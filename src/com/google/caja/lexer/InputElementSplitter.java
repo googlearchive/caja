@@ -65,9 +65,9 @@ final class InputElementSplitter extends AbstractTokenStream<JsTokenType> {
 
   @Override
   protected Token<JsTokenType> produce() throws ParseException {
-    char[] buf = p.getBuffer();
+    final char[] buf = p.getBuffer();
     int start = p.getOffset();
-    int limit = p.getLimit();
+    final int limit = p.getLimit();
     if (start < limit && JsLexer.isJsSpace(buf[start])) {
       ++start;
       while (start < limit && JsLexer.isJsSpace(buf[start])) {
@@ -210,7 +210,7 @@ final class InputElementSplitter extends AbstractTokenStream<JsTokenType> {
       case '.':
         // punctuation that may start a number
         if (end < limit && buf[end] >= '0' && buf[end] <= '9') {
-          ParsedNumber pn = processNumber(start, end);
+          ParsedNumber pn = processNumber(p, start, end);
           end = pn.end;
           type = pn.type;
         } else {
@@ -220,7 +220,7 @@ final class InputElementSplitter extends AbstractTokenStream<JsTokenType> {
         break;
       case '0': case '1': case '2': case '3': case '4':
       case '5': case '6': case '7': case '8': case '9':
-        ParsedNumber pn = processNumber(start, end);
+        ParsedNumber pn = processNumber(p, start, end);
         end = pn.end;
         type = pn.type;
         break;
@@ -253,7 +253,7 @@ final class InputElementSplitter extends AbstractTokenStream<JsTokenType> {
     return Token.instance(p.toString(start, end), type, pos);
   }
 
-  private static final class ParsedNumber {
+  static final class ParsedNumber {
     final JsTokenType type;
     final int end;
     ParsedNumber(JsTokenType type, int end) {
@@ -261,37 +261,22 @@ final class InputElementSplitter extends AbstractTokenStream<JsTokenType> {
       this.end = end;
     }
   }
-  private ParsedNumber processNumber(int start, int end) {
+  private ParsedNumber processNumber(CharProducer p, int start, int end) {
     // This recognizes several patterns
-    // 0x<hex><modifiers>
-    // <decimal>+("."<decimal>*)?<exponent>?<modifiers>
+    // 0x<hex>
+    // <decimal>+("."<decimal>*)?<exponent>?
     // "."<decimal>+<exponent>?
 
-    // It does *not* attempt to distinguish octal literals from decimal at
-    // this stage and does not group signs with numbers or mantissas with
-    // exponents containing a sign.
-    // Both those groupings are done by the joiner to preserve the one
-    // character lookahead rule.
-
-    char[] buf = p.getBuffer();
-    int limit = p.getLimit();
-
     // Anything not obviously a number is labeled a word.
-    NumberRecognizer nr = new NumberRecognizer();
+    NumberRecognizer nr = new NumberRecognizer(punctuation, p);
     for (int i = start; i < end; ++i) {
-      if (!nr.consume(buf[i])) {
+      if (!nr.recognize(i)) {
         return new ParsedNumber(nr.getTokenType(), end);
       }
     }
 
-    while (end < limit) {
-      char ch = buf[end];
-      if ('"' == ch || '\'' == ch || ('.' != ch && punctuation.contains(ch))
-          || JsLexer.isJsSpace(ch) || !nr.consume(ch)) {
-        break;
-      }
-      ++end;
-    }
+    int limit = p.getLimit();
+    while (end < limit && nr.recognize(end)) { ++end; }
     return new ParsedNumber(nr.getTokenType(), end);
   }
 

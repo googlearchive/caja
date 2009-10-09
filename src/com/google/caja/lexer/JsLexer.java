@@ -40,9 +40,8 @@ public class JsLexer implements TokenStream<JsTokenType> {
 
   public JsLexer(CharProducer producer, boolean isQuasiliteral) {
     this.ts = new WordClassifier(
-        new InputElementJoiner(
-            new InputElementSplitter(producer, JAVASCRIPT_PUNCTUATOR,
-                                     isQuasiliteral)));
+        new InputElementSplitter(producer, JAVASCRIPT_PUNCTUATOR,
+                                 isQuasiliteral));
   }
 
   public boolean hasNext() throws ParseException { return ts.hasNext(); }
@@ -115,7 +114,7 @@ public class JsLexer implements TokenStream<JsTokenType> {
   static boolean isRegexp(String previous) {
     if (TOKEN_BEFORE_REGEXP_LITERAL_RE.matcher(previous).find()) {
       // There is one case the above doesn't handle.
-      // If the preceder is a number that ends with a decimal point, the
+      // If the preceding token is a number that ends with a decimal point, the
       // regex will mistake it as a "." token which is in validPreceders.
       if (previous.length() >= 2 && previous.endsWith(".")) {
         char secondToLast = previous.charAt(previous.length() - 2);
@@ -153,7 +152,7 @@ public class JsLexer implements TokenStream<JsTokenType> {
         } else if (0 < tok.text.length()) {
           char ch = tok.text.charAt(0);
           if ((ch >= '0' && ch <= '9') || '-' == ch || '+' == ch || '.' == ch) {
-            // Verify tok is a well formed numeric token
+            // Verify tok is a well formed numeric token.
             if (INTEGER_LITERAL_RE.matcher(tok.text).matches()) {
               type = JsTokenType.INTEGER;
             } else {

@@ -33,152 +33,157 @@ final class NumberRecognizer {
     HEX,
     FRACTION,
     EXP_PRE,
+    EXP_SIGN,
     EXPONENT,
     WORD,
     ;
   }
 
+  private final PunctuationTrie<?> punctuation;
+  private final CharProducer p;
   private State state = State.START;
-  private boolean hasExponent;
-  private boolean isDecimal;
-  private boolean isHex;
 
-  boolean consume(char ch) {
-    if ('.' == ch && state.compareTo(State.INTEGER) > 0) { return false; }
+  NumberRecognizer(PunctuationTrie<?> punctuation, CharProducer p) {
+    this.punctuation = punctuation;
+    this.p = p;
+  }
+
+  boolean recognize(int offset) {
+    char ch = p.getBuffer()[offset];
+    State newState = null;
     switch (state) {
       case START:
         if ('0' == ch) {
-          state = State.ZERO;
+          newState = State.ZERO;
         } else if ('1' <= ch && '9' >= ch) {
-          state = State.INTEGER;
+          newState = State.INTEGER;
         } else if ('.' == ch) {
-          state = State.DOT;
+          newState = State.DOT;
         } else {
           throw new AssertionError();
         }
         break;
       case ZERO:
         if (ch >= '1' && ch <= '9') {
-          state = State.OCTAL;
+          newState = State.OCTAL;
         } else if (ch == '.') {
-          state = State.INTEGER_DOT;
-          isDecimal = true;
+          newState = State.INTEGER_DOT;
         } else if (ch == '0') {
-          // pass
+          newState = State.ZERO;
         } else if (ch >= 'a' && ch <= 'z' || ch >= 'A' && ch <= 'Z') {
           if (ch == 'x' || ch == 'X') {
-            state = State.HEX_PRE;
+            newState = State.HEX_PRE;
           } else if (ch == 'e' || ch == 'E') {
-            isDecimal = true;
-            state = State.EXP_PRE;
-          } else {
-            state = State.WORD;
+            newState = State.EXP_PRE;
           }
-        } else {
-          state = State.WORD;
         }
         break;
       case DOT:
-        if (ch >= '0' && ch <= '9') {
-          isDecimal = true;
-          state = State.FRACTION;
+        if (isDecimal(ch)) {
+          newState = State.FRACTION;
         } else {
           return false;
         }
         break;
       case INTEGER:
-        if (ch >= '0' && ch <= '9') {
-          // pass
+        if (isDecimal(ch)) {
+          newState = State.INTEGER;
         } else if ('.' == ch) {
-          state = State.INTEGER_DOT;
-          isDecimal = true;
+          newState = State.INTEGER_DOT;
         } else if (ch == 'e' || ch == 'E') {
-          state = State.EXP_PRE;
-          isDecimal = true;
-        } else {
-          state = State.WORD;
+          newState = State.EXP_PRE;
         }
         break;
       case INTEGER_DOT:
-        if (ch >= '0' && ch <= '9') {
-          state = State.FRACTION;
+        if (isDecimal(ch)) {
+          newState = State.FRACTION;
         } else if (ch == 'e' || ch == 'E') {
-          state = State.EXP_PRE;
-        } else {
-          state = State.WORD;
+          newState = State.EXP_PRE;
         }
         break;
       case OCTAL:
         if (ch >= '0' && ch <= '7') {
-          // pass
-        } else {
-          state = State.WORD;
+          newState = State.OCTAL;
         }
         break;
       case HEX_PRE:
-        if (ch >= '0' && ch <= '9'
+        if (isDecimal(ch)
             || ch >= 'a' && ch <= 'f'
             || ch >= 'A' && ch <= 'F') {
-          state = State.HEX;
-          this.isHex = true;
-        } else {
-          state = State.WORD;
+          newState = State.HEX;
         }
         break;
       case HEX:
-        if (!((ch >= '0' && ch <= '9')
-              || (ch >= 'a' && ch <= 'f')
-              || (ch >= 'A' && ch <= 'F'))) {
-          state = State.WORD;
+        if ((isDecimal(ch))
+             || (ch >= 'a' && ch <= 'f')
+             || (ch >= 'A' && ch <= 'F')) {
+          newState = State.HEX;
         }
         break;
       case FRACTION:
-        if (ch >= '0' && ch <= '9') {
-          // pass
+        if (isDecimal(ch)) {
+          newState = State.FRACTION;
         } else if (ch == 'e' || ch == 'E') {
-          state = State.EXP_PRE;
-        } else {
-          state = State.WORD;
+          newState = State.EXP_PRE;
         }
         break;
       case EXP_PRE:
-        if (ch >= '0' && ch <= '9') {
-          state = State.EXPONENT;
-        } else {
-          state = State.WORD;
+        if (isDecimal(ch)) {
+          newState = State.EXPONENT;
+        } else if ((ch == '+' || ch == '-')
+                   && offset + 1 < p.getLimit()
+                   && isDecimal(p.getBuffer()[offset + 1])) {
+          newState = State.EXP_SIGN;
+        }
+        break;
+      case EXP_SIGN:
+        if (isDecimal(ch)) {
+          newState = State.EXPONENT;
         }
         break;
       case EXPONENT:
-        if (ch >= '0' && ch <= '9') {
-          // pass
-        } else {
-          state = State.WORD;
+        if (isDecimal(ch)) {
+          newState = State.EXPONENT;
         }
         break;
       case WORD:
-        // pass
         break;
     }
-    return true;
+    if (newState != null) {
+      this.state = newState;
+      return true;
+    } else if (endsToken(ch)) {
+      return false;
+    } else {
+      this.state = State.WORD;
+      return true;
+    }
   }
 
   State getState() { return state; }
 
   boolean isNumber() { return State.WORD != state; }
-  boolean isDecimal() { return State.WORD != state && this.isDecimal; }
-  boolean isHex() { return State.WORD != state && this.isHex; }
+  boolean isHex() { return State.HEX == state; }
   boolean isOctal() { return State.OCTAL == state; }
-  boolean hasExponent() { return State.WORD != state && this.hasExponent; }
 
   JsTokenType getTokenType() {
     switch (state) {
+      case DOT: return JsTokenType.PUNCTUATION;
       case ZERO: case INTEGER: case HEX: case OCTAL:
         return JsTokenType.INTEGER;
       case INTEGER_DOT: case FRACTION: case EXPONENT:
-      case EXP_PRE:
         return JsTokenType.FLOAT;
       default:
         return JsTokenType.WORD;
     }
+  }
+
+  private static boolean isDecimal(char ch) {
+    return '0' <= ch && ch <= '9';
+  }
+
+  private boolean endsToken(char ch) {
+    return ch == '"' || ch == '\'' || punctuation.contains(ch)
+        || JsLexer.isJsSpace(ch);
   }
 }
