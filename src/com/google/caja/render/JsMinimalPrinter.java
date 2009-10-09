@@ -81,10 +81,27 @@ public final class JsMinimalPrinter extends BufferingRenderer {
 
       // Actually write the token.
       charInLine += text.length();
-      outputTokens.add(text);
-
+      if ("}".equals(text) && ";".equals(lastToken)) {
+        // ES5 Section 7.9.1 Rules of Automatic Semicolon Insertion
+        // When, as the program is parsed from left to right, a token (called
+        // the offending token) is encountered that is not allowed by any
+        // production of the grammar, then a semicolon is automatically inserted
+        // before the offending token if one or more of the following conditions
+        // is true:
+        // ...
+        // 2.   The offending token is }.
+        outputTokens.set(outputTokens.size() - 1, text);
+      } else {
+        outputTokens.add(text);
+      }
       lastToken = text;
     }
+    // ES5 Section 7.9.1 Rules of Automatic Semicolon Insertion
+    // When, as the program is parsed from left to right, the end of the input
+    // stream of tokens is encountered and the parser is unable to parse the
+    // input token stream as a single complete ECMAScript Program, then a
+    // semicolon is automatically inserted at the end of the input stream.
+    if (";".equals(lastToken)) { outputTokens.remove(outputTokens.size() - 1); }
     return outputTokens;
   }
 }

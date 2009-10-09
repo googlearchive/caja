@@ -46,13 +46,13 @@ public class JsMinimalPrinterTest extends CajaTestCase {
   }
 
   public final void testSimpleStatement() throws Exception {
-    assertRendered("{foo();}", "foo();");
+    assertRendered("{foo()}", "foo();");
   }
 
   public final void testSemisInsideParents() throws Exception {
     assertRendered(
         "{for(var i=0,n=a.length;i<n;++i){"
-        + "bar(a[i]);}}",
+        + "bar(a[i])}}",
         "for (var i = 0, n = a.length; i < n; ++i) {"
         + "  bar(a[ i ]);"
         + "}");
@@ -60,13 +60,13 @@ public class JsMinimalPrinterTest extends CajaTestCase {
 
   public final void testObjectConstructor() throws Exception {
     assertRendered(
-        "{foo({'x':1,'y':bar({'w':4}),'z':3});}",
+        "{foo({'x':1,'y':bar({'w':4}),'z':3})}",
         "foo({ x: 1, y: bar({ w: 4 }), z: 3 });");
   }
 
   public final void testMultipleStatements() throws Exception {
     assertRendered(
-        "{(function(a,b,c){foo(a);bar(b);return c;})(1,2,3);}",
+        "{(function(a,b,c){foo(a);bar(b);return c})(1,2,3)}",
         "(function (a, b, c) { foo(a); bar(b); return (c); })(1, 2, 3);");
   }
 
@@ -74,29 +74,29 @@ public class JsMinimalPrinterTest extends CajaTestCase {
     // Make sure -->, </script, and ]]> don't show up in rendered output.
     // Preventing these in strings is handled separately.
     assertRendered(
-        "{(i--)>j,k< /script>/,[[0]] >0/ / / *x;}",
+        "{(i--)>j,k< /script>/,[[0]] >0/ / / *x}",
         "i-->j, k</script>/, [[0]]>0 / / / * x;");
   }
 
   public final void testJSON() throws Exception {
     assertRendered(
-        "{({'a':[1,2,3],'b':{'c':[{}],'d':[{'e':null,'f':'foo'},null]}});}",
+        "{({'a':[1,2,3],'b':{'c':[{}],'d':[{'e':null,'f':'foo'},null]}})}",
         "({ a: [1,2,3], b: { c: [{}], d: [{ e: null, f: 'foo' }, null] } });");
   }
 
   public final void testConditional() throws Exception {
     assertRendered(
-        "{if(c1){foo();}else if(c2)bar();else baz();}",
+        "{if(c1){foo()}else if(c2)bar();else baz()}",
         "if (c1) { foo(); } else if (c2) bar(); else baz();");
   }
 
   public final void testNumberPropertyAccess() throws Exception {
-    assertRendered("{(3).toString();}", "(3).toString();");
+    assertRendered("{(3).toString()}", "(3).toString();");
   }
 
   public final void testComments() throws Exception {
     assertLexed(
-        "var x=foo;function Bar(){}var baz;a+b;",
+        "var x=foo;function Bar(){}var baz;a+b",
 
         ""
         + "var x = foo;  /* end of line */\n"
@@ -108,7 +108,7 @@ public class JsMinimalPrinterTest extends CajaTestCase {
   }
 
   public final void testDivisionByRegex() throws Exception {
-    assertLexed("3/ /foo/;", "3 / /foo/;");
+    assertLexed("3/ /foo/", "3 / /foo/;");
   }
 
   public final void testPunctuationRun() throws Exception {
@@ -127,6 +127,7 @@ public class JsMinimalPrinterTest extends CajaTestCase {
     long seed = Long.parseLong(
         System.getProperty("junit.seed", "" + System.currentTimeMillis()));
     Random rnd = new Random(seed);
+    boolean pass = false;
     try {
       for (int i = 1000; --i >= 0;) {
         List<String> randomTokens = generateRandomTokens(rnd);
@@ -153,32 +154,32 @@ public class JsMinimalPrinterTest extends CajaTestCase {
 
         MoreAsserts.assertListsEqual(randomTokens, actualTokens);
       }
-    } catch (Exception e) {
-      System.err.println("Using seed " + seed);
-      throw e;
+      pass = true;
+    } finally {
+      if (!pass) { System.err.println("Using seed " + seed); }
     }
   }
 
   public final void testSpacingAroundBrackets1() throws Exception {
-    assertTokens("longObjectInstance.reallyLongMethodName(a,b,c,d);",
+    assertTokens("longObjectInstance.reallyLongMethodName(a,b,c,d)",
                  "longObjectInstance", ".", "reallyLongMethodName", "(",
                  "a", ",", "b", ",", "c", ",", "d", ")", ";");
   }
 
   public final void testSpacingAroundBrackets2() throws Exception {
-    assertTokens("longObjectInstance.reallyLongMethodName(a,b,c,d);",
+    assertTokens("longObjectInstance.reallyLongMethodName(a,b,c,d)",
                  "longObjectInstance", ".", "reallyLongMethodName", "(",
                  "a", ",", "b", ",", "c", ",", "\n", "d", ")", ";");
   }
 
   public final void testSpacingAroundBrackets3() throws Exception {
-    assertTokens("longObjectInstance.reallyLongMethodName(a,b,c,d);",
+    assertTokens("longObjectInstance.reallyLongMethodName(a,b,c,d)",
                  "longObjectInstance", ".", "reallyLongMethodName", "(",
                  "\n", "a", ",", "b", ",", "c", ",", "d", ")", ";");
   }
 
   public final void testSpacingAroundBrackets4() throws Exception {
-    assertTokens("var x=({'fooBar':[0,1,2,]});",
+    assertTokens("var x=({'fooBar':[0,1,2,]})",
                  "var", "x", "=", "(", "{", "'fooBar'", ":", "[",
                  "\n", "0", ",", "1", ",", "2", ",", "]", "}", ")", ";");
   }
@@ -219,7 +220,7 @@ public class JsMinimalPrinterTest extends CajaTestCase {
         + "\n-c;if(b)throw new"
         + "\nError();break label;do"
         + "\nnothing;while(0);continue top;a-"
-        + "\n-b;number=counter++;number=counter--;number=n-++counter;}",
+        + "\n-b;number=counter++;number=counter--;number=n-++counter}",
         out.toString());
   }
 
@@ -234,8 +235,9 @@ public class JsMinimalPrinterTest extends CajaTestCase {
 
   private List<String> generateRandomTokens(Random rnd) {
     List<String> tokens = new ArrayList<String>();
+    String last = null;
     for (int i = 10; --i >= 0;) {
-      final String tok;
+      String tok;
       switch (TYPES[rnd.nextInt(TYPES.length)]) {
         case COMMENT:
           continue;
@@ -262,6 +264,9 @@ public class JsMinimalPrinterTest extends CajaTestCase {
             // as regular expressions.
             tokens.add("3");
           }
+          if ("}".equals(tok) && ";".equals(last)) {
+            tok = "{";
+          }
           break;
         case WORD:
           tok = randomWord(rnd);
@@ -286,6 +291,11 @@ public class JsMinimalPrinterTest extends CajaTestCase {
           throw new AssertionError();
       }
       tokens.add(tok);
+      last = tok;
+    }
+    while (";".equals(last)) {
+      tokens.remove(tokens.size() - 1);
+      last = tokens.isEmpty() ? null : tokens.get(tokens.size() - 1);
     }
     return tokens;
   }
