@@ -75,7 +75,14 @@ Object.prototype.proto___ = null;
 /** In anticipation of ES5 */
 if (Date.prototype.toISOString === void 0 && 
     typeof Date.prototype.toJSON === 'function') {
-  Date.prototype.toISOString = Date.prototype.toJSON;
+  // These are separate functions in ES5. As separate functions, they
+  // also tame separately.
+  // TODO(erights): Really, to follow ES5, Date.prototype.toISOString
+  // should be non-generic and Date.prototype.toJSON should be generic
+  // and defined by calling this.toISOString().
+  Date.prototype.toISOString = function() {
+    return Date.prototype.toJSON.call(this);
+  };
 }
 
 /**
@@ -85,7 +92,7 @@ if (Date.prototype.toISOString === void 0 &&
  */
 if (Array.slice === void 0) {
   Array.slice = function(self, start, end) {
-    if (typeof self === 'object') {
+    if (self && typeof self === 'object') {
       return Array.prototype.slice.call(self, start || 0, end || self.length);
     } else {
       return [];
@@ -263,6 +270,7 @@ var safeJSON;
    * unmodified Javascript system.
    */
   function hasOwnProp(obj, name) {
+    if (!obj) { return false; }
     var t = typeof obj;
     if (t !== 'object' && t !== 'function') {
       // If obj is a primitive, Object(obj) still has no own properties.
@@ -365,7 +373,7 @@ var safeJSON;
    * </pre>
    */
   function enforce(test, var_args) {
-    return test || fail.apply({}, Array.slice(arguments, 1));
+    return test || fail.apply(USELESS, Array.slice(arguments, 1));
   }
 
   /**
@@ -509,16 +517,6 @@ var safeJSON;
   ////////////////////////////////////////////////////////////////////////
 
   /**
-   * Does str end with suffix?
-   */
-  function endsWith(str, suffix) {
-    enforceType(str, 'string');
-    enforceType(suffix, 'string');
-    var d = str.length - suffix.length;
-    return d >= 0 && str.lastIndexOf(suffix) === d;
-  }
-
-  /**
    * Returns the 'constructor' property of obj's prototype.
    * <p>
    * SECURITY TODO(erights): Analyze the security implications
@@ -576,7 +574,8 @@ var safeJSON;
         } else {
           fail('Discovery of direct constructors unsupported when the ',
                'constructor property is not deletable: ',
-               oldConstr);
+               obj, '.constructor === ', oldConstr, 
+               '(', obj === global, ')');
         }
       }
 
@@ -631,7 +630,7 @@ var safeJSON;
   }
 
   /**
-   * A Record is an object whose direct constructor is Object.
+   * A Record is an object whose direct constructor is Object. 
    * <p>
    * These are the kinds of objects that can be expressed as
    * an object literal ("<tt>{...}</tt>") in the JSON language.
@@ -984,7 +983,634 @@ var safeJSON;
   }
 
   ////////////////////////////////////////////////////////////////////////
-  // Classifying functions
+  // Primitive objective membrane
+  ////////////////////////////////////////////////////////////////////////
+
+  /**
+   * Records that f is t's feral twin and t is f's tame twin.
+   * <p>
+   * A <i>feral</i> object is one safe to make accessible to trusted
+   * but possibly innocent uncajoled code. A <i>tame</i> object is one
+   * safe to make accessible to untrusted cajoled
+   * code. ___tamesTo(f, t) records that f is feral, that t is tamed,
+   * and that they are in one-to-one correspondence so that 
+   * ___.tame(f) === t and ___.untame(t) === f.
+   * <p>
+   * All primitives already tame and untame to themselves, so tamesTo
+   * only accepts non-primitive arguments. The characteristic of being
+   * marked tame or feral only applies to the object itself, not to
+   * objects which inherit from it. TODO(erights): We should probably
+   * check that a derived object does not get markings that conflict
+   * with the markings on its base object.
+   * <p>
+   * Initialization code can express some taming decisions by calling
+   * tamesTo to preregister some feral/tame pairs. 
+   * <p>
+   * Unlike the subjective membranes created by Domita, in this one,
+   * the objects in a tame/feral pair point directly at each other,
+   * and thereby retain each other. So long as one is non-garbage the
+   * other will be as well. 
+   */
+  function tamesTo(f, t) {
+    var ftype = typeof f;
+    if (!f || (ftype !== 'function' && ftype !== 'object')) { 
+      fail('Unexpected feral primitive: ', f); 
+    }
+    var ttype = typeof t;
+    if (!t || (ttype !== 'function' && ttype !== 'object')) {
+      fail('Unexpected tame primitive: ', t); 
+    }
+
+    if (f.TAMED_TWIN___ === t && t.FERAL_TWIN___ === f) { 
+      // Just a transient diagnostic until we understand how often
+      // this happens.
+      log('multiply tamed: ' + f + ', ' + t);
+      return; 
+    }
+
+    // TODO(erights): Given that we maintain the invariant that 
+    // (f.TAMED_TWIN___ === t && hasOwnProp(f, 'TAMED_TWIN___')) iff
+    // (t.FERAL_TWIN___ === f && hasOwnProp(t, 'FERAL_TWIN___')), then we
+    // could decide to more delicately rely on this invariant and test
+    // the backpointing rather than hasOwnProp below.
+
+    if (f.TAMED_TWIN___ && hasOwnProp(f, 'TAMED_TWIN___')) { 
+      fail('Already tames to something: ', f); 
+    }
+    if (t.FERAL_TWIN___ && hasOwnProp(t, 'FERAL_TWIN___')) { 
+      fail('Already untames to something: ', t); 
+    }
+    if (f.FERAL_TWIN___ && hasOwnProp(f, 'FERAL_TWIN___')) { 
+      fail('Already tame: ', f); 
+    }
+    if (t.TAMED_TWIN___ && hasOwnProp(t, 'TAMED_TWIN___')) { 
+      fail('Already feral: ', t); 
+    }
+
+    f.TAMED_TWIN___ = t;
+    t.FERAL_TWIN___ = f;
+  }
+
+  /**
+   * ___.tamesToSelf(obj) marks obj as both tame and feral.
+   * <p>
+   * Most tamed objects should be both feral and tame, i.e.,
+   * safe to be accessed from both the feral and tame worlds.
+   * <p>
+   * This is equivalent to tamesTo(obj, obj) but a bit faster by
+   * exploiting the knowledge that f and t are the same object.
+   */
+  function tamesToSelf(obj) {
+    var otype = typeof obj;
+    if (!obj || (otype !== 'function' && otype !== 'object')) { 
+      fail('Unexpected primitive: ', obj); 
+    }
+    if (obj.TAMED_TWIN___ === obj && obj.FERAL_TWIN___ === obj) { 
+      // Just a transient diagnostic until we understand how often
+      // this happens.
+      log('multiply tamed: ' + obj);
+      return; 
+    }
+
+    // TODO(erights): Given that we maintain the invariant that 
+    // (f.TAMED_TWIN___ === t && hasOwnProp(f, 'TAMED_TWIN___')) iff
+    // (t.FERAL_TWIN___ === f && hasOwnProp(t, 'FERAL_TWIN___')), then we
+    // could decide to more delicately rely on this invariant and test
+    // the backpointing rather than hasOwnProp below.
+    if (obj.TAMED_TWIN___ && hasOwnProp(obj, 'TAMED_TWIN___')) { 
+      fail('Already tames to something: ', obj); 
+    }
+    if (obj.FERAL_TWIN___ && hasOwnProp(obj, 'FERAL_TWIN___')) { 
+      fail('Already untames to something: ', obj); 
+    }
+
+    obj.TAMED_TWIN___ = obj.FERAL_TWIN___ = obj;
+  }
+
+  /**
+   * 
+   * Returns a tame object representing f, or undefined on failure.
+   * <ol>
+   * <li>All primitives tame and untame to themselves. Therefore,
+   *     undefined is only a valid failure indication after checking
+   *     that the argument is not undefined. 
+   * <li>If f has a registered tame twin, return that.
+   * <li>If f is marked tame, then f already is a tame object 
+   *     representing f, so return f.
+   * <li>If f has an AS_TAMED___() method, call it and then register 
+   *     the result as f's tame twin. Unlike the tame/feral
+   *     registrations, this method applies even if it is inherited.
+   * <li>If f is a Record, call tameRecord(f). We break Records out as
+   *     a special case since the only thing all Records inherit from
+   *     is Object.prototype, which everything else inherits from as
+   *     well. 
+   * <li>Indicate failure by returning undefined.
+   * </ol>
+   * Record taming does not (yet?) deal with record inheritance. 
+   * <p>
+   * The AS_TAMED___() methods may assume that they are called only by
+   * tame() and only on unmarked non-primitive objects. They must
+   * therefore either return another unmarked non-primitive object
+   * (possibly the same one) or undefined for failure. On returning
+   * successfully, tame() will register the pair so AS_TAMED___() does
+   * not need to. 
+   */
+  function tame(f) {
+    var ftype = typeof f;
+    if (!f || (ftype !== 'function' && ftype !== 'object')) { 
+      return f; 
+    }
+    var t = f.TAMED_TWIN___;
+    // Here we do use the backpointing test as a cheap hasOwnProp test.
+    if (t && t.FERAL_TWIN___ === f) { return t; }
+
+    var realFeral = f.FERAL_TWIN___;
+    if (realFeral && realFeral.TAMED_TWIN___ === f) {
+      // If f has a feral twin, then f itself is tame.
+      log('Tame-only object from feral side: ' + f);
+      return f;
+    }
+    if (f.AS_TAMED___) {
+      t = f.AS_TAMED___();
+      if (t) { tamesTo(f, t); }
+      return t;
+    }
+    if (isRecord(f)) {
+      t = tameRecord(f);
+      // tameRecord does not actually have any possibility of failure,
+      // but we can't assume that here.
+      if (t) { tamesTo(f, t); }
+      return t;
+    }
+    return undefined;
+  }
+
+  /**
+   * Returns a feral object representing t, or undefined on failure.
+   * <ol>
+   * <li>All primitives tame and untame to themselves. Therefore,
+   *     undefined is only a valid failure indication after checking
+   *     that the argument is not undefined. 
+   * <li>If t has a registered feral twin, return that.
+   * <li>If t is marked feral, then t already is a feral object 
+   *     representing t, so return t.
+   * <li>If t has an AS_FERAL___() method, call it and then register 
+   *     the result as t's feral twin. Unlike the tame/feral
+   *     registrations, this method applies even if it is inherited.
+   * <li>If t is a Record, call untameRecord(t).
+   * <li>Indicate failure by returning undefined.
+   * </ol>
+   * Record untaming does not (yet?) deal with record inheritance. 
+   * <p>
+   * The AS_FERAL___() methods may assume that they are called only by
+   * untame() and only on unmarked non-primitive objects. They must
+   * therefore either return another unmarked non-primitive object
+   * (possibly the same one) or undefined for failure. On returning
+   * successfully, untame() will register the pair so AS_FERAL___() does
+   * not need to. 
+   */
+  function untame(t) {
+    var ttype = typeof t;
+    if (!t || (ttype !== 'function' && ttype !== 'object')) { 
+      return t; 
+    }
+    var f = t.FERAL_TWIN___;
+    // Here we do use the backpointing test as a cheap hasOwnProp test.
+    if (f && f.TAMED_TWIN___ === t) { return f; }
+
+    var realTame = t.TAMED_TWIN___;
+    if (realTame && realTame.FERAL_TWIN___ === t) {
+      // If t has a tamed twin, then t itself is feral.
+      log('Feral-only object from tame side: ' + t);
+      return t;
+    }
+    if (t.AS_FERAL___) {
+      f = t.AS_FERAL___();
+      if (f) { tamesTo(f, t); }
+      return f;
+    }
+    if (isRecord(t)) {
+      f = untameRecord(t);
+      // untameRecord does not actually have any possibility of
+      // failure, but we can't assume that here.
+      if (f) { tamesTo(f, t); }
+      return f;
+    }
+    return undefined;
+  }
+
+  ////////////////////////////////////////////////////////////////////////
+  // Taming helpers to be called only by tame() and untame().
+  ////////////////////////////////////////////////////////////////////////
+
+  global.AS_TAMED___ = function() {
+    fail('global object almost leaked');
+  };
+
+  global.AS_FERAL___ = function() {
+    fail('global object leaked');
+  };
+
+  /**
+   * Used in lieu of an AS_TAMED___() method for Records.
+   * <p>
+   * Assume f is an unmarked Record. Recursively tame all its
+   * mentionable enumerable own properties, being careful to
+   * handle cycles. Failure to tame a property value only causes
+   * that property to be omitted. Freeze the resulting record. If
+   * the original record were frozen and all properties tame to
+   * themselves, then the Record should tame to itself. 
+   */
+  function tameRecord(f) {
+    var t = {};
+    var changed = !isFrozen(f);
+    // To handle cycles, provisionally mark f as taming to a fresh
+    // t going in and see how the rest tames. Set up a try/finally
+    // block to remove these provisional markings even on
+    // exceptional exit.
+    tamesTo(f, t);      
+    try {
+      var keys = ownKeys(f);
+      var len = keys.length;
+      for (var i = 0; i < len; i++) {
+        var k = keys[i];
+        var fv = f[k];
+        var tv = tame(fv);
+        if (tv === void 0 && fv !== void 0) {
+          changed = true;
+        } else {
+          if (fv !== tv && fv === fv) { // I hate NaNs
+            changed = true;
+          }
+          t[k] = tv;
+        }
+      }
+    } finally {
+      delete f.TAMED_TWIN___;
+      delete t.FERAL_TWIN___;
+    }
+    if (changed) {
+      // Although the provisional marks have been removed, our caller
+      // will restore them. We do it this way to make tameRecord()
+      // more similar to AS_TAMED___() methods.
+      return primFreeze(t);
+    } else {
+      return f;
+    }
+  }
+ 
+  /**
+   * Used in lieu of an AS_FERAL___() method for Records.
+   * <p>
+   * Assume t is an unmarked Record. Recursively untame all its
+   * mentionable enumerable own properties, being careful to
+   * handle cycles. Failure to untame a property value only causes
+   * that property to be omitted. Freeze the resulting record. If
+   * the original record were frozen and all properties untame to
+   * themselves, then the Record should untame to itself. 
+   */
+  function untameRecord(t) {
+    var f = {};
+    var changed = !isFrozen(t);
+    // To handle cycles, provisionally mark t as untaming to a fresh
+    // f going in and see how the rest untames. Set up a try/finally
+    // block to remove these provisional markings even on
+    // exceptional exit.
+    tamesTo(f, t);      
+    try {
+      var keys = ownKeys(t);
+      var len = keys.length;
+      for (var i = 0; i < len; i++) {
+        var k = keys[i];
+        var tv = t[k];
+        var fv = untame(tv);
+        if (fv === void 0 && tv !== void 0) {
+          changed = true;
+        } else {
+          if (tv !== fv && tv === tv) { // I hate NaNs
+            changed = true;
+          }
+          f[k] = fv;
+        }
+      }
+    } finally {
+      delete t.FERAL_TWIN___;
+      delete f.TAMED_TWIN___;
+    }
+    if (changed) {
+      // Although the provisional marks have been removed, our caller
+      // will restore them. We do it this way to make untameRecord()
+      // more similar to AS_FERAL___() methods.
+      return primFreeze(f);
+    } else {
+      return t;
+    }
+  }
+
+  /**
+   * 
+   * Tame an array into a frozen dense array of tamed elements.
+   * <p>
+   * Assume f is an unmarked array. Recursively tame all its
+   * elements (the values of its uint-named properties between 0 and
+   * length-1), being careful to handle cycles. Absence of an index or
+   * failure to tame a value only causes the taming at that index to
+   * be undefined. Freeze the resulting array. If the original array
+   * were frozen and all elements are present and tame to themselves,
+   * then the array should tame to itself.
+   * <p>
+   * SECURITY HAZARD: Having the array tame to itself under the above
+   * rule isn't safe if the array contains non-index-named properties
+   * with non-tame values, as these will become accessible to
+   * untrusted cajoled code. However, it is too expensive to check for
+   * these here, so it is the responsibility of the trusted uncajoled
+   * code never to cause an array containing such properties to be
+   * tamed. TODO(erights): Should add a debugging flag to enable
+   * expensive safety checks.
+   */
+  Array.prototype.AS_TAMED___ = function tameArray() {
+    var f = this;
+    var t = [];
+    var changed = !isFrozen(f);
+    // To handle cycles, provisionally mark f as taming to a fresh
+    // t going in and see how the rest tames. Set up a try/finally
+    // block to remove these provisional markings even on
+    // exceptional exit.
+    tamesTo(f, t);      
+    try {
+      var len = f.length;
+      for (var i = 0; i < len; i++) {
+        if (i in f) {
+          var fv = f[i];
+          var tv = tame(fv);
+          if (fv !== tv && fv === fv) { // I hate NaNs
+            changed = true;
+          }
+          t[i] = tv;
+        } else {
+          changed = true;
+          t[i] = void 0;          
+        }
+      }
+    } finally {
+      delete f.TAMED_TWIN___;
+      delete t.FERAL_TWIN___;
+    }
+    if (changed) {
+      // Although the provisional marks have been removed, our caller
+      // will restore them.
+      return primFreeze(t);
+    } else {
+      // See SECURITY HAZARD note in doc-comment.
+      return f;
+    }
+  };
+
+  /**
+   * Untame an array into a frozen dense array of feral elements.
+   * <p>
+   * Assume f is an unmarked array. Recursively untame all its
+   * elements (the values of its uint-named properties between 0 and
+   * length-1), being careful to handle cycles. Absence of an index or
+   * failure to untame a value only causes the untaming at that index to
+   * be undefined. Freeze the resulting array. If the original array
+   * were frozen and all elements are present and untame to themselves,
+   * then the array should untame to itself.
+   * <p>
+   * SECURITY HAZARD: Having the array untame to itself under the above
+   * rule isn't safe if the array contains non-index-named properties
+   * with non-feral values, as these might be accessed by
+   * trusted uncajoled code. However, it is too expensive to check for
+   * these here, so it is the responsibility of the trusted uncajoled
+   * code not to <i>innocently</i> access such properties on a feral
+   * array resulting from untaming a tame array. TODO(erights): Should
+   * add a debugging flag to enable expensive safety checks.
+   */
+  Array.prototype.AS_FERAL___ = function untameArray() {
+    var t = this;
+    var f = [];
+    var changed = !isFrozen(t);
+    // To handle cycles, provisionally mark t as untaming to a fresh
+    // f going in and see how the rest untames. Set up a try/finally
+    // block to remove these provisional markings even on
+    // exceptional exit.
+    tamesTo(f, t);      
+    try {
+      var len = t.length;
+      for (var i = 0; i < len; i++) {
+        if (i in t) {
+          var tv = t[i];
+          var fv = untame(tv);
+          if (tv !== fv && tv === tv) { // I hate NaNs
+            changed = true;
+          }
+          f[i] = fv;
+        } else {
+          changed = true;
+          f[i] = void 0;
+        }
+      }
+    } finally {
+      delete t.FERAL_TWIN___;
+      delete f.TAMED_TWIN___;
+    }
+    if (changed) {
+      // Although the provisional marks have been removed, our caller
+      // will restore them.
+      return primFreeze(f);
+    } else {
+      // See SECURITY HAZARD note in doc-comment.
+      return t;
+    }
+  };
+  
+  /**
+   * Constructors and simple-functions tame to themselves by default.
+   */
+  Function.prototype.AS_TAMED___ = function defaultTameFunc() {
+    var f = this;
+    if (isFunc(f) || isCtor(f)) { return f; }
+    return void 0;
+  };
+  
+  /**
+   * Constructors and simple-function untame to themselves by default.
+   */
+  Function.prototype.AS_FERAL___ = function defaultUntameFunc() {
+    var t = this;
+    if (isFunc(t) || isCtor(t)) { return t; }
+    return void 0;    
+  };
+
+  /**
+   * Prevent privilege escalation by passing USELESS rather than null,
+   * undefined or the global object as the <tt>this</tt> of a call to
+   * a real <tt>call</tt>, <tt>apply</tt>, or <tt>bind</tt> method.
+   */
+  function stopEscalation(val) {
+    if (val === null || val === void 0 || val === global) {
+      return USELESS;
+    }
+    return val;
+  }
+
+  /**
+   * To be installed as the AS_TAMED___() method on feral functions
+   * marked by markXo4a().
+   * <p>
+   * A feral function is marked as xo4a iff it may be given a tame
+   * <tt>this</tt> and arguments and must return a tame result. We
+   * therefore tame it to a frozen pseudo-function whose call and
+   * apply methods calls the original function's apply method
+   * directly. 
+   */
+  function tameXo4a() {
+    var xo4aFunc = this;
+    function tameApplyFuncWrapper(self, args) {
+      return xo4aFunc.apply(stopEscalation(self), args);
+    }
+    markFuncFreeze(tameApplyFuncWrapper);
+
+    function tameCallFuncWrapper(self, var_args) {
+      return tameApplyFuncWrapper(self, Array.slice(arguments, 1));
+    }
+    markFuncFreeze(tameCallFuncWrapper);
+
+    var result = PseudoFunction(tameCallFuncWrapper, tameApplyFuncWrapper);
+    result.length = xo4aFunc.length;
+    result.toString = markFuncFreeze(xo4aFunc.toString.bind(xo4aFunc));
+    return primFreeze(result);
+  }
+
+  /**
+   * To be installed as the AS_TAMED___() method on feral functions
+   * marked by markInnocent().
+   * <p>
+   * An innocent feral function must be assumed to be exophoric, to
+   * expect only a feral this and arguments and to return a feral
+   * result. We therefore tame it to a frozen pseudo-function whose
+   * call and apply methods calls the original feral function with an
+   * untaming of its self and remaining arguments. It will then return 
+   * a taming of what the feral function returns.
+   */
+  function tameInnocent() {
+    var feralFunc = this;
+    function tameApplyFuncWrapper(self, args) {
+      var feralThis = stopEscalation(untame(self));
+      var feralArgs = untame(args);
+      var feralResult = feralFunc.apply(feralThis, feralArgs);
+      return tame(feralResult);
+    }
+    markFuncFreeze(tameApplyFuncWrapper);
+
+    function tameCallFuncWrapper(self, var_args) {
+      return tameApplyFuncWrapper(self, Array.slice(arguments, 1));
+    }
+    markFuncFreeze(tameCallFuncWrapper);
+
+    var result = PseudoFunction(tameCallFuncWrapper, tameApplyFuncWrapper);
+    result.length = feralFunc.length;
+    result.toString = markFuncFreeze(feralFunc.toString.bind(feralFunc));
+    return primFreeze(result);
+  }
+
+  /**
+   * A Record is a pseudo-function if it inherits from
+   * some PseudoFunctionProto.
+   * <p>
+   * At the moment a pseudo-function is returned from
+   * PseudoFunction(), it has working call, apply, and bind
+   * methods. However, since pseudo-functions may be mutated, these
+   * can be altered or deleted. Neverthess, having determined that an
+   * object is a pseudo-function, its clients may (and generally will)
+   * assume that all these methods are present and working.
+   */
+  var PseudoFunctionProto = primFreeze({
+
+    /**
+     * A simple default that should generally be overridden.
+     */
+    toString: markFuncFreeze(function() {
+      return 'pseudofunction(var_args) {\n    [some code]\n}';
+    }),
+
+    /**
+     * Since there's no constructor, to have a general cross-frame
+     * pseudo-function test, we test CLASS___ ===
+     * 'PseudoFunction'. This CLASS___ will also cause a cajoled
+     * ({}).toString.call(pseudoFunc) to return 
+     * "[object PseudoFunction]". 
+     * <p>
+     * TODO(erights): In Cajita, it might be better to return 
+     * "[object Object]"; it's not clear. In Valija, it would
+     * definitely be better to return "[object Function]".
+     */
+    CLASS___: 'PseudoFunction',
+
+    /**
+     * A pseudo-function untames to an exophoric feral function.
+     * <p>
+     * The resulting feral function will call the pseudo-function's
+     * apply method with a taming of the feral this as the tame self
+     * and a taming of its arguments. It will then return an untaming
+     * of the result. 
+     */
+    AS_FERAL___: function untamePseudoFunction() {
+      var tamePseudoFunc = this;
+      function feralWrapper(var_args) {
+        var feralArgs = Array.slice(arguments, 0);
+        var tamedSelf = tame(stopEscalation(this));
+        var tamedArgs = tame(feralArgs);
+        var tameResult = callPub(tamePseudoFunc, 
+                                 'apply', 
+                                 [tamedSelf, tamedArgs]);
+        return untame(tameResult);
+      }
+      return feralWrapper;
+    }
+  });
+
+  /**
+   * Makes an unfrozen pseudo-function that inherits from
+   * PseudoFunctionProto. 
+   * <p>
+   * Both the callFunc and the opt_applyFunc, if provided, must be
+   * simple-functions. If the opt_applyFunc is omitted, it is
+   * synthesized from the callFunc.
+   * <p>
+   * PseudoFunction is not a genuine constructor, because
+   * pseudo-functions are Records, not constructed objects.
+   * <p>
+   * PseudoFunction's caller should set the pseudo-function's toString
+   * method to something useful, overriding the default inherited from
+   * PseudoFunctionProto. 
+   */
+  function PseudoFunction(callFunc, opt_applyFunc) {
+    callFunc = asFunc(callFunc);
+    var applyFunc;
+    if (opt_applyFunc) {
+      applyFunc = asFunc(opt_applyFunc);
+    } else {
+      applyFunc = markFuncFreeze(function applyFun(self, args) {
+        args = Array.slice(args, 0);                              
+        return callFunc.apply(USELESS, [self].concat(args));
+      });
+    }
+
+    var result = primBeget(PseudoFunctionProto);
+    result.call = callFunc;
+    result.apply = applyFunc;
+    result.bind = markFuncFreeze(function bindFun(self, var_args) {
+      self = stopEscalation(self);                                 
+      var args = [USELESS, self].concat(Array.slice(arguments, 1));
+      return markFuncFreeze(callFunc.bind.apply(callFunc, args));
+    });
+    result.length = callFunc.length -1;
+    return result;
+  }
+
+  ////////////////////////////////////////////////////////////////////////
+  // Classifying functions and pseudo-functions
   ////////////////////////////////////////////////////////////////////////
 
   function isCtor(constr)    {
@@ -996,17 +1622,22 @@ var safeJSON;
   function isXo4aFunc(func) {
     return func && !!func.XO4A___;
   }
+  function isPseudoFunc(fun) {
+    return fun && fun.CLASS___ === 'PseudoFunction';
+  }
 
   /**
-   * Mark <tt>constr</tt> as a constructor.
+   * Mark <tt>constr</tt> as a constructor which tames to itself by 
+   * default, and whose instances are constructed objects which tame 
+   * and untame to themselves by default. 
    * <p>
    * A function is tamed and classified by calling one of
    * <tt>markCtor()</tt>, <tt>markXo4a()</tt>, or
    * <tt>markFuncFreeze()</tt>. Each of these checks that the function
    * hasn't already been classified by any of the others. A function
-   * which has not been so classified is an <i>untamed function</i>.
+   * which has not been so classified is an <i>unclassifed function</i>.
    * <p>
-   * If <tt>opt_Sup</tt> is provided, record that const.prototype
+   * If <tt>opt_Sup</tt> is provided, record that constr.prototype
    * inherits from opt_Sup.prototype. This bookkeeping helps
    * directConstructor().
    * <p>
@@ -1030,6 +1661,17 @@ var safeJSON;
     }
     if (opt_name) {
       constr.NAME___ = String(opt_name);
+    }
+    if (constr !== Object && constr !== Array) {
+      // Iff constr is not Object nor Array, then any object inheriting from
+      // constr.prototype is a constructed object which therefore tames to
+      // itself by default. We do this with AS_TAMED___ and AS_FERAL___
+      // methods on the prototype so it can be overridden either by overriding
+      // these methods or by pre-taming with ___.tamesTo or ___.tamesToSelf.
+      constr.prototype.AS_TAMED___ =
+        constr.prototype.AS_FERAL___ = function() {
+          return this;
+        };
     }
     return constr;  // translator freezes constructor later
   }
@@ -1059,18 +1701,18 @@ var safeJSON;
   }
 
   /**
-   * Initialize argument constructor <i>hiddenCtor</i> so that it
+   * Initialize argument constructor <i>feralCtor</i> so that it
    * represents a "subclass" of argument constructor <i>someSuper</i>,
-   * and return a safely non-invokable version of <i>hiddenCtor</i>. 
+   * and return a non-invokable taming of <i>feralCtor</i>. 
    *
    * Given: 
    *
-   *   function HiddenFoo() { ... some uncajoled constructor ... }
-   *   var Foo = extend(HiddenFoo, HiddenSuper, 'Foo');
+   *   function FeralFoo() { ... some uncajoled constructor ... }
+   *   var Foo = extend(FeralFoo, FeralSuper, 'Foo');
    *
    * it will be the case that:
    *
-   *   new HiddenFoo() instanceof Foo
+   *   new FeralFoo() instanceof Foo
    *
    * however -- and this is the crucial property -- cajoled code will get an
    * error if it invokes either of:
@@ -1078,23 +1720,23 @@ var safeJSON;
    *   new Foo()
    *   Foo()
    *
-   * This allows us to expose Foo to cajoled code, allowing it to sense
-   * that all the HiddenFoo instances we give it are instanceof Foo, without
-   * granting to cajoled code the means to create any new such
-   * instances.
+   * This allows us to expose the tame Foo to cajoled code, allowing
+   * it to sense that all the FeralFoo instances we give it are
+   * instanceof Foo, without granting to cajoled code the means to
+   * create any new such instances.
    * 
-   * extend() also sets <i>hiddenCtor</i>.prototype to set up the
+   * extend() also sets <i>feralCtor</i>.prototype to set up the
    * prototype chain so that 
    *
-   *   new HiddenFoo() instanceof HiddenSuper
+   *   new FeralFoo() instanceof FeralSuper
    * and
-   *   new HiddenFoo() instanceof Super
+   *   new FeralFoo() instanceof Super
    *
-   * @param hiddenCtor An uncajoled constructor. This must NOT be
-   *        exposed to cajoled code by any other mechanism.
+   * @param feralCtor An feral-only uncajoled constructor. This must
+   *        NOT be exposed to cajoled code by any other mechanism.
    * @param someSuper Some constructor representing the
    *        superclass. This can be <ul>
-   *        <li>a hiddenCtor that had been provided as a first argument
+   *        <li>a feralCtor that had been provided as a first argument
    *            in a previous call to extend(), 
    *        <li>an inertCtor as returned by a previous call to
    *            extend(), or 
@@ -1106,72 +1748,33 @@ var safeJSON;
    * @param opt_name If the returned inert constructor is made
    *        available this should be the property name used.
    *
-   * @return an inert class constructor as described above.
+   * @return a tame inert class constructor as described above.
    */
-  function extend(hiddenCtor, someSuper, opt_name) {
-    if (!('function' === typeof hiddenCtor)) {
-      fail('Internal: Provided constructor is not a function');
+  function extend(feralCtor, someSuper, opt_name) {
+    if (!('function' === typeof feralCtor)) {
+      fail('Internal: Feral constructor is not a function');
     }
     someSuper = asCtor(someSuper.prototype.constructor);
     var noop = function () {};
     noop.prototype = someSuper.prototype;
-    hiddenCtor.prototype = new noop();
-    hiddenCtor.prototype.proto___ = someSuper.prototype;
+    feralCtor.prototype = new noop();
+    feralCtor.prototype.proto___ = someSuper.prototype;
 
     var inert = function() {
       fail('This constructor cannot be called directly');
     };
 
-    inert.prototype = hiddenCtor.prototype;
-    hiddenCtor.prototype.constructor = inert;
-    return markCtor(inert, someSuper, opt_name);
+    inert.prototype = feralCtor.prototype;
+    feralCtor.prototype.constructor = inert;
+    markCtor(inert, someSuper, opt_name);
+    tamesTo(feralCtor, inert);
+    return primFreeze(inert);
   }
 
   /**
-   * Enables first-class reification of exophoric functions as
-   * pseudo-functions -- frozen records with call, bind, and apply
-   * functions.
-   */
-  function reifyIfXo4a(xfunc, opt_name) {
-    if (!isXo4aFunc(xfunc)) {
-      return asFirstClass(xfunc);
-    }
-    var result = {
-      call: markFuncFreeze(function callXo4a(self, var_args) {
-        if (self === null || self === void 0) { self = USELESS; }
-        return xfunc.apply(self, Array.slice(arguments, 1));
-      }),
-      apply: markFuncFreeze(function applyXo4a(self, args) {
-        if (self === null || self === void 0) { self = USELESS; }
-        return xfunc.apply(self, args);
-      }),
-      bind: markFuncFreeze(function bindXo4a(self, var_args) {
-        var args = arguments;
-        if (self === null || self === void 0) {
-          self = USELESS;
-          args = [self].concat(Array.slice(args, 1));
-        }
-        return markFuncFreeze(xfunc.bind.apply(xfunc, args));
-      }),
-      length: xfunc.length,
-      toString: markFuncFreeze(function xo4aToString() {
-        return xfunc.toString();
-      })
-    };
-    if (opt_name !== void 0) {
-      result.name = opt_name;
-    }
-    return primFreeze(result);
-  }
-
-  /**
-   * Marks an anonymous function as exophoric:
-   * the function mentions <tt>this</tt>,
-   * but only accesses the public interface.
-   * <p>
-   * @param opt_name if provided, should be the message name associated
-   *   with the method. Currently, this is used only to generate
-   *   friendlier error messages.
+   * Marks a function as a feral exophoric function whose
+   * <tt>this</tt> and arguments may be tame and whose results will be
+   * tame .
    */
   function markXo4a(func, opt_name) {
     enforceType(func, 'function', opt_name);
@@ -1182,11 +1785,40 @@ var safeJSON;
       fail("Internal: Simple functions can't be exophora: ", func);
     }
     func.XO4A___ = true;
+    if (opt_name) {
+      func.NAME___ = opt_name;
+    }
+    func.AS_TAMED___ = tameXo4a;
+    return primFreeze(func);
+  }
+
+  /**
+   * Mark a function innocent if it might expect a feral <tt>this</tt>
+   * and arguments and might return a feral result, but should still
+   * tame to something that allows untrusted cajoled code to invoke it.
+   */
+  function markInnocent(func, opt_name) {
+    enforceType(func, 'function', opt_name);
+    if (isCtor(func)) {
+      fail("Internal: Constructors aren't innocent: ", func);
+    }
+    if (isFunc(func)) {
+      fail("Internal: Simple functions aren't innocent: ", func);
+    }
+    if (isXo4aFunc(func)) {
+      fail("Internal: Exophoric functions aren't innocent: ", func);
+    }
+    if (opt_name) {
+      func.NAME___ = opt_name;
+    }
+    func.AS_TAMED___ = tameInnocent;
     return primFreeze(func);
   }
 
   /**
    * Mark fun as a simple function and freeze it.
+   * <p>
+   * simple functions tame to themselves by default.
    * <p>
    * opt_name, if provided, should be the name of the
    * function. Currently, this is used only to generate friendlier
@@ -1216,7 +1848,6 @@ var safeJSON;
     if (isCtor(constr) || isFunc(constr)) {
       return constr;
     }
-
     enforceType(constr, 'function');
     fail("Untamed functions can't be called as constructors: ", constr);
   }
@@ -1277,26 +1908,13 @@ var safeJSON;
   }
 
   /**
-   * Is <tt>funoid</tt> an applicator -- a non-function object with a
-   * callable <tt>apply</tt> method, such as a pseudo-function or
-   * disfunction?
-   * <p>
-   * If so, then it can be used as a function in some contexts.
-   */
-  function isApplicator(funoid) {
-    if (typeof funoid !== 'object') { return false; }
-    if (funoid === null) { return false; }
-    return canCallPub(funoid, 'apply');
-  }
-
-  /**
    * Coerces fun to a genuine simple-function.
    * <p>
-   * If fun is an applicator, then return a simple-function that invokes
-   * fun's apply method. Otherwise, asFunc().
+   * If fun is an pseudo-function, then return a simple-function that
+   * invokes fun's apply method. Otherwise, asFunc().
    */
   function toFunc(fun) {
-    if (isApplicator(fun)) {
+    if (isPseudoFunc(fun)) {
       return markFuncFreeze(function applier(var_args) {
         return callPub(fun, 'apply', [USELESS, Array.slice(arguments, 0)]);
       });
@@ -1399,7 +2017,7 @@ var safeJSON;
    */
   function inPub(name, obj) {
     var t = typeof obj;
-    if (obj === null || (t !== 'object' && t !== 'function')) {
+    if (!obj || (t !== 'object' && t !== 'function')) {
       throw new TypeError('invalid "in" operand: ' + obj);
     }
     obj = Object(obj);
@@ -1938,6 +2556,7 @@ var safeJSON;
    */
   var stackInfoFields = [
     'stack', 'fileName', 'lineNumer', // Seen in FF 3.0.3
+    // fileName, lineNumber also seen in Rhino 1.7r1
     'description', // Seen in IE 6.0.2900, but seems identical to "message"
     'stackTrace', // Seen on Opera 9.51 after enabling
                   // "opera:config#UserPrefs|Exceptions Have Stacktrace"
@@ -2015,8 +2634,7 @@ var safeJSON;
           function inLieuOfThrownFunction() {
             return 'In lieu of thrown function: ' + name;
           };
-          inLieuOfThrownFunction.NAME___ = name;
-          return markFuncFreeze(inLieuOfThrownFunction);
+          return markFuncFreeze(inLieuOfThrownFunction, name);
         }
         default: {
           log('Unrecognized exception type: ' + (typeOf(ex)));
@@ -2165,24 +2783,38 @@ var safeJSON;
   function grantGenericMethod(proto, name) {
     var func = markXo4a(proto[name], name);
     grantCall(proto, name);
-    var pseudoFunc = reifyIfXo4a(func, name);
+    var pseudoFunc = tame(func);
     useGetHandler(proto, name, function xo4aGetter() {
       return pseudoFunc;
     });
   }
 
   /**
-   * Mark func as exophoric and use it as a virtual generic
-   * exophoric function.
+   * Use func as a virtual generic exophoric function.
    * <p>
    * Since exophoric functions are not first-class, reading
    * proto[name] returns the corresponding pseudo-function -- a record
    * with simple-functions for its call, bind, and apply.
    */
   function handleGenericMethod(obj, name, func) {
-    markXo4a(func);
+    var feral = obj[name];
+    if (!hasOwnProp(obj, name)) {
+      // TODO(erights): domita would currently generate this warning,
+      // and generated warnings currently cause DomitaTest to fail. It
+      // is not clear whether the right solution is to make domita not
+      // generate these warnings or to not consider the triggering
+      // condition to deserve a warning. In any case, DomitaTest
+      // should probably become warning tolerant.
+      //log('warning: possible taming mistake: (' + obj + ')[' + name + ']');
+      feral = func;
+    } else if (hasOwnProp(feral, 'TAMED_TWIN___')) {
+      // TODO(erights): See above TODO note.
+      //log('warning: already tamed: (' + obj + ')[' + name + ']');
+      feral = func;      
+    }
     useCallHandler(obj, name, func);
-    var pseudoFunc = reifyIfXo4a(func, name);
+    var pseudoFunc = tameXo4a.call(func);
+    tamesTo(feral, pseudoFunc);
     useGetHandler(obj, name, function genericGetter() {
       return pseudoFunc;
     });
@@ -2237,6 +2869,32 @@ var safeJSON;
   }
 
   /**
+   * Virtually replace proto[name] with a fault-handler wrapper under
+   * the assumption that the original is a generic innocent method.
+   * <p>
+   * As an innocent method, we assume it is exophoric (uses its
+   * <tt>this</tt> parameter), requires a feral <tt>this</tt> and
+   * arguments, and returns a feral result. As a generic method, we
+   * assume that its <tt>this</tt> may be bound to objects that do not
+   * inherit from <tt>proto</tt>.
+   * <p>
+   * The wrapper will untame <tt>this</tt>. Note that typically
+   * <tt>this</tt> will be a constructed object and so will untame to
+   * itself. The wrapper will also untame the arguments and tame and
+   * return the result.
+   */
+  function grantInnocentMethod(proto, name) {
+    var original = proto[name];
+    handleGenericMethod(proto, name, function guardedApplier(var_args) {
+      // like tameApplyFuncWrapper() but restated to avoid triple wrapping.
+      var feralThis = stopEscalation(untame(this));
+      var feralArgs = untame(Array.slice(arguments, 0));
+      var feralResult = original.apply(feralThis, feralArgs);
+      return tame(feralResult);
+    });
+  }
+
+  /**
    * Verifies that regexp is something that can appear as a
    * parameter to a Javascript method that would use it in a match.
    * <p>
@@ -2282,51 +2940,56 @@ var safeJSON;
   /// toString
 
   function grantToString(proto) {
-    proto.TOSTRING___ = markXo4a(proto.toString, 'toString');
+    proto.TOSTRING___ = tame(markXo4a(proto.toString, 'toString'));
   }
-  useGetHandler(Object.prototype, 'toString',
-                function toStringGetter() {
-    if (hasOwnProp(this, 'toString') &&
-        typeOf(this.toString) === 'function' &&
-        !hasOwnProp(this, 'TOSTRING___')) {
-      // This case is a kludge that doesn't work for undiagnosed reasons.
-//    this.TOSTRING___ = markXo4a(this.toString, 'toString');
-      // TODO(erights): This case is a different kludge that needs to
-      // be explained.
-      // TODO(erights): This is probably wrong in that it can leak xo4a.
-      return this.toString;
-    }
-    return reifyIfXo4a(this.TOSTRING___, 'toString');
-  });
-  useApplyHandler(Object.prototype, 'toString',
-                  function toStringApplier(args) {
-    return this.toString.apply(this, args);
-  });
-  useSetHandler(Object.prototype, 'toString',
-                function toStringSetter(meth) {
-    if (isFrozen(this)) {
-      return myKeeper.handleSet(this, 'toString', meth);
-    }
-    meth = asFirstClass(meth);
-    this.TOSTRING___ = meth;
-    this.toString = function delegatingToString(var_args) {
+
+  function makeToStringMethod(toStringValue) {
+    function toStringMethod(var_args) {
       var args = Array.slice(arguments, 0);
-      if (typeOf(meth) === 'function') {
-        return meth.apply(this, args);
+      if (isFunc(toStringValue)) {
+        return toStringValue.apply(this, args);
       }
-      var methApply = readPub(meth, 'apply');
-      if (typeOf(methApply) === 'function') {
-        return methApply.call(meth, this, args);
+      var toStringValueApply = readPub(toStringValue, 'apply');
+      if (isFunc(toStringValueApply)) {
+        return toStringValueApply.call(toStringValue, this, args);
       }
-      var result = Object.toString.call(this);
+      var result = myOriginalToString.call(this);
       log('Not correctly printed: ' + result);
       return result;
     };
-    return meth;
+    return toStringMethod;
+  }
+
+  function toStringGetter() {
+    if (hasOwnProp(this, 'toString') &&
+        typeOf(this.toString) === 'function' &&
+        !hasOwnProp(this, 'TOSTRING___')) {
+      grantToString(this);
+    }
+    return this.TOSTRING___;
+  }
+  useGetHandler(Object.prototype, 'toString',
+                toStringGetter);
+
+  useApplyHandler(Object.prototype, 'toString',
+                  function toStringApplier(args) {
+    var toStringValue = toStringGetter.call(this);
+    return makeToStringMethod(toStringValue).apply(this, args);
   });
+
+  useSetHandler(Object.prototype, 'toString',
+                function toStringSetter(toStringValue) {
+    if (isFrozen(this) || !isJSONContainer(this)) {
+      return myKeeper.handleSet(this, 'toString', toStringValue);
+    }
+    toStringValue = asFirstClass(toStringValue);
+    this.TOSTRING___ = toStringValue;
+    this.toString = makeToStringMethod(toStringValue);
+  });
+
   useDeleteHandler(Object.prototype, 'toString',
                    function toStringDeleter() {
-    if (isFrozen(this)) {
+    if (isFrozen(this) || !isJSONContainer(this)) {
       return myKeeper.handleDelete(this, 'toString');
     }
     return (delete this.toString) && (delete this.TOSTRING___);
@@ -2335,13 +2998,13 @@ var safeJSON;
   /// Object
 
   markCtor(Object, void 0, 'Object');
-  Object.prototype.TOSTRING___ = markXo4a(function() {
+  Object.prototype.TOSTRING___ = tame(markXo4a(function() {
     if (this.CLASS___) {
       return '[object ' + this.CLASS___ + ']';
     } else {
       return myOriginalToString.call(this);
     }
-  });
+  }, 'toString'));
   all2(grantGenericMethod, Object.prototype, [
     'toLocaleString', 'valueOf', 'isPrototypeOf'
   ]);
@@ -2358,21 +3021,22 @@ var safeJSON;
 
   /// Function
 
+  grantToString(Function.prototype);
   handleGenericMethod(Function.prototype, 'apply',
                       function applyHandler(self, realArgs) {
-    return toFunc(this).apply(self, realArgs);
+    return toFunc(this).apply(USELESS, realArgs);
   });
   handleGenericMethod(Function.prototype, 'call',
                       function callHandler(self, var_args) {
-    return toFunc(this).apply(self, Array.slice(arguments, 1));
+    return toFunc(this).apply(USELESS, Array.slice(arguments, 1));
   });
   handleGenericMethod(Function.prototype, 'bind',
                       function bindHandler(self, var_args) {
-    var thisFunc = this;
+    var thisFunc = toFunc(this);
     var leftArgs = Array.slice(arguments, 1);
     function boundHandler(var_args) {
       var args = leftArgs.concat(Array.slice(arguments, 0));
-      return callPub(thisFunc, 'apply', [self, args]);
+      return thisFunc.apply(USELESS, args);
     }
     return markFuncFreeze(boundHandler);
   });
@@ -2407,7 +3071,7 @@ var safeJSON;
   grantFunc(String, 'fromCharCode');
   grantToString(String.prototype);
   all2(grantTypedMethod, String.prototype, [
-    'toLocaleString', 'indexOf', 'lastIndexOf'
+    'indexOf', 'lastIndexOf'
   ]);
   all2(grantGenericMethod, String.prototype, [
     'charAt', 'charCodeAt', 'concat',
@@ -2425,7 +3089,7 @@ var safeJSON;
     enforceMatchable(searcher);
     if (isFunc(replacement)) {
       replacement = asFunc(replacement);
-    } else if (isApplicator(replacement)) {
+    } else if (isPseudoFunc(replacement)) {
       replacement = toFunc(replacement);
     } else {
       replacement = '' + replacement;
@@ -2457,7 +3121,7 @@ var safeJSON;
   ]);
   grantToString(Number.prototype);
   all2(grantTypedMethod, Number.prototype, [
-    'toFixed', 'toExponential', 'toPrecision'
+    'toLocaleString', 'toFixed', 'toExponential', 'toPrecision'
   ]);
 
   /// Date
@@ -2678,7 +3342,7 @@ var safeJSON;
         // exceptions, it would go here before onerror is invoked.
 
         // See the HTML5 discussion for the reasons behind this rule.
-        if (isApplicator(onerror)) { onerror = toFunc(onerror); }
+        if (isPseudoFunc(onerror)) { onerror = toFunc(onerror); }
         var shouldReport = (
             isFunc(onerror)
             ? onerror.CALL___(message, String(source), String(lineNum))
@@ -3191,7 +3855,8 @@ var safeJSON;
     var myMagicIndexName = MAGIC_NAME + magicCount + '___';
 
     function setOnKey(key, value) {
-      if (key !== Object(key)) {
+      var ktype = typeof key;
+      if (!key || (ktype !== 'function' && ktype !== 'object')) { 
         fail("Can't use key lifetime on primitive keys: ", key);
       }
       var list = key[myMagicIndexName];
@@ -3215,7 +3880,8 @@ var safeJSON;
     }
 
     function getOnKey(key) {
-      if (key !== Object(key)) {
+      var ktype = typeof key;
+      if (!key || (ktype !== 'function' && ktype !== 'object')) { 
         fail("Can't use key lifetime on primitive keys: ", key);
       }
       var list = key[myMagicIndexName];
@@ -3245,35 +3911,35 @@ var safeJSON;
         case 'function': {
           if (null === key) { myValues.prim_null = value; return; }
           index = getOnKey(key);
-	  if (value === void 0) {
-	    if (index === void 0) {
-	      return;
-	    } else {
-	      setOnKey(key, void 0);
-	    }
-	  } else {
-	    if (index === void 0) {
+          if (value === void 0) {
+            if (index === void 0) {
+              return;
+            } else {
+              setOnKey(key, void 0);
+            }
+          } else {
+            if (index === void 0) {
               index = myValues.length;
               setOnKey(key, index);
-	    }
+            }
           }
-	  break;
+          break;
         }
         case 'string': {
-	  index = 'str_' + key;
-	  break;
-	}
+          index = 'str_' + key;
+          break;
+        }
         default: { 
-	  index = 'prim_' + key;
-	  break; 
-	}
+          index = 'prim_' + key;
+          break; 
+        }
       }
       if (value === void 0) {
-	// TODO(erights): Not clear that this is the performant
-	// thing to do when index is numeric and < length-1.
-	delete myValues[index];
+        // TODO(erights): Not clear that this is the performant
+        // thing to do when index is numeric and < length-1.
+        delete myValues[index];
       } else {
-	myValues[index] = value;
+        myValues[index] = value;
       }
     }
 
@@ -3398,7 +4064,7 @@ var safeJSON;
    * func.prototype, what would the value of x[name] be? If the value
    * associated with func.prototype[name] is an exophoric function
    * (resulting from taming a generic method), then return the
-   * corresponding pseudo-function. See reifyIfXo4a().
+   * corresponding pseudo-function.
    */
   function getProtoPropertyValue(func, name) {
     return asFirstClass(readPub(func.prototype, name));
@@ -3523,6 +4189,10 @@ var safeJSON;
     getProtoPropertyValue: getProtoPropertyValue,
     beget: beget,
 
+    PseudoFunctionProto: PseudoFunctionProto,
+    PseudoFunction: PseudoFunction,
+    isPseudoFunc: isPseudoFunc,
+
     // deprecated
     enforceNat: deprecate(enforceNat, '___.enforceNat',
                           'Use (x === x >>> 0) instead as a UInt32 test')
@@ -3615,6 +4285,7 @@ var safeJSON;
     isFunc: isFunc,
     markCtor: markCtor,           extend: extend,
     markFuncFreeze: markFuncFreeze,
+    markXo4a: markXo4a,           markInnocent: markInnocent,
     asFunc: asFunc,               toFunc: toFunc,
 
     // Accessing properties
@@ -3642,9 +4313,15 @@ var safeJSON;
     handleGenericMethod: handleGenericMethod,
     grantTypedMethod: grantTypedMethod,
     grantMutatingMethod: grantMutatingMethod,
+    grantInnocentMethod: grantInnocentMethod,
 
     enforceMatchable: enforceMatchable,
     all2: all2,
+
+    tamesTo: tamesTo,
+    tamesToSelf: tamesToSelf,
+    tame: tame,
+    untame: untame,
 
     // Module loading
     getNewModuleHandler: getNewModuleHandler,
@@ -3686,9 +4363,10 @@ var safeJSON;
                           'Refactor to avoid needing to dynamically test ' +
                           'whether a function is marked exophoric.'),
     xo4a: deprecate(markXo4a, '___.xo4a',
-                    'Refactor to avoid needing to explicitly mark ' +
-                    'a function as exophoric. Use one of the exophoric ' +
-                    'method tamers (e.g., ___.grantGenericMethod) instead.'),
+                    'Consider refactoring to avoid needing to explicitly ' +
+                    'mark a function as exophoric. Use one of the exophoric ' +
+                    'method tamers (e.g., ___.grantGenericMethod) instead.' +
+                    'Otherwise, use ___.markXo4a instead.'),
     ctor: deprecate(markCtor, '___.ctor',
                     'Use ___.markCtor instead.'),
     func: deprecate(markFuncFreeze, '___.func',

@@ -39,7 +39,6 @@ public class AllTests {
   };
 
 
-  @SuppressWarnings("unchecked")
   public static Test suite() throws IOException, ClassNotFoundException {
     TestSuite suite = new TestSuite("Caja Tests");
     // AllTests should be run in the project root directory

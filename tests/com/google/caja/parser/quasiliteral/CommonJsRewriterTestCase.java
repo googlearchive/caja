@@ -413,12 +413,11 @@ public abstract class CommonJsRewriterTestCase extends RewriterTestCase {
   public final void testJSONClass() throws Exception {
     rewriteAndExecute(
             "assertTrue(({}).toString.call(JSON) === '[object JSON]');");
-
-    // Neither of the following tests pass in both Cajita and Valija.
-    // This does not block closing issue 1086, but is mysterious and so
-    // should be figured out. Filed separately as issue 1114.
-//    rewriteAndExecute("assertTrue(JSON.toString() === '[object JSON]');");
-//    rewriteAndExecute("assertTrue(''+JSON === '[object JSON]');");
+    rewriteAndExecute("assertTrue(JSON.toString() === '[object JSON]');");
+    
+    // In neither Cajita nor Valija is it possible to mask the real toString()
+    // when used implicitly by a primitive JS coercion rule.
+    rewriteAndExecute("assertTrue(''+JSON === '[object Object]');");
   }
 
   /**
@@ -437,6 +436,138 @@ public abstract class CommonJsRewriterTestCase extends RewriterTestCase {
             "  assertThrows(function(){b.x = 9;});" +
             "  assertEquals(b.x, 8);" +
             "})();");
+  }
+  
+  /**
+   * 
+   */
+  public final void testFeralTameBoundary() throws Exception {
+    rewriteAndExecute(
+            "function forbidden() { return arguments; }" +
+            "function xo4ic(f) {" +
+            "  return ___.callPub(f, 'call', [___.USELESS, this]);" +
+            "}" +
+            "___.markXo4a(xo4ic);" +
+            
+            "function innocent(f) { return f(this); }" + 
+            "___.markInnocent(innocent);" +
+            
+            "function simple(f) {" +
+            "  return ___.callPub(f, 'call', [___.USELESS, simple]); " +
+            "}" +
+            "___.markFuncFreeze(simple);" +
+
+            "function Point(x,y) {" +
+            "  this.x = x;" +
+            "  this.y = y;" +
+            "}" +
+            "Point.prototype.getX = function() { return this.x; };" +
+            "Point.prototype.getY = function() { return this.y; };" +
+            "Point.prototype.badness = function(str) { return eval(str); };" +
+            "Point.prototype.welcome = function(visitor) {" +
+            "  return visitor(this.x, this.y); " +
+            "};" +
+            "___.markCtor(Point, Object, 'Point');" +
+            "___.grantGenericMethod(Point.prototype, 'getX');" +
+            "___.grantTypedMethod(Point.prototype, 'getY');" +
+            "___.grantInnocentMethod(Point.prototype, 'welcome');" +
+            
+            "var pt = new Point(3,5);" +
+            
+            "function eight() { return 8; }" +
+            "function nine() { return 9; }" +
+            "___.markFuncFreeze(nine);" +
+            "___.tamesTo(eight, nine);" +
+            
+            "var funcs = [[simple, Point, pt], forbidden, " +
+            "             xo4ic, innocent, eight];" +
+            "___.freeze(funcs[0]);" +
+            "funcs[5] = funcs;" +
+            "var f = { " +
+            "  forbidden: forbidden," +
+            "  xo4ic: xo4ic," +
+            "  innocent: innocent," +
+            "  simple: simple," +
+            "  Point: Point," +
+            "  pt: pt," +
+            "  eight: eight," +
+            "  funcs: funcs" +
+            "};" +
+            "f.f = f;" +
+            "funcs[6] = f;" +
+            "testImports.f = f;" + // purposeful safety violation
+            "testImports.t = ___.tame(f);",
+            
+            
+            "assertFalse(f === t);" +
+            "assertFalse('forbidden' in t);" +
+            "assertFalse(f.xo4ic === t.xo4ic);" +
+            "assertFalse(f.innocent === t.innocent);" +
+            "assertTrue(f.simple === t.simple);" +
+            "assertTrue(f.Point === t.Point);" +
+            "assertTrue(f.pt === t.pt);" +
+            "assertFalse('x' in t.pt);" +
+            "assertFalse('y' in t.pt);" +
+            "assertTrue('getX' in t.pt);" +
+            "assertTrue('getY' in t.pt);" +
+            "assertFalse('badness' in t.pt);" +
+            "assertTrue('welcome' in t.pt);" +
+            "assertFalse(f.eight === t.eight);" +
+            "assertFalse(f.funcs === t.funcs);" +
+            "assertTrue(f.funcs[0][0] === t.funcs[0][0]);" +
+            "assertTrue(f.funcs[0] === t.funcs[0]);" +
+            "assertTrue('1' in t.funcs);" +
+            "assertTrue(t.funcs[1] === void 0);" +
+            "assertTrue(t.funcs === t.funcs[5]);" +
+            "assertTrue(t === t.funcs[6]);" +
+            "assertTrue(t === t.f);" +
+            
+            "var lastArg = void 0;" +
+            "function capture(arg) { return lastArg = arg; }" +
+
+            "var lastResult = t.xo4ic.call(void 0, capture);" +
+            "assertTrue(lastArg === cajita.USELESS);" +
+            "assertTrue(lastResult === cajita.USELESS);" +
+            
+            "lastResult = t.innocent.call(void 0, capture);" +
+            "assertTrue(lastArg === cajita.USELESS);" +
+            "assertTrue(lastResult === cajita.USELESS);" +
+
+            "lastResult = t.innocent.apply(void 0, [capture]);" +
+            "assertTrue(lastArg === cajita.USELESS);" +
+            "assertTrue(lastResult === cajita.USELESS);" +
+
+            "lastResult = t.simple(capture);" +
+            "assertTrue(lastArg === t.simple);" +
+            "assertTrue(lastResult === t.simple);" +
+            
+            "assertTrue(t.pt.getX() === 3);" +
+            "assertTrue(t.pt.getY() === 5);" +
+            "var getX = t.pt.getX;" +
+            "var getY = t.pt.getY;" +
+            "assertTrue(cajita.isPseudoFunc(getX));" +
+            "assertTrue(cajita.isPseudoFunc(getY));" +
+            "assertTrue(getX.call(t.pt) === 3);" +
+            "assertTrue(getY.call(t.pt) === 5);" +
+            "var nonpt = {x: 33, y: 55};" +
+            "assertTrue(getX.call(nonpt) === 33);" +
+            "assertThrows(function() { getY.call(nonpt); });" +
+
+            "function visitor(x, y) {" +
+            "  assertTrue(x === 3);" +
+            "  assertTrue(y === 5);" +
+            "}" +
+            "t.pt.welcome(visitor);" +
+
+            "assertTrue(t.eight() === 9);" +
+            "lastResult = t.innocent.call(void 0, t.eight);" +
+            "assertTrue(lastResult === 8);" +
+
+            "lastResult = t.innocent.apply(void 0, [t.eight]);" +
+            "assertTrue(lastResult === 8);",
+
+            
+            "");
   }
 }
 

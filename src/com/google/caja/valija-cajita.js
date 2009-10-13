@@ -57,12 +57,15 @@
 var valijaMaker = (function(outers) {
 
   /**
-   * Simulates a monkey-patchable <tt>Object.prototype</tt>.
+   * Simulates a monkey-patchable <tt>Object.prototype</tt> except
+   * that it also inherits from the real <tt>Object.prototype</tt>.
    */
   var ObjectPrototype = {constructor: Object};
 
   /**
-   * Simulates a monkey-patchable <tt>Function.prototype</tt>.
+   * Simulates a monkey-patchable <tt>Function.prototype</tt> except
+   * that it inherits from <tt>cajita.PseudoFunctionProto</tt> rather
+   * than <tt>ObjectPrototype</tt>.
    * <p>
    * $v.dis(aFunction) creates a disfunction instance inheriting from
    * DisfunctionPrototype, each with its own specific call() and
@@ -71,7 +74,7 @@ var valijaMaker = (function(outers) {
    * apply(), and bind() disfunctions, in order to simulate
    * Function.prototype.
    */
-  var DisfunctionPrototype = cajita.beget(ObjectPrototype);
+  var DisfunctionPrototype = cajita.beget(cajita.PseudoFunctionProto);
 
   var Disfunction = cajita.beget(DisfunctionPrototype);
   Disfunction.prototype = DisfunctionPrototype,
@@ -202,25 +205,13 @@ var valijaMaker = (function(outers) {
   /**
    * Handle Valija <tt>typeof <i>obj</i></tt>.
    * <p>
-   * If <tt>obj</tt> inherits from DisfunctionPrototype, then return
-   * 'function'.
-   * <p>
-   * Else if <tt>obj</tt> is a frozen record whose 'call' property is
-   * a Cajita function, as are the reifications of exophoric methods, then
-   * return 'function'. 
-   * TODO(erights): Resolve 'apply' vs 'call' confusions.
-   * TODO(erights): Consider trademarking rather than duck typing.
-   * <p>
-   * Otherwise as normal.
+   * If <tt>obj</tt> inherits from <tt>PseudoFunction</tt> then return
+   * 'function'. Otherwise as normal.
    */
   function typeOf(obj) {
     var result = typeof obj;
     if (result !== 'object') { return result; }
-    if (null === obj) { return result; }
-    if (cajita.inheritsFrom(obj, DisfunctionPrototype)) { return 'function'; }
-    if (cajita.isFrozen(obj) && typeof obj.call === 'function') {
-      return 'function';
-    }
+    if (cajita.isPseudoFunc(obj)) { return 'function';  }
     return result;
   }
 
@@ -330,17 +321,18 @@ var valijaMaker = (function(outers) {
    * Handle Valija <tt>function <i>opt_name</i>(...){...}</tt>.
    */
   function dis(callFn, opt_name) {
-    cajita.enforceType(callFn, 'function');
+    var template = cajita.PseudoFunction(callFn);
 
     var result = cajita.beget(DisfunctionPrototype);
     result.call = callFn;
-    result.apply = function(self, args) {
-      return callFn.apply(cajita.USELESS, [self].concat(Array.slice(args, 0)));
-    };
+    result.apply = template.apply;
+// TODO(erights): Investigate why things break if the following line
+// is uncommented out.
+//    result.bind = template.bind;
     var disproto = cajita.beget(ObjectPrototype);
     result.prototype = disproto;
     disproto.constructor = result;
-    result.length = callFn.length - 1;
+    result.length = template.length;
     // TODO(erights): Why are we testing for the empty string here?
     if (opt_name !== void 0 && opt_name !== '') {
       result.name = opt_name;
@@ -351,8 +343,8 @@ var valijaMaker = (function(outers) {
   /**
    * The Valija code <tt>Function.prototype.call</tt> evaluates to a
    * generic disfunction which can be applied to anything with a
-   * callable <tt>apply</tt> method, such as simple-functions,
-   * pseudo-functions, and disfunctions.
+   * callable <tt>apply</tt> method, such as simple-functions and
+   * pseudo-functions. 
    */
   function disfuncCall($dis, self, var_args) {
     return $dis.apply(self, Array.slice(arguments, 2));
@@ -362,8 +354,8 @@ var valijaMaker = (function(outers) {
   /**
    * The Valija code <tt>Function.prototype.apply</tt> evaluates to a
    * generic disfunction which can be applied to anything with a
-   * callable <tt>apply</tt> method, such as simple-functions,
-   * pseudo-functions, and disfunctions.
+   * callable <tt>apply</tt> method, such as simple-functions and
+   * pseudo-functions.
    * <p>
    * Since other objects may inherit from DisfunctionPrototype, and
    * since disfunctions actually do, this generic apply method
@@ -378,8 +370,8 @@ var valijaMaker = (function(outers) {
   /**
    * The Valija code <tt>Function.prototype.bind</tt> evaluates to a
    * generic disfunction which can be applied to anything with a
-   * callable <tt>apply</tt> method, such as simple-functions,
-   * pseudo-functions, and disfunctions.
+   * callable <tt>apply</tt> method, such as simple-functions and
+   * pseudo-functions.
    */
   function disfuncBind($dis, self, var_args) {
     var leftArgs = Array.slice(arguments, 2);
