@@ -778,34 +778,39 @@ var attachDocumentStub = (function () {
       htmlSanitizer(htmlText, out);
       return out.join('');
     }
-    var htmlSanitizer = html.makeHtmlSanitizer(
-        function sanitizeAttributes(tagName, attribs) {
-          for (var i = 0; i < attribs.length; i += 2) {
-            var attribName = attribs[i];
-            var value = attribs[i + 1];
-            var atype = null, attribKey;
-            if ((attribKey = tagName + '::' + attribName,
-                 html4.ATTRIBS.hasOwnProperty(attribKey))
-                || (attribKey = '*::' + attribName,
-                    html4.ATTRIBS.hasOwnProperty(attribKey))) {
-              atype = html4.ATTRIBS[attribKey];
-              value = rewriteAttribute(tagName, attribName, atype, value);
-            } else {
-              value = null;
-            }
-            if (value !== null && value !== void 0) {
-              attribs[i + 1] = value;
-            } else {
-              attribs.splice(i, 2);
-              i -= 2;
-            }
-          }
-          var policy = elementPolicies[tagName];
-          if (policy && elementPolicies.hasOwnProperty(tagName)) {
-            return policy(attribs);
-          }
-          return attribs;
-        });
+    function sanitizeAttrs(tagName, attribs) {
+      var n = attribs.length;
+      for (var i = 0; i < n; i += 2) {
+        var attribName = attribs[i];
+        var value = attribs[i + 1];
+        var atype = null, attribKey;
+        if ((attribKey = tagName + '::' + attribName,
+             html4.ATTRIBS.hasOwnProperty(attribKey))
+            || (attribKey = '*::' + attribName,
+                html4.ATTRIBS.hasOwnProperty(attribKey))) {
+          atype = html4.ATTRIBS[attribKey];
+          value = rewriteAttribute(tagName, attribName, atype, value);
+        } else {
+          value = null;
+        }
+        if (value !== null && value !== void 0) {
+          attribs[i + 1] = value;
+        } else {
+          // Swap last attribute name/value pair in place, and reprocess here.
+          // This could affect how user-agents deal with duplicate attributes.
+          attribs[i + 1] = attribs[--n];
+          attribs[i] = attribs[--n];
+          i -= 2;
+        }
+      }
+      attribs.length = n;
+      var policy = elementPolicies[tagName];
+      if (policy && elementPolicies.hasOwnProperty(tagName)) {
+        return policy(attribs);
+      }
+      return attribs;
+    }
+    var htmlSanitizer = html.makeHtmlSanitizer(sanitizeAttrs);
 
     /**
      * If str ends with suffix,
@@ -3329,10 +3334,6 @@ var attachDocumentStub = (function () {
     TameHTMLDocument.prototype.toString = function () {
       return '[Fake Document]';
     };
-    TameHTMLDocument.prototype.write = function (text) {
-      // TODO(mikesamuel): Needs implementation
-      ___.log('Called document.write() with: ' + text);
-    };
     // http://www.w3.org/TR/DOM-Level-2-Events/events.html
     // #Events-DocumentEvent-createEvent
     TameHTMLDocument.prototype.createEvent = function (type) {
@@ -3378,8 +3379,7 @@ var attachDocumentStub = (function () {
               'createComment', 'createDocumentFragment',
               'createElement', 'createEvent', 'createTextNode',
               'getElementById', 'getElementsByClassName',
-              'getElementsByTagName',
-              'write']);
+              'getElementsByTagName']);
 
 
     imports.tameNode___ = defaultTameNode;
@@ -3969,6 +3969,8 @@ var attachDocumentStub = (function () {
     if (tameDocument.editable___) {
       tameDocument.defaultView = tameDefaultView;
       ___.grantRead(tameDocument, 'defaultView');
+      // Hook for document.write support.
+      tameDocument.sanitizeAttrs___ = sanitizeAttrs;
     }
 
     // Iterate over all node classes, assigning them to the Window object

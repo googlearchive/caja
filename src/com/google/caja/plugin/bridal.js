@@ -341,6 +341,23 @@ var bridal = (function() {
     return clone;
   }
 
+  function createElement(tagName, attribs) {
+    if (features.extendedCreateElement) {
+      var tag = ['<', tagName];
+      for (var i = 0, n = attribs.length; i < n; i += 2) {
+        tag.push(' ', attribs[i], '="', html.escapeAttrib(attribs[i + 1]), '"');
+      }
+      tag.push('>');
+      return document.createElement(tag.join(''));
+    } else {
+      var el = document.createElement(tagName);
+      for (var i = 0, n = attribs.length; i < n; i += 2) {
+        bridal.setAttribute(el, attribs[i], attribs[i + 1]);
+      }
+      return el;
+    }
+  }
+
   /**
    * Create a <code>style</code> element for a document containing some
    * specified CSS text. Does not add the element to the document: the client
@@ -562,6 +579,7 @@ var bridal = (function() {
     initEvent: initEvent,
     dispatchEvent: dispatchEvent,
     cloneNode: cloneNode,
+    createElement: createElement,
     createStylesheet: createStylesheet,
     setAttribute: setAttribute,
     getAttribute: getAttribute,

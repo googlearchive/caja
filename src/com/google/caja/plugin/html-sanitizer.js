@@ -383,8 +383,8 @@ var html = (function () {
  * @return {Function} from html to sanitized html
  */
 html.makeHtmlSanitizer = function (sanitizeAttributes) {
-  var stack = [];
-  var ignoring = false;
+  var stack;
+  var ignoring;
   return html.makeSaxParser({
         startDoc: function (_) {
           stack = [];

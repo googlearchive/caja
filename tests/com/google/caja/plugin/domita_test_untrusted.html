@@ -87,6 +87,20 @@
      onclick="pass('test-onclick-handler');">click me</b>
 </p>
 
+<br>
+<div class="testcontainer" id="test-document-write">
+  <div>
+    <p>Before <code>document.write</code></p>
+    <script type="text/javascript">
+      document.write(
+          '<p id=test-document-write-foo>Document written<\/p></div><div>',
+          '<p>Written afterwards<p>More written afterwards');
+    </script>
+    <p>After <code>document.write</code>
+  </div>
+</div>
+<br>
+
 <div class="testcontainer" id="test-attrs-declared-in-markup"
     ><form title="test title"></form>
   <b>Test attributes in markup</b>
@@ -893,10 +907,29 @@ jsunitRegister('testOnclickHandler',
   // nothing to do here
 });
 
+jsunitRegister('testDocumentWrite',
+               function testDocumentWrite() {
+  // TODO(mikesamuel): This is wrong because we don't allow the insertion point
+  // to move above it's starting position
+  assertEquals(
+      ''
+      + '<div>'
+        + '<p>Before <code>document.write</code></p>'
+        + '<p id="test-document-write-foo">Document written</p>'
+        + '<p>After <code>document.write</code></p>'
+      + '</div>'
+      + '<div>'
+        + '<p>Written afterwards</p>'
+        + '<p>More written afterwards</p>'
+      + '</div>',
+      document.getElementById('test-document-write').innerHTML
+           .replace(new RegExp('[\\r\\n]\\s*', 'g'), ''));
+  pass('test-document-write');
+});
+
 jsunitRegister('testAttrsDeclaredInMarkup',
                function testAttrsDeclaredInMarkup() {
-  var d =
-      document.getElementById('test-attrs-declared-in-markup').firstChild;
+  var d = document.getElementById('test-attrs-declared-in-markup').firstChild;
 
   assertTrue(d.hasAttribute('title'));
   assertEquals('test title', d.getAttribute('title'));
@@ -1233,7 +1266,8 @@ function foo() {
   container.appendChild(div);
 }
 
-/* TODO: this test often causes ie6/ie7 to crash.  figure out why
+// TODO: this test often causes ie6/ie7 to crash.  figure out why
+if (false)
 jsunitRegister('testScriptLoading',
                function testScriptLoading() {
   // Test that we block ways scripts can be used to executed code in strings.
@@ -1300,7 +1334,6 @@ jsunitRegister('testScriptLoading',
 
   pass('test-script-loading');
 });
-*/
 
 jsunitRegister('testGetElementsByTagName',
                function testGetElementsByTagName() {

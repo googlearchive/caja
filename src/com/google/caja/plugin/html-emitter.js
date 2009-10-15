@@ -14,7 +14,8 @@
 
 /**
  * @fileoverview
- * JavaScript support for TemplateCompiler.java.
+ * JavaScript support for TemplateCompiler.java and for a tamed version of
+ * <code>document.write{,ln}</code>.
  * <p>
  * This handles the problem of making sure that only the bits of a Gadget's
  * static HTML which should be visible to a script are visible, and provides
@@ -23,8 +24,17 @@
  *
  * @author mikesamuel@gmail.com
  */
+
+/**
+ * @param base a node that is the ancestor of all statically generated HTML.
+ * @param opt_tameDocument a tame document that will receive a load event
+ *    when the html-emitter is closed, and which will have {@code write} and
+ *    {@code writeln} members attached.
+ */
 function HtmlEmitter(base, opt_tameDocument) {
   if (!base) { throw new Error(); }
+
+  var insertionPoint = base;
 
   /**
    * Contiguous pairs of ex-descendants of base, and their ex-parent.
@@ -203,6 +213,12 @@ function HtmlEmitter(base, opt_tameDocument) {
       detached = [];
       detachOnto(limit, detached);
     }
+    // Keep track of the insertion point for document.write.
+    // The tag was closed if there is no child waiting to be added.
+    // FIXME(mikesamuel): This is not technically correct, since the script
+    // element could have been the only child.
+    var isLimitClosed = detached[1] !== limit;
+    insertionPoint = isLimitClosed ? limit.parentNode : limit;
     return limit;
   }
   /**
@@ -223,6 +239,7 @@ function HtmlEmitter(base, opt_tameDocument) {
    * loaded event.
    */
   function finish() {
+    insertionPoint = null;
     if (detached) {
       for (var i = 0, n = detached.length; i < n; i += 2) {
         detached[i + 1].appendChild(detached[i]);
@@ -247,4 +264,97 @@ function HtmlEmitter(base, opt_tameDocument) {
   this.finish = finish;
   this.signalLoaded = signalLoaded;
   this.setAttr = bridal.setAttribute;
+
+  (function (tameDoc) {
+    if (!tameDoc || tameDoc.write) { return; }
+
+    function concat(items) {
+      return Array.prototype.join.call(items, '');
+    }
+
+    var ucase;
+    if ('script'.toUpperCase() === 'SCRIPT') {
+      ucase = function (s) { return s.toUpperCase(); };
+    } else {
+      ucase = function (s) {
+        return s.replace(
+            /[a-z]/g,
+            function (ch) {
+              return String.fromCharCode(ch.charCodeAt(0) & ~32);
+            });
+      };
+    }
+
+    var documentWriter = {
+      startTag: function (tagName, attribs) {
+        var eltype = html4.ELEMENTS[tagName];
+        if (!html4.ELEMENTS.hasOwnProperty(tagName)
+            || (eltype & html4.eflags.UNSAFE) !== 0) {
+          return;
+        }
+        tameDoc.sanitizeAttrs___(tagName, attribs);
+        var el = bridal.createElement(tagName, attribs);
+        if ((eltype & html4.eflags.OPTIONAL_ENDTAG)
+            && el.tagName === insertionPoint.tagName) {
+          documentWriter.endTag(el.tagName, true);
+        }
+        insertionPoint.appendChild(el);
+        if (!(eltype & html4.eflags.EMPTY)) { insertionPoint = el; }
+      },
+      endTag: function (tagName, optional) {
+        var anc = insertionPoint;
+        tagName = ucase(tagName);
+        while (anc !== base && !/\bvdoc-body___\b/.test(anc.className)) {
+          var p = anc.parentNode;
+          if (anc.tagName === tagName) {
+            insertionPoint = p;
+            return;
+          }
+          anc = p;
+        }
+      },
+      pcdata: function (text) {
+        insertionPoint.appendChild(
+            document.createTextNode(html.unescapeEntities(text)));
+      },
+      cdata: function (text) {
+        insertionPoint.appendChild(document.createTextNode(text));
+      }
+    };
+    documentWriter.rcdata = documentWriter.pcdata;
+
+    // Document.write and document.writeln behave as described at
+    // http://www.w3.org/TR/2009/WD-html5-20090825/embedded-content-0.html#dom-document-write
+    // but with a few differences:
+    // (1) all HTML written is sanitized per the opt_tameDocument's HTML
+    //     sanitizer
+    // (2) HTML written cannot change where subsequent static HTML is emitted.
+    // (3) if the document has been closed (insertion point is undefined) then
+    //     the window will not be reopened.  Instead, execution will proceed at
+    //     the end of the virtual document.  This is allowed by the spec but
+    //     only if the onunload refuses to allow an unload, so we treat the
+    //     virtual document as un-unloadable by document.write.
+    // (4) document.write cannot be used to inject scripts, so the
+    //     "if there is a pending external script" does not apply.
+    /**
+     * A tame version of document.write.
+     * @param html_varargs according to HTML5, the input to document.write is
+     *     an varargs, and the HTML is the concatenation of all the arguments.
+     */
+    var tameDocWrite = function write(html_varargs) {
+      var htmlText = concat(arguments);
+      if (!insertionPoint) {
+        // Handles case 3 where the document has been closed.
+        insertionPoint = base;
+      }
+      var lexer = html.makeSaxParser(documentWriter);      
+      lexer(htmlText);
+    };
+    tameDoc.write = ___.markFuncFreeze(tameDocWrite, 'write');
+    tameDoc.writeln = ___.markFuncFreeze(function writeln(html) {
+      tameDocWrite(concat(arguments), '\n');
+    }, 'writeln');
+    ___.grantFunc(tameDoc, 'write');
+    ___.grantFunc(tameDoc, 'writeln');
+  })(opt_tameDocument);
 }
