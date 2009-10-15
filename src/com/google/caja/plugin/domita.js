@@ -2149,17 +2149,10 @@ var attachDocumentStub = (function () {
       }
       var value = bridal.getAttribute(this.node___, attribName);
       if ('string' !== typeof value) { return value; }
-      if ('' === value) {
-        // IE creates attribute nodes for any attribute in the HTML schema
-        // so even when they are deleted, there will be a value, usually
-        // the empty string.
-        var attr = bridal.getAttributeNode(this.node___, attribName);
-        if (attr && !attr.specified) { return null; }
-      }
       return virtualizeAttributeValue(atype, value);
     };
     TameElement.prototype.getAttributeNode = function (name) {
-      var hostDomNode = bridal.getAttributeNode(this.node___, name);
+      var hostDomNode = this.node___.getAttributeNode(name);
       if (hostDomNode === null) { return null; }
       return new TameBackedAttributeNode(
           hostDomNode, this.editable___, this.node___);

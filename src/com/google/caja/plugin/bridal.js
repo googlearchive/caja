@@ -36,7 +36,6 @@ var bridal = (function() {
 
   var features = {
     attachEvent: !!(document.createElement('div').attachEvent),
-    setAttributeExtraParam: isIE,
     /**
      * Does the extended form of extendedCreateElement work?
      * From http://msdn.microsoft.com/en-us/library/ms536389.aspx :<blockquote>
@@ -378,27 +377,18 @@ var bridal = (function() {
    * @param {string} value the value of an attribute.
    */
   function setAttribute(element, name, value) {
-    switch (name) {
-      case 'style':
-        if ((typeof element.style.cssText) === 'string') {
-          // Setting the 'style' attribute does not work for IE, but
-          // setting cssText works on IE 6, Firefox, and IE 7.
-          element.style.cssText = value;
-          return value;
-        }
-        break;
-      case 'class':
-        element.className = value;
+    // In IE[67], element.style.cssText seems to be the only way to set the
+    // style.  This unfortunately fails when element.style is an input
+    // element instead of the style object.
+    if (name === 'style') {
+      if (typeof element.style.cssText === 'string') {
+        element.style.cssText = value;
         return value;
-      case 'for':
-        element.htmlFor = value;
-        return value;
+      }
     }
-    if (features.setAttributeExtraParam) {
-      element.setAttribute(name, value, 0);
-    } else {
-      element.setAttribute(name, value);
-    }
+    var node = element.ownerDocument.createAttribute(name);
+    node.value = value;
+    element.setAttributeNode(node);
     return value;
   }
 
@@ -505,34 +495,44 @@ var bridal = (function() {
 
   /**
    * Returns the value of the named attribute on element.
+   * 
+   * <p> In IE[67], if you have
+   * <pre>
+   *    <form id="f" foo="x"><input name="foo"></form>
+   * </pre>
+   * then f.foo is the input node,
+   * and f.getAttribute('foo') is also the input node,
+   * which is contrary to the DOM spec and the behavior of other browsers.
+   * 
+   * <p> This function tries to get a reliable value.
+   *
+   * <p> In IE[67], getting 'style' may be unreliable for form elements.
    *
    * @param {HTMLElement} element a DOM element.
    * @param {string} name the name of an attribute.
    */
   function getAttribute(element, name) {
-    switch (name) {
-      case 'style':
-        if ((typeof element.style.cssText) === 'string') {
-          return element.style.cssText;
-        }
-        break;
-      case 'class':
-        return element.className;
-      case 'for':
-        return element.htmlFor;
+    // In IE[67], element.style.cssText seems to be the only way to get the
+    // value string.  This unfortunately fails when element.style is an
+    // input element instead of a style object.
+    if (name === 'style') {
+      if (typeof element.style.cssText === 'string') {
+        return element.style.cssText;
+      }
     }
-    return element.getAttribute(name);
-  }
-
-  function getAttributeNode(element, name) {
-    return element.getAttributeNode(name);
+    var attr = element.getAttributeNode(name);
+    if (attr && attr.specified) {
+      return attr.value;
+    } else {
+      return null;
+    }
   }
 
   function hasAttribute(element, name) {
     if (element.hasAttribute) {  // Non IE
       return element.hasAttribute(name);
     } else {
-      var attr = getAttributeNode(element, name);
+      var attr = element.getAttributeNode(name);
       return attr !== null && attr.specified;
     }
   }
@@ -565,7 +565,6 @@ var bridal = (function() {
     createStylesheet: createStylesheet,
     setAttribute: setAttribute,
     getAttribute: getAttribute,
-    getAttributeNode: getAttributeNode,
     hasAttribute: hasAttribute,
     getBoundingClientRect: getBoundingClientRect,
     untameEventType: untameEventType,
