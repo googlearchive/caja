@@ -23,6 +23,8 @@
  * in the face of DOM modifications by untrusted scripts.
  *
  * @author mikesamuel@gmail.com
+ * @provides HtmlEmitter
+ * @requires bridal
  */
 
 /**
@@ -186,7 +188,8 @@ function HtmlEmitter(base, opt_tameDocument) {
       // Since limit has no parent, detachOnto will bottom out at its sibling.
       detachOnto(limit, newDetached);
       // Find the node containing limit that appears on detached.
-      for (var limitAnc = limit, parent; (parent = limitAnc.parentNode);) {
+      var limitAnc = limit;
+      for (var parent; (parent = limitAnc.parentNode);) {
         limitAnc = parent;
       }
       // Reattach up to and including limit ancestor.

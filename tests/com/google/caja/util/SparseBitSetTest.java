@@ -125,4 +125,38 @@ public class SparseBitSetTest extends CajaTestCase {
       assertEquals("" + i, sbs1.contains(i), sbs2.contains(i));
     }
   }
+
+  public final void testUnion() {
+    //                 1               2               3
+    // 0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0
+    //    AAAAAAAAA      A A A A   A AAA   AAA A A
+    //  BBB  BBB  BBB BBB        B B    BBB
+    //  UUUUUUUUUUUUU UUUU U U U U U UUUUUUUUU U U
+    SparseBitSet a = SparseBitSet.withRanges(new int[] {
+        0x03, 0x0C, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19,
+        0x1A, 0x1B, 0x1C, 0x1D, 0x1E, 0x21, 0x24, 0x27, 0x28, 0x29,
+        0x2A, 0x2B });
+    SparseBitSet b = SparseBitSet.withRanges(new int[] {
+        0x01, 0x04, 0x06, 0x09, 0x0B, 0x0E, 0x0F, 0x12, 0x1A, 0x1B,
+        0x1C, 0x1D, 0x21, 0x24 });
+    SparseBitSet empty = SparseBitSet.withMembers(new int[0]);
+
+    assertEquals(empty, empty.union(empty));
+    assertEquals(a, a.union(empty));
+    assertEquals(b, empty.union(b));
+
+    SparseBitSet aUb = a.union(b);
+    assertEquals(
+        "[0x1-0xd 0xf-0x12 0x14 0x16 0x18 0x1a 0x1c 0x1e-0x26 0x28 0x2a]",
+        aUb.toString());
+    assertEquals(aUb, b.union(a));
+
+    // Check that a and b not changed by operation
+    assertEquals(
+        "[0x3-0xb 0x12 0x14 0x16 0x18 0x1a 0x1c 0x1e-0x20 0x24-0x26 0x28 0x2a]",
+        a.toString());
+    assertEquals(
+        "[0x1-0x3 0x6-0x8 0xb-0xd 0xf-0x11 0x1a 0x1c 0x21-0x23]",
+        b.toString());
+  }
 }

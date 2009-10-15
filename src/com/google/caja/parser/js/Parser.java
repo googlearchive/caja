@@ -277,13 +277,14 @@ public final class Parser extends ParserBase {
     Token<JsTokenType> t = tq.peek();
     if (JsTokenType.WORD == t.type) {
       String label = parseIdentifier(false);
+      FilePosition labelPos = t.pos;
       if (tq.checkToken(Punctuation.COLON)) {
         t = tq.peek();
         AbstractStatement s = null;
         if (JsTokenType.KEYWORD == t.type) {
           switch (Keyword.fromString(t.text)) {
             case FOR: case DO: case WHILE: case SWITCH:
-              s = parseLoopOrSwitch(t.pos, label);
+              s = parseLoopOrSwitch(labelPos, label);
               break;
             default:
               break;

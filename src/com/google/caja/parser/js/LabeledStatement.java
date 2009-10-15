@@ -47,6 +47,13 @@ public abstract class LabeledStatement extends AbstractStatement {
 
   public String getLabel() { return label; }
 
+  /**
+   * Is the statement a target for a {@link ContinueStmt continue}?
+   * For example, {@code switch} statements can be broken from, but since they
+   * are not loops, they cannot be continued to.
+   */
+  public abstract boolean isTargetForContinue();
+
   @Override
   public void breaks(Map<String, List<BreakStmt>> labels) {
     super.breaks(labels);

@@ -22,11 +22,12 @@
  * </ol>
  *
  * @author erights@gmail.com
- * @requires console
- * @provides ___, arraySlice, cajita, dateToISOString, funcBind
+ * @requires this
+ * @provides ___, cajita, safeJSON 
  * @overrides Array, Boolean, Date, Function, Number, Object, RegExp, String
  * @overrides Error, EvalError, RangeError, ReferenceError, SyntaxError,
  *   TypeError, URIError
+ * @overrides escape, JSON
  */
 
 // TODO(erights): All code text in comments should be enclosed in
@@ -572,10 +573,10 @@ var safeJSON;
           log('Guessing the directConstructor of : ' + obj);
           result = Object;
         } else {
-          fail('Discovery of direct constructors unsupported when the ',
-               'constructor property is not deletable: ',
-               obj, '.constructor === ', oldConstr, 
-               '(', obj === global, ')');
+          return fail('Discovery of direct constructors unsupported when the ',
+                      'constructor property is not deletable: ',
+                      obj, '.constructor === ', oldConstr, 
+                      '(', obj === global, ')');
         }
       }
 
@@ -3535,7 +3536,7 @@ var safeJSON;
     var disabled = false;
     var token = new Token('ejection');
     token.UNCATCHABLE___ = true;
-    var stash;
+    var stash = void 0;
     function ejector(result) {
       if (disabled) {
         cajita.fail('ejector disabled');
@@ -3713,10 +3714,9 @@ var safeJSON;
     // If we extend Cajita to allow getters/setters, we'll need to make a 
     // copy of the array above and loop over the copy below.
     for (var i = 0; i < numStamps; i++) {
-      var stamp = stamps[i];
       // Only works for real stamps, postponing the need for a
       // user-implementable auditing protocol.
-      stamp.mark___(record);
+      stamps[i].mark___(record);
     }
     return freeze(record);
   }
@@ -3871,7 +3871,8 @@ var safeJSON;
       if (!list || list[0] !== key) {
         key[myMagicIndexName] = [key, MAGIC_TOKEN, value];
       } else {
-        for (var i = 1; i < list.length; i += 2) {
+        var i;
+        for (i = 1; i < list.length; i += 2) {
           if (list[i] === MAGIC_TOKEN) { break; }
         }
         list[i] = MAGIC_TOKEN;

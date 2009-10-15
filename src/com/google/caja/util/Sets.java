@@ -139,6 +139,35 @@ public final class Sets {
     return s;
   }
 
+
+    /** <tt>a U b</tt> */
+  public static <T> Set<T> union(
+      Collection<? extends T> a, Collection<? extends T> b) {
+    Set<T> u = new LinkedHashSet<T>(a);
+    u.addAll(b);
+    return u;
+  }
+
+  public static <T> Set<T> intersection(
+      Collection<? extends T> a, Collection<? extends T> b) {
+    // Use the smaller to construct i
+    if (b.size() > a.size()) {
+      Collection<? extends T> t = a;
+      a = b;
+      b = t;
+    }
+    Set<T> i = new LinkedHashSet<T>(b);
+    i.retainAll(a);
+    return i;
+  }
+
+  /** <tt>(pos - neg)</tt>. */
+  public static <T> Set<T> difference(
+      Collection<? extends T> pos, Collection<? extends T> neg) {
+    Set<T> d = new LinkedHashSet<T>(pos);
+    d.removeAll(neg);
+    return d;
+  }
+
   private Sets() {}
 }
-

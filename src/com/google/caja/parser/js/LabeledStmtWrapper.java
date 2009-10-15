@@ -50,6 +50,9 @@ public final class LabeledStmtWrapper extends LabeledStatement {
   public Statement getBody() { return body; }
 
   @Override
+  public boolean isTargetForContinue() { return false; }
+
+  @Override
   protected void childrenChanged() {
     super.childrenChanged();
     this.body = (Statement) children().get(0);

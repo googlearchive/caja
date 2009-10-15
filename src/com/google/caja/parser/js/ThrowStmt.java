@@ -47,6 +47,8 @@ public final class ThrowStmt extends AbstractStatement {
   @Override
   public Object getValue() { return null; }
 
+  public Expression getException() { return exception; }
+
   @Override
   public List<? extends Expression> children() {
     return childrenAs(Expression.class);

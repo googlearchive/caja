@@ -51,7 +51,7 @@
  * @author mikesamuel@gmail.com
  * @requires console, document, window
  * @requires clearInterval, clearTimeout, setInterval, setTimeout
- * @requires ___, bridal, cajita, css, html, html4, unicode
+ * @requires ___, bridal, css, html, html4, unicode
  * @provides attachDocumentStub, plugin_dispatchEvent___
  * @overrides domitaModules
  */

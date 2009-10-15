@@ -62,7 +62,14 @@ public final class ForEachLoop extends LabeledStatement implements NestedScope {
         .execute();
   }
 
+  public Statement getKeyReceiver() { return keyReceiver; }
+
   public Expression getContainer() { return container; }
+
+  public Statement getBody() { return body; }
+
+  @Override
+  public boolean isTargetForContinue() { return true; }
 
   @Override
   protected void childrenChanged() {

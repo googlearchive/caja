@@ -52,6 +52,8 @@
  * not cajoled.
  *
  * @author erights@gmail.com
+ * @requires cajita, loader
+ * @provides valijaMaker
  */
 
 var valijaMaker = (function(outers) {
@@ -77,7 +79,7 @@ var valijaMaker = (function(outers) {
   var DisfunctionPrototype = cajita.beget(cajita.PseudoFunctionProto);
 
   var Disfunction = cajita.beget(DisfunctionPrototype);
-  Disfunction.prototype = DisfunctionPrototype,
+  Disfunction.prototype = DisfunctionPrototype;
   Disfunction.length = 1;
   DisfunctionPrototype.constructor = Disfunction;
 

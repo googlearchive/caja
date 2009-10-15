@@ -38,6 +38,8 @@ public final class FinallyStmt extends AbstractStatement {
     appendChild(body);
   }
 
+  public Statement getBody() { return body; }
+
   @Override
   protected void childrenChanged() {
     super.childrenChanged();

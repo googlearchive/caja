@@ -34,24 +34,32 @@ import java.util.Map;
  */
 public class SnippetProducer {
   private static final int DEFAULT_MAX_WIDTH = 80;
+  private static final int DEFAULT_TAB_WIDTH = 8;
 
   private final Map<InputSource, ? extends CharSequence> originalSource;
   protected final MessageContext mc;
-  protected final int maxWidth;
+  protected final int maxWidth, tabWidth;
 
   public SnippetProducer(
       Map<InputSource, ? extends CharSequence> originalSource,
       MessageContext mc) {
-    this(originalSource, mc, DEFAULT_MAX_WIDTH);
+    this(originalSource, mc, DEFAULT_MAX_WIDTH, DEFAULT_TAB_WIDTH);
   }
 
   public SnippetProducer(
       Map<InputSource, ? extends CharSequence> originalSource,
       MessageContext mc,
       int maxWidth) {
+    this(originalSource, mc, maxWidth, DEFAULT_TAB_WIDTH);
+  }
+
+  public SnippetProducer(
+      Map<InputSource, ? extends CharSequence> originalSource,
+      MessageContext mc, int maxWidth, int tabWidth) {
     this.originalSource = originalSource;
     this.mc = mc;
     this.maxWidth = maxWidth;
+    this.tabWidth = tabWidth;
   }
 
   public final String getSnippet(Message msg) {
@@ -139,14 +147,20 @@ public class SnippetProducer {
     posBuf.append(": ");
     int filePosLength = posBuf.length();
 
+    int nSpaces = start + filePosLength;
+    int nCarets = end - start;
+
     out.append(posBuf);
-    out.append(line);
+    // Expand tabs so that the carets line up with the source.
+    int nExtraSpaces = expandTabs(line, 0, start, 0, out);
+    int nExtraCarets = expandTabs(line, start, end, nExtraSpaces, out);
+    expandTabs(line, end, line.length(), nExtraSpaces + nExtraCarets, out);
     if (line.length() == 0 || !isLinebreak(line.charAt(line.length() - 1))) {
       // If the line is the last in the file, it may not end with a newline.
       out.append("\n");
     }
-    repeat("                ", start + filePosLength, out);
-    repeat("^^^^^^^^^^^^^^^^", Math.max(end - start, 1), out);
+    repeat("                ", nSpaces + nExtraSpaces, out);
+    repeat("^^^^^^^^^^^^^^^^", Math.max(nCarets + nExtraCarets, 1), out);
   }
 
   /**
@@ -187,6 +201,41 @@ public class SnippetProducer {
       return seq.subSequence(start, end);
     }
     return null;
+  }
+
+  private static int indexOf(
+      CharSequence seq, char ch, int fromIndex, int toIndex) {
+    for (int i = fromIndex; i < toIndex; ++i) {
+      if (seq.charAt(i) == ch) { return i; }
+    }
+    return -1;
+  }
+
+  private int expandTabs(
+      CharSequence seq, int start, int end, int nExpanded, Appendable out)
+      throws IOException {
+    final String SPACES = "        ";
+    int tabIdx = indexOf(seq, '\t', start, end);
+    if (tabIdx < 0) {
+      out.append(seq, start, end);
+      return 0;
+    }
+    int nExtra = 0;
+    int done = start;
+    do {
+      out.append(seq, done, tabIdx);
+      int nBefore = nExtra + tabIdx + nExpanded;
+      int nSpaces = tabWidth - (nBefore % tabWidth);
+      nExtra += nSpaces - 1;
+      while (nSpaces >= SPACES.length()) {
+        out.append(SPACES);
+        nSpaces -= SPACES.length();
+      }
+      out.append(SPACES, 0, nSpaces);
+      done = tabIdx + 1;
+    } while ((tabIdx = indexOf(seq, '\t', done, end)) >= 0);
+    out.append(seq, done, end);
+    return nExtra;
   }
 
   private static int posPastNextLinebreak(CharSequence seq, int pos) {

@@ -53,6 +53,10 @@ public final class CaseStmt extends SwitchCase {
         .execute();
   }
 
+  public Expression getCaseValue() { return caseValue; }
+
+  public Statement getBody() { return body; }
+
   @Override
   protected void childrenChanged() {
     super.childrenChanged();

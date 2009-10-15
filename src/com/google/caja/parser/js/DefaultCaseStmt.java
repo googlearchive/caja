@@ -48,6 +48,8 @@ public final class DefaultCaseStmt extends SwitchCase {
   @Override
   public Object getValue() { return null; }
 
+  public Statement getBody() { return body; }
+
   public void render(RenderContext rc) {
     TokenConsumer out = rc.getOut();
     out.mark(getFilePosition());

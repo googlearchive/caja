@@ -43,6 +43,8 @@
  * stack to a valid state.  If the stack is already valid, it's left alone.
  *
  * @author mikesamuel@gmail.com
+ * @requires cajita, console
+ * @overrides ___
  */
 
 (function () {
@@ -231,7 +233,7 @@
   }
 
   function tameException(ex) {
-    var ex = orig.tameException(ex);
+    var tamedEx = orig.tameException(ex);
     // Make sure that tamed Errors propagate the cajitaStack___,
     // so that an exception can be rethrown.
     
@@ -239,10 +241,10 @@
     //     try { f(); } catch (ex) { throw ex; }
     // preserves stack information if it was captured by an earlier throw,
     // so it will be available to code with access to the unsealer.
-    if (ex && ex instanceof Error && !ex.cajitaStack___) {
-      ex.cajitaStack___ = getCallerStack();
+    if (tamedEx && tamedEx instanceof Error && !tamedEx.cajitaStack___) {
+      tamedEx.cajitaStack___ = getCallerStack();
     }
-    return ex;
+    return tamedEx;
   }
 
   // Extend to output the source file position with the message.
@@ -370,4 +372,3 @@
 
   startCallerStack();
 })();
- 

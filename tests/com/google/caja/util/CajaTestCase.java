@@ -251,6 +251,16 @@ public abstract class CajaTestCase extends TestCase {
     return sb.toString();
   }
 
+  protected String formatShort(FilePosition p) {
+    StringBuilder sb = new StringBuilder();
+    try {
+      p.formatShort(sb);
+    } catch (IOException ex) {
+      throw new RuntimeException("IOException from StringBuilder");
+    }
+    return sb.toString();
+  }
+
   protected String minify(ParseTreeNode node) {
     if (node == null) {
       return null;

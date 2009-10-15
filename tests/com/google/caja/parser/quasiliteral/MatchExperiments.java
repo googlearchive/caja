@@ -84,7 +84,7 @@ public class MatchExperiments {
         "substResult = " + format(substResult));
   }
 
-  private static String format(QuasiNode n) throws Exception {
+  private static String format(QuasiNode n) {
     return n.render();
   }
 

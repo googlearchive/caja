@@ -26,16 +26,8 @@ public enum MessageType implements MessageTypeInt {
   // TODO(mikesamuel): rename this to CommonMessageType and rename
   // MessageTypeInt to MessageType
 
-  UNIMPLEMENTED("Lazy author error", MessageLevel.FATAL_ERROR),
   INTERNAL_ERROR("Internal error: %s", MessageLevel.FATAL_ERROR),
   IO_ERROR("I/O Error: %s", MessageLevel.FATAL_ERROR),
-
-  // command line flags
-  NO_SOURCE_FILES("No source files specified", MessageLevel.FATAL_ERROR),
-  UNRECOGNIZED_FLAG("Unrecognized flag: %s", MessageLevel.FATAL_ERROR),
-  DUPLICATE_FLAG(
-      "duplicate command line argument %s", MessageLevel.FATAL_ERROR),
-  NO_SUCH_FILE("%s: No such file", MessageLevel.FATAL_ERROR),
 
   // lexing messages
   UNTERMINATED_STRING_TOKEN("%s: Unclosed string", MessageLevel.FATAL_ERROR),
@@ -48,8 +40,6 @@ public enum MessageType implements MessageTypeInt {
   MALFORMED_STRING("%s: Illegal char in string '%s'", MessageLevel.FATAL_ERROR),
   MALFORMED_URI("%s: Not a valid uri: '%s'", MessageLevel.FATAL_ERROR),
   MALFORMED_XHTML("%s: malformed xhtml: %s", MessageLevel.FATAL_ERROR),
-  MISSING_ENDTAG(
-      "%s: missing end tag %s, saw %s instead", MessageLevel.FATAL_ERROR),
   REDUNDANT_ESCAPE_SEQUENCE(
       "%s: escape %s is redundant in a quoted string", MessageLevel.LINT),
   AMBIGUOUS_ESCAPE_SEQUENCE(
@@ -73,7 +63,6 @@ public enum MessageType implements MessageTypeInt {
   UNRECOGNIZED_REGEX_MODIFIERS(
       "%s: Unrecognized regular expression modifiers %s", MessageLevel.ERROR),
   PARSE_ERROR("%s: Parse error in %s", MessageLevel.ERROR),
-  ILLEGAL_NAME("%s: Illegal name: %s", MessageLevel.ERROR),
   AMBIGUOUS_ATTRIBUTE_VALUE(
       "%s: attribute %s has ambiguous value \"%s\"", MessageLevel.WARNING),
   MISSING_ATTRIBUTE_VALUE(
@@ -89,84 +78,28 @@ public enum MessageType implements MessageTypeInt {
   NOT_IE("%s: Will not work in IE", MessageLevel.WARNING),
 
   // symbol errors
-  IMPLICIT_DEFINITION(
-      "Symbol %s implicitly defined at %s", MessageLevel.WARNING),
   SYMBOL_REDEFINED("%s: %s originally defined at %s", MessageLevel.ERROR),
-  UNRECOGNIZED_TYPE("%s: No such type %s", MessageLevel.ERROR),
-  INVALID_TYPE("Invalid type %s at %s", MessageLevel.ERROR),
   INVALID_DECLARATION(
-      "Invalid declaration of %s at %s", MessageLevel.ERROR),
-  INVALID_DECLARATION_GENERIC_ENUM(
-      "Invalid declaration of %s at %s: enumerations can't be generic",
-      MessageLevel.ERROR),
-  ACCESS_VIOLATION("%s: Cannot access %s defined at %s", MessageLevel.ERROR),
-  MEMBER_ACCESS_VIOLATION("%s: Cannot access member %s of %s",
-      MessageLevel.ERROR),
-  NO_SUCH_MEMBER("%s: No such member %s in type %s", MessageLevel.ERROR),
-  SYMBOL_PARTIALLY_AVAILABLE(
-      "Symbol %s declared at %s partially defined in context of %s",
-      MessageLevel.ERROR),
-  TYPE_NOT_EXTENDABLE("%s: Type %s cannot be bound with %s to %s",
-      MessageLevel.ERROR),
-  EXTRA_TEMPLATE_PARAM(
-      "Extraneous paramater %s specified at %s for type defined at %s",
-      MessageLevel.ERROR),
-  MISSING_TEMPLATE_PARAM(
-      "Type at %s is missing paramater %s declared at %s",
-      MessageLevel.ERROR),
-  WRONG_TEMPLATE_PARAMS(
-      "Type %s at %s has wrong parameters.  Expected %s",
-      MessageLevel.ERROR),
+      "%s: Invalid declaration of %s", MessageLevel.ERROR),
+  INVALID_ASSIGNMENT(
+      "%s: Invalid assignment to %s", MessageLevel.ERROR),
   MASKING_SYMBOL(
       "%s: Declaration of %s masks declaration at %s", MessageLevel.LINT),
-  SCOPE_BLEED(
-      "Symbol %s defined at %s is accessed across scope boundaries at %s",
-      MessageLevel.ERROR),
   UNDEFINED_SYMBOL(
-      "Symbol %s referenced at %s has not been defined", MessageLevel.ERROR),
-  PROTOTYPE_REDEFINED(
-      "Prototype for class %s redefined at %s", MessageLevel.ERROR),
-  SUPER_CLASS_MISMATCH(
-      "Superclass of %s at %s does not match earlier declaration at %s",
-      MessageLevel.ERROR),
-  SUB_CLASSING_WARNING(
-      "%s: Obscure subclassing of %s", MessageLevel.WARNING),
-  EXPECTED_CLASS_TYPE(
-      "Type %s declared at %s conflicts with constructor at %s -- not a class",
-      MessageLevel.ERROR),
-  CONST_WITHOUT_INITIALIZER(
-      "Failed to determine initializer for const %s declared at %s",
-      MessageLevel.ERROR),
-  BREAK_OUTSIDE_LOOP(
-      "Break statement at %s outside loop", MessageLevel.ERROR),
-  CONTINUE_OUTSIDE_LOOP(
-      "Continue statement at %s outside loop", MessageLevel.ERROR),
+      "%s: Symbol %s has not been defined", MessageLevel.ERROR),
   ASSIGN_TO_NON_LVALUE(
       "%s: Assignment to non lvalue: %s", MessageLevel.ERROR),
 
-  // caught to decide whether to treat a directive comment as a declaration or
-  // a type for a variable declaration
-  NO_DECLARATION(
-      "No declaration at %s", MessageLevel.ERROR),
-
-  // lint checks
-  NAMING_CONVENTION_VIOLATION(
-      "Identifier %s at %s violates naming convention %s", MessageLevel.LINT),
-
-  // other inference
-  GENERATED_IDENTIFIER(
-      "Generated unique identifier %s for node at %s", MessageLevel.INFERENCE),
-
   // runtime, as during constant folding
-  DIVISION_BY_ZERO("%s: division by zero", MessageLevel.WARNING),
-  INDEX_OUT_OF_BOUNDS("%s: index out of bounds %s", MessageLevel.WARNING),
-  INVALID_MEMBER_ACCESS("%s: invalid member %s", MessageLevel.WARNING),
-  INVALID_REGEXP_FLAGS("%s: invalid regexp flags %s", MessageLevel.WARNING),
-  INVALID_SHIFT_AMOUNT("%s: cannot shift by %s bits", MessageLevel.WARNING),
-  INVALID_MASK("%s: masking outside 32 bits: %s", MessageLevel.WARNING),
-  POSSIBLE_SIDE_EFFECT("%s: possible side-effecting operation's value not used",
+  DIVISION_BY_ZERO("%s: Division by zero", MessageLevel.WARNING),
+  INDEX_OUT_OF_BOUNDS("%s: Index out of bounds %s", MessageLevel.WARNING),
+  INVALID_MEMBER_ACCESS("%s: Invalid member %s", MessageLevel.WARNING),
+  INVALID_REGEXP_FLAGS("%s: Invalid regexp flags %s", MessageLevel.WARNING),
+  INVALID_SHIFT_AMOUNT("%s: Cannot shift by %s bits", MessageLevel.WARNING),
+  INVALID_MASK("%s: Masking outside 32 bits: %s", MessageLevel.WARNING),
+  POSSIBLE_SIDE_EFFECT("%s: Possible side-effecting operation's value not used",
                        MessageLevel.WARNING),
-
+  NO_SIDE_EFFECT("%s: Operation has no effect", MessageLevel.WARNING),
 
   // logging
   CHECKPOINT("Checkpoint: %s at T+%s seconds", MessageLevel.LOG),

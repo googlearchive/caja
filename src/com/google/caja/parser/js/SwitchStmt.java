@@ -71,6 +71,9 @@ public final class SwitchStmt extends LabeledStatement {
     }
   }
 
+  @Override
+  public boolean isTargetForContinue() { return false; }
+
   public void render(RenderContext rc) {
     TokenConsumer out = rc.getOut();
     out.mark(getFilePosition());

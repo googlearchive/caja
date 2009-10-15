@@ -21,7 +21,7 @@
  * @author ihab.awad@gmail.com
  * @author jasvir@gmail.com
  * @provides bridal
- * @requires ___, cajita, document, html, html4, navigator
+ * @requires ___, cajita, document, html, html4, navigator, window
  */
 
 var bridal = (function() {

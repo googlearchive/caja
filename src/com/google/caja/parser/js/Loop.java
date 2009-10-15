@@ -32,4 +32,7 @@ public abstract class Loop extends LabeledStatement {
 
   public abstract Expression getCondition();
   public abstract Statement getBody();
+
+  @Override
+  public final boolean isTargetForContinue() { return true; }
 }
