@@ -24,7 +24,7 @@
  *
  * @author mikesamuel@gmail.com
  * @provides HtmlEmitter
- * @requires bridal
+ * @requires bridal html html4 ___
  */
 
 /**
@@ -296,6 +296,8 @@ function HtmlEmitter(base, opt_tameDocument) {
           return;
         }
         tameDoc.sanitizeAttrs___(tagName, attribs);
+        // TODO(mikesamuel): use the insertionPoint's ownerDocument
+        // to create the element.
         var el = bridal.createElement(tagName, attribs);
         if ((eltype & html4.eflags.OPTIONAL_ENDTAG)
             && el.tagName === insertionPoint.tagName) {
@@ -317,11 +319,12 @@ function HtmlEmitter(base, opt_tameDocument) {
         }
       },
       pcdata: function (text) {
-        insertionPoint.appendChild(
-            document.createTextNode(html.unescapeEntities(text)));
+        insertionPoint.appendChild(insertionPoint.ownerDocument.createTextNode(
+            html.unescapeEntities(text)));
       },
       cdata: function (text) {
-        insertionPoint.appendChild(document.createTextNode(text));
+        insertionPoint.appendChild(
+            insertionPoint.ownerDocument.createTextNode(text));
       }
     };
     documentWriter.rcdata = documentWriter.pcdata;
@@ -342,7 +345,7 @@ function HtmlEmitter(base, opt_tameDocument) {
     /**
      * A tame version of document.write.
      * @param html_varargs according to HTML5, the input to document.write is
-     *     an varargs, and the HTML is the concatenation of all the arguments.
+     *     varargs, and the HTML is the concatenation of all the arguments.
      */
     var tameDocWrite = function write(html_varargs) {
       var htmlText = concat(arguments);
@@ -350,7 +353,7 @@ function HtmlEmitter(base, opt_tameDocument) {
         // Handles case 3 where the document has been closed.
         insertionPoint = base;
       }
-      var lexer = html.makeSaxParser(documentWriter);      
+      var lexer = html.makeSaxParser(documentWriter);
       lexer(htmlText);
     };
     tameDoc.write = ___.markFuncFreeze(tameDocWrite, 'write');

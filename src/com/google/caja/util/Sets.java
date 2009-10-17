@@ -143,7 +143,7 @@ public final class Sets {
     /** <tt>a U b</tt> */
   public static <T> Set<T> union(
       Collection<? extends T> a, Collection<? extends T> b) {
-    Set<T> u = new LinkedHashSet<T>(a);
+    Set<T> u = newLinkedHashSet(a);
     u.addAll(b);
     return u;
   }
@@ -156,7 +156,7 @@ public final class Sets {
       a = b;
       b = t;
     }
-    Set<T> i = new LinkedHashSet<T>(b);
+    Set<T> i = newLinkedHashSet(b);
     i.retainAll(a);
     return i;
   }
@@ -164,7 +164,7 @@ public final class Sets {
   /** <tt>(pos - neg)</tt>. */
   public static <T> Set<T> difference(
       Collection<? extends T> pos, Collection<? extends T> neg) {
-    Set<T> d = new LinkedHashSet<T>(pos);
+    Set<T> d = newLinkedHashSet(pos);
     d.removeAll(neg);
     return d;
   }

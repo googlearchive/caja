@@ -17,11 +17,11 @@ package com.google.caja.reporting;
 import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.InputSource;
+import com.google.caja.util.Maps;
 
 import java.io.IOException;
 import java.io.StringReader;
 import java.net.URI;
-import java.util.HashMap;
 import java.util.Map;
 
 import junit.framework.TestCase;
@@ -36,7 +36,7 @@ public class SnippetProducerTest extends TestCase {
       + "\r\n"
       + "f1 line 3\n");
 
-  static final String F2_TEXT = "f2 line 1";
+  static final String F2_TEXT = "f2\tline 1";
 
   static final String F3_TEXT =
     "123456789.abcdefghi.123456789.ABCDEFGHI.";
@@ -50,8 +50,7 @@ public class SnippetProducerTest extends TestCase {
   @Override
   public void setUp() throws Exception {
     super.setUp();
-    Map<InputSource, String> originalSource
-        = new HashMap<InputSource, String>();
+    Map<InputSource, String> originalSource = Maps.newHashMap();
     originalSource.put(f1, F1_TEXT);
     originalSource.put(f2, F2_TEXT);
     originalSource.put(f3, F3_TEXT);
@@ -106,9 +105,9 @@ public class SnippetProducerTest extends TestCase {
     Message msg = new Message(
         TestMessageType.ONE,
         FilePosition.instance(f2, 1, 4, 4, 4));
-    assertEquals(
-        ("f2:1: f2 line 1\n" +
-         "         ^^^^"),
+    assertEquals(  // Tabs expanded
+        ("f2:1: f2      line 1\n" +
+         "              ^^^^"),
         s.getSnippet(msg));
   }
 
@@ -126,7 +125,7 @@ public class SnippetProducerTest extends TestCase {
             1 + F1_TEXT.indexOf(" line 3"))
         );
     assertEquals(
-        ("f2:1: f2 line 1\n" +
+        ("f2:1: f2      line 1\n" +
          "      ^^\n" +
          "f1:3: f1 line 3\n" +
          "      ^^"),
@@ -137,7 +136,7 @@ public class SnippetProducerTest extends TestCase {
     Message msg = new Message(
         TestMessageType.ONE, FilePosition.instance(f2, 1, 3, 3));
     assertEquals(
-        ("f2:1: f2 line 1\n" +
+        ("f2:1: f2      line 1\n" +
          "        ^"),
         s.getSnippet(msg));
   }
@@ -159,8 +158,8 @@ public class SnippetProducerTest extends TestCase {
         TestMessageType.ONE,
         FilePosition.instance(f2, 1, endPos, endPos));
     assertEquals(
-        ("f2:1: f2 line 1\n" +
-         "               ^"),
+        ("f2:1: f2      line 1\n" +
+         "                    ^"),
         s.getSnippet(msg));
   }
 
