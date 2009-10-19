@@ -34,32 +34,31 @@ var bridal = (function() {
   var isIE = !isOpera && navigator.userAgent.indexOf('MSIE') !== -1;
   var isWebkit = !isOpera && navigator.userAgent.indexOf('WebKit') !== -1;
 
-  var features = {
-    attachEvent: !!(document.createElement('div').attachEvent),
-    /**
-     * Does the extended form of extendedCreateElement work?
-     * From http://msdn.microsoft.com/en-us/library/ms536389.aspx :<blockquote>
-     *     You can also specify all the attributes inside the createElement
-     *     method by using an HTML string for the method argument.
-     *     The following example demonstrates how to dynamically create two
-     *     radio buttons utilizing this technique.
-     *     <pre>
-     *     ...
-     *     var newRadioButton = document.createElement(
-     *         "&lt;INPUT TYPE='RADIO' NAME='RADIOTEST' VALUE='First Choice'>")
-     *     </pre>
-     * </blockquote>
-     */
-    extendedCreateElement: (
-      function () {
+  var featureAttachEvent = !!(document.createElement('div').attachEvent);
+  var featureSetAttributeExtraParam = isIE;
+  /**
+   * Does the extended form of extendedCreateElement work?
+   * From http://msdn.microsoft.com/en-us/library/ms536389.aspx :<blockquote>
+   *     You can also specify all the attributes inside the createElement
+   *     method by using an HTML string for the method argument.
+   *     The following example demonstrates how to dynamically create two
+   *     radio buttons utilizing this technique.
+   *     <pre>
+   *     ...
+   *     var newRadioButton = document.createElement(
+   *         "&lt;INPUT TYPE='RADIO' NAME='RADIOTEST' VALUE='First Choice'>")
+   *     </pre>
+   * </blockquote>
+   */
+  var featureExtendedCreateElement =
+      (function () {
         try {
-          var inp = document.createElement('<input name="x" type="radio">');
-          return inp.name === 'x' && inp.type === 'radio';
-        } catch (ex) {
+          return (
+              document.createElement('<input type="radio">').type === 'radio');
+        } catch (e) {
           return false;
         }
-      })()
-  };
+      })();
 
   var CUSTOM_EVENT_TYPE_SUFFIX = '_custom___';
   function tameEventType(type, opt_isCustom, opt_tagName) {
@@ -93,7 +92,7 @@ var bridal = (function() {
   var endsWith__ = /__$/;
   function constructClone(node, deep) {
     var clone;
-    if (node.nodeType === 1) {
+    if (node.nodeType === 1 && featureExtendedCreateElement) {
       // From http://blog.pengoworks.com/index.cfm/2007/7/16/IE6--IE7-quirks-with-cloneNode-and-form-elements
       //     It turns out IE 6/7 doesn't properly clone some form elements
       //     when you use the cloneNode(true) and the form element is a
@@ -258,7 +257,7 @@ var bridal = (function() {
   function addEventListener(element, type, handler, useCapture) {
     type = String(type);
     var tameType = tameEventType(type, false, element.tagName);
-    if (features.attachEvent) {
+    if (featureAttachEvent) {
       // TODO(ihab.awad): How do we emulate 'useCapture' here?
       if (type !== tameType) {
         var wrapper = eventHandlerTypeFilter(handler, tameType);
@@ -290,7 +289,7 @@ var bridal = (function() {
   function removeEventListener(element, type, handler, useCapture) {
     type = String(type);
     var tameType = tameEventType(type, false, element.tagName);
-    if (features.attachEvent) {
+    if (featureAttachEvent) {
       // TODO(ihab.awad): How do we emulate 'useCapture' here?
       if (tameType !== type) {
         element.detachEvent('ondataavailable', handler);
@@ -342,7 +341,7 @@ var bridal = (function() {
   }
 
   function createElement(tagName, attribs) {
-    if (features.extendedCreateElement) {
+    if (featureExtendedCreateElement) {
       var tag = ['<', tagName];
       for (var i = 0, n = attribs.length; i < n; i += 2) {
         tag.push(' ', attribs[i], '="', html.escapeAttrib(attribs[i + 1]), '"');
@@ -586,7 +585,7 @@ var bridal = (function() {
     hasAttribute: hasAttribute,
     getBoundingClientRect: getBoundingClientRect,
     untameEventType: untameEventType,
-    extendedCreateElementFeature: features.extendedCreateElement,
+    extendedCreateElementFeature: featureExtendedCreateElement,
     getComputedStyle: getComputedStyle
   };
 })();

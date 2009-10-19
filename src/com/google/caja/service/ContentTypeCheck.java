@@ -27,7 +27,7 @@ public abstract class ContentTypeCheck {
    * mime-type must never contain wildcards.
    *
    * @return true if the {@code candidate} mime-type meets the requirements
-   * of the {@code} spec.
+   * of the spec.
    */
   public abstract boolean check(String spec, String candidate);
 }

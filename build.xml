@@ -179,6 +179,7 @@
       <sysproperty key="emma.coverage.out.merge" value="false"/>
       <sysproperty key="user.language" value="tr"/>
       <sysproperty key="user.region" value="TR"/>
+      <sysproperty key="test.filter" value="${test.filter}"/>
       <test name="com.google.caja.AllTests" if="emma.enabled"/>
     </junit>
     <summarize errorProperty="runtests.error"
@@ -502,6 +503,9 @@
       <include file="${third_party}/js/json_sans_eval/json_sans_eval.js"/>
       <include file="${src}/com/google/caja/cajita.js"/>
       <include file="${src}/com/google/caja/plugin/unicode.js"/>
+      <include file="${lib}/com/google/caja/plugin/css-defs.js"/>
+      <include file="${lib}/com/google/caja/plugin/html4-defs.js"/>
+      <include file="${src}/com/google/caja/plugin/html-sanitizer.js"/>
       <include file="${src}/com/google/caja/plugin/html-emitter.js"/>
       <include file="${src}/com/google/caja/plugin/bridal.js"/>
       <include file="${src}/com/google/caja/plugin/domita.js"/>

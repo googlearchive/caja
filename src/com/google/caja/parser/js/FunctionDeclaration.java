@@ -43,12 +43,14 @@ public final class FunctionDeclaration extends Declaration {
   @Override
   protected void childrenChanged() {
     super.childrenChanged();
-    Expression initializer = getInitializer();
+    FunctionConstructor initializer = getInitializer();  // Checks class.
     if (null == initializer) {
-      throw new IllegalArgumentException(
+      throw new NullPointerException(
           "Function declaration missing function");
     }
-    assert initializer instanceof FunctionConstructor;
+    if (!getIdentifierName().equals(initializer.getIdentifierName())) {
+      throw new IllegalStateException("Name mismatch");
+    }
   }
 
   @Override

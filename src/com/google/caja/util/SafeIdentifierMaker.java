@@ -64,7 +64,15 @@ public final class SafeIdentifierMaker implements Iterator<String> {
   public boolean isSafeIdentifier(String ident) {
     return !ident.endsWith("__")
         && ParserBase.isJavascriptIdentifier(ident)
-        && !Keyword.isKeyword(ident) && !"arguments".equals(ident);
+        && !Keyword.isKeyword(ident) && !"arguments".equals(ident)
+        // "eval" has special significance in the ES262 spec, so do not output
+        // it.  From section 15.1.2.1:
+        // If value of the eval property is used in any way other than a direct
+        // call (that is, other than by the explicit use of its name as an
+        // Identifier which is the MemberExpression in a Call Expression), or if
+        // the eval property is assigned to, an Eval Error exception may be
+        // thrown.
+        && !"eval".equals(ident);
   }
 
   /**

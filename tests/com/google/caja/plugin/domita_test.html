@@ -22,19 +22,19 @@
     <script src="../../../../js/json_sans_eval/json_sans_eval.js"
      onerror="console.error(this.src)"></script>
     <script src="../cajita.js" onerror="console.error(this.src)"></script>
-    <script src="../cajita-promise.js" onerror="console.error(this.src)">
-     </script>
-    <script src="../cajita-module.js" onerror="console.error(this.src)">
-     </script>
-    <script src="../../../../js/jsunit/2.2/jsUnitCore.js"></script>
-    <script src="jsunit.js" onerror="console.error(this.src)"></script>
     <script src="unicode.js" onerror="console.error(this.src)"></script>
+    <script src="html-sanitizer.js" onerror="console.error(this.src)"></script>
+    <script src="html-emitter.js" onerror="console.error(this.src)"></script>
+    <script src="bridal.js" onerror="console.error(this.src)"></script>
+    <script src="domita.js" onerror="console.error(this.src)"></script>
     <script src="html4-defs.js" onerror="console.error(this.src)"></script>
     <script src="css-defs.js" onerror="console.error(this.src)"></script>
-    <script src="html-sanitizer.js" onerror="console.error(this.src)"></script>
-    <script src="bridal.js" onerror="console.error(this.src)"></script>
-    <script src="html-emitter.js" onerror="console.error(this.src)"></script>
-    <script src="domita.js" onerror="console.error(this.src)"></script>
+    <script src="jsunit.js" onerror="console.error(this.src)"></script>
+    <script src="../cajita-promise.js" onerror="console.error(this.src)">
+    </script>
+    <script src="../cajita-module.js" onerror="console.error(this.src)">
+    </script>
+    <script src="../../../../js/jsunit/2.2/jsUnitCore.js"></script>
     <!-- Prime the browser cache by loading the whitelisted script
       - synchronously so the test doesn't take so long. -->
     <script src="whitelisted_script.js"
@@ -406,12 +406,12 @@
 
       testImports.xhrModuleLoad = xhrModuleLoadMaker(
         '/ant-lib/com/google/caja/domita_test');
-        
+
       testImports.scriptModuleLoad = scriptModuleLoadMaker(
         'http://localhost:8000/ant-lib/com/google/caja/domita_test');
 
       if (isValija) {
-        testImports.xhrIncludeScript = ___.primFreeze({ 
+        testImports.xhrIncludeScript = ___.primFreeze({
           async: ___.markFuncFreeze(function(src) {
             var m = xhrModuleLoadMaker(
                 '/ant-lib/com/google/caja/domita_test'
@@ -420,8 +420,8 @@
                 function(module) { return module({$v: testImports.$v}); });
           })
         });
-            
-        testImports.scriptIncludeScript = ___.primFreeze({ 
+
+        testImports.scriptIncludeScript = ___.primFreeze({
           async: ___.markFuncFreeze(function(src) {
             var m = scriptModuleLoadMaker(
                 'http://localhost:8000/ant-lib/com/google/caja/domita_test'
@@ -430,7 +430,7 @@
                 function(module) { return module({$v: testImports.$v}); });
           })
         });
-        
+
         testImports.env = testImports;
         testImports.env.x = 6;
         testImports.env.w = 6;

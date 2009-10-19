@@ -55,4 +55,55 @@ public class SafeIdentifierMakerTest extends TestCase {
     assertEquals("ini", maker.next());
     assertEquals("inn", maker.next());
   }
+
+  public final void testNoEval() {
+    Iterator<String> maker = new SafeIdentifierMaker("aelv".toCharArray());
+    assertEquals("a", maker.next());
+    assertEquals("e", maker.next());
+    assertEquals("l", maker.next());
+    assertEquals("v", maker.next());
+    assertEquals("aa", maker.next());
+    assertEquals("ae", maker.next());
+    assertEquals("al", maker.next());
+    assertEquals("av", maker.next());
+    // Skip the rest of the 2s
+    for (int i = 12; --i >= 0;) {  // 12 = |(e,l,v)x(a,e,l,v)|
+      String s = maker.next();
+      assertEquals(s, 2, s.length());
+    }
+    // Skip the rest of the 3s
+    for (int i = 64; --i >= 0;) {
+      String s = maker.next();
+      assertEquals(s, 3, s.length());
+    }
+    // Skip the 4s that start with a
+    for (int i = 64; --i >= 0;) {
+      String s = maker.next();
+      assertEquals(s, 4, s.length());
+      assertTrue(s, s.startsWith("a"));
+    }
+    // Skip the 4s that start with e[~v]
+    for (int i = 48; --i >= 0;) {
+      String s = maker.next();
+      assertEquals(s, 4, s.length());
+      assertTrue(s, s.startsWith("e") && !s.startsWith("ev"));
+    }
+    assertEquals("evaa", maker.next());
+    assertEquals("evae", maker.next());
+    assertEquals("evav", maker.next());
+    // Skip the 4s that start with eve, evl, and evv
+    for (int i = 12; --i >= 0;) {
+      String s = maker.next();
+      assertEquals(s, 4, s.length());
+      assertTrue(
+          s, s.startsWith("eve") || s.startsWith("evl") || s.startsWith("evv"));
+    }
+    // Skip the 4s that start with l and v
+    for (int i = 128; --i >= 0;) {
+      String s = maker.next();
+      assertEquals(s, 4, s.length());
+      assertTrue(s, s.startsWith("l") || s.startsWith("v"));
+    }
+    assertEquals("aaaaa", maker.next());
+  }
 }
