@@ -144,6 +144,14 @@
     <mkdir dir="${maven}"/>
   </target>
 
+  <target name="JavaVersion">
+    <condition property="earlier-than-java-1.5">
+      <not><matches pattern="1[.][5-9].*" string="${java.version}" /></not>
+    </condition>
+    <fail if="earlier-than-java-1.5" 
+	message="Require Java 1.5, not Java ${java.version} from ${java.home}" />
+  </target>
+
   <target name="runtests" depends="AllTests"
    description="Runs unittests.  To filter tests: $ ant -Dtest.filter=My\*Test">
     <!-- Instrument the compiled class files to gather code coverage stats -->
