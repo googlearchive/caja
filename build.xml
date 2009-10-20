@@ -240,11 +240,13 @@
 
   <target name="tools" depends="PluginCompiler">
     <!-- Now that we have the compiler, build ant task wrappers -->
-    <javac destdir="${lib}" debug="true" target="1.5" source="1.5">
+    <javac destdir="${lib}" debug="true" target="1.5" source="1.5"
+     excludes="${tools.ancillary.excludes}">
       <src path="${src}"/>
       <classpath refid="classpath.ant"/>
       <include name="**/caja/plugin/BuildServiceImplementation.java"/>
       <include name="**/caja/tools/*.java"/>
+      <include name="**/caja/ancillary/**/*.java"/>
       <compilerarg line="-Xlint:deprecation"/>
       <compilerarg line="-Xlint:unchecked"/>
     </javac>
@@ -513,7 +515,7 @@
   </target>
 
   <target name="AllTests"
-   depends="pluginc,CajoledValija,MinifiedJs,CajolingService,CajoledTests,TestbedClasses,dirs">
+   depends="dirs,tools,MinifiedJs,CajolingService,CajoledTests,TestbedClasses">
     <javac destdir="${lib}" debug="true" target="1.5" source="1.5">
       <src path="${tests}"/>
       <classpath refid="classpath.tests.compile"/>
@@ -523,6 +525,21 @@
       <include name="**/caja/**/*Test.java"/>
       <compilerarg line="-Xlint:unchecked"/>
     </javac>
+
+    <genrule class="com.google.caja.ancillary.linter.Linter"
+     unless="${tools.ancillary.disable}">
+      <include file="${src}/com/google/caja/cajita-debugmode.js"/>
+      <include file="${src}/com/google/caja/cajita.js"/>
+      <include file="${src}/com/google/caja/plugin/bridal.js"/>
+      <include file="${lib}/com/google/caja/plugin/css-defs.js"/>
+      <include file="${src}/com/google/caja/plugin/domita.js"/>
+      <include file="${src}/com/google/caja/plugin/html-emitter.js"/>
+      <include file="${src}/com/google/caja/plugin/html-sanitizer.js"/>
+      <include file="${lib}/com/google/caja/plugin/html4-defs.js"/>
+      <include file="${src}/com/google/caja/plugin/unicode.js"/>
+      <include file="${src}/com/google/caja/valija-cajita.js"/>
+      <output file="${lib}/AllTests.Linter.tstamp"/>
+    </genrule>
 
     <!-- TODO(mikesamuel): Can we replace these tree copies with something
       - that builds a symlink tree? -->
@@ -797,7 +814,8 @@
     </copy>
   </target>
 
-  <target name="slides" depends="dirs,pluginc,MinifiedJs,CajoledValija,lolcat-search"
+  <target name="slides"
+   depends="dirs,pluginc,MinifiedJs,CajoledValija,lolcat-search"
    description="Explain Caja">
     <transform>
       <output file="${www}/slides/redirection.co.html" language="valija"
@@ -1146,6 +1164,11 @@
   <target name="reportAllFailure" depends=""
    description="Do not skip known failures when running tests.">
     <property name="test.failureNotAnOption" value="true" />
+  </target>
+
+  <target name="skipChecks" depends="" description="Turns off ancillary tools.">
+    <property name="tools.ancillary.disable" value="true" />
+    <property name="tools.ancillary.excludes" value="**/caja/tools/**/*.java" />
   </target>
 
 </project>

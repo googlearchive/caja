@@ -30,6 +30,7 @@ import org.apache.tools.ant.BuildException;
  */
 public class GenRuleAntTask extends AbstractCajaAntTask {
   private Class<? extends BuildCommand> clazz;
+  private boolean unless = false;
 
   @Override
   protected boolean run(BuildService buildService, PrintWriter logger,
@@ -38,7 +39,9 @@ public class GenRuleAntTask extends AbstractCajaAntTask {
        throws BuildException {
     boolean succeeded = false;
     try {
-      succeeded = clazz.newInstance().build(inputs, depends, output);
+      if (!unless) {
+        succeeded = clazz.newInstance().build(inputs, depends, output);
+      }
     } catch (IOException ex) {
       throw new BuildException(ex);
     } catch (IllegalAccessException ex) {
@@ -58,6 +61,8 @@ public class GenRuleAntTask extends AbstractCajaAntTask {
     Class<?> clazz = loader.loadClass(className);
     this.clazz = clazz.asSubclass(BuildCommand.class);
   }
+
+  public void setUnless(boolean cond) { this.unless = cond; }
 
   @Override
   Output makeOutput() { return new Output() {}; }

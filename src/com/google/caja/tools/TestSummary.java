@@ -113,11 +113,13 @@ public final class TestSummary extends Task {
           throw new BuildException(
               "Cannot find method " + methodName + " of " + className, ex);
         }
+        boolean isFailureExpected = method.isAnnotationPresent(
+            FailureIsAnOption.class);
+        boolean isFailureAllowed = isFailureAnOptionOverride && (
+            isFailureExpected
+            || className.startsWith("com.google.caja.ancillary."));
 
-        boolean isFailureAnOption = method.isAnnotationPresent(
-            FailureIsAnOption.class) && isFailureAnOptionOverride;
-
-        if (isFailureAnOption) {
+        if (isFailureAllowed) {
           log("Failure is an option for " + className + "." + methodName,
               Project.MSG_VERBOSE);
 
@@ -136,7 +138,7 @@ public final class TestSummary extends Task {
           expectedFailures += nFailures;
 
           // Warn, so that we can remove expected failure annotations.
-          if (nErrors == 0 && nFailures == 0) {
+          if (nErrors == 0 && nFailures == 0 && isFailureExpected) {
             hero(className, methodName);
           }
 
