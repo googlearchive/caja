@@ -520,6 +520,12 @@
       <include file="${src}/com/google/caja/plugin/bridal.js"/>
       <include file="${src}/com/google/caja/plugin/domita.js"/>
     </transform>
+    <transform>
+      <output file="${lib}/com/google/caja/plugin/module-promise-minified.js"
+       language="javascript" renderer="minify"/>
+      <include file="${src}/com/google/caja/cajita-module.js"/>
+      <include file="${src}/com/google/caja/cajita-promise.js"/>
+    </transform>
   </target>
 
   <target name="AllTests"
