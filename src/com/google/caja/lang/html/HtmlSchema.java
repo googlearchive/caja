@@ -228,8 +228,10 @@ public final class HtmlSchema {
   }
 
   public boolean isAttributeAllowed(Name elementName, Name attribName) {
-    return allowedAttributes.contains(Pair.pair(elementName, attribName))
-        || allowedAttributes.contains(Pair.pair(WILDCARD, attribName));
+    HTML.Attribute a = lookupAttribute(elementName, attribName);
+    if (a == null) { return false; }
+    return allowedAttributes.contains(
+        Pair.pair(a.getElementName(), a.getAttributeName()));
   }
 
   public HTML.Attribute lookupAttribute(Name elementName, Name attribName) {

@@ -61,11 +61,131 @@ public class TemplateSanitizerTest extends CajaTestCase {
         "WARNING: removing unknown tag bogus",
         "WARNING: removing unknown attribute unknown on bogus");
   }
-  public final void testDisallowedElement() throws Exception {
+  public final void testDisallowedScriptElement() throws Exception {
     assertValid(
         htmlFragment(fromString("<script>disallowed</script>")),
         "disallowed",
         "WARNING: removing disallowed tag script");
+    assertValid(
+        htmlFragment(fromString(
+            "<script src=http://can-link-to.com/ >disallowed</script>")),
+        "disallowed",
+        "WARNING: removing disallowed tag script",
+        "WARNING: removing disallowed attribute src on tag script");
+  }
+  public final void testDisallowedAppletElement() throws Exception {
+    assertValid(
+        htmlFragment(fromString(
+            ""
+            + "<applet><param name=zoicks value=ack>"
+            + "<a href=http://can-link-to.com/ >disallowed</a></applet>")),
+        "<a href=\"http://can-link-to.com/\">disallowed</a>",
+        "WARNING: removing disallowed tag applet",
+        "WARNING: removing disallowed tag param",
+        "WARNING: removing disallowed attribute value on tag param",
+        "WARNING: removing disallowed attribute name on tag param");
+  }
+  public final void testDisallowedBaseElement() throws Exception {
+    assertValid(
+        htmlFragment(fromString(
+            "<base href='http://can-link-to.com/'>disallowed")),
+        "disallowed",
+        "WARNING: removing disallowed tag base",
+        "WARNING: removing disallowed attribute href on tag base");
+  }
+  public final void testDisallowedBasefontElement() throws Exception {
+    assertValid(
+        htmlFragment(fromString("<basefont size=4>disallowed")),
+        "disallowed",
+        "WARNING: removing disallowed tag basefont",
+        "WARNING: removing disallowed attribute size on tag basefont");
+  }
+  public final void testDisallowedFrameElement() throws Exception {
+    assertValid(
+        htmlFragment(fromString(
+            ""
+            + "<frameset><frame src='http://can-link-to.com/'>"
+            + "disallowed</frame></frameset>")),
+        "",
+        "WARNING: removing disallowed tag frameset",
+        "WARNING: removing disallowed tag frame",
+        "WARNING: removing disallowed attribute src on tag frame");
+    // Frames outside framesets are thrown out by the parser.
+    assertValid(
+        htmlFragment(fromString(
+            "<frame src='http://can-link-to.com/'>disallowed</frame>")),
+        "disallowed");
+  }
+  public final void testDisallowedFramesetElement() throws Exception {
+    assertValid(
+        htmlFragment(fromString("<frameset>disallowed</frameset>")),
+        "",
+        "WARNING: removing disallowed tag frameset");
+  }
+  public final void testDisallowedIframeElement() throws Exception {
+    assertValid(
+        htmlFragment(fromString(
+            ""
+            + "<iframe src='http://can-link-to.com/'"
+            + " name='foo' id='bar' width=3>"
+            + "disallowed</iframe>")),
+        "<iframe width=\"3\">disallowed</iframe>",
+        "WARNING: removing disallowed attribute src on tag iframe",
+        "WARNING: removing disallowed attribute name on tag iframe",
+        "WARNING: removing disallowed attribute id on tag iframe");
+  }
+  public final void testIsindexElementRewrittenSafely() throws Exception {
+    assertValid(
+        htmlFragment(fromString("<isindex name=foo>rewritten")),
+        ""
+        + "<form><hr /><p><label>This is a searchable index."
+        + " Insert your search keywords here:"
+        + " <input name=\"isindex\" /></label></p><hr /></form>rewritten");
+  }
+  public final void testDisallowedLinkElement() throws Exception {
+    assertValid(
+        htmlFragment(fromString(
+            "<link rev=Contents href='http://can-link-to.com/'>disallowed")),
+        "disallowed",
+        "WARNING: removing disallowed tag link",
+        "WARNING: removing disallowed attribute rev on tag link",
+        "WARNING: removing disallowed attribute href on tag link");
+  }
+  public final void testDisallowedMetaElement() throws Exception {
+    assertValid(
+        htmlFragment(fromString(
+            ""
+            + "<meta http-equiv='refresh'"
+            + " content='5;url=http://can-link-to.com/'>"
+            + "disallowed")),
+        "disallowed",
+        "WARNING: removing disallowed tag meta",
+        "WARNING: removing disallowed attribute http-equiv on tag meta",
+        "WARNING: removing disallowed attribute content on tag meta");
+  }
+  public final void testDisallowedObjectElement() throws Exception {
+    assertValid(
+        htmlFragment(fromString(
+            "<object><param name=zoicks value=ack>disallowed</object>")),
+        "disallowed",
+        "WARNING: removing disallowed tag object",
+        "WARNING: removing disallowed tag param",
+        "WARNING: removing disallowed attribute value on tag param",
+        "WARNING: removing disallowed attribute name on tag param");
+  }
+  public final void testDisallowedStyleElement() throws Exception {
+    assertValid(
+        htmlFragment(fromString(
+            "<style>p { color: expression(disallowed()) }</style>")),
+        "p { color: expression(disallowed()) }",
+        "WARNING: removing disallowed tag style");
+  }
+  public final void testDisallowedTitleElement() throws Exception {
+    assertValid(
+        htmlFragment(fromString(
+            "<title>disallowed</title>")),
+        "",
+        "WARNING: removing disallowed tag title");
   }
   public final void testAttributeValidity() throws Exception {
     assertValid(

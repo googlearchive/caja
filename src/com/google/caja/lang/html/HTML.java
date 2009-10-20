@@ -277,7 +277,7 @@ public final class HTML {
      */
     @Override
     public String toString() {
-      return attributeName_.getCanonicalForm();
+      return elementName_ + "::" + attributeName_;
     }
 
     @Override
