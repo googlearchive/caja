@@ -33,7 +33,7 @@ public class GadgetParserTest extends TestCase {
 
   public final void testListFriends() throws Exception {
     testFile("listfriends.xml", new Tests() {
-      public void test(GadgetSpec spec) {
+      public final void test(GadgetSpec spec) {
         assertEquals(1, spec.getRequiredFeatures().size());
         assertEquals("opensocial-0.5", spec.getRequiredFeatures().get(0));
         assertEquals(1, spec.getModulePrefs().size());
@@ -45,7 +45,7 @@ public class GadgetParserTest extends TestCase {
 
   public final void testTestParsing() throws Exception {
     testFile("test-parsing.xml", new Tests() {
-      public void test(GadgetSpec spec) {
+      public final void test(GadgetSpec spec) {
         assertEquals(2, spec.getRequiredFeatures().size());
         assertEquals("opensocial-0.5", spec.getRequiredFeatures().get(0));
         assertEquals("dynamic-height", spec.getRequiredFeatures().get(1));

@@ -17,6 +17,7 @@ package com.google.caja.parser.quasiliteral;
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.ParseException;
 import com.google.caja.parser.js.Block;
+import com.google.caja.util.Executor;
 import com.google.caja.util.RhinoTestBed;
 
 import java.io.IOException;
@@ -161,12 +162,12 @@ public class InnocentCodeRewriterTest extends RewriterTestCase {
   protected Object executePlain(String caja) throws IOException {
     mq.getMessages().clear();
     return RhinoTestBed.runJs(
-        new RhinoTestBed.Input(
+        new Executor.Input(
             getClass(), "../../../../../js/json_sans_eval/json_sans_eval.js"),
-        new RhinoTestBed.Input(getClass(), "/com/google/caja/cajita.js"),
-        new RhinoTestBed.Input(
+        new Executor.Input(getClass(), "/com/google/caja/cajita.js"),
+        new Executor.Input(
             getClass(), "../../../../../js/jsunit/2.2/jsUnitCore.js"),
-        new RhinoTestBed.Input(caja, getName() + "-uncajoled"));
+        new Executor.Input(caja, getName() + "-uncajoled"));
   }
 
   @Override
@@ -184,14 +185,14 @@ public class InnocentCodeRewriterTest extends RewriterTestCase {
     assertNoErrors();
 
     Object result = RhinoTestBed.runJs(
-        new RhinoTestBed.Input(
+        new Executor.Input(
             getClass(), "/com/google/caja/plugin/console-stubs.js"),
-        new RhinoTestBed.Input(
+        new Executor.Input(
             getClass(), "../../../../../js/json_sans_eval/json_sans_eval.js"),
-        new RhinoTestBed.Input(getClass(), "/com/google/caja/cajita.js"),
-        new RhinoTestBed.Input(pre, getName()),
-        new RhinoTestBed.Input(transJs, getName()),
-        new RhinoTestBed.Input(post, getName()));
+        new Executor.Input(getClass(), "/com/google/caja/cajita.js"),
+        new Executor.Input(pre, getName()),
+        new Executor.Input(transJs, getName()),
+        new Executor.Input(post, getName()));
 
     assertNoErrors();
     return result;

@@ -21,6 +21,7 @@ import com.google.caja.parser.css.CssPropertySignature;
 import com.google.caja.parser.js.ArrayConstructor;
 import com.google.caja.parser.js.StringLiteral;
 import com.google.caja.util.CajaTestCase;
+import com.google.caja.util.Executor;
 import com.google.caja.util.Name;
 import com.google.caja.util.RhinoTestBed;
 
@@ -146,7 +147,7 @@ public class CssPropertyPatternsTest extends CajaTestCase {
   private void assertMatches(String sig, String... candidates)
       throws Exception {
     RhinoTestBed.runJs(
-        new RhinoTestBed.Input(
+        new Executor.Input(
             ""
             + "var pattern = " + toPattern(sig) + ";"
             + "var candidates = " + render(toArrayList(candidates)) + ";"
@@ -161,7 +162,7 @@ public class CssPropertyPatternsTest extends CajaTestCase {
   private void assertDoesNotMatch(String sig, String... candidates)
       throws Exception {
     RhinoTestBed.runJs(
-        new RhinoTestBed.Input(
+        new Executor.Input(
             ""
             + "var pattern = " + toPattern(sig) + ";"
             + "var candidates = " + render(toArrayList(candidates)) + ";"

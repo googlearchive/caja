@@ -14,6 +14,7 @@
 
 package com.google.caja;
 
+import com.google.caja.util.Executor;
 import com.google.caja.util.RhinoTestBed;
 import com.google.caja.util.CajaTestCase;
 
@@ -109,17 +110,17 @@ public class CajitaTest extends CajaTestCase {
   protected void runTest(String code) throws Exception {
     mq.getMessages().clear();
     RhinoTestBed.runJs(
-        new RhinoTestBed.Input(
+        new Executor.Input(
             getClass(), "/js/json_sans_eval/json_sans_eval.js"),
-        new RhinoTestBed.Input(
+        new Executor.Input(
             getClass(), "/com/google/caja/plugin/console-stubs.js"),
-        new RhinoTestBed.Input(
+        new Executor.Input(
             getClass(), "/com/google/caja/cajita.js"),
-        new RhinoTestBed.Input(
+        new Executor.Input(
             getClass(), "/js/jsunit/2.2/jsUnitCore.js"),
-        new RhinoTestBed.Input(
+        new Executor.Input(
             getClass(), "/com/google/caja/log-to-console.js"),
-        new RhinoTestBed.Input(code, getName() + "-test"));
+        new Executor.Input(code, getName() + "-test"));
     assertNoErrors();
   }
 }

@@ -63,8 +63,8 @@ MyRootNamespace.JsonObj = {
 
 <script type="text/javascript">
 ___.setLogFunc(function (msg) {
-  if (typeof Packages !== 'undefined') {
-    Packages.java.lang.System.err.println(msg);
+  if (typeof stderr !== 'undefined') {
+    stderr.println(msg);
   }
 });
 
@@ -265,7 +265,7 @@ assertTrue(notCallableKey in MyRootNamespace.JsonObj);
 assertThrows(function () { MyRootNamespace.JsonObj.not_callable = 0; });
 assertThrows(function () { MyRootNamespace.JsonObj[notCallableKey] = 0; });
 
-cajita.log('Testing enumerability of JSON object properties'); 
+cajita.log('Testing enumerability of JSON object properties');
 assertAllKeys([readableKey, callableKey, notCallableKey],
               MyRootNamespace.JsonObj);
 </script>

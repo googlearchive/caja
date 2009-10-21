@@ -22,6 +22,7 @@ import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.SimpleMessageQueue;
 import com.google.caja.reporting.TestBuildInfo;
 import com.google.caja.util.CajaTestCase;
+import com.google.caja.util.Executor;
 import com.google.caja.util.RhinoTestBed;
 
 /**
@@ -120,10 +121,10 @@ public class BenchmarkRunner extends CajaTestCase {
 
   private double runUncajoled(String filename) throws Exception {
     Number elapsed = (Number) RhinoTestBed.runJs(
-        new RhinoTestBed.Input("var benchmark = {};", "setup"),
-        new RhinoTestBed.Input("benchmark.startTime = new Date();", "clock"),
-        new RhinoTestBed.Input(getClass(), filename),
-        new RhinoTestBed.Input("(new Date() - benchmark.startTime)", "elapsed"));
+        new Executor.Input("var benchmark = {};", "setup"),
+        new Executor.Input("benchmark.startTime = new Date();", "clock"),
+        new Executor.Input(getClass(), filename),
+        new Executor.Input("(new Date() - benchmark.startTime)", "elapsed"));
     return elapsed.doubleValue();
   }
 
@@ -145,10 +146,10 @@ public class BenchmarkRunner extends CajaTestCase {
           "(wrapped: " + wrapGlobals +
           ", valija:" + valija + ") --\n" + cajoledJs + "\n---\n");
     Number elapsed = (Number) RhinoTestBed.runJs(
-        new RhinoTestBed.Input(getClass(),
+        new Executor.Input(getClass(),
             "../../../../../js/json_sans_eval/json_sans_eval.js"),
-        new RhinoTestBed.Input(getClass(), "../../cajita.js"),
-        new RhinoTestBed.Input(
+        new Executor.Input(getClass(), "../../cajita.js"),
+        new Executor.Input(
             ""
             + "var testImports = ___.copy(___.sharedImports);\n"
             + "testImports.loader = ___.freeze({\n"
@@ -158,8 +159,8 @@ public class BenchmarkRunner extends CajaTestCase {
             + "testImports.outers = ___.copy(___.sharedImports);\n"
             + "___.getNewModuleHandler().setImports(testImports);",
             getName() + "valija-setup"),
-        new RhinoTestBed.Input(getClass(), "../../plugin/valija.co.js"),
-        new RhinoTestBed.Input(
+        new Executor.Input(getClass(), "../../plugin/valija.co.js"),
+        new Executor.Input(
             // Set up the imports environment.
             ""
             + "testImports = ___.copy(___.sharedImports);\n"
@@ -168,8 +169,8 @@ public class BenchmarkRunner extends CajaTestCase {
             + "testImports.$v = valijaMaker.CALL___(testImports);\n"
             + "___.getNewModuleHandler().setImports(testImports);",
             "benchmark-container"),
-        new RhinoTestBed.Input(cajoledJs, getName()),
-        new RhinoTestBed.Input(
+        new Executor.Input(cajoledJs, getName()),
+        new Executor.Input(
             "(new Date() - testImports.benchmark.startTime)",
             "elapsed"));
     return elapsed.doubleValue();

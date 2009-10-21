@@ -37,6 +37,7 @@ import com.google.caja.plugin.PluginEnvironment;
 import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessageType;
 import com.google.caja.reporting.TestBuildInfo;
+import com.google.caja.util.Executor;
 import com.google.caja.util.FailureIsAnOption;
 import com.google.caja.util.RhinoTestBed;
 
@@ -2467,12 +2468,12 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
   protected Object executePlain(String caja) throws IOException {
     mq.getMessages().clear();
     return RhinoTestBed.runJs(
-        new RhinoTestBed.Input(
+        new Executor.Input(
             getClass(), "../../../../../js/json_sans_eval/json_sans_eval.js"),
-        new RhinoTestBed.Input(getClass(), "/com/google/caja/cajita.js"),
-        new RhinoTestBed.Input(
+        new Executor.Input(getClass(), "/com/google/caja/cajita.js"),
+        new Executor.Input(
             getClass(), "../../../../../js/jsunit/2.2/jsUnitCore.js"),
-        new RhinoTestBed.Input(caja, getName() + "-uncajoled"));
+        new Executor.Input(caja, getName() + "-uncajoled"));
   }
 
   @Override
@@ -2507,24 +2508,24 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
     importsSetup.append("___.getNewModuleHandler().setImports(testImports);");
 
     Object result = RhinoTestBed.runJs(
-        new RhinoTestBed.Input(
+        new Executor.Input(
             getClass(), "/com/google/caja/plugin/console-stubs.js"),
-        new RhinoTestBed.Input(
+        new Executor.Input(
             getClass(), "../../../../../js/json_sans_eval/json_sans_eval.js"),
-        new RhinoTestBed.Input(getClass(), "/com/google/caja/cajita.js"),
-        new RhinoTestBed.Input(
+        new Executor.Input(getClass(), "/com/google/caja/cajita.js"),
+        new Executor.Input(
             getClass(), "../../../../../js/jsunit/2.2/jsUnitCore.js"),
-        new RhinoTestBed.Input(
+        new Executor.Input(
             getClass(), "/com/google/caja/log-to-console.js"),
-        new RhinoTestBed.Input(
+        new Executor.Input(
             importsSetup.toString(),
             getName() + "-test-fixture"),
-        new RhinoTestBed.Input(pre, getName()),
+        new Executor.Input(pre, getName()),
         // Load the cajoled code.
-        new RhinoTestBed.Input(cajoledJs, getName() + "-cajoled"),
-        new RhinoTestBed.Input(post, getName()),
+        new Executor.Input(cajoledJs, getName() + "-cajoled"),
+        new Executor.Input(post, getName()),
         // Return the output field as the value of the run.
-        new RhinoTestBed.Input(
+        new Executor.Input(
             "___.getNewModuleHandler().getLastValue();", getName()));
 
     assertNoErrors();

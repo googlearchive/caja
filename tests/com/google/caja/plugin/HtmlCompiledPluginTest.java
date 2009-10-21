@@ -27,6 +27,7 @@ import com.google.caja.parser.js.UncajoledModule;
 import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessageType;
 import com.google.caja.reporting.TestBuildInfo;
+import com.google.caja.util.Executor;
 import com.google.caja.util.RhinoTestBed;
 import com.google.caja.util.TestUtil;
 import com.google.caja.util.CajaTestCase;
@@ -65,10 +66,7 @@ public class HtmlCompiledPluginTest extends CajaTestCase {
       // execution to continue into subsequent script blocks.
       execGadget("<script>fail('hiya');</script>", "", true);
     } catch (AssertionFailedError ex) {
-      String message = ex.getMessage();
-      String shortMessage = message.substring(
-          message.indexOf(": ") + 2, message.indexOf("\n"));
-      assertEquals("hiya", shortMessage);
+      assertEquals("hiya", ex.getMessage());
       return;
     }
     fail("Expected failure");
@@ -246,27 +244,27 @@ public class HtmlCompiledPluginTest extends CajaTestCase {
           + "</div></body></html>");
 
       try {
-        RhinoTestBed.Input[] inputs = new RhinoTestBed.Input[] {
+        Executor.Input[] inputs = new Executor.Input[] {
             // Browser Stubs
-            new RhinoTestBed.Input(getClass(), "/js/jqueryjs/runtest/env.js"),
+            new Executor.Input(getClass(), "/js/jqueryjs/runtest/env.js"),
             // Console Stubs
-            new RhinoTestBed.Input(getClass(), "console-stubs.js"),
+            new Executor.Input(getClass(), "console-stubs.js"),
             // Initialize the DOM
-            new RhinoTestBed.Input(
+            new Executor.Input(
                 // Document not defined until window.location set.
                 "location = '" + htmlStubUrl + "';\n",
                 "dom"),
             // Make the assertTrue, etc. functions available to javascript
-            new RhinoTestBed.Input(
+            new Executor.Input(
                 getClass(), "../../../../js/jsunit/2.2/jsUnitCore.js"),
             // Plugin Framework
-            new RhinoTestBed.Input(
+            new Executor.Input(
                 getClass(), "../../../../js/json_sans_eval/json_sans_eval.js"),
-            new RhinoTestBed.Input(getClass(), "../cajita.js"),
-            new RhinoTestBed.Input(
+            new Executor.Input(getClass(), "../cajita.js"),
+            new Executor.Input(
                 "___.setLogFunc(function(s, opt_stop) { console.log(s); });",
                 "setLogFunc-setup"),
-            new RhinoTestBed.Input(
+            new Executor.Input(
                 "var valijaMaker = {};\n" +
                 "var testImports = ___.copy(___.sharedImports);\n" +
                 "testImports.loader = {\n" +
@@ -276,16 +274,14 @@ public class HtmlCompiledPluginTest extends CajaTestCase {
                 "testImports.outers = ___.copy(___.sharedImports);\n" +
                 "___.getNewModuleHandler().setImports(testImports);",
                 getName() + "valija-setup"),
-            new RhinoTestBed.Input(
-                valijaCajoled,
-                "valija-cajoled"),
-            new RhinoTestBed.Input(getClass(), "bridal.js"),
-            new RhinoTestBed.Input(getClass(), "html-emitter.js"),
-            new RhinoTestBed.Input(getClass(), "container.js"),
+            new Executor.Input(valijaCajoled, "valija-cajoled"),
+            new Executor.Input(getClass(), "bridal.js"),
+            new Executor.Input(getClass(), "html-emitter.js"),
+            new Executor.Input(getClass(), "container.js"),
             // The gadget
-            new RhinoTestBed.Input(js.toString(), "gadget"),
+            new Executor.Input(js.toString(), "gadget"),
             // The tests
-            new RhinoTestBed.Input(tests, "tests"),
+            new Executor.Input(tests, "tests"),
           };
         RhinoTestBed.runJs(inputs);
       } catch (Exception e) {

@@ -36,30 +36,23 @@ import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.reporting.TestBuildInfo;
+import com.google.caja.util.Executor;
+import com.google.caja.util.Executor.AbnormalExitException;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
-import java.io.Reader;
 import java.io.StringReader;
-import java.io.StringWriter;
-import java.io.Writer;
 import java.net.URISyntaxException;
-
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import junit.framework.Assert;
 import junit.framework.AssertionFailedError;
 
-import org.mozilla.javascript.Context;
-import org.mozilla.javascript.ContextFactory;
-import org.mozilla.javascript.RhinoException;
-import org.mozilla.javascript.ScriptableObject;
 import org.w3c.dom.Attr;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -76,37 +69,18 @@ public class RhinoTestBed {
    * Runs the javascript from the given inputs in order, and returns the
    * result.
    */
-  public static Object runJs(Input... inputs) throws IOException {
-    Context context = ContextFactory.getGlobal().enterContext();
-    // Don't bother to compile tests to a class file.  Removing this causes
-    // a 5x slow-down in Rhino-heavy tests.
-    context.setOptimizationLevel(-1);
+  public static Object runJs(Executor.Input... inputs) {
     try {
-      ScriptableObject globalScope = context.initStandardObjects();
-      Object stderr = Context.javaToJS(System.err, globalScope);
-      ScriptableObject.putProperty(globalScope, "stderr", stderr);
-      Object result = null;
-
-      for (Input input : inputs) {
-        String js = readReader(input.input);
-        input.input.close();
-        try {
-          result = context.evaluateReader(
-              globalScope, new StringReader(js), input.source, 1, null);
-        } catch (RhinoException e) {
-          if (e.getCause() instanceof AssertionFailedError) {
-            throw (AssertionFailedError) e.getCause();
-          }
-          System.err.println(input.source + ": [[[");
-          System.err.println(js);
-          System.err.println("]]]");
-          Assert.fail(e.details() + "\n" + e.getScriptStackTrace());
-          return null;
-        }
-      }
-      return result;
-    } finally {
-      Context.exit();
+      Map<String, Object> actuals = Maps.newHashMap();
+      actuals.put("stderr", System.err);
+      actuals.put("_junit_", new JunitSandBoxSafe());
+      RhinoExecutor exec = new RhinoExecutor(inputs);
+      return exec.run(actuals, Object.class);
+    } catch (AbnormalExitException ex) {
+      Throwable th = ex.getCause();
+      if (th instanceof Error) { throw (Error) th; }
+      if (th instanceof RuntimeException) { throw (RuntimeException) th; }
+      throw new RuntimeException(ex);
     }
   }
 
@@ -122,11 +96,13 @@ public class RhinoTestBed {
   public static void runJsUnittestFromHtml(Element html)
       throws IOException, ParseException {
     TestUtil.enableContentUrls();  // Used to get HTML to env.js
-    List<Input> inputs = new ArrayList<Input>();
+    List<Executor.Input> inputs = Lists.newArrayList();
 
     // Stub out the Browser
-    inputs.add(new Input(RhinoTestBed.class, "../plugin/console-stubs.js"));
-    inputs.add(new Input(RhinoTestBed.class, "/js/jqueryjs/runtest/env.js"));
+    inputs.add(new Executor.Input(
+        RhinoTestBed.class, "../plugin/console-stubs.js"));
+    inputs.add(new Executor.Input(
+        RhinoTestBed.class, "/js/jqueryjs/runtest/env.js"));
     int injectHtmlIndex = inputs.size();
 
     List<Pair<String, InputSource>> scriptContent
@@ -179,7 +155,7 @@ public class RhinoTestBed {
       script.getParentNode().removeChild(script);
     }
     for (Pair<String, InputSource> script : scriptContent) {
-      inputs.add(new Input(script.a, mc.abbreviate(script.b)));
+      inputs.add(new Executor.Input(script.a, mc.abbreviate(script.b)));
     }
 
     // Set up the DOM.  env.js requires that location be set to a URI before it
@@ -192,58 +168,15 @@ public class RhinoTestBed {
             TestUtil.makeContentUrl(Nodes.render(html)))
         + ";";
     String htmlSource = Nodes.getFilePositionFor(html).source().toString();
-    inputs.add(injectHtmlIndex, new Input(domJs, htmlSource));
-    inputs.add(new Input(
+    inputs.add(injectHtmlIndex, new Executor.Input(domJs, htmlSource));
+    inputs.add(new Executor.Input(
         "(function () {\n"
         + "   var onload = document.body.getAttribute('onload');\n"
         + "   onload && eval(onload);\n"
         + " })();", htmlSource));
 
     // Execute for side-effect
-    runJs(inputs.toArray(new Input[inputs.size()]));
-  }
-
-  /** An input javascript file. */
-  public static final class Input {
-    public final Reader input;
-    public final String source;
-    public Input(Class<?> base, String resource) throws IOException {
-      this.source = resource;
-      InputStream instream = TestUtil.getResourceAsStream(base, resource);
-      this.input = new InputStreamReader(instream , "UTF-8");
-    }
-    /** @param source file path or url from which the javascript came. */
-    public Input(Reader input, String source) {
-      this.input = input;
-      this.source = source;
-    }
-
-    public Input(String javascript, String source) {
-      this(new StringReader(javascript), source);
-    }
-
-    @Override
-    public String toString() { return "(InputSource " + source + ")"; }
-  }
-
-  private static String readReader(Reader reader) {
-    Reader r;
-    r = new BufferedReader(reader);
-    Writer w = new StringWriter();
-
-    try {
-      for (int c; (c = r.read()) != -1; ) w.write(c);
-    } catch (IOException e)  {
-      throw new RuntimeException(e);
-    }
-
-    try {
-      r.close();
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
-
-    return w.toString();
+    runJs(inputs.toArray(new Executor.Input[inputs.size()]));
   }
 
   private static ParseTreeNode cajoleCajita(Block program, MessageQueue mq) {
@@ -327,6 +260,23 @@ public class RhinoTestBed {
       }
     }
     return CharProducer.Factory.chain(parts.toArray(new CharProducer[0]));
+  }
+
+  public static final class JunitSandBoxSafe {
+    public void fail(Object message) {
+      Assert.fail("" + message);
+    }
+    public void fail() {
+      Assert.fail();
+    }
+    public boolean isAssertionFailedError(Object o) {
+      Throwable th = null;
+      if (o instanceof Throwable) {
+        th = (Throwable) o;
+        return th instanceof AssertionFailedError;
+      }
+      return false;
+    }
   }
 
   private RhinoTestBed() { /* uninstantiable */ }

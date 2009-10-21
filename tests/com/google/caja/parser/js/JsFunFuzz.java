@@ -16,6 +16,7 @@ package com.google.caja.parser.js;
 
 import com.google.caja.lexer.ParseException;
 import com.google.caja.util.CajaTestCase;
+import com.google.caja.util.Executor;
 import com.google.caja.util.RhinoTestBed;
 
 import java.io.IOException;
@@ -38,7 +39,7 @@ public class JsFunFuzz extends CajaTestCase {
   private String fudgeroonify() {
     try {
       return (String) RhinoTestBed.runJs(
-          new RhinoTestBed.Input(getClass(), "/js/jsfunfuzz/jsfunfuzz.js"));
+          new Executor.Input(getClass(), "/js/jsfunfuzz/jsfunfuzz.js"));
     } catch (IOException e) {
       fail("JS Fuzzer jsfunfuzz.js not found");
       return null;

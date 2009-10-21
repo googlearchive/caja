@@ -34,14 +34,13 @@ ___.markFuncFreeze(console.log);
 imports.stamp = ___.markFuncFreeze(___.stamp);
 imports.exports = exports;
 ___.getNewModuleHandler().setImports(imports);
-if ('undefined' !== typeof Packages) {
+if (typeof _junit_ !== 'undefined') {
   // Propagate test failures upwards.
   ___.getNewModuleHandler().handleUncaughtException = (function (orig) {
         return function (exception, onerror, source, lineNum) {
           // Propagate test failures outside script blocks.
           // See fail() in asserts.js.
-          if (exception
-              instanceof Packages.junit.framework.AssertionFailedError) {
+          if (_junit_.isAssertionFailedError(exception)) {
             throw exception;
           }
           return orig.call(cajita.USELESS, exception, onerror, source, lineNum);

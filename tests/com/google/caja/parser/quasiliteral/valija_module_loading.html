@@ -20,7 +20,7 @@
 <body>
 <h1>Valija Module Loading</h1>
 <p>Test that loading multiple Valija module in series with the same
-<tt>IMPORTS___</tt> and <tt>$v</tt> reproduces JS behavior.</p> 
+<tt>IMPORTS___</tt> and <tt>$v</tt> reproduces JS behavior.</p>
 
 <script type="text/javascript" src="/js/jsunit/2.2/jsUnitCore.js"></script>
 <script type="text/javascript" src="/js/json_sans_eval/json_sans_eval.js">
@@ -29,8 +29,8 @@
 
 <script type="text/javascript">
 ___.setLogFunc(function (msg) {
-  if (typeof Packages !== 'undefined') {
-    Packages.java.lang.System.err.println(msg);
+  if (typeof stderr !== 'undefined') {
+    stderr.println(msg);
   }
 });
 

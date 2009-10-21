@@ -20,13 +20,13 @@ var window = this;
     }
   };
 
-  var curLocation = (new java.io.File("./")).toURL();
+  var curLocation = scriptEngine___.currentLocation();
 
   window.__defineSetter__("location", function(url){
     var xhr = new XMLHttpRequest();
     xhr.open("GET", url);
     xhr.onreadystatechange = function(){
-      curLocation = new java.net.URL( curLocation, url );
+      curLocation = curLocation.resolve(url);
       window.document = xhr.responseXML;
 
       var event = window.document.createEvent();
@@ -39,7 +39,7 @@ var window = this;
   window.__defineGetter__("location", function(url){
     return {
       get hash() {
-        return curLocation.getRef() || '';
+        return curLocation.getFragment() || '';
       },
       get host() {
         var hostname = this.hostname, port = this.port;
@@ -58,7 +58,7 @@ var window = this;
         return String(curLocation.getPort()) || 0;
       },
       get protocol() {
-        return String(curLocation.getProtocol()) + ":";
+        return String(curLocation.getScheme()) + ":";
       },
       get search() {
         return String(curLocation.getQuery()) || '';
@@ -84,15 +84,7 @@ var window = this;
   window.setInterval = function(fn, time){
     var num = timers.length;
 
-    timers[num] = new java.lang.Thread(new java.lang.Runnable({
-      run: function(){
-        while (true){
-          java.lang.Thread.currentThread().sleep(time);
-          fn();
-        }
-      }
-    }));
-
+    timers[num] = scriptEngine___.timer(fn, time);
     timers[num].start();
 
     return num;
@@ -156,14 +148,9 @@ var window = this;
 
   window.DOMDocument = function(file) {
     this._file = file;
-    this._dom = Packages.javax.xml.parsers.
-      DocumentBuilderFactory.newInstance()
-        .newDocumentBuilder().parse(file);
-    if ('scriptEngine___' in window) {
-      window.scriptEngine___.dontEnum(this, '_file');
-      window.scriptEngine___.dontEnum(this, '_dom');
-    }
-
+    this._dom = scriptEngine___.parseDom(file);
+    scriptEngine___.dontEnum(this, '_file');
+    scriptEngine___.dontEnum(this, '_dom');
     if ( !obj_nodes.containsKey( this._dom ) )
       obj_nodes.put( this._dom, this );
   };
@@ -389,9 +376,9 @@ var window = this;
       });
 
       var nodes = this.ownerDocument.importNode(
-        new DOMDocument( new java.io.ByteArrayInputStream(
-          (new java.lang.String("<wrap>" + html + "</wrap>"))
-            .getBytes("UTF8"))).documentElement, true).childNodes;
+          new DOMDocument(
+              scriptEngine___.streamFromString("<wrap>" + html + "</wrap>"))
+          .documentElement, true).childNodes;
 
       while (this.firstChild)
         this.removeChild( this.firstChild );
@@ -590,11 +577,10 @@ var window = this;
     },
     get contentDocument(){
       if ( this.nodeName == "IFRAME" ) {
-        if ( !this._doc )
-          this._doc = new DOMDocument(
-            new java.io.ByteArrayInputStream((new java.lang.String(
-            "<html><head><title></title></head><body></body></html>"))
-            .getBytes("UTF8")));
+        if (!this._doc) {
+          this._doc = new DOMDocument(scriptEngine___.streamFromString(
+              "<html><head><title></title></head><body></body></html>"));
+        }
         return this._doc;
       } else
         return null;
@@ -634,21 +620,22 @@ var window = this;
     } else {
       baseUri = String(doc.location);
     }
-    return String((new java.net.URI(baseUri)).resolve(uri));
+    return String((scriptEngine___.uri(baseUri)).resolve(uri));
   }
 
   // Helper method for generating the right
   // DOM objects based upon the type
 
-  var obj_nodes = new java.util.HashMap();
+  var obj_nodes = scriptEngine___.weakMap();
 
   function makeNode(node){
-    if ( node ) {
-      if ( !obj_nodes.containsKey( node ) )
-        obj_nodes.put( node, node.getNodeType() ==
-          Packages.org.w3c.dom.Node.ELEMENT_NODE ?
-            new DOMElement( node ) : new DOMNode( node ) );
-
+    if (node) {
+      if (!obj_nodes.containsKey(node)) {
+        obj_nodes.put(
+            node,
+            node.getNodeType() === 1
+            ? new DOMElement(node) : new DOMNode(node));
+      }
       return obj_nodes.get(node);
     } else
       return null;
@@ -678,72 +665,23 @@ var window = this;
       var self = this;
 
       function makeRequest(){
-        var url = new java.net.URL(curLocation, self.url);
+        var url = curLocation.resolve(self.url);
 
-        if ( url.getProtocol() == "file" ) {
-          if ( self.method == "PUT" ) {
-            var out = new java.io.FileWriter(
-                new java.io.File( new java.net.URI( url.toString() ) ) ),
-              text = new java.lang.String( data || "" );
-
-            out.write( text, 0, text.length() );
-            out.flush();
-            out.close();
-          } else if ( self.method == "DELETE" ) {
-            var file = new java.io.File( new java.net.URI( url.toString() ) );
-            file["delete"]();
-          } else {
-            var connection = url.openConnection();
-            connection.connect();
-            handleResponse();
-          }
-        } else if ('http' ===url.getProtocol()
-                   || 'https' == url.getProtocol()) {
-          var connection = url.openConnection();
-
-          connection.setRequestMethod( self.method );
-
-          // Add headers to Java connection
-          for (var header in self.headers)
-            connection.addRequestProperty(header, self.headers[header]);
-
-          connection.connect();
-
-          // Stick the response headers into responseHeaders
-          for (var i = 0; ; i++) {
-            var headerName = connection.getHeaderFieldKey(i);
-            var headerValue = connection.getHeaderField(i);
-            if (!headerName && !headerValue) break;
-            if (headerName)
-              self.responseHeaders[headerName] = headerValue;
-          }
-
-          handleResponse();
-        } else {
-          var connection = url.openConnection();
-          connection.connect();
-          handleResponse();
-        }
+        var protocol = url.getScheme();
+        var connection = scriptEngine___.openConnection(
+            url, self.headers, self.responseHeaders);
+        handleResponse();
 
         function handleResponse(){
           self.readyState = 4;
-          self.status = parseInt(connection.responseCode) || undefined;
-          self.statusText = connection.responseMessage || "";
-
-          var stream = new java.io.InputStreamReader(connection.getInputStream()),
-            buffer = new java.io.BufferedReader(stream), line;
-
-          while ((line = buffer.readLine()) != null)
-            self.responseText += line;
-
+          self.status = parseInt(connection.status) || undefined;
+          self.statusText = connection.statusText || "";
+          self.responseText = connection.responseBody;
           self.responseXML = null;
-
           if ( self.responseText.match(/^\s*</) ) {
             try {
               self.responseXML = new DOMDocument(
-                new java.io.ByteArrayInputStream(
-                  (new java.lang.String(
-                    self.responseText)).getBytes("UTF8")));
+                  scriptEngine___.streamFromString(self.responseText));
             } catch(e) {}
           }
         }
@@ -752,9 +690,7 @@ var window = this;
       }
 
       if (this.async)
-        (new java.lang.Thread(new java.lang.Runnable({
-          run: makeRequest
-        }))).start();
+        setTimeout(makeRequest, 0);
       else
         makeRequest();
     },

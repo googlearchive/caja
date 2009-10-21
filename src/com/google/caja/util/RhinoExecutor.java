@@ -15,8 +15,12 @@
 package com.google.caja.util;
 
 import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.PrintStream;
 import java.io.Reader;
 import java.io.StringReader;
 import java.io.UnsupportedEncodingException;
@@ -26,19 +30,38 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.net.URLStreamHandler;
 import java.net.URLStreamHandlerFactory;
-
-import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
+import java.util.WeakHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+
+import org.mozilla.javascript.ClassShutter;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.ContextFactory;
 import org.mozilla.javascript.EcmaError;
+import org.mozilla.javascript.EvaluatorException;
+import org.mozilla.javascript.Function;
+import org.mozilla.javascript.JavaScriptException;
+import org.mozilla.javascript.NativeArray;
+import org.mozilla.javascript.NativeJavaObject;
+import org.mozilla.javascript.RhinoException;
+import org.mozilla.javascript.Scriptable;
 import org.mozilla.javascript.ScriptableObject;
+import org.mozilla.javascript.WrapFactory;
+import org.mozilla.javascript.WrappedException;
+import org.w3c.dom.DOMException;
+import org.xml.sax.SAXException;
 
 /**
  * Do not instantiate directly.  Use {@link Executor.Factory} instead.
- * This will be obsoleted once a JDK ships with builtin scripting language
- * support.
+ * This will be obsoleted once a JDK ships with built-in scripting language
+ * support and proper sand-boxing.
  *
  * @author mikesamuel@gmail.com
  */
@@ -47,9 +70,137 @@ public final class RhinoExecutor implements Executor {
 
   public RhinoExecutor(Executor.Input[] srcs) { this.srcs = srcs.clone(); }
 
+  private static final Set<String> OBJECT_CLASS_MEMBERS = Sets.newHashSet(
+      // We allow toString since that is part of JS as well, typically has
+      // no side effect, and returns a JS primitive type.
+      "class", "clone", "equals", "finalize", "getClass", "hashCode",
+      "notify", "notifyAll", "wait");
+
+  private static final Set<String> CLASS_WHITELIST = Sets.newHashSet(
+      "junit.framework.AssertionFailedError",
+      Boolean.class.getName(),
+      ByteArrayInputStream.class.getName(),
+      Connection.class.getName(),
+      Character.class.getName(),
+      DOMException.class.getName(),
+      Double.class.getName(),
+      EcmaError.class.getName(),
+      EvaluatorException.class.getName(),
+      Float.class.getName(),
+      Integer.class.getName(),
+      JavaScriptException.class.getName(),
+      Long.class.getName(),
+      PrintStream.class.getName(),
+      RhinoException.class.getName(),
+      ScriptPowerBox.class.getName(),
+      Short.class.getName(),
+      String.class.getName(),
+      Timer.class.getName(),
+      URI.class.getName(),
+      WeakHashMap.class.getName(),
+      WrappedException.class.getName(),
+      "org.apache.xerces.*");
+
+  private static final ContextFactory SANDBOXINGFACTORY = new ContextFactory() {
+    @Override
+    protected Context makeContext() {
+      // Implement Rhino sandboxing as explained at
+      //     http://codeutopia.net/blog/2009/01/02/sandboxing-rhino-in-java/
+      // plus a few extra checks.
+      Context context = super.makeContext();
+      context.setClassShutter(new ClassShutter() {
+        public boolean visibleToScripts(String fullClassName) {
+          if (fullClassName.endsWith("SandBoxSafe")) { return true; }
+          if (CLASS_WHITELIST.contains(fullClassName)) { return true; }
+          for (int dot = fullClassName.length();
+               (dot = fullClassName.lastIndexOf('.', dot - 1)) >= 0;) {
+            if (CLASS_WHITELIST.contains(
+                    fullClassName.substring(0, dot + 1) + "*")) {
+              return true;
+            }
+          }
+          if (fullClassName.matches("[A-Z]")) {  // is a class, not a package
+            System.err.println(
+                "RhinoExecutor denied access to " + fullClassName);
+          }
+          return false;
+        }
+      });
+      context.setWrapFactory(new WrapFactory() {
+        @SuppressWarnings("unchecked")  // Overridden method is not generic
+        @Override
+        public Object wrap(
+            Context cx, Scriptable scope, Object javaObject, Class staticType) {
+          // Deny reflective access up front.  This should not be triggered due
+          // to getter filtering, but let's be paranoid.
+          if (javaObject != null
+              && (javaObject instanceof Class
+                  || javaObject instanceof ClassLoader
+                  || "java.lang.reflect".equals(
+                      javaObject.getClass().getPackage().getName()))) {
+            return Context.getUndefinedValue();
+          }
+          // Make java arrays behave like native JS arrays.
+          // This breaks EQ, but is better than the alternative.
+          if (javaObject instanceof Object[]) {
+            Object[] javaArray = (Object[]) javaObject;
+            int n = javaArray.length;
+            Object[] wrappedElements = new Object[n];
+            Class<?> compType = javaArray.getClass().getComponentType();
+            for (int i = n; --i >= 0;) {
+              wrappedElements[i] = wrap(cx, scope, javaArray[i], compType);
+            }
+            NativeArray jsArray = new NativeArray(wrappedElements);
+            jsArray.setPrototype(
+                ScriptableObject.getClassPrototype(scope, "Array"));
+            jsArray.setParentScope(scope);
+            return jsArray;
+          }
+          return super.wrap(cx, scope, javaObject, staticType);
+        }
+
+        @SuppressWarnings("unchecked")  // Overridden method is not generic
+        @Override
+        public Scriptable wrapAsJavaObject(
+            Context cx, Scriptable scope, Object javaObject, Class staticType) {
+          return new NativeJavaObject(scope, javaObject, staticType) {
+            @Override
+            public Object get(String name, Scriptable start) {
+              // Deny access to all members of the base Object class since
+              // some of them enable reflection, and the others are mostly for
+              // serialization and timing which should not be accessible.
+              // The codeutopia implementation only blacklists getClass.
+              if (OBJECT_CLASS_MEMBERS.contains(name)) { return NOT_FOUND; }
+              return super.get(name, start);
+            }
+          };
+        }
+      });
+      return context;
+    }
+    @Override
+    public boolean hasFeature(Context c, int feature) {
+      switch (feature) {
+        case Context.FEATURE_LOCATION_INFORMATION_IN_ERROR: return true;
+        case Context.FEATURE_E4X: return false;
+        case Context.FEATURE_ENHANCED_JAVA_ACCESS: return false;
+        //case Context.FEATURE_PARENT_PROTO_PROPERTIES: return false;
+        default: return super.hasFeature(c, feature);
+      }
+    }
+  };
+  static {
+    ContextFactory.initGlobal(SANDBOXINGFACTORY);
+  }
+
   public <T> T run(Map<String, ?> actuals, Class<T> expectedResultType)
       throws AbnormalExitException {
-    Context context = ContextFactory.getGlobal().enterContext();
+    if (SANDBOXINGFACTORY != ContextFactory.getGlobal()) {
+      throw new IllegalStateException();
+    }
+    Context context = SANDBOXINGFACTORY.enterContext();
+    // Don't bother to compile tests to a class file.  Removing this causes
+    // a 5x slow-down in Rhino-heavy tests.
     context.setOptimizationLevel(-1);
     try {
       return runInContext(context, actuals, expectedResultType);
@@ -64,27 +215,31 @@ public final class RhinoExecutor implements Executor {
     ScriptableObject globalScope = context.initStandardObjects();
     try {
       globalScope.defineProperty(
-          "scriptEngine___", new ScriptEngine(), ScriptableObject.DONTENUM);
+          "scriptEngine___", new ScriptPowerBox(context, globalScope),
+          ScriptableObject.DONTENUM);
       for (Map.Entry<String, ?> e : actuals.entrySet()) {
         globalScope.defineProperty(
-            e.getKey(), e.getValue(), ScriptableObject.DONTENUM);
+            e.getKey(), Context.javaToJS(e.getValue(), globalScope),
+            ScriptableObject.DONTENUM);
       }
 
       Object result = null;
-      for (Input src : srcs) {
-        String inputRead = drain(src.input);
-        try {
-          result = context.evaluateReader(
-              globalScope, new StringReader(inputRead), src.source, 1, null);
-        } catch (EcmaError ex) {
-          System.err.println(withLineNums(inputRead));
-          throw new AbnormalExitException(ex);
+      synchronized (context) {
+        for (Input src : srcs) {
+          String inputRead = drain(src.input);
+          try {
+            result = context.evaluateReader(
+                globalScope, new StringReader(inputRead), src.source, 1, null);
+          } catch (EcmaError ex) {
+            System.err.println(withLineNums(inputRead));
+            throw new AbnormalExitException(ex);
+          }
+          if (inputRead.length() > 500) { inputRead = "<ABREVIATED>"; }
         }
-        if (inputRead.length() > 500) { inputRead = "<ABREVIATED>"; }
-      }
-      if (result == null) { return null; }
-      if (!expectedResultType.isInstance(result)) {
-        result = Context.jsToJava(result, expectedResultType);
+        if (result == null) { return null; }
+        if (!expectedResultType.isInstance(result)) {
+          result = Context.jsToJava(result, expectedResultType);
+        }
       }
       return expectedResultType.cast(result);
     } catch (IOException ex) {
@@ -109,12 +264,151 @@ public final class RhinoExecutor implements Executor {
     return sb.toString();
   }
 
-  public static class ScriptEngine {
+  public static class ScriptPowerBox {
+    private final Context cx;
+    private final Scriptable global;
+
+    ScriptPowerBox(Context cx, Scriptable global) {
+      this.cx = cx;
+      this.global = global;
+    }
+
     public void dontEnum(Object obj, String name) {
       if (obj instanceof ScriptableObject) {
         ((ScriptableObject) obj).setAttributes(name, ScriptableObject.DONTENUM);
       }
     }
+
+    // Some capabilities needed by env.js
+    public URI currentLocation() {
+      return new File("./").toURI();
+    }
+
+    public URI uri(String s) {
+      return URI.create(s);
+    }
+
+    public Timer timer(Function fn, double delta) {
+      return new Timer(cx, global, global, fn, delta);
+    }
+
+    public Object parseDom(InputStream in) throws IOException, SAXException {
+      try {
+        return DocumentBuilderFactory.newInstance().newDocumentBuilder()
+            .parse(in);
+      } catch (ParserConfigurationException ex) {
+        throw new RuntimeException(ex);
+      }
+    }
+
+    public InputStream streamFromString(String str) {
+      try {
+        return new ByteArrayInputStream(str.getBytes("UTF-8"));
+      } catch (UnsupportedEncodingException ex) {
+        throw new RuntimeException(ex);
+      }
+    }
+
+    public Map<Object, Object> weakMap() {
+      return new WeakHashMap<Object, Object>();
+    }
+
+    /**
+     * @param headers available in case we want to support http/https
+     * @param responseHeaders available in case we want to support http/https
+     */
+    public Connection openConnection(
+        URI uri, Object headers, Object responseHeaders) {
+      String scheme = Strings.toLowerCase(uri.getScheme());
+      int status;
+      String statusText;
+      String responseBody;
+      try {
+        if ("file".equals(scheme)) {
+          // Load using the classpath, since the classpath is already limited
+          // to files openable by the JVM, and does not allow deletion or
+          // writing.
+          String path = uri.getPath();
+          Reader in = new InputStreamReader(
+              getClass().getClassLoader().getResourceAsStream(path), "UTF-8");
+          StringBuilder sb = new StringBuilder();
+          char[] buf = new char[4096];
+          for (int n; (n = in.read(buf)) > 0;) {
+            sb.append(buf, 0, n);
+          }
+          responseBody = sb.toString();
+        } else if ("content".equals(scheme)) {
+          responseBody = uri.getSchemeSpecificPart();
+        } else {
+          throw new IllegalArgumentException(scheme);
+        }
+        status = 200;
+        statusText = "OK";
+      } catch (FileNotFoundException ex) {
+        status = 404;
+        statusText = "Not Found";
+        responseBody = "";
+      } catch (IOException ex) {
+        status = 500;
+        statusText = "Access Denied";
+        responseBody = "";
+      }
+      return new Connection(status, statusText, responseBody);
+    }
+  }
+
+  private static final ScheduledExecutorService executorService
+      = Executors.newSingleThreadScheduledExecutor();
+  private static final Object[] ZERO_ARGS = new Object[0];
+  public static class Timer {
+    private final Context cx;
+    private final Scriptable global;
+    private final Scriptable scope;
+    private final Function fn;
+    private final long deltaMillis;
+    private ScheduledFuture<?> future;
+
+    Timer(Context cx, Scriptable global, Scriptable scope, Function fn,
+          double deltaMillis) {
+      this.cx = cx;
+      this.global = global;
+      this.scope = scope;
+      this.fn = fn;
+      this.deltaMillis = (long) deltaMillis;
+    }
+
+    public void start() {
+      if (future != null) { throw new IllegalStateException(); }
+      future = executorService.scheduleWithFixedDelay(new Runnable() {
+        public void run() {
+          synchronized (cx) {
+            fn.call(cx, scope, global, ZERO_ARGS);
+          }
+        }
+      }, deltaMillis, deltaMillis, TimeUnit.MILLISECONDS);
+    }
+
+    public void stop() {
+      if (future == null) { throw new IllegalStateException(); }
+      future.cancel(false);
+      future = null;
+    }
+  }
+
+  public static final class Connection {
+    private final int status;
+    private final String statusText;
+    private final String responseBody;
+
+    Connection(int status, String statusText, String responseBody) {
+      this.status = status;
+      this.statusText = statusText;
+      this.responseBody = responseBody;
+    }
+
+    public int getStatus() { return status; }
+    public String getStatusText() { return statusText; }
+    public String getResponseBody() { return responseBody; }
   }
 
   /**
@@ -135,8 +429,7 @@ public final class RhinoExecutor implements Executor {
 class SetupUrlHandlers {
   static {
     URL.setURLStreamHandlerFactory(new URLStreamHandlerFactory() {
-        private Map<String, URLStreamHandler> handlers
-            = new HashMap<String, URLStreamHandler>();
+        private Map<String, URLStreamHandler> handlers = Maps.newHashMap();
 
         // The below scheme for extending URL handlers is written according to
         // examples at:
@@ -157,7 +450,8 @@ class SetupUrlHandlers {
         }
 
         private URLStreamHandler createHandler(String protocol) {
-          if (Strings.equalsIgnoreCase("content", protocol)) {
+          protocol = Strings.toLowerCase(protocol);
+          if ("content".equals(protocol)) {
             return new ContentUrlHandler();
           } else if ("http".equals(protocol) || "https".equals(protocol)) {
             // We could allow tests to stub out the internet, but

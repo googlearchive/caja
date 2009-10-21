@@ -213,17 +213,16 @@ public final class PluginCompilerMain {
 
   /** Write the given HTML to the given file. */
   private void writeFile(File outputHtmlFile, String compiledHtmlOutput) {
-    OutputStreamWriter out = null;
     try {
-      out = new OutputStreamWriter(
-          new FileOutputStream(outputHtmlFile), "UTF-8");
-      out.append(compiledHtmlOutput);
-    } catch (IOException ex) {
-      exHandler.handle(ex);
-    } finally {
-      if (out != null) {
+      OutputStreamWriter out = new OutputStreamWriter(
+            new FileOutputStream(outputHtmlFile), "UTF-8");
+      try {
+        out.append(compiledHtmlOutput);
+      } finally {
         try { out.close(); } catch (IOException e) {}
       }
+    } catch (IOException ex) {
+      exHandler.handle(ex);
     }
   }
 

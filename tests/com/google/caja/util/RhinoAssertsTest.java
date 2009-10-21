@@ -14,8 +14,6 @@
 
 package com.google.caja.util;
 
-import java.io.IOException;
-
 import junit.framework.TestCase;
 
 public class RhinoAssertsTest extends TestCase {
@@ -91,14 +89,13 @@ public class RhinoAssertsTest extends TestCase {
     assertIndeterminateStructuralForm("java.lang.System.err");
   }
 
-  private void assertStructuralForm(String structuralForm, String js)
-      throws IOException {
-    Object result = RhinoTestBed.runJs(new RhinoTestBed.Input(js, getName()));
+  private void assertStructuralForm(String structuralForm, String js) {
+    Object result = RhinoTestBed.runJs(new Executor.Input(js, getName()));
     assertEquals(structuralForm, RhinoAsserts.structuralForm(result));
   }
 
-  private void assertIndeterminateStructuralForm(String js) throws IOException {
-    Object result = RhinoTestBed.runJs(new RhinoTestBed.Input(js, getName()));
+  private void assertIndeterminateStructuralForm(String js) {
+    Object result = RhinoTestBed.runJs(new Executor.Input(js, getName()));
     try {
       RhinoAsserts.structuralForm(result);
     } catch (IllegalArgumentException ex) {

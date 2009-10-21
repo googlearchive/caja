@@ -14,6 +14,7 @@
 
 package com.google.caja;
 
+import junit.framework.AssertionFailedError;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -27,14 +28,11 @@ import java.util.regex.Pattern;
  * @author mikesamuel@gmail.com
  */
 public class AllTests {
-  private static Pattern testFilter = 
-    Pattern.compile(System.getProperty("test.filter", ""));
-
   private static FilenameFilter testClassFilter = new FilenameFilter() {
     public boolean accept(File dir, String name) {
       File test = new File(dir, name);
-      return !name.startsWith(".svn") && 
-        (test.isDirectory() || name.endsWith("Test.java"));
+      return !name.startsWith(".svn")
+          && (test.isDirectory() || name.endsWith("Test.java"));
     }
   };
 
@@ -43,42 +41,47 @@ public class AllTests {
     TestSuite suite = new TestSuite("Caja Tests");
     // AllTests should be run in the project root directory
     File testRoot = new File("tests");
-    findAllTests(suite, testRoot);
+    int nTests = findAllTests(suite, testRoot);
+    if (nTests == 0) { throw new AssertionFailedError("Found no tests"); }
     return suite;
   }
 
-  @SuppressWarnings("unchecked")
-  private static Class<? extends TestCase> mapToTestClass(String className) 
-    throws ClassNotFoundException {
-    return (Class<? extends TestCase>) Class.forName(className);
+  private static Class<? extends TestCase> mapToTestClass(String className)
+      throws ClassNotFoundException {
+    return Class.forName(className).asSubclass(TestCase.class);
   }
 
-  private static void findAllTests(TestSuite ts, File... roots) 
-    throws IOException, ClassNotFoundException {
+  private static int findAllTests(TestSuite ts, File... roots)
+      throws IOException, ClassNotFoundException {
+    int count = 0;
     for (File root : roots) {
-      File[] childs = root.listFiles(testClassFilter);
-      for(File child : childs) {
-        findAllTests(ts, child, null);
+      for (File child : root.listFiles(testClassFilter)) {
+        count += findAllTests(ts, child, null);
       }
     }
+    return count;
   }
-  
-  private static void findAllTests(TestSuite ts, File root, String classpath)
-    throws IOException, ClassNotFoundException {
+
+  private static int findAllTests(TestSuite ts, File root, String classpath)
+      throws IOException, ClassNotFoundException {
     if (root.isDirectory()) {
-      final File[] childs = root.listFiles(testClassFilter);
-      for(File child : childs) {
-        findAllTests(ts, child, classpath == null ? root.getName() :
-                                classpath + "." + root.getName());
+      int count = 0;
+      for (File child : root.listFiles(testClassFilter)) {
+        count += findAllTests(
+            ts, child,
+            (classpath != null ? classpath + "." : "") + root.getName());
       }
-      return;
+      return count;
     }
-    String className = classpath + "." +
-      root.getName().replaceFirst("[.]java$", "");
-    
+    String className = classpath + "."
+        + root.getName().replaceFirst("[.]java$", "");
+
     Class<? extends TestCase> testCase = mapToTestClass(className);
+    Pattern testFilter = Pattern.compile(System.getProperty("test.filter", ""));
+
     if (testCase != null && testFilter.matcher(testCase.getName()).find()) {
       ts.addTestSuite(testCase);
     }
+    return 1;
   }
 }

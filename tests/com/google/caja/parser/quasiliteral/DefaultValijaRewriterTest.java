@@ -39,6 +39,7 @@ import com.google.caja.parser.js.Statement;
 import com.google.caja.parser.js.SyntheticNodes;
 import com.google.caja.parser.js.UncajoledModule;
 import com.google.caja.plugin.PluginEnvironment;
+import com.google.caja.util.Executor;
 import com.google.caja.util.FailureIsAnOption;
 import com.google.caja.util.RhinoTestBed;
 import com.google.caja.reporting.TestBuildInfo;
@@ -675,12 +676,12 @@ public class DefaultValijaRewriterTest extends CommonJsRewriterTestCase {
     Statement innocentTree = (Statement) rewriteTopLevelNode(
         js(fromString(caja, is)));
     return RhinoTestBed.runJs(
-        new RhinoTestBed.Input(
+        new Executor.Input(
             getClass(), "../../../../../js/json_sans_eval/json_sans_eval.js"),
-        new RhinoTestBed.Input(getClass(), "/com/google/caja/cajita.js"),
-        new RhinoTestBed.Input(
+        new Executor.Input(getClass(), "/com/google/caja/cajita.js"),
+        new Executor.Input(
             getClass(), "../../../../../js/jsunit/2.2/jsUnitCore.js"),
-        new RhinoTestBed.Input(render(innocentTree), getName() + "-uncajoled"));
+        new Executor.Input(render(innocentTree), getName() + "-uncajoled"));
   }
 
   @Override
@@ -701,18 +702,18 @@ public class DefaultValijaRewriterTest extends CommonJsRewriterTestCase {
     assertNoErrors();
 
     Object result = RhinoTestBed.runJs(
-        new RhinoTestBed.Input(
+        new Executor.Input(
             getClass(), "/com/google/caja/plugin/console-stubs.js"),
-        new RhinoTestBed.Input(
+        new Executor.Input(
             getClass(), "../../../../../js/json_sans_eval/json_sans_eval.js"),
-        new RhinoTestBed.Input(getClass(), "/com/google/caja/cajita.js"),
-        new RhinoTestBed.Input(
+        new Executor.Input(getClass(), "/com/google/caja/cajita.js"),
+        new Executor.Input(
             getClass(), "/com/google/caja/cajita-promise.js"),
-        new RhinoTestBed.Input(
+        new Executor.Input(
             getClass(), "../../../../../js/jsunit/2.2/jsUnitCore.js"),
-        new RhinoTestBed.Input(
+        new Executor.Input(
             getClass(), "/com/google/caja/log-to-console.js"),
-        new RhinoTestBed.Input(
+        new Executor.Input(
             "var testImports = ___.copy(___.sharedImports);\n" +
             "testImports.Q = Q;" +
             "testImports.loader = ___.freeze({\n" +
@@ -722,8 +723,8 @@ public class DefaultValijaRewriterTest extends CommonJsRewriterTestCase {
             "testImports.outers = ___.copy(___.sharedImports);\n" +
             "___.getNewModuleHandler().setImports(testImports);",
             getName() + "valija-setup"),
-        new RhinoTestBed.Input(valijaCajoled, "valija-cajoled"),
-        new RhinoTestBed.Input(
+        new Executor.Input(valijaCajoled, "valija-cajoled"),
+        new Executor.Input(
             // Set up the imports environment.
             "testImports = ___.copy(___.sharedImports);\n" +
             "testImports.Q = Q;" +
@@ -742,12 +743,12 @@ public class DefaultValijaRewriterTest extends CommonJsRewriterTestCase {
             "testImports.$v = valijaMaker.CALL___(testImports);\n" +
             "___.getNewModuleHandler().setImports(testImports);",
             getName() + "-test-fixture"),
-        new RhinoTestBed.Input(pre, getName() + "-pre"),
+        new Executor.Input(pre, getName() + "-pre"),
         // Load the cajoled code.
-        new RhinoTestBed.Input(cajoledJs, getName() + "-cajoled"),
-        new RhinoTestBed.Input(post, getName() + "-post"),
+        new Executor.Input(cajoledJs, getName() + "-cajoled"),
+        new Executor.Input(post, getName() + "-post"),
         // Return the output field as the value of the run.
-        new RhinoTestBed.Input("___.getNewModuleHandler().getLastValue();",
+        new Executor.Input("___.getNewModuleHandler().getLastValue();",
                                getName()));
 
     assertNoErrors();

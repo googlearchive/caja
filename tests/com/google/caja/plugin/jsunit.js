@@ -39,7 +39,7 @@ jsunit.pass = function(id) {
   }
   jsunit.passTests[id] = true;
   jsunit.passCount += 1;
-  jsunit.updateStatus()
+  jsunit.updateStatus();
   if (typeof console !== 'undefined') {
     console.log('PASS: ' + id);
   }

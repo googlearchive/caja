@@ -85,22 +85,20 @@ function _displayStringForValue(aVar) {
 }
 
 function fail(failureMessage) {
-  if ('undefined' !== typeof Packages
-      && 'function' === typeof Packages.junit.framework.AssertionFailedError) {
+  if ('undefined' !== typeof _junit_) {
     // If run inside Rhino in the presence of junit, throw an error which will
     // escape any exception trapping around the Rhino embedding.
-    throw new Packages.junit.framework.AssertionFailedError(failureMessage);
+    _junit_.fail(failureMessage);
   } else {
     throw new JsUnitException("Call to fail()", failureMessage);
   }
 }
 
 function error(errorMessage) {
-  if ('undefined' !== typeof Packages
-      && 'function' === typeof Packages.junit.framework.AssertionFailedError) {
+  if ('undefined' !== typeof _junit_) {
     // If run inside Rhino in the presence of junit, throw an error which will
     // escape any exception trapping around the Rhino embedding.
-    throw new Packages.junit.framework.AssertionFailedError(errorMessage);
+    _junit_.fail(errorMessage);
   } else {
     var errorObject = new Object();
     errorObject.description = errorMessage;
@@ -133,8 +131,17 @@ function _validateArguments(expectedNumberOfNonCommentArgs, args) {
 }
 
 function _assert(comment, booleanValue, failureMessage) {
-    if (!booleanValue)
-        throw new JsUnitException(comment, failureMessage);
+  if (!booleanValue) {
+    if ('undefined' !== typeof _junit_) {
+      var message = comment
+          ? (failureMessage ? comment + ': ' + failureMessage : comment)
+          : failureMessage;
+      // If run inside Rhino in the presence of junit, throw an error which will
+      // escape any exception trapping around the Rhino embedding.
+      _junit_.fail(message);
+    }
+    throw new JsUnitException(comment, failureMessage);
+  }
 }
 
 function assert() {

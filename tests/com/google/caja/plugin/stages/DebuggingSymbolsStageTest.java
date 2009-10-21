@@ -23,6 +23,7 @@ import com.google.caja.plugin.PluginMeta;
 import com.google.caja.reporting.Message;
 import com.google.caja.reporting.TestBuildInfo;
 import com.google.caja.util.CajaTestCase;
+import com.google.caja.util.Executor;
 import com.google.caja.util.FailureIsAnOption;
 import com.google.caja.util.Pipeline;
 import com.google.caja.util.RhinoTestBed;
@@ -261,10 +262,10 @@ public class DebuggingSymbolsStageTest extends CajaTestCase {
   private void assertConsistent(String js) throws Exception {
     // Execute js in the presence of cajita so it can use Caja symbols.
     Object golden = RhinoTestBed.runJs(
-        new RhinoTestBed.Input(
+        new Executor.Input(
             getClass(), "/js/json_sans_eval/json_sans_eval.js"),
-        new RhinoTestBed.Input(getClass(), "/com/google/caja/cajita.js"),
-        new RhinoTestBed.Input(js, getName()));
+        new Executor.Input(getClass(), "/com/google/caja/cajita.js"),
+        new Executor.Input(js, getName()));
     runCajoled("result(" + js + ");", golden,
                "var output = '<no-output>';"
                + "___.getNewModuleHandler().getImports().result = "
@@ -306,15 +307,14 @@ public class DebuggingSymbolsStageTest extends CajaTestCase {
     try {
       String cajoledText = String.format(context, render(cajoledModule));
       Object actual = RhinoTestBed.runJs(
-          new RhinoTestBed.Input(
+          new Executor.Input(
               getClass(), "/js/json_sans_eval/json_sans_eval.js"),
-          new RhinoTestBed.Input(getClass(), "../console-stubs.js"),
-          new RhinoTestBed.Input(getClass(), "/com/google/caja/cajita.js"),
-          new RhinoTestBed.Input(
-              getClass(), "/com/google/caja/log-to-console.js"),
-          new RhinoTestBed.Input(
+          new Executor.Input(getClass(), "../console-stubs.js"),
+          new Executor.Input(getClass(), "/com/google/caja/cajita.js"),
+          new Executor.Input(getClass(), "/com/google/caja/log-to-console.js"),
+          new Executor.Input(
               getClass(), "/com/google/caja/cajita-debugmode.js"),
-          new RhinoTestBed.Input(cajoledText, getName()));
+          new Executor.Input(cajoledText, getName()));
       assertEquals(golden, actual);
     } catch (Exception ex) {
       System.err.println(render(cajoledModule));
