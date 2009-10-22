@@ -28,7 +28,7 @@ public final class BooleanLiteral extends Literal {
   public final boolean value;
 
   /** @param children unused.  This ctor is provided for reflection. */
-  @ReflectiveCtor  
+  @ReflectiveCtor
   public BooleanLiteral(
       FilePosition pos, Boolean value, List<? extends ParseTreeNode> children) {
     this(pos, value);
@@ -48,4 +48,6 @@ public final class BooleanLiteral extends Literal {
   public boolean getValueInBooleanContext() {
     return value;
   }
+
+  public String typeOf() { return "boolean"; }
 }

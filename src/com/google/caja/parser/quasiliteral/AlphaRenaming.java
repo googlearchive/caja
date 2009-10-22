@@ -197,12 +197,10 @@ public final class AlphaRenaming {
     } else if (n instanceof Reference) {
       String name = ((Reference) n).getIdentifierName();
       if (isOuter(name, s)) { outers.add(name); }
-    } else if (n instanceof Operation) {
+    } else if (Operation.is(n, Operator.MEMBER_ACCESS)) {
       Operation op = (Operation) n;
-      if (op.getOperator() == Operator.MEMBER_ACCESS) {
-        checkScope(op.children().get(0), s, outers);
-        return;
-      }
+      checkScope(op.children().get(0), s, outers);
+      return;
     }
     for (ParseTreeNode child : n.children()) {
       checkScope(child, childScope, outers);

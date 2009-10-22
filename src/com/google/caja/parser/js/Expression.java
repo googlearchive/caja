@@ -37,4 +37,23 @@ public interface Expression extends MutableParseTreeNode {
    * an exception, then it may return any result.
    */
   Boolean conditionResult();
+
+  /**
+   * {@code null} or the result of applying the {@code typeof} operator to
+   * the result of this expression.
+   *
+   * @return if the expression yields a result with the same {@code typeof}
+   *     in all environments in which it returns normally, then returns the
+   *     result of applying the {@code typeof} operator to the result.
+   *     {@code null} if the type cannot be determined.
+   *     This method is conservative, so it may return null where it is possible
+   *     to prove a bound.
+   */
+  String typeOf();
+
+  /**
+   * This expression or a semantically equivalent simpler expression.
+   * This method does not recurse.
+   */
+  Expression fold();
 }

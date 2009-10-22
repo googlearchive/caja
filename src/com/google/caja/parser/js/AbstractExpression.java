@@ -46,4 +46,6 @@ public abstract class AbstractExpression
   public Expression simplifyForSideEffect() { return this; }
 
   public Boolean conditionResult() { return null; }
+
+  public Expression fold() { return this; }
 }

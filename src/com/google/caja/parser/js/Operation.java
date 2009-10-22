@@ -39,6 +39,10 @@ public abstract class Operation extends AbstractExpression {
     createMutation().appendChildren(params).execute();
   }
 
+  public static boolean is(ParseTreeNode n, Operator op) {
+    return n instanceof Operation && op == ((Operation) n).getOperator();
+  }
+
   @Override
   public List<? extends Expression> children() {
     return childrenAs(Expression.class);
@@ -100,9 +104,15 @@ public abstract class Operation extends AbstractExpression {
         Expression sb = operands.get(1).simplifyForSideEffect();
         return sb == null ? sa : sa == null ? sb : this;
       }
-      case VOID:
+      case TERNARY:
         operands = children();
-        return operands.get(0).simplifyForSideEffect();
+        if (operands.get(1).simplifyForSideEffect() == null
+            && operands.get(2).simplifyForSideEffect() == null) {
+          return operands.get(0).simplifyForSideEffect();
+        }
+        return this;
+      case NOT: case TYPEOF: return children().get(0).simplifyForSideEffect();
+      case VOID: return children().get(0).simplifyForSideEffect();
       default: break;
     }
     return this;
@@ -118,9 +128,7 @@ public abstract class Operation extends AbstractExpression {
       case CONSTRUCTOR:
         return true;
       case FUNCTION_CALL:
-        return (operands.get(0) instanceof Operation
-                && Operator.CONSTRUCTOR == operands.get(0).getValue())
-            ? true : null;
+        return is(operands.get(0), Operator.CONSTRUCTOR) ? true : null;
       case LOGICAL_AND:
         opResult = operands.get(0).conditionResult();
         if (opResult != null) {
@@ -336,7 +344,7 @@ public abstract class Operation extends AbstractExpression {
         // By inspection of the grammar, a slash after a function call
         // or a member access is a division op, so no chance of
         // lexical ambiguity here.  These are also common enough that
-        // unecessarily parenthesizing them things less readable.
+        // unnecessarily parenthesizing them things less readable.
         if (childOp != Operator.FUNCTION_CALL
             && childOp != Operator.MEMBER_ACCESS) {
           return true;
@@ -389,5 +397,234 @@ public abstract class Operation extends AbstractExpression {
   private static int maxArity(Operator op) {
     if (op == Operator.FUNCTION_CALL) { return Integer.MAX_VALUE; }
     return op.getType().getArity();
+  }
+
+  public String typeOf() {
+    List<? extends Expression> operands = children();
+    switch (getOperator()) {
+      case PRE_INCREMENT: case PRE_DECREMENT: case TO_NUMBER: case NEGATION:
+      case INVERSE: case MULTIPLICATION: case DIVISION: case MODULUS:
+      case SUBTRACTION: case LSHIFT: case RSHIFT: case RUSHIFT:
+      case BITWISE_AND: case BITWISE_OR: case BITWISE_XOR:
+      case ASSIGN_MUL: case ASSIGN_DIV: case ASSIGN_MOD: case ASSIGN_SUB:
+      case ASSIGN_LSH: case ASSIGN_RSH: case ASSIGN_USH: case ASSIGN_AND:
+      case ASSIGN_XOR: case ASSIGN_OR:
+        return "number";
+      case DELETE: case IN: case NOT: case LESS_THAN: case GREATER_THAN:
+      case LESS_EQUALS: case GREATER_EQUALS: case INSTANCE_OF: case EQUAL:
+      case NOT_EQUAL: case STRICTLY_EQUAL: case STRICTLY_NOT_EQUAL:
+        return "boolean";
+      case VOID: return "undefined";
+      case LOGICAL_OR: case LOGICAL_AND: case TERNARY: {
+        String t1 = operands.get(operands.size() - 2).typeOf();
+        String t2 = operands.get(operands.size() - 1).typeOf();
+        return (t1 != null && t1.equals(t2)) ? t1 : null;
+      }
+      case ADDITION: {
+        String t1 = operands.get(operands.size() - 2).typeOf();
+        String t2 = operands.get(operands.size() - 1).typeOf();
+        if ("string".equals(t1) || "string".equals(t2)) { return "string"; }
+        if ("number".equals(t1) && "number".equals(t2)) { return "number"; }
+        return null;
+      }
+      case TYPEOF: return "string";  // Trippy
+      case COMMA:
+        return operands.get(1).typeOf();
+      default: return null;
+    }
+  }
+
+  @Override
+  public Expression fold() {
+    if (getOperator() == Operator.FUNCTION_CALL) { return foldCall(); }
+    switch (children().size()) {
+      case 1: return foldUnaryOp();
+      case 2: return foldBinaryOp();
+      case 3: return foldTernaryOp();
+      default: return this;
+    }
+  }
+
+  private Expression foldUnaryOp() {
+    Expression operand = children().get(0);
+    switch (op) {
+      case NOT:
+        Boolean b = operand.conditionResult();
+        if (b != null && operand.simplifyForSideEffect() == null) {
+          return new BooleanLiteral(getFilePosition(), !b);
+        }
+        return this;
+      case TYPEOF:
+        String type = operand.typeOf();
+        if (type != null && operand.simplifyForSideEffect() == null) {
+          return StringLiteral.valueOf(getFilePosition(), type);
+        }
+        return this;
+      default:
+        break;
+    }
+    Object v = toLiteralValue(operand);
+    if (v != null) {
+      FilePosition pos = getFilePosition();
+      switch (getOperator()) {
+        case NEGATION:
+          if (v instanceof Number) {
+            if (operand instanceof IntegerLiteral) {
+              long n = ((IntegerLiteral) operand).getValue().longValue();
+              if (n != Long.MIN_VALUE) {
+                return new IntegerLiteral(pos, -n);
+              }
+            }
+            return new RealLiteral(pos, -((Number) v).doubleValue());
+          }
+          break;
+        case INVERSE:
+          if (v instanceof Number) {
+            return new IntegerLiteral(pos, ~((Number) v).longValue());
+          }
+          break;
+        case TO_NUMBER:
+          if (v instanceof Number) { return children().get(0); }
+          break;
+        default: break;
+      }
+    }
+    return this;
+  }
+
+  private Expression foldTernaryOp() {
+    if (getOperator() == Operator.TERNARY) {
+      Expression cond = children().get(0);
+      Boolean condResult = cond.conditionResult();
+      if (condResult != null && cond.simplifyForSideEffect() == null) {
+        return children().get(condResult ? 1 : 2);
+      }
+    }
+    return this;
+  }
+
+  private Expression foldBinaryOp() {
+    List<? extends Expression> operands = children();
+    Expression left = operands.get(0), right = operands.get(1);
+    Operator op = getOperator();
+    if (op == Operator.LOGICAL_AND || op == Operator.LOGICAL_OR) {
+      Boolean bv = left.conditionResult();
+      if (bv != null) {
+        Expression sideEffect = left.simplifyForSideEffect();
+        if (bv == (op == Operator.LOGICAL_AND)) {
+          return sideEffect == null
+              ? right
+              : Operation.createInfix(Operator.COMMA, sideEffect, right);
+        } else {
+          return left;
+        }
+      }
+    } else if (op == Operator.MEMBER_ACCESS) {
+      if (left instanceof StringLiteral) {
+        Reference r = (Reference) right;
+        if ("length".equals(r.getIdentifierName())) {
+          return new IntegerLiteral(
+              getFilePosition(),
+              ((StringLiteral) left).getUnquotedValue().length());
+        }
+      }
+    }
+    Object lhs = toLiteralValue(left);
+    Object rhs = toLiteralValue(right);
+    if (lhs != null && rhs != null) {
+      FilePosition pos = getFilePosition();
+      switch (op) {
+        case EQUAL: case STRICTLY_EQUAL:
+        case NOT_EQUAL: case STRICTLY_NOT_EQUAL:
+          boolean isStrict =  op == Operator.STRICTLY_EQUAL
+              || op == Operator.STRICTLY_NOT_EQUAL;
+          boolean isEqual = op == Operator.EQUAL
+              || op == Operator.STRICTLY_EQUAL;
+          boolean areEqual = lhs.equals(rhs);
+          if (isStrict || areEqual
+              || lhs.getClass().equals(rhs.getClass())) {
+            return new BooleanLiteral(pos, areEqual == isEqual);
+          }
+          break;
+        case ADDITION:
+          if ((lhs instanceof String) || (rhs instanceof String)) {
+            if (lhs instanceof Number) {
+              lhs = NumberLiteral.numberToString(
+                  ((Number) lhs).doubleValue());
+            } else if (rhs instanceof Number) {
+              rhs = NumberLiteral.numberToString(
+                  ((Number) rhs).doubleValue());
+            }
+            return StringLiteral.valueOf(pos, "" + lhs + rhs);
+          }
+          break;
+        default: break;
+      }
+      if (lhs instanceof Number && rhs instanceof Number) {
+        double a = ((Number) lhs).doubleValue();
+        double b = ((Number) rhs).doubleValue();
+        double result = Double.NaN;
+        switch (op) {
+          case ADDITION: result = a + b; break;
+          case SUBTRACTION: result = a - b; break;
+          case MULTIPLICATION: result = a * b; break;
+          case DIVISION: result = a / b; break;
+          case MODULUS: result = Math.IEEEremainder(a, b); break;
+          default: break;
+        }
+        if (!Double.isNaN(result)) {
+          return new RealLiteral(pos, result);
+        }
+      }
+    }
+    return this;
+  }
+
+  /**
+   * Fold some common string operations like indexOf which show up frequently
+   * in userAgent testing code.  This helps when we've inlined the value of
+   * navigator.userAgent.
+   */
+  private Expression foldCall() {
+    List<? extends Expression> operands = children();
+    Expression fn = operands.get(0);
+    if (is(fn, Operator.MEMBER_ACCESS)
+        && fn.children().get(0) instanceof StringLiteral) {
+      StringLiteral sl = (StringLiteral) fn.children().get(0);
+      String methodName = ((Reference) fn.children().get(1))
+          .getIdentifierName();
+      if ("indexOf".equals(methodName)) {
+        if (operands.size() == 2) {
+          Expression target = operands.get(1);
+          if (target instanceof StringLiteral) {
+            int index = sl.getUnquotedValue().indexOf(
+                ((StringLiteral) target).getUnquotedValue());
+            return new IntegerLiteral(getFilePosition(), index);
+          }
+        }
+      }
+    }
+    return this;
+  }
+
+  private static final Object UNDEFINED = new Object() {
+    @Override public String toString() { return "undefined"; }
+  };
+  private static Object toLiteralValue(Expression e) {
+    if (is(e, Operator.VOID) && e.simplifyForSideEffect() == null) {
+      return UNDEFINED;
+    }
+    if (e instanceof Literal) {
+      if (e instanceof StringLiteral) {
+        return ((StringLiteral) e).getUnquotedValue();
+      }
+      if (e instanceof NumberLiteral) {
+        return ((NumberLiteral) e).doubleValue();
+      }
+      if (e instanceof BooleanLiteral || e instanceof NullLiteral) {
+        return e.getValue();
+      }
+    }
+    return null;
   }
 }

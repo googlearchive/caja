@@ -108,4 +108,6 @@ public final class FunctionConstructor
     out.consume(")");
     body.renderBlock(rc, false);
   }
+
+  public String typeOf() { return "function"; }
 }

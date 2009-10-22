@@ -60,7 +60,7 @@ public final class RealLiteral extends NumberLiteral {
       out.consume(")");
     } else if (Double.isInfinite(value)) {
       out.consume("(");
-      if (value >= 0) { out.consume("-"); }
+      if (value < 0) { out.consume("-"); }
       out.consume("1");
       out.consume("/");
       out.consume("0");

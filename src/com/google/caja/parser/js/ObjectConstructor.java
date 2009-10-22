@@ -122,8 +122,7 @@ public final class ObjectConstructor extends AbstractExpression {
       }
       key.render(rc);
       out.consume(":");
-      if (!(value instanceof Operation
-            && Operator.COMMA == ((Operation) value).getOperator())) {
+      if (!Operation.is(value, Operator.COMMA)) {
         value.render(rc);
       } else {
         out.mark(value.getFilePosition());
@@ -135,4 +134,6 @@ public final class ObjectConstructor extends AbstractExpression {
     out.mark(FilePosition.endOfOrNull(getFilePosition()));
     out.consume("}");
   }
+
+  public String typeOf() { return "object"; }
 }

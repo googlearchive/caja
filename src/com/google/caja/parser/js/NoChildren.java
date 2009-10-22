@@ -28,4 +28,5 @@ public final class NoChildren extends AbstractExpression {
   @Override
   public Object getValue() { throw new AssertionError(); }
   public void render(RenderContext rc) { throw new AssertionError(); }
+  public String typeOf() { throw new AssertionError(); }
 }

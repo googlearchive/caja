@@ -46,7 +46,7 @@ import java.util.Set;
  *
  * <p>
  * The grammar below is a context-free representation of the grammar this
- * parser parses.  It disagrees with EcmaScript 262 Edition 3 (ES3) where 
+ * parser parses.  It disagrees with EcmaScript 262 Edition 3 (ES3) where
  * implementations disagree with ES3.  The rules for semicolon insertion and
  * the possible backtracking in expressions needed to properly handle
  * backtracking are commented thoroughly in code, since semicolon insertion
@@ -1418,6 +1418,8 @@ public final class Parser extends ParserBase {
     public void render(RenderContext rc) {
       throw new UnsupportedOperationException();
     }
+
+    public String typeOf() { return null; }
   }
 
   private static void issueLintWarningsForProblematicEscapes(

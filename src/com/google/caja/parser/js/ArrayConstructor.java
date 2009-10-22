@@ -61,8 +61,7 @@ public final class ArrayConstructor extends AbstractExpression {
         out.consume(",");
       }
       last = e;
-      if (!(e instanceof Operation
-            && Operator.COMMA == ((Operation) e).getOperator())) {
+      if (!Operation.is(e, Operator.COMMA)) {
         e.render(rc);
       } else {
         out.consume("(");
@@ -73,4 +72,6 @@ public final class ArrayConstructor extends AbstractExpression {
     out.mark(FilePosition.endOfOrNull(pos));
     out.consume("]");
   }
+
+  public String typeOf() { return "object"; }
 }

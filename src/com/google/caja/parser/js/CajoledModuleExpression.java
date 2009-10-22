@@ -58,10 +58,12 @@ public class CajoledModuleExpression extends AbstractExpression {
 
   public void render(RenderContext r) {
     ObjectConstructor oc = getCajoledModule().getModuleBody();
-    
+
     Expression e = (Expression) QuasiBuilder.substV(
-        "___.prepareModule(@module);",
+        "___.prepareModule(@module)",
         "module", oc);
     e.render(r);
   }
+
+  public String typeOf() { return null; }
 }

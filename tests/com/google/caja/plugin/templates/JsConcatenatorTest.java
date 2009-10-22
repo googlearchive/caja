@@ -106,7 +106,7 @@ public class JsConcatenatorTest extends CajaTestCase {
     JsConcatenator concat = new JsConcatenator();
     for (String part : parts) {
       Expression e = jsExpr(fromString(part));
-      if (e instanceof Operation && Operator.VOID == e.getValue()) {
+      if (Operation.is(e, Operator.VOID)) {
         concat.forSideEffect(((Operation) e).children().get(0));
       } else {
         concat.append(e);

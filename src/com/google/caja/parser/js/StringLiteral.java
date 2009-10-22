@@ -164,4 +164,6 @@ public final class StringLiteral extends Literal {
     m.appendTail(sb);
     return sb.toString();
   }
+
+  public String typeOf() { return "string"; }
 }

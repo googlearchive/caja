@@ -78,4 +78,6 @@ public final class Reference extends AbstractExpression {
     }
     ident.render(rc);
   }
+
+  public String typeOf() { return null; }
 }

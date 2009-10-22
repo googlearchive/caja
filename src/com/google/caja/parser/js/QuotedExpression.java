@@ -55,4 +55,6 @@ public final class QuotedExpression extends AbstractExpression {
   }
 
   public Expression unquote() { return (Expression) children().get(0); }
+
+  public String typeOf() { return null; }
 }

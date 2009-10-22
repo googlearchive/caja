@@ -179,4 +179,6 @@ public abstract class NumberLiteral extends Literal {
           + ((n - 1) < 0 ? "e-" : "e+") + Math.abs(n - 1);
     }
   }
+
+  public String typeOf() { return "number"; }
 }

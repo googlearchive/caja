@@ -96,11 +96,10 @@ public class Declaration extends AbstractStatement {
     identifier.render(rc);
     if (null != initializer) {
       out.consume("=");
-      boolean isComma = initializer instanceof Operation
-          && Operator.COMMA == ((Operation) initializer).getOperator();
-      if (isComma) out.consume("(");
+      boolean isComma = Operation.is(initializer, Operator.COMMA);
+      if (isComma) { out.consume("("); }
       initializer.render(rc);
-      if (isComma) out.consume(")");
+      if (isComma) { out.consume(")"); }
     }
   }
 }

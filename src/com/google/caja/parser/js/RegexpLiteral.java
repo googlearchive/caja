@@ -163,4 +163,7 @@ public final class RegexpLiteral extends Literal {
     }
     return true;
   }
+
+  // "function" on some interpreters, "object" on others.
+  public String typeOf() { return null; }
 }

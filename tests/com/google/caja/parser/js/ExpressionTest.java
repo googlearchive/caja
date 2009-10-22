@@ -106,6 +106,93 @@ public class ExpressionTest extends CajaTestCase {
     assertSimplified("x + y", "x + y");  // coercion might be side-effecting
   }
 
+  public final void testTypeOf() throws Exception {
+    assertTypeOf("boolean", "true");
+    assertTypeOf("boolean", "false");
+    assertTypeOf("number", "0");
+    assertTypeOf("number", "1");
+    assertTypeOf("number", "-1.5");
+    assertTypeOf("number", "6.02e+23");
+    assertTypeOf("string", "''");
+    assertTypeOf("string", "'foo'");
+    assertTypeOf("object", "null");
+    assertTypeOf("object", "{}");
+    assertTypeOf("function", "function () {}");
+    assertTypeOf("boolean", "!x");
+    assertTypeOf("boolean", "!x || !y");
+    assertTypeOf(null, "!x || y");
+    assertTypeOf(null, "x || !y");
+    assertTypeOf("number", "+x");
+    assertTypeOf("number", "-x");
+    assertTypeOf("number", "x - y");
+    assertTypeOf(null, "y++");  // See browser-expectations.html
+    assertTypeOf(null, "z--");
+    assertTypeOf("number", "++y");
+    assertTypeOf("number", "--z");
+    assertTypeOf(null, "a + b");
+    assertTypeOf("number", "+a + 1");
+    assertTypeOf("string", "'' + b");
+    assertTypeOf("number", "'4' - 1");
+    assertTypeOf("string", "foo() ? 'bar' : 'baz'");
+    assertTypeOf(null, "foo() ? 'bar' : null");
+    assertTypeOf(null, "foo() ? bar : 'baz'");
+    assertTypeOf("string", "'bar' && ('' + baz)");
+    assertTypeOf(null, "'bar' && null");
+    assertTypeOf(null, "bar && 'baz'");
+    assertTypeOf("boolean", "foo(), !x");
+    assertTypeOf(null, "'' + foo(), x");
+    assertTypeOf(null, "/./");
+  }
+
+  public final void testFold() throws Exception {
+    assertFolded("4.0", "1 + 3");
+    assertFolded("'13'", "1 + '3'");
+    assertFolded("'13'", "'1' + 3");
+    assertFolded("'13'", "'1' + '3'");
+    assertFolded("'-1.5'", "'' + -1.5");
+    assertFolded("'undefined'", "'' + void 0");
+    assertFolded("'null'", "null + ''");
+    assertFolded("null + 0", "null + 0");  // 0 in JS
+    assertFolded("-2.0", "1 - 3");
+    assertFolded("4.0", "2 * 2");
+    assertFolded("true", "!''");
+    assertFolded("true", "!0");
+    assertFolded("false", "!'0'");
+    assertFolded("true", "!null");
+    assertFolded("true", "!(void 0)");
+    assertFolded("! (void foo())", "!(void foo())");
+    assertFolded("false", "!(4,true)");
+    assertFolded("! (foo() || true)", "!(foo()||true)");
+    assertFolded("true", "'foo' == 'foo'");
+    assertFolded("true", "'foo' === 'foo'");
+    assertFolded("false", "'foo' == 'bar'");
+    assertFolded("false", "'foo' === 'bar'");
+    assertFolded("false", "4 === '4'");
+    assertFolded("4 == '4'", "4 == '4'");
+    assertFolded("false", "'foo' != 'foo'");
+    assertFolded("false", "'foo' !== 'foo'");
+    assertFolded("true", "'foo' != 'bar'");
+    assertFolded("true", "'foo' !== 'bar'");
+    assertFolded("true", "4 !== '4'");
+    assertFolded("4 != '4'", "4 != '4'");
+    assertFolded("0.5", "1 / 2");
+    assertFolded("1 / '2'", "1 / '2'");
+    assertFolded("(1/0)", "1 / 0");
+    assertFolded("(-1/0)", "-1 / 0");
+    assertFolded("0 / 0", "0 / 0");
+    assertFolded("1.0", "1 % 3");
+    assertFolded("1.0", "1 % -3");
+    assertFolded("-1.0", "-1 % 3");
+    assertFolded("-1.0", "-1 % -3");
+    assertFolded("4.0", "4.0");
+    assertFolded("4.0", "+4.0");
+    assertFolded("-1", "~0");
+    assertFolded("-1", "-1");
+    assertFolded("3", "'foo'.length");
+    assertFolded("1", "'foo'.indexOf('o')");
+    assertFolded("-1", "'foo'.indexOf('bar')");
+  }
+
   private void assertSimplified(String golden, String input)
       throws ParseException {
     Expression simple = jsExpr(fromString(input)).simplifyForSideEffect();
@@ -114,5 +201,25 @@ public class ExpressionTest extends CajaTestCase {
       return;
     }
     assertEquals(input, render(jsExpr(fromString(golden))), render(simple));
+  }
+
+  private void assertTypeOf(String type, String expr) throws ParseException {
+    assertEquals(type, jsExpr(fromString(expr)).typeOf());
+  }
+
+  private void assertFolded(String result, String expr) throws ParseException {
+    Expression input = jsExpr(fromString(expr));
+      // Fold operands so we can test negative numbers.
+      if (input instanceof Operation) {
+        Operation op = (Operation) input;
+        for (Expression operand : op.children()) {
+          if (Operation.is(operand, Operator.NEGATION)
+              && operand.children().get(0) instanceof NumberLiteral) {
+            op.replaceChild(operand.fold(), operand);
+          }
+        }
+      }
+    Expression actual = input.fold();
+    assertEquals(result, actual != null ? render(actual) : null);
   }
 }

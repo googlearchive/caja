@@ -60,4 +60,6 @@ public final class NullLiteral extends Literal {
   public boolean getValueInBooleanContext() {
     return false;
   }
+
+  public String typeOf() { return "object"; }
 }
