@@ -50,6 +50,18 @@ public class HtmlQuasiBuilderTest extends TestCase {
             "title", "My title",
             "text", "<Hello>")));
     assertEquals(
+        "<b title=\"My title\">&lt;Hello&gt;</b>",
+        Nodes.render(hb.substV(
+            "<b title=\"@title\">@text</b>",
+            "title", "My title",
+            "text", "<Hello>")));
+    assertEquals(
+        "<b title=\"My title\">&lt;Hello&gt;</b>",
+        Nodes.render(hb.substV(
+            "<b title='@title'>@text</b>",
+            "title", "My title",
+            "text", "<Hello>")));
+    assertEquals(
         "<b title=\"My title\">Hello <i>World</i></b>",
         Nodes.render(hb.substV(
             "<b title=@title>@a  @b</b>",

@@ -28,6 +28,7 @@ public enum MessageType implements MessageTypeInt {
 
   INTERNAL_ERROR("Internal error: %s", MessageLevel.FATAL_ERROR),
   IO_ERROR("I/O Error: %s", MessageLevel.FATAL_ERROR),
+  NO_SUCH_FILE("%s: could not read input", MessageLevel.FATAL_ERROR),
 
   // lexing messages
   UNTERMINATED_STRING_TOKEN("%s: Unclosed string", MessageLevel.FATAL_ERROR),

@@ -284,21 +284,22 @@ public class CajitaRewriter extends Rewriter {
           reason="So that the module loader can be invoked to load a module.",
           matches="<an UncajoledModule>",
           substitutes=(
-              "      (/*@synthetic*/{"
-              + "      instantiate: /*@synthetic*/function (___, IMPORTS___) {"
-              + "        var moduleResult___ = ___.NO_RESULT;"
-              + "        @rewrittenModuleStmts*;"
-              + "        return moduleResult___;"
-              + "      },"
-              + "      includedModules: @moduleNames,"
-              + "      cajolerName: @cajolerName,"
-              + "      cajolerVersion: @cajolerVersion,"
-              + "      cajoledDate: @cajoledDate"
-              /*       TODO(ihab.awad): originalSource */
-              /*       TODO(ihab.awad): sourceLocationMap */
-              /*       TODO(ihab.awad): imports */
-              /*       TODO(ihab.awad): manifest */
-              + "    })"))
+              ""
+              + "(/*@synthetic*/{"
+              + "  instantiate: /*@synthetic*/function (___, IMPORTS___) {"
+              + "    var moduleResult___ = ___.NO_RESULT;"
+              + "    @rewrittenModuleStmts*;"
+              + "    return moduleResult___;"
+              + "  },"
+              + "  includedModules: @moduleNames,"
+              + "  cajolerName: @cajolerName,"
+              + "  cajolerVersion: @cajolerVersion,"
+              + "  cajoledDate: @cajoledDate"
+              // TODO(ihab.awad): originalSource
+              // TODO(ihab.awad): sourceLocationMap
+              // TODO(ihab.awad): imports
+              // TODO(ihab.awad): manifest
+              + "})"))
       public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
         if (node instanceof UncajoledModule) {
           Block inputModuleStmts = ((UncajoledModule) node).getModuleBody();
@@ -2266,9 +2267,6 @@ public class CajitaRewriter extends Rewriter {
     }
   };
 
-  /**
-   * Creates a Cajita rewriter
-   */
   public CajitaRewriter(
       BuildInfo buildInfo, ModuleManager moduleManager, MessageQueue mq,
       boolean logging) {

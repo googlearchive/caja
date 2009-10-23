@@ -27,7 +27,7 @@
                computedStyle = document.defaultView.getComputedStyle(link, null);
                try {computedColor = computedStyle.getPropertyValue('color');} catch(e){}
           } else {
-          	computedColor = link.currentStyle && link.currentStyle['color'];
+            computedColor = link.currentStyle && link.currentStyle['color'];
           }
           document.getElementById("googlesniff-result").innerHTML = computedColor == '#000000' || computedColor == 'rgb(0, 0, 0)' ? "Yes!" : "Unknown";
         </script>

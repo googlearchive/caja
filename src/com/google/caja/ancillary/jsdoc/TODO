@@ -1,0 +1,20 @@
+- Get rid of use of __proto__ so that we can turn off __proto__
+  widginess in rhino
+- Make object graph walking breadth-first
+- Update package.html
+- Linking to source code.
+- Prettify code segments.
+- Link to javadoc
+- Walk over tree after rewriting to find unconsumed doc comments.
+- Remove exception handling in resolvePromises and make linkTo safe.
+- Test results in rendered documentation.
+
+Testcase
+(function () {
+  /** @see foo */
+  function bar() {}
+
+  function foo() {} // not exported
+
+  this.bar = bar;
+}();

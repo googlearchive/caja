@@ -158,7 +158,7 @@ var html = (function () {
    * $ escapeAttrib('')
    * # ''
    * $ escapeAttrib('"<<&==&>>"')  // Do not just escape the first occurrence.
-   * # '&quot;&lt;&lt;&amp;&#61;&#61;&amp;&gt;&gt;&quot;'
+   * # '&#34;&lt;&lt;&amp;&#61;&#61;&amp;&gt;&gt;&#34;'
    * $ escapeAttrib('Hello <World>!')
    * # 'Hello &lt;World&gt;!'
    * }

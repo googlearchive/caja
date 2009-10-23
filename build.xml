@@ -26,7 +26,8 @@
   -   benchmarks :  runs the benchmarks
   -   clean      :  wipes generated files
   -   demos      :  demo files
-  -   docs       :  javadoc
+  -   docs       :  javadoc, jsdocs, and rule docs
+  -   jars       :  build the binary distribution
   -   jars       :  build the binary distribution
   -   pluginc    :  the plugin compiler
   -   runtests   :  runs the tests
@@ -103,6 +104,10 @@
   <path id="classpath.ant">
     <pathelement path="${ant.home}/lib/ant.jar"/>
   </path>
+  <path id="classpath.tools">
+    <path refid="classpath.ant"/>
+    <pathelement path="${third_party}/java/rhino/js.jar"/>
+  </path>
   <path id="classpath.javadocs">
     <path refid="classpath.compile"/>
     <path refid="classpath.ant"/>
@@ -149,7 +154,7 @@
       <not><matches pattern="1[.][5-9].*" string="${java.version}" /></not>
     </condition>
     <fail if="earlier-than-java-1.5" 
-	message="Require Java 1.5, not Java ${java.version} from ${java.home}" />
+     message="Require Java 1.5, not Java ${java.version} from ${java.home}" />
   </target>
 
   <target name="runtests" depends="AllTests"
@@ -189,6 +194,13 @@
       <sysproperty key="user.region" value="TR"/>
       <sysproperty key="test.filter" value="${test.filter}"/>
       <test name="com.google.caja.AllTests" if="emma.enabled"/>
+      <permissions>
+        <!-- Do not allow tests to reach outside the build directory -->
+        <revoke class="java.io.FilePermission" name="&lt;&lt;ALL FILES&gt;&gt;"
+         actions="read,write,execute,delete"/>
+        <grant class="java.io.FilePermission" name="${builddir}/~"
+         actions="read,execute"/>
+      </permissions>
     </junit>
     <summarize errorProperty="runtests.error"
      failureProperty="runtests.failure">
@@ -222,8 +234,7 @@
   </target>
 
   <target name="docs" description="Builds all Caja documentation."
-   depends="javadocs,ruledocs">
-  </target>
+   depends="javadocs,ruledocs,jsdocs"/>
 
   <target name="javadocs" description="Builds javadoc documentation.">
     <mkdir dir="${javadocs}"/>
@@ -237,6 +248,32 @@
      classpathref="classpath.javadocs"
      linksource="yes"/>
      <!-- overview="${src}/overview.html" -->
+  </target>
+
+  <target name="jsdocs" description="Javascript documentation." depends="tools">
+    <mkdir dir="${docs}/js"/>
+    <copy todir="${lib}">
+      <fileset dir="${src}">
+        <include name="com/google/caja/ancillary/jsdoc/*.js"/>
+        <include name="com/google/caja/ancillary/jsdoc/jsdoc.css"/>
+        <include name="com/google/caja/ancillary/jsdoc/jsdoc_index.html"/>
+      </fileset>
+    </copy>
+    <genrule class="com.google.caja.ancillary.jsdoc.JsdocMain$Builder">
+      <output file="${docs}/js/"/>
+      <include file="${src}/com/google/caja/cajita.js"/>
+      <include file="${src}/com/google/caja/valija-cajita.js"/>
+      <include file="${src}/com/google/caja/plugin/unicode.js"/>
+      <include file="${src}/com/google/caja/plugin/html-emitter.js"/>
+      <include file="${src}/com/google/caja/plugin/html-sanitizer.js"/>
+      <include file="${src}/com/google/caja/plugin/bridal.js"/>
+      <include file="${src}/com/google/caja/plugin/domita.js"/>
+      <depend file="${src}/com/google/caja/ancillary/jsdoc/jsdoc.js"/>
+      <depend
+       file="${src}/com/google/caja/ancillary/jsdoc/jsdoc_html_formatter.js"
+       />
+      <depend file="${src}/com/google/caja/ancillary/jsdoc/jsdoc_renderer.js"/>
+    </genrule>
   </target>
 
   <target name="ruledocs" description="Caja rule documentation."
@@ -258,6 +295,18 @@
       <compilerarg line="-Xlint:deprecation"/>
       <compilerarg line="-Xlint:unchecked"/>
     </javac>
+    <!-- Copy supporting javascript to lib -->
+    <copy todir="${lib}">
+      <fileset dir="${third_party}">
+        <include name="js/jqueryjs/runtest/env.js"/>
+      </fileset>
+      <fileset dir="${src}">
+        <include name="**/caja/ancillary/jsdoc/jsdoc.js"/>
+      </fileset>
+      <fileset dir="${tests}">
+        <include name="**/caja/plugin/console-stubs.js"/>
+      </fileset>
+    </copy>
     <taskdef name="transform" classname="com.google.caja.tools.TransformAntTask"
      classpathref="classpath.run"/>
     <taskdef name="innocent" classname="com.google.caja.tools.InnocentAntTask"
@@ -406,6 +455,9 @@
       </fileset>
       <fileset dir="${third_party}/java/xerces">
         <include name="xercesImpl.jar"/>
+      </fileset>
+      <fileset dir="${third_party}/java/rhino">
+        <include name="js.jar"/>
       </fileset>
     </copy>
     <jar destfile="${jars}/pluginc.jar">
@@ -559,6 +611,7 @@
       - that builds a symlink tree? -->
     <copy todir="${lib}">
       <fileset dir="${src}">
+        <include name="**/caja/ancillary/jsdoc/*.js"/>
         <include name="**/caja/cajita.js"/>
         <include name="**/caja/cajita-promise.js"/>
         <include name="**/caja/cajita-module.js"/>

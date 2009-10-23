@@ -266,7 +266,8 @@ public class HtmlQuasiBuilder {
     if (sb.length() != 0) {
       parts.appendChild(doc.createTextNode(Nodes.decode(sb.toString())));
     }
-    if (parts.getFirstChild().getNextSibling() == null) {
+    if (parts.getFirstChild() != null
+        && parts.getFirstChild().getNextSibling() == null) {
       return parts.getFirstChild();
     }
     return parts;
@@ -299,7 +300,7 @@ public class HtmlQuasiBuilder {
 
   private static String substAttrValue(
       String rawText, Map<String, ?> bindings) {
-    String unescaped = Nodes.decode(rawText);
+    String unescaped = Nodes.decode(dequote(rawText));
     Matcher m = QUASI_PATTERN.matcher(unescaped);
     if (!m.find()) { return unescaped; }
     StringBuilder sb = new StringBuilder();
