@@ -38,6 +38,11 @@ import java.util.Map;
 /**
  * The result of running the cajoler over some content.
  *
+ * <p>TODO(ihab.awad): This class relies on
+ * {@link com.google.caja.parser.quasiliteral.QuasiBuilder}
+ * which makes our dependencies messy. Refactor {@code QuasiBuilder} so that
+ * parser and parse tree node components can rely on it. 
+ *
  * @author ihab.awad@gmail.com
  */
 public final class CajoledModule extends AbstractParseTreeNode {
@@ -95,10 +100,65 @@ public final class CajoledModule extends AbstractParseTreeNode {
     return new JsPrettyPrinter(new Concatenator(out, exHandler));
   }
 
+  /**
+   * Render the cajoled module in default form. The result is text representing
+   * a block containing a statement that calls the new module handler as defined
+   * using {@code cajita.js}. The result looks like:
+   *
+   * <p><pre>
+   * {
+   *   ___.loadModule({
+   *     <em>contents of module object literal</em>
+   *   });
+   * }
+   * </pre>
+   *
+   * @param rc a {@code RenderContext}.
+   */
   public void render(RenderContext rc) {
-    Expression expr = (Expression) QuasiBuilder.substV(
-        "___.loadModule(@body)",
-        "body", getModuleBody());
+    renderModuleExpression(
+        (Expression) QuasiBuilder.substV(
+            "___.loadModule(@body)",
+            "body", getModuleBody()),
+        rc);
+  }
+
+  /**
+   * Render the cajoled module with a custom callback expression. This is used
+   * when the receiving JavaScript runtime wishes to use a different scheme for
+   * handling new modules (for example, to implement a cajoling Web service
+   * using a JSONP-style protocol for returning content to the client). The
+   * result looks like:
+   *
+   * <p><pre>
+   * {
+   *   <em>callbackExpression</em>(___.prepareModule({
+   *     <em>contents of module object literal</em>
+   *   }));
+   * }
+   * </pre>
+   *
+   * @param callbackExpression an {@code Expression} that will be called, in the
+   *     rendered output, as a single-argument function passing the module
+   *     object. If this argument is {@code null}, the behavior of this method
+   *     is the same as {@link #render(RenderContext)}.
+   * @param rc a {@code RenderContext}.
+   */
+  public void render(Expression callbackExpression,
+                     RenderContext rc) {
+    if (callbackExpression == null) {
+      render(rc);
+    } else {
+      renderModuleExpression(
+          (Expression) QuasiBuilder.substV(
+              "@callbackExpression(___.prepareModule(@body))",
+              "callbackExpression", callbackExpression,
+              "body", getModuleBody()),
+          rc);
+    }
+  }
+
+  private void renderModuleExpression(Expression expr, RenderContext rc) {
     // Note that we deliberately add an enclosing block. See:
     // http://code.google.com/p/google-caja/issues/detail?id=1000
     Block block = new Block(
@@ -107,7 +167,74 @@ public final class CajoledModule extends AbstractParseTreeNode {
     block.render(rc);
   }
 
+  /**
+   * Render this {@code CajoledModule} with debugging information.
+   *
+   * <p>The Caja compiler keeps track of the originating {@code InputSource} of
+   * each piece of compiled material. This method can therefore use the
+   * {@code originalSources} argument to embed, in the rendered output, snippets
+   * of the original source linked to the compiled code. This in turn allows a
+   * compatible debugger to provide debugging based on the original source.
+   *
+   * <p>See description of the <a
+   * href="http://google-caja.googlecode.com/svn/trunk/doc/html/compiledModuleFormat/index.html">compiled
+   * module format</a>.
+   *
+   * @param originalSources a map from {@code InputSource}s to the literal text
+   *     of the code found in each {@code InputSource}. This map is expected to
+   *     contain an entry for each of the original {@code InputSource}s from
+   *     which this {@code CajoledModule} was compiled.
+   * @param out an {@code Appendable} to which rendered text will be written.
+   * @param exHandler a handler for {@code IOException}s encountered during
+   *     rendering. This handler may absorb the exceptions to allow rendering
+   *     to continue, or rethrow them as {@code RuntimeException}s to halt
+   *     the rendering. In the latter case, the {@code RuntimeException}s
+   *     thrown by the handler will escape from this method. 
+   */
   public void renderWithDebugSymbols(
+      Map<InputSource, CharSequence> originalSources,
+      Appendable out, Callback<IOException> exHandler) {
+    HandledAppendable hout = new HandledAppendable(exHandler, out);
+
+    // Note that we deliberately add an enclosing block. See:
+    // http://code.google.com/p/google-caja/issues/detail?id=1000
+    hout.append("{ ___.loadModule({\n");
+
+    renderModuleBodyWithDebugSymbols(originalSources, out, exHandler);
+
+    hout.append("}); }\n");
+  }
+
+  /**
+   * Render with debugging symbols, specifying a callback expression.
+   * 
+   * @param callbackExpression see
+   *     {@link #render(Expression, RenderContext)}.
+   * @param originalSources see
+   *     {@link #renderWithDebugSymbols(Map, Appendable, Callback)}.
+   * @param out see
+   *     {@link #renderWithDebugSymbols(Map, Appendable, Callback)}.
+   * @param exHandler see
+   *     {@link #renderWithDebugSymbols(Map, Appendable, Callback)}.
+   */
+  public void renderWithDebugSymbols(
+      Expression callbackExpression,
+      Map<InputSource, CharSequence> originalSources,
+      Appendable out, Callback<IOException> exHandler) {
+    HandledAppendable hout = new HandledAppendable(exHandler, out);
+
+    // Note that we deliberately add an enclosing block. See:
+    // http://code.google.com/p/google-caja/issues/detail?id=1000
+    hout.append("{");
+    renderNode(callbackExpression, out, exHandler);
+    hout.append("(___.prepareModule({\n");
+
+    renderModuleBodyWithDebugSymbols(originalSources, out, exHandler);
+
+    hout.append("}));}\n");
+  }
+
+  private void renderModuleBodyWithDebugSymbols(
       Map<InputSource, CharSequence> originalSources,
       Appendable out, Callback<IOException> exHandler) {
     // Render the module function. With this, the SourceSpansRenderer captures
@@ -153,11 +280,6 @@ public final class CajoledModule extends AbstractParseTreeNode {
                                  Callback<IOException> exHandler) {
     HandledAppendable hout = new HandledAppendable(exHandler, out);
 
-    // Open top level function call and object literal
-    // Note that we deliberately add an enclosing block. See:
-    // http://code.google.com/p/google-caja/issues/detail?id=1000
-    hout.append("{___.loadModule({\n");
-
     // Render the cajoled code
     renderNode(stringToStringLiteral("instantiate"), out, exHandler);
     hout.append(":\n");
@@ -191,9 +313,6 @@ public final class CajoledModule extends AbstractParseTreeNode {
             originalFileContents),
         out, exHandler);
     hout.append("\n");
-
-    // Close top level function call and object literal
-    hout.append("});}\n");
   }
 
   private static ParseTreeNode buildOriginalSourceNode(

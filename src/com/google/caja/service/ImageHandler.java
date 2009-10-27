@@ -34,9 +34,15 @@ public class ImageHandler implements ContentHandler {
         && checker.check(outputContentType, inputContentType);
   }
 
-  public Pair<String, String> apply(URI uri, CajolingService.Transform trans,
-      String inputContentType, String outputContentType, String charSet,
-      byte[] content, OutputStream response)
+  public Pair<String, String> apply(URI uri,
+                                    CajolingService.Transform trans,
+                                    ContentHandlerArgs args,
+                                    String inputContentType,
+                                    String outputContentType,
+                                    ContentTypeCheck checker,
+                                    String charSet,
+                                    byte[] content,
+                                    OutputStream response)
     throws UnsupportedContentTypeException {
     try {
       response.write(content);

@@ -24,6 +24,8 @@ public final class PluginMeta {
   private final PluginEnvironment env;
   /** True if the output should include debugging info. */
   private boolean debugMode;
+  /** True if the output should be *only* JS, not HTML+JS. */
+  private boolean onlyJsEmitted;
   /** True if the source should be treated as Valija */
   private boolean valijaMode;
   /**
@@ -59,6 +61,13 @@ public final class PluginMeta {
 
   public void setDebugMode(boolean debugMode) { this.debugMode = debugMode; }
 
+  /** True if the output should be *only* JS, not HTML+JS. */
+  public boolean isOnlyJsEmitted() { return onlyJsEmitted; }
+
+  public void setOnlyJsEmitted(boolean onlyJsEmitted) {
+    this.onlyJsEmitted = onlyJsEmitted;
+  }
+  
   /** True if the source should be treated as Valija. */
   public boolean isValijaMode() { return valijaMode; }
 

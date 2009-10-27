@@ -22,9 +22,11 @@ import com.google.caja.opensocial.UriCallback;
 import com.google.caja.opensocial.UriCallbackException;
 import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.ParseTreeNode;
+import com.google.caja.parser.quasiliteral.QuasiBuilder;
 import com.google.caja.parser.html.DomParser;
 import com.google.caja.parser.html.Nodes;
 import com.google.caja.parser.js.CajoledModule;
+import com.google.caja.parser.js.Expression;
 import com.google.caja.plugin.Dom;
 import com.google.caja.plugin.PluginCompiler;
 import com.google.caja.plugin.PluginEnvironment;
@@ -60,9 +62,9 @@ import org.w3c.dom.Node;
  */
 public class HtmlHandler implements ContentHandler {
   private final BuildInfo buildInfo;
-  private final PluginMeta meta;
+  private final PluginEnvironment pluginEnvironment;
   private final static String DEFAULT_HOSTED_SERVICE =
-    "http://caja.appsport.com/cajoler";
+      "http://caja.appsport.com/cajoler";
 
   public HtmlHandler(BuildInfo buildInfo) {
     this(buildInfo, DEFAULT_HOSTED_SERVICE, null);
@@ -72,7 +74,7 @@ public class HtmlHandler implements ContentHandler {
       BuildInfo buildInfo, final String hostedService,
       final UriCallback retriever) {
     this.buildInfo = buildInfo;
-    this.meta = new PluginMeta(new PluginEnvironment() {
+    this.pluginEnvironment = new PluginEnvironment() {
       public CharProducer loadExternalResource(
           ExternalReference ref, String mimeType) {
         try {
@@ -101,33 +103,60 @@ public class HtmlHandler implements ContentHandler {
           return null;
         }
       }
-
-    });
-    // HtmlHandler only cajoles in valija mode
-    meta.setValijaMode(true);
+    };
   }
 
   public boolean canHandle(URI uri, CajolingService.Transform transform,
       String inputContentType, String outputContentType,
       ContentTypeCheck checker) {
-    // TODO(ihab.awad): Here is where we support "application/javascript" output
     return checker.check("text/html", inputContentType)
-        && checker.check(outputContentType, "text/html");
+        && (checker.check(outputContentType, "text/html")
+            || checker.check(outputContentType, "*/*")
+            || checker.check(outputContentType, "text/javascript"));
   }
 
-  public Pair<String,String> apply(URI uri, CajolingService.Transform transform,
-      String inputContentType, String outputContentType, String charset,
-      byte[] content, OutputStream response)
+  public Pair<String,String> apply(URI uri,
+                                   CajolingService.Transform transform,
+                                   ContentHandlerArgs args,
+                                   String inputContentType,
+                                   String outputContentType,
+                                   ContentTypeCheck checker,
+                                   String charset,
+                                   byte[] content,
+                                   OutputStream response)
       throws UnsupportedContentTypeException {
+    PluginMeta meta = new PluginMeta(pluginEnvironment);
+    // HtmlHandler only cajoles in valija mode
+    meta.setValijaMode(true);
+    if (checker.check(outputContentType, "text/html")
+        || checker.check(outputContentType, "*/*")) {
+      meta.setOnlyJsEmitted(false);
+    } else if (checker.check(outputContentType, "text/javascript")) {
+      meta.setOnlyJsEmitted(true);
+    } else {
+      throw new UnsupportedContentTypeException();
+    }
+
     if (charset == null) { charset = "UTF-8"; }
+
+    String moduleCallbackString = CajaArguments.MODULE_CALLBACK.get(args);
+    Expression moduleCallback = (Expression)
+        (moduleCallbackString == null
+            ? null
+            : QuasiBuilder.substV(moduleCallbackString));
+
     try {
       OutputStreamWriter writer = new OutputStreamWriter(response, "UTF-8");
-      cajoleHtml(uri, new StringReader(new String(content, charset)), writer);
+      cajoleHtml(uri, new StringReader(new String(content, charset)),
+          meta, moduleCallback, writer);
       writer.flush();
     } catch (IOException e) {
       throw new UnsupportedContentTypeException();
     }
-    return new Pair<String, String>("text/javascript", "UTF-8");
+    
+    return new Pair<String, String>(
+        meta.isOnlyJsEmitted() ? "text/javascript" : "text/html",
+        "UTF-8");
   }
 
   public void printMessages(MessageQueue mq, MessageContext mc,
@@ -144,7 +173,8 @@ public class HtmlHandler implements ContentHandler {
     }
   }
 
-  private void cajoleHtml(URI inputUri, Reader cajaInput, Appendable output)
+  private void cajoleHtml(URI inputUri, Reader cajaInput, PluginMeta meta,
+                          Expression moduleCallback, Appendable output)
       throws IOException, UnsupportedContentTypeException {
     InputSource is = new InputSource (inputUri);
     CharProducer cp = CharProducer.Factory.create(cajaInput,is);
@@ -165,23 +195,16 @@ public class HtmlHandler implements ContentHandler {
         okToContinue &= compiler.run();
       }
       if (okToContinue) {
-        Node staticHtml = compiler.getStaticHtml();
-        if (staticHtml != null) {
-          output.append(Nodes.render(staticHtml));
-        }
-        CajoledModule js = compiler.getJavascript();
-        if (js != null) {
-          StringBuilder jsOut = new StringBuilder();
-          RenderContext rc = new RenderContext(
-              new JsMinimalPrinter(new Concatenator(jsOut)))
-              .withEmbeddable(true);
-          js.render(rc);
-          rc.getOut().noMoreTokens();
-
-          Element script = doc.createElement("SCRIPT");
-          script.setAttribute("type", "text/javascript");
-          script.appendChild(doc.createTextNode(jsOut.toString()));
-          output.append(Nodes.render(script));
+        if (meta.isOnlyJsEmitted()) {
+          renderAsJavascript(compiler.getJavascript(),
+                             moduleCallback,
+                             output);
+        } else {
+          renderAsHtml(doc,
+                       compiler.getStaticHtml(),
+                       compiler.getJavascript(),
+                       moduleCallback,
+                       output);
         }
       } else {
         MessageContext mc = new MessageContext();
@@ -194,5 +217,42 @@ public class HtmlHandler implements ContentHandler {
     } catch (IOException e) {
       throw new UnsupportedContentTypeException();
     }
+  }
+
+  private void renderAsHtml(Document doc,
+                            Node staticHtml,
+                            CajoledModule javascript,
+                            Expression moduleCallback,
+                            Appendable output)
+      throws IOException {
+    if (staticHtml != null) {
+      output.append(Nodes.render(staticHtml));
+    }
+    if (javascript != null) {
+      Element script = doc.createElement("SCRIPT");
+      script.setAttribute("type", "text/javascript");
+      script.appendChild(doc.createTextNode(
+          renderJavascript(javascript, moduleCallback)));
+      output.append(Nodes.render(script));
+    }
+  }
+
+  private void renderAsJavascript(CajoledModule javascript,
+                                  Expression moduleCallback,
+                                  Appendable output)
+      throws IOException {
+    output.append(renderJavascript(javascript, moduleCallback));
+  }
+
+  private String renderJavascript(CajoledModule javascript,
+                                  Expression moduleCallback)
+      throws IOException {
+    StringBuilder jsOut = new StringBuilder();
+    RenderContext rc = new RenderContext(
+        new JsMinimalPrinter(new Concatenator(jsOut)))
+        .withEmbeddable(true);
+    javascript.render(moduleCallback, rc);
+    rc.getOut().noMoreTokens();
+    return jsOut.toString();
   }
 }

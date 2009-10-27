@@ -94,12 +94,27 @@ public abstract class ServiceTestCase extends CajaTestCase {
     service.doPost(req, resp);
     return resp.getOutputObject();
   }
-  
+
   protected static String valijaModule(String... lines) {
+    return valijaModuleInternal(
+        "___.loadModule(", ")",
+        lines);
+  }
+
+  protected static String valijaModuleWithCallback(String callback,
+                                                   String... lines) {
+    return valijaModuleInternal(
+        callback + "(___.prepareModule(", "))",
+        lines);
+  }
+
+  private static String valijaModuleInternal(String modulePrefix,
+                                             String moduleSuffix,
+                                             String... lines) {
     String prefix = (
         ""
         + "{\n"
-        + "  ___.loadModule({\n"
+        + "  " + modulePrefix + "{\n"
         + "      'instantiate': function (___, IMPORTS___) {\n"
         + "        var moduleResult___ = ___.NO_RESULT;\n"
         + "        var $v = ___.readImport(IMPORTS___, '$v', {\n"
@@ -127,7 +142,7 @@ public abstract class ServiceTestCase extends CajaTestCase {
         + "      'cajolerName': 'com.google.caja',\n"
         + "      'cajolerVersion': 'testBuildVersion',\n"
         + "      'cajoledDate': 0\n"
-        + "    });\n"
+        + "    }" + moduleSuffix + ";\n"
         + "}"
         );
     StringBuilder sb = new StringBuilder();

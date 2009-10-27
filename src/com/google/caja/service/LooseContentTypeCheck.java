@@ -44,12 +44,12 @@ public class LooseContentTypeCheck extends ContentTypeCheck {
    */
   @Override
   public boolean check(String spec, String candidate) {
+    spec = canonicalize(spec);
     if ("*/*".equals(spec)) { return true; }
 
     int semi = candidate.indexOf(';');
     if (semi >= 0) { candidate = candidate.substring(0, semi).trim(); }
-    String canon = canonicalMimeType.get(candidate);
-    if (canon != null) { candidate = canon; }
+    candidate = canonicalize(candidate);
 
     if (spec.endsWith("*")) {
       spec = spec.substring(0, spec.length() - 1);
@@ -58,5 +58,10 @@ public class LooseContentTypeCheck extends ContentTypeCheck {
       candidate = candidate.substring(0, slash + 1);
     }
     return spec.equals(candidate);
+  }
+
+  private String canonicalize(String mimeType) {
+    return canonicalMimeType.containsKey(mimeType)
+        ? canonicalMimeType.get(mimeType) : mimeType;
   }
 }

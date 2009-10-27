@@ -47,6 +47,18 @@ import javax.servlet.http.HttpServletResponse;
  * @author jasvir@gmail.com (Jasvir Nagra)
  */
 public class CajolingService extends HttpServlet {
+  private static class HttpContentHandlerArgs extends ContentHandlerArgs {
+    private final HttpServletRequest request;
+
+    public HttpContentHandlerArgs(HttpServletRequest request) {
+      this.request = request;
+    }
+
+    public String get(String name) {
+      return request.getParameter(name);
+    }
+  }
+
   private List<ContentHandler> handlers = new Vector<ContentHandler>();
   private ContentTypeCheck typeCheck = new LooseContentTypeCheck();
   private String host = "http://caja.appspot.com/cajoler";
@@ -74,20 +86,6 @@ public class CajolingService extends HttpServlet {
     }
   }
 
-  /**
-   * Fetch query parameter from request
-   */
-  private String getParam(HttpServletRequest r, String param, boolean required)
-    throws ServletException {
-    String result = r.getParameter(param);
-    if (required && result == null) {
-      throw new ServletException(
-        "Missing parameter \"" + param + "\" is required: " +
-          r.getRequestURI());
-    }
-    return result;
-  }
-
   @Override
   public void doPost(HttpServletRequest req, HttpServletResponse resp)
       throws ServletException {
@@ -105,7 +103,9 @@ public class CajolingService extends HttpServlet {
       return;
     }
 
-    String inputUrlString = getParam(req, "url", false /* required */);
+    ContentHandlerArgs args = new HttpContentHandlerArgs(req);
+
+    String inputUrlString = CajaArguments.URL.get(args);
     URI inputUri;
     if (inputUrlString == null) {
       inputUri = InputSource.UNKNOWN.getUri();
@@ -117,25 +117,33 @@ public class CajolingService extends HttpServlet {
       }
     }
 
-    handle(req, resp, inputUri, fetchedData);
+    handle(resp, inputUri, args, fetchedData);
   }
 
   @Override
   public void doGet(HttpServletRequest req, HttpServletResponse resp)
       throws ServletException {
-    String inputUrlString = getParam(req, "url", true /* required */);
-    URI inputUri;
-    try {
-      inputUri = new URI(inputUrlString);
-    } catch (URISyntaxException ex) {
-      throw (ServletException) new ServletException().initCause(ex);
-    }
+    ContentHandlerArgs args = new HttpContentHandlerArgs(req);
 
-    String expectedInputContentType = getParam(req, "mime-type",
-        false /* required */);
-    if (expectedInputContentType == null) {
-      expectedInputContentType = getParam(req, "input-mime-type",
-          true /* required */);
+    URI inputUri;
+    String expectedInputContentType;
+
+    try {
+      String inputUrlString = CajaArguments.URL.get(args, true);
+      try {
+        inputUri = new URI(inputUrlString);
+      } catch (URISyntaxException ex) {
+        throw (ServletException) new ServletException().initCause(ex);
+      }
+
+      expectedInputContentType =
+          CajaArguments.INPUT_MIME_TYPE.get(args, false);
+      if (expectedInputContentType == null) {
+        expectedInputContentType =
+            CajaArguments.OLD_INPUT_MIME_TYPE.get(args, true);
+      }
+    } catch (InvalidArgumentsException e) {
+      throw new ServletException(e.getMessage());
     }
 
     FetchedData fetchedData;
@@ -152,33 +160,43 @@ public class CajolingService extends HttpServlet {
       return;
     }
 
-    handle(req, resp, inputUri, fetchedData);
+    handle(resp, inputUri, args, fetchedData);
   }
 
-  private void handle(HttpServletRequest req, HttpServletResponse resp,
-                      URI inputUri, FetchedData fetchedData)
+  private void handle(HttpServletResponse resp,
+                      URI inputUri,
+                      ContentHandlerArgs args,
+                      FetchedData fetchedData)
       throws ServletException {
-    String outputContentType = getParam(req, "output-mime-type",
-        false /* required */);
+    String outputContentType = CajaArguments.OUTPUT_MIME_TYPE.get(args);
     if (outputContentType == null) {
       outputContentType = "*/*";
     }
 
-    Transform transform;
-    try {
-      transform = Transform.valueOf(
-          getParam(req, "transform", false /* required */));
-    } catch (Exception e ) {
-      transform = null;
+    String transformName = CajaArguments.TRANSFORM.get(args);
+    Transform transform = null;
+    if (transformName != null) {
+      try {
+        transform = Transform.valueOf(transformName);
+      } catch (Exception e) {
+        throw new ServletException(
+            InvalidArgumentsException.invalid(
+                CajaArguments.TRANSFORM.getArgKeyword(), transformName, "")
+                .getMessage());
+      }
     }
-
+    
     ByteArrayOutputStream intermediateResponse = new ByteArrayOutputStream();
     Pair<String, String> contentInfo;
     try {
       contentInfo = applyHandler(
           inputUri,
-          transform, fetchedData.getContentType(), outputContentType,
-          fetchedData.getCharSet(), fetchedData.getContent(),
+          transform,
+          args,
+          fetchedData.getContentType(),
+          outputContentType,
+          fetchedData.getCharSet(),
+          fetchedData.getContent(),
           intermediateResponse);
     } catch (UnsupportedContentTypeException e) {
       closeBadRequest(resp);
@@ -236,14 +254,15 @@ public class CajolingService extends HttpServlet {
   }
 
   private Pair<String, String> applyHandler(
-      URI uri, Transform t, String inputContentType, String outputContentType,
+      URI uri, Transform t, ContentHandlerArgs args,
+      String inputContentType, String outputContentType,
       String charSet, byte[] content, OutputStream response)
       throws UnsupportedContentTypeException {
     for (ContentHandler handler : handlers) {
       if (handler.canHandle(uri, t, inputContentType,
               outputContentType, typeCheck)) {
-        return handler.apply(uri, t, inputContentType,
-            outputContentType, charSet, content, response);
+        return handler.apply(uri, t, args, inputContentType,
+            outputContentType, typeCheck, charSet, content, response);
       }
     }
     throw new UnsupportedContentTypeException();

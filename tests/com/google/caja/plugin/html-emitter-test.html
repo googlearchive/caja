@@ -23,12 +23,14 @@
   </head>
 
   <body>
-    <blockquote id="base">
+    <blockquote id="base0">
 <p>Hi</p>
 <div id="id_1___">Hello <span id="id_2___"></span>World!!!</div>
 <h1>Foo <b id="id_3___">Bar</b> Baz</h1>
 <h2 id="id_4___">Boo</h2>
 </blockquote>
+
+    <blockquote id="base1"></blockquote>
 
     <script>//<![CDATA[
     function normInnerHtml(el) {
@@ -37,7 +39,7 @@
           // Gloss over differences in how browsers compute innerHTML.
           .replace(/\s+</g, '<').replace(/>\s+/g, '>');
     }
-    var base = document.getElementById('base');
+    var base = document.getElementById('base0');
 
     var el___, emitter___ = new HtmlEmitter(base);
 
@@ -71,6 +73,17 @@
         'Done',
         '<p>Hi<\/p><div>Hello World!!!<\/div><h1>Foo<b>Bar<\/b>Baz<\/h1>'
         + '<h2 id="mySuffix___">Boo<\/h2>',
+        normInnerHtml(base));
+
+    base = document.getElementById('base1');
+    el___ = undefined;
+    emitter___ = new HtmlEmitter(base);
+
+    console.log('Emitting static');
+    emitter___.emitStatic('<p>Hello world<\/p>');
+    assertEquals(
+        'emitStatic',
+        '<p>Hello world<\/p>',
         normInnerHtml(base));
     //]]></script>
 

@@ -18,20 +18,39 @@ package com.google.caja.service;
  * @author jasvir@google.com (Jasvir Nagra)
  */
 public class JsHandlerTest extends ServiceTestCase {
+  // TODO(ihab.awad): Change tests to use structural equality (via quasi
+  // matches) rather than golden text to avoid this.
+  protected void assertEqualsIgnoreSpace(String expected, String actual)
+    throws Exception {
+    assertEquals(
+        expected.replace(" ", ""),
+        actual.replace(" ", ""));
+  }
+
   public final void testSimpleJs() throws Exception {
     registerUri("http://foo/bar.js", "g(1);", "text/javascript");
-    assertEquals(
+    assertEqualsIgnoreSpace(
         valijaModule("moduleResult___ = $v.cf($v.ro('g'), [ 1 ]);"),
-        requestGet("?url=http://foo/bar.js&mime-type=text/javascript" +
+        (String) requestGet("?url=http://foo/bar.js&mime-type=text/javascript" +
                 "&transform=VALIJA"));
   }
 
   public final void testAltJscriptMimeType() throws Exception {
     registerUri(
         "http://foo/bar.js", "f();", "application/x-javascript");
-    assertEquals(
+    assertEqualsIgnoreSpace(
         valijaModule("moduleResult___ = $v.cf($v.ro('f'), [ ]);"),
-        requestGet("?url=http://foo/bar.js&mime-type=text/javascript" +
+        (String) requestGet("?url=http://foo/bar.js&mime-type=text/javascript" +
             "&transform=VALIJA"));
+  }
+
+  public final void testJsWithCallback() throws Exception {
+    registerUri("http://foo/bar.js", "g(1);", "text/javascript");
+    assertEqualsIgnoreSpace(
+        valijaModuleWithCallback("foo.bar.baz",
+            "moduleResult___ = $v.cf($v.ro('g'), [ 1 ]);"),
+        (String) requestGet("?url=http://foo/bar.js&mime-type=text/javascript"
+            + "&transform=VALIJA"
+            + "&module-callback=foo.bar.baz"));
   }
 }

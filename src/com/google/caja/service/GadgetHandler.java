@@ -52,9 +52,15 @@ public class GadgetHandler implements ContentHandler {
         && checker.check(outputContentType, "text/javascript");
   }
 
-  public Pair<String, String> apply(URI uri, CajolingService.Transform trans, 
-      String inputContentType, String outputContentType, String charSet,
-      byte[] content, OutputStream response)
+  public Pair<String, String> apply(URI uri,
+                                    CajolingService.Transform trans,
+                                    ContentHandlerArgs args,
+                                    String inputContentType,
+                                    String outputContentType,
+                                    ContentTypeCheck checker,
+                                    String charSet,
+                                    byte[] content,
+                                    OutputStream response)
         throws UnsupportedContentTypeException {
     try {
       OutputStreamWriter writer = new OutputStreamWriter(response, "UTF-8");

@@ -1,4 +1,4 @@
-{___.loadModule({
+{ ___.loadModule({
 'instantiate':
  function ( ___, IMPORTS___) {
  var moduleResult___ =
@@ -31,4 +31,4 @@
     'content': [ '1 + 1;' ]
   }
 }
-});}
+}); }

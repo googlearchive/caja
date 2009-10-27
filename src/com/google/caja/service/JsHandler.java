@@ -19,14 +19,20 @@ import com.google.caja.lexer.JsLexer;
 import com.google.caja.lexer.JsTokenQueue;
 import com.google.caja.lexer.ParseException;
 import com.google.caja.parser.js.Block;
+import com.google.caja.parser.js.CajoledModule;
+import com.google.caja.parser.js.Expression;
 import com.google.caja.parser.js.Parser;
 import com.google.caja.parser.js.UncajoledModule;
 import com.google.caja.parser.quasiliteral.CajitaRewriter;
 import com.google.caja.parser.quasiliteral.DefaultValijaRewriter;
+import com.google.caja.parser.quasiliteral.QuasiBuilder;
 import com.google.caja.parser.quasiliteral.Rewriter;
-import com.google.caja.reporting.MessageQueue;
-import com.google.caja.reporting.SimpleMessageQueue;
+import com.google.caja.render.Concatenator;
+import com.google.caja.render.JsPrettyPrinter;
 import com.google.caja.reporting.BuildInfo;
+import com.google.caja.reporting.MessageQueue;
+import com.google.caja.reporting.RenderContext;
+import com.google.caja.reporting.SimpleMessageQueue;
 import com.google.caja.util.Pair;
 
 import java.io.IOException;
@@ -58,16 +64,29 @@ public class JsHandler implements ContentHandler {
             || transform.equals(CajolingService.Transform.VALIJA));
   }
 
-  public Pair<String,String> apply(URI uri, CajolingService.Transform transform,
-      String inputContentType, String outputContentType, String charset,
-      byte[] content, OutputStream response)
+  public Pair<String,String> apply(URI uri,
+                                   CajolingService.Transform transform,
+                                   ContentHandlerArgs args,
+                                   String inputContentType,
+                                   String outputContentType,
+                                   ContentTypeCheck checker,
+                                   String charset,
+                                   byte[] content,
+                                   OutputStream response)
       throws UnsupportedContentTypeException {
     if (charset == null) { charset = "UTF-8"; }
+
+    String moduleCallbackString = CajaArguments.MODULE_CALLBACK.get(args);
+    Expression moduleCallback = (Expression)
+        (moduleCallbackString == null
+            ? null
+            : QuasiBuilder.substV(moduleCallbackString));
+
     try {
       OutputStreamWriter writer = new OutputStreamWriter(response, "UTF-8");
       boolean valijaMode = CajolingService.Transform.VALIJA.equals(transform);
-      cajoleJs(uri, new StringReader(new String(content, charset)), valijaMode,
-          writer);
+      cajoleJs(uri, new StringReader(new String(content, charset)),
+          moduleCallback, valijaMode, writer);
       writer.flush();
     } catch (IOException e) {
       throw new UnsupportedContentTypeException();
@@ -75,8 +94,11 @@ public class JsHandler implements ContentHandler {
     return new Pair<String, String>("text/javascript", "UTF-8");
   }
 
-  private void cajoleJs(URI inputUri, Reader cajaInput, boolean valijaMode,
-      Appendable output)
+  private void cajoleJs(URI inputUri,
+                        Reader cajaInput,
+                        Expression moduleCallback,
+                        boolean valijaMode,
+                        Appendable output)
       throws IOException, UnsupportedContentTypeException {
     InputSource is = new InputSource (inputUri);
     CharProducer cp = CharProducer.Factory.create(cajaInput,is);
@@ -89,11 +111,10 @@ public class JsHandler implements ContentHandler {
       Rewriter vrw = new DefaultValijaRewriter(mq, false /* logging */);
       Rewriter crw = new CajitaRewriter(buildInfo, mq, false /* logging */);
       UncajoledModule ucm = new UncajoledModule(input);
-      if (valijaMode) {
-        output.append(Rewriter.render(crw.expand(vrw.expand(ucm))));
-      } else {
-        output.append(Rewriter.render(crw.expand(ucm)));
-      }
+      CajoledModule cm = (CajoledModule) (valijaMode
+          ? crw.expand(vrw.expand(ucm))
+          : crw.expand(ucm));
+      output.append(renderJavascript(cm, moduleCallback));
     } catch (ParseException e) {
       throw new UnsupportedContentTypeException();
     } catch (IllegalArgumentException e) {
@@ -101,5 +122,17 @@ public class JsHandler implements ContentHandler {
     } catch (IOException e) {
       throw new UnsupportedContentTypeException();
     }
+  }
+
+  private String renderJavascript(CajoledModule javascript,
+                                  Expression moduleCallback)
+      throws IOException {
+    StringBuilder jsOut = new StringBuilder();
+    RenderContext rc = new RenderContext(
+        new JsPrettyPrinter(new Concatenator(jsOut)))
+        .withEmbeddable(true);
+    javascript.render(moduleCallback, rc);
+    rc.getOut().noMoreTokens();
+    return jsOut.toString();
   }
 }

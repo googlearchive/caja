@@ -79,6 +79,20 @@ function HtmlEmitter(base, opt_tameDocument) {
     return null;
   }
 
+  /**
+   * emitStatic allows the caller to inject the static HTML from JavaScript,
+   * if the gadget container's usage pattern requires it.
+   */
+  function emitStatic(htmlString) {
+    // TODO: We could append the cajoled HTML to existing contents of the
+    // 'base' element, thus allowing the container to pre-populate it prior to
+    // adding cajoled content. However, no clients need that yet.
+    if (base.firstChild) {
+      throw new Error('Container error: Virtual document element is not empty');
+    }
+    base.innerHTML = htmlString;
+  }
+  
   // Below we define the attach, detach, and finish operations.
   // These obey the conventions that:
   //   (1) All detached nodes, along with their ex-parents are in detached,
@@ -264,6 +278,7 @@ function HtmlEmitter(base, opt_tameDocument) {
   this.byId = byId;
   this.attach = attach;
   this.discard = discard;
+  this.emitStatic = emitStatic;
   this.finish = finish;
   this.signalLoaded = signalLoaded;
   this.setAttr = bridal.setAttribute;

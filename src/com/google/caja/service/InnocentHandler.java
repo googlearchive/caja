@@ -48,9 +48,15 @@ public class InnocentHandler implements ContentHandler {
       && checker.check(outputContentType, "text/javascript");
   }
 
-  public Pair<String,String> apply(URI uri, CajolingService.Transform transform,
-      String inputContentType, String outputContentType, String charset,
-      byte[] content, OutputStream response)
+  public Pair<String,String> apply(URI uri,
+                                   CajolingService.Transform transform,
+                                   ContentHandlerArgs args,
+                                   String inputContentType,
+                                   String outputContentType,
+                                   ContentTypeCheck checker,
+                                   String charset,
+                                   byte[] content,
+                                   OutputStream response)
       throws UnsupportedContentTypeException {
     if (!CajolingService.Transform.INNOCENT.equals(transform)) {
       return null;

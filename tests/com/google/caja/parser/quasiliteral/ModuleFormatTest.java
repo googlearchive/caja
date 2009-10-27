@@ -14,14 +14,21 @@
 
 package com.google.caja.parser.quasiliteral;
 
+import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.InputSource;
+import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.CajoledModule;
+import com.google.caja.parser.js.Expression;
 import com.google.caja.parser.js.FunctionConstructor;
 import com.google.caja.parser.js.IntegerLiteral;
+import com.google.caja.parser.js.ObjectConstructor;
 import com.google.caja.parser.js.StringLiteral;
 import com.google.caja.parser.js.UncajoledModule;
+import com.google.caja.render.Concatenator;
+import com.google.caja.render.JsPrettyPrinter;
+import com.google.caja.reporting.RenderContext;
 import com.google.caja.reporting.TestBuildInfo;
 import com.google.caja.util.CajaTestCase;
 import com.google.caja.util.Callback;
@@ -33,6 +40,7 @@ import java.net.URI;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Arrays;
 
 /**
  * This test ensures that the module format, including debugging information,
@@ -103,5 +111,99 @@ public class ModuleFormatTest extends CajaTestCase {
     assertEquals(
         TestUtil.readResource(getClass(), "testModule.co.js"),
         sb.toString());
+  }
+
+  private CajoledModule makeTestCajoledModule() throws Exception {
+    ObjectConstructor oc = (ObjectConstructor) QuasiBuilder.substV(
+        "  ({"
+        + "  instantiate: function() {},"
+        + "  foo: 42"
+        + "})");
+    return new CajoledModule(
+        FilePosition.UNKNOWN,
+        null,
+        Arrays.asList(oc));
+  }
+
+  private String render(CajoledModule module,
+                        Expression callbackExpression) {
+    StringBuilder out = new StringBuilder();
+    TokenConsumer tc = new JsPrettyPrinter(new Concatenator(out, exHandler));
+    module.render(callbackExpression, new RenderContext(tc));
+    tc.noMoreTokens();
+    return out.toString();
+  }
+
+  private String renderWithDebugSymbols(CajoledModule module,
+                                        Expression callbackExpression) {
+    StringBuilder out = new StringBuilder();
+    TokenConsumer tc = new JsPrettyPrinter(new Concatenator(out, exHandler));
+    module.renderWithDebugSymbols(
+        callbackExpression,
+        new HashMap<InputSource, CharSequence>(),
+        out, exHandler);
+    tc.noMoreTokens();
+    return out.toString();
+  }
+
+  public final void testCajoledModuleRenderingWithCallback()
+      throws Exception {
+    // Ensure that the rendered form of a cajoled module with a callback
+    // expression fits the expected format.
+
+    // Create a cajoled module and render it with a callback.
+    String renderedModule = render(
+        makeTestCajoledModule(),
+        jsExpr(fromString("foo.bar.baz")));
+
+    // Re-parse the rendered output so we can apply quasi matches to it.
+    Expression reparsedModule = (Expression)
+        js(fromString(renderedModule))
+        // Extract the innermost Expression since the quasi will match that.
+        .children().get(0).children().get(0).children().get(0);
+
+    // Check that the reparsed structure matches what we expect.
+    assertTrue(QuasiBuilder.match(
+        "  foo.bar.baz(___.prepareModule({"
+        + "  instantiate: function() {},"
+        + "  foo: 42"
+        + "}));",
+        reparsedModule));
+  }
+
+  public final void testCajoledModuleDebugRenderingWithCallback()
+      throws Exception {
+    // Ensure that the rendered form of a cajoled module with a callback
+    // expression and debugging information fits the expected format.
+
+    // Create a cajoled module and render it with a callback and
+    // debugging information.
+    String renderedModule = renderWithDebugSymbols(
+        makeTestCajoledModule(),
+        jsExpr(fromString("foo.bar.baz")));
+
+    // Re-parse the rendered output so we can apply quasi matches to it.
+    Expression reparsedModule = (Expression)
+        js(fromString(renderedModule))
+        // Extract the innermost Expression since the quasi will match that.
+        .children().get(0).children().get(0).children().get(0);
+
+    // Check that the reparsed structure matches what we expect.
+    Map<String, ParseTreeNode> bindings = new HashMap<String, ParseTreeNode>();
+    assertTrue(QuasiBuilder.match(
+        "  foo.bar.baz(___.prepareModule({"
+        + "  instantiate: function() {},"
+        + "  foo: 42,"
+        + "  sourceLocationMap: @sourceLocationMap,"
+        + "  originalSource: @originalSource"
+        + "}));",
+        reparsedModule,
+        bindings));
+    // Other tests verify the exact details of "sourceLocationMap" and
+    // "originalSource". In this test, we are checking for the correct callback
+    // expression "foo.bar.baz", so we apply only a very weak sanity check on
+    // the remainder.
+    assertTrue(bindings.get("sourceLocationMap") instanceof ObjectConstructor);
+    assertTrue(bindings.get("originalSource") instanceof ObjectConstructor);
   }
 }

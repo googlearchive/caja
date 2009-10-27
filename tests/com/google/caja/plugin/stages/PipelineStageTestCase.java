@@ -47,7 +47,7 @@ import java.util.List;
  * @author mikesamuel@gmail.com
  */
 public abstract class PipelineStageTestCase extends CajaTestCase {
-  private PluginMeta meta;
+  protected PluginMeta meta;
   private TestPluginEnvironment pluginEnv;
 
   @Override

@@ -37,9 +37,11 @@ public interface ContentHandler {
    * @param checker Used to check whether two content-types are compatible
    * @return true if this content-handler is appropriate for this URL and content-type
    */
-  public boolean canHandle(URI uri, CajolingService.Transform transform,
-      String inputContentType, String outputContentType,
-      ContentTypeCheck checker);
+  public boolean canHandle(URI uri,
+                           CajolingService.Transform transform,
+                           String inputContentType,
+                           String outputContentType,
+                           ContentTypeCheck checker);
 
   /**
    * Reads content from {@code stream} and writes it to {@code response}.
@@ -48,14 +50,23 @@ public interface ContentHandler {
    *
    * @param uri URI of content
    * @param trans Type of rewriting to perform
+   * @param args Handler-specific arguments.
    * @param inputContentType The actual input content-type
    * @param outputContentType Requested output content-type
+   * @param checker Used to check whether two content-types are compatible
+   * @param charSet Character set of the incoming content.
    * @param content content from uri
    * @param response writes modified content to user
    * @return the content-type and content-encoding of the resulting output
    */
-  public Pair<String, String> apply(URI uri, CajolingService.Transform trans,
-      String inputContentType, String outputContentType, String charSet,
-      byte[] content, OutputStream response)
+  public Pair<String, String> apply(URI uri,
+                                    CajolingService.Transform trans,
+                                    ContentHandlerArgs args,
+                                    String inputContentType,
+                                    String outputContentType,
+                                    ContentTypeCheck checker,
+                                    String charSet,
+                                    byte[] content,
+                                    OutputStream response)
       throws UnsupportedContentTypeException;
 }

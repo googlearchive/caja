@@ -19,19 +19,32 @@ import com.google.caja.lang.html.HtmlSchema;
 import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.css.CssTree;
 import com.google.caja.parser.html.DomParser;
+import com.google.caja.parser.html.Nodes;
 import com.google.caja.parser.js.Block;
+import com.google.caja.parser.js.StringLiteral;
+import com.google.caja.parser.js.Expression;
+import com.google.caja.parser.js.ExpressionStmt;
+import com.google.caja.parser.js.Statement;
+import com.google.caja.parser.quasiliteral.QuasiBuilder;
 import com.google.caja.plugin.Dom;
 import com.google.caja.plugin.Job;
 import com.google.caja.plugin.Jobs;
 import com.google.caja.plugin.templates.TemplateCompiler;
 import com.google.caja.plugin.templates.TemplateSanitizer;
 import com.google.caja.reporting.MessageQueue;
+import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.Pair;
 import com.google.caja.util.Pipeline;
+import com.google.caja.util.Callback;
+import com.google.caja.lexer.FilePosition;
+import com.google.caja.lexer.TokenConsumer;
+import com.google.caja.render.Concatenator;
 
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.io.IOException;
+
 import org.w3c.dom.Node;
 
 /**
@@ -85,12 +98,29 @@ public final class CompileHtmlStage implements Pipeline.Stage<Jobs> {
       Pair<Node, List<Block>> htmlAndJs = tc.getSafeHtml(
           DomParser.makeDocument(null, null));
 
-      jobs.getJobs().add(new Job(AncestorChain.instance(new Dom(htmlAndJs.a))));
+      jobs.getJobs().add(new Job(AncestorChain.instance(
+          jobs.getPluginMeta().isOnlyJsEmitted()
+              ? makeEmitStaticStmt(htmlAndJs.a) : new Dom(htmlAndJs.a))));
+
       for (Block bl : htmlAndJs.b) {
         jobs.getJobs().add(new Job(AncestorChain.instance(bl)));
       }
     }
 
     return jobs.hasNoFatalErrors();
+  }
+
+  private static Statement makeEmitStaticStmt(Node node) {
+    return new ExpressionStmt((Expression) QuasiBuilder.substV(
+        "IMPORTS___./*@synthetic*/htmlEmitter___"
+            + "./*@synthetic*/emitStatic(@html)",
+        "html", renderDomAsJsStringLiteral(node)));
+  }
+  
+  private static StringLiteral renderDomAsJsStringLiteral(Node node) {
+    StringBuilder stringBuilder = new StringBuilder();
+    TokenConsumer tc = new Concatenator(stringBuilder);
+    Nodes.render(node, new RenderContext(tc).withEmbeddable(true));
+    return StringLiteral.valueOf(Nodes.getFilePositionFor(node), stringBuilder);
   }
 }
