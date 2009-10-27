@@ -1,0 +1,78 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+
+<!--
+ - Copyright (C) 2009 Google Inc.
+ -
+ - Licensed under the Apache License, Version 2.0 (the "License");
+ - you may not use this file except in compliance with the License.
+ - You may obtain a copy of the License at
+ -
+ -      http://www.apache.org/licenses/LICENSE-2.0
+ -
+ - Unless required by applicable law or agreed to in writing, software
+ - distributed under the License is distributed on an "AS IS" BASIS,
+ - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ - See the License for the specific language governing permissions and
+ - limitations under the License.
+-->
+
+<!--
+ - Displays the environment JSON.
+ - @author mikesamuel@gmail.com
+-->
+
+<html><head>
+<title>Environment Check</title>
+</head>
+<!-- Wait to run scripts so the environment observed includes a body. -->
+<body style="width:80em; font-family: monospace; white-space: pre-wrap"
+><script src=environment-checks.js></script><script>
+(function () {
+  var envJson;
+  if (typeof JSON !== 'undefined' && typeof JSON.stringify === 'function') {
+    envJson = JSON.stringify(env);
+  } else {
+    var prefixes = ['\\x00', '\\x0', '\\x', '\\u0', '\\u'];
+    function hex(ch) {
+      var hex = ch.charCodeAt(0).toString(16);
+      return prefixes[hex.length] + hex;
+    }
+    function stringify(json) {
+      if (json === null) { return 'null'; }
+      switch (typeof json) {
+        case 'boolean': return json ? 'true' : 'false';
+        case 'number':
+          if (isNaN(json) || isInfinite(json)) {
+            throw new Error(json);
+          }
+          return '' + json;
+        case 'string':
+          return '\x22' + json.replace(/[\x22\\]/g, '\\$&')
+              .replace(/[^\x20-\x7e]/g, hex) + '\x22';
+        case 'object':
+          switch (Object.prototype.toString.call(json)) {
+            case '[object Array]':
+              var els = [];
+              for (var i = json.length; --i != 0;) {
+                els[i] = stringify(json[i]);
+              }
+              return '[' + els + ']';
+            case '[object Object]':
+              var pairs = [];
+              for (var k in json) {
+                if (Object.prototype.hasOwnProperty.call(json, k)) {
+                  pairs.push(stringify(k) + ':' + stringify(json[k]));
+                }
+              }
+              return '{' + pairs + '}';
+          }
+          break;
+      }
+      throw new Error('' + json + ' : ' + typeof json);
+    }
+    envJson = stringify(env);
+  }
+  document.body.appendChild(document.createTextNode(envJson));
+})();
+</script>
+</body></html>

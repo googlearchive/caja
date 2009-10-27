@@ -79,7 +79,7 @@ public class TransformAntTask extends AbstractCajaAntTask {
   }
 
   public class TranslateTaskOutput extends Output {
-    private boolean debug;
+    private boolean debug, rename;
     private String language;
     private String renderer = "pretty";
     private Set<String> messagesToIgnore = Sets.newHashSet();
@@ -91,11 +91,13 @@ public class TransformAntTask extends AbstractCajaAntTask {
       options.put("language", language);
       options.put("renderer", renderer);
       options.put("toIgnore", messagesToIgnore);
+      options.put("rename", rename);
       return options;
     }
 
     // Invoked reflectively by ANT.
     public void setDebug(boolean debug) { this.debug = debug; }
+    public void setRename(boolean rename) { this.rename = rename; }
     public void setLanguage(String language) { this.language = language; }
     public void setRenderer(String renderer) { this.renderer = renderer; }
     public void setIgnore(String messageTypeNames) {

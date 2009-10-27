@@ -14,9 +14,14 @@
 
 package com.google.caja.plugin;
 
+import com.google.caja.ancillary.opt.Fact;
+import com.google.caja.ancillary.opt.LocalVarRenamer;
+import com.google.caja.ancillary.opt.ParseTreeKB;
 import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.ExternalReference;
 import com.google.caja.lexer.InputSource;
+import com.google.caja.lexer.JsLexer;
+import com.google.caja.lexer.JsTokenQueue;
 import com.google.caja.lexer.ParseException;
 import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.parser.AncestorChain;
@@ -24,11 +29,17 @@ import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.html.DomParser;
 import com.google.caja.parser.html.Nodes;
 import com.google.caja.parser.js.Block;
+import com.google.caja.parser.js.Expression;
+import com.google.caja.parser.js.Literal;
 import com.google.caja.parser.js.Minify;
+import com.google.caja.parser.js.ObjectConstructor;
+import com.google.caja.parser.js.Parser;
 import com.google.caja.parser.js.Statement;
+import com.google.caja.parser.js.StringLiteral;
 import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessageLevel;
+import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.MessageType;
 import com.google.caja.reporting.RenderContext;
@@ -179,29 +190,36 @@ public class BuildServiceImplementation implements BuildService {
     } else {
       Block block = new Block();
       passed = true;
+      ParseTreeKB optimizer = null;
       for (File f : inputs) {
         try {
-          AncestorChain<?> parsedInput = parseInput(
-              new InputSource(f.getCanonicalFile().toURI()), mq);
-          if (parsedInput != null) {
-            block.appendChild(parsedInput.cast(Statement.class).node);
+          if (f.getName().endsWith(".env.json")) {
+            optimizer = loadEnvJsonFile(f, optimizer, mq);
+          } else {
+            AncestorChain<?> parsedInput = parseInput(
+                new InputSource(f.getCanonicalFile().toURI()), mq);
+            if (parsedInput != null) {
+              block.appendChild(parsedInput.cast(Statement.class).node);
+            }
           }
         } catch (IOException ex) {
           logger.println("Failed to read " + f);
           passed = false;
         }
       }
-      if (passed) {
-        for (Message msg : mq.getMessages()) {
-          if (MessageLevel.ERROR.compareTo(msg.getMessageLevel()) >= 0) {
-            passed = false;
-            break;
-          }
-        }
+      passed = passed && !hasErrors(mq);
+      if (passed && optimizer != null) {
+        SimpleMessageQueue optMq = new SimpleMessageQueue();
+        block = optimizer.optimize(block, optMq);
+      }
+      if (passed && Boolean.TRUE.equals(options.get("rename"))) {
+        SimpleMessageQueue optMq = new SimpleMessageQueue();
+        block = new LocalVarRenamer(optMq).optimize(block);
       }
       outputJs = block;
       outputHtml = null;
     }
+    passed = passed && !hasErrors(mq);
 
     // From the ignore attribute to the <transform> element.
     Set<?> toIgnore = (Set<?>) options.get("toIgnore");
@@ -362,5 +380,71 @@ public class BuildServiceImplementation implements BuildService {
       logger.println("Innocent transform failed: " + ex);
       return false;
     }
+  }
+
+  private static ParseTreeKB loadEnvJsonFile(
+      File f, ParseTreeKB kb, MessageQueue mq) {
+    CharProducer cp;
+    try {
+      cp = read(f);
+    } catch (IOException ex) {
+      mq.addMessage(
+          MessageType.IO_ERROR, MessagePart.Factory.valueOf(ex.toString()));
+      return kb;
+    }
+    ObjectConstructor envJson;
+    try {
+      Parser p = parser(cp, mq);
+      Expression e = p.parseExpression(true); // TODO(mikesamuel): limit to JSON
+      p.getTokenQueue().expectEmpty();
+      if (!(e instanceof ObjectConstructor)) {
+        mq.addMessage(
+            MessageType.IO_ERROR,
+            MessagePart.Factory.valueOf("Invalid JSON in " + f));
+        return kb;
+      }
+      envJson = (ObjectConstructor) e;
+    } catch (ParseException ex) {
+      ex.toMessageQueue(mq);
+      return kb;
+    }
+    if (kb == null) { kb = new ParseTreeKB(); }
+    List<? extends Expression> parts = envJson.children();
+    for (int i = 0, n = parts.size(); i < n; i += 2) {
+      StringLiteral sl = (StringLiteral) parts.get(i);
+      Literal value = (Literal) parts.get(i + 1);
+      String rawExpr = sl.getValue();
+      rawExpr = " " + rawExpr.substring(1, rawExpr.length() - 1) + " ";
+      CharProducer valueCp = CharProducer.Factory.fromJsString(
+          CharProducer.Factory.fromString(rawExpr, sl.getFilePosition()));
+      try {
+        Expression expr = parser(valueCp, mq).parseExpression(true);
+        kb.addFact(expr, Fact.is(value));
+      } catch (ParseException ex) {
+        ex.toMessageQueue(mq);
+      }
+    }
+    return kb;
+  }
+
+  private static CharProducer read(File f) throws IOException {
+    InputSource is = new InputSource(f.toURI());
+    return CharProducer.Factory.create(
+        new InputStreamReader(new FileInputStream(f), "UTF-8"), is);
+  }
+
+  private static Parser parser(CharProducer cp, MessageQueue errs) {
+    JsLexer lexer = new JsLexer(cp);
+    JsTokenQueue tq = new JsTokenQueue(lexer, cp.getCurrentPosition().source());
+    return new Parser(tq, errs);
+  }
+
+  private static boolean hasErrors(MessageQueue mq) {
+    for (Message msg : mq.getMessages()) {
+      if (MessageLevel.ERROR.compareTo(msg.getMessageLevel()) <= 0) {
+        return true;
+      }
+    }
+    return false;
   }
 }

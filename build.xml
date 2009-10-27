@@ -153,7 +153,7 @@
     <condition property="earlier-than-java-1.5">
       <not><matches pattern="1[.][5-9].*" string="${java.version}" /></not>
     </condition>
-    <fail if="earlier-than-java-1.5" 
+    <fail if="earlier-than-java-1.5"
      message="Require Java 1.5, not Java ${java.version} from ${java.home}" />
   </target>
 
@@ -247,7 +247,7 @@
      packagenames="com/google/caja/*"
      classpathref="classpath.javadocs"
      linksource="yes"/>
-     <!-- overview="${src}/overview.html" -->
+    <!-- overview="${src}/overview.html" -->
   </target>
 
   <target name="jsdocs" description="Javascript documentation." depends="tools">
@@ -315,6 +315,12 @@
      classpathref="classpath.run"/>
     <taskdef name="summarize" classname="com.google.caja.tools.TestSummary"
      classpathref="classpath.tests.run" />
+    <copy todir="${lib}">
+      <fileset dir="${src}">
+        <include name="**/caja/ancillary/**/*.js"/>
+        <include name="**/caja/ancillary/**/*.json"/>
+      </fileset>
+    </copy>
   </target>
 
   <target name="pluginc" depends="dirs,PluginCompiler,build.info,tools"
@@ -488,50 +494,50 @@
        language="valija"/>
     </transform>
     <transform>
-     <include file="${tests}/com/google/caja/a.js"/>
-     <output file="${lib}/com/google/caja/a.co.js" language="cajita"/>
+      <include file="${tests}/com/google/caja/a.js"/>
+      <output file="${lib}/com/google/caja/a.co.js" language="cajita"/>
     </transform>
     <transform>
-     <include file="${tests}/com/google/caja/foo/b.js"/>
-     <output file="${lib}/com/google/caja/foo/b.co.js" language="cajita"/>
+      <include file="${tests}/com/google/caja/foo/b.js"/>
+      <output file="${lib}/com/google/caja/foo/b.co.js" language="cajita"/>
     </transform>
     <transform>
-     <include file="${tests}/com/google/caja/c.js"/>
-     <output file="${lib}/com/google/caja/c.co.js" language="cajita"/>
+      <include file="${tests}/com/google/caja/c.js"/>
+      <output file="${lib}/com/google/caja/c.co.js" language="cajita"/>
     </transform>
     <transform>
-     <include file="${tests}/com/google/caja/recursion.js"/>
-     <output file="${lib}/com/google/caja/recursion.co.js" language="cajita"/>
+      <include file="${tests}/com/google/caja/recursion.js"/>
+      <output file="${lib}/com/google/caja/recursion.co.js" language="cajita"/>
     </transform>
     <transform>
-     <include file="${tests}/com/google/caja/x.js"/>
-     <output file="${lib}/com/google/caja/x.vo.js" language="valija"/>
+      <include file="${tests}/com/google/caja/x.js"/>
+      <output file="${lib}/com/google/caja/x.vo.js" language="valija"/>
     </transform>
     <transform>
-     <include file="${tests}/com/google/caja/foo/inc.js"/>
-     <output file="${lib}/com/google/caja/foo/inc.vo.js" language="valija"/>
+      <include file="${tests}/com/google/caja/foo/inc.js"/>
+      <output file="${lib}/com/google/caja/foo/inc.vo.js" language="valija"/>
     </transform>
     <transform>
-     <include file="${tests}/com/google/caja/add.js"/>
-     <output file="${lib}/com/google/caja/add.vo.js" language="valija"/>
+      <include file="${tests}/com/google/caja/add.js"/>
+      <output file="${lib}/com/google/caja/add.vo.js" language="valija"/>
     </transform>
     <transform>
-     <include file="${tests}/com/google/caja/commonJsRecursion.js"/>
-     <output file="${lib}/com/google/caja/commonJsRecursion.vo.js"
-      language="valija"/>
-    </transform>
-    <transform>
-     <include file="${tests}/com/google/caja/foo/f.js"/>
-     <output file="${lib}/com/google/caja/foo/f.co.js" language="cajita"/>
-    </transform>
-    <transform>
-     <include file="${tests}/com/google/caja/foo/staticinc.js"/>
-     <output file="${lib}/com/google/caja/foo/staticinc.vo.js"
+      <include file="${tests}/com/google/caja/commonJsRecursion.js"/>
+      <output file="${lib}/com/google/caja/commonJsRecursion.vo.js"
        language="valija"/>
     </transform>
     <transform>
-     <include file="${tests}/com/google/caja/sum.js"/>
-     <output file="${lib}/com/google/caja/sum.vo.js" language="valija"/>
+      <include file="${tests}/com/google/caja/foo/f.js"/>
+      <output file="${lib}/com/google/caja/foo/f.co.js" language="cajita"/>
+    </transform>
+    <transform>
+      <include file="${tests}/com/google/caja/foo/staticinc.js"/>
+      <output file="${lib}/com/google/caja/foo/staticinc.vo.js"
+       language="valija"/>
+    </transform>
+    <transform>
+      <include file="${tests}/com/google/caja/sum.js"/>
+      <output file="${lib}/com/google/caja/sum.vo.js" language="valija"/>
     </transform>
     <copy todir="${lib}">
       <fileset dir="${src}" includes="**/*.html"/>
@@ -1038,27 +1044,27 @@
     <copy file="${src}/com/google/caja/demos/applet/index.html"
      tofile="${www}/testbed/debug.html"/>
     <replace file="${www}/testbed/debug.html">
-     <replacetoken><![CDATA[<script type="text/javascript" src="cajita-combined-min.js"></script>]]></replacetoken>
-     <replacevalue><![CDATA[
-       <script type="text/javascript" src="json_sans_eval.js"></script>
-       <script type="text/javascript" src="cajita.js"></script>
-       <script type="text/javascript" src="console.js"></script>
-       <script type="text/javascript" src="log-to-console.js"></script>
-       <script type="text/javascript" src="cajita-debugmode.js"></script>
-       <script type="text/javascript" src="unicode.js"></script>
-       <script type="text/javascript" src="css-defs.js"></script>
-       <script type="text/javascript" src="html4-defs.js"></script>
-       <script type="text/javascript" src="html-sanitizer.js"></script>
-       <script type="text/javascript" src="html-emitter.js"></script>
-       <script type="text/javascript" src="setup-valija.js"></script>
-       <script type="text/javascript" src="bridal.js"></script>
-       <script type="text/javascript" src="domita.js"></script>
-       <script type="text/javascript" src="prettify.js"></script>
-       <script type="text/javascript" src="lang-css.js"></script>
-       <script type="text/javascript" src="testbed.js"></script>
-       <script type="text/javascript" src="valija.co.js"></script>
-       ]]>
-     </replacevalue>
+      <replacetoken><![CDATA[<script type="text/javascript" src="cajita-combined-min.js"></script>]]></replacetoken>
+      <replacevalue><![CDATA[
+        <script type="text/javascript" src="json_sans_eval.js"></script>
+        <script type="text/javascript" src="cajita.js"></script>
+        <script type="text/javascript" src="console.js"></script>
+        <script type="text/javascript" src="log-to-console.js"></script>
+        <script type="text/javascript" src="cajita-debugmode.js"></script>
+        <script type="text/javascript" src="unicode.js"></script>
+        <script type="text/javascript" src="css-defs.js"></script>
+        <script type="text/javascript" src="html4-defs.js"></script>
+        <script type="text/javascript" src="html-sanitizer.js"></script>
+        <script type="text/javascript" src="html-emitter.js"></script>
+        <script type="text/javascript" src="setup-valija.js"></script>
+        <script type="text/javascript" src="bridal.js"></script>
+        <script type="text/javascript" src="domita.js"></script>
+        <script type="text/javascript" src="prettify.js"></script>
+        <script type="text/javascript" src="lang-css.js"></script>
+        <script type="text/javascript" src="testbed.js"></script>
+        <script type="text/javascript" src="valija.co.js"></script>
+        ]]>
+      </replacevalue>
     </replace>
     <!-- The following should use the same files as the above list -->
     <transform>

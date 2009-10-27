@@ -239,7 +239,6 @@
 
 if (typeof JSON === 'undefined') {
   var JSON = {};
-}
 
 (function() {
 
@@ -666,3 +665,4 @@ if (typeof JSON === 'undefined') {
    }
  })();
  
+}

@@ -118,7 +118,7 @@ public class Scope {
     }
   }
 
-  private enum ScopeType {
+  public enum ScopeType {
     /**
      * A Scope created from a plain block.
      * Example: the block containing 'foo' in the following --
@@ -394,6 +394,18 @@ public class Scope {
     return getType(name) != null;
   }
 
+  /**
+   * Returns the scope that defines the given name or null if none.
+   */
+  public Scope thatDefines(String name) {
+    for (Scope s = this; s != null; s = s.parent) {
+      if (s.locals.containsKey(name)) { return s; }
+    }
+    return null;
+  }
+
+  public ScopeType getType() { return type; }
+
   private boolean isDefinedAs(String name, LocalType type) {
     return isDefined(name) && getType(name).implies(type);
   }
@@ -445,6 +457,18 @@ public class Scope {
    */
   public boolean isDeclaredFunction(String name) {
     return isDefinedAs(name, LocalType.DECLARED_FUNCTION);
+  }
+
+  /**
+   * In this scope or some enclosing scope, is a given name
+   * defined as data via a local "var" or formal parameter declaration?
+   *
+   * @param name an identifier.
+   * @return whether 'name' is defined as a declared function within this
+   *   scope. If 'name' is not defined, return false.
+   */
+  public boolean isData(String name) {
+    return isDefinedAs(name, LocalType.DATA);
   }
 
   /**
@@ -621,7 +645,7 @@ public class Scope {
           "NaN",
           "Object",     // Masking Object can change the behavior of { k: v }
           "arguments",  // Can muck with arguments to synthetic values.
-          "cajita"     // Used for caja extensions.
+          "cajita"      // Used for caja extensions.
           ));
 
   /**
