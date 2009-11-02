@@ -398,8 +398,15 @@ public class Scope {
    * Returns the scope that defines the given name or null if none.
    */
   public Scope thatDefines(String name) {
+    boolean isThis = "this".equals(name);
+    boolean isArguments = "arguments".equals(name);
+    boolean isThisOrArguments = isThis || isArguments;
     for (Scope s = this; s != null; s = s.parent) {
       if (s.locals.containsKey(name)) { return s; }
+      if (isThisOrArguments) {
+        if (s.type == ScopeType.FUNCTION_BODY) { return s; }
+        if (s.type == ScopeType.PROGRAM && isThis) { return s; }
+      }
     }
     return null;
   }
@@ -492,6 +499,12 @@ public class Scope {
   public boolean isOuter(String name) {
     if (parent == null) { return true;}
     if (locals.containsKey(name)) return false;
+    if (type == ScopeType.FUNCTION_BODY
+        && ("this".equals(name) || "arguments".equals(name))) {
+      return false;
+    } else if (type == ScopeType.PROGRAM && "this".equals(name)) {
+      return false;
+    }
     return parent.isOuter(name);
   }
 

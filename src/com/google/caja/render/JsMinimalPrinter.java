@@ -95,6 +95,7 @@ public final class JsMinimalPrinter extends BufferingRenderer {
         // E.g. ({ a: 0; }) => ({ a: 0 })
         //             ^
         outputTokens.set(outputTokens.size() - 1, text);
+        lastToken = null;
       } else {
         outputTokens.add(text);
       }

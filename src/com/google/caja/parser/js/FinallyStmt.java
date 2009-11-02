@@ -24,26 +24,27 @@ import java.util.List;
  * @author mikesamuel@gmail.com
  */
 public final class FinallyStmt extends AbstractStatement {
-  private Statement body;
+  private Block body;
 
   /** @param value unused.  This ctor is provided for reflection. */
   @ReflectiveCtor
   public FinallyStmt(
-      FilePosition pos, Void value, List<? extends Statement> children) {
+      FilePosition pos, Void value, List<? extends Block> children) {
     this(pos, children.get(0));
   }
 
-  public FinallyStmt(FilePosition pos, Statement body) {
-    super(pos, Statement.class);
+  public FinallyStmt(FilePosition pos, Block body) {
+    super(pos, Block.class);
     appendChild(body);
   }
 
-  public Statement getBody() { return body; }
+  public Block getBody() { return body; }
 
   @Override
   protected void childrenChanged() {
     super.childrenChanged();
-    this.body = (Statement) children().get(0);
+    this.body = (Block) children().get(0);
+    if (children().size() != 1) { throw new IndexOutOfBoundsException(); }
   }
 
   @Override

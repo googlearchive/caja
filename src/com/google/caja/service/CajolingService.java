@@ -54,6 +54,7 @@ public class CajolingService extends HttpServlet {
       this.request = request;
     }
 
+    @Override
     public String get(String name) {
       return request.getParameter(name);
     }
@@ -120,6 +121,8 @@ public class CajolingService extends HttpServlet {
     handle(resp, inputUri, args, fetchedData);
   }
 
+
+  @SuppressWarnings("deprecation")
   @Override
   public void doGet(HttpServletRequest req, HttpServletResponse resp)
       throws ServletException {
@@ -136,11 +139,10 @@ public class CajolingService extends HttpServlet {
         throw (ServletException) new ServletException().initCause(ex);
       }
 
-      expectedInputContentType =
-          CajaArguments.INPUT_MIME_TYPE.get(args, false);
+      expectedInputContentType = CajaArguments.INPUT_MIME_TYPE.get(args, false);
       if (expectedInputContentType == null) {
-        expectedInputContentType =
-            CajaArguments.OLD_INPUT_MIME_TYPE.get(args, true);
+        expectedInputContentType = CajaArguments.OLD_INPUT_MIME_TYPE
+            .get(args, true);
       }
     } catch (InvalidArgumentsException e) {
       throw new ServletException(e.getMessage());
@@ -185,7 +187,7 @@ public class CajolingService extends HttpServlet {
                 .getMessage());
       }
     }
-    
+
     ByteArrayOutputStream intermediateResponse = new ByteArrayOutputStream();
     Pair<String, String> contentInfo;
     try {

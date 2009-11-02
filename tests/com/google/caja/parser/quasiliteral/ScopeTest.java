@@ -301,10 +301,10 @@ public class ScopeTest extends CajaTestCase {
     Block outerBlock = js(fromString(
         "try { } catch (e) { try { } catch (e) { var x; } }"));
 
-    TryStmt t0 = (TryStmt)outerBlock.children().get(0);
+    TryStmt t0 = (TryStmt) outerBlock.children().get(0);
     CatchStmt c0 = t0.getCatchClause();
-    Block b0 = (Block)c0.getBody();
-    TryStmt t1 = (TryStmt)b0.children().get(0);
+    Block b0 = c0.getBody();
+    TryStmt t1 = (TryStmt) b0.children().get(0);
     CatchStmt c1 = t1.getCatchClause();
 
     Scope sn = Scope.fromProgram(outerBlock, mq);

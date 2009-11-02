@@ -78,6 +78,10 @@ public class HtmlQuasiBuilderTest extends TestCase {
             hb.substV("<i>@w1</i>@w2", "w1", "Hello", "w2", " World")
             )));
     assertEquals(
+        "<select class=\"type-select\"></select>",
+        Nodes.render(hb.substV(
+            "<select class=type-select></select>")));
+    assertEquals(
         ""
         + "<table summary=\"&#34;Quoted&#34;, a &lt; b &amp;&amp; c &gt; d\">"
         + "<tbody><tr>"
@@ -236,6 +240,37 @@ public class HtmlQuasiBuilderTest extends TestCase {
             "      #text : /x@6+5"
             ),
         nodePositions(n));
+  }
+
+  public final void testProblematicElements() throws Exception {
+    assertEquals(
+        "option", onlyElement(hb.substV("<option>Foo</option>")).getTagName());
+    assertEquals(
+        "option", onlyElement(hb.substV("<OPTION>Foo</OPTION>")).getTagName());
+    assertEquals(
+        "thead", onlyElement(hb.substV("<thead>Foo</thead>")).getTagName());
+    assertEquals(
+        "tbody", onlyElement(hb.substV("<tbody>Foo</tbody>")).getTagName());
+    assertEquals(
+        "tfoot", onlyElement(hb.substV("<tfoot></tfoot>")).getTagName());
+    assertEquals(
+        "caption", onlyElement(hb.substV("<caption>Foo</caption>")).getTagName());
+    assertEquals(
+        "tr", onlyElement(hb.substV("<tr><td>Foo</td></tr>")).getTagName());
+    assertEquals(
+        "td", onlyElement(hb.substV("<td>Foo</td>")).getTagName());
+    assertEquals(
+        "th", onlyElement(hb.substV("<th>Foo</th>")).getTagName());
+    assertEquals(
+        "p", onlyElement(hb.substV("<p>Not problematic")).getTagName());
+  }
+
+  private static Element onlyElement(Node node) {
+    assertTrue(node.getNodeName(), node instanceof DocumentFragment);
+    Element el = (Element) node.getFirstChild();
+    assertNotNull(el);
+    assertNull("" + el.getNextSibling(), el.getNextSibling());
+    return el;
   }
 
   private static List<String> nodePositions(Node n) {

@@ -30,7 +30,7 @@ import java.util.List;
 public final class Block
     extends AbstractStatement implements NestedScope {
   /** @param value unused.  This ctor is provided for reflection. */
-  @ReflectiveCtor  
+  @ReflectiveCtor
   public Block(
       FilePosition pos, Void value, List<? extends Statement> children) {
     this(pos, children);
@@ -70,6 +70,12 @@ public final class Block
     TokenConsumer out = rc.getOut();
     out.mark(getFilePosition());
     out.consume("{");
+    renderBody(rc);
+    out.consume("}");
+  }
+
+  public void renderBody(RenderContext rc) {
+    TokenConsumer out = rc.getOut();
     for (Statement stmt : children()) {
       out.mark(stmt.getFilePosition());
       stmt.render(rc);
@@ -79,7 +85,6 @@ public final class Block
       }
     }
     out.mark(FilePosition.endOfOrNull(getFilePosition()));
-    out.consume("}");
   }
 
   public void render(RenderContext rc) {

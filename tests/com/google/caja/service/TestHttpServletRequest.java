@@ -14,16 +14,23 @@
 
 package com.google.caja.service;
 
+import com.google.caja.util.Strings;
+
 import java.io.BufferedReader;
 import java.io.UnsupportedEncodingException;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.URLDecoder;
+import java.security.Principal;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 
+import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletInputStream;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
@@ -167,5 +174,54 @@ final class TestHttpServletRequest implements HttpServletRequest {
     } catch (UnsupportedEncodingException ex) {
       throw new RuntimeException(ex);
     }
+  }
+
+  public String getContextPath() {
+    throw new UnsupportedOperationException();
+  }
+
+  public Enumeration<?> getHeaders(String arg0) {
+    throw new UnsupportedOperationException();
+  }
+
+  public StringBuffer getRequestURL() {
+    throw new UnsupportedOperationException();
+  }
+
+  public Principal getUserPrincipal() {
+    throw new UnsupportedOperationException();
+  }
+
+  public boolean isUserInRole(String arg0) {
+    throw new UnsupportedOperationException();
+  }
+
+  public Locale getLocale() {
+    return Locale.ENGLISH;
+  }
+
+  public Enumeration<Locale> getLocales() {
+    throw new UnsupportedOperationException();
+  }
+
+  public Map<String, List<String>> getParameterMap() {
+    return Collections.unmodifiableMap(this.getParameterMap());
+  }
+
+  public RequestDispatcher getRequestDispatcher(String arg0) {
+    throw new UnsupportedOperationException();
+  }
+
+  public boolean isSecure() {
+    return Strings.toLowerCase(this.getRequestURI()).startsWith("https://");
+  }
+
+  public void removeAttribute(String arg0) {
+    throw new UnsupportedOperationException();
+  }
+
+  public void setCharacterEncoding(String encodingName)
+      throws UnsupportedEncodingException {
+    throw new UnsupportedOperationException();
   }
 }

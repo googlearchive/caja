@@ -620,7 +620,7 @@ public final class Parser extends ParserBase {
         case TRY:
         {
           tq.advance();
-          Statement body = parseBody(true);
+          Block body = parseBodyBlock();
           CatchStmt handler;
           FinallyStmt finallyBlock;
           Mark m2 = tq.mark();
@@ -635,14 +635,14 @@ public final class Parser extends ParserBase {
                 idNode.getFilePosition(), idNode, (Expression)null);
             exvar.setComments(idNode.getComments());
             tq.expectToken(Punctuation.RPAREN);
-            Statement catchBody = parseBody(true);
+            Block catchBody = parseBodyBlock();
             handler = new CatchStmt(posFrom(m2), exvar, catchBody);
             finish(handler, m2);
             m2 = tq.mark();
             sawFinally = tq.checkToken(Keyword.FINALLY);
           }
           if (sawFinally) {
-            Statement st = parseBody(true);
+            Block st = parseBodyBlock();
             finallyBlock = new FinallyStmt(posFrom(m2), st);
             finish(finallyBlock, m2);
           } else {
@@ -1247,7 +1247,9 @@ public final class Parser extends ParserBase {
     if (tq.isEmpty()) { return; }
     if (semicolonInserted()) {
       FilePosition semiPoint = FilePosition.endOf(tq.lastPosition());
-      mq.addMessage(MessageType.SEMICOLON_INSERTED, semiPoint);
+      MessageLevel lvl = tq.isEmpty() || tq.lookaheadToken(Punctuation.RCURLY)
+          ? MessageLevel.LOG : MessageLevel.LINT;
+      mq.addMessage(MessageType.SEMICOLON_INSERTED, lvl, semiPoint);
     } else {
       tq.expectToken(Punctuation.SEMI);  // Just used to throw an exception
     }
@@ -1325,6 +1327,13 @@ public final class Parser extends ParserBase {
       tq.checkToken(Punctuation.SEMI);
       return s;
     }
+  }
+
+  private Block parseBodyBlock() throws ParseException {
+    if (!tq.lookaheadToken(Punctuation.LCURLY)) {
+      tq.expectToken(Punctuation.LCURLY);
+    }
+    return (Block) parseTerminatedStatement();
   }
 
   private FormalParamList parseFormalParams() throws ParseException {

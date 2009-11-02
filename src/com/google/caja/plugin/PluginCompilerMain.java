@@ -200,7 +200,7 @@ public final class PluginCompilerMain {
       input = p.parseStyleSheet();
       tq.expectEmpty();
     } else if (path.endsWith(".html") || path.endsWith(".xhtml")
-               || cp.lookahead() == '<') {
+               || (!cp.isEmpty() && cp.getBuffer()[cp.getOffset()] == '<')) {
       DomParser p = new DomParser(new HtmlLexer(cp), is, mq);
       if (p.getTokenQueue().isEmpty()) { return null; }
       input = new Dom(p.parseFragment(DomParser.makeDocument(null, null)));

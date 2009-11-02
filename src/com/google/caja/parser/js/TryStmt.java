@@ -25,7 +25,7 @@ import java.util.List;
  * @author mikesamuel@gmail.com
  */
 public final class TryStmt extends AbstractStatement {
-  private Statement body;
+  private Block body;
   private CatchStmt cat;
   private FinallyStmt fin;
 
@@ -38,7 +38,7 @@ public final class TryStmt extends AbstractStatement {
   }
 
   public TryStmt(
-      FilePosition pos, Statement body, CatchStmt cat, FinallyStmt fin) {
+      FilePosition pos, Block body, CatchStmt cat, FinallyStmt fin) {
     super(pos, Statement.class);
     Mutation m = createMutation().appendChild(body);
     if (cat != null) {
@@ -54,7 +54,7 @@ public final class TryStmt extends AbstractStatement {
   protected void childrenChanged() {
     super.childrenChanged();
     List<? extends Statement> children = children();
-    this.body = children.get(0);
+    this.body = (Block) children.get(0);
     Statement stmt1 = children.get(1);
     Statement stmt2 = children.size() >= 3 ? children.get(2) : null;
     if (stmt2 != null) {
@@ -69,7 +69,7 @@ public final class TryStmt extends AbstractStatement {
     }
   }
 
-  public Statement getBody() { return this.body; }
+  public Block getBody() { return this.body; }
   public CatchStmt getCatchClause() { return this.cat; }
   public FinallyStmt getFinallyClause() { return this.fin; }
 

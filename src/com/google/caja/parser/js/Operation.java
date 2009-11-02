@@ -85,6 +85,13 @@ public abstract class Operation extends AbstractExpression {
         op, left, right);
   }
 
+  public static Operation createTernary(
+      Expression left, Expression middle, Expression right) {
+    return create(
+        FilePosition.span(left.getFilePosition(), right.getFilePosition()),
+        Operator.TERNARY, left, middle, right);
+  }
+
   public static Operation undefined(FilePosition pos) {
     return create(pos, Operator.VOID, new IntegerLiteral(pos, 0));
   }

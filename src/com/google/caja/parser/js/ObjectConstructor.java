@@ -16,6 +16,7 @@ package com.google.caja.parser.js;
 
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.TokenConsumer;
+import com.google.caja.parser.ParserBase;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.Pair;
 
@@ -120,7 +121,16 @@ public final class ObjectConstructor extends AbstractExpression {
       } else {
         seen = true;
       }
-      key.render(rc);
+      String uqVal;
+      if (rc.rawObjKeys()
+          && key instanceof StringLiteral
+          && ParserBase.isJavascriptIdentifier(
+              uqVal = ((StringLiteral) key).getUnquotedValue())
+          && !("get".equals(uqVal) || "set".equals(uqVal))) {
+        out.consume(uqVal);
+      } else {
+        key.render(rc);
+      }
       out.consume(":");
       if (!Operation.is(value, Operator.COMMA)) {
         value.render(rc);

@@ -25,7 +25,7 @@ import java.util.Arrays;
  *
  * @author mikesamuel@gmail.com
  */
-public abstract class CharProducer {
+public abstract class CharProducer implements CharSequence {
   private int offset, limit;
   private final char[] buf;
 
@@ -80,17 +80,6 @@ public abstract class CharProducer {
   /** True iff the {@link #getOffset offset} is at the end of the input. */
   public final boolean isEmpty() { return offset == limit; }
 
-  // TODO(mikesamuel): rewrite CssLexer so we can deprecate lookahead and read.
-  public final int lookahead() {
-    if (offset == limit) { return -1; }
-    return buf[offset];
-  }
-
-  public final int read() {
-    if (offset == limit) { return -1; }
-    return buf[offset++];
-  }
-
   /** The index of the character at {@code getBuffer()[offset]} in the input. */
   public abstract int getCharInFile(int offset);
   /** The source breaks associated with {@code getBuffer()[offset]}. */
@@ -103,6 +92,21 @@ public abstract class CharProducer {
   public FilePosition filePositionForOffsets(int start, int end) {
     return getSourceBreaks(start)
         .toFilePosition(getCharInFile(start), getCharInFile(end));
+  }
+
+  public CharSequence subSequence(int start, int end) {
+    if (end > limit || start < 0 || end < start) {
+      throw new IndexOutOfBoundsException();
+    }
+    return new BufferBackedSequence(buf, start + offset, end + offset);
+  }
+
+  public final int length() { return limit - offset; }  // For CharProducer
+  public char charAt(int i) {
+    if (i < 0 || (i += offset) >= limit) {
+      throw new IndexOutOfBoundsException();
+    }
+    return buf[i];
   }
 
   /** Returns a distinct instance initialized with the same offset and limit. */
@@ -135,12 +139,20 @@ public abstract class CharProducer {
       return new CharProducerImpl(buf, limit, pos);
     }
 
-    public static CharProducer fromString(String s, InputSource src) {
+    public static CharProducer fromString(CharSequence s, InputSource src) {
       return fromString(s, FilePosition.startOfFile(src));
     }
 
-    public static CharProducer fromString(String s, FilePosition pos) {
-      char[] buf = s.toCharArray();
+    public static CharProducer fromString(CharSequence s, FilePosition pos) {
+      char[] buf = new char[s.length()];
+      if (s instanceof String) {
+        buf = ((String) s).toCharArray();
+      } else {
+        buf = new char[s.length()];
+        for (int i = 0; i < buf.length; ++i) {
+          buf[i] = s.charAt(i);
+        }
+      }
       return new CharProducerImpl(buf, buf.length, pos);
     }
 
@@ -350,5 +362,32 @@ public abstract class CharProducer {
     public CharProducer clone() {
       return new ChainCharProducer(this);
     }
+  }
+}
+
+class BufferBackedSequence implements CharSequence {
+  private final int start;
+  private final int end;
+  private final char[] buf;
+
+  BufferBackedSequence(char[] buf, int start, int end) {
+    this.start = start;
+    this.end = end;
+    this.buf = buf;
+  }
+
+  public char charAt(int index) {
+    return buf[start + index];
+  }
+
+  public int length() { return end - start; }
+
+  public CharSequence subSequence(int start, int end) {
+    if (start < 0 || end < start || this.start + end > this.end) {
+      throw new IndexOutOfBoundsException();
+    }
+    if (start == end) { return ""; }
+    if (start == 0 && end == this.end) { return this; }
+    return new BufferBackedSequence(buf, start + this.start, end + this.start);
   }
 }

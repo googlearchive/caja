@@ -185,7 +185,7 @@
       </batchtest>
       <syspropertyset>
         <propertyref name="test.headless"/>
-        <propertyref prefix="webdriver.firefox.bin"/>
+        <propertyref name="webdriver.firefox.bin"/>
       </syspropertyset>
       <sysproperty key="emma.coverage.out.file"
        value="${reports}/coverage/coverage.ec"/>

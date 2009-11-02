@@ -56,25 +56,25 @@ public final class Lists {
   }
 
   public static <E>
-  List<E> newLinkedList() {
+  LinkedList<E> newLinkedList() {
     return new LinkedList<E>();
   }
 
   public static <E>
-  List<E> newLinkedList(Collection<? extends E> els) {
+  LinkedList<E> newLinkedList(Collection<? extends E> els) {
     return new LinkedList<E>(els);
   }
 
   public static <E>
-  List<E> newLinkedList(Iterable<? extends E> els) {
-    List<E> list = new LinkedList<E>();
+  LinkedList<E> newLinkedList(Iterable<? extends E> els) {
+    LinkedList<E> list = new LinkedList<E>();
     for (E el : els) { list.add(el); }
     return list;
   }
 
   public static <E>
-  List<E> newLinkedList(E... els) {
-    List<E> list = new LinkedList<E>();
+  LinkedList<E> newLinkedList(E... els) {
+    LinkedList<E> list = new LinkedList<E>();
     for (E el : els) { list.add(el); }
     return list;
   }

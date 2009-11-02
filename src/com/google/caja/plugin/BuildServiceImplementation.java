@@ -14,9 +14,7 @@
 
 package com.google.caja.plugin;
 
-import com.google.caja.ancillary.opt.Fact;
-import com.google.caja.ancillary.opt.LocalVarRenamer;
-import com.google.caja.ancillary.opt.ParseTreeKB;
+import com.google.caja.ancillary.opt.JsOptimizer;
 import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.ExternalReference;
 import com.google.caja.lexer.InputSource;
@@ -28,14 +26,11 @@ import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.html.DomParser;
 import com.google.caja.parser.html.Nodes;
-import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.Expression;
-import com.google.caja.parser.js.Literal;
 import com.google.caja.parser.js.Minify;
 import com.google.caja.parser.js.ObjectConstructor;
 import com.google.caja.parser.js.Parser;
 import com.google.caja.parser.js.Statement;
-import com.google.caja.parser.js.StringLiteral;
 import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessageLevel;
@@ -188,18 +183,17 @@ public class BuildServiceImplementation implements BuildService {
       outputJs = passed ? compiler.getJavascript() : null;
       outputHtml = passed ? compiler.getStaticHtml() : null;
     } else {
-      Block block = new Block();
       passed = true;
-      ParseTreeKB optimizer = null;
+      JsOptimizer optimizer = new JsOptimizer(mq);
       for (File f : inputs) {
         try {
           if (f.getName().endsWith(".env.json")) {
-            optimizer = loadEnvJsonFile(f, optimizer, mq);
+            loadEnvJsonFile(f, optimizer, mq);
           } else {
             AncestorChain<?> parsedInput = parseInput(
                 new InputSource(f.getCanonicalFile().toURI()), mq);
             if (parsedInput != null) {
-              block.appendChild(parsedInput.cast(Statement.class).node);
+              optimizer.addInput(parsedInput.cast(Statement.class).node);
             }
           }
         } catch (IOException ex) {
@@ -207,16 +201,7 @@ public class BuildServiceImplementation implements BuildService {
           passed = false;
         }
       }
-      passed = passed && !hasErrors(mq);
-      if (passed && optimizer != null) {
-        SimpleMessageQueue optMq = new SimpleMessageQueue();
-        block = optimizer.optimize(block, optMq);
-      }
-      if (passed && Boolean.TRUE.equals(options.get("rename"))) {
-        SimpleMessageQueue optMq = new SimpleMessageQueue();
-        block = new LocalVarRenamer(optMq).optimize(block);
-      }
-      outputJs = block;
+      outputJs = optimizer.optimize();
       outputHtml = null;
     }
     passed = passed && !hasErrors(mq);
@@ -382,15 +367,14 @@ public class BuildServiceImplementation implements BuildService {
     }
   }
 
-  private static ParseTreeKB loadEnvJsonFile(
-      File f, ParseTreeKB kb, MessageQueue mq) {
+  private static void loadEnvJsonFile(File f, JsOptimizer op, MessageQueue mq) {
     CharProducer cp;
     try {
       cp = read(f);
     } catch (IOException ex) {
       mq.addMessage(
           MessageType.IO_ERROR, MessagePart.Factory.valueOf(ex.toString()));
-      return kb;
+      return;
     }
     ObjectConstructor envJson;
     try {
@@ -401,30 +385,14 @@ public class BuildServiceImplementation implements BuildService {
         mq.addMessage(
             MessageType.IO_ERROR,
             MessagePart.Factory.valueOf("Invalid JSON in " + f));
-        return kb;
+        return;
       }
       envJson = (ObjectConstructor) e;
     } catch (ParseException ex) {
       ex.toMessageQueue(mq);
-      return kb;
+      return;
     }
-    if (kb == null) { kb = new ParseTreeKB(); }
-    List<? extends Expression> parts = envJson.children();
-    for (int i = 0, n = parts.size(); i < n; i += 2) {
-      StringLiteral sl = (StringLiteral) parts.get(i);
-      Literal value = (Literal) parts.get(i + 1);
-      String rawExpr = sl.getValue();
-      rawExpr = " " + rawExpr.substring(1, rawExpr.length() - 1) + " ";
-      CharProducer valueCp = CharProducer.Factory.fromJsString(
-          CharProducer.Factory.fromString(rawExpr, sl.getFilePosition()));
-      try {
-        Expression expr = parser(valueCp, mq).parseExpression(true);
-        kb.addFact(expr, Fact.is(value));
-      } catch (ParseException ex) {
-        ex.toMessageQueue(mq);
-      }
-    }
-    return kb;
+    op.setEnvJson(envJson);
   }
 
   private static CharProducer read(File f) throws IOException {

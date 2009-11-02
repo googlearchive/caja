@@ -55,15 +55,15 @@ public class CssLexerTest extends CajaTestCase {
   }
 
   public final void testUnterminatedComment() throws Exception {
-    assertFails("foo\nb /* bar ", "2+3: Unclosed comment");
+    assertFails("foo\nb /* bar ", "2+3 - 10: Unclosed comment");
   }
 
   public final void testUnterminatedFunction() throws Exception {
-    assertFails("url(bar", "1+8: Expected ) not -1");
+    assertFails("url(bar", "1+8: Expected ) not <end-of-input>");
   }
 
   public final void testMalformedNumber() throws Exception {
-    assertFails("100.?", "1+5: Malformed number 100.");
+    assertFails("100.?", "1+1 - 5: Malformed number 100.");
   }
 
   public final void testDecodeCssIdentifier() throws Exception {

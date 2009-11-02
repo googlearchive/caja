@@ -19,11 +19,11 @@ import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.MessageType;
+import com.google.caja.util.Lists;
 import com.google.caja.util.Strings;
 
 import java.util.LinkedList;
 import java.util.NoSuchElementException;
-import java.util.regex.Pattern;
 
 /**
  * A lexer that recognizes the
@@ -41,9 +41,9 @@ import java.util.regex.Pattern;
  */
 public final class CssLexer implements TokenStream<CssTokenType> {
   private final CssSplitter splitter;
-  private final LinkedList<Token<CssTokenType>> pending
-      = new LinkedList<Token<CssTokenType>>();
+  private final LinkedList<Token<CssTokenType>> pending = Lists.newLinkedList();
 
+  // TODO(mikesamuel): all clients should pass in a proper queue
   public CssLexer(CharProducer cp) {
     this(cp, DevNullMessageQueue.singleton(), false);
   }
@@ -52,7 +52,8 @@ public final class CssLexer implements TokenStream<CssTokenType> {
    * @param allowSubstitutions true iff ${...} style substitutions should be
    *   allowed as described at {@link CssTokenType#SUBSTITUTION}
    */
-  public CssLexer(CharProducer cp, MessageQueue mq, boolean allowSubstitutions) {
+  public CssLexer(
+      CharProducer cp, MessageQueue mq, boolean allowSubstitutions) {
     assert null != cp;
     this.splitter = new CssSplitter(cp, mq, allowSubstitutions);
   }
@@ -255,40 +256,31 @@ final class CssSplitter implements TokenStream<CssTokenType> {
   }
 
 
-  private static final Pattern URL_RE = Pattern.compile(
-      "^url\\($", Pattern.CASE_INSENSITIVE);
-  private int spos, epos;
   private void produce() throws ParseException {
     if (null != pending) { return; }
     if (cp.isEmpty()) { return; }
 
-    SourceBreaks breaks = cp.getSourceBreaks(cp.getOffset());
-    spos = cp.getCharInFile(cp.getOffset());
-    StringBuilder sb = new StringBuilder();
-    int chi = cp.lookahead();
-    char ch = (char) chi;
+    char[] buf = cp.getBuffer();
+    final int start = cp.getOffset();
+    int limit = cp.getLimit();
+    int end = start + 1;
 
     CssTokenType type;
+    char ch = buf[start];
+
+    int identEnd;
     if (CssLexer.isSpaceChar(ch)) {
       // [ \t\r\n\f]+        S
-      sb.append(ch);
-      cp.read();
 
-      parseWhitespace(sb);
+      end = parseWhitespace(buf, end, limit);
       type = CssTokenType.SPACE;
     } else if (ch == '/') {
-      sb.append(ch);
-      cp.read();
-
-      int la = cp.lookahead();
-      if (la == '*') {
+      if (end < limit && buf[end] == '*') {
         // \/\*[^*]*\*+([^/*][^*]*\*+)*\/    /* ignore comments */
         int state = 0;  // 0 - start, 1 - in comment, 2 - saw, 3 - done
         do {
-          chi = cp.read();
-          if (chi < 0) { break; }
-          ch = (char) chi;
-          sb.append(ch);
+          if (end == limit) { break; }
+          ch = buf[end];
           switch (state) {
             case 0: state = 1; break;
             case 1: if (ch == '*') { state = 2; } break;
@@ -300,54 +292,49 @@ final class CssSplitter implements TokenStream<CssTokenType> {
               }
               break;
           }
+          ++end;
         } while (state != 3);
         if (state != 3) {
           throw new ParseException(new Message(
               MessageType.UNTERMINATED_COMMENT_TOKEN,
-              breaks.toFilePosition(spos)));
+              cp.filePositionForOffsets(start, end)));
         }
         type = CssTokenType.COMMENT;
-      } else if (la == '/') {
+      } else if (end < limit && buf[end] == '/') {
         do {
-          sb.append((char) la);
-          cp.consume(1);
-          la = cp.lookahead();
+          if (++end == limit) { break; }
+          ch = buf[end];
           // Line comment does not contain the newline character that ends it
           // since we don't want to break \r\n sequences across two tokens,
-          // and for consistency with Javascript conventions which exclude the
+          // and for consistency with JavaScript conventions which exclude the
           // newline from the line comment token.
-          if (la < 0 || la == '\r' || la == '\n') { break; }
+          if (ch == '\r' || ch == '\n') { break; }
         } while (true);
         type = CssTokenType.COMMENT;
-        epos = cp.getCharInFile(cp.getOffset());
-        FilePosition commentPos = breaks.toFilePosition(spos, epos);
+        FilePosition commentPos = cp.filePositionForOffsets(start, end);
         mq.addMessage(MessageType.INVALID_CSS_COMMENT, commentPos);
       } else {
         //               *yytext
         type = CssTokenType.PUNCTUATION;
       }
     } else if ('~' == ch || '|' == ch) {
-      sb.append(ch);
-      cp.read();
-
-      if ('=' == cp.lookahead()) {
+      if (end < limit && '=' == buf[end]) {
         // "~="          INCLUDES
         // "|="          DASHMATCH
-        sb.append('=');
-        cp.read();
+        ++end;
       } else {
         //        .      *yytext
       }
       type = CssTokenType.PUNCTUATION;
+
     } else if (ch == '\'' || ch == '"') {
-      parseString(sb);
+      end = parseString(cp, start);
       type = CssTokenType.STRING;
 
     } else if (ch == '@') {
-      sb.append(ch);
-      cp.read();
 
-      if (parseIdent(sb)) {
+      identEnd = parseIdent(cp, end);
+      if (identEnd != -1) {
         // "@import"       IMPORT_SYM
         // "@page"         PAGE_SYM
         // "@media"        MEDIA_SYM
@@ -355,14 +342,12 @@ final class CssSplitter implements TokenStream<CssTokenType> {
         // "@charset"      CHARSET_SYM
         // "@"{ident}      ATKEYWORD
         type = CssTokenType.SYMBOL;
+        end = identEnd;
       } else {
         //        .        *yytext
         type = CssTokenType.PUNCTUATION;
       }
     } else if (ch == '!') {
-      sb.append(ch);
-      cp.read();
-
       // "!{w}important" IMPORTANT_SYM
       // handled by token joining at a later pass
 
@@ -370,12 +355,11 @@ final class CssSplitter implements TokenStream<CssTokenType> {
 
       type = CssTokenType.PUNCTUATION;
     } else if (ch == '#') {
-      sb.append(ch);
-      cp.read();
-
-      if (parseName(sb)) {
+      int nameEnd = parseName(cp, end);
+      if (nameEnd >= 0) {
         // "#"{name}       HASH
         type = CssTokenType.HASH;
+        end = nameEnd;
       } else {
         //          .      *yytext
         type = CssTokenType.PUNCTUATION;
@@ -385,26 +369,9 @@ final class CssSplitter implements TokenStream<CssTokenType> {
       // "<!--"          CDO
       // "-->"           CDC
 
-      String tail = ch == '<' ? "!--" : "->";
-
-      sb.append(ch);
-      cp.read();
-
+      int tailEnd = parseMatch(cp, end, ch == '<' ? "!--" : "->");
+      if (tailEnd >= 0) { end = tailEnd; }
       type = CssTokenType.PUNCTUATION;
-      if (cp.getLimit() - cp.getOffset() >= tail.length()) {
-        boolean matchedTail = true;
-        char[] buffer = cp.getBuffer();
-        for (int i = 0, len = tail.length(); i < len; ++i) {
-          if (buffer[i + cp.getOffset()] != tail.charAt(i)) {
-            matchedTail = false;
-            break;
-          }
-        }
-        if (matchedTail) {
-          sb.append(tail);
-          cp.consume(tail.length());
-        }
-      }
 
     } else if ((ch >= '0' && ch <= '9') || '.' == ch) {
       // {num}em         EMS
@@ -427,18 +394,20 @@ final class CssSplitter implements TokenStream<CssTokenType> {
       // {num}           NUMBER
       boolean isNum;
       if ('.' == ch) {
-        sb.append(ch);
-        cp.read();
-        isNum = parseInt(sb);
+        int numEnd = parseInt(cp, end);
+        isNum = numEnd >= 0;
+        if (isNum) { end = numEnd; }
       } else {
         isNum = true;
-        parseNum(sb);
+        end = parseNum(cp, start);
       }
 
       if (isNum) {
-        if (!parseIdent(sb) && '%' == cp.lookahead()) {
-          sb.append('%');
-          cp.read();
+        identEnd = parseIdent(cp, end);
+        if (identEnd >= 0) {
+          end = identEnd;
+        } else if (end < limit && '%' == buf[end]) {
+          ++end;
         }
         type = CssTokenType.QUANTITY;
       } else {
@@ -447,43 +416,40 @@ final class CssSplitter implements TokenStream<CssTokenType> {
         type = CssTokenType.PUNCTUATION;
       }
 
-    } else if (parseIdent(sb)) {
-      if (sb.length() == 1 && 'U' == ch && '+' == cp.lookahead()) {
+    } else if ((identEnd = parseIdent(cp, start)) >= 0) {
+      end = identEnd;
+      if (end - start == 1 && 'U' == ch && end < limit && '+' == buf[end]) {
         // U\+{range}      UNICODERANGE
         // U\+{h}{1,6}-{h}{1,6}    UNICODERANGE
         // range         \?{1,6}|{h}(\?{0,5}|{h}(\?{0,4}|{h}\
         //               (\?{0,3}|{h}(\?{0,2}|{h}(\??|{h})))))
 
         type = CssTokenType.UNICODE_RANGE;
-        sb.append('+');
-        cp.read();
-        parseRange(sb);
-      } else if ('(' == cp.lookahead()) {
-        sb.append('(');
-        cp.read();
-        if (URL_RE.matcher(sb).matches()) {
+        ++end;
+        end = parseRange(cp, end);
+      } else if (end < limit && '(' == buf[end]) {
+        ++end;
+        if (end - start == 4 && parseMatch(cp, start, "url(") >= 0) {
           // "url("{w}{string}{w}")" URI
           // "url("{w}{url}{w}")"    URI
-          parseWhitespace(sb);
-          if (!(parseString(sb) || parseUri(sb))) {
+          end = parseWhitespace(buf, end, limit);
+          int stringEnd = parseString(cp, end);
+          int uriEnd = stringEnd < 0 ? parseUri(cp, end) : -1;
+          if (stringEnd < 0 && uriEnd < 0) {
             throw new ParseException(new Message(
                 MessageType.EXPECTED_TOKEN,
-                breaks.toFilePosition(
-                    cp.getCharInFile(cp.getOffset())),
-                MessagePart.Factory.valueOf("{url}"),
-                MessagePart.Factory.valueOf(ch)));
+                cp.filePositionForOffsets(end, end),
+                MessagePart.Factory.valueOf("{url}"), toMessagePart(cp, end)));
           }
-          parseWhitespace(sb);
-          int ch2 = cp.read();
-          if (')' != ch2) {
+          end = stringEnd >= 0 ? stringEnd : uriEnd;
+          end = parseWhitespace(buf, end, limit);
+          if (end == limit || ')' != buf[end]) {
             throw new ParseException(new Message(
                 MessageType.EXPECTED_TOKEN,
-                breaks.toFilePosition(
-                    cp.getCharInFile(cp.getOffset())),
-                MessagePart.Factory.valueOf(")"),
-                MessagePart.Factory.valueOf(ch2)));
+                cp.filePositionForOffsets(end, end),
+                MessagePart.Factory.valueOf(")"), toMessagePart(cp, end)));
           }
-          sb.append(')');
+          ++end;
           type = CssTokenType.URI;
         } else {
           // {ident}"("      FUNCTION
@@ -496,10 +462,8 @@ final class CssSplitter implements TokenStream<CssTokenType> {
 
     } else if (ch == '$' && allowSubstitutions) {
       // ${<javascript tokens>}
-      sb.append(ch);
-      cp.read();
 
-      if (cp.lookahead() != '{') {
+      if (end < limit && buf[end] != '{') {
         type = CssTokenType.PUNCTUATION;
       } else {
         // 0 - non string
@@ -511,10 +475,8 @@ final class CssSplitter implements TokenStream<CssTokenType> {
         int nOpen = 0;
         char delim = 0;
         do {
-          chi = cp.read();
-          if (chi < 0) { break; }
-          ch = (char) chi;
-          sb.append(ch);
+          if (end == limit) { break; }
+          ch = buf[end];
           switch (state) {
             case 0:
               if (ch == '"' || ch == '\'') {
@@ -539,40 +501,54 @@ final class CssSplitter implements TokenStream<CssTokenType> {
               state = 1;
               break;
           }
+          ++end;
         } while (state != 3);
         if (state != 3) {
           throw new ParseException(new Message(
               MessageType.UNTERMINATED_STRING_TOKEN,
-              breaks.toFilePosition(spos)));
+              cp.filePositionForOffsets(start, end)));
         }
 
-        if (!parseIdent(sb) && '%' == cp.lookahead()) {
-          sb.append('%');
-          cp.read();
+        identEnd = parseIdent(cp, end);
+        if (identEnd >= 0) {end = identEnd;
+        } else if (end != limit && '%' == buf[end]) {
+          ++end;
         }
 
         type = CssTokenType.SUBSTITUTION;
       }
     } else {
       //          .      *yytext
-      sb.append(ch);
-      cp.read();
       type = CssTokenType.PUNCTUATION;
     }
-    epos = cp.getCharInFile(cp.getOffset());
-    assert sb.length() > 0
-         : "ch=" + ch + " : " + chi + " : " + spos + " : " + type;
-    pending = Token.instance(sb.toString(), type,
-        breaks.toFilePosition(spos, epos));
+    assert end > start;
+    pending = Token.instance(cp.toString(start, end), type,
+                             cp.filePositionForOffsets(start, end));
+    cp.consumeTo(end);
   }
 
-  private boolean parseString(StringBuilder sb) throws ParseException {
-    if (cp.isEmpty()) { return false; }
-    int start = cp.getOffset();
+  private static int parseMatch(CharProducer cp, int start, String match) {
+    int len = match.length();
     int limit = cp.getLimit();
-    char[] buffer = cp.getBuffer();
-    char ch = buffer[start];
-    if (ch != '\'' && ch != '"') { return false; }
+    if (limit - start < len) { return -1; }
+    char[] buf = cp.getBuffer();
+    for (int i = 0; i < len; ++i) {
+      char chB = buf[start + i];
+      char chM = match.charAt(i);
+      if (!(chB == chM || ((chB | 0x20) == chM && chB >= 'A' && chB < 'Z'))) {
+        return -1;
+      }
+    }
+    return start + len;
+  }
+
+  private static int parseString(CharProducer cp, int start)
+      throws ParseException {
+    int limit = cp.getLimit();
+    if (start == limit) { return -1; }
+    char[] buf = cp.getBuffer();
+    char ch = buf[start];
+    if (ch != '\'' && ch != '"') { return -1; }
 
     // {string}        STRING
     // string1         \"([^\n\r\f\\"]|\\{nl}|{escape})*\"
@@ -580,65 +556,52 @@ final class CssSplitter implements TokenStream<CssTokenType> {
     // string          {string1}|{string2}
 
     char delim = ch;
-    sb.append(ch);
-    cp.consume(1);
-    for (int offset; (offset = cp.getOffset()) < limit;) {
-      ch = buffer[offset];
-      if (!parseOneStringChar(sb)) {
-        if (delim == ch) {
-          sb.append(ch);
-          cp.consume(1);
-          return true;
-        } else if (ch == '\'' || ch == '"') {
-          sb.append(ch);
-          cp.consume(1);
+    int end = start + 1;
+    while (end < limit) {
+      ch = buf[end];
+      ++end;
+      // escape            {unicode}|\\[^\r\n\f0-9a-f]
+      // nl                \n|\r\n|\r|\f
+      if (delim == ch) {
+        return end;
+      } else if (ch == '\\') {
+        if (end < limit && isLineBreak(ch = buf[end])) {
+          ++end;
+          if (ch == '\r' && end < limit && buf[end] == '\n') {
+            ++end;
+          }
         } else {
-          throw new ParseException(new Message(
-              MessageType.MALFORMED_STRING,
-              cp.getCurrentPosition(),
-              MessagePart.Factory.valueOf(String.valueOf(ch))));
+          end = parseEscapeBody(cp, end);
         }
+      } else if (isLineBreak(ch)) {
+        throw new ParseException(new Message(
+            MessageType.MALFORMED_STRING,
+            cp.filePositionForOffsets(end - 1, end - 1),
+            MessagePart.Factory.valueOf("" + ch)));
       }
     }
     throw new ParseException(new Message(
         MessageType.UNTERMINATED_STRING_TOKEN,
-        cp.getSourceBreaks(start)
-            .toFilePosition(cp.getCharInFile(start),
-                            cp.getCharInFile(limit))));
+        cp.filePositionForOffsets(start, end)));
   }
 
-  private boolean parseOneStringChar(StringBuilder sb) throws ParseException {
-    if (cp.isEmpty()) {
-      throw new ParseException(
-          new Message(MessageType.UNTERMINATED_STRING_TOKEN,
-                      cp.getCurrentPosition()));
-    }
-    char ch = (char) cp.lookahead();
-    switch (ch) {
-      case '\n': case '\r': case '\f': case '\"': case '\'':
-        return false;
-      case '\\':
-        return parseEscapeOrNewline(sb);
-    }
-
-    cp.read();
-    sb.append(ch);
-    return true;
-  }
-
-  private boolean parseUri(StringBuilder sb) throws ParseException {
+  private int parseUri(CharProducer cp, int start) throws ParseException {
     // url     ([!#$%&*-~]|{nonascii}|{escape})*
-    for (int chi; (chi = cp.lookahead()) >= 0;) {
-      if (isUriChar((char) chi)) {
-        sb.append((char) chi);
-        cp.read();
-      } else if (!parseEscape(sb)) {
+    char[] buf = cp.getBuffer();
+    int limit = cp.getLimit();
+    int end = start;
+    while (end < limit) {
+      if (isUriChar(buf[end])) {
+        ++end;
+      } else if (buf[end] == '\\') {
+        end = parseEscapeBody(cp, end + 1);
+      } else {
         break;
       }
     }
-    return true;
+    return end;
   }
-  private boolean isUriChar(char ch) {
+  private static boolean isUriChar(char ch) {
     switch (ch) {
     case '!':
     case '#':
@@ -651,224 +614,193 @@ final class CssSplitter implements TokenStream<CssTokenType> {
     }
   }
 
-  private void parseWhitespace(StringBuilder sb) {
-    // w       [ \t\r\n\f]*
-    char[] buf = cp.getBuffer();
-    int start = cp.getOffset();
-    int end = start;
-    for (int limit = cp.getLimit(); end < limit; ++end) {
-      if (!CssLexer.isSpaceChar(buf[end])) { break; }
+  private static boolean isLineBreak(char ch) {
+    // nl                \n|\r\n|\r|\f
+    switch (ch) {
+      case '\r': case '\n': case '\f':
+        return true;
+      default:
+        return false;
     }
-    sb.append(buf, start, end - start);
-    cp.consumeTo(end);
+  }
+
+  private int parseWhitespace(char[] buf, int end, int limit) {
+    // w       [ \t\r\n\f]*
+    while (end < limit && CssLexer.isSpaceChar(buf[end])) { ++end; }
+    return end;
   }
 
   /**
    * Only handles the case where num does not start with a dot since it is
    * hard to distinguish a "." token from a number token with 1 char lookahead.
    */
-  private void parseNum(StringBuilder sb) throws ParseException {
+  private static int parseNum(CharProducer cp, int start)
+      throws ParseException {
     //      num     [0-9]+|[0-9]*"."[0-9]+
 
-    boolean result = parseInt(sb);
-    assert result;
-    if ('.' == cp.lookahead()) {
-      sb.append('.');
-      cp.read();
-      int chi = cp.lookahead();
-      if (chi < '0' || chi > '9') {
+    int end = parseInt(cp, start);
+    assert end >= 0;
+    int limit = cp.getLimit();
+    char[] buf = cp.getBuffer();
+    if (end < limit && '.' == buf[end]) {
+      ++end;
+      char ch;
+      // By CSS rules, 0. is an invalid number.
+      if (end == limit || (ch = buf[end]) < '0' || ch > '9') {
         throw new ParseException(new Message(
-            MessageType.MALFORMED_NUMBER, cp.getCurrentPosition(),
-            MessagePart.Factory.valueOf(sb.toString())));
+            MessageType.MALFORMED_NUMBER, cp.filePositionForOffsets(start, end),
+            MessagePart.Factory.valueOf(cp.toString(start, end))));
       }
-      parseInt(sb);
+      return parseInt(cp, end);
     }
+    return end;
   }
 
-  private boolean parseInt(StringBuilder sb) {
-    int chi = cp.lookahead();
-    if (chi >= '0' && chi <= '9') {
+  private static int parseInt(CharProducer cp, int start) {
+    int limit = cp.getLimit();
+    if (start == limit) { return -1; }
+    char[] buf = cp.getBuffer();
+    char ch = buf[start];
+    if (ch >= '0' && ch <= '9') {
+      int end = start;
       do {
-        sb.append((char) chi);
-        cp.read();
-      } while ((chi = cp.lookahead()) >= '0' && chi <= '9');
-      return true;
+        if (++end == limit) { break; }
+        ch = buf[end];
+      } while (ch >= '0' && ch <= '9');
+      return end;
     } else {
-      return false;
+      return -1;
     }
   }
 
-  private boolean parseIdent(StringBuilder sb) throws ParseException {
+  private static int parseIdent(CharProducer cp, int start)
+      throws ParseException {
     // ident      -?{nmstart}{nmchar}*
     // We later join '-' to the front of an identifier, so don't start here.
-    if (parseNmStart(sb)) {
-      while (parseNmChar(sb)) { }
-      return true;
-   }
-   return false;
+    int end = parseNmStart(cp, start);
+    if (end < 0) { return -1; }
+    for (int nmCharEnd; (nmCharEnd = parseNmChar(cp, end)) >= 0;) {
+      end = nmCharEnd;
+    }
+    return end;
  }
 
-  private boolean parseName(StringBuilder sb) throws ParseException {
+  private static int parseName(CharProducer cp, int start)
+      throws ParseException {
     // name      {nmchar}+
-    if (parseNmChar(sb)) {
-      while (parseNmChar(sb)) { }
-      return true;
+    int end = parseNmChar(cp, start);
+    if (end < 0) { return -1; }
+    for (int nmCharEnd; (nmCharEnd = parseNmChar(cp, end)) >= 0;) {
+      end = nmCharEnd;
     }
-    return false;
+    return end;
   }
 
-  private boolean parseNmStart(StringBuilder sb) throws ParseException {
-    if (cp.isEmpty()) { return false; }
-    char ch = cp.getBuffer()[cp.getOffset()];
-    if (CssLexer.isNmStart(ch)) {
-      sb.append(ch);
-      cp.consume(1);
-      return true;
+  private static int parseNmStart(CharProducer cp, int start)
+      throws ParseException {
+    if (start == cp.getLimit()) { return -1; }
+    char ch = cp.getBuffer()[start];
+    if (CssLexer.isNmStart(ch)) { return start + 1; }
+    if (ch == '\\') { return parseEscapeBody(cp, start + 1); }
+    return -1;
+  }
+
+  private static int parseNmChar(CharProducer cp, int start)
+      throws ParseException {
+    // nmchar     [_a-z0-9-]|{nonascii}|{escape}
+    int end = parseNmStart(cp, start);
+    if (end >= 0) { return end; }
+    if (start != cp.getLimit()) {
+      char ch = cp.getBuffer()[start];
+      if ((ch >= '0' && ch <= '9') || ch == '-') { return start + 1; }
     }
-    return parseEscape(sb);
+    return -1;
   }
 
-  private boolean parseEscape(StringBuilder sb) throws ParseException {
-    if (cp.isEmpty()) { return false; }
-    char ch = cp.getBuffer()[cp.getOffset()];
-    if (ch != '\\') { return false; }
-
-    sb.append(ch);
-    cp.consume(1);  // skip \\
-    parseEscapeBody(sb);
-    return true;
-  }
-
-  private boolean parseEscapeOrNewline(StringBuilder sb) throws ParseException {
-    // escape            {unicode}|\\[^\r\n\f0-9a-f]
-    // nl                \n|\r\n|\r|\f
-    int chi = cp.lookahead();
-    if (chi != '\\') { return false; }
-
-    sb.append((char) chi);
-    cp.read();  // skip \\
-
-    chi = cp.lookahead();
-    switch (chi) {
-      case '\n': case '\f':
-        sb.append((char) chi);
-        cp.read();
-        break;
-      case '\r':
-        sb.append('\r');
-        cp.read();
-        if ('\n' == cp.lookahead()) {
-          sb.append('\n');
-          cp.read();
-        }
-        break;
-      default:
-        parseEscapeBody(sb);
-        break;
-    }
-    return true;
-  }
-
-  private void parseEscapeBody(StringBuilder sb) throws ParseException {
+  private static int parseEscapeBody(CharProducer cp, int start)
+      throws ParseException {
     // unicode    \\{h}{1,6}(\r\n|[ \t\r\n\f])?
     // escape     {unicode}|\\[^\r\n\f0-9a-f]
-    int chi = cp.read();
-    if (cp.isEmpty()) {
+    int limit = cp.getLimit();
+    char[] buf = cp.getBuffer();
+    if (start == limit) {
       throw new ParseException(
           new Message(MessageType.EXPECTED_TOKEN,
-                      cp.getCurrentPosition(),
+                      cp.filePositionForOffsets(start, start),
                       MessagePart.Factory.valueOf("<hex-digit>"),
                       MessagePart.Factory.valueOf("<end-of-input>")));
     }
-    char ch = (char) chi;
+    char ch = buf[start];
     if (CssLexer.isHexChar(ch)) {
-      sb.append(ch);
-      for (int i = 5; --i >= 0;) {
-        chi = cp.lookahead();
-        if (chi < 0) { break; }
-        ch = (char) chi;
+      int end = start + 1;
+      for (int i = 5; --i >= 0; ++end) {
+        if (end == limit) { break; }
+        ch = buf[end];
         if (!CssLexer.isHexChar(ch)) { break; }
-        sb.append(ch);
-        cp.read();
       }
-      if (chi >= 0 && CssLexer.isSpaceChar(ch = (char) chi)) {
-        sb.append(ch);
-        cp.read();
+      if (end < limit && CssLexer.isSpaceChar(ch = buf[end])) {
+        ++end;
 
-        if ('\r' == ch && '\n' == cp.lookahead()) {
-          sb.append(ch);
-          cp.read();
+        if ('\r' == ch && end < limit && '\n' == buf[end]) {
+          ++end;
         }
       }
-    } else if (ch != '\r' && ch != '\n' && ch != '\f') {
-      sb.append(ch);
-    } else {
+      return end;
+    } else if (isLineBreak(ch)) {
       throw new ParseException(
           new Message(
-              MessageType.UNRECOGNIZED_ESCAPE, cp.getCurrentPosition(),
+              MessageType.UNRECOGNIZED_ESCAPE,
+              cp.filePositionForOffsets(start, start),
               MessagePart.Factory.valueOf(String.valueOf(ch))));
+    } else {
+      return start + 1;
     }
   }
 
-  private boolean parseNmChar(StringBuilder sb) throws ParseException {
-    // nmchar     [_a-z0-9-]|{nonascii}|{escape}
-    if (parseNmStart(sb)) { return true; }
-    int chi = cp.lookahead();
-    if ((chi >= '0' && chi <= '9') || chi == '-') {
-      sb.append((char) chi);
-      cp.read();
-      return true;
-    }
-    return false;
-  }
-
-  private void parseRange(StringBuilder sb) throws ParseException {
+  private static int parseRange(CharProducer cp, int start)
+      throws ParseException {
     // range         \?{1,6}|{h}(\?{0,5}|{h}(\?{0,4}|{h}\
     //               (\?{0,3}|{h}(\?{0,2}|{h}(\??|{h})))))
     // This method also handles {h}{1,6}-{h}{1,6}
 
-    int chi;
+    char[] buf = cp.getBuffer();
+    int limit = cp.getLimit();
+
+    int end = start;
     int len = 6;
-    boolean isRange = '?' == cp.lookahead();
+    boolean isRange = end < limit && buf[limit] == '?';
     if (isRange) {
-      while ('?' == cp.lookahead() && --len >= 0) {
-        sb.append('?');
-        cp.read();
-      }
+      while (end < limit && '?' == buf[end] && --len >= 0) { ++end; }
     }
-    while ((chi = cp.lookahead()) >= 0
-           && CssLexer.isHexChar((char) chi) && --len >= 0) {
-      sb.append((char) chi);
-      cp.read();
-    }
+    while (end < limit && CssLexer.isHexChar(buf[end]) && --len >= 0) { ++end; }
     if (!isRange) {
-      chi = cp.read();
-      if ('-' != chi) {
+      if (end == limit || '-' != buf[end]) {
         throw new ParseException(
             new Message(
                 MessageType.EXPECTED_TOKEN,
-                cp.getCurrentPosition(),
-                MessagePart.Factory.valueOf("-"),
-                chi < 0 ? MessagePart.Factory.valueOf((char) chi)
-                        : MessagePart.Factory.valueOf("<end-of-input>")));
+                cp.filePositionForOffsets(end, end),
+                MessagePart.Factory.valueOf("-"), toMessagePart(cp, end)));
       }
-      sb.append('-');
+      ++end;
 
       len = 6;
-      while ('?' == cp.lookahead() && --len >= 0) {
-        sb.append('?');
-        cp.read();
-      }
-      while ((chi = cp.lookahead()) >= 0
-             && CssLexer.isHexChar((char) chi) && --len >= 0) {
-        sb.append((char) chi);
-        cp.read();
+      while (end < limit && '?' == buf[end] && --len >= 0) { ++end; }
+      while (end < limit && CssLexer.isHexChar(buf[end]) && --len >= 0) {
+        ++end;
       }
     }
+    return end != start ? end : -1;
   }
 
   // nonascii    [\200-\377]
   private static boolean isNonAscii(char ch) {
     return ch >= '\200' && ch <= '\377';
+  }
+
+  private static MessagePart toMessagePart(CharProducer cp, int offset) {
+    return MessagePart.Factory.valueOf(
+        offset == cp.getLimit()
+        ? "<end-of-input>"
+        : "" + cp.getBuffer()[offset]);
   }
 }

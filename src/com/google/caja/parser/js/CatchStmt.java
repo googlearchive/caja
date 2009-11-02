@@ -28,16 +28,16 @@ import java.util.List;
  */
 public final class CatchStmt extends AbstractStatement {
   private Declaration exception;
-  private Statement body;
+  private Block body;
 
   /** @param value unused.  This ctor is provided for reflection. */
   @ReflectiveCtor
   public CatchStmt(
       FilePosition pos, Void value, List<? extends ParseTreeNode> children) {
-    this(pos, (Declaration) children.get(0), (Statement) children.get(1));
+    this(pos, (Declaration) children.get(0), (Block) children.get(1));
   }
 
-  public CatchStmt(FilePosition pos, Declaration exception, Statement body) {
+  public CatchStmt(FilePosition pos, Declaration exception, Block body) {
     super(pos, Statement.class);
     createMutation()
         .appendChild(exception)
@@ -50,11 +50,11 @@ public final class CatchStmt extends AbstractStatement {
     super.childrenChanged();
     List<? extends ParseTreeNode> children = children();
     this.exception = (Declaration) children.get(0);
-    this.body = (Statement) children.get(1);
+    this.body = (Block) children.get(1);
   }
 
   public Declaration getException() { return exception; }
-  public Statement getBody() { return body; }
+  public Block getBody() { return body; }
 
   @Override
   public Object getValue() { return null; }

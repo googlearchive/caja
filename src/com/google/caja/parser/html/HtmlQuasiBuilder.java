@@ -14,17 +14,21 @@
 
 package com.google.caja.parser.html;
 
+import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.FilePosition;
+import com.google.caja.lexer.HtmlLexer;
 import com.google.caja.lexer.HtmlTokenType;
 import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.ParseException;
 import com.google.caja.lexer.PositionInferer;
 import com.google.caja.lexer.Token;
 import com.google.caja.lexer.TokenQueue;
+import com.google.caja.lexer.TokenStream;
 import com.google.caja.lexer.TokenQueue.Mark;
 import com.google.caja.lexer.escaping.Escaping;
 import com.google.caja.reporting.DevNullMessageQueue;
 import com.google.caja.util.Maps;
+import com.google.caja.util.Sets;
 import com.google.caja.util.Strings;
 
 import java.io.IOException;
@@ -32,6 +36,7 @@ import java.io.StringReader;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -84,6 +89,13 @@ public class HtmlQuasiBuilder {
   }
 
   /**
+   * Tags that are ignored in HTML5 unless seen inside a certain other tag, and
+   * so cannot appear at the top level of a parsed HTML5 document fragment.
+   */
+  private static final Set<String> PROBLEMATIC_TAGS = Sets.newHashSet(
+      "<thead", "<tbody", "<tfoot", "<caption", "<tr", "<td", "<th",
+      "<option");
+  /**
    * @param quasiHtml a string of HTML containing quasi-literal identifiers.
    * @param bindings adjacent quasi-identifier names and binding values.
    *     If a binding value is a DomTree, then that binding may be substituted
@@ -99,25 +111,56 @@ public class HtmlQuasiBuilder {
     Node quasi = QUASI_CACHE.get(quasiHtml);
     if (quasi == null) {
       try {
-        TokenQueue<HtmlTokenType> tq = DomParser.makeTokenQueue(
-            FilePosition.UNKNOWN, new StringReader(quasiHtml), false);
+        CharProducer cp = CharProducer.Factory.fromString(
+            quasiHtml, InputSource.UNKNOWN);
+        TokenQueue<HtmlTokenType> tq = new TokenQueue<HtmlTokenType>(
+            new HtmlLexer(cp.clone()), InputSource.UNKNOWN);
         boolean isDocument = false;
         Mark m = tq.mark();
+        Token<HtmlTokenType> firstTag = null;
         while (!tq.isEmpty()) {
           Token<HtmlTokenType> t = tq.pop();
-          if (t.type == HtmlTokenType.TAGBEGIN
-              && "<html".equals(Strings.toLowerCase(t.text))) {
-            isDocument = true;
-            break;
+          if (t.type == HtmlTokenType.TAGBEGIN) {
+            if (firstTag == null) { firstTag = t; }
+            if (Strings.equalsIgnoreCase("<html", t.text)) {
+              isDocument = true;
+              break;
+            }
           }
         }
-        tq.rewind(m);
-        DomParser p = new DomParser(tq, false, DevNullMessageQueue.singleton());
+        boolean isProblematic = !isDocument && firstTag != null
+            && PROBLEMATIC_TAGS.contains(Strings.toLowerCase(firstTag.text));
+        if (isProblematic) {
+          final TokenStream<HtmlTokenType> lexer = new HtmlLexer(cp);
+          final TokenStream<HtmlTokenType> caseFilter
+              = new TokenStream<HtmlTokenType>() {
+            public boolean hasNext() throws ParseException {
+              return lexer.hasNext();
+            }
+            public Token<HtmlTokenType> next() throws ParseException {
+              Token<HtmlTokenType> t = lexer.next();
+              switch (t.type) {
+                case TAGBEGIN: case TAGEND: case ATTRNAME:
+                  if (!t.text.contains(":")) {
+                    t = Token.instance(
+                        Strings.toLowerCase(t.text), t.type, t.pos);
+                  }
+                  break;
+                default: break;
+              }
+              return t;
+            }
+          };
+          tq = new TokenQueue<HtmlTokenType>(caseFilter, InputSource.UNKNOWN);
+        } else {
+          tq.rewind(m);
+        }
+
+        DomParser p = new DomParser(
+            tq, isProblematic, DevNullMessageQueue.singleton());
         quasi = isDocument
             ? p.parseDocument()
             : p.parseFragment(DomParser.makeDocument(null, null));
-      } catch (IOException ex) {
-        throw new RuntimeException("Can't drain StringReader", ex);
       } catch (ParseException ex) {
         throw new RuntimeException("Malformed Quasiliteral : " + quasiHtml, ex);
       }
@@ -140,11 +183,14 @@ public class HtmlQuasiBuilder {
               FilePosition.startOfFile(InputSource.UNKNOWN),
               new StringReader(html), false),
           false, DevNullMessageQueue.singleton())
-          .parseFragment(DomParser.makeDocument(null, null));
+          .parseFragment(doc);
     } catch (IOException ex) {
       throw new RuntimeException("Can't drain StringReader", ex);
     }
   }
+
+  /** The document used to create DOM nodes. */
+  public Document getDocument() { return doc; }
 
   /**
    * Given a file position for a quasi generated sub-tree, make sure all
@@ -388,9 +434,9 @@ public class HtmlQuasiBuilder {
       char chn = rawAttributeValue.charAt(end - 1);
       if (chn == '"' || chn == '\'') {
         --end;
-      }
-      if (start < end && rawAttributeValue.charAt(0) == chn) {
-        ++start;
+        if (start < end && rawAttributeValue.charAt(0) == chn) {
+          ++start;
+        }
       }
     }
     return rawAttributeValue.substring(start, end);

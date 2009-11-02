@@ -35,15 +35,12 @@ import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.Pair;
 import com.google.caja.util.Pipeline;
-import com.google.caja.util.Callback;
-import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.render.Concatenator;
 
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.io.IOException;
 
 import org.w3c.dom.Node;
 
@@ -89,7 +86,7 @@ public final class CompileHtmlStage implements Pipeline.Stage<Jobs> {
 
     if (!ihtmlRoots.isEmpty() || !stylesheets.isEmpty()) {
       MessageQueue mq = jobs.getMessageQueue();
-  
+
       TemplateSanitizer ts = new TemplateSanitizer(htmlSchema, mq);
       for (Node ihtmlRoot : ihtmlRoots) { ts.sanitize(ihtmlRoot); }
       TemplateCompiler tc = new TemplateCompiler(
@@ -116,7 +113,7 @@ public final class CompileHtmlStage implements Pipeline.Stage<Jobs> {
             + "./*@synthetic*/emitStatic(@html)",
         "html", renderDomAsJsStringLiteral(node)));
   }
-  
+
   private static StringLiteral renderDomAsJsStringLiteral(Node node) {
     StringBuilder stringBuilder = new StringBuilder();
     TokenConsumer tc = new Concatenator(stringBuilder);

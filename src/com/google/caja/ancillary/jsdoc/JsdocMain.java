@@ -234,7 +234,7 @@ public class JsdocMain {
           mq.addMessage(MessageType.NO_SUCH_FILE, fs.toInputSource(f));
           continue;
         }
-        initFiles.add(Pair.pair(f, drain(fs.read(f))));
+        initFiles.add(Pair.pair(f, fs.read(f).toString()));
       } catch (IOException ex) {
         mq.addMessage(
             MessageType.IO_ERROR, MessagePart.Factory.valueOf(path));
@@ -344,14 +344,6 @@ public class JsdocMain {
     });
     node.render(new RenderContext(tc));
     tc.noMoreTokens();
-  }
-
-  private static String drain(CharProducer cp) {
-    StringBuilder sb = new StringBuilder();
-    for (int ch; (ch = cp.read()) >= 0;) {
-      sb.append((char) ch);
-    }
-    return sb.toString();
   }
 
   static class RealFileSystem implements FileSystem {

@@ -114,7 +114,7 @@ public class SnippetProducerTest extends TestCase {
   public final void testGetSnippetTwoPos() {
     CharProducer cp = CharProducer.Factory.create(
         new StringReader(F1_TEXT), f1);
-    while (cp.read() >= 0) {}
+    cp.consume(cp.length());
 
     Message msg = new Message(
         TestMessageType.TWO,

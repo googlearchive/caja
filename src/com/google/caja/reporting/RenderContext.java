@@ -30,20 +30,26 @@ public class RenderContext {
   private final boolean json;
   /** True iff DOM tree nodes should be rendered as XML. */
   private final boolean asXml;
+  /**
+   * True iff object ctor keys that are JS identifiers can be rendered without
+   * quotes.
+   */
+  private final boolean rawObjKeys;
   private final TokenConsumer out;
 
   public RenderContext(TokenConsumer out) {
-    this(true, false, false, false, out);
+    this(true, false, false, false, false, out);
   }
 
   private RenderContext(
       boolean asciiOnly, boolean embeddable, boolean json, boolean asXml,
-      TokenConsumer out) {
+      boolean rawObjKeys, TokenConsumer out) {
     if (null == out) { throw new NullPointerException(); }
     this.embeddable = embeddable;
     this.asciiOnly = asciiOnly;
     this.json = json;
     this.asXml = asXml;
+    this.rawObjKeys = rawObjKeys;
     this.out = out;
   }
 
@@ -60,22 +66,29 @@ public class RenderContext {
   public final boolean asJson() { return json; }
   /** True iff DOM tree nodes should be rendered as XML. */
   public final boolean asXml() { return asXml; }
+  public final boolean rawObjKeys() { return rawObjKeys; }
   public final TokenConsumer getOut() { return out; }
 
   public RenderContext withAsciiOnly(boolean b) {
     return b != asciiOnly
-        ? new RenderContext(b, embeddable, json, asXml, out) : this;
+        ? new RenderContext(b, embeddable, json, asXml, rawObjKeys, out) : this;
   }
   public RenderContext withEmbeddable(boolean b) {
     return b != embeddable
-        ? new RenderContext(asciiOnly, b, json, asXml, out) : this;
+        ? new RenderContext(asciiOnly, b, json, asXml, rawObjKeys, out) : this;
   }
   public RenderContext withJson(boolean b) {
     return b != json
-        ? new RenderContext(asciiOnly, embeddable, b, asXml, out) : this;
+        ? new RenderContext(asciiOnly, embeddable, b, asXml, rawObjKeys, out)
+        : this;
   }
   public RenderContext withAsXml(boolean b) {
     return b != this.asXml
-        ? new RenderContext(asciiOnly, embeddable, json, b, out) : this;
+        ? new RenderContext(asciiOnly, embeddable, json, b, rawObjKeys, out)
+        : this;
+  }
+  public RenderContext withRawObjKeys(boolean b) {
+    return b != this.asXml
+        ? new RenderContext(asciiOnly, embeddable, json, asXml, b, out) : this;
   }
 }

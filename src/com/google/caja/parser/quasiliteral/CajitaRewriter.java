@@ -90,7 +90,7 @@ public class CajitaRewriter extends Rewriter {
   private final BuildInfo buildInfo;
   private final ModuleManager moduleManager;
   // TODO: move this into scope if we use a single CajitaRewriter to rewrite
-  // multiple modules 
+  // multiple modules
   private final Set<StringLiteral> moduleNameList
       = new HashSet<StringLiteral>();
 
@@ -160,7 +160,7 @@ public class CajitaRewriter extends Rewriter {
       TryStmt tryer = (TryStmt) node;
       result = new TryStmt(
           node.getFilePosition(),
-          (Statement) returnLast(tryer.getBody()),
+          (Block) returnLast(tryer.getBody()),
           tryer.getCatchClause(),
           tryer.getFinallyClause());
     }
@@ -168,7 +168,7 @@ public class CajitaRewriter extends Rewriter {
     result.getAttributes().putAll(node.getAttributes());
     return result;
   }
-  
+
   // A NOTE ABOUT MATCHING MEMBER ACCESS EXPRESSIONS
   // When we match the pattern like '@x.@y' or '@x.@y()' against a specimen,
   // the result is that 'y' is bound to the rightmost component, and 'x' is
@@ -307,7 +307,7 @@ public class CajitaRewriter extends Rewriter {
           ObjectConstructor moduleObjectLiteral = (ObjectConstructor) substV(
               "rewrittenModuleStmts", returnLast(rewrittenModuleStmts),
               "moduleNames", new ArrayConstructor(
-                  FilePosition.UNKNOWN, 
+                  FilePosition.UNKNOWN,
                   new ArrayList<StringLiteral>(moduleNameList)),
               "cajolerName", new StringLiteral(
                   FilePosition.UNKNOWN, "com.google.caja"),

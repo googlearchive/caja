@@ -103,6 +103,9 @@ public class ExpressionTest extends CajaTestCase {
     assertSimplified("foo()", "foo() && 1");
     assertSimplified("foo()", "1 && foo()");
     assertSimplified(null, "1 && 2");
+    assertSimplified("++x", "++x");
+    assertSimplified("x -= 2", "x -= 2");
+    assertSimplified("x = 2", "x = 2");
     assertSimplified("x + y", "x + y");  // coercion might be side-effecting
   }
 

@@ -23,7 +23,9 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
+import java.util.Date;
 import java.util.Hashtable;
+import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -131,5 +133,38 @@ final class TestHttpServletResponse implements HttpServletResponse {
       return bytes;
     }
     return ((StringWriter) output).toString();
+  }
+  public void addDateHeader(String arg0, long arg1) {
+    addHeader(arg0, "" + new Date(arg1));
+  }
+  public void addHeader(String arg0, String arg1) {
+    headers.put(arg0, arg1);
+  }
+  public void addIntHeader(String arg0, int arg1) {
+    addHeader(arg0, "" + arg1);
+  }
+  public void flushBuffer() throws IOException {
+    throw new UnsupportedOperationException();
+  }
+  public int getBufferSize() {
+    throw new UnsupportedOperationException();
+  }
+  public Locale getLocale() {
+    throw new UnsupportedOperationException();
+  }
+  public boolean isCommitted() {
+    throw new UnsupportedOperationException();
+  }
+  public void reset() {
+    throw new UnsupportedOperationException();
+  }
+  public void resetBuffer() {
+    throw new UnsupportedOperationException();
+  }
+  public void setBufferSize(int arg0) {
+    throw new UnsupportedOperationException();
+  }
+  public void setLocale(Locale arg0) {
+    throw new UnsupportedOperationException();
   }
 }
