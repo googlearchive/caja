@@ -18,13 +18,24 @@
   .testcontainer { background: yellow; border: 2px solid yellow }
   .clickme { border: 2px solid fuchsia; }
   .waiting { border: 2px solid aqua; }
+  .manual { background: #eef; border: 2px solid #00f; }
   .passed { background: #c0ffc0; border: 2px solid #c0ffc0 }
   .invisible { display: none; float: left }
   .inline { display: inline }
 </style>
 
-<p class="waiting testcontainer" id="test-timeout-and-interval">
-  Timeouts and Intervals<br>
+<p class="manual testcontainer" id="test-related-target-mouse-container">
+  <span id="test-related-target-mouse">
+    Move mouse here to see event.relatedTarget.
+    Rapid motion from outside sandbox should show a null relatedTarget.
+  </span>
+  <br />
+  <span id="test-related-target-mouse-info">&nbsp;</span>
+</p>
+
+<p class="clickme testcontainer" id="test-related-target">
+  <b id="test-related-target-child">click me (test-related-target)
+  </b>
 </p>
 
 <p class="clickme testcontainer" id="test-add-event-listener">
@@ -87,7 +98,16 @@
      onclick="pass('test-onclick-handler');">click me</b>
 </p>
 
+<p class="clickme testcontainer" id="test-current-target">
+  <b id="test-current-target-child">click me</b>
+</p>
+
+<p class="waiting testcontainer" id="test-timeout-and-interval">
+  Timeouts and Intervals<br>
+</p>
+
 <br>
+
 <div class="testcontainer" id="test-document-write">
   <div>
     <p>Before <code>document.write</code></p>
@@ -908,6 +928,57 @@ jsunitRegister('testOnclickHandler',
                function testOnclickHandler() {
   // nothing to do here
 });
+
+jsunitRegister('testCurrentTarget',
+               function testCurrentTarget() {
+  var parent = document.getElementById('test-current-target');
+  var child = document.getElementById('test-current-target-child');
+  var gotChildClick = false;
+  parent.addEventListener('click', parentClick, false);
+  child.addEventListener('click', childClick, false);
+
+  function childClick(event) {
+    assertEquals('test-current-target-child', event.currentTarget.id);
+    gotChildClick = true;
+  }
+
+  function parentClick(event) {
+    assertEquals('test-current-target', event.currentTarget.id);
+    assertTrue(gotChildClick);
+    pass('test-current-target');
+  }
+});
+
+jsunitRegister('testRelatedTarget',
+               function testRelatedTarget() {
+  var child = document.getElementById('test-related-target-child');
+  child.addEventListener('click', childClick, false);
+
+  function childClick(event) {
+    // get should work.  in manual clicks, relatedTarget is null, but in
+    // webdriver simulated clicks, it's non-null.
+    assertEquals(event.relatedTarget, event.relatedTarget);
+    // set doesn't have to work, but shouldn't throw an error
+    event.relatedTarget = [];
+    pass('test-related-target');
+  }
+
+  // TODO: webdriver doesn't have a good way of testing relatedTarget.
+  // there are two cases we care about: relatedTarget is an element in the
+  // sandbox, and relatedTarget is an element outside the sandbox.
+
+  var mouse = document.getElementById('test-related-target-mouse');
+  var info = document.getElementById('test-related-target-mouse-info');
+  mouse.addEventListener('mouseover', mouseReport, false);
+  mouse.addEventListener('mouseout', mouseReport, false);
+
+  function mouseReport(event) {
+    var r = event.relatedTarget;
+    r = r && (r.tagName + '#' + r.id);
+    info.innerHTML = event.type + ' ' + String(r);
+  }
+});
+
 
 jsunitRegister('testDocumentWrite',
                function testDocumentWrite() {
@@ -3061,12 +3132,17 @@ jsunitRegister('testFocusBlur',
   var input = document.getElementById('test-focus-blur-1');
   input.focus();
   input.blur();
-  // TODO: verify focus does change.  requires an event-driven tester.
+  // IE specific methods
+  if (input.hasFocus) {
+    assertEquals('boolean', typeof input.hasFocus());
+  }
+  if (input.setActive) {
+    input.setActive();
+  }
+  // TODO: can't verify focus changes in webdriver, because webdriver runs
+  // without focusing the browser window, so onfocus never gets fired.
   pass('test-focus-blur');
 });
-
-// TODO: can't test onfocus/onblur in webdriver, because webdriver
-// runs without focusing the browser, so onfocus never fires.
 
 // form:onreset uses the same logic path as input:onfocus
 jsunitRegister('testOnReset',

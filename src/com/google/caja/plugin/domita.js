@@ -2135,6 +2135,23 @@ var attachDocumentStub = (function () {
         this.node___.focus();
       }
     };
+    // IE-specific method.  Sets the element that will have focus when the
+    // window has focus, without focusing the window.
+    if (document.documentElement.setActive) {
+      TameElement.prototype.setActive = function () {
+        if (imports.isProcessingEvent___) {
+          this.node___.setActive();
+        }
+      };
+      ___.grantTypedMethod(TameElement.prototype, 'setActive');
+    }
+    // IE-specific method.
+    if (document.documentElement.hasFocus) {
+      TameElement.prototype.hasFocus = function () {
+        return this.node___.hasFocus();
+      };
+      ___.grantTypedMethod(TameElement.prototype, 'hasFocus');
+    }
     TameElement.prototype.getId = function () {
       return this.getAttribute('id') || '';
     };
@@ -2946,6 +2963,14 @@ var attachDocumentStub = (function () {
         }
       }
       return tameRelatedNode(t, true, defaultTameNode);
+    };
+    // relatedTarget is read-only.  this dummy setter is because some code
+    // tries to workaround IE by setting a relatedTarget when it's not set.
+    // code in a sandbox can't tell the difference between "falsey because
+    // relatedTarget is not supported" and "falsey because relatedTarget is
+    // outside sandbox".
+    TameEvent.prototype.setRelatedTarget = function (newValue) {
+      return newValue;
     };
     TameEvent.prototype.getFromElement = function () {
       return tameRelatedNode(this.event___.fromElement, true, defaultTameNode);
@@ -4065,6 +4090,10 @@ var attachDocumentStub = (function () {
  */
 function plugin_dispatchEvent___(thisNode, event, pluginId, handler) {
   event = (event || window.event);
+  // support currentTarget on IE[678]
+  if (!event.currentTarget) {
+    event.currentTarget = thisNode;
+  }
   var sig = String(handler).match(/^function\b[^\)]*\)/);
   var imports = ___.getImports(pluginId);
   if (imports.domitaTrace___ & 0x1) {
