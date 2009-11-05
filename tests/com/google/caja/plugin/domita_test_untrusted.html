@@ -227,7 +227,9 @@
 
 <p class="testcontainer" id="test-bug-920"><input id="bug-920" /></p>
 
+<p class="testcontainer" id="test-array-slice">test-array-slice</p>
 <p class="testcontainer" id="test-browser-apply">test-browser-apply</p>
+<p class="testcontainer" id="test-xo4a-apply">test-xo4a-apply</p>
 
 <br>
 
@@ -1701,14 +1703,83 @@ jsunitRegister('testBug920',
   pass('test-bug-920');
 });
 
+jsunitRegister('testArraySlice',
+               function testArraySlice() {
+  function assertArray(expect, actual, note) {
+    assertEquals(note + ' typeof', 'object', typeof actual);
+    assertEquals(note + ' length', expect.length, actual.length);
+    for (var k = 0; k < actual.length; ++k) {
+      assertEquals(note + ' @' + k, expect[k], actual[k]);
+    }
+  }
+
+  assertArray([], Array.slice(null), 'null');
+  assertArray([], Array.slice(void 0), 'void 0');
+
+  // note difference between missing arg and undefined arg.
+  assertArray([9], Array.slice([9]), '([9])');
+  assertArray([9], Array.slice([9], void 0), '([9], void 0)');
+  assertArray([],  Array.slice([9], void 0, void 0), '([9], void 0, void 0)');
+  assertArray([],  Array.slice([9], void 0, 0), '([9], void 0, 0)');
+
+  assertArray([2,3,4], Array.slice([0,1,2,3,4,5,6], 2, 5));
+  assertArray([2,3], Array.slice([0,1,2,3], 2, 5));
+
+  pass('test-array-slice');
+});
+
 // http://code.google.com/p/google-caja/issues/detail?id=1077
 jsunitRegister('testBrowserApply',
                function testBrowserApply() {
-  var canary = 'alive';
-  var kill = function() { canary = 'dead'; };
-  kill.apply({});
-  assertEquals('dead', canary);
+  var count = 0;
+
+  var inc = function() { if (arguments.length === 0) count += 1; };
+
+  inc.apply({});
+  inc.apply({}, []);
+  assertEquals('inc()', 2, count);
+
+  inc.apply({}, [1]);
+  assertEquals('inc(1)', 2, count);
+
+  // ES5 says these should work, but they throw an error on IE[678] in
+  // cajita, but not in valija.  In cajita, these become a direct call to
+  // native apply, and native apply throws the error.  This could be fixed
+  // by wrapping apply, but that adds overhead without much benefit.
+  //inc.apply({}, null);
+  //inc.apply({}, undefined);
+
+  // ES5 says these should throw TypeError.  They usually do in cajita, and
+  // usually don't in valija.  Enforcing the TypeError adds overhead
+  // without much benefit.
+  //expectFailure(function() { inc.apply({}, 0); }, 'apply 0');
+  //expectFailure(function() { inc.apply({}, 1); }, 'apply 1');
+  //expectFailure(function() { inc.apply({}, false); }, 'apply false');
+  //expectFailure(function() { inc.apply({}, true); }, 'apply true');
+  //expectFailure(function() { inc.apply({}, ''); }, 'apply ""');
+  //expectFailure(function() { inc.apply({}, 'x'); }, 'apply "x"');
+  //expectFailure(function() { inc.apply({}, {length:0}); }, 'fake array"');
+
+  var add = function(x) { if (arguments.length === 1) count += x; };
+
+  add.apply({}, [3]);
+  assertEquals('add(3)', 5, count);
+
+  add.apply({}, []);
+  add.apply({}, [4, 5]);
+  assertEquals('add(4, 5)', 5, count);
+
   pass('test-browser-apply');
+});
+
+jsunitRegister('textXo4aApply',
+               function testXo4aApply() {
+  // cajita can't access Object.prototype
+  if (directAccess.isValija) {
+    var type = Object.prototype.toString.apply('');
+    assertEquals('[object String]', type);
+  }
+  pass('test-xo4a-apply');
 });
 
 jsunitRegister('testInputDefaultValue',

@@ -94,7 +94,9 @@ if (Date.prototype.toISOString === void 0 &&
 if (Array.slice === void 0) {
   Array.slice = function(self, start, end) {
     if (self && typeof self === 'object') {
-      return Array.prototype.slice.call(self, start || 0, end || self.length);
+      if (arguments.length < 2) { start = 0; }
+      if (arguments.length < 3) { end = self.length; }
+      return Array.prototype.slice.call(self, start, end);
     } else {
       return [];
     }
@@ -1467,8 +1469,8 @@ var safeJSON;
    */
   function tameXo4a() {
     var xo4aFunc = this;
-    function tameApplyFuncWrapper(self, args) {
-      return xo4aFunc.apply(stopEscalation(self), args);
+    function tameApplyFuncWrapper(self, opt_args) {
+      return xo4aFunc.apply(stopEscalation(self), opt_args || []);
     }
     markFuncFreeze(tameApplyFuncWrapper);
 
@@ -1496,10 +1498,10 @@ var safeJSON;
    */
   function tameInnocent() {
     var feralFunc = this;
-    function tameApplyFuncWrapper(self, args) {
+    function tameApplyFuncWrapper(self, opt_args) {
       var feralThis = stopEscalation(untame(self));
-      var feralArgs = untame(args);
-      var feralResult = feralFunc.apply(feralThis, feralArgs);
+      var feralArgs = untame(opt_args);
+      var feralResult = feralFunc.apply(feralThis, feralArgs || []);
       return tame(feralResult);
     }
     markFuncFreeze(tameApplyFuncWrapper);
@@ -1592,9 +1594,12 @@ var safeJSON;
     if (opt_applyFunc) {
       applyFunc = asFunc(opt_applyFunc);
     } else {
-      applyFunc = markFuncFreeze(function applyFun(self, args) {
-        args = Array.slice(args, 0);                              
-        return callFunc.apply(USELESS, [self].concat(args));
+      applyFunc = markFuncFreeze(function applyFun(self, opt_args) {
+        var args = [self];
+        if (opt_args !== void 0 && opt_args !== null) {
+          args.push.apply(args, opt_args);
+        }
+        return callFunc.apply(USELESS, args);
       });
     }
 
@@ -1602,7 +1607,7 @@ var safeJSON;
     result.call = callFunc;
     result.apply = applyFunc;
     result.bind = markFuncFreeze(function bindFun(self, var_args) {
-      self = stopEscalation(self);                                 
+      self = stopEscalation(self);
       var args = [USELESS, self].concat(Array.slice(arguments, 1));
       return markFuncFreeze(callFunc.bind.apply(callFunc, args));
     });
@@ -3024,8 +3029,8 @@ var safeJSON;
 
   grantToString(Function.prototype);
   handleGenericMethod(Function.prototype, 'apply',
-                      function applyHandler(self, realArgs) {
-    return toFunc(this).apply(USELESS, realArgs);
+                      function applyHandler(self, opt_args) {
+    return toFunc(this).apply(USELESS, opt_args || []);
   });
   handleGenericMethod(Function.prototype, 'call',
                       function callHandler(self, var_args) {
