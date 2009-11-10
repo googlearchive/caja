@@ -1946,6 +1946,7 @@ jsunitRegister('testOnLoadListener',
   window.addEventListener('load', setb2);
   window.removeEventListener('load', setb1);
   window.onload = setb3;
+  //TODO(felix8a): also need to test when onload isn't set
 
   assertAsynchronousRequirement(
       'onload listeners',

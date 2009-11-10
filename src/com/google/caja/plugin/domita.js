@@ -3389,9 +3389,10 @@ var attachDocumentStub = (function () {
     // Called by the html-emitter when the virtual document has been loaded.
     TameHTMLDocument.prototype.signalLoaded___ = function () {
       var onload = ((___.canRead(imports, '$v')
-                     && ___.canCallPub(imports.$v, 'ro')
-                     && imports.$v.ro('onload'))
-                    || ___.readPub(imports.window, 'onload'));
+                     && ___.canCallPub(imports.$v, 'ros')
+                     && imports.$v.ros('onload'))
+                    || (imports.window &&
+                        ___.readPub(imports.window, 'onload')));
       if (onload) {
         setTimeout(
             function () { ___.callPub(onload, 'call', [___.USELESS]); },
