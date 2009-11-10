@@ -1937,17 +1937,20 @@ jsunitRegister('testOnLoadListener',
                function testOnLoadListener() {
   var b1 = false;
   var b2 = false;
+  var b3 = false;
   function setb1() { console.log('set onload b1'); b1 = true; }
   function setb2() { console.log('set onload b2'); b2 = true; }
+  function setb3() { console.log('set onload b3'); b3 = true; }
 
   window.addEventListener('load', setb1);
   window.addEventListener('load', setb2);
   window.removeEventListener('load', setb1);
+  window.onload = setb3;
 
   assertAsynchronousRequirement(
       'onload listeners',
       function () {
-        if (!b1 && b2) {
+        if (!b1 && b2 && b3) {
           pass('test-onload-listener');
           return true;
         }
@@ -1956,6 +1959,7 @@ jsunitRegister('testOnLoadListener',
 
   assertFalse(b1);
   assertFalse(b2);
+  assertFalse(b3);
 });
 
 jsunitRegister('testInnerHTMLStyleSanitizer',

@@ -3388,6 +3388,15 @@ var attachDocumentStub = (function () {
     };
     // Called by the html-emitter when the virtual document has been loaded.
     TameHTMLDocument.prototype.signalLoaded___ = function () {
+      var onload = ((___.canRead(imports, '$v')
+                     && ___.canCallPub(imports.$v, 'ro')
+                     && imports.$v.ro('onload'))
+                    || ___.readPub(imports.window, 'onload'));
+      if (onload) {
+        setTimeout(
+            function () { ___.callPub(onload, 'call', [___.USELESS]); },
+            0);
+      }
       var listeners = this.onLoadListeners___;
       this.onLoadListeners___ = [];
       for (var i = 0, n = listeners.length; i < n; ++i) {
@@ -4069,7 +4078,7 @@ var attachDocumentStub = (function () {
 
     var outers = imports.outers;
     if (___.isJSONContainer(outers)) {
-      // For Valija, attach use the window object as outers.
+      // For Valija, use the window object as outers.
       ___.forOwnKeys(outers, ___.markFuncFreeze(function(k, v) {
         if (!(k in tameWindow)) {
           tameWindow[k] = v;
