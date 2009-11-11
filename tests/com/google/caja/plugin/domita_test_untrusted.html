@@ -438,6 +438,7 @@ can test window.scrollBy with a positive x value with a visible effect.
 <div class="testcontainer" id="test-row-cell">
 Test row cell
   <table id="test-row-cell-1">
+    <tbody id="test-row-cell-2"></tbody>
   </table>
 </div>
 
@@ -3000,17 +3001,28 @@ jsunitRegister('testRowCell',
   assertEquals(table.rows.length, 1);
   assertEquals(0, table.rows.item(0).cells.length);
   table.rows.item(0).insertCell(-1);
-  table.rows.item(0).insertCell(-1);
+  var cell = table.rows.item(0).insertCell(-1);
+  assertEquals(1, cell.cellIndex);
   assertEquals(2, table.rows.item(0).cells.length);
   table.rows.item(0).deleteCell(1);
   table.rows.item(0).deleteCell(0);
   assertEquals(0, table.rows.item(0).cells.length);
-  try{
+  var tableDeleteRow = false, tbodyDeleteRow = false;
+  try {
     table.deleteRow(2);
-  } catch(e) {
+  } catch (e) {
     assertEquals('Index size error.', e.message);
+    tableDeleteRow = true;
   }
-  pass('test-row-cell');
+  try {
+    document.getElementById('test-row-cell-2').deleteRow(2);
+  } catch (e) {
+    assertEquals('Index size error.', e.message);
+    tbodyDeleteRow = true;
+  }
+  if (tableDeleteRow === true && tbodyDeleteRow === true) {
+    pass('test-row-cell');
+  }
 });
 
 jsunitRegister('testNegativeIndices',

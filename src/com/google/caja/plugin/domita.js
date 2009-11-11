@@ -2780,8 +2780,8 @@ var attachDocumentStub = (function () {
       TameElement.call(this, node, editable, editable);
       classUtils.exportFields(
           this,
-          ['colSpan', 'cells', 'rowSpan', 'rows', 'rowIndex', 'align',
-           'vAlign', 'nowrap', 'sectionRowIndex']);
+          ['colSpan', 'cells', 'cellIndex', 'rowSpan', 'rows', 'rowIndex',
+           'align', 'vAlign', 'nowrap', 'sectionRowIndex']);
     }
     ___.extend(TameTableCompElement, TameElement);
     TameTableCompElement.prototype.getColSpan = function () {
@@ -2795,6 +2795,9 @@ var attachDocumentStub = (function () {
     TameTableCompElement.prototype.getCells = function () {
       return tameNodeList(
           this.node___.cells, this.editable___, defaultTameNode);
+    };
+    TameTableCompElement.prototype.getCellIndex = function () {
+      return this.node___.cellIndex;
     };
     TameTableCompElement.prototype.getRowSpan = function () {
       return this.node___.rowSpan;
@@ -2837,6 +2840,18 @@ var attachDocumentStub = (function () {
       this.node___.nowrap = newValue;
       return newValue;
     };
+    TameTableCompElement.prototype.insertRow = function (index) {
+      if (!this.editable___) { throw new Error(NOT_EDITABLE); }
+      requireIntIn(index, -1, this.node___.rows.length);
+      return defaultTameNode(this.node___.insertRow(index), this.editable___);
+    };
+    TameTableCompElement.prototype.deleteRow = function (index) {
+      if (!this.editable___) { throw new Error(NOT_EDITABLE); }
+      requireIntIn(index, -1, this.node___.rows.length);
+      this.node___.deleteRow(index);
+    };
+    ___.all2(___.grantTypedMethod, TameTableCompElement.prototype,
+             ['insertRow', 'deleteRow']);
 
     function requireIntIn(idx, min, max) {
       if (idx !== (idx | 0) || idx < min || idx > max) {
