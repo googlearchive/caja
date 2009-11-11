@@ -28,50 +28,49 @@
 <body style="width:80em; font-family: monospace; white-space: pre-wrap"
 ><script src=environment-checks.js></script><script>
 (function () {
-  var envJson;
-  if (typeof JSON !== 'undefined' && typeof JSON.stringify === 'function') {
-    envJson = JSON.stringify(env);
-  } else {
-    var prefixes = ['\\x00', '\\x0', '\\x', '\\u0', '\\u'];
-    function hex(ch) {
-      var hex = ch.charCodeAt(0).toString(16);
-      return prefixes[hex.length] + hex;
-    }
-    function stringify(json) {
-      if (json === null) { return 'null'; }
-      switch (typeof json) {
-        case 'boolean': return json ? 'true' : 'false';
-        case 'number':
-          if (isNaN(json) || isInfinite(json)) {
-            throw new Error(json);
-          }
-          return '' + json;
-        case 'string':
-          return '\x22' + json.replace(/[\x22\\]/g, '\\$&')
-              .replace(/[^\x20-\x7e]/g, hex) + '\x22';
-        case 'object':
-          switch (Object.prototype.toString.call(json)) {
-            case '[object Array]':
-              var els = [];
-              for (var i = json.length; --i != 0;) {
-                els[i] = stringify(json[i]);
-              }
-              return '[' + els + ']';
-            case '[object Object]':
-              var pairs = [];
-              for (var k in json) {
-                if (Object.prototype.hasOwnProperty.call(json, k)) {
-                  pairs.push(stringify(k) + ':' + stringify(json[k]));
-                }
-              }
-              return '{' + pairs + '}';
-          }
-          break;
-      }
-      throw new Error('' + json + ' : ' + typeof json);
-    }
-    envJson = stringify(env);
+  var prefixes = ['\\x00', '\\x0', '\\x', '\\u0', '\\u'];
+  function hex(ch) {
+    var hex = ch.charCodeAt(0).toString(16);
+    return prefixes[hex.length] + hex;
   }
+  function stringify(json) {
+    if (json === null) { return 'null'; }
+    switch (typeof json) {
+      case 'boolean': return json ? 'true' : 'false';
+      case 'number':
+        if (isNaN(json) || isInfinite(json)) {
+          throw new Error(json);
+        }
+        if (json === 0) {
+          return (1/json) < 0 ? '-0' : '0';
+        } else {
+          return '' + json;
+        }
+      case 'string':
+        return '\x22' + json.replace(/[\x22\\]/g, '\\$&')
+            .replace(/[^\x20-\x7e]/g, hex) + '\x22';
+      case 'object':
+        switch (Object.prototype.toString.call(json)) {
+          case '[object Array]':
+            var els = [];
+            for (var i = json.length; --i != 0;) {
+              els[i] = stringify(json[i]);
+            }
+            return '[' + els + ']';
+          case '[object Object]':
+            var pairs = [];
+            for (var k in json) {
+              if (Object.prototype.hasOwnProperty.call(json, k)) {
+                pairs.push(stringify(k) + ':' + stringify(json[k]));
+              }
+            }
+            return '{' + pairs.join(',\n') + '}';
+        }
+        break;
+    }
+    throw new Error('' + json + ' : ' + typeof json);
+  }
+  var envJson = stringify(env);
   document.body.appendChild(document.createTextNode(envJson));
 })();
 </script>

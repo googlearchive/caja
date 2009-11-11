@@ -45,13 +45,23 @@ var env = (function () {
       'navigator.appName',
       'navigator.appVersion',
       'navigator.platform',
+      // Check ES global definitions
+      'typeof undefined',
+      'Infinity === 1/0',
+      'NaN !== NaN',
+      //// Does window alias the global object?
+      '!!this.window && this === window',
       //// Is EcmaScript 5 strict mode present?
-      '!(function(){return this;}.call(null))',
+      '!(function () { return this; }.call(null))',
       //// Check whether native implementations are available
       'typeof JSON',
       'typeof addEventListener',
+      // IE makes a lot of its functions, objects.
+      // Fun fact: but not ActiveXObject.
       'typeof attachEvent',
+      '!!window.attachEvent',
       'typeof document.getElementsByClassName',
+      'typeof document.documentElement.getElementsByClassName',
       '!!document.all',
       'typeof Date.now',
       // Is the extended createElement syntax available?
@@ -65,19 +75,35 @@ var env = (function () {
       'typeof ActiveXObject',
       'typeof getComputedStyle',
       'typeof document.body.currentStyle',
+      '!!document.body.currentStyle',
       'typeof document.documentElement.compareDocumentPosition',
       'typeof document.documentElement.contains',
+      '!!document.documentElement.contains',
       'typeof document.createEvent',
+      'typeof document.createRange',
+      'typeof document.documentElement.doScroll',
+      '!!typeof document.documentElement.doScroll',
+      'typeof document.documentElement.getBoundingClientRect',
+      '!!document.documentElement.getBoundingClientRect',
+      '"sourceIndex" in document.documentElement',
       'typeof document.createEventObject',
+      '!!document.createEventObject',
       'typeof Date.prototype.toISOString',
       'typeof Date.prototype.toJSON',
       'typeof Array.slice',
       'typeof Function.prototype.bind',
+      'typeof Object.prototype.toSource',
+      'typeof uneval',
       //// Check for known bugs and inconsistencies
       // Do functions not leak dangerous info in negative indices?
       'void 0 === ((function(){})[-2])',
       // Do function expressions not muck with the local scope?
       'void 0 === ((function(){var b,a=function b(){};return b;})())',
+      // Do function scope frames inherit from Object.prototype?
+      // http://yura.thinkweb2.com/named-function-expressions/#spidermonkey-peculiarity
+      ('0 === (function () {'
+       + ' var toString = 0; return (function () { return toString; })();'
+       + ' })()'),
       // Do exceptions scope properly?
       '(function(){var e=true;try{throw false;}catch(e){}return e;})()',
       // Are regex functions or objects?

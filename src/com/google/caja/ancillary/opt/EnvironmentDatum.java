@@ -25,6 +25,7 @@ import com.google.caja.lexer.ParseException;
  */
 public enum EnvironmentDatum {
   NAV_USER_AGENT("navigator.userAgent"),
+  IS_WINDOW_GLOBAL("!!this.window && this === window"),
   ES5_STRICT_AVAILABLE("!(function () { return this; }.call(null))"),
   NEG_INDICES_SAFE("void 0 === ((function () {})[-2])"),
   FN_CTORS_PURE(
