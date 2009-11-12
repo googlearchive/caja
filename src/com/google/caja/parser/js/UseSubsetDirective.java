@@ -31,12 +31,12 @@ import java.util.Set;
  * <p>
  * "Use subsets" are they were defined in ES5.
  * Since then the grammar was changed to use a separate string literal per
- * use-directive. The use-directives do not necessarily define subsets. But 
- * they typically should define at least almost subsets in practice so 
- * the code within their scope will still work on browsers that do not 
- * recognize the "subset" to be used. For example, ES5/strict is not a subset 
+ * use-directive. The use-directives do not necessarily define subsets. But
+ * they typically should define at least almost subsets in practice so
+ * the code within their scope will still work on browsers that do not
+ * recognize the "subset" to be used. For example, ES5/strict is not a subset
  * of ES5/non-strict. See issue 1111.
- * 
+ *
  * <p>An <a href="http://wiki.ecmascript.org/lib/exe/fetch.php?id=es3.1%3Aes3.1_proposal_working_draft&amp;cache=cache&amp;media=es3.1:tc39-es31-draft27oct08.pdf"
  * >ES5 draft</a> defined the use grammar as:<blockquote><pre>
  * UseSubsetDirective opt :
@@ -54,7 +54,7 @@ import java.util.Set;
  *   <li>Evaluate SubsetList
  *   <li>Return Result(1)
  * </ol>
- * 
+ *
  * <p>
  * The production SubsetList : Subset is evaluated as follows:<ol>
  *   <li>If Subset is not the name of a usage subset that is supported by this
@@ -142,4 +142,6 @@ public final class UseSubsetDirective extends AbstractStatement {
   public boolean isTerminal() {
     return true;
   }
+
+  public boolean hasHangingConditional() { return false; }
 }

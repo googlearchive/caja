@@ -49,4 +49,6 @@ public final class DebuggerStmt extends AbstractStatement {
     out.mark(getFilePosition());
     out.consume("debugger");
   }
+
+  public boolean hasHangingConditional() { return false; }
 }

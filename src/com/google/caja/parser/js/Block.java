@@ -95,4 +95,6 @@ public final class Block
   public boolean isTerminal() {
     return true;
   }
+
+  public boolean hasHangingConditional() { return false; }
 }

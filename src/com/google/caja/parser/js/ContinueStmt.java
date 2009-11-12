@@ -63,4 +63,6 @@ public final class ContinueStmt extends AbstractStatement {
       out.consume(label);
     }
   }
+
+  public boolean hasHangingConditional() { return false; }
 }

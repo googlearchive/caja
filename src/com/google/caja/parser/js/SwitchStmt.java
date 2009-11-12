@@ -104,4 +104,6 @@ public final class SwitchStmt extends LabeledStatement {
   public boolean isTerminal() {
     return true;
   }
+
+  public boolean hasHangingConditional() { return false; }
 }

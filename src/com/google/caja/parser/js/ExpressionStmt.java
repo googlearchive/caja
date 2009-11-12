@@ -84,4 +84,6 @@ public final class ExpressionStmt extends AbstractStatement {
       expr.render(rc);
     }
   }
+
+  public boolean hasHangingConditional() { return false; }
 }

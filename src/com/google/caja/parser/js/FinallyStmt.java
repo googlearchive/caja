@@ -55,4 +55,6 @@ public final class FinallyStmt extends AbstractStatement {
     rc.getOut().consume("finally");
     body.renderBlock(rc, false);
   }
+
+  public boolean hasHangingConditional() { return false; }
 }

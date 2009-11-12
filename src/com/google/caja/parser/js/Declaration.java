@@ -102,4 +102,6 @@ public class Declaration extends AbstractStatement {
       if (isComma) { out.consume(")"); }
     }
   }
+
+  public boolean hasHangingConditional() { return false; }
 }

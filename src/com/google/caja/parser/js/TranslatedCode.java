@@ -75,6 +75,8 @@ public final class TranslatedCode extends AbstractStatement {
     out.consume("/* End translated code */");
   }
 
+  public boolean hasHangingConditional() { return false; }
+
   @Override
   public boolean isTerminal() {
     return true;

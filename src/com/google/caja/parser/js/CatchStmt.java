@@ -69,4 +69,6 @@ public final class CatchStmt extends AbstractStatement {
     out.consume(")");
     body.renderBlock(rc, false);
   }
+
+  public boolean hasHangingConditional() { return false; }
 }

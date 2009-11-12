@@ -94,4 +94,8 @@ public final class ForLoop extends Loop implements NestedScope {
     out.consume(")");
     getBody().renderBlock(rc, false);
   }
+
+  public boolean hasHangingConditional() {
+    return body.hasHangingConditional();
+  }
 }

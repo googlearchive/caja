@@ -39,4 +39,6 @@ public final class Noop extends AbstractStatement {
   public void render(RenderContext rc) {
     // render for Noop is a noop as renderBlock will take care of the semicolon
   }
+
+  public boolean hasHangingConditional() { return false; }
 }

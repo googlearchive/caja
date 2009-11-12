@@ -64,4 +64,6 @@ public final class BreakStmt extends AbstractStatement {
       out.consume(label);
     }
   }
+
+  public boolean hasHangingConditional() { return false; }
 }

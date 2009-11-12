@@ -19,7 +19,9 @@ import com.google.caja.lexer.Keyword;
 import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.lexer.ParseException;
 import com.google.caja.parser.AncestorChain;
+import com.google.caja.parser.MutableParseTreeNode;
 import com.google.caja.parser.ParseTreeNode;
+import com.google.caja.parser.Visitor;
 import com.google.caja.render.Concatenator;
 import com.google.caja.render.JsPrettyPrinter;
 import com.google.caja.reporting.Message;
@@ -29,7 +31,9 @@ import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageType;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.CajaTestCase;
+import com.google.caja.util.Lists;
 import com.google.caja.util.MoreAsserts;
+import com.google.caja.util.Pair;
 import com.google.caja.util.Strings;
 import com.google.caja.util.TestUtil;
 
@@ -346,6 +350,23 @@ public class ParserTest extends CajaTestCase {
         MessagePart.Factory.valueOf("C\0327"));
   }
 
+  /**
+   * If conditionals are moved around, they can get in a configuration that
+   * would be impossible to parse.
+   */
+  public final void testRenderingOfRebuiltConditionals() throws ParseException {
+    assertEquals(
+        render(js(fromString("if (foo) { if (bar);} else baz"))),
+        render(stripBlocks(js(fromString("if (foo) { if (bar) {} } else baz"))))
+        );
+    assertEquals(
+        render(js(fromString(
+            "if (foo) { while (foo) if (bar) break; } else baz"))),
+        render(stripBlocks(js(fromString(
+            "if (foo) { while (foo) if (bar) break; } else baz"))))
+        );
+  }
+
   public void assertExpectedSemi() {
     assertParseFails("foo(function () {return;");
     assertMessage(MessageType.EXPECTED_TOKEN, MessageLevel.ERROR,
@@ -602,5 +623,28 @@ public class ParserTest extends CajaTestCase {
     } catch (RuntimeException ex) {
       throw new RuntimeException(msg, ex);
     }
+  }
+
+  private static Statement stripBlocks(Block b) {
+    b.acceptPostOrder(new Visitor() {
+      public boolean visit(AncestorChain<?> chain) {
+        if (chain.node instanceof Block && chain.parent != null) {
+          Block b = chain.cast(Block.class).node;
+          List<? extends Statement> children = b.children();
+          switch (children.size()) {
+            case 0:
+              chain.parent.cast(MutableParseTreeNode.class).node.replaceChild(
+                  new Noop(b.getFilePosition()), b);
+              break;
+            case 1:
+              chain.parent.cast(MutableParseTreeNode.class).node.replaceChild(
+                  children.get(0), b);
+              break;
+          }
+        }
+        return true;
+      }
+    }, null);
+    return b;
   }
 }

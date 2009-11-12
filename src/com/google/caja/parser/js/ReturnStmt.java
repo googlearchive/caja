@@ -68,4 +68,6 @@ public final class ReturnStmt extends AbstractStatement {
       returnValue.render(rc);
     }
   }
+
+  public boolean hasHangingConditional() { return false; }
 }

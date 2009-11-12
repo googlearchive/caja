@@ -59,4 +59,6 @@ public final class ThrowStmt extends AbstractStatement {
     rc.getOut().consume("throw");
     exception.render(rc);
   }
+
+  public boolean hasHangingConditional() { return false; }
 }

@@ -60,4 +60,10 @@ public interface Statement extends ParseTreeNode {
    *   semicolon if not a block.
    */
   void renderBlock(RenderContext rc, boolean terminate);
+
+  /**
+   * True if the rendered form of the statement would consume more tokens if
+   * parsed followed by the tokens "else" and ";".
+   */
+  boolean hasHangingConditional();
 }

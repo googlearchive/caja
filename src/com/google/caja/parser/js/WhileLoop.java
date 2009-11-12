@@ -67,4 +67,8 @@ public class WhileLoop extends Loop {
     out.consume(")");
     body.renderBlock(rc, false);
   }
+
+  public boolean hasHangingConditional() {
+    return body.hasHangingConditional();
+  }
 }

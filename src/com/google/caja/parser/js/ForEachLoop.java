@@ -102,4 +102,8 @@ public final class ForEachLoop extends LabeledStatement implements NestedScope {
     out.consume(")");
     body.renderBlock(rc, false);
   }
+
+  public boolean hasHangingConditional() {
+    return body.hasHangingConditional();
+  }
 }

@@ -77,12 +77,26 @@ public final class Conditional extends AbstractStatement {
       out.consume("(");
       condition.render(rc);
       out.consume(")");
+      boolean hanging = body.hasHangingConditional();
+      if (hanging) { out.consume("{"); }
       body.renderBlock(rc, i + 2 < n);
+      if (hanging) { out.consume("}"); }
     }
     if (i < n) {
       Statement body = (Statement) children.get(i);
       out.consume("else");
       body.renderBlock(rc, false);
     }
+  }
+
+  public boolean hasHangingConditional() {
+    List<? extends ParseTreeNode> children = children();
+    int n = children.size();
+    // If there is no else clause, then an else following would change the
+    // meaning.
+    if ((n & 1) == 0) { return true; }
+    // Otherwise if the else clause has a hanging conditional, then an else
+    // would change the meaning.
+    return ((Statement) children.get(n - 1)).hasHangingConditional();
   }
 }

@@ -25,7 +25,7 @@ import java.util.List;
  * ES3-12.10: The with statement adds a computed object to the front
  * of the scope chain of the current execution context, then executes a
  * statement with this augmented scope chain, then restores the scope
- * chain. (ES5 expresses this in terms of environment records but with 
+ * chain. (ES5 expresses this in terms of environment records but with
  * similar effect.)
  *
  * @author mikesamuel@gmail.com
@@ -70,5 +70,9 @@ public final class WithStmt extends AbstractStatement
     getScopeObject().render(rc);
     out.consume(")");
     getBody().renderBlock(rc, false);
+  }
+
+  public boolean hasHangingConditional() {
+    return getBody().hasHangingConditional();
   }
 }

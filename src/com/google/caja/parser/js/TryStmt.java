@@ -92,4 +92,6 @@ public final class TryStmt extends AbstractStatement {
       fin.renderBlock(rc, false);
     }
   }
+
+  public boolean hasHangingConditional() { return false; }
 }

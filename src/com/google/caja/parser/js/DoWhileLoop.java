@@ -68,4 +68,6 @@ public class DoWhileLoop extends Loop {
     condition.render(rc);
     out.consume(")");
   }
+
+  public boolean hasHangingConditional() { return false; }
 }

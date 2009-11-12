@@ -78,4 +78,6 @@ public final class MultiDeclaration extends AbstractStatement {
       decl.renderShort(rc);
     }
   }
+
+  public boolean hasHangingConditional() { return false; }
 }

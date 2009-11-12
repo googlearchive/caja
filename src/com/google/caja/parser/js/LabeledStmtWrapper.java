@@ -68,4 +68,8 @@ public final class LabeledStmtWrapper extends LabeledStatement {
     }
     body.render(rc);
   }
+
+  public boolean hasHangingConditional() {
+    return body.hasHangingConditional();
+  }
 }
