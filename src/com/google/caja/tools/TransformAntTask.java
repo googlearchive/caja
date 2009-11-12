@@ -29,8 +29,8 @@ import org.apache.tools.ant.BuildException;
  *
  * Given an ANT task like {@code
  * <transform>
- *   <include file="baz/input1.js"/>
- *   <include file="baz/input2.css"/>
+ *   <input file="baz/input1.js"/>
+ *   <input file="baz/input2.css"/>
  *   <depend file="baz/boo.css"/>
  *   <output language="cajita" debug="false" file="output-file-1.js"/>
  *   <output language="valija" debug="true" file="output-file-2.js"

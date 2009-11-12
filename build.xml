@@ -261,13 +261,13 @@
     </copy>
     <genrule class="com.google.caja.ancillary.jsdoc.JsdocMain$Builder">
       <output file="${docs}/js/"/>
-      <include file="${src}/com/google/caja/cajita.js"/>
-      <include file="${src}/com/google/caja/valija-cajita.js"/>
-      <include file="${src}/com/google/caja/plugin/unicode.js"/>
-      <include file="${src}/com/google/caja/plugin/html-emitter.js"/>
-      <include file="${src}/com/google/caja/plugin/html-sanitizer.js"/>
-      <include file="${src}/com/google/caja/plugin/bridal.js"/>
-      <include file="${src}/com/google/caja/plugin/domita.js"/>
+      <input file="${src}/com/google/caja/cajita.js"/>
+      <input file="${src}/com/google/caja/valija-cajita.js"/>
+      <input file="${src}/com/google/caja/plugin/unicode.js"/>
+      <input file="${src}/com/google/caja/plugin/html-emitter.js"/>
+      <input file="${src}/com/google/caja/plugin/html-sanitizer.js"/>
+      <input file="${src}/com/google/caja/plugin/bridal.js"/>
+      <input file="${src}/com/google/caja/plugin/domita.js"/>
       <depend file="${src}/com/google/caja/ancillary/jsdoc/jsdoc.js"/>
       <depend
        file="${src}/com/google/caja/ancillary/jsdoc/jsdoc_html_formatter.js"
@@ -341,7 +341,7 @@
     </javac>
     <genrule class="com.google.caja.lang.css.CssPropertyPatterns$Builder">
       <output file="${lib}/com/google/caja/plugin/css-defs.js"/>
-      <include file="${src}/com/google/caja/lang/css/css-extensions.json"/>
+      <input file="${src}/com/google/caja/lang/css/css-extensions.json"/>
       <depend file="${src}/com/google/caja/lang/css/css21.json"/>
       <depend file="${src}/com/google/caja/lang/css/css21-defs.json"/>
       <depend file="${src}/com/google/caja/lang/css/css21-whitelist.json"/>
@@ -349,19 +349,19 @@
       <depend file="${src}/com/google/caja/lang/css/css-extensions-defs.json"/>
       <depend
        file="${src}/com/google/caja/lang/css/css-extensions-whitelist.json"/>
-      <include file="${src}/com/google/caja/lang/css/css21-fns.json"/>
+      <input file="${src}/com/google/caja/lang/css/css21-fns.json"/>
       <depend file="${src}/com/google/caja/lang/css/css21-fns-defs.json"/>
       <depend file="${src}/com/google/caja/lang/css/css21-fns-whitelist.json"/>
       <depend file="${src}/com/google/caja/lang/css/CssPropertyPatterns.java"/>
     </genrule>
     <genrule class="com.google.caja.lang.html.HtmlDefinitions$Builder">
       <output file="${lib}/com/google/caja/plugin/html4-defs.js"/>
-      <include file="${src}/com/google/caja/lang/html/html4-elements.json"/>
+      <input file="${src}/com/google/caja/lang/html/html4-elements.json"/>
       <depend
        file="${src}/com/google/caja/lang/html/html4-elements-defs.json"/>
       <depend
        file="${src}/com/google/caja/lang/html/html4-elements-whitelist.json"/>
-      <include
+      <input
        file="${src}/com/google/caja/lang/html/html4-attributes-extensions.json"
        />
       <depend file="${src}/com/google/caja/lang/html/html4-attributes.json"/>
@@ -370,8 +370,7 @@
       <depend
        file="${src}/com/google/caja/lang/html/html4-attributes-extensions-defs.json"/>
       <depend
-       file="${src}/com/google/caja/lang/html/html4-attributes-whitelist.json"
-       />
+       file="${src}/com/google/caja/lang/html/html4-attributes-whitelist.json"/>
       <depend file="${src}/com/google/caja/lang/html/HtmlDefinitions.java"/>
     </genrule>
   </target>
@@ -485,58 +484,56 @@
   <!-- Cajoles test resources that contain cajita to javascript. -->
   <target name="CajoledTests" depends="pluginc,dirs,CajoledValija">
     <transform>
-      <include file="${tests}/com/google/caja/plugin/domita_test_untrusted.html"
-       />
-
+      <input file="${tests}/com/google/caja/plugin/domita_test_untrusted.html"/>
       <output file="${lib}/com/google/caja/plugin/domita_test.co.html"
        language="cajita"/>
       <output file="${lib}/com/google/caja/plugin/domita_test.vo.html"
        language="valija"/>
     </transform>
     <transform>
-      <include file="${tests}/com/google/caja/a.js"/>
+      <input file="${tests}/com/google/caja/a.js"/>
       <output file="${lib}/com/google/caja/a.co.js" language="cajita"/>
     </transform>
     <transform>
-      <include file="${tests}/com/google/caja/foo/b.js"/>
+      <input file="${tests}/com/google/caja/foo/b.js"/>
       <output file="${lib}/com/google/caja/foo/b.co.js" language="cajita"/>
     </transform>
     <transform>
-      <include file="${tests}/com/google/caja/c.js"/>
+      <input file="${tests}/com/google/caja/c.js"/>
       <output file="${lib}/com/google/caja/c.co.js" language="cajita"/>
     </transform>
     <transform>
-      <include file="${tests}/com/google/caja/recursion.js"/>
+      <input file="${tests}/com/google/caja/recursion.js"/>
       <output file="${lib}/com/google/caja/recursion.co.js" language="cajita"/>
     </transform>
     <transform>
-      <include file="${tests}/com/google/caja/x.js"/>
+      <input file="${tests}/com/google/caja/x.js"/>
       <output file="${lib}/com/google/caja/x.vo.js" language="valija"/>
     </transform>
     <transform>
-      <include file="${tests}/com/google/caja/foo/inc.js"/>
+      <input file="${tests}/com/google/caja/foo/inc.js"/>
       <output file="${lib}/com/google/caja/foo/inc.vo.js" language="valija"/>
     </transform>
     <transform>
-      <include file="${tests}/com/google/caja/add.js"/>
+      <input file="${tests}/com/google/caja/add.js"/>
       <output file="${lib}/com/google/caja/add.vo.js" language="valija"/>
     </transform>
     <transform>
-      <include file="${tests}/com/google/caja/commonJsRecursion.js"/>
+      <input file="${tests}/com/google/caja/commonJsRecursion.js"/>
       <output file="${lib}/com/google/caja/commonJsRecursion.vo.js"
        language="valija"/>
     </transform>
     <transform>
-      <include file="${tests}/com/google/caja/foo/f.js"/>
+      <input file="${tests}/com/google/caja/foo/f.js"/>
       <output file="${lib}/com/google/caja/foo/f.co.js" language="cajita"/>
     </transform>
     <transform>
-      <include file="${tests}/com/google/caja/foo/staticinc.js"/>
+      <input file="${tests}/com/google/caja/foo/staticinc.js"/>
       <output file="${lib}/com/google/caja/foo/staticinc.vo.js"
        language="valija"/>
     </transform>
     <transform>
-      <include file="${tests}/com/google/caja/sum.js"/>
+      <input file="${tests}/com/google/caja/sum.js"/>
       <output file="${lib}/com/google/caja/sum.vo.js" language="valija"/>
     </transform>
     <copy todir="${lib}">
@@ -548,12 +545,12 @@
     <transform>
       <output file="${lib}/com/google/caja/plugin/valija.co.js"
        language="cajita"/>
-      <include file="${src}/com/google/caja/valija-cajita.js"/>
+      <input file="${src}/com/google/caja/valija-cajita.js"/>
     </transform>
     <transform>
       <output file="${lib}/com/google/caja/plugin/commonjs-sandbox.co.js"
         language="cajita"/>
-      <include file="${src}/com/google/caja/commonjs-sandbox.js"/>
+      <input file="${src}/com/google/caja/commonjs-sandbox.js"/>
     </transform>
   </target>
 
@@ -561,28 +558,28 @@
     <transform>
       <output file="${lib}/com/google/caja/plugin/html-sanitizer-minified.js"
        language="javascript" renderer="minify"/>
-      <include file="${lib}/com/google/caja/plugin/css-defs.js"/>
-      <include file="${lib}/com/google/caja/plugin/html4-defs.js"/>
-      <include file="${src}/com/google/caja/plugin/html-sanitizer.js"/>
+      <input file="${lib}/com/google/caja/plugin/css-defs.js"/>
+      <input file="${lib}/com/google/caja/plugin/html4-defs.js"/>
+      <input file="${src}/com/google/caja/plugin/html-sanitizer.js"/>
     </transform>
     <transform>
       <output file="${lib}/com/google/caja/plugin/domita-minified.js"
        language="javascript" renderer="minify"/>
-      <include file="${third_party}/js/json_sans_eval/json_sans_eval.js"/>
-      <include file="${src}/com/google/caja/cajita.js"/>
-      <include file="${src}/com/google/caja/plugin/unicode.js"/>
-      <include file="${lib}/com/google/caja/plugin/css-defs.js"/>
-      <include file="${lib}/com/google/caja/plugin/html4-defs.js"/>
-      <include file="${src}/com/google/caja/plugin/html-sanitizer.js"/>
-      <include file="${src}/com/google/caja/plugin/html-emitter.js"/>
-      <include file="${src}/com/google/caja/plugin/bridal.js"/>
-      <include file="${src}/com/google/caja/plugin/domita.js"/>
+      <input file="${third_party}/js/json_sans_eval/json_sans_eval.js"/>
+      <input file="${src}/com/google/caja/cajita.js"/>
+      <input file="${src}/com/google/caja/plugin/unicode.js"/>
+      <input file="${lib}/com/google/caja/plugin/css-defs.js"/>
+      <input file="${lib}/com/google/caja/plugin/html4-defs.js"/>
+      <input file="${src}/com/google/caja/plugin/html-sanitizer.js"/>
+      <input file="${src}/com/google/caja/plugin/html-emitter.js"/>
+      <input file="${src}/com/google/caja/plugin/bridal.js"/>
+      <input file="${src}/com/google/caja/plugin/domita.js"/>
     </transform>
     <transform>
       <output file="${lib}/com/google/caja/plugin/module-promise-minified.js"
        language="javascript" renderer="minify"/>
-      <include file="${src}/com/google/caja/cajita-module.js"/>
-      <include file="${src}/com/google/caja/cajita-promise.js"/>
+      <input file="${src}/com/google/caja/cajita-module.js"/>
+      <input file="${src}/com/google/caja/cajita-promise.js"/>
     </transform>
   </target>
 
@@ -600,16 +597,16 @@
 
     <genrule class="com.google.caja.ancillary.linter.Linter"
      unless="${tools.ancillary.disable}">
-      <include file="${src}/com/google/caja/cajita-debugmode.js"/>
-      <include file="${src}/com/google/caja/cajita.js"/>
-      <include file="${src}/com/google/caja/plugin/bridal.js"/>
-      <include file="${lib}/com/google/caja/plugin/css-defs.js"/>
-      <include file="${src}/com/google/caja/plugin/domita.js"/>
-      <include file="${src}/com/google/caja/plugin/html-emitter.js"/>
-      <include file="${src}/com/google/caja/plugin/html-sanitizer.js"/>
-      <include file="${lib}/com/google/caja/plugin/html4-defs.js"/>
-      <include file="${src}/com/google/caja/plugin/unicode.js"/>
-      <include file="${src}/com/google/caja/valija-cajita.js"/>
+      <input file="${src}/com/google/caja/cajita-debugmode.js"/>
+      <input file="${src}/com/google/caja/cajita.js"/>
+      <input file="${src}/com/google/caja/plugin/bridal.js"/>
+      <input file="${lib}/com/google/caja/plugin/css-defs.js"/>
+      <input file="${src}/com/google/caja/plugin/domita.js"/>
+      <input file="${src}/com/google/caja/plugin/html-emitter.js"/>
+      <input file="${src}/com/google/caja/plugin/html-sanitizer.js"/>
+      <input file="${lib}/com/google/caja/plugin/html4-defs.js"/>
+      <input file="${src}/com/google/caja/plugin/unicode.js"/>
+      <input file="${src}/com/google/caja/valija-cajita.js"/>
       <output file="${lib}/AllTests.Linter.tstamp"/>
     </genrule>
 
@@ -855,13 +852,13 @@
     <transform>
       <output file="${www}/lolcat-search/searchbox.co.html"
        language="cajita"/>
-      <include file="${demos}/lolcat-search/searchbox.html"/>
+      <input file="${demos}/lolcat-search/searchbox.html"/>
       <depend file="${demos}/lolcat-search/searchbox.css"/>
       <depend file="${demos}/lolcat-search/searchbox.js"/>
     </transform>
     <transform>
       <output file="${www}/lolcat-search/kittens.co.html" language="cajita"/>
-      <include file="${demos}/lolcat-search/kittens.html"/>
+      <input file="${demos}/lolcat-search/kittens.html"/>
       <depend file="${demos}/lolcat-search/katTranzlator.js"/>
       <depend file="${demos}/lolcat-search/kittens.js"/>
     </transform>
@@ -893,39 +890,39 @@
     <transform>
       <output file="${www}/slides/redirection.co.html" language="valija"
        ignore="UNSAFE_TAG DISALLOWED_CSS_PROPERTY_IN_SELECTOR"/>
-      <include file="${demos}/slides/redirection.html"/>
+      <input file="${demos}/slides/redirection.html"/>
     </transform>
     <transform>
       <output file="${www}/slides/history.co.html" language="valija"
        ignore="UNSAFE_TAG DISALLOWED_CSS_PROPERTY_IN_SELECTOR"/>
-      <include file="${demos}/slides/history.html"/>
+      <input file="${demos}/slides/history.html"/>
     </transform>
     <transform>
       <output file="${www}/slides/cookie.co.html" language="valija"
        ignore="UNSAFE_TAG DISALLOWED_CSS_PROPERTY_IN_SELECTOR"/>
-      <include file="${demos}/slides/cookie.html"/>
+      <input file="${demos}/slides/cookie.html"/>
     </transform>
     <transform>
       <output file="${www}/slides/script-injection.co.html" language="valija"
        ignore="UNSAFE_TAG DISALLOWED_CSS_PROPERTY_IN_SELECTOR"/>
-      <include file="${demos}/slides/script-injection.html"/>
+      <input file="${demos}/slides/script-injection.html"/>
     </transform>
     <transform>
       <output file="${www}/slides/tame-alert.co.html" language="valija"
        ignore="UNSAFE_TAG DISALLOWED_CSS_PROPERTY_IN_SELECTOR"/>
-      <include file="${demos}/slides/tame-alert.html"/>
+      <input file="${demos}/slides/tame-alert.html"/>
     </transform>
 
     <transform>
       <output file="${www}/slides/searchbox.co.html"
        language="cajita"/>
-      <include file="${demos}/lolcat-search/searchbox.html"/>
+      <input file="${demos}/lolcat-search/searchbox.html"/>
       <depend file="${demos}/lolcat-search/searchbox.css"/>
       <depend file="${demos}/lolcat-search/searchbox.js"/>
     </transform>
     <transform>
       <output file="${www}/slides/kittens.co.html" language="cajita"/>
-      <include file="${demos}/lolcat-search/kittens.html"/>
+      <input file="${demos}/lolcat-search/kittens.html"/>
       <depend file="${demos}/lolcat-search/katTranzlator.js"/>
       <depend file="${demos}/lolcat-search/kittens.js"/>
     </transform>
@@ -1070,23 +1067,23 @@
     <transform>
       <output file="${www}/testbed/cajita-combined-min.js"
        language="javascript" renderer="minify"/>
-      <include file="${third_party}/js/json_sans_eval/json_sans_eval.js"/>
-      <include file="${src}/com/google/caja/cajita.js"/>
-      <include file="${src}/com/google/caja/console.js"/>
-      <include file="${src}/com/google/caja/log-to-console.js"/>
-      <include file="${src}/com/google/caja/cajita-debugmode.js"/>
-      <include file="${src}/com/google/caja/plugin/unicode.js"/>
-      <include file="${lib}/com/google/caja/plugin/css-defs.js"/>
-      <include file="${lib}/com/google/caja/plugin/html4-defs.js"/>
-      <include file="${src}/com/google/caja/plugin/html-sanitizer.js"/>
-      <include file="${src}/com/google/caja/plugin/html-emitter.js"/>
-      <include file="${src}/com/google/caja/demos/applet/setup-valija.js"/>
-      <include file="${src}/com/google/caja/plugin/bridal.js"/>
-      <include file="${src}/com/google/caja/plugin/domita.js"/>
-      <include file="${third_party}/js/prettify/prettify.js"/>
-      <include file="${third_party}/js/prettify/lang-css.js"/>
-      <include file="${src}/com/google/caja/demos/applet/testbed.js"/>
-      <include file="${lib}/com/google/caja/plugin/valija.co.js"/>
+      <input file="${third_party}/js/json_sans_eval/json_sans_eval.js"/>
+      <input file="${src}/com/google/caja/cajita.js"/>
+      <input file="${src}/com/google/caja/console.js"/>
+      <input file="${src}/com/google/caja/log-to-console.js"/>
+      <input file="${src}/com/google/caja/cajita-debugmode.js"/>
+      <input file="${src}/com/google/caja/plugin/unicode.js"/>
+      <input file="${lib}/com/google/caja/plugin/css-defs.js"/>
+      <input file="${lib}/com/google/caja/plugin/html4-defs.js"/>
+      <input file="${src}/com/google/caja/plugin/html-sanitizer.js"/>
+      <input file="${src}/com/google/caja/plugin/html-emitter.js"/>
+      <input file="${src}/com/google/caja/demos/applet/setup-valija.js"/>
+      <input file="${src}/com/google/caja/plugin/bridal.js"/>
+      <input file="${src}/com/google/caja/plugin/domita.js"/>
+      <input file="${third_party}/js/prettify/prettify.js"/>
+      <input file="${third_party}/js/prettify/lang-css.js"/>
+      <input file="${src}/com/google/caja/demos/applet/testbed.js"/>
+      <input file="${lib}/com/google/caja/plugin/valija.co.js"/>
     </transform>
   </target>
 
@@ -1099,70 +1096,70 @@
        file="${lib}/com/google/caja/demos/calendar/html-interp-minified.js"/>
       <include
        file="${demos}/calendar/string-interpolation.js"/>
-      <include file="${demos}/calendar/html-interp.js"/>
+      <input file="${demos}/calendar/html-interp.js"/>
     </transform>
     <transform>
       <output file="${lib}/com/google/caja/demos/calendar/calendar-minified.js"
        language="javascript" renderer="minify"/>
-      <include file="${demos}/calendar/util.js"/>
-      <include file="${demos}/calendar/bitset.js"/>
-      <include file="${lib}/com/google/caja/plugin/html4-defs.js"/>
-      <include file="${src}/com/google/caja/plugin/html-sanitizer.js"/>
-      <include file="${demos}/calendar/uformat.js"/>
-      <include file="${demos}/calendar/time-cajita.js"/>
-      <include file="${demos}/calendar/weekday-cajita.js"/>
-      <include file="${demos}/calendar/timezone-cajita.js"/>
-      <include file="${demos}/calendar/time_util-cajita.js"/>
-      <include file="${demos}/calendar/hcalendar.js"/>
-      <include file="${demos}/calendar/generators-cajita.js"/>
-      <include file="${demos}/calendar/instanceGenerators-cajita.js"/>
-      <include file="${demos}/calendar/conditions-cajita.js"/>
-      <include file="${demos}/calendar/predicates-cajita.js"/>
-      <include file="${demos}/calendar/filters-cajita.js"/>
-      <include file="${demos}/calendar/rrule-cajita.js"/>
-      <include file="${demos}/calendar/event.js"/>
-      <include file="${demos}/calendar/chip.js"/>
-      <include file="${demos}/calendar/calendar.js"/>
-      <include file="${demos}/calendar/event_store.js"/>
-      <include file="${demos}/calendar/axis.js"/>
-      <include file="${demos}/calendar/layout_policy.js"/>
-      <include file="${demos}/calendar/layout.js"/>
-      <include file="${demos}/calendar/overlap.js"/>
-      <include file="${demos}/calendar/widget.js"/>
-      <include file="${demos}/calendar/widget-html.js"/>
-      <include file="${demos}/calendar/main.js"/>
+      <input file="${demos}/calendar/util.js"/>
+      <input file="${demos}/calendar/bitset.js"/>
+      <input file="${lib}/com/google/caja/plugin/html4-defs.js"/>
+      <input file="${src}/com/google/caja/plugin/html-sanitizer.js"/>
+      <input file="${demos}/calendar/uformat.js"/>
+      <input file="${demos}/calendar/time-cajita.js"/>
+      <input file="${demos}/calendar/weekday-cajita.js"/>
+      <input file="${demos}/calendar/timezone-cajita.js"/>
+      <input file="${demos}/calendar/time_util-cajita.js"/>
+      <input file="${demos}/calendar/hcalendar.js"/>
+      <input file="${demos}/calendar/generators-cajita.js"/>
+      <input file="${demos}/calendar/instanceGenerators-cajita.js"/>
+      <input file="${demos}/calendar/conditions-cajita.js"/>
+      <input file="${demos}/calendar/predicates-cajita.js"/>
+      <input file="${demos}/calendar/filters-cajita.js"/>
+      <input file="${demos}/calendar/rrule-cajita.js"/>
+      <input file="${demos}/calendar/event.js"/>
+      <input file="${demos}/calendar/chip.js"/>
+      <input file="${demos}/calendar/calendar.js"/>
+      <input file="${demos}/calendar/event_store.js"/>
+      <input file="${demos}/calendar/axis.js"/>
+      <input file="${demos}/calendar/layout_policy.js"/>
+      <input file="${demos}/calendar/layout.js"/>
+      <input file="${demos}/calendar/overlap.js"/>
+      <input file="${demos}/calendar/widget.js"/>
+      <input file="${demos}/calendar/widget-html.js"/>
+      <input file="${demos}/calendar/main.js"/>
     </transform>
     <transform>
       <output file="${lib}/com/google/caja/demos/calendar/calendar.vo.js"
        language="valija" debug="false"/>
-      <include file="${demos}/calendar/widget.css"/>
-      <include file="${demos}/calendar/util.js"/>
-      <include file="${demos}/calendar/bitset.js"/>
-      <include file="${lib}/com/google/caja/plugin/html4-defs.js"/>
-      <include file="${src}/com/google/caja/plugin/html-sanitizer.js"/>
-      <include file="${demos}/calendar/uformat.js"/>
-      <include file="${demos}/calendar/time-cajita.js"/>
-      <include file="${demos}/calendar/weekday-cajita.js"/>
-      <include file="${demos}/calendar/timezone-cajita.js"/>
-      <include file="${demos}/calendar/time_util-cajita.js"/>
-      <include file="${demos}/calendar/hcalendar.js"/>
-      <include file="${demos}/calendar/generators-cajita.js"/>
-      <include file="${demos}/calendar/instanceGenerators-cajita.js"/>
-      <include file="${demos}/calendar/conditions-cajita.js"/>
-      <include file="${demos}/calendar/predicates-cajita.js"/>
-      <include file="${demos}/calendar/filters-cajita.js"/>
-      <include file="${demos}/calendar/rrule-cajita.js"/>
-      <include file="${demos}/calendar/event.js"/>
-      <include file="${demos}/calendar/chip.js"/>
-      <include file="${demos}/calendar/calendar.js"/>
-      <include file="${demos}/calendar/event_store.js"/>
-      <include file="${demos}/calendar/axis.js"/>
-      <include file="${demos}/calendar/layout_policy.js"/>
-      <include file="${demos}/calendar/layout.js"/>
-      <include file="${demos}/calendar/overlap.js"/>
-      <include file="${demos}/calendar/widget.js"/>
-      <include file="${demos}/calendar/widget-html.js"/>
-      <include file="${demos}/calendar/main.js"/>
+      <input file="${demos}/calendar/widget.css"/>
+      <input file="${demos}/calendar/util.js"/>
+      <input file="${demos}/calendar/bitset.js"/>
+      <input file="${lib}/com/google/caja/plugin/html4-defs.js"/>
+      <input file="${src}/com/google/caja/plugin/html-sanitizer.js"/>
+      <input file="${demos}/calendar/uformat.js"/>
+      <input file="${demos}/calendar/time-cajita.js"/>
+      <input file="${demos}/calendar/weekday-cajita.js"/>
+      <input file="${demos}/calendar/timezone-cajita.js"/>
+      <input file="${demos}/calendar/time_util-cajita.js"/>
+      <input file="${demos}/calendar/hcalendar.js"/>
+      <input file="${demos}/calendar/generators-cajita.js"/>
+      <input file="${demos}/calendar/instanceGenerators-cajita.js"/>
+      <input file="${demos}/calendar/conditions-cajita.js"/>
+      <input file="${demos}/calendar/predicates-cajita.js"/>
+      <input file="${demos}/calendar/filters-cajita.js"/>
+      <input file="${demos}/calendar/rrule-cajita.js"/>
+      <input file="${demos}/calendar/event.js"/>
+      <input file="${demos}/calendar/chip.js"/>
+      <input file="${demos}/calendar/calendar.js"/>
+      <input file="${demos}/calendar/event_store.js"/>
+      <input file="${demos}/calendar/axis.js"/>
+      <input file="${demos}/calendar/layout_policy.js"/>
+      <input file="${demos}/calendar/layout.js"/>
+      <input file="${demos}/calendar/overlap.js"/>
+      <input file="${demos}/calendar/widget.js"/>
+      <input file="${demos}/calendar/widget-html.js"/>
+      <input file="${demos}/calendar/main.js"/>
     </transform>
     <copy todir="${www}/calendar">
       <fileset dir="${src}/com/google/caja">
@@ -1192,11 +1189,11 @@
 
   <target name="yuitest" depends="pluginc,dirs,CajoledValija">
     <transform>
-      <include file="yuitest/yahoo-dom.js"/>
+      <input file="yuitest/yahoo-dom.js"/>
       <output file="yuitest/yahoo-dom.vo.js" language="valija"/>
     </transform>
     <transform>
-      <include file="yuitest/dom_test.html"/>
+      <input file="yuitest/dom_test.html"/>
       <output file="yuitest/dom_test.vo.html" language="valija"/>
     </transform>
   </target>

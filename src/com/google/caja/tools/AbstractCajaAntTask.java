@@ -15,17 +15,22 @@
 package com.google.caja.tools;
 
 import com.google.caja.plugin.BuildServiceImplementation;
+import com.google.caja.util.Lists;
+import com.google.caja.util.Sets;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Writer;
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.apache.tools.ant.BuildException;
+import org.apache.tools.ant.DirectoryScanner;
 import org.apache.tools.ant.Task;
+import org.apache.tools.ant.types.FileSet;
 
 /**
  * An ANT task that operates on a set of files to produce a single output file
@@ -40,11 +45,11 @@ import org.apache.tools.ant.Task;
  */
 public abstract class AbstractCajaAntTask extends Task {
   /** Input files to compile. */
-  private final List<Include> includes = new ArrayList<Include>();
-  /** Files that the inputs might include. */
-  private final List<Depend> depends = new ArrayList<Depend>();
+  private final List<FileGroup> inputs = Lists.newArrayList();
+  /** Files that the inputs might depend upon. */
+  private final List<FileGroup> depends = Lists.newArrayList();
   /** Outputs to generate. */
-  private final List<Output> outputs = new ArrayList<Output>();
+  private final List<Output> outputs = Lists.newArrayList();
 
   /** Called to actually execute a job by invoking the BuildService. */
   protected abstract boolean run(BuildService buildService, PrintWriter logger,
@@ -55,27 +60,32 @@ public abstract class AbstractCajaAntTask extends Task {
   @Override
   public void execute() throws BuildException {
     try {
-      for (Include include : includes) { include.requireExecutable(); }
+      for (FileGroup input : inputs) { input.requireExecutable(); }
       for (Output output : outputs) { output.requireExecutable(); }
-      for (Depend depend : depends) { depend.requireExecutable(); }
+      for (FileGroup depend : depends) { depend.requireExecutable(); }
 
       long youngest = Long.MIN_VALUE;
-      List<File> inputs = new ArrayList<File>();
-      for (Include include : includes) {
-        inputs.add(include.file);
-        youngest = Math.max(youngest, include.file.lastModified());
+      List<File> inputFiles = Lists.newArrayList();
+      for (FileGroup input : inputs) { inputFiles.addAll(input.files); }
+      for (File file : inputFiles) {
+        youngest = Math.max(youngest, file.lastModified());
       }
-      List<File> dependees = new ArrayList<File>();
-      for (Depend depend : depends) {
-        dependees.add(depend.file);
-        youngest = Math.max(youngest, depend.file.lastModified());
+      if (Sets.newHashSet(inputFiles).size() != inputFiles.size()) {
+        List<File> dupes = Lists.newArrayList(inputFiles);
+        for (File f : Sets.newHashSet(inputFiles)) { dupes.remove(f); }
+        throw new BuildException("Duplicate inputs: " + dupes);
+      }
+      List<File> dependees = Lists.newArrayList();
+      for (FileGroup depend : depends) { dependees.addAll(depend.files); }
+      for (File file : dependees) {
+        youngest = Math.max(youngest, file.lastModified());
       }
 
       BuildService buildService = getBuildService();
       PrintWriter logger = getLogger();
       try {
         for (Output output : outputs) {
-          output.build(inputs, dependees, youngest, buildService, logger);
+          output.build(inputFiles, dependees, youngest, buildService, logger);
         }
       } finally {
         logger.flush();
@@ -114,16 +124,16 @@ public abstract class AbstractCajaAntTask extends Task {
     return new BuildServiceImplementation();
   }
 
-  /** Invoked reflectively whenever {@code <include>} is seen. */
-  public Include createInclude() {
-    Include include = new Include();
-    includes.add(include);
-    return include;
+  /** Invoked reflectively whenever {@code <input>} is seen. */
+  public FileGroup createInput() {
+    FileGroup input = new FileGroup("<input>");
+    inputs.add(input);
+    return input;
   }
 
   /** Invoked reflectively whenever {@code <depend>} is seen. */
-  public Depend createDepend() {
-    Depend depend = new Depend();
+  public FileGroup createDepend() {
+    FileGroup depend = new FileGroup("<depend>");
     depends.add(depend);
     return depend;
   }
@@ -213,40 +223,42 @@ public abstract class AbstractCajaAntTask extends Task {
     }
   }
 
-  /** An input file. */
-  public class Include {
-    /** An input file.  Could use FileSet to get globbing? */
-    private File file;
+  /**
+   * A group of files.  This supports both the {file="path"} attribute and
+   * nested filesets.
+   */
+  public class FileGroup {
+    private final List<File> files = Lists.newArrayList();
+    private final String originTag;
 
-    public void setFile(File file) { this.file = file; }
+    FileGroup(String originTag) { this.originTag = originTag; }
 
-    void requireExecutable() throws BuildException {
-      if (file == null) {
-        throw new BuildException("<include> at " + getLocation()
-                                 + "missing 'file' attribute");
-      }
-      if (!file.canRead()) {
-        throw new BuildException("<include> at " + getLocation()
-                                 + "of '" + file + "' is not readable");
+    // Invoked reflectively by ant
+    public void setFile(File file) {
+      this.files.add(file);
+    }
+    // See http://ant.apache.org/manual/develop.html#nested-elements
+    public void addConfiguredFileSet(FileSet fs) {
+      DirectoryScanner scanner = fs.getDirectoryScanner(getProject());
+      File baseDir = scanner.getBasedir();
+      scanner.scan();
+      String[] includedFiles = scanner.getIncludedFiles();
+      Arrays.sort(includedFiles);
+      for (String localPath : includedFiles) {
+        files.add(new File(baseDir, localPath));
       }
     }
-  }
-
-  /** An ancillary file. */
-  public class Depend {
-    /** An ancillary file.  Could use FileSet to get globbing? */
-    private File file;
-
-    public void setFile(File file) { this.file = file; }
 
     void requireExecutable() throws BuildException {
-      if (file == null) {
-        throw new BuildException("<depend> at " + getLocation()
-                                 + "missing 'file' attribute");
+      if (files.isEmpty()) {
+        throw new BuildException(originTag + " at " + getLocation()
+                                 + "missing 'file' attribute and '<fileset>'");
       }
-      if (!file.canRead()) {
-        throw new BuildException("<depend> at " + getLocation()
-                                 + "of '" + file + "' is not readable");
+      for (File file : files) {
+        if (!file.canRead()) {
+          throw new BuildException(originTag + " at " + getLocation()
+                                   + "of '" + file + "' is not readable");
+        }
       }
     }
   }
