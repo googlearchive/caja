@@ -137,8 +137,8 @@ public class DomParserTest extends CajaTestCase {
             "    Value : en 5+63-5+67",
             "  Attrib : xml:lang 5+44-5+52",
             "    Value : en 5+53-5+57",
-            "  Attrib : xmlns 5+7-5+12",
-            "    Value : http://www.w3.org/1999/xhtml 5+13-5+43",
+            // xmlns declarations do not appear in output since they are not
+            // real attributes.
             "  Text : \\n 5+68-6+1",
             "  Element : head 6+1-7+8",
             "    Text : \\n 6+7-7+1",
@@ -149,8 +149,7 @@ public class DomParserTest extends CajaTestCase {
         Arrays.<String>asList(
             ),
         Arrays.asList(
-            ("<html lang=\"en\" xml:lang=\"en\""
-             + " xmlns=\"http://www.w3.org/1999/xhtml\">"),
+            ("<html lang=\"en\" xml:lang=\"en\">"),
             "<head>",
             "</head>",
             "<body>",
@@ -1855,7 +1854,7 @@ public class DomParserTest extends CajaTestCase {
             ),
         Arrays.<String>asList(),
         Arrays.asList(
-            "<html:xmp><br /></html:xmp>"
+            "<xmp><br /></xmp>"
             ),
         null, false);
   }
@@ -1979,7 +1978,8 @@ public class DomParserTest extends CajaTestCase {
             "      Value : / 1+11-1+14",
             "    Text : first part of the text</> second part 1+15-1+52"
             ),
-        Arrays.<String>asList(),
+        Arrays.asList(
+            "ERROR testShortTags:1+3 - 5: Malformed identifier <a"),
         Arrays.asList(
             "<p href=\"/\">"
             + "first part of the text&lt;/&gt; second part</p>"

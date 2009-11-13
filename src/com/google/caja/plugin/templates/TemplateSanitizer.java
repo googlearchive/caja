@@ -16,6 +16,8 @@ package com.google.caja.plugin.templates;
 
 import com.google.caja.lang.html.HTML;
 import com.google.caja.lang.html.HtmlSchema;
+import com.google.caja.parser.html.AttribKey;
+import com.google.caja.parser.html.ElKey;
 import com.google.caja.parser.html.Nodes;
 import com.google.caja.plugin.PluginMessageType;
 import com.google.caja.reporting.Message;
@@ -23,7 +25,6 @@ import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.util.Criterion;
-import com.google.caja.util.Name;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -70,10 +71,10 @@ public final class TemplateSanitizer {
       case Node.ELEMENT_NODE:
       {
         Element el = (Element) t;
-        Name tagName = Name.xml(el.getTagName());
+        ElKey elKey = ElKey.forElement(el);
         {
-          if (!schema.isElementAllowed(tagName)) {
-            IhtmlMessageType msgType = schema.lookupElement(tagName) != null
+          if (!schema.isElementAllowed(elKey)) {
+            IhtmlMessageType msgType = schema.lookupElement(elKey) != null
                 ? IhtmlMessageType.UNSAFE_TAG
                 : IhtmlMessageType.UNKNOWN_TAG;
 
@@ -82,9 +83,9 @@ public final class TemplateSanitizer {
             boolean ignore = false, fold = false;
             Node p = el.getParentNode();
             if (p != null) {
-              if (isElementIgnorable(tagName)) {
+              if (isElementIgnorable(elKey)) {
                 ignore = true;
-              } else if (HtmlSchema.isElementFoldable(tagName)) {
+              } else if (HtmlSchema.isElementFoldable(elKey)) {
                 fold = true;
                 msgType = IhtmlMessageType.FOLDING_ELEMENT;
               }
@@ -93,7 +94,7 @@ public final class TemplateSanitizer {
             MessageLevel msgLevel
                 = ignore || fold ? MessageLevel.WARNING : msgType.getLevel();
             mq.getMessages().add(new Message(
-                msgType, msgLevel, Nodes.getFilePositionFor(el), tagName));
+                msgType, msgLevel, Nodes.getFilePositionFor(el), elKey));
 
             if (ignore) {
               p.removeChild(el);
@@ -102,10 +103,10 @@ public final class TemplateSanitizer {
               // According to http://www.w3.org/TR/html401/appendix/notes.html
               // the recommended behavior is to try to render an unrecognized
               // element's contents
-              return valid & foldElement(el);
+              return valid & foldElement(elKey, el);
             }
           }
-          valid &= sanitizeAttrs(el);
+          valid &= sanitizeAttrs(elKey, el);
         }
         // We know by construction of org.w3c.Element that there can only be
         // one attribute with a given name.
@@ -113,7 +114,7 @@ public final class TemplateSanitizer {
         // first occurrence of an attribute could be spoofed.
         break;
       }
-      case Node.TEXT_NODE: 
+      case Node.TEXT_NODE:
       case Node.CDATA_SECTION_NODE:
       case Node.COMMENT_NODE:
         break;
@@ -126,39 +127,38 @@ public final class TemplateSanitizer {
     return valid;
   }
 
-  private boolean sanitizeAttrs(Element el) {
+  private boolean sanitizeAttrs(ElKey elKey, Element el) {
     boolean valid = true;
     // Iterate in reverse so that removed attributes don't break iteration.
     NamedNodeMap attrs = el.getAttributes();
     for (int i = attrs.getLength(); --i >= 0;) {
-      valid &= sanitizeAttr(el, (Attr) attrs.item(i));
+      valid &= sanitizeAttr(elKey, el, (Attr) attrs.item(i));
     }
     return valid;
   }
 
-  private boolean sanitizeAttr(Element el, Attr attrib) {
+  private boolean sanitizeAttr(ElKey elKey, Element el, Attr attrib) {
     boolean valid = true;
-    Name tagName = Name.xml(el.getTagName());
-    Name attrName = Name.xml(attrib.getNodeName());
-    HTML.Attribute a = schema.lookupAttribute(tagName, attrName);
+    AttribKey attrKey = AttribKey.forAttribute(elKey, attrib);
+    HTML.Attribute a = schema.lookupAttribute(attrKey);
     if (null == a) {
       mq.getMessages().add(new Message(
           PluginMessageType.UNKNOWN_ATTRIBUTE, MessageLevel.WARNING,
-          Nodes.getFilePositionFor(attrib), attrName, tagName));
-      valid &= removeBadAttribute(el, attrName);
-    } else if (!schema.isAttributeAllowed(tagName, attrName)) {
+          Nodes.getFilePositionFor(attrib), attrKey, elKey));
+      valid &= removeBadAttribute(el, attrKey);
+    } else if (!schema.isAttributeAllowed(attrKey)) {
       mq.addMessage(
           PluginMessageType.UNSAFE_ATTRIBUTE,
-          Nodes.getFilePositionFor(attrib), attrName, tagName);
-      valid &= removeBadAttribute(el, attrName);
+          Nodes.getFilePositionFor(attrib), attrKey, elKey);
+      valid &= removeBadAttribute(el, attrKey);
     } else {
       Criterion<? super String> criteria = a.getValueCriterion();
       if (!criteria.accept(attrib.getNodeValue())) {
         mq.addMessage(
             PluginMessageType.DISALLOWED_ATTRIBUTE_VALUE,
             Nodes.getFilePositionForValue(attrib),
-            attrName, MessagePart.Factory.valueOf(attrib.getNodeValue()));
-        valid &= removeBadAttribute(el, attrName);
+            attrKey, MessagePart.Factory.valueOf(attrib.getNodeValue()));
+        valid &= removeBadAttribute(el, attrKey);
       }
     }
     return valid;
@@ -167,8 +167,9 @@ public final class TemplateSanitizer {
   /**
    * Elements that can be safely removed from the DOM without changing behavior.
    */
-  private static boolean isElementIgnorable(Name tagName) {
-    String lcName = tagName.getCanonicalForm();
+  private static boolean isElementIgnorable(ElKey elKey) {
+    if (!elKey.isHtml()) { return false; }
+    String lcName = elKey.localName;
     return "noscript".equals(lcName) || "noembed".equals(lcName)
         || "noframes".equals(lcName) || "title".equals(lcName);
   }
@@ -192,18 +193,18 @@ public final class TemplateSanitizer {
    * @return true iff the el's children are transitively valid, and if they
    *     could all be folded into the parent.
    */
-  private boolean foldElement(Element el) {
+  private boolean foldElement(ElKey elKey, Element el) {
     boolean valid = true;
 
     // Recurse to children to ensure that all nodes are processed.
-    valid &= sanitizeAttrs(el);
+    valid &= sanitizeAttrs(elKey, el);
     for (Node child : Nodes.childrenOf(el)) { valid &= sanitize(child); }
 
     for (Attr a : Nodes.attributesOf(el)) {
       mq.addMessage(
           PluginMessageType.CANNOT_FOLD_ATTRIBUTE, Nodes.getFilePositionFor(a),
           MessagePart.Factory.valueOf(a.getNodeName()),
-          MessagePart.Factory.valueOf(el.getTagName()));
+          MessagePart.Factory.valueOf(el.getLocalName()));
     }
 
     // Pick the subset of children to fold in.
@@ -229,8 +230,8 @@ public final class TemplateSanitizer {
     return valid;
   }
 
-  private boolean removeBadAttribute(Element el, Name attrName) {
-    el.removeAttribute(attrName.getCanonicalForm());
+  private boolean removeBadAttribute(Element el, AttribKey attrKey) {
+    el.removeAttributeNS(attrKey.ns.uri, attrKey.localName);
     return true;
   }
 }

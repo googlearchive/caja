@@ -28,7 +28,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeMap;
 
 import com.google.caja.config.AllowedFileResolver;
 import com.google.caja.config.ConfigUtil;
@@ -38,6 +37,8 @@ import com.google.caja.lexer.HtmlTextEscapingMode;
 import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.ParseException;
 import com.google.caja.parser.ParseTreeNodeContainer;
+import com.google.caja.parser.html.AttribKey;
+import com.google.caja.parser.html.ElKey;
 import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.Expression;
 import com.google.caja.parser.js.ExpressionStmt;
@@ -51,8 +52,7 @@ import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.reporting.SimpleMessageQueue;
 import com.google.caja.tools.BuildCommand;
-import com.google.caja.util.Name;
-import com.google.caja.util.Pair;
+import com.google.caja.util.Maps;
 
 /**
  * Generates a JavaScript tree with tables mapping HTML element and attribute
@@ -85,10 +85,12 @@ public final class HtmlDefinitions {
     EFlag(int bitMask) { this.bitMask = bitMask; }
   }
 
+  private static final AttribKey SCRIPT_SRC = AttribKey.forHtmlAttrib(
+      ElKey.forHtmlElement("script"), "src");
   public static Block generateJavascriptDefinitions(HtmlSchema schema) {
     FilePosition unk = FilePosition.UNKNOWN;
-    Map<String, HTML.Attribute.Type> atypes = attributeTypes(schema);
-    Map<String, EnumSet<EFlag>> eflags = elementFlags(schema);
+    Map<AttribKey, HTML.Attribute.Type> atypes = attributeTypes(schema);
+    Map<ElKey, EnumSet<EFlag>> eflags = elementFlags(schema);
 
     Block definitions = new Block();
     definitions.appendChild(QuasiBuilder.substV("var html4 = {};"));
@@ -112,14 +114,13 @@ public final class HtmlDefinitions {
     {
       List<StringLiteral> keys = new ArrayList<StringLiteral>();
       List<IntegerLiteral> values = new ArrayList<IntegerLiteral>();
-      for (Map.Entry<String, HTML.Attribute.Type> e : atypes.entrySet()) {
-        String key = e.getKey();
-        Name elementName = Name.html(key.substring(0, key.indexOf(':')));
-        if ("*".equals(elementName.getCanonicalForm())
-            || schema.isElementAllowed(elementName)
+      for (Map.Entry<AttribKey, HTML.Attribute.Type> e : atypes.entrySet()) {
+        AttribKey key = e.getKey();
+        if (ElKey.HTML_WILDCARD.equals(key.el)
+            || schema.isElementAllowed(key.el)
             // Whitelisted to allow dynamic script loading via proxy
-            || "script:src".equals(key)) {
-          keys.add(StringLiteral.valueOf(unk, key));
+            || SCRIPT_SRC.equals(key)) {
+          keys.add(StringLiteral.valueOf(unk, key.toString()));
           values.add(new IntegerLiteral(unk, A_TYPE_MAP.get(e.getValue())));
         }
       }
@@ -148,11 +149,11 @@ public final class HtmlDefinitions {
     {
       List<StringLiteral> keys = new ArrayList<StringLiteral>();
       List<IntegerLiteral> values = new ArrayList<IntegerLiteral>();
-      for (Map.Entry<String, EnumSet<EFlag>> e : eflags.entrySet()) {
-        String key = e.getKey();
+      for (Map.Entry<ElKey, EnumSet<EFlag>> e : eflags.entrySet()) {
+        ElKey key = e.getKey();
         int value = 0;
         for (EFlag f : e.getValue()) { value |= f.bitMask; }
-        keys.add(StringLiteral.valueOf(unk, key));
+        keys.add(StringLiteral.valueOf(unk, key.toString()));
         values.add(new IntegerLiteral(unk, value));
       }
       definitions.appendChild(new ExpressionStmt(unk, (Expression)
@@ -196,51 +197,51 @@ public final class HtmlDefinitions {
     return A_TYPE_MAP.get(atype);
   }
 
-  private static Map<String, HTML.Attribute.Type> attributeTypes(
+  private static Map<AttribKey, HTML.Attribute.Type> attributeTypes(
       HtmlSchema schema) {
-    Map<String, HTML.Attribute.Type> attributeFlags
-        = new TreeMap<String, HTML.Attribute.Type>();
-    for (Pair<Name, Name> elAndAttrib : schema.getAttributeNames()) {
-      Name elementName = elAndAttrib.a,
-          attributeName = elAndAttrib.b;
-      if (schema.isAttributeAllowed(elementName, attributeName)) {
-        HTML.Attribute a = schema.lookupAttribute(elementName, attributeName);
+    Map<AttribKey, HTML.Attribute.Type> attributeFlags = Maps.newTreeMap();
+    for (AttribKey attribKey : schema.getAttributeNames()) {
+      if (schema.isAttributeAllowed(attribKey)) {
+        HTML.Attribute a = schema.lookupAttribute(attribKey);
         HTML.Attribute.Type type = a.getType();
-        attributeFlags.put(elementName + "::" + attributeName, type);
+        attributeFlags.put(attribKey, type);
       }
     }
     return attributeFlags;
   }
 
-  private static Map<String, EnumSet<EFlag>> elementFlags(HtmlSchema schema) {
-    Map<String, EnumSet<EFlag>> elementFlags
-        = new TreeMap<String, EnumSet<EFlag>>();
-    for (Name elementName : schema.getElementNames()) {
+  private static Map<ElKey, EnumSet<EFlag>> elementFlags(HtmlSchema schema) {
+    final ElKey SCRIPT = ElKey.forHtmlElement("script");
+    final ElKey STYLE = ElKey.forHtmlElement("style");
+    Map<ElKey, EnumSet<EFlag>> elementFlags = Maps.newTreeMap();
+    for (ElKey elementName : schema.getElementNames()) {
       HTML.Element el = schema.lookupElement(elementName);
       EnumSet<EFlag> flags = EnumSet.noneOf(EFlag.class);
       if (el.isEndTagOptional()) { flags.add(EFlag.OPTIONAL_ENDTAG); }
       if (el.isEmpty()) { flags.add(EFlag.EMPTY); }
-      switch (HtmlTextEscapingMode.getModeForTag(elementName)) {
-        case CDATA:
-          flags.add(EFlag.CDATA);
-          break;
-        case RCDATA:
-          flags.add(EFlag.RCDATA);
-          break;
-        default: break;
+      if (elementName.isHtml()) {
+        switch (HtmlTextEscapingMode.getModeForTag(elementName.localName)) {
+          case CDATA:
+            flags.add(EFlag.CDATA);
+            break;
+          case RCDATA:
+            flags.add(EFlag.RCDATA);
+            break;
+          default: break;
+        }
       }
       if (!schema.isElementAllowed(elementName)) {
         flags.add(EFlag.UNSAFE);
-        if (Name.html("script").equals(elementName)) {
+        if (SCRIPT.equals(elementName)) {
           flags.add(EFlag.SCRIPT);
-        } else if (Name.html("style").equals(elementName)) {
+        } else if (STYLE.equals(elementName)) {
           flags.add(EFlag.STYLE);
         }
       }
       if (HtmlSchema.isElementFoldable(elementName)) {
         flags.add(EFlag.FOLDABLE);
       }
-      elementFlags.put(elementName.getCanonicalForm(), flags);
+      elementFlags.put(elementName, flags);
     }
     return elementFlags;
   }

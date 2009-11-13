@@ -24,6 +24,7 @@ import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.quasiliteral.QuasiBuilder;
 import com.google.caja.parser.html.DomParser;
+import com.google.caja.parser.html.Namespaces;
 import com.google.caja.parser.html.Nodes;
 import com.google.caja.parser.js.CajoledModule;
 import com.google.caja.parser.js.Expression;
@@ -63,8 +64,8 @@ import org.w3c.dom.Node;
 public class HtmlHandler implements ContentHandler {
   private final BuildInfo buildInfo;
   private final PluginEnvironment pluginEnvironment;
-  private final static String DEFAULT_HOSTED_SERVICE =
-      "http://caja.appsport.com/cajoler";
+  private final static String DEFAULT_HOSTED_SERVICE
+      = "http://caja.appsport.com/cajoler";
 
   public HtmlHandler(BuildInfo buildInfo) {
     this(buildInfo, DEFAULT_HOSTED_SERVICE, null);
@@ -153,7 +154,7 @@ public class HtmlHandler implements ContentHandler {
     } catch (IOException e) {
       throw new UnsupportedContentTypeException();
     }
-    
+
     return new Pair<String, String>(
         meta.isOnlyJsEmitted() ? "text/javascript" : "text/html",
         "UTF-8");
@@ -229,8 +230,9 @@ public class HtmlHandler implements ContentHandler {
       output.append(Nodes.render(staticHtml));
     }
     if (javascript != null) {
-      Element script = doc.createElement("SCRIPT");
-      script.setAttribute("type", "text/javascript");
+      String htmlNs = Namespaces.HTML_NAMESPACE_URI;
+      Element script = doc.createElementNS(htmlNs, "script");
+      script.setAttributeNS(htmlNs, "type", "text/javascript");
       script.appendChild(doc.createTextNode(
           renderJavascript(javascript, moduleCallback)));
       output.append(Nodes.render(script));
@@ -245,8 +247,7 @@ public class HtmlHandler implements ContentHandler {
   }
 
   private String renderJavascript(CajoledModule javascript,
-                                  Expression moduleCallback)
-      throws IOException {
+                                  Expression moduleCallback) {
     StringBuilder jsOut = new StringBuilder();
     RenderContext rc = new RenderContext(
         new JsMinimalPrinter(new Concatenator(jsOut)))

@@ -22,6 +22,8 @@ import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.ParseException;
 import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.css.CssTree;
+import com.google.caja.parser.html.ElKey;
+import com.google.caja.parser.html.Namespaces;
 import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.util.CajaTestCase;
@@ -44,11 +46,15 @@ public class CssRewriterTest extends CajaTestCase {
 
   public final void testBadTagsRemoved() throws Exception {
     runTest("script { display: none }", "");
+    assertMessage(
+        true, PluginMessageType.UNSAFE_TAG, MessageLevel.ERROR,
+        ElKey.forElement(Namespaces.HTML_DEFAULT, "script"));
+    assertNoErrors();
     runTest("strike, script, strong { display: none }",
             "strike, strong {\n  display: none\n}");  // See error
     assertMessage(
         true, PluginMessageType.UNSAFE_TAG, MessageLevel.ERROR,
-        Name.html("script"));
+        ElKey.forElement(Namespaces.HTML_DEFAULT, "script"));
     assertNoErrors();
   }
 

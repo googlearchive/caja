@@ -26,6 +26,7 @@ import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.Visitor;
 import com.google.caja.parser.css.CssTree;
 import com.google.caja.parser.html.DomParser;
+import com.google.caja.parser.html.Namespaces;
 import com.google.caja.parser.html.Nodes;
 import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.TranslatedCode;
@@ -201,7 +202,7 @@ public class TemplateCompilerTest extends CajaTestCase {
             ""
             + "{"
             // The extracted handler.
-            + "  var c_1___ = ___.markFuncFreeze(function (event, thisNode___) {"
+            + "  var c_1___ = ___.markFuncFreeze(function(event, thisNode___) {"
             + "    alert('hi');"  // Cajoled later
             + "    return true;"
             + "  });"
@@ -630,8 +631,8 @@ public class TemplateCompilerTest extends CajaTestCase {
   private void assertSafeHtml(
       DocumentFragment input, DocumentFragment htmlGolden, Block jsGolden,
       boolean checkErrors) throws ParseException {
-    assertSafeHtml(Collections.singletonList(input), htmlGolden, jsGolden,
-        checkErrors);
+    assertSafeHtml(
+        Collections.singletonList(input), htmlGolden, jsGolden, checkErrors);
   }
 
   private void assertSafeHtml(
@@ -675,9 +676,11 @@ public class TemplateCompilerTest extends CajaTestCase {
     extractStyles(n, cssOut);
   }
 
+  private static String HTML_NS = Namespaces.HTML_NAMESPACE_URI;
   private Node extractScripts(Node n) throws ParseException {
-    if (n instanceof Element && "script".equals(n.getNodeName())) {
-      Element span = n.getOwnerDocument().createElement("span");
+    if (n instanceof Element && "script".equals(n.getLocalName())
+        && HTML_NS.equals(n.getNamespaceURI())) {
+      Element span = n.getOwnerDocument().createElementNS(HTML_NS, "span");
       if (n.getParentNode() != null) {
         n.getParentNode().replaceChild(span, n);
       }
@@ -694,7 +697,8 @@ public class TemplateCompilerTest extends CajaTestCase {
 
   private void extractStyles(Node n, List<CssTree.StyleSheet> styles)
       throws ParseException {
-    if (n instanceof Element && "style".equals(n.getNodeName())) {
+    if (n instanceof Element && "style".equals(n.getNodeName())
+        && HTML_NS.equals(n.getNamespaceURI())) {
       FilePosition pos = Nodes.getFilePositionFor(n);
       if (n.getFirstChild() != null) {
         String text = n.getFirstChild().getNodeValue();

@@ -14,9 +14,10 @@
 
 package com.google.caja.lang.html;
 
-import com.google.caja.util.Name;
+import com.google.caja.parser.html.AttribKey;
+import com.google.caja.parser.html.ElKey;
+import com.google.caja.util.Lists;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -28,22 +29,20 @@ import java.util.List;
 public final class HTML {
 
   /**
-   * Html element
+   * HTML element
    */
   public static final class Element {
-    private final Name name_;
+    private final ElKey key_;
     private final List<Attribute> attrs_;
     private final boolean empty_;
     private final boolean optionalEndTag_;
 
     /** Construct an Element */
-    public Element(
-        Name name, List<Attribute> attrs,
-        boolean empty, boolean optionalEndTag) {
-      assert name != null;
-      this.name_ = name;
-      this.attrs_ = Collections.unmodifiableList(
-          new ArrayList<Attribute>(attrs));
+    public Element(ElKey key, List<Attribute> attrs, boolean empty,
+                   boolean optionalEndTag) {
+      assert key != null;
+      this.key_ = key;
+      this.attrs_ = Collections.unmodifiableList(Lists.newArrayList(attrs));
       this.empty_ = empty;
       this.optionalEndTag_ = optionalEndTag;
     }
@@ -52,9 +51,9 @@ public final class HTML {
       return attrs_;
     }
 
-    /** Name of the element, e.g. "a", "br" */
-    public Name getName() {
-      return name_;
+    /** Identifies the element, e.g. "a", "br" */
+    public ElKey getKey() {
+      return key_;
     }
 
     /** True if it's empty, has no inner elements or end tag */
@@ -72,29 +71,23 @@ public final class HTML {
      */
     @Override
     public String toString() {
-      return name_.getCanonicalForm();
+      return key_.toString();
     }
 
     @Override
     public boolean equals(Object o) {
-      if (this == o) {
-        return true;
-      }
-      if (o instanceof HTML.Element) {
-        HTML.Element that = (HTML.Element) o;
-        return this.name_.equals(that.name_);
-      }
-      return false;
+      if (!(o instanceof Element)) { return false; }
+      return this.key_.equals(((Element) o).key_);
     }
 
     @Override
     public int hashCode() {
-      return this.name_.hashCode();
+      return this.key_.hashCode();
     }
   }
 
   /**
-   * Html attribute
+   * HTML attribute
    */
   public static final class Attribute {
 
@@ -169,10 +162,7 @@ public final class HTML {
       ;
     }
 
-    /** Name of the element, e.g. "a" or "*" */
-    private final Name elementName_;
-    /** Name of the attribute, e.g. "href" */
-    private final Name attributeName_;
+    private final AttribKey key_;
 
     /** Type of the attribute value, e.g. URI */
     private final Type type_;
@@ -200,18 +190,16 @@ public final class HTML {
 
     /** Construct an Attribute */
     public Attribute(
-        Name elementName, Name attributeName, Type type, String defaultValue,
-        String safeValue, boolean valueless, boolean optional, String mimeTypes,
+        AttribKey key, Type type, String defaultValue, String safeValue,
+        boolean valueless, boolean optional, String mimeTypes,
         RegularCriterion valueCriterion) {
-      assert elementName != null;
-      assert attributeName != null;
+      assert key != null;
       assert type != null;
       // HACK: null should not be allowed
       assert safeValue == null || valueCriterion.accept(safeValue)
-          : "[" + safeValue + "] for " + elementName + "::" + attributeName
-            + " with criterion /" + valueCriterion.toRegularExpression() + "/";
-      this.elementName_ = elementName;
-      this.attributeName_ = attributeName;
+          : ("[" + safeValue + "] for " + key + " with criterion /"
+             + valueCriterion.toRegularExpression() + "/");
+      this.key_ = key;
       this.type_ = type;
       this.defaultValue_ = defaultValue;
       this.safeValue_ = safeValue;
@@ -221,15 +209,7 @@ public final class HTML {
       this.valueCriterion_ = valueCriterion;
     }
 
-    /** Gets the name of the attribute. */
-    public Name getAttributeName() {
-      return attributeName_;
-    }
-
-    /** Gets the name of the element, or the special value "*". */
-    public Name getElementName() {
-      return elementName_;
-    }
+    public AttribKey getKey() { return key_; }
 
     /** Gets the type, e.g. URI. */
     public Type getType() {
@@ -277,25 +257,19 @@ public final class HTML {
      */
     @Override
     public String toString() {
-      return elementName_ + "::" + attributeName_;
+      return key_.toString();
     }
 
     @Override
     public boolean equals(Object o) {
-      if (this == o) {
-        return true;
-      }
-      if (o instanceof HTML.Attribute) {
-        HTML.Attribute that = (HTML.Attribute) o;
-        return this.attributeName_.equals(that.attributeName_)
-            && this.elementName_.equals(that.elementName_);
-      }
-      return false;
+      if (!(o instanceof Attribute)) { return false; }
+      Attribute that = (HTML.Attribute) o;
+      return this.key_.equals(that.key_);
     }
 
     @Override
     public int hashCode() {
-      return this.attributeName_.hashCode() * 31 + this.elementName_.hashCode();
+      return key_.hashCode();
     }
   }
 }

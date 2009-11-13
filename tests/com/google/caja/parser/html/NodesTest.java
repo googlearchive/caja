@@ -14,8 +14,12 @@
 
 package com.google.caja.parser.html;
 
+import com.google.caja.render.Concatenator;
+import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.CajaTestCase;
 
+import org.w3c.dom.Document;
+import org.w3c.dom.DocumentFragment;
 import org.w3c.dom.Element;
 
 public class NodesTest extends CajaTestCase {
@@ -84,6 +88,143 @@ public class NodesTest extends CajaTestCase {
 
     assertEquals("&;", Nodes.decode("&;"));
     assertEquals("&bogus;", Nodes.decode("&bogus;"));
+  }
+
+  public final void testRenderOfEmbeddedXml() throws Exception {
+    assertEquals(
+        "<td width=\"10\"><svg:Rect width=\"50\"></svg:Rect></td>",
+        Nodes.render(xmlFragment(fromString(
+            "<html:td width='10'><svg:Rect width='50'/></html:td>")), false));
+    assertEquals(
+        "<td width=\"10\"><svg:Rect width=\"50\" /></td>",
+        Nodes.render(xmlFragment(fromString(
+            "<html:td width='10'><svg:Rect width='50'/></html:td>")), true));
+  }
+
+  public final void testRenderWithNonstandardNamespaces() throws Exception {
+    assertEquals(
+        "<td width=\"10\"><svg:Rect width=\"50\" /></td>",
+        Nodes.render(xmlFragment(fromString(
+            ""
+            + "<html:td width='10' xmlns:s='http://www.w3.org/2000/svg'>"
+            + "<s:Rect width='50'/>"
+            + "</html:td>")),
+            true));
+  }
+
+  public final void testRenderWithUnknownNamespace() throws Exception {
+    assertEquals(
+        ""
+        + "<xml:foo>"
+        + "<_ns8:baz xmlns:_ns8=\"http://bobs.house.of/XML&amp;BBQ\""
+        + " boo=\"howdy\" xml:lang=\"es\" />"
+        + "</xml:foo>",
+        Nodes.render(xmlFragment(fromString(
+            ""
+            + "<foo xmlns='http://www.w3.org/XML/1998/namespace'"
+            + " xmlns:bar='http://bobs.house.of/XML&BBQ'>"
+            + "<bar:baz boo='howdy' xml:lang='es'/>"
+            + "</foo>")),
+            true));
+  }
+
+  public final void testRenderWithMaskedInputNamespace1() throws Exception {
+    DocumentFragment fragment = xmlFragment(fromString(
+        "<svg:foo><svg:bar xmlns:svg='" + Namespaces.HTML_NAMESPACE_URI
+        + "'/></svg:foo>"));
+    assertEquals("<svg:foo><bar></bar></svg:foo>", Nodes.render(fragment));
+  }
+
+  public final void testRenderWithMaskedInputNamespace2() throws Exception {
+    DocumentFragment fragment = xmlFragment(fromString(
+        "<svg:foo><svg:bar xmlns:svg='http://foo/'/></svg:foo>"));
+    assertEquals(
+        "<svg:foo><_ns8:bar xmlns:_ns8=\"http://foo/\"></_ns8:bar></svg:foo>",
+        Nodes.render(fragment));
+  }
+
+  public final void testRenderWithMaskedOutputNamespace1() throws Exception {
+    DocumentFragment fragment = xmlFragment(fromString(
+        "<svg:foo><xml:bar/></svg:foo>"));
+    Namespaces ns = new Namespaces(
+        Namespaces.HTML_DEFAULT, "svg", Namespaces.XML_NAMESPACE_URI);
+    StringBuilder sb = new StringBuilder();
+    RenderContext rc = new RenderContext(new Concatenator(sb)).withAsXml(true);
+    Nodes.render(fragment, ns, rc);
+    rc.getOut().noMoreTokens();
+    assertEquals(
+        ""
+        + "<_ns9:foo xmlns:_ns9=\"http://www.w3.org/2000/svg\">"
+        + "<svg:bar /></_ns9:foo>",
+        sb.toString());
+  }
+
+  public final void testHtmlNamesNormalized() throws Exception {
+    Document doc = DomParser.makeDocument(null, null);
+    Element el = doc.createElementNS(Namespaces.HTML_NAMESPACE_URI, "SPAN");
+    el.setAttributeNS(Namespaces.HTML_NAMESPACE_URI, "TITLE", "Howdy");
+
+    assertEquals("<span title=\"Howdy\"></span>", Nodes.render(el));
+
+    Namespaces ns = new Namespaces(
+        Namespaces.HTML_DEFAULT, "html", Namespaces.HTML_NAMESPACE_URI);
+    StringBuilder sb = new StringBuilder();
+    RenderContext rc = new RenderContext(new Concatenator(sb)).withAsXml(false);
+    Nodes.render(el, ns, rc);
+    rc.getOut().noMoreTokens();
+    assertEquals("<html:span title=\"Howdy\"></html:span>", sb.toString());
+  }
+
+  public final void testNoSneakyNamespaceDecls1() throws Exception {
+    Document doc = DomParser.makeDocument(null, null);
+    Element el = doc.createElementNS(
+        Namespaces.SVG_NAMESPACE_URI, "span");
+    try {
+      el.setAttributeNS(
+          Namespaces.SVG_NAMESPACE_URI, "xmlns", Namespaces.HTML_NAMESPACE_URI);
+    } catch (Exception ex) {
+      try {
+        el.setAttributeNS(
+            Namespaces.HTML_NAMESPACE_URI, "xmlns",
+            Namespaces.HTML_NAMESPACE_URI);
+      } catch (Exception ex2) {
+        el.setAttribute("xmlns", Namespaces.HTML_NAMESPACE_URI);
+      }
+    }
+    el.appendChild(doc.createElementNS(Namespaces.SVG_NAMESPACE_URI, "br"));
+    String rendered;
+    try {
+      rendered = Nodes.render(el);
+    } catch (RuntimeException ex) {
+      return;  // Failure is an option.
+    }
+    assertEquals("<svg:span><svg:br/></svg:span>", rendered);
+  }
+
+  public final void testNoSneakyNamespaceDecls2() throws Exception {
+    Document doc = DomParser.makeDocument(null, null);
+    Element el = doc.createElementNS(
+        Namespaces.SVG_NAMESPACE_URI, "span");
+    try {
+      el.setAttributeNS(
+          Namespaces.XMLNS_NAMESPACE_URI, "svg", Namespaces.HTML_NAMESPACE_URI);
+    } catch (Exception ex) {
+      try {
+        el.setAttributeNS(
+            Namespaces.HTML_NAMESPACE_URI, "xmlns:svg",
+            Namespaces.HTML_NAMESPACE_URI);
+      } catch (Exception ex2) {
+        el.setAttribute("xmlns:svg", Namespaces.HTML_NAMESPACE_URI);
+      }
+    }
+    el.appendChild(doc.createElementNS(Namespaces.SVG_NAMESPACE_URI, "br"));
+    String rendered;
+    try {
+      rendered = Nodes.render(el);
+    } catch (RuntimeException ex) {
+      return;  // Failure is an option.
+    }
+    assertEquals("<svg:span><svg:br/></svg:span>", rendered);
   }
 
   public final void testRenderSpeed() throws Exception {

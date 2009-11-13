@@ -26,6 +26,7 @@ import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.ParseTreeNodeContainer;
 import com.google.caja.parser.ParseTreeNodes;
 import com.google.caja.parser.Visitor;
+import com.google.caja.parser.html.ElKey;
 import com.google.caja.parser.js.ArrayConstructor;
 import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.Conditional;
@@ -50,15 +51,13 @@ import com.google.caja.parser.quasiliteral.QuasiBuilder;
 import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.util.Criterion;
-import com.google.caja.util.Name;
+import com.google.caja.util.Lists;
+import com.google.caja.util.Maps;
 import com.google.caja.util.Pair;
+import com.google.caja.util.Sets;
 
 import java.io.StringReader;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -75,7 +74,7 @@ import java.util.regex.Pattern;
 class JsdocRewriter {
   private final MessageQueue mq;
   private final MessageContext mc;
-  private final Set<Token<?>> consumed = new HashSet<Token<?>>();
+  private final Set<Token<?>> consumed = Sets.newHashSet();
   private final AnnotationHandlers handlers;
 
   JsdocRewriter(
@@ -127,7 +126,7 @@ class JsdocRewriter {
       return extractFileOverview(js.children().get(0));
     }
     if (fileOverview != null) {
-      List<Annotation> flattened = new ArrayList<Annotation>();
+      List<Annotation> flattened = Lists.newArrayList();
       for (Annotation a : fileOverview.children()) {
         if (a instanceof BlockAnnotation
             && "fileoverview".equals(a.getValue())) {
@@ -205,7 +204,7 @@ class JsdocRewriter {
           case NOT_EQUAL:
           case STRICTLY_EQUAL:
           case STRICTLY_NOT_EQUAL:
-            List<Expression> unwrappedChildren = new ArrayList<Expression>();
+            List<Expression> unwrappedChildren = Lists.newArrayList();
             for (Expression child : operation.children()) {
               unwrappedChildren.add(
                   (Expression) QuasiBuilder.substV(
@@ -310,14 +309,12 @@ class JsdocRewriter {
       doc = new ObjectConstructor(pos);
     }
     // Now build a set of fields by eliminating duplicate members.
-    final Map<String, Expression> fieldDocsByName
-        = new LinkedHashMap<String, Expression>();
+    final Map<String, Expression> fieldDocsByName = Maps.newLinkedHashMap();
     ctor.getBody().acceptPreOrder(new Visitor() {
       public boolean visit(AncestorChain<?> ac) {
         if (ac.node instanceof FunctionConstructor) { return false; }
         if (!(ac.node instanceof Operation)) { return true; }
-        Map<String, ParseTreeNode> bindings
-            = new HashMap<String, ParseTreeNode>();
+        Map<String, ParseTreeNode> bindings = Maps.newHashMap();
         if (QuasiBuilder.match("this.@field", ac.node, bindings)
             || QuasiBuilder.match("this.@field = @rhs", ac.node, bindings)) {
           String name = ((Reference) bindings.get("field")).getIdentifierName();
@@ -342,8 +339,7 @@ class JsdocRewriter {
       }
     }, null);
 
-    List<Pair<Literal, Expression>> fieldMembers
-        = new ArrayList<Pair<Literal, Expression>>();
+    List<Pair<Literal, Expression>> fieldMembers = Lists.newArrayList();
     for (Map.Entry<String, Expression> e : fieldDocsByName.entrySet()) {
       Expression memberDoc = e.getValue();
       if (memberDoc == null) { memberDoc = new ObjectConstructor(pos); }
@@ -384,8 +380,7 @@ class JsdocRewriter {
 
   private ParseTreeNode documentObjectConstructor(ObjectConstructor o) {
     List<? extends Expression> children = o.children();
-    List<Pair<Literal, Expression>> entries
-        = new ArrayList<Pair<Literal, Expression>>();
+    List<Pair<Literal, Expression>> entries = Lists.newArrayList();
     for (int i = 0, n = children.size(); i < n; i += 2) {
       Literal key = (Literal) children.get(i);
       Expression value = children.get(i + 1);
@@ -430,7 +425,7 @@ class JsdocRewriter {
   }
 
   private Statement delayDocingOfUninitializedVariables(final Statement s) {
-    final List<Declaration> uninitialized = new ArrayList<Declaration>();
+    final List<Declaration> uninitialized = Lists.newArrayList();
     s.acceptPreOrder(new Visitor() {
       public boolean visit(AncestorChain<?> ac) {
         if (ac.node == s) { return true; }
@@ -446,7 +441,7 @@ class JsdocRewriter {
       }
     }, null);
 
-    List<Statement> docStmts = new ArrayList<Statement>();
+    List<Statement> docStmts = Lists.newArrayList();
     for (Declaration decl : uninitialized) {
       Expression doc = getDocCommentJson(decl);
       if (doc != null) {
@@ -473,7 +468,7 @@ class JsdocRewriter {
   }
 
   private List<ParseTreeNode> rewriteAll(List<? extends ParseTreeNode> nodes) {
-    List<ParseTreeNode> rewritten = new ArrayList<ParseTreeNode>();
+    List<ParseTreeNode> rewritten = Lists.newArrayList();
     for (ParseTreeNode node : nodes) {
       ParseTreeNode rnode = rewrite(node);
       if (rnode instanceof ParseTreeNodeContainer) {
@@ -512,16 +507,15 @@ class JsdocRewriter {
 
   private Expression commentToJson(Comment cmt) {
     FilePosition pos = cmt.getFilePosition();
-    List<Annotation> description = new ArrayList<Annotation>();
-    Map<String, List<Expression>> blocks
-        = new LinkedHashMap<String, List<Expression>>();
+    List<Annotation> description = Lists.newArrayList();
+    Map<String, List<Expression>> blocks = Maps.newLinkedHashMap();
     for (Annotation a : cmt.children()) {
       if (a instanceof BlockAnnotation) {
         Expression e = handlers.handlerFor(a).handle(a, mq);
         if (e != null) {
           String name = a.getValue();
           if (!blocks.containsKey(name)) {
-            blocks.put(name, new ArrayList<Expression>());
+            blocks.put(name, Lists.<Expression>newArrayList());
           }
           blocks.get(name).add(e);
         }
@@ -530,8 +524,7 @@ class JsdocRewriter {
       }
     }
 
-    List<Pair<Literal, Expression>> docEntries
-        = new ArrayList<Pair<Literal, Expression>>();
+    List<Pair<Literal, Expression>> docEntries = Lists.newArrayList();
 
     if (!description.isEmpty()) {
       BlockAnnotation desc = new BlockAnnotation(
@@ -613,8 +606,8 @@ class JsdocRewriter {
       List<? extends Annotation> annotations) {
     HtmlSchema schema = HtmlSchema.getDefault(mq);
 
-    List<Name> open = new ArrayList<Name>();
-    List<Annotation> normalized = new ArrayList<Annotation>();
+    List<ElKey> open = Lists.newArrayList();
+    List<Annotation> normalized = Lists.newArrayList();
     for (int i = 0, n = annotations.size(); i < n; ++i) {
       Annotation a = annotations.get(i);
       if (a instanceof TextAnnotation) {
@@ -624,11 +617,11 @@ class JsdocRewriter {
           m.appendReplacement(sb, "");
           if (m.group(1) != null) {
             boolean end = "</".equals(m.group(1));
-            Name name = Name.html(m.group(2));
-            HTML.Element el = schema.lookupElement(name);
-            if (el != null) {
+            ElKey elKey = ElKey.forHtmlElement(m.group(2));
+            HTML.Element el = schema.lookupElement(elKey);
+            if (schema.isElementAllowed(elKey)) {
               if (end) {
-                int lindex = open.lastIndexOf(name);
+                int lindex = open.lastIndexOf(elKey);
                 if (lindex >= 0) {
                   for (int j = open.size(); --j >= lindex;) {
                     sb.append("</").append(open.get(j)).append('>');
@@ -637,7 +630,7 @@ class JsdocRewriter {
                 }
               } else {
                 sb.append(m.group(0));
-                if (!el.isEmpty()) { open.add(name); }
+                if (!el.isEmpty()) { open.add(elKey); }
               }
             } else {
               sb.append("&lt;").append(m.group(0).substring(1));

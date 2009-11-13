@@ -14,7 +14,6 @@
 
 package com.google.caja.util;
 
-import com.google.caja.parser.html.Html5ElementStack;
 import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessagePart;
 import java.io.IOException;
@@ -35,20 +34,6 @@ public final class Name implements Comparable<Name>, MessagePart {
 
   private Name(String canonicalForm) {
     this.canonicalForm = canonicalForm;
-  }
-
-  /**
-   * The name of an HTML element or attribute.
-   * Names in the default, HTML, name-space are case-normalized.  Names in other
-   * name-spaces are not.
-   */
-  public static Name html(String htmlName) {
-    return new Name(Html5ElementStack.canonicalizeName(htmlName));
-  }
-
-  /** The name of a case-sensitive XML element or attribute. */
-  public static Name xml(String xmlName) {
-    return new Name(xmlName);
   }
 
   /**

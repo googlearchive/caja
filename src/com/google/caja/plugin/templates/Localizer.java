@@ -20,6 +20,7 @@ import com.google.caja.lexer.HtmlLexer;
 import com.google.caja.lexer.HtmlTokenType;
 import com.google.caja.lexer.ParseException;
 import com.google.caja.lexer.Token;
+import com.google.caja.parser.html.Namespaces;
 import com.google.caja.parser.html.Nodes;
 import com.google.caja.render.Concatenator;
 import com.google.caja.reporting.MessagePart;
@@ -146,9 +147,10 @@ public class Localizer {
     return byName;
   }
 
+  private static final String XML_NS = Namespaces.XML_NAMESPACE_URI;
   public IhtmlL10NContext extractMessages(Element ihtmlRoot) {
-    Locale locale = ihtmlRoot.hasAttribute("xml:lang")
-        ? new Locale(ihtmlRoot.getAttribute("xml:lang").replace('-', '_'))
+    Locale locale = ihtmlRoot.hasAttributeNS(XML_NS, "lang")
+        ? new Locale(ihtmlRoot.getAttributeNS(XML_NS, "lang").replace('-', '_'))
         // Choose a default that is independent of the default locale since we
         // typically run tests in the Turkish locale.
         : Locale.ENGLISH;
@@ -177,8 +179,8 @@ public class Localizer {
     String name = IHTML.getName(message).getValue();
     StringBuilder filteredXhtml = new StringBuilder();
     if (message.getFirstChild() != null) {
-      // Render an XHTML string containing the message content, with embedded <ph>
-      // elements.
+      // Render an XHTML string containing the message content, with embedded
+      // <ph> elements.
       StringBuilder xhtml = new StringBuilder();
       RenderContext rc = new RenderContext(new Concatenator(xhtml))
           .withAsXml(true).withAsciiOnly(true);
@@ -239,7 +241,7 @@ public class Localizer {
 
   private static Iterable<Element> allMessages(Element root) {
     return Nodes.nodeListIterable(
-        root.getElementsByTagName(IHTML.PREFIX + ":message"), Element.class);
+        root.getElementsByTagNameNS(IHTML.NAMESPACE, "message"), Element.class);
   }
 
   private static <T> List<T> snapshot(Iterable<T> it) {
@@ -341,8 +343,7 @@ public class Localizer {
         if (IHTML.isEph(n)) { return false; }
         Element e = (Element) n;
         FilePosition spos = FilePosition.startOf(pos);
-        out.add(Token.instance(
-            "<" + e.getTagName(), HtmlTokenType.TAGBEGIN, spos));
+        out.add(Token.instance("<" + tagName(e), HtmlTokenType.TAGBEGIN, spos));
         FilePosition cpos = spos;
         for (Attr a : Nodes.attributesOf(e)) {
           emitTokens(a, out);
@@ -376,8 +377,15 @@ public class Localizer {
       Element e = (Element) n;
       FilePosition epos = FilePosition.endOf(Nodes.getFilePositionFor(e));
       out.add(Token.instance(
-          "</" + e.getTagName(), HtmlTokenType.TAGBEGIN, epos));
+          "</" + tagName(e), HtmlTokenType.TAGBEGIN, epos));
       out.add(Token.instance(">", HtmlTokenType.TAGEND, epos));
     }
+  }
+
+  private static String tagName(Element e) {
+    Namespaces ns = Namespaces.COMMON.forUri(e.getNamespaceURI());
+    String prefix = ns != null ? ns.prefix : "";
+    String localName = e.getLocalName();
+    return "".equals(prefix) ? localName : prefix + ":" + localName;
   }
 }

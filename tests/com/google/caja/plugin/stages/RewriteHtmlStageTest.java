@@ -16,6 +16,7 @@ package com.google.caja.plugin.stages;
 
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.parser.AncestorChain;
+import com.google.caja.parser.html.Namespaces;
 import com.google.caja.parser.js.Block;
 import com.google.caja.plugin.Dom;
 import com.google.caja.plugin.ExtractedHtmlContent;
@@ -186,7 +187,9 @@ public final class RewriteHtmlStageTest extends PipelineStageTestCase {
             + "<span jobnum=\"3\"></span>",
             Job.JobType.HTML),
         job("{\n  onerror = panic;\n}", Job.JobType.JAVASCRIPT),
-        job("{\n  throw new Error('Failed to load http://bogus.com/bogus.js#\\'!');\n}", Job.JobType.JAVASCRIPT),
+        job("{\n  throw new Error("
+                     + "'Failed to load http://bogus.com/bogus.js#\\'!');\n}",
+            Job.JobType.JAVASCRIPT),
         job("{ foo(); }", Job.JobType.JAVASCRIPT));
     assertNoErrors();
   }
@@ -210,7 +213,8 @@ public final class RewriteHtmlStageTest extends PipelineStageTestCase {
         Block extracted = ExtractedHtmlContent.getExtractedScriptFor(el);
         if (extracted != null) {
           int jobNum = jobs.getJobs().size();
-          el.setAttribute("jobnum", "" + jobNum);
+          el.setAttributeNS(
+              Namespaces.HTML_NAMESPACE_URI, "jobnum", "" + jobNum);
           jobs.getJobs().add(new Job(AncestorChain.instance(extracted)));
         }
         for (Node c = el.getFirstChild(); c != null; c = c.getNextSibling()) {

@@ -17,6 +17,9 @@ package com.google.caja.plugin.templates;
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.HtmlTextEscapingMode;
 import com.google.caja.parser.ParseTreeNode;
+import com.google.caja.parser.html.AttribKey;
+import com.google.caja.parser.html.ElKey;
+import com.google.caja.parser.html.Namespaces;
 import com.google.caja.parser.html.Nodes;
 import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.Expression;
@@ -30,7 +33,6 @@ import com.google.caja.parser.js.TranslatedCode;
 import com.google.caja.plugin.ExtractedHtmlContent;
 import com.google.caja.plugin.PluginMeta;
 import com.google.caja.reporting.MessageContext;
-import com.google.caja.util.Name;
 import com.google.caja.util.Pair;
 
 import java.util.ArrayList;
@@ -91,7 +93,8 @@ import org.w3c.dom.Text;
  * @author mikesamuel@gmail.com
  */
 final class SafeHtmlMaker {
-  private static final Name ID = Name.html("id");
+  private static final AttribKey ID = AttribKey.forHtmlAttrib(
+      ElKey.HTML_WILDCARD, "id");
 
   private final PluginMeta meta;
   private final MessageContext mc;
@@ -200,7 +203,7 @@ final class SafeHtmlMaker {
           return null;
         } else {
           FilePosition pos = Nodes.getFilePositionFor(el);
-          safe = doc.createElement(el.getTagName());
+          safe = doc.createElementNS(el.getNamespaceURI(), el.getLocalName());
           Nodes.setFilePositionFor(safe, pos);
           bones.add(new NodeBone(n, safe));
 
@@ -307,7 +310,7 @@ final class SafeHtmlMaker {
         // these exception handlers are only reachable while control is in
         // loadModule.
         + "      ./*@synthetic*/ handleUncaughtException("
-        + "      ex___, onerror, @sourceFile, @line);"
+        + "          ex___, onerror, @sourceFile, @line);"
         + "}",
         // TODO(ihab.awad): Will add UncajoledModule wrapper when we no longer
         // "consolidate" all scripts in an HTML file into one Caja module.
@@ -325,7 +328,7 @@ final class SafeHtmlMaker {
    *     cause code to execute.
    */
   private void insertPlaceholderAfter(Node preceder) {
-    String dynId = meta.generateUniqueName(ID.getCanonicalForm());
+    String dynId = meta.generateUniqueName(ID.localName);
     emitStatement(quasiStmt(
         ""
         + "emitter___./*@synthetic*/discard("
@@ -351,16 +354,24 @@ final class SafeHtmlMaker {
       assert !containsOnlyText(parent);
     }
 
-    Element placeholder = doc.createElement("span");
-    placeholder.setAttribute(ID.getCanonicalForm(), dynId);
+    Element placeholder = doc.createElementNS(
+        Namespaces.HTML_NAMESPACE_URI, "span");
+    placeholder.setAttributeNS(
+        Namespaces.HTML_NAMESPACE_URI, ID.localName, dynId);
     parent.insertBefore(placeholder, follower);
   }
 
   private static boolean containsOnlyText(Node n) {
     if (!(n instanceof Element)) { return false; }
-    Name tagName = Name.html(((Element) n).getTagName());
-    HtmlTextEscapingMode mode = HtmlTextEscapingMode.getModeForTag(tagName);
-    return mode != HtmlTextEscapingMode.PCDATA;
+    Element el = (Element) n;
+    ElKey schemaKey = ElKey.forElement(el);
+    if (schemaKey.isHtml()) {
+      HtmlTextEscapingMode mode = HtmlTextEscapingMode.getModeForTag(
+          schemaKey.localName);
+      return mode != HtmlTextEscapingMode.PCDATA;
+    } else {
+      return false;
+    }
   }
 
   /**
@@ -386,14 +397,16 @@ final class SafeHtmlMaker {
     }
     Nodes.setFilePositionFor(safe, pos);
 
+    ElKey elKey = ElKey.forElement(el);
     Attr id = null;
     for (Attr a : Nodes.attributesOf(el)) {
       if (!scriptsPerNode.containsKey(a)) { continue; }
-      Name attrName = Name.html(a.getName());
+      AttribKey attrKey = AttribKey.forAttribute(elKey, a);
       // Keep track of whether there is an ID so that we know whether or
       // not to remove any auto-generated ID later.
       Expression dynamicValue = (Expression) scriptsPerNode.get(a);
-      if (!ID.equals(attrName)) {
+      if (ID.ns.uri != attrKey.ns.uri
+          || !ID.localName.equals(attrKey.localName)) {
         if (dynamicValue == null
             || dynamicValue instanceof StringLiteral) {
           emitStaticAttr(a, (StringLiteral) dynamicValue, safe);
@@ -423,11 +436,10 @@ final class SafeHtmlMaker {
 
     // Remove the dynamic ID if it is still present.
     if (dynId != null) {
-      assert !safe.hasAttribute(ID.getCanonicalForm());
-      safe.setAttribute(ID.getCanonicalForm(), dynId);
+      assert !safe.hasAttributeNS(ID.ns.uri, ID.localName);
+      safe.setAttributeNS(ID.ns.uri, ID.localName, dynId);
       if (id == null) {
-        emitStatement(quasiStmt(
-            "el___./*@synthetic*/removeAttribute('id');"));
+        emitStatement(quasiStmt("el___./*@synthetic*/removeAttribute('id');"));
       }
     }
   }
@@ -435,15 +447,13 @@ final class SafeHtmlMaker {
   private void emitStaticAttr(
       Attr a, StringLiteral dynamicValue, Element safe) {
     // Emit an attribute with a known value in the safe HTML.
-    Attr safeAttr = doc.createAttribute(a.getName());
+    Attr safeAttr = doc.createAttributeNS(
+        a.getNamespaceURI(), a.getLocalName());
     safeAttr.setValue(
-        dynamicValue == null
-        ? a.getValue()
-        : dynamicValue.getUnquotedValue());
+        dynamicValue == null ? a.getValue() : dynamicValue.getUnquotedValue());
     Nodes.setFilePositionFor(safeAttr, Nodes.getFilePositionFor(a));
-    Nodes.setFilePositionForValue(
-        safeAttr, Nodes.getFilePositionForValue(a));
-    safe.setAttributeNode(safeAttr);
+    Nodes.setFilePositionForValue(safeAttr, Nodes.getFilePositionForValue(a));
+    safe.setAttributeNodeNS(safeAttr);
   }
 
   private void emitDynamicAttr(Attr a, Expression dynamicValue) {
@@ -470,7 +480,7 @@ final class SafeHtmlMaker {
     if (dynId == null) {
       // We need a dynamic ID so that we can find the node so that
       // we can attach dynamic attributes.
-      dynId = meta.generateUniqueName(ID.getCanonicalForm());
+      dynId = meta.generateUniqueName(ID.localName);
       emitStatement(quasiStmt(
           "el___ = emitter___./*@synthetic*/byId(@id);",
           "id", StringLiteral.valueOf(pos, dynId)));

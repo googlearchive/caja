@@ -25,6 +25,7 @@ import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.html.DomParser;
+import com.google.caja.parser.html.Namespaces;
 import com.google.caja.parser.html.Nodes;
 import com.google.caja.parser.js.Expression;
 import com.google.caja.parser.js.Minify;
@@ -252,8 +253,9 @@ public class BuildServiceImplementation implements BuildService {
       String translatedCode;
       if (emitMarkup) {
         Document doc = DomParser.makeDocument(null, null);
-        Element script = doc.createElement("script");
-        script.setAttribute("type", "text/javascript");
+        String ns = Namespaces.HTML_NAMESPACE_URI;
+        Element script = doc.createElementNS(ns, "script");
+        script.setAttributeNS(ns, "type", "text/javascript");
         script.appendChild(doc.createCDATASection(jsOut.toString()));
         translatedCode = htmlOut + Nodes.render(script, asXml);
       } else {

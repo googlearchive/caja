@@ -27,24 +27,23 @@ import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.MessageType;
-import com.google.caja.util.Name;
+import com.google.caja.util.Lists;
 import com.google.caja.util.Strings;
 
 import java.io.IOException;
 import java.io.Reader;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.regex.Pattern;
 
 import org.w3c.dom.Attr;
-import org.w3c.dom.DOMException;
 import org.w3c.dom.DOMImplementation;
 import org.w3c.dom.Document;
 import org.w3c.dom.DocumentFragment;
 import org.w3c.dom.DocumentType;
 import org.w3c.dom.Element;
+import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.bootstrap.DOMImplementationRegistry;
 
@@ -63,12 +62,19 @@ public final class DomParser {
   private final TokenQueue<HtmlTokenType> tokens;
   private final boolean asXml;
   private final MessageQueue mq;
+  private final Namespaces ns;
   private boolean needsDebugData = true;
 
+  public DomParser(
+      TokenQueue<HtmlTokenType> tokens, boolean asXml, MessageQueue mq) {
+    this(tokens, asXml, Namespaces.HTML_DEFAULT, mq);
+  }
+
   public DomParser(TokenQueue<HtmlTokenType> tokens, boolean asXml,
-                   MessageQueue mq) {
+                   Namespaces ns, MessageQueue mq) {
     this.tokens = tokens;
     this.asXml = asXml;
+    this.ns = ns;
     this.mq = mq;
   }
 
@@ -77,9 +83,18 @@ public final class DomParser {
    */
   public DomParser(HtmlLexer lexer, InputSource src, MessageQueue mq)
       throws ParseException {
+    this(lexer, src, Namespaces.HTML_DEFAULT, mq);
+  }
+
+  public DomParser(
+      HtmlLexer lexer, InputSource src, Namespaces ns, MessageQueue mq)
+      throws ParseException {
     this.mq = mq;
+    this.ns = ns;
     LookaheadLexer la = new LookaheadLexer(lexer);
-    lexer.setTreatedAsXml(this.asXml = guessAsXml(la, src));
+    lexer.setTreatedAsXml(
+        this.asXml = (ns.forPrefix("").uri != Namespaces.HTML_NAMESPACE_URI
+                      || guessAsXml(la, src)));
     this.tokens = new TokenQueue<HtmlTokenType>(la, src);
   }
 
@@ -102,7 +117,7 @@ public final class DomParser {
   protected OpenElementStack makeElementStack(Document doc, MessageQueue mq) {
     return asXml
         ? OpenElementStack.Factory.createXmlElementStack(
-            doc, needsDebugData, mq)
+            doc, needsDebugData, ns, mq)
         : OpenElementStack.Factory.createHtml5ElementStack(
             doc, needsDebugData, mq);
   }
@@ -188,6 +203,10 @@ public final class DomParser {
 
     doc.appendChild(firstChild);
 
+    if (elementStack.needsNamespaceFixup()) {
+      fixup(firstChild, ns);
+    }
+
     return (Element) firstChild;
   }
 
@@ -228,7 +247,118 @@ public final class DomParser {
       throw new ParseException(ex.getCajaMessage(), ex);
     }
 
-    return elementStack.getRootElement();
+    DocumentFragment fragment = elementStack.getRootElement();
+    if (elementStack.needsNamespaceFixup()) {
+      fixup(fragment, ns);
+    }
+    return fragment;
+  }
+
+  private void fixup(Node node, Namespaces ns) {
+    switch (node.getNodeType()) {
+      case Node.ELEMENT_NODE:
+        Element el = (Element) node;
+        Document doc = el.getOwnerDocument();
+        // First, look at any xmlns:* attributes and add to the inScope
+        // namespace.
+        boolean hasNamespaceAttrs = false;
+        {
+          NamedNodeMap attrs = el.getAttributes();
+          for (int i = 0, n = attrs.getLength(); i < n; ++i) {
+            Attr a = (Attr) attrs.item(i);
+            if (a.getNamespaceURI() != null) { continue; }
+            String name = a.getName();
+            if (name.startsWith("xmlns:")) {
+              hasNamespaceAttrs = true;
+              String prefix = name.substring(6);
+              String uri = a.getValue();
+              ns = new Namespaces(ns, prefix, uri);
+            }
+          }
+        }
+        // Now we know what's in scope, find the element namespace.
+        Namespaces elNs;
+        if (el.getNamespaceURI() == null) {
+          String qname = el.getTagName();
+          elNs = ns.forElementName(qname);
+          if (elNs == null) {
+            FilePosition pos = Nodes.getFilePositionFor(el);
+            ns = elNs = AbstractElementStack.unknownNamespace(
+                pos, ns, qname, mq);
+          }
+          String localName = qname.substring(qname.indexOf(':') + 1);
+          Element replacement = doc.createElementNS(elNs.uri, localName);
+          replacement.setPrefix(elNs.prefix);
+          el.getParentNode().replaceChild(replacement, el);
+          for (Node child; (child = el.getFirstChild()) != null; ) {
+            replacement.appendChild(child);
+          }
+          NamedNodeMap attrs = el.getAttributes();
+          while (attrs.getLength() != 0) {
+            Attr a = (Attr) attrs.item(0);
+            el.removeAttributeNode(a);
+            replacement.setAttributeNodeNS(a);
+          }
+          if (needsDebugData) {
+            Nodes.setFilePositionFor(replacement, Nodes.getFilePositionFor(el));
+          }
+          node = el = replacement;
+        } else {
+          elNs = ns.forUri(el.getNamespaceURI());
+          if (elNs == null) {
+            FilePosition pos = Nodes.getFilePositionFor(el);
+            ns = elNs = AbstractElementStack.unknownNamespace(
+                pos, ns, el.getTagName(), mq);
+          }
+        }
+        // And finally, namespace all the attributes.
+        boolean modifiedAttrs;
+        do {
+          modifiedAttrs = false;
+          NamedNodeMap attrs = el.getAttributes();
+          for (int i = 0, n = attrs.getLength(); i < n; ++i) {
+            Attr a = (Attr) attrs.item(i);
+            String qname = a.getName();
+            if (hasNamespaceAttrs && qname.startsWith("xmlns:")) {
+              el.removeAttributeNode(a);
+              modifiedAttrs = true;
+              continue;
+            }
+            if (a.getNamespaceURI() != null) { continue; }
+            String localName = qname.substring(qname.indexOf(':') + 1);
+            Namespaces attrNs = ns.forAttrName(elNs, qname);
+            if (attrNs == null) {
+              FilePosition pos = Nodes.getFilePositionFor(a);
+              ns = attrNs = AbstractElementStack.unknownNamespace(
+                  pos, ns, qname, mq);
+            }
+            Attr newAttr = doc.createAttributeNS(attrNs.uri, localName);
+            if (attrNs.uri != elNs.uri) {
+              newAttr.setPrefix(attrNs.prefix);
+            }
+            newAttr.setValue(a.getValue());
+            if (needsDebugData) {
+              Nodes.setFilePositionFor(newAttr, Nodes.getFilePositionFor(a));
+              Nodes.setFilePositionForValue(
+                  newAttr, Nodes.getFilePositionForValue(a));
+              Nodes.setRawValue(newAttr, Nodes.getRawValue(a));
+            }
+            // This may screw up the count or change the order of attributes in
+            // attrs, so we do this operation in a loop to make sure that all
+            // attributes are considered.
+            el.removeAttributeNode(a);
+            el.setAttributeNodeNS(newAttr);
+            modifiedAttrs = true;
+          }
+        } while (modifiedAttrs);
+        break;
+      case Node.DOCUMENT_FRAGMENT_NODE:
+        break;
+      default: return;
+    }
+    for (Node c = node.getFirstChild(); c != null; c = c.getNextSibling()) {
+      fixup(c, ns);
+    }
   }
 
   /**
@@ -269,14 +399,14 @@ public final class DomParser {
       switch (t.type) {
         case TAGBEGIN:
           {
-            List<Attr> attribs;
+            List<AttrStub> attribs;
             Token<HtmlTokenType> end;
             if (isClose(t)) {
-              attribs = Collections.<Attr>emptyList();
+              attribs = Collections.emptyList();
               while (true) {
                 end = tokens.pop();
                 if (end.type == HtmlTokenType.TAGEND) { break; }
-                // If this is not a tagend, then we should require
+                // If this is not a tag end, then we should require
                 // ignorable whitespace when we're parsing strictly.
                 if (end.type != HtmlTokenType.IGNORABLE) {
                   mq.addMessage(
@@ -285,10 +415,9 @@ public final class DomParser {
                 }
               }
             } else {
-              attribs = new ArrayList<Attr>();
-              end = parseTagAttributes(out.getDocument(), t.pos, attribs);
+              attribs = Lists.newArrayList();
+              end = parseTagAttributes(t.pos, attribs);
             }
-            attribs = Collections.unmodifiableList(attribs);
             try {
               out.processTag(t, end, attribs);
             } catch (IllegalDocumentStateException ex) {
@@ -316,7 +445,7 @@ public final class DomParser {
    * token.
    */
   private Token<HtmlTokenType> parseTagAttributes(
-      Document doc, FilePosition start, List<? super Attr> children)
+      FilePosition start, List<? super AttrStub> attrs)
       throws ParseException {
     Token<HtmlTokenType> last;
     tokloop:
@@ -327,10 +456,8 @@ public final class DomParser {
         tokens.advance();
         break tokloop;
       case ATTRNAME:
-        Attr a = parseAttrib(doc);
-        if (a != null) {
-          children.add(a);
-        }
+        AttrStub a = parseAttrib();
+        if (a != null) { attrs.add(a); }
         break;
       default:
         throw new ParseException(new Message(
@@ -344,7 +471,7 @@ public final class DomParser {
   /**
    * Parses an element from a token stream.
    */
-  private Attr parseAttrib(Document doc) throws ParseException {
+  private AttrStub parseAttrib() throws ParseException {
     Token<HtmlTokenType> name = tokens.pop();
     Token<HtmlTokenType> value = tokens.peek();
     if (value.type == HtmlTokenType.ATTRVALUE) {
@@ -363,15 +490,8 @@ public final class DomParser {
     } else {
       value = Token.instance(name.text, HtmlTokenType.ATTRVALUE, name.pos);
     }
-    Name attrName = (asXml ? Name.xml(name.text) : Name.html(name.text));
-    Attr a;
-    try {
-      a = doc.createAttribute(attrName.getCanonicalForm());
-    } catch (DOMException ex) {
-      return null;
-    }
     String rawValue = value.text;
-    String decodedValue = null;
+    String decodedValue;
     int vlen = rawValue.length();
     if (vlen >= 2) {
       char ch0 = rawValue.charAt(0);
@@ -386,13 +506,7 @@ public final class DomParser {
     } else {
       decodedValue = Nodes.decode(rawValue);
     }
-    a.setValue(decodedValue);
-    if (needsDebugData) {
-      Nodes.setFilePositionFor(a, name.pos);
-      Nodes.setFilePositionForValue(a, value.pos);
-      Nodes.setRawValue(a, rawValue);
-    }
-    return a;
+    return new AttrStub(name, value, decodedValue);
   }
 
   /**
@@ -448,8 +562,7 @@ public final class DomParser {
         && !Pattern.compile("(?i:\\bXHTML\\b)").matcher(s).find();
   }
 
-  private static final Pattern AMBIGUOUS_VALUE = Pattern.compile(
-      "^\\w+\\s*=");
+  private static final Pattern AMBIGUOUS_VALUE = Pattern.compile("^\\w+\\s*=");
   /**
    * True for the attribute value 'bar=baz' in {@code <a foo= bar=baz>}
    * which a naive reader might interpret as {@code <a foo="" bar="baz">}.

@@ -14,7 +14,6 @@
 
 package com.google.caja.lexer;
 
-import com.google.caja.util.Name;
 import com.google.caja.util.Strings;
 
 import java.util.Arrays;
@@ -254,7 +253,7 @@ final class HtmlInputSplitter extends AbstractTokenStream<HtmlTokenType> {
   /** Should the input be considered xml?  are escape exempt blocks allowed? */
   private boolean asXml = false;
 
-  /** The source of html character data. */
+  /** The source of HTML character data. */
   private final CharProducer p;
   /** True iff the current character is inside a tag. */
   private boolean inTag;
@@ -268,9 +267,9 @@ final class HtmlInputSplitter extends AbstractTokenStream<HtmlTokenType> {
    * Null or the name of the close tag required to end the current escape exempt
    * block.
    * Preformatted tags include &lt;script&gt;, &lt;xmp&gt;, etc. that may
-   * contain unescaped html input.
+   * contain unescaped HTML input.
    */
-  private Name escapeExemptTagName = null;
+  private String escapeExemptTagName = null;
 
   private HtmlTextEscapingMode textEscapingMode;
 
@@ -280,8 +279,8 @@ final class HtmlInputSplitter extends AbstractTokenStream<HtmlTokenType> {
 
   /**
    * True iff this is treated as xml.  Xml-ness affects the treatment of
-   * script tags, which must be CDATA or html-escaped in GXPs and other xml
-   * types, but are specially handled by html-parsers.
+   * script tags, which must be CDATA or HTML-escaped in GXPs and other xml
+   * types, but are specially handled by HTML parsers.
    */
   public boolean getTreatedAsXml() {
     return this.asXml;
@@ -316,12 +315,12 @@ final class HtmlInputSplitter extends AbstractTokenStream<HtmlTokenType> {
       switch (token.type) {
         case TAGBEGIN:
           {
-            Name canonTagName = name(token.text.substring(1));
-            if (HtmlTextEscapingMode
-                .isTagFollowedByLiteralContent(canonTagName)) {
+            String canonTagName = name(token.text.substring(1));
+            if (HtmlTextEscapingMode.isTagFollowedByLiteralContent(
+                    canonTagName)) {
               this.escapeExemptTagName = canonTagName;
-              this.textEscapingMode
-                  = HtmlTextEscapingMode.getModeForTag(canonTagName);
+              this.textEscapingMode = HtmlTextEscapingMode.getModeForTag(
+                  canonTagName);
             }
             break;
           }
@@ -360,7 +359,7 @@ final class HtmlInputSplitter extends AbstractTokenStream<HtmlTokenType> {
     // From HTML 5 section 8.1.2.6
 
     // The text in CDATA and RCDATA elements must not contain any
-    // occurences of the string "</" followed by characters that
+    // occurrences of the string "</" followed by characters that
     // case-insensitively match the tag name of the element followed
     // by one of U+0009 CHARACTER TABULATION, U+000A LINE FEED (LF),
     // U+000B LINE TABULATION, U+000C FORM FEED (FF), U+0020 SPACE,
@@ -730,11 +729,12 @@ final class HtmlInputSplitter extends AbstractTokenStream<HtmlTokenType> {
     return Token.instance(text, type, p.filePositionForOffsets(start, end));
   }
 
-  protected Name name(String tagName) {
-    return asXml ? Name.xml(tagName) : Name.html(tagName);
+  protected String name(String tagName) {
+    return asXml || tagName.indexOf(':') >= 0
+        ? tagName : Strings.toLowerCase(tagName);
   }
 
-  private Name name(int start, int end) {
+  private String name(int start, int end) {
     return name(p.toString(start, end));
   }
 

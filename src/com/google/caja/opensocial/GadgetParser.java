@@ -23,12 +23,12 @@ import com.google.caja.lexer.ParseException;
 import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.lexer.TokenQueue;
 import com.google.caja.parser.html.DomParser;
+import com.google.caja.parser.html.Namespaces;
 import com.google.caja.parser.html.Nodes;
-import com.google.caja.plugin.Dom;
+import com.google.caja.render.Concatenator;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.Callback;
-import com.google.caja.util.Name;
 
 import java.io.IOException;
 import java.io.StringReader;
@@ -68,7 +68,8 @@ public class GadgetParser {
     HtmlLexer lexer = new HtmlLexer(gadgetSpec);
     lexer.setTreatedAsXml(true);
     Element el = new DomParser(
-        new TokenQueue<HtmlTokenType>(lexer, src), true, mq).parseDocument();
+        new TokenQueue<HtmlTokenType>(lexer, src), true, MODULE_NS, mq)
+        .parseDocument();
 
     Document doc = el.getOwnerDocument();
     GadgetSpec spec = new GadgetSpec();
@@ -81,10 +82,9 @@ public class GadgetParser {
 
   private void readModulePrefs(Document doc, GadgetSpec spec)
       throws GadgetRewriteException {
-    Iterator<Element> els = getElementsByTagName(doc, Name.xml("ModulePrefs"))
+    Iterator<Element> els = getElementsByTagNameNS(doc, "ModulePrefs")
         .iterator();
-    Element modulePrefs = null;
-    if (els.hasNext()) { modulePrefs = els.next(); }
+    Element modulePrefs = els.hasNext() ? els.next() : null;
     check(modulePrefs != null && !els.hasNext(),
           "Must have exactly one <ModulePrefs>");
     for (Attr attr : Nodes.attributesOf(modulePrefs)) {
@@ -94,8 +94,8 @@ public class GadgetParser {
 
   private void readRequiredFeatures(Document doc, GadgetSpec spec)
       throws GadgetRewriteException {
-    for (Element require : getElementsByTagName(doc, Name.xml("Require"))) {
-      Attr feature = require.getAttributeNode("feature");
+    for (Element require : getElementsByTagNameNS(doc, "Require")) {
+      Attr feature = require.getAttributeNodeNS(NS_URI, "feature");
       check(feature != null,
             "<Require> must have a \"feature\" attribute");
       spec.getRequiredFeatures().add(feature.getNodeValue());
@@ -104,13 +104,12 @@ public class GadgetParser {
 
   private void readContent(Document doc, GadgetSpec spec, String view)
       throws GadgetRewriteException {
-    for (final Element contentNode
-         : getElementsByTagName(doc, Name.xml("Content"))) {
-      Attr viewAttr = contentNode.getAttributeNode("view");
+    for (final Element contentNode : getElementsByTagNameNS(doc, "Content")) {
+      Attr viewAttr = contentNode.getAttributeNodeNS(NS_URI, "view");
       if (viewAttr == null
           || Arrays.asList(viewAttr.getNodeValue().trim().split("\\s*,\\s*"))
              .contains(view)) {
-        Attr typeAttr = contentNode.getAttributeNode("type");
+        Attr typeAttr = contentNode.getAttributeNodeNS(NS_URI, "type");
         check(typeAttr != null, "No 'type' attribute for view '" + view + "'");
         String value = typeAttr.getNodeValue();
 
@@ -175,43 +174,42 @@ public class GadgetParser {
    */
   public void render(GadgetSpec gadgetSpec, Appendable output)
       throws IOException {
-    try {
-      Element doc = toDocument(gadgetSpec);
-      Dom dom = new Dom(doc);
-      TokenConsumer tc = dom.makeRenderer(output, new Callback<IOException>() {
-        public void handle(IOException e) {
-          throw new RenderFailure(e);
-        }
-      });
-      dom.render(new RenderContext(tc).withAsXml(true));
-      tc.noMoreTokens();
-    } catch (RenderFailure e) {
-      throw (IOException) e.getCause();
-    }
+    Element rootElement = toDocument(gadgetSpec);
+    TokenConsumer tc = new Concatenator(output, new Callback<IOException>() {
+      public void handle(IOException e) {
+        throw new RenderFailure(e);
+      }
+    });
+    RenderContext rc = new RenderContext(tc).withAsXml(true);
+    Nodes.render(rootElement, MODULE_NS, rc);
+    tc.noMoreTokens();
   }
   private static class RenderFailure extends RuntimeException {
     RenderFailure(IOException ex) { initCause(ex); }
   }
 
+  private static final String NS_URI = "http://opensocial.org/";
+  private static final Namespaces MODULE_NS = new Namespaces(
+      Namespaces.COMMON, "", NS_URI);
   private Element toDocument(GadgetSpec gadgetSpec) throws IOException {
     Document doc = DomParser.makeDocument(null, null);
 
-    Element modulePrefs = doc.createElement("ModulePrefs");
+    Element modulePrefs = doc.createElementNS(NS_URI, "ModulePrefs");
     for (Map.Entry<String, String> e : gadgetSpec.getModulePrefs().entrySet()) {
-      modulePrefs.setAttribute(e.getKey(), e.getValue());
+      modulePrefs.setAttributeNS(NS_URI, e.getKey(), e.getValue());
     }
 
     for (String feature : gadgetSpec.getRequiredFeatures()) {
-      Element featureEl = doc.createElement("Require");
-      featureEl.setAttribute("feature", feature);
+      Element featureEl = doc.createElementNS(NS_URI, "Require");
+      featureEl.setAttributeNS(NS_URI, "feature", feature);
       modulePrefs.appendChild(featureEl);
     }
 
-    Element content = doc.createElement("Content");
-    content.setAttribute("type", gadgetSpec.getContentType());
+    Element content = doc.createElementNS(NS_URI, "Content");
+    content.setAttributeNS(NS_URI, "type", gadgetSpec.getContentType());
     content.appendChild(doc.createCDATASection(drain(gadgetSpec.getContent())));
 
-    Element module = doc.createElement("Module");
+    Element module = doc.createElementNS(NS_URI, "Module");
     module.appendChild(modulePrefs);
     module.appendChild(content);
 
@@ -221,7 +219,7 @@ public class GadgetParser {
 
   private void check(boolean condition, String msg)
       throws GadgetRewriteException {
-    if (!condition) throw new GadgetRewriteException(msg);
+    if (!condition) { throw new GadgetRewriteException(msg); }
   }
 
   private String drain(CharProducer cp) {
@@ -229,8 +227,9 @@ public class GadgetParser {
         cp.getBuffer(), cp.getOffset(), cp.getLimit() - cp.getOffset());
   }
 
-  private static Iterable<Element> getElementsByTagName(Document d, Name name) {
-    NodeList elements = d.getElementsByTagName(name.getCanonicalForm());
+  private static Iterable<Element> getElementsByTagNameNS(
+      Document d, String qname) {
+    NodeList elements = d.getElementsByTagNameNS(NS_URI, qname);
     return Nodes.nodeListIterable(elements, Element.class);
   }
 }

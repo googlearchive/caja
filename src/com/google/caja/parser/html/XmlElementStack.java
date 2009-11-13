@@ -22,8 +22,8 @@ import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.MessageType;
-import com.google.caja.util.Name;
 
+import java.util.Iterator;
 import java.util.List;
 
 import org.w3c.dom.Attr;
@@ -41,67 +41,83 @@ import org.w3c.dom.Text;
 class XmlElementStack extends AbstractElementStack {
   private final MessageQueue mq;
 
-  XmlElementStack(Document doc, boolean needsDebugData, MessageQueue mq) {
-    super(doc, needsDebugData);
+  XmlElementStack(
+      Document doc, Namespaces ns, boolean needsDebugData, MessageQueue mq) {
+    super(doc, ns, needsDebugData);
     this.mq = mq;
   }
 
-  public Name canonicalizeElementName(String elementName) {
-    // This will need to change if we start accepting namespaced XML.
-    return Name.xml(elementName);
-  }
-
-  public Name canonicalizeAttributeName(String attributeName) {
-    // This will need to change if we start accepting namespaced XML.
-    return Name.xml(attributeName);
-  }
+  public boolean needsNamespaceFixup() { return false; }
 
   /** {@inheritDoc} */
   public void processTag(Token<HtmlTokenType> start, Token<HtmlTokenType> end,
-                         List<Attr> attrs)
+                         List<AttrStub> attrs)
       throws IllegalDocumentStateException {
     assert start.type == HtmlTokenType.TAGBEGIN;
     assert end.type == HtmlTokenType.TAGEND;
 
     boolean open = !start.text.startsWith("</");
-    Name tagName = canonicalizeElementName(
-        start.text.substring(open ? 1 : 2));
-
-    processTag(tagName, open, start, end, attrs);
+    processTag(start.text.substring(open ? 1 : 2), open, start, end, attrs);
   }
 
   private void processTag(
-      Name tagName, boolean open, Token<HtmlTokenType> start,
-      Token<HtmlTokenType> end, List<Attr> attrs)
+      String elQName, boolean open, Token<HtmlTokenType> start,
+      Token<HtmlTokenType> end, List<AttrStub> attrs)
       throws IllegalDocumentStateException {
     if (open) {
-      Element newElement = doc.createElement(tagName.getCanonicalForm());
-      for (Attr a : attrs) {
-        String name = a.getName();
-        if (!newElement.hasAttribute(name)) {
-          newElement.setAttributeNode(a);
+      OpenNode bottom = getBottom();
+      Namespaces ns = bottom.ns;
+      for (Iterator<AttrStub> it = attrs.iterator(); it.hasNext();) {
+        AttrStub a = it.next();
+        Namespaces fromAttr = a.toNamespace(ns, mq);
+        if (fromAttr != null) {
+          ns = fromAttr;
+          it.remove();
+        }
+      }
+
+      Namespaces elNs = ns.forElementName(elQName);
+      if (elNs == null) {
+        elNs = ns = unknownNamespace(start.pos, ns, elQName, mq);
+      }
+      String localName = Namespaces.localName(elNs.uri, elQName);
+      Element newElement = doc.createElementNS(elNs.uri, localName);
+      newElement.setPrefix(elNs.prefix);
+      for (AttrStub a : attrs) {
+        String attrQName = a.nameTok.text;
+        Namespaces attrNs = ns.forAttrName(elNs, attrQName);
+        if (attrNs == null) {
+          attrNs = ns = unknownNamespace(a.nameTok.pos, ns, attrQName, mq);
+        }
+        String localAttrName = Namespaces.localName(attrNs.uri, attrQName);
+        if (!newElement.hasAttributeNS(attrNs.uri, localAttrName)) {
+          if (needsDebugData) {
+            Attr attrNode = a.toAttr(doc, attrNs.uri, localAttrName);
+            newElement.setAttributeNodeNS(attrNode);
+          } else {
+            newElement.setAttributeNS(attrNs.uri, localAttrName, a.value);
+          }
         } else {
           mq.addMessage(
-              MessageType.DUPLICATE_ATTRIBUTE, Nodes.getFilePositionFor(a),
-              MessagePart.Factory.valueOf(name),
-              Nodes.getFilePositionFor(newElement.getAttributeNode(name)));
+              MessageType.DUPLICATE_ATTRIBUTE, a.nameTok.pos,
+              MessagePart.Factory.valueOf(attrQName),
+              Nodes.getFilePositionFor(
+                  newElement.getAttributeNodeNS(attrNs.uri, localAttrName)));
         }
       }
       if (needsDebugData) {
         Nodes.setFilePositionFor(
             newElement, FilePosition.span(start.pos, end.pos));
       }
-      push(newElement);
-
       // Does the tag end immediately?
-      if ("/>".equals(end.text)) { popN(1, end.pos); }
-    } else {
-      String bottomElementName = null;
-      Node bottom = getBottomElement();
-      if (bottom instanceof Element) {
-        bottomElementName = ((Element) bottom).getTagName();
+      if ("/>".equals(end.text)) {
+        doAppend(newElement, bottom.n);
+      } else {
+        push(newElement, ns, elQName);
       }
-      if (!tagName.getCanonicalForm().equals(bottomElementName)) {
+    } else {
+      String bottomElementName = getBottom().qname;
+      if (!elQName.equals(bottomElementName)) {
         throw new IllegalDocumentStateException(new Message(
             DomParserMessageType.UNMATCHED_END,
             start.pos, MessagePart.Factory.valueOf(start.text),
@@ -113,7 +129,7 @@ class XmlElementStack extends AbstractElementStack {
 
   /** {@inheritDoc} */
   public void processText(Token<HtmlTokenType> text) {
-    Node parent = getBottomElement();
+    Node parent = getBottom().n;
 
     Text textNode;
     switch (text.type) {

@@ -24,6 +24,7 @@ import com.google.caja.lexer.ParseException;
 import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.html.DomParser;
+import com.google.caja.parser.html.Namespaces;
 import com.google.caja.parser.html.Nodes;
 import com.google.caja.parser.js.CajoledModule;
 import com.google.caja.plugin.Dom;
@@ -155,8 +156,10 @@ public class DefaultGadgetRewriter
     }
 
     Document doc = dom.getOwnerDocument();
-    Element scriptElement = doc.createElement("script");
-    scriptElement.setAttribute("type", "text/javascript");
+    Element scriptElement = doc.createElementNS(
+        Namespaces.HTML_NAMESPACE_URI, "script");
+    scriptElement.setAttributeNS(
+        Namespaces.HTML_NAMESPACE_URI, "type", "text/javascript");
     scriptElement.appendChild(doc.createTextNode(script.toString()));
     return new Pair<Node, Element>(dom, scriptElement);
   }

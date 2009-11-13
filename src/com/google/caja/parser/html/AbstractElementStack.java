@@ -15,8 +15,11 @@
 package com.google.caja.parser.html;
 
 import com.google.caja.lexer.FilePosition;
+import com.google.caja.reporting.MessagePart;
+import com.google.caja.reporting.MessageQueue;
+import com.google.caja.reporting.MessageType;
+import com.google.caja.util.Lists;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import org.w3c.dom.Document;
@@ -36,16 +39,16 @@ abstract class AbstractElementStack implements OpenElementStack {
   protected final boolean needsDebugData;
   private final DocumentFragment rootElement;
   /** A list of open nodes. */
-  private final List<Node> openNodes = new ArrayList<Node>();
+  private final List<OpenNode> openNodes = Lists.newArrayList();
 
   /**
    * @param needsDebugData see {@link DomParser#setNeedsDebugData(boolean)}
    */
-  AbstractElementStack(Document doc, boolean needsDebugData) {
+  AbstractElementStack(Document doc, Namespaces ns, boolean needsDebugData) {
     this.doc = doc;
     this.needsDebugData = needsDebugData;
     this.rootElement = doc.createDocumentFragment();
-    this.openNodes.add(rootElement);
+    this.openNodes.add(new OpenNode(rootElement, ns, null));
   }
 
   public final Document getDocument() { return doc; }
@@ -59,7 +62,7 @@ abstract class AbstractElementStack implements OpenElementStack {
   public void open(boolean fragment) {}
 
   /** The current element &mdash; according to HTML5 the stack grows down. */
-  protected final Node getBottomElement() {
+  protected final OpenNode getBottom() {
     return openNodes.get(openNodes.size() - 1);
   }
 
@@ -78,10 +81,10 @@ abstract class AbstractElementStack implements OpenElementStack {
    * Adds an element to the element stack, puts it on the previous head's
    * child list, and updates file positions.
    */
-  protected final void push(Element el) {
+  protected final void push(Element el, Namespaces ns, String qname) {
     if (DEBUG) System.err.println("push(" + el + ")");
-    Node parent = getBottomElement();
-    openNodes.add(el);
+    Node parent = getBottom().n;
+    openNodes.add(new OpenNode(el, ns, qname));
     doAppend(el, parent);
   }
 
@@ -103,7 +106,7 @@ abstract class AbstractElementStack implements OpenElementStack {
     if (DEBUG) System.err.println("popN(" + n + ", " + endPos + ")");
     n = Math.min(n, openNodes.size() - 1);
     while (--n >= 0) {
-      Node node = openNodes.remove(openNodes.size() - 1);
+      Node node = openNodes.remove(openNodes.size() - 1).n;
       if (needsDebugData) {
         Nodes.setFilePositionFor(
             node, FilePosition.span(Nodes.getFilePositionFor(node), endPos));
@@ -149,5 +152,27 @@ abstract class AbstractElementStack implements OpenElementStack {
     // Note: CDATA and ESCAPED text purposefully not treated as whitespace.
     return t.getNodeType() == Node.TEXT_NODE
         && "".equals(t.getNodeValue().trim());
+  }
+
+  static Namespaces unknownNamespace(
+      FilePosition pos, Namespaces ns, String qname, MessageQueue mq) {
+    int colon = qname.indexOf(':');
+    String prefix = colon >= 0 ? qname.substring(0, colon) : "";
+    mq.addMessage(
+        MessageType.NO_SUCH_NAMESPACE, pos, MessagePart.Factory.valueOf(prefix),
+        MessagePart.Factory.valueOf(qname));
+    return new Namespaces(
+        ns, prefix, "unknown:///" + prefix);
+  }
+
+  static class OpenNode {
+    final Node n;
+    final Namespaces ns;
+    final String qname;
+    OpenNode(Node n, Namespaces ns, String qname) {
+      this.n = n;
+      this.ns = ns;
+      this.qname = qname;
+    }
   }
 }

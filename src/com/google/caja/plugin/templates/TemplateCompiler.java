@@ -19,6 +19,8 @@ import com.google.caja.lang.html.HTML;
 import com.google.caja.lang.html.HtmlSchema;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.css.CssTree;
+import com.google.caja.parser.html.AttribKey;
+import com.google.caja.parser.html.ElKey;
 import com.google.caja.parser.html.Nodes;
 import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.UncajoledModule;
@@ -26,9 +28,7 @@ import com.google.caja.plugin.ExtractedHtmlContent;
 import com.google.caja.plugin.PluginMeta;
 import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessageLevel;
-import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
-import com.google.caja.util.Name;
 import com.google.caja.util.Pair;
 
 import java.util.ArrayList;
@@ -116,12 +116,12 @@ public class TemplateCompiler {
   private void inspect() {
     if (!mq.hasMessageAtLevel(MessageLevel.FATAL_ERROR)) {
       for (Node ihtmlRoot : ihtmlRoots) {
-        inspect(ihtmlRoot, Name.html("div"));
+        inspect(ihtmlRoot, ElKey.forHtmlElement("div"));
       }
     }
   }
 
-  private void inspect(Node n, Name containingHtmlElement) {
+  private void inspect(Node n, ElKey containingHtmlElement) {
     switch (n.getNodeType()) {
       case Node.ELEMENT_NODE:
         inspectElement((Element) n, containingHtmlElement);
@@ -144,13 +144,13 @@ public class TemplateCompiler {
    *     If the HTML element is contained inside a template construct then this
    *     name may differ from el's immediate parent.
    */
-  private void inspectElement(Element el, Name containingHtmlElement) {
-    Name elName = Name.html(el.getTagName());
+  private void inspectElement(Element el, ElKey containingHtmlElement) {
+    ElKey elKey = ElKey.forElement(el);
 
     // Recurse early so that ihtml:dynamic elements have been parsed before we
     // process the attributes element list.
     for (Node child : Nodes.childrenOf(el)) {
-      inspect(child, elName);
+      inspect(child, elKey);
     }
 
     // For each attribute allowed on this element type, ensure that
@@ -161,25 +161,24 @@ public class TemplateCompiler {
     // not be present in scriptsPerNode.  The TemplateSanitizer should have
     // stripped those out.  The TemplateSanitizer should also have stripped out
     // disallowed elements.
-    if (!htmlSchema.isElementAllowed(elName)) { return; }
+    if (!htmlSchema.isElementAllowed(elKey)) { return; }
 
-    HTML.Element elInfo = htmlSchema.lookupElement(elName);
+    HTML.Element elInfo = htmlSchema.lookupElement(elKey);
     List<HTML.Attribute> attrs = elInfo.getAttributes();
     if (attrs != null) {
       for (HTML.Attribute a : attrs) {
-        Name attrName = a.getAttributeName();
-        if (!htmlSchema.isAttributeAllowed(elName, attrName)) { continue; }
-        HTML.Attribute attrInfo = htmlSchema.lookupAttribute(elName, attrName);
-        String attrNameStr = attrName.getCanonicalForm();
+        AttribKey attrKey = a.getKey();
+        if (!htmlSchema.isAttributeAllowed(attrKey)) { continue; }
         Attr attr = null;
-        if (el.hasAttribute(attrNameStr)
-            && attrInfo.getValueCriterion().accept(
-                el.getAttribute(attrNameStr))) {
-          attr = el.getAttributeNode(attrNameStr);
+        String aUri = attrKey.ns.uri;
+        String aName = attrKey.localName;
+        Attr unsafe = el.getAttributeNodeNS(aUri, aName);
+        if (unsafe != null && a.getValueCriterion().accept(unsafe.getValue())) {
+          attr = unsafe;
         } else if ((a.getDefaultValue() != null
                     && !a.getValueCriterion().accept(a.getDefaultValue()))
                    || !a.isOptional()) {
-          attr = el.getOwnerDocument().createAttribute(attrNameStr);
+          attr = el.getOwnerDocument().createAttributeNS(aUri, aName);
           String safeValue;
           if (a.getType() == HTML.Attribute.Type.URI) {
             safeValue = "" + Nodes.getFilePositionFor(el).source().getUri();
@@ -188,28 +187,27 @@ public class TemplateCompiler {
           }
           if (safeValue == null) {
             mq.addMessage(IhtmlMessageType.MISSING_ATTRIB,
-                Nodes.getFilePositionFor(el),
-                MessagePart.Factory.valueOf(elName.toString()),
-                MessagePart.Factory.valueOf(attrNameStr));
+                          Nodes.getFilePositionFor(el), elKey, attrKey);
             continue;
           }
           attr.setNodeValue(safeValue);
-          el.setAttributeNode(attr);
+          el.setAttributeNodeNS(attr);
         }
         if (attr != null) {
-          inspectHtmlAttribute(attr, attrInfo);
+          inspectHtmlAttribute(attr, a);
         }
       }
     }
     scriptsPerNode.put(el, null);
   }
 
-  private void inspectText(Text t, Name containingHtmlElement) {
+  private void inspectText(Text t, ElKey containingHtmlElement) {
     if (!htmlSchema.isElementAllowed(containingHtmlElement)) { return; }
     scriptsPerNode.put(t, null);
   }
 
-  private void inspectFragment(DocumentFragment f, Name containingHtmlElement) {
+  private void inspectFragment(
+      DocumentFragment f, ElKey containingHtmlElement) {
     scriptsPerNode.put(f, null);
     for (Node child : Nodes.childrenOf(f)) {
       // We know that top level text nodes in a document fragment

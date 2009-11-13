@@ -174,7 +174,7 @@ public final class HtmlAttributeRewriter {
         if (!attr.attrInfo.getValueCriterion().accept(value)) {
           mq.addMessage(
               IhtmlMessageType.BAD_ATTRIB, pos,
-              attr.attrInfo.getElementName(), attr.attrInfo.getAttributeName(),
+              attr.attrInfo.getKey().el, attr.attrInfo.getKey(),
               MessagePart.Factory.valueOf(value));
           return noResult(attr);
         }
@@ -271,7 +271,7 @@ public final class HtmlAttributeRewriter {
         if (value.length() < 2 || !value.startsWith("#")) {
           mq.addMessage(
               IhtmlMessageType.BAD_ATTRIB, pos,
-              attr.attrInfo.getElementName(), attr.attrInfo.getAttributeName(),
+              attr.attrInfo.getKey().el, attr.attrInfo.getKey(),
               MessagePart.Factory.valueOf(value));
           return noResult(attr);
         }

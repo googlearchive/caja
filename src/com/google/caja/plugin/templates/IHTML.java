@@ -19,6 +19,7 @@ import com.google.caja.lang.html.HtmlSchema;
 import com.google.caja.lexer.Keyword;
 import com.google.caja.lexer.ParseException;
 import com.google.caja.parser.ParserBase;
+import com.google.caja.parser.html.Namespaces;
 import com.google.caja.parser.html.Nodes;
 import com.google.caja.reporting.EchoingMessageQueue;
 import com.google.caja.reporting.MessageContext;
@@ -42,14 +43,11 @@ import org.w3c.dom.Node;
  * @author mikesamuel@gmail.com
  */
 public class IHTML {
-  /**
-   * The URI namespace for IHTML elements.
-   */
-  public static final String NAMESPACE
-      = "http://google-caja.googlecode.com/ihtml";
+  /** The URI namespace for IHTML elements. */
+  public static final String NAMESPACE = Namespaces.COMMON.forPrefix("ihtml")
+      .uri;
   /** The tag prefix reserved for IHTML elements. */
   public static final String PREFIX = "ihtml";
-  private static final int PREFIX_LEN = PREFIX.length();
 
   /**
    * Name of an attribute used to mark the kind of tag within which a template
@@ -101,34 +99,36 @@ public class IHTML {
   /** True iff the given node is an IHTML element with the given local name. */
   public static boolean is(Node n, String localElementName) {
     if (!(n instanceof Element)) { return false; }
-    String tagName = ((Element) n).getTagName();
-    return tagName.length() == (PREFIX_LEN + 1 + localElementName.length())
-        && tagName.startsWith(PREFIX)
-        && ':' == tagName.charAt(PREFIX_LEN)
-        && tagName.endsWith(localElementName);
+    Element el = (Element) n;
+    return localElementName.equals(el.getLocalName())
+        && NAMESPACE.equals(el.getNamespaceURI());
+  }
+
+  public static boolean is(Namespaces ns) {
+    return ns.uri == NAMESPACE;
   }
 
   public static boolean isAttribute(Node n) { return is(n, "attribute"); }
   public static Attr getName(Element ihtmlEl) {
-    return ihtmlEl.getAttributeNode("name");
+    return ihtmlEl.getAttributeNodeNS(NAMESPACE, "name");
   }
   public static boolean isCall(Node n) { return is(n, "call"); }
   public static Attr getCallTarget(Element callEl) {
-    return callEl.getAttributeNode("ihtml:template");
+    return callEl.getAttributeNodeNS(NAMESPACE, "ihtml:template");  // TODO
   }
   public static boolean isDo(Node n) { return is(n, "do"); }
   public static Attr getInit(Element doEl) {
-    return doEl.getAttributeNode("init");
+    return doEl.getAttributeNodeNS(NAMESPACE, "init");
   }
   public static Attr getVars(Element doEl) {
-    return doEl.getAttributeNode("vars");
+    return doEl.getAttributeNodeNS(NAMESPACE, "vars");
   }
   public static Attr getWhile(Element doEl) {
-    return doEl.getAttributeNode("while");
+    return doEl.getAttributeNodeNS(NAMESPACE, "while");
   }
   public static boolean isDynamic(Node n) { return is(n, "dynamic"); }
   public static Attr getExpr(Element dynEl) {
-    return dynEl.getAttributeNode("expr");
+    return dynEl.getAttributeNodeNS(NAMESPACE, "expr");
   }
   public static boolean isElement(Node n) { return is(n, "element"); }
   public static boolean isElse(Node n) { return is(n, "else"); }
@@ -137,15 +137,12 @@ public class IHTML {
   public static boolean isPh(Node n) { return is(n, "ph"); }
   public static boolean isTemplate(Node n) { return is(n, "template"); }
   public static Attr getFormals(Element templateEl) {
-    return templateEl.getAttributeNode("formals");
+    return templateEl.getAttributeNodeNS(NAMESPACE, "formals");
   }
 
   public static boolean isIhtml(Node n) {
     if (!(n instanceof Element)) { return false; }
-    String tagName = ((Element) n).getTagName();
-    return tagName.length() > (PREFIX_LEN + 2)
-        && tagName.startsWith(PREFIX)
-        && ':' == tagName.charAt(PREFIX_LEN);
+    return NAMESPACE.equals(n.getNamespaceURI());
   }
 
   public static boolean isSafeIdentifier(String ident) {
@@ -165,11 +162,11 @@ public class IHTML {
     switch (root.getNodeType()) {
       case Node.DOCUMENT_NODE:
         return Nodes.nodeListIterable(
-            ((Document) root).getElementsByTagName(PREFIX + ":" + localName),
+            ((Document) root).getElementsByTagNameNS(NAMESPACE, localName),
             Element.class);
       case Node.ELEMENT_NODE:
         return Nodes.nodeListIterable(
-            ((Element) root).getElementsByTagName(PREFIX + ":" + localName),
+            ((Element) root).getElementsByTagNameNS(NAMESPACE, localName),
             Element.class);
     }
     List<Element> els = new ArrayList<Element>();

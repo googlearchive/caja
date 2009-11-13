@@ -143,7 +143,7 @@ final class TestHttpServletResponse implements HttpServletResponse {
   public void addIntHeader(String arg0, int arg1) {
     addHeader(arg0, "" + arg1);
   }
-  public void flushBuffer() throws IOException {
+  public void flushBuffer() {
     throw new UnsupportedOperationException();
   }
   public int getBufferSize() {

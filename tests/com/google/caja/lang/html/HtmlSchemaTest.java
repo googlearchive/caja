@@ -14,9 +14,11 @@
 
 package com.google.caja.lang.html;
 
+import com.google.caja.parser.html.AttribKey;
+import com.google.caja.parser.html.ElKey;
+import com.google.caja.parser.html.Namespaces;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.SimpleMessageQueue;
-import com.google.caja.util.Name;
 
 import java.util.List;
 
@@ -39,112 +41,113 @@ public class HtmlSchemaTest extends TestCase {
 
   /** blacklist the whitelist. */
   public final void testSchema() throws Exception {
-    assertFalse(schema.isElementAllowed(id("script")));
-    assertFalse(schema.isElementAllowed(id("style")));
+    assertFalse(schema.isElementAllowed(el("script")));
+    assertFalse(schema.isElementAllowed(el("style")));
     // swapping innerHTML from an XMP or LISTING tag into another tag might
     // allow bad things to happen.
-    assertFalse(schema.isElementAllowed(id("xmp")));
-    assertFalse(schema.isElementAllowed(id("listing")));
-    assertFalse(schema.isElementAllowed(id("frame")));
-    assertFalse(schema.isElementAllowed(id("frameset")));
-    assertFalse(schema.isElementAllowed(id("body")));
-    assertFalse(schema.isElementAllowed(id("head")));
-    assertFalse(schema.isElementAllowed(id("html")));
-    assertFalse(schema.isElementAllowed(id("title")));
-    assertTrue(schema.isElementAllowed(id("div")));
-    assertTrue(schema.isElementAllowed(id("span")));
+    assertFalse(schema.isElementAllowed(el("xmp")));
+    assertFalse(schema.isElementAllowed(el("listing")));
+    assertFalse(schema.isElementAllowed(el("frame")));
+    assertFalse(schema.isElementAllowed(el("frameset")));
+    assertFalse(schema.isElementAllowed(el("body")));
+    assertFalse(schema.isElementAllowed(el("head")));
+    assertFalse(schema.isElementAllowed(el("html")));
+    assertFalse(schema.isElementAllowed(el("title")));
+    assertTrue(schema.isElementAllowed(el("div")));
+    assertTrue(schema.isElementAllowed(el("span")));
   }
 
   public final void testAttributeTypes() throws Exception {
     assertEquals(HTML.Attribute.Type.STYLE,
-                 schema.lookupAttribute(id("div"), id("style")).getType());
+                 lookupAttribute("div", "style").getType());
     assertEquals(HTML.Attribute.Type.SCRIPT,
-                 schema.lookupAttribute(id("a"), id("onclick")).getType());
+                 lookupAttribute("a", "onclick").getType());
     assertEquals(HTML.Attribute.Type.URI,
-                 schema.lookupAttribute(id("a"), id("href")).getType());
+                 lookupAttribute("a", "href").getType());
     assertEquals(HTML.Attribute.Type.NONE,
-                 schema.lookupAttribute(id("a"), id("title")).getType());
+                 lookupAttribute("a", "title").getType());
   }
 
   public final void testAttributeMimeTypes() throws Exception {
+    assertEquals("image/*", lookupAttribute("img", "src").getMimeTypes());
     assertEquals(
-        "image/*",
-        schema.lookupAttribute(id("img"), id("src")).getMimeTypes());
-    assertEquals(
-        "text/javascript",
-        schema.lookupAttribute(id("script"), id("src")).getMimeTypes());
-    assertEquals(
-        null,
-        schema.lookupAttribute(id("table"), id("cellpadding")).getMimeTypes());
+        "text/javascript", lookupAttribute("script", "src").getMimeTypes());
+    assertNull(lookupAttribute("table", "cellpadding").getMimeTypes());
   }
 
   public final void testAttributeCriteria() throws Exception {
-    assertFalse(schema.lookupAttribute(id("a"), id("target"))
+    assertFalse(lookupAttribute("a", "target")
                 .getValueCriterion().accept("_top"));
-    assertTrue(schema.lookupAttribute(id("a"), id("target"))
+    assertTrue(lookupAttribute("a", "target")
                .getValueCriterion().accept("_blank"));
 
-    assertFalse(schema.lookupAttribute(id("table"), id("cellpadding"))
+    assertFalse(lookupAttribute("table", "cellpadding")
                 .getValueCriterion().accept("six"));
-    assertTrue(schema.lookupAttribute(id("table"), id("cellpadding"))
+    assertTrue(lookupAttribute("table", "cellpadding")
                .getValueCriterion().accept("6"));
-    assertTrue(schema.lookupAttribute(id("table"), id("width"))
+    assertTrue(lookupAttribute("table", "width")
                .getValueCriterion().accept("10%"));
-    assertFalse(schema.lookupAttribute(id("table"), id("width"))
+    assertFalse(lookupAttribute("table", "width")
                .getValueCriterion().accept("%"));
 
-    assertFalse(schema.lookupAttribute(id("script"), id("type"))
+    assertFalse(lookupAttribute("script", "type")
                 .getValueCriterion().accept("text/vbscript"));
-    assertTrue(schema.lookupAttribute(id("script"), id("type"))
+    assertTrue(lookupAttribute("script", "type")
                .getValueCriterion().accept("text/javascript"));
-    assertTrue(schema.lookupAttribute(id("script"), id("type"))
+    assertTrue(lookupAttribute("script", "type")
                .getValueCriterion().accept("text/javascript;charset=UTF-8"));
-    assertTrue(schema.lookupAttribute(id("input"), id("type"))
+    assertTrue(lookupAttribute("input", "type")
                .getValueCriterion().accept("text"));
-    assertTrue(schema.lookupAttribute(id("input"), id("type"))
+    assertTrue(lookupAttribute("input", "type")
                .getValueCriterion().accept("TEXT"));
-    assertTrue(schema.lookupAttribute(id("input"), id("type"))
+    assertTrue(lookupAttribute("input", "type")
                .getValueCriterion().accept("button"));
-    assertFalse(schema.lookupAttribute(id("input"), id("type"))
+    assertFalse(lookupAttribute("input", "type")
                 .getValueCriterion().accept("file"));
-    assertFalse(schema.lookupAttribute(id("input"), id("type"))
+    assertFalse(lookupAttribute("input", "type")
                 .getValueCriterion().accept("FILE"));
-    assertFalse(schema.lookupAttribute(id("input"), id("type"))
+    assertFalse(lookupAttribute("input", "type")
                 .getValueCriterion().accept("bogus"));
   }
 
   public final void testSafeAndDefaultValues() {
-    HTML.Attribute tgt = schema.lookupAttribute(id("a"), id("target"));
+    HTML.Attribute tgt = lookupAttribute("a", "target");
     assertEquals("_blank", tgt.getSafeValue());
     assertEquals("_self", tgt.getDefaultValue());
   }
 
   public final void testAttributeList() {
-    HTML.Element a = schema.lookupElement(id("a"));
-    assertEquals(
-        schema.lookupAttribute(id("A"), id("HREF")),
-        withId(a.getAttributes(), id("HREF")));
-    assertEquals(
-        schema.lookupAttribute(id("A"), id("ID")),
-        withId(a.getAttributes(), id("ID")));
-    assertEquals(null, withId(a.getAttributes(), id("COLSPAN")));
-    HTML.Element b = schema.lookupElement(id("b"));
-    assertEquals(
-        schema.lookupAttribute(id("B"), id("ID")),
-        withId(b.getAttributes(), id("ID")));
+    HTML.Element a = schema.lookupElement(el("a"));
+    assertEquals(lookupAttribute("A", "HREF"), withName(a, "HREF"));
+    assertEquals(lookupAttribute("A", "ID"), withName(a, "ID"));
+    assertEquals(null, withName(a, "COLSPAN"));
+    HTML.Element b = schema.lookupElement(el("b"));
+    assertEquals(lookupAttribute("B", "ID"), withName(b, "ID"));
   }
-  private static HTML.Attribute withId(List<HTML.Attribute> attrs, Name name) {
+
+  private HTML.Attribute lookupAttribute(
+      String qualifiedEl, String qualifiedAttr) {
+    AttribKey attr = AttribKey.forAttribute(
+        Namespaces.HTML_DEFAULT, el(qualifiedEl), qualifiedAttr);
+    return schema.lookupAttribute(attr);
+  }
+
+  private static HTML.Attribute withName(HTML.Element el, String qname) {
+    List<HTML.Attribute> attrs = el.getAttributes();
+    AttribKey key = AttribKey.forAttribute(
+        Namespaces.HTML_DEFAULT, el.getKey(), qname);
     HTML.Attribute result = null;
     for (HTML.Attribute a : attrs) {
-      if (name.equals(a.getAttributeName())) {
-        if (result != null) { throw new IllegalStateException("DUPE"); }
+      if (key.localName.equals(a.getKey().localName)
+          && key.ns.uri == a.getKey().ns.uri) {
+        if (result != null) { throw new IllegalStateException("DUPE " + key); }
         result = a;
       }
     }
     return result;
   }
 
-  private static Name id(String name) {
-    return Name.html(name);
+  private static ElKey el(String qualifiedElName) {
+    return ElKey.forElement(Namespaces.HTML_DEFAULT, qualifiedElName);
   }
 }

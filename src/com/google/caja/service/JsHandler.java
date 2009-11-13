@@ -125,8 +125,7 @@ public class JsHandler implements ContentHandler {
   }
 
   private String renderJavascript(CajoledModule javascript,
-                                  Expression moduleCallback)
-      throws IOException {
+                                  Expression moduleCallback) {
     StringBuilder jsOut = new StringBuilder();
     RenderContext rc = new RenderContext(
         new JsPrettyPrinter(new Concatenator(jsOut)))

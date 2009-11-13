@@ -23,6 +23,7 @@ import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.ParseTreeNodeContainer;
 import com.google.caja.parser.html.DomParser;
+import com.google.caja.parser.html.Namespaces;
 import com.google.caja.parser.html.Nodes;
 import com.google.caja.parser.js.ArrayConstructor;
 import com.google.caja.parser.js.BooleanLiteral;
@@ -326,7 +327,6 @@ public final class AnnotationHandlers {
         }
       }
       private boolean hasCall(Expression e) {
-        System.err.println("hasCall " + e);
         if (e instanceof FunctionConstructor) { return false; }
         if (Operation.is(e, Operator.FUNCTION_CALL)) { return true; }
         for (ParseTreeNode child : e.children()) {
@@ -488,7 +488,8 @@ public final class AnnotationHandlers {
             return null;
           }
           if (link != null) {
-            Attr href = link.getAttributeNode("href");
+            Attr href = link.getAttributeNodeNS(
+                Namespaces.HTML_NAMESPACE_URI, "href");
             if (href != null) {
               URI uri = parseDocUri(
                   href.getValue(), schemeSet,

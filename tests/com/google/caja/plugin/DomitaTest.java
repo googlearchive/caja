@@ -14,6 +14,7 @@
 
 package com.google.caja.plugin;
 
+import com.google.caja.lexer.escaping.Escaping;
 import com.google.caja.util.CajaTestCase;
 
 import org.mortbay.jetty.Server;
@@ -96,18 +97,15 @@ public class DomitaTest extends CajaTestCase {
     //System.setProperty("webdriver.firefox.bin", "/usr/bin/firefox");
     WebDriver driver = new FirefoxDriver();
 
-    driver.get("http://localhost:8000/"
-        + "ant-lib/com/google/caja/plugin/"
-        + pageName);
+    driver.get("http://localhost:8000/ant-lib/com/google/caja/plugin/"
+               + pageName);
 
     int clickRounds = 0;
     List<WebElement> clickingList = null;
     for (; clickRounds < clickRoundLimit; clickRounds++) {
-      clickingList =
-          driver.findElements(By.xpath("//*[contains(@class,'clickme')]/*"));
-      if (clickingList.size() == 0) {
-        break;
-      }
+      clickingList = driver.findElements(By.xpath(
+          "//*[contains(@class,'clickme')]/*"));
+      if (clickingList.isEmpty()) { break; }
       for (WebElement e : clickingList) {
         e.click();
       }
@@ -136,27 +134,33 @@ public class DomitaTest extends CajaTestCase {
 
     // check the title of the document
     String title = driver.getTitle();
-    assertTrue("The title shows " + title,
-        title.contains("all tests passed"));
+    assertTrue("The title shows " + title, title.contains("all tests passed"));
 
     driver.quit();
   }
 
   private static String renderElements(List<WebElement> elements) {
     StringBuilder sb = new StringBuilder();
-    sb.append("[");
-    for (int i = 0; i < elements.size(); i++) {
-      sb
-          .append("<")
-          .append(elements.get(i).getElementName())
-          .append(" id=\"")
-          .append(elements.get(i).getAttribute("id"))
-          .append(" class=\"")
-          .append(elements.get(i).getAttribute("class"))
-          .append("\"/>");
-      if (i < elements.size() - 1) { sb.append(", "); }
+    sb.append('[');
+    for (int i = 0, n = elements.size(); i < n; i++) {
+      if (i != 0) { sb.append(", "); }
+      WebElement el = elements.get(i);
+      sb.append('<').append(el.getTagName());
+      String id = el.getAttribute("id");
+      if (id != null) {
+        sb.append(" id=\"");
+        Escaping.escapeXml(id, false, sb);
+        sb.append('"');
+      }
+      String className = el.getAttribute("class");
+      if (className != null) {
+        sb.append(" class=\"");
+        Escaping.escapeXml(className, false, sb);
+        sb.append('"');
+      }
+      sb.append('>');
     }
-    sb.append("]");
+    sb.append(']');
     return sb.toString();
   }
 }

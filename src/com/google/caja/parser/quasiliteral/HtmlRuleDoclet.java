@@ -14,6 +14,8 @@
 
 package com.google.caja.parser.quasiliteral;
 
+import com.google.caja.parser.html.Namespaces;
+
 import java.io.Writer;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
@@ -69,16 +71,17 @@ public class HtmlRuleDoclet extends RuleDoclet {
     assert qname.equals(htmlDocument.getDocumentElement().getLocalName());
   }
 
+  private static final String HTML_NS = Namespaces.HTML_NAMESPACE_URI;
   private Element headerRow(String... cells) {
-    Element thead = htmlDocument.createElement("thead");
+    Element thead = htmlDocument.createElementNS(HTML_NS, "thead");
     thead.appendChild(row(cells));
     return thead;
   }
 
   private Element row(String... cells) {
-    Element tr = htmlDocument.createElement("tr");
+    Element tr = htmlDocument.createElementNS(HTML_NS, "tr");
     for (String cell : cells) {
-      Element td = htmlDocument.createElement("td");
+      Element td = htmlDocument.createElementNS(HTML_NS, "td");
       td.appendChild(htmlDocument.createTextNode(cell));
       tr.appendChild(td);
     }
@@ -87,17 +90,17 @@ public class HtmlRuleDoclet extends RuleDoclet {
 
   @Override
   public void generateHeader(Writer output, RulesetDescription ruleSet) {
-    Element head = htmlDocument.createElement("head");
-    Element title = htmlDocument.createElement("title");
+    Element head = htmlDocument.createElementNS(HTML_NS, "head");
+    Element title = htmlDocument.createElementNS(HTML_NS, "title");
     title.appendChild(htmlDocument.createTextNode(ruleSet.name()));
     head.appendChild(title);
-    Element meta = htmlDocument.createElement("meta");
-    meta.setAttribute("http-equiv", "Content-Type");
-    meta.setAttribute("content", "text/html; charset=utf-8");
+    Element meta = htmlDocument.createElementNS(HTML_NS, "meta");
+    meta.setAttributeNS(HTML_NS, "http-equiv", "Content-Type");
+    meta.setAttributeNS(HTML_NS, "content", "text/html; charset=utf-8");
     head.appendChild(meta);
 
-    Element style = htmlDocument.createElement("style");
-    style.setAttribute("type", "text/css");
+    Element style = htmlDocument.createElementNS(HTML_NS, "style");
+    style.setAttributeNS(HTML_NS, "type", "text/css");
     style.appendChild(htmlDocument.createTextNode(
         "h1 { text-align: center }\n"
         + "div.centered { text-align: center }\n"
@@ -105,12 +108,12 @@ public class HtmlRuleDoclet extends RuleDoclet {
     head.appendChild(style);
     htmlDocument.getDocumentElement().appendChild(head);
 
-    body = htmlDocument.createElement("body");
-    Element h1 = htmlDocument.createElement("h1");
+    body = htmlDocument.createElementNS(HTML_NS, "body");
+    Element h1 = htmlDocument.createElementNS(HTML_NS, "h1");
     h1.appendChild(htmlDocument.createTextNode(ruleSet.name()));
     body.appendChild(h1);
 
-    Element h2 = htmlDocument.createElement("h2");
+    Element h2 = htmlDocument.createElementNS(HTML_NS, "h2");
     h2.appendChild(htmlDocument.createTextNode(ruleSet.synopsis()));
     body.appendChild(h2);
     htmlDocument.getDocumentElement().appendChild(body);
@@ -133,7 +136,7 @@ public class HtmlRuleDoclet extends RuleDoclet {
   @Override
   public void generateRuleDocumentation(Writer output, RuleDescription anno) {
     if (0 == countRules) {
-      table = htmlDocument.createElement("table");
+      table = htmlDocument.createElementNS(HTML_NS, "table");
       table.appendChild(headerRow("", "Rule", "Synopsis", "Reason", "Matches",
                                   "Substitutes"));
       body.appendChild(table);

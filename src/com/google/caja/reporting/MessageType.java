@@ -74,6 +74,13 @@ public enum MessageType implements MessageTypeInt {
   SKIPPING("%s: Skipping malformed content", MessageLevel.WARNING),
   DUPLICATE_ATTRIBUTE(
       "%s: attribute %s duplicates one at %s", MessageLevel.WARNING),
+  NO_SUCH_NAMESPACE(
+      "%s: unrecognized namespace %s on %s", MessageLevel.WARNING),
+  ILLEGAL_NAMESPACE_NAME(
+      "%s: illegal namespace name: %s", MessageLevel.WARNING),
+  CANNOT_OVERRIDE_DEFAULT_NAMESPACE_IN_HTML(
+      "%s: cannot override default XML namespace in HTML",
+      MessageLevel.WARNING),
 
   // platform context
   NOT_IE("%s: Will not work in IE", MessageLevel.WARNING),

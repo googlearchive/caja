@@ -180,7 +180,8 @@ public class HtmlQuasiBuilderTest extends TestCase {
         "\n\n\n" + forty + "\n\n" + forty + "\n    \n" + forty,
         is);
 
-    Attr title = inputDoc.createAttribute("description");
+    Attr title = inputDoc.createAttributeNS(
+        Namespaces.HTML_NAMESPACE_URI, "description");
     title.setNodeValue("Hello, World!");
     Nodes.setFilePositionFor(title, cp.filePositionForOffsets(12, 42));
     Nodes.setFilePositionForValue(title, cp.filePositionForOffsets(22, 42));
@@ -188,9 +189,10 @@ public class HtmlQuasiBuilderTest extends TestCase {
     Text boldText = inputDoc.createTextNode("BOLD!");
 
     Text italicText = inputDoc.createTextNode("/74l1c");
-    Element italicEl = inputDoc.createElement("SPAN");
+    Element italicEl = inputDoc.createElementNS(
+        Namespaces.HTML_NAMESPACE_URI, "SPAN");
     italicEl.appendChild(italicText);
-    italicEl.setAttribute("id", "i");
+    italicEl.setAttributeNS(Namespaces.HTML_NAMESPACE_URI, "id", "i");
     Nodes.setFilePositionFor(italicEl, cp.filePositionForOffsets(49, 79));
 
     Node n = hb.substV(
@@ -244,25 +246,31 @@ public class HtmlQuasiBuilderTest extends TestCase {
 
   public final void testProblematicElements() throws Exception {
     assertEquals(
-        "option", onlyElement(hb.substV("<option>Foo</option>")).getTagName());
+        "option",
+        onlyElement(hb.substV("<option>Foo</option>")).getLocalName());
     assertEquals(
-        "option", onlyElement(hb.substV("<OPTION>Foo</OPTION>")).getTagName());
+        "option",
+        onlyElement(hb.substV("<OPTION>Foo</OPTION>")).getLocalName());
     assertEquals(
-        "thead", onlyElement(hb.substV("<thead>Foo</thead>")).getTagName());
+        "thead",
+        onlyElement(hb.substV("<thead>Foo</thead>")).getLocalName());
     assertEquals(
-        "tbody", onlyElement(hb.substV("<tbody>Foo</tbody>")).getTagName());
+        "tbody",
+        onlyElement(hb.substV("<tbody>Foo</tbody>")).getLocalName());
     assertEquals(
-        "tfoot", onlyElement(hb.substV("<tfoot></tfoot>")).getTagName());
+        "tfoot",
+        onlyElement(hb.substV("<tfoot></tfoot>")).getLocalName());
     assertEquals(
-        "caption", onlyElement(hb.substV("<caption>Foo</caption>")).getTagName());
+        "caption",
+        onlyElement(hb.substV("<caption>Foo</caption>")).getLocalName());
     assertEquals(
-        "tr", onlyElement(hb.substV("<tr><td>Foo</td></tr>")).getTagName());
+        "tr", onlyElement(hb.substV("<tr><td>Foo</td></tr>")).getLocalName());
     assertEquals(
-        "td", onlyElement(hb.substV("<td>Foo</td>")).getTagName());
+        "td", onlyElement(hb.substV("<td>Foo</td>")).getLocalName());
     assertEquals(
-        "th", onlyElement(hb.substV("<th>Foo</th>")).getTagName());
+        "th", onlyElement(hb.substV("<th>Foo</th>")).getLocalName());
     assertEquals(
-        "p", onlyElement(hb.substV("<p>Not problematic")).getTagName());
+        "p", onlyElement(hb.substV("<p>Not problematic")).getLocalName());
   }
 
   private static Element onlyElement(Node node) {

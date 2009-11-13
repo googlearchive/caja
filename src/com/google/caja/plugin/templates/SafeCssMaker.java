@@ -16,6 +16,7 @@ package com.google.caja.plugin.templates;
 
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.parser.css.CssTree;
+import com.google.caja.parser.html.Namespaces;
 import com.google.caja.parser.html.Nodes;
 import com.google.caja.parser.js.ArrayConstructor;
 import com.google.caja.parser.js.Block;
@@ -125,8 +126,9 @@ final class SafeCssMaker {
     Node safeHtml = this.safeHtml;
     if (css.length() != 0) {
       Document doc = safeHtml.getOwnerDocument();
-      Element style = doc.createElement("style");
-      style.setAttribute("type", "text/css");
+      String nsUri = Namespaces.HTML_NAMESPACE_URI;
+      Element style = doc.createElementNS(nsUri, "style");
+      style.setAttributeNS(nsUri, "type", "text/css");
       style.appendChild(doc.createTextNode(css.toString()));
       Nodes.setFilePositionFor(style, dynamicPos);
       if (!(safeHtml instanceof DocumentFragment)) {

@@ -37,11 +37,10 @@ public class CajolingServiceMain {
     // http://docs.codehaus.org/display/JETTY/Embedding+Jetty
     int port = 8887;
     Server server = new Server(port);
-    
-    final CajolingService service
-    = new CajolingService(BuildInfo.getInstance(),
-        "http://localhost:" + port);
-    
+
+    final CajolingService service = new CajolingService(
+        BuildInfo.getInstance(), "http://localhost:" + port);
+
     server.setHandler(new AbstractHandler() {
       public void handle(
           String target, HttpServletRequest req, HttpServletResponse resp,

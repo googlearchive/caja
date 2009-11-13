@@ -23,6 +23,8 @@ import com.google.caja.parser.MutableParseTreeNode;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.Visitor;
 import com.google.caja.parser.css.CssTree;
+import com.google.caja.parser.html.ElKey;
+import com.google.caja.parser.html.Namespaces;
 import com.google.caja.render.Concatenator;
 import com.google.caja.render.CssPrettyPrinter;
 import com.google.caja.reporting.Message;
@@ -225,8 +227,8 @@ public final class CssRewriter {
     return modified;
   }
 
-  /** The name of an anchor (<A>) HTML tag. */
-  private static final Name HTML_ANCHOR = Name.html("a");
+  /** The name of an anchor {@code <A>} HTML tag. */
+  private static final ElKey HTML_ANCHOR = ElKey.forHtmlElement("a");
 
   /**
    * Rewrites any visited or link pseudo class elements to have element name A.
@@ -241,13 +243,14 @@ public final class CssRewriter {
       // "*#foo:visited" --> "a#foo:visited"
       selector.replaceChild(
           new CssTree.IdentLiteral(
-              firstChild.getFilePosition(), HTML_ANCHOR.getCanonicalForm()),
+              firstChild.getFilePosition(), HTML_ANCHOR.toString()),
           firstChild);
       return true;
     } else if (firstChild instanceof CssTree.IdentLiteral) {
       // "a#foo:visited" is legal; "p#foo:visited" is not
       String value = ((CssTree.IdentLiteral) firstChild).getValue();
-      if (HTML_ANCHOR.compareTo(Name.html(value)) != 0) {
+      if (!HTML_ANCHOR.equals(
+              ElKey.forElement(Namespaces.HTML_DEFAULT, value))) {
         mq.addMessage(
             PluginMessageType.CSS_LINK_PSEUDO_SELECTOR_NOT_ALLOWED_ON_NONANCHOR,
             firstChild.getFilePosition());
@@ -257,7 +260,7 @@ public final class CssRewriter {
       // "#foo:visited" --> "a#foo:visited"
       selector.insertBefore(
           new CssTree.IdentLiteral(
-              firstChild.getFilePosition(), HTML_ANCHOR.getCanonicalForm()),
+              firstChild.getFilePosition(), HTML_ANCHOR.toString()),
           firstChild);
       return true;
     }
@@ -538,7 +541,7 @@ public final class CssRewriter {
                   ((CssTree.IdentLiteral) child).getValue());
               if (!ALLOWED_PSEUDO_CLASSES.contains(pseudoName)) {
                 // Allow the visited pseudo selector but not with any styles
-                // that are fetchable via getComputedStyle in DOMita's
+                // that can be fetched via getComputedStyle in DOMita's
                 // COMPUTED_STYLE_WHITELIST.
                 if (!(LINK_PSEUDO_CLASSES.contains(pseudoName)
                       && strippedPropertiesBannedInLinkClasses(

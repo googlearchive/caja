@@ -21,7 +21,7 @@ import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.MessageType;
 
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -199,13 +199,14 @@ final class CajaTreeBuilder extends TreeBuilder<Node> {
     Element el = (Element) node;
     for (Attr a : getAttributes(attributes)) {
       String name = a.getName();
-      if (!el.hasAttribute(a.getName())) {
-        el.setAttributeNode(a);
+      if (!el.hasAttributeNS(a.getNamespaceURI(), a.getLocalName())) {
+        el.setAttributeNodeNS(a);
       } else {
         mq.addMessage(
             MessageType.DUPLICATE_ATTRIBUTE, Nodes.getFilePositionFor(a),
             MessagePart.Factory.valueOf(name),
-            Nodes.getFilePositionFor(el.getAttributeNode(name)));
+            Nodes.getFilePositionFor(
+                el.getAttributeNodeNS(a.getNamespaceURI(), a.getLocalName())));
       }
     }
   }
@@ -257,7 +258,8 @@ final class CajaTreeBuilder extends TreeBuilder<Node> {
         NamedNodeMap attrs = el.getAttributes();
         for (int i = 0, n = attrs.getLength(); i < n; ++i) {
           Attr a = (Attr) attrs.item(i);
-          Attr cloneA = cloneEl.getAttributeNode(a.getName());
+          Attr cloneA = cloneEl.getAttributeNodeNS(
+              a.getNamespaceURI(), a.getLocalName());
           if (needsDebugData) {
             Nodes.setFilePositionFor(cloneA, Nodes.getFilePositionFor(a));
             Nodes.setFilePositionForValue(
@@ -296,9 +298,15 @@ final class CajaTreeBuilder extends TreeBuilder<Node> {
   @Override
   protected Element createElement(String name, Attributes attributes) {
     if (DEBUG) { System.err.println("Created element " + name); }
-    name = Html5ElementStack.canonicalElementName(name);
+    // Intern since the TreeBuilder likes to compare strings by reference.
+    name = name.intern();
 
-    Element el = doc.createElement(name);
+    Element el;
+    if (name.indexOf(':') < 0) {
+      el = doc.createElementNS(Namespaces.HTML_NAMESPACE_URI, name);
+    } else {  // Will be fixed up later.  See DomParser#fixup.
+      el = doc.createElement(name);
+    }
     addAttributesToElement(el, attributes);
 
     if (needsDebugData) {
@@ -408,18 +416,19 @@ final class CajaTreeBuilder extends TreeBuilder<Node> {
     if (n == 0) {
       return Collections.<Attr>emptyList();
     } else {
-      List<Attr> newAttribs = new ArrayList<Attr>();
+      Attr[] newAttribs = new Attr[n];
       FilePosition pos = FilePosition.startOf(startTok.pos);
       for (int i = 0; i < n; ++i) {
-        Attr a = doc.createAttribute(attributes.getQName(i));
+        Attr a = doc.createAttributeNS(
+            attributes.getURI(i), attributes.getLocalName(i));
         a.setNodeValue(attributes.getValue(i));
         if (needsDebugData) {
           Nodes.setFilePositionFor(a, pos);
           Nodes.setFilePositionForValue(a, pos);
         }
-        newAttribs.add(a);
+        newAttribs[i] = a;
       }
-      return newAttribs;
+      return Arrays.asList(newAttribs);
     }
   }
 
@@ -431,7 +440,7 @@ final class CajaTreeBuilder extends TreeBuilder<Node> {
   static String tagName(String tokenText) {
     String name = tokenText.substring(isEndTag(tokenText) ? 2 : 1);
     // Intern since the TreeBuilder likes to compare strings by reference.
-    return Html5ElementStack.canonicalElementName(name).intern();
+    return Html5ElementStack.canonicalElementName(name);
   }
 
   static boolean tagMatchesElementName(String tagName, String elementName) {
@@ -453,74 +462,5 @@ final class CajaTreeBuilder extends TreeBuilder<Node> {
     if (tagName.length() != 2 || 'h' != tagName.charAt(0)) { return false; }
     char ch1 = tagName.charAt(1);
     return ch1 >= '1' && ch1 <= '6';
-  }
-
-  /**
-   * An implementation of org.xml.sax that wraps {@code DomTree.Attrib}s.
-   * This ignores all namespacing since HTML doesn't do namespacing.
-   */
-  static final class AttributesImpl implements Attributes {
-    private final List<Attr> attribs;
-
-    AttributesImpl(List<Attr> attribs) { this.attribs = attribs; }
-
-    public int getIndex(String qName) {
-      int index = 0;
-      for (Attr attrib : attribs) {
-        if (attrib.getName().equals(qName)) { return index; }
-        ++index;
-      }
-      return -1;
-    }
-
-    public int getIndex(String uri, String localName) {
-      int index = 0;
-      for (Attr attrib : attribs) {
-        if ((uri == null
-             ? attrib.getNamespaceURI() == null
-             : uri.equals(attrib.getNamespaceURI()))
-            && attrib.getLocalName().equals(localName)) {
-          return index;
-        }
-        ++index;
-      }
-      return -1;
-    }
-
-    public int getLength() { return attribs.size(); }
-
-    public String getLocalName(int index) {
-      return attribs.get(index).getLocalName();
-    }
-
-    public String getQName(int index) { return attribs.get(index).getName(); }
-
-    public String getType(int index) { return null; }
-
-    public String getType(String qName) { return null; }
-
-    public String getType(String uri, String localName) { return null; }
-
-    public String getURI(int index) {
-      return attribs.get(index).getNamespaceURI();
-    }
-
-    public String getValue(int index) {
-      return attribs.get(index).getValue();
-    }
-
-    public String getValue(String qName) {
-      int index = getIndex(qName);
-      return index < 0 ? null : getValue(index);
-    }
-
-    public String getValue(String uri, String localName) {
-      int index = getIndex(uri, localName);
-      return index < 0 ? null : getValue(index);
-    }
-
-    public List<Attr> getAttributes() {
-      return Collections.unmodifiableList(attribs);
-    }
   }
 }

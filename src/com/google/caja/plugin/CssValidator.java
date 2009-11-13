@@ -24,6 +24,9 @@ import com.google.caja.parser.Visitor;
 import com.google.caja.parser.css.CssPropertySignature;
 import com.google.caja.parser.css.CssTree;
 import com.google.caja.parser.css.CssTree.Combinator;
+import com.google.caja.parser.html.AttribKey;
+import com.google.caja.parser.html.ElKey;
+import com.google.caja.parser.html.Namespaces;
 import com.google.caja.render.Concatenator;
 import com.google.caja.render.CssPrettyPrinter;
 import com.google.caja.reporting.Message;
@@ -41,7 +44,6 @@ import com.google.caja.util.SyntheticAttributeKey;
 import com.google.caja.util.SyntheticAttributes;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.BitSet;
 import java.util.Collection;
 import java.util.Collections;
@@ -242,12 +244,13 @@ public final class CssValidator {
   private boolean validateSimpleSelector(CssTree.SimpleSelector sel) {
     boolean valid = true;
     if (null != sel.getElementName()) {
-      Name tagName = Name.html(sel.getElementName());
-      if (null != htmlSchema.lookupElement(tagName)) {
-        if (!htmlSchema.isElementAllowed(tagName)) {
+      String elName = sel.getElementName();
+      ElKey elKey = ElKey.forElement(Namespaces.HTML_DEFAULT, elName);
+      if (null != htmlSchema.lookupElement(elKey)) {
+        if (!htmlSchema.isElementAllowed(elKey)) {
           mq.addMessage(
               PluginMessageType.UNSAFE_TAG, invalidNodeMessageLevel,
-              sel.getFilePosition(), tagName);
+              sel.getFilePosition(), elKey);
           valid = false;
         }
       } else {
@@ -264,30 +267,35 @@ public final class CssValidator {
   }
 
   private boolean validateAllAttribs(CssTree.SimpleSelector sel) {
-    Name tagName = (null == sel.getElementName()) ?
-        Name.html("*") : Name.html(sel.getElementName());
+    String qname = sel.getElementName();
+    ElKey el;
+    if (qname == null) {
+      el = ElKey.HTML_WILDCARD;
+    } else {
+      el = ElKey.forElement(Namespaces.HTML_DEFAULT, qname);
+    }
     boolean valid = true;
     for (CssTree n : sel.children()) {
       if (n instanceof CssTree.Attrib) {
-        valid &= validateAttrib(tagName, (CssTree.Attrib) n);
+        valid &= validateAttrib(el, (CssTree.Attrib) n);
       }
     }
     return valid;
   }
 
   /**
-   * Attrib must exist in HTML 4 whitelist.
+   * Attribute must exist in HTML 4 whitelist.
    */
-  private boolean validateAttrib(Name tagName, CssTree.Attrib attr) {
-    Name attribName = Name.html(attr.getIdent());
-    HTML.Attribute htmlAttribute =
-        htmlSchema.lookupAttribute(tagName, attribName);
+  private boolean validateAttrib(ElKey elId, CssTree.Attrib attr) {
+    AttribKey attrId = AttribKey.forAttribute(
+        Namespaces.HTML_DEFAULT, elId, attr.getIdent());
+    HTML.Attribute htmlAttribute = htmlSchema.lookupAttribute(attrId);
     if (null != htmlAttribute) {
-      return validateAttribToSchema(tagName, htmlAttribute, attr);
+      return validateAttribToSchema(elId, htmlAttribute, attr);
     } else {
       mq.addMessage(
           PluginMessageType.UNKNOWN_ATTRIBUTE, invalidNodeMessageLevel,
-          attr.getFilePosition(), attribName,
+          attr.getFilePosition(), attrId,
           MessagePart.Factory.valueOf("{css selector}"));
       attr.getAttributes().set(INVALID, Boolean.TRUE);
       return false;
@@ -311,14 +319,12 @@ public final class CssValidator {
    * Selectors for STYLE attributes would allow embedding of CSS within CSS
    * which could lead to undefined behavior.
    */
-  private static final Collection<Name>
-      DISALLOWED_SELECTOR_ATTRIBUTE_NAMES =
-      Collections.unmodifiableList(Arrays.asList(
-          Name.html("style")));
+  private static final Collection<AttribKey> DISALLOWED_SELECTOR_ATTRIBUTE_NAMES
+      = Collections.unmodifiableList(Collections.singletonList(
+          AttribKey.forHtmlAttrib(ElKey.HTML_WILDCARD, "style")));
 
-  private boolean validateAttribToSchema(Name tagName,
-                                         HTML.Attribute htmlAttribute,
-                                         CssTree.Attrib attr) {
+  private boolean validateAttribToSchema(
+      ElKey elId, HTML.Attribute htmlAttribute, CssTree.Attrib attr) {
     boolean valid = true;
     for (HTML.Attribute.Type type : DISALLOWED_SELECTOR_ATTRIBUTE_TYPES) {
       if (type == htmlAttribute.getType()) {
@@ -330,23 +336,21 @@ public final class CssValidator {
         valid = false;
       }
     }
-    for (Name name : DISALLOWED_SELECTOR_ATTRIBUTE_NAMES) {
-      if (name.equals(htmlAttribute.getAttributeName())) {
-        mq.addMessage(
-            PluginMessageType.CSS_ATTRIBUTE_NAME_NOT_ALLOWED_IN_SELECTOR,
-            invalidNodeMessageLevel,
-            name,
-            attr.getFilePosition());
-        valid = false;
-      }
+    if (DISALLOWED_SELECTOR_ATTRIBUTE_NAMES.contains(htmlAttribute.getKey())) {
+      mq.addMessage(
+          PluginMessageType.CSS_ATTRIBUTE_NAME_NOT_ALLOWED_IN_SELECTOR,
+          invalidNodeMessageLevel,
+          MessagePart.Factory.valueOf(htmlAttribute.getKey().localName),
+          attr.getFilePosition());
+      valid = false;
     }
     if (null != attr.getOperation()) {
       switch (attr.getOperation().getValue()) {
         case EQUAL:
-          valid &= validateAttribValueEqual(tagName, htmlAttribute, attr);
+          valid &= validateAttribValueEqual(elId, htmlAttribute, attr);
           break;
         case INCLUDES:
-          valid &= validateAttribValueIncludes(tagName, htmlAttribute, attr);
+          valid &= validateAttribValueIncludes(elId, htmlAttribute, attr);
           break;
         case DASHMATCH:
           mq.addMessage(
@@ -361,46 +365,34 @@ public final class CssValidator {
     return valid;
   }
 
-  private boolean validateAttribValueEqual(Name tagName,
-                                           HTML.Attribute htmlAttribute,
-                                           CssTree.Attrib attr) {
+  private boolean validateAttribValueEqual(
+      ElKey elId, HTML.Attribute htmlAttribute, CssTree.Attrib attr) {
     return validateAttribValue(
-        tagName,
-        htmlAttribute,
-        attr,
-        attr.getRhsValue().getValue());
+        elId, htmlAttribute, attr, attr.getRhsValue().getValue());
   }
 
-  private boolean validateAttribValueIncludes(Name tagName,
-                                              HTML.Attribute htmlAttribute,
-                                              CssTree.Attrib attr) {
+  private boolean validateAttribValueIncludes(
+      ElKey elId, HTML.Attribute htmlAttribute, CssTree.Attrib attr) {
     boolean valid = true;
     // http://www.w3.org/TR/CSS2/selector.html#attribute-selectors
     // specifies that the value for the "~=" operator is a whitespace
     // separated list of words
     for (String value : attr.getRhsValue().getValue().split("\\s+")) {
       if ("".equals(value)) { continue; }  // Blank due to whitespace
-      valid &= validateAttribValue(
-          tagName,
-          htmlAttribute,
-          attr,
-          value);
+      valid &= validateAttribValue(elId, htmlAttribute, attr, value);
     }
     return valid;
   }
 
-  private boolean validateAttribValue(Name tagName,
-                                      HTML.Attribute htmlAttribute,
-                                      CssTree.Attrib attr,
-                                      String value) {
+  private boolean validateAttribValue(
+      ElKey elId, HTML.Attribute htmlAttribute, CssTree.Attrib attr,
+      String value) {
     if (!htmlAttribute.getValueCriterion().accept(value)) {
       mq.addMessage(
           PluginMessageType.UNRECOGNIZED_ATTRIBUTE_VALUE,
-          invalidNodeMessageLevel,
-          attr.getFilePosition(),
-          MessagePart.Factory.valueOf(value),
-          tagName,
-          htmlAttribute.getAttributeName());
+          invalidNodeMessageLevel, attr.getFilePosition(),
+          MessagePart.Factory.valueOf(value), elId,
+          MessagePart.Factory.valueOf(htmlAttribute.getKey().localName));
       return false;
     }
     return true;

@@ -220,8 +220,7 @@ final class TestHttpServletRequest implements HttpServletRequest {
     throw new UnsupportedOperationException();
   }
 
-  public void setCharacterEncoding(String encodingName)
-      throws UnsupportedEncodingException {
+  public void setCharacterEncoding(String encodingName) {
     throw new UnsupportedOperationException();
   }
 }

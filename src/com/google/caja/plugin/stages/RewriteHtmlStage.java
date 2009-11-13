@@ -29,6 +29,7 @@ import com.google.caja.parser.MutableParseTreeNode;
 import com.google.caja.parser.Visitor;
 import com.google.caja.parser.css.CssParser;
 import com.google.caja.parser.css.CssTree;
+import com.google.caja.parser.html.Namespaces;
 import com.google.caja.parser.html.Nodes;
 import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.Parser;
@@ -91,6 +92,8 @@ public class RewriteHtmlStage implements Pipeline.Stage<Jobs> {
     return jobs.hasNoFatalErrors();
   }
 
+  private static final String HTML_NS = Namespaces.HTML_NAMESPACE_URI;
+
   void rewriteDomTree(Node root, Node n, Jobs jobs) {
     // Rewrite styles and scripts.
     // <script>foo()</script>  ->  <script>(cajoled foo)</script>
@@ -100,15 +103,17 @@ public class RewriteHtmlStage implements Pipeline.Stage<Jobs> {
     //     ->  <style>(cajoled, inlined styles)</style>
     if (n.getNodeType() == Node.ELEMENT_NODE) {
       Element el = (Element) n;
-      String name = el.getTagName();
-      if ("script".equals(name)) {
-        rewriteScriptTag(root, el, jobs);
-      } else if ("style".equals(name)) {
-        rewriteStyleTag(el, jobs);
-      } else if ("link".equals(name)) {
-        rewriteLinkTag(el, jobs);
-      } else if ("body".equals(name)) {
-        moveOnLoadHandlerToEndOfBody(el);
+      if (HTML_NS.equals(el.getNamespaceURI())) {
+        String name = el.getLocalName();
+        if ("script".equals(name)) {
+          rewriteScriptTag(root, el, jobs);
+        } else if ("style".equals(name)) {
+          rewriteStyleTag(el, jobs);
+        } else if ("link".equals(name)) {
+          rewriteLinkTag(el, jobs);
+        } else if ("body".equals(name)) {
+          moveOnLoadHandlerToEndOfBody(el);
+        }
       }
     }
     for (Node child : Nodes.childrenOf(n)) {
@@ -120,8 +125,8 @@ public class RewriteHtmlStage implements Pipeline.Stage<Jobs> {
     Node parent = scriptTag.getParentNode();
     PluginEnvironment env = jobs.getPluginMeta().getPluginEnvironment();
 
-    Attr type = scriptTag.getAttributeNode("type");
-    Attr src = scriptTag.getAttributeNode("src");
+    Attr type = scriptTag.getAttributeNodeNS(HTML_NS, "type");
+    Attr src = scriptTag.getAttributeNodeNS(HTML_NS, "src");
     if (type != null && !isJavaScriptContentType(type.getNodeValue())) {
       jobs.getMessageQueue().addMessage(
           PluginMessageType.UNRECOGNIZED_CONTENT_TYPE,
@@ -197,14 +202,16 @@ public class RewriteHtmlStage implements Pipeline.Stage<Jobs> {
     // Build a replacement element, <span/>, and link it to the extracted
     // javascript, so that when the DOM is rendered, we can properly interleave
     // the extract scripts with the scripts that generate markup.
-    Element placeholder = parent.getOwnerDocument().createElement("span");
+    Element placeholder = parent.getOwnerDocument().createElementNS(
+        HTML_NS, "span");
     Nodes.setFilePositionFor(placeholder, Nodes.getFilePositionFor(scriptTag));
     ExtractedHtmlContent.setExtractedScriptFor(
         placeholder, parsedScriptBody);
 
     // Replace the script tag with a placeholder that points to the inlined
     // script.
-    if (Strings.equalsIgnoreCase("defer", scriptTag.getAttribute("defer"))) {
+    if (Strings.equalsIgnoreCase(
+            "defer", scriptTag.getAttributeNS(HTML_NS, "defer"))) {
       parent.removeChild(scriptTag);
       root.appendChild(placeholder);
     } else {
@@ -227,7 +234,7 @@ public class RewriteHtmlStage implements Pipeline.Stage<Jobs> {
 
     styleTag.getParentNode().removeChild(styleTag);
 
-    Attr rel = styleTag.getAttributeNode("rel");
+    Attr rel = styleTag.getAttributeNodeNS(HTML_NS, "rel");
     if (rel == null || !Strings.equalsIgnoreCase(
         rel.getNodeValue().trim(), "stylesheet")) {
       // If it's not a stylesheet then ignore it.
@@ -235,8 +242,8 @@ public class RewriteHtmlStage implements Pipeline.Stage<Jobs> {
       return;
     }
 
-    Attr href = styleTag.getAttributeNode("href");
-    Attr media = styleTag.getAttributeNode("media");
+    Attr href = styleTag.getAttributeNodeNS(HTML_NS, "href");
+    Attr media = styleTag.getAttributeNodeNS(HTML_NS, "media");
 
     if (href == null) {
       jobs.getMessageQueue().addMessage(
@@ -279,7 +286,7 @@ public class RewriteHtmlStage implements Pipeline.Stage<Jobs> {
 
   private void extractStyles(
       Element styleTag, CharProducer cssStream, Attr media, Jobs jobs) {
-    Attr type = styleTag.getAttributeNode("type");
+    Attr type = styleTag.getAttributeNodeNS(HTML_NS, "type");
 
     if (type != null && !isCssContentType(type.getNodeValue())) {
       jobs.getMessageQueue().addMessage(
@@ -361,8 +368,8 @@ public class RewriteHtmlStage implements Pipeline.Stage<Jobs> {
    * </pre>
    */
   private void moveOnLoadHandlerToEndOfBody(Element body) {
-    Attr onload = body.getAttributeNode("onload");
-    Attr language = body.getAttributeNode("language");
+    Attr onload = body.getAttributeNodeNS(HTML_NS, "onload");
+    Attr language = body.getAttributeNodeNS(HTML_NS, "language");
     if (onload == null
         // If the onload handler is vbscript, let the validator complain.
         || (language != null && !isJavaScriptLanguage(language.getNodeValue()))
@@ -375,7 +382,8 @@ public class RewriteHtmlStage implements Pipeline.Stage<Jobs> {
     String source = onload.getNodeValue();
     Text sourceText = body.getOwnerDocument().createTextNode(source);
     Nodes.setFilePositionFor(sourceText, pos);
-    Element scriptElement = body.getOwnerDocument().createElement("script");
+    Element scriptElement = body.getOwnerDocument().createElementNS(
+        HTML_NS, "script");
     scriptElement.appendChild(sourceText);
     Nodes.setFilePositionFor(scriptElement, pos);
 

@@ -20,6 +20,7 @@ import com.google.caja.lexer.ExternalReference;
 import com.google.caja.lexer.ParseException;
 import com.google.caja.parser.css.CssTree;
 import com.google.caja.parser.html.DomParser;
+import com.google.caja.parser.html.Namespaces;
 import com.google.caja.parser.html.Nodes;
 import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.Noop;
@@ -138,7 +139,8 @@ public class HtmlEmitterTest extends CajaTestCase {
 
   private Node extract(Node n) throws ParseException {
     if (n.getNodeType() == 1 && "script".equals(n.getNodeName())) {
-      Element span = n.getOwnerDocument().createElement("span");
+      String HTML_NS = Namespaces.HTML_NAMESPACE_URI;
+      Element span = n.getOwnerDocument().createElementNS(HTML_NS, "span");
       ExtractedHtmlContent.setExtractedScriptFor(
           span, js(fromString(n.getFirstChild().getNodeValue())));
       n.getParentNode().replaceChild(span, n);

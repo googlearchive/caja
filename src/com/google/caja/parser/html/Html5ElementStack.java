@@ -21,12 +21,14 @@ import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
-import com.google.caja.util.Name;
+import com.google.caja.reporting.MessageType;
+import com.google.caja.util.Lists;
 import com.google.caja.util.Strings;
 
 import java.util.List;
 
 import org.w3c.dom.Attr;
+import org.w3c.dom.DOMException;
 import org.w3c.dom.Document;
 import org.w3c.dom.DocumentFragment;
 import org.w3c.dom.Element;
@@ -43,7 +45,7 @@ import nu.validator.htmlparser.impl.Tokenizer;
 /**
  * A bridge between DomParser and html5lib which translates
  * {@code Token<HtmlTokenType>}s into SAX style events which are fed to the
- * TreeBuilder.  The TreeBuilder responds by issuing {@code createElement}
+ * TreeBuilder.  The TreeBuilder responds by issuing {@code createElementNS}
  * commands which are used to build a {@link DocumentFragment}.
  *
  * @author mikesamuel@gmail.com
@@ -55,6 +57,7 @@ public class Html5ElementStack implements OpenElementStack {
   private final Document doc;
   private final boolean needsDebugData;
   private boolean isFragment;
+  private boolean needsNamespaceFixup;
 
   /**
    * @param needsDebugData see {@link DomParser#setNeedsDebugData(boolean)}
@@ -68,6 +71,8 @@ public class Html5ElementStack implements OpenElementStack {
   }
 
   public final Document getDocument() { return doc; }
+
+  public boolean needsNamespaceFixup() { return needsNamespaceFixup; }
 
   /** {@inheritDoc} */
   public void open(boolean isFragment) {
@@ -118,16 +123,6 @@ public class Html5ElementStack implements OpenElementStack {
   public void finish(FilePosition endOfFile) {
     builder.finish(endOfFile);
     builder.closeUnclosedNodes();
-  }
-
-  /** {@inheritDoc} */
-  public Name canonicalizeElementName(String elementName) {
-    return Name.html(elementName);
-  }
-
-  /** {@inheritDoc} */
-  public Name canonicalizeAttributeName(String attributeName) {
-    return Name.html(attributeName);
   }
 
   public static String canonicalizeName(String name) {
@@ -245,7 +240,7 @@ public class Html5ElementStack implements OpenElementStack {
     NamedNodeMap attrs = el.getAttributes();
     for (int i = 0, n = attrs.getLength(); i < n; ++i) {
       Attr a = (Attr) attrs.item(i);
-      if (el.hasAttribute(a.getName())) {
+      if (el.hasAttributeNS(a.getNamespaceURI(), a.getLocalName())) {
         return true;
       }
     }
@@ -285,21 +280,79 @@ public class Html5ElementStack implements OpenElementStack {
    *   paragraph start, {@code "</p"} for an end tag.
    * @param end the token of the beginning of the tag, so {@code ">"} for a
    *   paragraph start, {@code "/>"} for an unary break tag.
-   * @param attrs the attributes for the element.  This will be empty
-   *   for end tags.
+   * @param attrStubs the attributes for the element.
    */
   public void processTag(Token<HtmlTokenType> start, Token<HtmlTokenType> end,
-                         List<Attr> attrs) {
+                         List<AttrStub> attrStubs) {
     builder.setTokenContext(start, end);
     try {
-      String tagName = CajaTreeBuilder.tagName(start.text);
-      if (CajaTreeBuilder.isEndTag(start.text)) {
-        builder.endTag(tagName, new CajaTreeBuilder.AttributesImpl(attrs));
+      boolean isEndTag = CajaTreeBuilder.isEndTag(start.text);
+      String tagName = start.text.substring(isEndTag ? 2 : 1);
+      boolean isHtml = checkName(tagName);
+      if (isHtml) { tagName = Strings.toLowerCase(tagName); }
+      // Intern since the TreeBuilder likes to compare strings by reference.
+      tagName = tagName.intern();
+
+      AttributesImpl attrImpl;
+      if (!attrStubs.isEmpty()) {
+        List<Attr> attrs = Lists.newArrayList();
+        for (AttrStub as : attrStubs) {
+          String qname = as.nameTok.text;
+          Attr attrNode;
+          try {
+            if ("xmlns".equals(qname)) {
+              if (!Namespaces.HTML_NAMESPACE_URI.equals(as.value)) {
+                // We do not allow overriding of the default namespace when
+                // parsing HTML.
+                mq.addMessage(
+                    MessageType.CANNOT_OVERRIDE_DEFAULT_NAMESPACE_IN_HTML,
+                    as.nameTok.pos);
+              }
+              continue;
+            } else {
+              boolean isAttrHtml = isHtml && checkName(qname);
+              if (isAttrHtml) {
+                qname = Strings.toLowerCase(qname);
+                attrNode = doc.createAttributeNS(
+                    Namespaces.HTML_NAMESPACE_URI, qname);
+              } else {
+                attrNode = doc.createAttribute(qname);
+              }
+            }
+            attrNode.setValue(as.value);
+            if (needsDebugData) {
+              Nodes.setFilePositionFor(attrNode, as.nameTok.pos);
+              Nodes.setFilePositionForValue(attrNode, as.valueTok.pos);
+              Nodes.setRawValue(attrNode, as.valueTok.text);
+            }
+            attrs.add(attrNode);
+          } catch (DOMException ex) {
+            ex.printStackTrace();
+            mq.addMessage(MessageType.INVALID_IDENTIFIER, as.nameTok.pos,
+                          MessagePart.Factory.valueOf(as.nameTok.text));
+          }
+        }
+        attrImpl = new AttributesImpl(attrs);
       } else {
-        builder.startTag(tagName, new CajaTreeBuilder.AttributesImpl(attrs));
+        attrImpl = AttributesImpl.NONE;
+      }
+      if (isEndTag) {
+        builder.endTag(tagName, attrImpl);
+      } else {
+        builder.startTag(tagName, attrImpl);
       }
     } catch (SAXException ex) {
       throw new RuntimeException(ex);
+    }
+  }
+
+
+  private boolean checkName(String qname) {
+    if (qname.indexOf(':', 1) < 0) {
+      return true;
+    } else {
+      needsNamespaceFixup = true;
+      return false;
     }
   }
 

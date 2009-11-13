@@ -31,9 +31,7 @@ import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageType;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.CajaTestCase;
-import com.google.caja.util.Lists;
 import com.google.caja.util.MoreAsserts;
-import com.google.caja.util.Pair;
 import com.google.caja.util.Strings;
 import com.google.caja.util.TestUtil;
 

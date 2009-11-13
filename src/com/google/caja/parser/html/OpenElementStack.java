@@ -18,11 +18,9 @@ import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.HtmlTokenType;
 import com.google.caja.lexer.Token;
 import com.google.caja.reporting.MessageQueue;
-import com.google.caja.util.Name;
 
 import java.util.List;
 
-import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
 import org.w3c.dom.DocumentFragment;
 
@@ -58,28 +56,6 @@ public interface OpenElementStack {
   DocumentFragment getRootElement();
 
   /**
-   * Given an element name, return a canonical element name.
-   * <p>
-   * This API does not currently handle namespace-aware XML.
-   * <p>
-   * Since this method canonicalizes, it is idempotent.  It must be idempotent
-   * even if the input is not canonicalizable to a name in an HTML or XML
-   * schema.
-   */
-  Name canonicalizeElementName(String elementName);
-
-  /**
-   * Given an element name, return a canonical attribute name.
-   * <p>
-   * This API does not currently handle namespace-aware XML.
-   * <p>
-   * Since this method canonicalizes, it is idempotent.  It must be idempotent
-   * even if the input is not canonicalizable to a name in an HTML or XML
-   * schema.
-   */
-  Name canonicalizeAttributeName(String attributeName);
-
-  /**
    * Records the fact that a tag has been seen, updating internal state
    *
    * @param start the token of the beginning of the tag, so {@code "<p"} for a
@@ -90,7 +66,7 @@ public interface OpenElementStack {
    *   for end tags.
    */
   void processTag(Token<HtmlTokenType> start, Token<HtmlTokenType> end,
-                  List<Attr>  attrs)
+                  List<AttrStub> attrs)
       throws IllegalDocumentStateException;
 
   /**
@@ -117,6 +93,8 @@ public interface OpenElementStack {
   void finish(FilePosition endOfFile)
       throws IllegalDocumentStateException;
 
+  boolean needsNamespaceFixup();
+
   /**
    * Constructors.
    */
@@ -137,10 +115,11 @@ public interface OpenElementStack {
      * @param mq receives parser warnings.
      */
     public static OpenElementStack createXmlElementStack(
-        Document doc, boolean needsDebugData, MessageQueue mq) {
-      return new XmlElementStack(doc, needsDebugData, mq);
+        Document doc, boolean needsDebugData, Namespaces ns, MessageQueue mq) {
+      return new XmlElementStack(doc, ns, needsDebugData, mq);
     }
 
     private Factory() {}
   }
 }
+

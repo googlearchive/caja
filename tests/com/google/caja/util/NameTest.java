@@ -22,22 +22,4 @@ public class NameTest extends TestCase {
     assertEquals("color", Name.css("colOr").getCanonicalForm());
     assertEquals("color", Name.css("COLOR").getCanonicalForm());
   }
-
-  public final void testHtml() {
-    assertEquals("foo", Name.html("foo").getCanonicalForm());
-    assertEquals("foo", Name.html("Foo").getCanonicalForm());
-    assertEquals("foo", Name.html("FOO").getCanonicalForm());
-    assertEquals("foo:bar", Name.html("foo:bar").getCanonicalForm());
-    assertEquals("Foo:Bar", Name.html("Foo:Bar").getCanonicalForm());
-    assertEquals("FOO:BAR", Name.html("FOO:BAR").getCanonicalForm());
-  }
-
-  public final void testXml() {
-    assertEquals("foo", Name.xml("foo").getCanonicalForm());
-    assertEquals("Foo", Name.xml("Foo").getCanonicalForm());
-    assertEquals("FOO", Name.xml("FOO").getCanonicalForm());
-    assertEquals("foo:bar", Name.xml("foo:bar").getCanonicalForm());
-    assertEquals("Foo:Bar", Name.xml("Foo:Bar").getCanonicalForm());
-    assertEquals("FOO:BAR", Name.xml("FOO:BAR").getCanonicalForm());
-  }
 }

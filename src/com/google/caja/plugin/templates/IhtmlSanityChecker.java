@@ -16,10 +16,11 @@ package com.google.caja.plugin.templates;
 
 import com.google.caja.lang.html.HTML;
 import com.google.caja.lexer.FilePosition;
+import com.google.caja.parser.html.AttribKey;
+import com.google.caja.parser.html.ElKey;
 import com.google.caja.parser.html.Nodes;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
-import com.google.caja.util.Name;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -61,42 +62,41 @@ public class IhtmlSanityChecker {
    * warning about broken elements.
    */
   private void checkIhtmlElements(Element ihtmlRoot) {
-    for (Element msg : allIhtml(ihtmlRoot)) {
-      Name elName = Name.xml(msg.getTagName());
-      if (!IHTML.SCHEMA.isElementAllowed(elName)) {
+    for (Element ihtmlEl : allIhtml(ihtmlRoot)) {
+      ElKey elKey = ElKey.forElement(ihtmlEl);
+      if (!IHTML.SCHEMA.isElementAllowed(elKey)) {
         mq.addMessage(
-            IhtmlMessageType.BAD_ELEMENT, Nodes.getFilePositionFor(msg),
-            elName);
-        markBroken(msg);
+            IhtmlMessageType.BAD_ELEMENT, Nodes.getFilePositionFor(ihtmlEl),
+            elKey);
+        markBroken(ihtmlEl);
         continue;
       }
-      HTML.Element elDetails = IHTML.SCHEMA.lookupElement(elName);
+      HTML.Element elDetails = IHTML.SCHEMA.lookupElement(elKey);
       for (HTML.Attribute attrDetails : elDetails.getAttributes()) {
         if (attrDetails.isOptional()) { continue; }
-        Name attrName = attrDetails.getAttributeName();
-        if (!msg.hasAttribute(attrName.getCanonicalForm())) {
+        AttribKey attrKey = attrDetails.getKey();
+        if (!ihtmlEl.hasAttributeNS(attrKey.ns.uri, attrKey.localName)) {
           mq.addMessage(
-              IhtmlMessageType.MISSING_ATTRIB, Nodes.getFilePositionFor(msg),
-              elName, attrName);
-          markBroken(msg);
+              IhtmlMessageType.MISSING_ATTRIB,
+              Nodes.getFilePositionFor(ihtmlEl), elKey, attrKey);
+          markBroken(ihtmlEl);
         }
       }
-      for (Attr a : Nodes.attributesOf(msg)) {
-        Name attrName = Name.xml(a.getName());
-        if ((IHTML.PREFIX + ":call").equals(elName.getCanonicalForm())
-            && IHTML.isSafeIdentifier(attrName.getCanonicalForm())) {
+      for (Attr a : Nodes.attributesOf(ihtmlEl)) {
+        AttribKey attrKey = AttribKey.forAttribute(elKey, a);
+        if (IHTML.is(ihtmlEl, "call") && IHTML.is(attrKey.ns)
+            && IHTML.isSafeIdentifier(a.getName())) {
           continue;
         }
-        HTML.Attribute attrDetails = IHTML.SCHEMA.lookupAttribute(
-            elName, attrName);
-        if (!IHTML.SCHEMA.isAttributeAllowed(elName, attrName)
+        HTML.Attribute attrDetails = IHTML.SCHEMA.lookupAttribute(attrKey);
+        if (!IHTML.SCHEMA.isAttributeAllowed(attrKey)
             || !attrDetails.getValueCriterion().accept(a.getValue())) {
           mq.addMessage(
               IhtmlMessageType.BAD_ATTRIB, posOf(a),
-              elName,
-              attrName,
+              elKey,
+              attrKey,
               MessagePart.Factory.valueOf(a.getValue()));
-          markBroken(msg);
+          markBroken(ihtmlEl);
         }
       }
     }
@@ -111,8 +111,8 @@ public class IhtmlSanityChecker {
             mq.addMessage(
                 IhtmlMessageType.MISPLACED_ELEMENT,
                 Nodes.getFilePositionFor(iel),
-                Name.xml(iel.getNodeName()),
-                Name.xml(p.getNodeName()));
+                MessagePart.Factory.valueOf(iel.getNodeName()),
+                MessagePart.Factory.valueOf(p.getNodeName()));
             markBroken(iel);
           }
         }
@@ -146,7 +146,7 @@ public class IhtmlSanityChecker {
             FilePosition.span(
                 Nodes.getFilePositionFor(el.getFirstChild()),
                 Nodes.getFilePositionFor(el.getLastChild())),
-            MessagePart.Factory.valueOf(el.getTagName())
+            MessagePart.Factory.valueOf(el.getLocalName())
             );
         markBroken(el);
       }
@@ -258,7 +258,7 @@ public class IhtmlSanityChecker {
         mq.addMessage(
             IhtmlMessageType.IHTML_IN_MESSAGE_OUTSIDE_PLACEHOLDER,
             Nodes.getFilePositionFor(el),
-            Name.xml(el.getTagName()));
+            MessagePart.Factory.valueOf(el.getLocalName()));
         for (Node p = el; (p = p.getParentNode()) != null;) {
           if (IHTML.isMessage(p)) {
             markBroken(p);
@@ -304,17 +304,12 @@ public class IhtmlSanityChecker {
 
   private static boolean isIhtml(Node node) {
     return node instanceof Element
-        && ((Element) node).getTagName().startsWith(IHTML.PREFIX + ":");
+        && IHTML.NAMESPACE.equals(node.getNamespaceURI());
   }
 
   private static Iterable<Element> allIhtml(Element root) {
-    List<Element> all = new ArrayList<Element>();
-    if (root.getTagName().startsWith(IHTML.PREFIX + ":")) { all.add(root); }
-    for (Element el : Nodes.nodeListIterable(
-             root.getElementsByTagName("*"), Element.class)) {
-      if (el.getTagName().startsWith(IHTML.PREFIX + ":")) { all.add(el); }
-    }
-    return all;
+    return Nodes.nodeListIterable(
+        root.getElementsByTagNameNS(IHTML.NAMESPACE, "*"), Element.class);
   }
 
   private static FilePosition posOf(Attr a) {

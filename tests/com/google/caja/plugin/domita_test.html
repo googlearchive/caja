@@ -182,7 +182,7 @@
           throw new Error('Failed to load ' + href + ' : ' + xhr.status);
         }
         var htmlAndScript = xhr.responseText.match(
-            /^([\s\S]*?)<script[^>]*>([\s\S]*?)<\/script>$/);
+            /^([\s\S]*?)<script[^>]*>([\s\S]*?)<\/script>\s*$/);
         var div = container.ownerDocument.createElement('DIV');
         div.innerHTML = htmlAndScript[1];
         while (div.firstChild) { container.appendChild(div.firstChild); }

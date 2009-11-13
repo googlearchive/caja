@@ -22,6 +22,7 @@ import com.google.caja.lexer.JsTokenQueue;
 import com.google.caja.lexer.ParseException;
 import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.parser.ParseTreeNode;
+import com.google.caja.parser.html.Namespaces;
 import com.google.caja.parser.html.Nodes;
 import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.Parser;
@@ -65,6 +66,8 @@ import org.w3c.dom.Text;
  * @author mikesamuel@gmail.com
  */
 public class RhinoTestBed {
+  private static final String HTML_NS = Namespaces.HTML_NAMESPACE_URI;
+
   /**
    * Runs the javascript from the given inputs in order, and returns the
    * result.
@@ -112,11 +115,11 @@ public class RhinoTestBed {
 
     List<Element> scripts = new ArrayList<Element>();
     for (Element script : Nodes.nodeListIterable(
-             html.getElementsByTagName("script"), Element.class)) {
+             html.getElementsByTagNameNS(HTML_NS, "script"), Element.class)) {
       scripts.add(script);
     }
     for (Element script : scripts) {
-      Attr src = script.getAttributeNode("src");
+      Attr src = script.getAttributeNodeNS(HTML_NS, "src");
       CharProducer scriptBody;
       if (src != null) {
         String resourcePath = src.getNodeValue();

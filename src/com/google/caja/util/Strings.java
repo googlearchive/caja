@@ -73,7 +73,7 @@ public final class Strings {
   }
   public static String toLowerCase(String s) {
     for (int i = s.length(); --i >= 0;) {
-      int c = s.charAt(i);
+      char c = s.charAt(i);
       if (c <= 'Z' && c >= 'A') {
         char[] chars = s.toCharArray();
         chars[i] = LCASE_CHARS[c];

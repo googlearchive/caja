@@ -547,7 +547,7 @@ var attachDocumentStub = (function () {
   // setTimeout.
   var TimeoutIdMark = ___.Trademark('TimeoutId');
   var TimeoutIdT = TimeoutIdMark.guard;
-  
+
   function tameSetTimeout(timeout, delayMillis) {
     // Existing browsers treat a timeout of null or undefined as a noop.
     var timeoutId;
@@ -576,10 +576,10 @@ var attachDocumentStub = (function () {
     if (rawTimeoutId === rawTimeoutId) { clearTimeout(rawTimeoutId); }
   }
   ___.markFuncFreeze(tameClearTimeout);
-  
+
   var IntervalIdMark = ___.Trademark('IntervalId');
   var IntervalIdT = IntervalIdMark.guard;
-  
+
   function tameSetInterval(interval, delayMillis) {
     // Existing browsers treat an interval of null or undefined as a noop.
     var intervalId;
