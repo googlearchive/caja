@@ -27,25 +27,60 @@ import java.io.IOException;
 import java.util.List;
 
 /**
- * Identifies a fail-stop subset of ECMAScript, e.g. "strict" mode.
+ * An element of a {@code DirectivePrologue}.
  *
  * @author mikesamuel@gmail.com
- * @see UseSubsetDirective
+ * @see DirectivePrologue
  */
-public final class UseSubset extends AbstractParseTreeNode {
-  private final String subsetName;
+public final class Directive extends AbstractParseTreeNode {
+
+  /**
+   * The directive strings recognized by Caja.
+   */
+  public enum RecognizedValue {
+
+    /**
+     * Directive invoking ES5 "strict" mode.
+     */
+    USE_STRICT("use strict"),
+
+    /**
+     * String value of a directive invoking Cajita mode.
+     */
+    USE_CAJITA("use cajita");
+
+    private final String directiveString;
+
+    RecognizedValue(String directiveString) {
+      this.directiveString = directiveString;
+    }
+
+    /**
+     * @return the representation of this directive in source code.
+     */
+    public String getDirectiveString() { return directiveString; }
+
+    public static boolean isDirectiveStringRecognized(String directiveString) {
+      for (RecognizedValue v : values()) {
+        if (v.directiveString.equals(directiveString)) { return true; }
+      }
+      return false;
+    }
+  }
+
+  private final String directiveString;
 
   /** @param children unused.  This ctor is provided for reflection. */
   @ReflectiveCtor
-  public UseSubset(
-      FilePosition pos, String subsetName, List<NoChildren> children) {
-    this(pos, subsetName);
+  public Directive(
+      FilePosition pos, String directiveString, List<NoChildren> children) {
+    this(pos, directiveString);
   }
 
-  public UseSubset(FilePosition pos, String subsetName) {
+  public Directive(FilePosition pos, String directiveString) {
     super(pos);
-    if (subsetName == null) { throw new NullPointerException(); }
-    this.subsetName = subsetName;
+    if (directiveString == null) { throw new NullPointerException(); }
+    this.directiveString = directiveString;
   }
 
   @Override
@@ -55,16 +90,22 @@ public final class UseSubset extends AbstractParseTreeNode {
   }
 
   @Override
-  public String getValue() { return subsetName; }
+  public String getValue() { return directiveString; }
 
-  public String getSubsetName() { return subsetName; }
+  public String getDirectiveString() { return directiveString; }
 
   public void render(RenderContext rc) {
     StringBuilder escaped = new StringBuilder();
     escaped.append('\'');  // Not allowed in JSON so always use single quotes.
-    Escaping.escapeJsString(subsetName, true, true, escaped);
+    Escaping.escapeJsString(directiveString, true, true, escaped);
     escaped.append('\'');
+    if (!escaped.toString().contains(directiveString)) {
+      // Escaping has modified the directive. Render nothing.
+      // See http://code.google.com/p/google-caja/issues/detail?id=1111
+      return;
+    }
     rc.getOut().consume(escaped.toString());
+    rc.getOut().consume(";");
   }
 
   public final TokenConsumer makeRenderer(

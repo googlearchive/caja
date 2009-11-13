@@ -48,8 +48,10 @@ public class ExpressionSanitizerTest extends CajaTestCase {
 
   public final void testBasicRewriting() throws Exception {
     assertSanitize(
-        "g[i];",
-        "var g = ___.readImport(IMPORTS___, 'g');"
+        "  'use strict';"
+        + "'use cajita';"
+        + "g[i];",
+        "  var g = ___.readImport(IMPORTS___, 'g');"
         + "var i = ___.readImport(IMPORTS___, 'i');"
         + "___.readPub(g, i);");
   }
@@ -73,7 +75,7 @@ public class ExpressionSanitizerTest extends CajaTestCase {
   }
 
   private ExpressionSanitizerCaja newPassThruSanitizer() throws Exception {
-    return new ExpressionSanitizerCaja(new TestBuildInfo(), mq, meta) {
+    return new ExpressionSanitizerCaja(new TestBuildInfo(), mq) {
       @Override
       protected Rewriter newCajitaRewriter(MessageQueue mq) {
         return new Rewriter(mq, true, true) {{
@@ -96,7 +98,7 @@ public class ExpressionSanitizerTest extends CajaTestCase {
       throws Exception {
     Block inputNode = js(fromString(input));
     ParseTreeNode sanitized =
-        new ExpressionSanitizerCaja(new TestBuildInfo(), mq, meta)
+        new ExpressionSanitizerCaja(new TestBuildInfo(), mq)
         .sanitize(ac(inputNode));
     String inputCmp = render(sanitized);
 

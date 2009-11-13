@@ -483,58 +483,74 @@
 
   <!-- Cajoles test resources that contain cajita to javascript. -->
   <target name="CajoledTests" depends="pluginc,dirs,CajoledValija">
+    <property name="libplugin" location="${lib}/com/google/caja/plugin"/>
+    <copy file="${tests}/com/google/caja/plugin/domita_test_untrusted.html"
+        tofile="${libplugin}/domita_test_untrusted_valija.html"/>
+    <copy file="${tests}/com/google/caja/plugin/domita_test_untrusted.html"
+        tofile="${libplugin}/domita_test_untrusted_cajita.html"/>
+    <replace file="${libplugin}/domita_test_untrusted_cajita.html">
+     <replacetoken>/*@@cajaLanguageSelectionStatements@@*/</replacetoken>
+     <replacevalue>"use cajita";</replacevalue>
+    </replace>
+    <replace file="${libplugin}/domita_test_untrusted_valija.html">
+     <replacetoken>/*@@cajaLanguageSelectionStatements@@*/</replacetoken>
+     <replacevalue></replacevalue>
+    </replace>
     <transform>
-      <input file="${tests}/com/google/caja/plugin/domita_test_untrusted.html"/>
-      <output file="${lib}/com/google/caja/plugin/domita_test.co.html"
-       language="cajita"/>
-      <output file="${lib}/com/google/caja/plugin/domita_test.vo.html"
-       language="valija"/>
+      <input file="${libplugin}/domita_test_untrusted_valija.html"/>
+      <output file="${libplugin}/domita_test_untrusted_valija.out.html"
+          language="caja"/>
     </transform>
     <transform>
-      <input file="${tests}/com/google/caja/a.js"/>
-      <output file="${lib}/com/google/caja/a.co.js" language="cajita"/>
+      <input file="${libplugin}/domita_test_untrusted_cajita.html"/>
+      <output file="${libplugin}/domita_test_untrusted_cajita.out.html"
+          language="caja"/>
+    </transform>      
+    <transform>
+     <input file="${tests}/com/google/caja/a.js"/>
+     <output file="${lib}/com/google/caja/a.out.js" language="caja"/>
     </transform>
     <transform>
-      <input file="${tests}/com/google/caja/foo/b.js"/>
-      <output file="${lib}/com/google/caja/foo/b.co.js" language="cajita"/>
+     <input file="${tests}/com/google/caja/foo/b.js"/>
+     <output file="${lib}/com/google/caja/foo/b.out.js" language="caja"/>
     </transform>
     <transform>
-      <input file="${tests}/com/google/caja/c.js"/>
-      <output file="${lib}/com/google/caja/c.co.js" language="cajita"/>
+     <input file="${tests}/com/google/caja/c.js"/>
+     <output file="${lib}/com/google/caja/c.out.js" language="caja"/>
     </transform>
     <transform>
-      <input file="${tests}/com/google/caja/recursion.js"/>
-      <output file="${lib}/com/google/caja/recursion.co.js" language="cajita"/>
+     <input file="${tests}/com/google/caja/recursion.js"/>
+     <output file="${lib}/com/google/caja/recursion.out.js" language="caja"/>
     </transform>
     <transform>
-      <input file="${tests}/com/google/caja/x.js"/>
-      <output file="${lib}/com/google/caja/x.vo.js" language="valija"/>
+     <input file="${tests}/com/google/caja/x.js"/>
+     <output file="${lib}/com/google/caja/x.out.js" language="caja"/>
     </transform>
     <transform>
-      <input file="${tests}/com/google/caja/foo/inc.js"/>
-      <output file="${lib}/com/google/caja/foo/inc.vo.js" language="valija"/>
+     <input file="${tests}/com/google/caja/foo/inc.js"/>
+     <output file="${lib}/com/google/caja/foo/inc.out.js" language="caja"/>
     </transform>
     <transform>
-      <input file="${tests}/com/google/caja/add.js"/>
-      <output file="${lib}/com/google/caja/add.vo.js" language="valija"/>
+     <input file="${tests}/com/google/caja/add.js"/>
+     <output file="${lib}/com/google/caja/add.out.js" language="caja"/>
     </transform>
     <transform>
-      <input file="${tests}/com/google/caja/commonJsRecursion.js"/>
-      <output file="${lib}/com/google/caja/commonJsRecursion.vo.js"
-       language="valija"/>
+     <input file="${tests}/com/google/caja/commonJsRecursion.js"/>
+     <output file="${lib}/com/google/caja/commonJsRecursion.out.js"
+      language="caja"/>
     </transform>
     <transform>
-      <input file="${tests}/com/google/caja/foo/f.js"/>
-      <output file="${lib}/com/google/caja/foo/f.co.js" language="cajita"/>
+     <input file="${tests}/com/google/caja/foo/f.js"/>
+     <output file="${lib}/com/google/caja/foo/f.out.js" language="caja"/>
     </transform>
     <transform>
-      <input file="${tests}/com/google/caja/foo/staticinc.js"/>
-      <output file="${lib}/com/google/caja/foo/staticinc.vo.js"
-       language="valija"/>
+     <input file="${tests}/com/google/caja/foo/staticinc.js"/>
+     <output file="${lib}/com/google/caja/foo/staticinc.out.js"
+       language="caja"/>
     </transform>
     <transform>
-      <input file="${tests}/com/google/caja/sum.js"/>
-      <output file="${lib}/com/google/caja/sum.vo.js" language="valija"/>
+     <input file="${tests}/com/google/caja/sum.js"/>
+     <output file="${lib}/com/google/caja/sum.out.js" language="caja"/>
     </transform>
     <copy todir="${lib}">
       <fileset dir="${src}" includes="**/*.html"/>
@@ -543,13 +559,13 @@
   </target>
   <target name="CajoledValija" depends="pluginc">
     <transform>
-      <output file="${lib}/com/google/caja/plugin/valija.co.js"
-       language="cajita"/>
+      <output file="${lib}/com/google/caja/plugin/valija.out.js"
+       language="caja"/>
       <input file="${src}/com/google/caja/valija-cajita.js"/>
     </transform>
     <transform>
-      <output file="${lib}/com/google/caja/plugin/commonjs-sandbox.co.js"
-        language="cajita"/>
+      <output file="${lib}/com/google/caja/plugin/commonjs-sandbox.out.js"
+        language="caja"/>
       <input file="${src}/com/google/caja/commonjs-sandbox.js"/>
     </transform>
   </target>
@@ -850,14 +866,15 @@
   <target name="lolcat-search" depends="dirs,pluginc,MinifiedJs"
    description="IM IN UR BUILD DEMOING UR GADGETZ">
     <transform>
-      <output file="${www}/lolcat-search/searchbox.co.html"
-       language="cajita"/>
+      <output file="${www}/lolcat-search/searchbox.out.js"
+          language="caja" onlyJsEmitted="true"/>
       <input file="${demos}/lolcat-search/searchbox.html"/>
       <depend file="${demos}/lolcat-search/searchbox.css"/>
       <depend file="${demos}/lolcat-search/searchbox.js"/>
     </transform>
     <transform>
-      <output file="${www}/lolcat-search/kittens.co.html" language="cajita"/>
+      <output file="${www}/lolcat-search/kittens.out.js"
+          language="caja" onlyJsEmitted="true"/>
       <input file="${demos}/lolcat-search/kittens.html"/>
       <depend file="${demos}/lolcat-search/katTranzlator.js"/>
       <depend file="${demos}/lolcat-search/kittens.js"/>
@@ -874,6 +891,8 @@
       <fileset dir="${lib}/com/google/caja/plugin">
         <include name="domita-minified.js"/>
         <include name="html-sanitizer-minified.js"/>
+        <include name="valija.out.js"/>
+        <include name="module-promise-minified.js"/>                
       </fileset>
       <fileset dir="${src}/com/google/caja">
         <include name="log-to-console.js"/>
@@ -888,41 +907,47 @@
    depends="dirs,pluginc,MinifiedJs,CajoledValija,lolcat-search"
    description="Explain Caja">
     <transform>
-      <output file="${www}/slides/redirection.co.html" language="valija"
-       ignore="UNSAFE_TAG DISALLOWED_CSS_PROPERTY_IN_SELECTOR"/>
+      <output file="${www}/slides/redirection.out.js" language="caja"
+       ignore="UNSAFE_TAG DISALLOWED_CSS_PROPERTY_IN_SELECTOR"
+       onlyJsEmitted="true"/>
       <input file="${demos}/slides/redirection.html"/>
     </transform>
     <transform>
-      <output file="${www}/slides/history.co.html" language="valija"
-       ignore="UNSAFE_TAG DISALLOWED_CSS_PROPERTY_IN_SELECTOR"/>
+      <output file="${www}/slides/history.out.js" language="caja"
+       ignore="UNSAFE_TAG DISALLOWED_CSS_PROPERTY_IN_SELECTOR"
+       onlyJsEmitted="true"/>
       <input file="${demos}/slides/history.html"/>
     </transform>
     <transform>
-      <output file="${www}/slides/cookie.co.html" language="valija"
-       ignore="UNSAFE_TAG DISALLOWED_CSS_PROPERTY_IN_SELECTOR"/>
+      <output file="${www}/slides/cookie.out.js" language="caja"
+       ignore="UNSAFE_TAG DISALLOWED_CSS_PROPERTY_IN_SELECTOR"
+       onlyJsEmitted="true"/>
       <input file="${demos}/slides/cookie.html"/>
     </transform>
     <transform>
-      <output file="${www}/slides/script-injection.co.html" language="valija"
-       ignore="UNSAFE_TAG DISALLOWED_CSS_PROPERTY_IN_SELECTOR"/>
+      <output file="${www}/slides/script-injection.out.js" language="caja"
+       ignore="UNSAFE_TAG DISALLOWED_CSS_PROPERTY_IN_SELECTOR"
+       onlyJsEmitted="true"/>
       <input file="${demos}/slides/script-injection.html"/>
     </transform>
     <transform>
-      <output file="${www}/slides/tame-alert.co.html" language="valija"
-       ignore="UNSAFE_TAG DISALLOWED_CSS_PROPERTY_IN_SELECTOR"/>
+      <output file="${www}/slides/tame-alert.out.js" language="caja"
+       ignore="UNSAFE_TAG DISALLOWED_CSS_PROPERTY_IN_SELECTOR"
+       onlyJsEmitted="true"/>
       <input file="${demos}/slides/tame-alert.html"/>
     </transform>
 
     <transform>
-      <output file="${www}/slides/searchbox.co.html"
-       language="cajita"/>
-      <input file="${demos}/lolcat-search/searchbox.html"/>
+      <output file="${www}/slides/searchbox.out.js"
+          language="caja" onlyJsEmitted="true"/>
+      <include file="${demos}/lolcat-search/searchbox.html"/>
       <depend file="${demos}/lolcat-search/searchbox.css"/>
       <depend file="${demos}/lolcat-search/searchbox.js"/>
     </transform>
     <transform>
-      <output file="${www}/slides/kittens.co.html" language="cajita"/>
-      <input file="${demos}/lolcat-search/kittens.html"/>
+      <output file="${www}/slides/kittens.out.js"
+          language="caja" onlyJsEmitted="true"/>
+      <include file="${demos}/lolcat-search/kittens.html"/>
       <depend file="${demos}/lolcat-search/katTranzlator.js"/>
       <depend file="${demos}/lolcat-search/kittens.js"/>
     </transform>
@@ -934,7 +959,8 @@
         <include name="html-emitter.js"/>
         <include name="css-defs.js"/>
         <include name="html4-defs.js"/>
-        <include name="valija.co.js"/>
+        <include name="valija.out.js"/>
+        <include name="module-promise-minified.js"/>
         <include name="bridal.js"/>
         <include name="domita.js"/>
         <include name="domita-minified.js"/>
@@ -1014,7 +1040,7 @@
       <fileset dir="${lib}/com/google/caja/plugin">
         <include name="css-defs.js"/>
         <include name="html4-defs.js"/>
-        <include name="valija.co.js"/>
+        <include name="valija.out.js"/>
       </fileset>
       <fileset dir="${third_party}/js/prettify">
         <include name="lang-css.js"/>
@@ -1059,7 +1085,7 @@
         <script type="text/javascript" src="prettify.js"></script>
         <script type="text/javascript" src="lang-css.js"></script>
         <script type="text/javascript" src="testbed.js"></script>
-        <script type="text/javascript" src="valija.co.js"></script>
+        <script type="text/javascript" src="valija.out.js"></script>
         ]]>
       </replacevalue>
     </replace>
@@ -1083,7 +1109,7 @@
       <input file="${third_party}/js/prettify/prettify.js"/>
       <input file="${third_party}/js/prettify/lang-css.js"/>
       <input file="${src}/com/google/caja/demos/applet/testbed.js"/>
-      <input file="${lib}/com/google/caja/plugin/valija.co.js"/>
+      <input file="${lib}/com/google/caja/plugin/valija.out.js"/>
     </transform>
   </target>
 
@@ -1130,8 +1156,8 @@
       <input file="${demos}/calendar/main.js"/>
     </transform>
     <transform>
-      <output file="${lib}/com/google/caja/demos/calendar/calendar.vo.js"
-       language="valija" debug="false"/>
+      <output file="${lib}/com/google/caja/demos/calendar/calendar.out.js"
+       language="caja" debug="false"/>
       <input file="${demos}/calendar/widget.css"/>
       <input file="${demos}/calendar/util.js"/>
       <input file="${demos}/calendar/bitset.js"/>
@@ -1168,8 +1194,7 @@
       </fileset>
       <fileset dir="${lib}/com/google/caja/demos/calendar">
         <include name="*-minified.js"/>
-        <include name="*.vo.js"/>
-        <include name="*.co.js"/>
+        <include name="*.out.js"/>
       </fileset>
       <fileset dir="${demos}/calendar">
         <include name="demo.html"/>
@@ -1179,7 +1204,7 @@
       <fileset dir="${lib}/com/google/caja/plugin">
         <include name="domita-minified.js"/>
         <include name="html-sanitizer-minified.js"/>
-        <include name="valija.co.js"/>
+        <include name="valija.out.js"/>
       </fileset>
       <fileset dir="${third_party}/js/firebug">
         <include name="firebugx.js"/>
@@ -1190,11 +1215,11 @@
   <target name="yuitest" depends="pluginc,dirs,CajoledValija">
     <transform>
       <input file="yuitest/yahoo-dom.js"/>
-      <output file="yuitest/yahoo-dom.vo.js" language="valija"/>
+      <output file="yuitest/yahoo-dom.out.js" language="caja"/>
     </transform>
     <transform>
       <input file="yuitest/dom_test.html"/>
-      <output file="yuitest/dom_test.vo.html" language="valija"/>
+      <output file="yuitest/dom_test.out.html" language="caja"/>
     </transform>
   </target>
 

@@ -35,168 +35,196 @@ public class DebuggingSymbolsStageTest extends CajaTestCase {
 
   public final void testDereferenceNull() throws Exception {
     assertStackTrace(
-        "var x = null;\n"
+         "'use strict';\n"
+        + "'use cajita';\n"
+        + "var x = null;\n"
         + "var xDotFoo = (x).foo;",
-        //                ^^^^^^ 2+16-22
+        //                ^^^^^^ 4+16-22
 
-        "testDereferenceNull:2+16 - 22");
+        "testDereferenceNull:4+16 - 22");
   }
 
   public final void testCallOnNullObject() throws Exception {
     assertStackTrace(
-        "{\n"
+        "'use strict';\n"
+       + "'use cajita';\n"
+        + "{\n"
         + "  function f(x) { return x.foo(); }\n"
-        //                          ^^^^^ 2+26-31
+        //                          ^^^^^ 4+26-31
         + "  function g() { return f(null); }\n"
-        //                         ^ 3+25-26
+        //                         ^ 5+25-26
         + "\n"
         + "  g();\n"
-        //   ^ 5+3-4
+        //   ^ 7+3-4
         + "}",
 
-        "testCallOnNullObject:5+3 - 4\n"
-        + "testCallOnNullObject:3+25 - 26\n"
-        + "testCallOnNullObject:2+26 - 31");
+        "testCallOnNullObject:7+3 - 4\n"
+        + "testCallOnNullObject:5+25 - 26\n"
+        + "testCallOnNullObject:4+26 - 31");
   }
 
   public final void testCallUndefinedMethod() throws Exception {
     assertStackTrace(
-        "{\n"
+        "'use strict';\n"
+        + "'use cajita';\n"
+        + "{\n"
         + "  function f(x) { return x.noSuchMethod(); }\n"
-        //                          ^^^^^^^^^^^^^^ 2+26-40
+        //                          ^^^^^^^^^^^^^^ 4+26-40
         + "  function g() { return f(new Date); }\n"
-        //                         ^ 3+25-26
+        //                         ^ 5+25-26
         + "\n"
         + "  g();\n"
-        //   ^ 5+3-4
+        //   ^ 7+3-4
         + "}",
 
-        "testCallUndefinedMethod:5+3 - 4\n"
-        + "testCallUndefinedMethod:3+25 - 26\n"
-        + "testCallUndefinedMethod:2+26 - 40");
+        "testCallUndefinedMethod:7+3 - 4\n"
+        + "testCallUndefinedMethod:5+25 - 26\n"
+        + "testCallUndefinedMethod:4+26 - 40");
   }
 
   public final void testReflectiveInvocation() throws Exception {
     // Constructors cannot be called or applied unless they are also simple fns.
     assertStackTrace(
-        "Date.call({}, 4);\n",
-        //^^^^^^^^^^^^^^ 1+1 - 16
-        "testReflectiveInvocation:1+1 - 16");
+        "'use strict';\n"
+        + "'use cajita';\n"
+        + "Date.call({}, 4);\n",
+        //^^^^^^^^^^^^^^ 3+1 - 16
+        "testReflectiveInvocation:3+1 - 16");
     assertStackTrace(
-        "Date.apply({}, 4);\n",
-        //^^^^^^^^^^^^^^^ 1+1 - 17
-        "testReflectiveInvocation:1+1 - 17");
+        "'use strict';\n"
+        + "'use cajita';\n"
+        + "Date.apply({}, 4);\n",
+        //^^^^^^^^^^^^^^^ 3+1 - 17
+        "testReflectiveInvocation:3+1 - 17");
   }
 
   public final void testInaccessibleProperty() throws Exception {
     assertStackTrace(
-        "{\n"
+        "'use strict';\n"
+        + "'use cajita';\n"
+        + "{\n"
         + "  function f(x, k) { return x['foo_'] = 0; }\n"
-        //                             ^^^^^^^^^^^^^ 2+29-42
+        //                             ^^^^^^^^^^^^^ 4+29-42
         + "  f(new Date);\n"
-        //   ^ 3+3-4
+        //   ^ 5+3-4
         + "}",
 
-        "testInaccessibleProperty:3+3 - 4\n"
-        + "testInaccessibleProperty:2+29 - 42");
+        "testInaccessibleProperty:5+3 - 4\n"
+        + "testInaccessibleProperty:4+29 - 42");
   }
 
   public final void testSetOfNullObject() throws Exception {
     assertStackTrace(
-        "(null).x = 0;",
-        //^^^^^^^^^^^ 1+2-13
-        "testSetOfNullObject:1+2 - 13");
+        "'use strict';\n"
+        + "'use cajita';\n"
+        + "(null).x = 0;",
+        //^^^^^^^^^^^ 3+2-13
+        "testSetOfNullObject:3+2 - 13");
   }
 
   public final void testDeleteOfNullObject() throws Exception {
     assertStackTrace(
-        "{ delete (null).x; }",
-        // ^^^^^^^^^^^^^^^ 1+3-18
-        "testDeleteOfNullObject:1+3 - 18");
+        "'use strict';\n"
+         + "'use cajita';\n"
+        + "{ delete (null).x; }",
+        // ^^^^^^^^^^^^^^^ 3+3-18
+        "testDeleteOfNullObject:3+3 - 18");
   }
 
   public final void testSetOfFrozenObject() throws Exception {
     assertStackTrace(
         ""
+        + "'use strict';\n"
+        + "'use cajita';\n"
         + "var o = cajita.freeze({ x: 1 });\n"
         + "(null).x = 0;",
-        //  ^^^^^^^^^^^ 2+2-13
-        "testSetOfFrozenObject:2+2 - 13");
+        //  ^^^^^^^^^^^ 4+2-13
+        "testSetOfFrozenObject:4+2 - 13");
   }
 
   public final void testDeleteOfFrozenObject() throws Exception {
     assertStackTrace(
         ""
+        + "'use strict';\n"
+        + "'use cajita';\n"
         + "var o = cajita.freeze({ x: 1 });\n"
         + "delete (null).x;",
-        // ^^^^^^^^^^^^^^^ 2+1-16
-        "testDeleteOfFrozenObject:2+1 - 16");
+        // ^^^^^^^^^^^^^^^ 4+1-16
+        "testDeleteOfFrozenObject:4+1 - 16");
   }
 
   @FailureIsAnOption
   public final void testEnumerateOfNull() throws Exception {
     assertStackTrace(
         ""
+        + "'use strict';\n"
+        + "'use cajita';\n"
         + "{\n"
         + "  (function () {\n"
-        //    ^ 2+4
+        //    ^ 4+4
         + "    var myObj = null;\n"
         + "    for (var k in myObj) {\n"
-        //                   ^^^^^ 4+19-24
+        //                   ^^^^^ 6+19-24
         + "      ;\n"
         + "    }\n"
         + "  })();\n"
-        //   ^ 7+4
+        //   ^ 9+4
         + "}",
 
-        "testEnumerateOfNull:2+4 - 7+4\n"
-        + "testEnumerateOfNull:4+19 - 24");
+        "testEnumerateOfNull:4+4 - 9+4\n"
+        + "testEnumerateOfNull:6+19 - 24");
   }
 
   public final void testPropertyInNull() throws Exception {
     assertStackTrace(
         ""
+        + "'use strict';\n"
+        + "'use cajita';\n"
         + "(function (x) {\n"
-        //  ^ 1+2
-        + "  return 'k' in x;\n"
-        //          ^^^^^^^^ 2+10-18
-        + "})(null);",
         //  ^ 3+2
+        + "  return 'k' in x;\n"
+        //          ^^^^^^^^ 4+10-18
+        + "})(null);",
+        //  ^ 5+2
 
-        "testPropertyInNull:1+2 - 3+2\n"
-        + "testPropertyInNull:2+10 - 18");
+        "testPropertyInNull:3+2 - 5+2\n"
+        + "testPropertyInNull:4+10 - 18");
   }
 
   public final void testConstruction() throws Exception {
     assertStackTrace(
         ""
+        + "'use strict';\n"
+        + "'use cajita';\n"
         + "var foo = function () { throw new Error('hi'); };\n"
-        //                         ^^^^^^^^^^^^^^^^^^^^^ 1+25-46
+        //                         ^^^^^^^^^^^^^^^^^^^^^ 3+25-46
         + "new foo();",
-        // ^^^^^^^^^ 2+1-10
+        // ^^^^^^^^^ 4+1-10
 
-        "testConstruction:2+1 - 10\n"
-        + "testConstruction:1+25 - 46"
+        "testConstruction:4+1 - 10\n"
+        + "testConstruction:3+25 - 46"
         );
   }
 
   public final void testIllegalAccessInsideHoistedFunction() throws Exception {
     assertStackTrace(
-        "var x = true;\n"
+        "'use strict';\n"
+        + "'use cajita';\n"
+        + "var x = true;\n"
         + "var foo = {};\n"
         + "if (x) {\n"
         + "  var y = 5;\n"
         + "  function f() {\n"
         + "    var x = 'y___';\n"
         + "    foo[x] = 1;\n"
-        //     ^^^^^^^^^^ 7+5 - 15
+        //     ^^^^^^^^^^ 9+5 - 15
         + "  }\n"
         + "}\n"
         + "new f();",
-        // ^^^^^^^ 10+1 - 8
+        // ^^^^^^^ 12+1 - 8
 
-        "testIllegalAccessInsideHoistedFunction:10+1 - 8\n"
-        + "testIllegalAccessInsideHoistedFunction:7+5 - 15");
+        "testIllegalAccessInsideHoistedFunction:12+1 - 8\n"
+        + "testIllegalAccessInsideHoistedFunction:9+5 - 15");
   }
 
   public final void testWrappedConstructors() throws Exception {
@@ -266,12 +294,16 @@ public class DebuggingSymbolsStageTest extends CajaTestCase {
             getClass(), "/js/json_sans_eval/json_sans_eval.js"),
         new Executor.Input(getClass(), "/com/google/caja/cajita.js"),
         new Executor.Input(js, getName()));
-    runCajoled("result(" + js + ");", golden,
-               "var output = '<no-output>';"
-               + "___.getNewModuleHandler().getImports().result = "
-               + "    ___.markFuncFreeze(function (x) { output = x; });"
-               + "%s;"
-               + "output");
+    runCajoled(
+        "'use strict';\n"
+        + "'use cajita';\n"
+        + "result(" + js + ");",
+        golden,
+        "  var output = '<no-output>';"
+        + "___.getNewModuleHandler().getImports().result = "
+        + "    ___.markFuncFreeze(function (x) { output = x; });"
+        + "%s;"
+        + "output");
   }
 
   private void runCajoled(String js, Object golden, String context)

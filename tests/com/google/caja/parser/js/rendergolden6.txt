@@ -1,4 +1,5 @@
 {
+  'use foo';
   var w = /\x3cscript\x3e/;
   var x = a < /script\x3e/;
   var y = [ [ 0 ] ] > 1;

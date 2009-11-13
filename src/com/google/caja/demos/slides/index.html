@@ -29,7 +29,8 @@
     <script type="text/javascript" src="log-to-console.js"></script>
     <script type="text/javascript" src="domita-minified.js"></script>
     <script type="text/javascript" src="html-sanitizer-minified.js"></script>
-
+    <script type="text/javascript" src="module-promise-minified.js"></script>
+    
     <script type="text/javascript">(function () {
       ___.sharedImports.console = {};
       for (var k in { log: 0, warn: 0, info: 0, error: 0, trace: 0,
@@ -43,69 +44,97 @@
       }
     })();</script>
 
-    <script type="text/javascript">
-      function makeXhr() {
-        if (typeof XMLHttpRequest === 'undefined') {
-          var activeXClassIds = [
-              'MSXML2.XMLHTTP.5.0', 'MSXML2.XMLHTTP.4.0', 'MSXML2.XMLHTTP.3.0',
-              'MSXML2.XMLHTTP', 'MICROSOFT.XMLHTTP.1.0', 'MICROSOFT.XMLHTTP.1',
-              'MICROSOFT.XMLHTTP'];
-          for (var i = 0, n = activeXClassIds.length; i < n; i++) {
-            var candidate = activeXClassIds[i];
-            try {
-              return new ActiveXObject(candidate);
-            } catch (e) {}
-          }
-        }
-        return new XMLHttpRequest;
-      }
+    <!-- Google Search API as documented at
+        - http://code.google.com/apis/ajaxsearch/documentation/reference.html -->
+    <!-- This allows us to serve from 127.0.0.1 -->
+    <!--script type="text/javascript" src="http://www.google.com/jsapi?key=ABQIAAAARYHJOWhGvC-hnHaFO4oa7BRi_j0U6kJrkFvY4-OX2XYmEAa76BTIOZulNVZlEl6ODqNB1GWqhRyqZQ"></script-->
+    <!-- Ihis allows us to serve from google-caja.googlecode.com -->
+    <script type="text/javascript" src="http://www.google.com/jsapi?key=ABQIAAAARYHJOWhGvC-hnHaFO4oa7BRvHrijLxG0Kbzp8ris5IURMLbrEBS7CZj1UJz7CIXsA-YHseffaxlnlQ"></script>
 
-      function inlineHtml(href, container) {
-        var xhr = makeXhr();
-        xhr.open('GET', href, false);
-        xhr.send(null);
-        if (xhr.status !== 200 && xhr.status !== 0) {
-          throw new Error('Failed to load ' + href + ' : ' + xhr.status);
-        }
-        var htmlAndScript = xhr.responseText.match(
-            /^([\s\S]*?)<script[^>]*>([\s\S]*?)<\/script>$/);
-        var div = container.ownerDocument.createElement('DIV');
-        div.innerHTML = htmlAndScript[1];
-        while (div.firstChild) { container.appendChild(div.firstChild); }
-        (new Function(htmlAndScript[2]))();
-      }
+    <!-- Container code. -->
+    <script type="text/javascript">google.load('search', '1');</script>
+    <script type="text/javascript" src="searchengine.js"></script>
+    <script type="text/javascript" src="chtml.js"></script>
+
+    <script>
+      google.load('search', '1');
+      var searchEngine = new SearchEngine();
+
+      var xhrModuleLoad = xhrModuleLoadMaker(
+          document.location.toString(),
+          function moduleIdResolver(base, input) {
+            return defaultModuleIdResolver(base, input + '.out.js');
+          });
+
+      var modulesVow =
+          xhrModuleLoad.asyncAll(['valija', 'searchbox', 'kittens']);
+
+      var newIsolatedGadget = function(id, moduleName) {
+        var newImports = ___.copy(___.sharedImports);
+        newImports.outers = newImports;
+        attachDocumentStub('-' + id, { rewrite: function () { return null; } },
+            newImports, document.getElementById('base-' + id));
+        newImports.htmlEmitter___ = new HtmlEmitter(
+            document.getElementById('base-' + id));
+        ___.getNewModuleHandler().setImports(newImports);
+        Q.when(xhrModuleLoad.asyncAll(['valija', moduleName]),
+            function(modules) {
+              newImports.$v = modules['valija'].CALL___(newImports.outers);
+              modules[moduleName].CALL___(newImports);
+            });
+      };
+
+      Q.when(modulesVow, function(modules) {
+
+        // Initialize separate global namespaces for each plugin
+
+        var searchBoxImports;
+        var kittensImports;
+
+        searchBoxImports = ___.copy(___.sharedImports);
+        attachDocumentStub(
+            '-searchbox', { rewrite: function () { return null; } },
+            searchBoxImports, document.getElementById('base-searchbox'));
+        searchBoxImports.htmlEmitter___ = new HtmlEmitter(
+            document.getElementById('base-searchbox'));
+        searchBoxImports.outers = searchBoxImports;
+        searchBoxImports.$v = modules['valija'].CALL___({
+          outers: searchBoxImports.outers
+        });
+
+        kittensImports = ___.copy(___.sharedImports);
+        kittensImports.exports = {};
+        ___.grantRead(searchBoxImports, 'exports');
+        attachDocumentStub(
+            '-kittens', { rewrite: function (url, mimeType) {
+                            return /^image\//.test(mimeType) ? url : null;
+                          } },
+            kittensImports, document.getElementById('base-kittens'));
+        kittensImports.htmlEmitter___ = new HtmlEmitter(
+            document.getElementById('base-kittens'));
+        kittensImports.outers = kittensImports;
+        kittensImports.$v = modules['valija'].CALL___({
+          outers: kittensImports.outers
+        });
+
+        // Inject some capabilities into the 2 plugins
+
+        // Provide both modules an interface to Google search.
+        searchBoxImports.searchEngine = kittensImports.searchEngine
+            = searchEngine;
+        ___.grantRead(searchBoxImports, 'searchEngine');
+        ___.grantRead(kittensImports, 'searchEngine');
+
+        modules['kittens'].CALL___(kittensImports);
+
+        // Allow searchBoxImports to talk to kittens.
+        searchBoxImports.resultConsumer = kittensImports.exports.showKitten;
+        ___.grantRead(searchBoxImports, 'resultConsumer');
+
+        modules['searchbox'].CALL___(searchBoxImports);
+      });
+
     </script>
-<script>
-var valijaMaker = undefined;
-
-(function(){
-  var imports = ___.copy(___.sharedImports);
-  imports.loader = {
-    provide: function(v) { valijaMaker = v; }
-  };
-  ___.grantRead(imports, 'loader');
-  ___.grantFunc(imports.loader, 'provide');
-  ___.getNewModuleHandler().setImports(imports);
-  ___.getNewModuleHandler().handleUncaughtException = function(e) {
-    throw e;
-  };
- })();
-</script>
-    <script type="text/javascript" src="valija.co.js"></script>
-<script>
-var newIsolatedGadget = (function() {
-  return function(id) {
-    var newImports = ___.copy(___.sharedImports);
-    newImports.outers = newImports;
-    attachDocumentStub('-' + id, { rewrite: function () { return null; } },
-    newImports, document.getElementById('base-' + id));
-    newImports.htmlEmitter___ = new HtmlEmitter(
-    document.getElementById('base-' + id));
-    ___.getNewModuleHandler().setImports(newImports);
-    newImports.$v = valijaMaker.CALL___(newImports.outers);
-  }
-})();
-</script>
   </head>
   <body>
     <div class="background"></div>
@@ -225,17 +254,6 @@ var newIsolatedGadget = (function() {
     <div class="slide">
       <h1>LOLcat Search</h1>
 
-        <!-- Google Search API as documented at
-            - http://code.google.com/apis/ajaxsearch/documentation/reference.html -->
-        <!-- This allows us to serve from 127.0.0.1 -->
-        <!--script type="text/javascript" src="http://www.google.com/jsapi?key=ABQIAAAARYHJOWhGvC-hnHaFO4oa7BRi_j0U6kJrkFvY4-OX2XYmEAa76BTIOZulNVZlEl6ODqNB1GWqhRyqZQ"></script-->
-        <!-- Ihis allows us to serve from google-caja.googlecode.com -->
-        <script type="text/javascript" src="http://www.google.com/jsapi?key=ABQIAAAARYHJOWhGvC-hnHaFO4oa7BRvHrijLxG0Kbzp8ris5IURMLbrEBS7CZj1UJz7CIXsA-YHseffaxlnlQ"></script>
-
-        <!-- Container code. -->
-        <script type="text/javascript">google.load('search', '1');</script>
-        <script type="text/javascript" src="searchengine.js"></script>
-        <script type="text/javascript" src="chtml.js"></script>
         <script type="text/javascript">
             ___.sharedImports.StringInterpolation = StringInterpolation;
             ___.grantFunc(___.sharedImports, 'StringInterpolation');
@@ -252,64 +270,6 @@ var newIsolatedGadget = (function() {
         <!-- And another for the searchbox gadget. -->
         <div class=searchbox><ul id="results-searchbox"></ul></div>
 
-        <!--
-            - Initialize separate global namespaces for each plugin as specified at
-            - http://code.google.com/p/google-caja/wiki/CajaHostingModules
-         -->
-        <script type="text/javascript">
-          var searchBoxImports = ___.copy(___.sharedImports);
-          attachDocumentStub(
-              '-searchbox', { rewrite: function () { return null; } },
-              searchBoxImports, document.getElementById('base-searchbox'));
-          searchBoxImports.htmlEmitter___ = new HtmlEmitter(
-              document.getElementById('base-searchbox'));
-        </script>
-        <script type="text/javascript">
-          var kittensImports = ___.copy(___.sharedImports);
-          kittensImports.exports = {};
-          ___.grantRead(searchBoxImports, 'exports');
-          attachDocumentStub(
-              '-kittens', { rewrite: function (url, mimeType) {
-                                       return /^image\//.test(mimeType) ? url : null;
-                                     } },
-              kittensImports, document.getElementById('base-kittens'));
-          kittensImports.htmlEmitter___ = new HtmlEmitter(
-              document.getElementById('base-kittens'));
-        </script>
-
-        <!-- Inject some capabilities into the 2 plugins. -->
-        <script type="text/javascript">
-        (function () {
-          google.load('search', '1');
-
-          var searchEngine = new SearchEngine();
-
-          // Provide both modules an interface to Google search.
-          searchBoxImports.searchEngine = kittensImports.searchEngine
-              = searchEngine;
-          ___.grantRead(searchBoxImports, 'searchEngine');
-          ___.grantRead(kittensImports, 'searchEngine');
-        })();
-        </script>
-
-        <script type="text/javascript">
-          ___.getNewModuleHandler().setImports(kittensImports);
-          inlineHtml('kittens.co.html',
-                     document.getElementById('base-kittens'));
-        </script>
-
-
-        <!-- Allow searchBoxImports to talk to kittens. -->
-        <script type="text/javascript">
-          searchBoxImports.resultConsumer = kittensImports.exports.showKitten;
-          ___.grantRead(searchBoxImports, 'resultConsumer');
-        </script>
-
-        <script type="text/javascript">
-          ___.getNewModuleHandler().setImports(searchBoxImports);
-          inlineHtml('searchbox.co.html',
-                     document.getElementById('base-searchbox'));
-        </script>
         <div class="handout">
         </div>
     </div>
@@ -342,9 +302,7 @@ var newIsolatedGadget = (function() {
       <script type="text/javascript">
       </script>
       <script type="text/javascript">
-        newIsolatedGadget('attackRedirection');
-        inlineHtml('redirection.co.html',
-                   document.getElementById('base-attackRedirection'));
+        newIsolatedGadget('attackRedirection', 'redirection');
       </script>
 
       <div class="vbox">
@@ -383,9 +341,7 @@ redirected to phishing and malware sites.
         </div>
       </div>
       <script type="text/javascript">
-        newIsolatedGadget('attackHistory');
-        inlineHtml('history.co.html',
-                   document.getElementById('base-attackHistory'));
+        newIsolatedGadget('attackHistory', 'history');
       </script>
 
       <div class="vbox">
@@ -425,9 +381,7 @@ var visited = computedColor == 'rgb(0, 0, 0)' ? "Yes!" : "Unknown";
       </div>
       <script type="text/javascript">document.cookie = "secret cookie"</script>
       <script type="text/javascript">
-        newIsolatedGadget('attackCookie');
-        inlineHtml('cookie.co.html',
-                   document.getElementById('base-attackCookie'));
+        newIsolatedGadget('attackCookie', 'cookie');
       </script>
 
       <div class="vbox">
@@ -461,9 +415,7 @@ var visited = computedColor == 'rgb(0, 0, 0)' ? "Yes!" : "Unknown";
         </div>
       </div>
       <script type="text/javascript">
-        newIsolatedGadget('attackScript');
-        inlineHtml('script-injection.co.html',
-                   document.getElementById('base-attackScript'));
+        newIsolatedGadget('attackScript', 'script-injection');
       </script>
 
       <div class="vbox">

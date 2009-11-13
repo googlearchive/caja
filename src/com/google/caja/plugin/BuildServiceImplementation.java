@@ -148,16 +148,10 @@ public class BuildServiceImplementation implements BuildService {
     boolean passed = true;
     ParseTreeNode outputJs;
     Node outputHtml;
-    if (!"javascript".equals(language)) {
+    if ("caja".equals(language)) {
       PluginMeta meta = new PluginMeta(env);
       meta.setDebugMode(Boolean.TRUE.equals(options.get("debug")));
-      if ("valija".equals(language)) {
-        meta.setValijaMode(true);
-      } else if ("cajita".equals(language)) {
-        meta.setValijaMode(false);
-      } else {
-        throw new RuntimeException("Unrecognized language: " + language);
-      }
+      meta.setOnlyJsEmitted(Boolean.TRUE.equals(options.get("onlyJsEmitted")));
       PluginCompiler compiler =
           new PluginCompiler(BuildInfo.getInstance(), meta, mq);
       compiler.setMessageContext(mc);
@@ -183,7 +177,7 @@ public class BuildServiceImplementation implements BuildService {
 
       outputJs = passed ? compiler.getJavascript() : null;
       outputHtml = passed ? compiler.getStaticHtml() : null;
-    } else {
+    } else if ("javascript".equals(language)) {
       passed = true;
       JsOptimizer optimizer = new JsOptimizer(mq);
       for (File f : inputs) {
@@ -204,6 +198,8 @@ public class BuildServiceImplementation implements BuildService {
       }
       outputJs = optimizer.optimize();
       outputHtml = null;
+    } else {
+      throw new RuntimeException("Unrecognized language: " + language);
     }
     passed = passed && !hasErrors(mq);
 

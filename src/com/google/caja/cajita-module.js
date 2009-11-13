@@ -14,7 +14,7 @@
 
 /**
  * @author maoziqing@gmail.com
- * @requires ___
+ * @requires ___, bridal
  * @provides xhrModuleLoadMaker, scriptModuleLoadMaker, clearModuleCache
  *
  * Each load maker object, given a current module identifier and an
@@ -26,6 +26,7 @@
  */
 var xhrModuleLoadMaker;
 var scriptModuleLoadMaker;
+var defaultModuleIdResolver;
 var clearModuleCache;
 
 (function() {
@@ -38,7 +39,7 @@ var clearModuleCache;
     return src;
   }
 
-  function defaultMidResolver(mid, src) {
+  defaultModuleIdResolver = function(mid, src) {
     if (src[0] !== '.') {
       return src;
     }
@@ -65,7 +66,7 @@ var clearModuleCache;
     }
 
     return newMid;
-  }
+  };
 
   function syncLoad(mid) {
     mid = addJsExtension(mid);
@@ -79,10 +80,40 @@ var clearModuleCache;
     var load = function(src) {
       return syncLoad(midResolver(mid, src));
     };
-    load.FUNC___ = 'load';
-    ___.setStatic(load, 'async', ___.markFuncFreeze(function (src) {
+
+    var async = function(src) {
       return asyncLoad(midResolver(mid, src), midResolver);
-    }));
+    };
+
+    var asyncAll = function(moduleNames) {
+      var r = Q.defer();
+      var i;
+      var modulePromises = [];
+      var modules = {};
+
+      for (i = 0; i < moduleNames.length; ++i) {
+        modulePromises[i] = async(moduleNames[i]);
+      }
+
+      var waitNext = function(idx) {
+        if (idx === moduleNames.length) {
+          r.resolve(modules);
+        } else {
+          Q.when( modulePromises[idx], function(theModule) {
+            modules[moduleNames[idx]] = theModule;
+            waitNext(idx + 1);
+          }, function(reason) {
+            r.resolve(Q.reject(reason));
+          });
+        }
+      };
+      waitNext(0);
+      return r.promise();
+    };
+    
+    load.FUNC___ = 'load';
+    ___.setStatic(load, 'async', ___.markFuncFreeze(async));
+    ___.setStatic(load, 'asyncAll', ___.markFuncFreeze(asyncAll));
     return ___.primFreeze(load);
   }
 
@@ -121,7 +152,9 @@ var clearModuleCache;
     }
 
     var r = Q.defer();
-    var xhr = new XMLHttpRequest();  // TODO(mikesamuel): get working on IE
+    cache[mid] = r.promise;
+
+    var xhr = bridal.makeXhr();
     xhr.onreadystatechange = function() {
       if (xhr.readyState === 4) {
         if (xhr.status === 200) {
@@ -132,7 +165,6 @@ var clearModuleCache;
                 var load = loadMaker(mid, midResolver, xhrAsyncLoad);
                 module.moduleId = mid;
                 var securedModule = ___.prepareModule(module, load);
-                cache[mid] = r.promise;
                 var dependency = resolveDependency(module, load);
                 Q.when(dependency, function(result) {
                                      r.resolve(securedModule);
@@ -161,14 +193,16 @@ var clearModuleCache;
     };
 
     xhr.open("GET", mid, true);
-    xhr.overrideMimeType("application/javascript");
+    if (typeof xhr.overrideMimeType === 'function') {
+      xhr.overrideMimeType("application/javascript");
+    }
     xhr.send(null);
     return r.promise;
   }
 
   xhrModuleLoadMaker = ___.markFuncFreeze(function(mid, midResolver) {
     if (midResolver === undefined) {
-      midResolver = defaultMidResolver;
+      midResolver = defaultModuleIdResolver;
     }
 
     return loadMaker(mid, midResolver, xhrAsyncLoad);
@@ -185,44 +219,58 @@ var clearModuleCache;
     }
 
     var r = Q.defer();
+    cache[mid] = r.promise; 
 
     function dequeue() {
       if (head < queue.length) {
         busy = true;
         var savedHead = head;
 
-        ___.setNewModuleHandler(___.primFreeze({
-          handle: ___.markFuncFreeze(function theHandler(module) {
-            if (savedHead === head) {
-              var r = queue[head].defer;
-              try {
-                var curMid = queue[head].mid;
-                var load = loadMaker(curMid, midResolver, scriptAsyncLoad);
-                module.moduleId = mid;
-                var securedModule = ___.prepareModule(module, load);
-                cache[curMid] = r.promise;
+        // TODO(ihab.awad): Modifying a frozen structure (the new module
+        // handler) in un-cajoled code is possible but poor practice.
 
-                var dependency = resolveDependency(module, load);
-                Q.when(dependency, function(result) {
-                                     r.resolve(securedModule);
-                                   },
-                                   function(reason) {
-                                     r.resolve(Q.reject(
-                                         "Resolving dependency for the module "
-                                         + curMid + " failed."));
-                                   });
-              } catch (e) {
-                r.resolve(Q.reject(e));
+        // TODO(ihab.awad): Consider refactoring the <script> module loader to
+        // always use a JSONP-style callback function so that it does not
+        // trample on code that uses the standard ___.loadModule().
+
+        // TODO(ihab.awad): Consider deprecating the entire newModuleHandler
+        // system since it relies on globally visible modifications to "___";
+        // instead maybe we should just cajole to a well-known callback if none
+        // is supplied, like:
+        //     cajaModuleCallback___(___.prepareModule({ ... module ... }));
+
+        var newModuleHandler = ___.makeNormalNewModuleHandler();
+        newModuleHandler.handle = ___.markFuncFreeze(
+            function theHandler(module) {
+              if (savedHead === head) {
+                var r = queue[head].defer;
+                try {
+                  var curMid = queue[head].mid;
+                  var load = loadMaker(curMid, midResolver, scriptAsyncLoad);
+                  module.moduleId = mid;
+                  var securedModule = ___.prepareModule(module, load);
+
+                  var dependency = resolveDependency(module, load);
+                  Q.when(dependency,
+                      function(result) {
+                        r.resolve(securedModule);
+                      },
+                      function(reason) {
+                        r.resolve(Q.reject(
+                            "Resolving dependency for the module "
+                            + curMid + " failed."));
+                      });
+                } catch (e) {
+                  r.resolve(Q.reject(e));
+                }
+                delete queue[head];
+                head++;
+                dequeue();
+              } else {
+                throw new Error('Module queue got out of sync');
               }
-              delete queue[head];
-              head++;
-              dequeue();
-            } else {
-              // this should not happen
-              // the module may have been mistakenly treated as a failure
-            }
-          })
-        }));
+            });
+        ___.setNewModuleHandler(newModuleHandler);
 
         function timeout() {
           if (savedHead === head) {
@@ -252,7 +300,7 @@ var clearModuleCache;
         };
         document.getElementsByTagName('head')[0].appendChild(script);
       } else {
-            busy = false;
+        busy = false;
       }
     }
 
@@ -270,7 +318,7 @@ var clearModuleCache;
 
   scriptModuleLoadMaker =  ___.markFuncFreeze(function(mid, midResolver) {
     if (midResolver === undefined) {
-      midResolver = defaultMidResolver;
+      midResolver = defaultModuleIdResolver;
     }
 
     return loadMaker(mid, midResolver, scriptAsyncLoad);

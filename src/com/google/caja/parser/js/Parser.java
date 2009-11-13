@@ -33,6 +33,7 @@ import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.MessageType;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.Pair;
+import com.google.caja.util.Lists;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -305,8 +306,8 @@ public final class Parser extends ParserBase {
   private Block parseProgramOrFunctionBody() throws ParseException {
     Mark m = tq.mark();
     List<Statement> stmts = new ArrayList<Statement>();
-    UseSubsetDirective usd = parseOptionalUseSubsetDirective();
-    if (usd != null) { stmts.add(usd); }
+    DirectivePrologue prologue = parseOptionalDirectivePrologue();
+    if (prologue != null) { stmts.add(prologue); }
     while (!tq.isEmpty() && !tq.lookaheadToken(Punctuation.RCURLY)) {
       stmts.add(parseTerminatedStatement());
     }
@@ -315,38 +316,69 @@ public final class Parser extends ParserBase {
     return b;
   }
 
-  private UseSubsetDirective parseOptionalUseSubsetDirective()
+  private DirectivePrologue parseOptionalDirectivePrologue()
       throws ParseException {
+    // Quick return if we are sure we will not accumulate anything
     if (tq.isEmpty() || tq.peek().type != JsTokenType.STRING) { return null; }
-    Mark m = tq.mark();
-    Token<JsTokenType> quotedString = tq.pop();
-    if (!tq.checkToken(Punctuation.SEMI)) {
-      tq.rewind(m);
-      return null;
-    }
-    String decoded = StringLiteral.getUnquotedValueOf(quotedString.text);
-    if (!(decoded.startsWith("use")
-          && (decoded.length() == 3
-              || JsLexer.isJsSpace(decoded.charAt(3))))) {
-      tq.rewind(m);
-      return null;
+
+    Mark startOfPrologue = tq.mark();
+    List<Directive> directives = Lists.newArrayList();
+    
+    while (tq.peek().type == JsTokenType.STRING) {
+      Mark startOfDirective = tq.mark();
+      Token<JsTokenType> quotedString = tq.pop();
+
+      boolean isDirective = false;
+      switch(tq.peek().type) {
+        case STRING:
+        case REGEXP:
+        case WORD:
+        case INTEGER:
+        case FLOAT:
+        case KEYWORD:
+        case COMMENT:
+          isDirective = true;
+          mq.addMessage(
+              MessageType.SEMICOLON_INSERTED,
+              FilePosition.endOf(quotedString.pos));
+          break;
+        case PUNCTUATION:
+          if (tq.lookaheadToken(Punctuation.SEMI)) {
+            isDirective = true;
+            tq.pop();
+          } else if (tq.lookaheadToken(Punctuation.RCURLY)) {
+            isDirective = true;
+            mq.addMessage(
+                MessageType.SEMICOLON_INSERTED,
+                FilePosition.endOf(quotedString.pos));
+          }
+          break;
+        case LINE_CONTINUATION:
+          break;
+      }
+
+      if (!isDirective) {
+        tq.rewind(startOfDirective);
+        break;
+      }
+      
+      String decoded = StringLiteral.getUnquotedValueOf(quotedString.text);
+      if (!Directive.RecognizedValue.isDirectiveStringRecognized(decoded)) {
+        mq.addMessage(
+            MessageType.UNRECOGNIZED_DIRECTIVE_IN_PROLOGUE,
+            quotedString.pos, MessagePart.Factory.valueOf(decoded));
+      }
+
+      directives.add(new Directive(
+          FilePosition.startOf(quotedString.pos), decoded));
     }
 
-    FilePosition quotedStringStart = FilePosition.startOf(quotedString.pos);
-    List<UseSubset> subsets = new ArrayList<UseSubset>();
-    for (String subsetName : decoded.substring(3).split(",")) {
-      String trimName = subsetName.trim();
-      if (!("strict".equals(trimName) || "cajita".equals(trimName))) {
-        mq.addMessage(
-            MessageType.UNRECOGNIZED_USE_SUBSET,
-            quotedString.pos, MessagePart.Factory.valueOf(trimName));
-      }
-      UseSubset us = new UseSubset(quotedStringStart, trimName);
-      subsets.add(us);
-    }
-    UseSubsetDirective usd = new UseSubsetDirective(posFrom(m), subsets);
-    finish(usd, m);
-    return usd;
+    if (directives.isEmpty()) { return null; }
+
+    DirectivePrologue prologue =
+        new DirectivePrologue(posFrom(startOfPrologue), directives);
+    finish(prologue, startOfPrologue);
+    return prologue;
   }
 
   private LabeledStatement parseLoopOrSwitch(FilePosition start, String label)

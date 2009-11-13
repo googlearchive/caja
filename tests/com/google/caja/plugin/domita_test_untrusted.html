@@ -497,6 +497,17 @@ Static CommonJS Module</p>
  >I should be the last element until something is appended to document.body</p>
 
 <script type="text/javascript">
+// We wish to test Domita under access from Valija, and from Cajita. To that
+// end, the build.xml rules generate two versions of this file by textually
+// substituting for the below comment:
+//
+//   * Nothing, so this SCRIPT is cajoled as Valija.
+//
+//   * A complete 'use cajita' directive prologue, so this SCRIPT is
+//     cajoled as Cajita.
+
+/*@@cajaLanguageSelectionStatements@@*/
+
 /** Aim high and you might miss the moon! */
 function expectFailure(shouldFail, opt_msg, opt_failFilter) {
   try {
@@ -683,15 +694,19 @@ jsunitRegister('testTimeoutAndInterval',
                function testTimeoutAndInterval() {
   var timeout1Ran = false,
       timeout2Ran = false;
-  var timeout1Id = setTimeout(function () { timeout1Ran = true; }, 50);
-  var timeout2Id = setTimeout(function () { timeout2Ran = true; }, 50);
+  var timeout1Id = setTimeout(jsunitCallback(
+      function to1Id() { timeout1Ran = true; }), 50);
+  var timeout2Id = setTimeout(jsunitCallback(
+      function to2Id() { timeout2Ran = true; }), 50);
   clearTimeout(timeout1Id);
 
   var intervalRunIndex = -1;
   var interval1RunCount = 0,
       interval2RunCount = 0;
-  var interval1Id = setInterval(function () { ++interval1RunCount; }, 50);
-  var interval2Id = setInterval(function () { ++interval2RunCount; }, 50);
+  var interval1Id = setInterval(jsunitCallback(
+      function iv1id() { ++interval1RunCount; }), 50);
+  var interval2Id = setInterval(jsunitCallback(
+      function iv2id() { ++interval2RunCount; }), 50);
 
   // Check that null is a noop as a timeout or interval value, and that the
   // return value works with clearTimeout and clearInterval and does not
@@ -707,17 +722,18 @@ jsunitRegister('testTimeoutAndInterval',
   clearTimeout(void 0);
 
   setTimeout(
-      function () {
+      jsunitCallback(function () {
         clearInterval(interval2Id);
         setTimeout(
-            function () {
+            jsunitCallback(function () {
               if (!timeout1Ran && timeout2Ran
                   && interval1RunCount > interval2RunCount) {
+                clearInterval(interval1Id);
                 pass('test-timeout-and-interval');
               }
-            },
+            }),
             500);
-      },
+      }),
       200);
 });
 
@@ -728,12 +744,13 @@ jsunitRegister('testAddEventListener',
   var container = document.getElementById('test-add-event-listener-label');
   container.addEventListener(
       'click',
-      function (event) {
-        console.log('received event');
-        assertEquals('B', event.target.tagName);
-        assertEquals('click', event.type);
-        pass('test-add-event-listener');
-      });
+      jsunitCallback(
+          function eventListener(event) {
+            console.log('received event');
+            assertEquals('B', event.target.tagName);
+            assertEquals('click', event.type);
+            pass('test-add-event-listener');
+          }));
   expectFailure(
       function() {
         container.addEventListener('foo');
@@ -751,28 +768,31 @@ jsunitRegister('testRemoveEventListener',
   var container = document.getElementById('test-remove-event-listener-label');
   var firstFired = false;
   var failed = false;
-  function second(event) {
-    console.log('received event');
-    if (failed) { return; }
-    assertEquals('B', event.target.tagName);
-    assertEquals('click', event.type);
-    event.target.innerHTML = 'All done!';
-    pass('test-remove-event-listener');
-  }
-  function first(event) {
-    if (firstFired) {
-      event.target.innerHTML = '<b>FAILED - event handler was not removed!</b>';
-      failed = true;
-      return;
-    }
-    firstFired = true;
-    console.log('received event');
-    assertEquals('B', event.target.tagName);
-    assertEquals('click', event.type);
-    event.target.innerHTML = 'Thank you, click me again please';
-    container.removeEventListener('click', first);
-    container.addEventListener('click', second);
-  }
+  var second = jsunitCallback(
+      function secondcb(event) {
+        console.log('received event');
+        if (failed) { return; }
+        assertEquals('B', event.target.tagName);
+        assertEquals('click', event.type);
+        event.target.innerHTML = 'All done!';
+        pass('test-remove-event-listener');
+      });
+  var first = jsunitCallback(
+      function firstcb(event) {
+        if (firstFired) {
+          event.target.innerHTML =
+              '<b>FAILED - event handler was not removed!</b>';
+          failed = true;
+          return;
+        }
+        firstFired = true;
+        console.log('received event');
+        assertEquals('B', event.target.tagName);
+        assertEquals('click', event.type);
+        event.target.innerHTML = 'Thank you, click me again please';
+        container.removeEventListener('click', first);
+        container.addEventListener('click', second);
+      });
   container.addEventListener('click', first);
 });
 
@@ -816,10 +836,11 @@ jsunitRegister('testDomClassHierarchy',
 
   document.getElementById('test-dom-class-hierarchy').addEventListener(
       'click',
-      function (event) {
-        assertTrue(event instanceof window.Event);
-        pass('test-dom-class-hierarchy');
-      });
+      jsunitCallback(
+          function onclick(event) {
+            assertTrue(event instanceof window.Event);
+            pass('test-dom-class-hierarchy');
+          }));
 });
 
 jsunitRegister('testInnerhtmlOnclick',
@@ -843,9 +864,12 @@ jsunitRegister('testCaseInsensitiveAttrs',
                function testCaseInsensitiveAttrs() {
   var tableNode = document.getElementById('is-red');
   tableNode.setAttribute('bgColor', 'red');
-  tableNode.addEventListener('click', function(event) {
-    pass('test-case-insensitive-attrs');
-  });
+  tableNode.addEventListener(
+      'click',
+      jsunitCallback(
+          function onclick(event) {
+            pass('test-case-insensitive-attrs');
+          }));
 });
 
 jsunitRegister('testDocumentForms',
@@ -935,49 +959,50 @@ jsunitRegister('testCurrentTarget',
   var parent = document.getElementById('test-current-target');
   var child = document.getElementById('test-current-target-child');
   var gotChildClick = false;
-  parent.addEventListener('click', parentClick, false);
-  child.addEventListener('click', childClick, false);
 
-  function childClick(event) {
+  var childClick = jsunitCallback(function (event) {
     assertEquals('test-current-target-child', event.currentTarget.id);
     gotChildClick = true;
-  }
+  });
 
-  function parentClick(event) {
+  var parentClick = jsunitCallback(function (event) {
     assertEquals('test-current-target', event.currentTarget.id);
     assertTrue(gotChildClick);
     pass('test-current-target');
-  }
+  });
+
+  parent.addEventListener('click', parentClick, false);
+  child.addEventListener('click', childClick, false);
 });
 
 jsunitRegister('testRelatedTarget',
                function testRelatedTarget() {
-  var child = document.getElementById('test-related-target-child');
-  child.addEventListener('click', childClick, false);
-
-  function childClick(event) {
+  var childClick = jsunitCallback(function (event) {
     // get should work.  in manual clicks, relatedTarget is null, but in
     // webdriver simulated clicks, it's non-null.
     assertEquals(event.relatedTarget, event.relatedTarget);
     // set doesn't have to work, but shouldn't throw an error
     event.relatedTarget = [];
     pass('test-related-target');
-  }
+  });
+
+  var child = document.getElementById('test-related-target-child');
+  child.addEventListener('click', childClick, false);
 
   // TODO: webdriver doesn't have a good way of testing relatedTarget.
   // there are two cases we care about: relatedTarget is an element in the
   // sandbox, and relatedTarget is an element outside the sandbox.
 
+  var mouseReport = jsunitCallback(function (event) {
+    var r = event.relatedTarget;
+    r = r && (r.tagName + '#' + r.id);
+    info.innerHTML = event.type + ' ' + String(r);
+  });
+
   var mouse = document.getElementById('test-related-target-mouse');
   var info = document.getElementById('test-related-target-mouse-info');
   mouse.addEventListener('mouseover', mouseReport, false);
   mouse.addEventListener('mouseout', mouseReport, false);
-
-  function mouseReport(event) {
-    var r = event.relatedTarget;
-    r = r && (r.tagName + '#' + r.id);
-    info.innerHTML = event.type + ' ' + String(r);
-  }
 });
 
 
@@ -1314,6 +1339,15 @@ jsunitRegister('testInnerHtml',
   pass('test-inner-html');
 });
 
+var foo = jsunitCallback(
+    function foocb() {
+      var container = document.getElementById('test-forms');
+      var div = document.createElement('blockquote');
+      div.innerHTML = 'event dispatched to <code>foo()</code>';
+      container.appendChild(div);
+    },
+    'testForms');
+
 jsunitRegister('testForms',
                function testForms() {
   var form = document.createElement('FORM');
@@ -1332,13 +1366,6 @@ jsunitRegister('testForms',
 
   pass('test-forms');
 });
-
-function foo() {
-  var container = document.getElementById('test-forms');
-  var div = document.createElement('blockquote');
-  div.innerHTML = 'event dispatched to <code>foo()</code>';
-  container.appendChild(div);
-}
 
 // TODO: this test often causes ie6/ie7 to crash.  figure out why
 if (false)
@@ -1402,7 +1429,7 @@ jsunitRegister('testScriptLoading',
   var s = document.createElement('script');
   assertAsynchronousRequirement(
       'whitelisted script never ran',
-      function () { return externalScript.loaded === true; });
+      jsunitCallback(function () { return externalScript.loaded === true; }));
   s.src = 'unproxied_whitelisted_script.js';
   document.getElementById('test-script-loading').appendChild(s);
 
@@ -1889,23 +1916,31 @@ jsunitRegister('testInputDefaultValue',
 
 var autoclicky = {
   clicked: [false, false],
-  click: function (i) {
-    console.log('clicking');
-    autoclicky.clicked[i] = true;
-  }
+  click: jsunitCallback(
+      function autoclickyClick(i) {
+        console.log('clicking');
+        autoclicky.clicked[i] = true;
+      },
+      "testEventHandlerAttributes")
 };
+
+if (!directAccess.isValija) {
+  $v.so('autoclicky', autoclicky);
+}
 
 jsunitRegister('testEventHandlerAttributes',
                function testEventHandlerAttributes() {
   assertFalse('initially unclicked', autoclicky.clicked[0]);
   directAccess.click(document.getElementById('autoclicker'));
   assertTrue('zero clicked', autoclicky.clicked[0]);
-
   var setOnclickOnMe = document.getElementById('set-onclick-on-me');
   assertFalse('one not clicked', autoclicky.clicked[1]);
   directAccess.click(setOnclickOnMe);
   assertFalse('one still not clicked', autoclicky.clicked[1]);
-  setOnclickOnMe.onclick = function () { autoclicky.click(1); };
+  setOnclickOnMe.onclick = jsunitCallback(
+      function autoclickyClick() {
+        autoclicky.click(1);
+      });
   directAccess.click(setOnclickOnMe);
   assertTrue('one clicked', autoclicky.clicked[1]);
 
@@ -1915,9 +1950,10 @@ jsunitRegister('testEventHandlerAttributes',
 jsunitRegister('testEventListenersOnDocument',
                function testEventListenersOnDocument() {
   var clickCounter = 0;
-  function clickHandler() {
-    ++clickCounter;
-  }
+  var clickHandler = jsunitCallback(
+      function clickHandlerCb() {
+        ++clickCounter;
+      });
 
   var inp = document.getElementById('test-event-listeners-on-document')
       .getElementsByTagName('INPUT')[0];
@@ -1939,9 +1975,21 @@ jsunitRegister('testOnLoadListener',
   var b1 = false;
   var b2 = false;
   var b3 = false;
-  function setb1() { console.log('set onload b1'); b1 = true; }
-  function setb2() { console.log('set onload b2'); b2 = true; }
-  function setb3() { console.log('set onload b3'); b3 = true; }
+  var setb1 = jsunitCallback(
+      function setb1cb() {
+        console.log('set onload b1');
+        b1 = true;
+      });
+  var setb2 = jsunitCallback(
+      function setb2cb() {
+        console.log('set onload b2');
+        b2 = true;
+      });
+   var setb3 = jsunitCallback(
+       function setb3cb() {
+         console.log('set onload b3');
+         b3 = true;
+       });
 
   window.addEventListener('load', setb1);
   window.addEventListener('load', setb2);
@@ -1951,13 +1999,14 @@ jsunitRegister('testOnLoadListener',
 
   assertAsynchronousRequirement(
       'onload listeners',
-      function () {
-        if (!b1 && b2 && b3) {
-          pass('test-onload-listener');
-          return true;
-        }
-        return false;
-      });
+      jsunitCallback(
+          function checkb1b2b3cb() {
+            if (!b1 && b2 && b3) {
+              pass('test-onload-listener');
+              return true;
+            }
+            return false;
+          }));
 
   assertFalse(b1);
   assertFalse(b2);
@@ -2112,18 +2161,23 @@ jsunitRegister('testXhrSync',
   // Check that response text is available after a synchronous XHR
   xhr = new window.XMLHttpRequest();
   xhr.open('GET', './xhrTest.txt', false);
+  console.log('About to do sync xhr.send() - may get preempted');
   xhr.send();
   assertEquals('The quick brown fox', xhr.responseText);
 
-   // Check that a synchronous XHR invokes its callback in ready state 4
-   var responseText;
-   xhr = new window.XMLHttpRequest();
-   xhr.onreadystatechange = function() {
-     if (xhr.readyState == 4) { responseText = xhr.responseText; }
-   };
-   xhr.open('GET', './xhrTest.txt', false);
-   xhr.send();
-   assertEquals('The quick brown fox', responseText);
+  // Check that a synchronous XHR invokes its callback in ready state 4
+  var responseText;
+  xhr = new window.XMLHttpRequest();
+  // Note we specify test id since we get preempted by xhr.send()
+  xhr.onreadystatechange = jsunitCallback(
+      function onreadystatechangecb() {
+        if (xhr.readyState == 4) { responseText = xhr.responseText; }
+      },
+      'testXhrSync');
+  xhr.open('GET', './xhrTest.txt', false);
+  console.log('About to do sync xhr.send() - may get preempted');
+  xhr.send();
+  assertEquals('The quick brown fox', responseText);
 
   pass('test-xhr-sync');
 });
@@ -2134,7 +2188,7 @@ jsunitRegister('testXhrAsync',
   var xhr = new window.XMLHttpRequest();
   xhr.open('GET', './xhrTest.txt', true);
   var asyncFlag = 'PRE';
-  xhr.onreadystatechange = function(event) {
+  xhr.onreadystatechange = jsunitCallback(function(event) {
     assertEquals(xhr, event.target);
     if (event.target.readyState === 4) {
       assertNotEquals(4, asyncFlag);
@@ -2143,7 +2197,7 @@ jsunitRegister('testXhrAsync',
       pass('test-xhr-async');
     }
     asyncFlag = event.target.readyState;
-  };
+  });
   xhr.send();
 });
 
@@ -2538,10 +2592,10 @@ jsunitRegister('testCustomEvents',
 
   // Event dispatch for custom events is synchronous
   var fired;
-  function myHandler(event) {
+  var myHandler = jsunitCallback(function (event) {
     assertEquals('hiya', event.details);
     fired = true;
-  }
+  });
 
   var eventTarget = document.getElementById('test-custom-events');
   eventTarget.addEventListener('howdy', myHandler, true);
@@ -2968,12 +3022,14 @@ jsunitRegister('testThisInEventHandlers',
   // property of the object passed to the event listener, we get
   // access to the value the function is supposed to use for the
   // 'this' keyword, even in cajita.
-  function f($dis, event, thisNode) {
-    "use cajita";
-    // In an event handler, "this" should be bound to the node.
-    assertEquals($dis, thisNode);
-    pass('test-this-in-event-handlers');
-  }
+  var f = jsunitCallback(
+      function fcb($dis, event, thisNode) {
+        'use strict';
+        'use cajita';
+        // In an event handler, "this" should be bound to the node.
+        assertEquals($dis, thisNode);
+        pass('test-this-in-event-handlers');
+      });
   inp.addEventListener('click', {call: f}, false);
   directAccess.click(inp);
 });
@@ -3166,32 +3222,33 @@ jsunitRegister('testOnReset',
                function testOnReset() {
   var form = document.getElementById('test-onreset-form');
   form.addEventListener('reset',
-      function() { pass('test-onreset'); },
+      jsunitCallback(
+          function onreset() { pass('test-onreset'); }),
       false);
 });
 
 function testAsyncModuleLoader(load, includeScript, prefix) {
   directAccess.clearModuleCache();
   if (!valijaMode) {
-    var m = load.async('./a.co');
-    var f1 = function(module) {
+    var m = load.async('../a');
+    var f1 = jsunitCallback(function f1cb(module) {
       var r = module({x: 1, y: 2});
       assertEquals(r, 3);
       pass(prefix + '-module-loader');
-    };
-    var f2 = function(reason) {
+    });
+    var f2 = jsunitCallback(function f2cb(reason) {
       fail("Loading module a failed, " + reason);
-    };
+    });
     Q.when(m, f1, f2);
   } else {
-    var m = includeScript.async('./x.vo');
-    var f1 = function(result) {
+    var m = includeScript.async('../x');
+    var f1 = jsunitCallback(function f1cb(result) {
       assertEquals(x, 3);
       pass(prefix + '-module-loader');
-    };
-    var f2 = function(reason) {
+    });
+    var f2 = jsunitCallback(function f2cb(reason) {
       fail("Loading module x failed, " + reason);
-    };
+    });
     Q.when(m, f1, f2);
   }
 }
@@ -3209,20 +3266,20 @@ jsunitRegister('testScriptModuleLoader',
 function testAsyncModuleLoader2(load, prefix) {
   directAccess.clearModuleCache();
   if (!valijaMode) {
-    var m = load.async('./foo/b.co');
-    var f1 = function(module) {
+    var m = load.async('../foo/b');
+    var f1 = jsunitCallback(function f1cb(module) {
       var r = module({x: 1, y: 2, Q: Q, fail: fail});
-      Q.when(r, function(result) {
+      Q.when(r, jsunitCallback(function(result) {
                   assertEquals(result, 5);
                   pass(prefix + '-module-loader-2');
-                },
-                function(reason) {
+                }),
+                jsunitCallback(function(reason) {
                   fail("Waiting for result failed, " + reason);
-                });
-    };
-    var f2 = function(reason) {
+                }));
+    });
+    var f2 = jsunitCallback(function f2cb(reason) {
       fail("loading module B failed, " + reason);
-    };
+    });
     Q.when(m, f1, f2);
   } else {
     pass(prefix + '-module-loader-2');
@@ -3241,21 +3298,21 @@ jsunitRegister('testScriptModuleLoader2',
 
 function testAsyncModuleLoaderFailure(load, includeScript, prefix) {
   directAccess.clearModuleCache();
-  var f1 = function(module) {
+  var f1 = jsunitCallback(function f1cb(module) {
       fail('It should not be resolved.');
-  };
+  });
 
-  var f2 = function(reason) {
+  var f2 = jsunitCallback(function f2cb(reason) {
     if (reason.substring(0, 22) === 'Retrieving the module ') {
       pass(prefix + '-module-loader-failure');
     }
-  };
+  });
 
   if (!valijaMode) {
-    var m = xhrModuleLoad.async('./b.co');
+    var m = xhrModuleLoad.async('../b');
     Q.when(m, f1, f2);
   } else {
-    var m = xhrIncludeScript.async('./foo/x.vo');
+    var m = xhrIncludeScript.async('../foo/x');
     Q.when(m, f1, f2);
   }
 }
@@ -3274,20 +3331,20 @@ jsunitRegister('testRecursiveModule',
                function testRecursiveModule() {
   directAccess.clearModuleCache();
   if (!valijaMode) {
-    var m = scriptModuleLoad.async('./recursion.co');
-    var f1 = function(module) {
+    var m = scriptModuleLoad.async('../recursion');
+    var f1 = jsunitCallback(function f1cb(module) {
       var r = module({x: 5, Q: Q});
-        Q.when(r, function(result) {
+        Q.when(r, jsunitCallback(function(result) {
                     assertEquals(result, 120);
                     pass('recursive-module');
-                  },
-                  function(reason) {
+                  }),
+                  jsunitCallback(function(reason) {
                     fail("Waiting for result failed, " + reason);
-                  });
-      };
-    var f2 = function(reason) {
+                  }));
+      });
+    var f2 = jsunitCallback(function f2cb(reason) {
       fail("Loading module Recursion failed, " + reason);
-    };
+    });
     Q.when(m, f1, f2);
   } else {
     pass('recursive-module');
@@ -3298,20 +3355,20 @@ jsunitRegister('testCommonJsModule',
                function testCommonJsModule() {
   directAccess.clearModuleCache();
   if (valijaMode) {
-    var m = commonJsModuleLoad('./foo/inc.vo');
-    Q.when(m, function(module) {
+    var m = commonJsModuleLoad('../foo/inc');
+    Q.when(m, jsunitCallback(function(module) {
                 var r = module.inc(env.x);
-                Q.when(r, function(result) {
+                Q.when(r, jsunitCallback(function(result) {
                             assertEquals(result, 7);
                             pass("common-js-module");
-                          },
-                          function(reason) {
+                          }),
+                          jsunitCallback(function(reason) {
                             fail(reason);
-                          });
-                  },
-                  function(reason) {
+                          }));
+                  }),
+                  jsunitCallback(function(reason) {
                     fail("Loading module inc failed, " + reason);
-                  });
+                  }));
   } else {
     pass("common-js-module");
   }
@@ -3321,20 +3378,20 @@ jsunitRegister('testCommonJsRecursiveModule',
                function testCommonJsRecursiveModule() {
   directAccess.clearModuleCache();
   if (valijaMode) {
-    var m = commonJsModuleLoad('./commonJsRecursion.vo');
-    Q.when(m, function(module) {
+    var m = commonJsModuleLoad('../commonJsRecursion');
+    Q.when(m, jsunitCallback(function(module) {
                 var r = module.isNonNegative(env.x);
-                Q.when(r, function(result) {
+                Q.when(r, jsunitCallback(function(result) {
                             assertEquals(result, true);
                             pass("common-js-recursive-module");
-                          },
-                          function(reason) {
+                          }),
+                          jsunitCallback(function(reason) {
                             fail("Waiting for result failed, " + reason);
-                          });
-              },
-              function(reason) {
+                          }));
+              }),
+              jsunitCallback(function(reason) {
                 fail("Loading module CommonJsRecursion failed, " + reason);
-              });
+              }));
   } else {
     pass("common-js-recursive-module");
   }
@@ -3343,15 +3400,15 @@ jsunitRegister('testCommonJsRecursiveModule',
 function testUnbundledModuleLoader(load, prefix) {
   //directAccess.clearModuleCache();
   if (!valijaMode) {
-    var m = load.async('./foo/f.co');
-    var f1 = function(module) {
+    var m = load.async('../foo/f');
+    var f1 = jsunitCallback(function f1cb(module) {
                var result = module({x: 1, y: 2});
                assertEquals(result, 5);
                pass(prefix + '-unbundled-module-loader');
-             };
-    var f2 = function(reason) {
+             });
+    var f2 = jsunitCallback(function f2cb(reason) {
       fail("loading module F failed, " + reason);
-    };
+    });
     Q.when(m, f1, f2);
   } else {
     pass(prefix + '-unbundled-module-loader');
@@ -3372,15 +3429,15 @@ jsunitRegister('testStaticCommonJsModule',
                function testStaticCommonJsModule() {
   directAccess.clearModuleCache();
   if (valijaMode) {
-    var m = commonJsModuleLoad('./foo/staticinc.vo');
-    Q.when(m, function(module) {
+    var m = commonJsModuleLoad('../foo/staticinc');
+    Q.when(m, jsunitCallback(function whenModuleLoaded(module) {
                 var r = module.inc(env.w);
                 assertEquals(r, 7);
                 pass("static-common-js-module");
-              },
-              function(reason) {
+              }),
+              jsunitCallback(function(reason) {
                 fail("Loading module staticinc failed, " + reason);
-              });
+              }));
   } else {
     pass("static-common-js-module");
   }

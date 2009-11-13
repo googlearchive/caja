@@ -12,12 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+'use strict';
+'use cajita';
+
 /**
  * @author maoziqing@gmail.com
  * 
  * A test file for asynchronous module loading in Cajita
  */
-var m = load.async('../c.co');
+var m = load.async('../c');
 var f1 = function(module) {
   var r1 = module({x: x});
   var r2 = module({x: y});

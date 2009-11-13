@@ -12,9 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+'use strict';
+'use cajita';
+
 /**
  * @author maoziqing@gmail.com
  * 
  * A test file for module loading in Cajita
  */
-x + y
+x + y;

@@ -1,3 +1,7 @@
+// Make sure prologue directives are rendered respecting escaping
+"use foo";  // Should be rendered
+"use f\u0008oo";  // Should not be rendered
+
 // Make sure code is safe to embed in script tags and CDATA sections.
 var w = /<script>/;
 var x = a </script>/;  // Try to escape script

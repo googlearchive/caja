@@ -172,7 +172,6 @@ public class CajaApplet extends Applet {
           }
         };
     rw.setDebugMode(features.contains(Feature.DEBUG_SYMBOLS));
-    rw.setValijaMode(features.contains(Feature.VALIJA_MODE));
 
     StringBuilder cajoledOutput = new StringBuilder();
 
@@ -248,8 +247,6 @@ public class CajaApplet extends Applet {
     DEBUG_SYMBOLS,
     /** Present if the output should be embeddable in HTML or XML. */
     EMBEDDABLE,
-    /** Present to enable valija mode. */
-    VALIJA_MODE,
     ;
   }
 }

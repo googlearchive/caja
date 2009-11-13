@@ -221,7 +221,7 @@ var cajole = (function () {
     var features = ['testbedServer=' + getTestbedServer().replace(/,/g, '%2C')];
     // See CajaApplet.Feature
     cajita.forOwnKeys(
-        { EMBEDDABLE: true, DEBUG_SYMBOLS: true, VALIJA_MODE: true },
+        { EMBEDDABLE: true, DEBUG_SYMBOLS: true },
         ___.markFuncFreeze(function (featureName) {
           if (document.getElementById(featureName + uiSuffix).checked) {
             features.push(featureName);

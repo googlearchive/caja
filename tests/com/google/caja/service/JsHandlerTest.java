@@ -32,7 +32,7 @@ public class JsHandlerTest extends ServiceTestCase {
     assertEqualsIgnoreSpace(
         valijaModule("moduleResult___ = $v.cf($v.ro('g'), [ 1 ]);"),
         (String) requestGet("?url=http://foo/bar.js&mime-type=text/javascript" +
-                "&transform=VALIJA"));
+                "&transform=CAJOLE"));
   }
 
   public final void testAltJscriptMimeType() throws Exception {
@@ -41,7 +41,7 @@ public class JsHandlerTest extends ServiceTestCase {
     assertEqualsIgnoreSpace(
         valijaModule("moduleResult___ = $v.cf($v.ro('f'), [ ]);"),
         (String) requestGet("?url=http://foo/bar.js&mime-type=text/javascript" +
-            "&transform=VALIJA"));
+            "&transform=CAJOLE"));
   }
 
   public final void testJsWithCallback() throws Exception {
@@ -50,7 +50,7 @@ public class JsHandlerTest extends ServiceTestCase {
         valijaModuleWithCallback("foo.bar.baz",
             "moduleResult___ = $v.cf($v.ro('g'), [ 1 ]);"),
         (String) requestGet("?url=http://foo/bar.js&mime-type=text/javascript"
-            + "&transform=VALIJA"
+            + "&transform=CAJOLE"
             + "&module-callback=foo.bar.baz"));
   }
 }

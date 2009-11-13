@@ -26,10 +26,11 @@ import com.google.caja.parser.html.Namespaces;
 import com.google.caja.parser.html.Nodes;
 import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.Parser;
-import com.google.caja.parser.js.Statement;
 import com.google.caja.parser.js.StringLiteral;
 import com.google.caja.parser.js.UncajoledModule;
-import com.google.caja.parser.js.UseSubsetDirective;
+import com.google.caja.parser.js.Statement;
+import com.google.caja.parser.js.DirectivePrologue;
+import com.google.caja.parser.js.Directive;
 import com.google.caja.parser.quasiliteral.CajitaRewriter;
 import com.google.caja.parser.quasiliteral.DefaultValijaRewriter;
 import com.google.caja.reporting.EchoingMessageQueue;
@@ -37,7 +38,6 @@ import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.reporting.TestBuildInfo;
-import com.google.caja.util.Executor;
 import com.google.caja.util.Executor.AbnormalExitException;
 
 import java.io.File;
@@ -91,8 +91,29 @@ public class RhinoTestBed {
    * Given an HTML file that references javascript sources, load all
    * the scripts, set up the DOM using env.js, and start JSUnit.
    *
-   * This lets us write test html files that can be run both
+   * <p>This lets us write test html files that can be run both
    * in a browser, and automatically via ANT.
+   *
+   * <p>NOTE: This method interprets the input HTML in an idiosyncratic way to
+   * facilitate conveniently bundling test code into one file. It handles each
+   * {@code <script>} block in the input as follows:
+   *
+   * <ul>
+   *
+   *   <li>If the directive prologue of the block contains the
+   *   {@code 'use cajita'} directive, its contents are cajoled as Cajita.</li>
+   *
+   *   <li>If the directive prologue of the block contains the
+   *   {@code 'use valija'} directive, its contents are cajoled as Valija. At
+   *   the time of writing, this method is the <em>only</em> component in Caja
+   *   that recognizes the {@code 'use valija'} directive. Consequently, and
+   *   because we do not wish to commit to supporting this directive for Caja
+   *   clients, it is notably absent from
+   *   {@link com.google.caja.parser.js.Directive.RecognizedValue}.</li>
+   *
+   *   <li>Otherwise, the block is run as plain JavaScript.</li>
+   *
+   * </ul>
    *
    * @param html an HTML DOM tree to run in Rhino.
    */
@@ -142,10 +163,8 @@ public class RhinoTestBed {
       }
       String scriptText;
       Block js = parseJavascript(scriptBody, mq);
-      if (hasUseSubsetDirective(js, "cajita")) {
-        scriptText = render(cajoleCajita(js, mq));
-      } else if (hasUseSubsetDirective(js, "valija")) {
-        scriptText = render(cajoleValija(js, mq));
+      if (shouldCajoleBlock(js)) {
+        scriptText = render(cajole(js, mq));
       } else {
         // Add blank lines at the front so that Rhino stack traces have correct
         // line numbers.
@@ -182,12 +201,7 @@ public class RhinoTestBed {
     runJs(inputs.toArray(new Executor.Input[inputs.size()]));
   }
 
-  private static ParseTreeNode cajoleCajita(Block program, MessageQueue mq) {
-    CajitaRewriter rw = new CajitaRewriter(new TestBuildInfo(), mq, false);
-    return rw.expand(new UncajoledModule(program));
-  }
-
-  private static ParseTreeNode cajoleValija(Block program, MessageQueue mq) {
+  private static ParseTreeNode cajole(Block program, MessageQueue mq) {
     DefaultValijaRewriter vrw = new DefaultValijaRewriter(mq, false);
     CajitaRewriter crw = new CajitaRewriter(new TestBuildInfo(), mq, false);
     return crw.expand(vrw.expand(new UncajoledModule(program)));
@@ -201,12 +215,15 @@ public class RhinoTestBed {
     return sb.toString();
   }
 
-  private static boolean hasUseSubsetDirective(Block block, String subsetName) {
+  private static boolean shouldCajoleBlock(Block block) {
     if (block.children().isEmpty()) { return false; }
     Statement first = block.children().get(0);
-    if (!(first instanceof UseSubsetDirective)) { return false; }
-    UseSubsetDirective usd = (UseSubsetDirective) first;
-    return usd.getSubsetNames().contains(subsetName);
+    if (!(first instanceof DirectivePrologue)) { return false; }
+    DirectivePrologue prologue = (DirectivePrologue) first;
+    return
+        prologue.getDirectives().contains(
+            Directive.RecognizedValue.USE_CAJITA.getDirectiveString())
+        || prologue.getDirectives().contains("use valija");
   }
 
   private static Block parseJavascript(CharProducer cp, MessageQueue mq)
@@ -273,12 +290,7 @@ public class RhinoTestBed {
       Assert.fail();
     }
     public boolean isAssertionFailedError(Object o) {
-      Throwable th = null;
-      if (o instanceof Throwable) {
-        th = (Throwable) o;
-        return th instanceof AssertionFailedError;
-      }
-      return false;
+      return o instanceof AssertionFailedError;
     }
   }
 

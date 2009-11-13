@@ -1,4 +1,4 @@
-"use strict,cajita";
+"use strict"; "use cajita";
 
 function strictFn1() {
   "use strict";
@@ -6,43 +6,48 @@ function strictFn1() {
 }
 
 function strictFn2() {
-  'use strict,cajita';
+  'use strict'; 'use cajita';
   return;
 }
 
 function strictFn3() {
-  "use strict, cajita";
+  "use strict"
+  "use cajita"
   return;
 }
 
+function strictFn4() {
+  "use strict"  // comment
+  "use cajita"
+  return;
+}
+
+function strictFn5() {
+  "use strict"  /* comment */
+  "use cajita"
+  return;
+}
+
+function strictFn6() {
+  "use strict"
+  "use cajita"
+}
+
 function notStrictFn1() {
-  "use strict,cajita"
+  ("use strict");
   return;
 }
 
 function notStrictFn2() {
-  ("use strict,cajita");
-  return;
-}
-
-function notStrictFn3() {
-  "use strict,cajita"
+  "use strict"
   + "foo";
   return;
 }
 
 function arbitraryBlocksCannotBeStrict() {
-  { "use strict,cajita"; }
+  { "use strict"; "use cajita"; }
 }
 
-function malformed1() {
-  "usestrict,cajita";
-}
-
-function unrecognizedSet1() {
-  "use bogus";
-}
-
-function unrecognizedSet2() {
-  "use strict,bogus";
+function malformedOkayWithWarning() {
+  "bogusburps";
 }

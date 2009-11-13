@@ -43,17 +43,6 @@
     <script src="../console.js"></script>
 
     <script type="text/javascript">
-    function testDomita() {
-      this.evaluateAsyncRequirements(function (pass) {
-        if (!pass) {
-          document.title = document.title.replace(
-              / - all tests passed$/, ' - async tests failed');
-        }
-        assertTrue(document.title,
-                   /(?: - all tests passed)?$/.test(document.title));
-      });
-    }
-
     // globalSideEffect() is not exposed to cajoled code, so if cajoled code
     // can reach it, then it has escaped containment.
     // checkGlobalSideEffect() is exposed to cajoled code and returns true iff
@@ -88,6 +77,21 @@
 
   <body bgcolor="white" onload="testDomita()">
 
+    <style type="text/css">
+      .notyetready {
+        background-color: yellow;
+        border: 1px solid red;
+      }
+      .readytotest {
+        background-color: green;
+        border: 1px solid black;
+      }
+    </style>
+
+    <span id="automatedTestingReadyIndicator" class="notyetready">
+      Not yet ready for testing
+    </span>
+      
     <style type="text/css">
       a:visited { color: purple; }
       a:link { color: blue; }
@@ -158,24 +162,14 @@
             + ' onerror="console.error(this.src)"><\/script>');
       }
 
-      function makeXhr() {
-        if (typeof XMLHttpRequest === 'undefined') {
-          var activeXClassIds = [
-              'MSXML2.XMLHTTP.5.0', 'MSXML2.XMLHTTP.4.0', 'MSXML2.XMLHTTP.3.0',
-              'MSXML2.XMLHTTP', 'MICROSOFT.XMLHTTP.1.0', 'MICROSOFT.XMLHTTP.1',
-              'MICROSOFT.XMLHTTP'];
-          for (var i = 0, n = activeXClassIds.length; i < n; i++) {
-            var candidate = activeXClassIds[i];
-            try {
-              return new ActiveXObject(candidate);
-            } catch (e) {}
-          }
-        }
-        return new XMLHttpRequest;
+      function readyForAutomatedTesting() {
+        var e = document.getElementById('automatedTestingReadyIndicator');
+        e.setAttribute('class', 'readytotest');
+        e.innerHTML = 'Ready for testing';
       }
 
-      function inlineHtml(href, container) {
-        var xhr = makeXhr();
+      function inlineHtml(href, container, imports) {
+        var xhr = bridal.makeXhr();
         xhr.open('GET', href, false);
         xhr.send(null);
         if (xhr.status !== 200 && xhr.status !== 0) {
@@ -186,44 +180,39 @@
         var div = container.ownerDocument.createElement('DIV');
         div.innerHTML = htmlAndScript[1];
         while (div.firstChild) { container.appendChild(div.firstChild); }
+
+        ___.setNewModuleHandler(___.makeNormalNewModuleHandler());
+        ___.getNewModuleHandler().setImports(imports);
         eval(htmlAndScript[2]);
+
+        // Caution: After this point, DO NOT mess with the newModuleHandler. The
+        // script module loader (which is tested by the code eval()-ed above)
+        // assigns its own newModuleHandler which it relies on for proper
+        // operation.
       }
 
       var isValija = /[&?]valija([=&]|$)/.test(location.search);
+
+      function moduleIdResolver(base, input) {
+        return defaultModuleIdResolver(base, input + '.out.js');
+      }
+
+      var xhrModuleLoad = xhrModuleLoadMaker(
+          document.location.toString(),
+          moduleIdResolver);
+
+      var scriptModuleLoad = scriptModuleLoadMaker(
+          document.location.toString(),
+          moduleIdResolver);
     </script>
 
     <script type="text/javascript">
-    var valijaMaker;
-    (function () {
-      if (isValija) {
-        var testImports = ___.copy(___.sharedImports);
-        testImports.loader = ___.freeze({
-              provide: ___.markFuncFreeze(function (v) { valijaMaker = v; })
-            });
-        ___.getNewModuleHandler().setImports(testImports);
-        loadScript('valija.co.js');
-      }
-    })();</script>
-
-    <script type="text/javascript">
-    var commonJsSandboxMaker;
-    (function () {
-      if (isValija) {
-        var testImports = ___.copy(___.sharedImports);
-        testImports.loader = ___.freeze({
-              provide: ___.markFuncFreeze(function (v)
-                  { commonJsSandboxMaker = v; })
-            });
-        ___.getNewModuleHandler().setImports(testImports);
-        loadScript('commonjs-sandbox.co.js');
-      }
-    })();</script>
-
-    <script type="text/javascript">(function () {
+    
+    function initialize(valijaModule, commonJsSandboxModule) {
       ___.setLogFunc(function(msg) { console.log(msg); });
 
       var testImports = ___.copy(___.sharedImports);
-      if (valijaMaker) { testImports.outers = testImports; }
+      testImports.outers = testImports;
       var testDomContainer = document.getElementById('untrusted_content');
       var pseudoWindowLocation = {
           href: 'http://zip.example.com:4242/pumpkin.html?q=getit#myanchor',
@@ -236,10 +225,9 @@
           search: '?q=getit'
       };
 
-      ___.getNewModuleHandler().setImports(testImports);
-
       testImports.jsunitRegister = ___.markFuncFreeze(jsunitRegister);
       testImports.jsunitRun = ___.markFuncFreeze(jsunitRun);
+      testImports.jsunitCallback = ___.markFuncFreeze(jsunitCallback);
       testImports.console = ___.primFreeze({
         log: ___.markFuncFreeze(
             function () { console.log.apply(console, arguments); }),
@@ -400,33 +388,24 @@
         testImports[name] = ___.markFuncFreeze(this[name], name);
       }
 
-      testImports.valijaMode = !!valijaMaker;
-
+      testImports.valijaMode = isValija;
       testImports.Q = Q;
-
-      testImports.xhrModuleLoad = xhrModuleLoadMaker(
-        '/ant-lib/com/google/caja/domita_test');
-
-      testImports.scriptModuleLoad = scriptModuleLoadMaker(
-        'http://localhost:8000/ant-lib/com/google/caja/domita_test');
+      testImports.xhrModuleLoad = xhrModuleLoad;
+      testImports.scriptModuleLoad = scriptModuleLoad;
 
       if (isValija) {
         testImports.xhrIncludeScript = ___.primFreeze({
           async: ___.markFuncFreeze(function(src) {
-            var m = xhrModuleLoadMaker(
-                '/ant-lib/com/google/caja/domita_test'
-                ).async(src);
-            return Q.when(m,
+            return Q.when(
+                testImports.xhrModuleLoad.async(src),
                 function(module) { return module({$v: testImports.$v}); });
           })
         });
 
         testImports.scriptIncludeScript = ___.primFreeze({
           async: ___.markFuncFreeze(function(src) {
-            var m = scriptModuleLoadMaker(
-                'http://localhost:8000/ant-lib/com/google/caja/domita_test'
-                ).async(src);
-            return Q.when(m,
+            return Q.when(
+                testImports.scriptModuleLoad.async(src),
                 function(module) { return module({$v: testImports.$v}); });
           })
         });
@@ -434,7 +413,9 @@
         testImports.env = testImports;
         testImports.env.x = 6;
         testImports.env.w = 6;
-        var $s = commonJsSandboxMaker.CALL___(testImports.env, valijaMaker);
+        var $s = commonJsSandboxModule.CALL___({
+          env: testImports.env,
+          valijaModule: valijaModule});
         testImports.commonJsModuleLoad = ___.markFuncFreeze(function(src) {
           return $s.loadModule(testImports.xhrModuleLoad.async(src));
         });
@@ -462,23 +443,50 @@
            testDomContainer,
            pseudoWindowLocation);
       console.log('attached stubs');
+      if (!isValija) { testImports.window = testImports.outers; }
 
       // Create a readonly mirror of document so that we can test that mutations
       // fail when they should.
-      var documentHolder = valijaMaker ? testImports.outers : testImports;
+      var documentHolder = isValija ? testImports.outers : testImports;
       documentHolder.documentRO = new testImports.TameHTMLDocument___(
           document, testDomContainer, false);
 
       testImports.htmlEmitter___ = new HtmlEmitter(
           testDomContainer, testImports.document);
-      if (valijaMaker) {
-        testImports.$v = valijaMaker.CALL___(testImports.outers);
-      }
+      testImports.$v = valijaModule.CALL___({
+        outers: testImports.outers
+      });
       window.toString = function () { return '[WINDOW]'; };
 
-      inlineHtml(isValija ? 'domita_test.vo.html' : 'domita_test.co.html',
-          testDomContainer);
-    })(); </script>
+      inlineHtml(
+          isValija
+              ? 'domita_test_untrusted_valija.out.html'
+              : 'domita_test_untrusted_cajita.out.html',
+          testDomContainer,
+          testImports);
+
+      this.evaluateAsyncRequirements(function (pass) {
+        if (!pass) {
+          document.title = document.title.replace(
+              / - all tests passed$/, ' - async tests failed');
+        }
+        assertTrue(document.title,
+                   /(?: - all tests passed)?$/.test(document.title));
+      });
+
+      readyForAutomatedTesting();
+    }
+
+    function testDomita() {
+      Q.when(xhrModuleLoad.async('valija'),
+          function(valijaModule) {
+            Q.when(xhrModuleLoad.async('commonjs-sandbox'),
+                function(commonJsSandboxModule) {
+                  initialize(valijaModule, commonJsSandboxModule);
+                })
+          });
+    }
+    </script>
 
   </body>
 </html>

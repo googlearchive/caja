@@ -26,14 +26,38 @@ jsunit.testCount = 0;
 jsunit.passTests = {};
 jsunit.passCount = 0;
 jsunit.failCount = 0;
-jsunit.currentTestId = '';
+jsunit.testIdStack = [];
 jsunit.originalTitle = '';
+
+jsunit.getCurrentTestId = function() {
+  return jsunit.testIdStack.length
+      ? jsunit.testIdStack[jsunit.testIdStack.length - 1]
+      : undefined;
+};
+
+jsunit.pushTestId = function(id) {
+  if (!jsunit.tests[id]) {
+    throw new Error('TEST ERROR: push unregistered test ID \"' + id + '\"');
+  }
+  jsunit.testIdStack.push(id);
+};
+
+jsunit.popTestId = function() {
+  if (!jsunit.getCurrentTestId()) {
+    throw new Error('TEST ERROR: pop empty test ID stack');
+  }
+  jsunit.testIdStack.pop();
+};
 
 // at the moment, every test should explicitly call jsunit.pass(),
 // because some tests don't pass until event handlers fire.
 // TODO: create jsunitRegisterAsync(), then make passes implicit.
-jsunit.pass = function(id) {
-  if (!id) id = jsunit.currentTestId;
+jsunit.pass = function(opt_id) {
+  if (!jsunit.getCurrentTestId() && !opt_id) {
+    console.error('TEST ERROR: pass without a test ID');
+    return;
+  }
+  var id = opt_id || jsunit.getCurrentTestId();
   if (id in jsunit.passTests) {
     throw new Error('dupe pass ' + id);
   }
@@ -66,6 +90,38 @@ function arrayContains(anArray, anElement) {
     if (anElement === anArray[i]) { return true; }
   }
   return false;
+}
+
+function logToConsole(e) {
+  if (e.isJsUnitException) {
+    console.error(
+        e.comment + '\n' + e.jsUnitMessage + '\n' + e.stackTrace);
+  } else {
+    console.error((e.message || '' + e) + '\n' + e.stack);
+  }
+}
+
+function isGroupLogMessages() {
+  return (typeof console !== 'undefined'
+      && 'group' in console);  // Not on Safari.
+}
+
+function startLogMessagesGroup(testName, opt_subTestName) {
+  if (isGroupLogMessages()) {
+    opt_subTestName
+        ? console.group('running %s - %s', testName, opt_subTestName)
+        : console.group('running %s', testName);
+    console.time(testName);
+  }
+  jsunit.pushTestId(testName);
+}
+
+function endLogMessagesGroup(testName, opt_subTestName) {
+  if (isGroupLogMessages()) {
+    console.timeEnd(testName);
+    console.groupEnd();
+  }
+  jsunit.popTestId();
 }
 
 /** Run tests. */
@@ -120,13 +176,7 @@ function jsunitRun(opt_testNames) {
   for (var i = 0; i < testNames.length; ++i) {
     var testName = testNames[i];
     if (testFilter && !testFilter.test(testName)) { continue; }
-    var groupLogMessages = (typeof console !== 'undefined'
-                            && 'group' in console);  // Not on Safari.
-    if (groupLogMessages) {
-      console.group('running %s', testName);
-      console.time(testName);
-    }
-    jsunit.currentTestId = testName;
+    startLogMessagesGroup(testName);
     try {
       (typeof setUp === 'function') && setUp();
       jsunit.tests[testName].call(this);
@@ -137,18 +187,10 @@ function jsunitRun(opt_testNames) {
       jsunit.updateStatus();
       if (typeof console !== 'undefined') {
         console.log('FAIL: ' + testName);
-        if (e.isJsUnitException) {
-          console.error(
-              e.comment + '\n' + e.jsUnitMessage + '\n' + e.stackTrace);
-        } else {
-          console.error((e.message || '' + e) + '\n' + e.stack);
-        }
+        logToConsole(e);
       }
     } finally {
-      if (groupLogMessages) {
-        console.timeEnd(testName);
-        console.groupEnd();
-      }
+      endLogMessagesGroup(testName);
     }
   }
 
@@ -158,4 +200,25 @@ function jsunitRun(opt_testNames) {
   }
   (typeof console !== 'undefined' && 'group' in console)
       && (console.group(document.title), console.groupEnd());
+}
+
+/** Register a callback within a running test. */
+function jsunitCallback(aFunction, opt_id) {
+  if (!jsunit.getCurrentTestId() && !opt_id) {
+    throw new Error('TEST ERROR: jsunitCallback without a test ID');
+  }
+  var id = opt_id || jsunit.getCurrentTestId();
+  var callbackName = aFunction.name || '<anonymous>';
+  return ___.markFuncFreeze(function(opt_args) {
+    var result = undefined;
+    startLogMessagesGroup(id, callbackName);
+    try {
+      result = aFunction.apply(undefined, arguments);
+    } catch (e) {
+      logToConsole(e);
+    } finally {
+      endLogMessagesGroup(id, callbackName);
+    }
+    return result;
+  });
 }

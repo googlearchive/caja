@@ -62,7 +62,6 @@ public class DefaultGadgetRewriter
   private CssSchema cssSchema;
   private HtmlSchema htmlSchema;
   private boolean debugMode;
-  private boolean valijaMode;
 
   public DefaultGadgetRewriter(BuildInfo buildInfo, MessageQueue mq) {
     this.buildInfo = buildInfo;
@@ -83,13 +82,6 @@ public class DefaultGadgetRewriter
    * @param debugMode whether to include debugging info in cajoled output.
    */
   public void setDebugMode(boolean debugMode) { this.debugMode = debugMode; }
-
-  /**
-   * @param valijaMode whether to treat the source as valija.
-   */
-  public void setValijaMode(boolean valijaMode) {
-    this.valijaMode = valijaMode;
-  }
 
   public void rewrite(ExternalReference gadgetRef, UriCallback uriCallback,
                       String view, Appendable output)
@@ -234,7 +226,6 @@ public class DefaultGadgetRewriter
           }
         });
     meta.setDebugMode(debugMode);
-    meta.setValijaMode(valijaMode);
 
     PluginCompiler compiler = createPluginCompiler(meta, mq);
 

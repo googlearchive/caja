@@ -277,7 +277,6 @@ public class CajolingService extends HttpServlet {
 
   public static enum Transform {
     INNOCENT,
-    VALIJA,
-    CAJITA;
+    CAJOLE;
   }
 }

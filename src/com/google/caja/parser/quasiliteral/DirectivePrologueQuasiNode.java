@@ -16,8 +16,8 @@ package com.google.caja.parser.quasiliteral;
 
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.parser.ParseTreeNode;
-import com.google.caja.parser.js.UseSubset;
-import com.google.caja.parser.js.UseSubsetDirective;
+import com.google.caja.parser.js.Directive;
+import com.google.caja.parser.js.DirectivePrologue;
 
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
@@ -27,20 +27,21 @@ import java.util.Set;
 
 /**
  * A quasi mode that matches a use subset node that matches a
- * {@link UseSubsetDirective} that contains all the subset names as the quasi
- * node.
+ * {@link com.google.caja.parser.js.DirectivePrologue}
+ * that contains all the subset names as the quasi node.
  *
  * <p>
- * So the quasiliteral {@code 'use strict'} will match {@code 'use strict'},
- * and {@code 'use strict,cajita'}, but not {@code 'use shiny'}.
+ * So the quasiliteral {@code 'use strict';} will match {@code 'use strict';},
+ * and {@code 'use strict'; 'use cajita';}, but not {@code 'use shiny';} or
+ * {@code 'alien directive from outer space';}.
  *
  * @author mikesamuel@gmail.com
  */
-final class UseSubsetQuasiNode extends QuasiNode {
-  private final Set<String> subsetNames;
+final class DirectivePrologueQuasiNode extends QuasiNode {
+  private final Set<String> directives;
 
-  public UseSubsetQuasiNode(Set<String> subsetNames) {
-    this.subsetNames = new LinkedHashSet<String>(subsetNames);
+  public DirectivePrologueQuasiNode(Set<String> directives) {
+    this.directives = new LinkedHashSet<String>(directives);
   }
 
   @Override
@@ -48,9 +49,9 @@ final class UseSubsetQuasiNode extends QuasiNode {
       List<ParseTreeNode> specimens, Map<String, ParseTreeNode> bindings) {
     if (specimens.isEmpty()) { return false; }
     ParseTreeNode specimen = specimens.get(0);
-    if (!(specimen instanceof UseSubsetDirective)) { return false; }
-    UseSubsetDirective usd = ((UseSubsetDirective) specimen);
-    if (!usd.getSubsetNames().containsAll(subsetNames)) { return false; }
+    if (!(specimen instanceof DirectivePrologue)) { return false; }
+    DirectivePrologue usd = ((DirectivePrologue) specimen);
+    if (!usd.getDirectives().containsAll(directives)) { return false; }
     specimens.remove(0);
     return true;
   }
@@ -58,11 +59,11 @@ final class UseSubsetQuasiNode extends QuasiNode {
   @Override
   protected boolean createSubstitutes(
       List<ParseTreeNode> substitutes, Map<String, ParseTreeNode> bindings) {
-    List<UseSubset> subsets = new ArrayList<UseSubset>();
-    for (String subsetName : subsetNames) {
-      subsets.add(new UseSubset(FilePosition.UNKNOWN, subsetName));
+    List<Directive> subsets = new ArrayList<Directive>();
+    for (String subsetName : directives) {
+      subsets.add(new Directive(FilePosition.UNKNOWN, subsetName));
     }
-    substitutes.add(new UseSubsetDirective(FilePosition.UNKNOWN, subsets));
+    substitutes.add(new DirectivePrologue(FilePosition.UNKNOWN, subsets));
     return true;
   }
 }

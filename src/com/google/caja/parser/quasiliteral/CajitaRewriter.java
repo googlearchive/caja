@@ -57,7 +57,7 @@ import com.google.caja.parser.js.ThrowStmt;
 import com.google.caja.parser.js.TranslatedCode;
 import com.google.caja.parser.js.TryStmt;
 import com.google.caja.parser.js.UncajoledModule;
-import com.google.caja.parser.js.UseSubsetDirective;
+import com.google.caja.parser.js.DirectivePrologue;
 import com.google.caja.reporting.BuildInfo;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
@@ -2223,7 +2223,7 @@ public class CajitaRewriter extends Rewriter {
           matches="'use';",
           substitutes=";")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
-        if (node instanceof UseSubsetDirective) {
+        if (node instanceof DirectivePrologue) {
           return new Noop(node.getFilePosition());
         }
         return NONE;

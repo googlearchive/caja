@@ -35,7 +35,7 @@ import com.google.caja.parser.js.Reference;
 import com.google.caja.parser.js.Statement;
 import com.google.caja.parser.js.StringLiteral;
 import com.google.caja.parser.js.SyntheticNodes;
-import com.google.caja.parser.js.UseSubsetDirective;
+import com.google.caja.parser.js.DirectivePrologue;
 import com.google.caja.reporting.DevNullMessageQueue;
 
 import java.io.StringReader;
@@ -249,8 +249,8 @@ public class QuasiBuilder {
       }
     }
 
-    if (n instanceof UseSubsetDirective) {
-      return buildUseSubsetQuasiNode(((UseSubsetDirective) n).getSubsetNames());
+    if (n instanceof DirectivePrologue) {
+      return buildDirectivePrologueMatchNode(((DirectivePrologue) n).getDirectives());
     }
 
     if (n instanceof StringLiteral) {
@@ -352,8 +352,8 @@ public class QuasiBuilder {
     return new ObjectConstructorHole(keyExpr, valueExpr);
   }
 
-  private static QuasiNode buildUseSubsetQuasiNode(Set<String> subsetNames) {
-    return new UseSubsetQuasiNode(subsetNames);
+  private static QuasiNode buildDirectivePrologueMatchNode(Set<String> subsetNames) {
+    return new DirectivePrologueQuasiNode(subsetNames);
   }
 
   private static QuasiNode[] buildChildrenOf(ParseTreeNode n) {

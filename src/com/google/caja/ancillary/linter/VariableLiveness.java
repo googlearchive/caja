@@ -47,6 +47,7 @@ import com.google.caja.parser.js.ThrowStmt;
 import com.google.caja.parser.js.TryStmt;
 import com.google.caja.parser.js.WhileLoop;
 import com.google.caja.parser.js.WithStmt;
+import com.google.caja.parser.js.DirectivePrologue;
 import com.google.caja.util.SyntheticAttributeKey;
 
 import java.util.List;
@@ -207,6 +208,10 @@ final class VariableLiveness {
       return processNoop(onEntry);
     } else if (s instanceof LabeledStmtWrapper) {
       return processLabeledStmtWrapper((LabeledStmtWrapper) s, onEntry);
+    } else if (s instanceof DirectivePrologue) {
+      // TODO: New node type, not yet supported by linter
+      // return processDirectivePrologue((DirectivePrologue) s, onEntry);
+      return processNoop(onEntry);
     } else {
       throw new RuntimeException(s.getClass().getName());
     }
@@ -669,6 +674,12 @@ final class VariableLiveness {
       last = liveness(childE, last).vars;
     }
     return last;
+  }
+
+  private static LiveCalc processDirectivePrologue(
+      DirectivePrologue d, LiveSet onEntry) {
+    // TODO: New node type, not yet supported by linter
+    return null;
   }
 
   /**

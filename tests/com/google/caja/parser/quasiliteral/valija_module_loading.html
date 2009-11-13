@@ -44,7 +44,7 @@ var valijaMaker;
 })();
 </script>
 
-<script type="text/javascript" src="../../plugin/valija.co.js"></script>
+<script type="text/javascript" src="../../plugin/valija.out.js"></script>
 
 <script type="text/javascript">
 var imports;
@@ -65,7 +65,8 @@ var imports;
 </script>
 
 <script type="text/javascript">
-"use strict,valija";
+"use strict";
+"use valija";
 
 var i = 0;
 var uninitialized;
@@ -73,7 +74,8 @@ function successor(n) { return n + 1; }
 </script>
 
 <script type="text/javascript">
-"use strict,valija";
+"use strict";
+"use valija";
 
 assertEquals(0, i);
 assertEquals('undefined', typeof uninitialized);
@@ -86,7 +88,8 @@ i = successor(i);
 </script>
 
 <script type="text/javascript">
-"use strict,valija";
+"use strict";
+"use valija";
 
 assertEquals(1, i);
 </script>

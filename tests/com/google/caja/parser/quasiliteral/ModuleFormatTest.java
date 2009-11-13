@@ -109,7 +109,7 @@ public class ModuleFormatTest extends CajaTestCase {
     cajoledModule.renderWithDebugSymbols(originalSource, sb, exHandler);
 
     assertEquals(
-        TestUtil.readResource(getClass(), "testModule.co.js"),
+        TestUtil.readResource(getClass(), "testModule.out.js"),
         sb.toString());
   }
 

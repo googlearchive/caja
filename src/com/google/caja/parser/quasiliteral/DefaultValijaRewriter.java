@@ -221,9 +221,6 @@ public class DefaultValijaRewriter extends Rewriter {
           ParseTreeNode arg = bindings.get("arg");
           if (arg instanceof StringLiteral) {
             String src = ((StringLiteral) arg).getUnquotedValue();
-            if (!src.endsWith(".vo")) {
-              src = src + ".vo";
-            }
             return substV("arg", 
                 new StringLiteral(FilePosition.UNKNOWN, src));
           } else {
@@ -251,10 +248,7 @@ public class DefaultValijaRewriter extends Rewriter {
           ParseTreeNode arg = bindings.get("arg");
           if (arg instanceof StringLiteral) {
             String src = ((StringLiteral) arg).getUnquotedValue();
-            if (!src.endsWith(".vo")) {
-              src = src + ".vo";
-            }
-            return substV("arg", 
+            return substV("arg",
                 new StringLiteral(FilePosition.UNKNOWN, src));
           } else {
             mq.addMessage(

@@ -38,6 +38,7 @@ import java.util.List;
 public class DomitaTest extends CajaTestCase {
   final int clickRoundLimit = 10;
   final int waitRoundLimit = 10;
+  final int waitForStartupRoundLimit = 50;
 
   Server server;
 
@@ -100,6 +101,23 @@ public class DomitaTest extends CajaTestCase {
     driver.get("http://localhost:8000/ant-lib/com/google/caja/plugin/"
                + pageName);
 
+    int waitForStartupRounds = 0;
+    for (; waitForStartupRounds < waitForStartupRoundLimit;
+         waitForStartupRounds++) {
+      List<WebElement> readyElements = driver.findElements(
+          By.xpath("//*[@class='readytotest']"));
+      System.err.println(readyElements);
+      if (readyElements.size() != 0) {
+        break;
+      }
+      try {
+        Thread.sleep(200);
+      } catch (InterruptedException e) {}
+    }
+    assertTrue(
+        "Too many rounds waiting for startup.",
+        waitForStartupRounds < waitRoundLimit);
+
     int clickRounds = 0;
     List<WebElement> clickingList = null;
     for (; clickRounds < clickRoundLimit; clickRounds++) {
@@ -115,9 +133,10 @@ public class DomitaTest extends CajaTestCase {
         "Remaining elements = " + renderElements(clickingList),
         clickRounds < clickRoundLimit);
 
-    int waitRounds = 0;
+    int waitForCompletionRounds = 0;
     List<WebElement> waitingList = null;
-    for (; waitRounds < waitRoundLimit; waitRounds++) {
+    for (; waitForCompletionRounds < waitRoundLimit;
+         waitForCompletionRounds++) {
       waitingList =
           driver.findElements(By.xpath("//*[contains(@class,'waiting')]"));
       if (waitingList.size() == 0) {
@@ -130,7 +149,7 @@ public class DomitaTest extends CajaTestCase {
     assertTrue(
         "Too many wait rounds. " +
         "Remaining elements = " + renderElements(waitingList),
-        waitRounds < waitRoundLimit);
+        waitForCompletionRounds < waitRoundLimit);
 
     // check the title of the document
     String title = driver.getTitle();

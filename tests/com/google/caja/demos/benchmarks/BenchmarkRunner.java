@@ -132,12 +132,13 @@ public class BenchmarkRunner extends CajaTestCase {
       boolean wrapGlobals) throws Exception {
     PluginMeta meta = new PluginMeta();
     MessageQueue mq = new SimpleMessageQueue();
-    meta.setValijaMode(valija);
     PluginCompiler pc = new PluginCompiler(new TestBuildInfo(), meta, mq);
     CharProducer src = wrapGlobals ?
         fromString(wrapGlobals(plain(fromResource(filename)))):
             fromString(plain(fromResource(filename)));
-    pc.addInput(AncestorChain.instance(js(src)));
+    pc.addInput(AncestorChain.instance(valija
+        ? BenchmarkUtils.addUseCajitaDirective(js(src))
+        : js(src)));
     if (!pc.run()) {
       return -1;
     }
@@ -159,7 +160,7 @@ public class BenchmarkRunner extends CajaTestCase {
             + "testImports.outers = ___.copy(___.sharedImports);\n"
             + "___.getNewModuleHandler().setImports(testImports);",
             getName() + "valija-setup"),
-        new Executor.Input(getClass(), "../../plugin/valija.co.js"),
+        new Executor.Input(getClass(), "../../plugin/valija.out.js"),
         new Executor.Input(
             // Set up the imports environment.
             ""

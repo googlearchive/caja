@@ -3370,9 +3370,12 @@ var safeJSON;
       // before invoking the Cajita module.
       var completeImports = copy(sharedImports);
       completeImports.load = load;
-      forOwnKeys(imports, markFuncFreeze(function(k, v) {
-        completeImports[k] = v;
-      }));
+      // Copy all properties, including Cajita-unreadable ones since these may
+      // be used by privileged code.
+      var k;
+      for (k in imports) {
+        if (hasOwnProp(imports, k)) { completeImports[k] = imports[k]; }
+      }
       return module.instantiate(___, primFreeze(completeImports));
     }
     theModule.FUNC___ = 'theModule';
@@ -3386,7 +3389,10 @@ var safeJSON;
     setStatic(theModule, 'moduleId', module.moduleId);
     // The below is a transitive freeze because includedModules is an array
     // of strings.
-    setStatic(theModule, 'includedModules', ___.freeze(module.includedModules));
+    if (!!module.includedModules) {
+      setStatic(theModule, 'includedModules',
+          ___.freeze(module.includedModules));
+    }
 
     return primFreeze(theModule);
   }

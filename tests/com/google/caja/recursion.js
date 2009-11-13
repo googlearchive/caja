@@ -12,6 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+'use strict';
+'use cajita';
+
 /**
  * @author maoziqing@gmail.com
  * 
@@ -25,7 +28,7 @@ else if (x == 1) {
   result.resolve(1);
 }
 else {
-  var m = load.async('./recursion.co');
+  var m = load.async('./recursion');
   Q.when(m, function(module) {
 	var r = module({x: x - 1, load: load, Q: Q});
 	Q.when(r, function(r) {result.resolve(x * r); });

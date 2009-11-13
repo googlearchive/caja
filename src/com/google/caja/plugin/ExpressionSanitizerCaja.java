@@ -32,26 +32,19 @@ import com.google.caja.reporting.BuildInfo;
 public class ExpressionSanitizerCaja {
   private final BuildInfo buildInfo;
   private final MessageQueue mq;
-  private final PluginMeta meta;
 
   public ExpressionSanitizerCaja(BuildInfo buildInfo,
-                                 MessageQueue mq,
-                                 PluginMeta meta) {
+                                 MessageQueue mq) {
     this.buildInfo = buildInfo;
     this.mq = mq;
-    this.meta = meta;
   }
 
   public ParseTreeNode sanitize(AncestorChain<?> toSanitize) {
     MutableParseTreeNode input = (MutableParseTreeNode) toSanitize.node;
     ParseTreeNode result;
-    if (this.meta.isValijaMode()) {
-      result = newValijaRewriter(this.mq).expand(input);
-      if (!this.mq.hasMessageAtLevel(MessageLevel.ERROR)) {
-        result = newCajitaRewriter(this.mq).expand(result);
-      }
-    } else {
-      result = newCajitaRewriter(this.mq).expand(input);
+    result = newValijaRewriter(this.mq).expand(input);
+    if (!this.mq.hasMessageAtLevel(MessageLevel.ERROR)) {
+      result = newCajitaRewriter(this.mq).expand(result);
     }
     if (!this.mq.hasMessageAtLevel(MessageLevel.ERROR)) {
       result = new IllegalReferenceCheckRewriter(this.mq, false).expand(result);

@@ -20,6 +20,8 @@
  * @author mikesamuel@gmail.com
  */
 
+'use strict';
+'use cajita';
 
 /**
  * Injected by the container.
@@ -84,6 +86,12 @@ function doSearch(button) {
         }
       });
 }
+
+/**
+ * Make 'doSearch' available to the HTML (Valija) global scope so we can
+ * call it as an event handler via a static HTML attribute.
+ */
+$v.so('doSearch', doSearch);
 
 /**
  * Event handler that is called when a result link is clicked.

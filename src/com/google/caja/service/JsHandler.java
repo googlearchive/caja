@@ -60,8 +60,7 @@ public class JsHandler implements ContentHandler {
     return checker.check("text/javascript", inputContentType)
         && checker.check(outputContentType, "text/javascript")
         && (transform == null
-            || transform.equals(CajolingService.Transform.CAJITA)
-            || transform.equals(CajolingService.Transform.VALIJA));
+            || transform.equals(CajolingService.Transform.CAJOLE));
   }
 
   public Pair<String,String> apply(URI uri,
@@ -84,9 +83,8 @@ public class JsHandler implements ContentHandler {
 
     try {
       OutputStreamWriter writer = new OutputStreamWriter(response, "UTF-8");
-      boolean valijaMode = CajolingService.Transform.VALIJA.equals(transform);
       cajoleJs(uri, new StringReader(new String(content, charset)),
-          moduleCallback, valijaMode, writer);
+          moduleCallback, writer);
       writer.flush();
     } catch (IOException e) {
       throw new UnsupportedContentTypeException();
@@ -97,7 +95,6 @@ public class JsHandler implements ContentHandler {
   private void cajoleJs(URI inputUri,
                         Reader cajaInput,
                         Expression moduleCallback,
-                        boolean valijaMode,
                         Appendable output)
       throws IOException, UnsupportedContentTypeException {
     InputSource is = new InputSource (inputUri);
@@ -111,10 +108,9 @@ public class JsHandler implements ContentHandler {
       Rewriter vrw = new DefaultValijaRewriter(mq, false /* logging */);
       Rewriter crw = new CajitaRewriter(buildInfo, mq, false /* logging */);
       UncajoledModule ucm = new UncajoledModule(input);
-      CajoledModule cm = (CajoledModule) (valijaMode
-          ? crw.expand(vrw.expand(ucm))
-          : crw.expand(ucm));
-      output.append(renderJavascript(cm, moduleCallback));
+      output.append(renderJavascript(
+          (CajoledModule) crw.expand(vrw.expand(ucm)),
+          moduleCallback));
     } catch (ParseException e) {
       throw new UnsupportedContentTypeException();
     } catch (IllegalArgumentException e) {

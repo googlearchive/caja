@@ -26,8 +26,6 @@ public final class PluginMeta {
   private boolean debugMode;
   /** True if the output should be *only* JS, not HTML+JS. */
   private boolean onlyJsEmitted;
-  /** True if the source should be treated as Valija */
-  private boolean valijaMode;
   /**
    * The DOM ID suffix if known at Cajole time.  Most clients should allow the
    * module ID to be assigned dynamically but for those clients who know that
@@ -68,13 +66,6 @@ public final class PluginMeta {
     this.onlyJsEmitted = onlyJsEmitted;
   }
   
-  /** True if the source should be treated as Valija. */
-  public boolean isValijaMode() { return valijaMode; }
-
-  public void setValijaMode(boolean valijaMode) {
-    this.valijaMode = valijaMode;
-  }
-
   /**
    * Null if the module ID is not known statically.
    * See {@code imports.getIdClass___()} defined in "domita.js".

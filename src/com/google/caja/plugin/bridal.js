@@ -21,7 +21,8 @@
  * @author ihab.awad@gmail.com
  * @author jasvir@gmail.com
  * @provides bridal
- * @requires ___, cajita, document, html, html4, navigator, window
+ * @requires ___, cajita, document, html, html4, navigator, window,
+ *     XMLHttpRequest, ActiveXObject 
  */
 
 var bridal = (function() {
@@ -572,6 +573,26 @@ var bridal = (function() {
     }
   }
 
+  /**
+   * Returns a new XMLHttpRequest object, hiding browser differences in the
+   * method of construction.
+   */
+  function makeXhr() {
+    if (typeof XMLHttpRequest === 'undefined') {
+      var activeXClassIds = [
+          'MSXML2.XMLHTTP.5.0', 'MSXML2.XMLHTTP.4.0', 'MSXML2.XMLHTTP.3.0',
+          'MSXML2.XMLHTTP', 'MICROSOFT.XMLHTTP.1.0', 'MICROSOFT.XMLHTTP.1',
+          'MICROSOFT.XMLHTTP'];
+      for (var i = 0, n = activeXClassIds.length; i < n; i++) {
+        var candidate = activeXClassIds[i];
+        try {
+          return new ActiveXObject(candidate);
+        } catch (e) {}
+      }
+    }
+    return new XMLHttpRequest;
+  }
+
   return {
     addEventListener: addEventListener,
     removeEventListener: removeEventListener,
@@ -586,6 +607,7 @@ var bridal = (function() {
     getBoundingClientRect: getBoundingClientRect,
     untameEventType: untameEventType,
     extendedCreateElementFeature: featureExtendedCreateElement,
-    getComputedStyle: getComputedStyle
+    getComputedStyle: getComputedStyle,
+    makeXhr: makeXhr
   };
 })();

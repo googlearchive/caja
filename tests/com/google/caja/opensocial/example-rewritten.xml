@@ -2,13 +2,37 @@
   ___.loadModule({
       'instantiate': function (___, IMPORTS___) {
         var moduleResult___ = ___.NO_RESULT;
-        var Error = ___.readImport(IMPORTS___, 'Error', { });
-        var alert = ___.readImport(IMPORTS___, 'alert');
-        var handleClicky = ___.readImport(IMPORTS___, 'handleClicky');
-        var onerror = ___.readImport(IMPORTS___, 'onerror');
-        var outers = ___.readImport(IMPORTS___, 'outers');
-        var externalScript;
-        var x0___;
+        var $v = ___.readImport(IMPORTS___, '$v', {
+            'getOuters': {
+              '()': { }
+            },
+            'initOuter': {
+              '()': { }
+            },
+            'cf': {
+              '()': { }
+            },
+            'ro': {
+              '()': { }
+            },
+            'so': {
+              '()': { }
+            },
+            'dis': {
+              '()': { }
+            },
+            'ts': {
+              '()': { }
+            },
+            'construct': {
+              '()': { }
+            },
+            's': {
+              '()': { }
+            }
+          });
+        var $dis = $v.getOuters();
+        $v.initOuter('onerror');
         IMPORTS___.emitCss___([ '.', ' #p3-',
             ' {\n  color: red\n}\n@media print {\n  .', ' #p3-',
             ' {\n    font-weight: bold;\n    color: black\n  }\n}\n@media print, screen {\n  .',
@@ -16,7 +40,7 @@
             ' .p1 {\n  color: red\n}' ].join(IMPORTS___.getIdClass___()));
         {
           var c_1___ = ___.markFuncFreeze(function (event, thisNode___) {
-              handleClicky.CALL___();
+              $v.cf($v.ro('handleClicky'), [ ]);
             });
           var el___;
           var emitter___ = IMPORTS___.htmlEmitter___;
@@ -24,17 +48,21 @@
         }
         try {
           {
-            externalScript = (function () {
-                function externalScript$_self() {
-                  alert.CALL___('external script');
-                }
-                externalScript$_self.FUNC___ = 'externalScript';
-                return externalScript$_self;
-              })();
+            $v.so('externalScript', ___.markFuncFreeze(function () {
+                  function externalScript$_caller($dis) {
+                    $v.cf($v.ro('alert'), [ 'external script' ]);
+                  }
+                  externalScript$_caller.FUNC___ = 'externalScript$_caller';
+                  var externalScript;;
+                  externalScript =
+                    $v.dis(___.primFreeze(externalScript$_caller),
+                    'externalScript');
+                  return externalScript;
+                }).CALL___());
           }
         } catch (ex___) {
-          ___.getNewModuleHandler().handleUncaughtException(ex___, onerror,
-            'external-script.js', '2');
+          ___.getNewModuleHandler().handleUncaughtException(ex___,
+            $v.ro('onerror'), 'external-script.js', '2');
         }
         {
           el___ = emitter___.byId('id_3___');
@@ -43,24 +71,30 @@
         }
         try {
           {
-            throw ___.construct(Error, [ 'Failed to load example-gadget-files/no-such-file.js' ]);
+            throw $v.ts($v.construct($v.ro('Error'), [
+                  'Failed to load example-gadget-files/no-such-file.js' ]));
           }
         } catch (ex___) {
-          ___.getNewModuleHandler().handleUncaughtException(ex___, onerror, 'example.xml', '28');
+          ___.getNewModuleHandler().handleUncaughtException(ex___,
+            $v.ro('onerror'), 'example.xml', '28');
         }
         try {
           {
-            moduleResult___ = (x0___ = (function () {
-                  function handleClicky() {
-                    alert.CALL___('You clicked something!!!');
+            moduleResult___ = $v.s($v.ro('outers'), 'handleClicky',
+              ___.markFuncFreeze(function () {
+                  function handleClicky$_caller($dis) {
+                    $v.cf($v.ro('alert'), [ 'You clicked something!!!' ]);
                   }
-                  return ___.markFuncFreeze(handleClicky, 'handleClicky');
-                })(), outers.handleClicky_canSet___ === outers? (outers.handleClicky =
-                x0___): ___.setPub(outers, 'handleClicky', x0___));
+                  handleClicky$_caller.FUNC___ = 'handleClicky$_caller';;
+                  var handleClicky =
+                    $v.dis(___.primFreeze(handleClicky$_caller),
+                    'handleClicky');
+                  return handleClicky;
+                }).CALL___());
           }
         } catch (ex___) {
-          ___.getNewModuleHandler().handleUncaughtException(ex___, onerror,
-            'example.xml', '37');
+          ___.getNewModuleHandler().handleUncaughtException(ex___,
+            $v.ro('onerror'), 'example.xml', '37');
         }
         {
           el___ = emitter___.byId('id_5___');

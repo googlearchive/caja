@@ -37,6 +37,7 @@
     <script type="text/javascript" src="log-to-console.js"></script>
     <script type="text/javascript" src="domita-minified.js"></script>
     <script type="text/javascript" src="html-sanitizer-minified.js"></script>
+    <script type="text/javascript" src="module-promise-minified.js"></script>
 
     <script type="text/javascript">(function () {
       ___.sharedImports.console = {};
@@ -50,39 +51,6 @@
         })(k, console[k] || function () {});
       }
     })();</script>
-
-    <script type="text/javascript">
-      function makeXhr() {
-        if (typeof XMLHttpRequest === 'undefined') {
-          var activeXClassIds = [
-              'MSXML2.XMLHTTP.5.0', 'MSXML2.XMLHTTP.4.0', 'MSXML2.XMLHTTP.3.0',
-              'MSXML2.XMLHTTP', 'MICROSOFT.XMLHTTP.1.0', 'MICROSOFT.XMLHTTP.1',
-              'MICROSOFT.XMLHTTP'];
-          for (var i = 0, n = activeXClassIds.length; i < n; i++) {
-            var candidate = activeXClassIds[i];
-            try {
-              return new ActiveXObject(candidate);
-            } catch (e) {}
-          }
-        }
-        return new XMLHttpRequest;
-      }
-
-      function inlineHtml(href, container) {
-        var xhr = makeXhr();
-        xhr.open('GET', href, false);
-        xhr.send(null);
-        if (xhr.status !== 200 && xhr.status !== 0) {
-          throw new Error('Failed to load ' + href + ' : ' + xhr.status);
-        }
-        var htmlAndScript = xhr.responseText.match(
-            /^([\s\S]*?)<script[^>]*>([\s\S]*?)<\/script>$/);
-        var div = container.ownerDocument.createElement('DIV');
-        div.innerHTML = htmlAndScript[1];
-        while (div.firstChild) { container.appendChild(div.firstChild); }
-        (new Function(htmlAndScript[2]))();
-      }
-    </script>
 
     <!-- Google Search API as documented at
       - http://code.google.com/apis/ajaxsearch/documentation/reference.html -->
@@ -112,62 +80,67 @@
     <!-- And another for the searchbox gadget. -->
     <div class=searchbox><ul id="results-searchbox"></ul></div>
 
-    <!--
-      - Initialize separate global namespaces for each plugin as specified at
-      - http://code.google.com/p/google-caja/wiki/CajaHostingModules
-     -->
     <script type="text/javascript">
-      var searchBoxImports = ___.copy(___.sharedImports);
-      attachDocumentStub(
-          '-searchbox', { rewrite: function () { return null; } },
-          searchBoxImports, document.getElementById('base-searchbox'));
-      searchBoxImports.htmlEmitter___ = new HtmlEmitter(
-          document.getElementById('base-searchbox'));
-    </script>
-    <script type="text/javascript">
-      var kittensImports = ___.copy(___.sharedImports);
-      kittensImports.exports = {};
-      ___.grantRead(searchBoxImports, 'exports');
-      attachDocumentStub(
-          '-kittens', { rewrite: function (url, mimeType) {
-                          return /^image\//.test(mimeType) ? url : null;
-                        } },
-          kittensImports, document.getElementById('base-kittens'));
-      kittensImports.htmlEmitter___ = new HtmlEmitter(
-          document.getElementById('base-kittens'));
-    </script>
+      google.load('search', '1');
+      var searchEngine = new SearchEngine();
 
-    <!-- Inject some capabilities into the 2 plugins. -->
-    <script type="text/javascript">
-      (function () {
-        google.load('search', '1');
+      var xhrModuleLoad = xhrModuleLoadMaker(
+          document.location.toString(),
+          function moduleIdResolver(base, input) {
+            return defaultModuleIdResolver(base, input + '.out.js');
+          });
 
-        var searchEngine = new SearchEngine();
+      Q.when(
+          xhrModuleLoad.asyncAll(['valija', 'searchbox', 'kittens']),
+          function(modules) {
 
-        // Provide both modules an interface to Google search.
-        searchBoxImports.searchEngine = kittensImports.searchEngine
-            = searchEngine;
-        ___.grantRead(searchBoxImports, 'searchEngine');
-        ___.grantRead(kittensImports, 'searchEngine');
-      })();
-    </script>
+            // Initialize separate global namespaces for each plugin
 
-    <script type="text/javascript">
-      ___.getNewModuleHandler().setImports(kittensImports);
-      inlineHtml('kittens.co.html',
-          document.getElementById('base-kittens'));
-    </script>
+            var searchBoxImports;
+            var kittensImports;
 
-    <!-- Allow searchBoxImports to talk to kittens. -->
-    <script type="text/javascript">
-      searchBoxImports.resultConsumer = kittensImports.exports.showKitten;
-      ___.grantRead(searchBoxImports, 'resultConsumer');
-    </script>
+            searchBoxImports = ___.copy(___.sharedImports);
+            attachDocumentStub(
+                '-searchbox', { rewrite: function () { return null; } },
+                searchBoxImports, document.getElementById('base-searchbox'));
+            searchBoxImports.htmlEmitter___ = new HtmlEmitter(
+                document.getElementById('base-searchbox'));
+            searchBoxImports.outers = searchBoxImports;
+            searchBoxImports.$v = modules['valija'].CALL___({
+              outers: searchBoxImports.outers
+            });
 
-    <script type="text/javascript">
-      ___.getNewModuleHandler().setImports(searchBoxImports);
-      inlineHtml('searchbox.co.html',
-          document.getElementById('base-searchbox'));
+            kittensImports = ___.copy(___.sharedImports);
+            kittensImports.exports = {};
+            ___.grantRead(searchBoxImports, 'exports');
+            attachDocumentStub(
+                '-kittens', { rewrite: function (url, mimeType) {
+                                return /^image\//.test(mimeType) ? url : null;
+                              } },
+                kittensImports, document.getElementById('base-kittens'));
+            kittensImports.htmlEmitter___ = new HtmlEmitter(
+                document.getElementById('base-kittens'));
+            kittensImports.outers = kittensImports;
+            kittensImports.$v = modules['valija'].CALL___({
+              outers: kittensImports.outers
+            });
+
+            // Inject some capabilities into the 2 plugins
+
+            // Provide both modules an interface to Google search.
+            searchBoxImports.searchEngine = kittensImports.searchEngine
+                = searchEngine;
+            ___.grantRead(searchBoxImports, 'searchEngine');
+            ___.grantRead(kittensImports, 'searchEngine');
+
+            modules['kittens'].CALL___(kittensImports);
+
+            // Allow searchBoxImports to talk to kittens.
+            searchBoxImports.resultConsumer = kittensImports.exports.showKitten;
+            ___.grantRead(searchBoxImports, 'resultConsumer');
+
+            modules['searchbox'].CALL___(searchBoxImports);
+          });
     </script>
 
   </body>

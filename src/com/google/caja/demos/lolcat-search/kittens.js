@@ -19,6 +19,8 @@
  * @author mikesamuel@gmail.com
  */
 
+'use strict';
+'use cajita';
 
 /** @type {SearchEngine} */
 searchEngine;

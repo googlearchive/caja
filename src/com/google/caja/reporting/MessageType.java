@@ -69,8 +69,9 @@ public enum MessageType implements MessageTypeInt {
   MISSING_ATTRIBUTE_VALUE(
       "%s: missing value for attribute %s", MessageLevel.FATAL_ERROR),
   OCTAL_LITERAL("%s: octal literal %s", MessageLevel.LINT),
-  UNRECOGNIZED_USE_SUBSET(
-      "%s: unrecognized subset name in 'use' clause: %s", MessageLevel.WARNING),
+  UNRECOGNIZED_DIRECTIVE_IN_PROLOGUE(
+      "%s: unrecognized directive in prologue: %s",
+      MessageLevel.WARNING),
   SKIPPING("%s: Skipping malformed content", MessageLevel.WARNING),
   DUPLICATE_ATTRIBUTE(
       "%s: attribute %s duplicates one at %s", MessageLevel.WARNING),

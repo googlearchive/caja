@@ -12,6 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+'use strict';
+'use cajita';
+
 /**
  * @author maoziqing@gmail.com
  * @provides commonJsSandboxMaker
@@ -81,4 +84,15 @@ var commonJsSandboxMaker = (function(env, valijaMaker) {
 
 if (typeof loader !== 'undefined') {
   loader.provide(commonJsSandboxMaker);
+}
+
+// If this module is called with the new-style Cajita module convention,
+// passing 'env', 'valijaModule' and 'load' as Cajita-level parameters, the
+// value returned from instantiating the module should be the fully constructed
+// ServerJS sandbox object.
+if (typeof env !== 'undefined'
+    && typeof valijaModule !== 'undefined') {
+  commonJsSandboxMaker(env, function(valijaOuters) {
+    return valijaModule({ outers: valijaOuters });
+  });
 }

@@ -60,13 +60,13 @@ public class BenchmarkSize extends CajaTestCase {
   public final void testOverhead() throws IOException {
     varzOverhead("valija", "minify", "plain",
         size(charset(plain(fromResource("../../plugin/domita-minified.js")))) +
-        size(charset(plain(fromResource("../../plugin/valija.co.js")))) +
+        size(charset(plain(fromResource("../../plugin/valija.out.js")))) +
         size(charset(plain(
             fromResource("../../plugin/html-sanitizer-minified.js")))));
     varzOverhead("valija", "minify", "gzip",
         size(gzip(charset(plain(
             fromResource("../../plugin/domita-minified.js"))))) +
-        size(gzip(charset(plain(fromResource("../../plugin/valija.co.js"))))) +
+        size(gzip(charset(plain(fromResource("../../plugin/valija.out.js"))))) +
         size(gzip(charset(plain(
             fromResource("../../plugin/html-sanitizer-minified.js"))))));
 
@@ -174,7 +174,7 @@ public class BenchmarkSize extends CajaTestCase {
     }
     PluginMeta meta = new PluginMeta();
     MessageQueue mq = TestUtil.createTestMessageQueue(this.mc);
-    meta.setValijaMode(valija);
+    if (!valija) { js = BenchmarkUtils.addUseCajitaDirective(js); }
     PluginCompiler pc = new PluginCompiler(new TestBuildInfo(), meta, mq);
     pc.addInput(AncestorChain.instance(js));
     if (pc.run()) {

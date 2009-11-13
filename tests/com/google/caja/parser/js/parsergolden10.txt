@@ -1,40 +1,66 @@
 Block
-  UseSubsetDirective
-    UseSubset : strict
-    UseSubset : cajita
+  DirectivePrologue
+    Directive : use strict
+    Directive : use cajita
   FunctionDeclaration
     Identifier : strictFn1
     FunctionConstructor
       Identifier : strictFn1
       Block
-        UseSubsetDirective
-          UseSubset : strict
+        DirectivePrologue
+          Directive : use strict
         ReturnStmt
   FunctionDeclaration
     Identifier : strictFn2
     FunctionConstructor
       Identifier : strictFn2
       Block
-        UseSubsetDirective
-          UseSubset : strict
-          UseSubset : cajita
+        DirectivePrologue
+          Directive : use strict
+          Directive : use cajita
         ReturnStmt
   FunctionDeclaration
     Identifier : strictFn3
     FunctionConstructor
       Identifier : strictFn3
       Block
-        UseSubsetDirective
-          UseSubset : strict
-          UseSubset : cajita
+        DirectivePrologue
+          Directive : use strict
+          Directive : use cajita
         ReturnStmt
+  FunctionDeclaration
+    Identifier : strictFn4
+    FunctionConstructor
+      Identifier : strictFn4
+      Block
+        DirectivePrologue
+          Directive : use strict
+          Directive : use cajita
+        ReturnStmt
+  FunctionDeclaration
+    Identifier : strictFn5
+    FunctionConstructor
+      Identifier : strictFn5
+      Block
+        DirectivePrologue
+          Directive : use strict
+          Directive : use cajita
+        ReturnStmt
+  FunctionDeclaration
+    Identifier : strictFn6
+    FunctionConstructor
+      Identifier : strictFn6
+      Block
+        DirectivePrologue
+          Directive : use strict
+          Directive : use cajita
   FunctionDeclaration
     Identifier : notStrictFn1
     FunctionConstructor
       Identifier : notStrictFn1
       Block
         ExpressionStmt
-          StringLiteral : "use strict,cajita"
+          StringLiteral : "use strict"
         ReturnStmt
   FunctionDeclaration
     Identifier : notStrictFn2
@@ -42,16 +68,8 @@ Block
       Identifier : notStrictFn2
       Block
         ExpressionStmt
-          StringLiteral : "use strict,cajita"
-        ReturnStmt
-  FunctionDeclaration
-    Identifier : notStrictFn3
-    FunctionConstructor
-      Identifier : notStrictFn3
-      Block
-        ExpressionStmt
           SimpleOperation : ADDITION
-            StringLiteral : "use strict,cajita"
+            StringLiteral : "use strict"
             StringLiteral : "foo"
         ReturnStmt
   FunctionDeclaration
@@ -61,26 +79,13 @@ Block
       Block
         Block
           ExpressionStmt
-            StringLiteral : "use strict,cajita"
+            StringLiteral : "use strict"
+          ExpressionStmt
+            StringLiteral : "use cajita"
   FunctionDeclaration
-    Identifier : malformed1
+    Identifier : malformedOkayWithWarning
     FunctionConstructor
-      Identifier : malformed1
+      Identifier : malformedOkayWithWarning
       Block
-        ExpressionStmt
-          StringLiteral : "usestrict,cajita"
-  FunctionDeclaration
-    Identifier : unrecognizedSet1
-    FunctionConstructor
-      Identifier : unrecognizedSet1
-      Block
-        UseSubsetDirective
-          UseSubset : bogus
-  FunctionDeclaration
-    Identifier : unrecognizedSet2
-    FunctionConstructor
-      Identifier : unrecognizedSet2
-      Block
-        UseSubsetDirective
-          UseSubset : strict
-          UseSubset : bogus
+        DirectivePrologue
+          Directive : bogusburps

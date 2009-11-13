@@ -57,22 +57,21 @@ public class ParserTest extends CajaTestCase {
 
     // Check warnings on message queue.
     Iterator<Message> msgs = mq.getMessages().iterator();
-    assertTrue(msgs.hasNext());
-    Message m1 = msgs.next();
-    assertEquals(MessageType.RESERVED_WORD_USED_AS_IDENTIFIER,
-                 m1.getMessageType());
-    assertFilePosition("parsertest1.js:11+29 - 33",
-                       (FilePosition) m1.getMessageParts().get(0), mc);
-    assertEquals(Keyword.ELSE, m1.getMessageParts().get(1));
-    assertTrue(msgs.hasNext());
-    Message m2 = msgs.next();
-    assertEquals(MessageType.NOT_IE, m2.getMessageType());
-    assertFilePosition("parsertest1.js:35+7 - 8",
-                       (FilePosition) m2.getMessageParts().get(0), mc);
-    Message m3 = msgs.next();
-    assertEquals(MessageType.SEMICOLON_INSERTED, m3.getMessageType());
-    assertFilePosition("parsertest1.js:96+2",
-                       (FilePosition) m3.getMessageParts().get(0), mc);
+
+    assertNextMessage(
+        msgs,
+        MessageType.RESERVED_WORD_USED_AS_IDENTIFIER,
+        "parsertest1.js:11+29 - 33",
+        Keyword.ELSE);
+    assertNextMessage(
+        msgs,
+        MessageType.NOT_IE,
+        "parsertest1.js:35+7 - 8");
+    assertNextMessage(
+        msgs,
+        MessageType.SEMICOLON_INSERTED,
+        "parsertest1.js:96+2");
+
     // No semicolon needed at the end.
     assertTrue(!msgs.hasNext());
   }
@@ -80,11 +79,12 @@ public class ParserTest extends CajaTestCase {
     runParseTest("parsertest2.js", "parsergolden2.txt");
 
     Iterator<Message> msgs = mq.getMessages().iterator();
-    assertTrue(msgs.hasNext());
-    Message m1 = msgs.next();
-    assertEquals(MessageType.SEMICOLON_INSERTED, m1.getMessageType());
-    assertFilePosition("parsertest2.js:4+3",
-                       (FilePosition) m1.getMessageParts().get(0), mc);
+
+    assertNextMessage(
+        msgs,
+        MessageType.SEMICOLON_INSERTED,
+        "parsertest2.js:4+3");
+
     assertTrue(!msgs.hasNext());
   }
   public final void testParser3() throws Exception {
@@ -108,28 +108,45 @@ public class ParserTest extends CajaTestCase {
   public final void testParser10() throws Exception {
     runParseTest("parsertest10.js", "parsergolden10.txt");
 
-    Message m;
     Iterator<Message> msgs = mq.getMessages().iterator();
 
-    assertTrue(msgs.hasNext());
-    m = msgs.next();
-    assertEquals(MessageType.SEMICOLON_INSERTED, m.getMessageType());
-    assertFilePosition("parsertest10.js:19+22",
-                       (FilePosition) m.getMessageParts().get(0), mc);
-
-    assertTrue(msgs.hasNext());
-    m = msgs.next();
-    assertEquals(MessageType.UNRECOGNIZED_USE_SUBSET, m.getMessageType());
-    assertFilePosition("parsertest10.js:43+3 - 14",
-                       (FilePosition) m.getMessageParts().get(0), mc);
-    assertEquals("bogus", m.getMessageParts().get(1).toString());
-
-    assertTrue(msgs.hasNext());
-    m = msgs.next();
-    assertEquals(MessageType.UNRECOGNIZED_USE_SUBSET, m.getMessageType());
-    assertFilePosition("parsertest10.js:47+3 - 21",
-                       (FilePosition) m.getMessageParts().get(0), mc);
-    assertEquals("bogus", m.getMessageParts().get(1).toString());
+    assertNextMessage(
+        msgs,
+        MessageType.SEMICOLON_INSERTED,
+        "parsertest10.js:14+15");
+    assertNextMessage(
+        msgs,
+        MessageType.SEMICOLON_INSERTED,
+        "parsertest10.js:15+15");
+    assertNextMessage(
+        msgs,
+        MessageType.SEMICOLON_INSERTED,
+        "parsertest10.js:20+15");
+    assertNextMessage(
+        msgs,
+        MessageType.SEMICOLON_INSERTED,
+        "parsertest10.js:21+15");
+    assertNextMessage(
+        msgs,
+        MessageType.SEMICOLON_INSERTED,
+        "parsertest10.js:26+15");
+    assertNextMessage(
+        msgs,
+        MessageType.SEMICOLON_INSERTED,
+        "parsertest10.js:27+15");
+    assertNextMessage(
+        msgs,
+        MessageType.SEMICOLON_INSERTED,
+        "parsertest10.js:32+15");
+    assertNextMessage(
+        msgs,
+        MessageType.SEMICOLON_INSERTED,
+        "parsertest10.js:33+15");
+    assertNextMessage(
+        msgs,
+        MessageType.UNRECOGNIZED_DIRECTIVE_IN_PROLOGUE,
+        "parsertest10.js:52+3 - 15",
+        MessagePart.Factory.valueOf("bogusburps"));
 
     assertFalse(msgs.hasNext());
   }
@@ -466,6 +483,22 @@ public class ParserTest extends CajaTestCase {
 
   private static String asRvalue(String expr) {
     return "x = " + expr + ";";
+  }
+
+  private void assertNextMessage(Iterator<Message> msgs,
+                                 MessageType type,
+                                 String filePositionString,
+                                 Object... otherMessageParts)
+      throws Exception {
+    assertTrue(msgs.hasNext());
+    Message m = msgs.next();
+    assertEquals(type, m.getMessageType());
+    assertFilePosition(
+        filePositionString,
+        (FilePosition) m.getMessageParts().get(0), mc);
+    for (int i = 0; i < otherMessageParts.length; i++) {
+      assertEquals(otherMessageParts[i], m.getMessageParts().get(i + 1));
+    }
   }
 
   private void assertRenderKeywordAsIdentifier(Keyword k) throws Exception {

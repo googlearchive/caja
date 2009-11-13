@@ -12,10 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+'use strict';
+'use cajita';
+
 /**
  * @author maoziqing@gmail.com
  * 
  * A test file for unbundled synchronous module loading in Cajita
  */
-var m = load('../c.co');
+var m = load('../c');
 m({x: x}) + m({x: y});

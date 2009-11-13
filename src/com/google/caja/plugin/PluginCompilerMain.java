@@ -111,7 +111,6 @@ public final class PluginCompilerMain {
     try {
       PluginMeta meta = new PluginMeta(makeEnvironment(config));
       meta.setDebugMode(config.debugMode());
-      meta.setValijaMode(true);
       meta.setIdClass(config.getIdClass());
       PluginCompiler compiler = new PluginCompiler(
           BuildInfo.getInstance(), meta, mq);

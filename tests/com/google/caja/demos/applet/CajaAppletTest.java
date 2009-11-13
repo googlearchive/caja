@@ -49,17 +49,6 @@ public class CajaAppletTest extends CajaTestCase {
     CajaApplet applet = makeApplet();
     assertEquals(
         TestUtil.readResource(getClass(), "caja-applet-valija-golden.js"),
-        applet.cajole(
-            "Howdy<script>alert(2 + 2);</script>There",
-            CajaApplet.Feature.VALIJA_MODE.name())
-            .replace("\\n", "\n"));
-  }
-
-  public final void testCajoleInCajita() throws Exception {
-    if (checkHeadless()) return;
-    CajaApplet applet = makeApplet();
-    assertEquals(
-        TestUtil.readResource(getClass(), "caja-applet-cajita-golden.js"),
         applet.cajole("Howdy<script>alert(2 + 2);</script>There", "")
             .replace("\\n", "\n"));
   }

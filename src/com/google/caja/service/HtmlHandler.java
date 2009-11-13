@@ -65,7 +65,7 @@ public class HtmlHandler implements ContentHandler {
   private final BuildInfo buildInfo;
   private final PluginEnvironment pluginEnvironment;
   private final static String DEFAULT_HOSTED_SERVICE
-      = "http://caja.appsport.com/cajoler";
+      = "http://caja.appspot.com/cajoler";
 
   public HtmlHandler(BuildInfo buildInfo) {
     this(buildInfo, DEFAULT_HOSTED_SERVICE, null);
@@ -127,8 +127,6 @@ public class HtmlHandler implements ContentHandler {
                                    OutputStream response)
       throws UnsupportedContentTypeException {
     PluginMeta meta = new PluginMeta(pluginEnvironment);
-    // HtmlHandler only cajoles in valija mode
-    meta.setValijaMode(true);
     if (checker.check(outputContentType, "text/html")
         || checker.check(outputContentType, "*/*")) {
       meta.setOnlyJsEmitted(false);

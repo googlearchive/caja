@@ -335,7 +335,7 @@ public class MatchTest extends CajaTestCase {
     assertEquals("foo", ((Identifier) m.get("f")).getName());
   }
 
-  public final void testUseSubsetsInFunctionBodies() throws Exception {
+  public final void testDirectivePrologueInFunctionBodies() throws Exception {
     match(
         "function () { 'use strict'; @stmts* }",
         "function () { return 4; };");
@@ -370,14 +370,14 @@ public class MatchTest extends CajaTestCase {
     assertEquals(ReturnStmt.class, m.get("stmts").children().get(0).getClass());
 
     match(
-        "function f() { 'use strict,cajita'; @stmts* }",
+        "function f() { 'use strict'; 'use cajita'; @stmts* }",
         "(function f() { 'use strict'; return 4; });");
     assertNull(m);
 
     // Partial matches work too
     match(
         "function f() { 'use strict'; @stmts* }",
-        "(function f() { 'use strict,cajita'; return 4; });");
+        "(function f() { 'use strict'; 'use cajita'; return 4; });");
     assertNotNull(m);
     assertEquals(ReturnStmt.class, m.get("stmts").children().get(0).getClass());
   }

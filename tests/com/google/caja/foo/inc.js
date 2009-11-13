@@ -24,7 +24,7 @@ exports.inc = function(x) {
   env.Q.when(m, function(module) {
                   r.resolve(module.add(x, 1));
                 },
-                function(reason) { 
+                function(reason) {
                   r.resolve(
                       env.Q.reject("Loading module Add failed, " + reason)); 
                 });

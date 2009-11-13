@@ -19,6 +19,9 @@
  * @author mikesamuel@gmail.com
  */
 
+'use strict';
+'use cajita';
+
 /**
  * @param {string} text English
  * @return {string} LOLCAT

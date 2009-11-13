@@ -71,7 +71,6 @@ public class GadgetRewriterMain {
     rewriter.setCssSchema(config.getCssSchema(mq));
     rewriter.setHtmlSchema(config.getHtmlSchema(mq));
     rewriter.setDebugMode(config.debugMode());
-    rewriter.setValijaMode(true);
 
     Writer w = new BufferedWriter(new FileWriter(config.getOutputBase()));
     try {

@@ -52,9 +52,12 @@
  * not cajoled.
  *
  * @author erights@gmail.com
- * @requires cajita, loader
+ * @requires cajita, loader, outers
  * @provides valijaMaker
  */
+
+'use strict';
+'use cajita';
 
 var valijaMaker = (function(outers) {
 
@@ -512,4 +515,12 @@ var valijaMaker = (function(outers) {
 // 'valijaMaker' globally.
 if (typeof loader !== 'undefined') {
   loader.provide(valijaMaker);
+}
+
+// If the Valija module is called with the new-style Cajita module convention,
+// passing an 'outers' as a Cajita-level parameter, the value returned from
+// instantiating the module should be the fully constructed '$v' object, not
+// just valijaMaker.
+if (typeof outers !== 'undefined') {
+  valijaMaker(outers);
 }
