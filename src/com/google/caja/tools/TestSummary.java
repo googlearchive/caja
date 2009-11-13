@@ -191,18 +191,30 @@ public final class TestSummary extends Task {
         Project.MSG_INFO);
   }
 
+  // Attribute names on <testsuite> elements.
+  private static final String U_FAILURES = "failures";
+  private static final String U_ERRORS = "errors";
+  private static final String E_FAILURES = "expected-failures";
+  private static final String E_ERRORS = "expected-errors";
+
   private static void subtract(int nErrors, int nFailures, Element el) {
     while ("testsuite".equals(el.getTagName())) {
-      el.setAttribute(
-          "failures",
-          "" + (Integer.valueOf(el.getAttribute("failures")) - nFailures));
-      el.setAttribute(
-          "errors",
-          "" + (Integer.valueOf(el.getAttribute("errors")) - nErrors));
+      adjAttr(el, U_ERRORS, -nErrors);
+      adjAttr(el, U_FAILURES, -nFailures);
+      adjAttr(el, E_ERRORS, nErrors);
+      adjAttr(el, E_FAILURES, nFailures);
+
       Node parent = el.getParentNode();
       if (!(parent instanceof Element)) { break; }
       el = (Element) parent;
     }
+  }
+
+  private static void adjAttr(Element el, String attrName, int delta) {
+    String value = el.getAttribute(attrName);
+    // getAttribute return 0 for undefined attributes.
+    int num = "".equals(value) ? 0 : Integer.parseInt(value);
+    el.setAttribute(attrName, "" + (num + delta));
   }
 
   private static int rewriteChildElements(

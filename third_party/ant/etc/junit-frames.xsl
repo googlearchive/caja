@@ -177,6 +177,9 @@ h6 {
 .Expected {
     font-weight:bold
 }
+.expected-summary {
+    font-style:italic
+}
 .Properties {
   text-align:right;
 }
@@ -491,8 +494,28 @@ h6 {
                         <xsl:if test="@package = ''">&lt;none&gt;</xsl:if>
                     </a></td>
                     <td><xsl:value-of select="sum($insamepackage/@tests)"/></td>
-                    <td><xsl:value-of select="sum($insamepackage/@errors)"/></td>
-                    <td><xsl:value-of select="sum($insamepackage/@failures)"/></td>
+                    <td>
+                      <xsl:value-of select="sum($insamepackage/@errors)"/>
+                      <xsl:if test="sum($insamepackage/@expected-errors) &gt; 0">
+                        <xsl:text> </xsl:text>
+                        <span title="expected" class="expected-summary">
+                          <xsl:text>(</xsl:text>
+                          <xsl:value-of select="sum($insamepackage/@expected-errors)"/>
+                          <xsl:text>)</xsl:text>
+                        </span>
+                      </xsl:if>
+                    </td>
+                    <td>
+                      <xsl:value-of select="sum($insamepackage/@failures)"/>
+                      <xsl:if test="sum($insamepackage/@expected-failures) &gt; 0">
+                        <xsl:text> </xsl:text>
+                        <span title="expected" class="expected-summary">
+                          <xsl:text>(</xsl:text>
+                          <xsl:value-of select="sum($insamepackage/@expected-failures)"/>
+                          <xsl:text>)</xsl:text>
+                        </span>
+                      </xsl:if>
+                    </td>
                     <td>
                     <xsl:call-template name="display-time">
                         <xsl:with-param name="value" select="sum($insamepackage/@time)"/>
@@ -612,10 +635,30 @@ h6 {
         </xsl:attribute>
         <td><a href="{@id}_{@name}.html"><xsl:value-of select="@name"/></a></td>
         <td><xsl:apply-templates select="@tests"/></td>
-        <td><xsl:apply-templates select="@errors"/></td>
-        <td><xsl:apply-templates select="@failures"/></td>
+        <td>
+          <xsl:apply-templates select="@errors"/>
+          <xsl:if test="@expected-errors[.&gt; 0]">
+            <xsl:text> </xsl:text>
+            <span title="expected" class="expected-summary">
+              <xsl:text>(</xsl:text>
+              <xsl:apply-templates select="@expected-errors"/>
+              <xsl:text>)</xsl:text>
+            </span>
+          </xsl:if>
+        </td>
+        <td>
+          <xsl:apply-templates select="@failures"/>
+          <xsl:if test="@expected-failures[.&gt; 0]">
+            <xsl:text> </xsl:text>
+            <span title="expected" class="expected-summary">
+              <xsl:text>(</xsl:text>
+              <xsl:apply-templates select="@expected-failures"/>
+              <xsl:text>)</xsl:text>
+            </span>
+          </xsl:if>
+        </td>
         <td><xsl:call-template name="display-time">
-                <xsl:with-param name="value" select="@time"/>
+              <xsl:with-param name="value" select="@time"/>
             </xsl:call-template>
         </td>
     </tr>
