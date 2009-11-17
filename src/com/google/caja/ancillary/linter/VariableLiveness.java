@@ -210,8 +210,7 @@ final class VariableLiveness {
       return processLabeledStmtWrapper((LabeledStmtWrapper) s, onEntry);
     } else if (s instanceof DirectivePrologue) {
       // TODO: New node type, not yet supported by linter
-      // return processDirectivePrologue((DirectivePrologue) s, onEntry);
-      return processNoop(onEntry);
+      return processDirectivePrologue((DirectivePrologue) s, onEntry);
     } else {
       throw new RuntimeException(s.getClass().getName());
     }
@@ -679,7 +678,7 @@ final class VariableLiveness {
   private static LiveCalc processDirectivePrologue(
       DirectivePrologue d, LiveSet onEntry) {
     // TODO: New node type, not yet supported by linter
-    return null;
+    return processNoop(onEntry);
   }
 
   /**

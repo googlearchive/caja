@@ -32,18 +32,15 @@ import com.google.caja.util.CajaTestCase;
  * @author mikesamuel@gmail.com (Mike Samuel)
  */
 public class ExpressionSanitizerTest extends CajaTestCase {
-  private PluginMeta meta;
 
   @Override
   protected void setUp() throws Exception {
     super.setUp();
-    meta = new PluginMeta();
   }
 
   @Override
   protected void tearDown() throws Exception {
     super.tearDown();
-    meta = null;
   }
 
   public final void testBasicRewriting() throws Exception {

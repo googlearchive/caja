@@ -15,7 +15,6 @@
 package com.google.caja.parser.js;
 
 import com.google.caja.lexer.FilePosition;
-import com.google.caja.lexer.JsLexer;
 import com.google.caja.lexer.JsTokenQueue;
 import com.google.caja.lexer.JsTokenType;
 import com.google.caja.lexer.Keyword;
@@ -323,7 +322,7 @@ public final class Parser extends ParserBase {
 
     Mark startOfPrologue = tq.mark();
     List<Directive> directives = Lists.newArrayList();
-    
+
     while (tq.peek().type == JsTokenType.STRING) {
       Mark startOfDirective = tq.mark();
       Token<JsTokenType> quotedString = tq.pop();
@@ -361,7 +360,7 @@ public final class Parser extends ParserBase {
         tq.rewind(startOfDirective);
         break;
       }
-      
+
       String decoded = StringLiteral.getUnquotedValueOf(quotedString.text);
       if (!Directive.RecognizedValue.isDirectiveStringRecognized(decoded)) {
         mq.addMessage(
