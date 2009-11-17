@@ -15,15 +15,17 @@
 'sourceLocationMap': {
   'type': 'content',
   'content': [
-    '/** Begin line maps. **/{ file: \'file:///CAJOLED-OUTPUT\', count: 7 }',
-    '[0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,]', '[0,,,,,,,,,,,,,,,,,,,,,]',
-    '[0,,,,,,,,,,,,,,,,,,]', '[0,,,,,,,,,,,,,,,,,,1,,,]', '[2,,3]',
-    '[0,,,,,,,,,,,,,,,,,,,,,,,]', '[0]', '/** Begin file information. **/',
-    '[(void 0)]', '[(void 0)]', '[(void 0)]', '[\'testModule.js\',(void 0)]',
-    '[\'testModule.js\']', '[(void 0)]', '[(void 0)]',
-    '/** Begin mapping definitions. **/', '[(void 0),0,0]',
-    '[\'testModule.js\',1,1]', '[\'testModule.js\',1,5]',
-    '[\'testModule.js\',1,6]' ]
+    '/** Begin line maps. **/{\"count\":7,\"file\":\"file:\\/\\/\\/CAJOLED-OUTPUT\"}',
+    '[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]',
+    '[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]',
+    '[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]',
+    '[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1]', '[2,2,3]',
+    '[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]', '[0]',
+    '/** Begin file information. **/', '[null]', '[null]', '[null]',
+    '[\"testModule.js\",null]', '[\"testModule.js\"]', '[null]', '[null]',
+    '/** Begin mapping definitions. **/', '[null,0,0]',
+    '[\"testModule.js\",1,1]', '[\"testModule.js\",1,5]',
+    '[\"testModule.js\",1,6]' ]
 },
 'originalSource': {
   'testModule.js': {

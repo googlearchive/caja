@@ -1,17 +1,17 @@
  xyz.invokeMeth(function (funcArgXyz) {
     1 + 1;
   })
-/** Begin line maps. **/{ file: 'file://foo/bar.js', count: 3 }
-[0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,]
-[1,,,,,2,,3,,4]
-[0,,,]
+/** Begin line maps. **/{"count":3,"file":"file:\/\/foo\/bar.js"}
+[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+[1,1,1,1,1,2,2,3,3,4]
+[0,0,0,0]
 /** Begin file information. **/
-[(void 0)]
-['ssp-test-input.js']
-[(void 0)]
+[null]
+["ssp-test-input.js"]
+[null]
 /** Begin mapping definitions. **/
-[(void 0),0,0]
-['ssp-test-input.js',1,1]
-['ssp-test-input.js',1,4]
-['ssp-test-input.js',1,6]
-['ssp-test-input.js',1,8]
+[null,0,0]
+["ssp-test-input.js",1,1]
+["ssp-test-input.js",1,4]
+["ssp-test-input.js",1,6]
+["ssp-test-input.js",1,8]

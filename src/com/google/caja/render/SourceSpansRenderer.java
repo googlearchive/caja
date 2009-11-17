@@ -19,6 +19,8 @@ import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.reporting.MessageContext;
 import com.google.caja.util.Callback;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
 
 import java.io.IOException;
 import java.text.MessageFormat;
@@ -183,24 +185,16 @@ public class SourceSpansRenderer implements TokenConsumer {
       linePositionIndicesByLine.add(new ArrayList<Integer>());
       inputSourcesByLine.add(new TreeSet<InputSource>(INPUT_SOURCE_COMPARATOR));
 
-      FilePosition lastPos = null;
-      FilePosition currentPos;
-
       for (int charIdx = 0; charIdx < allPositionsByLine.get(lineIdx).size();
            charIdx++) {
 
-        currentPos = FilePosition.startOf(
+        FilePosition currentPos = FilePosition.startOf(
             allPositionsByLine.get(lineIdx).get(charIdx));
 
         inputSourcesByLine.get(lineIdx).add(currentPos.source());
 
         if (!currentPos.source().equals(InputSource.UNKNOWN)) {
           mc.addInputSource(currentPos.source());
-        }
-
-        if (currentPos.equals(lastPos) && charIdx != 0) {
-          linePositionIndicesByLine.get(lineIdx).add(-1);
-          continue;
         }
 
         Integer tableIndex = tableIndexByFilePosition.get(currentPos);
@@ -211,8 +205,6 @@ public class SourceSpansRenderer implements TokenConsumer {
         }
 
         linePositionIndicesByLine.get(lineIdx).add(tableIndex);
-
-        lastPos = currentPos;
       }
     }
 
@@ -226,47 +218,58 @@ public class SourceSpansRenderer implements TokenConsumer {
       List<List<Integer>> linePositionIndicesByLine,
       List<Set<InputSource>> inputSourcesByLine,
       List<FilePosition> filePositionTable) {
-    sourceLocationMap.add(MessageFormat.format(
-        "/** Begin line maps. **/'{' file: {0}, count: {1} '}'",
-        renderInputSource(mc, cajoledOutputFilename),
-        linePositionIndicesByLine.size()));
+    {
+      JSONObject header = new JSONObject();
+      jsonObjectPut(header,
+          "file", renderInputSource(mc, cajoledOutputFilename));
+      jsonObjectPut(header,
+          "count", linePositionIndicesByLine.size());
+      sourceLocationMap.add(
+          "/** Begin line maps. **/" + header.toJSONString());
+    }
 
     for (int i = 0; i < linePositionIndicesByLine.size(); i++) {
-      StringBuilder sb = new StringBuilder();
-      sb.append("[");
+      JSONArray line = new JSONArray();
       for (int j = 0; j < linePositionIndicesByLine.get(i).size(); j++) {
-        if (j != 0) { sb.append(","); }
-        int idx = linePositionIndicesByLine.get(i).get(j);
-        if (idx >= 0) { sb.append(idx); }
+          jsonArrayAdd(line, linePositionIndicesByLine.get(i).get(j));
       }
-      sb.append("]");
-      sourceLocationMap.add(sb.toString());
+      sourceLocationMap.add(line.toJSONString());
     }
 
     sourceLocationMap.add("/** Begin file information. **/");
 
     for (int i = 0; i < inputSourcesByLine.size(); i++) {
-      StringBuilder sb = new StringBuilder();
-      sb.append("[");
-      boolean first = true;
+      JSONArray line = new JSONArray();
       for (InputSource p : inputSourcesByLine.get(i)) {
-        if (first) { first = false; }
-        else { sb.append(","); }
-        sb.append(renderInputSource(mc, p));
+        jsonArrayAdd(line, renderInputSource(mc, p));
       }
-      sb.append("]");
-      sourceLocationMap.add(sb.toString());
+      sourceLocationMap.add(line.toJSONString());
     }
 
     sourceLocationMap.add("/** Begin mapping definitions. **/");
 
     for (int i = 0; i < filePositionTable.size(); i++) {
-      sourceLocationMap.add(MessageFormat.format(
-          "[{0},{1},{2}]",
-          renderInputSource(mc, filePositionTable.get(i).source()),
-          filePositionTable.get(i).startLineNo(),
-          filePositionTable.get(i).startCharInLine()));
+      JSONArray line = new JSONArray();
+      jsonArrayAdd(line,
+          renderInputSource(mc, filePositionTable.get(i).source()));
+      jsonArrayAdd(line,
+          filePositionTable.get(i).startLineNo());
+      jsonArrayAdd(line,
+          filePositionTable.get(i).startCharInLine());
+      sourceLocationMap.add(line.toJSONString());
     }
+  }
+
+  // Use instead of JSONObject.put to avoid unchecked warnings.
+  @SuppressWarnings("unchecked")
+  private static void jsonObjectPut(JSONObject o, Object key, Object value) {
+    o.put(key, value);
+  }
+
+  // Use instead of JSONArray.add to avoid unchecked warnings.
+  @SuppressWarnings("unchecked")
+  private static void jsonArrayAdd(JSONArray a, Object value) {
+    a.add(value);
   }
 
   /**
@@ -317,7 +320,6 @@ public class SourceSpansRenderer implements TokenConsumer {
 
   private static String renderInputSource(MessageContext mc, InputSource is) {
     return InputSource.UNKNOWN.equals(is)
-        ? "(void 0)"
-        : "'" + mc.abbreviate(is) + "'";
+        ? null : mc.abbreviate(is);
   }
 }

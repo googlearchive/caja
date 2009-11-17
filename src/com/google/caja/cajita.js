@@ -3230,6 +3230,13 @@ var safeJSON;
     handle: markFuncFreeze(function handleOnly(newModule){ return newModule; })
   });
 
+  function registerClosureInspector(module) {
+    if (this && this.CLOSURE_INSPECTOR___ 
+        && this.CLOSURE_INSPECTOR___.supportsCajaDebugging) {
+      this.CLOSURE_INSPECTOR___.registerCajaModule(module);
+    }
+  }
+
   /**
    * Makes and returns a fresh "normal" module handler whose imports
    * are initialized to a copy of the sharedImports.
@@ -3293,6 +3300,7 @@ var safeJSON;
        * the same manner.
        */
       handle: markFuncFreeze(function handle(newModule) {
+        registerClosureInspector(newModule);
         lastOutcome = void 0;
         try {
           var result = newModule.instantiate(___, imports);
@@ -3364,6 +3372,7 @@ var safeJSON;
    * Produces a function module given an object literal module 
    */
   function prepareModule(module, load) {
+    registerClosureInspector(module);
     function theModule(imports) {
       // The supplied 'imports' contain arguments supplied by the caller of the
       // module. We need to add the primordials (Array, Object, ...) to these
