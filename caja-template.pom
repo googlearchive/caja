@@ -28,6 +28,11 @@
       <artifactId>htmlparser</artifactId>
       <version>1.0.7</version>
     </dependency>
+    <dependency>
+      <groupId>com.googlecode.json-simple</groupId>
+      <artifactId>json-simple</artifactId>
+      <version>1.1</version>
+    </dependency>
     <!--
       - The next two dependencies include third_party/java/xerces/
       - as described at http://xerces.apache.org/xerces-j/
