@@ -15,7 +15,7 @@
 'sourceLocationMap': {
   'type': 'content',
   'content': [
-    '/** Begin line maps. **/{\"count\":7,\"file\":\"file:\\/\\/\\/CAJOLED-OUTPUT\"}',
+    '/** Begin line maps. **/{\"count\":7,\"file\":\"file:///CAJOLED-OUTPUT\"}',
     '[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]',
     '[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]',
     '[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]',

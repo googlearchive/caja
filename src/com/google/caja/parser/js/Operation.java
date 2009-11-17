@@ -43,6 +43,11 @@ public abstract class Operation extends AbstractExpression {
     return n instanceof Operation && op == ((Operation) n).getOperator();
   }
 
+  public static boolean is(ParseTreeNode n, OperatorCategory cat) {
+    return n instanceof Operation
+        && cat == ((Operation) n).getOperator().getCategory();
+  }
+
   @Override
   public List<? extends Expression> children() {
     return childrenAs(Expression.class);

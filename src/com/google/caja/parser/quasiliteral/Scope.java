@@ -31,6 +31,7 @@ import com.google.caja.parser.js.Statement;
 import com.google.caja.parser.js.Operation;
 import com.google.caja.parser.js.Operator;
 import com.google.caja.parser.js.UncajoledModule;
+import com.google.caja.parser.js.scope.ScopeType;
 import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessagePart;
@@ -118,64 +119,6 @@ public class Scope {
     }
   }
 
-  public enum ScopeType {
-    /**
-     * A Scope created from a plain block.
-     * Example: the block containing 'foo' in the following --
-     *
-     * <pre>
-     * if (someCondition) { foo; }
-     * </pre>
-     */
-    PLAIN_BLOCK(false),
-
-    /**
-     * A Scope created from a catch block.
-     * Example: the block containing 'foo' in the following --
-     *
-     * <pre>
-     * try { doSomething(); } catch (e) { foo; }
-     * </pre>
-     */
-    CATCH_BLOCK(false),
-
-    /**
-     * A Scope created from a function body.
-     * Example: the blocks containing 'foo' in the following --
-     *
-     * <pre>
-     * function someFunc() { foo; }
-     * var someFunc = function() { foo; }
-     * </pre>
-     */
-    FUNCTION_BODY(true),
-
-    /**
-     * A Scope created to represent the top level of a JavaScript program.
-     * Example: the scope in which the variable 'foo' is defined in the following --
-     *
-     * <pre>
-     * var foo = 3;
-     * var bar = 4;
-     * </pre>
-     */
-    PROGRAM(true),
-    ;
-
-    private final boolean declarationContainer;
-
-    /**
-     * @return whether this type of Scope can encapsulate unique 'var' declarations.
-     */
-    public boolean isDeclarationContainer() {
-      return declarationContainer;
-    }
-
-    private ScopeType(boolean declarationContainer) {
-      this.declarationContainer = declarationContainer;
-    }
-  }
-
   private final Scope parent;
   private final MessageQueue mq;
   private final ScopeType type;
@@ -198,25 +141,26 @@ public class Scope {
   }
 
   public static Scope fromPlainBlock(Scope parent) {
-    return new Scope(ScopeType.PLAIN_BLOCK, parent);
+    return new Scope(ScopeType.BLOCK, parent);
   }
 
   public static Scope fromCatchStmt(Scope parent, CatchStmt root) {
-    Scope s = new Scope(ScopeType.CATCH_BLOCK, parent);
+    Scope s = new Scope(ScopeType.CATCH, parent);
     declare(s, root.getException().getIdentifier(),
             LocalType.CAUGHT_EXCEPTION);
     return s;
   }
 
-  public static Scope fromParseTreeNodeContainer(Scope parent, ParseTreeNodeContainer root) {
-    Scope s = new Scope(ScopeType.PLAIN_BLOCK, parent);
+  public static Scope fromParseTreeNodeContainer(
+      Scope parent, ParseTreeNodeContainer root) {
+    Scope s = new Scope(ScopeType.BLOCK, parent);
     walkBlock(s, root);
     return s;
   }
 
   public static Scope fromFunctionConstructor(
       Scope parent, FunctionConstructor root) {
-    Scope s = new Scope(ScopeType.FUNCTION_BODY, parent);
+    Scope s = new Scope(ScopeType.FUNCTION, parent);
 
     // A function's name is bound to it in its body. After executing
     //    var g = function f() { return f; };
@@ -264,7 +208,7 @@ public class Scope {
    * scope are therefore visible throughout the program.
    */
   public boolean isOuter() {
-    if (type == ScopeType.FUNCTION_BODY) { return false; }
+    if (type == ScopeType.FUNCTION) { return false; }
     if (parent == null) return true;
     return parent.isOuter();
   }
@@ -351,7 +295,7 @@ public class Scope {
   }
 
   public Scope getClosestDeclarationContainer() {
-    if (!type.isDeclarationContainer()) {
+    if (!type.isDeclarationContainer) {
       assert(parent != null);
       return parent.getClosestDeclarationContainer();
     }
@@ -404,7 +348,7 @@ public class Scope {
     for (Scope s = this; s != null; s = s.parent) {
       if (s.locals.containsKey(name)) { return s; }
       if (isThisOrArguments) {
-        if (s.type == ScopeType.FUNCTION_BODY) { return s; }
+        if (s.type == ScopeType.FUNCTION) { return s; }
         if (s.type == ScopeType.PROGRAM && isThis) { return s; }
       }
     }
@@ -499,7 +443,7 @@ public class Scope {
   public boolean isOuter(String name) {
     if (parent == null) { return true;}
     if (locals.containsKey(name)) return false;
-    if (type == ScopeType.FUNCTION_BODY
+    if (type == ScopeType.FUNCTION
         && ("this".equals(name) || "arguments".equals(name))) {
       return false;
     } else if (type == ScopeType.PROGRAM && "this".equals(name)) {

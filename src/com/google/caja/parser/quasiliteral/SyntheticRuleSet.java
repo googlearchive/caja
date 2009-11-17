@@ -15,12 +15,14 @@
 package com.google.caja.parser.quasiliteral;
 
 import com.google.caja.parser.ParseTreeNode;
+import com.google.caja.parser.js.CatchStmt;
 import com.google.caja.parser.js.Expression;
 import com.google.caja.parser.js.FormalParam;
 import com.google.caja.parser.js.FunctionConstructor;
 import com.google.caja.parser.js.FunctionDeclaration;
 import com.google.caja.parser.js.Identifier;
 import com.google.caja.parser.js.Reference;
+import com.google.caja.parser.js.TryStmt;
 
 import java.util.Map;
 
@@ -236,12 +238,14 @@ class SyntheticRuleSet {
         Map<String, ParseTreeNode> bindings = this.match(node);
         if (bindings != null) {
           Identifier ex = (Identifier) bindings.get("ex");
+          TryStmt ts = (TryStmt) node;
+          CatchStmt cs = ts.getCatchClause();
           if (isSynthetic(ex)) {
             return substV(
                 "body", rw.expand(bindings.get("body"), scope),
                 "ex", rw.noexpand(ex),
-                "handler", rw.expand(bindings.get("handler"), scope)
-                );
+                "handler", rw.expand(
+                    bindings.get("handler"), Scope.fromCatchStmt(scope, cs)));
           }
         }
         return NONE;
@@ -263,12 +267,15 @@ class SyntheticRuleSet {
       public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
         Map<String, ParseTreeNode> bindings = this.match(node);
         if (bindings != null) {
+          TryStmt ts = (TryStmt) node;
+          CatchStmt cs = ts.getCatchClause();
           Identifier ex = (Identifier) bindings.get("ex");
           if (isSynthetic(ex)) {
             return substV(
                 "body", rw.expand(bindings.get("body"), scope),
                 "ex", rw.noexpand(ex),
-                "handler", rw.expand(bindings.get("handler"), scope),
+                "handler", rw.expand(
+                    bindings.get("handler"), Scope.fromCatchStmt(scope, cs)),
                 "cleanup", rw.expand(bindings.get("cleanup"), scope)
                 );
           }

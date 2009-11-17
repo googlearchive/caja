@@ -17,13 +17,18 @@ package com.google.caja.render;
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.TokenConsumer;
+import com.google.caja.parser.js.IntegerLiteral;
+import com.google.caja.parser.js.Literal;
+import com.google.caja.parser.js.NullLiteral;
+import com.google.caja.parser.js.ObjectConstructor;
+import com.google.caja.parser.js.StringLiteral;
+import com.google.caja.parser.quasiliteral.QuasiBuilder;
 import com.google.caja.reporting.MessageContext;
+import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.Callback;
 import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
 
 import java.io.IOException;
-import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -219,19 +224,31 @@ public class SourceSpansRenderer implements TokenConsumer {
       List<Set<InputSource>> inputSourcesByLine,
       List<FilePosition> filePositionTable) {
     {
-      JSONObject header = new JSONObject();
-      jsonObjectPut(header,
-          "file", renderInputSource(mc, cajoledOutputFilename));
-      jsonObjectPut(header,
-          "count", linePositionIndicesByLine.size());
-      sourceLocationMap.add(
-          "/** Begin line maps. **/" + header.toJSONString());
+      FilePosition unk = FilePosition.UNKNOWN;
+      // Input source might be null.
+      String inputSource = renderInputSource(mc, cajoledOutputFilename);
+      Literal fileLit;
+      if (inputSource == null) {
+        fileLit = new NullLiteral(unk);
+      } else {
+        fileLit = StringLiteral.valueOf(unk, inputSource);
+      }
+      ObjectConstructor oc = (ObjectConstructor) QuasiBuilder.substV(
+          "({ count: @count, file: @file })",
+          "file", fileLit,
+          "count", new IntegerLiteral(unk, linePositionIndicesByLine.size()));
+      StringBuilder header = new StringBuilder("/** Begin line maps. **/");
+      RenderContext rc = new RenderContext(
+          new JsMinimalPrinter(new Concatenator(header))).withJson(true);
+      oc.render(rc);
+      rc.getOut().noMoreTokens();
+      sourceLocationMap.add(header.toString());
     }
 
     for (int i = 0; i < linePositionIndicesByLine.size(); i++) {
       JSONArray line = new JSONArray();
       for (int j = 0; j < linePositionIndicesByLine.get(i).size(); j++) {
-          jsonArrayAdd(line, linePositionIndicesByLine.get(i).get(j));
+        jsonArrayAdd(line, linePositionIndicesByLine.get(i).get(j));
       }
       sourceLocationMap.add(line.toJSONString());
     }
@@ -258,12 +275,6 @@ public class SourceSpansRenderer implements TokenConsumer {
           filePositionTable.get(i).startCharInLine());
       sourceLocationMap.add(line.toJSONString());
     }
-  }
-
-  // Use instead of JSONObject.put to avoid unchecked warnings.
-  @SuppressWarnings("unchecked")
-  private static void jsonObjectPut(JSONObject o, Object key, Object value) {
-    o.put(key, value);
   }
 
   // Use instead of JSONArray.add to avoid unchecked warnings.

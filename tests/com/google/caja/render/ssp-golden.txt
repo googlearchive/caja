@@ -1,7 +1,7 @@
  xyz.invokeMeth(function (funcArgXyz) {
     1 + 1;
   })
-/** Begin line maps. **/{"count":3,"file":"file:\/\/foo\/bar.js"}
+/** Begin line maps. **/{"count":3,"file":"file://foo/bar.js"}
 [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
 [1,1,1,1,1,2,2,3,3,4]
 [0,0,0,0]

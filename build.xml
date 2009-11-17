@@ -788,7 +788,7 @@
       <src path="${src}"/>
       <classpath refid="classpath.compile"/>
       <include name="**/caja/parser/ParserBase.java"/>
-      <include name="**/caja/parser/js/*.java"/>
+      <include name="**/caja/parser/js/**/*.java"/>
       <compilerarg line="-Xlint:unchecked"/>
     </javac>
   </target>

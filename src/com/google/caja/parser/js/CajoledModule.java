@@ -41,7 +41,7 @@ import java.util.Map;
  * <p>TODO(ihab.awad): This class relies on
  * {@link com.google.caja.parser.quasiliteral.QuasiBuilder}
  * which makes our dependencies messy. Refactor {@code QuasiBuilder} so that
- * parser and parse tree node components can rely on it. 
+ * parser and parse tree node components can rely on it.
  *
  * @author ihab.awad@gmail.com
  */
@@ -63,7 +63,7 @@ public final class CajoledModule extends AbstractParseTreeNode {
    * Creates a CajoledModule.
    *
    * @param pos a file position.
-   * @param body an object contructor representing the module.
+   * @param body an object constructor representing the module.
    */
   public CajoledModule(FilePosition pos, ObjectConstructor body) {
     super(pos, ObjectConstructor.class);
@@ -189,7 +189,7 @@ public final class CajoledModule extends AbstractParseTreeNode {
    *     rendering. This handler may absorb the exceptions to allow rendering
    *     to continue, or rethrow them as {@code RuntimeException}s to halt
    *     the rendering. In the latter case, the {@code RuntimeException}s
-   *     thrown by the handler will escape from this method. 
+   *     thrown by the handler will escape from this method.
    */
   public void renderWithDebugSymbols(
       Map<InputSource, CharSequence> originalSources,
@@ -207,7 +207,7 @@ public final class CajoledModule extends AbstractParseTreeNode {
 
   /**
    * Render with debugging symbols, specifying a callback expression.
-   * 
+   *
    * @param callbackExpression see
    *     {@link #render(Expression, RenderContext)}.
    * @param originalSources see

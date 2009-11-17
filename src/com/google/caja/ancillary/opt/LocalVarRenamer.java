@@ -28,6 +28,7 @@ import com.google.caja.parser.js.Operation;
 import com.google.caja.parser.js.Operator;
 import com.google.caja.parser.js.Reference;
 import com.google.caja.parser.js.WithStmt;
+import com.google.caja.parser.js.scope.ScopeType;
 import com.google.caja.parser.quasiliteral.Scope;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.util.Iterators;
@@ -108,7 +109,7 @@ public final class LocalVarRenamer {
     } else if (n instanceof Declaration) {
       ScopeInfo declaring = scope;
       // Hoist out of catch block scopes.
-      while (declaring.s.getType() == Scope.ScopeType.CATCH_BLOCK) {
+      while (declaring.s.getType() == ScopeType.CATCH) {
         declaring = declaring.parent;
       }
       declaring.decls.add(ac.cast(Declaration.class));
@@ -213,7 +214,7 @@ public final class LocalVarRenamer {
    */
   private static void allocateExceptionNames(
       ScopeInfo scope, Iterator<String> namer) {
-    if (scope.s.getType() == Scope.ScopeType.CATCH_BLOCK) {
+    if (scope.s.getType() == ScopeType.CATCH) {
       for (AncestorChain<Declaration> d : scope.decls) {
         String name = d.node.getIdentifierName();
         if (!scope.mapping.containsKey(name)) {
