@@ -1225,14 +1225,14 @@
 
   <target name="maven" depends="jars,dirs,build.info">
     <copy file="${jars}/pluginc.jar"
-          tofile="${maven}/caja-${build.svnVersion}.jar"/>
+          tofile="${maven}/caja-r${build.svnVersion}.jar"/>
     <copy file="${jars}/pluginc-src.jar"
-          tofile="${maven}/caja-${build.svnVersion}-src.jar"/>
+          tofile="${maven}/caja-r${build.svnVersion}-src.jar"/>
     <copy file="caja-template.pom"
-          tofile="${maven}/caja-${build.svnVersion}.pom"/>
-    <replace file="${maven}/caja-${build.svnVersion}.pom"
+          tofile="${maven}/caja-r${build.svnVersion}.pom"/>
+    <replace file="${maven}/caja-r${build.svnVersion}.pom"
              token="%%build.svnVersion%%"
-             value="${build.svnVersion}"/>
+             value="r${build.svnVersion}"/>
   </target>
 
   <!--
