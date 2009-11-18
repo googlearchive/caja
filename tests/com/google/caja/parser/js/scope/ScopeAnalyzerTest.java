@@ -36,10 +36,11 @@ public class ScopeAnalyzerTest extends CajaTestCase {
   ScopeListener<TestScope> listener;
 
   public final void testGlobalScope() throws ParseException {
-    new ES5ScopeAnalyzer<TestScope>(listener).apply(program(
-        "var x = 1, y;",
-        "alert(x + z)"));
-    assertEvents(
+    assertScoping(
+        program(
+            "var x = 1, y;",
+            "alert(x + z)"),
+        allImplementations(listener),
         "enterScope PROGRAM at 0 @ testGlobalScope:1+1 - 2+13",
         "  locals:   [x, y]",
         "  read:     [outer alert at 0, x at 0, outer z at 0]",
@@ -49,11 +50,12 @@ public class ScopeAnalyzerTest extends CajaTestCase {
   }
 
   public final void testFnDecls() throws ParseException {
-    new ES5ScopeAnalyzer<TestScope>(listener).apply(program(
-        "var x = 1, y;",
-        "alert(x + z);",
-        "function alert(msg) { console.log(msg); }"));
-    assertEvents(
+    assertScoping(
+        program(
+            "var x = 1, y;",
+            "alert(x + z);",
+            "function alert(msg) { console.log(msg); }"),
+        notJScript(listener),
         "enterScope PROGRAM at 0 @ testFnDecls:1+1 - 3+42",
         "  enterScope FUNCTION at 1 @ testFnDecls:3+1 - 42",
         "    locals:   [alert, msg]",
@@ -125,15 +127,16 @@ public class ScopeAnalyzerTest extends CajaTestCase {
   }
 
   public final void testHoistingOfDecls1() throws ParseException {
-    new ES5ScopeAnalyzer<TestScope>(listener).apply(program(
-        "try {",
-        "  for (var i = 0; i < n; ++i) {",
-        "    foo(arr[i]);",
-        "  }",
-        "} catch (e) {",
-        "  alert('stopped at ' + i);",
-        "}"));
-    assertEvents(
+    assertScoping(
+        program(
+            "try {",
+            "  for (var i = 0; i < n; ++i) {",
+            "    foo(arr[i]);",
+            "  }",
+            "} catch (e) {",
+            "  alert('stopped at ' + i);",
+            "}"),
+        allImplementations(listener),
         "enterScope PROGRAM at 0 @ testHoistingOfDecls1:1+1 - 7+2",
         "  enterScope CATCH at 1 @ testHoistingOfDecls1:5+3 - 7+2",
         "    locals:   [e]",
@@ -143,21 +146,21 @@ public class ScopeAnalyzerTest extends CajaTestCase {
                   + " outer foo at 0, outer arr at 0, i at 0]",
         "  assigned: [i at 0, i at 0]",
         "exitScope at 0");
-    assertNoErrors();
   }
 
   public final void testHoistingOfDecls2() throws ParseException {
-    new ES5ScopeAnalyzer<TestScope>(listener).apply(program(
-        "(function () {",
-        "try {",
-        "  for (var i = 0; i < n; ++i) {",
-        "    foo(arr[i]);",
-        "  }",
-        "} catch (e) {",
-        "  alert('stopped at ' + i);",
-        "}",
-        "})();"));
-    assertEvents(
+    assertScoping(
+        program(
+            "(function () {",
+            "try {",
+            "  for (var i = 0; i < n; ++i) {",
+            "    foo(arr[i]);",
+            "  }",
+            "} catch (e) {",
+            "  alert('stopped at ' + i);",
+            "}",
+            "})();"),
+        allImplementations(listener),
         "enterScope PROGRAM at 0 @ testHoistingOfDecls2:1+1 - 9+6",
         "  enterScope FUNCTION at 1 @ testHoistingOfDecls2:1+2 - 9+2",
         "    enterScope CATCH at 2 @ testHoistingOfDecls2:6+3 - 8+2",
@@ -174,14 +177,15 @@ public class ScopeAnalyzerTest extends CajaTestCase {
   }
 
   public final void testUsageOfThis1() throws ParseException {
-    new ES5ScopeAnalyzer<TestScope>(listener).apply(program(
-        "this.location = 'foo';",
-        "try {",
-        "  new XMLHttpRequest;",
-        "} catch (e) {",
-        "  this.XMLHttpRequest = bar;",
-        "}"));
-    assertEvents(
+    assertScoping(
+        program(
+            "this.location = 'foo';",
+            "try {",
+            "  new XMLHttpRequest;",
+            "} catch (e) {",
+            "  this.XMLHttpRequest = bar;",
+            "}"),
+        allImplementations(listener),
         "enterScope PROGRAM at 0 @ testUsageOfThis1:1+1 - 6+2",
         "  enterScope CATCH at 1 @ testUsageOfThis1:4+3 - 6+2",
         "    locals:   [e]",
@@ -193,16 +197,17 @@ public class ScopeAnalyzerTest extends CajaTestCase {
   }
 
   public final void testUsageOfThis2() throws ParseException {
-    new ES5ScopeAnalyzer<TestScope>(listener).apply(program(
-        "(function () {",
-        "this.location = 'foo';",
-        "try {",
-        "  new XMLHttpRequest;",
-        "} catch (e) {",
-        "  this.XMLHttpRequest = bar;",
-        "}",
-        "})();"));
-    assertEvents(
+    assertScoping(
+        program(
+            "(function () {",
+            "this.location = 'foo';",
+            "try {",
+            "  new XMLHttpRequest;",
+            "} catch (e) {",
+            "  this.XMLHttpRequest = bar;",
+            "}",
+            "})();"),
+        allImplementations(listener),
         "enterScope PROGRAM at 0 @ testUsageOfThis2:1+1 - 8+6",
         "  enterScope FUNCTION at 1 @ testUsageOfThis2:1+2 - 8+2",
         "    enterScope CATCH at 2 @ testUsageOfThis2:5+3 - 7+2",
@@ -216,15 +221,16 @@ public class ScopeAnalyzerTest extends CajaTestCase {
   }
 
   public final void testUsageOfArguments() throws ParseException {
-    new ES5ScopeAnalyzer<TestScope>(listener).apply(program(
-        "if (typeof arguments === 'undefined') {",
-        "  try {",
-        "    arguments = (function () { return arguments; })();",
-        "  } catch (ex) {",
-        "    arguments = 'arguments';",
-        "  }",
-        "}"));
-    assertEvents(
+    assertScoping(
+        program(
+            "if (typeof arguments === 'undefined') {",
+            "  try {",
+            "    arguments = (function () { return arguments; })();",
+            "  } catch (ex) {",
+            "    arguments = 'arguments';",
+            "  }",
+            "}"),
+        allImplementations(listener),
         "enterScope PROGRAM at 0 @ testUsageOfArguments:1+1 - 7+2",
         "  enterScope FUNCTION at 1 @ testUsageOfArguments:3+18 - 51",
         "    read:     [arguments at 1]",
@@ -239,15 +245,20 @@ public class ScopeAnalyzerTest extends CajaTestCase {
   }
 
   public final void testDupesAndMasking() throws ParseException {
-    new ES5ScopeAnalyzer<TestScope>(listener).apply(program(
+    AncestorChain<Block> prog = program(
         "var ex, arguments;",
         "try {",
         "  var arguments = (function (arguments) { return arguments[z]; })();",
         "} catch (ex) {",
         "  arguments = 'arguments';",
         "  var z;",
-        "}"));
-    assertEvents(
+        "}");
+    assertMessage(  // Generated by parser
+        true, MessageType.DUPLICATE_FORMAL_PARAM, MessageLevel.ERROR,
+        MessagePart.Factory.valueOf("arguments"));
+    assertScoping(
+        prog,
+        allImplementations(listener),
         "enterScope PROGRAM at 0 @ testDupesAndMasking:1+1 - 7+2",
         "  Dupe arguments",
         "  enterScope FUNCTION at 1 @ testDupesAndMasking:3+20 - 65",
@@ -263,17 +274,15 @@ public class ScopeAnalyzerTest extends CajaTestCase {
         "  read:     [z at 1]",
         "  assigned: [arguments at 1, arguments at 0]",
         "exitScope at 0");
-    assertMessage(  // Generated by parser
-        true, MessageType.DUPLICATE_FORMAL_PARAM, MessageLevel.ERROR,
-        MessagePart.Factory.valueOf("arguments"));
     assertNoErrors();
   }
 
   public final void testMasking1() throws ParseException {
-    new ES5ScopeAnalyzer<TestScope>(listener).apply(program(
-        "var x;",
-        "(function (x) {});"));
-    assertEvents(
+    assertScoping(
+        program(
+            "var x;",
+            "(function (x) {});"),
+        allImplementations(listener),
         "enterScope PROGRAM at 0 @ testMasking1:1+1 - 2+19",
         "  enterScope FUNCTION at 1 @ testMasking1:2+2 - 17",
         "    masked x at 0",
@@ -285,14 +294,15 @@ public class ScopeAnalyzerTest extends CajaTestCase {
   }
 
   public final void testSplitInitialization() throws ParseException {
-    new ES5ScopeAnalyzer<TestScope>(listener).apply(program(
-        "try {",
-        "  throw 1;",
-        "} catch (e) {",
-        "  var e = 1;",
-        "}",
-        "return e;"));
-    assertEvents(
+    assertScoping(
+        program(
+            "try {",
+            "  throw 1;",
+            "} catch (e) {",
+            "  var e = 1;",
+            "}",
+            "return e;"),
+        allImplementations(listener),
         "enterScope PROGRAM at 0 @ testSplitInitialization:1+1 - 6+10",
         "  split initialization of e at 0 into 1",
         "  enterScope CATCH at 1 @ testSplitInitialization:3+3 - 5+2",
@@ -308,10 +318,11 @@ public class ScopeAnalyzerTest extends CajaTestCase {
   }
 
   public final void testMasking2() throws ParseException {
-    new ES5ScopeAnalyzer<TestScope>(listener).apply(program(
-        "(function (x) {});",
-        "var x;"));
-    assertEvents(
+    assertScoping(
+        program(
+            "(function (x) {});",
+            "var x;"),
+        allImplementations(listener),
         "enterScope PROGRAM at 0 @ testMasking2:1+1 - 2+7",
         "  enterScope FUNCTION at 1 @ testMasking2:1+2 - 17",
         "    masked x at 0",
@@ -334,8 +345,7 @@ public class ScopeAnalyzerTest extends CajaTestCase {
           AncestorChain<Identifier> id, TestScope useSite, TestScope defSite) {
         emit("read " + id.node.getName());
       }
-    }).apply(program(
-        "var x = 1; ++y; w = z += x;"));
+    }).apply(program("var x = 1; ++y; w = z += x;"));
     assertEvents(
         "enterScope PROGRAM at 0 @ testAssignments:1+1 - 28",
         "  set  x",
@@ -351,9 +361,9 @@ public class ScopeAnalyzerTest extends CajaTestCase {
   }
 
   public final void testForEachLoopAssignsPropName1() throws ParseException {
-    new ES5ScopeAnalyzer<TestScope>(listener).apply(program(
-        "for (var k in obj) { count(); }"));
-    assertEvents(
+    assertScoping(
+        program("for (var k in obj) { count(); }"),
+        allImplementations(listener),
         "enterScope PROGRAM at 0 @ testForEachLoopAssignsPropName1:1+1 - 32",
         "  locals:   [k]",
         "  read:     [outer obj at 0, outer count at 0]",
@@ -363,9 +373,9 @@ public class ScopeAnalyzerTest extends CajaTestCase {
   }
 
   public final void testForEachLoopAssignsPropName2() throws ParseException {
-    new ES5ScopeAnalyzer<TestScope>(listener).apply(program(
-        "for (k in obj) { count(); }"));
-    assertEvents(
+    assertScoping(
+        program("for (k in obj) { count(); }"),
+        allImplementations(listener),
         "enterScope PROGRAM at 0 @ testForEachLoopAssignsPropName2:1+1 - 28",
         "  read:     [outer obj at 0, outer count at 0]",
         "  assigned: [outer k at 0]",
@@ -374,8 +384,8 @@ public class ScopeAnalyzerTest extends CajaTestCase {
   }
 
   public final void testSameName1() throws ParseException {
-    new ES5ScopeAnalyzer<TestScope>(listener).apply(program(
-        "var x = function x() {};"));  // not masking
+    new ES5ScopeAnalyzer<TestScope>(listener).apply(
+        program("var x = function x() {};"));  // not masking
     assertEvents(
         "enterScope PROGRAM at 0 @ testSameName1:1+1 - 25",
         "  enterScope FUNCTION at 1 @ testSameName1:1+9 - 24",
@@ -388,12 +398,13 @@ public class ScopeAnalyzerTest extends CajaTestCase {
   }
 
   public final void testFnDeclInCatch() throws ParseException {
-    new ES5ScopeAnalyzer<TestScope>(listener).apply(program(
-        "try {",
-        "} catch (e) {",
-        "  function foo() { var e; }",
-        "}"));
-    assertEvents(
+    assertScoping(
+        program(
+            "try {",
+            "} catch (e) {",
+            "  function foo() { var e; }",
+            "}"),
+        notJScript(listener),
         "enterScope PROGRAM at 0 @ testFnDeclInCatch:1+1 - 4+2",
         "  enterScope CATCH at 1 @ testFnDeclInCatch:2+3 - 4+2",
         "    enterScope FUNCTION at 2 @ testFnDeclInCatch:3+3 - 28",
@@ -408,15 +419,37 @@ public class ScopeAnalyzerTest extends CajaTestCase {
     assertNoErrors();
   }
 
-  public final void testExceptionReadAndAssign() throws ParseException {
-    new ES5ScopeAnalyzer<TestScope>(listener).apply(program(
+  public final void testFnDeclInCatchJS() throws ParseException {
+    new JScriptScopeAnalyzer<TestScope>(listener).apply(program(
         "try {",
-        "  throw new Error();",
         "} catch (e) {",
-        "  e = new ErrorWrapper(e);",
-        "  throw e;",
+        "  function foo() { var e; }",
         "}"));
     assertEvents(
+        "enterScope PROGRAM at 0 @ testFnDeclInCatchJS:1+1 - 4+2",
+        "  enterScope CATCH at 1 @ testFnDeclInCatchJS:2+3 - 4+2",
+        "    enterScope FUNCTION at 2 @ testFnDeclInCatchJS:3+3 - 28",
+        "      masked e at 1",
+        "      locals:   [e]",
+        "    exitScope at 2",
+        "    locals:   [e]",
+        "  exitScope at 1",
+        "  locals:   [foo]",
+        "  assigned: [foo at 1]",
+        "exitScope at 0");
+    assertNoErrors();
+  }
+
+  public final void testExceptionReadAndAssign() throws ParseException {
+    assertScoping(
+        program(
+            "try {",
+            "  throw new Error();",
+            "} catch (e) {",
+            "  e = new ErrorWrapper(e);",
+            "  throw e;",
+            "}"),
+        allImplementations(listener),
         "enterScope PROGRAM at 0 @ testExceptionReadAndAssign:1+1 - 6+2",
         "  enterScope CATCH at 1 @ testExceptionReadAndAssign:3+3 - 6+2",
         "    locals:   [e]",
@@ -442,14 +475,43 @@ public class ScopeAnalyzerTest extends CajaTestCase {
         "exitScope at 0");
     assertNoErrors();
   }
+  public final void testSameName3() throws ParseException {
+    new JScriptScopeAnalyzer<TestScope>(listener).apply(program(
+        "var x;",
+        "x = function x() {};"));  // not masking
+    assertEvents(
+        "enterScope PROGRAM at 0 @ testSameName3:1+1 - 2+21",
+        "  enterScope FUNCTION at 1 @ testSameName3:2+5 - 20",
+        "  exitScope at 1",
+        "  locals:   [x, x]",
+        "  assigned: [x at 0]",
+        "exitScope at 0");
+    assertNoErrors();
+  }
+
+  public final void testSameName4() throws ParseException {
+    new WorstCaseScopeAnalyzer<TestScope>(listener).apply(program(
+        "var x;",
+        "x = function x() {};"));  // not masking
+    assertEvents(
+        "enterScope PROGRAM at 0 @ testSameName4:1+1 - 2+21",
+        "  enterScope FUNCTION at 1 @ testSameName4:2+5 - 20",
+        "    locals:   [x]",
+        "  exitScope at 1",
+        "  locals:   [x, x]",
+        "  assigned: [x at 0]",
+        "exitScope at 0");
+    assertNoErrors();
+  }
 
   public final void testWithBlock() throws ParseException {
-    new ES5ScopeAnalyzer<TestScope>(listener).apply(program(
-        "with (obj) {",
-        "  var sum = x + y;",
-        "  alert(sum);",
-        "}"));
-    assertEvents(
+    assertScoping(
+        program(
+            "with (obj) {",
+            "  var sum = x + y;",
+            "  alert(sum);",
+            "}"),
+        allImplementations(listener),
         "enterScope PROGRAM at 0 @ testWithBlock:1+1 - 4+2",
         "  enterScope WITH at 1 @ testWithBlock:1+1 - 4+2",
         "  exitScope at 1",
@@ -461,17 +523,51 @@ public class ScopeAnalyzerTest extends CajaTestCase {
     assertNoErrors();
   }
 
-  public final void testImmediatelyCalledFns() throws ParseException {
+  public final void testImmediatelyCalledFns1() throws ParseException {
     new ES5ScopeAnalyzer<TestScope>(listener).apply(program(
         "alert([function () { return 'Hello'; }(),",
         "       function f() { return ' World!'; }()]);"));
     assertEvents(
-        "enterScope PROGRAM at 0 @ testImmediatelyCalledFns:1+1 - 2+47",
-        "  enterScope FUNCTION at 1 @ testImmediatelyCalledFns:1+8 - 39",
+        "enterScope PROGRAM at 0 @ testImmediatelyCalledFns1:1+1 - 2+47",
+        "  enterScope FUNCTION at 1 @ testImmediatelyCalledFns1:1+8 - 39",
         "  exitScope at 1",
-        "  enterScope FUNCTION at 1 @ testImmediatelyCalledFns:2+8 - 42",
+        "  enterScope FUNCTION at 1 @ testImmediatelyCalledFns1:2+8 - 42",
         "    locals:   [f]",
         "  exitScope at 1",
+        "  read:     [outer alert at 0]",
+        "exitScope at 0");
+    assertNoErrors();
+  }
+
+  public final void testImmediatelyCalledFns2() throws ParseException {
+    new JScriptScopeAnalyzer<TestScope>(listener).apply(program(
+        "alert([function () { return 'Hello'; }(),",
+        "       function f() { return ' World!'; }()]);"));
+    assertEvents(
+        "enterScope PROGRAM at 0 @ testImmediatelyCalledFns2:1+1 - 2+47",
+        "  enterScope FUNCTION at 1 @ testImmediatelyCalledFns2:1+8 - 39",
+        "  exitScope at 1",
+        "  enterScope FUNCTION at 1 @ testImmediatelyCalledFns2:2+8 - 42",
+        "  exitScope at 1",
+        "  locals:   [f]",
+        "  read:     [outer alert at 0]",
+        "exitScope at 0");
+    assertNoErrors();
+  }
+
+  public final void testImmediatelyCalledFns3() throws ParseException {
+    new WorstCaseScopeAnalyzer<TestScope>(listener).apply(program(
+        "alert([function () { return 'Hello'; }(),",
+        "       function f() { return ' World!'; }()]);"));
+    assertEvents(
+        "enterScope PROGRAM at 0 @ testImmediatelyCalledFns3:1+1 - 2+47",
+        "  enterScope FUNCTION at 1 @ testImmediatelyCalledFns3:1+8 - 39",
+        "  exitScope at 1",
+        "  enterScope FUNCTION at 1 @ testImmediatelyCalledFns3:2+8 - 42",
+        "    masked f at 0",
+        "    locals:   [f]",
+        "  exitScope at 1",
+        "  locals:   [f]",
         "  read:     [outer alert at 0]",
         "exitScope at 0");
     assertNoErrors();
@@ -606,5 +702,33 @@ public class ScopeAnalyzerTest extends CajaTestCase {
 
   private void assertEvents(String... expected) {
     MoreAsserts.assertListsEqual(Arrays.asList(expected), events);
+  }
+
+  private void assertScoping(
+      AncestorChain<Block> program, List<ScopeAnalyzer<TestScope>> impls,
+      String... goldenEvents) {
+    assertTrue(events.isEmpty());
+    for (ScopeAnalyzer<TestScope> impl : impls) {
+      impl.apply(program);
+      assertEvents(goldenEvents);
+      events.clear();
+    }
+  }
+
+  private static <S extends AbstractScope>
+  List<ScopeAnalyzer<S>> allImplementations(ScopeListener<S> listener) {
+    List<ScopeAnalyzer<S>> impls = Lists.newArrayList();
+    impls.add(new ES5ScopeAnalyzer<S>(listener));
+    impls.add(new JScriptScopeAnalyzer<S>(listener));
+    impls.add(new WorstCaseScopeAnalyzer<S>(listener));
+    return impls;
+  }
+
+  private static <S extends AbstractScope>
+  List<ScopeAnalyzer<S>> notJScript(ScopeListener<S> listener) {
+    List<ScopeAnalyzer<S>> impls = Lists.newArrayList();
+    impls.add(new ES5ScopeAnalyzer<S>(listener));
+    impls.add(new WorstCaseScopeAnalyzer<S>(listener));
+    return impls;
   }
 }

@@ -69,7 +69,7 @@ import java.util.Set;
  *     <dd>A symbol masks another symbol when they have the same name and the
  *       first appears in a scope that is wholly contained in the other's scope
  *       so that any uses of the name will not resolve to the symbol in the
- *       containing scope.
+ *       containing scope.  A symbol does not mask itself.
  *       E.g. in <code>var x; function (x) { ... x ... }}</code> the formal
  *       parameter {@code x} masks the variable {@code x} since uses of
  *       {@code x} in the function no longer resolve to the variable.
@@ -185,7 +185,7 @@ public abstract class ScopeAnalyzer<S extends AbstractScope> {
       // Now that we're done with all the declaration in the scope, we can
       // tell whether a use corresponds to a declaration in the scope.
       String symbolName = id.node.getName();
-      ScopeTree<S> defSite = defSite(symbolName, s);
+      ScopeTree<S> defSite = definingSite(symbolName, s);
       Operator assignOperator = assignOperator(id);
       if (assignOperator == null) {
         listener.read(id, s.scopeImpl, scopeImpl(defSite));
@@ -196,7 +196,7 @@ public abstract class ScopeAnalyzer<S extends AbstractScope> {
         listener.assigned(id, s.scopeImpl, scopeImpl(defSite));
       }
     } else if (n instanceof Declaration) {
-      ScopeTree<S> defSite = defSite(id.node.getName(), s);
+      ScopeTree<S> defSite = definingSite(id.node.getName(), s);
       listener.assigned(id, s.scopeImpl, scopeImpl(defSite));
     } else {
       throw new ClassCastException("Unexpected use " + n);
@@ -234,7 +234,7 @@ public abstract class ScopeAnalyzer<S extends AbstractScope> {
    * variable.
    * @param useSite the scope in which symbol is referenced.
    */
-  private ScopeTree<S> defSite(String symbolName, ScopeTree<S> useSite) {
+  private ScopeTree<S> definingSite(String symbolName, ScopeTree<S> useSite) {
     if ("this".equals(symbolName)) {
       // "this" is defined in function & program scopes, and cannot be declared.
       for (ScopeTree<S> s = useSite; s != null; s = s.outer) {
@@ -330,16 +330,17 @@ public abstract class ScopeAnalyzer<S extends AbstractScope> {
             id, declScope.scopeImpl, ex.child(exId), s.scopeImpl);
       }
     }
-    ScopeTree<S> maskedScope = defSite(symbolName, declScope);
+    ScopeTree<S> maskedScope = definingSite(symbolName, declScope);
     declScope.declared.add(symbolName);
     listener.declaration(id, declScope.scopeImpl);
-    if (maskedScope != null) {
-      if (maskedScope == scope) {
-        listener.duplicate(id, declScope.scopeImpl);
-      } else if (!(id.parent.node instanceof FunctionConstructor
-                   && symbolName.equals(nameAssignedTo(id.parent)))) {
+    if (maskedScope != null
         // Not a function declaration or a var declaration like
         //   var x = function x() { ... };
+        && !(id.parent.node instanceof FunctionConstructor
+             && symbolName.equals(nameAssignedTo(id.parent)))) {
+      if (maskedScope == scope) {
+        listener.duplicate(id, declScope.scopeImpl);
+      } else {
         listener.masked(id, declScope.scopeImpl, scopeImpl(maskedScope));
       }
     }

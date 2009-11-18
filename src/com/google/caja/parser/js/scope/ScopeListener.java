@@ -89,13 +89,13 @@ public interface ScopeListener<S extends AbstractScope> {
    * Called when a variable is read.
    *
    * @param useSite the scope in which id is read.
-   * @param defSite the scope in which id is defined or null in the case
+   * @param definingSite the scope in which id is defined or null in the case
    *     of undeclared globals.  NOTE: be skeptical of this event if there is a
-   *     {@link ScopeType#WITH with} block between useSite and defSite.
-   *     {@code defSite} will always be the same as {@code useSite} or on its
-   *     {@link AbstractScope#getContainingScope() containing scope chain}.
+   *     {@link ScopeType#WITH with} block between useSite and definingSite.
+   *     {@code definingSite} will always be the same as {@code useSite} or on
+   *     its {@link AbstractScope#getContainingScope() containing scope chain}.
    */
-  void read(AncestorChain<Identifier> id, S useSite, S defSite);
+  void read(AncestorChain<Identifier> id, S useSite, S definingSite);
 
   /**
    * Called when a variable is assigned.
@@ -105,13 +105,13 @@ public interface ScopeListener<S extends AbstractScope> {
    * for them unless they are explicitly assigned.</p>
    *
    * @param useSite the scope in which id is assigned.
-   * @param defSite the scope in which id is defined or null in the case
+   * @param definingSite the scope in which id is defined or null in the case
    *     of undeclared globals.  NOTE: be skeptical of this event if there is a
-   *     {@link ScopeType#WITH with} block between useSite and defSite.
-   *     {@code defSite} will always be the same as {@code useSite} or on its
-   *     {@link AbstractScope#getContainingScope() containing scope chain}.
+   *     {@link ScopeType#WITH with} block between useSite and definingSite.
+   *     {@code definingSite} will always be the same as {@code useSite} or on
+   *     its {@link AbstractScope#getContainingScope() containing scope chain}.
    */
-  void assigned(AncestorChain<Identifier> id, S useSite, S defSite);
+  void assigned(AncestorChain<Identifier> id, S useSite, S definingSite);
 
   /**
    * Creates a scope for the given node.

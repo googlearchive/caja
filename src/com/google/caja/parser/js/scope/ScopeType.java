@@ -19,6 +19,11 @@ import com.google.caja.parser.js.CatchStmt;
 import com.google.caja.parser.js.FunctionConstructor;
 import com.google.caja.parser.js.WithStmt;
 
+/**
+ * Describes the kind of parse tree node that introduces a scope.
+ *
+ * @author mikesamuel@gmail.com
+ */
 public enum ScopeType {
 
   /**
@@ -74,6 +79,10 @@ public enum ScopeType {
   WITH,
   ;
 
+  /**
+   * True iff {@code var} declarations that appear inside this scope take
+   * effect in this scope instead of being hoisted to a containing scope.
+   */
   public final boolean isDeclarationContainer;
 
   ScopeType() { this(false); }
@@ -81,6 +90,10 @@ public enum ScopeType {
     this.isDeclarationContainer = isDeclarationContainer;
   }
 
+  /**
+   * The type of scope introduced by the given node or null if the given node
+   * does not introduce a scope.
+   */
   public static ScopeType forNode(ParseTreeNode n) {
     if (n instanceof FunctionConstructor) { return FUNCTION; }
     if (n instanceof CatchStmt) { return CATCH; }
