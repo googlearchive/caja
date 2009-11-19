@@ -47,8 +47,8 @@ import org.w3c.dom.Node;
  *
  * @author mikesamuel@gmail.com
  */
-class HtmlRenderer {
-  static void buildHtml(
+public class HtmlRenderer {
+  public static void buildHtml(
       String json, FileSystem fs, File htmlDir,
       Iterable<CharProducer> sources, MessageContext mc)
       throws IOException, JsdocException {
@@ -186,7 +186,7 @@ class HtmlRenderer {
   private void buildSourceFile(
       String relUri, String rootDirPath, CharProducer src, Writer out)
       throws IOException {
-    String sourceCode = String.valueOf(src.getBuffer(), 0, src.getLimit());
+    String sourceCode = src.toString();
     int startLineNo = src.filePositionForOffsets(0, 0).startLineNo();
     String extension = fileExtension(relUri);
     String lang = "";

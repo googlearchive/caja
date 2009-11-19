@@ -62,17 +62,21 @@ public class Jsdoc {
   private final List<Pair<String, String>> initFiles
       = new ArrayList<Pair<String, String>>();
 
+  public Jsdoc(MessageContext mc, MessageQueue mq) {
+    this(new AnnotationHandlers(mc), mc, mq);
+  }
+
   Jsdoc(AnnotationHandlers handlers, MessageContext mc, MessageQueue mq) {
     this.mc = mc;
     this.mq = mq;
     this.handlers = handlers;
   }
 
-  void addInitFile(String path, String content) {
+  public void addInitFile(String path, String content) {
     this.initFiles.add(Pair.pair(path, content));
   }
-  void addSource(ParseTreeNode source) { this.sources.add(source); }
-  void addPackage(InputSource pkg, Comment docs) {
+  public void addSource(ParseTreeNode source) { this.sources.add(source); }
+  public void addPackage(InputSource pkg, Comment docs) {
     packageDocs.add(Pair.pair(pkg, docs));
   }
 
@@ -80,7 +84,7 @@ public class Jsdoc {
    * Produces documentation JSON from the {@link #addSource sources} and
    * {@link #addPackage packages} added prior.
    */
-  ObjectConstructor extract() throws JsdocException {
+  public ObjectConstructor extract() throws JsdocException {
     Executor.Input[] rewritten = sourceCodeWithDocHooks();
     try {
       Map<String, Object> bindings = new LinkedHashMap<String, Object>();
@@ -106,7 +110,8 @@ public class Jsdoc {
     }
   }
   /**
-   * Allows jsdoc running code to issue messages and such.
+   * Allows "jsdoc.js" to report errors, etc..
+   * Public to allow for reflection.
    */
   public final class JsdocPowerBoxSandBoxSafe {
     public void addMessage(

@@ -17,9 +17,8 @@
  * defines the operators added by the rewriter.
  *
  * @author mikesamuel@gmail.com
+ * @namespace
  */
-
-/** @namespace */
 var jsdoc___ = (function () {
   var hasOwnProperty = ({}).hasOwnProperty;
   var lookupGetter = ({}).__lookupGetter__;
@@ -390,7 +389,11 @@ var jsdoc___ = (function () {
    * @return null if skipped.
    */
   function subtractIntersection(a, b) {
-    if ('object' !== typeof a) { return a !== b ? a : null; }
+    if ('object' !== typeof a) {
+      if (a === b) { return null; }
+      if (a !== a && b !== b) { return null; }  // Treat NaN as equal to itself
+      return a;
+    }
     if ('object' !== typeof b) { return a; }
     if (a === null || b === null) { return a; }
     var diff = a instanceof Array ? [] : {};
