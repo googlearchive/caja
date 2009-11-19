@@ -32,7 +32,7 @@ public class HtmlSnippetProducerTest extends CajaTestCase {
         pos, MessagePart.Factory.valueOf("http://<h1>foo</h1>")));
     assertEquals(
         ""
-        + "<a href=\"#\" class=\"filepos\""
+        + "<a href=\"#\" class=\"filepos nocode\""
         + " onclick=\"selectLine(&#39;test:///testSnippetEscaped&#39;,1)\">"
         + "testSnippetEscaped:1</a>"
         + ": &lt;style&gt;background: url("

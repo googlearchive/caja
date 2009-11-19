@@ -32,7 +32,7 @@ public enum PluginMessageType implements MessageTypeInt {
       "%s: access not allowed to global %s", MessageLevel.FATAL_ERROR),
   UNSAFE_ACCESS(
       "%s: unsafe access to protected namespace: %s", MessageLevel.FATAL_ERROR),
-  UNKNOWN_TAG("%s: removing unknown tag %s", MessageLevel.WARNING),
+  UNKNOWN_TAG("%s: unknown tag %s", MessageLevel.WARNING),
   UNSAFE_TAG("%s: removing disallowed tag %s", MessageLevel.WARNING),
   MISSING_ATTRIBUTE("%s: expected param %s on %s", MessageLevel.ERROR),
   UNKNOWN_ATTRIBUTE("%s: removing unknown attribute %s on %s",
@@ -50,7 +50,7 @@ public enum PluginMessageType implements MessageTypeInt {
   DISALLOWED_URI("%s: url %s cannot be linked to", MessageLevel.FATAL_ERROR),
   MALFORMED_URL("%s: malformed url %s", MessageLevel.FATAL_ERROR),
   MALFORMED_CSS_PROPERTY_VALUE(
-      "%s: removing css property %s with bad value: %s", MessageLevel.WARNING),
+      "%s: css property %s has bad value: %s", MessageLevel.WARNING),
   DISALLOWED_CSS_PROPERTY_IN_SELECTOR(
       "%s: css property %s not allowed in :visited selector at %s",
       MessageLevel.ERROR),

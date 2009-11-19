@@ -69,6 +69,11 @@ public final class LabeledStmtWrapper extends LabeledStatement {
     body.render(rc);
   }
 
+  @Override
+  public boolean isTerminal() {
+    return body.isTerminal();
+  }
+
   public boolean hasHangingConditional() {
     return body.hasHangingConditional();
   }

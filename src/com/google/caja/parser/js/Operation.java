@@ -533,6 +533,15 @@ public abstract class Operation extends AbstractExpression {
         } else {
           return left;
         }
+      } else {
+        bv = right.conditionResult();
+        // foo != bar && true -> foo != bar
+        if (bv != null && bv.booleanValue() == (op == Operator.LOGICAL_AND)
+            && "boolean".equals(left.typeOf())
+            && "boolean".equals(right.typeOf())
+            && right.simplifyForSideEffect() == null) {
+          return left;
+        }
       }
     } else if (op == Operator.MEMBER_ACCESS) {
       if (left instanceof StringLiteral) {
@@ -578,6 +587,19 @@ public abstract class Operation extends AbstractExpression {
       if (lhs instanceof Number && rhs instanceof Number) {
         double a = ((Number) lhs).doubleValue();
         double b = ((Number) rhs).doubleValue();
+        if (isIntOp(op) && !Double.isNaN(a) && !Double.isNaN(b)) {
+          long result;
+          switch (op) {
+            case BITWISE_AND: result = toInt32(a)  &   toInt32(b); break;
+            case BITWISE_OR:  result = toInt32(a)  |   toInt32(b); break;
+            case BITWISE_XOR: result = toInt32(a)  ^   toInt32(b); break;
+            case LSHIFT:      result = toInt32(a)  <<  toUint32(b); break;
+            case RSHIFT:      result = toInt32(a)  >>  toUint32(b); break;
+            case RUSHIFT:     result = toUint32(a) >>> toUint32(b); break;
+            default: return this;
+          }
+          return new IntegerLiteral(pos, result);
+        }
         double result;
         switch (op) {
           case ADDITION: result = a + b; break;
@@ -639,5 +661,27 @@ public abstract class Operation extends AbstractExpression {
       }
     }
     return null;
+  }
+
+  private static boolean isIntOp(Operator op) {
+    switch (op) {
+      case BITWISE_AND:
+      case BITWISE_OR:
+      case BITWISE_XOR:
+      case LSHIFT:
+      case RSHIFT:
+      case RUSHIFT:
+        return true;
+      default:
+        return false;
+    }
+  }
+
+  private static long toInt32(double n) {
+    return (int) n;
+  }
+
+  private static long toUint32(double n) {
+    return ((long) n) & 0xffffffffL;
   }
 }

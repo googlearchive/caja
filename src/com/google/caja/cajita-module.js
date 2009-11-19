@@ -157,6 +157,7 @@ var clearModuleCache;
     var xhr = bridal.makeXhr();
     xhr.onreadystatechange = function() {
       if (xhr.readyState === 4) {
+        xhr.onreadystatechange = noop;  // avoid memory leak
         if (xhr.status === 200) {
           var savedModuleHandler = ___.getNewModuleHandler();
           ___.setNewModuleHandler(___.primFreeze({
@@ -183,7 +184,6 @@ var clearModuleCache;
           //TODO: validate the response before eval it
           eval(xhr.responseText);
           ___.setNewModuleHandler(savedModuleHandler);
-          xhr.onreadystatechange = noop;  // avoid memory leak
         } else {
           r.resolve(Q.reject(
               "Retrieving the module " + mid + " failed, "

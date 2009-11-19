@@ -44,7 +44,7 @@ public final class JsMinimalPrinter extends BufferingRenderer {
   }
 
   /** Visible for testing.  Should not be used by clients. */
-  void setLineLengthLimit(int lineLengthLimit) {
+  public void setLineLengthLimit(int lineLengthLimit) {
     this.lineLengthLimit = lineLengthLimit;
   }
 

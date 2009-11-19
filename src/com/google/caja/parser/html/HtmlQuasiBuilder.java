@@ -360,6 +360,9 @@ public class HtmlQuasiBuilder {
 
       String quasiIdentifier = m.group(1);
       Object binding = bindings.get(quasiIdentifier);
+      if (!(binding instanceof String)) {
+        throw new ClassCastException("@" + quasiIdentifier);
+      }
       Escaping.escapeXml((String) binding, false, sb);
     } while (m.find());
     sb.append(unescaped, pos, unescaped.length());

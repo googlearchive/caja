@@ -1256,6 +1256,9 @@ public final class Parser extends ParserBase {
   }
 
   private static boolean isTerminal(Statement s) {
+    if (s instanceof LabeledStmtWrapper) {
+      return isTerminal(((LabeledStmtWrapper) s).getBody());
+    }
     return ((s instanceof Loop && !(s instanceof DoWhileLoop))
             || s instanceof Conditional || s instanceof FunctionDeclaration
             || s instanceof Block || s instanceof TryStmt
@@ -1265,9 +1268,7 @@ public final class Parser extends ParserBase {
 
   private Statement parseTerminatedStatement() throws ParseException {
     Statement s = parseStatement();
-    if (!isTerminal(s)) {
-      checkSemicolon();
-    }
+    if (!isTerminal(s)) { checkSemicolon(); }
     return s;
   }
 

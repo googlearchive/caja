@@ -14,6 +14,7 @@
 
 package com.google.caja.service;
 
+import com.google.caja.util.Maps;
 import com.google.caja.util.Strings;
 
 import java.io.ByteArrayOutputStream;
@@ -24,8 +25,8 @@ import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.util.Date;
-import java.util.Hashtable;
 import java.util.Locale;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -36,9 +37,9 @@ import javax.servlet.http.HttpServletResponse;
 /**
  * @author jasvir@google.com (Jasvir Nagra)
  */
-final class TestHttpServletResponse implements HttpServletResponse {
+public final class TestHttpServletResponse implements HttpServletResponse {
   private int status = 200;
-  private Hashtable<String, String> headers = new Hashtable<String, String>();
+  private Map<String, String> headers = Maps.newLinkedHashMap();
   private Object output;
   public void addCookie(Cookie a) { throw new UnsupportedOperationException(); }
   public boolean containsHeader(String n) { return headers.containsKey(n); }
@@ -66,14 +67,14 @@ final class TestHttpServletResponse implements HttpServletResponse {
     throw new UnsupportedOperationException();
   }
   public void setDateHeader(String arg0, long arg1) {
-    throw new UnsupportedOperationException();
+    setHeader(arg0, new Date(arg1).toString());
   }
   public void setHeader(String k, String v) {
     if (output != null) { throw new IllegalStateException(); }
     headers.put(Strings.toLowerCase(k), v);
   }
   public void setIntHeader(String arg0, int arg1) {
-    throw new UnsupportedOperationException();
+    setHeader(arg0, "" + arg1);
   }
   public void setStatus(int status) {
     if (output != null) { throw new IllegalStateException(); }
@@ -167,4 +168,6 @@ final class TestHttpServletResponse implements HttpServletResponse {
   public void setLocale(Locale arg0) {
     throw new UnsupportedOperationException();
   }
+
+  public Map<String, String> getHeaders() { return headers; }
 }

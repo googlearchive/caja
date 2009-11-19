@@ -199,7 +199,7 @@ public final class CssValidatorTest extends CajaTestCase {
             + "      SimpleSelector\n"
             + "        IdentLiteral : dl\n"
             + "    EmptyDeclaration",
-            "WARNING: removing css property font with bad value: "
+            "WARNING: css property font has bad value: "
             + "status-bar  ==><==  caption");
 
     // size and family
@@ -235,7 +235,7 @@ public final class CssValidatorTest extends CajaTestCase {
             + "      SimpleSelector\n"
             + "        IdentLiteral : dl\n"
             + "    EmptyDeclaration",
-            "WARNING: removing css property font with bad value:"
+            "WARNING: css property font has bad value:"
             + " -12pt  ==>url('Arial')<==");
     runTest("p, dl { font: twelve Arial; }",
             "StyleSheet\n"
@@ -292,7 +292,7 @@ public final class CssValidatorTest extends CajaTestCase {
             + "      SimpleSelector\n"
             + "        IdentLiteral : dl\n"
             + "    EmptyDeclaration",
-            "WARNING: removing css property font with bad value:"
+            "WARNING: css property font has bad value:"
             + " ==>150Arial<==");
     runTest("p, dl { font: 150/Arial; }",
             "StyleSheet\n"
@@ -304,7 +304,7 @@ public final class CssValidatorTest extends CajaTestCase {
             + "      SimpleSelector\n"
             + "        IdentLiteral : dl\n"
             + "    EmptyDeclaration",
-            "WARNING: removing css property font with bad value:"
+            "WARNING: css property font has bad value:"
             + " 150 /  ==>Arial<==");
     runTest("p, dl { font: medium Arial; }",
             "StyleSheet\n"
@@ -385,7 +385,7 @@ public final class CssValidatorTest extends CajaTestCase {
             + "      SimpleSelector\n"
             + "        IdentLiteral : dl\n"
             + "    EmptyDeclaration",
-            "WARNING: removing css property font with bad value:"
+            "WARNING: css property font has bad value:"
             + " italic  ==>bolderer<==  150% Arial");
     runTest("p, dl { font: italix bolder 150% Arial; }",
             "StyleSheet\n"
@@ -397,7 +397,7 @@ public final class CssValidatorTest extends CajaTestCase {
             + "      SimpleSelector\n"
             + "        IdentLiteral : dl\n"
             + "    EmptyDeclaration",
-            "WARNING: removing css property font with bad value:"
+            "WARNING: css property font has bad value:"
             + " ==>italix<==  bolder 150% Arial");
 
     // font-size also matches by previous terms
@@ -431,7 +431,7 @@ public final class CssValidatorTest extends CajaTestCase {
             + "      SimpleSelector\n"
             + "        IdentLiteral : dl\n"
             + "    EmptyDeclaration",
-            "WARNING: removing css property font with bad value: inherit");
+            "WARNING: css property font has bad value: inherit");
 
     // weight size family
     runTest("p, dl { font: 800 150% Arial; }",
@@ -517,7 +517,7 @@ public final class CssValidatorTest extends CajaTestCase {
             + "      SimpleSelector\n"
             + "        IdentLiteral : dl\n"
             + "    EmptyDeclaration",
-            "WARNING: removing css property font with bad value:"
+            "WARNING: css property font has bad value:"
             + " ==>abnormal<==  150% Arial");
 
     // with line-height following /
@@ -564,7 +564,7 @@ public final class CssValidatorTest extends CajaTestCase {
             + "      SimpleSelector\n"
             + "        IdentLiteral : dl\n"
             + "    EmptyDeclaration",
-            "WARNING: removing css property font with bad value:"
+            "WARNING: css property font has bad value:"
             + " ==>abnormal<==  150% / 175% Arial");
     runTest("p, dl { font: normal 800 150%/ Arial; }",
             "StyleSheet\n"
@@ -576,7 +576,7 @@ public final class CssValidatorTest extends CajaTestCase {
             + "      SimpleSelector\n"
             + "        IdentLiteral : dl\n"
             + "    EmptyDeclaration",
-            "WARNING: removing css property font with bad value:"
+            "WARNING: css property font has bad value:"
             + " normal 800 150% /  ==>Arial<==");
     runTest("p, dl { font: normal 800 150%/17.5 Arial; }",
             "StyleSheet\n"
@@ -1356,7 +1356,7 @@ public final class CssValidatorTest extends CajaTestCase {
             + "    Selector\n"
             + "      SimpleSelector\n"
             + "        IdentLiteral : p\n",
-            "WARNING: removing css property filter with bad value:"
+            "WARNING: css property filter has bad value:"
             + " ==>progid:foo.bar()<==");
     runTest("p { filter: progid:dximagetransform.microsoft.alpha(opaquity=50) }",
             "StyleSheet\n"
@@ -1364,7 +1364,7 @@ public final class CssValidatorTest extends CajaTestCase {
             + "    Selector\n"
             + "      SimpleSelector\n"
             + "        IdentLiteral : p\n",
-            "WARNING: removing css property filter with bad value:"
+            "WARNING: css property filter has bad value:"
             + " ==>progid:dximagetransform.microsoft.alpha(opaquity=50)<==");
   }
 
@@ -1397,7 +1397,7 @@ public final class CssValidatorTest extends CajaTestCase {
             + "    Selector\n"
             + "      SimpleSelector\n"
             + "        IdentLiteral : p\n",
-            "WARNING: removing css property color with bad value: ==>yelow<==");
+            "WARNING: css property color has bad value: ==>yelow<==");
   }
 
   public final void testHtmlStarHack() throws Exception {

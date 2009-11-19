@@ -14,18 +14,20 @@
 
 package com.google.caja.service;
 
+import com.google.caja.util.Maps;
 import com.google.caja.util.Strings;
 
 import java.io.BufferedReader;
-import java.io.UnsupportedEncodingException;
 import java.io.ByteArrayInputStream;
+import java.io.UnsupportedEncodingException;
 import java.io.IOException;
 import java.net.URLDecoder;
 import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.Enumeration;
-import java.util.Hashtable;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -39,15 +41,15 @@ import javax.servlet.http.HttpSession;
 /**
  * @author jasvir@google.com (Jasvir Nagra)
  */
-final class TestHttpServletRequest implements HttpServletRequest {
+public final class TestHttpServletRequest implements HttpServletRequest {
   private final String queryString;
-  private final Hashtable<String, List<String>> params
-      = new Hashtable<String, List<String>>();
+  private final Map<String, List<String>> params = Maps.newHashMap();
   private final byte[] content;
   private final String contentType;
   private final String characterEncoding;
+  private final Map<String, String> headers = Maps.newHashMap();
 
-  TestHttpServletRequest(String queryString) {
+  public TestHttpServletRequest(String queryString) {
     this.queryString = queryString;
     this.content = new byte[0];
     this.contentType = null;
@@ -80,17 +82,20 @@ final class TestHttpServletRequest implements HttpServletRequest {
 
   public String getAuthType() { throw new UnsupportedOperationException(); }
   public Cookie[] getCookies() { throw new UnsupportedOperationException(); }
+  @SuppressWarnings("deprecation")
   public long getDateHeader(String a) {
-    throw new UnsupportedOperationException();
+    String h = headers.get(a);
+    return h != null ? new Date(h).getTime() : -1;
   }
   public String getHeader(String a) {
-    throw new UnsupportedOperationException();
+    return headers.get(a);
   }
   public Enumeration<String> getHeaderNames() {
-    throw new UnsupportedOperationException();
+    return enumeration(headers.keySet().iterator());
   }
   public int getIntHeader(String arg0) {
-    throw new UnsupportedOperationException();
+    String h = headers.get(arg0);
+    return h != null ? Integer.valueOf(h) : -1;
   }
   public String getMethod() { throw new UnsupportedOperationException(); }
   public String getPathInfo() { throw new UnsupportedOperationException(); }
@@ -146,7 +151,9 @@ final class TestHttpServletRequest implements HttpServletRequest {
   public String getParameter(String k) {
     return params.containsKey(k) ? params.get(k).get(0) : null;
   }
-  public Enumeration<?> getParameterNames() { return params.keys(); }
+  public Enumeration<String> getParameterNames() {
+    return enumeration(params.keySet().iterator());
+  }
   public String[] getParameterValues(String k) {
     List<String> vals = params.get(k);
     return vals != null ? vals.toArray(new String[0]) : null;
@@ -222,5 +229,12 @@ final class TestHttpServletRequest implements HttpServletRequest {
 
   public void setCharacterEncoding(String encodingName) {
     throw new UnsupportedOperationException();
+  }
+
+  private static <T> Enumeration<T> enumeration(final Iterator<T> it) {
+    return new Enumeration<T>() {
+      public boolean hasMoreElements() { return it.hasNext(); }
+      public T nextElement() { return it.next(); }
+    };
   }
 }

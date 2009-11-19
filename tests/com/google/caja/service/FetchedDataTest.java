@@ -58,7 +58,7 @@ public class FetchedDataTest extends CajaTestCase {
     testUrl = URI.create("http://www.example.com/").toURL();
   }
 
-  public void testSimpleContent() throws Exception {
+  public final void testSimpleContent() throws Exception {
     FetchedData fd = new FetchedData(
         new TestURLConnection(testUrl, "abcdef", "text/html"));
     assertEquals("text/html", fd.getContentType());
@@ -76,7 +76,7 @@ public class FetchedDataTest extends CajaTestCase {
     assertEquals(expectedCharSet, fd.getCharSet());
   }
 
-  public void testCharSetParsing() throws Exception {
+  public final void testCharSetParsing() throws Exception {
     assertCharSet(
         "iso-8859-1",
         "text/html;charset=iso-8859-1");

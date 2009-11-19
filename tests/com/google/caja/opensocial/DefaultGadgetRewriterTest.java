@@ -1,4 +1,5 @@
 // Copyright (C) 2007 Google Inc.
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -130,7 +131,7 @@ public class DefaultGadgetRewriterTest extends CajaTestCase {
   public final void testStylesSanitized() throws Exception {
     assertRewritesWithMessage(
         "<p style=\"color: expression(foo)\">Bar</p>",
-        "removing css property color with bad value: ==>expression(foo)<==",
+        "css property color has bad value: ==>expression(foo)<==",
         MessageLevel.WARNING, false /* should not fail */);
   }
 

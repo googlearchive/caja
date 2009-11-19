@@ -26,7 +26,7 @@
   -   benchmarks :  runs the benchmarks
   -   clean      :  wipes generated files
   -   demos      :  demo files
-  -   docs       :  javadoc, jsdocs, and rule docs
+  -   docs       :  javadocs, jsdocs, and rule docs
   -   jars       :  build the binary distribution
   -   jars       :  build the binary distribution
   -   pluginc    :  the plugin compiler
@@ -112,7 +112,7 @@
   </path>
   <path id="classpath.javadocs">
     <path refid="classpath.compile"/>
-    <path refid="classpath.ant"/>
+    <path refid="classpath.tools"/>
   </path>
 
   <!--== Tasks Used Below ==-->

@@ -16,6 +16,7 @@ package com.google.caja.util;
 
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
@@ -94,25 +95,59 @@ public final class Maps {
 
   public static final class ImmutableMapBuilder<K, V> {
     private Map<K, V> map;
+    private boolean canUseEnumMap = true;
+    @SuppressWarnings("unchecked")
+    private Class<? extends Enum> enumKeyType;
     ImmutableMapBuilder(Map<K, V> emptyMap) { this.map = emptyMap; }
 
     public ImmutableMapBuilder<K, V> put(K key, V value) {
+      if (canUseEnumMap) {
+        if (enumKeyType != null) {
+          if (!enumKeyType.isInstance(key)) {  // Values from different enums
+            canUseEnumMap = false;
+            enumKeyType = null;
+          }
+        } else if (key instanceof Enum) {
+          enumKeyType = Enum.class.cast(key).getClass();
+        } else {
+          canUseEnumMap = false;
+        }
+      }
       map.put(key, value);
       return this;
     }
 
     public ImmutableMapBuilder<K, V> putAll(Map<K, V> map) {
-      map.putAll(map);
+      if (canUseEnumMap) {
+        for (Map.Entry<K, V> e : map.entrySet()) {
+          put(e.getKey(), e.getValue());
+        }
+      } else {
+        map.putAll(map);
+      }
       return this;
     }
 
     public Map<K, V> create() {
-      Map<K, V> map = this.map;
+      if (this.map.isEmpty()) { return Collections.<K, V>emptyMap(); }
+      Map<K, V> map;
+      if (canUseEnumMap) {
+        map = Maps.<K, V>makeEnumMap(enumKeyType);
+        map.putAll(this.map);
+      } else {
+        map = this.map;
+      }
       if (map == null) { throw new IllegalStateException(); }
       this.map = null;
       return Collections.unmodifiableMap(map);
     }
   }
+
+  // This is legit because enumKeyType above is both an enum type (checked at
+  // runtime in the EnumMap ctor) and is the type of a subclass of K.
+  @SuppressWarnings("unchecked")
+  private static <K, V>
+  Map<K, V> makeEnumMap(Class<? extends Enum> t) { return new EnumMap(t); }
 
   private Maps() {}
 }
