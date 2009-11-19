@@ -17,35 +17,24 @@ package com.google.caja.render;
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.TokenConsumer;
 
-import java.util.ArrayList;
-import java.util.List;
-
 /**
- * A formatter that indents code for CSS paying careful attention to where
- * adding whitespace between tokens would change tokenization.
+ * A formatter that renders CSS with the minimal amount of whitespace that
+ * does not change meaning.
  *
  * @author mikesamuel@gmail.com
  */
-public final class CssPrettyPrinter extends AbstractRenderer {
-  /**
-   * Stack of indentation positions.
-   * Curly brackets indent to two past the last stack position and
-   * parenthetical blocks indent to the open parenthesis.
-   *
-   * A non-negative number indicates a curly bracket indentation and a negative
-   * number a parenthetical indentation.
-   */
-  private List<Integer> indentStack = new ArrayList<Integer>();
+public final class CssMinimalPrinter extends AbstractRenderer {
   /** Number of characters written to out since the last line-break. */
   private int charInLine;
 
+  private char lastToken = '\0';
   /** True if the last token needs a following space. */
   private char pendingSpace = '\0';
 
   /**
    * @param out receives the rendered text.  Typically a {@link Concatenator}.
    */
-  public CssPrettyPrinter(TokenConsumer out) {
+  public CssMinimalPrinter(TokenConsumer out) {
     super(out);
   }
 
@@ -64,45 +53,24 @@ public final class CssPrettyPrinter extends AbstractRenderer {
         pendingSpace = '\n';
         return;
       case SPACE:
-        if (pendingSpace != '\n') { pendingSpace = ' '; }
-        return;
-      case COMMENT:
-        emit(text);
+        if (pendingSpace != '\n' && lastToken != ':') { pendingSpace = ' '; }
         return;
       default: break;
     }
 
     char spaceBefore = pendingSpace;
     pendingSpace = '\0';
-    char spaceAfter = '\0';
 
-    Integer nextIndent = null;
     if (text.length() == 1) {
       char ch0 = text.charAt(0);
       switch (ch0) {
-        case '{':
-          if (spaceBefore != '\n') {
-            spaceBefore = ' ';
-          }
-          nextIndent = getIndentation() + 2;
-          spaceAfter = '\n';
-          break;
-        case '}':
-          spaceAfter = spaceBefore = '\n';
-          popIndentStack();
-          break;
-        case ',':
+        case '{': case '}': case ',': case ';': case ':':
           spaceBefore = '\0';
-          spaceAfter = ' ';
-          break;
-        case ';':
-          spaceBefore = '\0';
-          // If we're rendering a declaration group, e.g. inside an HTML style
-          // attribute, separate them with spaces, but if we're pretty printing
-          // a stylesheet, put newlines between declarations.
-          spaceAfter = indentStack.isEmpty() ? ' ' : '\n';
           break;
       }
+      lastToken = ch0;
+    } else {
+      lastToken = '\0';
     }
 
     switch (spaceBefore) {
@@ -114,42 +82,7 @@ public final class CssPrettyPrinter extends AbstractRenderer {
         break;
     }
 
-    indent();
     emit(text);
-    if (nextIndent != null) {
-      pushIndent(nextIndent);
-    }
-
-    pendingSpace = spaceAfter;
-  }
-
-  private int getIndentation() {
-    return indentStack.isEmpty() ? 0 : indentStack.get(indentStack.size() - 1);
-  }
-
-  private void pushIndent(int indent) {
-    indentStack.add(indent);
-  }
-
-  private void popIndentStack() {
-    if (!indentStack.isEmpty()) {
-      indentStack.remove(indentStack.size() - 1);
-    }
-  }
-
-  private void indent() {
-    if (charInLine != 0) { return; }
-    int indent = getIndentation();
-
-    charInLine += indent;
-    String spaces = "                ";
-    while (indent >= spaces.length()) {
-      out.consume(spaces);
-      indent -= spaces.length();
-    }
-    if (indent != 0) {
-      out.consume(spaces.substring(0, indent));
-    }
   }
 
   private void newLine() {

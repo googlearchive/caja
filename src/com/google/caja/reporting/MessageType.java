@@ -47,7 +47,7 @@ public enum MessageType implements MessageTypeInt {
       "%s: escape sequence %s does not work in all interpreters",
       MessageLevel.WARNING),
   INVALID_CSS_COMMENT(
-      "%s: Line comments not allowed in CSS.", MessageLevel.WARNING),
+      "%s: Line comments non-standard in CSS.", MessageLevel.LINT),
 
   // parsing
   END_OF_FILE("Unexpected end of input in %s", MessageLevel.ERROR),
@@ -88,8 +88,7 @@ public enum MessageType implements MessageTypeInt {
 
   // symbol errors
   SYMBOL_REDEFINED("%s: %s originally defined at %s", MessageLevel.ERROR),
-  INVALID_DECLARATION(
-      "%s: Invalid declaration of %s", MessageLevel.ERROR),
+  UNDOCUMENTED_GLOBAL("%s: Undocumented global %s", MessageLevel.LINT),
   INVALID_ASSIGNMENT(
       "%s: Invalid assignment to %s", MessageLevel.ERROR),
   MASKING_SYMBOL(

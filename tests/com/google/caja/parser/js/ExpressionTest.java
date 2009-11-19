@@ -163,7 +163,7 @@ public class ExpressionTest extends CajaTestCase {
     assertFolded("false", "!'0'");
     assertFolded("true", "!null");
     assertFolded("true", "!(void 0)");
-    assertFolded("! (void foo())", "!(void foo())");
+    assertFolded("!void foo()", "!(void foo())");
     assertFolded("false", "!(4,true)");
     assertFolded("! (foo() || true)", "!(foo()||true)");
     assertFolded("true", "'foo' == 'foo'");
@@ -182,7 +182,7 @@ public class ExpressionTest extends CajaTestCase {
     assertFolded("1 / '2'", "1 / '2'");
     assertFolded("(1/0)", "1 / 0");
     assertFolded("(-1/0)", "-1 / 0");
-    assertFolded("0 / 0", "0 / 0");
+    assertFolded("(0/0)", "0 / 0");
     assertFolded("1.0", "1 % 3");
     assertFolded("1.0", "1 % -3");
     assertFolded("-1.0", "-1 % 3");
@@ -191,6 +191,8 @@ public class ExpressionTest extends CajaTestCase {
     assertFolded("4.0", "+4.0");
     assertFolded("-1", "~0");
     assertFolded("-1", "-1");
+    assertFolded("(-0)", "-0");
+    assertFolded("0.0", "-(-0)");
     assertFolded("3", "'foo'.length");
     assertFolded("1", "'foo'.indexOf('o')");
     assertFolded("-1", "'foo'.indexOf('bar')");

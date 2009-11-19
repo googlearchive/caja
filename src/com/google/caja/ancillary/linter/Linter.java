@@ -387,8 +387,7 @@ public class Linter implements BuildCommand {
            : globalScope.symbols.getSymbol(symbolName).getDeclarations()) {
         if (decl == globalScope.root) { continue; }  // a built-in
         mq.addMessage(
-            MessageType.INVALID_DECLARATION,
-            decl.node.getFilePosition(),
+            MessageType.UNDOCUMENTED_GLOBAL, decl.node.getFilePosition(),
             MessagePart.Factory.valueOf(symbolName));
       }
     }

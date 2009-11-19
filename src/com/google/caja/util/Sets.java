@@ -15,6 +15,7 @@
 package com.google.caja.util;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -139,8 +140,25 @@ public final class Sets {
     return s;
   }
 
+  public static <E> Set<E> immutableSet(E... elements) {
+    return Collections.unmodifiableSet(newLinkedHashSet(elements));
+  }
 
-    /** <tt>a U b</tt> */
+  public static <E> Set<E> immutableSet(Iterable<E> elements) {
+    return Collections.unmodifiableSet(newLinkedHashSet(elements));
+  }
+
+  public static <E extends Comparable<E>>
+  Set<E> immutableSortedSet(E... elements) {
+    return Collections.unmodifiableSet(newTreeSet(elements));
+  }
+
+  public static <E extends Comparable<E>>
+  Set<E> immutableSortedSet(Iterable<E> elements) {
+    return Collections.unmodifiableSet(newTreeSet(elements));
+  }
+
+  /** <tt>a U b</tt> */
   public static <T> Set<T> union(
       Collection<? extends T> a, Collection<? extends T> b) {
     Set<T> u = newLinkedHashSet(a);

@@ -14,6 +14,7 @@
 
 package com.google.caja.util;
 
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
@@ -80,6 +81,37 @@ public final class Maps {
     SortedMap<K, V> m = new TreeMap<K, V>(cmp);
     m.putAll(map);
     return m;
+  }
+
+  public static <K, V> ImmutableMapBuilder<K, V> immutableMap() {
+    return new ImmutableMapBuilder<K, V>(new LinkedHashMap<K, V>());
+  }
+
+  public static <K, V>
+  ImmutableMapBuilder<K, V> immutableSortedMap(Comparator<? super K> keyCmp) {
+    return new ImmutableMapBuilder<K, V>(new TreeMap<K, V>(keyCmp));
+  }
+
+  public static final class ImmutableMapBuilder<K, V> {
+    private Map<K, V> map;
+    ImmutableMapBuilder(Map<K, V> emptyMap) { this.map = emptyMap; }
+
+    public ImmutableMapBuilder<K, V> put(K key, V value) {
+      map.put(key, value);
+      return this;
+    }
+
+    public ImmutableMapBuilder<K, V> putAll(Map<K, V> map) {
+      map.putAll(map);
+      return this;
+    }
+
+    public Map<K, V> create() {
+      Map<K, V> map = this.map;
+      if (map == null) { throw new IllegalStateException(); }
+      this.map = null;
+      return Collections.unmodifiableMap(map);
+    }
   }
 
   private Maps() {}

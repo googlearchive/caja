@@ -38,8 +38,9 @@ public class CssLexerTest extends CajaTestCase {
     CharProducer cp = fromResource("csslexerinput1.css");
     runTest(cp, TestUtil.readResource(getClass(), "csslexergolden1.txt"));
     assertMessage(
-        MessageType.INVALID_CSS_COMMENT, MessageLevel.WARNING,
+        true, MessageType.INVALID_CSS_COMMENT, MessageLevel.LINT,
         cp.getSourceBreaks(0).toFilePosition(5076, 5093));
+    assertTrue(mq.getMessages().isEmpty());
   }
 
   public final void testUnterminatedStrings() throws Exception {

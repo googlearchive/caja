@@ -158,7 +158,7 @@ function typeForFile() {
       echo -n "text/css;charset=UTF-8"
       ;;
     gif )
-      echo -n "text/gif"
+      echo -n "image/gif"
       ;;
     graffle )
       echo -n "text/xml;charset=UTF-8"

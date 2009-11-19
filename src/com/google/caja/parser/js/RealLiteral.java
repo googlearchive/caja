@@ -65,6 +65,11 @@ public final class RealLiteral extends NumberLiteral {
       out.consume("/");
       out.consume("0");
       out.consume(")");
+    } else if (value == 0 && (1d/value) < 0) {
+      out.consume("(");
+      out.consume("-");
+      out.consume("0");
+      out.consume(")");
     } else {
       super.render(rc);
     }

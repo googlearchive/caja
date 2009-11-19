@@ -78,7 +78,7 @@ public abstract class NumberLiteral extends Literal {
    *   the integer abs(n-1) (with no leading zeros).
    * <li>Return the string consisting of the most significant digit
    *   of the decimal representation of s, followed by a decimal point
-   *   '.', folloarwed by the remaining k-1 digits of the decimal
+   *   '.', followed by the remaining k-1 digits of the decimal
    *   representation of s, followed by the lowercase character 'e',
    *   followed by a plus sign '+' or minus sign '-' according to
    *   whether n-1 is positive or negative, followed by the decimal

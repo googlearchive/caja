@@ -391,11 +391,14 @@ public abstract class Operation extends AbstractExpression {
       // RIGHT: a = b = c -> a = (b = c)
       // And we'd need to parenthesize left in (a = b) = c if that were legal
 
-      // -(-a) is right associative so it is parenthesized
+      // -(-a) is right associative but does not need to be parenthesized.
+      // The JS printers prevent the two - signs from being merged into a
+      // single -- token.
+      if (op.getType() == OperatorType.PREFIX) { return false; }
 
       // ?: is right associative, so in a ? b : c, a would be parenthesized were
       // it a ternary op.
-      return (childOp.getAssociativity() == Associativity.LEFT) != firstOp;
+      return childOp.getAssociativity() == Associativity.LEFT != firstOp;
     } else {
       return false;
     }
@@ -483,7 +486,7 @@ public abstract class Operation extends AbstractExpression {
           if (v instanceof Number) {
             if (operand instanceof IntegerLiteral) {
               long n = ((IntegerLiteral) operand).getValue().longValue();
-              if (n != Long.MIN_VALUE) {
+              if (n != Long.MIN_VALUE && n != 0) {
                 return new IntegerLiteral(pos, -n);
               }
             }
@@ -575,18 +578,16 @@ public abstract class Operation extends AbstractExpression {
       if (lhs instanceof Number && rhs instanceof Number) {
         double a = ((Number) lhs).doubleValue();
         double b = ((Number) rhs).doubleValue();
-        double result = Double.NaN;
+        double result;
         switch (op) {
           case ADDITION: result = a + b; break;
           case SUBTRACTION: result = a - b; break;
           case MULTIPLICATION: result = a * b; break;
           case DIVISION: result = a / b; break;
           case MODULUS: result = Math.IEEEremainder(a, b); break;
-          default: break;
+          default: return this;
         }
-        if (!Double.isNaN(result)) {
-          return new RealLiteral(pos, result);
-        }
+        return new RealLiteral(pos, result);
       }
     }
     return this;

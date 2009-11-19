@@ -34,8 +34,7 @@ import java.util.NoSuchElementException;
  *
  * @author mikesamuel@gmail.com
  */
-public abstract class AbstractParseTreeNode
-    implements MutableParseTreeNode {
+public abstract class AbstractParseTreeNode implements MutableParseTreeNode {
   private FilePosition pos;
   private List<Token<?>> comments = Collections.<Token<?>>emptyList();
   private SyntheticAttributes attributes;

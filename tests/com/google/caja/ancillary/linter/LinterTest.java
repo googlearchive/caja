@@ -35,7 +35,7 @@ public class LinterTest extends CajaTestCase {
   public final void testProvides() throws Exception {
     runLinterTest(
         jobs(new LintJobMaker(js(fromString("var x;"))).make()),
-        "ERROR: testProvides:1+1 - 6: Invalid declaration of x");
+        "LINT: testProvides:1+1 - 6: Undocumented global x");
     runLinterTest(
         jobs(new LintJobMaker(js(fromString("var x = 1;")))
              .withProvides("x")
@@ -179,7 +179,7 @@ public class LinterTest extends CajaTestCase {
             + "  // swallow exception\n"
             + "}")))
             .make()),
-        "ERROR: testCatchBlocks:1+1 - 6: Invalid declaration of e",
+        "LINT: testCatchBlocks:1+1 - 6: Undocumented global e",
         ("WARNING: testCatchBlocks:4+10 - 11: Declaration of e masks"
          + " declaration at testCatchBlocks:1+1 - 6"));
     runLinterTest(
@@ -193,7 +193,7 @@ public class LinterTest extends CajaTestCase {
             + "}")))
             .withRequires("print")
             .make()),
-        "ERROR: testCatchBlocks:4+3 - 18: Invalid declaration of f");
+        "LINT: testCatchBlocks:4+3 - 18: Undocumented global f");
     runLinterTest(
         jobs(new LintJobMaker(js(fromString(
             ""
@@ -422,7 +422,7 @@ public class LinterTest extends CajaTestCase {
             )))
             .withProvides("myObject")
             .make()),
-        "ERROR: testIEQuirksScoping:2+10 - 27: Invalid declaration of foo");
+        "LINT: testIEQuirksScoping:2+10 - 27: Undocumented global foo");
     // No problem if done inside a closure.
     runLinterTest(
         jobs(new LintJobMaker(js(fromString(
