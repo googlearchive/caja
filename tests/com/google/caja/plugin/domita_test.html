@@ -66,7 +66,7 @@
         function _testSideEffectTestFramework() {
           assertFalse(checkGlobalSideEffect());
           var s = document.createElement('SCRIPT');
-          s.innerHTML = 'globalSideEffect()';
+          s.text = 'globalSideEffect()';
           document.body.appendChild(s);
           assertTrue(checkGlobalSideEffect());
           assertFalse(checkGlobalSideEffect());
@@ -164,7 +164,7 @@
 
       function readyForAutomatedTesting() {
         var e = document.getElementById('automatedTestingReadyIndicator');
-        e.setAttribute('class', 'readytotest');
+        bridal.setAttribute(e, 'class', 'readytotest');
         e.innerHTML = 'Ready for testing';
       }
 
@@ -458,6 +458,8 @@
       });
       window.toString = function () { return '[WINDOW]'; };
 
+      document.title += isValija ? ' valija' : ' cajita';
+
       inlineHtml(
           isValija
               ? 'domita_test_untrusted_valija.out.html'
@@ -468,10 +470,8 @@
       this.evaluateAsyncRequirements(function (pass) {
         if (!pass) {
           document.title = document.title.replace(
-              / - all tests passed$/, ' - async tests failed');
+              /all tests passed/, 'async tests failed');
         }
-        assertTrue(document.title,
-                   /(?: - all tests passed)?$/.test(document.title));
       });
 
       readyForAutomatedTesting();

@@ -329,7 +329,7 @@ After
 <div class="testcontainer" id="test-strange-ids"></div>
 
 <div class="testcontainer" id="test-clone-node-structure">
-  <p>I have <b title="I have attributes">content</b></p>
+  <p class="cloneable">some <label for="x">content</label></p>
 </div>
 
 <p class="testcontainer" id="test-compat-mode">Compat Mode:</p>
@@ -635,8 +635,12 @@ function assertDomTree(skeleton, node, opt_stack) {
 }
 
 /**
- * Canonicalize well formed innerHTML output, by making sure that attributes
- * are ordered by name, and have quoted values.
+ * Canonicalize innerHTML output:
+ *   - collapse all whitespace to a single space
+ *   - remove whitespace between adjacent tags
+ *   - lowercase tagnames and attribute names
+ *   - sort attributes by name
+ *   - quote attribute values
  *
  * Without this step, it's impossible to compare innerHTML cross-browser.
  */
@@ -656,7 +660,7 @@ function canonInnerHtml(s) {
       function (_, tagStart, tagBody) {
         var attrs = [];
         for (var m; tagBody && (m = tagBody.match(htmlAttribute));) {
-          var name = m[1];
+          var name = m[1].toLowerCase();
           var value = m[2];
           var hasValue = value != null;
           if (hasValue && (new RegExp('^["\']')).test(value)) {
@@ -669,15 +673,18 @@ function canonInnerHtml(s) {
           tagBody = tagBody.substring(m[0].length);
         }
         attrs.sort();
-        return tagStart + ' ' + attrs.join(' ') + '>';
+        attrs.unshift(tagStart);
+        return attrs.join(' ') + '>';
       });
   s = s.replace(
       htmlTag,
       function (_, open, name, body) {
         return open + name.toLowerCase() + (body || '') + '>';
       });
-  // Remove ignorable whitespace.
-  s = s.replace(ignorableWhitespace, '');
+  // Collapse whitespace.
+  s = s.replace(new RegExp('\\s+', 'g'), ' ');
+  s = s.replace(new RegExp('^ | $', 'g'), '');
+  s = s.replace(new RegExp('[>]\\s+[<]', 'g'), '><');
   // Normalize escaping of text nodes since Safari doesn't escape loose >.
   s = s.replace(
       tagEntityOrText,
@@ -1009,7 +1016,8 @@ jsunitRegister('testRelatedTarget',
 jsunitRegister('testDocumentWrite',
                function testDocumentWrite() {
   // TODO(mikesamuel): This is wrong because we don't allow the insertion point
-  // to move above it's starting position
+  // to move above its starting position
+  var el = document.getElementById('test-document-write');
   assertEquals(
       ''
       + '<div>'
@@ -1021,8 +1029,7 @@ jsunitRegister('testDocumentWrite',
         + '<p>Written afterwards</p>'
         + '<p>More written afterwards</p>'
       + '</div>',
-      document.getElementById('test-document-write').innerHTML
-           .replace(new RegExp('[\\r\\n]\\s*', 'g'), ''));
+      canonInnerHtml(el.innerHTML));
   pass('test-document-write');
 });
 
@@ -1812,17 +1819,28 @@ jsunitRegister('testArraySlice',
     }
   }
 
+  // These cases are critical, because they affect the correctness of
+  // valija's fn.apply() implementation.  IE is the problem case, because
+  // it throws an error when you Array.prototype.slice.call(null).
   assertArray([], Array.slice(null), 'null');
   assertArray([], Array.slice(void 0), 'void 0');
 
-  // note difference between missing arg and undefined arg.
+  // These are expected behavior that work fine on all browsers.
   assertArray([9], Array.slice([9]), '([9])');
+  assertArray([9], Array.slice([9], null), '([9], null)');
   assertArray([9], Array.slice([9], void 0), '([9], void 0)');
-  assertArray([],  Array.slice([9], void 0, void 0), '([9], void 0, void 0)');
+  assertArray([],  Array.slice([9], null, 0), '([9], null, 0)');
   assertArray([],  Array.slice([9], void 0, 0), '([9], void 0, 0)');
+  assertArray([],  Array.slice([9], null, null), '([9], null, null)');
+  assertArray([],  Array.slice([9], void 0, null), '([9], void 0, null)');
 
   assertArray([2,3,4], Array.slice([0,1,2,3,4,5,6], 2, 5));
   assertArray([2,3], Array.slice([0,1,2,3], 2, 5));
+
+  // es5 says end===undefined is the same as end===length, and most
+  // browsers agree.  Firefox 3.x disagrees and treats it as end===0.
+  // Nothing depends on this behavior, so we ignore the incompatibility.
+  //assertArray([9], Array.slice([9], null, void 0), '([9], null, void 0)');
 
   pass('test-array-slice');
 });
@@ -2378,7 +2396,9 @@ jsunitRegister('testCloneNodeStructure', function testCloneNodeStructure() {
       {
         nodeType: 1,
         tagName: 'P',
-        attributes: [],
+        attributes: [
+          { nodeName: 'class', nodeValue: 'cloneable' }
+        ],
         children: [
           // shallow clones contain attrs but not children.
         ]
@@ -2388,20 +2408,19 @@ jsunitRegister('testCloneNodeStructure', function testCloneNodeStructure() {
       {
         nodeType: 1,
         tagName: 'P',
-        attributes: [],
+        attributes: [
+          { nodeName: 'class', nodeValue: 'cloneable' }
+        ],
         children: [
           {
             nodeType: 3,
-            nodeValue: 'I have '
+            nodeValue: 'some '
           },
           {
             nodeType: 1,
-            nodeName: 'B',
+            nodeName: 'LABEL',
             attributes: [
-              {
-                nodeName: 'title',
-                nodeValue: 'I have attributes'
-              }
+              { nodeName: 'for', nodeValue: 'x' }
             ],
             children: [
               {
@@ -3153,6 +3172,7 @@ jsunitRegister('testEmitterIe',
 
 jsunitRegister('testUsemap',
                function testUsemap() {
+  var el = document.getElementById('test-usemap');
   assertEquals(
       (''
        + '<map name="foo-xyz___">'
@@ -3160,10 +3180,13 @@ jsunitRegister('testUsemap',
        + '?mime-type=*%2F*&amp;uri=areatarget.html"'
        + ' target="_blank">'
        + '</map>'
-       + '<img usemap="#foo-xyz___"'
-       + ' src="http://example.com/?mime-type=image%2F*&amp;uri=mappic.gif">'),
-      directAccess.getInnerHTML(document.getElementById('test-usemap')));
-  pass('test-usemap');               
+       + '<img'
+       + ' src="http://example.com/?mime-type=image%2F*&amp;uri=mappic.gif"'
+       + ' usemap="#foo-xyz___"'
+       + '>'),
+      canonInnerHtml(directAccess.getInnerHTML(el)));
+
+  pass('test-usemap');
 });
 
 jsunitRegister('testDocumentBodyAppendChild',

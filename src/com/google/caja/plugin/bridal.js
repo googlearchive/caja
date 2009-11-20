@@ -36,7 +36,6 @@ var bridal = (function() {
   var isWebkit = !isOpera && navigator.userAgent.indexOf('WebKit') !== -1;
 
   var featureAttachEvent = !!(document.createElement('div').attachEvent);
-  var featureSetAttributeExtraParam = isIE;
   /**
    * Does the extended form of extendedCreateElement work?
    * From http://msdn.microsoft.com/en-us/library/ms536389.aspx :<blockquote>
@@ -134,7 +133,7 @@ var bridal = (function() {
       var attrs = node.attributes;
       for (var i = 0, attr; (attr = attrs[i]); ++i) {
         if (attr.specified && !endsWith__.test(attr.name)) {
-          clone.setAttribute(attr.nodeName, attr.nodeValue);
+          bridal.setAttribute(clone, attr.nodeName, attr.nodeValue);
         }
       }
     } else {

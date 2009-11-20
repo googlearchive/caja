@@ -87,16 +87,24 @@ if (Date.prototype.toISOString === void 0 &&
 }
 
 /**
- * Provide Array.slice like Firefox.  You can slice anything, and the
- * result is always an array.  This behaves differently from Firefox in the
- * exotic case of an array-like x with typeof x !== 'object'.
+ * Provide Array.slice similar to Firefox.  You can slice anything, and the
+ * result is always an array.  Hazards:
+ *
+ *  - In IE, Array.prototype.slice.call(void 0) throws an error, and we
+ *    need it to return [].
+ *
+ *  - In IE[678] and Firefox 3, x.slice(0, undefined) returns [] rather
+ *    than x.  We don't care about that incompatibility, but we do need
+ *    Array.slice(x) to return x.
+ *
+ *  - In Firefox 3.x, Array.slice works on any array-like x.  We only
+ *    handle typeof x === 'object'.
  */
 if (Array.slice === void 0) {
-  Array.slice = function(self, start, end) {
+  Array.slice = function(self, opt_start, opt_end) {
     if (self && typeof self === 'object') {
-      if (arguments.length < 2) { start = 0; }
-      if (arguments.length < 3) { end = self.length; }
-      return Array.prototype.slice.call(self, start, end);
+      if (opt_end === void 0) { opt_end = self.length; }
+      return Array.prototype.slice.call(self, opt_start, opt_end);
     } else {
       return [];
     }
