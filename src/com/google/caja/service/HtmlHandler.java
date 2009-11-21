@@ -21,7 +21,6 @@ import com.google.caja.lexer.ParseException;
 import com.google.caja.opensocial.UriCallback;
 import com.google.caja.opensocial.UriCallbackException;
 import com.google.caja.parser.AncestorChain;
-import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.quasiliteral.QuasiBuilder;
 import com.google.caja.parser.html.DomParser;
 import com.google.caja.parser.html.Namespaces;
@@ -183,8 +182,8 @@ public class HtmlHandler implements ContentHandler {
       DomParser p = new DomParser(new HtmlLexer(cp), is, mq);
       if (p.getTokenQueue().isEmpty()) { okToContinue = false; }
 
-      Document doc = DomParser.makeDocument(null, null);
-      ParseTreeNode html = new Dom(p.parseFragment(doc));
+      Dom html = new Dom(p.parseFragment());
+      Document doc = html.getValue().getOwnerDocument();
       p.getTokenQueue().expectEmpty();
 
       PluginCompiler compiler = new PluginCompiler(buildInfo, meta, mq);

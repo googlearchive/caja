@@ -23,10 +23,12 @@ import com.google.caja.lexer.ParseException;
 import com.google.caja.lexer.Token;
 import com.google.caja.lexer.TokenQueue;
 import com.google.caja.lexer.TokenStream;
+import com.google.caja.lexer.TokenQueue.Mark;
 import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.MessageType;
+import com.google.caja.util.Function;
 import com.google.caja.util.Lists;
 import com.google.caja.util.Strings;
 
@@ -115,6 +117,15 @@ public final class DomParser {
   }
 
   protected OpenElementStack makeElementStack(Document doc, MessageQueue mq) {
+    Namespaces ns = this.ns;
+    DocumentType doctype = doc.getDoctype();
+    if (doctype != null) {
+      // If we have a DOCTYPE, use its SYSTEM ID to determine the default
+      // namespace.
+      String sysid = doctype.getSystemId();
+      String nsUri = DoctypeMaker.systemIdToNsUri(sysid);
+      if (nsUri != null) { ns = new Namespaces(ns, "", nsUri); }
+    }
     return asXml
         ? OpenElementStack.Factory.createXmlElementStack(
             doc, needsDebugData, ns, mq)
@@ -122,7 +133,8 @@ public final class DomParser {
             doc, needsDebugData, mq);
   }
 
-  public static Document makeDocument(DocumentType doctype, String features) {
+  public static Document makeDocument(
+      Function<DOMImplementation, DocumentType> doctypeMaker, String features) {
     if (features == null) { features = "XML 1.0 Traversal"; }
     DOMImplementation impl;
     try {
@@ -138,6 +150,8 @@ public final class DomParser {
       throw new RuntimeException(
           "Missing DOM implementation.  Is Xerces on the classpath?", ex);
     }
+    DocumentType doctype = doctypeMaker != null
+        ? doctypeMaker.apply(impl) : null;
     return impl.createDocument(null, null, doctype);
   }
 
@@ -148,7 +162,8 @@ public final class DomParser {
 
   /** Parse a document returning the document element. */
   public Element parseDocument(String features) throws ParseException {
-    Document doc = makeDocument(null, features);
+    Function<DOMImplementation, DocumentType> doctypeMaker = findDoctype();
+    Document doc = makeDocument(doctypeMaker, features);
     OpenElementStack elementStack = makeElementStack(doc, mq);
 
     // Make sure the elementStack is empty.
@@ -210,7 +225,23 @@ public final class DomParser {
     return (Element) firstChild;
   }
 
-  /** Parses a snippet of markup. */
+  /**
+   * Parses a snippet of markup.
+   * The snippet need not be a single element as in an XML or HTML document.
+   * For HTML, this will create no implied HTML, HEAD, or BODY elements.
+   * If there is a DOCTYPE, it will be used to seed the default namespace.
+   */
+  public DocumentFragment parseFragment() throws ParseException {
+    return parseFragment(makeDocument(findDoctype(), null));
+  }
+
+  /**
+   * Parses a snippet of markup creating new nodes using the given document.
+   * The snippet need not be a single element as in an XML or HTML document.
+   * For HTML, this will create no implied HTML, HEAD, or BODY elements.
+   * Any doctype on the input will be ignored, and that on the input document
+   * used instead.
+   */
   public DocumentFragment parseFragment(Document doc) throws ParseException {
     OpenElementStack elementStack = makeElementStack(doc, mq);
 
@@ -554,6 +585,42 @@ public final class DomParser {
       }
     }
     return false;
+  }
+
+  private Function<DOMImplementation, DocumentType> findDoctype()
+      throws ParseException {
+    if (tokens.isEmpty()) { return null; }
+    Function<DOMImplementation, DocumentType> doctypeMaker = null;
+    Mark start = tokens.mark();
+    doctypeloop:
+    while (!tokens.isEmpty()) {
+      Token<HtmlTokenType> t = tokens.peek();
+      switch (t.type) {
+        case COMMENT:
+        case IGNORABLE:
+          tokens.pop();
+          break;
+        case DIRECTIVE:
+          tokens.pop();
+          final Function<DOMImplementation, DocumentType> maker
+              = DoctypeMaker.parse(t.text);
+          if (maker != null) {
+            final FilePosition pos = t.pos;
+            doctypeMaker = new Function<DOMImplementation, DocumentType>() {
+              public DocumentType apply(DOMImplementation impl) {
+                DocumentType t = maker.apply(impl);
+                Nodes.setFilePositionFor(t, pos);
+                return t;
+              }
+            };
+            break doctypeloop;
+          }
+          break;
+        default: break doctypeloop;
+      }
+    }
+    tokens.rewind(start);
+    return doctypeMaker;
   }
 
   private static boolean isHtmlDoctype(String s) {

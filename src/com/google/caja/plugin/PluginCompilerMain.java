@@ -74,8 +74,7 @@ public final class PluginCompilerMain {
   private final Map<InputSource, CapturingReader> originalInputs
       = new HashMap<InputSource, CapturingReader>();
   private final Config config = new Config(
-      getClass(), System.err,
-      "Cajoles HTML, CSS, and JS files to JS.");
+      getClass(), System.err, "Cajoles HTML, CSS, and JS files to JS.");
   private final Callback<IOException> exHandler = new Callback<IOException>() {
     public void handle(IOException ex) {
       mq.addMessage(
@@ -202,7 +201,7 @@ public final class PluginCompilerMain {
                || (!cp.isEmpty() && cp.getBuffer()[cp.getOffset()] == '<')) {
       DomParser p = new DomParser(new HtmlLexer(cp), is, mq);
       if (p.getTokenQueue().isEmpty()) { return null; }
-      input = new Dom(p.parseFragment(DomParser.makeDocument(null, null)));
+      input = new Dom(p.parseFragment());
       p.getTokenQueue().expectEmpty();
     } else {
       throw new AssertionError("Can't classify input " + is);

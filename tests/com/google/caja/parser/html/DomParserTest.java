@@ -45,7 +45,7 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 
 /**
- * testcase for {@link DomParser}.
+ * Testcase for {@link DomParser}.
  * http://james.html5.org/parsetree.html is a useful resource for testing
  * HTML related tests.
  *
@@ -1773,6 +1773,36 @@ public class DomParserTest extends CajaTestCase {
         null, false);
   }
 
+  public final void testDoctypeGuessAsSVG() throws Exception {
+    assertParsedMarkup(
+        Arrays.asList(
+            "<!DOCTYPE svg PUBLIC \"-//W3C//DTD SVG 1.1//EN\"",
+            " \"http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd\">",
+            "<svg><rect width='100' height='100' x='50' y='50'",
+            " style='color:red'/></svg>"
+            ),
+        Arrays.asList(
+            "Element : svg 3+1-4+27",
+            "  Element : rect 3+6-4+21",
+            "    Attrib : height 3+24-3+30",
+            "      Value : 100 3+31-3+36",
+            "    Attrib : style 4+2-4+7",
+            "      Value : color:red 4+8-4+19",
+            "    Attrib : width 3+12-3+17",
+            "      Value : 100 3+18-3+23",
+            "    Attrib : x 3+37-3+38",
+            "      Value : 50 3+39-3+43",
+            "    Attrib : y 3+44-3+45",
+            "      Value : 50 3+46-3+50"
+            ),
+        Arrays.<String>asList(),
+        Arrays.asList(
+            "<svg:svg><svg:rect height=\"100\" style=\"color:red\""
+            + " width=\"100\" x=\"50\" y=\"50\" /></svg:svg>"
+            ),
+        null, false);
+  }
+
   public final void testXmlPrologueTreatedAsXml() throws Exception {
     assertParsedMarkup(
         Arrays.asList(
@@ -2188,9 +2218,7 @@ public class DomParserTest extends CajaTestCase {
       p = new DomParser(lexer, is, mq);
       asXml = lexer.getTreatedAsXml();
     }
-    Node tree = fragment
-        ? p.parseFragment(DomParser.makeDocument(null, null))
-        : p.parseDocument();
+    Node tree = fragment ? p.parseFragment() : p.parseDocument();
 
     List<String> actualParseTree = formatLines(tree);
     MoreAsserts.assertListsEqual(expectedParseTree, actualParseTree);
@@ -2220,7 +2248,7 @@ public class DomParserTest extends CajaTestCase {
       DomParser noDebugParser = new DomParser(
           tq, p.asXml(), DevNullMessageQueue.singleton());
       treeWithoutDebugData = fragment
-          ? noDebugParser.parseFragment(DomParser.makeDocument(null, null))
+          ? noDebugParser.parseFragment()
           : noDebugParser.parseDocument();
     }
 

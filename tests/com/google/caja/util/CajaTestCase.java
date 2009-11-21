@@ -188,24 +188,18 @@ public abstract class CajaTestCase extends TestCase {
     lexer.setTreatedAsXml(asXml);
     TokenQueue<HtmlTokenType> tq = new TokenQueue<HtmlTokenType>(lexer, is);
     DomParser p = new DomParser(tq, asXml, mq);
-    Node t = asDoc
-        ? p.parseDocument()
-        : p.parseFragment(DomParser.makeDocument(null, null));
+    Node t = asDoc ? p.parseDocument() : p.parseFragment();
     tq.expectEmpty();
     return t;
   }
 
   protected Element markup(CharProducer cp) throws ParseException {
-    HtmlLexer lexer = new HtmlLexer(cp);
-    DomParser p = new DomParser(lexer, sourceOf(cp), mq);
-    return p.parseDocument();
+    return new DomParser(new HtmlLexer(cp), sourceOf(cp), mq).parseDocument();
   }
 
   protected DocumentFragment markupFragment(CharProducer cp)
       throws ParseException {
-    HtmlLexer lexer = new HtmlLexer(cp);
-    DomParser p = new DomParser(lexer, sourceOf(cp), mq);
-    return p.parseFragment(DomParser.makeDocument(null, null));
+    return new DomParser(new HtmlLexer(cp), sourceOf(cp), mq).parseFragment();
   }
 
   protected CssTree.StyleSheet css(CharProducer cp) throws ParseException {

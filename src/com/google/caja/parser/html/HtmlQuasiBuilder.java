@@ -158,9 +158,7 @@ public class HtmlQuasiBuilder {
 
         DomParser p = new DomParser(
             tq, isProblematic, DevNullMessageQueue.singleton());
-        quasi = isDocument
-            ? p.parseDocument()
-            : p.parseFragment(DomParser.makeDocument(null, null));
+        quasi = isDocument ? p.parseDocument() : p.parseFragment();
       } catch (ParseException ex) {
         throw new RuntimeException("Malformed Quasiliteral : " + quasiHtml, ex);
       }

@@ -64,7 +64,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.w3c.dom.Attr;
-import org.w3c.dom.Document;
 import org.w3c.dom.DocumentFragment;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -471,9 +470,8 @@ public final class AnnotationHandlers {
             CharProducer cp = CharProducer.Factory.create(
                 new StringReader(content), p);
             HtmlLexer lexer = new HtmlLexer(cp);
-            Document doc = DomParser.makeDocument(null, null);
             DomParser parser = new DomParser(lexer, p.source(), mq);
-            DocumentFragment f = parser.parseFragment(doc);
+            DocumentFragment f = parser.parseFragment();
             parser.getTokenQueue().expectEmpty();
             Node fFirst = f.getFirstChild();
             if (fFirst == null

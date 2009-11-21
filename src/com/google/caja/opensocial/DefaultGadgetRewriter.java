@@ -183,7 +183,7 @@ public class DefaultGadgetRewriter
       mq.addMessage(OpenSocialMessageType.NO_CONTENT, src);
       throw new GadgetRewriteException("No content");
     }
-    return p.parseFragment(DomParser.makeDocument(null, null));
+    return p.parseFragment();
   }
 
   private PluginCompiler compileGadget(
