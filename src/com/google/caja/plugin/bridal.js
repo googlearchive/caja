@@ -393,19 +393,48 @@ var bridal = (function() {
    * @param {string} value the value of an attribute.
    */
   function setAttribute(element, name, value) {
-    // In IE[67], element.style.cssText seems to be the only way to set the
-    // style.  This unfortunately fails when element.style is an input
-    // element instead of the style object.
-    if (name === 'style') {
-      if (typeof element.style.cssText === 'string') {
-        element.style.cssText = value;
-        return value;
-      }
+    /*
+      Hazards:
+
+        - In IE[67], el.setAttribute doesn't work for attributes like
+          'class' or 'for'.  IE[67] expects you to set 'className' or
+          'htmlFor'.  Using setAttributeNode solves this problem.
+
+        - In IE[67], <input> elements can shadow attributes.  If el is a
+          form that contains an <input> named x, then el.setAttribute(x, y)
+          will set x's value rather than setting el's attribute.  Using
+          setAttributeNode solves this problem.
+
+        - In IE[67], the style attribute can only be modified by setting
+          el.style.cssText.  Neither setAttribute nor setAttributeNode will
+          work.  el.style.cssText isn't bullet-proof, since it can be
+          shadowed by <input> elements.
+
+        - In IE[67], you can never change the type of an <button> element.
+          setAttribute('type') silently fails, but setAttributeNode 
+          throws an exception.  We want the silent failure.
+
+        - In IE[67], you can never change the type of an <input> element.
+          setAttribute('type') throws an exception.  We want the exception.
+
+        - In IE[67], setAttribute is case-sensitive, unless you pass 0 as a
+          3rd argument.  setAttributeNode is case-insensitive.
+
+        - Trying to set an invalid name like ":" is supposed to throw an
+          error.  In IE[678] and Opera 10, it fails without an error.
+    */
+    if (name === 'style' && typeof element.style.cssText === 'string') {
+      element.style.cssText = value;
+      return value;
     }
-    var node = element.ownerDocument.createAttribute(name);
-    node.value = value;
-    element.setAttributeNode(node);
-    return value;
+    var attr = element.ownerDocument.createAttribute(name);
+    attr.value = value;
+    try {
+      element.setAttributeNode(attr);
+      return value;
+    } catch (e) {}
+    // It's a real failure only if setAttribute also fails.
+    return element.setAttribute(name, value, 0);
   }
 
   /**

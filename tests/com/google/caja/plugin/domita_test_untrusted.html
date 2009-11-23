@@ -435,6 +435,10 @@ can test window.scrollBy with a positive x value with a visible effect.
 
 <p class="testcontainer" id="test-for-attribute">for attribute</p>
 
+<p class="testcontainer" id="test-button-mutation">
+<button id="test-button-mutation-1">test-button-mutation</button>
+</p>
+
 <div class="testcontainer" id="test-row-cell">
 Test row cell
   <table id="test-row-cell-1">
@@ -3067,6 +3071,17 @@ jsunitRegister('testForAttribute', function testForAttribute() {
   assertEquals('Y', label.htmlFor);
   assertTrue(label.hasAttribute('for'));
   pass('test-for-attribute');
+});
+
+jsunitRegister('testButtonMutation', function testButtonMutation() {
+  var el = document.getElementById('test-button-mutation-1');
+  // this never works on IE[67], but it shouldn't throw an error.
+  try {
+    el.setAttribute('type', 'reset');
+  } catch (e) {
+    fail('testButtonMutation got error: ' + e.message);
+  }
+  pass('testButtonMutation');
 });
 
 jsunitRegister('testRowCell',
