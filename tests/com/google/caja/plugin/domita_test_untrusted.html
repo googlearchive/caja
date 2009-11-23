@@ -534,6 +534,7 @@ function assertColor(expected, cssColorString) {
     cssColorString = cssColorString.toLowerCase();
   }
   if (cssColorString === expected.name) { return; }
+  if (cssColorString === '"' + expected.name + '"') { return; }
   var hexSix = expected.rgb.toString(16);
   while (hexSix.length < 6) { hexSix = '0' + hexSix; }
   if (cssColorString === '#' + hexSix) { return; }
@@ -2261,7 +2262,7 @@ jsunitRegister('testComputedStyle',
   }
   assertComputedStyle(invisible, null, 'display', 'none');
   assertComputedStyle(invisible, null, 'float', 'left');
-  assertComputedStyle(block, null, 'color', 'rgb(3,6,9)');
+  assertComputedStyle(block, null, 'cursor', 'crosshair');
   assertComputedStyle(block, null, 'float', 'none');
 
   pass('test-computed-style');
@@ -2607,12 +2608,12 @@ jsunitRegister('testCompatMode',
 
 jsunitRegister('testCustomEvents',
                function testCustomEvents() {
-  assertTrue(!!document.createEvent);
+  assertTrue('createEvent exists', !!document.createEvent);
 
   // Event dispatch for custom events is synchronous
-  var fired;
+  var fired = false;
   var myHandler = jsunitCallback(function (event) {
-    assertEquals('hiya', event.details);
+    assertEquals("received correct event", 'hiya', event.details);
     fired = true;
   });
 
@@ -2622,10 +2623,10 @@ jsunitRegister('testCustomEvents',
   var event = document.createEvent('HTMLEvents');
   event.details = 'hiya';
   event.initEvent('howdy', true, true);
-  assertEquals('hiya', event.details);
+  assertEquals('initEvent correct', 'hiya', event.details);
 
   eventTarget.dispatchEvent(event);
-  assertTrue(fired);
+  assertTrue("event did fire", fired);
 
   pass('test-custom-events');
 });
@@ -2939,14 +2940,14 @@ jsunitRegister('testShorthandCss',
                function testShorthandCss() {
   var body = document.body;
   var container = document.getElementById('test-shorthand-css');
-  var elementRef = document.createElement('DIV');
-  elementRef.id = 'foo';
-  elementRef.innerHTML = 'style me shortly';
-  container.appendChild(elementRef);
-  elementRef.style.border = '5px dashed blue';
-  assertEquals('shorthand width set', elementRef.style.borderTopWidth, '5px');
-  assertEquals('shorthand color set', elementRef.style.borderTopColor, 'blue');
-  assertEquals('shorthand style set', elementRef.style.borderTopStyle, 'dashed');
+  var el = document.createElement('DIV');
+  el.id = 'foo';
+  el.innerHTML = 'style me shortly';
+  container.appendChild(el);
+  el.style.border = '5px dashed blue';
+  assertEquals('shorthand width set', el.style.borderTopWidth, '5px');
+  assertColor({ name: 'blue', rgb: 0x0000ff }, el.style.borderTopColor);
+  assertEquals('shorthand style set', el.style.borderTopStyle, 'dashed');
 
   pass('test-shorthand-css');
 });
@@ -3086,13 +3087,13 @@ jsunitRegister('testRowCell',
   try {
     table.deleteRow(2);
   } catch (e) {
-    assertEquals('Index size error.', e.message);
+    assertTrue(new RegExp('Index size error').test(e.message));
     tableDeleteRow = true;
   }
   try {
     document.getElementById('test-row-cell-2').deleteRow(2);
   } catch (e) {
-    assertEquals('Index size error.', e.message);
+    assertTrue(new RegExp('Index size error').test(e.message));
     tbodyDeleteRow = true;
   }
   if (tableDeleteRow === true && tbodyDeleteRow === true) {

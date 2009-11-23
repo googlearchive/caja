@@ -96,6 +96,8 @@ function logToConsole(e) {
   if (e.isJsUnitException) {
     console.error(
         e.comment + '\n' + e.jsUnitMessage + '\n' + e.stackTrace);
+  } else if (e.description) {
+    console.error(e.description + '\n' + e.stackTrace);
   } else {
     console.error((e.message || '' + e) + '\n' + e.stack);
   }
