@@ -18,6 +18,9 @@ import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.js.CatchStmt;
 import com.google.caja.parser.js.FunctionConstructor;
 import com.google.caja.parser.js.WithStmt;
+import com.google.caja.util.Lists;
+
+import java.util.List;
 
 /**
  * A set of adjacent AST nodes that share a common ancestor which is in the set.
@@ -54,11 +57,13 @@ final class LexicalScope {
   final AncestorChain<?> root;
   final LexicalScope parent;
   final SymbolTable symbols;
+  final List<LexicalScope> innerScopes = Lists.newArrayList();
 
   LexicalScope(AncestorChain<?> root, LexicalScope parent) {
     this.root = root;
     this.parent = parent;
     this.symbols = new SymbolTable();
+    if (parent != null) { parent.innerScopes.add(this); }
   }
 
   LexicalScope declaringScope(String symbolName) {

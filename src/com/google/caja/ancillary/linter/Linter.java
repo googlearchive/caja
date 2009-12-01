@@ -18,7 +18,6 @@ import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.JsLexer;
 import com.google.caja.lexer.JsTokenQueue;
-import com.google.caja.lexer.JsTokenType;
 import com.google.caja.lexer.ParseException;
 import com.google.caja.lexer.Token;
 import com.google.caja.lexer.TokenConsumer;
@@ -27,6 +26,7 @@ import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.ParserBase;
 import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.BreakStmt;
+import com.google.caja.parser.js.CatchStmt;
 import com.google.caja.parser.js.ContinueStmt;
 import com.google.caja.parser.js.Expression;
 import com.google.caja.parser.js.ExpressionStmt;
@@ -39,6 +39,7 @@ import com.google.caja.parser.js.Literal;
 import com.google.caja.parser.js.Loop;
 import com.google.caja.parser.js.Operation;
 import com.google.caja.parser.js.Operator;
+import com.google.caja.parser.js.OperatorCategory;
 import com.google.caja.parser.js.Parser;
 import com.google.caja.parser.js.Reference;
 import com.google.caja.parser.js.ReturnStmt;
@@ -85,7 +86,7 @@ public class Linter implements BuildCommand {
     Map<InputSource, CharSequence> contentMap = Maps.newLinkedHashMap();
     MessageQueue mq = new SimpleMessageQueue();
     List<LintJob> lintJobs = parseInputs(inputs, contentMap, mc, mq);
-    lint(lintJobs, mq);
+    lint(lintJobs, new Environment(Sets.<String>newHashSet()), mq);
     if (ErrorReporter.reportErrors(contentMap, mc, mq, System.out)
         .compareTo(MessageLevel.WARNING) < 0) {
       // Touch the time-stamp file to make it clear that the inputs were
@@ -114,15 +115,8 @@ public class Linter implements BuildCommand {
       JsTokenQueue tq = new JsTokenQueue(new JsLexer(cp), src);
       try {
         if (tq.isEmpty()) { continue; }
-        List<Token<JsTokenType>> tokens = tq.filteredTokens();
         Parser p = new Parser(tq, mq);
-        compUnits.add(
-            new LintJob(
-                src,
-                parseIdentifierListFromComment("requires", tokens, mq),
-                parseIdentifierListFromComment("provides", tokens, mq),
-                parseIdentifierListFromComment("overrides", tokens, mq),
-                p.parse()));
+        compUnits.add(makeLintJob(p.parse(), mq));
       } catch (ParseException ex) {
         ex.toMessageQueue(mq);
       }
@@ -130,10 +124,21 @@ public class Linter implements BuildCommand {
     return compUnits;
   }
 
-  // Visible for testing
-  static void lint(List<LintJob> jobs, MessageQueue mq) {
+  public static LintJob makeLintJob(Block program, MessageQueue mq) {
+    InputSource src = program.getFilePosition().source();
+    List<Token<?>> tokens = program.getComments();
+    return new LintJob(
+        src,
+        parseIdentifierListFromComment("requires", tokens, mq),
+        parseIdentifierListFromComment("provides", tokens, mq),
+        parseIdentifierListFromComment("overrides", tokens, mq),
+        program);
+  }
+
+  public static void lint(
+      List<LintJob> jobs, Environment env, MessageQueue mq) {
     for (LintJob job : jobs) {
-      lint(AncestorChain.instance(job.program),
+      lint(AncestorChain.instance(job.program), env,
            // Anything defined by this file can be read by this file.
            job.provides, job.requires, job.overrides, mq);
     }
@@ -157,7 +162,7 @@ public class Linter implements BuildCommand {
    * @param mq receives messages about violations of canRead and canSet.
    */
   private static void lint(
-      AncestorChain<?> ac,
+      AncestorChain<?> ac, final Environment env,
       Set<String> provides, final Set<String> requires,
       final Set<String> overrides,
       MessageQueue mq) {
@@ -186,7 +191,8 @@ public class Linter implements BuildCommand {
             containing.symbols.declare(fc.getIdentifierName(), scope.root);
           }
         } else if (scope.isGlobal()) {
-          for (String symbolName : Sets.union(requires, overrides)) {
+          for (String symbolName : Sets.union(
+                   env.outers, Sets.union(requires, overrides))) {
             if (scope.symbols.getSymbol(symbolName) == null) {
               scope.symbols.declare(symbolName, scope.root);
             }
@@ -241,6 +247,8 @@ public class Linter implements BuildCommand {
           for (LexicalScope p = scope; (p = p.parent) != null;) {
             SymbolTable.Symbol masked = p.symbols.getSymbol(symbolName);
             if (masked != null) {
+              AncestorChain<?> firstMasked = masked.getDeclarations().iterator()
+                  .next();
               mq.addMessage(
                   MessageType.MASKING_SYMBOL,
                   (scope.isCatchScope()
@@ -248,8 +256,7 @@ public class Linter implements BuildCommand {
                    : MessageLevel.ERROR),
                   declarations.iterator().next().node.getFilePosition(),
                   MessagePart.Factory.valueOf(symbolName),
-                  masked.getDeclarations().iterator()
-                      .next().node.getFilePosition());
+                  firstMasked.node.getFilePosition());
             }
             if (p.isFunctionScope()) { break; }
           }
@@ -331,12 +338,13 @@ public class Linter implements BuildCommand {
       LexicalScope cscope = ScopeAnalyzer.containingScopeForNode(use.ref.node);
       LexicalScope subScopeOrigin = banned.get(Pair.pair(cscope, symbolName));
       if (subScopeOrigin != null) {
+        AncestorChain<?> firstDecl = subScopeOrigin.symbols
+            .getSymbol(symbolName).getDeclarations().iterator().next();
         mq.addMessage(
             LinterMessageType.OUT_OF_BLOCK_SCOPE,
             use.ref.node.getFilePosition(),
             MessagePart.Factory.valueOf(symbolName),
-            (subScopeOrigin.symbols.getSymbol(symbolName).getDeclarations()
-             .iterator().next().node.getFilePosition()));
+            firstDecl.node.getFilePosition());
         continue;
       }
       LexicalScope dscope = cscope.declaringScope(symbolName);
@@ -380,17 +388,8 @@ public class Linter implements BuildCommand {
     }
 
     // Check @provides and @overrides against the program's free variables.
-    for (String symbolName : Sets.difference(
-             globalScope.symbols.symbolNames(),
-             Sets.union(provides, overrides))) {
-      for (AncestorChain<?> decl
-           : globalScope.symbols.getSymbol(symbolName).getDeclarations()) {
-        if (decl == globalScope.root) { continue; }  // a built-in
-        mq.addMessage(
-            MessageType.UNDOCUMENTED_GLOBAL, decl.node.getFilePosition(),
-            MessagePart.Factory.valueOf(symbolName));
-      }
-    }
+    checkGlobalsDefined(
+        globalScope, globalScope, Sets.union(provides, overrides), mq);
     for (String symbolName : Sets.difference(
              globalsSet.keySet(), Sets.union(provides, overrides))) {
       mq.addMessage(
@@ -408,9 +407,10 @@ public class Linter implements BuildCommand {
 
     // Check @requires are used
     for (String symbolName : Sets.difference(requires, globalsRead.keySet())) {
+      AncestorChain<?> root = globalScope.root;
       mq.addMessage(
           LinterMessageType.UNUSED_REQUIRE,
-          globalScope.root.node.getFilePosition().source(),
+          root.node.getFilePosition().source(),
           MessagePart.Factory.valueOf(symbolName));
     }
     // TODO(mikesamuel): check locals and formals used
@@ -418,9 +418,10 @@ public class Linter implements BuildCommand {
     // Check that @provides are provided
     for (String symbolName : provides) {
       if (!liveAtEnd.symbols.contains(Pair.pair(symbolName, globalScope))) {
+        AncestorChain<?> root = globalScope.root;
         mq.addMessage(
             LinterMessageType.UNUSED_PROVIDE,
-            globalScope.root.node.getFilePosition().source(),
+            root.node.getFilePosition().source(),
             MessagePart.Factory.valueOf(symbolName));
       }
     }
@@ -466,7 +467,7 @@ public class Linter implements BuildCommand {
   }
 
   /** Encapsulates information about a single input to the linter. */
-  static final class LintJob {  // Visible for testing
+  public static final class LintJob {
     final InputSource src;
     final Set<String> requires, provides, overrides;
     final Block program;
@@ -481,6 +482,20 @@ public class Linter implements BuildCommand {
     }
   }
 
+  public static final class Environment {
+    final Set<String> outers;
+
+    public Environment(Set<String> outers) {
+      this.outers = Sets.immutableSet(outers);
+    }
+  }
+
+  public static final Environment BROWSER_ENVIRONMENT = new Environment(
+      Sets.newLinkedHashSet(
+          "window", "document", "setTimeout", "setInterval", "location",
+          "XMLHttpRequest", "clearInterval", "clearTimeout", "navigator",
+          "event", "alert", "confirm", "prompt", "this"));
+
   /**
    * Find identifier lists in documentation comments.
    * Annotations in documentation comments start with a '&#64;' symbol followed
@@ -489,11 +504,11 @@ public class Linter implements BuildCommand {
    * identifier list separated by spaces and/or commas.
    */
   private static final Set<String> parseIdentifierListFromComment(
-      String annotationName, List<Token<JsTokenType>> comments,
+      String annotationName, List<Token<?>> comments,
       MessageQueue mq) {
     // TODO(mikesamuel): replace with jsdoc comment parser
     Set<String> idents = Sets.newLinkedHashSet();
-    for (Token<JsTokenType> comment : comments) {
+    for (Token<?> comment : comments) {
       // Remove line prefixes so they're not interpreted as significant in the
       // middle of an identifier list.
       // And remove trailing content that is not whitespace or commas
@@ -567,7 +582,20 @@ public class Linter implements BuildCommand {
         Expression left = op.children().get(0);
         return left instanceof Operation
             && Operator.CONSTRUCTOR == ((Operation) left).getOperator();
-      default: return op.getOperator().getAssignmentDelegate() == null;
+      case LOGICAL_AND: case LOGICAL_OR:
+        return shouldBeEvaluatedForValue(op.children().get(1));
+      case TERNARY:
+        return shouldBeEvaluatedForValue(op.children().get(1))
+            && shouldBeEvaluatedForValue(op.children().get(2));
+      case COMMA:
+        // We do not allow comma, since bad things happen when commas are used.
+        // Consider
+        //    if (foo)
+        //      return bar,
+        //    baz();
+        // $FALL-THROUGH
+      default:
+        return op.getOperator().getCategory() != OperatorCategory.ASSIGNMENT;
     }
   }
 
@@ -604,5 +632,27 @@ public class Linter implements BuildCommand {
     List<File> deps = Lists.newArrayList();
     File out = File.createTempFile(Linter.class.getSimpleName(), ".stamp");
     (new Linter()).build(inputs, deps, out);
+  }
+
+  private static void checkGlobalsDefined(
+      LexicalScope globalScope, LexicalScope scope,
+      Set<String> documentedGlobals, MessageQueue mq) {
+    for (String symbolName : Sets.difference(
+            scope.symbols.symbolNames(), documentedGlobals)) {
+      for (AncestorChain<?> decl
+           : scope.symbols.getSymbol(symbolName).getDeclarations()) {
+        if (decl == globalScope.root) { continue; }  // a built-in
+        if (decl.parent.node instanceof CatchStmt) { continue; }
+        mq.addMessage(
+            MessageType.UNDOCUMENTED_GLOBAL,
+            decl.node.getFilePosition(),
+            MessagePart.Factory.valueOf(symbolName));
+      }
+    }
+    for (LexicalScope inner : scope.innerScopes) {
+      if (!inner.isFunctionScope()) {
+        checkGlobalsDefined(globalScope, inner, documentedGlobals, mq);
+      }
+    }
   }
 }

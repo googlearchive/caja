@@ -58,6 +58,9 @@ public class LinterTest extends CajaTestCase {
              .make()),
         "ERROR: testProvides: @provides y not provided"
         );
+    runLinterTest(
+        jobs(new LintJobMaker(js(fromString("for (var i;;) {}"))).make()),
+        "LINT: testProvides:1+6 - 11: Undocumented global i");
   }
 
   public final void testMultiplyProvidedSymbols() throws Exception {
@@ -288,7 +291,8 @@ public class LinterTest extends CajaTestCase {
         );
     runLinterTest(
         jobs(new LintJobMaker(js(fromString("for (var k in o);"))).make()),
-        "ERROR: testLoops:1+15 - 16: Symbol o has not been defined");
+        "ERROR: testLoops:1+15 - 16: Symbol o has not been defined",
+        "LINT: testLoops:1+6 - 11: Undocumented global k");
   }
 
   public final void testIgnoredValue() throws Exception {
@@ -298,7 +302,7 @@ public class LinterTest extends CajaTestCase {
             + "var c; f;  \n"  // Line 1
             + "+n;  \n"  // line 2
             + "a.b;  \n"  // line 3
-            + "f && g();  \n"  // line 4
+            + "f && g();  f && g;  f() && g;  \n"  // line 4: 1st OK, others not
             + "a = b, c = d;  \n"  // line 5
             + "a = b;  \n"  // OK
             + "m += n;  \n"  // OK
@@ -306,7 +310,8 @@ public class LinterTest extends CajaTestCase {
             + "new Array;  \n"  // line 9
             + "new Array();  \n"  // line 10
             + "for (a = b, c = d; !a; ++a, --m, ++c) f;  \n"  // line 11
-            + "while (1) { 1; }"  // line 12.  First allowed, second not
+            + "++c;  \n"  // OK
+            + "while (1) { 1; }"  // line 13.  First allowed, second not
             //          1         2         3         4
             // 1234567890123456789012345678901234567890
             )))
@@ -317,12 +322,13 @@ public class LinterTest extends CajaTestCase {
         "WARNING: testIgnoredValue:1+8 - 9: Operation has no effect",
         "WARNING: testIgnoredValue:2+1 - 3: Operation has no effect",
         "WARNING: testIgnoredValue:3+1 - 4: Operation has no effect",
-        "WARNING: testIgnoredValue:4+1 - 9: Operation has no effect",
+        "WARNING: testIgnoredValue:4+12 - 18: Operation has no effect",
+        "WARNING: testIgnoredValue:4+21 - 29: Operation has no effect",
         "WARNING: testIgnoredValue:5+1 - 13: Operation has no effect",
         "WARNING: testIgnoredValue:9+1 - 10: Operation has no effect",
         "WARNING: testIgnoredValue:10+1 - 12: Operation has no effect",
         "WARNING: testIgnoredValue:11+39 - 40: Operation has no effect",
-        "WARNING: testIgnoredValue:12+13 - 14: Operation has no effect");
+        "WARNING: testIgnoredValue:13+13 - 14: Operation has no effect");
   }
 
   public final void testDeadCode() throws Exception {
@@ -509,7 +515,7 @@ public class LinterTest extends CajaTestCase {
 
   private void runLinterTest(List<Linter.LintJob> inputs, String... messages) {
     MessageQueue mq = new SimpleMessageQueue();
-    Linter.lint(inputs, mq);
+    Linter.lint(inputs, new Linter.Environment(Sets.<String>newHashSet()), mq);
     List<String> actualMessageStrs = Lists.newArrayList();
     for (Message msg : mq.getMessages()) {
       actualMessageStrs.add(

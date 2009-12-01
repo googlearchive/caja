@@ -1469,6 +1469,14 @@ public class VariableLivenessTest extends CajaTestCase {
     assertFalse(stmts.hasNext());
   }
 
+  public final void testDirectives() throws Exception {
+    assertLiveness(
+        js(fromString("\"use strict\";")),
+        "Block",
+        "  DirectivePrologue",
+        "    Directive : use strict");
+  }
+
   private static ExitModes setup(ParseTreeNode js) {
     ScopeAnalyzer sa = new ScopeAnalyzer();
     sa.computeLexicalScopes(AncestorChain.instance(js));
