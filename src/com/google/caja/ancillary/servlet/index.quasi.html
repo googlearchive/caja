@@ -1,0 +1,76 @@
+<html>
+<head>
+<meta http-equiv=Content-Type content=text/html;charset=utf-8 />
+<title>Caja Web Tools</title>
+<link rel=stylesheet type=text/css href=files-@cacheId/styles.css>
+</head>
+<body>
+<h1>Caja Web Tools</h1>
+<div id=examples>
+<h2>Examples</h2>
+<ul>
+  <li><a href="javascript:exampleFromUrl('http://jqueryjs.googlecode.com/files/jquery-1.3.1.js')">JQuery</a></li>
+  <li><a href="javascript:exampleFromUrl('http://mootools.net/download/get/mootools-1.2.4-core-nc.js')">MooTools</a></li>
+  <li><a href="javascript:replaceSource('h1, p.bar, blockquite { backgrond-color: red; color: blue }', 'text/css'), setOptions({verb:'lint',minify:true})">Whacky CSS</a></li>
+  <li><a href="javascript:replaceSource('&lt;style&gt;p { color:  pink /* Not a color in CSS 2.1 */ }&lt;/style&gt;\n&lt;script&gt;alert(HelloWorld);&lt;/script&gt;\n&lt;h1&gt;Hello, World!&lt;/h2&gt;', 'text/html'), setOptions({verb:'lint',minify:true})">Whacky HTML</a></li>
+  <li><a href="javascript:replaceSource('if (window.addEventListener) {\n  window.addEventListener(&quot;click&quot;, alert);\n} else if (window.attachEvent) {\n  window.attachEvent(&quot;click&quot;, alert);\n} else {\n  throw new Error();\n}', 'text/javascript'), setOptions({userAgent:'*Firefox*',verb:'lint',minify:true})">Optimized for Firefox</a></li>
+  <li><a href="javascript:replaceSource('if (window.addEventListener) {\n  window.addEventListener(&quot;click&quot;, alert);\n} else if (window.attachEvent) {\n  window.attachEvent(&quot;click&quot;, alert);\n} else {\n  throw new Error();\n}', 'text/javascript'),setOptions({userAgent:'*MSIE*',verb:'lint',minify:true})">Optimized for IE</a></li>
+  <li><a href="javascript:replaceSource('// %40provides registerEventListener\nvar registerEventListener = (function () {\n  // Store environment checks in local variables to avoid rechecking\n  var useAttach = window.attachEvent != undefined && !window.addEventListener;\n  return function (node, type, listener) {\n    if (useAttach) node.attachEvent(type, listener);\n    else node.addEventListener(type, listener);\n  };\n})();', 'text/javascript'), setOptions({userAgent:'*MSIE*',verb:'lint',minify:true})">More Optimization</a></li>
+  <li><a href="javascript:replaceSource('/** This module declares what it expects and what it provides.\n * %40requires foo\n * %40provides bar\n */\nvar bar = {\n  myMethod: function (that, other) { return foo.far(that) %2B other; },\n  myMember: []\n};\nfor (var i = 0; i &lt; foo.count; %2B%2Bi) { // unintended global i\n  bar.myMember[i] = foo.far(i);\n}', 'text/javascript'), setOptions({userAgent:'*',verb:'lint',minify:true})">Global Declarations</a></li>
+</ul>
+</div>
+<form method='POST' id=tools-form>
+<button class=submit type=submit>Transform</button>
+<select name='verb'>
+<option value=lint selected=@lint>Check For Problems</option>
+<option value=echo selected=@echo>Debiggify</option>
+<option value=doc selected=@doc>Generate Documentation</option>
+</select>
+<a target=help href=files-@cacheId/verb_help.html class=help
+ title="Lint identifies problems, debiggify removes redundant content">&#xff1f;</a>
+and report messages more severe than
+<select name='minLevel'>
+<option value=></option>
+@messageLevels
+</select><br>
+<span id=user-agent>
+<label for=userAgent>User Agent</label>:
+<input name=userAgent value=@userAgent />
+<a target=help href=files-@cacheId/user_agent_help.html class=help
+ title="matches user agent strings of browsers to which the output can be served">&#xff1f;</a>
+</span>
+<select name=minify>
+<option value=true selected=@minifyTrue>Minimize</option>
+<option value=false selected=@minifyFalse>Prettify</option>
+</select>
+<div id="more-options">
+<span id=base-uri>
+<label for=baseUri>Base URI</label>:
+<input name=baseUri value=@baseUri>
+</span>
+<a target=help href=files-@cacheId/format_help.html class=help
+ title="minimize produces smaller output">&#xff1f;</a>
+<span id=ignores>
+Ignore: <input name=ign size=40 value=@ignores>
+<a target=help href=files-@cacheId/ign_help.html class=help
+ title="names of messages to filter out">&#xff1f;</a>
+</span>
+<span id="ascii-only">
+<label for="asciiOnly">ASCII Output</label>:
+<input type="checkbox" name="asciiOnly" value="true" checked=@asciiOnly>
+<a target=help href=files-@cacheId/ascii_out.html class=help
+ title="output will only contain codepoints in [1,126]">&#xff1f;</a>
+</span>
+</div>
+<div><ul id=inputs>@inputs</ul></div>  <!-- The source code -->
+<button class=submit type=submit>Transform</button>
+</form>
+<script>var filesDir = 'files-@cacheId';</script>
+<script src=files-@cacheId/index.js type=text/javascript></script>
+<div class=legalese>
+<a href='http://code.google.com/p/google-caja/'>Source</a> available under the
+<a href='http://www.apache.org/licenses/LICENSE-2.0'>Apache Public License</a>.
+NO WARRANTY EXPRESSED OR IMPLIED. USE AT YOUR OWN RISK.
+</div>
+</body>
+</html>

@@ -1,0 +1,57 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+<title>Caja Web Tools &mdash; Operation Has No Effect</title>
+<link rel=stylesheet type=text/css href=styles.css>
+<link rel=stylesheet type=text/css href=prettify.css>
+<script type=text/javascript src=prettify.js></script>
+<script type=text/javascript src=lang-css.js></script>
+</head>
+<body onload="prettyPrint()">
+<h1>Operation Has No Effect</h1>
+
+<p>The linter will warn when it sees an expression that is typically
+used only for its value in a place where its value is not used.
+
+This often happens when a programmer meant to call a function but didn't.
+
+<blockquote><pre class=prettyprint>
+  myObject.myMethod;
+</pre></blockquote>
+
+or confused a comparison with an assignment
+
+<blockquote><pre class=prettyprint>
+  foo == bar;
+</pre></blockquote>
+
+or typed <code>+</code> instead of <code>+=</code>
+<blockquote><pre class=prettyprint>
+  output + part;
+</pre></blockquote>
+
+or typed <code>,</code> instead of <code>;</code> changing the meaning
+of return statements in hard to read ways.
+<blockquote><pre class=prettyprint>
+  if (c)
+    return 4<b>,</b>
+  foo()
+</pre></blockquote>
+
+<p>
+If you have an expression like this that legitimately has a side
+effect, just put <code>void</code> in front of it to tell the linter,
+"I am discarding the value explicitly", so instead of
+<blockquote><pre class=prettyprint>
+  el.parentNode.selectedIndex;  // Safari HACK
+</pre></blockquote>
+do
+<blockquote><pre class=prettyprint>
+  <b>void</b> el.parentNode.selectedIndex;  // Safari HACK
+</pre></blockquote>
+The optimizer will take out the unnecessary <tt>void</tt>.
+
+<p>As always, to turn this off, put the error message name
+<code>NO_SIDE_EFFECT</code> in the <a href="ign_help.html>ignores list</a>.
+</body>
+</html>

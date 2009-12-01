@@ -1,0 +1,50 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+<title>Caja Web Tools &mdash; Ignoring Messages</title>
+<link rel=stylesheet type=text/css href=styles.css>
+<link rel=stylesheet type=text/css href=prettify.css>
+<script type=text/javascript src=prettify.js></script>
+<script type=text/javascript src=lang-css.js></script>
+</head>
+<body onload="prettyPrint()">
+<h1>Ignoring Messages</h1>
+
+<p>To ignore errors, warnings, or lint messages, just add the message
+name to the Ignore list.  You can find out a message's name by hovering
+over it with your mouse ; it should be an upper case string like
+<code>EXAMPLE_MESSAGE_NAME</code>.  To ignore multiple messages,
+separate them with spaces, and/or commas.
+
+<p>For example, the following code
+<blockquote><pre class="prettyprint lang-js">
+foo()
+bar()
+</pre></blockquote>
+
+yields the following message
+
+<blockquote>
+<h2>&hellip; Semicolon inserted</h2>
+<pre class="prettyprint lang-js">foo()<span class=problem></span></pre>
+</blockquote>
+
+<p>Semicolon insertion can be problematic as shown below, but we
+believe it's important to prioritize code reading, so to turn
+off this warning, add <code>SEMICOLON_INSERTED</code> to the ignore
+list.
+
+<p>As an example of why we warn on semicolon insertion, consider how
+the following program would behave very differently if the first
+semicolon were removed:
+<blockquote><pre class="prettyprint lang-js">
+var alertWrapper = function (msg) { alert(msg) }<b style=background:#fbb>;</b>
+
+(function () {
+  // do stuff
+})();
+</pre></blockquote>
+
+<p>The message level also governs which messages are displayed.
+</body>
+</html>

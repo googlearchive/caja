@@ -1,0 +1,80 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+<title>Caja Web Tools &mdash; Semicolon Insertion</title>
+<link rel=stylesheet type=text/css href=styles.css>
+<link rel=stylesheet type=text/css href=prettify.css>
+<script type=text/javascript src=prettify.js></script>
+<script type=text/javascript src=lang-css.js></script>
+</head>
+<body onload="prettyPrint()">
+<h1>Semicolon Insertion</h1>
+
+<p>Many languages like C, Java, and JavaScript end statements with
+semicolons ("<tt>;</tt>").  JavaScript introduces a syntactic
+convenience so that semicolons can be omitted in some places.
+
+<blockquote><pre class=prettyprint>
+foo()  // No semicolon needed.
+bar()
+</pre></blockquote>
+
+<p>This is often useful, but unfortunately the rules around where
+semicolons can be inserted are tricky.  Consider the following code
+snippets that change meaning radically based on whether a semicolon
+is present or not:
+
+<blockquote><pre class="prettyprint lang-js">
+var alertWrapper = function (msg) { alert(msg) }<b style=background:#fbb>;</b>
+
+(function () {
+  // do stuff
+})();
+
+// Could be
+// 1. a function definition and a block of initialization code.
+// 2. a declaration initialized to the result of chained function calls.
+</pre></blockquote>
+
+<blockquote><pre class="prettyprint lang-js">
+foo.bar()<b style=background:#fbb>;</b>
+
+[doThis, doThat, doTheOther][functionIndex]();
+
+// Could be
+// 1. a not uncommon idiom for function dispatch.
+// 2. a property lookup on the result of foo.bar()
+</pre></blockquote>
+
+<blockquote><pre class="prettyprint lang-js">
+foo.bar()<b style=background:#fbb>;</b>
+
+/myRegex/g.test(baz) ? doThis() : doThat();
+
+// Could be
+// 1. a short form of if-else based on a regex
+// 2. an if-else based on the result of a division.
+</pre></blockquote>
+
+<blockquote><pre class="prettyprint lang-js">
+function fib(i) {
+  if (i > 2)
+    return<b style=background:#fbb>;</b>  // Compute recursively
+        fib(i - 2) + fib(i - 1);
+  return 1;  // The base case
+}
+</pre></blockquote>
+
+
+<p>To help you get into the habit of not leaving out semicolons,
+except before closing braces ("<tt>}</tt>") and the end of a
+compilation unit, the linter will issue warnings where semicolons
+are inserted.
+
+<p>The linter can also help you diagnose problems with semicolons
+not being inserted where you expect them to be.
+
+<p>As always, to turn this off, put the error message name
+<code>SEMICOLON_INSERTED</code> in the <a href="ign_help.html>ignores list</a>.
+</body>
+</html>

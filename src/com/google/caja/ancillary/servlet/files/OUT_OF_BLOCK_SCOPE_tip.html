@@ -1,0 +1,46 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+<title>Caja Web Tools &mdash; Out Of Block Scope</title>
+<link rel=stylesheet type=text/css href=styles.css>
+<link rel=stylesheet type=text/css href=prettify.css>
+<script type=text/javascript src=prettify.js></script>
+<script type=text/javascript src=lang-css.js></script>
+</head>
+<body onload="prettyPrint()">
+<h1>Out Of Block Scope</h1>
+
+<p>JavaScript allows <code>var</code>s to be declared and used
+anywhere in a function
+
+<blockquote><pre class=prettyprint>
+while (foo()) {
+  <b>var bar</b> = 4;
+  &hellip;
+}
+return <b>bar</b>;
+</pre></blockquote>
+
+but this is confusing to programmers used to block-scoped languages.
+To make this go away, make sure the <code>var</code> is declared in a
+block containing all uses, as in
+
+<blockquote><pre class=prettyprint>
+<b>var bar</b>;
+while (foo()) {
+  bar = 4;
+  &hellip;
+}
+return <b>bar</b>;
+</pre></blockquote>
+
+<p>One of the least controversial parts of the proposed EcmaScript 4,
+was it's introduction of a block scoped
+<code><a href="http://wiki.ecmascript.org/doku.php?id=proposals:block_expressions">let</a></code>
+statement to eventually replace <code>var</code>, so getting in the
+practice of block scoping will pay off in the future.
+
+<p>As always, to turn this off, put the error message name
+<code>OUT_OF_BLOCK_SCOPE</code> in the <a href="ign_help.html>ignores list</a>.
+</body>
+</html>

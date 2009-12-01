@@ -1,0 +1,57 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+<title>Caja Web Tools &mdash; User Agent Optimizations</title>
+<link rel=stylesheet type=text/css href=styles.css>
+<link rel=stylesheet type=text/css href=prettify.css>
+<script src=prettify.js></script>
+</head>
+<body onload="prettyPrint()">
+<h1>User Agent</h1>
+
+<p>By supplying <span id="summary">a
+<a href="http://en.wikipedia.org/wiki/Glob_%28programming%29">glob</a>
+that matches browsers'
+<a href="http://en.wikipedia.org/wiki/User_agent">user agent</a>
+strings </span>, the optimizer can take into account browser specific
+information.
+E.g.
+<pre class="prettyprint lang-js">
+if (typeof addEventListener !== 'undefined') {
+  myNode.addEventListener(&hellip;);
+} else if (typeof attachEvent !== 'undefined') {
+  myNode.attachEvent(&hellip;);
+}
+</pre>
+could be optimized by taking into accout knowledge about the browser
+to produce
+<pre>
+    myNode.addEventListener(&hellip);
+</pre>
+on all non-IE browsers, and
+<pre>
+    myNode.attachEvent(&hellip);
+</pre>
+on IE.
+
+<p>To get best results, use code similar to the tests in
+<a href="http://code.google.com/p/google-caja/source/browse/trunk/src/com/google/caja/ancillary/opt/environment-checks.js">environment-checks.js</a>
+and if you want to avoid rechecking, store the checks in
+<code>var</code>s declared at the top of a function body or program:
+<pre class="prettyprint lang-js">
+    var useGetComputedStyle = typeof addEventListener === 'undefined';
+    ...
+</pre>
+
+<p>This feature is experimental and should be used with care.
+The database of user agent info is not complete, so the merge
+procedure described above may have holes.
+And some small percentage of browsers spoof the user agent.
+Optimizations that assume things about the browser based on the user
+agent will not work.
+
+<p>See the
+<a href="http://code.google.com/p/google-caja/wiki/UserAgentContext">wiki docs</a>
+for more details.
+</body>
+</html>

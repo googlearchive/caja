@@ -1,0 +1,99 @@
+body { background-color: #fff; color: #000; margin: 10px; font-family: Arial }
+button.submit { font-weight: bold }
+
+.verbs-help .verb { font-family: monospace; font-weight: bold; font-size: 125% }
+.verbs-help th { text-align: left; font-family: monospace; font-weight: normal }
+.verbs-help li { margin-bottom: .5em }
+
+/* Make sure that the textarea inputs and uploaded files are aligned properly.
+ */ 
+#inputs { list-style: none; padding-left: 0 }
+#inputs li { display: block; vertical-align: top }
+.type-select { margin-left: 1em }
+#inputs, #inputs li { clear: both }
+input:focus, textarea:focus { background-color: #f8f8ff }
+.source-code-cont, .source-code-input, .uploadedFile {
+  font-family: monospace; font-size: 10pt
+}
+input, .source-code-cont, .uploadedFile { border: 2px solid #bbb }
+.source-code-cont, .uploadedFile { width: 110ex }
+.source-code-input, .uploadedFile .file { padding: 2px }
+.source-code-cont { float: left; margin-bottom: 4px; padding: 0 }
+.source-code-input { width: 100%; border: 0px; margin: 0; height: 12ex }
+
+h1 {
+  padding: 2px;
+  border-radius: 6px; -moz-border-radius: 6px; -webkit-border-radius: 6px;
+  font-size: 200%;
+  font-weight: bold;
+  font-variant: small-caps;
+  font-family: sans-serif;
+  text-decoration: smallcaps;
+  color: #337;
+  background-color: #eef;
+  border-color: #337;
+  border-style: solid;
+  border-width: 4px;
+  padding: 2px 2px 2px 30px;
+  background-image: url(tools-28.gif);
+  background-repeat: no-repeat;
+  background-position: center left;
+}
+
+.new-input-button, .upload-button { margin-bottom: 1ex }
+
+.legalese { text-align: center; font-size: small }
+
+#inlineCode {
+  width: 100%;
+  height: 40ex;
+  border: 1px solid black;
+}
+
+.problem {
+  background: #fee;
+  border: 2px dotted red;
+}
+
+.help, .del-input {
+  text-decoration:none;
+  font-weight: bold;
+  font-size: small;
+  border-width: 1px;
+  border-style: outset;
+  border-radius: 6px; -moz-border-radius: 6px; -webkit-border-radius: 6px;   
+  display: inline-block;
+  padding: 1px;
+  background: #fff;
+  margin-right: 4px;
+  margin-top: 2px
+}
+
+.help { border-color: blue; color: blue }
+.help:visited { border-color: purple; color: purple }
+.del-input {
+  color: #800;
+  border-color: #800;
+  font-size: 60%;
+  float: right
+}
+
+.help:hover { background-color: #eef }
+.del-input:hover { background-color: #fee }
+
+iframe.upload { width: 100ex; height: 5ex; border: none; overflow: hidden }
+
+#examples { position: absolute; left: 120ex }
+#examples h2 { margin-bottom: 0; font-size: 100%; margin-top: 0 }
+#examples ul { margin: 0; padding: 0 }
+#examples li { display: block; list-style: none }
+
+.head {
+  position: fixed;
+  top: 3px;
+  right: 3px;
+  text-align: center;
+  width: 10em;
+  border: 1px solid #888;
+  background-color: #fff
+}
