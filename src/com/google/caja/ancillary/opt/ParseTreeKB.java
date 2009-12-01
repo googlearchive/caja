@@ -24,11 +24,14 @@ import com.google.caja.parser.js.Expression;
 import com.google.caja.parser.js.ExpressionStmt;
 import com.google.caja.parser.js.FunctionConstructor;
 import com.google.caja.parser.js.Identifier;
+import com.google.caja.parser.js.IntegerLiteral;
 import com.google.caja.parser.js.Literal;
 import com.google.caja.parser.js.Noop;
+import com.google.caja.parser.js.NullLiteral;
 import com.google.caja.parser.js.Operation;
 import com.google.caja.parser.js.Operator;
 import com.google.caja.parser.js.OperatorCategory;
+import com.google.caja.parser.js.RealLiteral;
 import com.google.caja.parser.js.Reference;
 import com.google.caja.parser.js.Statement;
 import com.google.caja.parser.js.StringLiteral;
@@ -36,12 +39,15 @@ import com.google.caja.parser.quasiliteral.Scope;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.util.Lists;
 import com.google.caja.util.Maps;
+import com.google.caja.util.Pair;
+import com.google.caja.util.Sets;
 
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * An optimizer which uses facts about the environment in which the program
@@ -50,20 +56,27 @@ import java.util.Map;
  * @author mikesamuel@gmail.com
  */
 public class ParseTreeKB {
-  private final Map<String, Fact> facts = Maps.newHashMap();
+  private final Map<String, Pair<Expression, Fact>> facts = Maps.newHashMap();
+  private boolean needsInference;
   private int longestKeyLength = 0;
 
   private static final FilePosition UNK = FilePosition.UNKNOWN;
 
   public ParseTreeKB() {
-    addFact(new Reference(new Identifier(UNK, "undefined")), Fact.UNDEFINED);
+    addFactInt(new Reference(new Identifier(UNK, "undefined")), Fact.UNDEFINED);
+    addFactInt(new Reference(new Identifier(UNK, "this")), Fact.GLOBAL);
   }
 
   /**
    * @param e an expression containing no non-global references.
    */
   public Fact getFact(Expression e) {
-    return facts.get(optNodeDigest(e));
+    return getFact(optNodeDigest(e));
+  }
+
+  private Fact getFact(String digest) {
+    Pair<Expression, Fact> fact = facts.get(digest);
+    return fact != null ? fact.b : null;
   }
 
   /**
@@ -74,11 +87,12 @@ public class ParseTreeKB {
    * @return js if no optimizations were performed.  Otherwise a partial clone.
    */
   public Block optimize(Block js, MessageQueue mq) {
+    finishInference();
     while (true) {
       Result out = new Result();
       Scope s = Scope.fromProgram(js, mq);
-      optimize(s, js, false, false, out);
-      Block optimized = ConstLocalOptimization.optimize((Block) out.node, mq);
+      optimize(s, js, false, false, false, out);
+      Block optimized = ConstLocalOptimization.optimize((Block) out.node);
       if (optimized == js) { return optimized; }
       js = optimized;
     }
@@ -89,14 +103,21 @@ public class ParseTreeKB {
    * easily inferred from the input fact.
    */
   public void addFact(Expression e, Fact fact) {
+    // Recursively fold e, since that is how the optimizer will compare it.
+    // This has the side effect of turning complex expressions like (1/0),
+    // (0/0), and (-0) into NumberLiterals.
+    addFactInt(rfold(e), fact);
+  }
+
+  private void addFactInt(Expression e, Fact fact) {
     // If we know it is a boolean, we can upgrade from LIKE to IS.
     if (fact.type == Fact.Type.LIKE && "boolean".equals(e.typeOf())) {
       fact = fact.isTruthy() ? Fact.TRUE : Fact.FALSE;
     }
 
     String digest = nodeDigest(e);
-    Fact oldFact = facts.get(digest);
-    if (oldFact != null && !oldFact.isLessSpecificThan(fact)) { return; }
+    Pair<Expression, Fact> oldFact = facts.get(digest);
+    if (oldFact != null && !oldFact.b.isLessSpecificThan(fact)) { return; }
     putFact(e, digest, fact);
 
     // Infer extra facts
@@ -114,10 +135,10 @@ public class ParseTreeKB {
             // If (a < b) the a != b, and !(a > b).
             Expression left = operands.get(0);
             Expression right = operands.get(1);
-            Operator inclusive = op.getOperator() == Operator.LESS_THAN
+            Operator included = op.getOperator() == Operator.LESS_THAN
                 ? Operator.LESS_EQUALS : Operator.GREATER_EQUALS;
-            addFact(Operation.create(UNK, inclusive, left, right), Fact.TRUE);
-            addFact(
+            addFactInt(Operation.create(UNK, included, left, right), Fact.TRUE);
+            addFactInt(
                 Operation.create(UNK, Operator.STRICTLY_NOT_EQUAL, left, right),
                 Fact.TRUE);
             // Incomparable values like NaN means we can conclude nothing if
@@ -130,7 +151,7 @@ public class ParseTreeKB {
             // if !(a <= b) then a !== b.
             Expression left = operands.get(0);
             Expression right = operands.get(1);
-            addFact(
+            addFactInt(
                 Operation.create(UNK, Operator.STRICTLY_NOT_EQUAL, left, right),
                 Fact.TRUE);
           }
@@ -139,21 +160,21 @@ public class ParseTreeKB {
           // if (x instanceof y) does not throw, then y must be a function.
           // if it's true, then x must be an object.
           // Note: primitives are not instances of their wrapper class.
-          addFact(
+          addFactInt(
               Operation.create(UNK, Operator.TYPEOF, operands.get(1)),
               Fact.is(StringLiteral.valueOf(UNK, "function")));
           if (fact.isTruthy()) {
-            addFact(operands.get(0), Fact.TRUTHY);
+            addFactInt(operands.get(0), Fact.TRUTHY);
           }
           break;
         case EQUAL:
-          addFact(
+          addFactInt(
               Operation.create(
                   UNK, Operator.NOT_EQUAL, operands.get(0), operands.get(1)),
               fact.isTruthy() ? Fact.FALSE : Fact.TRUE);
           break;
         case NOT_EQUAL:
-          addFact(
+          addFactInt(
               Operation.create(
                   UNK, Operator.EQUAL, operands.get(0), operands.get(1)),
               fact.isTruthy() ? Fact.FALSE : Fact.TRUE);
@@ -162,30 +183,51 @@ public class ParseTreeKB {
           if (fact.isTruthy()) {
             Expression lhs = operands.get(0);
             Expression rhs = operands.get(1);
-            addFact(Operation.create(UNK, Operator.EQUAL, lhs, rhs), Fact.TRUE);
+            addFactInt(Operation.create(UNK, Operator.EQUAL, lhs, rhs),
+                       Fact.TRUE);
             if (rhs instanceof Literal) {
-              addFact(lhs, Fact.is((Literal) rhs));
+              // TODO(mikesamuel): what do we do about the fact that (0 === -0)?
+              // Instead of inferring that the value IS 0, we could infer that
+              // it's falsey, and the typeof is number.
+              addFactInt(lhs, Fact.is((Literal) rhs));
+
+            // (this.global === this) -> global aliases the global object.
+            } else if (isThis(rhs) && lhs instanceof Reference) {
+              addFactInt(lhs, Fact.GLOBAL);
             } else {
               String typeOf = rhs.typeOf();
               if (typeOf != null && lhs.typeOf() == null) {
-                addFact(
+                addFactInt(
                     Operation.create(UNK, Operator.TYPEOF, lhs),
                     Fact.is(StringLiteral.valueOf(UNK, typeOf)));
               }
+              // TODO(mikesamuel): Is this useful?  When, in a comparison,
+              // do we know that something is truthy or falsey, but not what
+              // literal value it is.  The expressions:
+              //    x === function () {}
+              //    y === [1,2,3]
+              //    z === {}
+              // are never true, so control wouldn't reach here.
               Boolean truthiness = rhs.conditionResult();
               if (truthiness != null) {
                 addFuzzyFact(lhs, truthiness);
               }
             }
+          } else {
+            Expression lhs = operands.get(0);
+            Expression rhs = operands.get(1);
+            if (ParseTreeNodes.deepEquals(lhs, rhs)) {
+              addFactInt(lhs, Fact.is(new RealLiteral(UNK, Double.NaN)));
+            }
           }
-          addFact(
+          addFactInt(
               Operation.create(
                   UNK, Operator.STRICTLY_NOT_EQUAL,
                   operands.get(0), operands.get(1)),
               fact.isTruthy() ? Fact.FALSE : Fact.TRUE);
           break;
         case STRICTLY_NOT_EQUAL:
-          addFact(Operation.create(
+          addFactInt(Operation.create(
               UNK, Operator.STRICTLY_EQUAL, operands.get(0), operands.get(1)),
               fact.isTruthy() ? Fact.FALSE : Fact.TRUE);
           break;
@@ -194,7 +236,14 @@ public class ParseTreeKB {
           boolean isAnd = op.getOperator() == Operator.LOGICAL_AND;
           if (fact.isTruthy() == isAnd) {
             addFuzzyFact(operands.get(0), isAnd);
-            addFact(operands.get(1), fact);  // Second value is result
+            addFactInt(operands.get(1), fact);  // Second value is result
+          }
+          break;
+        case MEMBER_ACCESS:
+        case SQUARE_BRACKET:
+          // If foo.bar is truthy, then so is foo.
+          if (fact.isTruthy()) {
+            addFuzzyFact(operands.get(0), true);
           }
           break;
         case TYPEOF:
@@ -203,12 +252,12 @@ public class ParseTreeKB {
             String s = ((StringLiteral) fact.value).getUnquotedValue();
             Expression op0 = operands.get(0);
             if ("undefined".equals(s)) {
-              addFact(op0, Fact.UNDEFINED);
+              addFactInt(op0, Fact.UNDEFINED);
             } else {
-              if ("function".equals(s)) { addFact(op0, Fact.TRUTHY); }
+              if ("function".equals(s)) { addFactInt(op0, Fact.TRUTHY); }
               // undefined is a commonly tested value, so infer its absence
               // for other types.
-              addFact(
+              addFactInt(
                   Operation.create(
                       UNK, Operator.STRICTLY_EQUAL, op0, Fact.UNDEFINED.value),
                   Fact.FALSE);
@@ -222,7 +271,7 @@ public class ParseTreeKB {
       if (operands.size() == 2) {
         Operator swapped = WITH_REVERSE_ORDER.get(op.getOperator());
         if (swapped != null) {
-          addFact(
+          addFactInt(
               Operation.create(
                   op.getFilePosition(), swapped,
                   operands.get(1), operands.get(0)),
@@ -232,8 +281,56 @@ public class ParseTreeKB {
     }
   }
 
+  /** Infer facts from the combination of two or more facts. */
+  void finishInference() {
+    if (!needsInference) { return; }
+    Set<String> globals = Sets.newHashSet();
+    globals.add("this");
+    List<Pair<Expression, Fact>> factList = Lists.newArrayList(facts.values());
+    for (Pair<Expression, Fact> fe : factList) {
+      if (fe.b == Fact.GLOBAL) {
+        globals.add(((Reference) fe.a).getIdentifierName());
+      }
+    }
+    if (!globals.isEmpty()) {
+      for (Pair<Expression, Fact> fe : factList) {
+        if (fe.b == Fact.GLOBAL) { continue; }
+        Expression e = fe.a;
+        Operator op = null;
+        if (Operation.is(e, Operator.TYPEOF)) {
+          op = Operator.TYPEOF;
+          e = (Expression) e.children().get(0);
+        }
+        String topRef = topRef(e);
+        if (topRef != null) {
+          if (!globals.contains(topRef)) {
+            for (String globalAlias : globals) {
+              Expression newExpr = withTopRef(e, globalAlias);
+              if (op != null) {
+                newExpr = Operation.create(UNK, op, newExpr);
+              }
+              addFactInt(newExpr, fe.b);
+            }
+          } else if (op == null && e instanceof Operation) {
+            // Simplify the fact unless it is falsey and not false.
+            // E.g. global.foo   IS   4
+            //   -> foo          IS   4
+            // but  global.foo   IS   undefined
+            //   !> foo          IS   undefined
+            // because foo could result in an Error.
+            if (fe.b.isFalse() || fe.b.isTruthy()) {
+              Expression newExpr = withoutTopRef(e);
+              addFactInt(newExpr, fe.b);
+            }
+          }
+        }
+      }
+    }
+    needsInference = false;
+  }
+
   private void addFuzzyFact(Expression e, boolean isTruthy) {
-    addFact(e, isTruthy ? Fact.TRUTHY : Fact.FALSEY);
+    addFactInt(e, isTruthy ? Fact.TRUTHY : Fact.FALSEY);
   }
 
   private static final EnumMap<Operator, Operator> WITH_REVERSE_ORDER
@@ -262,7 +359,8 @@ public class ParseTreeKB {
     if (digest.length() > longestKeyLength) {
       longestKeyLength = digest.length();
     }
-    facts.put(digest, fact);
+    facts.put(digest, Pair.pair((Expression) e.clone(), fact));
+    needsInference = true;
   }
 
   /** Holds the result of optimizing a single node, and its digest. */
@@ -272,7 +370,8 @@ public class ParseTreeKB {
   }
 
   private void optimize(
-      Scope s, ParseTreeNode node, boolean isFuzzy, boolean isLhs, Result out) {
+      Scope s, ParseTreeNode node, boolean isFuzzy, boolean isLhs,
+      boolean throwsOnUndefined, Result out) {
     if (node instanceof Conditional) {
       // Handle conditionals specially since the goal of this code is to cut
       // bits out of them.
@@ -283,7 +382,8 @@ public class ParseTreeKB {
       if (Operator.MEMBER_ACCESS == op) {
         // The reference that is the second argument should not be treated as
         // an optimization target.
-        optimizeMemberAccess(s, (Operation) node, isFuzzy, isLhs, out);
+        optimizeMemberAccess(
+            s, (Operation) node, isFuzzy, isLhs, throwsOnUndefined, out);
         return;
       }
     }
@@ -311,6 +411,9 @@ public class ParseTreeKB {
       int fuzzyLimit = 0;
       // The number of operands that are left hand side expressions.
       int lhsLimit = 0;
+      // The number of operands that will cause the exception to fail with
+      // an error if undefined.
+      int touLimit = 0;
 
       if (node instanceof Operation) {
         Operator op = ((Operation) node).getOperator();
@@ -323,6 +426,10 @@ public class ParseTreeKB {
             break;
           case NOT:
             fuzzyLimit = 1;
+            break;
+          case FUNCTION_CALL: case MEMBER_ACCESS: case CONSTRUCTOR:
+          case SQUARE_BRACKET:
+            touLimit = 1;
             break;
           default: break;
         }
@@ -340,7 +447,7 @@ public class ParseTreeKB {
       ParseTreeNode[] newChildren = null;
       for (int i = 0; i < n; ++i) {
         ParseTreeNode child = children.get(i);
-        optimize(s, child, i < fuzzyLimit, i < lhsLimit, out);
+        optimize(s, child, i < fuzzyLimit, i < lhsLimit, i < touLimit, out);
         sb = addDigest(out.digest, sb);
         if (out.node != child) {
           if (newChildren == null) {
@@ -355,16 +462,18 @@ public class ParseTreeKB {
             Arrays.asList(newChildren));
       }
     }
+
     String digest;
     if (sb != null) {
       nodeTail(node, sb);
 
       digest = sb.toString();
       if (node instanceof Expression && !isLhs) {
-        Fact f = facts.get(digest);
-        if (f != null && (isFuzzy || f.type == Fact.Type.IS)) {
+        Fact f = getFact(digest);
+        if (f == null) { f = foldComparisonToFalsey(node); }
+        if (f != null && f.isSubstitutable(isFuzzy)) {
           node = f.value.clone();
-          digest = optNodeDigest(f.value);
+          digest = optNodeDigest(node);
         }
       }
     } else {
@@ -372,7 +481,7 @@ public class ParseTreeKB {
     }
 
     if (node instanceof Expression) {
-      Expression folded = ((Expression) node).fold();
+      Expression folded = normNum(((Expression) node).fold());
       if (folded != node) {
         node = folded;
         digest = optNodeDigest(folded);
@@ -394,7 +503,7 @@ public class ParseTreeKB {
     }
     while (i < n) {
       ParseTreeNode child = children.get(i);
-      optimize(s, child, true, false, out);
+      optimize(s, child, true, false, false, out);
       ParseTreeNode newChild = out.node;
       String newDigest = out.digest;
       Boolean optCond = (i & 1) == 0 && i + 1 < n
@@ -420,7 +529,7 @@ public class ParseTreeKB {
           } else {
             if (optCond) {
               // if (foo() || true) { ... }  =>  { foo(); ... }
-              optimize(s, children.get(i + 1), false, false, out);
+              optimize(s, children.get(i + 1), false, false, false, out);
               // if (foo() && 0) { ... } else { baz(); }  =>  { foo(); baz(); }
             } else {
               optimizeConditional(s, c, i + 2, out);
@@ -471,17 +580,19 @@ public class ParseTreeKB {
   }
 
   private void optimizeMemberAccess(
-      Scope s, Operation ma, boolean isFuzzy, boolean isLhs, Result out) {
+      Scope s, Operation ma, boolean isFuzzy, boolean isLhs,
+      boolean throwsOnUndefined, Result out) {
     StringBuilder sb = new StringBuilder();
     sb.append('(');
     Expression obj = ma.children().get(0);
+    optimize(s, obj, false, false, false, out);
     Reference prop = (Reference) ma.children().get(1);
-    optimize(s, obj, false, false, out);
     if (out.node != obj) {
       ma = Operation.createInfix(
           Operator.MEMBER_ACCESS, (Expression) out.node, prop);
     }
     sb = addDigest(out.digest, sb);
+    int objDigestEnd = sb != null ? sb.length() : -1;
     if (sb != null) {
       nodeDigest(ma.children().get(1), sb);
       nodeTail(ma, sb);
@@ -489,11 +600,41 @@ public class ParseTreeKB {
     String digest = sb != null ? sb.toString() : null;
     out.node = ma;
     out.digest = digest;
-    if (digest != null && !isLhs) {
-      Fact f = facts.get(digest);
-      if (f != null && (isFuzzy || f.type == Fact.Type.IS)) {
-        out.node = f.value.clone();
-        out.digest = nodeDigest(out.node);
+    if (digest != null) {
+      if (!isLhs) {
+        Fact f = getFact(digest);
+        if (f != null && f.isSubstitutable(isFuzzy)) {
+          out.node = f.value.clone();
+          out.digest = nodeDigest(out.node);
+          return;
+        }
+      }
+      // window.addEventListener -> addEventListener
+      String objDigest = digest.substring(1, objDigestEnd);
+      Pair<Expression, Fact> objFe = facts.get(objDigest);
+      if (objFe != null && objFe.b.isGlobal()
+          && s.isOuter(prop.getIdentifierName())) {
+        String propDigest = nodeDigest(prop);
+        boolean canSimplify = false;
+        if (isLhs || throwsOnUndefined) {
+          // If it's being set, we don't need to worry about undefined global
+          // errors, and we don't need to worry if the containing expression
+          // would throw if it were undefined anyway.
+          canSimplify = true;
+        } else {
+          // No difference between foo and global.foo because foo is
+          // not undefined (truthy or (falsey and not undefined).
+          Pair<Expression, Fact> propFe = facts.get(propDigest);
+          if (propFe != null) {
+            Fact pf = propFe.b;
+            canSimplify = pf.isTruthy()
+                || (pf.type == Fact.Type.IS && !pf.isUndefined());
+          }
+        }
+        if (canSimplify) {
+          out.node = prop;
+          out.digest = propDigest;
+        }
       }
     }
   }
@@ -550,6 +691,47 @@ public class ParseTreeKB {
     return sb.toString();
   }
 
+  private Fact foldComparisonToFalsey(ParseTreeNode n) {
+    if (!(n instanceof Operation)) { return null; }
+    Operation op = (Operation) n;
+    Operator o = op.getOperator();
+    boolean eq;
+    boolean strict;
+    switch (o) {
+      case EQUAL: case STRICTLY_EQUAL: eq = true; break;
+      case NOT_EQUAL: case STRICTLY_NOT_EQUAL: eq = false; break;
+      default: return null;
+    }
+    strict = o == Operator.STRICTLY_EQUAL || o == Operator.STRICTLY_NOT_EQUAL;
+    List<? extends Expression> operands = op.children();
+    Expression a = operands.get(0);
+    Expression b = operands.get(1);
+    if (strict ? isUndefOrLiteral(a) : isNullOrUndef(a)) {
+      // continue to check
+    } else if (strict ? isUndefOrLiteral(b) : isNullOrUndef(b)) {
+      Expression t = a;
+      a = b;
+      b = t;
+    } else {
+      return null;
+    }
+    Pair<Expression, Fact> fe = facts.get(this.optNodeDigest(b));
+    if (fe == null) { return null; }
+    Boolean bool = a.conditionResult();
+    if (bool == null || bool.booleanValue() == fe.b.isTruthy()) { return null; }
+    return eq ? Fact.FALSE : Fact.TRUE;
+  }
+
+  private static boolean isUndefOrLiteral(Expression e) {
+    if (e instanceof Literal) { return true; }
+    return Operation.is(e, Operator.VOID) && e.simplifyForSideEffect() == null;
+  }
+
+  private static boolean isNullOrUndef(Expression e) {
+    if (e instanceof NullLiteral) { return true; }
+    return Operation.is(e, Operator.VOID) && e.simplifyForSideEffect() == null;
+  }
+
   private static void nodeDigest(ParseTreeNode n, StringBuilder out) {
     out.append('(');
     for (ParseTreeNode child : n.children()) {
@@ -587,5 +769,80 @@ public class ParseTreeKB {
       }
     }
     out.append(')');
+  }
+
+  private static boolean isThis(ParseTreeNode node) {
+    if (!(node instanceof Reference)) { return false; }
+    return "this".equals(((Reference) node).getIdentifierName());
+  }
+
+  private static String topRef(Expression e) {
+    while (true) {
+      if (e instanceof Reference) { return ((Reference) e).getIdentifierName(); }
+      if (!(e instanceof Operation)) { return null; }
+      Operation op = (Operation) e;
+      switch (op.getOperator()) {
+        case MEMBER_ACCESS: case SQUARE_BRACKET:
+          e = op.children().get(0);
+          break;
+        default: return null;
+      }
+    }
+  }
+
+  private static Expression withTopRef(Expression e, String lhs) {
+    if (e instanceof Reference) {
+      return Operation.createInfix(
+          Operator.MEMBER_ACCESS, new Reference(new Identifier(UNK, lhs)), e);
+    } else {
+      Operation op = (Operation) e;
+      List<? extends Expression> operands = op.children();
+      return Operation.create(
+          e.getFilePosition(), op.getOperator(),
+          withTopRef(operands.get(0), lhs), operands.get(1));
+    }
+  }
+
+  private static Expression withoutTopRef(Expression e) {
+    Operation op = (Operation) e;
+    List<? extends Expression> operands = op.children();
+    Expression obj = operands.get(0), prop = operands.get(1);
+    if (obj instanceof Reference) { return prop; }
+    return Operation.create(
+        e.getFilePosition(), op.getOperator(), withoutTopRef(obj), prop);
+  }
+
+  private static Expression rfold(Expression e) {
+    if (e instanceof Operation) {
+      Operation o = (Operation) e;
+      List<? extends Expression> children = o.children();
+      Expression[] newChildren = null;
+      for (int i = 0, n = children.size(); i < n; ++i) {
+        Expression operand = children.get(i);
+        Expression newOperand = operand.fold();
+        if (operand == newOperand) { continue; }
+        if (newChildren == null) {
+          newChildren = children.toArray(new Expression[n]);
+        }
+        newChildren[i] = newOperand;
+      }
+      if (newChildren != null) {
+        e = Operation.create(e.getFilePosition(), o.getOperator(), newChildren);
+      }
+    }
+    return normNum(e.fold());
+  }
+
+  private static Expression normNum(Expression e) {
+    if (!(e instanceof RealLiteral)) { return e; }
+    RealLiteral rl = (RealLiteral) e;
+    Number n = rl.getValue();
+    double dv = n.doubleValue();
+    long lv = n.longValue();
+    // Convert 1.0 to 1, but do not convert -0.0 to 0.
+    if (dv == lv && (dv != 0d || (1 / dv) == Double.POSITIVE_INFINITY)) {
+      return new IntegerLiteral(rl.getFilePosition(), lv);
+    }
+    return rl;
   }
 }

@@ -102,7 +102,7 @@ public final class LocalVarRenamer {
       Reference r = (Reference) n;
       String rName = r.getIdentifierName();
       Scope definingScope = scope.s.thatDefines(rName);
-      assert (definingScope != null) || scope.s.isOuter(rName);
+      assert (definingScope != null) || scope.s.isOuter(rName) : rName;
       scope.uses.add(new Use(scope.withScope(definingScope), rName));
       if ("eval".equals(rName)) { infected = true; }
       infected = infected || "eval".equals(rName);

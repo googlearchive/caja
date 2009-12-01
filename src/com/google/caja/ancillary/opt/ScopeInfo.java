@@ -18,6 +18,7 @@ import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.Declaration;
 import com.google.caja.parser.js.FunctionConstructor;
+import com.google.caja.parser.js.scope.ScopeType;
 import com.google.caja.parser.quasiliteral.Scope;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.util.Lists;
@@ -72,6 +73,12 @@ final class ScopeInfo {
     this.parent = parent;
     this.s = s;
     parent.inners.add(this);
+    if (s.getType() == ScopeType.FUNCTION) {
+      mapping.put("this", "this");
+      mapping.put("arguments", "arguments");
+    } else if (s.getType() == ScopeType.PROGRAM) {
+      mapping.put("this", "this");
+    }
   }
 
   ScopeInfo() {

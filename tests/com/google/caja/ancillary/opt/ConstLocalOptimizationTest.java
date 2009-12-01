@@ -24,19 +24,35 @@ public class ConstLocalOptimizationTest extends CajaTestCase {
             ""
             + "function f() {"
             + "  var isIE = true;"
-            + "  function x() { isIE = !window.opera; }"
-            + "  return [isIE, false];"
+            + "  return [isIE, false, function x() { isIE = !window.opera; }];"
             + "}"))),
         render(ConstLocalOptimization.optimize(
             js(fromString(
                 ""
                 + "function f() {"
                 + "  var isIE = true;"  // Inlined by the ParseTreeKB
-                + "  var isFF = false;"
+                + "  var isFF = false;"  // Not inlined because can change
+                + "  function x() { isIE = !window.opera; }"
+                + "  return [isIE, isFF, x];"
+                + "}")))));
+  }
+
+  public final void testAssignedInUnusedClosure() throws Exception {
+    assertEquals(
+        render(js(fromString(
+            ""
+            + "function f() {"
+            + "  return [true, false];"
+            + "}"))),
+        render(ConstLocalOptimization.optimize(
+            js(fromString(
+                ""
+                + "function f() {"
+                + "  var isIE = true;"
+                + "  var isFF = false;"  // Could change if x were used.
                 + "  function x() { isIE = !window.opera; }"
                 + "  return [isIE, isFF];"
-                + "}")),
-            mq)));
+                + "}")))));
   }
 
   public final void testDoubleInitialized() throws Exception {
@@ -55,8 +71,7 @@ public class ConstLocalOptimizationTest extends CajaTestCase {
                 + "  var isIE = true;"  // Inlined by the ParseTreeKB
                 + "  var isFF = false, isIE = isIE && !window.opera;"
                 + "  return [isIE, isFF];"
-                + "}")),
-            mq)));
+                + "}")))));
   }
 
   public final void testMultiDecls() throws Exception {
@@ -72,8 +87,7 @@ public class ConstLocalOptimizationTest extends CajaTestCase {
                 + "function f() {"
                 + "  var isFF = false, isIE = true;"
                 + "  return [isIE, isFF];"
-                + "}")),
-            mq)));
+                + "}")))));
   }
 
   public final void testUndefined() throws Exception {
@@ -89,8 +103,7 @@ public class ConstLocalOptimizationTest extends CajaTestCase {
                 + "function f() {"
                 + "  var x, x = void 1, y = 'undefined', z;"
                 + "  return [x, y, z];"
-                + "}")),
-            mq)));
+                + "}")))));
   }
 
   public final void testUndeclared() throws Exception {
@@ -105,8 +118,7 @@ public class ConstLocalOptimizationTest extends CajaTestCase {
                 ""
                 + "function f() {"
                 + "  return x;"
-                + "}")),
-            mq)));
+                + "}")))));
   }
 
   public final void testFunctionDeclarations() throws Exception {
@@ -114,8 +126,7 @@ public class ConstLocalOptimizationTest extends CajaTestCase {
         render(js(fromString(
             ""
             + "function f() {"
-            + "  function g() {}"
-            + "  return g;"
+            + "  return function g() {};"
             + "}"))),
         render(ConstLocalOptimization.optimize(
             js(fromString(
@@ -123,8 +134,7 @@ public class ConstLocalOptimizationTest extends CajaTestCase {
                 + "function f() {"
                 + "  function g() {}"
                 + "  return g;"
-                + "}")),
-            mq)));
+                + "}")))));
   }
 
   public final void testFunctionMasking1() throws Exception {
@@ -132,7 +142,7 @@ public class ConstLocalOptimizationTest extends CajaTestCase {
         render(js(fromString(
             ""
             + "function f() {"
-            + "  var g;"
+            + "  var g = 1;"
             + "  function g() {}"
             + "  return g;"
             + "}"))),
@@ -140,11 +150,10 @@ public class ConstLocalOptimizationTest extends CajaTestCase {
             js(fromString(
                 ""
                 + "function f() {"
-                + "  var g;"
+                + "  var g = 1;"
                 + "  function g() {}"
                 + "  return g;"
-                + "}")),
-            mq)));
+                + "}")))));
   }
 
   public final void testFunctionMasking2() throws Exception {
@@ -153,7 +162,7 @@ public class ConstLocalOptimizationTest extends CajaTestCase {
             ""
             + "function f() {"
             + "  function g() {}"
-            + "  var g;"
+            + "  var g = 1;"
             + "  return g;"
             + "}"))),
         render(ConstLocalOptimization.optimize(
@@ -161,10 +170,9 @@ public class ConstLocalOptimizationTest extends CajaTestCase {
                 ""
                 + "function f() {"
                 + "  function g() {}"
-                + "  var g;"
+                + "  var g = 1;"
                 + "  return g;"
-                + "}")),
-            mq)));
+                + "}")))));
   }
 
   public final void testIdentityOfOutput() throws Exception {
@@ -179,11 +187,152 @@ public class ConstLocalOptimizationTest extends CajaTestCase {
         + "function f() {"
         + "  return true;"
         + "}"));
-    assertSame(
-        cannotOptimize, ConstLocalOptimization.optimize(cannotOptimize, mq));
-    Block optimized = ConstLocalOptimization.optimize(canOptimize, mq);
+    assertSame(cannotOptimize, ConstLocalOptimization.optimize(cannotOptimize));
+    Block optimized = ConstLocalOptimization.optimize(canOptimize);
     assertEquals(render(cannotOptimize), render(optimized));
     assertFalse(canOptimize == optimized);
-    assertSame(optimized, ConstLocalOptimization.optimize(optimized, mq));
+    assertSame(optimized, ConstLocalOptimization.optimize(optimized));
+  }
+
+  public final void testForEachLoop1() throws Exception {
+    assertEquals(
+        render(js(fromString(
+            ""
+            + "function f() {"
+            + "  var lastKey = null;"
+            + "  for (lastKey in obj);"
+            + "  return lastKey;"
+            + "}"))),
+        render(ConstLocalOptimization.optimize(
+            js(fromString(
+                ""
+                + "function f() {"
+                + "  var lastKey = null;"
+                + "  for (lastKey in obj);"
+                + "  return lastKey;"
+                + "}")))));
+  }
+
+  public final void testForEachLoop2() throws Exception {
+    assertEquals(
+        render(js(fromString(
+            ""
+            + "function f() {"
+            + "  lastKey = null;"
+            + "  for (var lastKey in obj);"
+            + "  return lastKey;"
+            + "}"))),
+        render(ConstLocalOptimization.optimize(
+            js(fromString(
+                ""
+                + "function f() {"
+                + "  lastKey = null;"
+                + "  for (var lastKey in obj);"
+                + "  return lastKey;"
+                + "}")))));
+  }
+
+  public final void testUnusedFunctions() throws Exception {
+    assertEquals(
+        render(js(fromString(
+            ""
+            + "function f() {"
+            + "  return 3;"
+            + "}"))),
+        render(ConstLocalOptimization.optimize(
+            js(fromString(
+                ""
+                + "function f() {"
+                + "  function g() { return 4; }"
+                + "  var i = 3;"
+                + "  return i;"
+                + "}")))));
+  }
+
+  public final void testGlobalsNotEliminated() throws Exception {
+    assertEquals(
+        render(js(fromString(
+            ""
+            + "var x = true;"  // Declaration needs to stay around.
+            + "function f() { alert('Hello World!'); }"
+            // Could inline x, but only by reasoning about lack of intervening
+            // assignments and side-effects of setters and getters.
+            + "alert(x);"))),
+        render(ConstLocalOptimization.optimize(
+            js(fromString(
+                ""
+                + "var x = true;"
+                + "function f() { alert('Hello World!'); }"
+                + "alert(x);")))));
+  }
+
+  public final void testSinglyUsedObjects() throws Exception {
+    assertEquals(
+        render(js(fromString(
+            ""
+            + "function f(x) {"
+            + "  var obj2 = { 1: baz, 2: boo };"
+            + "  return (function g(y) { return obj2[y]; })"
+            + "      (({ foo: 1, bar: 2 })[x]);"
+            + "}"))),
+        render(ConstLocalOptimization.optimize(
+            js(fromString(
+                ""
+                + "function f(x) {"
+                + "  var obj1 = { foo: 1, bar: 2 };"
+                + "  var obj2 = { 1: baz, 2: boo };"
+                + "  function g(y) { return obj2[y]; }"
+                + "  return g(obj1[x]);"
+                + "}")))));
+  }
+
+  public final void testRedundantDecls() throws Exception {
+    assertEquals(
+        render(js(fromString(
+            ""
+            + "function f(x) {"
+            + "  return 1;"
+            + "}"))),
+        render(ConstLocalOptimization.optimize(
+            js(fromString(
+                ""
+                + "function f(x) {"
+                + "  var x, x = 1, x;"
+                + "  return x;"
+                + "}")))));
+  }
+
+  public final void testNotInlineable() throws Exception {
+    assertEquals(
+        render(js(fromString(
+            ""
+            + "function f() {"
+            + "  var x = y, y = 1;"
+            + "  return [x, y, 2];"
+            + "}"))),
+        render(ConstLocalOptimization.optimize(
+            js(fromString(
+                ""
+                + "function f() {"
+                + "  var x = y, y = 1, z = 2;"
+                + "  return [x, y, z];"
+                + "}")))));
+  }
+
+  public final void testArguments() throws Exception {
+    assertEquals(
+        render(js(fromString(
+            ""
+            + "function f() {"
+            + "  var arguments = 1;"
+            + "  return arguments[0];"
+            + "}"))),
+        render(ConstLocalOptimization.optimize(
+            js(fromString(
+                ""
+                + "function f() {"
+                + "  var arguments = 1;"
+                + "  return arguments[0];"
+                + "}")))));
   }
 }

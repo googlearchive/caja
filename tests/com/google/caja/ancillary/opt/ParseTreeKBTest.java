@@ -15,9 +15,14 @@
 package com.google.caja.ancillary.opt;
 
 import com.google.caja.lexer.ParseException;
+import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.Expression;
 import com.google.caja.parser.js.Literal;
+import com.google.caja.render.Concatenator;
+import com.google.caja.render.JsMinimalPrinter;
+import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.CajaTestCase;
+import com.google.caja.util.Join;
 import com.google.caja.util.Lists;
 import com.google.caja.util.MoreAsserts;
 import com.google.caja.util.Pair;
@@ -41,6 +46,7 @@ public class ParseTreeKBTest extends CajaTestCase {
         super.putFact(e, digest, f);
       }
     };
+    kb.finishInference();
     knowledge.clear();
   }
 
@@ -66,6 +72,7 @@ public class ParseTreeKBTest extends CajaTestCase {
     addFact("typeof window.JSON", " 'function' ");
     assertFacts(
         "(typeof window.JSON) IS 'function'",
+        "(window) LIKE true",
         "(window.JSON) LIKE true",
         "(window.JSON !== void 0) IS true",
         "(window.JSON === void 0) IS false",
@@ -89,6 +96,34 @@ public class ParseTreeKBTest extends CajaTestCase {
         "(window.JSON === void 0) IS false",
         "(void 0 !== window.JSON) IS true",
         "(void 0 === window.JSON) IS false");
+  }
+
+  public final void testTypeof5() throws Exception {
+    addFact("typeof addEventListener", "'undefined'");
+    addFact("!!this.window && window === this", "true");
+    kb.finishInference();
+    assertFacts(
+        "(window) LIKE this",
+        "(! !this.window && window === this) IS true",
+        "(! !this.window) IS true",
+        "(!this.window) IS false",
+        "(this.window) LIKE true",
+        "(typeof addEventListener) IS 'undefined'",
+        "(typeof this.addEventListener) IS 'undefined'",
+        "(typeof window.addEventListener) IS 'undefined'",
+        "(addEventListener) IS void 0",
+        "(this.addEventListener) IS void 0",
+        "(window.addEventListener) IS void 0",
+        // The usual window alias guff
+        "(this != window) IS false",
+        "(this !== window) IS false",
+        "(this == window) IS true",
+        "(this === window) IS true",
+        "(window != this) IS false",
+        "(window !== this) IS false",
+        "(window == this) IS true",
+        "(window === this) IS true",
+        "(window.undefined) IS void 0");
   }
 
   public final void testNot1() throws Exception {
@@ -283,13 +318,105 @@ public class ParseTreeKBTest extends CajaTestCase {
         "(void 0 !== a + b) IS true");
   }
 
+  public final void testGlobalObject() throws Exception {
+    addFact("this === global", "true");
+    addFact("!global", "false");
+    addFact("typeof addEventListener", "'function'");
+    assertFacts(
+        true,
+       "(this != global) IS false",
+       "(this !== global) IS false",
+       "(this == global) IS true",
+       "(this === global) IS true",
+       "(global != this) IS false",
+       "(global !== this) IS false",
+       "(global == this) IS true",
+       "(global === this) IS true",
+       "(!global) IS false",
+       "(global) LIKE this",
+       "(global.undefined) IS void 0",
+       "(typeof addEventListener) IS 'function'",
+       "(addEventListener !== void 0) IS true",
+       "(addEventListener === void 0) IS false",
+       "(void 0 !== addEventListener) IS true",
+       "(void 0 === addEventListener) IS false",
+       "(addEventListener) LIKE true",
+       "(typeof global.addEventListener) IS 'function'",
+       "(global.addEventListener !== void 0) IS true",
+       "(global.addEventListener === void 0) IS false",
+       "(void 0 !== global.addEventListener) IS true",
+       "(void 0 === global.addEventListener) IS false",
+       "(global.addEventListener) LIKE true",
+       "(typeof this.addEventListener) IS 'function'",
+       "(this.addEventListener !== void 0) IS true",
+       "(this.addEventListener === void 0) IS false",
+       "(void 0 !== this.addEventListener) IS true",
+       "(void 0 === this.addEventListener) IS false",
+       "(this.addEventListener) LIKE true");
+  }
+
+  public final void testSpecialFloatingValues() throws Exception {
+    addFact("NaN === NaN", "false");
+    addFact("Infinity === 1/0", "true");
+    addFact("NZERO", "-0");
+    assertFacts(
+        "((1/0) === Infinity) IS true",
+        "((1/0) !== Infinity) IS false",
+        "((1/0) == Infinity) IS true",
+        "((1/0) != Infinity) IS false",
+        "(Infinity === (1/0)) IS true",
+        "(Infinity !== (1/0)) IS false",
+        "(Infinity == (1/0)) IS true",
+        "(Infinity != (1/0)) IS false",
+        "(Infinity) IS (1/0)",
+        "(NZERO) IS (-0)",
+        "(NaN !== NaN) IS true",
+        "(NaN === NaN) IS false",
+        "(NaN) IS (0/0)");
+
+    assertEquals(
+        "{\n  alert((0/0), (1/0), (-1/0), (-1/0), (-0));\n}",
+        render(kb.optimize(
+            js(fromString(
+                "alert(NaN, Infinity, -Infinity, 1/NZERO, NZERO);")),
+            mq)));
+    assertNoErrors();
+  }
+
+  public final void testGlobalExistence() throws Exception {
+    addFact("window === this", "true");
+    addFact("!!window.addEventListener", "true");
+    addFact("!window.attachEvent", "true");
+    assertFacts(
+        true,
+        "(! !window.addEventListener) IS true",
+        "(!window.addEventListener) IS false",
+        "(!window.attachEvent) IS true",
+        "(window.attachEvent) LIKE false",
+        "(this != window) IS false",
+        "(this !== window) IS false",
+        "(this == window) IS true",
+        "(this === window) IS true",
+        "(window != this) IS false",
+        "(window !== this) IS false",
+        "(window == this) IS true",
+        "(window === this) IS true",
+        "(window.addEventListener) LIKE true",
+        "(addEventListener) LIKE true",
+        "(window.undefined) IS void 0",
+        "(window) LIKE this"
+        );
+    assertNoErrors();
+  }
+
   public final void testReplacement() throws Exception {
-    addFact("typeof window.JSON", "'undefined'");
+    addFact("typeof JSON", "'undefined'");
+    addFact("this === window", "'undefined'");
     assertEquals(
         render(js(fromString(
             ""
             + "var oldJSON = void 0;"
-            + "window.JSON = { parse: null, stringify: null };"))),
+            + "JSON = { parse: null, stringify: null };"))),
         render(kb.optimize(
             js(fromString(
                 ""
@@ -636,9 +763,186 @@ public class ParseTreeKBTest extends CajaTestCase {
             mq)));
   }
 
+  public final void testHookOptimization() throws Exception {
+    addFact("typeof Date.now", "'function'");
+    assertEquals(
+        render(js(fromString(
+            "t = Date.now()"
+            + ";"))),
+        render(kb.optimize(
+            js(fromString(
+                "t = Date.now ? Date.now() : (new Date).getTime()")),
+            mq)));
+  }
+
+  public final void testGlobalFolding1() throws Exception {
+    addFact("typeof Date.now", "'function'");
+    addFact("window === this", "'function'");
+    checkGlobalFolding();
+  }
+
+  public final void testGlobalFolding2() throws Exception {
+    addFact("typeof window.Date.now", "'function'");
+    addFact("window === this", "'function'");
+    checkGlobalFolding();
+  }
+
+  private void checkGlobalFolding() throws Exception {
+    assertEquals(
+        render(js(fromString(
+            ""
+            + "function borken() {"
+            + "  return this.Date.now ? this.Date.now() : +(new this.Date);"
+            + "}"
+            + "function borken2(window) {"
+            + "  return window.Date.now"
+            + "      ? window.Date.now() : +(new window.Date);"
+            + "}"
+            + "function ok() {"
+            + "  return Date.now();"
+            + "}"
+            + "var ok2 = Date.now();"
+            + "var ok3 = Date.now();"))),
+        render(kb.optimize(
+            js(fromString(
+                ""
+                + "function borken() {"
+                + "  return this.Date.now ? this.Date.now() : +(new this.Date);"
+                + "}"
+                + "function borken2(window) {"
+                + "  return window.Date.now"
+                + "      ? window.Date.now() : +(new window.Date);"
+                + "}"
+                + "function ok() {"
+                + "  return window.Date.now"
+                + "      ? window.Date.now() : +(new window.Date);"
+                + "}"
+                + "var ok2 = window.Date.now"
+                + "    ? window.Date.now() : +(new window.Date);"
+                + "var ok3 = this.Date.now"
+                + "    ? this.Date.now() : +(new this.Date);"
+                )),
+            mq)));
+    assertNoErrors();
+  }
+
+  public final void testOptimizeOutGlobals1() throws Exception {
+    addFact("window === this", "'function'");
+    assertEquals(
+        render(js(fromString(
+            ""
+            + "function al(t, listener) {"
+            + "  addEventListener(t, listener);"
+            + "}"))),
+        render(kb.optimize(
+            js(fromString(
+                ""
+                + "function al(t, listener) {"
+                + "  window.addEventListener(t, listener);"
+                + "}")),
+            mq)));
+    assertNoErrors();
+  }
+
+  public final void testOptimizeOutGlobals2() throws Exception {
+    addFact("window === this", "'function'");
+    assertEquals(
+        render(js(fromString(
+            ""
+            + "function al(window, t, listener) {"
+            + "  window.addEventListener(t, listener);"
+            + "}"))),
+        render(kb.optimize(
+            js(fromString(
+                ""
+                + "function al(window, t, listener) {"
+                + "  window.addEventListener(t, listener);"
+                + "}")),
+            mq)));
+    assertNoErrors();
+  }
+
+  public final void testOptimizeOutGlobals3() throws Exception {
+    addFact("window === this", "'function'");
+    assertEquals(
+        render(js(fromString(
+            ""
+            + "function al(t, addEventListener) {"
+            + "  window.addEventListener(t, addEventListener);"
+            + "}"))),
+        render(kb.optimize(
+            js(fromString(
+                ""
+                + "function al(t, addEventListener) {"
+                + "  window.addEventListener(t, addEventListener);"
+                + "}")),
+            mq)));
+    assertNoErrors();
+  }
+
+  public final void testComparisonsToSpecials() throws Exception {
+    // Since we know x is falsey we can't conclude that much.
+    addFact("!x", "true");
+    // But since y is truthy, it can't be null, undefined, false, 0, NaN, ''
+    addFact("!!y", "true");
+    addFact("NaN", "0/0");
+    assertEquals(
+        Join.join(
+            ",",
+            "alert([x==null",   "x===null",
+                   "x!=null",   "x!==null",
+                   "x==void 0", "x===void 0",
+                   "x!=void 0", "x!==void 0",
+                   "x!=''",     "x!==''",
+                   "x!=0",      "x!==0",
+                   "x!=1",      "true",
+                   "x!=(0/0)",  "x!==(0/0)",
+                   "x!=false",  "x!==false",
+                   "false",     "false",
+                   "true",      "true",
+                   "false",     "false",
+                   "true",      "true",
+                   "y!=''",     "true",  // [] == '', but [] !== ''
+                   "y!=0",      "true",  // new Number(0) == 0
+                   "y!=1",      "y!==1",
+                   "y!=(0/0)",  "true",  // possibly safe to optimize left
+                   "y!=false",  "true])"),   // new Boolean(false) == false
+        renderMin(kb.optimize(
+            js(fromString(
+                ""
+                + "alert([\n"
+                + "    x == null,      x === null,\n"
+                + "    x != null,      x !== null,\n"
+                + "    x == undefined, x === undefined,\n"
+                + "    x != undefined, x !== undefined,\n"
+                + "    x != '',        x !== '',\n"
+                + "    x != 0,         x !== 0,\n"
+                + "    x != 1,         x !== 1,\n"
+                + "    x != NaN,       x !== NaN,\n"
+                + "    x != false,     x !== false\n"
+                + "    y == null,      y === null,\n"
+                + "    y != null,      y !== null,\n"
+                + "    y == undefined, y === undefined,\n"
+                + "    y != undefined, y !== undefined,\n"
+                + "    y != '',        y !== '',\n"
+                + "    y != 0,         y !== 0,\n"
+                + "    y != 1,         y !== 1,\n"
+                + "    y != NaN,       y !== NaN,\n"
+                + "    y != false,     y !== false\n"
+                + "    ])")),
+            mq)));
+    assertNoErrors();
+  }
+
+  public final void testFolding() throws Exception {
+    assertEquals(
+        render(js(fromString("x = 2;"))),
+        render(kb.optimize(js(fromString("x = 1 + 1;")), mq)));
+  }
+
   private void addFact(String expr, String value) throws ParseException {
     kb.addFact(jsExpr(fromString(expr)),
-               Fact.is((Literal) jsExpr(fromString(value))));
+               Fact.is((Literal) jsExpr(fromString(value)).fold()));
   }
 
   private void addFuzzyFact(String expr, boolean truthy) throws ParseException {
@@ -646,8 +950,13 @@ public class ParseTreeKBTest extends CajaTestCase {
   }
 
   private void assertFacts(String... expected) {
+    assertFacts(false, expected);
+  }
+
+  private void assertFacts(boolean finish, String... expected) {
     List<String> expectedKnowledge = Arrays.asList(expected);
     List<String> actualKnowledge = Lists.newArrayList();
+    if (finish) { kb.finishInference(); }
     for (Pair<Expression, Fact> k : knowledge) {
       actualKnowledge.add(
           "(" + render(k.a) + ") " + k.b.type + " " + render(k.b.value));
@@ -655,5 +964,14 @@ public class ParseTreeKBTest extends CajaTestCase {
     Collections.sort(actualKnowledge);
     Collections.sort(expectedKnowledge);
     MoreAsserts.assertListsEqual(expectedKnowledge, actualKnowledge);
+  }
+
+  private static String renderMin(Block js) {
+    StringBuilder sb = new StringBuilder();
+    JsMinimalPrinter p = new JsMinimalPrinter(new Concatenator(sb));
+    p.setLineLengthLimit(1000);
+    js.renderBody(new RenderContext(p));
+    p.noMoreTokens();
+    return sb.toString();
   }
 }

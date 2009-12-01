@@ -61,7 +61,7 @@ public class EnvironmentData {
     return data.get(d.getCode());
   }
 
-  private static String normJsQuiet(String js) throws ParseException {
+  public static String normJsQuiet(String js) throws ParseException {
     return normJs(js, DevNullMessageQueue.singleton());
   }
 

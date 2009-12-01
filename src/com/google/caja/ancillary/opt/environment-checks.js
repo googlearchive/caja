@@ -94,6 +94,8 @@ var env = (function () {
       'typeof Function.prototype.bind',
       'typeof Object.prototype.toSource',
       'typeof uneval',
+      'typeof getSelection',
+      '!!(document && document.selection)',
       //// Check for known bugs and inconsistencies
       // Do functions not leak dangerous info in negative indices?
       'void 0 === ((function(){})[-2])',

@@ -33,7 +33,7 @@ import com.google.caja.util.Lists;
 import java.util.List;
 
 /**
- * Optimizes javascript code.
+ * Optimizes JavaScript code.
  *
  * @author mikesamuel@gmail.com
  */
@@ -64,7 +64,7 @@ public class JsOptimizer {
     List<? extends Expression> parts = envJson.children();
     for (int i = 0, n = parts.size(); i < n; i += 2) {
       StringLiteral sl = (StringLiteral) parts.get(i);
-      Literal value = (Literal) parts.get(i + 1);
+      Literal value = (Literal) parts.get(i + 1).fold();  // fold negative nums
       String rawExpr = sl.getValue();
       rawExpr = " " + rawExpr.substring(1, rawExpr.length() - 1) + " ";
       CharProducer valueCp = CharProducer.Factory.fromJsString(
@@ -99,13 +99,15 @@ public class JsOptimizer {
     SimpleMessageQueue optMq = new SimpleMessageQueue();
     Block block = new Block(FilePosition.UNKNOWN, compUnits);
     // Do first since this improves the performance of the ConstVarInliner.
+    VarCollector.optimize(block);
     if (optimizer != null) {
       block = optimizer.optimize(block, optMq);
     }
     if (rename) {
+      block = ConstantPooler.optimize(block);
       block = new LocalVarRenamer(optMq).optimize(block);
     }
-    return block;
+    return (Statement) StatementSimplifier.optimize(block, mq);
   }
 
   private static Parser parser(CharProducer cp, MessageQueue errs) {

@@ -15,12 +15,15 @@
 package com.google.caja.ancillary.opt;
 
 import com.google.caja.lexer.FilePosition;
+import com.google.caja.lexer.Keyword;
 import com.google.caja.parser.js.BooleanLiteral;
 import com.google.caja.parser.js.Expression;
+import com.google.caja.parser.js.Identifier;
 import com.google.caja.parser.js.IntegerLiteral;
 import com.google.caja.parser.js.Literal;
 import com.google.caja.parser.js.Operation;
 import com.google.caja.parser.js.Operator;
+import com.google.caja.parser.js.Reference;
 
 /**
  * A piece of knowledge about the environment a JavaScript program might run in.
@@ -48,7 +51,8 @@ public final class Fact {
   }
 
   boolean isLessSpecificThan(Fact that) {
-    return this.type == Type.LIKE && that.type == Type.IS;
+    if (this.type == Type.LIKE && that.type == Type.IS) { return true; }
+    return this != that && that == GLOBAL;  // global more specific than truthy
   }
 
   public static Fact is(Literal value) {
@@ -63,9 +67,13 @@ public final class Fact {
   static Fact UNDEFINED = new Fact(
       Type.IS,
       Operation.create(UNK, Operator.VOID, new IntegerLiteral(UNK, 0)));
+  static Fact GLOBAL = new Fact(
+      Type.LIKE, new Reference(new Identifier(UNK, Keyword.THIS.toString())));
 
   boolean isTruthy() {
-    return this != UNDEFINED && ((Literal) value).getValueInBooleanContext();
+    if (this == GLOBAL) { return true; }
+    if (this == UNDEFINED) { return false; }
+    return ((Literal) value).getValueInBooleanContext();
   }
   boolean isFalsey() { return !isTruthy(); }
   boolean isTrue() {
@@ -75,6 +83,12 @@ public final class Fact {
   boolean isFalse() {
     return type == Type.IS && value instanceof BooleanLiteral
         && !((BooleanLiteral) value).value;
+  }
+  boolean isGlobal() { return this == GLOBAL; }
+  boolean isUndefined() { return this == UNDEFINED; }
+
+  boolean isSubstitutable(boolean isFuzzy) {
+    return type == Type.IS || (isFuzzy && this != GLOBAL);
   }
 
   @Override

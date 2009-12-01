@@ -17,27 +17,34 @@ package com.google.caja.ancillary.opt;
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.MutableParseTreeNode;
-import com.google.caja.parser.ParseTreeNode;
-import com.google.caja.parser.ParseTreeNodes;
+import com.google.caja.parser.js.ArrayConstructor;
 import com.google.caja.parser.js.Block;
-import com.google.caja.parser.js.CatchStmt;
 import com.google.caja.parser.js.Declaration;
 import com.google.caja.parser.js.Expression;
+import com.google.caja.parser.js.FormalParam;
 import com.google.caja.parser.js.FunctionConstructor;
+import com.google.caja.parser.js.FunctionDeclaration;
 import com.google.caja.parser.js.Identifier;
 import com.google.caja.parser.js.IntegerLiteral;
 import com.google.caja.parser.js.Literal;
 import com.google.caja.parser.js.MultiDeclaration;
+import com.google.caja.parser.js.ObjectConstructor;
 import com.google.caja.parser.js.Operation;
 import com.google.caja.parser.js.Operator;
-import com.google.caja.parser.js.OperatorCategory;
 import com.google.caja.parser.js.Reference;
 import com.google.caja.parser.js.RegexpLiteral;
 import com.google.caja.parser.js.Statement;
-import com.google.caja.parser.quasiliteral.Scope;
-import com.google.caja.reporting.MessageQueue;
-import com.google.caja.util.Multimap;
-import com.google.caja.util.Multimaps;
+import com.google.caja.parser.js.scope.AbstractScope;
+import com.google.caja.parser.js.scope.ES5ScopeAnalyzer;
+import com.google.caja.parser.js.scope.ScopeListener;
+import com.google.caja.parser.js.scope.ScopeType;
+import com.google.caja.util.Lists;
+import com.google.caja.util.Maps;
+import com.google.caja.util.Sets;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Inlines uses of local variables at the top of a block which are immediately
@@ -55,143 +62,233 @@ import com.google.caja.util.Multimaps;
  * function f() { return 3 + 4; }
  * </pre>
  *
+ * <p>
+ * We do not muck with initializations inside a ternary or short-circuiting
+ * logic op or in conditionals or loops, since those can be executed multiple
+ * times or not at all.
+ * And we don't muck with initializations in try blocks since reads could be
+ * inside catch or finally which might get invoked when set fails.
+ *
  * @author mikesamuel@gmail.com
  */
 public class ConstLocalOptimization {
-  public static Block optimize(Block program, MessageQueue mq) {
+  public static Block optimize(Block program) {
     Block clone = (Block) program.clone();
-    Optimizer opt = new Optimizer();
-    AncestorChain<Block> root = AncestorChain.instance(clone);
-    Scope scope = Scope.fromProgram(clone, mq);
-    for (Statement s : clone.children()) {
-      opt.examine(AncestorChain.instance(root, s), scope);
+    while (true) {
+      Optimizer opt = new Optimizer();
+      opt.examine(AncestorChain.instance(clone));
+      opt.finish();
+      if (!opt.changed) { return program; }
+      program = clone;
     }
-    opt.finish();
-    return opt.changed ? clone : program;
   }
 }
 
 class Optimizer {
-  final Multimap<Var, AncestorChain<?>> uses = Multimaps.newListHashMultimap();
+  final Set<Var> vars = Sets.newLinkedHashSet();
+  final Map<AncestorChain<?>, Integer> positions = Maps.newHashMap();
   boolean changed;
 
-  void examine(AncestorChain<?> ac, Scope s) {
-    ParseTreeNode n = ac.node;
-    if (n instanceof FunctionConstructor) {
-      FunctionConstructor fn = (FunctionConstructor) n;
-      s = Scope.fromFunctionConstructor(s, fn);
-      AncestorChain<Block> body = AncestorChain.instance(ac, fn.getBody());
-      for (Statement fnBodyStmt : body.node.children()) {
-        if (!examineDeclaration(AncestorChain.instance(body, fnBodyStmt), s)) {
-          break;
-        }
-      }
-    } else if (n instanceof CatchStmt) {
-      s = Scope.fromCatchStmt(s, ((CatchStmt) n));
-    } else if (n instanceof Operation
-               && Operator.MEMBER_ACCESS == n.getValue()) {
-      examine(AncestorChain.instance(ac, n.children().get(0)), s);
-      return;
-    } else if (n instanceof Reference) {
-      Identifier id = (Identifier) n.children().get(0);
-      Scope defining = s.thatDefines(id.getName());
-      if (defining != null) { uses.put(new Var(id, defining), ac); }
-    }
-    for (ParseTreeNode child : n.children()) {
-      examine(AncestorChain.instance(ac, child), s);
-    }
+  void examine(AncestorChain<?> program) {
+    ES5ScopeAnalyzer<OptScope> sa = new ES5ScopeAnalyzer<OptScope>(
+        new ScopeListener<OptScope>() {
+          public void assigned(
+              AncestorChain<Identifier> id, OptScope useSite,
+              OptScope definingSite) {
+            if (definingSite != null) {
+              definingSite.requireSymbol(id.node.getName()).writes.add(id);
+            }
+          }
+
+          public OptScope createScope(
+              ScopeType t, AncestorChain<?> root, OptScope parent) {
+            return new OptScope(parent, t, root);
+          }
+
+          public void declaration(AncestorChain<Identifier> id, OptScope s) {
+            s.requireSymbol(id.node.getName()).decls.add(id);
+          }
+
+          public void duplicate(AncestorChain<Identifier> id, OptScope scope) {}
+
+          public void enterScope(OptScope Scope) {}
+
+          public void exitScope(OptScope scope) {
+            if (scope.t == ScopeType.FUNCTION) {
+              AncestorChain<FunctionConstructor> fc = scope.root.cast(
+                  FunctionConstructor.class);
+              AncestorChain<Block> body = fc.child(fc.node.getBody());
+              for (Statement fnBodyStmt : body.node.children()) {
+                if (!examineDeclaration(body.child(fnBodyStmt), scope)) {
+                  break;
+                }
+              }
+            }
+          }
+
+          public void inScope(AncestorChain<?> ac, OptScope scope) {
+            positions.put(ac, positions.size());
+          }
+
+          public void masked(
+              AncestorChain<Identifier> id, OptScope inner, OptScope outer) {}
+
+          public void read(
+              AncestorChain<Identifier> id, OptScope useSite,
+              OptScope definingSite) {
+            if (definingSite != null) {
+              definingSite.requireSymbol(id.node.getName()).reads.add(id);
+            }
+          }
+
+          public void splitInitialization(
+              AncestorChain<Identifier> declared, OptScope declScope,
+              AncestorChain<Identifier> initialized, OptScope maskingScope) {
+          }
+        });
+    sa.apply(program);
   }
 
-  private boolean examineDeclaration(AncestorChain<Statement> ac, Scope s) {
+  private boolean examineDeclaration(AncestorChain<Statement> ac, OptScope s) {
     Statement stmt = ac.node;
     if (stmt instanceof MultiDeclaration) {
       for (Declaration d : ((MultiDeclaration) stmt).children()) {
-        if (!examineDeclaration(AncestorChain.instance(ac, (Statement) d), s)) {
+        if (!examineDeclaration(ac.child((Statement) d), s)) {
           return false;
         }
       }
       return true;
     } else if (stmt instanceof Declaration) {
-      Declaration d = (Declaration) stmt;
-      String name = d.getIdentifierName();
-      if (s.isData(name)) { uses.put(new Var(d.getIdentifier(), s), ac); }
+      vars.add(new Var(((Declaration) stmt).getIdentifier(), s));
       return true;
     }
     return false;
   }
 
   void finish() {
+    // Walk over the list of variables that appear at the top of a function
+    // body.
     var:
-    for (Var v : uses.keySet()) {
-      Iterable<AncestorChain<?>> acs = uses.get(v);
-      // If there is exactly one declaration which has a value,
-      // and no assignments, then inline.
-      Expression value = null;
-      FilePosition declPos = null;
-      for (AncestorChain<?> ac : acs) {
-        if (ac.node instanceof Declaration) {
-          Declaration d = ac.cast(Declaration.class).node;
-          declPos = d.getFilePosition();
-          if (d.getInitializer() != null) {
-            if (value != null || !isConst(d.getInitializer())) {
+    for (Var v : vars) {
+      if ("arguments".equals(v.name)) { continue; }  // special in function body
+      Symbol s = v.s.getSymbol(v.name);
+      Expression value;
+      int initPos;
+      switch (s.writes.size()) {
+        case 1:
+          AncestorChain<Identifier> write = s.writes.get(0);
+          if (write.parent.node instanceof Declaration) {
+            initPos = write.parent.node instanceof FunctionDeclaration
+                ? -1  // hoisted
+                : positions.get(write);
+            AncestorChain<Declaration> d = write.parent.cast(Declaration.class);
+            value = d.node.getInitializer();
+
+            if (s.reads.size() <= 1) {
+              if (!isSinglyInlineable(value)) { continue var; }
+              if (!(s.reads.isEmpty() || inSameFn(s.reads.get(0), d))) {
+                continue var;
+              }
+            } else if (!isConst(value)) {
               continue var;
             }
-            value = d.getInitializer();
+          } else {
+            continue var;
           }
-        } else {
-          AncestorChain<Reference> r = ac.cast(Reference.class);
-          if (r.parent.node instanceof Operation
-              && r.node == r.parent.node.children().get(0)) {
-            Operator op = r.parent.cast(Operation.class).node.getOperator();
-            if (op.getCategory() == OperatorCategory.ASSIGNMENT) {
-              continue var;
-            }
-          }
-        }
+          break;
+        case 0:
+          initPos = -1;
+          value = null;
+          break;
+        default:
+          continue var;
       }
-      if (declPos == null) { continue; }
-      if (value == null) {
-        value = Operation.create(
-            declPos, Operator.VOID, new IntegerLiteral(declPos, 0));
+
+      // If there is at most one assignment at the top level of the function
+      // and all reads occur after that, and the value is constant, then
+      // inline uses.
+
+      // If all the reads occur afterwards lexically, then, since we
+      // know the declaration appears at the top of a run of
+      // declarations in a function body, then it isn't being read by
+      // any of the earlier declarations ; so all reads must happen
+      // after the var is initialized.
+      for (AncestorChain<Identifier> read : s.reads) {
+        if (positions.get(read) < initPos) { continue var; }
       }
-      changed = true;
-      for (AncestorChain<?> ac : acs) {
-        if (ac.node instanceof Reference) {
-          Reference ref = ac.cast(Reference.class).node;
-          Expression subst = ParseTreeNodes.newNodeInstance(
-              value.getClass(), ref.getFilePosition(),
-              value.getValue(), value.children());
-          ac.parent.cast(MutableParseTreeNode.class).node.replaceChild(
-              subst, ref);
-        } else {  // Remove the declaration
-          AncestorChain<?> toRemove = ac;
-          if (toRemove.parent.node instanceof MultiDeclaration
-              && 1 == toRemove.parent.node.children().size()) {
-            toRemove = toRemove.parent;
-          }
-          toRemove.parent.cast(MutableParseTreeNode.class).node.removeChild(
-              toRemove.node);
+
+      for (AncestorChain<Identifier> read : s.reads) {
+        AncestorChain<Reference> toReplace
+            = read.parent.cast(Reference.class);
+        Expression repl = value;
+        if (repl == null) {
+          FilePosition fp = toReplace.node.getFilePosition();
+          repl = Operation.create(fp, Operator.VOID, new IntegerLiteral(fp, 0));
         }
+        toReplace.parent.cast(MutableParseTreeNode.class)
+            .node.replaceChild(repl, toReplace.node);
+        changed = true;
+      }
+
+      for (AncestorChain<Identifier> decl : s.decls) {
+        AncestorChain<?> toRemove = decl.parent;
+        if (toRemove.node instanceof FormalParam) { continue; }
+        if (toRemove.parent.node instanceof MultiDeclaration
+            && toRemove.parent.node.children().size() == 1) {
+          toRemove = toRemove.parent;
+        }
+        toRemove.parent.cast(MutableParseTreeNode.class)
+            .node.removeChild(toRemove.node);
+        changed = true;
       }
     }
   }
 
-  private static boolean isOperation(Operator op, Expression e) {
-    return e instanceof Operation && op == ((Operation) e).getOperator();
+  private static boolean isSinglyInlineable(Expression expr) {
+    return isConst(expr)
+        || (expr instanceof ObjectConstructor
+            && areSinglyInlineable(((ObjectConstructor) expr).children()))
+        || (expr instanceof ArrayConstructor
+            && areSinglyInlineable(((ArrayConstructor) expr).children()))
+        || expr instanceof FunctionConstructor;
+  }
+
+  private static boolean areSinglyInlineable(List<? extends Expression> exprs) {
+    for (Expression e : exprs) {
+      if (!isSinglyInlineable(e)) { return false; }
+    }
+    return true;
   }
 
   private static boolean isConst(Expression expr) {
     return (expr instanceof Literal && !(expr instanceof RegexpLiteral))
-        || (isOperation(Operator.VOID, expr)
-            && isConst((Expression) expr.children().get(0)));
+        || (Operation.is(expr, Operator.VOID)
+            && areConst(((Operation) expr).children()));
+  }
+
+  private static boolean areConst(List<? extends Expression> exprs) {
+    for (Expression e : exprs) {
+      if (!isConst(e)) { return false; }
+    }
+    return true;
+  }
+
+  private static boolean inSameFn(AncestorChain<?> a, AncestorChain<?> b) {
+    while (a != null && !(a.node instanceof FunctionConstructor)) {
+      a = a.parent;
+    }
+    while (b != null && !(b.node instanceof FunctionConstructor)) {
+      b = b.parent;
+    }
+    return a != null && a.equals(b);
   }
 }
 
 final class Var {
   final String name;
-  final Scope s;
+  final OptScope s;
 
-  Var(Identifier id, Scope s) {
+  Var(Identifier id, OptScope s) {
     this.name = id.getName();
     this.s = s;
   }
@@ -212,4 +309,46 @@ final class Var {
   public String toString() {
     return "[Var " + name + " in " + s + "]";
   }
+}
+
+final class OptScope implements AbstractScope {
+  final OptScope containing;
+  final ScopeType t;
+  final Map<String, Symbol> symbols = Maps.newLinkedHashMap();
+  final AncestorChain<?> root;
+
+  OptScope(OptScope containing, ScopeType t, AncestorChain<?> root) {
+    this.containing = containing;
+    this.t = t;
+    this.root = root;
+  }
+
+  public AbstractScope getContainingScope() { return containing; }
+  public ScopeType getType() { return t; }
+  public boolean isSymbolDeclared(String name) {
+    return symbols.containsKey(name);
+  }
+  public Symbol getSymbol(String name) {
+    OptScope os = this;
+    do {
+      Symbol s = symbols.get(name);
+      if (s != null) { return s; }
+      os = os.containing;
+    } while (os != null);
+    return null;
+  }
+  public Symbol requireSymbol(String name) {
+    Symbol s = symbols.get(name);
+    if (s == null) {
+      s = new Symbol();
+      symbols.put(name, s);
+    }
+    return s;
+  }
+}
+
+final class Symbol {
+  List<AncestorChain<Identifier>> decls = Lists.newArrayList(),
+      reads = Lists.newArrayList(),
+      writes = Lists.newArrayList();
 }
