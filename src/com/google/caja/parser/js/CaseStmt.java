@@ -15,7 +15,6 @@
 package com.google.caja.parser.js;
 
 import com.google.caja.lexer.FilePosition;
-import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.reporting.RenderContext;
 
@@ -55,7 +54,14 @@ public final class CaseStmt extends SwitchCase {
 
   public Expression getCaseValue() { return caseValue; }
 
+  @Override
   public Statement getBody() { return body; }
+
+  @Override
+  protected void renderHead(RenderContext rc) {
+    rc.getOut().consume("case");
+    caseValue.render(rc);
+  }
 
   @Override
   protected void childrenChanged() {
@@ -67,14 +73,4 @@ public final class CaseStmt extends SwitchCase {
 
   @Override
   public Object getValue() { return null; }
-
-  public void render(RenderContext rc) {
-    TokenConsumer out = rc.getOut();
-    out.mark(getFilePosition());
-    out.consume("case");
-    caseValue.render(rc);
-    out.consume(":");
-    out.consume("\n");
-    body.renderBlock(rc, false);
-  }
 }

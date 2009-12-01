@@ -15,7 +15,9 @@
 package com.google.caja.parser.js;
 
 import com.google.caja.lexer.FilePosition;
+import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.parser.ParseTreeNode;
+import com.google.caja.reporting.RenderContext;
 
 /**
  * Base class for case and default blocks.
@@ -25,4 +27,22 @@ public abstract class SwitchCase extends AbstractStatement {
   protected SwitchCase(FilePosition pos) { super(pos, ParseTreeNode.class); }
 
   public boolean hasHangingConditional() { return false; }
+
+  public abstract Statement getBody();
+
+  protected abstract void renderHead(RenderContext rc);
+
+  public final void render(RenderContext rc) {
+    TokenConsumer out = rc.getOut();
+    out.mark(getFilePosition());
+    renderHead(rc);
+    out.consume(":");
+    out.consume("\n");
+    Statement body = getBody();
+    if (body instanceof Block) {
+      ((Block) body).renderBody(rc);
+    } else if (!(body instanceof Noop)) {
+      body.renderBlock(rc, true);
+    }
+  }
 }

@@ -26,14 +26,10 @@
   case 2:
     if (a === 4) { break; }
   case BAR:
-    {
-      f();
-      g();
-    }
+    f();
+    g();
   default:
-    {
-      zowie(wowie());;;
-    }
+    zowie(wowie());;;
   }
   for (var i in array) {
     f(i);
@@ -44,12 +40,9 @@
   var o = new Object;
   switch (n) {
   case 0:
-    ;
   case 1:
-    {
-      { foo(); }
-      break;
-    }
+    { foo(); }
+    break;
   default:
     panic();
   case 2:

@@ -73,16 +73,15 @@ import java.util.Set;
  *
  * <xmp>
  * // Terminal productions
- * Program                 => <UseSubsetDirective>? <TerminatedStatement>*
+ * Program                 => <DirectivePrologue>? <TerminatedStatement>*
  * Statement               => <TerminalStatement>
  *                          | <NonTerminalStatement>
  * Expression              => <CommaOperator>
  *
  * // Non-terminal productions.  Indentation indicates that a nonterminal is
  * // used only by the unindented nonterminal above it.
- * UseSubsetDirective      => '"' 'use' <UseSubsetList>? '"'
- * UseSubsetList           => <UseSubset> <UseSubsetTail>*
- * UseSubsetTail           => ',' <UseSubset>
+ * DirectivePrologue       => <Directive> <DirectivePrologue>?
+ * Directive               => <StringLiteral> ';'
  * TerminatedStatement     => <BlockStatement>
  *                          | <SimpleStatement> <StatementTerminator>
  *   StatementTerminator   => ';'
@@ -323,61 +322,50 @@ public final class Parser extends ParserBase {
     Mark startOfPrologue = tq.mark();
     List<Directive> directives = Lists.newArrayList();
 
-    while (tq.peek().type == JsTokenType.STRING) {
+    while (!tq.isEmpty() && tq.peek().type == JsTokenType.STRING) {
       Mark startOfDirective = tq.mark();
       Token<JsTokenType> quotedString = tq.pop();
 
-      boolean isDirective = false;
-      switch(tq.peek().type) {
-        case STRING:
-        case REGEXP:
-        case WORD:
-        case INTEGER:
-        case FLOAT:
-        case KEYWORD:
-        case COMMENT:
-          isDirective = true;
-          mq.addMessage(
-              MessageType.SEMICOLON_INSERTED,
-              FilePosition.endOf(quotedString.pos));
+      if (!tq.checkToken(Punctuation.SEMI)) {
+        Token<JsTokenType> t = !tq.isEmpty() ? tq.peek() : null;
+        if ((t == null || !continuesExpr(t.text)) && semicolonInserted()) {
+          FilePosition semiPoint = FilePosition.endOf(tq.lastPosition());
+          MessageLevel lvl = tq.isEmpty()
+              || tq.lookaheadToken(Punctuation.RCURLY)
+              ? MessageLevel.LOG : MessageLevel.LINT;
+          mq.addMessage(MessageType.SEMICOLON_INSERTED, lvl, semiPoint);
+        } else {
+          tq.rewind(startOfDirective);
           break;
-        case PUNCTUATION:
-          if (tq.lookaheadToken(Punctuation.SEMI)) {
-            isDirective = true;
-            tq.pop();
-          } else if (tq.lookaheadToken(Punctuation.RCURLY)) {
-            isDirective = true;
-            mq.addMessage(
-                MessageType.SEMICOLON_INSERTED,
-                FilePosition.endOf(quotedString.pos));
-          }
-          break;
-        case LINE_CONTINUATION:
-          break;
+        }
       }
 
-      if (!isDirective) {
-        tq.rewind(startOfDirective);
-        break;
-      }
-
+      String unquoted = quotedString.text.substring(
+          1, quotedString.text.length() - 1);
       String decoded = StringLiteral.getUnquotedValueOf(quotedString.text);
-      if (!Directive.RecognizedValue.isDirectiveStringRecognized(decoded)) {
+      if (!unquoted.equals(decoded)
+          || !Directive.RecognizedValue.isDirectiveStringRecognized(unquoted)) {
         mq.addMessage(
             MessageType.UNRECOGNIZED_DIRECTIVE_IN_PROLOGUE,
             quotedString.pos, MessagePart.Factory.valueOf(decoded));
       }
 
-      directives.add(new Directive(
-          FilePosition.startOf(quotedString.pos), decoded));
+      Directive d = new Directive(posFrom(quotedString.pos), decoded);
+      finish(d, startOfDirective);
+      directives.add(d);
     }
 
     if (directives.isEmpty()) { return null; }
 
-    DirectivePrologue prologue =
-        new DirectivePrologue(posFrom(startOfPrologue), directives);
+    DirectivePrologue prologue = new DirectivePrologue(
+        posFrom(startOfPrologue), directives);
     finish(prologue, startOfPrologue);
     return prologue;
+  }
+  private static boolean continuesExpr(String tokenText) {
+    return Operator.lookupOperation(tokenText, OperatorType.INFIX) != null
+        || Operator.lookupOperation(tokenText, OperatorType.BRACKET) != null
+        || Operator.lookupOperation(tokenText, OperatorType.TERNARY) != null;
   }
 
   private LabeledStatement parseLoopOrSwitch(FilePosition start, String label)

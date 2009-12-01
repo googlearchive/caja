@@ -91,10 +91,6 @@ public final class SwitchStmt extends LabeledStatement {
     while (it.hasNext()) {
       SwitchCase caseStmt = (SwitchCase) it.next();
       caseStmt.render(rc);
-      if (!caseStmt.isTerminal()) {
-        out.mark(FilePosition.endOfOrNull(caseStmt.getFilePosition()));
-        out.consume(";");
-      }
     }
     out.mark(FilePosition.endOfOrNull(getFilePosition()));
     out.consume("}");
