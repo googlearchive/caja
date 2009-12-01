@@ -150,13 +150,14 @@ public class CssPropertyPatterns {
   private final CssSchema schema;
 
   /**
-   * Set of properties accessible on computed style of an anchor (<A>) element
-   * or some element nested within an anchor. This list is a conservative one
-   * based on the ability to do visibility, containment, and layout
-   * calculations. It REQUIRES that user CSS is prevented from specifying ANY
-   * of these properties in a history sensitive manner (i.e., in a rule with
-   * a ":link" or ":visited" predicate). Otherwise, it would allow an attacker
-   * to probe the user's history as described at
+   * Set of properties accessible on computed style of an anchor
+   * (&lt;A&gt;) element or some element nested within an anchor. This
+   * list is a conservative one based on the ability to do visibility,
+   * containment, and layout calculations. It REQUIRES that user CSS
+   * is prevented from specifying ANY of these properties in a history
+   * sensitive manner (i.e., in a rule with a ":link" or ":visited"
+   * predicate). Otherwise, it would allow an attacker to probe the
+   * user's history as described at
    * https://bugzilla.mozilla.org/show_bug.cgi?id=147777 .
    */
   public static Set<Name> HISTORY_INSENSITIVE_STYLE_WHITELIST

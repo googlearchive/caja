@@ -170,15 +170,6 @@ sub collectCodeStats() {
   print STDERR "building testbed\n";
   track(\&build, ['testbed'], 'testbed', \@status_log);
 
-  print STDERR "running compatible library tests\n";
-  track(\&updatePrototypeClient, [], 'prototype', \@status_log);
-  track(\&rakePrototype, ['caja:test'], 'prototype tests', \@status_log);
-
-  print STDERR "running selenium\n";
-  track(\&farm, ['all'], 'selenium', \@status_log);
-  extractSeleniumSummary("$REPORTS_DIR/selenium/TESTS-TestSuites.xml",
-                         \@status_log);
-
   print STDERR "making output directory\n";
   makeOutputDir();
 
@@ -189,8 +180,6 @@ sub collectCodeStats() {
   print STDERR "copying test reports\n";
   outputTree("$REPORTS_DIR/tests", 'tests', 'index.html', \@status_log);
   outputTree("$REPORTS_DIR/coverage", 'coverage', 'index.html', \@status_log);
-  outputTree("$REPORTS_DIR/selenium", 'selenium', 'index.html', \@status_log);
-  outputTree("$PROTOTYPEJS/test/unit/tmp/", 'prototype', '.', \@status_log);
 
   print STDERR "copying demos\n";
   outputTree($DEMOS_DIR, 'demos', '', \@status_log);
@@ -462,7 +451,7 @@ sub extractCoverageSummary($$) {
   my $summaryTable = $&;
 
   my ($pct, $covered, $total) = ($summaryTable
-      =~ m|<td>([\d\.]+)%\s*\(([\d\.]+)/([\d\.]+)\)</TD></TR>|i);
+      =~ m|<td[^>]*>([\d\.]+)%\s*\(([\d\.]+)/([\d\.]+)\)</TD></TR>|i);
   die "Malformed $html_file: $summaryTable" unless defined($pct);
 
   push(@{$status_log_ref}, qq'<varz name="emma.pct" value="$pct"/>');
