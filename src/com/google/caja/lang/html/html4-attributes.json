@@ -47,12 +47,14 @@
       {
         "key": "SCRIPT::TYPE",
         "description": "content type of script language",
-        "optional": true, "pattern": "text/javascript(;.*)?"
+        "optional": true, "pattern": "text/javascript(;.*)?",
+        "default": "text/javascript"
       },
       {
         "key": "STYLE::TYPE",
         "description": "content type of a style language",
-        "optional": true, "pattern": "text/css(;.*)?"
+        "optional": true, "pattern": "text/css(;.*)?",
+        "default": "text/css"
       },
       {
         "key": "INPUT::TYPE",
