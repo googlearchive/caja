@@ -47,6 +47,24 @@ import javax.servlet.http.HttpServletResponse;
  * @author jasvir@gmail.com (Jasvir Nagra)
  */
 public class CajolingService extends HttpServlet {
+  private static final String DEFAULT_HOST = "http://caja.appspot.com/cajoler";
+  private final UriCallback DEFAULT_URIPOLICY = new UriCallback() {
+    public Reader retrieve(ExternalReference extref, String mimeType)
+        throws UriCallbackException {
+      try {
+        FetchedData data = fetch(extref.getUri());
+        return new InputStreamReader(
+            new ByteArrayInputStream(data.getContent()), data.getCharSet());
+      } catch (IOException ex) {
+        throw new UriCallbackException(extref, ex);
+      }
+    }
+
+    public URI rewrite(ExternalReference extref, String mimeType) {
+      return extref.getUri();
+    }
+  };
+ 
   private static class HttpContentHandlerArgs extends ContentHandlerArgs {
     private final HttpServletRequest request;
 
@@ -62,14 +80,22 @@ public class CajolingService extends HttpServlet {
 
   private List<ContentHandler> handlers = new Vector<ContentHandler>();
   private ContentTypeCheck typeCheck = new LooseContentTypeCheck();
-  private String host = "http://caja.appspot.com/cajoler";
+  private String host;
+  private UriCallback cb;
 
   public CajolingService(BuildInfo buildInfo) {
-    registerHandlers(buildInfo);
+    this(buildInfo, DEFAULT_HOST);
   }
 
   public CajolingService(BuildInfo buildInfo, String host) {
     this.host = host;
+    this.cb = DEFAULT_URIPOLICY;
+    registerHandlers(buildInfo);
+  }
+
+  public CajolingService(BuildInfo buildInfo, String host, UriCallback cb) {
+    this.host = host;
+    this.cb = cb;
     registerHandlers(buildInfo);
   }
 
@@ -228,27 +254,11 @@ public class CajolingService extends HttpServlet {
   }
 
   public void registerHandlers(BuildInfo buildInfo) {
-    UriCallback retriever = new UriCallback() {
-      public Reader retrieve(ExternalReference extref, String mimeType)
-          throws UriCallbackException {
-        try {
-          FetchedData data = fetch(extref.getUri());
-          return new InputStreamReader(
-              new ByteArrayInputStream(data.getContent()), data.getCharSet());
-        } catch (IOException ex) {
-          throw new UriCallbackException(extref, ex);
-        }
-      }
-
-      public URI rewrite(ExternalReference extref, String mimeType) {
-        return null;
-      }
-    };
     handlers.add(new JsHandler(buildInfo));
     handlers.add(new ImageHandler());
-    handlers.add(new GadgetHandler(buildInfo, retriever));
+    handlers.add(new GadgetHandler(buildInfo, cb));
     handlers.add(new InnocentHandler());
-    handlers.add(new HtmlHandler(buildInfo, host, retriever));
+    handlers.add(new HtmlHandler(buildInfo, host, cb));
   }
 
   protected FetchedData fetch(URI uri) throws IOException {
