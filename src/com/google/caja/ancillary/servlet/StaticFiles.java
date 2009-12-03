@@ -26,6 +26,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.Writer;
+import java.net.URISyntaxException;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -93,8 +94,15 @@ final class StaticFiles {
           // available via the ClassLoader.  Is there any way to get at it?
           ContentType t = ContentType.guess(null, path, null);
           if (t != null && t.isText) {
+            InputSource is;
+            try {
+              is = new InputSource(StaticFiles.class.getResource(path).toURI());
+            } catch (URISyntaxException ex) {
+              ex.printStackTrace();
+              is = InputSource.UNKNOWN;
+            }
             CharProducer cp = CharProducer.Factory.create(
-                new InputStreamReader(in, "UTF-8"), InputSource.UNKNOWN);
+                new InputStreamReader(in, "UTF-8"), is);
             // Minimize it before serving.
             Request min = Request.create(Verb.ECHO, this);
             min.minify = true;
