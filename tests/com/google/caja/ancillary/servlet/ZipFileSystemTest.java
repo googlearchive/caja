@@ -60,7 +60,7 @@ public class ZipFileSystemTest extends TestCase {
     }
   }
 
-  public final void testBaseName() throws IOException {
+  public final void testBaseName() {
     ZipFileSystem zfs = new ZipFileSystem("/foo");
     assertEquals("", zfs.basename(""));
     assertEquals("/", zfs.basename("/"));
@@ -70,7 +70,7 @@ public class ZipFileSystemTest extends TestCase {
     assertEquals("bar", zfs.basename("/foo/bar/"));
   }
 
-  public final void testDirName() throws IOException {
+  public final void testDirName() {
     ZipFileSystem zfs = new ZipFileSystem("/foo");
     assertEquals(null, zfs.dirname(""));
     assertEquals("/", zfs.dirname("/"));
@@ -81,7 +81,7 @@ public class ZipFileSystemTest extends TestCase {
     assertEquals("foo", zfs.dirname("foo/bar"));
   }
 
-  public final void testJoin() throws IOException {
+  public final void testJoin() {
     ZipFileSystem zfs = new ZipFileSystem("/foo");
     assertEquals("foo", zfs.join(null, "foo"));
     assertEquals("bar", zfs.join(null, "bar"));

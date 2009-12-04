@@ -159,8 +159,7 @@ final class Request implements Cloneable {
       public String manual() { return "path of the next input"; }
     });
     ALL_PARAM_HANDLERS.put("i", new ParamHandler() {  // input source
-      public void handle(String name, String val, Request c)
-          throws BadInputException {
+      public void handle(String name, String val, Request c) {
         String mimeType = c.itype;
         String path = c.ifile;
         if (mimeType != null && !"".equals(mimeType)) {
@@ -221,8 +220,7 @@ final class Request implements Cloneable {
       }
     });
     ALL_PARAM_HANDLERS.put("userAgent", new ParamHandler() {
-      public void handle(String name, String val, Request c)
-          throws BadInputException {
+      public void handle(String name, String val, Request c) {
         c.opt = true;
         c.userAgent = "*".equals(val) ? null : Glob.globToRegex(val);
       }
@@ -241,8 +239,7 @@ final class Request implements Cloneable {
       }
     });
     ALL_PARAM_HANDLERS.put("ign", new ParamHandler() {
-      public void handle(String name, String val, Request c)
-          throws BadInputException {
+      public void handle(String name, String val, Request c) {
         List<String> msgTypes = Arrays.asList(
             Strings.toUpperCase(val).split("[\\s,]+"));
         c.toIgnore.addAll(msgTypes);

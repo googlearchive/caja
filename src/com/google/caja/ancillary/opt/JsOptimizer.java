@@ -184,8 +184,7 @@ public class JsOptimizer {
     return e;
   }
 
-  private static Parser jsParser(CharProducer cp, MessageQueue mq)
-      throws ParseException {
+  private static Parser jsParser(CharProducer cp, MessageQueue mq) {
     JsLexer lexer = new JsLexer(cp, false);
     JsTokenQueue tq = new JsTokenQueue(lexer, cp.getCurrentPosition().source());
     tq.setInputRange(cp.filePositionForOffsets(cp.getOffset(), cp.getLimit()));

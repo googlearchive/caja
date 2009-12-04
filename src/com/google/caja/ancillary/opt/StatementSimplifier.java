@@ -66,8 +66,8 @@ import java.util.Map;
  */
 public class StatementSimplifier {
   /**
-   * @param needsBlock true if the optimizer should not replace a block with
-   *     less than 2 elements with a simpler structure.
+   * @param mq receives warnings about problems such as breaks to undefined
+   *   labels.
    * @return the input if no changes were made.  Otherwise, a partial clone.
    */
   public static ParseTreeNode optimize(ParseTreeNode n, MessageQueue mq) {

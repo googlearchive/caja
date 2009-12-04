@@ -57,7 +57,7 @@ public class CajaWebToolsServletTest extends CajaTestCase {
     super.tearDown();
   }
 
-  public final void testBadPath() throws IOException {
+  public final void testBadPath() {
     new ServletTest()
         .get("/bogus")
         .expectStatus(404)
@@ -68,7 +68,7 @@ public class CajaWebToolsServletTest extends CajaTestCase {
     assertNoErrors();
   }
 
-  public final void testIndex() throws IOException {
+  public final void testIndex() {
     new ServletTest()
         .get("/index")
         .expectStatus(200)
@@ -81,7 +81,7 @@ public class CajaWebToolsServletTest extends CajaTestCase {
     assertNoErrors();
   }
 
-  public final void testIndexWithPresuppliedInput() throws IOException {
+  public final void testIndexWithPresuppliedInput() {
     new ServletTest()
         .get("/index")
         .param("i", "<p>Hello, World!</p>")
@@ -95,7 +95,7 @@ public class CajaWebToolsServletTest extends CajaTestCase {
     assertNoErrors();
   }
 
-  public final void testIndexWithBadParam() throws IOException {
+  public final void testIndexWithBadParam() {
     new ServletTest()
         .get("/index")
         .param("bogus", "foo")
@@ -107,7 +107,7 @@ public class CajaWebToolsServletTest extends CajaTestCase {
     assertNoErrors();
   }
 
-  public final void testEcho() throws IOException {
+  public final void testEcho() {
     new ServletTest()
         .get("/echo")
         .param("it", "text/javascript")
@@ -121,7 +121,7 @@ public class CajaWebToolsServletTest extends CajaTestCase {
     assertNoErrors();
   }
 
-  public final void testMinify() throws IOException {
+  public final void testMinify() {
     new ServletTest()
         .get("/echo")
         .param("it", "text/javascript")
@@ -134,7 +134,7 @@ public class CajaWebToolsServletTest extends CajaTestCase {
     assertNoErrors();
   }
 
-  public final void testMinifiedWithUA1() throws IOException {
+  public final void testMinifiedWithUA1() {
     new ServletTest()
         .get("/echo")
         .param("it", "text/javascript")
@@ -158,7 +158,7 @@ public class CajaWebToolsServletTest extends CajaTestCase {
     assertNoErrors();
   }
 
-  public final void testMinifiedWithUA2() throws IOException {
+  public final void testMinifiedWithUA2() {
     new ServletTest()
         .get("/echo")
         .param("it", "text/javascript")
@@ -178,7 +178,7 @@ public class CajaWebToolsServletTest extends CajaTestCase {
     assertNoErrors();
   }
 
-  public final void testMinifiedWithUA3() throws IOException {
+  public final void testMinifiedWithUA3() {
     new ServletTest()
         .get("/echo")
         .param("it", "text/javascript")
@@ -198,7 +198,7 @@ public class CajaWebToolsServletTest extends CajaTestCase {
     assertNoErrors();
   }
 
-  public final void testMinifyHtml() throws IOException {
+  public final void testMinifyHtml() {
     new ServletTest()
         .get("/echo")
         .param("it", "text/html")
@@ -219,7 +219,7 @@ public class CajaWebToolsServletTest extends CajaTestCase {
     assertNoErrors();
   }
 
-  public final void testRenamed() throws IOException {
+  public final void testRenamed() {
     new ServletTest()
         .get("/echo")
         .param("it", "text/javascript")
@@ -235,7 +235,7 @@ public class CajaWebToolsServletTest extends CajaTestCase {
     assertNoErrors();
   }
 
-  public final void testAsciiOnly() throws IOException {
+  public final void testAsciiOnly() {
     new ServletTest()
         .get("/echo")
         .param("it", "text/javascript")
@@ -249,7 +249,7 @@ public class CajaWebToolsServletTest extends CajaTestCase {
     assertNoErrors();
   }
 
-  public final void testHtmlInputs() throws IOException {
+  public final void testHtmlInputs() {
     new ServletTest()
         .get("/echo")
         .param("i", "<script>function hi(msg) { alert(msg); }</script>")
@@ -263,7 +263,7 @@ public class CajaWebToolsServletTest extends CajaTestCase {
   }
 
 
-  public final void testLint() throws IOException {
+  public final void testLint() {
     new ServletTest()
         .get("/lint")
         .param("i", (""
@@ -292,7 +292,7 @@ public class CajaWebToolsServletTest extends CajaTestCase {
     assertNoErrors();
   }
 
-  public final void testHtmlLint() throws IOException {
+  public final void testHtmlLint() {
     new ServletTest()
         .get("/lint")
         .param("i", ("<select value=foo><option></option></select>"))
@@ -308,7 +308,7 @@ public class CajaWebToolsServletTest extends CajaTestCase {
     assertNoErrors();
   }
 
-  public final void testHtmlDocEcho() throws IOException {
+  public final void testHtmlDocEcho() {
     new ServletTest()
         .get("/echo")
         .param("i", "<html><head><title>Hello</title></hed><body>World!</body>")
@@ -323,7 +323,7 @@ public class CajaWebToolsServletTest extends CajaTestCase {
     assertNoErrors();
   }
 
-  public final void testDoc() throws IOException {
+  public final void testDoc() {
     new ServletTest()
         .get("/doc")
         .param("ip", "frobbit.js")
@@ -336,7 +336,7 @@ public class CajaWebToolsServletTest extends CajaTestCase {
         .send();
   }
 
-  public final void testDocJar() throws IOException {
+  public final void testDocJar() {
     new ServletTest()
         .get("/doc")
         .param("ip", "foo.js")
@@ -356,7 +356,7 @@ public class CajaWebToolsServletTest extends CajaTestCase {
         .send();
   }
 
-  public final void testHelp() throws IOException {
+  public final void testHelp() {
     new ServletTest()
         .get("/help")
         .expectStatus(200)
@@ -368,7 +368,7 @@ public class CajaWebToolsServletTest extends CajaTestCase {
         .send();
   }
 
-  public final void testLintPageTips() throws IOException {
+  public final void testLintPageTips() {
     new ServletTest()
         .get("/lint")
         .param("it", "text/javascript")
@@ -599,7 +599,7 @@ public class CajaWebToolsServletTest extends CajaTestCase {
       return this;
     }
 
-    Result send() throws IOException {
+    Result send() {
       assertTrue(tests.remove(this));
       result = servlet.handle(path, params);
       mq.getMessages().addAll(result.mq.getMessages());

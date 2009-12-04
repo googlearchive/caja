@@ -174,7 +174,7 @@ final class StaticFiles {
     return Collections.synchronizedMap(new LinkedHashMap<K, V>() {
       @Override
       public boolean removeEldestEntry(Map.Entry<K, V> e) {
-        return size() > 128;
+        return size() > maxSize;
       }
     });
   }

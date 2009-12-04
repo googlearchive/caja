@@ -42,7 +42,6 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -103,7 +102,7 @@ public class CajaWebToolsServlet extends HttpServlet {
       staticFiles.serve("files/" + path, req, resp);
     } else {
       // Process a dynamic operation.
-      process(reqUri, req.getQueryString(), req, resp);
+      process(reqUri.getPath(), req.getQueryString(), resp);
     }
   }
 
@@ -125,20 +124,17 @@ public class CajaWebToolsServlet extends HttpServlet {
     } finally {
       in.close();
     }
-    process(reqUri, query.toString(), req, resp);
+    process(reqUri.getPath(), query.toString(), resp);
   }
 
   /**
    * Processes a dynamic request which cannot be satisfied by
-   * {@link StaticFiles}.
+   * {@link StaticFiles} or the special upload handler.
    */
-  void process(
-      URI reqUri, String query, HttpServletRequest req, HttpServletResponse out)
+  private void process(String reqPath, String query, HttpServletResponse out)
       throws IOException {
-    String reqPath = reqUri.getPath();
-
-    List<Pair<String, String>> params = parseQueryString(query);
-    Result result = handle(reqPath, params);
+    Result result = handle(reqPath, parseQueryString(query));
+    // Serve the result
     if (result.status != 0) { out.setStatus(result.status); }
     String contentType = result.getContentType();
     if (contentType != null) { out.setContentType(contentType); }
@@ -201,8 +197,7 @@ public class CajaWebToolsServlet extends HttpServlet {
    * @param params query parameters in the order they appear.
    * @return the response to send back.
    */
-  Result handle(String reqPath, List<Pair<String, String>> params)
-      throws IOException {
+  Result handle(String reqPath, List<Pair<String, String>> params) {
     MessageQueue mq = new SimpleMessageQueue();
     Request req;
     {
@@ -303,14 +298,12 @@ public class CajaWebToolsServlet extends HttpServlet {
     return max;
   }
 
-  private Result errorPage(String title, MessageQueue mq, Request req)
-      throws IOException {
+  private Result errorPage(String title, MessageQueue mq, Request req) {
     return errorPage(HttpServletResponse.SC_BAD_REQUEST, title, mq, req);
   }
 
   private Result errorPage(
-      int status, String title, MessageQueue mq, Request req)
-      throws IOException {
+      int status, String title, MessageQueue mq, Request req) {
     Document doc = DomParser.makeDocument(null, null);
     HtmlQuasiBuilder b = HtmlQuasiBuilder.getBuilder(doc);
     DocumentFragment messages = Reporter.messagesToFragment(mq, req, b);
@@ -342,7 +335,7 @@ public class CajaWebToolsServlet extends HttpServlet {
       public void handle(
           String tgt, HttpServletRequest req, HttpServletResponse resp,
           int dispatch)
-          throws IOException, ServletException {
+          throws IOException {
         String method = req.getMethod();
         if ("GET".equals(method)) {
           servlet.doGet(req, resp);

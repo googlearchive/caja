@@ -15,7 +15,6 @@
 package com.google.caja.ancillary.opt;
 
 import com.google.caja.lexer.FilePosition;
-import com.google.caja.lexer.ParseException;
 import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.ObjectConstructor;
 import com.google.caja.parser.js.Statement;
@@ -78,8 +77,7 @@ public class JsOptimizerTest extends CajaTestCase {
         js(fromString("alert(1+1);")));
   }
 
-  private void assertOptimized(Statement golden, Block... inputs)
-      throws ParseException {
+  private void assertOptimized(Statement golden, Block... inputs) {
     for (Block input : inputs) { opt.addInput(input); }
     Statement optimized = opt.optimize();
     assertEquals(renderProgram(golden), renderProgram(optimized));

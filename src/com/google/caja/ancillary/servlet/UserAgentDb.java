@@ -40,7 +40,6 @@ import java.util.regex.Pattern;
 /**
  * A store of user agent environment files.
  *
- * @see com.google.caja.ancillary.opt
  * @author mikesamuel@gmail.com
  */
 final class UserAgentDb {
