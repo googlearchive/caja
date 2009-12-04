@@ -125,6 +125,12 @@ public abstract class Operation extends AbstractExpression {
         return this;
       case NOT: case TYPEOF: return children().get(0).simplifyForSideEffect();
       case VOID: return children().get(0).simplifyForSideEffect();
+      case POST_INCREMENT:  // i++ => ++i
+        return Operation.create(
+            getFilePosition(), Operator.PRE_INCREMENT, children().get(0));
+      case POST_DECREMENT:
+        return Operation.create(
+            getFilePosition(), Operator.PRE_DECREMENT, children().get(0));
       default: break;
     }
     return this;
@@ -587,7 +593,7 @@ public abstract class Operation extends AbstractExpression {
       if (lhs instanceof Number && rhs instanceof Number) {
         double a = ((Number) lhs).doubleValue();
         double b = ((Number) rhs).doubleValue();
-        if (isIntOp(op) && !Double.isNaN(a) && !Double.isNaN(b)) {
+        if (isIntOp(op)) {
           long result;
           switch (op) {
             case BITWISE_AND: result = toInt32(a)  &   toInt32(b); break;
@@ -677,11 +683,44 @@ public abstract class Operation extends AbstractExpression {
     }
   }
 
-  private static long toInt32(double n) {
-    return (int) n;
+
+  private static final long TWO_TO_THE_32 = 0x100000000L;
+
+  // For ToInt32 and ToUInt32, see sections 9.5 and 9.6 of ES5
+  // http://wiki.ecmascript.org/doku.php?id=es3.1:es3.1_proposal_working_draft
+  //
+  // For Java %, see
+  // http://java.sun.com/docs/books/jls/third_edition/html/expressions.html#15.17.3
+  //
+  // For Java (int) and (long), see
+  // http://java.sun.com/docs/books/jls/third_edition/html/conversions.html#25363
+
+  static long toInt32(double number) {
+    // 1. Let number be the result of calling ToNumber on the input argument.
+    // 2. If number is NaN, +0, -0, +Inf, or -Inf, return +0.
+    // 3. Let posInt be sign(number) * floor(abs(number)).
+    number = (number < 0.0 ? Math.ceil(number) : Math.floor(number));
+    // 4. Let int32bit be posInt modulo 2**32; that is, a finite integer value k
+    // of Number type with positive sign and less than 2**32 in magnitude such
+    // that the mathematical difference of posInt and k is mathematically an
+    // integer multiple of 2**32.
+    double int32bit = number % TWO_TO_THE_32;  // Handles Inf and NaN from (2)
+    // 5. If int32bit is greater than or equal to 2**31, return
+    // int32bit - 2**32, otherwise return int32bit.
+    return (int) (long) int32bit;
   }
 
-  private static long toUint32(double n) {
-    return ((long) n) & 0xffffffffL;
+  static long toUint32(double number) {
+    // 1. Let number be the result of calling ToNumber on the input argument.
+    // 2. If number is NaN, +0, -0, +Inf, or -Inf, return +0.
+    // 3. Let posInt be sign(number) * floor(abs(number)).
+    number = (number < 0.0 ? Math.ceil(number) : Math.floor(number));
+    // 4. Let int32bit be posInt modulo 2**32; that is, a finite integer value k
+    // of Number type with positive sign and less than 2**32 in magnitude such
+    // that the mathematical difference of posInt and k is mathematically an
+    // integer multiple of 2**32.
+    double int32bit = number % TWO_TO_THE_32;  // Handles Inf and NaN from (2)
+    // 5. Return int32bit.
+    return ((long) int32bit) & 0xffffffffL;
   }
 }

@@ -104,6 +104,9 @@ public class ExpressionTest extends CajaTestCase {
     assertSimplified("foo()", "1 && foo()");
     assertSimplified(null, "1 && 2");
     assertSimplified("++x", "++x");
+    assertSimplified("++x", "x++");
+    assertSimplified("--x", "--x");
+    assertSimplified("--x", "x--");
     assertSimplified("x -= 2", "x -= 2");
     assertSimplified("x = 2", "x = 2");
     assertSimplified("x + y", "x + y");  // coercion might be side-effecting
@@ -195,25 +198,51 @@ public class ExpressionTest extends CajaTestCase {
     assertFolded("1.0", "1 % 3");
     assertFolded("1.0", "1 % -3");
     assertFolded("-1.0", "-1 % 3");
+    assertFolded("1.0", "1 % -3");
+    assertFolded("-1.0", "-1 % 3");
     assertFolded("-1.0", "-1 % -3");
+    assertFolded("" + 0x7fffffffL, "0x7fffffff | 0");
+    assertFolded("-" + 0x7fffffffL, "-0x7fffffff | 0");
+    assertFolded("-" + 0x80000000L, "0x80000000 | 0");
+    assertFolded("-1", "0xffffffff | 0");
+    assertFolded("-1", "0x1ffffffff | 0");
+    assertFolded("0", "0x100000000 | 0");
+    assertFolded("0", "0x200000000 | 0");
+    assertFolded("1", "0x100000001 | 0");
+    assertFolded("1661992960", "1e20 | 0");  // Outside the range of java longs
+    assertFolded("-1661992960", "-1e20 | 0");
     assertFolded("1024", "1 << 10");
     assertFolded("" + (1 << 20), "1 << 20");
+    assertFolded("1", "1 << 0/0");
+    assertFolded("0", "0/0 << 0");
+    assertFolded("1", "1 << 1/0");
+    assertFolded("0", "1/0 << 0");
     assertFolded("2", "4 >> 1");
     assertFolded("1", "4 >> 2");
     assertFolded("0", "4 >> 3");
     assertFolded("-1", "-1 >> 1");
+    assertFolded("1", "1 >> 1/0");
+    assertFolded("0", "1/0 >> 0");
     assertFolded("" + (-1 >>> 1), "-1 >>> 1");
     assertFolded("1", "4 >>> 2");
+    assertFolded("1", "1 >>> 1/0");
+    assertFolded("0", "1/0 >>> 0");
     assertFolded("0", "1 & 2");
     assertFolded("2", "2 & 3");
     assertFolded("2", "3 & 2");
+    assertFolded("0", "1 & 1/0");
+    assertFolded("0", "1/0 & 0");
     assertFolded("3", "1 | 2");
     assertFolded("7", "6 | 5");
     assertFolded("11", "3 | 9");
+    assertFolded("1", "1 | 1/0");
+    assertFolded("0", "1/0 | 0");
     assertFolded("0", "0 ^ 0");
     assertFolded("0", "1 ^ 1");
     assertFolded("3", "1 ^ 2");
     assertFolded("-2", "-1 ^ 1");
+    assertFolded("1", "1 ^ 1/0");
+    assertFolded("0", "1/0 ^ 0");
     assertFolded("4.0", "4.0");
     assertFolded("4.0", "+4.0");
     assertFolded("-1", "~0");
@@ -223,6 +252,78 @@ public class ExpressionTest extends CajaTestCase {
     assertFolded("3", "'foo'.length");
     assertFolded("1", "'foo'.indexOf('o')");
     assertFolded("-1", "'foo'.indexOf('bar')");
+  }
+
+  public final void testToInt32() {
+    assertEquals(0, Operation.toInt32(0d));
+    assertEquals(0, Operation.toInt32(-0d));
+    assertEquals(0, Operation.toInt32(Double.POSITIVE_INFINITY));
+    assertEquals(0, Operation.toInt32(Double.NEGATIVE_INFINITY));
+    assertEquals(0, Operation.toInt32(Double.NaN));
+    assertEquals(0, Operation.toInt32(0x100000000L));
+    assertEquals(0, Operation.toInt32(-0x100000000L));
+    assertEquals(0x7fffffffL, Operation.toInt32(0x7fffffffL));
+    assertEquals(-0x7fffffffL, Operation.toInt32(-0x7fffffffL));
+    assertEquals(-0x80000000L, Operation.toInt32(-0x80000000L));
+    assertEquals(-0x80000000L, Operation.toInt32(0x80000000L));
+    assertEquals(1, Operation.toInt32(1));
+    assertEquals(-1, Operation.toInt32(-1));
+    assertEquals(2, Operation.toInt32(2));
+    assertEquals(-2, Operation.toInt32(-2));
+    assertEquals((long) 1e6, Operation.toInt32(1e6));
+    assertEquals((long) 1e7, Operation.toInt32(1e7));
+    assertEquals((long) 1e8, Operation.toInt32(1e8));
+    assertEquals((long) 1e9, Operation.toInt32(1e9));
+    assertEquals(1410065408L, Operation.toInt32(1e10));
+    assertEquals(1215752192L, Operation.toInt32(1e11));
+    assertEquals(-727379968L, Operation.toInt32(1e12));
+    assertEquals((long) -1e6, Operation.toInt32(-1e6));
+    assertEquals((long) -1e7, Operation.toInt32(-1e7));
+    assertEquals((long) -1e8, Operation.toInt32(-1e8));
+    assertEquals((long) -1e9, Operation.toInt32(-1e9));
+    assertEquals(-1410065408L, Operation.toInt32(-1e10));
+    assertEquals(-1215752192L, Operation.toInt32(-1e11));
+    assertEquals(727379968L, Operation.toInt32(-1e12));
+    assertEquals(0, Operation.toInt32(0.5d));
+    assertEquals(0, Operation.toInt32(-0.5d));
+    assertEquals(1, Operation.toInt32(1.5d));
+    assertEquals(-1, Operation.toInt32(-1.5d));
+  }
+
+  public final void testToUint32() {
+    assertEquals(0, Operation.toUint32(0d));
+    assertEquals(0, Operation.toUint32(-0d));
+    assertEquals(0, Operation.toUint32(Double.POSITIVE_INFINITY));
+    assertEquals(0, Operation.toUint32(Double.NEGATIVE_INFINITY));
+    assertEquals(0, Operation.toUint32(Double.NaN));
+    assertEquals(0, Operation.toUint32(0x100000000L));
+    assertEquals(0, Operation.toUint32(-0x100000000L));
+    assertEquals(0x7fffffffL, Operation.toUint32(0x7fffffffL));
+    assertEquals(0x80000001L, Operation.toUint32(-0x7fffffffL));
+    assertEquals(0x80000000L, Operation.toUint32(-0x80000000L));
+    assertEquals(0x80000000L, Operation.toUint32(0x80000000L));
+    assertEquals(1, Operation.toUint32(1));
+    assertEquals(0xffffffffL, Operation.toUint32(-1));
+    assertEquals(2, Operation.toUint32(2));
+    assertEquals(0xfffffffeL, Operation.toUint32(-2));
+    assertEquals((long) 1e6, Operation.toUint32(1e6));
+    assertEquals((long) 1e7, Operation.toUint32(1e7));
+    assertEquals((long) 1e8, Operation.toUint32(1e8));
+    assertEquals((long) 1e9, Operation.toUint32(1e9));
+    assertEquals(1410065408L, Operation.toUint32(1e10));
+    assertEquals(1215752192L, Operation.toUint32(1e11));
+    assertEquals(3567587328L, Operation.toUint32(1e12));
+    assertEquals((long) (0x100000000L - 1e6), Operation.toUint32(-1e6));
+    assertEquals((long) (0x100000000L - 1e7), Operation.toUint32(-1e7));
+    assertEquals((long) (0x100000000L - 1e8), Operation.toUint32(-1e8));
+    assertEquals((long) (0x100000000L - 1e9), Operation.toUint32(-1e9));
+    assertEquals(2884901888L, Operation.toUint32(-1e10));
+    assertEquals(3079215104L, Operation.toUint32(-1e11));
+    assertEquals(727379968L, Operation.toUint32(-1e12));
+    assertEquals(0, Operation.toUint32(0.5d));
+    assertEquals(0, Operation.toUint32(-0.5d));
+    assertEquals(1, Operation.toUint32(1.5d));
+    assertEquals(0xffffffffL, Operation.toUint32(-1.5d));
   }
 
   private void assertSimplified(String golden, String input)
@@ -241,17 +342,19 @@ public class ExpressionTest extends CajaTestCase {
 
   private void assertFolded(String result, String expr) throws ParseException {
     Expression input = jsExpr(fromString(expr));
-      // Fold operands so we can test negative numbers.
       if (input instanceof Operation) {
         Operation op = (Operation) input;
         for (Expression operand : op.children()) {
-          if (Operation.is(operand, Operator.NEGATION)
+          // Fold some operands so we can test negative numbers.
+          if ((Operation.is(operand, Operator.NEGATION)
+               // and so that we can test corner cases around NaN and Infinity.
+               || Operation.is(operand, Operator.DIVISION))
               && operand.children().get(0) instanceof NumberLiteral) {
             op.replaceChild(operand.fold(), operand);
           }
         }
       }
     Expression actual = input.fold();
-    assertEquals(result, actual != null ? render(actual) : null);
+    assertEquals(expr, result, actual != null ? render(actual) : null);
   }
 }
