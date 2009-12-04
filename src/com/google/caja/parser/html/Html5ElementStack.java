@@ -58,6 +58,8 @@ public class Html5ElementStack implements OpenElementStack {
   private final boolean needsDebugData;
   private boolean isFragment;
   private boolean needsNamespaceFixup;
+  private boolean topLevelHtmlFromInput = false;
+  private boolean processingFirstTag = true;
 
   /**
    * @param needsDebugData see {@link DomParser#setNeedsDebugData(boolean)}
@@ -156,12 +158,13 @@ public class Html5ElementStack implements OpenElementStack {
     if (needsDebugData) {
       Nodes.setFilePositionFor(result, builder.getFragmentBounds());
     }
-    if (!isFragment) {
+    
+    final Node first = root.getFirstChild();
+
+    if (!isFragment || topLevelHtmlFromInput) {
       result.appendChild(root);
       return result;
     }
-
-    final Node first = root.getFirstChild();
 
     // If disposing of the html, body, or head elements would lose info don't
     // do it, so look for attributes.
@@ -289,6 +292,13 @@ public class Html5ElementStack implements OpenElementStack {
       boolean isEndTag = CajaTreeBuilder.isEndTag(start.text);
       String tagName = start.text.substring(isEndTag ? 2 : 1);
       boolean isHtml = checkName(tagName);
+      if (processingFirstTag && Strings.equalsIgnoreCase("html", tagName)) {
+        // Indicate to fragment-retrieval code that the top-level
+        // <html> element came from the input, and wasn't synthesized
+        // by the underlying parser implementation.
+        topLevelHtmlFromInput = true;
+      }
+      processingFirstTag = false;
       if (isHtml) { tagName = Strings.toLowerCase(tagName); }
       // Intern since the TreeBuilder likes to compare strings by reference.
       tagName = tagName.intern();
@@ -345,7 +355,29 @@ public class Html5ElementStack implements OpenElementStack {
       throw new RuntimeException(ex);
     }
   }
-
+  
+  /**
+   * Adds the given comment node to the DOM.
+   */
+  public void processComment(Token<HtmlTokenType> commentToken) {
+    String text = commentToken.text.substring("<!--".length(),
+        commentToken.text.lastIndexOf("--"));
+    commentToken = Token.instance(text, commentToken.type, commentToken.pos);
+    char[] chars;
+    int n = text.length();
+    if (n <= charBuf.length) {
+      chars = charBuf;
+      text.getChars(0, n, chars, 0);
+    } else {
+      chars = text.toCharArray();
+    }
+    builder.setTokenContext(commentToken, commentToken);
+    try {
+      builder.comment(chars, n);
+    } catch (SAXException ex) {
+      throw new RuntimeException(ex);
+    }
+  }
 
   private boolean checkName(String qname) {
     if (qname.indexOf(':', 1) < 0) {

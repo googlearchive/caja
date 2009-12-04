@@ -27,6 +27,7 @@ import java.util.Iterator;
 import java.util.List;
 
 import org.w3c.dom.Attr;
+import org.w3c.dom.Comment;
 import org.w3c.dom.Document;
 import org.w3c.dom.DocumentFragment;
 import org.w3c.dom.Element;
@@ -170,6 +171,19 @@ class XmlElementStack extends AbstractElementStack {
       Nodes.setFilePositionFor(textNode, text.pos);
     }
     doAppend(textNode, parent);
+  }
+  
+  /**
+   * Adds the given comment node to the DOM.
+   */
+  public void processComment(Token<HtmlTokenType> commentToken) {
+    String text = commentToken.text.substring("<!--".length(),
+        commentToken.text.lastIndexOf("--"));
+    Comment comment = doc.createComment(text);
+    if (needsDebugData) {
+      Nodes.setFilePositionFor(comment, commentToken.pos);
+    }
+    doAppend(comment, getBottom().n);
   }
 
   /** {@inheritDoc} */

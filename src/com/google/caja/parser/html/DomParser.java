@@ -60,12 +60,14 @@ import org.w3c.dom.bootstrap.DOMImplementationRegistry;
  *
  * @author mikesamuel@gmail.com
  */
-public final class DomParser {
+public class DomParser {
   private final TokenQueue<HtmlTokenType> tokens;
   private final boolean asXml;
   private final MessageQueue mq;
   private final Namespaces ns;
   private boolean needsDebugData = true;
+  private boolean wantsComments = false;
+  private DOMImplementation domImpl = null;
 
   public DomParser(
       TokenQueue<HtmlTokenType> tokens, boolean asXml, MessageQueue mq) {
@@ -132,27 +134,44 @@ public final class DomParser {
         : OpenElementStack.Factory.createHtml5ElementStack(
             doc, needsDebugData, mq);
   }
+  
+  public void setDomImpl(DOMImplementation domImpl) {
+    this.domImpl = domImpl;
+  }
+  
+  public void setWantsComments(boolean wantsComments) {
+    this.wantsComments = wantsComments;
+  }
+  
+  public static Document makeDocument(
+      Function<DOMImplementation, DocumentType> doctypeMaker, String features,
+      DOMImplementation domImpl) {
+    if (features == null) { features = "XML 1.0 Traversal"; }
+    if (domImpl == null) {
+      try { 
+        domImpl = DOMImplementationRegistry.newInstance()
+            .getDOMImplementation(features);
+      } catch (ClassNotFoundException ex) {
+        throw new RuntimeException(
+            "Missing DOM implementation.  Is Xerces on the classpath?", ex);
+      } catch (IllegalAccessException ex) {
+        throw new RuntimeException(
+            "Missing DOM implementation.  Is Xerces on the classpath?", ex);
+      } catch (InstantiationException ex) {
+        throw new RuntimeException(
+            "Missing DOM implementation.  Is Xerces on the classpath?", ex);
+      }
+    }
+
+    DocumentType doctype = doctypeMaker != null
+        ? doctypeMaker.apply(domImpl) : null;
+    return domImpl.createDocument(null, null, doctype);
+
+  }
 
   public static Document makeDocument(
       Function<DOMImplementation, DocumentType> doctypeMaker, String features) {
-    if (features == null) { features = "XML 1.0 Traversal"; }
-    DOMImplementation impl;
-    try {
-      impl = DOMImplementationRegistry.newInstance()
-          .getDOMImplementation(features);
-    } catch (ClassNotFoundException ex) {
-      throw new RuntimeException(
-          "Missing DOM implementation.  Is Xerces on the classpath?", ex);
-    } catch (IllegalAccessException ex) {
-      throw new RuntimeException(
-          "Missing DOM implementation.  Is Xerces on the classpath?", ex);
-    } catch (InstantiationException ex) {
-      throw new RuntimeException(
-          "Missing DOM implementation.  Is Xerces on the classpath?", ex);
-    }
-    DocumentType doctype = doctypeMaker != null
-        ? doctypeMaker.apply(impl) : null;
-    return impl.createDocument(null, null, doctype);
+    return makeDocument(doctypeMaker, features, null);
   }
 
   /** Parse a document returning the document element. */
@@ -163,7 +182,7 @@ public final class DomParser {
   /** Parse a document returning the document element. */
   public Element parseDocument(String features) throws ParseException {
     Function<DOMImplementation, DocumentType> doctypeMaker = findDoctype();
-    Document doc = makeDocument(doctypeMaker, features);
+    Document doc = makeDocument(doctypeMaker, features, domImpl);
     OpenElementStack elementStack = makeElementStack(doc, mq);
 
     // Make sure the elementStack is empty.
@@ -232,7 +251,7 @@ public final class DomParser {
    * If there is a DOCTYPE, it will be used to seed the default namespace.
    */
   public DocumentFragment parseFragment() throws ParseException {
-    return parseFragment(makeDocument(findDoctype(), null));
+    return parseFragment(makeDocument(findDoctype(), null, domImpl));
   }
 
   /**
@@ -249,15 +268,16 @@ public final class DomParser {
     elementStack.open(true);
 
     while (!tokens.isEmpty()) {
-      // Skip over top level comments, and whitespace only text nodes.
+      // Skip over top level doctypes, and whitespace only text nodes.
       // Whitespace is significant for XML unless the schema specifies
       // otherwise, but whitespace outside the root element is not.  There is
       // one exception for whitespace preceding the prologue.
+      // Comments are ignored by the underlying TreeBuilder unless explicitly
+      // configured otherwise.
       Token<HtmlTokenType> t = tokens.peek();
 
       switch (t.type) {
-        case COMMENT:
-        case DIRECTIVE:  // especially DOCTYPEs
+        case DIRECTIVE:  // ignore DOCTYPEs
           tokens.advance();
           continue;
         default: break;
@@ -402,6 +422,7 @@ public final class DomParser {
       InputSource is, Reader in, boolean asXml) throws IOException {
     return makeTokenQueue(FilePosition.startOfFile(is), in, asXml);
   }
+  
   /**
    * Creates a TokenQueue suitable for this class's parse methods.
    * @param pos the position of the first character on in.
@@ -462,6 +483,9 @@ public final class DomParser {
           out.processText(t);
           return;
         case COMMENT:
+          if (wantsComments) {
+            out.processComment(t);
+          }
           continue;
         default:
           throw new ParseException(new Message(

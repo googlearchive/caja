@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Set;
 
 import org.w3c.dom.Attr;
+import org.w3c.dom.Comment;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
@@ -78,7 +79,7 @@ final class CajaTreeBuilder extends TreeBuilder<Node> {
     this.doc = doc;
     this.needsDebugData = needsDebugData;
     this.mq = mq;
-    setIgnoringComments(true);
+    setIgnoringComments(false);
     setScriptingEnabled(true);  // Affects behavior of noscript
   }
 
@@ -121,10 +122,18 @@ final class CajaTreeBuilder extends TreeBuilder<Node> {
   }
 
   @Override
-  protected void appendCommentToDocument(char[] buf, int start, int length) {}
+  protected void appendCommentToDocument(char[] buf, int start, int length) {
+    appendComment(doc.getDocumentElement(), buf, start, length);
+  }
 
   @Override
-  protected void appendComment(Node el, char[] buf, int start, int length) {}
+  protected void appendComment(Node el, char[] buf, int start, int length) {
+    Comment comment = doc.createComment(new String(buf, start, length));
+    el.appendChild(comment);
+    if (needsDebugData) {
+      Nodes.setFilePositionFor(comment, startTok.pos);
+    }
+  }
 
   @Override
   protected void appendCharacters(

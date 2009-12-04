@@ -533,7 +533,68 @@ public class DomParserTest extends CajaTestCase {
             )
         );
   }
-
+  
+  public final void testFragmentThatEndsWithACommentRetained()
+      throws Exception {
+    assertParsedHtmlFragmentWithComments(
+        Arrays.asList(
+            "<p>Hello</p>  <!-- Zoicks -->   "),
+        Arrays.asList(
+            "Fragment 1+1-1+33",
+            "  Element : p 1+1-1+13",
+            "    Text : Hello 1+4-1+9",
+            "  Text :    1+13-1+15",
+            "  Comment :  Zoicks  1+15-1+30",
+            "  Text :     1+30-1+33"
+            ),
+        Arrays.<String>asList(
+            ),
+        Arrays.asList(
+            // Parses as comment, but comment is suppressed by Nodes.render()
+            "<p>Hello</p>     "
+            )
+        );
+  }
+  
+  public final void testFragmentWithTopLevelHtmlNodeRetained()
+      throws Exception {
+    assertParsedHtmlFragmentWithComments(
+        Arrays.asList(
+            "<html>",
+            "<head><script>foo</script></head>",
+            "<!-- Above body -->",
+            "<body>",
+            "  <!-- In body -->",
+            "</body>",
+            "</html>"),
+        Arrays.asList(
+            "Fragment 1+1-7+8",
+            "  Element : html 1+1-7+8",
+            "    Text : \\n 1+7-2+1",
+            "    Element : head 2+1-2+34",
+            "      Element : script 2+7-2+27",
+            "        Text : foo 2+15-2+18",
+            "    Text : \\n 2+34-3+1",
+            "    Comment :  Above body  3+1-3+20",
+            "    Text : \\n 3+20-4+1",
+            "    Element : body 4+1-6+8",
+            "      Text : \\n   4+7-5+3",
+            "      Comment :  In body  5+3-5+19",
+            "      Text : \\n\\n 5+19-7+1"),
+        Arrays.<String>asList(
+            ),
+        Arrays.asList(
+            // Again comment is parsed but suppressed for now at output.
+            "<html>",
+            "<head><script>foo</script></head>",
+            "",
+            "<body>",
+            "  ",
+            "",
+            "</body></html>")
+        );
+  }
+            
   public final void testTableFragment() throws Exception {
     assertParsedHtmlFragment(
         Arrays.asList(
@@ -2195,7 +2256,17 @@ public class DomParserTest extends CajaTestCase {
     assertParsedMarkup(htmlInput, expectedParseTree, expectedMessages,
                        expectedOutputHtml, false, true);
   }
-
+  
+  private void assertParsedHtmlFragmentWithComments(
+      List<String> htmlInput,
+      List<String> expectedParseTree,
+      List<String> expectedMessages,
+      List<String> expectedOutputHtml)
+      throws ParseException {
+    assertParsedMarkup(htmlInput, expectedParseTree, expectedMessages,
+                       expectedOutputHtml, false, true, true);
+  }
+  
   private void assertParsedMarkup(
       List<String> htmlInput,
       List<String> expectedParseTree,
@@ -2203,6 +2274,19 @@ public class DomParserTest extends CajaTestCase {
       List<String> expectedOutputHtml,
       Boolean asXml,
       boolean fragment)
+      throws ParseException {
+    assertParsedMarkup(htmlInput, expectedParseTree, expectedMessages,
+                       expectedOutputHtml, asXml, fragment, false);
+  }
+
+  private void assertParsedMarkup(
+      List<String> htmlInput,
+      List<String> expectedParseTree,
+      List<String> expectedMessages,
+      List<String> expectedOutputHtml,
+      Boolean asXml,
+      boolean fragment,
+      boolean wantsComments)
       throws ParseException {
 
     System.err.println("\n\nStarting " + getName() + "\n===================");
@@ -2218,6 +2302,7 @@ public class DomParserTest extends CajaTestCase {
       p = new DomParser(lexer, is, mq);
       asXml = lexer.getTreatedAsXml();
     }
+    p.setWantsComments(wantsComments);
     Node tree = fragment ? p.parseFragment() : p.parseDocument();
 
     List<String> actualParseTree = formatLines(tree);
@@ -2247,6 +2332,7 @@ public class DomParserTest extends CajaTestCase {
           Join.join("\n", htmlInput), asXml);
       DomParser noDebugParser = new DomParser(
           tq, p.asXml(), DevNullMessageQueue.singleton());
+      noDebugParser.setWantsComments(wantsComments);
       treeWithoutDebugData = fragment
           ? noDebugParser.parseFragment()
           : noDebugParser.parseDocument();
@@ -2342,6 +2428,11 @@ public class DomParserTest extends CajaTestCase {
           break;
         case Node.TEXT_NODE:
           out.append("Text : ");
+          formatValue(node.getNodeValue());
+          formatPosition(Nodes.getFilePositionFor(node));
+          break;
+        case Node.COMMENT_NODE:
+          out.append("Comment : ");
           formatValue(node.getNodeValue());
           formatPosition(Nodes.getFilePositionFor(node));
           break;
