@@ -175,9 +175,14 @@ public class StatementSimplifier {
     } else if (n instanceof ReturnStmt) {
       ReturnStmt rs = (ReturnStmt) n;
       Expression returnValue = rs.getReturnValue();
-      if (returnValue != null && "undefined".equals(returnValue.typeOf())
-          && returnValue.simplifyForSideEffect() == null) {
+      Expression optReturnValue = returnValue != null
+          ? (Expression) optimize(returnValue, false)
+          : null;
+      if (optReturnValue != null && "undefined".equals(returnValue.typeOf())
+          && optReturnValue.simplifyForSideEffect() == null) {
         return new ReturnStmt(rs.getFilePosition(), null);
+      } else if (optReturnValue != returnValue) {
+        return new ReturnStmt(rs.getFilePosition(), optReturnValue);
       }
       return rs;
     } else {

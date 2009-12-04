@@ -34,6 +34,7 @@ import com.google.caja.parser.js.Operator;
 import com.google.caja.parser.js.Reference;
 import com.google.caja.parser.js.RegexpLiteral;
 import com.google.caja.parser.js.Statement;
+import com.google.caja.parser.js.StringLiteral;
 import com.google.caja.parser.js.scope.AbstractScope;
 import com.google.caja.parser.js.scope.ES5ScopeAnalyzer;
 import com.google.caja.parser.js.scope.ScopeListener;
@@ -246,6 +247,7 @@ class Optimizer {
 
   private static boolean isSinglyInlineable(Expression expr) {
     return isConst(expr)
+        || expr instanceof StringLiteral  // inline large string literal once
         || (expr instanceof ObjectConstructor
             && areSinglyInlineable(((ObjectConstructor) expr).children()))
         || (expr instanceof ArrayConstructor
@@ -261,9 +263,17 @@ class Optimizer {
   }
 
   private static boolean isConst(Expression expr) {
-    return (expr instanceof Literal && !(expr instanceof RegexpLiteral))
-        || (Operation.is(expr, Operator.VOID)
-            && areConst(((Operation) expr).children()));
+    if (expr instanceof Literal) {
+      if (expr instanceof RegexpLiteral) { return false; }
+      if (expr instanceof StringLiteral) {
+        // Don't inline large strings more than once.
+        // TODO(mikesamuel): 100 is a tuning parameter.
+        return ((StringLiteral) expr).getValue().length() < 100;
+      }
+      return true;
+    }
+    return (Operation.is(expr, Operator.VOID)
+        && areConst(((Operation) expr).children()));
   }
 
   private static boolean areConst(List<? extends Expression> exprs) {

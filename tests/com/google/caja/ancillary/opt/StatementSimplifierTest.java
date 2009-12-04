@@ -89,7 +89,6 @@ public class StatementSimplifierTest extends CajaTestCase {
     assertNoErrors();
   }
 
-
   public final void testExprStmtsSimplified() throws ParseException {
     assertSimplified(
         Arrays.asList("while (cond) foo(), f(), bar();"),
@@ -350,7 +349,7 @@ public class StatementSimplifierTest extends CajaTestCase {
     assertSimplified(
         // Brackets needed to disambiguate the fact that the a is not attached
         // to the while.
-        Arrays.asList("a: { while (1) break a }"),
+        Arrays.asList("a: { while (1) break a; }"),
         Arrays.asList("{ foo: { while (1) break foo; } }"));
     assertNoErrors();
   }
@@ -465,6 +464,7 @@ public class StatementSimplifierTest extends CajaTestCase {
             "  default:",
             "    break;",
             "}"));
+    assertNoErrors();
   }
 
   public final void testSwitchBlocks3b() throws ParseException {
@@ -600,6 +600,25 @@ public class StatementSimplifierTest extends CajaTestCase {
             "    foo();",
             "  case 3: break;",
             "  case 4: baz();",
+            "}"));
+    assertNoErrors();
+  }
+
+  public final void testReturnValueVisited() throws ParseException {
+    assertSimplified(
+        Arrays.asList(
+            "function f() {",
+            "  var i = 0;",
+            "  return function () {",
+            "     return ++i & 1 ? i : -i;",
+            "  };",
+            "}"),
+        Arrays.asList(
+            "function f() {",
+            "  var i = 0;",
+            "  return function () {",
+            "    if (++i & 1) { return i; } else { return -i; }",
+            "  };",
             "}"));
     assertNoErrors();
   }
