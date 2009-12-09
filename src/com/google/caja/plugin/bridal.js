@@ -35,7 +35,7 @@ var bridal = (function() {
   var isIE = !isOpera && navigator.userAgent.indexOf('MSIE') !== -1;
   var isWebkit = !isOpera && navigator.userAgent.indexOf('WebKit') !== -1;
 
-  var featureAttachEvent = !!(document.createElement('div').attachEvent);
+  var featureAttachEvent = !!(window.attachEvent && !window.addEventListener);
   /**
    * Does the extended form of extendedCreateElement work?
    * From http://msdn.microsoft.com/en-us/library/ms536389.aspx :<blockquote>

@@ -193,6 +193,10 @@
       }
 
       var isValija = /[&?]valija([=&]|$)/.test(location.search);
+      var filter = /[&?]filter=([^&]+)/.exec(location.search);
+      if (filter) {
+        jsunitFilter(new RegExp(decodeURIComponent(filter[1])));
+      }
 
       function moduleIdResolver(base, input) {
         return defaultModuleIdResolver(base, input + '.out.js');

@@ -126,6 +126,10 @@ function endLogMessagesGroup(testName, opt_subTestName) {
   jsunit.popTestId();
 }
 
+function jsunitFilter(filter) {
+  jsunitFilter.filter = filter;
+}
+
 /** Run tests. */
 function jsunitRun(opt_testNames) {
   document.title += ' (' + (navigator.appName
@@ -133,11 +137,14 @@ function jsunitRun(opt_testNames) {
                             : navigator.userAgent) + ')';
   jsunit.originalTitle = document.title;
 
+  var filter = jsunitFilter.filter || /.?/;
   var testNames = [];
   for (var k in jsunit.tests) {
     if (jsunit.tests.hasOwnProperty(k)) {
       if (!opt_testNames || arrayContains(arguments, k)) {
-        testNames.push(k);
+        if (filter.test(k)) {
+          testNames.push(k);
+        }
       }
     }
   }
@@ -159,25 +166,16 @@ function jsunitRun(opt_testNames) {
     return queryParams;
   })();
 
-  // If loaded with ?test.filter=Foo, should run testFoo and testFooBar, but not
-  // testBar.
-  var testFilter = null;
-  if (queryParams['test.filter']) {
-    testFilter = new RegExp(queryParams['test.filter'][0]);
-  }
 
   jsunit.testCount = 0;
   for (var i = 0; i < testNames.length; ++i) {
-    if (!testFilter || testFilter.test(testName)) {
-      jsunit.testCount++;
-    }
+    jsunit.testCount++;
   }
 
   var firstFailure = null;
   jsunit.failCount = 0;
   for (var i = 0; i < testNames.length; ++i) {
     var testName = testNames[i];
-    if (testFilter && !testFilter.test(testName)) { continue; }
     startLogMessagesGroup(testName);
     try {
       (typeof setUp === 'function') && setUp();
