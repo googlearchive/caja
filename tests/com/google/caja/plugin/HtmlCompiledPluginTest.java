@@ -288,6 +288,8 @@ public class HtmlCompiledPluginTest extends CajaTestCase {
                 "___.getNewModuleHandler().setImports(testImports);",
                 getName() + "valija-setup"),
             new Executor.Input(valijaCajoled, "valija-cajoled"),
+            new Executor.Input(getClass(), "html4-defs.js"),
+            new Executor.Input(getClass(), "html-sanitizer.js"),
             new Executor.Input(getClass(), "bridal.js"),
             new Executor.Input(getClass(), "html-emitter.js"),
             new Executor.Input(getClass(), "container.js"),

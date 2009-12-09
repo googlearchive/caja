@@ -90,6 +90,7 @@ var bridal = (function() {
   }
 
   var endsWith__ = /__$/;
+  var escapeAttrib = html.escapeAttrib;
   function constructClone(node, deep) {
     var clone;
     if (node.nodeType === 1 && featureExtendedCreateElement) {
@@ -113,10 +114,15 @@ var bridal = (function() {
       // value property.
       switch (node.tagName) {
         case 'INPUT':
-          tagDesc = '<input name="' + html.escapeAttrib(node.name)
-              + '" type="' + html.escapeAttrib(node.type)
-              + '" value="' + html.escapeAttrib(node.defaultValue) + '"'
+          tagDesc = '<input name="' + escapeAttrib(node.name)
+              + '" type="' + escapeAttrib(node.type)
+              + '" value="' + escapeAttrib(node.defaultValue) + '"'
               + (node.defaultChecked ? ' checked="checked">' : '>');
+          break;
+        case 'BUTTON':
+          tagDesc = '<button name="' + escapeAttrib(node.name)
+              + '" type="' + escapeAttrib(node.type)
+              + '" value="' + escapeAttrib(node.value) + '">';
           break;
         case 'OPTION':
           tagDesc = '<option '
@@ -124,7 +130,7 @@ var bridal = (function() {
           break;
         case 'TEXTAREA':
           tagDesc = '<textarea value="'
-              + html.escapeAttrib(node.defaultValue) + '">';
+              + escapeAttrib(node.defaultValue) + '">';
           break;
       }
 
@@ -344,7 +350,7 @@ var bridal = (function() {
     if (featureExtendedCreateElement) {
       var tag = ['<', tagName];
       for (var i = 0, n = attribs.length; i < n; i += 2) {
-        tag.push(' ', attribs[i], '="', html.escapeAttrib(attribs[i + 1]), '"');
+        tag.push(' ', attribs[i], '="', escapeAttrib(attribs[i + 1]), '"');
       }
       tag.push('>');
       return document.createElement(tag.join(''));
