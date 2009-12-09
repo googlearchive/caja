@@ -1179,6 +1179,13 @@ var attachDocumentStub = (function () {
           mixinNodeList([], nodeList, editable, opt_tameNodeCtor));
     }
 
+    function tameOptionsList(nodeList, editable, opt_tameNodeCtor) {
+      var nl = mixinNodeList([], nodeList, editable, opt_tameNodeCtor);
+      nl.selectedIndex = +nodeList.selectedIndex;
+      ___.grantRead(nl, 'selectedIndex');
+      return ___.freeze(nl);
+    }
+
     /**
      * Return a fake node list containing tamed nodes.
      * @param {Array.<TameNode>} array of tamed nodes.
@@ -2506,7 +2513,7 @@ var attachDocumentStub = (function () {
       return newValue;
     };
     TameInputElement.prototype.getOptions = function () {
-      return tameNodeList(
+      return tameOptionsList(
           this.node___.options, this.editable___, defaultTameNode, 'name');
     };
     TameInputElement.prototype.getDefaultSelected = function () {

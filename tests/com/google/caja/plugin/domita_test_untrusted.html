@@ -459,6 +459,14 @@ Test row cell
   duck-4
 </div>
 
+<div class="testcontainer" id="test-selected-index">Test selectedIndex
+  <select id="test-selected-index-1">
+    <option value="0">Zeroth</option>
+    <option value="1">First</option>
+    <option selected value="2">Second</option>
+  </select>
+</div>
+
 <p class="waiting testcontainer" id="xhr-module-loader">XHR Module Loader</p>
 
 <p class="waiting testcontainer" id="script-module-loader">Script Module Loader</p>
@@ -3254,6 +3262,13 @@ jsunitRegister('testFocusBlur',
   // TODO: can't verify focus changes in webdriver, because webdriver runs
   // without focusing the browser window, so onfocus never gets fired.
   pass('test-focus-blur');
+});
+
+jsunitRegister('testSelectedIndex', 
+               function testSelectedIndex() {
+  assertEquals(2, document.getElementById('test-selected-index-1').
+      options.selectedIndex);
+  pass('test-selected-index');
 });
 
 // form:onreset uses the same logic path as input:onfocus
