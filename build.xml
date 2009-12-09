@@ -506,7 +506,7 @@
       <input file="${libplugin}/domita_test_untrusted_cajita.html"/>
       <output file="${libplugin}/domita_test_untrusted_cajita.out.html"
           language="caja"/>
-    </transform>      
+    </transform>
     <transform>
      <input file="${tests}/com/google/caja/a.js"/>
      <output file="${lib}/com/google/caja/a.out.js" language="caja"/>
@@ -893,7 +893,7 @@
         <include name="domita-minified.js"/>
         <include name="html-sanitizer-minified.js"/>
         <include name="valija.out.js"/>
-        <include name="module-promise-minified.js"/>                
+        <include name="module-promise-minified.js"/>
       </fileset>
       <fileset dir="${src}/com/google/caja">
         <include name="log-to-console.js"/>
@@ -941,14 +941,14 @@
     <transform>
       <output file="${www}/slides/searchbox.out.js"
           language="caja" onlyJsEmitted="true"/>
-      <include file="${demos}/lolcat-search/searchbox.html"/>
+      <input file="${demos}/lolcat-search/searchbox.html"/>
       <depend file="${demos}/lolcat-search/searchbox.css"/>
       <depend file="${demos}/lolcat-search/searchbox.js"/>
     </transform>
     <transform>
       <output file="${www}/slides/kittens.out.js"
           language="caja" onlyJsEmitted="true"/>
-      <include file="${demos}/lolcat-search/kittens.html"/>
+      <input file="${demos}/lolcat-search/kittens.html"/>
       <depend file="${demos}/lolcat-search/katTranzlator.js"/>
       <depend file="${demos}/lolcat-search/kittens.js"/>
     </transform>
@@ -1121,8 +1121,7 @@
     <transform>
       <output language="javascript" renderer="minify"
        file="${lib}/com/google/caja/demos/calendar/html-interp-minified.js"/>
-      <include
-       file="${demos}/calendar/string-interpolation.js"/>
+      <input file="${demos}/calendar/string-interpolation.js"/>
       <input file="${demos}/calendar/html-interp.js"/>
     </transform>
     <transform>
