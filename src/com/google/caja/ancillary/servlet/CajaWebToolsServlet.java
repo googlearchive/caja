@@ -35,7 +35,6 @@ import java.io.Writer;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLDecoder;
-import java.security.SecureRandom;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
@@ -46,8 +45,6 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.mortbay.jetty.Server;
-import org.mortbay.jetty.handler.AbstractHandler;
 import org.w3c.dom.Document;
 import org.w3c.dom.DocumentFragment;
 import org.w3c.dom.Node;
@@ -321,31 +318,6 @@ public class CajaWebToolsServlet extends HttpServlet {
         "messages", messages);
     Content errorHtml = new Content(Nodes.render(errorDoc), ContentType.HTML);
     return new Result(status, errorHtml, mq);
-  }
-
-  /** Starts a server on port 8080. */
-  public static void main(String[] args) throws Exception {
-    if (args.length != 0) {
-      throw new Exception("What are these command line parameters for?");
-    }
-    Server server = new Server(8080);  // 8000 conflicts with DomitaTest
-    String cacheId = Integer.toString(new SecureRandom().nextInt(1 << 30), 36);
-    final CajaWebToolsServlet servlet = new CajaWebToolsServlet(cacheId);
-    server.setHandler(new AbstractHandler() {
-      public void handle(
-          String tgt, HttpServletRequest req, HttpServletResponse resp,
-          int dispatch)
-          throws IOException {
-        String method = req.getMethod();
-        if ("GET".equals(method)) {
-          servlet.doGet(req, resp);
-        } else if ("POST".equals(method)) {
-          servlet.doPost(req, resp);
-        }
-      }
-    });
-
-    server.start();
   }
 
   private static boolean containsControlChar(String s) {
