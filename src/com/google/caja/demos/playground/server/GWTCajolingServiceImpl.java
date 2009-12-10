@@ -36,9 +36,9 @@ import java.util.Map;
  * @author jasvir@google.com (Jasvir Nagra)
  */
 @SuppressWarnings("serial")
-public class GWTCajolingServiceImpl extends RemoteServiceServlet 
+public class GWTCajolingServiceImpl extends RemoteServiceServlet
     implements PlaygroundService {
-	
+
   private static final UriCallback uriCallback = new UriCallback() {
     public Reader retrieve(ExternalReference extref, String mimeType)
         throws UriCallbackException {
@@ -60,9 +60,8 @@ public class GWTCajolingServiceImpl extends RemoteServiceServlet
       }
     }
   };
-  
+
   private URI guessURI(String guess) {
-    URI result;
     try {
       System.out.println(guess);
       return new URI(guess);
@@ -71,7 +70,7 @@ public class GWTCajolingServiceImpl extends RemoteServiceServlet
       return URI.create("unknown:///unknown");
     }
   }
-  
+
   public String[] getMessageLevels() {
     MessageLevel[] values = MessageLevel.values();
     String[] result = new String[values.length];
@@ -80,10 +79,10 @@ public class GWTCajolingServiceImpl extends RemoteServiceServlet
     }
     return result;
   }
-  
+
   public String[] cajole(String url, String input) {
     MessageQueue mq = new SimpleMessageQueue();
-    Map<InputSource, CharSequence> originalSrc = 
+    Map<InputSource, CharSequence> originalSrc =
       new HashMap<InputSource, CharSequence>();
 
     Appendable output = new StringBuilder();
@@ -106,7 +105,7 @@ public class GWTCajolingServiceImpl extends RemoteServiceServlet
     System.arraycopy(messages, 0, result, 2, messages.length);
     return result;
   }
-  
+
   private String[] formatMessages(Map<InputSource, CharSequence> inputMap,
       MessageQueue mq) {
     MessageContext mc = new MessageContext();
@@ -124,7 +123,7 @@ public class GWTCajolingServiceImpl extends RemoteServiceServlet
     }
     return result.toArray(new String[0]);
   }
-  
+
   public String getBuildInfo() {
     return BuildInfo.getInstance().getBuildInfo();
   }

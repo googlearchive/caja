@@ -14,14 +14,12 @@
 
 package com.google.caja.reporting;
 
-import java.io.Serializable;
-
 /**
  * The seriousness of a {@link Message}.
  *
  * @author mikesamuel@gmail.com
  */
-public enum MessageLevel implements Serializable {
+public enum MessageLevel {
   /** Fine grained info about the internal progress of the Cajoler. */
   LOG,
   /** Broad info about the internal progress of the Cajoler. */

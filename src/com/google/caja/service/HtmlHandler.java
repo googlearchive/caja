@@ -63,8 +63,6 @@ import org.w3c.dom.Node;
 public class HtmlHandler implements ContentHandler {
   private final BuildInfo buildInfo;
   private final PluginEnvironment pluginEnvironment;
-  private final static String DEFAULT_HOSTED_SERVICE
-      = "http://caja.appspot.com/cajole";
 
   public HtmlHandler(
       BuildInfo buildInfo, final String hostedService,

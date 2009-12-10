@@ -53,7 +53,7 @@ import java.util.TreeMap;
 
 /**
  * GUI elements of the playground client
- * 
+ *
  * @author Jasvir Nagra (jasvir@gmail.com)
  */
 public class PlaygroundView {
@@ -65,7 +65,7 @@ public class PlaygroundView {
   private Label version = new Label("Unknown");
   private Playground controller;
   private TextArea sourceText;
-  
+
   public void setVersion(String v) {
     version.setText(v);
   }
@@ -73,7 +73,7 @@ public class PlaygroundView {
   public void selectTab(Tabs tab) {
     editorPanel.selectTab(tab.ordinal());
   }
-  
+
   private Panel createFeedbackPanel() {
     HorizontalPanel feedbackPanel = new HorizontalPanel();
     feedbackPanel.setWidth("100%");
@@ -89,7 +89,7 @@ public class PlaygroundView {
     }
     return feedbackPanel;
   }
-    
+
   private Panel createLogoPanel() {
     HorizontalPanel logoPanel = new HorizontalPanel();
     VerticalPanel infoPanel = new VerticalPanel();
@@ -110,7 +110,7 @@ public class PlaygroundView {
     final SuggestBox addressField = new SuggestBox(oracle);
     addressField.getTextBox().addFocusHandler(new FocusHandler() {
       public void onFocus(FocusEvent event) {
-        addressField.showSuggestionList();        
+        addressField.showSuggestionList();
       }
     });
     addressField.setText("http://");
@@ -119,10 +119,10 @@ public class PlaygroundView {
     goButton.addClickHandler(new ClickHandler() {
       public void onClick(ClickEvent event) {
         controller.loadSource(addressField.getText());
-      }      
+      }
     });
     goButton.setWidth("100%");
-    
+
     final Button cajoleButton = new Button("Cajole");
     cajoleButton.addClickHandler(new ClickHandler() {
       public void onClick(ClickEvent event) {
@@ -131,26 +131,26 @@ public class PlaygroundView {
         cajoledSource.setText("");
         renderPanel.setText("");
         controller.cajole(addressField.getText(), sourceText.getText());
-      }      
+      }
     });
     cajoleButton.setWidth("100%");
-    
+
     HorizontalPanel addressBar = new HorizontalPanel();
     addressBar.add(addressField);
     addressBar.add(goButton);
     addressBar.add(cajoleButton);
     addressBar.setWidth("95%");
     addressBar.setCellWidth(addressField, "90%");
-    
+
     sourceText = new TextArea();
     sourceText.setText("<script>\n\n</script>");
-    
+
     FlowPanel mainPanel = new FlowPanel();
     mainPanel.add(addressBar);
     mainPanel.add(sourceText);
     sourceText.setSize("95%", "100%");
     mainPanel.setSize("100%", "100%");
-    
+
     return mainPanel;
   }
 
@@ -178,7 +178,7 @@ public class PlaygroundView {
     setupNativeRuntimeMessageBridge();
     return runtimeMessages;
   }
-  
+
   private native void setupNativeRuntimeMessageBridge() /*-{
     var that = this;
     $wnd.___.setLogFunc(function logMessage (msg) {
@@ -200,13 +200,13 @@ public class PlaygroundView {
     editorPanel.selectTab(0);
     return editorPanel;
   }
-  
+
   private HTML createRenderPanel() {
     renderPanel = new HTML();
     return renderPanel;
   }
-  
-  private TreeItem addExampleItem(Map<Example.Type, TreeItem> menu, 
+
+  private TreeItem addExampleItem(Map<Example.Type, TreeItem> menu,
       Example eg) {
     if (!menu.containsKey(eg.type)) {
       TreeItem menuItem = new TreeItem(eg.type.description);
@@ -216,24 +216,24 @@ public class PlaygroundView {
     menu.get(eg.type).addItem(egItem);
     return egItem;
   }
-  
+
   private DecoratedTabPanel createExamplePanel() {
     DecoratedTabPanel cp = new DecoratedTabPanel();
     Tree exampleTree = new Tree();
     SortedMap<Example.Type, TreeItem> menuMap = new TreeMap<Example.Type, TreeItem>();
     final Map<TreeItem, Example> entryMap =
       new HashMap<TreeItem, Example>();
-    
+
     exampleTree.setTitle("Select an example");
     for (Example eg : Example.values()) {
       TreeItem it = addExampleItem(menuMap, eg);
       entryMap.put(it, eg);
     }
-    
+
     for (TreeItem menuItem : menuMap.values()) {
       exampleTree.addItem(menuItem);
     }
-    
+
     exampleTree.addSelectionHandler(new SelectionHandler<TreeItem>() {
       public void onSelection(SelectionEvent<TreeItem> event) {
         Example eg = entryMap.get(event.getSelectedItem());
@@ -243,14 +243,14 @@ public class PlaygroundView {
         }
         controller.loadSource(eg.url);
       }
-      
+
     });
     cp.setSize("100%", "auto");
     cp.add(exampleTree, "Examples");
     cp.selectTab(0);
     return cp;
   }
-  
+
   public Panel createMainPanel() {
     HorizontalSplitPanel mainPanel = new HorizontalSplitPanel();
     mainPanel.add(createExamplePanel());
@@ -258,7 +258,7 @@ public class PlaygroundView {
     mainPanel.setSplitPosition("15%");
     return mainPanel;
   }
-  
+
   public PlaygroundView(Playground controller) {
     this.controller = controller;
 
@@ -271,7 +271,6 @@ public class PlaygroundView {
     vp.setHeight(Window.getClientHeight() + "px");
     Window.addResizeHandler(new ResizeHandler() {
       public void onResize(ResizeEvent event) {
-        int height = event.getHeight();
         vp.setSize(event.getWidth() + "px", event.getHeight() + "px");
       }
     });
@@ -285,7 +284,7 @@ public class PlaygroundView {
       sourceText.setText(result);
     }
   }
-  
+
   public void setCajoledSource(String result) {
     if (result == null) {
       cajoledSource.setText("Nothing to show");
@@ -293,7 +292,7 @@ public class PlaygroundView {
     }
     cajoledSource.setHTML(prettyPrint(result));
   }
-  
+
   private native String prettyPrint(String result) /*-{
     return $wnd.prettyPrintOne($wnd.indentAndWrapCode(result));
   }-*/;
@@ -308,7 +307,7 @@ public class PlaygroundView {
     htmlAndJs[1] = htmlAndJs[1].substring(0, htmlAndJs[1].length() - 9);
 
     renderPanel.setHTML(
-        "<div id=\"cajoled-output\" class=\"g___\">\n" + 
+        "<div id=\"cajoled-output\" class=\"g___\">\n" +
           htmlAndJs[0] +
         "</div>\n");
 
@@ -322,15 +321,15 @@ public class PlaygroundView {
       "    imports.$v = valijaMaker.CALL___(imports.outers);\n" +
       "    ___.getNewModuleHandler().setImports(imports);\n" +
     htmlAndJs[1];
-    
+
     Element el = DOM.createElement("script");
     ScriptElement script = ScriptElement.as(el);
     script.setType("text/javascript");
     script.setInnerText(cajoled);
     renderPanel.getElement().appendChild(script);
-    editorPanel.selectTab(2);    
+    editorPanel.selectTab(2);
   }
-  
+
   public void addCompileMessage(String item) {
     compileMessages.addItem(item);
   }
@@ -338,7 +337,7 @@ public class PlaygroundView {
   public void addRuntimeMessage(String item) {
     runtimeMessages.addItem(item);
   }
-  
+
   public enum Tabs {
     SOURCE,
     CAJOLED_SOURCE,

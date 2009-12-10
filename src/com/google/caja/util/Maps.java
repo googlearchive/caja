@@ -107,7 +107,7 @@ public final class Maps {
             canUseEnumMap = false;
             enumKeyType = null;
           }
-        } else if (key instanceof Enum) {
+        } else if (key instanceof Enum<?>) {
           enumKeyType = Enum.class.cast(key).getClass();
         } else {
           canUseEnumMap = false;
