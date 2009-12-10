@@ -53,8 +53,14 @@ public class CssTreeTest extends CajaTestCase {
         "cssrendergolden-uahacks.css", "cssparserinput-uahacks.css", true);
   }
 
-  public final void testClone() throws Exception {
+  public final void testClone1() throws Exception {
     CssTree t = css(fromResource("cssparserinput1.css"));
+    assertEquals(render(t), render(t.clone()));
+  }
+
+  public final void testClone2() throws Exception {
+    CssTree t = css(fromString(
+        "span { background-image:url('//www.example.org/image.gif'); }"));
     assertEquals(render(t), render(t.clone()));
   }
 
