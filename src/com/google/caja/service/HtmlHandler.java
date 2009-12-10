@@ -63,6 +63,8 @@ import org.w3c.dom.Node;
 public class HtmlHandler implements ContentHandler {
   private final BuildInfo buildInfo;
   private final PluginEnvironment pluginEnvironment;
+  private final static String DEFAULT_HOSTED_SERVICE
+      = "http://caja.appspot.com/cajole";
 
   public HtmlHandler(
       BuildInfo buildInfo, final String hostedService,
@@ -129,7 +131,9 @@ public class HtmlHandler implements ContentHandler {
       throw new UnsupportedContentTypeException();
     }
 
-    if (charset == null) { charset = "UTF-8"; }
+    if (charset == null || charset.equals("")) {
+      charset = "UTF-8";
+    }
 
     String moduleCallbackString = CajaArguments.MODULE_CALLBACK.get(args);
     Expression moduleCallback = (Expression)

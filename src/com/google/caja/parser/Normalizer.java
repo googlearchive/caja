@@ -38,14 +38,16 @@ final class Normalizer {
           "isNormalized", CharSequence.class, normalizerForm);
       normalFormC = normalizerForm.getField("NFC").get(null);
     } catch (ClassNotFoundException ex) {
-      // Don't use the normalizer.
-      // Use null from above.
+      // JVM versions < 1.5 don't provide Normalizer.
+      // Use heuristic below.
     } catch (IllegalAccessException ex) {
       throw new RuntimeException(ex);
     } catch (NoSuchFieldException ex) {
-      throw new RuntimeException(ex);
+      // AppEngine doesn't provide Normalizer.Form.
+      // Use heuristic below.
     } catch (NoSuchMethodException ex) {
-      throw new RuntimeException(ex);
+      // Don't use the normalizer.
+      // Use heuristic below.
     }
 
     IS_NORMALIZED = isNormalized;

@@ -56,6 +56,10 @@
   <property name="javadocs"    location="${docs}/java"/>
   <property name="jars"        location="ant-jars"/>
   <property name="www"         location="ant-www"/>  <!-- demo files dir -->
+  <!-- servlet dir - needs to be called "war" for GWT eclipse plugin/shell
+    See http://code.google.com/webtoolkit/doc/1.6/ReleaseNotes_1_6.html
+  -->
+  <property name="war"         location="ant-war"/>
   <property name="maven"       location="ant-maven"/>  <!-- maven distro -->
 
   <!--== classpaths ==-->
@@ -114,8 +118,18 @@
     <path refid="classpath.compile"/>
     <path refid="classpath.tools"/>
   </path>
+  <path id="classpath.gwt">
+    <pathelement path="${third_party}/java/gwt/gwt-user.jar"/>
+    <pathelement path="${third_party}/java/gwt/gwt-dev.jar"/>
+    <pathelement path="${third_party}/java/gwt/gwt-api-checker.jar"/>
+    <pathelement path="${third_party}/java/gwt/gwt-servlet.jar"/>
+  </path>
 
   <!--== Tasks Used Below ==-->
+
+  <!--== Appengine tasks ==-->
+  <import file="${third_party}/java/appengine/config/user/ant-macros.xml" />
+
   <taskdef resource="emma_ant.properties"
    classpathref="classpath.extensions" />
 
@@ -139,6 +153,7 @@
     <delete dir="${lib}"/>
     <delete dir="${www}"/>
     <delete dir="${maven}"/>
+    <delete dir="${war}"/>
   </target>
 
   <target name="dirs">
@@ -148,6 +163,7 @@
     <mkdir dir="${jars}"/>
     <mkdir dir="${lib}"/>
     <mkdir dir="${www}"/>
+    <mkdir dir="${war}"/>
     <mkdir dir="${maven}"/>
   </target>
 
@@ -742,6 +758,93 @@
     </javac>
   </target>
 
+  <target name="PlaygroundFE" description="Playground Front End"
+    depends="testbed">
+    <java failonerror="true" fork="true"
+    	classname="com.google.gwt.dev.Compiler">
+      <classpath>
+        <pathelement location="src"/>
+        <path refid="classpath.gwt"/>
+      </classpath>
+      <jvmarg value="-Xmx256M"/>
+      <jvmarg value="-XX:CompileCommand=exclude,org/eclipse/core/internal/dtree/DataTreeNode,forwardDeltaWith" />
+      <jvmarg value="-XX:CompileCommand=exclude,org/eclipse/jdt/internal/compiler/lookup/ParameterizedTypeBinding,&lt;init&gt;" />
+      <jvmarg value="-XX:CompileCommand=exclude,org/eclipse/jdt/internal/compiler/lookup/ParameterizedMethodBinding,&lt;init&gt;" />
+      <arg line="-war ${war}" />
+      <arg value="com.google.caja.demos.playground.Playground"/>
+    </java>
+    <copy todir="${war}">
+      <fileset dir="${www}/testbed">
+        <include name="**/*.js" />
+        <include name="**/*.css" />
+      </fileset>
+      <fileset dir="${src}/com/google/caja/demos/playground">
+        <include name="Playground.html" />
+        <include name="Playground.css" />
+      </fileset>
+    </copy>
+  </target>
+
+  <target name="PlaygroundJars" depends="build.info"
+      description="Copy the App Engine JARs to the WAR directory">
+    <mkdir dir="${war}/WEB-INF" />
+    <copy todir="war/WEB-INF/lib" 
+    	file="${third_party}/java/gwt/gwt-servlet.jar" />
+    <copy todir="${war}/WEB-INF">
+      <fileset dir="">
+        <include name="appengine-web.xml" />
+        <include name="web.xml" />
+      </fileset>
+    </copy>
+    <replace file="${war}/WEB-INF/appengine-web.xml">
+      <replacetoken>%VERSION%</replacetoken>
+      <replacevalue>${build.svnVersion}</replacevalue>
+    </replace>
+    <copy todir="${war}/WEB-INF/lib" flatten="true">
+      <fileset dir="${third_party}/java/appengine/lib/user">
+        <include name="**/*.jar" />
+      </fileset>
+      <fileset dir="${third_party}/java/gwt">
+        <include name="gwt-servlet.jar" />
+      </fileset>
+      <fileset dir="${third_party}/java/htmlparser">
+        <include name="htmlparser.jar" />
+      </fileset>
+      <fileset dir="${third_party}/java/xerces/">
+        <include name="xercesImpl.jar" />
+      </fileset>
+      <fileset dir="${third_party}/java/json_simple/">
+        <include name="json_simple.jar" />
+      </fileset>
+    </copy>
+    <copy todir="${war}/WEB-INF" 
+      file="${third_party}/java/appengine/config/user/logging.properties" />
+  </target>
+
+  <target name="PlaygroundBE" depends="pluginc,  PlaygroundJars"
+     description="Compile the GWT backend and copies to the WAR.">
+    <mkdir dir="${war}/WEB-INF/classes" />
+    <copy todir="${war}/WEB-INF/classes">
+      <fileset dir="${lib}">
+        <include name="com/**" />
+      </fileset>
+    </copy>
+    <javac destdir="${war}/WEB-INF/classes" debug="true">
+      <src path="${src}"/>
+      <classpath refid="classpath.compile"/>
+      <classpath refid="classpath.gwt"/>
+      <include name="**/caja/demos/playground/server/*.java"/>
+      <compilerarg line="-Xlint:unchecked"/>
+    </javac>
+  </target>
+
+  <target name="playground" 
+  	depends="CajolingService, PlaygroundBE, PlaygroundFE">
+  </target>
+
+  <target name="runserver" description="Starts the development server.">
+    <dev_appserver war="${war}" />
+  </target>
 
   <target name="Config" depends="Reporting">
     <javac destdir="${lib}" debug="true" target="1.5" source="1.5">

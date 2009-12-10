@@ -60,7 +60,7 @@
 # filetypes    -  sets svn:mime-type of modified files based on file suffix
 
 function myvn() {
-  local default_svn_path=/opt/googlesvn/bin/svn
+  local default_svn_path=/opt/subversion/bin/svn
   local tools_dir="$(dirname $0)"
   local submit_bug_path="$tools_dir"/submit-caja-bug.py
 
@@ -207,6 +207,7 @@ function makeEclipseClasspath() {
   echo "<classpath>"
   echo "	<classpathentry excluding=\"**/*~|**/.svn/**\" kind=\"src\" path=\"src\"/>"
   echo "	<classpathentry excluding=\"**/*~|**/.svn/**\" kind=\"src\" path=\"tests\"/>"
+  echo "	<classpathentry kind=\"con\" path=\"com.google.gwt.eclipse.core.GWT_CONTAINER\"/>"
   # Needed so JUnit test works in Eclipse
   echo "	<classpathentry excluding=\"**/*~|**/.svn/**|**/*.java|java/htmlparser/src\" kind=\"src\" path=\"third_party\"/>"
   # TODO(mikesamuel): enable once we've replaced htmlparser.jar with the source
@@ -233,20 +234,27 @@ function makeEclipseProject() {
   local projectName="$(basename "$dir")"
   echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
   echo "<projectDescription>"
-  echo "	<name>$projectName</name>"
-  echo "	<comment></comment>"
-  echo "	<projects>"
-  echo "	</projects>"
-  echo "	<buildSpec>"
-  echo "		<buildCommand>"
-  echo "			<name>org.eclipse.jdt.core.javabuilder</name>"
-  echo "			<arguments>"
-  echo "			</arguments>"
-  echo "		</buildCommand>"
-  echo "	</buildSpec>"
-  echo "	<natures>"
-  echo "		<nature>org.eclipse.jdt.core.javanature</nature>"
-  echo "	</natures>"
+  echo "  <name>$projectName</name>"
+  echo "  <comment></comment>"
+  echo "  <projects>"
+  echo "  </projects>"
+  echo "  <buildSpec>"
+  echo "	  <buildCommand>"
+  echo "      <name>org.eclipse.jdt.core.javabuilder</name>"
+  echo "        <arguments>"
+  echo "        </arguments>"
+  echo "    </buildCommand>"
+  echo "    <buildCommand>"
+  echo "      <name>com.google.gdt.eclipse.core.webAppProjectValidator</name>"
+  echo "      <arguments>"
+  echo "      </arguments>"
+  echo "    </buildCommand>"
+  echo "  </buildSpec>"
+  echo "  <natures>"
+  echo "    <nature>org.eclipse.jdt.core.javanature</nature>"
+  echo "    <nature>com.google.gwt.eclipse.core.gwtNature</nature>"
+  echo "    <nature>com.google.gdt.eclipse.core.webAppNature</nature>"  
+  echo "  </natures>"
   echo "</projectDescription>"
 }
 

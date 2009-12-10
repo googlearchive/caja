@@ -1,0 +1,106 @@
+Release Notes for the Google App Engine ORM, a DataNucleus plugin that provides
+access to the Google App Engine Datastore via JDO and JPA.
+
+VERSION 1.0.0 Final
+- Fix automatic entity group assignment with non-transactional datasources.
+- Support aliased table names.
+- Fix getSingleResult() (jpa)
+- Support filtering with transient params
+
+-------------------------------------------------------------------------------
+UNRELEASED VERSIONS
+-------------------------------------------------------------------------------
+
+VERSION 1.0.0 RC3
+- Translate IllegalAccessException to JDOFatalUserException when thrown by datastore api
+- Handle PMFs with no name
+- Added package-info.java
+
+VERSION 1.0.0 RC2
+- Support for ShortBlob
+- Support filtering with enum params
+- Support count() queries
+- Datastore API exceptions now properly wrapped in JDO/JPA exceptions
+
+VERSION 1.0.0 RC1
+- Support unencoded String primary keys
+- Support long primary keys
+- Let developers specify pk in different ways for getObjectById (JDO) and find (JPA)
+- Support for Set, SortedSet, TreeSet, LinkedHashSet, LinkedList
+- preserveCase is the default for the identifier factory
+- Detect changes to primary key and ancestor
+- Support negative literals in queries
+- Querying and sorting by embedded fields
+- App Engine specific meta data validation
+- Detect invalid jdoql and jpql
+
+VERSION 0.8.5
+- Support java 5 enums
+- OSGI-compliant manifest
+- Fix single string JDOQL range queries
+- Support querying parent by 1 to 1 child
+- Support updates without explicit txn management (jdo)
+
+VERSION 0.8.4
+- There is no 0.8.4
+
+VERSION 0.8.3
+- There is no 0.8.3
+
+VERSION 0.8.2
+- Avoid getting entities from multiple entity groups in a single txn
+- Avoid multiple writes to the same entity in a single txn
+- Query by ancestor provider
+- One To Many bug fixes
+
+VERSION 0.8.1
+- One To Many bug fixes
+- Method renames
+
+VERSION 0.8
+- Support for non-transactional datasources.
+- Fixed a nasty ClassCastException related to transaction management.
+
+VERSION 0.7
+- Removed dependency on datanucleus' rdbms jar
+- Support for @OneToMany when the member is of type List
+- Support for serialized members.
+- Support for custom serialization strategies.
+
+VERSION 0.6
+- Implicitly assign entity groups when creating dependent children (1 to 1 only)
+- Support for jdk 5.
+
+VERSION 0.5
+- Better error messages when attempting to assign null to a not-null pojo field.
+- Removed jta.jar and persistence-api.1.0.2.jar from the distro - users must download
+these by hand for now.
+
+VERSION 0.4
+- Support for 1-1 associations, both unidirectional and bidirectional.
+- Proper handling of null fields.
+- Support filtering and sorting by implicit __key__ entity property.
+
+VERSION 0.3
+- Support pks and ancestors of type Key
+- Translate members of type byte[] and Byte[] to datastore type BLOB
+- Support for offset in jpql and jdoql
+- Support for embeddable classes
+
+VERSION 0.2
+- Support for ancestors
+- Support for named keys
+- Support for JPQL bind variables
+- Support for limit in JDOQL and JPQL queries
+- Support for querying by key
+- Spec compliance for default table names.
+- Spec compliance for default column names.
+- Spec compliance for default version column names.
+
+VERSION 0.1
+- Initial release
+- JDO and JPA support for insert, update, delete, retrieve
+- JDOQL and JPQL queries.  Predicates may only use '=', '<', '<=', '>=', '>', '&&' as
+  well as sort clauses.
+- Basic Transaction support.
+

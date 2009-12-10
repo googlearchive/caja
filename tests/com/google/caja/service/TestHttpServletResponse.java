@@ -168,6 +168,12 @@ public final class TestHttpServletResponse implements HttpServletResponse {
   public void setLocale(Locale arg0) {
     throw new UnsupportedOperationException();
   }
+  public String getContentType() {
+    throw new UnsupportedOperationException();
+  }
+  public void setCharacterEncoding(String charset) { 
+    throw new UnsupportedOperationException();
+  }
 
   public Map<String, String> getHeaders() { return headers; }
 }

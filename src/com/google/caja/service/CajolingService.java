@@ -47,7 +47,7 @@ import javax.servlet.http.HttpServletResponse;
  * @author jasvir@gmail.com (Jasvir Nagra)
  */
 public class CajolingService extends HttpServlet {
-  private static final String DEFAULT_HOST = "http://caja.appspot.com/cajoler";
+  private static final String DEFAULT_HOST = "http://caja.appspot.com/cajole";
   private final UriCallback DEFAULT_URIPOLICY = new UriCallback() {
     public Reader retrieve(ExternalReference extref, String mimeType)
         throws UriCallbackException {
@@ -83,6 +83,10 @@ public class CajolingService extends HttpServlet {
   private String host;
   private UriCallback cb;
 
+  public CajolingService() {
+    this(BuildInfo.getInstance());
+  }
+  
   public CajolingService(BuildInfo buildInfo) {
     this(buildInfo, DEFAULT_HOST);
   }

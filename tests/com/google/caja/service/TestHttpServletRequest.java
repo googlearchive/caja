@@ -237,4 +237,9 @@ public final class TestHttpServletRequest implements HttpServletRequest {
       public T nextElement() { return it.next(); }
     };
   }
+
+  public String getLocalAddr() { throw new UnsupportedOperationException(); }
+  public String getLocalName() { throw new UnsupportedOperationException(); }
+  public int getLocalPort() { throw new UnsupportedOperationException(); }
+  public int getRemotePort() { throw new UnsupportedOperationException(); }
 }
