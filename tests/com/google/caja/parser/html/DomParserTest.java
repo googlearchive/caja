@@ -2070,7 +2070,7 @@ public class DomParserTest extends CajaTestCase {
             "    Text : first part of the text</> second part 1+15-1+52"
             ),
         Arrays.asList(
-            "ERROR testShortTags:1+3 - 5: Malformed identifier <a"),
+            "WARNING testShortTags:1+3 - 5: Malformed identifier <a"),
         Arrays.asList(
             "<p href=\"/\">"
             + "first part of the text&lt;/&gt; second part</p>"

@@ -337,9 +337,11 @@ public class Html5ElementStack implements OpenElementStack {
             }
             attrs.add(attrNode);
           } catch (DOMException ex) {
-            ex.printStackTrace();
-            mq.addMessage(MessageType.INVALID_IDENTIFIER, as.nameTok.pos,
-                          MessagePart.Factory.valueOf(as.nameTok.text));
+            mq.addMessage(
+                MessageType.INVALID_IDENTIFIER,
+                MessageLevel.WARNING,
+                as.nameTok.pos,
+                MessagePart.Factory.valueOf(as.nameTok.text));
           }
         }
         attrImpl = new AttributesImpl(attrs);
