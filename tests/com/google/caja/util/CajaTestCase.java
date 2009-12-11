@@ -14,6 +14,7 @@
 
 package com.google.caja.util;
 
+import com.google.caja.SomethingWidgyHappenedError;
 import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.CssTokenType;
 import com.google.caja.lexer.FilePosition;
@@ -250,7 +251,8 @@ public abstract class CajaTestCase extends TestCase {
     try {
       p.formatShort(sb);
     } catch (IOException ex) {
-      throw new RuntimeException("IOException from StringBuilder");
+      throw new SomethingWidgyHappenedError(
+          "IOException from StringBuilder", ex);
     }
     return sb.toString();
   }

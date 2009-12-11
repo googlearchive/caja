@@ -14,6 +14,7 @@
 
 package com.google.caja.parser.js;
 
+import com.google.caja.SomethingWidgyHappenedError;
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.lexer.Keyword;
@@ -78,7 +79,7 @@ public abstract class Operation extends AbstractExpression {
       case SIMPLE:
         return new SimpleOperation(pos, op, Arrays.asList(params));
       default:
-        throw new RuntimeException("unexpected: " + op);
+        throw new SomethingWidgyHappenedError("unexpected: " + op);
     }
   }
 

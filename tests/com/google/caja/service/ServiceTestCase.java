@@ -14,6 +14,7 @@
 
 package com.google.caja.service;
 
+import com.google.caja.SomethingWidgyHappenedError;
 import com.google.caja.util.CajaTestCase;
 import com.google.caja.reporting.TestBuildInfo;
 
@@ -61,9 +62,9 @@ public abstract class ServiceTestCase extends CajaTestCase {
       w.write(content);
       w.flush();
     } catch (UnsupportedEncodingException ex) {
-      throw new RuntimeException(ex);
+      throw new SomethingWidgyHappenedError(ex);
     } catch (IOException ex) {
-      throw new RuntimeException(ex);
+      throw new SomethingWidgyHappenedError(ex);
     }
     registerUri(uri, out.toByteArray(), contentType, "UTF-8");
   }

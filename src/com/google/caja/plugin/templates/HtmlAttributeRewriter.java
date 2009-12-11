@@ -14,6 +14,7 @@
 
 package com.google.caja.plugin.templates;
 
+import com.google.caja.SomethingWidgyHappenedError;
 import com.google.caja.lang.css.CssSchema;
 import com.google.caja.lang.html.HTML;
 import com.google.caja.lang.html.HtmlSchema;
@@ -283,7 +284,7 @@ public final class HtmlAttributeRewriter {
         dynamicValue = out.toExpression(false);
         break;
       default:
-        throw new RuntimeException(attr.attrInfo.getType().name());
+        throw new SomethingWidgyHappenedError(attr.attrInfo.getType().name());
     }
     return new SanitizedAttr(true, dynamicValue);
   }

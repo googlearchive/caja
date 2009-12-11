@@ -14,9 +14,9 @@
 
 package com.google.caja.service;
 
+import com.google.caja.SomethingWidgyHappenedError;
 import com.google.caja.util.Maps;
 import com.google.caja.util.Strings;
-
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.UnsupportedEncodingException;
@@ -179,7 +179,7 @@ public final class TestHttpServletRequest implements HttpServletRequest {
     try {
       return URLDecoder.decode(mimeEncoded, "UTF-8");
     } catch (UnsupportedEncodingException ex) {
-      throw new RuntimeException(ex);
+      throw new SomethingWidgyHappenedError(ex);
     }
   }
 

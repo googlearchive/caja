@@ -14,8 +14,8 @@
 
 package com.google.caja.parser.quasiliteral;
 
+import com.google.caja.SomethingWidgyHappenedError;
 import com.google.caja.parser.html.Namespaces;
-
 import java.io.Writer;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
@@ -61,7 +61,7 @@ public class HtmlRuleDoclet extends RuleDoclet {
             .getDOMImplementation("XML 1.0");
       }
     } catch (Exception ex) {
-      throw new RuntimeException(ex);
+      throw new SomethingWidgyHappenedError(ex);
     }
     String qname = "html";
     String systemId = "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd";
@@ -129,7 +129,7 @@ public class HtmlRuleDoclet extends RuleDoclet {
     try {
       TransformerFactory.newInstance().newTransformer().transform(src, result);
     } catch (TransformerException ex) {
-      throw new RuntimeException(ex);
+      throw new SomethingWidgyHappenedError(ex);
     }
   }
 

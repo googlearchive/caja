@@ -14,6 +14,7 @@
 
 package com.google.caja.parser.quasiliteral;
 
+import com.google.caja.SomethingWidgyHappenedError;
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.ParseTreeNodeContainer;
@@ -1924,7 +1925,7 @@ public class CajitaRewriter extends Rewriter {
               result = result.children().get(0);
             } else if (!(result instanceof Expression
                          || result instanceof Declaration)) {
-              throw new RuntimeException(
+              throw new SomethingWidgyHappenedError(
                   "Unexpected result class: " + result.getClass());
             }
             expanded.add(result);

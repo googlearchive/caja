@@ -14,6 +14,7 @@
 
 package com.google.caja.reporting;
 
+import com.google.caja.SomethingWidgyHappenedError;
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.InputSource;
 
@@ -73,7 +74,7 @@ public class SnippetProducer {
       try {
         appendSnippet(pos, snippet);
       } catch (IOException ex) {
-        throw new RuntimeException(
+        throw new SomethingWidgyHappenedError(
             "StringBuilders shouldn't throw IOExceptions", ex);
       }
       // If no content written by appendSnippet, then remove the newline.

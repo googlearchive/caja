@@ -14,6 +14,7 @@
 
 package com.google.caja.parser.html;
 
+import com.google.caja.SomethingWidgyHappenedError;
 import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.HtmlLexer;
@@ -160,7 +161,8 @@ public class HtmlQuasiBuilder {
             tq, isProblematic, DevNullMessageQueue.singleton());
         quasi = isDocument ? p.parseDocument() : p.parseFragment();
       } catch (ParseException ex) {
-        throw new RuntimeException("Malformed Quasiliteral : " + quasiHtml, ex);
+        throw new SomethingWidgyHappenedError(
+            "Malformed Quasiliteral : " + quasiHtml, ex);
       }
       QUASI_CACHE.put(quasiHtml, quasi);
     }
@@ -183,7 +185,7 @@ public class HtmlQuasiBuilder {
           false, DevNullMessageQueue.singleton())
           .parseFragment(doc);
     } catch (IOException ex) {
-      throw new RuntimeException("Can't drain StringReader", ex);
+      throw new SomethingWidgyHappenedError("Can't drain StringReader", ex);
     }
   }
 

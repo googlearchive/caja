@@ -14,6 +14,7 @@
 
 package com.google.caja.plugin;
 
+import com.google.caja.SomethingWidgyHappenedError;
 import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.css.CssTree;
@@ -50,7 +51,7 @@ public final class Job {
     } else if (rootNode instanceof CssTree.StyleSheet) {
       this.type = Job.JobType.CSS;
     } else {
-      throw new RuntimeException("Unknown input type " + rootNode);
+      throw new SomethingWidgyHappenedError("Unknown input type " + rootNode);
     }
   }
 

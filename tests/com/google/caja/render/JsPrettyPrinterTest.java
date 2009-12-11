@@ -14,6 +14,7 @@
 
 package com.google.caja.render;
 
+import com.google.caja.SomethingWidgyHappenedError;
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.JsLexer;
 import com.google.caja.lexer.JsTokenQueue;
@@ -372,7 +373,7 @@ public class JsPrettyPrinterTest extends CajaTestCase {
         case LINE_CONTINUATION:
           continue;
         default:
-          throw new AssertionError();
+          throw new SomethingWidgyHappenedError();
       }
       tokens.add(tok);
     }

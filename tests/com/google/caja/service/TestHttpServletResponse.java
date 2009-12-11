@@ -14,6 +14,7 @@
 
 package com.google.caja.service;
 
+import com.google.caja.SomethingWidgyHappenedError;
 import com.google.caja.util.Maps;
 import com.google.caja.util.Strings;
 
@@ -128,7 +129,7 @@ public final class TestHttpServletResponse implements HttpServletResponse {
         try {
           return new String(bytes, enc);
         } catch (UnsupportedEncodingException ex) {
-          throw new RuntimeException(ex);
+          throw new SomethingWidgyHappenedError(ex);
         }
       }
       return bytes;

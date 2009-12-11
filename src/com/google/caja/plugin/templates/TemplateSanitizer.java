@@ -14,6 +14,7 @@
 
 package com.google.caja.plugin.templates;
 
+import com.google.caja.SomethingWidgyHappenedError;
 import com.google.caja.lang.html.HTML;
 import com.google.caja.lang.html.HtmlSchema;
 import com.google.caja.parser.html.AttribKey;
@@ -119,7 +120,7 @@ public final class TemplateSanitizer {
       case Node.COMMENT_NODE:
         break;
       default:
-        throw new AssertionError(t.getNodeName());
+        throw new SomethingWidgyHappenedError(t.getNodeName());
     }
     for (Node child : Nodes.childrenOf(t)) {
       valid &= sanitize(child);

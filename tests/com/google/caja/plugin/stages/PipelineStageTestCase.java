@@ -14,6 +14,7 @@
 
 package com.google.caja.plugin.stages;
 
+import com.google.caja.SomethingWidgyHappenedError;
 import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.ExternalReference;
 import com.google.caja.lexer.InputSource;
@@ -174,7 +175,7 @@ public abstract class PipelineStageTestCase extends CajaTestCase {
     try {
       return URLEncoder.encode(s, "UTF-8");
     } catch (UnsupportedEncodingException ex) {
-      throw new RuntimeException(ex);
+      throw new SomethingWidgyHappenedError(ex);
     }
   }
 
@@ -182,7 +183,7 @@ public abstract class PipelineStageTestCase extends CajaTestCase {
     try {
       return URLDecoder.decode(s, "UTF-8");
     } catch (UnsupportedEncodingException ex) {
-      throw new RuntimeException(ex);
+      throw new SomethingWidgyHappenedError(ex);
     }
   }
 

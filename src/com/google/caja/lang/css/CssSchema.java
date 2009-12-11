@@ -14,6 +14,7 @@
 
 package com.google.caja.lang.css;
 
+import com.google.caja.SomethingWidgyHappenedError;
 import com.google.caja.config.ConfigUtil;
 import com.google.caja.config.WhiteList;
 import com.google.caja.lexer.ParseException;
@@ -73,11 +74,11 @@ public final class CssSchema {
       // If the default schema is borked, there's not much we can do.
       } catch (IOException ex) {
         mq.getMessages().addAll(cacheMq.getMessages());
-        throw new RuntimeException(ex);
+        throw new SomethingWidgyHappenedError("Default schema is borked", ex);
       } catch (ParseException ex) {
         ex.toMessageQueue(cacheMq);
         mq.getMessages().addAll(cacheMq.getMessages());
-        throw new RuntimeException(ex);
+        throw new SomethingWidgyHappenedError("Default schema is borked", ex);
       }
       defaultSchema = Pair.pair(
           new CssSchema(propDefs, fnDefs), cacheMq.getMessages());
@@ -373,7 +374,7 @@ public final class CssSchema {
     try {
       return CssPropertySignature.Parser.parseSignature(sig);
     } catch (RuntimeException ex) {
-      throw new RuntimeException(
+      throw new SomethingWidgyHappenedError(
           "Error parsing symbol " + name + " with signature " + sig, ex);
     }
   }

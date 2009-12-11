@@ -14,6 +14,7 @@
 
 package com.google.caja.config;
 
+import com.google.caja.SomethingWidgyHappenedError;
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.ParseException;
@@ -532,7 +533,7 @@ class JSONWhiteListLoader {
                || obj instanceof String) {
       return obj;
     } else {
-      throw new AssertionError(obj.getClass().getSimpleName());
+      throw new SomethingWidgyHappenedError(obj.getClass().getSimpleName());
     }
   }
 

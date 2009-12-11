@@ -14,6 +14,7 @@
 
 package com.google.caja.plugin.stages;
 
+import com.google.caja.SomethingWidgyHappenedError;
 import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.JsLexer;
@@ -380,7 +381,8 @@ final class Splitter {
         break;
       case IN_BLOCK:
         // TODO: output to a message queue
-        throw new RuntimeException("End of template inside brackets");
+        throw new SomethingWidgyHappenedError(
+            "End of template inside brackets");
     }
   }
 

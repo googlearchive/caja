@@ -14,6 +14,7 @@
 
 package com.google.caja.lexer.escaping;
 
+import com.google.caja.SomethingWidgyHappenedError;
 import com.google.caja.util.SparseBitSet;
 import java.io.IOException;
 
@@ -57,8 +58,8 @@ public class Escaping {
     try {
       escapeJsString(s, asciiOnly, embeddable, (Appendable) out);
     } catch (IOException ex) {
-      // StringBuilders don't throw IOException
-      throw new RuntimeException(ex);
+      throw new SomethingWidgyHappenedError(
+          "StringBuilders don't throw IOException", ex);
     }
   }
 
@@ -87,8 +88,8 @@ public class Escaping {
     try {
       escapeJsIdentifier(s, asciiOnly, (Appendable) out);
     } catch (IOException ex) {
-      // StringBuilders don't throw IOException
-      throw new RuntimeException(ex);
+      throw new SomethingWidgyHappenedError(
+          "StringBuilders don't throw IOException", ex);
     }
   }
 
@@ -124,8 +125,8 @@ public class Escaping {
     try {
       escapeRegex(s, asciiOnly, embeddable, (Appendable) out);
     } catch (IOException ex) {
-      // StringBuilders don't throw IOException
-      throw new RuntimeException(ex);
+      throw new SomethingWidgyHappenedError(
+          "StringBuilders don't throw IOException", ex);
     }
   }
 
@@ -161,8 +162,8 @@ public class Escaping {
     try {
       normalizeRegex(s, asciiOnly, embeddable, (Appendable) out);
     } catch (IOException ex) {
-      // StringBuilders don't throw IOException
-      throw new RuntimeException(ex);
+      throw new SomethingWidgyHappenedError(
+      "StringBuilders don't throw IOException", ex);
     }
   }
 
@@ -189,8 +190,8 @@ public class Escaping {
     try {
       escapeXml(s, asciiOnly, (Appendable) out);
     } catch (IOException ex) {
-      // StringBuilders don't throw IOException
-      throw new RuntimeException(ex);
+      throw new SomethingWidgyHappenedError(
+          "StringBuilders don't throw IOException", ex);
     }
   }
 
@@ -211,8 +212,8 @@ public class Escaping {
     try {
       escapeCssString(s, (Appendable) out);
     } catch (IOException ex) {
-      // StringBuilders don't throw IOException
-      throw new RuntimeException(ex);
+      throw new SomethingWidgyHappenedError(
+          "StringBuilders don't throw IOException", ex);
     }
   }
 
@@ -240,8 +241,8 @@ public class Escaping {
     try {
       escapeCssIdent(s, (Appendable) out);
     } catch (IOException ex) {
-      // StringBuilders don't throw IOException
-      throw new RuntimeException(ex);
+      throw new SomethingWidgyHappenedError(
+          "StringBuilders don't throw IOException", ex);
     }
   }
 
@@ -527,8 +528,8 @@ public class Escaping {
       try {
         hex2Escape(ch, sb);
       } catch (IOException ex) {
-        // StringBuilders do not throw IOException
-        throw new RuntimeException(ex);
+        throw new SomethingWidgyHappenedError(
+            "StringBuilders don't throw IOException", ex);
       }
       out[i] = new Escape(ch, sb.toString());
     }

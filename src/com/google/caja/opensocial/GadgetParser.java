@@ -14,6 +14,7 @@
 
 package com.google.caja.opensocial;
 
+import com.google.caja.SomethingWidgyHappenedError;
 import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.HtmlLexer;
@@ -184,7 +185,7 @@ public class GadgetParser {
     Nodes.render(rootElement, MODULE_NS, rc);
     tc.noMoreTokens();
   }
-  private static class RenderFailure extends RuntimeException {
+  private static class RenderFailure extends SomethingWidgyHappenedError {
     RenderFailure(IOException ex) { initCause(ex); }
   }
 

@@ -14,6 +14,7 @@
 
 package com.google.caja.plugin;
 
+import com.google.caja.SomethingWidgyHappenedError;
 import com.google.caja.lang.css.CssSchema;
 import com.google.caja.lang.html.HTML;
 import com.google.caja.lang.html.HtmlSchema;
@@ -793,7 +794,7 @@ final class SignatureResolver {
             (CssPropertySignature.ProgIdSignature) sig,
             candidate, propertyName, passed);
       } else {
-        throw new AssertionError(sig.getClass().getName());
+        throw new SomethingWidgyHappenedError(sig.getClass().getName());
       }
     }
     for (Candidate candidate : passed) {
@@ -1024,7 +1025,7 @@ final class SignatureResolver {
     CssSchema.CssPropertyInfo info = cssSchema.getCssProperty(
         ssig.getPropertyName());
     if (null == info) {
-      throw new AssertionError(
+      throw new SomethingWidgyHappenedError(
           "Unknown property in css property signature: " + propertyName);
     }
     check(info.sig);
@@ -1346,7 +1347,7 @@ final class SignatureResolver {
       candidate.match(term, CssPropertyPartType.IDENT, propertyName);
       ++candidate.exprIdx;
     } else {
-      throw new AssertionError(
+      throw new SomethingWidgyHappenedError(
           "unhandled symbol " + sig.symbolName + "\n" + dump(atom));
     }
 

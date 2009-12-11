@@ -14,6 +14,7 @@
 
 package com.google.caja.plugin;
 
+import com.google.caja.SomethingWidgyHappenedError;
 import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.CssTokenType;
 import com.google.caja.lexer.HtmlLexer;
@@ -204,7 +205,7 @@ public final class PluginCompilerMain {
       input = new Dom(p.parseFragment());
       p.getTokenQueue().expectEmpty();
     } else {
-      throw new AssertionError("Can't classify input " + is);
+      throw new SomethingWidgyHappenedError("Can't classify input " + is);
     }
     return input;
   }
@@ -262,7 +263,7 @@ public final class PluginCompilerMain {
             buildOriginalInputCharSequences(), mc, out, exHandler);
         break;
       default:
-        throw new AssertionError(
+        throw new SomethingWidgyHappenedError(
             "Unrecognized renderer: " + config.renderer());
     }
     RenderContext rc = new RenderContext(tc)
@@ -327,7 +328,7 @@ public final class PluginCompilerMain {
     try {
       isr = new InputStreamReader(stream, "UTF-8");
     } catch (UnsupportedEncodingException e) {
-      throw new AssertionError(e);
+      throw new SomethingWidgyHappenedError(e);
     }
 
     if (config.renderer() == Config.SourceRenderMode.SIDEBYSIDE ||

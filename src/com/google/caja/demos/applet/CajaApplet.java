@@ -14,6 +14,7 @@
 
 package com.google.caja.demos.applet;
 
+import com.google.caja.SomethingWidgyHappenedError;
 import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.ExternalReference;
 import com.google.caja.lexer.FilePosition;
@@ -125,7 +126,8 @@ public class CajaApplet extends Applet {
                   + URLEncoder.encode(extref.getUri().toString(), "UTF-8")
                   + "&mimeType=" + URLEncoder.encode(mimeType, "UTF-8"));
             } catch (UnsupportedEncodingException ex) {
-              throw new RuntimeException("UTF-8 should be supported.", ex);
+              throw new SomethingWidgyHappenedError(
+                  "UTF-8 should be supported", ex);
             }
           }
         };
@@ -182,7 +184,7 @@ public class CajaApplet extends Applet {
         messagesToString(originalSources, mq)
       };
     } catch (IOException ex) {
-      throw new RuntimeException(ex);
+      throw new SomethingWidgyHappenedError("Unexpected I/O error", ex);
     } catch (GadgetRewriteException ex) {
       return new Object[] {
         null,

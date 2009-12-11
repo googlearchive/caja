@@ -16,6 +16,7 @@ package com.google.caja.lexer;
 
 import com.google.caja.util.CajaTestCase;
 import com.google.caja.util.FailureIsAnOption;
+
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.URI;

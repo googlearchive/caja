@@ -14,6 +14,7 @@
 
 package com.google.caja.plugin.templates;
 
+import com.google.caja.SomethingWidgyHappenedError;
 import com.google.caja.lang.css.CssSchema;
 import com.google.caja.lang.html.HtmlSchema;
 import com.google.caja.lexer.CharProducer;
@@ -34,8 +35,10 @@ import com.google.caja.plugin.CssRuleRewriter;
 import com.google.caja.plugin.ExtractedHtmlContent;
 import com.google.caja.plugin.PluginEnvironment;
 import com.google.caja.plugin.PluginMeta;
+import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessagePart;
+import com.google.caja.reporting.MessageType;
 import com.google.caja.util.CajaTestCase;
 import com.google.caja.util.Pair;
 
@@ -59,7 +62,10 @@ public class TemplateCompilerTest extends CajaTestCase {
     meta = new PluginMeta(new PluginEnvironment() {
       public CharProducer loadExternalResource(
           ExternalReference ref, String mimeType) {
-        throw new RuntimeException("NOT IMPLEMENTED");
+        throw new SomethingWidgyHappenedError(
+            new Message(MessageType.INTERNAL_ERROR, MessageLevel.FATAL_ERROR,
+                MessagePart.Factory.valueOf(
+                    "Loading from external resource unimplemented")));
       }
 
       // return the URI unchanged, so we can test URI normalization
@@ -347,7 +353,10 @@ public class TemplateCompilerTest extends CajaTestCase {
     meta = new PluginMeta(new PluginEnvironment() {
       public CharProducer loadExternalResource(
           ExternalReference ref, String mimeType) {
-        throw new RuntimeException("NOT IMPLEMENTED");
+        throw new SomethingWidgyHappenedError(
+            new Message(MessageType.INTERNAL_ERROR, MessageLevel.FATAL_ERROR,
+                MessagePart.Factory.valueOf(
+                    "Loading from external resource unimplemented")));
       }
 
       public String rewriteUri(ExternalReference ref, String mimeType) {

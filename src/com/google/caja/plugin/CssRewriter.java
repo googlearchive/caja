@@ -14,6 +14,7 @@
 
 package com.google.caja.plugin;
 
+import com.google.caja.SomethingWidgyHappenedError;
 import com.google.caja.lang.css.CssPropertyPatterns;
 import com.google.caja.lexer.ExternalReference;
 import com.google.caja.lexer.FilePosition;
@@ -712,7 +713,7 @@ public final class CssRewriter {
                 term.replaceChild(replacement, content);
               } catch (URISyntaxException ex) {
                 // Should've been checked in removeUnsafeConstructs.
-                throw new AssertionError();
+                throw new SomethingWidgyHappenedError(ex);
               }
             }
             return true;

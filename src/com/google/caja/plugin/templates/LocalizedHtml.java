@@ -14,6 +14,7 @@
 
 package com.google.caja.plugin.templates;
 
+import com.google.caja.SomethingWidgyHappenedError;
 import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.HtmlLexer;
@@ -60,7 +61,7 @@ public final class LocalizedHtml {
     } catch (URISyntaxException ex) {
       // Authority can't be bad since there isn't one, and the path is not
       // relative, so should not throw.
-      throw new RuntimeException(ex);
+      throw new SomethingWidgyHappenedError(ex);
     }
   }
 

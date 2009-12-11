@@ -14,6 +14,7 @@
 
 package com.google.caja.plugin.templates;
 
+import com.google.caja.SomethingWidgyHappenedError;
 import com.google.caja.config.ConfigUtil;
 import com.google.caja.lang.html.HtmlSchema;
 import com.google.caja.lexer.Keyword;
@@ -71,10 +72,10 @@ public class IHTML {
               attrSrc, ConfigUtil.RESOURCE_RESOLVER, mq));
       // If the default schema is borked, there's not much we can do.
     } catch (IOException ex) {
-      throw new RuntimeException(ex);
+      throw new SomethingWidgyHappenedError(ex);
     } catch (ParseException ex) {
       mq.getMessages().add(ex.getCajaMessage());
-      throw new RuntimeException(ex);
+      throw new SomethingWidgyHappenedError(ex);
     }
   }
 

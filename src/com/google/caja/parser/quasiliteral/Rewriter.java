@@ -14,6 +14,7 @@
 
 package com.google.caja.parser.quasiliteral;
 
+import com.google.caja.SomethingWidgyHappenedError;
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.TokenConsumer;
@@ -89,7 +90,7 @@ public abstract class Rewriter {
         ParseTreeNode result = rule.fire(node, scope);
         if (result != Rule.NONE) {
           if (debug && !rules.applicableTo(node).contains(rule)) {
-            throw new AssertionError(
+            throw new SomethingWidgyHappenedError(
                 rule.getName() + " should be applicable to " + node);
           }
           FilePosition resultPos = result.getFilePosition();

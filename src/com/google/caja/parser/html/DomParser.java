@@ -14,6 +14,7 @@
 
 package com.google.caja.parser.html;
 
+import com.google.caja.SomethingWidgyHappenedError;
 import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.HtmlLexer;
@@ -152,14 +153,14 @@ public class DomParser {
         domImpl = DOMImplementationRegistry.newInstance()
             .getDOMImplementation(features);
       } catch (ClassNotFoundException ex) {
-        throw new RuntimeException(
-            "Missing DOM implementation.  Is Xerces on the classpath?", ex);
+    	  throw new SomethingWidgyHappenedError(
+              "Missing DOM implementation.  Is Xerces on the classpath?", ex);
       } catch (IllegalAccessException ex) {
-        throw new RuntimeException(
-            "Missing DOM implementation.  Is Xerces on the classpath?", ex);
+          throw new SomethingWidgyHappenedError(
+              "Missing DOM implementation.  Is Xerces on the classpath?", ex);
       } catch (InstantiationException ex) {
-        throw new RuntimeException(
-            "Missing DOM implementation.  Is Xerces on the classpath?", ex);
+          throw new SomethingWidgyHappenedError(
+              "Missing DOM implementation.  Is Xerces on the classpath?", ex);
       }
     }
 

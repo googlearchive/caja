@@ -14,6 +14,7 @@
 
 package com.google.caja.util;
 
+import com.google.caja.SomethingWidgyHappenedError;
 import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.InputSource;
@@ -83,7 +84,7 @@ public class RhinoTestBed {
       Throwable th = ex.getCause();
       if (th instanceof Error) { throw (Error) th; }
       if (th instanceof RuntimeException) { throw (RuntimeException) th; }
-      throw new RuntimeException(ex);
+      throw new SomethingWidgyHappenedError(ex);
     }
   }
 
@@ -150,7 +151,7 @@ public class RhinoTestBed {
             resource = new InputSource(
                 RhinoTestBed.class.getResource(resourcePath).toURI());
           } catch (URISyntaxException ex) {
-            throw new RuntimeException(
+            throw new SomethingWidgyHappenedError(
                 "java.net.URL is not a valid java.net.URI", ex);
           }
         } else {

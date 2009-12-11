@@ -14,6 +14,7 @@
 
 package com.google.caja.plugin;
 
+import com.google.caja.SomethingWidgyHappenedError;
 import com.google.caja.ancillary.opt.JsOptimizer;
 import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.ExternalReference;
@@ -136,7 +137,7 @@ public class BuildServiceImplementation implements BuildService {
                 + "&uri=" + URLEncoder.encode("" + uri.getUri(), "UTF-8"))
                 .toString();
           } catch (UnsupportedEncodingException ex) {
-            throw new RuntimeException(ex);
+            throw new SomethingWidgyHappenedError(ex);
           }
         }
       };

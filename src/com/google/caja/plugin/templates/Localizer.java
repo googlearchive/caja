@@ -14,6 +14,7 @@
 
 package com.google.caja.plugin.templates;
 
+import com.google.caja.SomethingWidgyHappenedError;
 import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.HtmlLexer;
@@ -225,7 +226,8 @@ public class Localizer {
           if (emit) { filteredXhtml.append(tt.text); }
         }
       } catch (ParseException ex) {
-        throw new RuntimeException("IOException reading from String");
+        throw new SomethingWidgyHappenedError(
+            "IOException reading from String", ex);
       }
     }
 

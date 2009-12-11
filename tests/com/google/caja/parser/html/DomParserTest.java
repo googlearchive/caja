@@ -14,6 +14,7 @@
 
 package com.google.caja.parser.html;
 
+import com.google.caja.SomethingWidgyHappenedError;
 import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.HtmlLexer;
@@ -2357,7 +2358,7 @@ public class DomParserTest extends CajaTestCase {
     try {
       new Formatter(true, sb).format(node);
     } catch (IOException ex) {
-      throw new RuntimeException(ex);
+      throw new SomethingWidgyHappenedError(ex);
     }
     return sb.length() == 0
         ? Collections.<String>emptyList()
@@ -2369,7 +2370,7 @@ public class DomParserTest extends CajaTestCase {
     try {
       new Formatter(withDebugData, sb).format(node);
     } catch (IOException ex) {
-      throw new RuntimeException(ex);
+      throw new SomethingWidgyHappenedError(ex);
     }
     return sb.toString();
   }

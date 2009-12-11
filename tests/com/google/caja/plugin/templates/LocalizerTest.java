@@ -14,6 +14,7 @@
 
 package com.google.caja.plugin.templates;
 
+import com.google.caja.SomethingWidgyHappenedError;
 import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.HtmlLexer;
@@ -224,7 +225,7 @@ public class LocalizerTest extends CajaTestCase {
                     try {
                       return tokens.hasNext();
                     } catch (ParseException ex) {
-                      throw new RuntimeException(ex);
+                      throw new SomethingWidgyHappenedError(ex);
                     }
                   }
 
@@ -232,7 +233,7 @@ public class LocalizerTest extends CajaTestCase {
                     try {
                       return tokens.next();
                     } catch (ParseException ex) {
-                      throw new RuntimeException(ex);
+                      throw new SomethingWidgyHappenedError(ex);
                     }
                   }
 

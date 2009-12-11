@@ -14,6 +14,7 @@
 
 package com.google.caja.parser.css;
 
+import com.google.caja.SomethingWidgyHappenedError;
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.lexer.escaping.Escaping;
@@ -69,7 +70,8 @@ public abstract class CssTree extends AbstractParseTreeNode {
     try {
       formatSelf(new MessageContext(), 0, sb);
     } catch (IOException ex) {
-      throw new AssertionError("StringBuilders shouldn't throw IOExceptions");
+      throw new SomethingWidgyHappenedError(
+          "StringBuilders shouldn't throw IOExceptions");
     }
     return sb.toString();
   }

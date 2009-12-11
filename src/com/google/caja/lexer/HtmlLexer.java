@@ -14,6 +14,7 @@
 
 package com.google.caja.lexer;
 
+import com.google.caja.SomethingWidgyHappenedError;
 import com.google.caja.util.Strings;
 
 import java.util.Arrays;
@@ -676,7 +677,8 @@ final class HtmlInputSplitter extends AbstractTokenStream<HtmlTokenType> {
                   }
                   break;
                 case DONE:
-                  throw new AssertionError();
+                  throw new SomethingWidgyHappenedError(
+                      "Unexpectedly DONE while lexing HTML token stream");
               }
               ++end;
               if (State.DONE == state) { break; }

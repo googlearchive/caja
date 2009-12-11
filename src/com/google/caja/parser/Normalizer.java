@@ -14,6 +14,8 @@
 
 package com.google.caja.parser;
 
+import com.google.caja.SomethingWidgyHappenedError;
+
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
@@ -41,13 +43,18 @@ final class Normalizer {
       // JVM versions < 1.5 don't provide Normalizer.
       // Use heuristic below.
     } catch (IllegalAccessException ex) {
-      throw new RuntimeException(ex);
+      throw new SomethingWidgyHappenedError(
+          "Normalizer exists but is unexpectedly inaccessible", ex);
     } catch (NoSuchFieldException ex) {
-      // AppEngine doesn't provide Normalizer.Form.
-      // Use heuristic below.
+    	// AppEngine doesn't provide Normalizer.Form.
+    	// Use heuristic below.
+      throw new SomethingWidgyHappenedError(
+          "Normalizer.Form unexpectedly missing", ex);
     } catch (NoSuchMethodException ex) {
-      // Don't use the normalizer.
-      // Use heuristic below.
+        // Don't use the normalizer.
+        // Use heuristic below.
+      throw new SomethingWidgyHappenedError(
+          "Normalizer unexpectedly missing methods", ex);
     }
 
     IS_NORMALIZED = isNormalized;
@@ -66,14 +73,12 @@ final class Normalizer {
         return ((Boolean) IS_NORMALIZED.invoke(null, s, NORMAL_FORM_C))
             .booleanValue();
       } catch (IllegalAccessException ex) {
-        throw new RuntimeException(ex);
+        throw new SomethingWidgyHappenedError(
+            "Normalizer unexpectedly uninvokable", ex);
       } catch (InvocationTargetException ex) {
         Throwable th = ex.getTargetException();
-        if (th instanceof RuntimeException) {
-          throw (RuntimeException) th;
-        } else {
-          throw (Error) th;
-        }
+          throw new SomethingWidgyHappenedError(
+              "Normalizer unexpectedly uninvokable", th);
       }
     }
 

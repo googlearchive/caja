@@ -13,6 +13,7 @@
 
 package com.google.caja.service;
 
+import com.google.caja.SomethingWidgyHappenedError;
 import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.ExternalReference;
 import com.google.caja.lexer.InputSource;
@@ -100,7 +101,8 @@ public class GadgetHandler implements ContentHandler {
               + URLEncoder.encode(extref.getUri().toString(), "UTF-8")
               + "&mime-type=" + URLEncoder.encode(mimeType, "UTF-8"));
         } catch (UnsupportedEncodingException ex) {
-          throw new RuntimeException("UTF-8 should be supported.", ex);
+          throw new SomethingWidgyHappenedError("UTF-8 should be supported.",
+              ex);
         }
       }
     };

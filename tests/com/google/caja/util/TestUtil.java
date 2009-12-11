@@ -14,6 +14,7 @@
 
 package com.google.caja.util;
 
+import com.google.caja.SomethingWidgyHappenedError;
 import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.InputSource;
 import com.google.caja.parser.AncestorChain;
@@ -101,7 +102,8 @@ public final class TestUtil {
     try {
       return null != url ? url.toURI() : null;
     } catch (URISyntaxException ex) {
-      throw new AssertionError("The following url is not a valid uri: " + url);
+      throw new SomethingWidgyHappenedError(
+          "The following url is not a valid uri: " + url);
     }
   }
 
@@ -144,7 +146,8 @@ public final class TestUtil {
     try {
       n.format(new MessageContext(), output);
     } catch (IOException ex) {
-      throw new RuntimeException(ex);  // StringBuilder should not throw.
+      throw new SomethingWidgyHappenedError(
+          "StringBuilder does not throw IOException", ex);
     }
     return output.toString();
   }
@@ -175,8 +178,7 @@ public final class TestUtil {
       return "content:"
           + URLEncoder.encode(content, "UTF-8").replace("+", "%20");
     } catch (UnsupportedEncodingException ex) {
-      throw (AssertionError) new AssertionError(
-          "UTF-8 not supported").initCause(ex);
+      throw new SomethingWidgyHappenedError("UTF-8 not supported", ex);
     }
   }
 

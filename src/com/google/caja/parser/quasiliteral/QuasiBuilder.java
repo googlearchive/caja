@@ -14,6 +14,7 @@
 
 package com.google.caja.parser.quasiliteral;
 
+import com.google.caja.SomethingWidgyHappenedError;
 import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.JsLexer;
@@ -119,7 +120,7 @@ public class QuasiBuilder {
    */
   public static ParseTreeNode substV(String patternText, Object... args) {
     if (args.length % 2 != 0) {
-      throw new RuntimeException("Wrong # of args for subst()");
+      throw new SomethingWidgyHappenedError("Wrong # of args for subst()");
     }
     Map<String, ParseTreeNode> bindings = Rule.makeBindings();
     for (int i = 0; i < args.length; ) {
@@ -189,8 +190,7 @@ public class QuasiBuilder {
             patternText,
             QuasiBuilder.parseQuasiNode(patternText));
       } catch (ParseException e) {
-        // Pattern programming error
-        throw new RuntimeException(e);
+        throw new SomethingWidgyHappenedError("Pattern programming error", e);
       }
     }
     return patternCache.get(patternText);

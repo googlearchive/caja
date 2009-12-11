@@ -14,6 +14,7 @@
 
 package com.google.caja.parser.js;
 
+import com.google.caja.SomethingWidgyHappenedError;
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.parser.ParseTreeNode;
@@ -65,7 +66,7 @@ public final class MultiDeclaration extends AbstractStatement {
     TokenConsumer out = rc.getOut();
     out.mark(getFilePosition());
     if (children().isEmpty()) {
-      throw new RuntimeException("Empty MultiDeclaration");
+      throw new SomethingWidgyHappenedError("Empty MultiDeclaration");
     }
     out.consume("var");
     boolean seen = false;

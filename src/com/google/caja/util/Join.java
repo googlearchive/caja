@@ -14,6 +14,8 @@
 
 package com.google.caja.util;
 
+import com.google.caja.SomethingWidgyHappenedError;
+
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -62,8 +64,8 @@ public class Join {
     try {
       join((Appendable) out, sep, items);
     } catch (IOException ex) {
-      // StringBuilder does not throw IOException
-      throw new RuntimeException(ex);
+      throw new SomethingWidgyHappenedError(
+          "StringBuilder does not throw IOException", ex);
     }
   }
 
@@ -80,8 +82,8 @@ public class Join {
     try {
       join((Appendable) out, sep, Arrays.asList(items));
     } catch (IOException ex) {
-      // StringBuilder does not throw IOException
-      throw new RuntimeException(ex);
+      throw new SomethingWidgyHappenedError(
+          "StringBuilder does not throw IOException", ex);
     }
   }
 }

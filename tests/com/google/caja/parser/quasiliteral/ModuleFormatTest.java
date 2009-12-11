@@ -14,6 +14,7 @@
 
 package com.google.caja.parser.quasiliteral;
 
+import com.google.caja.SomethingWidgyHappenedError;
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.TokenConsumer;
@@ -56,7 +57,9 @@ public class ModuleFormatTest extends CajaTestCase {
   }
 
   private final Callback<IOException> exHandler = new Callback<IOException>() {
-    public void handle(IOException e) { throw new RuntimeException(e); }
+    public void handle(IOException e) { 
+      throw new SomethingWidgyHappenedError(e);
+    }
   };
 
   public final void testCajoledModuleContents() throws Exception {

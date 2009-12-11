@@ -14,6 +14,8 @@
 
 package com.google.caja.parser.js;
 
+import com.google.caja.SomethingWidgyHappenedError;
+
 import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.Map;
@@ -211,8 +213,9 @@ public enum Operator {
       for (Operator op : Operator.values()) {
         if (null != symbolsByType.get(op.getType())
             .put(op.getOpeningSymbol(), op)) {
-          throw new AssertionError("Duplicate symbol " + op.getSymbol()
-                                   + " for type " + op.getType());
+          throw new SomethingWidgyHappenedError(
+              "Duplicate symbol " + op.getSymbol()
+              + " for type " + op.getType());
         }
       }
     }
@@ -224,7 +227,7 @@ public enum Operator {
       if (assignmentDelegate != null
           && (assignmentDelegate == ASSIGN
               || assignmentDelegate.assignmentDelegate != null)) {
-        throw new AssertionError(
+        throw new SomethingWidgyHappenedError(
             op + " cannot delegate assignment to an assignment operator: "
             + assignmentDelegate);
       }

@@ -14,6 +14,8 @@
 
 package com.google.caja.reporting;
 
+import com.google.caja.SomethingWidgyHappenedError;
+
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -74,10 +76,8 @@ public final class Message implements Serializable {
       this.format(context, sb);
       return sb.toString();
     } catch (IOException ex) {
-      AssertionError e = new AssertionError(
-        "IOException writing to StringBuilder");
-      e.initCause(ex);
-      throw e;
+      throw new SomethingWidgyHappenedError(
+          "IOException writing to StringBuilder", ex);
     }
   }
 

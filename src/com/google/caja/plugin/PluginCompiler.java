@@ -14,6 +14,7 @@
 
 package com.google.caja.plugin;
 
+import com.google.caja.SomethingWidgyHappenedError;
 import com.google.caja.lang.css.CssSchema;
 import com.google.caja.lang.html.HtmlSchema;
 import com.google.caja.parser.AncestorChain;
@@ -177,7 +178,8 @@ public final class PluginCompiler {
     for (Job job : this.jobs.getJobs()) {
       if (filter.accept(job)) {
         if (match != null) {
-          throw new RuntimeException("Not consolidated.  Check your pipeline.");
+          throw new SomethingWidgyHappenedError(
+              "Not consolidated.  Check your pipeline.");
         }
         match = job;
       }

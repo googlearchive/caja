@@ -14,21 +14,22 @@
 
 package com.google.caja.render;
 
+import com.google.caja.SomethingWidgyHappenedError;
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.reporting.MessageContext;
-import com.google.caja.util.TestUtil;
 import com.google.caja.util.Callback;
+import com.google.caja.util.TestUtil;
 
 import junit.framework.TestCase;
 
+import java.io.IOException;
+import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.io.IOException;
-import java.net.URI;
 
 /**
  * Test case base class for a renderer that includes snippets of the original
@@ -99,7 +100,10 @@ public abstract class OrigSourceRendererTestCase extends TestCase {
     Matcher m = Pattern.compile(
         "(.*):(\\d+)\\+(\\d+)-(?:(\\d+)\\+)?(\\d+)$")
         .matcher(testInputLine);
-    if (!m.matches()) { throw new RuntimeException(testInputLine); }
+    if (!m.matches()) {
+      throw new SomethingWidgyHappenedError(
+          "Format of file position has changed");
+    }
     String basename = m.group(1);
     int sln = Integer.parseInt(m.group(2));
     int slc = Integer.parseInt(m.group(3));
@@ -113,7 +117,10 @@ public abstract class OrigSourceRendererTestCase extends TestCase {
         src = candidate;
       }
     }
-    if (src == null) { throw new RuntimeException(basename); }
+    if (src == null) {
+      throw new SomethingWidgyHappenedError(
+          "No sources specified");
+    }
 
     return FilePosition.fromLinePositions(src, sln, slc, eln, elc);
   }

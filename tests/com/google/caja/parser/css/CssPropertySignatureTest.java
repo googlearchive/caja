@@ -14,6 +14,7 @@
 
 package com.google.caja.parser.css;
 
+import com.google.caja.SomethingWidgyHappenedError;
 import com.google.caja.util.CajaTestCase;
 import com.google.caja.util.MoreAsserts;
 
@@ -172,7 +173,7 @@ public class CssPropertySignatureTest extends CajaTestCase {
     try {
       sig(sig).formatTree(mc, 0, actual);
     } catch (IOException ex) {
-      throw new RuntimeException(ex);
+      throw new SomethingWidgyHappenedError("Unexpected assertion failure", ex);
     }
     MoreAsserts.assertListsEqual(
         Arrays.asList(golden), Arrays.asList(actual.toString().split("\n")));

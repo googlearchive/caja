@@ -14,6 +14,8 @@
 
 package com.google.caja.lexer;
 
+import com.google.caja.SomethingWidgyHappenedError;
+
 import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
@@ -165,7 +167,8 @@ public abstract class CharProducer implements CharSequence {
       try {
         return create((Reader) r, FilePosition.startOfFile(src));
       } catch (IOException ex) {
-        throw new RuntimeException(ex);  // Error reading chars from String.
+        throw new SomethingWidgyHappenedError(
+            "Error reading chars from String");
       }
     }
 
@@ -173,7 +176,8 @@ public abstract class CharProducer implements CharSequence {
       try {
         return create((Reader) r, pos);
       } catch (IOException ex) {
-        throw new RuntimeException(ex);  // Error reading chars from String.
+        throw new SomethingWidgyHappenedError(
+            "Error reading chars from String");
       }
     }
 

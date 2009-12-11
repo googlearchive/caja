@@ -14,6 +14,7 @@
 
 package com.google.caja.plugin.stages;
 
+import com.google.caja.SomethingWidgyHappenedError;
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.InputSource;
 import com.google.caja.parser.ParseTreeNodeContainer;
@@ -98,7 +99,7 @@ final class DebuggingSymbols {
     try {
       pos.format(mc, sb);
     } catch (IOException ex) {
-      throw new RuntimeException(ex);
+      throw new SomethingWidgyHappenedError(ex);
     }
     return sb.toString();
   }

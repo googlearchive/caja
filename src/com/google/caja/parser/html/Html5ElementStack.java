@@ -14,6 +14,7 @@
 
 package com.google.caja.parser.html;
 
+import com.google.caja.SomethingWidgyHappenedError;
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.HtmlTokenType;
 import com.google.caja.lexer.Token;
@@ -83,7 +84,7 @@ public class Html5ElementStack implements OpenElementStack {
     try {
       builder.start(new Tokenizer(builder));
     } catch (SAXException ex) {
-      throw new RuntimeException(ex);
+      throw new SomethingWidgyHappenedError(ex);
     }
     builder.setErrorHandler(
         new ErrorHandler() {
@@ -354,7 +355,7 @@ public class Html5ElementStack implements OpenElementStack {
         builder.startTag(tagName, attrImpl);
       }
     } catch (SAXException ex) {
-      throw new RuntimeException(ex);
+      throw new SomethingWidgyHappenedError(ex);
     }
   }
   
@@ -411,7 +412,7 @@ public class Html5ElementStack implements OpenElementStack {
     try {
       builder.characters(chars, 0, n);
     } catch (SAXException ex) {
-      throw new RuntimeException(ex);
+      throw new SomethingWidgyHappenedError(ex);
     }
   }
 }

@@ -14,6 +14,7 @@
 
 package com.google.caja.lang.html;
 
+import com.google.caja.SomethingWidgyHappenedError;
 import com.google.caja.lexer.escaping.Escaping;
 import com.google.caja.util.Criterion;
 import com.google.caja.util.Strings;
@@ -99,7 +100,8 @@ public interface RegularCriterion extends Criterion<String> {
 
         private String stripDelims(String regex) {
           if (!(regex.startsWith("/") && regex.endsWith("/i"))) {
-            throw new RuntimeException(regex);
+            throw new SomethingWidgyHappenedError(
+                "Incorrect regular expression format");
           }
           return regex.substring(1, regex.length() - 2);
         }

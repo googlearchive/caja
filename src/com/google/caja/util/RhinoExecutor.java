@@ -14,6 +14,8 @@
 
 package com.google.caja.util;
 
+import com.google.caja.SomethingWidgyHappenedError;
+
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -297,7 +299,7 @@ public final class RhinoExecutor implements Executor {
         return DocumentBuilderFactory.newInstance().newDocumentBuilder()
             .parse(in);
       } catch (ParserConfigurationException ex) {
-        throw new RuntimeException(ex);
+        throw new SomethingWidgyHappenedError(ex);
       }
     }
 
@@ -305,7 +307,7 @@ public final class RhinoExecutor implements Executor {
       try {
         return new ByteArrayInputStream(str.getBytes("UTF-8"));
       } catch (UnsupportedEncodingException ex) {
-        throw new RuntimeException(ex);
+        throw new SomethingWidgyHappenedError(ex);
       }
     }
 
@@ -496,8 +498,8 @@ class ContentUrlHandler extends URLStreamHandler {
             instream = new ByteArrayInputStream(
                 uri.getSchemeSpecificPart().getBytes("UTF-8"));
           } catch (UnsupportedEncodingException ex) {
-            throw (AssertionError) new AssertionError(
-                "UTF-8 not supported").initCause(ex);
+            throw new SomethingWidgyHappenedError(
+                "UTF-8 not supported", ex);
           }
         }
 

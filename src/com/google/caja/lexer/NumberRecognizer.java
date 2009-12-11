@@ -14,6 +14,8 @@
 
 package com.google.caja.lexer;
 
+import com.google.caja.SomethingWidgyHappenedError;
+
 /**
  * A state machine that keeps track of whether a run of word characters and
  * dots might be a part of a number.
@@ -60,7 +62,7 @@ final class NumberRecognizer {
         } else if ('.' == ch) {
           newState = State.DOT;
         } else {
-          throw new AssertionError();
+          throw new SomethingWidgyHappenedError();
         }
         break;
       case ZERO:

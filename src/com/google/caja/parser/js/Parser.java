@@ -14,6 +14,7 @@
 
 package com.google.caja.parser.js;
 
+import com.google.caja.SomethingWidgyHappenedError;
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.JsTokenQueue;
 import com.google.caja.lexer.JsTokenType;
@@ -518,7 +519,7 @@ public final class Parser extends ParserBase {
         break;
       }
       default:
-        throw new AssertionError(t.text);
+        throw new SomethingWidgyHappenedError(t.text);
     }
     return s;
   }
@@ -929,7 +930,7 @@ public final class Parser extends ParserBase {
             left = Operation.create(posFrom(left), op, left);
             break;
           default:
-            throw new AssertionError();
+            throw new SomethingWidgyHappenedError();
       }
     }
     return left;

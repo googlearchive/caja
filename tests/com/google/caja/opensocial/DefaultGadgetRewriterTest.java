@@ -14,6 +14,7 @@
 
 package com.google.caja.opensocial;
 
+import com.google.caja.SomethingWidgyHappenedError;
 import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.ExternalReference;
 import com.google.caja.lexer.InputSource;
@@ -63,8 +64,7 @@ public class DefaultGadgetRewriterTest extends CajaTestCase {
             + "?url=" + URLEncoder.encode(extref.getUri().toString(), "UTF-8")
             + "&mime-type=" + URLEncoder.encode(mimeType, "UTF-8"));
       } catch (UnsupportedEncodingException ex) {
-        // If we don't support UTF-8 we're in trouble
-        throw new RuntimeException(ex);
+        throw new SomethingWidgyHappenedError("UTF-8 should be supported", ex);
       }
     }
   };

@@ -14,6 +14,8 @@
 
 package com.google.caja.util;
 
+import com.google.caja.SomethingWidgyHappenedError;
+
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -91,7 +93,8 @@ public interface Executor {
       } catch (NoSuchMethodException ex) {
         cause = ex;
       }
-      throw new RuntimeException(cause);  // Can't recover from bad config
+      throw new SomethingWidgyHappenedError("Can't recover from bad config",
+          cause); 
     }
 
     private Factory() { /* not instantiable */ }

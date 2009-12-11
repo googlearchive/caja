@@ -14,6 +14,7 @@
 
 package com.google.caja.parser;
 
+import com.google.caja.SomethingWidgyHappenedError;
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.Token;
 import com.google.caja.reporting.MessageContext;
@@ -221,7 +222,8 @@ public abstract class AbstractParseTreeNode implements MutableParseTreeNode {
     try {
       formatSelf(new MessageContext(), 0, sb);
     } catch (IOException ex) {
-      throw new AssertionError("StringBuilders shouldn't throw IOExceptions");
+      throw new SomethingWidgyHappenedError(
+          "StringBuilders shouldn't throw IOExceptions");
     }
     return sb.toString();
   }
@@ -233,7 +235,8 @@ public abstract class AbstractParseTreeNode implements MutableParseTreeNode {
     try {
       formatTree(new MessageContext(), d, sb);
     } catch (IOException ex) {
-      throw new AssertionError("StringBuilders shouldn't throw IOExceptions");
+      throw new SomethingWidgyHappenedError(
+          "StringBuilders shouldn't throw IOExceptions");
     }
     return sb.toString();
   }

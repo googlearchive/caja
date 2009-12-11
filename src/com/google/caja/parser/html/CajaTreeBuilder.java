@@ -14,6 +14,7 @@
 
 package com.google.caja.parser.html;
 
+import com.google.caja.SomethingWidgyHappenedError;
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.HtmlTokenType;
 import com.google.caja.lexer.Token;
@@ -117,7 +118,8 @@ final class CajaTreeBuilder extends TreeBuilder<Node> {
     try {
       eof();  // Signal that we can close the html node now.
     } catch (SAXException ex) {
-      throw new RuntimeException(ex);
+      throw new SomethingWidgyHappenedError(
+          "Unexpected parsing error", ex);
     }
   }
 

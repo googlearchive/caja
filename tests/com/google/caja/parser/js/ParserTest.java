@@ -14,6 +14,7 @@
 
 package com.google.caja.parser.js;
 
+import com.google.caja.SomethingWidgyHappenedError;
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.Keyword;
 import com.google.caja.lexer.TokenConsumer;
@@ -652,7 +653,7 @@ public class ParserTest extends CajaTestCase {
         checkFilePositionInvariants(AncestorChain.instance(nChain, c));
       }
     } catch (RuntimeException ex) {
-      throw new RuntimeException(msg, ex);
+      throw new SomethingWidgyHappenedError(msg, ex);
     }
   }
 

@@ -14,6 +14,7 @@
 
 package com.google.caja.lang.html;
 
+import com.google.caja.SomethingWidgyHappenedError;
 import com.google.caja.config.ConfigUtil;
 import com.google.caja.config.WhiteList;
 import com.google.caja.lexer.ParseException;
@@ -76,11 +77,11 @@ public final class HtmlSchema {
       // If the default schema is borked, there's not much we can do.
       } catch (IOException ex) {
         mq.getMessages().addAll(cacheMq.getMessages());
-        throw new RuntimeException(ex);
+        throw new SomethingWidgyHappenedError("Default schema is borked", ex);
       } catch (ParseException ex) {
         cacheMq.getMessages().add(ex.getCajaMessage());
         mq.getMessages().addAll(cacheMq.getMessages());
-        throw new RuntimeException(ex);
+        throw new SomethingWidgyHappenedError("Default schema is borked", ex);
       }
     }
     mq.getMessages().addAll(defaultSchema.b);

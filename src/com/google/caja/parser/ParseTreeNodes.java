@@ -14,6 +14,7 @@
 
 package com.google.caja.parser;
 
+import com.google.caja.SomethingWidgyHappenedError;
 import com.google.caja.lexer.FilePosition;
 
 import java.lang.reflect.Constructor;
@@ -52,13 +53,17 @@ public class ParseTreeNodes {
     try {
       return ctor.newInstance(pos, value, children);
     } catch (InstantiationException e) {
-      throw new RuntimeException(getCtorErrorMessage(ctor, value, children), e);
+      throw new SomethingWidgyHappenedError(
+          getCtorErrorMessage(ctor, value, children), e);
     } catch (IllegalAccessException e) {
-      throw new RuntimeException(getCtorErrorMessage(ctor, value, children), e);
+      throw new SomethingWidgyHappenedError(
+          getCtorErrorMessage(ctor, value, children), e);
     } catch (InvocationTargetException e) {
-      throw new RuntimeException(getCtorErrorMessage(ctor, value, children), e);
+      throw new SomethingWidgyHappenedError(
+          getCtorErrorMessage(ctor, value, children), e);
     } catch (IllegalArgumentException e) {
-      throw new RuntimeException(getCtorErrorMessage(ctor, value, children), e);
+      throw new SomethingWidgyHappenedError(
+          getCtorErrorMessage(ctor, value, children), e);
     }
   }
 
@@ -102,7 +107,8 @@ public class ParseTreeNodes {
         return ctor;
       }
     }
-    throw new RuntimeException("Cannot find clone ctor for node " + clazz);
+    throw new SomethingWidgyHappenedError(
+        "Cannot find clone ctor for node " + clazz);
   }
 
   private static final boolean isReflectiveCtorAnnotated(Constructor<?> ctor) {

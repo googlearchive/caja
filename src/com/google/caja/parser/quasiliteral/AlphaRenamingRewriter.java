@@ -14,6 +14,7 @@
 
 package com.google.caja.parser.quasiliteral;
 
+import com.google.caja.SomethingWidgyHappenedError;
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.ParseTreeNodeContainer;
@@ -105,8 +106,8 @@ final class AlphaRenamingRewriter extends Rewriter {
               try {
                 vi = newContext.declare("this", FilePosition.UNKNOWN);
               } catch (NameContext.RedeclarationException ex) {
-                // Should never occur since locals must be a set.
-                throw new RuntimeException(ex);
+                throw new SomethingWidgyHappenedError(
+                    "Local variable unexpectedly not set", ex);
               }
               headDecls.add((Declaration) QuasiBuilder.substV(
                   "var @newName = this",
@@ -117,8 +118,8 @@ final class AlphaRenamingRewriter extends Rewriter {
               try {
                 vi = newContext.declare("arguments", FilePosition.UNKNOWN);
               } catch (NameContext.RedeclarationException ex) {
-                // Should never occur since locals must be a set.
-                throw new RuntimeException(ex);
+                throw new SomethingWidgyHappenedError(
+                    "Local variable unexpectedly not set", ex);
               }
               headDecls.add((Declaration) QuasiBuilder.substV(
                   "var @newName = arguments",
@@ -161,7 +162,7 @@ final class AlphaRenamingRewriter extends Rewriter {
                         p.getIdentifierName(), p.getFilePosition());
                   } catch (NameContext.RedeclarationException ex) {
                     // If it was previously declared then v wouldn't be null.
-                    throw new RuntimeException(ex);
+                    throw new SomethingWidgyHappenedError(ex);
                   }
                 }
                 FormalParam newP = new FormalParam(new Identifier(
@@ -273,8 +274,8 @@ final class AlphaRenamingRewriter extends Rewriter {
                 newContext.declare(
                     local, newScope.getLocationOfDeclaration(local));
               } catch (NameContext.RedeclarationException ex) {
-                // Should never occur since locals must be a set.
-                throw new RuntimeException(ex);
+                throw new SomethingWidgyHappenedError(
+                    "Local variable unexpectedly not set", ex);
               }
             }
             for (Statement s : bl.children()) {
