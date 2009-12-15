@@ -1,0 +1,16 @@
+<!--
+* View of the model guardian.
+*
+* @param modelGuardian a model guardian.
+* @param document a DOM document.
+-->
+<div style="height: 150px; overflow: scroll;" id="events">
+</div>
+
+<script type="text/javascript">
+
+ modelGuardian.listen('events', function(e) {
+   document.getElementById('events').innerHTML += e.text + '<br/>';
+ });
+
+</script>

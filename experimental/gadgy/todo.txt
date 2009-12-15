@@ -1,0 +1,32 @@
+
+
+- implement dispose() of a gadget(model, guardian, ui)
+- reusable 'event listener support' module
+
+------------------------------------------------------------------------
+
+- ui shows "broadcast" when message sent, not pending
+- reformat "callback" vs. "broadcast" messages in ui
+- guardian interface to ui: { write, read, listen } w/o promises
+- make ui read() from guardian on first load
+- add compiler output dribble to cajoling service
+- guardian returns promise for self and powerbox waits to load ui
+- uncomment ui read() from guardian on first load
+- guardian <=> queue interface: async (promises)
+- guardian refactor to remove explicit resultVow
+- guardian <=> queue interface: random delays
+- guardian saves all known events
+- guardian implements "destructive" read
+- model tries to cheat on "read"
+- model includes some non-commutative ops (+,-,*,/)
+- model implements non-commutativity errors (which throw)
+- ui tries to avoid sending erroneous messages, but fails
+- model guardian 2 facets
+- model guardian view
+- model guardian diagnostic facet "listen" -> std event listener api
+- view modules - use load() where can
+- restore order to the world
+- server contains copy of model
+- ui no longer sanity checks against local model (useless anyway)
+- server drops messages that throw
+- server holds connection to client, sends back errors
