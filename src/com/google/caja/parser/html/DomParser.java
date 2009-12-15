@@ -119,7 +119,7 @@ public class DomParser {
     this.needsDebugData = needsDebugData;
   }
 
-  protected OpenElementStack makeElementStack(Document doc, MessageQueue mq) {
+  private OpenElementStack makeElementStack(Document doc, MessageQueue mq) {
     Namespaces ns = this.ns;
     DocumentType doctype = doc.getDoctype();
     if (doctype != null) {
@@ -135,21 +135,21 @@ public class DomParser {
         : OpenElementStack.Factory.createHtml5ElementStack(
             doc, needsDebugData, mq);
   }
-  
+
   public void setDomImpl(DOMImplementation domImpl) {
     this.domImpl = domImpl;
   }
-  
+
   public void setWantsComments(boolean wantsComments) {
     this.wantsComments = wantsComments;
   }
-  
+
   public static Document makeDocument(
       Function<DOMImplementation, DocumentType> doctypeMaker, String features,
       DOMImplementation domImpl) {
     if (features == null) { features = "XML 1.0 Traversal"; }
     if (domImpl == null) {
-      try { 
+      try {
         domImpl = DOMImplementationRegistry.newInstance()
             .getDOMImplementation(features);
       } catch (ClassNotFoundException ex) {
@@ -423,7 +423,7 @@ public class DomParser {
       InputSource is, Reader in, boolean asXml) throws IOException {
     return makeTokenQueue(FilePosition.startOfFile(is), in, asXml);
   }
-  
+
   /**
    * Creates a TokenQueue suitable for this class's parse methods.
    * @param pos the position of the first character on in.

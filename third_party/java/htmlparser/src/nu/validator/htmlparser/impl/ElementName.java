@@ -53,6 +53,20 @@ public final class ElementName
 
     // ]NOCPP]
     
+    public static ElementName elementNameByString(String name) {
+        int hash = ElementName.stringToHash(name);
+        int index = Arrays.binarySearch(ElementName.ELEMENT_HASHES, hash);
+        if (index < 0) {
+            return new ElementName(name);
+        } else {
+            ElementName rv = ElementName.ELEMENT_NAMES[index];
+            if (!name.equals(rv.name)) {
+                return new ElementName(name);
+            }
+          return rv;
+        }
+    }
+
     static ElementName elementNameByBuffer(char[] buf, int offset, int length) {
         int hash = ElementName.bufToHash(buf, length);
         int index = Arrays.binarySearch(ElementName.ELEMENT_HASHES, hash);
@@ -86,6 +100,24 @@ public final class ElementName
             j--;
             hash <<= 5;
             hash += buf[j] - 0x60;
+        }
+        return hash;
+    }
+
+    /**
+     * This method has to return a unique integer for each well-known
+     * lower-cased element name.
+     */
+    private static int stringToHash(String s) {
+        int len = s.length();
+        int hash = len;
+        hash <<= 5;
+        hash += s.charAt(0) - 0x60;
+        int j = len;
+        for (int i = 0; i < 4 && j > 0; i++) {
+            j--;
+            hash <<= 5;
+            hash += s.charAt(j) - 0x60;
         }
         return hash;
     }

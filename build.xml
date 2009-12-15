@@ -72,11 +72,11 @@
   </path>
   <path id="classpath.compile">
     <path refid="classpath.web"/>
-    <pathelement path="${third_party}/java/htmlparser/htmlparser.jar"/>
     <pathelement path="${third_party}/java/jakarta_commons/commons-cli.jar"/>
     <pathelement path="${third_party}/java/json_simple/json_simple.jar"/>
     <pathelement path="${third_party}/java/rhino/js.jar"/>
     <pathelement path="${third_party}/java/xerces/xercesImpl.jar"/>
+    <pathelement path="${jars}/htmlparser.jar"/>
   </path>
   <path id="classpath.run">
     <pathelement path="${lib}"/>
@@ -92,7 +92,6 @@
   </path>
   <path id="classpath.tests.run">
     <pathelement path="${third_party}/java/emma/emma.jar"/>
-    <pathelement path="${third_party}/java/htmlparser/htmlparser.jar"/>
     <path refid="classpath.tests.compile"/>
     <pathelement path="${instr}/classes"/>
     <!-- Must be last for coverage to work -->
@@ -453,9 +452,6 @@
         <include name="commons-fileupload-1.2.1.jar"/>
         <include name="commons-io-1.4.jar"/>
       </fileset>
-      <fileset dir="${third_party}/java/htmlparser">
-        <include name="htmlparser.jar"/>
-      </fileset>
       <fileset dir="${third_party}/java/jaf">
         <include name="activation.jar"/>
       </fileset>
@@ -521,7 +517,7 @@
     <transform>
       <input file="${libplugin}/domita_test_untrusted_cajita.html"/>
       <output file="${libplugin}/domita_test_untrusted_cajita.out.html"
-          language="caja"/>
+       language="caja"/>
     </transform>
     <transform>
      <input file="${tests}/com/google/caja/a.js"/>
@@ -788,8 +784,8 @@
   <target name="PlaygroundJars" depends="build.info"
       description="Copy the App Engine JARs to the WAR directory">
     <mkdir dir="${war}/WEB-INF" />
-    <copy todir="war/WEB-INF/lib" 
-    	file="${third_party}/java/gwt/gwt-servlet.jar" />
+    <copy todir="war/WEB-INF/lib"
+     file="${third_party}/java/gwt/gwt-servlet.jar" />
     <copy todir="${war}/WEB-INF">
       <fileset dir="">
         <include name="appengine-web.xml" />
@@ -817,8 +813,8 @@
         <include name="json_simple.jar" />
       </fileset>
     </copy>
-    <copy todir="${war}/WEB-INF" 
-      file="${third_party}/java/appengine/config/user/logging.properties" />
+    <copy todir="${war}/WEB-INF"
+     file="${third_party}/java/appengine/config/user/logging.properties" />
   </target>
 
   <target name="PlaygroundBE" depends="pluginc,  PlaygroundJars"
@@ -838,8 +834,8 @@
     </javac>
   </target>
 
-  <target name="playground" 
-  	depends="CajolingService, PlaygroundBE, PlaygroundFE">
+  <target name="playground"
+   depends="CajolingService, PlaygroundBE, PlaygroundFE">
   </target>
 
   <target name="runserver" description="Starts the development server.">
@@ -879,6 +875,22 @@
   </target>
 
   <target name="HtmlParser" depends="ParserCore,dirs">
+    <mkdir dir="${lib}/third-party"/>
+    <javac destdir="${lib}/third-party" debug="true" target="1.5" source="1.5">
+      <src path="${third_party}/java/htmlparser/src"/>
+      <classpath refid="classpath.compile"/>
+      <include name="**/*.java"/>
+      <exclude name="nu/validator/htmlparser/dom/**/*.java"/>
+      <exclude name="nu/validator/htmlparser/extra/**/*.java"/>
+      <exclude name="nu/validator/htmlparser/io/**/*.java"/>
+      <exclude name="nu/validator/htmlparser/sax/**/*.java"/>
+      <exclude name="nu/validator/htmlparser/xom/**/*.java"/>
+      <compilerarg line="-Xlint:none"/>
+    </javac>
+    <jar destfile="${jars}/htmlparser.jar" basedir="${lib}/third-party">
+      <fileset dir="${lib}/third-party"><include name="**/*"/></fileset>
+    </jar>
+    <delete dir="${lib}/third-party"/>
     <javac destdir="${lib}" debug="true" target="1.5" source="1.5">
       <src path="${src}"/>
       <classpath refid="classpath.compile"/>

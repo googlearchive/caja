@@ -208,6 +208,37 @@ public final class AttributeName
     }
 
     /**
+     * Returns an attribute name by buffer.
+     *
+     * <p>C++ ownership: The return value is either released
+     * by the caller if the attribute is a duplicate or the ownership is transferred
+     * to HtmlAttributes and released upon clearing or destroying that object.
+     */
+    public static AttributeName nameByString(String qname) {
+        // XXX deal with offset
+        int hash = AttributeName.stringToHash(qname);
+        int index = Arrays.binarySearch(AttributeName.ATTRIBUTE_HASHES, hash);
+        if (index < 0) {
+            return AttributeName.createAttributeName(qname.intern()
+                    // [NOCPP[
+                    , false
+            // ]NOCPP]
+            );
+        } else {
+            AttributeName rv = AttributeName.ATTRIBUTE_NAMES[index];
+            @Local String name = rv.getLocal(AttributeName.HTML);
+            if (!name.equals(qname)) {
+                return AttributeName.createAttributeName(qname.intern()
+                        // [NOCPP[
+                        , false
+                // ]NOCPP]
+                );
+            }
+            return rv;
+        }
+    }
+
+    /**
      * This method has to return a unique integer for each well-known
      * lower-cased attribute name.
      * 
@@ -227,6 +258,27 @@ public final class AttributeName
             hash += buf[j] - 0x60;
             hash2 <<= 6;
             hash2 += buf[i] - 0x5F;
+        }
+        return hash ^ hash2;
+    }
+
+    /**
+     * This method has to return a unique integer for each well-known
+     * lower-cased attribute name.
+     */
+    private static int stringToHash(String s) {
+        int len = s.length();
+        int hash2 = 0;
+        int hash = len;
+        hash <<= 5;
+        hash += s.charAt(0) - 0x60;
+        int j = len;
+        for (int i = 0; i < 4 && j > 0; i++) {
+            j--;
+            hash <<= 5;
+            hash += s.charAt(j) - 0x60;
+            hash2 <<= 6;
+            hash2 += s.charAt(i) - 0x5F;
         }
         return hash ^ hash2;
     }

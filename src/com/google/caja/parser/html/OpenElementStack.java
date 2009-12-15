@@ -73,7 +73,7 @@ public interface OpenElementStack {
    * Adds the given text node to the DOM.
    */
   void processText(Token<HtmlTokenType> text);
-  
+
   /**
    * Adds the given comment node to the DOM.
    */

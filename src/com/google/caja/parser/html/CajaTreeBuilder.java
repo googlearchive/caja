@@ -17,15 +17,13 @@ package com.google.caja.parser.html;
 import com.google.caja.SomethingWidgyHappenedError;
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.HtmlTokenType;
+import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.Token;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.MessageType;
+import com.google.caja.util.Sets;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 import org.w3c.dom.Attr;
@@ -35,10 +33,10 @@ import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.Text;
-import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 
 import nu.validator.htmlparser.common.XmlViolationPolicy;
+import nu.validator.htmlparser.impl.HtmlAttributes;
 import nu.validator.htmlparser.impl.TreeBuilder;
 
 /**
@@ -49,12 +47,14 @@ import nu.validator.htmlparser.impl.TreeBuilder;
  * @author mikesamuel@gmail.com
  */
 final class CajaTreeBuilder extends TreeBuilder<Node> {
-  private static final boolean DEBUG = false;
+  static final boolean DEBUG = false;
+  private static final String HTML_NAMESPACE = Namespaces.HTML_NAMESPACE_URI;
 
   // Keep track of the tokens bounding the section we're processing so that
   // we can compute file positions for all added nodes.
   private Token<HtmlTokenType> startTok;
   private Token<HtmlTokenType> endTok;
+  private Token<HtmlTokenType> pendingText;
   // The root html element.  TreeBuilder always creates a valid tree with
   // html, head, and body elements.
   private Element rootElement;
@@ -65,23 +65,19 @@ final class CajaTreeBuilder extends TreeBuilder<Node> {
   // Track unpopped elements since a </html> tag will not close tables
   // and other scoping elements.
   // @see #closeUnclosedNodes
-  private final Set<Node> unpoppedElements = new HashSet<Node>();
+  private final Set<Element> unpoppedElements = Sets.newHashSet();
   private final Document doc;
-  private final boolean needsDebugData;
+  final boolean needsDebugData;
   private final MessageQueue mq;
 
   /** @param needsDebugData see {@link DomParser#setNeedsDebugData(boolean)} */
   CajaTreeBuilder(Document doc, boolean needsDebugData, MessageQueue mq) {
-    super(
-        // Allow loose parsing
-        XmlViolationPolicy.ALLOW,
-        // Don't coalesce text so that we can apply file positions.
-        false);
+    setNamePolicy(XmlViolationPolicy.ALLOW);  // Allow loose parsing
     this.doc = doc;
     this.needsDebugData = needsDebugData;
     this.mq = mq;
     setIgnoringComments(false);
-    setScriptingEnabled(true);  // Affects behavior of noscript
+    setScriptingEnabled(true);  // Affects behavior of <noscript>
   }
 
   Element getRootElement() {
@@ -98,23 +94,45 @@ final class CajaTreeBuilder extends TreeBuilder<Node> {
             : startTok.pos);
   }
 
+  boolean wasOpened(String htmlLocalName) {
+    for (Node child = rootElement.getFirstChild();
+         child != null; child = child.getNextSibling()) {
+      if (child.getNodeType() == Node.ELEMENT_NODE
+          && Namespaces.isHtml(child.getNamespaceURI())
+          && htmlLocalName.equals(child.getLocalName())) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   void setTokenContext(Token<HtmlTokenType> start, Token<HtmlTokenType> end) {
     if (DEBUG) {
       System.err.println(
-          "*** considering " + start.toString().replace("\n", "\\n"));
+          "*** considering " + start.toString().replace("\n", "\\n")
+          + " @ " + FilePosition.span(start.pos, end.pos));
     }
     startTok = start;
     endTok = end;
+    switch (startTok.type) {
+      case TEXT: case UNESCAPED: case CDATA:
+        pendingText = startTok;
+        break;
+      default: break;
+    }
     if (fragmentBounds == null) { fragmentBounds = start.pos; }
   }
 
   void finish(FilePosition pos) {
+    if (DEBUG) { System.err.println("Finished at " + pos); }
     // The position of this token is used for any end tags implied by the end
     // of file.
     Token<HtmlTokenType> eofToken = Token.instance(
         "", HtmlTokenType.IGNORABLE, pos);
     setTokenContext(eofToken, eofToken);
-    fragmentBounds = FilePosition.span(fragmentBounds, pos);
+    if (needsDebugData) {
+      fragmentBounds = FilePosition.span(fragmentBounds, pos);
+    }
     try {
       eof();  // Signal that we can close the html node now.
     } catch (SAXException ex) {
@@ -143,9 +161,14 @@ final class CajaTreeBuilder extends TreeBuilder<Node> {
     insertCharactersBefore(buf, start, length, null, n);
   }
 
-  @Override
-  protected void insertCharactersBefore(
+  private void insertCharactersBefore(
       char[] buf, int start, int length, Node sibling, Node parent) {
+    if (DEBUG) {
+      System.err.println(
+          "Inserting characters "
+          + String.valueOf(buf, start, length).replace("\n", "\\n")
+          + " into " + parent);
+    }
     // Normalize text by adding to an existing text node.
     Node priorSibling = sibling != null
         ? sibling.getPreviousSibling()
@@ -156,26 +179,31 @@ final class CajaTreeBuilder extends TreeBuilder<Node> {
     String plainText;
 
     String tokText;
-    if (bufferMatches(buf, start, length, startTok.text)) {
-      tokText = startTok.text;
+    Token<HtmlTokenType> tok = pendingText;
+    pendingText = null;
+    if (tok != null && bufferMatches(buf, start, length, tok.text)) {
+      tokText = tok.text;
     } else {
       tokText = String.valueOf(buf, start, length);
     }
 
-    if (startTok.type == HtmlTokenType.TEXT) {
-      pos = startTok.pos;
-      htmlText = tokText;
-      plainText = Nodes.decode(htmlText);
-    } else if (startTok.type == HtmlTokenType.UNESCAPED
-               || startTok.type == HtmlTokenType.CDATA) {
-      pos = startTok.pos;
-      plainText = htmlText = tokText;
-    } else {
-      pos = endTok.pos;
-      plainText = tokText;
-      if (needsDebugData) {
-        htmlText = Nodes.encode(plainText);
-      }
+    switch (tok != null ? tok.type : HtmlTokenType.IGNORABLE) {
+      case TEXT:
+        pos = tok.pos;
+        htmlText = tokText;
+        plainText = Nodes.decode(htmlText);
+        break;
+      case UNESCAPED: case CDATA:
+        pos = tok.pos;
+        plainText = htmlText = tokText;
+        break;
+      default:
+        pos = startTok.pos;
+        plainText = tokText;
+        if (needsDebugData) {
+          htmlText = Nodes.encode(plainText);
+        }
+        break;
     }
 
     if (priorSibling != null && priorSibling.getNodeType() == Node.TEXT_NODE) {
@@ -206,13 +234,13 @@ final class CajaTreeBuilder extends TreeBuilder<Node> {
   }
 
   @Override
-  protected void addAttributesToElement(Node node, Attributes attributes) {
+  protected void addAttributesToElement(Node node, HtmlAttributes attributes) {
     Element el = (Element) node;
-    for (Attr a : getAttributes(attributes)) {
-      String name = a.getName();
+    for (Attr a : Html5ElementStack.getAssociatedAttrs(attributes)) {
       if (!el.hasAttributeNS(a.getNamespaceURI(), a.getLocalName())) {
         el.setAttributeNodeNS(a);
       } else {
+        String name = a.getName();
         mq.addMessage(
             MessageType.DUPLICATE_ATTRIBUTE, Nodes.getFilePositionFor(a),
             MessagePart.Factory.valueOf(name),
@@ -220,16 +248,37 @@ final class CajaTreeBuilder extends TreeBuilder<Node> {
                 el.getAttributeNodeNS(a.getNamespaceURI(), a.getLocalName())));
       }
     }
+    if (attributes.getLength() != 0) {
+      FilePosition pos;
+      if (needsDebugData) {
+        pos = FilePosition.startOf(Nodes.getFilePositionFor(el));
+      } else {
+        pos = null;
+      }
+      String elNs = el.getNamespaceURI();
+      for (int i = 0, n = attributes.getLength(); i < n; ++i) {
+        String ns = attributes.getURI(i);
+        if ("".equals(ns)) { ns = elNs; }
+        String localName = attributes.getLocalName(i);
+        if (el.hasAttributeNS(ns, localName)) { continue; }
+        String value = attributes.getValue(i);
+        Attr a = doc.createAttributeNS(ns, localName);
+        a.setValue(value);
+        if (pos != null) {
+          Nodes.setFilePositionFor(a, pos);
+          Nodes.setFilePositionForValue(a, pos);
+        }
+        el.setAttributeNodeNS(a);
+      }
+    }
   }
 
   @Override
-  protected void insertBefore(Node child, Node sibling, Node parent) {
-    parent.insertBefore(child, sibling);
-  }
-
-  @Override
-  protected Node parentElementFor(Node child) {
-    return child.getParentNode();
+  protected void appendElement(Node child, Node parent) {
+    if (DEBUG) {
+      System.err.println("appendElement " + child + " to " + parent);
+    }
+    parent.appendChild(child);
   }
 
   @Override
@@ -245,9 +294,27 @@ final class CajaTreeBuilder extends TreeBuilder<Node> {
   }
 
   @Override
-  protected void detachFromParentAndAppendToNewParent(
-      Node child, Node newParent) {
-    newParent.appendChild(child);
+  protected void insertFosterParentedChild(
+      Node child, Node table, Node stackParent) {
+    // http://www.w3.org/TR/html5/syntax.html#foster-parent-element
+    if (DEBUG) {
+      System.err.println(
+          "Inserting foster parented child.  child=" + child
+          + ", table=" + table + ", stackParent=" + stackParent);
+    }
+    stackParent.insertBefore(child, table);
+  }
+
+  @Override
+  protected void insertFosterParentedCharacters(
+      char[] buf, int start, int length, Node table, Node stackParent) {
+    if (DEBUG) {
+      System.err.println(
+          "Inserting foster parented characters.  chars="
+          + String.valueOf(buf, start, length)
+          + ", table=" + table + ", stackParent=" + stackParent);
+    }
+    insertCharactersBefore(buf, start, length, table, stackParent);
   }
 
   @Override
@@ -299,24 +366,25 @@ final class CajaTreeBuilder extends TreeBuilder<Node> {
   }
 
   @Override
-  protected Element createHtmlElementSetAsRoot(Attributes attributes) {
-    Element documentElement = createElement("html", attributes);
-    if (DEBUG) { System.err.println("Created root " + documentElement); }
+  protected Element createHtmlElementSetAsRoot(HtmlAttributes attributes) {
+    Element documentElement = createElement(HTML_NAMESPACE, "html", attributes);
+    if (DEBUG) { System.err.println("Setting as root " + documentElement); }
     this.rootElement = documentElement;
     return documentElement;
   }
 
   @Override
-  protected Element createElement(String name, Attributes attributes) {
-    if (DEBUG) { System.err.println("Created element " + name); }
+  protected Element createElement(
+      String ns, String localName, HtmlAttributes attributes) {
+    if (DEBUG) { System.err.println("Created element " + localName); }
     // Intern since the TreeBuilder likes to compare strings by reference.
-    name = name.intern();
+    localName = localName.intern();
 
     Element el;
-    if (name.indexOf(':') < 0) {
-      el = doc.createElementNS(Namespaces.HTML_NAMESPACE_URI, name);
+    if (localName.indexOf(':') < 0) {
+      el = doc.createElementNS(Namespaces.HTML_NAMESPACE_URI, localName);
     } else {  // Will be fixed up later.  See DomParser#fixup.
-      el = doc.createElement(name);
+      el = doc.createElement(localName);
     }
     addAttributesToElement(el, attributes);
 
@@ -325,7 +393,7 @@ final class CajaTreeBuilder extends TreeBuilder<Node> {
       if (startTok == null) {
         pos = null;
       } else if (startTok.type == HtmlTokenType.TAGBEGIN
-                 && tagMatchesElementName(tagName(startTok.text), name)) {
+                 && tagMatchesElementName(tagName(startTok.text), localName)) {
         pos = FilePosition.span(startTok.pos, endTok.pos);
       } else {
         pos = FilePosition.startOf(startTok.pos);
@@ -336,9 +404,12 @@ final class CajaTreeBuilder extends TreeBuilder<Node> {
   }
 
   @Override
-  protected void elementPopped(String name, Node node) {
-    unpoppedElements.remove(node);
-    if (DEBUG) { System.err.println("popped " + name + ", node=" + node); }
+  protected void elementPopped(String ns, String name, Node node) {
+    boolean removed = unpoppedElements.remove(node);
+    if (DEBUG) {
+      System.err.println("popped " + ns + " : " + name + ", node=" + node
+                         + " @ " + endTok.pos);
+    }
     if (needsDebugData) {
       name = Html5ElementStack.canonicalElementName(name);
       FilePosition endPos;
@@ -358,34 +429,81 @@ final class CajaTreeBuilder extends TreeBuilder<Node> {
         endPos = FilePosition.startOf(startTok.pos);
       }
       FilePosition startPos = Nodes.getFilePositionFor(node);
-      if (startPos == null) {
+      if (startPos.source().equals(InputSource.UNKNOWN)) {
         Node first = node.getFirstChild();
-        startPos = first == null ? endPos : Nodes.getFilePositionFor(first);
+        if (first != null) {
+          startPos = Nodes.getFilePositionFor(first);
+        }
       }
-      if (endPos.endCharInFile() >= startPos.endCharInFile()) {
+      FilePosition lastPos = startPos;
+      Node last;
+      for (last = node.getLastChild(); last != null;
+           last = last.getPreviousSibling()) {
+        if (last.getNodeType() != Node.TEXT_NODE
+            || !isWhitespace(last.getNodeValue())) {
+          break;
+        }
+      }
+      if (last != null) {
+        lastPos = Nodes.getFilePositionFor(last);
+      }
+      if (DEBUG) {
+        System.err.println("startPos=" + startPos + ", lastPos=" + lastPos
+             + ", removed=" + removed);
+      }
+      if (endPos.endCharInFile() >= lastPos.endCharInFile()
+          && (removed || lastPos.endCharInFile() > startPos.endCharInFile())) {
         Nodes.setFilePositionFor(node, FilePosition.span(startPos, endPos));
       }
     }
   }
+  private static boolean isWhitespace(String s) {
+    for (int i = s.length(); --i >= 0;) {
+      switch (s.charAt(i)) {
+        case '\r': case '\n': case ' ': case '\t': break;
+        default: return false;
+      }
+    }
+    return true;
+  }
 
   /**
-   * htmlparser does not generate elementPopped events for the html or body
+   * htmlparser does not generate elementPopped events for the head or body
    * elements, or for void elements.
    */
-  @Override
-  protected void bodyClosed(Node body) {
-    elementPopped("body", body);
+  protected void bodyClosed() {
+    if (DEBUG) { System.err.println("In bodyClosed " + unpoppedElements); }
+    for (Element unpopped : unpoppedElements) {
+      if ("body".equals(unpopped.getTagName())
+          && HTML_NAMESPACE.equals(unpopped.getNamespaceURI())) {
+        elementPopped(HTML_NAMESPACE, "body", unpopped);
+        return;
+      }
+    }
   }
 
-  @Override
+  protected void headClosed() {
+    if (DEBUG) { System.err.println("In headClosed " + unpoppedElements); }
+    for (Element unpopped : unpoppedElements) {
+      if ("head".equals(unpopped.getTagName())
+          && HTML_NAMESPACE.equals(unpopped.getNamespaceURI())) {
+        elementPopped(HTML_NAMESPACE, "head", unpopped);
+        return;
+      }
+    }
+  }
+
   protected void htmlClosed(Node html) {
-    elementPopped("html", html);
+    if (DEBUG) { System.err.println("In htmlClosed " + unpoppedElements); }
+    elementPopped(HTML_NAMESPACE, "html", html);
   }
 
   @Override
-  protected void elementPushed(String name, Node node) {
-    if (DEBUG) { System.err.println("pushed " + name + ", node=" + node); }
-    unpoppedElements.add(node);
+  protected void elementPushed(String ns, String name, Node node) {
+    if (DEBUG) {
+      System.err.println("pushed " + ns + " : " + name + ", node=" + node);
+    }
+    unpoppedElements.add((Element) node);
   }
 
   /**
@@ -412,46 +530,14 @@ final class CajaTreeBuilder extends TreeBuilder<Node> {
     return true;
   }
 
-  // htmlparser passes around an org.xml.sax Attributes list which is a
-  // String->String map, but I want to use DomTree.Attrib nodes since they
-  // have position info.  htmlparser in some cases does create its own
-  // Attributes instances, such as when it is expanding a tag to emulate
-  // deprecated elements.
-  private List<Attr> getAttributes(Attributes attributes) {
-    if (attributes instanceof AttributesImpl) {
-      return ((AttributesImpl) attributes).getAttributes();
-    }
-    // There might be attributes here, but only for emulated tags, such as the
-    // mess that is "isindex"
-    int n = attributes.getLength();
-    if (n == 0) {
-      return Collections.<Attr>emptyList();
-    } else {
-      Attr[] newAttribs = new Attr[n];
-      FilePosition pos = FilePosition.startOf(startTok.pos);
-      for (int i = 0; i < n; ++i) {
-        Attr a = doc.createAttributeNS(
-            attributes.getURI(i), attributes.getLocalName(i));
-        a.setNodeValue(attributes.getValue(i));
-        if (needsDebugData) {
-          Nodes.setFilePositionFor(a, pos);
-          Nodes.setFilePositionForValue(a, pos);
-        }
-        newAttribs[i] = a;
-      }
-      return Arrays.asList(newAttribs);
-    }
-  }
-
-  // the start token text is either <name or </name for a tag
+  /** The start token text is either <name or </name for a tag. */
   static boolean isEndTag(String tokenText) {
     return tokenText.length() >= 2 && tokenText.charAt(1) == '/';
   }
 
-  static String tagName(String tokenText) {
+  private static String tagName(String tokenText) {
     String name = tokenText.substring(isEndTag(tokenText) ? 2 : 1);
-    // Intern since the TreeBuilder likes to compare strings by reference.
-    return Html5ElementStack.canonicalElementName(name);
+    return Html5ElementStack.canonicalElementName(name.intern());
   }
 
   static boolean tagMatchesElementName(String tagName, String elementName) {

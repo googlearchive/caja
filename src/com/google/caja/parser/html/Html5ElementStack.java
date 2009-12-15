@@ -24,9 +24,13 @@ import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.MessageType;
 import com.google.caja.util.Lists;
+import com.google.caja.util.Maps;
 import com.google.caja.util.Strings;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.WeakHashMap;
 
 import org.w3c.dom.Attr;
 import org.w3c.dom.DOMException;
@@ -41,6 +45,10 @@ import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 
 import nu.validator.htmlparser.common.DoctypeExpectation;
+import nu.validator.htmlparser.common.XmlViolationPolicy;
+import nu.validator.htmlparser.impl.AttributeName;
+import nu.validator.htmlparser.impl.ElementName;
+import nu.validator.htmlparser.impl.HtmlAttributes;
 import nu.validator.htmlparser.impl.Tokenizer;
 
 /**
@@ -57,6 +65,7 @@ public class Html5ElementStack implements OpenElementStack {
   private final MessageQueue mq;
   private final Document doc;
   private final boolean needsDebugData;
+  private final Map<String, ElementName> elNames = Maps.newHashMap();
   private boolean isFragment;
   private boolean needsNamespaceFixup;
   private boolean topLevelHtmlFromInput = false;
@@ -80,9 +89,12 @@ public class Html5ElementStack implements OpenElementStack {
   /** {@inheritDoc} */
   public void open(boolean isFragment) {
     this.isFragment = isFragment;
+    if (isFragment) {
+      builder.setFragmentContext(null);
+    }
     builder.setDoctypeExpectation(DoctypeExpectation.NO_DOCTYPE_ERRORS);
     try {
-      builder.start(new Tokenizer(builder));
+      builder.startTokenization(new Tokenizer(builder));
     } catch (SAXException ex) {
       throw new SomethingWidgyHappenedError(ex);
     }
@@ -124,7 +136,13 @@ public class Html5ElementStack implements OpenElementStack {
 
   /** {@inheritDoc} */
   public void finish(FilePosition endOfFile) {
+    if (CajaTreeBuilder.DEBUG) {
+      System.err.println("finish(" + endOfFile + ")");
+    }
     builder.finish(endOfFile);
+    if (CajaTreeBuilder.DEBUG) {
+      System.err.println("closeUnclosedNodes");
+    }
     builder.closeUnclosedNodes();
   }
 
@@ -159,7 +177,7 @@ public class Html5ElementStack implements OpenElementStack {
     if (needsDebugData) {
       Nodes.setFilePositionFor(result, builder.getFragmentBounds());
     }
-    
+
     final Node first = root.getFirstChild();
 
     if (!isFragment || topLevelHtmlFromInput) {
@@ -288,83 +306,133 @@ public class Html5ElementStack implements OpenElementStack {
    */
   public void processTag(Token<HtmlTokenType> start, Token<HtmlTokenType> end,
                          List<AttrStub> attrStubs) {
-    builder.setTokenContext(start, end);
-    try {
-      boolean isEndTag = CajaTreeBuilder.isEndTag(start.text);
-      String tagName = start.text.substring(isEndTag ? 2 : 1);
-      boolean isHtml = checkName(tagName);
-      if (processingFirstTag && Strings.equalsIgnoreCase("html", tagName)) {
-        // Indicate to fragment-retrieval code that the top-level
-        // <html> element came from the input, and wasn't synthesized
-        // by the underlying parser implementation.
-        topLevelHtmlFromInput = true;
-      }
-      processingFirstTag = false;
-      if (isHtml) { tagName = Strings.toLowerCase(tagName); }
-      // Intern since the TreeBuilder likes to compare strings by reference.
-      tagName = tagName.intern();
+    if (CajaTreeBuilder.DEBUG) {
+      System.err.println("processTag(" + start + ", " + end + ")");
+    }
+    boolean isEndTag = CajaTreeBuilder.isEndTag(start.text);
+    String tagName = start.text.substring(isEndTag ? 2 : 1);
+    boolean isHtml = checkName(tagName);
+    if (isHtml) { tagName = Strings.toLowerCase(tagName); }
 
-      AttributesImpl attrImpl;
-      if (!attrStubs.isEmpty()) {
-        List<Attr> attrs = Lists.newArrayList();
-        for (AttrStub as : attrStubs) {
-          String qname = as.nameTok.text;
-          Attr attrNode;
-          try {
-            if ("xmlns".equals(qname)) {
-              if (!Namespaces.HTML_NAMESPACE_URI.equals(as.value)) {
-                // We do not allow overriding of the default namespace when
-                // parsing HTML.
-                mq.addMessage(
-                    MessageType.CANNOT_OVERRIDE_DEFAULT_NAMESPACE_IN_HTML,
-                    as.nameTok.pos);
-              }
-              continue;
+    HtmlAttributes htmlAttrs = new HtmlAttributes(AttributeName.HTML);
+    List<Attr> attrs = Lists.newArrayList();
+    if (!attrStubs.isEmpty()) {
+      for (AttrStub as : attrStubs) {
+        String qname = as.nameTok.text;
+        Attr attrNode;
+        boolean isAttrHtml;
+        try {
+          if ("xmlns".equals(qname)) {
+            if (!Namespaces.HTML_NAMESPACE_URI.equals(as.value)) {
+              // We do not allow overriding of the default namespace when
+              // parsing HTML.
+              mq.addMessage(
+                  MessageType.CANNOT_OVERRIDE_DEFAULT_NAMESPACE_IN_HTML,
+                  as.nameTok.pos);
+            }
+            continue;
+          } else {
+            isAttrHtml = isHtml && checkName(qname);
+            if (isAttrHtml) {
+              qname = Strings.toLowerCase(qname);
+              attrNode = doc.createAttributeNS(
+                  Namespaces.HTML_NAMESPACE_URI, qname);
             } else {
-              boolean isAttrHtml = isHtml && checkName(qname);
-              if (isAttrHtml) {
-                qname = Strings.toLowerCase(qname);
-                attrNode = doc.createAttributeNS(
-                    Namespaces.HTML_NAMESPACE_URI, qname);
-              } else {
-                attrNode = doc.createAttribute(qname);
+              attrNode = doc.createAttribute(qname);
+            }
+          }
+          attrNode.setValue(as.value);
+          if (needsDebugData) {
+            Nodes.setFilePositionFor(attrNode, as.nameTok.pos);
+            Nodes.setFilePositionForValue(attrNode, as.valueTok.pos);
+            Nodes.setRawValue(attrNode, as.valueTok.text);
+          }
+          attrs.add(attrNode);
+          try {
+            if (isAttrHtml || qname.startsWith("xmlns:")) {
+              htmlAttrs.addAttribute(
+                  AttributeName.nameByString(qname),
+                  as.value, XmlViolationPolicy.ALLOW);
+            }
+          } catch (SAXException ex) {
+            if (CajaTreeBuilder.DEBUG) { ex.printStackTrace(); }
+          }
+        } catch (DOMException ex) {
+          ex.printStackTrace();
+          mq.addMessage(
+              MessageType.INVALID_IDENTIFIER, MessageLevel.WARNING,
+              as.nameTok.pos,
+              MessagePart.Factory.valueOf(as.nameTok.text));
+        }
+      }
+    }
+    ElementName elName = elNames.get(tagName);
+    if (elName == null) {
+      elName = ElementName.elementNameByString(tagName);
+      // Store element names because the underlying tree builder compares them
+      // using ==.
+      elNames.put(tagName, elName);
+    }
+    if (processingFirstTag && elName == ElementName.HTML && !isEndTag) {
+      // Indicate to fragment-retrieval code that the top-level
+      // <html> element came from the input, and wasn't synthesized
+      // by the underlying parser implementation.
+      topLevelHtmlFromInput = true;
+    }
+    processingFirstTag = false;
+    try {
+      if (builder.needsDebugData) {
+        if (isEndTag) {
+          // Version 1.2.1 of the TreeBuilder has a bug where it does not
+          // generate element popped events for body and head elements.
+          if (elName == ElementName.HTML) {
+            Token<HtmlTokenType> tok= Token.instance(
+                "", HtmlTokenType.TAGEND, FilePosition.startOf(start.pos));
+            if (!builder.wasOpened("frameset")) {
+              builder.setTokenContext(tok, tok);
+              if (!builder.wasOpened("body")) {
+                if (!builder.wasOpened("head")) {
+                  builder.startTag(
+                      ElementName.HEAD, HtmlAttributes.EMPTY_ATTRIBUTES, false);
+                  builder.endTag(ElementName.HEAD);
+                }
+                builder.headClosed();
+                builder.startTag(
+                    ElementName.BODY, HtmlAttributes.EMPTY_ATTRIBUTES, false);
+                builder.endTag(ElementName.BODY);
               }
+              builder.bodyClosed();
             }
-            attrNode.setValue(as.value);
-            if (needsDebugData) {
-              Nodes.setFilePositionFor(attrNode, as.nameTok.pos);
-              Nodes.setFilePositionForValue(attrNode, as.valueTok.pos);
-              Nodes.setRawValue(attrNode, as.valueTok.text);
-            }
-            attrs.add(attrNode);
-          } catch (DOMException ex) {
-            mq.addMessage(
-                MessageType.INVALID_IDENTIFIER,
-                MessageLevel.WARNING,
-                as.nameTok.pos,
-                MessagePart.Factory.valueOf(as.nameTok.text));
           }
         }
-        attrImpl = new AttributesImpl(attrs);
-      } else {
-        attrImpl = AttributesImpl.NONE;
+        builder.setTokenContext(start, end);
       }
       if (isEndTag) {
-        builder.endTag(tagName, attrImpl);
+        builder.endTag(elName);
+        if (builder.needsDebugData) {
+          // Make sure that implicit body and head tag are marked as ending
+          // before the </html> tag.
+          if (elName == ElementName.BODY) {
+            builder.bodyClosed();
+          } else if (elName == ElementName.HEAD) {
+            builder.headClosed();
+          }
+        }
       } else {
-        builder.startTag(tagName, attrImpl);
+        builder.startTag(elName, toHtmlAttributes(attrs, htmlAttrs),
+                         end.text.equals("/>"));
       }
     } catch (SAXException ex) {
       throw new SomethingWidgyHappenedError(ex);
     }
   }
-  
+
   /**
    * Adds the given comment node to the DOM.
    */
   public void processComment(Token<HtmlTokenType> commentToken) {
-    String text = commentToken.text.substring("<!--".length(),
-        commentToken.text.lastIndexOf("--"));
+    String text = commentToken.text.substring(
+        "<!--".length(), commentToken.text.lastIndexOf("--"));
     commentToken = Token.instance(text, commentToken.type, commentToken.pos);
     char[] chars;
     int n = text.length();
@@ -376,7 +444,7 @@ public class Html5ElementStack implements OpenElementStack {
     }
     builder.setTokenContext(commentToken, commentToken);
     try {
-      builder.comment(chars, n);
+      builder.comment(chars, 0, n);
     } catch (SAXException ex) {
       throw new RuntimeException(ex);
     }
@@ -391,10 +459,29 @@ public class Html5ElementStack implements OpenElementStack {
     }
   }
 
+  private static final Map<HtmlAttributes, List<Attr>> HTML_ASSOCIATED_ATTRS
+      = new WeakHashMap<HtmlAttributes, List<Attr>>();
+  private static HtmlAttributes toHtmlAttributes(
+      List<Attr> attrs, HtmlAttributes blank) {
+    HTML_ASSOCIATED_ATTRS.put(blank, attrs);
+    return blank;
+  }
+
+  static List<Attr> getAssociatedAttrs(HtmlAttributes attrs) {
+    List<Attr> attrList = HTML_ASSOCIATED_ATTRS.get(attrs);
+    if (attrList == null) { attrList = Collections.emptyList(); }
+    return attrList;
+  }
+
   /**
    * Adds the given text node to the DOM.
    */
   public void processText(Token<HtmlTokenType> textToken) {
+    if (CajaTreeBuilder.DEBUG) {
+      System.err.println(
+          "processText(\""
+          + textToken.text.replaceAll("\r\n?|\n", "\\n") + "\")");
+    }
     // htmlparser doesn't recognize \r as whitespace.
     String text = textToken.text.replaceAll("\r\n?", "\n");
     if (!text.equals(textToken.text)) {

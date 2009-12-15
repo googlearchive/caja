@@ -140,7 +140,6 @@ public class DomParserTest extends CajaTestCase {
             "    Value : en 5+53-5+57",
             // xmlns declarations do not appear in output since they are not
             // real attributes.
-            "  Text : \\n 5+68-6+1",
             "  Element : head 6+1-7+8",
             "    Text : \\n 6+7-7+1",
             "  Text : \\n 7+8-8+1",
@@ -150,8 +149,7 @@ public class DomParserTest extends CajaTestCase {
         Arrays.<String>asList(
             ),
         Arrays.asList(
-            ("<html lang=\"en\" xml:lang=\"en\">"),
-            "<head>",
+            "<html lang=\"en\" xml:lang=\"en\"><head>",
             "</head>",
             "<body>",
             "",
@@ -262,8 +260,7 @@ public class DomParserTest extends CajaTestCase {
             "</html>"),
         Arrays.asList(
             "Element : html 1+1-11+8",  // </html> inside <table> ignored
-            "  Text : \\n   1+7-2+3",
-            "  Element : head 2+3-6+24",
+            "  Element : head 2+3-5+10",
             "    Text : \\n     2+9-3+5",
             "    Element : link 3+5-3+44",
             "      Attrib : href 3+26-3+30",
@@ -295,8 +292,7 @@ public class DomParserTest extends CajaTestCase {
             + " 'script' element between 'head' and 'body'."
             ),
         Arrays.asList(
-            "<html>",
-            "  <head>",
+            "<html><head>",
             "    <link href=\"styles-1.css\" rel=\"stylesheet\" />",
             "    <meta content=\"utf-8\" http-equiv=\"charset\" />",
             "  <script src=\"foo.js\"></script></head>",
@@ -333,6 +329,20 @@ public class DomParserTest extends CajaTestCase {
     assertParsedHtml(
         Arrays.asList(
             "<html></html>"),
+        Arrays.asList(
+            "Element : html 1+1-1+14",
+            "  Element : head 1+7-1+7",
+            "  Element : body 1+7-1+7"
+            ),
+        Arrays.<String>asList(
+            ),
+        Arrays.asList(
+            "<html><head></head><body></body></html>"
+            )
+        );
+    assertParsedHtml(
+        Arrays.asList(
+            "<HTML></HTML>"),
         Arrays.asList(
             "Element : html 1+1-1+14",
             "  Element : head 1+7-1+7",
@@ -534,7 +544,7 @@ public class DomParserTest extends CajaTestCase {
             )
         );
   }
-  
+
   public final void testFragmentThatEndsWithACommentRetained()
       throws Exception {
     assertParsedHtmlFragmentWithComments(
@@ -556,7 +566,7 @@ public class DomParserTest extends CajaTestCase {
             )
         );
   }
-  
+
   public final void testFragmentWithTopLevelHtmlNodeRetained()
       throws Exception {
     assertParsedHtmlFragmentWithComments(
@@ -571,7 +581,6 @@ public class DomParserTest extends CajaTestCase {
         Arrays.asList(
             "Fragment 1+1-7+8",
             "  Element : html 1+1-7+8",
-            "    Text : \\n 1+7-2+1",
             "    Element : head 2+1-2+34",
             "      Element : script 2+7-2+27",
             "        Text : foo 2+15-2+18",
@@ -586,8 +595,7 @@ public class DomParserTest extends CajaTestCase {
             ),
         Arrays.asList(
             // Again comment is parsed but suppressed for now at output.
-            "<html>",
-            "<head><script>foo</script></head>",
+            "<html><head><script>foo</script></head>",
             "",
             "<body>",
             "  ",
@@ -595,7 +603,7 @@ public class DomParserTest extends CajaTestCase {
             "</body></html>")
         );
   }
-            
+
   public final void testTableFragment() throws Exception {
     assertParsedHtmlFragment(
         Arrays.asList(
@@ -647,17 +655,14 @@ public class DomParserTest extends CajaTestCase {
             "<html><body><title>What head?</title></body></html>"),
         Arrays.asList(
             "Element : html 1+1-1+52",
-            "  Element : head 1+7-1+30",
+            "  Element : head 1+7-1+7",
+            "  Element : body 1+7-1+45",
             "    Element : title 1+13-1+38",
-            "      Text : What head? 1+20-1+30",
-            "  Element : body 1+7-1+45"
+            "      Text : What head? 1+20-1+30"
             ),
-        Arrays.<String>asList(
-            "LINT testMisplacedTitle:1+13 - 20:"
-            + " 'title' element found inside 'body'."
-            ),
+        Arrays.<String>asList(),
         Arrays.asList(
-            "<html><head><title>What head?</title></head><body></body></html>"
+            "<html><head></head><body><title>What head?</title></body></html>"
             )
         );
   }
@@ -780,9 +785,9 @@ public class DomParserTest extends CajaTestCase {
             ),
         Arrays.asList(
             "LINT testFormsNotNested:3+1 - 19: Saw a 'form' start tag"
-            + ", but there was already an active 'form' element.",
-            "LINT testFormsNotNested:6+8 - 15: End tag 'form' seen but"
-            + " there were unclosed elements."
+            + ", but there was already an active 'form' element."
+            + " Nested forms are not allowed. Ignoring the tag.",
+            "LINT testFormsNotNested:6+8 - 15: Stray end tag 'form'."
             ),
         Arrays.asList(
             "<form action=\"fly\">",
@@ -837,13 +842,11 @@ public class DomParserTest extends CajaTestCase {
             // TODO(mikesamuel): this error message seems to be a bug.
             // There is an error there, but the close tag is spurious.
             "LINT testListNesting:2+21 - 26:"
-            + " End tag 'li' seen but there were unclosed elements.",
-            "LINT testListNesting:6+3 - 7:"
-            + " A 'li' start tag was seen but the previous 'li' element"
-            + " had open children.",
+            + " No 'li' element in scope but a 'li' end tag seen.",
+            "LINT testListNesting:6+3 - 7: Unclosed elements inside a list.",
             // Ditto wrong message
             "LINT testListNesting:7+29 - 34:"
-            + " End tag 'li' seen but there were unclosed elements."
+            + " End tag for 'li' seen, but there were unclosed elements."
             ),
         Arrays.asList(
             "<ul id=\"unordered-list\">",
@@ -908,12 +911,11 @@ public class DomParserTest extends CajaTestCase {
             ),
         Arrays.asList(
             "LINT testParagraphInterrupters:2+56 - 60:"
-            + " A definition list item start tag was seen but the previous"
-            + " definition list item element had open children.",
+            + " Unclosed elements inside a list.",
             "LINT testParagraphInterrupters:2+61 - 66:"
             + " End tag 'dl' seen but there were unclosed elements.",
             "LINT testParagraphInterrupters:3+6 - 11:"
-            + " End tag 'dl' seen but there were unclosed elements.",
+            + " Stray end tag 'dl'.",
             "LINT testParagraphInterrupters:5+18:"
             + " End of file seen and there were open elements."
             ),
@@ -941,7 +943,6 @@ public class DomParserTest extends CajaTestCase {
             ),
         Arrays.asList(
             "Element : html 1+1-5+8",
-            "  Text : \\n 1+7-2+1",
             "  Element : head 2+1-2+1",
             "  Element : body 2+1-5+1",
             "    Element : p 2+1-2+11",
@@ -956,11 +957,10 @@ public class DomParserTest extends CajaTestCase {
             ),
         Arrays.asList(
             "LINT testParagraphNotNested:4+11 - 15:"
-            + " End tag 'p' seen but there were unclosed elements."
+            + " No 'p' element in scope but a 'p' end tag seen."
             ),
         Arrays.asList(
-            "<html>",
-            "<head></head><body><p>Foo</p>",
+            "<html><head></head><body><p>Foo</p>",
             "<p>Bar",
             "</p><p>Baz</p><p></p>",
             "</body></html>"
@@ -975,7 +975,7 @@ public class DomParserTest extends CajaTestCase {
             "<p>Foo",
             "<h1><p>Bar</H3>",
             "",
-            "<h2>Baz",
+            "<h2>Baz",  // Closes at open <h3>
             "",
             "<<h3>Boo</h2>",  // Close tag closes h3, not enclosing h2
             "",
@@ -983,7 +983,6 @@ public class DomParserTest extends CajaTestCase {
             ),
         Arrays.asList(
             "Element : html 1+1-9+18",
-            "  Text : \\n 1+7-2+1",
             "  Element : head 2+1-2+1",
             "  Element : body 2+1-9+18",
             "    Element : p 2+1-3+1",
@@ -992,34 +991,35 @@ public class DomParserTest extends CajaTestCase {
             "      Element : p 3+5-3+11",
             "        Text : Bar 3+8-3+11",
             "    Text : \\n\\n 3+16-5+1",
-            "    Element : h2 5+1-9+13",
+            "    Element : h2 5+1-7+2",
             "      Text : Baz\\n\\n< 5+5-7+2",
-            "      Element : h3 7+2-7+14",
-            "        Text : Boo 7+6-7+9",
-            "      Text : \\n\\n 7+14-9+1",
-            "      Element : p 9+1-9+8",
-            "        Text : Far> 9+4-9+8"
+            "    Element : h3 7+2-7+14",
+            "      Text : Boo 7+6-7+9",
+            "    Text : \\n\\n 7+14-9+1",
+            "    Element : p 9+1-9+18",
+            "      Text : Far> 9+4-9+8"
             ),
         Arrays.asList(
             "LINT testAnyHeadingTagCloses:3+11 - 16:"
             + " End tag 'h3' seen but there were unclosed elements.",
+            "LINT testAnyHeadingTagCloses:7+2 - 6:"
+            + " Heading cannot be a child of another heading.",
             "LINT testAnyHeadingTagCloses:7+9 - 14:"
             + " End tag 'h2' seen but there were unclosed elements.",
             "LINT testAnyHeadingTagCloses:9+8 - 13:"
-            + " End tag 'h3' seen but there were unclosed elements.",
+            + " Stray end tag 'h3'.",
             "LINT testAnyHeadingTagCloses:9+13 - 18:"
-            + " End tag 'h1' seen but there were unclosed elements."
+            + " Stray end tag 'h1'."
             ),
         Arrays.asList(
-            "<html>",
-            "<head></head><body><p>Foo",
+            "<html><head></head><body><p>Foo",
             "</p><h1><p>Bar</p></h1>",
             "",
             "<h2>Baz",
             "",
-            "&lt;<h3>Boo</h3>",
+            "&lt;</h2><h3>Boo</h3>",
             "",
-            "<p>Far&gt;</p></h2></body></html>"
+            "<p>Far&gt;</p></body></html>"
             )
         );
   }
@@ -1099,7 +1099,7 @@ public class DomParserTest extends CajaTestCase {
             "      Text : Foo 2+13-2+16",
             "      Element : nobr 2+16-2+25",
             "        Text : Bar 2+22-2+25",
-            "    Element : nobr 2+16-7+27",
+            "    Element : nobr 2+16-7+34",
             "      Text : \\n\\n 2+29-4+1",
             "      Element : b 4+1-4+34",
             "        Element : font 4+4-4+30",
@@ -1122,8 +1122,12 @@ public class DomParserTest extends CajaTestCase {
             + " End tag 'a' violates nesting rules.",
             "LINT testFormattingElements:4+30 - 34:"
             + " End tag 'b' violates nesting rules.",
-            "LINT testFormattingElements:7+13 - 20: Unclosed element 'b'.",
-            "LINT testFormattingElements:7+27 - 34: Unclosed element 'nobr'."
+            "LINT testFormattingElements:7+13 - 20:"
+            + " End tag 'span' seen but there were unclosed elements.",
+            "LINT testFormattingElements:7+27 - 34:"
+            + " Stray end tag 'span'.",
+            "LINT testFormattingElements:7+34:"
+            + " End of file seen and there were open elements."
             ),
         Arrays.asList(
             "<html><head></head><body>",
@@ -1208,9 +1212,9 @@ public class DomParserTest extends CajaTestCase {
             + " 'td' start tag in table body.",
             "LINT testButtonsDontNest:4+23 - 31: Unclosed elements.",
             "LINT testButtonsDontNest:5+10 - 19:"
-            + " End tag 'button' seen but there were unclosed elements.",
+            + " Stray end tag 'button'.",
             "LINT testButtonsDontNest:5+19 - 28:"
-            + " End tag 'button' seen but there were unclosed elements.",
+            + " Stray end tag 'button'.",
             "LINT testButtonsDontNest:5+28:"
             + " End of file seen and there were open elements."
             ),
@@ -1260,10 +1264,10 @@ public class DomParserTest extends CajaTestCase {
             "        Element : hr 1+6-1+6",
             "        Element : p 1+6-1+6",
             "          Element : label 1+6-1+6",
-            "            Text : Blah blah 1+33-1+34",
+            "            Text : Blah blah 1+6-1+14", // Position of the open tag
             "            Element : input 1+6-1+6",
-            "              Attrib : name 1+6-1+6",
-            "                Value : isindex 1+6-1+6",
+            "              Attrib : name unknown",
+            "                Value : isindex unknown",
             "        Element : hr 1+6-1+6"
             ),
         Arrays.asList(
@@ -1310,7 +1314,7 @@ public class DomParserTest extends CajaTestCase {
             "  <option>One",
             "  <option>Two</option>",
             "<select>",  // Sometimes an open tag is a close tag.
-            "  <option>Three</option>",  // Option tags outside selects ignored
+            "  <option>Three</option>",
             "</select>",
             "</select>",
             "<optgroup><option>Four</option></optgroup>",
@@ -1331,16 +1335,20 @@ public class DomParserTest extends CajaTestCase {
             "      Element : option 9+3-9+23",
             "        Text : Two 9+11-9+14",
             "      Text : \\n 9+23-10+1",
-            "    Text : \\n  Three\\n\\n\\nFour\\n 10+9-15+1"
+            "    Text : \\n   10+9-11+3",
+            "    Element : option 11+3-11+25",
+            "      Text : Three 11+11-11+16",
+            "    Text : \\n\\n\\n 11+25-14+1",
+            "    Element : optgroup 14+1-14+43",
+            "      Element : option 14+11-14+32",
+            "        Text : Four 14+19-14+23",
+            "    Text : \\n 14+43-15+1"
             ),
         Arrays.<String>asList(
             "LINT testInputElements:10+1 - 9:"
             + " 'select' start tag where end tag expected.",
-            "LINT testInputElements:11+3 - 11: Stray start tag 'option'.",
             "LINT testInputElements:12+1 - 10: Stray end tag 'select'.",
-            "LINT testInputElements:13+1 - 10: Stray end tag 'select'.",
-            "LINT testInputElements:14+1 - 11: Stray start tag 'optgroup'.",
-            "LINT testInputElements:14+11 - 19: Stray start tag 'option'."
+            "LINT testInputElements:13+1 - 10: Stray end tag 'select'."
             ),
         Arrays.asList(
             "<form>",
@@ -1352,10 +1360,10 @@ public class DomParserTest extends CajaTestCase {
             "  <option>One",
             "  </option><option>Two</option>",
             "</select>",
-            "  Three",
+            "  <option>Three</option>",
             "",
             "",
-            "Four",
+            "<optgroup><option>Four</option></optgroup>",
             "</form>"
             )
         );
@@ -1369,21 +1377,21 @@ public class DomParserTest extends CajaTestCase {
         Arrays.asList(
             "Element : html 1+1-1+51",
             "  Element : head 1+7-1+7",
-            "  Element : body 1+7-1+44",
-            "    Element : foo 1+7-1+26",
+            "  Element : body 1+7-1+51",
+            "    Element : foo 1+7-1+51",
             "      Element : bar 1+12-1+26",
             "        Text : baz 1+17-1+20",
-            "    Text : boo 1+32-1+35",
-            "    Element : command 1+35-1+51"
+            "      Text : boo 1+32-1+35",
+            "      Element : command 1+35-1+44"
             ),
         Arrays.asList(
-            "LINT testUnknownTagsNest:1+26 - 32: Unclosed element 'foo'.",
+            "LINT testUnknownTagsNest:1+26 - 32: Stray end tag 'baz'.",
             "LINT testUnknownTagsNest:1+44 - 51:"
             + " End tag for 'html' seen but there were unclosed elements."
             ),
         Arrays.asList(
             ("<html><head></head><body>"
-             + "<foo><bar>baz</bar></foo>boo<command></command></body></html>")
+             + "<foo><bar>baz</bar>boo<command></command></foo></body></html>")
             )
         );
   }
@@ -1401,6 +1409,7 @@ public class DomParserTest extends CajaTestCase {
             "    Text : Bar 1+23-1+26"
             ),
         Arrays.<String>asList(
+            "LINT testRegularTags:1+33 - 40: Stray end tag 'span'."
             ),
         Arrays.asList(
             "<span><span>Foo</span>Bar</span>"
@@ -1567,18 +1576,18 @@ public class DomParserTest extends CajaTestCase {
             "Fragment 1+1-6+9",
             "  Element : div 1+1-6+9",
             "    Text : \\n 1+6-2+1",
-            "    Element : p 2+1-2+4",
-            "    Element : p 3+1-3+11",
-            "      Text : Foo 3+4-3+7",
-            "    Element : table 2+4-6+9",
-            "      Text : \\n\\n 2+11-4+1",
-            "      Element : tbody 4+1-5+1",
-            "        Element : tr 4+1-5+1",
-            "          Text : \\n 4+5-5+1",
-            "      Element : caption 5+1-5+10",
-            "      Element : tbody 5+10-6+1",
-            "        Element : tr 5+10-6+1",
-            "          Text : \\n 5+14-6+1"
+            "    Element : p 2+1-6+9",
+            "      Element : p 3+1-3+11",
+            "        Text : Foo 3+4-3+7",
+            "      Element : table 2+4-6+9",
+            "        Text : \\n\\n 2+11-4+1",
+            "        Element : tbody 4+1-5+1",
+            "          Element : tr 4+1-5+1",
+            "            Text : \\n 4+5-5+1",
+            "        Element : caption 5+1-5+10",
+            "        Element : tbody 5+10-6+1",
+            "          Element : tr 5+10-6+1",
+            "            Text : \\n 5+14-6+1"
             ),
         Arrays.asList(
             "LINT testMoreTables:3+1 - 4: Start tag 'p' seen in 'table'.",
@@ -1590,11 +1599,11 @@ public class DomParserTest extends CajaTestCase {
             ),
         Arrays.asList(
             "<div>",
-            "<p></p><p>Foo</p><table>",
+            "<p><p>Foo</p><table>",
             "",
             "<tbody><tr>",
             "</tr></tbody><caption></caption><tbody><tr>",
-            "</tr></tbody></table></div>"
+            "</tr></tbody></table></p></div>"
             )
         );
   }
@@ -1659,21 +1668,17 @@ public class DomParserTest extends CajaTestCase {
             "Fragment 1+1-1+64",
             "  Element : div 1+1-1+64",
             "    Element : hr 1+17-1+21",
-            "    Element : table 1+6-1+64",
-            "      Element : tbody 1+13-1+64",
-            "        Element : tr 1+13-1+64",
-            "          Element : td 1+21-1+64",
-            "            Element : select 1+37-1+64"
+            "    Element : table 1+6-1+58",
+            "      Element : tbody 1+13-1+50",
+            "        Element : tr 1+13-1+50",
+            "          Element : td 1+21-1+50",
+            "            Element : select 1+37-1+45"
             ),
         Arrays.<String>asList(
             "LINT testTableRows:1+17 - 21: Start tag 'hr' seen in 'table'.",
             "LINT testTableRows:1+25 - 30: Stray end tag 'th'.",
             "LINT testTableRows:1+30 - 37: Stray end tag 'html'.",
-            "LINT testTableRows:1+45 - 50: Stray end tag 'td'",
-            "LINT testTableRows:1+50 - 58: Stray end tag 'table'",
-            "LINT testTableRows:1+58 - 64: Stray end tag 'div'",
-            "LINT testTableRows:1+64:"
-            + " End of file seen and there were open elements."
+            "LINT testTableRows:1+45 - 50: 'td' end tag with 'select' open."
             ),
         Arrays.asList(
             ("<div><hr /><table><tbody><tr><td><select></select>"
@@ -2137,7 +2142,10 @@ public class DomParserTest extends CajaTestCase {
             "        Value : ${foo} 1+23-1+31",
             "      Element : br 1+32-1+37"
             ),
-        Arrays.<String>asList(),
+        Arrays.<String>asList(
+            // TODO: Why is this here?
+            "LINT testEmbeddedXmlInHtml:1+6 - 32:"
+            + " Element name 'os:If' cannot be represented as XML 1.0."),
         Arrays.asList("<div><os:If condition=\"${foo}\"><br /></os:If></div>"));
   }
 
@@ -2214,6 +2222,7 @@ public class DomParserTest extends CajaTestCase {
   }
 
   public final void testParserSpeed() throws Exception {
+    assertFalse(CajaTreeBuilder.DEBUG);  // Don't run 100 times if verbose.
     benchmark(100);  // prime the JIT
     Thread.sleep(250);  // Let the JIT kick-in.
     int microsPerRun = benchmark(250);
@@ -2257,7 +2266,7 @@ public class DomParserTest extends CajaTestCase {
     assertParsedMarkup(htmlInput, expectedParseTree, expectedMessages,
                        expectedOutputHtml, false, true);
   }
-  
+
   private void assertParsedHtmlFragmentWithComments(
       List<String> htmlInput,
       List<String> expectedParseTree,
@@ -2267,7 +2276,7 @@ public class DomParserTest extends CajaTestCase {
     assertParsedMarkup(htmlInput, expectedParseTree, expectedMessages,
                        expectedOutputHtml, false, true, true);
   }
-  
+
   private void assertParsedMarkup(
       List<String> htmlInput,
       List<String> expectedParseTree,
@@ -2458,7 +2467,11 @@ public class DomParserTest extends CajaTestCase {
 
     void formatPosition(FilePosition pos) throws IOException {
       if (!withDebugData) { return; }
-      if (pos != null) {
+      if (pos == null) { return; }
+      if (1 == pos.startCharInFile() && 0 == pos.length()
+          && InputSource.UNKNOWN.equals(pos.source())) {
+        out.append(" unknown");
+      } else {
         out.append(' ')
             .append(String.valueOf(pos.startLineNo()))
             .append('+')

@@ -328,7 +328,7 @@ public final class HtmlAttributes implements Attributes {
 
     // ]NOCPP]
 
-    void addAttribute(AttributeName name, String value
+    public void addAttribute(AttributeName name, String value
             // [NOCPP[
             , XmlViolationPolicy xmlnsPolicy
     // ]NOCPP]        

@@ -206,8 +206,8 @@ public final class FilePosition implements MessagePart {
     // without walking the newline array.
     return (
         this.startCharInFile == that.startCharInFile
-        && this.source().equals(that.source())
         && this.length == that.length
+        && this.source().equals(that.source())
         );
   }
 

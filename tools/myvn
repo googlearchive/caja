@@ -215,7 +215,7 @@ function makeEclipseClasspath() {
   echo "	<classpathentry kind=\"lib\" path=\"ant-eclipse-genfiles\"/>"
   # TODO(mikesamuel): limit to only those jars listed in build.xml.
   # Perhaps create a build target for ant that writes the classpath to stdout.
-  for jar in $(find third_party -name \*.jar | sort); do
+  for jar in $(find third_party -name \*.jar | sort) ant-jars/htmlparser.jar; do
     echo "	<classpathentry kind=\"lib\" path=\"$jar\"/>"
   done
   echo "	<classpathentry kind=\"con\" path=\"org.eclipse.jdt.launching.JRE_CONTAINER\"/>"
