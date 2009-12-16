@@ -290,6 +290,18 @@ public class CssRewriterTest extends CajaTestCase {
     assertNoErrors();
   }
 
+  public final void testNonStandardColors() throws Exception {
+    runTest("a.c { color: LightSlateGray; background: ivory; }",
+            "a.c {\n  color: #789;\n  background: #FFFFF0\n}");
+    assertMessage(PluginMessageType.NON_STANDARD_COLOR,
+                  MessageLevel.LINT, Name.css("lightslategray"),
+                  MessagePart.Factory.valueOf("#789"));
+    assertMessage(PluginMessageType.NON_STANDARD_COLOR,
+                  MessageLevel.LINT, Name.css("ivory"),
+                  MessagePart.Factory.valueOf("#FFFFF0"));
+    assertNoErrors();
+  }
+
   private void runTest(String css, String golden) throws Exception {
     runTest(css, golden, false);
   }
@@ -308,8 +320,8 @@ public class CssRewriterTest extends CajaTestCase {
       msg = msgBuf.toString();
     }
 
-    new CssValidator(CssSchema.getDefaultCss21Schema(mq),
-                     HtmlSchema.getDefault(mq), mq)
+    CssSchema cssSchema = CssSchema.getDefaultCss21Schema(mq);
+    new CssValidator(cssSchema, HtmlSchema.getDefault(mq), mq)
         .validateCss(AncestorChain.instance(t));
     new CssRewriter(
         new PluginEnvironment() {
@@ -339,6 +351,7 @@ public class CssRewriterTest extends CajaTestCase {
             }
           }
         },
+        cssSchema,
         mq)
         .rewrite(AncestorChain.instance(t));
 

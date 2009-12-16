@@ -236,7 +236,7 @@ public final class HtmlAttributeRewriter {
         v.validateCss(AncestorChain.instance(decls));
         // The rewriter will remove any unsafe constructs.
         // and put URLs in the proper filename namespace
-        new CssRewriter(meta.getPluginEnvironment(), mq)
+        new CssRewriter(meta.getPluginEnvironment(), cssSchema, mq)
             .withInvalidNodeMessageLevel(MessageLevel.WARNING)
             .rewrite(AncestorChain.instance(decls));
 

@@ -198,6 +198,18 @@ public class CssPropertyPatterns {
     return out.toString();
   }
 
+  public java.util.regex.Pattern cssPropertyToJavaRegex(
+      CssPropertySignature sig) {
+    Pattern p = sigToPattern(sig);
+    if (p == null) { return null; }
+    p = new Concatenation(
+        Arrays.asList(new Snippet("^"), p, new Snippet("$"))).optimize();
+    StringBuilder out = new StringBuilder();
+    p.render(out);
+    return java.util.regex.Pattern.compile(
+        out.toString(), java.util.regex.Pattern.CASE_INSENSITIVE);
+  }
+
   private Pattern sigToPattern(CssPropertySignature sig) {
     // Dispatch to a set of handlers that either append balanced content to
     // out, or append cruft and return null.
@@ -260,11 +272,19 @@ public class CssPropertyPatterns {
     return new Concatenation(children);
   }
 
+  private static final Name COLOR = Name.css("color");
+  private static final Name STANDARD_COLOR = Name.css("color-standard");
   private Pattern symbolToPattern(CssPropertySignature.SymbolSignature sig) {
     Name symbolName = sig.getValue();
     Pattern builtinMatch = builtinToPattern(symbolName);
     if (builtinMatch != null) { return builtinMatch; }
     CssSchema.SymbolInfo s = schema.getSymbol(symbolName);
+    if (COLOR.equals(symbolName)) {
+      // Don't blow up the regexs by including the entire X11 color set over
+      // and over.
+      CssSchema.SymbolInfo standard = schema.getSymbol(STANDARD_COLOR);
+      if (standard != null) { s = standard; }
+    }
     return s != null ? sigToPattern(s.sig) : null;
   }
 
@@ -688,7 +708,7 @@ public class CssPropertyPatterns {
       String currentDate = "" + new Date();
       if (currentDate.indexOf("*/") >= 0) {
         throw new SomethingWidgyHappenedError("Date should not contain '*/'");
-      
+
       }
       out.write("/* Copyright Google Inc.\n");
       out.write(" * Licensed under the Apache Licence Version 2.0\n");

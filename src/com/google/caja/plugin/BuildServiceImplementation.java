@@ -304,7 +304,9 @@ public class BuildServiceImplementation implements BuildService {
     CharProducer cp = CharProducer.Factory.create(
         new StringReader(getSourceContent(is)), is);
     try {
-      return AncestorChain.instance(PluginCompilerMain.parseInput(is, cp, mq));
+      ParseTreeNode input = PluginCompilerMain.parseInput(is, cp, mq);
+      if (input == null) { return null; }
+      return AncestorChain.instance(input);
     } catch (ParseException ex) {
       ex.toMessageQueue(mq);
       return null;

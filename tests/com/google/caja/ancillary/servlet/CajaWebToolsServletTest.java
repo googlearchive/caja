@@ -400,17 +400,13 @@ public class CajaWebToolsServletTest extends CajaTestCase {
             "&lt;h1&gt;Hello, World!<span class=\"problem\">&lt;/h2&gt;</span>"
             ))
         .expectContentMatches(Pattern.compile(
-            "1\\+20 - 24: css property color has bad value: ==&gt;pink&lt;=="))
-        .expectContentMatches(Pattern.compile(
-            "&lt;style&gt;p \\{ color:  <span class=\"problem\">pink</span>"))
-        .expectContentMatches(Pattern.compile(
             ":2\\+15 - 25: Symbol HelloWorld has not been defined"))
         .expectContentMatches(Pattern.compile(
             "&lt;script&gt;alert\\(<span class=\"problem\">HelloWorld</span>\\)"
             ))
         .expectContentMatches(Pattern.compile(
             "\\Q"  // Quote special characters until next \E
-            + "<h2 class=\"summary\">1 Error, 1 Warning, 1 Lint"
+            + "<h2 class=\"summary\">1 Error, 1 Lint"
             + " (121B \u2192 86B; output is 71.1% of the original)</h2>"
             + "\\E"
             ))

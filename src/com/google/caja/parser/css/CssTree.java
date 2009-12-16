@@ -1039,6 +1039,14 @@ public abstract class CssTree extends AbstractParseTreeNode {
       this(pos, inputValue);
     }
     public HashLiteral(FilePosition pos, String value) { super(pos, value); }
+    public static HashLiteral hex(FilePosition pos, int n, int digits) {
+      StringBuilder sb = new StringBuilder(digits + 1);
+      sb.append('#');
+      while (--digits >= 0) {
+        sb.append("0123456789ABCDEF".charAt((n >>> (digits * 4)) & 0xf));
+      }
+      return new HashLiteral(pos, sb.toString());
+    }
     @Override
     protected boolean checkValue(String value) {
       return HASHLITERAL.matcher(value).matches();

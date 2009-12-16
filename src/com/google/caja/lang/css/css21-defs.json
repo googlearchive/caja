@@ -876,6 +876,9 @@
       "signature": "thin|medium|thick|<length>" },
 
     { "key": "<color>",
+      "as": "<color-standard>" },
+
+    { "key": "<color-standard>",
       "see": "http://www.w3.org/TR/REC-CSS2/syndata.html#value-def-color and http://www.w3.org/TR/REC-CSS2/ui.html#system-colors",
       "signature": "<hex-color>|aqua|black|blue|fuchsia|gray|green|lime|maroon|navy|olive|orange|purple|red|silver|teal|white|yellow|rgb(<red>,<green>,<blue>)" },
 
@@ -924,11 +927,11 @@
 
     { "key": "<top>", "signature": "<length>|auto" },
 
-    { "key": "<right>", "as": "top" },
+    { "key": "<right>", "as": "<top>" },
 
-    { "key": "<bottom>", "as": "top" },
+    { "key": "<bottom>", "as": "<top>" },
 
-    { "key": "<left>", "as": "top" },
+    { "key": "<left>", "as": "<top>" },
 
     { "key": "<red>", "signature": "<integer:0,255>|<percentage:0,100>" },
 
