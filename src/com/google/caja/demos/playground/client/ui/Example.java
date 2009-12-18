@@ -26,6 +26,8 @@ public enum Example {
       Type.ATTACK, "Stealing cookies"),
   LIFE("http://www.thinkfu.com/cajalife/index.php", 
       Type.APPS, "Game of Life"),
+  MARKDOWN("http://www.thinkfu.com/markdown.html", 
+      Type.APPS, "Markdown Editor"),
   GOOGLE("http://www.google.com/", 
       Type.WEB, "Google"),
   YAHOO("http://www.yahoo.com/", 

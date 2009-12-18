@@ -63,10 +63,8 @@ public class GWTCajolingServiceImpl extends RemoteServiceServlet
 
   private URI guessURI(String guess) {
     try {
-      System.out.println(guess);
       return new URI(guess);
     } catch (URISyntaxException e) {
-      System.out.println("Failed: Using unknown");
       return URI.create("unknown:///unknown");
     }
   }
@@ -96,13 +94,14 @@ public class GWTCajolingServiceImpl extends RemoteServiceServlet
     } catch (IOException e) {
       e.printStackTrace();
     } catch (GadgetRewriteException e) {
-      e.printStackTrace();
+      // Reflected in the message queue which is serialized below
     }
     String[] messages = formatMessages(originalSrc, mq);
     String[] result = new String[messages.length + 2];
-    result[0] = success ? output.toString() : null;
-    result[1] = "";
-    System.arraycopy(messages, 0, result, 2, messages.length);
+    result[PlaygroundService.HTML] = success ? output.toString() : null;
+    result[PlaygroundService.JAVASCRIPT] = null;
+    System.arraycopy(messages, 0,
+        result, PlaygroundService.ERRORS, messages.length);
     return result;
   }
 

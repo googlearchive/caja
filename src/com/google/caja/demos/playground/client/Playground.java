@@ -56,12 +56,18 @@ public class Playground implements EntryPoint {
           gui.selectTab(PlaygroundView.Tabs.COMPILE_WARNINGS);
           return;
         }
-        gui.setCajoledSource(result[0]);
-        gui.setRenderedResult(result[0]);
-        for (int i = 2; i < result.length - 2; i++) {
+        for (int i = PlaygroundService.ERRORS; i < result.length; i++) {
           gui.addCompileMessage(result[i]);
         }
-        gui.selectTab(PlaygroundView.Tabs.RENDER);
+        if (result[PlaygroundService.HTML] != null) {
+          gui.setCajoledSource(result[PlaygroundService.HTML]);
+          gui.setRenderedResult(result[PlaygroundService.HTML]);
+          gui.selectTab(PlaygroundView.Tabs.RENDER);
+        } else {
+          gui.setCajoledSource(null);
+          gui.setRenderedResult(null);
+          gui.selectTab(PlaygroundView.Tabs.COMPILE_WARNINGS);
+        }
       }
     });
   }

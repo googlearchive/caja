@@ -287,7 +287,7 @@ public class PlaygroundView {
 
   public void setCajoledSource(String result) {
     if (result == null) {
-      cajoledSource.setText("Nothing to show");
+      cajoledSource.setText("There were cajoling errors");
       return;
     }
     cajoledSource.setHTML(prettyPrint(result));
@@ -299,16 +299,17 @@ public class PlaygroundView {
 
   public void setRenderedResult(String result) {
     if (result == null) {
-      cajoledSource.setText("");
+      renderPanel.setText("There were cajoling errors");
       return;
     }
     String[] htmlAndJs = result.split("<script[^>]*>");
-    // remove the </script> tag
-    htmlAndJs[1] = htmlAndJs[1].substring(0, htmlAndJs[1].length() - 9);
+    String html = htmlAndJs[0];
+    String js = htmlAndJs.length > 1 ?
+        htmlAndJs[1].substring(0, htmlAndJs[1].length() - 9) : "";
 
-    renderPanel.setHTML(
+        renderPanel.setHTML(
         "<div id=\"cajoled-output\" class=\"g___\">\n" +
-          htmlAndJs[0] +
+          html +
         "</div>\n");
 
     String cajoled =
@@ -320,7 +321,7 @@ public class PlaygroundView {
       "      { rewrite: function() {return null;} }, imports, gadgetRoot);\n" +
       "    imports.$v = valijaMaker.CALL___(imports.outers);\n" +
       "    ___.getNewModuleHandler().setImports(imports);\n" +
-    htmlAndJs[1];
+    js;
 
     Element el = DOM.createElement("script");
     ScriptElement script = ScriptElement.as(el);

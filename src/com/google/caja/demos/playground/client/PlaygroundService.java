@@ -10,6 +10,13 @@ import com.google.gwt.user.client.rpc.RemoteServiceRelativePath;
  */
 @RemoteServiceRelativePath("cajole")
 public interface PlaygroundService extends RemoteService {
+  /*
+   * GWT doesn't support enums
+   */
+  public final int HTML = 0;
+  public final int JAVASCRIPT = 1;
+  public final int ERRORS = 2;
+  
   /**
    * Cajoles input and returns cajoled output and error messages
    * @param uri Set input source to uri (used only for error messages)

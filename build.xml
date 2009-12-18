@@ -63,6 +63,12 @@
   <property name="maven"       location="ant-maven"/>  <!-- maven distro -->
 
   <!--== classpaths ==-->
+  <path id="classpath.gwt">
+    <pathelement path="${third_party}/java/gwt/gwt-user.jar"/>
+    <pathelement path="${third_party}/java/gwt/gwt-dev.jar"/>
+    <pathelement path="${third_party}/java/gwt/gwt-api-checker.jar"/>
+    <pathelement path="${third_party}/java/gwt/gwt-servlet.jar"/>
+  </path>
   <path id="classpath.web">
     <pathelement path="${third_party}/java/jsdk2.1/servlet.jar"/>
     <pathelement path="${third_party}/java/jaf/activation.jar"/>
@@ -84,6 +90,7 @@
   </path>
   <path id="classpath.tests.compile">
     <path refid="classpath.web"/>
+    <path refid="classpath.gwt"/>
     <pathelement path="${third_party}/java/junit/junit.jar"/>
     <pathelement path="${third_party}/java/json_simple/json_simple.jar"/>
     <pathelement path="${third_party}/java/rhino/js.jar"/>
@@ -116,12 +123,6 @@
   <path id="classpath.javadocs">
     <path refid="classpath.compile"/>
     <path refid="classpath.tools"/>
-  </path>
-  <path id="classpath.gwt">
-    <pathelement path="${third_party}/java/gwt/gwt-user.jar"/>
-    <pathelement path="${third_party}/java/gwt/gwt-dev.jar"/>
-    <pathelement path="${third_party}/java/gwt/gwt-api-checker.jar"/>
-    <pathelement path="${third_party}/java/gwt/gwt-servlet.jar"/>
   </path>
 
   <!--== Tasks Used Below ==-->
@@ -495,7 +496,7 @@
    description="Puts all the demo files together for easy browsing."/>
 
   <!-- Cajoles test resources that contain cajita to javascript. -->
-  <target name="CajoledTests" depends="pluginc,dirs,CajoledValija">
+  <target name="CajoledTests" depends="pluginc,dirs,CajoledValija, playground">
     <property name="libplugin" location="${lib}/com/google/caja/plugin"/>
     <copy file="${tests}/com/google/caja/plugin/domita_test_untrusted.html"
         tofile="${libplugin}/domita_test_untrusted_valija.html"/>
@@ -613,7 +614,7 @@
   </target>
 
   <target name="AllTests"
-   depends="dirs,tools,MinifiedJs,CajolingService,CajoledTests,TestbedClasses">
+   depends="dirs,tools,MinifiedJs,playground,CajoledTests,TestbedClasses">
     <javac destdir="${lib}" debug="true" target="1.5" source="1.5">
       <src path="${tests}"/>
       <classpath refid="classpath.tests.compile"/>
@@ -803,7 +804,7 @@
       <fileset dir="${third_party}/java/gwt">
         <include name="gwt-servlet.jar" />
       </fileset>
-      <fileset dir="${third_party}/java/htmlparser">
+      <fileset dir="${jars}">
         <include name="htmlparser.jar" />
       </fileset>
       <fileset dir="${third_party}/java/xerces/">
@@ -830,6 +831,13 @@
       <classpath refid="classpath.compile"/>
       <classpath refid="classpath.gwt"/>
       <include name="**/caja/demos/playground/server/*.java"/>
+      <compilerarg line="-Xlint:unchecked"/>
+    </javac>
+    <javac destdir="${lib}" debug="true">
+      <src path="${src}"/>
+      <classpath refid="classpath.compile"/>
+      <classpath refid="classpath.gwt"/>
+      <include name="**/caja/demos/playground/**/*.java"/>
       <compilerarg line="-Xlint:unchecked"/>
     </javac>
   </target>
