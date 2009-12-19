@@ -98,6 +98,8 @@ public enum PluginMessageType implements MessageTypeInt {
       "%s: malformed envelope around cajoled code", MessageLevel.ERROR),
   SPECIALIZING_CSS_PROPERTY(
       "%s: specialized CSS property %s to %s", MessageLevel.WARNING),
+  MISSING_XML_NAMESPACE(
+      "%s: XML %s has prefix but no namespace", MessageLevel.ERROR),
   ;
 
   private final String formatString;

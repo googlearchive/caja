@@ -20,6 +20,7 @@ import com.google.caja.lexer.ExternalReference;
 import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.quasiliteral.CajitaRewriter;
+import com.google.caja.parser.html.DomParser;
 import com.google.caja.parser.html.Nodes;
 import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.CajoledModule;
@@ -31,6 +32,10 @@ import com.google.caja.util.Executor;
 import com.google.caja.util.RhinoTestBed;
 import com.google.caja.util.TestUtil;
 import com.google.caja.util.CajaTestCase;
+
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 
 import junit.framework.AssertionFailedError;
 
@@ -79,6 +84,20 @@ public class HtmlCompiledPluginTest extends CajaTestCase {
         + "</script>"
         + "<a onclick='foo + bar;'>foo</a>",
         "");
+  }
+
+  public final void testNonNamespaceAwareDom() throws Exception {
+    Document doc = DomParser.makeDocument(null, null);
+    Node root = doc.createDocumentFragment();
+    Element script = doc.createElement("script");
+    script.setAttribute("type", "text/javascript");
+    script.appendChild(doc.createTextNode("var foo;"));
+    Element a = doc.createElement("a");
+    a.setAttribute("onclick", "foo + bar;");
+    a.appendChild(doc.createTextNode("foo"));
+    root.appendChild(script);
+    root.appendChild(a);
+    execGadget(new Dom(root), "");
   }
 
   /**
@@ -219,8 +238,11 @@ public class HtmlCompiledPluginTest extends CajaTestCase {
         FilePosition.instance(is, 1, 9, 9, 1));
   }
 
-  private void execGadget(String gadgetSpec, String tests)
-      throws Exception {
+  private void execGadget(String gadgetSpec, String tests) throws Exception {
+    execGadget(new Dom(htmlFragment(fromString(gadgetSpec))), tests);
+  }
+
+  private void execGadget(Dom html, String tests) throws Exception {
     PluginMeta meta = new PluginMeta(new PluginEnvironment() {
       public CharProducer loadExternalResource(
           ExternalReference ref, String mimeType) {
@@ -232,7 +254,6 @@ public class HtmlCompiledPluginTest extends CajaTestCase {
     });
     PluginCompiler compiler = new PluginCompiler(new TestBuildInfo(), meta, mq);
     compiler.setMessageContext(mc);
-    Dom html = new Dom(htmlFragment(fromString(gadgetSpec)));
     compiler.addInput(AncestorChain.instance(html));
 
     boolean failed = !compiler.run();

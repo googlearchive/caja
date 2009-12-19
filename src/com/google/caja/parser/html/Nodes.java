@@ -305,7 +305,7 @@ final class Renderer {
           if (attrUri != null && (attrUri = attrUri.intern()) != elNs.uri) {
             Namespaces attrNs = ns.forUri(attrUri);
             if (attrNs == null) {
-              attrNs = ns = addNamespace(ns, elNs.uri);
+              attrNs = ns = addNamespace(ns, attrUri);
               renderNamespace(attrNs);
               out.append(' ');
             }
