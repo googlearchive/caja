@@ -79,9 +79,12 @@ div.renderedoutput {
   width: 600px;
   height: 400px;
   border: 3px solid #cccccc;
+}
+
+.vdoc-body___ {
   position: relative;
-  clip: 0 0 0 0;
   overflow: auto;
+  clip: 0 0 0 0
 }
 
 .variableoutput {
