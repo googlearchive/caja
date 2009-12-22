@@ -47,8 +47,8 @@ import com.google.gwt.user.client.ui.TreeItem;
 import com.google.gwt.user.client.ui.VerticalPanel;
 
 import java.util.HashMap;
-import java.util.SortedMap;
 import java.util.Map;
+import java.util.SortedMap;
 import java.util.TreeMap;
 
 /**
@@ -65,6 +65,7 @@ public class PlaygroundView {
   private Label version = new Label("Unknown");
   private Playground controller;
   private TextArea sourceText;
+  private HorizontalPanel loadingLabel;
 
   public void setVersion(String v) {
     version.setText(v);
@@ -99,6 +100,14 @@ public class PlaygroundView {
     logoPanel.add(
         new Image("http://cajadores.com/demos/testbed/caja_logo_small.png"));
     logoPanel.add(infoPanel);
+
+    loadingLabel = new HorizontalPanel();
+    loadingLabel.setHorizontalAlignment(HasHorizontalAlignment.ALIGN_CENTER);
+    loadingLabel.add(new Label("Loading... "));
+    loadingLabel.add(new Image("ajax-loader.gif"));
+    loadingLabel.setStyleName("loadingLabel");
+    loadingLabel.setVisible(false);
+    logoPanel.add(loadingLabel);
     return logoPanel;
   }
 
@@ -292,7 +301,11 @@ public class PlaygroundView {
     }
     cajoledSource.setHTML(prettyPrint(result));
   }
-
+  
+  public void setLoading(boolean isLoading) {
+    loadingLabel.setVisible(isLoading);
+  }
+  
   private native String prettyPrint(String result) /*-{
     return $wnd.prettyPrintOne($wnd.indentAndWrapCode(result));
   }-*/;

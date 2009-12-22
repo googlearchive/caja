@@ -30,13 +30,16 @@ public class Playground implements EntryPoint {
     GWT.create(PlaygroundService.class);
   
   public void loadSource(String url) {
+    gui.setLoading(true);
     cajolingService.fetch(url, new AsyncCallback<String>() {
       public void onFailure(Throwable caught) {
+        gui.setLoading(false);
         gui.addCompileMessage(caught.getMessage());
         gui.selectTab(PlaygroundView.Tabs.COMPILE_WARNINGS);
       }
 
       public void onSuccess(String result) {
+        gui.setLoading(false);
         gui.setOriginalSource(result);
         gui.setCajoledSource("");
         gui.selectTab(PlaygroundView.Tabs.SOURCE);
@@ -45,12 +48,15 @@ public class Playground implements EntryPoint {
   }
   
   public void cajole(String uri, String input) {
+    gui.setLoading(true);
     cajolingService.cajole(uri, input, new AsyncCallback<String[]>() {
       public void onFailure(Throwable caught) {
-        caught.printStackTrace();
+        gui.setLoading(false);
+        gui.addCompileMessage(caught.getMessage());
       }
 
       public void onSuccess(String[] result) {
+        gui.setLoading(false);
         if (result == null) {
           gui.addCompileMessage("An unknown error occurred");
           gui.selectTab(PlaygroundView.Tabs.COMPILE_WARNINGS);
@@ -74,13 +80,16 @@ public class Playground implements EntryPoint {
   
   public void onModuleLoad() {
     gui = new PlaygroundView(this);
+    gui.setLoading(true);
     cajolingService.getBuildInfo(new AsyncCallback<String>() {
       public void onFailure(Throwable caught) {
+        gui.setLoading(false);
         gui.addCompileMessage(caught.getMessage());
         gui.setVersion("Unknown");
       }
 
       public void onSuccess(String result) {
+        gui.setLoading(false);
         gui.setVersion(result);
       }      
     });

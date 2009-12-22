@@ -48,6 +48,11 @@ div {
   text-indent: 0em;
 }
 
+/** Label shown during asynchronous calls **/
+.loadingLabel {
+  padding: 1px;
+}
+
 /** Contains user input to be sent to  the cajoling service eg. src, taming **/
 .inputTab {
   background-color: blue;  

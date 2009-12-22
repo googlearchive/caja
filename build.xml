@@ -776,6 +776,7 @@
         <include name="**/*.css" />
       </fileset>
       <fileset dir="${src}/com/google/caja/demos/playground">
+        <include name="ajax-loader.gif" />
         <include name="Playground.html" />
         <include name="Playground.css" />
       </fileset>
