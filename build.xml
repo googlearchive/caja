@@ -785,7 +785,7 @@
   <target name="PlaygroundJars" depends="build.info"
       description="Copy the App Engine JARs to the WAR directory">
     <mkdir dir="${war}/WEB-INF" />
-    <copy todir="war/WEB-INF/lib"
+    <copy todir="${war}/WEB-INF/lib"
      file="${third_party}/java/gwt/gwt-servlet.jar" />
     <copy todir="${war}/WEB-INF">
       <fileset dir="">
