@@ -64,6 +64,10 @@ public final class Config {
       + "\".out.html\")",
       true);
 
+  private final Option ONLY_JS_EMITTED = defineBooleanOption(
+      "s", "only_js_emitted",
+      "Whether input HTML should be collapsed into one output JS file.");
+
   private final Option OUTPUT_JS = defineOption(
       "j", "output_js",
       "Output file path for translated JS (defaults to input with \".out.js\")",
@@ -141,6 +145,7 @@ public final class Config {
   private SourceRenderMode renderer;
   private int servicePort;
   private String idClass;
+  private boolean onlyJsEmitted;
 
   public Config(Class<?> mainClass, PrintStream stderr, String usageText) {
     this(mainClass, new PrintWriter(stderr), usageText);
@@ -189,6 +194,8 @@ public final class Config {
   public boolean debugMode() { return debugMode; }
 
   public SourceRenderMode renderer() { return renderer; }
+
+  public boolean isOnlyJsEmitted() { return onlyJsEmitted; }
 
   public boolean processArguments(String[] argv) {
     try {
@@ -296,6 +303,7 @@ public final class Config {
       gadgetView = cl.getOptionValue(VIEW.getOpt(), "canvas");
       idClass = cl.getOptionValue(ID_CLASS.getOpt(), null);
       debugMode = cl.hasOption(DEBUG_MODE.getOpt());
+      onlyJsEmitted = cl.hasOption(ONLY_JS_EMITTED.getOpt());
 
       String servicePortString;
       try {

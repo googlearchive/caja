@@ -112,6 +112,7 @@ public final class PluginCompilerMain {
       PluginMeta meta = new PluginMeta(makeEnvironment(config));
       meta.setDebugMode(config.debugMode());
       meta.setIdClass(config.getIdClass());
+      meta.setOnlyJsEmitted(config.isOnlyJsEmitted());
       PluginCompiler compiler = new PluginCompiler(
           BuildInfo.getInstance(), meta, mq);
       mc = compiler.getMessageContext();
