@@ -41,7 +41,9 @@ public final class Block
     createMutation().appendChildren(elements).execute();
   }
 
-  public Block() { super(FilePosition.UNKNOWN, Statement.class); }
+  public Block(FilePosition pos) { super(pos, Statement.class); }
+
+  public Block() { this(FilePosition.UNKNOWN); }
 
   @Override
   public List<? extends Statement> children() {

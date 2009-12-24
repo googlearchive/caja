@@ -33,9 +33,9 @@ import com.google.caja.parser.js.TranslatedCode;
 import com.google.caja.plugin.ExtractedHtmlContent;
 import com.google.caja.plugin.PluginMeta;
 import com.google.caja.reporting.MessageContext;
+import com.google.caja.util.Lists;
 import com.google.caja.util.Pair;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
@@ -99,7 +99,7 @@ final class SafeHtmlMaker {
   private final PluginMeta meta;
   private final MessageContext mc;
   private final Document doc;
-  private final List<Block> js = new ArrayList<Block>();
+  private final List<Block> js = Lists.newArrayList();
   private final Map<Node, ParseTreeNode> scriptsPerNode;
   private final List<Node> roots;
   private final List<Statement> handlers;
@@ -141,8 +141,8 @@ final class SafeHtmlMaker {
     // First we build a skeleton which maps a safe DOM to a list of "bones"
     // which include element start tags, text nodes, and embedded scripts in
     // depth-first order.
-    List<DomBone> domSkeleton = new ArrayList<DomBone>();
-    List<Node> safe = new ArrayList<Node>(roots.size());
+    List<DomBone> domSkeleton = Lists.newArrayList();
+    List<Node> safe = Lists.newArrayList(roots.size());
     for (Node root : roots) {
       Node one = makeSkeleton(root, domSkeleton);
       if (one != null) { safe.add(one); }
@@ -151,7 +151,7 @@ final class SafeHtmlMaker {
     fleshOutSkeleton(domSkeleton);
 
     Node safeHtml = consolidateHtml(safe);
-    return Pair.pair(safeHtml, (List<Block>) new ArrayList<Block>(js));
+    return Pair.pair(safeHtml, Lists.newArrayList(js));
   }
 
   /** Part of a DOM skeleton. */

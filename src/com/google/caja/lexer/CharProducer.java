@@ -28,7 +28,8 @@ import java.util.Arrays;
  * @author mikesamuel@gmail.com
  */
 public abstract class CharProducer implements CharSequence {
-  private int offset, limit;
+  private int offset;
+  private final int limit;
   private final char[] buf;
 
   CharProducer(char[] buf, int limit) {
@@ -249,6 +250,10 @@ public abstract class CharProducer implements CharSequence {
           this.end = (int) (packedEndAndCodepoint >>> 32);
         }
       }, p);
+    }
+
+    public static CharProducer fromUri(CharProducer p) {
+      return DecodingCharProducer.make(new UriDecoder(), p);
     }
 
     /**

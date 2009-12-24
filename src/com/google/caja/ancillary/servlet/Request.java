@@ -21,6 +21,7 @@ import com.google.caja.lexer.InputSource;
 import com.google.caja.reporting.EchoingMessageQueue;
 import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessageLevel;
+import com.google.caja.util.ContentType;
 import com.google.caja.util.Lists;
 import com.google.caja.util.Maps;
 import com.google.caja.util.Multimap;
@@ -166,7 +167,7 @@ final class Request implements Cloneable {
           int semi = mimeType.indexOf(';');
           if (semi >= 0) { mimeType = mimeType.substring(0, semi); }
         }
-        ContentType ct = ContentType.guess(mimeType, path, val);
+        ContentType ct = GuessContentType.guess(mimeType, path, val);
         if (path == null || "".equals(path)) {
           path = "unnamed-" + c.inputs.size() + "." + ct.ext;
         }

@@ -30,12 +30,12 @@ import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.MessageType;
 import com.google.caja.reporting.MessageTypeInt;
 import com.google.caja.util.Criterion;
+import com.google.caja.util.Lists;
 import com.google.caja.util.Name;
 import com.google.caja.util.Strings;
 
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -211,13 +211,15 @@ public final class CssParser {
     this.isTolerant = isTolerant();
   }
 
+  public TokenQueue<CssTokenType> getTokenQueue() { return tq; }
+
   public CssTree.StyleSheet parseStyleSheet() throws ParseException {
     // stylesheet
     //   : [ CHARSET_SYM STRING ';' ]?
     //     [S|CDO|CDC]* [ import [S|CDO|CDC]* ]*
     //     [ [ ruleset | media | page ] [S|CDO|CDC]* ]*
     Mark m = tq.mark();
-    List<CssTree.CssStatement> stmts = new ArrayList<CssTree.CssStatement>();
+    List<CssTree.CssStatement> stmts = Lists.newArrayList();
     while (true) {
       skipTopLevelIgnorables();
       if (!lookaheadSymbol("@import")) { break; }
@@ -235,7 +237,7 @@ public final class CssParser {
   public CssTree.DeclarationGroup parseDeclarationGroup()
       throws ParseException {
     Mark m = tq.mark();
-    List<CssTree.Declaration> decls = new ArrayList<CssTree.Declaration>();
+    List<CssTree.Declaration> decls = Lists.newArrayList();
     while (!tq.isEmpty()) {
       while (tq.lookaheadToken(";")) { tq.advance(); }
       if (tq.isEmpty()) { break; }
@@ -261,7 +263,7 @@ public final class CssParser {
     }
     List<CssTree.Medium> media = Collections.<CssTree.Medium>emptyList();
     if (!tq.checkToken(";")) {
-      media = new ArrayList<CssTree.Medium>();
+      media = Lists.newArrayList();
       do {
         CssTree.Medium medium = parseMedium();
         if (medium == null) {
@@ -310,7 +312,7 @@ public final class CssParser {
   private CssTree.Media parseMedia() throws ParseException {
     Mark m = tq.mark();
     expectSymbol("@media");
-    List<CssTree> children = new ArrayList<CssTree>();
+    List<CssTree> children = Lists.newArrayList();
     do {
       CssTree.Medium medium = parseMedium();
       if (medium == null) {
@@ -343,7 +345,7 @@ public final class CssParser {
       ident = unescape(t);
       tq.advance();
     }
-    List<CssTree.PageElement> elements = new ArrayList<CssTree.PageElement>();
+    List<CssTree.PageElement> elements = Lists.newArrayList();
     if (tq.lookaheadToken(":")) {
       Mark m2 = tq.mark();
       tq.expectToken(":");
@@ -362,7 +364,7 @@ public final class CssParser {
   private CssTree.FontFace parseFontFace() throws ParseException {
     Mark m = tq.mark();
     expectSymbol("@font-face");
-    List<CssTree.Declaration> elements = new ArrayList<CssTree.Declaration>();
+    List<CssTree.Declaration> elements = Lists.newArrayList();
     if (parseDeclarationBlock(elements, m)) { return null; }
     return new CssTree.FontFace(pos(m), elements);
   }
@@ -428,7 +430,7 @@ public final class CssParser {
 
   private CssTree.RuleSet parseRuleSet() throws ParseException {
     Mark m = tq.mark();
-    List<CssTree> elements = new ArrayList<CssTree>();
+    List<CssTree> elements = Lists.newArrayList();
     do {
       CssTree.Selector sel = parseSelector();
       addIfNotNull(elements, sel);
@@ -443,7 +445,7 @@ public final class CssParser {
 
   private CssTree.Selector parseSelector() throws ParseException {
     Mark m = tq.mark();
-    List<CssTree> elements = new ArrayList<CssTree>();
+    List<CssTree> elements = Lists.newArrayList();
     while (true) {
       if (!elements.isEmpty()) {
         elements.add(parseCombinator());
@@ -471,7 +473,7 @@ public final class CssParser {
 
   private CssTree.SimpleSelector parseSimpleSelector() throws ParseException {
     Mark m = tq.mark();
-    List<CssTree> elements = new ArrayList<CssTree>();
+    List<CssTree> elements = Lists.newArrayList();
     if (!tq.isEmpty()) {
       Token<CssTokenType> t = tq.peek();
       if (CssTokenType.IDENT == t.type) {
@@ -606,7 +608,7 @@ public final class CssParser {
       SKIP_TO_CHUNK_END_FROM_WITHIN_BLOCK.recover(this, m);
       return null;
     }
-    List<CssTree> children = new ArrayList<CssTree>(3);
+    List<CssTree> children = Lists.newArrayList(3);
     children.add(property);
     if (expect(":", SKIP_TO_CHUNK_END_FROM_WITHIN_BLOCK, m)) {
       return null;
@@ -653,7 +655,7 @@ public final class CssParser {
 
   private CssTree.Expr parseExpr() throws ParseException {
     Mark m = tq.mark();
-    List<CssTree> children = new ArrayList<CssTree>();
+    List<CssTree> children = Lists.newArrayList();
     {
       CssTree.Term term = parseTerm();
       if (term == null) { return null; }
@@ -837,7 +839,7 @@ public final class CssParser {
       if (!tq.checkToken(".")) { return null; }
       sb.append('.');
     }
-    List<ProgIdAttribute> attrs = new ArrayList<ProgIdAttribute>();
+    List<ProgIdAttribute> attrs = Lists.newArrayList();
     if (!tq.checkToken(")")) {
       do {
         CssTree.ProgIdAttribute attr = parseProgIdAttribute();

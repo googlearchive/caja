@@ -26,13 +26,15 @@ import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.UncajoledModule;
 import com.google.caja.plugin.ExtractedHtmlContent;
 import com.google.caja.plugin.PluginMeta;
+import com.google.caja.plugin.stages.EmbeddedContent;
+import com.google.caja.plugin.stages.HtmlEmbeddedContentFinder;
 import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessageQueue;
+import com.google.caja.util.Lists;
+import com.google.caja.util.Maps;
 import com.google.caja.util.Pair;
 
-import java.util.ArrayList;
-import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -84,7 +86,10 @@ public class TemplateCompiler {
    * </ul>
    */
   private final Map<Node, ParseTreeNode> scriptsPerNode
-      = new IdentityHashMap<Node, ParseTreeNode>();
+      = Maps.newIdentityHashMap();
+
+  private final Map<Attr, EmbeddedContent> embeddedContent
+      = Maps.newIdentityHashMap();
 
   /**
    * @param ihtmlRoots roots of trees to process.
@@ -100,13 +105,14 @@ public class TemplateCompiler {
       List<? extends CssTree.StyleSheet> safeStylesheets,
       CssSchema cssSchema, HtmlSchema htmlSchema,
       PluginMeta meta, MessageContext mc, MessageQueue mq) {
-    this.ihtmlRoots = new ArrayList<Node>(ihtmlRoots);
-    this.safeStylesheets = new ArrayList<CssTree.StyleSheet>(safeStylesheets);
+    this.ihtmlRoots = Lists.newArrayList(ihtmlRoots);
+    this.safeStylesheets = Lists.newArrayList(safeStylesheets);
     this.htmlSchema = htmlSchema;
     this.meta = meta;
     this.mc = mc;
     this.mq = mq;
-    this.aRewriter = new HtmlAttributeRewriter(meta, cssSchema, htmlSchema, mq);
+    this.aRewriter = new HtmlAttributeRewriter(
+        meta, cssSchema, htmlSchema, embeddedContent, mq);
   }
 
   /**
@@ -116,6 +122,12 @@ public class TemplateCompiler {
   private void inspect() {
     if (!mq.hasMessageAtLevel(MessageLevel.FATAL_ERROR)) {
       for (Node ihtmlRoot : ihtmlRoots) {
+        HtmlEmbeddedContentFinder finder = new HtmlEmbeddedContentFinder(
+            htmlSchema, null, mq, mc);
+        for (EmbeddedContent c : finder.findEmbeddedContent(ihtmlRoot)) {
+          Node src = c.getSource();
+          if (src instanceof Attr) { embeddedContent.put((Attr) src, c); }
+        }
         inspect(ihtmlRoot, ElKey.forHtmlElement("div"));
       }
     }

@@ -18,20 +18,14 @@ import com.google.caja.SomethingWidgyHappenedError;
 import com.google.caja.lang.css.CssSchema;
 import com.google.caja.lang.html.HTML;
 import com.google.caja.lang.html.HtmlSchema;
-import com.google.caja.lexer.CharProducer;
-import com.google.caja.lexer.CssTokenType;
 import com.google.caja.lexer.ExternalReference;
 import com.google.caja.lexer.FilePosition;
-import com.google.caja.lexer.JsLexer;
-import com.google.caja.lexer.JsTokenQueue;
 import com.google.caja.lexer.Keyword;
 import com.google.caja.lexer.ParseException;
-import com.google.caja.lexer.TokenQueue;
 import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.ParseTreeNodeContainer;
 import com.google.caja.parser.Visitor;
-import com.google.caja.parser.css.CssParser;
 import com.google.caja.parser.css.CssTree;
 import com.google.caja.parser.html.Nodes;
 import com.google.caja.parser.js.AbstractExpression;
@@ -40,7 +34,7 @@ import com.google.caja.parser.js.Declaration;
 import com.google.caja.parser.js.Expression;
 import com.google.caja.parser.js.FunctionConstructor;
 import com.google.caja.parser.js.Identifier;
-import com.google.caja.parser.js.Parser;
+import com.google.caja.parser.js.Operation;
 import com.google.caja.parser.js.Reference;
 import com.google.caja.parser.js.Statement;
 import com.google.caja.parser.js.StringLiteral;
@@ -50,6 +44,7 @@ import com.google.caja.parser.quasiliteral.ReservedNames;
 import com.google.caja.plugin.CssRewriter;
 import com.google.caja.plugin.CssValidator;
 import com.google.caja.plugin.PluginMeta;
+import com.google.caja.plugin.stages.EmbeddedContent;
 import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
@@ -77,6 +72,7 @@ public final class HtmlAttributeRewriter {
   private final CssSchema cssSchema;
   private final HtmlSchema htmlSchema;
   private final MessageQueue mq;
+  private final Map<Attr, EmbeddedContent> attributeContent;
   /** Maps handler attribute source to handler names. */
   private final Map<String, String> handlerCache
       = new HashMap<String, String>();
@@ -85,10 +81,11 @@ public final class HtmlAttributeRewriter {
 
   public HtmlAttributeRewriter(
       PluginMeta meta, CssSchema cssSchema, HtmlSchema htmlSchema,
-      MessageQueue mq) {
+      Map<Attr, EmbeddedContent> attributeContent, MessageQueue mq) {
     this.meta = meta;
     this.cssSchema = cssSchema;
     this.htmlSchema = htmlSchema;
+    this.attributeContent = attributeContent;
     this.mq = mq;
   }
 
@@ -100,20 +97,22 @@ public final class HtmlAttributeRewriter {
   }
 
   public static abstract class AttrValue {
+    final Attr src;
     final FilePosition valuePos;
     final HTML.Attribute attrInfo;
     abstract Expression getValueExpr();
     abstract String getPlainValue();
     abstract String getRawValue();
 
-    AttrValue(FilePosition valuePos, HTML.Attribute attr) {
+    AttrValue(Attr src, FilePosition valuePos, HTML.Attribute attr) {
+      this.src = src;
       this.valuePos = valuePos;
       this.attrInfo = attr;
     }
   }
 
   public static AttrValue fromAttr(final Attr a, HTML.Attribute attr) {
-    return new AttrValue(Nodes.getFilePositionForValue(a), attr) {
+    return new AttrValue(a, Nodes.getFilePositionForValue(a), attr) {
       @Override
       Expression getValueExpr() {
         return StringLiteral.valueOf(valuePos, getPlainValue());
@@ -183,14 +182,8 @@ public final class HtmlAttributeRewriter {
       case SCRIPT:
         String handlerFnName = handlerCache.get(value);
         if (handlerFnName == null) {
-          Block b;
-          try {
-            b = parseJsFromAttrValue(attr);
-          } catch (ParseException ex) {
-            ex.toMessageQueue(mq);
-            return noResult(attr);
-          }
-          if (b.children().isEmpty()) { return noResult(attr); }
+          Block b = jsFromAttrib(attr);
+          if (b == null || b.children().isEmpty()) { return noResult(attr); }
           rewriteEventHandlerReferences(b);
 
           handlerFnName = meta.generateUniqueName("c");
@@ -220,12 +213,8 @@ public final class HtmlAttributeRewriter {
         dynamicValue = eventAdapter;
         break;
       case STYLE:
-        CssTree.DeclarationGroup decls;
-        try {
-          decls = parseStyleAttrib(attr);
-          if (decls == null) { return noResult(attr); }
-        } catch (ParseException ex) {
-          ex.toMessageQueue(mq);
+        CssTree.DeclarationGroup decls = styleFromAttrib(attr);
+        if (decls == null || decls.children().isEmpty()) {
           return noResult(attr);
         }
 
@@ -248,24 +237,52 @@ public final class HtmlAttributeRewriter {
         dynamicValue = StringLiteral.valueOf(pos, css);
         break;
       case URI:
-        try {
-          URI uri = new URI(value);
-          ExternalReference ref = new ExternalReference(uri, pos);
-          String rewrittenUri = meta.getPluginEnvironment()
-              .rewriteUri(ref, attr.attrInfo.getMimeTypes());
-          if (rewrittenUri == null) {
+        if (attributeContent.containsKey(attr.src)) {  // A javascript: URI
+          Block b = this.jsFromAttrib(attr);
+          if (b == null || b.children().isEmpty()) { return noResult(attr); }
+          rewriteEventHandlerReferences(b);
+
+          handlerFnName = meta.generateUniqueName("c");
+          Declaration handler = (Declaration) QuasiBuilder.substV(
+              ""
+              + "var @handlerName = ___./*@synthetic*/markFuncFreeze("
+              + "    /*@synthetic*/function ("
+                         + ReservedNames.THIS_NODE + ") { @body*; });",
+              "handlerName", SyntheticNodes.s(
+                  new Identifier(FilePosition.UNKNOWN, handlerFnName)),
+              "body", new ParseTreeNodeContainer(b.children()));
+          handlers.add(handler);
+          handlerCache.put(value, handlerFnName);
+
+          Operation urlAdapter = (Operation) QuasiBuilder.substV(
+                  ""
+                  + "'javascript:' + /*@synthetic*/encodeURIComponent("
+                  + "   'plugin_dispatchEvent___(this, null, '"
+                  + "    + ___./*@synthetic*/getId(IMPORTS___)"
+                  + "    + ', ' + '@handlerName' + '), void 0')",
+              "handlerName", new Identifier(pos, handlerFnName));
+          urlAdapter.setFilePosition(pos);
+          dynamicValue = urlAdapter;
+        } else {
+          try {
+            URI uri = new URI(value);
+            ExternalReference ref = new ExternalReference(uri, pos);
+            String rewrittenUri = meta.getPluginEnvironment()
+                .rewriteUri(ref, attr.attrInfo.getMimeTypes());
+            if (rewrittenUri == null) {
+              mq.addMessage(
+                  IhtmlMessageType.MALFORMED_URI, pos,
+                  MessagePart.Factory.valueOf(uri.toString()));
+              return noResult(attr);
+            }
+            dynamicValue = StringLiteral.valueOf(
+                ref.getReferencePosition(), rewrittenUri);
+          } catch (URISyntaxException ex) {
             mq.addMessage(
                 IhtmlMessageType.MALFORMED_URI, pos,
-                MessagePart.Factory.valueOf(uri.toString()));
+                MessagePart.Factory.valueOf(value));
             return noResult(attr);
           }
-          dynamicValue = StringLiteral.valueOf(
-              ref.getReferencePosition(), rewrittenUri);
-        } catch (URISyntaxException ex) {
-          mq.addMessage(
-              IhtmlMessageType.MALFORMED_URI, pos,
-              MessagePart.Factory.valueOf(value));
-          return noResult(attr);
         }
         break;
       case URI_FRAGMENT:
@@ -401,76 +418,6 @@ public final class HtmlAttributeRewriter {
         }, null);
   }
 
-  /**
-   * Parses an {@code onclick} handler's or other handler's attribute value
-   * as a javascript statement.
-   */
-  private Block parseJsFromAttrValue(AttrValue attr) throws ParseException {
-    FilePosition pos = attr.valuePos;
-    CharProducer cp = fromAttrValue(attr);
-    JsTokenQueue tq = new JsTokenQueue(new JsLexer(cp, false), pos.source());
-    tq.setInputRange(pos);
-    if (tq.isEmpty()) {
-      return new Block(pos, Collections.<Statement>emptyList());
-    }
-    // Parse as a javascript block.
-    Block b = new Parser(tq, mq).parse();
-    // Block will be sanitized in a later pass.
-    b.setFilePosition(pos);
-    return b;
-  }
-
-  /**
-   * Parses a style attribute's value as a CSS declaration group.
-   */
-  private CssTree.DeclarationGroup parseStyleAttrib(AttrValue attr)
-      throws ParseException {
-    return parseCssDeclarationGroup(fromAttrValue(attr), attr.valuePos);
-  }
-
-  CssTree.DeclarationGroup parseCssDeclarationGroup(
-      CharProducer cp, FilePosition inputRange)
-      throws ParseException {
-    // Parse the CSS as a set of declarations separated by semicolons.
-    TokenQueue<CssTokenType> tq = CssParser.makeTokenQueue(cp, mq, false);
-    if (tq.isEmpty()) { return null; }
-    if (inputRange != null) { tq.setInputRange(inputRange); }
-    CssParser p = new CssParser(tq, mq, MessageLevel.WARNING);
-    CssTree.DeclarationGroup decls = p.parseDeclarationGroup();
-    tq.expectEmpty();
-    return decls;
-  }
-
-  private static CharProducer fromAttrValue(AttrValue a) {
-    String value = a.getPlainValue();
-    FilePosition pos = a.valuePos;
-    String rawValue = a.getRawValue();
-    // Use the raw value so that the file positions come out right in
-    // error messages.
-    if (rawValue != null) {
-      // The raw value is HTML so we wrap it in an HTML decoder.
-      CharProducer cp = CharProducer.Factory.fromHtmlAttribute(
-          CharProducer.Factory.fromString(deQuote(rawValue), pos));
-      // Check if the attribute value has been set since parsing.
-      if (String.valueOf(cp.getBuffer(), cp.getOffset(), cp.getLength())
-          .equals(value)) {
-        return cp;
-      }
-    }
-    // Reached if no raw value stored or if the raw value is out of sync.
-    return CharProducer.Factory.fromString(value, pos);
-  }
-
-  /** Strip quotes from an attribute value if there are any. */
-  private static String deQuote(String s) {
-    int len = s.length();
-    if (len < 2) { return s; }
-    char ch0 = s.charAt(0);
-    return (('"' == ch0 || '\'' == ch0) && ch0 == s.charAt(len - 1))
-           ? " " + s.substring(1, len - 1) + " "
-           : s;
-  }
-
   static SanitizedAttr noResult(AttrValue a) {
     String safeValue = a.attrInfo.getSafeValue();
     String defaultValue = a.attrInfo.getDefaultValue();
@@ -491,5 +438,31 @@ public final class HtmlAttributeRewriter {
     return "".equals(idents)
         ? Collections.<String>emptyList()
         : Arrays.asList(idents.trim().split("\\s+"));
+  }
+
+  private Block jsFromAttrib(AttrValue v) {
+    EmbeddedContent c = attributeContent.get(v.src);
+    if (c == null) { return null; }
+    try {
+      ParseTreeNode n = c.parse(meta.getPluginEnvironment(), mq);
+      if (n instanceof Block) { return (Block) n; }
+    } catch (ParseException ex) {
+      ex.toMessageQueue(mq);
+    }
+    return null;
+  }
+
+  private CssTree.DeclarationGroup styleFromAttrib(AttrValue v) {
+    EmbeddedContent c = attributeContent.get(v.src);
+    if (c == null) { return null; }
+    try {
+      ParseTreeNode n = c.parse(meta.getPluginEnvironment(), mq);
+      if (n instanceof CssTree.DeclarationGroup) {
+        return (CssTree.DeclarationGroup) n;
+      }
+    } catch (ParseException ex) {
+      ex.toMessageQueue(mq);
+    }
+    return null;
   }
 }

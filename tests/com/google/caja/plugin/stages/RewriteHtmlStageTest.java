@@ -14,6 +14,7 @@
 
 package com.google.caja.plugin.stages;
 
+import com.google.caja.lang.html.HtmlSchema;
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.html.Namespaces;
@@ -187,8 +188,7 @@ public final class RewriteHtmlStageTest extends PipelineStageTestCase {
             + "<span jobnum=\"3\"></span>",
             Job.JobType.HTML),
         job("{\n  onerror = panic;\n}", Job.JobType.JAVASCRIPT),
-        job("{\n  throw new Error("
-                     + "'Failed to load http://bogus.com/bogus.js#\\'!');\n}",
+        job("{\n  throw new Error('Failed to load bogus.js#%27%21');\n}",
             Job.JobType.JAVASCRIPT),
         job("{ foo(); }", Job.JobType.JAVASCRIPT));
     assertNoErrors();
@@ -197,7 +197,9 @@ public final class RewriteHtmlStageTest extends PipelineStageTestCase {
   @Override
   protected boolean runPipeline(Jobs jobs) throws Exception {
     mq.getMessages().clear();
-    boolean result = new RewriteHtmlStage().apply(jobs);
+    HtmlSchema schema = HtmlSchema.getDefault(mq);
+    boolean result = new ResolveUriStage(schema).apply(jobs)
+        && new RewriteHtmlStage(schema).apply(jobs);
     // Dump the extracted script bits on the queue.
     for (Job job : new ArrayList<Job>(jobs.getJobsByType(JobType.HTML))) {
       Dom dom = job.getRoot().cast(Dom.class).node;

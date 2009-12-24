@@ -15,7 +15,9 @@
 package com.google.caja.lexer.escaping;
 
 import com.google.caja.util.Join;
+import com.google.caja.util.Strings;
 
+import java.net.URI;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;
@@ -101,7 +103,7 @@ public class UriUtil {
       normalizeAuthority(authority, sb);
     }
     if (path.length() != 0 || sb.length() != 0) {
-      normalizePath(path, sb.length() != 0, sb);
+      normalizePath(path, sb.length() != 0 && !isOpaque(scheme), sb);
     }
     if (query != null) {
       sb.append('?');
@@ -112,6 +114,20 @@ public class UriUtil {
       normalizeFragment(fragment, sb);
     }
     return sb.toString();
+  }
+
+  public static URI resolve(URI base, String relative) {
+    URI abs = base.resolve(normalizeUri(relative));
+    if (!abs.isOpaque()) {
+      String path = abs.getPath();
+      // Workaround a bug in java.net.URI.
+      // TODO(mikesamuel): stop using java.net.URI and use a decent URL
+      // implementation instead.
+      if (path != null && (path.startsWith("/../") || path.equals("/.."))) {
+        return null;
+      }
+    }
+    return abs;
   }
 
   private static void normalizeScheme(String scheme, StringBuilder out) {
@@ -135,6 +151,13 @@ public class UriUtil {
       }
     }
     out.append(scheme, pos, n);
+  }
+
+  private static boolean isOpaque(String scheme) {
+    return Strings.equalsIgnoreCase("mailto", scheme)
+        || Strings.equalsIgnoreCase("javascript", scheme)
+        || Strings.equalsIgnoreCase("content", scheme)
+        || Strings.equalsIgnoreCase("data", scheme);
   }
 
   private static void normalizeAuthority(String authority, StringBuilder out) {

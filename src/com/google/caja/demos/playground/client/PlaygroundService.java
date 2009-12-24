@@ -5,7 +5,7 @@ import com.google.gwt.user.client.rpc.RemoteServiceRelativePath;
 
 /**
  * The client side stub for the RPC cajoling service.
- * 
+ *
  * @author jasvir@gmail.com (Jasvir Nagra)
  */
 @RemoteServiceRelativePath("cajole")
@@ -16,7 +16,7 @@ public interface PlaygroundService extends RemoteService {
   public final int HTML = 0;
   public final int JAVASCRIPT = 1;
   public final int ERRORS = 2;
-  
+
   /**
    * Cajoles input and returns cajoled output and error messages
    * @param uri Set input source to uri (used only for error messages)
@@ -29,7 +29,7 @@ public interface PlaygroundService extends RemoteService {
    */
   // TODO(jasvir): Coax gwt to serialize and return CajolingResult instead
   String[] cajole(String uri, String input);
-  
+
   /**
    * Returns build info as a string
    */
@@ -37,7 +37,7 @@ public interface PlaygroundService extends RemoteService {
 
   /**
    * Fetches the document located at {@code uri} as a string
-   * @param url
+   * @param url the URL to fetch.
    * @return the document if it exists, null else
    */
   // TODO(jasvir): Fetching ought to be done via a separate service

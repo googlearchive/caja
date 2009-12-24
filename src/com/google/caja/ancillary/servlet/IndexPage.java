@@ -17,6 +17,7 @@ package com.google.caja.ancillary.servlet;
 import com.google.caja.parser.html.DomParser;
 import com.google.caja.parser.html.HtmlQuasiBuilder;
 import com.google.caja.reporting.MessageLevel;
+import com.google.caja.util.ContentType;
 import com.google.caja.util.Join;
 import com.google.caja.util.Lists;
 import com.google.caja.util.Sets;

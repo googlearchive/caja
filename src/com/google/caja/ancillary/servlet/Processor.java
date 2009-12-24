@@ -14,6 +14,7 @@
 
 package com.google.caja.ancillary.servlet;
 
+import com.google.caja.SomethingWidgyHappenedError;
 import com.google.caja.ancillary.jsdoc.HtmlRenderer;
 import com.google.caja.ancillary.jsdoc.Jsdoc;
 import com.google.caja.ancillary.jsdoc.JsdocException;
@@ -41,7 +42,6 @@ import com.google.caja.parser.html.AttribKey;
 import com.google.caja.parser.html.DomParser;
 import com.google.caja.parser.html.ElKey;
 import com.google.caja.parser.html.HtmlQuasiBuilder;
-import com.google.caja.parser.html.Namespaces;
 import com.google.caja.parser.html.Nodes;
 import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.Expression;
@@ -49,7 +49,10 @@ import com.google.caja.parser.js.ObjectConstructor;
 import com.google.caja.parser.js.Parser;
 import com.google.caja.parser.js.Statement;
 import com.google.caja.plugin.CssValidator;
+import com.google.caja.plugin.PluginEnvironment;
 import com.google.caja.plugin.PluginMessageType;
+import com.google.caja.plugin.stages.EmbeddedContent;
+import com.google.caja.plugin.stages.HtmlEmbeddedContentFinder;
 import com.google.caja.render.Concatenator;
 import com.google.caja.render.CssMinimalPrinter;
 import com.google.caja.render.CssPrettyPrinter;
@@ -61,12 +64,15 @@ import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.MessageTypeInt;
 import com.google.caja.reporting.RenderContext;
+import com.google.caja.util.ContentType;
 import com.google.caja.util.Lists;
 import com.google.caja.util.Sets;
 import com.google.caja.util.Strings;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
+
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
@@ -122,7 +128,7 @@ class Processor {
         }
         break;
       case LINT:
-        output.add(Job.html(LintPage.render(reduce(jobs), req, mq)));
+        output.add(Job.html(LintPage.render(reduce(jobs), req, mq), null));
         break;
       default:
         for (Job job : jobs) {
@@ -248,7 +254,7 @@ class Processor {
   }
 
   /** Parse a job from input parameters. */
-  Job parse(CharProducer cp, ContentType contentType, Node src)
+  Job parse(CharProducer cp, ContentType contentType, Node src, URI baseUri)
       throws ParseException {
     FilePosition inputRange = cp.filePositionForOffsets(
         cp.getOffset(), cp.getLimit());
@@ -273,7 +279,7 @@ class Processor {
             Element el = p.parseDocument();
             DocumentFragment f = el.getOwnerDocument().createDocumentFragment();
             f.appendChild(el);
-            return Job.html(f);
+            return Job.html(f, baseUri);
           }
         } else {
           lexer.setTreatedAsXml(contentType == ContentType.XML);
@@ -282,19 +288,20 @@ class Processor {
           tq.setInputRange(inputRange);
           p = new DomParser(tq, contentType == ContentType.XML, mq);
         }
-        return Job.html(p.parseFragment());
+        return Job.html(p.parseFragment(), baseUri);
       }
       case JS: {
         JsLexer lexer = new JsLexer(cp);
         JsTokenQueue tq = new JsTokenQueue(lexer, is);
         if (tq.isEmpty()) {
           return Job.js(
-              new Block(inputRange, Collections.<Statement>emptyList()), src);
+              new Block(inputRange, Collections.<Statement>emptyList()), src,
+              baseUri);
         }
         tq.setInputRange(inputRange);
         Block program = new Parser(tq, mq, false).parse();
         tq.expectEmpty();
-        return Job.js(program, src);
+        return Job.js(program, src, baseUri);
       }
       case JSON: {  // TODO: use a JSON only lexer.
         JsLexer lexer = new JsLexer(cp);
@@ -305,7 +312,7 @@ class Processor {
         tq.setInputRange(inputRange);
         Expression e = new Parser(tq, mq, false).parseExpressionPart(true);
         tq.expectEmpty();
-        return Job.json((ObjectConstructor) e);
+        return Job.json((ObjectConstructor) e, baseUri);
       }
       case CSS: {
         TokenQueue<CssTokenType> tq = CssParser.makeTokenQueue(cp, mq, false);
@@ -314,10 +321,10 @@ class Processor {
         Job job;
         if (src instanceof Attr) {
           CssTree.DeclarationGroup dg = p.parseDeclarationGroup();
-          job = Job.css(dg, (Attr) src);
+          job = Job.css(dg, (Attr) src, baseUri);
         } else {
           CssTree.StyleSheet ss = p.parseStyleSheet();
-          job = Job.css(ss, (Element) src);  // src may be null
+          job = Job.css(ss, (Element) src, baseUri);  // src may be null
         }
         tq.expectEmpty();
         return job;
@@ -368,90 +375,45 @@ class Processor {
   private List<Job> extractJobs(Job job) {
     List<Job> all = Lists.newArrayList(job);
     if (job.t == ContentType.XML || job.t == ContentType.HTML) {
-      extractJobs((Node) job.root, all);
+      extractJobs((Node) job.root, job.baseUri, all);
     }
     return all;
   }
 
-  private void extractJobs(Node node, List<Job> out) {
-    if (node instanceof Element) {
-      Element el = (Element) node;
-      ElKey elKey = ElKey.forElement(el);
-      if (Namespaces.isHtml(elKey.ns.uri)
-          && ("script".equals(elKey.localName)
-              || "style".equals(elKey.localName))) {
-        String mimeType = el.getAttributeNS(elKey.ns.uri, "type");
-        boolean isScript = "script".equals(elKey.localName);
-        if (!isScript || !el.hasAttribute("src")) {
-          if ("".equals(mimeType)) {
-            mimeType = isScript ? "text/javascript" : "text/css";
-          }
-          CharProducer cp = cdataProducer(node);
-          try {
-            out.add(parse(cp, ContentType.guess(
-                mimeType, null, cp.clone()), el));
-          } catch (ParseException ex) {
-            ex.toMessageQueue(mq);
-          }
+  private void extractJobs(Node node, URI baseUri, List<Job> out) {
+    HtmlEmbeddedContentFinder f = new HtmlEmbeddedContentFinder(
+        req.htmlSchema, req.baseUri, mq, req.mc);
+    PluginEnvironment env = null;
+    for (EmbeddedContent c : f.findEmbeddedContent(node)) {
+      if (c.getType() != null) {
+        Node src = c.getSource();
+        ParseTreeNode t;
+        try {
+          t = c.parse(env, mq);
+        } catch (ParseException ex) {
+          ex.toMessageQueue(mq);
+          continue;
         }
-      }
-      for (Attr a : Nodes.attributesOf(el)) {
-        AttribKey aKey = AttribKey.forAttribute(elKey, a);
-        HTML.Attribute aInfo = req.htmlSchema.lookupAttribute(aKey);
-        if (aInfo != null) {
-          HTML.Attribute.Type aType = aInfo.getType();
-          switch (aType) {
-            case SCRIPT:
-            case STYLE:
-              if (!"".equals(a.getValue().trim())) {
-                CharProducer cp = attribProducer(a);
-                ContentType ct = aType == HTML.Attribute.Type.SCRIPT
-                    ? ContentType.JS : ContentType.CSS;
-                try {
-                  out.add(parse(cp, ct, a));
-                } catch (ParseException ex) {
-                  ex.toMessageQueue(mq);
-                }
-              }
-              break;
-            default: break;
-          }
+        switch (c.getType()) {
+          case JS:
+            if (src instanceof Element) {
+              out.add(Job.js((Block) t, (Element) src, baseUri));
+            } else {
+              out.add(Job.js((Block) t, (Attr) src, baseUri));
+            }
+            break;
+          case CSS:
+            if (src instanceof Element) {
+              out.add(Job.css((CssTree.StyleSheet) t, (Element) src, baseUri));
+            } else {
+              out.add(Job.css(
+                  (CssTree.DeclarationGroup) t, (Attr) src, baseUri));
+            }
+            break;
+          default: throw new SomethingWidgyHappenedError();
         }
       }
     }
-    for (Node child : Nodes.childrenOf(node)) {
-      extractJobs(child, out);
-    }
-  }
-
-  private static CharProducer cdataProducer(Node node) {
-    List<CharProducer> cps = Lists.newArrayList();
-    for (Node child : Nodes.childrenOf(node)) {
-      switch (child.getNodeType()) {
-        case Node.TEXT_NODE:
-        case Node.CDATA_SECTION_NODE:
-          cps.add(
-              CharProducer.Factory.fromString(
-                  child.getNodeValue(),
-                  Nodes.getFilePositionFor(child)));
-          break;
-      }
-    }
-    return CharProducer.Factory.chain(cps.toArray(new CharProducer[0]));
-  }
-
-  private CharProducer attribProducer(Attr a) {
-    String rawText = Nodes.getRawValue(a);
-    FilePosition pos = Nodes.getFilePositionForValue(a);
-    int rawTextLen = rawText.length();
-    if (rawTextLen >= 2) {
-      char ch = rawText.charAt(0);
-      if ((ch == '"' || ch == '\'') && ch == rawText.charAt(rawTextLen - 1)) {
-        rawText = " " + rawText.substring(1, rawTextLen - 1) + " ";
-      }
-    }
-    return CharProducer.Factory.fromHtmlAttribute(
-        CharProducer.Factory.fromString(rawText, pos));
   }
 
   /** Find problems in code. */
@@ -551,7 +513,7 @@ class Processor {
       optimized = new Block(
           optimized.getFilePosition(), Collections.singletonList(optimized));
     }
-    return Job.js((Block) optimized, job.origin);
+    return Job.js((Block) optimized, job.origin, job.baseUri);
   }
 
   private Job optimizeHtml(Job job) {
@@ -602,7 +564,7 @@ class Processor {
     }
     ObjectConstructor json = jsdoc.extract();
     if (req.otype == ContentType.JSON) {
-      return Job.json(json);
+      return Job.json(json, null);
     } else {
       ZipFileSystem fs = new ZipFileSystem("/jsdoc");
       StringBuilder jsonSb = new StringBuilder();

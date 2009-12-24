@@ -14,6 +14,8 @@
 
 package com.google.caja.ancillary.servlet;
 
+import com.google.caja.util.ContentType;
+
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;

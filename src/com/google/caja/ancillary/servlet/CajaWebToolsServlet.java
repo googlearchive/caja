@@ -24,6 +24,7 @@ import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.SimpleMessageQueue;
+import com.google.caja.util.ContentType;
 import com.google.caja.util.Lists;
 import com.google.caja.util.Pair;
 
@@ -229,8 +230,9 @@ public class CajaWebToolsServlet extends HttpServlet {
         CharProducer cp = CharProducer.Factory.fromString(input.code, is);
         req.srcMap.put(is, cp.clone());
         req.mc.addInputSource(is);
+        URI baseUri = req.baseUri != null ? req.baseUri : is.getUri();
         try {
-          inputJobs.add(p.parse(cp, input.t, null));
+          inputJobs.add(p.parse(cp, input.t, null, baseUri));
         } catch (ParseException ex) {
           ex.toMessageQueue(mq);
         }
@@ -242,9 +244,11 @@ public class CajaWebToolsServlet extends HttpServlet {
     // Take the inputs and generate output jobs.
     List<Job> jobs;
     if (req.verb == Verb.INDEX) {
-      jobs = Collections.singletonList(Job.html(IndexPage.render(req)));
+      jobs = Collections.singletonList(
+          Job.html(IndexPage.render(req), null));
     } else if (req.verb == Verb.HELP) {
-      jobs = Collections.singletonList(Job.html(HelpPage.render(staticFiles)));
+      jobs = Collections.singletonList(
+          Job.html(HelpPage.render(staticFiles), null));
     } else {
       try {
         jobs = p.process(inputJobs);

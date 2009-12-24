@@ -18,6 +18,7 @@ import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.ParseException;
 import com.google.caja.reporting.DevNullMessageQueue;
+import com.google.caja.util.ContentType;
 import com.google.caja.util.Lists;
 
 import java.io.ByteArrayOutputStream;
@@ -92,7 +93,7 @@ final class StaticFiles {
         try {
           // TODO(mikesamuel): SVN has it in svn:mime-type, but that is not
           // available via the ClassLoader.  Is there any way to get at it?
-          ContentType t = ContentType.guess(null, path, null);
+          ContentType t = GuessContentType.guess(null, path, null);
           if (t != null && t.isText) {
             InputSource is;
             try {
@@ -110,7 +111,7 @@ final class StaticFiles {
             min.otype = t;
             Processor p = new Processor(min, DevNullMessageQueue.singleton());
             try {
-              Job j = p.parse(cp, t, null);
+              Job j = p.parse(cp, t, null, is.getUri());
               List<Job> out = p.process(Lists.newArrayList(j));
               if (out.size() == 1) {
                 content = p.reduce(out);

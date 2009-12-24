@@ -224,6 +224,30 @@ public class TemplateCompilerTest extends CajaTestCase {
             + "}")));
   }
 
+  public final void testJavascriptUrl() throws Exception {
+    assertSafeHtml(
+        htmlFragment(fromString(
+            "<a href='javascript:alert(1+1)'>Two!!</a>")),
+        htmlFragment(fromString(
+            "<a id=\"id_2___\" target=\"_blank\">Two!!</a>")),
+        js(fromString(
+            ""
+            + "{"
+            // The extracted handler.
+            + "  var c_1___ = ___.markFuncFreeze(function(thisNode___) {"
+            + "    alert(1 + 1);"  // Cajoled later
+            + "  });"
+            + "  var el___; var emitter___ = IMPORTS___.htmlEmitter___;"
+            + "  el___ = emitter___.byId('id_2___');"
+            + "  emitter___.setAttr(el___, 'href', 'javascript:' +"
+            + "    encodeURIComponent('plugin_dispatchEvent___(this, null, ' +"
+            + "        ___.getId(IMPORTS___) + ', ' + 'c_1___' + '), void 0'));"
+            + "  el___.removeAttribute('id');"
+            + "  el___ = emitter___.finish();"
+            + "  emitter___.signalLoaded();"
+            + "}")));
+  }
+
   // See bug 722
   public final void testFormOnSubmitEmpty() throws Exception {
     assertSafeHtml(

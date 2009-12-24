@@ -3201,14 +3201,17 @@ jsunitRegister('testUsemap',
       (''
        + '<map name="foo-xyz___">'
        + '<area href="http://example.com/'
-       + '?mime-type=*%2F*&amp;uri=areatarget.html"'
+       + '?mime-type=*%2F*&amp;uri=(base)/areatarget.html"'
        + ' target="_blank">'
        + '</map>'
        + '<img'
-       + ' src="http://example.com/?mime-type=image%2F*&amp;uri=mappic.gif"'
-       + ' usemap="#foo-xyz___"'
+       + ' src="http://example.com/?mime-type=image%2F*'
+       + '&amp;uri=(base)/mappic.gif" usemap="#foo-xyz___"'
        + '>'),
-      canonInnerHtml(directAccess.getInnerHTML(el)));
+      canonInnerHtml(directAccess.getInnerHTML(el)).replace(
+          // Normalize the base URI
+          new RegExp('\\buri=[^\"<>]*?(%2[Ff]|/)plugin(%2[Ff]|/)', 'g'),
+          'uri=(base)/'));
 
   pass('test-usemap');
 });

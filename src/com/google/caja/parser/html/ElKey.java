@@ -67,6 +67,11 @@ public final class ElKey implements MessagePart, Comparable<ElKey> {
 
   public boolean isHtml() { return ns.uri == Namespaces.HTML_NAMESPACE_URI; }
 
+  public boolean is(Element el) {
+    return ns.uri.equals(el.getNamespaceURI())
+        && ("*".equals(localName) || localName.equals(el.getLocalName()));
+  }
+
   public static ElKey forHtmlElement(String localName) {
     return new ElKey(HTML_NS, Strings.toLowerCase(localName));
   }

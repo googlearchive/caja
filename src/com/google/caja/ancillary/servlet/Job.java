@@ -17,6 +17,9 @@ package com.google.caja.ancillary.servlet;
 import com.google.caja.parser.css.CssTree;
 import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.ObjectConstructor;
+import com.google.caja.util.ContentType;
+
+import java.net.URI;
 
 import org.w3c.dom.Attr;
 import org.w3c.dom.DocumentFragment;
@@ -38,35 +41,38 @@ final class Job {
    * For JS this might be a {@code script} element or {@code onclick} attribute.
    */
   final Node origin;
+  /** Base URI for the job */
+  final URI baseUri;
 
-  private Job(ContentType t, Object root, Node origin) {
+  private Job(ContentType t, Object root, Node origin, URI baseUri) {
     this.t = t;
     this.root = root;
     this.origin = origin;
+    this.baseUri = baseUri;
   }
 
-  static Job js(Block root, Node origin) {
-    return new Job(ContentType.JS, root, origin);
+  static Job js(Block root, Node origin, URI baseUri) {
+    return new Job(ContentType.JS, root, origin, baseUri);
   }
 
-  static Job json(ObjectConstructor root) {
-    return new Job(ContentType.JSON, root, null);
+  static Job json(ObjectConstructor root, URI baseUri) {
+    return new Job(ContentType.JSON, root, null, baseUri);
   }
 
-  static Job css(CssTree.StyleSheet css, Element origin) {
-    return new Job(ContentType.CSS, css, origin);
+  static Job css(CssTree.StyleSheet css, Element origin, URI baseUri) {
+    return new Job(ContentType.CSS, css, origin, baseUri);
   }
 
-  static Job css(CssTree.DeclarationGroup css, Attr origin) {
-    return new Job(ContentType.CSS, css, origin);
+  static Job css(CssTree.DeclarationGroup css, Attr origin, URI baseUri) {
+    return new Job(ContentType.CSS, css, origin, baseUri);
   }
 
-  static Job html(DocumentFragment fragment) {
-    return new Job(ContentType.HTML, fragment, null);
+  static Job html(DocumentFragment fragment, URI baseUri) {
+    return new Job(ContentType.HTML, fragment, null, baseUri);
   }
 
   static Job zip(byte[] zipBody) {
-    return new Job(ContentType.ZIP, zipBody, null);
+    return new Job(ContentType.ZIP, zipBody, null, null);
   }
 
   @Override

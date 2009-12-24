@@ -50,6 +50,12 @@ public final class AttribKey implements MessagePart, Comparable<AttribKey> {
         ? Strings.toLowerCase(localName) : localName;
   }
 
+  public boolean is(Attr a) {
+    return ns.uri.equals(a.getNamespaceURI())
+        && localName.equals(a.getLocalName())
+        && el.is(a.getOwnerElement());
+  }
+
   private static final Namespaces HTML_NS = Namespaces.HTML_DEFAULT.forUri(
       Namespaces.HTML_NAMESPACE_URI);
 

@@ -72,7 +72,7 @@
         try {
           {
             throw $v.ts($v.construct($v.ro('Error'), [
-                  'Failed to load example-gadget-files/no-such-file.js' ]));
+                  'Failed to load no-such-file.js' ]));
           }
         } catch (ex___) {
           ___.getNewModuleHandler().handleUncaughtException(ex___,

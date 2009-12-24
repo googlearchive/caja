@@ -14,6 +14,8 @@
 
 package com.google.caja.ancillary.servlet;
 
+import com.google.caja.util.ContentType;
+
 /**
  * Encapsulates a source file uploaded to the tools servlet.
  *

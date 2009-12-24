@@ -14,6 +14,7 @@
 
 package com.google.caja.ancillary.servlet;
 
+import com.google.caja.util.ContentType;
 import com.google.caja.util.Strings;
 
 import java.io.IOException;
@@ -47,7 +48,7 @@ final class UriFetcher {
     } finally {
       in.close();
     }
-    ContentType t = ContentType.guess(
+    ContentType t = GuessContentType.guess(
         conn.getContentType(), uri.getPath(), text);
     return new Content(text.toString(), t);
   }
