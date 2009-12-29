@@ -33,12 +33,14 @@ import com.google.caja.plugin.templates.TemplateCompiler;
 import com.google.caja.plugin.templates.TemplateSanitizer;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.RenderContext;
+import com.google.caja.util.Lists;
 import com.google.caja.util.Pair;
 import com.google.caja.util.Pipeline;
+import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.render.Concatenator;
 
-import java.util.ArrayList;
+import java.net.URI;
 import java.util.Iterator;
 import java.util.List;
 
@@ -61,8 +63,8 @@ public final class CompileHtmlStage implements Pipeline.Stage<Jobs> {
   }
 
   public boolean apply(Jobs jobs) {
-    List<Node> ihtmlRoots = new ArrayList<Node>();
-    List<CssTree.StyleSheet> stylesheets = new ArrayList<CssTree.StyleSheet>();
+    List<Pair<Node, URI>> ihtmlRoots = Lists.newArrayList();
+    List<CssTree.StyleSheet> stylesheets = Lists.newArrayList();
 
     for (Iterator<Job> jobIt = jobs.getJobs().iterator(); jobIt.hasNext();) {
       Job job = jobIt.next();
@@ -73,7 +75,8 @@ public final class CompileHtmlStage implements Pipeline.Stage<Jobs> {
           // system and we set up expectations on the part of our users to
           // maintain this behavior, regardless of whatever complexity that
           // might entail.
-          ihtmlRoots.add(job.getRoot().cast(Dom.class).node.getValue());
+          ihtmlRoots.add(Pair.pair(
+              job.getRoot().cast(Dom.class).node.getValue(), job.getBaseUri()));
           jobIt.remove();
           break;
         case CSS:
@@ -88,19 +91,26 @@ public final class CompileHtmlStage implements Pipeline.Stage<Jobs> {
       MessageQueue mq = jobs.getMessageQueue();
 
       TemplateSanitizer ts = new TemplateSanitizer(htmlSchema, mq);
-      for (Node ihtmlRoot : ihtmlRoots) { ts.sanitize(ihtmlRoot); }
+      for (Pair<Node, URI> ihtmlRoot : ihtmlRoots) { ts.sanitize(ihtmlRoot.a); }
       TemplateCompiler tc = new TemplateCompiler(
           ihtmlRoots, stylesheets, cssSchema, htmlSchema,
           jobs.getPluginMeta(), jobs.getMessageContext(), mq);
       Pair<Node, List<Block>> htmlAndJs = tc.getSafeHtml(
           DomParser.makeDocument(null, null));
 
-      jobs.getJobs().add(new Job(AncestorChain.instance(
-          jobs.getPluginMeta().isOnlyJsEmitted()
-              ? makeEmitStaticStmt(htmlAndJs.a) : new Dom(htmlAndJs.a))));
+      Job outJob;
+      if (jobs.getPluginMeta().isOnlyJsEmitted()) {
+        outJob = Job.jsJob(
+            AncestorChain.instance(makeEmitStaticStmt(htmlAndJs.a)));
+      } else {
+        outJob = Job.domJob(
+            AncestorChain.instance(new Dom(htmlAndJs.a)),
+            InputSource.UNKNOWN.getUri());
+      }
+      jobs.getJobs().add(outJob);
 
       for (Block bl : htmlAndJs.b) {
-        jobs.getJobs().add(new Job(AncestorChain.instance(bl)));
+        jobs.getJobs().add(Job.jsJob(AncestorChain.instance(bl)));
       }
     }
 

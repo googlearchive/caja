@@ -152,7 +152,7 @@ public final class PluginCompilerMain {
       try {
         ParseTreeNode parseTree = parseInput(input);
         if (null != parseTree) {
-          pluginc.addInput(AncestorChain.instance(parseTree));
+          pluginc.addInput(AncestorChain.instance(parseTree), input);
         }
       } catch (ParseException ex) {
         ex.toMessageQueue(mq);

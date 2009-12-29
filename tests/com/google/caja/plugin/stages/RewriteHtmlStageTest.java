@@ -24,11 +24,11 @@ import com.google.caja.plugin.ExtractedHtmlContent;
 import com.google.caja.plugin.Job;
 import com.google.caja.plugin.Jobs;
 import com.google.caja.plugin.PluginMessageType;
-import com.google.caja.plugin.Job.JobType;
 import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageType;
-import java.util.ArrayList;
+import com.google.caja.util.ContentType;
+import com.google.caja.util.Lists;
 
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -40,34 +40,34 @@ import org.w3c.dom.Node;
 public final class RewriteHtmlStageTest extends PipelineStageTestCase {
   public final void testScriptExtraction() throws Exception {
     assertPipeline(
-        job("foo<script>extracted();</script>baz", Job.JobType.HTML),
+        job("foo<script>extracted();</script>baz", ContentType.HTML),
         // The "jobnum" attribute was added by the extractScript method below.
-        job("foo<span jobnum=\"1\"></span>baz", Job.JobType.HTML),
-        job("{ extracted(); }", Job.JobType.JAVASCRIPT)
+        job("foo<span jobnum=\"1\"></span>baz", ContentType.HTML),
+        job("{ extracted(); }", ContentType.JS)
         );
     assertNoErrors();
 
     assertPipeline(
         job("foo<script type=text/vbscript>deleted()</script>baz",
-            Job.JobType.HTML),
-        job("foobaz", Job.JobType.HTML)
+            ContentType.HTML),
+        job("foobaz", ContentType.HTML)
         );
     assertMessage(
         PluginMessageType.UNRECOGNIZED_CONTENT_TYPE, MessageLevel.WARNING);
 
     assertPipeline(
         job("foo<script type=\"text/javascript\">var x = 1;</script>baz",
-            Job.JobType.HTML),
-        job("foo<span jobnum=\"1\"></span>baz", Job.JobType.HTML),
-        job("{\n  var x = 1;\n}", Job.JobType.JAVASCRIPT)
+            ContentType.HTML),
+        job("foo<span jobnum=\"1\"></span>baz", ContentType.HTML),
+        job("{\n  var x = 1;\n}", ContentType.JS)
         );
     assertNoErrors();
 
     assertPipeline(
         job("foo<script type=\"text/javascript\""
             + ">useXml(<xml>foo</xml>);</script>baz",
-            Job.JobType.HTML),
-        job("foobaz", Job.JobType.HTML)
+            ContentType.HTML),
+        job("foobaz", ContentType.HTML)
         );
     assertMessage(
         MessageType.UNEXPECTED_TOKEN,
@@ -77,54 +77,54 @@ public final class RewriteHtmlStageTest extends PipelineStageTestCase {
 
     assertPipeline(
         job("foo<script type=text/javascript>extracted();</script>baz",
-            Job.JobType.HTML),
-        job("foo<span jobnum=\"1\"></span>baz", Job.JobType.HTML),
-        job("{ extracted(); }", Job.JobType.JAVASCRIPT)
+            ContentType.HTML),
+        job("foo<span jobnum=\"1\"></span>baz", ContentType.HTML),
+        job("{ extracted(); }", ContentType.JS)
         );
     assertNoErrors();
 
     assertPipeline(
-        job("foo<script></script>baz", Job.JobType.HTML),
-        job("foobaz", Job.JobType.HTML)
+        job("foo<script></script>baz", ContentType.HTML),
+        job("foobaz", ContentType.HTML)
         );
     assertNoErrors();
   }
 
   public final void testStyleExtraction() throws Exception {
     assertPipeline(
-        job("Foo<style>p { color: blue }</style><p>Bar", Job.JobType.HTML),
-        job("Foo<p>Bar</p>", Job.JobType.HTML),
-        job("p {\n  color: blue\n}", Job.JobType.CSS));
+        job("Foo<style>p { color: blue }</style><p>Bar", ContentType.HTML),
+        job("Foo<p>Bar</p>", ContentType.HTML),
+        job("p {\n  color: blue\n}", ContentType.CSS));
     assertNoErrors();
 
     assertPipeline(
         job("Foo<link rel=stylesheet href=content:p+%7Bcolor%3A+blue%7D><p>Bar",
-            Job.JobType.HTML),
-        job("Foo<p>Bar</p>", Job.JobType.HTML),
-        job("p {\n  color: blue\n}", Job.JobType.CSS));
+            ContentType.HTML),
+        job("Foo<p>Bar</p>", ContentType.HTML),
+        job("p {\n  color: blue\n}", ContentType.CSS));
     assertNoErrors();
 
     assertPipeline(
-        job("Foo<style></style><p>Bar", Job.JobType.HTML),
-        job("Foo<p>Bar</p>", Job.JobType.HTML));
+        job("Foo<style></style><p>Bar", ContentType.HTML),
+        job("Foo<p>Bar</p>", ContentType.HTML));
     assertNoErrors();
   }
 
   public final void testOnLoadHandlers() throws Exception {
     assertPipeline(
-        job("<body onload=init();>Foo</body>", Job.JobType.HTML),
+        job("<body onload=init();>Foo</body>", ContentType.HTML),
         job("<html><head></head>"
             + "<body>Foo<span jobnum=\"1\"></span></body></html>",
-            Job.JobType.HTML),
-        job("{ init(); }", Job.JobType.JAVASCRIPT));
+            ContentType.HTML),
+        job("{ init(); }", ContentType.JS));
     assertNoErrors();
   }
 
   public final void testImportedStyles() throws Exception {
     assertPipeline(
-        job("<style>@import 'styles.css';</style>", Job.JobType.HTML),
-        job("", Job.JobType.HTML),
-        job("@import url('styles.css');", Job.JobType.CSS)
+        job("<style>@import 'styles.css';</style>", ContentType.HTML),
+        job("", ContentType.HTML),
+        job("@import url('styles.css');", ContentType.CSS)
         );
     assertNoErrors();
   }
@@ -132,31 +132,31 @@ public final class RewriteHtmlStageTest extends PipelineStageTestCase {
   public final void testTypeAndMediaAttributes() throws Exception {
     assertPipeline(
         job("<link rel=stylesheet media=screen href=content:p+%7B%7D>",
-            Job.JobType.HTML),
-        job("", Job.JobType.HTML),
-        job("@media screen {\n  p {\n  }\n}", Job.JobType.CSS));
+            ContentType.HTML),
+        job("", ContentType.HTML),
+        job("@media screen {\n  p {\n  }\n}", ContentType.CSS));
     assertNoErrors();
 
     assertPipeline(
         job("<link rel=stylesheet type=text/css href=content:p+%7B%7D>",
-            Job.JobType.HTML),
-        job("", Job.JobType.HTML),
-        job("p {\n}", Job.JobType.CSS));
+            ContentType.HTML),
+        job("", ContentType.HTML),
+        job("p {\n}", ContentType.CSS));
     assertNoErrors();
 
     assertPipeline(
         job("<link rel=stylesheet media=all href=content:p+%7B%7D>",
-            Job.JobType.HTML),
-        job("", Job.JobType.HTML),
-        job("p {\n}", Job.JobType.CSS));
+            ContentType.HTML),
+        job("", ContentType.HTML),
+        job("p {\n}", ContentType.CSS));
     assertNoErrors();
 
     assertPipeline(
         job("<link rel=stylesheet media=braille,tty type=text/css"
             + " href=content:p+%7B%7D>",
-            Job.JobType.HTML),
-        job("", Job.JobType.HTML),
-        job("@media braille, tty {\n  p {\n  }\n}", Job.JobType.CSS));
+            ContentType.HTML),
+        job("", ContentType.HTML),
+        job("@media braille, tty {\n  p {\n  }\n}", ContentType.CSS));
     assertNoErrors();
   }
 
@@ -167,14 +167,14 @@ public final class RewriteHtmlStageTest extends PipelineStageTestCase {
             + "<script src=content:c(); defer=defer></script>"
             + "<script src=content:d(); defer=no></script>"
             + "<br>",
-            Job.JobType.HTML),
+            ContentType.HTML),
         job("<span jobnum=\"1\"></span><span jobnum=\"2\"></span><br />"
             + "<span jobnum=\"3\"></span><span jobnum=\"4\"></span>",
-            Job.JobType.HTML),
-        job("{ a(); }", Job.JobType.JAVASCRIPT),
-        job("{ d(); }", Job.JobType.JAVASCRIPT),
-        job("{ b(); }", Job.JobType.JAVASCRIPT),
-        job("{ c(); }", Job.JobType.JAVASCRIPT));
+            ContentType.HTML),
+        job("{ a(); }", ContentType.JS),
+        job("{ d(); }", ContentType.JS),
+        job("{ b(); }", ContentType.JS),
+        job("{ c(); }", ContentType.JS));
     assertNoErrors();
   }
 
@@ -183,14 +183,14 @@ public final class RewriteHtmlStageTest extends PipelineStageTestCase {
         job("<script src=content:onerror=panic;></script>"
             + "<script src=\"http://bogus.com/bogus.js#'!\"></script>"
             + "<script src=content:foo()></script>",
-            Job.JobType.HTML),
+            ContentType.HTML),
         job("<span jobnum=\"1\"></span><span jobnum=\"2\"></span>"
             + "<span jobnum=\"3\"></span>",
-            Job.JobType.HTML),
-        job("{\n  onerror = panic;\n}", Job.JobType.JAVASCRIPT),
+            ContentType.HTML),
+        job("{\n  onerror = panic;\n}", ContentType.JS),
         job("{\n  throw new Error('Failed to load bogus.js#%27%21');\n}",
-            Job.JobType.JAVASCRIPT),
-        job("{ foo(); }", Job.JobType.JAVASCRIPT));
+            ContentType.JS),
+        job("{ foo(); }", ContentType.JS));
     assertNoErrors();
   }
 
@@ -201,7 +201,7 @@ public final class RewriteHtmlStageTest extends PipelineStageTestCase {
     boolean result = new ResolveUriStage(schema).apply(jobs)
         && new RewriteHtmlStage(schema).apply(jobs);
     // Dump the extracted script bits on the queue.
-    for (Job job : new ArrayList<Job>(jobs.getJobsByType(JobType.HTML))) {
+    for (Job job : Lists.newArrayList(jobs.getJobsByType(ContentType.HTML))) {
       Dom dom = job.getRoot().cast(Dom.class).node;
       extractScripts(dom.getValue(), jobs);
     }
@@ -217,7 +217,7 @@ public final class RewriteHtmlStageTest extends PipelineStageTestCase {
           int jobNum = jobs.getJobs().size();
           el.setAttributeNS(
               Namespaces.HTML_NAMESPACE_URI, "jobnum", "" + jobNum);
-          jobs.getJobs().add(new Job(AncestorChain.instance(extracted)));
+          jobs.getJobs().add(Job.jsJob(AncestorChain.instance(extracted)));
         }
         for (Node c = el.getFirstChild(); c != null; c = c.getNextSibling()) {
           extractScripts(c, jobs);

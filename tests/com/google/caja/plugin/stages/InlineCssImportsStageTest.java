@@ -15,24 +15,24 @@
 package com.google.caja.plugin.stages;
 
 import com.google.caja.lexer.ParseException;
-import com.google.caja.plugin.Job;
 import com.google.caja.plugin.Jobs;
 import com.google.caja.plugin.PluginMessageType;
 import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessageType;
+import com.google.caja.util.ContentType;
 
 public class InlineCssImportsStageTest extends PipelineStageTestCase {
   public final void testNoImports() throws Exception {
     assertPipeline(
-        job("p { color: purple }", Job.JobType.CSS),
-        job("p {\n  color: purple\n}", Job.JobType.CSS));
+        job("p { color: purple }", ContentType.CSS),
+        job("p {\n  color: purple\n}", ContentType.CSS));
   }
 
   public final void testOneImport() throws Exception {
     addUrlToPluginEnvironment("foo.css", "p { color: purple }");
     assertPipeline(
-        job("@import 'foo.css';", Job.JobType.CSS),
-        job("p {\n  color: purple\n}", Job.JobType.CSS));
+        job("@import 'foo.css';", ContentType.CSS),
+        job("p {\n  color: purple\n}", ContentType.CSS));
   }
 
   public final void testImportResolvedRelativeToImporter() throws Exception {
@@ -40,8 +40,8 @@ public class InlineCssImportsStageTest extends PipelineStageTestCase {
     addUrlToPluginEnvironment("baz.css", "p { color: #f88 }");
     addUrlToPluginEnvironment("foo/baz.css", "p { color: purple }");
     assertPipeline(
-        job("@import 'foo/bar.css';", Job.JobType.CSS),
-        job("p {\n  color: purple\n}", Job.JobType.CSS));
+        job("@import 'foo/bar.css';", ContentType.CSS),
+        job("p {\n  color: purple\n}", ContentType.CSS));
   }
 
   public final void testMultipleImport() throws Exception {
@@ -49,10 +49,10 @@ public class InlineCssImportsStageTest extends PipelineStageTestCase {
     addUrlToPluginEnvironment("bar.css", "b { color: blue }");
     assertPipeline(
         job("@import 'foo.css'; @import 'bar.css'; i { color: #ff8 }",
-            Job.JobType.CSS),
+            ContentType.CSS),
         job("p {\n  color: purple\n}\n"
             + "b {\n  color: blue\n}\n"
-            + "i {\n  color: #ff8\n}", Job.JobType.CSS));
+            + "i {\n  color: #ff8\n}", ContentType.CSS));
   }
 
   public final void testMediaTypesUnioned() throws Exception {
@@ -79,7 +79,7 @@ public class InlineCssImportsStageTest extends PipelineStageTestCase {
             + "@import 'all2.css' screen, print;\n"  // Cross with explicit all
             + "@import 'all1.css' all;\n"  // All x implicit all
             + "@import 'all2.css' all;",  // All x explicit all
-            Job.JobType.CSS),
+            ContentType.CSS),
         job("@media screen {\n  s {\n    content: 'screen'\n  }\n}\n"
             + "@media print {\n  p {\n    content: 'print'\n  }\n}\n"
             + "@media print {\n  b {\n    content: 'multi'\n  }\n}\n"
@@ -87,13 +87,13 @@ public class InlineCssImportsStageTest extends PipelineStageTestCase {
             + "@media screen, print {\n  a {\n    content: 'all2'\n  }\n}\n"
             + "a {\n  content: 'all1'\n}\n"
             + "@media all {\n  a {\n    content: 'all2'\n  }\n}",
-            Job.JobType.CSS));
+            ContentType.CSS));
   }
 
   public final void testUnresolveableImport() throws Exception {
     assertPipelineFails(
-        job("@import 'bogus.css';", Job.JobType.CSS),
-        job("@import url('bogus.css');", Job.JobType.CSS));
+        job("@import 'bogus.css';", ContentType.CSS),
+        job("@import url('bogus.css');", ContentType.CSS));
     assertMessage(PluginMessageType.FAILED_TO_LOAD_EXTERNAL_URL, MessageLevel.ERROR);
   }
 
@@ -102,16 +102,16 @@ public class InlineCssImportsStageTest extends PipelineStageTestCase {
       addUrlToPluginEnvironment("foo.css", "@import 'foo.css';");
     }
     assertPipelineFails(
-        job("@import 'foo.css';", Job.JobType.CSS),
-        job("@import url('foo.css');", Job.JobType.CSS));
+        job("@import 'foo.css';", ContentType.CSS),
+        job("@import url('foo.css');", ContentType.CSS));
     assertMessage(PluginMessageType.CYCLIC_INCLUDE, MessageLevel.ERROR);
   }
 
   public final void testMalformedUrl() throws Exception {
     try {
       assertPipelineFails(
-          job("@import ':::';", Job.JobType.CSS),
-          job("@import url(':::');", Job.JobType.CSS));
+          job("@import ':::';", ContentType.CSS),
+          job("@import url(':::');", ContentType.CSS));
     } catch (ParseException ex) {
       ex.toMessageQueue(mq);
     }

@@ -20,10 +20,10 @@ import com.google.caja.plugin.Dom;
 import com.google.caja.plugin.Job;
 import com.google.caja.plugin.Jobs;
 import com.google.caja.plugin.PluginMessageType;
-import com.google.caja.plugin.Job.JobType;
 import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
+import com.google.caja.util.ContentType;
 import com.google.caja.util.Lists;
 import com.google.caja.util.Pipeline;
 
@@ -44,7 +44,7 @@ public class LegacyNamespaceFixupStage implements Pipeline.Stage<Jobs> {
 
   public boolean apply(Jobs jobs) {
     Fixer f = new Fixer(jobs.getMessageQueue());
-    for (Job job : jobs.getJobsByType(JobType.HTML)) { f.fix(job); }
+    for (Job job : jobs.getJobsByType(ContentType.HTML)) { f.fix(job); }
     return jobs.hasNoFatalErrors();
   }
 

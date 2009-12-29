@@ -14,6 +14,7 @@
 
 package com.google.caja.plugin.stages;
 
+import com.google.caja.lexer.InputSource;
 import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.html.DomParser;
@@ -136,7 +137,8 @@ public class LegacyNamespaceFixupStageTest extends CajaTestCase {
 
     Job job() {
       assertEquals(stack, Lists.newArrayList(root));
-      return new Job(AncestorChain.instance(new Dom(root)));
+      return Job.domJob(
+          AncestorChain.instance(new Dom(root)), InputSource.UNKNOWN.getUri());
     }
     NamespaceUnawareBuilder open(String qname) {
       Element el = doc.createElement(qname);

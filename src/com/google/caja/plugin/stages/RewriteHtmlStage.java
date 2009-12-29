@@ -36,6 +36,7 @@ import com.google.caja.plugin.PluginMessageType;
 import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
+import com.google.caja.util.ContentType;
 import com.google.caja.util.Lists;
 import com.google.caja.util.Name;
 import com.google.caja.util.Pipeline;
@@ -79,10 +80,10 @@ public class RewriteHtmlStage implements Pipeline.Stage<Jobs> {
   public boolean apply(Jobs jobs) {
     MessageQueue mq = jobs.getMessageQueue();
     MessageContext mc = jobs.getMessageContext();
-    for (Job job : jobs.getJobsByType(Job.JobType.HTML)) {
+    for (Job job : jobs.getJobsByType(ContentType.HTML)) {
       Node root = ((Dom) job.getRoot().node).getValue();
       HtmlEmbeddedContentFinder finder = new HtmlEmbeddedContentFinder(
-          htmlSchema, null, mq, mc);
+          htmlSchema, job.getBaseUri(), mq, mc);
       for (EmbeddedContent content : finder.findEmbeddedContent(root)) {
         Node src = content.getSource();
         if (content.getSource() instanceof Element) {
@@ -234,7 +235,8 @@ public class RewriteHtmlStage implements Pipeline.Stage<Jobs> {
       }
     }
 
-    jobs.getJobs().add(new Job(AncestorChain.instance(stylesheet)));
+    jobs.getJobs().add(Job.cssJob(
+        AncestorChain.instance(stylesheet), c.getBaseUri()));
   }
 
   /**

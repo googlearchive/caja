@@ -26,6 +26,7 @@ import com.google.caja.plugin.Job;
 import com.google.caja.plugin.Jobs;
 import com.google.caja.plugin.PluginMessageType;
 import com.google.caja.reporting.MessageQueue;
+import com.google.caja.util.ContentType;
 import com.google.caja.util.Pipeline;
 
 import java.util.LinkedHashMap;
@@ -73,7 +74,7 @@ public final class DebuggingSymbolsStage implements Pipeline.Stage<Jobs> {
       for (ListIterator<Job> it = jobs.getJobs().listIterator();
            it.hasNext();) {
         Job job = it.next();
-        if (job.getType() != Job.JobType.JAVASCRIPT
+        if (job.getType() != ContentType.JS
             // May occur if the cajita rewriter does not run due to errors.
             || !(job.getRoot().node instanceof CajoledModule)) {
           continue;
@@ -87,13 +88,14 @@ public final class DebuggingSymbolsStage implements Pipeline.Stage<Jobs> {
         }
 
         DebuggingSymbols symbols = new DebuggingSymbols();
-        CajoledModule js = addSymbols(job.getRoot().cast(CajoledModule.class), symbols, mq);
+        CajoledModule js = addSymbols(
+            job.getRoot().cast(CajoledModule.class), symbols, mq);
         if (!symbols.isEmpty()) {
           if (DEBUG) {
             System.err.println("\n\nPost\n===\n" + js.toStringDeep() + "\n\n");
           }
-          it.set(
-              new Job(AncestorChain.instance(attachSymbols(symbols, js, mq))));
+          it.set(Job.cajoledJob(AncestorChain.instance(
+              attachSymbols(symbols, js, mq))));
         }
       }
     }

@@ -15,79 +15,79 @@
 package com.google.caja.plugin.stages;
 
 import com.google.caja.lang.html.HtmlSchema;
-import com.google.caja.plugin.Job;
 import com.google.caja.plugin.Jobs;
+import com.google.caja.util.ContentType;
 
 public class ResolveUriStageTest extends PipelineStageTestCase {
 
   public final void testEmptyDoc() throws Exception {
     assertPipeline(
-        job("", Job.JobType.HTML),
-        job("", Job.JobType.HTML));
+        job("", ContentType.HTML),
+        job("", ContentType.HTML));
   }
 
   public final void testLink() throws Exception {
     assertPipeline(
-        job("<a href=foo.html>foo</a>", Job.JobType.HTML),
-        job("<a href=\"test:/foo.html\">foo</a>", Job.JobType.HTML));
+        job("<a href=foo.html>foo</a>", ContentType.HTML),
+        job("<a href=\"test:/foo.html\">foo</a>", ContentType.HTML));
   }
 
   public final void testAnchorOnly() throws Exception {
     assertPipeline(
-        job("<a href=#bar>foo</a>", Job.JobType.HTML),
-        job("<a href=\"#bar\">foo</a>", Job.JobType.HTML));
+        job("<a href=#bar>foo</a>", ContentType.HTML),
+        job("<a href=\"#bar\">foo</a>", ContentType.HTML));
   }
 
   public final void testLinkWithAnchor() throws Exception {
     assertPipeline(
-        job("<a href=foo.html#bar>foo</a>", Job.JobType.HTML),
+        job("<a href=foo.html#bar>foo</a>", ContentType.HTML),
         job("<a href=\"test:/foo.html#bar\">foo</a>",
-            Job.JobType.HTML));
+            ContentType.HTML));
   }
 
   public final void testLinkWithBase() throws Exception {
     assertPipeline(
         job("<base href=http://example.org/bar/baz/foo.html>"
             + "<a href=../boo.html>foo</a>",
-            Job.JobType.HTML),
+            ContentType.HTML),
         job("<base href=\"http://example.org/bar/baz/foo.html\" />"
             + "<a href=\"http://example.org/bar/boo.html\">foo</a>",
-            Job.JobType.HTML));
+            ContentType.HTML));
   }
 
   public final void testUnresolvableUrl() throws Exception {
     assertPipeline(
         job("<base href=http://example.org/bar/baz/foo.html>"
             + "<a href=../../../../boo.html>foo</a>",
-            Job.JobType.HTML),
+            ContentType.HTML),
         job("<base href=\"http://example.org/bar/baz/foo.html\" />"
             + "<a href=\"../../../../boo.html\">foo</a>",
-            Job.JobType.HTML));
+            ContentType.HTML));
   }
 
   public final void testMalformedUrl() throws Exception {
     assertPipeline(
         job("<a href='foo bar'>foo</a>",
-            Job.JobType.HTML),
+            ContentType.HTML),
         job("<a href=\"test:/foo%20bar\">foo</a>",
-            Job.JobType.HTML));
+            ContentType.HTML));
   }
 
   public final void testOpaqueUrl() throws Exception {
     assertPipeline(
         job("<a href=mailto:bob@example.com>foo</a>",
-            Job.JobType.HTML),
+            ContentType.HTML),
         job("<a href=\"mailto:bob%40example.com\">foo</a>",
-            Job.JobType.HTML));
+            ContentType.HTML));
   }
 
   public final void testJavascriptUrl() throws Exception {
     assertPipeline(
         job("<a href='javascript:foo() + bar([1, 2, 3]) * 4'>foo</a>",
-            Job.JobType.HTML),
+            ContentType.HTML),
         job("<a href=\"javascript:"
             + "foo%28%29%20+%20bar%28%5B1,%202,%203%5D%29%20%2A%204\">foo</a>",
-            Job.JobType.HTML));
+            ContentType.HTML));
   }
 
   @Override

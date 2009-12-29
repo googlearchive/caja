@@ -138,7 +138,7 @@ public class BenchmarkRunner extends CajaTestCase {
             fromString(plain(fromResource(filename)));
     pc.addInput(AncestorChain.instance(valija
         ? BenchmarkUtils.addUseCajitaDirective(js(src))
-        : js(src)));
+        : js(src)), is.getUri());
     if (!pc.run()) {
       return -1;
     }

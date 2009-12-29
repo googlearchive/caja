@@ -22,6 +22,7 @@ import com.google.caja.parser.js.Block;
 import com.google.caja.plugin.ExpressionSanitizerCaja;
 import com.google.caja.plugin.Job;
 import com.google.caja.plugin.Jobs;
+import com.google.caja.util.ContentType;
 import com.google.caja.util.Pipeline;
 import com.google.caja.reporting.BuildInfo;
 
@@ -42,7 +43,7 @@ public final class ValidateJavascriptStage implements Pipeline.Stage<Jobs> {
   public boolean apply(Jobs jobs) {
     for (ListIterator<Job> it = jobs.getJobs().listIterator(); it.hasNext();) {
       Job job = it.next();
-      if (job.getType() != Job.JobType.JAVASCRIPT) { continue; }
+      if (job.getType() != ContentType.JS) { continue; }
       // Pass in the rootmost scope that has non-synthetic children, so that
       // the Caja rules correctly identify global function declarations.
       AncestorChain<?> nonSyntheticScopeRoot
@@ -53,7 +54,7 @@ public final class ValidateJavascriptStage implements Pipeline.Stage<Jobs> {
             buildInfo, jobs.getMessageQueue())
             .sanitize(nonSyntheticScopeRoot);
         if (nonSyntheticScopeRoot.parent == null) {
-          it.set(new Job(AncestorChain.instance(validated)));
+          it.set(Job.job(AncestorChain.instance(validated), null));
         } else {
           ((MutableParseTreeNode) nonSyntheticScopeRoot.parent.node)
               .replaceChild(validated, nonSyntheticScopeRoot.node);

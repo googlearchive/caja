@@ -29,6 +29,7 @@ import com.google.caja.reporting.MessageQueue;
 import com.google.caja.util.ContentType;
 import com.google.caja.util.Function;
 
+import java.net.URI;
 import java.util.Collections;
 
 import org.w3c.dom.Node;
@@ -61,6 +62,10 @@ public final class EmbeddedContent {
     this.type = type;
   }
 
+  public URI getBaseUri() {
+    return contentLocation != null
+        ? contentLocation.getUri() : finder.getBaseUri();
+  }
   public FilePosition getPosition() { return pos; }
   /**
    * The message queue associated with the HtmlEmbeddedContentFinder that

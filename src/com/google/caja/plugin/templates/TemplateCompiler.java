@@ -35,6 +35,7 @@ import com.google.caja.util.Lists;
 import com.google.caja.util.Maps;
 import com.google.caja.util.Pair;
 
+import java.net.URI;
 import java.util.List;
 import java.util.Map;
 
@@ -58,7 +59,7 @@ import org.w3c.dom.Text;
  * @author mikesamuel@gmail.com
  */
 public class TemplateCompiler {
-  private final List<Node> ihtmlRoots;
+  private final List<Pair<Node, URI>> ihtmlRoots;
   private final List<CssTree.StyleSheet> safeStylesheets;
   private final HtmlSchema htmlSchema;
   private final PluginMeta meta;
@@ -92,7 +93,8 @@ public class TemplateCompiler {
       = Maps.newIdentityHashMap();
 
   /**
-   * @param ihtmlRoots roots of trees to process.
+   * @param ihtmlRoots roots of trees to process and the baseURI used to resolve
+   *     URIs in those nodes.
    * @param safeStylesheets CSS style-sheets that have had unsafe
    *     constructs removed and had rules rewritten.
    * @param meta specifies how URLs and other attributes are rewritten.
@@ -101,7 +103,7 @@ public class TemplateCompiler {
    * @param mq receives messages about invalid attribute values.
    */
   public TemplateCompiler(
-      List<? extends Node> ihtmlRoots,
+      List<Pair<Node, URI>> ihtmlRoots,
       List<? extends CssTree.StyleSheet> safeStylesheets,
       CssSchema cssSchema, HtmlSchema htmlSchema,
       PluginMeta meta, MessageContext mc, MessageQueue mq) {
@@ -121,14 +123,14 @@ public class TemplateCompiler {
    */
   private void inspect() {
     if (!mq.hasMessageAtLevel(MessageLevel.FATAL_ERROR)) {
-      for (Node ihtmlRoot : ihtmlRoots) {
+      for (Pair<Node, URI> ihtmlRoot : ihtmlRoots) {
         HtmlEmbeddedContentFinder finder = new HtmlEmbeddedContentFinder(
-            htmlSchema, null, mq, mc);
-        for (EmbeddedContent c : finder.findEmbeddedContent(ihtmlRoot)) {
+            htmlSchema, ihtmlRoot.b, mq, mc);
+        for (EmbeddedContent c : finder.findEmbeddedContent(ihtmlRoot.a)) {
           Node src = c.getSource();
           if (src instanceof Attr) { embeddedContent.put((Attr) src, c); }
         }
-        inspect(ihtmlRoot, ElKey.forHtmlElement("div"));
+        inspect(ihtmlRoot.a, ElKey.forHtmlElement("div"));
       }
     }
   }
@@ -271,8 +273,10 @@ public class TemplateCompiler {
     inspect();
 
     // Emit safe HTML with JS which attaches dynamic attributes.
+    List<Node> roots = Lists.newArrayList();
+    for (Pair<Node, URI> root : ihtmlRoots) { roots.add(root.a); }
     SafeHtmlMaker htmlMaker = new SafeHtmlMaker(
-        meta, mc, doc, scriptsPerNode, ihtmlRoots, aRewriter.getHandlers());
+        meta, mc, doc, scriptsPerNode, roots, aRewriter.getHandlers());
     Pair<Node, List<Block>> htmlAndJs = htmlMaker.make();
     Node html = htmlAndJs.a;
     List<Block> js = htmlAndJs.b;

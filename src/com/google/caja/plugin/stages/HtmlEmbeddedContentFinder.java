@@ -76,7 +76,7 @@ public class HtmlEmbeddedContentFinder {
   public HtmlEmbeddedContentFinder(
       HtmlSchema schema, URI baseUri, MessageQueue mq, MessageContext mc) {
     assert schema != null && mq != null
-        && (baseUri == null || (baseUri.isAbsolute() && !baseUri.isOpaque()));
+        && baseUri.isAbsolute() && !baseUri.isOpaque();
     this.schema = schema;
     this.baseUri = baseUri;
     this.mq = mq;
@@ -88,6 +88,8 @@ public class HtmlEmbeddedContentFinder {
     findEmbeddedContent(node, out);
     return out;
   }
+
+  public URI getBaseUri() { return baseUri; }
 
   private static final ElKey LINK = ElKey.forHtmlElement("link");
   private static final ElKey SCRIPT = ElKey.forHtmlElement("script");

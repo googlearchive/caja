@@ -17,18 +17,20 @@ package com.google.caja.plugin.stages;
 import com.google.caja.lang.html.HTML;
 import com.google.caja.lang.html.HtmlSchema;
 import com.google.caja.lexer.FilePosition;
-import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.escaping.UriUtil;
+import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.html.AttribKey;
 import com.google.caja.parser.html.ElKey;
 import com.google.caja.parser.html.Nodes;
 import com.google.caja.plugin.Dom;
 import com.google.caja.plugin.Job;
 import com.google.caja.plugin.Jobs;
+import com.google.caja.util.ContentType;
 import com.google.caja.util.Pipeline;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.ListIterator;
 
 import org.w3c.dom.Attr;
 import org.w3c.dom.Element;
@@ -51,16 +53,22 @@ public class ResolveUriStage implements Pipeline.Stage<Jobs> {
     this.schema = schema;
   }
 
-  private URI baseUri(Node root, FilePosition pos) {
-    URI uri = baseUriForDoc(root);
-    if (uri == null) {
-      // TODO(mikesamuel): this is problematic for DOM nodes parsed without
-      // proper debugging info.
-      if (!InputSource.UNKNOWN.equals(pos.source())) {
-        uri = pos.source().getUri();
+  private static boolean isBaseUri(URI uri) {
+    return uri != null && uri.isAbsolute() && !uri.isOpaque();
+  }
+
+  private URI baseUri(Node root, URI uri, FilePosition pos) {
+    URI baseUri = baseUriForDoc(root);
+    if (!isBaseUri(baseUri)) {
+      baseUri = uri;
+      if (!isBaseUri(baseUri)) {
+        // TODO(mikesamuel): this is problematic for DOM nodes parsed without
+        // proper debugging info.
+        baseUri = pos.source().getUri();
+        if (!isBaseUri(baseUri)) { return null; }
       }
     }
-    return (uri != null && uri.isAbsolute() && !uri.isOpaque()) ? uri : null;
+    return baseUri;
   }
 
   private URI baseUriForDoc(Node root) {
@@ -92,19 +100,24 @@ public class ResolveUriStage implements Pipeline.Stage<Jobs> {
     String value = a.getValue();
     try {
       URI uri = new URI(value);
-      return uri.isAbsolute() && !uri.isOpaque() ? uri : null;
+      return isBaseUri(uri) ? uri : null;
     } catch (URISyntaxException ex) {
       return null;
     }
   }
 
   public boolean apply(Jobs jobs) {
-    for (Job job : jobs.getJobsByType(Job.JobType.HTML)) {
+    ListIterator<Job> it = jobs.getJobs().listIterator();
+    while (it.hasNext()) {
+      Job job = it.next();
+      if (job.getType() != ContentType.HTML) { continue; }
+      AncestorChain<Dom> root = job.getRoot().cast(Dom.class);
       Dom dom = job.getRoot().cast(Dom.class).node;
-      Node root = dom.getValue();
-      URI baseUri = baseUri(root, dom.getFilePosition());
+      Node node = dom.getValue();
+      URI baseUri = baseUri(node, job.getBaseUri(), dom.getFilePosition());
       if (baseUri != null) {
-        resolveRelativeUrls(root, baseUri);
+        resolveRelativeUrls(node, baseUri);
+        it.set(Job.domJob(root, baseUri));
       }
     }
     return true;

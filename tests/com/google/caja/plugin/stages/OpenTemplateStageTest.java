@@ -99,10 +99,10 @@ public final class OpenTemplateStageTest extends CajaTestCase {
     pipeline.getStages().add(new ValidateCssStage(cssSchema, htmlSchema));
     pipeline.getStages().add(new ConsolidateCodeStage());
 
-    ParseTreeNode node = js(fromString(input));
+    Block node = js(fromString(input));
     PluginMeta meta = new PluginMeta();
     Jobs jobs = new Jobs(mc, mq, meta);
-    jobs.getJobs().add(new Job(AncestorChain.instance(node)));
+    jobs.getJobs().add(Job.jsJob(AncestorChain.instance(node)));
 
     assertTrue(pipeline.apply(jobs));
     assertEquals(

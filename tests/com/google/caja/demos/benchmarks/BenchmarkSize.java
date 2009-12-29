@@ -176,7 +176,7 @@ public class BenchmarkSize extends CajaTestCase {
     MessageQueue mq = TestUtil.createTestMessageQueue(this.mc);
     if (!valija) { js = BenchmarkUtils.addUseCajitaDirective(js); }
     PluginCompiler pc = new PluginCompiler(new TestBuildInfo(), meta, mq);
-    pc.addInput(AncestorChain.instance(js));
+    pc.addInput(AncestorChain.instance(js), null);
     if (pc.run()) {
       result = pc.getJavascript();
       if (valija) {

@@ -39,9 +39,11 @@ import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.MessageType;
 import com.google.caja.reporting.BuildInfo;
+import com.google.caja.util.ContentType;
 import com.google.caja.util.Criterion;
 import com.google.caja.util.Pipeline;
 
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -95,10 +97,15 @@ public final class PluginCompiler {
     this.compilationPipeline = null;
   }
 
-  public void addInput(AncestorChain<?> input) {
-    jobs.getJobs().add(new Job(input));
+  public void addInput(AncestorChain<?> input, URI baseUri) {
+    jobs.getJobs().add(Job.job(input, baseUri));
     jobs.getMessageContext().addInputSource(
         input.node.getFilePosition().source());
+  }
+
+  @Deprecated
+  public void addInput(AncestorChain<?> input) {
+    addInput(input, input.node.getFilePosition().source().getUri());
   }
 
   /**
@@ -156,7 +163,7 @@ public final class PluginCompiler {
   public Node getStaticHtml() {
     Job soleHtmlJob = getConsolidatedOutput(new Criterion<Job>() {
           public boolean accept(Job job) {
-            return job.getType() == Job.JobType.HTML;
+            return job.getType() == ContentType.HTML;
           }
         });
     return soleHtmlJob != null
@@ -171,7 +178,7 @@ public final class PluginCompiler {
   public CajoledModule getJavascript() {
     Job soleJsJob = getConsolidatedOutput(new Criterion<Job>() {
           public boolean accept(Job job) {
-            return job.getType() == Job.JobType.JAVASCRIPT;
+            return job.getType() == ContentType.JS;
           }
         });
     return soleJsJob != null ? (CajoledModule) soleJsJob.getRoot().node : null;

@@ -22,42 +22,77 @@ import com.google.caja.parser.js.CajoledModule;
 import com.google.caja.parser.js.Expression;
 import com.google.caja.parser.js.Statement;
 import com.google.caja.parser.js.UncajoledModule;
+import com.google.caja.util.ContentType;
+
+import java.net.URI;
 
 /**
  * A parse tree that is awaiting rewriting, compiling, or rendering.
  */
 public final class Job {
-  public static enum JobType {
-    CSS,
-    JAVASCRIPT,
-    HTML
-    ;
-  }
-
   private final AncestorChain<?> root;
-  private final Job.JobType type;
+  private final ContentType type;
+  private final URI baseUri;
 
-  public Job(AncestorChain<?> root) {
-    assert root != null;
-    this.root = root;
+  public static Job job(AncestorChain<?> root, URI baseUri) {
+    ContentType type;
     ParseTreeNode rootNode = root.node;
     if (rootNode instanceof Statement
         || rootNode instanceof Expression
         || rootNode instanceof UncajoledModule
         || rootNode instanceof CajoledModule) {
-      this.type = Job.JobType.JAVASCRIPT;
+      type = ContentType.JS;
     } else if (rootNode instanceof Dom) {
-      this.type = Job.JobType.HTML;
+      type = ContentType.HTML;
+      assert baseUri != null;
     } else if (rootNode instanceof CssTree.StyleSheet) {
-      this.type = Job.JobType.CSS;
+      type = ContentType.CSS;
+      assert baseUri != null;
     } else {
       throw new SomethingWidgyHappenedError("Unknown input type " + rootNode);
     }
+    return new Job(root, type, baseUri);
+  }
+
+  public static Job jsJob(AncestorChain<? extends Statement> root) {
+    return new Job(root, ContentType.JS, null);
+  }
+
+  public static Job exprJob(AncestorChain<? extends Expression> root) {
+    return new Job(root, ContentType.JS, null);
+  }
+
+  public static Job moduleJob(AncestorChain<? extends UncajoledModule> root) {
+    return new Job(root, ContentType.JS, null);
+  }
+
+  public static Job cajoledJob(AncestorChain<? extends CajoledModule> root) {
+    return new Job(root, ContentType.JS, null);
+  }
+
+  public static Job domJob(AncestorChain<? extends Dom> root, URI baseUri) {
+    assert baseUri != null;
+    return new Job(root, ContentType.HTML, baseUri);
+  }
+
+  public static Job cssJob(
+      AncestorChain<? extends CssTree.StyleSheet> root, URI baseUri) {
+    assert baseUri != null;
+    return new Job(root, ContentType.CSS, baseUri);
+  }
+
+  private Job(AncestorChain<?> root, ContentType type, URI baseUri) {
+    assert root != null;
+    this.root = root;
+    this.type = type;
+    this.baseUri = baseUri;
   }
 
   public AncestorChain<?> getRoot() { return root; }
 
-  public Job.JobType getType() { return type; }
+  public ContentType getType() { return type; }
+
+  public URI getBaseUri() { return baseUri; }
 
   @Override
   public String toString() {

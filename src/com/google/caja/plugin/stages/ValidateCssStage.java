@@ -23,6 +23,7 @@ import com.google.caja.plugin.CssValidator;
 import com.google.caja.plugin.Job;
 import com.google.caja.plugin.Jobs;
 import com.google.caja.reporting.MessageLevel;
+import com.google.caja.util.ContentType;
 import com.google.caja.util.Pipeline;
 
 /**
@@ -58,7 +59,7 @@ public final class ValidateCssStage implements Pipeline.Stage<Jobs> {
 
     v.withInvalidNodeMessageLevel(MessageLevel.WARNING);
     rw.withInvalidNodeMessageLevel(MessageLevel.WARNING);
-    for (Job job : jobs.getJobsByType(Job.JobType.CSS)) {
+    for (Job job : jobs.getJobsByType(ContentType.CSS)) {
       validate(v, rw, job.getRoot().cast(CssTree.class));
     }
 

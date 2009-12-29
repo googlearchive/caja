@@ -22,6 +22,7 @@ import com.google.caja.parser.js.Statement;
 import com.google.caja.parser.js.UncajoledModule;
 import com.google.caja.plugin.Job;
 import com.google.caja.plugin.Jobs;
+import com.google.caja.util.ContentType;
 import com.google.caja.util.Pipeline;
 
 import java.util.Collections;
@@ -44,7 +45,7 @@ public final class ConsolidateCodeStage implements Pipeline.Stage<Jobs> {
     ListIterator<Job> it = jobs.getJobs().listIterator();
     while (it.hasNext()) {
       Job job = it.next();
-      if (Job.JobType.JAVASCRIPT != job.getType()) { continue; }
+      if (ContentType.JS != job.getType()) { continue; }
 
       Statement stmt = (Statement) job.getRoot().node;
       if (stmt instanceof Block) {
@@ -66,7 +67,7 @@ public final class ConsolidateCodeStage implements Pipeline.Stage<Jobs> {
     // Now initFunctionBody contains all the top level statements.
 
     UncajoledModule envelope = new UncajoledModule(initFunctionBody);
-    jobs.getJobs().add(new Job(AncestorChain.instance(envelope)));
+    jobs.getJobs().add(Job.moduleJob(AncestorChain.instance(envelope)));
 
     return jobs.hasNoFatalErrors();
   }

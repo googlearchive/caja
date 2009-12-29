@@ -18,6 +18,7 @@ import com.google.caja.parser.css.CssTree;
 import com.google.caja.plugin.CssRuleRewriter;
 import com.google.caja.plugin.Job;
 import com.google.caja.plugin.Jobs;
+import com.google.caja.util.ContentType;
 import com.google.caja.util.Pipeline;
 
 import java.util.ListIterator;
@@ -33,7 +34,7 @@ public final class RewriteCssStage implements Pipeline.Stage<Jobs> {
   public boolean apply(Jobs jobs) {
     for (ListIterator<Job> it = jobs.getJobs().listIterator(); it.hasNext();) {
       Job job = it.next();
-      if (job.getType() != Job.JobType.CSS) { continue; }
+      if (job.getType() != ContentType.CSS) { continue; }
 
       new CssRuleRewriter(jobs.getPluginMeta()).rewriteCss(
           job.getRoot().cast(CssTree.StyleSheet.class).node);

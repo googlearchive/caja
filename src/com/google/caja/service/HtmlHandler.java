@@ -184,7 +184,7 @@ public class HtmlHandler implements ContentHandler {
 
       PluginCompiler compiler = new PluginCompiler(buildInfo, meta, mq);
 
-      compiler.addInput(AncestorChain.instance(html));
+      compiler.addInput(AncestorChain.instance(html), inputUri);
       if (okToContinue) {
         okToContinue &= compiler.run();
       }

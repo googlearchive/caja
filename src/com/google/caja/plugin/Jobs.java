@@ -18,6 +18,8 @@ import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessageQueue;
+import com.google.caja.util.ContentType;
+
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
@@ -43,21 +45,21 @@ public class Jobs {
     this.mq = mq;
     this.meta = meta;
   }
-  
+
   public void setMessageContext(MessageContext newMc) { this.mc = newMc; }
-  
+
   public MessageContext getMessageContext() { return mc; }
 
   public MessageQueue getMessageQueue() { return mq; }
 
   public PluginMeta getPluginMeta() { return meta; }
-  
+
   /** May be mutated in place. */
   public List<Job> getJobs() { return jobs; }
 
-  public List<Job> getJobsByType(Job.JobType type, Job.JobType... others) {
+  public List<Job> getJobsByType(ContentType type, ContentType... others) {
     List<Job> matches = new ArrayList<Job>();
-    EnumSet<Job.JobType> types = EnumSet.of(type, others);
+    EnumSet<ContentType> types = EnumSet.of(type, others);
     for (Job job : jobs) {
       if (types.contains(job.getType())) { matches.add(job); }
     }

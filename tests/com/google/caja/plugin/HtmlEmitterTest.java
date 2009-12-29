@@ -68,7 +68,8 @@ public class HtmlEmitterTest extends CajaTestCase {
       }
     });
     TemplateCompiler tc = new TemplateCompiler(
-        Collections.singletonList(htmlWithExtractedScripts(input)),
+        Collections.singletonList(
+            Pair.pair(htmlWithExtractedScripts(input), is.getUri())),
         Collections.<CssTree.StyleSheet>emptyList(),
         CssSchema.getDefaultCss21Schema(mq), HtmlSchema.getDefault(mq),
         meta, mc, mq);

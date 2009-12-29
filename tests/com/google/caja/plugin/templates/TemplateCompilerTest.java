@@ -40,10 +40,10 @@ import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageType;
 import com.google.caja.util.CajaTestCase;
+import com.google.caja.util.Lists;
 import com.google.caja.util.Pair;
 
 import java.net.URI;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -677,10 +677,11 @@ public class TemplateCompilerTest extends CajaTestCase {
   private void assertSafeHtml(
       List<DocumentFragment> inputs, DocumentFragment htmlGolden,
       Block jsGolden, boolean checkErrors) throws ParseException {
-    List<Node> html = new ArrayList<Node>();
-    List<CssTree.StyleSheet> css = new ArrayList<CssTree.StyleSheet>();
+    List<Pair<Node, URI>> html = Lists.newArrayList();
+    List<CssTree.StyleSheet> css = Lists.newArrayList();
     for (DocumentFragment input : inputs) {
-      extractScriptsAndStyles(input, html, css);
+      extractScriptsAndStyles(
+          input, Nodes.getFilePositionFor(input).source().getUri(), html, css);
     }
 
     TemplateCompiler tc = new TemplateCompiler(
@@ -702,10 +703,11 @@ public class TemplateCompilerTest extends CajaTestCase {
   }
 
   private void extractScriptsAndStyles(
-      Node n, List<Node> htmlOut, List<CssTree.StyleSheet> cssOut)
+      Node n, URI baseUri, List<Pair<Node, URI>> htmlOut,
+      List<CssTree.StyleSheet> cssOut)
       throws ParseException {
     n = extractScripts(n);
-    htmlOut.add(n);
+    htmlOut.add(Pair.pair(n, baseUri));
     extractStyles(n, cssOut);
   }
 

@@ -160,12 +160,13 @@ public class BuildServiceImplementation implements BuildService {
       // Parse inputs
       for (File f : inputs) {
         try {
+          URI fileUri = f.getCanonicalFile().toURI();
           AncestorChain<?> parsedInput = parseInput(
-              new InputSource(f.getCanonicalFile().toURI()), mq);
+              new InputSource(fileUri), mq);
           if (parsedInput == null) {
             passed = false;
           } else {
-            compiler.addInput(parsedInput);
+            compiler.addInput(parsedInput, fileUri);
           }
         } catch (IOException ex) {
           logger.println("Failed to read " + f);

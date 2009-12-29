@@ -228,7 +228,7 @@ public class HtmlCompiledPluginTest extends CajaTestCase {
     PluginCompiler compiler = new PluginCompiler(new TestBuildInfo(), meta, mq);
     compiler.setMessageContext(mc);
     Dom html = new Dom(htmlFragment(fromString("<script>{</script>")));
-    compiler.addInput(AncestorChain.instance(html));
+    compiler.addInput(AncestorChain.instance(html), is.getUri());
 
     boolean passed = compiler.run();
     assertFalse(passed);
@@ -254,7 +254,8 @@ public class HtmlCompiledPluginTest extends CajaTestCase {
     });
     PluginCompiler compiler = new PluginCompiler(new TestBuildInfo(), meta, mq);
     compiler.setMessageContext(mc);
-    compiler.addInput(AncestorChain.instance(html));
+    compiler.addInput(
+        AncestorChain.instance(html), html.getFilePosition().source().getUri());
 
     boolean failed = !compiler.run();
 

@@ -29,6 +29,7 @@ import com.google.caja.plugin.PluginEnvironment;
 import com.google.caja.plugin.PluginMeta;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.CajaTestCase;
+import com.google.caja.util.ContentType;
 import com.google.caja.util.MoreAsserts;
 import com.google.caja.util.Pair;
 
@@ -107,17 +108,20 @@ public abstract class PipelineStageTestCase extends CajaTestCase {
     switch (inputJob.type) {
       case HTML:
         outputJobs.getJobs().add(
-            new Job(AncestorChain.instance(
-                new Dom(htmlFragment(fromString(inputJob.content, is))))));
+            Job.domJob(
+                AncestorChain.instance(
+                    new Dom(htmlFragment(fromString(inputJob.content, is)))),
+                is.getUri()));
         break;
       case CSS:
         outputJobs.getJobs().add(
-            new Job(AncestorChain.instance(
-                css(fromString(inputJob.content, is)))));
+            Job.cssJob(
+                AncestorChain.instance(css(fromString(inputJob.content, is))),
+                is.getUri()));
         break;
-      case JAVASCRIPT:
+      case JS:
         outputJobs.getJobs().add(
-            new Job(AncestorChain.instance(
+            Job.jsJob(AncestorChain.instance(
                 js(fromString(inputJob.content, is)))));
         break;
       default:
@@ -139,15 +143,15 @@ public abstract class PipelineStageTestCase extends CajaTestCase {
   protected abstract boolean runPipeline(Jobs jobs) throws Exception;
 
   /** Create a stub job object. */
-  protected static JobStub job(String content, Job.JobType type) {
+  protected static JobStub job(String content, ContentType type) {
     return new JobStub(content, type);
   }
 
   protected static final class JobStub {
     final String content;
-    final Job.JobType type;
+    final ContentType type;
 
-    JobStub(String content, Job.JobType type) {
+    JobStub(String content, ContentType type) {
       if (content == null || type == null) { throw new NullPointerException(); }
       this.content = content;
       this.type = type;

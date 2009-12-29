@@ -316,7 +316,7 @@ public class DebuggingSymbolsStageTest extends CajaTestCase {
     meta.setDebugMode(true);
 
     Jobs jobs = new Jobs(mc, mq, meta);
-    jobs.getJobs().add(new Job(AncestorChain.instance(uncajoledModuleBody)));
+    jobs.getJobs().add(Job.jsJob(AncestorChain.instance(uncajoledModuleBody)));
 
     Pipeline<Jobs> pipeline = new Pipeline<Jobs>();
     pipeline.getStages().add(new ConsolidateCodeStage());

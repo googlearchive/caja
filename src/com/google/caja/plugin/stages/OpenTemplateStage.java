@@ -37,6 +37,7 @@ import com.google.caja.parser.js.StringLiteral;
 import com.google.caja.plugin.Job;
 import com.google.caja.plugin.Jobs;
 import com.google.caja.reporting.MessageQueue;
+import com.google.caja.util.ContentType;
 import com.google.caja.util.Pair;
 import com.google.caja.util.Pipeline;
 
@@ -55,7 +56,7 @@ import java.util.Set;
  */
 public final class OpenTemplateStage implements Pipeline.Stage<Jobs> {
   public boolean apply(Jobs jobs) {
-    for (Job job : jobs.getJobsByType(Job.JobType.JAVASCRIPT)) {
+    for (Job job : jobs.getJobsByType(ContentType.JS)) {
       optimizeOpenTemplate(job.getRoot(), jobs);
     }
     return jobs.hasNoFatalErrors();

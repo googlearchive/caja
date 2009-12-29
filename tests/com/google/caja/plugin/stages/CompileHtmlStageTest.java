@@ -15,7 +15,7 @@
 package com.google.caja.plugin.stages;
 
 import com.google.caja.plugin.Jobs;
-import com.google.caja.plugin.Job;
+import com.google.caja.util.ContentType;
 import com.google.caja.lang.css.CssSchema;
 import com.google.caja.lang.html.HtmlSchema;
 
@@ -26,19 +26,19 @@ public final class CompileHtmlStageTest extends PipelineStageTestCase {
   public final void testEmitHtmlAsJsStaticOnly() throws Exception {
     meta.setOnlyJsEmitted(true);
     assertPipeline(
-        job("<p>Hello world</p>", Job.JobType.HTML),
+        job("<p>Hello world</p>", ContentType.HTML),
         job("IMPORTS___.htmlEmitter___.emitStatic('<p>Hello world</p>')",
-            Job.JobType.JAVASCRIPT));
+            ContentType.JS));
   }
 
   public final void testEmitHtmlAsJsAttributes() throws Exception {
     meta.setOnlyJsEmitted(true);
     assertPipeline(
-        job("<p id=\"foo\">Hello world</p>", Job.JobType.HTML),
+        job("<p id=\"foo\">Hello world</p>", ContentType.HTML),
         job(""
             + "IMPORTS___.htmlEmitter___.emitStatic('<p id=\\\"id_1___\\\">"
                 + "Hello world</p>')",
-            Job.JobType.JAVASCRIPT),
+            ContentType.JS),
         job(""
             + "{ /* Start translated code */\n"
             + "  throw 'Translated code must never be executed';\n"
@@ -52,9 +52,9 @@ public final class CompileHtmlStageTest extends PipelineStageTestCase {
             + "    emitter___.signalLoaded();\n"
             + "  } /* End translated code */\n"
             + "}",
-            Job.JobType.JAVASCRIPT));
+            ContentType.JS));
   }
-  
+
   @Override
   protected boolean runPipeline(Jobs jobs) throws Exception {
     mq.getMessages().clear();
