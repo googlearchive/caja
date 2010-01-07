@@ -66,9 +66,16 @@ public class PlaygroundView {
   private Playground controller;
   private TextArea sourceText;
   private HorizontalPanel loadingLabel;
+  private SuggestBox addressField;
+  private MultiWordSuggestOracle oracle;
 
   public void setVersion(String v) {
     version.setText(v);
+  }
+  
+  public void setUrl(String url) {
+    addressField.setText(url);
+    oracle.add(url);
   }
 
   public void selectTab(Tabs tab) {
@@ -98,7 +105,7 @@ public class PlaygroundView {
     infoPanel.add(title);
     infoPanel.add(version);
     logoPanel.add(
-        new Image("http://cajadores.com/demos/testbed/caja_logo_small.png"));
+        new Image("//cajadores.com/demos/testbed/caja_logo_small.png"));
     logoPanel.add(infoPanel);
 
     loadingLabel = new HorizontalPanel();
@@ -112,11 +119,11 @@ public class PlaygroundView {
   }
 
   private Panel createSourcePanel() {
-    MultiWordSuggestOracle oracle = new MultiWordSuggestOracle();
+    oracle = new MultiWordSuggestOracle();
     for (Example eg : Example.values()) {
       oracle.add(eg.url);
     }
-    final SuggestBox addressField = new SuggestBox(oracle);
+    addressField = new SuggestBox(oracle);
     addressField.getTextBox().addFocusHandler(new FocusHandler() {
       public void onFocus(FocusEvent event) {
         addressField.showSuggestionList();
@@ -320,21 +327,12 @@ public class PlaygroundView {
     String js = htmlAndJs.length > 1 ?
         htmlAndJs[1].substring(0, htmlAndJs[1].length() - 9) : "";
 
-        renderPanel.setHTML(
-        "<div id=\"cajoled-output\" class=\"g___\">\n" +
-          html +
-        "</div>\n");
+    renderPanel.setHTML(
+    "<div id=\"cajoled-output\" class=\"g___\">\n" +
+      html +
+    "</div>\n");
 
-    String cajoled =
-      "    var imports = ___.copy(___.sharedImports);\n" +
-      "    imports.outers = imports;\n" +
-      "    var gadgetRoot = document.getElementById('cajoled-output');\n" +
-      "    imports.htmlEmitter___ = new HtmlEmitter(gadgetRoot);\n" +
-      "    attachDocumentStub('-g___', " +
-      "      { rewrite: function() {return null;} }, imports, gadgetRoot);\n" +
-      "    imports.$v = valijaMaker.CALL___(imports.outers);\n" +
-      "    ___.getNewModuleHandler().setImports(imports);\n" +
-    js;
+    String cajoled = "caja___.enable(); " + js;
 
     Element el = DOM.createElement("script");
     ScriptElement script = ScriptElement.as(el);

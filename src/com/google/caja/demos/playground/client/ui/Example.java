@@ -26,6 +26,8 @@ public enum Example {
       Type.ATTACK, "Stealing cookies"),
   LIFE("http://www.thinkfu.com/cajalife/index.php", 
       Type.APPS, "Game of Life"),
+  FLASH("http://www.thinkfu.com/flash.html", 
+        Type.HOWTO, "Embed Flash"),
   MARKDOWN("http://www.thinkfu.com/markdown.html", 
       Type.APPS, "Markdown Editor"),
   GOOGLE("http://www.google.com/", 
@@ -45,6 +47,7 @@ public enum Example {
     this.description = description;
   }
   public enum Type {
+    HOWTO("How do I.."),
     WEB("Web pages"),
     APPS("Applications"),
     ATTACK("Attacks"),

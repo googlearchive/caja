@@ -779,6 +779,7 @@
         <include name="ajax-loader.gif" />
         <include name="Playground.html" />
         <include name="Playground.css" />
+        <include name="taming.js" />
       </fileset>
     </copy>
   </target>

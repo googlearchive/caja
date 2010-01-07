@@ -31,6 +31,7 @@ public class Playground implements EntryPoint {
   
   public void loadSource(String url) {
     gui.setLoading(true);
+    gui.setUrl(url);
     cajolingService.fetch(url, new AsyncCallback<String>() {
       public void onFailure(Throwable caught) {
         gui.setLoading(false);
