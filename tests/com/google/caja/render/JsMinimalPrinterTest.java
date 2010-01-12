@@ -79,6 +79,14 @@ public class JsMinimalPrinterTest extends CajaTestCase {
         "i-->j, k</script>/, [[0]]>0 / / / * x;");
   }
 
+  public final void testMarkupStartStructure() throws Exception {
+    // Make sure <!-- and <![CDATA[ don't show up in rendered output.
+    // Preventing these in strings is handled separately.
+    assertRendered(
+        "{1< !--b&&c< ![CDATA[0]]}",
+        "1<!--b && c<![CDATA[0]]");
+  }
+
   public final void testJSON() throws Exception {
     assertRendered(
         "{({'a':[1,2,3],'b':{'c':[{}],'d':[{'e':null,'f':'foo'},null]}})}",

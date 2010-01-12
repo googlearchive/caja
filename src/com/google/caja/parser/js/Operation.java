@@ -20,6 +20,7 @@ import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.lexer.Keyword;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.parser.ParseTreeNode;
+import com.google.caja.parser.ParserBase;
 
 import java.util.Arrays;
 import java.util.List;
@@ -550,6 +551,20 @@ public abstract class Operation extends AbstractExpression {
           return left;
         }
       }
+    } else if (op == Operator.SQUARE_BRACKET) {
+      if (right instanceof StringLiteral) {
+        String propertyName = ((StringLiteral) right).getUnquotedValue();
+        if (ParserBase.isJavascriptIdentifier(propertyName)
+            && !Keyword.isKeyword(propertyName)) {
+          return Operation.create(
+              getFilePosition(), Operator.MEMBER_ACCESS,
+              left,
+              new Reference(
+                  new Identifier(right.getFilePosition(), propertyName)))
+              // Possibly handle the .length or other properties below
+              .foldBinaryOp();
+        }
+      }
     } else if (op == Operator.MEMBER_ACCESS) {
       if (left instanceof StringLiteral) {
         Reference r = (Reference) right;
@@ -630,6 +645,9 @@ public abstract class Operation extends AbstractExpression {
   private Expression foldCall() {
     List<? extends Expression> operands = children();
     Expression fn = operands.get(0);
+    if (Operation.is(fn, Operator.CONSTRUCTOR) && 1 == operands.size()) {
+      return fn;
+    }
     if (is(fn, Operator.MEMBER_ACCESS)
         && fn.children().get(0) instanceof StringLiteral) {
       StringLiteral sl = (StringLiteral) fn.children().get(0);
