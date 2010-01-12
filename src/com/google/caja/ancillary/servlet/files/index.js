@@ -41,7 +41,11 @@ function doSubmit() {
   if (!inlineCode) {
     inlineCode = document.createElement('iframe');
     inlineCode.name = inlineCode.id = 'inlineCode';
-    document.body.appendChild(inlineCode);
+    var inlineCodeCell = document.createElement('td');
+    inlineCodeCell.width = '50%';
+    inlineCodeCell.appendChild(inlineCode);
+    document.getElementById("content").getElementsByTagName("tr")[0]
+        .appendChild(inlineCodeCell);
   }
   toSubmit.target = inlineCode.name;
 
@@ -78,7 +82,10 @@ function foreachDesc(container, elName, action) {
 }
 
 /** The index of the caret in the given input element. */
-function getCaret(el) { 
+function getCaret(el) {
+  // Simple case for initialization of new inputs that doesn't require el to be
+  // part of the DOM yet.
+  if (el.value === '') { return 0; }
   // This code courtesy CMS from
   // http://stackoverflow.com/questions/263743/how-to-get-cursor-position-in-textarea
   if (el.selectionStart) { 
@@ -178,7 +185,7 @@ this.setOptions = function (opts) {
     var sourceTextArea = null;
     foreachDesc(newInput, 'textarea', function (ta) {
       ta.value = '';
-      installSourceHandler(ta);
+      installSourceHandler(ta)();
       sourceTextArea = ta;
     });
     foreachDesc(newInput, 'input', function (input) { input.value = ''; });

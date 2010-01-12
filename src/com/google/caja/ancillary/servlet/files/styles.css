@@ -5,12 +5,10 @@ button.submit { font-weight: bold }
 .verbs-help th { text-align: left; font-family: monospace; font-weight: normal }
 .verbs-help li { margin-bottom: .5em }
 
-/* Make sure that the textarea inputs and uploaded files are aligned properly.
- */ 
+/* Make sure that the textarea inputs and uploaded files align properly. */ 
 #inputs { list-style: none; padding-left: 0 }
 #inputs li { display: block; vertical-align: top }
 .type-select { margin-left: 1em }
-#inputs, #inputs li { clear: both }
 input:focus, textarea:focus { background-color: #f8f8ff }
 .source-code-cont, .source-code-input, .uploadedFile {
   font-family: monospace; font-size: 10pt
@@ -47,7 +45,8 @@ h1 {
 #inlineCode {
   width: 100%;
   height: 40ex;
-  border: 1px solid black;
+  border-style: none;
+  border-left: 1px solid black;
 }
 
 .problem {
@@ -83,10 +82,11 @@ h1 {
 
 iframe.upload { width: 100ex; height: 5ex; border: none; overflow: hidden }
 
-#examples { position: absolute; left: 120ex }
-#examples h2 { margin-bottom: 0; font-size: 100%; margin-top: 0 }
-#examples ul { margin: 0; padding: 0 }
-#examples li { display: block; list-style: none }
+#examples { margin-bottom: 1ex }
+#examples h2 { margin-bottom: 0; font-size: 100%; margin-top: 0; display: inline }
+#examples ul { margin: 0; padding: 0; display: inline }
+#examples h2:after { content: ':' }
+#examples li { display: inline; list-style: none }
 
 .head {
   position: fixed;

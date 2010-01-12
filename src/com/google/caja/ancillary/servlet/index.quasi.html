@@ -6,6 +6,7 @@
 </head>
 <body>
 <h1>Caja Web Tools</h1>
+<table id="content" width="100%"><tr><td>
 <div id=examples>
 <h2>Examples</h2>
 <ul>
@@ -26,8 +27,8 @@
 <option value=echo selected=@echo>Debiggify</option>
 <option value=doc selected=@doc>Generate Documentation</option>
 </select>
-<a target=help href=files-@cacheId/verb_help.html class=help
- title="Lint identifies problems, debiggify removes redundant content">&#xff1f;</a>
+<a title="Lint identifies problems, debiggify removes redundant content"
+ target=help href=files-@cacheId/verb_help.html class=help>&#xff1f;</a>
 and report messages more severe than
 <select name='minLevel'>
 <option value=></option>
@@ -72,5 +73,6 @@ Ignore: <input name=ign size=40 value=@ignores>
 <a href='http://www.apache.org/licenses/LICENSE-2.0'>Apache Public License</a>.
 NO WARRANTY EXPRESSED OR IMPLIED. USE AT YOUR OWN RISK.
 </div>
+</table>
 </body>
 </html>
