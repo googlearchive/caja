@@ -302,6 +302,19 @@ public class CssRewriterTest extends CajaTestCase {
     assertNoErrors();
   }
 
+  public final void testFixedPositioning() throws Exception {
+    runTest("#foo { position: absolute; left: 0px; top: 0px }",
+            "#foo {\n  position: absolute;\n  left: 0px;\n  top: 0px\n}");
+    assertNoErrors();
+    runTest("#foo { position: fixed; left: 0px; top: 0px }",
+            "#foo {\n  left: 0px;\n  top: 0px\n}");
+    // TODO(mikesamuel): fix message.  "fixed" is well-formed but disallowed.
+    assertMessage(true, PluginMessageType.MALFORMED_CSS_PROPERTY_VALUE,
+                  MessageLevel.WARNING, Name.css("position"),
+                  MessagePart.Factory.valueOf("==>fixed<=="));
+    assertNoErrors();
+  }
+
   private void runTest(String css, String golden) throws Exception {
     runTest(css, golden, false);
   }
@@ -361,8 +374,6 @@ public class CssRewriterTest extends CajaTestCase {
       msg += "\n  ->\n" + msgBuf.toString();
     }
 
-    String actual = render(t);
-    System.err.println("\n\nactual=[[" + actual + "]]");
-    assertEquals(msg, golden, actual);
+    assertEquals(msg, golden, render(t));
   }
 }

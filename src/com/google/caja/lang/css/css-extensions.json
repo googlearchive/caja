@@ -1,3 +1,13 @@
 {
   "inherits": ["css-extensions-defs.json", "css-extensions-whitelist.json"]
+  "allowed": ["position"],
+  "types": [
+    { "key": "position",
+      "signature": "static | relative | absolute | inherit",
+      "default": "static",
+      "appliesTo": "*",
+      "inherited": false,
+      "mediaGroups": ["visual"],
+      "dom2property": "position" }
+  ]
 }
