@@ -757,6 +757,11 @@
 
   <target name="PlaygroundFE" description="Playground Front End"
     depends="testbed">
+    <condition property="gwt.target.module" 
+        value="com.google.caja.demos.playground.Playground" 
+        else="com.google.caja.demos.playground.Playground_dev">
+      <istrue value="${gwt.productionMode}"/>
+    </condition>
     <java failonerror="true" fork="true"
     	classname="com.google.gwt.dev.Compiler">
       <classpath>
@@ -768,7 +773,7 @@
       <jvmarg value="-XX:CompileCommand=exclude,org/eclipse/jdt/internal/compiler/lookup/ParameterizedTypeBinding,&lt;init&gt;" />
       <jvmarg value="-XX:CompileCommand=exclude,org/eclipse/jdt/internal/compiler/lookup/ParameterizedMethodBinding,&lt;init&gt;" />
       <arg line="-war ${war}" />
-      <arg value="com.google.caja.demos.playground.Playground"/>
+      <arg value="${gwt.target.module}"/>
     </java>
     <copy todir="${war}">
       <fileset dir="${www}/testbed">
@@ -1348,7 +1353,7 @@
     </transform>
   </target>
 
-  <target name="maven" depends="jars,dirs,build.info">
+  <target name="maven" depends="jars,dirs,build.info, CajolingService">
     <copy file="${jars}/pluginc.jar"
           tofile="${maven}/caja-r${build.svnVersion}.jar"/>
     <copy file="${jars}/pluginc-src.jar"
@@ -1391,4 +1396,7 @@
     <property name="tools.ancillary.excludes" value="**/caja/tools/**/*.java" />
   </target>
 
+  <target name="production" depends="" description="Turns on multiple gwt permutations.">
+    <property name="gwt.productionMode" value="true" />
+  </target>
 </project>

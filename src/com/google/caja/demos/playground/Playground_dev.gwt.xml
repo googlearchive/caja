@@ -2,5 +2,6 @@
 <!DOCTYPE module PUBLIC "-//Google Inc.//DTD Google Web Toolkit 1.6.4//EN" "http://google-web-toolkit.googlecode.com/svn/tags/1.6.4/distro-source/core/src/gwt-module.dtd">
 <module rename-to='playground'>
   <inherits name='com.google.caja.demos.playground.Playground_common'/>
+  <set-property name="user.agent" value="safari" />
   <entry-point class='com.google.caja.demos.playground.client.Playground'/>
 </module>
