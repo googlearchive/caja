@@ -36,6 +36,7 @@ import java.io.Writer;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLDecoder;
+import java.security.SecureRandom;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
@@ -57,9 +58,14 @@ import org.w3c.dom.Node;
  * @author mikesamuel@gmail.com
  */
 public class CajaWebToolsServlet extends HttpServlet {
+  private static final long serialVersionUID = -5232422153254165200L;
   final StaticFiles staticFiles;
   private final Pattern staticFilePath;
 
+  public CajaWebToolsServlet() {
+    this(Integer.toString(new SecureRandom().nextInt(1 << 30), 36));
+  }
+  
   /**
    * @param cacheId an alphanumeric string that can be added to a directory
    *     name in a URL to version all resources in that directory.
@@ -78,10 +84,9 @@ public class CajaWebToolsServlet extends HttpServlet {
   @Override
   public void doGet(HttpServletRequest req, HttpServletResponse resp)
       throws IOException {
-    URI reqUri = URI.create(req.getRequestURI());
-    String reqPath = reqUri.getPath();
+    String reqPath = req.getPathInfo();
     // Redirect to /index preserving any query string.
-    if ("/".equals(reqPath)) {
+    if (null == reqPath || "/".equals(reqPath)) {
       try {
         String query = req.getQueryString();
         URI indexUri = new URI(null, null, Verb.INDEX.requestPath, query, null);
@@ -100,15 +105,14 @@ public class CajaWebToolsServlet extends HttpServlet {
       staticFiles.serve("files/" + path, req, resp);
     } else {
       // Process a dynamic operation.
-      process(reqUri.getPath(), req.getQueryString(), resp);
+      process(reqPath, req.getQueryString(), resp);
     }
   }
 
   @Override
   public void doPost(HttpServletRequest req, HttpServletResponse resp)
       throws IOException {
-    URI reqUri = URI.create(req.getRequestURI());
-    String reqPath = reqUri.getPath();
+    String reqPath = req.getPathInfo();
     // Special case uploads since they require very different processing.
     if ("/upload".equals(reqPath)) {
       UploadPage.doUpload(req, resp);
@@ -122,7 +126,7 @@ public class CajaWebToolsServlet extends HttpServlet {
     } finally {
       in.close();
     }
-    process(reqUri.getPath(), query.toString(), resp);
+    process(reqPath, query.toString(), resp);
   }
 
   /**

@@ -31,11 +31,6 @@ public enum MessageLevel {
   /** Indicative of a probable problem in an input source file. */
   WARNING,
   /**
-   * More serious than {@link #WARNING}, but the Cajoler can still produce a
-   * usable output.
-   */
-  CRITICAL_WARNING,
-  /**
    * Indicative of a part of an input that prevents the Cajoler from producing
    * a usable output, but the Cajoler could continue to the next stage to
    * produce messages that might shed more info on the problem.

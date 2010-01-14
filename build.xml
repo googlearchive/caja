@@ -800,9 +800,9 @@
         <include name="web.xml" />
       </fileset>
     </copy>
-    <replace file="${war}/WEB-INF/appengine-web.xml">
-      <replacetoken>%VERSION%</replacetoken>
-      <replacevalue>${build.svnVersion}</replacevalue>
+    <replace file="${war}/WEB-INF/appengine-web.xml"
+        propertyFile="${lib}/com/google/caja/reporting/buildInfo.properties" >
+      <replacefilter token="%VERSION%" property="svnVersion" />
     </replace>
     <copy todir="${war}/WEB-INF/lib" flatten="true">
       <fileset dir="${third_party}/java/appengine/lib/user">
@@ -819,6 +819,12 @@
       </fileset>
       <fileset dir="${third_party}/java/json_simple/">
         <include name="json_simple.jar" />
+      </fileset>
+      <fileset dir="${third_party}/java/jakarta_commons/">
+        <include name="commons-io-1.4.jar" />
+      </fileset>
+      <fileset dir="${third_party}/java/jakarta_commons/">
+        <include name="commons-fileupload-1.2.1.jar" />
       </fileset>
     </copy>
     <copy todir="${war}/WEB-INF"
