@@ -516,7 +516,7 @@ public final class CssValidator {
    *   have their {@link #CSS_PROPERTY_PART} and {@link #CSS_PROPERTY_PART_TYPE}
    *   attributes set.
    */
-  private boolean applySignature(
+  public boolean applySignature(
       Name propertyName, CssTree.Expr expr, CssPropertySignature sig) {
     SignatureResolver resolver = new SignatureResolver(expr, cssSchema);
     List<Candidate> matches = resolver.applySignature(

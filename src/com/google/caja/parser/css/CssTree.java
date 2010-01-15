@@ -1043,7 +1043,7 @@ public abstract class CssTree extends AbstractParseTreeNode {
       StringBuilder sb = new StringBuilder(digits + 1);
       sb.append('#');
       while (--digits >= 0) {
-        sb.append("0123456789ABCDEF".charAt((n >>> (digits * 4)) & 0xf));
+        sb.append("0123456789abcdef".charAt((n >>> (digits * 4)) & 0xf));
       }
       return new HashLiteral(pos, sb.toString());
     }

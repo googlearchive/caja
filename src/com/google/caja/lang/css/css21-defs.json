@@ -174,12 +174,17 @@
       "dom2property": "borderWidth" },
 
     { "key": "border",
-      "signature": "[ <border-width> || <border-style> || 'border-top-color' ] | inherit",
+      "signature": "[ <border-width> || <border-style> || [<color> | transparent] ] | inherit",
       "default": null, "default-comment": "see individual properties",
       "appliesTo": "*",
       "inherited": false,
       "mediaGroups": ["visual"],
-      "dom2property": "border" },
+      "dom2property": "border",
+      "signature-comment": [
+        "signature is the portion of the CSS3 signature ",
+        "(minus border-image-transform) that is equivalent to CSS2.1 in the ",
+        "strings matched but not confusing around whether a border applies to ",
+        "the top only or to the entire box"] },
 
     { "key": "bottom",
       "signature": "<length> | <percentage> | auto | inherit",

@@ -26,10 +26,10 @@ import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.SimpleMessageQueue;
 import com.google.caja.util.CajaTestCase;
+import com.google.caja.util.Lists;
 import com.google.caja.util.MoreAsserts;
 import com.google.caja.util.SyntheticAttributeKey;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -679,7 +679,7 @@ public final class CssValidatorTest extends CajaTestCase {
             + "      Property : border\n"
             + "      Expr\n"
             + "        Term ; cssPropertyPartType=IDENT"
-                        + " ; cssPropertyPart=border-top-color\n"
+                        + " ; cssPropertyPart=border\n"
             + "          IdentLiteral : inherit\n"
             + "    EmptyDeclaration");
     runTest("p { border: 2px }",
@@ -712,7 +712,7 @@ public final class CssValidatorTest extends CajaTestCase {
             + "          IdentLiteral : solid\n"
             + "        Operation : NONE\n"
             + "        Term ; cssPropertyPartType=IDENT"
-                        + " ; cssPropertyPart=border-top-color::color\n"
+                        + " ; cssPropertyPart=border::color\n"
             + "          IdentLiteral : black");
     runTest("p {border: solid black; }",
             "StyleSheet\n"
@@ -728,9 +728,26 @@ public final class CssValidatorTest extends CajaTestCase {
             + "          IdentLiteral : solid\n"
             + "        Operation : NONE\n"
             + "        Term ; cssPropertyPartType=IDENT"
-                        + " ; cssPropertyPart=border-top-color::color\n"
+                        + " ; cssPropertyPart=border::color\n"
             + "          IdentLiteral : black\n"
             + "    EmptyDeclaration");
+    runTest("p {border-top: solid black; }",
+        "StyleSheet\n"
+        + "  RuleSet\n"
+        + "    Selector\n"
+        + "      SimpleSelector\n"
+        + "        IdentLiteral : p\n"
+        + "    PropertyDeclaration\n"
+        + "      Property : border-top\n"
+        + "      Expr\n"
+        + "        Term ; cssPropertyPartType=IDENT"
+                    + " ; cssPropertyPart=border-top::border-style\n"
+        + "          IdentLiteral : solid\n"
+        + "        Operation : NONE\n"
+        + "        Term ; cssPropertyPartType=IDENT"
+                    + " ; cssPropertyPart=border-top-color::color\n"
+        + "          IdentLiteral : black\n"
+        + "    EmptyDeclaration");
     runTest("p { border:solid black 1em}",
             "StyleSheet\n"
             + "  RuleSet\n"
@@ -745,7 +762,7 @@ public final class CssValidatorTest extends CajaTestCase {
             + "          IdentLiteral : solid\n"
             + "        Operation : NONE\n"
             + "        Term ; cssPropertyPartType=IDENT"
-                        + " ; cssPropertyPart=border-top-color::color\n"
+                        + " ; cssPropertyPart=border::color\n"
             + "          IdentLiteral : black\n"
             + "        Operation : NONE\n"
             + "        Term ; cssPropertyPartType=LENGTH"
@@ -765,7 +782,7 @@ public final class CssValidatorTest extends CajaTestCase {
             + "          QuantityLiteral : 14px\n"
             + "        Operation : NONE\n"
             + "        Term ; cssPropertyPartType=IDENT"
-                        + " ; cssPropertyPart=border-top-color\n"
+                        + " ; cssPropertyPart=border\n"
             + "          IdentLiteral : transparent");
   }
 
@@ -1652,7 +1669,7 @@ public final class CssValidatorTest extends CajaTestCase {
       assertEquals(css, golden.trim(), sb.toString().trim());
     }
 
-    List<String> actualWarnings = new ArrayList<String>();
+    List<String> actualWarnings = Lists.newArrayList();
     for (Message msg : mq.getMessages()) {
       if (MessageLevel.WARNING.compareTo(msg.getMessageLevel()) <= 0) {
         String msgText = msg.format(mc);

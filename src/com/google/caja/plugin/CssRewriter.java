@@ -425,21 +425,11 @@ public final class CssRewriter {
                 ((CssTree.IdentLiteral) term.getExprAtom()).getValue());
             if (!stdColorMatcher.matcher(colorName.getCanonicalForm() + " ")
                 .matches()) {
-              Integer hexI = CSS3_COLORS.get(colorName.getCanonicalForm());
-              MessageLevel lvl = MessageLevel.ERROR;
               FilePosition pos = term.getExprAtom().getFilePosition();
-              CssTree.HashLiteral replacement;
-              if (hexI != null) {
-                lvl = MessageLevel.LINT;
-                int hex = hexI;
-                if ((hex & 0x0f0f0f) == ((hex >>> 4) & 0x0f0f0f)) {  // #rgb
-                  replacement = CssTree.HashLiteral.hex(
-                      pos, ((hex >>> 8) & 0xf00) | ((hex >>> 4) & 0xf0)
-                      | (hex & 0xf), 3);
-                } else { // #rrggbb
-                  replacement = CssTree.HashLiteral.hex(pos, hex, 6);
-                }
-              } else {
+              CssTree.HashLiteral replacement = colorHash(pos, colorName);
+              MessageLevel lvl = MessageLevel.LINT;
+              if (replacement == null) {
+                lvl = MessageLevel.ERROR;
                 replacement = CssTree.HashLiteral.hex(pos, 0, 3);
               }
               term.replaceChild(replacement, term.getExprAtom());
@@ -870,6 +860,20 @@ public final class CssRewriter {
 
   private static CssPropertyPartType propertyPartType(ParseTreeNode node) {
     return node.getAttributes().get(CssValidator.CSS_PROPERTY_PART_TYPE);
+  }
+
+  public static CssTree.HashLiteral colorHash(FilePosition pos, Name color) {
+    Integer hexI = CSS3_COLORS.get(color.getCanonicalForm());
+    return hexI != null ? colorHash(pos, hexI) : null;
+  }
+
+  public static CssTree.HashLiteral colorHash(FilePosition pos, int hex) {
+    if ((hex & 0x0f0f0f) == ((hex >>> 4) & 0x0f0f0f)) {  // #rgb
+      return CssTree.HashLiteral.hex(
+          pos, ((hex >>> 8) & 0xf00) | ((hex >>> 4) & 0xf0) | (hex & 0xf), 3);
+    } else { // #rrggbb
+      return CssTree.HashLiteral.hex(pos, hex, 6);
+    }
   }
 
   // http://www.w3.org/TR/css3-iccprof#x11-color

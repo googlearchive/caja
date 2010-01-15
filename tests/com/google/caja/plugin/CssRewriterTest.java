@@ -292,14 +292,33 @@ public class CssRewriterTest extends CajaTestCase {
 
   public final void testNonStandardColors() throws Exception {
     runTest("a.c { color: LightSlateGray; background: ivory; }",
-            "a.c {\n  color: #789;\n  background: #FFFFF0\n}");
+            "a.c {\n  color: #789;\n  background: #fffff0\n}");
     assertMessage(PluginMessageType.NON_STANDARD_COLOR,
                   MessageLevel.LINT, Name.css("lightslategray"),
                   MessagePart.Factory.valueOf("#789"));
     assertMessage(PluginMessageType.NON_STANDARD_COLOR,
                   MessageLevel.LINT, Name.css("ivory"),
-                  MessagePart.Factory.valueOf("#FFFFF0"));
+                  MessagePart.Factory.valueOf("#fffff0"));
     assertNoErrors();
+
+    FilePosition u = FilePosition.UNKNOWN;
+    assertNull(CssRewriter.colorHash(u, Name.css("invisible")));
+    // Can get color hashes even for standard colors.
+    assertEquals("#00f", CssRewriter.colorHash(u, Name.css("blue")).getValue());
+    // Is case insensitive.
+    assertEquals("#00f", CssRewriter.colorHash(u, Name.css("Blue")).getValue());
+    assertEquals("#00f", CssRewriter.colorHash(u, Name.css("BLUE")).getValue());
+
+    assertEquals("#000", CssRewriter.colorHash(u, 0).getValue());
+    assertEquals("#fff", CssRewriter.colorHash(u, 0xffffff).getValue());
+    assertEquals("#123", CssRewriter.colorHash(u, 0x112233).getValue());
+    // A change in any quartet causes the long form to be used.
+    assertEquals(
+        "#022233", CssRewriter.colorHash(u, 0x112233 ^ 0x130000).getValue());
+    assertEquals(
+        "#111333", CssRewriter.colorHash(u, 0x112233 ^ 0x003100).getValue());
+    assertEquals(
+        "#112220", CssRewriter.colorHash(u, 0x112233 ^ 0x000013).getValue());
   }
 
   public final void testFixedPositioning() throws Exception {

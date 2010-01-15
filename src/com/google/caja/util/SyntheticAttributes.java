@@ -36,12 +36,18 @@ public final class SyntheticAttributes
   private Map<SyntheticAttributeKey<?>, Object> attributes;
 
   public SyntheticAttributes() {
-    attributes = Collections.emptyMap();
+    clear();
   }
 
   public SyntheticAttributes(SyntheticAttributes sa) {
     attributes = sa.attributes;
     sa.hasOwnCopy = false;
+  }
+
+  @Override
+  public void clear() {
+    attributes = Collections.emptyMap();
+    hasOwnCopy = false;
   }
 
   @SuppressWarnings("unchecked")
@@ -92,7 +98,7 @@ public final class SyntheticAttributes
    */
   @SuppressWarnings("unchecked")
   public <T> T remove(SyntheticAttributeKey<T> k) {
-    return (T) attributes.remove(k);
+    return (T) remove((Object) k);
   }
 
   @Override
@@ -110,7 +116,7 @@ public final class SyntheticAttributes
       hasOwnCopy = true;
     }
   }
-  
+
   @Override
   public int size() { return attributes.size(); }
 
