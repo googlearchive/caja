@@ -63,8 +63,10 @@ function doSubmit() {
     }
     var input = document.createElement('input');
     input.name = el.name;
-    input.value = el.value;
+    // Make hidden before setting value so that webkit will not turn newlines
+    // in value into spaces.
     input.type = 'hidden';
+    input.value = el.value;
     toSubmit.appendChild(input);
   }
 
@@ -111,6 +113,7 @@ function getCaret(el) {
 /** Attaches listeners to the given source code textarea. */
 function installSourceHandler(ta) {
   var timeoutId = null;
+  var lastCaret = NaN;
   function checkSource() {
     timeoutId = null;
     var typeSelect = ta.parentNode.parentNode.getElementsByTagName('select')[0];
@@ -154,14 +157,21 @@ function installSourceHandler(ta) {
         }
       }
       cursorPos.innerHTML = 'Ln ' + lineNo + '+' + (caret - lineStart + 1);
+      if (lastCaret !== caret) {
+        // In case a key is being held down that does not trigger onkeypress.
+        lastCaret = caret;
+        timeoutId = setTimeout(function () { checkSource(); }, 100);
+      }
     } else {
       console.error('Failed to find cursor pos');
     }
   }
-  ta.onkeypress = function onSourceChange() {
-    if (timeoutId !== null) { return; }
-    timeoutId = setTimeout(function () { checkSource(); }, 100);
-  };
+  ta.onkeypress = ta.onkeyup = ta.onkeydown = ta.onfocus =
+      function onSourceChange() {
+        if (timeoutId === null) {
+          timeoutId = setTimeout(function () { checkSource(); }, 100);
+        }
+      };
   return checkSource;
 }
 

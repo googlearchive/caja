@@ -471,9 +471,11 @@ public class ParseTreeKB {
       if (node instanceof Expression && !isLhs) {
         Fact f = getFact(digest);
         if (f == null) { f = foldComparisonToFalsey(node); }
-        if (f != null && f.isSubstitutable(isFuzzy)) {
-          node = f.value.clone();
-          digest = optNodeDigest(node);
+        if (f != null) {
+          if (f.isSubstitutable(isFuzzy)) {
+            node = f.value.clone();
+            digest = optNodeDigest(node);
+          }
         }
       }
     } else {

@@ -15,6 +15,7 @@
 package com.google.caja.ancillary.servlet;
 
 import java.io.IOException;
+import java.net.URI;
 import java.security.SecureRandom;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -40,7 +41,10 @@ public class Main {
     }
     Server server = new Server(port);
     String cacheId = Integer.toString(new SecureRandom().nextInt(1 << 30), 36);
-    final CajaWebToolsServlet servlet = new CajaWebToolsServlet(cacheId);
+    URI uadb = URI.create(System.getProperty(
+        "caja.webservice.useragentDb",
+        UserAgentDb.BROWSERSCOPE_WEB_SERVICE.toString()));
+    final CajaWebToolsServlet servlet = new CajaWebToolsServlet(cacheId, uadb);
     server.setHandler(new AbstractHandler() {
       public void handle(
           String tgt, HttpServletRequest req, HttpServletResponse resp,

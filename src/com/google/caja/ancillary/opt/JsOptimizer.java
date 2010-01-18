@@ -29,6 +29,7 @@ import com.google.caja.parser.js.Statement;
 import com.google.caja.parser.js.StringLiteral;
 import com.google.caja.render.Concatenator;
 import com.google.caja.render.JsMinimalPrinter;
+import com.google.caja.reporting.DevNullMessageQueue;
 import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessageQueue;
@@ -73,15 +74,19 @@ public class JsOptimizer {
     if (optimizer == null) { optimizer = new ParseTreeKB(); }
     List<? extends Expression> parts = envJson.children();
     for (int i = 0, n = parts.size(); i < n; i += 2) {
+      Expression value = parts.get(i + 1).fold();  // fold negative nums
+      if (!(value instanceof Literal)) {
+        // True for "*useragent*" property inserted by JSKB.
+        continue;
+      }
       StringLiteral sl = (StringLiteral) parts.get(i);
-      Literal value = (Literal) parts.get(i + 1).fold();  // fold negative nums
       String rawExpr = sl.getValue();
       rawExpr = " " + rawExpr.substring(1, rawExpr.length() - 1) + " ";
       CharProducer valueCp = CharProducer.Factory.fromJsString(
           CharProducer.Factory.fromString(rawExpr, sl.getFilePosition()));
       try {
-        Expression expr = parser(valueCp, mq).parseExpression(true);
-        optimizer.addFact(expr, Fact.is(value));
+        Expression expr = jsExpr(valueCp, DevNullMessageQueue.singleton());
+        optimizer.addFact(expr, Fact.is((Literal) value));
       } catch (ParseException ex) {
         ex.toMessageQueue(mq);
       }
@@ -122,12 +127,6 @@ public class JsOptimizer {
     // Finally we rearrange statements and convert conditionals to expressions
     // where it will make things shorter.
     return (Statement) StatementSimplifier.optimize(block, mq);
-  }
-
-  private static Parser parser(CharProducer cp, MessageQueue errs) {
-    JsLexer lexer = new JsLexer(cp);
-    JsTokenQueue tq = new JsTokenQueue(lexer, cp.getCurrentPosition().source());
-    return new Parser(tq, errs);
   }
 
   public static void main(String... args) throws IOException {

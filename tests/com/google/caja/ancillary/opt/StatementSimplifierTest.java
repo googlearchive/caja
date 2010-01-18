@@ -229,6 +229,46 @@ public class StatementSimplifierTest extends CajaTestCase {
     assertNoErrors();
   }
 
+  public final void testCondOptimization8a() throws ParseException {
+    assertSimplified(
+        Arrays.asList("return !c"),
+        Arrays.asList(
+            "if (!c) {",
+            "  return true;",
+            "}",
+            "return false;"));
+    assertNoErrors();
+  }
+
+  public final void testCondOptimization8b() throws ParseException {
+    assertSimplified(
+        Arrays.asList("return !!c"),
+        Arrays.asList(
+            "if (c) {",
+            "  return true;",
+            "}",
+            "return false;"));
+    assertNoErrors();
+  }
+
+  public final void testCondOptimization8c() throws ParseException {
+    assertSimplified(
+        Arrays.asList("return c === b"),
+        Arrays.asList(
+            "if (c === b) return true;",
+            "else return false;"));
+    assertNoErrors();
+  }
+
+  public final void testCondOptimization8d() throws ParseException {
+    assertSimplified(
+        Arrays.asList("return c !== b"),
+        Arrays.asList(
+            "if (c === b) return false;",
+            "return true;"));
+    assertNoErrors();
+  }
+
   public final void testNotFoldableToTernary() throws ParseException {
     assertSimplified(
         Arrays.asList("if (!c) foo(); else return bar();"),

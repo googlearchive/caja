@@ -20,6 +20,7 @@ import com.google.caja.ancillary.jsdoc.Jsdoc;
 import com.google.caja.ancillary.jsdoc.JsdocException;
 import com.google.caja.ancillary.linter.Linter;
 import com.google.caja.ancillary.opt.JsOptimizer;
+import com.google.caja.lang.css.CssSchema;
 import com.google.caja.lang.html.HTML;
 import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.CssTokenType;
@@ -36,6 +37,7 @@ import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.lexer.TokenQueue;
 import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.ParseTreeNode;
+import com.google.caja.parser.Visitor;
 import com.google.caja.parser.css.CssParser;
 import com.google.caja.parser.css.CssTree;
 import com.google.caja.parser.html.AttribKey;
@@ -48,6 +50,8 @@ import com.google.caja.parser.js.Expression;
 import com.google.caja.parser.js.ObjectConstructor;
 import com.google.caja.parser.js.Parser;
 import com.google.caja.parser.js.Statement;
+import com.google.caja.plugin.CssPropertyPartType;
+import com.google.caja.plugin.CssRewriter;
 import com.google.caja.plugin.CssValidator;
 import com.google.caja.plugin.PluginEnvironment;
 import com.google.caja.plugin.PluginMessageType;
@@ -58,6 +62,7 @@ import com.google.caja.render.CssMinimalPrinter;
 import com.google.caja.render.CssPrettyPrinter;
 import com.google.caja.render.JsMinimalPrinter;
 import com.google.caja.render.JsPrettyPrinter;
+import com.google.caja.reporting.DevNullMessageQueue;
 import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessagePart;
@@ -66,6 +71,9 @@ import com.google.caja.reporting.MessageTypeInt;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.ContentType;
 import com.google.caja.util.Lists;
+import com.google.caja.util.Multimap;
+import com.google.caja.util.Multimaps;
+import com.google.caja.util.Name;
 import com.google.caja.util.Sets;
 import com.google.caja.util.Strings;
 
@@ -487,6 +495,7 @@ class Processor {
       switch (job.t) {
         case JS: job = optimizeJs(job); break;
         case HTML: job = optimizeHtml(job); break;
+        case CSS: job = optimizeCss(job); break;
         default: continue;
       }
       jobIt.set(job);
@@ -496,14 +505,9 @@ class Processor {
   private Job optimizeJs(Job job) {
     JsOptimizer opt = new JsOptimizer(mq);
     opt.addInput((Block) job.root);
-    ObjectConstructor envJson;
-    if (req.userAgent != null) {
-      envJson = UserAgentDb.lookupEnvJson(req.userAgent);
-    } else {
-      envJson = null;
-    }
-    if (envJson != null) {
-      opt.setEnvJson(envJson);
+
+    if (req.userAgent != null && req.userAgentDb != null) {
+      opt.setEnvJson(req.userAgentDb.lookupEnvJson(req.userAgent, 2000 /*ms*/));
     } else {
       opt.setEnvJson(new ObjectConstructor(FilePosition.UNKNOWN));
     }
@@ -521,6 +525,185 @@ class Processor {
     optimizeHtml(f);
     return job;
   }
+
+  private Job optimizeCss(Job job) {
+    final CssValidator v = new CssValidator(
+        req.cssSchema, req.htmlSchema, DevNullMessageQueue.singleton());
+    CssTree t = (CssTree) job.root;
+    v.validateCss(AncestorChain.instance(t));
+    t.acceptPostOrder(new Visitor() {
+      public boolean visit(AncestorChain<?> ac) {
+        if (ac.node instanceof CssTree.RuleSet
+            || ac.node instanceof CssTree.DeclarationGroup) {
+          optimizeCssDeclarations(ac.cast(CssTree.class), v);
+        } else if (ac.node instanceof CssTree.IdentLiteral) {
+          Name part = ac.parent.node.getAttributes().get(
+              CssValidator.CSS_PROPERTY_PART);
+          if (part == null) { return true; }
+          String partS = part.getCanonicalForm();
+          if ("color".equals(partS) || partS.endsWith("::color")) {
+            CssTree.IdentLiteral id = ac.cast(CssTree.IdentLiteral.class).node;
+            CssTree.HashLiteral hash = CssRewriter.colorHash(
+                id.getFilePosition(), Name.css(id.getValue()));
+            if (hash != null
+                && hash.getValue().length() < id.getValue().length()) {
+              hash.getAttributes().putAll(id.getAttributes());
+              ((CssTree) ac.parent.node).replaceChild(hash, id);
+            }
+          }
+        } else if (ac.node instanceof CssTree.HashLiteral
+                   && (ac.parent.node.getAttributes()
+                           .get(CssValidator.CSS_PROPERTY_PART_TYPE)
+                       == CssPropertyPartType.COLOR)) {
+          CssTree.HashLiteral hash = ac.cast(CssTree.HashLiteral.class).node;
+          String color = hash.getValue();
+          if (color.length() == 7) {
+            int hex = Integer.valueOf(color.substring(1), 16);
+            CssTree.HashLiteral shortHash = CssRewriter.colorHash(
+                hash.getFilePosition(), hex);
+            if (shortHash.getValue().length() < hash.getValue().length()) {
+              shortHash.getAttributes().putAll(hash.getAttributes());
+              ((CssTree) ac.parent.node).replaceChild(shortHash, hash);
+            }
+          }
+        }
+        return true;
+      }
+    }, null);
+    return job;
+  }
+
+  private static Name propertyPrefix(Name propertyName) {
+    String canon = propertyName.getCanonicalForm();
+    int dash = canon.lastIndexOf('-');
+    if (dash < 0) { return null; }
+    return Name.css(canon.substring(0, dash));
+  }
+
+  private void optimizeCssDeclarations(
+      AncestorChain<? extends CssTree> cont, CssValidator v) {
+    List<CssTree.Declaration> decls = Lists.newArrayList();
+    for (CssTree t : cont.node.children()) {
+      // RuleSets have non selectors too
+      if (!(t instanceof CssTree.Declaration)) { continue; }
+      decls.add((CssTree.Declaration) t);
+    }
+    // Maintain a prefix map so that we don't accidentally reduce two
+    // property names to the same prefix which would break them.
+    Multimap<Name, Name> propertyPrefixes = Multimaps.newListHashMultimap();
+    for (Iterator<CssTree.Declaration> it = decls.iterator(); it.hasNext();) {
+      CssTree.Declaration d = it.next();
+      if (d instanceof CssTree.EmptyDeclaration) {
+        cont.node.removeChild(d);
+        it.remove();
+      } else if (d instanceof CssTree.PropertyDeclaration) {
+        CssTree.PropertyDeclaration pd = (CssTree.PropertyDeclaration) d;
+        Name propName = pd.getProperty().getPropertyName();
+        for (Name n = propName; n != null; n = propertyPrefix(n)) {
+          propertyPrefixes.put(n, propName);
+        }
+      } else if (d instanceof CssTree.UserAgentHack) {
+        for (CssTree h : d.children()) {
+          CssTree.PropertyDeclaration pd = (CssTree.PropertyDeclaration) h;
+          Name propName = pd.getProperty().getPropertyName();
+          for (Name n = propName; n != null; n = propertyPrefix(n)) {
+            propertyPrefixes.put(n, propName);
+          }
+        }
+      }
+    }
+    for (CssTree.Declaration d : decls) {
+      if (!(d instanceof CssTree.PropertyDeclaration)) { continue; }
+      CssTree.PropertyDeclaration pd = (CssTree.PropertyDeclaration) d;
+      CssTree.Property p = pd.getProperty();
+      Name pName = p.getPropertyName();
+      CssSchema.CssPropertyInfo i = req.cssSchema.getCssProperty(pName);
+      if (i == null) { continue; }
+      Name shortName = pName;
+      List<String> pExprTypes = null;
+      CssTree.Expr shortened = null;
+      for (Name prefix = shortName;(prefix = propertyPrefix(prefix)) != null;) {
+        if (propertyPrefixes.get(prefix).size() != 1) { break; }
+        CssSchema.CssPropertyInfo si = req.cssSchema.getCssProperty(prefix);
+        if (si == null) { break; }
+        // If we can shorten the name and get the same types out, then
+        // do so.
+        CssTree.Expr e = (CssTree.Expr) pd.getExpr().clone();
+        clearAttributes(e);
+        if (!v.applySignature(prefix, e, si.sig)) { break; }
+        if (pExprTypes == null) { pExprTypes = cssExprParts(pd.getExpr()); }
+        if (!cssExprPartsConsistent(
+                cssExprParts(e), pExprTypes, pName.getCanonicalForm())) {
+          break;
+        }
+        shortName = prefix;
+        shortened = e;
+      }
+      if (shortName != pName) {
+        pd.replaceChild(shortened, pd.getExpr());
+        pd.replaceChild(
+            new CssTree.Property(p.getFilePosition(), shortName), p);
+      }
+    }
+  }
+
+  private static void clearAttributes(CssTree t) {
+    t.getAttributes().remove(CssValidator.CSS_PROPERTY_PART);
+    t.getAttributes().remove(CssValidator.CSS_PROPERTY_PART_TYPE);
+    for (CssTree c : t.children()) { clearAttributes(c); }
+  }
+
+  private static List<String> cssExprParts(CssTree t) {
+    final List<String> out = Lists.newArrayList();
+    t.acceptPostOrder(new Visitor() {
+      public boolean visit(AncestorChain<?> ac) {
+        Name part = ac.node.getAttributes().get(CssValidator.CSS_PROPERTY_PART);
+        if (part != null) { out.add(part.getCanonicalForm()); }
+        return true;
+      }
+    }, null);
+    return Collections.unmodifiableList(out);
+  }
+
+  private static boolean cssExprPartsConsistent(
+      List<? extends String> a, List<? extends String> b, String toIgnore) {
+    int n = a.size();
+    if (n != b.size()) { return false; }
+    for (int i = 0; i < n; ++i) {
+      String sa = a.get(i), sb = b.get(i);
+      if (sa == null) { return sb == null; }
+      if (sb == null) { return false; }
+      if (!withoutCssPartPrefix(sa, toIgnore).equals(
+              withoutCssPartPrefix(sb, toIgnore))) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  private static String withoutCssPartPrefix(String part, String prefix) {
+    int n = part.length(), pn = prefix.length();
+    int i = 0;
+    // :: is used to separate parts in a CssPropertyPart, as in
+    // background-color::color.
+    // For a prefix like "background", skip over any parts that match the prefix
+    // or that have (prefix + "-") as a prefix.
+    while (i < n) {
+      if (!part.regionMatches(i, prefix, 0, pn)) { break; }
+      int e = i + pn;
+      if (e != n) {
+        int dc = part.indexOf("::", e);
+        char ch = part.charAt(e);
+        // Skip over the part since '-' next establishes it is ignorable.
+        if (ch != '-' && e != dc) { break; }
+        i = dc < 0 ? n : dc + 2;  // end of the next :: separator
+      } else {
+        i = e;
+      }
+    }
+    return part.substring(i);
+  }
+
 
   private void optimizeHtml(Node n) {
     if (n instanceof Element) {

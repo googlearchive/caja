@@ -78,7 +78,7 @@ final class Reporter {
         }
       }
       f.appendChild(b.substV(
-          "<h2 title=@msgname>@text @help</h2>@snippet",
+          "<h4 title=@msgname>@text @help</h4>@snippet",
           // Output the message name so that people can weed out message types
           // using the ign CGI parameter.
           "msgname", msg.getMessageType().name(),

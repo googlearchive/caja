@@ -36,7 +36,6 @@ import java.io.Writer;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLDecoder;
-import java.security.SecureRandom;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
@@ -60,17 +59,14 @@ import org.w3c.dom.Node;
 public class CajaWebToolsServlet extends HttpServlet {
   private static final long serialVersionUID = -5232422153254165200L;
   final StaticFiles staticFiles;
+  final UserAgentDb userAgentDb;
   private final Pattern staticFilePath;
 
-  public CajaWebToolsServlet() {
-    this(Integer.toString(new SecureRandom().nextInt(1 << 30), 36));
-  }
-  
   /**
    * @param cacheId an alphanumeric string that can be added to a directory
    *     name in a URL to version all resources in that directory.
    */
-  public CajaWebToolsServlet(String cacheId) {
+  public CajaWebToolsServlet(String cacheId, URI userAgentWebService) {
     this.staticFiles = new StaticFiles(cacheId);
     // Matches "favicon.ico" and paths under <tt>/files-.../</tt> that do not
     // contain any pathname element that starts with a ., so no parent directory
@@ -79,6 +75,7 @@ public class CajaWebToolsServlet extends HttpServlet {
         "^/(?:(favicon\\.ico)|"
         + Pattern.quote("files-" + cacheId) // A directory containing cache Id
         + "/((?:[^/.]+/)*[^/.]+(?:\\.[^/.]+)))$");
+    this.userAgentDb = UserAgentDb.create(userAgentWebService);
   }
 
   @Override
@@ -213,7 +210,7 @@ public class CajaWebToolsServlet extends HttpServlet {
             + EnumSet.allOf(Verb.class),
             mq, new Request());
       }
-      req = Request.create(verb, staticFiles);
+      req = Request.create(verb, staticFiles, userAgentDb);
     }
 
     List<Job> inputJobs = Lists.newArrayList();

@@ -105,7 +105,7 @@ final class StaticFiles {
             CharProducer cp = CharProducer.Factory.create(
                 new InputStreamReader(in, "UTF-8"), is);
             // Minimize it before serving.
-            Request min = Request.create(Verb.ECHO, this);
+            Request min = Request.create(Verb.ECHO, this, null);
             min.minify = true;
             min.opt = true;
             min.otype = t;

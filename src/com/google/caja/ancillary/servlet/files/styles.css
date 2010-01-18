@@ -8,7 +8,6 @@ button.submit { font-weight: bold }
 /* Make sure that the textarea inputs and uploaded files align properly. */ 
 #inputs { list-style: none; padding-left: 0 }
 #inputs li { display: block; vertical-align: top }
-.type-select { margin-left: 1em }
 input:focus, textarea:focus { background-color: #f8f8ff }
 .source-code-cont, .source-code-input, .uploadedFile {
   font-family: monospace; font-size: 10pt
@@ -17,7 +16,7 @@ input, .source-code-cont, .uploadedFile { border: 2px solid #bbb }
 .source-code-cont, .uploadedFile { width: 110ex }
 .source-code-input, .uploadedFile .file { padding: 2px }
 .source-code-cont { float: left; margin-bottom: 4px; padding: 0 }
-.source-code-input { width: 100%; border: 0px; margin: 0; height: 12ex }
+.source-code-input { width: 100%; border: 0px; margin: 0 0 0 2px; height: 12ex }
 
 h1 {
   padding: 2px;
@@ -28,14 +27,9 @@ h1 {
   font-family: sans-serif;
   text-decoration: smallcaps;
   color: #337;
-  background-color: #eef;
-  border-color: #337;
-  border-style: solid;
-  border-width: 4px;
+  border: #337 solid 4px;
   padding: 2px 2px 2px 30px;
-  background-image: url(tools-28.gif);
-  background-repeat: no-repeat;
-  background-position: center left;
+  background: #eef url(tools-28.gif) no-repeat center left;
 }
 
 .new-input-button, .upload-button { margin-bottom: 1ex }
@@ -86,7 +80,10 @@ iframe.upload { width: 100ex; height: 5ex; border: none; overflow: hidden }
 #examples h2 { margin-bottom: 0; font-size: 100%; margin-top: 0; display: inline }
 #examples ul { margin: 0; padding: 0; display: inline }
 #examples h2:after { content: ':' }
-#examples li { display: inline; list-style: none }
+#examples li {
+  display: inline; display: inline-block;
+  list-style: none; white-space: nowrap
+}
 
 .head {
   position: fixed;

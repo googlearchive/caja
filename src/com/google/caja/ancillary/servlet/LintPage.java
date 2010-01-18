@@ -97,12 +97,13 @@ public class LintPage {
           "change", PCT.format(outSize / ((double) inputSize)));
     }
 
+    String lang = content.type != null ? " lang-" + content.type.ext : "";
     DocumentFragment f = doc.createDocumentFragment();
     f.appendChild(b.substV(
         LINT_PAGE_TEMPLATE,
         "messages", messages,
         "code", contentText,
-        "class", contentText.length() < 2048 ? "prettyprint" : "",
+        "class", contentText.length() < 2048 ? "prettyprint" + lang : "",
         "messageSummary", messageSummary,
         "stats", stats,
         "cid", req.staticFiles.cacheId));

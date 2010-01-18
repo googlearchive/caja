@@ -18,6 +18,7 @@ import com.google.caja.lexer.FilePosition;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.ParseTreeNodes;
 import com.google.caja.parser.js.Block;
+import com.google.caja.parser.js.BooleanLiteral;
 import com.google.caja.parser.js.BreakStmt;
 import com.google.caja.parser.js.CaseStmt;
 import com.google.caja.parser.js.CatchStmt;
@@ -245,12 +246,11 @@ public class StatementSimplifier {
           }
         }
       }
-      if (newChildren == null) {
-        return n;
-      } else {
-        return ParseTreeNodes.newNodeInstance(
+      if (newChildren != null) {
+        n = ParseTreeNodes.newNodeInstance(
             n.getClass(), n.getFilePosition(), n.getValue(), newChildren);
       }
+      return n instanceof Expression ? ((Expression) n).fold() : n;
     }
   }
 
@@ -483,7 +483,23 @@ public class StatementSimplifier {
       Expression cond = (Expression) condParts.get(--pos);
       FilePosition fpos = FilePosition.span(
           cond.getFilePosition(), e.getFilePosition());
-      if (Operation.is(cond, Operator.NOT)) {
+      if (clause instanceof BooleanLiteral && e instanceof BooleanLiteral) {
+        BooleanLiteral a = (BooleanLiteral) clause,
+            b = (BooleanLiteral) e;
+        if (a.value == b.value) {
+          e = commaOp(cond, a).fold();
+        } else {
+          // cond ? true : false -> !!cond
+          int nNotsNeeded = a.value ? 2 : 1;
+          if (nNotsNeeded == 2 && "boolean".equals(cond.typeOf())) {
+            nNotsNeeded = 0;
+          }
+          e = cond;
+          while (--nNotsNeeded >= 0) {
+            e = Operation.create(e.getFilePosition(), Operator.NOT, e).fold();
+          }
+        }
+      } else if (Operation.is(cond, Operator.NOT)) {
         Expression notCond = ((Operation) cond).children().get(0);
         e = Operation.create(fpos, Operator.TERNARY, notCond, e, clause);
       } else {
@@ -556,6 +572,8 @@ public class StatementSimplifier {
         return Operation.create(pos, Operator.LOGICAL_AND, c, x);
       }
     }
+    // TODO(mikesamuel): if c is simple and not a global reference, optimize
+    // out he common head as well.
     CommaCommonalities opt = commaCommonalities(x, y);
     if (opt != null) {
       // Both reduced sides can't be null since we checked above whether

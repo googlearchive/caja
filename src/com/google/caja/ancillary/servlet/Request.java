@@ -14,10 +14,15 @@
 
 package com.google.caja.ancillary.servlet;
 
+import com.google.caja.SomethingWidgyHappenedError;
+import com.google.caja.config.ConfigUtil;
+import com.google.caja.config.WhiteList;
 import com.google.caja.lang.css.CssSchema;
 import com.google.caja.lang.html.HtmlSchema;
 import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.InputSource;
+import com.google.caja.lexer.ParseException;
+import com.google.caja.lexer.escaping.Escaping;
 import com.google.caja.reporting.EchoingMessageQueue;
 import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessageLevel;
@@ -29,9 +34,11 @@ import com.google.caja.util.Multimaps;
 import com.google.caja.util.Sets;
 import com.google.caja.util.Strings;
 
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URLEncoder;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.EnumMap;
@@ -39,7 +46,6 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.regex.Pattern;
 
 /**
  * Encapsulates all the information extracted from an HTTP request of the
@@ -50,6 +56,8 @@ import java.util.regex.Pattern;
 final class Request implements Cloneable {
   /** The set of static files visible to the request. */
   StaticFiles staticFiles;
+  /** A mechanism to fetch user agent JSON. */
+  UserAgentDb userAgentDb;
   /** The action to perform. */
   Verb verb;
   /** The type of output that the client requested. */
@@ -70,18 +78,18 @@ final class Request implements Cloneable {
   /** True if the outputs should be rendered using only ASCII code-points. */
   boolean asciiOnly;
   /**
-   * A pattern that matches user agent strings so that the optimizer can
+   * Comma separated user agent descriptions that allows the optimizer to
    * incorporate knowledge about the user agent that will receive the output.
    */
-  Pattern userAgent;
+  String userAgent;
   /**
    * The minimum level of messages to report.
    */
   MessageLevel minLevel = MessageLevel.WARNING;
   /** The HTML schema to use. */
-  HtmlSchema htmlSchema;
+  HtmlSchema htmlSchema = DefaultSchemas.HTML;
   /** The CSS schema to use. */
-  CssSchema cssSchema;
+  CssSchema cssSchema = DefaultSchemas.CSS;
   /** A URI against which relative URIs in the inputs are resolved. */
   URI baseUri = URI.create("http://www.example.com/");
   /** Inputs to process. */
@@ -142,9 +150,10 @@ final class Request implements Cloneable {
   }
 
   /** Returns a fresh request with defaults for the given verb. */
-  static Request create(Verb verb, StaticFiles staticFiles) {
+  static Request create(Verb verb, StaticFiles staticFiles, UserAgentDb uadb) {
     Request req = REQUEST_BY_VERB.get(verb).clone();
     req.staticFiles = staticFiles;
+    req.userAgentDb = uadb;
     return req;
   }
 
@@ -223,7 +232,12 @@ final class Request implements Cloneable {
     ALL_PARAM_HANDLERS.put("userAgent", new ParamHandler() {
       public void handle(String name, String val, Request c) {
         c.opt = true;
-        c.userAgent = "*".equals(val) ? null : Glob.globToRegex(val);
+        String ua = val.trim();
+        if ("".equals(ua) || "*".equals(ua)) { ua = null; }
+        c.userAgent = ua;
+        if (ua != null && c.userAgentDb != null) {
+          c.userAgentDb.prefetchEnvJson(ua);
+        }
       }
       public String manual() {
         return "a glob that matches browser user agents strings"
@@ -338,12 +352,6 @@ final class Request implements Cloneable {
     Request index = new Request();
     Request lint = new Request();
 
-    EchoingMessageQueue mq = new EchoingMessageQueue(
-        new PrintWriter(System.err), new MessageContext());
-    echo.cssSchema = lint.cssSchema = doc.cssSchema
-        = CssSchema.getDefaultCss21Schema(mq);
-    echo.htmlSchema = lint.htmlSchema = doc.htmlSchema
-        = HtmlSchema.getDefault(mq);
     lint.minLevel = MessageLevel.LINT;
 
     doc.lint = lint.lint = true;
@@ -366,5 +374,64 @@ final class Request implements Cloneable {
     for (Map.Entry<Verb, Request> e : REQUEST_BY_VERB.entrySet()) {
       e.getValue().verb = e.getKey();
     }
+  }
+}
+
+class DefaultSchemas {
+  static final CssSchema CSS;
+  static final HtmlSchema HTML;
+  static {
+    try {
+      String langDir = "resource:///com/google/caja/lang";
+
+      WhiteList cssProps = load(langDir + "/css/css-extensions-defs.json");
+      WhiteList cssFunctions = load(
+          langDir + "/css/css-extensions-fns-defs.json");
+      CSS = new CssSchema(cssProps, cssFunctions);
+      WhiteList tagList = load(
+          langDir + "/html/html4-elements-defs.json",
+          langDir + "/html/html4-elements-extensions-defs.json");
+      WhiteList attribList = load(
+          langDir + "/html/html4-attributes-defs.json",
+          langDir + "/html/html4-attributes-extensions-defs.json");
+      HTML = new HtmlSchema(tagList, attribList);
+    } catch (IOException ex) {
+      throw new SomethingWidgyHappenedError(ex);
+    } catch (ParseException ex) {
+      throw new SomethingWidgyHappenedError(ex);
+    }
+  }
+
+  private static WhiteList load(String... whiteListUrls)
+      throws IOException, ParseException {
+    StringBuilder sb = new StringBuilder("{\"inherits\":[");
+    boolean first = true;
+    for (String url : whiteListUrls) {
+      if (first) {
+        first = false;
+      } else {
+        sb.append(',');
+      }
+      sb.append('"');
+      Escaping.escapeJsString(url, false, false, sb);
+      sb.append('"');
+    }
+    sb.append("]}");
+    String contentUrl = "content:" + URLEncoder.encode(sb.toString(), "UTF-8");
+    EchoingMessageQueue mq = new EchoingMessageQueue(
+        new PrintWriter(System.err), new MessageContext());
+    return permissive(ConfigUtil.loadWhiteListFromJson(
+        URI.create(contentUrl), ConfigUtil.RESOURCE_RESOLVER, mq));
+   }
+
+  private static WhiteList permissive(final WhiteList defs) {
+    return new WhiteList() {
+      public Set<String> allowedItems() {
+        return defs.typeDefinitions().keySet();
+      }
+      public Map<String, TypeDefinition> typeDefinitions() {
+        return defs.typeDefinitions();
+      }
+    };
   }
 }

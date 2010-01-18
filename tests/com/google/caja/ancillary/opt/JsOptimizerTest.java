@@ -77,6 +77,13 @@ public class JsOptimizerTest extends CajaTestCase {
         js(fromString("alert(1+1);")));
   }
 
+  public final void testMultiple() throws Exception {
+    assertOptimized(
+        js(fromString("alert(a?(foo(),bar(),baz()):boo())")),
+        js(fromString("alert(function(){ if (a) { foo(); bar(); return baz(); }"
+                      + "else return boo(); }());")));
+  }
+
   private void assertOptimized(Statement golden, Block... inputs) {
     for (Block input : inputs) { opt.addInput(input); }
     Statement optimized = opt.optimize();

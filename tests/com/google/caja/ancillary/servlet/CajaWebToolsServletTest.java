@@ -47,7 +47,7 @@ public class CajaWebToolsServletTest extends CajaTestCase {
   @Override
   public void setUp() throws Exception {
     super.setUp();
-    servlet = new CajaWebToolsServlet("cid");
+    servlet = new CajaWebToolsServlet("cid", null);
   }
 
   @Override
@@ -62,8 +62,8 @@ public class CajaWebToolsServletTest extends CajaTestCase {
         .get("/bogus")
         .expectStatus(404)
         .expectContentType("text/html; charset=UTF-8")
-        .expectContentMatches(Pattern.compile(
-            "File not found /bogus.  Expected a path in \\[.*\\]"))
+        .expectContentMatches(
+            "File not found /bogus.  Expected a path in \\[.*\\]")
         .send();
     assertNoErrors();
   }
@@ -73,10 +73,9 @@ public class CajaWebToolsServletTest extends CajaTestCase {
         .get("/index")
         .expectStatus(200)
         .expectContentType("text/html; charset=UTF-8")
-        .expectContentMatches(Pattern.compile(
-            "<form\\b[^>]*>"))
-        .expectContentMatches(Pattern.compile(
-            "<textarea[^>]*>&lt;script&gt;&lt;/script&gt;</textarea>"))
+        .expectContentMatches("<form\\b[^>]*>")
+        .expectContentMatches(
+            "<textarea[^>]*>&lt;script&gt;&lt;/script&gt;</textarea>")
         .send();
     assertNoErrors();
   }
@@ -87,10 +86,9 @@ public class CajaWebToolsServletTest extends CajaTestCase {
         .param("i", "<p>Hello, World!</p>")
         .expectStatus(200)
         .expectContentType("text/html; charset=UTF-8")
-        .expectContentMatches(Pattern.compile(
-            "<form\\b[^>]*>"))
-        .expectContentMatches(Pattern.compile(
-            "<textarea[^>]*>&lt;p&gt;Hello, World!&lt;/p&gt;</textarea>"))
+        .expectContentMatches("<form\\b[^>]*>")
+        .expectContentMatches(
+            "<textarea[^>]*>&lt;p&gt;Hello, World!&lt;/p&gt;</textarea>")
         .send();
     assertNoErrors();
   }
@@ -101,8 +99,7 @@ public class CajaWebToolsServletTest extends CajaTestCase {
         .param("bogus", "foo")
         .expectStatus(400)
         .expectContentType("text/html; charset=UTF-8")
-        .expectContentMatches(Pattern.compile(
-            "Unrecognized param bogus"))
+        .expectContentMatches("Unrecognized param bogus")
         .send();
     assertNoErrors();
   }
@@ -219,6 +216,75 @@ public class CajaWebToolsServletTest extends CajaTestCase {
     assertNoErrors();
   }
 
+  public final void testMinifyCss1() {
+    new ServletTest()
+        .get("/echo")
+        .param("it", "text/css")
+        .param(
+            "i",
+            ""
+            + "p { color: red;"
+            + "    background-color: magenta;"
+            + "    outline-color: #ff0000;"
+            + "    border-top-color: blue; }")  // not simplified to border
+        .param("ot", "CSS")
+        .param("minify", "t")
+        .param("opt", "t")
+        .param("userAgent", "*")
+        .expectStatus(200)
+        .expectContentType("text/css; charset=UTF-8")
+        .expectContent(
+            "p{color:red;background:#f0f;outline:#f00;border-top:blue}")
+        .send();
+    assertNoErrors();
+  }
+
+  public final void testMinifyCss2() {
+    new ServletTest()
+        .get("/echo")
+        .param("it", "text/css")
+        .param(
+            "i",
+            // Can't reduce both to background.
+            "p { background-color: darkblue; background-image: url(foo.gif); }")
+        .param("ot", "CSS")
+        .param("minify", "t")
+        .param("opt", "t")
+        .param("userAgent", "*")
+        .expectStatus(200)
+        .expectContentType("text/css; charset=UTF-8")
+        .expectContent(
+            "p{background-color:#00008b;background-image:url('foo.gif')}")
+        .send();
+    assertNoErrors();
+  }
+
+  public final void testMinifyCss3() {
+    new ServletTest()
+        .get("/echo")
+        .param("it", "text/css")
+        .param(
+            "i",
+            // Valid, but can't reduce.
+            ""
+            + "p { background-image: purple; }"
+            + "q { background-color: purple; }"
+            + "s { background-image: 'foo.gif'; }")
+        .param("ot", "CSS")
+        .param("minify", "t")
+        .param("opt", "t")
+        .param("userAgent", "*")
+        .expectStatus(200)
+        .expectContentType("text/css; charset=UTF-8")
+        .expectContent(
+            ""
+            + "p{background-image:purple}"
+            + "q{background:purple}"
+            + "s{background:'foo.gif'}")
+        .send();
+    assertNoErrors();
+  }
+
   public final void testRenamed() {
     new ServletTest()
         .get("/echo")
@@ -278,16 +344,31 @@ public class CajaWebToolsServletTest extends CajaTestCase {
                      + "})();"))
         .expectStatus(200)
         .expectContentType("text/html; charset=UTF-8")
-        .expectContentMatches(Pattern.compile(
+        .expectContentMatches(
             ""
-            + "<h2 title=\"SYMBOL_NOT_LIVE\">[^<.]+\\.js:8\\+10 - 11:"
-            + " Symbol x may be used before being initialized</h2>"))
-        .expectContentMatches(Pattern.compile(
-            "return <span class=\"problem\">x</span> \\+ y \\+ z;"))
-        .expectContentMatches(Pattern.compile(
+            + "<h4 title=\"SYMBOL_NOT_LIVE\">[^<.]+\\.js:8\\+10 - 11:"
+            + " Symbol x may be used before being initialized</h4>")
+        .expectContentMatches(
+            "return <span class=\"problem\">x</span> \\+ y \\+ z;")
+        .expectContentMatches(
             ""
-            + "<h2 title=\"UNUSED_REQUIRE\">[^<.]+\\.js:"
-            + " @requires alert not used</h2>"))
+            + "<h4 title=\"UNUSED_REQUIRE\">[^<.]+\\.js:"
+            + " @requires alert not used</h4>")
+        .send();
+    assertNoErrors();
+  }
+
+  public final void testLintIgnoresCajaWhitelist() {
+    new ServletTest()
+        .get("/lint")
+        .param("it", "text/css")
+        .param("i", ("p { position: fixed }\n"  // Disallowed in Caja
+                     + "q { position: relative }\n"  // OK in both
+                     + "s { position: bogus }"))  // Malformed
+        .expectStatus(200)
+        .expectContentType("text/html; charset=UTF-8")
+        .expectContentMatches("<h2 class=\"summary\">1 Warning </h2>")
+        .expectContentMatches("<span class=\"problem\">bogus</span>")
         .send();
     assertNoErrors();
   }
@@ -298,12 +379,12 @@ public class CajaWebToolsServletTest extends CajaTestCase {
         .param("i", ("<select value=foo><option></option></select>"))
         .expectStatus(200)
         .expectContentType("text/html; charset=UTF-8")
-        .expectContentMatches(Pattern.compile(
+        .expectContentMatches(
             ""
-            + "<h2 title=\"UNKNOWN_ATTRIB\">[^<.]+\\.html:1\\+9 - 14:"
-            + " Unknown attribute value on &lt;select&gt;</h2>"))
-        .expectContentMatches(Pattern.compile(
-            "&lt;select <span class=\"problem\">value</span>=foo&gt;"))
+            + "<h4 title=\"UNKNOWN_ATTRIB\">[^<.]+\\.html:1\\+9 - 14:"
+            + " Unknown attribute value on &lt;select&gt;</h4>")
+        .expectContentMatches(
+            "&lt;select <span class=\"problem\">value</span>=foo&gt;")
         .send();
     assertNoErrors();
   }
@@ -331,8 +412,8 @@ public class CajaWebToolsServletTest extends CajaTestCase {
         .param("ot", "JSON")
         .expectStatus(200)
         .expectContentType("application/json; charset=UTF-8")
-        .expectContentMatches(Pattern.compile(
-            " \"frobbit\": \\{\\s*\"@description\": \"Frobbits nobbits \","))
+        .expectContentMatches(
+            " \"frobbit\": \\{\\s*\"@description\": \"Frobbits nobbits \",")
         .send();
   }
 
@@ -361,10 +442,9 @@ public class CajaWebToolsServletTest extends CajaTestCase {
         .get("/help")
         .expectStatus(200)
         .expectContentType("text/html; charset=UTF-8")
-        .expectContentMatches(Pattern.compile(
-            "<a href=\"/index\">/index</a>"))
-        .expectContentMatches(Pattern.compile(
-            "<tr><th>&amp;i=\u2026</th><td>an input source file</td></tr>"))
+        .expectContentMatches("<a href=\"/index\">/index</a>")
+        .expectContentMatches(
+            "<tr><th>&amp;i=\u2026</th><td>an input source file</td></tr>")
         .send();
   }
 
@@ -375,12 +455,12 @@ public class CajaWebToolsServletTest extends CajaTestCase {
         .param("i", "avast('foo')")
         .expectStatus(200)
         .expectContentType("text/html; charset=UTF-8")
-        .expectContentMatches(Pattern.compile(
+        .expectContentMatches(
             // Since there's a file under ancillary/servlet/files describing
             // the error message, there should be a tip link.
             ""
             + "<a class=\"help\" href=\"files-cid/UNDEFINED_SYMBOL_tip.html\""
-            + " target=\"help\">"))
+            + " target=\"help\">")
         .send();
   }
 
@@ -393,30 +473,30 @@ public class CajaWebToolsServletTest extends CajaTestCase {
         .param("minify", "true")
         .expectStatus(200)
         .expectContentType("text/html; charset=UTF-8")
-        .expectContentMatches(Pattern.compile(
+        .expectContentMatches(
             ":3\\+18 - 23:"
-            + " End tag &#39;h2&#39; seen but there were unclosed elements"))
-        .expectContentMatches(Pattern.compile(
+            + " End tag &#39;h2&#39; seen but there were unclosed elements")
+        .expectContentMatches(
             "&lt;h1&gt;Hello, World!<span class=\"problem\">&lt;/h2&gt;</span>"
-            ))
-        .expectContentMatches(Pattern.compile(
-            ":2\\+15 - 25: Symbol HelloWorld has not been defined"))
-        .expectContentMatches(Pattern.compile(
+            )
+        .expectContentMatches(
+            ":2\\+15 - 25: Symbol HelloWorld has not been defined")
+        .expectContentMatches(
             "&lt;script&gt;alert\\(<span class=\"problem\">HelloWorld</span>\\)"
-            ))
-        .expectContentMatches(Pattern.compile(
+            )
+        .expectContentMatches(
             "\\Q"  // Quote special characters until next \E
             + "<h2 class=\"summary\">1 Error, 1 Lint"
             + " (121B \u2192 86B; output is 71.1% of the original)</h2>"
             + "\\E"
-            ))
-        .expectContentMatches(Pattern.compile(
+            )
+        .expectContentMatches(
             "\\Q"
             + "&lt;style&gt;p{color:pink}&lt;/style&gt;\n"
             + "&lt;script&gt;alert(HelloWorld)&lt;/script&gt;\n"
             + "&lt;h1&gt;Hello, World!&lt;/h1&gt;"
             + "\\E"
-            ))
+            )
         .send();
   }
 
@@ -429,19 +509,17 @@ public class CajaWebToolsServletTest extends CajaTestCase {
         .param("minify", "true")
         .expectStatus(200)
         .expectContentType("text/html; charset=UTF-8")
-        .expectContentMatches(Pattern.compile(
-            ":1\\+12 - 22: unknown tag blockquite"))
-        .expectContentMatches(Pattern.compile(
-            "1\\+25 - 40: unknown css property backgrond"))
-        .expectContentMatches(Pattern.compile(
+        .expectContentMatches(":1\\+12 - 22: unknown tag blockquite")
+        .expectContentMatches("3\\+3 - 9: unknown css property colour")
+        .expectContentMatches(
             "\\Q"  // Quote special characters until next \E
             + "<h2 class=\"summary\">2 Errors"
-            + " (59B \u2192 51B; output is 86.4% of the original)</h2>"
+            + " (70B \u2192 48B; output is 68.6% of the original)</h2>"
             + "\\E"
-            ))
-        .expectContentMatches(Pattern.compile(
-            "\\Qh1,p.bar,blockquite{backgrond-color:red;color:blue}\\E"
-            ))
+            )
+        .expectContentMatches(
+            "\\Qh1,p.bar,blockquite{background:#f0f;colour:blue}\\E"
+            )
         .send();
   }
 
@@ -520,6 +598,10 @@ public class CajaWebToolsServletTest extends CajaTestCase {
         }
       });
       return this;
+    }
+
+    ServletTest expectContentMatches(String re) {
+      return expectContentMatches(Pattern.compile(re));
     }
 
     ServletTest expectContentMatches(final Pattern p) {

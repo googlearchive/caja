@@ -106,8 +106,7 @@ final class IndexPage {
         "minifyTrue", req.minify,
         "minifyFalse", !req.minify,
         "asciiOnly", req.asciiOnly,
-        "userAgent", (
-            req.userAgent != null ? Glob.regexToGlob(req.userAgent) : "*"),
+        "userAgent", req.userAgent != null ? req.userAgent : "*",
         "cacheId", req.staticFiles.cacheId));
     return f;
   }

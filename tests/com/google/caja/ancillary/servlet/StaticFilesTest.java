@@ -54,7 +54,7 @@ public class StaticFilesTest extends CajaTestCase {
     assertEquals("text/css; charset=UTF-8",
                  resp.getHeaders().get("content-type"));
     String css = (String) resp.getOutputObject();
-    assertTrue(css.startsWith("body{background-color:#fff"));
+    assertTrue(css.startsWith("body{background:#fff"));
     assertFalse(css.matches("\\s[{}]|[{}]\\s"));
   }
 
