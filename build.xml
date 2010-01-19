@@ -115,7 +115,7 @@
   </path>
   <path id="classpath.tools">
     <path refid="classpath.ant"/>
-    <path refid="classpath.web"/>
+    <path refid="classpath.compile"/>
     <pathelement
      path="${third_party}/java/jakarta_commons/commons-fileupload-1.2.1.jar"/>
     <pathelement path="${third_party}/java/jakarta_commons/commons-io-1.4.jar"/>
