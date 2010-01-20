@@ -64,6 +64,7 @@ class GuessContentType {
       // Try and lex and see what happens.
       CharProducer cp = CharProducer.Factory.fromString(
           code, FilePosition.UNKNOWN);
+      boolean sawColon = false;
       try {
         CssLexer cssLexer = new CssLexer(
             cp, DevNullMessageQueue.singleton(), false);
@@ -71,11 +72,14 @@ class GuessContentType {
         while (cssLexer.hasNext()) {
           Token<CssTokenType> t = cssLexer.next();
           if ("if".equals(t.text) || "while".equals(t.text)
-              || "for".equals(t.text) || "return".equals(t.text)) {
+              || "for".equals(t.text) || "return".equals(t.text)
+              || "?".equals(t.text)) {
             contentType = ContentType.JS;
             break;
           }
+          if (!sawColon && ":".equals(t.text)) { sawColon = true; }
         }
+        if (!sawColon) { contentType = ContentType.JS; }
       } catch (ParseException ex) {
         contentType = ContentType.JS;
       }

@@ -442,7 +442,7 @@ public class CajaWebToolsServletTest extends CajaTestCase {
         .get("/help")
         .expectStatus(200)
         .expectContentType("text/html; charset=UTF-8")
-        .expectContentMatches("<a href=\"/index\">/index</a>")
+        .expectContentMatches("<a href=\"index\">index</a>")
         .expectContentMatches(
             "<tr><th>&amp;i=\u2026</th><td>an input source file</td></tr>")
         .send();

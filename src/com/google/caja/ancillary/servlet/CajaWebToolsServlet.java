@@ -86,7 +86,8 @@ public class CajaWebToolsServlet extends HttpServlet {
     if (null == reqPath || "/".equals(reqPath)) {
       try {
         String query = req.getQueryString();
-        URI indexUri = new URI(null, null, Verb.INDEX.requestPath, query, null);
+        URI indexUri = new URI(
+            null, null, "/" + Verb.INDEX.relRequestPath, query, null);
         resp.sendRedirect(indexUri.toString());
       } catch (URISyntaxException ex) {
         ex.printStackTrace();
@@ -198,19 +199,21 @@ public class CajaWebToolsServlet extends HttpServlet {
    */
   Result handle(String reqPath, List<Pair<String, String>> params) {
     MessageQueue mq = new SimpleMessageQueue();
-    Request req;
-    {
+    Request req = null;
+    if (reqPath.startsWith("/")) {
       // The verb is specified in the path, but in the index page, there is
       // a select box for the verb, so for /index, the param processing below
       // might set the verb in request.
-      Verb verb = Verb.fromReqPath(reqPath);
-      if (verb == null) {
-        return errorPage(
-            404, "File not found " + reqPath + ".  Expected a path in "
-            + EnumSet.allOf(Verb.class),
-            mq, new Request());
+      Verb verb = Verb.fromRelReqPath(reqPath.substring(1));
+      if (verb != null) {
+        req = Request.create(verb, staticFiles, userAgentDb);
       }
-      req = Request.create(verb, staticFiles, userAgentDb);
+    }
+    if (req == null) {
+      return errorPage(
+          404, "File not found " + reqPath + ".  Expected a path in "
+          + EnumSet.allOf(Verb.class),
+          mq, new Request());
     }
 
     List<Job> inputJobs = Lists.newArrayList();

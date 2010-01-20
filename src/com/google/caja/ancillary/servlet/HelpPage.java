@@ -47,7 +47,7 @@ final class HelpPage {
          + " apply the Caja web tools to your web application.  Use the"
          + " <a href=@index>interactive form</a> to experiment.</p>"
          + "@verbs</body></html>"),
-        "index", Verb.INDEX.requestPath,
+        "index", Verb.INDEX.relRequestPath,
         "verbs", renderVerbHelp(b),
         "cacheId", staticFiles.cacheId));
     return out;
@@ -58,7 +58,7 @@ final class HelpPage {
     Element verbs = b.getDocument().createElementNS(HTML_NS, "ul");
     verbs.setAttributeNS(HTML_NS, "class", "verbs-help");
     for (Verb v : Verb.values()) {
-      Object reqPath = v.requestPath;
+      Object reqPath = v.relRequestPath;
       if (v == Verb.INDEX) {
         reqPath = b.substV("<a href=@reqPath>@reqPath</a>", "reqPath", reqPath);
       }

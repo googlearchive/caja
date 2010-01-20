@@ -24,6 +24,7 @@ import com.google.caja.lang.css.CssSchema;
 import com.google.caja.lang.html.HTML;
 import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.CssTokenType;
+import com.google.caja.lexer.ExternalReference;
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.HtmlLexer;
 import com.google.caja.lexer.HtmlTokenType;
@@ -391,7 +392,18 @@ class Processor {
   private void extractJobs(Node node, URI baseUri, List<Job> out) {
     HtmlEmbeddedContentFinder f = new HtmlEmbeddedContentFinder(
         req.htmlSchema, req.baseUri, mq, req.mc);
-    PluginEnvironment env = null;
+    PluginEnvironment env = new PluginEnvironment() {
+      @Override
+      public CharProducer loadExternalResource(
+          ExternalReference ref, String mimeType) {
+        return null;
+      }
+
+      @Override
+      public String rewriteUri(ExternalReference uri, String mimeType) {
+        return null;
+      }
+    };
     for (EmbeddedContent c : f.findEmbeddedContent(node)) {
       if (c.getType() != null) {
         Node src = c.getSource();

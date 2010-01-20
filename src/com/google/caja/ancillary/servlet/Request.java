@@ -141,7 +141,7 @@ final class Request implements Cloneable {
         public void handle(String name, String val, Request c)
             throws BadInputException {
           throw new BadInputException(
-              "Param " + name + " not allowed on " + v.requestPath, null);
+              "Param " + name + " not allowed on " + v.relRequestPath, null);
         }
         public String manual() { throw new UnsupportedOperationException(); }
       };

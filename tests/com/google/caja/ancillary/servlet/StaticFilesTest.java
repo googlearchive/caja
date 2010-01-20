@@ -65,4 +65,14 @@ public class StaticFilesTest extends CajaTestCase {
     f.serve("files/nosuchfile.txt", req, resp);
     assertEquals(404, resp.getStatus());
   }
+
+  public final void testTip() throws Exception {
+    StaticFiles f = new StaticFiles("cacheId");
+    TestHttpServletRequest req = new TestHttpServletRequest("");
+    TestHttpServletResponse resp = new TestHttpServletResponse();
+    f.serve("files/NO_SIDE_EFFECT_tip.html", req, resp);
+    assertEquals(200, resp.getStatus());
+    assertTrue(((String) resp.getOutputObject())
+               .contains("Operation Has No Effect</title>"));
+  }
 }

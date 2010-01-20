@@ -111,7 +111,7 @@ final class StaticFiles {
             min.otype = t;
             Processor p = new Processor(min, DevNullMessageQueue.singleton());
             try {
-              Job j = p.parse(cp, t, null, is.getUri());
+              Job j = p.parse(cp.clone(), t, null, is.getUri());
               List<Job> out = p.process(Lists.newArrayList(j));
               if (out.size() == 1) {
                 content = p.reduce(out);
@@ -154,6 +154,10 @@ final class StaticFiles {
       }
     } else {
       resp.setStatus(404);
+      resp.setContentType("text/plain");
+      Writer out = resp.getWriter();
+      out.write("404 - I have no response to that.");
+      out.close();
     }
   }
 
