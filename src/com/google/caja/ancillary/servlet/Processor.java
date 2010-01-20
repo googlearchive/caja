@@ -393,13 +393,11 @@ class Processor {
     HtmlEmbeddedContentFinder f = new HtmlEmbeddedContentFinder(
         req.htmlSchema, req.baseUri, mq, req.mc);
     PluginEnvironment env = new PluginEnvironment() {
-      @Override
       public CharProducer loadExternalResource(
           ExternalReference ref, String mimeType) {
         return null;
       }
 
-      @Override
       public String rewriteUri(ExternalReference uri, String mimeType) {
         return null;
       }
