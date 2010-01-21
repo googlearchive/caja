@@ -190,6 +190,10 @@ public class ExpressionTest extends CajaTestCase {
     assertFolded("true", "'foo' !== 'bar'");
     assertFolded("true", "4 !== '4'");
     assertFolded("4 != '4'", "4 != '4'");
+    assertFolded("a !== b", "!(a === b)");  // Correct around NaN
+    assertFolded("a === b", "!(a !== b)");
+    assertFolded("a != b", "!(a == b)");
+    assertFolded("a == b", "!(a != b)");
     assertFolded("0.5", "1 / 2");
     assertFolded("1 / '2'", "1 / '2'");
     assertFolded("(1/0)", "1 / 0");
@@ -259,6 +263,25 @@ public class ExpressionTest extends CajaTestCase {
     assertFolded("3", "'foo'['length']");
     assertFolded("new Date", "new Date()");
     assertFolded("new Date(0)", "new Date(0)");
+    assertFolded(
+        "(function () { return this; })()",
+        "(function () { return this; })()");
+    assertFolded(
+        "(function () {\n   return -arguments[ i ];\n })()",
+        "(function () { return -arguments[i]; })()");
+    assertFolded("4", "(function () { return 4; })()");
+    assertFolded("void 0", "(function () {})()");
+    assertFolded("void 0", "(function () { return; })()");
+    assertFolded("void foo()", "(function () { foo(); })()");
+    assertFolded(
+        "(function (i) { return i; })()",
+        "(function (i) { return i; })()");
+    assertFolded(
+        "(function i() { return i; })()",
+        "(function i() { return i; })()");
+    assertFolded(
+        "(function () {\n   arguments.callee();\n })()",
+        "(function () { arguments.callee(); })()");
   }
 
   public final void testToInt32() {

@@ -468,6 +468,7 @@ public abstract class Operation extends AbstractExpression {
     }
   }
 
+  private static final Expression[] NO_EXPRESSIONS = new Expression[0];
   private Expression foldUnaryOp() {
     Expression operand = children().get(0);
     switch (op) {
@@ -475,6 +476,23 @@ public abstract class Operation extends AbstractExpression {
         Boolean b = operand.conditionResult();
         if (b != null && operand.simplifyForSideEffect() == null) {
           return new BooleanLiteral(getFilePosition(), !b);
+        }
+        if (operand instanceof Operation) {
+          Operation op = (Operation) operand;
+          Operator negation;
+          switch (op.getOperator()) {
+            // Cannot do the same around comparison because of NaN.
+            case NOT_EQUAL: negation = Operator.EQUAL; break;
+            case EQUAL: negation = Operator.NOT_EQUAL; break;
+            case STRICTLY_NOT_EQUAL: negation = Operator.STRICTLY_EQUAL; break;
+            case STRICTLY_EQUAL: negation = Operator.STRICTLY_NOT_EQUAL; break;
+            default: negation = null; break;
+          }
+          if (negation != null) {
+            return Operation.create(
+                getFilePosition(), negation,
+                op.children().toArray(NO_EXPRESSIONS));
+          }
         }
         return this;
       case TYPEOF:
@@ -645,10 +663,34 @@ public abstract class Operation extends AbstractExpression {
   private Expression foldCall() {
     List<? extends Expression> operands = children();
     Expression fn = operands.get(0);
-    if (Operation.is(fn, Operator.CONSTRUCTOR) && 1 == operands.size()) {
-      return fn;
-    }
-    if (is(fn, Operator.MEMBER_ACCESS)
+    if (fn instanceof FunctionConstructor) {
+      // Inline calls to zero argument functions given zero arguments that
+      // contain a single return statement or a single expression statement
+      // that do not mention this or arguments.
+      if (operands.size() == 1) {
+        FunctionConstructor fc = (FunctionConstructor) fn;
+        if (fc.getParams().isEmpty() && fc.getIdentifierName() == null) {
+          switch (fc.getBody().children().size()) {
+            case 0: return undefined(getFilePosition());
+            case 1:
+              Statement s = fc.getBody().children().get(0);
+              if (s instanceof ReturnStmt) {
+                Expression e = ((ReturnStmt) s).getReturnValue();
+                if (e == null) { return undefined(getFilePosition()); }
+                if (!mentionsThisOrArguments(e)) { return e; }
+              } else if (s instanceof ExpressionStmt) {
+                Expression e = ((ExpressionStmt) s).getExpression();
+                if (!mentionsThisOrArguments(e)) {
+                  return create(getFilePosition(), Operator.VOID, e);
+                }
+              }
+              break;
+          }
+        }
+      }
+    } else if (is(fn, Operator.CONSTRUCTOR)) {
+      if (1 == operands.size()) { return fn; }
+    } else if (is(fn, Operator.MEMBER_ACCESS)
         && fn.children().get(0) instanceof StringLiteral) {
       StringLiteral sl = (StringLiteral) fn.children().get(0);
       String methodName = ((Reference) fn.children().get(1))
@@ -741,5 +783,18 @@ public abstract class Operation extends AbstractExpression {
     double int32bit = number % TWO_TO_THE_32;  // Handles Inf and NaN from (2)
     // 5. Return int32bit.
     return ((long) int32bit) & 0xffffffffL;
+  }
+
+  private static boolean mentionsThisOrArguments(Expression e) {
+    if (e instanceof Reference) {
+      String s = ((Reference) e).getIdentifierName();
+      return ("this".equals(s) || "arguments".equals(s));
+    } else if (e instanceof FunctionConstructor) { return false; }
+    for (ParseTreeNode c : e.children()) {
+      if (c instanceof Expression && mentionsThisOrArguments((Expression) c)) {
+        return true;
+      }
+    }
+    return false;
   }
 }
