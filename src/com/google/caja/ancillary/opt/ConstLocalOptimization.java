@@ -128,7 +128,22 @@ class Optimizer {
           }
 
           public void inScope(AncestorChain<?> ac, OptScope scope) {
-            positions.put(ac, positions.size());
+            int pos = positions.size();
+            positions.put(ac, pos);
+            // Identify non-local transfer of control.
+            OptScope dc = scope;
+            while (!dc.t.isDeclarationContainer) { dc = dc.containing; }
+            if (dc.earliestNonLocalXfer == Integer.MAX_VALUE
+                && ac.node instanceof Operation) {
+              Operator op = ((Operation) ac.node).getOperator();
+              switch (op) {
+                case FUNCTION_CALL: case CONSTRUCTOR: case MEMBER_ACCESS:
+                case SQUARE_BRACKET:
+                  dc.earliestNonLocalXfer = pos;
+                  break;
+                default: break;
+              }
+            }
           }
 
           public void masked(
@@ -175,9 +190,12 @@ class Optimizer {
       Symbol s = v.s.getSymbol(v.name);
       Expression value;
       int initPos;
+      boolean isConst;
+      AncestorChain<Identifier> write;
+
       switch (s.writes.size()) {
         case 1:
-          AncestorChain<Identifier> write = s.writes.get(0);
+          write = s.writes.get(0);
           if (write.parent.node instanceof Declaration) {
             initPos = write.parent.node instanceof FunctionDeclaration
                 ? -1  // hoisted
@@ -185,12 +203,9 @@ class Optimizer {
             AncestorChain<Declaration> d = write.parent.cast(Declaration.class);
             value = d.node.getInitializer();
 
-            if (s.reads.size() <= 1) {
-              if (!isSinglyInlineable(value)) { continue var; }
-              if (!(s.reads.isEmpty() || inSameFn(s.reads.get(0), d))) {
-                continue var;
-              }
-            } else if (!isConst(value)) {
+            isConst = isConst(value);
+            if (!isConst
+                && (!isSinglyInlineable(value) || s.reads.size() > 1)) {
               continue var;
             }
           } else {
@@ -200,6 +215,8 @@ class Optimizer {
         case 0:
           initPos = -1;
           value = null;
+          write = null;
+          isConst = true;
           break;
         default:
           continue var;
@@ -209,38 +226,53 @@ class Optimizer {
       // and all reads occur after that, and the value is constant, then
       // inline uses.
 
-      // If all the reads occur afterwards lexically, then, since we
-      // know the declaration appears at the top of a run of
-      // declarations in a function body, then it isn't being read by
-      // any of the earlier declarations ; so all reads must happen
-      // after the var is initialized.
-      for (AncestorChain<Identifier> read : s.reads) {
-        if (positions.get(read) < initPos) { continue var; }
-      }
+      // TODO: we can safely inline the reads that are okay.
 
+      // TODO: check that reads are in the same function
+      // or before the first call or member dereference op.
+
+      int nInlined = 0;
       for (AncestorChain<Identifier> read : s.reads) {
-        AncestorChain<Reference> toReplace
-            = read.parent.cast(Reference.class);
-        Expression repl = value;
-        if (repl == null) {
+        // If the read occur afterwards lexically, then, since we
+        // know the declaration appears at the top of a run of
+        // declarations in a function body, then it isn't being read by
+        // any of the earlier declarations ; so the read must happen
+        // after the var is initialized.
+        if (positions.get(read) < initPos) { continue; }
+        if (write != null && !inSameFn(write, read)) {
+          // Can't reuse reference values across function boundaries.
+          if (!isConst) { continue; }
+          // If the use is across function boundaries, and there might have
+          // been a non-local transfer of control, then we can't inline.
+          if (initPos > v.s.earliestNonLocalXfer) { continue; }
+        }
+
+        AncestorChain<Reference> toReplace = read.parent.cast(Reference.class);
+        Expression repl;
+        if (value == null) {
           FilePosition fp = toReplace.node.getFilePosition();
           repl = Operation.create(fp, Operator.VOID, new IntegerLiteral(fp, 0));
+        } else {
+          repl = (Expression) value.clone();
         }
         toReplace.parent.cast(MutableParseTreeNode.class)
             .node.replaceChild(repl, toReplace.node);
+        ++nInlined;
         changed = true;
       }
 
-      for (AncestorChain<Identifier> decl : s.decls) {
-        AncestorChain<?> toRemove = decl.parent;
-        if (toRemove.node instanceof FormalParam) { continue; }
-        if (toRemove.parent.node instanceof MultiDeclaration
-            && toRemove.parent.node.children().size() == 1) {
-          toRemove = toRemove.parent;
+      if (nInlined == s.reads.size()) {
+        for (AncestorChain<Identifier> decl : s.decls) {
+          AncestorChain<?> toRemove = decl.parent;
+          if (toRemove.node instanceof FormalParam) { continue; }
+          if (toRemove.parent.node instanceof MultiDeclaration
+              && toRemove.parent.node.children().size() == 1) {
+            toRemove = toRemove.parent;
+          }
+          toRemove.parent.cast(MutableParseTreeNode.class)
+              .node.removeChild(toRemove.node);
+          changed = true;
         }
-        toRemove.parent.cast(MutableParseTreeNode.class)
-            .node.removeChild(toRemove.node);
-        changed = true;
       }
     }
   }
@@ -248,6 +280,7 @@ class Optimizer {
   private static boolean isSinglyInlineable(Expression expr) {
     return isConst(expr)
         || expr instanceof StringLiteral  // inline large string literal once
+        || expr instanceof RegexpLiteral
         || (expr instanceof ObjectConstructor
             && areSinglyInlineable(((ObjectConstructor) expr).children()))
         || (expr instanceof ArrayConstructor
@@ -267,13 +300,13 @@ class Optimizer {
       if (expr instanceof RegexpLiteral) { return false; }
       if (expr instanceof StringLiteral) {
         // Don't inline large strings more than once.
-        // TODO(mikesamuel): 100 is a tuning parameter.
-        return ((StringLiteral) expr).getValue().length() < 100;
+        // TODO(mikesamuel): 20 is a tuning parameter.
+        return ((StringLiteral) expr).getValue().length() < 20;
       }
       return true;
     }
     return (Operation.is(expr, Operator.VOID)
-        && areConst(((Operation) expr).children()));
+            && areConst(((Operation) expr).children()));
   }
 
   private static boolean areConst(List<? extends Expression> exprs) {
@@ -326,8 +359,10 @@ final class OptScope implements AbstractScope {
   final ScopeType t;
   final Map<String, Symbol> symbols = Maps.newLinkedHashMap();
   final AncestorChain<?> root;
+  int earliestNonLocalXfer = Integer.MAX_VALUE;
 
-  OptScope(OptScope containing, ScopeType t, AncestorChain<?> root) {
+  OptScope(
+      OptScope containing, ScopeType t, AncestorChain<?> root) {
     this.containing = containing;
     this.t = t;
     this.root = root;

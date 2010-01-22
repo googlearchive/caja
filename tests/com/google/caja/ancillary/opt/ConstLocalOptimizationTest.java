@@ -308,7 +308,7 @@ public class ConstLocalOptimizationTest extends CajaTestCase {
             ""
             + "function f() {"
             + "  var x = y, y = 1;"
-            + "  return [x, y, 2];"
+            + "  return [x, 1, 2];"
             + "}"))),
         render(ConstLocalOptimization.optimize(
             js(fromString(
@@ -334,5 +334,38 @@ public class ConstLocalOptimizationTest extends CajaTestCase {
                 + "  var arguments = 1;"
                 + "  return arguments[0];"
                 + "}")))));
+  }
+
+  public final void testLiteralsAcrossFunctionBoundaries() throws Exception {
+    assertEquals(
+        render(js(fromString(
+            ""
+            + "function f() {"
+            + "  return function g() { return 4; };"
+            + "}"))),
+        render(ConstLocalOptimization.optimize(js(fromString(
+            ""
+            + "function f() {"
+            + "  var n = 4;"
+            + "  function g() { return n; }"
+            + "  return g;"
+            + "}")))));
+  }
+
+  public final void testCalls() throws Exception {
+    assertEquals(
+        render(js(fromString(
+            ""
+            + "function g() {"
+            + "  var y = (function f() { return z; })(), z = 2;"
+            + "  return 1 + y + 2;"
+            + "}"))),
+        render(ConstLocalOptimization.optimize(js(fromString(
+            ""
+            + "function g() {"
+            + "  var x = 1, y = f(), z = 2;"
+            + "  function f() { return z; }"
+            + "  return x + y + z;"
+            + "}")))));
   }
 }
