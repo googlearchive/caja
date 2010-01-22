@@ -15,7 +15,7 @@ knows which globals a piece of code uses.  If you see warnings like
 
 <blockquote>
 ERROR: foo.js:10+6 - 11: Undocumented global foo
-for (var <span class=problem>i</span> = 0; i < n; ++i) {
+<pre class="prettyprint lang-js">for (var <span class=problem>i</span> = 0; i < n; ++i) {
 </pre></blockquote>
 
 then it's possible you're unintentionally introducing a global into
@@ -26,6 +26,6 @@ file listing the globals you depend upon.
 <blockquote><pre class=prettyprint>/** @provides foo */</pre></blockquote>
 
 <p>As always, to turn this off, put the error message name
-<code>UNDOCUMENTED_GLOBAL</code> in the <a href="ign_help.html>ignores list</a>.
+<code>UNDOCUMENTED_GLOBAL</code> in the <a href="ign_help.html">ignores list</a>.
 </body>
 </html>
