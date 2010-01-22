@@ -49,6 +49,9 @@ public class GWTCajolingServiceImpl extends RemoteServiceServlet
     // point back to the gwt cajoling service, while others that load media into
     // an existing page should go through a configurable cajoling service
     public URI rewrite(ExternalReference extref, String mimeType) {
+      if (mimeType.startsWith("image/")) {
+        return extref.getUri();
+      }
       try {
         return URI.create(
             "http://caja.appspot.com/cajole"

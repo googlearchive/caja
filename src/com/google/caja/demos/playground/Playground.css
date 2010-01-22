@@ -41,6 +41,14 @@ div {
   margin: 5px;	
 }
 
+.clearPadding {
+  padding: 0px;	
+}
+
+.playgroundUI {
+  background: #92C1F0;
+}
+
 .indentedblock {
   margin-left: 1em;
 }

@@ -29,6 +29,7 @@ import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.ui.Anchor;
 import com.google.gwt.user.client.ui.Button;
 import com.google.gwt.user.client.ui.DecoratedTabPanel;
+import com.google.gwt.user.client.ui.DisclosurePanel;
 import com.google.gwt.user.client.ui.FlowPanel;
 import com.google.gwt.user.client.ui.HTML;
 import com.google.gwt.user.client.ui.HasHorizontalAlignment;
@@ -42,6 +43,7 @@ import com.google.gwt.user.client.ui.Panel;
 import com.google.gwt.user.client.ui.RootPanel;
 import com.google.gwt.user.client.ui.SuggestBox;
 import com.google.gwt.user.client.ui.TextArea;
+import com.google.gwt.user.client.ui.TextBox;
 import com.google.gwt.user.client.ui.Tree;
 import com.google.gwt.user.client.ui.TreeItem;
 import com.google.gwt.user.client.ui.VerticalPanel;
@@ -58,6 +60,7 @@ import java.util.TreeMap;
  */
 public class PlaygroundView {
   private HTML renderPanel;
+  private TextBox renderResult;
   private HTML cajoledSource;
   private ListBox compileMessages;
   private ListBox runtimeMessages;
@@ -152,6 +155,7 @@ public class PlaygroundView {
     cajoleButton.setWidth("100%");
 
     HorizontalPanel addressBar = new HorizontalPanel();
+    addressBar.setStyleName("playgroundUI");
     addressBar.add(addressField);
     addressBar.add(goButton);
     addressBar.add(cajoleButton);
@@ -204,6 +208,7 @@ public class PlaygroundView {
 
   private DecoratedTabPanel createEditorPanel() {
     editorPanel = new DecoratedTabPanel();
+    editorPanel.setStyleName("clearPadding");
     editorPanel.add(createSourcePanel(), "Source");
     editorPanel.add(createCajoledSourcePanel(), "Cajoled Source");
     editorPanel.add(createRenderPanel(), "Rendered Result");
@@ -217,9 +222,19 @@ public class PlaygroundView {
     return editorPanel;
   }
 
-  private HTML createRenderPanel() {
+  private Panel createRenderPanel() {
+    DisclosurePanel resultBar = new DisclosurePanel("Eval Result");
+    resultBar.setStyleName("playgroundUI");
+    renderResult = new TextBox();
+    renderResult.setWidth("100%");
+    resultBar.add(renderResult);
+    resultBar.setWidth("100%");
     renderPanel = new HTML();
-    return renderPanel;
+    FlowPanel mainPanel = new FlowPanel();
+    mainPanel.add(resultBar);
+    mainPanel.add(renderPanel);
+    renderPanel.setSize("100%", "100%");
+    return mainPanel;
   }
 
   private TreeItem addExampleItem(Map<Example.Type, TreeItem> menu,
@@ -235,6 +250,7 @@ public class PlaygroundView {
 
   private DecoratedTabPanel createExamplePanel() {
     DecoratedTabPanel cp = new DecoratedTabPanel();
+    cp.setStyleName("clearPadding");
     Tree exampleTree = new Tree();
     SortedMap<Example.Type, TreeItem> menuMap = new TreeMap<Example.Type, TreeItem>();
     final Map<TreeItem, Example> entryMap =
@@ -339,9 +355,14 @@ public class PlaygroundView {
     script.setType("text/javascript");
     script.setInnerText(cajoled);
     renderPanel.getElement().appendChild(script);
+    renderResult.setText(getRenderResult());
     editorPanel.selectTab(2);
   }
 
+  private native String getRenderResult() /*-{
+    return "" + $wnd.___.getNewModuleHandler().getLastValue();
+  }-*/;
+  
   public void addCompileMessage(String item) {
     compileMessages.addItem(item);
   }
