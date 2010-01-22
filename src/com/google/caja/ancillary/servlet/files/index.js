@@ -44,8 +44,7 @@ function doSubmit() {
     var inlineCodeCell = document.createElement('td');
     inlineCodeCell.width = '50%';
     inlineCodeCell.appendChild(inlineCode);
-    document.getElementById("content").getElementsByTagName("tr")[0]
-        .appendChild(inlineCodeCell);
+    document.getElementById("content").appendChild(inlineCodeCell);
   }
   toSubmit.target = inlineCode.name;
 
