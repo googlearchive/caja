@@ -153,9 +153,9 @@ sub collectCodeStats() {
   extractCoverageSummary("$REPORTS_DIR/coverage/index.html", \@status_log);
 
   print STDERR "running benchmarks\n";
-  track(\&build, ['benchmarks'], 'benchmarks', \@status_log);
-  extractBenchmarkSummary("$REPORTS_DIR/benchmarks/TESTS-TestSuites.xml",
-                          \@status_log);
+  track(\&build, ['-Xmx=512m', 'benchmarks'], 'benchmarks', \@status_log);
+  extractBenchmarkSummary(
+      "$REPORTS_DIR/benchmarks/TESTS-TestSuites.xml", \@status_log);
 
   print STDERR "running tests\n";
   track(\&build, ['runtests'], 'tests', \@status_log);
@@ -338,11 +338,11 @@ sub extractTestSummary($$) {
     next unless m/<testsuite\b(.*)/;
     my $testsummary = $1;
     die "Malformed $xml_file: $_" unless $testsummary =~ s/>.*//;
-    die "Malformed $xml_file: $_" unless $testsummary =~ m/\btests="(\d+)"/;
+    die "Malformed $xml_file: $_" unless $testsummary =~ m/\stests="(\d+)"/;
     $tests += $1;
-    die "Malformed $xml_file: $_" unless $testsummary =~ m/\berrors="(\d+)"/;
+    die "Malformed $xml_file: $_" unless $testsummary =~ m/\serrors="(\d+)"/;
     $errors += $1;
-    die "Malformed $xml_file: $_" unless $testsummary =~ m/\bfailures="(\d+)"/;
+    die "Malformed $xml_file: $_" unless $testsummary =~ m/\sfailures="(\d+)"/;
     $failures += $1;
   }
   close(IN);

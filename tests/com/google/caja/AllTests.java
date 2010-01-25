@@ -14,15 +14,16 @@
 
 package com.google.caja;
 
+import java.io.File;
+import java.io.FilenameFilter;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.regex.Pattern;
+
 import junit.framework.AssertionFailedError;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
-
-import java.io.File;
-import java.io.FilenameFilter;
-import java.io.IOException;
-import java.util.regex.Pattern;
 
 /**
  * @author mikesamuel@gmail.com
@@ -77,11 +78,37 @@ public class AllTests {
         + root.getName().replaceFirst("[.]java$", "");
 
     Class<? extends TestCase> testCase = mapToTestClass(className);
-    Pattern testFilter = Pattern.compile(System.getProperty("test.filter", ""));
+    Pattern testFilter = Pattern.compile(
+        "(?:" + globToPattern(System.getProperty("test.filter", "*")) + ")$",
+        Pattern.DOTALL);
 
     if (testCase != null && testFilter.matcher(testCase.getName()).find()) {
       ts.addTestSuite(testCase);
     }
     return 1;
+  }
+
+  private static String globToPattern(String glob) {
+    StringBuilder sb = new StringBuilder();
+    int pos = 0;
+    for (int i = 0, n = glob.length(); i < n; ++i) {
+      char ch = glob.charAt(i);
+      if (ch == '*') {
+        sb.append(Pattern.quote(glob.substring(pos, i)));
+        pos = i + 1;
+        // ** matches across package boundaries
+        if (pos < n && '*' == glob.charAt(pos)) {
+          ++pos;
+          sb.append(".*");
+        } else {
+          sb.append("[^.]*");
+        }
+      } else if (ch == '?') {
+        sb.append(Pattern.quote(glob.substring(pos, i))).append('.');
+        pos = i + 1;
+      }
+    }
+    sb.append(Pattern.quote(glob.substring(pos)));
+    return sb.toString();
   }
 }
