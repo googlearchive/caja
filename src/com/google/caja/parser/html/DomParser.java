@@ -338,9 +338,7 @@ public class DomParser {
             ns = elNs = AbstractElementStack.unknownNamespace(
                 pos, ns, qname, mq);
           }
-          String localName = qname.substring(qname.indexOf(':') + 1);
-          Element replacement = doc.createElementNS(elNs.uri, localName);
-          replacement.setPrefix(elNs.prefix);
+          Element replacement = doc.createElementNS(elNs.uri, qname);
           el.getParentNode().replaceChild(replacement, el);
           for (Node child; (child = el.getFirstChild()) != null; ) {
             replacement.appendChild(child);
@@ -377,17 +375,12 @@ public class DomParser {
               continue;
             }
             if (a.getNamespaceURI() != null) { continue; }
-            String localName = qname.substring(qname.indexOf(':') + 1);
             Namespaces attrNs = ns.forAttrName(elNs, qname);
             if (attrNs == null) {
-              FilePosition pos = Nodes.getFilePositionFor(a);
               ns = attrNs = AbstractElementStack.unknownNamespace(
-                  pos, ns, qname, mq);
+                  Nodes.getFilePositionFor(a), ns, qname, mq);
             }
-            Attr newAttr = doc.createAttributeNS(attrNs.uri, localName);
-            if (attrNs.uri != elNs.uri) {
-              newAttr.setPrefix(attrNs.prefix);
-            }
+            Attr newAttr = doc.createAttributeNS(attrNs.uri, qname);
             newAttr.setValue(a.getValue());
             if (needsDebugData) {
               Nodes.setFilePositionFor(newAttr, Nodes.getFilePositionFor(a));

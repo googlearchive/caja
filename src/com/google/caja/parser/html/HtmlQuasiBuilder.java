@@ -324,25 +324,25 @@ public class HtmlQuasiBuilder {
     String oldValue = Nodes.getRawValue(a);
     String quasiIdentifier = singleIdentifier(dequote(oldValue));
     String uri = a.getNamespaceURI();
-    String localName = a.getLocalName();
+    String qname = a.getName();
     if (quasiIdentifier != null) {
       // Handle boolean attributes like checked, selected
       Object binding = bindings.get(quasiIdentifier);
       if (binding instanceof Boolean) {
         boolean present = ((Boolean) binding).booleanValue();
         if (!present) { return null; }
-        Attr result = doc.createAttributeNS(uri, localName);
+        Attr result = doc.createAttributeNS(uri, qname);
         result.setNodeValue(result.getName());
         return result;
       } else if (binding instanceof Attr) {
         Attr bindingAttr = (Attr) binding;
-        Attr result = doc.createAttributeNS(uri, localName);
+        Attr result = doc.createAttributeNS(uri, qname);
         result.setNodeValue(bindingAttr.getNodeValue());
         copyFilePositions(bindingAttr, result);
         return result;
       }
     }
-    Attr result = doc.createAttributeNS(uri, localName);
+    Attr result = doc.createAttributeNS(uri, qname);
     result.setNodeValue(substAttrValue(oldValue, bindings));
     return result;
   }
@@ -370,7 +370,7 @@ public class HtmlQuasiBuilder {
   }
 
   private Element substElement(Element e, Map<String, ?> bindings) {
-    Element result = doc.createElementNS(e.getNamespaceURI(), e.getLocalName());
+    Element result = doc.createElementNS(e.getNamespaceURI(), e.getTagName());
     for (Attr attr : Nodes.attributesOf(e)) {
       Attr newAttr = substAttrib(attr, bindings);
       if (newAttr != null) {

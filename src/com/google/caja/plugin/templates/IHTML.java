@@ -44,11 +44,11 @@ import org.w3c.dom.Node;
  * @author mikesamuel@gmail.com
  */
 public class IHTML {
-  /** The URI namespace for IHTML elements. */
-  public static final String NAMESPACE = Namespaces.COMMON.forPrefix("ihtml")
-      .uri;
   /** The tag prefix reserved for IHTML elements. */
   public static final String PREFIX = "ihtml";
+  /** The URI namespace for IHTML elements. */
+  public static final String NAMESPACE = Namespaces.COMMON.forPrefix(PREFIX)
+      .uri;
 
   /**
    * Name of an attribute used to mark the kind of tag within which a template

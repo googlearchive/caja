@@ -262,7 +262,7 @@ final class CajaTreeBuilder extends TreeBuilder<Node> {
         String localName = attributes.getLocalName(i);
         if (el.hasAttributeNS(ns, localName)) { continue; }
         String value = attributes.getValue(i);
-        Attr a = doc.createAttributeNS(ns, localName);
+        Attr a = doc.createAttributeNS(ns, attributes.getQName(i));
         a.setValue(value);
         if (pos != null) {
           Nodes.setFilePositionFor(a, pos);

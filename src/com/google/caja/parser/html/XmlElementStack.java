@@ -81,9 +81,7 @@ class XmlElementStack extends AbstractElementStack {
       if (elNs == null) {
         elNs = ns = unknownNamespace(start.pos, ns, elQName, mq);
       }
-      String localName = Namespaces.localName(elNs.uri, elQName);
-      Element newElement = doc.createElementNS(elNs.uri, localName);
-      newElement.setPrefix(elNs.prefix);
+      Element newElement = doc.createElementNS(elNs.uri, elQName);
       for (AttrStub a : attrs) {
         String attrQName = a.nameTok.text;
         Namespaces attrNs = ns.forAttrName(elNs, attrQName);
@@ -93,10 +91,10 @@ class XmlElementStack extends AbstractElementStack {
         String localAttrName = Namespaces.localName(attrNs.uri, attrQName);
         if (!newElement.hasAttributeNS(attrNs.uri, localAttrName)) {
           if (needsDebugData) {
-            Attr attrNode = a.toAttr(doc, attrNs.uri, localAttrName);
+            Attr attrNode = a.toAttr(doc, attrNs.uri, attrQName);
             newElement.setAttributeNodeNS(attrNode);
           } else {
-            newElement.setAttributeNS(attrNs.uri, localAttrName, a.value);
+            newElement.setAttributeNS(attrNs.uri, attrQName, a.value);
           }
         } else {
           mq.addMessage(
@@ -172,7 +170,7 @@ class XmlElementStack extends AbstractElementStack {
     }
     doAppend(textNode, parent);
   }
-  
+
   /**
    * Adds the given comment node to the DOM.
    */

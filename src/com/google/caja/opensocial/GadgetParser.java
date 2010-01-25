@@ -229,8 +229,8 @@ public class GadgetParser {
   }
 
   private static Iterable<Element> getElementsByTagNameNS(
-      Document d, String qname) {
-    NodeList elements = d.getElementsByTagNameNS(NS_URI, qname);
+      Document d, String localName) {
+    NodeList elements = d.getElementsByTagNameNS(NS_URI, localName);
     return Nodes.nodeListIterable(elements, Element.class);
   }
 }

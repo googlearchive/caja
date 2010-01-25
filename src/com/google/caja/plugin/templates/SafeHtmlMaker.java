@@ -203,7 +203,7 @@ final class SafeHtmlMaker {
           return null;
         } else {
           FilePosition pos = Nodes.getFilePositionFor(el);
-          safe = doc.createElementNS(el.getNamespaceURI(), el.getLocalName());
+          safe = doc.createElementNS(el.getNamespaceURI(), el.getTagName());
           Nodes.setFilePositionFor(safe, pos);
           bones.add(new NodeBone(n, safe));
 
@@ -447,8 +447,7 @@ final class SafeHtmlMaker {
   private void emitStaticAttr(
       Attr a, StringLiteral dynamicValue, Element safe) {
     // Emit an attribute with a known value in the safe HTML.
-    Attr safeAttr = doc.createAttributeNS(
-        a.getNamespaceURI(), a.getLocalName());
+    Attr safeAttr = doc.createAttributeNS(a.getNamespaceURI(), a.getName());
     safeAttr.setValue(
         dynamicValue == null ? a.getValue() : dynamicValue.getUnquotedValue());
     Nodes.setFilePositionFor(safeAttr, Nodes.getFilePositionFor(a));

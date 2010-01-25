@@ -82,11 +82,9 @@ public class LegacyNamespaceFixupStage implements Pipeline.Stage<Jobs> {
     }
 
     private Element fixElement(Element e) {
-      String[] nsAndLocalName = guessNamespaceAndWarn(
-          Namespaces.HTML_NAMESPACE_URI, e);
-      String ns = nsAndLocalName[0], localName = nsAndLocalName[1];
+      String ns = guessNamespaceAndWarn(Namespaces.HTML_NAMESPACE_URI, e);
       // Create a namespace aware version of e.
-      Element newE = e.getOwnerDocument().createElementNS(ns, localName);
+      Element newE = e.getOwnerDocument().createElementNS(ns, e.getTagName());
       Nodes.setFilePositionFor(newE, Nodes.getFilePositionFor(e));
       // Move all children from old to new.
       for (Node c; (c = e.getFirstChild()) != null;) {
@@ -110,9 +108,8 @@ public class LegacyNamespaceFixupStage implements Pipeline.Stage<Jobs> {
 
     private void fixAttr(String elNsUri, Attr a) {
       Element e = a.getOwnerElement();
-      String[] nsAndLocalName = guessNamespaceAndWarn(elNsUri, a);
-      String ns = nsAndLocalName[0], localName = nsAndLocalName[1];
-      Attr newA = a.getOwnerDocument().createAttributeNS(ns, localName);
+      String ns = guessNamespaceAndWarn(elNsUri, a);
+      Attr newA = a.getOwnerDocument().createAttributeNS(ns, a.getName());
       newA.setNodeValue(a.getValue());
       Nodes.setFilePositionFor(newA, Nodes.getFilePositionFor(a));
       Nodes.setFilePositionForValue(newA, Nodes.getFilePositionForValue(a));
@@ -121,11 +118,11 @@ public class LegacyNamespaceFixupStage implements Pipeline.Stage<Jobs> {
       e.setAttributeNodeNS(newA);
     }
 
-    private String[] guessNamespaceAndWarn(String defaultNsUri, Node n) {
+    private String guessNamespaceAndWarn(String defaultNsUri, Node n) {
       String xmlIdent = n.getNodeName();
       int colon = xmlIdent.indexOf(':');
       if (colon < 0) {  // Don't warn if no prefix
-        return new String[] { defaultNsUri, xmlIdent };
+        return defaultNsUri;
       }
       MessageLevel level;
       String prefix = xmlIdent.substring(0, colon);
@@ -142,7 +139,7 @@ public class LegacyNamespaceFixupStage implements Pipeline.Stage<Jobs> {
           PluginMessageType.MISSING_XML_NAMESPACE, level,
           Nodes.getFilePositionFor(n),
           MessagePart.Factory.valueOf(xmlIdent));
-      return new String[] { nsUri, xmlIdent.substring(colon + 1) };
+      return nsUri;
     }
   }
 }
