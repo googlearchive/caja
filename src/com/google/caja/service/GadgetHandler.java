@@ -35,6 +35,7 @@ import java.io.StringReader;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URLEncoder;
+import java.util.List;
 
 public class GadgetHandler implements ContentHandler {
   private final BuildInfo buildInfo;
@@ -45,8 +46,8 @@ public class GadgetHandler implements ContentHandler {
     this.retriever = retriever;
   }
 
-  public boolean canHandle(
-      URI uri, CajolingService.Transform transform,
+  public boolean canHandle(URI uri, CajolingService.Transform transform,
+      List<CajolingService.Directive> directives,
       String inputContentType, String outputContentType,
       ContentTypeCheck checker) {
     return checker.check("application/xml", inputContentType)
@@ -55,6 +56,7 @@ public class GadgetHandler implements ContentHandler {
 
   public Pair<String, String> apply(URI uri,
                                     CajolingService.Transform trans,
+                                    List<CajolingService.Directive> d,
                                     ContentHandlerArgs args,
                                     String inputContentType,
                                     String outputContentType,

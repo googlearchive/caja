@@ -53,4 +53,13 @@ public class JsHandlerTest extends ServiceTestCase {
             + "&transform=CAJOLE"
             + "&module-callback=foo.bar.baz"));
   }
+
+  public final void testSimpleCajitaJs() throws Exception {
+    registerUri("http://foo/bar.js", "g(1);", "text/javascript");
+    assertEqualsIgnoreSpace(
+        cajitaModule("varg=___.readImport(IMPORTS___,'g');",
+                     "moduleResult___=g.CALL___(1);"),
+        (String) requestGet("?url=http://foo/bar.js&mime-type=text/javascript" +
+                "&transform=CAJOLE&directive=CAJITA"));
+  }
 }

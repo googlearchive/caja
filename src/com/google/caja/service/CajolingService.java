@@ -15,6 +15,7 @@
 package com.google.caja.service;
 
 import com.google.caja.reporting.BuildInfo;
+import com.google.caja.util.Lists;
 import com.google.caja.util.Pair;
 import com.google.caja.lexer.ExternalReference;
 import com.google.caja.lexer.InputSource;
@@ -47,6 +48,7 @@ import javax.servlet.http.HttpServletResponse;
  * @author jasvir@gmail.com (Jasvir Nagra)
  */
 public class CajolingService extends HttpServlet {
+  private static final long serialVersionUID = 5055670217887121398L;
   private static final String DEFAULT_HOST = "http://caja.appspot.com/cajole";
   private final UriCallback DEFAULT_URIPOLICY = new UriCallback() {
     public Reader retrieve(ExternalReference extref, String mimeType)
@@ -218,12 +220,27 @@ public class CajolingService extends HttpServlet {
       }
     }
 
+    // TODO(jasvir): Change CajaArguments to handle >1 occurrence of arg
+    String directiveName = CajaArguments.DIRECTIVE.get(args);
+    List<Directive> directive = Lists.newArrayList();
+    if (directiveName != null) {
+      try {
+        directive.add(Directive.valueOf(directiveName));
+      } catch (Exception e) {
+        throw new ServletException(
+            InvalidArgumentsException.invalid(
+                CajaArguments.DIRECTIVE.getArgKeyword(), directiveName, "")
+                .getMessage());
+      }
+    }
+    
     ByteArrayOutputStream intermediateResponse = new ByteArrayOutputStream();
     Pair<String, String> contentInfo;
     try {
       contentInfo = applyHandler(
           inputUri,
           transform,
+          directive,
           args,
           fetchedData.getContentType(),
           outputContentType,
@@ -270,14 +287,14 @@ public class CajolingService extends HttpServlet {
   }
 
   private Pair<String, String> applyHandler(
-      URI uri, Transform t, ContentHandlerArgs args,
+      URI uri, Transform t, List<Directive> d, ContentHandlerArgs args,
       String inputContentType, String outputContentType,
       String charSet, byte[] content, OutputStream response)
       throws UnsupportedContentTypeException {
     for (ContentHandler handler : handlers) {
-      if (handler.canHandle(uri, t, inputContentType,
-              outputContentType, typeCheck)) {
-        return handler.apply(uri, t, args, inputContentType,
+      if (handler.canHandle(uri, t, d, inputContentType,
+          outputContentType, typeCheck)) {
+        return handler.apply(uri, t, d, args, inputContentType,
             outputContentType, typeCheck, charSet, content, response);
       }
     }
@@ -289,6 +306,10 @@ public class CajolingService extends HttpServlet {
     return s.indexOf('\n') >= 0 || s.indexOf('\r') >= 0;
   }
 
+  public static enum Directive {
+    CAJITA;
+  }
+  
   public static enum Transform {
     INNOCENT,
     CAJOLE;

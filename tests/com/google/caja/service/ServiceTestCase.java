@@ -97,27 +97,36 @@ public abstract class ServiceTestCase extends CajaTestCase {
   }
 
   protected static String valijaModule(String... lines) {
-    return valijaModuleInternal(
+    return moduleInternal(true /* valija */,
+        "___.loadModule(", ")",
+        lines);
+  }
+
+  protected static String cajitaModule(String... lines) {
+    return moduleInternal(false /* valija */,
         "___.loadModule(", ")",
         lines);
   }
 
   protected static String valijaModuleWithCallback(String callback,
                                                    String... lines) {
-    return valijaModuleInternal(
+    return moduleInternal(true /* valija */,
         callback + "(___.prepareModule(", "))",
         lines);
   }
 
-  private static String valijaModuleInternal(String modulePrefix,
-                                             String moduleSuffix,
-                                             String... lines) {
+  private static String moduleInternal(boolean valija,
+                                       String modulePrefix,
+                                       String moduleSuffix,
+                                       String... lines) {
     String prefix = (
         ""
         + "{\n"
         + "  " + modulePrefix + "{\n"
         + "      'instantiate': function (___, IMPORTS___) {\n"
-        + "        var moduleResult___ = ___.NO_RESULT;\n"
+        + "        var moduleResult___ = ___.NO_RESULT;\n");
+    String valijaPrefix = (
+        ""
         + "        var $v = ___.readImport(IMPORTS___, '$v', {\n"
         + "            'getOuters': {\n"
         + "              '()': { }\n"
@@ -148,6 +157,9 @@ public abstract class ServiceTestCase extends CajaTestCase {
         );
     StringBuilder sb = new StringBuilder();
     sb.append(prefix);
+    if (valija) {
+      sb.append(valijaPrefix);
+    }
     for (String line : lines) {
       sb.append("        ").append(line).append('\n');
     }

@@ -56,19 +56,23 @@ public enum CajaArguments {
   OUTPUT_MIME_TYPE("output-mime-type"),
 
   /**
-   * The Caja language transform that is being requested. Valid values are:
+   * The Caja transform that is being requested. Valid values are:
    * <ul>
-   *   <li>{@code cajita} the Cajita language.</li>
-   *   <li>{@code valija} the Valija language.</li>
+   *   <li>{@code cajole} the Cajita language.</li>
    *   <li>{@code innocent} the innocent code transform.</li>
    * </ul>
    *
    * <p>All these transforms are applicable to {@code text/javascript} input.
    * For {@code text/html} input, this argument is ignored and the
-   * {@code valija} transform is always applied.
+   * {@code cajole} transform is always applied.
    */
   TRANSFORM("transform"),
 
+  /**
+   * Directives which affect the chosen Caja transformation
+   */
+  DIRECTIVE("directive"),
+  
   /**
    * The URL of the input document that Caja is being asked to process.
    */

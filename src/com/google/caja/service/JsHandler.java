@@ -41,6 +41,7 @@ import java.io.OutputStreamWriter;
 import java.io.Reader;
 import java.io.StringReader;
 import java.net.URI;
+import java.util.List;
 
 /**
  * Retrieves javascript files and cajoles them
@@ -55,8 +56,8 @@ public class JsHandler implements ContentHandler {
   }
 
   public boolean canHandle(URI uri, CajolingService.Transform transform,
-      String inputContentType, String outputContentType,
-      ContentTypeCheck checker) {
+      List<CajolingService.Directive> directives, String inputContentType,
+      String outputContentType, ContentTypeCheck checker) {
     return checker.check("text/javascript", inputContentType)
         && checker.check(outputContentType, "text/javascript")
         && (transform == null
@@ -64,14 +65,11 @@ public class JsHandler implements ContentHandler {
   }
 
   public Pair<String,String> apply(URI uri,
-                                   CajolingService.Transform transform,
-                                   ContentHandlerArgs args,
-                                   String inputContentType,
-                                   String outputContentType,
-                                   ContentTypeCheck checker,
-                                   String charset,
-                                   byte[] content,
-                                   OutputStream response)
+      CajolingService.Transform transform, List<CajolingService.Directive> directive,
+      ContentHandlerArgs args,
+      String inputContentType, String outputContentType,
+      ContentTypeCheck checker, String charset, byte[] content,
+      OutputStream response)
       throws UnsupportedContentTypeException {
     if (charset == null) { charset = "UTF-8"; }
 
@@ -84,7 +82,7 @@ public class JsHandler implements ContentHandler {
     try {
       OutputStreamWriter writer = new OutputStreamWriter(response, "UTF-8");
       cajoleJs(uri, new StringReader(new String(content, charset)),
-          moduleCallback, writer);
+          transform, directive, moduleCallback, writer);
       writer.flush();
     } catch (IOException e) {
       throw new UnsupportedContentTypeException();
@@ -94,6 +92,8 @@ public class JsHandler implements ContentHandler {
 
   private void cajoleJs(URI inputUri,
                         Reader cajaInput,
+                        CajolingService.Transform transform,
+                        List<CajolingService.Directive> directive,
                         Expression moduleCallback,
                         Appendable output)
       throws IOException, UnsupportedContentTypeException {
@@ -108,9 +108,17 @@ public class JsHandler implements ContentHandler {
       Rewriter vrw = new DefaultValijaRewriter(mq, false /* logging */);
       Rewriter crw = new CajitaRewriter(buildInfo, mq, false /* logging */);
       UncajoledModule ucm = new UncajoledModule(input);
-      output.append(renderJavascript(
+      if (transform == null ||
+          (transform.equals(CajolingService.Transform.CAJOLE) &&
+              directive.contains(CajolingService.Directive.CAJITA))) {
+        output.append(renderJavascript(
+          (CajoledModule) crw.expand(ucm),
+          moduleCallback));
+      } else {
+        output.append(renderJavascript(
           (CajoledModule) crw.expand(vrw.expand(ucm)),
           moduleCallback));
+      }
     } catch (ParseException e) {
       throw new UnsupportedContentTypeException();
     } catch (IllegalArgumentException e) {

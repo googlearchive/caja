@@ -2030,7 +2030,7 @@ public class CajitaRewriter extends Rewriter {
               "(such as one with a bad 'toString' method), pass an " +
               "array of a @key and a @val.",
           matches="({@key: @val})",
-          substitutes="___.initializeMap([@key, @val])")
+          substitutes="___.iM([@key, @val])")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
         Map<String, ParseTreeNode> bindings = matchSingleMap(node);
         if (bindings != null) {
@@ -2053,7 +2053,7 @@ public class CajitaRewriter extends Rewriter {
               "(such as one with a bad 'toString' method), pass an " +
               "array of @items, which are interleaved @keys and @vals.",
           matches="({@keys*: @vals*})",
-          substitutes="___.initializeMap([@items*])")
+          substitutes="___.iM([@items*])")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
         Map<String, ParseTreeNode> bindings = match(node);
         if (bindings != null) {
@@ -2070,7 +2070,7 @@ public class CajitaRewriter extends Rewriter {
             ParseTreeNode pairIn = substSingleMap(keys.get(i), vals.get(i));
             ParseTreeNode pairOut = expand(pairIn, scope);
             Map<String, ParseTreeNode> pairBindings = makeBindings();
-            if (!QuasiBuilder.match("___.initializeMap([@key, @val])",
+            if (!QuasiBuilder.match("___.iM([@key, @val])",
                                     pairOut, pairBindings)) {
               mq.addMessage(
                   RewriterMessageType.MAP_RECURSION_FAILED,

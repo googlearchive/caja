@@ -18,6 +18,7 @@ import com.google.caja.util.Pair;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.URI;
+import java.util.List;
 
 /**
  * Retrieves image objects and returns them unchecked
@@ -27,7 +28,8 @@ import java.net.URI;
  */
 public class ImageHandler implements ContentHandler {
 
-  public boolean canHandle(URI uri, CajolingService.Transform transform, 
+  public boolean canHandle(URI uri, CajolingService.Transform transform,
+      List<CajolingService.Directive> directives,
       String inputContentType, String outputContentType,
       ContentTypeCheck checker) {
     return checker.check("image/*", inputContentType)
@@ -36,6 +38,7 @@ public class ImageHandler implements ContentHandler {
 
   public Pair<String, String> apply(URI uri,
                                     CajolingService.Transform trans,
+                                    List<CajolingService.Directive> directives,
                                     ContentHandlerArgs args,
                                     String inputContentType,
                                     String outputContentType,

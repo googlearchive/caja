@@ -32,6 +32,7 @@ import java.io.OutputStreamWriter;
 import java.io.Reader;
 import java.io.StringReader;
 import java.net.URI;
+import java.util.List;
 
 /**
  * Retrieves javascript files and cajoles them
@@ -41,6 +42,7 @@ import java.net.URI;
 public class InnocentHandler implements ContentHandler {
 
   public boolean canHandle(URI uri, CajolingService.Transform transform,
+      List<CajolingService.Directive> directives,
       String inputContentType, String outputContentType,
       ContentTypeCheck checker) {
     return CajolingService.Transform.INNOCENT.equals(transform)
@@ -50,6 +52,7 @@ public class InnocentHandler implements ContentHandler {
 
   public Pair<String,String> apply(URI uri,
                                    CajolingService.Transform transform,
+                                   List<CajolingService.Directive> directives,
                                    ContentHandlerArgs args,
                                    String inputContentType,
                                    String outputContentType,

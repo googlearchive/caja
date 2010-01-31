@@ -4332,6 +4332,7 @@ var safeJSON;
     GuardStamp: GuardStamp,
     asFirstClass: asFirstClass,
     initializeMap: initializeMap,
+    iM: initializeMap,
 
     // Taming mechanism
     useGetHandler: useGetHandler,

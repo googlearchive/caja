@@ -17,6 +17,7 @@ import com.google.caja.util.Pair;
 
 import java.io.OutputStream;
 import java.net.URI;
+import java.util.List;
 
 /**
  * Loads content from streams it can handle
@@ -39,6 +40,7 @@ public interface ContentHandler {
    */
   public boolean canHandle(URI uri,
                            CajolingService.Transform transform,
+                           List<CajolingService.Directive> directives,
                            String inputContentType,
                            String outputContentType,
                            ContentTypeCheck checker);
@@ -61,6 +63,7 @@ public interface ContentHandler {
    */
   public Pair<String, String> apply(URI uri,
                                     CajolingService.Transform trans,
+                                    List<CajolingService.Directive> directives,
                                     ContentHandlerArgs args,
                                     String inputContentType,
                                     String outputContentType,

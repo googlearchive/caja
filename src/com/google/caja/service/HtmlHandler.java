@@ -50,6 +50,7 @@ import java.io.StringReader;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URLEncoder;
+import java.util.List;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -101,6 +102,7 @@ public class HtmlHandler implements ContentHandler {
   }
 
   public boolean canHandle(URI uri, CajolingService.Transform transform,
+      List<CajolingService.Directive> directives,
       String inputContentType, String outputContentType,
       ContentTypeCheck checker) {
     return checker.check("text/html", inputContentType)
@@ -111,6 +113,7 @@ public class HtmlHandler implements ContentHandler {
 
   public Pair<String,String> apply(URI uri,
                                    CajolingService.Transform transform,
+                                   List<CajolingService.Directive> directives,
                                    ContentHandlerArgs args,
                                    String inputContentType,
                                    String outputContentType,

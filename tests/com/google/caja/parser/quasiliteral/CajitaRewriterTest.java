@@ -436,7 +436,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
   public final void testSyntheticMemberAccess() throws Exception {
     ParseTreeNode input = js(fromString("({}).foo"));
     syntheticTree(input);
-    checkSucceeds(input, js(fromString("___.initializeMap([]).foo;")));
+    checkSucceeds(input, js(fromString("___.iM([]).foo;")));
   }
 
   public final void testSyntheticNestedIsExpanded() throws Exception {
@@ -1640,7 +1640,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
   public final void testMapEmpty() throws Exception {
     checkSucceeds(
         "var f = {};",
-        "var f = ___.initializeMap([]);");
+        "var f = ___.iM([]);");
   }
 
   public final void testMapBadKeySuffix() throws Exception {
@@ -1655,7 +1655,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
         weldPrelude("g") +
         "var x0___;" +
         "var x1___;" +
-        "var o = ___.initializeMap(" +
+        "var o = ___.iM(" +
         "    [ 'k0', " + weldReadPub("g.CALL___()", "x", "x0___") + ", " +
         "      'k1', " + weldReadPub("g.CALL___()", "y", "x1___") + " ]);");
     // Ensure that calling an untamed function throws
@@ -2343,7 +2343,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
         "function foo() { debugger; }" +
         "foo.FUNC___ = 'foo';" +
         "var x0___;;" +
-        "var x = ___.initializeMap(['bar', (function () {" +
+        "var x = ___.iM(['bar', (function () {" +
         "  function bar$_lit() { foo.CALL___(); }" +
         "  return ___.markFuncFreeze(bar$_lit, 'bar$_lit');" +
         "})()]);" +
