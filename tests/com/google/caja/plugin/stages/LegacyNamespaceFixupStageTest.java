@@ -38,26 +38,26 @@ import org.w3c.dom.Node;
 
 public class LegacyNamespaceFixupStageTest extends CajaTestCase {
 
-  public void testEmptyFragment() {
+  public final void testEmptyFragment() {
     assertFixed("", builder().job());
     assertTrue(mq.getMessages().isEmpty());
   }
 
-  public void testOneHtmlTag() {
+  public final void testOneHtmlTag() {
     assertFixed(
         "<b>Foo</b>",
         builder().open("b").text("Foo").close().job());
     assertTrue(mq.getMessages().isEmpty());
   }
 
-  public void testHtmlTagAndAttrib() {
+  public final void testHtmlTagAndAttrib() {
     assertFixed(
         "<a href=\"bar.html\">Foo</a>",
         builder().open("a").attr("href", "bar.html").text("Foo").close().job());
     assertTrue(mq.getMessages().isEmpty());
   }
 
-  public void testPrefixedAttribWithWellKnownPrefix() {
+  public final void testPrefixedAttribWithWellKnownPrefix() {
     assertFixed(
         "<a href=\"bar.html\" xml:lang=\"en\">Foo</a>",
         builder().open("a").attr("href", "bar.html")
@@ -68,7 +68,7 @@ public class LegacyNamespaceFixupStageTest extends CajaTestCase {
     assertTrue(mq.getMessages().isEmpty());
   }
 
-  public void testPrefixedAttribWithUnknownPrefix() {
+  public final void testPrefixedAttribWithUnknownPrefix() {
     assertFixed(
         ""
         + "<a xmlns:_ns8=\"http://example.net/unknown-xml-namespace/\""
@@ -81,7 +81,7 @@ public class LegacyNamespaceFixupStageTest extends CajaTestCase {
     assertTrue(mq.getMessages().isEmpty());
   }
 
-  public void testPrefixedElementWithKnownPrefix() {
+  public final void testPrefixedElementWithKnownPrefix() {
     // The unprefixed href attribute gets the namespace of the containing
     // element, not necessarily HTML.
     assertFixed(
@@ -94,7 +94,7 @@ public class LegacyNamespaceFixupStageTest extends CajaTestCase {
     assertTrue(mq.getMessages().isEmpty());
   }
 
-  public void testPrefixedElementWithUnknownPrefix() {
+  public final void testPrefixedElementWithUnknownPrefix() {
     // The unprefixed href attribute gets the namespace of the containing
     // element, not necessarily HTML.
     assertFixed(
