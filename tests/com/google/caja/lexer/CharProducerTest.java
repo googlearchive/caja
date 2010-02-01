@@ -14,6 +14,7 @@
 
 package com.google.caja.lexer;
 
+import com.google.caja.lexer.escaping.UriUtil;
 import com.google.caja.util.Pair;
 import com.google.caja.util.TestUtil;
 
@@ -518,24 +519,29 @@ public final class CharProducerTest extends TestCase {
   public final void testFromUri() {
     assertEquals("", decodeUri(""));
     assertEquals("foo", decodeUri("foo"));
-    // Plus (+) character not decoded to space.
+    // Plus (+) character not decoded to space, since + is not an escape
+    // character in the body of non-hierarchical URLs
     // javascript:alert('foo+bar') issues an alert containing a plus character.
     assertEquals("foo+bar", decodeUri("foo+bar"));
+    assertEquals("foo+bar", decodeUri("foo%2bbar"));
     assertEquals("foo@bar", decodeUri("foo%40bar"));
     assertEquals("\u00A0", decodeUri("%A0"));   // A single ASCII char
     // Test some well-formed UTF-8 sequences.
     assertEquals("foo\u0123bar", decodeUri("foo%C4%a3bar"));
     assertEquals("foo\u20ACbar", decodeUri("foo%e2%82%Acbar"));
     // There are multiple ways to encode supplementary characters
+    String supplemental = String.valueOf(Character.toChars(0x1d11e));
     assertEquals(
-        String.valueOf(Character.toChars(0x1d11e)),
+        supplemental,
         decodeUri("%ed%a0%B4%eD%b4%9E"));  // as a surrogate pair
     assertEquals(
-        String.valueOf(Character.toChars(0x1d11e)),
+        supplemental,
         decodeUri("%F0%9d%84%9E"));  // as a 4 byte sequence
     assertEquals(
-        String.valueOf(Character.toChars(0x1d11e)),
+        supplemental,
         decodeUri("%f0%9D%84%9e"));  // as a 4 byte sequence with different case
+    // Make sure our encoder round trips properly.
+    assertEquals(supplemental, decodeUri(UriUtil.encode(supplemental)));
     // Test boundary conditions.
     assertEquals("%", decodeUri("%"));
     assertEquals("%2", decodeUri("%2"));  // An incomplete sequence

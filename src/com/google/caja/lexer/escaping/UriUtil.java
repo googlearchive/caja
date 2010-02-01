@@ -14,16 +14,14 @@
 
 package com.google.caja.lexer.escaping;
 
+import com.google.caja.SomethingWidgyHappenedError;
 import com.google.caja.util.Join;
+import com.google.caja.util.Lists;
 import com.google.caja.util.Strings;
 
+import java.io.IOException;
 import java.net.URI;
-import java.nio.ByteBuffer;
-import java.nio.CharBuffer;
-import java.nio.charset.Charset;
 
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -130,6 +128,18 @@ public class UriUtil {
     return abs;
   }
 
+  public static String encode(String part) {
+    for (int i = 0, n = part.length(); i < n; ++i) {
+      char ch = part.charAt(i);
+      if (ch >= 0x80 || Escaping.URI_ESCAPES.getEscape(ch) != null) {
+        StringBuilder out = new StringBuilder(n + (n >> 2));
+        Escaping.escapeUri(part, i, out);
+        return out.toString();
+      }
+    }
+    return part;
+  }
+
   private static void normalizeScheme(String scheme, StringBuilder out) {
     // Section 3.1:
     // scheme        = alpha *( alpha | digit | "+" | "-" | "." )
@@ -141,10 +151,21 @@ public class UriUtil {
           out.append(scheme, pos, i).append("%25");
           pos = i + 1;
         }
+      } else if ('A' <= ch && ch <= 'Z') {
+        // From Section 3.1.
+        // Although schemes are case-insensitive, the canonical form is
+        // lowercase and documents that specify schemes must do so with
+        // lowercase letters.
+        // ...
+        // An implementation should accept uppercase letters as equivalent to
+        // lowercase in scheme names (e.g., allow "HTTP" as well as "http") for
+        // the sake of robustness but should only produce lowercase scheme names
+        // for consistency.
+        out.append(scheme, pos, i).append((char) (ch | 32));
+        pos = i + 1;
       } else if (!(('a' <= ch && ch <= 'z')
-            || ('A' <= ch && ch <= 'Z')
-            || ('0' <= ch && ch <= '9')
-            || ch == '+' || ch == '-' || ch == '.')) {
+                 || ('0' <= ch && ch <= '9')
+                 || ch == '+' || ch == '-' || ch == '.')) {
         out.append(scheme, pos, i);
         pos = i + 1;
         pctEncode(ch, out);
@@ -183,10 +204,10 @@ public class UriUtil {
           pos = i + 1;
         }
       } else if (!(('a' <= ch && ch <= 'z')
-            || ('A' <= ch && ch <= 'Z')
-            || ('0' <= ch && ch <= '9')
-            // Escapes ; and @.
-            || ch == ':' || ch == '-' || ch == '+' || ch == '.')) {
+                   || ('A' <= ch && ch <= 'Z')
+                   || ('0' <= ch && ch <= '9')
+                   // Escapes ; and @.
+                   || ch == ':' || ch == '-' || ch == '+' || ch == '.')) {
         out.append(authority, pos, i);
         pos = i + 1;
         pctEncode(ch, out);
@@ -203,8 +224,7 @@ public class UriUtil {
       normPath = normPath.substring(1);
       isAbs = true;
     }
-    List<String> pathParts = new ArrayList<String>(
-        Arrays.asList(normPath.split("/")));
+    List<String> pathParts = Lists.newArrayList(normPath.split("/"));
     int i = 0;
     while (i < pathParts.size()) {
       String dottedPart = pathParts.get(i).replace("%2e", ".")
@@ -261,11 +281,11 @@ public class UriUtil {
           pos = i + 1;
         }
       } else if (!(('a' <= ch && ch <= 'z')
-            || ('A' <= ch && ch <= 'Z')
-            || ('0' <= ch && ch <= '9')
-            // Escapes ';' and '='
-            || ch == ':' || ch == '-' || ch == '+'
-            || ch == '.' || ch == '/' || ch == ',' || ch == '$')) {
+                   || ('A' <= ch && ch <= 'Z')
+                   || ('0' <= ch && ch <= '9')
+                   // Escapes ';' and '='
+                   || ch == ':' || ch == '-' || ch == '+'
+                   || ch == '.' || ch == '/' || ch == ',' || ch == '$')) {
         sb.append(path, pos, i);
         pos = i + 1;
         pctEncode(ch, sb);
@@ -295,11 +315,11 @@ public class UriUtil {
           pos = i + 1;
         }
       } else if (!(('a' <= ch && ch <= 'z')
-            || ('A' <= ch && ch <= 'Z')
-            || ('0' <= ch && ch <= '9')
-            // Escapes ';', ':' and '@'
-            || ch == '-' || ch == '+' || ch == '.' || ch == '=' || ch == '&'
-            || ch == ',')) {
+                   || ('A' <= ch && ch <= 'Z')
+                   || ('0' <= ch && ch <= '9')
+                   // Escapes ';', ':' and '@'
+                   || ch == '-' || ch == '+' || ch == '.' || ch == '='
+                   || ch == '&' || ch == ',')) {
         out.append(query, pos, i);
         pos = i + 1;
         pctEncode(ch, out);
@@ -321,33 +341,15 @@ public class UriUtil {
           pos = i + 1;
         }
       } else if (!(('a' <= ch && ch <= 'z')
-            || ('A' <= ch && ch <= 'Z')
-            || ('0' <= ch && ch <= '9')
-            || ch == '-' || ch == '+' || ch == '.')) {
+                   || ('A' <= ch && ch <= 'Z')
+                   || ('0' <= ch && ch <= '9')
+                   || ch == '-' || ch == '+' || ch == '.')) {
         out.append(fragment, pos, i);
         pos = i + 1;
         pctEncode(ch, out);
       }
     }
     out.append(fragment, pos, n);
-  }
-
-  private static final Charset UTF8 = Charset.forName("UTF-8");
-  private static void pctEncode(char ch, StringBuilder out) {
-    if (ch < 0x80) {
-      pctEncode((byte) ch, out);
-    } else {
-      // UTF-8 encode
-      ByteBuffer bb = UTF8.encode(CharBuffer.wrap(new char[] { ch }));
-      while (bb.position() < bb.limit()) {
-        pctEncode(bb.get(), out);
-      }
-    }
-  }
-  private static void pctEncode(byte b, StringBuilder out) {
-    out.append('%')
-        .append("0123456789ABCDEF".charAt((b >> 4) & 0xf))
-        .append("0123456789ABCDEF".charAt(b & 0xf));
   }
 
   private static boolean isInvalidEsc(String uriPart, int pctIdx) {
@@ -359,6 +361,15 @@ public class UriUtil {
   private static boolean isHexDigit(char ch) {
     return ('0' <= ch && ch <= '9') || ('a' <= ch && ch <= 'f')
         || ('A' <= ch && ch <= 'F');
+  }
+
+  private static void pctEncode(char ch, StringBuilder out) {
+    try {
+      Escaping.pctEncode(ch, out);
+    } catch (IOException ex) {
+      throw new SomethingWidgyHappenedError(
+          "StringBuilders shouldn't throw IOException", ex);
+    }
   }
 
   private UriUtil() { /* not instantiable */ }

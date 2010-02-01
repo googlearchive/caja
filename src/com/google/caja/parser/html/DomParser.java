@@ -499,6 +499,10 @@ public class DomParser {
     Token<HtmlTokenType> last;
     tokloop:
     while (true) {
+      if (tokens.isEmpty()) {
+        throw new ParseException(
+            new Message(DomParserMessageType.UNCLOSED_TAG, start));
+      }
       last = tokens.peek();
       switch (last.type) {
       case TAGEND:

@@ -3,6 +3,7 @@ package com.google.caja.demos.playground.server;
 import com.google.caja.demos.playground.client.PlaygroundService;
 import com.google.caja.lexer.ExternalReference;
 import com.google.caja.lexer.InputSource;
+import com.google.caja.lexer.escaping.UriUtil;
 import com.google.caja.opensocial.DefaultGadgetRewriter;
 import com.google.caja.opensocial.GadgetRewriteException;
 import com.google.caja.opensocial.UriCallback;
@@ -21,11 +22,9 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.StringReader;
-import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -52,30 +51,27 @@ public class GWTCajolingServiceImpl extends RemoteServiceServlet
       if (mimeType.startsWith("image/")) {
         return extref.getUri();
       }
-      try {
-        return URI.create(
-            "http://caja.appspot.com/cajole"
-            + "?url=" + URLEncoder.encode(extref.getUri().toString(), "UTF-8")
-            + "&mime-type=" + URLEncoder.encode(mimeType, "UTF-8"));
-      } catch (UnsupportedEncodingException ex) {
-        // If we don't support UTF-8 we're in trouble
-        throw new RuntimeException(ex);
-      }
+      return URI.create(
+          "http://caja.appspot.com/cajole"
+          + "?url=" + UriUtil.encode(extref.getUri().toString())
+          + "&mime-type=" + UriUtil.encode(mimeType));
     }
   };
 
-  private URI guessURI(String guess) {
+  private static URI guessURI(String guess) {
     try {
-      return new URI(guess);
+      guess = UriUtil.normalizeUri(guess);
+      if (guess != null) { return new URI(guess); }
     } catch (URISyntaxException e) {
-      return URI.create("unknown:///unknown");
+      // fallback below
     }
+    return URI.create("unknown:///unknown");
   }
 
   public String[] getMessageLevels() {
     MessageLevel[] values = MessageLevel.values();
     String[] result = new String[values.length];
-    for (int i=0; i < values.length; i++) {
+    for (int i= 0 ; i < values.length; i++) {
       result[i] = values[i].name();
     }
     return result;

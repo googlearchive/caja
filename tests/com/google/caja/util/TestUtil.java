@@ -17,6 +17,7 @@ package com.google.caja.util;
 import com.google.caja.SomethingWidgyHappenedError;
 import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.InputSource;
+import com.google.caja.lexer.escaping.UriUtil;
 import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.MutableParseTreeNode;
 import com.google.caja.parser.ParseTreeNode;
@@ -35,12 +36,10 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
-import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLConnection;
-import java.net.URLEncoder;
 
 /**
  * Utilities for junit test cases.
@@ -174,12 +173,7 @@ public final class TestUtil {
   }
 
   public static String makeContentUrl(String content) {
-    try {
-      return "content:"
-          + URLEncoder.encode(content, "UTF-8").replace("+", "%20");
-    } catch (UnsupportedEncodingException ex) {
-      throw new SomethingWidgyHappenedError("UTF-8 not supported", ex);
-    }
+    return "content:" + UriUtil.encode(content).replace("+", "%20");
   }
 
   public static void removePseudoNodes(ParseTreeNode node) {

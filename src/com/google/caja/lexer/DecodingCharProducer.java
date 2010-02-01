@@ -50,7 +50,9 @@ final class DecodingCharProducer extends CharProducer {
 
       limit += nCodeUnits;
     }
-    if (limit != 0) { deltas[limit] = deltas[limit - 1]; }
+    if (limit != 0) {
+      for (int i = limit; i < pavail + 1; ++i) { deltas[i] = deltas[i - 1]; }
+    }
     return new DecodingCharProducer(buf, limit, p, deltas, poffset);
   }
 

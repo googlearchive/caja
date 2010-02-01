@@ -2129,6 +2129,29 @@ public class DomParserTest extends CajaTestCase {
             ));
   }
 
+  public final void testCommentsInCdataSection1() throws Exception {
+    assertParsedMarkup(
+        Arrays.asList("<foo><![CDATA[ <!-- <bar/> --> ]]></foo>"),
+        Arrays.asList(
+            "Element : foo 1+1-1+41",
+            "  CDATA :  <!-- <bar/> -->  1+6-1+35"),
+        Arrays.<String>asList(),
+        Arrays.asList("<foo><![CDATA[ <!-- <bar/> --> ]]></foo>"),
+        true, false);
+  }
+
+  public final void testCommentsInCdataSection2() throws Exception {
+    assertParsedMarkup(
+        Arrays.asList("<foo><![CDATA[ <!-- <bar/> ]]></foo>"),
+        Arrays.asList(
+            "Element : foo 1+1-1+37",
+            "  CDATA :  <!-- <bar/>  1+6-1+31"),
+        Arrays.<String>asList(),
+        Arrays.asList("<foo><![CDATA[ <!-- <bar/> ]]></foo>"),
+        true, false);
+  }
+
+
   public final void testEmbeddedXmlInHtml() throws Exception {
     assertParsedHtmlFragment(
         Arrays.asList(
@@ -2219,6 +2242,21 @@ public class DomParserTest extends CajaTestCase {
         fromString("<xmp> <!-- </xmp> --> </xmp>"));
     assertEquals("<xmp>  </xmp>", Nodes.render(t, true));
     assertEquals("<xmp>  </xmp>", Nodes.render(t, false));
+  }
+
+  public final void testEofMessageDueToMismatchedQuotes() throws Exception {
+    ParseException pex = null;
+    try {
+      htmlFragment(fromString("<foo><bar baz='boo></bar></foo>"));
+    } catch (ParseException ex) {
+      pex = ex;
+    }
+    assertNotNull("Mismatched quote did not result in exception", pex);
+    Message msg = pex.getCajaMessage();
+    assertEquals(DomParserMessageType.UNCLOSED_TAG, msg.getMessageType());
+    assertEquals(
+        "testEofMessageDueToMismatchedQuotes:1+6@6 - 10@10",
+        msg.getMessageParts().get(0).toString());
   }
 
   public final void testParserSpeed() throws Exception {

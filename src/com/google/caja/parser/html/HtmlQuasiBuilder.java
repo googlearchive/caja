@@ -278,7 +278,7 @@ public class HtmlQuasiBuilder {
   }
 
   private static final Pattern QUASI_PATTERN = Pattern.compile(
-      "@([a-zA-Z][a-zA-Z0-9_]*) ?");
+      "@(?:([a-zA-Z][a-zA-Z0-9_]*) ?|@)");
   private Node substText(Text t, Map<String, ?> bindings) {
     String unescaped = Nodes.getRawText(t);
     Matcher m = QUASI_PATTERN.matcher(unescaped);
@@ -295,6 +295,11 @@ public class HtmlQuasiBuilder {
       pos = m.end();
 
       String quasiIdentifier = m.group(1);
+      if (quasiIdentifier == null) {  // matched @@
+        sb.append('@');
+        continue;
+      }
+
       Object binding = bindings.get(quasiIdentifier);
       if (binding instanceof String) {
         Escaping.escapeXml((String) binding, false, sb);
@@ -359,6 +364,11 @@ public class HtmlQuasiBuilder {
       pos = m.end();
 
       String quasiIdentifier = m.group(1);
+      if (quasiIdentifier == null) {  // matched @@
+        sb.append('@');
+        continue;
+      }
+
       Object binding = bindings.get(quasiIdentifier);
       if (!(binding instanceof String)) {
         throw new ClassCastException("@" + quasiIdentifier);

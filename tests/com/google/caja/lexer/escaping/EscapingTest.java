@@ -274,7 +274,6 @@ public class EscapingTest extends TestCase {
         sb.toString());
   }
 
-
   public final void testRegexNormalization() throws Exception {
     StringBuilder sb = new StringBuilder();
     Escaping.normalizeRegex(
@@ -440,10 +439,50 @@ public class EscapingTest extends TestCase {
     Escaping.escapeCssIdent("0zoicks", sb);
     assertStringsEqual("\\30zoicks", sb.toString());
 
-
     sb = new StringBuilder();
     Escaping.escapeCssIdent("4", sb);
     assertStringsEqual("\\34 ", sb.toString());
+  }
+
+  public static void testEscapeUri() {
+    StringBuilder sb;
+
+    sb = new StringBuilder();
+    Escaping.escapeUri("", sb);
+    assertEquals("", sb.toString());
+
+    sb = new StringBuilder();
+    Escaping.escapeUri("foo", sb);
+    assertEquals("foo", sb.toString());
+
+    sb = new StringBuilder();
+    Escaping.escapeUri("FOO", sb);
+    assertEquals("FOO", sb.toString());
+
+    // All of the reserved characters must be encoded.
+    sb = new StringBuilder();
+    Escaping.escapeUri(":/?#[]@!$&'()*+,;=", sb);
+    assertEquals(
+        "%3a%2f%3f%23%5b%5d%40%21%24%26%27%28%29%2a%2b%2c%3b%3d",
+        sb.toString());
+
+    sb = new StringBuilder();
+    Escaping.escapeUri(CHARS, sb);
+    assertEquals(
+        ""
+        + "%00%01%02%03%04%05%06%07%08%09%0a%0b%0c%0d%0e%0f"
+        + "%10%11%12%13%14%15%16%17%18%19%1a%1b%1c%1d%1e%1f"
+        // %20, not + since that is not valid in non-hierarchical URIs.
+        + "%20%21%22%23%24%25%26%27%28%29%2a%2b%2c-.%2f"
+        + "0123456789%3a%3b%3c%3d%3e%3f"
+        + "%40ABCDEFGHIJKLMNO"
+        + "PQRSTUVWXYZ%5b%5c%5d%5e_"
+        + "%60abcdefghijklmno"
+        + "pqrstuvwxyz%7b%7c%7d~%7f"
+        + "%c2%80%c2%81%c2%82%c2%83%c2%84"
+        + "%e2%80%8e%e2%80%8f%e2%80%90%e2%80%a8%e2%80%a9"
+        + "%ed%a0%b4%ed%b4%a0%ed%a0%b4%ed%b5%b7",
+        sb.toString());
   }
 
   private static void assertStringsEqual(String a, String b) {

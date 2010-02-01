@@ -13,11 +13,11 @@
 
 package com.google.caja.service;
 
-import com.google.caja.SomethingWidgyHappenedError;
 import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.ExternalReference;
 import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.ParseException;
+import com.google.caja.lexer.escaping.UriUtil;
 import com.google.caja.opensocial.DefaultGadgetRewriter;
 import com.google.caja.opensocial.GadgetRewriteException;
 import com.google.caja.opensocial.UriCallback;
@@ -32,9 +32,7 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Reader;
 import java.io.StringReader;
-import java.io.UnsupportedEncodingException;
 import java.net.URI;
-import java.net.URLEncoder;
 import java.util.List;
 
 public class GadgetHandler implements ContentHandler {
@@ -97,15 +95,10 @@ public class GadgetHandler implements ContentHandler {
       }
 
       public URI rewrite(ExternalReference extref, String mimeType) {
-        try {
-          return URI.create(
-              "http://localhost:8887/?url="
-              + URLEncoder.encode(extref.getUri().toString(), "UTF-8")
-              + "&mime-type=" + URLEncoder.encode(mimeType, "UTF-8"));
-        } catch (UnsupportedEncodingException ex) {
-          throw new SomethingWidgyHappenedError("UTF-8 should be supported.",
-              ex);
-        }
+        return URI.create(
+            "http://localhost:8887/?url="
+            + UriUtil.encode(extref.getUri().toString())
+            + "&mime-type=" + UriUtil.encode(mimeType));
       }
     };
 

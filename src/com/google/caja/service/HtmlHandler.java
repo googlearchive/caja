@@ -18,6 +18,7 @@ import com.google.caja.lexer.ExternalReference;
 import com.google.caja.lexer.HtmlLexer;
 import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.ParseException;
+import com.google.caja.lexer.escaping.UriUtil;
 import com.google.caja.opensocial.UriCallback;
 import com.google.caja.opensocial.UriCallbackException;
 import com.google.caja.parser.AncestorChain;
@@ -47,9 +48,7 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Reader;
 import java.io.StringReader;
-import java.io.UnsupportedEncodingException;
 import java.net.URI;
-import java.net.URLEncoder;
 import java.util.List;
 
 import org.w3c.dom.Document;
@@ -86,14 +85,10 @@ public class HtmlHandler implements ContentHandler {
 
       public String rewriteUri(ExternalReference uri, String mimeType) {
         if (hostedService != null) {
-          try {
-            return hostedService
-                + "?url="
-                + URLEncoder.encode(uri.getUri().toString(), "UTF-8")
-                + "&mime-type=" + mimeType;
-          } catch (UnsupportedEncodingException e) {
-            return null;
-          }
+          return hostedService
+              + "?url="
+              + UriUtil.encode(uri.getUri().toString())
+              + "&mime-type=" + UriUtil.encode(mimeType);
         } else {
           return null;
         }

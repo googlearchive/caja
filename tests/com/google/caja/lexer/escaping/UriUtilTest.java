@@ -24,8 +24,8 @@ public class UriUtilTest extends TestCase {
         "http://www.foo.org:80/path?q=query#fragmento",
         UriUtil.normalizeUri("http://www.foo.org:80/path?q=query#fragmento"));
     // But normalize = before '?', and ':' afterwards.
-    assertEquals("x%3Dfoo/bar?a=b%3Ac=d",
-        UriUtil.normalizeUri("x=foo/bar?a=b:c=d"));
+    assertEquals("x%3dfoo/bar?a=b%3ac=d",
+                 UriUtil.normalizeUri("x=foo/bar?a=b:c=d"));
     // Spaces escaped using %20, not '+'
     assertEquals("/foo%20bar", UriUtil.normalizeUri("/foo bar"));
     assertEquals("/foo%20bar", UriUtil.normalizeUri("/foo%20bar"));
@@ -46,7 +46,7 @@ public class UriUtilTest extends TestCase {
         UriUtil.normalizeUri("http://foo/bar/../../../baz/"));
     // Malformed escapes
     assertEquals(
-        "foo%25%20.bar%25%7E://baz%252/boo%252?foo%25%5B#far%25",
+        "foo%25%20.bar%25%7e://baz%252/boo%252?foo%25%5b#far%25",
         UriUtil.normalizeUri("foo% .bar%~://baz%2/boo%2?foo%[#far%"));
     // Don't interfere with well-formed escapes
     assertEquals(
@@ -58,9 +58,9 @@ public class UriUtilTest extends TestCase {
         UriUtil.normalizeUri("foo!.bar!://baz!/boo!?foo!#far!"));
     // Check reserved characters in various URI parts.
     assertEquals(
-        "A-b.1+2:///hiya", UriUtil.normalizeUri("A-b.1+2:///hiya"));
+        "a-b.1+2:///hiya", UriUtil.normalizeUri("A-b.1+2:///hiya"));
     assertEquals(
-        "HTTP://Hello+There-Now.com:80/",
+        "http://Hello+There-Now.com:80/",
         UriUtil.normalizeUri("HTTP://Hello+There-Now.com:80"));
     assertEquals(
         "/Hello+There-N0w.",
@@ -69,12 +69,21 @@ public class UriUtilTest extends TestCase {
         "zounds?foo=BAR&four=2+2-0.0",
         UriUtil.normalizeUri("zounds?foo=BAR&four=2+2-0.0"));
     assertEquals(
-        "#Hiya.%20%201-+1%3D0.0",
+        "#Hiya.%20%201-+1%3d0.0",
         UriUtil.normalizeUri("#Hiya.  1-+1=0.0"));
     // Test non Latin characters in various places.
-    String enc = "%EF%BD%A1";
+    String enc = "%ef%bd%a1";
     assertEquals(
-        "S" + enc + "://A" + enc + "/P" + enc + "?Q" + enc + "#F" + enc,
+        "s" + enc + "://A" + enc + "/P" + enc + "?Q" + enc + "#F" + enc,
         UriUtil.normalizeUri("S\uff61://A\uff61/P\uff61?Q\uff61#F\uff61"));
+  }
+
+  public final void testEncode() {
+    assertEquals("", UriUtil.encode(""));
+    assertEquals("foo", UriUtil.encode("foo"));
+    assertEquals("foo%2bbar", UriUtil.encode("foo+bar"));
+    assertEquals("foo%2fbar", UriUtil.encode("foo/bar"));
+    assertEquals("%e1%88%b4", UriUtil.encode("\u1234"));
+    assertEquals("%3a%23%3f%2f%3d%26%40%25", UriUtil.encode(":#?/=&@%"));
   }
 }

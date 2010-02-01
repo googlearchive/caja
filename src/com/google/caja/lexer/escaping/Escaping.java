@@ -15,10 +15,10 @@
 package com.google.caja.lexer.escaping;
 
 import com.google.caja.SomethingWidgyHappenedError;
+import com.google.caja.util.Lists;
 import com.google.caja.util.SparseBitSet;
-import java.io.IOException;
 
-import java.util.ArrayList;
+import java.io.IOException;
 import java.util.List;
 
 /**
@@ -246,6 +246,47 @@ public class Escaping {
     }
   }
 
+  /**
+   * Encodes a string as a URI component per section 2.1 of RFC 3986.
+   * To deal with a composed URI, see {@link UriUtil#normalizeUri(String)}.
+   */
+  public static void escapeUri(CharSequence s, StringBuilder out) {
+    escapeUri(s, 0, out);
+  }
+
+  static void escapeUri(CharSequence s, int i, StringBuilder out) {
+    try {
+      escapeUri(s, i, (Appendable) out);
+    } catch (IOException ex) {
+      throw new SomethingWidgyHappenedError(
+          "StringBuilders don't throw IOException", ex);
+    }
+  }
+
+  /**
+   * Encodes a string as a URI component per section 2.1 of RFC 3986.
+   * To deal with a composed URI, see {@link UriUtil#normalizeUri(String)}.
+   * @throws IOException if {@code out} throws during append.
+   */
+  public static void escapeUri(CharSequence s, Appendable out)
+      throws IOException {
+    escapeUri(s, 0, out);
+  }
+
+  private static void escapeUri(CharSequence s, int i, Appendable out)
+      throws IOException {
+    int pos = 0, n = s.length();
+    for (; i < n; ++i) {
+      char ch = s.charAt(i);
+      if (ch >= 0x80 || Escaping.URI_ESCAPES.getEscape(ch) != null) {
+        out.append(s, pos, i);
+        pctEncode(ch, out);
+        pos = i + 1;
+      }
+    }
+    out.append(s, pos, n);
+  }
+
   // Escape only the characters in string that must be escaped.
   private static final EscapeMap STRING_MINIMAL_ESCAPES = new EscapeMap(
       new Escape('\0', "\\x00"),
@@ -319,7 +360,7 @@ public class Escaping {
    */
   private static final EscapeMap XML_ESCAPES;
   static {
-    List<Escape> escapes = new ArrayList<Escape>();
+    List<Escape> escapes = Lists.newArrayList();
     for (int i = 0; i < 0x20; ++i) {
       switch (i) {
         // Only three control characters are allowed in XML text.
@@ -423,6 +464,50 @@ public class Escaping {
                   0xFFFFE, 0x100000,
                   0x10FFFE, 0x110000 });
 
+  /**
+   * From RFC 3986:
+   * <blockquote>
+   * <h3>2.3.  Unreserved Characters</h3>
+   *
+   * Characters that are allowed in a URI but do not have a reserved
+   * purpose are called unreserved.  These include uppercase and lowercase
+   * letters, decimal digits, hyphen, period, underscore, and tilde.
+   *
+   * <blockquote><code>
+   *    unreserved  = ALPHA / DIGIT / "-" / "." / "_" / "~"
+   * </code></blockquote>
+   *
+   * URIs that differ in the replacement of an unreserved character with
+   * its corresponding percent-encoded US-ASCII octet are equivalent: they
+   * identify the same resource.  However, URI comparison implementations
+   * do not always perform normalization prior to comparison (see Section
+   * 6).  For consistency, percent-encoded octets in the ranges of ALPHA
+   * (%41-%5A and %61-%7A), DIGIT (%30-%39), hyphen (%2D), period (%2E),
+   * underscore (%5F), or tilde (%7E) should not be created by URI
+   * producers and, when found in a URI, should be decoded to their
+   * corresponding unreserved characters by URI normalizers.
+   * </blockquote>
+   */
+  static final EscapeMap URI_ESCAPES;
+  static {
+    List<Escape> escapes = Lists.newArrayList();
+    for (int i = 0; i < 0x80; ++i) {
+      if (i == '-' || i == '.' || i == '_' || i == '~' || (i >= '0' && i <= '9')
+          || (i >= 'A' && i <= 'Z') || (i >= 'a' && i <= 'z')) {
+        continue;
+      }
+      StringBuilder sb = new StringBuilder(3);
+      try {
+        pctEncode((byte) i, sb);
+      } catch (IOException ex) {
+        throw new SomethingWidgyHappenedError(
+            "StringBuilders shouldn't throw IOException", ex);
+      }
+      escapes.add(new Escape((char) i, sb.toString()));
+    }
+    URI_ESCAPES = new EscapeMap(escapes.toArray(new Escape[escapes.size()]));
+  }
+
   static final Encoder JS_ENCODER = new Encoder() {
       public void encode(int codepoint, int nextCodepoint, Appendable out)
           throws IOException {
@@ -518,6 +603,28 @@ public class Escaping {
           .append("0123456789ABCDEF".charAt(ch & 0xf));
     }
   }
+
+  static void pctEncode(char ch, Appendable out) throws IOException {
+    if (ch < 0x80) {
+      pctEncode((byte) ch, out);
+    } else {
+      // UTF-8 encode
+      if (ch < 0x800) {  // 2 byte form
+        pctEncode((byte) (0xc0 | ((ch >>> 6) & 0x1f)), out);
+      } else {  // 3 byte form
+        pctEncode((byte) (0xe0 | ((ch >>> 12) & 0xf)), out);
+        pctEncode((byte) (0x80 | ((ch >>> 6) & 0x3f)), out);
+      }
+      pctEncode((byte) (0x80 | (ch & 0x3f)), out);
+    }
+  }
+
+  static void pctEncode(byte b, Appendable out) throws IOException {
+    out.append('%')
+        .append("0123456789abcdef".charAt((b >> 4) & 0xf))
+        .append("0123456789abcdef".charAt(b & 0xf));
+  }
+
 
   /** Produces hex escape for all characters in the given inclusive range. */
   private static Escape[] hex2Escapes(char min, char max) {

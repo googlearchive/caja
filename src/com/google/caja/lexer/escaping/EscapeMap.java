@@ -17,7 +17,7 @@ package com.google.caja.lexer.escaping;
 import java.util.Arrays;
 
 /**
- * Maps ascii codepoints (lower 7b) to the escaped form.  This is a lookup
+ * Maps ascii codepoints (lower 7f) to the escaped form.  This is a lookup
  * table that performs efficiently for latin strings.
  *
  * @author mikesamuel@gmail.com (Mike Samuel)

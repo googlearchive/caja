@@ -14,7 +14,6 @@
 
 package com.google.caja.plugin;
 
-import com.google.caja.SomethingWidgyHappenedError;
 import com.google.caja.ancillary.opt.JsOptimizer;
 import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.ExternalReference;
@@ -23,6 +22,7 @@ import com.google.caja.lexer.JsLexer;
 import com.google.caja.lexer.JsTokenQueue;
 import com.google.caja.lexer.ParseException;
 import com.google.caja.lexer.TokenConsumer;
+import com.google.caja.lexer.escaping.UriUtil;
 import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.html.DomParser;
@@ -58,10 +58,8 @@ import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.Reader;
 import java.io.StringReader;
-import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.net.URI;
-import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -128,17 +126,13 @@ public class BuildServiceImplementation implements BuildService {
         }
 
         public String rewriteUri(ExternalReference uri, String mimeType) {
-          try {
-            // TODO(ihab.awad): Need to pass in the URI rewriter from the build
-            // file somehow (as a Cajita program?). The below is a stub.
-            return URI.create(
-                "http://example.com/"
-                + "?mime-type=" + URLEncoder.encode(mimeType, "UTF-8")
-                + "&uri=" + URLEncoder.encode("" + uri.getUri(), "UTF-8"))
-                .toString();
-          } catch (UnsupportedEncodingException ex) {
-            throw new SomethingWidgyHappenedError(ex);
-          }
+          // TODO(ihab.awad): Need to pass in the URI rewriter from the build
+          // file somehow (as a Cajita program?). The below is a stub.
+          return URI.create(
+              "http://example.com/"
+              + "?mime-type=" + UriUtil.encode(mimeType)
+              + "&uri=" + UriUtil.encode("" + uri.getUri()))
+              .toString();
         }
       };
 

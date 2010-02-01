@@ -3201,11 +3201,11 @@ jsunitRegister('testUsemap',
       (''
        + '<map name="foo-xyz___">'
        + '<area href="http://example.com/'
-       + '?mime-type=*%2F*&amp;uri=(base)/areatarget.html"'
+       + '?mime-type=%2a%2f%2a&amp;uri=(base)/areatarget.html"'
        + ' target="_blank">'
        + '</map>'
        + '<img'
-       + ' src="http://example.com/?mime-type=image%2F*'
+       + ' src="http://example.com/?mime-type=image%2f%2a'
        + '&amp;uri=(base)/mappic.gif" usemap="#foo-xyz___"'
        + '>'),
       canonInnerHtml(directAccess.getInnerHTML(el)).replace(

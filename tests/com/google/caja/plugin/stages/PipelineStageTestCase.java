@@ -20,6 +20,7 @@ import com.google.caja.lexer.ExternalReference;
 import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.ParseException;
 import com.google.caja.lexer.TokenConsumer;
+import com.google.caja.lexer.escaping.UriUtil;
 import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.plugin.Dom;
@@ -37,7 +38,6 @@ import java.io.StringReader;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URLDecoder;
-import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -175,14 +175,6 @@ public abstract class PipelineStageTestCase extends CajaTestCase {
     }
   }
 
-  private static String encode(String s) {
-    try {
-      return URLEncoder.encode(s, "UTF-8");
-    } catch (UnsupportedEncodingException ex) {
-      throw new SomethingWidgyHappenedError(ex);
-    }
-  }
-
   private static String decode(String s) {
     try {
       return URLDecoder.decode(s, "UTF-8");
@@ -215,8 +207,8 @@ public abstract class PipelineStageTestCase extends CajaTestCase {
     }
 
     public String rewriteUri(ExternalReference uri, String mimeType) {
-      return "http://proxy/?uri=" + encode(uri.getUri().toString())
-          + "&mimeType=" + encode(mimeType);
+      return "http://proxy/?uri=" + UriUtil.encode(uri.getUri().toString())
+          + "&mimeType=" + UriUtil.encode(mimeType);
     }
   }
 }

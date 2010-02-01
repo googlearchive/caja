@@ -86,7 +86,7 @@ public class ResolveUriStageTest extends PipelineStageTestCase {
         job("<a href='javascript:foo() + bar([1, 2, 3]) * 4'>foo</a>",
             ContentType.HTML),
         job("<a href=\"javascript:"
-            + "foo%28%29%20+%20bar%28%5B1,%202,%203%5D%29%20%2A%204\">foo</a>",
+            + "foo%28%29%20+%20bar%28%5b1,%202,%203%5d%29%20%2a%204\">foo</a>",
             ContentType.HTML));
   }
 

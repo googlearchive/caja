@@ -1,4 +1,4 @@
-<Module><ModulePrefs title="Example Gadget"><Require feature="opensocial-0.5" /></ModulePrefs><Content type="html"><![CDATA[<p class="p1 p2">Paragraph 1<span id="id_2___"></span></p><p id="id_3___">Paragraph 2<span id="id_4___"></span></p><p><a id="id_5___" target="_blank">Paragraph 3</a></p><a href="http://url-proxy.test.google.com/?url=http%3A%2F%2Ffoo.com%2F&amp;mime-type=*%2F*" target="_blank">External URL.  Apply URICallback.rewrite to me.</a><script type="text/javascript">{
+<Module><ModulePrefs title="Example Gadget"><Require feature="opensocial-0.5" /></ModulePrefs><Content type="html"><![CDATA[<p class="p1 p2">Paragraph 1<span id="id_2___"></span></p><p id="id_3___">Paragraph 2<span id="id_4___"></span></p><p><a id="id_5___" target="_blank">Paragraph 3</a></p><a href="http://url-proxy.test.google.com/?url=http%3a%2f%2ffoo.com%2f&amp;mime-type=%2a%2f%2a" target="_blank">External URL.  Apply URICallback.rewrite to me.</a><script type="text/javascript">{
   ___.loadModule({
       'instantiate': function (___, IMPORTS___) {
         var moduleResult___ = ___.NO_RESULT;

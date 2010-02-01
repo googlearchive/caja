@@ -51,8 +51,8 @@ public class DefaultValijaRewriterTest extends CommonJsRewriterTestCase {
   protected class TestPluginEnvironment implements PluginEnvironment {
     public CharProducer loadExternalResource(
         ExternalReference ref, String mimeType) {
-      URI uri = ref.getUri();
-      uri = ref.getReferencePosition().source().getUri().resolve(uri);
+      URI uri;
+      uri = ref.getReferencePosition().source().getUri().resolve(ref.getUri());
       try {
         InputSource is = new InputSource(uri);
         return fromResource(uri.getPath().substring(1), is);

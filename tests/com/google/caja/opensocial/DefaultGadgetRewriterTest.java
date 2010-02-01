@@ -14,11 +14,11 @@
 
 package com.google.caja.opensocial;
 
-import com.google.caja.SomethingWidgyHappenedError;
 import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.ExternalReference;
 import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.TokenConsumer;
+import com.google.caja.lexer.escaping.UriUtil;
 import com.google.caja.reporting.EchoingMessageQueue;
 import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessageContext;
@@ -33,9 +33,7 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.PrintWriter;
 import java.io.Reader;
-import java.io.UnsupportedEncodingException;
 import java.net.URI;
-import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -58,14 +56,10 @@ public class DefaultGadgetRewriterTest extends CajaTestCase {
     }
 
     public URI rewrite(ExternalReference extref, String mimeType) {
-      try {
-        return URI.create(
-            "http://url-proxy.test.google.com/"
-            + "?url=" + URLEncoder.encode(extref.getUri().toString(), "UTF-8")
-            + "&mime-type=" + URLEncoder.encode(mimeType, "UTF-8"));
-      } catch (UnsupportedEncodingException ex) {
-        throw new SomethingWidgyHappenedError("UTF-8 should be supported", ex);
-      }
+      return URI.create(
+          "http://url-proxy.test.google.com/"
+          + "?url=" + UriUtil.encode(extref.getUri().toString())
+          + "&mime-type=" + UriUtil.encode(mimeType));
     }
   };
 

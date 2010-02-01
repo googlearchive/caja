@@ -21,6 +21,7 @@ import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.lexer.escaping.Escaping;
+import com.google.caja.lexer.escaping.UriUtil;
 import com.google.caja.parser.js.ArrayConstructor;
 import com.google.caja.parser.js.Expression;
 import com.google.caja.parser.js.NullLiteral;
@@ -46,9 +47,7 @@ import java.io.PrintWriter;
 import java.io.Reader;
 import java.io.StringReader;
 import java.io.StringWriter;
-import java.io.UnsupportedEncodingException;
 import java.net.URI;
-import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
@@ -120,15 +119,10 @@ public class CajaApplet extends Applet {
           }
 
           public URI rewrite(ExternalReference extref, String mimeType) {
-            try {
-              return URI.create(
-                  uriCallbackProxyServer + "/proxy?url="
-                  + URLEncoder.encode(extref.getUri().toString(), "UTF-8")
-                  + "&mimeType=" + URLEncoder.encode(mimeType, "UTF-8"));
-            } catch (UnsupportedEncodingException ex) {
-              throw new SomethingWidgyHappenedError(
-                  "UTF-8 should be supported", ex);
-            }
+            return URI.create(
+                uriCallbackProxyServer + "/proxy?url="
+                + UriUtil.encode(extref.getUri().toString())
+                + "&mimeType=" + UriUtil.encode(mimeType));
           }
         };
 
