@@ -27,8 +27,7 @@ import java.util.List;
  *
  * @author mikesamuel@gmail.com
  */
-public final class Block
-    extends AbstractStatement implements NestedScope {
+public final class Block extends AbstractStatement implements NestedScope {
   /** @param value unused.  This ctor is provided for reflection. */
   @ReflectiveCtor
   public Block(
@@ -57,7 +56,13 @@ public final class Block
   @Override
   protected void childrenChanged() {
     super.childrenChanged();
+    boolean first = true;
     for (ParseTreeNode child : children()) {
+      if (first) {
+        first = false;
+      } else if (child instanceof DirectivePrologue) {
+        throw new IllegalArgumentException("Misplaced directive prologoue");
+      }
       if (!(child instanceof Statement)) {
         throw new ClassCastException("Expected statement, not " + child);
       }

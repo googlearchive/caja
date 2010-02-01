@@ -17,8 +17,11 @@ package com.google.caja.parser.quasiliteral;
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.ParseTreeNodes;
+import com.google.caja.parser.js.Block;
+import com.google.caja.parser.js.Directive;
+import com.google.caja.parser.js.DirectivePrologue;
+import com.google.caja.util.Lists;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -63,28 +66,56 @@ public class SimpleQuasiNode extends QuasiNode {
   private boolean matchChildren(
       ParseTreeNode specimen,
       Map<String, ParseTreeNode> bindings) {
-    List<ParseTreeNode> specimenChildren = new ArrayList<ParseTreeNode>();
-    specimenChildren.addAll(specimen.children());
+    List<ParseTreeNode> specimenChildren
+        = Lists.newArrayList(specimen.children());
 
     for (QuasiNode child : getChildren()) {
-      if (!child.consumeSpecimens(specimenChildren, bindings)) return false;
+      if (!child.consumeSpecimens(specimenChildren, bindings)) { return false; }
     }
 
-    return specimenChildren.size() == 0;
+    return specimenChildren.isEmpty();
   }
 
   @Override
   protected boolean createSubstitutes(
       List<ParseTreeNode> substitutes,
       Map<String, ParseTreeNode> bindings) {
-    List<ParseTreeNode> children = new ArrayList<ParseTreeNode>();
+    List<ParseTreeNode> children = Lists.newArrayList();
 
     for (QuasiNode child : getChildren()) {
       if (!child.createSubstitutes(children, bindings)) { return false; }
     }
 
-    // TODO(ihab.awad): Absorb setting the FilePosition into newNodeInstance and remove the
-    // assumption here that everything is an AbstractParseTreeNode.
+    if (Block.class.isAssignableFrom(clazz)) {
+      // Move directive prologues to the front since they are only syntactically
+      // significant there.
+      for (int i = 1, n = children.size(); i < n; ++i) {
+        ParseTreeNode child = children.get(i);
+        if (child instanceof DirectivePrologue) {
+          if (children.get(0) instanceof DirectivePrologue) {
+            DirectivePrologue dp0 = (DirectivePrologue) children.get(0);
+            DirectivePrologue dp1 = (DirectivePrologue) child;
+            if (!dp1.children().isEmpty()) {
+              List<Directive> all = Lists.newArrayList(dp0.children());
+              all.addAll(dp1.children());
+              children.set(
+                  0,
+                  new DirectivePrologue(
+                      FilePosition.span(
+                          dp0.getFilePosition(), dp1.getFilePosition()),
+                      all));
+            }
+            children.remove(i);
+          } else {
+            for (int j = i; j >= 1; --j) {
+              children.set(j, children.get(j - 1));
+            }
+            children.set(0, child);
+          }
+        }
+      }
+    }
+
     ParseTreeNode node = ParseTreeNodes.newNodeInstance(
         clazz, FilePosition.UNKNOWN, value, children);
     substitutes.add(node);
