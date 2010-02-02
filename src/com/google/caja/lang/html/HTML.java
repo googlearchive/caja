@@ -36,15 +36,17 @@ public final class HTML {
     private final List<Attribute> attrs_;
     private final boolean empty_;
     private final boolean optionalEndTag_;
+    private final boolean containsText_;
 
     /** Construct an Element */
     public Element(ElKey key, List<Attribute> attrs, boolean empty,
-                   boolean optionalEndTag) {
+                   boolean optionalEndTag, boolean containsText) {
       assert key != null;
       this.key_ = key;
       this.attrs_ = Collections.unmodifiableList(Lists.newArrayList(attrs));
       this.empty_ = empty;
       this.optionalEndTag_ = optionalEndTag;
+      this.containsText_ = containsText;
     }
 
     public List<Attribute> getAttributes() {
@@ -64,6 +66,11 @@ public final class HTML {
     /** True if the end tag is optional */
     public boolean isEndTagOptional() {
       return optionalEndTag_;
+    }
+
+    /** True if the element can contain textual content. */
+    public boolean canContainText() {
+      return containsText_;
     }
 
     /**

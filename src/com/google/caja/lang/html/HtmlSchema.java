@@ -188,7 +188,10 @@ public final class HtmlSchema {
       }
       boolean empty = (Boolean) def.get("empty", Boolean.FALSE);
       boolean optionalEnd = (Boolean) def.get("optionalEnd", Boolean.FALSE);
-      elementDetails.put(key, new HTML.Element(key, attrs, empty, optionalEnd));
+      boolean containsText = (Boolean) def.get("textContent", Boolean.TRUE)
+          && !empty;
+      elementDetails.put(
+          key, new HTML.Element(key, attrs, empty, optionalEnd, containsText));
     }
   }
 
