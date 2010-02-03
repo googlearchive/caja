@@ -22,6 +22,7 @@ import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.JsLexer;
 import com.google.caja.lexer.JsTokenQueue;
 import com.google.caja.lexer.ParseException;
+import com.google.caja.lexer.escaping.UriUtil;
 import com.google.caja.parser.ParseTreeNodes;
 import com.google.caja.parser.js.Expression;
 import com.google.caja.parser.js.Literal;
@@ -45,7 +46,6 @@ import java.io.Reader;
 import java.net.URI;
 import java.net.URL;
 import java.net.URLConnection;
-import java.net.URLEncoder;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -140,8 +140,7 @@ final class UserAgentDb {
         try {
           URL url = urlWithQuery(
               webService,
-              ("ua=" + URLEncoder.encode(uaKey, "UTF-8")
-               + "&ot=application%2Fjson"));
+              ("ua=" + UriUtil.encode(uaKey) + "&ot=application%2Fjson"));
           URLConnection conn = url.openConnection();
           conn.setConnectTimeout(WEBSERVICE_TIMEOUT);
           conn.setAllowUserInteraction(false);

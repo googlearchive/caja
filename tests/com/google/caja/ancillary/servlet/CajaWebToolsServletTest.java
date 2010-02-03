@@ -202,16 +202,26 @@ public class CajaWebToolsServletTest extends CajaTestCase {
         .param(
             "i",
             ""
-            + "<script type=text/javascript>"
-            + "alert('Hello, World!')"
-            + "</script>")
+            + "<script type=text/javascript>\n"
+            + "alert('Hello, World!')\n"
+            + "</script>\n"
+            + "<ul>\n"
+            + "  <li onclick='if (foo()) return bar(); return false'>One</li>\n"
+            + "  <li><a href=javascript:baz()>Two</a></li>\n"
+            + "  <li>Three</li>\n"
+            + "</ul>")
         .param("ot", "HTML")
         .param("minify", "t")
         .param("opt", "t")
         .param("userAgent", "*")
         .expectStatus(200)
         .expectContentType("text/html; charset=UTF-8")
-        .expectContent("<script>alert('Hello, World!')</script>")
+        .expectContent(
+            ""
+            + "<script>alert('Hello, World!')</script>\n"
+            + "<ul><li onclick=\"return foo()?bar():false\">One</li>"
+            + "<li><a href=\"javascript:baz%28%29\">Two</a></li>"
+            + "<li>Three</li></ul>")
         .send();
     assertNoErrors();
   }

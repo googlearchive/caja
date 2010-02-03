@@ -36,6 +36,7 @@ import com.google.caja.lexer.Punctuation;
 import com.google.caja.lexer.Token;
 import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.lexer.TokenQueue;
+import com.google.caja.lexer.escaping.UriUtil;
 import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.Visitor;
@@ -81,7 +82,6 @@ import com.google.caja.util.Strings;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
-
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
@@ -92,6 +92,7 @@ import org.w3c.dom.Attr;
 import org.w3c.dom.DocumentFragment;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
+import org.w3c.dom.Text;
 
 /**
  * The tools servlet's transformation engine.
@@ -403,7 +404,7 @@ class Processor {
       }
     };
     for (EmbeddedContent c : f.findEmbeddedContent(node)) {
-      if (c.getType() != null) {
+      if (c.getType() != null && c.getContentLocation() == null) {
         Node src = c.getSource();
         ParseTreeNode t;
         try {
@@ -730,6 +731,16 @@ class Processor {
       for (Attr a : toRemove) {
         el.removeAttributeNode(a);
       }
+      HTML.Element elInfo = req.htmlSchema.lookupElement(elKey);
+      if (elInfo != null && !elInfo.canContainText()) {
+        for (Node c = el.getFirstChild(); c != null;)  {
+          Node next = c.getNextSibling();
+          if (c instanceof Text && "".equals(c.getNodeValue().trim())) {
+            el.removeChild(c);
+          }
+          c = next;
+        }
+      }
     }
     for (Node c = n.getFirstChild(); c != null; c = c.getNextSibling()) {
       optimizeHtml(c);
@@ -796,6 +807,14 @@ class Processor {
         jobsIt.remove();
       } else if (job.origin instanceof Attr) {
         Attr origin = (Attr) job.origin;
+        if (job.t == ContentType.JS) {
+          HTML.Attribute aInfo = req.htmlSchema.lookupAttribute(
+              AttribKey.forAttribute(
+                  ElKey.forElement(origin.getOwnerElement()), origin));
+          if (aInfo != null && aInfo.getType() == HTML.Attribute.Type.URI) {
+            rendered = "javascript:" + UriUtil.encode(rendered);
+          }
+        }
         origin.setNodeValue(rendered);
         jobsIt.remove();
       }

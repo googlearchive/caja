@@ -34,7 +34,7 @@ import org.w3c.dom.DocumentFragment;
  * @see Verb#INDEX
  */
 final class IndexPage {
-  private static final String INDEX_PAGE_TEMPLATE = Resources.readRequired(
+  private static final String INDEX_PAGE_TEMPLATE = Resources.readOptimized(
       IndexPage.class, "index.quasi.html").toString();
 
   static final String DEFAULT_SOURCE_INPUT = "<script></script>";

@@ -23,6 +23,7 @@ import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.ParseException;
 import com.google.caja.lexer.escaping.Escaping;
+import com.google.caja.lexer.escaping.UriUtil;
 import com.google.caja.reporting.EchoingMessageQueue;
 import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessageLevel;
@@ -38,7 +39,6 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URLEncoder;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.EnumMap;
@@ -417,7 +417,7 @@ class DefaultSchemas {
       sb.append('"');
     }
     sb.append("]}");
-    String contentUrl = "content:" + URLEncoder.encode(sb.toString(), "UTF-8");
+    String contentUrl = "content:" + UriUtil.encode(sb.toString());
     EchoingMessageQueue mq = new EchoingMessageQueue(
         new PrintWriter(System.err), new MessageContext());
     return permissive(ConfigUtil.loadWhiteListFromJson(
