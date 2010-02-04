@@ -3923,15 +3923,7 @@ var attachDocumentStub = (function () {
       if (this[handlerName]) {
         return this[handlerName]();
       }
-      return (
-          delete this[name]
-          && delete this[name + '_canEnum___']
-          && delete this[name + '_canRead___']);
-    };
-    TameWindow.prototype.handleEnum___ = function (ownFlag) {
-      // TODO(metaweta): Add code to list all the other handled stuff we know
-      // about.
-      return ___.allKeys(this);
+      return ___.deleteFieldEntirely(this, name);
     };
 
     var tameWindow = new TameWindow();

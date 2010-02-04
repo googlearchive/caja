@@ -4325,6 +4325,7 @@ var safeJSON;
     typeOf: typeOf,
     hasOwnProp: hasOwnProp,
     args: args,
+    deleteFieldEntirely: deleteFieldEntirely,
     tameException: tameException,
     primBeget: primBeget,
     callStackUnsealer: callStackUnsealer,

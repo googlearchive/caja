@@ -121,6 +121,10 @@
 </div>
 <br>
 
+<p class="testcontainer" id="test-window-mutable">
+<script>window.myProp = 1234;</script>
+</p>
+
 <div class="testcontainer" id="test-attrs-declared-in-markup"
     ><form title="test title"></form>
   <b>Test attributes in markup</b>
@@ -871,7 +875,7 @@ jsunitRegister('testInnerhtmlOnclick',
   } else {
     // in cajita, innerhtmlClicked is a local module function,
     // and there's no way for domita.js to access it.
-    el.innerHTML = "<span>Cajita can't link up onclick= functions</span>";
+    el.innerHTML = "<span>Cajita cannot link up onclick= functions</span>";
     pass('test-innerhtml-onclick');
   }
 });
@@ -1044,6 +1048,25 @@ jsunitRegister('testDocumentWrite',
       + '</div>',
       canonInnerHtml(el.innerHTML));
   pass('test-document-write');
+});
+
+jsunitRegister('testWindowMutable',
+               function testWindowMutable() {
+  function contains(arr, el) {
+    for (var i = arr.length; --i >= 0;) { if (el === arr[i]) { return true; } }
+    return false;
+  }
+  assertEquals(1234, window.myProp);
+  window.myOtherProp = 2345;
+  var props = cajita.ownKeys(window);
+  assertTrue(contains(props, 'myProp'));
+  assertTrue(contains(props, 'myOtherProp'));
+  delete window.myProp;
+  assertEquals(void 0, window.myProp);
+  props = cajita.ownKeys(window);
+  assertFalse(contains(props, 'myProp'));
+  assertTrue(contains(props, 'myOtherProp'));
+  pass('test-window-mutable');
 });
 
 jsunitRegister('testAttrsDeclaredInMarkup',
