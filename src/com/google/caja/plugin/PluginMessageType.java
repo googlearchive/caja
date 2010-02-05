@@ -100,6 +100,7 @@ public enum PluginMessageType implements MessageTypeInt {
       "%s: specialized CSS property %s to %s", MessageLevel.WARNING),
   MISSING_XML_NAMESPACE(
       "%s: XML %s has prefix but no namespace", MessageLevel.ERROR),
+  INVALID_PIPELINE("Cannot find plan from %s to %s", MessageLevel.FATAL_ERROR),
   ;
 
   private final String formatString;

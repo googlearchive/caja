@@ -20,20 +20,6 @@ import com.google.caja.lang.html.HtmlSchema;
 import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.js.CajoledModule;
-import com.google.caja.plugin.stages.CheckForErrorsStage;
-import com.google.caja.plugin.stages.CompileHtmlStage;
-import com.google.caja.plugin.stages.ConsolidateCodeStage;
-import com.google.caja.plugin.stages.DebuggingSymbolsStage;
-import com.google.caja.plugin.stages.InferFilePositionsStage;
-import com.google.caja.plugin.stages.InlineCssImportsStage;
-import com.google.caja.plugin.stages.LegacyNamespaceFixupStage;
-import com.google.caja.plugin.stages.OpenTemplateStage;
-import com.google.caja.plugin.stages.ResolveUriStage;
-import com.google.caja.plugin.stages.RewriteCssStage;
-import com.google.caja.plugin.stages.RewriteHtmlStage;
-import com.google.caja.plugin.stages.SanitizeHtmlStage;
-import com.google.caja.plugin.stages.ValidateCssStage;
-import com.google.caja.plugin.stages.ValidateJavascriptStage;
 import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
@@ -65,13 +51,16 @@ public final class PluginCompiler {
   private Pipeline<Jobs> compilationPipeline;
   private CssSchema cssSchema;
   private HtmlSchema htmlSchema;
+  private Planner.PlanState preconditions;
+  private Planner.PlanState goals;
 
   public PluginCompiler(BuildInfo buildInfo, PluginMeta meta, MessageQueue mq) {
     this.buildInfo = buildInfo;
-    MessageContext mc = new MessageContext();
-    jobs = new Jobs(mc, mq, meta);
-    cssSchema = CssSchema.getDefaultCss21Schema(mq);
-    htmlSchema = HtmlSchema.getDefault(mq);
+    this.jobs = new Jobs(new MessageContext(), mq, meta);
+    this.cssSchema = CssSchema.getDefaultCss21Schema(mq);
+    this.htmlSchema = HtmlSchema.getDefault(mq);
+    this.preconditions = PipelineMaker.defaultPreconds();
+    this.goals = PipelineMaker.defaultGoals(meta);
   }
 
   public MessageQueue getMessageQueue() { return jobs.getMessageQueue(); }
@@ -119,38 +108,28 @@ public final class PluginCompiler {
     return outputs;
   }
 
-  protected void setupCompilationPipeline() {
+  private final void setupCompilationPipeline()
+      throws Planner.UnsatisfiableGoalException {
     compilationPipeline = new Pipeline<Jobs>() {
       final long t0 = System.nanoTime();
       @Override
       protected boolean applyStage(
           Pipeline.Stage<? super Jobs> stage, Jobs jobs) {
+        long t1 = System.nanoTime();
         jobs.getMessageQueue().addMessage(
             MessageType.CHECKPOINT,
             MessagePart.Factory.valueOf(stage.getClass().getSimpleName()),
-            MessagePart.Factory.valueOf((System.nanoTime() - t0) / 1e9));
+            MessagePart.Factory.valueOf((t1 - t0) / 1e9 /* ns/s */));
         return super.applyStage(stage, jobs);
       }
     };
 
-    List<Pipeline.Stage<Jobs>> stages = compilationPipeline.getStages();
-    stages.add(new LegacyNamespaceFixupStage());
-    stages.add(new ResolveUriStage(htmlSchema));
-    stages.add(new RewriteHtmlStage(htmlSchema));
-    stages.add(new InlineCssImportsStage());
-    stages.add(new SanitizeHtmlStage(htmlSchema));
-    stages.add(new ValidateCssStage(cssSchema, htmlSchema));
-    stages.add(new RewriteCssStage());
-    stages.add(new CompileHtmlStage(cssSchema, htmlSchema));
-    stages.add(new OpenTemplateStage());
-    stages.add(new ConsolidateCodeStage());
-    stages.add(new ValidateJavascriptStage(buildInfo));
-    stages.add(new InferFilePositionsStage());
-    stages.add(new DebuggingSymbolsStage());
-    stages.add(new CheckForErrorsStage());
+    new PipelineMaker(buildInfo, cssSchema, htmlSchema, preconditions, goals)
+        .populate(compilationPipeline.getStages());
   }
 
-  public Pipeline<Jobs> getCompilationPipeline() {
+  public final Pipeline<Jobs> getCompilationPipeline()
+      throws Planner.UnsatisfiableGoalException {
     if (compilationPipeline == null) { setupCompilationPipeline(); }
     return compilationPipeline;
   }
@@ -204,6 +183,14 @@ public final class PluginCompiler {
    * @return true on success, false on failure.
    */
   public boolean run() {
-    return getCompilationPipeline().apply(jobs);
+    try {
+      return getCompilationPipeline().apply(jobs);
+    } catch (Planner.UnsatisfiableGoalException ex) {
+      jobs.getMessageQueue().addMessage(
+          PluginMessageType.INVALID_PIPELINE,
+          MessagePart.Factory.valueOf("" + preconditions),
+          MessagePart.Factory.valueOf("" + goals));
+      return false;
+    }
   }
 }

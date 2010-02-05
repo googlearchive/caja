@@ -33,6 +33,7 @@ import com.google.caja.plugin.templates.TemplateCompiler;
 import com.google.caja.plugin.templates.TemplateSanitizer;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.RenderContext;
+import com.google.caja.util.ContentType;
 import com.google.caja.util.Lists;
 import com.google.caja.util.Pair;
 import com.google.caja.util.Pipeline;
@@ -54,12 +55,19 @@ import org.w3c.dom.Node;
 public final class CompileHtmlStage implements Pipeline.Stage<Jobs> {
   private final CssSchema cssSchema;
   private final HtmlSchema htmlSchema;
+  private final ContentType outputType;
 
   public CompileHtmlStage(CssSchema cssSchema, HtmlSchema htmlSchema) {
+    this(cssSchema, htmlSchema, null);
+  }
+
+  public CompileHtmlStage(CssSchema cssSchema, HtmlSchema htmlSchema,
+                          ContentType outputType) {
     if (null == cssSchema) { throw new NullPointerException(); }
     if (null == htmlSchema) { throw new NullPointerException(); }
     this.cssSchema = cssSchema;
     this.htmlSchema = htmlSchema;
+    this.outputType = outputType;
   }
 
   public boolean apply(Jobs jobs) {
@@ -99,13 +107,22 @@ public final class CompileHtmlStage implements Pipeline.Stage<Jobs> {
           DomParser.makeDocument(null, null));
 
       Job outJob;
-      if (jobs.getPluginMeta().isOnlyJsEmitted()) {
-        outJob = Job.jsJob(
-            AncestorChain.instance(makeEmitStaticStmt(htmlAndJs.a)));
-      } else {
-        outJob = Job.domJob(
-            AncestorChain.instance(new Dom(htmlAndJs.a)),
-            InputSource.UNKNOWN.getUri());
+      ContentType desiredType = outputType;
+      if (desiredType == null) {
+        desiredType = jobs.getPluginMeta().isOnlyJsEmitted()
+           ? ContentType.JS : ContentType.HTML;
+      }
+      switch (desiredType) {
+        case JS:
+          outJob = Job.jsJob(
+              AncestorChain.instance(makeEmitStaticStmt(htmlAndJs.a)));
+          break;
+        case HTML:
+          outJob = Job.domJob(
+              AncestorChain.instance(new Dom(htmlAndJs.a)),
+              InputSource.UNKNOWN.getUri());
+          break;
+        default: throw new IllegalArgumentException(desiredType.name());
       }
       jobs.getJobs().add(outJob);
 
