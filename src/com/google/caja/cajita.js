@@ -3514,36 +3514,36 @@ var safeJSON;
    * One-arg form is known in scheme as "call with escape
    * continuation" (call/ec), and is the semantics currently 
    * proposed for EcmaScript Harmony's "return to label".
-   * <p>
-   * In this analogy, a call to <tt>escape</tt> emulates a labeled
-   * statement. The ejector passed to the <tt>attemptFunc</tt>
-   * emulates the label part. The <tt>attemptFunc</tt> itself
-   * emulates the statement being labeled. And a call to
-   * <tt>eject</tt> with this ejector emulates the return-to-label
-   * statement. 
-   * <p>
-   * We extend the normal notion of call/ec with an
+   * 
+   * <p>In this analogy, a call to <tt>callWithEjector</tt> emulates a
+   * labeled statement. The ejector passed to the <tt>attemptFunc</tt>
+   * emulates the label part. The <tt>attemptFunc</tt> itself emulates
+   * the statement being labeled. And a call to <tt>eject</tt> with
+   * this ejector emulates the return-to-label statement.
+   * 
+   * <p>We extend the normal notion of call/ec with an
    * <tt>opt_failFunc</tt> in order to give more the sense of a
    * <tt>try/catch</tt> (or similarly, the <tt>escape</tt> special
    * form in E). The <tt>attemptFunc</tt> is like the <tt>try</tt>
    * clause and the <tt>opt_failFunc</tt> is like the <tt>catch</tt>
    * clause. If omitted, <tt>opt_failFunc</tt> defaults to the
    * <tt>identity</tt> function. 
-   * <p>
-   * <tt>escape</tt> creates a fresh ejector -- a one argument
-   * function -- for exiting from this attempt. It then calls
+   * 
+   * <p><tt>callWithEjector</tt> creates a fresh ejector -- a one
+   * argument function -- for exiting from this attempt. It then calls
    * <tt>attemptFunc</tt> passing that ejector as argument. If
    * <tt>attemptFunc</tt> completes without calling the ejector, then
-   * this call to <tt>escape</tt> completes likewise. Otherwise, if the
-   * ejector is called with an argument, then <tt>opt_failFunc</tt> is
-   * called with that argument. The completion of <tt>opt_failFunc</tt>
-   * is then the completion of the <tt>escape</tt> as a whole.
-   * <p>
-   * The ejector stays live until <tt>attemptFunc</tt> is exited, at
-   * which point the ejector is disabled. Calling a disabled ejector
-   * throws. 
-   * <p>
-   * In order to emulate the semantics I expect of ES-Harmony's
+   * this call to <tt>callWithEjector</tt> completes
+   * likewise. Otherwise, if the ejector is called with an argument,
+   * then <tt>opt_failFunc</tt> is called with that argument. The
+   * completion of <tt>opt_failFunc</tt> is then the completion of the
+   * <tt>callWithEjector</tt> as a whole.
+   * 
+   * <p>The ejector stays live until <tt>attemptFunc</tt> is exited,
+   * at which point the ejector is disabled. Calling a disabled
+   * ejector throws.
+   * 
+   * <p>In order to emulate the semantics I expect of ES-Harmony's
    * return-to-label and to prevent the reification of the internal
    * token thrown in order to emulate call/ec, <tt>tameException</tt>
    * immediately rethrows this token, preventing Cajita and Valija
@@ -3551,15 +3551,15 @@ var safeJSON;
    * <tt>finally</tt> clauses will still be run while unwinding an
    * ejection. If these do their own non-local exit, that takes
    * precedence over the ejection in progress but leave the ejector
-   * live. 
-   * <p>
-   * Historic note: This was first invented by John C. Reynolds in 
+   * live.
+   * 
+   * <p>Historic note: This was first invented by John C. Reynolds in 
    * <a href="http://doi.acm.org/10.1145/800194.805852"
    * >Definitional interpreters for higher-order programming 
    * languages</a>. Reynold's invention was a special form as in E, 
    * rather than a higher order function as here and in call/ec.
    */
-  function escape(attemptFunc, opt_failFunc) {
+  function callWithEjector(attemptFunc, opt_failFunc) {
     var failFunc = opt_failFunc || identity;
     var disabled = false;
     var token = new Token('ejection');
@@ -3701,7 +3701,7 @@ var safeJSON;
    */
   function passesGuard(g, specimen) {
     g = GuardT.coerce(g); // failure throws rather than ejects
-    return escape(
+    return callWithEjector(
       markFuncFreeze(function(opt_ejector) {
         g.coerce(specimen, opt_ejector);
         return true;
@@ -4194,7 +4194,7 @@ var safeJSON;
 
     // Guards and Trademarks
     identity: identity,
-    escape: escape,
+    callWithEjector: callWithEjector,
     eject: eject,
     GuardT: GuardT,
     Trademark: Trademark,

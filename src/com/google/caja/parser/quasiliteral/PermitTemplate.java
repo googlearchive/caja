@@ -109,7 +109,7 @@ final class PermitTemplate {
           "newTable", CanCall,
 
           "identity", CanCall,
-          "escape", CanCall,
+          "callWithEjector", CanCall,
           "eject", CanCall,
           "Trademark", CanCall,
           "guard", CanCall,
