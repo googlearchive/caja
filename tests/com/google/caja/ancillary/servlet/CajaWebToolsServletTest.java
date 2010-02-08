@@ -53,7 +53,7 @@ public class CajaWebToolsServletTest extends CajaTestCase {
   @Override
   public void tearDown() throws Exception {
     // Make sure we don't construct a test and then not run it.
-    assertTrue(tests.isEmpty());
+    assertTrue("Maybe send was never called", tests.isEmpty());
     super.tearDown();
   }
 
@@ -530,6 +530,21 @@ public class CajaWebToolsServletTest extends CajaTestCase {
         .expectContentMatches(
             "\\Qh1,p.bar,blockquite{background:#f0f;colour:blue}\\E"
             )
+        .send();
+  }
+
+  public final void testExample3() throws Exception {
+    new ServletTest()
+        .get("/echo")
+        .param("it", "text/javascript")
+        .param("i", exampleCode("More Optimization"))
+        .param("opt", "true")
+        .param("minify", "true")
+        .param("userAgent", "MSIE")
+        .expectStatus(200)
+        .expectContentType("text/javascript; charset=UTF-8")
+        .expectContent(
+            "var registerEventListener=function(a,b,c){a.attachEvent(b,c)}")
         .send();
   }
 
