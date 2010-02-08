@@ -19,27 +19,16 @@ import com.google.caja.lang.html.HtmlSchema;
 import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.css.CssTree;
 import com.google.caja.parser.html.DomParser;
-import com.google.caja.parser.html.Nodes;
 import com.google.caja.parser.js.Block;
-import com.google.caja.parser.js.StringLiteral;
-import com.google.caja.parser.js.Expression;
-import com.google.caja.parser.js.ExpressionStmt;
-import com.google.caja.parser.js.Statement;
-import com.google.caja.parser.quasiliteral.QuasiBuilder;
 import com.google.caja.plugin.Dom;
 import com.google.caja.plugin.Job;
 import com.google.caja.plugin.Jobs;
 import com.google.caja.plugin.templates.TemplateCompiler;
 import com.google.caja.plugin.templates.TemplateSanitizer;
 import com.google.caja.reporting.MessageQueue;
-import com.google.caja.reporting.RenderContext;
-import com.google.caja.util.ContentType;
 import com.google.caja.util.Lists;
 import com.google.caja.util.Pair;
 import com.google.caja.util.Pipeline;
-import com.google.caja.lexer.InputSource;
-import com.google.caja.lexer.TokenConsumer;
-import com.google.caja.render.Concatenator;
 
 import java.net.URI;
 import java.util.Iterator;
@@ -52,22 +41,15 @@ import org.w3c.dom.Node;
  *
  * @author mikesamuel@gmail.com
  */
-public final class CompileHtmlStage implements Pipeline.Stage<Jobs> {
+abstract class CompileHtmlStage implements Pipeline.Stage<Jobs> {
   private final CssSchema cssSchema;
   private final HtmlSchema htmlSchema;
-  private final ContentType outputType;
 
   public CompileHtmlStage(CssSchema cssSchema, HtmlSchema htmlSchema) {
-    this(cssSchema, htmlSchema, null);
-  }
-
-  public CompileHtmlStage(CssSchema cssSchema, HtmlSchema htmlSchema,
-                          ContentType outputType) {
     if (null == cssSchema) { throw new NullPointerException(); }
     if (null == htmlSchema) { throw new NullPointerException(); }
     this.cssSchema = cssSchema;
     this.htmlSchema = htmlSchema;
-    this.outputType = outputType;
   }
 
   public boolean apply(Jobs jobs) {
@@ -106,24 +88,7 @@ public final class CompileHtmlStage implements Pipeline.Stage<Jobs> {
       Pair<Node, List<Block>> htmlAndJs = tc.getSafeHtml(
           DomParser.makeDocument(null, null));
 
-      Job outJob;
-      ContentType desiredType = outputType;
-      if (desiredType == null) {
-        desiredType = jobs.getPluginMeta().isOnlyJsEmitted()
-           ? ContentType.JS : ContentType.HTML;
-      }
-      switch (desiredType) {
-        case JS:
-          outJob = Job.jsJob(
-              AncestorChain.instance(makeEmitStaticStmt(htmlAndJs.a)));
-          break;
-        case HTML:
-          outJob = Job.domJob(
-              AncestorChain.instance(new Dom(htmlAndJs.a)),
-              InputSource.UNKNOWN.getUri());
-          break;
-        default: throw new IllegalArgumentException(desiredType.name());
-      }
+      Job outJob = makeJobFromHtml(htmlAndJs.a);
       jobs.getJobs().add(outJob);
 
       for (Block bl : htmlAndJs.b) {
@@ -134,17 +99,5 @@ public final class CompileHtmlStage implements Pipeline.Stage<Jobs> {
     return jobs.hasNoFatalErrors();
   }
 
-  private static Statement makeEmitStaticStmt(Node node) {
-    return new ExpressionStmt((Expression) QuasiBuilder.substV(
-        "IMPORTS___./*@synthetic*/htmlEmitter___"
-            + "./*@synthetic*/emitStatic(@html)",
-        "html", renderDomAsJsStringLiteral(node)));
-  }
-
-  private static StringLiteral renderDomAsJsStringLiteral(Node node) {
-    StringBuilder stringBuilder = new StringBuilder();
-    TokenConsumer tc = new Concatenator(stringBuilder);
-    Nodes.render(node, new RenderContext(tc).withEmbeddable(true));
-    return StringLiteral.valueOf(Nodes.getFilePositionFor(node), stringBuilder);
-  }
+  abstract Job makeJobFromHtml(Node html);
 }

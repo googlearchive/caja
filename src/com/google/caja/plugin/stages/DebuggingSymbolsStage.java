@@ -69,34 +69,31 @@ public final class DebuggingSymbolsStage implements Pipeline.Stage<Jobs> {
   private static final boolean DEBUG = false;
 
   public boolean apply(Jobs jobs) {
-    if (jobs.getPluginMeta().isDebugMode()) {
-      MessageQueue mq = jobs.getMessageQueue();
-      for (ListIterator<Job> it = jobs.getJobs().listIterator();
-           it.hasNext();) {
-        Job job = it.next();
-        if (job.getType() != ContentType.JS
-            // May occur if the cajita rewriter does not run due to errors.
-            || !(job.getRoot().node instanceof CajoledModule)) {
-          continue;
-        }
+    MessageQueue mq = jobs.getMessageQueue();
+    for (ListIterator<Job> it = jobs.getJobs().listIterator(); it.hasNext();) {
+      Job job = it.next();
+      if (job.getType() != ContentType.JS
+          // May occur if the cajita rewriter does not run due to errors.
+          || !(job.getRoot().node instanceof CajoledModule)) {
+        continue;
+      }
 
+      if (DEBUG) {
+        System.err.println(
+            "\n\nPre\n===\n"
+            + (job.getRoot().cast(CajoledModule.class).node.toStringDeep(1))
+            + "\n\n");
+      }
+
+      DebuggingSymbols symbols = new DebuggingSymbols();
+      CajoledModule js = addSymbols(
+          job.getRoot().cast(CajoledModule.class), symbols, mq);
+      if (!symbols.isEmpty()) {
         if (DEBUG) {
-          System.err.println(
-              "\n\nPre\n===\n"
-              + (job.getRoot().cast(CajoledModule.class).node.toStringDeep(1))
-              + "\n\n");
+          System.err.println("\n\nPost\n===\n" + js.toStringDeep() + "\n\n");
         }
-
-        DebuggingSymbols symbols = new DebuggingSymbols();
-        CajoledModule js = addSymbols(
-            job.getRoot().cast(CajoledModule.class), symbols, mq);
-        if (!symbols.isEmpty()) {
-          if (DEBUG) {
-            System.err.println("\n\nPost\n===\n" + js.toStringDeep() + "\n\n");
-          }
-          it.set(Job.cajoledJob(AncestorChain.instance(
-              attachSymbols(symbols, js, mq))));
-        }
+        it.set(Job.cajoledJob(AncestorChain.instance(
+                   attachSymbols(symbols, js, mq))));
       }
     }
     return jobs.hasNoFatalErrors();

@@ -29,6 +29,7 @@ import com.google.caja.parser.html.Nodes;
 import com.google.caja.parser.js.CajoledModule;
 import com.google.caja.parser.js.Expression;
 import com.google.caja.plugin.Dom;
+import com.google.caja.plugin.PipelineMaker;
 import com.google.caja.plugin.PluginCompiler;
 import com.google.caja.plugin.PluginEnvironment;
 import com.google.caja.plugin.PluginMeta;
@@ -41,13 +42,15 @@ import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.reporting.SimpleMessageQueue;
+import com.google.caja.util.ContentType;
 import com.google.caja.util.Pair;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Reader;
-import java.io.StringReader;
 import java.net.URI;
 import java.util.List;
 
@@ -118,17 +121,19 @@ public class HtmlHandler implements ContentHandler {
                                    OutputStream response)
       throws UnsupportedContentTypeException {
     PluginMeta meta = new PluginMeta(pluginEnvironment);
-    if (checker.check(outputContentType, "text/html")
-        || checker.check(outputContentType, "*/*")) {
-      meta.setOnlyJsEmitted(false);
-    } else if (checker.check(outputContentType, "text/javascript")) {
-      meta.setOnlyJsEmitted(true);
+    ContentType outputType = ContentType.fromMimeType(outputContentType);
+    if (outputType == null) {
+      if (outputContentType.matches("\\*/\\*(\\s*;.*)?")) {
+        outputType = ContentType.HTML;
+      } else {
+        throw new UnsupportedContentTypeException(outputContentType);
+      }
     } else {
-      throw new UnsupportedContentTypeException();
-    }
-
-    if (charset == null || charset.equals("")) {
-      charset = "UTF-8";
+      switch (outputType) {
+        case JS: case HTML: break;
+        default:
+          throw new UnsupportedContentTypeException(outputContentType);
+      }
     }
 
     String moduleCallbackString = CajaArguments.MODULE_CALLBACK.get(args);
@@ -139,16 +144,17 @@ public class HtmlHandler implements ContentHandler {
 
     try {
       OutputStreamWriter writer = new OutputStreamWriter(response, "UTF-8");
-      cajoleHtml(uri, new StringReader(new String(content, charset)),
-          meta, moduleCallback, writer);
+      cajoleHtml(
+          uri,
+          new InputStreamReader(new ByteArrayInputStream(content), charset),
+          meta, moduleCallback, outputType, writer);
       writer.flush();
     } catch (IOException e) {
+      // TODO(mikesamuel): this is not a valid assumption.
       throw new UnsupportedContentTypeException();
     }
 
-    return new Pair<String, String>(
-        meta.isOnlyJsEmitted() ? "text/javascript" : "text/html",
-        "UTF-8");
+    return new Pair<String, String>(outputType.mimeType, "UTF-8");
   }
 
   public void printMessages(MessageQueue mq, MessageContext mc,
@@ -166,7 +172,8 @@ public class HtmlHandler implements ContentHandler {
   }
 
   private void cajoleHtml(URI inputUri, Reader cajaInput, PluginMeta meta,
-                          Expression moduleCallback, Appendable output)
+                          Expression moduleCallback, ContentType outputType,
+                          Appendable output)
       throws IOException, UnsupportedContentTypeException {
     InputSource is = new InputSource (inputUri);
     CharProducer cp = CharProducer.Factory.create(cajaInput,is);
@@ -181,17 +188,22 @@ public class HtmlHandler implements ContentHandler {
       p.getTokenQueue().expectEmpty();
 
       PluginCompiler compiler = new PluginCompiler(buildInfo, meta, mq);
+      if (outputType == ContentType.JS) {
+        compiler.setGoals(
+            compiler.getGoals().without(PipelineMaker.HTML_SAFE_STATIC));
+      }
 
       compiler.addInput(AncestorChain.instance(html), inputUri);
       if (okToContinue) {
         okToContinue &= compiler.run();
       }
       if (okToContinue) {
-        if (meta.isOnlyJsEmitted()) {
+        if (outputType == ContentType.JS) {
           renderAsJavascript(compiler.getJavascript(),
                              moduleCallback,
                              output);
         } else {
+          assert outputType == ContentType.HTML;
           renderAsHtml(doc,
                        compiler.getStaticHtml(),
                        compiler.getJavascript(),

@@ -66,7 +66,7 @@ public class CajolingService extends HttpServlet {
       return extref.getUri();
     }
   };
- 
+
   private static class HttpContentHandlerArgs extends ContentHandlerArgs {
     private final HttpServletRequest request;
 
@@ -88,7 +88,7 @@ public class CajolingService extends HttpServlet {
   public CajolingService() {
     this(BuildInfo.getInstance());
   }
-  
+
   public CajolingService(BuildInfo buildInfo) {
     this(buildInfo, DEFAULT_HOST);
   }
@@ -188,8 +188,8 @@ public class CajolingService extends HttpServlet {
       return;
     }
 
-    if (!typeCheck.check(expectedInputContentType,
-            fetchedData.getContentType())) {
+    if (!typeCheck.check(
+            expectedInputContentType, fetchedData.getContentType())) {
       closeBadRequest(resp);
       return;
     }
@@ -233,7 +233,7 @@ public class CajolingService extends HttpServlet {
                 .getMessage());
       }
     }
-    
+
     ByteArrayOutputStream intermediateResponse = new ByteArrayOutputStream();
     Pair<String, String> contentInfo;
     try {
@@ -309,7 +309,7 @@ public class CajolingService extends HttpServlet {
   public static enum Directive {
     CAJITA;
   }
-  
+
   public static enum Transform {
     INNOCENT,
     CAJOLE;

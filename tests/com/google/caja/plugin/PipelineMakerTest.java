@@ -27,10 +27,9 @@ import java.util.List;
 
 public class PipelineMakerTest extends CajaTestCase {
   public final void testDefaultPipeline() throws Exception {
-    PluginMeta meta = new PluginMeta();
     assertPipeline(
-        PipelineMaker.defaultPreconds(),
-        PipelineMaker.defaultGoals(meta),
+        PipelineMaker.DEFAULT_PRECONDS,
+        PipelineMaker.DEFAULT_GOALS,
         "LegacyNamespaceFixupStage",
         "ResolveUriStage",
         "RewriteHtmlStage",
@@ -38,18 +37,35 @@ public class PipelineMakerTest extends CajaTestCase {
         "SanitizeHtmlStage",
         "ValidateCssStage",
         "RewriteCssStage",
-        "CompileHtmlStage",
+        "HtmlToBundleStage",
+        "ConsolidateCodeStage",
+        "ValidateJavascriptStage",
+        "CheckForErrorsStage");
+  }
+
+  public final void testJsOnlyOutput() throws Exception {
+    assertPipeline(
+        PipelineMaker.DEFAULT_PRECONDS,
+        PipelineMaker.DEFAULT_GOALS.without(PipelineMaker.HTML_SAFE_STATIC),
+        "LegacyNamespaceFixupStage",
+        "ResolveUriStage",
+        "RewriteHtmlStage",
+        "InlineCssImportsStage",
+        "SanitizeHtmlStage",
+        "ValidateCssStage",
+        "RewriteCssStage",
+        "HtmlToJsStage",
         "ConsolidateCodeStage",
         "ValidateJavascriptStage",
         "CheckForErrorsStage");
   }
 
   public final void testDebuggingModePipeline() throws Exception {
-    PluginMeta meta = new PluginMeta();
-    meta.setDebugMode(true);
     assertPipeline(
-        PipelineMaker.defaultPreconds(),
-        PipelineMaker.defaultGoals(meta),
+        PipelineMaker.DEFAULT_PRECONDS,
+        PipelineMaker.DEFAULT_GOALS
+            .without(PipelineMaker.CAJOLED_MODULE)
+            .with(PipelineMaker.CAJOLED_MODULE_DEBUG),
         "LegacyNamespaceFixupStage",
         "ResolveUriStage",
         "RewriteHtmlStage",
@@ -57,7 +73,7 @@ public class PipelineMakerTest extends CajaTestCase {
         "SanitizeHtmlStage",
         "ValidateCssStage",
         "RewriteCssStage",
-        "CompileHtmlStage",
+        "HtmlToBundleStage",
         "ConsolidateCodeStage",
         "ValidateJavascriptStage",
         "InferFilePositionsStage",  // extra
@@ -66,17 +82,16 @@ public class PipelineMakerTest extends CajaTestCase {
   }
 
   public final void testHtmlAlreadyNamespaced() throws Exception {
-    PluginMeta meta = new PluginMeta();
     assertPipeline(
-        PipelineMaker.planState("html+xmlns", "js", "css"),
-        PipelineMaker.defaultGoals(meta),
+        PipelineMaker.HTML_XMLNS.with(PipelineMaker.JS).with(PipelineMaker.CSS),
+        PipelineMaker.DEFAULT_GOALS,
         "ResolveUriStage",
         "RewriteHtmlStage",
         "InlineCssImportsStage",
         "SanitizeHtmlStage",
         "ValidateCssStage",
         "RewriteCssStage",
-        "CompileHtmlStage",
+        "HtmlToBundleStage",
         "ConsolidateCodeStage",
         "ValidateJavascriptStage",
         "CheckForErrorsStage");
@@ -84,8 +99,8 @@ public class PipelineMakerTest extends CajaTestCase {
 
   public final void testJsOnly() throws Exception {
     assertPipeline(
-        PipelineMaker.planState("js"),
-        PipelineMaker.planState("cajoled_module", "sanity_check"),
+        PipelineMaker.JS,
+        PipelineMaker.CAJOLED_MODULE.with(PipelineMaker.SANITY_CHECK),
         "ConsolidateCodeStage",
         "ValidateJavascriptStage",
         "CheckForErrorsStage");
@@ -104,8 +119,7 @@ public class PipelineMakerTest extends CajaTestCase {
   public final void testNoPath() throws Exception {
     PipelineMaker pm = new PipelineMaker(
         new TestBuildInfo(), CssSchema.getDefaultCss21Schema(mq),
-        HtmlSchema.getDefault(mq), PipelineMaker.planState("html"),
-        PipelineMaker.planState("css"));
+        HtmlSchema.getDefault(mq), PipelineMaker.HTML, PipelineMaker.CSS);
     long t0 = System.nanoTime();
     try {
       pm.populate(Lists.<Pipeline.Stage<Jobs>>newArrayList());

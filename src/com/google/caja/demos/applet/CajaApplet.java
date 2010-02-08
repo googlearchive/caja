@@ -26,6 +26,7 @@ import com.google.caja.parser.js.ArrayConstructor;
 import com.google.caja.parser.js.Expression;
 import com.google.caja.parser.js.NullLiteral;
 import com.google.caja.parser.js.StringLiteral;
+import com.google.caja.plugin.PipelineMaker;
 import com.google.caja.opensocial.DefaultGadgetRewriter;
 import com.google.caja.opensocial.GadgetRewriteException;
 import com.google.caja.opensocial.UriCallback;
@@ -158,16 +159,20 @@ public class CajaApplet extends Applet {
         new StringReader(cajaInput), is);
 
     MessageQueue mq = new SimpleMessageQueue();
-    DefaultGadgetRewriter rw =
-        new DefaultGadgetRewriter(buildInfo, mq) {
-          @Override
-          protected RenderContext createRenderContext(TokenConsumer out) {
-            return new RenderContext(out)
-                .withAsciiOnly(features.contains(Feature.ASCII_ONLY))
-                .withEmbeddable(features.contains(Feature.EMBEDDABLE));
-          }
-        };
-    rw.setDebugMode(features.contains(Feature.DEBUG_SYMBOLS));
+    DefaultGadgetRewriter rw = new DefaultGadgetRewriter(buildInfo, mq) {
+      @Override
+      protected RenderContext createRenderContext(TokenConsumer out) {
+        return new RenderContext(out)
+            .withAsciiOnly(features.contains(Feature.ASCII_ONLY))
+            .withEmbeddable(features.contains(Feature.EMBEDDABLE));
+      }
+    };
+    if (features.contains(Feature.DEBUG_SYMBOLS)) {
+      rw.setGoals(
+          rw.getGoals()
+          .with(PipelineMaker.CAJOLED_MODULE_DEBUG)
+          .without(PipelineMaker.CAJOLED_MODULE));
+    }
 
     StringBuilder cajoledOutput = new StringBuilder();
 

@@ -24,7 +24,6 @@ import com.google.caja.lang.html.HtmlSchema;
  */
 public final class CompileHtmlStageTest extends PipelineStageTestCase {
   public final void testEmitHtmlAsJsStaticOnly() throws Exception {
-    meta.setOnlyJsEmitted(true);
     assertPipeline(
         job("<p>Hello world</p>", ContentType.HTML),
         job("IMPORTS___.htmlEmitter___.emitStatic('<p>Hello world</p>')",
@@ -32,7 +31,6 @@ public final class CompileHtmlStageTest extends PipelineStageTestCase {
   }
 
   public final void testEmitHtmlAsJsAttributes() throws Exception {
-    meta.setOnlyJsEmitted(true);
     assertPipeline(
         job("<p id=\"foo\">Hello world</p>", ContentType.HTML),
         job(""
@@ -58,9 +56,8 @@ public final class CompileHtmlStageTest extends PipelineStageTestCase {
   @Override
   protected boolean runPipeline(Jobs jobs) throws Exception {
     mq.getMessages().clear();
-    return new CompileHtmlStage(
-        CssSchema.getDefaultCss21Schema(mq),
-        HtmlSchema.getDefault(mq))
+    return new HtmlToJsStage(
+        CssSchema.getDefaultCss21Schema(mq), HtmlSchema.getDefault(mq))
         .apply(jobs);
   }
 }

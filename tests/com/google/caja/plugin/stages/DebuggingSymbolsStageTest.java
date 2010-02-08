@@ -312,10 +312,7 @@ public class DebuggingSymbolsStageTest extends CajaTestCase {
     System.err.println("\n\nblock\n=====\n" +
                        uncajoledModuleBody.toStringDeep(1));
 
-    PluginMeta meta = new PluginMeta();
-    meta.setDebugMode(true);
-
-    Jobs jobs = new Jobs(mc, mq, meta);
+    Jobs jobs = new Jobs(mc, mq, new PluginMeta());
     jobs.getJobs().add(Job.jsJob(AncestorChain.instance(uncajoledModuleBody)));
 
     Pipeline<Jobs> pipeline = new Pipeline<Jobs>();

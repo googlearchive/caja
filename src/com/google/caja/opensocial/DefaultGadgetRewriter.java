@@ -28,6 +28,8 @@ import com.google.caja.parser.html.Namespaces;
 import com.google.caja.parser.html.Nodes;
 import com.google.caja.parser.js.CajoledModule;
 import com.google.caja.plugin.Dom;
+import com.google.caja.plugin.PipelineMaker;
+import com.google.caja.plugin.Planner;
 import com.google.caja.plugin.PluginCompiler;
 import com.google.caja.plugin.PluginEnvironment;
 import com.google.caja.plugin.PluginMeta;
@@ -61,7 +63,8 @@ public class DefaultGadgetRewriter
   private final BuildInfo buildInfo;
   private CssSchema cssSchema;
   private HtmlSchema htmlSchema;
-  private boolean debugMode;
+  private Planner.PlanState preconditions = PipelineMaker.DEFAULT_PRECONDS;
+  private Planner.PlanState goals = PipelineMaker.DEFAULT_GOALS;
 
   public DefaultGadgetRewriter(BuildInfo buildInfo, MessageQueue mq) {
     this.buildInfo = buildInfo;
@@ -78,10 +81,12 @@ public class DefaultGadgetRewriter
   public void setHtmlSchema(HtmlSchema htmlSchema) {
     this.htmlSchema = htmlSchema;
   }
-  /**
-   * @param debugMode whether to include debugging info in cajoled output.
-   */
-  public void setDebugMode(boolean debugMode) { this.debugMode = debugMode; }
+
+  public final Planner.PlanState getPreconditions() { return preconditions; }
+  public void setPreconditions(Planner.PlanState s) { preconditions = s; }
+
+  public final Planner.PlanState getGoals() { return goals; }
+  public void setGoals(Planner.PlanState s) { goals = s; }
 
   public void rewrite(ExternalReference gadgetRef, UriCallback uriCallback,
                       String view, Appendable output)
@@ -225,9 +230,10 @@ public class DefaultGadgetRewriter
             }
           }
         });
-    meta.setDebugMode(debugMode);
 
     PluginCompiler compiler = createPluginCompiler(meta, mq);
+    compiler.setPreconditions(preconditions);
+    compiler.setGoals(goals);
 
     compiler.addInput(AncestorChain.instance(new Dom(content)), baseUri);
 

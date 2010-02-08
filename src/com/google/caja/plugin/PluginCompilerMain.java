@@ -110,11 +110,14 @@ public final class PluginCompilerMain {
 
     try {
       PluginMeta meta = new PluginMeta(makeEnvironment(config));
-      meta.setDebugMode(config.debugMode());
       meta.setIdClass(config.getIdClass());
-      meta.setOnlyJsEmitted(config.isOnlyJsEmitted());
       PluginCompiler compiler = new PluginCompiler(
           BuildInfo.getInstance(), meta, mq);
+      Planner.PlanState preconds = compiler.getPreconditions();
+      Planner.PlanState goals = compiler.getGoals();
+      compiler.setPreconditions(config.preconditions(preconds));
+      compiler.setGoals(config.goals(goals));
+
       mc = compiler.getMessageContext();
       compiler.setCssSchema(config.getCssSchema(mq));
       compiler.setHtmlSchema(config.getHtmlSchema(mq));

@@ -22,10 +22,6 @@ public final class PluginMeta {
   private int guidCounter;
   /** Describes how resources external to the plugin definition are resolved. */
   private final PluginEnvironment env;
-  /** True if the output should include debugging info. */
-  private boolean debugMode;
-  /** True if the output should be *only* JS, not HTML+JS. */
-  private boolean onlyJsEmitted;
   /**
    * The DOM ID suffix if known at Cajole time.  Most clients should allow the
    * module ID to be assigned dynamically but for those clients who know that
@@ -54,18 +50,6 @@ public final class PluginMeta {
   /** Describes how resources external to the plugin definition are resolved. */
   public PluginEnvironment getPluginEnvironment() { return env; }
 
-  /** True iff the output should include debugging info. */
-  public boolean isDebugMode() { return debugMode; }
-
-  public void setDebugMode(boolean debugMode) { this.debugMode = debugMode; }
-
-  /** True if the output should be *only* JS, not HTML+JS. */
-  public boolean isOnlyJsEmitted() { return onlyJsEmitted; }
-
-  public void setOnlyJsEmitted(boolean onlyJsEmitted) {
-    this.onlyJsEmitted = onlyJsEmitted;
-  }
-  
   /**
    * Null if the module ID is not known statically.
    * See {@code imports.getIdClass___()} defined in "domita.js".

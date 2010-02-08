@@ -46,7 +46,7 @@ import java.util.Set;
  *
  * @author mikesamuel@gmail.com
  */
-final class Planner {
+public final class Planner {
 
   /**
    * @param novelPropNames true iff strs can contain novel properties.
@@ -55,7 +55,7 @@ final class Planner {
    *     be satisfied.
    * @param strs a "+" separated group of identifiers, e.g. form foo+bar+baz.
    */
-  PlanState planState(boolean novelPropNames, String... strs) {
+  public PlanState planState(boolean novelPropNames, String... strs) {
     Set<Long> prods = Sets.newHashSet();
     for (String s : strs) {
       if (s == null) { continue; }
@@ -73,15 +73,14 @@ final class Planner {
     long[] props = new long[prods.size()];
     int k = 0;
     for (Long p : prods) {
-      long lp = p;
-      props[k++] = lp;
-      union |= lp;
+      props[k++] = p;
+      union |= p;
     }
     Arrays.sort(props);
     return new PlanState(this, props, union);
   }
 
-  <TOOL extends Tool>
+  public <TOOL extends Tool>
   List<TOOL> plan(List<TOOL> tools, PlanState inputs, PlanState goals)
       throws UnsatisfiableGoalException {
     assert inputs.getPlanner() == this;
@@ -177,7 +176,7 @@ final class Planner {
     }
   }
 
-  static abstract class Tool {
+  public static abstract class Tool {
     PlanState preconds = EMPTY;
     PlanState postconds = EMPTY;
 
@@ -214,13 +213,13 @@ final class Planner {
     return index;
   }
 
-  static final PlanState EMPTY = new PlanState();
+  public static final PlanState EMPTY = new PlanState();
 
   /**
    * The state of a plan, such as the initial conditions, goals, and all the
    * intermediate states in a process.
    */
-  static final class PlanState {
+  public static final class PlanState {
     /**
      * The planner instance from which this part is derived, so that
      * properties can be matched to names, or possibly null if this contains
@@ -238,6 +237,7 @@ final class Planner {
     }
 
     private PlanState(Planner planner, long[] properties, long union) {
+      assert union != 0 || properties.length == 0;
       this.planner = planner;
       this.properties = properties;
       this.union = union;
@@ -324,7 +324,7 @@ final class Planner {
       long union = 0;
       for (int i = 0, k = 0; k < newPropertiesTrim.length; ++i) {
         if (newProperties[i] == 0) { continue; }
-        newPropertiesTrim[k++] = newProperties[i];
+        union |= (newPropertiesTrim[k++] = newProperties[i]);
       }
       return new PlanState(planner, newPropertiesTrim, union);
     }

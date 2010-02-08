@@ -23,6 +23,9 @@ import com.google.caja.lexer.ParseException;
 import com.google.caja.reporting.BuildInfo;
 import com.google.caja.reporting.MessageType;
 import com.google.caja.reporting.MessageQueue;
+import com.google.caja.util.Join;
+import com.google.caja.util.Lists;
+import com.google.caja.util.Pair;
 import com.google.caja.util.Strings;
 
 import java.io.File;
@@ -31,7 +34,7 @@ import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -79,17 +82,17 @@ public final class Config {
       true);
 
   private final Option CSS_PROPERTY_WHITELIST = defineOption(
-      "css_prop_schema",
+      "cps", "css_prop_schema",
       "A file: or resource: URI of the CSS Property Whitelist to use.",
       true);
 
   private final Option HTML_ATTRIBUTE_WHITELIST = defineOption(
-      "html_attrib_schema",
+      "has", "html_attrib_schema",
       "A file: or resource: URI of the HTML attribute Whitelist to use.",
       true);
 
   private final Option HTML_ELEMENT_WHITELIST = defineOption(
-      "html_property_schema",
+      "hps", "html_property_schema",
       "A file: or resource: URI of the HTML element Whitelist to use.",
       true);
 
@@ -118,8 +121,17 @@ public final class Config {
   private final Option RENDERER = defineOption(
       "r",
       "renderer",
-      "The output renderer ('minify', 'pretty', 'sidebyside', or 'debugger')",
+      "The output renderer "
+      + Strings.toLowerCase(Arrays.toString(SourceRenderMode.values())) + "",
       true);
+
+  private final Option PIPELINE_PRECONDITIONS = defineOption(
+      "ppc", "preconds",
+      "Space separated properties as described in help text.", true);
+
+  private final Option PIPELINE_GOALS = defineOption(
+      "pg", "goals",
+      "Space separated properties as described in help text.", true);
 
   public enum SourceRenderMode {
     MINIFY,
@@ -141,11 +153,13 @@ public final class Config {
   private URI htmlElementWhitelistUri;
   private URI baseUri;
   private String gadgetView;
-  private boolean debugMode;
   private SourceRenderMode renderer;
   private int servicePort;
   private String idClass;
-  private boolean onlyJsEmitted;
+  private Planner.PlanState negGoals = Planner.EMPTY;
+  private Planner.PlanState posGoals = Planner.EMPTY;
+  private Planner.PlanState negPreconds = Planner.EMPTY;
+  private Planner.PlanState posPreconds = Planner.EMPTY;
 
   public Config(Class<?> mainClass, PrintStream stderr, String usageText) {
     this(mainClass, new PrintWriter(stderr), usageText);
@@ -191,11 +205,15 @@ public final class Config {
 
   public String getIdClass() { return idClass; }
 
-  public boolean debugMode() { return debugMode; }
-
   public SourceRenderMode renderer() { return renderer; }
 
-  public boolean isOnlyJsEmitted() { return onlyJsEmitted; }
+  public Planner.PlanState goals(Planner.PlanState ps) {
+    return ps.without(negGoals).with(posGoals);
+  }
+
+  public Planner.PlanState preconditions(Planner.PlanState ps) {
+    return ps.without(negPreconds).with(posPreconds);
+  }
 
   public boolean processArguments(String[] argv) {
     try {
@@ -207,7 +225,7 @@ public final class Config {
         return false;
       }
 
-      inputUris = new ArrayList<URI>();
+      inputUris = Lists.newArrayList();
       if (cl.getOptionValues(INPUT.getOpt()) != null) {
         for (String input : cl.getOptionValues(INPUT.getOpt())) {
           URI inputUri;
@@ -302,8 +320,6 @@ public final class Config {
 
       gadgetView = cl.getOptionValue(VIEW.getOpt(), "canvas");
       idClass = cl.getOptionValue(ID_CLASS.getOpt(), null);
-      debugMode = cl.hasOption(DEBUG_MODE.getOpt());
-      onlyJsEmitted = cl.hasOption(ONLY_JS_EMITTED.getOpt());
 
       String servicePortString;
       try {
@@ -327,9 +343,57 @@ public final class Config {
         renderer = SourceRenderMode.PRETTY;
       }
 
+      boolean debugMode = cl.hasOption(DEBUG_MODE.getOpt());
+      boolean onlyJsEmitted = cl.hasOption(ONLY_JS_EMITTED.getOpt());
+      if (debugMode) {
+        negGoals = negGoals.with(PipelineMaker.CAJOLED_MODULE);
+        posGoals = posGoals.with(PipelineMaker.CAJOLED_MODULE_DEBUG);
+      }
+      if (onlyJsEmitted) {
+        negGoals = negGoals.with(PipelineMaker.HTML_SAFE_STATIC);
+      }
+
+      String preconds = cl.getOptionValue(PIPELINE_PRECONDITIONS.getOpt());
+      if (preconds != null) {
+        Pair<Planner.PlanState, Planner.PlanState> deltas
+            = planDeltas(preconds);
+        negPreconds = negPreconds.with(deltas.a);
+        posPreconds = posPreconds.with(deltas.b);
+      }
+
+      String goals = cl.getOptionValue(PIPELINE_GOALS.getOpt());
+      if (goals != null) {
+        Pair<Planner.PlanState, Planner.PlanState> deltas = planDeltas(goals);
+        negGoals = negGoals.with(deltas.a);
+        posGoals = posGoals.with(deltas.b);
+      }
+
       return true;
     } finally {
       stderr.flush();
+    }
+  }
+
+  private Pair<Planner.PlanState, Planner.PlanState> planDeltas(String props) {
+    props = props.trim();
+    List<String> neg = Lists.newArrayList();
+    List<String> pos = Lists.newArrayList();
+    for (String part : props.split("\\s+")) {
+      if (!"".equals(part)) {
+        if (part.startsWith("-")) {
+          neg.add(part.substring(1));
+        } else {
+          pos.add(part.substring(part.startsWith("+") ? 1 : 0));
+        }
+      }
+    }
+    try {
+      return Pair.pair(
+          PipelineMaker.planState(Join.join("", neg)),
+          PipelineMaker.planState(Join.join("", pos)));
+    } catch (IllegalArgumentException ex) {
+      stderr.println("Bad prop in " + props + " : " + ex.getMessage());
+      return Pair.pair(Planner.EMPTY, Planner.EMPTY);
     }
   }
 
@@ -347,6 +411,27 @@ public final class Config {
         "\n", options,
         HelpFormatter.DEFAULT_LEFT_PAD, HelpFormatter.DEFAULT_DESC_PAD,
         "\n" + usageText, false);
+    out.println();
+    int maxPlanStateWidth = 0;
+    for (Pair<String, String> doc
+        : PipelineMaker.getPreconditionDocumentation()) {
+      maxPlanStateWidth = Math.max(maxPlanStateWidth, doc.a.length());
+    }
+    for (Pair<String, String> doc : PipelineMaker.getGoalDocumentation()) {
+      maxPlanStateWidth = Math.max(maxPlanStateWidth, doc.a.length());
+    }
+    String fmtStr = "%" + maxPlanStateWidth + "s | %s";
+    out.println(
+        "Preconditions (default to " + PipelineMaker.DEFAULT_PRECONDS + ")");
+    for (Pair<String, String> doc
+            : PipelineMaker.getPreconditionDocumentation()) {
+      out.println(String.format(fmtStr, doc.a, doc.b));
+    }
+    out.println();
+    out.println("Goals (default to " + PipelineMaker.DEFAULT_GOALS + ")");
+    for (Pair<String, String> doc : PipelineMaker.getGoalDocumentation()) {
+      out.println(String.format(fmtStr, doc.a, doc.b));
+    }
   }
 
   private static File toFileWithExtension(URI uri, String extension) {

@@ -17,9 +17,10 @@ package com.google.caja.plugin;
 import com.google.caja.lang.css.CssSchema;
 import com.google.caja.lang.html.HtmlSchema;
 import com.google.caja.plugin.stages.CheckForErrorsStage;
-import com.google.caja.plugin.stages.CompileHtmlStage;
 import com.google.caja.plugin.stages.ConsolidateCodeStage;
 import com.google.caja.plugin.stages.DebuggingSymbolsStage;
+import com.google.caja.plugin.stages.HtmlToBundleStage;
+import com.google.caja.plugin.stages.HtmlToJsStage;
 import com.google.caja.plugin.stages.InferFilePositionsStage;
 import com.google.caja.plugin.stages.InlineCssImportsStage;
 import com.google.caja.plugin.stages.LegacyNamespaceFixupStage;
@@ -31,7 +32,9 @@ import com.google.caja.plugin.stages.SanitizeHtmlStage;
 import com.google.caja.plugin.stages.ValidateCssStage;
 import com.google.caja.plugin.stages.ValidateJavascriptStage;
 import com.google.caja.reporting.BuildInfo;
-import com.google.caja.util.ContentType;
+import com.google.caja.util.Join;
+import com.google.caja.util.Lists;
+import com.google.caja.util.Pair;
 import com.google.caja.util.Pipeline;
 
 import java.util.Arrays;
@@ -43,35 +46,14 @@ import java.util.Map;
 /**
  * A quick and dirty planner that builds a pipeline based on flags from the
  * command line or from a web service.
- *
- * <h2>Inputs</h2>
- * If you are unsure, just use {@link PipelineMaker#defaultPreconds}.
- * <table>
- * <tr><td>css<td>Include if your input can contain CSS</tr>
- * <tr><td>css+inlined</td>
- *    <td>Include instead of CSS if your input contains CSS
- *    without any {@code @imports}</tr>
- * <tr><td>html<td>Include if your input can contain HTML</tr>
- * <tr><td>html+xmlns<td>Include instead of 'html" if your input only contain
- *   namespace aware HTML or XML.</tr>
- * <tr><td>js<td>Include if your input can contain JS</tr>
- * <tr><td>option+inline_opentemplate<td>Include if you want calls to
- *   {@code open(Template(...))} desugared in your code.</tr>
- * </table>
- *
- * <h2>Goals</h2>
- * <table>
- * <tr><td>cajoled_module<td>Specifies that JS should be cajoled.</tr>
- * <tr><td>cajoled_module+debug_symbols<td>Instead, to cajole with debug
- *    symbols.</tr>
- * <tr><td>sanity_check<td>Always include this unless you are sure of what
- *    you are doing.  Causes the pipeline to report failure at the end on
- *    {@link MessageLevel#ERROR errors} instead of just fatal errors.</tr>
- * <tr>
+ * <p>
+ * See {@link PipelineMaker#getGoalDocumentation()} and
+ * {@link PipelineMaker#getPreconditionDocumentation()} for details on the
+ * meanings of flags.
  *
  * @author mikesamuel@gmail.com
  */
-final class PipelineMaker {
+public final class PipelineMaker {
   private final PlanInputs in;
   private final Planner.PlanState inputs;
   private final Planner.PlanState goals;
@@ -86,34 +68,14 @@ final class PipelineMaker {
     this.goals = goals;
   }
 
-  static boolean initializedIdents;
   /**
    * Creates a plan state from a set of '+' separated identifiers.
    * See the class comments for descriptions of useful identifiers.
    * @see #defaultGoals(PluginMeta)
    * @see #defaultPreconds()
    */
-  static Planner.PlanState planState(String... products) {
-    if (!initializedIdents) {
-      // Instantiate the tool set, so that all the useful property names have
-      // been seen by PLANNER.
-      makeTools(Planner.EMPTY);
-      initializedIdents = true;
-    }
+  public static Planner.PlanState planState(String... products) {
     return PLANNER.planState(false, products);
-  }
-
-  /** The default preconditions for a {@code PluginCompiler} pipeline. */
-  static final Planner.PlanState defaultPreconds() {
-    return planState("css", "html", "js");
-  }
-
-  /** The default goals of a {@code PluginCompiler} pipeline. */
-  static final Planner.PlanState defaultGoals(PluginMeta meta) {
-    return planState(
-        meta.isDebugMode() ? "cajoled_module+debug_symbols" : "cajoled_module",
-        meta.isOnlyJsEmitted() ? null : "html+safe+static",
-        "sanity_check");
   }
 
   private static final Map<String, List<Tool>> PLAN_CACHE
@@ -136,11 +98,78 @@ final class PipelineMaker {
         + Arrays.toString(inputs.properties);
     List<Tool> plan = PLAN_CACHE.get(cacheKey);
     if (plan == null) {
-      PLAN_CACHE.put(
-          cacheKey, plan = PLANNER.plan(makeTools(goals), inputs, goals));
+      List<Tool> tools = makeTools(goals);
+      PLAN_CACHE.put(cacheKey, plan = PLANNER.plan(tools, inputs, goals));
     }
     for (Tool tool : plan) { tool.operate(in, compilationPipeline); }
   }
+
+  public static List<Pair<String, String>> getPreconditionDocumentation() {
+    return Collections.unmodifiableList(PRECOND_DOCS);
+  }
+
+  public static List<Pair<String, String>> getGoalDocumentation() {
+    return Collections.unmodifiableList(GOAL_DOCS);
+  }
+
+  private static List<Pair<String, String>> PRECOND_DOCS = Lists.newArrayList();
+  private static List<Pair<String, String>> GOAL_DOCS = Lists.newArrayList();
+
+  private static Planner.PlanState makePrecond(String props, String... docs) {
+    Planner.PlanState ps = PLANNER.planState(true, props);
+    PRECOND_DOCS.add(Pair.pair(ps.toString(), Join.join("", docs)));
+    return ps;
+  }
+
+  private static Planner.PlanState makeInner(String props) {
+    return PLANNER.planState(true, props);
+  }
+
+  private static Planner.PlanState makeGoal(String props, String... docs) {
+    Planner.PlanState ps = PLANNER.planState(true, props);
+    GOAL_DOCS.add(Pair.pair(ps.toString(), Join.join("", docs)));
+    return ps;
+  }
+
+  public static final Planner.PlanState CSS = makePrecond(
+      "css", "when CSS can appear on the input.");
+  public static final Planner.PlanState JS = makePrecond(
+      "js", "when JavaScript can appear on the input.");
+  public static final Planner.PlanState HTML = makePrecond(
+      "html", "when HTML can appear on the input.");
+  public static final Planner.PlanState HTML_XMLNS = makePrecond(
+      "html+xmlns", "instead of html if no un-namespaced DOMs on the input.");
+  private static final Planner.PlanState HTML_ABSURI_XMLNS = makeInner(
+      "html+absuri+xmlns");
+  private static final Planner.PlanState HTML_STATIC = makeInner(
+      "html+static");
+  private static final Planner.PlanState HTML_STATIC_STRIPPED = makeInner(
+      "html+static+stripped");
+  private static final Planner.PlanState CSS_NAMESPACED = makeInner(
+      "css+namespaced");
+  public static final Planner.PlanState CSS_INLINED = makePrecond(
+      "css+inlined", "instead of css if no @import statements in the inputs.");
+  public static final Planner.PlanState OPT_OPENTEMPLATE = makePrecond(
+      "opt+opentemplate", "to desugar open(Template(...)) calls.");
+  public static final Planner.PlanState HTML_SAFE_STATIC = makeGoal(
+      "html+safe+static",
+      "to output HTML.  Not exlusive with cajoled_module.");
+  private static final Planner.PlanState UNCAJOLED_MODULE = makeInner(
+      "uncajoled_module");
+  public static final Planner.PlanState CAJOLED_MODULE = makeGoal(
+      "cajoled_module", "to output a bundle of JS.");
+  public static final Planner.PlanState CAJOLED_MODULE_DEBUG = makeGoal(
+      "cajoled_module+debug",
+      "instead of cajoled_module if you want debug symbols.");
+  public static final Planner.PlanState SANITY_CHECK = makeGoal(
+      "sanity_check", "reports errors due to ERRORs, not just FATAL_ERRORS.");
+
+  /** The default preconditions for a {@code PluginCompiler} pipeline. */
+  public static final Planner.PlanState DEFAULT_PRECONDS = CSS
+      .with(HTML).with(JS);
+  /** The default goals of a {@code PluginCompiler} pipeline. */
+  public static final Planner.PlanState DEFAULT_GOALS = CAJOLED_MODULE
+      .with(HTML_SAFE_STATIC).with(SANITY_CHECK);
 
   private static List<Tool> makeTools(Planner.PlanState goals) {
     return Arrays.asList(
@@ -148,86 +177,84 @@ final class PipelineMaker {
           public void operate(PlanInputs in, List<Pipeline.Stage<Jobs>> out) {
             out.add(new LegacyNamespaceFixupStage());
           }
-        }.given("html").produces("html+xmlns"),
+        }.given(HTML).produces(HTML_XMLNS),
 
         new Tool() {
           public void operate(PlanInputs in, List<Pipeline.Stage<Jobs>> out) {
             out.add(new ResolveUriStage(in.htmlSchema));
           }
-        }.given("html+xmlns").produces("html+absuri+xmlns"),
+        }.given(HTML_XMLNS).produces(HTML_ABSURI_XMLNS),
 
         new Tool() {
           public void operate(PlanInputs in, List<Pipeline.Stage<Jobs>> out) {
             out.add(new RewriteHtmlStage(in.htmlSchema));
           }
-        }.given("html+absuri+xmlns").produces("js", "css", "html+static"),
+        }.given(HTML_ABSURI_XMLNS)
+         .produces(CSS).produces(JS).produces(HTML_STATIC),
 
         new Tool() {
           public void operate(PlanInputs in, List<Pipeline.Stage<Jobs>> out) {
             out.add(new InlineCssImportsStage());
           }
-        }.given("css").produces("css+inlined"),
+        }.given(CSS).produces(CSS_INLINED),
 
         new Tool() {
           public void operate(PlanInputs in, List<Pipeline.Stage<Jobs>> out) {
             out.add(new SanitizeHtmlStage(in.htmlSchema));
           }
-        }.given("html+static").produces("html+stripped+static"),
+        }.given(HTML_STATIC).produces(HTML_STATIC_STRIPPED),
 
         new Tool() {
           public void operate(PlanInputs in, List<Pipeline.Stage<Jobs>> out) {
             out.add(new ValidateCssStage(in.cssSchema, in.htmlSchema));
             out.add(new RewriteCssStage());
           }
-        }.given("css+inlined").produces("css+namespaced"),
+        }.given(CSS_INLINED).produces(CSS_NAMESPACED),
 
         new Tool() {
           public void operate(PlanInputs in, List<Pipeline.Stage<Jobs>> out) {
-            out.add(new CompileHtmlStage(
-                in.cssSchema, in.htmlSchema, ContentType.HTML));
+            out.add(new HtmlToBundleStage(in.cssSchema, in.htmlSchema));
           }
-        }.given("html+stripped+static", "css+namespaced")
-         .produces("js+safe", "html+safe+static"),
+        }.given(HTML_STATIC_STRIPPED).given(CSS_NAMESPACED)
+         .produces(JS).produces(HTML_SAFE_STATIC),
 
         new Tool() {
           public void operate(PlanInputs in, List<Pipeline.Stage<Jobs>> out) {
-            out.add(new CompileHtmlStage(
-                in.cssSchema, in.htmlSchema, ContentType.JS));
+            out.add(new HtmlToJsStage(in.cssSchema, in.htmlSchema));
           }
-        }.given("html+stripped+static", "css+namespaced").produces("js"),
+        }.given(HTML_STATIC_STRIPPED).given(CSS_NAMESPACED).produces(JS),
 
         new Tool() {
           public void operate(PlanInputs in, List<Pipeline.Stage<Jobs>> out) {
             out.add(new OpenTemplateStage());
           }
-        }.given("js", "option+inline_opentemplate").produces("js"),
+        }.given(JS).given(OPT_OPENTEMPLATE).produces(JS),
 
         new Tool() {
           public void operate(PlanInputs in, List<Pipeline.Stage<Jobs>> out) {
             out.add(new ConsolidateCodeStage());
           }
-        }.given("js").produces("uncajoled_module"),
+        }.given(JS).produces(UNCAJOLED_MODULE),
 
         new Tool() {
           public void operate(PlanInputs in, List<Pipeline.Stage<Jobs>> out) {
             out.add(new ValidateJavascriptStage(in.buildInfo));
           }
-        }.given("uncajoled_module").produces("cajoled_module"),
+        }.given(UNCAJOLED_MODULE).produces(CAJOLED_MODULE),
 
         new Tool() {
           public void operate(PlanInputs in, List<Pipeline.Stage<Jobs>> out) {
             out.add(new InferFilePositionsStage());
             out.add(new DebuggingSymbolsStage());
           }
-        }.given("cajoled_module")
-         .produces("cajoled_module+debug_symbols"),
+        }.given(CAJOLED_MODULE).produces(CAJOLED_MODULE_DEBUG),
 
         new Tool() {
           public void operate(PlanInputs in, List<Pipeline.Stage<Jobs>> out) {
             out.add(new CheckForErrorsStage());
           }
-        }.given(goals).exceptNotGiven("sanity_check")
-         .produces(goals).produces("sanity_check")
+        }.given(goals).exceptNotGiven(SANITY_CHECK)
+         .produces(goals).produces(SANITY_CHECK)
     );
   }
 
@@ -237,17 +264,9 @@ final class PipelineMaker {
 
   private static abstract class Tool extends Planner.Tool
       implements StageMaker {
-    Tool given(String... preconds) {
-      return given(PLANNER.planState(true, preconds));
-    }
-
     @Override
     Tool given(Planner.PlanState preconds) {
       return (Tool) super.given(preconds);
-    }
-
-    Tool produces(String... postconds) {
-      return produces(PLANNER.planState(true, postconds));
     }
 
     @Override
@@ -255,9 +274,9 @@ final class PipelineMaker {
       return (Tool) super.produces(postconds);
     }
 
-    Tool exceptNotGiven(String... exceptions) {
-      exceptNotGiven(PLANNER.planState(true, exceptions));
-      return this;
+    @Override
+    Tool exceptNotGiven(Planner.PlanState exceptions) {
+      return (Tool) super.exceptNotGiven(exceptions);
     }
   }
 
@@ -266,7 +285,8 @@ final class PipelineMaker {
     final HtmlSchema htmlSchema;
     final BuildInfo buildInfo;
 
-    PlanInputs(CssSchema cssSchema, HtmlSchema htmlSchema, BuildInfo buildInfo) {
+    PlanInputs(
+        CssSchema cssSchema, HtmlSchema htmlSchema, BuildInfo buildInfo) {
       this.cssSchema = cssSchema;
       this.htmlSchema = htmlSchema;
       this.buildInfo = buildInfo;

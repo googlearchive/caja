@@ -66,11 +66,13 @@ public class GadgetRewriterMain {
       throws GadgetRewriteException, IOException, UriCallbackException,
           ParseException {
     MessageQueue mq = new SimpleMessageQueue();
-    DefaultGadgetRewriter rewriter =
-        new DefaultGadgetRewriter(BuildInfo.getInstance(), mq);
+    DefaultGadgetRewriter rewriter = new DefaultGadgetRewriter(
+        BuildInfo.getInstance(), mq);
     rewriter.setCssSchema(config.getCssSchema(mq));
     rewriter.setHtmlSchema(config.getHtmlSchema(mq));
-    rewriter.setDebugMode(config.debugMode());
+    rewriter.setPreconditions(
+        config.preconditions(rewriter.getPreconditions()));
+    rewriter.setGoals(config.goals(rewriter.getGoals()));
 
     Writer w = new BufferedWriter(new FileWriter(config.getOutputBase()));
     try {

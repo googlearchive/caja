@@ -59,8 +59,8 @@ public final class PluginCompiler {
     this.jobs = new Jobs(new MessageContext(), mq, meta);
     this.cssSchema = CssSchema.getDefaultCss21Schema(mq);
     this.htmlSchema = HtmlSchema.getDefault(mq);
-    this.preconditions = PipelineMaker.defaultPreconds();
-    this.goals = PipelineMaker.defaultGoals(meta);
+    this.preconditions = PipelineMaker.DEFAULT_PRECONDS;
+    this.goals = PipelineMaker.DEFAULT_GOALS;
   }
 
   public MessageQueue getMessageQueue() { return jobs.getMessageQueue(); }
@@ -73,6 +73,14 @@ public final class PluginCompiler {
   }
 
   public PluginMeta getPluginMeta() { return jobs.getPluginMeta(); }
+
+  public final Planner.PlanState getPreconditions() { return preconditions; }
+
+  public void setPreconditions(Planner.PlanState s) { preconditions = s; }
+
+  public final Planner.PlanState getGoals() { return goals; }
+
+  public void setGoals(Planner.PlanState s) { goals = s; }
 
   public Jobs getJobs() { return jobs; }
 

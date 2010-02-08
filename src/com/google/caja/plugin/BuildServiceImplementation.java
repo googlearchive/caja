@@ -48,7 +48,11 @@ import com.google.caja.render.Innocent;
 import com.google.caja.render.JsMinimalPrinter;
 import com.google.caja.render.JsPrettyPrinter;
 import com.google.caja.tools.BuildService;
+import com.google.caja.util.Lists;
+import com.google.caja.util.Maps;
 import com.google.caja.util.Pair;
+import com.google.caja.util.Sets;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -60,10 +64,7 @@ import java.io.Reader;
 import java.io.StringReader;
 import java.io.Writer;
 import java.net.URI;
-import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -78,8 +79,7 @@ import org.w3c.dom.Node;
  * @author mikesamuel@gmail.com
  */
 public class BuildServiceImplementation implements BuildService {
-  private final Map<InputSource, String> originalSources
-      = new HashMap<InputSource, String>();
+  private final Map<InputSource, String> originalSources = Maps.newHashMap();
 
   /**
    * Cajoles inputs to output writing any messages to logger, returning true
@@ -88,7 +88,7 @@ public class BuildServiceImplementation implements BuildService {
   public boolean cajole(
       PrintWriter logger, List<File> dependees, List<File> inputs, File output,
       Map<String, Object> options) {
-    final Set<File> canonFiles = new HashSet<File>();
+    final Set<File> canonFiles = Sets.newHashSet();
     try {
       for (File f : dependees) { canonFiles.add(f.getCanonicalFile()); }
       for (File f : inputs) { canonFiles.add(f.getCanonicalFile()); }
@@ -144,12 +144,18 @@ public class BuildServiceImplementation implements BuildService {
     ParseTreeNode outputJs;
     Node outputHtml;
     if ("caja".equals(language)) {
-      PluginMeta meta = new PluginMeta(env);
-      meta.setDebugMode(Boolean.TRUE.equals(options.get("debug")));
-      meta.setOnlyJsEmitted(Boolean.TRUE.equals(options.get("onlyJsEmitted")));
-      PluginCompiler compiler =
-          new PluginCompiler(BuildInfo.getInstance(), meta, mq);
+      PluginCompiler compiler = new PluginCompiler(
+          BuildInfo.getInstance(), new PluginMeta(env), mq);
       compiler.setMessageContext(mc);
+      if (Boolean.TRUE.equals(options.get("debug"))) {
+        compiler.setGoals(compiler.getGoals()
+            .without(PipelineMaker.CAJOLED_MODULE)
+            .with(PipelineMaker.CAJOLED_MODULE_DEBUG));
+      }
+      if (Boolean.TRUE.equals(options.get("onlyJsEmitted"))) {
+        compiler.setGoals(
+            compiler.getGoals().without(PipelineMaker.HTML_SAFE_STATIC));
+      }
 
       // Parse inputs
       for (File f : inputs) {
@@ -316,8 +322,7 @@ public class BuildServiceImplementation implements BuildService {
       PrintWriter logger, List<File> dependees, List<File> inputs, File output,
       Map<String, Object> options) {
     try {
-      List<Pair<InputSource, File>> inputSources
-          = new ArrayList<Pair<InputSource, File>>();
+      List<Pair<InputSource, File>> inputSources = Lists.newArrayList();
       for (File f : inputs) {
         inputSources.add(
             Pair.pair(new InputSource(f.getAbsoluteFile().toURI()), f));
