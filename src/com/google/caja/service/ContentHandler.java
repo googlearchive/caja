@@ -13,6 +13,7 @@
 
 package com.google.caja.service;
 
+import com.google.caja.reporting.MessageQueue;
 import com.google.caja.util.Pair;
 
 import java.io.OutputStream;
@@ -52,13 +53,14 @@ public interface ContentHandler {
    *
    * @param uri URI of content
    * @param trans Type of rewriting to perform
-   * @param args Handler-specific arguments.
+   * @param args Handler-specific arguments
    * @param inputContentType The actual input content-type
    * @param outputContentType Requested output content-type
    * @param checker Used to check whether two content-types are compatible
-   * @param charSet Character set of the incoming content.
+   * @param charSet Character set of the incoming content
    * @param content content from uri
    * @param response writes modified content to user
+   * @param mq receives status and error messages
    * @return the content-type and content-encoding of the resulting output
    */
   public Pair<String, String> apply(URI uri,
@@ -70,6 +72,7 @@ public interface ContentHandler {
                                     ContentTypeCheck checker,
                                     String charSet,
                                     byte[] content,
-                                    OutputStream response)
+                                    OutputStream response,
+                                    MessageQueue mq)
       throws UnsupportedContentTypeException;
 }

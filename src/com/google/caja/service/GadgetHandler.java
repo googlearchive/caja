@@ -23,7 +23,6 @@ import com.google.caja.opensocial.GadgetRewriteException;
 import com.google.caja.opensocial.UriCallback;
 import com.google.caja.opensocial.UriCallbackException;
 import com.google.caja.reporting.MessageQueue;
-import com.google.caja.reporting.SimpleMessageQueue;
 import com.google.caja.reporting.BuildInfo;
 import com.google.caja.util.Pair;
 
@@ -61,11 +60,12 @@ public class GadgetHandler implements ContentHandler {
                                     ContentTypeCheck checker,
                                     String charSet,
                                     byte[] content,
-                                    OutputStream response)
+                                    OutputStream response,
+                                    MessageQueue mq)
         throws UnsupportedContentTypeException {
     try {
       OutputStreamWriter writer = new OutputStreamWriter(response, "UTF-8");
-      cajoleGadget(uri, new String(content, charSet), writer);
+      cajoleGadget(uri, new String(content, charSet), writer, mq);
       writer.flush();
       return new Pair<String, String>("text/javascript", "UTF-8");
     } catch (ParseException e) {
@@ -83,9 +83,9 @@ public class GadgetHandler implements ContentHandler {
     }
   }
 
-  private void cajoleGadget(URI inputUri, String cajaInput, Appendable output)
+  private void cajoleGadget(URI inputUri, String cajaInput, Appendable output,
+                            MessageQueue mq)
       throws ParseException, GadgetRewriteException, IOException {
-    MessageQueue mq = new SimpleMessageQueue();
     DefaultGadgetRewriter rewriter = new DefaultGadgetRewriter(buildInfo, mq);
 
     UriCallback uriCallback = new UriCallback() {

@@ -22,8 +22,8 @@ import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.Parser;
 import com.google.caja.parser.quasiliteral.InnocentCodeRewriter;
 import com.google.caja.parser.quasiliteral.Rewriter;
+import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
-import com.google.caja.reporting.SimpleMessageQueue;
 import com.google.caja.util.Pair;
 
 import java.io.IOException;
@@ -59,7 +59,8 @@ public class InnocentHandler implements ContentHandler {
                                    ContentTypeCheck checker,
                                    String charset,
                                    byte[] content,
-                                   OutputStream response)
+                                   OutputStream response,
+                                   MessageQueue mq)
       throws UnsupportedContentTypeException {
     if (!CajolingService.Transform.INNOCENT.equals(transform)) {
       return null;
@@ -67,7 +68,8 @@ public class InnocentHandler implements ContentHandler {
     if (charset == null) { charset = "UTF-8"; }
     try {
       OutputStreamWriter writer = new OutputStreamWriter(response, "UTF-8");
-      innocentJs(uri, new StringReader(new String(content, charset)), writer);
+      innocentJs(
+          uri, new StringReader(new String(content, charset)), writer, mq);
       writer.flush();
     } catch (IOException e) {
       throw new UnsupportedContentTypeException();
@@ -75,11 +77,11 @@ public class InnocentHandler implements ContentHandler {
     return new Pair<String, String>("text/javascript", "UTF-8");
   }
 
-  private void innocentJs(URI inputUri, Reader cajaInput, Appendable output)
+  private void innocentJs(
+      URI inputUri, Reader cajaInput, Appendable output, MessageQueue mq)
       throws IOException, UnsupportedContentTypeException {
     InputSource is = new InputSource (inputUri);
     CharProducer cp = CharProducer.Factory.create(cajaInput,is);
-    MessageQueue mq = new SimpleMessageQueue();
     try {
       JsTokenQueue tq = new JsTokenQueue(new JsLexer(cp), is);
       Block input = new Parser(tq, mq).parse();
@@ -88,11 +90,11 @@ public class InnocentHandler implements ContentHandler {
       Rewriter rw = new InnocentCodeRewriter(mq, false /* logging */);
       output.append(Rewriter.render(rw.expand(input)));
     } catch (ParseException e) {
-      throw new UnsupportedContentTypeException();
-    } catch (IllegalArgumentException e) {
-      throw new UnsupportedContentTypeException();
+      e.toMessageQueue(mq);
     } catch (IOException e) {
-      throw new UnsupportedContentTypeException();
+      mq.addMessage(
+          ServiceMessageType.IO_ERROR,
+          MessagePart.Factory.valueOf(e.getMessage()));
     }
   }
 }

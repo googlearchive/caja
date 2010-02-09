@@ -22,12 +22,12 @@ import com.google.caja.lexer.escaping.UriUtil;
 import com.google.caja.opensocial.UriCallback;
 import com.google.caja.opensocial.UriCallbackException;
 import com.google.caja.parser.AncestorChain;
-import com.google.caja.parser.quasiliteral.QuasiBuilder;
 import com.google.caja.parser.html.DomParser;
 import com.google.caja.parser.html.Namespaces;
 import com.google.caja.parser.html.Nodes;
 import com.google.caja.parser.js.CajoledModule;
 import com.google.caja.parser.js.Expression;
+import com.google.caja.parser.quasiliteral.QuasiBuilder;
 import com.google.caja.plugin.Dom;
 import com.google.caja.plugin.PipelineMaker;
 import com.google.caja.plugin.PluginCompiler;
@@ -36,14 +36,15 @@ import com.google.caja.plugin.PluginMeta;
 import com.google.caja.render.Concatenator;
 import com.google.caja.render.JsMinimalPrinter;
 import com.google.caja.reporting.BuildInfo;
-import com.google.caja.reporting.Message;
-import com.google.caja.reporting.MessageContext;
-import com.google.caja.reporting.MessageLevel;
+import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
+import com.google.caja.reporting.MessageType;
 import com.google.caja.reporting.RenderContext;
-import com.google.caja.reporting.SimpleMessageQueue;
 import com.google.caja.util.ContentType;
 import com.google.caja.util.Pair;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -53,10 +54,6 @@ import java.io.OutputStreamWriter;
 import java.io.Reader;
 import java.net.URI;
 import java.util.List;
-
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.Node;
 
 /**
  * Retrieves html files and cajoles them
@@ -91,7 +88,7 @@ public class HtmlHandler implements ContentHandler {
           return hostedService
               + "?url="
               + UriUtil.encode(uri.getUri().toString())
-              + "&mime-type=" + UriUtil.encode(mimeType);
+              + "&input-mime-type=" + UriUtil.encode(mimeType);
         } else {
           return null;
         }
@@ -118,7 +115,8 @@ public class HtmlHandler implements ContentHandler {
                                    ContentTypeCheck checker,
                                    String charset,
                                    byte[] content,
-                                   OutputStream response)
+                                   OutputStream response,
+                                   MessageQueue mq)
       throws UnsupportedContentTypeException {
     PluginMeta meta = new PluginMeta(pluginEnvironment);
     ContentType outputType = ContentType.fromMimeType(outputContentType);
@@ -147,7 +145,7 @@ public class HtmlHandler implements ContentHandler {
       cajoleHtml(
           uri,
           new InputStreamReader(new ByteArrayInputStream(content), charset),
-          meta, moduleCallback, outputType, writer);
+          meta, moduleCallback, outputType, writer, mq);
       writer.flush();
     } catch (IOException e) {
       // TODO(mikesamuel): this is not a valid assumption.
@@ -157,27 +155,12 @@ public class HtmlHandler implements ContentHandler {
     return new Pair<String, String>(outputType.mimeType, "UTF-8");
   }
 
-  public void printMessages(MessageQueue mq, MessageContext mc,
-      Appendable out) {
-    try {
-      for (Message m : mq.getMessages()) {
-        MessageLevel level = m.getMessageLevel();
-        out.append(level.name() + ": ");
-        m.format(mc, out);
-        out.append("\n");
-      }
-    } catch (IOException ex) {
-      ex.printStackTrace();
-    }
-  }
-
   private void cajoleHtml(URI inputUri, Reader cajaInput, PluginMeta meta,
                           Expression moduleCallback, ContentType outputType,
-                          Appendable output)
+                          Appendable output, MessageQueue mq)
       throws IOException, UnsupportedContentTypeException {
     InputSource is = new InputSource (inputUri);
     CharProducer cp = CharProducer.Factory.create(cajaInput,is);
-    MessageQueue mq = new SimpleMessageQueue();
     boolean okToContinue = true;
     try {
       DomParser p = new DomParser(new HtmlLexer(cp), is, mq);
@@ -210,16 +193,13 @@ public class HtmlHandler implements ContentHandler {
                        moduleCallback,
                        output);
         }
-      } else {
-        MessageContext mc = new MessageContext();
-        printMessages(mq, mc, System.err);
       }
     } catch (ParseException e) {
-      throw new UnsupportedContentTypeException();
-    } catch (IllegalArgumentException e) {
-      throw new UnsupportedContentTypeException();
+      e.toMessageQueue(mq);
     } catch (IOException e) {
-      throw new UnsupportedContentTypeException();
+      mq.addMessage(
+          ServiceMessageType.IO_ERROR,
+          MessagePart.Factory.valueOf(e.getMessage()));
     }
   }
 

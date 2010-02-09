@@ -14,13 +14,15 @@
 
 package com.google.caja.service;
 
-import com.google.caja.reporting.BuildInfo;
-import com.google.caja.util.Lists;
-import com.google.caja.util.Pair;
 import com.google.caja.lexer.ExternalReference;
 import com.google.caja.lexer.InputSource;
 import com.google.caja.opensocial.UriCallback;
 import com.google.caja.opensocial.UriCallbackException;
+import com.google.caja.reporting.BuildInfo;
+import com.google.caja.reporting.MessagePart;
+import com.google.caja.reporting.MessageQueue;
+import com.google.caja.util.Lists;
+import com.google.caja.util.Pair;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -33,11 +35,6 @@ import java.net.URISyntaxException;
 import java.util.List;
 import java.util.Vector;
 
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
 /**
  * A cajoling service which proxies connections:<ul>
  *   <li> cajole any javascript
@@ -47,8 +44,7 @@ import javax.servlet.http.HttpServletResponse;
  *
  * @author jasvir@gmail.com (Jasvir Nagra)
  */
-public class CajolingService extends HttpServlet {
-  private static final long serialVersionUID = 5055670217887121398L;
+public class CajolingService {
   private static final String DEFAULT_HOST = "http://caja.appspot.com/cajole";
   private final UriCallback DEFAULT_URIPOLICY = new UriCallback() {
     public Reader retrieve(ExternalReference extref, String mimeType)
@@ -66,19 +62,6 @@ public class CajolingService extends HttpServlet {
       return extref.getUri();
     }
   };
-
-  private static class HttpContentHandlerArgs extends ContentHandlerArgs {
-    private final HttpServletRequest request;
-
-    public HttpContentHandlerArgs(HttpServletRequest request) {
-      this.request = request;
-    }
-
-    @Override
-    public String get(String name) {
-      return request.getParameter(name);
-    }
-  }
 
   private List<ContentHandler> handlers = new Vector<ContentHandler>();
   private ContentTypeCheck typeCheck = new LooseContentTypeCheck();
@@ -106,102 +89,76 @@ public class CajolingService extends HttpServlet {
   }
 
   /**
-   * Read the remainder of the input request, send a BAD_REQUEST http status
-   * to browser and close the connection
+   * Main entry point for the cajoling service.
+   *
+   * @param inputFetchedData the input content. If this is {@code null}, the
+   *     service will attempt to fetch the content from the location given by
+   *     the {@link CajaArguments#URL} parameter.
+   * @param args a set of arguments to the cajoling service.
+   * @param mq a message queue into which status and error messages will be
+   *     placed. The caller should query for the most severe status of the
+   *     messages in this queue to determine the overall success of the
+   *     invocation.
+   * @return the output content, or {@code null} if a serious error occurred
+   *     that prevented the content from being generated.
    */
-  private static void closeBadRequest(HttpServletResponse resp)
-      throws ServletException {
-    try {
-      resp.sendError(HttpServletResponse.SC_FORBIDDEN);
-      resp.getWriter().close();
-    } catch (IOException ex) {
-      throw (ServletException) new ServletException().initCause(ex);
-    }
-  }
-
-  @Override
-  public void doPost(HttpServletRequest req, HttpServletResponse resp)
-      throws ServletException {
-    if (req.getContentType() == null) {
-      closeBadRequest(resp);
-      return;
-    }
-
-    FetchedData fetchedData;
-    try {
-      fetchedData = new FetchedData(req.getInputStream(),
-          req.getContentType(), req.getCharacterEncoding());
-    } catch (IOException e) {
-      closeBadRequest(resp);
-      return;
-    }
-
-    ContentHandlerArgs args = new HttpContentHandlerArgs(req);
-
+  @SuppressWarnings("deprecation")
+  public FetchedData handle(FetchedData inputFetchedData,
+                            ContentHandlerArgs args,
+                            MessageQueue mq) {
     String inputUrlString = CajaArguments.URL.get(args);
     URI inputUri;
-    if (inputUrlString == null) {
+    if (inputUrlString == null && inputFetchedData == null) {
+      mq.addMessage(
+          ServiceMessageType.MISSING_ARGUMENT,
+          MessagePart.Factory.valueOf(CajaArguments.URL.toString()));
+      return null;
+    } else if (inputUrlString == null) {
       inputUri = InputSource.UNKNOWN.getUri();
     } else {
       try {
         inputUri = new URI(inputUrlString);
       } catch (URISyntaxException ex) {
-        throw (ServletException) new ServletException().initCause(ex);
+        mq.addMessage(
+            ServiceMessageType.INVALID_INPUT_URL,
+            MessagePart.Factory.valueOf(inputUrlString));
+        return null;
       }
     }
 
-    handle(resp, inputUri, args, fetchedData);
-  }
+    String expectedInputContentType = CajaArguments.INPUT_MIME_TYPE.get(args);
+    if (expectedInputContentType == null) {
+      expectedInputContentType = CajaArguments.OLD_INPUT_MIME_TYPE.get(args);
+    }
+    if (expectedInputContentType == null) {
+      mq.addMessage(
+          ServiceMessageType.MISSING_ARGUMENT,
+          MessagePart.Factory.valueOf(
+              CajaArguments.INPUT_MIME_TYPE.toString()));
+      return null;
+    }
 
-
-  @SuppressWarnings("deprecation")
-  @Override
-  public void doGet(HttpServletRequest req, HttpServletResponse resp)
-      throws ServletException {
-    ContentHandlerArgs args = new HttpContentHandlerArgs(req);
-
-    URI inputUri;
-    String expectedInputContentType;
-
-    try {
-      String inputUrlString = CajaArguments.URL.get(args, true);
+    if (inputFetchedData == null) {
       try {
-        inputUri = new URI(inputUrlString);
-      } catch (URISyntaxException ex) {
-        throw (ServletException) new ServletException().initCause(ex);
+        inputFetchedData = fetch(inputUri);
+      } catch (IOException ex) {
+        mq.addMessage(
+            ServiceMessageType.CANNOT_FETCH_INPUT_URL,
+            MessagePart.Factory.valueOf(inputUri.toString()));
+        return null;
       }
-
-      expectedInputContentType = CajaArguments.INPUT_MIME_TYPE.get(args, false);
-      if (expectedInputContentType == null) {
-        expectedInputContentType = CajaArguments.OLD_INPUT_MIME_TYPE
-            .get(args, true);
-      }
-    } catch (InvalidArgumentsException e) {
-      throw new ServletException(e.getMessage());
-    }
-
-    FetchedData fetchedData;
-    try {
-      fetchedData = fetch(inputUri);
-    } catch (IOException ex) {
-      closeBadRequest(resp);
-      return;
     }
 
     if (!typeCheck.check(
-            expectedInputContentType, fetchedData.getContentType())) {
-      closeBadRequest(resp);
-      return;
+            expectedInputContentType,
+            inputFetchedData.getContentType())) {
+      mq.addMessage(
+          ServiceMessageType.UNEXPECTED_INPUT_MIME_TYPE,
+          MessagePart.Factory.valueOf(expectedInputContentType),
+          MessagePart.Factory.valueOf(inputFetchedData.getContentType()));
+      return null;
     }
 
-    handle(resp, inputUri, args, fetchedData);
-  }
-
-  private void handle(HttpServletResponse resp,
-                      URI inputUri,
-                      ContentHandlerArgs args,
-                      FetchedData fetchedData)
-      throws ServletException {
     String outputContentType = CajaArguments.OUTPUT_MIME_TYPE.get(args);
     if (outputContentType == null) {
       outputContentType = "*/*";
@@ -213,10 +170,11 @@ public class CajolingService extends HttpServlet {
       try {
         transform = Transform.valueOf(transformName);
       } catch (Exception e) {
-        throw new ServletException(
-            InvalidArgumentsException.invalid(
-                CajaArguments.TRANSFORM.getArgKeyword(), transformName, "")
-                .getMessage());
+        mq.addMessage(
+            ServiceMessageType.INVALID_ARGUMENT,
+            MessagePart.Factory.valueOf(transformName),
+            MessagePart.Factory.valueOf(CajaArguments.TRANSFORM.toString()));
+        return null;
       }
     }
 
@@ -227,13 +185,14 @@ public class CajolingService extends HttpServlet {
       try {
         directive.add(Directive.valueOf(directiveName));
       } catch (Exception e) {
-        throw new ServletException(
-            InvalidArgumentsException.invalid(
-                CajaArguments.DIRECTIVE.getArgKeyword(), directiveName, "")
-                .getMessage());
+        mq.addMessage(
+            ServiceMessageType.INVALID_ARGUMENT,
+            MessagePart.Factory.valueOf(directiveName),
+            MessagePart.Factory.valueOf(CajaArguments.DIRECTIVE.toString()));
+        return null;
       }
     }
-
+    
     ByteArrayOutputStream intermediateResponse = new ByteArrayOutputStream();
     Pair<String, String> contentInfo;
     try {
@@ -242,39 +201,29 @@ public class CajolingService extends HttpServlet {
           transform,
           directive,
           args,
-          fetchedData.getContentType(),
+          inputFetchedData.getContentType(),
           outputContentType,
-          fetchedData.getCharSet(),
-          fetchedData.getContent(),
-          intermediateResponse);
+          inputFetchedData.getCharSet(),
+          inputFetchedData.getContent(),
+          intermediateResponse,
+          mq);
     } catch (UnsupportedContentTypeException e) {
-      closeBadRequest(resp);
-      return;
+      mq.addMessage(ServiceMessageType.UNSUPPORTED_CONTENT_TYPES);
+      return null;
+    } catch (RuntimeException e) {
+      mq.addMessage(
+          ServiceMessageType.EXCEPTION_IN_SERVICE, 
+          MessagePart.Factory.valueOf(e.toString()));
+      return null;
     }
 
-    byte[] response = intermediateResponse.toByteArray();
-    int responseLength = response.length;
-
-    resp.setStatus(HttpServletResponse.SC_OK);
-    String responseContentType = contentInfo.a;
-    if (contentInfo.b != null) {
-      responseContentType += ";charset=" + contentInfo.b;
-    }
-    if (containsNewline(responseContentType)) {
-      throw new IllegalArgumentException(responseContentType);
-    }
-    resp.setContentType(responseContentType);
-    resp.setContentLength(responseLength);
-
-    try {
-      resp.getOutputStream().write(response);
-      resp.getOutputStream().close();
-    } catch (IOException ex) {
-      throw (ServletException) new ServletException().initCause(ex);
-    }
+    return new FetchedData(
+        intermediateResponse.toByteArray(),
+        contentInfo.a,
+        contentInfo.b);
   }
 
-  public void registerHandlers(BuildInfo buildInfo) {
+  private void registerHandlers(BuildInfo buildInfo) {
     handlers.add(new JsHandler(buildInfo));
     handlers.add(new ImageHandler());
     handlers.add(new GadgetHandler(buildInfo, cb));
@@ -289,25 +238,21 @@ public class CajolingService extends HttpServlet {
   private Pair<String, String> applyHandler(
       URI uri, Transform t, List<Directive> d, ContentHandlerArgs args,
       String inputContentType, String outputContentType,
-      String charSet, byte[] content, OutputStream response)
+      String charSet, byte[] content, OutputStream response, MessageQueue mq)
       throws UnsupportedContentTypeException {
     for (ContentHandler handler : handlers) {
       if (handler.canHandle(uri, t, d, inputContentType,
           outputContentType, typeCheck)) {
         return handler.apply(uri, t, d, args, inputContentType,
-            outputContentType, typeCheck, charSet, content, response);
+            outputContentType, typeCheck, charSet, content, response, mq);
       }
     }
     throw new UnsupportedContentTypeException();
   }
 
-  // Used to protect against header splitting attacks.
-  private static boolean containsNewline(String s) {
-    return s.indexOf('\n') >= 0 || s.indexOf('\r') >= 0;
-  }
-
   public static enum Directive {
-    CAJITA;
+    CAJITA,
+    STRICT;
   }
 
   public static enum Transform {

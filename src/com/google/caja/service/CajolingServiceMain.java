@@ -23,6 +23,8 @@ import javax.servlet.http.HttpServletResponse;
 import org.mortbay.jetty.Server;
 import org.mortbay.jetty.handler.AbstractHandler;
 
+import java.io.IOException;
+
 /**
  * A executable that starts a cajoling service which proxies connections:<ul>
  *   <li>cajole any javascript
@@ -38,15 +40,21 @@ public class CajolingServiceMain {
     int port = 8887;
     Server server = new Server(port);
 
-    final CajolingService service = new CajolingService(
-        BuildInfo.getInstance(), "http://localhost:" + port);
+    final CajolingServlet servlet = new CajolingServlet(
+        new CajolingService(
+            BuildInfo.getInstance(),
+            "http://localhost:" + port));
 
     server.setHandler(new AbstractHandler() {
       public void handle(
           String target, HttpServletRequest req, HttpServletResponse resp,
           int dispatch)
           throws ServletException {
-        service.doGet(req, resp);
+        try {
+          servlet.service(req, resp);
+        } catch (IOException e) {
+          throw (ServletException) new ServletException().initCause(e);
+        }
       }
     });
     server.start();

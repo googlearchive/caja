@@ -13,6 +13,9 @@
 
 package com.google.caja.service;
 
+import com.google.caja.reporting.MessagePart;
+import com.google.caja.reporting.MessageQueue;
+import com.google.caja.reporting.MessageType;
 import com.google.caja.util.Pair;
 
 import java.io.IOException;
@@ -45,13 +48,17 @@ public class ImageHandler implements ContentHandler {
                                     ContentTypeCheck checker,
                                     String charSet,
                                     byte[] content,
-                                    OutputStream response)
+                                    OutputStream response,
+                                    MessageQueue mq)
     throws UnsupportedContentTypeException {
     try {
       response.write(content);
       return new Pair<String,String>(inputContentType, "");
     } catch (IOException e) {
-      throw new UnsupportedContentTypeException();
+      mq.addMessage(
+          MessageType.IO_ERROR,
+          MessagePart.Factory.valueOf(e.getMessage()));
+      return null;
     }
   }
 }

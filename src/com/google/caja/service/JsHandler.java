@@ -30,9 +30,9 @@ import com.google.caja.parser.quasiliteral.Rewriter;
 import com.google.caja.render.Concatenator;
 import com.google.caja.render.JsPrettyPrinter;
 import com.google.caja.reporting.BuildInfo;
+import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.RenderContext;
-import com.google.caja.reporting.SimpleMessageQueue;
 import com.google.caja.util.Pair;
 
 import java.io.IOException;
@@ -69,7 +69,8 @@ public class JsHandler implements ContentHandler {
       ContentHandlerArgs args,
       String inputContentType, String outputContentType,
       ContentTypeCheck checker, String charset, byte[] content,
-      OutputStream response)
+      OutputStream response,
+      MessageQueue mq)
       throws UnsupportedContentTypeException {
     if (charset == null) { charset = "UTF-8"; }
 
@@ -82,7 +83,7 @@ public class JsHandler implements ContentHandler {
     try {
       OutputStreamWriter writer = new OutputStreamWriter(response, "UTF-8");
       cajoleJs(uri, new StringReader(new String(content, charset)),
-          transform, directive, moduleCallback, writer);
+          transform, directive, moduleCallback, writer, mq);
       writer.flush();
     } catch (IOException e) {
       throw new UnsupportedContentTypeException();
@@ -95,11 +96,11 @@ public class JsHandler implements ContentHandler {
                         CajolingService.Transform transform,
                         List<CajolingService.Directive> directive,
                         Expression moduleCallback,
-                        Appendable output)
+                        Appendable output,
+                        MessageQueue mq)
       throws IOException, UnsupportedContentTypeException {
     InputSource is = new InputSource (inputUri);
     CharProducer cp = CharProducer.Factory.create(cajaInput,is);
-    MessageQueue mq = new SimpleMessageQueue();
     try {
       JsTokenQueue tq = new JsTokenQueue(new JsLexer(cp), is);
       Block input = new Parser(tq, mq).parse();
@@ -120,11 +121,11 @@ public class JsHandler implements ContentHandler {
           moduleCallback));
       }
     } catch (ParseException e) {
-      throw new UnsupportedContentTypeException();
-    } catch (IllegalArgumentException e) {
-      throw new UnsupportedContentTypeException();
+      e.toMessageQueue(mq);
     } catch (IOException e) {
-      throw new UnsupportedContentTypeException();
+      mq.addMessage(
+          ServiceMessageType.IO_ERROR,
+          MessagePart.Factory.valueOf(e.getMessage()));
     }
   }
 

@@ -31,14 +31,14 @@ import java.util.Map;
  * @author jasvir@google.com (Jasvir Nagra)
  */
 public abstract class ServiceTestCase extends CajaTestCase {
-  private CajolingService service;
+  private CajolingServlet servlet;
   private Map<URI, FetchedData> uriContent;
 
   @Override
   protected void setUp() throws Exception {
     super.setUp();
 
-    service = new CajolingService(new TestBuildInfo()) {
+    servlet = new CajolingServlet(new CajolingService(new TestBuildInfo()) {
       @Override
       protected FetchedData fetch(URI uri) throws IOException {
         if (!uriContent.containsKey(uri)) {
@@ -46,7 +46,7 @@ public abstract class ServiceTestCase extends CajaTestCase {
         }
         return uriContent.get(uri);
       }
-    };
+    });
     uriContent = new HashMap<URI, FetchedData>();
   }
 
@@ -79,7 +79,7 @@ public abstract class ServiceTestCase extends CajaTestCase {
   protected Object requestGet(String queryString) throws Exception {
     TestHttpServletRequest req = new TestHttpServletRequest(queryString);
     TestHttpServletResponse resp = new TestHttpServletResponse();
-    service.doGet(req, resp);
+    servlet.doGet(req, resp);
     return resp.getOutputObject();
   }
 
@@ -92,7 +92,7 @@ public abstract class ServiceTestCase extends CajaTestCase {
         new TestHttpServletRequest(queryString, content, contentType,
             contentEncoding);
     TestHttpServletResponse resp = new TestHttpServletResponse();
-    service.doPost(req, resp);
+    servlet.doPost(req, resp);
     return resp.getOutputObject();
   }
 
