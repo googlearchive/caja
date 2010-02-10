@@ -121,7 +121,7 @@
     <pathelement path="${third_party}/java/jakarta_commons/commons-io-1.4.jar"/>
   </path>
   <path id="classpath.javadocs">
-    <path refid="classpath.compile"/>
+    <path refid="classpath.tests.compile"/>
     <path refid="classpath.tools"/>
   </path>
 
@@ -257,6 +257,7 @@
      docencoding="utf-8"
      packagenames="com/google/caja/*"
      classpathref="classpath.javadocs"
+     includenosourcepackages="true"
      linksource="yes"/>
     <!-- overview="${src}/overview.html" -->
   </target>
