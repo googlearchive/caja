@@ -661,6 +661,7 @@
         <include name="**/caja/plugin/html-emitter.js"/>
         <include name="**/caja/plugin/html-sanitizer.js"/>
         <include name="**/caja/plugin/unicode.js"/>
+        <include name="**/caja/plugin/uri.js"/>
       </fileset>
       <fileset dir="${tests}">
         <include name="**/caja/**/*.css"/>
@@ -764,7 +765,7 @@
       <istrue value="${gwt.productionMode}"/>
     </condition>
     <java failonerror="true" fork="true"
-    	classname="com.google.gwt.dev.Compiler">
+     classname="com.google.gwt.dev.Compiler">
       <classpath>
         <pathelement location="src"/>
         <path refid="classpath.gwt"/>

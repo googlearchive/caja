@@ -1,0 +1,26 @@
+<html>
+  <head>
+    <title>URI Test</title>
+    <script src="../../../../js/jsunit/2.2/jsUnitCore.js"></script>
+    <script src="jsunit.js"></script>
+    <script src="uri.js"></script>
+    <script src="uri_test.js"></script>
+    <script>
+    if ('%0a' === encodeURIComponent('\x0a')) {
+      encodeURIComponent = (function () {
+        var origEnc = encodeURIComponent;
+        function upper(s) { return s.toUpperCase(); }
+        return function encodeURIComponent(comp) {
+          return origEnc.apply(this, arguments).replace(/%[0-9a-f]{2}/g, upper);
+        };
+      })();
+    }
+    </script>
+  </head>
+  <body>
+    <p>Run <code>ant AllTests</code> and view this from under
+    <code>ant-lib</code>, or run under Rhino via
+    <code>UriTest.java</code></p>
+    <script>jsunitRun()</script>
+  </body>
+</html>
