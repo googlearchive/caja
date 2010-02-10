@@ -28,7 +28,7 @@ import java.io.ByteArrayOutputStream;
  *
  * @author jasvir@gmail.com (Jasvir Nagra)
  */
-final class FetchedData {
+public final class FetchedData {
   private final byte[] content;
   private final String contentType;
   private final String charSet;
