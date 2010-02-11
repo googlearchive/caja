@@ -1152,7 +1152,7 @@
     </javac>
   </target>
 
-  <target name="testbed" depends="dirs,TestbedClasses,jars"
+  <target name="testbed" depends="dirs,HtmlParser,TestbedClasses,jars"
    description="Produce an Applet that interactively cajoles in the browser.">
     <jar destfile="${jars}/testbed.jar" basedir="${lib}">
       <manifest>
