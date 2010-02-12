@@ -6,7 +6,7 @@
   + +4;
   -3;
   (a? b: c) ? d? e: f: g? h: i;
-  (function () { })();
+  (function () {})();
   f((a, b), c, d);
   o = {
     'x': (f(), n),

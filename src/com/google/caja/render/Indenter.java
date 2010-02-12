@@ -121,10 +121,10 @@ class Indenter {
       if ("{".equals(prev)) {
         // Break inside curly blocks that are long.
         // But not things like foo({})
-        isBreak = match[i - 1] - i > 6;
+        isBreak = !isShortRun(i, match[i - 1]);
       } else if ("}".equals(next)) {
         // Matches the above.
-        isBreak = i - match[i + 1] > 6;
+        isBreak = !isShortRun(match[i + 1], i);
       } else if (";".equals(prev)) {
         // parenthetical check distinguishes { for(;;) } from { foo(); }
         isBreak = !parenthetical[i];
@@ -278,6 +278,15 @@ class Indenter {
           break;
       }
     }
+  }
+
+  private boolean isShortRun(int start, int end) {
+    if (end - start > 8) { return false; }
+    int len = 0;
+    for (int i = start; i < end; ++i) {
+      if ((len += tokens.get(i).length()) > 20) { return false; }
+    }
+    return true;
   }
 
   private static String makeIndent(int nSpaces) {

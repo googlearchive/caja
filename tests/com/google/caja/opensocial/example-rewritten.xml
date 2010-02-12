@@ -3,33 +3,15 @@
       'instantiate': function (___, IMPORTS___) {
         var moduleResult___ = ___.NO_RESULT;
         var $v = ___.readImport(IMPORTS___, '$v', {
-            'getOuters': {
-              '()': { }
-            },
-            'initOuter': {
-              '()': { }
-            },
-            'cf': {
-              '()': { }
-            },
-            'ro': {
-              '()': { }
-            },
-            'so': {
-              '()': { }
-            },
-            'dis': {
-              '()': { }
-            },
-            'ts': {
-              '()': { }
-            },
-            'construct': {
-              '()': { }
-            },
-            's': {
-              '()': { }
-            }
+            'getOuters': { '()': {} },
+            'initOuter': { '()': {} },
+            'cf': { '()': {} },
+            'ro': { '()': {} },
+            'so': { '()': {} },
+            'dis': { '()': {} },
+            'ts': { '()': {} },
+            'construct': { '()': {} },
+            's': { '()': {} }
           });
         var $dis = $v.getOuters();
         $v.initOuter('onerror');

@@ -69,12 +69,12 @@ public final class OpenTemplateStageTest extends CajaTestCase {
   public final void testMaskedEval() throws Exception {
     assertRewritten(
         "{\n"
-        + "  function eval() { }\n"
+        + "  function eval() {}\n"
         + "  eval(Template('foo${bar}baz'));\n"  // not rewritten
         + "}",
 
         "{\n"
-        + "  function eval() { }\n"
+        + "  function eval() {}\n"
         + "  eval(Template('foo${bar}baz'));\n"
         + "}",
         true);

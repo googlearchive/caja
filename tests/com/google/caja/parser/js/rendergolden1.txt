@@ -5,12 +5,8 @@
   }
   var x = 0, y, z, else;
   x += y = z = 14;
-  if (y === 1 - 1 - 1) {
-    print(z);
-  }
-  if (x < y) {
-    print(x);
-  } else if (x == y) print(y);
+  if (y === 1 - 1 - 1) { print(z); }
+  if (x < y) { print(x); } else if (x == y) print(y);
   else print(z);
   arr = [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, void 0, 13 ];
   for (var i = 0; i < a.length; ++i) {
@@ -31,12 +27,8 @@
   default:
     zowie(wowie());;;
   }
-  for (var i in array) {
-    f(i);
-  }
-  for (i in [ 1, 2, 3 ]) {
-    f(i);
-  }
+  for (var i in array) { f(i); }
+  for (i in [ 1, 2, 3 ]) { f(i); }
   var o = new Object;
   switch (n) {
   case 0:

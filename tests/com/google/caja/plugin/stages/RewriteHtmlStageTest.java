@@ -187,7 +187,7 @@ public final class RewriteHtmlStageTest extends PipelineStageTestCase {
         job("<span jobnum=\"1\"></span><span jobnum=\"2\"></span>"
             + "<span jobnum=\"3\"></span>",
             ContentType.HTML),
-        job("{\n  onerror = panic;\n}", ContentType.JS),
+        job("{ onerror = panic; }", ContentType.JS),
         job("{\n  throw new Error('Failed to load bogus.js#%27%21');\n}",
             ContentType.JS),
         job("{ foo(); }", ContentType.JS));

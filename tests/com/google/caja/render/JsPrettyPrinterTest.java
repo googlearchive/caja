@@ -39,11 +39,11 @@ import java.util.Random;
 
 public class JsPrettyPrinterTest extends CajaTestCase {
   public final void testEmptyBlock() throws Exception {
-    assertRendered("{ { } }", "{}");
+    assertRendered("{ {} }", "{}");
   }
 
   public final void testAdjacentBlocks() throws Exception {
-    assertRendered("{\n  { }\n  { }\n}", "{}{}");
+    assertRendered("{ {}\n  {} }", "{}{}");
   }
 
   public final void testSimpleStatement() throws Exception {
@@ -53,15 +53,15 @@ public class JsPrettyPrinterTest extends CajaTestCase {
   public final void testLongLines() throws Exception {
     assertRendered(
         ""
-        + "{ cdefgh10abcdefgh20abcdefgh30abcdefgh40"
-        + "abcdefgh50abcdefgh60abcdefgh70abcd(); }",
+        + "{\n  cdefgh10abcdefgh20abcdefgh30abcdefgh40"
+        + "abcdefgh50abcdefgh60abcdefgh70abcd();\n}",
         ""
         + "  cdefgh10abcdefgh20abcdefgh30abcdefgh40"
         + "abcdefgh50abcdefgh60abcdefgh70abcd();"
         );
     assertRendered(
         ""
-        + "{ cdefgh10abcdefgh20abcdefgh30abcdefgh40"
+        + "{\n  cdefgh10abcdefgh20abcdefgh30abcdefgh40"
         + "abcdefgh50abcdefgh60abcdefgh70abcde();\n"
         + "}",
         ""
@@ -73,7 +73,8 @@ public class JsPrettyPrinterTest extends CajaTestCase {
         + "{\n"
         + "  cdefgh10abcdefgh20abcdefgh30abcdefgh40"
         + "abcdefgh50abcdefgh60abcdefgh70abcdefgh()\n"
-        + "    ; }",
+        + "    ;"
+        + "\n}",
         ""
         + "  cdefgh10abcdefgh20abcdefgh30abcdefgh40"
         + "abcdefgh50abcdefgh60abcdefgh70abcdefgh();"
@@ -145,7 +146,7 @@ public class JsPrettyPrinterTest extends CajaTestCase {
         + "  ({\n"
         + "     'a': [ 1, 2, 3 ],\n"
         + "     'b': {\n"
-        + "       'c': [{ }],\n"
+        + "       'c': [{}],\n"
         + "       'd': [{\n"
         + "           'e': null,\n"
         + "           'f': 'foo'\n"
@@ -173,7 +174,7 @@ public class JsPrettyPrinterTest extends CajaTestCase {
     assertLexed(
         "var x = foo; /* end of line */\n"
         + "/** Own line */\n"
-        + "function Bar() { }\n"
+        + "function Bar() {}\n"
         + "/* Beginning */\n"
         + "var baz;\n"
         + "a+// Line comment\n"

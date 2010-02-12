@@ -148,7 +148,8 @@ class Spacer {
           }
           break;
         case '}':
-          spaceBefore = true; spaceAfter = true;
+          spaceBefore = !"{".equals(lastToken);
+          spaceAfter = true;
           break;
         case ')':
           spaceBefore = false;
