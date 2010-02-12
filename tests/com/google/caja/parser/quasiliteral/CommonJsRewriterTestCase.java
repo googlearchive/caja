@@ -45,7 +45,7 @@ public abstract class CommonJsRewriterTestCase extends RewriterTestCase {
         "fail('found nonexisting property');");
     assertConsistent(
         "var flag = true;" +
-        "try { 'length' in '123' }" +
+        "try { 'length' in '123'; }" +
         "catch (e) { flag = false; }" +
         "if (flag) { fail ('should throw TypeError'); }" +
         "true;");
@@ -414,7 +414,7 @@ public abstract class CommonJsRewriterTestCase extends RewriterTestCase {
     rewriteAndExecute(
             "assertTrue(({}).toString.call(JSON) === '[object JSON]');");
     rewriteAndExecute("assertTrue(JSON.toString() === '[object JSON]');");
-    
+
     // In neither Cajita nor Valija is it possible to mask the real toString()
     // when used implicitly by a primitive JS coercion rule.
     rewriteAndExecute("assertTrue(''+JSON === '[object Object]');");
@@ -437,9 +437,9 @@ public abstract class CommonJsRewriterTestCase extends RewriterTestCase {
             "  assertEquals(b.x, 8);" +
             "})();");
   }
-  
+
   /**
-   * 
+   *
    */
   public final void testFeralTameBoundary() throws Exception {
     rewriteAndExecute(
@@ -448,10 +448,10 @@ public abstract class CommonJsRewriterTestCase extends RewriterTestCase {
             "  return ___.callPub(f, 'call', [___.USELESS, this]);" +
             "}" +
             "___.markXo4a(xo4ic);" +
-            
-            "function innocent(f) { return f(this); }" + 
+
+            "function innocent(f) { return f(this); }" +
             "___.markInnocent(innocent);" +
-            
+
             "function simple(f) {" +
             "  return ___.callPub(f, 'call', [___.USELESS, simple]); " +
             "}" +
@@ -471,14 +471,14 @@ public abstract class CommonJsRewriterTestCase extends RewriterTestCase {
             "___.grantGenericMethod(Point.prototype, 'getX');" +
             "___.grantTypedMethod(Point.prototype, 'getY');" +
             "___.grantInnocentMethod(Point.prototype, 'welcome');" +
-            
+
             "var pt = new Point(3,5);" +
-            
+
             "function eight() { return 8; }" +
             "function nine() { return 9; }" +
             "___.markFuncFreeze(nine);" +
             "___.tamesTo(eight, nine);" +
-            
+
             "var funcs = [[simple, Point, pt], forbidden, " +
             "             xo4ic, innocent, eight];" +
             "___.freeze(funcs[0]);" +
@@ -497,8 +497,8 @@ public abstract class CommonJsRewriterTestCase extends RewriterTestCase {
             "funcs[6] = f;" +
             "testImports.f = f;" + // purposeful safety violation
             "testImports.t = ___.tame(f);",
-            
-            
+
+
             "assertFalse(f === t);" +
             "assertFalse('forbidden' in t);" +
             "assertFalse(f.xo4ic === t.xo4ic);" +
@@ -521,14 +521,14 @@ public abstract class CommonJsRewriterTestCase extends RewriterTestCase {
             "assertTrue(t.funcs === t.funcs[5]);" +
             "assertTrue(t === t.funcs[6]);" +
             "assertTrue(t === t.f);" +
-            
+
             "var lastArg = void 0;" +
             "function capture(arg) { return lastArg = arg; }" +
 
             "var lastResult = t.xo4ic.call(void 0, capture);" +
             "assertTrue(lastArg === cajita.USELESS);" +
             "assertTrue(lastResult === cajita.USELESS);" +
-            
+
             "lastResult = t.innocent.call(void 0, capture);" +
             "assertTrue(lastArg === cajita.USELESS);" +
             "assertTrue(lastResult === cajita.USELESS);" +
@@ -540,7 +540,7 @@ public abstract class CommonJsRewriterTestCase extends RewriterTestCase {
             "lastResult = t.simple(capture);" +
             "assertTrue(lastArg === t.simple);" +
             "assertTrue(lastResult === t.simple);" +
-            
+
             "assertTrue(t.pt.getX() === 3);" +
             "assertTrue(t.pt.getY() === 5);" +
             "var getX = t.pt.getX;" +
@@ -566,7 +566,7 @@ public abstract class CommonJsRewriterTestCase extends RewriterTestCase {
             "lastResult = t.innocent.apply(void 0, [t.eight]);" +
             "assertTrue(lastResult === 8);",
 
-            
+
             "");
   }
 }

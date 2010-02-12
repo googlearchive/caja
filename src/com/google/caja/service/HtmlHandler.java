@@ -38,7 +38,6 @@ import com.google.caja.render.JsMinimalPrinter;
 import com.google.caja.reporting.BuildInfo;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
-import com.google.caja.reporting.MessageType;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.ContentType;
 import com.google.caja.util.Pair;

@@ -199,6 +199,13 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
     rewriteAndExecute("var a={}; assertThrows(function(){a['valueOf']=1;});");
     rewriteAndExecute(
         "var a={}; assertThrows(function(){delete a['valueOf'];});");
+    checkFails("var x = { valueOf: function (hint) { return 2; } };",
+               "The valueOf property must not be set");
+    checkFails("var x = { valueOf: function (hint) { return 2; }, x: y };",
+               "The valueOf property must not be set");
+    checkFails("var o = {}; o.valueOf = function (hint) { return 2; };",
+               "The valueOf property must not be set");
+
   }
 
   public final void testFunctionDoesNotMaskVariable() throws Exception {
@@ -2216,11 +2223,11 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
     rewriteAndExecute(
         "var x = [33];" +
         "x.foo = [].push;" +
-        "assertThrows(function(){x.foo(44)});");
+        "assertThrows(function(){x.foo(44);});");
     rewriteAndExecute(
         "var x = {blue:'green'};" +
         "x.foo = [].push;" +
-        "assertThrows(function(){x.foo(44)});");
+        "assertThrows(function(){x.foo(44);});");
   }
 
   public final void testIndexOf() throws Exception {
@@ -2462,6 +2469,12 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
             "} catch (ex) {" +
             "  assertTrue(cajita.isFrozen(ex));" +
             "}");
+  }
+
+  public final void testUnderscore() throws Exception {
+    checkFails(
+        "var o = { p__: 1 };",
+        "Properties cannot end in \"__\"");
   }
 
   @Override

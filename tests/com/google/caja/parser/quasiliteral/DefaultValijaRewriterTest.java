@@ -14,11 +14,6 @@
 
 package com.google.caja.parser.quasiliteral;
 
-import java.io.IOException;
-import java.net.URI;
-import java.util.Arrays;
-import java.util.Collections;
-
 import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.ExternalReference;
 import com.google.caja.lexer.InputSource;
@@ -43,6 +38,11 @@ import com.google.caja.util.Executor;
 import com.google.caja.util.FailureIsAnOption;
 import com.google.caja.util.RhinoTestBed;
 import com.google.caja.reporting.TestBuildInfo;
+
+import java.io.IOException;
+import java.net.URI;
+import java.util.Arrays;
+import java.util.Collections;
 
 /**
  * @author metaweta@gmail.com
@@ -358,9 +358,6 @@ public class DefaultValijaRewriterTest extends CommonJsRewriterTestCase {
          + "  msg = ex.message;"
          + "}"
          + "assertEquals('Not writable: ([Object]).x__', msg);");
-     checkFails(
-         "var o = { p__: 1 };",
-         "Properties cannot end in \"__\"");
   }
 
   public final void testDate() throws Exception {
@@ -431,10 +428,6 @@ public class DefaultValijaRewriterTest extends CommonJsRewriterTestCase {
          + "}"
          + "assertEquals('Not writable: ([Object]).valueOf', msg);"
          );
-    checkFails("var x = { valueOf: function (hint) { return 2; } };",
-               "The valueOf property must not be set");
-    checkFails("var o = {}; o.valueOf = function (hint) { return 2; };",
-               "The valueOf property must not be set");
   }
 
   /**
@@ -672,9 +665,11 @@ public class DefaultValijaRewriterTest extends CommonJsRewriterTestCase {
   protected Object executePlain(String caja)
       throws IOException, ParseException {
     mq.getMessages().clear();
+    Rewriter old = getRewriter();
     setRewriter(innocentCodeRewriter);
     Statement innocentTree = (Statement) rewriteTopLevelNode(
         js(fromString(caja, is)));
+    setRewriter(old);
     return RhinoTestBed.runJs(
         new Executor.Input(
             getClass(), "../../../../../js/json_sans_eval/json_sans_eval.js"),
@@ -682,6 +677,7 @@ public class DefaultValijaRewriterTest extends CommonJsRewriterTestCase {
         new Executor.Input(
             getClass(), "../../../../../js/jsunit/2.2/jsUnitCore.js"),
         new Executor.Input(render(innocentTree), getName() + "-uncajoled"));
+
   }
 
   @Override
@@ -689,6 +685,7 @@ public class DefaultValijaRewriterTest extends CommonJsRewriterTestCase {
       throws IOException, ParseException {
     mq.getMessages().clear();
 
+    Rewriter old = getRewriter();
     setRewriter(valijaRewriter);
     Block valijaTree = js(fromString(caja, is));
     Block cajitaTree = (Block) rewriteTopLevelNode(valijaTree);
@@ -699,6 +696,8 @@ public class DefaultValijaRewriterTest extends CommonJsRewriterTestCase {
     CajoledModule valijaBody = (CajoledModule) rewriteTopLevelNode(
         new UncajoledModule(js(fromResource("../../valija-cajita.js"))));
     String valijaCajoled = render(valijaBody);
+    setRewriter(old);
+
     assertNoErrors();
 
     Object result = RhinoTestBed.runJs(
