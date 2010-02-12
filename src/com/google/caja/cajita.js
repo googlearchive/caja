@@ -3401,14 +3401,14 @@ var safeJSON;
     // are all primitive values that do not allow two Cajita entities with
     // access to the same module object to communicate.
     setStatic(theModule, 'cajolerName', module.cajolerName);
-    setStatic(theModule, 'cajolerVersion', module.cajolerName);
-    setStatic(theModule, 'cajoledDate', module.cajolerName);
+    setStatic(theModule, 'cajolerVersion', module.cajolerVersion);
+    setStatic(theModule, 'cajoledDate', module.cajoledDate);
     setStatic(theModule, 'moduleId', module.moduleId);
     // The below is a transitive freeze because includedModules is an array
     // of strings.
     if (!!module.includedModules) {
       setStatic(theModule, 'includedModules',
-          ___.freeze(module.includedModules));
+                ___.freeze(module.includedModules));
     }
 
     return primFreeze(theModule);
