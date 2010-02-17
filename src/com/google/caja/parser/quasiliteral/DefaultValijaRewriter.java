@@ -71,7 +71,7 @@ public class DefaultValijaRewriter extends Rewriter {
   }
 
 
-  public final Rule[] valijaRules = {
+  private final Rule[] valijaRules = {
 
     // See also rules in SyntheticRuleSet
 
@@ -221,7 +221,7 @@ public class DefaultValijaRewriter extends Rewriter {
           ParseTreeNode arg = bindings.get("arg");
           if (arg instanceof StringLiteral) {
             String src = ((StringLiteral) arg).getUnquotedValue();
-            return substV("arg", 
+            return substV("arg",
                 new StringLiteral(FilePosition.UNKNOWN, src));
           } else {
             mq.addMessage(

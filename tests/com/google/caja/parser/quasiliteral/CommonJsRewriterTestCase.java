@@ -14,8 +14,6 @@
 
 package com.google.caja.parser.quasiliteral;
 
-import com.google.caja.util.FailureIsAnOption;
-
 import junit.framework.AssertionFailedError;
 
 /**
@@ -169,60 +167,44 @@ public abstract class CommonJsRewriterTestCase extends RewriterTestCase {
         "if(!success)fail('Object.watch is accessible');");
   }
 
-  @FailureIsAnOption
   public final void testForIn1() throws Exception {
-    // TODO(ihab.awad): Disabled until we figure out how to get a test fixture
-    // that allows us to add stuff to IMPORTS___ before the test is run.
     rewriteAndExecute(
-        "",
-        "function Foo() {" +
-        "  this.x_ = 1;" +
-        "  this.y = 2;" +
-        "  this.z = 3;" +
-        "}" +
-        "var obj = new Foo();" +
-        "var y = {};" +
-        "var result = [];" +
-        "for (y.k in obj) {" +
-        "  result.push(y.k);" +
-        "}",
-        "assertEquals(" +
-        "    ___.getNewModuleHandler().getImports().result.toSource()," +
-        "    (['y', 'z']).toSource());");
+        ""
+        + "function Foo() {"
+        + "  return { x: 1, y: 2, z: 3 };"
+        + "}"
+        + "var obj = new Foo();"
+        + "var y = {};"
+        + "var result = [];"
+        + "for (y.k in obj) {"
+        + "  result.push(y.k);"
+        + "}"
+        + "assertEquals("
+        + "    '' + result,"
+        + "    '' + ['x', 'y', 'z']);");
     rewriteAndExecute(
-        "",
-        "function test(obj) {" +
-        "  var y = {};" +
-        "  var result = [];" +
-        "  for (y.k in obj) {" +
-        "    result.push(y.k);" +
-        "  }" +
-        "  return result;" +
-        "}",
-        "assertEquals(" +
-        "    ___.getNewModuleHandler().getImports().test({x_:1, y:2, z:3})" +
-        "        .sort().toSource()," +
-        "    (['y', 'z']).toSource());");
+        ""
+        + "function test(obj) {"
+        + "  var y = {};"
+        + "  var result = [];"
+        + "  for (y.k in obj) {"
+        + "    result.push(y.k);"
+        + "  }"
+        + "  return '' + result;"
+        + "}"
+        + "assertEquals('', test());");
     rewriteAndExecute(
-        "",
-        "function Foo() {" +
-        "  this.x_ = 1;" +
-        "  this.y = 2;" +
-        "}" +
-        "cajita.def(Foo, Object, {" +
-        "  test: function () {" +
-        "    var y = {};" +
-        "    var result = [];" +
-        "    for (y.k in this) {" +
-        "      result.push(y.k);" +
-        "    }" +
-        "    return result;" +
-        "  }});" +
-        "var obj = new Foo();",
-        "assertEquals(" +
-        "    ___.getNewModuleHandler().getImports().obj.test()" +
-        "        .sort().toSource()," +
-        "    (['test', 'x_', 'y']).toSource());");
+        ""
+        + "function Foo() {"
+        + "  return { x: 1, y: 2, z: 3 };"
+        + "}"
+        + "var obj = new Foo();"
+        + "var result = [];"
+        + "for (var k in obj)"
+        + "  result.push(k);"
+        + "assertEquals("
+        + "    '' + result,"
+        + "    '' + ['x', 'y', 'z']);");
   }
 
   public final void testFor() throws Exception {

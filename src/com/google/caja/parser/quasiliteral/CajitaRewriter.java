@@ -30,6 +30,7 @@ import com.google.caja.parser.js.ControlOperation;
 import com.google.caja.parser.js.DebuggerStmt;
 import com.google.caja.parser.js.Declaration;
 import com.google.caja.parser.js.DefaultCaseStmt;
+import com.google.caja.parser.js.DirectivePrologue;
 import com.google.caja.parser.js.Expression;
 import com.google.caja.parser.js.ExpressionStmt;
 import com.google.caja.parser.js.FormalParam;
@@ -58,7 +59,6 @@ import com.google.caja.parser.js.ThrowStmt;
 import com.google.caja.parser.js.TranslatedCode;
 import com.google.caja.parser.js.TryStmt;
 import com.google.caja.parser.js.UncajoledModule;
-import com.google.caja.parser.js.DirectivePrologue;
 import com.google.caja.reporting.BuildInfo;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
@@ -468,23 +468,67 @@ public class CajitaRewriter extends Rewriter {
     // foreach - "for ... in" loops
     ////////////////////////////////////////////////////////////////////////
 
-    new Rule() {
+    new Rule () {
       @Override
       @RuleDescription(
-          name="forInBad",
-          synopsis="Do not allow a for-in loop.",
-          reason="Use Cajita for-in construct instead.",
+          name="foreachExpr",
+          synopsis="Get the keys, then iterate over them.",
+          reason="",
           matches="for (@k in @o) @ss;",
-          substitutes="")
+          substitutes=(
+              ""
+              + "for (@tkeys = cajita.allKeys(@o),"
+              + "     @tidx = 0,"
+              + "     @tlen = @tkeys.length;\n"
+              + "     @tidx < @tlen; ++@tidx) {\n"
+              + "  @assign;\n"
+              + "  @ss;\n"
+              + "}"))
       public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
-        Map<String, ParseTreeNode> bindings = match(node);
+        Map<String, ParseTreeNode> bindings = this.match(node);
         if (bindings != null) {
-          mq.addMessage(
-              RewriterMessageType.FOR_IN_NOT_IN_CAJITA,
-              node.getFilePosition(), this, node);
-          return node;
+          Expression k;
+          Statement ks = (Statement) bindings.get("k");
+          if (ks instanceof ExpressionStmt) {
+            k = ((ExpressionStmt) ks).getExpression();
+          } else {
+            Declaration d = (Declaration) ks;
+            if (d.getInitializer() != null
+                || d.getIdentifierName().endsWith("__")) {
+              return NONE;
+            }
+            k = new Reference(d.getIdentifier());
+            k.getAttributes().set(ParseTreeNode.TAINTED, true);
+            // TODO(mikesamuel): once decls consolidated, no need to add to
+            // start of scope.
+            scope.addStartOfScopeStatement((Statement) expand(d, scope));
+          }
+
+          Reference tkeys = new Reference(
+              scope.declareStartOfScopeTempVariable());
+          Reference tidx = new Reference(
+              scope.declareStartOfScopeTempVariable());
+          Reference tlen = new Reference(
+              scope.declareStartOfScopeTempVariable());
+
+          FilePosition unk = FilePosition.UNKNOWN;
+          Expression assign = Operation.create(
+              unk, Operator.ASSIGN, k,
+              Operation.create(
+                  unk, Operator.SQUARE_BRACKET, tkeys,
+                  Operation.create(unk, Operator.TO_NUMBER, tidx)));
+          assign.getAttributes().set(ParseTreeNode.TAINTED, true);
+
+          return substV(
+              "tidx", tidx,
+              "tlen", tlen,
+              "tkeys", tkeys,
+              "o", expand(bindings.get("o"), scope),
+              "assign", newExprStmt((Expression) expand(assign, scope)),
+              "ss", expand(bindings.get("ss"), scope));
+        } else {
+          return NONE;
         }
-        return NONE;
       }
     },
 

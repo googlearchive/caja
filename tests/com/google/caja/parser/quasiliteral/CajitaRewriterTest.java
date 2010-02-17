@@ -580,13 +580,6 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
                "\"with\" blocks are not allowed");
   }
 
-  public final void testForInBad() throws Exception {
-    checkAddsMessage(js(fromString(
-        "for (var x in {}) {}")),
-        RewriterMessageType.FOR_IN_NOT_IN_CAJITA,
-        MessageLevel.FATAL_ERROR);
-  }
-
   public final void testTryCatch() throws Exception {
     checkAddsMessage(js(fromString(
         "try {" +
