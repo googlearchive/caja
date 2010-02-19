@@ -219,9 +219,9 @@ public class CajaWebToolsServletTest extends CajaTestCase {
         .expectContent(
             ""
             + "<script>alert('Hello, World!')</script>\n"
-            + "<ul><li onclick=\"return foo()?bar():false\">One</li>"
-            + "<li><a href=\"javascript:baz%28%29\">Two</a></li>"
-            + "<li>Three</li></ul>")
+            + "<ul><li onclick=\"return foo()?bar():false\">One"
+            + "<li><a href=\"javascript:baz%28%29\">Two</a>"
+            + "<li>Three</ul>")
         .send();
     assertNoErrors();
   }
@@ -408,8 +408,7 @@ public class CajaWebToolsServletTest extends CajaTestCase {
         .expectContentType("text/html; charset=UTF-8")
         .expectHeader("Content-disposition",
                       "attachment; filename=\"caja_tools_output.html\"")
-        .expectContent(
-            "<html><head><title>Hello</title></head><body>World!</body></html>")
+        .expectContent("<title>Hello</title>World!")
         .send();
     assertNoErrors();
   }

@@ -241,6 +241,17 @@ class Processor {
           }
         }
         Nodes.render(f, out);
+        if (otype == ContentType.HTML && req.minify) {
+          out.getOut().noMoreTokens();
+          String html = outBuf.toString();
+          outBuf.setLength(0);
+          try {
+            HtmlReducer.reduce(html, outBuf);
+          } catch (ParseException ex) {
+            outBuf.setLength(0);
+            outBuf.append(html);
+          }
+        }
         break;
       case JS:
         List<Statement> stmts = Lists.newArrayList();
