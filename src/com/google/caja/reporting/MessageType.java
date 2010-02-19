@@ -53,6 +53,7 @@ public enum MessageType implements MessageTypeInt {
   END_OF_FILE("Unexpected end of input in %s", MessageLevel.ERROR),
   EXPECTED_TOKEN("%s: Expected %s not %s", MessageLevel.ERROR),
   UNUSED_TOKENS("%s: Unused tokens: %s ...", MessageLevel.ERROR),
+  MAYBE_MISSING_SEMI("%s: Maybe missing semicolon", MessageLevel.WARNING),
   SEMICOLON_INSERTED("%s: Semicolon inserted", MessageLevel.LINT),
   PLACEHOLDER_INSERTED("%s: Placeholder inserted", MessageLevel.WARNING),
   RESERVED_WORD_USED_AS_IDENTIFIER(

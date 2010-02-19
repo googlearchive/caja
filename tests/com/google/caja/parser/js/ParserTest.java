@@ -383,6 +383,28 @@ public class ParserTest extends CajaTestCase {
         );
   }
 
+  public final void testMissingSemis() throws ParseException {
+    js(fromString("foo();"));
+    assertTrue(mq.getMessages().isEmpty());
+
+    js(fromString("foo(\n  42);"));
+    assertTrue(mq.getMessages().isEmpty());
+
+    js(fromString("foo\n(42);"));
+    assertMessage(true, MessageType.MAYBE_MISSING_SEMI, MessageLevel.WARNING);
+    assertTrue(mq.getMessages().isEmpty());
+
+    js(fromString("foo[42];"));
+    assertTrue(mq.getMessages().isEmpty());
+
+    js(fromString("foo[\n  42];"));
+    assertTrue(mq.getMessages().isEmpty());
+
+    js(fromString("foo\n[42];"));
+    assertMessage(true, MessageType.MAYBE_MISSING_SEMI, MessageLevel.WARNING);
+    assertTrue(mq.getMessages().isEmpty());
+  }
+
   public void assertExpectedSemi() {
     assertParseFails("foo(function () {return;");
     assertMessage(MessageType.EXPECTED_TOKEN, MessageLevel.ERROR,

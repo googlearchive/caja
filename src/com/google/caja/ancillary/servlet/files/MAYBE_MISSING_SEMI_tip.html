@@ -1,0 +1,51 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+<title>Caja Web Tools &mdash; Missing semicolon</title>
+<link rel=stylesheet type=text/css href=styles.css>
+<link rel=stylesheet type=text/css href=prettify.css>
+<script type=text/javascript src=prettify.js></script>
+<script type=text/javascript src=lang-css.js></script>
+</head>
+<body onload="prettyPrint()">
+<h1>Missing Semicolon</h1>
+
+<p>JavaScript will often insert semicolons for you at the end of
+lines, but not always.
+
+<blockquote><pre class=prettyprint>
+// Declaration that is not semicolon terminated
+var myRegex = /foo/  // &larr; no semicolon
+
+// Looks like a common way to define and call a function.
+(function () { alert('Hi'); }());
+
+alert(myRegex);  // myRegex is null.  FTW!?!
+</pre></blockquote>
+
+<p>In the above example, it looks like <code>myRegex</code> is being
+initialized to the regular expression <code>foo</code>, and then a
+closure is defined to do some more initialization.  But what actually
+happens is that <code>/foo/</code> is called with the result of the
+closure, and the result of that unintended function call is assigned
+to <code>myRegex</code>.
+
+<p>If you see code like this, consider putting a semicolon at the end of
+the line if you want the statement to end there.
+
+<p>If not, then maybe move the open bracket from the following line to
+the previous.  So you can eliminate the warning by changing
+<blockquote><pre class=prettyprint>
+myFunction
+(parameters);
+</pre></blockquote>
+to
+<blockquote><pre class=prettyprint>
+myFunction(
+    parameters);
+</pre></blockquote>
+
+<p>As always, to turn this off, put the error message name
+<code>MAYBE_MISSING_SEMI</code> in the <a href="ign_help.html">ignores list</a>.
+</body>
+</html>

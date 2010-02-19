@@ -817,6 +817,11 @@ public final class Parser extends ParserBase {
                 && Associativity.RIGHT == op.getAssociativity()))) {
         break;
       }
+
+      if (op.getType() == OperatorType.BRACKET) {
+        checkForMissingSemicolon();
+      }
+
       Mark opStart = tq.mark();
       int nMessages = mq.getMessages().size();
       tq.advance();  // Consume the operator token
@@ -946,6 +951,15 @@ public final class Parser extends ParserBase {
       if (filtered.type == JsTokenType.LINE_CONTINUATION) { return false; }
     }
     return true;
+  }
+
+  private void checkForMissingSemicolon() throws ParseException {
+    FilePosition current = tq.currentPosition();
+    FilePosition last = tq.lastPosition();
+    if (current.source().equals(last.source())
+        && current.startLineNo() > last.endLineNo()) {
+      mq.addMessage(MessageType.MAYBE_MISSING_SEMI, FilePosition.endOf(last));
+    }
   }
 
   private double toNumber(Token<JsTokenType> t) {
