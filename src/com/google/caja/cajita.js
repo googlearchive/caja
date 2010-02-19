@@ -3309,23 +3309,22 @@ var safeJSON;
        */
       handle: markFuncFreeze(function handle(newModule) {
         registerClosureInspector(newModule);
-        lastOutcome = void 0;
+        var outcome = void 0;
         try {
           var result = newModule.instantiate(___, imports);
           if (result !== NO_RESULT) {
-            lastOutcome = [true, result];
+            outcome = [true, result];
           }
         } catch (ex) {
-          lastOutcome = [false, ex];
+          outcome = [false, ex];
         }
-        if (lastOutcome) {
-          if (lastOutcome[0]) {
-            return lastOutcome[1];
+        lastOutcome = outcome;
+        if (outcome) {
+          if (outcome[0]) {
+            return outcome[1];
           } else {
-            throw lastOutcome[1];
+            throw outcome[1];
           }
-        } else {
-          return void 0;
         }
       }),
 
@@ -3370,14 +3369,14 @@ var safeJSON;
             ? onerror.CALL___(message, String(source), String(lineNum))
             : onerror !== null);
         if (shouldReport !== false) {
-          cajita.log(source + ':' + lineNum + ': ' + message);
+          log(source + ':' + lineNum + ': ' + message);
         }
       }
     });
   }
-  
+
   /**
-   * Produces a function module given an object literal module 
+   * Produces a function module given an object literal module
    */
   function prepareModule(module, load) {
     registerClosureInspector(module);
