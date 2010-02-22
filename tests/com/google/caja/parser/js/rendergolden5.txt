@@ -30,9 +30,7 @@
        doSomething(this, this.x + this.y);
      }
    }).invoke();
-  {
-    block: 4;
-  }
+  { block: 4; }
   ({ 'objet': 4 });
   eval('foo');
   \u00e9v\uff41l('foo');
