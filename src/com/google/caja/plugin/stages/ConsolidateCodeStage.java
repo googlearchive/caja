@@ -67,7 +67,8 @@ public final class ConsolidateCodeStage implements Pipeline.Stage<Jobs> {
     // Now initFunctionBody contains all the top level statements.
 
     UncajoledModule envelope = new UncajoledModule(initFunctionBody);
-    jobs.getJobs().add(Job.moduleJob(AncestorChain.instance(envelope)));
+    // TODO: break this up using the module stuff.
+    jobs.getJobs().add(Job.moduleJob(null, AncestorChain.instance(envelope)));
 
     return jobs.hasNoFatalErrors();
   }

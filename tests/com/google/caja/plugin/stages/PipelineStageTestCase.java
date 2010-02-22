@@ -23,7 +23,7 @@ import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.lexer.escaping.UriUtil;
 import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.ParseTreeNode;
-import com.google.caja.plugin.Dom;
+import com.google.caja.parser.html.Dom;
 import com.google.caja.plugin.Job;
 import com.google.caja.plugin.Jobs;
 import com.google.caja.plugin.PluginEnvironment;
@@ -109,6 +109,7 @@ public abstract class PipelineStageTestCase extends CajaTestCase {
       case HTML:
         outputJobs.getJobs().add(
             Job.domJob(
+                null,
                 AncestorChain.instance(
                     new Dom(htmlFragment(fromString(inputJob.content, is)))),
                 is.getUri()));
@@ -116,13 +117,15 @@ public abstract class PipelineStageTestCase extends CajaTestCase {
       case CSS:
         outputJobs.getJobs().add(
             Job.cssJob(
+                null,
                 AncestorChain.instance(css(fromString(inputJob.content, is))),
                 is.getUri()));
         break;
       case JS:
         outputJobs.getJobs().add(
-            Job.jsJob(AncestorChain.instance(
-                js(fromString(inputJob.content, is)))));
+            Job.jsJob(
+                null,
+                AncestorChain.instance(js(fromString(inputJob.content, is)))));
         break;
       default:
         throw new IllegalArgumentException(inputJob.type.name());

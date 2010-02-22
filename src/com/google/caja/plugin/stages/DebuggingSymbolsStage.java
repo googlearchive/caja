@@ -92,8 +92,9 @@ public final class DebuggingSymbolsStage implements Pipeline.Stage<Jobs> {
         if (DEBUG) {
           System.err.println("\n\nPost\n===\n" + js.toStringDeep() + "\n\n");
         }
-        it.set(Job.cajoledJob(AncestorChain.instance(
-                   attachSymbols(symbols, js, mq))));
+        it.set(Job.cajoledJob(
+            job.getCacheKeys(),
+            AncestorChain.instance(attachSymbols(symbols, js, mq))));
       }
     }
     return jobs.hasNoFatalErrors();

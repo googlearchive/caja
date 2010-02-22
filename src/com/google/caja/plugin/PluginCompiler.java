@@ -19,6 +19,7 @@ import com.google.caja.lang.css.CssSchema;
 import com.google.caja.lang.html.HtmlSchema;
 import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.ParseTreeNode;
+import com.google.caja.parser.html.Dom;
 import com.google.caja.parser.js.CajoledModule;
 import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessagePart;
@@ -95,7 +96,7 @@ public final class PluginCompiler {
   }
 
   public void addInput(AncestorChain<?> input, URI baseUri) {
-    jobs.getJobs().add(Job.job(input, baseUri));
+    jobs.getJobs().add(Job.job(null, input, baseUri));
     jobs.getMessageContext().addInputSource(
         input.node.getFilePosition().source());
   }

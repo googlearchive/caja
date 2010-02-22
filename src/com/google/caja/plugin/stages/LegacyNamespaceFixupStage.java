@@ -14,9 +14,9 @@
 
 package com.google.caja.plugin.stages;
 
+import com.google.caja.parser.html.Dom;
 import com.google.caja.parser.html.Namespaces;
 import com.google.caja.parser.html.Nodes;
-import com.google.caja.plugin.Dom;
 import com.google.caja.plugin.Job;
 import com.google.caja.plugin.Jobs;
 import com.google.caja.plugin.PluginMessageType;

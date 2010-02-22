@@ -23,11 +23,11 @@ import com.google.caja.parser.MutableParseTreeNode;
 import com.google.caja.parser.Visitor;
 import com.google.caja.parser.css.CssTree;
 import com.google.caja.parser.html.AttribKey;
+import com.google.caja.parser.html.Dom;
 import com.google.caja.parser.html.ElKey;
 import com.google.caja.parser.html.Namespaces;
 import com.google.caja.parser.html.Nodes;
 import com.google.caja.parser.js.Block;
-import com.google.caja.plugin.Dom;
 import com.google.caja.plugin.ExtractedHtmlContent;
 import com.google.caja.plugin.Job;
 import com.google.caja.plugin.Jobs;
@@ -98,9 +98,9 @@ public class RewriteHtmlStage implements Pipeline.Stage<Jobs> {
           if (SCRIPT.is(el)) {
             rewriteScriptEl(root, content, jobs);
           } else if (STYLE.is(el)) {
-            rewriteStyleEl(content, jobs);
+            rewriteStyleEl(job.getCacheKeys(), content, jobs);
           } else if (LINK.is(el)) {
-            rewriteLinkEl(content, jobs);
+            rewriteLinkEl(job.getCacheKeys(), content, jobs);
           } else {
             throw new SomethingWidgyHappenedError(src.getNodeName());
           }
@@ -162,22 +162,23 @@ public class RewriteHtmlStage implements Pipeline.Stage<Jobs> {
     return placeholder;
   }
 
-  private void rewriteStyleEl(EmbeddedContent c, Jobs jobs) {
+  private void rewriteStyleEl(
+      JobCache.Keys keys, EmbeddedContent c, Jobs jobs) {
     Element styleEl = (Element) c.getSource();
     styleEl.getParentNode().removeChild(styleEl);
-    extractStyles(styleEl, c, null, jobs);
+    extractStyles(keys, styleEl, c, null, jobs);
   }
 
-  private void rewriteLinkEl(EmbeddedContent c, Jobs jobs) {
+  private void rewriteLinkEl(JobCache.Keys keys, EmbeddedContent c, Jobs jobs) {
     Element linkEl = (Element) c.getSource();
     linkEl.getParentNode().removeChild(linkEl);
     Attr media = linkEl.getAttributeNodeNS(
         Namespaces.HTML_NAMESPACE_URI, "media");
-    extractStyles(linkEl, c, media, jobs);
+    extractStyles(keys, linkEl, c, media, jobs);
   }
 
   private void extractStyles(
-      Element el, EmbeddedContent c, Attr media, Jobs jobs) {
+      JobCache.Keys keys, Element el, EmbeddedContent c, Attr media, Jobs jobs) {
     MessageQueue mq = jobs.getMessageQueue();
     PluginEnvironment env = jobs.getPluginMeta().getPluginEnvironment();
     CssTree.StyleSheet stylesheet = null;
@@ -236,7 +237,7 @@ public class RewriteHtmlStage implements Pipeline.Stage<Jobs> {
     }
 
     jobs.getJobs().add(Job.cssJob(
-        AncestorChain.instance(stylesheet), c.getBaseUri()));
+        keys, AncestorChain.instance(stylesheet), c.getBaseUri()));
   }
 
   /**

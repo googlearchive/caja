@@ -30,6 +30,11 @@ import com.google.caja.reporting.RenderContext;
 
 import org.w3c.dom.Node;
 
+/**
+ * Converts HTML to a block of JavaScript.
+ *
+ * @author mikesamuel@gmail.com
+ */
 public final class HtmlToJsStage extends CompileHtmlStage {
 
   public HtmlToJsStage(CssSchema cssSchema, HtmlSchema htmlSchema) {
@@ -37,8 +42,8 @@ public final class HtmlToJsStage extends CompileHtmlStage {
   }
 
   @Override
-  Job makeJobFromHtml(Node html) {
-    return Job.jsJob(AncestorChain.instance(makeEmitStaticStmt(html)));
+  Job makeJobFromHtml(JobCache.Keys keys, Node html) {
+    return Job.jsJob(keys, AncestorChain.instance(makeEmitStaticStmt(html)));
   }
 
   private static Statement makeEmitStaticStmt(Node node) {

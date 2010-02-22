@@ -54,7 +54,8 @@ public final class ValidateJavascriptStage implements Pipeline.Stage<Jobs> {
             buildInfo, jobs.getMessageQueue())
             .sanitize(nonSyntheticScopeRoot);
         if (nonSyntheticScopeRoot.parent == null) {
-          it.set(Job.job(AncestorChain.instance(validated), null));
+          it.set(Job.job(job.getCacheKeys(),
+                         AncestorChain.instance(validated), null));
         } else {
           ((MutableParseTreeNode) nonSyntheticScopeRoot.parent.node)
               .replaceChild(validated, nonSyntheticScopeRoot.node);

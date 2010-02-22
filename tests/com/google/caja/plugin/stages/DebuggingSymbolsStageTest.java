@@ -313,7 +313,8 @@ public class DebuggingSymbolsStageTest extends CajaTestCase {
                        uncajoledModuleBody.toStringDeep(1));
 
     Jobs jobs = new Jobs(mc, mq, new PluginMeta());
-    jobs.getJobs().add(Job.jsJob(AncestorChain.instance(uncajoledModuleBody)));
+    jobs.getJobs().add(
+        Job.jsJob(null, AncestorChain.instance(uncajoledModuleBody)));
 
     Pipeline<Jobs> pipeline = new Pipeline<Jobs>();
     pipeline.getStages().add(new ConsolidateCodeStage());

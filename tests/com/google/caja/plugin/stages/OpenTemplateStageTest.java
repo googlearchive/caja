@@ -102,7 +102,7 @@ public final class OpenTemplateStageTest extends CajaTestCase {
     Block node = js(fromString(input));
     PluginMeta meta = new PluginMeta();
     Jobs jobs = new Jobs(mc, mq, meta);
-    jobs.getJobs().add(Job.jsJob(AncestorChain.instance(node)));
+    jobs.getJobs().add(Job.jsJob(null, AncestorChain.instance(node)));
 
     assertTrue(pipeline.apply(jobs));
     assertEquals(

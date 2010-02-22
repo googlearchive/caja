@@ -14,30 +14,36 @@
 
 package com.google.caja.plugin.stages;
 
-import com.google.caja.lang.css.CssSchema;
-import com.google.caja.lang.html.HtmlSchema;
-import com.google.caja.lexer.InputSource;
-import com.google.caja.parser.AncestorChain;
-import com.google.caja.parser.html.Dom;
 import com.google.caja.plugin.Job;
 
-import org.w3c.dom.Node;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
 
 /**
- * Separates HTML into a fragment of safe, static HTML, and a block of dynamic
- * JavaScript.
+ * Caches the result of expensive pipeline stages.
  *
  * @author mikesamuel@gmail.com
  */
-public final class HtmlToBundleStage extends CompileHtmlStage {
-  public HtmlToBundleStage(CssSchema cssSchema, HtmlSchema htmlSchema) {
-    super(cssSchema, htmlSchema);
+public abstract class JobCache {
+  public abstract Key forJob(Job j);
+  public abstract List<Job> fetch(Key k);
+  public abstract void store(Key k, List<Job> derivatives);
+
+  public interface Key {
+    public Keys asSingleton();
   }
 
-  @Override
-  Job makeJobFromHtml(JobCache.Keys cacheKeys, Node html) {
-    return Job.domJob(
-        cacheKeys, AncestorChain.instance(new Dom(html)),
-        InputSource.UNKNOWN.getUri());
+  public interface Keys extends Iterable<Key> {
+    Keys union(Keys other);
+  }
+
+  public static Keys none() {
+    return new Keys() {
+      public Iterator<Key> iterator() {
+        return Collections.<Key>emptySet().iterator();
+      }
+      public Keys union(Keys other) { return other; }
+    };
   }
 }
