@@ -27,9 +27,9 @@ import com.google.caja.parser.js.Expression;
 import com.google.caja.parser.js.NullLiteral;
 import com.google.caja.parser.js.StringLiteral;
 import com.google.caja.plugin.PipelineMaker;
+import com.google.caja.plugin.PluginEnvironment;
 import com.google.caja.opensocial.DefaultGadgetRewriter;
 import com.google.caja.opensocial.GadgetRewriteException;
-import com.google.caja.opensocial.UriCallback;
 import com.google.caja.render.Concatenator;
 import com.google.caja.render.JsMinimalPrinter;
 import com.google.caja.reporting.BuildInfo;
@@ -45,7 +45,6 @@ import com.google.caja.reporting.SnippetProducer;
 import java.applet.Applet;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.io.Reader;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.net.URI;
@@ -110,24 +109,25 @@ public class CajaApplet extends Applet {
         }
       }
 
-      final String uriCallbackProxyServer = testbedServer;
+      final String proxyServer = testbedServer;
 
-      UriCallback uriCallback = new UriCallback() {
-          public Reader retrieve(ExternalReference extref, String mimeType) {
-            // If we do retreive content, make sure to stick the original source
+      PluginEnvironment env = new PluginEnvironment() {
+          public CharProducer loadExternalResource(
+              ExternalReference ref, String mimeType) {
+            // If we do retrieve content, make sure to stick the original source
             // in originalSources.
             return null;
           }
 
-          public URI rewrite(ExternalReference extref, String mimeType) {
-            return URI.create(
-                uriCallbackProxyServer + "/proxy?url="
+          public String rewriteUri(ExternalReference extref, String mimeType) {
+            return (
+                proxyServer + "/proxy?url="
                 + UriUtil.encode(extref.getUri().toString())
                 + "&mimeType=" + UriUtil.encode(mimeType));
           }
         };
 
-      return serializeJsArray(runCajoler(cajaInput, uriCallback, features));
+      return serializeJsArray(runCajoler(cajaInput, env, features));
     } catch (RuntimeException ex) {
       StringWriter sw = new StringWriter();
       PrintWriter pw = new PrintWriter(sw);
@@ -141,7 +141,7 @@ public class CajaApplet extends Applet {
     return buildInfo.getBuildInfo();
   }
 
-  private Object[] runCajoler(String cajaInput, UriCallback uriCallback,
+  private Object[] runCajoler(String cajaInput, PluginEnvironment env,
                               final Set<Feature> features) {
     // TODO(mikesamuel): If the text starts with a <base> tag, maybe use that
     // and white it out to preserve file positions.
@@ -177,7 +177,7 @@ public class CajaApplet extends Applet {
     StringBuilder cajoledOutput = new StringBuilder();
 
     try {
-      rw.rewriteContent(src, cp, uriCallback, cajoledOutput);
+      rw.rewriteContent(src, cp, env, cajoledOutput);
       return new Object[] {
         cajoledOutput.toString(),
         messagesToString(originalSources, mq)

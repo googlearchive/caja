@@ -35,16 +35,13 @@ import com.google.caja.plugin.PluginEnvironment;
 import com.google.caja.plugin.PluginMeta;
 import com.google.caja.render.Concatenator;
 import com.google.caja.render.JsPrettyPrinter;
-import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
-import com.google.caja.reporting.MessageType;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.reporting.BuildInfo;
 import com.google.caja.util.Pair;
 import com.google.caja.util.ReadableReader;
 
 import java.io.IOException;
-import java.io.Reader;
 import java.net.URI;
 
 import org.w3c.dom.Document;
@@ -57,8 +54,7 @@ import org.w3c.dom.Node;
  *
  * @author ihab.awad@gmail.com (Ihab Awad)
  */
-public class DefaultGadgetRewriter
-    implements GadgetRewriter, GadgetContentRewriter {
+public class DefaultGadgetRewriter {
   private final MessageQueue mq;
   private final BuildInfo buildInfo;
   private CssSchema cssSchema;
@@ -88,55 +84,49 @@ public class DefaultGadgetRewriter
   public final Planner.PlanState getGoals() { return goals; }
   public void setGoals(Planner.PlanState s) { goals = s; }
 
-  public void rewrite(ExternalReference gadgetRef, UriCallback uriCallback,
+  public void rewrite(ExternalReference gadgetRef, PluginEnvironment env,
                       String view, Appendable output)
-      throws UriCallbackException, GadgetRewriteException, IOException,
-          ParseException {
+      throws GadgetRewriteException, IOException, ParseException {
     assert gadgetRef.getUri().isAbsolute() : gadgetRef.toString();
     rewrite(
-        gadgetRef.getUri(),
-        CharProducer.Factory.create(
-            uriCallback.retrieve(gadgetRef, "text/xml"),
-            new InputSource(gadgetRef.getUri())),
-        uriCallback,
-        view,
-        output);
+        gadgetRef.getUri(), env.loadExternalResource(gadgetRef, "text/xml"),
+        env, view, output);
   }
 
   public void rewrite(
-      URI baseUri, CharProducer gadgetSpec, UriCallback uriCallback,
+      URI baseUri, CharProducer gadgetSpec, PluginEnvironment env,
       String view, Appendable output)
       throws GadgetRewriteException, IOException, ParseException {
     GadgetParser parser = new GadgetParser();
     GadgetSpec spec = parser.parse(
         gadgetSpec, new InputSource(baseUri), view, mq);
     StringBuilder rewritten = new StringBuilder();
-    rewriteContent(baseUri, spec.getContent(), uriCallback, rewritten);
+    rewriteContent(baseUri, spec.getContent(), env, rewritten);
     spec.setContent(rewritten.toString());
     parser.render(spec, output);
   }
 
   public void rewriteContent(URI baseUri,
                              Readable gadgetSpec,
-                             UriCallback uriCallback,
+                             PluginEnvironment env,
                              Appendable output)
       throws GadgetRewriteException, IOException {
     CharProducer content = readReadable(gadgetSpec, new InputSource(baseUri));
-    output.append(rewriteContent(baseUri, content, uriCallback));
+    output.append(rewriteContent(baseUri, content, env));
   }
 
   public void rewriteContent(URI baseUri,
                              CharProducer content,
-                             UriCallback uriCallback,
+                             PluginEnvironment env,
                              Appendable output)
       throws GadgetRewriteException, IOException {
-    output.append(rewriteContent(baseUri, content, uriCallback));
+    output.append(rewriteContent(baseUri, content, env));
   }
 
   public Pair<Node, Element> rewriteContent(
-      URI baseUri, Node htmlContent, UriCallback callback)
+      URI baseUri, Node htmlContent, PluginEnvironment env)
       throws GadgetRewriteException {
-    PluginCompiler compiler = compileGadget(htmlContent, baseUri, callback);
+    PluginCompiler compiler = compileGadget(htmlContent, baseUri, env);
 
     StringBuilder script = new StringBuilder();
 
@@ -162,7 +152,7 @@ public class DefaultGadgetRewriter
   }
 
   private String rewriteContent(
-      URI baseUri, CharProducer content, UriCallback callback)
+      URI baseUri, CharProducer content, PluginEnvironment env)
       throws GadgetRewriteException {
 
     Node htmlContent;
@@ -172,7 +162,7 @@ public class DefaultGadgetRewriter
       ex.toMessageQueue(mq);
       throw new GadgetRewriteException(ex);
     }
-    Pair<Node, Element> result = rewriteContent(baseUri, htmlContent, callback);
+    Pair<Node, Element> result = rewriteContent(baseUri, htmlContent, env);
     Node dom = result.a;
     Element scriptElement = result.b;
 
@@ -192,44 +182,9 @@ public class DefaultGadgetRewriter
   }
 
   private PluginCompiler compileGadget(
-      Node content, final URI baseUri, final UriCallback callback)
+      Node content, URI baseUri, PluginEnvironment env)
       throws GadgetRewriteException {
-    PluginMeta meta = new PluginMeta(
-        new PluginEnvironment() {
-          public CharProducer loadExternalResource(
-              ExternalReference ref, String mimeType) {
-            ExternalReference absRef = new ExternalReference(
-                baseUri.resolve(ref.getUri()), ref.getReferencePosition());
-            Reader content;
-            try {
-              content = callback.retrieve(absRef, mimeType);
-              if (content == null) { return null; }
-            } catch (UriCallbackException ex) {
-              return null;
-            }
-            try {
-              return CharProducer.Factory.create(
-                  content, new InputSource(absRef.getUri()));
-            } catch (IOException ex) {
-              mq.addMessage(
-                  MessageType.IO_ERROR,
-                  MessagePart.Factory.valueOf(ex.getMessage()));
-              return null;
-            }
-          }
-
-          public String rewriteUri(ExternalReference ref, String mimeType) {
-            ExternalReference absRef = new ExternalReference(
-                baseUri.resolve(ref.getUri()), ref.getReferencePosition());
-            try {
-              URI uri = callback.rewrite(absRef, mimeType);
-              if (uri == null) { return null; }
-              return uri.toString();
-            } catch (UriCallbackException ex) {
-              return null;
-            }
-          }
-        });
+    PluginMeta meta = new PluginMeta(env);
 
     PluginCompiler compiler = createPluginCompiler(meta, mq);
     compiler.setPreconditions(preconditions);

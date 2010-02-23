@@ -19,6 +19,7 @@ import com.google.caja.lexer.ExternalReference;
 import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.lexer.escaping.UriUtil;
+import com.google.caja.plugin.PluginEnvironment;
 import com.google.caja.reporting.EchoingMessageQueue;
 import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessageContext;
@@ -29,10 +30,10 @@ import com.google.caja.util.CajaTestCase;
 import com.google.caja.util.FailureIsAnOption;
 import com.google.caja.util.TestUtil;
 
-import java.io.FileNotFoundException;
-import java.io.FileReader;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.PrintWriter;
-import java.io.Reader;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
@@ -42,21 +43,28 @@ import java.util.List;
  */
 public class DefaultGadgetRewriterTest extends CajaTestCase {
 
-  private static final UriCallback uriCallback = new UriCallback() {
-    public Reader retrieve(ExternalReference extref, String mimeType)
-        throws UriCallbackException {
+  private static final PluginEnvironment ENV = new PluginEnvironment() {
+    public CharProducer loadExternalResource(
+        ExternalReference extref, String mimeType) {
       if ("file".equals(extref.getUri().getScheme())) {
-        try {
-          return new FileReader(extref.getUri().getPath());
-        } catch (FileNotFoundException ex) {
-          throw new UriCallbackException(extref, ex);
+        if (extref.getUri().toString().startsWith(
+                TestUtil.getResource(getClass(), "").toString())) {
+          InputSource is = new InputSource(extref.getUri());
+          try {
+            return CharProducer.Factory.create(
+                new InputStreamReader(
+                    new FileInputStream(extref.getUri().getPath()), "UTF-8"),
+                is);
+          } catch (IOException ex) {
+            return null;
+          }
         }
       }
-      throw new UriCallbackException(extref);
+      return null;
     }
 
-    public URI rewrite(ExternalReference extref, String mimeType) {
-      return URI.create(
+    public String rewriteUri(ExternalReference extref, String mimeType) {
+      return (
           "http://url-proxy.test.google.com/"
           + "?url=" + UriUtil.encode(extref.getUri().toString())
           + "&mime-type=" + UriUtil.encode(mimeType));
@@ -142,7 +150,7 @@ public class DefaultGadgetRewriterTest extends CajaTestCase {
   private void assertRewritePasses(String file, MessageLevel failLevel)
       throws Exception {
     URI gadgetUri = TestUtil.getResource(getClass(), file);
-    rewriter.rewrite(gadgetUri, fromResource(file), uriCallback, "canvas",
+    rewriter.rewrite(gadgetUri, fromResource(file), ENV, "canvas",
                      System.out);
     checkMessages(failLevel);
   }
@@ -154,7 +162,7 @@ public class DefaultGadgetRewriterTest extends CajaTestCase {
     CharProducer cp = fromResource(file);
 
     StringBuilder sb = new StringBuilder();
-    rewriter.rewrite(gadgetUri, cp, uriCallback, "canvas", sb);
+    rewriter.rewrite(gadgetUri, cp, ENV, "canvas", sb);
     String actual = normalXml(sb.toString()).trim();
 
     checkMessages(failLevel);
@@ -189,7 +197,7 @@ public class DefaultGadgetRewriterTest extends CajaTestCase {
     CharProducer cp = fromString(input, new InputSource(gadgetUri));
 
     try {
-      rewriter.rewrite(gadgetUri, cp, uriCallback, "canvas", System.out);
+      rewriter.rewrite(gadgetUri, cp, ENV, "canvas", System.out);
       if (rewriteShouldFail)
         fail("rewrite should have failed with message " + msg);
     } catch (GadgetRewriteException ex) {

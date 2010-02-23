@@ -47,7 +47,8 @@ public class ReservedNames {
    */
   public static final String HTML_EMITTER = "htmlEmitter___";
   /**
-   * Applies {@link com.google.caja.opensocial.UriCallback#rewrite} at runtime.
+   * Applies {@link com.google.caja.plugin.PluginEnvironment#rewriteUri}
+   * at runtime.
    */
   public static final String REWRITE_URI = "rewriteUri___";
   /** Applies the id and name policy at runtime. */
@@ -61,7 +62,7 @@ public class ReservedNames {
   public static final String CSS_NUMBER = "cssNumber___";
   /** Coerces the argument to a CSS color. */
   public static final String CSS_COLOR = "cssColor___";
-  /** Coerces the argument to a CSS uri by applying the URICallback policy. */
+  /** Coerces the argument to a CSS URI by applying the PluginEnvironment. */
   public static final String CSS_URI = "cssUri___";
   /** An output buffer for a compiled template. */
   public static final String OUTPUT_BUFFER = "out___";

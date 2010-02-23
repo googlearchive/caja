@@ -19,8 +19,6 @@ import com.google.caja.lexer.HtmlLexer;
 import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.ParseException;
 import com.google.caja.lexer.escaping.UriUtil;
-import com.google.caja.opensocial.UriCallback;
-import com.google.caja.opensocial.UriCallbackException;
 import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.html.Dom;
 import com.google.caja.parser.html.DomParser;
@@ -65,28 +63,20 @@ public class HtmlHandler implements ContentHandler {
 
   public HtmlHandler(
       BuildInfo buildInfo, final String hostedService,
-      final UriCallback retriever) {
+      final PluginEnvironment retriever) {
     this.buildInfo = buildInfo;
     this.pluginEnvironment = new PluginEnvironment() {
       public CharProducer loadExternalResource(
           ExternalReference ref, String mimeType) {
-        try {
-          Reader in = retriever != null
-              ? retriever.retrieve(ref, mimeType) : null;
-          InputSource is = new InputSource(ref.getUri());
-          return in != null ? CharProducer.Factory.create(in, is) : null;
-        } catch (UriCallbackException ex) {
-          return null;
-        } catch (IOException ex) {
-          return null;
-        }
+        return retriever != null
+            ? retriever.loadExternalResource(ref, mimeType)
+            : null;
       }
 
       public String rewriteUri(ExternalReference uri, String mimeType) {
         if (hostedService != null) {
           return hostedService
-              + "?url="
-              + UriUtil.encode(uri.getUri().toString())
+              + "?url=" + UriUtil.encode(uri.getUri().toString())
               + "&input-mime-type=" + UriUtil.encode(mimeType);
         } else {
           return null;

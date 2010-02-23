@@ -1,13 +1,13 @@
 package com.google.caja.demos.playground.server;
 
 import com.google.caja.demos.playground.client.PlaygroundService;
+import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.ExternalReference;
 import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.escaping.UriUtil;
 import com.google.caja.opensocial.DefaultGadgetRewriter;
 import com.google.caja.opensocial.GadgetRewriteException;
-import com.google.caja.opensocial.UriCallback;
-import com.google.caja.opensocial.UriCallbackException;
+import com.google.caja.plugin.PluginEnvironment;
 import com.google.caja.reporting.BuildInfo;
 import com.google.caja.reporting.HtmlSnippetProducer;
 import com.google.caja.reporting.Message;
@@ -38,20 +38,20 @@ import java.util.Map;
 public class GWTCajolingServiceImpl extends RemoteServiceServlet
     implements PlaygroundService {
 
-  private static final UriCallback uriCallback = new UriCallback() {
-    public Reader retrieve(ExternalReference extref, String mimeType)
-        throws UriCallbackException {
-      throw new UriCallbackException(extref);
+  private static final PluginEnvironment uriCallback = new PluginEnvironment() {
+    public CharProducer loadExternalResource(
+        ExternalReference ref, String mimeType) {
+      return null;
     }
 
     // TODO(jasvir): URIs in some contexts (such as links to new pages) should
     // point back to the gwt cajoling service, while others that load media into
     // an existing page should go through a configurable cajoling service
-    public URI rewrite(ExternalReference extref, String mimeType) {
+    public String rewriteUri(ExternalReference extref, String mimeType) {
       if (mimeType.startsWith("image/")) {
-        return extref.getUri();
+        return extref.getUri().toString();
       }
-      return URI.create(
+      return (
           "http://caja.appspot.com/cajole"
           + "?url=" + UriUtil.encode(extref.getUri().toString())
           + "&mime-type=" + UriUtil.encode(mimeType));
@@ -71,7 +71,7 @@ public class GWTCajolingServiceImpl extends RemoteServiceServlet
   public String[] getMessageLevels() {
     MessageLevel[] values = MessageLevel.values();
     String[] result = new String[values.length];
-    for (int i= 0 ; i < values.length; i++) {
+    for (int i = 0; i < values.length; i++) {
       result[i] = values[i].name();
     }
     return result;

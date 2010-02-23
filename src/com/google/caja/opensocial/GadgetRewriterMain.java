@@ -28,7 +28,6 @@ import com.google.caja.reporting.BuildInfo;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.Reader;
 import java.io.Writer;
 import java.net.URI;
 import java.util.HashMap;
@@ -49,8 +48,7 @@ public class GadgetRewriterMain {
   }
 
    public static void main(String[] argv)
-       throws GadgetRewriteException, IOException, UriCallbackException,
-          ParseException {
+       throws GadgetRewriteException, IOException, ParseException {
      GadgetRewriterMain grm = new GadgetRewriterMain();
      if (grm.init(argv)) {
        System.exit(grm.run());
@@ -62,9 +60,7 @@ public class GadgetRewriterMain {
     return config.processArguments(argv);
   }
 
-  public int run()
-      throws GadgetRewriteException, IOException, UriCallbackException,
-          ParseException {
+  public int run() throws GadgetRewriteException, IOException, ParseException {
     MessageQueue mq = new SimpleMessageQueue();
     DefaultGadgetRewriter rewriter = new DefaultGadgetRewriter(
         BuildInfo.getInstance(), mq);
@@ -79,8 +75,8 @@ public class GadgetRewriterMain {
       Callback cb = new Callback(mc, originalSources);
       URI baseUri = config.getBaseUri();
       for (URI input : config.getInputUris()) {
-        Reader r = cb.retrieve(new ExternalReference(input, null), null);
-        CharProducer p = CharProducer.Factory.create(r, new InputSource(input));
+        CharProducer p = cb.loadExternalResource(
+            new ExternalReference(input, null), null);
         try {
           rewriter.rewrite(baseUri, p, cb, config.getGadgetView(), w);
         } finally {
@@ -91,7 +87,6 @@ public class GadgetRewriterMain {
             System.err.println(sp.getSnippet(msg));
             System.err.println();
           }
-          r.close();
         }
       }
     } finally {

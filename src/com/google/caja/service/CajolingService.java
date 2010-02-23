@@ -14,10 +14,10 @@
 
 package com.google.caja.service;
 
+import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.ExternalReference;
 import com.google.caja.lexer.InputSource;
-import com.google.caja.opensocial.UriCallback;
-import com.google.caja.opensocial.UriCallbackException;
+import com.google.caja.plugin.PluginEnvironment;
 import com.google.caja.reporting.BuildInfo;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
@@ -29,7 +29,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
-import java.io.Reader;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;
@@ -46,27 +45,11 @@ import java.util.Vector;
  */
 public class CajolingService {
   private static final String DEFAULT_HOST = "http://caja.appspot.com/cajole";
-  private final UriCallback DEFAULT_URIPOLICY = new UriCallback() {
-    public Reader retrieve(ExternalReference extref, String mimeType)
-        throws UriCallbackException {
-      try {
-        FetchedData data = fetch(extref.getUri());
-        return new InputStreamReader(
-            new ByteArrayInputStream(data.getContent()), data.getCharSet());
-      } catch (IOException ex) {
-        throw new UriCallbackException(extref, ex);
-      }
-    }
-
-    public URI rewrite(ExternalReference extref, String mimeType) {
-      return extref.getUri();
-    }
-  };
 
   private List<ContentHandler> handlers = new Vector<ContentHandler>();
   private ContentTypeCheck typeCheck = new LooseContentTypeCheck();
   private String host;
-  private UriCallback cb;
+  private PluginEnvironment env;
 
   public CajolingService() {
     this(BuildInfo.getInstance());
@@ -78,13 +61,31 @@ public class CajolingService {
 
   public CajolingService(BuildInfo buildInfo, String host) {
     this.host = host;
-    this.cb = DEFAULT_URIPOLICY;
+    this.env = new PluginEnvironment() {
+
+          public CharProducer loadExternalResource(
+              ExternalReference extref, String mimeType) {
+            try {
+              FetchedData data = fetch(extref.getUri());
+              return CharProducer.Factory.create(new InputStreamReader(
+                  new ByteArrayInputStream(data.getContent()), data.getCharSet()),
+                  new InputSource(extref.getUri()));
+            } catch (IOException ex) {
+              return null;
+            }
+          }
+
+          public String rewriteUri(ExternalReference extref, String mimeType) {
+            return extref.getUri().toString();
+          }
+        };
     registerHandlers(buildInfo);
   }
 
-  public CajolingService(BuildInfo buildInfo, String host, UriCallback cb) {
+  public CajolingService(
+      BuildInfo buildInfo, String host, PluginEnvironment env) {
     this.host = host;
-    this.cb = cb;
+    this.env = env;
     registerHandlers(buildInfo);
   }
 
@@ -226,9 +227,9 @@ public class CajolingService {
   private void registerHandlers(BuildInfo buildInfo) {
     handlers.add(new JsHandler(buildInfo));
     handlers.add(new ImageHandler());
-    handlers.add(new GadgetHandler(buildInfo, cb));
+    handlers.add(new GadgetHandler(buildInfo, env));
     handlers.add(new InnocentHandler());
-    handlers.add(new HtmlHandler(buildInfo, host, cb));
+    handlers.add(new HtmlHandler(buildInfo, host, env));
   }
 
   protected FetchedData fetch(URI uri) throws IOException {

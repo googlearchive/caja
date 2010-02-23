@@ -43,7 +43,6 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
-import java.io.Reader;
 import java.io.Writer;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -72,7 +71,7 @@ public class GadgetsTestMain {
     resultDoc = new JSONObject();
   }
 
-  public static void main(String[] argv) throws UriCallbackException {
+  public static void main(String[] argv) {
     System.exit(new GadgetsTestMain().run(argv));
   }
 
@@ -156,7 +155,7 @@ public class GadgetsTestMain {
 
   private void testGadget(URI gadget, JSONArray testResults,
                           Map<MessageTypeInt, Integer> errorCount)
-      throws IOException, UriCallbackException {
+      throws IOException {
 
     String[] argv = {
         "-o", "/tmp/xx",
@@ -190,10 +189,8 @@ public class GadgetsTestMain {
       URI baseUri = config.getBaseUri();
       for (URI input : config.getInputUris()) {
         System.err.println(input);
-        Reader r = cb.retrieve(
+        CharProducer cp = cb.loadExternalResource(
             new ExternalReference(input, FilePosition.UNKNOWN), null);
-        CharProducer cp = CharProducer.Factory.create(
-            r, new InputSource(input));
         try {
           rewriter.rewrite(baseUri, cp, cb, "canvas", w);
         } catch (Exception e) {
@@ -222,7 +219,6 @@ public class GadgetsTestMain {
               worstErrorLevel = msg.getMessageLevel();
             }
           }
-          r.close();
         }
       }
     } catch (RuntimeException e) {
@@ -259,7 +255,7 @@ public class GadgetsTestMain {
     }
   }
 
-  private int run(String[] argv) throws UriCallbackException {
+  private int run(String[] argv) {
     if (!processArguments(argv)) {
       return -1;
     }

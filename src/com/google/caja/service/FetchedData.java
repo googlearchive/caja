@@ -14,13 +14,13 @@
 
 package com.google.caja.service;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URI;
+import java.net.URLConnection;
 import javax.mail.internet.ContentType;
 import javax.mail.internet.ParseException;
-import java.net.URLConnection;
-import java.net.URI;
-import java.io.InputStream;
-import java.io.IOException;
-import java.io.ByteArrayOutputStream;
 
 /**
  * Encapsulates a unit of content fetched from some remote location, including

@@ -211,7 +211,8 @@
       <sysproperty key="user.language" value="tr"/>
       <sysproperty key="user.region" value="TR"/>
       <sysproperty key="test.filter" value="${test.filter}"/>
-      <test name="com.google.caja.AllTests" if="emma.enabled"/>
+      <test name="com.google.caja.AllTests" todir="${reports}/tests"
+       if="emma.enabled"/>
     </junit>
     <summarize errorProperty="runtests.error"
      failureProperty="runtests.failure">

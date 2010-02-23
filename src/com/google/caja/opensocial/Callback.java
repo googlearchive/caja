@@ -14,8 +14,10 @@
 
 package com.google.caja.opensocial;
 
+import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.ExternalReference;
 import com.google.caja.lexer.InputSource;
+import com.google.caja.plugin.PluginEnvironment;
 import com.google.caja.reporting.MessageContext;
 
 import java.io.IOException;
@@ -24,7 +26,7 @@ import java.io.Reader;
 import java.net.URI;
 import java.util.Map;
 
-public class Callback implements UriCallback {
+public class Callback implements PluginEnvironment {
   private MessageContext mc;
   private Map<InputSource, CharSequence> originalSources;
 
@@ -34,43 +36,29 @@ public class Callback implements UriCallback {
     this.originalSources = originalSources;
   }
 
-  public Reader retrieve(ExternalReference extref, String mimeType)
-      throws UriCallbackException {
-    final Reader in;
-    URI uri;
+  public CharProducer loadExternalResource(
+      ExternalReference extref, String mimeType) {
+    URI uri = extref.getUri();
+    InputSource is = new InputSource(uri);
+
+    CharProducer resource;
     try {
-      uri = extref.getUri();
-      in = new InputStreamReader(uri.toURL().openStream(), "UTF-8");
+      Reader in = new InputStreamReader(uri.toURL().openStream(), "UTF-8");
+      resource = CharProducer.Factory.create(in, is);
     } catch (IOException e) {
-      throw new UriCallbackException(extref, e);
+      return null;
     }
 
-    final StringBuilder originalSource = new StringBuilder();
-    InputSource is = new InputSource(uri);
-    originalSources.put(is, originalSource);
+    originalSources.put(
+        is,
+        String.valueOf(
+            resource.toString(resource.getOffset(), resource.getLength())));
     mc.addInputSource(is);
 
-    // Tee the content out to a buffer so that we can keep track of the
-    // original content so we can show error message snippets later.
-    return new Reader() {
-        @Override
-        public void close() throws IOException { in.close(); }
-        @Override
-        public int read(char[] cbuf, int off, int len) throws IOException {
-          int n = in.read(cbuf, off, len);
-          if (n > 0) { originalSource.append(cbuf, off, n); }
-          return n;
-        }
-        @Override
-        public int read() throws IOException {
-          int ch = in.read();
-          if (ch >= 0) { originalSource.append((char) ch); }
-          return ch;
-        }
-      };
+    return resource;
   }
 
-  public URI rewrite(ExternalReference extref, String mimeType) {
-    return extref.getUri();
+  public String rewriteUri(ExternalReference extref, String mimeType) {
+    return extref.getUri().toString();
   }
 }

@@ -20,8 +20,7 @@ import com.google.caja.lexer.ParseException;
 import com.google.caja.lexer.escaping.UriUtil;
 import com.google.caja.opensocial.DefaultGadgetRewriter;
 import com.google.caja.opensocial.GadgetRewriteException;
-import com.google.caja.opensocial.UriCallback;
-import com.google.caja.opensocial.UriCallbackException;
+import com.google.caja.plugin.PluginEnvironment;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.BuildInfo;
 import com.google.caja.util.Pair;
@@ -29,16 +28,15 @@ import com.google.caja.util.Pair;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
-import java.io.Reader;
 import java.io.StringReader;
 import java.net.URI;
 import java.util.List;
 
 public class GadgetHandler implements ContentHandler {
   private final BuildInfo buildInfo;
-  private final UriCallback retriever;
+  private final PluginEnvironment retriever;
 
-  public GadgetHandler(BuildInfo buildInfo, UriCallback retriever) {
+  public GadgetHandler(BuildInfo buildInfo, PluginEnvironment retriever) {
     this.buildInfo = buildInfo;
     this.retriever = retriever;
   }
@@ -62,7 +60,7 @@ public class GadgetHandler implements ContentHandler {
                                     byte[] content,
                                     OutputStream response,
                                     MessageQueue mq)
-        throws UnsupportedContentTypeException {
+      throws UnsupportedContentTypeException {
     try {
       OutputStreamWriter writer = new OutputStreamWriter(response, "UTF-8");
       cajoleGadget(uri, new String(content, charSet), writer, mq);
@@ -88,14 +86,15 @@ public class GadgetHandler implements ContentHandler {
       throws ParseException, GadgetRewriteException, IOException {
     DefaultGadgetRewriter rewriter = new DefaultGadgetRewriter(buildInfo, mq);
 
-    UriCallback uriCallback = new UriCallback() {
-      public Reader retrieve(ExternalReference extref, String mimeType)
-          throws UriCallbackException {
-        return retriever != null ? retriever.retrieve(extref, mimeType) : null;
+    PluginEnvironment env = new PluginEnvironment() {
+      public CharProducer loadExternalResource(
+          ExternalReference extref, String mimeType) {
+        return retriever != null
+            ? retriever.loadExternalResource(extref, mimeType) : null;
       }
 
-      public URI rewrite(ExternalReference extref, String mimeType) {
-        return URI.create(
+      public String rewriteUri(ExternalReference extref, String mimeType) {
+        return (
             "http://localhost:8887/?url="
             + UriUtil.encode(extref.getUri().toString())
             + "&mime-type=" + UriUtil.encode(mimeType));
@@ -104,6 +103,6 @@ public class GadgetHandler implements ContentHandler {
 
     CharProducer p = CharProducer.Factory.create(
         new StringReader(cajaInput), new InputSource(inputUri));
-    rewriter.rewrite(inputUri, p, uriCallback, "canvas", output);
+    rewriter.rewrite(inputUri, p, env, "canvas", output);
   }
 }
