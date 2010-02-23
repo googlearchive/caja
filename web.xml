@@ -15,7 +15,7 @@
   </servlet>
   <servlet>
     <servlet-name>CajolingServlet</servlet-name>
-    <servlet-class>com.google.caja.service.CajolingService</servlet-class>
+    <servlet-class>com.google.caja.service.CajolingServlet</servlet-class>
   </servlet>
   <servlet>
     <servlet-name>ToolsServlet</servlet-name>

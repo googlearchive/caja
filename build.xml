@@ -747,7 +747,7 @@
   </target>
 
   <!-- Builds the cajoling service. -->
-  <target name="CajolingService"
+  <target name="CajolingServlet"
    depends="CssParser,HtmlParser,Quasiliterals,Rendering,Schemas">
     <javac destdir="${lib}" debug="true" target="1.5" source="1.5">
       <src path="${src}"/>
@@ -858,7 +858,7 @@
   </target>
 
   <target name="playground"
-   depends="CajolingService, PlaygroundBE, PlaygroundFE">
+   depends="CajolingServlet, PlaygroundBE, PlaygroundFE">
   </target>
 
   <target name="runserver" description="Starts the development server.">
@@ -1361,7 +1361,7 @@
     </transform>
   </target>
 
-  <target name="maven" depends="jars,dirs,build.info, CajolingService">
+  <target name="maven" depends="jars,dirs,build.info, CajolingServlet">
     <copy file="${jars}/pluginc.jar"
           tofile="${maven}/caja-r${build.svnVersion}.jar"/>
     <copy file="${jars}/pluginc-src.jar"
