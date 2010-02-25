@@ -125,7 +125,8 @@ public abstract class PipelineStageTestCase extends CajaTestCase {
         outputJobs.getJobs().add(
             Job.jsJob(
                 null,
-                AncestorChain.instance(js(fromString(inputJob.content, is)))));
+                AncestorChain.instance(js(fromString(inputJob.content, is))),
+                null));
         break;
       default:
         throw new IllegalArgumentException(inputJob.type.name());

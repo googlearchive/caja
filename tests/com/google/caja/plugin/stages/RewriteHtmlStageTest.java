@@ -218,7 +218,7 @@ public final class RewriteHtmlStageTest extends PipelineStageTestCase {
           el.setAttributeNS(
               Namespaces.HTML_NAMESPACE_URI, "jobnum", "" + jobNum);
           jobs.getJobs().add(
-              Job.jsJob(null, AncestorChain.instance(extracted)));
+              Job.jsJob(null, AncestorChain.instance(extracted), null));
         }
         for (Node c = el.getFirstChild(); c != null; c = c.getNextSibling()) {
           extractScripts(c, jobs);

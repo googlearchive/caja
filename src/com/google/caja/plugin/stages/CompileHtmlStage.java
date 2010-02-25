@@ -105,7 +105,10 @@ abstract class CompileHtmlStage implements Pipeline.Stage<Jobs> {
       jobs.getJobs().add(outJob);
 
       for (Block bl : htmlAndJs.b) {
-        jobs.getJobs().add(Job.jsJob(cacheKeys, AncestorChain.instance(bl)));
+        jobs.getJobs().add(Job.jsJob(
+            cacheKeys, AncestorChain.instance(bl),
+            // TODO(mikesamuel): propagate base URI from ihtmlRoot.
+            bl.getFilePosition().source().getUri()));
       }
     }
 

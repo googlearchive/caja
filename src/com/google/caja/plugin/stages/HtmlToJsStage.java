@@ -43,7 +43,8 @@ public final class HtmlToJsStage extends CompileHtmlStage {
 
   @Override
   Job makeJobFromHtml(JobCache.Keys keys, Node html) {
-    return Job.jsJob(keys, AncestorChain.instance(makeEmitStaticStmt(html)));
+    return Job.jsJob(
+        keys, AncestorChain.instance(makeEmitStaticStmt(html)), null);
   }
 
   private static Statement makeEmitStaticStmt(Node node) {

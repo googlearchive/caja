@@ -59,8 +59,9 @@ public final class Job {
   }
 
   public static Job jsJob(
-      JobCache.Keys keys, AncestorChain<? extends Statement> root) {
-    return new Job(keys, root, ContentType.JS, null);
+      JobCache.Keys keys, AncestorChain<? extends Statement> root,
+      URI baseUri) {
+    return new Job(keys, root, ContentType.JS, baseUri);
   }
 
   public static Job exprJob(
@@ -70,8 +71,9 @@ public final class Job {
   }
 
   public static Job moduleJob(
-      JobCache.Keys keys, AncestorChain<? extends UncajoledModule> root) {
-    return new Job(keys, root, ContentType.JS, null);
+      JobCache.Keys keys, AncestorChain<? extends UncajoledModule> root,
+      URI baseUri) {
+    return new Job(keys, root, ContentType.JS, baseUri);
   }
 
   public static Job cajoledJob(
