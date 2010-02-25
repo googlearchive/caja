@@ -71,8 +71,8 @@ public final class PipelineMaker {
   /**
    * Creates a plan state from a set of '+' separated identifiers.
    * See the class comments for descriptions of useful identifiers.
-   * @see #defaultGoals(PluginMeta)
-   * @see #defaultPreconds()
+   * @see #DEFAULT_GOALS
+   * @see #DEFAULT_PRECONDS
    */
   public static Planner.PlanState planState(String... products) {
     return PLANNER.planState(false, products);
@@ -89,7 +89,7 @@ public final class PipelineMaker {
   /**
    * Appends pipeline stages to the argument.
    *
-   * @throws UnsatisfiableGoalException iff there is no path from the
+   * @throws Planner.UnsatisfiableGoalException iff there is no path from the
    *   preconditions to the goal using the pipeline stages declared.
    */
   void populate(List<Pipeline.Stage<Jobs>> compilationPipeline)

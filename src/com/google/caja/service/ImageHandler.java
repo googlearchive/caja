@@ -49,11 +49,10 @@ public class ImageHandler implements ContentHandler {
                                     String charSet,
                                     byte[] content,
                                     OutputStream response,
-                                    MessageQueue mq)
-    throws UnsupportedContentTypeException {
+                                    MessageQueue mq) {
     try {
       response.write(content);
-      return new Pair<String,String>(inputContentType, "");
+      return Pair.pair(inputContentType, "");
     } catch (IOException e) {
       mq.addMessage(
           MessageType.IO_ERROR,

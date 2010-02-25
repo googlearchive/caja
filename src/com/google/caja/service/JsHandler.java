@@ -88,7 +88,7 @@ public class JsHandler implements ContentHandler {
     } catch (IOException e) {
       throw new UnsupportedContentTypeException();
     }
-    return new Pair<String, String>("text/javascript", "UTF-8");
+    return Pair.pair("text/javascript", "UTF-8");
   }
 
   private void cajoleJs(URI inputUri,
@@ -98,7 +98,7 @@ public class JsHandler implements ContentHandler {
                         Expression moduleCallback,
                         Appendable output,
                         MessageQueue mq)
-      throws IOException, UnsupportedContentTypeException {
+      throws IOException {
     InputSource is = new InputSource (inputUri);
     CharProducer cp = CharProducer.Factory.create(cajaInput,is);
     try {

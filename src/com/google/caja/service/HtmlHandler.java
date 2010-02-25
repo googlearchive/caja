@@ -141,13 +141,13 @@ public class HtmlHandler implements ContentHandler {
       throw new UnsupportedContentTypeException();
     }
 
-    return new Pair<String, String>(outputType.mimeType, "UTF-8");
+    return Pair.pair(outputType.mimeType, "UTF-8");
   }
 
   private void cajoleHtml(URI inputUri, Reader cajaInput, PluginMeta meta,
                           Expression moduleCallback, ContentType outputType,
                           Appendable output, MessageQueue mq)
-      throws IOException, UnsupportedContentTypeException {
+      throws IOException {
     InputSource is = new InputSource (inputUri);
     CharProducer cp = CharProducer.Factory.create(cajaInput,is);
     boolean okToContinue = true;
