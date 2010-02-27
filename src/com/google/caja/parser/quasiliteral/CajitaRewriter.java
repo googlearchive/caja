@@ -60,9 +60,12 @@ import com.google.caja.parser.js.TranslatedCode;
 import com.google.caja.parser.js.TryStmt;
 import com.google.caja.parser.js.UncajoledModule;
 import com.google.caja.reporting.BuildInfo;
+import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
+import com.google.caja.util.Lists;
 import com.google.caja.util.Pair;
+import com.google.caja.util.Sets;
 import com.google.caja.util.SyntheticAttributeKey;
 
 import static com.google.caja.parser.js.SyntheticNodes.s;
@@ -70,7 +73,6 @@ import static com.google.caja.parser.js.SyntheticNodes.s;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -132,14 +134,14 @@ public class CajitaRewriter extends Rewriter {
               "moduleResult___ = @result;",
               "result", ((ExpressionStmt) node).getExpression()));
     } else if (node instanceof ParseTreeNodeContainer) {
-      List<ParseTreeNode> nodes = new ArrayList<ParseTreeNode>(node.children());
+      List<ParseTreeNode> nodes = Lists.newArrayList(node.children());
       int lasti = lastRealJavascriptChild(nodes);
       if (lasti >= 0) {
         nodes.set(lasti, returnLast(nodes.get(lasti)));
         result = new ParseTreeNodeContainer(nodes);
       }
     } else if (node instanceof Block) {
-      List<Statement> stats = new ArrayList<Statement>();
+      List<Statement> stats = Lists.newArrayList();
       stats.addAll((Collection<? extends Statement>) node.children());
       int lasti = lastRealJavascriptChild(stats);
       if (lasti >= 0) {
@@ -147,7 +149,7 @@ public class CajitaRewriter extends Rewriter {
         result = new Block(node.getFilePosition(), stats);
       }
     } else if (node instanceof Conditional) {
-      List<ParseTreeNode> nodes = new ArrayList<ParseTreeNode>();
+      List<ParseTreeNode> nodes = Lists.newArrayList();
       nodes.addAll(node.children());
       int lasti = nodes.size() - 1;
       for (int i = 1; i <= lasti; i += 2) {  // Even are conditions.
@@ -177,7 +179,7 @@ public class CajitaRewriter extends Rewriter {
   //     @x.@y, @x.@y(), @x.@y(arg), @x.@y(args*), ...
   // is that 'y' is always bound to a Reference.
 
-  final public Rule[] cajaRules = {
+  private final Rule[] cajaRules = {
 
     ////////////////////////////////////////////////////////////////////////
     // Do nothing if the node is already the result of some translation
@@ -248,7 +250,7 @@ public class CajitaRewriter extends Rewriter {
                     "moduleIndex",
                     new IntegerLiteral(FilePosition.UNKNOWN, index));
               } else {
-                // error messages were logged in the function getModule
+                assert mq.hasMessageAtLevel(MessageLevel.ERROR);
                 return node;
               }
             } else {
@@ -336,11 +338,11 @@ public class CajitaRewriter extends Rewriter {
       public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
         if (node instanceof Block && scope == null) {
           Scope s2 = Scope.fromProgram((Block) node, mq);
-          List<ParseTreeNode> expanded = new ArrayList<ParseTreeNode>();
+          List<ParseTreeNode> expanded = Lists.newArrayList();
           for (ParseTreeNode c : node.children()) {
             expanded.add(expand(c, s2));
           }
-          List<ParseTreeNode> importedVars = new ArrayList<ParseTreeNode>();
+          List<ParseTreeNode> importedVars = Lists.newArrayList();
 
           Set<String> importNames = s2.getImportedVariables();
           // Order imports so that Array and Object appear first, and so that
@@ -350,7 +352,7 @@ public class CajitaRewriter extends Rewriter {
           // SpiderMonkey actually implements this behavior, though it is fixed
           // in FF3, and ES5 specifies the behavior of [] and {} in terms
           // of the original Array and Object constructors for that context.
-          Set<String> orderedImportNames = new LinkedHashSet<String>();
+          Set<String> orderedImportNames = Sets.newLinkedHashSet();
           if (importNames.contains("Array")) {
             orderedImportNames.add("Array");
           }
@@ -416,7 +418,7 @@ public class CajitaRewriter extends Rewriter {
           substitutes="@startStmts*; @ss*;")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
         if (node instanceof Block) {
-          List<Statement> expanded = new ArrayList<Statement>();
+          List<Statement> expanded = Lists.newArrayList();
           Scope s2 = Scope.fromPlainBlock(scope);
           for (Statement c : ((Block) node).children()) {
             ParseTreeNode rewritten = expand(c, s2);
@@ -1958,7 +1960,7 @@ public class CajitaRewriter extends Rewriter {
       public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
         if (node instanceof MultiDeclaration) {
           boolean allDeclarations = true;
-          List<ParseTreeNode> expanded = new ArrayList<ParseTreeNode>();
+          List<ParseTreeNode> expanded = Lists.newArrayList();
 
           // Expand each declaration individually, and keep track of whether
           // the result is a declaration or whether we can just run the
@@ -1978,8 +1980,8 @@ public class CajitaRewriter extends Rewriter {
 
           // If they're not all declarations, then split the initializers out
           // so that we can run them in order.
-          List<Declaration> declarations = new ArrayList<Declaration>();
-          List<Expression> initializers = new ArrayList<Expression>();
+          List<Declaration> declarations = Lists.newArrayList();
+          List<Expression> initializers = Lists.newArrayList();
           if (allDeclarations) {
             for (ParseTreeNode n : expanded) {
               declarations.add((Declaration) n);
@@ -2025,17 +2027,20 @@ public class CajitaRewriter extends Rewriter {
           name="mapBadKeyValueOf",
           synopsis="Statically reject 'valueOf' as a key",
           reason="We depend on valueOf returning consistent results.",
-          matches="({@key: @val})",
+          matches="({valueOf: @f, @key*: @val*})",
           substitutes="<reject>")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
-        Map<String, ParseTreeNode> bindings = matchSingleMap(node);
-        if (bindings != null) {
-          StringLiteral key = (StringLiteral) bindings.get("key");
-          if (key.getUnquotedValue().equals("valueOf")) {
-            mq.addMessage(
-                RewriterMessageType.VALUEOF_PROPERTY_MUST_NOT_BE_SET,
-                key.getFilePosition(), this, key);
-            return node;
+        if (node instanceof ObjectConstructor) {
+          ObjectConstructor obj = (ObjectConstructor) node;
+          List<? extends Expression> parts = obj.children();
+          for (int i = 0, n = parts.size(); i < n; i += 2) {
+            StringLiteral key = (StringLiteral) parts.get(i);
+            if ("valueOf".equals(key.getUnquotedValue())) {
+              mq.addMessage(
+                  RewriterMessageType.VALUEOF_PROPERTY_MUST_NOT_BE_SET,
+                  key.getFilePosition(), this, key);
+              return node;
+            }
           }
         }
         return NONE;
@@ -2048,13 +2053,15 @@ public class CajitaRewriter extends Rewriter {
           name="mapBadKeySuffix",
           synopsis="Statically reject if a key with `__` suffix is found",
           reason="",
-          matches="({@key: @val})",
+          matches="({ @k__: @v, @key*: @val* })",
           substitutes="<reject>")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
-        Map<String, ParseTreeNode> bindings = matchSingleMap(node);
-        if (bindings != null) {
-          StringLiteral key = (StringLiteral) bindings.get("key");
-          if (key.getUnquotedValue().endsWith("__")) {
+        if (node instanceof ObjectConstructor) {
+          ObjectConstructor obj = (ObjectConstructor) node;
+          List<? extends Expression> parts = obj.children();
+          for (int i = 0, n = parts.size(); i < n; i += 2) {
+            StringLiteral key = (StringLiteral) parts.get(i);
+            if (!key.getUnquotedValue().endsWith("__")) { continue; }
             mq.addMessage(
                 RewriterMessageType.PROPERTIES_CANNOT_END_IN_DOUBLE_UNDERSCORE,
                 key.getFilePosition(), this, key);
@@ -2068,64 +2075,24 @@ public class CajitaRewriter extends Rewriter {
     new Rule() {
       @Override
       @RuleDescription(
-          name="mapSingle",
+          name="map",
           synopsis="Turns an object literal into an explicit initialization.",
-          reason="To avoid creating even a temporary possibly unsafe object " +
-              "(such as one with a bad 'toString' method), pass an " +
-              "array of a @key and a @val.",
-          matches="({@key: @val})",
-          substitutes="___.iM([@key, @val])")
+          reason="",
+          matches="({@key*: @val*})",
+          substitutes="___.iM([@parts*])")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
-        Map<String, ParseTreeNode> bindings = matchSingleMap(node);
-        if (bindings != null) {
-          StringLiteral key = (StringLiteral) bindings.get("key");
-          ParseTreeNode val = bindings.get("val");
-          return substV(
-              "key", noexpand(key),
-              "val", expand(nymize(val, key.getUnquotedValue(), "lit"), scope));
-        }
-        return NONE;
-      }
-    },
-
-    new Rule() {
-      @Override
-      @RuleDescription(
-          name="mapPlural",
-          synopsis="Turns an object literal into an explicit initialization.",
-          reason="To avoid creating even a temporary possibly unsafe object " +
-              "(such as one with a bad 'toString' method), pass an " +
-              "array of @items, which are interleaved @keys and @vals.",
-          matches="({@keys*: @vals*})",
-          substitutes="___.iM([@items*])")
-      public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
-        Map<String, ParseTreeNode> bindings = match(node);
-        if (bindings != null) {
-          List<ParseTreeNode> items = new ArrayList<ParseTreeNode>();
-          List<? extends ParseTreeNode> keys = bindings.get("keys").children();
-          List<? extends ParseTreeNode> vals = bindings.get("vals").children();
-          int len = keys.size();
-          if (1 == len) {
-            mq.addMessage(
-                RewriterMessageType.MAP_RECURSION_FAILED,
-                node.getFilePosition(), node);
+        if (node instanceof ObjectConstructor) {
+          ObjectConstructor obj = (ObjectConstructor) node;
+          List<? extends Expression> parts = obj.children();
+          List<Expression> expanded = Lists.newArrayList();
+          for (int i = 0, n = parts.size(); i < n; i += 2) {
+            StringLiteral key = (StringLiteral) parts.get(i);
+            Expression val = parts.get(i + 1);
+            expanded.add(noexpand(key));
+            expanded.add((Expression) expand(
+                nymize(val, key.getUnquotedValue(), "lit"), scope));
           }
-          for (int i = 0, n = len; i < n; ++i) {
-            ParseTreeNode pairIn = substSingleMap(keys.get(i), vals.get(i));
-            ParseTreeNode pairOut = expand(pairIn, scope);
-            Map<String, ParseTreeNode> pairBindings = makeBindings();
-            if (!QuasiBuilder.match("___.iM([@key, @val])",
-                                    pairOut, pairBindings)) {
-              mq.addMessage(
-                  RewriterMessageType.MAP_RECURSION_FAILED,
-                  node.getFilePosition(), node);
-            } else {
-              items.add(pairBindings.get("key"));
-              items.add(pairBindings.get("val"));
-            }
-          }
-          return substV(
-              "items", new ParseTreeNodeContainer(items));
+          return substV("parts", new ParseTreeNodeContainer(expanded));
         }
         return NONE;
       }

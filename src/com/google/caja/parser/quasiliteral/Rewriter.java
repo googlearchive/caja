@@ -271,7 +271,7 @@ public abstract class Rewriter {
     return removeTaint(node);
   }
 
-  protected Literal noexpand(Literal node) {
+  protected <T extends Literal> T noexpand(T node) {
     return removeTaint(node);
   }
 

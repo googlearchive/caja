@@ -23,7 +23,9 @@ import com.google.caja.parser.js.FunctionDeclaration;
 import com.google.caja.parser.js.Identifier;
 import com.google.caja.parser.js.LabeledStatement;
 import com.google.caja.parser.js.LabeledStmtWrapper;
+import com.google.caja.parser.js.ObjectConstructor;
 import com.google.caja.parser.js.Reference;
+import com.google.caja.parser.js.StringLiteral;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -86,6 +88,10 @@ public final class RuleChain {
           QuasiNode p = QuasiBuilder.parseQuasiNode(pattern);
           if (p instanceof SimpleQuasiNode) {
             lowerBound = toNodeType(((SimpleQuasiNode) p).getMatchedClass());
+          } else if (p instanceof ObjectCtorQuasiNode) {
+            lowerBound = ObjectConstructor.class;
+          } else if (p instanceof StringLiteralQuasiNode) {
+            lowerBound = StringLiteral.class;
           } else {
             lowerBound = ParseTreeNode.class;
           }

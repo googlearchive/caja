@@ -28,9 +28,9 @@ import java.util.Map;
 public class SyntheticQuasiNode extends SimpleQuasiNode {
   public SyntheticQuasiNode(
       Class<? extends ParseTreeNode> clazz,
-      Object value,
+      Object value, Equivalence valueComparator,
       QuasiNode... children) {
-    super(clazz, value, children);
+    super(clazz, value, valueComparator, children);
   }
 
   @Override

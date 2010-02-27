@@ -14,20 +14,50 @@
 
 package com.google.caja.parser.quasiliteral;
 
+import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.InputSource;
-import junit.framework.TestCase;
+import com.google.caja.parser.ParseTreeNode;
+import com.google.caja.parser.ParseTreeNodeContainer;
+import com.google.caja.parser.js.IntegerLiteral;
+import com.google.caja.parser.js.StringLiteral;
+import com.google.caja.util.CajaTestCase;
 
 import java.net.URI;
+import java.util.Arrays;
 
 /**
  *
  * @author ihab.awad@gmail.com
  */
-public class QuasiBuilderTest extends TestCase {
+public class QuasiBuilderTest extends CajaTestCase {
   public final void testParseDoesNotFail() throws Exception {
     QuasiNode n = QuasiBuilder.parseQuasiNode(
         new InputSource(URI.create("built-in:///js-quasi-literals")),
         "function @a() { @b.@c = @d; @e = @f; }");
     assertTrue(n instanceof SimpleQuasiNode);
+  }
+
+  public final void testMultiProps() throws Exception {
+    ParseTreeNode n = QuasiBuilder.substV(
+        "({ '@k*': @v*, baz: @boo })",
+        "k", new ParseTreeNodeContainer(Arrays.asList(
+            jsExpr(fromString("'foo'")), jsExpr(fromString("'bar'")))),
+        "v", new ParseTreeNodeContainer(Arrays.asList(
+            jsExpr(fromString("0")), jsExpr(fromString("1")))),
+        "boo", new IntegerLiteral(FilePosition.UNKNOWN, 2));
+    assertEquals(
+        render(jsExpr(fromString("{ foo: 0, bar: 1, baz: 2 }"))),
+        render(n));
+  }
+
+  public final void testPropKeys() throws Exception {
+    ParseTreeNode n = QuasiBuilder.substV(
+        "({ @a: @b, '\\@c': @d })",
+        "a", StringLiteral.valueOf(FilePosition.UNKNOWN, "a"),
+        "b", StringLiteral.valueOf(FilePosition.UNKNOWN, "b"),
+        "c", StringLiteral.valueOf(FilePosition.UNKNOWN, "c"),
+        "d", StringLiteral.valueOf(FilePosition.UNKNOWN, "d"));
+    assertEquals(
+        render(jsExpr(fromString("{ a: 'b', '@c': 'd' }"))), render(n));
   }
 }

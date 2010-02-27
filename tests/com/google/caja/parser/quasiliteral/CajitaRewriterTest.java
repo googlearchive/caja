@@ -39,11 +39,11 @@ import com.google.caja.reporting.MessageType;
 import com.google.caja.reporting.TestBuildInfo;
 import com.google.caja.util.Executor;
 import com.google.caja.util.FailureIsAnOption;
+import com.google.caja.util.Lists;
 import com.google.caja.util.RhinoTestBed;
 
 import java.io.IOException;
 import java.net.URI;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
@@ -81,7 +81,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
   @Override
   public void setUp() throws Exception {
     super.setUp();
-    cajitaRewriter = new CajitaRewriter(new TestBuildInfo(), mq, false);
+    cajitaRewriter = new CajitaRewriter(TestBuildInfo.getInstance(), mq, false);
     setRewriter(cajitaRewriter);
   }
 
@@ -1676,6 +1676,34 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
         ";");
   }
 
+  public final void testMapSingle() throws Exception {
+    checkSucceeds(
+        "var o = { k0: p.x };",
+        weldPrelude("p") +
+        "var o = ___.iM(['k0', p.x_canRead___ ? p.x : ___.readPub(p, 'x')]);");
+    checkFails("var o = { valueOf: p.x, k1: p.y };",
+               "The valueOf property must not be set");
+    checkFails("var o = { x___: p.x, k1: p.y };",
+               "Properties cannot end in \"__\"");
+  }
+
+  public final void testMapPlural() throws Exception {
+    checkSucceeds(
+        "var o = { k0: p.x, k1: p.y };",
+        weldPrelude("p")
+        + "var o = ___.iM(['k0', p.x_canRead___ ? p.x : ___.readPub(p, 'x'),"
+        + "                'k1', p.y_canRead___ ? p.y : ___.readPub(p, 'y')]);"
+        );
+    checkFails("var o = { valueOf: p.x, k1: p.y };",
+               "The valueOf property must not be set");
+    checkFails("var o = { x___: p.x, k1: p.y };",
+               "Properties cannot end in \"__\"");
+    checkFails("var o = { k0: p.x, valueOf: p.y };",
+               "The valueOf property must not be set");
+    checkFails("var o = { k0: p.x, x___: p.y };",
+               "Properties cannot end in \"__\"");
+  }
+
   public final void testOtherInstanceof() throws Exception {
     checkSucceeds(
         "function foo() {}" +
@@ -2410,10 +2438,10 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
 
     rewriteAndExecute(
         "var m = load('foo/testPrimordials'); "
-        + "assertTrue(m.cajolerName !== undefined);"
-        + "assertTrue(m.cajolerVersion !== undefined);"
-        + "assertTrue(m.cajoledDate !== undefined);"
-        + "assertTrue(m.includedModules !== undefined);"
+        + "assertEquals('com.google.caja', m.cajolerName);"
+        + "assertEquals('testBuildVersion', m.cajolerVersion);"
+        + "assertEquals(0, m.cajoledDate);"
+        + "assertEquals(0, m.includedModules.length);"
         + "assertThrows(function() { m.cajolerName = 'bar'; });"
         + "assertThrows(function() { m.includedModules = 'bar'; });"
         + "assertThrows(function() { m.includedModules.foo = 'bar'; });"
@@ -2445,8 +2473,6 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
         new UncajoledModule(js(fromString("var s = 'c'; var m = load(s);"))),
         RewriterMessageType.CANNOT_LOAD_A_DYNAMIC_CAJITA_MODULE,
         MessageLevel.FATAL_ERROR);
-
-    setRewriter(cajitaRewriter);
   }
 
   /**
@@ -2487,7 +2513,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
       throws IOException, ParseException {
     mq.getMessages().clear();
 
-    List<Statement> children = new ArrayList<Statement>();
+    List<Statement> children = Lists.newArrayList();
     children.add(js(fromString(caja, is)));
     String cajoledJs = render(rewriteTopLevelNode(
         new UncajoledModule(new Block(FilePosition.UNKNOWN, children))));

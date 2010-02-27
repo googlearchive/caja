@@ -341,49 +341,6 @@ public abstract class Rule implements MessagePart {
     return node;
   }
 
-  /**
-   * <tt>substSingleMap(k, v)</tt> should be equivalent to<pre>
-   * QuasiBuilder.substV(
-   *     "({&#64;key: @val})",
-   *     "key", k,
-   *     "val", v)</pre>
-   * but currently isn't.
-   * <p>
-   * TODO(erights): figure out why not, and fix if appropriate.
-   */
-  protected ParseTreeNode substSingleMap(ParseTreeNode key, ParseTreeNode val) {
-    List<ParseTreeNode> keys = new ArrayList<ParseTreeNode>();
-    List<ParseTreeNode> vals = new ArrayList<ParseTreeNode>();
-    keys.add(key);
-    vals.add(val);
-    return QuasiBuilder.substV(
-        "({@keys*: @vals*})",
-        "keys", new ParseTreeNodeContainer(keys),
-        "vals", new ParseTreeNodeContainer(vals));
-  }
-
-  /**
-   * <tt>matchSingleMap(node) != null</tt> should be equivalent to<pre>
-   * QuasiBuilder.match("({&#64;key: @val})", node)</pre>
-   * but currently isn't.
-   * <p>
-   * TODO(erights): figure out why not, and fix if appropriate.
-   */
-  protected Map<String, ParseTreeNode> matchSingleMap(ParseTreeNode node) {
-    Map<String, ParseTreeNode> badBindings = makeBindings();
-    if (QuasiBuilder.match("({@keys*: @vals*})", node, badBindings)) {
-      ParseTreeNodeContainer keys = (ParseTreeNodeContainer) badBindings.get("keys");
-      if (keys.children().size() == 1) {
-        ParseTreeNodeContainer vals = (ParseTreeNodeContainer) badBindings.get("vals");
-        Map<String, ParseTreeNode> fixedBindings = makeBindings();
-        fixedBindings.put("key", keys.children().get(0));
-        fixedBindings.put("val", vals.children().get(0));
-        return fixedBindings;
-      }
-    }
-    return null;
-  }
-
   protected void checkFormals(ParseTreeNode formals) {
     for (ParseTreeNode formal : formals.children()) {
       FormalParam f = (FormalParam) formal;

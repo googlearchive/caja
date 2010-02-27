@@ -14,73 +14,75 @@
 
 package com.google.caja.parser.quasiliteral;
 
-import com.google.caja.lexer.FilePosition;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.ParseTreeNodeContainer;
 import com.google.caja.parser.js.Expression;
-import com.google.caja.parser.js.ObjectConstructor;
+import com.google.caja.util.Lists;
 
 import java.util.List;
 import java.util.Map;
-import java.util.ArrayList;
 
 /**
- * A quasi hole matching an object constructor. It always matches expressions of
- * the form:
+ * A quasi hole matching an object constructor. It matches any number of
+ * properties (adjacent key value pairs) of the abbreviate object syntax, e.g.:
  *
  * <pre>
  *   { k1: v1, k2: v2, ..., kn: vn}
  * </pre>
  *
- * and binds the key nodes as a {@code ParseTreeNodeContainer} under {@code keyIdentifier},
- * and the value nodes as a {@code ParseTreeNodeContainer} under {@code valueIdentifier}.
+ * and binds the key nodes as a {@code ParseTreeNodeContainer} under {@code k},
+ * and the value nodes as a {@code ParseTreeNodeContainer} under {@code v}.
+ *
+ * This node type is always a child of {@link ObjectCtorQuasiNode}.
+ * {@link SinglePropertyQuasi} is similar but only matches a single
+ * key/value pair.
  *
  * @author ihab.awad@gmail.com (Ihab Awad)
  */
-public class ObjectConstructorHole extends QuasiNode {
+final class MultiPropertyQuasi extends QuasiNode {
   private final String keyIdentifier;
   private final String valueIdentifier;
 
-  public ObjectConstructorHole(String keyIdentifier, String valueIdentifier) {
+  MultiPropertyQuasi(String keyIdentifier, String valueIdentifier) {
     this.keyIdentifier = keyIdentifier;
     this.valueIdentifier = valueIdentifier;
   }
 
   @Override
   protected boolean consumeSpecimens(
-      List<ParseTreeNode> specimens,
-      Map<String, ParseTreeNode> bindings) {
-    if (specimens.isEmpty()) return false;
-    if (!(specimens.get(0) instanceof ObjectConstructor)) return false;
-    assert(specimens.get(0).children().size() % 2 == 0);
-    List<ParseTreeNode> keyList = new ArrayList<ParseTreeNode>();
-    List<ParseTreeNode> valueList = new ArrayList<ParseTreeNode>();
-    for (int i = 0; i < specimens.get(0).children().size(); ) {
-      keyList.add(specimens.get(0).children().get(i++));
-      valueList.add(specimens.get(0).children().get(i++));
+      List<ParseTreeNode> specimens, Map<String, ParseTreeNode> bindings) {
+    List<ParseTreeNode> keyList = Lists.newArrayList();
+    List<ParseTreeNode> valueList = Lists.newArrayList();
+    for (int i = 0, n = specimens.size(); i < n; i += 2) {
+      keyList.add(specimens.get(i));
+      valueList.add(specimens.get(i + 1));
     }
-    specimens.remove(0);
-    return
-        putIfDeepEquals(bindings, keyIdentifier, new ParseTreeNodeContainer(keyList)) &&
-        putIfDeepEquals(bindings, valueIdentifier, new ParseTreeNodeContainer(valueList));
+    if (putIfDeepEquals(
+            bindings, keyIdentifier, new ParseTreeNodeContainer(keyList))
+        && putIfDeepEquals(
+              bindings, valueIdentifier,
+              new ParseTreeNodeContainer(valueList))) {
+      specimens.clear();
+      return true;
+    }
+    return false;
   }
 
   @Override
   protected boolean createSubstitutes(
       List<ParseTreeNode> substitutes,
       Map<String, ParseTreeNode> bindings) {
-    if (bindings.containsKey(keyIdentifier) &&
-        bindings.containsKey(valueIdentifier)) {
+    if (bindings.containsKey(keyIdentifier)
+        && bindings.containsKey(valueIdentifier)) {
       ParseTreeNode keyNode = bindings.get(keyIdentifier);
       ParseTreeNode valueNode = bindings.get(valueIdentifier);
-      assert(keyNode.children().size() == valueNode.children().size());
-      List<Expression> children = new ArrayList<Expression>();
+      assert keyNode.children().size() == valueNode.children().size();
+      List<Expression> children = Lists.newArrayList();
       for (int i = 0; i < keyNode.children().size(); i++) {
         children.add((Expression) keyNode.children().get(i));
         children.add((Expression) valueNode.children().get(i));
       }
-      substitutes.add(
-          new ObjectConstructor(FilePosition.UNKNOWN, null, children));
+      substitutes.addAll(children);
       return true;
     }
     return false;

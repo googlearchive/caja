@@ -38,10 +38,10 @@ import com.google.caja.parser.js.StringLiteral;
 import com.google.caja.parser.js.SyntheticNodes;
 import com.google.caja.parser.js.DirectivePrologue;
 import com.google.caja.reporting.DevNullMessageQueue;
+import com.google.caja.util.Lists;
 
-import java.io.StringReader;
-import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -54,7 +54,12 @@ import java.util.Set;
  */
 public class QuasiBuilder {
   private static final Map<String, QuasiNode> patternCache
-      = new HashMap<String, QuasiNode>();
+      = Collections.synchronizedMap(new LinkedHashMap<String, QuasiNode>() {
+        @Override
+        public boolean removeEldestEntry(Map.Entry<String, QuasiNode> e) {
+          return this.size() > 256;
+        }
+      });
 
   /**
    * Match a quasiliteral pattern against a specimen.
@@ -237,16 +242,8 @@ public class QuasiBuilder {
       }
     }
 
-    if (n instanceof ObjectConstructor
-        && n.children().size() == 2
-        && n.children().get(0) instanceof StringLiteral
-        && n.children().get(1) instanceof Reference) {
-      String key = ((StringLiteral) n.children().get(0)).getUnquotedValue();
-      String val = ((Reference) n.children().get(1)).getIdentifierName();
-      if (key.startsWith("@") && key.endsWith("*")
-          && val.startsWith("@") && val.endsWith("*")) {
-        return buildObjectConstructorMatchNode(key, val);
-      }
+    if (n instanceof ObjectConstructor) {
+      return buildObjectConstructorNode((ObjectConstructor) n);
     }
 
     if (n instanceof DirectivePrologue) {
@@ -255,12 +252,11 @@ public class QuasiBuilder {
 
     if (n instanceof StringLiteral) {
       StringLiteral lit = (StringLiteral) n;
-      String value = lit.getUnquotedValue();
-      if (value.startsWith("@")) {
-        String bindingName = value.substring(1);
-        if (ParserBase.isJavascriptIdentifier(bindingName)) {
-          return new StringLiteralQuasiNode(bindingName);
-        }
+      String ident = quasiIdent(lit);
+      if (ident != null
+          // Make sure it doesn't end in * or ?.
+          && Character.isJavaIdentifierPart(ident.charAt(ident.length() - 1))) {
+        return new StringLiteralQuasiNode(ident.substring(1));
       }
     }
 
@@ -285,16 +281,16 @@ public class QuasiBuilder {
       isSynthetic = ref.getIdentifierName().endsWith("__");
     }
 
+    // StringLiteral values are the raw text, so compare by decoded value.
+    QuasiNode.Equivalence cmp = (n instanceof StringLiteral)
+        ? QuasiNode.EQUAL_UNESCAPED : QuasiNode.SAFE_EQUALS;
+
     if (isSynthetic) {
       return new SyntheticQuasiNode(
-          n.getClass(),
-          n.getValue(),
-          buildChildrenOf(n));
+          n.getClass(), n.getValue(), cmp, buildChildrenOf(n));
     } else {
       return new SimpleQuasiNode(
-          n.getClass(),
-          n.getValue(),
-          buildChildrenOf(n));
+          n.getClass(), n.getValue(), cmp, buildChildrenOf(n));
     }
   }
 
@@ -346,18 +342,71 @@ public class QuasiBuilder {
     return new TrailingUnderscoresHole(quasiString, numberOfUnderscores);
   }
 
-  private static QuasiNode buildObjectConstructorMatchNode(String keyExpr, String valueExpr) {
-    keyExpr = keyExpr.substring(1, keyExpr.length() - 1);
-    valueExpr = valueExpr.substring(1, valueExpr.length() - 1);
-    return new ObjectConstructorHole(keyExpr, valueExpr);
+  /**
+   * Extracts a quasi reference from a string literal.
+   * <pre>
+   * '"foo"'   => null,
+   * '"@foo"'  => '@foo',
+   * '"\@foo"' => null,  // Strings with escape sequences are treated literally.
+   * '"@foo*"' => '@foo*'
+   * </pre>
+   */
+  private static String quasiIdent(StringLiteral sl) {
+    String raw = sl.getValue();
+    int start = 0, end = raw.length();
+    if (end - start >= 2 && raw.charAt(end - 1) == raw.charAt(start)) {
+      switch (raw.charAt(start)) {
+        case '\'': case '"': start = 1; --end; break;
+      }
+    }
+    if (start >= end || raw.charAt(start) != '@') { return null; }
+    int identStart = start + 1;
+    int identEnd = end;
+    if (identEnd > identStart) {
+      switch (raw.charAt(identEnd - 1)) {
+        case '?': case '*': case '+': --identEnd; break;
+      }
+    }
+    if (ParserBase.isJavascriptIdentifier(StringLiteral.unescapeJsString(
+            raw.substring(identStart, identEnd)))) {
+      return StringLiteral.unescapeJsString(raw.substring(start, end));
+    }
+    return null;
   }
 
-  private static QuasiNode buildDirectivePrologueMatchNode(Set<String> subsetNames) {
+  private static QuasiNode buildObjectConstructorNode(ObjectConstructor obj) {
+    List<QuasiNode> propQuasis = Lists.newArrayList();
+    List<? extends Expression> objParts = obj.children();
+    for (int i = 0, n = objParts.size(); i < n; i += 2) {
+      StringLiteral key = (StringLiteral) objParts.get(i);
+      Expression value = objParts.get(i + 1);
+      String keyIdent = quasiIdent(key);
+      if (value instanceof Reference) {
+        String valueStr = ((Reference) value).getIdentifierName();
+        if (keyIdent != null && keyIdent.endsWith("*")
+            && valueStr.startsWith("@") && valueStr.endsWith("*")) {
+          propQuasis.add(new MultiPropertyQuasi(
+              keyIdent.substring(1, keyIdent.length() - 1),
+              valueStr.substring(1, valueStr.length() - 1)));
+          continue;
+        }
+      }
+      QuasiNode keyQuasi = build(
+          keyIdent != null
+          ? new Reference(new Identifier(FilePosition.UNKNOWN, keyIdent))
+          : key);
+      propQuasis.add(new SinglePropertyQuasi(keyQuasi, build(value)));
+    }
+    return new ObjectCtorQuasiNode(propQuasis.toArray(new QuasiNode[0]));
+  }
+
+  private static QuasiNode buildDirectivePrologueMatchNode(
+      Set<String> subsetNames) {
     return new DirectivePrologueQuasiNode(subsetNames);
   }
 
   private static QuasiNode[] buildChildrenOf(ParseTreeNode n) {
-    List<QuasiNode> children = new ArrayList<QuasiNode>();
+    List<QuasiNode> children = Lists.newArrayList();
     for (ParseTreeNode child : n.children()) children.add(build(child));
     return children.toArray(new QuasiNode[children.size()]);
   }
@@ -368,8 +417,7 @@ public class QuasiBuilder {
     Parser parser = new Parser(
         new JsTokenQueue(
             new JsLexer(
-                CharProducer.Factory.create(new StringReader(sourceText),
-                inputSource),
+                CharProducer.Factory.fromString(sourceText, inputSource),
                 true),
             inputSource),
         DevNullMessageQueue.singleton(),

@@ -34,20 +34,20 @@ import java.util.Map;
 public class SimpleQuasiNode extends QuasiNode {
   private final Class<? extends ParseTreeNode> clazz;
   private final Object value;
+  private Equivalence valueComparator;
 
   protected SimpleQuasiNode(
-      Class<? extends ParseTreeNode> clazz,
-      Object value,
-      QuasiNode... children) {
+      Class<? extends ParseTreeNode> clazz, Object value,
+      Equivalence valueComparator, QuasiNode... children) {
     super(children);
     this.clazz = clazz;
     this.value = value;
+    this.valueComparator = valueComparator;
   }
 
   @Override
   protected boolean consumeSpecimens(
-      List<ParseTreeNode> specimens,
-      Map<String, ParseTreeNode> bindings) {
+      List<ParseTreeNode> specimens, Map<String, ParseTreeNode> bindings) {
     if (specimens.isEmpty()) return false;
     if (matchSelf(specimens.get(0)) &&
         matchChildren(specimens.get(0), bindings)) {
@@ -58,9 +58,8 @@ public class SimpleQuasiNode extends QuasiNode {
   }
 
   private boolean matchSelf(ParseTreeNode specimen) {
-    return
-        clazz == specimen.getClass() &&
-        safeEquals(value, specimen.getValue());
+    return clazz == specimen.getClass()
+        && valueComparator.equivalent(value, specimen.getValue());
   }
 
   private boolean matchChildren(

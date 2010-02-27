@@ -116,12 +116,6 @@ public enum RewriterMessageType implements MessageTypeInt {
           + "Please report this error at: http://code.google.com/p/google-caja/issues/",
       MessageLevel.FATAL_ERROR),
 
-  MAP_RECURSION_FAILED(
-      "%s: INTERNAL COMPILER ERROR. "
-          + "Object literal decomposition did not match any rules at: %s. "
-          + "Please report this error at: http://code.google.com/p/google-caja/issues/",
-      MessageLevel.FATAL_ERROR),
-
   NOEXPAND_BINARY_DECL(
       "%s: INTERNAL COMPILER ERROR. "
           + "Can't noexpand a binary Declaration: %s. "

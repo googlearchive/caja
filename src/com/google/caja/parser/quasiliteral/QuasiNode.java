@@ -17,6 +17,8 @@ package com.google.caja.parser.quasiliteral;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.ParseTreeNodes;
 import com.google.caja.parser.js.Identifier;
+import com.google.caja.parser.js.StringLiteral;
+import com.google.caja.util.Lists;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -41,7 +43,7 @@ public abstract class QuasiNode {
   public List<QuasiNode> getChildren() { return children; }
 
   public Map<String, ParseTreeNode> match(ParseTreeNode specimen) {
-    List<ParseTreeNode> specimens = new ArrayList<ParseTreeNode>();
+    List<ParseTreeNode> specimens = Lists.newArrayList();
     specimens.add(specimen);
     Map<String, ParseTreeNode> bindings = Rule.makeBindings();
     return consumeSpecimens(specimens, bindings) ? bindings : null;
@@ -49,7 +51,8 @@ public abstract class QuasiNode {
 
   public ParseTreeNode substitute(Map<String, ParseTreeNode> bindings) {
     List<ParseTreeNode> results = new ArrayList<ParseTreeNode>();
-    return (createSubstitutes(results, bindings) && results.size() == 1) ? results.get(0) : null;
+    return (createSubstitutes(results, bindings) && results.size() == 1)
+        ? results.get(0) : null;
   }
 
   protected abstract boolean consumeSpecimens(
@@ -74,7 +77,7 @@ public abstract class QuasiNode {
   }
 
   protected static boolean safeEquals(Object x, Object y) {
-    return x != null ? x.equals(y) : y == null;
+    return x == y || (x != null && x.equals(y));
   }
 
   protected static boolean putIfDeepEquals(
@@ -89,4 +92,19 @@ public abstract class QuasiNode {
     bindings.put(key, value);
     return true;
   }
+
+  interface Equivalence {
+    boolean equivalent(Object a, Object b);
+  }
+
+  static final Equivalence SAFE_EQUALS = new Equivalence() {
+    public boolean equivalent(Object a, Object b) { return safeEquals(a, b); }
+  };
+
+  static final Equivalence EQUAL_UNESCAPED = new Equivalence() {
+    public boolean equivalent(Object a, Object b) {
+      return StringLiteral.getUnquotedValueOf((String) a)
+          .equals(StringLiteral.getUnquotedValueOf((String) b));
+    }
+  };
 }

@@ -14,11 +14,6 @@
 
 package com.google.caja.parser.quasiliteral;
 
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.ParseTreeNodeContainer;
@@ -31,6 +26,7 @@ import com.google.caja.parser.js.FunctionDeclaration;
 import com.google.caja.parser.js.Identifier;
 import com.google.caja.parser.js.MultiDeclaration;
 import com.google.caja.parser.js.Noop;
+import com.google.caja.parser.js.ObjectConstructor;
 import com.google.caja.parser.js.Operation;
 import com.google.caja.parser.js.Operator;
 import com.google.caja.parser.js.QuotedExpression;
@@ -42,6 +38,10 @@ import com.google.caja.parser.js.SyntheticNodes;
 import com.google.caja.parser.js.TryStmt;
 import com.google.caja.parser.js.UncajoledModule;
 import com.google.caja.reporting.MessageQueue;
+import com.google.caja.util.Lists;
+
+import java.util.List;
+import java.util.Map;
 
 /**
  * Rewrites a JavaScript parse tree to comply with default Valija rules.
@@ -193,9 +193,7 @@ public class DefaultValijaRewriter extends Rewriter {
         if (bindings != null && scope.isOuter("includeScript")) {
           ParseTreeNode arg = bindings.get("arg");
           if (arg instanceof StringLiteral) {
-            return substV("arg",
-                new StringLiteral(FilePosition.UNKNOWN,
-                    ((StringLiteral) arg).getUnquotedValue()));
+            return substV("arg", noexpand((StringLiteral) arg));
           } else {
             mq.addMessage(
                 RewriterMessageType.CANNOT_LOAD_A_DYNAMIC_VALIJA_MODULE,
@@ -220,9 +218,7 @@ public class DefaultValijaRewriter extends Rewriter {
         if (bindings != null && scope.isOuter("includeScript")) {
           ParseTreeNode arg = bindings.get("arg");
           if (arg instanceof StringLiteral) {
-            String src = ((StringLiteral) arg).getUnquotedValue();
-            return substV("arg",
-                new StringLiteral(FilePosition.UNKNOWN, src));
+            return substV("arg", noexpand((StringLiteral) arg));
           } else {
             mq.addMessage(
                 RewriterMessageType.CANNOT_LOAD_A_DYNAMIC_SERVERJS_MODULE,
@@ -247,9 +243,7 @@ public class DefaultValijaRewriter extends Rewriter {
         if (bindings != null && scope.isOuter("includeScript")) {
           ParseTreeNode arg = bindings.get("arg");
           if (arg instanceof StringLiteral) {
-            String src = ((StringLiteral) arg).getUnquotedValue();
-            return substV("arg",
-                new StringLiteral(FilePosition.UNKNOWN, src));
+            return substV("arg", noexpand((StringLiteral) arg));
           } else {
             mq.addMessage(
                 RewriterMessageType.CANNOT_LOAD_A_DYNAMIC_SERVERJS_MODULE,
@@ -295,8 +289,8 @@ public class DefaultValijaRewriter extends Rewriter {
             + "@ss*;")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
         if (node instanceof Block && scope == null) {
-          Scope s2 = Scope.fromProgram((Block)node, mq);
-          List<ParseTreeNode> expanded = new ArrayList<ParseTreeNode>();
+          Scope s2 = Scope.fromProgram((Block) node, mq);
+          List<ParseTreeNode> expanded = Lists.newArrayList();
           for (ParseTreeNode c : node.children()) {
             expanded.add(expand(c, s2));
           }
@@ -334,7 +328,7 @@ public class DefaultValijaRewriter extends Rewriter {
           substitutes="@startStmts*; @ss*;")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
         if (node instanceof Block) {
-          List<ParseTreeNode> expanded = new ArrayList<ParseTreeNode>();
+          List<ParseTreeNode> expanded = Lists.newArrayList();
           Scope s2 = Scope.fromPlainBlock(scope);
           for (ParseTreeNode c : node.children()) {
             expanded.add(expand(c, s2));
@@ -1041,7 +1035,7 @@ public class DefaultValijaRewriter extends Rewriter {
         Map<String, ParseTreeNode> bindings = this.match(node);
         if (bindings != null) {
           Reference p = (Reference) bindings.get("p");
-          List<ParseTreeNode> expanded = new ArrayList<ParseTreeNode>();
+          List<ParseTreeNode> expanded = Lists.newArrayList();
           ParseTreeNodeContainer args = (ParseTreeNodeContainer)bindings.get("as");
           for (ParseTreeNode c : args.children()) {
             expanded.add(expand(c, scope));
@@ -1066,7 +1060,7 @@ public class DefaultValijaRewriter extends Rewriter {
       public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
         Map<String, ParseTreeNode> bindings = this.match(node);
         if (bindings != null) {
-          List<ParseTreeNode> expanded = new ArrayList<ParseTreeNode>();
+          List<ParseTreeNode> expanded = Lists.newArrayList();
           ParseTreeNodeContainer args = (ParseTreeNodeContainer)bindings.get("as");
           for (ParseTreeNode c : args.children()) {
             expanded.add(expand(c, scope));
@@ -1091,7 +1085,7 @@ public class DefaultValijaRewriter extends Rewriter {
       public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
         Map<String, ParseTreeNode> bindings = this.match(node);
         if (bindings != null) {
-          List<ParseTreeNode> expanded = new ArrayList<ParseTreeNode>();
+          List<ParseTreeNode> expanded = Lists.newArrayList();
           ParseTreeNodeContainer args = (ParseTreeNodeContainer)bindings.get("as");
           for (ParseTreeNode c : args.children()) {
             expanded.add(expand(c, scope));
@@ -1190,7 +1184,7 @@ public class DefaultValijaRewriter extends Rewriter {
               "}" +
               "@fname = $v.dis(@rfcaller, '@fname');"))
       public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
-        Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
+        Map<String, ParseTreeNode> bindings = makeBindings();
         // Named simple function declaration
         if (node instanceof FunctionDeclaration &&
             QuasiBuilder.match(
@@ -1275,7 +1269,7 @@ public class DefaultValijaRewriter extends Rewriter {
       public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
         if (node instanceof MultiDeclaration
             && scope.isOuter()) {
-          List <Expression> newChildren = new ArrayList<Expression>();
+          List <Expression> newChildren = Lists.newArrayList();
           for (int i = 0, len = node.children().size(); i < len; i++) {
             ExpressionStmt result = (ExpressionStmt)
                 expand(node.children().get(i), scope);
@@ -1294,59 +1288,26 @@ public class DefaultValijaRewriter extends Rewriter {
     new Rule() {
       @Override
       @RuleDescription(
-          name="mapSingle",
+          name="map",
           synopsis="",
           reason="",
-          matches="({@key: @val})",
-          substitutes="({@key: @val})")
-      public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
-        Map<String, ParseTreeNode> bindings = matchSingleMap(node);
-        if (bindings != null) {
-          StringLiteral key = (StringLiteral) bindings.get("key");
-          ParseTreeNode val = bindings.get("val");
-          return substSingleMap(
-              key,
-              expand(nymize(val, key.getUnquotedValue(), "lit"), scope));
-        }
-        return NONE;
-      }
-    },
-
-    new Rule() {
-      @Override
-      @RuleDescription(
-          name="mapPlural",
-          synopsis="",
-          reason="",
-          matches="({@keys*: @vals*})",
+          matches="({@keys*: @val*})",
           substitutes="({@keys*: @vals*})")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
-        Map<String, ParseTreeNode> bindings = match(node);
-        if (bindings != null) {
-          List<ParseTreeNode> newVals = new ArrayList<ParseTreeNode>();
-          List<? extends ParseTreeNode> keys = bindings.get("keys").children();
-          List<? extends ParseTreeNode> vals = bindings.get("vals").children();
-          int len = keys.size();
-          if (1 == len) {
-            mq.addMessage(
-                RewriterMessageType.MAP_RECURSION_FAILED,
-                node.getFilePosition(), node);
+        if (node instanceof ObjectConstructor) {
+          List<? extends Expression> children = ((ObjectConstructor) node)
+              .children();
+          List<Expression> keys = Lists.newArrayList();
+          List<Expression> vals = Lists.newArrayList();
+          for (int i = 0, n = children.size(); i < n; i += 2) {
+            StringLiteral key = (StringLiteral) children.get(i);
+            Expression val = children.get(i + 1);
+            keys.add(noexpand(key));
+            vals.add((Expression) expand(
+                nymize(val, key.getUnquotedValue(), "lit"), scope));
           }
-          for (int i = 0, n = len; i < n; ++i) {
-            ParseTreeNode pairIn = substSingleMap(keys.get(i), vals.get(i));
-            ParseTreeNode pairOut = expand(pairIn, scope);
-            Map<String, ParseTreeNode> pairBindings = matchSingleMap(pairOut);
-            if (null == pairBindings) {
-              mq.addMessage(
-                  RewriterMessageType.MAP_RECURSION_FAILED,
-                  node.getFilePosition(), node);
-            } else {
-              newVals.add(pairBindings.get("val"));
-            }
-          }
-          return substV(
-              "keys", new ParseTreeNodeContainer(keys),
-              "vals", new ParseTreeNodeContainer(newVals));
+          return substV("keys", new ParseTreeNodeContainer(keys),
+                        "vals", new ParseTreeNodeContainer(vals));
         }
         return NONE;
       }

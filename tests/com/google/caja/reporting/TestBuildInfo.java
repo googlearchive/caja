@@ -20,6 +20,10 @@ package com.google.caja.reporting;
  * @author ihab.awad@gmail.com
  */
 public class TestBuildInfo extends BuildInfo {
+  // Intentionally mask static method in superclass, since getInstance shows
+  // by auto-completion on TestBuildInfo, but does not do what is intended.
+  public static TestBuildInfo getInstance() { return new TestBuildInfo(); }
+
   @Override
   public String getBuildInfo() {
     return "testBuildInfo";

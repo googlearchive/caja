@@ -139,6 +139,17 @@ public class MatchTest extends CajaTestCase {
     assertEquals(0, m.get("v").children().size());
 
     match(
+        "({ @k*: @v*, foo: @bar });",
+        "({ foo: bar, boo: baz })");
+    assertNotNull(m);
+    assertEquals(ParseTreeNodeContainer.class, m.get("k").getClass());
+    assertEquals(ParseTreeNodeContainer.class, m.get("v").getClass());
+    assertEquals(1, m.get("k").children().size());
+    assertEquals(1, m.get("v").children().size());
+    assertEquals(Reference.class, m.get("bar").getClass());
+    assertEquals("bar", ((Reference) m.get("bar")).getIdentifierName());
+
+    match(
         "({ @k* : @v* });",
         "({ a: 3, b: 4 })");
     assertNotNull(m);
@@ -398,6 +409,16 @@ public class MatchTest extends CajaTestCase {
             "fakeGlobals['@name'] = function @name() { @body* }",
             "name", m.get("name"),
             "body", m.get("body"))));
+  }
+
+  public final void testStringEquivalence() throws Exception {
+    assertTrue(QuasiBuilder.match("('foo')", jsExpr(fromString("'foo'"))));
+    assertTrue(QuasiBuilder.match("('bar')", jsExpr(fromString("'bar'"))));
+    assertTrue(QuasiBuilder.match("('foo')", jsExpr(fromString("'f\\oo'"))));
+    assertTrue(QuasiBuilder.match("('foo')", jsExpr(fromString("\"foo\""))));
+    assertTrue(QuasiBuilder.match("('f\\oo')", jsExpr(fromString("'foo'"))));
+    assertTrue(QuasiBuilder.match("('f\\oo')", jsExpr(fromString("'f\\oo'"))));
+    assertFalse(QuasiBuilder.match("('bar')", jsExpr(fromString("'foo'"))));
   }
 
   private void match(String pattern, String source)
