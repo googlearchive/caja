@@ -32,6 +32,7 @@ import com.google.caja.plugin.PipelineMaker;
 import com.google.caja.plugin.Planner;
 import com.google.caja.plugin.PluginCompiler;
 import com.google.caja.plugin.PluginEnvironment;
+import com.google.caja.plugin.PluginMessageType;
 import com.google.caja.plugin.PluginMeta;
 import com.google.caja.render.Concatenator;
 import com.google.caja.render.JsPrettyPrinter;
@@ -175,7 +176,7 @@ public class DefaultGadgetRewriter {
       throws GadgetRewriteException, ParseException {
     DomParser p = new DomParser(new HtmlLexer(htmlContent), src, mq);
     if (p.getTokenQueue().isEmpty()) {
-      mq.addMessage(OpenSocialMessageType.NO_CONTENT, src);
+      mq.addMessage(PluginMessageType.NO_CONTENT, src);
       throw new GadgetRewriteException("No content");
     }
     return p.parseFragment();

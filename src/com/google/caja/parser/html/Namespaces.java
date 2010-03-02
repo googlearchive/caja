@@ -31,11 +31,15 @@ public final class Namespaces {
    */
   public final String uri;
 
-  public static String HTML_NAMESPACE_URI = "http://www.w3.org/1999/xhtml";
-  public static String XML_NAMESPACE_URI
+  public static final String HTML_NAMESPACE_URI
+      = "http://www.w3.org/1999/xhtml";
+  public static final String XML_NAMESPACE_URI
       = "http://www.w3.org/XML/1998/namespace";
-  public static String XMLNS_NAMESPACE_URI = "http://www.w3.org/2000/xmlns/";
-  public static String SVG_NAMESPACE_URI = "http://www.w3.org/2000/svg";
+  public static final String XMLNS_NAMESPACE_URI
+      = "http://www.w3.org/2000/xmlns/";
+  public static final String XLINK_NAMESPACE_URI
+      = "http://www.w3.org/1999/xlink";
+  public static final String SVG_NAMESPACE_URI = "http://www.w3.org/2000/svg";
 
   private static final Namespaces XMLNS = new Namespaces(
       "xmlns", XMLNS_NAMESPACE_URI);
@@ -45,14 +49,19 @@ public final class Namespaces {
    */
   public static final Namespaces XML_SPECIAL = new Namespaces(
       XMLNS, "xml", XML_NAMESPACE_URI);
+
+  public static final Namespaces XLINK = new Namespaces(
+      XML_SPECIAL, "xlink", XLINK_NAMESPACE_URI);
+
+  public static final Namespaces IHTML = new Namespaces(
+      XLINK, "ihtml", "http://code.google.com/p/google-caja/ihtml");
+
   /** Some common namespaces good for parsing XML fragments. */
   public static final Namespaces COMMON = new Namespaces(
       new Namespaces(
           new Namespaces(
               new Namespaces(
-                  new Namespaces(
-                      XML_SPECIAL,
-                      "ihtml", "http://code.google.com/p/google-caja/ihtml"),
+                  IHTML,
                   "xsl", "http://www.w3.org/1999/XSL/Transform"),
               "os", "http://ns.opensocial.org/2008/markup"),
           "svg", SVG_NAMESPACE_URI),

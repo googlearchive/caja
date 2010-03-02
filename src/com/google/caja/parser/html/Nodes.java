@@ -392,10 +392,20 @@ final class Renderer {
     }
   }
 
+  private static final int COMMON_NS_DEPTH = depth(Namespaces.COMMON);
   private Namespaces addNamespace(Namespaces base, String uri) {
+    // We subtract COMMON_NS_DEPTH so that when we modify Namespaces.COMMON,
+    // we do not change the output for documents that do not depend on the
+    // added or removed namespaces.
+    // It is alright for depth to be negative since dashes can appear in
+    // namespace prefixes.
+    return new Namespaces(base, "_ns" + (depth(base) - COMMON_NS_DEPTH), uri);
+  }
+
+  private static int depth(Namespaces ns) {
     int depth = 0;
-    for (Namespaces p = base; p != null; p = p.parent) { ++depth; }
-    return new Namespaces(base, "_ns" + depth, uri);
+    for (Namespaces p = ns; p != null; p = p.parent) { ++depth; }
+    return depth;
   }
 
   private void renderNamespace(Namespaces ns) {

@@ -82,6 +82,7 @@ public enum PluginMessageType implements MessageTypeInt {
   FONT_FACE_NOT_ALLOWED("%s: @font-face not allowed", MessageLevel.ERROR),
   FAILED_TO_LOAD_EXTERNAL_URL(
       "%s: failed to load external url %s", MessageLevel.WARNING),
+  NO_CONTENT("%s: no content", MessageLevel.FATAL_ERROR),
   UNRECOGNIZED_CONTENT_TYPE(
       "%s: unrecognized content type %s for %s tag", MessageLevel.WARNING),
   UNRECOGNIZED_MEDIA_TYPE(

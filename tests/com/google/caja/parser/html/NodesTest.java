@@ -116,7 +116,7 @@ public class NodesTest extends CajaTestCase {
     assertEquals(
         ""
         + "<xml:foo>"
-        + "<_ns8:baz xmlns:_ns8=\"http://bobs.house.of/XML&amp;BBQ\""
+        + "<_ns1:baz xmlns:_ns1=\"http://bobs.house.of/XML&amp;BBQ\""
         + " boo=\"howdy\" xml:lang=\"es\" />"
         + "</xml:foo>",
         Nodes.render(xmlFragment(fromString(
@@ -139,7 +139,7 @@ public class NodesTest extends CajaTestCase {
     DocumentFragment fragment = xmlFragment(fromString(
         "<svg:foo><svg:bar xmlns:svg='http://foo/'/></svg:foo>"));
     assertEquals(
-        "<svg:foo><_ns8:bar xmlns:_ns8=\"http://foo/\"></_ns8:bar></svg:foo>",
+        "<svg:foo><_ns1:bar xmlns:_ns1=\"http://foo/\"></_ns1:bar></svg:foo>",
         Nodes.render(fragment));
   }
 
@@ -154,8 +154,8 @@ public class NodesTest extends CajaTestCase {
     rc.getOut().noMoreTokens();
     assertEquals(
         ""
-        + "<_ns9:foo xmlns:_ns9=\"http://www.w3.org/2000/svg\">"
-        + "<svg:bar /></_ns9:foo>",
+        + "<_ns2:foo xmlns:_ns2=\"http://www.w3.org/2000/svg\">"
+        + "<svg:bar /></_ns2:foo>",
         sb.toString());
   }
 

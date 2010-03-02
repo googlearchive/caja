@@ -71,8 +71,8 @@ public class LegacyNamespaceFixupStageTest extends CajaTestCase {
   public final void testPrefixedAttribWithUnknownPrefix() {
     assertFixed(
         ""
-        + "<a xmlns:_ns8=\"http://example.net/unknown-xml-namespace/\""
-        + " _ns8:lang=\"en\" href=\"bar.html\">Foo</a>",
+        + "<a xmlns:_ns1=\"http://example.net/unknown-xml-namespace/\""
+        + " _ns1:lang=\"en\" href=\"bar.html\">Foo</a>",
         builder().open("a").attr("href", "bar.html")
             .attr("baz:lang", "en").text("Foo").close().job());
     assertMessage(
@@ -99,8 +99,8 @@ public class LegacyNamespaceFixupStageTest extends CajaTestCase {
     // element, not necessarily HTML.
     assertFixed(
         ""
-        + "<_ns8:a xmlns:_ns8=\"http://example.net/unknown-xml-namespace/\""
-        + " href=\"foo.svg\">Foo</_ns8:a>",
+        + "<_ns1:a xmlns:_ns1=\"http://example.net/unknown-xml-namespace/\""
+        + " href=\"foo.svg\">Foo</_ns1:a>",
         builder().open("foo:a").attr("href", "foo.svg").text("Foo").close()
             .job());
     assertMessage(
