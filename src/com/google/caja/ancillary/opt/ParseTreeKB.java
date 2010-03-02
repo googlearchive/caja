@@ -91,7 +91,7 @@ public class ParseTreeKB {
     while (true) {
       Result out = new Result();
       Scope s = Scope.fromProgram(js, mq);
-      optimize(s, js, false, false, false, out);
+      optimize(s, js, false, false, false, false, out);
       Block optimized = ConstLocalOptimization.optimize((Block) out.node);
       if (optimized == js) { return optimized; }
       js = optimized;
@@ -106,7 +106,7 @@ public class ParseTreeKB {
     // Recursively fold e, since that is how the optimizer will compare it.
     // This has the side effect of turning complex expressions like (1/0),
     // (0/0), and (-0) into NumberLiterals.
-    addFactInt(rfold(e), fact);
+    addFactInt(rfold(e, false), fact);
   }
 
   private void addFactInt(Expression e, Fact fact) {
@@ -371,7 +371,7 @@ public class ParseTreeKB {
 
   private void optimize(
       Scope s, ParseTreeNode node, boolean isFuzzy, boolean isLhs,
-      boolean throwsOnUndefined, Result out) {
+      boolean throwsOnUndefined, boolean isFn, Result out) {
     if (node instanceof Conditional) {
       // Handle conditionals specially since the goal of this code is to cut
       // bits out of them.
@@ -414,6 +414,8 @@ public class ParseTreeKB {
       // The number of operands that will cause the exception to fail with
       // an error if undefined.
       int touLimit = 0;
+      // The number of operands that are functions.
+      int fnLimit = 0;
 
       if (node instanceof Operation) {
         Operator op = ((Operation) node).getOperator();
@@ -427,7 +429,10 @@ public class ParseTreeKB {
           case NOT:
             fuzzyLimit = 1;
             break;
-          case FUNCTION_CALL: case MEMBER_ACCESS: case CONSTRUCTOR:
+          case FUNCTION_CALL:
+            fnLimit = 1;
+            // $FALL-THROUGH$
+          case MEMBER_ACCESS: case CONSTRUCTOR:
           case SQUARE_BRACKET:
             touLimit = 1;
             break;
@@ -447,7 +452,9 @@ public class ParseTreeKB {
       ParseTreeNode[] newChildren = null;
       for (int i = 0; i < n; ++i) {
         ParseTreeNode child = children.get(i);
-        optimize(s, child, i < fuzzyLimit, i < lhsLimit, i < touLimit, out);
+        optimize(
+            s, child, i < fuzzyLimit, i < lhsLimit, i < touLimit,
+            i < fnLimit, out);
         sb = addDigest(out.digest, sb);
         if (out.node != child) {
           if (newChildren == null) {
@@ -483,7 +490,7 @@ public class ParseTreeKB {
     }
 
     if (node instanceof Expression) {
-      Expression folded = normNum(((Expression) node).fold());
+      Expression folded = normNum(((Expression) node).fold(isFn));
       if (folded != node) {
         node = folded;
         digest = optNodeDigest(folded);
@@ -505,7 +512,7 @@ public class ParseTreeKB {
     }
     while (i < n) {
       ParseTreeNode child = children.get(i);
-      optimize(s, child, true, false, false, out);
+      optimize(s, child, true, false, false, false, out);
       ParseTreeNode newChild = out.node;
       String newDigest = out.digest;
       Boolean optCond = (i & 1) == 0 && i + 1 < n
@@ -531,7 +538,7 @@ public class ParseTreeKB {
           } else {
             if (optCond) {
               // if (foo() || true) { ... }  =>  { foo(); ... }
-              optimize(s, children.get(i + 1), false, false, false, out);
+              optimize(s, children.get(i + 1), false, false, false, false, out);
               // if (foo() && 0) { ... } else { baz(); }  =>  { foo(); baz(); }
             } else {
               optimizeConditional(s, c, i + 2, out);
@@ -587,7 +594,7 @@ public class ParseTreeKB {
     StringBuilder sb = new StringBuilder();
     sb.append('(');
     Expression obj = ma.children().get(0);
-    optimize(s, obj, false, false, false, out);
+    optimize(s, obj, false, false, false, false, out);
     Reference prop = (Reference) ma.children().get(1);
     if (out.node != obj) {
       ma = Operation.createInfix(
@@ -814,14 +821,15 @@ public class ParseTreeKB {
         e.getFilePosition(), op.getOperator(), withoutTopRef(obj), prop);
   }
 
-  private static Expression rfold(Expression e) {
+  private static Expression rfold(Expression e, boolean isFn) {
     if (e instanceof Operation) {
       Operation o = (Operation) e;
       List<? extends Expression> children = o.children();
       Expression[] newChildren = null;
+      boolean oIsFn = o.getOperator() == Operator.FUNCTION_CALL;
       for (int i = 0, n = children.size(); i < n; ++i) {
         Expression operand = children.get(i);
-        Expression newOperand = operand.fold();
+        Expression newOperand = rfold(operand, oIsFn && i == 0);
         if (operand == newOperand) { continue; }
         if (newChildren == null) {
           newChildren = children.toArray(new Expression[n]);
@@ -832,7 +840,7 @@ public class ParseTreeKB {
         e = Operation.create(e.getFilePosition(), o.getOperator(), newChildren);
       }
     }
-    return normNum(e.fold());
+    return normNum(e.fold(isFn));
   }
 
   private static Expression normNum(Expression e) {

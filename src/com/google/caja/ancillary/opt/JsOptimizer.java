@@ -74,7 +74,7 @@ public class JsOptimizer {
     if (optimizer == null) { optimizer = new ParseTreeKB(); }
     List<? extends Expression> parts = envJson.children();
     for (int i = 0, n = parts.size(); i < n; i += 2) {
-      Expression value = parts.get(i + 1).fold();  // fold negative nums
+      Expression value = parts.get(i + 1).fold(false);  // fold negative nums
       if (!(value instanceof Literal)) {
         // True for "*useragent*" property inserted by JSKB.
         continue;

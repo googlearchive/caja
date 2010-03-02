@@ -942,7 +942,7 @@ public class ParseTreeKBTest extends CajaTestCase {
 
   private void addFact(String expr, String value) throws ParseException {
     kb.addFact(jsExpr(fromString(expr)),
-               Fact.is((Literal) jsExpr(fromString(value)).fold()));
+               Fact.is((Literal) jsExpr(fromString(value)).fold(false)));
   }
 
   private void addFuzzyFact(String expr, boolean truthy) throws ParseException {

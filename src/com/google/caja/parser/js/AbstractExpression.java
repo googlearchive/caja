@@ -47,5 +47,5 @@ public abstract class AbstractExpression
 
   public Boolean conditionResult() { return null; }
 
-  public Expression fold() { return this; }
+  public Expression fold(boolean isFn) { return this; }
 }

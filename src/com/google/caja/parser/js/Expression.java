@@ -54,6 +54,12 @@ public interface Expression extends MutableParseTreeNode {
   /**
    * This expression or a semantically equivalent simpler expression.
    * This method does not recurse.
+   * @param isFn true if the expression is the first operand to a function call.
+   *     Parts of JS are semantics specified in terms of the syntactic structure
+   *     of sub-expressions, such as the value of {@code this} in a method call
+   *     or the {@code eval} function/operator distinction.  This parameter is
+   *     used to ensure the semantics don't change even when the simplified
+   *     sub-expression is called as a function.
    */
-  Expression fold();
+  Expression fold(boolean isFn);
 }

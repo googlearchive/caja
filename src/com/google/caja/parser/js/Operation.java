@@ -458,14 +458,22 @@ public abstract class Operation extends AbstractExpression {
   }
 
   @Override
-  public Expression fold() {
+  public Expression fold(boolean isFn) {
     if (getOperator() == Operator.FUNCTION_CALL) { return foldCall(); }
+    Expression folded;
     switch (children().size()) {
-      case 1: return foldUnaryOp();
-      case 2: return foldBinaryOp();
-      case 3: return foldTernaryOp();
+      case 1: folded = foldUnaryOp(); break;
+      case 2: folded = foldBinaryOp(); break;
+      case 3: folded = foldTernaryOp(); break;
       default: return this;
     }
+    if (isFn && isFnSpecialForm(folded) && !isFnSpecialForm(this)) {
+      FilePosition pos = getFilePosition();
+      folded = Operation.create(
+          pos, Operator.COMMA,
+          new IntegerLiteral(FilePosition.startOf(pos), 0), folded);
+    }
+    return folded;
   }
 
   private static final Expression[] NO_EXPRESSIONS = new Expression[0];
@@ -592,6 +600,8 @@ public abstract class Operation extends AbstractExpression {
               ((StringLiteral) left).getUnquotedValue().length());
         }
       }
+    } else if (op == Operator.COMMA) {
+      if (left.simplifyForSideEffect() == null) { return right; }
     }
     Object lhs = toLiteralValue(left);
     Object rhs = toLiteralValue(right);
@@ -796,5 +806,17 @@ public abstract class Operation extends AbstractExpression {
       }
     }
     return false;
+  }
+
+  private static boolean isFnSpecialForm(Expression e) {
+    if (e instanceof Reference) {
+      Reference r = (Reference) e;
+      return "eval".equals(r.getIdentifierName());
+    } else if (e instanceof Operation) {
+      Operator op = ((Operation) e).getOperator();
+      return Operator.MEMBER_ACCESS == op || Operator.SQUARE_BRACKET == op;
+    } else {
+      return false;
+    }
   }
 }

@@ -250,7 +250,7 @@ public class StatementSimplifier {
         n = ParseTreeNodes.newNodeInstance(
             n.getClass(), n.getFilePosition(), n.getValue(), newChildren);
       }
-      return n instanceof Expression ? ((Expression) n).fold() : n;
+      return n instanceof Expression ? ((Expression) n).fold(false) : n;
     }
   }
 
@@ -487,7 +487,7 @@ public class StatementSimplifier {
         BooleanLiteral a = (BooleanLiteral) clause,
             b = (BooleanLiteral) e;
         if (a.value == b.value) {
-          e = commaOp(cond, a).fold();
+          e = commaOp(cond, a).fold(false);
         } else {
           // cond ? true : false -> !!cond
           int nNotsNeeded = a.value ? 2 : 1;
@@ -496,7 +496,8 @@ public class StatementSimplifier {
           }
           e = cond;
           while (--nNotsNeeded >= 0) {
-            e = Operation.create(e.getFilePosition(), Operator.NOT, e).fold();
+            e = Operation.create(e.getFilePosition(), Operator.NOT, e)
+                .fold(false);
           }
         }
       } else if (Operation.is(cond, Operator.NOT)) {

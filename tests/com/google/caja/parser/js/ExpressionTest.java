@@ -282,6 +282,14 @@ public class ExpressionTest extends CajaTestCase {
     assertFolded(
         "(function () {\n   arguments.callee();\n })()",
         "(function () { arguments.callee(); })()");
+    assertFolded("eval", "0,eval", false);
+    assertFolded("0, eval", "0,eval", true);
+    assertFolded("foo.bar", "0,foo.bar", false);
+    assertFolded("0, foo.bar", "0,foo.bar", true);
+    assertFolded("foo[ bar ]", "0,foo[bar]", false);
+    assertFolded("0, foo[ bar ]", "0,foo[bar]", true);
+    assertFolded("foo[ 'bar' ]", "0,foo['bar']", false);
+    assertFolded("0, foo[ 'bar' ]", "0,foo['bar']", true);
   }
 
   public final void testToInt32() {
@@ -371,20 +379,25 @@ public class ExpressionTest extends CajaTestCase {
   }
 
   private void assertFolded(String result, String expr) throws ParseException {
+    assertFolded(result, expr, false);
+  }
+
+  private void assertFolded(String result, String expr, boolean isFn)
+      throws ParseException {
     Expression input = jsExpr(fromString(expr));
-      if (input instanceof Operation) {
-        Operation op = (Operation) input;
-        for (Expression operand : op.children()) {
-          // Fold some operands so we can test negative numbers.
-          if ((Operation.is(operand, Operator.NEGATION)
-               // and so that we can test corner cases around NaN and Infinity.
-               || Operation.is(operand, Operator.DIVISION))
-              && operand.children().get(0) instanceof NumberLiteral) {
-            op.replaceChild(operand.fold(), operand);
-          }
+    if (input instanceof Operation) {
+      Operation op = (Operation) input;
+      for (Expression operand : op.children()) {
+        // Fold some operands so we can test negative numbers.
+        if ((Operation.is(operand, Operator.NEGATION)
+            // and so that we can test corner cases around NaN and Infinity.
+            || Operation.is(operand, Operator.DIVISION))
+            && operand.children().get(0) instanceof NumberLiteral) {
+          op.replaceChild(operand.fold(false), operand);
         }
       }
-    Expression actual = input.fold();
+    }
+    Expression actual = input.fold(isFn);
     assertEquals(expr, result, actual != null ? render(actual) : null);
   }
 }
