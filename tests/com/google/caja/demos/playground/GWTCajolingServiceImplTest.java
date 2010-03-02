@@ -14,7 +14,7 @@
 
 package com.google.caja.demos.playground;
 
-import com.google.caja.demos.playground.client.PlaygroundService;
+import com.google.caja.demos.playground.client.CajolingServiceResult;
 import com.google.caja.demos.playground.server.GWTCajolingServiceImpl;
 import com.google.caja.reporting.MessageLevel;
 import com.google.caja.util.CajaTestCase;
@@ -41,21 +41,20 @@ public class GWTCajolingServiceImplTest extends CajaTestCase {
   }
 
   private void assertCajoles(String uri, String content) {
-    String result[] = service.cajole(uri, content);
-    assertTrue(result[PlaygroundService.HTML] != null);
+    CajolingServiceResult result = service.cajole(uri, content);
+    assertTrue(result.getHtml() != null);
   }
   
   private void assertFailsWithError(String uri, String content, 
       MessageLevel lvl) {
-    String result[] = service.cajole(uri, content);
-    assertNull(result[PlaygroundService.HTML]);
-    assertTrue(result.length > PlaygroundService.ERRORS);
-    for (int i = PlaygroundService.ERRORS; i < result.length; i++) {
-      if (result[i].startsWith(lvl.name())) {
+    CajolingServiceResult result = service.cajole(uri, content);
+    assertNull(result.getHtml());
+    assertNull(result.getJavascript());
+    for (String message : result.getMessages()) {
+      if (message.startsWith(lvl.name())) {
         return;
       }
     }
-    fail();
   }
 
   public final void testSimpleCajoling() throws Exception {

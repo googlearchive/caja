@@ -42,7 +42,7 @@ public class Playground implements EntryPoint {
       public void onSuccess(String result) {
         gui.setLoading(false);
         gui.setOriginalSource(result);
-        gui.setCajoledSource("");
+        gui.setCajoledSource("", "");
         gui.selectTab(PlaygroundView.Tabs.SOURCE);
       }
     });
@@ -50,29 +50,29 @@ public class Playground implements EntryPoint {
   
   public void cajole(String uri, String input) {
     gui.setLoading(true);
-    cajolingService.cajole(uri, input, new AsyncCallback<String[]>() {
+    cajolingService.cajole(uri, input, new AsyncCallback<CajolingServiceResult>() {
       public void onFailure(Throwable caught) {
         gui.setLoading(false);
         gui.addCompileMessage(caught.getMessage());
       }
 
-      public void onSuccess(String[] result) {
+      public void onSuccess(CajolingServiceResult result) {
         gui.setLoading(false);
         if (result == null) {
           gui.addCompileMessage("An unknown error occurred");
           gui.selectTab(PlaygroundView.Tabs.COMPILE_WARNINGS);
           return;
         }
-        for (int i = PlaygroundService.ERRORS; i < result.length; i++) {
-          gui.addCompileMessage(result[i]);
+        for (String message: result.getMessages()) {
+          gui.addCompileMessage(message);
         }
-        if (result[PlaygroundService.HTML] != null) {
-          gui.setCajoledSource(result[PlaygroundService.HTML]);
-          gui.setRenderedResult(result[PlaygroundService.HTML]);
+        if (result.getHtml() != null) {
+          gui.setCajoledSource(result.getHtml(), result.getJavascript());
+          gui.setRenderedResult(result.getHtml(), result.getJavascript());
           gui.selectTab(PlaygroundView.Tabs.RENDER);
         } else {
-          gui.setCajoledSource(null);
-          gui.setRenderedResult(null);
+          gui.setCajoledSource(null, null);
+          gui.setRenderedResult(null, null);
           gui.selectTab(PlaygroundView.Tabs.COMPILE_WARNINGS);
         }
       }

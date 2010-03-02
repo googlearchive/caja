@@ -21,14 +21,9 @@ public interface PlaygroundService extends RemoteService {
    * Cajoles input and returns cajoled output and error messages
    * @param uri Set input source to uri (used only for error messages)
    * @param input Source to cajole
-   * @return cajoled html, js and cajoling messages as an array
-   *         as follows:
-   *           return[0] -> html
-   *           return[1] -> js
-   *           return[2 .. (return.length - 1)] -> messages
+   * @return cajoled html, js and cajoling messages
    */
-  // TODO(jasvir): Coax gwt to serialize and return CajolingResult instead
-  String[] cajole(String uri, String input);
+  CajolingServiceResult cajole(String uri, String input);
 
   /**
    * Returns build info as a string

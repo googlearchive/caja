@@ -13,7 +13,7 @@
 
 package com.google.caja.demos.playground.client;
 
-import java.io.Serializable;
+import com.google.gwt.user.client.rpc.IsSerializable;
 
 /**
  * Result of cajoling using the cajoling service.  Contains the static html,
@@ -21,10 +21,12 @@ import java.io.Serializable;
  * 
  * @author jasvir@google.com (Jasvir Nagra)
  */
-public class CajolingServiceResult implements Serializable {
+public class CajolingServiceResult implements IsSerializable {
   private String html;
   private String javascript;
   private String[] messages;
+  
+  public CajolingServiceResult() {}
   
   public CajolingServiceResult(String html, String javascript, 
       String[] messages) {

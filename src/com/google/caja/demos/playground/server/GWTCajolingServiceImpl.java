@@ -1,5 +1,19 @@
 package com.google.caja.demos.playground.server;
 
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.io.StringReader;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import com.google.caja.demos.playground.client.CajolingServiceResult;
 import com.google.caja.demos.playground.client.PlaygroundService;
 import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.ExternalReference;
@@ -17,18 +31,6 @@ import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.SimpleMessageQueue;
 import com.google.caja.reporting.SnippetProducer;
 import com.google.gwt.user.server.rpc.RemoteServiceServlet;
-
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.Reader;
-import java.io.StringReader;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 /**
  * Implements the GWT version of the cajoling service
@@ -77,39 +79,42 @@ public class GWTCajolingServiceImpl extends RemoteServiceServlet
     return result;
   }
 
-  public String[] cajole(String url, String input) {
+  public CajolingServiceResult cajole(String url, String input) {
+    MessageContext mc = new MessageContext();
     MessageQueue mq = new SimpleMessageQueue();
-    Map<InputSource, CharSequence> originalSrc =
-      new HashMap<InputSource, CharSequence>();
 
     Appendable output = new StringBuilder();
-    boolean success = false;
+    String html = null;
+    String javascript = null;
+
+    Map<InputSource, ? extends CharSequence> originalSources
+        = Collections.singletonMap(new InputSource(guessURI(url)), input);
+    
     try {
       DefaultGadgetRewriter rw = new DefaultGadgetRewriter(
           BuildInfo.getInstance(), mq);
       StringReader in = new StringReader(input);
       rw.rewriteContent(guessURI(url), in, uriCallback, output);
-      success = true;
+      String[] htmlAndJs = output.toString().split("<script[^>]*>");
+      html = htmlAndJs[0];
+      javascript = htmlAndJs.length > 1 ?
+        htmlAndJs[1].substring(0, htmlAndJs[1].length() - 9) : null;
     } catch (IOException e) {
       e.printStackTrace();
     } catch (GadgetRewriteException e) {
       // Reflected in the message queue which is serialized below
     }
-    String[] messages = formatMessages(originalSrc, mq);
-    String[] result = new String[messages.length + 2];
-    result[PlaygroundService.HTML] = success ? output.toString() : null;
-    result[PlaygroundService.JAVASCRIPT] = null;
-    System.arraycopy(messages, 0,
-        result, PlaygroundService.ERRORS, messages.length);
-    return result;
+    String[] messages = formatMessages(originalSources, mc, mq);
+    return new CajolingServiceResult(html, javascript, messages);
   }
 
-  private String[] formatMessages(Map<InputSource, CharSequence> inputMap,
-      MessageQueue mq) {
-    MessageContext mc = new MessageContext();
+  private String[] formatMessages(
+      Map<InputSource, ? extends CharSequence> inputMap,
+      MessageContext mc, MessageQueue mq) {
     List<Message> messages = mq.getMessages();
-    List<String> result = new ArrayList<String>();
     SnippetProducer sp = new HtmlSnippetProducer(inputMap, mc);
+    List<String> result = new ArrayList<String>();
+
     for (Message msg : messages) {
       String snippet = sp.getSnippet(msg);
       StringBuilder messageText = new StringBuilder();

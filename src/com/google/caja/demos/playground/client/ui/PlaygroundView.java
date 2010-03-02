@@ -30,16 +30,16 @@ import com.google.gwt.user.client.ui.Anchor;
 import com.google.gwt.user.client.ui.Button;
 import com.google.gwt.user.client.ui.DecoratedTabPanel;
 import com.google.gwt.user.client.ui.DisclosurePanel;
+import com.google.gwt.user.client.ui.FlexTable;
 import com.google.gwt.user.client.ui.FlowPanel;
 import com.google.gwt.user.client.ui.HTML;
 import com.google.gwt.user.client.ui.HasHorizontalAlignment;
+import com.google.gwt.user.client.ui.HasVerticalAlignment;
 import com.google.gwt.user.client.ui.HorizontalPanel;
 import com.google.gwt.user.client.ui.HorizontalSplitPanel;
 import com.google.gwt.user.client.ui.Image;
 import com.google.gwt.user.client.ui.Label;
-import com.google.gwt.user.client.ui.ListBox;
 import com.google.gwt.user.client.ui.MultiWordSuggestOracle;
-import com.google.gwt.user.client.ui.Panel;
 import com.google.gwt.user.client.ui.RootPanel;
 import com.google.gwt.user.client.ui.SuggestBox;
 import com.google.gwt.user.client.ui.TextArea;
@@ -47,6 +47,7 @@ import com.google.gwt.user.client.ui.TextBox;
 import com.google.gwt.user.client.ui.Tree;
 import com.google.gwt.user.client.ui.TreeItem;
 import com.google.gwt.user.client.ui.VerticalPanel;
+import com.google.gwt.user.client.ui.Widget;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -62,8 +63,8 @@ public class PlaygroundView {
   private HTML renderPanel;
   private TextBox renderResult;
   private HTML cajoledSource;
-  private ListBox compileMessages;
-  private ListBox runtimeMessages;
+  private FlexTable compileMessages;
+  private FlexTable runtimeMessages;
   private DecoratedTabPanel editorPanel;
   private Label version = new Label("Unknown");
   private Playground controller;
@@ -85,7 +86,7 @@ public class PlaygroundView {
     editorPanel.selectTab(tab.ordinal());
   }
 
-  private Panel createFeedbackPanel() {
+  private Widget createFeedbackPanel() {
     HorizontalPanel feedbackPanel = new HorizontalPanel();
     feedbackPanel.setWidth("100%");
     feedbackPanel.setHorizontalAlignment(HasHorizontalAlignment.ALIGN_RIGHT);
@@ -101,7 +102,7 @@ public class PlaygroundView {
     return feedbackPanel;
   }
 
-  private Panel createLogoPanel() {
+  private Widget createLogoPanel() {
     HorizontalPanel logoPanel = new HorizontalPanel();
     VerticalPanel infoPanel = new VerticalPanel();
     Label title = new Label("Caja Playground");
@@ -121,7 +122,7 @@ public class PlaygroundView {
     return logoPanel;
   }
 
-  private Panel createSourcePanel() {
+  private Widget createSourcePanel() {
     oracle = new MultiWordSuggestOracle();
     for (Example eg : Example.values()) {
       oracle.add(eg.url);
@@ -164,17 +165,20 @@ public class PlaygroundView {
 
     sourceText = new TextArea();
     sourceText.setText("<script>\n\n</script>");
-
-    FlowPanel mainPanel = new FlowPanel();
-    mainPanel.add(addressBar);
-    mainPanel.add(sourceText);
     sourceText.setSize("95%", "100%");
-    mainPanel.setSize("100%", "100%");
+
+    VerticalPanel mainPanel = new VerticalPanel();
+    mainPanel.setWidth("100%");
+    mainPanel.setVerticalAlignment(HasVerticalAlignment.ALIGN_TOP);
+    mainPanel.add(addressBar);
+    mainPanel.setCellHeight(addressBar, "0%");
+    mainPanel.add(sourceText);
+    mainPanel.setCellHeight(sourceText, "100%");
 
     return mainPanel;
   }
 
-  private FlowPanel createCajoledSourcePanel() {
+  private Widget createCajoledSourcePanel() {
     FlowPanel fp = new FlowPanel();
     cajoledSource = new HTML();
     cajoledSource.setSize("100%", "100%");
@@ -183,20 +187,23 @@ public class PlaygroundView {
     return fp;
   }
 
-  private FlowPanel createCompileMessagesPanel() {
+  private Widget createCompileMessagesPanel() {
     FlowPanel hp = new FlowPanel();
     hp.setSize("100%", "100%");
-    compileMessages = new ListBox(true /*multilist box*/);
-    compileMessages.setSize("100%", "100%");
+    compileMessages = new FlexTable();
+    compileMessages.setWidth("100%");
     hp.add(compileMessages);
     return hp;
   }
 
-  private ListBox createRuntimeMessagesPanel() {
-    runtimeMessages = new ListBox(true /*multilist box*/);
-    runtimeMessages.setSize("100%", "100%");
+  private Widget createRuntimeMessagesPanel() {
+    FlowPanel hp = new FlowPanel();
+    hp.setSize("100%", "100%");
+    runtimeMessages = new FlexTable();
+    runtimeMessages.setWidth("100%");
+    hp.add(runtimeMessages);
     setupNativeRuntimeMessageBridge();
-    return runtimeMessages;
+    return hp;
   }
 
   private native void setupNativeRuntimeMessageBridge() /*-{
@@ -206,7 +213,16 @@ public class PlaygroundView {
     });
   }-*/;
 
-  private DecoratedTabPanel createEditorPanel() {
+  private native void setupNativeSelectLineBridge() /*-{
+    var that = this;
+    $wnd.selectLine = function (uri, lineNumber) {
+      that.@com.google.caja.demos.playground.client.ui.PlaygroundView::selectTab(Lcom/google/caja/demos/playground/client/ui/PlaygroundView$Tabs;)(
+          @com.google.caja.demos.playground.client.ui.PlaygroundView.Tabs::SOURCE);
+      that.@com.google.caja.demos.playground.client.ui.PlaygroundView::highlightSource(Ljava/lang/String;I)(uri, lineNumber); 
+    }
+  }-*/;
+  
+  private Widget createEditorPanel() {
     editorPanel = new DecoratedTabPanel();
     editorPanel.setStyleName("clearPadding");
     editorPanel.add(createSourcePanel(), "Source");
@@ -215,6 +231,7 @@ public class PlaygroundView {
     editorPanel.add(createCompileMessagesPanel(), "Compile Warnings/Errors");
     editorPanel.add(createRuntimeMessagesPanel(), "Runtime Warnings/Errors");
 
+    setupNativeSelectLineBridge();
     editorPanel.setSize("100%", "100%");
     editorPanel.getDeckPanel().setSize("100%", "100%");
 
@@ -222,7 +239,7 @@ public class PlaygroundView {
     return editorPanel;
   }
 
-  private Panel createRenderPanel() {
+  private Widget createRenderPanel() {
     DisclosurePanel resultBar = new DisclosurePanel("Eval Result");
     resultBar.setStyleName("playgroundUI");
     renderResult = new TextBox();
@@ -248,7 +265,7 @@ public class PlaygroundView {
     return egItem;
   }
 
-  private DecoratedTabPanel createExamplePanel() {
+  private Widget createExamplePanel() {
     DecoratedTabPanel cp = new DecoratedTabPanel();
     cp.setStyleName("clearPadding");
     Tree exampleTree = new Tree();
@@ -283,11 +300,12 @@ public class PlaygroundView {
     return cp;
   }
 
-  public Panel createMainPanel() {
+  public Widget createMainPanel() {
     HorizontalSplitPanel mainPanel = new HorizontalSplitPanel();
     mainPanel.add(createExamplePanel());
     mainPanel.add(createEditorPanel());
     mainPanel.setSplitPosition("15%");
+    mainPanel.setSize("100%", "100%");
     return mainPanel;
   }
 
@@ -317,12 +335,13 @@ public class PlaygroundView {
     }
   }
 
-  public void setCajoledSource(String result) {
-    if (result == null) {
+  public void setCajoledSource(String html, String js) {
+    if (html == null && js == null) {
       cajoledSource.setText("There were cajoling errors");
       return;
     }
-    cajoledSource.setHTML(prettyPrint(result));
+    cajoledSource.setHTML(prettyPrint(html) + 
+      "&lt;script&gt;" + prettyPrint(js) + "&lt;/script&gt;");
   }
   
   public void setLoading(boolean isLoading) {
@@ -333,16 +352,11 @@ public class PlaygroundView {
     return $wnd.prettyPrintOne($wnd.indentAndWrapCode(result));
   }-*/;
 
-  public void setRenderedResult(String result) {
-    if (result == null) {
+  public void setRenderedResult(String html, String js) {
+    if (html == null && js == null) {
       renderPanel.setText("There were cajoling errors");
       return;
     }
-    String[] htmlAndJs = result.split("<script[^>]*>");
-    String html = htmlAndJs[0];
-    String js = htmlAndJs.length > 1 ?
-        htmlAndJs[1].substring(0, htmlAndJs[1].length() - 9) : "";
-
     renderPanel.setHTML(
     "<div id=\"cajoled-output\" class=\"g___\">\n" +
       html +
@@ -364,11 +378,32 @@ public class PlaygroundView {
   }-*/;
   
   public void addCompileMessage(String item) {
-    compileMessages.addItem(item);
+    compileMessages.insertRow(0);
+    compileMessages.setHTML(0, 0, item);
   }
-
+  
   public void addRuntimeMessage(String item) {
-    runtimeMessages.addItem(item);
+    runtimeMessages.insertRow(0);
+    runtimeMessages.setHTML(0, 0, item);
+  }
+    
+  public void highlightSource(String uri, int lineNumber) {
+    String content = sourceText.getText();
+    content.replaceAll("\\r\\n", "\\n");
+    int currentStart = 0;
+    int currentEnd = 0;
+    for (int line = 0; line < lineNumber; line++) {
+      currentStart = currentEnd + 1;
+      currentEnd = content.indexOf('\n', currentStart);
+      if (currentEnd < 0) {
+        break;
+      }
+    }
+    if (currentEnd >= 0) {
+      sourceText.setCursorPos(currentStart);
+      sourceText.setSelectionRange(currentStart,
+        currentEnd - currentStart + 1);
+    }
   }
 
   public enum Tabs {

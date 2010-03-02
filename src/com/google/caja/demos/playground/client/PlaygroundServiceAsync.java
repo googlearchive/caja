@@ -23,5 +23,5 @@ import com.google.gwt.user.client.rpc.AsyncCallback;
 public interface PlaygroundServiceAsync {
   void getBuildInfo(AsyncCallback<String> callback);
   void fetch(String url, AsyncCallback<String> callback);
-  void cajole(String uri, String input, AsyncCallback<String[]> callback);
+  void cajole(String uri, String input, AsyncCallback<CajolingServiceResult> asyncCallback);
 }
