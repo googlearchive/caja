@@ -24,7 +24,7 @@
  *
  * @author mikesamuel@gmail.com
  * @provides HtmlEmitter
- * @requires bridal html html4 ___
+ * @requires bridalMaker html html4 ___
  */
 
 /**
@@ -35,8 +35,8 @@
  */
 function HtmlEmitter(base, opt_tameDocument) {
   if (!base) { throw new Error(); }
-
   var insertionPoint = base;
+  var bridal = bridalMaker(base.ownerDocument);
 
   /**
    * Contiguous pairs of ex-descendants of base, and their ex-parent.
@@ -311,8 +311,6 @@ function HtmlEmitter(base, opt_tameDocument) {
           return;
         }
         tameDoc.sanitizeAttrs___(tagName, attribs);
-        // TODO(mikesamuel): use the insertionPoint's ownerDocument
-        // to create the element.
         var el = bridal.createElement(tagName, attribs);
         if ((eltype & html4.eflags.OPTIONAL_ENDTAG)
             && el.tagName === insertionPoint.tagName) {

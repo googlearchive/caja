@@ -20,12 +20,12 @@
  *
  * @author ihab.awad@gmail.com
  * @author jasvir@gmail.com
- * @provides bridal
+ * @provides bridalMaker, bridal
  * @requires ___, cajita, document, html, html4, navigator, window,
  *     XMLHttpRequest, ActiveXObject 
  */
 
-var bridal = (function() {
+var bridalMaker = function(document) {
 
   ////////////////////////////////////////////////////////////////////////////
   // Private section
@@ -139,7 +139,7 @@ var bridal = (function() {
       var attrs = node.attributes;
       for (var i = 0, attr; (attr = attrs[i]); ++i) {
         if (attr.specified && !endsWith__.test(attr.name)) {
-          bridal.setAttribute(clone, attr.nodeName, attr.nodeValue);
+          setAttribute(clone, attr.nodeName, attr.nodeValue);
         }
       }
     } else {
@@ -199,6 +199,23 @@ var bridal = (function() {
   ////////////////////////////////////////////////////////////////////////////
   // Public section
   ////////////////////////////////////////////////////////////////////////////
+
+  // Returns the window containing this element. 
+  function getWindow(element) {
+    var doc = element.ownerDocument;
+    // IE
+    if (doc.parentWindow) { return doc.parentWindow; }
+    // Everything else
+    // TODO: Safari 2's defaultView wasn't a window object :(
+    // Safari 2 is not A-grade, though.
+    if (doc.defaultView) { return doc.defaultView; }
+    // Just in case
+    var s = doc.createElement('script');
+    s.innerHTML = "document.parentWindow = window;";
+    doc.body.appendChild(s);
+    doc.body.removeChild(s);
+    return doc.parentWindow;
+  }
 
   function untameEventType(type) {
     var suffix = CUSTOM_EVENT_TYPE_SUFFIX;
@@ -357,7 +374,7 @@ var bridal = (function() {
     } else {
       var el = document.createElement(tagName);
       for (var i = 0, n = attribs.length; i < n; i += 2) {
-        bridal.setAttribute(el, attribs[i], attribs[i + 1]);
+        setAttribute(el, attribs[i], attribs[i + 1]);
       }
       return el;
     }
@@ -639,9 +656,12 @@ var bridal = (function() {
     getAttribute: getAttribute,
     hasAttribute: hasAttribute,
     getBoundingClientRect: getBoundingClientRect,
+    getWindow: getWindow,
     untameEventType: untameEventType,
     extendedCreateElementFeature: featureExtendedCreateElement,
     getComputedStyle: getComputedStyle,
     makeXhr: makeXhr
   };
-})();
+};
+
+var bridal = bridalMaker(document);

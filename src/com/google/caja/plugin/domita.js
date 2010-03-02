@@ -49,9 +49,9 @@
  * or Valija Disfunction.
  *
  * @author mikesamuel@gmail.com
- * @requires console, document, window
+ * @requires console
  * @requires clearInterval, clearTimeout, setInterval, setTimeout
- * @requires ___, bridal, css, html, html4, unicode
+ * @requires ___, bridal, bridalMaker, css, html, html4, unicode
  * @provides attachDocumentStub, plugin_dispatchEvent___
  * @overrides domitaModules
  */
@@ -608,6 +608,7 @@ var attachDocumentStub = (function () {
   ___.markFuncFreeze(tameClearInterval);
 
   function makeScrollable(element) {
+    var window = bridal.getWindow(element);
     var overflow = null;
     if (element.currentStyle) {
       overflow = element.currentStyle.overflow;
@@ -710,7 +711,7 @@ var attachDocumentStub = (function () {
 
     var style = element.currentStyle;
     if (!style) {
-      style = window.getComputedStyle(element, void 0);
+      style = bridal.getWindow(element).getComputedStyle(element, void 0);
     }
 
     // We guess the padding since it's not always expressed in px on IE
@@ -744,6 +745,10 @@ var attachDocumentStub = (function () {
   // See above for a description of this function.
   function attachDocumentStub(
       idSuffix, uriCallback, imports, pseudoBodyNode, optPseudoWindowLocation) {
+    var document = pseudoBodyNode.ownerDocument;
+    var bridal = bridalMaker(document);
+    var window = bridal.getWindow(pseudoBodyNode);
+
     if (arguments.length < 4) {
       throw new Error('arity mismatch: ' + arguments.length);
     }
@@ -4113,7 +4118,7 @@ var attachDocumentStub = (function () {
  * Function called from rewritten event handlers to dispatch an event safely.
  */
 function plugin_dispatchEvent___(thisNode, event, pluginId, handler) {
-  event = (event || window.event);
+  event = (event || bridal.getWindow(thisNode).event);
   // support currentTarget on IE[678]
   if (!event.currentTarget) {
     event.currentTarget = thisNode;
