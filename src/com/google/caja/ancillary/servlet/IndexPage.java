@@ -25,6 +25,7 @@ import com.google.caja.util.Sets;
 import java.util.List;
 import org.w3c.dom.Document;
 import org.w3c.dom.DocumentFragment;
+import org.w3c.dom.Node;
 
 /**
  * The main servlet page that presents a web form to let developers
@@ -93,6 +94,21 @@ final class IndexPage {
     isDoc = req.verb == Verb.DOC;
     isEcho = !(isLint || isDoc);
 
+    DocumentFragment userAgentOptions = doc.createDocumentFragment();
+    userAgentOptions.appendChild(b.substV(
+        "<option value='*' selected=@selected></option>",
+        "selected", req.userAgent == null || "*".equals(req.userAgent)));
+    for (String userAgent : UserAgentDb.USER_AGENTS) {
+      userAgentOptions.appendChild(b.substV(
+          "<option value=@userAgent selected=@selected>@userAgent</option>",
+          "userAgent", userAgent,
+          "selected", userAgent.equals(req.userAgent)));
+    }
+
+    Node userAgentSelector = b.substV(
+        "<select name=userAgent>@options</select>",
+        "options", userAgentOptions);
+
     DocumentFragment f = doc.createDocumentFragment();
     f.appendChild(b.substV(
         INDEX_PAGE_TEMPLATE,
@@ -106,7 +122,7 @@ final class IndexPage {
         "minifyTrue", req.minify,
         "minifyFalse", !req.minify,
         "asciiOnly", req.asciiOnly,
-        "userAgent", req.userAgent != null ? req.userAgent : "*",
+        "userAgent", userAgentSelector,
         "cacheId", req.staticFiles.cacheId));
     return f;
   }

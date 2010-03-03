@@ -56,8 +56,6 @@ import java.util.Set;
 final class Request implements Cloneable {
   /** The set of static files visible to the request. */
   StaticFiles staticFiles;
-  /** A mechanism to fetch user agent JSON. */
-  UserAgentDb userAgentDb;
   /** The action to perform. */
   Verb verb;
   /** The type of output that the client requested. */
@@ -150,10 +148,9 @@ final class Request implements Cloneable {
   }
 
   /** Returns a fresh request with defaults for the given verb. */
-  static Request create(Verb verb, StaticFiles staticFiles, UserAgentDb uadb) {
+  static Request create(Verb verb, StaticFiles staticFiles) {
     Request req = REQUEST_BY_VERB.get(verb).clone();
     req.staticFiles = staticFiles;
-    req.userAgentDb = uadb;
     return req;
   }
 
@@ -235,9 +232,6 @@ final class Request implements Cloneable {
         String ua = val.trim();
         if ("".equals(ua) || "*".equals(ua)) { ua = null; }
         c.userAgent = ua;
-        if (ua != null && c.userAgentDb != null) {
-          c.userAgentDb.prefetchEnvJson(ua);
-        }
       }
       public String manual() {
         return "a glob that matches browser user agents strings"

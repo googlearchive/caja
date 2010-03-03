@@ -47,7 +47,7 @@ public class CajaWebToolsServletTest extends CajaTestCase {
   @Override
   public void setUp() throws Exception {
     super.setUp();
-    servlet = new CajaWebToolsServlet("cid", null);
+    servlet = new CajaWebToolsServlet("cid");
   }
 
   @Override
@@ -337,7 +337,6 @@ public class CajaWebToolsServletTest extends CajaTestCase {
         .send();
     assertNoErrors();
   }
-
 
   public final void testLint() {
     new ServletTest()

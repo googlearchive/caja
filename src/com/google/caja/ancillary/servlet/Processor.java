@@ -528,11 +528,12 @@ class Processor {
     JsOptimizer opt = new JsOptimizer(mq);
     opt.addInput((Block) job.root);
 
-    if (req.userAgent != null && req.userAgentDb != null) {
-      opt.setEnvJson(req.userAgentDb.lookupEnvJson(req.userAgent, 2000 /*ms*/));
-    } else {
-      opt.setEnvJson(new ObjectConstructor(FilePosition.UNKNOWN));
+    ObjectConstructor envJson = req.userAgent != null
+        ? UserAgentDb.lookupEnvJson(req.userAgent) : null;
+    if (envJson == null) {
+      envJson = new ObjectConstructor(FilePosition.UNKNOWN);
     }
+    opt.setEnvJson(envJson);
     opt.setRename(true);
     Statement optimized = opt.optimize();
     if (!(optimized instanceof Block)) {

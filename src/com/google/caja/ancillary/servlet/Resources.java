@@ -44,7 +44,7 @@ final class Resources {
     EchoingMessageQueue mq = new EchoingMessageQueue(
         new PrintWriter(System.err), new MessageContext(), true);
     URI base = cp.getCurrentPosition().source().getUri();
-    Request req = Request.create(Verb.ECHO, null, null);
+    Request req = Request.create(Verb.ECHO, null);
     req.otype = t;
     Processor p = new Processor(req, mq);
     Job j;

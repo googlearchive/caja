@@ -14,7 +14,6 @@
 
 package com.google.caja.ancillary.servlet;
 
-import java.net.URI;
 import java.security.SecureRandom;
 
 /**
@@ -29,12 +28,6 @@ public final class MainServlet extends CajaWebToolsServlet {
     return Integer.toString(new SecureRandom().nextInt(1 << 30), 36);
   }
 
-  private static URI makeUserAgentDbUri() {
-    return URI.create(System.getProperty(
-        "caja.webservice.useragentDb",
-        UserAgentDb.BROWSERSCOPE_WEB_SERVICE.toString()));
-  }
-
   /** Zero argument ctor for Jetty. */
-  public MainServlet() { super(makeCacheId(), makeUserAgentDbUri()); }
+  public MainServlet() { super(makeCacheId()); }
 }

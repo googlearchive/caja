@@ -15,7 +15,7 @@
   <li><a href="javascript:exampleFromUrl('http://mootools.net/download/get/mootools-1.2.4-core-nc.js')">MooTools</a></li>
   <li><a href="javascript:replaceSource('h1, p.bar, blockquite {\n  background-color: magenta;\n  colour: blue;\n}', 'text/css'), setOptions({verb:'lint',minify:true})">Whacky CSS</a></li>
   <li><a href="javascript:replaceSource('&lt;style&gt;p { color:  pink /* Not a color in CSS 2.1 */ }&lt;/style&gt;\n&lt;script&gt;alert(HelloWorld);&lt;/script&gt;\n&lt;h1&gt;Hello, World!&lt;/h2&gt;', 'text/html'), setOptions({verb:'lint',minify:true})">Whacky HTML</a></li>
-  <li><a href="javascript:replaceSource('if (window.addEventListener) {\n  window.addEventListener(&quot;click&quot;, alert);\n} else if (window.attachEvent) {\n  window.attachEvent(&quot;click&quot;, alert);\n} else {\n  throw new Error();\n}', 'text/javascript'), setOptions({userAgent:'Firefox',verb:'lint',minify:true})">Optimized for Firefox</a></li>
+  <li><a href="javascript:replaceSource('if (window.addEventListener) {\n  window.addEventListener(&quot;click&quot;, alert);\n} else if (window.attachEvent) {\n  window.attachEvent(&quot;click&quot;, alert);\n} else {\n  throw new Error();\n}', 'text/javascript'), setOptions({userAgent:'Firefox 3.5',verb:'lint',minify:true})">Optimized for Firefox</a></li>
   <li><a href="javascript:replaceSource('if (window.addEventListener) {\n  window.addEventListener(&quot;click&quot;, alert);\n} else if (window.attachEvent) {\n  window.attachEvent(&quot;click&quot;, alert);\n} else {\n  throw new Error();\n}', 'text/javascript'),setOptions({userAgent:'MSIE',verb:'lint',minify:true})">Optimized for IE</a></li>
   <li><a href="javascript:replaceSource('// \x40provides registerEventListener\nvar registerEventListener = (function () {\n  // Store environment checks in local variables to avoid rechecking\n  var useAttach = window.attachEvent != undefined &amp;&amp; !window.addEventListener;\n  return function (node, type, listener) {\n    if (useAttach) node.attachEvent(type, listener);\n    else node.addEventListener(type, listener);\n  };\n})();', 'text/javascript'), setOptions({userAgent:'MSIE',verb:'lint',minify:true})">More Optimization</a></li>
   <li><a href="javascript:replaceSource('/** This module declares what it expects and what it provides.\n * \x40requires foo\n * \x40provides bar\n */\nvar bar = {\n  myMethod: function (that, other) { return foo.far(that) %2B other; },\n  myMember: []\n};\nfor (var i = 0; i &lt; foo.count; %2B%2Bi) { // unintended global i\n  bar.myMember[i] = foo.far(i);\n}', 'text/javascript'), setOptions({userAgent:'*',verb:'lint',minify:true})">Global Declarations</a></li>
@@ -36,8 +36,7 @@ and report messages more severe than
 @messageLevels
 </select><br>
 <span id=user-agent>
-<label for=userAgent>User Agent</label>:
-<input name=userAgent value=@userAgent />
+<label for=userAgent>User Agent</label>: @userAgent
 <a target=help href=files-@cacheId/user_agent_help.html class=help
  title="matches user agent strings of browsers to which the output can be served">&#xff1f;</a>
 </span>

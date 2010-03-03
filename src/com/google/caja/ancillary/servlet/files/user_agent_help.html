@@ -23,19 +23,20 @@ if (typeof addEventListener !== 'undefined') {
   myNode.attachEvent(&hellip;);
 }
 </pre>
-could be optimized by taking into accout knowledge about the browser
+could be optimized by taking into account knowledge about the browser
 to produce
 <pre>
-    myNode.addEventListener(&hellip);
+    myNode.addEventListener(&hellip;);
 </pre>
 on all non-IE browsers, and
 <pre>
-    myNode.attachEvent(&hellip);
+    myNode.attachEvent(&hellip;);
 </pre>
 on IE.
 
 <p>To get best results, use code similar to the tests in
-<a href="http://code.google.com/p/google-caja/source/browse/trunk/src/com/google/caja/ancillary/opt/environment-checks.js">environment-checks.js</a>
+<a href="http://code.google.com/p/browserscope/source/browse/trunk/categories/jskb/ecmascript_snippets.py"
+><code>ecmascript_snippets.py</code></a>
 and if you want to avoid rechecking, store the checks in
 <code>var</code>s declared at the top of a function body or program:
 <pre class="prettyprint lang-js">
@@ -50,8 +51,7 @@ And some small percentage of browsers spoof the user agent.
 Optimizations that assume things about the browser based on the user
 agent will not work.
 
-<p>See the
-<a href="http://code.google.com/p/google-caja/wiki/UserAgentContext">wiki docs</a>
+<p>See the <a href="http://www.browserscope.org/jskb/about">BrowserScope help</a>
 for more details.
 </body>
 </html>

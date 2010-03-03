@@ -59,14 +59,13 @@ import org.w3c.dom.Node;
 public class CajaWebToolsServlet extends HttpServlet {
   private static final long serialVersionUID = -5232422153254165200L;
   final StaticFiles staticFiles;
-  final UserAgentDb userAgentDb;
   private final Pattern staticFilePath;
 
   /**
    * @param cacheId an alphanumeric string that can be added to a directory
    *     name in a URL to version all resources in that directory.
    */
-  public CajaWebToolsServlet(String cacheId, URI userAgentWebService) {
+  public CajaWebToolsServlet(String cacheId) {
     this.staticFiles = new StaticFiles(cacheId);
     // Matches "favicon.ico" and paths under <tt>/files-.../</tt> that do not
     // contain any pathname element that starts with a ., so no parent directory
@@ -75,7 +74,6 @@ public class CajaWebToolsServlet extends HttpServlet {
         "^/(?:(favicon\\.ico)|"
         + Pattern.quote("files-" + cacheId) // A directory containing cache Id
         + "/((?:[^/.]+/)*[^/.]+(?:\\.[^/.]+)))$");
-    this.userAgentDb = UserAgentDb.create(userAgentWebService);
   }
 
   @Override
@@ -206,7 +204,7 @@ public class CajaWebToolsServlet extends HttpServlet {
       // might set the verb in request.
       Verb verb = Verb.fromRelReqPath(reqPath.substring(1));
       if (verb != null) {
-        req = Request.create(verb, staticFiles, userAgentDb);
+        req = Request.create(verb, staticFiles);
       }
     }
     if (req == null) {

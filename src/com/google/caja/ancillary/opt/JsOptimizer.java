@@ -88,7 +88,7 @@ public class JsOptimizer {
         Expression expr = jsExpr(valueCp, DevNullMessageQueue.singleton());
         optimizer.addFact(expr, Fact.is((Literal) value));
       } catch (ParseException ex) {
-        ex.toMessageQueue(mq);
+        continue;  // Triggered for browser specific extensions such as for each
       }
     }
     return this;
