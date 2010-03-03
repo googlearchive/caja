@@ -19,7 +19,7 @@
   </servlet>
   <servlet>
     <servlet-name>ToolsServlet</servlet-name>
-    <servlet-class>com.google.caja.ancillary.servlet.CajaWebToolsServlet</servlet-class>
+    <servlet-class>com.google.caja.ancillary.servlet.Main</servlet-class>
   </servlet>
   
   <servlet-mapping>

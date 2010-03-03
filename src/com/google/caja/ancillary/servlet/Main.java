@@ -28,7 +28,20 @@ import org.mortbay.jetty.handler.AbstractHandler;
  *
  * @author mikesamuel@gmail.com
  */
-public class Main {
+public final class Main extends CajaWebToolsServlet {
+
+  private static String makeCacheId() {
+    return Integer.toString(new SecureRandom().nextInt(1 << 30), 36);
+  }
+
+  private static URI makeUserAgentDbUri() {
+    return URI.create(System.getProperty(
+        "caja.webservice.useragentDb",
+        UserAgentDb.BROWSERSCOPE_WEB_SERVICE.toString()));
+  }
+
+  /** Zero argument ctor for Jetty. */
+  public Main() { super(makeCacheId(), makeUserAgentDbUri()); }
 
   /** Starts a server on port 8080. */
   public static void main(String[] args) throws Exception {
@@ -40,11 +53,7 @@ public class Main {
         throw new Exception("What are these command line parameters for?");
     }
     Server server = new Server(port);
-    String cacheId = Integer.toString(new SecureRandom().nextInt(1 << 30), 36);
-    URI uadb = URI.create(System.getProperty(
-        "caja.webservice.useragentDb",
-        UserAgentDb.BROWSERSCOPE_WEB_SERVICE.toString()));
-    final CajaWebToolsServlet servlet = new CajaWebToolsServlet(cacheId, uadb);
+    final Main servlet = new Main();
     server.setHandler(new AbstractHandler() {
       public void handle(
           String tgt, HttpServletRequest req, HttpServletResponse resp,
