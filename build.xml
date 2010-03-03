@@ -789,6 +789,9 @@
         <include name="Playground.css" />
         <include name="taming.js" />
       </fileset>
+      <fileset dir="${src}/com/google/caja/demos/flash">
+        <include name="Boxed.swf" />
+      </fileset>
     </copy>
   </target>
 
