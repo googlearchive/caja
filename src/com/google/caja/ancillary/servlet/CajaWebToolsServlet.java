@@ -87,7 +87,7 @@ public class CajaWebToolsServlet extends HttpServlet {
       try {
         String query = req.getQueryString();
         URI indexUri = new URI(
-            null, null, "/" + Verb.INDEX.relRequestPath, query, null);
+            null, null, Verb.INDEX.relRequestPath, query, null);
         resp.sendRedirect(indexUri.toString());
       } catch (URISyntaxException ex) {
         ex.printStackTrace();

@@ -15,8 +15,6 @@
 package com.google.caja.ancillary.servlet;
 
 import java.io.IOException;
-import java.net.URI;
-import java.security.SecureRandom;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -28,20 +26,7 @@ import org.mortbay.jetty.handler.AbstractHandler;
  *
  * @author mikesamuel@gmail.com
  */
-public final class Main extends CajaWebToolsServlet {
-
-  private static String makeCacheId() {
-    return Integer.toString(new SecureRandom().nextInt(1 << 30), 36);
-  }
-
-  private static URI makeUserAgentDbUri() {
-    return URI.create(System.getProperty(
-        "caja.webservice.useragentDb",
-        UserAgentDb.BROWSERSCOPE_WEB_SERVICE.toString()));
-  }
-
-  /** Zero argument ctor for Jetty. */
-  public Main() { super(makeCacheId(), makeUserAgentDbUri()); }
+public final class Main {
 
   /** Starts a server on port 8080. */
   public static void main(String[] args) throws Exception {
@@ -53,7 +38,7 @@ public final class Main extends CajaWebToolsServlet {
         throw new Exception("What are these command line parameters for?");
     }
     Server server = new Server(port);
-    final Main servlet = new Main();
+    final MainServlet servlet = new MainServlet();
     server.setHandler(new AbstractHandler() {
       public void handle(
           String tgt, HttpServletRequest req, HttpServletResponse resp,
