@@ -28,7 +28,7 @@
     <sequential>
       <java classname="com.google.appengine.tools.KickStart"
             classpath="${appengine.tools.classpath}"
-            fork="true">
+            fork="true" failonerror="true">
         <arg value="com.google.appengine.tools.development.DevAppServerMain"/>
         <arg value="--port=@{port}"/>
         <arg value="--address=@{address}"/>
@@ -54,7 +54,7 @@
     <sequential>
       <java classname="com.google.appengine.tools.admin.AppCfg"
             classpath="${appengine.tools.classpath}"
-            fork="true">
+            fork="true" failonerror="true">
         <arg value="--disable_prompt"/>
         <options/>
         <arg value="@{action}"/>
@@ -89,9 +89,10 @@
   -->
   <macrodef name="enhance_war" description="Run the ORM enhancer on an exploded war">
     <attribute name="war" description="The exploded war directory containing the application"/>
+    <attribute name="api" description="persistence api, JDO or JPA" default="JDO"/>
     <element name="args" optional="true" description="Additional arguments to the enhancer"/>
     <sequential>
-      <enhance failonerror="true">
+      <enhance failonerror="true" api="@{api}">
         <args/>
         <classpath>
           <pathelement path="${appengine.tools.classpath}"/>

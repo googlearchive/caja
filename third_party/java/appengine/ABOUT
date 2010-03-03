@@ -17,8 +17,14 @@ This product includes software developed by:
    - javax/mail with modifications
    - javax/activation
    - geronimo-servlet_2.5_spec-1.2.jar, geronimo-jsp_2.1_spec-1.0.1.jar, geronimo-el_1.0_spec-1.0.1.jar
+
  - Mort Bay Consulting (http://www.mortbay.org)
    - Jetty web server
  
+ - OpenSymphony (http://www.opensymphony.com/)
+   - Quartz Scheduler
 
+ - DataNucleus (http://www.datanucleus.org/)
+   - DataNucleus Access Platform
+   
 For source availability and license information see COPYING.

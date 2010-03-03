@@ -775,7 +775,8 @@
       <jvmarg value="-XX:CompileCommand=exclude,org/eclipse/core/internal/dtree/DataTreeNode,forwardDeltaWith" />
       <jvmarg value="-XX:CompileCommand=exclude,org/eclipse/jdt/internal/compiler/lookup/ParameterizedTypeBinding,&lt;init&gt;" />
       <jvmarg value="-XX:CompileCommand=exclude,org/eclipse/jdt/internal/compiler/lookup/ParameterizedMethodBinding,&lt;init&gt;" />
-      <arg line="-war ${war}" />
+      <arg value="-war"/>
+      <arg value="${war}" />
       <arg value="${gwt.target.module}"/>
     </java>
     <copy todir="${war}">

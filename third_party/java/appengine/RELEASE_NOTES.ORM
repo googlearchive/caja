@@ -1,6 +1,294 @@
 Release Notes for the Google App Engine ORM, a DataNucleus plugin that provides
 access to the Google App Engine Datastore via JDO and JPA.
 
+VERSION 1.0.5
+- Child object with custom pk column can't be saved
+http://code.google.com/p/datanucleus-appengine/issues/detail?id=188
+
+- Queries with multiple contains() where one filter is on pk don't work
+http://code.google.com/p/datanucleus-appengine/issues/detail?id=185
+
+- Throw exception when filtering or sorting by pk-id or pk-name fields
+http://code.google.com/p/datanucleus-appengine/issues/detail?id=190
+
+- Throw exception when filtering or sorting by pk-id or pk-name fields
+http://code.google.com/p/datanucleus-appengine/issues/detail?id=191
+
+- Store child keys in a multi-value property on the parent
+http://code.google.com/p/datanucleus-appengine/issues/detail?id=192
+
+VERSION 1.0.4.1 Final
+- Incorrect exception for multiple fields of same type
+http://code.google.com/p/datanucleus-appengine/issues/detail?id=172
+
+VERSION 1.0.4.1 RC1
+- Non-persistent base classes do not work
+http://code.google.com/p/datanucleus-appengine/issues/detail?id=169
+
+- Relationships in abstract base classes don't work
+http://code.google.com/p/datanucleus-appengine/issues/detail?id=171
+
+VERSION 1.0.4 Final
+- Explicitly disallow multiple relationships of the same type
+http://code.google.com/p/datanucleus-appengine/issues/detail?id=154
+
+- Occasional ArrayOutOfBoundsIndexException
+http://code.google.com/p/datanucleus-appengine/issues/detail?id=156
+
+- Support inheritance
+http://code.google.com/p/datanucleus-appengine/issues/detail?id=25
+
+- Support != queries
+
+- Support IN queries
+http://code.google.com/p/datanucleus-appengine/issues/detail?id=39
+
+- Support datastore cursors
+
+VERSION 1.0.4 RC1
+- Inheritance is working for simple fields and embedded fields.  Relationships
+in base classes are completely untested and probably do not work.
+
+- Cannot add child to existing one-to-many if parent has Long or unencoded String pk
+http://code.google.com/p/datanucleus-appengine/issues/detail?id=28
+
+- Can't query by embedded fields at depth > 1
+http://code.google.com/p/datanucleus-appengine/issues/detail?id=120
+
+- Positional parameters don't work (JPQL)
+http://code.google.com/p/datanucleus-appengine/issues/detail?id=128
+
+- Throw JDOCanRetryException when ConcurrentMod hit during txn commit
+http://code.google.com/p/datanucleus-appengine/issues/detail?id=134
+
+- Respect JDOQL/JPQL case sensitivity for keywords, in particular "count"
+http://code.google.com/p/datanucleus-appengine/issues/detail?id=139
+
+- Put all native datastore types in the default fetch group
+http://code.google.com/p/datanucleus-appengine/issues/detail?id=143
+
+- Empty Set gets loaded from datastore as null
+http://code.google.com/p/datanucleus-appengine/issues/detail?id=145
+
+- Cannot remove element of one to many when parent has pk of type Long or unencoded String
+http://code.google.com/p/datanucleus-appengine/issues/detail?id=126
+
+- Severe problem when deleting a child object from an owned relationship (JDO)
+http://code.google.com/p/datanucleus-appengine/issues/detail?id=135
+
+- NPE resulting from corrupt JDOQL query
+http://code.google.com/p/datanucleus-appengine/issues/detail?id=136
+
+- Embedded, multi-value fields don't work
+http://code.google.com/p/datanucleus-appengine/issues/detail?id=146
+
+VERSION 1.0.3 Final
+- Support delete by query (JPA)
+http://code.google.com/p/datanucleus-appengine/issues/detail?id=36
+
+- Support delete by query (JDO)
+http://code.google.com/p/datanucleus-appengine/issues/detail?id=106
+
+- pm.makePersistentAll() should use batch puts
+http://code.google.com/p/datanucleus-appengine/issues/detail?id=7
+
+- Query by key name when pk is encoded String or Key
+http://code.google.com/p/datanucleus-appengine/issues/detail?id=11
+
+- Exception: {Primary keys are immutable} thrown when cascadingly deleting of chilren with "gae.pk-name" field
+http://code.google.com/p/datanucleus-appengine/issues/detail?id=91
+
+- Make it clear that @Unique and @Uniques are not supported
+http://code.google.com/p/datanucleus-appengine/issues/detail?id=22
+
+- Warn when child fields marked for Eager/Lazy fetching
+http://code.google.com/p/datanucleus-appengine/issues/detail?id=13
+
+- Better error message for JPQL update statements
+http://code.google.com/p/datanucleus-appengine/issues/detail?id=64
+
+- Queries don't respect fetch groups
+http://code.google.com/p/datanucleus-appengine/issues/detail?id=58
+
+- Exception deleting object with gae.parent-pk field
+http://code.google.com/p/datanucleus-appengine/issues/detail?id=87
+
+- Allow embedded field restrictions in queries (JDO/JPA)
+http://code.google.com/p/datanucleus-appengine/issues/detail?id=51
+
+- Cannot modify two fields in the embedded class in one transaction
+http://code.google.com/p/datanucleus-appengine/issues/detail?id=65
+
+- Add operator LIKE support for JPA
+http://code.google.com/p/datanucleus-appengine/issues/detail?id=88
+
+- fail to serialize field that is PC -- message "Specified class class com.google.appengine.api.datastore.Blob is not persistable"
+http://code.google.com/p/datanucleus-appengine/issues/detail?id=94
+
+- Collection<Byte> anomaly
+http://code.google.com/p/datanucleus-appengine/issues/detail?id=95
+
+- Upgrade to DataNucleus 1.1.5
+http://code.google.com/p/datanucleus-appengine/issues/detail?id=96
+
+- More sensible error when ancestor query param is null.
+http://code.google.com/p/datanucleus-appengine/issues/detail?id=97
+
+- JPQL: MEMBER OF only supported when args are in the wrong order
+http://code.google.com/p/datanucleus-appengine/issues/detail?id=99
+
+- Make it clear that ManyToMany is not supported
+http://code.google.com/p/datanucleus-appengine/issues/detail?id=104
+
+- Issuing an ancestor query when a jdo/jpa txn has been started does not actually start a txn
+http://code.google.com/p/datanucleus-appengine/issues/detail?id=105
+
+- pm.deletePersistentAll() should use batch deletes
+http://code.google.com/p/datanucleus-appengine/issues/detail?id=108
+
+- Support sequences
+http://code.google.com/p/datanucleus-appengine/issues/detail?id=110
+
+- JPA support for JPQL functions CURRENT_TIMESTAMP, CURRENT_DATE
+http://code.google.com/p/datanucleus-appengine/issues/detail?id=111
+
+- Support 'is not null' in queries
+http://code.google.com/p/datanucleus-appengine/issues/detail?id=116
+
+
+VERSION 1.0.2 Final
+N.B: This release includes a dependency on a patched version of DataNucleus core 1.1.4.
+The patch was necessary to work around a bug that prevented applications from starting
+when persistence.xml was located in a directory whose full path contained spaces.  The
+patch that was applied to DataNucleus core 1.1.4 can be found in appengine-sdk-1_2_2_patch.patch.
+
+- Fetched objects with multi-value props incorrectly marked dirty
+  http://code.google.com/p/datanucleus-appengine/issues/detail?id=83
+
+- UnsupportedOperationException when updating one-to-many
+  http://code.google.com/p/datanucleus-appengine/issues/detail?id=33
+
+- StartsWith doesn't work
+  http://code.google.com/p/datanucleus-appengine/issues/detail?id=85
+
+- Ancestor queries execute in txn if txn is available
+
+- Added support for gae.exclude-query-from-txn query extension
+
+- Work around DataNucleus bug preventing app from loading persistence.xml in a
+  path containing spaces.
+
+
+VERSION 1.0.2 RC1
+- Upgrade to DataNucleus 1.1.4
+
+- Short entity name cannot be used in JPQL Query
+  http://code.google.com/p/datanucleus-appengine/issues/detail?id=15
+
+- NullPointerException when adding setFirstResult or setMaxResults to query
+  http://code.google.com/p/datanucleus-appengine/issues/detail?id=38
+
+- Adding a child to a unidirectional one-to-many when the parent is detached doesn't work
+  http://code.google.com/p/datanucleus-appengine/issues/detail?id=67
+
+- Support long and int as substitute for child object when querying
+  http://code.google.com/p/datanucleus-appengine/issues/detail?id=1
+
+- Support fields of type Collection
+  http://code.google.com/p/datanucleus-appengine/issues/detail?id=9
+
+- JPQL queries with single character literals enclosed in single quotes not properly handled
+  http://code.google.com/p/datanucleus-appengine/issues/detail?id=21
+
+- Embedded classes not working in JPA
+  http://code.google.com/p/datanucleus-appengine/issues/detail?id=55
+
+- NPE when saving bidirectional child that hasn't been added to parent.
+  http://code.google.com/p/datanucleus-appengine/issues/detail?id=53
+
+- ClassCastException when explicitly setting parent of child 
+  http://code.google.com/p/datanucleus-appengine/issues/detail?id=59
+
+- Support "MEMBER OF" in jpql 
+  http://code.google.com/p/datanucleus-appengine/issues/detail?id=17
+
+- Detached objects have SCO fields
+  http://code.google.com/p/datanucleus-appengine/issues/detail?id=60
+
+- Cannot filter by parent if parent has a parent
+  http://code.google.com/p/datanucleus-appengine/issues/detail?id=61
+
+- Race condition initializing datanucleus meta-data
+  http://code.google.com/p/datanucleus-appengine/issues/detail?id=63
+
+- Take advantage of keys-only queries
+  http://code.google.com/p/datanucleus-appengine/issues/detail?id=77
+
+- Support unindexed properties
+  http://code.google.com/p/datanucleus-appengine/issues/detail?id=78
+
+- results.size() must be called before closing JPA Entity Manager to avoid
+  'NucleusUserException: Object Manager has been closed'
+  http://code.google.com/p/datanucleus-appengine/issues/detail?id=24
+
+VERSION 1.0.1 Final
+- Fix handling of user-defined @Order
+  http://code.google.com/p/datanucleus-appengine/issues/detail?id=40
+
+- Support field restrictions in queries
+  http://code.google.com/p/datanucleus-appengine/issues/detail?id=23
+
+- Fix NPE when querying for null parent
+  http://code.google.com/p/datanucleus-appengine/issues/detail?id=47
+  
+
+VERSION 1.0.1 RC1
+- Support contains operator in JDOQL
+  http://code.google.com/p/datanucleus-appengine/issues/detail?id=2
+
+- Support doubles as query literals
+  http://code.google.com/p/datanucleus-appengine/issues/detail?can=7&id=3
+
+- Support BigDecimal fields
+  http://code.google.com/p/datanucleus-appengine/issues/detail?can=7&id=4
+
+- Support persisting classes with superclasses
+  http://code.google.com/p/datanucleus-appengine/issues/detail?can=7&id=5
+
+- Support Collection fields with serialized="true"
+  http://code.google.com/p/datanucleus-appengine/issues/detail?can=7&id=6
+
+- Support @Lob JPA annotation
+  http://code.google.com/p/datanucleus-appengine/issues/detail?can=7&id=10
+
+- Support @Serialized on byte[] member
+  http://code.google.com/p/datanucleus-appengine/issues/detail?can=7&id=16
+
+- Bidirectional one-to-many when parent has long or unencoded String pk fails
+  http://code.google.com/p/datanucleus-appengine/issues/detail?can=7&id=19
+
+- Cannot fetch many side of one-to-many when pk is Key, Long, or unencoded String
+  http://code.google.com/p/datanucleus-appengine/issues/detail?can=7&id=26
+
+- JDOQL: Support implicit params
+  http://code.google.com/p/datanucleus-appengine/issues/detail?can=7&id=27
+
+- Cannot add child to existing one-to-many if parent has Long or unencoded String pk
+  http://code.google.com/p/datanucleus-appengine/issues/detail?can=7&id=28
+
+- Expose batch gets
+  http://code.google.com/p/datanucleus-appengine/issues/detail?can=7&id=29
+
+- Can't reattach detached objects with Date props
+  http://code.google.com/p/datanucleus-appengine/issues/detail?can=7&id=30
+
+- Fetching 1 to 1 needs to differentiate between direct and indirect children
+  http://code.google.com/p/datanucleus-appengine/issues/detail?can=7&id=31
+
+- Support embedded classes with Key primary key
+  http://code.google.com/p/datanucleus-appengine/issues/detail?can=7&id=32
+
+
 VERSION 1.0.0 Final
 - Fix automatic entity group assignment with non-transactional datasources.
 - Support aliased table names.

@@ -31,14 +31,14 @@ licenses and/or has source available from other locations.
   License: Apache License v. 2.0 
   Source code availability: http://ant.apache.org/
   Bundled in lib/impl/appengine-local-runtime.jar under org/apache/tools/ant
-  lib/shared/jsp/ant-1.6.5.jar
-  lib/shared/jsp/ant-launcher-1.6.5.jar
-  
+  lib/shared/jsp/repackaged-appengine-ant-1.6.5.jar
+  lib/shared/jsp/repackaged-appengine-ant-launcher-1.6.5.jar
+
 * Jakarta Commons Logging 
     License: Apache License v. 2.0 
     Source code availability: http://commons.apache.org/logging/
     Bundled in lib/impl/appengine-api-stubs.jar under org/apache/commons/logging
-    Modifications in /lib/shared/jsp/commons-logger-1.1.1.jar at com/google/appengine/repackaged/org/apache/commons/logging
+    Modifications in /lib/shared/jsp/repackaged-appengine-commons-logger-1.1.1.jar at com/google/appengine/repackaged/org/apache/commons/logging
     
 * Jakarta HTTP Client 
     License: Apache License v. 2.0 
@@ -53,13 +53,13 @@ licenses and/or has source available from other locations.
 * Jakarta Commons EL
     License: Apache License v. 2.0 
     Source code availability: http://commons.apache.org/el/
-    lib/shared/jsp/commons-el-1.0.jar
+    lib/shared/jsp/repackaged-appengine-commons-el-1.0.jar
 
 * Jakarta Jasper
     License: Apache License v. 2.0 
     Source code availability: http://tomcat.apache.org/svn.html
-    lib/shared/jsp/jasper-runtime-5.0.28.jar
-    lib/shared/jsp/jasper-compiler-5.0.28.jar
+    lib/shared/jsp/repackaged-appengine-jasper-runtime-5.0.28.jar
+    lib/shared/jsp/repackaged-appengine-jasper-compiler-5.0.28.jar
 
 * Jakarta Taglibs
     License: Apache License v. 2.0 
@@ -91,7 +91,21 @@ licenses and/or has source available from other locations.
   * Geronimo JSTL Expression Language (EL) 
       lib/shared/geronimo-el_1.0_spec-1.0.1.jar
 
+* OpenSymphony Quartz
+    License: Apache License v. 2.0
+    Source code availability: http://www.quartz-scheduler.org/
+    Bundled in lib/impl/appengine-api-stubs.jar under org/quartz
 
-    
+* Antlr 3
+    License: BSD
+    Source code availability: http://antlr.org
+    Bundled in lib/impl/appengine-api-tools.jar under com/google/appengine/repackaged/org/antlr
 
-
+* DataNucleus Access Platform
+    License: Apache License v. 2.0
+    Source code availability: http://www.datanucleus.org/
+    lib/tools/orm/datanucleus-core-1.1.5.jar
+    lib/tools/orm/datanucleus-jpa-1.1.5.jar
+    lib/tools/orm/datanucleus-enhancer-1.1.4.jar
+    lib/user/orm/datanucleus-core-1.1.5.jar
+    lib/user/orm/datanucleus-jpa-1.1.5.jar
