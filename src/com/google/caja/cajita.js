@@ -4118,36 +4118,36 @@ var safeJSON;
   safeJSON = primFreeze({
     CLASS___: 'JSON',
     parse: markFuncFreeze(function (text, opt_reviver) {
-      var attenuatedReviver;
-      // In attenuatedReviver, key will be a string, and "this" will be an
-      // object constructed by the JSON parser or attached to the JSON parser
-      // during a previous call to the reviver.
-
-      text = String(text);
+      var reviver = void 0;
       if (opt_reviver) {
         opt_reviver = toFunc(opt_reviver);
-        throw new Error('JSON.parse with a reviver unimplemented');
-        // TODO(mikesamuel): implement me
-      } else {
-        return nativeJSON.parse(text, function (key, value) {
-          return canSetPub(this, key) ? value : void 0;
-        });
+        reviver = function (key, value) {
+          return opt_reviver.apply(this, arguments);
+        };
       }
+      return nativeJSON.parse(
+          JSON.checkSyntax(text, function (key) {
+            return key !== 'valueOf' && key !== 'toString' && !endsWith__(key);
+          }), reviver);
     }),
     stringify: markFuncFreeze(function (obj, opt_replacer, opt_space) {
       switch (typeof opt_space) {
-        case 'object': case 'function': case 'boolean':
-          throw new TypeError('space must be a number or string');
+        case 'number': case 'string': case 'undefined': break;
+        default: throw new TypeError('space must be a number or string');
       }
+      var replacer;
       if (opt_replacer) {
         opt_replacer = toFunc(opt_replacer);
-        throw new Error('JSON.stringify with a replacer unimplemented');
-        // TODO(mikesamuel): implement me
+        replacer = function (key, value) {
+          if (!canReadPub(this, key)) { return void 0; }
+          return opt_replacer.apply(this, arguments);
+        };
       } else {
-        return nativeJSON.stringify(obj, function (key, value) {
+        replacer = function (key, value) {
           return (canReadPub(this, key)) ? value : void 0;
-        }, opt_space);
+        };
       }
+      return nativeJSON.stringify(obj, replacer, opt_space);
     })
   });
 

@@ -15,17 +15,17 @@
 
 /**
  * This file combines the JSON.parse method defined by the original
- * json_sans_eval.js with the stringify method from the original 
- * json2.js. Like json2.js, it defines a JSON object if one does not 
- * already exist, and it initializes its parse and stringify methods 
- * only if JSON does not currently have such methods (functions at 
- * those property names). Additionally, if there is no 
+ * json_sans_eval.js with the stringify method from the original
+ * json2.js. Like json2.js, it defines a JSON object if one does not
+ * already exist, and it initializes its parse and stringify methods
+ * only if JSON does not currently have such methods (functions at
+ * those property names). Additionally, if there is no
  * <tt>Date.prototype.toJSON</tt>, this file defines an ES5 compliant
  * one as well as the <tt>toJSON</tt> methods for <tt>String</tt>,
  * <tt>Number</tt>, and <tt>Boolean</tt>. The latter three are no
  * longer part of ES5, but are expected by the parts of this file
  * derived from json2.js.
- * 
+ *
  * Of course, the reason this is included in the Caja distribution is
  * so that Caja can expose an ES5 compliant but Caja-safe JSON object
  * to cajoled code. Caja's wrapping of the provided JSON therefore
@@ -34,10 +34,10 @@
  * hooks. Fortunately, ES5 and json2.js both specify that only own
  * properties of an object are stringified, and the the replacer is
  * called on the result of a <tt>toJSON</tt> call, making it possible
- * for the replacer to do its job. 
- * 
+ * for the replacer to do its job.
+ *
  * Comment from original json2.js:
- * 
+ *
     http://www.JSON.org/json2.js
     2009-08-17
 
@@ -182,7 +182,7 @@
 
     USE YOUR OWN COPY. IT IS EXTREMELY UNWISE TO LOAD CODE FROM SERVERS YOU DO
     NOT CONTROL.
- * 
+ *
  * Comment from original json_sans_eval.js:
  *
  * Parses a string of well-formed JSON text.
@@ -237,24 +237,23 @@
  * @author Mike Samuel <mikesamuel@gmail.com>
  */
 
-if (typeof JSON === 'undefined') {
-  var JSON = {};
+if (typeof JSON === 'undefined') { var JSON = {}; }
 
 (function() {
 
    var hop = Object.hasOwnProperty;
-   
-   ///////////////////// from json2.js //////////////////////////   
+
+   ///////////////////// from json2.js //////////////////////////
 
    function f(n) {
      // Format integers to have at least two digits.
      return n < 10 ? '0' + n : n;
    }
-   
+
    if (typeof Date.prototype.toJSON !== 'function') {
-     
+
      Date.prototype.toJSON = function (key) {
-       
+
        return isFinite(this.valueOf()) ?
          this.getUTCFullYear()   + '-' +
          f(this.getUTCMonth() + 1) + '-' +
@@ -263,14 +262,14 @@ if (typeof JSON === 'undefined') {
          f(this.getUTCMinutes())   + ':' +
          f(this.getUTCSeconds())   + 'Z' : null;
      };
-     
+
      String.prototype.toJSON =
        Number.prototype.toJSON =
        Boolean.prototype.toJSON = function (key) {
          return this.valueOf();
        };
    }
-   
+
    var cx = /[\u0000\u00ad\u0600-\u0604\u070f\u17b4\u17b5\u200c-\u200f\u2028-\u202f\u2060-\u206f\ufeff\ufff0-\uffff]/g,
    escapable = /[\\\"\x00-\x1f\x7f-\x9f\u00ad\u0600-\u0604\u070f\u17b4\u17b5\u200c-\u200f\u2028-\u202f\u2060-\u206f\ufeff\ufff0-\uffff]/g,
    gap,
@@ -285,16 +284,16 @@ if (typeof JSON === 'undefined') {
      '\\': '\\\\'
    },
    rep;
-   
-   
+
+
    function quote(string) {
-     
+
      // If the string contains no control characters, no quote
      // characters, and no
      // backslash characters, then we can safely slap some quotes around it.
      // Otherwise we must also replace the offending characters with safe escape
      // sequences.
-     
+
      escapable.lastIndex = 0;
      return escapable.test(string) ?
        '"' + string.replace(escapable, function (a) {
@@ -304,12 +303,12 @@ if (typeof JSON === 'undefined') {
                             }) + '"' :
      '"' + string + '"';
    }
-   
-   
+
+
    function str(key, holder) {
-     
+
      // Produce a string from holder[key].
-     
+
      var i,          // The loop counter.
      k,          // The member key.
      v,          // The member value.
@@ -317,78 +316,78 @@ if (typeof JSON === 'undefined') {
      mind = gap,
      partial,
      value = holder[key];
-     
+
      // If the value has a toJSON method, call it to obtain a replacement value.
-     
+
      if (value && typeof value === 'object' &&
          typeof value.toJSON === 'function') {
        value = value.toJSON(key);
      }
-     
+
      // If we were called with a replacer function, then call the replacer to
      // obtain a replacement value.
-     
+
      if (typeof rep === 'function') {
        value = rep.call(holder, key, value);
      }
-     
+
      // What happens next depends on the value's type.
-     
+
      switch (typeof value) {
      case 'string':
        return quote(value);
-       
+
      case 'number':
-       
+
        // JSON numbers must be finite. Encode non-finite numbers as null.
-       
+
        return isFinite(value) ? String(value) : 'null';
-       
+
      case 'boolean':
      case 'null':
-       
+
        // If the value is a boolean or null, convert it to a string. Note:
        // typeof null does not produce 'null'. The case is included here in
        // the remote chance that this gets fixed someday.
-       
+
        return String(value);
-       
+
        // If the type is 'object', we might be dealing with an object
        // or an array or
        // null.
-       
+
      case 'object':
-       
+
        // Due to a specification blunder in ECMAScript, typeof null is 'object',
        // so watch out for that case.
-       
+
        if (!value) {
          return 'null';
        }
-       
+
        // Make an array to hold the partial results of stringifying
        // this object value.
-       
+
        gap += indent;
        partial = [];
-       
+
        // Is the value an array?
-       
+
        if (Object.prototype.toString.apply(value) === '[object Array]') {
-         
+
          // The value is an array. Stringify every element. Use null
          // as a placeholder
          // for non-JSON values.
-         
+
          length = value.length;
          for (i = 0; i < length; i += 1) {
            partial[i] = str(i, value) || 'null';
          }
-         
+
          // Join all of the elements together, separated with commas,
          // and wrap them in
          // brackets.
-         
+
          v = partial.length === 0 ? '[]' :
            gap ? '[\n' + gap +
            partial.join(',\n' + gap) + '\n' +
@@ -397,10 +396,10 @@ if (typeof JSON === 'undefined') {
          gap = mind;
          return v;
        }
-       
+
        // If the replacer is an array, use it to select the members to
        // be stringified.
-       
+
        if (rep && typeof rep === 'object') {
          length = rep.length;
          for (i = 0; i < length; i += 1) {
@@ -413,9 +412,9 @@ if (typeof JSON === 'undefined') {
            }
          }
        } else {
-         
+
          // Otherwise, iterate through all of the keys in the object.
-         
+
          for (k in value) {
            if (hop.call(value, k)) {
              v = str(k, value);
@@ -425,10 +424,10 @@ if (typeof JSON === 'undefined') {
            }
          }
        }
-       
+
        // Join all of the member texts together, separated with commas,
        // and wrap them in braces.
-       
+
        v = partial.length === 0 ? '{}' :
          gap ? '{\n' + gap + partial.join(',\n' + gap) + '\n' +
          mind + '}' : '{' + partial.join(',') + '}';
@@ -436,77 +435,77 @@ if (typeof JSON === 'undefined') {
        return v;
      }
    }
-   
+
    // If the JSON object does not yet have a stringify method, give it one.
-   
+
    if (typeof JSON.stringify !== 'function') {
      JSON.stringify = function (value, replacer, space) {
-       
+
        // The stringify method takes a value and an optional replacer,
        // and an optional space parameter, and returns a JSON
        // text. The replacer can be a function that can replace
        // values, or an array of strings that will select the keys. A
        // default replacer method can be provided. Use of the space
-       // parameter can produce text that is more easily readable. 
-       
+       // parameter can produce text that is more easily readable.
+
        var i;
        gap = '';
        indent = '';
-       
+
        // If the space parameter is a number, make an indent string
        // containing that
        // many spaces.
-       
+
        if (typeof space === 'number') {
          for (i = 0; i < space; i += 1) {
            indent += ' ';
          }
-         
+
          // If the space parameter is a string, it will be used as the
          // indent string.
-         
+
        } else if (typeof space === 'string') {
          indent = space;
        }
-       
+
        // If there is a replacer, it must be a function or an array.
        // Otherwise, throw an error.
-       
+
        rep = replacer;
        if (replacer && typeof replacer !== 'function' &&
            (typeof replacer !== 'object' ||
             typeof replacer.length !== 'number')) {
          throw new Error('JSON.stringify');
        }
-       
+
        // Make a fake root object containing our value under the key of ''.
        // Return the result of stringifying the value.
-       
+
        return str('', {'': value});
      };
    }
-   
+
    var number
-     = '(?:-?\\b(?:0|[1-9][0-9]*)(?:\\.[0-9]+)?(?:[eE][+-]?[0-9]+)?\\b)';
+       = '(?:-?\\b(?:0|[1-9][0-9]*)(?:\\.[0-9]+)?(?:[eE][+-]?[0-9]+)?\\b)';
    var oneChar = '(?:[^\\0-\\x08\\x0a-\\x1f\"\\\\]'
-     + '|\\\\(?:[\"/\\\\bfnrt]|u[0-9A-Fa-f]{4}))';
+       + '|\\\\(?:[\"/\\\\bfnrt]|u[0-9A-Fa-f]{4}))';
    var string = '(?:\"' + oneChar + '*\")';
-   
+
    // Will match a value in a well-formed JSON file.
    // If the input is not well-formed, may match strangely, but not in an unsafe
    // way.
    // Since this only matches value tokens, it does not match
    // whitespace, colons,
    // or commas.
-   var jsonToken = new RegExp(
-     '(?:false|true|null|[\\{\\}\\[\\]]'
+   var significantToken = new RegExp(
+       '(?:false|true|null|[\\{\\}\\[\\]]'
        + '|' + number
        + '|' + string
        + ')', 'g');
-   
+
    // Matches escape sequences in a string literal
    var escapeSequence = new RegExp('\\\\(?:([^u])|u(.{4}))', 'g');
-   
+
    // Decodes escape sequences in object literals
    var escapes = {
      '"': '"',
@@ -521,23 +520,101 @@ if (typeof JSON === 'undefined') {
    function unescapeOne(_, ch, hex) {
      return ch ? escapes[ch] : String.fromCharCode(parseInt(hex, 16));
    }
-   
+
    // A non-falsy value that coerces to the empty string when used as a key.
    var EMPTY_STRING = new String('');
    var SLASH = '\\';
-   
-   // Constructor to use based on an open token.
-   var firstTokenCtors = { '{': Object, '[': Array };
-   
+
+   var completeToken = new RegExp(
+       '(?:false|true|null|[ \t\r\n]+|[\\{\\}\\[\\],:]'
+       + '|' + number
+       + '|' + string
+       + '|.)', 'g');
+
+   function blank(arr, s, e) { while (--e >= s) { arr[e] = ''; } }
+
+   JSON.checkSyntax = function checkJson(text, keyFilter) {
+     var toks = ('' + text).match(completeToken);
+     var i = 0, n = toks.length;
+     checkArray();
+     if (i < n) {
+       throw new Error('Trailing tokens ' + toks.slice(i - 1).join(''));
+     }
+     return toks.join('');
+
+     function checkArray() {
+       while (i < n) {
+         var t = toks[i++];
+         switch (t) {
+           case ']': return;
+           case '[': checkArray(); break;
+           case '{': checkObject(); break;
+         }
+       }
+     }
+     function checkObject() {
+       // For the tokens    {  "a"  :  null  ,  "b" ...
+       // the state is         0    1  2     3  0
+       var state = 0;
+       // If we need to sanitize instead of validating, uncomment:
+       // var skip = 0;  // The index of the first token to skip or 0.
+       while (i < n) {
+         var t = toks[i++];
+         switch (t.charCodeAt(0)) {
+           case 0x09: case 0x0a: case 0x0d: case 0x20: continue; // space chars
+           case 0x22: // "
+             var len = t.length;
+             if (len === 1) { throw new Error(t); }
+             if (state === 0) {
+               if (keyFilter && !keyFilter(
+                       t.substring(1, len - 1)
+                       .replace(escapeSequence, unescapeOne))) {
+                 throw new Error(t);
+                 // If we need to sanitize instead of validating, uncomment:
+                 // skip = i - 1;
+               }
+             } else if (state !== 2) { throw new Error(t); }
+             break;
+           case 0x27: throw new Error(t);  // '
+           case 0x2c: // ,
+             if (state !== 3) { throw new Error(t); }
+             state = 0;
+             // If we need to sanitize instead of validating, uncomment:
+             // if (skip) { blank(toks, skip, i); skip = 0; }
+             continue;
+           case 0x3a: // :
+             if (state !== 1) { throw new Error(t); }
+             break;
+           case 0x5b:  // [
+             if (state !== 2) { throw new Error(t); }
+             checkArray();
+             break;
+           case 0x7b:  // {
+             if (state !== 2) { throw new Error(t); }
+             checkObject();
+             break;
+           case 0x7d:  // }
+             // If we need to sanitize instead of validating, uncomment:
+             // if (skip) { blank(toks, skip, i - 1); skip = 0; }
+             return;
+           default:
+             if (state !== 2) { throw new Error(t); }
+             break;
+         }
+         ++state;
+       }
+     }
+   };
+
    // If the JSON object does not yet have a parse method, give it one.
-   
+
    if (typeof JSON.parse !== 'function') {
 
-     ///////////////////// from json_sans_eval.js //////////////////////////   
+     ///////////////////// from json_sans_eval.js //////////////////////////
 
      JSON.parse = function (json, opt_reviver) {
        // Split into tokens
-       var toks = json.match(jsonToken);
+       var toks = json.match(significantToken);
        // Construct the object to return
        var result;
        var tok = toks[0];
@@ -548,7 +625,7 @@ if (typeof JSON === 'undefined') {
        } else {
          throw new Error(tok);
        }
-       
+
        // If undefined, the key in an object key/value record to use
        // for the next
        // value parsed.
@@ -559,7 +636,7 @@ if (typeof JSON === 'undefined') {
        var stack = [result];
        for (var i = 1, n = toks.length; i < n; ++i) {
          tok = toks[i];
-         
+
          var cont;
          switch (tok.charCodeAt(0)) {
          default:  // sign or digit
@@ -619,7 +696,7 @@ if (typeof JSON === 'undefined') {
        }
        // Fail if we've got an uncompleted object.
        if (stack.length) { throw new Error(); }
-       
+
        if (opt_reviver) {
          // Based on walk as implemented in http://www.json.org/json2.js
          var walk = function (holder, key) {
@@ -630,11 +707,11 @@ if (typeof JSON === 'undefined') {
                if (hop.call(value, k) && value !== holder) {
                  // Recurse to properties first.  This has the effect of causing
                  // the reviver to be called on the object graph depth-first.
-                 
+
                  // Since 'this' is bound to the holder of the property, the
                  // reviver can access sibling properties of k including ones
                  // that have not yet been revived.
-                 
+
                  // The value returned by the reviver is used in place of the
                  // current value of property k.
                  // If it returns undefined then the property is deleted.
@@ -659,10 +736,8 @@ if (typeof JSON === 'undefined') {
          };
          result = walk({ '': result }, '');
        }
-       
+
        return result;
      };
    }
  })();
- 
-}
