@@ -23,6 +23,7 @@ import com.google.caja.parser.html.AttribKey;
 import com.google.caja.parser.html.ElKey;
 import com.google.caja.parser.html.Nodes;
 import com.google.caja.parser.js.Block;
+import com.google.caja.parser.js.Statement;
 import com.google.caja.parser.js.UncajoledModule;
 import com.google.caja.plugin.ExtractedHtmlContent;
 import com.google.caja.plugin.PluginMeta;
@@ -272,26 +273,16 @@ public class TemplateCompiler {
     // Inspect the document.
     inspect();
 
+    // Compile CSS to HTML when appropriate or to JS where not.
+    // It always ends up at the top either way.
+    Pair<Statement, Element> css = new SafeCssMaker(
+        safeStylesheets, doc).make();
+
     // Emit safe HTML with JS which attaches dynamic attributes.
     List<Node> roots = Lists.newArrayList();
     for (Pair<Node, URI> root : ihtmlRoots) { roots.add(root.a); }
     SafeHtmlMaker htmlMaker = new SafeHtmlMaker(
         meta, mc, doc, scriptsPerNode, roots, aRewriter.getHandlers());
-    Pair<Node, List<Block>> htmlAndJs = htmlMaker.make();
-    Node html = htmlAndJs.a;
-    List<Block> js = htmlAndJs.b;
-    Block firstJs;
-    if (js.isEmpty()) {
-      js.add(firstJs = new Block());
-    } else {
-      firstJs = js.get(0);
-    }
-    // Compile CSS to HTML when appropriate or to JS where not.
-    // It always ends up at the top either way.
-    new SafeCssMaker(html, firstJs, safeStylesheets).make();
-    if (firstJs.children().isEmpty()) {
-      js.remove(firstJs);
-    }
-    return Pair.pair(html, js);
+    return htmlMaker.make(css);
   }
 }

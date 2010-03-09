@@ -40,7 +40,7 @@ public class HtmlHandlerTest extends ServiceTestCase {
     return moduleCallback == null ?
         "___.loadModule(" : moduleCallback + "(___.prepareModule(";
   }
-  
+
   private String moduleCallbackSuffix(String moduleCallback) {
     return moduleCallback == null ?
         ")" : "))";
@@ -134,7 +134,7 @@ public class HtmlHandlerTest extends ServiceTestCase {
                 + "var\nel___;"
                 + "var emitter___=IMPORTS___.htmlEmitter___;"
                 + "emitter___.discard(emitter___.attach('id_1___'))"
-              + "}"              
+              + "}"
               + "try{"
                 + "{moduleResult___=42}"
               + "}catch(ex___){"
@@ -142,6 +142,8 @@ public class HtmlHandlerTest extends ServiceTestCase {
                     + "ex___,$v.ro('onerror'),'bar.html','1')"
               + "}"
               + "{"
+                + "var\nel___;"
+                + "var emitter___=IMPORTS___.htmlEmitter___;"
                 + "el___=emitter___.finish();"
                 + "emitter___.signalLoaded()"
               + "}"
@@ -161,7 +163,7 @@ public class HtmlHandlerTest extends ServiceTestCase {
     assertHtml2Js("*/*", "text/javascript", null);
     assertHtml2Js("*/*", "application/javascript", null);
     assertHtml2Js("text/html", "application/javascript", null);
-    assertHtml2Js("text/html", "text/javascript", null);    
+    assertHtml2Js("text/html", "text/javascript", null);
     assertHtml2Js("text/html", "text/javascript", "foo.bar.baz");
   }
 }

@@ -24,6 +24,8 @@
             $v.ro(\'onerror\'), \'example.com\', \'1\');
         }
         {
+          var el___;
+          var emitter___ = IMPORTS___.htmlEmitter___;
           el___ = emitter___.finish();
           emitter___.signalLoaded();
         }

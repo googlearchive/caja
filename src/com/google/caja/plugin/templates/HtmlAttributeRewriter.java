@@ -36,7 +36,6 @@ import com.google.caja.parser.js.FunctionConstructor;
 import com.google.caja.parser.js.Identifier;
 import com.google.caja.parser.js.Operation;
 import com.google.caja.parser.js.Reference;
-import com.google.caja.parser.js.Statement;
 import com.google.caja.parser.js.StringLiteral;
 import com.google.caja.parser.js.SyntheticNodes;
 import com.google.caja.parser.quasiliteral.QuasiBuilder;
@@ -49,13 +48,14 @@ import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.RenderContext;
+import com.google.caja.util.Lists;
+import com.google.caja.util.Maps;
+import com.google.caja.util.SyntheticAttributeKey;
 
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
@@ -74,10 +74,12 @@ public final class HtmlAttributeRewriter {
   private final MessageQueue mq;
   private final Map<Attr, EmbeddedContent> attributeContent;
   /** Maps handler attribute source to handler names. */
-  private final Map<String, String> handlerCache
-      = new HashMap<String, String>();
+  private final Map<String, String> handlerCache = Maps.newHashMap();
   /** Extracted event handler functions. */
-  private final List<Statement> handlers = new ArrayList<Statement>();
+  private final List<Declaration> handlers = Lists.newArrayList();
+
+  public static final SyntheticAttributeKey<String> HANDLER_NAME
+      = new SyntheticAttributeKey<String>(String.class, "handlerName");
 
   public HtmlAttributeRewriter(
       PluginMeta meta, CssSchema cssSchema, HtmlSchema htmlSchema,
@@ -92,7 +94,7 @@ public final class HtmlAttributeRewriter {
   public PluginMeta getPluginMeta() { return meta; }
   public CssSchema getCssSchema() { return cssSchema; }
   public HtmlSchema getHtmlSchema() { return htmlSchema; }
-  public List<Statement> getHandlers() {
+  public List<Declaration> getHandlers() {
     return Collections.unmodifiableList(handlers);
   }
 
@@ -210,6 +212,7 @@ public final class HtmlAttributeRewriter {
             "tail", new Reference(SyntheticNodes.s(
                 new Identifier(pos, handlerFnName))));
         eventAdapter.setFilePosition(pos);
+        eventAdapter.getAttributes().set(HANDLER_NAME, handlerFnName);
         dynamicValue = eventAdapter;
         break;
       case STYLE:
@@ -255,13 +258,14 @@ public final class HtmlAttributeRewriter {
           handlerCache.put(value, handlerFnName);
 
           Operation urlAdapter = (Operation) QuasiBuilder.substV(
-                  ""
-                  + "'javascript:' + /*@synthetic*/encodeURIComponent("
-                  + "   'plugin_dispatchEvent___(this, null, '"
-                  + "    + ___./*@synthetic*/getId(IMPORTS___)"
-                  + "    + ', ' + '@handlerName' + '), void 0')",
+              ""
+              + "'javascript:' + /*@synthetic*/encodeURIComponent("
+              + "   'plugin_dispatchEvent___(this, null, '"
+              + "    + ___./*@synthetic*/getId(IMPORTS___)"
+              + "    + ', ' + '@handlerName' + '), void 0')",
               "handlerName", new Identifier(pos, handlerFnName));
           urlAdapter.setFilePosition(pos);
+          urlAdapter.getAttributes().set(HANDLER_NAME, handlerFnName);
           dynamicValue = urlAdapter;
         } else {
           try {

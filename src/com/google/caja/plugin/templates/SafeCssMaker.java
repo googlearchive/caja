@@ -19,7 +19,6 @@ import com.google.caja.parser.css.CssTree;
 import com.google.caja.parser.html.Namespaces;
 import com.google.caja.parser.html.Nodes;
 import com.google.caja.parser.js.ArrayConstructor;
-import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.Expression;
 import com.google.caja.parser.js.ExpressionStmt;
 import com.google.caja.parser.js.Statement;
@@ -27,14 +26,13 @@ import com.google.caja.parser.js.StringLiteral;
 import com.google.caja.parser.quasiliteral.QuasiBuilder;
 import com.google.caja.parser.quasiliteral.ReservedNames;
 import com.google.caja.plugin.CssRuleRewriter;
+import com.google.caja.util.Lists;
+import com.google.caja.util.Pair;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import org.w3c.dom.Document;
-import org.w3c.dom.DocumentFragment;
 import org.w3c.dom.Element;
-import org.w3c.dom.Node;
 
 /**
  * Attaches CSS to either the static HTML or the uncajoled JS as appropriate.
@@ -44,22 +42,19 @@ import org.w3c.dom.Node;
  * @author mikesamuel@gmail.com
  */
 final class SafeCssMaker {
-  private final Node safeHtml;
-  private final Block safeJs;
   private final List<CssTree.StyleSheet> validatedStylesheets;
+  private final Document doc;
 
-  SafeCssMaker(Node safeHtml, Block safeJs,
-               List<CssTree.StyleSheet> validatedStylesheets) {
-    this.safeHtml = safeHtml;
-    this.safeJs = safeJs;
+  SafeCssMaker(List<CssTree.StyleSheet> validatedStylesheets, Document doc) {
     this.validatedStylesheets = validatedStylesheets;
+    this.doc = doc;
   }
 
-  void make() {
-    if (validatedStylesheets.isEmpty()) { return; }
+  Pair<Statement, Element> make() {
+    if (validatedStylesheets.isEmpty()) { return Pair.pair(null, null); }
 
     // Accumulates dynamic CSS that will be added to the JS.
-    List<Expression> cssParts = new ArrayList<Expression>();
+    List<Expression> cssParts = Lists.newArrayList();
     // Accumulate static CSS that can be embedded in the DOM.
     StringBuilder css = new StringBuilder();
     FilePosition staticPos = null, dynamicPos = null;
@@ -97,10 +92,10 @@ final class SafeCssMaker {
       }
     }
 
+    ExpressionStmt dynamicCss = null;
+    Element staticCss = null;
     // Emit any dynamic CSS.
     if (!cssParts.isEmpty()) {
-      Statement firstChild = safeJs.children().isEmpty()
-          ? null : safeJs.children().get(0);
       // The CSS rule
       //     p { color: purple }
       // is converted to the JavaScript
@@ -112,31 +107,25 @@ final class SafeCssMaker {
       //     .g123___ p { color: purple }
       // will only make purple paragraphs that are under a node with class
       // g123__.
-      safeJs.insertBefore(new ExpressionStmt(
+      dynamicCss = new ExpressionStmt(
           dynamicPos,
           (Expression) QuasiBuilder.substV(
               ReservedNames.IMPORTS
               + ".emitCss___(@cssParts./*@synthetic*/join("
               + ReservedNames.IMPORTS + ".getIdClass___()))",
-              "cssParts", new ArrayConstructor(dynamicPos, cssParts))),
-          firstChild);
+              "cssParts", new ArrayConstructor(dynamicPos, cssParts)));
     }
 
     // Emit any static CSS.
-    Node safeHtml = this.safeHtml;
     if (css.length() != 0) {
-      Document doc = safeHtml.getOwnerDocument();
       String nsUri = Namespaces.HTML_NAMESPACE_URI;
       Element style = doc.createElementNS(nsUri, "style");
       style.setAttributeNS(nsUri, "type", "text/css");
       style.appendChild(doc.createTextNode(css.toString()));
       Nodes.setFilePositionFor(style, dynamicPos);
-      if (!(safeHtml instanceof DocumentFragment)) {
-        DocumentFragment f = doc.createDocumentFragment();
-        f.appendChild(safeHtml);
-        safeHtml = f;
-      }
-      safeHtml.insertBefore(style, safeHtml.getFirstChild());
+      staticCss = style;
     }
+
+    return Pair.pair((Statement) dynamicCss, staticCss);
   }
 }

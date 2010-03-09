@@ -30,6 +30,10 @@ import com.google.caja.parser.html.DomParser;
 import com.google.caja.parser.html.Namespaces;
 import com.google.caja.parser.html.Nodes;
 import com.google.caja.parser.js.Block;
+import com.google.caja.parser.js.FormalParam;
+import com.google.caja.parser.js.FunctionConstructor;
+import com.google.caja.parser.js.FunctionDeclaration;
+import com.google.caja.parser.js.Identifier;
 import com.google.caja.parser.js.TranslatedCode;
 import com.google.caja.plugin.CssRuleRewriter;
 import com.google.caja.plugin.ExtractedHtmlContent;
@@ -118,22 +122,28 @@ public class TemplateCompilerTest extends CajaTestCase {
             "<p id=\"id_1___\">a</p>")),
         js(fromString(
             ""
-            + "{"
-            + "  var el___;"
-            + "  var emitter___ = IMPORTS___.htmlEmitter___;"
-            + "  el___ = emitter___.byId('id_1___');"
-            + "  emitter___.setAttr("
-            + "      el___, 'id', 'a-' + IMPORTS___.getIdClass___());"
-            + "  el___ = emitter___.finish();"
+            + "function module() {"
+            + "  {"
+            + "    var el___;"
+            + "    var emitter___ = IMPORTS___.htmlEmitter___;"
+            + "    el___ = emitter___.byId('id_1___');"
+            + "    emitter___.setAttr("
+            + "        el___, 'id', 'a-' + IMPORTS___.getIdClass___());"
+            + "    el___ = emitter___.finish();"
+            + "  }"
             + "}"
-            + "try {"
-            + "  { 1; }"
-            + "} catch (ex___) {"
-            + "  ___.getNewModuleHandler().handleUncaughtException(ex___,"
-            + "      onerror, 'testSignalLoadedAtEnd', '1');"
+            + "function module() {"
+            + "  try {"
+            + "    { 1; }"
+            + "  } catch (ex___) {"
+            + "    ___.getNewModuleHandler().handleUncaughtException(ex___,"
+            + "        onerror, 'testSignalLoadedAtEnd', '1');"
+            + "  }"
             + "}"
-            + "{"
-            + "  emitter___.signalLoaded();"
+            + "function module() {"
+            + "  {"
+            + "    IMPORTS___.htmlEmitter___.signalLoaded();"
+            + "  }"
             + "}")));
   }
 
@@ -159,14 +169,16 @@ public class TemplateCompilerTest extends CajaTestCase {
         htmlFragment(fromString("<a id='id_1___' target='_blank'></a>")),
         js(fromString(
             ""
-            + "{"
-            + "  var el___; var emitter___ = IMPORTS___.htmlEmitter___;"
-            + "  el___ = emitter___.byId('id_1___');"
-            + "  emitter___.setAttr("
-            + "      el___, 'name', 'hi-' + IMPORTS___.getIdClass___());"
-            + "  el___.removeAttribute('id');"
-            + "  el___ = emitter___.finish();"
-            + "  emitter___.signalLoaded();"
+            + "function module() {"
+            + "  {"
+            + "    var el___; var emitter___ = IMPORTS___.htmlEmitter___;"
+            + "    el___ = emitter___.byId('id_1___');"
+            + "    emitter___.setAttr("
+            + "        el___, 'name', 'hi-' + IMPORTS___.getIdClass___());"
+            + "    el___.removeAttribute('id');"
+            + "    el___ = emitter___.finish();"
+            + "    emitter___.signalLoaded();"
+            + "  }"
             + "}")));
 
     meta.setIdClass("xyz___");
@@ -206,21 +218,23 @@ public class TemplateCompilerTest extends CajaTestCase {
             + " id=id_2___ target='_blank'></form>")),
         js(fromString(
             ""
-            + "{"
+            + "function module() {"
+            + "  {"
+            + "    var el___; var emitter___ = IMPORTS___.htmlEmitter___;"
+            + "    el___ = emitter___.byId('id_2___');"
             // The extracted handler.
-            + "  var c_1___ = ___.markFuncFreeze(function(event, thisNode___) {"
-            + "    alert('hi');"  // Cajoled later
-            + "    return true;"
-            + "  });"
-            + "  var el___; var emitter___ = IMPORTS___.htmlEmitter___;"
-            + "  el___ = emitter___.byId('id_2___');"
-            + "  el___.onsubmit = function (event) {"
-            + "    return plugin_dispatchEvent___("
-            + "        this, event, ___.getId(IMPORTS___), c_1___);"
-            + "  };"
-            + "  el___.removeAttribute('id');"
-            + "  el___ = emitter___.finish();"
-            + "  emitter___.signalLoaded();"
+            + "    var c_1___ = ___.markFuncFreeze(function(event, thisNode___) {"
+            + "      alert('hi');"  // Cajoled later
+            + "      return true;"
+            + "    });"
+            + "    el___.onsubmit = function (event) {"
+            + "      return plugin_dispatchEvent___("
+            + "          this, event, ___.getId(IMPORTS___), c_1___);"
+            + "    };"
+            + "    el___.removeAttribute('id');"
+            + "    el___ = emitter___.finish();"
+            + "    emitter___.signalLoaded();"
+            + "  }"
             + "}")));
   }
 
@@ -232,19 +246,48 @@ public class TemplateCompilerTest extends CajaTestCase {
             "<a id=\"id_2___\" target=\"_blank\">Two!!</a>")),
         js(fromString(
             ""
-            + "{"
+            + "function module() {"
+            + "  {"
+            + "    var el___; var emitter___ = IMPORTS___.htmlEmitter___;"
+            + "    el___ = emitter___.byId('id_2___');"
             // The extracted handler.
-            + "  var c_1___ = ___.markFuncFreeze(function(thisNode___) {"
-            + "    alert(1 + 1);"  // Cajoled later
-            + "  });"
-            + "  var el___; var emitter___ = IMPORTS___.htmlEmitter___;"
-            + "  el___ = emitter___.byId('id_2___');"
-            + "  emitter___.setAttr(el___, 'href', 'javascript:' +"
-            + "    encodeURIComponent('plugin_dispatchEvent___(this, null, ' +"
-            + "        ___.getId(IMPORTS___) + ', ' + 'c_1___' + '), void 0'));"
-            + "  el___.removeAttribute('id');"
-            + "  el___ = emitter___.finish();"
-            + "  emitter___.signalLoaded();"
+            + "    var c_1___ = ___.markFuncFreeze(function(thisNode___) {"
+            + "      alert(1 + 1);"  // Cajoled later
+            + "    });"
+            + "    emitter___.setAttr(el___, 'href', 'javascript:' +"
+            + "      encodeURIComponent('plugin_dispatchEvent___(this, null, '"
+            + "      + ___.getId(IMPORTS___) + ', ' + 'c_1___' + '), void 0'));"
+            + "    el___.removeAttribute('id');"
+            + "    el___ = emitter___.finish();"
+            + "    emitter___.signalLoaded();"
+            + "  }"
+            + "}")));
+  }
+
+  public final void testJavascriptUrlWithUseCajita() throws Exception {
+    assertSafeHtml(
+        htmlFragment(fromString(
+            "<a href='javascript:%22use%20cajita%22;alert(1+1)'>Two!!</a>")),
+        htmlFragment(fromString(
+            "<a id=\"id_2___\" target=\"_blank\">Two!!</a>")),
+        js(fromString(
+            ""
+            + "function module() {"
+            + "  {"
+            + "    var el___; var emitter___ = IMPORTS___.htmlEmitter___;"
+            + "    el___ = emitter___.byId('id_2___');"
+            // The extracted handler.
+            + "    var c_1___ = ___.markFuncFreeze(function(thisNode___) {"
+            + "      'use cajita';"
+            + "      alert(1 + 1);"  // Cajoled later
+            + "    });"
+            + "    emitter___.setAttr(el___, 'href', 'javascript:' +"
+            + "      encodeURIComponent('plugin_dispatchEvent___(this, null, '"
+            + "      + ___.getId(IMPORTS___) + ', ' + 'c_1___' + '), void 0'));"
+            + "    el___.removeAttribute('id');"
+            + "    el___ = emitter___.finish();"
+            + "    emitter___.signalLoaded();"
+            + "  }"
             + "}")));
   }
 
@@ -303,14 +346,18 @@ public class TemplateCompilerTest extends CajaTestCase {
         htmlFragment(fromString("Hi")),
         js(fromString(
             ""
-            + "try {"
-            + "  { alert('howdy'); }"
-            + "} catch (ex___) {"
-            + "  ___.getNewModuleHandler().handleUncaughtException("
-            + "      ex___, onerror, 'testDeferredScripts', '1');"
+            + "function module() {"
+            + "  try {"
+            + "    { alert('howdy'); }"
+            + "  } catch (ex___) {"
+            + "    ___.getNewModuleHandler().handleUncaughtException("
+            + "        ex___, onerror, 'testDeferredScripts', '1');"
+            + "  }"
             + "}"
-            + "{"
-            + "  IMPORTS___.htmlEmitter___.signalLoaded();"
+            + "function module() {"
+            + "  {"
+            + "    IMPORTS___.htmlEmitter___.signalLoaded();"
+            + "  }"
             + "}"))
         );
   }
@@ -350,19 +397,26 @@ public class TemplateCompilerTest extends CajaTestCase {
             + "<textarea>Bye!</textarea>")),
         js(fromString(
             ""
-            + "{"
-            + "  var el___; var emitter___ = IMPORTS___.htmlEmitter___;"
-            + "  emitter___.discard(emitter___.attach('id_1___'));"
+            + "function module() {"
+            + "  {"
+            + "    var el___; var emitter___ = IMPORTS___.htmlEmitter___;"
+            + "    emitter___.discard(emitter___.attach('id_1___'));"
+            + "  }"
             + "}"
-            + "try {"
-            + "  { alert('Howdy yourself!'); }"
-            + "}catch (ex___) {"
-            + "  ___.getNewModuleHandler().handleUncaughtException("
-            + "      ex___, onerror, 'testTextAreas', '1');"
+            + "function module() {"
+            + "  try {"
+            + "    { alert('Howdy yourself!'); }"
+            + "  }catch (ex___) {"
+            + "    ___.getNewModuleHandler().handleUncaughtException("
+            + "        ex___, onerror, 'testTextAreas', '1');"
+            + "  }"
             + "}"
-            + "{"
-            + "  el___ = emitter___.finish();"
-            + "  emitter___.signalLoaded();"
+            + "function module() {"
+            + "  {"
+            + "    var el___; var emitter___ = IMPORTS___.htmlEmitter___;"
+            + "    el___ = emitter___.finish();"
+            + "    emitter___.signalLoaded();"
+            + "  }"
             + "}")));
   }
 
@@ -426,27 +480,33 @@ public class TemplateCompilerTest extends CajaTestCase {
             + "<div id=\"id_2___\"></div>")),
         js(fromString(
             ""
-            + "{"
-            + "  var el___;"
-            + "  var emitter___ = IMPORTS___.htmlEmitter___;"
-            + "  el___ = emitter___.byId('id_1___');"
-            + "  emitter___.setAttr(el___, 'id',"
-            + "    'a-' + IMPORTS___.getIdClass___());"
-            + "  el___ = emitter___.byId('id_2___');"
-            + "  emitter___.setAttr(el___, 'id',"
-            + "    'b-' + IMPORTS___.getIdClass___());"
-            + "  el___ = emitter___.finish();"
-            + "}"
-            + "try {"
+            + "function module() {"
             + "  {"
-            + "    1;"
+            + "    var el___;"
+            + "    var emitter___ = IMPORTS___.htmlEmitter___;"
+            + "    el___ = emitter___.byId('id_1___');"
+            + "    emitter___.setAttr(el___, 'id',"
+            + "      'a-' + IMPORTS___.getIdClass___());"
+            + "    el___ = emitter___.byId('id_2___');"
+            + "    emitter___.setAttr(el___, 'id',"
+            + "      'b-' + IMPORTS___.getIdClass___());"
+            + "    el___ = emitter___.finish();"
             + "  }"
-            + "} catch (ex___) {"
-            + "  ___.getNewModuleHandler().handleUncaughtException(ex___,"
-            + "    onerror, 'testFinishCalledAtEnd', '1');"
             + "}"
-            + "{"
-            + "  emitter___.signalLoaded();"
+            + "function module() {"
+            + "  try {"
+            + "    {"
+            + "      1;"
+            + "    }"
+            + "  } catch (ex___) {"
+            + "    ___.getNewModuleHandler().handleUncaughtException(ex___,"
+            + "      onerror, 'testFinishCalledAtEnd', '1');"
+            + "  }"
+            + "}"
+            + "function module() {"
+            + "  {"
+            + "    IMPORTS___.htmlEmitter___.signalLoaded();"
+            + "  }"
             + "}"
             )));
   }
@@ -507,20 +567,23 @@ public class TemplateCompilerTest extends CajaTestCase {
             + "<div id='id_2___'></div>"
             + "<div id='id_3___'></div>")),
         js(fromString(
-            "{"
-            + "  var el___;"
-            + "  var emitter___ = IMPORTS___.htmlEmitter___;"
-            + "  el___ = emitter___.byId('id_1___');"
-            + "  emitter___.setAttr(el___, 'id',"
-            + "    '23skiddoo-' + IMPORTS___.getIdClass___());"
-            + "  el___ = emitter___.byId('id_2___');"
-            + "  emitter___.setAttr(el___, 'id',"
-            + "    '8675309-' + IMPORTS___.getIdClass___());"
-            + "  el___ = emitter___.byId('id_3___');"
-            + "  emitter___.setAttr(el___, 'id',"
-            + "    '$-.:;()[]=-' + IMPORTS___.getIdClass___());"
-            + "  el___ = emitter___.finish();"
-            + "  emitter___.signalLoaded();"
+            ""
+            + "function module() {"
+            + "  {"
+            + "    var el___;"
+            + "    var emitter___ = IMPORTS___.htmlEmitter___;"
+            + "    el___ = emitter___.byId('id_1___');"
+            + "    emitter___.setAttr(el___, 'id',"
+            + "      '23skiddoo-' + IMPORTS___.getIdClass___());"
+            + "    el___ = emitter___.byId('id_2___');"
+            + "    emitter___.setAttr(el___, 'id',"
+            + "      '8675309-' + IMPORTS___.getIdClass___());"
+            + "    el___ = emitter___.byId('id_3___');"
+            + "    emitter___.setAttr(el___, 'id',"
+            + "      '$-.:;()[]=-' + IMPORTS___.getIdClass___());"
+            + "    el___ = emitter___.finish();"
+            + "    emitter___.signalLoaded();"
+            + "  }"
             + "}")));
     assertNoWarnings();
   }
@@ -599,16 +662,18 @@ public class TemplateCompilerTest extends CajaTestCase {
             "<table><tr><td id='id_1___'></td></tr></table>")),
         js(fromString(
             ""
-            + "{"
-            + "  var el___;"
-            + "  var emitter___ = IMPORTS___.htmlEmitter___;"
-            + "  el___ = emitter___.byId('id_1___');"
-            + "  emitter___.setAttr(el___, 'headers',"
-            + "    'a-' + IMPORTS___.getIdClass___()"
-            + "    + ' b-' + IMPORTS___.getIdClass___());"
-            + "  el___.removeAttribute('id');"
-            + "  el___ = emitter___.finish();"
-            + "  emitter___.signalLoaded();"
+            + "function module() {"
+            + "  {"
+            + "    var el___;"
+            + "    var emitter___ = IMPORTS___.htmlEmitter___;"
+            + "    el___ = emitter___.byId('id_1___');"
+            + "    emitter___.setAttr(el___, 'headers',"
+            + "      'a-' + IMPORTS___.getIdClass___()"
+            + "      + ' b-' + IMPORTS___.getIdClass___());"
+            + "    el___.removeAttribute('id');"
+            + "    el___ = emitter___.finish();"
+            + "    emitter___.signalLoaded();"
+            + "  }"
             + "}")));
   }
 
@@ -699,7 +764,8 @@ public class TemplateCompilerTest extends CajaTestCase {
 
     assertEquals(Nodes.render(htmlGolden, true),
                  Nodes.render(safeContent.a, true));
-    assertEquals(render(jsGolden), render(consolidate(safeContent.b)));
+    assertEquals(
+        render(jsGolden), render(consolidate(safeContent.b)));
   }
 
   private void extractScriptsAndStyles(
@@ -752,8 +818,12 @@ public class TemplateCompilerTest extends CajaTestCase {
   private Block consolidate(List<Block> blocks) {
     Block consolidated = new Block();
     MutableParseTreeNode.Mutation mut = consolidated.createMutation();
+    FilePosition unk = FilePosition.UNKNOWN;
     for (Block bl : blocks) {
-      mut.appendChildren(bl.children());
+      Identifier ident = new Identifier(unk, "module");
+      mut.appendChild(new FunctionDeclaration(
+          new FunctionConstructor(
+              unk, ident, Collections.<FormalParam>emptyList(), bl)));
     }
     mut.execute();
     stripTranslatedCode(consolidated);
