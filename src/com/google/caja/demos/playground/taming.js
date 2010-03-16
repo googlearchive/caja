@@ -98,9 +98,9 @@ var caja___ = (function () {
     var gadgetRoot = document.getElementById(divElId);
     gadgetRoot.className = cajaDomSuffix;
     
-    imports.htmlEmitter___ = new HtmlEmitter(gadgetRoot);
     attachDocumentStub('-' + divElId + '-' + cajaDomSuffix, uriCallback,
         imports, gadgetRoot);
+    imports.htmlEmitter___ = new HtmlEmitter(gadgetRoot, imports.document);
     imports.$v = valijaMaker.CALL___(imports.outers);
     ___.getNewModuleHandler().setImports(imports);
     

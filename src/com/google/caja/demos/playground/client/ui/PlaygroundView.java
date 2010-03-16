@@ -76,7 +76,7 @@ public class PlaygroundView {
   public void setVersion(String v) {
     version.setText(v);
   }
-  
+
   public void setUrl(String url) {
     addressField.setText(url);
     oracle.add(url);
@@ -218,10 +218,10 @@ public class PlaygroundView {
     $wnd.selectLine = function (uri, lineNumber) {
       that.@com.google.caja.demos.playground.client.ui.PlaygroundView::selectTab(Lcom/google/caja/demos/playground/client/ui/PlaygroundView$Tabs;)(
           @com.google.caja.demos.playground.client.ui.PlaygroundView.Tabs::SOURCE);
-      that.@com.google.caja.demos.playground.client.ui.PlaygroundView::highlightSource(Ljava/lang/String;I)(uri, lineNumber); 
+      that.@com.google.caja.demos.playground.client.ui.PlaygroundView::highlightSource(Ljava/lang/String;I)(uri, lineNumber);
     }
   }-*/;
-  
+
   private Widget createEditorPanel() {
     editorPanel = new DecoratedTabPanel();
     editorPanel.setStyleName("clearPadding");
@@ -340,14 +340,14 @@ public class PlaygroundView {
       cajoledSource.setText("There were cajoling errors");
       return;
     }
-    cajoledSource.setHTML(prettyPrint(html) + 
+    cajoledSource.setHTML(prettyPrint(html) +
       "&lt;script&gt;" + prettyPrint(js) + "&lt;/script&gt;");
   }
-  
+
   public void setLoading(boolean isLoading) {
     loadingLabel.setVisible(isLoading);
   }
-  
+
   private native String prettyPrint(String result) /*-{
     return $wnd.prettyPrintOne($wnd.indentAndWrapCode(result));
   }-*/;
@@ -376,20 +376,21 @@ public class PlaygroundView {
   private native String getRenderResult() /*-{
     return "" + $wnd.___.getNewModuleHandler().getLastValue();
   }-*/;
-  
+
   public void addCompileMessage(String item) {
     compileMessages.insertRow(0);
     compileMessages.setHTML(0, 0, item);
   }
-  
+
   public void addRuntimeMessage(String item) {
     runtimeMessages.insertRow(0);
-    runtimeMessages.setHTML(0, 0, item);
+    runtimeMessages.setText(0, 0, item);
   }
-    
+
+  /** @param uri unused but provided for consistency with native GWT caller. */
   public void highlightSource(String uri, int lineNumber) {
     String content = sourceText.getText();
-    content.replaceAll("\\r\\n", "\\n");
+    content.replaceAll("\\r\\n?", "\\n");
     int currentStart = 0;
     int currentEnd = 0;
     for (int line = 0; line < lineNumber; line++) {
@@ -401,8 +402,7 @@ public class PlaygroundView {
     }
     if (currentEnd >= 0) {
       sourceText.setCursorPos(currentStart);
-      sourceText.setSelectionRange(currentStart,
-        currentEnd - currentStart + 1);
+      sourceText.setSelectionRange(currentStart, currentEnd - currentStart + 1);
     }
   }
 

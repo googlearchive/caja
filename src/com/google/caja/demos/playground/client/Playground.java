@@ -20,15 +20,15 @@ import com.google.gwt.user.client.rpc.AsyncCallback;
 
 /**
  * Main entry point for GWT-based Caja playground
- * 
+ *
  * @author Jasvir Nagra (jasvir@gmail.com)
  */
 public class Playground implements EntryPoint {
   private PlaygroundView gui;
-  
-  private PlaygroundServiceAsync cajolingService = 
+
+  private PlaygroundServiceAsync cajolingService =
     GWT.create(PlaygroundService.class);
-  
+
   public void loadSource(String url) {
     gui.setLoading(true);
     gui.setUrl(url);
@@ -47,7 +47,7 @@ public class Playground implements EntryPoint {
       }
     });
   }
-  
+
   public void cajole(String uri, String input) {
     gui.setLoading(true);
     cajolingService.cajole(uri, input, new AsyncCallback<CajolingServiceResult>() {
@@ -78,7 +78,7 @@ public class Playground implements EntryPoint {
       }
     });
   }
-  
+
   public void onModuleLoad() {
     gui = new PlaygroundView(this);
     gui.setLoading(true);
@@ -92,7 +92,7 @@ public class Playground implements EntryPoint {
       public void onSuccess(String result) {
         gui.setLoading(false);
         gui.setVersion(result);
-      }      
+      }
     });
   }
 }

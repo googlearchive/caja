@@ -789,6 +789,7 @@
         <include name="Playground.html" />
         <include name="Playground.css" />
         <include name="taming.js" />
+      	<include name="favicon.ico" />
       </fileset>
       <fileset dir="${src}/com/google/caja/demos/flash">
         <include name="Boxed.swf" />
