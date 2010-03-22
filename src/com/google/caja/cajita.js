@@ -3032,6 +3032,8 @@ var safeJSON;
     name = String(name);
     return canEnumPub(this, name);
   });
+  useCallHandler(Object, 'freeze', markFuncFreeze(freeze));
+  useGetHandler(Object, 'freeze', function(){return freeze;});
 
   /// Function
 
@@ -3325,6 +3327,8 @@ var safeJSON;
           } else {
             throw outcome[1];
           }
+        } else {
+          return void 0;
         }
       }),
 

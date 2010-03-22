@@ -661,6 +661,49 @@ public class DefaultValijaRewriterTest extends CommonJsRewriterTestCase {
             "}");
   }
 
+  /**
+   * 
+   */
+  public final void testObjectFreeze() throws Exception {
+    rewriteAndExecute( // records can be frozen
+        "var r = Object.freeze({});" +
+        "assertThrows(function(){r.foo = 8;});");
+    rewriteAndExecute( // anon disfunctions are not frozen
+        "var f = function(){};" +
+        "f.foo = 8;");
+    rewriteAndExecute( // anon functions are virtually not frozen
+        "var f = function(){'use cajita';};" +
+        "f.foo = 8;");
+    rewriteAndExecute( // anon disfunctions can be frozen
+        "var f = Object.freeze(function(){});" +
+        "assertThrows(function(){f.foo = 8;});");
+    rewriteAndExecute( // anon functions can be virtually frozen
+        "var f = Object.freeze(function(){'use cajita';});" +
+        "assertThrows(function(){f.foo = 8;});");
+    rewriteAndExecute( // constructed objects cannot be frozen
+        "function Point(x,y) {" +
+        "  this.x = x;" +
+        "  this.y = y;" +
+        "}" +
+        "___.markCtor(Point, Object, 'Point');" +
+        "testImports.pt = new Point(3,5);" +
+        "___.grantSet(testImports.pt, 'x');",
+
+        "pt.x = 8;" +
+        "assertThrows(function(){Object.freeze(pt);});",
+
+        "");
+    rewriteAndExecute( // pseudo-constructed objects can be frozen
+        "function Point(x,y) {" +
+        "  this.x = x;" +
+        "  this.y = y;" +
+        "}" +
+        "var pt = new Point(3,5);" +
+        "pt.x = 8;" +
+        "Object.freeze(pt);" +
+        "assertThrows(function(){pt.y = 9;});");
+  }
+  
   @Override
   protected Object executePlain(String caja)
       throws IOException, ParseException {
@@ -735,7 +778,9 @@ public class DefaultValijaRewriterTest extends CommonJsRewriterTestCase {
             "___.grantFunc(testImports, 'assertTrue');" +
             "testImports.assertFalse = assertFalse;" +
             "___.grantFunc(testImports, 'assertFalse');" +
-            "testImports.assertThrows = assertThrows;" +
+            "testImports.assertThrows = function(func, opt_msg) {" +
+            "  assertThrows(___.toFunc(func), opt_msg);" +
+            "};" +
             "___.grantFunc(testImports, 'assertThrows');" +
             "testImports.fail = fail;" +
             "___.grantFunc(testImports, 'fail');" +

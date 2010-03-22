@@ -94,6 +94,20 @@ var valijaMaker = (function(outers) {
   var ObjectShadow = cajita.beget(DisfunctionPrototype);
   ObjectShadow.prototype = ObjectPrototype;
 
+  /**
+   * Like Cajita's Object.freeze, except that, when applied to an
+   * actual function (which must therefore already be frozen), will
+   * freeze its shadow instead.
+   */
+  ObjectShadow.freeze = function(obj) {
+    if (typeof obj === 'function') {
+      cajita.freeze(getShadow(obj));
+    } else {
+      cajita.freeze(obj);
+    }
+    return obj;
+  };
+
   var FuncHeader = new RegExp(
     // Capture the function name if present.
     // Use absence of spaces or open parens, rather than presence of

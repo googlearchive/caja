@@ -2496,6 +2496,34 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
         "Properties cannot end in \"__\"");
   }
 
+  /**
+   * 
+   */
+  public final void testObjectFreeze() throws Exception {
+    rewriteAndExecute( // records can be frozen
+        "var r = Object.freeze({});" +
+        "assertThrows(function(){r.foo = 8;});");
+    rewriteAndExecute( // anon functions are already frozen
+        "var f = function(){};" +
+        "assertThrows(function(){f.foo = 8;});");
+    rewriteAndExecute( // anon functions can be frozen
+        "var f = Object.freeze(function(){});" +
+        "assertThrows(function(){f.foo = 8;});");
+    rewriteAndExecute( // constructed objects cannot be frozen
+        "function Point(x,y) {" +
+        "  this.x = x;" +
+        "  this.y = y;" +
+        "}" +
+        "___.markCtor(Point, Object, 'Point');" +
+        "testImports.pt = new Point(3,5);" +
+        "___.grantSet(testImports.pt, 'x');",
+
+        "pt.x = 8;" +
+        "assertThrows(function(){Object.freeze(pt);});",
+
+        "");
+  }
+
   @Override
   protected Object executePlain(String caja) throws IOException {
     mq.getMessages().clear();
