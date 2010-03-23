@@ -30,13 +30,13 @@ import java.util.List;
 
 public class CssPropertyPatternsTest extends CajaTestCase {
   public final void testKeywordPattern() throws Exception {
-    assertPattern("zoicks", "/^\\s*zoicks\\s+$/i");
+    assertPattern("zoicks", "/^\\s*zoicks\\s*$/i");
     assertMatches("zoicks", "zoicks", "  zoicks", " ZOICKS ");
     assertDoesNotMatch("zoicks", "zoick", "zzoicks", "zoicks zoicks");
   }
 
   public final void testUnionPattern() throws Exception {
-    assertPattern("[ foo | bar ]", "/^\\s*(?:foo|bar)\\s+$/i");
+    assertPattern("[ foo | bar ]", "/^\\s*(?:foo|bar)\\s*$/i");
     assertMatches("[ foo | bar ]", "foo", "bar", " foo ", " bar ");
     assertDoesNotMatch("[ foo | bar ]", "fo", "ar", " foo bar", " far ");
   }
@@ -44,39 +44,40 @@ public class CssPropertyPatternsTest extends CajaTestCase {
 
   public final void testExclusiveUnionPattern() throws Exception {
     assertPattern("[ foo | [ a || b || c || d ] | bar ]",
-                  "/^\\s*(?:foo\\s+|(?:(?:a|b|c|d)\\s+)+|bar\\s+)$/i");
+                  "/^\\s*(?:foo|[a-d](?:\\s+[a-d]){0,3}|bar)\\s*$/i");
   }
 
   public final void testReferencePattern() throws Exception {
-    assertPattern("'background-attachment'",
-                  "/^\\s*(?:scroll|fixed|inherit)\\s+$/i");
+    assertPattern(
+        "'background-attachment'",
+        "/^\\s*(?:scroll|fixed|local)(?:\\s*,\\s*(?:scroll|fixed|local))*\\s*$/i");
   }
 
   public final void testMultiFoo() throws Exception {
-    assertPattern("foo*", "/^\\s*(?:foo\\s+)*$/i");
+    assertPattern("foo*", "/^\\s*(?:foo(?:\\s+foo)*)?\\s*$/i");
     assertMatches("foo*", "", "foo", "foo foo");
     assertDoesNotMatch("foo*", "bar", "foo bar", "bar foo foo", "foofoo");
 
-    assertPattern("foo+", "/^\\s*(?:foo\\s+)+$/i");
+    assertPattern("foo+", "/^\\s*foo(?:\\s+foo)*\\s*$/i");
     assertMatches("foo+", "foo", "foo foo", "foo  foo foo");
     assertDoesNotMatch("foo+", "", "bar", "foo bar", "bar  foo foo", "foofoo");
 
-    assertPattern("foo?", "/^\\s*(?:foo\\s+)?$/i");
+    assertPattern("foo?", "/^\\s*(?:foo)?\\s*$/i");
     assertMatches("foo?", "", "foo");
     assertDoesNotMatch("foo?", "bar", "foo bar", "foo foo", "foofoo");
   }
 
   public final void testConcatenations() throws Exception {
-    assertPattern("foo bar", "/^\\s*foo\\s+bar\\s+$/i");
+    assertPattern("foo bar", "/^\\s*foo\\s+bar\\s*$/i");
     // Fail if cannot handle a member of a concatenation
-    assertPattern("[ a b [ c || d ] ]", "/^\\s*a\\s+b\\s+(?:(?:c|d)\\s+)+$/i");
+    assertPattern("[ a b [ c || d ] ]", "/^\\s*a\\s+b(?:\\s+[cd]){1,2}\\s*$/i");
     assertMatches("foo bar", "foo bar", "foo  bar");
     assertDoesNotMatch("foo bar", "foo", "bar", "bar foo", "");
   }
 
   public final void testUnionsFolded() throws Exception {
     assertPattern("[ foo | [ bar bar | baz ] | boo ]",
-                  "/^\\s*(?:foo|bar\\s+bar|baz|boo)\\s+$/i");
+                  "/^\\s*(?:foo|ba(?:r\\s+bar|z)|boo)\\s*$/i");
     assertMatches("[ foo | [ bar bar | baz ] | boo ]",
                   "foo", "bar bar", "baz", "boo");
     assertDoesNotMatch("[ foo | [ bar bar | baz ] | boo ]",
@@ -86,7 +87,7 @@ public class CssPropertyPatternsTest extends CajaTestCase {
   public final void testBackgroundImage() throws Exception {
     assertPattern(
         "<uri> | none | inherit",
-        "/^\\s*(?:url\\(\"[^\\(\\)\\\\\\\"\\r\\n]+\"\\)|none|inherit)\\s+$/i");
+        "/^\\s*(?:url\\(\"[^()\\\\\"\\r\\n]+\"\\)|none|inherit)\\s*$/i");
     assertMatches(
         "<uri> | none | inherit", "none", "inherit", "url(\"foo.gif\")");
     assertDoesNotMatch(

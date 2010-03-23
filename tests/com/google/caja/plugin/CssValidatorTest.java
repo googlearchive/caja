@@ -859,11 +859,11 @@ public final class CssValidatorTest extends CajaTestCase {
             + "      Property : background\n"
             + "      Expr\n"
             + "        Term ; cssPropertyPartType=URI"
-                        + " ; cssPropertyPart=background-image\n"
+                        + " ; cssPropertyPart=background::bg-image::image\n"
             + "          UriLiteral : /images/smiley-face.jpg\n"
             + "        Operation : NONE\n"
             + "        Term ; cssPropertyPartType=IDENT"
-                        + " ; cssPropertyPart=background-repeat\n"
+                        + " ; cssPropertyPart=background::repeat-style\n"
             + "          IdentLiteral : no-repeat");
     runTest("p { background: url( /images/smiley-face.jpg ) no-repeat }",
             "StyleSheet\n"
@@ -875,11 +875,11 @@ public final class CssValidatorTest extends CajaTestCase {
             + "      Property : background\n"
             + "      Expr\n"
             + "        Term ; cssPropertyPartType=URI"
-                        + " ; cssPropertyPart=background-image\n"
+                        + " ; cssPropertyPart=background::bg-image::image\n"
             + "          UriLiteral : /images/smiley-face.jpg\n"
             + "        Operation : NONE\n"
             + "        Term ; cssPropertyPartType=IDENT"
-                        + " ; cssPropertyPart=background-repeat\n"
+                        + " ; cssPropertyPart=background::repeat-style\n"
             + "          IdentLiteral : no-repeat");
     runTest("p { background-image: '/images/smiley-face.jpg' }",
             "StyleSheet\n"
@@ -891,7 +891,7 @@ public final class CssValidatorTest extends CajaTestCase {
             + "      Property : background-image\n"
             + "      Expr\n"
             + "        Term ; cssPropertyPartType=URI"
-                        + " ; cssPropertyPart=background-image\n"
+                        + " ; cssPropertyPart=background-image::bg-image::image\n"
             + "          StringLiteral : /images/smiley-face.jpg");
     runTest("p { background:#F7F7F7 url(/images/foo.gif) no-repeat scroll"
             + " left top; }",
@@ -908,23 +908,23 @@ public final class CssValidatorTest extends CajaTestCase {
             + "          HashLiteral : #F7F7F7\n"
             + "        Operation : NONE\n"
             + "        Term ; cssPropertyPartType=URI"
-                        + " ; cssPropertyPart=background-image\n"
+                        + " ; cssPropertyPart=background::bg-image::image\n"
             + "          UriLiteral : /images/foo.gif\n"
             + "        Operation : NONE\n"
             + "        Term ; cssPropertyPartType=IDENT"
-                        + " ; cssPropertyPart=background-repeat\n"
+                        + " ; cssPropertyPart=background::repeat-style\n"
             + "          IdentLiteral : no-repeat\n"
             + "        Operation : NONE\n"
             + "        Term ; cssPropertyPartType=IDENT"
-                        + " ; cssPropertyPart=background-attachment\n"
+                        + " ; cssPropertyPart=background::attachment\n"
             + "          IdentLiteral : scroll\n"
             + "        Operation : NONE\n"
             + "        Term ; cssPropertyPartType=IDENT"
-                        + " ; cssPropertyPart=background-position\n"
+                        + " ; cssPropertyPart=background::bg-position\n"
             + "          IdentLiteral : left\n"
             + "        Operation : NONE\n"
             + "        Term ; cssPropertyPartType=IDENT"
-                        + " ; cssPropertyPart=background-position\n"
+                        + " ; cssPropertyPart=background::bg-position\n"
             + "          IdentLiteral : top\n"
             + "    EmptyDeclaration\n"
             );
@@ -942,19 +942,19 @@ public final class CssValidatorTest extends CajaTestCase {
             + "          HashLiteral : #FFEBE8\n"
             + "        Operation : NONE\n"
             + "        Term ; cssPropertyPartType=IDENT"
-                        + " ; cssPropertyPart=background-image\n"
+                        + " ; cssPropertyPart=background::bg-image\n"
             + "          IdentLiteral : none\n"
             + "        Operation : NONE\n"
             + "        Term ; cssPropertyPartType=IDENT"
-                        + " ; cssPropertyPart=background-repeat\n"
+                        + " ; cssPropertyPart=background::repeat-style\n"
             + "          IdentLiteral : repeat\n"
             + "        Operation : NONE\n"
             + "        Term ; cssPropertyPartType=IDENT"
-                        + " ; cssPropertyPart=background-attachment\n"
+                        + " ; cssPropertyPart=background::attachment\n"
             + "          IdentLiteral : scroll\n"
             + "        Operation : NONE\n"
             + "        Term ; cssPropertyPartType=PERCENTAGE"
-                        + " ; cssPropertyPart=background-position\n"
+                        + " ; cssPropertyPart=background::bg-position\n"
             + "          QuantityLiteral : 0%\n"
             );
     runTest("p { background: transparent url(/foo.gif) no-repeat top right }",
@@ -971,21 +971,43 @@ public final class CssValidatorTest extends CajaTestCase {
             + "          IdentLiteral : transparent\n"
             + "        Operation : NONE\n"
             + "        Term ; cssPropertyPartType=URI"
-                        + " ; cssPropertyPart=background-image\n"
+                        + " ; cssPropertyPart=background::bg-image::image\n"
             + "          UriLiteral : /foo.gif\n"
             + "        Operation : NONE\n"
             + "        Term ; cssPropertyPartType=IDENT"
-                        + " ; cssPropertyPart=background-repeat\n"
+                        + " ; cssPropertyPart=background::repeat-style\n"
             + "          IdentLiteral : no-repeat\n"
             + "        Operation : NONE\n"
             + "        Term ; cssPropertyPartType=IDENT"
-                        + " ; cssPropertyPart=background-position\n"
+                        + " ; cssPropertyPart=background::bg-position\n"
             + "          IdentLiteral : top\n"
             + "        Operation : NONE\n"
             + "        Term ; cssPropertyPartType=IDENT"
-                        + " ; cssPropertyPart=background-position\n"
+                        + " ; cssPropertyPart=background::bg-position\n"
             + "          IdentLiteral : right\n"
             );
+    runTest(
+        "p { background: url( /images/smiley-face.jpg ) no-repeat, blue }",
+        "StyleSheet\n"
+        + "  RuleSet\n"
+        + "    Selector\n"
+        + "      SimpleSelector\n"
+        + "        IdentLiteral : p\n"
+        + "    PropertyDeclaration\n"
+        + "      Property : background\n"
+        + "      Expr\n"
+        + "        Term ; cssPropertyPartType=URI"
+                    + " ; cssPropertyPart=background::bg-image::image\n"
+        + "          UriLiteral : /images/smiley-face.jpg\n"
+        + "        Operation : NONE\n"
+        + "        Term ; cssPropertyPartType=IDENT"
+                    + " ; cssPropertyPart=background::repeat-style\n"
+        + "          IdentLiteral : no-repeat\n"
+        + "        Operation : COMMA\n"
+        + "        Term ; cssPropertyPartType=IDENT"
+                    + " ; cssPropertyPart=background-color::color\n"
+        + "          IdentLiteral : blue"
+        );
   }
 
   public final void testBackgroundPosition() throws Exception {
@@ -1002,11 +1024,11 @@ public final class CssValidatorTest extends CajaTestCase {
             + "      Property : background-position\n"
             + "      Expr\n"
             + "        Term ; cssPropertyPartType=IDENT"
-                        + " ; cssPropertyPart=background-position\n"
+                        + " ; cssPropertyPart=background-position::bg-position\n"
             + "          IdentLiteral : right\n"
             + "        Operation : NONE\n"
             + "        Term ; cssPropertyPartType=IDENT"
-                        + " ; cssPropertyPart=background-position\n"
+                        + " ; cssPropertyPart=background-position::bg-position\n"
             + "          IdentLiteral : top\n"
             );
     runTest("p { background-position: top center }",
@@ -1019,11 +1041,11 @@ public final class CssValidatorTest extends CajaTestCase {
             + "      Property : background-position\n"
             + "      Expr\n"
             + "        Term ; cssPropertyPartType=IDENT"
-                        + " ; cssPropertyPart=background-position\n"
+                        + " ; cssPropertyPart=background-position::bg-position\n"
             + "          IdentLiteral : top\n"
             + "        Operation : NONE\n"
             + "        Term ; cssPropertyPartType=IDENT"
-                        + " ; cssPropertyPart=background-position\n"
+                        + " ; cssPropertyPart=background-position::bg-position\n"
             + "          IdentLiteral : center\n"
             );
     runTest("p { background-position: center }",
@@ -1036,7 +1058,7 @@ public final class CssValidatorTest extends CajaTestCase {
             + "      Property : background-position\n"
             + "      Expr\n"
             + "        Term ; cssPropertyPartType=IDENT"
-                        + " ; cssPropertyPart=background-position\n"
+                        + " ; cssPropertyPart=background-position::bg-position\n"
             + "          IdentLiteral : center\n"
             );
     runTest("p { background-position: bottom }",
@@ -1049,7 +1071,7 @@ public final class CssValidatorTest extends CajaTestCase {
             + "      Property : background-position\n"
             + "      Expr\n"
             + "        Term ; cssPropertyPartType=IDENT"
-                        + " ; cssPropertyPart=background-position\n"
+                        + " ; cssPropertyPart=background-position::bg-position\n"
             + "          IdentLiteral : bottom\n"
             );
   }
@@ -1095,7 +1117,7 @@ public final class CssValidatorTest extends CajaTestCase {
             + "      Property : background\n"
             + "      Expr\n"
             + "        Term ; cssPropertyPartType=URI"
-                        + " ; cssPropertyPart=background-image\n"
+                        + " ; cssPropertyPart=background::bg-image::image\n"
             + "          Substitution : ${imageName + '.png'}uri");
     runTest("p { background-image: ${imageName + '.png'} }",
             "StyleSheet\n"
@@ -1107,7 +1129,7 @@ public final class CssValidatorTest extends CajaTestCase {
             + "      Property : background-image\n"
             + "      Expr\n"
             + "        Term ; cssPropertyPartType=URI"
-                        + " ; cssPropertyPart=background-image\n"
+                        + " ; cssPropertyPart=background-image::bg-image::image\n"
             + "          Substitution : ${imageName + '.png'}");
   }
 

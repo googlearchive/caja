@@ -507,7 +507,7 @@ var attachDocumentStub = (function () {
       var property = trimCssSpaces(parts[0]).toLowerCase();
       var value = trimCssSpaces(parts.slice(1).join(":"));
       if (css.properties.hasOwnProperty(property)
-          && css.properties[property].test(value + ' ')) {
+          && css.properties[property].test(value + '')) {
         sanitizedDeclarations.push(property + ': ' + value);
       }
     }

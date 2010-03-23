@@ -18,21 +18,26 @@ import com.google.caja.SomethingWidgyHappenedError;
 import com.google.caja.config.AllowedFileResolver;
 import com.google.caja.config.ConfigUtil;
 import com.google.caja.config.ImportResolver;
+import com.google.caja.lexer.CssLexer;
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.ParseException;
 import com.google.caja.lexer.TokenConsumer;
-import com.google.caja.lexer.escaping.Escaping;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.css.CssPropertySignature;
 import com.google.caja.parser.js.ArrayConstructor;
 import com.google.caja.parser.js.BooleanLiteral;
 import com.google.caja.parser.js.Declaration;
 import com.google.caja.parser.js.Expression;
+import com.google.caja.parser.js.Identifier;
 import com.google.caja.parser.js.IntegerLiteral;
 import com.google.caja.parser.js.Literal;
+import com.google.caja.parser.js.MultiDeclaration;
 import com.google.caja.parser.js.ObjectConstructor;
+import com.google.caja.parser.js.Operation;
+import com.google.caja.parser.js.Operator;
 import com.google.caja.parser.js.RegexpLiteral;
+import com.google.caja.parser.js.Statement;
 import com.google.caja.parser.js.StringLiteral;
 import com.google.caja.parser.quasiliteral.QuasiBuilder;
 import com.google.caja.reporting.EchoingMessageQueue;
@@ -41,6 +46,8 @@ import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.reporting.SimpleMessageQueue;
 import com.google.caja.tools.BuildCommand;
+import com.google.caja.util.Bag;
+import com.google.caja.util.Lists;
 import com.google.caja.util.Maps;
 import com.google.caja.util.Name;
 import com.google.caja.util.Pair;
@@ -53,15 +60,15 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.Writer;
-import java.util.ArrayList;
+
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 /**
  * Operates on CSS property signatures to come up with a simple regular
@@ -162,7 +169,7 @@ public class CssPropertyPatterns {
    * https://bugzilla.mozilla.org/show_bug.cgi?id=147777 .
    */
   public static Set<Name> HISTORY_INSENSITIVE_STYLE_WHITELIST
-      = Sets.newLinkedHashSet(
+      = Sets.immutableSet(
           Name.css("display"), Name.css("filter"), Name.css("float"),
           Name.css("height"), Name.css("left"), Name.css("opacity"),
           Name.css("overflow"), Name.css("position"), Name.css("right"),
@@ -185,99 +192,161 @@ public class CssPropertyPatterns {
    *     pattern would match "blue ".
    */
   public String cssPropertyToPattern(CssPropertySignature sig) {
-    Pattern p = sigToPattern(sig);
+    JSRE p = cssPropertyToJSRE(sig);
     if (p == null) { return null; }
-    p = new Concatenation(
-        Arrays.asList(new Snippet("^\\s*"), p, new Snippet("$"))).optimize();
     StringBuilder out = new StringBuilder();
     out.append('/');
-    p.render(out);
+    p.optimize().render(out);
     // Since all keywords are case insensitive and we never match text inside
     // strings.
     out.append("/i");
     return out.toString();
   }
 
-  public java.util.regex.Pattern cssPropertyToJavaRegex(
-      CssPropertySignature sig) {
-    Pattern p = sigToPattern(sig);
+  public Pattern cssPropertyToJavaRegex(CssPropertySignature sig) {
+    JSRE p = cssPropertyToJSRE(sig);
     if (p == null) { return null; }
-    p = new Concatenation(
-        Arrays.asList(new Snippet("^"), p, new Snippet("$"))).optimize();
     StringBuilder out = new StringBuilder();
     p.render(out);
-    return java.util.regex.Pattern.compile(
-        out.toString(), java.util.regex.Pattern.CASE_INSENSITIVE);
+    // Since all keywords are case insensitive and we never match text inside
+    // strings.
+    return Pattern.compile("" + out, Pattern.CASE_INSENSITIVE);
   }
 
-  private Pattern sigToPattern(CssPropertySignature sig) {
+  private static class JSREBuilder {
+    final JSRE p;
+    final boolean identBefore;
+
+    JSREBuilder(boolean identBefore, JSRE p) {
+      this.identBefore = identBefore;
+      this.p = p;
+    }
+  }
+
+  private static final JSRE SPACES = JSRE.many(JSRE.raw("\\s"));
+  private static final JSRE OPT_SPACES = JSRE.any(JSRE.raw("\\s"));
+
+  private JSRE cssPropertyToJSRE(CssPropertySignature sig) {
+    JSREBuilder b = sigToPattern(false, sig);
+    if (b == null) { return null; }
+    return JSRE.cat(JSRE.raw("^"), OPT_SPACES, b.p, OPT_SPACES, JSRE.raw("$"))
+        .optimize();
+  }
+
+  private JSREBuilder sigToPattern(
+      boolean identBefore, CssPropertySignature sig) {
     // Dispatch to a set of handlers that either append balanced content to
     // out, or append cruft and return null.
     if (sig instanceof CssPropertySignature.LiteralSignature) {
-      return litToPattern((CssPropertySignature.LiteralSignature) sig);
+      return litToPattern(
+          identBefore, (CssPropertySignature.LiteralSignature) sig);
     } else if (sig instanceof CssPropertySignature.RepeatedSignature) {
-      return repToPattern((CssPropertySignature.RepeatedSignature) sig);
+      return repToPattern(
+          identBefore, (CssPropertySignature.RepeatedSignature) sig);
     } else if (sig instanceof CssPropertySignature.PropertyRefSignature) {
-      return refToPattern((CssPropertySignature.PropertyRefSignature) sig);
+      return refToPattern(
+          identBefore, (CssPropertySignature.PropertyRefSignature) sig);
     } else if (sig instanceof CssPropertySignature.SeriesSignature) {
-      return seriesToPattern((CssPropertySignature.SeriesSignature) sig);
+      return seriesToPattern(
+          identBefore, (CssPropertySignature.SeriesSignature) sig);
     } else if (sig instanceof CssPropertySignature.SymbolSignature) {
-      return symbolToPattern((CssPropertySignature.SymbolSignature) sig);
+      return symbolToPattern(
+          identBefore, (CssPropertySignature.SymbolSignature) sig);
     } else if (sig instanceof CssPropertySignature.SetSignature
-        || sig instanceof CssPropertySignature.ExclusiveSetSignature) {
-      return setToPattern(sig);
+               || sig instanceof CssPropertySignature.ExclusiveSetSignature) {
+      return setToPattern(identBefore, sig);
     }
     return null;
   }
 
-  private static Pattern litToPattern(
-      CssPropertySignature.LiteralSignature lit) {
-    StringBuilder regex = new StringBuilder();
-    Escaping.escapeRegex(lit.getValue(), false, false, regex);
+  private static JSREBuilder litToPattern(
+      boolean identBefore, CssPropertySignature.LiteralSignature lit) {
+    String litValue = lit.getValue();
     // Match some trailing whitespace.
     // Since some patterns can match nothing (e.g. foo*), we make sure that
     // all positive matches are followed by token-breaking space.
     // The pattern as a whole can then be matched against the value with one
     // space added at the end.
-    regex.append("\\s+");
-    return new Snippet(regex.toString());
+    boolean ident = isIdentChar(litValue.charAt(litValue.length() - 1));
+    JSRE p = JSRE.lit(litValue);
+    return new JSREBuilder(
+        ident, JSRE.cat(ident && identBefore ? SPACES : OPT_SPACES, p));
   }
 
-  private Pattern repToPattern(CssPropertySignature.RepeatedSignature sig) {
+  private static boolean isIdentChar(char ch) {
+    return CssLexer.isNmStart(ch) || ('0' <= ch && ch <= '9')
+        || ch == '#' || ch == '.';
+  }
+
+  private JSREBuilder repToPattern(
+      boolean identBefore, CssPropertySignature.RepeatedSignature sig) {
     CssPropertySignature rep = sig.getRepeatedSignature();
     if (rep instanceof CssPropertySignature.ExclusiveSetSignature) {
       // The spec (http://www.w3.org/TR/REC-CSS1/#css1-properties) defines
       // A double bar (A || B) means that either A or B or both must occur
       // in any order.
       // We convert [ a || b ] -> [a | b]+
-      return exclusiveToPattern(rep);
+      return exclusiveToPattern(identBefore, rep);
     }
-    Pattern repeatedPattern = sigToPattern(rep);
+    JSREBuilder repeatedPattern = sigToPattern(identBefore, rep);
     if (repeatedPattern == null) { return null; }
-    return new Repetition(repeatedPattern, sig.minCount, sig.maxCount);
-  }
-
-  private Pattern refToPattern(CssPropertySignature.PropertyRefSignature sig) {
-    CssSchema.CssPropertyInfo p = schema.getCssProperty(sig.getPropertyName());
-    return p != null ? sigToPattern(p.sig) : null;
-  }
-
-  private Pattern seriesToPattern(CssPropertySignature.SeriesSignature sig) {
-    List<Pattern> children = new ArrayList<Pattern>();
-    for (CssPropertySignature child : sig.children()) {
-      Pattern childP = sigToPattern(child);
-      if (childP == null) { return null; }
-      children.add(childP);
+    int min = sig.minCount;
+    int max = sig.maxCount;
+    if (repeatedPattern.identBefore == identBefore || max == 1) {
+      return new JSREBuilder(
+          repeatedPattern.identBefore, JSRE.rep(repeatedPattern.p, min, max));
+    } else {
+      JSREBuilder tail = sigToPattern(repeatedPattern.identBefore, rep);
+      if (min == 0) {
+        if (max != Integer.MAX_VALUE) { --max; }
+        return new JSREBuilder(
+            tail.identBefore,
+            JSRE.opt(
+                JSRE.cat(repeatedPattern.p, JSRE.rep(tail.p, 0, max))));
+      } else {
+        return new JSREBuilder(
+            tail.identBefore,
+            JSRE.cat(repeatedPattern.p, JSRE.rep(tail.p, min - 1, max)));
+      }
     }
-    return new Concatenation(children);
+  }
+
+  private final Bag<String> refsUsed = Bag.newHashBag();
+
+  private JSREBuilder refToPattern(
+      boolean identBefore, CssPropertySignature.PropertyRefSignature sig) {
+    refsUsed.incr(sig.getPropertyName().getCanonicalForm());
+    CssSchema.CssPropertyInfo p = schema.getCssProperty(sig.getPropertyName());
+    return p != null ? sigToPattern(identBefore, p.sig) : null;
+  }
+
+  private JSREBuilder seriesToPattern(
+      boolean identBefore, CssPropertySignature.SeriesSignature sig) {
+    List<JSRE> children = Lists.newArrayList();
+    for (CssPropertySignature child : sig.children()) {
+      JSREBuilder b = sigToPattern(identBefore, child);
+      if (b == null) { return null; }
+      children.add(b.p);
+      identBefore = b.identBefore;
+    }
+    return new JSREBuilder(identBefore, JSRE.cat(children));
   }
 
   private static final Name COLOR = Name.css("color");
   private static final Name STANDARD_COLOR = Name.css("color-standard");
-  private Pattern symbolToPattern(CssPropertySignature.SymbolSignature sig) {
+  private JSREBuilder symbolToPattern(
+      boolean identBefore, CssPropertySignature.SymbolSignature sig) {
     Name symbolName = sig.getValue();
-    Pattern builtinMatch = builtinToPattern(symbolName);
-    if (builtinMatch != null) { return builtinMatch; }
+    refsUsed.incr(symbolName.getCanonicalForm());
+    JSRE builtinMatch = builtinToPattern(symbolName);
+    if (builtinMatch != null) {
+      String re = builtinMatch.toString();
+      boolean ident = isIdentChar(re.charAt(0));
+      boolean identAfter = isIdentChar(re.charAt(re.length() - 1));
+      return new JSREBuilder(
+          identAfter,
+          JSRE.cat(identBefore && ident ? SPACES : OPT_SPACES, builtinMatch));
+    }
     CssSchema.SymbolInfo s = schema.getSymbol(symbolName);
     if (COLOR.equals(symbolName)) {
       // Don't blow up the regexs by including the entire X11 color set over
@@ -285,265 +354,121 @@ public class CssPropertyPatterns {
       CssSchema.SymbolInfo standard = schema.getSymbol(STANDARD_COLOR);
       if (standard != null) { s = standard; }
     }
-    return s != null ? sigToPattern(s.sig) : null;
+    return s != null ? sigToPattern(identBefore, s.sig) : null;
   }
 
-  private Pattern setToPattern(CssPropertySignature sig) {
+  private JSREBuilder setToPattern(
+      boolean identBefore, CssPropertySignature sig) {
     if (sig.children().isEmpty()) { return null; }
-    List<Pattern> children = new ArrayList<Pattern>();
+    List<JSRE> children = Lists.newArrayList();
+    boolean identAfter = false;
     for (CssPropertySignature child : sig.children()) {
-      Pattern childP = sigToPattern(child);
-      if (childP != null) { children.add(childP); }
+      JSREBuilder b = sigToPattern(identBefore, child);
+      if (b != null) {
+        children.add(b.p);
+        identAfter |= b.identBefore;
+      }
     }
     if (children.isEmpty()) { return null; }
-    return new Union(children);
+    return new JSREBuilder(identAfter, JSRE.alt(children));
   }
 
   // TODO(jasvir): Clarify the meaning of (a||b)* and modify this function
-  // if to neccessary to reflect it.
-  private Pattern exclusiveToPattern(CssPropertySignature sig) {
+  // if necessary to reflect it.
+  private JSREBuilder exclusiveToPattern(
+      boolean identBefore, CssPropertySignature sig) {
     if (sig.children().isEmpty()) { return null; }
-    List<Pattern> children = new ArrayList<Pattern>();
+    List<JSRE> head = Lists.newArrayList();
+    boolean identAfterHead = false;
     for (CssPropertySignature child : sig.children()) {
-      Pattern childP = sigToPattern(child);
-      if (childP != null) { children.add(childP); }
+      JSREBuilder b = sigToPattern(identBefore, child);
+      if (b != null) {
+        head.add(b.p);
+        identAfterHead = b.identBefore;
+      }
     }
-    if (children.isEmpty()) { return null; }
-    return new Repetition(new Union(children), 1, Integer.MAX_VALUE);
+    List<JSRE> tail = Lists.newArrayList();
+    boolean identAfterTail = false;
+    for (CssPropertySignature child : sig.children()) {
+      JSREBuilder b = sigToPattern(identAfterHead, child);
+      if (b != null) {
+        tail.add(b.p);
+        identAfterTail = b.identBefore;
+      }
+    }
+    if (tail.isEmpty()) { return null; }
+    return new JSREBuilder(
+        identAfterTail,
+        JSRE.cat(JSRE.alt(head), JSRE.rep(JSRE.alt(tail), 0, tail.size() - 1)));
   }
 
-  private static final Map<String, String> BUILTINS = Maps.newHashMap();
+  private static final Map<String, JSRE> BUILTINS;
   static {
     // http://www.w3.org/TR/REC-CSS2/syndata.html
-    String unsignedNum = "(?:\\d+(?:\\.\\d+)?)";
-    String signedNum = "[+-]?\\d+(?:\\.\\d+)?";
-    String angleUnits = "(?:deg|g?rad)";
-    String freqUnits = "k?Hz";
-    String lengthUnits = "(?:em|ex|px|in|cm|mm|pt|pc)";
-    String timeUnits = "m?s";
-    String quotedIdentifiers = "\"\\w(?:[\\w-]*\\w)(?:\\s+\\w([\\w-]*\\w))*\"";
-    BUILTINS.put("number:0,", "0|" + unsignedNum);
-    BUILTINS.put("number:0,1", "(?:0(?:\\.[0-9]+)?|\\.[0-9]+|1(?:\\.0+)?)");
-    BUILTINS.put("number", "0|" + signedNum);
-    BUILTINS.put("percentage", "0|" + unsignedNum + "%");
-    BUILTINS.put("percentage:0,", "0|" + signedNum + "%");
-    BUILTINS.put("angle:0,", "0|" + unsignedNum + angleUnits);
-    BUILTINS.put("angle", "0|" + signedNum + angleUnits);
-    BUILTINS.put("frequency", "0|" + unsignedNum + freqUnits);
-    BUILTINS.put("length:0,", "0|" + unsignedNum + lengthUnits);
-    BUILTINS.put("length", "0|" + signedNum + lengthUnits);
-    BUILTINS.put("time:0,", "0|" + unsignedNum + timeUnits);
-    BUILTINS.put("time", "0|" + signedNum + timeUnits);
-    BUILTINS.put("integer", "-?\\d+");
-    BUILTINS.put("integer:0,", "\\d+");
-    BUILTINS.put("hex-color", "#(?:[0-9a-f]{3}){1,2}");
-    BUILTINS.put("specific-voice", quotedIdentifiers);
-    BUILTINS.put("family-name", quotedIdentifiers);
-    BUILTINS.put("uri", "url\\(\"[^\\(\\)\\\\\\\"\\r\\n]+\"\\)");
+    JSRE zero = JSRE.lit("0");
+    JSRE one = JSRE.lit("1");
+    JSRE digit = JSRE.raw("\\d");
+    JSRE digits = JSRE.many(digit);
+    JSRE dot = JSRE.raw("\\.");
+    JSRE fraction = JSRE.cat(dot, digits);
+    JSRE pct = JSRE.lit("%");
+    JSRE minus = JSRE.lit("-");
+    JSRE sign = JSRE.alt(JSRE.lit("+"), minus);
+    JSRE unsignedNum = JSRE.cat(digits, JSRE.opt(fraction));
+    JSRE signedNum = JSRE.cat(JSRE.opt(sign), unsignedNum);
+    JSRE angleUnits = JSRE.alt(
+        JSRE.alt(JSRE.lit("rad"), JSRE.lit("grad")),
+        JSRE.lit("deg"));
+    JSRE freqUnits = JSRE.alt(JSRE.lit("Hz"), JSRE.lit("kHz"));
+    JSRE lengthUnits = JSRE.alt(
+        JSRE.alt(JSRE.lit("cm"), JSRE.lit("mm"), JSRE.lit("em")),
+        JSRE.lit("ex"), JSRE.lit("in"),
+        JSRE.alt(JSRE.lit("pc"), JSRE.lit("pt"), JSRE.lit("px")));
+    JSRE timeUnits = JSRE.alt(JSRE.lit("ms"), JSRE.lit("s"));
+    JSRE quotedIdentifiers = JSRE.raw(
+        "\"\\w(?:[\\w-]*\\w)(?:\\s+\\w([\\w-]*\\w))*\"");
+    JSRE hash = JSRE.lit("#");
+    JSRE hex = JSRE.alt(digit, JSRE.lit("a"), JSRE.lit("b"), JSRE.lit("c"),
+                        JSRE.lit("d"), JSRE.lit("e"), JSRE.lit("f"));
+    BUILTINS = Maps.<String, JSRE>immutableMap()
+        .put("number:0,", JSRE.alt(zero, unsignedNum).optimize())
+        .put("number:0,1", JSRE.alt(
+            JSRE.cat(zero, JSRE.opt(fraction)),
+            fraction,
+            JSRE.cat(one, JSRE.opt(JSRE.cat(dot, JSRE.many(zero)))))
+            .optimize())
+        .put("number", JSRE.alt(zero, signedNum).optimize())
+        .put("percentage:0,", JSRE.alt(zero, JSRE.cat(unsignedNum, pct))
+             .optimize())
+        .put("percentage", JSRE.alt(zero, JSRE.cat(signedNum, pct)).optimize())
+        .put("angle:0", JSRE.alt(zero, JSRE.cat(unsignedNum, angleUnits)))
+        .put("angle", JSRE.alt(zero, JSRE.cat(signedNum, angleUnits)))
+        .put("frequency", JSRE.alt(zero, JSRE.cat(unsignedNum, freqUnits)))
+        .put("length:0,", JSRE.alt(zero, JSRE.cat(unsignedNum, lengthUnits)))
+        .put("length", JSRE.alt(zero, JSRE.cat(signedNum, lengthUnits)))
+        .put("time:0,", JSRE.alt(zero, JSRE.cat(unsignedNum, timeUnits)))
+        .put("time", JSRE.alt(zero, JSRE.cat(signedNum, timeUnits)))
+        .put("integer", JSRE.cat(JSRE.opt(minus), digits))
+        .put("integer:0,", digits)
+        .put("hex-color", JSRE.cat(hash, JSRE.rep(JSRE.rep(hex, 3, 3), 1, 2)))
+        .put("specific-voice", quotedIdentifiers)
+        .put("family-name", quotedIdentifiers)
+        .put("uri", JSRE.cat(
+            JSRE.lit("url(\""),
+            JSRE.many(JSRE.raw("[^()\\\\\"\\r\\n]")),
+            JSRE.lit("\")")))
+        .create();
   }
-  private Pattern builtinToPattern(Name name) {
-    String pattern = BUILTINS.get(name.getCanonicalForm());
-    if (pattern == null && name.getCanonicalForm().contains(":")) {
-      System.err.println("Failing detail check on " + name);
-    }
-    return pattern != null ? new Snippet(pattern + "\\s+") : null;
-  }
-
-  private static interface Pattern {
-    /** Returns a simpler but equivalent Pattern. */
-    Pattern optimize();
-    /** Appends javascript regular expression to the given buffer. */
-    void render(StringBuilder out);
-    /** A Pattern suffix that matches all strings matched by this pattern. */
-    String tail();
-    /**
-     * A pattern that matches the same content as this pattern but without
-     * matching the last n characters.
-     */
-    Pattern subtractTail(int n);
-  }
-
-  private static final class Snippet implements Pattern {
-    final String patternSnippet;
-    Snippet(String patternSnippet) {
-      this.patternSnippet = patternSnippet;
-    }
-    public Pattern optimize() {
-      return this;
-    }
-    public void render(StringBuilder out) { out.append(patternSnippet); }
-    public String tail() { return patternSnippet; }
-    public Pattern subtractTail(int n) {
-      return new Snippet(
-          patternSnippet.substring(0, patternSnippet.length() - n));
-    }
-    @Override
-    public boolean equals(Object o) {
-      if (!(o instanceof Snippet)) { return false; }
-      return patternSnippet.equals(((Snippet) o).patternSnippet);
-    }
-    @Override
-    public int hashCode() {
-      return patternSnippet.hashCode() ^ 0x4482de40;
-    }
-  }
-
-  private static final class Concatenation implements Pattern {
-    final List<Pattern> children;
-    Concatenation(List<Pattern> children) { this.children = children; }
-    public Pattern optimize() {
-      List<Pattern> newChildren = new ArrayList<Pattern>();
-      for (Pattern child : children) {
-        child = child.optimize();
-        if (child instanceof Concatenation) {
-          Concatenation childCat = (Concatenation) child;
-          newChildren.addAll(childCat.children);
-        } else if (!(child instanceof Snippet
-                     && "".equals(((Snippet) child).patternSnippet))) {
-          newChildren.add(child);
-        }
+  private JSRE builtinToPattern(Name name) {
+    String key = name.getCanonicalForm();
+    JSRE p = BUILTINS.get(key);
+    if (p == null) {
+      int comma = key.lastIndexOf(':');
+      if (comma >= 0) {
+        p = BUILTINS.get(key.substring(0, comma));
       }
-      if (newChildren.size() == 1) { return newChildren.get(0); }
-      return new Concatenation(newChildren);
     }
-    public void render(StringBuilder out) {
-      for (Pattern n : children) { n.render(out); }
-    }
-    public String tail() {
-      return children.get(children.size() - 1).tail();
-    }
-    public Pattern subtractTail(int n) {
-      List<Pattern> newChildren = new ArrayList<Pattern>();
-      int last = children.size() - 1;
-      newChildren.addAll(children.subList(0, last));
-      newChildren.add(children.get(last).subtractTail(n));
-      return new Concatenation(newChildren);
-    }
-    @Override
-    public boolean equals(Object o) {
-      if (!(o instanceof Concatenation)) { return false; }
-      return children.equals(((Concatenation) o).children);
-    }
-    @Override
-    public int hashCode() {
-      return children.hashCode() ^ 0xd18b17e;
-    }
-  }
-
-  private static class Union implements Pattern {
-    final List<Pattern> children;
-    Union(List<Pattern> children) { this.children = children; }
-    public Pattern optimize() {
-      List<Pattern> newChildren = new ArrayList<Pattern>();
-      for (Pattern child : children) {
-        child = child.optimize();
-        if (child instanceof Union) {
-          Union childUnion = (Union) child;
-          newChildren.addAll(childUnion.children);
-        } else {
-          newChildren.add(child);
-        }
-      }
-      int n = newChildren.size();
-      if (n == 1) { return newChildren.get(0); }
-      if (n != 0) {  // a\\s+|b\\s+|c\\s+  -> (a|b|c)\\s+
-        // Tail optimize since most patterns will end with \\s+.
-        Pattern child0 = newChildren.get(0);
-        String tail = child0.tail();
-        for (Pattern child : newChildren.subList(1, n)) {
-          if ("".equals(tail)) { break; }
-          tail = commonSuffix(tail, child.tail());
-        }
-        if (!"".equals(tail)) {
-          for (int i = 0; i < n; ++i) {
-            newChildren.set(i, newChildren.get(i).subtractTail(tail.length()));
-          }
-          Pattern opt = new Concatenation(
-              Arrays.asList(new Union(newChildren), new Snippet(tail)))
-              .optimize();
-          return opt;
-        }
-      }
-      // Remove duplicates
-      Set<Pattern> seen = Sets.newHashSet();
-      for (Iterator<Pattern> it = newChildren.iterator(); it.hasNext();) {
-        if (!seen.add(it.next())) { it.remove(); }
-      }
-      if (n == 1) { return newChildren.get(0); }
-      return new Union(newChildren);
-    }
-    public void render(StringBuilder out) {
-      out.append("(?:");
-      for (int i = 0, n = children.size(); i < n; ++i) {
-        if (i != 0) { out.append('|'); }
-        children.get(i).render(out);
-      }
-      out.append(')');
-    }
-    public String tail() { return ""; }
-    public Pattern subtractTail(int n) {
-      throw new UnsupportedOperationException();
-    }
-    @Override
-    public boolean equals(Object o) {
-      if (!(o instanceof Union)) { return false; }
-      return children.equals(((Union) o).children);
-    }
-    @Override
-    public int hashCode() {
-      return children.hashCode() ^ 0x11b79bed;
-    }
-  }
-
-  private static final class Repetition implements Pattern {
-    final Pattern repeated;
-    final int min, max;
-    Repetition(Pattern repeated, int min, int max) {
-      this.repeated = repeated;
-      this.min = min;
-      this.max = max;
-    }
-    public Pattern optimize() {
-      return new Repetition(repeated.optimize(), min, max);
-    }
-    public void render(StringBuilder out) {
-      out.append("(?:");
-      repeated.render(out);
-      out.append(')');
-      if (max == Integer.MAX_VALUE) {
-        switch (min) {
-          case 0: out.append('*'); return;
-          case 1: out.append('+'); return;
-        }
-      } else if (max == 1 && min == 0) {
-        out.append('?');
-        return;
-      }
-      out.append('{').append(min).append(',').append(max).append('}');
-    }
-    public String tail() { return ""; }
-    public Pattern subtractTail(int n) {
-      throw new UnsupportedOperationException();
-    }
-    @Override
-    public boolean equals(Object o) {
-      if (!(o instanceof Repetition)) { return false; }
-      Repetition that = (Repetition) o;
-      return this.min == that.min && this.max == that.max
-          && this.repeated.equals(that.repeated);
-    }
-    @Override
-    public int hashCode() {
-      return (repeated.hashCode() + 31 * (min + 31 * max)) ^ 0xa3c916;
-    }
-  }
-
-  public static String commonSuffix(String a, String b) {
-    int m = a.length(), n = b.length();
-    int k = Math.min(m, n);
-    int i = 0;
-    while (i < k && a.charAt(m - i - 1) == b.charAt(n - i - 1)) { ++i; }
-    return a.substring(m - i, m);
+    return p;
   }
 
   public static void generatePatterns(CssSchema schema, Appendable out)
@@ -551,7 +476,7 @@ public class CssPropertyPatterns {
     FilePosition unk = FilePosition.UNKNOWN;
     CssPropertyPatterns pp = new CssPropertyPatterns(schema);
     List<CssSchema.CssPropertyInfo> props
-        = new ArrayList<CssSchema.CssPropertyInfo>(schema.getCssProperties());
+        = Lists.newArrayList(schema.getCssProperties());
     Collections.sort(
         props, new Comparator<CssSchema.CssPropertyInfo>() {
           public int compare(CssSchema.CssPropertyInfo a,
@@ -559,42 +484,88 @@ public class CssPropertyPatterns {
             return a.name.compareTo(b.name);
           }
         });
-    Map<String, int[]> constantPoolMap = Maps.newHashMap();
+    Set<String> commonSubstrings = Sets.newLinkedHashSet();
+    commonSubstrings.add("|left|center|right");
+    commonSubstrings.add("|top|center|bottom");
+    // Seed with some known constant strings.
+    for (Name commonSymbol : new Name[] {
+        // Derived by counting symbol names into a bag in symbolToPattern above.
+        COLOR, Name.css("length"), Name.css("length:0,"),
+        Name.css("border-style"), Name.css("border-width"),
+        Name.css("bg-position"), Name.css("bg-size"),
+        Name.css("percentage"), Name.css("percentage:0,"), Name.css("uri"),
+        Name.css("repeat-style") }) {
+      CssPropertySignature.SymbolSignature sig
+          = (CssPropertySignature.SymbolSignature)
+            CssPropertySignature.Parser.parseSignature(
+                "<" + commonSymbol + ">");
+      JSREBuilder p = pp.symbolToPattern(false, sig);
+      if (p != null) {
+        commonSubstrings.add("" + withoutSpacesOrZero(p.p.optimize()));
+      }
+    }
+    Map<String, int[]> regexPoolMap = Maps.newHashMap();
+    Map<String, Integer> commonSubstringMap = Maps.newLinkedHashMap();
     List<Pair<CssSchema.CssPropertyInfo, String>> patterns
-        = new ArrayList<Pair<CssSchema.CssPropertyInfo, String>>();
-    List<RegexpLiteral> constantPool = new ArrayList<RegexpLiteral>();
+        = Lists.newArrayList();
+    List<Expression> stringPool = Lists.newArrayList();
+    List<Expression> regexPool = Lists.newArrayList();
 
     for (CssSchema.CssPropertyInfo prop : props) {
       String pattern = pp.cssPropertyToPattern(prop.sig);
       if (!schema.isPropertyAllowed(prop.name)) { continue; }
-      if (pattern != null && !"(?:inherit\\s+)".equals(pattern)) {
+      if (pattern != null && !"(?:inherit\\s)".equals(pattern)) {
         patterns.add(Pair.pair(prop, pattern));
-        // Keep track of which patterns appear more than once so we can use
-        // a constant pool.
-        int[] pool = constantPoolMap.get(pattern);
-        if (pool == null) {
-          constantPoolMap.put(pattern, new int[] { -1 });
-        } else if (pool[0] == -1) {
-          pool[0] = constantPool.size();
-          constantPool.add(new RegexpLiteral(unk, pattern));
-        }
       }
     }
 
-    Declaration constantPoolDecl = null;
-    if (!constantPool.isEmpty()) {
-      constantPoolDecl = (Declaration) QuasiBuilder.substV(
-          "var c = @constantPool;",
-          "constantPool", new ArrayConstructor(unk, constantPool));
+    for (String s : commonSubstrings) {
+      int n = 0;
+      for (Pair<CssSchema.CssPropertyInfo, String> p : patterns) {
+        String pattern = p.b;
+        for (int index = -1; (index = pattern.indexOf(s, index + 1)) >= 0;) {
+          ++n;
+        }
+      }
+      if (n > 1) {
+        int poolIndx = stringPool.size();
+        stringPool.add(StringLiteral.valueOf(unk, s));
+        commonSubstringMap.put(s, poolIndx);
+      }
     }
-    List<Pair<Literal, Expression>> members
-        = new ArrayList<Pair<Literal, Expression>>();
-    List<Pair<Literal, Expression>> alternates
-        = new ArrayList<Pair<Literal, Expression>>();
+
     for (Pair<CssSchema.CssPropertyInfo, String> p : patterns) {
-      int poolIndex = constantPoolMap.get(p.b)[0];
+      String pattern = p.b;
+      // Keep track of which patterns appear more than once so we can use
+      // a constant pool.
+      int[] pool = regexPoolMap.get(pattern);
+      if (pool == null) {
+        regexPoolMap.put(pattern, new int[] { -1 });
+      } else if (pool[0] == -1) {
+        pool[0] = regexPool.size();
+        regexPool.add(makeRegexp(commonSubstringMap, pattern));
+      }
+    }
+
+    Statement poolDecls = null;
+    if (!stringPool.isEmpty()) {
+      poolDecls = new Declaration(
+          unk, new Identifier(unk, "s"), new ArrayConstructor(unk, stringPool));
+    }
+    if (!regexPool.isEmpty()) {
+      Declaration d = new Declaration(
+          unk, new Identifier(unk, "c"), new ArrayConstructor(unk, regexPool));
+      poolDecls = (poolDecls == null
+          ? d
+          : new MultiDeclaration(
+              unk, Arrays.asList((Declaration) poolDecls, d)));
+    }
+    List<Pair<Literal, Expression>> members = Lists.newArrayList();
+    List<Pair<Literal, Expression>> alternates = Lists.newArrayList();
+    for (Pair<CssSchema.CssPropertyInfo, String> p : patterns) {
+      int poolIndex = regexPoolMap.get(p.b)[0];
       Expression re = poolIndex < 0
-          ? new RegexpLiteral(unk, p.b)
+          ? makeRegexp(commonSubstringMap, p.b)
           : (Expression) QuasiBuilder.substV(
               "c[@i]", "i", new IntegerLiteral(unk, poolIndex));
       Literal name = StringLiteral.valueOf(unk, p.a.name.getCanonicalForm());
@@ -616,7 +587,7 @@ public class CssPropertyPatterns {
     }
 
     List<Pair<Literal, Expression>> historyInsensitiveStyleWhitelistEls
-        = new ArrayList<Pair<Literal, Expression>>();
+        = Lists.newArrayList();
     for (Name propertyName : HISTORY_INSENSITIVE_STYLE_WHITELIST) {
       historyInsensitiveStyleWhitelistEls.add(Pair.<Literal, Expression>pair(
           StringLiteral.valueOf(unk, propertyName.getCanonicalForm()),
@@ -632,22 +603,106 @@ public class CssPropertyPatterns {
         ""
         + "var css = {"
         + "  properties: (function () {"
-        + "    @constantPoolDecl?;"
+        + "    @poolDecls?;"
         + "    return @cssPropConstructor;"
         + "  })(),"
         + "  alternates: @alternates,"
         + "  HISTORY_INSENSITIVE_STYLE_WHITELIST: "
         + "      @historyInsensitiveStyleWhitelist"
         + "};",
-        "constantPoolDecl", constantPoolDecl,
+        "poolDecls", poolDecls,
         "cssPropConstructor", cssPropConstructor,
         "alternates", alternateNames,
         "historyInsensitiveStyleWhitelist", historyInsensitiveStyleWhitelist);
     TokenConsumer tc = js.makeRenderer(out, null);
     js.render(new RenderContext(tc));
-    tc.consume(";");
     tc.noMoreTokens();
     out.append("\n");
+  }
+
+  private static Expression makeRegexp(
+      Map<String, Integer> commonSubstrings, String regex) {
+    FilePosition unk = FilePosition.UNKNOWN;
+    List<Pair<String, Expression>> substrings = Lists.newArrayList();
+    for (Map.Entry<String, Integer> e : commonSubstrings.entrySet()) {
+      substrings.add(Pair.pair(e.getKey(), (Expression) QuasiBuilder.substV(
+          "s[@i]", "i", new IntegerLiteral(unk, e.getValue()))));
+    }
+    List<Expression> parts = Lists.newArrayList();
+    assert regex.startsWith("/") && regex.endsWith("/i");
+    String pattern = regex.substring(1, regex.length() - 2);
+    makeRegexpOnto(substrings, pattern, 0, parts);
+    if (parts.size() == 1 && parts.get(0) instanceof StringLiteral) {
+      return new RegexpLiteral(unk, regex);
+    } else {
+      Expression e = parts.get(0);
+      for (int i = 1, n = parts.size(); i < n; ++i) {
+        e = Operation.createInfix(Operator.ADDITION, e, parts.get(i));
+      }
+      return (Expression) QuasiBuilder.substV(
+          "RegExp(@pattern, 'i')", "pattern", e);
+    }
+  }
+
+  private static void makeRegexpOnto(
+      List<Pair<String, Expression>> strs, String pattern, int index,
+      List<Expression> parts) {
+    if ("".equals(pattern)) { return; }
+    for (int n = strs.size(); index < n; ++index) {
+      Pair<String, Expression> commonString = strs.get(index);
+      String s = commonString.a;
+      int pos = pattern.indexOf(s);
+      if (pos >= 0) {
+        makeRegexpOnto(strs, pattern.substring(0, pos), index + 1, parts);
+        parts.add(commonString.b);
+        makeRegexpOnto(strs, pattern.substring(pos + s.length()), index, parts);
+        return;
+      }
+    }
+    parts.add(StringLiteral.valueOf(FilePosition.UNKNOWN, pattern));
+  }
+
+  /**
+   * Spaces and zero tend to get moved/merged frequently during
+   * regex optimization so don't consider them when doing common substring
+   * matching.
+   */
+  private static JSRE withoutSpacesOrZero(JSRE p) {
+    if (p instanceof JSRE.Atom) {
+      String s = ((JSRE.Atom) p).atom;
+      return ("0".equals(s) || "\\s".equals(s)) ? null : p;
+    } else if (p instanceof JSRE.Concatenation) {
+      JSRE.Concatenation c = (JSRE.Concatenation) p;
+      List<JSRE> children = Lists.newArrayList(c.children);
+      while (!children.isEmpty()) {
+        JSRE p0 = children.get(0);
+        JSRE p0w = withoutSpacesOrZero(p0);
+        if (p0w == null) {
+          children.remove(0);
+        } else {
+          children.set(0, p0w);
+          break;
+        }
+      }
+      if (children.isEmpty()) { return null; }
+      return JSRE.cat(children).optimize();
+    } else if (p instanceof JSRE.Alternation) {
+      List<JSRE> children = ((JSRE.Alternation) p).children;
+      List<JSRE> childrenNew = Lists.newArrayList();
+      for (JSRE child : children) {
+        JSRE wo = withoutSpacesOrZero(child);
+        if (wo != null) { childrenNew.add(wo); }
+      }
+      if (childrenNew.isEmpty()) { return null; }
+      return JSRE.alt(childrenNew);
+    } else if (p instanceof JSRE.Repetition) {
+      JSRE.Repetition rep = (JSRE.Repetition) p;
+      JSRE body = withoutSpacesOrZero(rep.body);
+      return body != null
+          ? JSRE.rep(body, rep.min, rep.max).optimize()
+          : null;
+    }
+    return p;
   }
 
   public static class Builder implements BuildCommand {
@@ -708,7 +763,6 @@ public class CssPropertyPatterns {
       String currentDate = "" + new Date();
       if (currentDate.indexOf("*/") >= 0) {
         throw new SomethingWidgyHappenedError("Date should not contain '*/'");
-
       }
       out.write("/* Copyright Google Inc.\n");
       out.write(" * Licensed under the Apache Licence Version 2.0\n");

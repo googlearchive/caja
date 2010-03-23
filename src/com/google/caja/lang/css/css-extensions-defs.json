@@ -8,6 +8,87 @@
 
   "types": [
 
+    { "key": "background",
+      "signature": "[ [ <bg-image> || [<bg-position> [/ <bg-size>]? | / <bg-size>] || <repeat-style> || <attachment> || <bg-origin> ] , ]* ['background-color' || <bg-image> || [<bg-position> [/ <bg-size>]? | / <bg-size>] || <repeat-style> || <attachment> || <bg-origin>]",
+      "appliesTo": "*",
+      "inherited": false,
+      "mediaGroups": ["visual"],
+      "source": "http://www.w3.org/TR/2009/CR-css3-background-20091217/#the-background",
+      "dom2property": "background"
+    },
+
+    { "key": "background-attachment",
+      "signature": "<attachment> [ , <attachment> ]*",
+      "default": "scroll",
+      "appliesTo": "*",
+      "inherited": false,
+      "mediaGroups": ["visual"],
+      "source": "http://www.w3.org/TR/2009/CR-css3-background-20091217/#background-attachment",
+      "dom2property": "backgroundAttachment"
+    },
+
+    { "key": "background-clip",
+      "signature": "[border-box | padding-box] [, [border-box | padding-box]]*",
+      "default": "border-box",
+      "appliesTo": "*",
+      "inherited": false,
+      "mediaGroups": ["visual"],
+      "source": "http://www.w3.org/TR/2009/CR-css3-background-20091217/#the-background-clip",
+      "dom2property": "backgroundClip",
+      "comment": "affects clipping but does not allow it to exceed bounds of box"
+    },
+
+    { "key": "background-image",
+      "signature": "<bg-image> [ , <bg-image> ]*",
+      "default": "none",
+      "appliesTo": "*",
+      "inherited": false,
+      "mediaGroups": ["visual"],
+      "source": "http://www.w3.org/TR/2009/CR-css3-background-20091217/#the-background-image",
+      "dom2property": "backgroundImage"
+    },
+
+    { "key": "background-origin",
+      "signature": "auto | <bg-origin> [ , <bg-origin> ]*",
+      "default": "auto",
+      "appliesTo": "*",
+      "inherited": false,
+      "mediaGroups": ["visual"],
+      "source": "http://www.w3.org/TR/2009/CR-css3-background-20091217/#background-origin",
+      "dom2property": "backgroundOrigin",
+      "comment": "changed signature since publish sig does not admit its default value"
+    },
+
+    { "key": "background-position",
+      "signature": "<bg-position> [ , <bg-position> ]*",
+      "default": "0% 0%",
+      "appliesTo": "*",
+      "inherited": false,
+      "mediaGroups": ["visual"],
+      "source": "http://www.w3.org/TR/2009/CR-css3-background-20091217/#the-background-position",
+      "dom2property": "backgroundPosition"
+    },
+
+    { "key": "background-repeat",
+      "signature": "<repeat-style> [ , <repeat-style> ]*",
+      "default": "repeat",
+      "appliesTo": "*",
+      "inherited": false,
+      "mediaGroups": ["visual"],
+      "source": "http://www.w3.org/TR/2009/CR-css3-background-20091217/#the-background-repeat",
+      "dom2property": "backgroundRepeat"
+    },
+
+    { "key": "background-size",
+      "signature": "<bg-size> [ , <bg-size> ]*",
+      "default": "auto",
+      "appliesTo": "*",
+      "inherited": false,
+      "mediaGroups": ["visual"],
+      "source": "http://www.w3.org/TR/2009/CR-css3-background-20091217/#background-size",
+      "dom2property": "backgroundSize"
+    },
+
     { "key": "border-radius",
       "signature": "<length> <length>?",
       "default": "0",
@@ -225,6 +306,41 @@
     { "key": "<color>",
       "signature": "<hex-color>|aliceblue|antiquewhite|aqua|aquamarine|azure|beige|bisque|black|blanchedalmond|blue|blueviolet|brown|burlywood|cadetblue|chartreuse|chocolate|coral|cornflowerblue|cornsilk|crimson|cyan|darkblue|darkcyan|darkgoldenrod|darkgray|darkgreen|darkkhaki|darkmagenta|darkolivegreen|darkorange|darkorchid|darkred|darksalmon|darkseagreen|darkslateblue|darkslategray|darkturquoise|darkviolet|deeppink|deepskyblue|dimgray|dodgerblue|firebrick|floralwhite|forestgreen|fuchsia|gainsboro|ghostwhite|gold|goldenrod|gray|green|greenyellow|honeydew|hotpink|indianred|indigo|ivory|khaki|lavender|lavenderblush|lawngreen|lemonchiffon|lightblue|lightcoral|lightcyan|lightgoldenrodyellow|lightgreen|lightgrey|lightpink|lightsalmon|lightseagreen|lightskyblue|lightslategray|lightsteelblue|lightyellow|lime|limegreen|linen|magenta|maroon|mediumaquamarine|mediumblue|mediumorchid|mediumpurple|mediumseagreen|mediumslateblue|mediumspringgreen|mediumturquoise|mediumvioletred|midnightblue|mintcream|mistyrose|moccasin|navajowhite|navy|oldlace|olive|olivedrab|orange|orangered|orchid|palegoldenrod|palegreen|paleturquoise|palevioletred|papayawhip|peachpuff|peru|pink|plum|powderblue|purple|red|rosybrown|royalblue|saddlebrown|salmon|sandybrown|seagreen|seashell|sienna|silver|skyblue|slateblue|slategray|snow|springgreen|steelblue|tan|teal|thistle|tomato|turquoise|violet|wheat|white|whitesmoke|yellow|yellowgreen|rgb(<red>,<green>,<blue>)|rgba(<red>,<green>,<blue>,<alpha>)",
       "source": "http://www.w3.org/TR/css3-iccprof#colorunits"
+    },
+
+    { "key": "<bg-origin>",
+      "signature": "border-box | padding-box | content-box",
+      "source": "http://www.w3.org/TR/2009/CR-css3-background-20091217/#ltbg-origingt"
+    },
+
+    { "key": "<bg-size>",
+      "signature": "[ <length:0,> | <percentage> | auto ]{1, 2} | cover | contain",
+      "source": "http://www.w3.org/TR/2009/CR-css3-background-20091217/#ltbg-origingt"
+    },
+
+    { "key": "<bg-image>",
+      "signature": "<image> | none",
+      "source": "http://www.w3.org/TR/2009/CR-css3-background-20091217/#ltbg-imagegt"
+    },
+
+    { "key": "<image>",
+      "signature": "<uri>",
+      "source": "http://www.w3.org/TR/2009/CR-css3-background-20091217/#ltimagegt"
+    },
+
+    { "key": "<bg-position>",
+      "signature": "[ [ [ <percentage> | <length> | left | center | right ] ] [ [ <percentage> | <length> | top | center | bottom ] ]? | [ [ center | [ left | right ] [ <percentage> | <length> ]? ] || [ center | [ top | bottom ] [ <percentage> | <length> ]? ] ] ]",
+      "source": "http://www.w3.org/TR/2009/CR-css3-background-20091217/#ltbg-positiongt"
+    },
+
+    { "key": "<repeat-style>",
+      "signature": "repeat-x | repeat-y | [repeat | space | round | no-repeat]{1,2}",
+      "source": "http://www.w3.org/TR/2009/CR-css3-background-20091217/#ltrepeat-stylegt"
+    },
+
+    { "key": "<attachment>",
+      "signature": "scroll | fixed | local",
+      "source": "http://www.w3.org/TR/2009/CR-css3-background-20091217/#ltattachmentgt"
     }
   ]
 }

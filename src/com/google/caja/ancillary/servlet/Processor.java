@@ -649,8 +649,7 @@ class Processor {
         if (propertyPrefixes.get(prefix).size() != 1) { break; }
         CssSchema.CssPropertyInfo si = req.cssSchema.getCssProperty(prefix);
         if (si == null) { break; }
-        // If we can shorten the name and get the same types out, then
-        // do so.
+        // If we can shorten the name and get the same types out, then do so.
         CssTree.Expr e = (CssTree.Expr) pd.getExpr().clone();
         clearAttributes(e);
         if (!v.applySignature(prefix, e, si.sig)) { break; }
@@ -690,6 +689,10 @@ class Processor {
 
   private static boolean cssExprPartsConsistent(
       List<? extends String> a, List<? extends String> b, String toIgnore) {
+    if (toIgnore.startsWith("background-")) {
+      // Backgrounds layer instead of partitioning spatially
+      toIgnore = "background";
+    }
     int n = a.size();
     if (n != b.size()) { return false; }
     for (int i = 0; i < n; ++i) {

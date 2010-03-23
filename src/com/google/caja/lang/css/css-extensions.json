@@ -1,5 +1,5 @@
 {
-  "inherits": ["css-extensions-defs.json", "css-extensions-whitelist.json"]
+  "inherits": ["css-extensions-defs.json", "css-extensions-whitelist.json"],
   "allowed": ["position"],
   "types": [
     { "key": "position",

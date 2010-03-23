@@ -541,9 +541,7 @@ public abstract class CssPropertySignature implements ParseTreeNode {
       CssPropertySignature sig;
       if ("[".equals(s)) {
         sig = parseSignature(toks);
-        if (!"]".equals(toks.next())) {
-          throw new IllegalArgumentException(unroll(toks));
-        }
+        expect(toks, "]");
       } else if (Name.css("progid").equals(Name.css(s))) {
         if (":".equals(toks.next())) {
           sig = parseProgId(toks);
@@ -688,6 +686,19 @@ public abstract class CssPropertySignature implements ParseTreeNode {
       sb.append(it.next());
       while (it.hasNext()) { sb.append(' ').append(it.next()); }
       return sb.toString();
+    }
+
+    private static void expect(ListIterator<String> it, String tok) {
+      if (!it.hasNext()) {
+        throw new IllegalArgumentException(
+            "Expected " + tok + ", not end of sig");
+      }
+      String next = it.next();
+      if (!tok.equals(next)) {
+        throw new IllegalArgumentException(
+            "Expected " + tok + ", not " + next + " : " + unroll(it));
+      }
+
     }
 
     private Parser() {
