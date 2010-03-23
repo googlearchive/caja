@@ -108,6 +108,7 @@ final class SafeHtmlMaker {
   private final Map<Node, ParseTreeNode> scriptsPerNode;
   private final List<Node> roots;
   private final Map<String, Declaration> handlers = Maps.newHashMap();
+  private final List<Statement> unnamedHandlers = Lists.newArrayList();
   /** The set of handlers defined in the current module. */
   private final Set<String> handlersUsedInModule = Sets.newHashSet();
   private Block currentBlock = null;
@@ -125,14 +126,19 @@ final class SafeHtmlMaker {
    */
   SafeHtmlMaker(PluginMeta meta, MessageContext mc, Document doc,
                 Map<Node, ParseTreeNode> scriptsPerNode,
-                List<Node> roots, List<Declaration> handlers) {
+                List<Node> roots, List<Statement> handlers) {
     this.meta = meta;
     this.mc = mc;
     this.doc = doc;
     this.scriptsPerNode = scriptsPerNode;
     this.roots = roots;
-    for (Declaration d : handlers) {
-      this.handlers.put(d.getIdentifierName(), d);
+    for (Statement handler : handlers) {
+      if (handler instanceof Declaration) {
+        Declaration d = (Declaration) handler;
+        this.handlers.put(d.getIdentifierName(), d);
+      } else {
+        unnamedHandlers.add(handler);
+      }
     }
   }
 
@@ -141,6 +147,10 @@ final class SafeHtmlMaker {
     currentBlock = null;
 
     if (css.a != null) { emitStatement(css.a, true); }
+
+    for (Statement handler : unnamedHandlers) {
+      emitStatement(handler, true);
+    }
 
     // Build the HTML and the javascript that adds dynamic attributes and that
     // executes inline scripts.
@@ -430,7 +440,8 @@ final class SafeHtmlMaker {
           String handlerName = dynamicValue.getAttributes().get(
               HtmlAttributeRewriter.HANDLER_NAME);
           if (handlerName != null
-              && !handlersUsedInModule.contains(handlerName)) {
+              && handlers.containsKey(handlerName)
+              && handlersUsedInModule.add(handlerName)) {
             emitHandler(handlerName);
           }
           emitDynamicAttr(a, dynamicValue);
@@ -541,8 +552,7 @@ final class SafeHtmlMaker {
   }
 
   private void emitHandler(String handlerName) {
-    Declaration d = handlers.get(handlerName);
-    emitStatement(d, true);
+    emitStatement(handlers.get(handlerName), true);
   }
 
   private Node consolidateHtml(List<Node> nodes) {

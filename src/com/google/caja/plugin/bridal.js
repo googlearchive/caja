@@ -446,18 +446,39 @@ var bridalMaker = function(document) {
         - Trying to set an invalid name like ":" is supposed to throw an
           error.  In IE[678] and Opera 10, it fails without an error.
     */
-    if (name === 'style' && typeof element.style.cssText === 'string') {
-      element.style.cssText = value;
-      return value;
+    switch (name) {
+      case 'style':
+        element.style.cssText = value;
+        return value;
+      // Firefox will run javascript: URLs in the frame specified by target.
+      // This can cause things to run in an unintended frame, so we make sure
+      // that the target is effectively _self whenever a javascript: URL appears
+      // on a node.
+      case 'href':
+        if (/^javascript:/i.test(value)) {
+          element.stored_target___ = element.target;
+          element.target = '';
+        } else if (element.stored_target___) {
+          element.target = element.stored_target___;
+          delete element.stored_target___;
+        }
+        break;
+      case 'target':
+        if (element.href && /^javascript:/i.test(element.href)) {
+          element.stored_target___ = value;
+          return value;
+        }
+        break;
     }
-    var attr = element.ownerDocument.createAttribute(name);
-    attr.value = value;
     try {
+      var attr = element.ownerDocument.createAttribute(name);
+      attr.value = value;
       element.setAttributeNode(attr);
-      return value;
-    } catch (e) {}
-    // It's a real failure only if setAttribute also fails.
-    return element.setAttribute(name, value, 0);
+    } catch (e) {
+      // It's a real failure only if setAttribute also fails.
+      return element.setAttribute(name, value, 0);
+    }
+    return value;
   }
 
   /**

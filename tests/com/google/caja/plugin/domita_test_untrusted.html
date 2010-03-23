@@ -98,6 +98,10 @@
      onclick="pass('test-onclick-handler');">click me</b>
 </p>
 
+<p class="clickme testcontainer" id="test-jsuri">
+  <a id="test-jsuri-label" href="javascript:pass('test-jsuri')">click me</a>
+</p>
+
 <p class="clickme testcontainer" id="test-current-target">
   <b id="test-current-target-child">click me</b>
 </p>
@@ -975,7 +979,12 @@ jsunitRegister('testFormElements',
 
 jsunitRegister('testOnclickHandler',
                function testOnclickHandler() {
-  // nothing to do here
+  // Nothing to do here.  pass call in test-onclick-handler HTML.
+});
+
+jsunitRegister('testJsUri',
+               function testJsUriHandler() {
+  // Nothing to do here.  pass call in test-jsuri HTML.
 });
 
 jsunitRegister('testCurrentTarget',

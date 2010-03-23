@@ -32,10 +32,12 @@ import com.google.caja.parser.js.AbstractExpression;
 import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.Declaration;
 import com.google.caja.parser.js.Expression;
+import com.google.caja.parser.js.ExpressionStmt;
 import com.google.caja.parser.js.FunctionConstructor;
 import com.google.caja.parser.js.Identifier;
 import com.google.caja.parser.js.Operation;
 import com.google.caja.parser.js.Reference;
+import com.google.caja.parser.js.Statement;
 import com.google.caja.parser.js.StringLiteral;
 import com.google.caja.parser.js.SyntheticNodes;
 import com.google.caja.parser.quasiliteral.QuasiBuilder;
@@ -76,7 +78,7 @@ public final class HtmlAttributeRewriter {
   /** Maps handler attribute source to handler names. */
   private final Map<String, String> handlerCache = Maps.newHashMap();
   /** Extracted event handler functions. */
-  private final List<Declaration> handlers = Lists.newArrayList();
+  private final List<Statement> handlers = Lists.newArrayList();
 
   public static final SyntheticAttributeKey<String> HANDLER_NAME
       = new SyntheticAttributeKey<String>(String.class, "handlerName");
@@ -94,7 +96,7 @@ public final class HtmlAttributeRewriter {
   public PluginMeta getPluginMeta() { return meta; }
   public CssSchema getCssSchema() { return cssSchema; }
   public HtmlSchema getHtmlSchema() { return htmlSchema; }
-  public List<Declaration> getHandlers() {
+  public List<Statement> getHandlers() {
     return Collections.unmodifiableList(handlers);
   }
 
@@ -243,27 +245,29 @@ public final class HtmlAttributeRewriter {
         if (attributeContent.containsKey(attr.src)) {  // A javascript: URI
           Block b = this.jsFromAttrib(attr);
           if (b == null || b.children().isEmpty()) { return noResult(attr); }
-          rewriteEventHandlerReferences(b);
 
           handlerFnName = meta.generateUniqueName("c");
-          Declaration handler = (Declaration) QuasiBuilder.substV(
+          Statement handler = new ExpressionStmt((Expression)
+              QuasiBuilder.substV(
               ""
-              + "var @handlerName = ___./*@synthetic*/markFuncFreeze("
-              + "    /*@synthetic*/function ("
-                         + ReservedNames.THIS_NODE + ") { @body*; });",
-              "handlerName", SyntheticNodes.s(
-                  new Identifier(FilePosition.UNKNOWN, handlerFnName)),
-              "body", new ParseTreeNodeContainer(b.children()));
+              + "IMPORTS___.@handlerName = ___./*@synthetic*/markFuncFreeze("
+              // There is no node or event object available to code in
+              // javascript: URIs.
+              + "    /*@synthetic*/function () { @body*; });",
+              "handlerName", new Reference(SyntheticNodes.s(new Identifier(
+                  FilePosition.UNKNOWN, handlerFnName))),
+              "body", new ParseTreeNodeContainer(b.children())));
           handlers.add(handler);
           handlerCache.put(value, handlerFnName);
 
           Operation urlAdapter = (Operation) QuasiBuilder.substV(
               ""
               + "'javascript:' + /*@synthetic*/encodeURIComponent("
-              + "   'plugin_dispatchEvent___(this, null, '"
+              + "   'try{void plugin_dispatchToHandler___('"
               + "    + ___./*@synthetic*/getId(IMPORTS___)"
-              + "    + ', ' + '@handlerName' + '), void 0')",
-              "handlerName", new Identifier(pos, handlerFnName));
+              + "    + ',' + @handlerName + ',[{}])}catch(_){}')",
+              "handlerName", StringLiteral.valueOf(
+                  pos, StringLiteral.toQuotedValue(handlerFnName)));
           urlAdapter.setFilePosition(pos);
           urlAdapter.getAttributes().set(HANDLER_NAME, handlerFnName);
           dynamicValue = urlAdapter;

@@ -52,7 +52,8 @@
  * @requires console
  * @requires clearInterval, clearTimeout, setInterval, setTimeout
  * @requires ___, bridal, bridalMaker, css, html, html4, unicode
- * @provides attachDocumentStub, plugin_dispatchEvent___
+ * @provides attachDocumentStub, plugin_dispatchEvent___,
+ *     plugin_dispatchToHandler___
  * @overrides domitaModules
  */
 
@@ -4123,23 +4124,27 @@ function plugin_dispatchEvent___(thisNode, event, pluginId, handler) {
   if (!event.currentTarget) {
     event.currentTarget = thisNode;
   }
-  var sig = String(handler).match(/^function\b[^\)]*\)/);
+  var imports = ___.getImports(pluginId);
+  var node = imports.tameNode___(thisNode, true);
+  return plugin_dispatchToHandler___(
+      pluginId, handler, [ node, imports.tameEvent___(event), node ]); 
+}
+
+function plugin_dispatchToHandler___(pluginId, handler, args) {
+  var sig = ('' + handler).match(/^function\b[^\)]*\)/);
   var imports = ___.getImports(pluginId);
   if (imports.domitaTrace___ & 0x1) {
     ___.log(
-        'Dispatch ' + (event && event.type) +
-        'event thisNode=' + thisNode + ', ' +
-        'event=' + event + ', ' +
-        'pluginId=' + pluginId + ', ' +
-        'handler=' + (sig ? sig[0] : handler));
+        'Dispatch pluginId=' + pluginId +
+        ', handler=' + (sig ? sig[0] : handler) +
+        ', args=' + args);
   }
   switch (typeof handler) {
     case 'string':
       handler = (___.canRead(imports, '$v') && imports.$v.getOuters()[handler])
-           || ___.readPub(imports, handler);
+           || imports[handler];
       break;
-    case 'function': case 'object':
-      break;
+    case 'function': case 'object': break;
     default:
       throw new Error(
           'Expected function as event handler, not ' + typeof handler);
@@ -4147,15 +4152,11 @@ function plugin_dispatchEvent___(thisNode, event, pluginId, handler) {
   if (___.startCallerStack) { ___.startCallerStack(); }
   imports.isProcessingEvent___ = true;
   try {
-    var node = imports.tameNode___(thisNode, true);
-    return ___.callPub(
-        handler,
-        'call',
-        [ node, imports.tameEvent___(event), node ]);
+    return ___.callPub(handler, 'call', args);
   } catch (ex) {
     if (ex && ex.cajitaStack___ && 'undefined' !== (typeof console)) {
-      console.error('Event dispatch %s: %s',
-          handler, ex.cajitaStack___.join('\n'));
+      console.error(
+          'Event dispatch %s: %s', handler, ex.cajitaStack___.join('\n'));
     }
     throw ex;
   } finally {

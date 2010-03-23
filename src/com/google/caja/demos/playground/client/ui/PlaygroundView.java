@@ -286,7 +286,7 @@ public class PlaygroundView {
     exampleTree.addSelectionHandler(new SelectionHandler<TreeItem>() {
       public void onSelection(SelectionEvent<TreeItem> event) {
         Example eg = entryMap.get(event.getSelectedItem());
-        // No associated example - eg. when opening a subtree menu
+        // No associated example - e.g. when opening a subtree menu
         if (null == eg) {
           return;
         }
