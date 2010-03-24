@@ -33,7 +33,7 @@ function dynamize() {
     if (returns) { buf = []; }
     if (n.nodeType === 3) { buf.push(n.nodeValue); }
     for (var c = n.firstChild; c; c = c.nextSibling) { innerText(c, buf); }
-    if (returns) { return buf.join(''); }  
+    if (returns) { return buf.join(''); }
   }
 
   function title(el) {
@@ -207,9 +207,13 @@ try { while (!channel.empty()) k = channel.next(), foo(k);
   <li class=slide>
     <h1>Anatomy of a Macro</h1>
     <code class=block><span style=color:#800>name</span>`<span style=color:#080>literal<sub>0</sub></span>${<span style=color:#008>subst<sub>0</sub></span>}<span style=color:#080>literal<sub>1</sub></span>`</code>
-    <p>Macro expander specified by a function <span style=color:#800>name</span>
-    <p><span style=color:#080>Literal portions</span> : data
-    <p><span style=color:#008>Substitutions</span> : code
+    <p>Macro expander specified by a function <span style=color:#800>name</span></p>
+    <p><span style=color:#080>Literal portions</span> : data</p>
+    <p><span style=color:#008>Substitutions</span> : code</p>
+
+    <br>
+
+    <p>Data/code split &rarr; non-intrusive injection-resistant content generation</p>
   </li>
   <li class=slide>
     <h1>Desugaring</h1>
