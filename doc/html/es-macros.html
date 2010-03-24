@@ -156,15 +156,15 @@ var processKey = (function () {
     <p>DSLs are used for query languages, and to generate content.
     <p>Already widely used to query DOMs: XPATH and
     CSS selectors.</p>
-    <p>jQuery: <code>$(#foo li.bar)</code> &rarr; list items with
-    class="bar" in el with id "foo"</p>
+    <p>jQuery: <code>$("#foo li.bar")</code> &rarr; all items with
+    <tt>class="bar"</tt> in el with <tt>id=foo</tt></p>
     <p>Interpreter overhead.
     <p>Content generation is ad-hoc and often inefficient and/or insecure.
   </li>
   <li class=slide>
     <h1>Why Macros?</h1>
     <p>Standardizing DSLs : burden on browser implementor &rarr; low rev rate.
-    <p>XML4J is unlikely to be standardized.</p>
+    <p>E4X took a long time, and is still Mozilla only.</p>
     <p>DSLs via Macros : burden on library developers &rarr; high rev rate.</p>
   </li>
   <li class=slide>
