@@ -169,258 +169,85 @@ var processKey = (function () {
   </li>
   <li class=slide>
     <h1>Why Macros?</h1>
-    <p>DSLs specified as macros can expand to <b>inlined code</b>
+    <p>DSLs specified as macros can expand to easily <b>inlinable code</b>
     &mdash; no per-iteration function call or interpreter overhead.
     <p>An unsound content-generation <b>idiom</b> (e.g. <code>+=</code>) must
     be fixed <b>everywhere</b> it is used, but if a content-generation
     <b>DSL</b> has problems, checks and fixes can often be applied <b>once</b>
     per library.
+    <p>Burden for security shifted to library from app developers.
+    Surprisingly this leads to lower effective rev rate.
   </li>
   <li class=slide>
     <h1>Why Macros?</h1>
     <p>Dynamic Regexs.  A multipart mime boundary may can contain '+'.<br>
-    <code>re{{^--${boundary}$}}</code> <span class="expandsto">&rarr;</span>
+    <code>re`^--${boundary}$`</code> <span class="expandsto">&rarr;</span>
     <code>new RegExp('^--' + escapeRegexpSpecials(boundary) + '$')</code>
 
     <p>Date formats with qualifiers<br>
-    <code>date{{ ${day}d/${month}m/${year}Y }}</code>
+    <code>date`${day}d/${month}m/${year}Y`</code>
 
     <p>Control Structures<br>
-    <code>using{{ ${=k} in ${file} do ${foo(k)} }}</code>
+    <code>using` $={k} in ${file} do ${foo(k)} `</code>
     <span class="expandsto">&rarr;</span>
     <code class=block>let channel = using.open(file);
 try { while (!channel.empty()) k = channel.next(), foo(k);
 } finally { channel.close(); }</code>
     <p>String Interpolation<br>
-    <code>s{{&lt;b&gt;$foo&lt;/b&gt;}}</code>
+    <code>s`&lt;b&gt;$foo&lt;/b&gt;`</code>
   </li>
   <li class=slide>
     <h1>Why Hygiene?</h1>
     <ul>
       <li>Correctness &mdash; no namespace collisions or masking.
       <li>Encapsulation &mdash; only substitutions and expander seen by expansion.
-      <li>Mutual Suspicion</li>
+      <li>Strictness &mdash; don't compromise analyzability of ES5 strict mode
     </ul>
-
-    <p>&alpha;-conversion excludes substitutions</p>
-    <code class=block>foreach{{ ${=<b>i</b>} in $<b>arr</b> ${ <b>foo(i)</b> } }}</code>
-    <div class=expandsto>&rarr;</div>
-    <code class=block>for (let i = 0, n = <b>arr</b>.length; i < n; ++i)
-  <b>i</b> = <b>arr</b>[i], <b>foo(i)</b></code>
-    <div class=expandsto>&rarr;</div>
-    <code class=block>for (let $0 = 0, $1 = <b>arr</b>.length; $0 < $1; ++$0)
-  <b>i</b> = <b>arr</b>[$0], <b>foo(i)</b></code>
   </li>
   <li class=slide>
-    <h1>Abstract Syntax Trees as Capabilities</h1>
-    <p>Due to &alpha;-conversion, expanded macro can only access symbols
-    in the macro's scope that are mentioned in a substitution.
-    <p>But it is more restrictive than that.
-    In <code>foo{{ ${x} }}</code>, <code>foo</code> can cause
-    <code>x</code> to be evaluated and observe the result, but
-    in <code>foo{{ ${x.y} }}</code>, <code>foo</code> cannot
-    observe <code>x</code>, only <code>x.y</code>.
-    <p>Author grants via a substitution the authority to
-    cause that expression to be evaluated in the macro's scope.
-    <p>Special <code>${=x}</code> syntax allows the macro to use
-    <code>x</code> as a <i>LeftHandSideExpression</i>.
+    <h1>Anatomy of a Macro</h1>
+    <code class=block><span style=color:#800>name</span>`<span style=color:#080>literal<sub>0</sub></span>${<span style=color:#008>subst<sub>0</sub></span>}<span style=color:#080>literal<sub>1</sub></span>`</code>
+    <p>Macro expander specified by a function <span style=color:#800>name</span>
+    <p><span style=color:#080>Literal portions</span> : data
+    <p><span style=color:#008>Substitutions</span> : code
   </li>
   <li class=slide>
     <h1>Desugaring</h1>
-    <code class=block><span style=color:#800>name</span>{{<span style=color:#080>literal<sub>0</sub></span>${<span style=color:#008>subst<sub>0</sub></span>}<span style=color:#080>literal<sub>1</sub></span>}}</code>
+    <code class=block><span style=color:#800>name</span>`<span style=color:#080>literal<sub>0</sub></span>${<span style=color:#008>subst<sub>0</sub></span>}<span style=color:#080>literal<sub>1</sub></span>`</code>
     <div class=expandsto>&rarr;</div>
-    <code class=block>eval(  // may evaluate in local scope
- (0, eval)("hygienicMacro")(  // uses global when above works
-   "<span style=color:#800>name</span>",  // reliable path to expander in macro scope
-   <span style=color:#800>name</span>,  // expander
-   ["<span style=color:#080>literal<sub>0</sub></span>", "<span style=color:#080>literal<sub>1</sub></span>", &hellip;],  // convey no authority
-   ["(<span style=color:#008>subst<sub>0</sub></span>)", &hellip;]))  // substitutions convey authority</code>
-  </li>
-  <li class=slide>
-    <h1><code>hygienicMacro</code></h1>
-    <p><a href="http://wiki.ecmascript.org/doku.php?id=strawman:quasis-alt#hygienic_macros">spec</a> | <a href="http://code.google.com/p/es-lab/source/browse/trunk/src/quasis/hygienicmacro.js">impl</a>
-    <ol>
-      <li>Define a <b>read ocaps</b> list: <code>[freeze(parse(macroFnName)), freeze(parse(substitution<sub>0</sub>)), &hellip;]</code>
-      <li>Define a <b>write ocaps</b>: only the <code>${=&hellip;}</code> style ocaps.
-      <li>Call the <b>untrusted macro expander</b> to produce a JSON AST.
-      <li>Define a <b>namer</b> that yields distinct idents not free in the ocaps.
-      <li><b>&alpha;-convert</b> the untrusted AST.  Copies it, except for ocaps.
-      <li>Fail if the &alpha;-converted AST has <b>free identifiers</b> ignoring ocaps.
-      <li><b>Render</b> the &alpha;-converted AST to a string of EcmaScript.
-      <li><b>Reparse</b> the resulting string.
-      <li>Fail if the original and reparsed aren't <b>structurally similar</b>.
-      <li>Return the string of ecmascript.
-    </ol>
-  </li>
-  <li class=slide>
-    <h1><code>hygienicMacro</code></h1>
-    <p><code>macroExpanderName{{foo${x * y}bar}}</code>
-    <p>&darr; Call<br><center><code class=block style="width:12em">hygienicMacro(
-    "macroExpanderName",
-    macroExpanderName,
-    ["foo", "bar"],
-    ["(x * y)"])</code></center>
-  </li>
-  <li class=slide>
-    <h1><code>hygienicMacro</code></h1>
-    <p><center><code class=block style="width:12em">hygienicMacro(
-    "macroExpanderName",
-    macroExpanderName,
-    ["foo", "bar"],
-    ["(x * y)"])</code></center>
-  <p>&darr; ASTs
-  <p><center><code class=block style="width:26em">[["IdExpr", { name: "macroExpanderName" }],
-[["LiteralExpr", { value: "foo" }], &hellip;],
-[["BinaryExpr", { op: "*" }, [&hellip;<i>x</i>&hellip;], [&hellip;<i>y</i>&hellip;]]]</code></center>
-  </li>
-  <li class=slide>
-    <h1><code>hygienicMacro</code></h1>
-    <p><center><code class=block style="width:26em">[["IdExpr", { name: "macroExpanderName" }],
-[["LiteralExpr", { value: "foo" }], &hellip;],
-[["BinaryExpr", { op: "*" }, [&hellip;<i>x</i>&hellip;], [&hellip;<i>y</i>&hellip;]]]</code></center>
-    <p>&darr; Call <code>macroExpander</code>
-    <p><center><code class=block style="width:34em"
->["BinaryExpr", { op: "+" },
-  ["LiteralExpr", { type: "string", value: "foo" }],
-  ["BinaryExpr", { op: "+" },
-    ["BinaryExpr", { op: "*" }, [&hellip;<i>x</i>&hellip;], [&hellip;<i>y</i>&hellip;]],  // ocap
-    ["LiteralExpr", { type: "string", value: "bar" }]
-  ]
-]</code></center>
-  </li>
-  <li class=slide>
-    <h1><code>hygienicMacro</code></h1>
-    <p><center><code class=block style="width:34em"
->["BinaryExpr", { op: "+" },
-  ["LiteralExpr", { type: "string", value: "foo" }],
-  ["BinaryExpr", { op: "+" },
-    ["BinaryExpr", { op: "*" }, [&hellip;<i>x</i>&hellip;], [&hellip;<i>y</i>&hellip;]],  // ocap
-    ["LiteralExpr", { type: "string", value: "bar" }]
-  ]
-]</code></center>
-    <p>&darr; &alpha;-conversion</p>
-    <p>No changes since idents in ocaps not changed.</p>
-    <p>Enforces hygiene between idents in substitutions and names introduced by
-    expander.</p>
-  </li>
-  <li class=slide>
-    <h1><code>hygienicMacro</code></h1>
-    <p><center><code class=block style="width:34em"
->["BinaryExpr", { op: "+" },
-  ["LiteralExpr", { type: "string", value: "foo" }],
-  ["BinaryExpr", { op: "+" },
-    ["BinaryExpr", { op: "*" }, [&hellip;<i>x</i>&hellip;], [&hellip;<i>y</i>&hellip;]],  // ocap
-    ["LiteralExpr", { type: "string", value: "bar" }]
-  ]
-]</code></center>
-    <p>&darr; free identifiers</p>
-    <p>&#x2205; since ocaps exempted.</p>
-    <p>Ensures that all identifiers introduced by expander are scoped entirely
-    within the expander.
-  </li>
-  <li class=slide>
-    <h1><code>hygienicMacro</code></h1>
-    <p><center><code class=block style="width:34em"
->["BinaryExpr", { op: "+" },
-  ["LiteralExpr", { type: "string", value: "foo" }],
-  ["BinaryExpr", { op: "+" },
-    ["BinaryExpr", { op: "*" }, [&hellip;<i>x</i>&hellip;], [&hellip;<i>y</i>&hellip;]],  // ocap
-    ["LiteralExpr", { type: "string", value: "bar" }]
-  ]
-]</code></center>
-    <p>&darr; Render</p>
-    <p><code>"foo" + (x * y) + "bar"</code></p>
-    <p>&darr; Reparse and Check</p>
-    <p>Ensures that output tree was well-formed.</p>
-  </li>
-  <li class=slide>
-    <h1><code>hygienicMacro</code></h1>
-    <p><code>"foo" + (x * y) + "bar"</code></p>
-    <p>&darr; Return</p>
-    <p><code>eval('"foo" + (x * y) + "bar"')</code></p>
-  </li>
-  <li class=slide>
-    <h1><code>hygienicMacro</code></h1>
-    <p><code>Object.freeze</code> must preserve the integrity of
-    AST nodes.  Can be relaxed.
-    <p>Free identifier analyzer must not undercount free identifiers.
-    <p>&alpha;-conversion must copy non-ocap AST nodes, and correctly
-    recognize write contexts.
-    <p>ES5Parser must find the same token-boundaries as the built-in parser.
-    Can be relaxed.
-    <p>ES5Parser must correctly parse substitutions.
-    Substitutions are from a trusted source and express user intent.
-  </li>
-  <li class=slide>
-    <h1>Performance</h1>
-    <p>Macros are expanded to a call to <code>eval(&hellip;)</code>.
-    <p><code>eval('foo()')</code> can be replaced with <code>foo()</code>
-    <p>A macro expander receives immutable statically known JSON.
-    <p>If a macro expander is pure, then we can inline.
-    <p>But purity is hard to prove in ES <code>:(</code>
-    <p>If a macro expander is deterministic, we can inline
-    after first call.
-    <p>But determinism is hard to prove in ES <code>:(</code>
-  </li>
-  <li class=slide>
-    <h1>Performance</h1>
-    <p>Macro expanders are JSON&rarr;JSON functions that can't mutate input.
-    <br>And JSON is serializable.
-    <p>Memoization gives just the level of determinism we need:
-<code class=block>
-function memoizingExpander(expander) {
-  var cache = {};
-  return function (literals, ocaps) {
-    var k = JSON.stringify([literals, ocaps]);
-    if (!(k in cache))  // Modulo own props.
-      // Side effects will occur at most once per call-site.
-      cache[k] = copyPreservingOCaps(
-          expander(literals, ocaps), ocaps);
-    return copyReplacingOCaps(cache[k], ocaps);
-  };
-}</code>
-  </li>
-  <li class=slide>
-    <h1>Performance</h1>
-    <code class=block>const cat = <b>memoizingExpander</b>(function (literals, ocaps) {
-  function plus(a, b){return ['BinaryExpr', {op:'+'}, a, b];}
-  var result = literals[0];
-  for (var i = 1; i < literals.length; ++i) {
-    result = plus(result, plus(literals[i], ocaps[i]));
-  }
-  return result;
-});
+    <code class=block><i style="color:#666">// resolved in macro scope</i>
+<span style=color:#800>name</span>(
+    <i style="color:#666">// literals convey no authority</i>
+    "<span style=color:#080>literal<sub>0</sub></span>", "<span style=color:#080>literal<sub>1</sub></span>", &hellip;)(
+    <i style="color:#666">// substitutions convey authority</i>
+    { get: function () { return (<span style=color:#008>subst<sub>0</sub></span>) } }, &hellip;)</code>
 
-// in a loop body far far away &hellip;
-f( str{{foo${bar}baz}} )  // Macro</code>
-  <div class=expandsto>&rarr;</div>
-<code class=block>f( 'foo' + bar + 'baz' )  // Inlined macro</code>
+    <p>Substitutions passed as property descriptors.
+    <p>If &lambda; available, then substitutions can be <i>Program</i>s.
+    <p>Otherwise, ban free <tt>arguments</tt> and use <i>GroupingExpression</i> bodies.
   </li>
   <li class=slide>
-    <h1>Forwards Compatibility</h1>
-    <p>On legacy interpreters<br>desugaring can be performed in compilers
-    / code minifiers.
-    <p><code>eval</code> inlining can be performed where the macro
-    expander can be proven or assumed pure.
+    <h1>Allowing Mutation</h1>
+    <code class=block><span style=color:#800>matcher</span>`<span style=color:#080>&lt;div&gt;</span><span style=color:#008>$=foo</span><span style=color:#080>&lt;/div&gt; as </span><span style=color:#008>$=bar</span>`</code>
+
+    <p><tt>=</tt> prefix adds a setter to the property descriptor.</p>
+    <p>Query languages can contain their output location.</p>
   </li>
   <li class=slide>
-    <h1>Error Reporting</h1>
-    <p>Macro syntax errors can expose expander implementation details.
-    <br>Cryptic error messages bad for usability.
-    <br>IDEs need good error messages for macros.
-    <p>Tentative solution
-    <ul>
-      <li>Thread a sealed source position through via AST meta info.
-      <li>Object can be unsealed by debugger.
-      <li>Exposes <code>sealedPos.narrow(charOffset, charOffset)</code>.
-      <li>Standard way to attach to <code>SyntaxError</code>s.
-    </ul>
+    <h1>Performance</h1>
+    <p>All inputs statically known.</p>
+    <p>All inputs share same environment.</p>
+    <p>If macro expander is <tt>const</tt>, and does not compare substitutions
+    by identity, highly inlineable after first call.
   </li>
   <li class=slide>
-    <h1>Contact Info</h1>
-    <p>Strawman : <a href="http://wiki.ecmascript.org/doku.php?id=strawman:quasis-alt">http://wiki.ecmascript.org/doku.php?id=strawman:quasis-alt</a>
-    <p>Discussion : es-discuss@mozilla.org</p>
-    <p>Presenter : mikesamuel@gmail.com</p>
+    <h1>Syntax Open Questions</h1>
+    <p>Goal: a syntax that is familiar to most JavaScript developers.  Many know string interpolation from Python/Perl/Ruby/PHP.
+    <p>&iquest;Boundaries between literal portions and substitutions independent of vendor
+    extensions and future language changes?
+    <p>&iquest;Literals raw escapes?
+    <p>&iquest;New Quotes <tt>foo`...`</tt> vs brackets <tt>foo{{...}}</tt> vs old quotes <tt>foo"..."</tt>?
+    <p>&iquest;Substitution Marker <tt>$</tt> vs <tt>#</tt> vs <tt>%</tt>?
   </li>
 </ol>
 </body></html>
