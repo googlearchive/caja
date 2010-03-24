@@ -148,23 +148,22 @@ var processKey = (function () {
     <h1>Why Macros?</h1>
     <p>EcmaScript is primarily used to <b>generate</b> and <b>manipulate</b>
     content in <b>other languages</b> : HTML, CSS, JSON, XML.</p>
-    <p>Domain Specific Languages (DSLs) integrate
-    languages into ES.
+    <p>Domain Specific Languages (DSLs) integrate languages into ES.</p>
   </li>
   <li class=slide>
     <h1>Why Macros?</h1>
-    <p>DSLs are used for query languages, and to generate content.
+    <p>DSLs are used for query languages, and to generate content.</p>
     <p>Already widely used to query DOMs: XPATH and
     CSS selectors.</p>
     <p>jQuery: <code>$("#foo li.bar")</code> &rarr; all items with
     <tt>class="bar"</tt> in el with <tt>id=foo</tt></p>
-    <p>Interpreter overhead.
-    <p>Content generation is ad-hoc and often inefficient and/or insecure.
+    <p>Interpreter overhead.</p>
+    <p>Content generation is ad-hoc and often inefficient and/or insecure.</p>
   </li>
   <li class=slide>
     <h1>Why Macros?</h1>
-    <p>Standardizing DSLs : burden on browser implementor &rarr; low rev rate.
-    <p>E4X took a long time, and is still Mozilla only.</p>
+    <p>Standardizing DSLs : burden on browser implementor &rarr; low rev rate.</p>
+    <p>E4X took a long time, and is still BEA/Mozilla only.</p>
     <p>DSLs via Macros : burden on library developers &rarr; high rev rate.</p>
   </li>
   <li class=slide>
@@ -190,7 +189,7 @@ var processKey = (function () {
     <p>Control Structures<br>
     <code>using` $={k} in ${file} do ${foo(k)} `</code>
     <span class="expandsto">&rarr;</span>
-    <code class=block>let channel = using.open(file);
+    <code class=block>let channel = open(file);
 try { while (!channel.empty()) k = channel.next(), foo(k);
 } finally { channel.close(); }</code>
     <p>String Interpolation<br>
