@@ -33,6 +33,8 @@ h1 {
   width: 400px;
 }
 
+.pg_info { font-weight: bold; font-size: 120% }
+
 .menuItems {
   margin: 5px;	
 }

@@ -43,6 +43,7 @@ import com.google.caja.reporting.SimpleMessageQueue;
 import com.google.caja.reporting.BuildInfo;
 import com.google.caja.util.Callback;
 import com.google.caja.util.CapturingReader;
+import com.google.caja.util.Maps;
 import com.google.caja.render.Concatenator;
 import com.google.caja.render.JsMinimalPrinter;
 import com.google.caja.render.SourceSnippetRenderer;
@@ -61,7 +62,6 @@ import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.util.Collection;
 import java.util.Map;
-import java.util.HashMap;
 
 import org.w3c.dom.Node;
 
@@ -74,7 +74,7 @@ public final class PluginCompilerMain {
   private final MessageQueue mq;
   private final MessageContext mc;
   private final Map<InputSource, CapturingReader> originalInputs
-      = new HashMap<InputSource, CapturingReader>();
+      = Maps.newHashMap();
   private final Config config = new Config(
       getClass(), System.err, "Cajoles HTML, CSS, and JS files to JS.");
   private final Callback<IOException> exHandler = new Callback<IOException>() {
@@ -265,14 +265,14 @@ public final class PluginCompilerMain {
         break;
       case SIDEBYSIDE:
         tc = new SourceSnippetRenderer(
-            buildOriginalInputCharSequences(), mc, out, exHandler);
+            buildOriginalInputCharSequences(), mc,
+            makeRenderContext(new Concatenator(out, exHandler)));
         break;
       default:
         throw new SomethingWidgyHappenedError(
             "Unrecognized renderer: " + config.renderer());
     }
-    RenderContext rc = new RenderContext(tc)
-        .withAsciiOnly(true).withEmbeddable(true);
+    RenderContext rc = makeRenderContext(tc);
     module.render(rc);
     tc.noMoreTokens();
     out.append('\n');
@@ -281,7 +281,12 @@ public final class PluginCompilerMain {
   private void writeFileWithDebug(Writer out, CajoledModule module)
       throws IOException {
     module.renderWithDebugSymbols(
-        buildOriginalInputCharSequences(), out, exHandler);
+        buildOriginalInputCharSequences(),
+        makeRenderContext(new Concatenator(out, exHandler)));
+  }
+
+  private static RenderContext makeRenderContext(TokenConsumer tc) {
+    return new RenderContext(tc).withAsciiOnly(true).withEmbeddable(true);
   }
 
   /**
@@ -348,8 +353,7 @@ public final class PluginCompilerMain {
 
   private Map<InputSource, CharSequence> buildOriginalInputCharSequences()
       throws IOException {
-    Map<InputSource, CharSequence> results =
-        new HashMap<InputSource, CharSequence>();
+    Map<InputSource, CharSequence> results = Maps.newHashMap();
     for (InputSource is : originalInputs.keySet()) {
       results.put(is, originalInputs.get(is).getCapture());
     }

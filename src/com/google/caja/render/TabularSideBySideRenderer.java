@@ -18,10 +18,9 @@ import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.reporting.MessageContext;
-import com.google.caja.util.Callback;
+import com.google.caja.reporting.RenderContext;
+import com.google.caja.util.Lists;
 
-import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -33,20 +32,18 @@ import java.util.Map;
  * @author mikesamuel@gmail.com
  */
 public class TabularSideBySideRenderer extends SideBySideRenderer {
-  private final List<TableRow> rows = new ArrayList<TableRow>();
+  private final List<TableRow> rows = Lists.newArrayList();
   private final MessageContext mc;
-  private final Appendable out;
-  private final Callback<IOException> exHandler;
+  private final RenderContext rc;
   private boolean closed = false;
 
   public TabularSideBySideRenderer(
       Map<InputSource, ? extends CharSequence> originalSource,
-      MessageContext mc, Appendable out, Callback<IOException> exHandler) {
+      MessageContext mc, RenderContext rc) {
     super(originalSource);
-    if (out == null) { throw new NullPointerException(); }
+    if (rc == null) { throw new NullPointerException(); }
     this.mc = mc;
-    this.out = out;
-    this.exHandler = exHandler;
+    this.rc = rc;
   }
 
   @Override
@@ -81,14 +78,13 @@ public class TabularSideBySideRenderer extends SideBySideRenderer {
     closed = true;
     super.noMoreTokens();
 
-    try {
-      int[] widths = layoutRows(rows);
-      for (TableRow row : rows) {
-        out.append(row.toString(widths)).append('\n');
-      }
-    } catch (IOException ex) {
-      exHandler.handle(ex);
+    Concatenator out = (Concatenator) rc.getOut();
+    int[] widths = layoutRows(rows);
+    for (TableRow row : rows) {
+      out.consume(row.toString(widths));
+      out.consume("\n");
     }
+    out.noMoreTokens();
   }
 
   /** Calculates width of columns. */

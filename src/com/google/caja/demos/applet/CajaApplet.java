@@ -41,6 +41,7 @@ import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.reporting.SimpleMessageQueue;
 import com.google.caja.reporting.SnippetProducer;
+import com.google.caja.util.Lists;
 
 import java.applet.Applet;
 import java.io.IOException;
@@ -48,7 +49,6 @@ import java.io.PrintWriter;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.net.URI;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
@@ -167,7 +167,8 @@ public class CajaApplet extends Applet {
             .withEmbeddable(features.contains(Feature.EMBEDDABLE));
       }
     };
-    if (features.contains(Feature.DEBUG_SYMBOLS)) {
+    boolean debug = features.contains(Feature.DEBUG_SYMBOLS);
+    if (debug) {
       rw.setGoals(
           rw.getGoals()
           .with(PipelineMaker.CAJOLED_MODULE_DEBUG)
@@ -177,7 +178,7 @@ public class CajaApplet extends Applet {
     StringBuilder cajoledOutput = new StringBuilder();
 
     try {
-      rw.rewriteContent(src, cp, env, cajoledOutput);
+      rw.rewriteContent(src, cp, env, debug, cajoledOutput);
       return new Object[] {
         cajoledOutput.toString(),
         messagesToString(originalSources, mq)
@@ -224,7 +225,7 @@ public class CajaApplet extends Applet {
   }
 
   private static String serializeJsArray(Object... values) {
-    List<Expression> valueExprs = new ArrayList<Expression>();
+    List<Expression> valueExprs = Lists.newArrayList();
     for (Object value : values) {
       if (value == null) {
         valueExprs.add(new NullLiteral(FilePosition.UNKNOWN));

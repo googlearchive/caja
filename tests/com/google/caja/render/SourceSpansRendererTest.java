@@ -18,9 +18,8 @@ import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.reporting.MessageContext;
-import com.google.caja.util.Callback;
+import com.google.caja.reporting.RenderContext;
 
-import java.io.IOException;
 import java.net.URI;
 import java.util.Map;
 
@@ -33,17 +32,13 @@ public class SourceSpansRendererTest extends OrigSourceRendererTestCase {
   // with something that generates a single piece of plain text out of the lot,
   // so we can test it using the superclass's framework.
   private class WrapperRenderer implements TokenConsumer {
-    private final Appendable out;
-    private final Callback<IOException> exHandler;
+    private final RenderContext rc;
     private final SourceSpansRenderer delegate;
 
-    public WrapperRenderer(Appendable out, Callback<IOException> exHandler) {
-      this.out = out;
-      this.exHandler = exHandler;
-
+    public WrapperRenderer(RenderContext rc) {
+      this.rc = rc;
       delegate = new SourceSpansRenderer(
-          exHandler,
-          new InputSource(URI.create("file://foo/bar.js")));
+          new InputSource(URI.create("file://foo/bar.js")), rc);
     }
 
     public void mark(FilePosition pos) {
@@ -60,13 +55,11 @@ public class SourceSpansRendererTest extends OrigSourceRendererTestCase {
     }
 
     private void dumpResults() {
-      try {
-        out.append(delegate.getProgramText());
-        for (String slmLine : delegate.getSourceLocationMap()) {
-          out.append(slmLine).append("\n");
-        }
-      } catch (IOException e) {
-        exHandler.handle(e);
+      Concatenator out = (Concatenator) rc.getOut();
+      out.consume(delegate.getProgramText());
+      for (String slmLine : delegate.getSourceLocationMap()) {
+        out.consume(slmLine);
+        out.consume("\n");
       }
     }
   }
@@ -80,7 +73,7 @@ public class SourceSpansRendererTest extends OrigSourceRendererTestCase {
   @Override
   protected TokenConsumer createRenderer(
       Map<InputSource, ? extends CharSequence> originalSource,
-      MessageContext mc, Appendable out, Callback<IOException> exHandler) {
-    return new WrapperRenderer(out, exHandler);
+      MessageContext mc, RenderContext rc) {
+    return new WrapperRenderer(rc);
   }
 }

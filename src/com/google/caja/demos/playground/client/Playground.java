@@ -48,9 +48,10 @@ public class Playground implements EntryPoint {
     });
   }
 
-  public void cajole(String uri, String input) {
+  public void cajole(String uri, String input, boolean debugMode) {
     gui.setLoading(true);
-    cajolingService.cajole(uri, input, new AsyncCallback<CajolingServiceResult>() {
+    cajolingService.cajole(uri, input, debugMode,
+                           new AsyncCallback<CajolingServiceResult>() {
       public void onFailure(Throwable caught) {
         gui.setLoading(false);
         gui.addCompileMessage(caught.getMessage());

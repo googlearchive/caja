@@ -33,13 +33,13 @@ import com.google.caja.reporting.RenderContext;
 import com.google.caja.reporting.TestBuildInfo;
 import com.google.caja.util.CajaTestCase;
 import com.google.caja.util.Callback;
+import com.google.caja.util.Maps;
 import com.google.caja.util.TestUtil;
 
 import java.io.IOException;
 import java.net.URI;
 
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Arrays;
 
@@ -57,7 +57,7 @@ public class ModuleFormatTest extends CajaTestCase {
   }
 
   private final Callback<IOException> exHandler = new Callback<IOException>() {
-    public void handle(IOException e) { 
+    public void handle(IOException e) {
       throw new SomethingWidgyHappenedError(e);
     }
   };
@@ -67,7 +67,7 @@ public class ModuleFormatTest extends CajaTestCase {
         new UncajoledModule(new Block()));
     assertNoErrors();
 
-    Map<String, ParseTreeNode> bindings = new HashMap<String, ParseTreeNode>();
+    Map<String, ParseTreeNode> bindings = Maps.newHashMap();
 
     assertTrue(QuasiBuilder.match(
         "  ({"
@@ -109,7 +109,9 @@ public class ModuleFormatTest extends CajaTestCase {
         (CharSequence) TestUtil.readResource(getClass(), "testModule.js"));
 
     StringBuilder sb = new StringBuilder();
-    cajoledModule.renderWithDebugSymbols(originalSource, sb, exHandler);
+    RenderContext rc = new RenderContext(new Concatenator(sb));
+    cajoledModule.renderWithDebugSymbols(originalSource, rc);
+    rc.getOut().noMoreTokens();
 
     assertEquals(
         TestUtil.readResource(getClass(), "testModule.out.js"),
@@ -140,11 +142,10 @@ public class ModuleFormatTest extends CajaTestCase {
   private String renderWithDebugSymbols(CajoledModule module,
                                         Expression callbackExpression) {
     StringBuilder out = new StringBuilder();
-    TokenConsumer tc = new JsPrettyPrinter(new Concatenator(out, exHandler));
+    TokenConsumer tc = new Concatenator(out, exHandler);
     module.renderWithDebugSymbols(
-        callbackExpression,
-        new HashMap<InputSource, CharSequence>(),
-        out, exHandler);
+        callbackExpression, Maps.<InputSource, CharSequence>newHashMap(),
+        new RenderContext(tc));
     tc.noMoreTokens();
     return out.toString();
   }
@@ -192,7 +193,7 @@ public class ModuleFormatTest extends CajaTestCase {
         .children().get(0).children().get(0).children().get(0);
 
     // Check that the reparsed structure matches what we expect.
-    Map<String, ParseTreeNode> bindings = new HashMap<String, ParseTreeNode>();
+    Map<String, ParseTreeNode> bindings = Maps.newHashMap();
     assertTrue(QuasiBuilder.match(
         "  foo.bar.baz(___.prepareModule({"
         + "  instantiate: function() {},"

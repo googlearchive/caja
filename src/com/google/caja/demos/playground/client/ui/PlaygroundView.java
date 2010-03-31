@@ -28,6 +28,7 @@ import com.google.gwt.user.client.DOM;
 import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.ui.Anchor;
 import com.google.gwt.user.client.ui.Button;
+import com.google.gwt.user.client.ui.CheckBox;
 import com.google.gwt.user.client.ui.DecoratedTabPanel;
 import com.google.gwt.user.client.ui.DisclosurePanel;
 import com.google.gwt.user.client.ui.FlexTable;
@@ -40,6 +41,7 @@ import com.google.gwt.user.client.ui.HorizontalSplitPanel;
 import com.google.gwt.user.client.ui.Image;
 import com.google.gwt.user.client.ui.Label;
 import com.google.gwt.user.client.ui.MultiWordSuggestOracle;
+import com.google.gwt.user.client.ui.PopupPanel;
 import com.google.gwt.user.client.ui.RootPanel;
 import com.google.gwt.user.client.ui.SuggestBox;
 import com.google.gwt.user.client.ui.TextArea;
@@ -51,7 +53,6 @@ import com.google.gwt.user.client.ui.Widget;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.SortedMap;
 import java.util.TreeMap;
 
 /**
@@ -65,6 +66,7 @@ public class PlaygroundView {
   private HTML cajoledSource;
   private FlexTable compileMessages;
   private FlexTable runtimeMessages;
+  private Button speedtracerManifestButton;
   private DecoratedTabPanel editorPanel;
   private Label version = new Label("Unknown");
   private Playground controller;
@@ -108,6 +110,7 @@ public class PlaygroundView {
     Label title = new Label("Caja Playground");
     infoPanel.add(title);
     infoPanel.add(version);
+    infoPanel.setStyleName("pg_info");
     logoPanel.add(
         new Image("//cajadores.com/demos/testbed/caja_logo_small.png"));
     logoPanel.add(infoPanel);
@@ -144,22 +147,29 @@ public class PlaygroundView {
     goButton.setWidth("100%");
 
     final Button cajoleButton = new Button("Cajole");
+    cajoleButton.setWidth("100%");
+
+    final CheckBox debugModeButton = new CheckBox("debug");
+    debugModeButton.setWidth("100%");
+
     cajoleButton.addClickHandler(new ClickHandler() {
       public void onClick(ClickEvent event) {
         runtimeMessages.clear();
         compileMessages.clear();
         cajoledSource.setText("");
         renderPanel.setText("");
-        controller.cajole(addressField.getText(), sourceText.getText());
+        controller.cajole(
+            addressField.getText(), sourceText.getText(),
+            Boolean.TRUE.equals(debugModeButton.getValue()));
       }
     });
-    cajoleButton.setWidth("100%");
 
     HorizontalPanel addressBar = new HorizontalPanel();
     addressBar.setStyleName("playgroundUI");
     addressBar.add(addressField);
     addressBar.add(goButton);
     addressBar.add(cajoleButton);
+    addressBar.add(debugModeButton);
     addressBar.setWidth("95%");
     addressBar.setCellWidth(addressField, "90%");
 
@@ -206,6 +216,49 @@ public class PlaygroundView {
     return hp;
   }
 
+  native static String encodeURIComponent(String uri) /*-{
+    return $wnd.encodeURIComponent(uri);
+  }-*/;
+
+  private Widget createSpeedtracerPanel() {
+    FlowPanel hp = new FlowPanel();
+    hp.setSize("100%", "100%");
+    speedtracerManifestButton = new Button("Manifest URI", new ClickHandler() {
+      PopupPanel panel;
+      Label uriLbl;
+
+      private String getManifestUri() {
+        // TODO: fetch the source map from the debugging output.
+        String sourceMap = "";
+        String source = sourceText.getText();
+        // TODO: does encodeURIComponent actually UTF-8 encode?
+        return "data:text/plain;charset=UTF-8," + encodeURIComponent(source);
+      }
+
+      public void onClick(ClickEvent event) {
+        String dataUri = getManifestUri();
+        if (panel == null) {
+          HorizontalPanel body = new HorizontalPanel();
+          body.add(uriLbl = new Label());
+          body.add(new Button("\u00d7", new ClickHandler() {
+            public void onClick(ClickEvent arg0) { panel.hide(); }
+          }));
+          panel = new PopupPanel();
+          panel.setWidget(body);
+          panel.setTitle("Manifest URI");
+        }
+        uriLbl.setText(dataUri);
+        if (panel.isShowing()) {
+          panel.hide();
+        } else {
+          panel.show();
+        }
+      }
+    });
+    hp.add(speedtracerManifestButton);
+    return hp;
+  }
+
   private native void setupNativeRuntimeMessageBridge() /*-{
     var that = this;
     $wnd.___.setLogFunc(function logMessage (msg) {
@@ -230,6 +283,7 @@ public class PlaygroundView {
     editorPanel.add(createRenderPanel(), "Rendered Result");
     editorPanel.add(createCompileMessagesPanel(), "Compile Warnings/Errors");
     editorPanel.add(createRuntimeMessagesPanel(), "Runtime Warnings/Errors");
+    editorPanel.add(createSpeedtracerPanel(), "Speedtracer");
 
     setupNativeSelectLineBridge();
     editorPanel.setSize("100%", "100%");
@@ -269,7 +323,7 @@ public class PlaygroundView {
     DecoratedTabPanel cp = new DecoratedTabPanel();
     cp.setStyleName("clearPadding");
     Tree exampleTree = new Tree();
-    SortedMap<Example.Type, TreeItem> menuMap = new TreeMap<Example.Type, TreeItem>();
+    Map<Example.Type, TreeItem> menuMap = new TreeMap<Example.Type, TreeItem>();
     final Map<TreeItem, Example> entryMap =
       new HashMap<TreeItem, Example>();
 
@@ -412,6 +466,7 @@ public class PlaygroundView {
     RENDER,
     COMPILE_WARNINGS,
     RUNTIME_WARNINGS,
-    TAMING;
+    TAMING,
+    MANIFEST;
   }
 }

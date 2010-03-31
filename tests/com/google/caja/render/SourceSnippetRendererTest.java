@@ -17,10 +17,9 @@ package com.google.caja.render;
 import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.lexer.InputSource;
 import com.google.caja.reporting.MessageContext;
-import com.google.caja.util.Callback;
+import com.google.caja.reporting.RenderContext;
 
 import java.util.Map;
-import java.io.IOException;
 
 /**
  * @author ihab.awad@gmail.com
@@ -35,7 +34,7 @@ public class SourceSnippetRendererTest extends OrigSourceRendererTestCase {
   @Override
   protected TokenConsumer createRenderer(
       Map<InputSource, ? extends CharSequence> originalSource,
-      MessageContext mc, Appendable out, Callback<IOException> exHandler) {
-    return new SourceSnippetRenderer(originalSource, mc, out, exHandler);
+      MessageContext mc, RenderContext rc) {
+    return new SourceSnippetRenderer(originalSource, mc, rc);
   }
 }

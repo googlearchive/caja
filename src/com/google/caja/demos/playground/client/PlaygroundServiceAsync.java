@@ -17,11 +17,12 @@ import com.google.gwt.user.client.rpc.AsyncCallback;
 
 /**
  * The async counterpart of <code>PlaygroundService</code>.
- * 
+ *
  * @author Jasvir Nagra (jasvir@gmail.com)
  */
 public interface PlaygroundServiceAsync {
   void getBuildInfo(AsyncCallback<String> callback);
   void fetch(String url, AsyncCallback<String> callback);
-  void cajole(String uri, String input, AsyncCallback<CajolingServiceResult> asyncCallback);
+  void cajole(String uri, String input, boolean debugMode,
+              AsyncCallback<CajolingServiceResult> asyncCallback);
 }

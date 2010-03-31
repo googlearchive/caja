@@ -17,19 +17,17 @@ package com.google.caja.render;
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.lexer.InputSource;
-import com.google.caja.util.Callback;
 import com.google.caja.reporting.MessageContext;
+import com.google.caja.reporting.RenderContext;
+import com.google.caja.util.Lists;
+import com.google.caja.util.Maps;
 
 import java.util.List;
-import java.util.ArrayList;
 import java.util.Map;
-import java.util.HashMap;
 import java.util.Collections;
 import java.util.Formatter;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import java.io.IOException;
 
 /**
  * A {@link TokenConsumer} that prints its output by writing out the
@@ -42,7 +40,7 @@ public class SourceSnippetRenderer implements TokenConsumer {
   private class OriginalSourceLine {
     private final int lineNo;
     private final String text;
-    private Map<Integer, Integer> evidence = new HashMap<Integer, Integer>();
+    private Map<Integer, Integer> evidence = Maps.newHashMap();
 
     public OriginalSourceLine(int lineNo, String text) {
       this.lineNo = lineNo;
@@ -77,8 +75,8 @@ public class SourceSnippetRenderer implements TokenConsumer {
 
   private class RenderedSourceLine {
     private final StringBuilder textBuffer = new StringBuilder();
-    private final Map<InputSource, Map<Integer, OriginalSourceLine>> lines =
-        new HashMap<InputSource, Map<Integer, OriginalSourceLine>>();
+    private final Map<InputSource, Map<Integer, OriginalSourceLine>> lines
+        = Maps.newHashMap();
 
     public RenderedSourceLine(String text) {
       textBuffer.append(text);
@@ -94,63 +92,55 @@ public class SourceSnippetRenderer implements TokenConsumer {
         OriginalSourceLine line) {
       Map<Integer, OriginalSourceLine> m = lines.get(inputSource);
       if (m == null) {
-        m = new HashMap<Integer, OriginalSourceLine>();
+        m = Maps.newHashMap();
         lines.put(inputSource, m);
       }
       m.put(lineNo, line);
     }
 
-    public void render(Appendable out) throws IOException {
+    public void render(Concatenator out) {
       for (InputSource s : lines.keySet()) {
-        out
-            .append("\n")
-            .append("// *** ")
-            .append(mc.abbreviate(s))
-            .append(" ***\n");
+        out.consume("\n");
+        out.consume("// *** ");
+        out.consume(mc.abbreviate(s));
+        out.consume(" ***\n");
 
         Map<Integer, OriginalSourceLine> forSource = lines.get(s);
-        List<Integer> sortedLines = new ArrayList<Integer>(forSource.keySet());
+        List<Integer> sortedLines = Lists.newArrayList(forSource.keySet());
         Collections.sort(sortedLines);
 
         for (int l : sortedLines) {
           OriginalSourceLine sl = forSource.get(l);
-          out
-              .append("// ")
-              .append(formatLineNo(sl.getLineNo()))
-              .append(": ")
-              .append(scrubJsString(forSource.get(l).getText()))
-              .append("\n");
+          out.consume("// ");
+          out.consume(formatLineNo(sl.getLineNo()));
+          out.consume(": ");
+          out.consume(scrubJsString(forSource.get(l).getText()));
+          out.consume("\n");
         }
-        out.append("\n");
+        out.consume("\n");
       }
 
-      out
-          .append(shrinkSpaces(textBuffer.toString()))
-          .append("\n");
+      out.consume(shrinkSpaces(textBuffer.toString()));
+      out.consume("\n");
     }
   }
 
-  private final Appendable out;
   private final MessageContext mc;
-  private final Callback<IOException> exHandler;
+  private final RenderContext rc;
   private final TokenConsumer delegateRenderer;
-  private final List<RenderedSourceLine> renderedLines
-      = new ArrayList<RenderedSourceLine>();
+  private final List<RenderedSourceLine> renderedLines = Lists.newArrayList();
   private final Map<InputSource, List<OriginalSourceLine>> originalSourceLines
-      = new HashMap<InputSource, List<OriginalSourceLine>>();
-  private List<FilePosition> marks = new ArrayList<FilePosition>();
-  private StringBuilder renderedTextAccumulator = new StringBuilder();
+      = Maps.newHashMap();
+  private final List<FilePosition> marks = Lists.newArrayList();
+  private final StringBuilder renderedTextAccumulator = new StringBuilder();
 
   public SourceSnippetRenderer(
       Map<InputSource, ? extends CharSequence> originalSource,
-      MessageContext mc,
-      Appendable out,
-      Callback<IOException> exHandler) {
-    this.out = out;
+      MessageContext mc, RenderContext rc) {
     this.mc = mc;
-    this.exHandler = exHandler;
+    this.rc = rc;
     this.delegateRenderer = new JsPrettyPrinter(
-        new Concatenator(renderedTextAccumulator, exHandler));
+        new Concatenator(renderedTextAccumulator));
     buildOriginalSourceLines(originalSource);
     renderedLines.add(new RenderedSourceLine(""));
   }
@@ -196,7 +186,7 @@ public class SourceSnippetRenderer implements TokenConsumer {
       Map<InputSource, ? extends CharSequence> originalSource) {
     for (Map.Entry<InputSource, ? extends CharSequence> entry
         : originalSource.entrySet()) {
-      List<OriginalSourceLine> lines = new ArrayList<OriginalSourceLine>();
+      List<OriginalSourceLine> lines = Lists.newArrayList();
       String[] text = splitLines(entry.getValue().toString());
       for (int i = 0; i < text.length; i++) {
         lines.add(new OriginalSourceLine(i, text[i]));
@@ -254,11 +244,7 @@ public class SourceSnippetRenderer implements TokenConsumer {
 
   private void renderOutput() {
     for (RenderedSourceLine rl : renderedLines) {
-      try {
-        rl.render(out);
-      } catch (IOException e) {
-        exHandler.handle(e);
-      }
+      rl.render((Concatenator) rc.getOut());
     }
   }
 

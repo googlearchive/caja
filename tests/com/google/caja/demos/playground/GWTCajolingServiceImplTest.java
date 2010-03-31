@@ -26,7 +26,7 @@ import com.google.caja.util.CajaTestCase;
  */
 public class GWTCajolingServiceImplTest extends CajaTestCase {
   private GWTCajolingServiceImpl service;
-  
+
   @Override
   protected void setUp() throws Exception {
     super.setUp();
@@ -41,13 +41,13 @@ public class GWTCajolingServiceImplTest extends CajaTestCase {
   }
 
   private void assertCajoles(String uri, String content) {
-    CajolingServiceResult result = service.cajole(uri, content);
+    CajolingServiceResult result = service.cajole(uri, content, false);
     assertTrue(result.getHtml() != null);
   }
-  
-  private void assertFailsWithError(String uri, String content, 
+
+  private void assertFailsWithError(String uri, String content,
       MessageLevel lvl) {
-    CajolingServiceResult result = service.cajole(uri, content);
+    CajolingServiceResult result = service.cajole(uri, content, false);
     assertNull(result.getHtml());
     assertNull(result.getJavascript());
     for (String message : result.getMessages()) {

@@ -7,7 +7,6 @@ import java.io.StringReader;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -29,6 +28,7 @@ import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.SimpleMessageQueue;
 import com.google.caja.reporting.SnippetProducer;
+import com.google.caja.util.Lists;
 import com.google.gwt.user.server.rpc.RemoteServiceServlet;
 
 /**
@@ -78,11 +78,12 @@ public class GWTCajolingServiceImpl extends RemoteServiceServlet
     return result;
   }
 
-  public CajolingServiceResult cajole(String url, String input) {
+  public CajolingServiceResult cajole(
+      String url, String input, boolean debugMode) {
     MessageContext mc = new MessageContext();
     MessageQueue mq = new SimpleMessageQueue();
 
-    Appendable output = new StringBuilder();
+    StringBuilder output = new StringBuilder();
     String html = null;
     String javascript = null;
 
@@ -92,12 +93,13 @@ public class GWTCajolingServiceImpl extends RemoteServiceServlet
     try {
       DefaultGadgetRewriter rw = new DefaultGadgetRewriter(
           BuildInfo.getInstance(), mq);
+
       StringReader in = new StringReader(input);
-      rw.rewriteContent(guessURI(url), in, uriCallback, output);
+      rw.rewriteContent(guessURI(url), in, uriCallback, debugMode, output);
       String[] htmlAndJs = output.toString().split("<script[^>]*>");
       html = htmlAndJs[0];
-      javascript = htmlAndJs.length > 1 ?
-        htmlAndJs[1].substring(0, htmlAndJs[1].length() - 9) : null;
+      javascript = htmlAndJs.length > 1
+          ? htmlAndJs[1].substring(0, htmlAndJs[1].length() - 9) : null;
     } catch (IOException e) {
       e.printStackTrace();
     } catch (GadgetRewriteException e) {
@@ -112,7 +114,7 @@ public class GWTCajolingServiceImpl extends RemoteServiceServlet
       MessageContext mc, MessageQueue mq) {
     List<Message> messages = mq.getMessages();
     SnippetProducer sp = new HtmlSnippetProducer(inputMap, mc);
-    List<String> result = new ArrayList<String>();
+    List<String> result = Lists.newArrayList();
 
     for (Message msg : messages) {
       String snippet = sp.getSnippet(msg);

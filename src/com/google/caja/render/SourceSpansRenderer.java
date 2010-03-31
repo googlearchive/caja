@@ -17,6 +17,7 @@ package com.google.caja.render;
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.TokenConsumer;
+import com.google.caja.lexer.escaping.Escaping;
 import com.google.caja.parser.js.IntegerLiteral;
 import com.google.caja.parser.js.Literal;
 import com.google.caja.parser.js.NullLiteral;
@@ -25,17 +26,14 @@ import com.google.caja.parser.js.StringLiteral;
 import com.google.caja.parser.quasiliteral.QuasiBuilder;
 import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.RenderContext;
-import com.google.caja.util.Callback;
-import org.json.simple.JSONArray;
+import com.google.caja.util.Lists;
+import com.google.caja.util.Maps;
+import com.google.caja.util.Sets;
 
-import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeSet;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 
@@ -65,31 +63,30 @@ public class SourceSpansRenderer implements TokenConsumer {
         }
       };
 
-  private static final Pattern markPattern =
-      Pattern.compile(" */\\*@([0-9]+)\\*/");
+  private static final Pattern MARK_PATTERN = Pattern.compile(
+      " */\\*@([0-9]+)\\*/");
 
-  private final MessageContext mc;
+  private final MessageContext mc = new MessageContext();
   private final InputSource cajoledOutputFilename;
-  private final TokenConsumer delegateRenderer;
-  private final List<FilePosition> marks = new ArrayList<FilePosition>();
+  private final RenderContext c;
   private final StringBuilder programTextAccumulator = new StringBuilder();
+  private final TokenConsumer delegateRenderer;
+  private final List<FilePosition> marks = Lists.newArrayList();
   private String programText;
-  private final List<String> sourceLocationMap = new ArrayList<String>();
+  private final List<String> sourceLocationMap = Lists.newArrayList();
 
   /**
    * Create a SourceSpansRenderer.
    *
-   * @param exHandler an exception handler in case of IOExceptions.
    * @param cajoledOutputFilename the filename that the client of this class
-   * wishes to call the cajoled output (which is otherwise anonymous).
+   *     wishes to call the cajoled output (which is otherwise anonymous).
    */
   public SourceSpansRenderer(
-      Callback<IOException> exHandler,
-      InputSource cajoledOutputFilename) {
-    this.mc = new MessageContext();
+      InputSource cajoledOutputFilename, RenderContext c) {
     this.cajoledOutputFilename = cajoledOutputFilename;
+    this.c = c;
     this.delegateRenderer = new JsPrettyPrinter(
-        new Concatenator(programTextAccumulator, exHandler));
+        new Concatenator(programTextAccumulator));
     ((JsPrettyPrinter) delegateRenderer).setBreakAfterComment(false);
   }
 
@@ -120,8 +117,7 @@ public class SourceSpansRenderer implements TokenConsumer {
     String[] renderedLines = splitLines(programText);
     Slot<FilePosition> currentPosition = new Slot<FilePosition>();
     currentPosition.value = FilePosition.UNKNOWN;
-    List<List<FilePosition>> allPositionsByLine =
-        new ArrayList<List<FilePosition>>();
+    List<List<FilePosition>> allPositionsByLine = Lists.newArrayList();
 
     for (String renderedLine : renderedLines) {
       allPositionsByLine.add(
@@ -134,10 +130,9 @@ public class SourceSpansRenderer implements TokenConsumer {
   }
 
   private List<FilePosition> buildSourcePositionMappingForLine(
-      Slot<FilePosition> currentPosition,
-      String line) {
-    List<FilePosition> result = new ArrayList<FilePosition>();
-    Matcher m = markPattern.matcher(line);
+      Slot<FilePosition> currentPosition, String line) {
+    List<FilePosition> result = Lists.newArrayList();
+    Matcher m = MARK_PATTERN.matcher(line);
     int consumed = 0;
 
     while (m.find()) {
@@ -169,26 +164,23 @@ public class SourceSpansRenderer implements TokenConsumer {
       List<List<FilePosition>> allPositionsByLine) {
     // For each line, file position indices, as in --
     //   [2,3,,,,,,,4]
-    List<List<Integer>> linePositionIndicesByLine =
-        new ArrayList<List<Integer>>();
+    List<List<Integer>> linePositionIndicesByLine = Lists.newArrayList();
 
     // For each line, input sources on that line, as in --
     //   ["x.js", "y.js", "z.js"]
-    List<Set<InputSource>> inputSourcesByLine =
-        new ArrayList<Set<InputSource>>();
+    List<Set<InputSource>> inputSourcesByLine = Lists.newArrayList();
 
     // Map from each file position seen to its array index, keyed by file
     // position to allow efficient searching while we build up the structures
-    Map<FilePosition, Integer> tableIndexByFilePosition =
-        new HashMap<FilePosition, Integer>();
+    Map<FilePosition, Integer> tableIndexByFilePosition = Maps.newHashMap();
 
     // Table of file positions
-    List<FilePosition> filePositionTable =
-        new ArrayList<FilePosition>();
+    List<FilePosition> filePositionTable = Lists.newArrayList();
 
     for (int lineIdx = 0; lineIdx < allPositionsByLine.size(); lineIdx++) {
-      linePositionIndicesByLine.add(new ArrayList<Integer>());
-      inputSourcesByLine.add(new TreeSet<InputSource>(INPUT_SOURCE_COMPARATOR));
+      linePositionIndicesByLine.add(Lists.<Integer>newArrayList());
+      inputSourcesByLine.add(
+          Sets.<InputSource>newTreeSet(INPUT_SOURCE_COMPARATOR));
 
       for (int charIdx = 0; charIdx < allPositionsByLine.get(lineIdx).size();
            charIdx++) {
@@ -223,64 +215,71 @@ public class SourceSpansRenderer implements TokenConsumer {
       List<List<Integer>> linePositionIndicesByLine,
       List<Set<InputSource>> inputSourcesByLine,
       List<FilePosition> filePositionTable) {
-    {
-      FilePosition unk = FilePosition.UNKNOWN;
-      // Input source might be null.
-      String inputSource = renderInputSource(mc, cajoledOutputFilename);
-      Literal fileLit;
-      if (inputSource == null) {
-        fileLit = new NullLiteral(unk);
-      } else {
-        fileLit = StringLiteral.valueOf(unk, inputSource);
-      }
-      ObjectConstructor oc = (ObjectConstructor) QuasiBuilder.substV(
-          "({ count: @count, file: @file })",
-          "file", fileLit,
-          "count", new IntegerLiteral(unk, linePositionIndicesByLine.size()));
-      StringBuilder header = new StringBuilder("/** Begin line maps. **/");
-      RenderContext rc = new RenderContext(
-          new JsMinimalPrinter(new Concatenator(header))).withJson(true);
-      oc.render(rc);
-      rc.getOut().noMoreTokens();
-      sourceLocationMap.add(header.toString());
+    FilePosition unk = FilePosition.UNKNOWN;
+    // Input source might be null.
+    String inputSource = renderInputSource(mc, cajoledOutputFilename);
+    Literal fileLit;
+    if (inputSource == null) {
+      fileLit = new NullLiteral(unk);
+    } else {
+      fileLit = StringLiteral.valueOf(unk, inputSource);
     }
+    ObjectConstructor oc = (ObjectConstructor) QuasiBuilder.substV(
+        "({ count: @count, file: @file })",
+        "file", fileLit,
+        "count", new IntegerLiteral(unk, linePositionIndicesByLine.size()));
+    StringBuilder header = new StringBuilder("/** Begin line maps. **/");
+    TokenConsumer tc = new JsMinimalPrinter(new Concatenator(header));
+    oc.render(new RenderContext(tc).withJson(true)
+              .withAsciiOnly(c.isAsciiOnly()).withEmbeddable(c.isEmbeddable()));
+    tc.noMoreTokens();
+    sourceLocationMap.add(header.toString());
 
     for (int i = 0; i < linePositionIndicesByLine.size(); i++) {
-      JSONArray line = new JSONArray();
-      for (int j = 0; j < linePositionIndicesByLine.get(i).size(); j++) {
-        jsonArrayAdd(line, linePositionIndicesByLine.get(i).get(j));
-      }
-      sourceLocationMap.add(line.toJSONString());
+      sourceLocationMap.add(toJson(linePositionIndicesByLine.get(i), c));
     }
 
     sourceLocationMap.add("/** Begin file information. **/");
 
+    List<Object> line = Lists.newArrayList();
     for (int i = 0; i < inputSourcesByLine.size(); i++) {
-      JSONArray line = new JSONArray();
+      line.clear();
       for (InputSource p : inputSourcesByLine.get(i)) {
-        jsonArrayAdd(line, renderInputSource(mc, p));
+        line.add(renderInputSource(mc, p));
       }
-      sourceLocationMap.add(line.toJSONString());
+      sourceLocationMap.add(toJson(line, c));
     }
 
     sourceLocationMap.add("/** Begin mapping definitions. **/");
 
     for (int i = 0; i < filePositionTable.size(); i++) {
-      JSONArray line = new JSONArray();
-      jsonArrayAdd(line,
-          renderInputSource(mc, filePositionTable.get(i).source()));
-      jsonArrayAdd(line,
-          filePositionTable.get(i).startLineNo());
-      jsonArrayAdd(line,
-          filePositionTable.get(i).startCharInLine());
-      sourceLocationMap.add(line.toJSONString());
+      line.clear();
+      line.add(renderInputSource(mc, filePositionTable.get(i).source()));
+      line.add(filePositionTable.get(i).startLineNo());
+      line.add(filePositionTable.get(i).startCharInLine());
+      sourceLocationMap.add(toJson(line, c));
     }
   }
 
-  // Use instead of JSONArray.add to avoid unchecked warnings.
-  @SuppressWarnings("unchecked")
-  private static void jsonArrayAdd(JSONArray a, Object value) {
-    a.add(value);
+  private static String toJson(List<?> els, RenderContext c) {
+    StringBuilder sb = new StringBuilder();
+    sb.append('[');
+    String sep = "";
+    for (Object o : els) {
+      sb.append(sep);
+      sep = ",";
+      if (o instanceof Number || o instanceof Boolean) {
+        sb.append(o);
+      } else if (o == null) {
+        sb.append("null");
+      } else {
+        sb.append('"');
+        Escaping.escapeJsString(
+            (CharSequence) o, c.isAsciiOnly(), c.isEmbeddable(), sb);
+        sb.append('"');
+      }
+    }
+    return sb.append(']').toString();
   }
 
   /**

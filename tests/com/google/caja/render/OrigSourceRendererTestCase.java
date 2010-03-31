@@ -19,17 +19,17 @@ import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.reporting.MessageContext;
-import com.google.caja.util.Callback;
+import com.google.caja.reporting.RenderContext;
+import com.google.caja.util.Maps;
 import com.google.caja.util.TestUtil;
-
-import junit.framework.TestCase;
 
 import java.io.IOException;
 import java.net.URI;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import junit.framework.TestCase;
 
 /**
  * Test case base class for a renderer that includes snippets of the original
@@ -56,7 +56,7 @@ public abstract class OrigSourceRendererTestCase extends TestCase {
                          String... originalSourceFiles) throws Exception {
     final MessageContext mc = new MessageContext();
 
-    Map<InputSource, String> originalSrcs = new HashMap<InputSource, String>();
+    Map<InputSource, String> originalSrcs = Maps.newHashMap();
     for (String originalSourceFile : originalSourceFiles) {
       URI resourceUri = TestUtil.getResource(getClass(), originalSourceFile);
       if (resourceUri == null) { throw new IOException(originalSourceFile); }
@@ -67,7 +67,8 @@ public abstract class OrigSourceRendererTestCase extends TestCase {
     for (InputSource is : originalSrcs.keySet()) { mc.addInputSource(is); }
 
     StringBuilder actual = new StringBuilder();
-    TokenConsumer r = createRenderer(originalSrcs, mc, actual, null);
+    RenderContext rc = new RenderContext(new Concatenator(actual));
+    TokenConsumer r = createRenderer(originalSrcs, mc, rc);
     for (String line
          : TestUtil.readResource(getClass(), rewrittenFile).split("\n")) {
       if (line.startsWith("#")) {
@@ -93,7 +94,7 @@ public abstract class OrigSourceRendererTestCase extends TestCase {
    */
   protected abstract TokenConsumer createRenderer(
       Map<InputSource, ? extends CharSequence> originalSource,
-      MessageContext mc, Appendable out, Callback<IOException> exHandler);
+      MessageContext mc, RenderContext rc);
 
   private FilePosition toFilePosition(
       String testInputLine, Map<InputSource, String> originalSrcs) {
