@@ -18,7 +18,9 @@ import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.Keyword;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.ParseTreeNodeContainer;
+import com.google.caja.parser.js.DirectivePrologue;
 import com.google.caja.parser.js.Expression;
+import com.google.caja.parser.js.MultiDeclaration;
 import com.google.caja.parser.js.SyntheticNodes;
 import com.google.caja.parser.js.CatchStmt;
 import com.google.caja.parser.js.Declaration;
@@ -214,17 +216,54 @@ public class Scope {
   }
 
   /**
-   * When a Scope is used for recursively processing a parse tree, steps taken on nodes contained
-   * within the node of this Scope sometimes add statements (e.g., variable declarations) that
-   * need to be rendered in the result before these nodes are rendered. These statements are the
-   * Scope's "start statements". After processing of subordinate nodes, these statements are to
-   * be found by calling this method.
+   * When a Scope is used for recursively processing a parse tree, steps taken
+   * on nodes contained within the node of this Scope sometimes add statements
+   * (e.g., variable declarations) that need to be rendered in the result before
+   * these nodes are rendered. These statements are the Scope's
+   * "start statements". After processing of subordinate nodes, these statements
+   * are to be found by calling this method.
    *
-   * @return the statements that recursive processing of enclosed nodes has determined should be
-   * rendered at the start of this Scope.
+   * @return the statements that recursive processing of enclosed nodes has
+   *     determined should be rendered at the start of this Scope.
    */
   public List<Statement> getStartStatements() {
-    return startStatements;
+    return Collections.unmodifiableList(startStatements);
+  }
+
+  public void addStartStatement(Statement s) {
+    int pos = startStatements.size();
+    // Group certain kinds of statements
+    if (s.getClass() == Declaration.class) {
+      Declaration d = (Declaration) s;
+      if (d.getInitializer() == null) {
+        int i = 0;
+        if (i < pos && startStatements.get(i) instanceof DirectivePrologue) {
+          ++i;
+        }
+        if (i < pos) {
+          Statement si = startStatements.get(i);
+          if (si instanceof MultiDeclaration) {
+            ((MultiDeclaration) si).appendChild(d);
+            return;
+          } else if (si.getClass() == Declaration.class) {
+            startStatements.set(
+                i,
+                new MultiDeclaration(
+                    FilePosition.UNKNOWN, Arrays.asList((Declaration) si, d)));
+            return;
+          }
+        }
+        pos = i;
+      }
+    } else if (s instanceof DirectivePrologue) {
+      if (0 < pos && startStatements.get(0) instanceof DirectivePrologue) {
+        ((DirectivePrologue) startStatements.get(0)).createMutation()
+           .appendChildren(((DirectivePrologue) s).children());
+        return;
+      }
+      pos = 0;
+    }
+    startStatements.add(pos, s);
   }
 
   public Set<String> getImportedVariables() {
@@ -247,17 +286,7 @@ public class Scope {
    * @see #getStartStatements()
    */
   public void addStartOfScopeStatement(Statement s) {
-    getClosestDeclarationContainer().addStartOfBlockStatement(s);
-  }
-
-  /**
-   * Add a start statement to the block represented by this Scope directly.
-   *
-   * @param s a Statement.
-   * @see #getStartStatements()
-   */
-  public void addStartOfBlockStatement(Statement s) {
-    startStatements.add(s);
+    getClosestDeclarationContainer().addStartStatement(s);
   }
 
   /**

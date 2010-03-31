@@ -13,7 +13,8 @@
             'construct': { '()': {} },
             's': { '()': {} }
           });
-        var $dis = $v.getOuters();
+        var $dis;
+        $dis = $v.getOuters();
         $v.initOuter('onerror');
         {
           IMPORTS___.emitCss___([ '.', ' #p3-',
@@ -28,11 +29,11 @@
         try {
           {
             $v.so('externalScript', ___.markFuncFreeze(function () {
+                  var externalScript;
                   function externalScript$_caller($dis) {
                     $v.cf($v.ro('alert'), [ 'external script' ]);
                   }
                   externalScript$_caller.FUNC___ = 'externalScript$_caller';
-                  var externalScript;;
                   externalScript =
                     $v.dis(___.primFreeze(externalScript$_caller),
                     'externalScript');
@@ -63,11 +64,12 @@
           {
             moduleResult___ = $v.s($v.ro('outers'), 'handleClicky',
               ___.markFuncFreeze(function () {
+                  var handleClicky;
                   function handleClicky$_caller($dis) {
                     $v.cf($v.ro('alert'), [ 'You clicked something!!!' ]);
                   }
-                  handleClicky$_caller.FUNC___ = 'handleClicky$_caller';;
-                  var handleClicky =
+                  handleClicky$_caller.FUNC___ = 'handleClicky$_caller';
+                  handleClicky =
                     $v.dis(___.primFreeze(handleClicky$_caller),
                     'handleClicky');
                   return handleClicky;

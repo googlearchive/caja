@@ -328,7 +328,7 @@ public abstract class RewriterTestCase extends CajaTestCase {
           Identifier ident = ctor.getIdentifier();
           Reference identRef = new Reference(ident);
           identRef.setFilePosition(ident.getFilePosition());
-          scope.addStartOfBlockStatement(
+          scope.addStartStatement(
               new Declaration(FilePosition.UNKNOWN, ident, identRef));
           return QuasiBuilder.substV(
               "(@var = function @ident(@formals*) { @fh*; @stmts*; @body*; })",

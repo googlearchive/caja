@@ -133,7 +133,8 @@ public abstract class ServiceTestCase extends CajaTestCase {
         + "            'cf': { '()': {} },\n"
         + "            'ro': { '()': {} }\n"
         + "          });\n"
-        + "        var $dis = $v.getOuters();\n"
+        + "        var $dis;\n"
+        + "        $dis = $v.getOuters();\n"
         + "        $v.initOuter('onerror');\n"
         );
     String suffix = (

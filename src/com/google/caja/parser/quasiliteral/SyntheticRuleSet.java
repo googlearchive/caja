@@ -22,6 +22,7 @@ import com.google.caja.parser.js.FunctionConstructor;
 import com.google.caja.parser.js.FunctionDeclaration;
 import com.google.caja.parser.js.Identifier;
 import com.google.caja.parser.js.Reference;
+import com.google.caja.parser.js.Statement;
 import com.google.caja.parser.js.TryStmt;
 
 import java.util.Map;
@@ -218,7 +219,9 @@ class SyntheticRuleSet {
         if (isSynthetic(ctor)) {
           Scope newScope = Scope.fromFunctionConstructor(scope, ctor);
           ParseTreeNode result = expandAll(node, newScope);
-          scope.getStartStatements().addAll(newScope.getStartStatements());
+          for (Statement s : newScope.getStartStatements()) {
+            scope.addStartStatement(s);
+          }
           return result;
         }
         return NONE;

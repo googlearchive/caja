@@ -8,7 +8,8 @@
             \'cf\': { \'()\': {} },
             \'ro\': { \'()\': {} }
           });
-        var $dis = $v.getOuters();
+        var $dis;
+        $dis = $v.getOuters();
         $v.initOuter(\'onerror\');
         {
           var el___;

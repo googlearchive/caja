@@ -18,6 +18,7 @@ import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.Keyword;
 import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.parser.AbstractParseTreeNode;
+import com.google.caja.parser.MutableParseTreeNode;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.ParseTreeNodeContainer;
 import com.google.caja.parser.ParseTreeNodes;
@@ -29,6 +30,7 @@ import com.google.caja.parser.js.FormalParam;
 import com.google.caja.parser.js.FunctionConstructor;
 import com.google.caja.parser.js.Identifier;
 import com.google.caja.parser.js.Literal;
+import com.google.caja.parser.js.Noop;
 import com.google.caja.parser.js.Operation;
 import com.google.caja.parser.js.Operator;
 import com.google.caja.parser.js.Reference;
@@ -39,13 +41,13 @@ import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.Callback;
+import com.google.caja.util.Lists;
+import com.google.caja.util.Maps;
 import com.google.caja.util.Pair;
 
 import java.io.IOException;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
 import java.util.Collections;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -162,7 +164,7 @@ public abstract class Rule implements MessagePart {
       ParseTreeNode node,
       Class<? extends ParseTreeNode> parentNodeClass,
       Scope scope) {
-    List<ParseTreeNode> rewrittenChildren = new ArrayList<ParseTreeNode>();
+    List<ParseTreeNode> rewrittenChildren = Lists.newArrayList();
     for (ParseTreeNode child : node.children()) {
       rewrittenChildren.add(rewriter.expand(child, scope));
     }
@@ -178,8 +180,20 @@ public abstract class Rule implements MessagePart {
     return result;
   }
 
+  static final ParseTreeNode withoutNoops(ParseTreeNode n) {
+    if (n instanceof ParseTreeNodeContainer) {
+      MutableParseTreeNode.Mutation mut = ((ParseTreeNodeContainer) n)
+          .createMutation();
+      for (ParseTreeNode child : n.children()) {
+        if (child instanceof Noop) { mut.removeChild(child); }
+      }
+      mut.execute();
+    }
+    return n;
+  }
+
   protected ParseTreeNode getFunctionHeadDeclarations(Scope scope) {
-    List<ParseTreeNode> stmts = new ArrayList<ParseTreeNode>();
+    List<ParseTreeNode> stmts = Lists.newArrayList();
 
     if (scope.hasFreeArguments()) {
       stmts.add(QuasiBuilder.substV(
@@ -280,7 +294,7 @@ public abstract class Rule implements MessagePart {
    */
   protected Pair<ParseTreeNodeContainer, Expression> reuseAll(
       ParseTreeNode arguments, Scope scope) {
-    List<ParseTreeNode> refs = new ArrayList<ParseTreeNode>();
+    List<ParseTreeNode> refs = Lists.newArrayList();
     Expression[] inits = new Expression[arguments.children().size()];
 
     for (int i = 0; i < arguments.children().size(); i++) {
@@ -407,7 +421,7 @@ public abstract class Rule implements MessagePart {
   }
 
   protected static Map<String, ParseTreeNode> makeBindings() {
-    return new LinkedHashMap<String, ParseTreeNode>();
+    return Maps.newLinkedHashMap();
   }
 
   /**
@@ -495,7 +509,7 @@ public abstract class Rule implements MessagePart {
       Expression uncajoledObject, Expression uncajoledKey, Scope scope) {
     Reference object;  // The object that contains the field to assign.
     Expression key;  // Identifies the field to assign.
-    List<Expression> temporaries = new ArrayList<Expression>();
+    List<Expression> temporaries = Lists.newArrayList();
 
     // Don't cajole the operands.  We return a simple assignment operator that
     // can then itself be cajoled, so that a rewriter can use context to treat

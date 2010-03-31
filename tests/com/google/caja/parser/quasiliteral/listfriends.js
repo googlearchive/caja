@@ -37,7 +37,7 @@ function nextFriends(opt_start, opt_withData) {
       'viewerFriends');
 
   req.send(onLoadFriends);
-};
+}
 
 /**
  * Parses the response to the friend information request and generates
@@ -69,4 +69,4 @@ function onLoadFriends(dataResponse) {
   }
 
   document.getElementById('message').innerHTML = html;
-};
+}

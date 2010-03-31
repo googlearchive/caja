@@ -14,7 +14,6 @@
 
 package com.google.caja.parser.quasiliteral;
 
-import com.google.caja.SomethingWidgyHappenedError;
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.ParseTreeNodeContainer;
@@ -87,8 +86,13 @@ import java.util.Set;
     synopsis="Default set of transformations used by Caja"
   )
 public class CajitaRewriter extends Rewriter {
-  private static final SyntheticAttributeKey<Boolean> TRANSLATED
-      = new SyntheticAttributeKey<Boolean>(Boolean.class, "translatedCode");
+  /**
+   * True if the node is evaluated for its side effect only, and so should
+   * not be considered as contributing to the value of the block in
+   * which it appears.
+   */
+  private static final SyntheticAttributeKey<Boolean> FOR_SIDE_EFFECT
+      = new SyntheticAttributeKey<Boolean>(Boolean.class, "forSideEffect");
 
   private final BuildInfo buildInfo;
   private final ModuleManager moduleManager;
@@ -97,12 +101,15 @@ public class CajitaRewriter extends Rewriter {
   private final Set<StringLiteral> moduleNameList
       = new HashSet<StringLiteral>();
 
-  /** Mark a tree as having been translated from another language. */
-  private static void markTranslated(ParseTreeNode node) {
+  /**
+   * Mark a tree as being evaluated for its side effect, so its value is
+   * not significant to the value of the block in which it appears.
+   */
+  private static void markForSideEffect(ParseTreeNode node) {
     if (node instanceof Statement) {
-      node.getAttributes().set(TRANSLATED, true);
+      node.getAttributes().set(FOR_SIDE_EFFECT, true);
       for (ParseTreeNode child : node.children()) {
-        markTranslated(child);
+        markForSideEffect(child);
       }
     }
   }
@@ -111,13 +118,13 @@ public class CajitaRewriter extends Rewriter {
       List<? extends ParseTreeNode> nodes) {
     int lasti = nodes.size();
     while (--lasti >= 0) {
-      if (!nodes.get(lasti).getAttributes().is(TRANSLATED)) { break; }
+      if (!nodes.get(lasti).getAttributes().is(FOR_SIDE_EFFECT)) { break; }
     }
     return lasti;
   }
 
   /**
-   * Find the last expression statetement executed in a block of code and
+   * Find the last expression statement executed in a block of code and
    * emit its value to a variable "moduleResult___" so that it can used as
    * the result of module loading.
    */
@@ -126,7 +133,7 @@ public class CajitaRewriter extends Rewriter {
     ParseTreeNode result = null;
     // Code translated from another language should not be used as the module
     // result.
-    if (node.getAttributes().is(TRANSLATED)) { return node; }
+    if (node.getAttributes().is(FOR_SIDE_EFFECT)) { return node; }
     if (node instanceof ExpressionStmt) {
       result = new ExpressionStmt(
           node.getFilePosition(),
@@ -198,7 +205,7 @@ public class CajitaRewriter extends Rewriter {
         if (node instanceof TranslatedCode) {
           Statement rewritten
               = ((TranslatedCode) expandAll(node, scope)).getTranslation();
-          markTranslated(rewritten);
+          markForSideEffect(rewritten);
           return rewritten;
         }
         return NONE;
@@ -340,7 +347,9 @@ public class CajitaRewriter extends Rewriter {
           Scope s2 = Scope.fromProgram((Block) node, mq);
           List<ParseTreeNode> expanded = Lists.newArrayList();
           for (ParseTreeNode c : node.children()) {
-            expanded.add(expand(c, s2));
+            ParseTreeNode expandedC = expand(c, s2);
+            if (expandedC instanceof Noop) { continue; }
+            expanded.add(expandedC);
           }
           List<ParseTreeNode> importedVars = Lists.newArrayList();
 
@@ -584,10 +593,11 @@ public class CajitaRewriter extends Rewriter {
             return node;
           }
           return substV(
-            "s0",  expandAll(bindings.get("s0"), scope),
+            "s0",  withoutNoops(expandAll(bindings.get("s0"), scope)),
             "x",   noexpand((Identifier) bindings.get("x")),
-            "s1",  expandAll(bindings.get("s1"),
-                             Scope.fromCatchStmt(scope, t.getCatchClause())));
+            "s1",  withoutNoops(
+                        expandAll(bindings.get("s1"),
+                        Scope.fromCatchStmt(scope, t.getCatchClause()))));
         }
         return NONE;
       }
@@ -626,11 +636,12 @@ public class CajitaRewriter extends Rewriter {
             return node;
           }
           return substV(
-            "s0",  expandAll(bindings.get("s0"), scope),
+            "s0",  withoutNoops(expandAll(bindings.get("s0"), scope)),
             "x",   noexpand((Identifier) bindings.get("x")),
-            "s1",  expandAll(bindings.get("s1"),
-                             Scope.fromCatchStmt(scope, t.getCatchClause())),
-            "s2",  expandAll(bindings.get("s2"), scope));
+            "s1",  withoutNoops(expandAll(
+                       bindings.get("s1"),
+                       Scope.fromCatchStmt(scope, t.getCatchClause()))),
+            "s2",  withoutNoops(expandAll(bindings.get("s2"), scope)));
         }
         return NONE;
       }
@@ -1231,16 +1242,23 @@ public class CajitaRewriter extends Rewriter {
           synopsis="Ensure v is not a function name. Expand the right side.",
           reason="",
           matches="var @v = @r",
-          substitutes="var @v = @r")
+          substitutes="@v = @r")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
         Map<String, ParseTreeNode> bindings = match(node);
         if (bindings != null) {
           Identifier v = (Identifier) bindings.get("v");
           if (!scope.isFunction(v.getName())) {
             ParseTreeNode r = bindings.get("r");
-            return substV(
-                "v", noexpand(v),
-                "r", expand(nymize(r, v.getName(), "var"), scope));
+            scope.addStartOfScopeStatement(
+                new Declaration(v.getFilePosition(), v, null));
+            ExpressionStmt init = new ExpressionStmt(
+                node.getFilePosition(), (Expression) substV(
+                    "v", new Reference(noexpand(v)),
+                    "r", expand(nymize(r, v.getName(), "var"), scope)));
+            // The result of the initializer of a declaration is not relevant to
+            // the module result.
+            markForSideEffect(init);
+            return init;
           }
         }
         return NONE;
@@ -1277,9 +1295,13 @@ public class CajitaRewriter extends Rewriter {
           substitutes="var @v")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
         Map<String, ParseTreeNode> bindings = match(node);
-        if (bindings != null
-            && !scope.isFunction(getIdentifierName(bindings.get("v")))) {
-          return substV("v", noexpand((Identifier) bindings.get("v")));
+        if (bindings != null) {
+          Identifier id = (Identifier) bindings.get("v");
+          if (!scope.isFunction(id.getName())) {
+            scope.addStartOfScopeStatement((Declaration) substV(
+                "v", noexpand((Identifier) bindings.get("v"))));
+            return new Noop(node.getFilePosition());
+          }
         }
         return NONE;
       }
@@ -1774,7 +1796,7 @@ public class CajitaRewriter extends Rewriter {
           return substV(
               "ps", noexpandParams(ps),
               // It's important to expand bs before computing fh and stmts.
-              "bs", expand(bindings.get("bs"), s2),
+              "bs", withoutNoops(expand(bindings.get("bs"), s2)),
               "fh", getFunctionHeadDeclarations(s2),
               "stmts", new ParseTreeNodeContainer(s2.getStartStatements()));
         }
@@ -1794,40 +1816,32 @@ public class CajitaRewriter extends Rewriter {
             + "  @stmts*;\n"
             + "  @bs*;\n"
             + "}\n"
-            + "@fname.FUNC___ = @'fname';\n")
+            + "@fnameRef.FUNC___ = '@fname';\n")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
-        if (node instanceof FunctionDeclaration &&
-            scope == scope.getClosestDeclarationContainer()) {
+        if (node instanceof FunctionDeclaration
+            && scope == scope.getClosestDeclarationContainer()) {
 
-          Map<String, ParseTreeNode> bindings =
-            match(((FunctionDeclaration) node).getInitializer());
+          Map<String, ParseTreeNode> bindings = match(
+              ((FunctionDeclaration) node).getInitializer());
           // Named simple function declaration
           if (bindings != null) {
             Scope s2 = Scope.fromFunctionConstructor(
-                scope,
-                ((FunctionDeclaration) node).getInitializer());
+                scope, ((FunctionDeclaration) node).getInitializer());
             ParseTreeNodeContainer ps = (ParseTreeNodeContainer) bindings.get("ps");
             checkFormals(ps);
             Identifier fname = noexpand((Identifier) bindings.get("fname"));
-            Block block = (Block) QuasiBuilder.substV(
-                "function @fname(@ps*) {\n"
-                + "  @fh*;\n"
-                + "  @stmts*;\n"
-                + "  @bs*;\n"
-                + "}\n"
-                + "@fRef.FUNC___ = @rf;\n",
+            Block block = (Block) substV(
                 "fname", fname,
-                "fRef", new Reference(fname),
-                "rf", toStringLiteral(fname),
+                "fnameRef", new Reference(fname),
                 "ps", noexpandParams(ps),
                 // It's important to expand bs before computing fh and stmts.
-                "bs", expand(bindings.get("bs"), s2),
+                "bs", withoutNoops(expand(bindings.get("bs"), s2)),
                 "fh", getFunctionHeadDeclarations(s2),
                 "stmts", new ParseTreeNodeContainer(s2.getStartStatements()));
             for (Statement stat : block.children()) {
-              scope.addStartOfBlockStatement(stat);
+              scope.addStartStatement(stat);
             }
-            return QuasiBuilder.substV(";");
+            return new Noop(FilePosition.UNKNOWN);
           }
         }
         return NONE;
@@ -1886,12 +1900,12 @@ public class CajitaRewriter extends Rewriter {
               "rf", toStringLiteral(fname),
               "ps", noexpandParams(ps),
               // It's important to expand bs before computing fh and stmts.
-              "bs", expand(bindings.get("bs"), s2),
+              "bs", withoutNoops(expand(bindings.get("bs"), s2)),
               "fh", getFunctionHeadDeclarations(s2),
               "stmts", new ParseTreeNodeContainer(s2.getStartStatements()));
-          scope.addStartOfBlockStatement(
+          scope.addStartStatement(
               new ExpressionStmt(node.getFilePosition(), expr));
-          return QuasiBuilder.substV(";");
+          return new Noop(FilePosition.UNKNOWN);
         }
         return NONE;
       }
@@ -1910,7 +1924,7 @@ public class CajitaRewriter extends Rewriter {
               + "    @stmts*;\n"
               + "    @bs*;\n"
               + "  }\n"
-              + "  return ___.markFuncFreeze(@fname, @'fname');\n"
+              + "  return ___.markFuncFreeze(@fRef, '@fname');\n"
               + "})();")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
         Map<String, ParseTreeNode> bindings = match(node);
@@ -1921,21 +1935,13 @@ public class CajitaRewriter extends Rewriter {
           ParseTreeNodeContainer ps = (ParseTreeNodeContainer) bindings.get("ps");
           checkFormals(ps);
           Identifier fname = noexpand((Identifier) bindings.get("fname"));
-          return QuasiBuilder.substV(
-              "(function() {\n"
-              + "  function @fname(@ps*) {\n"
-              + "    @fh*;\n"
-              + "    @stmts*;\n"
-              + "    @bs*;\n"
-              + "  }\n"
-              + "  return ___.markFuncFreeze(@fRef, @rf);\n"
-              + "})();",
+          return substV(
               "fname", fname,
               "fRef", new Reference(fname),
               "rf", toStringLiteral(fname),
               "ps", noexpandParams(ps),
               // It's important to expand bs before computing fh and stmts.
-              "bs", expand(bindings.get("bs"), s2),
+              "bs", withoutNoops(expand(bindings.get("bs"), s2)),
               "fh", getFunctionHeadDeclarations(s2),
               "stmts", new ParseTreeNodeContainer(s2.getStartStatements()));
         }
@@ -1947,8 +1953,6 @@ public class CajitaRewriter extends Rewriter {
     // multiDeclaration - multiple declarations
     ////////////////////////////////////////////////////////////////////////
 
-    // TODO(ihab.awad): The 'multiDeclaration' implementation is hard
-    // to follow or maintain. Refactor asap.
     new Rule() {
       @Override
       @RuleDescription(
@@ -1959,58 +1963,23 @@ public class CajitaRewriter extends Rewriter {
           substitutes="{ @decl; @init; }")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
         if (node instanceof MultiDeclaration) {
-          boolean allDeclarations = true;
-          List<ParseTreeNode> expanded = Lists.newArrayList();
-
-          // Expand each declaration individually, and keep track of whether
-          // the result is a declaration or whether we can just run the
-          // initializers separately.
-          for (ParseTreeNode child : node.children()) {
-            ParseTreeNode result = expand(child, scope);
-            if (result instanceof ExpressionStmt) {
-              result = result.children().get(0);
-            } else if (!(result instanceof Expression
-                         || result instanceof Declaration)) {
-              throw new SomethingWidgyHappenedError(
-                  "Unexpected result class: " + result.getClass());
-            }
-            expanded.add(result);
-            allDeclarations &= result instanceof Declaration;
+          Expression initializer = null;
+          for (Declaration d : ((MultiDeclaration) node).children()) {
+            Statement s = (Statement) expand(d, scope);
+            if (s instanceof Noop) { continue; }
+            Expression init = ((ExpressionStmt) s).getExpression();
+            initializer = initializer == null
+                ? init
+                : Operation.createInfix(Operator.COMMA, initializer, init);
           }
-
-          // If they're not all declarations, then split the initializers out
-          // so that we can run them in order.
-          List<Declaration> declarations = Lists.newArrayList();
-          List<Expression> initializers = Lists.newArrayList();
-          if (allDeclarations) {
-            for (ParseTreeNode n : expanded) {
-              declarations.add((Declaration) n);
-            }
+          if (initializer == null) {
+            return new Noop(node.getFilePosition());
           } else {
-            for (ParseTreeNode n : expanded) {
-              if (n instanceof Declaration) {
-                Declaration decl = (Declaration) n;
-                Expression init = decl.getInitializer();
-                if (init != null) {
-                  initializers.add(init);
-                  decl.removeChild(init);
-                }
-                declarations.add(decl);
-              } else {
-                initializers.add((Expression) n);
-              }
-            }
-          }
-          if (initializers.isEmpty()) {
-            return new MultiDeclaration(node.getFilePosition(), declarations);
-          } else if (declarations.isEmpty()) {
-            return newExprStmt(newCommaOperation(initializers));
-          } else {
-            Expression init = newCommaOperation(initializers);
-            return substV(
-                "decl", new MultiDeclaration(
-                    FilePosition.UNKNOWN, declarations),
-                "init", newExprStmt(init));
+            ExpressionStmt es = new ExpressionStmt(
+                node.getFilePosition(), initializer);
+            // The value of a declaration is not the value of the initializer.
+            markForSideEffect(es);
+            return es;
           }
         }
         return NONE;

@@ -133,7 +133,7 @@ public class DefaultValijaRewriter extends Rewriter {
                   "body", noexpandAll(bindings.get("body"))
               );
               scope.addStartOfScopeStatement(newExprStmt(initScope));
-              scope.addStartOfBlockStatement(newExprStmt(initBlock));
+              scope.addStartStatement(newExprStmt(initBlock));
               return new Noop(node.getFilePosition());
             }
           }
@@ -1162,7 +1162,7 @@ public class DefaultValijaRewriter extends Rewriter {
                 // It's important to expand bs before computing stmts.
                 "bs", expand(bindings.get("bs"), s2),
                 "stmts", new ParseTreeNodeContainer(s2.getStartStatements()));
-            scope.addStartOfBlockStatement(newExprStmt(expr));
+            scope.addStartStatement(newExprStmt(expr));
             return QuasiBuilder.substV(";");
           }
         }
@@ -1207,7 +1207,7 @@ public class DefaultValijaRewriter extends Rewriter {
               "bs", expand(bindings.get("bs"), s2),
               "stmts", new ParseTreeNodeContainer(s2.getStartStatements()));
           for (Statement stat : block.children()) {
-            scope.addStartOfBlockStatement(stat);
+            scope.addStartStatement(stat);
           }
           return QuasiBuilder.substV(";");
         }

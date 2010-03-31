@@ -70,7 +70,7 @@ function onFetchFriendData(dataResponse) {
   }
 
   showTopScorers();
-};
+}
 
 
 function getScore(person) {
@@ -78,7 +78,7 @@ function getScore(person) {
    return 0;
   }
   return Number(personAppData[person.getId()]['Score'] || 0);
-};
+}
 
 
 function showTopScorers() {
@@ -99,7 +99,7 @@ function showTopScorers() {
   html += '</ul>';
   document.getElementById('topScore').innerHTML = html;
   document.getElementById('myScore').innerHTML = 'Your score: ' + myScore;
-};
+}
 
 
 function onMyClick() {
@@ -133,4 +133,4 @@ function onMyClick() {
     );
     opensocial.requestCreateActivity(activity, 'LOW');
   }
-};
+}
