@@ -22,7 +22,7 @@
  * </ol>
  *
  * @author erights@gmail.com
- * @requires this
+ * @requires this, json_sans_eval
  * @provides ___, cajita, safeJSON 
  * @overrides Array, Boolean, Date, Function, Number, Object, RegExp, String
  * @overrides Error, EvalError, RangeError, ReferenceError, SyntaxError,
@@ -4118,7 +4118,32 @@ var safeJSON;
   // JSON
   ////////////////////////////////////////////////////////////////////////
 
-  var nativeJSON = global.JSON;
+  function jsonParseOk(json) {
+    try {
+      var x = json.parse('{"a":3}');
+      return x.a === 3;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function jsonStringifyOk(json) {
+    try {
+      var x = json.stringify({"a":3, "b__":4}, function replacer(k, v) {
+        return (/__$/.test(k) ? void 0 : v);
+      });
+      return x === '{"a":3}';
+    } catch (e) {
+      return false;
+    }
+  }
+
+  var goodJSON = {};
+  goodJSON.parse = jsonParseOk(global.JSON) ?
+    global.JSON.parse : json_sans_eval.parse;
+  goodJSON.stringify = jsonStringifyOk(global.JSON) ?
+    global.JSON.stringify : json_sans_eval.stringify;
+
   safeJSON = primFreeze({
     CLASS___: 'JSON',
     parse: markFuncFreeze(function (text, opt_reviver) {
@@ -4129,8 +4154,8 @@ var safeJSON;
           return opt_reviver.apply(this, arguments);
         };
       }
-      return nativeJSON.parse(
-          JSON.checkSyntax(text, function (key) {
+      return goodJSON.parse(
+          json_sans_eval.checkSyntax(text, function (key) {
             return key !== 'valueOf' && key !== 'toString' && !endsWith__(key);
           }), reviver);
     }),
@@ -4151,7 +4176,7 @@ var safeJSON;
           return (canReadPub(this, key)) ? value : void 0;
         };
       }
-      return nativeJSON.stringify(obj, replacer, opt_space);
+      return goodJSON.stringify(obj, replacer, opt_space);
     })
   });
 

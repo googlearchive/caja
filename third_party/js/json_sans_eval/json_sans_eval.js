@@ -237,9 +237,25 @@
  * @author Mike Samuel <mikesamuel@gmail.com>
  */
 
-if (typeof JSON === 'undefined') { var JSON = {}; }
+if (typeof Date.prototype.toJSON !== 'function') {
+  Date.prototype.toJSON = function (key) {
+    return isFinite(this.valueOf()) ?
+    this.getUTCFullYear()   + '-' +
+    f(this.getUTCMonth() + 1) + '-' +
+    f(this.getUTCDate())      + 'T' +
+    f(this.getUTCHours())     + ':' +
+    f(this.getUTCMinutes())   + ':' +
+    f(this.getUTCSeconds())   + 'Z' : null;
+  };
 
-(function() {
+  String.prototype.toJSON =
+  Number.prototype.toJSON =
+  Boolean.prototype.toJSON = function (key) {
+    return this.valueOf();
+  };
+}
+
+var json_sans_eval = (function() {
 
    var hop = Object.hasOwnProperty;
 
@@ -248,26 +264,6 @@ if (typeof JSON === 'undefined') { var JSON = {}; }
    function f(n) {
      // Format integers to have at least two digits.
      return n < 10 ? '0' + n : n;
-   }
-
-   if (typeof Date.prototype.toJSON !== 'function') {
-
-     Date.prototype.toJSON = function (key) {
-
-       return isFinite(this.valueOf()) ?
-         this.getUTCFullYear()   + '-' +
-         f(this.getUTCMonth() + 1) + '-' +
-         f(this.getUTCDate())      + 'T' +
-         f(this.getUTCHours())     + ':' +
-         f(this.getUTCMinutes())   + ':' +
-         f(this.getUTCSeconds())   + 'Z' : null;
-     };
-
-     String.prototype.toJSON =
-       Number.prototype.toJSON =
-       Boolean.prototype.toJSON = function (key) {
-         return this.valueOf();
-       };
    }
 
    var cx = /[\u0000\u00ad\u0600-\u0604\u070f\u17b4\u17b5\u200c-\u200f\u2028-\u202f\u2060-\u206f\ufeff\ufff0-\uffff]/g,
@@ -436,53 +432,49 @@ if (typeof JSON === 'undefined') { var JSON = {}; }
      }
    }
 
-   // If the JSON object does not yet have a stringify method, give it one.
+   function stringify (value, replacer, space) {
 
-   if (typeof JSON.stringify !== 'function') {
-     JSON.stringify = function (value, replacer, space) {
+     // The stringify method takes a value and an optional replacer,
+     // and an optional space parameter, and returns a JSON
+     // text. The replacer can be a function that can replace
+     // values, or an array of strings that will select the keys. A
+     // default replacer method can be provided. Use of the space
+     // parameter can produce text that is more easily readable.
 
-       // The stringify method takes a value and an optional replacer,
-       // and an optional space parameter, and returns a JSON
-       // text. The replacer can be a function that can replace
-       // values, or an array of strings that will select the keys. A
-       // default replacer method can be provided. Use of the space
-       // parameter can produce text that is more easily readable.
+     var i;
+     gap = '';
+     indent = '';
 
-       var i;
-       gap = '';
-       indent = '';
+     // If the space parameter is a number, make an indent string
+     // containing that
+     // many spaces.
 
-       // If the space parameter is a number, make an indent string
-       // containing that
-       // many spaces.
-
-       if (typeof space === 'number') {
-         for (i = 0; i < space; i += 1) {
-           indent += ' ';
-         }
-
-         // If the space parameter is a string, it will be used as the
-         // indent string.
-
-       } else if (typeof space === 'string') {
-         indent = space;
+     if (typeof space === 'number') {
+       for (i = 0; i < space; i += 1) {
+         indent += ' ';
        }
 
-       // If there is a replacer, it must be a function or an array.
-       // Otherwise, throw an error.
+       // If the space parameter is a string, it will be used as the
+       // indent string.
 
-       rep = replacer;
-       if (replacer && typeof replacer !== 'function' &&
-           (typeof replacer !== 'object' ||
-            typeof replacer.length !== 'number')) {
-         throw new Error('JSON.stringify');
-       }
+     } else if (typeof space === 'string') {
+       indent = space;
+     }
 
-       // Make a fake root object containing our value under the key of ''.
-       // Return the result of stringifying the value.
+     // If there is a replacer, it must be a function or an array.
+     // Otherwise, throw an error.
 
-       return str('', {'': value});
-     };
+     rep = replacer;
+     if (replacer && typeof replacer !== 'function' &&
+         (typeof replacer !== 'object' ||
+          typeof replacer.length !== 'number')) {
+       throw new Error('json_sans_eval.stringify');
+     }
+
+     // Make a fake root object containing our value under the key of ''.
+     // Return the result of stringifying the value.
+
+     return str('', {'': value});
    }
 
    var number
@@ -533,7 +525,7 @@ if (typeof JSON === 'undefined') { var JSON = {}; }
 
    function blank(arr, s, e) { while (--e >= s) { arr[e] = ''; } }
 
-   JSON.checkSyntax = function checkJson(text, keyFilter) {
+   function checkSyntax(text, keyFilter) {
      var toks = ('' + text).match(completeToken);
      var i = 0, n = toks.length;
      checkArray();
@@ -606,138 +598,145 @@ if (typeof JSON === 'undefined') { var JSON = {}; }
      }
    };
 
-   // If the JSON object does not yet have a parse method, give it one.
+   function parse (json, opt_reviver) {
+     // Split into tokens
+     var toks = json.match(significantToken);
+     // Construct the object to return
+     var result;
+     var tok = toks[0];
+     if ('{' === tok) {
+       result = {};
+     } else if ('[' === tok) {
+       result = [];
+     } else {
+       throw new Error(tok);
+     }
 
-   if (typeof JSON.parse !== 'function') {
+     // If undefined, the key in an object key/value record to use
+     // for the next
+     // value parsed.
+     var key;
+     // Loop over remaining tokens maintaining a stack of
+     // uncompleted objects and
+     // arrays.
+     var stack = [result];
+     for (var i = 1, n = toks.length; i < n; ++i) {
+       tok = toks[i];
 
-     ///////////////////// from json_sans_eval.js //////////////////////////
-
-     JSON.parse = function (json, opt_reviver) {
-       // Split into tokens
-       var toks = json.match(significantToken);
-       // Construct the object to return
-       var result;
-       var tok = toks[0];
-       if ('{' === tok) {
-         result = {};
-       } else if ('[' === tok) {
-         result = [];
-       } else {
-         throw new Error(tok);
-       }
-
-       // If undefined, the key in an object key/value record to use
-       // for the next
-       // value parsed.
-       var key;
-       // Loop over remaining tokens maintaining a stack of
-       // uncompleted objects and
-       // arrays.
-       var stack = [result];
-       for (var i = 1, n = toks.length; i < n; ++i) {
-         tok = toks[i];
-
-         var cont;
-         switch (tok.charCodeAt(0)) {
-         default:  // sign or digit
-           cont = stack[0];
-           cont[key || cont.length] = +(tok);
-           key = void 0;
-           break;
-         case 0x22:  // '"'
-           tok = tok.substring(1, tok.length - 1);
-           if (tok.indexOf(SLASH) !== -1) {
-             tok = tok.replace(escapeSequence, unescapeOne);
-           }
-           cont = stack[0];
-           if (!key) {
-             if (cont instanceof Array) {
-               key = cont.length;
-             } else {
-               key = tok || EMPTY_STRING;  // Use as key for next value seen.
-               break;
-             }
-           }
-           cont[key] = tok;
-           key = void 0;
-           break;
-         case 0x5b:  // '['
-           cont = stack[0];
-           stack.unshift(cont[key || cont.length] = []);
-           key = void 0;
-           break;
-         case 0x5d:  // ']'
-           stack.shift();
-           break;
-         case 0x66:  // 'f'
-           cont = stack[0];
-           cont[key || cont.length] = false;
-           key = void 0;
-           break;
-         case 0x6e:  // 'n'
-           cont = stack[0];
-           cont[key || cont.length] = null;
-           key = void 0;
-           break;
-         case 0x74:  // 't'
-           cont = stack[0];
-           cont[key || cont.length] = true;
-           key = void 0;
-           break;
-         case 0x7b:  // '{'
-           cont = stack[0];
-           stack.unshift(cont[key || cont.length] = {});
-           key = void 0;
-           break;
-         case 0x7d:  // '}'
-           stack.shift();
-           break;
+       var cont;
+       switch (tok.charCodeAt(0)) {
+       default:  // sign or digit
+         cont = stack[0];
+         cont[key || cont.length] = +(tok);
+         key = void 0;
+         break;
+       case 0x22:  // '"'
+         tok = tok.substring(1, tok.length - 1);
+         if (tok.indexOf(SLASH) !== -1) {
+           tok = tok.replace(escapeSequence, unescapeOne);
          }
+         cont = stack[0];
+         if (!key) {
+           if (cont instanceof Array) {
+             key = cont.length;
+           } else {
+             key = tok || EMPTY_STRING;  // Use as key for next value seen.
+             break;
+           }
+         }
+         cont[key] = tok;
+         key = void 0;
+         break;
+       case 0x5b:  // '['
+         cont = stack[0];
+         stack.unshift(cont[key || cont.length] = []);
+         key = void 0;
+         break;
+       case 0x5d:  // ']'
+         stack.shift();
+         break;
+       case 0x66:  // 'f'
+         cont = stack[0];
+         cont[key || cont.length] = false;
+         key = void 0;
+         break;
+       case 0x6e:  // 'n'
+         cont = stack[0];
+         cont[key || cont.length] = null;
+         key = void 0;
+         break;
+       case 0x74:  // 't'
+         cont = stack[0];
+         cont[key || cont.length] = true;
+         key = void 0;
+         break;
+       case 0x7b:  // '{'
+         cont = stack[0];
+         stack.unshift(cont[key || cont.length] = {});
+         key = void 0;
+         break;
+       case 0x7d:  // '}'
+         stack.shift();
+         break;
        }
-       // Fail if we've got an uncompleted object.
-       if (stack.length) { throw new Error(); }
+     }
+     // Fail if we've got an uncompleted object.
+     if (stack.length) { throw new Error(); }
 
-       if (opt_reviver) {
-         // Based on walk as implemented in http://www.json.org/json2.js
-         var walk = function (holder, key) {
-           var value = holder[key];
-           if (value && typeof value === 'object') {
-             var toDelete = null;
-             for (var k in value) {
-               if (hop.call(value, k) && value !== holder) {
-                 // Recurse to properties first.  This has the effect of causing
-                 // the reviver to be called on the object graph depth-first.
+     if (opt_reviver) {
+       // Based on walk as implemented in http://www.json.org/json2.js
+       var walk = function (holder, key) {
+         var value = holder[key];
+         if (value && typeof value === 'object') {
+           var toDelete = null;
+           for (var k in value) {
+             if (hop.call(value, k) && value !== holder) {
+               // Recurse to properties first.  This has the effect of causing
+               // the reviver to be called on the object graph depth-first.
 
-                 // Since 'this' is bound to the holder of the property, the
-                 // reviver can access sibling properties of k including ones
-                 // that have not yet been revived.
+               // Since 'this' is bound to the holder of the property, the
+               // reviver can access sibling properties of k including ones
+               // that have not yet been revived.
 
-                 // The value returned by the reviver is used in place of the
-                 // current value of property k.
-                 // If it returns undefined then the property is deleted.
-                 var v = walk(value, k);
-                 if (v !== void 0) {
-                   value[k] = v;
-                 } else {
-                   // Deleting properties inside the loop has vaguely defined
-                   // semantics in ES3.
-                   if (!toDelete) { toDelete = []; }
-                   toDelete.push(k);
-                 }
-               }
-             }
-             if (toDelete) {
-               for (var i = toDelete.length; --i >= 0;) {
-                 delete value[toDelete[i]];
+               // The value returned by the reviver is used in place of the
+               // current value of property k.
+               // If it returns undefined then the property is deleted.
+               var v = walk(value, k);
+               if (v !== void 0) {
+                 value[k] = v;
+               } else {
+                 // Deleting properties inside the loop has vaguely defined
+                 // semantics in ES3.
+                 if (!toDelete) { toDelete = []; }
+                 toDelete.push(k);
                }
              }
            }
-           return opt_reviver.call(holder, key, value);
-         };
-         result = walk({ '': result }, '');
-       }
+           if (toDelete) {
+             for (var i = toDelete.length; --i >= 0;) {
+               delete value[toDelete[i]];
+             }
+           }
+         }
+         return opt_reviver.call(holder, key, value);
+       };
+       result = walk({ '': result }, '');
+     }
 
-       return result;
-     };
+     return result;
    }
- })();
+
+   return {
+     checkSyntax: checkSyntax,
+     parse: parse,
+     stringify: stringify
+   };
+})();
+
+if (typeof JSON === 'undefined') { var JSON = {}; }
+if (typeof JSON.stringify !== 'function') {
+  JSON.stringify = json_sans_eval.stringify;
+}
+if (typeof JSON.parse !== 'function') {
+  JSON.parse = json_sans_eval.parse;
+}
