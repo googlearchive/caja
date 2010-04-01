@@ -405,11 +405,14 @@ public class ParserTest extends CajaTestCase {
     assertTrue(mq.getMessages().isEmpty());
   }
 
-  public void assertExpectedSemi() {
-    assertParseFails("foo(function () {return;");
-    assertMessage(MessageType.EXPECTED_TOKEN, MessageLevel.ERROR,
-                  FilePosition.instance(is, 1, 24, 24),
-                  MessagePart.Factory.valueOf("}"));
+  public final void testCommas() {
+    try {
+      js(fromString("[1 2]"));
+    } catch (ParseException ex) {
+      // pass
+      return;
+    }
+    fail("Commas not required");
   }
 
   private void assertParseKeywordAsIdentifier(Keyword k) throws Exception {
@@ -629,7 +632,7 @@ public class ParserTest extends CajaTestCase {
     MoreAsserts.assertListsEqual(expectedErrors, actualErrors);
   }
 
-  public static void checkFilePositionInvariants(ParseTreeNode root) {
+  private static void checkFilePositionInvariants(ParseTreeNode root) {
     checkFilePositionInvariants(AncestorChain.instance(root));
   }
 

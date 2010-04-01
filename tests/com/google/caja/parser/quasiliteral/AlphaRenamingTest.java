@@ -305,14 +305,14 @@ public class AlphaRenamingTest extends CajaTestCase {
   public final void testRenamingOfPseudoKeywords() throws Exception {
     assertRenamed(
         ""
-        + "[function (a) { var a = arguments; return a; }"
+        + "[function (a) { var a = arguments; return a; },"
         + " function () { var b = arguments; return b; }]",
         ""
         + "[function (arguments) { return arguments; },"
         + " function () { return arguments; }]");
     assertRenamed(
         ""
-        + "[function (b) { return b; }"
+        + "[function (b) { return b; },"
         + " function () { return a; }]",
         ""
         + "[function (undefined) { return undefined; },"

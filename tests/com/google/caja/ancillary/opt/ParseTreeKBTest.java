@@ -919,7 +919,7 @@ public class ParseTreeKBTest extends CajaTestCase {
                 + "    x != 0,         x !== 0,\n"
                 + "    x != 1,         x !== 1,\n"
                 + "    x != NaN,       x !== NaN,\n"
-                + "    x != false,     x !== false\n"
+                + "    x != false,     x !== false,\n"
                 + "    y == null,      y === null,\n"
                 + "    y != null,      y !== null,\n"
                 + "    y == undefined, y === undefined,\n"

@@ -32,13 +32,12 @@ import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.MessageType;
 import com.google.caja.reporting.RenderContext;
-import com.google.caja.util.Pair;
 import com.google.caja.util.Lists;
+import com.google.caja.util.Pair;
+import com.google.caja.util.Sets;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -304,7 +303,7 @@ public final class Parser extends ParserBase {
 
   private Block parseProgramOrFunctionBody() throws ParseException {
     Mark m = tq.mark();
-    List<Statement> stmts = new ArrayList<Statement>();
+    List<Statement> stmts = Lists.newArrayList();
     DirectivePrologue prologue = parseOptionalDirectivePrologue();
     if (prologue != null) { stmts.add(prologue); }
     while (!tq.isEmpty() && !tq.lookaheadToken(Punctuation.RCURLY)) {
@@ -476,7 +475,7 @@ public final class Parser extends ParserBase {
         Expression switchValue = parseExpressionInt(true);
         tq.expectToken(Punctuation.RPAREN);
         tq.expectToken(Punctuation.LCURLY);
-        List<SwitchCase> cases = new ArrayList<SwitchCase>();
+        List<SwitchCase> cases = Lists.newArrayList();
         while (!tq.checkToken(Punctuation.RCURLY)) {
           Mark caseMark = tq.mark();
           Expression caseValue;
@@ -489,7 +488,7 @@ public final class Parser extends ParserBase {
           tq.expectToken(Punctuation.COLON);
           FilePosition colonPos = tq.lastPosition();
           Mark caseBodyStart = tq.mark();
-          List<Statement> caseBodyContents = new ArrayList<Statement>();
+          List<Statement> caseBodyContents = Lists.newArrayList();
           while (!(tq.lookaheadToken(Keyword.DEFAULT)
                    || tq.lookaheadToken(Keyword.CASE)
                    || tq.lookaheadToken(Punctuation.RCURLY))) {
@@ -538,8 +537,7 @@ public final class Parser extends ParserBase {
         case IF:
         {
           tq.advance();
-          List<Pair<Expression, Statement>> clauses =
-            new ArrayList<Pair<Expression, Statement>>();
+          List<Pair<Expression, Statement>> clauses = Lists.newArrayList();
           Statement elseClause = null;
           boolean sawElse;
           do {
@@ -690,7 +688,7 @@ public final class Parser extends ParserBase {
       // In a statement a curly block opens a block.
       // Blocks don't have a scope associated, so are effectively useless,
       // except to group statements in a loop.
-      List<Statement> blockParts = new ArrayList<Statement>();
+      List<Statement> blockParts = Lists.newArrayList();
       while (!tq.checkToken(Punctuation.RCURLY)) {
         blockParts.add(parseTerminatedStatement());
       }
@@ -835,7 +833,7 @@ public final class Parser extends ParserBase {
             if (tq.checkToken(op.getClosingSymbol())) {
               actuals = Collections.<Expression>emptyList();
             } else {
-              actuals = new ArrayList<Expression>();
+              actuals = Lists.newArrayList();
               do {
                 actuals.add(parseExpressionPart(true));
               } while (tq.checkToken(Punctuation.COMMA));
@@ -1104,35 +1102,29 @@ public final class Parser extends ParserBase {
             return e;  // Don't pull comments outside parens inside
           case LSQUARE:
           {
-            List<Expression> elements = new ArrayList<Expression>();
+            List<Expression> elements = Lists.newArrayList();
 
-            // True iff a comma represents an implicit undefined value
-            boolean empty = true;
-            while (!tq.checkToken(Punctuation.RSQUARE)) {
-              boolean lastComma = false;
-              Mark cm = tq.mark();  // If lastComma, mark of the last comma.
-              while (tq.checkToken(Punctuation.COMMA)) {
-                if (empty) {
+            if (!tq.checkToken(Punctuation.RSQUARE)) {
+              Mark comma = null;
+              do {
+                // Handle adjacent commas that specify undefined values.
+                // E.g. [1,,2]
+                for (Mark cm = tq.mark(); tq.checkToken(Punctuation.COMMA);
+                     cm = tq.mark()) {
+                  comma = cm;
                   Operation vl = Operation.undefined(posFrom(cm));
                   finish(vl, cm);
                   elements.add(vl);
-                } else {
-                  empty = true;
                 }
-                lastComma = true;
-                cm = tq.mark();
-              }
-
-              if (!tq.checkToken(Punctuation.RSQUARE)) {
+                if (tq.lookaheadToken(Punctuation.RSQUARE)) { break; }
+                comma = null;
                 elements.add(parseExpressionPart(true));
-                lastComma = false;
-                empty = false;
-              } else {
-                if (lastComma) {
-                  mq.addMessage(MessageType.NOT_IE, cm.getFilePosition());
-                }
-                break;
+              } while (tq.checkToken(Punctuation.COMMA));
+              if (comma != null) {
+                // On IE, [1,] has length 2 unlike on other browsers.
+                mq.addMessage(MessageType.NOT_IE, comma.getFilePosition());
               }
+              tq.expectToken(Punctuation.RSQUARE);
             }
 
             e = new ArrayConstructor(posFrom(m), elements);
@@ -1140,8 +1132,7 @@ public final class Parser extends ParserBase {
           }
           case LCURLY:
           {
-            List<Pair<Literal, Expression>> properties
-                = new ArrayList<Pair<Literal, Expression>>();
+            List<Pair<Literal, Expression>> properties = Lists.newArrayList();
             if (!tq.checkToken(Punctuation.RCURLY)) {
               boolean sawComma;
               do {
@@ -1329,7 +1320,7 @@ public final class Parser extends ParserBase {
         finish(d, m);
       }
       if (tq.checkToken(Punctuation.COMMA)) {
-        List<Declaration> decls = new ArrayList<Declaration>();
+        List<Declaration> decls = Lists.newArrayList();
         decls.add(d);
         do {
           Mark m2 = tq.mark();
@@ -1372,7 +1363,7 @@ public final class Parser extends ParserBase {
   }
 
   private FormalParamList parseFormalParams() throws ParseException {
-    List<FormalParam> params = new ArrayList<FormalParam>();
+    List<FormalParam> params = Lists.newArrayList();
     if (!tq.lookaheadToken(Punctuation.RPAREN)) {
       do {
         Mark m = tq.mark();
@@ -1426,7 +1417,7 @@ public final class Parser extends ParserBase {
     public List<FormalParam> params;
 
     public FormalParamList(List<FormalParam> params, MessageQueue mq) {
-      Set<String> paramNames = new HashSet<String>();
+      Set<String> paramNames = Sets.newHashSet();
       paramNames.add("arguments");
       paramNames.add("this");
       for (FormalParam p : params) {
