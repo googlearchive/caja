@@ -329,7 +329,6 @@ public class SourceSpansRenderer implements TokenConsumer {
   }
 
   private static String renderInputSource(MessageContext mc, InputSource is) {
-    return InputSource.UNKNOWN.equals(is)
-        ? null : mc.abbreviate(is);
+    return InputSource.UNKNOWN.equals(is) ? null : mc.abbreviate(is);
   }
 }

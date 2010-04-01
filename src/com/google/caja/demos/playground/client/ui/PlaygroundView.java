@@ -52,6 +52,7 @@ import com.google.gwt.user.client.ui.VerticalPanel;
 import com.google.gwt.user.client.ui.Widget;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -220,6 +221,43 @@ public class PlaygroundView {
     return $wnd.encodeURIComponent(uri);
   }-*/;
 
+  /**
+   * Extracts the location map and original source from content cajoled in
+   * debug mode.
+   * The format is described at <a href=
+   * "http://google-caja.googlecode.com/svn/trunk/doc/html/compiledModuleFormat/index.html"
+   * ><tt>doc/html/compiledModuleFormat/index.html</tt></a>.
+   */
+  private static native boolean srcLocMapAndOriginalSrc(
+      String source, String[] out) /*-{
+    var str = "'(?:[^'\\\\]|\\\\.)*'";
+    var colon = "\\s*:\\s*";
+    var comma = "\\s*,\\s*";
+    var block = str + colon + "\\{(?:\\s*" + str + colon + str + comma + ")*?"
+        + "\\s*'content'" + colon + "\\[\\s*"
+        + str + "(?:" + comma + str + ")*\\s*\\]\\s*\\}";
+    // TODO(mikesamuel): extract this a better way once we're providing module
+    // output in an easy to consume JSON format.
+    var re = new RegExp(
+        // sourceLocationMap in group 1
+        "'sourceLocationMap'" + colon + "\\{"
+        + "(?:\\s*" + str + colon + str + comma + ")*?"  // any number of pairs
+        + "\\s*'content'" + colon + "\\[\\s*(" + str + "(?:" + comma + str
+        + ")*)\\s*\\]\\s*\\}" + comma
+        // originalSource in group 2
+        + "'originalSource'" + colon + "\\{\\s*("
+        + block + "(?:" + comma + block
+        + ")*)\\s*\\}\\s*\\}\\s*\\)\\s*;?\\s*\\}\\s*<\\/script>\s*$");
+    var match = source.match(re);
+    if (match) {
+      out[0] = match[0];
+      out[1] = match[1];
+      return true;
+    } else {
+      return false;
+    }
+  }-*/;
+
   private Widget createSpeedtracerPanel() {
     FlowPanel hp = new FlowPanel();
     hp.setSize("100%", "100%");
@@ -228,11 +266,13 @@ public class PlaygroundView {
       Label uriLbl;
 
       private String getManifestUri() {
-        // TODO: fetch the source map from the debugging output.
-        String sourceMap = "";
-        String source = sourceText.getText();
-        // TODO: does encodeURIComponent actually UTF-8 encode?
-        return "data:text/plain;charset=UTF-8," + encodeURIComponent(source);
+        String[] locMapAndSrc = new String[2];
+        if (srcLocMapAndOriginalSrc(cajoledSource.getText(), locMapAndSrc)) {
+          String json = "[[" + locMapAndSrc[0] + "],[" + locMapAndSrc[1] + "]]";
+          return "data:text/plain," + encodeURIComponent(json);
+        } else {
+          return null;
+        }
       }
 
       public void onClick(ClickEvent event) {
@@ -241,7 +281,7 @@ public class PlaygroundView {
           HorizontalPanel body = new HorizontalPanel();
           body.add(uriLbl = new Label());
           body.add(new Button("\u00d7", new ClickHandler() {
-            public void onClick(ClickEvent arg0) { panel.hide(); }
+            public void onClick(ClickEvent ev) { panel.hide(); }
           }));
           panel = new PopupPanel();
           panel.setWidget(body);
