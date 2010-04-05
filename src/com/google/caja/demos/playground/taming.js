@@ -31,7 +31,7 @@ var caja___ = (function () {
     imports.outers.swfobject.embedSWF = function(swfUrl, id, width, height, 
         version, expressInstall, flashvars, params, attributes, cb) {
       var tameSwfUrl = !/^https?:\/\//i.test(swfUrl) ? null : swfUrl;
-      var tameId = id + '-' + cajaDomSuffix;
+      var tameId = id + '-cajoled-output-' + cajaDomSuffix;
       var tameWidth = +width;
       var tameHeight = +height;
       // Default to 9.0 if unspecified or specified < 9

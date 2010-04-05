@@ -62,6 +62,8 @@ import java.util.TreeMap;
  * @author Jasvir Nagra (jasvir@gmail.com)
  */
 public class PlaygroundView {
+  private final boolean EXPERIMENTAL_MODE = false;
+
   private HTML renderPanel;
   private TextBox renderResult;
   private HTML cajoledSource;
@@ -323,7 +325,9 @@ public class PlaygroundView {
     editorPanel.add(createRenderPanel(), "Rendered Result");
     editorPanel.add(createCompileMessagesPanel(), "Compile Warnings/Errors");
     editorPanel.add(createRuntimeMessagesPanel(), "Runtime Warnings/Errors");
-    editorPanel.add(createSpeedtracerPanel(), "Speedtracer");
+    if (EXPERIMENTAL_MODE) {
+      editorPanel.add(createSpeedtracerPanel(), "Speedtracer");
+    }
 
     setupNativeSelectLineBridge();
     editorPanel.setSize("100%", "100%");

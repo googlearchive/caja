@@ -30,10 +30,10 @@ public enum Example {
         Type.HOWTO, "Embed Flash"),
   MARKDOWN("http://www.thinkfu.com/markdown.html", 
       Type.APPS, "Markdown Editor"),
+  UNBOXED("http://www.thinkfu.com/unboxed/index.html", 
+          Type.APPS, "Cajita Unboxed"),
   GOOGLE("http://www.google.com/", 
       Type.WEB, "Google"),
-  YAHOO("http://www.yahoo.com/", 
-      Type.WEB, "Yahoo"),
   ERIGHTS("http://www.erights.org/", 
       Type.WEB, "E-Rights");
   
