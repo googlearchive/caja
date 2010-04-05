@@ -1,6 +1,6 @@
 <!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
 <html><head>
-<title>Hygienic Macros for EcmaScript</title>
+<title>Hygienic Quasis for EcmaScript</title>
 <style>
 .slide {
   list-style: none;
@@ -140,18 +140,18 @@ var processKey = (function () {
 <ol id=slides>
   <li class=slide>
     <h1><a href="http://wiki.ecmascript.org/doku.php?id=strawman:quasis-alt"
-     >Hygienic Macros For EcmaScript</a></h1>
+     >Hygienic Quasis For EcmaScript</a></h1>
     <ol id=contents>
    </ol>
   </li>
   <li class=slide>
-    <h1>Why Macros?</h1>
+    <h1>Why Quasis?</h1>
     <p>EcmaScript is primarily used to <b>generate</b> and <b>manipulate</b>
     content in <b>other languages</b> : HTML, CSS, JSON, XML.</p>
     <p>Domain Specific Languages (DSLs) integrate languages into ES.</p>
   </li>
   <li class=slide>
-    <h1>Why Macros?</h1>
+    <h1>Why Quasis?</h1>
     <p>DSLs are used for query languages, and to generate content.</p>
     <p>Already widely used to query DOMs: XPATH and
     CSS selectors.</p>
@@ -161,14 +161,14 @@ var processKey = (function () {
     <p>Content generation is ad-hoc and often inefficient and/or insecure.</p>
   </li>
   <li class=slide>
-    <h1>Why Macros?</h1>
+    <h1>Why Quasis?</h1>
     <p>Standardizing DSLs : burden on browser implementor &rarr; low rev rate.</p>
     <p>E4X took a long time, and is still BEA/Mozilla only.</p>
-    <p>DSLs via Macros : burden on library developers &rarr; high rev rate.</p>
+    <p>DSLs via Quasis : burden on library developers &rarr; high rev rate.</p>
   </li>
   <li class=slide>
-    <h1>Why Macros?</h1>
-    <p>DSLs specified as macros can expand to easily <b>inlinable code</b>
+    <h1>Why Quasis?</h1>
+    <p>DSLs specified as quasis can expand to easily <b>inlinable code</b>
     &mdash; no per-iteration function call or interpreter overhead.
     <p>An unsound content-generation <b>idiom</b> (e.g. <code>+=</code>) must
     be fixed <b>everywhere</b> it is used, but if a content-generation
@@ -178,7 +178,7 @@ var processKey = (function () {
     Surprisingly this leads to lower effective rev rate.
   </li>
   <li class=slide>
-    <h1>Why Macros?</h1>
+    <h1>Why Quasis?</h1>
     <p>Dynamic Regexs.  A multipart mime boundary may can contain '+'.<br>
     <code>re`^--${boundary}$`</code> <span class="expandsto">&rarr;</span>
     <code>new RegExp('^--' + escapeRegexpSpecials(boundary) + '$')</code>
@@ -204,9 +204,9 @@ try { while (!channel.empty()) k = channel.next(), foo(k);
     </ul>
   </li>
   <li class=slide>
-    <h1>Anatomy of a Macro</h1>
+    <h1>Anatomy of a Quasiliteral</h1>
     <code class=block><span style=color:#800>name</span>`<span style=color:#080>literal<sub>0</sub></span>${<span style=color:#008>subst<sub>0</sub></span>}<span style=color:#080>literal<sub>1</sub></span>`</code>
-    <p>Macro expander specified by a function <span style=color:#800>name</span></p>
+    <p>Quasi expander specified by a function <span style=color:#800>name</span></p>
     <p><span style=color:#080>Literal portions</span> : data</p>
     <p><span style=color:#008>Substitutions</span> : code</p>
 
@@ -218,7 +218,7 @@ try { while (!channel.empty()) k = channel.next(), foo(k);
     <h1>Desugaring</h1>
     <code class=block><span style=color:#800>name</span>`<span style=color:#080>literal<sub>0</sub></span>${<span style=color:#008>subst<sub>0</sub></span>}<span style=color:#080>literal<sub>1</sub></span>`</code>
     <div class=expandsto>&rarr;</div>
-    <code class=block><i style="color:#666">// resolved in macro scope</i>
+    <code class=block><i style="color:#666">// resolved in quasi scope</i>
 <span style=color:#800>name</span>(
     <i style="color:#666">// literals convey no authority</i>
     "<span style=color:#080>literal<sub>0</sub></span>", "<span style=color:#080>literal<sub>1</sub></span>", &hellip;)(
@@ -240,7 +240,7 @@ try { while (!channel.empty()) k = channel.next(), foo(k);
     <h1>Performance</h1>
     <p>All inputs statically known.</p>
     <p>All inputs share same environment.</p>
-    <p>If macro expander is <tt>const</tt>, and does not compare substitutions
+    <p>If quasi expander is <tt>const</tt>, and does not compare substitutions
     by identity, highly inlineable after first call.
   </li>
   <li class=slide>
