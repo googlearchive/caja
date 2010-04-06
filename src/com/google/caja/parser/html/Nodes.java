@@ -22,6 +22,7 @@ import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.lexer.escaping.Escaping;
 import com.google.caja.render.Concatenator;
 import com.google.caja.reporting.RenderContext;
+import com.google.caja.util.SparseBitSet;
 import com.google.caja.util.Strings;
 
 import java.util.Iterator;
@@ -32,6 +33,7 @@ import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+import org.w3c.dom.ProcessingInstruction;
 import org.w3c.dom.Text;
 
 /**
@@ -389,6 +391,27 @@ final class Renderer {
         renderAttr(a, HTML_NS.equals(a.getNamespaceURI()));
         break;
       }
+      case Node.PROCESSING_INSTRUCTION_NODE: {
+        if (!asXml) {
+          throw new IllegalStateException(
+              "XML not renderable as HTML due to processing instruction");
+        }
+        ProcessingInstruction pi = (ProcessingInstruction) node;
+        String target = pi.getTarget();
+        String data = pi.getData();
+        if (data.contains("?>")) {
+          throw new IllegalStateException(
+              "XML document not renderable due to \"?>\" inside "
+              + "processing instruction");
+        }
+        if (Strings.equalsIgnoreCase(target.substring(0, 3), "xml")
+            || !isName(target)) {  // isName check avoids targets with "?>".
+          throw new IllegalStateException(
+              "Bad processing instruction target " + target);
+        }
+        out.append("<?").append(target).append(' ').append(data).append("?>");
+        break;
+      }
     }
   }
 
@@ -463,4 +486,44 @@ final class Renderer {
     }
     return false;
   }
+
+  /** As defined in section 2.6 of XML version 5. */
+  private static boolean isName(String s) {
+    int n = s.length();
+    if (n == 0) { return false; }
+    if (!NAME_START_CHARS.contains(s.codePointAt(0))) { return false; }
+
+    for (int i = 1; i < n; ++i) {
+      if (!NAME_CHARS.contains(s.charAt(i))) { return false; }
+    }
+    return true;
+  }
+
+  /**
+   * From http://www.w3.org/TR/2008/REC-xml-20081126/#NT-NameStartChar
+   * <pre>
+   * NameStartChar     ::=      ":" | [A-Z] | "_" | [a-z] | [#xC0-#xD6]
+   *     | [#xD8-#xF6] | [#xF8-#x2FF] | [#x370-#x37D] | [#x37F-#x1FFF]
+   *     | [#x200C-#x200D] | [#x2070-#x218F] | [#x2C00-#x2FEF] | [#x3001-#xD7FF]
+   *     | [#xF900-#xFDCF] | [#xFDF0-#xFFFD] | [#x10000-#xEFFFF]
+   * </pre>
+   */
+  private static final SparseBitSet NAME_START_CHARS = SparseBitSet.withRanges(
+      0x3a, 0x3b, 0x41, 0x5b, 0x5f, 0x60, 0x61, 0x7b, 0xc0, 0xd7, 0xd8, 0xf7,
+      0x2ff, 0x300, 0x370, 0x37e, 0x37f, 0x2000, 0x200c, 0x200e, 0x2070, 0x2190,
+      0x2c00, 0x2ff0, 0x3001, 0xd800, 0xf900, 0xfdd0, 0xfdf0, 0xfffe,
+      0x10000, 0xf0000);
+
+  /**
+   * From http://www.w3.org/TR/2008/REC-xml-20081126/#NT-NameChar
+   * <pre>
+   * NameChar      ::=      NameStartChar | "-" | "." | [0-9] | #xB7
+   *     | [#x0300-#x036F] | [#x203F-#x2040]
+   * </pre>
+   */
+  private static final SparseBitSet NAME_CHARS = SparseBitSet.withRanges(
+      0x2d, 0x2f, 0x30, 0x3b, 0x41, 0x5b, 0x5f, 0x60, 0x61, 0x7b, 0xb7, 0xb8,
+      0xc0, 0xd7, 0xd8, 0xf7, 0x2ff, 0x37e, 0x37f, 0x2000, 0x200c, 0x200e,
+      0x203f, 0x2041, 0x2070, 0x2190, 0x2c00, 0x2ff0, 0x3001, 0xd800,
+      0xf900, 0xfdd0, 0xfdf0, 0xfffe, 0x10000, 0xf0000);
 }

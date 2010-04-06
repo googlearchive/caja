@@ -50,7 +50,7 @@ public final class HtmlLexer extends AbstractTokenStream<HtmlTokenType> {
   }
 
   /**
-   * An fsm that lets us reclassify text tokensinside tags as attribute
+   * An fsm that lets us reclassify text tokens inside tags as attribute
    * names/values
    */
   private static enum State {
@@ -63,7 +63,7 @@ public final class HtmlLexer extends AbstractTokenStream<HtmlTokenType> {
 
   /**
    * Makes sure that this.token contains a token if one is available.
-   * This may require fetching and combining multple tokens from the underlying
+   * This may require fetching and combining multiple tokens from the underlying
    * splitter.
    */
   @Override

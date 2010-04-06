@@ -18,9 +18,13 @@ import com.google.caja.render.Concatenator;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.CajaTestCase;
 
+import java.util.Arrays;
+
+import org.w3c.dom.DOMException;
 import org.w3c.dom.Document;
 import org.w3c.dom.DocumentFragment;
 import org.w3c.dom.Element;
+import org.w3c.dom.ProcessingInstruction;
 
 public class NodesTest extends CajaTestCase {
   public final void testDecode() throws Exception {
@@ -225,6 +229,50 @@ public class NodesTest extends CajaTestCase {
       return;  // Failure is an option.
     }
     assertEquals("<svg:span><svg:br/></svg:span>", rendered);
+  }
+
+  public final void testProcessingInstructions() {
+    Document doc = DomParser.makeDocument(null, null);
+    ProcessingInstruction pi = doc.createProcessingInstruction("foo", "bar");
+    assertEquals("<?foo bar?>", Nodes.render(pi, true));
+  }
+
+  public final void testBadProcessingInstructions() {
+    Document doc = DomParser.makeDocument(null, null);
+    for (String[] badPi : new String[][] {
+           { "xml", "foo" }, { "XmL", "foo" },
+           { "foo?><script>alert(1)</script>", "<?bar baz" },
+           { "ok", "foo?><script>alert(1)</script><?foo bar" },
+         }) {
+      try {
+        ProcessingInstruction pi = doc.createProcessingInstruction(
+            badPi[0], badPi[1]);
+        Nodes.render(pi, true);
+      } catch (IllegalStateException ex) {
+        continue;  // OK
+      } catch (DOMException ex) {
+        continue;  // OK
+      }
+      fail("Rendered " + Arrays.toString(badPi));
+    }
+  }
+
+  public final void testProcessingInstructionInHtml() {
+    Document doc = DomParser.makeDocument(null, null);
+    ProcessingInstruction pi = doc.createProcessingInstruction(
+        "foo", "<script>alert(1)</script>");
+    Element el = doc.createElementNS(Namespaces.HTML_NAMESPACE_URI, "div");
+    el.appendChild(pi);
+    assertEquals(
+        "<div><?foo <script>alert(1)</script>?></div>",
+        Nodes.render(el, /* XML */true));
+    try {
+      Nodes.render(el, /* HTML */false);
+    } catch (IllegalStateException ex) {
+      // OK
+      return;
+    }
+    fail("Rendered in html");
   }
 
   public final void testRenderSpeed() throws Exception {

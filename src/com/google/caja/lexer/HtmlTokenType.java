@@ -33,7 +33,7 @@ public enum HtmlTokenType implements TokenType {
   CDATA,
   /**
    * A directive such as the DTD declaration or
-   * <tt>&lt;?xml version=1.0?&gt;</tt>.
+   * <tt>&lt;?xml version=1.0?&gt;</tt> or an XML processing instruction.
    */
   DIRECTIVE,
   /** Unescaped tag, for instance, inside a script, or xmp tag. */
@@ -44,8 +44,8 @@ public enum HtmlTokenType implements TokenType {
    */
   QSTRING,
   /**
-   * The beginning of a tag -- not to be condused with a start tag.
-   * Valid tag beginnings include <tt>&lt'a</tt> and <tt>&lt;/a</tt>.  The
+   * The beginning of a tag -- not to be confused with a start tag.
+   * Valid tag beginnings include <tt>&lt;a</tt> and <tt>&lt;/a</tt>.  The
    * rest of the tag is a series of attribute names, values, and the tag end.
    */
   TAGBEGIN,

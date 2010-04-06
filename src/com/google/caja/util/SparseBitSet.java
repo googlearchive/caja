@@ -24,7 +24,7 @@ import java.util.Arrays;
 public final class SparseBitSet {
   /**
    * A strictly increasing set of bit indices where even members are the
-   * inclusive starts of ranges, and odd members are the inclusive ends.
+   * inclusive starts of ranges, and odd members are the exclusive ends.
    * <p>
    * E.g., { 1, 5, 6, 10 } represents the set ( 1, 2, 3, 4, 6, 7, 8, 9 ).
    */
@@ -53,7 +53,7 @@ public final class SparseBitSet {
     return new SparseBitSet(new int[] { start, end });
   }
 
-  public static SparseBitSet withRanges(int[] ranges) {
+  public static SparseBitSet withRanges(int... ranges) {
     ranges = ranges.clone();
     if ((ranges.length & 1) != 0) { throw new IllegalArgumentException(); }
     for (int i = 1; i < ranges.length; ++i) {
