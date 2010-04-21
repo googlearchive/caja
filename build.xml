@@ -916,9 +916,7 @@
       <exclude name="nu/validator/htmlparser/xom/**/*.java"/>
       <compilerarg line="-Xlint:none"/>
     </javac>
-    <jar destfile="${jars}/htmlparser.jar" basedir="${lib}/third-party">
-      <fileset dir="${lib}/third-party"><include name="**/*"/></fileset>
-    </jar>
+    <jar destfile="${jars}/htmlparser.jar" basedir="${lib}/third-party" />
     <delete dir="${lib}/third-party"/>
     <javac destdir="${lib}" debug="true" target="1.5" source="1.5">
       <src path="${src}"/>
@@ -1160,11 +1158,15 @@
 
   <target name="testbed" depends="dirs,HtmlParser,TestbedClasses,jars"
    description="Produce an Applet that interactively cajoles in the browser.">
-    <jar destfile="${jars}/testbed.jar" basedir="${lib}">
+    <jar destfile="${jars}/testbed.jar">
       <manifest>
         <attribute name="Main-Class"
          value="com.google.caja.demos.applet.CajaApplet"/>
       </manifest>
+      <fileset dir="${lib}">
+        <include name="com/google/caja/**"/>
+        <include name="js/json_sans_eval/json_sans_eval.js"/>
+      </fileset>
     </jar>
 
     <mkdir dir="${www}/testbed"/>
