@@ -51,6 +51,11 @@ public class CajolingServlet extends HttpServlet {
 
   private final CajolingService service;
 
+  //Appengine insists on a zero-argument constructor
+  public CajolingServlet() {
+    this(new CajolingService());
+  }
+
   public CajolingServlet(CajolingService service) {
     this.service = service;
   }

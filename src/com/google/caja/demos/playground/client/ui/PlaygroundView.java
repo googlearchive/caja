@@ -456,7 +456,7 @@ public class PlaygroundView {
       return;
     }
     renderPanel.setHTML(
-    "<div id=\"cajoled-output\" class=\"g___\">\n" +
+    "<div id=\"cajoled-output\" class=\"cajoled-output-g___\">\n" +
       html +
     "</div>\n");
 

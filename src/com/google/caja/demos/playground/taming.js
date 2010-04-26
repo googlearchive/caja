@@ -92,11 +92,11 @@ var caja___ = (function () {
           if (/^image[/]/.test(mimeType)) { return uri; }
           return ('http://caja.appspot.com/cajole?url='
               + encodeURIComponent(uri)
-              + '&mimeType=' + encodeURIComponent(mimeType));
+              + '&mime-type=' + encodeURIComponent(mimeType));
       }
     };
     var gadgetRoot = document.getElementById(divElId);
-    gadgetRoot.className = cajaDomSuffix;
+    gadgetRoot.className = divElId + '-' + cajaDomSuffix;
     
     attachDocumentStub('-' + divElId + '-' + cajaDomSuffix, uriCallback,
         imports, gadgetRoot);
