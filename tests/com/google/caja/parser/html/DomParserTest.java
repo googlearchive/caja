@@ -30,11 +30,11 @@ import com.google.caja.reporting.MessageType;
 import com.google.caja.util.CajaTestCase;
 import com.google.caja.util.Criterion;
 import com.google.caja.util.Join;
+import com.google.caja.util.Lists;
 import com.google.caja.util.MoreAsserts;
 
 import java.io.IOException;
 import java.net.URI;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -2259,6 +2259,16 @@ public class DomParserTest extends CajaTestCase {
         msg.getMessageParts().get(0).toString());
   }
 
+  public final void testIssue1207() throws Exception {
+    ParseException pex = null;
+    try {
+      xmlFragment(fromString("<?xml ?><html><"));
+    } catch (ParseException ex) {
+      pex = ex;
+    }
+    assertNotNull(pex);
+  }
+
   public final void testParserSpeed() throws Exception {
     assertFalse(CajaTreeBuilder.DEBUG);  // Don't run 100 times if verbose.
     benchmark(100);  // prime the JIT
@@ -2356,7 +2366,7 @@ public class DomParserTest extends CajaTestCase {
     List<String> actualParseTree = formatLines(tree);
     MoreAsserts.assertListsEqual(expectedParseTree, actualParseTree);
 
-    List<String> actualMessages = new ArrayList<String>();
+    List<String> actualMessages = Lists.newArrayList();
     for (Message message : mq.getMessages()) {
       String messageText = (message.getMessageLevel().name() + " "
                             + message.format(mc));

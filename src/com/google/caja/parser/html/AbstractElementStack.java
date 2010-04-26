@@ -74,7 +74,7 @@ abstract class AbstractElementStack implements OpenElementStack {
   /** The index-th open element counting from 0 at the root. */
   protected final Element getElement(int index) {
     assert index > 0 : "" + index;
-    return (Element) openNodes.get(index);
+    return (Element) openNodes.get(index).n;
   }
 
   /**
