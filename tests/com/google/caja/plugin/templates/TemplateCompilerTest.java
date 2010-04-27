@@ -158,7 +158,7 @@ public class TemplateCompilerTest extends CajaTestCase {
     assertSafeHtml(
         htmlFragment(fromString("<form></form>")),
         htmlFragment(fromString(
-            "<form action='test:///testFormRewritten'"
+            "<form action='test:///testFormRewritten' autocomplete='off'"
             + " target='_blank'></form>")),
         new Block());
   }
@@ -203,7 +203,7 @@ public class TemplateCompilerTest extends CajaTestCase {
     assertSafeHtml(
         htmlFragment(fromString("<form name='hi'></form>")),
         htmlFragment(fromString(
-            "<form action='test:///testFormName'"
+            "<form action='test:///testFormName' autocomplete='off'"
             + " name='hi-suffix___' target=_blank></form>")),
         new Block());
   }
@@ -214,7 +214,7 @@ public class TemplateCompilerTest extends CajaTestCase {
         htmlFragment(fromString(
             "<form onsubmit='alert(&quot;hi&quot;); return true;'></form>")),
         htmlFragment(fromString(
-            "<form action='test:///testFormOnSubmitTrue'"
+            "<form action='test:///testFormOnSubmitTrue' autocomplete='off'"
             + " id=id_2___ target='_blank'></form>")),
         js(fromString(
             ""
@@ -223,10 +223,11 @@ public class TemplateCompilerTest extends CajaTestCase {
             + "    var el___; var emitter___ = IMPORTS___.htmlEmitter___;"
             + "    el___ = emitter___.byId('id_2___');"
             // The extracted handler.
-            + "    var c_1___ = ___.markFuncFreeze(function(event, thisNode___) {"
-            + "      alert('hi');"  // Cajoled later
-            + "      return true;"
-            + "    });"
+            + "    var c_1___ = ___.markFuncFreeze("
+            + "        function(event, thisNode___) {"
+            + "          alert('hi');"  // Cajoled later
+            + "          return true;"
+            + "        });"
             + "    el___.onsubmit = function (event) {"
             + "      return plugin_dispatchEvent___("
             + "          this, event, ___.getId(IMPORTS___), c_1___);"
@@ -299,7 +300,7 @@ public class TemplateCompilerTest extends CajaTestCase {
     assertSafeHtml(
         htmlFragment(fromString("<form onsubmit=''></form>")),
         htmlFragment(fromString(
-            "<form action='test:///testFormOnSubmitEmpty'"
+            "<form action='test:///testFormOnSubmitEmpty' autocomplete='off'"
             + " target='_blank'></form>")),
         new Block());
   }
@@ -544,19 +545,21 @@ public class TemplateCompilerTest extends CajaTestCase {
   public final void testValidIdNames() throws Exception {
     assertSafeHtml(
         htmlFragment(fromString("<input name='tag[]'>")),
-        htmlFragment(fromString("<input name='tag[]'>")),
+        htmlFragment(fromString("<input autocomplete='off' name='tag[]'>")),
         new Block());
     assertNoWarnings();
 
     assertSafeHtml(
         htmlFragment(fromString("<input name='form$location'>")),
-        htmlFragment(fromString("<input name='form$location'>")),
+        htmlFragment(fromString(
+            "<input autocomplete='off' name='form$location'>")),
         new Block());
     assertNoWarnings();
 
     assertSafeHtml(
         htmlFragment(fromString("<input name='$-.:;()[]='>")),
-        htmlFragment(fromString("<input name='$-.:;()[]='>")),
+        htmlFragment(fromString(
+            "<input autocomplete='off' name='$-.:;()[]='>")),
         new Block());
     assertNoWarnings();
 
@@ -620,7 +623,7 @@ public class TemplateCompilerTest extends CajaTestCase {
   public final void testInvalidIdNames() throws Exception {
     assertSafeHtml(
         htmlFragment(fromString("<input id='bad1__' name='bad2__'>")),
-        htmlFragment(fromString("<input>")),
+        htmlFragment(fromString("<input autocomplete='off'>")),
         new Block());
     assertMessage(true, IhtmlMessageType.ILLEGAL_NAME, MessageLevel.WARNING,
         MessagePart.Factory.valueOf("bad1__"));
@@ -630,7 +633,7 @@ public class TemplateCompilerTest extends CajaTestCase {
 
     assertSafeHtml(
         htmlFragment(fromString("<input id='bad1__ ' name='bad2__ '>")),
-        htmlFragment(fromString("<input>")),
+        htmlFragment(fromString("<input autocomplete='off'>")),
         new Block());
     assertMessage(true, IhtmlMessageType.ILLEGAL_NAME, MessageLevel.WARNING,
         MessagePart.Factory.valueOf("bad1__ "));
@@ -640,7 +643,7 @@ public class TemplateCompilerTest extends CajaTestCase {
 
     assertSafeHtml(
         htmlFragment(fromString("<input id='b__ c'>")),
-        htmlFragment(fromString("<input>")),
+        htmlFragment(fromString("<input autocomplete='off'>")),
         new Block(),
         false);
     assertMessage(true, IhtmlMessageType.ILLEGAL_NAME, MessageLevel.ERROR,
@@ -649,7 +652,7 @@ public class TemplateCompilerTest extends CajaTestCase {
 
     assertSafeHtml(
        htmlFragment(fromString("<input name='d__ e'>")),
-       htmlFragment(fromString("<input>")),
+       htmlFragment(fromString("<input autocomplete='off'>")),
        new Block(),
        false);
     assertMessage(true, IhtmlMessageType.ILLEGAL_NAME, MessageLevel.ERROR,
@@ -721,6 +724,13 @@ public class TemplateCompilerTest extends CajaTestCase {
             + "<img src=foo.gif>"
             + "<img src=bar.gif>")),
          new Block(), false);
+  }
+
+  public final void testSingleValueAttrs() throws Exception {
+    assertSafeHtml(
+        htmlFragment(fromString("<input type=\"text\">")),
+        htmlFragment(fromString("<input autocomplete=\"off\" type=\"text\">")),
+        new Block(), false);
   }
 
   private void assertSafeHtml(
