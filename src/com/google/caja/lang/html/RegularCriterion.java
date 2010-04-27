@@ -108,6 +108,20 @@ public interface RegularCriterion extends Criterion<String> {
       };
     }
 
+    static RegularCriterion or(
+        final RegularCriterion a, final RegularCriterion b) {
+      return new RegularCriterion() {
+        public String toRegularExpression() {
+          return "(?:" + a.toRegularExpression()
+              + "|" + b.toRegularExpression() + ")";
+        }
+
+        public boolean accept(String candidate) {
+          return a.accept(candidate) || b.accept(candidate);
+        }
+      };
+    }
+
     static RegularCriterion optimist() {
       return new RegularCriterion() {
         public String toRegularExpression() { return ""; }

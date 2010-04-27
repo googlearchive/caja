@@ -36,6 +36,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -156,6 +157,12 @@ public final class HtmlSchema {
         }
       }
       boolean valueless = Boolean.TRUE.equals(def.get("valueless", false));
+      // For valueless attributes, like checked, we allow the blank value.
+      if (valueless && !criterion.accept("")) {
+        criterion = RegularCriterion.Factory.or(
+            criterion,
+            RegularCriterion.Factory.fromValueSet(Collections.singleton("")));
+      }
       HTML.Attribute a = new HTML.Attribute(
           elAndAttrib, type, defaultValue, safeValue, valueless, optional,
           mimeTypes, criterion);

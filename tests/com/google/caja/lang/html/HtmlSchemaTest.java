@@ -108,6 +108,16 @@ public class HtmlSchemaTest extends TestCase {
                 .getValueCriterion().accept("FILE"));
     assertFalse(lookupAttribute("input", "type")
                 .getValueCriterion().accept("bogus"));
+    assertFalse(lookupAttribute("input", "type")
+                .getValueCriterion().accept(""));
+    assertTrue(lookupAttribute("input", "checked")
+              .getValueCriterion().accept("checked"));
+    assertTrue(lookupAttribute("input", "checked")
+               .getValueCriterion().accept(""));
+    assertFalse(lookupAttribute("input", "checked")
+                .getValueCriterion().accept("turkey"));
+    assertFalse(lookupAttribute("input", "checked")
+                .getValueCriterion().accept("no"));
   }
 
   public final void testSafeAndDefaultValues() {
