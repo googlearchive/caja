@@ -731,6 +731,10 @@ public class TemplateCompilerTest extends CajaTestCase {
         htmlFragment(fromString("<input type=\"text\">")),
         htmlFragment(fromString("<input autocomplete=\"off\" type=\"text\">")),
         new Block(), false);
+    assertSafeHtml(
+        htmlFragment(fromString("<input autocomplete=\"on\" type=\"text\">")),
+        htmlFragment(fromString("<input autocomplete=\"off\" type=\"text\">")),
+        new Block(), false);
   }
 
   private void assertSafeHtml(
