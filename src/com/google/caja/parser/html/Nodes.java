@@ -288,6 +288,16 @@ final class Renderer {
           out.append(elNs.prefix).append(':');
         }
         String localName = el.getLocalName();
+        // TODO: do away with the below once Shindig has done away with Neko.
+        // This is a workaround for a bug in Element.getLocalName in the version
+        // of Neko used by Shindig.
+        // See also similar attribute rendering code in this file.
+        if (localName == null) {
+          localName = el.getTagName();
+          if (localName.indexOf(':') >= 0) {
+            throw new IllegalStateException();
+          }
+        }
         boolean isHtml = elNs.uri == HTML_NS;
         if (isHtml) { localName = Strings.toLowerCase(localName); }
         out.append(localName);
@@ -438,7 +448,15 @@ final class Renderer {
   }
 
   private void renderAttr(Attr a, boolean isHtml) {
-    emitLocalName(a.getLocalName(), isHtml);
+    String localName = a.getLocalName();
+    // TODO: do away with these once shindig has gotten rid of Neko
+    if (localName == null) {
+      localName = a.getName();
+      if (localName.indexOf(':') >= 0 || localName.startsWith("xmlns")) {
+        throw new IllegalStateException();
+      }
+    }
+    emitLocalName(localName, isHtml);
     out.append("=\"");
     Escaping.escapeXml(a.getValue(), isAsciiOnly, out);
     out.append("\"");

@@ -275,6 +275,13 @@ public class NodesTest extends CajaTestCase {
     fail("Rendered in html");
   }
 
+  public final void testRenderWithBrokenNekoDom() throws Exception {
+    Element el = html(fromString("<a href='foo.html'>bar</a>"));
+    assertEquals(
+        "<html><head></head><body><a href=\"foo.html\">bar</a></body></html>",
+        Nodes.render(new NullLocalNameMembrane().wrap(el, Element.class)));
+  }
+
   public final void testRenderSpeed() throws Exception {
     Element doc = html(fromResource("amazon.com.html"));
     benchmark(100, doc);  // prime the JIT
