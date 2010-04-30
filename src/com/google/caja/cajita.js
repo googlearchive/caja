@@ -4156,7 +4156,8 @@ var safeJSON;
       }
       return goodJSON.parse(
           json_sans_eval.checkSyntax(text, function (key) {
-            return key !== 'valueOf' && key !== 'toString' && !endsWith__(key);
+            return (key !== 'valueOf' && key !== 'toString'
+                    && !endsWith__.test(key));
           }), reviver);
     }),
     stringify: markFuncFreeze(function (obj, opt_replacer, opt_space) {
