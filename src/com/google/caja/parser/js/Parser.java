@@ -1132,13 +1132,13 @@ public final class Parser extends ParserBase {
           }
           case LCURLY:
           {
-            List<Pair<Literal, Expression>> properties = Lists.newArrayList();
+            List<ObjProperty> properties = Lists.newArrayList();
             if (!tq.checkToken(Punctuation.RCURLY)) {
               boolean sawComma;
               do {
                 Mark km = tq.mark();
                 Token<JsTokenType> keyToken = tq.peek();
-                Literal key;
+                StringLiteral key;
                 switch (keyToken.type) {
                   case STRING:
                     tq.advance();
@@ -1162,7 +1162,7 @@ public final class Parser extends ParserBase {
                 finish(key, km);
                 tq.expectToken(Punctuation.COLON);
                 Expression value = parseExpressionPart(true);
-                properties.add(Pair.pair(key, value));
+                properties.add(new ValueProperty(key, value));
                 Mark cm = tq.mark();
                 sawComma = tq.checkToken(Punctuation.COMMA);
                 if (sawComma && tq.lookaheadToken(Punctuation.RCURLY)) {

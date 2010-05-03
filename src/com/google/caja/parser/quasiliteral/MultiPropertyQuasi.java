@@ -17,6 +17,9 @@ package com.google.caja.parser.quasiliteral;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.ParseTreeNodeContainer;
 import com.google.caja.parser.js.Expression;
+import com.google.caja.parser.js.ObjProperty;
+import com.google.caja.parser.js.StringLiteral;
+import com.google.caja.parser.js.ValueProperty;
 import com.google.caja.util.Lists;
 
 import java.util.List;
@@ -53,9 +56,11 @@ final class MultiPropertyQuasi extends QuasiNode {
       List<ParseTreeNode> specimens, Map<String, ParseTreeNode> bindings) {
     List<ParseTreeNode> keyList = Lists.newArrayList();
     List<ParseTreeNode> valueList = Lists.newArrayList();
-    for (int i = 0, n = specimens.size(); i < n; i += 2) {
-      keyList.add(specimens.get(i));
-      valueList.add(specimens.get(i + 1));
+    for (ParseTreeNode quasi : specimens) {
+      if (!(quasi instanceof ValueProperty)) { return false; }
+      ValueProperty prop = (ValueProperty) quasi;
+      keyList.add(prop.getPropertyNameNode());
+      valueList.add(prop.getValueExpr());
     }
     if (putIfDeepEquals(
             bindings, keyIdentifier, new ParseTreeNodeContainer(keyList))
@@ -77,10 +82,12 @@ final class MultiPropertyQuasi extends QuasiNode {
       ParseTreeNode keyNode = bindings.get(keyIdentifier);
       ParseTreeNode valueNode = bindings.get(valueIdentifier);
       assert keyNode.children().size() == valueNode.children().size();
-      List<Expression> children = Lists.newArrayList();
+      List<ObjProperty> children = Lists.newArrayList();
       for (int i = 0; i < keyNode.children().size(); i++) {
-        children.add((Expression) keyNode.children().get(i));
-        children.add((Expression) valueNode.children().get(i));
+        children.add(
+            new ValueProperty(
+                (StringLiteral) keyNode.children().get(i),
+                (Expression) valueNode.children().get(i)));
       }
       substitutes.addAll(children);
       return true;

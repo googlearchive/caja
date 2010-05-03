@@ -16,7 +16,7 @@ package com.google.caja.parser.quasiliteral;
 
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.parser.ParseTreeNode;
-import com.google.caja.parser.js.Expression;
+import com.google.caja.parser.js.ObjProperty;
 import com.google.caja.parser.js.ObjectConstructor;
 import com.google.caja.util.Lists;
 
@@ -61,13 +61,10 @@ final class ObjectCtorQuasiNode extends QuasiNode {
     for (QuasiNode q : getChildren()) {
       if (!q.createSubstitutes(props, bindings)) { return false; }
     }
-    Expression[] exprs = new Expression[props.size()];
-    for (int i = exprs.length; --i >= 0;) {
-      exprs[i] = (Expression) props.get(i);
-    }
+    ObjProperty[] propArr = new ObjProperty[props.size()];
+    props.toArray(propArr);
     substitutes.add(new ObjectConstructor(
-        FilePosition.UNKNOWN, null, Arrays.asList(exprs)));
+        FilePosition.UNKNOWN, Arrays.asList(propArr)));
     return true;
   }
-
 }

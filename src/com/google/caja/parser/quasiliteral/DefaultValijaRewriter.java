@@ -26,6 +26,7 @@ import com.google.caja.parser.js.FunctionDeclaration;
 import com.google.caja.parser.js.Identifier;
 import com.google.caja.parser.js.MultiDeclaration;
 import com.google.caja.parser.js.Noop;
+import com.google.caja.parser.js.ObjProperty;
 import com.google.caja.parser.js.ObjectConstructor;
 import com.google.caja.parser.js.Operation;
 import com.google.caja.parser.js.Operator;
@@ -37,6 +38,7 @@ import com.google.caja.parser.js.StringLiteral;
 import com.google.caja.parser.js.SyntheticNodes;
 import com.google.caja.parser.js.TryStmt;
 import com.google.caja.parser.js.UncajoledModule;
+import com.google.caja.parser.js.ValueProperty;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.util.Lists;
 
@@ -1288,6 +1290,28 @@ public class DefaultValijaRewriter extends Rewriter {
     new Rule() {
       @Override
       @RuleDescription(
+          name="oneprop",
+          synopsis="",
+          reason="",
+          matches="\"@key\": @val",
+          substitutes="\"@key\": @val")
+      public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
+        if (node instanceof ValueProperty) {
+          ValueProperty prop = (ValueProperty) node;
+          StringLiteral key = prop.getPropertyNameNode();
+          Expression val = prop.getValueExpr();
+          return new ValueProperty(
+              noexpand(key),
+              (Expression) expand(
+                  nymize(val, key.getUnquotedValue(), "lit"), scope));
+        }
+        return NONE;
+      }
+    },
+
+    new Rule() {
+      @Override
+      @RuleDescription(
           name="map",
           synopsis="",
           reason="",
@@ -1295,19 +1319,14 @@ public class DefaultValijaRewriter extends Rewriter {
           substitutes="({@keys*: @vals*})")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
         if (node instanceof ObjectConstructor) {
-          List<? extends Expression> children = ((ObjectConstructor) node)
+          List<? extends ObjProperty> props = ((ObjectConstructor) node)
               .children();
-          List<Expression> keys = Lists.newArrayList();
-          List<Expression> vals = Lists.newArrayList();
-          for (int i = 0, n = children.size(); i < n; i += 2) {
-            StringLiteral key = (StringLiteral) children.get(i);
-            Expression val = children.get(i + 1);
-            keys.add(noexpand(key));
-            vals.add((Expression) expand(
-                nymize(val, key.getUnquotedValue(), "lit"), scope));
+          List<ObjProperty> outProps = Lists.newArrayList();
+          for (ObjProperty prop : props) {
+            ObjProperty expandedProp = (ObjProperty) expand(prop, scope);
+            outProps.add(expandedProp);
           }
-          return substV("keys", new ParseTreeNodeContainer(keys),
-                        "vals", new ParseTreeNodeContainer(vals));
+          return new ObjectConstructor(FilePosition.UNKNOWN, outProps);
         }
         return NONE;
       }

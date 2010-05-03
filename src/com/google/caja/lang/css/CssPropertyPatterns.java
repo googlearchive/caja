@@ -31,14 +31,15 @@ import com.google.caja.parser.js.Declaration;
 import com.google.caja.parser.js.Expression;
 import com.google.caja.parser.js.Identifier;
 import com.google.caja.parser.js.IntegerLiteral;
-import com.google.caja.parser.js.Literal;
 import com.google.caja.parser.js.MultiDeclaration;
+import com.google.caja.parser.js.ObjProperty;
 import com.google.caja.parser.js.ObjectConstructor;
 import com.google.caja.parser.js.Operation;
 import com.google.caja.parser.js.Operator;
 import com.google.caja.parser.js.RegexpLiteral;
 import com.google.caja.parser.js.Statement;
 import com.google.caja.parser.js.StringLiteral;
+import com.google.caja.parser.js.ValueProperty;
 import com.google.caja.parser.quasiliteral.QuasiBuilder;
 import com.google.caja.reporting.EchoingMessageQueue;
 import com.google.caja.reporting.MessageContext;
@@ -560,16 +561,17 @@ public class CssPropertyPatterns {
           : new MultiDeclaration(
               unk, Arrays.asList((Declaration) poolDecls, d)));
     }
-    List<Pair<Literal, Expression>> members = Lists.newArrayList();
-    List<Pair<Literal, Expression>> alternates = Lists.newArrayList();
+    List<ObjProperty> members = Lists.newArrayList();
+    List<ObjProperty> alternates = Lists.newArrayList();
     for (Pair<CssSchema.CssPropertyInfo, String> p : patterns) {
       int poolIndex = regexPoolMap.get(p.b)[0];
       Expression re = poolIndex < 0
           ? makeRegexp(commonSubstringMap, p.b)
           : (Expression) QuasiBuilder.substV(
               "c[@i]", "i", new IntegerLiteral(unk, poolIndex));
-      Literal name = StringLiteral.valueOf(unk, p.a.name.getCanonicalForm());
-      members.add(Pair.pair(name, re));
+      StringLiteral name = StringLiteral.valueOf(
+          unk, p.a.name.getCanonicalForm());
+      members.add(new ValueProperty(name, re));
 
       String dom2property = propertyNameToDom2Property(p.a.name);
       ArrayConstructor altNames = null;
@@ -578,18 +580,17 @@ public class CssPropertyPatterns {
         if (altNames == null) {
           altNames = new ArrayConstructor(
               unk, Collections.<Expression>emptyList());
-          alternates.add(Pair.pair(
-              (Literal) StringLiteral.valueOf(unk, dom2property),
-              (Expression) altNames));
+          alternates.add(new ValueProperty(
+              StringLiteral.valueOf(unk, dom2property), altNames));
         }
         altNames.appendChild(StringLiteral.valueOf(unk, altDom2Property));
       }
     }
 
-    List<Pair<Literal, Expression>> historyInsensitiveStyleWhitelistEls
+    List<ObjProperty> historyInsensitiveStyleWhitelistEls
         = Lists.newArrayList();
     for (Name propertyName : HISTORY_INSENSITIVE_STYLE_WHITELIST) {
-      historyInsensitiveStyleWhitelistEls.add(Pair.<Literal, Expression>pair(
+      historyInsensitiveStyleWhitelistEls.add(new ValueProperty(
           StringLiteral.valueOf(unk, propertyName.getCanonicalForm()),
           new BooleanLiteral(unk, true)));
     }

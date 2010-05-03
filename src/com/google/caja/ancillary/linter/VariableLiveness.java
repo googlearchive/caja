@@ -39,6 +39,8 @@ import com.google.caja.parser.js.LabeledStatement;
 import com.google.caja.parser.js.LabeledStmtWrapper;
 import com.google.caja.parser.js.MultiDeclaration;
 import com.google.caja.parser.js.Noop;
+import com.google.caja.parser.js.ObjProperty;
+import com.google.caja.parser.js.ObjectConstructor;
 import com.google.caja.parser.js.Operation;
 import com.google.caja.parser.js.Reference;
 import com.google.caja.parser.js.ReturnStmt;
@@ -667,9 +669,15 @@ final class VariableLiveness {
   private static LiveSet processLiteralOrConstructor(
       Expression e, LiveSet onEntry) {
     LiveSet last = onEntry;
-    for (ParseTreeNode child : e.children()) {
-      Expression childE = (Expression) child;
-      last = liveness(childE, last).vars;
+    if (e instanceof ObjectConstructor) {
+      for (ObjProperty p : ((ObjectConstructor) e).children()) {
+        last = liveness(p.children().get(1), last).vars;
+      }
+    } else {
+      for (ParseTreeNode child : e.children()) {
+        Expression childE = (Expression) child;
+        last = liveness(childE, last).vars;
+      }
     }
     return last;
   }

@@ -16,12 +16,13 @@ package com.google.caja.parser.js;
 
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.TokenConsumer;
-import com.google.caja.parser.ParserBase;
+import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.reporting.RenderContext;
-import com.google.caja.util.Pair;
 
-import java.util.Iterator;
 import java.util.List;
+
+// TODO: audit all places where (instanceof Expression) is used since we have
+// inserted a non-expression type in an expression sub-tree.
 
 /**
  * Sometimes called an object literal, a shorthand for constructing an object
@@ -38,48 +39,27 @@ public final class ObjectConstructor extends AbstractExpression {
   /** @param value unused.  This ctor is provided for reflection. */
   @ReflectiveCtor
   public ObjectConstructor(
-      FilePosition pos, Void value, List<? extends Expression> children) {
-    super(pos, Expression.class);
-    createMutation().appendChildren(children).execute();
+      FilePosition pos, Void value, List<? extends ObjProperty> properties) {
+    super(pos, ObjProperty.class);
+    createMutation().appendChildren(properties).execute();
   }
 
   public ObjectConstructor(
-      FilePosition pos, List<Pair<Literal, Expression>> properties) {
-    super(pos, Expression.class);
-    Mutation m = createMutation();
-    for (Pair<Literal, Expression> p : properties) {
-      m.appendChild(p.a);
-      m.appendChild(p.b);
-    }
-    m.execute();
+      FilePosition pos, List<ObjProperty> properties) {
+    this(pos, null, properties);
   }
 
   public ObjectConstructor(FilePosition pos) {
-    super(pos, Expression.class);
+    super(pos, ObjProperty.class);
   }
 
   @Override
   protected void childrenChanged() {
     super.childrenChanged();
 
-    // Make sure that all children are expressions and that the left hand sides
-    // are literals.
-
-    // There need to be an even number of children, so to add or remove a pair
-    // use the transaction safe {@link MutableParseTreeNode#createMutation}.
-    List<? extends Expression> children = children();
-
-    if (0 != (children.size() & 1)) {
-      throw new IllegalArgumentException("Odd number of children");
-    }
-
-    for (int i = 0; i < children.size(); ++i) {
-      Expression e = children.get(i);
-      if ((i & 1) == 0) {
-        if (!(e instanceof StringLiteral)) {
-          throw new ClassCastException(
-              "object field must be a string literal, not " + e);
-        }
+    for (ParseTreeNode prop : children()) {
+      if (!(prop instanceof ObjProperty)) {
+        throw new ClassCastException(prop.getClass().getName());
       }
     }
   }
@@ -88,17 +68,13 @@ public final class ObjectConstructor extends AbstractExpression {
   public Object getValue() { return null; }
 
   @Override
-  public List<? extends Expression> children() {
-    return childrenAs(Expression.class);
+  public List<? extends ObjProperty> children() {
+    return childrenAs(ObjProperty.class);
   }
 
-  public Expression getValue(String key) {
-    List<? extends Expression> children = children();
-    for (int i = 0, n = children.size(); i < n; i += 2) {
-      StringLiteral sl = (StringLiteral) children.get(i);
-      if (key.equals(sl.getUnquotedValue())) {
-        return children.get(i + 1);
-      }
+  public ObjProperty propertyWithName(String key) {
+    for (ObjProperty prop : children()) {
+      if (key.equals(prop.getPropertyName())) { return prop; }
     }
     return null;
   }
@@ -111,35 +87,14 @@ public final class ObjectConstructor extends AbstractExpression {
     out.mark(getFilePosition());
     out.consume("{");
     boolean seen = false;
-    Iterator<? extends Expression> els = children().iterator();
-    while (els.hasNext()) {
-      Expression key = els.next(),
-               value = els.next();
+    for (ObjProperty prop : children()) {
       if (seen) {
         out.consume(",");
         out.consume("\n");
       } else {
         seen = true;
       }
-      String uqVal;
-      if (rc.rawObjKeys()
-          && key instanceof StringLiteral
-          && ParserBase.isJavascriptIdentifier(
-              uqVal = ((StringLiteral) key).getUnquotedValue())
-          && !("get".equals(uqVal) || "set".equals(uqVal))) {
-        out.consume(uqVal);
-      } else {
-        key.render(rc);
-      }
-      out.consume(":");
-      if (!Operation.is(value, Operator.COMMA)) {
-        value.render(rc);
-      } else {
-        out.mark(value.getFilePosition());
-        out.consume("(");
-        value.render(rc);
-        out.consume(")");
-      }
+      prop.render(rc);
     }
     out.mark(FilePosition.endOfOrNull(getFilePosition()));
     out.consume("}");

@@ -30,6 +30,7 @@ import com.google.caja.parser.js.ExpressionStmt;
 import com.google.caja.parser.js.FormalParam;
 import com.google.caja.parser.js.FunctionDeclaration;
 import com.google.caja.parser.js.Identifier;
+import com.google.caja.parser.js.ObjProperty;
 import com.google.caja.parser.js.ObjectConstructor;
 import com.google.caja.parser.js.Parser;
 import com.google.caja.parser.js.Reference;
@@ -37,6 +38,7 @@ import com.google.caja.parser.js.Statement;
 import com.google.caja.parser.js.StringLiteral;
 import com.google.caja.parser.js.SyntheticNodes;
 import com.google.caja.parser.js.DirectivePrologue;
+import com.google.caja.parser.js.ValueProperty;
 import com.google.caja.reporting.DevNullMessageQueue;
 import com.google.caja.util.Lists;
 
@@ -376,26 +378,30 @@ public class QuasiBuilder {
 
   private static QuasiNode buildObjectConstructorNode(ObjectConstructor obj) {
     List<QuasiNode> propQuasis = Lists.newArrayList();
-    List<? extends Expression> objParts = obj.children();
-    for (int i = 0, n = objParts.size(); i < n; i += 2) {
-      StringLiteral key = (StringLiteral) objParts.get(i);
-      Expression value = objParts.get(i + 1);
-      String keyIdent = quasiIdent(key);
-      if (value instanceof Reference) {
-        String valueStr = ((Reference) value).getIdentifierName();
-        if (keyIdent != null && keyIdent.endsWith("*")
-            && valueStr.startsWith("@") && valueStr.endsWith("*")) {
-          propQuasis.add(new MultiPropertyQuasi(
-              keyIdent.substring(1, keyIdent.length() - 1),
-              valueStr.substring(1, valueStr.length() - 1)));
-          continue;
+    for (ObjProperty prop : obj.children()) {
+      StringLiteral key = prop.getPropertyNameNode();
+      if (prop instanceof ValueProperty) {
+        Expression value = ((ValueProperty) prop).getValueExpr();
+        String keyIdent = quasiIdent(key);
+        if (value instanceof Reference) {
+          String valueStr = ((Reference) value).getIdentifierName();
+          if (keyIdent != null && keyIdent.endsWith("*")
+              && valueStr.startsWith("@") && valueStr.endsWith("*")) {
+            propQuasis.add(new MultiPropertyQuasi(
+                keyIdent.substring(1, keyIdent.length() - 1),
+                valueStr.substring(1, valueStr.length() - 1)));
+            continue;
+          }
         }
+        QuasiNode keyQuasi = build(
+            keyIdent != null
+            ? new Reference(new Identifier(FilePosition.UNKNOWN, keyIdent))
+            : key);
+        propQuasis.add(new SinglePropertyQuasi(keyQuasi, build(value)));
+      } else {
+        // TODO: support getters and setters in object quasis
+        throw new UnsupportedOperationException(prop.getClass().getName());
       }
-      QuasiNode keyQuasi = build(
-          keyIdent != null
-          ? new Reference(new Identifier(FilePosition.UNKNOWN, keyIdent))
-          : key);
-      propQuasis.add(new SinglePropertyQuasi(keyQuasi, build(value)));
     }
     return new ObjectCtorQuasiNode(propQuasis.toArray(new QuasiNode[0]));
   }

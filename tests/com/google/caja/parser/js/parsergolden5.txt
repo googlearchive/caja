@@ -81,31 +81,34 @@ Block
     SpecialOperation : FUNCTION_CALL
       SpecialOperation : MEMBER_ACCESS
         ObjectConstructor
-          StringLiteral : 'x'
-          IntegerLiteral : 4
-          StringLiteral : 'y'
-          IntegerLiteral : 5
-          StringLiteral : 'invoke'
-          FunctionConstructor
-            Identifier
-            Block
-              ExpressionStmt
-                SpecialOperation : FUNCTION_CALL
-                  Reference
-                    Identifier : doSomething
-                  Reference
-                    Identifier : this
-                  SimpleOperation : ADDITION
-                    SpecialOperation : MEMBER_ACCESS
-                      Reference
-                        Identifier : this
-                      Reference
-                        Identifier : x
-                    SpecialOperation : MEMBER_ACCESS
-                      Reference
-                        Identifier : this
-                      Reference
-                        Identifier : y
+          ValueProperty
+            StringLiteral : 'x'
+            IntegerLiteral : 4
+          ValueProperty
+            StringLiteral : 'y'
+            IntegerLiteral : 5
+          ValueProperty
+            StringLiteral : 'invoke'
+            FunctionConstructor
+              Identifier
+              Block
+                ExpressionStmt
+                  SpecialOperation : FUNCTION_CALL
+                    Reference
+                      Identifier : doSomething
+                    Reference
+                      Identifier : this
+                    SimpleOperation : ADDITION
+                      SpecialOperation : MEMBER_ACCESS
+                        Reference
+                          Identifier : this
+                        Reference
+                          Identifier : x
+                      SpecialOperation : MEMBER_ACCESS
+                        Reference
+                          Identifier : this
+                        Reference
+                          Identifier : y
         Reference
           Identifier : invoke
   Block
@@ -114,8 +117,9 @@ Block
         IntegerLiteral : 4
   ExpressionStmt
     ObjectConstructor
-      StringLiteral : 'objet'
-      IntegerLiteral : 4
+      ValueProperty
+        StringLiteral : 'objet'
+        IntegerLiteral : 4
   ExpressionStmt
     SpecialOperation : FUNCTION_CALL
       Reference

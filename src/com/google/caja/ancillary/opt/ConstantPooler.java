@@ -25,6 +25,7 @@ import com.google.caja.parser.js.FunctionConstructor;
 import com.google.caja.parser.js.Identifier;
 import com.google.caja.parser.js.Literal;
 import com.google.caja.parser.js.MultiDeclaration;
+import com.google.caja.parser.js.ObjProperty;
 import com.google.caja.parser.js.ObjectConstructor;
 import com.google.caja.parser.js.Reference;
 import com.google.caja.parser.js.RegexpLiteral;
@@ -76,9 +77,10 @@ public class ConstantPooler {
           }
           stored.uses.add(litAc);
         } else if (chain.node instanceof ObjectConstructor) {
-          List<? extends ParseTreeNode> children = chain.node.children();
-          for (int i = 1, n = children.size(); i < n; i += 2) {
-            visit(chain.child(children.get(i)));
+          List<? extends ObjProperty> children = chain
+              .cast(ObjectConstructor.class).node.children();
+          for (ObjProperty prop : children) {
+            visit(chain.child(prop).child(prop.children().get(1)));
           }
           return false;
         }

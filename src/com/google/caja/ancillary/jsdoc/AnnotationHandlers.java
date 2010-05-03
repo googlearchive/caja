@@ -30,13 +30,14 @@ import com.google.caja.parser.js.BooleanLiteral;
 import com.google.caja.parser.js.Expression;
 import com.google.caja.parser.js.FunctionConstructor;
 import com.google.caja.parser.js.Identifier;
-import com.google.caja.parser.js.Literal;
 import com.google.caja.parser.js.NullLiteral;
+import com.google.caja.parser.js.ObjProperty;
 import com.google.caja.parser.js.ObjectConstructor;
 import com.google.caja.parser.js.Operation;
 import com.google.caja.parser.js.Operator;
 import com.google.caja.parser.js.Reference;
 import com.google.caja.parser.js.StringLiteral;
+import com.google.caja.parser.js.ValueProperty;
 import com.google.caja.parser.quasiliteral.QuasiBuilder;
 import com.google.caja.render.Concatenator;
 import com.google.caja.render.JsMinimalPrinter;
@@ -45,13 +46,13 @@ import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.Join;
+import com.google.caja.util.Lists;
 import com.google.caja.util.Pair;
 import com.google.caja.util.Sets;
 
 import java.io.StringReader;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -331,6 +332,9 @@ public final class AnnotationHandlers {
         for (ParseTreeNode child : e.children()) {
           if (child instanceof Expression && hasCall((Expression) child)) {
             return true;
+          } else if (child instanceof ObjProperty
+                     && hasCall(((ObjProperty) child).children().get(1))) {
+            return true;
           }
         }
         return false;
@@ -557,7 +561,7 @@ public final class AnnotationHandlers {
         TextAnnotation first = (TextAnnotation) a.children().get(0);
         String value = first.getValue();
         int last = itemHandlers.length - 1;
-        List<Expression> items = new ArrayList<Expression>();
+        List<Expression> items = Lists.newArrayList();
         int consumed = 0;
         for (int i = 0; i < last; ++i) {
           Matcher m = COMMENT_TOKEN.matcher(value.substring(consumed));
@@ -580,7 +584,7 @@ public final class AnnotationHandlers {
         TextAnnotation unusedText = first.slice(consumed, value.length());
         Annotation tail;
         if (a instanceof BlockAnnotation) {
-          List<Annotation> newChildren = new ArrayList<Annotation>();
+          List<Annotation> newChildren = Lists.newArrayList();
           newChildren.add(unusedText);
           newChildren.addAll(children.subList(1, children.size()));
           tail = new BlockAnnotation(
@@ -694,7 +698,7 @@ public final class AnnotationHandlers {
       public Expression handle(Annotation a, MessageQueue mq) {
         String value = contentAsString(a, mq);
         if (value == null) { return null; }
-        List<Expression> elements = new ArrayList<Expression>();
+        List<Expression> elements = Lists.newArrayList();
         boolean nullPart = false;
         for (String part : value.split("[\\s,]+")) {
           Expression e = ah.handle(
@@ -726,7 +730,7 @@ public final class AnnotationHandlers {
           Updoc updoc = new UpdocParser(mq).parseComplete(
               CharProducer.Factory.create(
                   new StringReader(value), a.getFilePosition()));
-          List<ObjectConstructor> runs = new ArrayList<ObjectConstructor>();
+          List<ObjectConstructor> runs = Lists.newArrayList();
           for (Updoc.Run run : updoc.getRuns()) {
             runs.add((ObjectConstructor) QuasiBuilder.substV(
                 ""
@@ -759,8 +763,7 @@ public final class AnnotationHandlers {
   private AnnotationHandler split(
       Pair<String, AnnotationHandler> a,
       Pair<String, AnnotationHandler> b) {
-    List<Pair<String, AnnotationHandler>> pairs
-        = new ArrayList<Pair<String, AnnotationHandler>>();
+    List<Pair<String, AnnotationHandler>> pairs = Lists.newArrayList();
     pairs.add(a);
     pairs.add(b);
     return split(pairs);
@@ -770,8 +773,7 @@ public final class AnnotationHandlers {
       Pair<String, AnnotationHandler> a,
       Pair<String, AnnotationHandler> b,
       Pair<String, AnnotationHandler> c) {
-    List<Pair<String, AnnotationHandler>> pairs
-        = new ArrayList<Pair<String, AnnotationHandler>>();
+    List<Pair<String, AnnotationHandler>> pairs = Lists.newArrayList();
     pairs.add(a);
     pairs.add(b);
     pairs.add(c);
@@ -795,8 +797,7 @@ public final class AnnotationHandlers {
           return null;
         }
 
-        List<Pair<Literal, Expression>> mapEntries
-            = new ArrayList<Pair<Literal, Expression>>();
+        List<ObjProperty> mapEntries = Lists.newArrayList();
 
         StringLiteral sl = (StringLiteral) parts.get(0);
         FilePosition slpos = sl.getFilePosition();
@@ -810,12 +811,11 @@ public final class AnnotationHandlers {
                   s, slpos, consumed + m.start(1), consumed + m.end(1)),
                   mq);
           if (value == null) { return null; }
-          mapEntries.add(
-              Pair.pair((Literal) stringFrom(a, entry.a), value));
+          mapEntries.add(new ValueProperty(stringFrom(a, entry.a), value));
           // Consume the beginning by blanking it out
           consumed += m.end();
         }
-        List<Annotation> tailMembers = new ArrayList<Annotation>(a.children());
+        List<Annotation> tailMembers = Lists.newArrayList(a.children());
         tailMembers.set(
             0, TextAnnotation.slice(s, slpos, consumed, s.length()));
         BlockAnnotation block = new BlockAnnotation(
@@ -826,7 +826,7 @@ public final class AnnotationHandlers {
         Expression value = remainder.b.handle(block, mq);
         if (value == null) { return null; }
         mapEntries.add(
-            Pair.pair((Literal) stringFrom(a, remainder.a), value));
+            new ValueProperty(stringFrom(a, remainder.a), value));
         return new ObjectConstructor(a.getFilePosition(), mapEntries);
       }
     };
@@ -839,7 +839,7 @@ public final class AnnotationHandlers {
   private AnnotationHandler tee(final AnnotationHandler... handlers) {
     return new AnnotationHandler() {
       public Expression handle(Annotation a, MessageQueue mq) {
-        List<Expression> results = new ArrayList<Expression>();
+        List<Expression> results = Lists.newArrayList();
         for (AnnotationHandler h : handlers) {
           Expression e = h.handle(a, mq);
           if (e == null) { return null; }
@@ -861,7 +861,7 @@ public final class AnnotationHandlers {
           // TODO: parse @type and @this annotations even without {}s
           if (s.startsWith("{") && s.endsWith("}")) {
             String typeString = s.substring(1, s.length() - 1).trim();
-            List<Expression> symbolNames = new ArrayList<Expression>();
+            List<Expression> symbolNames = Lists.newArrayList();
             Matcher m = QUALIFIED_NAME_PATTERN.matcher(typeString);
             while (m.find()) {
               String ident = m.group(0);
@@ -926,16 +926,14 @@ public final class AnnotationHandlers {
             }
           }
           if (name != null || uri != null) {
-            List<Pair<Literal, Expression>> entries
-                = new ArrayList<Pair<Literal, Expression>>();
+            List<ObjProperty> entries = Lists.newArrayList();
             if (name != null) {
-              entries.add(Pair.<Literal, Expression>pair(
+              entries.add(new ValueProperty(
                   stringFrom(a, "name"), stringFrom(a, name)));
             }
             if (uri != null) {
-              entries.add(Pair.<Literal, Expression>pair(
-                  stringFrom(a, "url"),
-                  stringFrom(a, "" + uri)));
+              entries.add(new ValueProperty(
+                  stringFrom(a, "url"), stringFrom(a, "" + uri)));
             }
             return new ObjectConstructor(a.getFilePosition(), entries);
           }
@@ -979,7 +977,7 @@ public final class AnnotationHandlers {
   private List<Expression> applyChildren(
       Annotation a, MessageQueue mq) {
     List<? extends Annotation> children = a.children();
-    List<Expression> exprs = new ArrayList<Expression>();
+    List<Expression> exprs = Lists.newArrayList();
     Expression last = null;
     for (Annotation child : children) {
       Expression e = rawHandlerFor(child).handle(child, mq);

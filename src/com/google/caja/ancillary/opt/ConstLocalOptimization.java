@@ -28,6 +28,7 @@ import com.google.caja.parser.js.Identifier;
 import com.google.caja.parser.js.IntegerLiteral;
 import com.google.caja.parser.js.Literal;
 import com.google.caja.parser.js.MultiDeclaration;
+import com.google.caja.parser.js.ObjProperty;
 import com.google.caja.parser.js.ObjectConstructor;
 import com.google.caja.parser.js.Operation;
 import com.google.caja.parser.js.Operator;
@@ -35,6 +36,7 @@ import com.google.caja.parser.js.Reference;
 import com.google.caja.parser.js.RegexpLiteral;
 import com.google.caja.parser.js.Statement;
 import com.google.caja.parser.js.StringLiteral;
+import com.google.caja.parser.js.ValueProperty;
 import com.google.caja.parser.js.scope.AbstractScope;
 import com.google.caja.parser.js.scope.ES5ScopeAnalyzer;
 import com.google.caja.parser.js.scope.ScopeListener;
@@ -282,7 +284,7 @@ class Optimizer {
         || expr instanceof StringLiteral  // inline large string literal once
         || expr instanceof RegexpLiteral
         || (expr instanceof ObjectConstructor
-            && areSinglyInlineable(((ObjectConstructor) expr).children()))
+            && areSinglyInlineableProps(((ObjectConstructor) expr).children()))
         || (expr instanceof ArrayConstructor
             && areSinglyInlineable(((ArrayConstructor) expr).children()))
         || expr instanceof FunctionConstructor;
@@ -291,6 +293,18 @@ class Optimizer {
   private static boolean areSinglyInlineable(List<? extends Expression> exprs) {
     for (Expression e : exprs) {
       if (!isSinglyInlineable(e)) { return false; }
+    }
+    return true;
+  }
+
+  private static boolean areSinglyInlineableProps(
+      List<? extends ObjProperty> props) {
+    for (ObjProperty prop : props) {
+      if (prop instanceof ValueProperty
+          && !isSinglyInlineable(((ValueProperty) prop).getValueExpr())) {
+        return false;
+      }
+      // getters and setters are inlineable.
     }
     return true;
   }

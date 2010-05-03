@@ -151,10 +151,12 @@ Block
   Declaration
     Identifier : obj
     ObjectConstructor
-      StringLiteral : 'x'
-      IntegerLiteral : 2
-      StringLiteral : 'y'
-      IntegerLiteral : 3
+      ValueProperty
+        StringLiteral : 'x'
+        IntegerLiteral : 2
+      ValueProperty
+        StringLiteral : 'y'
+        IntegerLiteral : 3
   SwitchStmt : 
     SpecialOperation : FUNCTION_CALL
       Reference

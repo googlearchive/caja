@@ -23,10 +23,12 @@ import com.google.caja.lexer.ParseException;
 import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.Expression;
 import com.google.caja.parser.js.Literal;
+import com.google.caja.parser.js.ObjProperty;
 import com.google.caja.parser.js.ObjectConstructor;
 import com.google.caja.parser.js.Parser;
 import com.google.caja.parser.js.Statement;
 import com.google.caja.parser.js.StringLiteral;
+import com.google.caja.parser.js.ValueProperty;
 import com.google.caja.render.Concatenator;
 import com.google.caja.render.JsMinimalPrinter;
 import com.google.caja.reporting.DevNullMessageQueue;
@@ -72,14 +74,16 @@ public class JsOptimizer {
    */
   public JsOptimizer setEnvJson(ObjectConstructor envJson) {
     if (optimizer == null) { optimizer = new ParseTreeKB(); }
-    List<? extends Expression> parts = envJson.children();
-    for (int i = 0, n = parts.size(); i < n; i += 2) {
-      Expression value = parts.get(i + 1).fold(false);  // fold negative nums
+    List<? extends ObjProperty> props = envJson.children();
+    for (ObjProperty prop : props) {
+      // JSON had better not have getters
+      ValueProperty vprop = (ValueProperty) prop;
+      Expression value = vprop.getValueExpr().fold(false); // fold negative nums
       if (!(value instanceof Literal)) {
         // True for "*useragent*" property inserted by JSKB.
         continue;
       }
-      StringLiteral sl = (StringLiteral) parts.get(i);
+      StringLiteral sl = vprop.getPropertyNameNode();
       String rawExpr = sl.getValue();
       rawExpr = " " + rawExpr.substring(1, rawExpr.length() - 1) + " ";
       CharProducer valueCp = CharProducer.Factory.fromJsString(

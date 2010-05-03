@@ -71,6 +71,16 @@ public class AlphaRenamingTest extends CajaTestCase {
     assertNoErrors();
   }
 
+  public final void testObjects1() throws Exception {
+    assertRenamed("({ x: a })", "({ x: foo })", "foo");
+    assertNoErrors();
+    assertRenamed("({ x: null })", "({ x: foo })");
+    assertMessage(
+        true, RewriterMessageType.FREE_VARIABLE, MessageLevel.ERROR,
+        MessagePart.Factory.valueOf("foo"));
+    assertNoErrors();
+  }
+
   public final void testGlobalThis() throws Exception {
     assertRenamed("null.foo()", "this.foo()");
     assertMessage(

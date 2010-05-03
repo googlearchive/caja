@@ -235,7 +235,8 @@ public final class CajoledModule extends AbstractParseTreeNode {
         .withAsciiOnly(rc.isAsciiOnly())
         .withEmbeddable(rc.isEmbeddable());
 
-    getModuleBody().getValue("instantiate").render(ssrrc);
+    ((ValueProperty) getModuleBody().propertyWithName("instantiate"))
+        .getValueExpr().render(ssrrc);
     ssr.noMoreTokens();
 
     // Build the abbreviated original file names and their contents.
@@ -277,15 +278,21 @@ public final class CajoledModule extends AbstractParseTreeNode {
     out.consume(instantiateFunctionText);
     out.consume(",\n");
 
-    List<? extends Expression> moduleBodyParts = moduleBody.children();
-    for (int i = 0, n = moduleBodyParts.size(); i < n; i += 2) {
-      String key = ((StringLiteral) moduleBodyParts.get(i)).getUnquotedValue();
-      if ("instantiate".equals(key)) { continue; }
+    List<? extends ObjProperty> moduleBodyProps = moduleBody.children();
+    for (ObjProperty moduleBodyProp : moduleBodyProps) {
+      if ("instantiate".equals(moduleBodyProp.getPropertyName())) { continue; }
 
       // Render remaining key/value pairs in the module body
-      renderNode(stringToStringLiteral(key), rc);
+      renderNode(moduleBodyProp.getPropertyNameNode(), rc);
       out.consume(": ");
-      renderNode(moduleBodyParts.get(i + 1), rc);
+      Expression valueExpr = ((ValueProperty) moduleBodyProp).getValueExpr();
+      if (Operation.is(valueExpr, Operator.COMMA)) {
+        out.consume("(");
+        renderNode(valueExpr, rc);
+        out.consume(")");
+      } else {
+        renderNode(valueExpr, rc);
+      }
       out.consume(",\n");
     }
 

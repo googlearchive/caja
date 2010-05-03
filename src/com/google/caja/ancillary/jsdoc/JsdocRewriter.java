@@ -36,8 +36,8 @@ import com.google.caja.parser.js.ExpressionStmt;
 import com.google.caja.parser.js.FunctionConstructor;
 import com.google.caja.parser.js.FunctionDeclaration;
 import com.google.caja.parser.js.Identifier;
-import com.google.caja.parser.js.Literal;
 import com.google.caja.parser.js.Loop;
+import com.google.caja.parser.js.ObjProperty;
 import com.google.caja.parser.js.ObjectConstructor;
 import com.google.caja.parser.js.Operation;
 import com.google.caja.parser.js.Operator;
@@ -46,6 +46,7 @@ import com.google.caja.parser.js.ReturnStmt;
 import com.google.caja.parser.js.Statement;
 import com.google.caja.parser.js.StringLiteral;
 import com.google.caja.parser.js.SwitchCase;
+import com.google.caja.parser.js.ValueProperty;
 import com.google.caja.parser.js.WhileLoop;
 import com.google.caja.parser.quasiliteral.QuasiBuilder;
 import com.google.caja.reporting.MessageContext;
@@ -53,7 +54,6 @@ import com.google.caja.reporting.MessageQueue;
 import com.google.caja.util.Criterion;
 import com.google.caja.util.Lists;
 import com.google.caja.util.Maps;
-import com.google.caja.util.Pair;
 import com.google.caja.util.Sets;
 
 import java.io.StringReader;
@@ -339,12 +339,12 @@ class JsdocRewriter {
       }
     }, null);
 
-    List<Pair<Literal, Expression>> fieldMembers = Lists.newArrayList();
+    List<ObjProperty> fieldMembers = Lists.newArrayList();
     for (Map.Entry<String, Expression> e : fieldDocsByName.entrySet()) {
       Expression memberDoc = e.getValue();
       if (memberDoc == null) { memberDoc = new ObjectConstructor(pos); }
-      fieldMembers.add(Pair.pair(
-          (Literal) StringLiteral.valueOf(pos, e.getKey()), memberDoc));
+      fieldMembers.add(new ValueProperty(
+          StringLiteral.valueOf(pos, e.getKey()), memberDoc));
     }
     ObjectConstructor fields = new ObjectConstructor(pos, fieldMembers);
 
@@ -379,17 +379,23 @@ class JsdocRewriter {
   }
 
   private ParseTreeNode documentObjectConstructor(ObjectConstructor o) {
-    List<? extends Expression> children = o.children();
-    List<Pair<Literal, Expression>> entries = Lists.newArrayList();
-    for (int i = 0, n = children.size(); i < n; i += 2) {
-      Literal key = (Literal) children.get(i);
-      Expression value = children.get(i + 1);
+    List<? extends ObjProperty> children = o.children();
+    List<ObjProperty> entries = Lists.newArrayList();
+    for (ObjProperty prop : children) {
+      if (!(prop instanceof ValueProperty)) {
+        entries.add(prop);
+        continue;
+      }
+      ValueProperty vprop = (ValueProperty) prop;
+      StringLiteral key = vprop.getPropertyNameNode();
+      Expression value = vprop.getValueExpr();
 
       Expression docComment = getDocCommentJson(key);
       if (docComment == null) {
         docComment = getDocCommentJson(value);
       }
-      entries.add(Pair.pair(key, documentExpression(value, docComment)));
+      entries.add(new ValueProperty(
+          key, documentExpression(value, docComment)));
     }
     return new ObjectConstructor(o.getFilePosition(), entries);
   }
@@ -524,7 +530,7 @@ class JsdocRewriter {
       }
     }
 
-    List<Pair<Literal, Expression>> docEntries = Lists.newArrayList();
+    List<ObjProperty> docEntries = Lists.newArrayList();
 
     if (!description.isEmpty()) {
       BlockAnnotation desc = new BlockAnnotation(
@@ -535,22 +541,22 @@ class JsdocRewriter {
       Expression summaryExpr = handlers.handlerFor(summary)
           .handle(normalizeHtml(summary), mq);
       if (descExpr != null) {
-        docEntries.add(Pair.pair(
-            (Literal) StringLiteral.valueOf(pos, "@description"), descExpr));
+        docEntries.add(new ValueProperty(
+            StringLiteral.valueOf(pos, "@description"), descExpr));
       }
       if (summaryExpr != null) {
-        docEntries.add(Pair.pair(
-            (Literal) StringLiteral.valueOf(pos, "@summary"), summaryExpr));
+        docEntries.add(new ValueProperty(
+            StringLiteral.valueOf(pos, "@summary"), summaryExpr));
       }
     }
 
-    docEntries.add(Pair.<Literal, Expression>pair(
+    docEntries.add(new ValueProperty(
         StringLiteral.valueOf(pos, "@pos"),
         StringLiteral.valueOf(pos, format(pos, mc))));
     for (Map.Entry<String, List<Expression>> block : blocks.entrySet()) {
-      docEntries.add(Pair.pair(
-          (Literal) StringLiteral.valueOf(pos, "@" + block.getKey()),
-          (Expression) new ArrayConstructor(pos, block.getValue())));
+      docEntries.add(new ValueProperty(
+          StringLiteral.valueOf(pos, "@" + block.getKey()),
+          new ArrayConstructor(pos, block.getValue())));
     }
     return new ObjectConstructor(pos, docEntries);
   }

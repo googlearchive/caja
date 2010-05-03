@@ -1,33 +1,47 @@
 Block
   ExpressionStmt
     ObjectConstructor
-      StringLiteral : '1'
-      StringLiteral : 'the loneliest number'
-      StringLiteral : '0'
-      StringLiteral : 'Yields a key "0".  WTF?'
-      StringLiteral : '42'
-      StringLiteral : 'is the answer'
-      StringLiteral : '1.23456789012345678901e+29'
-      StringLiteral : '8 digits stripped from key'
-      StringLiteral : 'NaN'
-      StringLiteral : 'Strange but true'
-      StringLiteral : 'Infinity'
-      StringLiteral : "and beyond!"
-      StringLiteral : 'null'
-      NullLiteral : null
-      StringLiteral : 'undefined'
-      SimpleOperation : NOT
-        Reference
-          Identifier : defined
-      StringLiteral : 'false'
-      BooleanLiteral : false
-      StringLiteral : ''
-      StringLiteral : ''
-      StringLiteral : 'if'
-      StringLiteral : 'if'
-      StringLiteral : 'function'
-      StringLiteral : 'function'
-      StringLiteral : 'with'
-      StringLiteral : 'with'
-      StringLiteral : 'debugger'
-      StringLiteral : 'debugger'
+      ValueProperty
+        StringLiteral : '1'
+        StringLiteral : 'the loneliest number'
+      ValueProperty
+        StringLiteral : '0'
+        StringLiteral : 'Yields a key "0".  WTF?'
+      ValueProperty
+        StringLiteral : '42'
+        StringLiteral : 'is the answer'
+      ValueProperty
+        StringLiteral : '1.23456789012345678901e+29'
+        StringLiteral : '8 digits stripped from key'
+      ValueProperty
+        StringLiteral : 'NaN'
+        StringLiteral : 'Strange but true'
+      ValueProperty
+        StringLiteral : 'Infinity'
+        StringLiteral : "and beyond!"
+      ValueProperty
+        StringLiteral : 'null'
+        NullLiteral : null
+      ValueProperty
+        StringLiteral : 'undefined'
+        SimpleOperation : NOT
+          Reference
+            Identifier : defined
+      ValueProperty
+        StringLiteral : 'false'
+        BooleanLiteral : false
+      ValueProperty
+        StringLiteral : ''
+        StringLiteral : ''
+      ValueProperty
+        StringLiteral : 'if'
+        StringLiteral : 'if'
+      ValueProperty
+        StringLiteral : 'function'
+        StringLiteral : 'function'
+      ValueProperty
+        StringLiteral : 'with'
+        StringLiteral : 'with'
+      ValueProperty
+        StringLiteral : 'debugger'
+        StringLiteral : 'debugger'

@@ -44,6 +44,7 @@ import com.google.caja.parser.js.Loop;
 import com.google.caja.parser.js.MultiDeclaration;
 import com.google.caja.parser.js.Noop;
 import com.google.caja.parser.js.NumberLiteral;
+import com.google.caja.parser.js.ObjProperty;
 import com.google.caja.parser.js.ObjectConstructor;
 import com.google.caja.parser.js.Operation;
 import com.google.caja.parser.js.Operator;
@@ -58,6 +59,7 @@ import com.google.caja.parser.js.ThrowStmt;
 import com.google.caja.parser.js.TranslatedCode;
 import com.google.caja.parser.js.TryStmt;
 import com.google.caja.parser.js.UncajoledModule;
+import com.google.caja.parser.js.ValueProperty;
 import com.google.caja.reporting.BuildInfo;
 import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessagePart;
@@ -70,6 +72,7 @@ import com.google.caja.util.SyntheticAttributeKey;
 import static com.google.caja.parser.js.SyntheticNodes.s;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
@@ -1996,20 +1999,17 @@ public class CajitaRewriter extends Rewriter {
           name="mapBadKeyValueOf",
           synopsis="Statically reject 'valueOf' as a key",
           reason="We depend on valueOf returning consistent results.",
-          matches="({valueOf: @f, @key*: @val*})",
+          matches="'valueOf': @f",
           substitutes="<reject>")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
-        if (node instanceof ObjectConstructor) {
-          ObjectConstructor obj = (ObjectConstructor) node;
-          List<? extends Expression> parts = obj.children();
-          for (int i = 0, n = parts.size(); i < n; i += 2) {
-            StringLiteral key = (StringLiteral) parts.get(i);
-            if ("valueOf".equals(key.getUnquotedValue())) {
-              mq.addMessage(
-                  RewriterMessageType.VALUEOF_PROPERTY_MUST_NOT_BE_SET,
-                  key.getFilePosition(), this, key);
-              return node;
-            }
+        if (node instanceof ObjProperty) {
+          ObjProperty prop = (ObjProperty) node;
+          StringLiteral key = prop.getPropertyNameNode();
+          if ("valueOf".equals(key.getUnquotedValue())) {
+            mq.addMessage(
+                RewriterMessageType.VALUEOF_PROPERTY_MUST_NOT_BE_SET,
+                key.getFilePosition(), this, key);
+            return node;
           }
         }
         return NONE;
@@ -2020,22 +2020,41 @@ public class CajitaRewriter extends Rewriter {
       @Override
       @RuleDescription(
           name="mapBadKeySuffix",
-          synopsis="Statically reject if a key with `__` suffix is found",
+          synopsis="Statically reject a property whose name ends with `__`",
           reason="",
-          matches="({ @k__: @v, @key*: @val* })",
+          matches="\"@k__\": @v",
           substitutes="<reject>")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
-        if (node instanceof ObjectConstructor) {
-          ObjectConstructor obj = (ObjectConstructor) node;
-          List<? extends Expression> parts = obj.children();
-          for (int i = 0, n = parts.size(); i < n; i += 2) {
-            StringLiteral key = (StringLiteral) parts.get(i);
-            if (!key.getUnquotedValue().endsWith("__")) { continue; }
+        if (node instanceof ObjProperty) {
+          ObjProperty prop = (ObjProperty) node;
+          StringLiteral key = prop.getPropertyNameNode();
+          if (key.getUnquotedValue().endsWith("__")) {
             mq.addMessage(
                 RewriterMessageType.PROPERTIES_CANNOT_END_IN_DOUBLE_UNDERSCORE,
                 key.getFilePosition(), this, key);
             return node;
           }
+        }
+        return NONE;
+      }
+    },
+
+    new Rule() {
+      @Override
+      @RuleDescription(
+          name="valueProperty",
+          synopsis="nymize object properties",
+          reason="",
+          matches="\"@k\": @v",
+          substitutes="<nymized>")
+      public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
+        if (node instanceof ValueProperty) {
+          ValueProperty prop = (ValueProperty) node;
+          return new ParseTreeNodeContainer(Arrays.asList(
+               noexpand(prop.getPropertyNameNode()),
+               expand(
+                   nymize(prop.getValueExpr(), prop.getPropertyName(), "lit"),
+                   scope)));
         }
         return NONE;
       }
@@ -2052,14 +2071,16 @@ public class CajitaRewriter extends Rewriter {
       public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
         if (node instanceof ObjectConstructor) {
           ObjectConstructor obj = (ObjectConstructor) node;
-          List<? extends Expression> parts = obj.children();
+          List<? extends ObjProperty> props = obj.children();
           List<Expression> expanded = Lists.newArrayList();
-          for (int i = 0, n = parts.size(); i < n; i += 2) {
-            StringLiteral key = (StringLiteral) parts.get(i);
-            Expression val = parts.get(i + 1);
-            expanded.add(noexpand(key));
-            expanded.add((Expression) expand(
-                nymize(val, key.getUnquotedValue(), "lit"), scope));
+          for (ObjProperty prop : props) {
+            ParseTreeNode nymized = expand(prop, scope);
+            if (nymized instanceof ParseTreeNodeContainer) {
+              // Non error property handling case above.
+              for (ParseTreeNode child : nymized.children()) {
+                expanded.add((Expression) child);
+              }
+            }
           }
           return substV("parts", new ParseTreeNodeContainer(expanded));
         }

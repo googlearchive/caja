@@ -22,10 +22,11 @@ import com.google.caja.lexer.JsTokenQueue;
 import com.google.caja.lexer.ParseException;
 import com.google.caja.parser.ParseTreeNodes;
 import com.google.caja.parser.js.Expression;
-import com.google.caja.parser.js.Literal;
+import com.google.caja.parser.js.ObjProperty;
 import com.google.caja.parser.js.ObjectConstructor;
 import com.google.caja.parser.js.Parser;
 import com.google.caja.parser.js.StringLiteral;
+import com.google.caja.parser.js.ValueProperty;
 import com.google.caja.reporting.EchoingMessageQueue;
 import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessageQueue;
@@ -119,16 +120,24 @@ final class UserAgentDb {
     return result;
   }
 
+  /**
+   * Intersect two JSON objects to produce an output that has only the
+   * properties in common between the two.
+   */
   private static ObjectConstructor merge(
       ObjectConstructor a, ObjectConstructor b) {
-    List<Pair<Literal, Expression>> props = Lists.newArrayList();
-    List<? extends Expression> children = a.children();
-    for (int i = 0, n = children.size(); i < n; i += 2) {
-      StringLiteral key = (StringLiteral) children.get(i);
-      Expression avalue = children.get(i + 1);
-      Expression bvalue = b.getValue(key.getUnquotedValue());
-      if (bvalue != null && ParseTreeNodes.deepEquals(avalue, bvalue)) {
-        props.add(Pair.pair((Literal) key, avalue));
+    List<ObjProperty> props = Lists.newArrayList();
+    List<? extends ObjProperty> children = a.children();
+    for (ObjProperty aprop : children) {
+      StringLiteral key = aprop.getPropertyNameNode();
+      if (aprop instanceof ValueProperty) {
+        Expression avalue = ((ValueProperty) aprop).getValueExpr();
+        ObjProperty bprop = b.propertyWithName(key.getUnquotedValue());
+        if (bprop instanceof ValueProperty
+            && ParseTreeNodes.deepEquals(
+                avalue, ((ValueProperty) bprop).getValueExpr())) {
+          props.add(aprop);
+        }
       }
     }
     return new ObjectConstructor(FilePosition.UNKNOWN, props);

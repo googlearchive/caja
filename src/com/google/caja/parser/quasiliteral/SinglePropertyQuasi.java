@@ -15,8 +15,12 @@
 package com.google.caja.parser.quasiliteral;
 
 import com.google.caja.parser.ParseTreeNode;
+import com.google.caja.parser.js.Expression;
+import com.google.caja.parser.js.StringLiteral;
+import com.google.caja.parser.js.ValueProperty;
 import com.google.caja.util.Lists;
 
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -40,18 +44,19 @@ final class SinglePropertyQuasi extends QuasiNode {
       List<ParseTreeNode> specimens, Map<String, ParseTreeNode> bindings) {
     QuasiNode key = getKey();
     QuasiNode value = getValue();
-    for (int i = 0, n = specimens.size(); i < n; i += 2) {
-      ParseTreeNode candidate = specimens.get(i);
-      List<ParseTreeNode> keyCandidate = Lists.newArrayList(1);
-      keyCandidate.add(candidate);
+    Iterator<ParseTreeNode> it = specimens.iterator();
+    while (it.hasNext()) {
+      ParseTreeNode candidate = it.next();
+      if (!(candidate instanceof ValueProperty)) { continue; }
+      ValueProperty prop = (ValueProperty) candidate;
+      List<ParseTreeNode> keyCandidate = Lists.<ParseTreeNode>newArrayList(
+          prop.getPropertyNameNode());
       if (key.consumeSpecimens(keyCandidate, bindings)
           && keyCandidate.isEmpty()) {
-        List<ParseTreeNode> valueCandidate = Lists.newArrayList(1);
-        valueCandidate.add(specimens.get(i + 1));
+        List<ParseTreeNode> valueCandidate = Lists.<ParseTreeNode>newArrayList(
+            prop.getValueExpr());
         if (value.consumeSpecimens(valueCandidate, bindings)) {
-          if (valueCandidate.isEmpty()) {
-            specimens.subList(i, i + 2).clear();
-          }
+          if (valueCandidate.isEmpty()) { it.remove(); }
           return true;
         }
       }
@@ -65,10 +70,15 @@ final class SinglePropertyQuasi extends QuasiNode {
     int subsSize = substitutes.size();
     if (getKey().createSubstitutes(substitutes, bindings)) {
       int subsSizeKey = substitutes.size();
-      if (subsSizeKey == subsSize + 1) {
+      if (subsSizeKey == subsSize + 1
+          && substitutes.get(subsSize) instanceof StringLiteral) {
         if (getValue().createSubstitutes(substitutes, bindings)) {
           int subsSizeValue = substitutes.size();
           if (subsSizeValue == subsSizeKey + 1) {
+            StringLiteral key = (StringLiteral) substitutes.get(subsSize);
+            Expression value = (Expression) substitutes.get(subsSize + 1);
+            substitutes.subList(subsSize, substitutes.size()).clear();
+            substitutes.add(new ValueProperty(key, value));
             return true;
           }
         }
