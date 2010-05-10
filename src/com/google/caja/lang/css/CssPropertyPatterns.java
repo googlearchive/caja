@@ -66,6 +66,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -256,6 +257,9 @@ public class CssPropertyPatterns {
     } else if (sig instanceof CssPropertySignature.SetSignature
                || sig instanceof CssPropertySignature.ExclusiveSetSignature) {
       return setToPattern(identBefore, sig);
+    } else if (sig instanceof CssPropertySignature.CallSignature) {
+      return callToPattern(
+          identBefore, (CssPropertySignature.CallSignature) sig);
     }
     return null;
   }
@@ -372,6 +376,29 @@ public class CssPropertyPatterns {
     }
     if (children.isEmpty()) { return null; }
     return new JSREBuilder(identAfter, JSRE.alt(children));
+  }
+
+  private JSREBuilder callToPattern(
+      boolean identBefore, CssPropertySignature.CallSignature sig) {
+    Iterator<? extends CssPropertySignature> sigs = sig.children().iterator();
+    List<JSRE> children = Lists.newArrayList();
+    JSREBuilder fnPattern = sigToPattern(identBefore, sigs.next());
+    if (fnPattern == null) { return null; }
+    children.add(fnPattern.p);
+    children.add(JSRE.lit("("));
+    boolean first = true;
+    while (sigs.hasNext()) {
+      if (first) {
+        first = false;
+      } else {
+        children.add(JSRE.lit(","));
+      }
+      JSREBuilder actual = sigToPattern(false, sigs.next());
+      if (actual == null) { return null; }
+      children.add(actual.p);
+    }
+    children.add(JSRE.lit(")"));
+    return new JSREBuilder(false, JSRE.cat(children));
   }
 
   // TODO(jasvir): Clarify the meaning of (a||b)* and modify this function

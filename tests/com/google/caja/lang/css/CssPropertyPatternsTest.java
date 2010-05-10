@@ -41,6 +41,11 @@ public class CssPropertyPatternsTest extends CajaTestCase {
     assertDoesNotMatch("[ foo | bar ]", "fo", "ar", " foo bar", " far ");
   }
 
+  public final void testColor() throws Exception {
+   assertMatches(
+       "'color'", "#fff", "#aabbcc", "red", "rgb(0,0,255)",
+       "rgb(0, 0, 255)");
+  }
 
   public final void testExclusiveUnionPattern() throws Exception {
     assertPattern("[ foo | [ a || b || c || d ] | bar ]",
@@ -50,7 +55,9 @@ public class CssPropertyPatternsTest extends CajaTestCase {
   public final void testReferencePattern() throws Exception {
     assertPattern(
         "'background-attachment'",
-        "/^\\s*(?:scroll|fixed|local)(?:\\s*,\\s*(?:scroll|fixed|local))*\\s*$/i");
+        ""
+        + "/^\\s*(?:scroll|fixed|local)"
+        + "(?:\\s*,\\s*(?:scroll|fixed|local))*\\s*$/i");
   }
 
   public final void testMultiFoo() throws Exception {
@@ -153,8 +160,8 @@ public class CssPropertyPatternsTest extends CajaTestCase {
             + "var pattern = " + toPattern(sig) + ";"
             + "var candidates = " + render(toArrayList(candidates)) + ";"
             + "for (var i = candidates.length; --i >= 0;) {"
-            + "  if (!pattern.test(candidates[i] + ' ')) {"
-            + "    throw new Error(candidates[i]);"
+            + "  if (!pattern.test(candidates[i])) {"
+            + "    throw new Error('' + candidates[i]);"
             + "  }"
             + "}",
             getName()));
@@ -168,7 +175,7 @@ public class CssPropertyPatternsTest extends CajaTestCase {
             + "var pattern = " + toPattern(sig) + ";"
             + "var candidates = " + render(toArrayList(candidates)) + ";"
             + "for (var i = candidates.length; --i >= 0;) {"
-            + "  if (pattern.test(candidates[i] + ' ')) {"
+            + "  if (pattern.test(candidates[i])) {"
             + "    throw new Error(candidates[i]);"
             + "  }"
             + "}",
