@@ -383,6 +383,7 @@ class JsdocRewriter {
     List<ObjProperty> entries = Lists.newArrayList();
     for (ObjProperty prop : children) {
       if (!(prop instanceof ValueProperty)) {
+        // TODO: handle getters and setters
         entries.add(prop);
         continue;
       }

@@ -46,6 +46,10 @@ public enum RewriterMessageType implements MessageTypeInt {
       "%s: Properties cannot end in \"__\": %s, %s",
       MessageLevel.FATAL_ERROR),
 
+  GETTERS_SETTERS_NOT_SUPPORTED(
+      "%s: Getter and setter properties not supported: %s",
+      MessageLevel.FATAL_ERROR),
+
   SELECTORS_CANNOT_END_IN_DOUBLE_UNDERSCORE(
       "%s: Selectors cannot end in \"__\": %s, %s",
       MessageLevel.FATAL_ERROR),

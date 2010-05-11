@@ -1296,14 +1296,21 @@ public class DefaultValijaRewriter extends Rewriter {
           matches="\"@key\": @val",
           substitutes="\"@key\": @val")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
-        if (node instanceof ValueProperty) {
-          ValueProperty prop = (ValueProperty) node;
-          StringLiteral key = prop.getPropertyNameNode();
-          Expression val = prop.getValueExpr();
-          return new ValueProperty(
-              noexpand(key),
-              (Expression) expand(
-                  nymize(val, key.getUnquotedValue(), "lit"), scope));
+        if (node instanceof ObjProperty) {
+          if (node instanceof ValueProperty) {
+            ValueProperty prop = (ValueProperty) node;
+            StringLiteral key = prop.getPropertyNameNode();
+            Expression val = prop.getValueExpr();
+            return new ValueProperty(
+                noexpand(key),
+                (Expression) expand(
+                    nymize(val, key.getUnquotedValue(), "lit"), scope));
+          } else {
+            mq.addMessage(
+                RewriterMessageType.GETTERS_SETTERS_NOT_SUPPORTED,
+                node.getFilePosition(), this);
+            return node;
+          }
         }
         return NONE;
       }

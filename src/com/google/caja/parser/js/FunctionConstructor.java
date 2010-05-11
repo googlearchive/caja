@@ -95,6 +95,12 @@ public final class FunctionConstructor
     if (null != name) {
       out.consume(name);
     }
+    renderActuals(rc);
+    renderBody(rc);
+  }
+
+  void renderActuals(RenderContext rc) {
+    TokenConsumer out = rc.getOut();
     out.consume("(");
     boolean seen = false;
     for (FormalParam e : params) {
@@ -106,6 +112,9 @@ public final class FunctionConstructor
       e.render(rc);
     }
     out.consume(")");
+  }
+
+  void renderBody(RenderContext rc) {
     body.renderBlock(rc, false);
   }
 

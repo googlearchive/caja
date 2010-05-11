@@ -2042,19 +2042,26 @@ public class CajitaRewriter extends Rewriter {
     new Rule() {
       @Override
       @RuleDescription(
-          name="valueProperty",
+          name="objectProperty",
           synopsis="nymize object properties",
           reason="",
           matches="\"@k\": @v",
           substitutes="<nymized>")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
-        if (node instanceof ValueProperty) {
-          ValueProperty prop = (ValueProperty) node;
-          return new ParseTreeNodeContainer(Arrays.asList(
-               noexpand(prop.getPropertyNameNode()),
-               expand(
-                   nymize(prop.getValueExpr(), prop.getPropertyName(), "lit"),
-                   scope)));
+        if (node instanceof ObjProperty) {
+          if (node instanceof ValueProperty) {
+            ValueProperty prop = (ValueProperty) node;
+            return new ParseTreeNodeContainer(Arrays.asList(
+                 noexpand(prop.getPropertyNameNode()),
+                 expand(
+                     nymize(prop.getValueExpr(), prop.getPropertyName(), "lit"),
+                     scope)));
+          } else {
+            mq.addMessage(
+                RewriterMessageType.GETTERS_SETTERS_NOT_SUPPORTED,
+                node.getFilePosition(), this);
+            return node;
+          }
         }
         return NONE;
       }

@@ -151,6 +151,9 @@ public class ParserTest extends CajaTestCase {
 
     assertFalse(msgs.hasNext());
   }
+  public final void testParser11() throws Exception {
+    runParseTest("parsertest11.js", "parsergolden11.txt");
+  }
 
   public final void testParseTreeRendering1() throws Exception {
     runRenderTest("parsertest1.js", "rendergolden1.txt", false, true);
@@ -189,6 +192,9 @@ public class ParserTest extends CajaTestCase {
   }
   public final void testParseTreeRendering9() throws Exception {
     runRenderTest("parsertest9.js", "rendergolden9.txt", false, false);
+  }
+  public final void testParseTreeRendering11() throws Exception {
+    runRenderTest("parsertest11.js", "rendergolden11.txt", false, false);
   }
   public final void testThrowAsRestrictedProduction() throws Exception {
     try {

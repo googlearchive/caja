@@ -1,0 +1,74 @@
+Block
+  ExpressionStmt
+    ObjectConstructor
+      ValueProperty
+        StringLiteral : 'foo'
+        Reference
+          Identifier : bar
+      ValueProperty
+        StringLiteral : 'get'
+        Reference
+          Identifier : set
+      ValueProperty
+        StringLiteral : 'set'
+        Reference
+          Identifier : get
+      GetterProperty
+        StringLiteral : 'x'
+        FunctionConstructor
+          Identifier
+          Block
+            ReturnStmt
+              IntegerLiteral : 1
+      SetterProperty
+        StringLiteral : 'x'
+        FunctionConstructor
+          Identifier
+          FormalParam
+            Identifier : v
+          Block
+            ExpressionStmt
+              AssignOperation : ASSIGN
+                SpecialOperation : MEMBER_ACCESS
+                  Reference
+                    Identifier : this
+                  Reference
+                    Identifier : x_
+                Reference
+                  Identifier : v
+      GetterProperty
+        StringLiteral : "y"
+        FunctionConstructor
+          Identifier
+          FormalParam
+            Identifier : n
+          Block
+            DirectivePrologue
+              Directive : use strict
+            ReturnStmt
+              Reference
+                Identifier : n
+      GetterProperty
+        StringLiteral : 'get'
+        FunctionConstructor
+          Identifier
+          FormalParam
+            Identifier : n
+          Block
+            ReturnStmt
+              IntegerLiteral : 2
+      SetterProperty
+        StringLiteral : "a-b"
+        FunctionConstructor
+          Identifier
+          FormalParam
+            Identifier : x
+          FormalParam
+            Identifier : y
+          Block
+            ExpressionStmt
+              SpecialOperation : FUNCTION_CALL
+                Reference
+                  Identifier : x
+                Reference
+                  Identifier : y

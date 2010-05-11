@@ -168,11 +168,10 @@ import java.util.Set;
  * FunctionDeclaration     => <NamedFunction>
  * FunctionConstructor     => <NamedFunction>
  *                          | <AnonymousFunction>
- *   AnonymousFunction     => 'function' '(' <FormalParams> ')' <FunctionBody>
- * NamedFunction           => 'function' <Identifier>
- *                            '(' <FormalParams> ')' <FunctionBody>
+ *   AnonymousFunction     => 'function' <Formals> <FunctionBody>
+ * NamedFunction           => 'function' <Identifier> <Formals> <FunctionBody>
  * FunctionBody            => '{' <Program> '}'
- * FormalParams            => <IdentifierList>?
+ * Formals                 => '(' <IdentifierList>? ')'
  *   IdentifierList        => <Identifier> <IdentifierListTail>
  *   IdentifierListTail    => ',' <IdentifierList>
  *
@@ -214,11 +213,16 @@ import java.util.Set;
  *     ArrayElements       => <ArrayElementsHead>* <Expression>
  *                          | &epsilon;
  *     ArrayElementsHead   => <Expression>? ','
- *   ObjectConstructor     => '{' <ObjectElementList> '}'
- *     ObjectElementList   => <ObjectElement> <ObjectElements>* <TrailingComma>?
- *     ObjectElements      => ',' <ObjectElement>
- *     ObjectElement       => <ObjectPropertyKey> ':' <Expression>
- *     ObjectPropertyKey   => <Identifier>
+ *   ObjectConstructor     => '{' <ObjPropertyList> '}'
+ *     ObjPropertyList     => <ObjPropery> <ObjProperties>* <TrailingComma>?
+ *     ObjProperties       => ',' <ObjectPreperty>
+ *     ObjProperty         => <ValueProperty>
+ *                          | <GetterProperty>
+ *                          | <SetterProperty>
+ *       ValueProperty     => <PropName> ':' <Expression>
+ *       GetterProperty    => 'get' <PropName> <Formals> <FunctionBody>
+ *       SetterProperty    => 'set' <PropName> <Formals> <FunctionBody>
+ *         ObjPropertyKey  => <Identifier>
  *                          | <StringLiteral>
  *                          | <NumberLiteral>
  *                          | <Keyword>  // set allowed interpreter dependent
@@ -264,7 +268,7 @@ public final class Parser extends ParserBase {
 
   /** Parses a top level block. */
   public Block parse() throws ParseException {
-    Block program = parseProgramOrFunctionBody();
+    Block program = parseProgram();
     tq.expectEmpty();
     return program;
   }
@@ -301,14 +305,25 @@ public final class Parser extends ParserBase {
     return parseStatementWithoutLabel();
   }
 
-  private Block parseProgramOrFunctionBody() throws ParseException {
+  private Block parseFunctionBody() throws ParseException {
+    return parseProgramOrFunctionBody(true);
+  }
+
+  private Block parseProgram() throws ParseException {
+    return parseProgramOrFunctionBody(false);
+  }
+
+  private Block parseProgramOrFunctionBody(boolean requireBrackets)
+      throws ParseException {
     Mark m = tq.mark();
+    if (requireBrackets) { tq.expectToken(Punctuation.LCURLY); }
     List<Statement> stmts = Lists.newArrayList();
     DirectivePrologue prologue = parseOptionalDirectivePrologue();
     if (prologue != null) { stmts.add(prologue); }
     while (!tq.isEmpty() && !tq.lookaheadToken(Punctuation.RCURLY)) {
       stmts.add(parseTerminatedStatement());
     }
+    if (requireBrackets) { tq.expectToken(Punctuation.RCURLY); }
     Block b = new Block(posFrom(m), stmts);
     finish(b, m);
     return b;
@@ -570,9 +585,7 @@ public final class Parser extends ParserBase {
             tq.expectToken(Punctuation.LPAREN);
             FormalParamList params = parseFormalParams();
             tq.expectToken(Punctuation.RPAREN);
-            tq.expectToken(Punctuation.LCURLY);
-            Block body = parseProgramOrFunctionBody();
-            tq.expectToken(Punctuation.RCURLY);
+            Block body = parseFunctionBody();
             FunctionConstructor fc = new FunctionConstructor(
                 posFrom(m), identifier, params.params, body);
             finish(fc, m);
@@ -1066,9 +1079,7 @@ public final class Parser extends ParserBase {
               tq.expectToken(Punctuation.LPAREN);
               FormalParamList params = parseFormalParams();
               tq.expectToken(Punctuation.RPAREN);
-              tq.expectToken(Punctuation.LCURLY);
-              Block body = parseProgramOrFunctionBody();
-              tq.expectToken(Punctuation.RCURLY);
+              Block body = parseFunctionBody();
               e = new FunctionConstructor(
                   posFrom(m), identifier, params.params, body);
               break typeswitch;
@@ -1138,6 +1149,21 @@ public final class Parser extends ParserBase {
               do {
                 Mark km = tq.mark();
                 Token<JsTokenType> keyToken = tq.peek();
+                String propertyType = null;
+                Mark beforeProperty = km;
+                if (keyToken.type == JsTokenType.WORD) {
+                  if ("get".equals(keyToken.text)
+                      || "set".equals(keyToken.text)) {
+                    tq.advance();
+                    Mark afterWord = tq.mark();
+                    if (!tq.checkToken(Punctuation.COLON)) {
+                      propertyType = keyToken.text;
+                      beforeProperty = afterWord;
+                      keyToken = tq.peek();
+                    }
+                    tq.rewind(beforeProperty);
+                  }
+                }
                 StringLiteral key;
                 switch (keyToken.type) {
                   case STRING:
@@ -1159,10 +1185,30 @@ public final class Parser extends ParserBase {
                     key = StringLiteral.valueOf(posFrom(km), ident);
                     break;
                 }
-                finish(key, km);
-                tq.expectToken(Punctuation.COLON);
-                Expression value = parseExpressionPart(true);
-                properties.add(new ValueProperty(key, value));
+                finish(key, beforeProperty);
+                ObjProperty prop;
+                if (propertyType == null) {
+                  tq.expectToken(Punctuation.COLON);
+                  Expression value = parseExpressionPart(true);
+                  prop = new ValueProperty(posFrom(km), key, value);
+                } else {
+                  Mark beforeFormals = tq.mark();
+                  Identifier ident = new Identifier(tq.currentPosition(), null);
+                  tq.expectToken(Punctuation.LPAREN);
+                  FormalParamList params = parseFormalParams();
+                  tq.expectToken(Punctuation.RPAREN);
+                  Block body = parseFunctionBody();
+                  FunctionConstructor fn = new FunctionConstructor(
+                      posFrom(beforeFormals), ident, params.params, body);
+                  if ("get".equals(propertyType)) {
+                    prop = new GetterProperty(posFrom(km), key, fn);
+                  } else {
+                    assert "set".equals(propertyType);
+                    prop = new SetterProperty(posFrom(km), key, fn);
+                  }
+                }
+                finish(prop, km);
+                properties.add(prop);
                 Mark cm = tq.mark();
                 sawComma = tq.checkToken(Punctuation.COMMA);
                 if (sawComma && tq.lookaheadToken(Punctuation.RCURLY)) {

@@ -15,8 +15,15 @@
 package com.google.caja.parser.js;
 
 import com.google.caja.lexer.FilePosition;
+import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.parser.AbstractParseTreeNode;
+import com.google.caja.parser.ParserBase;
+import com.google.caja.render.Concatenator;
+import com.google.caja.render.JsPrettyPrinter;
+import com.google.caja.reporting.RenderContext;
+import com.google.caja.util.Callback;
 
+import java.io.IOException;
 import java.util.List;
 
 /**
@@ -49,21 +56,47 @@ public abstract class ObjProperty extends AbstractParseTreeNode {
     assert children.size() == 2;
   }
 
+  @Override public final Object getValue() { return null; }
+
   @Override
   public List<? extends Expression> children() {
     return childrenAs(Expression.class);
   }
 
-  public StringLiteral getPropertyNameNode() {
+  public final StringLiteral getPropertyNameNode() {
     return (StringLiteral) children().get(0);
   }
 
   @Override
   public void childrenChanged() {
+    super.childrenChanged();
+    if (2 != children().size()) { throw new IndexOutOfBoundsException(); }
     getPropertyName();
   }
 
   public final String getPropertyName() {
     return ((StringLiteral) children().get(0)).getUnquotedValue();
+  }
+
+  @Override
+  public final TokenConsumer makeRenderer(
+      Appendable out, Callback<IOException> handler) {
+    return new JsPrettyPrinter(new Concatenator(out, handler));
+  }
+
+  protected final void renderPropertyName(
+      RenderContext rc, boolean preferUnquoted) {
+    StringLiteral key = (StringLiteral) children().get(0);
+    TokenConsumer out = rc.getOut();
+    if (rc.rawObjKeys() || preferUnquoted) {
+      String uqVal = key.getUnquotedValue();
+      if (ParserBase.isJavascriptIdentifier(uqVal)
+          && !("get".equals(uqVal) || "set".equals(uqVal))) {
+        out.mark(key.getFilePosition());
+        out.consume(uqVal);
+        return;
+      }
+    }
+    key.render(rc);
   }
 }
