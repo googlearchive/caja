@@ -17,7 +17,9 @@ package com.google.caja.util;
 import com.google.caja.SomethingWidgyHappenedError;
 import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.CssTokenType;
+import com.google.caja.lexer.FetchedData;
 import com.google.caja.lexer.FilePosition;
+import com.google.caja.lexer.GuessContentType;
 import com.google.caja.lexer.HtmlLexer;
 import com.google.caja.lexer.HtmlTokenType;
 import com.google.caja.lexer.InputSource;
@@ -56,7 +58,6 @@ import java.awt.GraphicsEnvironment;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.StringReader;
 import java.lang.reflect.Method;
 import java.net.URI;
@@ -109,7 +110,8 @@ public abstract class CajaTestCase extends TestCase {
     return CharProducer.Factory.create(new StringReader(content), pos);
   }
 
-  protected CharProducer fromResource(String resourcePath) throws IOException {
+  protected CharProducer fromResource(String resourcePath)
+      throws IOException {
     URI resource = TestUtil.getResource(getClass(), resourcePath);
     if (resource == null) { throw new FileNotFoundException(resourcePath); }
     return fromResource(resourcePath, new InputSource(resource));
@@ -117,11 +119,16 @@ public abstract class CajaTestCase extends TestCase {
 
   protected CharProducer fromResource(String resourcePath, InputSource is)
       throws IOException {
+    return dataFromResource(resourcePath, is).getTextualContent();
+  }
+
+  protected FetchedData dataFromResource(String resourcePath, InputSource is)
+      throws IOException {
+    ContentType guess = GuessContentType.guess(null, resourcePath, null);
     InputStream in = TestUtil.getResourceAsStream(getClass(), resourcePath);
-    CharProducer cp = CharProducer.Factory.create(
-        new InputStreamReader(in, "UTF-8"), is);
     mc.addInputSource(is);
-    return cp;
+    return FetchedData.fromStream(
+        in, guess != null ? guess.mimeType : "", "UTF-8", is);
   }
 
   protected String plain(CharProducer cp) {

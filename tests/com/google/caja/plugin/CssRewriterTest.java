@@ -16,7 +16,6 @@ package com.google.caja.plugin;
 
 import com.google.caja.lang.css.CssSchema;
 import com.google.caja.lang.html.HtmlSchema;
-import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.ExternalReference;
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.ParseException;
@@ -356,11 +355,7 @@ public class CssRewriterTest extends CajaTestCase {
     new CssValidator(cssSchema, HtmlSchema.getDefault(mq), mq)
         .validateCss(AncestorChain.instance(t));
     new CssRewriter(
-        new PluginEnvironment() {
-          public CharProducer loadExternalResource(
-              ExternalReference ref, String mimeType) {
-            return null;
-          }
+        new UriPolicy() {
           public String rewriteUri(ExternalReference ref, String mimeType) {
             URI uri = ref.getUri();
 
@@ -383,8 +378,7 @@ public class CssRewriterTest extends CajaTestCase {
             }
           }
         },
-        cssSchema,
-        mq)
+        cssSchema, mq)
         .rewrite(AncestorChain.instance(t));
 
     {

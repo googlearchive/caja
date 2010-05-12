@@ -16,10 +16,12 @@ package com.google.caja.ancillary.servlet;
 
 import com.google.caja.SomethingWidgyHappenedError;
 import com.google.caja.lexer.CharProducer;
+import com.google.caja.lexer.GuessContentType;
 import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.ParseException;
 import com.google.caja.reporting.EchoingMessageQueue;
 import com.google.caja.reporting.MessageContext;
+import com.google.caja.util.Charsets;
 import com.google.caja.util.ContentType;
 import com.google.caja.util.Lists;
 
@@ -83,7 +85,8 @@ final class Resources {
     InputStream in = clazz.getResourceAsStream(resourcePath);
     try {
       return CharProducer.Factory.create(
-          new InputStreamReader(in, "UTF-8"), new InputSource(src.toURI()));
+          new InputStreamReader(in, Charsets.UTF_8),
+          new InputSource(src.toURI()));
     } catch (URISyntaxException ex) {
       throw (IOException) new IOException("Bad path " + resourcePath)
           .initCause(ex);

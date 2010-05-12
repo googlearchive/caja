@@ -15,6 +15,8 @@
 package com.google.caja.service;
 
 import com.google.caja.SomethingWidgyHappenedError;
+import com.google.caja.lexer.FetchedData;
+import com.google.caja.lexer.InputSource;
 import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessageLevel;
@@ -113,13 +115,15 @@ public class CajolingServlet extends HttpServlet {
 
     FetchedData fetchedData;
     try {
-      fetchedData = new FetchedData(req.getInputStream(),
-          req.getContentType(), req.getCharacterEncoding());
+      fetchedData = FetchedData.fromStream(
+          req.getInputStream(), req.getContentType(),
+          req.getCharacterEncoding(),
+          InputSource.UNKNOWN);
     } catch (IOException e) {
       closeBadRequest(resp, "Error decoding POST data");
       return;
     }
-    
+
     handle(resp, new HttpContentHandlerArgs(req), fetchedData);
   }
 
@@ -148,11 +152,13 @@ public class CajolingServlet extends HttpServlet {
     if (containsNewline(responseContentType)) {
       throw new IllegalArgumentException(responseContentType);
     }
-    resp.setContentType(responseContentType);
-    resp.setContentLength(result.getContent().length);
 
     try {
-      resp.getOutputStream().write(result.getContent());
+      byte[] content = result.getByteContent();
+      resp.setContentType(responseContentType);
+      resp.setContentLength(content.length);
+
+      resp.getOutputStream().write(content);
       resp.getOutputStream().close();
     } catch (IOException ex) {
       throw (ServletException) new ServletException().initCause(ex);

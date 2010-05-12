@@ -20,6 +20,7 @@ import com.google.caja.config.WhiteList;
 import com.google.caja.lang.css.CssSchema;
 import com.google.caja.lang.html.HtmlSchema;
 import com.google.caja.lexer.CharProducer;
+import com.google.caja.lexer.GuessContentType;
 import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.ParseException;
 import com.google.caja.lexer.escaping.Escaping;

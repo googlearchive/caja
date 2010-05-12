@@ -43,6 +43,7 @@ import com.google.caja.reporting.SimpleMessageQueue;
 import com.google.caja.reporting.BuildInfo;
 import com.google.caja.util.Callback;
 import com.google.caja.util.CapturingReader;
+import com.google.caja.util.Charsets;
 import com.google.caja.util.Maps;
 import com.google.caja.render.Concatenator;
 import com.google.caja.render.JsMinimalPrinter;
@@ -58,7 +59,6 @@ import java.io.Writer;
 import java.io.Reader;
 import java.io.FileNotFoundException;
 import java.io.FileInputStream;
-import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.util.Collection;
 import java.util.Map;
@@ -84,12 +84,17 @@ public final class PluginCompilerMain {
     }
   };
 
-  private class CachingEnvironment extends FileSystemEnvironment {
-    public CachingEnvironment(File f) { super(f); }
+  private class CachingUriFetcher extends FileSystemUriFetcher {
+    public CachingUriFetcher(UriToFile u2f) { super(u2f); }
 
     @Override
     protected Reader newReader(File f) throws FileNotFoundException {
       return createReader(new InputSource(f), new FileInputStream(f));
+    }
+
+    @Override
+    protected InputStream newInputStream(File f) throws FileNotFoundException {
+      return new FileInputStream(f);
     }
   }
 
@@ -110,7 +115,19 @@ public final class PluginCompilerMain {
     String compiledHtmlOutput = null;
 
     try {
-      PluginMeta meta = new PluginMeta(makeEnvironment(config));
+      UriFetcher fetcher;
+      UriPolicy policy;
+      try {
+        UriToFile u2f = new UriToFile(
+            new File(config.getInputUris().iterator().next()).getParentFile());
+        fetcher = new CachingUriFetcher(u2f);
+        policy = new FileSystemUriPolicy(u2f);
+      } catch (IllegalArgumentException ex) {  // Not a file: URI
+        fetcher = UriFetcher.NULL_NETWORK;
+        policy = UriPolicy.CLOSED_PLUGIN_ENVIRONMENT;
+      }
+
+      PluginMeta meta = new PluginMeta(fetcher, policy);
       meta.setIdClass(config.getIdClass());
       PluginCompiler compiler = new PluginCompiler(
           BuildInfo.getInstance(), meta, mq);
@@ -219,7 +236,7 @@ public final class PluginCompilerMain {
   private void writeFile(File outputHtmlFile, String compiledHtmlOutput) {
     try {
       OutputStreamWriter out = new OutputStreamWriter(
-            new FileOutputStream(outputHtmlFile), "UTF-8");
+            new FileOutputStream(outputHtmlFile), Charsets.UTF_8);
       try {
         out.append(compiledHtmlOutput);
       } finally {
@@ -237,7 +254,7 @@ public final class PluginCompilerMain {
     Writer out = null;
 
     try {
-      out = new OutputStreamWriter(new FileOutputStream(f), "UTF-8");
+      out = new OutputStreamWriter(new FileOutputStream(f), Charsets.UTF_8);
       if (config.renderer() == Config.SourceRenderMode.DEBUGGER) {
         // Debugger rendering is weird enough to warrant its own method
         writeFileWithDebug(out, module);
@@ -323,23 +340,8 @@ public final class PluginCompilerMain {
     return maxLevel;
   }
 
-  private PluginEnvironment makeEnvironment(Config config) {
-    try {
-      return new CachingEnvironment(
-          new File(config.getInputUris().iterator().next()).getParentFile());
-    } catch (IllegalArgumentException ex) {  // Not a file: URI
-      return PluginEnvironment.CLOSED_PLUGIN_ENVIRONMENT;
-    }
-  }
-
   private Reader createReader(InputSource is, InputStream stream) {
-    InputStreamReader isr;
-
-    try {
-      isr = new InputStreamReader(stream, "UTF-8");
-    } catch (UnsupportedEncodingException e) {
-      throw new SomethingWidgyHappenedError(e);
-    }
+    InputStreamReader isr = new InputStreamReader(stream, Charsets.UTF_8);
 
     if (config.renderer() == Config.SourceRenderMode.SIDEBYSIDE ||
         config.renderer() == Config.SourceRenderMode.DEBUGGER) {

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.caja.service;
+package com.google.caja.lexer;
 
 import com.google.caja.util.CajaTestCase;
 
@@ -59,19 +59,19 @@ public class FetchedDataTest extends CajaTestCase {
   }
 
   public final void testSimpleContent() throws Exception {
-    FetchedData fd = new FetchedData(
+    FetchedData fd = FetchedData.fromConnection(
         new TestURLConnection(testUrl, "abcdef", "text/html"));
     assertEquals("text/html", fd.getContentType());
-    assertEquals("abcdef", new String(fd.getContent()));
+    assertEquals("abcdef", new String(fd.getByteContent()));
   }
 
   private void assertCharSet(
-      String expectedCharSet,
-      String urlConnectionContentType) throws Exception {
+      String expectedCharSet, String urlConnectionContentType)
+      throws Exception {
     String testContent = "abcdef";
-    FetchedData fd = new FetchedData(
+    FetchedData fd = FetchedData.fromConnection(
         new TestURLConnection(testUrl, testContent, urlConnectionContentType));
-    assertEquals(testContent, new String(fd.getContent()));
+    assertEquals(testContent, new String(fd.getByteContent()));
     assertEquals(urlConnectionContentType, fd.getContentType());
     assertEquals(expectedCharSet, fd.getCharSet());
   }

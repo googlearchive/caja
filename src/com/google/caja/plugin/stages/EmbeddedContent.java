@@ -24,7 +24,7 @@ import com.google.caja.parser.css.CssParser;
 import com.google.caja.parser.css.CssTree;
 import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.Parser;
-import com.google.caja.plugin.PluginEnvironment;
+import com.google.caja.plugin.UriFetcher;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.util.ContentType;
 import com.google.caja.util.Function;
@@ -42,7 +42,7 @@ import org.w3c.dom.Node;
 public final class EmbeddedContent {
   private final HtmlEmbeddedContentFinder finder;
   private final FilePosition pos;
-  private final Function<PluginEnvironment, CharProducer> getter;
+  private final Function<UriFetcher, CharProducer> getter;
   private final ExternalReference contentLocation;
   private final boolean deferred;
   private final Node source;
@@ -50,7 +50,7 @@ public final class EmbeddedContent {
 
   EmbeddedContent(
       HtmlEmbeddedContentFinder finder, FilePosition pos,
-      Function<PluginEnvironment, CharProducer> getter,
+      Function<UriFetcher, CharProducer> getter,
       ExternalReference contentLocation, boolean deferred, Node source,
       ContentType type) {
     this.finder = finder;
@@ -75,7 +75,7 @@ public final class EmbeddedContent {
    * such as code to raise a JS exception to trigger <tt>onerror</tt>
    * handlers.
    */
-  public CharProducer getContent(PluginEnvironment env) {
+  public CharProducer getContent(UriFetcher env) {
     return getter.apply(env);
   }
   /** Non null for remote content. */
@@ -90,10 +90,10 @@ public final class EmbeddedContent {
    * @param mq receives messages about parsing problems but not about
    *     content fetching.
    */
-  public ParseTreeNode parse(PluginEnvironment env, MessageQueue mq)
+  public ParseTreeNode parse(UriFetcher fetcher, MessageQueue mq)
       throws ParseException {
     if (type == null) { return null; }  // Malformed content
-    CharProducer cp = getContent(env);
+    CharProducer cp = getContent(fetcher);
     FilePosition p = cp.filePositionForOffsets(cp.getOffset(), cp.getLimit());
     switch (type) {
       case JS: {

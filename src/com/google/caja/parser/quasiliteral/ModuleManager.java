@@ -25,14 +25,17 @@ import com.google.caja.parser.js.CajoledModule;
 import com.google.caja.parser.js.Parser;
 import com.google.caja.parser.js.StringLiteral;
 import com.google.caja.parser.js.UncajoledModule;
-import com.google.caja.plugin.PluginEnvironment;
+import com.google.caja.plugin.UriFetcher;
 import com.google.caja.reporting.BuildInfo;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
+import com.google.caja.reporting.MessageType;
+import com.google.caja.util.ContentType;
+import com.google.caja.util.Maps;
 
+import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -44,22 +47,20 @@ import java.util.Map;
  * @author maoziqing@gmail.com
  */
 public class ModuleManager {
-  private final PluginEnvironment pluginEnv;
+  private final UriFetcher uriFetcher;
   private final BuildInfo buildInfo;
   private final MessageQueue mq;
   private final boolean isValija;
 
-  private final Map<String, Integer> moduleNameMap 
-    = new HashMap<String, Integer>();
-  private final Map<Integer, CajoledModule> moduleIndexMap
-    = new HashMap<Integer, CajoledModule>();
+  private final Map<String, Integer> moduleNameMap = Maps.newHashMap();
+  private final Map<Integer, CajoledModule> moduleIndexMap = Maps.newHashMap();
   private int moduleCounter = 0;
 
   public ModuleManager(
-      BuildInfo buildInfo, PluginEnvironment pluginEnv, MessageQueue mq,
+      BuildInfo buildInfo, UriFetcher uriFetcher, MessageQueue mq,
       boolean isValija) {
     this.buildInfo = buildInfo;
-    this.pluginEnv = pluginEnv;
+    this.uriFetcher = uriFetcher;
     this.mq = mq;
     this.isValija = isValija;
   }
@@ -102,13 +103,20 @@ public class ModuleManager {
     ExternalReference er = new ExternalReference(
         inputUri, src.getFilePosition());
 
-    CharProducer cp =
-        this.pluginEnv.loadExternalResource(er, "text/javascript");
-    if (cp == null) {
+    CharProducer cp;
+    try {
+      cp = this.uriFetcher.fetch(er, ContentType.JS.mimeType)
+          .getTextualContent();
+    } catch (UriFetcher.UriFetchException ex) {
       mq.addMessage(
           RewriterMessageType.MODULE_NOT_FOUND,
           src.getFilePosition(),
           MessagePart.Factory.valueOf(src.getUnquotedValue()));
+      return -1;
+    } catch (UnsupportedEncodingException ex) {
+      mq.addMessage(
+          MessageType.IO_ERROR,
+          MessagePart.Factory.valueOf(ex.toString()));
       return -1;
     }
 
@@ -130,12 +138,12 @@ public class ModuleManager {
       Block intermediate;
       if (isValija) {
         DefaultValijaRewriter dvr = new DefaultValijaRewriter(mq);
-        intermediate = (Block) dvr.expand(input); 
+        intermediate = (Block) dvr.expand(input);
       } else {
         intermediate = input;
       }
-      
-      CajitaRewriter dcr = 
+
+      CajitaRewriter dcr =
           new CajitaRewriter(buildInfo, this, mq, false);
       UncajoledModule uncajoledModule = new UncajoledModule(intermediate);
       CajoledModule cajoledModule = (CajoledModule) dcr.expand(uncajoledModule);

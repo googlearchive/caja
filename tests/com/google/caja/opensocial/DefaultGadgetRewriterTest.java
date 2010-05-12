@@ -16,10 +16,12 @@ package com.google.caja.opensocial;
 
 import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.ExternalReference;
+import com.google.caja.lexer.FetchedData;
 import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.lexer.escaping.UriUtil;
-import com.google.caja.plugin.PluginEnvironment;
+import com.google.caja.plugin.UriFetcher;
+import com.google.caja.plugin.UriPolicy;
 import com.google.caja.reporting.EchoingMessageQueue;
 import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessageContext;
@@ -28,14 +30,13 @@ import com.google.caja.reporting.RenderContext;
 import com.google.caja.reporting.TestBuildInfo;
 import com.google.caja.util.CajaTestCase;
 import com.google.caja.util.FailureIsAnOption;
+import com.google.caja.util.Lists;
 import com.google.caja.util.TestUtil;
 
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.URI;
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -43,26 +44,27 @@ import java.util.List;
  */
 public class DefaultGadgetRewriterTest extends CajaTestCase {
 
-  private static final PluginEnvironment ENV = new PluginEnvironment() {
-    public CharProducer loadExternalResource(
-        ExternalReference extref, String mimeType) {
+  private static final UriFetcher FETCHER = new UriFetcher() {
+    public FetchedData fetch(ExternalReference extref, String mimeType)
+        throws UriFetchException {
       if ("file".equals(extref.getUri().getScheme())) {
         if (extref.getUri().toString().startsWith(
                 TestUtil.getResource(getClass(), "").toString())) {
           InputSource is = new InputSource(extref.getUri());
           try {
-            return CharProducer.Factory.create(
-                new InputStreamReader(
-                    new FileInputStream(extref.getUri().getPath()), "UTF-8"),
-                is);
+            return FetchedData.fromStream(
+                new FileInputStream(extref.getUri().getPath()),
+                mimeType, "UTF-8", is);
           } catch (IOException ex) {
-            return null;
+            throw new UriFetchException(extref, mimeType, ex);
           }
         }
       }
-      return null;
+      throw new UriFetchException(extref, mimeType);
     }
+  };
 
+  private static final UriPolicy POLICY = new UriPolicy() {
     public String rewriteUri(ExternalReference extref, String mimeType) {
       return (
           "http://url-proxy.test.google.com/"
@@ -150,7 +152,7 @@ public class DefaultGadgetRewriterTest extends CajaTestCase {
   private void assertRewritePasses(String file, MessageLevel failLevel)
       throws Exception {
     URI gadgetUri = TestUtil.getResource(getClass(), file);
-    rewriter.rewrite(gadgetUri, fromResource(file), ENV, "canvas",
+    rewriter.rewrite(gadgetUri, fromResource(file), FETCHER, POLICY, "canvas",
                      System.out);
     checkMessages(failLevel);
   }
@@ -162,7 +164,7 @@ public class DefaultGadgetRewriterTest extends CajaTestCase {
     CharProducer cp = fromResource(file);
 
     StringBuilder sb = new StringBuilder();
-    rewriter.rewrite(gadgetUri, cp, ENV, "canvas", sb);
+    rewriter.rewrite(gadgetUri, cp, FETCHER, POLICY, "canvas", sb);
     String actual = normalXml(sb.toString()).trim();
 
     checkMessages(failLevel);
@@ -197,7 +199,7 @@ public class DefaultGadgetRewriterTest extends CajaTestCase {
     CharProducer cp = fromString(input, new InputSource(gadgetUri));
 
     try {
-      rewriter.rewrite(gadgetUri, cp, ENV, "canvas", System.out);
+      rewriter.rewrite(gadgetUri, cp, FETCHER, POLICY, "canvas", System.out);
       if (rewriteShouldFail)
         fail("rewrite should have failed with message " + msg);
     } catch (GadgetRewriteException ex) {
@@ -215,7 +217,7 @@ public class DefaultGadgetRewriterTest extends CajaTestCase {
   }
 
   private List<Message> getMessagesExceedingLevel(MessageLevel limit) {
-    List<Message> matches = new ArrayList<Message>();
+    List<Message> matches = Lists.newArrayList();
     for (Message msg : rewriter.getMessageQueue().getMessages()) {
       if (msg.getMessageLevel().compareTo(limit) >= 0) {
         matches.add(msg);

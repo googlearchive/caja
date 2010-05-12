@@ -40,10 +40,8 @@ public class CajolingServiceMain {
     int port = 8887;
     Server server = new Server(port);
 
-    final CajolingServlet servlet = new CajolingServlet(
-        new CajolingService(
-            BuildInfo.getInstance(),
-            "http://localhost:" + port));
+    final CajolingServlet servlet = new CajolingServlet(new CajolingService(
+        BuildInfo.getInstance(), "http://localhost:" + port));
 
     server.setHandler(new AbstractHandler() {
       public void handle(

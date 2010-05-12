@@ -25,11 +25,11 @@ import com.google.caja.parser.js.IntegerLiteral;
 import com.google.caja.parser.js.ObjectConstructor;
 import com.google.caja.parser.js.StringLiteral;
 import com.google.caja.parser.js.UncajoledModule;
-import com.google.caja.plugin.PluginEnvironment;
+import com.google.caja.plugin.UriFetcher;
 import com.google.caja.reporting.BuildInfo;
 import com.google.caja.reporting.MessageQueue;
+import com.google.caja.util.Lists;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -45,7 +45,7 @@ import java.util.Map;
   )
 public class CajitaModuleRewriter extends Rewriter {
   private final BuildInfo buildInfo;
-  private final PluginEnvironment pluginEnv;
+  private final UriFetcher uriFetcher;
   private final boolean isFromValija;
 
   final public Rule[] cajaRules = {
@@ -73,13 +73,13 @@ public class CajitaModuleRewriter extends Rewriter {
               + "    })"))
       public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
         if (node instanceof UncajoledModule) {
-          ModuleManager moduleManager =
-            new ModuleManager(buildInfo, pluginEnv, mq, isFromValija);
+          ModuleManager moduleManager = new ModuleManager(
+              buildInfo, uriFetcher, mq, isFromValija);
           moduleManager.appendUncajoledModule((UncajoledModule)node);
 
-          List<ParseTreeNode> moduleDefs = new ArrayList<ParseTreeNode>();
-          Map<Integer, CajoledModule> modules=
-            moduleManager.getModuleIndexMap();
+          List<ParseTreeNode> moduleDefs = Lists.newArrayList();
+          Map<Integer, CajoledModule> modules
+              = moduleManager.getModuleIndexMap();
 
           if (modules.size() == 1) {
             return modules.get(0);
@@ -118,19 +118,18 @@ public class CajitaModuleRewriter extends Rewriter {
    * Creates a CajitaModuleRewriter
    */
   public CajitaModuleRewriter(
-      BuildInfo buildInfo, PluginEnvironment pluginEnv, MessageQueue mq,
-      boolean logging, boolean isFromValija) {
+      BuildInfo buildInfo, UriFetcher fetcher,
+      MessageQueue mq, boolean logging, boolean isFromValija) {
     super(mq, false, logging);
     this.buildInfo = buildInfo;
-    this.pluginEnv = pluginEnv;
+    this.uriFetcher = fetcher;
     this.isFromValija = isFromValija;
     addRules(cajaRules);
   }
 
   public CajitaModuleRewriter(
-      BuildInfo buildInfo, MessageQueue mq, boolean logging, 
+      BuildInfo buildInfo, MessageQueue mq, boolean logging,
       boolean isFromValija) {
-    this(buildInfo, PluginEnvironment.CLOSED_PLUGIN_ENVIRONMENT, mq, logging, 
-        isFromValija);
+    this(buildInfo, UriFetcher.NULL_NETWORK, mq, logging, isFromValija);
   }
 }

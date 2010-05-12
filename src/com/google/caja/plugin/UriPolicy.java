@@ -14,24 +14,15 @@
 
 package com.google.caja.plugin;
 
-import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.ExternalReference;
 
 /**
- * Specifies how the cajoler resolves external resources such as scripts and
- * stylesheets in the code being cajoled.
+ * Specifies how to map external resources present in untrusted content
+ * or computed by cajoled scripts to URLs which the container can secure.
  *
  * @author mikesamuel@gmail.com
  */
-public interface PluginEnvironment {
-
-  /**
-   * Loads an external resource such as the {@code src} of a {@code script}
-   * tag or a stylesheet.
-   *
-   * @return null if the resource could not be loaded.
-   */
-  CharProducer loadExternalResource(ExternalReference ref, String mimeType);
+public interface UriPolicy {
 
   /**
    * Applies a URI policy and returns a URI that enforces that policy.
@@ -40,16 +31,16 @@ public interface PluginEnvironment {
    */
   String rewriteUri(ExternalReference uri, String mimeType);
 
-  /** A plugin environment that will not resolve or rewrite any URI. */
-  public static final PluginEnvironment CLOSED_PLUGIN_ENVIRONMENT
-      = new PluginEnvironment() {
-        public CharProducer loadExternalResource(
-          ExternalReference ref, String mimeType) {
-          return null;
-        }
-
+  /** A policy that denies all URIs. */
+  public static final UriPolicy CLOSED_PLUGIN_ENVIRONMENT = new UriPolicy() {
         public String rewriteUri(ExternalReference uri, String mimeType) {
           return null;
+        }
+      };
+
+  public static final UriPolicy IDENTITY = new UriPolicy() {
+        public String rewriteUri(ExternalReference extref, String mimeType) {
+          return extref.getUri().toString();
         }
       };
 }

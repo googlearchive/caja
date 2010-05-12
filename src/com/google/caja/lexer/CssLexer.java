@@ -768,7 +768,7 @@ final class CssSplitter implements TokenStream<CssTokenType> {
 
     int end = start;
     int len = 6;
-    boolean isRange = end < limit && buf[limit] == '?';
+    boolean isRange = end < limit && buf[end] == '?';
     if (isRange) {
       while (end < limit && '?' == buf[end] && --len >= 0) { ++end; }
     }

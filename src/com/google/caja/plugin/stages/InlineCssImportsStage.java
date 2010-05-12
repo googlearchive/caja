@@ -18,7 +18,6 @@ import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.CssTokenType;
 import com.google.caja.lexer.ExternalReference;
 import com.google.caja.lexer.FilePosition;
-import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.ParseException;
 import com.google.caja.lexer.TokenQueue;
 import com.google.caja.lexer.escaping.UriUtil;
@@ -27,18 +26,19 @@ import com.google.caja.parser.css.CssParser;
 import com.google.caja.parser.css.CssTree;
 import com.google.caja.plugin.Job;
 import com.google.caja.plugin.Jobs;
-import com.google.caja.plugin.PluginEnvironment;
 import com.google.caja.plugin.PluginMessageType;
+import com.google.caja.plugin.UriFetcher;
 import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.util.ContentType;
+import com.google.caja.util.Lists;
 import com.google.caja.util.Name;
 import com.google.caja.util.Pipeline;
+import com.google.caja.util.Sets;
 
+import java.io.UnsupportedEncodingException;
 import java.net.URI;
-import java.util.ArrayList;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -86,9 +86,8 @@ public class InlineCssImportsStage implements Pipeline.Stage<Jobs> {
   public boolean apply(Jobs jobs) {
     for (Job job : jobs.getJobsByType(ContentType.CSS)) {
       inlineImports(job.getRoot().cast(CssTree.StyleSheet.class).node,
-                    job.getBaseUri(),
-                    MAXIMUM_IMPORT_DEPTH,
-                    jobs.getPluginMeta().getPluginEnvironment(),
+                    job.getBaseUri(), MAXIMUM_IMPORT_DEPTH,
+                    jobs.getPluginMeta().getUriFetcher(),
                     jobs.getMessageQueue());
     }
     return jobs.hasNoErrors();
@@ -99,7 +98,7 @@ public class InlineCssImportsStage implements Pipeline.Stage<Jobs> {
 
   /** Inline imports at the beginning of ss. */
   private static void inlineImports(
-      CssTree.StyleSheet ss, URI baseUri, int depth, PluginEnvironment env,
+      CssTree.StyleSheet ss, URI baseUri, int depth, UriFetcher fetcher,
       MessageQueue mq) {
     MutableParseTreeNode.Mutation mut = ss.createMutation();
     for (CssTree t : ss.children()) {
@@ -113,7 +112,7 @@ public class InlineCssImportsStage implements Pipeline.Stage<Jobs> {
         return;
       }
       try {
-        inlineImport(importNode, baseUri, depth, env, mq, mut);
+        inlineImport(importNode, baseUri, depth, fetcher, mq, mut);
       } catch (ParseException ex) {
         ex.toMessageQueue(mq);
       }
@@ -124,13 +123,13 @@ public class InlineCssImportsStage implements Pipeline.Stage<Jobs> {
   /**
    * @param importNode specifies the URI to import, and the file position to
    *     resolve that URI relative to.
-   * @param env used to resolve the URI.
+   * @param fetcher used to load the URI.
    * @param mq receives error messages
    * @param mut mutation that receives changes that replace importNode with the
    *     content of the URI.
    */
   private static void inlineImport(
-      CssTree.Import importNode, URI baseUri, int depth, PluginEnvironment env,
+      CssTree.Import importNode, URI baseUri, int depth, UriFetcher fetcher,
       MessageQueue mq, MutableParseTreeNode.Mutation mut)
       throws ParseException {
     CssTree.UriLiteral uriNode = importNode.getUri();
@@ -149,15 +148,22 @@ public class InlineCssImportsStage implements Pipeline.Stage<Jobs> {
     }
 
     // Import it and recursively import its imports
-    InputSource is = new InputSource(importUrl.getUri());
-    CharProducer cp = env.loadExternalResource(importUrl, "text/css");
-    if (cp == null) {
+    CharProducer cp;
+    try {
+      cp = fetcher.fetch(importUrl, "text/css").getTextualContent();
+    } catch (UriFetcher.UriFetchException ex) {
       mq.addMessage(PluginMessageType.FAILED_TO_LOAD_EXTERNAL_URL,
-                    MessageLevel.ERROR, importUrl.getReferencePosition(), is);
+                    MessageLevel.ERROR, ex.ref.getReferencePosition(),
+                    MessagePart.Factory.valueOf(ex.ref.getUri().toString()));
+      return;
+    } catch (UnsupportedEncodingException ex) {
+      mq.addMessage(PluginMessageType.FAILED_TO_LOAD_EXTERNAL_URL,
+          MessageLevel.ERROR, importUrl.getReferencePosition(),
+          MessagePart.Factory.valueOf(absUri.toString()));
       return;
     }
     CssTree.StyleSheet importedSs = parseCss(cp, mq);
-    inlineImports(importedSs, importUrl.getUri(), depth - 1, env, mq);
+    inlineImports(importedSs, importUrl.getUri(), depth - 1, fetcher, mq);
 
     // Create a set of blocks to import by taking the union of media types on
     // the import block and the media blocks in the style-sheet.
@@ -236,7 +242,7 @@ public class InlineCssImportsStage implements Pipeline.Stage<Jobs> {
       List<? extends CssTree> nodes, Set<Name> mediaTypes,
       MutableParseTreeNode.Mutation mut) {
     if (nodes.isEmpty()) { return; }
-    List<CssTree> mediaBlockChildren = new ArrayList<CssTree>();
+    List<CssTree> mediaBlockChildren = Lists.newArrayList();
     FilePosition pos = FilePosition.startOf(nodes.get(0).getFilePosition());
     for (Name mediaType : mediaTypes) {
       mediaBlockChildren.add(new CssTree.Medium(pos, mediaType));
@@ -256,7 +262,7 @@ public class InlineCssImportsStage implements Pipeline.Stage<Jobs> {
   }
 
   private static Set<Name> toMediaTypeSet(List<CssTree.Medium> media) {
-    Set<Name> mediaTypes = new LinkedHashSet<Name>();
+    Set<Name> mediaTypes = Sets.newLinkedHashSet();
     for (CssTree.Medium medium : media) {
       mediaTypes.add(medium.getValue());
     }

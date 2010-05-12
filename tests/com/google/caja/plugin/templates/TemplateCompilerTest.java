@@ -14,10 +14,8 @@
 
 package com.google.caja.plugin.templates;
 
-import com.google.caja.SomethingWidgyHappenedError;
 import com.google.caja.lang.css.CssSchema;
 import com.google.caja.lang.html.HtmlSchema;
-import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.ExternalReference;
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.ParseException;
@@ -37,12 +35,11 @@ import com.google.caja.parser.js.Identifier;
 import com.google.caja.parser.js.TranslatedCode;
 import com.google.caja.plugin.CssRuleRewriter;
 import com.google.caja.plugin.ExtractedHtmlContent;
-import com.google.caja.plugin.PluginEnvironment;
 import com.google.caja.plugin.PluginMeta;
-import com.google.caja.reporting.Message;
+import com.google.caja.plugin.UriFetcher;
+import com.google.caja.plugin.UriPolicy;
 import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessagePart;
-import com.google.caja.reporting.MessageType;
 import com.google.caja.util.CajaTestCase;
 import com.google.caja.util.Lists;
 import com.google.caja.util.Pair;
@@ -63,20 +60,7 @@ public class TemplateCompilerTest extends CajaTestCase {
   @Override
   public void setUp() throws Exception {
     super.setUp();
-    meta = new PluginMeta(new PluginEnvironment() {
-      public CharProducer loadExternalResource(
-          ExternalReference ref, String mimeType) {
-        throw new SomethingWidgyHappenedError(
-            new Message(MessageType.INTERNAL_ERROR, MessageLevel.FATAL_ERROR,
-                MessagePart.Factory.valueOf(
-                    "Loading from external resource unimplemented")));
-      }
-
-      // return the URI unchanged, so we can test URI normalization
-      public String rewriteUri(ExternalReference ref, String mimeType) {
-        return ref.getUri().toString();
-      }
-    });
+    meta = new PluginMeta(UriFetcher.NULL_NETWORK, UriPolicy.IDENTITY);
   }
 
   public final void testEmptyModule() throws Exception {
@@ -432,20 +416,14 @@ public class TemplateCompilerTest extends CajaTestCase {
 
     final Holder<ExternalReference> savedRef = new Holder<ExternalReference>();
 
-    meta = new PluginMeta(new PluginEnvironment() {
-      public CharProducer loadExternalResource(
-          ExternalReference ref, String mimeType) {
-        throw new SomethingWidgyHappenedError(
-            new Message(MessageType.INTERNAL_ERROR, MessageLevel.FATAL_ERROR,
-                MessagePart.Factory.valueOf(
-                    "Loading from external resource unimplemented")));
-      }
-
-      public String rewriteUri(ExternalReference ref, String mimeType) {
-        savedRef.value = ref;
-        return "rewritten";
-      }
-    });
+    meta = new PluginMeta(
+        UriFetcher.NULL_NETWORK,
+        new UriPolicy() {
+          public String rewriteUri(ExternalReference ref, String mimeType) {
+            savedRef.value = ref;
+            return "rewritten";
+          }
+        });
 
     DocumentFragment htmlInput =
         htmlFragment(fromString("<a href=\"x.html\"></a>"));

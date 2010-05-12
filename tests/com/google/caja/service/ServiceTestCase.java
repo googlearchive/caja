@@ -16,6 +16,12 @@ package com.google.caja.service;
 
 import com.google.caja.SomethingWidgyHappenedError;
 import com.google.caja.util.CajaTestCase;
+import com.google.caja.util.Charsets;
+import com.google.caja.util.Maps;
+import com.google.caja.lexer.ExternalReference;
+import com.google.caja.lexer.FetchedData;
+import com.google.caja.lexer.InputSource;
+import com.google.caja.plugin.UriFetcher;
 import com.google.caja.reporting.TestBuildInfo;
 
 import java.io.ByteArrayOutputStream;
@@ -24,7 +30,6 @@ import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.net.URI;
-import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -38,16 +43,20 @@ public abstract class ServiceTestCase extends CajaTestCase {
   protected void setUp() throws Exception {
     super.setUp();
 
-    servlet = new CajolingServlet(new CajolingService(new TestBuildInfo()) {
-      @Override
-      protected FetchedData fetch(URI uri) throws IOException {
-        if (!uriContent.containsKey(uri)) {
-          throw new IOException(uri.toString());
-        }
-        return uriContent.get(uri);
-      }
-    });
-    uriContent = new HashMap<URI, FetchedData>();
+    uriContent = Maps.newHashMap();
+    servlet = new CajolingServlet(new CajolingService(
+        new TestBuildInfo(), null,
+        new UriFetcher() {
+          @Override
+          public FetchedData fetch(ExternalReference ref, String mimeType)
+              throws UriFetchException {
+            FetchedData data = uriContent.get(ref.getUri());
+            if (data == null) {
+              throw new UriFetchException(ref, mimeType);
+            }
+            return data;
+          }
+        }));
   }
 
   @Override
@@ -58,7 +67,7 @@ public abstract class ServiceTestCase extends CajaTestCase {
   protected void registerUri(String uri, String content, String contentType) {
     ByteArrayOutputStream out = new ByteArrayOutputStream();
     try {
-      Writer w = new OutputStreamWriter(out, "UTF-8");
+      Writer w = new OutputStreamWriter(out, Charsets.UTF_8);
       w.write(content);
       w.flush();
     } catch (UnsupportedEncodingException ex) {
@@ -73,7 +82,8 @@ public abstract class ServiceTestCase extends CajaTestCase {
       String uri, byte[] content, String contentType, String charset) {
     uriContent.put(
         URI.create(uri),
-        new FetchedData(content, contentType, charset));
+        FetchedData.fromBytes(
+            content, contentType, charset, new InputSource(URI.create(uri))));
   }
 
   protected Object requestGet(String queryString) throws Exception {

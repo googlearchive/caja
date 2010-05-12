@@ -14,21 +14,21 @@
 
 package com.google.caja.service;
 
-import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.ExternalReference;
+import com.google.caja.lexer.FetchedData;
+import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.InputSource;
-import com.google.caja.plugin.PluginEnvironment;
+import com.google.caja.plugin.UriFetcher;
 import com.google.caja.reporting.BuildInfo;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.util.Lists;
 import com.google.caja.util.Pair;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;
@@ -44,48 +44,35 @@ import java.util.Vector;
  * @author jasvir@gmail.com (Jasvir Nagra)
  */
 public class CajolingService {
-  private static final String DEFAULT_HOST = "http://caja.appspot.com/cajole";
+  static final String DEFAULT_HOST = "http://caja.appspot.com/cajole";
 
-  private List<ContentHandler> handlers = new Vector<ContentHandler>();
-  private ContentTypeCheck typeCheck = new LooseContentTypeCheck();
-  private String host;
-  private PluginEnvironment env;
+  private final List<ContentHandler> handlers = new Vector<ContentHandler>();
+  private final ContentTypeCheck typeCheck = new LooseContentTypeCheck();
+  private final String host;
+  private final UriFetcher uriFetcher;
 
-  public CajolingService() {
-    this(BuildInfo.getInstance());
-  }
+  public CajolingService() { this(BuildInfo.getInstance()); }
 
-  public CajolingService(BuildInfo buildInfo) {
-    this(buildInfo, DEFAULT_HOST);
-  }
+  public CajolingService(BuildInfo buildInfo) { this(buildInfo, null); }
 
   public CajolingService(BuildInfo buildInfo, String host) {
-    this.host = host;
-    this.env = new PluginEnvironment() {
-
-          public CharProducer loadExternalResource(
-              ExternalReference extref, String mimeType) {
-            try {
-              FetchedData data = fetch(extref.getUri());
-              return CharProducer.Factory.create(new InputStreamReader(
-                  new ByteArrayInputStream(data.getContent()), data.getCharSet()),
-                  new InputSource(extref.getUri()));
-            } catch (IOException ex) {
-              return null;
-            }
-          }
-
-          public String rewriteUri(ExternalReference extref, String mimeType) {
-            return extref.getUri().toString();
-          }
-        };
-    registerHandlers(buildInfo);
+    this(buildInfo, host, new UriFetcher() {
+      @Override
+      public FetchedData fetch(ExternalReference ref, String mimeType)
+          throws UriFetchException {
+        try {
+          return FetchedData.fromConnection(
+              ref.getUri().toURL().openConnection());
+        } catch (IOException ex) {
+          throw new UriFetchException(ref, mimeType, ex);
+        }
+      }
+    });
   }
 
-  public CajolingService(
-      BuildInfo buildInfo, String host, PluginEnvironment env) {
-    this.host = host;
-    this.env = env;
+  public CajolingService(BuildInfo buildInfo, String host, UriFetcher fetcher) {
+    this.host = host != null ? host : DEFAULT_HOST;
+    this.uriFetcher = fetcher;
     registerHandlers(buildInfo);
   }
 
@@ -141,11 +128,11 @@ public class CajolingService {
 
     if (inputFetchedData == null) {
       try {
-        inputFetchedData = fetch(inputUri);
-      } catch (IOException ex) {
-        mq.addMessage(
-            ServiceMessageType.CANNOT_FETCH_INPUT_URL,
-            MessagePart.Factory.valueOf(inputUri.toString()));
+        inputFetchedData = uriFetcher.fetch(
+            new ExternalReference(inputUri, FilePosition.UNKNOWN),
+            expectedInputContentType);
+      } catch (UriFetcher.UriFetchException ex) {
+        ex.toMessageQueue(mq);
         return null;
       }
     }
@@ -193,7 +180,7 @@ public class CajolingService {
         return null;
       }
     }
-    
+
     ByteArrayOutputStream intermediateResponse = new ByteArrayOutputStream();
     Pair<String, String> contentInfo;
     try {
@@ -205,35 +192,35 @@ public class CajolingService {
           inputFetchedData.getContentType(),
           outputContentType,
           inputFetchedData.getCharSet(),
-          inputFetchedData.getContent(),
+          inputFetchedData.getByteContent(),
           intermediateResponse,
           mq);
     } catch (UnsupportedContentTypeException e) {
       mq.addMessage(ServiceMessageType.UNSUPPORTED_CONTENT_TYPES);
       return null;
+    } catch (UnsupportedEncodingException e) {
+      mq.addMessage(ServiceMessageType.UNSUPPORTED_CONTENT_TYPES);
+      return null;
     } catch (RuntimeException e) {
       mq.addMessage(
-          ServiceMessageType.EXCEPTION_IN_SERVICE, 
+          ServiceMessageType.EXCEPTION_IN_SERVICE,
           MessagePart.Factory.valueOf(e.toString()));
       return null;
     }
 
-    return new FetchedData(
+    return FetchedData.fromBytes(
         intermediateResponse.toByteArray(),
         contentInfo.a,
-        contentInfo.b);
+        contentInfo.b,
+        new InputSource(inputUri));
   }
 
   private void registerHandlers(BuildInfo buildInfo) {
     handlers.add(new JsHandler(buildInfo));
     handlers.add(new ImageHandler());
-    handlers.add(new GadgetHandler(buildInfo, env));
+    handlers.add(new GadgetHandler(buildInfo, uriFetcher));
     handlers.add(new InnocentHandler());
-    handlers.add(new HtmlHandler(buildInfo, host, env));
-  }
-
-  protected FetchedData fetch(URI uri) throws IOException {
-    return new FetchedData(uri);
+    handlers.add(new HtmlHandler(buildInfo, host, uriFetcher));
   }
 
   private Pair<String, String> applyHandler(

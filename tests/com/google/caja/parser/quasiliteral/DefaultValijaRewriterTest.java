@@ -14,8 +14,8 @@
 
 package com.google.caja.parser.quasiliteral;
 
-import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.ExternalReference;
+import com.google.caja.lexer.FetchedData;
 import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.ParseException;
@@ -33,7 +33,7 @@ import com.google.caja.parser.js.ReturnStmt;
 import com.google.caja.parser.js.Statement;
 import com.google.caja.parser.js.SyntheticNodes;
 import com.google.caja.parser.js.UncajoledModule;
-import com.google.caja.plugin.PluginEnvironment;
+import com.google.caja.plugin.UriFetcher;
 import com.google.caja.util.Executor;
 import com.google.caja.util.FailureIsAnOption;
 import com.google.caja.util.RhinoTestBed;
@@ -48,21 +48,17 @@ import java.util.Collections;
  * @author metaweta@gmail.com
  */
 public class DefaultValijaRewriterTest extends CommonJsRewriterTestCase {
-  protected class TestPluginEnvironment implements PluginEnvironment {
-    public CharProducer loadExternalResource(
-        ExternalReference ref, String mimeType) {
-      URI uri;
-      uri = ref.getReferencePosition().source().getUri().resolve(ref.getUri());
+  protected class TestUriFetcher implements UriFetcher {
+    public FetchedData fetch(ExternalReference ref, String mimeType)
+        throws UriFetchException {
       try {
-        InputSource is = new InputSource(uri);
-        return fromResource(uri.getPath().substring(1), is);
-      } catch (IOException e) {
+        URI uri = ref.getReferencePosition().source().getUri()
+            .resolve(ref.getUri());
+        return dataFromResource(
+            uri.getPath().substring(1), new InputSource(uri));
+      } catch (IOException ex) {
+        throw new UriFetchException(ref, mimeType, ex);
       }
-      return null;
-    }
-
-    public String rewriteUri(ExternalReference uri, String mimeType) {
-      return null;
     }
   }
 
@@ -75,7 +71,7 @@ public class DefaultValijaRewriterTest extends CommonJsRewriterTestCase {
     super.setUp();
     valijaRewriter = new DefaultValijaRewriter(mq, false);
     cajitaRewriter = new CajitaModuleRewriter(
-        new TestBuildInfo(), new TestPluginEnvironment(), mq, false, true);
+        new TestBuildInfo(), new TestUriFetcher(), mq, false, true);
     innocentCodeRewriter = new InnocentCodeRewriter(mq, false);
     // Start with this one, then switch later to CajitaRewriter for
     // the second pass.
@@ -662,7 +658,7 @@ public class DefaultValijaRewriterTest extends CommonJsRewriterTestCase {
   }
 
   /**
-   * 
+   *
    */
   public final void testObjectFreeze() throws Exception {
     rewriteAndExecute( // records can be frozen
@@ -703,7 +699,7 @@ public class DefaultValijaRewriterTest extends CommonJsRewriterTestCase {
         "Object.freeze(pt);" +
         "assertThrows(function(){pt.y = 9;});");
   }
-  
+
   @Override
   protected Object executePlain(String caja)
       throws IOException, ParseException {

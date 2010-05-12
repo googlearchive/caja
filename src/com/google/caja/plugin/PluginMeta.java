@@ -20,8 +20,8 @@ package com.google.caja.plugin;
 public final class PluginMeta {
   /** Used to generate names that are unique within the plugin's namespace. */
   private int guidCounter;
-  /** Describes how resources external to the plugin definition are resolved. */
-  private final PluginEnvironment env;
+  private final UriFetcher uriFetcher;
+  private final UriPolicy uriPolicy;
   /**
    * The DOM ID suffix if known at Cajole time.  Most clients should allow the
    * module ID to be assigned dynamically but for those clients who know that
@@ -30,12 +30,15 @@ public final class PluginMeta {
   private String idClass;
 
   public PluginMeta() {
-    this(PluginEnvironment.CLOSED_PLUGIN_ENVIRONMENT);
+    this(UriFetcher.NULL_NETWORK, UriPolicy.CLOSED_PLUGIN_ENVIRONMENT);
   }
 
-  public PluginMeta(PluginEnvironment env) {
-    if (env == null) { throw new NullPointerException(); }
-    this.env = env;
+  public PluginMeta(UriFetcher uriFetcher, UriPolicy uriPolicy) {
+    if (uriFetcher == null || uriPolicy == null) {
+      throw new NullPointerException();
+    }
+    this.uriFetcher = uriFetcher;
+    this.uriPolicy = uriPolicy;
   }
 
   /**
@@ -48,7 +51,10 @@ public final class PluginMeta {
   }
 
   /** Describes how resources external to the plugin definition are resolved. */
-  public PluginEnvironment getPluginEnvironment() { return env; }
+  public UriPolicy getUriPolicy() { return uriPolicy; }
+
+  /** Describes how resources external to the plugin definition are resolved. */
+  public UriFetcher getUriFetcher() { return uriFetcher; }
 
   /**
    * Null if the module ID is not known statically.

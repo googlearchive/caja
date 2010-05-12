@@ -31,7 +31,6 @@ import com.google.caja.parser.js.Block;
 import com.google.caja.plugin.ExtractedHtmlContent;
 import com.google.caja.plugin.Job;
 import com.google.caja.plugin.Jobs;
-import com.google.caja.plugin.PluginEnvironment;
 import com.google.caja.plugin.PluginMessageType;
 import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessagePart;
@@ -123,13 +122,13 @@ public class RewriteHtmlStage implements Pipeline.Stage<Jobs> {
   private void rewriteScriptEl(Node root, EmbeddedContent c, Jobs jobs) {
     Element scriptEl = (Element) c.getSource();
     Node parent = scriptEl.getParentNode();
-    PluginEnvironment env = jobs.getPluginMeta().getPluginEnvironment();
 
     // Parse the body and create a block that will be placed inline in
     // loadModule.
     Block parsedScriptBody;
     try {
-      parsedScriptBody = (Block) c.parse(env, jobs.getMessageQueue());
+      parsedScriptBody = (Block) c.parse(
+          jobs.getPluginMeta().getUriFetcher(), jobs.getMessageQueue());
     } catch (ParseException ex) {
       ex.toMessageQueue(jobs.getMessageQueue());
       parent.removeChild(scriptEl);
@@ -180,10 +179,10 @@ public class RewriteHtmlStage implements Pipeline.Stage<Jobs> {
   private void extractStyles(
       JobCache.Keys keys, Element el, EmbeddedContent c, Attr media, Jobs jobs) {
     MessageQueue mq = jobs.getMessageQueue();
-    PluginEnvironment env = jobs.getPluginMeta().getPluginEnvironment();
     CssTree.StyleSheet stylesheet = null;
     try {
-      stylesheet = (CssTree.StyleSheet) c.parse(env, mq);
+      stylesheet = (CssTree.StyleSheet) c.parse(
+          jobs.getPluginMeta().getUriFetcher(), mq);
     } catch (ParseException ex) {
       ex.toMessageQueue(mq);
     }
@@ -256,11 +255,10 @@ public class RewriteHtmlStage implements Pipeline.Stage<Jobs> {
     Element body = onload.getOwnerElement();
     body.removeAttributeNode(onload);
 
-    PluginEnvironment env = jobs.getPluginMeta().getPluginEnvironment();
     MessageQueue mq = jobs.getMessageQueue();
     Block handler;
     try {
-      handler = (Block) c.parse(env, mq);
+      handler = (Block) c.parse(jobs.getPluginMeta().getUriFetcher(), mq);
     } catch (ParseException ex) {
       ex.toMessageQueue(mq);
       return;

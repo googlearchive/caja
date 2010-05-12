@@ -29,14 +29,16 @@ import com.google.caja.parser.js.Expression;
 import com.google.caja.parser.quasiliteral.QuasiBuilder;
 import com.google.caja.plugin.PipelineMaker;
 import com.google.caja.plugin.PluginCompiler;
-import com.google.caja.plugin.PluginEnvironment;
 import com.google.caja.plugin.PluginMeta;
+import com.google.caja.plugin.UriFetcher;
+import com.google.caja.plugin.UriPolicy;
 import com.google.caja.render.Concatenator;
 import com.google.caja.render.JsMinimalPrinter;
 import com.google.caja.reporting.BuildInfo;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.RenderContext;
+import com.google.caja.util.Charsets;
 import com.google.caja.util.ContentType;
 import com.google.caja.util.Pair;
 import org.w3c.dom.Document;
@@ -59,20 +61,15 @@ import java.util.List;
  */
 public class HtmlHandler implements ContentHandler {
   private final BuildInfo buildInfo;
-  private final PluginEnvironment pluginEnvironment;
+  private final UriFetcher uriFetcher;
+  private final UriPolicy uriPolicy;
 
   public HtmlHandler(
       BuildInfo buildInfo, final String hostedService,
-      final PluginEnvironment retriever) {
+      final UriFetcher uriFetcher) {
     this.buildInfo = buildInfo;
-    this.pluginEnvironment = new PluginEnvironment() {
-      public CharProducer loadExternalResource(
-          ExternalReference ref, String mimeType) {
-        return retriever != null
-            ? retriever.loadExternalResource(ref, mimeType)
-            : null;
-      }
-
+    this.uriFetcher = uriFetcher != null ? uriFetcher : UriFetcher.NULL_NETWORK;
+    this.uriPolicy = new UriPolicy() {
       public String rewriteUri(ExternalReference uri, String mimeType) {
         if (hostedService != null) {
           return hostedService
@@ -107,7 +104,7 @@ public class HtmlHandler implements ContentHandler {
                                    OutputStream response,
                                    MessageQueue mq)
       throws UnsupportedContentTypeException {
-    PluginMeta meta = new PluginMeta(pluginEnvironment);
+    PluginMeta meta = new PluginMeta(uriFetcher, uriPolicy);
     ContentType outputType = ContentType.fromMimeType(outputContentType);
     if (outputType == null) {
       if (outputContentType.matches("\\*/\\*(\\s*;.*)?")) {
@@ -130,7 +127,8 @@ public class HtmlHandler implements ContentHandler {
             : QuasiBuilder.substV(moduleCallbackString));
 
     try {
-      OutputStreamWriter writer = new OutputStreamWriter(response, "UTF-8");
+      OutputStreamWriter writer = new OutputStreamWriter(
+          response, Charsets.UTF_8);
       cajoleHtml(
           uri,
           new InputStreamReader(new ByteArrayInputStream(content), charset),

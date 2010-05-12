@@ -16,8 +16,6 @@ package com.google.caja.plugin;
 
 import com.google.caja.lang.css.CssSchema;
 import com.google.caja.lang.html.HtmlSchema;
-import com.google.caja.lexer.CharProducer;
-import com.google.caja.lexer.ExternalReference;
 import com.google.caja.lexer.ParseException;
 import com.google.caja.parser.css.CssTree;
 import com.google.caja.parser.html.DomParser;
@@ -31,11 +29,11 @@ import com.google.caja.render.Concatenator;
 import com.google.caja.render.JsPrettyPrinter;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.CajaTestCase;
+import com.google.caja.util.Lists;
 import com.google.caja.util.MoreAsserts;
 import com.google.caja.util.Pair;
 import com.google.caja.util.RhinoTestBed;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -58,15 +56,7 @@ public class HtmlEmitterTest extends CajaTestCase {
         + "<div><script>a()</script>Hello <script>b()</script>World!!!</div>\n"
         + "<h1>Foo <b><script>c()</script>Bar</b> Baz</h1>\n"
         + "<h2 id='x'>Boo</h2>\n");
-    PluginMeta meta = new PluginMeta(new PluginEnvironment() {
-      public CharProducer loadExternalResource(
-          ExternalReference ref, String mimeType) {
-        return null;
-      }
-      public String rewriteUri(ExternalReference uri, String mimeType) {
-        return null;
-      }
-    });
+    PluginMeta meta = new PluginMeta();
     TemplateCompiler tc = new TemplateCompiler(
         Collections.singletonList(
             Pair.pair(htmlWithExtractedScripts(input), is.getUri())),
@@ -159,7 +149,7 @@ public class HtmlEmitterTest extends CajaTestCase {
   }
 
   private static String renderConsolidated(List<Block> blocks) {
-    List<Statement> statements = new ArrayList<Statement>();
+    List<Statement> statements = Lists.newArrayList();
     for (Block block : blocks) {
       for (Statement s : block.children()) {
         if (s instanceof Noop) { continue; }

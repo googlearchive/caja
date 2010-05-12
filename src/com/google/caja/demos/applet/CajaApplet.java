@@ -27,7 +27,8 @@ import com.google.caja.parser.js.Expression;
 import com.google.caja.parser.js.NullLiteral;
 import com.google.caja.parser.js.StringLiteral;
 import com.google.caja.plugin.PipelineMaker;
-import com.google.caja.plugin.PluginEnvironment;
+import com.google.caja.plugin.UriFetcher;
+import com.google.caja.plugin.UriPolicy;
 import com.google.caja.opensocial.DefaultGadgetRewriter;
 import com.google.caja.opensocial.GadgetRewriteException;
 import com.google.caja.render.Concatenator;
@@ -111,14 +112,11 @@ public class CajaApplet extends Applet {
 
       final String proxyServer = testbedServer;
 
-      PluginEnvironment env = new PluginEnvironment() {
-          public CharProducer loadExternalResource(
-              ExternalReference ref, String mimeType) {
-            // If we do retrieve content, make sure to stick the original source
-            // in originalSources.
-            return null;
-          }
+      // If we do retrieve content, make sure to stick the original source
+      // in originalSources.
+      UriFetcher fetcher = UriFetcher.NULL_NETWORK;
 
+      UriPolicy policy = new UriPolicy() {
           public String rewriteUri(ExternalReference extref, String mimeType) {
             return (
                 proxyServer + "/proxy?url="
@@ -127,7 +125,7 @@ public class CajaApplet extends Applet {
           }
         };
 
-      return serializeJsArray(runCajoler(cajaInput, env, features));
+      return serializeJsArray(runCajoler(cajaInput, fetcher, policy, features));
     } catch (RuntimeException ex) {
       StringWriter sw = new StringWriter();
       PrintWriter pw = new PrintWriter(sw);
@@ -141,8 +139,9 @@ public class CajaApplet extends Applet {
     return buildInfo.getBuildInfo();
   }
 
-  private Object[] runCajoler(String cajaInput, PluginEnvironment env,
-                              final Set<Feature> features) {
+  private Object[] runCajoler(
+      String cajaInput, UriFetcher uriFetcher, UriPolicy uriPolicy,
+      final Set<Feature> features) {
     // TODO(mikesamuel): If the text starts with a <base> tag, maybe use that
     // and white it out to preserve file positions.
     String url = standAlone
@@ -178,7 +177,7 @@ public class CajaApplet extends Applet {
     StringBuilder cajoledOutput = new StringBuilder();
 
     try {
-      rw.rewriteContent(src, cp, env, debug, cajoledOutput);
+      rw.rewriteContent(src, cp, uriFetcher, uriPolicy, debug, cajoledOutput);
       return new Object[] {
         cajoledOutput.toString(),
         messagesToString(originalSources, mq)

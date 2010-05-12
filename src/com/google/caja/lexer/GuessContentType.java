@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.caja.ancillary.servlet;
+package com.google.caja.lexer;
 
 import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.CssLexer;
@@ -28,9 +28,27 @@ import com.google.caja.util.ContentType;
  *
  * @author mikesamuel@gmail.com
  */
-class GuessContentType {
+public final class GuessContentType {
 
-  static ContentType guess(String mimeType, String path, CharSequence code) {
+  /**
+   * Tries a number of heuristics to determine the type of content.
+   * <ol>
+   *   <li>if mimeType is provided and is recognized, uses it.
+   *   <li>if the file path is available and has a recognized extension, uses
+   *   it.
+   *   <li>if the code is provided then applies some further heuristics;
+   *     anything where the first non-whitespace char is {@code '<'} is markup.
+   * </ol>
+   *
+   * @param mimeType null or a string like "text/plain" or
+   *    "text/javascript; param=value"
+   * @param path null or the path to the content.  Either a URL path
+   *     (no trailing query or fragment) or a file system path will work.
+   * @param code null or a representative prefix of the content.
+   * @return a known {@link ContentType} or null if none could be found.
+   */
+  public static ContentType guess(
+      String mimeType, String path, CharSequence code) {
     ContentType contentType = null;
     if (mimeType != null) { contentType = ContentType.fromMimeType(mimeType); }
     if (contentType == null && path != null) {

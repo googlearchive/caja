@@ -15,9 +15,11 @@
 package com.google.caja.ancillary.servlet;
 
 import com.google.caja.lexer.CharProducer;
+import com.google.caja.lexer.GuessContentType;
 import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.ParseException;
 import com.google.caja.reporting.DevNullMessageQueue;
+import com.google.caja.util.Charsets;
 import com.google.caja.util.ContentType;
 import com.google.caja.util.Lists;
 
@@ -103,7 +105,7 @@ final class StaticFiles {
               is = InputSource.UNKNOWN;
             }
             CharProducer cp = CharProducer.Factory.create(
-                new InputStreamReader(in, "UTF-8"), is);
+                new InputStreamReader(in, Charsets.UTF_8), is);
             // Minimize it before serving.
             Request min = Request.create(Verb.ECHO, this);
             min.minify = true;

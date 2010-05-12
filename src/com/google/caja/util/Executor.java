@@ -26,7 +26,6 @@ import java.io.StringReader;
 import java.io.StringWriter;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
-import java.net.URLConnection;
 import java.util.Map;
 
 /**
@@ -94,7 +93,7 @@ public interface Executor {
         cause = ex;
       }
       throw new SomethingWidgyHappenedError("Can't recover from bad config",
-          cause); 
+          cause);
     }
 
     private Factory() { /* not instantiable */ }
@@ -120,11 +119,9 @@ public interface Executor {
         throw new FileNotFoundException(
             "Resource " + resource + " relative to " + base);
       }
-      URLConnection conn = url.openConnection();
-      conn.connect();
-      InputStream instream = conn.getInputStream();
-
       this.source = url.toString();
+      InputStream instream = base.getResourceAsStream(resource);
+
       this.input = new InputStreamReader(instream , "UTF-8");
     }
 

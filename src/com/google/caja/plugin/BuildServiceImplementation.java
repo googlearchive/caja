@@ -17,6 +17,7 @@ package com.google.caja.plugin;
 import com.google.caja.ancillary.opt.JsOptimizer;
 import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.ExternalReference;
+import com.google.caja.lexer.FetchedData;
 import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.JsLexer;
 import com.google.caja.lexer.JsTokenQueue;
@@ -48,6 +49,7 @@ import com.google.caja.render.Innocent;
 import com.google.caja.render.JsMinimalPrinter;
 import com.google.caja.render.JsPrettyPrinter;
 import com.google.caja.tools.BuildService;
+import com.google.caja.util.Charsets;
 import com.google.caja.util.Lists;
 import com.google.caja.util.Maps;
 import com.google.caja.util.Pair;
@@ -61,7 +63,6 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.Reader;
-import java.io.StringReader;
 import java.io.Writer;
 import java.net.URI;
 import java.util.Collections;
@@ -98,32 +99,38 @@ public class BuildServiceImplementation implements BuildService {
     }
     final MessageQueue mq = new SimpleMessageQueue();
 
-    PluginEnvironment env = new PluginEnvironment() {
-        public CharProducer loadExternalResource(
-            ExternalReference ref, String mimeType) {
+    UriFetcher fetcher = new UriFetcher() {
+        public FetchedData fetch(ExternalReference ref, String mimeType)
+            throws UriFetchException {
           URI uri = ref.getUri();
           uri = ref.getReferencePosition().source().getUri().resolve(uri);
           InputSource is = new InputSource(uri);
 
           try {
             if (!canonFiles.contains(new File(uri).getCanonicalFile())) {
-              return null;
+              throw new UriFetchException(ref, mimeType);
             }
           } catch (IllegalArgumentException ex) {
-            return null;  // Not a file reference.
+            throw new UriFetchException(ref, mimeType, ex);
           } catch (IOException ex) {
-            return null;  // Not a file reference.
+            throw new UriFetchException(ref, mimeType, ex);
           }
 
           try {
             String content = getSourceContent(is);
-            if (content == null) { return null; }
-            return CharProducer.Factory.create(new StringReader(content), is);
+            if (content == null) {
+              throw new UriFetchException(ref, mimeType);
+            }
+            return FetchedData.fromCharProducer(
+                CharProducer.Factory.fromString(content, is),
+                mimeType, "UTF-8");
           } catch (IOException ex) {
-            mq.addMessage(MessageType.IO_ERROR, is);
-            return null;
+            throw new UriFetchException(ref, mimeType, ex);
           }
         }
+      };
+
+    UriPolicy policy = new UriPolicy() {
 
         public String rewriteUri(ExternalReference uri, String mimeType) {
           // TODO(ihab.awad): Need to pass in the URI rewriter from the build
@@ -145,7 +152,7 @@ public class BuildServiceImplementation implements BuildService {
     Node outputHtml;
     if ("caja".equals(language)) {
       PluginCompiler compiler = new PluginCompiler(
-          BuildInfo.getInstance(), new PluginMeta(env), mq);
+          BuildInfo.getInstance(), new PluginMeta(fetcher, policy), mq);
       compiler.setMessageContext(mc);
       if (Boolean.TRUE.equals(options.get("debug"))) {
         compiler.setGoals(compiler.getGoals()
@@ -284,7 +291,7 @@ public class BuildServiceImplementation implements BuildService {
       File f = new File(is.getUri());
       // Read it in and stuff it back in the map so we can generate
       // snippets.
-      Reader in = new InputStreamReader(new FileInputStream(f), "UTF-8");
+      Reader in = new InputStreamReader(new FileInputStream(f), Charsets.UTF_8);
       try {
         char[] buf = new char[4096];
         StringBuilder sb = new StringBuilder();
@@ -302,8 +309,8 @@ public class BuildServiceImplementation implements BuildService {
 
   private AncestorChain<?> parseInput(InputSource is, MessageQueue mq)
       throws IOException {
-    CharProducer cp = CharProducer.Factory.create(
-        new StringReader(getSourceContent(is)), is);
+    CharProducer cp = CharProducer.Factory.fromString(
+        getSourceContent(is), is);
     try {
       ParseTreeNode input = PluginCompilerMain.parseInput(is, cp, mq);
       if (input == null) { return null; }
@@ -328,7 +335,7 @@ public class BuildServiceImplementation implements BuildService {
             Pair.pair(new InputSource(f.getAbsoluteFile().toURI()), f));
       }
       Writer outputWriter = new OutputStreamWriter(
-          new FileOutputStream(output), "UTF-8");
+          new FileOutputStream(output), Charsets.UTF_8);
       try {
         return Minify.minify(inputSources, outputWriter, logger);
       } finally {
@@ -350,7 +357,7 @@ public class BuildServiceImplementation implements BuildService {
     try {
       boolean ret;
       Writer outputWriter = new OutputStreamWriter(
-          new FileOutputStream(output), "UTF-8");
+          new FileOutputStream(output), Charsets.UTF_8);
       for (File f : inputs) {
         Pair<InputSource, File> inputSource =
           Pair.pair(new InputSource(f.getAbsoluteFile().toURI()), f);
@@ -399,7 +406,7 @@ public class BuildServiceImplementation implements BuildService {
   private static CharProducer read(File f) throws IOException {
     InputSource is = new InputSource(f.toURI());
     return CharProducer.Factory.create(
-        new InputStreamReader(new FileInputStream(f), "UTF-8"), is);
+        new InputStreamReader(new FileInputStream(f), Charsets.UTF_8), is);
   }
 
   private static Parser parser(CharProducer cp, MessageQueue errs) {

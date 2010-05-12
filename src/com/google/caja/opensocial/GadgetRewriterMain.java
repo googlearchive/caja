@@ -15,22 +15,25 @@ package com.google.caja.opensocial;
 
 import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.ExternalReference;
+import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.ParseException;
 import com.google.caja.plugin.Config;
+import com.google.caja.plugin.UriFetcher;
+import com.google.caja.plugin.UriPolicy;
 import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.SimpleMessageQueue;
 import com.google.caja.reporting.SnippetProducer;
 import com.google.caja.reporting.BuildInfo;
+import com.google.caja.util.Maps;
 
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Writer;
 import java.net.URI;
-import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -39,8 +42,7 @@ import java.util.Map;
 public class GadgetRewriterMain {
   private Config config;
   private MessageContext mc = new MessageContext();
-  private Map<InputSource, CharSequence> originalSources
-      = new HashMap<InputSource, CharSequence>();
+  private Map<InputSource, CharSequence> originalSources = Maps.newHashMap();
 
   public GadgetRewriterMain() {
     config = new Config(
@@ -72,21 +74,28 @@ public class GadgetRewriterMain {
 
     Writer w = new BufferedWriter(new FileWriter(config.getOutputBase()));
     try {
-      Callback cb = new Callback(mc, originalSources);
+      UriFetcher fetcher = new GadgetUriFetcher(mc, originalSources);
+      UriPolicy policy = UriPolicy.IDENTITY;
       URI baseUri = config.getBaseUri();
       for (URI input : config.getInputUris()) {
-        CharProducer p = cb.loadExternalResource(
-            new ExternalReference(input, null), null);
         try {
-          rewriter.rewrite(baseUri, p, cb, config.getGadgetView(), w);
-        } finally {
-          SnippetProducer sp = new SnippetProducer(originalSources, mc);
-          for (Message msg : mq.getMessages()) {
-            System.err.println(
-                msg.getMessageLevel().name() + ": " + msg.format(mc));
-            System.err.println(sp.getSnippet(msg));
-            System.err.println();
+          CharProducer p = fetcher.fetch(
+              new ExternalReference(input, FilePosition.UNKNOWN), "*/*")
+              .getTextualContent();
+          try {
+            rewriter.rewrite(
+                baseUri, p, fetcher, policy, config.getGadgetView(), w);
+          } finally {
+            SnippetProducer sp = new SnippetProducer(originalSources, mc);
+            for (Message msg : mq.getMessages()) {
+              System.err.println(
+                  msg.getMessageLevel().name() + ": " + msg.format(mc));
+              System.err.println(sp.getSnippet(msg));
+              System.err.println();
+            }
           }
+        } catch (UriFetcher.UriFetchException ex) {
+          ex.toMessageQueue(mq);
         }
       }
     } finally {

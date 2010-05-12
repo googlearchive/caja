@@ -24,7 +24,6 @@ import com.google.caja.lang.css.CssSchema;
 import com.google.caja.lang.html.HTML;
 import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.CssTokenType;
-import com.google.caja.lexer.ExternalReference;
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.HtmlLexer;
 import com.google.caja.lexer.HtmlTokenType;
@@ -55,8 +54,8 @@ import com.google.caja.parser.js.Statement;
 import com.google.caja.plugin.CssPropertyPartType;
 import com.google.caja.plugin.CssRewriter;
 import com.google.caja.plugin.CssValidator;
-import com.google.caja.plugin.PluginEnvironment;
 import com.google.caja.plugin.PluginMessageType;
+import com.google.caja.plugin.UriFetcher;
 import com.google.caja.plugin.stages.EmbeddedContent;
 import com.google.caja.plugin.stages.HtmlEmbeddedContentFinder;
 import com.google.caja.render.Concatenator;
@@ -404,22 +403,12 @@ class Processor {
   private void extractJobs(Node node, URI baseUri, List<Job> out) {
     HtmlEmbeddedContentFinder f = new HtmlEmbeddedContentFinder(
         req.htmlSchema, req.baseUri, mq, req.mc);
-    PluginEnvironment env = new PluginEnvironment() {
-      public CharProducer loadExternalResource(
-          ExternalReference ref, String mimeType) {
-        return null;
-      }
-
-      public String rewriteUri(ExternalReference uri, String mimeType) {
-        return null;
-      }
-    };
     for (EmbeddedContent c : f.findEmbeddedContent(node)) {
       if (c.getType() != null && c.getContentLocation() == null) {
         Node src = c.getSource();
         ParseTreeNode t;
         try {
-          t = c.parse(env, mq);
+          t = c.parse(UriFetcher.NULL_NETWORK, mq);
         } catch (ParseException ex) {
           ex.toMessageQueue(mq);
           continue;

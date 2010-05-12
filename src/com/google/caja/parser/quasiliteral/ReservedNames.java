@@ -47,8 +47,7 @@ public class ReservedNames {
    */
   public static final String HTML_EMITTER = "htmlEmitter___";
   /**
-   * Applies {@link com.google.caja.plugin.PluginEnvironment#rewriteUri}
-   * at runtime.
+   * Applies {@link com.google.caja.plugin.UriPolicy#rewriteUri} at runtime.
    */
   public static final String REWRITE_URI = "rewriteUri___";
   /** Applies the id and name policy at runtime. */

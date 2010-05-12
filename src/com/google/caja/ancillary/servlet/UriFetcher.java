@@ -14,6 +14,7 @@
 
 package com.google.caja.ancillary.servlet;
 
+import com.google.caja.lexer.GuessContentType;
 import com.google.caja.util.ContentType;
 import com.google.caja.util.Strings;
 

@@ -17,6 +17,7 @@ package com.google.caja.plugin.stages;
 import com.google.caja.SomethingWidgyHappenedError;
 import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.ExternalReference;
+import com.google.caja.lexer.FetchedData;
 import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.ParseException;
 import com.google.caja.lexer.TokenConsumer;
@@ -26,19 +27,19 @@ import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.html.Dom;
 import com.google.caja.plugin.Job;
 import com.google.caja.plugin.Jobs;
-import com.google.caja.plugin.PluginEnvironment;
 import com.google.caja.plugin.PluginMeta;
+import com.google.caja.plugin.UriFetcher;
+import com.google.caja.plugin.UriPolicy;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.CajaTestCase;
 import com.google.caja.util.ContentType;
+import com.google.caja.util.Lists;
 import com.google.caja.util.MoreAsserts;
 import com.google.caja.util.Pair;
 
-import java.io.StringReader;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URLDecoder;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
@@ -50,20 +51,20 @@ import java.util.List;
  */
 public abstract class PipelineStageTestCase extends CajaTestCase {
   protected PluginMeta meta;
-  private TestPluginEnvironment pluginEnv;
+  private TestUriFetcher uriFetcher;
 
   @Override
   protected void setUp() throws Exception {
     super.setUp();
-    pluginEnv = new TestPluginEnvironment();
-    meta = new PluginMeta(pluginEnv);
+    uriFetcher = new TestUriFetcher();
+    meta = new PluginMeta(uriFetcher, new TestUriPolicy());
   }
 
   @Override
   protected void tearDown() throws Exception {
     super.tearDown();
     meta = null;
-    pluginEnv = null;
+    uriFetcher = null;
   }
 
   /**
@@ -91,7 +92,7 @@ public abstract class PipelineStageTestCase extends CajaTestCase {
   }
 
   private void assertOutputJobs(JobStub[] outputJobs, Jobs jobs) {
-    List<JobStub> actualJobs = new ArrayList<JobStub>();
+    List<JobStub> actualJobs = Lists.newArrayList();
     for (Job job : jobs.getJobs()) {
       StringBuilder sb = new StringBuilder();
       ParseTreeNode node = job.getRoot().cast(ParseTreeNode.class).node;
@@ -141,7 +142,7 @@ public abstract class PipelineStageTestCase extends CajaTestCase {
 
   protected void addUrlToPluginEnvironment(URI uri, CharProducer cp) {
     URI absUrl = is.getUri().resolve(uri);
-    pluginEnv.filesToLoad.add(Pair.pair(absUrl, cp));
+    uriFetcher.filesToLoad.add(Pair.pair(absUrl, cp));
   }
 
   protected abstract boolean runPipeline(Jobs jobs) throws Exception;
@@ -187,29 +188,33 @@ public abstract class PipelineStageTestCase extends CajaTestCase {
     }
   }
 
-  private static class TestPluginEnvironment implements PluginEnvironment {
-    private List<Pair<URI, CharProducer>> filesToLoad
-        = new ArrayList<Pair<URI, CharProducer>>();
+  private static class TestUriFetcher implements UriFetcher {
+    private List<Pair<URI, CharProducer>> filesToLoad = Lists.newArrayList();
 
-    public CharProducer loadExternalResource(
-        ExternalReference ref, String mimeType) {
+    public FetchedData fetch(ExternalReference ref, String mimeType)
+        throws UriFetchException {
       URI uri = ref.getUri();
       for (Iterator<Pair<URI, CharProducer>> it = filesToLoad.iterator();
            it.hasNext();) {
         Pair<URI, CharProducer> entry = it.next();
         if (ref.getUri().equals(entry.a)) {
           it.remove();
-          return entry.b;
+          return FetchedData.fromCharProducer(
+              entry.b.clone(), mimeType, "uTF-8");
         }
       }
       if (!"content".equals(uri.getScheme())) {
-        return null;
+        throw new UriFetchException(ref, mimeType);
       }
-      return CharProducer.Factory.create(
-          new StringReader(decode(uri.getRawSchemeSpecificPart())),
-          new InputSource(uri));
+      return FetchedData.fromCharProducer(
+          CharProducer.Factory.fromString(
+              decode(uri.getRawSchemeSpecificPart()),
+              new InputSource(uri)),
+          mimeType, "UTF-8");
     }
+  }
 
+  private static class TestUriPolicy implements UriPolicy {
     public String rewriteUri(ExternalReference uri, String mimeType) {
       return "http://proxy/?uri=" + UriUtil.encode(uri.getUri().toString())
           + "&mimeType=" + UriUtil.encode(mimeType);

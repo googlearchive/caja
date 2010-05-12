@@ -58,15 +58,15 @@ import java.util.regex.Pattern;
  * @author mikesamuel@gmail.com
  */
 public final class CssRewriter {
-  private final PluginEnvironment env;
+  private final UriPolicy uriPolicy;
   private final CssSchema schema;
   private final MessageQueue mq;
   private MessageLevel invalidNodeMessageLevel = MessageLevel.ERROR;
 
-  public CssRewriter(PluginEnvironment env, CssSchema schema, MessageQueue mq) {
+  public CssRewriter(UriPolicy uriPolicy, CssSchema schema, MessageQueue mq) {
     assert null != mq;
-    assert null != env;
-    this.env = env;
+    assert null != uriPolicy;
+    this.uriPolicy = uriPolicy;
     this.schema = schema;
     this.mq = mq;
   }
@@ -211,7 +211,7 @@ public final class CssRewriter {
       }
     }
 
-    return new Pair<CssTree.RuleSet, CssTree.RuleSet>(
+    return Pair.pair(
         new CssTree.RuleSet(ruleSet.getFilePosition(), linkeyChildren),
         new CssTree.RuleSet(ruleSet.getFilePosition(), nonLinkeyChildren));
   }
@@ -645,7 +645,7 @@ public final class CssRewriter {
               URI uri = baseUri.resolve(new URI(uriStr));
               ExternalReference ref = new ExternalReference(
                   uri, content.getFilePosition());
-              if (env.rewriteUri(ref, "image/*") == null) {
+              if (uriPolicy.rewriteUri(ref, "image/*") == null) {
                 removeMsg = new Message(
                     PluginMessageType.DISALLOWED_URI,
                     node.getFilePosition(),
@@ -740,7 +740,7 @@ public final class CssRewriter {
                 // mime-type of text/*.
                 ExternalReference ref = new ExternalReference(
                     uri, content.getFilePosition());
-                String rewrittenUri = env.rewriteUri(ref, "image/*");
+                String rewrittenUri = uriPolicy.rewriteUri(ref, "image/*");
                 CssTree.UriLiteral replacement = new CssTree.UriLiteral(
                         content.getFilePosition(), URI.create(rewrittenUri));
                 replacement.getAttributes().putAll(content.getAttributes());

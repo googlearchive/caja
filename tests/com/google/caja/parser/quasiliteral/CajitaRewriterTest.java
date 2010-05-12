@@ -14,8 +14,8 @@
 
 package com.google.caja.parser.quasiliteral;
 
-import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.ExternalReference;
+import com.google.caja.lexer.FetchedData;
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.ParseException;
@@ -33,7 +33,7 @@ import com.google.caja.parser.js.Statement;
 import com.google.caja.parser.js.StringLiteral;
 import com.google.caja.parser.js.SyntheticNodes;
 import com.google.caja.parser.js.UncajoledModule;
-import com.google.caja.plugin.PluginEnvironment;
+import com.google.caja.plugin.UriFetcher;
 import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessageType;
 import com.google.caja.reporting.TestBuildInfo;
@@ -56,23 +56,21 @@ import junit.framework.AssertionFailedError;
  */
 public class CajitaRewriterTest extends CommonJsRewriterTestCase {
 
-  protected class TestPluginEnvironment implements PluginEnvironment {
-    public CharProducer loadExternalResource(
-        ExternalReference ref, String mimeType) {
+  protected class TestUriFetcher implements UriFetcher {
+    public FetchedData fetch(ExternalReference ref, String mimeType)
+        throws UriFetchException {
       URI uri = ref.getUri();
       uri = ref.getReferencePosition().source().getUri().resolve(uri);
       if ("test".equals(uri.getScheme())) {
         try {
           InputSource is = new InputSource(uri);
-          return fromResource(uri.getPath().substring(1), is);
-        } catch (IOException e) {
+          return dataFromResource(uri.getPath().substring(1), is);
+        } catch (IOException ex) {
+          throw new UriFetchException(ref, mimeType, ex);
         }
+      } else {
+        throw new UriFetchException(ref, mimeType);
       }
-      return null;
-    }
-
-    public String rewriteUri(ExternalReference uri, String mimeType) {
-      return null;
     }
   }
 
@@ -2445,7 +2443,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
   // for those tests that run against other ParseTreeNode
   public final void testModule() throws Exception {
     CajitaModuleRewriter moduleRewriter = new CajitaModuleRewriter(
-        new TestBuildInfo(), new TestPluginEnvironment(), mq, false, false);
+        new TestBuildInfo(), new TestUriFetcher(), mq, false, false);
     setRewriter(moduleRewriter);
 
     rewriteAndExecute(
@@ -2513,7 +2511,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
   }
 
   /**
-   * 
+   *
    */
   public final void testObjectFreeze() throws Exception {
     rewriteAndExecute( // records can be frozen

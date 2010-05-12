@@ -18,6 +18,8 @@ import com.google.caja.lexer.ExternalReference;
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.InputSource;
 import com.google.caja.plugin.Config;
+import com.google.caja.plugin.UriFetcher;
+import com.google.caja.plugin.UriPolicy;
 import com.google.caja.reporting.BuildInfo;
 import com.google.caja.reporting.HtmlSnippetProducer;
 import com.google.caja.reporting.Message;
@@ -31,6 +33,8 @@ import com.google.caja.reporting.SimpleMessageQueue;
 import com.google.caja.reporting.SnippetProducer;
 import com.google.caja.reporting.TestBuildInfo;
 import com.google.caja.util.Json;
+import com.google.caja.util.Lists;
+import com.google.caja.util.Maps;
 
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -46,12 +50,9 @@ import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -61,9 +62,8 @@ import java.util.Map;
 public class GadgetsTestMain {
 
   private MessageContext mc = new MessageContext();
-  private Map<InputSource, CharSequence> originalSources
-      = new HashMap<InputSource, CharSequence>();
-  private ArrayList<URI> gadgetList;
+  private Map<InputSource, CharSequence> originalSources = Maps.newHashMap();
+  private List<URI> gadgetList;
   private JSONObject resultDoc;
   private BufferedWriter jsonOutput;
 
@@ -76,7 +76,7 @@ public class GadgetsTestMain {
   }
 
   public boolean processArguments(String[] argv) {
-    gadgetList = new ArrayList<URI>();
+    gadgetList = Lists.newArrayList();
     if (argv.length == 0) {
       usage("GadgetsTestMain urls-of-gadgets.txt [outputfile]");
       return false;
@@ -170,8 +170,8 @@ public class GadgetsTestMain {
     Config config = grm.getConfig();
 
     MessageQueue mq = new SimpleMessageQueue();
-    DefaultGadgetRewriter rewriter =
-        new DefaultGadgetRewriter(new TestBuildInfo(), mq);
+    DefaultGadgetRewriter rewriter = new DefaultGadgetRewriter(
+        new TestBuildInfo(), mq);
     rewriter.setCssSchema(config.getCssSchema(mq));
     rewriter.setHtmlSchema(config.getHtmlSchema(mq));
 
@@ -185,25 +185,31 @@ public class GadgetsTestMain {
     MessageLevel worstErrorLevel = MessageLevel.LOG;
     MessageTypeInt worstErrorType = null;
     try {
-      Callback cb = new Callback(mc, originalSources);
       URI baseUri = config.getBaseUri();
+      UriPolicy policy = UriPolicy.IDENTITY;
+      UriFetcher fetcher = new GadgetUriFetcher(mc, originalSources);
       for (URI input : config.getInputUris()) {
         System.err.println(input);
-        CharProducer cp = cb.loadExternalResource(
-            new ExternalReference(input, FilePosition.UNKNOWN), null);
         try {
-          rewriter.rewrite(baseUri, cp, cb, "canvas", w);
-        } catch (Exception e) {
-          addMessageNode(messages,"Compiler threw uncaught exception: " + e,
-              MessageLevel.FATAL_ERROR.toString(),
-              MessageType.INTERNAL_ERROR.toString(),
-              getExceptionTrace(e));
-          worstErrorType = MessageType.INTERNAL_ERROR;
-          worstErrorLevel = MessageLevel.FATAL_ERROR;
+          CharProducer cp = fetcher.fetch(
+              new ExternalReference(input, FilePosition.UNKNOWN), null)
+              .getTextualContent();
+          try {
+            rewriter.rewrite(baseUri, cp, fetcher, policy, "canvas", w);
+          } catch (Exception e) {
+            addMessageNode(messages, "Compiler threw uncaught exception: " + e,
+                MessageLevel.FATAL_ERROR.toString(),
+                MessageType.INTERNAL_ERROR.toString(),
+                getExceptionTrace(e));
+            worstErrorType = MessageType.INTERNAL_ERROR;
+            worstErrorLevel = MessageLevel.FATAL_ERROR;
 
-          int count = errorCount.containsKey(MessageType.INTERNAL_ERROR)
-              ? errorCount.get(MessageType.INTERNAL_ERROR) : 0;
-          errorCount.put(MessageType.INTERNAL_ERROR, count + 1);
+            int count = errorCount.containsKey(MessageType.INTERNAL_ERROR)
+                ? errorCount.get(MessageType.INTERNAL_ERROR) : 0;
+            errorCount.put(MessageType.INTERNAL_ERROR, count + 1);
+          }
+        } catch (UriFetcher.UriFetchException ex) {
+          ex.toMessageQueue(mq);
         } finally {
           SnippetProducer sp = new HtmlSnippetProducer(originalSources, mc);
           for (Message msg : mq.getMessages()) {
@@ -236,8 +242,7 @@ public class GadgetsTestMain {
 
   private void addSummaryResults(
       JSONArray summary, Map<MessageTypeInt, Integer> errorCount) {
-    List<Map.Entry<MessageTypeInt, Integer>> entries
-        = new ArrayList<Map.Entry<MessageTypeInt, Integer>>(
+    List<Map.Entry<MessageTypeInt, Integer>> entries = Lists.newArrayList(
             errorCount.entrySet());
     Collections.sort(
         entries, new Comparator<Map.Entry<MessageTypeInt, Integer>>() {
@@ -263,8 +268,7 @@ public class GadgetsTestMain {
     String timestamp = (new Date()).toString();
     System.out.println(timestamp);
 
-    Map<MessageTypeInt, Integer> errorCount
-        = new LinkedHashMap<MessageTypeInt, Integer>();
+    Map<MessageTypeInt, Integer> errorCount = Maps.newLinkedHashMap();
 
     JSONArray testResults = new JSONArray();
     JSONArray summary = new JSONArray();

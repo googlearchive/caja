@@ -32,8 +32,8 @@ import com.google.caja.parser.html.ElKey;
 import com.google.caja.parser.html.Nodes;
 import com.google.caja.parser.js.Parser;
 import com.google.caja.parser.js.StringLiteral;
-import com.google.caja.plugin.PluginEnvironment;
 import com.google.caja.plugin.PluginMessageType;
+import com.google.caja.plugin.UriFetcher;
 import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessageLevel;
@@ -45,6 +45,7 @@ import com.google.caja.util.Lists;
 import com.google.caja.util.Strings;
 
 import java.io.StringReader;
+import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;
@@ -197,10 +198,10 @@ public class HtmlEmbeddedContentFinder {
       boolean deferred) {
     return new EmbeddedContent(
         this, extRef.getReferencePosition(),
-        new Function<PluginEnvironment, CharProducer>() {
+        new Function<UriFetcher, CharProducer>() {
           boolean loaded;
           CharProducer cp = null;
-          public CharProducer apply(PluginEnvironment env) {
+          public CharProducer apply(UriFetcher fetcher) {
             if (!loaded) {
               URI uri = extRef.getUri();
               ExternalReference toLoad = extRef;
@@ -209,7 +210,13 @@ public class HtmlEmbeddedContentFinder {
                     baseUri.resolve(uri),
                     extRef.getReferencePosition());
               }
-              cp = env.loadExternalResource(toLoad, t.mimeType);
+              try {
+                cp = fetcher.fetch(toLoad, t.mimeType).getTextualContent();
+              } catch (UriFetcher.UriFetchException ex) {
+                cp = null;  // Handled below.
+              } catch (UnsupportedEncodingException ex) {
+                cp = null;  // Handled below.
+              }
               mc.addInputSource(new InputSource(toLoad.getUri()));
               loaded = true;
             }
@@ -253,10 +260,8 @@ public class HtmlEmbeddedContentFinder {
     final CharProducer cp = textNodesToCharProducer(el, t == ContentType.JS);
     return new EmbeddedContent(
         this, cp.filePositionForOffsets(0, cp.getLimit()),
-        new Function<PluginEnvironment, CharProducer>() {
-          public CharProducer apply(PluginEnvironment env) {
-            return cp.clone();
-          }
+        new Function<UriFetcher, CharProducer>() {
+          public CharProducer apply(UriFetcher fetcher) { return cp.clone(); }
         },
         null, deferred, el, t);
   }
@@ -267,9 +272,9 @@ public class HtmlEmbeddedContentFinder {
     final String value = a.getValue();
     return new EmbeddedContent(
         this, Nodes.getFilePositionForValue(a),
-        new Function<PluginEnvironment, CharProducer>() {
+        new Function<UriFetcher, CharProducer>() {
           CharProducer cp;
-          public CharProducer apply(PluginEnvironment env) {
+          public CharProducer apply(UriFetcher fetcher) {
             if (this.cp == null) {
               CharProducer cp;
               if (rawValue != null && Nodes.decode(rawValue).equals(value)) {
@@ -310,8 +315,8 @@ public class HtmlEmbeddedContentFinder {
     final FilePosition pos = FilePosition.startOf(Nodes.getFilePositionFor(el));
     return new EmbeddedContent(
         this, pos,
-        new Function<PluginEnvironment, CharProducer>() {
-          public CharProducer apply(PluginEnvironment env) {
+        new Function<UriFetcher, CharProducer>() {
+          public CharProducer apply(UriFetcher fetcher) {
             return CharProducer.Factory.fromString("", pos);
           }
         },

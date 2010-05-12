@@ -31,9 +31,10 @@ import com.google.caja.parser.js.CajoledModule;
 import com.google.caja.plugin.PipelineMaker;
 import com.google.caja.plugin.Planner;
 import com.google.caja.plugin.PluginCompiler;
-import com.google.caja.plugin.PluginEnvironment;
 import com.google.caja.plugin.PluginMessageType;
 import com.google.caja.plugin.PluginMeta;
+import com.google.caja.plugin.UriFetcher;
+import com.google.caja.plugin.UriPolicy;
 import com.google.caja.render.Concatenator;
 import com.google.caja.render.JsPrettyPrinter;
 import com.google.caja.reporting.MessageQueue;
@@ -87,52 +88,59 @@ public class DefaultGadgetRewriter {
   public final Planner.PlanState getGoals() { return goals; }
   public void setGoals(Planner.PlanState s) { goals = s; }
 
-  public void rewrite(ExternalReference gadgetRef, PluginEnvironment env,
-                      String view, Appendable output)
-      throws GadgetRewriteException, IOException, ParseException {
+  public void rewrite(
+      ExternalReference gadgetRef, UriFetcher fetcher,
+      UriPolicy policy, String view, Appendable output)
+      throws GadgetRewriteException, IOException, ParseException,
+          UriFetcher.UriFetchException {
     assert gadgetRef.getUri().isAbsolute() : gadgetRef.toString();
     rewrite(
-        gadgetRef.getUri(), env.loadExternalResource(gadgetRef, "text/xml"),
-        env, view, output);
+        gadgetRef.getUri(),
+        fetcher.fetch(gadgetRef, "text/xml").getTextualContent(),
+        fetcher, policy, view, output);
   }
 
   public void rewrite(
-      URI baseUri, CharProducer gadgetSpec, PluginEnvironment env,
-      String view, Appendable output)
+      URI baseUri, CharProducer gadgetSpec, UriFetcher fetcher,
+      UriPolicy policy, String view, Appendable output)
       throws GadgetRewriteException, IOException, ParseException {
     GadgetParser parser = new GadgetParser();
     GadgetSpec spec = parser.parse(
         gadgetSpec, new InputSource(baseUri), view, mq);
     StringBuilder rewritten = new StringBuilder();
-    rewriteContent(baseUri, spec.getContent(), env, false, rewritten);
+    rewriteContent(
+        baseUri, spec.getContent(), fetcher, policy, false, rewritten);
     spec.setContent(rewritten.toString());
     parser.render(spec, output);
   }
 
   public void rewriteContent(URI baseUri,
                              Readable gadgetSpec,
-                             PluginEnvironment env,
+                             UriFetcher fetcher,
+                             UriPolicy policy,
                              boolean debug,
                              Appendable output)
       throws GadgetRewriteException, IOException {
     CharProducer content = readReadable(gadgetSpec, new InputSource(baseUri));
-    output.append(rewriteContent(baseUri, content, env, debug));
+    output.append(rewriteContent(baseUri, content, fetcher, policy, debug));
   }
 
   public void rewriteContent(URI baseUri,
                              CharProducer content,
-                             PluginEnvironment env,
+                             UriFetcher fetcher,
+                             UriPolicy policy,
                              boolean debug,
                              Appendable output)
       throws GadgetRewriteException, IOException {
-    output.append(rewriteContent(baseUri, content, env, debug));
+    output.append(rewriteContent(baseUri, content, fetcher, policy, debug));
   }
 
   public Pair<Node, Element> rewriteContent(
-      URI baseUri, Node htmlContent, PluginEnvironment env,
+      URI baseUri, Node htmlContent, UriFetcher fetcher, UriPolicy policy,
       Map<InputSource, CharSequence> originalSources)
       throws GadgetRewriteException {
-    PluginCompiler compiler = compileGadget(htmlContent, baseUri, env);
+    PluginCompiler compiler = compileGadget(
+        htmlContent, baseUri, fetcher, policy);
 
     StringBuilder script = new StringBuilder();
 
@@ -159,11 +167,12 @@ public class DefaultGadgetRewriter {
     scriptElement.setAttributeNS(
         Namespaces.HTML_NAMESPACE_URI, "type", "text/javascript");
     scriptElement.appendChild(doc.createTextNode(script.toString()));
-    return new Pair<Node, Element>(dom, scriptElement);
+    return Pair.<Node, Element>pair(dom, scriptElement);
   }
 
   private String rewriteContent(
-      URI baseUri, CharProducer content, PluginEnvironment env, boolean debug)
+      URI baseUri, CharProducer content, UriFetcher fetcher, UriPolicy policy,
+      boolean debug)
       throws GadgetRewriteException {
     Map<InputSource, CharSequence> originalSources = null;
     if (debug) {
@@ -180,7 +189,7 @@ public class DefaultGadgetRewriter {
       throw new GadgetRewriteException(ex);
     }
     Pair<Node, Element> result = rewriteContent(
-        baseUri, htmlContent, env, originalSources);
+        baseUri, htmlContent, fetcher, policy, originalSources);
     Node dom = result.a;
     Element scriptElement = result.b;
 
@@ -200,9 +209,9 @@ public class DefaultGadgetRewriter {
   }
 
   private PluginCompiler compileGadget(
-      Node content, URI baseUri, PluginEnvironment env)
+      Node content, URI baseUri, UriFetcher fetcher, UriPolicy policy)
       throws GadgetRewriteException {
-    PluginMeta meta = new PluginMeta(env);
+    PluginMeta meta = new PluginMeta(fetcher, policy);
 
     PluginCompiler compiler = createPluginCompiler(meta, mq);
     compiler.setPreconditions(preconditions);

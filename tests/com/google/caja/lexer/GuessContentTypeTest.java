@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.caja.ancillary.servlet;
+package com.google.caja.lexer;
 
 import com.google.caja.util.CajaTestCase;
 import com.google.caja.util.ContentType;

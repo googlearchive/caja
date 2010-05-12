@@ -15,8 +15,6 @@
 package com.google.caja.plugin;
 
 import com.google.caja.lexer.FilePosition;
-import com.google.caja.lexer.CharProducer;
-import com.google.caja.lexer.ExternalReference;
 import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.quasiliteral.CajitaRewriter;
@@ -244,15 +242,8 @@ public class HtmlCompiledPluginTest extends CajaTestCase {
   }
 
   private void execGadget(Dom html, String tests) throws Exception {
-    PluginMeta meta = new PluginMeta(new PluginEnvironment() {
-      public CharProducer loadExternalResource(
-          ExternalReference ref, String mimeType) {
-        return null;
-      }
-      public String rewriteUri(ExternalReference uri, String mimeType) {
-        return uri.toString();
-      }
-    });
+    PluginMeta meta = new PluginMeta(
+        UriFetcher.NULL_NETWORK, UriPolicy.IDENTITY);
     PluginCompiler compiler = new PluginCompiler(new TestBuildInfo(), meta, mq);
     compiler.setMessageContext(mc);
     compiler.addInput(

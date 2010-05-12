@@ -230,7 +230,7 @@ public final class HtmlAttributeRewriter {
         v.validateCss(AncestorChain.instance(decls));
         // The rewriter will remove any unsafe constructs.
         // and put URLs in the proper filename namespace
-        new CssRewriter(meta.getPluginEnvironment(), cssSchema, mq)
+        new CssRewriter(meta.getUriPolicy(), cssSchema, mq)
             .withInvalidNodeMessageLevel(MessageLevel.WARNING)
             .rewrite(AncestorChain.instance(decls));
 
@@ -275,8 +275,8 @@ public final class HtmlAttributeRewriter {
           try {
             URI uri = new URI(value);
             ExternalReference ref = new ExternalReference(uri, pos);
-            String rewrittenUri = meta.getPluginEnvironment()
-                .rewriteUri(ref, attr.attrInfo.getMimeTypes());
+            String rewrittenUri = meta.getUriPolicy().rewriteUri(
+                ref, attr.attrInfo.getMimeTypes());
             if (rewrittenUri == null) {
               mq.addMessage(
                   IhtmlMessageType.MALFORMED_URI, pos,
@@ -452,7 +452,7 @@ public final class HtmlAttributeRewriter {
     EmbeddedContent c = attributeContent.get(v.src);
     if (c == null) { return null; }
     try {
-      ParseTreeNode n = c.parse(meta.getPluginEnvironment(), mq);
+      ParseTreeNode n = c.parse(meta.getUriFetcher(), mq);
       if (n instanceof Block) { return (Block) n; }
     } catch (ParseException ex) {
       ex.toMessageQueue(mq);
@@ -464,7 +464,7 @@ public final class HtmlAttributeRewriter {
     EmbeddedContent c = attributeContent.get(v.src);
     if (c == null) { return null; }
     try {
-      ParseTreeNode n = c.parse(meta.getPluginEnvironment(), mq);
+      ParseTreeNode n = c.parse(meta.getUriFetcher(), mq);
       if (n instanceof CssTree.DeclarationGroup) {
         return (CssTree.DeclarationGroup) n;
       }
