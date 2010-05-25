@@ -28,6 +28,7 @@ import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessageQueue;
+import com.google.caja.util.Charsets;
 import com.google.caja.util.Pair;
 
 import java.io.File;
@@ -92,7 +93,8 @@ public class Innocent {
     final MessageQueue errs = new EchoingMessageQueue(
         err, mc, false);
     CharProducer cp = CharProducer.Factory.create(
-        new InputStreamReader(new FileInputStream(input.b), "UTF-8"),
+        new InputStreamReader(new FileInputStream(input.b), 
+            Charsets.UTF_8.name()),
         input.a);
 
     JsLexer lexer = new JsLexer(cp);

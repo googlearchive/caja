@@ -305,7 +305,8 @@ public final class RhinoExecutor implements Executor {
 
     public InputStream streamFromString(String str) {
       try {
-        return new ByteArrayInputStream(str.getBytes("UTF-8"));
+        return new ByteArrayInputStream(
+            str.getBytes(Charsets.UTF_8.name()));
       } catch (UnsupportedEncodingException ex) {
         throw new SomethingWidgyHappenedError(ex);
       }
@@ -496,7 +497,7 @@ class ContentUrlHandler extends URLStreamHandler {
           assert uri.isOpaque();
           try {
             instream = new ByteArrayInputStream(
-                uri.getSchemeSpecificPart().getBytes("UTF-8"));
+                uri.getSchemeSpecificPart().getBytes(Charsets.UTF_8.name()));
           } catch (UnsupportedEncodingException ex) {
             throw new SomethingWidgyHappenedError(
                 "UTF-8 not supported", ex);

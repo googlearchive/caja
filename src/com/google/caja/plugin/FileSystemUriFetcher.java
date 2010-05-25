@@ -19,6 +19,7 @@ import com.google.caja.lexer.ExternalReference;
 import com.google.caja.lexer.FetchedData;
 import com.google.caja.lexer.GuessContentType;
 import com.google.caja.lexer.InputSource;
+import com.google.caja.util.Charsets;
 import com.google.caja.util.ContentType;
 
 import java.io.ByteArrayOutputStream;
@@ -47,7 +48,7 @@ abstract class FileSystemUriFetcher implements UriFetcher {
           newReader(f), new InputSource(uri));
       ContentType ct = GuessContentType.guess(null, f.getName(), cp);
       return FetchedData.fromCharProducer(
-          cp, ct != null ? ct.mimeType : "", "UTF-8");
+          cp, ct != null ? ct.mimeType : "", Charsets.UTF_8.name());
     } catch (IOException ex) {
       throw new UriFetchException(ref, mimeType, ex);
     }

@@ -13,7 +13,14 @@
 
 package com.google.caja.service;
 
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.net.URI;
+import java.util.List;
+
 import com.google.caja.lexer.CharProducer;
+import com.google.caja.lexer.FetchedData;
 import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.JsLexer;
 import com.google.caja.lexer.JsTokenQueue;
@@ -33,15 +40,8 @@ import com.google.caja.reporting.BuildInfo;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.RenderContext;
+import com.google.caja.util.Charsets;
 import com.google.caja.util.Pair;
-
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.io.Reader;
-import java.io.StringReader;
-import java.net.URI;
-import java.util.List;
 
 /**
  * Retrieves javascript files and cajoles them
@@ -68,12 +68,11 @@ public class JsHandler implements ContentHandler {
       CajolingService.Transform transform, List<CajolingService.Directive> directive,
       ContentHandlerArgs args,
       String inputContentType, String outputContentType,
-      ContentTypeCheck checker, String charset, byte[] content,
+      ContentTypeCheck checker,
+      FetchedData input,
       OutputStream response,
       MessageQueue mq)
       throws UnsupportedContentTypeException {
-    if (charset == null) { charset = "UTF-8"; }
-
     String moduleCallbackString = CajaArguments.MODULE_CALLBACK.get(args);
     Expression moduleCallback = (Expression)
         (moduleCallbackString == null
@@ -81,18 +80,19 @@ public class JsHandler implements ContentHandler {
             : QuasiBuilder.substV(moduleCallbackString));
 
     try {
-      OutputStreamWriter writer = new OutputStreamWriter(response, "UTF-8");
-      cajoleJs(uri, new StringReader(new String(content, charset)),
+      OutputStreamWriter writer = new OutputStreamWriter(response, 
+          Charsets.UTF_8.name());
+      cajoleJs(uri, input.getTextualContent(),
           transform, directive, moduleCallback, writer, mq);
       writer.flush();
     } catch (IOException e) {
       throw new UnsupportedContentTypeException();
     }
-    return Pair.pair("text/javascript", "UTF-8");
+    return Pair.pair("text/javascript", Charsets.UTF_8.name());
   }
 
   private void cajoleJs(URI inputUri,
-                        Reader cajaInput,
+                        CharProducer cp,
                         CajolingService.Transform transform,
                         List<CajolingService.Directive> directive,
                         Expression moduleCallback,
@@ -100,7 +100,6 @@ public class JsHandler implements ContentHandler {
                         MessageQueue mq)
       throws IOException {
     InputSource is = new InputSource (inputUri);
-    CharProducer cp = CharProducer.Factory.create(cajaInput,is);
     try {
       JsTokenQueue tq = new JsTokenQueue(new JsLexer(cp), is);
       Block input = new Parser(tq, mq).parse();

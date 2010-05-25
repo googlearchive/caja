@@ -23,6 +23,7 @@ import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.SimpleMessageQueue;
+import com.google.caja.util.Charsets;
 import com.google.caja.util.Pair;
 import com.google.caja.util.Strings;
 
@@ -114,7 +115,7 @@ public class ConfigUtil {
       }
 
       return Pair.pair(
-          (Reader) new InputStreamReader(in, "UTF-8"),
+          (Reader) new InputStreamReader(in, Charsets.UTF_8.name()),
           FilePosition.startOfFile(new InputSource(uri)));
     }
   };

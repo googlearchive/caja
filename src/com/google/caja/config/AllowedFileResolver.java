@@ -10,6 +10,7 @@ import java.util.Set;
 
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.InputSource;
+import com.google.caja.util.Charsets;
 import com.google.caja.util.Pair;
 
 /**
@@ -43,7 +44,8 @@ public final class AllowedFileResolver implements ImportResolver {
       File f = new File(uri);
       if (allowedFiles.contains(f)) {
         return Pair.pair(
-            (Reader) new InputStreamReader(new FileInputStream(f), "UTF-8"),
+            (Reader) new InputStreamReader(new FileInputStream(f),
+              Charsets.UTF_8.name()),
             FilePosition.startOfFile(new InputSource(uri)));
       }
     }

@@ -24,6 +24,7 @@ import com.google.caja.parser.quasiliteral.WikiRuleDoclet;
 import com.google.caja.reporting.BuildInfo;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.SimpleMessageQueue;
+import com.google.caja.util.Charsets;
 
 import java.io.BufferedWriter;
 import java.io.FileOutputStream;
@@ -142,8 +143,8 @@ public class DocletAntTask extends Task {
       checkValidParameters();
       output.setRewriter(rewriter);
       String outputFile = getOutputFileName();
-      BufferedWriter outputStream = new BufferedWriter(
-          new OutputStreamWriter(new FileOutputStream(outputFile), "UTF-8"));
+      BufferedWriter outputStream = new BufferedWriter(new OutputStreamWriter(
+          new FileOutputStream(outputFile), Charsets.UTF_8.name()));
       output.generateDocumentation(outputStream);
       outputStream.close();
     } catch (IOException e) {

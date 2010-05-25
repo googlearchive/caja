@@ -13,7 +13,14 @@
 
 package com.google.caja.service;
 
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.net.URI;
+import java.util.List;
+
 import com.google.caja.lexer.CharProducer;
+import com.google.caja.lexer.FetchedData;
 import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.JsLexer;
 import com.google.caja.lexer.JsTokenQueue;
@@ -24,15 +31,8 @@ import com.google.caja.parser.quasiliteral.InnocentCodeRewriter;
 import com.google.caja.parser.quasiliteral.Rewriter;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
+import com.google.caja.util.Charsets;
 import com.google.caja.util.Pair;
-
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.io.Reader;
-import java.io.StringReader;
-import java.net.URI;
-import java.util.List;
 
 /**
  * Retrieves javascript files and cajoles them
@@ -57,31 +57,28 @@ public class InnocentHandler implements ContentHandler {
                                    String inputContentType,
                                    String outputContentType,
                                    ContentTypeCheck checker,
-                                   String charset,
-                                   byte[] content,
+                                   FetchedData input,
                                    OutputStream response,
                                    MessageQueue mq)
       throws UnsupportedContentTypeException {
     if (!CajolingService.Transform.INNOCENT.equals(transform)) {
       return null;
     }
-    if (charset == null) { charset = "UTF-8"; }
     try {
-      OutputStreamWriter writer = new OutputStreamWriter(response, "UTF-8");
-      innocentJs(
-          uri, new StringReader(new String(content, charset)), writer, mq);
+      OutputStreamWriter writer = new OutputStreamWriter(response,
+          Charsets.UTF_8.name());
+      innocentJs(uri, input.getTextualContent(), writer, mq);
       writer.flush();
     } catch (IOException e) {
       throw new UnsupportedContentTypeException();
     }
-    return Pair.pair("text/javascript", "UTF-8");
+    return Pair.pair("text/javascript", Charsets.UTF_8.name());
   }
 
   private void innocentJs(
-      URI inputUri, Reader cajaInput, Appendable output, MessageQueue mq)
+      URI inputUri, CharProducer cp, Appendable output, MessageQueue mq)
       throws IOException {
     InputSource is = new InputSource (inputUri);
-    CharProducer cp = CharProducer.Factory.create(cajaInput,is);
     try {
       JsTokenQueue tq = new JsTokenQueue(new JsLexer(cp), is);
       Block input = new Parser(tq, mq).parse();

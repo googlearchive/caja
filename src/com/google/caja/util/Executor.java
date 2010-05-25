@@ -122,7 +122,7 @@ public interface Executor {
       this.source = url.toString();
       InputStream instream = base.getResourceAsStream(resource);
 
-      this.input = new InputStreamReader(instream , "UTF-8");
+      this.input = new InputStreamReader(instream , Charsets.UTF_8.name());
     }
 
     @Override

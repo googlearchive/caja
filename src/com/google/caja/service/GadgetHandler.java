@@ -13,26 +13,25 @@
 
 package com.google.caja.service;
 
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.net.URI;
+import java.util.List;
+
 import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.ExternalReference;
-import com.google.caja.lexer.InputSource;
+import com.google.caja.lexer.FetchedData;
 import com.google.caja.lexer.ParseException;
 import com.google.caja.lexer.escaping.UriUtil;
 import com.google.caja.opensocial.DefaultGadgetRewriter;
 import com.google.caja.opensocial.GadgetRewriteException;
 import com.google.caja.plugin.UriFetcher;
 import com.google.caja.plugin.UriPolicy;
-import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.BuildInfo;
+import com.google.caja.reporting.MessageQueue;
 import com.google.caja.util.Charsets;
 import com.google.caja.util.Pair;
-
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.io.StringReader;
-import java.net.URI;
-import java.util.List;
 
 public class GadgetHandler implements ContentHandler {
   private final BuildInfo buildInfo;
@@ -58,17 +57,16 @@ public class GadgetHandler implements ContentHandler {
                                     String inputContentType,
                                     String outputContentType,
                                     ContentTypeCheck checker,
-                                    String charSet,
-                                    byte[] content,
+                                    FetchedData input,
                                     OutputStream response,
                                     MessageQueue mq)
       throws UnsupportedContentTypeException {
     try {
       OutputStreamWriter writer = new OutputStreamWriter(
           response, Charsets.UTF_8);
-      cajoleGadget(uri, new String(content, charSet), writer, mq);
+      cajoleGadget(uri, input.getTextualContent(), writer, mq);
       writer.flush();
-      return Pair.pair("text/javascript", "UTF-8");
+      return Pair.pair("text/javascript", Charsets.UTF_8.name());
     } catch (ParseException e) {
       e.printStackTrace();
       throw new UnsupportedContentTypeException();
@@ -84,8 +82,8 @@ public class GadgetHandler implements ContentHandler {
     }
   }
 
-  private void cajoleGadget(URI inputUri, String cajaInput, Appendable output,
-                            MessageQueue mq)
+  private void cajoleGadget(URI inputUri, CharProducer cajaInput,
+      Appendable output, MessageQueue mq)
       throws ParseException, GadgetRewriteException, IOException {
     DefaultGadgetRewriter rewriter = new DefaultGadgetRewriter(buildInfo, mq);
 
@@ -99,9 +97,6 @@ public class GadgetHandler implements ContentHandler {
             + "&mime-type=" + UriUtil.encode(mimeType));
       }
     };
-
-    CharProducer p = CharProducer.Factory.create(
-        new StringReader(cajaInput), new InputSource(inputUri));
-    rewriter.rewrite(inputUri, p, fetcher, policy, "canvas", output);
+    rewriter.rewrite(inputUri, cajaInput, fetcher, policy, "canvas", output);
   }
 }

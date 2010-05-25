@@ -123,7 +123,7 @@ public class BuildServiceImplementation implements BuildService {
             }
             return FetchedData.fromCharProducer(
                 CharProducer.Factory.fromString(content, is),
-                mimeType, "UTF-8");
+                mimeType, Charsets.UTF_8.name());
           } catch (IOException ex) {
             throw new UriFetchException(ref, mimeType, ex);
           }

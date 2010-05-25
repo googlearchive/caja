@@ -40,6 +40,22 @@ public class CajolingServiceTest extends ServiceTestCase {
         requestGet("?url=http://foo/bar.gif&mime-type=image/*"));
   }
 
+  // Tests requests for various mime types work.
+  public final void testSupportedContentTypes() throws Exception {
+    registerUri("http://foo/bar.js", "foo()", "text/javascript");
+    registerUri("http://foo/bar.html", "<b>Hello</b>", "text/html");
+    assertFalse("ERROR".equals(
+        requestGet("?url=http://foo/bar.js&mime-type=text/javascript")));
+    assertFalse("ERROR".equals(
+        requestGet("?url=http://foo/bar.html&mime-type=text/html")));
+    assertFalse("ERROR".equals(
+        requestGet("?url=http://foo/bar.html&input-mime-type=text/html&" +
+        		"output-mime-type=text/javascript")));
+    assertEquals("ERROR",
+        requestGet("?url=http://foo/bar.js&input-mime-type=text/javascript&" +
+        		"output-mime-type=text/html"));
+  }
+
   // Tests that POST-ing to the service works just as well as GET-ting from it.
   public final void testPost() throws Exception {
     byte[] byteData = { (byte) 0x47, (byte) 0x49, (byte) 0x46,

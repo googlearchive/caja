@@ -28,7 +28,6 @@ import com.google.caja.util.Pair;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;
@@ -190,14 +189,10 @@ public class CajolingService {
           args,
           inputFetchedData.getContentType(),
           outputContentType,
-          inputFetchedData.getCharSet(),
-          inputFetchedData.getByteContent(),
+          inputFetchedData,
           intermediateResponse,
           mq);
     } catch (UnsupportedContentTypeException e) {
-      mq.addMessage(ServiceMessageType.UNSUPPORTED_CONTENT_TYPES);
-      return null;
-    } catch (UnsupportedEncodingException e) {
       mq.addMessage(ServiceMessageType.UNSUPPORTED_CONTENT_TYPES);
       return null;
     } catch (RuntimeException e) {
@@ -225,13 +220,13 @@ public class CajolingService {
   private Pair<String, String> applyHandler(
       URI uri, Transform t, List<Directive> d, ContentHandlerArgs args,
       String inputContentType, String outputContentType,
-      String charSet, byte[] content, OutputStream response, MessageQueue mq)
+      FetchedData input, OutputStream response, MessageQueue mq)
       throws UnsupportedContentTypeException {
     for (ContentHandler handler : handlers) {
       if (handler.canHandle(uri, t, d, inputContentType,
           outputContentType, typeCheck)) {
         return handler.apply(uri, t, d, args, inputContentType,
-            outputContentType, typeCheck, charSet, content, response, mq);
+            outputContentType, typeCheck, input, response, mq);
       }
     }
     throw new UnsupportedContentTypeException();

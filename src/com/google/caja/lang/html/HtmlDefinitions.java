@@ -53,6 +53,7 @@ import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.reporting.SimpleMessageQueue;
 import com.google.caja.tools.BuildCommand;
+import com.google.caja.util.Charsets;
 import com.google.caja.util.Maps;
 
 /**
@@ -301,7 +302,7 @@ public final class HtmlDefinitions {
       }
 
       Writer out = new OutputStreamWriter(
-          new FileOutputStream(output), "UTF-8");
+          new FileOutputStream(output), Charsets.UTF_8.name());
       String currentDate = "" + new Date();
       if (currentDate.indexOf("*/") >= 0) {
         throw new SomethingWidgyHappenedError("Date should not contain '*/'");

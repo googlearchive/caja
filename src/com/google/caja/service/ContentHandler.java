@@ -13,6 +13,7 @@
 
 package com.google.caja.service;
 
+import com.google.caja.lexer.FetchedData;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.util.Pair;
 
@@ -70,8 +71,7 @@ public interface ContentHandler {
                                     String inputContentType,
                                     String outputContentType,
                                     ContentTypeCheck checker,
-                                    String charSet,
-                                    byte[] content,
+                                    FetchedData input,
                                     OutputStream response,
                                     MessageQueue mq)
       throws UnsupportedContentTypeException;

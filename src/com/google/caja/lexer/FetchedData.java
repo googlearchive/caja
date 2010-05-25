@@ -18,6 +18,7 @@ import com.google.caja.SomethingWidgyHappenedError;
 import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.InputSource;
+import com.google.caja.util.Charsets;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -62,7 +63,8 @@ public abstract class FetchedData {
     public CharProducer getTextualContent()
         throws UnsupportedEncodingException {
       return CharProducer.Factory.fromString(
-          new String(content, "".equals(charSet) ? "UTF_8" : charSet), src);
+          new String(content, "".equals(charSet) 
+              ? Charsets.UTF_8.name() : charSet), src);
     }
 
     @Override

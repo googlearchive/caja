@@ -13,6 +13,7 @@
 
 package com.google.caja.service;
 
+import com.google.caja.lexer.FetchedData;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.MessageType;
@@ -46,12 +47,11 @@ public class ImageHandler implements ContentHandler {
                                     String inputContentType,
                                     String outputContentType,
                                     ContentTypeCheck checker,
-                                    String charSet,
-                                    byte[] content,
+                                    FetchedData input,
                                     OutputStream response,
                                     MessageQueue mq) {
     try {
-      response.write(content);
+      response.write(input.getByteContent());
       return Pair.pair(inputContentType, "");
     } catch (IOException e) {
       mq.addMessage(

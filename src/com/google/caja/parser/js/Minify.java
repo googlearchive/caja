@@ -30,6 +30,7 @@ import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.MessageType;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.Callback;
+import com.google.caja.util.Charsets;
 import com.google.caja.util.Pair;
 
 import java.io.File;
@@ -101,7 +102,8 @@ public class Minify {
 
     for (Pair<InputSource, File> input : inputs) {
       CharProducer cp = CharProducer.Factory.create(
-          new InputStreamReader(new FileInputStream(input.b), "UTF-8"),
+          new InputStreamReader(new FileInputStream(input.b), 
+              Charsets.UTF_8.name()),
           input.a);
       JsLexer lexer = new JsLexer(cp);
       JsTokenQueue tq = new JsTokenQueue(lexer, input.a);

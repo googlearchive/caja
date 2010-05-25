@@ -13,8 +13,19 @@
 
 package com.google.caja.service;
 
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.net.URI;
+import java.util.List;
+
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+
 import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.ExternalReference;
+import com.google.caja.lexer.FetchedData;
 import com.google.caja.lexer.HtmlLexer;
 import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.ParseException;
@@ -41,18 +52,6 @@ import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.Charsets;
 import com.google.caja.util.ContentType;
 import com.google.caja.util.Pair;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.Node;
-
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.io.Reader;
-import java.net.URI;
-import java.util.List;
 
 /**
  * Retrieves html files and cajoles them
@@ -99,8 +98,7 @@ public class HtmlHandler implements ContentHandler {
                                    String inputContentType,
                                    String outputContentType,
                                    ContentTypeCheck checker,
-                                   String charset,
-                                   byte[] content,
+                                   FetchedData input,
                                    OutputStream response,
                                    MessageQueue mq)
       throws UnsupportedContentTypeException {
@@ -130,8 +128,7 @@ public class HtmlHandler implements ContentHandler {
       OutputStreamWriter writer = new OutputStreamWriter(
           response, Charsets.UTF_8);
       cajoleHtml(
-          uri,
-          new InputStreamReader(new ByteArrayInputStream(content), charset),
+          uri, input.getTextualContent(),
           meta, moduleCallback, outputType, writer, mq);
       writer.flush();
     } catch (IOException e) {
@@ -139,15 +136,13 @@ public class HtmlHandler implements ContentHandler {
       throw new UnsupportedContentTypeException();
     }
 
-    return Pair.pair(outputType.mimeType, "UTF-8");
+    return Pair.pair(outputType.mimeType, Charsets.UTF_8.name());
   }
 
-  private void cajoleHtml(URI inputUri, Reader cajaInput, PluginMeta meta,
+  private void cajoleHtml(URI inputUri, CharProducer cp, PluginMeta meta,
                           Expression moduleCallback, ContentType outputType,
-                          Appendable output, MessageQueue mq)
-      throws IOException {
+                          Appendable output, MessageQueue mq) {
     InputSource is = new InputSource (inputUri);
-    CharProducer cp = CharProducer.Factory.create(cajaInput,is);
     boolean okToContinue = true;
     try {
       DomParser p = new DomParser(new HtmlLexer(cp), is, mq);
