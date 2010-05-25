@@ -89,6 +89,7 @@ final class CajaTreeBuilder extends TreeBuilder<Node> {
   }
 
   FilePosition getErrorLocation() {
+    if (!needsDebugData) { return FilePosition.UNKNOWN; }
     return (startTok.pos != endTok.pos
             ? FilePosition.span(startTok.pos, endTok.pos)
             : startTok.pos);

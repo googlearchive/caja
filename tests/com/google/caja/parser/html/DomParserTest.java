@@ -29,6 +29,7 @@ import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.MessageType;
 import com.google.caja.util.CajaTestCase;
 import com.google.caja.util.Criterion;
+import com.google.caja.util.Function;
 import com.google.caja.util.Join;
 import com.google.caja.util.Lists;
 import com.google.caja.util.MoreAsserts;
@@ -37,7 +38,9 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
+import java.util.NoSuchElementException;
 
 import org.w3c.dom.Attr;
 import org.w3c.dom.DocumentFragment;
@@ -83,10 +86,155 @@ public class DomParserTest extends CajaTestCase {
       + "  Text : \\n 5+37-6+1"
       );
 
+  static final String DOM1_XML_RENDERED_GOLDEN = (
+      ""
+      + "<foo a=\"b\" c=\"d\" e=\"&lt;&#34;f&#34;&amp;amp;\">\n"
+      + "<bar></bar> <bar></bar> before  after \n"
+      + "Hello &lt;there&gt;\n"
+      + "<baz>Hello &lt;there&gt;</baz>\n"
+      + "</foo>"
+      );
+
+  static final String DOM2_HTML = (
+      ""
+      + "<html>\n"
+      + "  <head>\n"
+      + "    <title>Title</title>\n"
+      + "  </head>\n"
+      + "  <body onload=foo()>\n"
+      + "    <!-- a comment -->\n"
+      + "    <p>Foo &lt; Bar</p>\n"
+      + "    <script>function foo() { alert('Hello, World!'); }</script>\n"
+      + "    <ul><li>One</li><li>Two</li></ul>\n"
+      + "  </body>\n"
+      + "</html>"
+      );
+
+  static final String DOM2_HTML_RENDERED_GOLDEN = (
+      ""
+      + "<html><head>\n"
+      + "    <title>Title</title>\n"
+      + "  </head>\n"
+      + "  <body onload=\"foo()\">\n"
+      + "    \n"
+      + "    <p>Foo &lt; Bar</p>\n"
+      + "    <script>function foo() { alert('Hello, World!'); }</script>\n"
+      + "    <ul><li>One</li><li>Two</li></ul>\n"
+      + "  \n"
+      + "</body></html>"
+      );
+
+  static final String DOM3_XML = (
+      "<element src=\"http://example.org/valid-src\"/>");
+
+  static final String DOM3_XML_RENDERED_GOLDEN = (
+      "<element src=\"http://example.org/valid-src\"></element>");
+
+  private static <T> Iterable<T> cartesianProduct(
+      final Function<Object[], T> fn, Object[]... options) {
+    final Object[][] opts = new Object[options.length][];
+    for (int i = opts.length; --i >= 0;) { opts[i] = options[i].clone(); }
+    return new Iterable<T>() {
+      public Iterator<T> iterator() {
+        return new Iterator<T>() {
+          final int[] pos = new int[opts.length];
+          boolean hasPending;
+          T pending;
+          boolean exhausted;
+
+          public boolean hasNext() {
+            fetch();
+            return hasPending;
+          }
+
+          public T next() {
+            fetch();
+            if (!hasPending) { throw new NoSuchElementException(); }
+            T out = pending;
+            pending = null;  // release for GC
+            hasPending = false;
+            return out;
+          }
+
+          public void remove() { throw new UnsupportedOperationException(); }
+
+          private void fetch() {
+            if (hasPending || exhausted) { return; }
+            // Produce a result.
+            int n = pos.length;
+            Object[] args = new Object[n];
+            for (int j = n; --j >= 0;) { args[j] = opts[j][pos[j]]; }
+            pending = fn.apply(args);
+            hasPending = true;
+            // Increment to next.
+            for (int i = n; --i >= 0;) {
+              if (++pos[i] < opts[i].length) {
+                for (int j = n; --j > i;) { pos[j] = 0; }
+                return;
+              }
+            }
+            exhausted = true;
+          }
+        };
+      }
+    };
+  }
+
+  private Iterable<DomParser> allPossibleConfigurations(
+      final String input, Boolean asXml) {
+    Boolean[] xmlConfigs = asXml != null
+        ? new Boolean[] { asXml } : new Boolean[] { false, true };
+    Boolean[] needsDebugData = new Boolean[] { false, true };
+    Boolean[] wantsComments = new Boolean[] { false, true };
+
+    return cartesianProduct(new Function<Object[], DomParser>() {
+      public DomParser apply(Object[] args) {
+        boolean asXml = (Boolean) args[0];
+        boolean needsDebugData = (Boolean) args[1];
+        boolean wantsComments = (Boolean) args[2];
+        TokenQueue<HtmlTokenType> tq = tokenizeTestInput(input, asXml);
+        DomParser p = new DomParser(tq, asXml, mq);
+        p.setNeedsDebugData(needsDebugData);
+        p.setWantsComments(wantsComments);
+        return p;
+      }
+    }, xmlConfigs, needsDebugData, wantsComments);
+  }
+
   public final void testParseDom() throws Exception {
     TokenQueue<HtmlTokenType> tq = tokenizeTestInput(DOM1_XML, true);
     Element el = new DomParser(tq, true, mq).parseDocument();
     assertEquals(DOM1_GOLDEN, formatToString(el, true));
+  }
+
+  public final void testParseXmlManyWays() throws Exception {
+    for (DomParser p : allPossibleConfigurations(DOM1_XML, true)) {
+      String config = (
+          "asXml=" + p.asXml() + ", needsDebugData=" + p.getNeedsDebugData()
+          + ", wantsComments=" + p.getWantsComments());
+      Node document = p.parseDocument();
+      assertEquals(config, DOM1_XML_RENDERED_GOLDEN, Nodes.render(document));
+    }
+  }
+
+  public final void testParseHtmlManyWays() throws Exception {
+    for (DomParser p : allPossibleConfigurations(DOM2_HTML, false)) {
+      String config = (
+          "asXml=" + p.asXml() + ", needsDebugData=" + p.getNeedsDebugData()
+          + ", wantsComments=" + p.getWantsComments());
+      Node document = p.parseDocument();
+      assertEquals(config, DOM2_HTML_RENDERED_GOLDEN, Nodes.render(document));
+    }
+  }
+
+  public final void testParseXmlFragmentManyWays() throws Exception {
+    for (DomParser p : allPossibleConfigurations(DOM3_XML, false)) {
+      String config = (
+          "asXml=" + p.asXml() + ", needsDebugData=" + p.getNeedsDebugData()
+          + ", wantsComments=" + p.getWantsComments());
+      Node fragment = p.parseFragment();
+      assertEquals(config, DOM3_XML_RENDERED_GOLDEN, Nodes.render(fragment));
+    }
   }
 
   public final void testOneRootXmlElement() throws Exception {

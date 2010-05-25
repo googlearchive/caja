@@ -106,6 +106,8 @@ public class DomParser {
   public TokenQueue<HtmlTokenType> getTokenQueue() { return tokens; }
 
   public boolean asXml() { return asXml; }
+  public boolean getNeedsDebugData() { return needsDebugData; }
+  public boolean getWantsComments() { return wantsComments; }
 
   /**
    * Sets a flag which determines whether subsequent parse calls will attach
