@@ -47,7 +47,6 @@ public abstract class ServiceTestCase extends CajaTestCase {
     servlet = new CajolingServlet(new CajolingService(
         new TestBuildInfo(), null,
         new UriFetcher() {
-          @Override
           public FetchedData fetch(ExternalReference ref, String mimeType)
               throws UriFetchException {
             FetchedData data = uriContent.get(ref.getUri());

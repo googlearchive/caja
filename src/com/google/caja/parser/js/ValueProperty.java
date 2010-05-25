@@ -33,7 +33,6 @@ public class ValueProperty extends ObjProperty {
 
   public Expression getValueExpr() { return children().get(1); }
 
-  @Override
   public void render(RenderContext rc) {
     Expression value = children().get(1);
     TokenConsumer out = rc.getOut();

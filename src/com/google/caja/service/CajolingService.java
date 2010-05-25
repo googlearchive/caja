@@ -57,7 +57,6 @@ public class CajolingService {
 
   public CajolingService(BuildInfo buildInfo, String host) {
     this(buildInfo, host, new UriFetcher() {
-      @Override
       public FetchedData fetch(ExternalReference ref, String mimeType)
           throws UriFetchException {
         try {

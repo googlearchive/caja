@@ -133,7 +133,13 @@ public class DomParserTest extends CajaTestCase {
   private static <T> Iterable<T> cartesianProduct(
       final Function<Object[], T> fn, Object[]... options) {
     final Object[][] opts = new Object[options.length][];
-    for (int i = opts.length; --i >= 0;) { opts[i] = options[i].clone(); }
+    for (int i = opts.length; --i >= 0;) {
+      // NPE on null input collections, and handle the empty output case here
+      // since the iterator code below assumes that it is not exhausted the
+      // first time through fetch.
+      if (options[i].length == 0) { return Collections.emptySet(); }
+      opts[i] = options[i].clone();
+    }
     return new Iterable<T>() {
       public Iterator<T> iterator() {
         return new Iterator<T>() {
@@ -237,7 +243,7 @@ public class DomParserTest extends CajaTestCase {
     }
   }
 
-  public final void testOneRootXmlElement() throws Exception {
+  public final void testOneRootXmlElement() {
     TokenQueue<HtmlTokenType> tq = tokenizeTestInput("<foo/><bar/>", true);
     try {
       new DomParser(tq, true, mq).parseDocument();
@@ -2392,22 +2398,25 @@ public class DomParserTest extends CajaTestCase {
     assertEquals("<xmp>  </xmp>", Nodes.render(t, false));
   }
 
-  public final void testEofMessageDueToMismatchedQuotes() throws Exception {
+  public final void testEofMessageDueToMismatchedQuotes() {
     ParseException pex = null;
     try {
       htmlFragment(fromString("<foo><bar baz='boo></bar></foo>"));
     } catch (ParseException ex) {
       pex = ex;
     }
-    assertNotNull("Mismatched quote did not result in exception", pex);
-    Message msg = pex.getCajaMessage();
-    assertEquals(DomParserMessageType.UNCLOSED_TAG, msg.getMessageType());
-    assertEquals(
-        "testEofMessageDueToMismatchedQuotes:1+6@6 - 10@10",
-        msg.getMessageParts().get(0).toString());
+    if (pex == null) {
+      fail("Mismatched quote did not result in exception");
+    } else {
+      Message msg = pex.getCajaMessage();
+      assertEquals(DomParserMessageType.UNCLOSED_TAG, msg.getMessageType());
+      assertEquals(
+          "testEofMessageDueToMismatchedQuotes:1+6@6 - 10@10",
+          msg.getMessageParts().get(0).toString());
+    }
   }
 
-  public final void testIssue1207() throws Exception {
+  public final void testIssue1207() {
     ParseException pex = null;
     try {
       xmlFragment(fromString("<?xml ?><html><"));

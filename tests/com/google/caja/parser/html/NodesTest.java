@@ -27,7 +27,7 @@ import org.w3c.dom.Element;
 import org.w3c.dom.ProcessingInstruction;
 
 public class NodesTest extends CajaTestCase {
-  public final void testDecode() throws Exception {
+  public final void testDecode() {
     assertEquals(Nodes.decode("1 &lt; 2 &amp;&amp; 4 &gt; &quot;3&quot;"),
                  "1 < 2 && 4 > \"3\"");
     assertEquals("", Nodes.decode(""));

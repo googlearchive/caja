@@ -17,13 +17,13 @@ package com.google.caja.util;
 import junit.framework.TestCase;
 
 public class RhinoAssertsTest extends TestCase {
-  public final void testString() throws Exception {
+  public final void testString() {
     assertStructuralForm("\"\"", "''");
     assertStructuralForm("\"foo\"", "'foo'");
     assertStructuralForm("\"foo\\nbar\"", "'foo\\nbar'");
   }
 
-  public final void testNumbers() throws Exception {
+  public final void testNumbers() {
     assertStructuralForm("0.0", "0");
     assertStructuralForm("-1.0", "-1");
     assertStructuralForm("1.0", "+1");
@@ -33,24 +33,24 @@ public class RhinoAssertsTest extends TestCase {
     assertStructuralForm("-Infinity", "-Infinity");
   }
 
-  public final void testBooleans() throws Exception {
+  public final void testBooleans() {
     assertStructuralForm("true", "true");
     assertStructuralForm("false", "false");
   }
 
-  public final void testNulls() throws Exception {
+  public final void testNulls() {
     assertStructuralForm("null", "null");
     assertStructuralForm("undefined", "undefined");
   }
 
-  public final void testArrays() throws Exception {
+  public final void testArrays() {
     assertStructuralForm("[]", "[]");
     assertStructuralForm("[1.0, 2.0, 3.0]", "[1, 2, 3]");
     assertStructuralForm("[[]]", "[[]]");
     assertStructuralForm("[1.0, 2.0, [3.0], null]", "[1, 2, [3], null]");
   }
 
-  public final void testObjects() throws Exception {
+  public final void testObjects() {
     assertStructuralForm("{}", "({})");
     assertStructuralForm("{\"a\": {\"b\": null}}", "({ a: { b: null } })");
     assertStructuralForm("{\"a\": 4.0, \"b\": null}", "({ b: null, a: 4 })");
@@ -59,7 +59,7 @@ public class RhinoAssertsTest extends TestCase {
         "({ length: 4, 2: 'there', 0: 'hi', 1.5: null })");
   }
 
-  public final void testObjectGraphCycles() throws Exception {
+  public final void testObjectGraphCycles() {
     assertStructuralForm(
         "#1=[#1#]",
         "(function () { var a = []; a.push(a); return a; })()");
@@ -81,7 +81,7 @@ public class RhinoAssertsTest extends TestCase {
         + "})()");
   }
 
-  public final void testBuiltinObjs() throws Exception {
+  public final void testBuiltinObjs() {
     assertIndeterminateStructuralForm("(function () {})");
     assertIndeterminateStructuralForm("(new Date(0))");
     assertIndeterminateStructuralForm(

@@ -219,13 +219,13 @@ public class ParserTest extends CajaTestCase {
     }
   }
 
-  public final void testParseKeywordsAsIdentifiers() throws Exception {
+  public final void testParseKeywordsAsIdentifiers() {
     for (Keyword k : Keyword.values()) {
       assertParseKeywordAsIdentifier(k);
     }
   }
 
-  public final void testDebuggerKeyword() throws Exception {
+  public final void testDebuggerKeyword() {
     // The debugger keyword can appear in a statement context
     assertParseSucceeds("{ debugger; }");
     // but not in an expression context
@@ -293,7 +293,7 @@ public class ParserTest extends CajaTestCase {
     assertMessage(MessageType.OCTAL_LITERAL, MessageLevel.LINT);
   }
 
-  public final void testIntegerPartIsOctal() throws Exception {
+  public final void testIntegerPartIsOctal() {
     assertTrue(Parser.integerPartIsOctal("012"));
     assertTrue(Parser.integerPartIsOctal("0012"));
     assertTrue(Parser.integerPartIsOctal("012.34"));
@@ -310,7 +310,7 @@ public class ParserTest extends CajaTestCase {
     assertEquals("'\\x00'", render(jsExpr(fromString("'\0'"))));
   }
 
-  public final void testRenderingOfMalformedRegexSafe() throws Exception {
+  public final void testRenderingOfMalformedRegexSafe() {
     assertEquals(
         "(new (/./.constructor)('foo', 'iii'))",
         render(new RegexpLiteral(FilePosition.UNKNOWN, "/foo/iii")));
@@ -354,7 +354,7 @@ public class ParserTest extends CajaTestCase {
     mq.getMessages().clear();
   }
 
-  public final void testUnnormalizedIdentifiers() throws Exception {
+  public final void testUnnormalizedIdentifiers() {
     // Test that identifiers not normalized to Normal Form C (Unicode NFC)
     // result in a ParseException with a useful error message.
     // According to chapter 6 of ES5, "The [source] text is expected to
@@ -421,15 +421,14 @@ public class ParserTest extends CajaTestCase {
     fail("Commas not required");
   }
 
-  private void assertParseKeywordAsIdentifier(Keyword k) throws Exception {
+  private void assertParseKeywordAsIdentifier(Keyword k) {
     assertAllowKeywordPropertyAccessor(k);
     assertAllowKeywordPropertyDeclaration(k);
     assertRejectKeywordAsExpr(k);
     assertRejectKeywordInVarDecl(k);
   }
 
-  private void assertAllowKeywordPropertyAccessor(Keyword k)
-      throws Exception {
+  private void assertAllowKeywordPropertyAccessor(Keyword k) {
     assertParseSucceeds(asLvalue("foo." + k));
     assertParseSucceeds(asRvalue("foo." + k));
     assertParseSucceeds(asLvalue("foo." + k + ".bar"));
@@ -447,8 +446,7 @@ public class ParserTest extends CajaTestCase {
     assertParseKeyword(asRvalue(k + ".foo"), isValidRvalue(k));
   }
 
-  private void assertRejectKeywordInVarDecl(Keyword k)
-      throws Exception {
+  private void assertRejectKeywordInVarDecl(Keyword k) {
     assertParseFails("var " + k + ";");
     assertMessage(
         MessageType.RESERVED_WORD_USED_AS_IDENTIFIER,

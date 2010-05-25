@@ -129,14 +129,13 @@ public class PunctuationTrieTest extends TestCase {
     assertEquals(skinnyTree, skinny.toString());
   }
 
-  public final void testPunctuationTrie() throws Exception {
+  public final void testPunctuationTrie() {
     // make sure that we can find strings in jsPunc
     Set<PunctuationTrie<?>> uniq = new HashSet<PunctuationTrie<?>>();
     for (Punctuation p : Punctuation.values()) {
       if (p.toString().equals("..")) { continue; }
       PunctuationTrie<?> t = jsPunc.lookup(p.toString());
-      assertTrue(null != t);
-      assertTrue(t.isTerminal());
+      assertTrue(t != null && t.isTerminal());
       assertTrue(uniq.add(t));
     }
 
@@ -151,7 +150,7 @@ public class PunctuationTrieTest extends TestCase {
     assertTrue(!jsPunc.lookup("..").isTerminal());
   }
 
-  public final void testSkinnyTrie() throws Exception {
+  public final void testSkinnyTrie() {
     String s = "hellooooooo";
     PunctuationTrie<Integer> t = skinny;
     for (int i = 0; i < s.length(); ++i) {

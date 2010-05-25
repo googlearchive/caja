@@ -36,7 +36,7 @@ public class JsOptimizerTest extends CajaTestCase {
     opt.setEnvJson(new ObjectConstructor(FilePosition.UNKNOWN));
   }
 
-  public final void testOptimizeNothing() throws Exception {
+  public final void testOptimizeNothing() {
     assertOptimized(emptyProgram());
   }
 

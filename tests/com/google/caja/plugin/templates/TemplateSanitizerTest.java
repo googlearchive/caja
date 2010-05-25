@@ -330,14 +330,12 @@ public class TemplateSanitizerTest extends CajaTestCase {
         html);
   }
 
-  private void assertValid(Node input, String golden, String... warnings)
-      throws Exception {
+  private void assertValid(Node input, String golden, String... warnings) {
     sanitize(input, golden, true, warnings);
   }
 
   private void sanitize(
-      Node input, String golden, boolean valid, String... warnings)
-      throws Exception {
+      Node input, String golden, boolean valid, String... warnings) {
     boolean validated = new TemplateSanitizer(HtmlSchema.getDefault(mq), mq)
         .sanitize(input);
 

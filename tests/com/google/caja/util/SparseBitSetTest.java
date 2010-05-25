@@ -22,7 +22,7 @@ import java.util.Random;
  */
 public class SparseBitSetTest extends CajaTestCase {
 
-  public final void testAgainstRegularImplementation() throws Exception {
+  public final void testAgainstRegularImplementation() {
     Random rnd = new Random(SEED);
 
     for (int run = 10; --run >= 0;) {

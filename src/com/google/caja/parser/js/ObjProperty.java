@@ -78,7 +78,6 @@ public abstract class ObjProperty extends AbstractParseTreeNode {
     return ((StringLiteral) children().get(0)).getUnquotedValue();
   }
 
-  @Override
   public final TokenConsumer makeRenderer(
       Appendable out, Callback<IOException> handler) {
     return new JsPrettyPrinter(new Concatenator(out, handler));

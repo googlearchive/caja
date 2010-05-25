@@ -124,7 +124,7 @@ public class JsMinimalPrinterTest extends CajaTestCase {
     assertLexed("!=|| =", "!= || =");
   }
 
-  public final void testNegatedNegativeNumericConstants() throws Exception {
+  public final void testNegatedNegativeNumericConstants() {
     assertRendered(
         "-(-3)",  // not --3
         Operation.create(
@@ -169,36 +169,36 @@ public class JsMinimalPrinterTest extends CajaTestCase {
     }
   }
 
-  public final void testSpacingAroundBrackets1() throws Exception {
+  public final void testSpacingAroundBrackets1() {
     assertTokens("longObjectInstance.reallyLongMethodName(a,b,c,d)",
                  "longObjectInstance", ".", "reallyLongMethodName", "(",
                  "a", ",", "b", ",", "c", ",", "d", ")", ";");
   }
 
-  public final void testSpacingAroundBrackets2() throws Exception {
+  public final void testSpacingAroundBrackets2() {
     assertTokens("longObjectInstance.reallyLongMethodName(a,b,c,d)",
                  "longObjectInstance", ".", "reallyLongMethodName", "(",
                  "a", ",", "b", ",", "c", ",", "\n", "d", ")", ";");
   }
 
-  public final void testSpacingAroundBrackets3() throws Exception {
+  public final void testSpacingAroundBrackets3() {
     assertTokens("longObjectInstance.reallyLongMethodName(a,b,c,d)",
                  "longObjectInstance", ".", "reallyLongMethodName", "(",
                  "\n", "a", ",", "b", ",", "c", ",", "d", ")", ";");
   }
 
-  public final void testSpacingAroundBrackets4() throws Exception {
+  public final void testSpacingAroundBrackets4() {
     assertTokens("var x=({'fooBar':[0,1,2,]})",
                  "var", "x", "=", "(", "{", "'fooBar'", ":", "[",
                  "\n", "0", ",", "1", ",", "2", ",", "]", "}", ")", ";");
   }
 
-  public final void testConfusedTokenSequences() throws Exception {
+  public final void testConfusedTokenSequences() {
     assertTokens("< ! =", "<", "!", "=");
     assertTokens("< !=", "<", "!=");
   }
 
-  public final void testNumbersAndDots() throws Exception {
+  public final void testNumbersAndDots() {
     assertTokens("2 .toString()", "2", ".", "toString", "(", ")");
     assertTokens("2..toString()", "2.", ".", "toString", "(", ")");
     assertTokens("2. .5", "2.", ".5");
@@ -349,8 +349,7 @@ public class JsMinimalPrinterTest extends CajaTestCase {
     assertRendered(golden, node);
   }
 
-  private void assertRendered(String golden, ParseTreeNode node)
-      throws Exception {
+  private void assertRendered(String golden, ParseTreeNode node) {
     StringBuilder out = new StringBuilder();
     JsMinimalPrinter pp = new JsMinimalPrinter(new Concatenator(out));
     node.render(new RenderContext(pp));
@@ -359,7 +358,7 @@ public class JsMinimalPrinterTest extends CajaTestCase {
     assertEquals(golden, out.toString());
   }
 
-  private void assertLexed(String golden, String input) throws Exception {
+  private void assertLexed(String golden, String input) throws ParseException {
     StringBuilder out = new StringBuilder();
     JsMinimalPrinter pp = new JsMinimalPrinter(new Concatenator(out));
 
@@ -374,7 +373,7 @@ public class JsMinimalPrinterTest extends CajaTestCase {
     assertEquals(golden, out.toString());
   }
 
-  private void assertTokens(String golden, String... input) throws Exception {
+  private void assertTokens(String golden, String... input) {
     StringBuilder out = new StringBuilder();
     JsMinimalPrinter pp = new JsMinimalPrinter(new Concatenator(out));
 

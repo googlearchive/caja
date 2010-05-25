@@ -128,7 +128,7 @@ public class HtmlQuasiBuilderTest extends TestCase {
             "fs", hb.toFragment("<frameset><frame src=foo.html></frameset>"))));
   }
 
-  public final void testAttributeValues() throws Exception {
+  public final void testAttributeValues() {
     assertEquals(
         "<input checked=\"checked\" type=\"checkbox\" />",
         Nodes.render(hb.substV(
@@ -244,7 +244,7 @@ public class HtmlQuasiBuilderTest extends TestCase {
         nodePositions(n));
   }
 
-  public final void testProblematicElements() throws Exception {
+  public final void testProblematicElements() {
     assertEquals(
         "option",
         onlyElement(hb.substV("<option>Foo</option>")).getLocalName());

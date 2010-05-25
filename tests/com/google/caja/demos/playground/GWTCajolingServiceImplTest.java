@@ -57,12 +57,12 @@ public class GWTCajolingServiceImplTest extends CajaTestCase {
     }
   }
 
-  public final void testSimpleCajoling() throws Exception {
+  public final void testSimpleCajoling() {
     assertCajoles("http://foo/baz.html", "<script>var a=1;</script>");
   }
 
   // Issue 1179
-  public final void testErrorReporting() throws Exception {
+  public final void testErrorReporting() {
     assertFailsWithError("http://foo/bar.html", "<script>var a=b[];</script>",
         MessageLevel.ERROR);
   }

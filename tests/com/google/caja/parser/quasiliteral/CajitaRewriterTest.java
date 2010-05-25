@@ -1885,7 +1885,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
         "a;");
   }
 
-  public final void testRecurseParseTreeNodeContainer() throws Exception {
+  public final void testRecurseParseTreeNodeContainer() {
     // Tested implicitly by other cases
   }
 
@@ -1897,7 +1897,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
         + "foo = [___.readPub(g, a), ___.readPub(g, b)];");
   }
 
-  public final void testRecurseBlock() throws Exception {
+  public final void testRecurseBlock() {
     // Tested implicitly by other cases
   }
 
@@ -1950,11 +1950,11 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
         "switch(___.readPub(g, i)) { default: break; }");
   }
 
-  public final void testRecurseExpressionStmt() throws Exception {
+  public final void testRecurseExpressionStmt() {
     // Tested implicitly by other cases
   }
 
-  public final void testRecurseIdentifier() throws Exception {
+  public final void testRecurseIdentifier() {
     // Tested implicitly by other cases
   }
 

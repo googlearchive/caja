@@ -62,7 +62,7 @@ public class ModuleFormatTest extends CajaTestCase {
     }
   };
 
-  public final void testCajoledModuleContents() throws Exception {
+  public final void testCajoledModuleContents() {
     CajoledModule trivialCajoledModule = (CajoledModule) makeRewriter().expand(
         new UncajoledModule(new Block()));
     assertNoErrors();
@@ -118,7 +118,7 @@ public class ModuleFormatTest extends CajaTestCase {
         sb.toString());
   }
 
-  private CajoledModule makeTestCajoledModule() throws Exception {
+  private CajoledModule makeTestCajoledModule() {
     ObjectConstructor oc = (ObjectConstructor) QuasiBuilder.substV(
         "  ({"
         + "  instantiate: function() {},"

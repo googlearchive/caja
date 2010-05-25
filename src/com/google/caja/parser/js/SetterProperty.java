@@ -71,7 +71,6 @@ public final class SetterProperty extends ObjProperty {
     }
   }
 
-  @Override
   public void render(RenderContext r) {
     TokenConsumer out = r.getOut();
     out.mark(getFilePosition());

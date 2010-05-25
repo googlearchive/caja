@@ -45,11 +45,11 @@ import java.util.Map;
  */
 public class CssParserTest extends CajaTestCase {
 
-  public final void testBadHashValue() throws Exception {
+  public final void testBadHashValue() {
     throwsParseException("h1 { color: #OOOOOO}");  // Letters instead of zeroes
   }
 
-  public final void testUnescape() throws Exception {
+  public final void testUnescape() {
     FilePosition pos = FilePosition.startOfFile(is);
     assertEquals("", CssParser.unescape(
         Token.instance("", CssTokenType.IDENT, pos)));
@@ -227,8 +227,7 @@ public class CssParserTest extends CajaTestCase {
     return css(fromString(fuzzString));
   }
 
-  private String renderSnippets(Map<InputSource, String> srcs)
-       throws Exception {
+  private String renderSnippets(Map<InputSource, String> srcs) {
     SnippetProducer sr = new SnippetProducer(srcs, mc, 80);
     List<Message> messages = new ArrayList<Message>(mq.getMessages());
     Collections.sort(messages, new Comparator<Message>() {

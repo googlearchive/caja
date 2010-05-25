@@ -24,11 +24,9 @@ class NodeListWrapper implements NodeList {
     this.underlying = underlying;
     this.membrane = membrane;
   }
-  @Override
   public int getLength() {
     return underlying.getLength();
   }
-  @Override
   public Node item(int arg0) {
     return membrane.wrap(underlying.item(arg0), Node.class);
   }

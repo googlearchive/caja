@@ -25,31 +25,24 @@ class AttrWrapper extends NodeWrapper implements Attr {
     super(underlyingAttr, membrane);
     this.underlyingAttr = underlyingAttr;
   }
-  @Override
   public String getName() {
     return underlyingAttr.getName();
   }
-  @Override
   public Element getOwnerElement() {
     return membrane.wrap(underlyingAttr.getOwnerElement(), Element.class);
   }
-  @Override
   public TypeInfo getSchemaTypeInfo() {
     return underlyingAttr.getSchemaTypeInfo();
   }
-  @Override
   public boolean getSpecified() {
     return underlyingAttr.getSpecified();
   }
-  @Override
   public String getValue() {
     return underlyingAttr.getValue();
   }
-  @Override
   public boolean isId() {
     return underlyingAttr.isId();
   }
-  @Override
   public void setValue(String arg0) throws DOMException {
     underlyingAttr.setValue(arg0);
   }

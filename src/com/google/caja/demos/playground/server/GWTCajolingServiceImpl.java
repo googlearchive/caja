@@ -48,7 +48,6 @@ public class GWTCajolingServiceImpl extends RemoteServiceServlet
   @ReflectiveCtor
   public GWTCajolingServiceImpl() {
     this(new UriFetcher() {
-      @Override
       public FetchedData fetch(ExternalReference ref, String mimeType)
           throws UriFetchException {
         try {

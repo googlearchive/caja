@@ -21,7 +21,7 @@ import com.google.caja.util.CajaTestCase;
 import java.util.Arrays;
 
 public class StaticFilesTest extends CajaTestCase {
-  public final void testBogusUrls() throws Exception {
+  public final void testBogusUrls() {
     StaticFiles f = new StaticFiles("cacheId");
     assertFalse(f.exists("files/bogus"));
     assertFalse(f.exists("files/bogus.html"));

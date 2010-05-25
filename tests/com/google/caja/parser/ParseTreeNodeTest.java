@@ -114,7 +114,7 @@ public class ParseTreeNodeTest extends TestCase {
         sb.toString());
   }
 
-  public final void testRender() throws Exception {
+  public final void testRender() {
     StringBuilder sb = new StringBuilder();
     TokenConsumer tc = new JsPrettyPrinter(new Concatenator(sb));
     root.render(new RenderContext(tc));
@@ -135,13 +135,13 @@ public class ParseTreeNodeTest extends TestCase {
         sb.toString());
   }
 
-  public final void testVisitPreOrder() throws Exception {
+  public final void testVisitPreOrder() {
     IntEnqueuer ie = new IntEnqueuer();
     root.acceptPreOrder(ie, null);
     assertEquals("[0, 1, 2, 3, 4, 5, 6, 7, 8]", ie.getNums().toString());
   }
 
-  public final void testVisitPreOrderReturnHandling() throws Exception {
+  public final void testVisitPreOrderReturnHandling() {
     IntEnqueuerExcept ie = new IntEnqueuerExcept(6);
     root.acceptPreOrder(ie, null);
     assertEquals("[0, 1, 2, 3, 4, 5, 6, 7, 8]", ie.getNums().toString());
@@ -151,13 +151,13 @@ public class ParseTreeNodeTest extends TestCase {
     assertEquals("[0, 1, 5, 6, 7, 8]", ie.getNums().toString());
   }
 
-  public final void testVisitPostOrder() throws Exception {
+  public final void testVisitPostOrder() {
     IntEnqueuer ie = new IntEnqueuer();
     root.acceptPostOrder(ie, null);
     assertEquals("[2, 3, 4, 1, 6, 7, 8, 5, 0]", ie.getNums().toString());
   }
 
-  public final void testVisitPostOrderReturnHandling() throws Exception {
+  public final void testVisitPostOrderReturnHandling() {
     IntEnqueuerExcept ie = new IntEnqueuerExcept(6);
     root.acceptPostOrder(ie, null);
     assertEquals("[2, 3, 4, 1, 6]", ie.getNums().toString());
@@ -200,7 +200,7 @@ public class ParseTreeNodeTest extends TestCase {
         sb.toString());
   }
 
-  public final void testRenderPostReplace() throws Exception {
+  public final void testRenderPostReplace() {
     doReplace();
     StringBuilder sb = new StringBuilder();
     TokenConsumer tc = new JsPrettyPrinter(new Concatenator(sb));
@@ -222,15 +222,14 @@ public class ParseTreeNodeTest extends TestCase {
         sb.toString());
   }
 
-  public final void testVisitPreOrderPostReplace() throws Exception {
+  public final void testVisitPreOrderPostReplace() {
     doReplace();
     IntEnqueuer ie = new IntEnqueuer();
     root.acceptPreOrder(ie, null);
     assertEquals("[0, 1, 2, 3, 4, 9, 10, 11, 12]", ie.getNums().toString());
   }
 
-  public final void testVisitPreorderDoesntDescendIntoReplaced()
-      throws Exception {
+  public final void testVisitPreorderDoesntDescendIntoReplaced() {
     IntEnqueuerThatReplaces ie = new IntEnqueuerThatReplaces(5, b9);
     root.acceptPreOrder(ie, null);
     assertEquals("[0, 1, 2, 3, 4, 5]", ie.getNums().toString());
@@ -299,7 +298,7 @@ public class ParseTreeNodeTest extends TestCase {
         sb.toString());
   }
 
-  public final void testRenderPostInsert() throws Exception {
+  public final void testRenderPostInsert() {
     doInsert(5);
     StringBuilder sb = new StringBuilder();
     TokenConsumer tc = new JsPrettyPrinter(new Concatenator(sb));
@@ -326,7 +325,7 @@ public class ParseTreeNodeTest extends TestCase {
         sb.toString());
   }
 
-  public final void testVisitPreOrderPostInsert() throws Exception {
+  public final void testVisitPreOrderPostInsert() {
     doInsert(5);
     IntEnqueuer ie = new IntEnqueuer();
     root.acceptPreOrder(ie, null);
@@ -383,7 +382,7 @@ public class ParseTreeNodeTest extends TestCase {
         sb.toString());
   }
 
-  public final void testRenderPostInsert2() throws Exception {
+  public final void testRenderPostInsert2() {
     doInsert(1);
     StringBuilder sb = new StringBuilder();
     TokenConsumer tc = new JsPrettyPrinter(new Concatenator(sb));
@@ -410,7 +409,7 @@ public class ParseTreeNodeTest extends TestCase {
         sb.toString());
   }
 
-  public final void testVisitPreOrderPostInsert2() throws Exception {
+  public final void testVisitPreOrderPostInsert2() {
     doInsert(1);
     IntEnqueuer ie = new IntEnqueuer();
     root.acceptPreOrder(ie, null);
@@ -467,7 +466,7 @@ public class ParseTreeNodeTest extends TestCase {
         sb.toString());
   }
 
-  public final void testRenderPostInsert3() throws Exception {
+  public final void testRenderPostInsert3() {
     doInsert(-1);
     StringBuilder sb = new StringBuilder();
     TokenConsumer tc = new JsPrettyPrinter(new Concatenator(sb));
@@ -494,7 +493,7 @@ public class ParseTreeNodeTest extends TestCase {
         sb.toString());
   }
 
-  public final void testVisitPreOrderPostInsert3() throws Exception {
+  public final void testVisitPreOrderPostInsert3() {
     doInsert(-1);
     IntEnqueuer ie = new IntEnqueuer();
     root.acceptPreOrder(ie, null);
@@ -542,7 +541,7 @@ public class ParseTreeNodeTest extends TestCase {
         sb.toString());
   }
 
-  public final void testRenderPostRemove() throws Exception {
+  public final void testRenderPostRemove() {
     doRemove(5);
     StringBuilder sb = new StringBuilder();
     TokenConsumer tc = new JsPrettyPrinter(new Concatenator(sb));
@@ -559,14 +558,14 @@ public class ParseTreeNodeTest extends TestCase {
         sb.toString());
   }
 
-  public final void testVisitPreOrderPostRemove() throws Exception {
+  public final void testVisitPreOrderPostRemove() {
     doRemove(5);
     IntEnqueuer ie = new IntEnqueuer();
     root.acceptPreOrder(ie, null);
     assertEquals("[0, 1, 2, 3, 4]", ie.getNums().toString());
   }
 
-  public final void testVisitPostOrderPostRemove() throws Exception {
+  public final void testVisitPostOrderPostRemove() {
     doRemove(5);
     IntEnqueuer ie = new IntEnqueuer();
     root.acceptPostOrder(ie, null);
@@ -579,7 +578,7 @@ public class ParseTreeNodeTest extends TestCase {
     assertEquals("[0, 1, 2, 3, 4, 5]", ie.getNums().toString());
   }
 
-  public final void testVisitPostOrderDescendsIntoRemoved() throws Exception {
+  public final void testVisitPostOrderDescendsIntoRemoved() {
     IntEnqueuerThatRemoves ie = new IntEnqueuerThatRemoves(5);
     root.acceptPostOrder(ie, null);
     assertEquals("[2, 3, 4, 1, 6, 7, 8, 5, 0]", ie.getNums().toString());
@@ -604,7 +603,7 @@ public class ParseTreeNodeTest extends TestCase {
         sb.toString());
   }
 
-  public final void testRenderPostRemove2() throws Exception {
+  public final void testRenderPostRemove2() {
     doRemove(1);
     StringBuilder sb = new StringBuilder();
     TokenConsumer tc = new JsPrettyPrinter(new Concatenator(sb));
@@ -621,14 +620,14 @@ public class ParseTreeNodeTest extends TestCase {
         sb.toString());
   }
 
-  public final void testVisitPreOrderPostRemove2() throws Exception {
+  public final void testVisitPreOrderPostRemove2() {
     doRemove(1);
     IntEnqueuer ie = new IntEnqueuer();
     root.acceptPreOrder(ie, null);
     assertEquals("[0, 5, 6, 7, 8]", ie.getNums().toString());
   }
 
-  public final void testVisitPostOrderPostRemove2() throws Exception {
+  public final void testVisitPostOrderPostRemove2() {
     doRemove(1);
     IntEnqueuer ie = new IntEnqueuer();
     root.acceptPostOrder(ie, null);
@@ -641,7 +640,7 @@ public class ParseTreeNodeTest extends TestCase {
     assertEquals("[0, 1, 5, 6, 7, 8]", ie.getNums().toString());
   }
 
-  public final void testVisitPostOrderDescendsIntoRemoved2() throws Exception {
+  public final void testVisitPostOrderDescendsIntoRemoved2() {
     IntEnqueuerThatRemoves ie = new IntEnqueuerThatRemoves(1);
     root.acceptPostOrder(ie, null);
     assertEquals("[2, 3, 4, 1, 6, 7, 8, 5, 0]", ie.getNums().toString());

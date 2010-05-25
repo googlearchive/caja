@@ -22,7 +22,7 @@ import java.util.ListResourceBundle;
  * @author ihab.awad@gmail.com
  */
 public class BuildInfoTest extends TestCase {
-  private BuildInfo getDefaultBuildInfo() throws Exception {
+  private BuildInfo getDefaultBuildInfo() {
     return new BuildInfo(
       new ListResourceBundle() {
         @Override
@@ -35,14 +35,14 @@ public class BuildInfoTest extends TestCase {
       });
   }
 
-  private Message getMessage(BuildInfo bi) throws Exception {
+  private Message getMessage(BuildInfo bi) {
     MessageQueue mq = new SimpleMessageQueue();
     bi.addBuildInfo(mq);
     assertEquals(1, mq.getMessages().size());
     return mq.getMessages().get(0);
   }
 
-  public final void testNonemptyInfo() throws Exception {
+  public final void testNonemptyInfo() {
     Message m = getMessage(getDefaultBuildInfo());
     assertEquals(MessageLevel.LOG, m.getMessageLevel());
     String s = m.format(new MessageContext());
@@ -50,7 +50,7 @@ public class BuildInfoTest extends TestCase {
     assertTrue(s.contains("January 1, 2007"));
   }
 
-  public final void testEmptyInfo() throws Exception {
+  public final void testEmptyInfo() {
     Message m = getMessage(new BuildInfo(null));
     // Just ensure that nothing failed dramatically
     assertEquals(MessageLevel.LOG, m.getMessageLevel());

@@ -40,7 +40,7 @@ public class HtmlSchemaTest extends TestCase {
   }
 
   /** blacklist the whitelist. */
-  public final void testSchema() throws Exception {
+  public final void testSchema() {
     assertFalse(schema.isElementAllowed(el("script")));
     assertFalse(schema.isElementAllowed(el("style")));
     // swapping innerHTML from an XMP or LISTING tag into another tag might
@@ -57,7 +57,7 @@ public class HtmlSchemaTest extends TestCase {
     assertTrue(schema.isElementAllowed(el("span")));
   }
 
-  public final void testAttributeTypes() throws Exception {
+  public final void testAttributeTypes() {
     assertEquals(HTML.Attribute.Type.STYLE,
                  lookupAttribute("div", "style").getType());
     assertEquals(HTML.Attribute.Type.SCRIPT,
@@ -68,14 +68,14 @@ public class HtmlSchemaTest extends TestCase {
                  lookupAttribute("a", "title").getType());
   }
 
-  public final void testAttributeMimeTypes() throws Exception {
+  public final void testAttributeMimeTypes() {
     assertEquals("image/*", lookupAttribute("img", "src").getMimeTypes());
     assertEquals(
         "text/javascript", lookupAttribute("script", "src").getMimeTypes());
     assertNull(lookupAttribute("table", "cellpadding").getMimeTypes());
   }
 
-  public final void testAttributeCriteria() throws Exception {
+  public final void testAttributeCriteria() {
     assertFalse(lookupAttribute("a", "target")
                 .getValueCriterion().accept("_top"));
     assertTrue(lookupAttribute("a", "target")

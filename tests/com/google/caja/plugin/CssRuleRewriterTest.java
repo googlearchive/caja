@@ -76,7 +76,7 @@ public class CssRuleRewriterTest extends CajaTestCase {
    * "*" selectors should rewrite properly.
    * <a href="http://code.google.com/p/google-caja/issues/detail?id=57">bug</a>
    */
-  public final void testWildcardSelectors() throws Exception {
+  public final void testWildcardSelectors() {
     assertCompiledCss(
         "div * { margin: 0; }",
         "[ '.', ' div * {\\n  margin: 0;\\n}' ]");

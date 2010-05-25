@@ -57,17 +57,7 @@ public class EscapingTest extends TestCase {
     WORD_CHARS = sb.toString();
   }
 
-  @Override
-  protected void setUp() throws Exception {
-    super.setUp();
-  }
-
-  @Override
-  protected void tearDown() throws Exception {
-    super.tearDown();
-  }
-
-  public final void testMinimalEscapeJsString() throws Exception {
+  public final void testMinimalEscapeJsString() {
     StringBuilder sb = new StringBuilder();
     Escaping.escapeJsString(CHARS, false, false, sb);
     assertStringsEqual(
@@ -117,7 +107,7 @@ public class EscapingTest extends TestCase {
     assertStringsEqual(golden, sb.toString());
   }
 
-  public final void testParanoidEscapeJsString() throws Exception {
+  public final void testParanoidEscapeJsString() {
     StringBuilder sb = new StringBuilder();
     Escaping.escapeJsString(CHARS, false, true, sb);
     assertStringsEqual(
@@ -140,7 +130,7 @@ public class EscapingTest extends TestCase {
         sb.toString());
   }
 
-  public final void testAsciiOnlyEscapeJsString() throws Exception {
+  public final void testAsciiOnlyEscapeJsString() {
     StringBuilder sb = new StringBuilder();
     Escaping.escapeJsString(CHARS, true, false, sb);
     assertStringsEqual(
@@ -160,7 +150,7 @@ public class EscapingTest extends TestCase {
         sb.toString());
   }
 
-  public final void testParanoidAsciiOnlyEscapeJsString() throws Exception {
+  public final void testParanoidAsciiOnlyEscapeJsString() {
     StringBuilder sb = new StringBuilder();
     Escaping.escapeJsString(CHARS, true, true, sb);
     assertStringsEqual(
@@ -182,7 +172,7 @@ public class EscapingTest extends TestCase {
         sb.toString());
   }
 
-  public final void testIdentifierEscaping() throws Exception {
+  public final void testIdentifierEscaping() {
     StringBuilder sb = new StringBuilder();
     Escaping.escapeJsIdentifier(WORD_CHARS, true, sb);
     assertStringsEqual(
@@ -230,7 +220,7 @@ public class EscapingTest extends TestCase {
   }
 
 
-  public final void testMinimalEscapeRegex() throws Exception {
+  public final void testMinimalEscapeRegex() {
     StringBuilder sb = new StringBuilder();
     Escaping.escapeRegex(CHARS, false, false, sb);
     assertStringsEqual(
@@ -251,7 +241,7 @@ public class EscapingTest extends TestCase {
         sb.toString());
   }
 
-  public final void testParanoidEscapeRegex() throws Exception {
+  public final void testParanoidEscapeRegex() {
     StringBuilder sb = new StringBuilder();
     Escaping.escapeRegex(CHARS, false, true, sb);
     assertStringsEqual(
@@ -274,7 +264,7 @@ public class EscapingTest extends TestCase {
         sb.toString());
   }
 
-  public final void testRegexNormalization() throws Exception {
+  public final void testRegexNormalization() {
     StringBuilder sb = new StringBuilder();
     Escaping.normalizeRegex(
         "<Foo+\\> \u2028 \\\\Ba*r \r Baz\\+\\+", false, true, sb);
@@ -316,7 +306,7 @@ public class EscapingTest extends TestCase {
     }
   }
 
-  public final void testEscapeXml() throws Exception {
+  public final void testEscapeXml() {
     StringBuilder sb = new StringBuilder();
     Escaping.escapeXml(CHARS, false, sb);
     assertStringsEqual(
@@ -339,7 +329,7 @@ public class EscapingTest extends TestCase {
         sb.toString());
   }
 
-  public final void testEscapeXmlAsciiOnly() throws Exception {
+  public final void testEscapeXmlAsciiOnly() {
     StringBuilder sb = new StringBuilder();
     Escaping.escapeXml(CHARS, true, sb);
     assertStringsEqual(
@@ -363,7 +353,7 @@ public class EscapingTest extends TestCase {
         sb.toString());
   }
 
-  public final void testEscapeCssString() throws Exception {
+  public final void testEscapeCssString() {
     StringBuilder sb;
 
     sb = new StringBuilder();
@@ -399,7 +389,7 @@ public class EscapingTest extends TestCase {
     assertStringsEqual("\\3CZZZ\\3E ", sb.toString());
   }
 
-  public final void testEscapeCssIdent() throws Exception {
+  public final void testEscapeCssIdent() {
     StringBuilder sb;
 
     sb = new StringBuilder();

@@ -43,31 +43,31 @@ public class CssLexerTest extends CajaTestCase {
     assertTrue(mq.getMessages().isEmpty());
   }
 
-  public final void testUnterminatedStrings() throws Exception {
+  public final void testUnterminatedStrings() {
     assertFails("font-family: 'foo", "1+14 - 18: Unclosed string");
   }
 
-  public final void testLinebreakInString() throws Exception {
+  public final void testLinebreakInString() {
     assertFails("font-family: 'foo\nbar'", "1+18: Illegal char in string '\n'");
   }
 
-  public final void testEofInEscape() throws Exception {
+  public final void testEofInEscape() {
     assertFails("font-family: 'foo\\abc", "1+14 - 22: Unclosed string");
   }
 
-  public final void testUnterminatedComment() throws Exception {
+  public final void testUnterminatedComment() {
     assertFails("foo\nb /* bar ", "2+3 - 10: Unclosed comment");
   }
 
-  public final void testUnterminatedFunction() throws Exception {
+  public final void testUnterminatedFunction() {
     assertFails("url(bar", "1+8: Expected ) not <end-of-input>");
   }
 
-  public final void testMalformedNumber() throws Exception {
+  public final void testMalformedNumber() {
     assertFails("100.?", "1+1 - 5: Malformed number 100.");
   }
 
-  public final void testDecodeCssIdentifier() throws Exception {
+  public final void testDecodeCssIdentifier() {
     assertEquals("foo", CssLexer.decodeCssIdentifier("foo"));
     assertEquals("foo", CssLexer.decodeCssIdentifier("f\\6fo"));
     assertEquals("foo", CssLexer.decodeCssIdentifier("f\\6f o"));

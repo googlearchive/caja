@@ -26,7 +26,6 @@ class UriToFile implements Function<URI, File> {
     this.directory = directory;
   }
 
-  @Override
   public File apply(URI uri) {
     return toFileUnderSameDirectory(uri);
   }

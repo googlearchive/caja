@@ -17,7 +17,7 @@ package com.google.caja.lexer.escaping;
 import junit.framework.TestCase;
 
 public class UriUtilTest extends TestCase {
-  public final void testUriNormalization() throws Exception {
+  public final void testUriNormalization() {
     // Don't muck with ':' after protocol or before port, or '=' in query
     // parameters.
     assertEquals(

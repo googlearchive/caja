@@ -58,7 +58,7 @@ public final class CharProducerTest extends TestCase {
         );
   }
 
-  public final void testFromString() throws Exception {
+  public final void testFromString() {
     String s =
       "but was shocked to learn\n\rthe lazy dog had\r\na fox-seeking missle.";
     // 0         1         2           3         4           5         6
@@ -116,7 +116,7 @@ public final class CharProducerTest extends TestCase {
         );
   }
 
-  public final void testJsUnEscaping() throws Exception {
+  public final void testJsUnEscaping() {
     String js =
       "The quick\\u0020brown fox\\njumps\\40over\\r\\nthe lazy dog\\n";
     // 0          1         2          3           4          5
@@ -257,7 +257,7 @@ public final class CharProducerTest extends TestCase {
     return CharProducer.Factory.create(new StringReader(js), STRING_SOURCE);
   }
 
-  public final void testHtmlUnEscaping() throws Exception {
+  public final void testHtmlUnEscaping() {
     String html =
       "The quick&nbsp;brown fox&#xa;jumps over&#xd;&#10;the lazy dog&#x000a;";
     //          1         2         3         4         5         6

@@ -20,8 +20,7 @@ package com.google.caja.service;
 public class JsHandlerTest extends ServiceTestCase {
   // TODO(ihab.awad): Change tests to use structural equality (via quasi
   // matches) rather than golden text to avoid this.
-  protected void assertEqualsIgnoreSpace(String expected, String actual)
-    throws Exception {
+  protected void assertEqualsIgnoreSpace(String expected, String actual) {
     assertEquals(
         expected.replace(" ", ""),
         actual.replace(" ", ""));

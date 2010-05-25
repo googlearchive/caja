@@ -28,7 +28,6 @@
   -   demos      :  demo files
   -   docs       :  javadocs, jsdocs, and rule docs
   -   jars       :  build the binary distribution
-  -   jars       :  build the binary distribution
   -   pluginc    :  the plugin compiler
   -   runtests   :  runs the tests
   -

@@ -85,16 +85,14 @@ public abstract class RewriterTestCase extends CajaTestCase {
   }
 
   protected void checkSucceeds(ParseTreeNode inputNode,
-                               ParseTreeNode expectedResultNode)
-      throws Exception {
+                               ParseTreeNode expectedResultNode) {
     checkSucceeds(inputNode, expectedResultNode, MessageLevel.WARNING);
   }
 
   protected void checkSucceeds(
       ParseTreeNode inputNode,
       ParseTreeNode expectedResultNode,
-      MessageLevel highest)
-      throws Exception {
+      MessageLevel highest) {
     mq.getMessages().clear();
     ParseTreeNode actualResultNode = getRewriter().expand(inputNode);
     for (Message m : mq.getMessages()) {

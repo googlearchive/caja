@@ -28,114 +28,94 @@ abstract class ElementWrapper extends NodeWrapper implements Element {
     this.underlyingEl = underlying;
   }
 
-  @Override
   public String getAttribute(String arg0) {
     return underlyingEl.getAttribute(arg0);
   }
 
-  @Override
   public String getAttributeNS(String arg0, String arg1) throws DOMException {
     return underlyingEl.getAttributeNS(arg0, arg1);
   }
 
-  @Override
   public Attr getAttributeNode(String arg0) {
     return membrane.wrap(underlyingEl.getAttributeNode(arg0), Attr.class);
   }
 
-  @Override
   public Attr getAttributeNodeNS(String arg0, String arg1) throws DOMException {
     return membrane.wrap(
         underlyingEl.getAttributeNodeNS(arg0, arg1), Attr.class);
   }
 
-  @Override
   public NodeList getElementsByTagName(String arg0) {
     return membrane.wrap(
         underlyingEl.getElementsByTagName(arg0), NodeList.class);
   }
 
-  @Override
   public NodeList getElementsByTagNameNS(String arg0, String arg1)
       throws DOMException {
     return membrane.wrap(
         underlyingEl.getElementsByTagNameNS(arg0, arg1), NodeList.class);
   }
 
-  @Override
   public TypeInfo getSchemaTypeInfo() {
     return underlyingEl.getSchemaTypeInfo();
   }
 
-  @Override
   public String getTagName() {
     return underlyingEl.getTagName();
   }
 
-  @Override
   public boolean hasAttribute(String arg0) {
     return underlyingEl.hasAttribute(arg0);
   }
 
-  @Override
   public boolean hasAttributeNS(String arg0, String arg1) throws DOMException {
     return underlyingEl.hasAttributeNS(arg0, arg1);
   }
 
-  @Override
   public void removeAttribute(String arg0) throws DOMException {
     underlyingEl.removeAttribute(arg0);
   }
 
-  @Override
   public void removeAttributeNS(String arg0, String arg1) throws DOMException {
     underlyingEl.removeAttributeNS(arg0, arg1);
   }
 
-  @Override
   public Attr removeAttributeNode(Attr arg0) throws DOMException {
     return membrane.wrap(
         underlyingEl.removeAttributeNode(membrane.unwrap(arg0, Attr.class)),
         Attr.class);
   }
 
-  @Override
   public void setAttribute(String arg0, String arg1) throws DOMException {
     underlyingEl.setAttribute(arg0, arg1);
   }
 
-  @Override
   public void setAttributeNS(String arg0, String arg1, String arg2)
       throws DOMException {
     underlyingEl.setAttributeNS(arg0, arg1, arg2);
   }
 
-  @Override
   public Attr setAttributeNode(Attr arg0) throws DOMException {
     return membrane.wrap(
         underlyingEl.setAttributeNode(membrane.unwrap(arg0, Attr.class)),
         Attr.class);
   }
 
-  @Override
   public Attr setAttributeNodeNS(Attr arg0) throws DOMException {
     return membrane.wrap(
         underlyingEl.setAttributeNodeNS(membrane.unwrap(arg0, Attr.class)),
         Attr.class);
   }
 
-  @Override
   public void setIdAttribute(String arg0, boolean arg1) throws DOMException {
     underlyingEl.setIdAttribute(arg0, arg1);
   }
 
-  @Override
   public void setIdAttributeNS(String arg0, String arg1, boolean arg2)
       throws DOMException {
     underlyingEl.setIdAttributeNS(arg0, arg1, arg2);
   }
 
-  @Override
   public void setIdAttributeNode(Attr arg0, boolean arg1) throws DOMException {
     underlyingEl.setIdAttributeNode(membrane.unwrap(arg0, Attr.class), arg1);
   }

@@ -120,7 +120,7 @@ public class HtmlCompiledPluginTest extends CajaTestCase {
         + "             document.getElementById('test-test').innerHTML);");
   }
 
-  public final void testECMAScript31Scoping() throws Exception {
+  public final void testECMAScript31Scoping() {
     // TODO(stay): Once they decide on scoping & initialization rules, test
     // them here.
   }

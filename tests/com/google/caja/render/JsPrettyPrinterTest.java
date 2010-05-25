@@ -193,7 +193,7 @@ public class JsPrettyPrinterTest extends CajaTestCase {
     assertLexed("3/ /foo/;", "3 / /foo/;");
   }
 
-  public final void testNegatedNegativeNumericConstants() throws Exception {
+  public final void testNegatedNegativeNumericConstants() {
     assertRendered(
         "- (-3)",  // not --3
         Operation.create(
@@ -264,27 +264,27 @@ public class JsPrettyPrinterTest extends CajaTestCase {
     return sb.toString();
   }
 
-  public final void testIndentationAfterParens1() throws Exception {
+  public final void testIndentationAfterParens1() {
     assertTokens("longObjectInstance.reallyLongMethodName(a, b, c, d);",
                  "longObjectInstance", ".", "reallyLongMethodName", "(",
                  "a", ",", "b", ",", "c", ",", "d", ")", ";");
   }
 
-  public final void testIndentationAfterParens2() throws Exception {
+  public final void testIndentationAfterParens2() {
     assertTokens("longObjectInstance.reallyLongMethodName(a, b, c,\n" +
                  "  d);",
                  "longObjectInstance", ".", "reallyLongMethodName", "(",
                  "a", ",", "b", ",", "c", ",", "\n", "d", ")", ";");
   }
 
-  public final void testIndentationAfterParens3() throws Exception {
+  public final void testIndentationAfterParens3() {
     assertTokens("longObjectInstance.reallyLongMethodName(\n" +
                  "  a, b, c, d);",
                  "longObjectInstance", ".", "reallyLongMethodName", "(",
                  "\n", "a", ",", "b", ",", "c", ",", "d", ")", ";");
   }
 
-  public final void testIndentationAfterParens4() throws Exception {
+  public final void testIndentationAfterParens4() {
     assertTokens("var x = ({\n" +
                  "    'fooBar': [\n" +
                  "      0, 1, 2, ]\n" +
@@ -293,11 +293,11 @@ public class JsPrettyPrinterTest extends CajaTestCase {
                  "\n", "0", ",", "1", ",", "2", ",", "]", "}", ")", ";");
   }
 
-  public final void testCommentsInRestrictedProductions1() throws Exception {
+  public final void testCommentsInRestrictedProductions1() {
     assertTokens("return /* */ 4;", "return", "/*\n*/", "4", ";");
   }
 
-  public final void testCommentsInRestrictedProductions2() throws Exception {
+  public final void testCommentsInRestrictedProductions2() {
     assertTokens("return /**/ 4;", "return", "//", "4", ";");
   }
 
@@ -421,8 +421,7 @@ public class JsPrettyPrinterTest extends CajaTestCase {
     assertRendered(golden, node);
   }
 
-  private void assertRendered(String golden, ParseTreeNode node)
-      throws Exception {
+  private void assertRendered(String golden, ParseTreeNode node) {
     StringBuilder out = new StringBuilder();
     JsPrettyPrinter pp = new JsPrettyPrinter(new Concatenator(out));
     node.render(new RenderContext(pp));
@@ -446,7 +445,7 @@ public class JsPrettyPrinterTest extends CajaTestCase {
     assertEquals(golden, out.toString());
   }
 
-  private void assertTokens(String golden, String... input) throws Exception {
+  private void assertTokens(String golden, String... input) {
     StringBuilder out = new StringBuilder();
     JsPrettyPrinter pp = new JsPrettyPrinter(new Concatenator(out));
 

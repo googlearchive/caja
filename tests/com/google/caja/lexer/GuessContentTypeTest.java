@@ -18,7 +18,7 @@ import com.google.caja.util.CajaTestCase;
 import com.google.caja.util.ContentType;
 
 public class GuessContentTypeTest extends CajaTestCase {
-  public final void testGuess() throws Exception {
+  public final void testGuess() {
     assertEquals(
         ContentType.JS,
         GuessContentType.guess(null, null, "foo()"));

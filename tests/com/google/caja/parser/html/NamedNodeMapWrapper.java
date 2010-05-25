@@ -25,37 +25,29 @@ class NamedNodeMapWrapper implements NamedNodeMap {
     this.underlying = underlying;
     this.membrane = membrane;
   }
-  @Override
   public int getLength() {
     return underlying.getLength();
   }
-  @Override
   public Node getNamedItem(String arg0) {
     return membrane.wrap(underlying.getNamedItem(arg0), Node.class);
   }
-  @Override
   public Node getNamedItemNS(String arg0, String arg1) throws DOMException {
     return membrane.wrap(underlying.getNamedItemNS(arg0, arg1), Node.class);
   }
-  @Override
   public Node item(int arg0) {
     return membrane.wrap(underlying.item(arg0), Node.class);
   }
-  @Override
   public Node removeNamedItem(String arg0) throws DOMException {
     return membrane.wrap(underlying.removeNamedItem(arg0), Node.class);
   }
-  @Override
   public Node removeNamedItemNS(String arg0, String arg1) throws DOMException {
     return membrane.wrap(underlying.removeNamedItemNS(arg0, arg1), Node.class);
   }
-  @Override
   public Node setNamedItem(Node arg0) throws DOMException {
     return membrane.wrap(underlying.setNamedItem(
         membrane.unwrap(arg0, Node.class)),
         Node.class);
   }
-  @Override
   public Node setNamedItemNS(Node arg0) throws DOMException {
     return membrane.wrap(underlying.setNamedItemNS(
         membrane.unwrap(arg0, Node.class)),

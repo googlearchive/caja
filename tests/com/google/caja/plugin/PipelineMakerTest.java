@@ -106,7 +106,7 @@ public class PipelineMakerTest extends CajaTestCase {
         "CheckForErrorsStage");
   }
 
-  public final void testFailEarly() throws Exception {
+  public final void testFailEarly() {
     try {
       PipelineMaker.planState("bogus");
     } catch (IllegalArgumentException ex) {
@@ -116,7 +116,7 @@ public class PipelineMakerTest extends CajaTestCase {
     fail("completed");
   }
 
-  public final void testNoPath() throws Exception {
+  public final void testNoPath() {
     PipelineMaker pm = new PipelineMaker(
         new TestBuildInfo(), CssSchema.getDefaultCss21Schema(mq),
         HtmlSchema.getDefault(mq), PipelineMaker.HTML, PipelineMaker.CSS);

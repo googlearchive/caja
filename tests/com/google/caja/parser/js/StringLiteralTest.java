@@ -23,7 +23,7 @@ import java.util.Random;
  * @author mikesamuel@gmail.com
  */
 public class StringLiteralTest extends CajaTestCase {
-  public final void testUnquotedValue() throws Exception {
+  public final void testUnquotedValue() {
     assertEquals("", StringLiteral.getUnquotedValueOf(""));
     assertEquals("foo", StringLiteral.getUnquotedValueOf("foo"));
     assertEquals("foo\\bar", StringLiteral.getUnquotedValueOf("foo\\bar"));
@@ -62,7 +62,7 @@ public class StringLiteralTest extends CajaTestCase {
     assertEquals("x4", StringLiteral.getUnquotedValueOf("'\\x4'"));
   }
 
-  public final void testQuoteValue() throws Exception {
+  public final void testQuoteValue() {
     assertEquals("''", StringLiteral.toQuotedValue(""));
     assertEquals("'foo'", StringLiteral.toQuotedValue("foo"));
     assertEquals("'foo\\bar'", StringLiteral.toQuotedValue("foo\bar"));
