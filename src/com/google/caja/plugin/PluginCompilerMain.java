@@ -125,6 +125,9 @@ public final class PluginCompilerMain {
       } catch (IllegalArgumentException ex) {  // Not a file: URI
         fetcher = UriFetcher.NULL_NETWORK;
         policy = UriPolicy.CLOSED_PLUGIN_ENVIRONMENT;
+      } catch (IOException e) {  // Could not resolve file name
+        fetcher = UriFetcher.NULL_NETWORK;
+        policy = UriPolicy.CLOSED_PLUGIN_ENVIRONMENT;
       }
 
       PluginMeta meta = new PluginMeta(fetcher, policy);

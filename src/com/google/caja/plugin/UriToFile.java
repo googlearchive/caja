@@ -17,13 +17,15 @@ package com.google.caja.plugin;
 import com.google.caja.util.Function;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.URI;
 
 class UriToFile implements Function<URI, File> {
   final File directory;
 
-  public UriToFile(File directory) {
-    this.directory = directory;
+  public UriToFile(File directory) throws IOException {
+    assert directory.isDirectory();
+    this.directory = directory.getCanonicalFile();
   }
 
   public File apply(URI uri) {
