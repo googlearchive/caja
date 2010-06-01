@@ -166,7 +166,7 @@ public final class LocalizedHtml {
       }
     };
     TokenQueue<HtmlTokenType> tq = new TokenQueue<HtmlTokenType>(
-        str, pos.source());
+        str, pos.source(), DomParser.SKIP_COMMENTS);
     tq.setInputRange(pos);
     return new DomParser(
         tq, true, DevNullMessageQueue.singleton()).parseFragment(sourceDoc);

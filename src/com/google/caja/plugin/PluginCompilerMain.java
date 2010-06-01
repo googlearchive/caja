@@ -225,7 +225,7 @@ public final class PluginCompilerMain {
       tq.expectEmpty();
     } else if (path.endsWith(".html") || path.endsWith(".xhtml")
                || (!cp.isEmpty() && cp.getBuffer()[cp.getOffset()] == '<')) {
-      DomParser p = new DomParser(new HtmlLexer(cp), is, mq);
+      DomParser p = new DomParser(new HtmlLexer(cp), false, is, mq);
       if (p.getTokenQueue().isEmpty()) { return null; }
       input = new Dom(p.parseFragment());
       p.getTokenQueue().expectEmpty();

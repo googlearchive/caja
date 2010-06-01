@@ -69,7 +69,8 @@ public class GadgetParser {
     HtmlLexer lexer = new HtmlLexer(gadgetSpec);
     lexer.setTreatedAsXml(true);
     Element el = new DomParser(
-        new TokenQueue<HtmlTokenType>(lexer, src), true, MODULE_NS, mq)
+        new TokenQueue<HtmlTokenType>(lexer, src, DomParser.SKIP_COMMENTS),
+        true, MODULE_NS, mq)
         .parseDocument();
 
     Document doc = el.getOwnerDocument();

@@ -21,20 +21,19 @@ import com.google.caja.lexer.HtmlLexer;
 import com.google.caja.lexer.HtmlTokenType;
 import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.ParseException;
-import com.google.caja.lexer.Token;
 import com.google.caja.lexer.TokenQueue;
 import com.google.caja.reporting.DevNullMessageQueue;
 import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.MessageType;
 import com.google.caja.util.CajaTestCase;
-import com.google.caja.util.Criterion;
 import com.google.caja.util.Function;
 import com.google.caja.util.Join;
 import com.google.caja.util.Lists;
 import com.google.caja.util.MoreAsserts;
 
 import java.io.IOException;
+import java.io.StringReader;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.Collections;
@@ -198,17 +197,17 @@ public class DomParserTest extends CajaTestCase {
         boolean asXml = (Boolean) args[0];
         boolean needsDebugData = (Boolean) args[1];
         boolean wantsComments = (Boolean) args[2];
-        TokenQueue<HtmlTokenType> tq = tokenizeTestInput(input, asXml);
+        TokenQueue<HtmlTokenType> tq = tokenizeTestInput(
+            input, asXml, wantsComments);
         DomParser p = new DomParser(tq, asXml, mq);
         p.setNeedsDebugData(needsDebugData);
-        p.setWantsComments(wantsComments);
         return p;
       }
     }, xmlConfigs, needsDebugData, wantsComments);
   }
 
   public final void testParseDom() throws Exception {
-    TokenQueue<HtmlTokenType> tq = tokenizeTestInput(DOM1_XML, true);
+    TokenQueue<HtmlTokenType> tq = tokenizeTestInput(DOM1_XML, true, false);
     Element el = new DomParser(tq, true, mq).parseDocument();
     assertEquals(DOM1_GOLDEN, formatToString(el, true));
   }
@@ -244,7 +243,8 @@ public class DomParserTest extends CajaTestCase {
   }
 
   public final void testOneRootXmlElement() {
-    TokenQueue<HtmlTokenType> tq = tokenizeTestInput("<foo/><bar/>", true);
+    TokenQueue<HtmlTokenType> tq = tokenizeTestInput(
+        "<foo/><bar/>", true, false);
     try {
       new DomParser(tq, true, mq).parseDocument();
     } catch (ParseException ex) {
@@ -2232,8 +2232,7 @@ public class DomParserTest extends CajaTestCase {
         Arrays.asList(
             "WARNING testShortTags:1+3 - 5: Malformed identifier <a"),
         Arrays.asList(
-            "<p href=\"/\">"
-            + "first part of the text&lt;/&gt; second part</p>"
+            "<p href=\"/\">first part of the text&lt;/&gt; second part</p>"
             )
         );
     try {
@@ -2469,6 +2468,15 @@ public class DomParserTest extends CajaTestCase {
         Nodes.render(f));
   }
 
+  public final void testIssue1212() throws Exception {
+    Node fragment = htmlFragment(fromString("<b>Hello, world</b><!---->"));
+    assertEquals("<b>Hello, world</b>", Nodes.render(fragment));
+    Node doc = html(fromString("<b>Hello, world</b><!---->"));
+    assertEquals(
+        "<html><head></head><body><b>Hello, world</b></body></html>",
+        Nodes.render(doc));
+  }
+
   public final void testParserSpeed() throws Exception {
     assertFalse(CajaTreeBuilder.DEBUG);  // Don't run 100 times if verbose.
     benchmark(100);  // prime the JIT
@@ -2487,7 +2495,8 @@ public class DomParserTest extends CajaTestCase {
     for (int i = nRuns; --i >= 0;) {
       HtmlLexer lexer = new HtmlLexer(testInput.clone());
       lexer.setTreatedAsXml(false);
-      TokenQueue<HtmlTokenType> tq = new TokenQueue<HtmlTokenType>(lexer, is);
+      TokenQueue<HtmlTokenType> tq = new TokenQueue<HtmlTokenType>(
+          lexer, is, DomParser.SKIP_COMMENTS);
       DomParser p = new DomParser(tq, false, mq);
       p.setNeedsDebugData(false);
       p.parseDocument();
@@ -2553,14 +2562,13 @@ public class DomParserTest extends CajaTestCase {
     DomParser p;
     if (asXml != null) {  // specified
       TokenQueue<HtmlTokenType> tq = tokenizeTestInput(
-          Join.join("\n", htmlInput), asXml);
+          Join.join("\n", htmlInput), asXml, wantsComments);
       p = new DomParser(tq, asXml, mq);
     } else {
       HtmlLexer lexer = new HtmlLexer(fromString(Join.join("\n", htmlInput)));
-      p = new DomParser(lexer, is, mq);
+      p = new DomParser(lexer, wantsComments, is, mq);
       asXml = lexer.getTreatedAsXml();
     }
-    p.setWantsComments(wantsComments);
     Node tree = fragment ? p.parseFragment() : p.parseDocument();
 
     List<String> actualParseTree = formatLines(tree);
@@ -2587,10 +2595,9 @@ public class DomParserTest extends CajaTestCase {
     Node treeWithoutDebugData;
     {
       TokenQueue<HtmlTokenType> tq = tokenizeTestInput(
-          Join.join("\n", htmlInput), asXml);
+          Join.join("\n", htmlInput), asXml, wantsComments);
       DomParser noDebugParser = new DomParser(
           tq, p.asXml(), DevNullMessageQueue.singleton());
-      noDebugParser.setWantsComments(wantsComments);
       treeWithoutDebugData = fragment
           ? noDebugParser.parseFragment()
           : noDebugParser.parseDocument();
@@ -2603,11 +2610,14 @@ public class DomParserTest extends CajaTestCase {
   }
 
   private TokenQueue<HtmlTokenType> tokenizeTestInput(
-      String sgmlInput, boolean asXml) {
-    HtmlLexer lexer = new HtmlLexer(fromString(sgmlInput));
-    lexer.setTreatedAsXml(asXml);
-    return new TokenQueue<HtmlTokenType>(
-        lexer, is, Criterion.Factory.<Token<HtmlTokenType>>optimist());
+      String sgmlInput, boolean asXml, boolean wantsComments) {
+    try {
+      return DomParser.makeTokenQueue(
+          FilePosition.startOfFile(is), new StringReader(sgmlInput),
+          asXml, wantsComments);
+    } catch (IOException ex) {
+      throw new SomethingWidgyHappenedError(ex);
+    }
   }
 
   private static List<String> formatLines(Node node) {

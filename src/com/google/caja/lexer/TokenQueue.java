@@ -30,11 +30,11 @@ import java.util.List;
  * @author mikesamuel@gmail.com
  */
 public class TokenQueue<T extends TokenType> {
-  private TokenStream<T> tstream;
-  private InputSource file;
+  private final TokenStream<T> tstream;
+  private final InputSource file;
   /** Null or the range of file that is being parsed. */
   private FilePosition inputRange;
-  private Criterion<Token<T>> tokenFilter;
+  private final Criterion<Token<T>> tokenFilter;
 
   private TokenList<T> current, prev;
 
@@ -56,6 +56,7 @@ public class TokenQueue<T extends TokenType> {
   /** Null or the range within the file which is being parsed. */
   public FilePosition getInputRange() { return this.inputRange; }
   public void setInputRange(FilePosition range) { this.inputRange = range; }
+  public Criterion<Token<T>> getTokenFilter() { return this.tokenFilter; }
 
   /** True iff there are no more tokens on the queue. */
   public boolean isEmpty() throws ParseException {

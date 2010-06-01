@@ -115,7 +115,8 @@ public class HtmlQuasiBuilder {
         CharProducer cp = CharProducer.Factory.fromString(
             quasiHtml, InputSource.UNKNOWN);
         TokenQueue<HtmlTokenType> tq = new TokenQueue<HtmlTokenType>(
-            new HtmlLexer(cp.clone()), InputSource.UNKNOWN);
+            new HtmlLexer(cp.clone()), InputSource.UNKNOWN,
+            DomParser.SKIP_COMMENTS);
         boolean isDocument = false;
         Mark m = tq.mark();
         Token<HtmlTokenType> firstTag = null;
@@ -152,7 +153,8 @@ public class HtmlQuasiBuilder {
               return t;
             }
           };
-          tq = new TokenQueue<HtmlTokenType>(caseFilter, InputSource.UNKNOWN);
+          tq = new TokenQueue<HtmlTokenType>(
+              caseFilter, InputSource.UNKNOWN, DomParser.SKIP_COMMENTS);
         } else {
           tq.rewind(m);
         }
@@ -181,7 +183,7 @@ public class HtmlQuasiBuilder {
       return new DomParser(
           DomParser.makeTokenQueue(
               FilePosition.startOfFile(InputSource.UNKNOWN),
-              new StringReader(html), false),
+              new StringReader(html), false, false),
           false, DevNullMessageQueue.singleton())
           .parseFragment(doc);
     } catch (IOException ex) {

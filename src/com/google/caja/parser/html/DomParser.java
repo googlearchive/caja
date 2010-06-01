@@ -29,6 +29,7 @@ import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.MessageType;
+import com.google.caja.util.Criterion;
 import com.google.caja.util.Function;
 import com.google.caja.util.Lists;
 import com.google.caja.util.Strings;
@@ -67,7 +68,6 @@ public class DomParser {
   private final MessageQueue mq;
   private final Namespaces ns;
   private boolean needsDebugData = true;
-  private boolean wantsComments = false;
   private DOMImplementation domImpl = null;
 
   public DomParser(
@@ -86,13 +86,15 @@ public class DomParser {
   /**
    * Guesses the markup type -- HTML vs XML -- by looking at the first token.
    */
-  public DomParser(HtmlLexer lexer, InputSource src, MessageQueue mq)
+  public DomParser(
+      HtmlLexer lexer, boolean wantsComments, InputSource src, MessageQueue mq)
       throws ParseException {
-    this(lexer, src, Namespaces.HTML_DEFAULT, mq);
+    this(lexer, wantsComments, src, Namespaces.HTML_DEFAULT, mq);
   }
 
   public DomParser(
-      HtmlLexer lexer, InputSource src, Namespaces ns, MessageQueue mq)
+      HtmlLexer lexer, boolean wantsComments, InputSource src, Namespaces ns,
+      MessageQueue mq)
       throws ParseException {
     this.mq = mq;
     this.ns = ns;
@@ -100,14 +102,20 @@ public class DomParser {
     lexer.setTreatedAsXml(
         this.asXml = (ns.forPrefix("").uri != Namespaces.HTML_NAMESPACE_URI
                       || guessAsXml(la, src)));
-    this.tokens = new TokenQueue<HtmlTokenType>(la, src);
+    this.tokens = new TokenQueue<HtmlTokenType>(
+        la, src, wantsComments
+            ? Criterion.Factory.<Token<HtmlTokenType>>optimist()
+            : SKIP_COMMENTS);
   }
 
   public TokenQueue<HtmlTokenType> getTokenQueue() { return tokens; }
 
   public boolean asXml() { return asXml; }
   public boolean getNeedsDebugData() { return needsDebugData; }
-  public boolean getWantsComments() { return wantsComments; }
+  public boolean getWantsComments() {
+    return tokens.getTokenFilter().accept(Token.instance(
+        "<!-- -->", HtmlTokenType.COMMENT, FilePosition.UNKNOWN));
+  }
 
   /**
    * Sets a flag which determines whether subsequent parse calls will attach
@@ -140,10 +148,6 @@ public class DomParser {
 
   public void setDomImpl(DOMImplementation domImpl) {
     this.domImpl = domImpl;
-  }
-
-  public void setWantsComments(boolean wantsComments) {
-    this.wantsComments = wantsComments;
   }
 
   public static Document makeDocument(
@@ -191,20 +195,10 @@ public class DomParser {
     // Make sure the elementStack is empty.
     elementStack.open(false);
 
-    do {
-      Token<HtmlTokenType> t = tokens.peek();
-      if (HtmlTokenType.TEXT == t.type) {
-        if (!"".equals(t.text.trim())) { break; }
-      } else if (HtmlTokenType.COMMENT != t.type
-                 && HtmlTokenType.DIRECTIVE != t.type) {
-        break;
-      }
-      tokens.advance();
-      continue;
-    } while (!tokens.isEmpty());
-
+    skipTopLevelDocIgnorables(true);
     do {
       parseDom(elementStack);
+      skipTopLevelDocIgnorables(false);
     } while (!tokens.isEmpty());
 
     FilePosition endPos = FilePosition.endOf(tokens.lastPosition());
@@ -270,23 +264,11 @@ public class DomParser {
     // Make sure the elementStack is empty.
     elementStack.open(true);
 
+    skipFragmentIgnorables();
+
     while (!tokens.isEmpty()) {
-      // Skip over top level doctypes, and whitespace only text nodes.
-      // Whitespace is significant for XML unless the schema specifies
-      // otherwise, but whitespace outside the root element is not.  There is
-      // one exception for whitespace preceding the prologue.
-      // Comments are ignored by the underlying TreeBuilder unless explicitly
-      // configured otherwise.
-      Token<HtmlTokenType> t = tokens.peek();
-
-      switch (t.type) {
-        case DIRECTIVE:  // ignore DOCTYPEs
-          tokens.advance();
-          continue;
-        default: break;
-      }
-
       parseDom(elementStack);
+      skipFragmentIgnorables();
     }
 
     FilePosition endPos = tokens.lastPosition();
@@ -306,6 +288,39 @@ public class DomParser {
       fragment = (DocumentFragment) fixup(fragment, ns);
     }
     return fragment;
+  }
+
+  /**
+   * Skip over top level doctypes, and whitespace only text nodes.
+   * Whitespace is significant for XML unless the schema specifies
+   * otherwise, but whitespace outside the root element is not.  There is
+   * one exception for whitespace preceding the prologue.
+   * Comments are ignored by the underlying TreeBuilder unless explicitly
+   * configured otherwise.
+   */
+  private void skipFragmentIgnorables() throws ParseException {
+    while (!tokens.isEmpty()) {
+      Token<HtmlTokenType> t = tokens.peek();
+      switch (t.type) {
+        case DIRECTIVE: break; // ignore DOCTYPEs
+        default: return;
+      }
+      tokens.advance();
+    }
+  }
+
+  private void skipTopLevelDocIgnorables(boolean atHead) throws ParseException {
+    while (!tokens.isEmpty()) {
+      Token<HtmlTokenType> t = tokens.peek();
+      switch (t.type) {
+        case TEXT:
+          if (atHead && "".equals(t.text.trim())) { break; }
+          return;
+        case DIRECTIVE: break;
+        default: return;
+      }
+      tokens.advance();
+    }
   }
 
   private Node fixup(Node node, Namespaces ns) {
@@ -424,8 +439,10 @@ public class DomParser {
    * @throws IOException when in raises an exception during read.
    */
   public static TokenQueue<HtmlTokenType> makeTokenQueue(
-      InputSource is, Reader in, boolean asXml) throws IOException {
-    return makeTokenQueue(FilePosition.startOfFile(is), in, asXml);
+      InputSource is, Reader in, boolean asXml, boolean wantsComments)
+      throws IOException {
+    return makeTokenQueue(
+        FilePosition.startOfFile(is), in, asXml, wantsComments);
   }
 
   /**
@@ -436,12 +453,25 @@ public class DomParser {
    * @throws IOException when in raises an exception during read.
    */
   public static TokenQueue<HtmlTokenType> makeTokenQueue(
-      FilePosition pos, Reader in, boolean asXml) throws IOException {
+      FilePosition pos, Reader in, boolean asXml, boolean wantsComments)
+      throws IOException {
     CharProducer cp = CharProducer.Factory.create(in, pos);
     HtmlLexer lexer = new HtmlLexer(cp);
     lexer.setTreatedAsXml(asXml);
-    return new TokenQueue<HtmlTokenType>(lexer, pos.source());
+    return new TokenQueue<HtmlTokenType>(
+        lexer, pos.source(),
+        wantsComments
+            ? Criterion.Factory.<Token<HtmlTokenType>>optimist()
+            : SKIP_COMMENTS);
   }
+
+  public static final Criterion<Token<HtmlTokenType>> SKIP_COMMENTS
+      = new Criterion<Token<HtmlTokenType>>() {
+    @Override
+    public boolean accept(Token<HtmlTokenType> candidate) {
+      return candidate.type != HtmlTokenType.COMMENT;
+    }
+  };
 
   /**
    * Parses a single top level construct, an element, or a text chunk from the
@@ -488,9 +518,7 @@ public class DomParser {
           out.processText(t);
           return;
         case COMMENT:
-          if (wantsComments) {
-            out.processComment(t);
-          }
+          out.processComment(t);
           continue;
         default:
           throw new ParseException(new Message(

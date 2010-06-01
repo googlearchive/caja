@@ -474,7 +474,7 @@ public final class AnnotationHandlers {
             CharProducer cp = CharProducer.Factory.create(
                 new StringReader(content), p);
             HtmlLexer lexer = new HtmlLexer(cp);
-            DomParser parser = new DomParser(lexer, p.source(), mq);
+            DomParser parser = new DomParser(lexer, false, p.source(), mq);
             DocumentFragment f = parser.parseFragment();
             parser.getTokenQueue().expectEmpty();
             Node fFirst = f.getFirstChild();

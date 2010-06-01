@@ -293,7 +293,7 @@ class Processor {
               break;
             }
           }
-          p = new DomParser(new HtmlLexer(cp), is, mq);
+          p = new DomParser(new HtmlLexer(cp), false, is, mq);
           if (firstTag != null
               && Strings.equalsIgnoreCase(firstTag.text, "<html")) {
             Element el = p.parseDocument();
@@ -304,7 +304,7 @@ class Processor {
         } else {
           lexer.setTreatedAsXml(contentType == ContentType.XML);
           TokenQueue<HtmlTokenType> tq = new TokenQueue<HtmlTokenType>(
-              lexer, is);
+              lexer, is, DomParser.SKIP_COMMENTS);
           tq.setInputRange(inputRange);
           p = new DomParser(tq, contentType == ContentType.XML, mq);
         }

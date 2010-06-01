@@ -194,7 +194,8 @@ public abstract class CajaTestCase extends TestCase {
     InputSource is = sourceOf(cp);
     HtmlLexer lexer = new HtmlLexer(cp);
     lexer.setTreatedAsXml(asXml);
-    TokenQueue<HtmlTokenType> tq = new TokenQueue<HtmlTokenType>(lexer, is);
+    TokenQueue<HtmlTokenType> tq = new TokenQueue<HtmlTokenType>(
+        lexer, is, DomParser.SKIP_COMMENTS);
     DomParser p = new DomParser(tq, asXml, mq);
     Node t = asDoc ? p.parseDocument() : p.parseFragment();
     tq.expectEmpty();
@@ -202,12 +203,14 @@ public abstract class CajaTestCase extends TestCase {
   }
 
   protected Element markup(CharProducer cp) throws ParseException {
-    return new DomParser(new HtmlLexer(cp), sourceOf(cp), mq).parseDocument();
+    return new DomParser(new HtmlLexer(cp), false, sourceOf(cp), mq)
+        .parseDocument();
   }
 
   protected DocumentFragment markupFragment(CharProducer cp)
       throws ParseException {
-    return new DomParser(new HtmlLexer(cp), sourceOf(cp), mq).parseFragment();
+    return new DomParser(new HtmlLexer(cp), false, sourceOf(cp), mq)
+        .parseFragment();
   }
 
   protected CssTree.StyleSheet css(CharProducer cp) throws ParseException {

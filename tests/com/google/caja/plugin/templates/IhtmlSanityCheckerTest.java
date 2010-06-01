@@ -510,7 +510,8 @@ public class IhtmlSanityCheckerTest extends CajaTestCase {
       throws Exception {
     Element ihtmlRoot = new DomParser(
         DomParser.makeTokenQueue(
-            FilePosition.startOfFile(is), new StringReader(inputIhtml), true),
+            FilePosition.startOfFile(is), new StringReader(inputIhtml), true,
+            false),
         true, mq)
         .parseDocument();
     new IhtmlSanityChecker(mq).check(ihtmlRoot);

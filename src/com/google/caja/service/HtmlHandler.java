@@ -145,7 +145,7 @@ public class HtmlHandler implements ContentHandler {
     InputSource is = new InputSource (inputUri);
     boolean okToContinue = true;
     try {
-      DomParser p = new DomParser(new HtmlLexer(cp), is, mq);
+      DomParser p = new DomParser(new HtmlLexer(cp), false, is, mq);
       if (p.getTokenQueue().isEmpty()) { okToContinue = false; }
 
       Dom html = new Dom(p.parseFragment());

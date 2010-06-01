@@ -200,7 +200,7 @@ public class DefaultGadgetRewriter {
 
   private DocumentFragment parseHtml(CharProducer htmlContent, InputSource src)
       throws GadgetRewriteException, ParseException {
-    DomParser p = new DomParser(new HtmlLexer(htmlContent), src, mq);
+    DomParser p = new DomParser(new HtmlLexer(htmlContent), false, src, mq);
     if (p.getTokenQueue().isEmpty()) {
       mq.addMessage(PluginMessageType.NO_CONTENT, src);
       throw new GadgetRewriteException("No content");
