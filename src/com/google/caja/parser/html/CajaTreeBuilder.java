@@ -258,12 +258,18 @@ final class CajaTreeBuilder extends TreeBuilder<Node> {
       }
       String elNs = el.getNamespaceURI();
       for (int i = 0, n = attributes.getLength(); i < n; ++i) {
+        String name = attributes.getQName(i);
         String ns = attributes.getURI(i);
         if ("".equals(ns)) { ns = elNs; }
-        String localName = attributes.getLocalName(i);
-        if (el.hasAttributeNS(ns, localName)) { continue; }
+        boolean isNamespaced = !name.startsWith(AttributeNameFixup.PREFIX);
+        if (isNamespaced) {
+          String localName = attributes.getLocalName(i);
+          if (el.hasAttributeNS(ns, localName)) { continue; }
+        } else {
+          if (el.hasAttribute(name)) { continue; }
+        }
         String value = attributes.getValue(i);
-        Attr a = doc.createAttributeNS(ns, attributes.getQName(i));
+        Attr a = doc.createAttributeNS(ns, name);
         a.setValue(value);
         if (pos != null) {
           Nodes.setFilePositionFor(a, pos);

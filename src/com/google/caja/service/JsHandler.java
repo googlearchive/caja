@@ -80,7 +80,7 @@ public class JsHandler implements ContentHandler {
             : QuasiBuilder.substV(moduleCallbackString));
 
     try {
-      OutputStreamWriter writer = new OutputStreamWriter(response, 
+      OutputStreamWriter writer = new OutputStreamWriter(response,
           Charsets.UTF_8.name());
       cajoleJs(uri, input.getTextualContent(),
           transform, directive, moduleCallback, writer, mq);
@@ -97,8 +97,7 @@ public class JsHandler implements ContentHandler {
                         List<CajolingService.Directive> directive,
                         Expression moduleCallback,
                         Appendable output,
-                        MessageQueue mq)
-      throws IOException {
+                        MessageQueue mq) {
     InputSource is = new InputSource (inputUri);
     try {
       JsTokenQueue tq = new JsTokenQueue(new JsLexer(cp), is);

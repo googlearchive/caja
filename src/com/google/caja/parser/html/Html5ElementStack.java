@@ -322,6 +322,7 @@ public class Html5ElementStack implements OpenElementStack {
         Attr attrNode;
         boolean isAttrHtml;
         try {
+          String name;
           if ("xmlns".equals(qname)) {
             if (!Namespaces.HTML_NAMESPACE_URI.equals(as.value)) {
               // We do not allow overriding of the default namespace when
@@ -334,11 +335,12 @@ public class Html5ElementStack implements OpenElementStack {
           } else {
             isAttrHtml = isHtml && checkName(qname);
             if (isAttrHtml) {
-              qname = Strings.toLowerCase(qname);
+              name = Strings.toLowerCase(qname);
               attrNode = doc.createAttributeNS(
-                  Namespaces.HTML_NAMESPACE_URI, qname);
+                  Namespaces.HTML_NAMESPACE_URI, name);
             } else {
-              attrNode = doc.createAttribute(qname);
+              name = AttributeNameFixup.fixupNameFromQname(qname);
+              attrNode = doc.createAttribute(name);
             }
           }
           attrNode.setValue(as.value);
@@ -349,11 +351,9 @@ public class Html5ElementStack implements OpenElementStack {
           }
           attrs.add(attrNode);
           try {
-            if (isAttrHtml || qname.startsWith("xmlns:")) {
-              htmlAttrs.addAttribute(
-                  AttributeName.nameByString(qname),
-                  as.value, XmlViolationPolicy.ALLOW);
-            }
+            htmlAttrs.addAttribute(
+                AttributeName.nameByString(name),
+                as.value, XmlViolationPolicy.ALLOW);
           } catch (SAXException ex) {
             if (CajaTreeBuilder.DEBUG) { ex.printStackTrace(); }
           }

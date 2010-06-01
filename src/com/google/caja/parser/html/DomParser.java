@@ -241,7 +241,7 @@ public class DomParser {
     doc.appendChild(firstChild);
 
     if (elementStack.needsNamespaceFixup()) {
-      fixup(firstChild, ns);
+      firstChild = fixup(firstChild, ns);
     }
 
     return (Element) firstChild;
@@ -303,12 +303,12 @@ public class DomParser {
 
     DocumentFragment fragment = elementStack.getRootElement();
     if (elementStack.needsNamespaceFixup()) {
-      fixup(fragment, ns);
+      fragment = (DocumentFragment) fixup(fragment, ns);
     }
     return fragment;
   }
 
-  private void fixup(Node node, Namespaces ns) {
+  private Node fixup(Node node, Namespaces ns) {
     switch (node.getNodeType()) {
       case Node.ELEMENT_NODE:
         Element el = (Element) node;
@@ -322,9 +322,10 @@ public class DomParser {
             Attr a = (Attr) attrs.item(i);
             if (a.getNamespaceURI() != null) { continue; }
             String name = a.getName();
-            if (name.startsWith("xmlns:")) {
+            if (name.startsWith(AttributeNameFixup.XMLNS_PREFIX)) {
+              String qname = AttributeNameFixup.qnameFromFixupName(name);
               hasNamespaceAttrs = true;
-              String prefix = name.substring(6);
+              String prefix = qname.substring(6);  // "xmlns:".length()
               String uri = a.getValue();
               ns = new Namespaces(ns, prefix, uri);
             }
@@ -354,7 +355,7 @@ public class DomParser {
           if (needsDebugData) {
             Nodes.setFilePositionFor(replacement, Nodes.getFilePositionFor(el));
           }
-          node = el = replacement;
+          node = el = replacement;  // Return the replacement.
         } else {
           elNs = ns.forUri(el.getNamespaceURI());
           if (elNs == null) {
@@ -370,13 +371,20 @@ public class DomParser {
           NamedNodeMap attrs = el.getAttributes();
           for (int i = 0, n = attrs.getLength(); i < n; ++i) {
             Attr a = (Attr) attrs.item(i);
-            String qname = a.getName();
-            if (hasNamespaceAttrs && qname.startsWith("xmlns:")) {
-              el.removeAttributeNode(a);
-              modifiedAttrs = true;
-              continue;
+            String qname;
+            {
+              String name = a.getName();
+              if (!name.startsWith(AttributeNameFixup.PREFIX)) { continue; }
+              if (hasNamespaceAttrs
+                  && name.startsWith(AttributeNameFixup.XMLNS_PREFIX)) {
+                el.removeAttributeNode(a);
+                modifiedAttrs = true;
+                n = attrs.getLength();
+                continue;
+              }
+              if (a.getNamespaceURI() != null) { continue; }
+              qname = AttributeNameFixup.qnameFromFixupName(name);
             }
-            if (a.getNamespaceURI() != null) { continue; }
             Namespaces attrNs = ns.forAttrName(elNs, qname);
             if (attrNs == null) {
               ns = attrNs = AbstractElementStack.unknownNamespace(
@@ -401,11 +409,12 @@ public class DomParser {
         break;
       case Node.DOCUMENT_FRAGMENT_NODE:
         break;
-      default: return;
+      default: return node;
     }
     for (Node c = node.getFirstChild(); c != null; c = c.getNextSibling()) {
       fixup(c, ns);
     }
+    return node;
   }
 
   /**

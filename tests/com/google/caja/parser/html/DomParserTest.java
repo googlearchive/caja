@@ -2426,6 +2426,49 @@ public class DomParserTest extends CajaTestCase {
     assertNotNull(pex);
   }
 
+  public final void testIssue1211XmlnsOnScript() throws Exception {
+    DocumentFragment f = htmlFragment(fromString(
+        ""
+        + "<script type=\"text/os-data\"\n"
+        + "    xmlns:os=\"http://ns.opensocial.org/2008/markup\">\n"
+        + "  <os:ViewerRequest key=\"viewer\"/>\n"
+        + "</script>"));
+    assertEquals(
+        ""
+        + "<script type=\"text/os-data\">\n"
+        + "  <os:ViewerRequest key=\"viewer\"/>\n"
+        + "</script>",
+        Nodes.render(f));
+  }
+
+  public final void testIssue1211XmlnsOnDiv() throws Exception {
+    DocumentFragment f = htmlFragment(fromString(
+        ""
+        + "<div xmlns:os=\"http://ns.opensocial.org/2008/markup\">\n"
+        + "  <os:ViewerRequest key=\"viewer\"/>\n"
+        + "</div>"));
+    assertEquals(
+        ""
+        + "<div>\n"
+        + "  <os:ViewerRequest key=\"viewer\">\n"
+        + "</os:ViewerRequest></div>",
+        Nodes.render(f));
+  }
+
+  public final void testIssue1211WithPrefixNs() throws Exception {
+    DocumentFragment f = htmlFragment(fromString(
+        ""
+        + "<div xmlns:f=\"http://ns.opensocial.org/2008/markup\">\n"
+        + "  <f:foo bar=\"baz\" f:boo=\"far\"/>\n"
+        + "</div>"));
+    assertEquals(
+        ""
+        + "<div>\n"
+        + "  <os:foo bar=\"baz\" boo=\"far\">\n"
+        + "</os:foo></div>",
+        Nodes.render(f));
+  }
+
   public final void testParserSpeed() throws Exception {
     assertFalse(CajaTreeBuilder.DEBUG);  // Don't run 100 times if verbose.
     benchmark(100);  // prime the JIT

@@ -76,8 +76,7 @@ public class InnocentHandler implements ContentHandler {
   }
 
   private void innocentJs(
-      URI inputUri, CharProducer cp, Appendable output, MessageQueue mq)
-      throws IOException {
+      URI inputUri, CharProducer cp, Appendable output, MessageQueue mq) {
     InputSource is = new InputSource (inputUri);
     try {
       JsTokenQueue tq = new JsTokenQueue(new JsLexer(cp), is);

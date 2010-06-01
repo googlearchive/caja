@@ -58,8 +58,7 @@ public interface ContentHandler {
    * @param inputContentType The actual input content-type
    * @param outputContentType Requested output content-type
    * @param checker Used to check whether two content-types are compatible
-   * @param charSet Character set of the incoming content
-   * @param content content from uri
+   * @param input content from uri
    * @param response writes modified content to user
    * @param mq receives status and error messages
    * @return the content-type and content-encoding of the resulting output
