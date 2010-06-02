@@ -495,12 +495,12 @@ public class CajaWebToolsServletTest extends CajaTestCase {
         .expectContentMatches(
             "\\Q"  // Quote special characters until next \E
             + "<h2 class=\"summary\">1 Error, 1 Lint"
-            + " (121B \u2192 86B; output is 71.1% of the original)</h2>"
+            + " (124B \u2192 86B; output is 69.4% of the original)</h2>"
             + "\\E"
             )
         .expectContentMatches(
             "\\Q"
-            + "&lt;style&gt;p{color:pink}&lt;/style&gt;\n"
+            + "&lt;style&gt;p{color:#f0f}&lt;/style&gt;\n"
             + "&lt;script&gt;alert(HelloWorld)&lt;/script&gt;\n"
             + "&lt;h1&gt;Hello, World!&lt;/h1&gt;"
             + "\\E"
