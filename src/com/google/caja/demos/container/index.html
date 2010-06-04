@@ -1,0 +1,67 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<!--
+ - Copyright (C) 2010 Google Inc.
+ -
+ - Licensed under the Apache License, Version 2.0 (the "License");
+ - you may not use this file except in compliance with the License.
+ - You may obtain a copy of the License at
+ -
+ -      http://www.apache.org/licenses/LICENSE-2.0
+ -
+ - Unless required by applicable law or agreed to in writing, software
+ - distributed under the License is distributed on an "AS IS" BASIS,
+ - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ - See the License for the specific language governing permissions and
+ - limitations under the License.
+-->
+
+<html>
+  <head>
+    <meta name="keywords" content="caja, trivial container, safe, javascript, object capabilities">
+    <meta name="description" content="Demo trivial container">
+    <meta http-equiv="content-language" content="en">
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <meta name="author" content="Jasvir Nagra (jasvir@gmail.com)">
+    <meta name="distribution" content="Global">
+    <meta name="copyright" content="Apache Public License">
+    <meta name="robots" content="follow,index">
+
+    <title>Trivial Caja Container</title>
+    <script src="http://caja.appspot.com/cajita-combined-min.js" type="text/javascript"></script> 
+  </head>
+
+  <body>
+    <div id="container"></div>
+    <script type="text/javascript">
+      function setGadgetContainer(container) {
+        var imports = ___.copy(___.sharedImports);
+        imports.outers = imports;
+        imports.htmlEmitter___ = new HtmlEmitter(container, imports.document);
+        attachDocumentStub('-' + container.className, {
+            rewrite: function() {
+                return null;
+            }
+        }, imports, container);
+        imports.$v = valijaMaker.CALL___(imports.outers);
+        ___.getNewModuleHandler().setImports(imports);
+      }
+
+      function loadGadget(pluginName, url) {
+          var containerDiv = document.createElement('div');
+          containerDiv.className = pluginName + "-form___";
+          document.getElementById("container").appendChild(containerDiv);
+          setGadgetContainer(containerDiv);
+          
+          var script = document.createElement('script');
+          script.src = 'http://caja.appspot.com/cajole?url=' + encodeURIComponent(url)
+            + '&url=' + encodeURIComponent('text/html')
+            + '&input-mime-type=' + encodeURIComponent('text/html')
+            + '&output-mime-type=' + encodeURIComponent('text/javascript');
+          document.head.appendChild(script);
+      }
+    </script>
+
+    <script>loadGadget("gadget1", 'http://www.thinkfu.com/trivial.html');</script>
+    <script>loadGadget("gadget2", 'http://www.thinkfu.com/trivial.html');</script>
+</body> 
+</html> 
