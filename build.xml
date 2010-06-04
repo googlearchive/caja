@@ -493,11 +493,11 @@
     <jar destfile="${jars}/pluginc-src.jar" basedir="${src}"/>
   </target>
 
-  <target name="demos" depends="calendar,lolcat-search,testbed,slides"
+  <target name="demos" depends="calendar,lolcat-search,slides"
    description="Puts all the demo files together for easy browsing."/>
 
   <!-- Cajoles test resources that contain cajita to javascript. -->
-  <target name="CajoledTests" depends="pluginc,dirs,CajoledValija, playground">
+  <target name="CajoledTests" depends="pluginc,dirs,CajoledValija">
     <property name="libplugin" location="${lib}/com/google/caja/plugin"/>
     <copy file="${tests}/com/google/caja/plugin/domita_test_untrusted.html"
         tofile="${libplugin}/domita_test_untrusted_valija.html"/>
@@ -615,7 +615,7 @@
   </target>
 
   <target name="AllTests"
-   depends="dirs,tools,MinifiedJs,playground,CajoledTests,TestbedClasses">
+   depends="dirs,tools,MinifiedJs,playground,CajoledTests">
     <javac destdir="${lib}" debug="true" target="1.5" source="1.5">
       <src path="${tests}"/>
       <classpath refid="classpath.tests.compile"/>
@@ -654,8 +654,6 @@
         <include name="**/caja/log-to-console.js"/>
         <include name="**/caja/valija-cajita.js"/>
         <include name="**/caja/demos/calendar/*.js"/>
-        <include name="**/caja/demos/applet/testbed.js"/>
-        <include name="**/caja/demos/applet/setup-valija.js"/>
         <include name="**/caja/plugin/bridal.js"/>
         <include name="**/caja/plugin/domita.js"/>
         <include name="**/caja/plugin/html-emitter.js"/>
@@ -757,8 +755,8 @@
     </javac>
   </target>
 
-  <target name="PlaygroundFE" description="Playground Front End"
-    depends="testbed">
+  <target name="PlaygroundFE" depends="CajoledTests"
+   description="Playground Front End">
     <condition property="gwt.target.module" 
         value="com.google.caja.demos.playground.Playground" 
         else="com.google.caja.demos.playground.Playground_dev">
@@ -778,17 +776,46 @@
       <arg value="${war}" />
       <arg value="${gwt.target.module}"/>
     </java>
+
+    <!-- Needed by Playground.html -->
     <copy todir="${war}">
-      <fileset dir="${www}/testbed">
-        <include name="**/*.js" />
-        <include name="**/*.css" />
+      <fileset dir="${third_party}/js/json_sans_eval">
+        <include name="json_sans_eval.js" />
+      </fileset>
+      <fileset dir="${src}/com/google/caja">
+        <include name="cajita.js" />
+        <include name="cajita-debugmode.js" />
+      </fileset>
+      <fileset dir="${src}/com/google/caja/plugin">
+        <include name="bridal.js" />
+        <include name="domita.js" />
+        <include name="html-emitter.js" />
+        <include name="html-sanitizer.js" />
+        <include name="unicode.js" />
+      </fileset>
+      <fileset dir="${lib}/com/google/caja/plugin">
+        <include name="css-defs.js" />
+        <include name="html4-defs.js" />
+        <include name="valija.out.js" />
+      </fileset>
+      <fileset dir="${third_party}/js/prettify">
+        <include name="lang-css.js" />
+        <include name="prettify.js" />
+        <include name="prettify.css" />
+      </fileset>
+      <fileset dir="${jars}">
+        <include name="htmlparser.jar" />
+        <include name="json_simple.jar" />
+        <include name="xercesImpl.jar" />
       </fileset>
       <fileset dir="${src}/com/google/caja/demos/playground">
         <include name="ajax-loader.gif" />
         <include name="Playground.html" />
         <include name="Playground.css" />
+        <include name="testbed.js" />
         <include name="taming.js" />
       	<include name="favicon.ico" />
+        <include name="setup-valija.js" />
       </fileset>
       <fileset dir="${src}/com/google/caja/demos/flash">
         <include name="Boxed.swf" />
@@ -1114,7 +1141,7 @@
       <fileset dir="${third_party}/js/firebug/">
         <include name="firebugx.js"/>
       </fileset>
-      <fileset dir="${src}/com/google/caja/demos/applet/">
+      <fileset dir="${src}/com/google/caja/demos/playground/">
       <include name="setup-valija.js"/>
       </fileset>
 
@@ -1143,120 +1170,6 @@
         <include name="searchengine.js"/>
       </fileset>
     </copy>
-  </target>
-
-  <target name="TestbedClasses" depends="dirs"
-   description="Produce an Applet that interactively cajoles in the browser.">
-    <javac destdir="${lib}" debug="true" target="1.5" source="1.5">
-      <src path="${src}"/>
-      <classpath refid="classpath.compile"/>
-      <include name="**/caja/demos/applet/*.java"/>
-      <compilerarg line="-Xlint:unchecked"/>
-    </javac>
-  </target>
-
-  <target name="testbed" depends="dirs,HtmlParser,TestbedClasses,jars"
-   description="Produce an Applet that interactively cajoles in the browser.">
-    <jar destfile="${jars}/testbed.jar">
-      <manifest>
-        <attribute name="Main-Class"
-         value="com.google.caja.demos.applet.CajaApplet"/>
-      </manifest>
-      <fileset dir="${lib}">
-        <include name="com/google/caja/**"/>
-        <include name="js/json_sans_eval/json_sans_eval.js"/>
-      </fileset>
-    </jar>
-
-    <mkdir dir="${www}/testbed"/>
-    <copy todir="${www}/testbed">
-      <fileset dir="${src}/com/google/caja">
-        <include name="cajita.js"/>
-        <include name="cajita-debugmode.js"/>
-        <include name="console.js"/>
-        <include name="log-to-console.js"/>
-      </fileset>
-      <fileset dir="${src}/com/google/caja/plugin">
-        <include name="bridal.js"/>
-        <include name="domita.js"/>
-        <include name="html-emitter.js"/>
-        <include name="html-sanitizer.js"/>
-        <include name="unicode.js"/>
-      </fileset>
-      <fileset dir="${lib}/com/google/caja/plugin">
-        <include name="css-defs.js"/>
-        <include name="html4-defs.js"/>
-        <include name="valija.out.js"/>
-      </fileset>
-      <fileset dir="${third_party}/js/prettify">
-        <include name="lang-css.js"/>
-        <include name="prettify.js"/>
-        <include name="prettify.css"/>
-      </fileset>
-      <fileset dir="${third_party}/js/json_sans_eval">
-        <include name="json_sans_eval.js"/>
-      </fileset>
-      <fileset dir="${src}/com/google/caja/demos/applet">
-        <include name="*.html"/>
-        <include name="*.js"/>
-        <include name="*.css"/>
-        <include name="*.png"/>
-      </fileset>
-      <fileset dir="${jars}">
-        <include name="testbed.jar"/>
-        <include name="htmlparser.jar"/>
-        <include name="json_simple.jar"/>
-        <include name="xercesImpl.jar"/>
-      </fileset>
-    </copy>
-
-    <copy file="${src}/com/google/caja/demos/applet/index.html"
-     tofile="${www}/testbed/debug.html"/>
-    <replace file="${www}/testbed/debug.html">
-      <replacetoken><![CDATA[<script type="text/javascript" src="cajita-combined-min.js"></script>]]></replacetoken>
-      <replacevalue><![CDATA[
-        <script type="text/javascript" src="json_sans_eval.js"></script>
-        <script type="text/javascript" src="cajita.js"></script>
-        <script type="text/javascript" src="console.js"></script>
-        <script type="text/javascript" src="log-to-console.js"></script>
-        <script type="text/javascript" src="cajita-debugmode.js"></script>
-        <script type="text/javascript" src="unicode.js"></script>
-        <script type="text/javascript" src="css-defs.js"></script>
-        <script type="text/javascript" src="html4-defs.js"></script>
-        <script type="text/javascript" src="html-sanitizer.js"></script>
-        <script type="text/javascript" src="html-emitter.js"></script>
-        <script type="text/javascript" src="setup-valija.js"></script>
-        <script type="text/javascript" src="bridal.js"></script>
-        <script type="text/javascript" src="domita.js"></script>
-        <script type="text/javascript" src="prettify.js"></script>
-        <script type="text/javascript" src="lang-css.js"></script>
-        <script type="text/javascript" src="testbed.js"></script>
-        <script type="text/javascript" src="valija.out.js"></script>
-        ]]>
-      </replacevalue>
-    </replace>
-    <!-- The following should use the same files as the above list -->
-    <transform>
-      <output file="${www}/testbed/cajita-combined-min.js"
-       language="javascript" renderer="minify"/>
-      <input file="${third_party}/js/json_sans_eval/json_sans_eval.js"/>
-      <input file="${src}/com/google/caja/cajita.js"/>
-      <input file="${src}/com/google/caja/console.js"/>
-      <input file="${src}/com/google/caja/log-to-console.js"/>
-      <input file="${src}/com/google/caja/cajita-debugmode.js"/>
-      <input file="${src}/com/google/caja/plugin/unicode.js"/>
-      <input file="${lib}/com/google/caja/plugin/css-defs.js"/>
-      <input file="${lib}/com/google/caja/plugin/html4-defs.js"/>
-      <input file="${src}/com/google/caja/plugin/html-sanitizer.js"/>
-      <input file="${src}/com/google/caja/plugin/html-emitter.js"/>
-      <input file="${src}/com/google/caja/demos/applet/setup-valija.js"/>
-      <input file="${src}/com/google/caja/plugin/bridal.js"/>
-      <input file="${src}/com/google/caja/plugin/domita.js"/>
-      <input file="${third_party}/js/prettify/prettify.js"/>
-      <input file="${third_party}/js/prettify/lang-css.js"/>
-      <input file="${src}/com/google/caja/demos/applet/testbed.js"/>
-      <input file="${lib}/com/google/caja/plugin/valija.out.js"/>
-    </transform>
   </target>
 
   <target name="calendar" depends="dirs,pluginc,MinifiedJs,jars"
