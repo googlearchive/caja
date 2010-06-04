@@ -277,9 +277,9 @@ public class HtmlEmbeddedContentFinder {
           public CharProducer apply(UriFetcher fetcher) {
             if (this.cp == null) {
               CharProducer cp;
-              if (rawValue != null && Nodes.decode(rawValue).equals(value)) {
-                int n = rawValue.length();
-                String rawText = rawValue;
+              String rawText = rawValue;
+              if (rawText != null) {
+                int n = rawText.length();
                 if (n >= 2) {  // Strip quotes
                   char lastCh = rawText.charAt(n - 1);
                   if (lastCh == '"' || lastCh == '\'') {
@@ -290,6 +290,9 @@ public class HtmlEmbeddedContentFinder {
                     }
                   }
                 }
+              }
+              if (rawText != null
+                  && Nodes.decode(rawText).trim().equals(value.trim())) {
                 if (uriDecode) { rawText = blankOutScheme(rawText); }
                 cp = CharProducer.Factory.fromHtmlAttribute(
                     CharProducer.Factory.fromString(

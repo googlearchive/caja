@@ -89,7 +89,8 @@ final class DecodingCharProducer extends CharProducer {
 
   /** The offset in the underlying CharProducer. */
   public int getUnderlyingOffset(int offset) {
-    return offset - poffset + deltas[offset];
+    int nAvail = deltas.length;
+    return offset - poffset + deltas[offset >= nAvail ? nAvail - 1 : offset];
   }
 
   static abstract class Decoder {
