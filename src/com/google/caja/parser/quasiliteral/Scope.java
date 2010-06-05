@@ -39,21 +39,19 @@ import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.MessageType;
+import com.google.caja.util.Lists;
 import com.google.caja.util.Maps;
 import com.google.caja.util.Pair;
+import com.google.caja.util.Sets;
 
 import static com.google.caja.parser.js.SyntheticNodes.s;
 import static com.google.caja.parser.quasiliteral.QuasiBuilder.substV;
 
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Map;
-import java.util.HashSet;
 import java.util.List;
-import java.util.ArrayList;
+import java.util.Map;
 import java.util.Set;
-import java.util.SortedSet;
-import java.util.TreeSet;
 
 /**
  * A scope analysis of a {@link com.google.caja.parser.ParseTreeNode}.
@@ -107,7 +105,7 @@ public class Scope {
     CAUGHT_EXCEPTION,
     ;
 
-    private final HashSet<LocalType> implications = new HashSet<LocalType>();
+    private final Set<LocalType> implications = Sets.newHashSet();
 
     private LocalType(LocalType... implications) {
       this.implications.add(this);
@@ -129,11 +127,11 @@ public class Scope {
   private int tempVariableCounter = 0;
   private final Map<String, Pair<LocalType, FilePosition>> locals
       = Maps.newLinkedHashMap();
-  private final List<Statement> startStatements = new ArrayList<Statement>();
-  // TODO(ihab.awad): importedVariables is only used by the root-most scope; it is
-  // empty everywhere else. Define subclasses of Scope so that this confusing
+  private final List<Statement> startStatements = Lists.newArrayList();
+  // TODO(ihab.awad): importedVariables is only used by the root-most scope; it
+  // is empty everywhere else. Define subclasses of Scope so that this confusing
   // overlapping of instance variables does not occur.
-  private final SortedSet<String> importedVariables = new TreeSet<String>();
+  private final Set<String> importedVariables = Sets.<String>newTreeSet();
   private final Permit permitsUsed;
 
   public static Scope fromProgram(Block root, MessageQueue mq) {
@@ -227,6 +225,9 @@ public class Scope {
    *     determined should be rendered at the start of this Scope.
    */
   public List<Statement> getStartStatements() {
+    for (Statement stmt : startStatements) {
+      CajitaRewriter.markForSideEffect(stmt);
+    }
     return Collections.unmodifiableList(startStatements);
   }
 
@@ -536,9 +537,9 @@ public class Scope {
   // using it because, due to the MEMBER_ACCESS case, we need more control
   // over when to stop traversing the children of a node.
   private static class SymbolHarvestVisitor {
-    private final List<Reference> references = new ArrayList<Reference>();
-    private final List<Declaration> declarations = new ArrayList<Declaration>();
-    private final List<String> exceptionVariables = new ArrayList<String>();
+    private final List<Reference> references = Lists.newArrayList();
+    private final List<Declaration> declarations = Lists.newArrayList();
+    private final List<String> exceptionVariables = Lists.newArrayList();
 
     public List<Reference> getReferences() { return references; }
 
@@ -624,15 +625,14 @@ public class Scope {
    * JavaScript identifiers where masking may change the behavior of synthetic
    * code or cause lots of confusion.
    */
-  public static final Set<String> UNMASKABLE_IDENTIFIERS = new HashSet<String>(
-      Arrays.asList(
-          "Array",      // Masking Array can change the behavior of [0, 1, ...]
-          "Infinity",
-          "NaN",
-          "Object",     // Masking Object can change the behavior of { k: v }
-          "arguments",  // Can muck with arguments to synthetic values.
-          "cajita"      // Used for caja extensions.
-          ));
+  public static final Set<String> UNMASKABLE_IDENTIFIERS = Sets.immutableSet(
+      "Array",      // Masking Array can change the behavior of [0, 1, ...]
+      "Infinity",
+      "NaN",
+      "Object",     // Masking Object can change the behavior of { k: v }
+      "arguments",  // Can muck with arguments to synthetic values.
+      "cajita"      // Used for caja extensions.
+      );
 
   /**
    * Add a symbol to the symbol table for this scope with the given type.

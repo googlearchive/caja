@@ -126,6 +126,13 @@ public enum RewriterMessageType implements MessageTypeInt {
           + "Please report this error at: http://code.google.com/p/google-caja/issues/",
           MessageLevel.ERROR),
 
+  BAD_RESULT_FROM_RECURSIVE_CALL(
+      "%s: INTERNAL COMPILER ERROR. "
+          + "Expected result from a recursive expansion: %s."
+          + " Please report this error at:"
+          + " http://code.google.com/p/google-caja/issues/",
+          MessageLevel.ERROR),
+
   ARGUMENTS_IN_GLOBAL_CONTEXT(
       "%s: 'arguments' used in a global context", MessageLevel.ERROR),
 

@@ -13,7 +13,7 @@
             'construct': { '()': {} },
             's': { '()': {} }
           });
-        var $dis;
+        var $dis, el___, emitter___, el___, emitter___, el___, emitter___, c_1___;
         $dis = $v.getOuters();
         $v.initOuter('onerror');
         {
@@ -22,8 +22,7 @@
               ' {\n    font-weight: bold;\n    color: black\n  }\n}\n@media print, screen {\n  .',
               ' .p4 {\n    font-weight: bold\n  }\n}\n.',
               ' .p1 {\n  color: red\n}' ].join(IMPORTS___.getIdClass___()));
-          var el___;
-          var emitter___ = IMPORTS___.htmlEmitter___;
+          emitter___ = IMPORTS___.htmlEmitter___;
           emitter___.discard(emitter___.attach('id_2___'));
         }
         try {
@@ -45,8 +44,7 @@
             $v.ro('onerror'), 'external-script.js', '2');
         }
         {
-          var el___;
-          var emitter___ = IMPORTS___.htmlEmitter___;
+          emitter___ = IMPORTS___.htmlEmitter___;
           el___ = emitter___.byId('id_3___');
           emitter___.setAttr(el___, 'id', 'p3-' + IMPORTS___.getIdClass___());
           emitter___.discard(emitter___.attach('id_4___'));
@@ -80,10 +78,9 @@
             $v.ro('onerror'), 'example.xml', '37');
         }
         {
-          var el___;
-          var emitter___ = IMPORTS___.htmlEmitter___;
+          emitter___ = IMPORTS___.htmlEmitter___;
           el___ = emitter___.byId('id_5___');
-          var c_1___ = ___.markFuncFreeze(function (event, thisNode___) {
+          c_1___ = ___.markFuncFreeze(function (event, thisNode___) {
               $v.cf($v.ro('handleClicky'), [ ]);
             });
           el___.onclick = function (event) {

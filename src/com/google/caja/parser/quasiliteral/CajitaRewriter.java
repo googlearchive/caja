@@ -108,7 +108,7 @@ public class CajitaRewriter extends Rewriter {
    * Mark a tree as being evaluated for its side effect, so its value is
    * not significant to the value of the block in which it appears.
    */
-  private static void markForSideEffect(ParseTreeNode node) {
+  static void markForSideEffect(ParseTreeNode node) {
     if (node instanceof Statement) {
       node.getAttributes().set(FOR_SIDE_EFFECT, true);
       for (ParseTreeNode child : node.children()) {
@@ -1970,10 +1970,15 @@ public class CajitaRewriter extends Rewriter {
           for (Declaration d : ((MultiDeclaration) node).children()) {
             Statement s = (Statement) expand(d, scope);
             if (s instanceof Noop) { continue; }
-            Expression init = ((ExpressionStmt) s).getExpression();
-            initializer = initializer == null
-                ? init
-                : Operation.createInfix(Operator.COMMA, initializer, init);
+            if (s instanceof ExpressionStmt) {
+              Expression init = ((ExpressionStmt) s).getExpression();
+              initializer = initializer == null
+                  ? init
+                  : Operation.createInfix(Operator.COMMA, initializer, init);
+            } else {
+              requireErrors(mq, s);
+              return node;
+            }
           }
           if (initializer == null) {
             return new Noop(node.getFilePosition());
@@ -2288,5 +2293,15 @@ public class CajitaRewriter extends Rewriter {
 
   public CajitaRewriter(BuildInfo buildInfo, MessageQueue mq, boolean logging) {
     this(buildInfo, null, mq, logging);
+  }
+
+  private static void requireErrors(MessageQueue mq, ParseTreeNode n) {
+    // Make sure a sub-rule has put an error because the rule got an unexpected
+    // result from a recursive call to expand.
+    if (!mq.hasMessageAtLevel(MessageLevel.ERROR)) {
+      mq.addMessage(
+          RewriterMessageType.BAD_RESULT_FROM_RECURSIVE_CALL,
+          n.getFilePosition(), n);
+    }
   }
 }

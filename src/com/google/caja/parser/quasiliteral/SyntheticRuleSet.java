@@ -16,11 +16,16 @@ package com.google.caja.parser.quasiliteral;
 
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.js.CatchStmt;
+import com.google.caja.parser.js.Declaration;
 import com.google.caja.parser.js.Expression;
+import com.google.caja.parser.js.ExpressionStmt;
 import com.google.caja.parser.js.FormalParam;
 import com.google.caja.parser.js.FunctionConstructor;
 import com.google.caja.parser.js.FunctionDeclaration;
 import com.google.caja.parser.js.Identifier;
+import com.google.caja.parser.js.Noop;
+import com.google.caja.parser.js.Operation;
+import com.google.caja.parser.js.Operator;
 import com.google.caja.parser.js.Reference;
 import com.google.caja.parser.js.Statement;
 import com.google.caja.parser.js.TryStmt;
@@ -180,7 +185,20 @@ class SyntheticRuleSet {
       public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
         Map<String, ParseTreeNode> bindings = this.match(node);
         if (bindings != null && isSynthetic((Identifier) bindings.get("v"))) {
-          return expandAll(node, scope);
+          Declaration d = (Declaration) expandAll(node, scope);
+          Statement s;
+          if (d.getInitializer() == null) {
+            s = new Noop(d.getFilePosition());
+          } else {
+            s = new ExpressionStmt(
+                Operation.createInfix(
+                    Operator.ASSIGN, new Reference(d.getIdentifier()),
+                    d.getInitializer()));
+            CajitaRewriter.markForSideEffect(s);
+            d.removeChild(d.getInitializer());
+          }
+          scope.addStartOfScopeStatement(d);
+          return s;
         }
         return NONE;
       }
