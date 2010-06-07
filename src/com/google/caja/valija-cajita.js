@@ -413,7 +413,7 @@ var valijaMaker = (function(outers) {
     if (canReadRev(name, outers)) {
       return read(outers, name);
     } else {
-      throw new ReferenceError('not found: ' + name);
+      throw new ReferenceError('Outer variable not found: ' + name);
     }
   }
 

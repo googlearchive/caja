@@ -34,7 +34,10 @@
  *    {@code writeln} members attached.
  */
 function HtmlEmitter(base, opt_tameDocument) {
-  if (!base) { throw new Error(); }
+  if (!base) {
+    throw new Error(
+        'Host page error: Virtual document element was not provided');
+  }
   var insertionPoint = base;
   var bridal = bridalMaker(base.ownerDocument);
 
@@ -81,14 +84,18 @@ function HtmlEmitter(base, opt_tameDocument) {
 
   /**
    * emitStatic allows the caller to inject the static HTML from JavaScript,
-   * if the gadget container's usage pattern requires it.
+   * if the gadget host page's usage pattern requires it.
    */
   function emitStatic(htmlString) {
+    if (!base) {
+      throw new Error('Host page error: HtmlEmitter.emitStatic called after' +
+          ' document finish()ed');
+    }
     // TODO: We could append the cajoled HTML to existing contents of the
-    // 'base' element, thus allowing the container to pre-populate it prior to
+    // 'base' element, thus allowing the host page to pre-populate it prior to
     // adding cajoled content. However, no clients need that yet.
     if (base.firstChild) {
-      throw new Error('Container error: Virtual document element is not empty');
+      throw new Error('Host page error: Virtual document element is not empty');
     }
     base.innerHTML = htmlString;
   }
