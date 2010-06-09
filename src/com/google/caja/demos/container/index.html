@@ -57,7 +57,7 @@
             + '&url=' + encodeURIComponent('text/html')
             + '&input-mime-type=' + encodeURIComponent('text/html')
             + '&output-mime-type=' + encodeURIComponent('text/javascript');
-          document.head.appendChild(script);
+          document.getElementsByTagName('head')[0].appendChild(script);
       }
     </script>
 
