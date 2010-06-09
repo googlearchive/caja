@@ -467,7 +467,6 @@ public class DomParser {
 
   public static final Criterion<Token<HtmlTokenType>> SKIP_COMMENTS
       = new Criterion<Token<HtmlTokenType>>() {
-    @Override
     public boolean accept(Token<HtmlTokenType> candidate) {
       return candidate.type != HtmlTokenType.COMMENT;
     }
