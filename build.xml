@@ -493,7 +493,7 @@
     <jar destfile="${jars}/pluginc-src.jar" basedir="${src}"/>
   </target>
 
-  <target name="demos" depends="calendar,lolcat-search,slides"
+  <target name="demos" depends="calendar,containers,lolcat-search,slides"
    description="Puts all the demo files together for easy browsing."/>
 
   <!-- Cajoles test resources that contain cajita to javascript. -->
@@ -1030,6 +1030,44 @@
       <include name="**/caja/util/*.java"/>
       <compilerarg line="-Xlint:unchecked"/>
     </javac>
+  </target>
+
+  <target name="containers" depends="dirs,MinifiedJs,jars"
+   description="Examples of hosting gadgets/modules.">
+    <mkdir dir="${www}/container"/>
+
+    <transform>
+      <output file="${lib}/com/google/caja/demos/container/gadget-get.out.js"
+       language="caja" onlyJsEmitted="true" debug="false"/>
+      <input file="${demos}/container/gadget-get.html"/>
+    </transform>
+    <transform>
+      <output file="${lib}/com/google/caja/demos/container/gadget-set.out.js"
+       language="caja" onlyJsEmitted="true" debug="false"/>
+      <input file="${demos}/container/gadget-set.html"/>
+    </transform>
+    <transform>
+      <output 
+       file="${lib}/com/google/caja/demos/container/gadget-library.out.js"
+       language="caja" onlyJsEmitted="true" debug="false"/>
+      <input file="${demos}/container/gadget-library.html"/>
+    </transform>
+    
+    <copy todir="${www}/container">
+      <fileset dir="${src}/com/google/caja">
+        <include name="log-to-console.js"/>
+      </fileset>
+      <fileset dir="${lib}/com/google/caja/demos/container">
+        <include name="*.out.js"/>
+      </fileset>
+      <fileset dir="${demos}/container">
+        <include name="container-*.html"/>
+      </fileset>
+      <fileset dir="${lib}/com/google/caja/plugin">
+        <include name="domita-minified.js"/>
+        <include name="valija.out.js"/>
+      </fileset>
+    </copy>
   </target>
 
   <target name="lolcat-search" depends="dirs,pluginc,MinifiedJs"

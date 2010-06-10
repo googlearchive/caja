@@ -1,0 +1,167 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<!--
+ - Copyright (C) 2010 Google Inc.
+ -
+ - Licensed under the Apache License, Version 2.0 (the "License");
+ - you may not use this file except in compliance with the License.
+ - You may obtain a copy of the License at
+ -
+ -      http://www.apache.org/licenses/LICENSE-2.0
+ -
+ - Unless required by applicable law or agreed to in writing, software
+ - distributed under the License is distributed on an "AS IS" BASIS,
+ - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ - See the License for the specific language governing permissions and
+ - limitations under the License.
+-->
+
+<!-- This should be kept in sync with the CajaHostingModules wiki page -->
+
+<html>
+  <head>
+    <title>A simple host page for Caja gadgets</title>
+  
+    <!-- In ant-lib/com/google/caja/plugin/ -->
+    <script src="domita-minified.js"></script>
+    <!-- In ant-lib/com/google/caja/ -->
+    <script src="log-to-console.js"></script>
+  
+    <script>
+    (function(){
+      // Give the module a variable into which it can export the valija maker
+      var imports = ___.getNewModuleHandler().getImports();
+      imports.loader = {
+        provide: ___.markFuncFreeze(function(v){ valijaMaker = v; })
+      };
+    })();
+    </script>
+
+    <!-- In ant-lib/com/google/caja/plugin/ -->
+    <script src="valija.out.js"></script>
+  
+    <script>
+      var clearImports = function () {
+        // Ensure that the next gadget cannot get the previous gadget's
+        // authorities even if setup fails.
+        ___.getNewModuleHandler().setImports(null);
+      };
+    
+      var initValija = function(divId, extraOuters) {
+        // Make a copy of the standard objects
+        var imports = ___.copy(___.sharedImports);
+      
+        // Reify the imports for use by Valija
+        imports.outers = imports;
+      
+        // Create a fake document object, attach it to the given div,
+        // and put a reference in imports
+        var htmlContainer = document.getElementById(divId);
+        imports.htmlEmitter___ = new HtmlEmitter(htmlContainer);
+        imports.getCssContainer___ = function () {
+          return htmlContainer;
+        };
+        
+        // The function attachDocumentStub() copies each property of
+        // imports.outers to tameWindow, a constructed object, then sets 
+        //   imports.outers = tameWindow
+        // so after this call, imports.outers !== imports.  Also, if
+        // you set a property on imports.outers after this point, 
+        // you have to grant access to it explicitly.
+        attachDocumentStub(
+            "-" + divId,
+            // Don't proxy urls
+            { rewrite: function(uri, mimetype) { return uri; } },
+            imports,
+            document.getElementById(divId));
+          
+        // Add the extra, possibly shared state
+        // forOwnKeys is like for...in but skips inherited and 
+        // Caja-bookkeeping properties.
+        cajita.forOwnKeys(extraOuters, ___.markFuncFreeze(function (i) {
+          // setPub makes the property readable from Cajita code
+          cajita.setPub(imports.outers, i, extraOuters[i]);
+        }));
+
+        // Create the Valija runtime instance
+        // This must be called after attachDocumentStub().
+        imports.$v = valijaMaker.CALL___(imports.outers);
+
+        // Use these imports
+        ___.getNewModuleHandler().setImports(imports);
+      };
+    </script>
+  </head>
+  <body>
+    <script>
+      // Some state to share between the gadgets
+      var shared = (function (x) {
+        return { 
+            get: ___.markFuncFreeze(function () { return x; }),
+            set: ___.markFuncFreeze(function (y) { x = String(y); })
+          };
+      })("");
+    </script>
+      
+    <script>
+      // Code for capturing, restoring, and calling a module function
+      // for sharing code between gadgets but having isolated instances
+      var sharedCode = (function () {
+        var oldModuleHandler = ___.getNewModuleHandler();
+        var module;
+        var capturingModuleHandler = ___.freeze({
+            handle: ___.markFuncFreeze(function handleOnly(newModule) {
+              module = newModule;
+            })});
+        return {
+            capture: function() {
+              ___.setNewModuleHandler(capturingModuleHandler);
+            },
+            restore: function() { 
+              ___.setNewModuleHandler(oldModuleHandler);
+            },
+            inject: function() {
+              module.instantiate(___, oldModuleHandler.getImports());
+            }
+          };
+      })();
+      
+      // Prepare to capture the module function of the library
+      sharedCode.capture();
+    </script>
+    <!-- Load the library code -->
+    <script src="gadget-library.out.js"></script>
+
+    <div id="gadget1" class="gadget1___"
+     style="position:relative; overflow: auto"></div>  
+    <script>
+      // Restore the default new-module handler
+      sharedCode.restore();
+
+      // Set up the valija instance for gadget1 
+      // and grant access to the getter
+      // The string should match the id and class above as shown.
+      initValija("gadget1", {set : shared.set});
+
+      // Create an instance of the library in gadget1's environment
+      sharedCode.inject();
+    </script>
+    <!-- Load the gadget -->
+    <script src="gadget-set.out.js"></script>
+    <script>
+      // Inhibit any further use of gadget1's environment, in case initValija
+      // for gadget2 fails.
+      clearImports();
+    </script>
+
+    <div id="gadget2" class="gadget2___"
+     style="position:relative; overflow: auto"></div>
+    <script>
+      initValija("gadget2", {get : shared.get});
+      sharedCode.inject();
+    </script>
+    <script src="gadget-get.out.js"></script>
+    <script>
+      clearImports();
+    </script>
+  </body>
+</html>
