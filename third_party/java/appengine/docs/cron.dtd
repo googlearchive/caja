@@ -1,0 +1,7 @@
+<!ELEMENT cronentries (cron)*>
+<!ELEMENT cron (url, description, schedule, timezone)>
+<!ELEMENT url (#PCDATA)>
+<!ELEMENT description (#PCDATA)>
+<!ELEMENT schedule (#PCDATA)>
+<!ELEMENT timezone (#PCDATA)>
+

@@ -1,0 +1,27 @@
+<!ELEMENT appengine-web-app (application, version, static-files?, resource-files?,
+                             system-properties?, env-variables?, ssl-enabled?,
+                             sessions-enabled?)>
+<!ATTLIST appengine-web-app
+          xmlns CDATA #REQUIRED>
+<!ELEMENT application (#PCDATA)>
+<!ELEMENT version (#PCDATA)>
+<!ELEMENT static-files (include|exclude)*>
+<!ELEMENT include (#PCDATA)>
+<!ATTLIST include
+          path CDATA #REQUIRED>
+<!ELEMENT exclude (#PCDATA)>
+<!ATTLIST exclude
+          path CDATA #REQUIRED>
+<!ELEMENT resource-files (include|exclude)*>
+<!ELEMENT system-properties (property)*>
+<!ELEMENT property (#PCDATA)>
+<!ATTLIST property
+          name CDATA #REQUIRED
+          value CDATA #REQUIRED>
+<!ELEMENT env-variables (env-var)*>
+<!ELEMENT env-var (#PCDATA)>
+<!ATTLIST env-var
+          name CDATA #REQUIRED
+          value CDATA #REQUIRED>
+<!ELEMENT ssl-enabled (#PCDATA)>
+<!ELEMENT sessions-enabled (#PCDATA)>

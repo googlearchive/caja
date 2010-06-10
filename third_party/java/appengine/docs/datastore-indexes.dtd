@@ -1,0 +1,11 @@
+<!ELEMENT datastore-indexes (datastore-index)*>
+<!ATTLIST datastore-indexes
+          autoGenerate (true|false) #REQUIRED>
+<!ELEMENT datastore-index (property)*>
+<!ATTLIST datastore-index
+          ancestor CDATA #REQUIRED
+          kind CDATA #REQUIRED>
+<!ELEMENT property (#PCDATA)>
+<!ATTLIST property
+          direction (asc|desc) #REQUIRED
+          name CDATA #REQUIRED>

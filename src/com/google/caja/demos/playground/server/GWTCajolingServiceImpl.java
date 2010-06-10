@@ -112,7 +112,7 @@ public class GWTCajolingServiceImpl extends RemoteServiceServlet
 
       StringReader in = new StringReader(input);
       rw.rewriteContent(
-          guessURI(url), in, UriFetcher.NULL_NETWORK, uriPolicy, debugMode,
+          guessURI(url), in, fetcher, uriPolicy, debugMode,
           output);
       String[] htmlAndJs = output.toString().split("<script[^>]*>");
       html = htmlAndJs[0];
