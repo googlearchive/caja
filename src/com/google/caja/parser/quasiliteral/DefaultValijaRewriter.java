@@ -19,6 +19,7 @@ import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.ParseTreeNodeContainer;
 import com.google.caja.parser.js.AssignOperation;
 import com.google.caja.parser.js.Block;
+import com.google.caja.parser.js.Declaration;
 import com.google.caja.parser.js.Expression;
 import com.google.caja.parser.js.ExpressionStmt;
 import com.google.caja.parser.js.FunctionConstructor;
@@ -125,9 +126,8 @@ public class DefaultValijaRewriter extends Rewriter {
             // of the block.
             Identifier fname = (Identifier) bindings.get("name");
             if (scope.isOuter((fname).getName())) {
-              Expression initScope = (Expression)
-                  QuasiBuilder.substV("$v.initOuter('@name');",
-                      "name", fname);
+              Expression initScope = (Expression) QuasiBuilder.substV(
+                  "$v.initOuter('@name');", "name", fname);
               ParseTreeNodeContainer actuals = (ParseTreeNodeContainer) bindings.get("actuals");
               Expression initBlock = (Expression) substV(
                   "name", fname,
@@ -285,13 +285,15 @@ public class DefaultValijaRewriter extends Rewriter {
             "Name it $dis so top level uses of \"this\" in Valija work.",
           reason="",
           matches="@ss*;",
-          substitutes="var $dis = $v.getOuters();"
-            + "$v.initOuter('onerror');"
-            + "@startStmts*;"
-            + "@ss*;")
+          substitutes="@startStmts*; @ss*;")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
         if (node instanceof Block && scope == null) {
           Scope s2 = Scope.fromProgram((Block) node, mq);
+          s2.addStartStatement(
+              (Declaration) QuasiBuilder.substV("var $dis = $v.getOuters();"));
+          s2.addStartStatement(newExprStmt(
+              (Expression) QuasiBuilder.substV("$v.initOuter('onerror');")));
+
           List<ParseTreeNode> expanded = Lists.newArrayList();
           for (ParseTreeNode c : node.children()) {
             expanded.add(expand(c, s2));
@@ -604,7 +606,10 @@ public class DefaultValijaRewriter extends Rewriter {
         if (bindings != null &&
             bindings.get("v") instanceof Identifier &&
             scope.isOuter(((Identifier) bindings.get("v")).getName())) {
-          return newExprStmt((Expression) substV("v", bindings.get("v")));
+          ExpressionStmt es = newExprStmt(
+              (Expression) substV("v", bindings.get("v")));
+          es.getAttributes().set(CajitaRewriter.FOR_SIDE_EFFECT, true);
+          return es;
         }
         return NONE;
       }
@@ -1476,10 +1481,10 @@ public class DefaultValijaRewriter extends Rewriter {
   };
 
   /**
-   * Creates a default valija rewriter with logging on.
+   * Creates a default valija rewriter with logging off.
    */
   public DefaultValijaRewriter(MessageQueue mq) {
-    this(mq, true);
+    this(mq, false);
   }
 
   public DefaultValijaRewriter(MessageQueue mq, boolean logging) {

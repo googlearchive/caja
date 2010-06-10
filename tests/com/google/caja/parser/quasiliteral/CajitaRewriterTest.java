@@ -21,6 +21,7 @@ import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.ParseException;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.js.Block;
+import com.google.caja.parser.js.CajoledModule;
 import com.google.caja.parser.js.FormalParam;
 import com.google.caja.parser.js.FunctionConstructor;
 import com.google.caja.parser.js.FunctionDeclaration;
@@ -60,7 +61,6 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
     public FetchedData fetch(ExternalReference ref, String mimeType)
         throws UriFetchException {
       URI uri = ref.getUri();
-      uri = ref.getReferencePosition().source().getUri().resolve(uri);
       if ("test".equals(uri.getScheme())) {
         try {
           InputSource is = new InputSource(uri);
@@ -2269,10 +2269,13 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
   }
 
   public final void testCallback() throws Exception {
-    // These two cases won't work in Valija since every Valija disfunction has its own
-    // non-generic call and apply methods.
-    assertConsistent("(function(){}).apply.call(function(a, b) {return a + b;}, {}, [3, 4]);");
-    assertConsistent("(function(){}).call.call(function(a, b) {return a + b;}, {}, 3, 4);");
+    // These two cases won't work in Valija since every Valija disfunction has
+    // its own non-generic call and apply methods.
+    assertConsistent(
+        "(function(){}).apply.call(function(a, b) {return a + b;}, {}, [3, 4]);"
+        );
+    assertConsistent(
+        "(function(){}).call.call(function(a, b) {return a + b;}, {}, 3, 4);");
   }
 
   /**
@@ -2437,14 +2440,31 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
   /**
    * Tests the static module loading
    */
-  // TODO: Refactor the test cases so that we can use CajitaModuleRewriter
-  // for all tests
-  // CajitaModuleRewriter only accepts an UncajoledModule, so it does not work
-  // for those tests that run against other ParseTreeNode
   public final void testModule() throws Exception {
-    CajitaModuleRewriter moduleRewriter = new CajitaModuleRewriter(
-        new TestBuildInfo(), new TestUriFetcher(), mq, false, false);
-    setRewriter(moduleRewriter);
+    // TODO: Refactor the test cases so that we can use CajitaModuleRewriter
+    // for all tests
+    // CajitaModuleRewriter only accepts an UncajoledModule, so it does not work
+    // for those tests that run against other ParseTreeNodes
+    final CajitaModuleRewriter moduleRewriter = new CajitaModuleRewriter(
+        TestBuildInfo.getInstance(), new TestUriFetcher(), false, mq);
+
+    setRewriter(new Rewriter(mq, true, false) {{
+      addRule(new Rule("UncajoledModule", this) {
+        @Override
+        @RuleDescription(
+            name="cajoledModule",
+            synopsis="a cajoled module envelope",
+            reason="",
+            matches="<UncajoledModule>",
+            substitutes="<CajoledModule>")
+        public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
+          CajitaRewriter cr = new CajitaRewriter(
+              is.getUri(), moduleRewriter.getModuleManager(), false);
+          return moduleRewriter.rewrite(Collections.singletonList(
+              (CajoledModule) cr.expand(node, scope)));
+        }
+      });
+    }});
 
     rewriteAndExecute(
         "var r = load('foo/testPrimordials')({}); "
@@ -2455,7 +2475,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
         + "assertEquals('com.google.caja', m.cajolerName);"
         + "assertEquals('testBuildVersion', m.cajolerVersion);"
         + "assertEquals(0, m.cajoledDate);"
-        + "assertEquals(0, m.includedModules.length);"
+        + "assertEquals(void 0, m.includedModules);"
         + "assertThrows(function() { m.cajolerName = 'bar'; });"
         + "assertThrows(function() { m.includedModules = 'bar'; });"
         + "assertThrows(function() { m.includedModules.foo = 'bar'; });"

@@ -54,8 +54,11 @@ public class DefaultValijaRewriterTest extends CommonJsRewriterTestCase {
       try {
         URI uri = ref.getReferencePosition().source().getUri()
             .resolve(ref.getUri());
-        return dataFromResource(
-            uri.getPath().substring(1), new InputSource(uri));
+        if ("resource".equals(uri.getScheme())) {
+          return dataFromResource(uri.getPath(), new InputSource(uri));
+        } else {
+          throw new UriFetchException(ref, mimeType);
+        }
       } catch (IOException ex) {
         throw new UriFetchException(ref, mimeType, ex);
       }
@@ -63,15 +66,15 @@ public class DefaultValijaRewriterTest extends CommonJsRewriterTestCase {
   }
 
   private Rewriter valijaRewriter;
-  private Rewriter cajitaRewriter;
+  private CajitaModuleRewriter cajitaModuleRewriter;
   private Rewriter innocentCodeRewriter;
 
   @Override
   public void setUp() throws Exception {
     super.setUp();
     valijaRewriter = new DefaultValijaRewriter(mq, false);
-    cajitaRewriter = new CajitaModuleRewriter(
-        new TestBuildInfo(), new TestUriFetcher(), mq, false, true);
+    cajitaModuleRewriter = new CajitaModuleRewriter(
+        new TestBuildInfo(), new TestUriFetcher(), true, mq);
     innocentCodeRewriter = new InnocentCodeRewriter(mq, false);
     // Start with this one, then switch later to CajitaRewriter for
     // the second pass.
@@ -338,13 +341,13 @@ public class DefaultValijaRewriterTest extends CommonJsRewriterTestCase {
         + "assertEquals(Function.prototype.toString.call(foo),\n"
         + "             'function foo() {\\n  [cajoled code]\\n}');");
     rewriteAndExecute(
-        "var foo = function (x$x, y_y) {}\n"
+        "var foo = function (x$x, y_y) {};\n"
         + "assertEquals(Function.prototype.toString.call(foo),\n"
         + "             'function foo$_var(x$x, y_y) {\\n  [cajoled code]\\n}');");
   }
 
   public final void testUnderscore() throws Exception {
-     rewriteAndExecute(
+    rewriteAndExecute(
          ""
          + "var msg;"
          + "try {"
@@ -728,11 +731,9 @@ public class DefaultValijaRewriterTest extends CommonJsRewriterTestCase {
     setRewriter(valijaRewriter);
     Block valijaTree = js(fromString(caja, is));
     Block cajitaTree = (Block) rewriteTopLevelNode(valijaTree);
-    setRewriter(cajitaRewriter);
-    CajoledModule cajoled = (CajoledModule)
-        rewriteTopLevelNode(new UncajoledModule(cajitaTree));
+    CajoledModule cajoled = cajoleModule(new UncajoledModule(cajitaTree));
     String cajoledJs = render(cajoled);
-    CajoledModule valijaBody = (CajoledModule) rewriteTopLevelNode(
+    CajoledModule valijaBody = cajoleModule(
         new UncajoledModule(js(fromResource("../../valija-cajita.js"))));
     String valijaCajoled = render(valijaBody);
     setRewriter(old);
@@ -788,10 +789,20 @@ public class DefaultValijaRewriterTest extends CommonJsRewriterTestCase {
         new Executor.Input(cajoledJs, getName() + "-cajoled"),
         new Executor.Input(post, getName() + "-post"),
         // Return the output field as the value of the run.
-        new Executor.Input("___.getNewModuleHandler().getLastValue();",
-                               getName()));
+        new Executor.Input(
+            "___.getNewModuleHandler().getLastValue();", getName()));
 
     assertNoErrors();
     return result;
+  }
+
+  private CajoledModule cajoleModule(UncajoledModule m) {
+    URI baseUri = URI.create(
+        "resource:///com/google/caja/parser/quasiliteral/");
+    CajitaModuleRewriter rw = cajitaModuleRewriter;
+    ModuleManager mm = rw.getModuleManager();
+    ParseTreeNode expanded = new CajitaRewriter(baseUri, mm, false).expand(m);
+    CajoledModule cm = (CajoledModule) expanded;
+    return cajitaModuleRewriter.rewrite(Collections.singletonList(cm));
   }
 }

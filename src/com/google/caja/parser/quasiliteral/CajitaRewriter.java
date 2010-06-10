@@ -71,10 +71,10 @@ import com.google.caja.util.SyntheticAttributeKey;
 
 import static com.google.caja.parser.js.SyntheticNodes.s;
 
-import java.util.ArrayList;
+import java.net.URI;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashSet;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -94,15 +94,26 @@ public class CajitaRewriter extends Rewriter {
    * not be considered as contributing to the value of the block in
    * which it appears.
    */
-  private static final SyntheticAttributeKey<Boolean> FOR_SIDE_EFFECT
+  public static final SyntheticAttributeKey<Boolean> FOR_SIDE_EFFECT
       = new SyntheticAttributeKey<Boolean>(Boolean.class, "forSideEffect");
 
   private final BuildInfo buildInfo;
+  private final URI baseUri;
   private final ModuleManager moduleManager;
   // TODO: move this into scope if we use a single CajitaRewriter to rewrite
   // multiple modules
-  private final Set<StringLiteral> moduleNameList
-      = new HashSet<StringLiteral>();
+  private final Set<StringLiteral> includedModules = Sets.newTreeSet(
+      new Comparator<StringLiteral>() {
+    public int compare(StringLiteral o1, StringLiteral o2) {
+      return o1.getUnquotedValue().compareTo(o2.getUnquotedValue());
+    }
+  });
+  private final Set<StringLiteral> inlinedModules = Sets.newTreeSet(
+      new Comparator<StringLiteral>() {
+    public int compare(StringLiteral o1, StringLiteral o2) {
+      return o1.getUnquotedValue().compareTo(o2.getUnquotedValue());
+    }
+  });
 
   /**
    * Mark a tree as being evaluated for its side effect, so its value is
@@ -182,6 +193,8 @@ public class CajitaRewriter extends Rewriter {
     return result;
   }
 
+  private static final FilePosition UNK = FilePosition.UNKNOWN;
+
   // A NOTE ABOUT MATCHING MEMBER ACCESS EXPRESSIONS
   // When we match the pattern like '@x.@y' or '@x.@y()' against a specimen,
   // the result is that 'y' is bound to the rightmost component, and 'x' is
@@ -246,31 +259,29 @@ public class CajitaRewriter extends Rewriter {
           synopsis="rewrites the load function.",
           reason="",
           matches="load(@arg)",
-          substitutes="<depending on whether bundle the modules")
+          substitutes="depending on whether moduleManager bundles modules")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
         Map<String, ParseTreeNode> bindings = match(node);
         if (bindings != null && scope.isImported("load")) {
           ParseTreeNode arg = bindings.get("arg");
           if (arg instanceof StringLiteral) {
+            StringLiteral name = noexpand((StringLiteral) arg);
             if (moduleManager != null) {
-              int index = moduleManager.getModule((StringLiteral) arg);
-              if (index != -1) {
+              int moduleIndex = moduleManager.getModule(baseUri, name);
+              if (moduleIndex >= 0) {
+                inlinedModules.add(name);
                 return QuasiBuilder.substV(
                     "moduleMap___[@moduleIndex]",
-                    "moduleIndex",
-                    new IntegerLiteral(FilePosition.UNKNOWN, index));
+                    "moduleIndex", new IntegerLiteral(UNK, moduleIndex));
               } else {
-                assert mq.hasMessageAtLevel(MessageLevel.ERROR);
+                requireErrors(mq, node);
+                // Error messages were logged in the function getModule.
                 return node;
               }
             } else {
-              String name = ((StringLiteral) arg).getUnquotedValue();
-              moduleNameList.add(new StringLiteral(
-                  FilePosition.UNKNOWN, name));
-              return QuasiBuilder.substV(
-                  "load(@name)",
-                  "name",
-                  new StringLiteral(FilePosition.UNKNOWN, name));
+              includedModules.add(name);
+              // TODO(mikesamuel): How does this work?  Why not return node?
+              return QuasiBuilder.substV("load(@name)", "name", name);
             }
           } else {
             mq.addMessage(
@@ -300,11 +311,11 @@ public class CajitaRewriter extends Rewriter {
               ""
               + "(/*@synthetic*/{"
               + "  instantiate: /*@synthetic*/function (___, IMPORTS___) {"
-              + "    var moduleResult___ = ___.NO_RESULT;"
+              + "    /*var moduleResult___ = ___.NO_RESULT;*/"
               + "    @rewrittenModuleStmts*;"
-              + "    return moduleResult___;"
+              + "    /*return moduleResult___;*/"
               + "  },"
-              + "  includedModules: @moduleNames,"
+              + "  @metaKeys*: @metaValues*,"
               + "  cajolerName: @cajolerName,"
               + "  cajolerVersion: @cajolerVersion,"
               + "  cajoledDate: @cajoledDate"
@@ -315,21 +326,40 @@ public class CajitaRewriter extends Rewriter {
               + "})"))
       public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
         if (node instanceof UncajoledModule) {
-          Block inputModuleStmts = ((UncajoledModule) node).getModuleBody();
+          Statement returnStmt = (Statement) QuasiBuilder.substV(
+              "return moduleResult___;");
+          markForSideEffect(returnStmt);
+          Block inputModuleStmts = (Block) QuasiBuilder.substV(
+              ""
+              + "var moduleResult___ = ___./*@synthetic*/NO_RESULT;"
+              + "@moduleBody*;"
+              + "@returnStmt",
+              "moduleBody", new ParseTreeNodeContainer(
+                  ((UncajoledModule) node).getModuleBody().children()),
+              "returnStmt", returnStmt);
           Block rewrittenModuleStmts = (Block) expand(inputModuleStmts, null);
+          ParseTreeNodeContainer metaKeys = new ParseTreeNodeContainer();
+          ParseTreeNodeContainer metaValues = new ParseTreeNodeContainer();
+          if (!includedModules.isEmpty()) {
+            metaKeys.appendChild(StringLiteral.valueOf(UNK, "includedModules"));
+            metaValues.appendChild(
+                new ArrayConstructor(UNK, Lists.newArrayList(includedModules)));
+          }
+          if (!inlinedModules.isEmpty()) {
+            metaKeys.appendChild(StringLiteral.valueOf(UNK, "inlinedModules"));
+            metaValues.appendChild(
+                new ArrayConstructor(UNK, Lists.newArrayList(inlinedModules)));
+          }
+
           ObjectConstructor moduleObjectLiteral = (ObjectConstructor) substV(
               "rewrittenModuleStmts", returnLast(rewrittenModuleStmts),
-              "moduleNames", new ArrayConstructor(
-                  FilePosition.UNKNOWN,
-                  new ArrayList<StringLiteral>(moduleNameList)),
-              "cajolerName", new StringLiteral(
-                  FilePosition.UNKNOWN, "com.google.caja"),
+              "metaKeys", metaKeys,
+              "metaValues", metaValues,
+              "cajolerName", new StringLiteral(UNK, "com.google.caja"),
               "cajolerVersion", new StringLiteral(
-                  FilePosition.UNKNOWN,
-                  buildInfo.getBuildVersion()),
+                  UNK, buildInfo.getBuildVersion()),
               "cajoledDate", new IntegerLiteral(
-                  FilePosition.UNKNOWN,
-                  buildInfo.getCurrentTime()));
+                  UNK, buildInfo.getCurrentTime()));
           return new CajoledModule(moduleObjectLiteral);
         }
         return NONE;
@@ -374,7 +404,7 @@ public class CajitaRewriter extends Rewriter {
           orderedImportNames.addAll(importNames);
 
           for (String k : orderedImportNames) {
-            Identifier kid = new Identifier(FilePosition.UNKNOWN, k);
+            Identifier kid = new Identifier(UNK, k);
             Expression permitsUsed = s2.getPermitsUsed(kid);
             if (null == permitsUsed
                 || "Array".equals(k) || "Object".equals(k)) {
@@ -1189,8 +1219,7 @@ public class CajitaRewriter extends Rewriter {
               "                           ___.setPub(@oRef, @pName, @rRef);",
               "oRef", oPair.a,
               "rRef", rPair.a,
-              "pCanSet", newReference(
-                  FilePosition.UNKNOWN, propertyName + "_canSet___"),
+              "pCanSet", newReference(UNK, propertyName + "_canSet___"),
               "p", noexpand(p),
               "pName", toStringLiteral(p)));
         }
@@ -1712,8 +1741,7 @@ public class CajitaRewriter extends Rewriter {
               "oRef",    oPair.a,
               "argRefs", argsPair.a,
               "m",       noexpand(m),
-              "fm",      newReference(
-                             FilePosition.UNKNOWN, methodName + "_canCall___"),
+              "fm",      newReference(UNK, methodName + "_canCall___"),
               "rm",      toStringLiteral(m)));
         }
         return NONE;
@@ -1884,7 +1912,7 @@ public class CajitaRewriter extends Rewriter {
           checkFormals(ps);
           Identifier fname = noexpand((Identifier) bindings.get("fname"));
           Identifier fself = new Identifier(
-              FilePosition.UNKNOWN, nym(node, fname.getName(), "self"));
+              UNK, nym(node, fname.getName(), "self"));
           scope.declareStartOfScopeVariable(fname);
           Expression expr = (Expression) QuasiBuilder.substV(
               "@fRef = (function() {\n"
@@ -2282,17 +2310,25 @@ public class CajitaRewriter extends Rewriter {
   };
 
   public CajitaRewriter(
-      BuildInfo buildInfo, ModuleManager moduleManager, MessageQueue mq,
-      boolean logging) {
-    super(mq, true, logging);
-    this.buildInfo = buildInfo;
+      URI baseUri, ModuleManager moduleManager, boolean logging) {
+    super(moduleManager.getMessageQueue(), true, logging);
+    this.buildInfo = moduleManager.getBuildInfo();
+    this.baseUri = baseUri;
     this.moduleManager = moduleManager;
-    addRules(SyntheticRuleSet.syntheticRules(this));
-    addRules(cajaRules);
+    initRules();
   }
 
   public CajitaRewriter(BuildInfo buildInfo, MessageQueue mq, boolean logging) {
-    this(buildInfo, null, mq, logging);
+    super(mq, true, logging);
+    this.buildInfo = buildInfo;
+    this.baseUri = null;
+    this.moduleManager = null;
+    initRules();
+  }
+
+  private void initRules() {
+    addRules(SyntheticRuleSet.syntheticRules(this));
+    addRules(cajaRules);
   }
 
   private static void requireErrors(MessageQueue mq, ParseTreeNode n) {

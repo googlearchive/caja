@@ -111,7 +111,7 @@ public abstract class Rule implements MessagePart {
    * Set the rewriter this {@code Rule} uses.
    */
   public void setRewriter(Rewriter rewriter) {
-    assert this.rewriter == null;
+    assert this.rewriter == null || this.rewriter == rewriter;
     this.rewriter = rewriter;
   }
 

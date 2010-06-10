@@ -39,9 +39,10 @@ import com.google.caja.util.TestUtil;
 import java.io.IOException;
 import java.net.URI;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Map;
-import java.util.Arrays;
+
 
 /**
  * This test ensures that the module format, including debugging information,
@@ -53,7 +54,7 @@ import java.util.Arrays;
  */
 public class ModuleFormatTest extends CajaTestCase {
   private final Rewriter makeRewriter() {
-    return new CajitaRewriter(new TestBuildInfo(), mq, false);
+    return new CajitaRewriter(TestBuildInfo.getInstance(), mq, false);
   }
 
   private final Callback<IOException> exHandler = new Callback<IOException>() {
@@ -72,7 +73,6 @@ public class ModuleFormatTest extends CajaTestCase {
     assertTrue(QuasiBuilder.match(
         "  ({"
         + "  instantiate: @instantiate,"
-        + "  includedModules: @includedModules,"
         + "  cajolerName: @cajolerName,"
         + "  cajolerVersion: @cajolerVersion,"
         + "  cajoledDate: @cajoledDate"
@@ -150,8 +150,7 @@ public class ModuleFormatTest extends CajaTestCase {
     return out.toString();
   }
 
-  public final void testCajoledModuleRenderingWithCallback()
-      throws Exception {
+  public final void testCajoledModuleRenderingWithCallback() throws Exception {
     // Ensure that the rendered form of a cajoled module with a callback
     // expression fits the expected format.
 
@@ -167,12 +166,14 @@ public class ModuleFormatTest extends CajaTestCase {
         .children().get(0).children().get(0).children().get(0);
 
     // Check that the reparsed structure matches what we expect.
-    assertTrue(QuasiBuilder.match(
-        "  foo.bar.baz(___.prepareModule({"
-        + "  instantiate: function() {},"
-        + "  foo: 42"
-        + "}));",
-        reparsedModule));
+    assertEquals(
+        render(jsExpr(fromString(
+            ""
+            + "foo.bar.baz(___.prepareModule({"
+            + "  instantiate: function() {},"
+            + "  foo: 42"
+            + "}))"))),
+        render(reparsedModule));
   }
 
   public final void testCajoledModuleDebugRenderingWithCallback()
@@ -193,16 +194,19 @@ public class ModuleFormatTest extends CajaTestCase {
         .children().get(0).children().get(0).children().get(0);
 
     // Check that the reparsed structure matches what we expect.
-    Map<String, ParseTreeNode> bindings = Maps.newHashMap();
-    assertTrue(QuasiBuilder.match(
-        "  foo.bar.baz(___.prepareModule({"
-        + "  instantiate: function() {},"
-        + "  foo: 42,"
-        + "  sourceLocationMap: @sourceLocationMap,"
-        + "  originalSource: @originalSource"
-        + "}));",
-        reparsedModule,
-        bindings));
+   Map<String, ParseTreeNode> bindings = Maps.newHashMap();
+    assertTrue(
+        render(reparsedModule),
+        QuasiBuilder.match(
+            ""
+            + "foo.bar.baz(___.prepareModule({"
+            + "  instantiate: function() {},"
+            + "  foo: 42,"
+            + "  sourceLocationMap: @sourceLocationMap,"
+            + "  originalSource: @originalSource"
+            + "}));",
+            reparsedModule,
+            bindings));
     // Other tests verify the exact details of "sourceLocationMap" and
     // "originalSource". In this test, we are checking for the correct callback
     // expression "foo.bar.baz", so we apply only a very weak sanity check on

@@ -15,121 +15,98 @@
 package com.google.caja.parser.quasiliteral;
 
 import com.google.caja.lexer.FilePosition;
-import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.ParseTreeNodeContainer;
 import com.google.caja.parser.js.CajoledModule;
 import com.google.caja.parser.js.CajoledModuleExpression;
+import com.google.caja.parser.js.Declaration;
 import com.google.caja.parser.js.Expression;
-import com.google.caja.parser.js.ExpressionStmt;
 import com.google.caja.parser.js.IntegerLiteral;
 import com.google.caja.parser.js.ObjectConstructor;
+import com.google.caja.parser.js.Operation;
+import com.google.caja.parser.js.Operator;
 import com.google.caja.parser.js.StringLiteral;
-import com.google.caja.parser.js.UncajoledModule;
 import com.google.caja.plugin.UriFetcher;
 import com.google.caja.reporting.BuildInfo;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.util.Lists;
 
 import java.util.List;
-import java.util.Map;
 
 /**
- * Add a top-level module envelope
- * Call the CajitaRewriter to do the actual rewriting
+ * Adds a top level module map.
  *
  * @author maoziqing@gmail.com
  */
-@RulesetDescription(
-    name="Caja Transformation Rules",
-    synopsis="Top-level module envelop"
-  )
-public class CajitaModuleRewriter extends Rewriter {
-  private final BuildInfo buildInfo;
-  private final UriFetcher uriFetcher;
-  private final boolean isFromValija;
+public class CajitaModuleRewriter {
+  private final ModuleManager mgr;
 
-  final public Rule[] cajaRules = {
-    new Rule() {
-      @Override
-      @RuleDescription(
-          name="topLevelModule",
-          synopsis="produce a module map and add a wrapper;"
-            + "only apply to top level module",
-          reason="",
-          matches="<an UncajoledModule>",
-          substitutes=(
-              "      ({"
-              + "      instantiate: function (___, IMPORTS___) {"
-              + "        var moduleResult___ = ___.NO_RESULT;"
-              + "        var moduleMap___ = {};"
-              + "        @setModules*;"
-              + "        moduleResult___ ="
-              + "          moduleMap___[0](IMPORTS___);"
-              + "        return moduleResult___;"
-              + "      },"
-              + "      cajolerName: @cajolerName,"
-              + "      cajolerVersion: @cajolerVersion,"
-              + "      cajoledDate: @cajoledDate"
-              + "    })"))
-      public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
-        if (node instanceof UncajoledModule) {
-          ModuleManager moduleManager = new ModuleManager(
-              buildInfo, uriFetcher, mq, isFromValija);
-          moduleManager.appendUncajoledModule((UncajoledModule)node);
-
-          List<ParseTreeNode> moduleDefs = Lists.newArrayList();
-          Map<Integer, CajoledModule> modules
-              = moduleManager.getModuleIndexMap();
-
-          if (modules.size() == 1) {
-            return modules.get(0);
-          }
-          else {
-            for (int k : modules.keySet()) {
-              ParseTreeNode e = QuasiBuilder.substV(
-                "moduleMap___[@moduleIndex] = @cajoledModuleExpression;",
-                "moduleIndex", new IntegerLiteral(
-                    FilePosition.UNKNOWN, k),
-                "cajoledModuleExpression", new CajoledModuleExpression(
-                    FilePosition.UNKNOWN, modules.get(k)));
-
-              moduleDefs.add(new ExpressionStmt((Expression)e));
-            }
-
-            ObjectConstructor moduleObjectLiteral = (ObjectConstructor) substV(
-                "setModules", new ParseTreeNodeContainer(moduleDefs),
-                "cajolerName", new StringLiteral(
-                    FilePosition.UNKNOWN, "com.google.caja"),
-                "cajolerVersion", new StringLiteral(
-                    FilePosition.UNKNOWN,
-                    buildInfo.getBuildVersion()),
-                "cajoledDate", new IntegerLiteral(
-                    FilePosition.UNKNOWN,
-                    buildInfo.getCurrentTime()));
-            return new CajoledModule(moduleObjectLiteral);
-          }
-        }
-        return NONE;
-      }
-    }
-  };
+  public ModuleManager getModuleManager() { return mgr; }
 
   /**
-   * Creates a CajitaModuleRewriter
+   * Produces a module containing a {@code moduleMap___} definition that
+   * introduces all the bindings needed by the {@code load(...)} rule
+   * expansion in {@link CajitaRewriter}.
    */
-  public CajitaModuleRewriter(
-      BuildInfo buildInfo, UriFetcher fetcher,
-      MessageQueue mq, boolean logging, boolean isFromValija) {
-    super(mq, false, logging);
-    this.buildInfo = buildInfo;
-    this.uriFetcher = fetcher;
-    this.isFromValija = isFromValija;
-    addRules(cajaRules);
+  public CajoledModule rewrite(List<CajoledModule> modules) {
+    List<CajoledModule> byIndex = mgr.getModuleMap();
+    if (modules.size() == 1 && byIndex.isEmpty()) { return modules.get(0); }
+
+    FilePosition unk = FilePosition.UNKNOWN;
+    BuildInfo buildInfo = mgr.getBuildInfo();
+
+    Declaration moduleMap = null;
+    if (!byIndex.isEmpty()) {
+      List<Expression> indexModules = Lists.newArrayList();
+      for (int i = 0, n = byIndex.size(); i < n; ++i) {
+        CajoledModule m = byIndex.get(i);
+        indexModules.add(new CajoledModuleExpression(m));
+      }
+      moduleMap = (Declaration) QuasiBuilder.substV(
+          "var moduleMap___ = [@modules*];",
+          "modules", new ParseTreeNodeContainer(indexModules));
+    }
+    Expression moduleInvocations = null;
+    for (CajoledModule module : modules) {
+      Expression invocation = (Expression) QuasiBuilder.substV(
+          "___.prepareModule(@moduleBody)(IMPORTS___)",
+          "moduleBody", module.getModuleBody());
+      moduleInvocations = moduleInvocations != null
+          ? Operation.createInfix(Operator.COMMA, moduleInvocations, invocation)
+          : invocation;
+    }
+
+    ObjectConstructor oc = (ObjectConstructor) QuasiBuilder.substV(
+        ""
+        + "({"
+        + "  instantiate: function (___, IMPORTS___) {"
+        + "    @moduleMap?;"
+        + "    return @moduleInvocations?;"
+        + "  },"
+        + "  cajolerName: @cajolerName,"
+        + "  cajolerVersion: @cajolerVersion,"
+        + "  cajoledDate: @cajoledDate"
+        + "})",
+        "moduleMap", moduleMap,
+        "moduleInvocations", moduleInvocations,
+        "cajolerName", StringLiteral.valueOf(unk, "com.google.caja"),
+        "cajolerVersion", StringLiteral.valueOf(
+            unk, buildInfo.getBuildVersion()),
+        "cajoledDate", new IntegerLiteral(unk, buildInfo.getCurrentTime()));
+    return new CajoledModule(oc);
+  }
+
+  public CajitaModuleRewriter(ModuleManager mgr) {
+    this.mgr = mgr;
   }
 
   public CajitaModuleRewriter(
-      BuildInfo buildInfo, MessageQueue mq, boolean logging,
-      boolean isFromValija) {
-    this(buildInfo, UriFetcher.NULL_NETWORK, mq, logging, isFromValija);
+      BuildInfo buildInfo, UriFetcher uriFetcher,
+      boolean isFromValija, MessageQueue mq) {
+    this(new ModuleManager(buildInfo, uriFetcher, isFromValija, mq));
+  }
+
+  public CajitaModuleRewriter(
+      BuildInfo buildInfo, boolean isFromValija, MessageQueue mq) {
+    this(buildInfo, UriFetcher.NULL_NETWORK, isFromValija, mq);
   }
 }

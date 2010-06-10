@@ -43,9 +43,8 @@ public abstract class ServiceTestCase extends CajaTestCase {
   protected void setUp() throws Exception {
     super.setUp();
 
-    uriContent = Maps.newHashMap();
     servlet = new CajolingServlet(new CajolingService(
-        new TestBuildInfo(), null,
+        TestBuildInfo.getInstance(), null,
         new UriFetcher() {
           public FetchedData fetch(ExternalReference ref, String mimeType)
               throws UriFetchException {
@@ -56,6 +55,7 @@ public abstract class ServiceTestCase extends CajaTestCase {
             return data;
           }
         }));
+    uriContent = Maps.newHashMap();
   }
 
   @Override
@@ -132,8 +132,7 @@ public abstract class ServiceTestCase extends CajaTestCase {
         ""
         + "{\n"
         + "  " + modulePrefix + "{\n"
-        + "      'instantiate': function (___, IMPORTS___) {\n"
-        + "        var moduleResult___ = ___.NO_RESULT;\n");
+        + "      'instantiate': function (___, IMPORTS___) {\n");
     String valijaPrefix = (
         ""
         + "        var $v = ___.readImport(IMPORTS___, '$v', {\n"
@@ -142,15 +141,20 @@ public abstract class ServiceTestCase extends CajaTestCase {
         + "            'cf': { '()': {} },\n"
         + "            'ro': { '()': {} }\n"
         + "          });\n"
-        + "        var $dis;\n"
+        + "        var moduleResult___, $dis;\n"
+        + "        moduleResult___ = ___.NO_RESULT;\n"
         + "        $dis = $v.getOuters();\n"
         + "        $v.initOuter('onerror');\n"
+        );
+    String cajitaPrefix = (
+        ""
+        + "        var moduleResult___;\n"
+        + "        moduleResult___ = ___.NO_RESULT;\n"
         );
     String suffix = (
         ""
         + "        return moduleResult___;\n"
         + "      },\n"
-        + "      'includedModules': [ ],\n"
         + "      'cajolerName': 'com.google.caja',\n"
         + "      'cajolerVersion': 'testBuildVersion',\n"
         + "      'cajoledDate': 0\n"
@@ -159,11 +163,13 @@ public abstract class ServiceTestCase extends CajaTestCase {
         );
     StringBuilder sb = new StringBuilder();
     sb.append(prefix);
-    if (valija) {
-      sb.append(valijaPrefix);
+    int i, n = lines.length;
+    for (i = 0; i < n && lines[i].contains("___.readImport"); ++i) {
+      sb.append("        ").append(lines[i]).append('\n');
     }
-    for (String line : lines) {
-      sb.append("        ").append(line).append('\n');
+    sb.append(valija ? valijaPrefix : cajitaPrefix);
+    for (; i < n; ++i) {
+      sb.append("        ").append(lines[i]).append('\n');
     }
     sb.append(suffix);
     return sb.toString();

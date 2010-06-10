@@ -16,26 +16,31 @@ package com.google.caja.parser.quasiliteral;
 
 import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.ExternalReference;
+import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.JsLexer;
 import com.google.caja.lexer.JsTokenQueue;
 import com.google.caja.lexer.ParseException;
+import com.google.caja.lexer.escaping.UriUtil;
 import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.CajoledModule;
 import com.google.caja.parser.js.Parser;
 import com.google.caja.parser.js.StringLiteral;
 import com.google.caja.parser.js.UncajoledModule;
+import com.google.caja.parser.js.ValueProperty;
 import com.google.caja.plugin.UriFetcher;
 import com.google.caja.reporting.BuildInfo;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.MessageType;
 import com.google.caja.util.ContentType;
+import com.google.caja.util.Lists;
 import com.google.caja.util.Maps;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
-import java.net.URISyntaxException;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -47,33 +52,44 @@ import java.util.Map;
  * @author maoziqing@gmail.com
  */
 public class ModuleManager {
-  private final UriFetcher uriFetcher;
   private final BuildInfo buildInfo;
-  private final MessageQueue mq;
+  private final UriFetcher uriFetcher;
   private final boolean isValija;
+  private final MessageQueue mq;
 
-  private final Map<String, Integer> moduleNameMap = Maps.newHashMap();
-  private final Map<Integer, CajoledModule> moduleIndexMap = Maps.newHashMap();
-  private int moduleCounter = 0;
+  /** Maps to indices into {@link #modules}. */
+  private final Map<URI, Integer> moduleNameMap = Maps.newHashMap();
+  private final List<CajoledModule> modules = Lists.newArrayList();
 
   public ModuleManager(
-      BuildInfo buildInfo, UriFetcher uriFetcher, MessageQueue mq,
-      boolean isValija) {
+      BuildInfo buildInfo, UriFetcher uriFetcher, boolean isValija,
+      MessageQueue mq) {
     this.buildInfo = buildInfo;
     this.uriFetcher = uriFetcher;
-    this.mq = mq;
     this.isValija = isValija;
+    this.mq = mq;
   }
 
-  public Map<Integer, CajoledModule> getModuleIndexMap() {
-    return moduleIndexMap;
+  public List<CajoledModule> getModuleMap() {
+    return Collections.unmodifiableList(modules);
   }
 
-  public void appendUncajoledModule(UncajoledModule uncajoledModule) {
-    moduleCounter++;
-    CajitaRewriter dcr = new CajitaRewriter(buildInfo, this, mq, false);
-    CajoledModule cajoledModule = (CajoledModule) dcr.expand(uncajoledModule);
-    moduleIndexMap.put(0, cajoledModule);
+  public BuildInfo getBuildInfo() { return buildInfo; }
+
+  public UriFetcher getUriFetcher() { return uriFetcher; }
+
+  public boolean isValija() { return isValija; }
+
+  public MessageQueue getMessageQueue() { return mq; }
+
+  public int appendCajoledModule(URI uri, CajoledModule cajoledModule) {
+    if (!uri.isAbsolute() || moduleNameMap.containsKey(uri)) {
+      throw new IllegalArgumentException(uri.toString());
+    }
+    int index = modules.size();
+    moduleNameMap.put(uri, index);
+    modules.add(cajoledModule);
+    return index;
   }
 
   /**
@@ -81,18 +97,27 @@ public class ModuleManager {
    * Retrieve the module if necessary
    * Return the index of the module in the local list
    *
-   * Return -1 if error occurs
+   * @return -1 if error occurs
    */
-  public int getModule(StringLiteral src) {
-    String loc = src.getUnquotedValue();
-    if (!loc.toLowerCase().endsWith(".js")) {
-      loc = loc + ".js";
+  public int getModule(URI baseUri, StringLiteral src) {
+    String uriStr = UriUtil.normalizeUri(src.getUnquotedValue());
+    // Add a .js extension to the path component if there is none.
+    URI relUri = URI.create(uriStr);
+    String path = relUri.getRawPath();
+    if (path != null && path.indexOf('.', path.lastIndexOf('/') + 1) < 0) {
+      int n = uriStr.length();
+      int fragmentStart = uriStr.lastIndexOf('#');
+      if (fragmentStart < 0) { fragmentStart = n; }
+      int queryStart = uriStr.lastIndexOf('?', fragmentStart);
+      if (queryStart < 0) { queryStart = n; }
+      relUri = URI.create(
+          uriStr.substring(0, queryStart) + ".js"
+          + uriStr.substring(queryStart));
     }
 
-    URI inputUri;
-    try {
-      inputUri = new URI(loc);
-    } catch (URISyntaxException ex) {
+    URI absoluteUri = baseUri != null
+        ? UriUtil.resolve(baseUri, relUri.toString()) : null;
+    if (absoluteUri == null) {
       mq.addMessage(
           RewriterMessageType.INVALID_MODULE_URI,
           src.getFilePosition(),
@@ -100,8 +125,12 @@ public class ModuleManager {
       return -1;
     }
 
+    if (moduleNameMap.containsKey(absoluteUri)) {
+      return moduleNameMap.get(absoluteUri);
+    }
+
     ExternalReference er = new ExternalReference(
-        inputUri, src.getFilePosition());
+        absoluteUri, src.getFilePosition());
 
     CharProducer cp;
     try {
@@ -120,43 +149,38 @@ public class ModuleManager {
       return -1;
     }
 
-    String absoluteUri = cp.getCurrentPosition().source().getUri().toString();
-    if (moduleNameMap.containsKey(absoluteUri)) {
-      return moduleNameMap.get(absoluteUri);
-    }
-
-    int cur = moduleCounter;
-    moduleCounter++;
-    moduleNameMap.put(absoluteUri, cur);
-
-    InputSource is = new InputSource(cp.getCurrentPosition().source().getUri());
     try {
+      InputSource is = cp.getCurrentPosition().source();
       JsTokenQueue tq = new JsTokenQueue(new JsLexer(cp), is);
       Block input = new Parser(tq, mq).parse();
       tq.expectEmpty();
 
       Block intermediate;
       if (isValija) {
-        DefaultValijaRewriter dvr = new DefaultValijaRewriter(mq);
-        intermediate = (Block) dvr.expand(input);
+        intermediate = (Block) new DefaultValijaRewriter(mq).expand(input);
       } else {
         intermediate = input;
       }
 
-      CajitaRewriter dcr =
-          new CajitaRewriter(buildInfo, this, mq, false);
+      CajitaRewriter cr = new CajitaRewriter(absoluteUri, this, false);
       UncajoledModule uncajoledModule = new UncajoledModule(intermediate);
-      CajoledModule cajoledModule = (CajoledModule) dcr.expand(uncajoledModule);
+      CajoledModule cajoledModule = (CajoledModule) cr.expand(uncajoledModule);
 
-      moduleIndexMap.put(cur, cajoledModule);
+      // Attach the name to the cajoledModule so that we can thread cache keys
+      // through with cajoled modules.
+      FilePosition unk = FilePosition.UNKNOWN;
+      cajoledModule.getModuleBody().appendChild(new ValueProperty(
+          StringLiteral.valueOf(unk, "src"),
+          StringLiteral.valueOf(unk, "" + absoluteUri)));
+
+      return appendCajoledModule(absoluteUri, cajoledModule);
     } catch (ParseException e) {
+      e.toMessageQueue(mq);
       mq.addMessage(
           RewriterMessageType.PARSING_MODULE_FAILED,
           src.getFilePosition(),
           MessagePart.Factory.valueOf(src.getUnquotedValue()));
       return -1;
     }
-
-    return cur;
   }
 }
