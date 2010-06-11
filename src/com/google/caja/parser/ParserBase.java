@@ -181,6 +181,7 @@ public abstract class ParserBase {
    * values.
    */
   public static String decodeIdentifier(String identifier) {
+    // TODO(mikesamuel): is this true?
     // Javascript identifiers use a different escaping scheme from strings.
     // Specifically, \Uxxxxxxxx escapes handle extended unicode.  There are
     // 8 hex digits allowed even though extended unicode can't use more than

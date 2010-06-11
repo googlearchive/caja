@@ -346,8 +346,8 @@ public final class Config {
       boolean debugMode = cl.hasOption(DEBUG_MODE.getOpt());
       boolean onlyJsEmitted = cl.hasOption(ONLY_JS_EMITTED.getOpt());
       if (debugMode) {
-        negGoals = negGoals.with(PipelineMaker.CAJOLED_MODULE);
-        posGoals = posGoals.with(PipelineMaker.CAJOLED_MODULE_DEBUG);
+        negGoals = negGoals.with(PipelineMaker.ONE_CAJOLED_MODULE);
+        posGoals = posGoals.with(PipelineMaker.ONE_CAJOLED_MODULE_DEBUG);
       }
       if (onlyJsEmitted) {
         negGoals = negGoals.with(PipelineMaker.HTML_SAFE_STATIC);

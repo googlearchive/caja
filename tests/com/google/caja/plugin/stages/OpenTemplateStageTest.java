@@ -16,16 +16,20 @@ package com.google.caja.plugin.stages;
 
 import com.google.caja.lang.css.CssSchema;
 import com.google.caja.lang.html.HtmlSchema;
+import com.google.caja.lexer.FilePosition;
 import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.ExpressionStmt;
-import com.google.caja.parser.js.UncajoledModule;
+import com.google.caja.parser.js.Statement;
 import com.google.caja.plugin.Job;
 import com.google.caja.plugin.Jobs;
 import com.google.caja.plugin.PluginMeta;
 import com.google.caja.util.CajaTestCase;
+import com.google.caja.util.ContentType;
 import com.google.caja.util.Pipeline;
+
+import java.util.List;
 
 /**
  * @author mikesamuel@gmail.com
@@ -97,7 +101,7 @@ public final class OpenTemplateStageTest extends CajaTestCase {
     };
     pipeline.getStages().add(new OpenTemplateStage());
     pipeline.getStages().add(new ValidateCssStage(cssSchema, htmlSchema));
-    pipeline.getStages().add(new ConsolidateCodeStage());
+    pipeline.getStages().add(new Consolidator());
 
     Block node = js(fromString(input));
     PluginMeta meta = new PluginMeta();
@@ -116,14 +120,25 @@ public final class OpenTemplateStageTest extends CajaTestCase {
   }
 
   private static ParseTreeNode stripBoilerPlate(ParseTreeNode node) {
-    if (!(node instanceof UncajoledModule)) { return node; }
-    node = node.children().get(0);
-    if (!(node instanceof Block && node.children().size() == 1)) {
-      return node;
+    while (node instanceof Block && node.children().size() == 1) {
+      node = node.children().get(0);
     }
-    node = node.children().get(0);
-    if (!(node instanceof ExpressionStmt)) { return node; }
-    node = node.children().get(0);
+    if (node instanceof ExpressionStmt) { node = node.children().get(0); }
     return node;
+  }
+
+  private static class Consolidator implements Pipeline.Stage<Jobs> {
+    public boolean apply(Jobs jobs) {
+      List<Job> jsJobs = jobs.getJobsByType(ContentType.JS);
+      if (jsJobs.size() == 1) { return true; }
+      jobs.getJobs().remove(jsJobs);
+      Block block = new Block(FilePosition.UNKNOWN);
+      for (Job job : jsJobs) {
+        Statement s = job.getRoot().cast(Statement.class).node;
+        block.appendChild(s);
+      }
+      jobs.getJobs().add(Job.jsJob(null, AncestorChain.instance(block), null));
+      return true;
+    }
   }
 }

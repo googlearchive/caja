@@ -18,12 +18,14 @@ package com.google.caja.service;
  * @author jasvir@google.com (Jasvir Nagra)
  */
 public class JsHandlerTest extends ServiceTestCase {
+  private static String normStringSpaces(String s) {
+    return s.replaceAll("[ \r\n\t]+", " ")
+        .replaceAll("^ | $|(?<=\\W) | (?=\\W)", "");
+  }
   // TODO(ihab.awad): Change tests to use structural equality (via quasi
   // matches) rather than golden text to avoid this.
-  protected void assertEqualsIgnoreSpace(String expected, String actual) {
-    assertEquals(
-        expected.replace(" ", ""),
-        actual.replace(" ", ""));
+  static void assertEqualsIgnoreSpace(String expected, String actual) {
+    assertEquals(normStringSpaces(expected), normStringSpaces(actual));
   }
 
   public final void testSimpleJs() throws Exception {
@@ -56,8 +58,9 @@ public class JsHandlerTest extends ServiceTestCase {
   public final void testSimpleCajitaJs() throws Exception {
     registerUri("http://foo/bar.js", "g(1);", "text/javascript");
     assertEqualsIgnoreSpace(
-        cajitaModule("varg=___.readImport(IMPORTS___,'g');",
-                     "moduleResult___=g.CALL___(1);"),
+        cajitaModule(
+            "var g=___.readImport(IMPORTS___,'g');",
+            "moduleResult___=g.CALL___(1);"),
         (String) requestGet("?url=http://foo/bar.js&mime-type=text/javascript" +
                 "&transform=CAJOLE&directive=CAJITA"));
   }

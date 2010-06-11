@@ -15,15 +15,14 @@
 package com.google.caja.plugin;
 
 import com.google.caja.lexer.FilePosition;
-import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.ParseTreeNode;
+import com.google.caja.parser.quasiliteral.ModuleManager;
 import com.google.caja.parser.quasiliteral.Rewriter;
 import com.google.caja.parser.quasiliteral.Rule;
 import com.google.caja.parser.quasiliteral.Scope;
 import com.google.caja.parser.quasiliteral.RuleDescription;
 import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.Identifier;
-import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.TestBuildInfo;
 import com.google.caja.util.CajaTestCase;
@@ -55,26 +54,28 @@ public class ExpressionSanitizerTest extends CajaTestCase {
 
   public final void testNoSpuriousRewriteErrorFound() {
     newPassThruSanitizer().sanitize(
-        ac(new Identifier(FilePosition.UNKNOWN, "x")));
+        new Identifier(FilePosition.UNKNOWN, "x"));
     assertFalse(mq.hasMessageAtLevel(MessageLevel.FATAL_ERROR));
   }
 
   public final void testRewriteErrorIsDetected() {
     newPassThruSanitizer().sanitize(
-        ac(new Identifier(FilePosition.UNKNOWN, "x__")));
+        new Identifier(FilePosition.UNKNOWN, "x__"));
     assertTrue(mq.hasMessageAtLevel(MessageLevel.FATAL_ERROR));
   }
 
   public final void testNonAsciiIsDetected() {
     newPassThruSanitizer().sanitize(
-        ac(new Identifier(FilePosition.UNKNOWN, "\u00e6")));
+        new Identifier(FilePosition.UNKNOWN, "\u00e6"));
     assertTrue(mq.hasMessageAtLevel(MessageLevel.FATAL_ERROR));
   }
 
   private ExpressionSanitizerCaja newPassThruSanitizer() {
-    return new ExpressionSanitizerCaja(new TestBuildInfo(), mq) {
+    ModuleManager mgr = new ModuleManager(
+        TestBuildInfo.getInstance(), UriFetcher.NULL_NETWORK, false, mq);
+    return new ExpressionSanitizerCaja(mgr, null) {
       @Override
-      protected Rewriter newCajitaRewriter(MessageQueue mq) {
+      protected Rewriter newCajitaRewriter(ModuleManager mgr) {
         return new Rewriter(mq, true, true) {{
           addRule(new Rule() {
             @Override
@@ -94,18 +95,15 @@ public class ExpressionSanitizerTest extends CajaTestCase {
   private void assertSanitize(String input, String golden)
       throws Exception {
     Block inputNode = js(fromString(input));
-    ParseTreeNode sanitized =
-        new ExpressionSanitizerCaja(new TestBuildInfo(), mq)
-        .sanitize(ac(inputNode));
+    ModuleManager mgr = new ModuleManager(
+        TestBuildInfo.getInstance(), UriFetcher.NULL_NETWORK, false, mq);
+    ParseTreeNode sanitized = new ExpressionSanitizerCaja(mgr, null)
+        .sanitize(inputNode);
     String inputCmp = render(sanitized);
 
     String goldenCmp = render(js(fromString(golden)));
 
     assertEquals(goldenCmp, inputCmp);
     assertFalse(mq.hasMessageAtLevel(MessageLevel.WARNING));
-  }
-
-  private static <T extends ParseTreeNode> AncestorChain<T> ac(T node) {
-    return AncestorChain.instance(node);
   }
 }

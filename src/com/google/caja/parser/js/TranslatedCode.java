@@ -33,13 +33,13 @@ public final class TranslatedCode extends AbstractStatement {
   @ReflectiveCtor
   public TranslatedCode(
       FilePosition pos, Void value, List<? extends Statement> children) {
-    super(pos, Statement.class);
+    super(pos, Block.class);
     appendChild(children.get(0));
     assert children.size() == 1;
   }
 
-  public TranslatedCode(Statement body) {
-    super(body.getFilePosition(), Statement.class);
+  public TranslatedCode(Block body) {
+    super(body.getFilePosition(), Block.class);
     appendChild(body);
   }
 
@@ -59,11 +59,11 @@ public final class TranslatedCode extends AbstractStatement {
   public Object getValue() { return null; }
 
   @Override
-  public List<? extends Statement> children() {
-    return childrenAs(Statement.class);
+  public List<? extends Block> children() {
+    return childrenAs(Block.class);
   }
 
-  public Statement getTranslation() { return children().get(0); }
+  public Block getTranslation() { return children().get(0); }
 
   public void render(RenderContext rc) {
     TokenConsumer out = rc.getOut();

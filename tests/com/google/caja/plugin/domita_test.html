@@ -36,9 +36,11 @@
     </script>
     <script src="../../../../js/jsunit/2.2/jsUnitCore.js"></script>
     <!-- Prime the browser cache by loading the whitelisted script
-      - synchronously so the test doesn't take so long. -->
-    <script src="whitelisted_script.js"
-     onerror="console.error(this.src)"></script>
+      - synchronously so the test doesn't take so long, but don't run it. -->
+    <script>(function () {
+      var img = new Image();
+      img.src = 'whitelisted_script.js';
+    })()</script>
 
     <script src="../console.js"></script>
 
@@ -91,7 +93,7 @@
     <span id="automatedTestingReadyIndicator" class="notyetready">
       Not yet ready for testing
     </span>
-      
+
     <style type="text/css">
       a:visited { color: purple; }
       a:link { color: blue; }
@@ -203,16 +205,14 @@
       }
 
       var xhrModuleLoad = xhrModuleLoadMaker(
-          document.location.toString(),
-          moduleIdResolver);
+          document.location.href, moduleIdResolver);
 
       var scriptModuleLoad = scriptModuleLoadMaker(
-          document.location.toString(),
-          moduleIdResolver);
+          document.location.href, moduleIdResolver);
     </script>
 
     <script type="text/javascript">
-    
+
     function initialize(valijaModule, commonJsSandboxModule) {
       ___.setLogFunc(function(msg) { console.log(msg); });
 
@@ -461,6 +461,7 @@
       testImports.$v = valijaModule.CALL___({
         outers: testImports.outers
       });
+      ___.grantRead(testImports, '$v');
       window.toString = function () { return '[WINDOW]'; };
 
       document.title += isValija ? ' valija' : ' cajita';

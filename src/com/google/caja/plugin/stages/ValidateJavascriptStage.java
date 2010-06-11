@@ -15,18 +15,27 @@
 package com.google.caja.plugin.stages;
 
 import com.google.caja.parser.AncestorChain;
-import com.google.caja.parser.MutableParseTreeNode;
 import com.google.caja.parser.ParseTreeNode;
-import com.google.caja.parser.js.SyntheticNodes;
+import com.google.caja.parser.js.ArrayConstructor;
 import com.google.caja.parser.js.Block;
+import com.google.caja.parser.js.CajoledModule;
+import com.google.caja.parser.js.Expression;
+import com.google.caja.parser.js.ExpressionStmt;
+import com.google.caja.parser.js.Statement;
+import com.google.caja.parser.js.StringLiteral;
+import com.google.caja.parser.js.UncajoledModule;
+import com.google.caja.parser.quasiliteral.ModuleManager;
 import com.google.caja.plugin.ExpressionSanitizerCaja;
 import com.google.caja.plugin.Job;
 import com.google.caja.plugin.Jobs;
 import com.google.caja.util.ContentType;
+import com.google.caja.util.Maps;
 import com.google.caja.util.Pipeline;
-import com.google.caja.reporting.BuildInfo;
 
+import java.net.URI;
+import java.util.Collections;
 import java.util.ListIterator;
+import java.util.Map;
 
 /**
  * Rewrite the javascript to prevent runtime sandbox violations.
@@ -34,67 +43,69 @@ import java.util.ListIterator;
  * @author mikesamuel@gmail.com
  */
 public final class ValidateJavascriptStage implements Pipeline.Stage<Jobs> {
-  private final BuildInfo buildInfo;
+  private final ModuleManager mgr;
 
-  public ValidateJavascriptStage(BuildInfo buildInfo) {
-    this.buildInfo = buildInfo;
+  public ValidateJavascriptStage(ModuleManager mgr) {
+    this.mgr = mgr;
   }
 
   public boolean apply(Jobs jobs) {
+    Map<String, JobCache.Keys> keys = Maps.newHashMap();
     for (ListIterator<Job> it = jobs.getJobs().listIterator(); it.hasNext();) {
       Job job = it.next();
       if (job.getType() != ContentType.JS) { continue; }
-      // Pass in the rootmost scope that has non-synthetic children, so that
-      // the Caja rules correctly identify global function declarations.
-      AncestorChain<?> nonSyntheticScopeRoot
-          = nonSyntheticScopeRoot(job.getRoot());
+      JobCache.Keys cacheKeys = job.getCacheKeys();
 
-      if (nonSyntheticScopeRoot != null) {  // False for empty programs
-        ParseTreeNode validated = new ExpressionSanitizerCaja(
-            buildInfo, jobs.getMessageQueue())
-            .sanitize(nonSyntheticScopeRoot);
-        if (nonSyntheticScopeRoot.parent == null) {
-          it.set(Job.job(job.getCacheKeys(),
-                         AncestorChain.instance(validated), null));
-        } else {
-          ((MutableParseTreeNode) nonSyntheticScopeRoot.parent.node)
-              .replaceChild(validated, nonSyntheticScopeRoot.node);
+      URI baseUri = job.getBaseUri();
+      ParseTreeNode result = new ExpressionSanitizerCaja(mgr, baseUri)
+          .sanitize(uncajoledModule(job.getRoot().cast(Statement.class).node));
+      if (!(result instanceof CajoledModule)) {
+        // Rewriter failed to rewrite so returned its input.
+        // There should be details on the message queue.
+        it.remove();
+        continue;
+      }
+      CajoledModule validated = (CajoledModule) result;
+      it.set(Job.cajoledJob(cacheKeys, AncestorChain.instance(validated)));
+
+      if (cacheKeys.iterator().hasNext()) {
+        ArrayConstructor deps = validated.getInlinedModules();
+        for (Expression moduleName : deps.children()) {
+          String moduleUri = ((StringLiteral) moduleName).getUnquotedValue();
+          JobCache.Keys forUri = keys.get(moduleUri);
+          if (forUri == null) {
+            forUri = cacheKeys;
+          } else {
+            forUri = forUri.union(cacheKeys);
+          }
+          keys.put(moduleUri, cacheKeys);
         }
       }
+    }
+
+    // Unpack any loaded modules onto the job queue so we can make sure they
+    // show up in the appropriate caches.
+    for (CajoledModule module : mgr.getModuleMap()) {
+      String src = module.getSrc();
+      jobs.getJobs().add(Job.cajoledJob(
+          keys.get(src), AncestorChain.instance(module)));
     }
 
     return jobs.hasNoFatalErrors();
   }
 
-  public AncestorChain<?> nonSyntheticScopeRoot(AncestorChain<?> js) {
-    AncestorChain<?> scopeRoot = nonSyntheticRoot(js);
-    if (scopeRoot == null) { return null; }
-    while (scopeRoot.parent != null && !(scopeRoot.node instanceof Block)) {
-      scopeRoot = scopeRoot.parent;
-    }
-    return scopeRoot;
-  }
-
-  public AncestorChain<?> nonSyntheticRoot(AncestorChain<?> js) {
-    ParseTreeNode node = js.node;
-
-    if (SyntheticNodes.isSynthesizable(node)
-        && !node.getAttributes().is(SyntheticNodes.SYNTHETIC)) {
-      return js;
-    }
-
-    // If any children are non-synthetic
-    AncestorChain<?> nonSyntheticChild = null;
-    for (ParseTreeNode child : node.children()) {
-      AncestorChain<?> result = nonSyntheticRoot(
-          AncestorChain.instance(js, child));
-      if (result != null) {
-        // Two children at least, so return js as the LCD
-        if (nonSyntheticChild != null) { return js; }
-        nonSyntheticChild = result;
+  private static UncajoledModule uncajoledModule(ParseTreeNode node) {
+    Block body;
+    if (node instanceof Block) {
+      body = (Block) node;
+    } else {
+      if (node instanceof Expression) {
+        node = new ExpressionStmt((Expression) node);
       }
+      body = new Block(
+          node.getFilePosition(), Collections.singletonList((Statement) node));
     }
 
-    return nonSyntheticChild;
+    return new UncajoledModule(body);
   }
 }

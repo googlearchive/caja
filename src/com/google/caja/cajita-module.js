@@ -110,7 +110,7 @@ var clearModuleCache;
       waitNext(0);
       return r.promise();
     };
-    
+
     load.FUNC___ = 'load';
     ___.setStatic(load, 'async', ___.markFuncFreeze(async));
     ___.setStatic(load, 'asyncAll', ___.markFuncFreeze(asyncAll));
@@ -182,8 +182,11 @@ var clearModuleCache;
             handleUncaughtException: savedModuleHandler.handleUncaughtException
           }));
           //TODO: validate the response before eval it
-          eval(xhr.responseText);
-          ___.setNewModuleHandler(savedModuleHandler);
+          try {
+            eval(xhr.responseText);
+          } finally {
+            ___.setNewModuleHandler(savedModuleHandler);
+          }
         } else {
           r.resolve(Q.reject(
               "Retrieving the module " + mid + " failed, "
@@ -219,7 +222,7 @@ var clearModuleCache;
     }
 
     var r = Q.defer();
-    cache[mid] = r.promise; 
+    cache[mid] = r.promise;
 
     function dequeue() {
       if (head < queue.length) {
@@ -270,9 +273,13 @@ var clearModuleCache;
                 throw new Error('Module queue got out of sync');
               }
             });
+        // TODO: don't we need to save the old module handler here so we
+        // can restore it in timeout.
         ___.setNewModuleHandler(newModuleHandler);
 
-        function timeout() {
+        var timeout = function () {
+          // Don't prevent GC
+          script.onreadystatechange = script.onerror = null;
           if (savedHead === head) {
             var r = queue[head].defer;
             r.resolve(Q.reject(
@@ -283,19 +290,15 @@ var clearModuleCache;
           } else {
             // the module has been loaded successfully
           }
-        }
+        };
 
         var script = document.createElement("script");
         script.src = queue[head].mid;
-        script.onerror = function() {
-          timeout();
-          script.onreadystatechange = script.onerror = null;
-        };
+        script.onerror = timeout;
         script.onreadystatechange = function() {
           if (script.readyState === 'loaded'
               || script.readyState === 'complete') {
             timeout();
-            script.onreadystatechange = script.onerror = null;
           }
         };
         document.getElementsByTagName('head')[0].appendChild(script);
@@ -304,10 +307,7 @@ var clearModuleCache;
       }
     }
 
-    var e = new Object();
-    e.mid = mid;
-    e.defer = r;
-    queue.push(e);
+    queue.push({ mid: mid, defer: r });
 
     if (!busy) {
       dequeue();

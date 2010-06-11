@@ -32,7 +32,6 @@ import com.google.caja.parser.js.AbstractExpression;
 import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.Declaration;
 import com.google.caja.parser.js.Expression;
-import com.google.caja.parser.js.ExpressionStmt;
 import com.google.caja.parser.js.FunctionConstructor;
 import com.google.caja.parser.js.Identifier;
 import com.google.caja.parser.js.Operation;
@@ -246,30 +245,30 @@ public final class HtmlAttributeRewriter {
           Block b = this.jsFromAttrib(attr);
           if (b == null || b.children().isEmpty()) { return noResult(attr); }
 
-          handlerFnName = meta.generateUniqueName("c");
-          Statement handler = new ExpressionStmt((Expression)
-              QuasiBuilder.substV(
+          String handlerIndexName = meta.generateUniqueName("c");
+          Identifier handlerIndex = SyntheticNodes.s(new Identifier(
+              FilePosition.UNKNOWN, handlerIndexName));
+          Statement handler = (Statement) QuasiBuilder.substV(
               ""
-              + "IMPORTS___.@handlerName = ___./*@synthetic*/markFuncFreeze("
+              + "var @handlerIndex = IMPORTS___.handlers___.push("
+              + "    ___./*@synthetic*/markFuncFreeze("
               // There is no node or event object available to code in
               // javascript: URIs.
-              + "    /*@synthetic*/function () { @body*; });",
-              "handlerName", new Reference(SyntheticNodes.s(new Identifier(
-                  FilePosition.UNKNOWN, handlerFnName))),
-              "body", new ParseTreeNodeContainer(b.children())));
+              + "        /*@synthetic*/function () { @body*; })) - 1;",
+              "handlerIndex", handlerIndex,
+              "body", new ParseTreeNodeContainer(b.children()));
           handlers.add(handler);
-          handlerCache.put(value, handlerFnName);
+          handlerCache.put(value, handlerIndexName);
 
           Operation urlAdapter = (Operation) QuasiBuilder.substV(
               ""
               + "'javascript:' + /*@synthetic*/encodeURIComponent("
               + "   'try{void plugin_dispatchToHandler___('"
               + "    + ___./*@synthetic*/getId(IMPORTS___)"
-              + "    + ',' + @handlerName + ',[{}])}catch(_){}')",
-              "handlerName", StringLiteral.valueOf(
-                  pos, StringLiteral.toQuotedValue(handlerFnName)));
+              + "    + ',' + @handlerIndex + ',[{}])}catch(_){}')",
+              "handlerIndex", new Reference(handlerIndex));
           urlAdapter.setFilePosition(pos);
-          urlAdapter.getAttributes().set(HANDLER_NAME, handlerFnName);
+          urlAdapter.getAttributes().set(HANDLER_NAME, handlerIndexName);
           dynamicValue = urlAdapter;
         } else {
           try {

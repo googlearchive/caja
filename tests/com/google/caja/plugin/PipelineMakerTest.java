@@ -16,6 +16,7 @@ package com.google.caja.plugin;
 
 import com.google.caja.lang.css.CssSchema;
 import com.google.caja.lang.html.HtmlSchema;
+import com.google.caja.parser.quasiliteral.ModuleManager;
 import com.google.caja.reporting.TestBuildInfo;
 import com.google.caja.util.CajaTestCase;
 import com.google.caja.util.Lists;
@@ -38,8 +39,8 @@ public class PipelineMakerTest extends CajaTestCase {
         "ValidateCssStage",
         "RewriteCssStage",
         "HtmlToBundleStage",
-        "ConsolidateCodeStage",
         "ValidateJavascriptStage",
+        "ConsolidateCodeStage",
         "CheckForErrorsStage");
   }
 
@@ -55,8 +56,8 @@ public class PipelineMakerTest extends CajaTestCase {
         "ValidateCssStage",
         "RewriteCssStage",
         "HtmlToJsStage",
-        "ConsolidateCodeStage",
         "ValidateJavascriptStage",
+        "ConsolidateCodeStage",
         "CheckForErrorsStage");
   }
 
@@ -64,8 +65,8 @@ public class PipelineMakerTest extends CajaTestCase {
     assertPipeline(
         PipelineMaker.DEFAULT_PRECONDS,
         PipelineMaker.DEFAULT_GOALS
-            .without(PipelineMaker.CAJOLED_MODULE)
-            .with(PipelineMaker.CAJOLED_MODULE_DEBUG),
+            .without(PipelineMaker.ONE_CAJOLED_MODULE)
+            .with(PipelineMaker.ONE_CAJOLED_MODULE_DEBUG),
         "LegacyNamespaceFixupStage",
         "ResolveUriStage",
         "RewriteHtmlStage",
@@ -74,8 +75,8 @@ public class PipelineMakerTest extends CajaTestCase {
         "ValidateCssStage",
         "RewriteCssStage",
         "HtmlToBundleStage",
-        "ConsolidateCodeStage",
         "ValidateJavascriptStage",
+        "ConsolidateCodeStage",
         "InferFilePositionsStage",  // extra
         "DebuggingSymbolsStage",  // extra
         "CheckForErrorsStage");
@@ -92,17 +93,17 @@ public class PipelineMakerTest extends CajaTestCase {
         "ValidateCssStage",
         "RewriteCssStage",
         "HtmlToBundleStage",
-        "ConsolidateCodeStage",
         "ValidateJavascriptStage",
+        "ConsolidateCodeStage",
         "CheckForErrorsStage");
   }
 
   public final void testJsOnly() throws Exception {
     assertPipeline(
         PipelineMaker.JS,
-        PipelineMaker.CAJOLED_MODULE.with(PipelineMaker.SANITY_CHECK),
-        "ConsolidateCodeStage",
+        PipelineMaker.ONE_CAJOLED_MODULE.with(PipelineMaker.SANITY_CHECK),
         "ValidateJavascriptStage",
+        "ConsolidateCodeStage",
         "CheckForErrorsStage");
   }
 
@@ -118,8 +119,10 @@ public class PipelineMakerTest extends CajaTestCase {
 
   public final void testNoPath() {
     PipelineMaker pm = new PipelineMaker(
-        new TestBuildInfo(), CssSchema.getDefaultCss21Schema(mq),
-        HtmlSchema.getDefault(mq), PipelineMaker.HTML, PipelineMaker.CSS);
+        CssSchema.getDefaultCss21Schema(mq), HtmlSchema.getDefault(mq),
+        new ModuleManager(
+            TestBuildInfo.getInstance(), UriFetcher.NULL_NETWORK, false, mq),
+        PipelineMaker.HTML, PipelineMaker.CSS);
     long t0 = System.nanoTime();
     try {
       pm.populate(Lists.<Pipeline.Stage<Jobs>>newArrayList());
@@ -137,8 +140,10 @@ public class PipelineMakerTest extends CajaTestCase {
 
     List<Pipeline.Stage<Jobs>> stages = Lists.newArrayList();
     PipelineMaker pm = new PipelineMaker(
-        new TestBuildInfo(), CssSchema.getDefaultCss21Schema(mq),
-        HtmlSchema.getDefault(mq), preconds, goals);
+        CssSchema.getDefaultCss21Schema(mq), HtmlSchema.getDefault(mq),
+        new ModuleManager(
+            TestBuildInfo.getInstance(), UriFetcher.NULL_NETWORK, false, mq),
+        preconds, goals);
     {
       long t0 = System.nanoTime();
       pm.populate(stages);

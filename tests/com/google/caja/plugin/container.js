@@ -48,3 +48,4 @@ if (typeof _junit_ !== 'undefined') {
       })(___.getNewModuleHandler().handleUncaughtException);
 }
 imports.htmlEmitter___ = new HtmlEmitter(document.getElementById("test-test"));
+imports.window = {};

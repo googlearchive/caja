@@ -16,19 +16,24 @@ package com.google.caja.plugin.stages;
 
 import com.google.caja.lang.css.CssSchema;
 import com.google.caja.lang.html.HtmlSchema;
+import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.html.Nodes;
+import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.Expression;
 import com.google.caja.parser.js.ExpressionStmt;
 import com.google.caja.parser.js.Statement;
 import com.google.caja.parser.js.StringLiteral;
+import com.google.caja.parser.js.TranslatedCode;
 import com.google.caja.parser.quasiliteral.QuasiBuilder;
 import com.google.caja.plugin.Job;
 import com.google.caja.render.Concatenator;
 import com.google.caja.reporting.RenderContext;
 
 import org.w3c.dom.Node;
+
+import java.util.Collections;
 
 /**
  * Converts HTML to a block of JavaScript.
@@ -48,10 +53,15 @@ public final class HtmlToJsStage extends CompileHtmlStage {
   }
 
   private static Statement makeEmitStaticStmt(Node node) {
-    return new ExpressionStmt((Expression) QuasiBuilder.substV(
-        "IMPORTS___./*@synthetic*/htmlEmitter___"
-            + "./*@synthetic*/emitStatic(@html)",
-        "html", renderDomAsJsStringLiteral(node)));
+    return (Statement) QuasiBuilder.substV(
+        "'use strict'; 'use cajita'; @stmt;",
+        "stmt", new TranslatedCode(new Block(
+            FilePosition.UNKNOWN,
+            Collections.singletonList(new ExpressionStmt(
+                (Expression) QuasiBuilder.substV(
+                    "IMPORTS___./*@synthetic*/htmlEmitter___"
+                        + "./*@synthetic*/emitStatic(@html)",
+                    "html", renderDomAsJsStringLiteral(node)))))));
   }
 
   private static StringLiteral renderDomAsJsStringLiteral(Node node) {

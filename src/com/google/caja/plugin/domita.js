@@ -746,6 +746,7 @@ var attachDocumentStub = (function () {
   // See above for a description of this function.
   function attachDocumentStub(
       idSuffix, uriCallback, imports, pseudoBodyNode, optPseudoWindowLocation) {
+    var pluginId = ___.getId(imports);
     var document = pseudoBodyNode.ownerDocument;
     var bridal = bridalMaker(document);
     var window = bridal.getWindow(pseudoBodyNode);
@@ -951,7 +952,6 @@ var attachDocumentStub = (function () {
           if (!match) { return null; }
           var doesReturn = match[1];
           var fnName = match[2];
-          var pluginId = ___.getId(imports);
           value = (doesReturn ? 'return ' : '') + 'plugin_dispatchEvent___('
               + 'this, event, ' + pluginId + ', "'
               + fnName + '");';
@@ -3445,6 +3445,8 @@ var attachDocumentStub = (function () {
               'getElementsByTagName']);
 
 
+    // For JavaScript handlers.  See plugin_dispatchEvent___ below
+    imports.handlers___ = [];
     imports.tameNode___ = defaultTameNode;
     imports.TameHTMLDocument___ = TameHTMLDocument;  // Exposed for testing
     imports.tameEvent___ = tameEvent;
@@ -4140,9 +4142,25 @@ function plugin_dispatchToHandler___(pluginId, handler, args) {
         ', args=' + args);
   }
   switch (typeof handler) {
+    case 'number':
+      handler = imports.handlers___[handler];
+      break;
     case 'string':
-      handler = (___.canRead(imports, '$v') && imports.$v.getOuters()[handler])
-           || imports[handler];
+      var fn = void 0;
+      var tameWin = void 0;
+      var $v = ___.readPub(imports, '$v');
+      if ($v) {
+        fn = ___.callPub($v, 'ros', [handler]);
+        if (!fn) { tameWin = ___.callPub($v, 'ros', ['window']); }
+      }
+      if (!fn) {
+        fn = ___.readPub(imports, handler);
+        if (!fn) {
+          if (!tameWin) { tameWin = ___.readPub(imports, 'window'); }
+          if (tameWin) { fn = ___.readPub(tameWin, handler); }
+        }
+      }
+      handler = fn && typeof fn.call === 'function' ? fn : void 0;
       break;
     case 'function': case 'object': break;
     default:

@@ -21,6 +21,7 @@ import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.html.Dom;
 import com.google.caja.parser.js.CajoledModule;
+import com.google.caja.parser.quasiliteral.ModuleManager;
 import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
@@ -28,10 +29,10 @@ import com.google.caja.reporting.MessageType;
 import com.google.caja.reporting.BuildInfo;
 import com.google.caja.util.ContentType;
 import com.google.caja.util.Criterion;
+import com.google.caja.util.Lists;
 import com.google.caja.util.Pipeline;
 
 import java.net.URI;
-import java.util.ArrayList;
 import java.util.List;
 
 import org.w3c.dom.Node;
@@ -111,7 +112,7 @@ public final class PluginCompiler {
    * Valid after run has been called.
    */
   public List<? extends ParseTreeNode> getOutputs() {
-    List<ParseTreeNode> outputs = new ArrayList<ParseTreeNode>();
+    List<ParseTreeNode> outputs = Lists.newArrayList();
     ParseTreeNode js = getJavascript();
     if (js != null) { outputs.add(js); }
     return outputs;
@@ -133,7 +134,10 @@ public final class PluginCompiler {
       }
     };
 
-    new PipelineMaker(buildInfo, cssSchema, htmlSchema, preconditions, goals)
+    ModuleManager moduleMgr = new ModuleManager(
+        buildInfo, jobs.getPluginMeta().getUriFetcher(), true,
+        jobs.getMessageQueue());
+    new PipelineMaker(cssSchema, htmlSchema, moduleMgr, preconditions, goals)
         .populate(compilationPipeline.getStages());
   }
 

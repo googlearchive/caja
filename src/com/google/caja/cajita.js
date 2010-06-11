@@ -30,8 +30,7 @@
  * @overrides escape, JSON
  */
 
-// TODO(erights): All code text in comments should be enclosed in
-// {@code ...}.
+// TODO(erights): All code text in comments should be enclosed in {@code ...}.
 
 // TODO(ihab.awad): Missing tests in CajitaTest.java for the functionality
 // in this file.
@@ -2996,9 +2995,10 @@ var safeJSON;
     if (isFrozen(this) || !isJSONContainer(this)) {
       return myKeeper.handleSet(this, 'toString', toStringValue);
     }
-    toStringValue = asFirstClass(toStringValue);
-    this.TOSTRING___ = toStringValue;
-    this.toString = makeToStringMethod(toStringValue);
+    var firstClassToStringValue = asFirstClass(toStringValue);
+    this.TOSTRING___ = firstClassToStringValue;
+    this.toString = makeToStringMethod(firstClassToStringValue);
+    return toStringValue;
   });
 
   useDeleteHandler(Object.prototype, 'toString',
@@ -3257,10 +3257,14 @@ var safeJSON;
    * updates to a shared global scope.
    */
   function makeNormalNewModuleHandler() {
-    var imports = copy(sharedImports);
+    var imports = void 0;
     var lastOutcome = void 0;
+    function getImports() {
+      if (!imports) { imports = copy(sharedImports); }
+      return imports;
+    }
     return freeze({
-      getImports: markFuncFreeze(function getImports() { return imports; }),
+      getImports: markFuncFreeze(getImports),
       setImports: markFuncFreeze(function setImports(newImports) {
         imports = newImports;
       }),
@@ -3313,7 +3317,7 @@ var safeJSON;
         registerClosureInspector(newModule);
         var outcome = void 0;
         try {
-          var result = newModule.instantiate(___, imports);
+          var result = newModule.instantiate(___, getImports());
           if (result !== NO_RESULT) {
             outcome = [true, result];
           }
@@ -3487,7 +3491,7 @@ var safeJSON;
   }
 
   /**
-   * If you know that this <tt>imports</tt> no longers needs to be
+   * If you know that this <tt>imports</tt> no longer needs to be
    * accessed by <tt>getImports</tt>, then you should
    * <tt>unregister</tt> it so it can be garbage collected.
    * <p>

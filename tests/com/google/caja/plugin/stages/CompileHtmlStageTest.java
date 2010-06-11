@@ -26,7 +26,16 @@ public final class CompileHtmlStageTest extends PipelineStageTestCase {
   public final void testEmitHtmlAsJsStaticOnly() throws Exception {
     assertPipeline(
         job("<p>Hello world</p>", ContentType.HTML),
-        job("IMPORTS___.htmlEmitter___.emitStatic('<p>Hello world</p>')",
+        job(""
+            + "{\n"
+            + "  'use strict';\n"
+            + "  'use cajita'; /* Start translated code */\n"
+            + "  throw 'Translated code must never be executed';\n"
+            + "  {\n"
+            + "    IMPORTS___.htmlEmitter___.emitStatic('<p>Hello world</p>');"
+            + "\n"
+            + "  } /* End translated code */\n"
+            + "}",
             ContentType.JS));
   }
 
@@ -34,11 +43,19 @@ public final class CompileHtmlStageTest extends PipelineStageTestCase {
     assertPipeline(
         job("<p id=\"foo\">Hello world</p>", ContentType.HTML),
         job(""
-            + "IMPORTS___.htmlEmitter___.emitStatic('<p id=\\\"id_1___\\\">"
-                + "Hello world</p>')",
+            + "{\n"
+            + "  'use strict';\n"
+            + "  'use cajita'; /* Start translated code */\n"
+            + "  throw 'Translated code must never be executed';\n"
+            + "  {\n"
+            + "    IMPORTS___.htmlEmitter___.emitStatic('<p id=\\\"id_1___\\\">"
+                    + "Hello world</p>');\n"
+            + "  } /* End translated code */\n"
+            + "}",
             ContentType.JS),
         job(""
-            + "{ /* Start translated code */\n"
+            + "{\n"
+            + "  'use cajita'; /* Start translated code */\n"
             + "  throw 'Translated code must never be executed';\n"
             + "  {\n"
             + "    var el___;\n"

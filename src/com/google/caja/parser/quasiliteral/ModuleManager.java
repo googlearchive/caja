@@ -64,6 +64,7 @@ public class ModuleManager {
   public ModuleManager(
       BuildInfo buildInfo, UriFetcher uriFetcher, boolean isValija,
       MessageQueue mq) {
+    assert uriFetcher != null;
     this.buildInfo = buildInfo;
     this.uriFetcher = uriFetcher;
     this.isValija = isValija;
@@ -109,7 +110,7 @@ public class ModuleManager {
       int fragmentStart = uriStr.lastIndexOf('#');
       if (fragmentStart < 0) { fragmentStart = n; }
       int queryStart = uriStr.lastIndexOf('?', fragmentStart);
-      if (queryStart < 0) { queryStart = n; }
+      if (queryStart < 0) { queryStart = fragmentStart; }
       relUri = URI.create(
           uriStr.substring(0, queryStart) + ".js"
           + uriStr.substring(queryStart));
@@ -137,6 +138,7 @@ public class ModuleManager {
       cp = this.uriFetcher.fetch(er, ContentType.JS.mimeType)
           .getTextualContent();
     } catch (UriFetcher.UriFetchException ex) {
+      ex.toMessageQueue(mq);
       mq.addMessage(
           RewriterMessageType.MODULE_NOT_FOUND,
           src.getFilePosition(),

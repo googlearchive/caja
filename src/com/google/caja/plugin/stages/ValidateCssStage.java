@@ -65,6 +65,10 @@ public final class ValidateCssStage implements Pipeline.Stage<Jobs> {
 
     v.withInvalidNodeMessageLevel(MessageLevel.ERROR);
     rw.withInvalidNodeMessageLevel(MessageLevel.ERROR);
+    /* TODO: why are we not revalidating? */
+    for (Job job : jobs.getJobsByType(ContentType.CSS)) {
+      validate(v, rw, job.getRoot().cast(CssTree.class));
+    }
 
     return jobs.hasNoFatalErrors();
   }

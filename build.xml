@@ -557,11 +557,13 @@
     <transform>
      <input file="${tests}/com/google/caja/foo/f.js"/>
      <output file="${lib}/com/google/caja/foo/f.out.js" language="caja"/>
+     <depend file="${tests}/com/google/caja/c.js"/>
     </transform>
     <transform>
      <input file="${tests}/com/google/caja/foo/staticinc.js"/>
      <output file="${lib}/com/google/caja/foo/staticinc.out.js"
        language="caja"/>
+     <depend file="${tests}/com/google/caja/sum.js"/>
     </transform>
     <transform>
      <input file="${tests}/com/google/caja/sum.js"/>
@@ -757,8 +759,8 @@
 
   <target name="PlaygroundFE" depends="CajoledTests"
    description="Playground Front End">
-    <condition property="gwt.target.module" 
-        value="com.google.caja.demos.playground.Playground" 
+    <condition property="gwt.target.module"
+        value="com.google.caja.demos.playground.Playground"
         else="com.google.caja.demos.playground.Playground_dev">
       <istrue value="${gwt.productionMode}"/>
     </condition>
@@ -814,7 +816,7 @@
         <include name="Playground.css" />
         <include name="testbed.js" />
         <include name="taming.js" />
-      	<include name="favicon.ico" />
+        <include name="favicon.ico" />
         <include name="setup-valija.js" />
       </fileset>
       <fileset dir="${src}/com/google/caja/demos/flash">
@@ -930,8 +932,9 @@
   </target>
 
   <target name="HtmlParser" depends="ParserCore,dirs">
-    <mkdir dir="${lib}/third-party"/>
-    <javac destdir="${lib}/third-party" debug="true" target="1.5" source="1.5">
+    <mkdir dir="${third_party}/java/htmlparser/lib"/>
+    <javac destdir="${third_party}/java/htmlparser/lib" debug="true"
+     target="1.5" source="1.5">
       <src path="${third_party}/java/htmlparser/src"/>
       <classpath refid="classpath.compile"/>
       <include name="**/*.java"/>
@@ -942,8 +945,8 @@
       <exclude name="nu/validator/htmlparser/xom/**/*.java"/>
       <compilerarg line="-Xlint:none"/>
     </javac>
-    <jar destfile="${jars}/htmlparser.jar" basedir="${lib}/third-party" />
-    <delete dir="${lib}/third-party"/>
+    <jar destfile="${jars}/htmlparser.jar"
+     basedir="${third_party}/java/htmlparser/lib" />
     <javac destdir="${lib}" debug="true" target="1.5" source="1.5">
       <src path="${src}"/>
       <classpath refid="classpath.compile"/>

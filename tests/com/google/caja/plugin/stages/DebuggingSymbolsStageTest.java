@@ -17,9 +17,11 @@ package com.google.caja.plugin.stages;
 import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.CajoledModule;
+import com.google.caja.parser.quasiliteral.ModuleManager;
 import com.google.caja.plugin.Job;
 import com.google.caja.plugin.Jobs;
 import com.google.caja.plugin.PluginMeta;
+import com.google.caja.plugin.UriFetcher;
 import com.google.caja.reporting.Message;
 import com.google.caja.reporting.TestBuildInfo;
 import com.google.caja.util.CajaTestCase;
@@ -317,8 +319,11 @@ public class DebuggingSymbolsStageTest extends CajaTestCase {
         Job.jsJob(null, AncestorChain.instance(uncajoledModuleBody), null));
 
     Pipeline<Jobs> pipeline = new Pipeline<Jobs>();
-    pipeline.getStages().add(new ConsolidateCodeStage());
-    pipeline.getStages().add(new ValidateJavascriptStage(new TestBuildInfo()));
+    TestBuildInfo buildInfo = TestBuildInfo.getInstance();
+    ModuleManager mgr = new ModuleManager(
+        buildInfo, UriFetcher.NULL_NETWORK, false, mq);
+    pipeline.getStages().add(new ValidateJavascriptStage(mgr));
+    pipeline.getStages().add(new ConsolidateCodeStage(mgr));
     pipeline.getStages().add(new InferFilePositionsStage());
     pipeline.getStages().add(new DebuggingSymbolsStage());
     if (!pipeline.apply(jobs)) {

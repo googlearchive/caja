@@ -94,6 +94,27 @@ public final class CajoledModule extends AbstractParseTreeNode {
     return childrenAs(ObjectConstructor.class).get(0);
   }
 
+  /** The URI from which the module was loaded. */
+  public String getSrc() {
+    ValueProperty p = (ValueProperty) getModuleBody().propertyWithName("src");
+    if (p == null) { return null; }
+    return ((StringLiteral) p.getValueExpr()).getUnquotedValue();
+  }
+
+  /** The URIs of modules needed by this module. */
+  public ArrayConstructor getIncludedModules() {
+    ValueProperty p = (ValueProperty) getModuleBody().propertyWithName(
+        "includedModules");
+    return p != null ? (ArrayConstructor) p.getValueExpr() : null;
+  }
+
+  /** The URIs of modules inlined by this module. */
+  public ArrayConstructor getInlinedModules() {
+    ValueProperty p = (ValueProperty) getModuleBody().propertyWithName(
+        "inlinedModules");
+    return p != null ? (ArrayConstructor) p.getValueExpr() : null;
+  }
+
   public final TokenConsumer makeRenderer(
       Appendable out, Callback<IOException> exHandler) {
     return new JsPrettyPrinter(new Concatenator(out, exHandler));

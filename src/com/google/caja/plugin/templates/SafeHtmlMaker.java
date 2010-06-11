@@ -23,9 +23,12 @@ import com.google.caja.parser.html.Namespaces;
 import com.google.caja.parser.html.Nodes;
 import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.Declaration;
+import com.google.caja.parser.js.Directive;
+import com.google.caja.parser.js.DirectivePrologue;
 import com.google.caja.parser.js.Expression;
 import com.google.caja.parser.js.FunctionConstructor;
 import com.google.caja.parser.js.Identifier;
+import com.google.caja.parser.js.Noop;
 import com.google.caja.parser.js.Reference;
 import com.google.caja.parser.js.Statement;
 import com.google.caja.parser.js.StringLiteral;
@@ -148,9 +151,7 @@ final class SafeHtmlMaker {
 
     if (css.a != null) { emitStatement(css.a, true); }
 
-    for (Statement handler : unnamedHandlers) {
-      emitStatement(handler, true);
-    }
+    for (Statement handler : unnamedHandlers) { emitHandler(handler); }
 
     // Build the HTML and the javascript that adds dynamic attributes and that
     // executes inline scripts.
@@ -540,6 +541,11 @@ final class SafeHtmlMaker {
       Block block = new Block();
       js.add(block);
       if (translated) {
+        // May be downgraded based on emitHandler below.
+        block.appendChild(new DirectivePrologue(
+            FilePosition.UNKNOWN,
+            Lists.newArrayList(new Directive(
+                FilePosition.UNKNOWN, "use cajita"))));
         TranslatedCode code = new TranslatedCode(currentBlock = new Block());
         block.appendChild(code);
       } else {
@@ -552,7 +558,23 @@ final class SafeHtmlMaker {
   }
 
   private void emitHandler(String handlerName) {
-    emitStatement(handlers.get(handlerName), true);
+    emitHandler(handlers.get(handlerName));
+  }
+
+ private void emitHandler(Statement handler) {
+    emitStatement(handler, true);
+    if (hasNonStrictFn(handler)) {
+      Block block = js.get(js.size() - 1);
+      Statement s = block.children().get(0);
+      // Do not put a block in cajita mode when we're outputting a non-strict
+      // handler.
+      if (s instanceof DirectivePrologue) {  // Added in emitStatement.
+        // TODO(mikesamuel): can we get rid of this noop by getting rid of the
+        // silly $v.initOuter('onerror') in DefaultValijaRewriter?
+        // Can that move into valija-cajita.js.
+        block.replaceChild(new Noop(s.getFilePosition()), s);
+      }
+    }
   }
 
   private Node consolidateHtml(List<Node> nodes) {
@@ -584,4 +606,25 @@ final class SafeHtmlMaker {
   }
 
   private void finishBlock() { currentBlock = null; }
+
+  private static boolean hasNonStrictFn(ParseTreeNode n) {
+    if (n instanceof FunctionConstructor) {
+      Block body = ((FunctionConstructor) n).getBody();
+      if (!body.children().isEmpty()) {
+        Statement s0 = body.children().get(0);
+        if (s0 instanceof DirectivePrologue) {
+          DirectivePrologue dp = (DirectivePrologue) s0;
+          for (Directive d : dp.children()) {
+            if ("use cajita".equals(d.getDirectiveString())) { return false; }
+          }
+        }
+      }
+      return true;
+    } else {
+      for (ParseTreeNode child : n.children()) {
+        if (hasNonStrictFn(child)) { return true; }
+      }
+      return false;
+    }
+  }
 }

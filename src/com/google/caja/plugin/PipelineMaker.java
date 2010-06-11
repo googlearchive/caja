@@ -16,6 +16,7 @@ package com.google.caja.plugin;
 
 import com.google.caja.lang.css.CssSchema;
 import com.google.caja.lang.html.HtmlSchema;
+import com.google.caja.parser.quasiliteral.ModuleManager;
 import com.google.caja.plugin.stages.CheckForErrorsStage;
 import com.google.caja.plugin.stages.ConsolidateCodeStage;
 import com.google.caja.plugin.stages.DebuggingSymbolsStage;
@@ -31,7 +32,6 @@ import com.google.caja.plugin.stages.RewriteHtmlStage;
 import com.google.caja.plugin.stages.SanitizeHtmlStage;
 import com.google.caja.plugin.stages.ValidateCssStage;
 import com.google.caja.plugin.stages.ValidateJavascriptStage;
-import com.google.caja.reporting.BuildInfo;
 import com.google.caja.util.Join;
 import com.google.caja.util.Lists;
 import com.google.caja.util.Pair;
@@ -61,9 +61,9 @@ public final class PipelineMaker {
   private static final Planner PLANNER = new Planner();
 
   PipelineMaker(
-      BuildInfo buildInfo, CssSchema cssSchema, HtmlSchema htmlSchema,
+      CssSchema cssSchema, HtmlSchema htmlSchema, ModuleManager mgr,
       Planner.PlanState inputs, Planner.PlanState goals) {
-    this.in = new PlanInputs(cssSchema, htmlSchema, buildInfo);
+    this.in = new PlanInputs(cssSchema, htmlSchema, mgr);
     this.inputs = inputs;
     this.goals = goals;
   }
@@ -154,12 +154,12 @@ public final class PipelineMaker {
   public static final Planner.PlanState HTML_SAFE_STATIC = makeGoal(
       "html+safe+static",
       "to output HTML.  Not exlusive with cajoled_module.");
-  private static final Planner.PlanState UNCAJOLED_MODULE = makeInner(
-      "uncajoled_module");
-  public static final Planner.PlanState CAJOLED_MODULE = makeGoal(
-      "cajoled_module", "to output a bundle of JS.");
-  public static final Planner.PlanState CAJOLED_MODULE_DEBUG = makeGoal(
-      "cajoled_module+debug",
+  private static final Planner.PlanState CAJOLED_MODULE = makeInner(
+      "cajoled_module");
+  public static final Planner.PlanState ONE_CAJOLED_MODULE = makeGoal(
+      "cajoled_module+one", "to output a bundle of JS.");
+  public static final Planner.PlanState ONE_CAJOLED_MODULE_DEBUG = makeGoal(
+      "cajoled_module+one+debug",
       "instead of cajoled_module if you want debug symbols.");
   public static final Planner.PlanState SANITY_CHECK = makeGoal(
       "sanity_check", "reports errors due to ERRORs, not just FATAL_ERRORS.");
@@ -168,7 +168,7 @@ public final class PipelineMaker {
   public static final Planner.PlanState DEFAULT_PRECONDS = CSS
       .with(HTML).with(JS);
   /** The default goals of a {@code PluginCompiler} pipeline. */
-  public static final Planner.PlanState DEFAULT_GOALS = CAJOLED_MODULE
+  public static final Planner.PlanState DEFAULT_GOALS = ONE_CAJOLED_MODULE
       .with(HTML_SAFE_STATIC).with(SANITY_CHECK);
 
   private static List<Tool> makeTools(Planner.PlanState goals) {
@@ -232,22 +232,22 @@ public final class PipelineMaker {
 
         new Tool() {
           public void operate(PlanInputs in, List<Pipeline.Stage<Jobs>> out) {
-            out.add(new ConsolidateCodeStage());
+            out.add(new ValidateJavascriptStage(in.moduleManager));
           }
-        }.given(JS).produces(UNCAJOLED_MODULE),
+        }.given(JS).produces(CAJOLED_MODULE),
 
         new Tool() {
           public void operate(PlanInputs in, List<Pipeline.Stage<Jobs>> out) {
-            out.add(new ValidateJavascriptStage(in.buildInfo));
+            out.add(new ConsolidateCodeStage(in.moduleManager));
           }
-        }.given(UNCAJOLED_MODULE).produces(CAJOLED_MODULE),
+        }.given(CAJOLED_MODULE).produces(ONE_CAJOLED_MODULE),
 
         new Tool() {
           public void operate(PlanInputs in, List<Pipeline.Stage<Jobs>> out) {
             out.add(new InferFilePositionsStage());
             out.add(new DebuggingSymbolsStage());
           }
-        }.given(CAJOLED_MODULE).produces(CAJOLED_MODULE_DEBUG),
+        }.given(ONE_CAJOLED_MODULE).produces(ONE_CAJOLED_MODULE_DEBUG),
 
         new Tool() {
           public void operate(PlanInputs in, List<Pipeline.Stage<Jobs>> out) {
@@ -283,13 +283,12 @@ public final class PipelineMaker {
   private static class PlanInputs {
     final CssSchema cssSchema;
     final HtmlSchema htmlSchema;
-    final BuildInfo buildInfo;
+    final ModuleManager moduleManager;
 
-    PlanInputs(
-        CssSchema cssSchema, HtmlSchema htmlSchema, BuildInfo buildInfo) {
+    PlanInputs(CssSchema cssSchema, HtmlSchema htmlSchema, ModuleManager mgr) {
       this.cssSchema = cssSchema;
       this.htmlSchema = htmlSchema;
-      this.buildInfo = buildInfo;
+      this.moduleManager = mgr;
     }
   }
 }

@@ -156,8 +156,8 @@ public class BuildServiceImplementation implements BuildService {
       compiler.setMessageContext(mc);
       if (Boolean.TRUE.equals(options.get("debug"))) {
         compiler.setGoals(compiler.getGoals()
-            .without(PipelineMaker.CAJOLED_MODULE)
-            .with(PipelineMaker.CAJOLED_MODULE_DEBUG));
+            .without(PipelineMaker.ONE_CAJOLED_MODULE)
+            .with(PipelineMaker.ONE_CAJOLED_MODULE_DEBUG));
       }
       if (Boolean.TRUE.equals(options.get("onlyJsEmitted"))) {
         compiler.setGoals(

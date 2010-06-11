@@ -23,12 +23,14 @@ import com.google.caja.plugin.PluginMeta;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.TestBuildInfo;
 import com.google.caja.util.CajaTestCase;
+import com.google.caja.util.Maps;
 import com.google.caja.util.TestUtil;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.util.HashMap;
+
+import java.util.Map;
 import java.util.zip.GZIPOutputStream;
 
 /**
@@ -160,30 +162,22 @@ public class BenchmarkSize extends CajaTestCase {
     return cajole(plain, false);
   }
 
-  HashMap<Block,CajoledModule> cMemo = new HashMap<Block, CajoledModule>();
-  HashMap<Block, CajoledModule> vMemo = new HashMap<Block, CajoledModule>();
+  Map<Block,CajoledModule> cMemo = Maps.newHashMap();
+  Map<Block, CajoledModule> vMemo = Maps.newHashMap();
   public CajoledModule cajole(Block js, boolean valija) {
-    CajoledModule result;
-    if (valija) {
-      result = vMemo.get(js);
-    } else {
-      result = cMemo.get(js);
-    }
+    CajoledModule result = (valija ? vMemo : cMemo).get(js);
     if (result != null) {
       return result;
     }
     PluginMeta meta = new PluginMeta();
     MessageQueue mq = TestUtil.createTestMessageQueue(this.mc);
     if (!valija) { js = BenchmarkUtils.addUseCajitaDirective(js); }
-    PluginCompiler pc = new PluginCompiler(new TestBuildInfo(), meta, mq);
+    PluginCompiler pc = new PluginCompiler(
+        TestBuildInfo.getInstance(), meta, mq);
     pc.addInput(AncestorChain.instance(js), null);
     if (pc.run()) {
       result = pc.getJavascript();
-      if (valija) {
-        vMemo.put(js, result);
-      } else {
-        cMemo.put(js, result);
-      }
+      (valija ? vMemo : cMemo).put(js, result);
       return result;
     } else {
       return null;

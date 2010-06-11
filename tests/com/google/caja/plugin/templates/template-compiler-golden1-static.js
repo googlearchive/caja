@@ -1,4 +1,5 @@
 function module() {
+  ;
   {
     // Set up local variables required for HTML support.
     var el___;
@@ -27,6 +28,7 @@ function module() {
   }
 }
 function module() {
+  "use cajita";
   {
     var el___;
     var emitter___ = IMPORTS___.htmlEmitter___;
@@ -36,14 +38,15 @@ function module() {
 }
 function module() {
   // The second script.
-  try {
-    { b(); }
+ try {
+   { b(); }
   } catch (ex___) {
     ___.getNewModuleHandler().handleUncaughtException(
             ex___, onerror, 'testSafeHtmlWithStaticModuleId', '4');
   }
 }
 function module() {
+  ;
   {
     var el___;
     var emitter___ = IMPORTS___.htmlEmitter___;

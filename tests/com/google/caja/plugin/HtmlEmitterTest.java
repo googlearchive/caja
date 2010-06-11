@@ -74,7 +74,7 @@ public class HtmlEmitterTest extends CajaTestCase {
         Nodes.render(htmlAndJs.a));
     // If you change this JS, also update the tests in html-emitter-test.html.
     List<String> jsLines =  Arrays.asList(
-        "/* Start translated code */",
+        "'use cajita'; /* Start translated code */",
         "throw 'Translated code must never be executed';",
         "{",
         "  var el___;",
@@ -88,7 +88,8 @@ public class HtmlEmitterTest extends CajaTestCase {
         "} catch (ex___) {",
         "  ___.getNewModuleHandler().handleUncaughtException(ex___, onerror,",
         "    'testCompiler', '1');",
-        "} /* Start translated code */",
+        "}",
+        "'use cajita'; /* Start translated code */",
         "throw 'Translated code must never be executed';",
         "{",
         "  var el___;",
@@ -100,7 +101,8 @@ public class HtmlEmitterTest extends CajaTestCase {
         "} catch (ex___) {",
         "  ___.getNewModuleHandler().handleUncaughtException(ex___, onerror,",
         "    'testCompiler', '1');",
-        "} /* Start translated code */",
+        "}",
+        "'use cajita'; /* Start translated code */",
         "throw 'Translated code must never be executed';",
         "{",
         "  var el___;",
@@ -114,7 +116,8 @@ public class HtmlEmitterTest extends CajaTestCase {
         "} catch (ex___) {",
         "  ___.getNewModuleHandler().handleUncaughtException(ex___, onerror,",
         "    'testCompiler', '1');",
-        "} /* Start translated code */",
+        "}",
+        "'use cajita'; /* Start translated code */",
         "throw 'Translated code must never be executed';",
         "{",
         "  var el___;",

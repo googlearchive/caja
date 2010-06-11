@@ -14,19 +14,17 @@
 
 package com.google.caja.plugin.stages;
 
-import com.google.caja.lexer.FilePosition;
 import com.google.caja.parser.AncestorChain;
-import com.google.caja.parser.MutableParseTreeNode;
-import com.google.caja.parser.js.Block;
-import com.google.caja.parser.js.Statement;
-import com.google.caja.parser.js.UncajoledModule;
+import com.google.caja.parser.js.CajoledModule;
+import com.google.caja.parser.quasiliteral.CajitaModuleRewriter;
+import com.google.caja.parser.quasiliteral.ModuleManager;
 import com.google.caja.plugin.Job;
 import com.google.caja.plugin.Jobs;
 import com.google.caja.util.ContentType;
+import com.google.caja.util.Lists;
 import com.google.caja.util.Pipeline;
 
-import java.util.Collections;
-import java.util.ListIterator;
+import java.util.List;
 
 /**
  * Put all the top level javascript code into an initializer block
@@ -35,42 +33,24 @@ import java.util.ListIterator;
  * @author mikesamuel@gmail.com
  */
 public final class ConsolidateCodeStage implements Pipeline.Stage<Jobs> {
+  private final ModuleManager mgr;
+
+  public ConsolidateCodeStage(ModuleManager mgr) { this.mgr = mgr; }
+
   public boolean apply(Jobs jobs) {
-    // create an initializer function
-    Block initFunctionBody = new Block(
-        FilePosition.UNKNOWN, Collections.<Statement>emptyList());
-
-    MutableParseTreeNode.Mutation mut = initFunctionBody.createMutation();
-
-    ListIterator<Job> it = jobs.getJobs().listIterator();
-    while (it.hasNext()) {
-      Job job = it.next();
-      if (ContentType.JS != job.getType()) { continue; }
-
-      Statement stmt = (Statement) job.getRoot().node;
-      if (stmt instanceof Block) {
-        Block body = (Block) stmt;
-        MutableParseTreeNode.Mutation old = body.createMutation();
-        for (Statement s : body.children()) {
-          old.removeChild(s);
-          mut.appendChild(s);
-        }
-        old.execute();
-      } else {
-        mut.appendChild(stmt);
+    List<Job> jsJobs = jobs.getJobsByType(ContentType.JS);
+    List<CajoledModule> modules = Lists.newArrayList();
+    for (Job job : jsJobs) {
+      CajoledModule module = (CajoledModule) job.getRoot().node;
+      if (module.getSrc() == null) {
+        // Is top level.  Not a loaded module from ValidateJavaScriptStage.
+        modules.add(module);
       }
-
-      it.remove();
     }
-    mut.execute();
-
-    // Now initFunctionBody contains all the top level statements.
-
-    UncajoledModule envelope = new UncajoledModule(initFunctionBody);
-    // TODO: break this up using the module stuff.
-    jobs.getJobs().add(Job.moduleJob(
-        null, AncestorChain.instance(envelope), null));
-
+    jobs.getJobs().removeAll(jsJobs);
+    CajitaModuleRewriter rw = new CajitaModuleRewriter(mgr);
+    jobs.getJobs().add(Job.cajoledJob(
+        null, AncestorChain.instance(rw.rewrite(modules))));
     return jobs.hasNoFatalErrors();
   }
 }

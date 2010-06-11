@@ -14,41 +14,56 @@
 
 package com.google.caja.plugin;
 
-import com.google.caja.parser.AncestorChain;
-import com.google.caja.parser.MutableParseTreeNode;
 import com.google.caja.parser.ParseTreeNode;
+import com.google.caja.parser.js.Block;
+import com.google.caja.parser.js.DirectivePrologue;
+import com.google.caja.parser.js.TranslatedCode;
+import com.google.caja.parser.js.UncajoledModule;
 import com.google.caja.parser.quasiliteral.CajitaRewriter;
 import com.google.caja.parser.quasiliteral.DefaultValijaRewriter;
 import com.google.caja.parser.quasiliteral.IllegalReferenceCheckRewriter;
+import com.google.caja.parser.quasiliteral.ModuleManager;
 import com.google.caja.parser.quasiliteral.NonAsciiCheckVisitor;
 import com.google.caja.parser.quasiliteral.Rewriter;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.MessageLevel;
-import com.google.caja.reporting.BuildInfo;
+
+import java.net.URI;
 
 /**
  * @author ihab.awad@gmail.com (Ihab Awad)
  */
 public class ExpressionSanitizerCaja {
-  private final BuildInfo buildInfo;
-  private final MessageQueue mq;
+  private final ModuleManager mgr;
+  private final URI baseUri;
 
-  public ExpressionSanitizerCaja(BuildInfo buildInfo,
-                                 MessageQueue mq) {
-    this.buildInfo = buildInfo;
-    this.mq = mq;
+  public ExpressionSanitizerCaja(ModuleManager mgr, URI baseUri) {
+    this.mgr = mgr;
+    this.baseUri = baseUri;
   }
 
-  public ParseTreeNode sanitize(AncestorChain<?> toSanitize) {
-    MutableParseTreeNode input = (MutableParseTreeNode) toSanitize.node;
-    ParseTreeNode result;
-    result = newValijaRewriter(this.mq).expand(input);
-    if (!this.mq.hasMessageAtLevel(MessageLevel.ERROR)) {
-      result = newCajitaRewriter(this.mq).expand(result);
+  public ParseTreeNode sanitize(ParseTreeNode input) {
+    MessageQueue mq = mgr.getMessageQueue();
+    ParseTreeNode result = null;
+    if (input instanceof UncajoledModule) {
+      Block body = ((UncajoledModule) input).getModuleBody();
+      if (body.children().size() == 2
+          && body.children().get(0) instanceof DirectivePrologue
+          && ((DirectivePrologue) body.children().get(0))
+              .hasDirective("use strict")
+          && body.children().get(1) instanceof TranslatedCode) {
+        result = input;
+      }
     }
-    if (!this.mq.hasMessageAtLevel(MessageLevel.ERROR)) {
-      result = new IllegalReferenceCheckRewriter(this.mq, false).expand(result);
-      if (!this.mq.hasMessageAtLevel(MessageLevel.ERROR)) {
+    if (result == null) {
+      result = newValijaRewriter(mq).expand(input);
+    }
+    if (!mq.hasMessageAtLevel(MessageLevel.ERROR)) {
+      result = newCajitaRewriter(mgr).expand(result);
+    }
+    if (!mq.hasMessageAtLevel(MessageLevel.ERROR)) {
+      result = new IllegalReferenceCheckRewriter(mq, false).expand(result);
+      if (!mq.hasMessageAtLevel(MessageLevel.ERROR)) {
         result.acceptPreOrder(new NonAsciiCheckVisitor(mq), null);
       }
     }
@@ -56,8 +71,8 @@ public class ExpressionSanitizerCaja {
   }
 
   /** Visible for testing. */
-  protected Rewriter newCajitaRewriter(MessageQueue mq) {
-    return new CajitaRewriter(buildInfo, mq, false);
+  protected Rewriter newCajitaRewriter(ModuleManager mgr) {
+    return new CajitaRewriter(baseUri, mgr, false);
   }
 
   protected Rewriter newValijaRewriter(MessageQueue mq) {

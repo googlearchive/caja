@@ -256,6 +256,18 @@ public abstract class CajaTestCase extends TestCase {
     return sb.toString();
   }
 
+  /**
+   * Returns a source code string for the given program without surrounding
+   * curly braces.
+   */
+  public static String renderProgram(Block program) {
+    StringBuilder sb = new StringBuilder();
+    TokenConsumer tc = program.makeRenderer(sb, null);
+    program.renderBody(new RenderContext(tc));
+    tc.noMoreTokens();
+    return sb.toString();
+  }
+
   protected String formatShort(FilePosition p) {
     StringBuilder sb = new StringBuilder();
     try {

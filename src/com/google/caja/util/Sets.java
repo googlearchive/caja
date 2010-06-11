@@ -141,21 +141,23 @@ public final class Sets {
   }
 
   public static <E> Set<E> immutableSet(E... elements) {
-    return Collections.unmodifiableSet(newLinkedHashSet(elements));
+    switch (elements.length) {
+      case 0: return Collections.emptySet();
+      case 1: return Collections.singleton(elements[0]);
+      default: return Collections.unmodifiableSet(newLinkedHashSet(elements));
+    }
+  }
+
+  public static <E> Set<E> immutableSet(Collection<E> elements) {
+    switch (elements.size()) {
+      case 0: return Collections.emptySet();
+      case 1: return Collections.singleton(elements.iterator().next());
+      default: return Collections.unmodifiableSet(newLinkedHashSet(elements));
+    }
   }
 
   public static <E> Set<E> immutableSet(Iterable<E> elements) {
     return Collections.unmodifiableSet(newLinkedHashSet(elements));
-  }
-
-  public static <E extends Comparable<E>>
-  Set<E> immutableSortedSet(E... elements) {
-    return Collections.unmodifiableSet(newTreeSet(elements));
-  }
-
-  public static <E extends Comparable<E>>
-  Set<E> immutableSortedSet(Iterable<E> elements) {
-    return Collections.unmodifiableSet(newTreeSet(elements));
   }
 
   /** <tt>a U b</tt> */

@@ -107,6 +107,7 @@ public class TemplateCompilerTest extends CajaTestCase {
         js(fromString(
             ""
             + "function module() {"
+            + "  'use cajita';"
             + "  {"
             + "    var el___;"
             + "    var emitter___ = IMPORTS___.htmlEmitter___;"
@@ -125,6 +126,7 @@ public class TemplateCompilerTest extends CajaTestCase {
             + "  }"
             + "}"
             + "function module() {"
+            + "  'use cajita';"
             + "  {"
             + "    IMPORTS___.htmlEmitter___.signalLoaded();"
             + "  }"
@@ -154,6 +156,7 @@ public class TemplateCompilerTest extends CajaTestCase {
         js(fromString(
             ""
             + "function module() {"
+            + "  'use cajita';"
             + "  {"
             + "    var el___; var emitter___ = IMPORTS___.htmlEmitter___;"
             + "    el___ = emitter___.byId('id_1___');"
@@ -203,6 +206,7 @@ public class TemplateCompilerTest extends CajaTestCase {
         js(fromString(
             ""
             + "function module() {"
+            + "  ;"
             + "  {"
             + "    var el___; var emitter___ = IMPORTS___.htmlEmitter___;"
             + "    el___ = emitter___.byId('id_2___');"
@@ -232,16 +236,19 @@ public class TemplateCompilerTest extends CajaTestCase {
         js(fromString(
             ""
             + "function module() {"
+            + "  ;"
             + "  {"
-            + "    IMPORTS___.c_1___ = ___.markFuncFreeze("
-            + "        function() { alert(1 + 1); });"  // body is cajoled later
-            + "    var el___; var emitter___ = IMPORTS___.htmlEmitter___;"
+            + "    var el___;"
+            + "    var emitter___ = IMPORTS___.htmlEmitter___;"
             + "    el___ = emitter___.byId('id_2___');"
+            + "    var c_1___ = IMPORTS___.handlers___.push(___.markFuncFreeze("
+            // body is cajoled later
+            + "        function() { alert(1 + 1); })) - 1;"
             // The extracted handler.
             + "    emitter___.setAttr(el___, 'href', 'javascript:'"
             + "      + encodeURIComponent("
             + "          'try{void plugin_dispatchToHandler___('"
-            + "          + ___.getId(IMPORTS___) + ',' + '\\'c_1___\\''"
+            + "          + ___.getId(IMPORTS___) + ',' + c_1___"
             + "          + ',[{}])}catch(_){}'));"
             + "    el___.removeAttribute('id');"
             + "    el___ = emitter___.finish();"
@@ -259,18 +266,20 @@ public class TemplateCompilerTest extends CajaTestCase {
         js(fromString(
             ""
             + "function module() {"
+            + "  'use cajita';"
             + "  {"
-            // The extracted handler.
-            + "    IMPORTS___.c_1___ = ___.markFuncFreeze(function () {"
-            + "      'use cajita';"
-            + "      alert(1 + 1);"  // Cajoled later
-            + "    });"
             + "    var el___; var emitter___ = IMPORTS___.htmlEmitter___;"
             + "    el___ = emitter___.byId('id_2___');"
+            // The extracted handler.
+            + "    var c_1___ = IMPORTS___.handlers___.push(___.markFuncFreeze("
+            + "        function () {"
+            + "          'use cajita';"
+            + "          alert(1 + 1);"  // Cajoled later
+            + "        })) - 1;"
             + "    emitter___.setAttr(el___, 'href', 'javascript:'"
             + "      + encodeURIComponent("
             + "          'try{void plugin_dispatchToHandler___('"
-            + "          + ___.getId(IMPORTS___) + ',' + '\\'c_1___\\''"
+            + "          + ___.getId(IMPORTS___) + ',' + c_1___"
             + "          + ',[{}])}catch(_){}'));"
             + "    el___.removeAttribute('id');"
             + "    el___ = emitter___.finish();"
@@ -343,6 +352,7 @@ public class TemplateCompilerTest extends CajaTestCase {
             + "  }"
             + "}"
             + "function module() {"
+            + "  'use cajita';"
             + "  {"
             + "    IMPORTS___.htmlEmitter___.signalLoaded();"
             + "  }"
@@ -386,6 +396,7 @@ public class TemplateCompilerTest extends CajaTestCase {
         js(fromString(
             ""
             + "function module() {"
+            + "  'use cajita';"
             + "  {"
             + "    var el___; var emitter___ = IMPORTS___.htmlEmitter___;"
             + "    emitter___.discard(emitter___.attach('id_1___'));"
@@ -400,6 +411,7 @@ public class TemplateCompilerTest extends CajaTestCase {
             + "  }"
             + "}"
             + "function module() {"
+            + "  'use cajita';"
             + "  {"
             + "    var el___; var emitter___ = IMPORTS___.htmlEmitter___;"
             + "    el___ = emitter___.finish();"
@@ -463,6 +475,7 @@ public class TemplateCompilerTest extends CajaTestCase {
         js(fromString(
             ""
             + "function module() {"
+            + "  'use cajita';"
             + "  {"
             + "    var el___;"
             + "    var emitter___ = IMPORTS___.htmlEmitter___;"
@@ -486,6 +499,7 @@ public class TemplateCompilerTest extends CajaTestCase {
             + "  }"
             + "}"
             + "function module() {"
+            + "  'use cajita';"
             + "  {"
             + "    IMPORTS___.htmlEmitter___.signalLoaded();"
             + "  }"
@@ -553,6 +567,7 @@ public class TemplateCompilerTest extends CajaTestCase {
         js(fromString(
             ""
             + "function module() {"
+            + "  'use cajita';"
             + "  {"
             + "    var el___;"
             + "    var emitter___ = IMPORTS___.htmlEmitter___;"
@@ -647,6 +662,7 @@ public class TemplateCompilerTest extends CajaTestCase {
         js(fromString(
             ""
             + "function module() {"
+            + "  'use cajita';"
             + "  {"
             + "    var el___;"
             + "    var emitter___ = IMPORTS___.htmlEmitter___;"
@@ -757,10 +773,11 @@ public class TemplateCompilerTest extends CajaTestCase {
 
     assertEquals(safeContent.a.getOwnerDocument(), doc);
 
-    assertEquals(Nodes.render(htmlGolden, true),
-                 Nodes.render(safeContent.a, true));
-    assertEquals(render(jsGolden), render(consolidate(safeContent.b)));
-  }
+    assertEquals(
+        Nodes.render(htmlGolden, true), Nodes.render(safeContent.a, true));
+    assertEquals(
+        renderProgram(jsGolden), renderProgram(consolidate(safeContent.b)));
+ }
 
   private void extractScriptsAndStyles(
       Node n, URI baseUri, List<Pair<Node, URI>> htmlOut,
