@@ -1055,6 +1055,12 @@
        language="caja" onlyJsEmitted="true" debug="false"/>
       <input file="${demos}/container/gadget-library.html"/>
     </transform>
+    <transform>
+      <output 
+       file="${lib}/com/google/caja/demos/container/gadget-trivial.out.js"
+       language="caja" onlyJsEmitted="true" debug="false"/>
+      <input file="${demos}/container/gadget-trivial.html"/>
+    </transform>
     
     <copy todir="${www}/container">
       <fileset dir="${src}/com/google/caja">

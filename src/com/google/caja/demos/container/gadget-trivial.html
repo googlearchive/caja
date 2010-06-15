@@ -1,0 +1,12 @@
+<p id="x" style="width: 10em; height: 10em; border: .2em double gray; padding: 1em;">This is a gadget. Mouse over for a scripted action.</p>
+<script>
+  var x = document.getElementById("x");
+  x.onmouseover = function () {
+    x.style.backgroundColor = "#000";
+    x.style.color = "#FFF";
+  };
+  x.onmouseout = function () {
+    x.style.backgroundColor = "#FFF";
+    x.style.color = "#000";
+  };
+</script>
