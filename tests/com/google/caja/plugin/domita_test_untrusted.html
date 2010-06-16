@@ -22,8 +22,11 @@
   .passed { background: #c0ffc0; border: 2px solid #c0ffc0 }
   .invisible { display: none; float: left }
   .inline { display: inline }
+  body.foo #test-body-classes-yes,
+  body.bar #test-body-classes-no { font-style: italic }
 </style>
 
+<body class="foo">
 <p class="manual testcontainer" id="test-related-target-mouse-container">
   <span id="test-related-target-mouse">
     Move mouse here to see event.relatedTarget.
@@ -474,6 +477,11 @@ Test row cell
     <option selected value="2">Second</option>
   </select>
 </div>
+
+<p class="testcontainer" id="test-body-classes">
+  <span id="test-body-classes-yes">italic since body has class foo</span> /
+  <span id="test-body-classes-no">normal since body has no class bar</span><br>
+</p>
 
 <p class="waiting testcontainer" id="xhr-module-loader">XHR Module Loader</p>
 
@@ -3059,9 +3067,9 @@ jsunitRegister('testAnchorComputedStylesDontLeakHistory',
   assertEquals(
       '123px',
       window.getComputedStyle(p1, null).paddingLeft);
-   assertEquals(
-       '123px',
-       window.getComputedStyle(p1, null).getPropertyValue('padding-left'));
+  assertEquals(
+      '123px',
+      window.getComputedStyle(p1, null).getPropertyValue('padding-left'));
 
   pass('test-anchor-computed-styles-dont-leak-history');
 });
@@ -3338,6 +3346,16 @@ function testAsyncModuleLoader(load, includeScript, prefix) {
   }
 }
 
+jsunitRegister('testBodyClasses',
+               function testBodyClasses() {
+  function s(id) {
+    return window.getComputedStyle(document.getElementById(id), null);
+  }
+  assertEquals('italic', s('test-body-classes-yes').fontStyle);
+  assertEquals('normal', s('test-body-classes-no').fontStyle);
+  pass('test-body-classes');
+});
+
 jsunitRegister('testXhrModuleLoader',
                function testXhrModuleLoader() {
   testAsyncModuleLoader(xhrModuleLoad, xhrIncludeScript, "xhr");
@@ -3531,3 +3549,4 @@ jsunitRegister('testStaticCommonJsModule',
 // Before onload events fire
 jsunitRun();
 </script>
+</body>

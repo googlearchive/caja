@@ -136,7 +136,7 @@ public final class HtmlAttributeRewriter {
     }
   }
 
-  SanitizedAttr sanitizeStringValue(AttrValue attr) {
+  public SanitizedAttr sanitizeStringValue(AttrValue attr) {
     Expression dynamicValue = null;
     FilePosition pos = attr.valuePos;
     String value = attr.getPlainValue();

@@ -104,22 +104,11 @@ public final class CssRuleRewriter {
                 sel.children().get(0);
             boolean baseIsDescendant = true;
             if (selectorMatchesElement(baseSelector, "body")) {
-              if (sel.children().size() > 2
-                  && isDescendant(sel.children().get(1))) {
-                // If this selector is like body.ie or body.firefox, move over
-                // it so that it remains topmost.
-                baseSelector = (CssTree.SimpleSelector) sel.children().get(2);
-              } else {
-                // Otherwise, rewrite it to use the class name that is typically
-                // attached to virtual document bodies.
-                CssTree.IdentLiteral elName = (CssTree.IdentLiteral)
-                    baseSelector.children().get(0);
-                baseSelector.replaceChild(
-                    new CssTree.ClassLiteral(
-                        elName.getFilePosition(), ".vdoc-body___"),
-                    elName);
-                baseIsDescendant = false;
-              }
+              CssTree.IdentLiteral elName = (CssTree.IdentLiteral)
+                  baseSelector.children().get(0);
+              baseSelector.replaceChild(new CssTree.ClassLiteral(
+                  elName.getFilePosition(), ".vdoc-body___"), elName);
+              baseIsDescendant = false;
             }
 
             // Use the start position of the base selector as the position of
@@ -208,11 +197,5 @@ public final class CssRuleRewriter {
   private static boolean selectorMatchesElement(
       CssTree.SimpleSelector t, String elementName) {
     return Strings.equalsIgnoreCase(elementName, t.getElementName());
-  }
-
-  private static boolean isDescendant(CssTree t) {
-    return (t instanceof CssTree.Combination
-            && (CssTree.Combinator.DESCENDANT
-                == ((CssTree.Combination) t).getCombinator()));
   }
 }

@@ -14,6 +14,7 @@
 
 package com.google.caja.config;
 
+import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 
@@ -45,5 +46,20 @@ public interface WhiteList {
   /** An immutable description of an item. */
   public interface TypeDefinition  {
     Object get(String key, Object defaultValue);
+  }
+
+  public static final class Factory {
+    public static WhiteList empty() {
+      return new WhiteList() {
+        @Override
+        public Set<String> allowedItems() { return Collections.emptySet(); }
+        @Override
+        public Map<String, TypeDefinition> typeDefinitions() {
+          return Collections.emptyMap();
+        }
+      };
+    }
+
+    private Factory() {}
   }
 }

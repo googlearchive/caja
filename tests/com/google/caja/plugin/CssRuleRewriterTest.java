@@ -34,6 +34,9 @@ public class CssRuleRewriterTest extends CajaTestCase {
     assertCompiledCss(
         ".foo .bar {color:blue}",
         "[ '.', ' .foo .bar {\\n  color: blue\\n}' ]");
+    assertCompiledCss(
+        ".foo.bar {color:blue}",
+        "[ '.', ' .foo.bar {\\n  color: blue\\n}' ]");
   }
 
   public final void testIdRule() {
@@ -48,11 +51,14 @@ public class CssRuleRewriterTest extends CajaTestCase {
   public final void testBodyMarker() {
     assertCompiledCss(
         "body.ie6 p {color:blue}",
-        "[ 'body.ie6 .', ' p {\\n  color: blue\\n}' ]");
+        // For a id suffix X we get
+        // .vdoc-body___.ie6.X p which applies to all p that are
+        // descendants of virtual bodies with the ie6 class and the X class.
+        "[ '.vdoc-body___.ie6.', ' p {\\n  color: blue\\n}' ]");
     assertCompiledCss(
         "body.ie6#zoicks p {color:blue}",
-        "[ 'body.ie6#zoicks-', ' .', ' p {\\n  color: blue\\n}' ]");
-    assertCompiledCss(  // Body markers do not apply to the body directly.
+        "[ '.vdoc-body___.ie6#zoicks-', '.', ' p {\\n  color: blue\\n}' ]");
+    assertCompiledCss(
         "body.ie6 {color:blue}",
         "[ '.vdoc-body___.ie6.', ' {\\n  color: blue\\n}' ]");
     assertCompiledCss(

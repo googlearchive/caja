@@ -15,8 +15,10 @@
 package com.google.caja.plugin.stages;
 
 import com.google.caja.SomethingWidgyHappenedError;
+import com.google.caja.config.WhiteList;
 import com.google.caja.lang.css.CssSchema;
 import com.google.caja.lang.html.HtmlSchema;
+import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.ParseException;
 import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.MutableParseTreeNode;
@@ -28,19 +30,27 @@ import com.google.caja.parser.html.ElKey;
 import com.google.caja.parser.html.Namespaces;
 import com.google.caja.parser.html.Nodes;
 import com.google.caja.parser.js.Block;
+import com.google.caja.parser.js.Expression;
+import com.google.caja.parser.js.ExpressionStmt;
+import com.google.caja.parser.js.Statement;
+import com.google.caja.parser.js.StringLiteral;
+import com.google.caja.parser.quasiliteral.QuasiBuilder;
 import com.google.caja.plugin.ExtractedHtmlContent;
 import com.google.caja.plugin.Job;
 import com.google.caja.plugin.Jobs;
 import com.google.caja.plugin.PluginMessageType;
+import com.google.caja.plugin.templates.HtmlAttributeRewriter;
 import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.util.ContentType;
 import com.google.caja.util.Lists;
+import com.google.caja.util.Maps;
 import com.google.caja.util.Name;
 import com.google.caja.util.Pipeline;
 import com.google.caja.util.Sets;
 
+import java.net.URI;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -81,6 +91,7 @@ public class RewriteHtmlStage implements Pipeline.Stage<Jobs> {
     MessageContext mc = jobs.getMessageContext();
     for (Job job : jobs.getJobsByType(ContentType.HTML)) {
       Node root = ((Dom) job.getRoot().node).getValue();
+      extractBodyInfo(root, job.getCacheKeys(), job.getBaseUri(), jobs);
       HtmlEmbeddedContentFinder finder = new HtmlEmbeddedContentFinder(
           htmlSchema, job.getBaseUri(), mq, mc);
       for (EmbeddedContent content : finder.findEmbeddedContent(root)) {
@@ -112,12 +123,15 @@ public class RewriteHtmlStage implements Pipeline.Stage<Jobs> {
     return jobs.hasNoFatalErrors();
   }
 
+  private static final ElKey HTML = ElKey.forHtmlElement("html");
   private static final ElKey BODY = ElKey.forHtmlElement("body");
   private static final ElKey LINK = ElKey.forHtmlElement("link");
   private static final ElKey SCRIPT = ElKey.forHtmlElement("script");
   private static final ElKey STYLE = ElKey.forHtmlElement("style");
   private static final AttribKey BODY_ONLOAD
       = AttribKey.forHtmlAttrib(BODY, "onload");
+  private static final AttribKey BODY_CLASS
+      = AttribKey.forHtmlAttrib(BODY, "class");
 
   private void rewriteScriptEl(Node root, EmbeddedContent c, Jobs jobs) {
     Element scriptEl = (Element) c.getSource();
@@ -266,6 +280,60 @@ public class RewriteHtmlStage implements Pipeline.Stage<Jobs> {
     if (handler != null && !handler.children().isEmpty()) {
       Element placeholder = placeholderFor(onload, handler);
       body.appendChild(placeholder);
+    }
+  }
+
+  /**
+   * Find any class attributes on the {@code <body>} element and use the HTML
+   * emitter to attach the classes to the virtual document body.
+   */
+  private void extractBodyInfo(
+      Node node, JobCache.Keys keys, URI base, Jobs jobs) {
+    switch (node.getNodeType()) {
+      case Node.DOCUMENT_FRAGMENT_NODE:
+        for (Node child : Nodes.childrenOf(node)) {
+          extractBodyInfo(child, keys, base, jobs);
+        }
+        break;
+      case Node.ELEMENT_NODE:
+        Element el = (Element) node;
+        ElKey elKey = ElKey.forElement(el);
+        if (HTML.equals(elKey)) {
+          for (Node child : Nodes.childrenOf(node)) {
+            extractBodyInfo(child, keys, base, jobs);
+          }
+        } else if (BODY.equals(elKey)) {
+          Attr classAttr = el.getAttributeNodeNS(
+              Namespaces.HTML_NAMESPACE_URI, BODY_CLASS.localName);
+          if (classAttr != null) {
+            el.removeAttributeNode(classAttr);
+            String identifiers = classAttr.getValue().trim();
+            if (!"".equals(identifiers)) {
+              WhiteList wl = WhiteList.Factory.empty();
+              HtmlAttributeRewriter rw = new HtmlAttributeRewriter(
+                  jobs.getPluginMeta(), new CssSchema(wl, wl),
+                  htmlSchema, Maps.<Attr, EmbeddedContent>newHashMap(),
+                  jobs.getMessageQueue());
+              HtmlAttributeRewriter.SanitizedAttr sanitized
+                  = rw.sanitizeStringValue(HtmlAttributeRewriter.fromAttr(
+                      classAttr, htmlSchema.lookupAttribute(BODY_CLASS)));
+              if (sanitized.isSafe) {
+                FilePosition pos = Nodes.getFilePositionForValue(classAttr);
+                Expression e = sanitized.result;
+                if (e == null) { e = StringLiteral.valueOf(pos, identifiers); }
+                Statement s = new ExpressionStmt(
+                    (Expression) QuasiBuilder.substV(
+                         ""
+                        + "IMPORTS___.htmlEmitter___"
+                        + "    ./*@synthetic*/addBodyClasses(@idents);",
+                        "idents", e));
+                jobs.getJobs().add(Job.jsJob(
+                    keys, AncestorChain.instance(s), base));
+              }
+            }
+          }
+        }
+        break;
     }
   }
 }

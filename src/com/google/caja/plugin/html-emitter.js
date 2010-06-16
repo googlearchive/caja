@@ -273,6 +273,14 @@ function HtmlEmitter(base, opt_tameDocument) {
     idMap = detached = base = null;
     return this;
   }
+  /**
+   * Attach to the virtual document body classes that were extracted from the
+   * body element.
+   * @param {string} classes rewritten HTML classes.
+   */
+  function addBodyClasses(classes) {
+    base.className += ' ' + classes;
+  }
 
   function signalLoaded() {
     // Signals the close of the document and fires any window.onload event
@@ -289,6 +297,7 @@ function HtmlEmitter(base, opt_tameDocument) {
   this.finish = finish;
   this.signalLoaded = signalLoaded;
   this.setAttr = bridal.setAttribute;
+  this.addBodyClasses = addBodyClasses;
 
   (function (tameDoc) {
     if (!tameDoc || tameDoc.write) { return; }

@@ -194,6 +194,15 @@ public final class RewriteHtmlStageTest extends PipelineStageTestCase {
     assertNoErrors();
   }
 
+  public final void testBodyClasses() throws Exception {
+    assertPipeline(
+        job("<body class=foo><b>Hello, World!</b></body>", ContentType.HTML),
+        job("<html><head></head><body><b>Hello, World!</b></body></html>",
+            ContentType.HTML),
+        job("IMPORTS___.htmlEmitter___.addBodyClasses('foo')",
+            ContentType.JS));
+  }
+
   @Override
   protected boolean runPipeline(Jobs jobs) throws Exception {
     mq.getMessages().clear();

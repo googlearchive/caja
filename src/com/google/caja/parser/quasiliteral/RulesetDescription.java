@@ -29,7 +29,7 @@ import java.lang.annotation.Target;
 @Documented
 @Inherited
 @Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.TYPE)  
+@Target(ElementType.TYPE)
 public @interface RulesetDescription {
   /**
    * @return Name of this set of transformation rules
