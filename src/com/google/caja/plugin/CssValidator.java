@@ -713,6 +713,7 @@ final class MessageSList {
  * each of the terms with a type, and the sub-rule that matched it.
  */
 final class SignatureResolver {
+  private static final boolean DEBUG = false;
 
   /**
    * The best match so far.  Used to generate an informative error
@@ -1004,7 +1005,7 @@ final class SignatureResolver {
 
     CssSchema.SymbolInfo symbolInfo = cssSchema.getSymbol(ssig.symbolName);
     if (null != symbolInfo) {
-      if (false) {
+      if (DEBUG) {
         System.err.println(
             "symbol " + symbolInfo.name + " from " + propertyName + "\n"
             + dump(symbolInfo.sig));
@@ -1047,7 +1048,7 @@ final class SignatureResolver {
                 call.children().get(0).getValue())) {
           CssPropertySignature formals = call.children().get(1);
           CssTree.Expr actuals = fn.getArguments();
-          if (false) {
+          if (DEBUG) {
             System.err.println("formals=\n" + dump(formals) +
                                "\nactuals=\n" + dump(actuals));
           }
@@ -1173,7 +1174,7 @@ final class SignatureResolver {
     CssTree.Term term = (CssTree.Term) expr.children().get(candidate.exprIdx);
     CssTree.CssExprAtom atom = term.getExprAtom();
 
-    if (false) {
+    if (DEBUG) {
       System.err.println(
           "symbol " + sig.symbolName + " : matching " + propertyName + "\n"
           + dump(sig) + "\nagainst exprIdx=" + candidate.exprIdx + "\n"
@@ -1369,7 +1370,7 @@ final class SignatureResolver {
       }
       double value = Double.parseDouble(valueStr.substring(0, numEnd));
       if (CssTree.UnaryOperator.NEGATION == term.getOperator()) { value *= -1; }
-      if (false) {
+      if (DEBUG) {
         System.err.println("min=" + min + ", max=" + max + ", value=" + value
                            + ", valueStr=" + valueStr + ", op="
                            + term.getOperator());
@@ -1395,15 +1396,16 @@ final class SignatureResolver {
   private static int serialno = 0;
   /** debugging */
   private static void check(ParseTreeNode node) {
-    if (true) { return; }
-    if (!node.getAttributes().containsKey(NUM)) {
-      node.acceptPreOrder(new Visitor() {
-          public boolean visit(AncestorChain<?> ancestors) {
-            ParseTreeNode n = ancestors.node;
-            n.getAttributes().set(NUM, Integer.valueOf(serialno++));
-            return true;
-          }
-        }, null);
+    if (DEBUG) {
+      if (!node.getAttributes().containsKey(NUM)) {
+        node.acceptPreOrder(new Visitor() {
+            public boolean visit(AncestorChain<?> ancestors) {
+              ParseTreeNode n = ancestors.node;
+              n.getAttributes().set(NUM, Integer.valueOf(serialno++));
+              return true;
+            }
+          }, null);
+      }
     }
   }
 

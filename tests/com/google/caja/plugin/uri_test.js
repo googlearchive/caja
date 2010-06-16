@@ -105,6 +105,18 @@ jsunitRegister("testRelativePathResolution",
                    URI.parse('bar'))
                    .toString()
                );
+  assertEquals('http://example.com/bar/y.js',
+               URI.resolve(
+                   URI.parse('http://example.com/foo/x.html'),
+                   URI.parse('../bar/y.js')
+                   ).toString()
+               );
+  assertEquals('http://example.com/foo/bar/y.js',
+               URI.resolve(
+                   URI.parse('http://example.com/foo/baz/x.html'),
+                   URI.parse('../bar/y.js')
+                   ).toString()
+               );
   jsunit.pass();
 });
 
@@ -373,10 +385,15 @@ jsunitRegister("testPathConcatenation",
   assertResolvedEquals('/bar', '/', 'bar');
   assertResolvedEquals('/bar', '/foo', '/bar');
   assertResolvedEquals('/foo/foo', '/foo/bar', 'foo');
-  assertResolvedEquals('/boo/foo',
-                       '/foo/../boo/bar', 'foo');
-  assertResolvedEquals('/boo/foo',
-                       '/foo/../boo/bar', 'foo');
+  assertResolvedEquals('/boo/foo', '/foo/../boo/bar', 'foo');
+  assertResolvedEquals('/boo/foo', '/foo/../boo/bar', 'foo');
+  assertResolvedEquals('/foo/baz', '/foo/bar/boo', '../baz');
+  assertResolvedEquals('foo/baz', '../foo/bar/boo', '../baz');
+  assertResolvedEquals('foo/bar/baz', '../foo/bar/boo', 'baz');
+  assertResolvedEquals('foo/baz', '../../foo/bar/boo', '../baz');
+  assertResolvedEquals('baz', '..', 'baz');
+  assertResolvedEquals('/baz', '/..', 'baz');
+  assertResolvedEquals('foo/...', 'foo/', '...');
   jsunit.pass();
 });
 
@@ -519,8 +536,8 @@ jsunitRegister("testCollapseDots",
   assertEquals('/foo', URI.collapse_dots('/foo'));
   assertEquals('/foo/', URI.collapse_dots('/foo/'));
   assertEquals('foo/', URI.collapse_dots('foo/'));
-  assertEquals('foo/bar', URI.collapse_dots('../foo/bar'));
-  assertEquals('foo', URI.collapse_dots('../foo'));
+  assertEquals('../foo/bar', URI.collapse_dots('../foo/bar'));
+  assertEquals('../foo', URI.collapse_dots('../foo'));
   assertEquals('bar', URI.collapse_dots('foo/../bar'));
   assertEquals('/bar', URI.collapse_dots('/foo/../bar'));
   assertEquals('/bar/', URI.collapse_dots('/foo/../bar/'));

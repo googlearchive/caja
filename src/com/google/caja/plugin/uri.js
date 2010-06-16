@@ -104,21 +104,58 @@ function encodeOne(ch) {
       '0123456789ABCDEF'.charAt(n & 0xf);
 }
 
+/**
+ * {@updoc
+ *  $ normPath('foo/./bar')
+ *  # 'foo/bar'
+ *  $ normPath('./foo')
+ *  # 'foo'
+ *  $ normPath('foo/.')
+ *  # 'foo'
+ *  $ normPath('foo//bar')
+ *  # 'foo/bar'
+ * }
+ */
+function normPath(path) {
+  return path.replace(/(^|\/)\.(?:\/|$)/g, '$1').replace(/\/{2,}/g, '/');
+}
+
+var PARENT_DIRECTORY_HANDLER = new RegExp(
+    ''
+    // A path break
+    + '(/|^)'
+    // followed by a non .. path element
+    // (cannot be . because normPath is used prior to this RegExp)
+    + '(?:[^./][^/]*|\\.{2,}(?:[^./][^/]*)|\\.{3,}[^/]*)'
+    // followed by .. followed by a path break.
+    + '/\\.\\.(?:/|$)');
+
+var PARENT_DIRECTORY_HANDLER_RE = new RegExp(PARENT_DIRECTORY_HANDLER);
+
+var EXTRA_PARENT_PATHS_RE = /^(?:\.\.\/)*(?:\.\.$)?/;
+
+/**
+ * Normalizes its input path and collapses all . and .. sequences except for
+ * .. sequences that would take it above the root of the current parent
+ * directory.
+ * {@updoc
+ *  $ collapse_dots('foo/../bar')
+ *  # 'bar'
+ *  $ collapse_dots('foo/./bar')
+ *  # 'foo/bar'
+ *  $ collapse_dots('foo/../bar/./../../baz')
+ *  # 'baz'
+ *  $ collapse_dots('../foo')
+ *  # '../foo'
+ *  $ collapse_dots('../foo').replace(EXTRA_PARENT_PATHS_RE, '')
+ *  # 'foo'
+ * }
+ */
 function collapse_dots(path) {
   if (path === null) { return null; }
-  var p = path.replace(/(^|\/)\.(?:\/|$)/g, '$1').replace(/\/{2,}/g, '/');
+  var p = normPath(path);
   // Only /../ left to flatten
-  var r = new RegExp(
-      ''
-      // A path break
-      + ('(/|^)'
-         // followed by a non .. path element
-         // (cannot be . because of replace above)
-         + '(?:[^./][^/]*|\\.{2,}(?:[^./][^/]*)|\\.{3,}[^/]*)'
-         // followed by .. followed by a path break.
-         + '/\\.\\.(?:/|$)')
-      // A .. at the front collapses to nothing.
-      + '|^\\.\\.(?:/|$)');
+  var r = PARENT_DIRECTORY_HANDLER_RE;
   // We replace with $1 which matches a / before the .. because this
   // guarantees that:
   // (1) we have at most 1 / between the adjacent place,
@@ -168,18 +205,27 @@ function resolve(baseUri, relativeUri) {
   var simplifiedPath = collapse_dots(rawPath);
   if (overridden) {
     absoluteUri.setPort(relativeUri.getPort());
+    simplifiedPath = simplifiedPath
+        && simplifiedPath.replace(EXTRA_PARENT_PATHS_RE, '');
   } else {
-    overridden = !!simplifiedPath;
+    overridden = !!rawPath;
     if (overridden) {
       // resolve path properly
       if (simplifiedPath.charCodeAt(0) !== 0x2f /* / */) {  // path is relative
-        var absRawPath = collapse_dots(absoluteUri.getRawPath() || '');
+        var absRawPath = collapse_dots(absoluteUri.getRawPath() || '')
+            .replace(EXTRA_PARENT_PATHS_RE, '');
         var slash = absRawPath.lastIndexOf('/') + 1;
-        simplifiedPath = (slash ? absRawPath.substring(0, slash) : '')
-            + simplifiedPath;
+        simplifiedPath = collapse_dots(
+            (slash ? absRawPath.substring(0, slash) : '')
+            + collapse_dots(rawPath))
+            .replace(EXTRA_PARENT_PATHS_RE, '');
       }
-    } else if (simplifiedPath !== rawPath) {
-      absoluteUri.setRawPath(simplifiedPath);
+    } else {
+      simplifiedPath = simplifiedPath
+          && simplifiedPath.replace(EXTRA_PARENT_PATHS_RE, '');
+      if (simplifiedPath !== rawPath) {
+        absoluteUri.setRawPath(simplifiedPath);
+      }
     }
   }
 
