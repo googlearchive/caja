@@ -51,9 +51,7 @@ public interface WhiteList {
   public static final class Factory {
     public static WhiteList empty() {
       return new WhiteList() {
-        @Override
         public Set<String> allowedItems() { return Collections.emptySet(); }
-        @Override
         public Map<String, TypeDefinition> typeDefinitions() {
           return Collections.emptyMap();
         }

@@ -32,7 +32,6 @@ final class FileSystemUriPolicy implements UriPolicy {
     return new URI(uri.getScheme(), uri.getSchemeSpecificPart(), frag);
   }
 
-  @Override
   public String rewriteUri(
       ExternalReference u, UriEffect effect, LoaderType loader,
       Map<String, ?> hints) {
