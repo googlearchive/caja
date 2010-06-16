@@ -1099,7 +1099,7 @@ final class SignatureResolver {
                 break;
               }
             }
-            if (!matched) { return; }
+            if (!matched) { return; }  // TODO: propagate error message
           }
           passed.add(new Candidate(candidate.exprIdx + 1, match, warning));
         }

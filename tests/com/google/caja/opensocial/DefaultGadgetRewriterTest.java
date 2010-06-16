@@ -29,7 +29,6 @@ import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.reporting.TestBuildInfo;
 import com.google.caja.util.CajaTestCase;
-import com.google.caja.util.FailureIsAnOption;
 import com.google.caja.util.Lists;
 import com.google.caja.util.TestUtil;
 
@@ -38,6 +37,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.URI;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author ihab.awad@gmail.com (Ihab Awad)
@@ -65,11 +65,13 @@ public class DefaultGadgetRewriterTest extends CajaTestCase {
   };
 
   private static final UriPolicy POLICY = new UriPolicy() {
-    public String rewriteUri(ExternalReference extref, String mimeType) {
+    public String rewriteUri(
+        ExternalReference u, UriEffect effect, LoaderType loader,
+        Map<String, ?> hint) {
       return (
           "http://url-proxy.test.google.com/"
-          + "?url=" + UriUtil.encode(extref.getUri().toString())
-          + "&mime-type=" + UriUtil.encode(mimeType));
+          + "?url=" + UriUtil.encode(u.getUri().toString())
+          + "&effect=" + effect + "&loader=" + loader);
     }
   };
 
@@ -137,16 +139,6 @@ public class DefaultGadgetRewriterTest extends CajaTestCase {
         "<p style=\"color: expression(foo)\">Bar</p>",
         "css property color has bad value: ==>expression(foo)<==",
         MessageLevel.WARNING, false /* should not fail */);
-  }
-
-  @FailureIsAnOption
-  public final void testStylesInScript() throws Exception {
-    // CSS template expansion works on style templates in extracted event
-    // handlers and script tags.
-    // TODO(ihab.awad): Rewrite "golden" or turn into a functional test
-    assertRewriteMatches("example-dynamic-styles.xml",
-                         "example-dynamic-styles-rewritten.xml",
-                         MessageLevel.WARNING);
   }
 
   private void assertRewritePasses(String file, MessageLevel failLevel)

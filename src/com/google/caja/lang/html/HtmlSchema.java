@@ -21,6 +21,7 @@ import com.google.caja.lexer.ParseException;
 import com.google.caja.parser.html.AttribKey;
 import com.google.caja.parser.html.ElKey;
 import com.google.caja.parser.html.Namespaces;
+import com.google.caja.plugin.UriPolicy;
 import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.SimpleMessageQueue;
@@ -138,7 +139,14 @@ public final class HtmlSchema {
         // TODO(mikesamuel): divert IllegalArgumentExceptions to MessageQueue
         type = HTML.Attribute.Type.valueOf(typeName);
       }
-      String mimeTypes = (String) def.get("mimeTypes", null);
+      String loaderTypeStr = (String) def.get("loaderType", null);
+      // TODO(mikesamuel): divert IllegalArgumentExceptions to MessageQueue
+      UriPolicy.LoaderType loaderType = loaderTypeStr != null
+          ? UriPolicy.LoaderType.valueOf(loaderTypeStr) : null;
+      String uriEffectStr = (String) def.get("uriEffect", null);
+      // TODO(mikesamuel): divert IllegalArgumentExceptions to MessageQueue
+      UriPolicy.UriEffect uriEffect = uriEffectStr != null
+          ? UriPolicy.UriEffect.valueOf(uriEffectStr) : null;
       RegularCriterion elCriterion = criteria.get(elAndAttrib);
       RegularCriterion wcCriterion = criteria.get(elAndAttrib.onAnyElement());
       RegularCriterion criterion = conjunction(elCriterion, wcCriterion);
@@ -165,7 +173,7 @@ public final class HtmlSchema {
       }
       HTML.Attribute a = new HTML.Attribute(
           elAndAttrib, type, defaultValue, safeValue, valueless, optional,
-          mimeTypes, criterion);
+          loaderType, uriEffect, criterion);
       attributeDetails.put(elAndAttrib, a);
 
       attributeDetailsByElement.put(element, a);

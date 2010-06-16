@@ -18,6 +18,7 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.net.URI;
 import java.util.List;
+import java.util.Map;
 
 import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.ExternalReference;
@@ -90,11 +91,13 @@ public class GadgetHandler implements ContentHandler {
     UriFetcher fetcher = uriFetcher;
     if (fetcher == null) { fetcher = UriFetcher.NULL_NETWORK; }
     UriPolicy policy = new UriPolicy() {
-      public String rewriteUri(ExternalReference extref, String mimeType) {
+      public String rewriteUri(
+          ExternalReference u, UriEffect effect, LoaderType loader,
+          Map<String, ?> hint) {
         return (
             "http://localhost:8887/?url="
-            + UriUtil.encode(extref.getUri().toString())
-            + "&mime-type=" + UriUtil.encode(mimeType));
+            + UriUtil.encode(u.getUri().toString())
+            + "&effect=" + effect + "&loader=" + loader);
       }
     };
     rewriter.rewrite(inputUri, cajaInput, fetcher, policy, "canvas", output);

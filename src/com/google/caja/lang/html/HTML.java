@@ -16,6 +16,7 @@ package com.google.caja.lang.html;
 
 import com.google.caja.parser.html.AttribKey;
 import com.google.caja.parser.html.ElKey;
+import com.google.caja.plugin.UriPolicy;
 import com.google.caja.util.Lists;
 
 import java.util.Collections;
@@ -190,29 +191,35 @@ public final class HTML {
     /** Is the attribute required on all elements on which it is allowed? */
     private final boolean optional_;
 
-    /** Mime-Type for URI attributes. */
-    private final String mimeTypes_;
+    /** For URI attributes. */
+    private final UriPolicy.LoaderType loaderType_;
+
+    /** For URI attributes. */
+    private final UriPolicy.UriEffect effect_;
 
     private final RegularCriterion valueCriterion_;
 
     /** Construct an Attribute */
     public Attribute(
         AttribKey key, Type type, String defaultValue, String safeValue,
-        boolean valueless, boolean optional, String mimeTypes,
-        RegularCriterion valueCriterion) {
+        boolean valueless, boolean optional, UriPolicy.LoaderType loaderType,
+        UriPolicy.UriEffect effect, RegularCriterion valueCriterion) {
       assert key != null;
       assert type != null;
       // HACK: null should not be allowed
       assert safeValue == null || valueCriterion.accept(safeValue)
           : ("[" + safeValue + "] for " + key + " with criterion /"
              + valueCriterion.toRegularExpression() + "/");
+      assert (type == Type.URI) == (effect != null) : key;
+      assert (type == Type.URI) == (loaderType != null) : key;
       this.key_ = key;
       this.type_ = type;
       this.defaultValue_ = defaultValue;
       this.safeValue_ = safeValue;
       this.valueless_ = valueless;
       this.optional_ = optional;
-      this.mimeTypes_ = mimeTypes;
+      this.loaderType_ = loaderType;
+      this.effect_ = effect;
       this.valueCriterion_ = valueCriterion;
     }
 
@@ -235,10 +242,6 @@ public final class HTML {
       return safeValue_;
     }
 
-    /** The mime-types or null. */
-    public String getMimeTypes() {
-      return mimeTypes_;
-    }
 
     /** Accepts values that are allowed for this attribute. */
     public RegularCriterion getValueCriterion() {
@@ -258,6 +261,10 @@ public final class HTML {
     public boolean isOptional() {
       return optional_;
     }
+
+    public UriPolicy.UriEffect getUriEffect() { return effect_; }
+
+    public UriPolicy.LoaderType getLoaderType() { return loaderType_; }
 
     /**
      * @return attribute name (name only, not proper HTML).

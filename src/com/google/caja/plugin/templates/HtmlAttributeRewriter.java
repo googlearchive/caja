@@ -44,6 +44,7 @@ import com.google.caja.parser.quasiliteral.ReservedNames;
 import com.google.caja.plugin.CssRewriter;
 import com.google.caja.plugin.CssValidator;
 import com.google.caja.plugin.PluginMeta;
+import com.google.caja.plugin.UriPolicyHintKey;
 import com.google.caja.plugin.stages.EmbeddedContent;
 import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessagePart;
@@ -275,7 +276,11 @@ public final class HtmlAttributeRewriter {
             URI uri = new URI(value);
             ExternalReference ref = new ExternalReference(uri, pos);
             String rewrittenUri = meta.getUriPolicy().rewriteUri(
-                ref, attr.attrInfo.getMimeTypes());
+                ref, attr.attrInfo.getUriEffect(),
+                attr.attrInfo.getLoaderType(),
+                Collections.singletonMap(
+                    UriPolicyHintKey.XML_ATTR.key,
+                    attr.attrInfo.getKey().toString()));
             if (rewrittenUri == null) {
               mq.addMessage(
                   IhtmlMessageType.MALFORMED_URI, pos,

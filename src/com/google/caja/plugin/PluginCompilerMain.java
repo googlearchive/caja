@@ -124,10 +124,10 @@ public final class PluginCompilerMain {
         policy = new FileSystemUriPolicy(u2f);
       } catch (IllegalArgumentException ex) {  // Not a file: URI
         fetcher = UriFetcher.NULL_NETWORK;
-        policy = UriPolicy.CLOSED_PLUGIN_ENVIRONMENT;
+        policy = UriPolicy.DENY_ALL;
       } catch (IOException e) {  // Could not resolve file name
         fetcher = UriFetcher.NULL_NETWORK;
-        policy = UriPolicy.CLOSED_PLUGIN_ENVIRONMENT;
+        policy = UriPolicy.DENY_ALL;
       }
 
       PluginMeta meta = new PluginMeta(fetcher, policy);

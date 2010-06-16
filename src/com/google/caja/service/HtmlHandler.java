@@ -18,6 +18,7 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.net.URI;
 import java.util.List;
+import java.util.Map;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -69,11 +70,13 @@ public class HtmlHandler implements ContentHandler {
     this.buildInfo = buildInfo;
     this.uriFetcher = uriFetcher != null ? uriFetcher : UriFetcher.NULL_NETWORK;
     this.uriPolicy = new UriPolicy() {
-      public String rewriteUri(ExternalReference uri, String mimeType) {
+      public String rewriteUri(
+          ExternalReference u, UriEffect effect, LoaderType loader,
+          Map<String, ?> hints) {
         if (hostedService != null) {
           return hostedService
-              + "?url=" + UriUtil.encode(uri.getUri().toString())
-              + "&input-mime-type=" + UriUtil.encode(mimeType);
+              + "?url=" + UriUtil.encode(u.getUri().toString())
+              + "&effect=" + effect + "&loader=" + loader;
         } else {
           return null;
         }

@@ -38,6 +38,7 @@ import com.google.caja.plugin.ExtractedHtmlContent;
 import com.google.caja.plugin.PluginMeta;
 import com.google.caja.plugin.UriFetcher;
 import com.google.caja.plugin.UriPolicy;
+import com.google.caja.plugin.UriPolicyHintKey;
 import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.util.CajaTestCase;
@@ -48,6 +49,7 @@ import java.net.URI;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.DocumentFragment;
@@ -431,8 +433,11 @@ public class TemplateCompilerTest extends CajaTestCase {
     meta = new PluginMeta(
         UriFetcher.NULL_NETWORK,
         new UriPolicy() {
-          public String rewriteUri(ExternalReference ref, String mimeType) {
-            savedRef.value = ref;
+          public String rewriteUri(
+              ExternalReference u, UriEffect effect, LoaderType loader,
+              Map<String, ?> hints) {
+            assertEquals("a::href", UriPolicyHintKey.XML_ATTR.valueFrom(hints));
+            savedRef.value = u;
             return "rewritten";
           }
         });

@@ -20,6 +20,8 @@ import java.io.File;
 import java.net.URI;
 import java.net.URISyntaxException;
 
+import java.util.Map;
+
 final class FileSystemUriPolicy implements UriPolicy {
   private final UriToFile uriToFile;
 
@@ -30,24 +32,26 @@ final class FileSystemUriPolicy implements UriPolicy {
     return new URI(uri.getScheme(), uri.getSchemeSpecificPart(), frag);
   }
 
-  public String rewriteUri(ExternalReference ref, String mimeType) {
+  @Override
+  public String rewriteUri(
+      ExternalReference u, UriEffect effect, LoaderType loader,
+      Map<String, ?> hints) {
+    URI uri = u.getUri();
     try {
-      URI fragless = refragUri(ref.getUri(), null);
+      URI fragless = refragUri(uri, null);
 
       // allow uri references within the base directory
       File f = uriToFile.apply(fragless);
       if (f != null) {
         URI base = new File(uriToFile.directory, ".").toURI();
         URI rel = base.relativize(fragless);
-        return refragUri(rel, ref.getUri().getFragment()).toString();
+        return refragUri(rel, uri.getFragment()).toString();
       }
 
       // allow bare fragments
-      URI self = ref.getReferencePosition().source().getUri();
-      String uristr = self.relativize(ref.getUri()).toString();
-      if (uristr.startsWith("#")) {
-        return uristr;
-      }
+      URI self = u.getReferencePosition().source().getUri();
+      String uristr = self.relativize(uri).toString();
+      if (uristr.startsWith("#")) { return uristr; }
     } catch (URISyntaxException e) { }
 
     // denied

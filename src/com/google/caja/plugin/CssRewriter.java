@@ -43,6 +43,7 @@ import com.google.caja.util.Sets;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -317,7 +318,7 @@ public final class CssRewriter {
       CssTree.Term t = e.getNthTerm(i);
       if (!isLooseWord(t)) { continue; }
 
-      Name propertyPart = t.getAttributes().get(CssValidator.CSS_PROPERTY_PART);
+      Name propertyPart = propertyPart(t);
       StringBuilder sb = new StringBuilder();
       sb.append(t.getExprAtom().getValue());
 
@@ -333,8 +334,7 @@ public final class CssRewriter {
         CssTree.Operation op = e.getNthOperation(end - 1);
         CssTree.Term t2 = e.getNthTerm(end);
         if (!(CssTree.Operator.NONE == op.getOperator() && isLooseWord(t2)
-              && propertyPart.equals(
-                     t2.getAttributes().get(CssValidator.CSS_PROPERTY_PART)))) {
+              && propertyPart.equals(propertyPart(t2)))) {
           break;
         }
         mut.removeChild(op);
@@ -373,8 +373,7 @@ public final class CssRewriter {
   private static boolean isLooseWord(CssTree.Term t) {
     return t.getOperator() == null
         && t.getExprAtom() instanceof CssTree.IdentLiteral
-        && (t.getAttributes().get(CssValidator.CSS_PROPERTY_PART_TYPE)
-            == CssPropertyPartType.LOOSE_WORD);
+        && propertyPartType(t) == CssPropertyPartType.LOOSE_WORD;
   }
 
   /**
@@ -399,8 +398,7 @@ public final class CssRewriter {
             return true;
           }
           CssTree.Term term = (CssTree.Term) ancestors.node;
-          CssPropertyPartType partType = term.getAttributes().get(
-              CssValidator.CSS_PROPERTY_PART_TYPE);
+          CssPropertyPartType partType = propertyPartType(term);
           if (CssPropertyPartType.LENGTH == partType
               && term.getExprAtom() instanceof CssTree.QuantityLiteral) {
             CssTree.QuantityLiteral quantity = (CssTree.QuantityLiteral)
@@ -419,8 +417,8 @@ public final class CssRewriter {
             return false;
           } else if (stdColorMatcher != null
                      && CssPropertyPartType.IDENT == partType
-                     && term.getAttributes().get(CssValidator.CSS_PROPERTY_PART)
-                         .getCanonicalForm().endsWith("::color")) {
+                     && (propertyPart(term).getCanonicalForm()
+                         .endsWith("::color"))) {
             Name colorName = Name.css(
                 ((CssTree.IdentLiteral) term.getExprAtom()).getValue());
             if (!stdColorMatcher.matcher(colorName.getCanonicalForm() + " ")
@@ -624,9 +622,7 @@ public final class CssRewriter {
                   CssValidator.INVALID, Boolean.TRUE);
             }
           } else if (node instanceof CssTree.Term
-                     && (CssPropertyPartType.URI ==
-                         node.getAttributes().get(
-                             CssValidator.CSS_PROPERTY_PART_TYPE))) {
+                     && (CssPropertyPartType.URI == propertyPartType(node))) {
 
             boolean remove = false;
             Message removeMsg = null;
@@ -645,7 +641,13 @@ public final class CssRewriter {
               URI uri = baseUri.resolve(new URI(uriStr));
               ExternalReference ref = new ExternalReference(
                   uri, content.getFilePosition());
-              if (uriPolicy.rewriteUri(ref, "image/*") == null) {
+              Name propertyPart = propertyPart(node);  // TODO
+              if (uriPolicy.rewriteUri(
+                      ref, UriPolicy.UriEffect.SAME_DOCUMENT,
+                      UriPolicy.LoaderType.SANDBOXED,
+                      Collections.singletonMap(
+                          UriPolicyHintKey.CSS_PROP.key, propertyPart))
+                      == null) {
                 removeMsg = new Message(
                     PluginMessageType.DISALLOWED_URI,
                     node.getFilePosition(),
@@ -731,6 +733,7 @@ public final class CssRewriter {
                 return true;  // Handled by later pass.
               }
 
+              Name propertyPart = propertyPart(node);
               String uriStr = content.getValue();
               try {
                 URI baseUri = content.getFilePosition().source().getUri();
@@ -740,7 +743,11 @@ public final class CssRewriter {
                 // mime-type of text/*.
                 ExternalReference ref = new ExternalReference(
                     uri, content.getFilePosition());
-                String rewrittenUri = uriPolicy.rewriteUri(ref, "image/*");
+                String rewrittenUri = uriPolicy.rewriteUri(
+                    ref, UriPolicy.UriEffect.SAME_DOCUMENT,
+                    UriPolicy.LoaderType.SANDBOXED,
+                    Collections.singletonMap(
+                        UriPolicyHintKey.CSS_PROP.key, propertyPart));
                 CssTree.UriLiteral replacement = new CssTree.UriLiteral(
                         content.getFilePosition(), URI.create(rewrittenUri));
                 replacement.getAttributes().putAll(content.getAttributes());
@@ -856,6 +863,10 @@ public final class CssRewriter {
    */
   private static boolean isSafeSelectorPart(String s) {
     return SAFE_SELECTOR_PART.matcher(s).matches();
+  }
+
+  private static Name propertyPart(ParseTreeNode node) {
+    return node.getAttributes().get(CssValidator.CSS_PROPERTY_PART);
   }
 
   private static CssPropertyPartType propertyPartType(ParseTreeNode node) {

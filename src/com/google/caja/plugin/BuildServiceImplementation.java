@@ -131,17 +131,18 @@ public class BuildServiceImplementation implements BuildService {
       };
 
     UriPolicy policy = new UriPolicy() {
-
-        public String rewriteUri(ExternalReference uri, String mimeType) {
-          // TODO(ihab.awad): Need to pass in the URI rewriter from the build
-          // file somehow (as a Cajita program?). The below is a stub.
-          return URI.create(
-              "http://example.com/"
-              + "?mime-type=" + UriUtil.encode(mimeType)
-              + "&uri=" + UriUtil.encode("" + uri.getUri()))
-              .toString();
-        }
-      };
+      public String rewriteUri(
+          ExternalReference u, UriEffect effect, LoaderType loader,
+          Map<String, ?> hints) {
+        // TODO(ihab.awad): Need to pass in the URI rewriter from the build
+        // file somehow (as a Cajita program?). The below is a stub.
+        return URI.create(
+            "http://example.com/"
+            + "?effect=" + effect + "&loader=" + loader
+            + "&uri=" + UriUtil.encode("" + u.getUri()))
+            .toString();
+      }
+    };
 
     MessageContext mc = new MessageContext();
 

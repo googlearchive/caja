@@ -30,7 +30,7 @@ public final class PluginMeta {
   private String idClass;
 
   public PluginMeta() {
-    this(UriFetcher.NULL_NETWORK, UriPolicy.CLOSED_PLUGIN_ENVIRONMENT);
+    this(UriFetcher.NULL_NETWORK, UriPolicy.DENY_ALL);
   }
 
   public PluginMeta(UriFetcher uriFetcher, UriPolicy uriPolicy) {

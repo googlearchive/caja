@@ -119,8 +119,6 @@
       "OPTGROUP::LABEL",
       "*::LANG",
       "BODY::LINK",
-      "IMG::LONGDESC",
-      "IFRAME::LONGDESC",
       "IFRAME::MARGINHEIGHT",
       "IFRAME::MARGINWIDTH",
       "INPUT::MAXLENGTH",
@@ -258,7 +256,11 @@
             "The charset attribute is not supported in any of the major browsers."
           ] },
       "LINK::CHARSET",
-      "SCRIPT::CHARSET"
+      "SCRIPT::CHARSET",
+      { "key": "IMG::LONGDESC",
+        "reason": "Not supported by any major browser" },
+      { "key": "IFRAME::LONGDESC",
+        "reason": "Not supported by any major browser" }
     ],
   "types": [
       { "key": "IFRAME::ID",

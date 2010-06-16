@@ -485,7 +485,8 @@ Test row cell
 
 <p class="waiting testcontainer" id="xhr-module-loader">XHR Module Loader</p>
 
-<p class="waiting testcontainer" id="script-module-loader">Script Module Loader</p>
+<p class="waiting testcontainer" id="script-module-loader"
+ >Script Module Loader</p>
 
 <p class="waiting testcontainer" id="xhr-module-loader-2">
 XHR Module Loader 2</p>
@@ -1924,7 +1925,7 @@ jsunitRegister('testBrowserApply',
   //expectFailure(function() { inc.apply({}, true); }, 'apply true');
   //expectFailure(function() { inc.apply({}, ''); }, 'apply ""');
   //expectFailure(function() { inc.apply({}, 'x'); }, 'apply "x"');
-  //expectFailure(function() { inc.apply({}, {length:0}); }, 'fake array"');
+  //expectFailure(function() { inc.apply({}, {length:0}); }, 'fake array');
 
   var add = function(x) { if (arguments.length === 1) count += x; };
 
@@ -3237,16 +3238,17 @@ jsunitRegister('testUsemap',
       (''
        + '<map name="foo-xyz___">'
        + '<area href="http://example.com/'
-       + '?mime-type=%2a%2f%2a&amp;uri=(base)/areatarget.html"'
-       + ' target="_blank">'
+       + '?effect=NEW_DOCUMENT&amp;loader=UNSANDBOXED'
+       + '&amp;uri=(base)/areatarget.html" target="_blank">'
        + '</map>'
        + '<img'
-       + ' src="http://example.com/?mime-type=image%2f%2a'
+       + ' src="http://example.com/'
+       + '?effect=SAME_DOCUMENT&amp;loader=SANDBOXED'
        + '&amp;uri=(base)/mappic.gif" usemap="#foo-xyz___"'
        + '>'),
       canonInnerHtml(directAccess.getInnerHTML(el)).replace(
           // Normalize the base URI
-          new RegExp('\\buri=[^\"<>]*?(%2[Ff]|/)plugin(%2[Ff]|/)', 'g'),
+          new RegExp('\\buri=[^\x22<>]*?(%2[Ff]|/)plugin(%2[Ff]|/)', 'g'),
           'uri=(base)/'));
 
   pass('test-usemap');

@@ -64,14 +64,15 @@ public class GWTCajolingServiceImpl extends RemoteServiceServlet
     // TODO(jasvir): URIs in some contexts (such as links to new pages) should
     // point back to the gwt cajoling service, while others that load media into
     // an existing page should go through a configurable cajoling service
-    public String rewriteUri(ExternalReference extref, String mimeType) {
-      if (mimeType.startsWith("image/")) {
-        return extref.getUri().toString();
-      }
+    @Override
+    public String rewriteUri(
+        ExternalReference u, UriEffect effect, LoaderType loader,
+        Map<String, ?> hints) {
+      if (LoaderType.SANDBOXED == loader) { return u.getUri().toString(); }
       return (
           "http://caja.appspot.com/cajole"
-          + "?url=" + UriUtil.encode(extref.getUri().toString())
-          + "&mime-type=" + UriUtil.encode(mimeType));
+          + "?url=" + UriUtil.encode(u.getUri().toString())
+          + "&loader=" + loader + "&effect=" + effect);
     }
   };
 

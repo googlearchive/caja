@@ -7,7 +7,8 @@
 
   "types": [
       { "key": "A::HREF",
-        "mimeTypes": "*/*", "type": "URI", "optional": true,
+        "mimeTypes": "*/*", "optional": true, "type": "URI", 
+        "uriEffect": "NEW_DOCUMENT", "loaderType": "UNSANDBOXED",
         "safeValue": "#",
         "reason": [
             "Specify the safe value # since it does not navigate the page"

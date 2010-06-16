@@ -43,6 +43,7 @@ import java.net.URLDecoder;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 /**
  * An abstract test framework for pipeline stages.
@@ -215,9 +216,11 @@ public abstract class PipelineStageTestCase extends CajaTestCase {
   }
 
   private static class TestUriPolicy implements UriPolicy {
-    public String rewriteUri(ExternalReference uri, String mimeType) {
-      return "http://proxy/?uri=" + UriUtil.encode(uri.getUri().toString())
-          + "&mimeType=" + UriUtil.encode(mimeType);
+    public String rewriteUri(
+        ExternalReference u, UriEffect effect, LoaderType loader,
+        Map<String, ?> hints) {
+      return "http://proxy/?uri=" + UriUtil.encode(u.getUri().toString())
+          + "&effect=" + effect + "&loader=" + loader;
     }
   }
 }

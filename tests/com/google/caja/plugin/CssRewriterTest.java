@@ -26,11 +26,17 @@ import com.google.caja.parser.html.Namespaces;
 import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.util.CajaTestCase;
+import com.google.caja.util.Lists;
+import com.google.caja.util.MoreAsserts;
 import com.google.caja.util.Name;
+import com.google.caja.util.Sets;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.Map;
+import java.util.Set;
 
 /**
  *
@@ -333,6 +339,21 @@ public class CssRewriterTest extends CajaTestCase {
     assertNoErrors();
   }
 
+  public final void testUrisCalledWithProperPropertyPart() throws Exception {
+    // The CssRewriter needs to rewrite URIs.
+    // When it does so it passes
+    assertCallsUriRewriterWithPropertyPart(
+        "background: 'foo.png'",
+        "background::bg-image::image");
+    assertCallsUriRewriterWithPropertyPart(
+        ""
+        + "img.trans {"
+        + "  filter: progid:DXImageTransform.Microsoft.AlphaImageLoader("
+        + "      src='bar.png', sizingMethod='image');"
+        + "}",
+        "filter::prog-id::prog-id-alpha-image-loader::page-url");
+  }
+
   private void runTest(String css, String golden) throws Exception {
     runTest(css, golden, false);
   }
@@ -356,7 +377,9 @@ public class CssRewriterTest extends CajaTestCase {
         .validateCss(AncestorChain.instance(t));
     new CssRewriter(
         new UriPolicy() {
-          public String rewriteUri(ExternalReference ref, String mimeType) {
+          public String rewriteUri(
+              ExternalReference ref, UriEffect effect, LoaderType loader,
+              Map<String, ?> hints) {
             URI uri = ref.getUri();
 
             if ("test".equals(uri.getScheme())  // Used by CajaTestCase
@@ -388,5 +411,35 @@ public class CssRewriterTest extends CajaTestCase {
     }
 
     assertEquals(msg, golden, render(t));
+  }
+
+  private void assertCallsUriRewriterWithPropertyPart(
+      String cssCode, String... expectedParts)
+      throws ParseException {
+    final Set<String> propertyParts = Sets.newLinkedHashSet();
+
+    CssTree t = cssCode.trim().endsWith("}")
+        ? css(fromString(cssCode)) : cssDecls(fromString(cssCode));
+
+    CssSchema cssSchema = CssSchema.getDefaultCss21Schema(mq);
+    new CssValidator(cssSchema, HtmlSchema.getDefault(mq), mq)
+        .validateCss(AncestorChain.instance(t));
+    new CssRewriter(
+        new UriPolicy() {
+          public String rewriteUri(
+              ExternalReference ref, UriEffect effect, LoaderType loader,
+              Map<String, ?> hints) {
+            propertyParts.add(
+                UriPolicyHintKey.CSS_PROP.valueFrom(hints)
+                    .getCanonicalForm());
+            return ref.getUri().toString();
+          }
+        },
+        cssSchema, mq)
+        .rewrite(AncestorChain.instance(t));
+
+    MoreAsserts.assertListsEqual(
+        Arrays.asList(expectedParts),
+        Lists.newArrayList(propertyParts));
   }
 }
