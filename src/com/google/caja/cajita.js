@@ -3410,7 +3410,7 @@ var safeJSON;
     setStatic(theModule, 'cajolerName', module.cajolerName);
     setStatic(theModule, 'cajolerVersion', module.cajolerVersion);
     setStatic(theModule, 'cajoledDate', module.cajoledDate);
-    setStatic(theModule, 'moduleId', module.moduleId);
+    setStatic(theModule, 'moduleURL', module.moduleURL);
     // The below is a transitive freeze because includedModules is an array
     // of strings.
     if (!!module.includedModules) {

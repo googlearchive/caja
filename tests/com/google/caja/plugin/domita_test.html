@@ -30,6 +30,8 @@
     <script src="html4-defs.js" onerror="console.error(this.src)"></script>
     <script src="css-defs.js" onerror="console.error(this.src)"></script>
     <script src="jsunit.js" onerror="console.error(this.src)"></script>
+    <script src="uri.js" onerror="console.error(this.src)">
+    </script>
     <script src="../cajita-promise.js" onerror="console.error(this.src)">
     </script>
     <script src="../cajita-module.js" onerror="console.error(this.src)">
@@ -200,15 +202,15 @@
         jsunitFilter(new RegExp(decodeURIComponent(filter[1])));
       }
 
-      function moduleIdResolver(base, input) {
-        return defaultModuleIdResolver(base, input + '.out.js');
+      function cajolerFinder(moduleURL) {
+        return moduleURL + '.out.js';
       }
 
       var xhrModuleLoad = xhrModuleLoadMaker(
-          document.location.href, moduleIdResolver);
+          document.location.href, defaultModuleIdResolver, cajolerFinder);
 
       var scriptModuleLoad = scriptModuleLoadMaker(
-          document.location.href, moduleIdResolver);
+          document.location.href, defaultModuleIdResolver, cajolerFinder);
     </script>
 
     <script type="text/javascript">

@@ -53,11 +53,6 @@ var attachWindow = function(title, imports) {
   };
 }
 
-var crackCompositeBaseUrl = function(base) {
-  var re = /\?url\=([^&]+)\&.*/;
-  return re.test(base) ? re.exec(base)[1] : base;
-}
-
 var basedUrlToAbsolute = function(base, input) {
   if (base.indexOf('/') !== -1) {
     base = base.substring(0, base.lastIndexOf('/'));
@@ -65,30 +60,26 @@ var basedUrlToAbsolute = function(base, input) {
   return base + '/' + input;
 }
 
-var moduleIdResolver = function(base, input) {
-  base = crackCompositeBaseUrl(base);
-
+var cajolerFinder = function(uncajoledSourceURL) {
   var inputMimeType;
-  if (/\.js$/.test(input)) {
+  if (/\.js$/.test(uncajoledSourceURL)) {
     inputMimeType = 'application/javascript';
-  } else if (/\.html$/.test(input)) {
+  } else if (/\.html$/.test(uncajoledSourceURL)) {
     inputMimeType = 'text/html';
   } else {
-    input = input + '.js';
     inputMimeType = 'application/javascript';
   }
 
-  input = basedUrlToAbsolute(base, input);
-
-  return 'http://localhost:8887/' +
-      '?url=' + input +
+  return 'http://localhost:8080/cajole' +
+      '?url=' + encodeURIComponent(uncajoledSourceURL) +
       '&input-mime-type=' + inputMimeType +
       '&output-mime-type=application/javascript';
 }
 
 var scriptModuleLoad =
     scriptModuleLoadMaker(document.location.toString(),
-                          moduleIdResolver);
+                          undefined,
+                          cajolerFinder);
 
 var valijaVow = scriptModuleLoad.async(
     '../google-caja/src/com/google/caja/valija-cajita');

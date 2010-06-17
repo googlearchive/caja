@@ -613,6 +613,7 @@
     <transform>
       <output file="${lib}/com/google/caja/plugin/module-promise-minified.js"
        language="javascript" renderer="minify"/>
+      <input file="${src}/com/google/caja/plugin/uri.js"/>
       <input file="${src}/com/google/caja/cajita-module.js"/>
       <input file="${src}/com/google/caja/cajita-promise.js"/>
     </transform>

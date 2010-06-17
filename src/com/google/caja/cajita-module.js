@@ -14,75 +14,80 @@
 
 /**
  * @author maoziqing@gmail.com
- * @requires ___, bridal
+ * @requires ___, bridal, Q, URI
  * @provides xhrModuleLoadMaker, scriptModuleLoadMaker, clearModuleCache
+ * To obtain the dependencies of this file, load:
+ *   cajita.js, bridal.js, uri.js, cajita-promise.js
  *
- * Each load maker object, given a current module identifier and an
- * identifier resolver, returns a load object.
+ * Each load maker object, given the absolute URL of the current module, an
+ * identifier resolver, and a cajoler finder, returns a load object.
  *
- * A load object is a function object, load() returns the module object,
- * given the source URL.
- * load.async() returns a promise to the module, given the source URL.
+ * A load object is a function object; load() returns a module object,
+ * given its module identifier.
+ * load.async() returns a promise to the module, given the module identifier.
+ * 
+ * What a module identifier is is entirely up to the identifier resolver. The
+ * identifier resolver is a function of two parameters, (current module 
+ * absolute URL, module identifier), returning the absolute URL for the
+ * identified module. The default module identifier resolver considers the
+ * module identifier to be a relative URL.
+ * 
+ * The cajoler finder is a function which should take an absolute module URL
+ * and return a URL for cajoled code to load as if by a <script> element. (It
+ * need not point to an actual cajoling service and could instead use static
+ * .out.js files, depending on the application.)
+ *
+ * Note that this system never actually fetches the module absolute URL, only
+ * passes it to the cajoler. But it *is* used as a key in the cache of loaded
+ * modules, so a module absolute URL should always have the same module.
+ *
+ * TODO(kpreid): explain static (sync) loading module id semantics.
  */
 var xhrModuleLoadMaker;
 var scriptModuleLoadMaker;
 var defaultModuleIdResolver;
+var defaultCajolerFinder;
 var clearModuleCache;
 
 (function() {
+  // Map from absolute module URLs to module objects.
   var cache = {};
 
-  function addJsExtension(src) {
-    if (src.toLowerCase().substring(src.length - 3) !== '.js') {
-      src = src + ".js";
-    }
-    return src;
-  }
-
-  defaultModuleIdResolver = function(mid, src) {
-    if (src[0] !== '.') {
-      return src;
-    }
-
-    var k = mid.lastIndexOf("/");
-    var newMid;
-    if (k === -1) {
-      newMid = src;
+  defaultModuleIdResolver = function(thisModURL, mid) {
+    return URI.resolve(URI.parse(thisModURL), URI.parse(mid)).toString();
+  };
+  
+  defaultCajolerFinder = function(uncajoledSourceURL) {
+    var inputMimeType;
+    if (/\.js$/.test(uncajoledSourceURL)) {
+      inputMimeType = 'application/javascript';
+    } else if (/\.html$/.test(uncajoledSourceURL)) {
+      inputMimeType = 'text/html';
     } else {
-      newMid = mid.substring(0, k + 1) + src;
+      inputMimeType = 'application/javascript';
     }
 
-    while((k = newMid.indexOf("/./")) !== -1) {
-      newMid = newMid.substring(0, k) + newMid.substring(k + 2);
-    }
-
-    while((k = newMid.indexOf("/../")) !== -1) {
-      var p = newMid.lastIndexOf("/", k - 1);
-      if (p === -1) {
-        newMid = newMid.substring(k + 4);
-      } else {
-        newMid = newMid.substring(0, p) + newMid.substring(k + 3);
-      }
-    }
-
-    return newMid;
+    return 'http://caja.appspot.com/cajole' +
+        '?url=' + encodeURIComponent(uncajoledSourceURL) +
+        '&input-mime-type=' + inputMimeType +
+        '&output-mime-type=application/javascript';
   };
 
-  function syncLoad(mid) {
-    mid = addJsExtension(mid);
-    if (cache[mid] === undefined || Q.near(cache[mid]).isPromise___) {
-      throw new Error("The static module " + mid + " cannot be resolved.");
+  function syncLoad(modURL) {
+    if (cache[modURL] === undefined || Q.near(cache[modURL]).isPromise___) {
+      throw new Error("The static module " + modURL + " cannot be resolved.");
     }
-    return Q.near(cache[mid]);
+    return Q.near(cache[modURL]);
   }
 
-  function loadMaker(mid, midResolver, asyncLoad) {
-    var load = function(src) {
-      return syncLoad(midResolver(mid, src));
+  function loadMaker(thisModURL, midResolver, cajolerFinder, asyncLoad) {
+    var load = function(mid) {
+      return syncLoad(midResolver(thisModURL, mid));
     };
 
-    var async = function(src) {
-      return asyncLoad(midResolver(mid, src), midResolver);
+    var async = function(mid) {
+      return asyncLoad(midResolver(thisModURL, mid),
+                       midResolver, cajolerFinder);
     };
 
     var asyncAll = function(moduleNames) {
@@ -124,8 +129,8 @@ var clearModuleCache;
       var size = module.includedModules.length;
       var count = 0;
       for (var i = 0; i < size; i++) {
-        var src = module.includedModules[i];
-        var m = load.async(src);
+        var mid = module.includedModules[i];
+        var m = load.async(mid);
         Q.when(m, function(childModule) {
                     count++;
                     if (count === size) {
@@ -134,7 +139,7 @@ var clearModuleCache;
                   },
                   function(reason) {
                     r.resolve(Q.reject(
-                        "Retrieving the module " + newMid + " failed."));
+                        "Retrieving the module " + mid + " failed."));
                   });
       }
     } else {
@@ -144,15 +149,31 @@ var clearModuleCache;
   }
 
   function noop() {}
+  
+  /** 
+   * Given a method of async loading, produce the load-maker that the client
+   * will use.
+   */
+  function makeConcreteLoadMaker(asyncLoadFunction) {
+    return ___.markFuncFreeze(function(mid, midResolver, cajolerFinder) {
+      if (midResolver === undefined) {
+        midResolver = defaultModuleIdResolver;
+      }
+      if (cajolerFinder === undefined) {
+        cajolerFinder = defaultCajolerFinder;
+      }
 
-  function xhrAsyncLoad(mid, midResolver) {
-    mid = addJsExtension(mid);
-    if (cache[mid] !== undefined) {
-      return cache[mid];
+      return loadMaker(mid, midResolver, cajolerFinder, asyncLoadFunction);
+    });
+  }
+
+  function xhrAsyncLoad(modURL, midResolver, cajolerFinder) {
+    if (cache[modURL] !== undefined) {
+      return cache[modURL];
     }
 
     var r = Q.defer();
-    cache[mid] = r.promise;
+    cache[modURL] = r.promise;
 
     var xhr = bridal.makeXhr();
     xhr.onreadystatechange = function() {
@@ -163,8 +184,9 @@ var clearModuleCache;
           ___.setNewModuleHandler(___.primFreeze({
             handle: ___.markFuncFreeze(function theHandler(module) {
               try {
-                var load = loadMaker(mid, midResolver, xhrAsyncLoad);
-                module.moduleId = mid;
+                var load = loadMaker(modURL, midResolver, cajolerFinder, 
+                                     xhrAsyncLoad);
+                module.moduleURL = modURL;
                 var securedModule = ___.prepareModule(module, load);
                 var dependency = resolveDependency(module, load);
                 Q.when(dependency, function(result) {
@@ -173,7 +195,7 @@ var clearModuleCache;
                                    function(reason) {
                                      r.resolve(Q.reject(
                                          "Resolving dependency for the"
-                                         + "module " + mid + " failed."));
+                                         + "module " + modURL + " failed."));
                                    });
               } catch (e) {
                 r.resolve(Q.reject(e));
@@ -189,13 +211,15 @@ var clearModuleCache;
           }
         } else {
           r.resolve(Q.reject(
-              "Retrieving the module " + mid + " failed, "
+              "Retrieving the module " + modURL + " failed, "
               + "status code = " + xhr.status));
         }
       }
     };
+    
+    var cajoledModURL = cajolerFinder(modURL);
 
-    xhr.open("GET", mid, true);
+    xhr.open("GET", cajoledModURL, true);
     if (typeof xhr.overrideMimeType === 'function') {
       xhr.overrideMimeType("application/javascript");
     }
@@ -203,26 +227,19 @@ var clearModuleCache;
     return r.promise;
   }
 
-  xhrModuleLoadMaker = ___.markFuncFreeze(function(mid, midResolver) {
-    if (midResolver === undefined) {
-      midResolver = defaultModuleIdResolver;
-    }
-
-    return loadMaker(mid, midResolver, xhrAsyncLoad);
-  });
+  xhrModuleLoadMaker = makeConcreteLoadMaker(xhrAsyncLoad);
 
   var head = 0;
   var queue = [];
   var busy = false;
 
-  function scriptAsyncLoad(mid, midResolver) {
-    mid = addJsExtension(mid);
-    if (cache[mid] !== undefined) {
-      return cache[mid];
+  function scriptAsyncLoad(modURL, midResolver, cajolerFinder) {
+    if (cache[modURL] !== undefined) {
+      return cache[modURL];
     }
 
     var r = Q.defer();
-    cache[mid] = r.promise;
+    cache[modURL] = r.promise;
 
     function dequeue() {
       if (head < queue.length) {
@@ -248,9 +265,10 @@ var clearModuleCache;
               if (savedHead === head) {
                 var r = queue[head].defer;
                 try {
-                  var curMid = queue[head].mid;
-                  var load = loadMaker(curMid, midResolver, scriptAsyncLoad);
-                  module.moduleId = mid;
+                  var curModURL = queue[head].modURL;
+                  var load = loadMaker(curModURL, midResolver, cajolerFinder,
+                                       scriptAsyncLoad);
+                  module.moduleURL = modURL;
                   var securedModule = ___.prepareModule(module, load);
 
                   var dependency = resolveDependency(module, load);
@@ -261,7 +279,7 @@ var clearModuleCache;
                       function(reason) {
                         r.resolve(Q.reject(
                             "Resolving dependency for the module "
-                            + curMid + " failed."));
+                            + curModURL + " failed."));
                       });
                 } catch (e) {
                   r.resolve(Q.reject(e));
@@ -283,7 +301,7 @@ var clearModuleCache;
           if (savedHead === head) {
             var r = queue[head].defer;
             r.resolve(Q.reject(
-                "Retrieving the module " + queue[head].mid + " failed."));
+                "Retrieving the module " + queue[head].modURL + " failed."));
             delete queue[head];
             head++;
             dequeue();
@@ -293,7 +311,7 @@ var clearModuleCache;
         };
 
         var script = document.createElement("script");
-        script.src = queue[head].mid;
+        script.src = cajolerFinder(queue[head].modURL);
         script.onerror = timeout;
         script.onreadystatechange = function() {
           if (script.readyState === 'loaded'
@@ -307,7 +325,7 @@ var clearModuleCache;
       }
     }
 
-    queue.push({ mid: mid, defer: r });
+    queue.push({ modURL: modURL, defer: r });
 
     if (!busy) {
       dequeue();
@@ -316,13 +334,7 @@ var clearModuleCache;
     return r.promise;
   }
 
-  scriptModuleLoadMaker =  ___.markFuncFreeze(function(mid, midResolver) {
-    if (midResolver === undefined) {
-      midResolver = defaultModuleIdResolver;
-    }
-
-    return loadMaker(mid, midResolver, scriptAsyncLoad);
-  });
+  scriptModuleLoadMaker = makeConcreteLoadMaker(scriptAsyncLoad);
 
   clearModuleCache = ___.markFuncFreeze(function() {
     cajita.forOwnKeys(cache, ___.markFuncFreeze(function(k, v) {

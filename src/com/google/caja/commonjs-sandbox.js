@@ -28,11 +28,11 @@ var commonJsSandboxMaker = (function(env, valijaMaker) {
 
   function requireMaker(mid) {
     function theRequire(securedModule) {
-      var theExports = exportsTable.get(securedModule.moduleId);
+      var theExports = exportsTable.get(securedModule.moduleURL);
       if (theExports !== void 0) {
         return theExports;
       } else {
-        var require = requireMaker(securedModule.moduleId);
+        var require = requireMaker(securedModule.moduleURL);
         var exports = {};
         exportsTable.set(newMid, exports);
 
@@ -47,13 +47,13 @@ var commonJsSandboxMaker = (function(env, valijaMaker) {
       var Q = env.Q;
       var r = Q.defer();
       Q.when(m, function(module) {
-                  var theExports = exportsTable.get(module.moduleId);
+                  var theExports = exportsTable.get(module.moduleURL);
                   if (theExports !== void 0) {
                     r.resolve(theExports);
                   } else {
-        	        var require = requireMaker(module.moduleId);
+        	        var require = requireMaker(module.moduleURL);
                     var exports = {};
-                    exportsTable.set(module.moduleId, exports);
+                    exportsTable.set(module.moduleURL, exports);
 
                     var valijaOuters
                         = {env: env, require: require, exports: exports};
@@ -71,7 +71,7 @@ var commonJsSandboxMaker = (function(env, valijaMaker) {
     }
     
     theRequire.async = async;
-    theRequire.moduleId = mid;
+    theRequire.moduleURL = mid;
     return cajita.freeze(theRequire);
   }
   

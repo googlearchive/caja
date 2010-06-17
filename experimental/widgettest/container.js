@@ -1,10 +1,10 @@
-function moduleIdResolver(base, input) {
-    return defaultModuleIdResolver(base, input + '.out.js');
+function cajolerFinder(moduleURL) {
+  return moduleURL + '.out.js';
 }
 
 var scriptModuleLoad =
     scriptModuleLoadMaker(document.location.toString(),
-                          moduleIdResolver);
+                          undefined, cajolerFinder);
 /**
  * Load the Valija module.
  */
