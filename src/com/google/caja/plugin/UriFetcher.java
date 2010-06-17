@@ -14,11 +14,13 @@
 
 package com.google.caja.plugin;
 
+import java.util.List;
 import com.google.caja.CajaException;
 import com.google.caja.lexer.ExternalReference;
 import com.google.caja.lexer.FetchedData;
 import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessagePart;
+import com.google.caja.util.Lists;
 
 /**
  * Specifies how the cajoler resolves external resources such as scripts and
@@ -32,22 +34,19 @@ public interface UriFetcher {
    * Loads an external resource such as the {@code src} of a {@code script}
    * tag or a stylesheet.
    *
-   * @return null if the resource could not be loaded.
+   * @return non-null resource
+   * @throws UriFetchException if the resource could not be loaded
    */
   FetchedData fetch(ExternalReference ref, String mimeType)
       throws UriFetchException;
 
   /** A fetcher that will not load any URI. */
-  public static final UriFetcher NULL_NETWORK = new UriFetcher() {
-        public FetchedData fetch(ExternalReference ref, String mimeType)
-            throws UriFetchException {
-          throw new UriFetchException(ref, mimeType);
-        }
-      };
+  public static final UriFetcher NULL_NETWORK = new DataUriFetcher();
 
   public static class UriFetchException extends CajaException {
     public ExternalReference ref;
     public String expectedMimeType;
+    public List<Throwable> causes;
 
     public UriFetchException(
         ExternalReference ref, String mimeType, Throwable cause) {
@@ -61,8 +60,38 @@ public interface UriFetcher {
       this.expectedMimeType = mimeType;
     }
 
+    public UriFetchException(
+        ExternalReference ref, String mimeType, List<Throwable> causes) {
+      this(ref, mimeType, causes.isEmpty() ? null : causes.get(0));
+    }
+
     public UriFetchException(ExternalReference ref, String mimeType) {
-      this(ref, mimeType, null);
+      this(ref, mimeType, (Throwable) null);
     }
   }
+  
+  /**
+   * Chains one of more uri fetchers in order and returns the first 
+   * successfully loaded resource 
+   */
+  public final static class ChainingUriFetcher {
+    public static UriFetcher make(final UriFetcher... fetchers) {
+      return new UriFetcher() {
+        List<Throwable> causes = Lists.newArrayList();
+        public FetchedData fetch(ExternalReference ref, String mimeType)
+            throws UriFetchException {
+          for (UriFetcher fetcher : fetchers) {
+            try {
+              return fetcher.fetch(ref, mimeType);
+            } catch (UriFetchException e) {
+              causes.add(e);
+            }
+          }
+          // None of the fetchers succeeded
+          throw new UriFetchException(ref, mimeType, causes);
+        }
+      };
+    }
+  }
+  
 }

@@ -90,6 +90,36 @@ public final class RewriteHtmlStageTest extends PipelineStageTestCase {
     assertNoErrors();
   }
 
+  public final void testDataUris() throws Exception {
+    assertPipeline(
+        job("foo<script src='data:text/javascript,extracted();'>bar</script>baz", ContentType.HTML),
+        job("foo<span jobnum=\"1\"></span>baz", ContentType.HTML),
+        job("{ extracted(); }", ContentType.JS)
+        );
+    assertNoErrors();
+
+    assertPipeline(
+        job("foo<script src='data:,extracted();'>bar</script>baz", ContentType.HTML),
+        job("foo<span jobnum=\"1\"></span>baz", ContentType.HTML),
+        job("{ extracted(); }", ContentType.JS)
+        );
+    assertNoErrors();
+
+    assertPipeline(
+        job("foo<script src='data:iso-8859-7;charset=utf-8,extracted%28%29%3B'>bar</script>baz", ContentType.HTML),
+        job("foo<span jobnum=\"1\"></span>baz", ContentType.HTML),
+        job("{ extracted(); }", ContentType.JS)
+        );
+    assertNoErrors();
+
+    assertPipeline(
+        job("foo<script src='data:text/javascript;charset=utf-8;base64,ZXh0cmFjdGVkKCk7'>bar</script>baz", ContentType.HTML),
+        job("foo<span jobnum=\"1\"></span>baz", ContentType.HTML),
+        job("{ extracted(); }", ContentType.JS)
+        );
+    assertNoErrors();
+}
+
   public final void testStyleExtraction() throws Exception {
     assertPipeline(
         job("Foo<style>p { color: blue }</style><p>Bar", ContentType.HTML),

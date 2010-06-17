@@ -32,6 +32,7 @@ import com.google.caja.parser.html.DomParser;
 import com.google.caja.parser.html.Nodes;
 import com.google.caja.parser.js.CajoledModule;
 import com.google.caja.parser.js.Parser;
+import com.google.caja.plugin.UriFetcher.ChainingUriFetcher;
 import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessageLevel;
@@ -120,7 +121,8 @@ public final class PluginCompilerMain {
       try {
         UriToFile u2f = new UriToFile(
             new File(config.getInputUris().iterator().next()).getParentFile());
-        fetcher = new CachingUriFetcher(u2f);
+        fetcher = ChainingUriFetcher.make(
+            new DataUriFetcher(), new CachingUriFetcher(u2f));
         policy = new FileSystemUriPolicy(u2f);
       } catch (IllegalArgumentException ex) {  // Not a file: URI
         fetcher = UriFetcher.NULL_NETWORK;

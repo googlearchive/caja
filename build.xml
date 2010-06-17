@@ -77,6 +77,7 @@
   </path>
   <path id="classpath.compile">
     <path refid="classpath.web"/>
+    <pathelement path="${third_party}/java/jakarta_commons/commons-codec-1.4.jar"/>
     <pathelement path="${third_party}/java/jakarta_commons/commons-cli.jar"/>
     <pathelement path="${third_party}/java/json_simple/json_simple.jar"/>
     <pathelement path="${third_party}/java/rhino/js.jar"/>
@@ -453,6 +454,7 @@
         <include name="commons-cli.jar"/>
         <include name="commons-fileupload-1.2.1.jar"/>
         <include name="commons-io-1.4.jar"/>
+        <include name="commons-codec-1.4.jar"/>
       </fileset>
       <fileset dir="${third_party}/java/jaf">
         <include name="activation.jar"/>
@@ -858,6 +860,7 @@
       </fileset>
       <fileset dir="${third_party}/java/jakarta_commons/">
         <include name="commons-io-1.4.jar" />
+        <include name="commons-codec-1.4.jar" />
       </fileset>
       <fileset dir="${third_party}/java/jakarta_commons/">
         <include name="commons-fileupload-1.2.1.jar" />
