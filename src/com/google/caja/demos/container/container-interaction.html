@@ -15,12 +15,15 @@
  - limitations under the License.
 -->
 
-<!-- This should be kept in sync with the CajaHostingModules wiki page -->
+<!-- This should be kept in sync with the InteractingModulesExample wiki page -->
 
 <html>
   <head>
     <title>A simple host page for Caja gadgets</title>
-  
+
+    <!-- Provides rules for visually confining vdoc-body___ elements -->
+    <link rel="stylesheet" href="caja-gadget.css" type="text/css">
+    
     <!-- In ant-lib/com/google/caja/plugin/ -->
     <script src="domita-minified.js"></script>
     <!-- In ant-lib/com/google/caja/ -->
@@ -131,8 +134,7 @@
     <!-- Load the library code -->
     <script src="gadget-library.out.js"></script>
 
-    <div id="gadget1" class="gadget1___"
-     style="position:relative; overflow: auto"></div>  
+    <div id="gadget1" class="gadget1___ vdoc-body___"></div>  
     <script>
       // Restore the default new-module handler
       sharedCode.restore();
@@ -153,8 +155,7 @@
       clearImports();
     </script>
 
-    <div id="gadget2" class="gadget2___"
-     style="position:relative; overflow: auto"></div>
+    <div id="gadget2" class="gadget2___ vdoc-body___"></div>
     <script>
       initValija("gadget2", {get : shared.get});
       sharedCode.inject();

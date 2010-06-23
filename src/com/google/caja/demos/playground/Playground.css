@@ -20,6 +20,8 @@
  * TODO(jasvir): Consider inlining into Playground.html to eliminate roundtrip
  */
 
+@import url("caja-gadget.css");
+
 body { font-family: arial,sans-serif,helvetica }
 
 p,td,span,input,label { font-family: arial,sans-serif, helvetica;
@@ -88,11 +90,4 @@ h1 {
 /** Set ids using widget.getElement().setId("idOfElement") **/
 #closeButton {
   margin: 15px 6px 6px;
-}
-
-/** Visually contains the virtual document body **/
-.vdoc-body___, .cajoled-output-g___ {
-  position: relative;
-  overflow: auto;
-  clip: 0 0 0 0
 }

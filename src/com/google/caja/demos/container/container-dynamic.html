@@ -40,6 +40,8 @@
     <script type="text/javascript" src="uri.js"            ></script>
     <script type="text/javascript" src="cajita-promise.js" ></script>
     <script type="text/javascript" src="cajita-module.js"  ></script>
+
+    <link rel="stylesheet" href="caja-gadget.css" type="text/css">
   </head>
 
   <body>
@@ -78,7 +80,8 @@
 
       function loadGadget(pluginName, url) {
           var containerDiv = document.createElement('div');
-          containerDiv.className = pluginName + "-form___";
+          var uniqueClass = pluginName + "-form___";
+          containerDiv.className = uniqueClass + " vdoc-body___";
           document.getElementById("container").appendChild(containerDiv);
           var imports = makeGadgetEnvironment(containerDiv);
           

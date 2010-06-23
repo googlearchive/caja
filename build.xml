@@ -665,6 +665,7 @@
         <include name="**/caja/plugin/html-sanitizer.js"/>
         <include name="**/caja/plugin/unicode.js"/>
         <include name="**/caja/plugin/uri.js"/>
+        <include name="**/caja/plugin/caja-gadget.css"/>
       </fileset>
       <fileset dir="${tests}">
         <include name="**/caja/**/*.css"/>
@@ -797,6 +798,7 @@
         <include name="html-emitter.js" />
         <include name="html-sanitizer.js" />
         <include name="unicode.js" />
+        <include name="caja-gadget.css" />
       </fileset>
       <fileset dir="${lib}/com/google/caja/plugin">
         <include name="css-defs.js" />
@@ -1095,6 +1097,7 @@
       <fileset dir="${lib}/com/google/caja/plugin">
         <include name="domita-minified.js"/>
         <include name="valija.out.js"/>
+        <include name="caja-gadget.css"/>
       </fileset>
     </copy>
   </target>
