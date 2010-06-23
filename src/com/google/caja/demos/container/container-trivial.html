@@ -55,12 +55,7 @@
     gadget below. The orange border in this example indicates the boundaries of
     the area which is under the control of the gadget.</p>
 
-    <div id="theGadget"
-         style="position: relative; overflow: auto; /* constrain gadget to 
-                                                       its area */
-                border: .1em solid orange; padding: .2em;"
-         class="theGadget___"></div>
-    <!-- TODO(kpreid): Explain the significance of id and class. -->
+    <div id="theGadget" class="vdoc-body___"></div>
     <script type="text/javascript">
         var root = document.getElementById("theGadget");
         
@@ -71,14 +66,20 @@
         
         // Create Domita (DOM taming, virtualized document) instance. Domita
         // will add the 'document' property to the provided imports object.
-        // TODO(kpreid): explain the first and second arguments.
+        //
+        // The first parameter is the id-suffix, which is used to give each
+        // gadget a unique namespace of element IDs (<div id="...">), and should
+        // therefore be unique among all gadgets on the page.
+        //
+        // The second parameter is the URI rewriting policy.
+        // TODO(kpreid): explain.
         //
         // The gadget gets no access to any HTML which is not a child of the
         // specified element. Domita pretends that that element is the <body>
         // of the virtual document the gadget is given.
         //
         // attachDocumentStub is from domita.js.
-        attachDocumentStub('-' + root.className, {
+        attachDocumentStub('-theGadget___', {
             rewrite: function() {
                 return null;
             }

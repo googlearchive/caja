@@ -1088,6 +1088,9 @@
       <fileset dir="${src}/com/google/caja">
         <include name="log-to-console.js"/>
       </fileset>
+      <fileset dir="${src}/com/google/caja/plugin">
+        <include name="caja-gadget.css"/>
+      </fileset>
       <fileset dir="${lib}/com/google/caja/demos/container">
         <include name="*.out.js"/>
       </fileset>
@@ -1097,7 +1100,6 @@
       <fileset dir="${lib}/com/google/caja/plugin">
         <include name="domita-minified.js"/>
         <include name="valija.out.js"/>
-        <include name="caja-gadget.css"/>
       </fileset>
     </copy>
   </target>
