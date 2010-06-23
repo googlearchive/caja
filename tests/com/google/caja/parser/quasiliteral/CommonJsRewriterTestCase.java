@@ -14,6 +14,8 @@
 
 package com.google.caja.parser.quasiliteral;
 
+import com.google.caja.util.FailureIsAnOption;
+
 import junit.framework.AssertionFailedError;
 
 /**
@@ -61,74 +63,175 @@ public abstract class CommonJsRewriterTestCase extends RewriterTestCase {
    */
   public final void testEval() throws Exception {
     rewriteAndExecute(
-        "var success=false;" +
-        "try{eval('1');}catch(e){success=true;}" +
-        "if (!success)fail('Outer eval is accessible.')");
+        "var success = false;" +
+        "try { eval('1'); } catch (e) { success = true; }" +
+        "if (!success) { fail('Outer eval is accessible.'); }");
   }
 
   /**
    * Tests that arguments to functions are not mutable through the
-   * arguments array.
+   * arguments array, but the arguments array itself is mutable.
    */
   public final void testMutableArguments() throws Exception {
     rewriteAndExecute(
-        "cajita.log('___.args = ' + ___.args);",
         "function f(a) {" +
-          "try {" +
-            "arguments[0] = 1;" +
-            "if (a) fail('Mutable arguments');" +
-          "} catch (e) {" +
-             // pass
-          "}" +
-        "}" +
-        "f(0);",
-        "");
-  }
-
-  /**
-   * Tests that the caller attribute is unreadable.
-   */
-  public final void testCaller() throws Exception {
-    rewriteAndExecute(
-        "function f(x) {" +
         "  try {" +
-        "    if (arguments.caller || f.caller) {" +
-        "      fail('caller is accessible');" +
+        "    if (arguments[0] !== false || arguments.length !== 1) { " +
+        "      fail('arguments not initialized correctly');" +
         "    }" +
-        "  } catch (e) {}" +
+        "    arguments[0] = true;" +
+        "  } catch (e) {" +
+        "    fail('assignment to arguments failed');" +
+        "  }" +
+        "  if (a) { fail('Joined arguments'); }" +
+        "  if (!arguments[0]) { fail('arguments not mutated'); }" +
         "}" +
-        "f(1);");
+        "f(false);");
   }
 
   /**
-   * Tests that the callee attribute is unreadable.
+   * Tests that arguments.caller is ungettable.
    */
-  public final void testCallee() throws Exception {
+  public final void testGetArgsCaller() throws Exception {
     rewriteAndExecute(
-        "function f(x) {" +
-        "  try {" +
-        "    if (arguments.callee || f.callee) {" +
-        "      fail('callee is accessible');" +
-        "    }" +
-        "  } catch (e) {}" +
-        "}" +
-        "f(1);");
+      "function f() {" +
+      "  try { arguments.caller; } catch (e) { return; }" +
+      "  fail('arguments.caller did not throw');" +
+      "}" +
+      "f();");
+  }
+    
+  /**
+   * Tests that arguments.caller is unsettable.
+   */
+  @FailureIsAnOption
+  public final void testSetArgsCaller() throws Exception {
+    // TODO(erights): failure should no longer be an option on (S)ES5/3.
+    rewriteAndExecute(
+      "function f() {" +
+      "  try { arguments.caller = 8; } catch (e) { return; }" +
+      "  fail('assigning to arguments.caller did not throw');" +
+      "}" +
+      "f();");
   }
 
   /**
-   * Tests that arguments are immutable from another function's scope.
+   * Tests that func.caller is ungettable.
    */
+  public final void testGetFuncCaller() throws Exception {
+    rewriteAndExecute(
+      "function f() {" +
+      "  try { f.caller; } catch (e) { return; }" +
+      "  fail('<function>.caller did not throw');" +
+      "}" +
+      "f();");
+  }
+  
+  /**
+   * Tests that func.caller is unsettable.
+   */
+  @FailureIsAnOption
+  public final void testSetFuncCaller() throws Exception {
+    // TODO(erights): failure should no longer be an option on (S)ES5/3.
+    rewriteAndExecute(
+      "function f() {" +
+      "  try { f.caller = 9; } catch (e) { return; }" +
+      "  fail('assigning to <function>.caller did not throw');" +
+      "}" +
+      "f();");
+  }
+
+  /**
+   * Tests that arguments.callee is ungettable.
+   */
+  public final void testGetArgsCallee() throws Exception {
+    rewriteAndExecute(
+      "function f() {" +
+      "  try { arguments.callee; } catch (e) { return; }" +
+      "  fail('arguments.callee did not throw');" +
+      "}" +
+      "f();");
+  }
+  
+  /**
+   * Tests that arguments.callee is unsettable.
+   */
+  @FailureIsAnOption
+  public final void testSetArgsCallee() throws Exception {
+    // TODO(erights): failure should no longer be an option on (S)ES5/3.
+    rewriteAndExecute(
+      "function f() {" +
+      "  try { arguments.callee = 7; } catch (e) { return; }" +
+      "  fail('assigning to arguments.callee did not throw');" +
+      "}" +
+      "f();");
+  }
+
+  /**
+   * Tests that func.arguments is ungettable.
+   */
+  public final void testGetFuncArguments() throws Exception {
+    rewriteAndExecute(
+      "function f(a) {" +
+      "  g();" +
+      "}\n" +
+      "function g() {" +
+      "  try { f.arguments; } catch (e) { return; }" +
+      "  fail('<function>.arguments did not throw');" +
+      "}" +
+      "f(false);");
+  }
+  
+  /**
+   * Tests that func.arguments is unsettable.
+   */
+  @FailureIsAnOption
+  public final void testSetFuncArguments() throws Exception {
+    // TODO(erights): failure should no longer be an option on (S)ES5/3.
+    rewriteAndExecute(
+      "function f(a) {" +
+      "  g();" +
+      "}\n" +
+      "function g() {" +
+      "  try { f.arguments = 6; } catch (e) { return; }" +
+      "  fail('assigning to <function>.arguments did not throw');" +
+      "}" +
+      "f(false);");
+  }
+  
+
+  /**
+  * Tests that arguments are immutable from another function's scope even if
+  * func.arguments turns out to be readable.
+  */
   public final void testCrossScopeArguments() throws Exception {
     rewriteAndExecute(
-        "function f(a) {" +
-          "g();" +
-          "if (a) fail('Mutable cross scope arguments');" +
-        "}\n" +
-        "function g() {" +
-          "if (f.arguments) " +
-            "f.arguments[0] = 1;" +
-        "}" +
-        "f(0);");
+      "function f(a) {" +
+      "  g();" +
+      "  if (a) { fail('Mutable cross scope arguments'); }" +
+      "}\n" +
+      "function g() {" +
+      "  var args;" +
+      "  try { args = f.arguments; } catch (e) { return; }" +
+      "  if (args) { args[0] = true; }" +
+      "}" +
+      "f(false);");
+  }
+
+  public final void testSameArguments() throws Exception {
+    assertConsistent(
+      "function foo() {" +
+      "  return arguments === arguments;" +
+      "}" +
+      "foo();");
+  }
+
+  public final void testConcatArguments() throws Exception {
+    assertConsistent(
+      "function foo() {" +
+      "  return [1].concat(arguments);" +
+      "}" +
+      "foo('a', 'b')[1][1];");
   }
 
   /**
@@ -137,9 +240,9 @@ public abstract class CommonJsRewriterTestCase extends RewriterTestCase {
   public final void testCatch() throws Exception {
     try {
       rewriteAndExecute(
-          "var e = 0;" +
-          "try{ throw 1; } catch (e) {}" +
-          "if (e) fail('Exception visible out of proper scope');");
+          "var e = false;" +
+          "try { throw true; } catch (e) {}" +
+          "if (e) { fail('Exception visible out of proper scope'); }");
       fail("Exception that masks var should not pass");
     } catch (AssertionFailedError e) {
       // pass
@@ -151,9 +254,9 @@ public abstract class CommonJsRewriterTestCase extends RewriterTestCase {
    */
   public final void testSetTimeout() throws Exception {
     rewriteAndExecute(
-        "var success=false;try{setTimeout('1',10);}" +
-        "catch(e){success=true;}" +
-        "if(!success)fail('setTimeout is accessible');");
+        "var success=false;" +
+        "try { setTimeout('1',10); } catch(e) { success=true; }" +
+        "if (!success) { fail('setTimeout is accessible'); }");
   }
 
   /**
@@ -162,9 +265,8 @@ public abstract class CommonJsRewriterTestCase extends RewriterTestCase {
   public final void testObjectWatch() throws Exception {
     rewriteAndExecute(
         "var x={}; var success=false;" +
-        "try{x.watch(y, function(){});}" +
-        "catch(e){success=true;}" +
-        "if(!success)fail('Object.watch is accessible');");
+        "try { x.watch(y, function(){}); } catch(e) { success=true; }" +
+        "if (!success) { fail('Object.watch is accessible'); }");
   }
 
   public final void testForIn1() throws Exception {

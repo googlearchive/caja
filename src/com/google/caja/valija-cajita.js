@@ -499,6 +499,10 @@ var valijaMaker = (function(outers) {
     return (v === void 0) ? key : ((v === undefIndicator) ? void 0 : v);
   }
 
+  function disArgs(original) {
+    return cajita.args(Array.slice(original, 1));
+  }
+
   //If you change these names, also change them in PermitTemplate.java
   return cajita.freeze({
     typeOf: typeOf,
@@ -519,6 +523,7 @@ var valijaMaker = (function(outers) {
     remove: remove,
     keys: keys,
     canReadRev: canReadRev,
+    disArgs: disArgs,
 
     dis: dis
   });

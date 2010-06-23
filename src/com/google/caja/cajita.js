@@ -1525,6 +1525,51 @@ var safeJSON;
   }
 
   /**
+   * Makes a [[ThrowTypeError]] function, as defined in section 13.2.3
+   * of the ES5 spec.
+   * 
+   * <p>The informal name for the [[ThrowTypeError]] function, defined
+   * in section 13.2.3 of the ES5 spec, is the "poison pill". The poison
+   * pill is simply a no-argument function that, when called, always
+   * throws a TypeError. Since we wish this TypeError to carry useful
+   * diagnostic info, we violate the ES5 spec by defining 4 poison
+   * pills with 4 distinct identities.
+   * 
+   * <p>A poison pill is installed as the getter & setter of the
+   * de-jure (arguments.callee) and de-facto non-strict magic stack
+   * inspection properties, which no longer work in ES5/strict, since
+   * they violate encapsulation. Rather than simply remove them,
+   * access to these properties is poisoned in order to catch errors
+   * earlier when porting old non-strict code.
+   */
+  function makePoisonPill(badThing) {
+    function poisonPill() {
+      throw new TypeError('' + badThing + ' forbidden by ES5/strict');
+    }
+    return poisonPill;
+  }
+  var poisonArgsCallee = makePoisonPill('arguments.callee');
+  var poisonArgsCaller = makePoisonPill('arguments.caller');
+  var poisonFuncCaller = makePoisonPill("A function's .caller");
+  var poisonFuncArgs = makePoisonPill("A function's .arguments");
+
+  /**
+   * Given either an array or an actual arguments object, return
+   * Cajita's emulation of an ES5/strict arguments object.
+   */
+  function args(original) {
+    var result = {length: 0};
+    pushMethod.apply(result, original);
+    result.CLASS___ = 'Arguments';
+    useGetHandler(result, 'callee', poisonArgsCallee);
+    useSetHandler(result, 'callee', poisonArgsCallee);
+    useGetHandler(result, 'caller', poisonArgsCaller);
+    useSetHandler(result, 'caller', poisonArgsCaller);
+    return result;
+  }
+  var pushMethod = [].push;
+
+  /**
    * A Record is a pseudo-function if it inherits from
    * some PseudoFunctionProto.
    * <p>
@@ -1535,7 +1580,7 @@ var safeJSON;
    * object is a pseudo-function, its clients may (and generally will)
    * assume that all these methods are present and working.
    */
-  var PseudoFunctionProto = primFreeze({
+  var PseudoFunctionProto = {
 
     /**
      * A simple default that should generally be overridden.
@@ -1578,7 +1623,12 @@ var safeJSON;
       }
       return feralWrapper;
     }
-  });
+  };
+  useGetHandler(PseudoFunctionProto, 'caller', poisonFuncCaller);
+  useSetHandler(PseudoFunctionProto, 'caller', poisonFuncCaller);
+  useGetHandler(PseudoFunctionProto, 'arguments', poisonFuncArgs);
+  useSetHandler(PseudoFunctionProto, 'arguments', poisonFuncArgs);
+  primFreeze(PseudoFunctionProto);
 
   /**
    * Makes an unfrozen pseudo-function that inherits from
@@ -2529,22 +2579,6 @@ var safeJSON;
   ////////////////////////////////////////////////////////////////////////
 
   /**
-   * This returns a frozen array copy of the original array or
-   * array-like object.
-   * <p>
-   * If a Cajita program makes use of <tt>arguments</tt> in any
-   * position other than <tt>arguments.callee</tt>, this is
-   * rewritten to use a frozen array copy of arguments instead. This
-   * way, if Cajita code passes its arguments to someone else, they
-   * are not giving the receiver the rights to access the passing
-   * function nor to modify the parameter variables of the passing
-   * function.
-   */
-  function args(original) {
-    return primFreeze(Array.slice(original, 0));
-  }
-
-  /**
    * When a <tt>this</tt> value must be provided but nothing is
    * suitable, provide this useless object instead.
    */
@@ -3056,6 +3090,8 @@ var safeJSON;
     }
     return markFuncFreeze(boundHandler);
   });
+  useGetHandler(Function.prototype, 'caller', poisonFuncCaller);
+  useGetHandler(Function.prototype, 'arguments', poisonFuncArgs);
 
   /// Array
 
@@ -4243,6 +4279,7 @@ var safeJSON;
     manifest: manifest,
 
     // Needed for Valija
+    args: args,
     construct: construct,
     inheritsFrom: inheritsFrom,
     getSuperCtor: getSuperCtor,
@@ -4357,7 +4394,6 @@ var safeJSON;
     // Other
     typeOf: typeOf,
     hasOwnProp: hasOwnProp,
-    args: args,
     deleteFieldEntirely: deleteFieldEntirely,
     tameException: tameException,
     primBeget: primBeget,

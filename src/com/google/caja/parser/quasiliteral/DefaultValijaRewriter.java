@@ -56,6 +56,28 @@ import java.util.Map;
     synopsis="Default set of transformations used by Valija"
   )
 public class DefaultValijaRewriter extends Rewriter {
+  
+  /**
+   * Generate the header that should be placed at the beginning of the body
+   * of the translation of a Valija function body.
+   * 
+   * @param scope The scope that results from expanding (cajoling) the Valija
+   *              function body.
+   * @return If the function body contains a free use of <tt>arguments</tt>,
+   *         translate to an initialization of cajoled arguments based on
+   *         an entry snapshot of the real ones.
+   */
+  public static ParseTreeNode getFunctionHeadDeclarations(Scope scope) {
+    List<ParseTreeNode> stmts = Lists.newArrayList();
+
+    if (scope.hasFreeArguments()) {
+      stmts.add(QuasiBuilder.substV(
+          "var $caja$args = $v.disArgs(arguments);"));
+    }
+    return new ParseTreeNodeContainer(stmts);
+  }
+  
+  
   private int tempVarCount = 1;
   private final String tempVarPrefix = "$caja$";
 
@@ -619,10 +641,10 @@ public class DefaultValijaRewriter extends Rewriter {
       @Override
       @RuleDescription(
           name="readArguments",
-          synopsis="Translate reference to 'arguments' unmodified",
+          synopsis="Translate reference to 'arguments'",
           reason="",
           matches="arguments",
-          substitutes="Array.slice(arguments,1)")
+          substitutes="$caja$args")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
         Map<String, ParseTreeNode> bindings = this.match(node);
         if (bindings != null) {
@@ -1116,15 +1138,21 @@ public class DefaultValijaRewriter extends Rewriter {
           synopsis="Transmutes functions into disfunctions.",
           reason="",
           matches="function (@ps*) {@bs*;}",
-          substitutes="$v.dis(function ($dis, @ps*) {@stmts*; @bs*;})")
+          substitutes=(
+              "$v.dis(function ($dis, @ps*) {" +
+              "  @fh*;" +
+              "  @stmts*; " +
+              "  @bs*;" +
+              "})"))
       public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
         Map<String, ParseTreeNode> bindings = this.match(node);
         if (bindings != null) {
           Scope s2 = Scope.fromFunctionConstructor(scope, (FunctionConstructor)node);
           return substV(
               "ps", bindings.get("ps"),
-              // It's important to expand bs before computing stmts.
+              // It's important to expand bs before computing fh and stmts.
               "bs", expand(bindings.get("bs"), s2),
+              "fh", getFunctionHeadDeclarations(s2),
               "stmts", new ParseTreeNodeContainer(s2.getStartStatements()));
         }
         return NONE;
@@ -1142,6 +1170,7 @@ public class DefaultValijaRewriter extends Rewriter {
               "$v.so('@f', (function () {" +
               "  var @f;" +
               "  function @fcaller($dis, @ps*) {" +
+              "    @fh*;" +
               "    @stmts*;" +
               "    @bs*;" +
               "  }" +
@@ -1166,8 +1195,9 @@ public class DefaultValijaRewriter extends Rewriter {
                 "fcaller", fcaller,
                 "rfcaller", new Reference(fcaller),
                 "ps", bindings.get("ps"),
-                // It's important to expand bs before computing stmts.
+                // It's important to expand bs before computing fh and stmts.
                 "bs", expand(bindings.get("bs"), s2),
+                "fh", getFunctionHeadDeclarations(s2),
                 "stmts", new ParseTreeNodeContainer(s2.getStartStatements()));
             scope.addStartStatement(newExprStmt(expr));
             return QuasiBuilder.substV(";");
@@ -1186,6 +1216,7 @@ public class DefaultValijaRewriter extends Rewriter {
           matches="function @fname(@ps*) {@bs*;}",
           substitutes=(
               "function @fcaller($dis, @ps*) {" +
+              "    @fh*;" +
               "    @stmts*;" +
               "    @bs*;" +
               "}" +
@@ -1210,8 +1241,9 @@ public class DefaultValijaRewriter extends Rewriter {
               "fcaller", fcaller,
               "rfcaller", new Reference(fcaller),
               "ps", bindings.get("ps"),
-              // It's important to expand bs before computing stmts.
+              // It's important to expand bs before computing fh and stmts.
               "bs", expand(bindings.get("bs"), s2),
+              "fh", getFunctionHeadDeclarations(s2),
               "stmts", new ParseTreeNodeContainer(s2.getStartStatements()));
           for (Statement stat : block.children()) {
             scope.addStartStatement(stat);
@@ -1232,6 +1264,7 @@ public class DefaultValijaRewriter extends Rewriter {
           substitutes=(
               "(function() {" +
               "  function @fcaller($dis, @ps*) {" +
+              "    @fh*;" +
               "    @stmts*;" +
               "    @bs*;" +
               "  }" +
@@ -1255,8 +1288,9 @@ public class DefaultValijaRewriter extends Rewriter {
               "fcaller", fcaller,
               "rfcaller", new Reference(fcaller),
               "ps", bindings.get("ps"),
-              // It's important to expand bs before computing stmts.
+              // It's important to expand bs before computing fh and stmts.
               "bs", expand(bindings.get("bs"), s2),
+              "fh", getFunctionHeadDeclarations(s2),
               "stmts", new ParseTreeNodeContainer(s2.getStartStatements()));
         }
         return NONE;

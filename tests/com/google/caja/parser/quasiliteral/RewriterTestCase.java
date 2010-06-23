@@ -299,7 +299,7 @@ public abstract class RewriterTestCase extends CajaTestCase {
                   "ident", ctor.getIdentifier(),
                   "formals", expandAll(
                       new ParseTreeNodeContainer(ctor.getParams()), s2),
-                  "fh", getFunctionHeadDeclarations(s2),
+                  "fh", CajitaRewriter.getFunctionHeadDeclarations(s2),
                   "stmts", new ParseTreeNodeContainer(s2.getStartStatements()),
                   "body", expandAll(
                       new ParseTreeNodeContainer(ctor.getBody().children()), s2)
@@ -333,7 +333,7 @@ public abstract class RewriterTestCase extends CajaTestCase {
               "var", identRef,
               "ident", ident,
               "formals", new ParseTreeNodeContainer(ctor.getParams()),
-              "fh", getFunctionHeadDeclarations(s2),
+              "fh", CajitaRewriter.getFunctionHeadDeclarations(s2),
               "stmts", new ParseTreeNodeContainer(s2.getStartStatements()),
               "body", expandAll(
                   new ParseTreeNodeContainer(ctor.getBody().children()), s2)

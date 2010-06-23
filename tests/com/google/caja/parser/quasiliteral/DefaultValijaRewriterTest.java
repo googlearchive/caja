@@ -451,13 +451,13 @@ public class DefaultValijaRewriterTest extends CommonJsRewriterTestCase {
     rewriteAndExecute(
         "function Foo(x) { this.x = x; }" +
         "var foo = new Foo(2);" +
-        "if (!foo) fail('Failed to construct a global object.');" +
+        "if (!foo) { fail('Failed to construct a global object.'); }" +
         "assertEquals(foo.x, 2);");
     rewriteAndExecute(
         "(function () {" +
         "  function Foo(x) { this.x = x; }" +
         "  var foo = new Foo(2);" +
-        "  if (!foo) fail('Failed to construct a local object.');" +
+        "  if (!foo) { fail('Failed to construct a local object.'); }" +
         "  assertEquals(foo.x, 2);" +
         "})();");
     rewriteAndExecute(

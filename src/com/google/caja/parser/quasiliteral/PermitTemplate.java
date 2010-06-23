@@ -61,6 +61,7 @@ final class PermitTemplate {
           "remove", CanCall,
           "keys", CanCall,
           "canReadRev", CanCall,
+          "disArgs", CanCall,
           "dis", CanCall),
       "cajita", new PermitTemplate(
           "BREAK", CanRead,
@@ -120,6 +121,7 @@ final class PermitTemplate {
 
           "manifest", CanCall,
 
+          "args", CanCall,
           "construct", CanCall,
           "inheritsFrom", CanCall,
           "getSuperCtor", CanCall,

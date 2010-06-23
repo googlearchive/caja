@@ -2120,7 +2120,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
         "} catch (e){" +
           "success = true;" +
         "}" +
-        "if (!success) fail('Array not frozen.');");
+        "if (!success) { fail('Array.prototype not frozen.'); }");
   }
 
   /**
@@ -2134,7 +2134,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
         "} catch (e){" +
           "success = true;" +
         "}" +
-        "if (!success) fail('Object not frozen.');");
+        "if (!success) { fail('Object.prototype not frozen.'); }");
   }
 
   public final void testStamp() throws Exception {

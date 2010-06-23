@@ -136,6 +136,30 @@ public class CajitaRewriter extends Rewriter {
     }
     return lasti;
   }
+  
+  /**
+   * Generate the header that should be placed at the beginning of the body
+   * of the translation of a Cajita function body.
+   * 
+   * @param scope The scope that results from expanding (cajoling) the Cajita
+   *              function body.
+   * @return If the function body contains a free use of <tt>arguments</tt>,
+   *         translate to an initialization of cajoled arguments based on
+   *         an entry snapshot of the real ones.
+   */
+  public static ParseTreeNode getFunctionHeadDeclarations(Scope scope) {
+    List<ParseTreeNode> stmts = Lists.newArrayList();
+
+    if (scope.hasFreeArguments()) {
+      stmts.add(QuasiBuilder.substV(
+          "var @la = ___.args(@ga);",
+          "la", s(new Identifier(
+              FilePosition.UNKNOWN, ReservedNames.LOCAL_ARGUMENTS)),
+          "ga", Rule.newReference(FilePosition.UNKNOWN, 
+                                  ReservedNames.ARGUMENTS)));
+    }
+    return new ParseTreeNodeContainer(stmts);
+  }
 
   /**
    * Find the last expression statement executed in a block of code and
@@ -707,7 +731,7 @@ public class CajitaRewriter extends Rewriter {
               + "actual arguments taken when the function was first entered.",
           reason="ES3 specifies that the magic \"arguments\" variable is a "
               + "dynamic (\"joined\") mutable array-like reflection of the "
-              + "values of the parameter variables. However, te typical usage "
+              + "values of the parameter variables. However, the typical usage "
               + "is to pass it to provide access to one's original arguments -- "
               + "without the intention of providing the ability to mutate the "
               + "caller's parameter variables. By making a frozen array "

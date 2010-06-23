@@ -192,21 +192,7 @@ public abstract class Rule implements MessagePart {
     return n;
   }
 
-  protected ParseTreeNode getFunctionHeadDeclarations(Scope scope) {
-    List<ParseTreeNode> stmts = Lists.newArrayList();
-
-    if (scope.hasFreeArguments()) {
-      stmts.add(QuasiBuilder.substV(
-          "var @la = ___.args(@ga);",
-          "la", s(new Identifier(
-              FilePosition.UNKNOWN, ReservedNames.LOCAL_ARGUMENTS)),
-          "ga", newReference(FilePosition.UNKNOWN, ReservedNames.ARGUMENTS)));
-    }
-
-    return new ParseTreeNodeContainer(stmts);
-  }
-
-  protected Reference newReference(FilePosition pos, String name) {
+  public static Reference newReference(FilePosition pos, String name) {
     return new Reference(s(new Identifier(pos, name)));
   }
 
