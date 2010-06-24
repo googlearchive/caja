@@ -367,6 +367,7 @@ domitaModules.CssPropertiesCollection =
  * Add a tamed document implementation to a Gadget's global scope.
  *
  * @param {string} idSuffix a string suffix appended to all node IDs.
+ *     It should begin with "-" and end with "___".
  * @param {Object} uriCallback an object like <pre>{
  *       rewrite: function (uri, mimeType) { return safeUri }
  *     }</pre>.
@@ -3674,6 +3675,9 @@ var attachDocumentStub = (function () {
 
     if (!/^-/.test(idSuffix)) {
       throw new Error('id suffix "' + idSuffix + '" must start with "-"');
+    }
+    if (!/___$/.test(idSuffix)) {
+      throw new Error('id suffix "' + idSuffix + '" must end with "___"');
     }
     var idClass = idSuffix.substring(1);
     var idClassPattern = new RegExp(

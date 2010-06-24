@@ -112,8 +112,7 @@
 
     function makeReadOnlyNode(node) {
       var stub = {};
-      // Use a blank suffix to give the gadget access to raw class names.
-      attachDocumentStub('-', uriCallback, stub, document.body);
+      attachDocumentStub('-dummysuffix___', uriCallback, stub, document.body);
       return stub.tameNode___(node, false);
     }
 

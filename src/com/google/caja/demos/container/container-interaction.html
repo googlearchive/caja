@@ -71,7 +71,7 @@
         // you set a property on imports.outers after this point, 
         // you have to grant access to it explicitly.
         attachDocumentStub(
-            "-" + divId,
+            "-" + divId + "___",
             // Don't proxy urls
             { rewrite: function(uri, mimetype) { return uri; } },
             imports,
