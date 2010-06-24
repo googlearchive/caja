@@ -13,9 +13,11 @@
 // limitations under the License.
 
 /**
- * @author maoziqing@gmail.com
+ * @author maoziqing@gmail.com, kpreid@switchb.org
  * @requires ___, bridal, Q, URI
- * @provides xhrModuleLoadMaker, scriptModuleLoadMaker, clearModuleCache
+ * @provides xhrModuleLoadMaker, scriptModuleLoadMaker, clearModuleCache,
+ *           defaultModuleIdResolver, defaultCajolerFinder,
+ *           CajolingServiceFinder
  * To obtain the dependencies of this file, load:
  *   cajita.js, bridal.js, uri.js, cajita-promise.js
  *
@@ -47,6 +49,7 @@ var xhrModuleLoadMaker;
 var scriptModuleLoadMaker;
 var defaultModuleIdResolver;
 var defaultCajolerFinder;
+var CajolingServiceFinder;
 var clearModuleCache;
 
 (function() {
@@ -57,21 +60,29 @@ var clearModuleCache;
     return URI.resolve(URI.parse(thisModURL), URI.parse(mid)).toString();
   };
   
-  defaultCajolerFinder = function(uncajoledSourceURL) {
-    var inputMimeType;
-    if (/\.js$/.test(uncajoledSourceURL)) {
-      inputMimeType = 'application/javascript';
-    } else if (/\.html$/.test(uncajoledSourceURL)) {
-      inputMimeType = 'text/html';
-    } else {
-      inputMimeType = 'application/javascript';
-    }
+  /**
+   * Constructor for a cajoler finder given the URL of a cajoling service.
+   */
+  CajolingServiceFinder = function(serviceURL) {
+    function cajolingServiceFinder(uncajoledSourceURL) {
+      var inputMimeType;
+      if (/\.js$/.test(uncajoledSourceURL)) {
+        inputMimeType = 'application/javascript';
+      } else if (/\.html$/.test(uncajoledSourceURL)) {
+        inputMimeType = 'text/html';
+      } else {
+        inputMimeType = 'application/javascript';
+      }
 
-    return 'http://caja.appspot.com/cajole' +
-        '?url=' + encodeURIComponent(uncajoledSourceURL) +
-        '&input-mime-type=' + inputMimeType +
-        '&output-mime-type=application/javascript';
+      return serviceURL +
+          '?url=' + encodeURIComponent(uncajoledSourceURL) +
+          '&input-mime-type=' + inputMimeType +
+          '&output-mime-type=application/javascript';
+    }
+    return cajolingServiceFinder;
   };
+  defaultCajolerFinder = new CajolingServiceFinder(
+      'http://caja.appspot.com/cajole');
 
   function syncLoad(modURL) {
     if (cache[modURL] === undefined || Q.near(cache[modURL]).isPromise___) {
