@@ -621,6 +621,8 @@
 
   <target name="AllTests"
    depends="dirs,tools,MinifiedJs,playground,CajoledTests">
+    <!-- TODO(kpreid): that this copies to ${lib} means the contents of
+         pluginc.jar depends on whether AllTests was built, which is bad. -->
     <javac destdir="${lib}" debug="true" target="1.5" source="1.5">
       <src path="${tests}"/>
       <classpath refid="classpath.tests.compile"/>
@@ -645,29 +647,8 @@
       <input file="${src}/com/google/caja/valija-cajita.js"/>
       <output file="${lib}/AllTests.Linter.tstamp"/>
     </genrule>
-
-    <!-- TODO(mikesamuel): Can we replace these tree copies with something
-      - that builds a symlink tree? -->
+    
     <copy todir="${lib}">
-      <fileset dir="${src}">
-        <include name="**/caja/ancillary/jsdoc/*.js"/>
-        <include name="**/caja/cajita.js"/>
-        <include name="**/caja/cajita-promise.js"/>
-        <include name="**/caja/cajita-module.js"/>
-        <include name="**/caja/cajita-debugmode.js"/>
-        <include name="**/caja/console.js"/>
-        <include name="**/caja/log-to-console.js"/>
-        <include name="**/caja/valija-cajita.js"/>
-        <include name="**/caja/demos/calendar/*.js"/>
-        <include name="**/caja/plugin/bridal.js"/>
-        <include name="**/caja/plugin/domita.js"/>
-        <include name="**/caja/plugin/host-tools.js"/>
-        <include name="**/caja/plugin/html-emitter.js"/>
-        <include name="**/caja/plugin/html-sanitizer.js"/>
-        <include name="**/caja/plugin/unicode.js"/>
-        <include name="**/caja/plugin/uri.js"/>
-        <include name="**/caja/plugin/caja-gadget.css"/>
-      </fileset>
       <fileset dir="${tests}">
         <include name="**/caja/**/*.css"/>
         <include name="**/caja/**/*.golden"/>
@@ -736,17 +717,30 @@
       <fileset dir="${third_party}">
       </fileset>
       <fileset dir="${src}">
-        <include name="**/caja/cajita.js"/>
         <include name="**/caja/cajita-debugmode.js"/>
+        <include name="**/caja/cajita-module.js"/>
+        <include name="**/caja/cajita-promise.js"/>
+        <include name="**/caja/cajita.js"/>
         <include name="**/caja/console.js"/>
         <include name="**/caja/log-to-console.js"/>
         <include name="**/caja/plugin/bridal.js"/>
+        <include name="**/caja/plugin/caja-gadget.css"/>
         <include name="**/caja/plugin/domita.js"/>
+        <include name="**/caja/plugin/host-tools.js"/>
         <include name="**/caja/plugin/html-emitter.js"/>
         <include name="**/caja/plugin/html-sanitizer.js"/>
-        <include name="**/caja/plugin/unicode.js"/>
         <include name="**/caja/plugin/plugin-base.js"/>
         <include name="**/caja/plugin/templates/*.json"/>
+        <include name="**/caja/plugin/unicode.js"/>
+        <include name="**/caja/plugin/uri.js"/>
+        <include name="**/caja/valija-cajita.js"/>
+      </fileset>
+      
+      <!-- These came from AllTests; They are moved here to reduce the "results
+           in jars depend on whether tests were built" problem -->
+      <fileset dir="${src}">
+        <include name="**/caja/ancillary/jsdoc/*.js"/>
+        <include name="**/caja/demos/calendar/*.js"/> <!-- Probably wrong -->
       </fileset>
     </copy>
   </target>
