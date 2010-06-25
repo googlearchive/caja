@@ -661,6 +661,7 @@
         <include name="**/caja/demos/calendar/*.js"/>
         <include name="**/caja/plugin/bridal.js"/>
         <include name="**/caja/plugin/domita.js"/>
+        <include name="**/caja/plugin/host-tools.js"/>
         <include name="**/caja/plugin/html-emitter.js"/>
         <include name="**/caja/plugin/html-sanitizer.js"/>
         <include name="**/caja/plugin/unicode.js"/>
@@ -834,10 +835,10 @@
         <include name="log-to-console.js"/>
         <include name="cajita-module.js"/>
         <include name="cajita-promise.js"/>
-        <include name="plugin/uri.js"/>
       </fileset>
       <fileset dir="${src}/com/google/caja/plugin">
         <include name="uri.js"/>
+        <include name="host-tools.js"/>
       </fileset>
       <fileset dir="${lib}/com/google/caja/plugin">
         <include name="domita-minified.js"/>

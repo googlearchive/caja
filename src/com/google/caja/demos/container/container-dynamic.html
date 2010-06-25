@@ -40,6 +40,7 @@
     <script type="text/javascript" src="uri.js"            ></script>
     <script type="text/javascript" src="cajita-promise.js" ></script>
     <script type="text/javascript" src="cajita-module.js"  ></script>
+    <script type="text/javascript" src="host-tools.js"     ></script>
 
     <link rel="stylesheet" href="caja-gadget.css" type="text/css">
   </head>
@@ -47,56 +48,23 @@
   <body>
     <div id="container"></div>
     <script type="text/javascript">
-      function makeGadgetEnvironment(container) {
-        var imports = ___.copy(___.sharedImports);
-        imports.outers = imports;
-        
-        // Create Domita (DOM taming, virtualized document) instance.
-        //
-        // attachDocumentStub is from domita-minified.js.
-        attachDocumentStub('-' + container.className, {
-            rewrite: function() {
-                return null;
-            }
-        }, imports, container);
-        
-        // Create HTML-emitter for gadget's HTML and document.write -- this
-        // should be done *after* Domita setup so that imports.document exists.
-        //
-        // HtmlEmitter is from domita-minified.js.
-        imports.htmlEmitter___ = new HtmlEmitter(container, imports.document);
-
-        // Create Valija (unrestricted-JavaScript emulation environment)
-        // instance.
-        //
-        // valijaMaker is defined in valija.out.js, but setup-valija.js
-        // arranges for it to be exported as a global function. Since 
-        // valija.out.js is cajoled code, functions in it must be invoked in
-        // this way.
-        imports.$v = valijaMaker.CALL___(imports.outers);
-
-        return imports;
-      }
-
-      function loadGadget(pluginName, url) {
+      var ht = new HostTools();
+      
+      function loadGadget(url) {
           var containerDiv = document.createElement('div');
-          var uniqueClass = pluginName + "-form___";
-          containerDiv.className = uniqueClass + " vdoc-body___";
           document.getElementById("container").appendChild(containerDiv);
-          var imports = makeGadgetEnvironment(containerDiv);
           
-          var load = scriptModuleLoadMaker(document.location.toString());
-          Q.when(load.async(url), function(moduleFunc) {
-            moduleFunc(imports);
-          });
+          var sandbox = new ht.Sandbox();
+          sandbox.attach(containerDiv);
+          sandbox.run(url);
       }
     </script>
 
     <script>
-      loadGadget("gadget1", 'http://www.thinkfu.com/trivial.html');
+      loadGadget('http://www.thinkfu.com/trivial.html');
     </script>
     <script>
-      loadGadget("gadget2", 'http://www.thinkfu.com/trivial.html');
+      loadGadget('http://www.thinkfu.com/trivial.html');
     </script>
 </body> 
 </html> 
