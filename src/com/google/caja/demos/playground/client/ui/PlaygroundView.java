@@ -140,19 +140,16 @@ public class PlaygroundView {
     });
     addressField.setText("http://");
     addressField.setWidth("100%");
-    final Button goButton = new Button("Load");
+    final Button goButton = new Button("\u21B4\u00A0Load");
     goButton.addClickHandler(new ClickHandler() {
       public void onClick(ClickEvent event) {
         controller.loadSource(addressField.getText());
       }
     });
-    goButton.setWidth("100%");
 
-    final Button cajoleButton = new Button("Cajole");
-    cajoleButton.setWidth("100%");
+    final Button cajoleButton = new Button("Cajole\u00A0\u21B1");
 
     final CheckBox debugModeButton = new CheckBox("debug");
-    debugModeButton.setWidth("100%");
 
     cajoleButton.addClickHandler(new ClickHandler() {
       public void onClick(ClickEvent event) {
