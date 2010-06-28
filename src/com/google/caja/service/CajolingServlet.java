@@ -14,9 +14,9 @@
 
 package com.google.caja.service;
 
-import com.google.caja.SomethingWidgyHappenedError;
 import com.google.caja.lexer.FetchedData;
 import com.google.caja.lexer.InputSource;
+import com.google.caja.lexer.escaping.Escaping;
 import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessageLevel;
@@ -90,17 +90,15 @@ public class CajolingServlet extends HttpServlet {
     closeBadRequest(resp, serializeMessageQueue(mq));
   }
 
+  // TODO(jasvir): The service like the gwt version should accumulate
+  // input sources and use html snippet producer to produce messages
   private static String serializeMessageQueue(MessageQueue mq) {
     StringBuilder sb = new StringBuilder();
     MessageContext mc = new MessageContext();
     for (Message m : mq.getMessages()) {
-      try {
-        sb.append(m.getMessageLevel()).append(": ");
-        m.format(mc, sb);
-        sb.append("\n");
-      } catch (IOException e) {
-        throw new SomethingWidgyHappenedError(e);
-      }
+      sb.append(m.getMessageLevel().name()).append(": ");
+      Escaping.escapeXml(m.format(mc), false, sb);
+      sb.append("\n");
     }
     return sb.toString();
   }

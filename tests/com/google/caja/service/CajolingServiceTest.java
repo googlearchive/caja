@@ -56,6 +56,13 @@ public class CajolingServiceTest extends ServiceTestCase {
         		"output-mime-type=text/html"));
   }
 
+  // Tests error messages are escaped.
+  public final void testErrorMessagesEscaped() throws Exception {
+    registerUri("http://foo/bar.js", "with(){};", "text/javascript");
+    assertEquals("ERROR",
+        (String)requestGet("?url=http://foo/bar.js&mime-type=text/javascript"));
+  }
+  
   // Tests that POST-ing to the service works just as well as GET-ting from it.
   public final void testPost() throws Exception {
     byte[] byteData = { (byte) 0x47, (byte) 0x49, (byte) 0x46,
