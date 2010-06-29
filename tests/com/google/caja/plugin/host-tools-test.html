@@ -29,8 +29,10 @@
     <script type="text/javascript" src="uri.js"></script>
     <script type="text/javascript" src="../cajita-promise.js"></script>
     <script type="text/javascript" src="../cajita-module.js"></script>
-    <!--<script type="text/javascript" src="module-promise-minified.js"></script>-->
-    <script type="text/javascript" src="../../../../../src/com/google/caja/demos/playground/setup-valija.js"></script>
+  <!--<script type="text/javascript" src="module-promise-minified.js"></script>
+      Disabled until minifier output bug fixed. -->
+    <script type="text/javascript"
+src="../../../../../src/com/google/caja/demos/playground/setup-valija.js"></script>
     <script type="text/javascript" src="valija.out.js"></script>
 
     <!-- That under test -->
@@ -40,6 +42,10 @@
     <script type="text/javascript" src="host-tools-test.js"></script>
   </head>
 
-  <body onload="jsunitRun()">
-  </body>
+  <body onload="htt_loaded()">
+  
+    <div id="automatedTestingReadyIndicator"></div> 
+    <!-- used for Java test driver -->
+  
+</body>
 </html>

@@ -41,7 +41,8 @@ import java.util.List;
  * @author kpreid@switchb.org
  */
 public class HostToolsTest extends CajaTestCase {
-  final int waitRoundLimit = 15;
+  final int waitForStartupRoundLimit = 50; // * 200ms
+  final int waitRoundLimit = 15; // * 1s
 
   Server server;
   Process cajoler;
@@ -107,6 +108,22 @@ public class HostToolsTest extends CajaTestCase {
 
     driver.get("http://localhost:8000/ant-lib/com/google/caja/plugin/"
                + pageName);
+
+    int waitForStartupRounds = 0;
+    for (; waitForStartupRounds < waitForStartupRoundLimit;
+         waitForStartupRounds++) {
+      List<WebElement> readyElements = driver.findElements(
+          By.xpath("//*[@class='readytotest']"));
+      if (readyElements.size() != 0) {
+        break;
+      }
+      try {
+        Thread.sleep(200);
+      } catch (InterruptedException e) {}
+    }
+    assertTrue(
+        "Too many rounds waiting for startup.",
+        waitForStartupRounds < waitRoundLimit);
 
     int waitForCompletionRounds = 0;
     for (; waitForCompletionRounds < waitRoundLimit;

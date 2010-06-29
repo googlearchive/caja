@@ -36,6 +36,12 @@ function tearDown() {
   tools = undefined;
 }
 
+function htt_loaded() {
+  var testState = document.getElementById("automatedTestingReadyIndicator");
+  testState.className = "readytotest";
+  jsunitRun();
+}
+
 //------------------------------------------------------------------------------
 
 function assertIdentical() {
