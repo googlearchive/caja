@@ -572,7 +572,15 @@ var attachDocumentStub = (function () {
   ___.markFuncFreeze(tameSetTimeout);
   function tameClearTimeout(timeoutId) {
     if (timeoutId === null || timeoutId === (void 0)) { return; }
-    timeoutId = TimeoutIdT.coerce(timeoutId);
+    try {
+      timeoutId = TimeoutIdT.coerce(timeoutId);
+    } catch (e) {
+      // From https://developer.mozilla.org/en/DOM/window.clearTimeout says:
+      // Notes:
+      // Passing an invalid ID to clearTimeout does not have any effect
+      // (and doesn't throw an exception).
+      return;
+    }
     var rawTimeoutId = timeoutId.timeoutId___;
     // Skip NaN values created for null timeouts above.
     if (rawTimeoutId === rawTimeoutId) { clearTimeout(rawTimeoutId); }
@@ -603,7 +611,12 @@ var attachDocumentStub = (function () {
   ___.markFuncFreeze(tameSetInterval);
   function tameClearInterval(intervalId) {
     if (intervalId === null || intervalId === (void 0)) { return; }
-    intervalId = IntervalIdT.coerce(intervalId);
+    try {
+      intervalId = IntervalIdT.coerce(intervalId);
+    } catch (e) {
+      // See comment about corresponding error handling in clearTimeout.
+      return;
+    }
     var rawIntervalId = intervalId.intervalId___;
     if (rawIntervalId === rawIntervalId) { clearInterval(rawIntervalId); }
   }

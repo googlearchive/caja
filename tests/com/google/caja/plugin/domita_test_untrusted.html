@@ -755,8 +755,16 @@ jsunitRegister('testTimeoutAndInterval',
   // and undefined intervalId's
   clearInterval(null);
   clearInterval(void 0);
+  clearInterval('1');
+  clearInterval({ intervalId : 1 });
+  clearInterval(clearInterval);
+  clearInterval(timeout2Id);
   clearTimeout(null);
   clearTimeout(void 0);
+  clearTimeout('1');
+  clearTimeout({ intervalId : 1 });
+  clearTimeout(clearTimeout);
+  clearTimeout(interval1Id);
 
   setTimeout(
       jsunitCallback(function () {
