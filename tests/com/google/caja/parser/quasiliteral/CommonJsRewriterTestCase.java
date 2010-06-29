@@ -50,6 +50,21 @@ public abstract class CommonJsRewriterTestCase extends RewriterTestCase {
         "if (flag) { fail ('should throw TypeError'); }" +
         "true;");
   }
+  
+  /**
+   * @see <a href="http://code.google.com/p/google-caja/issues/detail?id=1238"
+   *      >issue 1238</a>
+   */
+  public final void testArrayLikeApply() throws Exception {
+    assertConsistent(
+	"function x(a,b) { return a===0 && b===1; }" +
+	"function y() { return x.apply(null,arguments); }" +
+	"x.apply(null, [0,1]);");
+    assertConsistent(
+        "function x(a,b) { return a===0 && b===1; }" +
+        "function y() { return x.apply(null,arguments); }" +
+        "y.apply(null, [0,1]);");
+  }
 
   /**
    * Tests that the length property whitelisting works on non-objects

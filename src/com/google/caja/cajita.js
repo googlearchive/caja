@@ -85,6 +85,36 @@ if (Date.prototype.toISOString === void 0 &&
   };
 }
 
+
+/**
+ * Make Function.prototype.apply tolerant of emulated ES5 arguments
+ * objects.
+ * 
+ * <p>If the existing Function.prototype.apply is not tolerant of
+ * array-like args that are neither arrays nor genuine arguments
+ * objects, then replace it with a wrapper that is at least tolerant
+ * of emulated ES5 arguments objects. Better would be to be tolerant
+ * of array-likes in general, as ES5 is, but we'd need a cheap enough
+ * test to know when we'd need to copy.
+ */
+try {
+  (function(){}).apply({},{length:0});
+} catch (ex) {
+  if (ex instanceof TypeError) {
+    (function() {
+       Function.prototype.apply___ = Function.prototype.apply;
+
+       Function.prototype.apply = function applyGuard(self, args) {
+         if (args && args.CLASS___ === 'Arguments') {
+           args = Array.slice(args, 0);
+         }
+         return this.apply___(self, args);
+       };
+     })();
+  }
+}
+
+
 /**
  * Provide Array.slice similar to Firefox.  You can slice anything, and the
  * result is always an array.  Hazards:
