@@ -28,7 +28,7 @@ var caja___ = (function () {
   // Simple flash taming that does not allow script access to the page
   function tameSimpleFlash(imports) {
     imports.outers.swfobject = {};
-    imports.outers.swfobject.embedSWF = function(swfUrl, id, width, height, 
+    imports.outers.swfobject.embedSWF = function(swfUrl, id, width, height,
         version, expressInstall, flashvars, params, attributes, cb) {
       var tameSwfUrl = !/^https?:\/\//i.test(swfUrl) ? null : swfUrl;
       var tameId = id + '-cajoled-output-' + cajaDomSuffix;
@@ -41,7 +41,7 @@ var caja___ = (function () {
         tameVersion = "9.0";
       }
       var tameExpressInstall = false;
-      var tameParams = { "allowScriptAccess" : "never", 
+      var tameParams = { "allowScriptAccess" : "never",
                          "allowNetworking" : "internal"};
       // TODO(jasvir): rewrite attributes
       var tameAttr = null;
@@ -81,7 +81,7 @@ var caja___ = (function () {
     })();
     ___.grantFunc(imports.outers, 'alert');
   }
-  
+
   function enable(divElId) {
     divElId = divElId || 'cajoled-output';
     var imports = ___.copy(___.sharedImports);
@@ -96,19 +96,19 @@ var caja___ = (function () {
       }
     };
     var gadgetRoot = document.getElementById(divElId);
-    gadgetRoot.className = divElId + '-' + cajaDomSuffix;
-    
+    gadgetRoot.className += ' ' + divElId + '-' + cajaDomSuffix;
+
     attachDocumentStub('-' + divElId + '-' + cajaDomSuffix, uriCallback,
         imports, gadgetRoot);
     imports.htmlEmitter___ = new HtmlEmitter(gadgetRoot, imports.document);
     imports.$v = valijaMaker.CALL___(imports.outers);
     ___.getNewModuleHandler().setImports(imports);
-    
+
     tameAlert(imports);
     tameFlash(imports);
   }
 
   return {
-    enable: enable  
+    enable: enable
   };
 })();

@@ -458,13 +458,16 @@ public class PlaygroundView {
 
     String cajoled = "caja___.enable(); " + js;
 
+    // Make the cajoled content visible so that the DOM will be laid out before
+    // the script checks DOM geometry.
+    editorPanel.selectTab(2);
+
     Element el = DOM.createElement("script");
     ScriptElement script = ScriptElement.as(el);
     script.setType("text/javascript");
     script.setInnerText(cajoled);
     renderPanel.getElement().appendChild(script);
     renderResult.setText(getRenderResult());
-    editorPanel.selectTab(2);
   }
 
   private native String getRenderResult() /*-{
