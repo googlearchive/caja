@@ -14,6 +14,11 @@
 
 package com.google.caja.service;
 
+import java.util.Arrays;
+
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+
 import com.google.caja.reporting.MessageLevel;
 
 /**
@@ -122,6 +127,93 @@ public class HtmlHandlerTest extends ServiceTestCase {
     assertHtml2Html("text/html", "text/html", "foo.bar.baz");
   }
 
+  public final void testHtml2Json() throws Exception {
+    assertHtml2Json("*/*", "application/json", null);
+    assertHtml2Json("text/html", "application/json", null);
+    assertHtml2Json("text/html", "application/json", "foo.bar.baz");
+  }  
+  
+  private void assertHtml2Json(String inputMimeType,
+                               String outputMimeType,
+                               String moduleCallback)
+      throws Exception {
+    registerUri("http://foo/bar.html", "<p>hi</p><script>42;</script><p>bye</p>",
+      "text/html");
+
+    Object result = json((String)requestGet(
+        requestString(inputMimeType, outputMimeType, moduleCallback)));  
+    assertTrue(result instanceof JSONObject);
+    JSONObject json = (JSONObject) result;
+
+    // Check html generation is correct
+    assertEquals("<p>hi<span id=\"id_1___\"></span></p><p>bye</p>",
+        (String)json.get("html"));
+    assertEquals("{"
+        + moduleCallbackPrefix(moduleCallback) + "{"
+        + "'instantiate':function(___,IMPORTS___){"
+          + "return ___.prepareModule({"
+              + "'instantiate':function(___,IMPORTS___){"
+                + "var\nmoduleResult___,el___,emitter___;"
+                +	"moduleResult___=___.NO_RESULT;"
+                + "{"
+                  +	"emitter___=IMPORTS___.htmlEmitter___;"
+                  + "emitter___.discard(emitter___.attach('id_1___'))"
+                + "}"
+                + "return moduleResult___"
+              + "},"
+              + "'cajolerName':'com.google.caja',"
+              + "'cajolerVersion':'testBuildVersion',"
+              + "'cajoledDate':0})(IMPORTS___),"
+              + "___.prepareModule({"
+                + "'instantiate':function(___,IMPORTS___){var\n"
+                  + "$v=___.readImport(IMPORTS___,'$v',{"
+                      + "'getOuters':{'()':{}},"
+                      + "'initOuter':{'()':{}},"
+                      + "'ro':{'()':{}}"
+                  + "});"
+                  + "var\nmoduleResult___,$dis;"
+                  + "moduleResult___=___.NO_RESULT;"
+                  + "$dis=$v.getOuters();"
+                  + "$v.initOuter('onerror');"
+                  + "try{"
+                    + "{moduleResult___=42}"
+                  + "}catch(ex___){"
+                    + "___.getNewModuleHandler().handleUncaughtException("
+                        + "ex___,$v.ro('onerror'),'bar.html','1')"
+                  + "}"
+                  + "return moduleResult___"
+                + "},"
+                + "'cajolerName':'com.google.caja',"
+                + "'cajolerVersion':'testBuildVersion',"
+                + "'cajoledDate':0"
+              + "})(IMPORTS___),___.prepareModule({"
+                + "'instantiate':function(___,IMPORTS___){"
+                  + "var\nmoduleResult___,el___,emitter___;"
+                  + "moduleResult___=___.NO_RESULT;"
+                  + "{"
+                    + "emitter___=IMPORTS___.htmlEmitter___;"
+                    + "el___=emitter___.finish();"
+                    + "emitter___.signalLoaded()"
+                  + "}"
+                  + "return moduleResult___"
+                + "},"
+                + "'cajolerName':'com.google.caja',"
+                + "'cajolerVersion':'testBuildVersion',"
+                + "'cajoledDate':0"
+              + "})(IMPORTS___)"
+            + "},"
+          + "'cajolerName':'com.google.caja',"
+          + "'cajolerVersion':'testBuildVersion',"
+          + "'cajoledDate':0"
+          + "}" + moduleCallbackSuffix(moduleCallback)
+        + "}",
+      (String)json.get("js"));
+    
+    assertTrue(json.get("messages") instanceof JSONArray);
+    JSONArray messages = (JSONArray)json.get("messages");
+    assertMessagesLessSevereThan(messages, MessageLevel.ERROR);
+  }
+  
   private void assertHtml2Js(String inputMimeType,
                              String outputMimeType,
                              String moduleCallback)

@@ -52,6 +52,7 @@ public enum ContentType {
       .put("text/ecmascript", ContentType.JS)
       .put("application/ecmascript", ContentType.JS)
       .put("text/jscript", ContentType.JS)
+      .put("application/json", ContentType.JSON)
       .put("text/css", ContentType.CSS)
       .put("text/html", ContentType.HTML)
       .put("application/xml", ContentType.XML)

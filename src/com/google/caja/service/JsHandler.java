@@ -34,12 +34,9 @@ import com.google.caja.parser.quasiliteral.CajitaRewriter;
 import com.google.caja.parser.quasiliteral.DefaultValijaRewriter;
 import com.google.caja.parser.quasiliteral.QuasiBuilder;
 import com.google.caja.parser.quasiliteral.Rewriter;
-import com.google.caja.render.Concatenator;
-import com.google.caja.render.JsPrettyPrinter;
 import com.google.caja.reporting.BuildInfo;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
-import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.Charsets;
 import com.google.caja.util.Pair;
 
@@ -48,11 +45,12 @@ import com.google.caja.util.Pair;
  *
  * @author jasvir@google.com (Jasvir Nagra)
  */
-public class JsHandler implements ContentHandler {
-  private final BuildInfo buildInfo;
+public class JsHandler extends AbstractCajolingHandler
+    implements ContentHandler {
 
   public JsHandler(BuildInfo buildInfo) {
-    this.buildInfo = buildInfo;
+    super(buildInfo, null /* hostedService */,
+        null /* uriFetcher */);
   }
 
   public boolean canHandle(URI uri, CajolingService.Transform transform,
@@ -125,16 +123,5 @@ public class JsHandler implements ContentHandler {
           ServiceMessageType.IO_ERROR,
           MessagePart.Factory.valueOf(e.getMessage()));
     }
-  }
-
-  private String renderJavascript(CajoledModule javascript,
-                                  Expression moduleCallback) {
-    StringBuilder jsOut = new StringBuilder();
-    RenderContext rc = new RenderContext(
-        new JsPrettyPrinter(new Concatenator(jsOut)))
-        .withEmbeddable(true);
-    javascript.render(moduleCallback, rc);
-    rc.getOut().noMoreTokens();
-    return jsOut.toString();
   }
 }

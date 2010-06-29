@@ -22,6 +22,7 @@ import com.google.caja.lexer.ExternalReference;
 import com.google.caja.lexer.FetchedData;
 import com.google.caja.lexer.InputSource;
 import com.google.caja.plugin.UriFetcher;
+import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.TestBuildInfo;
 
 import java.io.ByteArrayOutputStream;
@@ -31,6 +32,10 @@ import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.net.URI;
 import java.util.Map;
+
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import org.json.simple.JSONValue;
 
 /**
  * @author jasvir@google.com (Jasvir Nagra)
@@ -63,6 +68,18 @@ public abstract class ServiceTestCase extends CajaTestCase {
     super.tearDown();
   }
 
+  protected Object json(String json) {
+    return JSONValue.parse(json);
+  }
+  
+  protected void assertMessagesLessSevereThan(JSONArray messages,
+      MessageLevel severity) {
+    for (Object m : messages.toArray()) {
+      Object level = ((JSONObject) m).get("level");
+      assertTrue(((Long) level).longValue() < severity.ordinal());
+    }
+  }
+  
   protected void registerUri(String uri, String content, String contentType) {
     ByteArrayOutputStream out = new ByteArrayOutputStream();
     try {
@@ -124,6 +141,14 @@ public abstract class ServiceTestCase extends CajaTestCase {
         lines);
   }
 
+  // TODO(ihab.awad): Change tests to use structural equality (via quasi
+  // matches) rather than golden text to avoid this.
+  protected void assertEqualsIgnoreSpace(String expected, String actual) {
+    assertEquals(
+        expected.replaceAll("\\s", ""),
+        actual.replaceAll("\\s", ""));
+  }
+
   private static String moduleInternal(boolean valija,
                                        String modulePrefix,
                                        String moduleSuffix,
@@ -135,16 +160,15 @@ public abstract class ServiceTestCase extends CajaTestCase {
         + "      'instantiate': function (___, IMPORTS___) {\n");
     String valijaPrefix = (
         ""
-        + "        var $v = ___.readImport(IMPORTS___, '$v', {\n"
-        + "            'getOuters': { '()': {} },\n"
-        + "            'initOuter': { '()': {} },\n"
-        + "            'cf': { '()': {} },\n"
-        + "            'ro': { '()': {} }\n"
-        + "          });\n"
-        + "        var moduleResult___, $dis;\n"
-        + "        moduleResult___ = ___.NO_RESULT;\n"
-        + "        $dis = $v.getOuters();\n"
-        + "        $v.initOuter('onerror');\n"
+        +         "var $v = ___.readImport(IMPORTS___, '$v', {"
+        +             "'getOuters': { '()': {} },"
+        +             "'initOuter': { '()': {} },"
+        +             "'cf': { '()': {} },"
+        +             "'ro': { '()': {} }"
+        +           "});"
+        +         "var moduleResult___,$dis;moduleResult___=___.NO_RESULT;"
+        +         "$dis = $v.getOuters();"
+        +         "$v.initOuter('onerror');"
         );
     String cajitaPrefix = (
         ""
@@ -153,12 +177,12 @@ public abstract class ServiceTestCase extends CajaTestCase {
         );
     String suffix = (
         ""
-        + "        return moduleResult___;\n"
-        + "      },\n"
-        + "      'cajolerName': 'com.google.caja',\n"
-        + "      'cajolerVersion': 'testBuildVersion',\n"
-        + "      'cajoledDate': 0\n"
-        + "    }" + moduleSuffix + ";\n"
+        +         "return moduleResult___"
+        +       "},"
+        +       "'cajolerName': 'com.google.caja',"
+        +       "'cajolerVersion': 'testBuildVersion',"
+        +       "'cajoledDate': 0"
+        +     "}" + moduleSuffix
         + "}"
         );
     StringBuilder sb = new StringBuilder();

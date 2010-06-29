@@ -20,6 +20,8 @@ import java.net.URI;
 import java.util.List;
 import java.util.Map;
 
+import org.json.simple.JSONObject;
+import org.json.simple.JSONArray;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -47,6 +49,8 @@ import com.google.caja.plugin.UriPolicy;
 import com.google.caja.render.Concatenator;
 import com.google.caja.render.JsMinimalPrinter;
 import com.google.caja.reporting.BuildInfo;
+import com.google.caja.reporting.Message;
+import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.RenderContext;
@@ -59,29 +63,12 @@ import com.google.caja.util.Pair;
  *
  * @author jasvir@google.com (Jasvir Nagra)
  */
-public class HtmlHandler implements ContentHandler {
-  private final BuildInfo buildInfo;
-  private final UriFetcher uriFetcher;
-  private final UriPolicy uriPolicy;
+public class HtmlHandler extends AbstractCajolingHandler
+    implements ContentHandler {
 
-  public HtmlHandler(
-      BuildInfo buildInfo, final String hostedService,
+  public HtmlHandler(BuildInfo buildInfo, final String hostedService,
       final UriFetcher uriFetcher) {
-    this.buildInfo = buildInfo;
-    this.uriFetcher = uriFetcher != null ? uriFetcher : UriFetcher.NULL_NETWORK;
-    this.uriPolicy = new UriPolicy() {
-      public String rewriteUri(
-          ExternalReference u, UriEffect effect, LoaderType loader,
-          Map<String, ?> hints) {
-        if (hostedService != null) {
-          return hostedService
-              + "?url=" + UriUtil.encode(u.getUri().toString())
-              + "&effect=" + effect + "&loader=" + loader;
-        } else {
-          return null;
-        }
-      }
-    };
+    super(buildInfo, hostedService, uriFetcher);
   }
 
   public boolean canHandle(URI uri, CajolingService.Transform transform,
@@ -91,6 +78,7 @@ public class HtmlHandler implements ContentHandler {
     return checker.check("text/html", inputContentType)
         && (checker.check(outputContentType, "text/html")
             || checker.check(outputContentType, "*/*")
+            || checker.check(outputContentType, "application/json")
             || checker.check(outputContentType, "text/javascript"));
   }
 
@@ -115,7 +103,7 @@ public class HtmlHandler implements ContentHandler {
       }
     } else {
       switch (outputType) {
-        case JS: case HTML: break;
+        case JS: case HTML: case JSON: break;
         default:
           throw new UnsupportedContentTypeException(outputContentType);
       }
@@ -170,6 +158,13 @@ public class HtmlHandler implements ContentHandler {
           renderAsJavascript(compiler.getJavascript(),
                              moduleCallback,
                              output);
+        } else if (outputType == ContentType.JSON) {
+          renderAsJSON(doc,
+              compiler.getStaticHtml(),
+              compiler.getJavascript(),
+              moduleCallback,
+              mq,
+              output);
         } else {
           assert outputType == ContentType.HTML;
           renderAsHtml(doc,
@@ -186,42 +181,5 @@ public class HtmlHandler implements ContentHandler {
           ServiceMessageType.IO_ERROR,
           MessagePart.Factory.valueOf(e.getMessage()));
     }
-  }
-
-  private void renderAsHtml(Document doc,
-                            Node staticHtml,
-                            CajoledModule javascript,
-                            Expression moduleCallback,
-                            Appendable output)
-      throws IOException {
-    if (staticHtml != null) {
-      output.append(Nodes.render(staticHtml));
-    }
-    if (javascript != null) {
-      String htmlNs = Namespaces.HTML_NAMESPACE_URI;
-      Element script = doc.createElementNS(htmlNs, "script");
-      script.setAttributeNS(htmlNs, "type", "text/javascript");
-      script.appendChild(doc.createTextNode(
-          renderJavascript(javascript, moduleCallback)));
-      output.append(Nodes.render(script));
-    }
-  }
-
-  private void renderAsJavascript(CajoledModule javascript,
-                                  Expression moduleCallback,
-                                  Appendable output)
-      throws IOException {
-    output.append(renderJavascript(javascript, moduleCallback));
-  }
-
-  private String renderJavascript(CajoledModule javascript,
-                                  Expression moduleCallback) {
-    StringBuilder jsOut = new StringBuilder();
-    RenderContext rc = new RenderContext(
-        new JsMinimalPrinter(new Concatenator(jsOut)))
-        .withEmbeddable(true);
-    javascript.render(moduleCallback, rc);
-    rc.getOut().noMoreTokens();
-    return jsOut.toString();
   }
 }

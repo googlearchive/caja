@@ -324,6 +324,25 @@ public abstract class CajaTestCase extends TestCase {
     }
   }
 
+  /**
+   * Ensures that two {@code Arrays} are of the same length and corresponding
+   * objects are equal
+   *
+   * @param a a {@code Array of objects}.
+   * @param b a {@code Array of objects}.
+   */
+  protected static void assertArrayEquals(Object[] a, Object[] b) {
+    assertEquals(a.length, b.length);
+    for (int i=0; i < a.length; i++) {
+      // So that eclipse diff works more friendly
+      if (a[i] instanceof String && b[i] instanceof String) {
+        assertEquals((String)a[i], (String)b[i]);
+      } else {
+        assertEquals(a[i], b[i]);
+      }
+    }
+  }
+  
   protected void assertMessagesLessSevereThan(MessageLevel level) {
     for (Message msg : mq.getMessages()) {
       if (level.compareTo(msg.getMessageLevel()) <= 0) {
