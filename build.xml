@@ -756,8 +756,16 @@
     </javac>
   </target>
 
-  <target name="PlaygroundFE" depends="CajoledTests,MinifiedJs"
-   description="Playground Front End">
+  <target name="PlaygroundTimestamp"
+    description="Checks if playground needs rebuilding">
+      <uptodate property="uptodate.playground" targetfile="${war}/playground/playground.nocache.js">
+         <srcfiles dir="${src}/com/google/caja/demos/playground/client" includes="**/*.java"/>
+         <srcfiles dir="${src}/com/google/caja/demos/playground" includes="Playground*.gwt.xml"/>
+      </uptodate>
+   </target>
+
+  <target name="PlaygroundFE" depends="PlaygroundTimestamp, PlaygroundSupportingFiles"
+    unless="uptodate.playground" description="Playground Front End">
     <condition property="gwt.target.module"
         value="com.google.caja.demos.playground.Playground"
         else="com.google.caja.demos.playground.Playground_dev">
@@ -777,7 +785,10 @@
       <arg value="${war}" />
       <arg value="${gwt.target.module}"/>
     </java>
+   </target>
 
+  <target name="PlaygroundSupportingFiles" depends="CajoledTests,MinifiedJs"
+    description="Copies playground front end supporting files">
     <copy todir="${war}">
       <!-- Needed by Playground.html -->
       <fileset dir="${third_party}/js/json_sans_eval">
@@ -912,7 +923,12 @@
    depends="CajolingServlet, PlaygroundBE, PlaygroundFE">
   </target>
 
-  <target name="runserver" description="Starts the development server.">
+  <target name="deploy" depends="production,playground">
+    <appcfg action="update" war="${war}" />
+  </target>
+
+  <target name="runserver" depends="playground"
+    description="Starts the development server.">
     <dev_appserver war="${war}" />
   </target>
 
