@@ -142,7 +142,7 @@ public class LinterTest extends CajaTestCase {
   public final void testRedefinition() throws Exception {
     runLinterTest(
         jobs(new LintJobMaker(js(fromString(
-            "(function () { var a = 1; var a = 2; });"))).make()),
+            "(function () { var a = 1; var a = 2; })();"))).make()),
         ("ERROR: testRedefinition:1+27 - 36: "
          + "a originally defined at testRedefinition:1+16 - 25"));
   }
@@ -240,7 +240,7 @@ public class LinterTest extends CajaTestCase {
             + "(function () {\n"
             + "  for (var i = 0; i < 10; ++i) { f(i); }\n"
             + "  for (var i = 10; --i >= 0;) { f(i); }\n"
-            + "});")))
+            + "})();")))
             .withRequires("f").make())
         );
     runLinterTest(
@@ -250,7 +250,7 @@ public class LinterTest extends CajaTestCase {
             + "  for (var i = 0; i < 10; ++i) {\n"
             + "    for (var i = 10; --i >= 0;) { f(i); }\n"
             + "  }\n"
-            + "});")))
+            + "})();")))
             .withRequires("f").make()),
         ("ERROR: testLoops:3+10 - 20:"
          + " Declaration of i masks declaration at testLoops:2+8 - 17"));
@@ -260,7 +260,7 @@ public class LinterTest extends CajaTestCase {
             + "(function () {\n"
             + "  for (var i = 0; i < 10; ++i) { f(i); }\n"
             + "  return i;"
-            + "});")))
+            + "})();")))
             .withRequires("f").make()),
         ("ERROR: testLoops:3+10 - 11: Usage of i declared at "
          + "testLoops:2+8 - 17 is out of block scope.")
@@ -286,7 +286,7 @@ public class LinterTest extends CajaTestCase {
             + "(function () {\n"
             + "  var k;\n"
             + "  for (k in o);\n"
-            + "});"))).make()),
+            + "})();"))).make()),
         "ERROR: testLoops:3+13 - 14: Symbol o has not been defined"
         );
     runLinterTest(
@@ -311,7 +311,8 @@ public class LinterTest extends CajaTestCase {
             + "new Array();  \n"  // line 10
             + "for (a = b, c = d; !a; ++a, --m, ++c) f;  \n"  // line 11
             + "++c;  \n"  // OK
-            + "while (1) { 1; }"  // line 13.  First allowed, second not
+            + "while (1) { 1; }\n"  // line 13.  First allowed, second not
+            + "({ x: 32 });\n"
             //          1         2         3         4
             // 1234567890123456789012345678901234567890
             )))
@@ -328,7 +329,8 @@ public class LinterTest extends CajaTestCase {
         "WARNING: testIgnoredValue:9+1 - 10: Operation has no effect",
         "WARNING: testIgnoredValue:10+1 - 12: Operation has no effect",
         "WARNING: testIgnoredValue:11+39 - 40: Operation has no effect",
-        "WARNING: testIgnoredValue:13+13 - 14: Operation has no effect");
+        "WARNING: testIgnoredValue:13+13 - 14: Operation has no effect",
+        "WARNING: testIgnoredValue:14+1 - 12: Operation has no effect");
   }
 
   public final void testDeadCode() throws Exception {

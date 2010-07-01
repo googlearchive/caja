@@ -24,6 +24,7 @@ import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.ParserBase;
+import com.google.caja.parser.js.ArrayConstructor;
 import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.BreakStmt;
 import com.google.caja.parser.js.CatchStmt;
@@ -37,6 +38,7 @@ import com.google.caja.parser.js.FunctionDeclaration;
 import com.google.caja.parser.js.LabeledStatement;
 import com.google.caja.parser.js.Literal;
 import com.google.caja.parser.js.Loop;
+import com.google.caja.parser.js.ObjectConstructor;
 import com.google.caja.parser.js.Operation;
 import com.google.caja.parser.js.Operator;
 import com.google.caja.parser.js.OperatorCategory;
@@ -54,6 +56,7 @@ import com.google.caja.reporting.MessageType;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.reporting.SimpleMessageQueue;
 import com.google.caja.tools.BuildCommand;
+import com.google.caja.util.Charsets;
 import com.google.caja.util.Lists;
 import com.google.caja.util.Maps;
 import com.google.caja.util.Pair;
@@ -64,10 +67,14 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
 
@@ -79,6 +86,10 @@ import java.util.Set;
  * @author mikesamuel@gmail.com
  */
 public class Linter implements BuildCommand {
+  private final Environment env;
+
+  public Linter() { this(new Environment(Sets.<String>newHashSet())); }
+  public Linter(Environment env) { this.env = env; }
 
   public boolean build(List<File> inputs, List<File> dependencies, File output)
       throws IOException {
@@ -86,15 +97,32 @@ public class Linter implements BuildCommand {
     Map<InputSource, CharSequence> contentMap = Maps.newLinkedHashMap();
     MessageQueue mq = new SimpleMessageQueue();
     List<LintJob> lintJobs = parseInputs(inputs, contentMap, mc, mq);
-    lint(lintJobs, new Environment(Sets.<String>newHashSet()), mq);
-    if (ErrorReporter.reportErrors(contentMap, mc, mq, System.out)
-        .compareTo(MessageLevel.WARNING) < 0) {
-      // Touch the time-stamp file to make it clear that the inputs were
-      // successfully linted.
-      (new FileOutputStream(output)).close();
-      return true;
+    lint(lintJobs, env, mq);
+    if (output.getName().endsWith(".stamp")) {
+      if (ErrorReporter.reportErrors(contentMap, mc, mq, System.out)
+          .compareTo(MessageLevel.WARNING) < 0) {
+        // Touch the time-stamp file to make it clear that the inputs were
+        // successfully linted.
+        (new FileOutputStream(output)).close();
+        return true;
+      } else {
+        return false;
+      }
     } else {
-      return false;
+      Writer reportOut = new OutputStreamWriter(
+          new FileOutputStream(output), Charsets.UTF_8);
+      boolean result;
+      try {
+        result = ErrorReporter.reportErrors(contentMap, mc, mq, reportOut)
+            .compareTo(MessageLevel.WARNING) < 0;
+      } finally {
+        try {
+          reportOut.close();
+        } catch (IOException ex) {
+          result = false;
+        }
+      }
+      return result;
     }
   }
 
@@ -494,7 +522,7 @@ public class Linter implements BuildCommand {
       Sets.newLinkedHashSet(
           "window", "document", "setTimeout", "setInterval", "location",
           "XMLHttpRequest", "clearInterval", "clearTimeout", "navigator",
-          "event", "alert", "confirm", "prompt", "this"));
+          "event", "alert", "confirm", "prompt", "this", "JSON"));
 
   /**
    * Find identifier lists in documentation comments.
@@ -567,7 +595,11 @@ public class Linter implements BuildCommand {
    */
   private static boolean shouldBeEvaluatedForValue(Expression e) {
     // A literal or value constructor
-    if (e instanceof Reference || e instanceof Literal) { return true; }
+    if (e instanceof Reference || e instanceof Literal
+        || e instanceof ArrayConstructor || e instanceof ObjectConstructor
+        || e instanceof FunctionConstructor) {
+      return true;
+    }
     if (!(e instanceof Operation)) { return false; }
     Operation op = (Operation) e;
     switch (op.getOperator()) {
@@ -627,11 +659,35 @@ public class Linter implements BuildCommand {
   }
 
   public static void main(String[] args) throws IOException {
+    ListIterator<String> argIt = Arrays.asList(args).listIterator();
     List<File> inputs = Lists.newArrayList();
-    for (String arg : args) { inputs.add(new File(arg)); }
+    String outDir = null;
+    Set<String> outers = Sets.newLinkedHashSet(BROWSER_ENVIRONMENT.outers);
+    while (argIt.hasNext()) {
+      String arg = argIt.next();
+      if (!arg.startsWith("-")) {
+        argIt.previous();
+        break;
+      } else if ("--out".equals(arg)) {
+        outDir = argIt.next();
+      } else if ("--builtin".equals(arg)) {
+        outers.add(argIt.next());
+      } else if ("--".equals(arg)) {
+        break;
+      } else {
+        throw new IOException("Unrecognized command line flag " + arg);
+      }
+    }
+    while (argIt.hasNext()) { inputs.add(new File(argIt.next())); }
     List<File> deps = Lists.newArrayList();
-    File out = File.createTempFile(Linter.class.getSimpleName(), ".stamp");
-    (new Linter()).build(inputs, deps, out);
+    File out;
+    if (outDir == null) {
+      out = File.createTempFile(Linter.class.getSimpleName(), ".stamp");
+    } else {
+      out = new File(outDir, "jslint.txt");
+    }
+    Environment env = new Environment(outers);
+    (new Linter(env)).build(inputs, deps, out);
   }
 
   private static void checkGlobalsDefined(
