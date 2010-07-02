@@ -221,9 +221,18 @@ public class StatementSimplifier {
             ? newChildren : Lists.newArrayList(children);
         Statement optCond = optimizeConditional(n.getFilePosition(), condParts);
         if (optCond != null) { return optCond; }
+        int nCondParts = condParts.size();
+        if ((nCondParts & 1) == 1) {  // There is an else clause
+          // Remove a useless else clause.
+          if (condParts.get(nCondParts - 1) instanceof Noop) {
+            if (newChildren == null) {
+              condParts = newChildren = Lists.newArrayList(condParts);
+            }
+            condParts.remove(--nCondParts);
+          }
+        }
         // If there is an else clause, and every other clause exits, then get
         // rid of the else.
-        int nCondParts = condParts.size();
         if ((nCondParts & 1) == 1) {  // There is an else clause
           boolean allExit = true;
           for (int i = 1; i < nCondParts; i += 2) {

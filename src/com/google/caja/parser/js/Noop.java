@@ -15,6 +15,7 @@
 package com.google.caja.parser.js;
 
 import com.google.caja.lexer.FilePosition;
+import com.google.caja.render.JsMinimalPrinter;
 import com.google.caja.reporting.RenderContext;
 
 import java.util.List;
@@ -37,8 +38,10 @@ public final class Noop extends AbstractStatement {
   public Object getValue() { return null; }
 
   public void render(RenderContext rc) {
-    // render for Noop is a noop as renderBlock will take care of the semicolon
+    rc.getOut().consume(JsMinimalPrinter.NOOP);
   }
 
   public boolean hasHangingConditional() { return false; }
+
+  @Override public boolean isTerminal() { return true; }
 }

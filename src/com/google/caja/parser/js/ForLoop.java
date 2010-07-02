@@ -17,6 +17,7 @@ package com.google.caja.parser.js;
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.parser.ParseTreeNode;
+import com.google.caja.render.JsMinimalPrinter;
 import com.google.caja.reporting.RenderContext;
 
 import java.util.List;
@@ -86,11 +87,14 @@ public final class ForLoop extends Loop implements NestedScope {
     }
     out.consume("for");
     out.consume("(");
-    initializer.render(rc);
-    out.consume(";");
-    condition.render(rc);
-    out.consume(";");
-    increment.render(rc);
+    if (!(initializer instanceof Noop)) { initializer.render(rc); }
+    out.consume(JsMinimalPrinter.NOOP);
+    if (!(condition instanceof BooleanLiteral
+          && ((BooleanLiteral) condition).value)) {
+      condition.render(rc);
+    }
+    out.consume(JsMinimalPrinter.NOOP);
+    if (!(increment instanceof Noop)) { increment.render(rc); }
     out.consume(")");
     getBody().renderBlock(rc, false);
   }

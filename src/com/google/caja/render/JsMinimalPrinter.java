@@ -37,6 +37,12 @@ public final class JsMinimalPrinter extends BufferingRenderer {
   private JsTokenAdjacencyChecker adjChecker = new JsTokenAdjacencyChecker();
 
   /**
+   * A non-interned version of the string {@code ";"} used to prevent
+   * necessary semicolons from being folded out.
+   */
+  public static final String NOOP = new String(";");
+
+  /**
    * @param out receives the rendered text.
    */
   public JsMinimalPrinter(Concatenator out) {
@@ -81,15 +87,22 @@ public final class JsMinimalPrinter extends BufferingRenderer {
 
       // Actually write the token.
       charInLine += text.length();
-      if ("}".equals(text) && ";".equals(lastToken)) {
-        // ES5 Section 7.9.1 Rules of Automatic Semicolon Insertion
-        // When, as the program is parsed from left to right, a token (called
-        // the offending token) is encountered that is not allowed by any
-        // production of the grammar, then a semicolon is automatically inserted
-        // before the offending token if one or more of the following conditions
-        // is true:
-        // ...
-        // 2.   The offending token is }.
+      // ES5 Section 7.9.1 Rules of Automatic Semicolon Insertion
+      // When, as the program is parsed from left to right, a token (called
+      // the offending token) is encountered that is not allowed by any
+      // production of the grammar, then a semicolon is automatically inserted
+      // before the offending token if one or more of the following conditions
+      // is true:
+      // ...
+      // 2.   The offending token is }.
+      if ("}".equals(text) && ";".equals(lastToken)
+          // ES Section 7.9.1 Rules of Automatic Semicolon Insertion
+          // However, there is an additional overriding condition on the
+          // preceding rules: a semicolon is never inserted automatically if the
+          // semicolon would then be parsed as an empty statement or if that
+          // semicolon would become one of the two semicolons in the header of a
+          // for statement (see 12.6.3).
+          && lastToken != NOOP) {
 
         // NOTE: this could turn an invalid token sequence into a valid one.
         // E.g. ({ a: 0; }) => ({ a: 0 })

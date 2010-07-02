@@ -233,6 +233,23 @@ public class JsMinimalPrinterTest extends CajaTestCase {
         out.toString());
   }
 
+  public final void testNoops() throws ParseException {
+    ParseTreeNode b = js(fromString(
+        "for (;;) {",
+        "  if (foo)",
+        "    bar();",
+        "  else",
+        "    ;",
+        "}"));
+    StringBuilder out = new StringBuilder();
+    JsMinimalPrinter pp = new JsMinimalPrinter(new Concatenator(out));
+    b.render(new RenderContext(pp));
+    pp.noMoreTokens();
+    assertEquals(
+        "{for(;;){if(foo)bar();else;}}",
+        out.toString());
+  }
+
   private static final JsTokenType[] TYPES = JsTokenType.values();
   private static final String[] PUNCTUATORS;
   static {

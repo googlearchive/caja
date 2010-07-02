@@ -96,8 +96,8 @@ public abstract class CajaTestCase extends TestCase {
     this.mq = null;
   }
 
-  protected CharProducer fromString(String content) {
-    return fromString(content, is);
+  protected CharProducer fromString(String... content) {
+    return fromString(Join.join("\n", content), is);
   }
 
   protected CharProducer fromString(String content, InputSource is) {
@@ -342,7 +342,7 @@ public abstract class CajaTestCase extends TestCase {
       }
     }
   }
-  
+
   protected void assertMessagesLessSevereThan(MessageLevel level) {
     for (Message msg : mq.getMessages()) {
       if (level.compareTo(msg.getMessageLevel()) <= 0) {

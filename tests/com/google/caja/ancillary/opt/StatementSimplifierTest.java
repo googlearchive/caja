@@ -351,6 +351,12 @@ public class StatementSimplifierTest extends CajaTestCase {
     assertNoErrors();
   }
 
+  public final void testUnnecessaryElses() throws ParseException {
+    assertSimplified(
+        Arrays.asList("if (foo()) bar();"),
+        Arrays.asList("if (foo()) { bar(); } else { /* do nothing */ }"));
+  }
+
   public final void testLabelRenaming() throws ParseException {
     assertSimplified(
         Arrays.asList(
