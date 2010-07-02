@@ -209,7 +209,7 @@ function jsunitCallback(aFunction, opt_id) {
   }
   var id = opt_id || jsunit.getCurrentTestId();
   var callbackName = aFunction.name || '<anonymous>';
-  return ___.markFuncFreeze(function(opt_args) {
+  function callback(opt_args) {
     var result = undefined;
     startLogMessagesGroup(id, callbackName);
     try {
@@ -220,5 +220,8 @@ function jsunitCallback(aFunction, opt_id) {
       endLogMessagesGroup(id, callbackName);
     }
     return result;
-  });
+  }
+  return typeof ___ !== 'undefined'
+           ? ___.markFuncFreeze(callback)
+           : callback;
 }
