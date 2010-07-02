@@ -29,7 +29,7 @@ function setUp() {
   tools = new HostTools();
   
   // override using appspot because we're working on localhost files
-  tools.setCajolerService("http://localhost:8080/cajole");
+  tools.setCajolerService("http://localhost:8000/cajole");
 }
 
 function tearDown() {

@@ -245,6 +245,13 @@
      if="runtests.failure"/>
   </target>
 
+  <target name="runbrowserstub" depends="AllTests">
+    <java failonerror="false" fork="true"
+     classname="com.google.caja.plugin.BrowserTestCaseStub">
+      <classpath refid="classpath.tests.run"/>
+    </java>
+  </target>
+
   <target name="docs" description="Builds all Caja documentation."
    depends="javadocs,ruledocs,jsdocs"/>
 
@@ -630,6 +637,7 @@
       <include name="**/caja/util/*.java"/>
       <include name="**/caja/**/*TestCase.java"/>
       <include name="**/caja/**/*Test.java"/>
+      <include name="**/caja/plugin/BrowserTestCaseStub.java"/>
       <compilerarg line="-Xlint:unchecked"/>
     </javac>
 
