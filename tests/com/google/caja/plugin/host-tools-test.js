@@ -106,6 +106,23 @@ jsunitRegister("testRunModule",
   }));
 });
 
+jsunitRegister("testSetBaseURL",
+               function testSetBaseURL() {
+  tools.setBaseURL(URI.resolve(URI.parse(document.location.toString()),
+                               URI.parse("../"))
+                      .toString());
+  
+  var s = new tools.Sandbox();
+  s.imports.x = 1;
+  Q.when(s.run("c.js"), jsunitCallback(function (moduleResult) {
+    // We actually only care that the module ran.
+    assertIdentical("module result", 2, moduleResult);
+    jsunit.pass();
+  }), jsunitCallback(function (reason) {
+    throw reason;
+  }));
+});
+
 jsunitRegister("testRunGadget",
                function testRunGadget() {
   

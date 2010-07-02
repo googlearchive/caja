@@ -35,6 +35,9 @@ var HostTools;
 
     // user-modifiable state
     var cajolerFinder = hasModuleLoader ? defaultCajolerFinder : null;
+    var baseURL = document.location.toString();
+    // TODO(kpreid): the above probably does the wrong thing in the case where
+    // the document has a <base>; fix.
     var load;
     
     // internal functions
@@ -44,7 +47,7 @@ var HostTools;
       } else {
         // TODO(kpreid): allow subbing module id resolver
         // TODO(kpreid): Using XHR loader didn't work; why?
-        load = scriptModuleLoadMaker(document.location.toString(),
+        load = scriptModuleLoadMaker(baseURL,
                                      defaultModuleIdResolver,
                                      cajolerFinder);
       }
@@ -55,6 +58,11 @@ var HostTools;
     
     function setCajolerService(url) {
       cajolerFinder = new CajolingServiceFinder(url);
+      updateLoad();
+    }
+    
+    function setBaseURL(url) {
+      baseURL = url;
       updateLoad();
     }
     
@@ -70,7 +78,7 @@ var HostTools;
               "cannot dynamically load modules.");
         }
         
-        // TODO: review error handling
+        // TODO: review error handling -- are errors propagated and descriptive?
         return Q.when(load.async(mid), function (moduleFunc) {
           //console.log("got load Q callback");
           return moduleFunc(imports);
@@ -112,6 +120,7 @@ var HostTools;
     }
     
     return cajita.freeze({
+      setBaseURL: setBaseURL,
       setCajolerService: setCajolerService,
       Sandbox: Sandbox,
     });
