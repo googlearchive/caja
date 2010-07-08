@@ -160,13 +160,18 @@ public class DomParser {
             .getDOMImplementation(features);
       } catch (ClassNotFoundException ex) {
     	  throw new SomethingWidgyHappenedError(
-              "Missing DOM implementation.  Is Xerces on the classpath?", ex);
+            "Missing DOM implementation.  Is Xerces on the classpath?", ex);
       } catch (IllegalAccessException ex) {
-          throw new SomethingWidgyHappenedError(
-              "Missing DOM implementation.  Is Xerces on the classpath?", ex);
+        throw new SomethingWidgyHappenedError(
+            "Missing DOM implementation.  Is Xerces on the classpath?", ex);
       } catch (InstantiationException ex) {
-          throw new SomethingWidgyHappenedError(
-              "Missing DOM implementation.  Is Xerces on the classpath?", ex);
+        throw new SomethingWidgyHappenedError(
+            "Missing DOM implementation.  Is Xerces on the classpath?", ex);
+      }
+      if (domImpl == null) {
+        throw new SomethingWidgyHappenedError(
+            "Missing DOM implementation.  Is Xerces on the classpath? " +
+            "(DOMImplementationRegistry.getDOMImplementation returned null.)");
       }
     }
 
