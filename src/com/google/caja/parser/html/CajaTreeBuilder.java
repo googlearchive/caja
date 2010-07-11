@@ -144,7 +144,12 @@ final class CajaTreeBuilder extends TreeBuilder<Node> {
 
   @Override
   protected void appendCommentToDocument(char[] buf, int start, int length) {
-    appendComment(doc.getDocumentElement(), buf, start, length);
+    Node el = doc.getDocumentElement();
+    if (null == el) {
+      el = doc.createDocumentFragment();
+      doc.appendChild(el);
+    }
+    appendComment(el, buf, start, length);
   }
 
   @Override
