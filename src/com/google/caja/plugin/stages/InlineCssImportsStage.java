@@ -86,7 +86,7 @@ import java.util.Set;
 public class InlineCssImportsStage implements Pipeline.Stage<Jobs> {
   public boolean apply(Jobs jobs) {
     for (Job job : jobs.getJobsByType(ContentType.CSS)) {
-      inlineImports(job.getRoot().cast(CssTree.StyleSheet.class).node,
+      inlineImports((CssTree.StyleSheet) job.getRoot(),
                     job.getBaseUri(), MAXIMUM_IMPORT_DEPTH,
                     jobs.getPluginMeta().getUriFetcher(),
                     jobs.getMessageQueue());

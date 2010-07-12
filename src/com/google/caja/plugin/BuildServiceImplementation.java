@@ -24,7 +24,6 @@ import com.google.caja.lexer.JsTokenQueue;
 import com.google.caja.lexer.ParseException;
 import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.lexer.escaping.UriUtil;
-import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.html.DomParser;
 import com.google.caja.parser.html.Namespaces;
@@ -169,8 +168,7 @@ public class BuildServiceImplementation implements BuildService {
       for (File f : inputs) {
         try {
           URI fileUri = f.getCanonicalFile().toURI();
-          AncestorChain<?> parsedInput = parseInput(
-              new InputSource(fileUri), mq);
+          ParseTreeNode parsedInput = parseInput(new InputSource(fileUri), mq);
           if (parsedInput == null) {
             passed = false;
           } else {
@@ -195,10 +193,10 @@ public class BuildServiceImplementation implements BuildService {
           if (f.getName().endsWith(".env.json")) {
             loadEnvJsonFile(f, optimizer, mq);
           } else {
-            AncestorChain<?> parsedInput = parseInput(
+            ParseTreeNode parsedInput = parseInput(
                 new InputSource(f.getCanonicalFile().toURI()), mq);
             if (parsedInput != null) {
-              optimizer.addInput(parsedInput.cast(Statement.class).node);
+              optimizer.addInput((Statement) parsedInput);
             }
           }
         } catch (IOException ex) {
@@ -308,14 +306,11 @@ public class BuildServiceImplementation implements BuildService {
     return content;
   }
 
-  private AncestorChain<?> parseInput(InputSource is, MessageQueue mq)
+  private ParseTreeNode parseInput(InputSource is, MessageQueue mq)
       throws IOException {
-    CharProducer cp = CharProducer.Factory.fromString(
-        getSourceContent(is), is);
+    CharProducer cp = CharProducer.Factory.fromString(getSourceContent(is), is);
     try {
-      ParseTreeNode input = PluginCompilerMain.parseInput(is, cp, mq);
-      if (input == null) { return null; }
-      return AncestorChain.instance(input);
+      return PluginCompilerMain.parseInput(is, cp, mq);
     } catch (ParseException ex) {
       ex.toMessageQueue(mq);
       return null;

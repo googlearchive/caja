@@ -645,7 +645,10 @@ public class ParserTest extends CajaTestCase {
     String msg = n + " : " + n.getFilePosition();
     try {
       // require that n start on or after its previous sibling
-      ParseTreeNode prev = nChain.getPrevSibling();
+      int indexInParent = nChain.parent != null
+          ? nChain.parent.node.children().indexOf(nChain.node) : -1;
+      ParseTreeNode prev = indexInParent > 0
+          ? nChain.parent.node.children().get(indexInParent - 1) : null;
       if (prev != null) {
         if (prev instanceof Identifier && n instanceof FunctionConstructor
             && nChain.parent != null

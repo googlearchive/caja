@@ -33,7 +33,6 @@ import com.google.caja.lexer.HtmlLexer;
 import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.ParseException;
 import com.google.caja.lexer.escaping.UriUtil;
-import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.html.Dom;
 import com.google.caja.parser.html.DomParser;
 import com.google.caja.parser.html.Namespaces;
@@ -149,7 +148,7 @@ public class HtmlHandler extends AbstractCajolingHandler
             compiler.getGoals().without(PipelineMaker.HTML_SAFE_STATIC));
       }
 
-      compiler.addInput(AncestorChain.instance(html), inputUri);
+      compiler.addInput(html, inputUri);
       if (okToContinue) {
         okToContinue &= compiler.run();
       }

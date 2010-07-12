@@ -22,7 +22,6 @@ import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.ParseException;
 import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.lexer.escaping.UriUtil;
-import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.html.Dom;
 import com.google.caja.plugin.DataUriFetcher;
@@ -97,7 +96,7 @@ public abstract class PipelineStageTestCase extends CajaTestCase {
     List<JobStub> actualJobs = Lists.newArrayList();
     for (Job job : jobs.getJobs()) {
       StringBuilder sb = new StringBuilder();
-      ParseTreeNode node = job.getRoot().cast(ParseTreeNode.class).node;
+      ParseTreeNode node = job.getRoot();
       TokenConsumer tc = node.makeRenderer(sb, null);
       node.render(new RenderContext(tc));
       tc.noMoreTokens();
@@ -112,24 +111,17 @@ public abstract class PipelineStageTestCase extends CajaTestCase {
       case HTML:
         outputJobs.getJobs().add(
             Job.domJob(
-                null,
-                AncestorChain.instance(
-                    new Dom(htmlFragment(fromString(inputJob.content, is)))),
+                null, new Dom(htmlFragment(fromString(inputJob.content, is))),
                 is.getUri()));
         break;
       case CSS:
         outputJobs.getJobs().add(
-            Job.cssJob(
-                null,
-                AncestorChain.instance(css(fromString(inputJob.content, is))),
-                is.getUri()));
+            Job.cssJob(null, css(fromString(inputJob.content, is)), is.getUri())
+            );
         break;
       case JS:
         outputJobs.getJobs().add(
-            Job.jsJob(
-                null,
-                AncestorChain.instance(js(fromString(inputJob.content, is))),
-                null));
+            Job.jsJob(null, js(fromString(inputJob.content, is)), null));
         break;
       default:
         throw new IllegalArgumentException(inputJob.type.name());

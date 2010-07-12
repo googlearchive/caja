@@ -16,10 +16,10 @@ package com.google.caja.plugin.stages;
 
 import com.google.caja.lang.css.CssSchema;
 import com.google.caja.lang.html.HtmlSchema;
-import com.google.caja.lexer.InputSource;
-import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.html.Dom;
 import com.google.caja.plugin.Job;
+
+import java.net.URI;
 
 import org.w3c.dom.Node;
 
@@ -35,9 +35,7 @@ public final class HtmlToBundleStage extends CompileHtmlStage {
   }
 
   @Override
-  Job makeJobFromHtml(JobCache.Keys cacheKeys, Node html) {
-    return Job.domJob(
-        cacheKeys, AncestorChain.instance(new Dom(html)),
-        InputSource.UNKNOWN.getUri());
+  Job makeJobFromHtml(JobCache.Keys cacheKeys, Node html, URI baseUri) {
+    return Job.domJob(cacheKeys, new Dom(html), baseUri);
   }
 }

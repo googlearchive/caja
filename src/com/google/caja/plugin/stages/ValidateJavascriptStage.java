@@ -14,7 +14,6 @@
 
 package com.google.caja.plugin.stages;
 
-import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.js.ArrayConstructor;
 import com.google.caja.parser.js.Block;
@@ -57,8 +56,9 @@ public final class ValidateJavascriptStage implements Pipeline.Stage<Jobs> {
       JobCache.Keys cacheKeys = job.getCacheKeys();
 
       URI baseUri = job.getBaseUri();
+      Statement s = (Statement) job.getRoot();
       ParseTreeNode result = new ExpressionSanitizerCaja(mgr, baseUri)
-          .sanitize(uncajoledModule(job.getRoot().cast(Statement.class).node));
+          .sanitize(uncajoledModule(s));
       if (!(result instanceof CajoledModule)) {
         // Rewriter failed to rewrite so returned its input.
         // There should be details on the message queue.
@@ -66,7 +66,7 @@ public final class ValidateJavascriptStage implements Pipeline.Stage<Jobs> {
         continue;
       }
       CajoledModule validated = (CajoledModule) result;
-      it.set(Job.cajoledJob(cacheKeys, AncestorChain.instance(validated)));
+      it.set(Job.cajoledJob(cacheKeys, validated));
 
       if (cacheKeys.iterator().hasNext()) {
         ArrayConstructor deps = validated.getInlinedModules();
@@ -87,8 +87,7 @@ public final class ValidateJavascriptStage implements Pipeline.Stage<Jobs> {
     // show up in the appropriate caches.
     for (CajoledModule module : mgr.getModuleMap()) {
       String src = module.getSrc();
-      jobs.getJobs().add(Job.cajoledJob(
-          keys.get(src), AncestorChain.instance(module)));
+      jobs.getJobs().add(Job.cajoledJob(keys.get(src), module));
     }
 
     return jobs.hasNoFatalErrors();

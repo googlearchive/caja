@@ -14,7 +14,6 @@
 
 package com.google.caja.plugin.stages;
 
-import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.js.CajoledModule;
 import com.google.caja.parser.quasiliteral.CajitaModuleRewriter;
 import com.google.caja.parser.quasiliteral.ModuleManager;
@@ -41,7 +40,7 @@ public final class ConsolidateCodeStage implements Pipeline.Stage<Jobs> {
     List<Job> jsJobs = jobs.getJobsByType(ContentType.JS);
     List<CajoledModule> modules = Lists.newArrayList();
     for (Job job : jsJobs) {
-      CajoledModule module = (CajoledModule) job.getRoot().node;
+      CajoledModule module = (CajoledModule) job.getRoot();
       if (module.getSrc() == null) {
         // Is top level.  Not a loaded module from ValidateJavaScriptStage.
         modules.add(module);
@@ -49,8 +48,7 @@ public final class ConsolidateCodeStage implements Pipeline.Stage<Jobs> {
     }
     jobs.getJobs().removeAll(jsJobs);
     CajitaModuleRewriter rw = new CajitaModuleRewriter(mgr);
-    jobs.getJobs().add(Job.cajoledJob(
-        null, AncestorChain.instance(rw.rewrite(modules))));
+    jobs.getJobs().add(Job.cajoledJob(null, rw.rewrite(modules)));
     return jobs.hasNoFatalErrors();
   }
 }

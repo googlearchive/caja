@@ -15,7 +15,6 @@
 package com.google.caja.demos.benchmarks;
 
 import com.google.caja.lexer.CharProducer;
-import com.google.caja.parser.AncestorChain;
 import com.google.caja.plugin.PluginCompiler;
 import com.google.caja.plugin.PluginMeta;
 import com.google.caja.reporting.MessageQueue;
@@ -136,9 +135,9 @@ public class BenchmarkRunner extends CajaTestCase {
     CharProducer src = wrapGlobals ?
         fromString(wrapGlobals(plain(fromResource(filename)))):
             fromString(plain(fromResource(filename)));
-    pc.addInput(AncestorChain.instance(valija
-        ? BenchmarkUtils.addUseCajitaDirective(js(src))
-        : js(src)), is.getUri());
+    pc.addInput(
+        valija ? BenchmarkUtils.addUseCajitaDirective(js(src)) : js(src),
+        is.getUri());
     if (!pc.run()) {
       return -1;
     }

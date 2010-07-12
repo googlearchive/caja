@@ -96,10 +96,14 @@ public final class PluginCompiler {
     this.compilationPipeline = null;
   }
 
-  public void addInput(AncestorChain<?> input, URI baseUri) {
+  public void addInput(ParseTreeNode input, URI baseUri) {
     jobs.getJobs().add(Job.job(null, input, baseUri));
-    jobs.getMessageContext().addInputSource(
-        input.node.getFilePosition().source());
+    jobs.getMessageContext().addInputSource(input.getFilePosition().source());
+  }
+
+  @Deprecated
+  public void addInput(AncestorChain<?> input, URI baseUri) {
+    addInput(input.node, baseUri);
   }
 
   @Deprecated
@@ -159,7 +163,7 @@ public final class PluginCompiler {
           }
         });
     return soleHtmlJob != null
-        ? soleHtmlJob.getRoot().cast(Dom.class).node.getValue() : null;
+        ? ((Dom) soleHtmlJob.getRoot()).getValue() : null;
   }
 
   /**
@@ -173,7 +177,7 @@ public final class PluginCompiler {
             return job.getType() == ContentType.JS;
           }
         });
-    return soleJsJob != null ? (CajoledModule) soleJsJob.getRoot().node : null;
+    return soleJsJob != null ? (CajoledModule) soleJsJob.getRoot() : null;
   }
 
   private Job getConsolidatedOutput(Criterion<Job> filter) {

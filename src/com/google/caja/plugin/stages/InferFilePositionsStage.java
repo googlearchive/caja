@@ -50,8 +50,8 @@ import java.util.List;
 public class InferFilePositionsStage implements Pipeline.Stage<Jobs> {
   public boolean apply(Jobs jobs) {
     for (Job job : jobs.getJobs()) {
-      inferFilePositions(job.getRoot().cast(ParseTreeNode.class).node);
-      inferFilePositions(job.getRoot().cast(ParseTreeNode.class).node);
+      inferFilePositions(job.getRoot());
+      inferFilePositions(job.getRoot());
     }
     return true;
   }

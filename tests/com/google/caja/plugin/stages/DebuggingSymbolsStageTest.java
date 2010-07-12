@@ -14,7 +14,6 @@
 
 package com.google.caja.plugin.stages;
 
-import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.CajoledModule;
 import com.google.caja.parser.quasiliteral.ModuleManager;
@@ -315,8 +314,7 @@ public class DebuggingSymbolsStageTest extends CajaTestCase {
                        uncajoledModuleBody.toStringDeep(1));
 
     Jobs jobs = new Jobs(mc, mq, new PluginMeta());
-    jobs.getJobs().add(
-        Job.jsJob(null, AncestorChain.instance(uncajoledModuleBody), null));
+    jobs.getJobs().add(Job.jsJob(null, uncajoledModuleBody, null));
 
     Pipeline<Jobs> pipeline = new Pipeline<Jobs>();
     TestBuildInfo buildInfo = TestBuildInfo.getInstance();
@@ -336,8 +334,8 @@ public class DebuggingSymbolsStageTest extends CajaTestCase {
       fail(sb.toString());
     }
 
-    CajoledModule cajoledModule =
-        jobs.getJobs().get(0).getRoot().cast(CajoledModule.class).node;
+    CajoledModule cajoledModule = (CajoledModule)
+        jobs.getJobs().get(0).getRoot();
 
     try {
       String cajoledText = String.format(context, render(cajoledModule));

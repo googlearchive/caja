@@ -15,7 +15,6 @@
 package com.google.caja.demos.benchmarks;
 
 import com.google.caja.lexer.ParseException;
-import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.CajoledModule;
 import com.google.caja.plugin.PluginCompiler;
@@ -174,7 +173,7 @@ public class BenchmarkSize extends CajaTestCase {
     if (!valija) { js = BenchmarkUtils.addUseCajitaDirective(js); }
     PluginCompiler pc = new PluginCompiler(
         TestBuildInfo.getInstance(), meta, mq);
-    pc.addInput(AncestorChain.instance(js), null);
+    pc.addInput(js, null);
     if (pc.run()) {
       result = pc.getJavascript();
       (valija ? vMemo : cMemo).put(js, result);

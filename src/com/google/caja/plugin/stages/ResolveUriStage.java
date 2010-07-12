@@ -18,7 +18,6 @@ import com.google.caja.lang.html.HTML;
 import com.google.caja.lang.html.HtmlSchema;
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.escaping.UriUtil;
-import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.html.AttribKey;
 import com.google.caja.parser.html.Dom;
 import com.google.caja.parser.html.ElKey;
@@ -115,13 +114,12 @@ public class ResolveUriStage implements Pipeline.Stage<Jobs> {
     while (it.hasNext()) {
       Job job = it.next();
       if (job.getType() != ContentType.HTML) { continue; }
-      AncestorChain<Dom> root = job.getRoot().cast(Dom.class);
-      Dom dom = job.getRoot().cast(Dom.class).node;
+      Dom dom = (Dom) job.getRoot();
       Node node = dom.getValue();
       URI baseUri = baseUri(node, job.getBaseUri(), dom.getFilePosition());
       if (baseUri != null) {
         resolveRelativeUrls(node, baseUri, mq);
-        it.set(Job.domJob(job.getCacheKeys(), root, baseUri));
+        it.set(Job.domJob(job.getCacheKeys(), dom, baseUri));
       }
     }
     return true;

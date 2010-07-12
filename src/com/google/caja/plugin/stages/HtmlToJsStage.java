@@ -18,7 +18,6 @@ import com.google.caja.lang.css.CssSchema;
 import com.google.caja.lang.html.HtmlSchema;
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.TokenConsumer;
-import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.html.Nodes;
 import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.Expression;
@@ -30,6 +29,8 @@ import com.google.caja.parser.quasiliteral.QuasiBuilder;
 import com.google.caja.plugin.Job;
 import com.google.caja.render.Concatenator;
 import com.google.caja.reporting.RenderContext;
+
+import java.net.URI;
 
 import org.w3c.dom.Node;
 
@@ -47,9 +48,8 @@ public final class HtmlToJsStage extends CompileHtmlStage {
   }
 
   @Override
-  Job makeJobFromHtml(JobCache.Keys keys, Node html) {
-    return Job.jsJob(
-        keys, AncestorChain.instance(makeEmitStaticStmt(html)), null);
+  Job makeJobFromHtml(JobCache.Keys keys, Node html, URI baseUri) {
+    return Job.jsJob(keys, makeEmitStaticStmt(html), baseUri);
   }
 
   private static Statement makeEmitStaticStmt(Node node) {

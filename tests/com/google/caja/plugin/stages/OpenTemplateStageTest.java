@@ -17,7 +17,6 @@ package com.google.caja.plugin.stages;
 import com.google.caja.lang.css.CssSchema;
 import com.google.caja.lang.html.HtmlSchema;
 import com.google.caja.lexer.FilePosition;
-import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.ExpressionStmt;
@@ -106,7 +105,7 @@ public final class OpenTemplateStageTest extends CajaTestCase {
     Block node = js(fromString(input));
     PluginMeta meta = new PluginMeta();
     Jobs jobs = new Jobs(mc, mq, meta);
-    jobs.getJobs().add(Job.jsJob(null, AncestorChain.instance(node), null));
+    jobs.getJobs().add(Job.jsJob(null, node, null));
 
     assertTrue(pipeline.apply(jobs));
     assertEquals(
@@ -114,8 +113,7 @@ public final class OpenTemplateStageTest extends CajaTestCase {
         passes, jobs.hasNoErrors());
     assertEquals("" + jobs.getJobs(), 1, jobs.getJobs().size());
 
-    ParseTreeNode bare = stripBoilerPlate(
-        jobs.getJobs().get(0).getRoot().cast(ParseTreeNode.class).node);
+    ParseTreeNode bare = stripBoilerPlate(jobs.getJobs().get(0).getRoot());
     assertEquals(golden, render(bare));
   }
 
@@ -134,10 +132,10 @@ public final class OpenTemplateStageTest extends CajaTestCase {
       jobs.getJobs().remove(jsJobs);
       Block block = new Block(FilePosition.UNKNOWN);
       for (Job job : jsJobs) {
-        Statement s = job.getRoot().cast(Statement.class).node;
+        Statement s = (Statement) job.getRoot();
         block.appendChild(s);
       }
-      jobs.getJobs().add(Job.jsJob(null, AncestorChain.instance(block), null));
+      jobs.getJobs().add(Job.jsJob(null, block, null));
       return true;
     }
   }

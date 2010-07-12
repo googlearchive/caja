@@ -16,7 +16,6 @@ package com.google.caja.plugin.stages;
 
 import com.google.caja.lang.html.HtmlSchema;
 import com.google.caja.lexer.FilePosition;
-import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.html.Dom;
 import com.google.caja.parser.html.Namespaces;
 import com.google.caja.parser.js.Block;
@@ -241,8 +240,7 @@ public final class RewriteHtmlStageTest extends PipelineStageTestCase {
         && new RewriteHtmlStage(schema).apply(jobs);
     // Dump the extracted script bits on the queue.
     for (Job job : Lists.newArrayList(jobs.getJobsByType(ContentType.HTML))) {
-      Dom dom = job.getRoot().cast(Dom.class).node;
-      extractScripts(dom.getValue(), jobs);
+      extractScripts(((Dom) job.getRoot()).getValue(), jobs);
     }
     return result;
   }
@@ -256,8 +254,7 @@ public final class RewriteHtmlStageTest extends PipelineStageTestCase {
           int jobNum = jobs.getJobs().size();
           el.setAttributeNS(
               Namespaces.HTML_NAMESPACE_URI, "jobnum", "" + jobNum);
-          jobs.getJobs().add(
-              Job.jsJob(null, AncestorChain.instance(extracted), null));
+          jobs.getJobs().add(Job.jsJob(null, extracted, null));
         }
         for (Node c = el.getFirstChild(); c != null; c = c.getNextSibling()) {
           extractScripts(c, jobs);

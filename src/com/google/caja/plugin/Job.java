@@ -15,7 +15,6 @@
 package com.google.caja.plugin;
 
 import com.google.caja.SomethingWidgyHappenedError;
-import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.css.CssTree;
 import com.google.caja.parser.html.Dom;
@@ -32,15 +31,14 @@ import java.net.URI;
  * A parse tree that is awaiting rewriting, compiling, or rendering.
  */
 public final class Job {
-  private final AncestorChain<?> root;
+  private final ParseTreeNode root;
   private final ContentType type;
   private final URI baseUri;
   private final JobCache.Keys keys;
 
   public static Job job(
-      JobCache.Keys keys, AncestorChain<?> root, URI baseUri) {
+      JobCache.Keys keys, ParseTreeNode rootNode, URI baseUri) {
     ContentType type;
-    ParseTreeNode rootNode = root.node;
     if (rootNode instanceof Statement
         || rootNode instanceof Expression
         || rootNode instanceof UncajoledModule
@@ -55,47 +53,39 @@ public final class Job {
     } else {
       throw new SomethingWidgyHappenedError("Unknown input type " + rootNode);
     }
-    return new Job(keys, root, type, baseUri);
+    return new Job(keys, rootNode, type, baseUri);
   }
 
-  public static Job jsJob(
-      JobCache.Keys keys, AncestorChain<? extends Statement> root,
-      URI baseUri) {
+  public static Job jsJob(JobCache.Keys keys, Statement root, URI baseUri) {
     return new Job(keys, root, ContentType.JS, baseUri);
   }
 
-  public static Job exprJob(
-      JobCache.Keys keys, AncestorChain<? extends Expression> root,
-      URI baseUri) {
+  public static Job exprJob(JobCache.Keys keys, Expression root, URI baseUri) {
     return new Job(keys, root, ContentType.JS, baseUri);
   }
 
   public static Job moduleJob(
-      JobCache.Keys keys, AncestorChain<? extends UncajoledModule> root,
-      URI baseUri) {
+      JobCache.Keys keys, UncajoledModule root, URI baseUri) {
     return new Job(keys, root, ContentType.JS, baseUri);
   }
 
-  public static Job cajoledJob(
-      JobCache.Keys keys, AncestorChain<? extends CajoledModule> root) {
+  public static Job cajoledJob(JobCache.Keys keys, CajoledModule root) {
     return new Job(keys, root, ContentType.JS, null);
   }
 
-  public static Job domJob(
-      JobCache.Keys keys, AncestorChain<? extends Dom> root, URI baseUri) {
+  public static Job domJob(JobCache.Keys keys, Dom root, URI baseUri) {
     assert baseUri != null;
     return new Job(keys, root, ContentType.HTML, baseUri);
   }
 
   public static Job cssJob(
-      JobCache.Keys keys, AncestorChain<? extends CssTree.StyleSheet> root,
-      URI baseUri) {
+      JobCache.Keys keys, CssTree.StyleSheet root, URI baseUri) {
     assert baseUri != null;
     return new Job(keys, root, ContentType.CSS, baseUri);
   }
 
   private Job(
-      JobCache.Keys keys, AncestorChain<?> root, ContentType type,
+      JobCache.Keys keys, ParseTreeNode root, ContentType type,
       URI baseUri) {
     assert root != null;
     this.root = root;
@@ -104,7 +94,7 @@ public final class Job {
     this.keys = keys == null ? JobCache.none() : keys;
   }
 
-  public AncestorChain<?> getRoot() { return root; }
+  public ParseTreeNode getRoot() { return root; }
 
   public ContentType getType() { return type; }
 

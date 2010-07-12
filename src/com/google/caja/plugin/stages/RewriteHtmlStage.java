@@ -90,7 +90,7 @@ public class RewriteHtmlStage implements Pipeline.Stage<Jobs> {
     MessageQueue mq = jobs.getMessageQueue();
     MessageContext mc = jobs.getMessageContext();
     for (Job job : jobs.getJobsByType(ContentType.HTML)) {
-      Node root = ((Dom) job.getRoot().node).getValue();
+      Node root = ((Dom) job.getRoot()).getValue();
       extractBodyInfo(root, job.getCacheKeys(), job.getBaseUri(), jobs);
       HtmlEmbeddedContentFinder finder = new HtmlEmbeddedContentFinder(
           htmlSchema, job.getBaseUri(), mq, mc);
@@ -249,8 +249,7 @@ public class RewriteHtmlStage implements Pipeline.Stage<Jobs> {
       }
     }
 
-    jobs.getJobs().add(Job.cssJob(
-        keys, AncestorChain.instance(stylesheet), c.getBaseUri()));
+    jobs.getJobs().add(Job.cssJob(keys, stylesheet, c.getBaseUri()));
   }
 
   /**
@@ -327,8 +326,7 @@ public class RewriteHtmlStage implements Pipeline.Stage<Jobs> {
                         + "IMPORTS___.htmlEmitter___"
                         + "    ./*@synthetic*/addBodyClasses(@idents);",
                         "idents", e));
-                jobs.getJobs().add(Job.jsJob(
-                    keys, AncestorChain.instance(s), base));
+                jobs.getJobs().add(Job.jsJob(keys, s, base));
               }
             }
           }

@@ -24,7 +24,6 @@ import com.google.caja.lexer.JsTokenQueue;
 import com.google.caja.lexer.ParseException;
 import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.lexer.TokenQueue;
-import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.css.CssParser;
 import com.google.caja.parser.html.Dom;
@@ -177,9 +176,7 @@ public final class PluginCompilerMain {
     for (URI input : inputs) {
       try {
         ParseTreeNode parseTree = parseInput(input);
-        if (null != parseTree) {
-          pluginc.addInput(AncestorChain.instance(parseTree), input);
-        }
+        if (null != parseTree) { pluginc.addInput(parseTree, input); }
       } catch (ParseException ex) {
         ex.toMessageQueue(mq);
         parsePassed = false;

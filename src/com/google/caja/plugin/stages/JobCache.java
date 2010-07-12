@@ -27,6 +27,10 @@ import java.util.List;
  */
 public abstract class JobCache {
   public abstract Key forJob(Job j);
+  /**
+   * @return null to indicate nothing in cache which is distinct from the empty
+   *     list.
+   */
   public abstract List<Job> fetch(Key k);
   public abstract void store(Key k, List<Job> derivatives);
 

@@ -54,7 +54,7 @@ public class LegacyNamespaceFixupStage implements Pipeline.Stage<Jobs> {
     Fixer(MessageQueue mq) { this.mq = mq; }
 
     void fix(Job job) {
-      fix(job.getRoot().cast(Dom.class).node.getValue());
+      fix(((Dom) job.getRoot()).getValue());
     }
 
     private void fix(Node node) {

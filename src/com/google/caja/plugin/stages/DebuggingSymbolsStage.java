@@ -15,7 +15,6 @@
 package com.google.caja.plugin.stages;
 
 import com.google.caja.lexer.FilePosition;
-import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.ParseTreeNodeContainer;
 import com.google.caja.parser.js.CajoledModule;
@@ -74,27 +73,26 @@ public final class DebuggingSymbolsStage implements Pipeline.Stage<Jobs> {
       Job job = it.next();
       if (job.getType() != ContentType.JS
           // May occur if the cajita rewriter does not run due to errors.
-          || !(job.getRoot().node instanceof CajoledModule)) {
+          || !(job.getRoot() instanceof CajoledModule)) {
         continue;
       }
 
       if (DEBUG) {
         System.err.println(
             "\n\nPre\n===\n"
-            + (job.getRoot().cast(CajoledModule.class).node.toStringDeep(1))
+            + ((CajoledModule) job.getRoot()).toStringDeep(1)
             + "\n\n");
       }
 
       DebuggingSymbols symbols = new DebuggingSymbols();
       CajoledModule js = addSymbols(
-          job.getRoot().cast(CajoledModule.class), symbols, mq);
+          (CajoledModule) job.getRoot(), symbols, mq);
       if (!symbols.isEmpty()) {
         if (DEBUG) {
           System.err.println("\n\nPost\n===\n" + js.toStringDeep() + "\n\n");
         }
         it.set(Job.cajoledJob(
-            job.getCacheKeys(),
-            AncestorChain.instance(attachSymbols(symbols, js, mq))));
+            job.getCacheKeys(), attachSymbols(symbols, js, mq)));
       }
     }
     return jobs.hasNoFatalErrors();
@@ -108,10 +106,9 @@ public final class DebuggingSymbolsStage implements Pipeline.Stage<Jobs> {
    * @return rewritten JS.
    */
   private CajoledModule addSymbols(
-      AncestorChain<CajoledModule> js, DebuggingSymbols symbols,
-      MessageQueue mq) {
+      CajoledModule js, DebuggingSymbols symbols, MessageQueue mq) {
     return (CajoledModule) new CajaRuntimeDebuggingRewriter(symbols, mq)
-        .expand(js.node);
+        .expand(js);
   }
 
   /**

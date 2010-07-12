@@ -34,36 +34,6 @@ public final class AncestorChain<T extends ParseTreeNode> {
     return instance(this, child);
   }
 
-  /** True if node is the first in its parent's child list, or is the root. */
-  public boolean isFirstSibling() {
-    return parent == null || parent.node.children().get(0) == node;
-  }
-
-  /** True if node is the last in its parent's child list, or is the root. */
-  public boolean isLastSibling() {
-    return parent == null || parent.node.children().get(
-        parent.node.children().size() - 1) == node;
-  }
-
-  /** The previous sibling of parent or null. */
-  public ParseTreeNode getPrevSibling() {
-    int idx = indexInParent() - 1;
-    if (idx < 0) { return null; }
-    return parent.node.children().get(idx);
-  }
-
-  /** The next sibling of parent or null. */
-  public ParseTreeNode getNextSibling() {
-    int idx = indexInParent() + 1;
-    if (idx <= 0 || idx >= parent.node.children().size()) { return null; }
-    return parent.node.children().get(idx);
-  }
-
-  /** The index such that if node in its parent's children list or -1. */
-  public int indexInParent() {
-    return parent == null ? -1 : parent.node.children().indexOf(node);
-  }
-
   public ParseTreeNode getParentNode() {
     return parent != null ? parent.node : null;
   }

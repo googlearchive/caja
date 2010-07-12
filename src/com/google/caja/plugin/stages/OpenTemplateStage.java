@@ -57,7 +57,7 @@ import java.util.Set;
 public final class OpenTemplateStage implements Pipeline.Stage<Jobs> {
   public boolean apply(Jobs jobs) {
     for (Job job : jobs.getJobsByType(ContentType.JS)) {
-      optimizeOpenTemplate(job.getRoot(), jobs);
+      optimizeOpenTemplate(AncestorChain.instance(job.getRoot()), jobs);
     }
     return jobs.hasNoFatalErrors();
   }

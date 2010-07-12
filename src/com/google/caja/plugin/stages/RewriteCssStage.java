@@ -37,7 +37,7 @@ public final class RewriteCssStage implements Pipeline.Stage<Jobs> {
       if (job.getType() != ContentType.CSS) { continue; }
 
       new CssRuleRewriter(jobs.getPluginMeta()).rewriteCss(
-          job.getRoot().cast(CssTree.StyleSheet.class).node);
+          (CssTree.StyleSheet) job.getRoot());
     }
     return jobs.hasNoFatalErrors();
   }

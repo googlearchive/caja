@@ -17,7 +17,7 @@ package com.google.caja.plugin.stages;
 import com.google.caja.SomethingWidgyHappenedError;
 import com.google.caja.lang.css.CssSchema;
 import com.google.caja.lang.html.HtmlSchema;
-import com.google.caja.parser.AncestorChain;
+import com.google.caja.lexer.InputSource;
 import com.google.caja.parser.css.CssTree;
 import com.google.caja.parser.html.Dom;
 import com.google.caja.parser.html.DomParser;
@@ -70,6 +70,7 @@ abstract class CompileHtmlStage implements Pipeline.Stage<Jobs> {
     }
 
     for (JobCache.Keys cacheKeys : byKey.keySet()) {
+      URI baseUri = null;
       List<Pair<Node, URI>> ihtmlRoots = Lists.newArrayList();
       List<CssTree.StyleSheet> stylesheets = Lists.newArrayList();
       for (Job job : byKey.get(cacheKeys)) {
@@ -81,15 +82,16 @@ abstract class CompileHtmlStage implements Pipeline.Stage<Jobs> {
             // maintain this behavior, regardless of whatever complexity that
             // might entail.
             ihtmlRoots.add(Pair.pair(
-                job.getRoot().cast(Dom.class).node.getValue(),
-                job.getBaseUri()));
+                ((Dom) job.getRoot()).getValue(), job.getBaseUri()));
+            if (baseUri == null) { baseUri = job.getBaseUri(); }
             break;
           case CSS:
-            stylesheets.add(job.getRoot().cast(CssTree.StyleSheet.class).node);
+            stylesheets.add((CssTree.StyleSheet) job.getRoot());
             break;
           default: throw new SomethingWidgyHappenedError(job.getType().name());
         }
       }
+      if (baseUri == null) { baseUri = InputSource.UNKNOWN.getUri(); }
 
       MessageQueue mq = jobs.getMessageQueue();
 
@@ -101,19 +103,16 @@ abstract class CompileHtmlStage implements Pipeline.Stage<Jobs> {
       Pair<Node, List<Block>> htmlAndJs = tc.getSafeHtml(
           DomParser.makeDocument(null, null));
 
-      Job outJob = makeJobFromHtml(cacheKeys, htmlAndJs.a);
+      Job outJob = makeJobFromHtml(cacheKeys, htmlAndJs.a, baseUri);
       jobs.getJobs().add(outJob);
 
       for (Block bl : htmlAndJs.b) {
-        jobs.getJobs().add(Job.jsJob(
-            cacheKeys, AncestorChain.instance(bl),
-            // TODO(mikesamuel): propagate base URI from ihtmlRoot.
-            bl.getFilePosition().source().getUri()));
+        jobs.getJobs().add(Job.jsJob(cacheKeys, bl, baseUri));
       }
     }
 
     return jobs.hasNoFatalErrors();
   }
 
-  abstract Job makeJobFromHtml(JobCache.Keys keys, Node html);
+  abstract Job makeJobFromHtml(JobCache.Keys keys, Node html, URI baseUri);
 }

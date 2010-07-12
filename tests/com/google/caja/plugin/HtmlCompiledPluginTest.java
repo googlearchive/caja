@@ -15,7 +15,6 @@
 package com.google.caja.plugin;
 
 import com.google.caja.lexer.FilePosition;
-import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.quasiliteral.CajitaRewriter;
 import com.google.caja.parser.html.Dom;
@@ -231,7 +230,7 @@ public class HtmlCompiledPluginTest extends CajaTestCase {
         TestBuildInfo.getInstance(), meta, mq);
     compiler.setMessageContext(mc);
     Dom html = new Dom(htmlFragment(fromString("<script>{</script>")));
-    compiler.addInput(AncestorChain.instance(html), is.getUri());
+    compiler.addInput(html, is.getUri());
 
     boolean passed = compiler.run();
     assertFalse(passed);
@@ -251,8 +250,7 @@ public class HtmlCompiledPluginTest extends CajaTestCase {
     PluginCompiler compiler = new PluginCompiler(
         TestBuildInfo.getInstance(), meta, mq);
     compiler.setMessageContext(mc);
-    compiler.addInput(
-        AncestorChain.instance(html), html.getFilePosition().source().getUri());
+    compiler.addInput(html, html.getFilePosition().source().getUri());
 
     boolean failed = !compiler.run();
 

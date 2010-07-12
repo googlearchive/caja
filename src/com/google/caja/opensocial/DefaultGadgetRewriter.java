@@ -22,7 +22,6 @@ import com.google.caja.lexer.HtmlLexer;
 import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.ParseException;
 import com.google.caja.lexer.TokenConsumer;
-import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.html.Dom;
 import com.google.caja.parser.html.DomParser;
 import com.google.caja.parser.html.Namespaces;
@@ -217,7 +216,7 @@ public class DefaultGadgetRewriter {
     compiler.setPreconditions(preconditions);
     compiler.setGoals(goals);
 
-    compiler.addInput(AncestorChain.instance(new Dom(content)), baseUri);
+    compiler.addInput(new Dom(content), baseUri);
 
     if (!compiler.run()) {
       throw new GadgetRewriteException("Gadget has compile errors");

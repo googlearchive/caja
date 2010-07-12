@@ -44,7 +44,7 @@ public final class SanitizeHtmlStage implements Pipeline.Stage<Jobs> {
 
     boolean valid = true;
     for (Job job : jobs.getJobsByType(ContentType.HTML)) {
-      if (!s.sanitize(job.getRoot().cast(Dom.class).node.getValue())) {
+      if (!s.sanitize(((Dom) job.getRoot()).getValue())) {
         valid = false;
         // Keep going so that we can display error messages for all inputs.
       }
