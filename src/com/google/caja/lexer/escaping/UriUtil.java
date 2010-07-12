@@ -21,7 +21,7 @@ import com.google.caja.util.Strings;
 
 import java.io.IOException;
 import java.net.URI;
-
+import java.net.URISyntaxException;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -34,8 +34,8 @@ import java.util.regex.Pattern;
 public class UriUtil {
 
   /** Matches a URI extracting bits with different escaping conventions. */
-  private static final Pattern RFC_2396 = Pattern.compile(
-      // Derived from RFC 2396 Appendix B
+  private static final Pattern RFC_3986 = Pattern.compile(
+      // Derived from RFC 3986 Appendix B
       //   1                 2          3             4            5
       "^(?:([^:/?#]+):)?(?://([^/?#]*))?([^?#]*)(?:\\?([^#]*))?(?:#(.*))?$",
       Pattern.DOTALL);
@@ -60,7 +60,9 @@ public class UriUtil {
    *
    * @param uri a non-opaque URI.
    */
-  public static String normalizeUri(String uri) {
+  public static String normalizeUri(String uri) throws URISyntaxException {
+    uri = normalizeSpecialCharacters(uri);
+
     // We don't use java.net.URI to recompose the URI because of problems with
     // encoding in the multi-argument constructor as described at
     // http://blog.limewire.org/?p=261:
@@ -78,7 +80,7 @@ public class UriUtil {
     //     are unusable, unless you restrict your URLs to never use reserved
     //     characters as values. In our use case, we can't do that because we
     //     don't control what URIs are incoming / outgoing.
-    Matcher m = RFC_2396.matcher(uri);
+    Matcher m = RFC_3986.matcher(uri);
     // The RFC_2396 matches all strings.
     m.matches();
     String scheme = m.group(1);
@@ -97,8 +99,15 @@ public class UriUtil {
       sb.append(':');
     }
     if (authority != null) {
+      if ("".equals(authority) && !Strings.equalsIgnoreCase("file", scheme)) {
+        throw new URISyntaxException(uri, "Blank authority");
+      }
       sb.append("//");
       normalizeAuthority(authority, sb);
+    } else if (scheme != null
+               && !(Strings.equalsIgnoreCase("file", scheme)
+                    || isOpaque(scheme))) {
+      throw new URISyntaxException(uri, "Missing authority");
     }
     if (path.length() != 0 || sb.length() != 0) {
       normalizePath(path, sb.length() != 0 && !isOpaque(scheme), sb);
@@ -114,7 +123,65 @@ public class UriUtil {
     return sb.toString();
   }
 
-  public static URI resolve(URI base, String relative) {
+  /**
+   * Browsers typically treat non-Latin variants of URI special characters as
+   * special so that Chinese users can copy and paste URLs rendered using
+   * full-width characters.
+   */
+  private static String normalizeSpecialCharacters(String uri) {
+    StringBuilder sb = null;
+    int pos = 0;
+    int n = uri.length();
+    for (int i = n; --i >= 0;) {
+      char subst;
+      // The mapping below was derived by running the below.
+      // We want to use a standard list so that we don't miss code-points on
+      // older Java versions.
+      // Map<String, List<String>> m = Maps.newLinkedHashMap();
+      // m.put(":", new ArrayList<String>());
+      // m.put("/", new ArrayList<String>());
+      // m.put("?", new ArrayList<String>());
+      // m.put("#", new ArrayList<String>());
+      // m.put("=", new ArrayList<String>());
+      // m.put("&", new ArrayList<String>());
+      // m.put(".", new ArrayList<String>());
+      // StringBuilder sb = new StringBuilder();
+      // for (int i = 0; i < Character.MAX_CODE_POINT; ++i) {
+      //   sb.setLength(0);
+      //   sb.appendCodePoint(i);
+      //   String abnormal = sb.toString();
+      //   String normal = Normalizer.normalize(abnormal, Normalizer.Form.NFKD);
+      //   List<String> abnormalForms = m.get(normal);
+      //   if (abnormalForms != null && !abnormal.equals(normal)) {
+      //     abnormalForms.add(abnormal);
+      //   }
+      // }
+      // for (Map.Entry<String, List<String>> e : m.entrySet()) {
+      //   System.out.println(e.getKey());
+      //   for (String s : e.getValue()) {
+      //     System.out.println("\t0x" + Integer.toString(s.codePointAt(0), 16)
+      //                        + " : " + s);
+      //   }
+      // }
+      switch (uri.charAt(i)) {
+        case 0xfe13: case 0xfe55: case 0xff1a:               subst = ':'; break;
+        case 0xff0f:                                         subst = '/'; break;
+        case 0xfe16: case 0xfe56: case 0xff1f:               subst = '?'; break;
+        case 0xfe5f: case 0xff03:                            subst = '#'; break;
+        case 0x207c: case 0x208c: case 0xfe66: case 0xff1d : subst = '='; break;
+        case 0xfe60: case 0xff06:                            subst = '&'; break;
+        case 0x2024: case 0xfe52: case 0xff0e:               subst = '.'; break;
+        default: continue;
+      }
+      if (sb == null) { sb = new StringBuilder(n); }
+      sb.append(uri, pos, i).append(subst);
+      pos = i + 1;
+    }
+    return sb == null ? uri : sb.toString();
+  }
+
+  public static URI resolve(URI base, String relative)
+      throws URISyntaxException {
     URI abs = base.resolve(normalizeUri(relative));
     if (!abs.isOpaque()) {
       String path = abs.getPath();
@@ -181,7 +248,8 @@ public class UriUtil {
         || Strings.equalsIgnoreCase("data", scheme);
   }
 
-  private static void normalizeAuthority(String authority, StringBuilder out) {
+  private static void normalizeAuthority(String authority, StringBuilder out)
+      throws URISyntaxException {
     // Section 3.2:
     // The authority component is preceded by a double slash "//" and is
     // terminated by the next slash "/", question-mark "?", or by the end of
@@ -203,11 +271,24 @@ public class UriUtil {
           out.append(authority, pos, i).append("%25");
           pos = i + 1;
         }
+      } else if (ch == ':') {
+        // We assume a subset of server-based URIs that only recognizes
+        //     host[:port]
+        // intentionally ignoring registry-based authorities and the user
+        // portion of server-based URIs.
+        for (int j = i + 1; j < n; ++j) {
+          ch = authority.charAt(j);
+          if (!('0' <= ch && ch <= '9')) {
+            throw new URISyntaxException(
+                authority, "Bad port " + authority.substring(i + 1), j);
+          }
+        }
+        break;
       } else if (!(('a' <= ch && ch <= 'z')
                    || ('A' <= ch && ch <= 'Z')
                    || ('0' <= ch && ch <= '9')
                    // Escapes ; and @.
-                   || ch == ':' || ch == '-' || ch == '+' || ch == '.')) {
+                   || ch == '-' || ch == '+' || ch == '.')) {
         out.append(authority, pos, i);
         pos = i + 1;
         pctEncode(ch, out);

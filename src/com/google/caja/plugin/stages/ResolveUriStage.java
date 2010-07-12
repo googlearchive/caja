@@ -25,6 +25,9 @@ import com.google.caja.parser.html.ElKey;
 import com.google.caja.parser.html.Nodes;
 import com.google.caja.plugin.Job;
 import com.google.caja.plugin.Jobs;
+import com.google.caja.plugin.PluginMessageType;
+import com.google.caja.reporting.MessagePart;
+import com.google.caja.reporting.MessageQueue;
 import com.google.caja.util.ContentType;
 import com.google.caja.util.Pipeline;
 
@@ -107,6 +110,7 @@ public class ResolveUriStage implements Pipeline.Stage<Jobs> {
   }
 
   public boolean apply(Jobs jobs) {
+    MessageQueue mq = jobs.getMessageQueue();
     ListIterator<Job> it = jobs.getJobs().listIterator();
     while (it.hasNext()) {
       Job job = it.next();
@@ -116,14 +120,14 @@ public class ResolveUriStage implements Pipeline.Stage<Jobs> {
       Node node = dom.getValue();
       URI baseUri = baseUri(node, job.getBaseUri(), dom.getFilePosition());
       if (baseUri != null) {
-        resolveRelativeUrls(node, baseUri);
+        resolveRelativeUrls(node, baseUri, mq);
         it.set(Job.domJob(job.getCacheKeys(), root, baseUri));
       }
     }
     return true;
   }
 
-  private void resolveRelativeUrls(Node n, URI base) {
+  private void resolveRelativeUrls(Node n, URI base, MessageQueue mq) {
     if (n instanceof Element) {
       Element el = (Element) n;
       ElKey elKey = ElKey.forElement(el);
@@ -137,7 +141,15 @@ public class ResolveUriStage implements Pipeline.Stage<Jobs> {
           String value = a.getValue();
           // Don't muck with inter-document references.
           if (value.startsWith("#")) { continue; }
-          URI uri = UriUtil.resolve(base, value);
+          URI uri = null;
+          try {
+            uri = UriUtil.resolve(base, value);
+          } catch (URISyntaxException ex) {
+            mq.addMessage(
+                PluginMessageType.MALFORMED_URL,
+                Nodes.getFilePositionForValue(a),
+                MessagePart.Factory.valueOf(value));
+          }
           if (uri != null && uri.isAbsolute()) {
             FilePosition valuePos = Nodes.getFilePositionForValue(a);
             a.setValue(base.resolve(uri).toString());
@@ -147,7 +159,7 @@ public class ResolveUriStage implements Pipeline.Stage<Jobs> {
       }
     }
     for (Node c = n.getFirstChild(); c != null; c = c.getNextSibling()) {
-      resolveRelativeUrls(c, base);
+      resolveRelativeUrls(c, base, mq);
     }
   }
 }

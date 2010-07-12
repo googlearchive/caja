@@ -18,6 +18,7 @@ import com.google.caja.lang.css.CssSchema;
 import com.google.caja.lang.html.HtmlSchema;
 import com.google.caja.lexer.ExternalReference;
 import com.google.caja.lexer.FilePosition;
+import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.ParseException;
 import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.MutableParseTreeNode;
@@ -80,6 +81,7 @@ public class TemplateCompilerTest extends CajaTestCase {
   }
 
   public final void testSafeHtmlWithDynamicModuleId() throws Exception {
+    InputSource is = new InputSource(URI.create("file:///" + getName()));
     assertSafeHtml(
         htmlFragment(fromResource("template-compiler-input1.html", is)),
         htmlFragment(fromResource("template-compiler-golden1-dynamic.html")),
@@ -87,6 +89,7 @@ public class TemplateCompilerTest extends CajaTestCase {
   }
 
   public final void testSafeHtmlWithStaticModuleId() throws Exception {
+    InputSource is = new InputSource(URI.create("file:///" + getName()));
     meta.setIdClass("xyz___");
 
     assertSafeHtml(
@@ -308,13 +311,14 @@ public class TemplateCompilerTest extends CajaTestCase {
   }
 
   public final void testStyleRewriting() throws Exception {
+    InputSource is = new InputSource(URI.create("file:///" + getName()));
     assertSafeHtml(
         htmlFragment(fromString(
             "<div style=\"position: absolute; background: url('bg-image')\">\n"
             + "Hello\n"
-            + "</div>\n")),
+            + "</div>\n", is)),
         htmlFragment(fromString(
-            "<div style=\"position: absolute; background: url('test:/bg-image')"
+            "<div style=\"position: absolute; background: url('file:/bg-image')"
             + "\">\nHello\n</div>")),
         new Block());
   }
@@ -761,8 +765,7 @@ public class TemplateCompilerTest extends CajaTestCase {
     List<Pair<Node, URI>> html = Lists.newArrayList();
     List<CssTree.StyleSheet> css = Lists.newArrayList();
     for (DocumentFragment input : inputs) {
-      extractScriptsAndStyles(
-          input, Nodes.getFilePositionFor(input).source().getUri(), html, css);
+      extractScriptsAndStyles(input, URI.create("file:///"), html, css);
     }
 
     TemplateCompiler tc = new TemplateCompiler(

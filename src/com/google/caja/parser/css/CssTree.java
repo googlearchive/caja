@@ -29,6 +29,7 @@ import com.google.caja.util.Name;
 
 import java.io.IOException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -1130,7 +1131,13 @@ public abstract class CssTree extends AbstractParseTreeNode {
       out.mark(getFilePosition());
       out.consume("url");
       out.consume("(");
-      renderCssString(UriUtil.normalizeUri(getValue()), r);
+      String url;
+      try {
+        url = UriUtil.normalizeUri(getValue());
+      } catch (URISyntaxException ex) {
+        url = "data:,";
+      }
+      renderCssString(url, r);
       out.mark(FilePosition.endOfOrNull(getFilePosition()));
       out.consume(")");
     }

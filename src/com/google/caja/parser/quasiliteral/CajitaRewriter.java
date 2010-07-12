@@ -67,7 +67,6 @@ import com.google.caja.reporting.MessageQueue;
 import com.google.caja.util.Lists;
 import com.google.caja.util.Pair;
 import com.google.caja.util.Sets;
-import com.google.caja.util.SyntheticAttributeKey;
 
 import static com.google.caja.parser.js.SyntheticNodes.s;
 
@@ -89,14 +88,6 @@ import java.util.Set;
     synopsis="Default set of transformations used by Caja"
   )
 public class CajitaRewriter extends Rewriter {
-  /**
-   * True if the node is evaluated for its side effect only, and so should
-   * not be considered as contributing to the value of the block in
-   * which it appears.
-   */
-  public static final SyntheticAttributeKey<Boolean> FOR_SIDE_EFFECT
-      = new SyntheticAttributeKey<Boolean>(Boolean.class, "forSideEffect");
-
   private final BuildInfo buildInfo;
   private final URI baseUri;
   private final ModuleManager moduleManager;
@@ -115,24 +106,14 @@ public class CajitaRewriter extends Rewriter {
     }
   });
 
-  /**
-   * Mark a tree as being evaluated for its side effect, so its value is
-   * not significant to the value of the block in which it appears.
-   */
-  static void markForSideEffect(ParseTreeNode node) {
-    if (node instanceof Statement) {
-      node.getAttributes().set(FOR_SIDE_EFFECT, true);
-      for (ParseTreeNode child : node.children()) {
-        markForSideEffect(child);
-      }
-    }
-  }
   /** Index of the last node that wasn't translated from another language. */
   private static int lastRealJavascriptChild(
       List<? extends ParseTreeNode> nodes) {
     int lasti = nodes.size();
     while (--lasti >= 0) {
-      if (!nodes.get(lasti).getAttributes().is(FOR_SIDE_EFFECT)) { break; }
+      if (!nodes.get(lasti).getAttributes().is(Scope.FOR_SIDE_EFFECT)) {
+        break;
+      }
     }
     return lasti;
   }
@@ -171,7 +152,7 @@ public class CajitaRewriter extends Rewriter {
     ParseTreeNode result = null;
     // Code translated from another language should not be used as the module
     // result.
-    if (node.getAttributes().is(FOR_SIDE_EFFECT)) { return node; }
+    if (node.getAttributes().is(Scope.FOR_SIDE_EFFECT)) { return node; }
     if (node instanceof ExpressionStmt) {
       result = new ExpressionStmt(
           node.getFilePosition(),
@@ -245,7 +226,7 @@ public class CajitaRewriter extends Rewriter {
         if (node instanceof TranslatedCode) {
           Statement rewritten
               = ((TranslatedCode) expandAll(node, scope)).getTranslation();
-          markForSideEffect(rewritten);
+          Scope.markForSideEffect(rewritten);
           return rewritten;
         }
         return NONE;
@@ -352,7 +333,7 @@ public class CajitaRewriter extends Rewriter {
         if (node instanceof UncajoledModule) {
           Statement returnStmt = (Statement) QuasiBuilder.substV(
               "return moduleResult___;");
-          markForSideEffect(returnStmt);
+          Scope.markForSideEffect(returnStmt);
           Block inputModuleStmts = (Block) QuasiBuilder.substV(
               ""
               + "var moduleResult___ = ___./*@synthetic*/NO_RESULT;"
@@ -1313,7 +1294,7 @@ public class CajitaRewriter extends Rewriter {
                     "r", expand(nymize(r, v.getName(), "var"), scope)));
             // The result of the initializer of a declaration is not relevant to
             // the module result.
-            markForSideEffect(init);
+            Scope.markForSideEffect(init);
             return init;
           }
         }
@@ -2038,7 +2019,7 @@ public class CajitaRewriter extends Rewriter {
             ExpressionStmt es = new ExpressionStmt(
                 node.getFilePosition(), initializer);
             // The value of a declaration is not the value of the initializer.
-            markForSideEffect(es);
+            Scope.markForSideEffect(es);
             return es;
           }
         }

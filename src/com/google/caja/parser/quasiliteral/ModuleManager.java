@@ -39,6 +39,7 @@ import com.google.caja.util.Maps;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -101,7 +102,16 @@ public class ModuleManager {
    * @return -1 if error occurs
    */
   public int getModule(URI baseUri, StringLiteral src) {
-    String uriStr = UriUtil.normalizeUri(src.getUnquotedValue());
+    String uriStr;
+    try {
+      uriStr = UriUtil.normalizeUri(src.getUnquotedValue());
+    } catch (URISyntaxException ex) {
+      mq.addMessage(
+          RewriterMessageType.INVALID_MODULE_URI,
+          src.getFilePosition(),
+          MessagePart.Factory.valueOf(src.getUnquotedValue()));
+      return -1;
+    }
     // Add a .js extension to the path component if there is none.
     URI relUri = URI.create(uriStr);
     String path = relUri.getRawPath();
@@ -116,8 +126,14 @@ public class ModuleManager {
           + uriStr.substring(queryStart));
     }
 
-    URI absoluteUri = baseUri != null
-        ? UriUtil.resolve(baseUri, relUri.toString()) : null;
+    URI absoluteUri = null;
+    if (baseUri != null) {
+      try {
+        absoluteUri = UriUtil.resolve(baseUri, relUri.toString());
+      } catch (URISyntaxException ex) {
+        // handled below.
+      }
+    }
     if (absoluteUri == null) {
       mq.addMessage(
           RewriterMessageType.INVALID_MODULE_URI,

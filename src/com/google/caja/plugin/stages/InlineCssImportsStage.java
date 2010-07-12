@@ -39,6 +39,7 @@ import com.google.caja.util.Sets;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.List;
 import java.util.Set;
 
@@ -135,7 +136,12 @@ public class InlineCssImportsStage implements Pipeline.Stage<Jobs> {
     CssTree.UriLiteral uriNode = importNode.getUri();
     // Compute the URI to import
     ExternalReference importUrl = null;
-    URI absUri = UriUtil.resolve(baseUri, uriNode.getValue());
+    URI absUri = null;
+    try {
+      absUri = UriUtil.resolve(baseUri, uriNode.getValue());
+    } catch (URISyntaxException ex) {
+      // handled below.
+    }
     if (absUri != null) {
       importUrl = new ExternalReference(absUri, uriNode.getFilePosition());
     }

@@ -56,11 +56,11 @@ import java.util.Map;
     synopsis="Default set of transformations used by Valija"
   )
 public class DefaultValijaRewriter extends Rewriter {
-  
+
   /**
    * Generate the header that should be placed at the beginning of the body
    * of the translation of a Valija function body.
-   * 
+   *
    * @param scope The scope that results from expanding (cajoling) the Valija
    *              function body.
    * @return If the function body contains a free use of <tt>arguments</tt>,
@@ -76,8 +76,8 @@ public class DefaultValijaRewriter extends Rewriter {
     }
     return new ParseTreeNodeContainer(stmts);
   }
-  
-  
+
+
   private int tempVarCount = 1;
   private final String tempVarPrefix = "$caja$";
 
@@ -630,7 +630,7 @@ public class DefaultValijaRewriter extends Rewriter {
             scope.isOuter(((Identifier) bindings.get("v")).getName())) {
           ExpressionStmt es = newExprStmt(
               (Expression) substV("v", bindings.get("v")));
-          es.getAttributes().set(CajitaRewriter.FOR_SIDE_EFFECT, true);
+          Scope.markForSideEffect(es);
           return es;
         }
         return NONE;

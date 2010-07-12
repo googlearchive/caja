@@ -14,10 +14,12 @@
 
 package com.google.caja.lexer.escaping;
 
+import java.net.URISyntaxException;
+
 import junit.framework.TestCase;
 
 public class UriUtilTest extends TestCase {
-  public final void testUriNormalization() {
+  public final void testUriNormalization() throws URISyntaxException {
     // Don't muck with ':' after protocol or before port, or '=' in query
     // parameters.
     assertEquals(
@@ -58,7 +60,7 @@ public class UriUtilTest extends TestCase {
         UriUtil.normalizeUri("foo!.bar!://baz!/boo!?foo!#far!"));
     // Check reserved characters in various URI parts.
     assertEquals(
-        "a-b.1+2:///hiya", UriUtil.normalizeUri("A-b.1+2:///hiya"));
+        "a-b.1+2://Foo/hiya", UriUtil.normalizeUri("A-b.1+2://Foo/hiya"));
     assertEquals(
         "http://Hello+There-Now.com:80/",
         UriUtil.normalizeUri("HTTP://Hello+There-Now.com:80"));
@@ -76,6 +78,50 @@ public class UriUtilTest extends TestCase {
     assertEquals(
         "s" + enc + "://A" + enc + "/P" + enc + "?Q" + enc + "#F" + enc,
         UriUtil.normalizeUri("S\uff61://A\uff61/P\uff61?Q\uff61#F\uff61"));
+  }
+
+  public final void testBlankAuthority1() {
+    String result;
+    try {
+      result = UriUtil.normalizeUri("http:///www.google.com/foo");
+    } catch (URISyntaxException ex) {
+      return;  // OK
+    }
+    // No way to reconstruct user intent so fail.
+    fail(result);
+  }
+
+  public final void testBlankAuthority2() {
+    String result;
+    try {
+      result = UriUtil.normalizeUri("///www.google.com/foo");
+    } catch (URISyntaxException ex) {
+      return;  // OK
+    }
+    // No way to reconstruct user intent so fail.
+    fail(result);
+  }
+
+  public final void testMissingAuthority() {
+    String result;
+    try {
+      result = UriUtil.normalizeUri("http:/www.google.com/foo");
+    } catch (URISyntaxException ex) {
+      return;  // OK
+    }
+    // No way to reconstruct user intent so fail.
+    fail(result);
+  }
+
+  public final void testMalformedPort() {
+    String result;
+    try {
+      result = UriUtil.normalizeUri("http://www.google.com:paypal.com/foo");
+    } catch (URISyntaxException ex) {
+      return;  // OK
+    }
+    // No way to reconstruct user intent so fail.
+    fail(result);
   }
 
   public final void testEncode() {

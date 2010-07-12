@@ -43,6 +43,7 @@ import com.google.caja.util.Lists;
 import com.google.caja.util.Maps;
 import com.google.caja.util.Pair;
 import com.google.caja.util.Sets;
+import com.google.caja.util.SyntheticAttributeKey;
 
 import static com.google.caja.parser.js.SyntheticNodes.s;
 import static com.google.caja.parser.quasiliteral.QuasiBuilder.substV;
@@ -225,9 +226,7 @@ public class Scope {
    *     determined should be rendered at the start of this Scope.
    */
   public List<Statement> getStartStatements() {
-    for (Statement stmt : startStatements) {
-      CajitaRewriter.markForSideEffect(stmt);
-    }
+    for (Statement stmt : startStatements) { markForSideEffect(stmt); }
     return Collections.unmodifiableList(startStatements);
   }
 
@@ -724,5 +723,26 @@ public class Scope {
       }
     }
     return null;
+  }
+
+  /**
+   * True if the node is evaluated for its side effect only, and so should
+   * not be considered as contributing to the value of the block in
+   * which it appears.
+   */
+  public static final SyntheticAttributeKey<Boolean> FOR_SIDE_EFFECT
+      = new SyntheticAttributeKey<Boolean>(Boolean.class, "forSideEffect");
+
+  /**
+   * Mark a tree as being evaluated for its side effect, so its value is
+   * not significant to the value of the block in which it appears.
+   */
+  static void markForSideEffect(ParseTreeNode node) {
+    if (node instanceof Statement) {
+      node.getAttributes().set(FOR_SIDE_EFFECT, true);
+      for (ParseTreeNode child : node.children()) {
+        markForSideEffect(child);
+      }
+    }
   }
 }

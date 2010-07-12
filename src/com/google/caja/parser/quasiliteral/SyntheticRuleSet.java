@@ -194,7 +194,7 @@ class SyntheticRuleSet {
                 Operation.createInfix(
                     Operator.ASSIGN, new Reference(d.getIdentifier()),
                     d.getInitializer()));
-            CajitaRewriter.markForSideEffect(s);
+            Scope.markForSideEffect(s);
             d.removeChild(d.getInitializer());
           }
           scope.addStartOfScopeStatement(d);

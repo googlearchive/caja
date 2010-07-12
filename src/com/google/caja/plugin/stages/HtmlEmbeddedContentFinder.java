@@ -161,9 +161,9 @@ public class HtmlEmbeddedContentFinder {
         if (aInfo != null) {
           switch (aInfo.getType()) {
             case URI:
-              String uriText = UriUtil.normalizeUri(a.getValue());
               boolean isCode = false;
               try {
+                String uriText = UriUtil.normalizeUri(a.getValue());
                 URI uri = new URI(uriText);
                 if (Strings.equalsIgnoreCase("javascript", uri.getScheme())) {
                   isCode = true;

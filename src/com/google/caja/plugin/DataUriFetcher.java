@@ -19,6 +19,7 @@ import java.net.URI;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import javax.mail.internet.ContentType;
 import javax.mail.internet.ParseException;
 
 import org.apache.commons.codec.binary.Base64;
@@ -29,11 +30,11 @@ import com.google.caja.lexer.InputSource;
 
 /**
  * Supports cross-browser support for fetching content from data uri
- * 
+ *
  * @author Jasvir Nagra <jasvir@gmail.com>
  */
 public class DataUriFetcher implements UriFetcher {
-  
+
   /**
    * From http://tools.ietf.org/html/rfc2397
    *   dataurl    := "data:" [ mediatype ] [ ";base64" ] "," data
@@ -41,12 +42,12 @@ public class DataUriFetcher implements UriFetcher {
    *   data       := *urlchar
    *   parameter  := attribute "=" value
    */
-  private final Pattern DATA_URI_RE = 
+  private final Pattern DATA_URI_RE =
     Pattern.compile("([^,]*?)(;base64)?,(.*)",
         Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
   private enum DATA_URI { ALL, TYPE, BASE64, DATA; }
   private final String DATA_URI_DEFAULT_CHARSET = "US-ASCII";
-  
+
   private boolean isDataUri(URI uri) {
     if (null != uri  && "data".equals(uri.getScheme())
         && uri.isOpaque()) {
@@ -54,12 +55,11 @@ public class DataUriFetcher implements UriFetcher {
     }
     return false;
   }
-  
+
   private String charsetFromMime(String mime) {
-    String charset = null;
+    String charset;
     try {
-      javax.mail.internet.ContentType parsedType = 
-        new javax.mail.internet.ContentType(mime);
+      ContentType parsedType = new ContentType(mime);
       charset = parsedType.getParameter("charset");
     } catch (ParseException e) {
       charset = null;
@@ -84,7 +84,7 @@ public class DataUriFetcher implements UriFetcher {
     if (!isDataUri(uri)) {
       throw new UriFetchException(ref, mimeType);
     }
-    
+
     String dataUri = uri.getSchemeSpecificPart();
     // We split the data uri into the mimetype and the data portion by
     // searching for the first comma (whether encoded or not).  This is
