@@ -138,6 +138,7 @@ public class JsOptimizer {
     MessageContext mc = new MessageContext();
     JsOptimizer opt = new JsOptimizer(mq);
     opt.setRename(true);
+    opt.setEnvJson(new ObjectConstructor(FilePosition.UNKNOWN));
     try {
       for (int i = 0, n = args.length; i < n; ++i) {
         String arg = args[i];

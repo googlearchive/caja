@@ -48,6 +48,7 @@ import com.google.caja.parser.js.ReturnStmt;
 import com.google.caja.parser.js.Statement;
 import com.google.caja.parser.js.ThrowStmt;
 import com.google.caja.parser.js.WithStmt;
+import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessagePart;
@@ -87,9 +88,16 @@ import java.util.Set;
  */
 public class Linter implements BuildCommand {
   private final Environment env;
+  private final Set<String> ignores;
 
-  public Linter() { this(new Environment(Sets.<String>newHashSet())); }
-  public Linter(Environment env) { this.env = env; }
+  public Linter() {
+    this(new Environment(Sets.<String>newHashSet()),
+         Collections.<String>emptySet());
+  }
+  public Linter(Environment env, Set<String> ignores) {
+    this.env = env;
+    this.ignores = ignores;
+  }
 
   public boolean build(List<File> inputs, List<File> dependencies, File output)
       throws IOException {
@@ -98,6 +106,13 @@ public class Linter implements BuildCommand {
     MessageQueue mq = new SimpleMessageQueue();
     List<LintJob> lintJobs = parseInputs(inputs, contentMap, mc, mq);
     lint(lintJobs, env, mq);
+    if (!ignores.isEmpty()) {
+      for (Iterator<Message> it = mq.getMessages().iterator(); it.hasNext();) {
+	if (ignores.contains(it.next().getMessageType().name())) {
+	  it.remove();
+	}
+      }
+    }
     if (output.getName().endsWith(".stamp")) {
       if (ErrorReporter.reportErrors(contentMap, mc, mq, System.out)
           .compareTo(MessageLevel.WARNING) < 0) {
@@ -663,6 +678,7 @@ public class Linter implements BuildCommand {
     List<File> inputs = Lists.newArrayList();
     String outDir = null;
     Set<String> outers = Sets.newLinkedHashSet(BROWSER_ENVIRONMENT.outers);
+    Set<String> ignores = Sets.newLinkedHashSet();
     while (argIt.hasNext()) {
       String arg = argIt.next();
       if (!arg.startsWith("-")) {
@@ -672,6 +688,8 @@ public class Linter implements BuildCommand {
         outDir = argIt.next();
       } else if ("--builtin".equals(arg)) {
         outers.add(argIt.next());
+      } else if ("--ignore".equals(arg)) {
+        ignores.add(argIt.next());
       } else if ("--".equals(arg)) {
         break;
       } else {
@@ -687,7 +705,7 @@ public class Linter implements BuildCommand {
       out = new File(outDir, "jslint.txt");
     }
     Environment env = new Environment(outers);
-    (new Linter(env)).build(inputs, deps, out);
+    (new Linter(env, ignores)).build(inputs, deps, out);
   }
 
   private static void checkGlobalsDefined(
