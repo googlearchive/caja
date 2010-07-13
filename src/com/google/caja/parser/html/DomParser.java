@@ -523,7 +523,7 @@ public class DomParser {
           return;
         case COMMENT:
           out.processComment(t);
-          continue;
+          return;
         default:
           throw new ParseException(new Message(
               MessageType.MALFORMED_XHTML, t.pos,

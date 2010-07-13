@@ -239,6 +239,14 @@ public class DomParserTest extends CajaTestCase {
     Element el = new DomParser(tq, false, mq).parseDocument();
     assertEquals(DOM2_HTML_RENDERED_GOLDEN, Nodes.render(el));
   }
+  
+  public final void testParseLastLineComment() throws Exception {
+    String DOM_WITH_COMMENT = DOM2_HTML + "<!-- This is a comment -->";
+    TokenQueue<HtmlTokenType> tq = tokenizeTestInput(
+        DOM_WITH_COMMENT, false, true);
+    Element el = new DomParser(tq, false, mq).parseDocument();
+    assertEquals(DOM2_HTML_RENDERED_GOLDEN, Nodes.render(el));
+  }
 
   public final void testParseXmlFragmentManyWays() throws Exception {
     for (DomParser p : allPossibleConfigurations(DOM3_XML, false)) {
