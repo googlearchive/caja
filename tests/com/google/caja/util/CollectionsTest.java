@@ -175,7 +175,7 @@ public class CollectionsTest extends TestCase {
   private static class PetulantCollection implements Collection<String> {
     public boolean add(String e) { return false; }
     public boolean addAll(Collection<? extends String> c) { return false; }
-    public void clear() {}
+    public void clear() { /* noop */ }
     public boolean contains(Object o) { return false; }
     public boolean containsAll(Collection<?> c) { return false; }
     public boolean isEmpty() { return true; }

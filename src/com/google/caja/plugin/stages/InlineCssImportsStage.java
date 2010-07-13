@@ -152,6 +152,7 @@ public class InlineCssImportsStage implements Pipeline.Stage<Jobs> {
           MessagePart.Factory.valueOf(uriNode.getValue()));
       return;
     }
+    assert absUri != null;  // because absUri == null  ->  importUrl == null
 
     // Import it and recursively import its imports
     CharProducer cp;

@@ -58,6 +58,6 @@ public interface WhiteList {
       };
     }
 
-    private Factory() {}
+    private Factory() { /* uninstantiable */ }
   }
 }

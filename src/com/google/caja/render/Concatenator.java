@@ -47,7 +47,7 @@ public final class Concatenator implements TokenConsumer {
 
   public Concatenator(StringBuilder out) { this(out, null); }
 
-  public void mark(FilePosition pos) {}
+  public void mark(FilePosition pos) { /* noop */ }
 
   public void consume(String text) {
     append(text);

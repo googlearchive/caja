@@ -189,5 +189,5 @@ public final class Sets {
     return d;
   }
 
-  private Sets() {}
+  private Sets() { /* uninstantiable */ }
 }

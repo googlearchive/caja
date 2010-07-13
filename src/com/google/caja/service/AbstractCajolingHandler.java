@@ -16,22 +16,27 @@ package com.google.caja.service;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.URI;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
 import com.google.caja.lexer.ExternalReference;
 import com.google.caja.lexer.FetchedData;
+import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.escaping.UriUtil;
 import com.google.caja.parser.html.Namespaces;
 import com.google.caja.parser.html.Nodes;
+import com.google.caja.parser.js.ArrayConstructor;
 import com.google.caja.parser.js.CajoledModule;
 import com.google.caja.parser.js.Expression;
+import com.google.caja.parser.js.IntegerLiteral;
+import com.google.caja.parser.js.ObjectConstructor;
+import com.google.caja.parser.js.StringLiteral;
+import com.google.caja.parser.js.ValueProperty;
 import com.google.caja.plugin.UriFetcher;
 import com.google.caja.plugin.UriPolicy;
 import com.google.caja.render.Concatenator;
@@ -41,6 +46,8 @@ import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.RenderContext;
+import com.google.caja.util.Callback;
+import com.google.caja.util.Lists;
 import com.google.caja.util.Pair;
 
 /**
@@ -91,7 +98,7 @@ public abstract class AbstractCajolingHandler implements ContentHandler {
       OutputStream response,
       MessageQueue mq)
       throws UnsupportedContentTypeException;
-  
+
   protected void renderAsHtml(Document doc,
       Node staticHtml, CajoledModule javascript,
       Expression moduleCallback, Appendable output)
@@ -108,33 +115,65 @@ public abstract class AbstractCajolingHandler implements ContentHandler {
       output.append(Nodes.render(script));
     }
   }
-  
+
+  private static StringLiteral lit(String s) {
+    return StringLiteral.valueOf(FilePosition.UNKNOWN, s);
+  }
+
+  private static IntegerLiteral lit(int i) {
+    return new IntegerLiteral(FilePosition.UNKNOWN, i);
+  }
+
+  private static ArrayConstructor arr(List<? extends Expression> items) {
+    return new ArrayConstructor(FilePosition.UNKNOWN, items);
+  }
+
+  private static ObjectConstructor obj(List<? extends ValueProperty> props) {
+    return new ObjectConstructor(FilePosition.UNKNOWN, props);
+  }
+
+  private static ValueProperty prop(String key, Expression e) {
+    return new ValueProperty(FilePosition.UNKNOWN, lit(key), e);
+  }
+
   protected void renderAsJSON(Document doc,
       Node staticHtml, CajoledModule javascript, Expression moduleCallback,
       MessageQueue mq, Appendable output)
-  throws IOException {
-    JSONObject json = new JSONObject();
-    
+      throws IOException {
+    List<ValueProperty> props = Lists.newArrayList();
+
     if (staticHtml != null) {
-      json.put("html", Nodes.render(staticHtml));
+      props.add(prop("html", lit(Nodes.render(staticHtml))));
     }
     if (javascript != null) {
-      json.put("js", renderJavascript(javascript, moduleCallback));
+      props.add(prop("js", lit(renderJavascript(javascript, moduleCallback))));
     }
     if (mq.hasMessageAtLevel(MessageLevel.LOG)) {
-      JSONArray jsonMessages = new JSONArray();
-      jsonMessages.ensureCapacity(4);
+      List<Expression> messages = Lists.newArrayList();
       for (Message m : mq.getMessages()) {
-        JSONObject jsonMessage = new JSONObject();
-        jsonMessage.put("level", m.getMessageLevel().ordinal());
-        jsonMessage.put("name", m.getMessageLevel().name());
-        jsonMessage.put("type", m.getMessageType().name());
-        jsonMessage.put("message", m.toString());
-        jsonMessages.add(jsonMessage);
+        messages.add(obj(Arrays.asList(
+            prop("level", lit(m.getMessageLevel().ordinal())),
+            prop("name", lit(m.getMessageLevel().name())),
+            prop("type", lit(m.getMessageType().name())),
+            prop("message", lit(m.toString())))));
       }
-      json.put("messages", jsonMessages);
+      props.add(prop("messages", arr(messages)));
     }
-    output.append(json.toString());
+
+    class IOCallback implements Callback<IOException> {
+      IOException ex;
+      public void handle(IOException e) {
+        if (this.ex != null) { this.ex = e; }
+      }
+    }
+
+    IOCallback callback = new IOCallback();
+    RenderContext rc = new RenderContext(new JsMinimalPrinter(new Concatenator(
+        output, callback)))
+        .withJson(true);
+    obj(props).render(rc);
+    rc.getOut().noMoreTokens();
+    if (callback.ex != null) { throw callback.ex; }
   }
 
   protected void renderAsJavascript(CajoledModule javascript,

@@ -18,41 +18,23 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.net.URI;
 import java.util.List;
-import java.util.Map;
-
-import org.json.simple.JSONObject;
-import org.json.simple.JSONArray;
 import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.Node;
-
 import com.google.caja.lexer.CharProducer;
-import com.google.caja.lexer.ExternalReference;
 import com.google.caja.lexer.FetchedData;
 import com.google.caja.lexer.HtmlLexer;
 import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.ParseException;
-import com.google.caja.lexer.escaping.UriUtil;
 import com.google.caja.parser.html.Dom;
 import com.google.caja.parser.html.DomParser;
-import com.google.caja.parser.html.Namespaces;
-import com.google.caja.parser.html.Nodes;
-import com.google.caja.parser.js.CajoledModule;
 import com.google.caja.parser.js.Expression;
 import com.google.caja.parser.quasiliteral.QuasiBuilder;
 import com.google.caja.plugin.PipelineMaker;
 import com.google.caja.plugin.PluginCompiler;
 import com.google.caja.plugin.PluginMeta;
 import com.google.caja.plugin.UriFetcher;
-import com.google.caja.plugin.UriPolicy;
-import com.google.caja.render.Concatenator;
-import com.google.caja.render.JsMinimalPrinter;
 import com.google.caja.reporting.BuildInfo;
-import com.google.caja.reporting.Message;
-import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
-import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.Charsets;
 import com.google.caja.util.ContentType;
 import com.google.caja.util.Pair;
@@ -62,14 +44,14 @@ import com.google.caja.util.Pair;
  *
  * @author jasvir@google.com (Jasvir Nagra)
  */
-public class HtmlHandler extends AbstractCajolingHandler
-    implements ContentHandler {
+public class HtmlHandler extends AbstractCajolingHandler {
 
   public HtmlHandler(BuildInfo buildInfo, final String hostedService,
       final UriFetcher uriFetcher) {
     super(buildInfo, hostedService, uriFetcher);
   }
 
+  @Override
   public boolean canHandle(URI uri, CajolingService.Transform transform,
       List<CajolingService.Directive> directives,
       String inputContentType, String outputContentType,
@@ -81,6 +63,7 @@ public class HtmlHandler extends AbstractCajolingHandler
             || checker.check(outputContentType, "text/javascript"));
   }
 
+  @Override
   public Pair<String,String> apply(URI uri,
                                    CajolingService.Transform transform,
                                    List<CajolingService.Directive> directives,

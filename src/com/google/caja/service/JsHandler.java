@@ -45,14 +45,14 @@ import com.google.caja.util.Pair;
  *
  * @author jasvir@google.com (Jasvir Nagra)
  */
-public class JsHandler extends AbstractCajolingHandler
-    implements ContentHandler {
+public class JsHandler extends AbstractCajolingHandler {
 
   public JsHandler(BuildInfo buildInfo) {
     super(buildInfo, null /* hostedService */,
         null /* uriFetcher */);
   }
 
+  @Override
   public boolean canHandle(URI uri, CajolingService.Transform transform,
       List<CajolingService.Directive> directives, String inputContentType,
       String outputContentType, ContentTypeCheck checker) {
@@ -62,6 +62,7 @@ public class JsHandler extends AbstractCajolingHandler
             || transform.equals(CajolingService.Transform.CAJOLE));
   }
 
+  @Override
   public Pair<String,String> apply(URI uri,
       CajolingService.Transform transform, List<CajolingService.Directive> directive,
       ContentHandlerArgs args,

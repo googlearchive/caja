@@ -14,8 +14,6 @@
 
 package com.google.caja.service;
 
-import java.util.Arrays;
-
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
@@ -131,8 +129,8 @@ public class HtmlHandlerTest extends ServiceTestCase {
     assertHtml2Json("*/*", "application/json", null);
     assertHtml2Json("text/html", "application/json", null);
     assertHtml2Json("text/html", "application/json", "foo.bar.baz");
-  }  
-  
+  }
+
   private void assertHtml2Json(String inputMimeType,
                                String outputMimeType,
                                String moduleCallback)
@@ -141,7 +139,7 @@ public class HtmlHandlerTest extends ServiceTestCase {
       "text/html");
 
     Object result = json((String)requestGet(
-        requestString(inputMimeType, outputMimeType, moduleCallback)));  
+        requestString(inputMimeType, outputMimeType, moduleCallback)));
     assertTrue(result instanceof JSONObject);
     JSONObject json = (JSONObject) result;
 
@@ -208,12 +206,12 @@ public class HtmlHandlerTest extends ServiceTestCase {
           + "}" + moduleCallbackSuffix(moduleCallback)
         + "}",
       (String)json.get("js"));
-    
+
     assertTrue(json.get("messages") instanceof JSONArray);
     JSONArray messages = (JSONArray)json.get("messages");
     assertMessagesLessSevereThan(messages, MessageLevel.ERROR);
   }
-  
+
   private void assertHtml2Js(String inputMimeType,
                              String outputMimeType,
                              String moduleCallback)

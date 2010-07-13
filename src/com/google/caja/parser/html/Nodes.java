@@ -245,7 +245,7 @@ public class Nodes {
     return sb.toString();
   }
 
-  private Nodes() {}
+  private Nodes() { /* uninstantiable */ }
 }
 
 final class Renderer {

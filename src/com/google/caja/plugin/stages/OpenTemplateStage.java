@@ -450,6 +450,7 @@ final class Splitter {
       joined = CharProducer.Factory.chain(
           producers.toArray(new CharProducer[0]));
     }
+    if (start == null) { start = FilePosition.UNKNOWN; }
     CharProducer exprText = CharProducer.Factory.fromJsString(joined);
     JsLexer lexer = new JsLexer(exprText);
     JsTokenQueue tq = new JsTokenQueue(

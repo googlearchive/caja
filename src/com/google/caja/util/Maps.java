@@ -149,5 +149,5 @@ public final class Maps {
   private static <K, V>
   Map<K, V> makeEnumMap(Class<? extends Enum> t) { return new EnumMap(t); }
 
-  private Maps() {}
+  private Maps() { /* uninstantiable */ }
 }

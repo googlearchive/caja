@@ -14,11 +14,29 @@
 
 package com.google.caja.reporting;
 
+import java.util.List;
+
 /**
- * A placeholder class to distinguish a top level MessageQueue from a
- * MessageGroup.
+ * A group of {@link Message message}s.
  *
  * @author mikesamuel@gmail.com
  */
-public interface MessageQueue extends MessageGroup {
+public interface MessageQueue {
+
+  /**
+   * Returns a list of the messages published thus far.
+   */
+  List<Message> getMessages();
+
+  /** Adds a message to this group's message list. */
+  void addMessage(MessageTypeInt type, MessagePart... parts);
+
+  /** Adds a message to this group's message list. */
+  void addMessage(MessageTypeInt type, MessageLevel lvl, MessagePart... parts);
+
+  /**
+   * Queries whether this group contains a message of at least the specified
+   * message level.
+   */
+  boolean hasMessageAtLevel(MessageLevel lvl);
 }

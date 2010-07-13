@@ -71,7 +71,7 @@ public abstract class ServiceTestCase extends CajaTestCase {
   protected Object json(String json) {
     return JSONValue.parse(json);
   }
-  
+
   protected void assertMessagesLessSevereThan(JSONArray messages,
       MessageLevel severity) {
     for (Object m : messages.toArray()) {
@@ -79,7 +79,7 @@ public abstract class ServiceTestCase extends CajaTestCase {
       assertTrue(((Long) level).longValue() < severity.ordinal());
     }
   }
-  
+
   protected void registerUri(String uri, String content, String contentType) {
     ByteArrayOutputStream out = new ByteArrayOutputStream();
     try {

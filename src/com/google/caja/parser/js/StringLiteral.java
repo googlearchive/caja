@@ -72,10 +72,16 @@ public final class StringLiteral extends Literal {
     // attribute values, they tend to use double quotes, and putting
     // single quotes around strings allows us to produce output that
     // contains no double quotes.
-    char delim = !rc.isEmbeddable() && rc.asJson() ? '"' : '\'';
-    sb.append(delim);
-    Escaping.escapeJsString(unquoted, rc.isAsciiOnly(), rc.isEmbeddable(), sb);
-    sb.append(delim);
+    if (!rc.isEmbeddable() && rc.asJson()) {
+      sb.append('"');
+      Escaping.escapeJsonString(unquoted, rc.isAsciiOnly(), sb);
+      sb.append('"');
+    } else {
+      sb.append('\'');
+      Escaping.escapeJsString(
+          unquoted, rc.isAsciiOnly(), rc.isEmbeddable(), sb);
+      sb.append('\'');
+    }
     rc.getOut().consume(sb.toString());
   }
 

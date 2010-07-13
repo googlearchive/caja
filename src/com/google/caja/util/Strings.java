@@ -107,5 +107,5 @@ public final class Strings {
     return s;
   }
 
-  private Strings() {}
+  private Strings() { /* uninstantiable */ }
 }

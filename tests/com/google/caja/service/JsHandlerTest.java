@@ -24,6 +24,7 @@ public class JsHandlerTest extends ServiceTestCase {
   }
   // TODO(ihab.awad): Change tests to use structural equality (via quasi
   // matches) rather than golden text to avoid this.
+  @Override
   protected void assertEqualsIgnoreSpace(String expected, String actual) {
     assertEquals(normStringSpaces(expected), normStringSpaces(actual));
   }

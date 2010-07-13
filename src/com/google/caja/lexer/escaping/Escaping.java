@@ -64,6 +64,40 @@ public class Escaping {
   }
 
   /**
+   * Given a plain text string writes an unquoted JSON string literal.
+   *
+   * @param s the plain text string to escape.
+   * @param asciiOnly Makes sure that only ASCII characters are written to out.
+   *     This is a good idea if you don't have control over the charset that
+   *     the javascript will be served with.
+   * @param embeddable True to make sure that nothing is written to out that
+   *     could interfere with embedding inside a script tag or CDATA section, or
+   *     other tag that typically contains markup.
+   *     This does not make it safe to embed in an HTML attribute without
+   *     further escaping.
+   * @param out written to.
+   */
+  public static void escapeJsonString(
+      CharSequence s, boolean asciiOnly, Appendable out)
+      throws IOException {
+    new Escaper(
+        s, JSON_ESCAPES,
+        asciiOnly ? NO_NON_ASCII : ALLOW_NON_ASCII, JS_ENCODER, out)
+        .escape();
+  }
+
+  /** @see #escapeJsonString(CharSequence, boolean, boolean, Appendable) */
+  public static void escapeJsonString(
+      CharSequence s, boolean asciiOnly, StringBuilder out) {
+    try {
+      escapeJsonString(s, asciiOnly, (Appendable) out);
+    } catch (IOException ex) {
+      throw new SomethingWidgyHappenedError(
+          "StringBuilders don't throw IOException", ex);
+    }
+  }
+
+  /**
    * Given a normalized JS identifier writes a javascript identifier.
    *
    * @param s a string containing only letters, digits, and the characters
@@ -288,6 +322,17 @@ public class Escaping {
   }
 
   // Escape only the characters in string that must be escaped.
+  private static final EscapeMap JSON_ESCAPES = new EscapeMap(
+      new Escape('\0', "\\u0000"),
+      new Escape('\b', "\\b"),
+      new Escape('\r', "\\r"),
+      new Escape('\f', "\\f"),
+      new Escape('\n', "\\n"),
+      new Escape('\t', "\\t"),
+      new Escape('\\', "\\\\"),
+      new Escape('\'', "\\u0027"),
+      new Escape('\"', "\\\"")
+      );
   private static final EscapeMap STRING_MINIMAL_ESCAPES = new EscapeMap(
       new Escape('\0', "\\x00"),
       new Escape('\b', "\\b"),

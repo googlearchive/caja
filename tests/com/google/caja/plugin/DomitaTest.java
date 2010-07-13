@@ -44,7 +44,7 @@ public class DomitaTest extends BrowserTestCase {
   @Override
   protected void driveBrowser(final WebDriver driver, final String pageName) {
     poll(10000, 200, new Check() {
-      public String toString() { return "startup"; }
+      @Override public String toString() { return "startup"; }
       public boolean run() {
         List<WebElement> readyElements = driver.findElements(
             By.xpath("//*[@class='readytotest']"));
@@ -54,8 +54,8 @@ public class DomitaTest extends BrowserTestCase {
 
     poll(10000, 1000, new Check() {
       private List<WebElement> clickingList = null;
-      public String toString() {
-        return "clicking done (Remaining elements = " + 
+      @Override public String toString() {
+        return "clicking done (Remaining elements = " +
             renderElements(clickingList) + ")";
       }
       public boolean run() {
@@ -70,8 +70,8 @@ public class DomitaTest extends BrowserTestCase {
 
     poll(10000, 1000, new Check() {
       private List<WebElement> waitingList = null;
-      public String toString() {
-        return "completion (Remaining elements = " + 
+      @Override public String toString() {
+        return "completion (Remaining elements = " +
             renderElements(waitingList) + ")";
       }
       public boolean run() {

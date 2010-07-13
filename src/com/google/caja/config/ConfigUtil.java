@@ -206,7 +206,7 @@ public class ConfigUtil {
     return new JSONWhiteListLoader(src, resolver, mq).loadFrom(value);
   }
 
-  private ConfigUtil() {}
+  private ConfigUtil() { /* uninstantiable */ }
 }
 
 final class UriReader extends BufferedReader {

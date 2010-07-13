@@ -45,7 +45,7 @@ public final class ObjectConstructor extends AbstractExpression {
   }
 
   public ObjectConstructor(
-      FilePosition pos, List<ObjProperty> properties) {
+      FilePosition pos, List<? extends ObjProperty> properties) {
     this(pos, null, properties);
   }
 

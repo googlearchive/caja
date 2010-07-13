@@ -116,7 +116,7 @@ public abstract class AbstractCajaAntTask extends Task {
             }
           }
           @Override
-          public void close() {}
+          public void close() { /* noop */ }
         }, true);
   }
 

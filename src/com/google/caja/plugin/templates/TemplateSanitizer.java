@@ -98,6 +98,7 @@ public final class TemplateSanitizer {
                 msgType, msgLevel, Nodes.getFilePositionFor(el), elKey));
 
             if (ignore) {
+              assert p != null;  // ignore = true  ->  p != null above
               p.removeChild(el);
               return valid;  // Don't recurse to children if removed.
             } else {

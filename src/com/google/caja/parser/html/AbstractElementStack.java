@@ -59,7 +59,7 @@ abstract class AbstractElementStack implements OpenElementStack {
   }
 
   /** {@inheritDoc} */
-  public void open(boolean fragment) {}
+  public void open(boolean fragment) { /* noop */ }
 
   /** The current element &mdash; according to HTML5 the stack grows down. */
   protected final OpenNode getBottom() {

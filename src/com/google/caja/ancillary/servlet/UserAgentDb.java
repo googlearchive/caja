@@ -52,7 +52,7 @@ final class UserAgentDb {
   private static final List<Pair<String, ObjectConstructor>> ENV_JSON
       = Lists.newArrayList();
 
-  private UserAgentDb() {}
+  private UserAgentDb() { /* uninstantiable */ }
 
   static {
     List<String> userAgents = Lists.newArrayList();

@@ -130,6 +130,30 @@ public class EscapingTest extends TestCase {
         sb.toString());
   }
 
+  public final void testEscapeJsonString() {
+    StringBuilder sb = new StringBuilder();
+    Escaping.escapeJsonString(CHARS, false, sb);
+    // JSON doesn't allow \x escapes, or \' as an escape sequence.
+    assertStringsEqual(
+        (// all ctrl chars escaped
+         "\\u0000\u0001\u0002\u0003\u0004\u0005\u0006\u0007"
+         + "\\b\\t\\n\u000b\\f\\r\u000e\u000f"
+         + "\u0010\u0011\u0012\u0013\u0014\u0015\u0016\u0017"
+         + "\u0018\u0019\u001a\u001b\u001c\u001d\u001e\u001f"
+         + " !\\\"#$%\u0026\\u0027()*+,-./"  // & escaped
+         + "0123456789:;\u003c=\u003e?"  // < and > escaped
+         + "@ABCDEFGHIJKLMNO"
+         + "PQRSTUVWXYZ[\\\\]^_"
+         + "`abcdefghijklmno"
+         + "pqrstuvwxyz{|}~\177"
+         + "\u0080\u0081\u0082\u0083\u0084"
+         + "\\u200e\\u200f\u2010\\u2028\\u2029"
+         + "\ud834\udd20"
+         + "\\ud834\\udd77"
+         ),
+        sb.toString());
+  }
+
   public final void testAsciiOnlyEscapeJsString() {
     StringBuilder sb = new StringBuilder();
     Escaping.escapeJsString(CHARS, true, false, sb);
