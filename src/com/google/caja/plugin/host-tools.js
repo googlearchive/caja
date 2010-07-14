@@ -120,9 +120,10 @@ var HostTools;
     }
     
     return cajita.freeze({
+      getLoad: function () { return load; },
       setBaseURL: setBaseURL,
       setCajolerService: setCajolerService,
-      Sandbox: Sandbox,
+      Sandbox: Sandbox
     });
   }
 })();

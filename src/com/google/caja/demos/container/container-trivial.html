@@ -22,31 +22,7 @@
     <!-- Provides rules for visually confining vdoc-body___ elements -->
     <link rel="stylesheet" href="caja-gadget.css" type="text/css">
     
-    <!-- In production these can be all replaced by domita-minified.js -->
-    <script src="http://caja.appspot.com/json_sans_eval.js"
-            type="text/javascript"></script>
-    <script src="http://caja.appspot.com/cajita.js"
-            type="text/javascript"></script>
-    <script src="http://caja.appspot.com/unicode.js"
-            type="text/javascript"></script>
-    <script src="http://caja.appspot.com/css-defs.js"
-            type="text/javascript"></script>
-    <script src="http://caja.appspot.com/html4-defs.js"
-            type="text/javascript"></script>
-    <script src="http://caja.appspot.com/html-sanitizer.js"
-            type="text/javascript"></script>
-    <script src="http://caja.appspot.com/html-emitter.js"
-            type="text/javascript"></script>
-    <script src="http://caja.appspot.com/bridal.js"
-            type="text/javascript"></script>
-    <script src="http://caja.appspot.com/domita.js"
-            type="text/javascript"></script>
-            
-    <script src="http://caja.appspot.com/setup-valija.js"
-            type="text/javascript"></script>
-    <script src="http://caja.appspot.com/valija.out.js"
-            type="text/javascript"></script>
-    <script src="http://caja.appspot.com/host-tools.js"
+    <script src="http://caja.appspot.com/caja.js"
             type="text/javascript"></script>
   </head>
 
@@ -58,26 +34,30 @@
     gadget below. The orange border in this example indicates the boundaries of
     the area which is under the control of the gadget.</p>
 
-    <div id="theGadget"></div>
+    <div id="theGadget" style="border: .1em solid orange; padding: .2em;"></div>
     <script type="text/javascript">
-        // Prepare the host-page library
-        var ht = new HostTools();
+        // Prepare the Caja library.
+        // This is an asynchronous load because it constructs an iframe which
+        // all the sandbox stuff is hidden in, so you have to provide a 
+        // callback.
+        loadCaja(function (caja) {
 
-        // There should be one Sandbox per gadget
-        var sandbox = new ht.Sandbox();
+          // There should be one Sandbox per gadget
+          var sandbox = new caja.hostTools.Sandbox();
 
-        // Specify the DOM node which is the virtual <body> of the gadget
-        sandbox.attach(document.getElementById("theGadget"));
-        
-        // Sandbox arranges an imports object with the appropriate 
-        // configuration; now we specify that the module about to be loaded gets
-        // that imports.
-        ___.getNewModuleHandler().setImports(sandbox.imports);
+          // Specify the DOM node which is the virtual <body> of the gadget
+          sandbox.attach(document.getElementById("theGadget"));
+          
+          // Load the gadget
+          sandbox.run("gadget-trivial.html");
+          
+        }, {
+          // Specify the Caja server -- since we are using local files this
+          // must be a local server.
+          cajaServer: "http://localhost:8080/"
+        });
     </script>
 
-    <!-- Load the module file -->
-    <script src="gadget-trivial.out.js" type="text/javascript"></script>
-    
     <p>See comments in the source of this page for more information.</p>
 </body> 
 </html>

@@ -1,5 +1,3 @@
-<script>
 var lib = {
   superCool: function () {}
 };
-</script>

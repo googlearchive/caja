@@ -596,7 +596,7 @@
     </transform>
   </target>
 
-  <target name="MinifiedJs" depends="pluginc">
+  <target name="MinifiedJs" depends="pluginc,CajoledValija">
     <transform>
       <output file="${lib}/com/google/caja/plugin/html-sanitizer-minified.js"
        language="javascript" renderer="minify"/>
@@ -623,6 +623,52 @@
       <input file="${src}/com/google/caja/plugin/uri.js"/>
       <input file="${src}/com/google/caja/cajita-module.js"/>
       <input file="${src}/com/google/caja/cajita-promise.js"/>
+    </transform>
+    <transform>
+      <!-- This file is loaded into an iframe by caja.js in debug mode -->
+      <output file="${lib}/com/google/caja/plugin/caja-iframe.js"
+       language="javascript" renderer="pretty"/>
+      <!-- TODO(kpreid): use a renderer that doesn't alter the formatting and
+           just concats. -->
+      <input file="${third_party}/js/json_sans_eval/json_sans_eval.js"/>
+      <input file="${src}/com/google/caja/cajita.js"/>
+      <input file="${src}/com/google/caja/cajita-debugmode.js"/> <!-- added -->
+      <input file="${src}/com/google/caja/log-to-console.js"/> <!-- added -->
+      <input file="${src}/com/google/caja/plugin/unicode.js"/>
+      <input file="${lib}/com/google/caja/plugin/css-defs.js"/>
+      <input file="${lib}/com/google/caja/plugin/html4-defs.js"/>
+      <input file="${src}/com/google/caja/plugin/html-sanitizer.js"/>
+      <input file="${src}/com/google/caja/plugin/html-emitter.js"/>
+      <input file="${src}/com/google/caja/plugin/bridal.js"/>
+      <input file="${src}/com/google/caja/plugin/domita.js"/>
+      <input file="${src}/com/google/caja/demos/playground/setup-valija.js"/>
+      <input file="${lib}/com/google/caja/plugin/valija.out.js"/>
+      <input file="${src}/com/google/caja/plugin/uri.js"/>
+      <input file="${src}/com/google/caja/cajita-module.js"/>
+      <input file="${src}/com/google/caja/cajita-promise.js"/>
+      <input file="${src}/com/google/caja/plugin/host-tools.js"/>
+      <input file="${src}/com/google/caja/plugin/host-iframe-final.js"/>
+    </transform>
+    <transform>
+      <!-- This file is loaded into an iframe by caja.js in production mode -->
+      <output file="${lib}/com/google/caja/plugin/caja-iframe-minified.js"
+       language="javascript" renderer="minify"/>
+       <input file="${third_party}/js/json_sans_eval/json_sans_eval.js"/>
+       <input file="${src}/com/google/caja/cajita.js"/>
+       <input file="${src}/com/google/caja/plugin/unicode.js"/>
+       <input file="${lib}/com/google/caja/plugin/css-defs.js"/>
+       <input file="${lib}/com/google/caja/plugin/html4-defs.js"/>
+       <input file="${src}/com/google/caja/plugin/html-sanitizer.js"/>
+       <input file="${src}/com/google/caja/plugin/html-emitter.js"/>
+       <input file="${src}/com/google/caja/plugin/bridal.js"/>
+       <input file="${src}/com/google/caja/plugin/domita.js"/>
+       <input file="${src}/com/google/caja/demos/playground/setup-valija.js"/>
+       <input file="${lib}/com/google/caja/plugin/valija.out.js"/>
+       <input file="${src}/com/google/caja/plugin/uri.js"/>
+       <input file="${src}/com/google/caja/cajita-module.js"/>
+       <input file="${src}/com/google/caja/cajita-promise.js"/>
+       <input file="${src}/com/google/caja/plugin/host-tools.js"/>
+       <input file="${src}/com/google/caja/plugin/host-iframe-final.js"/>
     </transform>
   </target>
 
@@ -734,6 +780,7 @@
         <include name="**/caja/plugin/bridal.js"/>
         <include name="**/caja/plugin/caja-gadget.css"/>
         <include name="**/caja/plugin/domita.js"/>
+        <include name="**/caja/plugin/caja.js"/>
         <include name="**/caja/plugin/host-tools.js"/>
         <include name="**/caja/plugin/html-emitter.js"/>
         <include name="**/caja/plugin/html-sanitizer.js"/>
@@ -856,6 +903,14 @@
       <fileset dir="${lib}/com/google/caja/plugin">
         <include name="domita-minified.js"/>
         <include name="valija.out.js"/>
+      </fileset>
+      
+      <!-- For iframe-based Caja loading - TODO(kpreid): this should become
+           part of a "Caja server" package separate from the playground. -->
+      <fileset dir="${lib}/com/google/caja/plugin">
+        <include name="caja.js"/>
+        <include name="caja-iframe.js"/>
+        <include name="caja-iframe-minified.js"/>
       </fileset>
     </copy>
   </target>
@@ -1081,20 +1136,10 @@
     <mkdir dir="${www}/container"/>
 
     <transform>
-      <output file="${lib}/com/google/caja/demos/container/gadget-get.out.js"
-       language="caja" onlyJsEmitted="true" debug="false"/>
-      <input file="${demos}/container/gadget-get.html"/>
-    </transform>
-    <transform>
-      <output file="${lib}/com/google/caja/demos/container/gadget-set.out.js"
-       language="caja" onlyJsEmitted="true" debug="false"/>
-      <input file="${demos}/container/gadget-set.html"/>
-    </transform>
-    <transform>
       <output 
        file="${lib}/com/google/caja/demos/container/gadget-library.out.js"
        language="caja" onlyJsEmitted="true" debug="false"/>
-      <input file="${demos}/container/gadget-library.html"/>
+      <input file="${demos}/container/gadget-library.js"/>
     </transform>
     <transform>
       <output 
@@ -1109,12 +1154,15 @@
       </fileset>
       <fileset dir="${src}/com/google/caja/plugin">
         <include name="caja-gadget.css"/>
+        <include name="caja.js"/>
       </fileset>
       <fileset dir="${lib}/com/google/caja/demos/container">
         <include name="*.out.js"/>
       </fileset>
       <fileset dir="${demos}/container">
         <include name="container-*.html"/>
+        <include name="gadget-*.html"/>
+        <include name="gadget-*.js"/>
       </fileset>
       <fileset dir="${lib}/com/google/caja/plugin">
         <include name="domita-minified.js"/>

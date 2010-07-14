@@ -15,154 +15,98 @@
  - limitations under the License.
 -->
 
-<!-- This should be kept in sync with the InteractingModulesExample wiki page -->
+<!-- This should be kept in sync with the InteractingModulesExample wiki page.
+     TODO(kpreid): At least, that used to be true. The info on that page is tied
+     to the old, explicit forms of loading Caja. What should we do now? -->
 
 <html>
   <head>
-    <title>A simple host page for Caja gadgets</title>
+    <title>Caja interacting gadgets example</title>
 
-    <!-- Provides rules for visually confining vdoc-body___ elements -->
+    <!-- Provides rules for visually confining gadget elements -->
     <link rel="stylesheet" href="caja-gadget.css" type="text/css">
     
-    <!-- In ant-lib/com/google/caja/plugin/ -->
-    <script src="domita-minified.js"></script>
-    <!-- In ant-lib/com/google/caja/ -->
-    <script src="log-to-console.js"></script>
-  
-    <script>
-    (function(){
-      // Give the module a variable into which it can export the valija maker
-      var imports = ___.getNewModuleHandler().getImports();
-      imports.loader = {
-        provide: ___.markFuncFreeze(function(v){ valijaMaker = v; })
-      };
-    })();
-    </script>
-
-    <!-- In ant-lib/com/google/caja/plugin/ -->
-    <script src="valija.out.js"></script>
-  
-    <script>
-      var clearImports = function () {
-        // Ensure that the next gadget cannot get the previous gadget's
-        // authorities even if setup fails.
-        ___.getNewModuleHandler().setImports(null);
-      };
+    <style type="text/css">
+      table { border-collapse: collapse; }
+      td { border: 1px solid black; padding: 1em; }
+    </style>
     
-      var initValija = function(divId, extraOuters) {
-        // Make a copy of the standard objects
-        var imports = ___.copy(___.sharedImports);
-      
-        // Reify the imports for use by Valija
-        imports.outers = imports;
-      
-        // Create a fake document object, attach it to the given div,
-        // and put a reference in imports
-        var htmlContainer = document.getElementById(divId);
-        imports.htmlEmitter___ = new HtmlEmitter(htmlContainer);
-        imports.getCssContainer___ = function () {
-          return htmlContainer;
-        };
+    <script type="text/javascript" src="caja.js"></script>
+  
+    <script type="text/javascript">
+      function loadGadgets(caja) {
+        var ___ = caja.___;
         
-        // The function attachDocumentStub() copies each property of
-        // imports.outers to tameWindow, a constructed object, then sets 
-        //   imports.outers = tameWindow
-        // so after this call, imports.outers !== imports.  Also, if
-        // you set a property on imports.outers after this point, 
-        // you have to grant access to it explicitly.
-        attachDocumentStub(
-            "-" + divId + "___",
-            // Don't proxy urls
-            { rewrite: function(uri, mimetype) { return uri; } },
-            imports,
-            document.getElementById(divId));
+        // Some state to share between the gadgets
+        // The functions must be explicitly marked as safe to the Cajita runtime
+        // because this is not cajoled code as in a module.
+        var shared = (function (x) {
+          return { 
+              get: ___.markFuncFreeze(function () { return x; }),
+              set: ___.markFuncFreeze(function (y) { x = String(y); })
+            };
+        })("");
+        
+        // libP is a promise for a module function.
+        var libP = caja.hostTools.getLoad().async("gadget-library.js");
+        
+        function loadGadget(mid, elem, extraOuters) {
+
+          // There is one Sandbox per gadget.
+          var sandbox = new caja.hostTools.Sandbox();
+
+          // Grant access to the DOM
+          sandbox.attach(elem);
           
-        // Add the extra, possibly shared state
-        // forOwnKeys is like for...in but skips inherited and 
-        // Caja-bookkeeping properties.
-        cajita.forOwnKeys(extraOuters, ___.markFuncFreeze(function (i) {
-          // setPub makes the property readable from Cajita code
-          cajita.setPub(imports.outers, i, extraOuters[i]);
-        }));
-
-        // Create the Valija runtime instance
-        // This must be called after attachDocumentStub().
-        imports.$v = valijaMaker.CALL___(imports.outers);
-
-        // Use these imports
-        ___.getNewModuleHandler().setImports(imports);
-      };
+          // Wait for the library module to be loaded...
+          return caja.Q.when(libP, function (lib) {
+            
+            // Instantiating the library (running its code) has a side effect of
+            // defining the 'lib' object in imports.outers.
+            lib(sandbox.imports);
+            
+            // Add other specified objects to the outers.
+            for (var p in extraOuters) {
+              if (Object.prototype.hasOwnProperty.call(extraOuters, p)) {
+                // setPub makes the property readable from Cajita/Valija code
+                caja.cajita.setPub(sandbox.imports.outers, p, extraOuters[p]);
+              }
+            }
+            
+            // Actually run the gadget code.
+            return sandbox.run(mid);            
+          })
+        }
+        
+        loadGadget("gadget-set.html",
+                   document.getElementById("gadget1"),
+                   {set: shared.set})
+        
+        loadGadget("gadget-get.html",
+                   document.getElementById("gadget2"),
+                   {get: shared.get})
+        
+      }
     </script>
   </head>
-  <body>
-    <script>
-      // Some state to share between the gadgets
-      var shared = (function (x) {
-        return { 
-            get: ___.markFuncFreeze(function () { return x; }),
-            set: ___.markFuncFreeze(function (y) { x = String(y); })
-          };
-      })("");
-    </script>
-      
-    <script>
-      // Code for capturing, restoring, and calling a module function
-      // for sharing code between gadgets but having isolated instances
-      var sharedCode = (function () {
-        var oldModuleHandler = ___.getNewModuleHandler();
-        var module;
-        var capturingModuleHandler = ___.freeze({
-            handle: ___.markFuncFreeze(function handleOnly(newModule) {
-              module = newModule;
-            })});
-        return {
-            capture: function() {
-              ___.setNewModuleHandler(capturingModuleHandler);
-            },
-            restore: function() { 
-              ___.setNewModuleHandler(oldModuleHandler);
-            },
-            inject: function() {
-              module.instantiate(___, oldModuleHandler.getImports());
-            }
-          };
-      })();
-      
-      // Prepare to capture the module function of the library
-      sharedCode.capture();
-    </script>
-    <!-- Load the library code -->
-    <script src="gadget-library.out.js"></script>
+  <body onload="loadCaja(loadGadgets, {debug:true,cajaServer: 'http://localhost:8080/'})">
+    
+    <h1>Interacting Gadgets Example</h1>
+    
+    <p>This host page loads two gadgets (which should appear in the table below) and provides the left gadget a function "set", and the right gadget "get", by which they can communicate.</p>
+    
+    <table>
+      <tr>
+        <th>Writes</th>
+        <th>Reads</th>
+      </tr>
+      <tr>
+        <td><div id="gadget1"></div></td>
+        <td><div id="gadget2"></div></td>
+      </tr>
+    </table>
 
-    <div id="gadget1" class="gadget1___ vdoc-body___"></div>  
-    <script>
-      // Restore the default new-module handler
-      sharedCode.restore();
+    <p>See comments in the source of this page for more information.</p>
 
-      // Set up the valija instance for gadget1 
-      // and grant access to the getter
-      // The string should match the id and class above as shown.
-      initValija("gadget1", {set : shared.set});
-
-      // Create an instance of the library in gadget1's environment
-      sharedCode.inject();
-    </script>
-    <!-- Load the gadget -->
-    <script src="gadget-set.out.js"></script>
-    <script>
-      // Inhibit any further use of gadget1's environment, in case initValija
-      // for gadget2 fails.
-      clearImports();
-    </script>
-
-    <div id="gadget2" class="gadget2___ vdoc-body___"></div>
-    <script>
-      initValija("gadget2", {get : shared.get});
-      sharedCode.inject();
-    </script>
-    <script src="gadget-get.out.js"></script>
-    <script>
-      clearImports();
-    </script>
   </body>
 </html>
