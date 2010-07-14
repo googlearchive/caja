@@ -882,6 +882,7 @@
         <include name="Playground.css" />
         <include name="testbed.js" />
         <include name="taming.js" />
+        <include name="policy.js" />
         <include name="favicon.ico" />
         <include name="setup-valija.js" />
       </fileset>

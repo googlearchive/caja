@@ -13,7 +13,12 @@
 
 package com.google.caja.demos.playground.client.ui;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.TreeMap;
+
 import com.google.caja.demos.playground.client.Playground;
+import com.google.caja.demos.playground.client.PlaygroundResource;
 import com.google.gwt.dom.client.Element;
 import com.google.gwt.dom.client.ScriptElement;
 import com.google.gwt.event.dom.client.ClickEvent;
@@ -28,11 +33,11 @@ import com.google.gwt.user.client.DOM;
 import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.ui.Anchor;
 import com.google.gwt.user.client.ui.Button;
-import com.google.gwt.user.client.ui.CheckBox;
 import com.google.gwt.user.client.ui.DecoratedTabPanel;
 import com.google.gwt.user.client.ui.DisclosurePanel;
 import com.google.gwt.user.client.ui.FlexTable;
 import com.google.gwt.user.client.ui.FlowPanel;
+import com.google.gwt.user.client.ui.Grid;
 import com.google.gwt.user.client.ui.HTML;
 import com.google.gwt.user.client.ui.HasHorizontalAlignment;
 import com.google.gwt.user.client.ui.HasVerticalAlignment;
@@ -46,14 +51,11 @@ import com.google.gwt.user.client.ui.RootPanel;
 import com.google.gwt.user.client.ui.SuggestBox;
 import com.google.gwt.user.client.ui.TextArea;
 import com.google.gwt.user.client.ui.TextBox;
+import com.google.gwt.user.client.ui.ToggleButton;
 import com.google.gwt.user.client.ui.Tree;
 import com.google.gwt.user.client.ui.TreeItem;
 import com.google.gwt.user.client.ui.VerticalPanel;
 import com.google.gwt.user.client.ui.Widget;
-
-import java.util.HashMap;
-import java.util.Map;
-import java.util.TreeMap;
 
 /**
  * GUI elements of the playground client
@@ -62,7 +64,7 @@ import java.util.TreeMap;
  */
 public class PlaygroundView {
   private final boolean EXPERIMENTAL_MODE = false;
-
+  
   private HTML renderPanel;
   private TextBox renderResult;
   private HTML cajoledSource;
@@ -73,17 +75,26 @@ public class PlaygroundView {
   private Label version = new Label("Unknown");
   private Playground controller;
   private TextArea sourceText;
+  private TextArea policyText;
+  private String currentPolicy;
   private HorizontalPanel loadingLabel;
   private SuggestBox addressField;
-  private MultiWordSuggestOracle oracle;
+  private SuggestBox policyAddressField;
+  private MultiWordSuggestOracle sourceExamples;
+  private MultiWordSuggestOracle policyExamples;
 
   public void setVersion(String v) {
     version.setText(v);
   }
 
+  public void setPolicyUrl(String url) {
+    policyAddressField.setText(url);
+    policyExamples.add(url);
+  }
+  
   public void setUrl(String url) {
     addressField.setText(url);
-    oracle.add(url);
+    sourceExamples.add(url);
   }
 
   public void selectTab(Tabs tab) {
@@ -113,8 +124,7 @@ public class PlaygroundView {
     infoPanel.add(title);
     infoPanel.add(version);
     infoPanel.setStyleName("pg_info");
-    logoPanel.add(
-        new Image("//cajadores.com/demos/testbed/caja_logo_small.png"));
+    logoPanel.add(new Image(PlaygroundResource.INSTANCE.logo().getURL()));
     logoPanel.add(infoPanel);
 
     loadingLabel = new HorizontalPanel();
@@ -128,11 +138,11 @@ public class PlaygroundView {
   }
 
   private Widget createSourcePanel() {
-    oracle = new MultiWordSuggestOracle();
+    sourceExamples = new MultiWordSuggestOracle();
     for (Example eg : Example.values()) {
-      oracle.add(eg.url);
+      sourceExamples.add(eg.url);
     }
-    addressField = new SuggestBox(oracle);
+    addressField = new SuggestBox(sourceExamples);
     addressField.getTextBox().addFocusHandler(new FocusHandler() {
       public void onFocus(FocusEvent event) {
         addressField.showSuggestionList();
@@ -149,7 +159,8 @@ public class PlaygroundView {
 
     final Button cajoleButton = new Button("Cajole\u00A0\u21B1");
 
-    final CheckBox debugModeButton = new CheckBox("debug");
+    final ToggleButton debugModeButton = new ToggleButton("No Debug", "Debug");
+    debugModeButton.setDown(true);
 
     cajoleButton.addClickHandler(new ClickHandler() {
       public void onClick(ClickEvent event) {
@@ -158,19 +169,21 @@ public class PlaygroundView {
         cajoledSource.setText("");
         renderPanel.setText("");
         controller.cajole(
-            addressField.getText(), sourceText.getText(),
-            Boolean.TRUE.equals(debugModeButton.getValue()));
+            addressField.getText(), sourceText.getText(), currentPolicy,
+            Boolean.TRUE.equals(debugModeButton.isDown()));
       }
     });
 
-    HorizontalPanel addressBar = new HorizontalPanel();
+    Grid addressBar = new Grid(1,4);
+    int item = 0;
     addressBar.setStyleName("playgroundUI");
-    addressBar.add(addressField);
-    addressBar.add(goButton);
-    addressBar.add(cajoleButton);
-    addressBar.add(debugModeButton);
+    addressBar.setWidget(0, item, addressField);
+    addressBar.getCellFormatter().setWidth(0, item++, "80%");
+    
+    addressBar.setWidget(0, item++, debugModeButton);
+    addressBar.setWidget(0, item++, goButton);
+    addressBar.setWidget(0, item++, cajoleButton);
     addressBar.setWidth("95%");
-    addressBar.setCellWidth(addressField, "90%");
 
     sourceText = new TextArea();
     sourceText.setText("<script>\n\n</script>");
@@ -187,6 +200,68 @@ public class PlaygroundView {
     return mainPanel;
   }
 
+  private Widget createPolicyPanel() {
+    policyExamples = new MultiWordSuggestOracle();
+    policyAddressField = new SuggestBox(policyExamples);
+    policyAddressField.getTextBox().addFocusHandler(new FocusHandler() {
+      public void onFocus(FocusEvent event) {
+        policyAddressField.showSuggestionList();
+      }
+    });
+    policyAddressField.setText("http://");
+    policyAddressField.setWidth("100%");
+    
+    final Button clearButton = new Button("Clear");
+    clearButton.addClickHandler(new ClickHandler() {
+      public void onClick(ClickEvent event) {
+        currentPolicy = "";
+        controller.clearPolicy();
+      }
+    });
+    
+    final Button loadButton = new Button("\u21B4\u00A0Load");
+    loadButton.addClickHandler(new ClickHandler() {
+      public void onClick(ClickEvent event) {
+        controller.loadPolicy(policyAddressField.getText());
+      }
+    });
+
+    final Button applyButton = new Button("Apply\u00A0\u21B1");
+    applyButton.addClickHandler(new ClickHandler() {
+      public void onClick(ClickEvent event) {
+        currentPolicy = policyText.getText();
+      }
+    });
+
+    Grid addressBar = new Grid(1,4);
+    int item = 0;
+    addressBar.setStyleName("playgroundUI");
+    addressBar.setWidget(0, item, policyAddressField);
+    addressBar.getCellFormatter().setWidth(0, item++, "80%");
+    addressBar.setWidget(0, item++, loadButton);
+    addressBar.setWidget(0, item++, applyButton);
+    addressBar.setWidget(0, item++, clearButton);
+    addressBar.setWidth("95%");
+
+    policyText = new TextArea();
+    setDefaultPolicy(policyText);
+    policyText.setSize("95%", "100%");
+
+    VerticalPanel mainPanel = new VerticalPanel();
+    mainPanel.setWidth("100%");
+    mainPanel.setVerticalAlignment(HasVerticalAlignment.ALIGN_TOP);
+    mainPanel.add(addressBar);
+    mainPanel.setCellHeight(addressBar, "0%");
+    mainPanel.add(policyText);
+    mainPanel.setCellHeight(policyText, "100%");
+
+    return mainPanel;
+  }
+
+  private void setDefaultPolicy(TextArea policyText) {
+    policyText.setText(PlaygroundResource.INSTANCE.defaultPolicy().getText());
+  }
+  
   private Widget createCajoledSourcePanel() {
     FlowPanel fp = new FlowPanel();
     cajoledSource = new HTML();
@@ -317,6 +392,7 @@ public class PlaygroundView {
     editorPanel = new DecoratedTabPanel();
     editorPanel.setStyleName("clearPadding");
     editorPanel.add(createSourcePanel(), "Source");
+    editorPanel.add(createPolicyPanel(), "Policy");
     editorPanel.add(createCajoledSourcePanel(), "Cajoled Source");
     editorPanel.add(createRenderPanel(), "Rendered Result");
     editorPanel.add(createCompileMessagesPanel(), "Compile Warnings/Errors");
@@ -429,6 +505,14 @@ public class PlaygroundView {
     }
   }
 
+  public void setPolicySource(String result) {
+    if (result == null) {
+      policyText.setText("");
+    } else {
+      policyText.setText(result);
+    }
+  }
+
   public void setCajoledSource(String html, String js) {
     if (html == null && js == null) {
       cajoledSource.setText("There were cajoling errors");
@@ -446,7 +530,15 @@ public class PlaygroundView {
     return $wnd.prettyPrintOne($wnd.indentAndWrapCode(result));
   }-*/;
 
-  public void setRenderedResult(String html, String js) {
+  private ScriptElement scriptOf(String text) {
+    Element el = DOM.createElement("script");
+    ScriptElement script = ScriptElement.as(el);
+    script.setType("text/javascript");
+    script.setInnerText(text);
+    return script;
+  }
+  
+  public void setRenderedResult(String policy, String html, String js) {
     if (html == null && js == null) {
       renderPanel.setText("There were cajoling errors");
       return;
@@ -456,17 +548,15 @@ public class PlaygroundView {
       html +
     "</div>\n");
 
-    String cajoled = "caja___.enable(); " + js;
-
     // Make the cajoled content visible so that the DOM will be laid out before
     // the script checks DOM geometry.
     editorPanel.selectTab(2);
+    
+    Element parent = renderPanel.getElement();
+    parent.appendChild(scriptOf(policy));
+    parent.appendChild(scriptOf("caja___.enable()"));
+    parent.appendChild(scriptOf(js));
 
-    Element el = DOM.createElement("script");
-    ScriptElement script = ScriptElement.as(el);
-    script.setType("text/javascript");
-    script.setInnerText(cajoled);
-    renderPanel.getElement().appendChild(script);
     renderResult.setText(getRenderResult());
   }
 
@@ -505,6 +595,7 @@ public class PlaygroundView {
 
   public enum Tabs {
     SOURCE,
+    POLICY,
     CAJOLED_SOURCE,
     RENDER,
     COMPILE_WARNINGS,

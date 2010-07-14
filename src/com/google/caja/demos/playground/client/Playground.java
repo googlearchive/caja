@@ -48,7 +48,30 @@ public class Playground implements EntryPoint {
     });
   }
 
-  public void cajole(String uri, String input, boolean debugMode) {
+  public void clearPolicy() {
+    gui.setPolicySource("");
+  }
+  
+  public void loadPolicy(String url) {
+    gui.setLoading(true);
+    gui.setPolicyUrl(url);
+    cajolingService.fetch(url, new AsyncCallback<String>() {
+      public void onFailure(Throwable caught) {
+        gui.setLoading(false);
+        gui.addCompileMessage(caught.getMessage());
+        gui.selectTab(PlaygroundView.Tabs.COMPILE_WARNINGS);
+      }
+
+      public void onSuccess(String result) {
+        gui.setLoading(false);
+        gui.setPolicySource(result);
+        gui.selectTab(PlaygroundView.Tabs.POLICY);
+      }
+    });
+  }
+
+  public void cajole(String uri, String input, final String policy,
+      boolean debugMode) {
     gui.setLoading(true);
     cajolingService.cajole(uri, input, debugMode,
                            new AsyncCallback<CajolingServiceResult>() {
@@ -69,11 +92,11 @@ public class Playground implements EntryPoint {
         }
         if (result.getHtml() != null) {
           gui.setCajoledSource(result.getHtml(), result.getJavascript());
-          gui.setRenderedResult(result.getHtml(), result.getJavascript());
+          gui.setRenderedResult(policy, result.getHtml(), result.getJavascript());
           gui.selectTab(PlaygroundView.Tabs.RENDER);
         } else {
           gui.setCajoledSource(null, null);
-          gui.setRenderedResult(null, null);
+          gui.setRenderedResult(null, null, null);
           gui.selectTab(PlaygroundView.Tabs.COMPILE_WARNINGS);
         }
       }

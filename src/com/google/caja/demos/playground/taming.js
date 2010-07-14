@@ -20,66 +20,17 @@
  * @requires document, window
  * @requires swfobject
  * @requires ___, attachDocumentStub, cajita
- * @provides caja___
+ * @provides caja___, tamings___
  */
+var tamings___ = tamings___ || [];
 var caja___ = (function () {
-    var cajaDomSuffix = 'g___';
-
-  // Simple flash taming that does not allow script access to the page
-  function tameSimpleFlash(imports) {
-    imports.outers.swfobject = {};
-    imports.outers.swfobject.embedSWF = function(swfUrl, id, width, height,
-        version, expressInstall, flashvars, params, attributes, cb) {
-      var tameSwfUrl = !/^https?:\/\//i.test(swfUrl) ? null : swfUrl;
-      var tameId = id + '-cajoled-output-' + cajaDomSuffix;
-      var tameWidth = +width;
-      var tameHeight = +height;
-      // Default to 9.0 if unspecified or specified < 9
-      // else use whatever variant of version 9 the user suggests
-      var tameVersion = version || "9.0";
-      if (!/^9|([1-9][0-9])\./.test(tameVersion)) {
-        tameVersion = "9.0";
+  var cajaDomSuffix = 'g___';
+  var grantAdditionalPowers = function(imports) {
+    for (var tamer in tamings___) {
+      if (tamings___.hasOwnProperty(tamer)) {
+        tamings___[tamer].call(___.USELESS, imports);
       }
-      var tameExpressInstall = false;
-      var tameParams = { "allowScriptAccess" : "never",
-                         "allowNetworking" : "internal"};
-      // TODO(jasvir): rewrite attributes
-      var tameAttr = null;
-      swfobject.embedSWF(tameSwfUrl, tameId, tameWidth, tameHeight, tameVersion,
-          tameExpressInstall, flashvars, tameParams, tameAttr, ___.untame(cb));
-    };
-    ___.grantRead(imports.outers, 'swfobject');
-    ___.grantFunc(imports.outers.swfobject, 'embedSWF');
-  }
-
-  function tameFlash(imports) {
-    tameSimpleFlash(imports);
-  }
-
-
-  function tameAlert(imports) {
-    imports.outers.alert = (function() {
-      var remainingAlerts = 10;
-      var useConsole = false;
-      function tameAlert(msg) {
-        if (useConsole) {
-          cajita.log(msg);
-        } else {
-          if (remainingAlerts > 0) {
-            remainingAlerts--;
-            alert(msg);
-          } else {
-            if (confirm("Redirect remaining alerts to console?")) {
-              useConsole = true;
-            } else {
-              remainingAlerts = 10;
-            }
-          }
-        }
-      };
-      return tameAlert;
-    })();
-    ___.grantFunc(imports.outers, 'alert');
+    }
   }
 
   function enable(divElId) {
@@ -103,9 +54,7 @@ var caja___ = (function () {
     imports.htmlEmitter___ = new HtmlEmitter(gadgetRoot, imports.document);
     imports.$v = valijaMaker.CALL___(imports.outers);
     ___.getNewModuleHandler().setImports(imports);
-
-    tameAlert(imports);
-    tameFlash(imports);
+    grantAdditionalPowers(imports);
   }
 
   return {
