@@ -259,7 +259,8 @@ public class PlaygroundView {
   }
 
   private void setDefaultPolicy(TextArea policyText) {
-    policyText.setText(PlaygroundResource.INSTANCE.defaultPolicy().getText());
+    currentPolicy = PlaygroundResource.INSTANCE.defaultPolicy().getText();
+    policyText.setText(currentPolicy);
   }
   
   private Widget createCajoledSourcePanel() {
