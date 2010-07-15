@@ -113,21 +113,23 @@ public final class PluginCompilerMain {
     CajoledModule compiledJsOutput = null;
     Node compiledDomOutput = null;
     String compiledHtmlOutput = null;
+    File fileLimitAncestor = config.getFetcherBase();
 
     try {
       UriFetcher fetcher;
       UriPolicy policy;
       try {
-        UriToFile u2f = new UriToFile(
-            new File(config.getInputUris().iterator().next()).getParentFile());
-        fetcher = ChainingUriFetcher.make(
-            new DataUriFetcher(), new CachingUriFetcher(u2f));
-        policy = new FileSystemUriPolicy(u2f);
-      } catch (IllegalArgumentException ex) {  // Not a file: URI
-        fetcher = UriFetcher.NULL_NETWORK;
-        policy = UriPolicy.DENY_ALL;
+        if (fileLimitAncestor != null) {
+          UriToFile u2f = new UriToFile(fileLimitAncestor);
+          fetcher = ChainingUriFetcher.make(
+              new DataUriFetcher(), new CachingUriFetcher(u2f));
+          policy = new FileSystemUriPolicy(u2f);
+        } else {
+          fetcher = new DataUriFetcher();
+          policy = UriPolicy.DENY_ALL;
+        }
       } catch (IOException e) {  // Could not resolve file name
-        fetcher = UriFetcher.NULL_NETWORK;
+        fetcher = new DataUriFetcher();
         policy = UriPolicy.DENY_ALL;
       }
 
@@ -330,7 +332,12 @@ public final class PluginCompilerMain {
         if (ignoreLevel != null && level.compareTo(ignoreLevel) <= 0) {
           continue;
         }
-        out.append(level.name() + ": ");
+        String levelName = level.name();
+        out.append(levelName);
+        if (levelName.length() < 7) {
+          out.append("       ".substring(levelName.length()));
+        }
+        out.append(": ");
         m.format(mc, out);
         out.append("\n");
 

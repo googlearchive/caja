@@ -43,6 +43,7 @@ import com.google.caja.parser.quasiliteral.QuasiBuilder;
 import com.google.caja.parser.quasiliteral.ReservedNames;
 import com.google.caja.plugin.CssRewriter;
 import com.google.caja.plugin.CssValidator;
+import com.google.caja.plugin.PluginMessageType;
 import com.google.caja.plugin.PluginMeta;
 import com.google.caja.plugin.UriPolicyHintKey;
 import com.google.caja.plugin.stages.EmbeddedContent;
@@ -99,7 +100,6 @@ public final class HtmlAttributeRewriter {
   public List<Statement> getHandlers() {
     return Collections.unmodifiableList(handlers);
   }
-
   public static abstract class AttrValue {
     final Attr src;
     final FilePosition valuePos;
@@ -283,7 +283,7 @@ public final class HtmlAttributeRewriter {
                     attr.attrInfo.getKey().toString()));
             if (rewrittenUri == null) {
               mq.addMessage(
-                  IhtmlMessageType.MALFORMED_URI, pos,
+                  PluginMessageType.DISALLOWED_URI, pos,
                   MessagePart.Factory.valueOf(uri.toString()));
               return noResult(attr);
             }

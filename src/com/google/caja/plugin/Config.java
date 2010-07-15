@@ -101,6 +101,11 @@ public final class Config {
       "The URI relative to which URIs in the inputs are resolved.",
       true);
 
+  private final Option FETCHER_BASE = defineOption(
+      "fetcher_base",
+      "An ancestor of all files which the URI fetcher is allowed to resolve.",
+      true);
+
   private final Option SERVICE_PORT = defineOption(
       "port",
       "The port on which cajoling service is run.",
@@ -152,6 +157,7 @@ public final class Config {
   private URI htmlAttributeWhitelistUri;
   private URI htmlElementWhitelistUri;
   private URI baseUri;
+  private File fetcherBase;
   private String gadgetView;
   private SourceRenderMode renderer;
   private int servicePort;
@@ -186,6 +192,7 @@ public final class Config {
     return htmlElementWhitelistUri;
   }
   public URI getBaseUri() { return baseUri; }
+  public File getFetcherBase() { return fetcherBase; }
 
   public CssSchema getCssSchema(MessageQueue mq) {
     return new CssSchema(
@@ -316,6 +323,12 @@ public final class Config {
         stderr.println("Invalid whitelist URI: " + ex.getInput() + "\n    "
                        + ex.getReason());
         return false;
+      }
+
+      if (cl.getOptionValue(FETCHER_BASE.getOpt()) != null) {
+        fetcherBase = new File(cl.getOptionValue(FETCHER_BASE.getOpt()));
+      } else if (Strings.equalsIgnoreCase(baseUri.getScheme(), "file")) {
+        fetcherBase = new File(baseUri).getParentFile();
       }
 
       gadgetView = cl.getOptionValue(VIEW.getOpt(), "canvas");
