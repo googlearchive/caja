@@ -112,9 +112,11 @@ class Optimizer {
             s.requireSymbol(id.node.getName()).decls.add(id);
           }
 
-          public void duplicate(AncestorChain<Identifier> id, OptScope scope) {}
+          public void duplicate(AncestorChain<Identifier> id, OptScope scope) {
+            // noop
+          }
 
-          public void enterScope(OptScope Scope) {}
+          public void enterScope(OptScope Scope) { /* noop */ }
 
           public void exitScope(OptScope scope) {
             if (scope.t == ScopeType.FUNCTION) {
@@ -149,7 +151,9 @@ class Optimizer {
           }
 
           public void masked(
-              AncestorChain<Identifier> id, OptScope inner, OptScope outer) {}
+              AncestorChain<Identifier> id, OptScope inner, OptScope outer) {
+            // noop
+          }
 
           public void read(
               AncestorChain<Identifier> id, OptScope useSite,
@@ -162,6 +166,7 @@ class Optimizer {
           public void splitInitialization(
               AncestorChain<Identifier> declared, OptScope declScope,
               AncestorChain<Identifier> initialized, OptScope maskingScope) {
+            // noop
           }
         });
     sa.apply(program);

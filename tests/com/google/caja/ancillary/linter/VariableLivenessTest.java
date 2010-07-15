@@ -1024,6 +1024,28 @@ public class VariableLivenessTest extends CajaTestCase {
         "  Noop ; liveness=(a)");
   }
 
+  public final void testSwitchNoCases() throws Exception {
+    assertLiveness(
+        js(fromString(
+            ""
+            + "var a, b;"
+            + "switch (a = x) {}"
+            + ";")),
+        "Block",
+        "  MultiDeclaration",
+        "    Declaration",
+        "      Identifier : a",
+        "    Declaration",
+        "      Identifier : b",
+        "  SwitchStmt : ",
+        "    AssignOperation : ASSIGN",
+        "      Reference",
+        "        Identifier : a",
+        "      Reference",
+        "        Identifier : x",
+        "  Noop ; liveness=(a)");
+  }
+
   public final void testFunctionBody() throws Exception {
     String inFoo = " ; liveness=(foo@2 this@2 arguments@2 x@2 y@2)";
     String inA = " ; liveness=(b@2 this@2 arguments@2)";

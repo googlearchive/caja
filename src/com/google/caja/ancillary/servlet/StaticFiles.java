@@ -68,13 +68,16 @@ final class StaticFiles {
     Boolean b = exists.get(path);
     if (b != null) { return b; }
     InputStream in = StaticFiles.class.getResourceAsStream(path);
-    boolean fileExists = in != null;
-    if (fileExists) {
+    boolean fileExists;
+    if (in != null) {
       try {
         in.close();
       } catch (IOException ex) {
         ex.printStackTrace();
       }
+      fileExists = true;
+    } else {
+      fileExists = false;
     }
     exists.put(path, fileExists);
     return fileExists;

@@ -179,7 +179,8 @@ public class StatementSimplifier {
       Expression optReturnValue = returnValue != null
           ? (Expression) optimize(returnValue, false)
           : null;
-      if (optReturnValue != null && "undefined".equals(returnValue.typeOf())
+      if (optReturnValue != null && returnValue != null  // 2nd implied by 1st
+          && "undefined".equals(returnValue.typeOf())
           && optReturnValue.simplifyForSideEffect() == null) {
         return new ReturnStmt(rs.getFilePosition(), null);
       } else if (optReturnValue != returnValue) {
@@ -399,6 +400,7 @@ public class StatementSimplifier {
               joined = joined == null ? e : commaOp(joined, e);
             }
             Statement newChild;
+            assert joined != null;  // because start < end, loop assigns it
             FilePosition exprPos = joined.getFilePosition();
             if (s instanceof ReturnStmt) {
               newChild = new ReturnStmt(exprPos, joined);

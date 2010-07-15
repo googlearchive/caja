@@ -417,11 +417,15 @@ final class VariableLiveness {
         last = last.withExits(last.exits.intersection(exits));
       }
     }
-    return sawDefault
-        ? last
-        : new LiveCalc(
-            postSwitchValue.vars.intersection(last.vars),
-            postSwitchValue.exits.intersection(last.exits));
+    if (sawDefault) {
+      return last;
+    } else if (last == null) {  // no case statements
+      return postSwitchValue;
+    } else {
+      return new LiveCalc(
+          postSwitchValue.vars.intersection(last.vars),
+          postSwitchValue.exits.intersection(last.exits));
+    }
   }
 
   private static LiveCalc processDefaultCaseStmt(

@@ -66,7 +66,7 @@ final class NodeBuckets {
 
   static class Maker {
     private Set<Class<? extends ParseTreeNode>> types = Sets.newLinkedHashSet();
-    private Maker() {}
+    private Maker() { /* no public zero-argument ctor */ }
     Maker with(Class<? extends ParseTreeNode> cl) {
       types.add(cl);
       return this;

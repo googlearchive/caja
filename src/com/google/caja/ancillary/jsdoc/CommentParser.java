@@ -157,9 +157,9 @@ public final class CommentParser {
     CommentParser p = new CommentParser(tq);
     List<Annotation> body = new ArrayList<Annotation>();
     // A comment consists of some text,
-    while (p.parseBodyPart(body)) {}
+    while (p.parseBodyPart(body)) { /* all work done in condition */ }
     // followed by block annotations.
-    while (p.parseBlockAnnotation(body)) {}
+    while (p.parseBlockAnnotation(body)) { /* all work done in condition */ }
 
     if (!p.tq.isEmpty()) {
       throw new IllegalStateException("Unprocessed '" + commentText + "'");
@@ -256,7 +256,7 @@ public final class CommentParser {
     FilePosition start = tq.currentPosition();
     String name = tq.pop().text.substring(1);
     List<Annotation> body = new ArrayList<Annotation>();
-    while (parseBodyPart(body)) {}
+    while (parseBodyPart(body)) { /* all work done in condition */ }
     out.add(new BlockAnnotation(name, body, posFrom(start)));
     return true;
   }
