@@ -171,3 +171,16 @@ jsunitRegister("testGadgetNonInterference",
   }
 });
 
+jsunitRegister("testEvalModule",
+               function testEvalModule() {
+  var s = new tools.Sandbox();
+  s.imports.h = 36;
+
+  var res = s.runCajoledModuleString(
+    "{___.loadModule({'instantiate':" +
+      "function(___,IMPORTS___){return IMPORTS___.h + 1}})}");
+  assertEquals("module result", 37, res);
+  
+  jsunit.pass();
+});
+

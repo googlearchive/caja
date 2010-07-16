@@ -85,6 +85,29 @@ var HostTools;
         });
       }
       
+      function runCajoledModuleString(js) {
+        // This is primarily useful when used from caja.js (Caja in an iframe),
+        // since the host page doesn't have eval of the frame
+
+        var moduleFunc;
+        var oldModuleHandler = ___.getNewModuleHandler();
+        var newModuleHandler = ___.makeNormalNewModuleHandler();
+        newModuleHandler.handle = ___.markFuncFreeze(
+            function theHandler(module) {
+              // TODO: does not support dependencies. Needs to tie in to
+              // cajita-module.js for that and to give the module a proper
+              // relative load function.
+              moduleFunc = ___.prepareModule(module, load);
+            });
+        try {
+          ___.setNewModuleHandler(newModuleHandler);
+          eval(js);
+        } finally {
+          ___.setNewModuleHandler(oldModuleHandler);
+        }
+        return moduleFunc(imports);
+      }
+      
       function attach(vdocBody, options) {
         // Generate unique element id suffix for Domita.
         // There are two counters just to make them a little more decodable.
@@ -115,7 +138,8 @@ var HostTools;
       return cajita.freeze({
         attach: attach,
         imports: imports,
-        run: run
+        run: run,
+        runCajoledModuleString: runCajoledModuleString
       });
     }
     

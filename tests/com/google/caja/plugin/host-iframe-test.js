@@ -98,3 +98,23 @@ jsunitRegister("testRunGadget",
     }));
   }), {cajaServer: "http://localhost:8000/caja/"});
 });
+
+// This is primarily a HostTools test, but it is relevant to reexamine its 
+// success in the iframe context because it is necessary that the eval occur in
+// the correct frame.
+jsunitRegister("testEvalModule",
+               function testEvalModule() {
+  loadCaja(jsunitCallback(function (framedCaja) {
+    var tools = framedCaja.hostTools;
+    var s = new tools.Sandbox();
+    s.imports.h = 36;
+  
+    var res = s.runCajoledModuleString(
+      "{___.loadModule({'instantiate':" +
+        "function(___,IMPORTS___){return IMPORTS___.h + 1}})}");
+    assertEquals(37, res);
+    
+    jsunit.pass();
+  }), {cajaServer: "http://localhost:8000/caja/"});
+});
+
