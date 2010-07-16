@@ -19,6 +19,7 @@ import com.google.caja.util.CajaTestCase;
 
 import org.mortbay.jetty.Handler;
 import org.mortbay.jetty.Server;
+import org.mortbay.jetty.handler.ContextHandler;
 import org.mortbay.jetty.handler.DefaultHandler;
 import org.mortbay.jetty.handler.HandlerList;
 import org.mortbay.jetty.handler.ResourceHandler;
@@ -44,19 +45,37 @@ public abstract class BrowserTestCase extends CajaTestCase {
   protected void StartLocalServer() {
     server = new Server(portNumber());
     
-    // static file serving
+    // static file serving for tests
     final ResourceHandler resource_handler = new ResourceHandler();
     resource_handler.setResourceBase(".");
+    
+    // caja (=playground for now) server under /caja directory
+    final ContextHandler caja = new ContextHandler("/caja");
+    {
+      // TODO(kpreid): deploy the already-configured war instead of manually
+      // plumbing 
+      
+      // static file serving
+      final ResourceHandler caja_static = new ResourceHandler();
+      caja_static.setResourceBase("./ant-war/");
+    
+      // cajoling service -- Servlet setup code gotten from
+      // <http://docs.codehaus.org/display/JETTY/Embedding+Jetty> @ 2010-06-30
+      Context servlets = new Context(server, "/", Context.NO_SESSIONS);
+      servlets.addServlet(new ServletHolder(new CajolingServlet()), "/cajole");
 
-    // cajoling service -- Servlet setup code gotten from
-    // <http://docs.codehaus.org/display/JETTY/Embedding+Jetty> @ 2010-06-30
-    Context servlets = new Context(server, "/", Context.NO_SESSIONS);
-    servlets.addServlet(new ServletHolder(new CajolingServlet()), "/cajole");
+      final HandlerList handlers = new HandlerList();
+      handlers.setHandlers(new Handler[] {
+          caja_static,
+          servlets,
+          new DefaultHandler()});
+      caja.setHandler(handlers);
+    }
 
     final HandlerList handlers = new HandlerList();
     handlers.setHandlers(new Handler[] {
         resource_handler,
-        servlets,
+        caja,
         new DefaultHandler()});
     server.setHandler(handlers);
 

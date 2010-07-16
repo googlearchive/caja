@@ -54,7 +54,7 @@ jsunitRegister("testBadOptionsIsCaught",
   try {
     loadCaja(jsunitCallback(function (framedCaja) {
       throw new Error("Shouldn't reach here (1)");
-    }), "http://localhost:8080/");
+    }), "http://localhost:8000/caja/");
   } catch (e) {
     console.log("(passed due to error ", e, ")");
     jsunit.pass();
@@ -91,11 +91,10 @@ jsunitRegister("testRunGadget",
     framedCaja.Q.when(s.run("../../../../../src/com/google/caja/" +
                             "demos/container/gadget-trivial.html"),
         jsunitCallback(function (moduleResult) {
-      assertNotEquals(e.childNodes.length, 0);
+      assertNotEquals(0, e.childNodes.length);
       jsunit.pass();
     }), jsunitCallback(function (reason) {
       throw reason;
     }));
-  }), {cajaServer: "http://localhost:8080/"});
+  }), {cajaServer: "http://localhost:8000/caja/"});
 });
-
