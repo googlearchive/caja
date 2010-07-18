@@ -16,6 +16,11 @@ package com.google.caja.service;
 
 import java.util.Arrays;
 
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+
+import com.google.caja.util.Json;
+
 /**
  * Tests the running the cajoler as a webservice
  *
@@ -80,5 +85,18 @@ public class CajolingServiceTest extends ServiceTestCase {
     registerUri("http://foo/bar.gif", "foo()", "text/javascript");
     assertEquals("ERROR",
         requestGet("?url=http://foo/bar.gif&mime-type=image/*"));
+  }
+  
+  public final void testEmptyContent() throws Exception {
+    registerUri("http://foo/bar.html", "", "text/html");
+    byte[] byteData = {};
+    JSONObject result = (JSONObject) json(
+        (String)requestPost("?url=http://foo/bar.html&input-mime-type=text/html"
+            + "&output-mime-type=application/json", byteData, "text/html",
+            null));
+
+    assertTrue("Output missing 'html' key", result.containsKey("html"));
+    assertTrue("Output missing 'javascript' key", result.containsKey("js"));
+    assertEquals("", (String)result.get("html"));
   }
 }

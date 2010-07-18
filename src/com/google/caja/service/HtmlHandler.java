@@ -119,7 +119,6 @@ public class HtmlHandler extends AbstractCajolingHandler {
     boolean okToContinue = true;
     try {
       DomParser p = new DomParser(new HtmlLexer(cp), false, is, mq);
-      if (p.getTokenQueue().isEmpty()) { okToContinue = false; }
 
       Dom html = new Dom(p.parseFragment());
       Document doc = html.getValue().getOwnerDocument();

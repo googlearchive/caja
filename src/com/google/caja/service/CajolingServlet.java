@@ -72,7 +72,7 @@ public class CajolingServlet extends HttpServlet {
                                       String error)
       throws ServletException {
     try {
-      resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, error);
+      resp.sendError(HttpServletResponse.SC_BAD_REQUEST, error);
     } catch (IOException ex) {
       throw (ServletException) new ServletException().initCause(ex);
     }
