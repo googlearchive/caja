@@ -1,0 +1,131 @@
+/*
+See the file LICENSE.txt in this directory for license information for the
+Caja Corkboard demo.
+
+@author kpreid@switchb.org
+*/
+
+@import url(http://caja.appspot.com/caja-gadget.css);
+
+/* --- General page styles ----------------------------------------------------- */
+
+body {
+  font-family: serif;
+  background: #8d5e4b url(cork.jpg);
+  background-repeat: repeat-y;
+  background-position: center top;
+  background-size: 100%; /* CSS3 */
+  text-shadow: 0 0 .5em #fff;
+}
+
+h1 {
+  text-align: center;
+}
+
+body > * {
+  text-shadow: none;
+  background-color: white;
+  color: black;
+  box-shadow:         0 0.23em 1em #000; /* CSS3 */
+  -moz-box-shadow:    0 0.23em 1em #000;
+  -webkit-box-shadow: 0 0.23em 1em #000;
+  padding: .4em .5em .3em .5em;
+}
+
+/* --- Postings ------------------------------------------------------------- */
+
+/* generates 3-column layout */
+.posting {
+  min-width: 20em;
+  /* width = 100% / (# of columns) - (2*margin + 2*padding + fudge factor) */
+  width: 27.33%;
+  margin: 1.2em 2.5%;
+  padding: 0.5%;
+  float: left;
+}
+
+/* full page instead of column */
+.posting.edit {
+  width: auto;
+  float: none;
+}
+
+.posting-content {
+  margin: .8em;
+	overflow: auto;
+	max-height: 40em;
+}
+
+.signature {
+  margin: .8em;
+  text-align: right;
+  font-style: italic;
+}
+
+form.posting {
+  background-color: yellow;
+  color: black;
+}
+
+form.posting textarea {
+  width: 90%;
+}
+
+/* nth-of-type and transform are CSS3 not-yet-standardized features */
+.posting:nth-of-type(12n+1 ) { -webkit-transform: rotate(-.6deg); }
+.posting:nth-of-type(12n+2 ) { -webkit-transform: rotate(  3deg); }
+.posting:nth-of-type(12n+3 ) { -webkit-transform: rotate(  2deg); }
+.posting:nth-of-type(12n+4 ) { -webkit-transform: rotate(  0deg); }
+.posting:nth-of-type(12n+5 ) { -webkit-transform: rotate(- 2deg); }
+.posting:nth-of-type(12n+6 ) { -webkit-transform: rotate(  3deg); }
+.posting:nth-of-type(12n+7 ) { -webkit-transform: rotate( .5deg); }
+.posting:nth-of-type(12n+8 ) { -webkit-transform: rotate(-.5deg); }
+.posting:nth-of-type(12n+9 ) { -webkit-transform: rotate(- 3deg); }
+.posting:nth-of-type(12n+10) { -webkit-transform: rotate(  1deg); }
+.posting:nth-of-type(12n+11) { -webkit-transform: rotate(- 1deg); }
+.posting:nth-of-type(12n+12) { -webkit-transform: rotate(- 2deg); }
+.posting:nth-of-type(12n+1 ) { -moz-transform: rotate(-.6deg); }
+.posting:nth-of-type(12n+2 ) { -moz-transform: rotate(  3deg); }
+.posting:nth-of-type(12n+3 ) { -moz-transform: rotate(  2deg); }
+.posting:nth-of-type(12n+4 ) { -moz-transform: rotate(  0deg); }
+.posting:nth-of-type(12n+5 ) { -moz-transform: rotate(- 2deg); }
+.posting:nth-of-type(12n+6 ) { -moz-transform: rotate(  3deg); }
+.posting:nth-of-type(12n+7 ) { -moz-transform: rotate( .5deg); }
+.posting:nth-of-type(12n+8 ) { -moz-transform: rotate(-.5deg); }
+.posting:nth-of-type(12n+9 ) { -moz-transform: rotate(- 3deg); }
+.posting:nth-of-type(12n+10) { -moz-transform: rotate(  1deg); }
+.posting:nth-of-type(12n+11) { -moz-transform: rotate(- 1deg); }
+.posting:nth-of-type(12n+12) { -moz-transform: rotate(- 2deg); }
+
+/* --- Button bar ----------------------------------------------------------- */
+
+.buttons {
+  margin-top: -1em;
+  margin-bottom: -1em;
+}
+.buttons form {
+  display: inline;
+}
+
+.buttons a {
+  background: white;
+  color: blue;
+  box-shadow:         0 .23em .4em #000; /* CSS3 */
+  -moz-box-shadow:    0 .23em .4em #000;
+  -webkit-box-shadow: 0 .23em .4em #000;
+  padding: .15em;
+}
+
+/* --- Paging controls ------------------------------------------------------ */
+
+.paging {
+  padding: 0;
+  text-align: center;
+  display: table;
+  margin-left: auto;
+  margin-right: auto;
+}
+.paging a {
+  display: table-cell;
+  padding: .4em .5em .3em .5em;
+}

@@ -1,0 +1,35 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<!--
+  See the file LICENSE.txt in this directory for license information for the
+  Caja Corkboard demo.
+  
+  @author kpreid@switchb.org
+-->
+<html>
+<head>
+  <title>Caja Corkboard Demo: Edit Posting</title>
+  <link rel="stylesheet" href="../../r/style.css">
+</head>
+<body>
+
+<h1>Caja Corkboard Demo: Edit Posting</h1>
+
+<form class="posting edit"
+      action="/post"
+      method="POST">
+  <input type="hidden" name="posting" value="{{ posting.key|escape }}">
+  <textarea name="content" rows="30" cols="60" 
+            {% if not posting.editable %}readonly{% endif %}
+    >{{ posting.content|escape }}</textarea>
+  <p class="signature">
+    &mdash; <span class="author">
+      {% if posting.author %}<!--
+        -->{{ posting.author.nickname|escape }}<!--
+      -->{% else %}Anon{% endif %}</span>, {{ posting.dateModified|escape }}
+  </p>
+  <div class="buttons">
+    {% if posting.editable %}<input type="submit" value="Update" />{% endif %}
+    <a href="../../">Cancel</a></div>
+</form>
+
+</body></html>
