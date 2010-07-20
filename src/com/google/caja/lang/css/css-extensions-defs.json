@@ -90,12 +90,12 @@
     },
 
     { "key": "border-radius",
-      "signature": "<length> <length>?",
+      "signature": "[<length> | <percentage>]{1,4} [ / [<length> | <percentage>]{1,4} ]?",
       "default": "0",
       "appliesTo": "*",
       "inherited": false,
       "mediaGroups": ["visual"],
-      "source": "http://www.w3.org/TR/2002/WD-css3-border-20021107/#the-border-radius",
+      "source": "http://www.w3.org/TR/css3-background/#the-border-radius",
       "dom2property": "borderRadius"
     },
     { "key": "-moz-border-radius",
@@ -106,6 +106,47 @@
       "as": "border-radius",
       "source": "http://www.the-art-of-web.com/css/border-radius/",
       "dom2property": "WebkitBorderRadius" },
+
+    { "key": "border-top-left-radius",
+      "signature": "[<length> | <percentage>] [<length> | <percentage>]?",
+      "default": "0",
+      "appliesTo": "*",
+      "inherited": false,
+      "mediaGroups": ["visual"],
+      "source": "http://www.w3.org/TR/css3-background/#the-border-radius" },
+
+    { "key": "border-top-right-radius",
+      "as": "border-top-left-radius" },
+
+    { "key": "border-bottom-left-radius",
+      "as": "border-top-left-radius" },
+
+    { "key": "border-bottom-right-radius",
+      "as": "border-top-left-radius" },
+
+    { "key": "-moz-border-radius-topleft",
+      "as": "border-top-left-radius" },
+
+    { "key": "-webkit-border-radius-top-left",
+      "as": "border-top-left-radius" },
+
+    { "key": "-moz-border-radius-topright",
+      "as": "border-top-left-radius" },
+
+    { "key": "-webkit-border-radius-top-right",
+      "as": "border-top-left-radius" },
+
+    { "key": "-moz-border-radius-bottomleft",
+      "as": "border-top-left-radius" },
+
+    { "key": "-webkit-border-radius-bottom-left",
+      "as": "border-top-left-radius" },
+
+    { "key": "-moz-border-radius-bottomright",
+      "as": "border-top-left-radius" },
+
+    { "key": "-webkit-border-radius-bottom-right",
+      "as": "border-top-left-radius" },
 
     { "key": "content",
       "signature": " \"\" | \" \" | \".\" ",
