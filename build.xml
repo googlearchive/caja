@@ -693,6 +693,7 @@
       <input file="${src}/com/google/caja/cajita.js"/>
       <input file="${src}/com/google/caja/plugin/bridal.js"/>
       <input file="${lib}/com/google/caja/plugin/css-defs.js"/>
+      <input file="${lib}/com/google/caja/plugin/cssparser.js"/>
       <input file="${src}/com/google/caja/plugin/domita.js"/>
       <input file="${src}/com/google/caja/plugin/html-emitter.js"/>
       <input file="${src}/com/google/caja/plugin/html-sanitizer.js"/>
@@ -779,6 +780,7 @@
         <include name="**/caja/log-to-console.js"/>
         <include name="**/caja/plugin/bridal.js"/>
         <include name="**/caja/plugin/caja-gadget.css"/>
+        <include name="**/caja/plugin/cssparser.js"/>
         <include name="**/caja/plugin/domita.js"/>
         <include name="**/caja/plugin/caja.js"/>
         <include name="**/caja/plugin/host-tools.js"/>
