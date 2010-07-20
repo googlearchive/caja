@@ -22,6 +22,7 @@ import com.google.caja.lexer.ExternalReference;
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.Keyword;
 import com.google.caja.lexer.ParseException;
+import com.google.caja.lexer.escaping.UriUtil;
 import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.ParseTreeNodeContainer;
@@ -273,7 +274,7 @@ public final class HtmlAttributeRewriter {
           dynamicValue = urlAdapter;
         } else {
           try {
-            URI uri = new URI(value);
+            URI uri = new URI(UriUtil.normalizeUri(value));
             ExternalReference ref = new ExternalReference(uri, pos);
             String rewrittenUri = meta.getUriPolicy().rewriteUri(
                 ref, attr.attrInfo.getUriEffect(),

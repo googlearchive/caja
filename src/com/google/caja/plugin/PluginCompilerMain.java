@@ -17,6 +17,8 @@ package com.google.caja.plugin;
 import com.google.caja.SomethingWidgyHappenedError;
 import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.CssTokenType;
+import com.google.caja.lexer.ExternalReference;
+import com.google.caja.lexer.FetchedData;
 import com.google.caja.lexer.HtmlLexer;
 import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.JsLexer;
@@ -60,8 +62,11 @@ import java.io.Reader;
 import java.io.FileNotFoundException;
 import java.io.FileInputStream;
 import java.net.URI;
+import java.net.URL;
+import java.net.URLConnection;
 import java.util.Collection;
 import java.util.Map;
+import java.util.Set;
 
 import org.w3c.dom.Node;
 
@@ -122,7 +127,8 @@ public final class PluginCompilerMain {
         if (fileLimitAncestor != null) {
           UriToFile u2f = new UriToFile(fileLimitAncestor);
           fetcher = ChainingUriFetcher.make(
-              new DataUriFetcher(), new CachingUriFetcher(u2f));
+              new DataUriFetcher(),
+              new CachingUriFetcher(u2f));
           policy = new FileSystemUriPolicy(u2f);
         } else {
           fetcher = new DataUriFetcher();
@@ -131,6 +137,41 @@ public final class PluginCompilerMain {
       } catch (IOException e) {  // Could not resolve file name
         fetcher = new DataUriFetcher();
         policy = UriPolicy.DENY_ALL;
+      }
+      final Set<String> lUrls = config.getLinkableUris();
+      if (!lUrls.isEmpty()) {
+        final UriPolicy prePolicy = policy;
+        policy = new UriPolicy() {
+          @Override
+          public String rewriteUri(
+              ExternalReference u, UriEffect effect,
+              LoaderType loader, Map<String, ?> hints) {
+            String uri = u.getUri().toString();
+            if (lUrls.contains(uri)) { return uri; }
+            return prePolicy.rewriteUri(u, effect, loader, hints);
+          }
+        };
+      }
+      final Set<String> fUrls = config.getFetchableUris();
+      if (!fUrls.isEmpty()) {
+        fetcher = ChainingUriFetcher.make(
+            fetcher,
+            new UriFetcher() {
+              @Override
+              public FetchedData fetch(ExternalReference ref, String mimeType)
+                  throws UriFetchException {
+                String uri = ref.getUri().toString();
+                if (!fUrls.contains(uri)) {
+                  throw new UriFetchException(ref, mimeType);
+                }
+                try {
+                  return FetchedData.fromConnection(
+                      new URL(uri).openConnection());
+                } catch (IOException ex) {
+                  throw new UriFetchException(ref, mimeType, ex);
+                }
+              }
+            });
       }
 
       PluginMeta meta = new PluginMeta(fetcher, policy);

@@ -38,8 +38,7 @@ class UriToFile implements Function<URI, File> {
       return null;
     }
 
-    if (uri.getScheme() != null &&
-        !"file".equals(uri.getScheme())) {
+    if (uri.getScheme() != null && !"file".equals(uri.getScheme())) {
       // Not a "file://..." URL so cannot be relative to a directory
       return null;
     }

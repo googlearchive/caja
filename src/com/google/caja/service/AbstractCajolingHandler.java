@@ -136,7 +136,7 @@ public abstract class AbstractCajolingHandler implements ContentHandler {
     return new ValueProperty(FilePosition.UNKNOWN, lit(key), e);
   }
 
-  protected void renderAsJSON(Document doc,
+  protected void renderAsJSON(
       Node staticHtml, CajoledModule javascript, Expression moduleCallback,
       MessageQueue mq, Appendable output)
       throws IOException {

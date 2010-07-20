@@ -70,11 +70,6 @@ public class Escaping {
    * @param asciiOnly Makes sure that only ASCII characters are written to out.
    *     This is a good idea if you don't have control over the charset that
    *     the javascript will be served with.
-   * @param embeddable True to make sure that nothing is written to out that
-   *     could interfere with embedding inside a script tag or CDATA section, or
-   *     other tag that typically contains markup.
-   *     This does not make it safe to embed in an HTML attribute without
-   *     further escaping.
    * @param out written to.
    */
   public static void escapeJsonString(
@@ -86,7 +81,7 @@ public class Escaping {
         .escape();
   }
 
-  /** @see #escapeJsonString(CharSequence, boolean, boolean, Appendable) */
+  /** @see #escapeJsonString(CharSequence, boolean, Appendable) */
   public static void escapeJsonString(
       CharSequence s, boolean asciiOnly, StringBuilder out) {
     try {

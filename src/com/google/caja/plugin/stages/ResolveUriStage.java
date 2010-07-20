@@ -118,6 +118,16 @@ public class ResolveUriStage implements Pipeline.Stage<Jobs> {
       Node node = dom.getValue();
       URI baseUri = baseUri(node, job.getBaseUri(), dom.getFilePosition());
       if (baseUri != null) {
+        try {
+          baseUri = URI.create(UriUtil.normalizeUri(baseUri.toString()));
+        } catch (URISyntaxException ex) {
+          mq.addMessage(
+              PluginMessageType.MALFORMED_URL, dom.getFilePosition(),
+              MessagePart.Factory.valueOf(baseUri.toString()));
+          baseUri = null;
+        }
+      }
+      if (baseUri != null) {
         resolveRelativeUrls(node, baseUri, mq);
         it.set(Job.domJob(job.getCacheKeys(), dom, baseUri));
       }

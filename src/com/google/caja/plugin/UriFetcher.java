@@ -44,9 +44,8 @@ public interface UriFetcher {
   public static final UriFetcher NULL_NETWORK = new DataUriFetcher();
 
   public static class UriFetchException extends CajaException {
-    public ExternalReference ref;
-    public String expectedMimeType;
-    public List<Throwable> causes;
+    public final ExternalReference ref;
+    public final String expectedMimeType;
 
     public UriFetchException(
         ExternalReference ref, String mimeType, Throwable cause) {
@@ -69,10 +68,10 @@ public interface UriFetcher {
       this(ref, mimeType, (Throwable) null);
     }
   }
-  
+
   /**
-   * Chains one of more uri fetchers in order and returns the first 
-   * successfully loaded resource 
+   * Chains one of more uri fetchers in order and returns the first
+   * successfully loaded resource
    */
   public final static class ChainingUriFetcher {
     public static UriFetcher make(final UriFetcher... fetchers) {
@@ -93,5 +92,5 @@ public interface UriFetcher {
       };
     }
   }
-  
+
 }

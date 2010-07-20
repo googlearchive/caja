@@ -154,6 +154,7 @@
     <delete dir="${www}"/>
     <delete dir="${maven}"/>
     <delete dir="${war}"/>
+    <delete dir="${third_party}/java/htmlparser/lib"/>
   </target>
 
   <target name="dirs">
@@ -165,6 +166,7 @@
     <mkdir dir="${www}"/>
     <mkdir dir="${war}"/>
     <mkdir dir="${maven}"/>
+    <mkdir dir="${third_party}/java/htmlparser/lib"/>
   </target>
 
   <target name="JavaVersion">
@@ -702,7 +704,7 @@
       <input file="${src}/com/google/caja/valija-cajita.js"/>
       <output file="${lib}/AllTests.Linter.tstamp"/>
     </genrule>
-    
+
     <copy todir="${lib}">
       <fileset dir="${tests}">
         <include name="**/caja/**/*.css"/>
@@ -792,7 +794,7 @@
         <include name="**/caja/plugin/uri.js"/>
         <include name="**/caja/valija-cajita.js"/>
       </fileset>
-      
+
       <!-- These came from AllTests; They are moved here to reduce the "results
            in jars depend on whether tests were built" problem -->
       <fileset dir="${src}">
@@ -907,7 +909,7 @@
         <include name="domita-minified.js"/>
         <include name="valija.out.js"/>
       </fileset>
-      
+
       <!-- For iframe-based Caja loading - TODO(kpreid): this should become
            part of a "Caja server" package separate from the playground. -->
       <fileset dir="${lib}/com/google/caja/plugin">
@@ -1031,7 +1033,6 @@
   </target>
 
   <target name="HtmlParser" depends="ParserCore,dirs">
-    <mkdir dir="${third_party}/java/htmlparser/lib"/>
     <javac destdir="${third_party}/java/htmlparser/lib" debug="true"
      target="1.5" source="1.5">
       <src path="${third_party}/java/htmlparser/src"/>
@@ -1139,18 +1140,18 @@
     <mkdir dir="${www}/container"/>
 
     <transform>
-      <output 
+      <output
        file="${lib}/com/google/caja/demos/container/gadget-library.out.js"
        language="caja" onlyJsEmitted="true" debug="false"/>
       <input file="${demos}/container/gadget-library.js"/>
     </transform>
     <transform>
-      <output 
+      <output
        file="${lib}/com/google/caja/demos/container/gadget-trivial.out.js"
        language="caja" onlyJsEmitted="true" debug="false"/>
       <input file="${demos}/container/gadget-trivial.html"/>
     </transform>
-    
+
     <copy todir="${www}/container">
       <fileset dir="${src}/com/google/caja">
         <include name="log-to-console.js"/>

@@ -140,7 +140,7 @@ public class HtmlHandler extends AbstractCajolingHandler {
                              moduleCallback,
                              output);
         } else if (outputType == ContentType.JSON) {
-          renderAsJSON(doc,
+          renderAsJSON(
               compiler.getStaticHtml(),
               compiler.getJavascript(),
               moduleCallback,

@@ -17,9 +17,6 @@ package com.google.caja.service;
 import java.util.Arrays;
 
 import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
-
-import com.google.caja.util.Json;
 
 /**
  * Tests the running the cajoler as a webservice
@@ -55,10 +52,10 @@ public class CajolingServiceTest extends ServiceTestCase {
         requestGet("?url=http://foo/bar.html&mime-type=text/html")));
     assertFalse("ERROR".equals(
         requestGet("?url=http://foo/bar.html&input-mime-type=text/html&" +
-        		"output-mime-type=text/javascript")));
+                   "output-mime-type=text/javascript")));
     assertEquals("ERROR",
         requestGet("?url=http://foo/bar.js&input-mime-type=text/javascript&" +
-        		"output-mime-type=text/html"));
+                   "output-mime-type=text/html"));
   }
 
   // Tests error messages are escaped.
@@ -67,7 +64,7 @@ public class CajolingServiceTest extends ServiceTestCase {
     assertEquals("ERROR",
         (String)requestGet("?url=http://foo/bar.js&mime-type=text/javascript"));
   }
-  
+
   // Tests that POST-ing to the service works just as well as GET-ting from it.
   public final void testPost() throws Exception {
     byte[] byteData = { (byte) 0x47, (byte) 0x49, (byte) 0x46,
@@ -86,7 +83,7 @@ public class CajolingServiceTest extends ServiceTestCase {
     assertEquals("ERROR",
         requestGet("?url=http://foo/bar.gif&mime-type=image/*"));
   }
-  
+
   public final void testEmptyContent() throws Exception {
     registerUri("http://foo/bar.html", "", "text/html");
     byte[] byteData = {};

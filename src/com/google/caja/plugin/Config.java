@@ -26,6 +26,7 @@ import com.google.caja.reporting.MessageQueue;
 import com.google.caja.util.Join;
 import com.google.caja.util.Lists;
 import com.google.caja.util.Pair;
+import com.google.caja.util.Sets;
 import com.google.caja.util.Strings;
 
 import java.io.File;
@@ -106,6 +107,12 @@ public final class Config {
       "An ancestor of all files which the URI fetcher is allowed to resolve.",
       true);
 
+  private final Option F_URI = defineOption(
+      "fu", "f_uri", "A URI which the URI fetcher is allowed to fetch.", true);
+  // TODO(mikesamuel): remove once JS uri policy is okay
+  private final Option L_URI = defineOption(
+      "lu", "l_uri", "A URI which the URI policy is allowed to link to.", true);
+
   private final Option SERVICE_PORT = defineOption(
       "port",
       "The port on which cajoling service is run.",
@@ -160,6 +167,8 @@ public final class Config {
   private File fetcherBase;
   private String gadgetView;
   private SourceRenderMode renderer;
+  private Set<String> fUris;
+  private Set<String> lUris;
   private int servicePort;
   private String idClass;
   private Planner.PlanState negGoals = Planner.EMPTY;
@@ -212,6 +221,10 @@ public final class Config {
 
   public String getIdClass() { return idClass; }
 
+  public Set<String> getFetchableUris() { return fUris; }
+
+  public Set<String> getLinkableUris() { return lUris; }
+
   public SourceRenderMode renderer() { return renderer; }
 
   public Planner.PlanState goals(Planner.PlanState ps) {
@@ -233,33 +246,31 @@ public final class Config {
       }
 
       inputUris = Lists.newArrayList();
-      if (cl.getOptionValues(INPUT.getOpt()) != null) {
-        for (String input : cl.getOptionValues(INPUT.getOpt())) {
-          URI inputUri;
-          try {
-            if (input.indexOf(':') >= 0) {
-              inputUri = new URI(input);
-            } else {
-              File inputFile = new File(input);
+      for (String input : getOptionValues(cl, INPUT)) {
+        URI inputUri;
+        try {
+          if (input.indexOf(':') >= 0) {
+            inputUri = new URI(input);
+          } else {
+            File inputFile = new File(input);
 
-              if (!inputFile.exists()) {
-                usage("File \"" + input + "\" does not exist", stderr);
-                return false;
-              }
-              if (!inputFile.canRead() || inputFile.isDirectory()) {
-                usage("File \"" + input + "\" is not a regular file", stderr);
-                return false;
-              }
-
-              inputUri = inputFile.getAbsoluteFile().toURI();
+            if (!inputFile.exists()) {
+              usage("File \"" + input + "\" does not exist", stderr);
+              return false;
             }
-          } catch (URISyntaxException ex) {
-            usage("Input \"" + input + "\" is not a valid URI", stderr);
-            return false;
-          }
+            if (!inputFile.canRead() || inputFile.isDirectory()) {
+              usage("File \"" + input + "\" is not a regular file", stderr);
+              return false;
+            }
 
-          inputUris.add(inputUri);
+            inputUri = inputFile.getAbsoluteFile().toURI();
+          }
+        } catch (URISyntaxException ex) {
+          usage("Input \"" + input + "\" is not a valid URI", stderr);
+          return false;
         }
+
+        inputUris.add(inputUri);
       }
       if (inputUris.isEmpty()) {
         usage("Option \"--" + INPUT.getLongOpt() + "\" missing", stderr);
@@ -344,6 +355,9 @@ public final class Config {
             + e.getMessage());
         return false;
       }
+
+      fUris = Sets.immutableSet(getOptionValues(cl, F_URI));
+      lUris = Sets.immutableSet(getOptionValues(cl, L_URI));
 
       String renderString = cl.getOptionValue(RENDERER.getOpt());
       if (renderString != null) {
@@ -501,6 +515,11 @@ public final class Config {
 
   private Option defineOption(String longFlag, String help, boolean optional) {
     return defineOption(longFlag, longFlag, help, optional);
+  }
+
+  private static String[] getOptionValues(CommandLine cl, Option opt) {
+    String[] values = cl.getOptionValues(opt.getOpt());
+    return values != null ? values : new String[0];
   }
 
   public static void main(String[] argv) {
