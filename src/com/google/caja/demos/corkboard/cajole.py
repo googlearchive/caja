@@ -10,7 +10,7 @@ changes to work outside of App Engine or if you don't want it to touch memcache.
 @author kpreid@switchb.org
 """
 
-from google.appengine.api import memcache
+from google.appengine.api import memcache, urlfetch
 
 from django.utils import simplejson as json
 
@@ -50,12 +50,16 @@ def cajole(html):
   if html == "":
     # workaround for http://code.google.com/p/google-caja/issues/detail?id=1248
     return {"html": "", "js": dummyModule}
-  key = hashlib.sha1(html).digest()
+  hash = hashlib.sha1(html)
+  key = hash.digest()
   value = memcache.get(key, namespace=memcacheNamespace)
   if value is None:
-    logging.debug("Cache miss (HTML sha1 " + key + "); invoking cajoler.")
+    logging.debug("Cache miss (HTML sha1 " + hash.hexdigest() +
+                  "); invoking cajoler.")
     try:
       try:
+        # TODO(kpreid): Use URL Fetch async requests for parallelism/network
+        # latency.
         result = urllib2.urlopen(urllib2.Request(
           cajoleRequestURL,
           html,
@@ -65,11 +69,21 @@ def cajole(html):
           }))
         value = json.load(result)
       except urllib2.HTTPError, e:
+        logging.exception("Error in invoking cajoler (matched HTTPError).")
         if e.code == 400:
           # cajoler's input error
           value = cajolingErrorModule(e)
         else:
           raise
+      except urlfetch.DownloadError, e:
+        logging.exception("Error in invoking cajoler (matched DownloadError).")
+        # TODO(kpreid): complain to app engine about detecting timeout vs.
+        # network errors, and that this isn't a urllib2 error
+        return {
+          "html": "<strong>(Error contacting Caja service)</strong>",
+          "js": dummyModule,
+          "error": True
+        }
     except Exception, e:
       logging.exception("Error in invoking cajoler.")
       # don't put in cache, might be a transient error
