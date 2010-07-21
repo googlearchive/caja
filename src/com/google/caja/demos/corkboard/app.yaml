@@ -14,5 +14,11 @@ handlers:
 - url: /r
   static_dir: static
 
+- url: /admin/.*
+  script: admin.py
+  login: admin
+  secure: always
+  auth_fail_action: redirect
+
 - url: /.*
   script: corkboard.py
