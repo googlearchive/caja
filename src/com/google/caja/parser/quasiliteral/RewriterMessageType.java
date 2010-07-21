@@ -200,6 +200,10 @@ public enum RewriterMessageType implements MessageTypeInt {
       "%s: Dynamically computed names should use load.async()",
       MessageLevel.FATAL_ERROR),
 
+  CANNOT_LOAD_A_DYNAMIC_SES_MODULE(
+      "%s: Dynamically computed names should use load.async()",
+      MessageLevel.FATAL_ERROR),
+
   CANNOT_LOAD_A_DYNAMIC_VALIJA_MODULE(
       "%s: Dynamically computed names should use includeScript.async()",
       MessageLevel.FATAL_ERROR),
