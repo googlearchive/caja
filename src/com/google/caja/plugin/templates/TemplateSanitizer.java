@@ -108,7 +108,7 @@ public final class TemplateSanitizer {
               return valid & foldElement(elKey, el);
             }
           }
-          valid &= sanitizeAttrs(elKey, el);
+          valid &= sanitizeAttrs(elKey, el, false);
         }
         // We know by construction of org.w3c.Element that there can only be
         // one attribute with a given name.
@@ -129,37 +129,44 @@ public final class TemplateSanitizer {
     return valid;
   }
 
-  private boolean sanitizeAttrs(ElKey elKey, Element el) {
+  private boolean sanitizeAttrs(ElKey elKey, Element el, boolean ignore) {
     boolean valid = true;
     // Iterate in reverse so that removed attributes don't break iteration.
     NamedNodeMap attrs = el.getAttributes();
     for (int i = attrs.getLength(); --i >= 0;) {
-      valid &= sanitizeAttr(elKey, el, (Attr) attrs.item(i));
+      valid &= sanitizeAttr(elKey, el, (Attr) attrs.item(i), ignore);
     }
     return valid;
   }
 
-  private boolean sanitizeAttr(ElKey elKey, Element el, Attr attrib) {
+  private boolean sanitizeAttr(
+      ElKey elKey, Element el, Attr attrib, boolean ignore) {
     boolean valid = true;
     AttribKey attrKey = AttribKey.forAttribute(elKey, attrib);
     HTML.Attribute a = schema.lookupAttribute(attrKey);
     if (null == a) {
-      mq.getMessages().add(new Message(
-          PluginMessageType.UNKNOWN_ATTRIBUTE, MessageLevel.WARNING,
-          Nodes.getFilePositionFor(attrib), attrKey, elKey));
+      if (!ignore) {
+        mq.getMessages().add(new Message(
+            PluginMessageType.UNKNOWN_ATTRIBUTE, MessageLevel.WARNING,
+            Nodes.getFilePositionFor(attrib), attrKey, elKey));
+      }
       valid &= removeBadAttribute(el, attrKey);
     } else if (!schema.isAttributeAllowed(attrKey)) {
-      mq.addMessage(
-          PluginMessageType.UNSAFE_ATTRIBUTE,
-          Nodes.getFilePositionFor(attrib), attrKey, elKey);
+      if (!ignore) {
+        mq.addMessage(
+            PluginMessageType.UNSAFE_ATTRIBUTE,
+            Nodes.getFilePositionFor(attrib), attrKey, elKey);
+      }
       valid &= removeBadAttribute(el, attrKey);
     } else {
       Criterion<? super String> criteria = a.getValueCriterion();
       if (!criteria.accept(attrib.getNodeValue())) {
-        mq.addMessage(
-            PluginMessageType.DISALLOWED_ATTRIBUTE_VALUE,
-            Nodes.getFilePositionForValue(attrib),
-            attrKey, MessagePart.Factory.valueOf(attrib.getNodeValue()));
+        if (!ignore) {
+          mq.addMessage(
+              PluginMessageType.DISALLOWED_ATTRIBUTE_VALUE,
+              Nodes.getFilePositionForValue(attrib),
+              attrKey, MessagePart.Factory.valueOf(attrib.getNodeValue()));
+        }
         valid &= removeBadAttribute(el, attrKey);
       }
     }
@@ -199,7 +206,7 @@ public final class TemplateSanitizer {
     boolean valid = true;
 
     // Recurse to children to ensure that all nodes are processed.
-    valid &= sanitizeAttrs(elKey, el);
+    valid &= sanitizeAttrs(elKey, el, true);
     for (Node child : Nodes.childrenOf(el)) { valid &= sanitize(child); }
 
     for (Attr a : Nodes.attributesOf(el)) {

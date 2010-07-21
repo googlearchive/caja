@@ -28,7 +28,7 @@ function module() { // The first script.
     { a(); }
   } catch (ex___) {
     ___.getNewModuleHandler().handleUncaughtException(
-        ex___, onerror, 'file:///testSafeHtmlWithDynamicModuleId', '2');
+        ex___, onerror, 'testSafeHtmlWithDynamicModuleId', '2');
   }
 }
 function module() {
@@ -47,7 +47,7 @@ function module() {
     { b(); }
   } catch (ex___) {
     ___.getNewModuleHandler().handleUncaughtException(
-        ex___, onerror, 'file:///testSafeHtmlWithDynamicModuleId', '4');
+        ex___, onerror, 'testSafeHtmlWithDynamicModuleId', '4');
   }
 }
 function module() {

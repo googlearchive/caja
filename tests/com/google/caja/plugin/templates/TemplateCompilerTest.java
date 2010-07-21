@@ -81,7 +81,6 @@ public class TemplateCompilerTest extends CajaTestCase {
   }
 
   public final void testSafeHtmlWithDynamicModuleId() throws Exception {
-    InputSource is = new InputSource(URI.create("file:///" + getName()));
     assertSafeHtml(
         htmlFragment(fromResource("template-compiler-input1.html", is)),
         htmlFragment(fromResource("template-compiler-golden1-dynamic.html")),
@@ -89,7 +88,6 @@ public class TemplateCompilerTest extends CajaTestCase {
   }
 
   public final void testSafeHtmlWithStaticModuleId() throws Exception {
-    InputSource is = new InputSource(URI.create("file:///" + getName()));
     meta.setIdClass("xyz___");
 
     assertSafeHtml(
@@ -149,8 +147,8 @@ public class TemplateCompilerTest extends CajaTestCase {
     assertSafeHtml(
         htmlFragment(fromString("<form></form>")),
         htmlFragment(fromString(
-            "<form action='test:///testFormRewritten' autocomplete='off'"
-            + " target='_blank'></form>")),
+            "<form action='test://example.org/testFormRewritten'"
+            + " autocomplete='off' target='_blank'></form>")),
         new Block());
   }
 
@@ -195,7 +193,7 @@ public class TemplateCompilerTest extends CajaTestCase {
     assertSafeHtml(
         htmlFragment(fromString("<form name='hi'></form>")),
         htmlFragment(fromString(
-            "<form action='test:///testFormName' autocomplete='off'"
+            "<form action='test://example.org/testFormName' autocomplete='off'"
             + " name='hi-suffix___' target=_blank></form>")),
         new Block());
   }
@@ -206,8 +204,8 @@ public class TemplateCompilerTest extends CajaTestCase {
         htmlFragment(fromString(
             "<form onsubmit='alert(&quot;hi&quot;); return true;'></form>")),
         htmlFragment(fromString(
-            "<form action='test:///testFormOnSubmitTrue' autocomplete='off'"
-            + " id=id_2___ target='_blank'></form>")),
+            "<form action='test://example.org/testFormOnSubmitTrue'"
+            + " autocomplete='off' id=id_2___ target='_blank'></form>")),
         js(fromString(
             ""
             + "function module() {"
@@ -298,8 +296,8 @@ public class TemplateCompilerTest extends CajaTestCase {
     assertSafeHtml(
         htmlFragment(fromString("<form onsubmit=''></form>")),
         htmlFragment(fromString(
-            "<form action='test:///testFormOnSubmitEmpty' autocomplete='off'"
-            + " target='_blank'></form>")),
+            "<form action='test://example.org/testFormOnSubmitEmpty'"
+            + " autocomplete='off' target='_blank'></form>")),
         new Block());
   }
 
@@ -371,7 +369,7 @@ public class TemplateCompilerTest extends CajaTestCase {
         htmlFragment(fromString(
             "<a href='mailto:x@y' target='_blank'>z</a>")),
         htmlFragment(fromString(
-            "<a href='mailto:x@y' target='_blank'>z</a>")),
+            "<a href='mailto:x%40y' target='_blank'>z</a>")),
         new Block());
   }
 
@@ -380,7 +378,7 @@ public class TemplateCompilerTest extends CajaTestCase {
         htmlFragment(fromString(
             "<a href='http://b/c;_d=e?f=g&i=%26' target='_blank'>z</a>")),
         htmlFragment(fromString(
-            "<a href='http://b/c;_d=e?f=g&i=%26' target='_blank'>z</a>")),
+            "<a href='http://b/c%3b%5fd%3de?f=g&i=%26' target='_blank'>z</a>")),
         new Block());
   }
 

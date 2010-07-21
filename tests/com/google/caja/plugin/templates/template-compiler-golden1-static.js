@@ -24,7 +24,7 @@ function module() {
     { a(); }
   } catch (ex___) {
     ___.getNewModuleHandler().handleUncaughtException(
-            ex___, onerror, 'file:///testSafeHtmlWithStaticModuleId', '2');
+            ex___, onerror, 'testSafeHtmlWithStaticModuleId', '2');
   }
 }
 function module() {
@@ -42,7 +42,7 @@ function module() {
    { b(); }
   } catch (ex___) {
     ___.getNewModuleHandler().handleUncaughtException(
-            ex___, onerror, 'file:///testSafeHtmlWithStaticModuleId', '4');
+            ex___, onerror, 'testSafeHtmlWithStaticModuleId', '4');
   }
 }
 function module() {

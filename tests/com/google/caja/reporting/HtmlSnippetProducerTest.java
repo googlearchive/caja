@@ -33,7 +33,8 @@ public class HtmlSnippetProducerTest extends CajaTestCase {
     assertEquals(
         ""
         + "<a href=\"#\" class=\"filepos nocode\""
-        + " onclick=\"selectLine(&#39;test:///testSnippetEscaped&#39;,1)\">"
+        + " onclick=\"selectLine(&#39;"
+        + "test://example.org/testSnippetEscaped&#39;,1)\">"
         + "testSnippetEscaped:1</a>"
         + ": &lt;style&gt;background: url("
         + "<span class=\"problem\">"

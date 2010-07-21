@@ -383,7 +383,7 @@ public class CssRewriterTest extends CajaTestCase {
             URI uri = ref.getUri();
 
             if ("test".equals(uri.getScheme())  // Used by CajaTestCase
-                && uri.getHost() == null
+                && "example.org".equals(uri.getHost())
                 && uri.getPath() != null
                 && uri.getPath().startsWith("/")) {
               try {

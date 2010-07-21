@@ -130,10 +130,16 @@
     { "key": "-webkit-border-radius-top-left",
       "as": "border-top-left-radius" },
 
+    { "key": "-webkit-border-top-left-radius",
+      "as": "border-top-left-radius" },
+
     { "key": "-moz-border-radius-topright",
       "as": "border-top-left-radius" },
 
     { "key": "-webkit-border-radius-top-right",
+      "as": "border-top-left-radius" },
+
+    { "key": "-webkit-border-top-right-radius",
       "as": "border-top-left-radius" },
 
     { "key": "-moz-border-radius-bottomleft",
@@ -142,10 +148,16 @@
     { "key": "-webkit-border-radius-bottom-left",
       "as": "border-top-left-radius" },
 
+    { "key": "-webkit-border-bottom-left-radius",
+      "as": "border-top-left-radius" },
+
     { "key": "-moz-border-radius-bottomright",
       "as": "border-top-left-radius" },
 
     { "key": "-webkit-border-radius-bottom-right",
+      "as": "border-top-left-radius" },
+
+    { "key": "-webkit-border-bottom-right-radius",
       "as": "border-top-left-radius" },
 
     { "key": "content",
@@ -257,7 +269,7 @@
       "signature": "<number:0,1>",
       "source": "http://www.w3.org/TR/css3-color/#alphavaluedt"
     },
-    { "key": "<alpha>", "as": "<red>" },
+    { "key": "<alpha>", "signature": "<integer:0,255>|<number:0,1>|<percentage:0,100>" },
 
     { "key": "-moz-outline",
       "as": "outline",
@@ -298,6 +310,21 @@
       "as": "text-overflow",
       "dom2property": "OTextOverflow" },
 
+    { "key": "box-shadow",
+      "signature": "none | [ <shadow>, ]* <shadow>",
+      "default": "none",
+      "appliesTo": "*",
+      "inherited": true,
+      "mediaGroups": ["visual"],
+      "dom2property": "boxShadow",
+      "source": "http://www.w3.org/TR/css3-background/#box-shadow" },
+
+    { "key": "-moz-box-shadow",
+      "as": "box-shadow" },
+
+    { "key": "-webkit-box-shadow",
+      "as": "box-shadow" },
+
     { "key": "text-shadow",
       "signature": "none | [ <shadow>, ]* <shadow>",
       "default": "none",
@@ -307,7 +334,7 @@
       "dom2property": "textShadow",
       "source": "http://www.w3.org/TR/css3-text/#text-shadow" },
     { "key": "<shadow>",
-      "signature": "[ <color> <length> <length> <length:0,>? | <length> <length> <length:0,>? <color>? ]" },
+      "signature": "[<color> <length>{2,4} inset?] | [ inset? <length>{2,4} <color>?]" },
 
     { "key": "text-wrap",
       "signature": "normal | unrestricted | none | suppress",

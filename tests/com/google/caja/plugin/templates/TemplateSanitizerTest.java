@@ -58,8 +58,9 @@ public class TemplateSanitizerTest extends CajaTestCase {
     assertValid(
         htmlFragment(fromString("<bogus unknown=\"bogus\">Hello</bogus>")),
         "Hello",
-        "WARNING: removing unknown tag bogus",
-        "WARNING: removing unknown attribute unknown on bogus");
+        "WARNING: removing unknown tag bogus"
+        // No need to warn about unknown since we have warned about tag
+        );
   }
   public final void testDisallowedScriptElement() throws Exception {
     assertValid(
@@ -70,8 +71,7 @@ public class TemplateSanitizerTest extends CajaTestCase {
         htmlFragment(fromString(
             "<script src=http://can-link-to.com/ >disallowed</script>")),
         "disallowed",
-        "WARNING: removing disallowed tag script",
-        "WARNING: removing disallowed attribute src on tag script");
+        "WARNING: removing disallowed tag script");
   }
   public final void testDisallowedAppletElement() throws Exception {
     assertValid(
@@ -81,24 +81,20 @@ public class TemplateSanitizerTest extends CajaTestCase {
             + "<a href=http://can-link-to.com/ >disallowed</a></applet>")),
         "<a href=\"http://can-link-to.com/\">disallowed</a>",
         "WARNING: removing disallowed tag applet",
-        "WARNING: removing disallowed tag param",
-        "WARNING: removing disallowed attribute value on tag param",
-        "WARNING: removing disallowed attribute name on tag param");
+        "WARNING: removing disallowed tag param");
   }
   public final void testDisallowedBaseElement() throws Exception {
     assertValid(
         htmlFragment(fromString(
             "<base href='http://can-link-to.com/'>disallowed")),
         "disallowed",
-        "WARNING: removing disallowed tag base",
-        "WARNING: removing disallowed attribute href on tag base");
+        "WARNING: removing disallowed tag base");
   }
   public final void testDisallowedBasefontElement() throws Exception {
     assertValid(
         htmlFragment(fromString("<basefont size=4>disallowed")),
         "disallowed",
-        "WARNING: removing disallowed tag basefont",
-        "WARNING: removing disallowed attribute size on tag basefont");
+        "WARNING: removing disallowed tag basefont");
   }
   public final void testDisallowedFrameElement() throws Exception {
     assertValid(
@@ -108,8 +104,7 @@ public class TemplateSanitizerTest extends CajaTestCase {
             + "disallowed</frame></frameset>")),
         "",
         "WARNING: removing disallowed tag frameset",
-        "WARNING: removing disallowed tag frame",
-        "WARNING: removing disallowed attribute src on tag frame");
+        "WARNING: removing disallowed tag frame");
     // Frames outside framesets are thrown out by the parser.
     assertValid(
         htmlFragment(fromString(
@@ -147,9 +142,7 @@ public class TemplateSanitizerTest extends CajaTestCase {
         htmlFragment(fromString(
             "<link rev=Contents href='http://can-link-to.com/'>disallowed")),
         "disallowed",
-        "WARNING: removing disallowed tag link",
-        "WARNING: removing disallowed attribute rev on tag link",
-        "WARNING: removing disallowed attribute href on tag link");
+        "WARNING: removing disallowed tag link");
   }
   public final void testDisallowedMetaElement() throws Exception {
     assertValid(
@@ -159,9 +152,7 @@ public class TemplateSanitizerTest extends CajaTestCase {
             + " content='5;url=http://can-link-to.com/'>"
             + "disallowed")),
         "disallowed",
-        "WARNING: removing disallowed tag meta",
-        "WARNING: removing disallowed attribute http-equiv on tag meta",
-        "WARNING: removing disallowed attribute content on tag meta");
+        "WARNING: removing disallowed tag meta");
   }
   public final void testDisallowedObjectElement() throws Exception {
     assertValid(
@@ -169,9 +160,7 @@ public class TemplateSanitizerTest extends CajaTestCase {
             "<object><param name=zoicks value=ack>disallowed</object>")),
         "disallowed",
         "WARNING: removing disallowed tag object",
-        "WARNING: removing disallowed tag param",
-        "WARNING: removing disallowed attribute value on tag param",
-        "WARNING: removing disallowed attribute name on tag param");
+        "WARNING: removing disallowed tag param");
   }
   public final void testDisallowedStyleElement() throws Exception {
     assertValid(
@@ -227,9 +216,7 @@ public class TemplateSanitizerTest extends CajaTestCase {
     assertValid(
         htmlFragment(fromString("<meta http-equiv='refresh' content='1'/>")),
         "",
-        "WARNING: removing disallowed tag meta",
-        "WARNING: removing disallowed attribute http-equiv on tag meta",
-        "WARNING: removing disallowed attribute content on tag meta");
+        "WARNING: removing disallowed tag meta");
   }
   public final void testDisallowedElement4() throws Exception {
     assertValid(

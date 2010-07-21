@@ -83,7 +83,7 @@ public abstract class CajaTestCase extends TestCase {
         System.err.println("junit.seed=" + SEED);
       }
     }
-    this.is = new InputSource(URI.create("test:///" + getName()));
+    this.is = new InputSource(URI.create("test://example.org/" + getName()));
     this.mc = new MessageContext();
     mc.addInputSource(is);
     this.mq = TestUtil.createTestMessageQueue(this.mc);
