@@ -43,6 +43,13 @@ body > * {
   padding: 0.5%;
   float: left;
 }
+.posting.cajoling-error {
+  background: red;
+  color: white;
+}
+.posting.cajoling-error pre {
+  white-space: pre-wrap;
+}
 
 /* full page instead of column */
 .posting.edit {

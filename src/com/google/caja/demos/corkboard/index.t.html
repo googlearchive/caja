@@ -28,7 +28,7 @@
 </p>{% endif %}
 
 {% for posting in postings %}
-  <div class="posting">
+  <div class="posting{% if posting.cajole.error %} cajoling-error{%endif%}">
     <!-- vdoc-body___ indicates the root of a Caja gadget and applies styles 
          needed for full sandboxing. It is automatically applied by
          sandbox.attach(), but including it here is needed for the client-is-
