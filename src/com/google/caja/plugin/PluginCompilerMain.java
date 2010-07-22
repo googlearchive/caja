@@ -142,7 +142,6 @@ public final class PluginCompilerMain {
       if (!lUrls.isEmpty()) {
         final UriPolicy prePolicy = policy;
         policy = new UriPolicy() {
-          @Override
           public String rewriteUri(
               ExternalReference u, UriEffect effect,
               LoaderType loader, Map<String, ?> hints) {
@@ -157,7 +156,6 @@ public final class PluginCompilerMain {
         fetcher = ChainingUriFetcher.make(
             fetcher,
             new UriFetcher() {
-              @Override
               public FetchedData fetch(ExternalReference ref, String mimeType)
                   throws UriFetchException {
                 String uri = ref.getUri().toString();
