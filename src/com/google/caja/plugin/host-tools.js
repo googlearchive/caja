@@ -119,7 +119,6 @@ var HostTools;
         if (options.valija === undefined) { options.valija = true; }
         
         // TODO(kpreid): do we want to reject multiple attach attempts?
-        vdocBody.className = vdocBody.className + " vdoc-body___";
         
         if (options.valija) { imports.outers = imports; }
         

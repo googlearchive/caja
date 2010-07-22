@@ -17,11 +17,11 @@
 /**
  * Common CSS rules to use for all Caja gadgets.
  *
- * The class name “vdoc-body___” should be applied to all elements in host
- * pages which serve as a virtual document body for a gadget. The style rules
- * in this file ensure that (a) the content of such elements does not cover any
- * other areas of the page, and that (b) the coordinate system for CSS absolute
- * positioning is relative to that element.
+ * The class name “vdoc-body___” is automatically applied to all elements in 
+ * host pages which serve as a virtual document body for a gadget. The style
+ * rules in this file ensure that (a) the content of such elements does not
+ * cover any other areas of the page, and that (b) the coordinate system for CSS
+ * absolute positioning is relative to that element.
  *
  * @author Kevin Reid (kpreid@switchb.org)
  */

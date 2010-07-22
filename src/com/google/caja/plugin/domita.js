@@ -366,6 +366,9 @@ domitaModules.CssPropertiesCollection =
 /**
  * Add a tamed document implementation to a Gadget's global scope.
  *
+ * Has the side effect of adding the classes "vdoc-body___" and 
+ * idSuffix.substring(1) to the pseudoBodyNode.
+ *
  * @param {string} idSuffix a string suffix appended to all node IDs.
  *     It should begin with "-" and end with "___".
  * @param {Object} uriCallback an object like <pre>{
@@ -3699,6 +3702,10 @@ var attachDocumentStub = (function () {
     imports.getIdClass___ = function () {
       return idClass;
     };
+    // enforce id class on element
+    bridal.setAttribute(pseudoBodyNode, "class",
+        bridal.getAttribute(pseudoBodyNode, "class")
+        + " " + idClass + " vdoc-body___");
 
     // bitmask of trace points
     //    0x0001 plugin_dispatchEvent

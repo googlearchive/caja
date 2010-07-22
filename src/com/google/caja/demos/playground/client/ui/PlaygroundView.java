@@ -545,7 +545,7 @@ public class PlaygroundView {
       return;
     }
     renderPanel.setHTML(
-    "<div id=\"cajoled-output\" class=\"vdoc-body___\">\n" +
+    "<div id=\"cajoled-output\">\n" +
       html +
     "</div>\n");
 

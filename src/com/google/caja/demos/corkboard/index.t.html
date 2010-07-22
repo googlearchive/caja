@@ -30,9 +30,9 @@
 {% for posting in postings %}
   <div class="posting{% if posting.cajole.error %} cajoling-error{%endif%}">
     <!-- vdoc-body___ indicates the root of a Caja gadget and applies styles 
-         needed for full sandboxing. It is automatically applied by
-         sandbox.attach(), but including it here is needed for the client-is-
-         not-running-JavaScript case and for before Caja has loaded. -->
+         needed for full sandboxing. It is automatically applied by Domita, but
+         including it here is needed for the client-is-not-running-JavaScript
+         case and for before Caja has loaded. -->
     <blockquote class="posting-content vdoc-body___"
                 id="pc-{{ forloop.counter }}">
       {{ posting.cajole.html }}
