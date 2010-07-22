@@ -44,7 +44,7 @@ public abstract class BrowserTestCase extends CajaTestCase {
    */
   protected void StartLocalServer() {
     server = new Server(portNumber());
-    
+
     // static file serving for tests
     final ResourceHandler resource_handler = new ResourceHandler();
     resource_handler.setResourceBase(".");
@@ -103,7 +103,7 @@ public abstract class BrowserTestCase extends CajaTestCase {
   protected int portNumber() {
     return 8000;
   }
-  
+
   /**
    * Start the web server and browser, go to pageName, call driveBrowser(driver,
    * pageName), and then clean up.
@@ -124,12 +124,12 @@ public abstract class BrowserTestCase extends CajaTestCase {
       StopLocalServer();
     }
   }
-  
+
   /**
    * Do what should be done with the browser.
    */
   abstract protected void driveBrowser(WebDriver driver, String pageName);
-  
+
   /**
    * Run 'c' every 'intervalMillis' milliseconds until it returns true or
    * 'timeoutSecs' seconds have passed (in which case, fail).
@@ -144,14 +144,16 @@ public abstract class BrowserTestCase extends CajaTestCase {
       }
       try {
         Thread.sleep(intervalMillis);
-      } catch (InterruptedException e) {}
+      } catch (InterruptedException e) {
+        // keep going
+      }
     }
     assertTrue(
         timeoutMillis + " ms passed while waiting for: " + c + ".",
         rounds < limit);
   }
-  
+
   public interface Check {
     boolean run();
-  }  
+  }
 }

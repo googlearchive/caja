@@ -256,7 +256,7 @@ public abstract class RewriterTestCase extends CajaTestCase {
   }
 
   protected ParseTreeNode emulateIE6FunctionConstructors(ParseTreeNode node) {
-    Rewriter w = new Rewriter(mq, true, false) {};
+    Rewriter w = new Rewriter(mq, true, false) { /* concrete */ };
     w.addRule(new Rule() {
       @Override
       @RuleDescription(

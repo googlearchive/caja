@@ -80,7 +80,9 @@ public abstract class SideBySideRenderer implements TokenConsumer {
    * @param next the source from which the next rendered token will come,
    *   unless switchSource is called again before {@link #consume}.
    */
-  protected void switchSource(InputSource previous, InputSource next) {}
+  protected void switchSource(InputSource previous, InputSource next) {
+    // noop
+  }
 
   protected abstract TokenConsumer makeRenderer(StringBuilder renderedSrc);
 

@@ -190,23 +190,25 @@ public final class RhinoAsserts {
   /** A visitor over a JavaScript object graph. */
   private static abstract class JsObjVisitor {
     /** @param s unused in this default implementation. */
-    void visitString(String s) {}
+    void visitString(String s) { /* noop */ }
     /** @param n unused in this default implementation. */
-    void visitNumber(Number n) {}
+    void visitNumber(Number n) { /* noop */ }
     /** @param b unused in this default implementation. */
-    void visitBoolean(Boolean b) {}
-    void visitNull() {}
-    void visitUndefined() {}
+    void visitBoolean(Boolean b) { /* noop */ }
+    void visitNull() { /* noop */ }
+    void visitUndefined() { /* noop */ }
     /**
      * @param s the JS array.
      * @param values elements of the array
      */
-    void visitArray(Scriptable s, Object[] values) {}
+    void visitArray(Scriptable s, Object[] values) { /* noop */ }
     /**
      * @param s the JSON object.
      * @param props name to value map of cajita mentionable properties.
      */
-    void visitObject(Scriptable s, List<Pair<String, Object>> props) {}
+    void visitObject(Scriptable s, List<Pair<String, Object>> props) {
+      /* noop */
+    }
   }
 
   /**

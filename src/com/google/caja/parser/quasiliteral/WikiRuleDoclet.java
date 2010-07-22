@@ -67,7 +67,9 @@ public class WikiRuleDoclet extends RuleDoclet {
   }
 
   @Override
-  public void generateFooter(Writer output, RulesetDescription ruleSet) {}
+  public void generateFooter(Writer output, RulesetDescription ruleSet) {
+    // no footer
+  }
 
   @Override
   public void generateRuleDocumentation(Writer output, RuleDescription anno)
@@ -83,5 +85,5 @@ public class WikiRuleDoclet extends RuleDoclet {
 
   /** @param out unused. */
   @Override
-  public void finish(Writer out) {}
+  public void finish(Writer out) { /* noop */ }
 }

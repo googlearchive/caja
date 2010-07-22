@@ -283,7 +283,7 @@ public final class PluginCompilerMain {
       try {
         out.append(compiledHtmlOutput);
       } finally {
-        try { out.close(); } catch (IOException e) {}
+        try { out.close(); } catch (IOException e) { /* close quietly */ }
       }
     } catch (IOException ex) {
       exHandler.handle(ex);
@@ -308,7 +308,11 @@ public final class PluginCompilerMain {
       exHandler.handle(ex);
     } finally {
       if (out != null) {
-        try { out.close(); } catch (IOException e) {}
+        try {
+          out.close();
+        } catch (IOException e) {
+          /* no zero-argument ctor */
+        }
       }
     }
   }

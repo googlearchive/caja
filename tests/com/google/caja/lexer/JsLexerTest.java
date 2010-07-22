@@ -21,6 +21,8 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.URI;
 
+import junit.framework.AssertionFailedError;
+
 /**
  * testcases for {@link JsLexer}.
  *
@@ -261,7 +263,8 @@ public class JsLexerTest extends CajaTestCase {
     try {
       tok = lexer.next();
     } catch (ParseException e) {
-      fail(e.toString());
+      throw (AssertionFailedError)
+          new AssertionFailedError(e.getMessage()).initCause(e);
     }
     assertEquals(type, tok.type);
     assertEquals("was '" + tok.text + "', expected '" + text + "'",

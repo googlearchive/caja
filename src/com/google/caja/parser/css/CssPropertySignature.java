@@ -356,10 +356,13 @@ public abstract class CssPropertySignature implements ParseTreeNode {
   private SyntheticAttributes attribs;
   private static final boolean DEBUG = false;
   public SyntheticAttributes getAttributes() {
-    if (!DEBUG) { throw new UnsupportedOperationException(); }
-    // may be mutable for debugging
-    if (null == attribs) { attribs = new SyntheticAttributes(); }
-    return attribs;
+    if (!DEBUG) {
+      throw new UnsupportedOperationException();
+    } else {
+      // may be mutable for debugging
+      if (null == attribs) { attribs = new SyntheticAttributes(); }
+      return attribs;
+    }
   }
 
   public List<? extends CssPropertySignature> children() { return children; }

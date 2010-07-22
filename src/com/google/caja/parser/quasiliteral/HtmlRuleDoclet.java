@@ -50,15 +50,19 @@ public class HtmlRuleDoclet extends RuleDoclet {
       impl = DOMImplementationRegistry.newInstance()
           .getDOMImplementation("XML 1.0");
       String implPropName = "org.w3c.dom.DOMImplementationSourceList";
-      if (impl == null && null == System.getProperty(implPropName)) {
-        // On MacOS 10.4, the system property for the DOM implementation isn't
-        // set properly on the pre-installed JDK.
-        System.getProperties().setProperty(
-           implPropName,
-           "com.sun.org.apache.xerces.internal.dom"
-           + ".DOMXSImplementationSourceImpl");
-        impl = DOMImplementationRegistry.newInstance()
-            .getDOMImplementation("XML 1.0");
+      if (impl == null) {
+        if (null == System.getProperty(implPropName)) {
+          // On MacOS 10.4, the system property for the DOM implementation isn't
+          // set properly on the pre-installed JDK.
+          System.getProperties().setProperty(
+              implPropName,
+              "com.sun.org.apache.xerces.internal.dom"
+              + ".DOMXSImplementationSourceImpl");
+          impl = DOMImplementationRegistry.newInstance()
+              .getDOMImplementation("XML 1.0");
+        } else {
+          throw new SomethingWidgyHappenedError();
+        }
       }
     } catch (Exception ex) {
       throw new SomethingWidgyHappenedError(ex);
@@ -120,7 +124,9 @@ public class HtmlRuleDoclet extends RuleDoclet {
   }
 
   @Override
-  public void generateFooter(Writer output, RulesetDescription ruleSet) {}
+  public void generateFooter(Writer output, RulesetDescription ruleSet) {
+    // No footer.
+  }
 
   @Override
   public void finish(Writer output) {

@@ -23,9 +23,9 @@ import java.io.IOException;
 import java.io.Writer;
 
 /**
- * Extracts and formats the rules of Caja from DefaultCajaRewriter 
+ * Extracts and formats the rules of Caja from DefaultCajaRewriter
  * as a json page which can be loaded and displayed by webpage
- * 
+ *
  * @author jasvir@google.com (Jasvir Nagra)
  */
 public class JsonRuleDoclet extends RuleDoclet {
@@ -37,22 +37,24 @@ public class JsonRuleDoclet extends RuleDoclet {
   public String getDefaultExtension() {
     return "json";
   }
-  
+
   @Override
   public void initialize(Writer output) {
     jsonDocument = new JSONObject();
   }
-  
+
   @Override
   public void generateHeader(Writer output, RulesetDescription ruleSet) {
     JSONObject head = Json.formatAsJson("name", ruleSet.name(),
         "synopsis", ruleSet.synopsis());
     Json.putJson(jsonDocument, "header", head);
   }
-  
+
   @Override
-  public void generateFooter(Writer output, RulesetDescription ruleSet) {}
-  
+  public void generateFooter(Writer output, RulesetDescription ruleSet) {
+    // no footer
+  }
+
   @Override
   public void finish(Writer output) throws IOException {
     output.write(jsonDocument.toString());
@@ -64,9 +66,9 @@ public class JsonRuleDoclet extends RuleDoclet {
       table = new JSONArray();
       Json.putJson(jsonDocument, "rules", table);
     }
-    Json.pushJson(table, Json.formatAsJson("number", countRules++, 
+    Json.pushJson(table, Json.formatAsJson("number", countRules++,
         "name", anno.name(), "synopsis", anno.synopsis(),
-        "reason", anno.reason(), "matches", anno.matches(), 
+        "reason", anno.reason(), "matches", anno.matches(),
         "substitutes", anno.substitutes()));
   }
 }

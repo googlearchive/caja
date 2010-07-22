@@ -83,7 +83,7 @@ public final class JsConcatenator {
   }
 }
 
-abstract class Part {}
+abstract class Part { /* marker base class */ }
 final class StringPart extends Part {
   final Expression e;
   StringPart(Expression e) { this.e = e; }

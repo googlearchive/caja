@@ -1085,7 +1085,7 @@ public final class CssParser {
 
   private static final RecoveryStrategy DO_NOTHING = new RecoveryStrategy() {
     @Override
-    void recover(CssParser p, Mark start) {}
+    void recover(CssParser p, Mark start) { /* noop */ }
   };
 
   /**

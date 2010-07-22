@@ -474,7 +474,7 @@ class SetupUrlHandlers {
       });
   }
 
-  public static void init() {}
+  public static void init() { /* noop */ }
 }
 
 class ContentUrlHandler extends URLStreamHandler {

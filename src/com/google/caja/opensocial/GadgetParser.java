@@ -87,8 +87,10 @@ public class GadgetParser {
     Iterator<Element> els = getElementsByTagNameNS(doc, "ModulePrefs")
         .iterator();
     Element modulePrefs = els.hasNext() ? els.next() : null;
-    check(modulePrefs != null && !els.hasNext(),
+    if (modulePrefs == null || els.hasNext()) {
+      throw new GadgetRewriteException(
           "Must have exactly one <ModulePrefs>");
+    }
     for (Attr attr : Nodes.attributesOf(modulePrefs)) {
       spec.getModulePrefs().put(attr.getNodeName(), attr.getNodeValue());
     }
@@ -98,8 +100,10 @@ public class GadgetParser {
       throws GadgetRewriteException {
     for (Element require : getElementsByTagNameNS(doc, "Require")) {
       Attr feature = require.getAttributeNodeNS(NS_URI, "feature");
-      check(feature != null,
+      if (feature == null) {
+        throw new GadgetRewriteException(
             "<Require> must have a \"feature\" attribute");
+      }
       spec.getRequiredFeatures().add(feature.getNodeValue());
     }
   }
@@ -112,10 +116,16 @@ public class GadgetParser {
           || Arrays.asList(viewAttr.getNodeValue().trim().split("\\s*,\\s*"))
              .contains(view)) {
         Attr typeAttr = contentNode.getAttributeNodeNS(NS_URI, "type");
-        check(typeAttr != null, "No 'type' attribute for view '" + view + "'");
+        if (typeAttr == null) {
+          throw new GadgetRewriteException(
+              "No 'type' attribute for view '" + view + "'");
+        }
         String value = typeAttr.getNodeValue();
 
-        check(value.equals("html"), "Can't handle Content type '" + value +"'");
+        if (!value.equals("html")) {
+          throw new GadgetRewriteException(
+              "Can't handle Content type '" + value +"'");
+        }
 
         spec.setContentType(value);
 
@@ -217,11 +227,6 @@ public class GadgetParser {
 
     doc.appendChild(module);
     return module;
-  }
-
-  private void check(boolean condition, String msg)
-      throws GadgetRewriteException {
-    if (!condition) { throw new GadgetRewriteException(msg); }
   }
 
   private String drain(CharProducer cp) {

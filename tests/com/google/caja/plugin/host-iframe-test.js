@@ -82,12 +82,12 @@ jsunitRegister("testRunGadget",
                function testRunGadget() {
   var e = document.createElement("div");
   document.body.appendChild(e);
-  
+
   loadCaja(jsunitCallback(function (framedCaja) {
     var tools = framedCaja.hostTools;
     var s = new tools.Sandbox();
     s.attach(e);
-  
+
     framedCaja.Q.when(s.run("../../../../../src/com/google/caja/" +
                             "demos/container/gadget-trivial.html"),
         jsunitCallback(function (moduleResult) {

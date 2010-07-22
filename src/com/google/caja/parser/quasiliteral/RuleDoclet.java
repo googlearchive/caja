@@ -41,7 +41,7 @@ public abstract class RuleDoclet {
    *
    * @param output a stream to which documentation can be written.
    */
-  public void initialize(Writer output) {}
+  public void initialize(Writer output) { /* noop */ }
 
   /**
    * Initializes the RuleDoclet
@@ -52,10 +52,10 @@ public abstract class RuleDoclet {
    * @param output a stream to which documentation can be written.
    * @throws IOException if any operation on output raises an IOException.
    */
-  public void finish(Writer output) throws IOException {}
+  public abstract void finish(Writer output) throws IOException;
 
   /**
-   * Returns the default file extension for the format output by this doclet
+   * Returns the default file extension for the format output by this doclet.
    */
   public abstract String getDefaultExtension();
 

@@ -189,6 +189,8 @@ public class IhtmlSanityChecker {
       if (msg != lastContainer) {
         // Found a different message.
         if (!expectOpen) {
+          // expectOpen can only be false if lastContainer has been set below.
+          assert lastContainer != null;
           // last must be an ihtml:ph without a corresponding ihtml:eph.
           markBroken(last);
           FilePosition endPos = FilePosition.endOf(
@@ -226,6 +228,8 @@ public class IhtmlSanityChecker {
 
     // Check that the last item is not an unclosed ihtml:ph.
     if (!expectOpen) {
+      // expectOpen can only be false if lastContainer has been set above.
+      assert lastContainer != null;
       FilePosition endPos = FilePosition.endOf(
           Nodes.getFilePositionFor(lastContainer.getLastChild()));
       mq.addMessage(

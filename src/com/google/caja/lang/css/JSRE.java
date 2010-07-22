@@ -94,7 +94,7 @@ abstract class JSRE {
   }
 
   static final class Noop extends JSRE {
-    private Noop() {}
+    private Noop() { /* no public zero-argument ctor */ }
 
     @Override public boolean equals(Object o) { return o instanceof Noop; }
 
@@ -105,7 +105,7 @@ abstract class JSRE {
     @Override Priority priority() { return Priority.MAX; }
 
     @Override
-    void render(StringBuilder sb) {}
+    void render(StringBuilder sb) { /* no output */ }
   }
 
   static final class Repetition extends JSRE {
@@ -273,6 +273,7 @@ abstract class JSRE {
             if (commonHead.isEmpty() && commonTail.isEmpty()) { break; }
           }
         }
+        assert commonHead != null && commonTail != null : "no children";
         if (!commonHead.isEmpty() || !commonTail.isEmpty()) {
           // (foo|far|faz) => f(oo|ar|az)
           // (oof|raf|zaf) => (oo|ra|za)f
@@ -393,7 +394,9 @@ abstract class JSRE {
   private static <T> List<T> commonSuffix(List<T> a, List<T> b) {
     int m = a.size(), n = b.size();
     int i = m, j = n;
-    while (--i >= 0 && --j >= 0 && a.get(i).equals(b.get(j))) {}
+    while (--i >= 0 && --j >= 0 && a.get(i).equals(b.get(j))) {
+      // work done in condition
+    }
     return a.subList(i + 1, m);
   }
 

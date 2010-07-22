@@ -180,7 +180,7 @@ final class SafeHtmlMaker {
   }
 
   /** Part of a DOM skeleton. */
-  private static class DomBone {}
+  private static class DomBone { /* marker base class */ }
 
   private static class NodeBone extends DomBone {
     final Node node;

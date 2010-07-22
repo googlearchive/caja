@@ -18,23 +18,25 @@ import com.google.gwt.user.client.rpc.IsSerializable;
 /**
  * Result of cajoling using the cajoling service.  Contains the static html,
  * css and javascript as well as errors and warnings from cajoling.
- * 
+ *
  * @author jasvir@google.com (Jasvir Nagra)
  */
 public class CajolingServiceResult implements IsSerializable {
   private String html;
   private String javascript;
   private String[] messages;
-  
-  public CajolingServiceResult() {}
-  
-  public CajolingServiceResult(String html, String javascript, 
+
+  public CajolingServiceResult() {
+    // Provided for deserialization.
+  }
+
+  public CajolingServiceResult(String html, String javascript,
       String[] messages) {
     this.html = html;
     this.javascript = javascript;
     this.messages = messages;
   }
-  
+
   public String getHtml() {
     return html;
   }

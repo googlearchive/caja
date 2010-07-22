@@ -273,15 +273,15 @@ final class Renderer {
         Element el = (Element) node;
         out.append('<');
         int tagNameStart = out.length();
-        boolean addElNs;
+        boolean addElNs = false;
         Namespaces elNs;
         {
           String nsUri = el.getNamespaceURI();
           if (nsUri == null) { nsUri = HTML_NS; }
           elNs = ns.forUri(nsUri);
-          addElNs = elNs == null;
-          if (addElNs) {
+          if (elNs == null) {
             elNs = ns = addNamespace(ns, nsUri);
+            addElNs = true;
           }
         }
         if (elNs.prefix.length() != 0) {

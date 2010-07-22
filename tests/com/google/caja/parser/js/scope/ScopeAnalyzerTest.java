@@ -671,7 +671,7 @@ public class ScopeAnalyzerTest extends CajaTestCase {
       emit("exitScope at " + scope.depth);
     }
 
-    public void inScope(AncestorChain<?> ac, TestScope scope) {}
+    public void inScope(AncestorChain<?> ac, TestScope scope) { /* noop */ }
 
     public void masked(
         AncestorChain<Identifier> id, TestScope narrower, TestScope wider) {

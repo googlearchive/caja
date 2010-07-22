@@ -60,7 +60,7 @@ public class TextRuleDoclet extends RuleDoclet {
 
   /** @param out unused. */
   @Override
-  public void finish(Writer out) {}
+  public void finish(Writer out) { /* noop */ }
 
   public static void main(String[] args) throws IOException {
     TextRuleDoclet trd = new TextRuleDoclet();

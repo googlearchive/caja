@@ -65,5 +65,5 @@ public class GenRuleAntTask extends AbstractCajaAntTask {
   public void setUnless(boolean cond) { this.unless = cond; }
 
   @Override
-  Output makeOutput() { return new Output() {}; }
+  Output makeOutput() { return new Output() { /* concrete */ }; }
 }

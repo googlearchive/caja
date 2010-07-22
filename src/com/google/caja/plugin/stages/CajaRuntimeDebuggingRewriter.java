@@ -277,6 +277,7 @@ final class CajaRuntimeDebuggingRewriter extends Rewriter {
           if (childPos.startCharInFile() < start.startCharInFile()) {
             start = childPos;
           }
+          assert end != null;  // end == null implies start == null above
           if (childPos.endCharInFile() > end.endCharInFile()) {
             end = childPos;
           }

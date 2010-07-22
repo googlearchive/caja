@@ -51,7 +51,9 @@ final class FileSystemUriPolicy implements UriPolicy {
       URI self = u.getReferencePosition().source().getUri();
       String uristr = self.relativize(uri).toString();
       if (uristr.startsWith("#")) { return uristr; }
-    } catch (URISyntaxException e) { }
+    } catch (URISyntaxException e) {
+      // return null below
+    }
 
     // denied
     return null;

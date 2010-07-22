@@ -139,7 +139,7 @@ public class RewriterTest extends RewriterTestCase {
   }
 
   public final void testUnmatchedThrowsError() throws Exception {
-    setRewriter(new Rewriter(mq, true, true) {});  // No rules
+    setRewriter(new Rewriter(mq, true, true) { /* concrete */ });  // No rules
     checkAddsMessage(
         js(fromString("3;")),
         RewriterMessageType.UNMATCHED_NODE_LEFT_OVER,

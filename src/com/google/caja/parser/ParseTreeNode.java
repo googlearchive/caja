@@ -104,5 +104,5 @@ public interface ParseTreeNode extends MessagePart, Renderable, Cloneable {
   @Documented
   @Retention(RetentionPolicy.RUNTIME)
   @Target(ElementType.CONSTRUCTOR)
-  public @interface ReflectiveCtor { }
+  public @interface ReflectiveCtor { /* no properties */ }
 }

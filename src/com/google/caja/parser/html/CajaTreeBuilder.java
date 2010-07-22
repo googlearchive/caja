@@ -180,10 +180,6 @@ final class CajaTreeBuilder extends TreeBuilder<Node> {
         ? sibling.getPreviousSibling()
         : parent.getLastChild();
 
-    FilePosition pos = null;
-    String htmlText = null;
-    String plainText;
-
     String tokText;
     Token<HtmlTokenType> tok = pendingText;
     pendingText = null;
@@ -193,23 +189,25 @@ final class CajaTreeBuilder extends TreeBuilder<Node> {
       tokText = String.valueOf(buf, start, length);
     }
 
-    switch (tok != null ? tok.type : HtmlTokenType.IGNORABLE) {
-      case TEXT:
-        pos = tok.pos;
-        htmlText = tokText;
-        plainText = Nodes.decode(htmlText);
-        break;
-      case UNESCAPED: case CDATA:
-        pos = tok.pos;
-        plainText = htmlText = tokText;
-        break;
-      default:
-        pos = startTok.pos;
-        plainText = tokText;
-        if (needsDebugData) {
-          htmlText = Nodes.encode(plainText);
-        }
-        break;
+    FilePosition pos = startTok.pos;
+    String htmlText = null;
+    String plainText = tokText;
+    if (tok != null) {
+      switch (tok.type) {
+        case TEXT:
+          pos = tok.pos;
+          htmlText = tokText;
+          plainText = Nodes.decode(htmlText);
+          break;
+        case UNESCAPED: case CDATA:
+          pos = tok.pos;
+          plainText = htmlText = tokText;
+          break;
+        default: break;
+      }
+    }
+    if (needsDebugData && htmlText == null) {
+      htmlText = Nodes.encode(plainText);
     }
 
     if (priorSibling != null && priorSibling.getNodeType() == Node.TEXT_NODE) {

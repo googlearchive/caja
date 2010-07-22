@@ -33,7 +33,7 @@ public class HostIframeTest extends BrowserTestCase {
   @Override
   protected void driveBrowser(final WebDriver driver, final String pageName) {
     poll(10000, 200, new Check() {
-      public String toString() { return "startup"; }
+      @Override public String toString() { return "startup"; }
       public boolean run() {
         List<WebElement> readyElements = driver.findElements(
             By.xpath("//*[@class='readytotest']"));
@@ -42,7 +42,7 @@ public class HostIframeTest extends BrowserTestCase {
     });
 
     poll(15000, 1000, new Check() {
-      public String toString() { return "completion"; }
+      @Override public String toString() { return "completion"; }
       public boolean run() {
         return driver.getTitle().contains("all tests passed");
       }

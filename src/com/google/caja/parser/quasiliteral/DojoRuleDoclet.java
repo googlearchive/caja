@@ -44,6 +44,7 @@ public class DojoRuleDoclet extends RuleDoclet {
 
   @Override
   public void generateHeader(Writer output, RulesetDescription ruleSet) {
+    // no header
   }
 
   @Override

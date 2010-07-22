@@ -49,5 +49,5 @@ public class InnocentAntTask extends AbstractCajaAntTask {
   }
 
   @Override
-  Output makeOutput() { return new Output() {}; }
+  Output makeOutput() { return new Output() { /* concrete */ }; }
 }

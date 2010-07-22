@@ -124,7 +124,7 @@ public interface OpenElementStack {
       return new XmlElementStack(doc, ns, needsDebugData, mq);
     }
 
-    private Factory() {}
+    private Factory() { /* no zero-argument ctor */ }
   }
 }
 

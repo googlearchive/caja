@@ -66,6 +66,5 @@ public class ReservedNames {
   /** An output buffer for a compiled template. */
   public static final String OUTPUT_BUFFER = "out___";
 
-  private ReservedNames() {
-  }
+  private ReservedNames() { /* uninstantiable */ }
 }

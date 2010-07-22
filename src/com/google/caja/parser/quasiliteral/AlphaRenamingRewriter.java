@@ -91,9 +91,9 @@ final class AlphaRenamingRewriter extends Rewriter {
           } else if (node instanceof FunctionDeclaration) {
             fc = ((FunctionDeclaration) node).getInitializer();
           } else {
-            fc = null;
+            return NONE;
           }
-          Map<String, ParseTreeNode> bindings = fc != null ? match(fc) : null;
+          Map<String, ParseTreeNode> bindings = match(fc);
           if (bindings != null) {
             boolean isDeclaration = fc != node;
             NameContext<String, ?> context = contexts.get(scope);

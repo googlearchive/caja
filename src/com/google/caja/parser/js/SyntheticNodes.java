@@ -78,5 +78,5 @@ public final class SyntheticNodes {
     return t;
   }
 
-  private SyntheticNodes() {}
+  private SyntheticNodes() { /* uninstantiable */ }
 }

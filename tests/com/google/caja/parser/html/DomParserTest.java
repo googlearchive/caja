@@ -231,7 +231,7 @@ public class DomParserTest extends CajaTestCase {
       assertEquals(config, DOM2_HTML_RENDERED_GOLDEN, Nodes.render(document));
     }
   }
-  
+
   public final void testParseFirstLineComment() throws Exception {
     String DOM_WITH_COMMENT = "<!-- This is a comment -->\n" + DOM2_HTML;
     TokenQueue<HtmlTokenType> tq = tokenizeTestInput(
@@ -239,7 +239,7 @@ public class DomParserTest extends CajaTestCase {
     Element el = new DomParser(tq, false, mq).parseDocument();
     assertEquals(DOM2_HTML_RENDERED_GOLDEN, Nodes.render(el));
   }
-  
+
   public final void testParseLastLineComment() throws Exception {
     String DOM_WITH_COMMENT = DOM2_HTML + "<!-- This is a comment -->";
     TokenQueue<HtmlTokenType> tq = tokenizeTestInput(
