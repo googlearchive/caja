@@ -20,7 +20,7 @@ import logging
 import re
 
 # config
-cajaServer = "http://localhost:8080/"
+cajaServer = "http://caja.appspot.com/"
 memcacheNamespace = "cajoled"
 
 # constants
