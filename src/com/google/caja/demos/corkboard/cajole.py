@@ -20,13 +20,14 @@ import logging
 import re
 
 # config
-cajaServer = "http://caja.appspot.com/"
+cajaServer = "http://localhost:8080/"
 memcacheNamespace = "cajoled"
 
 # constants
 cajoleRequestURL = cajaServer + "cajole?input-mime-type=text/html" \
                                     + "&output-mime-type=application/json"
 dummyModule = "___.loadModule({'instantiate': function () {}})"
+requestBodyEncoding = "utf-8"
 
 def cajolingErrorModule(e):
   """Given a HTTP 400 error (as presented by urllib2), return a cajoling-result
@@ -50,7 +51,7 @@ def cajole(html):
   if html == "":
     # workaround for http://code.google.com/p/google-caja/issues/detail?id=1248
     return {"html": "", "js": dummyModule}
-  hash = hashlib.sha1(html)
+  hash = hashlib.sha1(html.encode("utf-8"))
   key = hash.digest()
   value = memcache.get(key, namespace=memcacheNamespace)
   if value is None:
@@ -62,9 +63,9 @@ def cajole(html):
         # latency.
         result = urllib2.urlopen(urllib2.Request(
           cajoleRequestURL,
-          html,
+          html.encode(requestBodyEncoding),
           {
-            "Content-Type": "text/html",
+            "Content-Type": "text/html;charset="+requestBodyEncoding,
             "Accept": "application/json",
           }))
         value = json.load(result)
