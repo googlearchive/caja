@@ -22,6 +22,8 @@ import re
 # config
 cajaServer = "http://caja.appspot.com/"
 memcacheNamespace = "cajoled"
+timeToCacheErrors = 120
+timeToCacheTimeouts = 10
 
 # constants
 cajoleRequestURL = cajaServer + "cajole?input-mime-type=text/html" \
@@ -57,6 +59,7 @@ def cajole(html):
   if value is None:
     logging.debug("Cache miss (HTML sha1 " + hash.hexdigest() +
                   "); invoking cajoler.")
+    cacheTime = 0 # forever
     try:
       try:
         # TODO(kpreid): Use URL Fetch async requests for parallelism/network
@@ -77,23 +80,37 @@ def cajole(html):
         else:
           raise
       except urlfetch.DownloadError, e:
-        logging.exception("Error in invoking cajoler (matched DownloadError).")
-        # TODO(kpreid): complain to app engine about detecting timeout vs.
-        # network errors, and that this isn't a urllib2 error
-        return {
-          "html": "<strong>(Error contacting Caja service)</strong>",
-          "js": dummyModule,
-          "error": True
-        }
+        if len(e.args) == 1 \
+             and isinstance(e.args[0], str) \
+             and "timed out" in e.args[0]:
+          # TODO(kpreid): complain to app engine about not being able to
+          # distinguish this properly.
+          logging.exception("Timeout invoking cajoler.")
+          # don't cache timeouts because the next try might work
+          cacheTime = timeToCacheTimeouts
+          value = {
+            "html": "<strong>(Timeout contacting Caja service)</strong>",
+            "js": dummyModule,
+            "error": True
+          }
+        else:
+          logging.exception("Error in invoking cajoler (matched DownloadError).")
+          cacheTime = timeToCacheErrors
+          value = {
+            "html": "<strong>(Error contacting Caja service)</strong>",
+            "js": dummyModule,
+            "error": True
+          }
     except Exception, e:
       logging.exception("Error in invoking cajoler.")
       # don't put in cache, might be a transient error
       # TODO(kpreid): when not debugging, DO put in cache with a shorter timeout
       # for high-load handling
-      return {
+      cacheTime = timeToCacheErrors
+      value = {
         "html": "<strong>(Unexpected Caja error)</strong>", 
         "js": dummyModule,
         "error": True
       }
-    memcache.add(key, value, namespace=memcacheNamespace)
+    memcache.add(key, value, time=cacheTime, namespace=memcacheNamespace)
   return value
