@@ -34,18 +34,40 @@ body > * {
 
 /* --- Postings ------------------------------------------------------------- */
 
-/* generates 3-column layout */
 .posting {
-  min-width: 20em;
-  /* width = 100% / (# of columns) - (2*margin + 2*padding + fudge factor) */
-  width: 27.33%;
-  margin: 1.2em 2.5%;
   padding: 0.5%;
-  float: left;
 }
+
+/* the only/and notation is CSS Media Query because Android/iPhone browsers
+   call themselves 'screen' so asking 'handheld' doesn't help. Anyway, the
+   condition we really care about is 'will two columns fit?' */
+@media screen, projection, print, only screen and (min-device-width: 50em) {
+  /* generates up-to-3-column layout */
+  .posting {
+    min-width: 20em;
+    /* width = 100% / (# of columns) - (2*margin + 2*padding + fudge factor) */
+    width: 27.33%;
+    margin: 1.2em 2.5%;
+    float: left;
+  }
+}
+@media handheld, tv, tty, only screen and (max-device-width: 50em) {
+  .posting {
+    min-width: 0;
+    width: auto;
+    margin: 5% 2.5%;
+    float: none;
+  }
+}
+
 .posting.cajoling-error {
-  background: red;
-  color: white;
+  background: #C7B4B4;
+  color: black;
+}
+body > .posting.cajoling-error {
+  box-shadow:         0 0.23em 1em #F00; /* CSS3 */
+  -moz-box-shadow:    0 0.23em 1em #F00;
+  -webkit-box-shadow: 0 0.23em 1em #F00;
 }
 .posting.cajoling-error pre {
   white-space: pre-wrap;
