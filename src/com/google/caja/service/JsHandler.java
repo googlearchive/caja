@@ -34,6 +34,7 @@ import com.google.caja.parser.quasiliteral.CajitaRewriter;
 import com.google.caja.parser.quasiliteral.DefaultValijaRewriter;
 import com.google.caja.parser.quasiliteral.QuasiBuilder;
 import com.google.caja.parser.quasiliteral.Rewriter;
+import com.google.caja.parser.quasiliteral.SESRewriter;
 import com.google.caja.reporting.BuildInfo;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
@@ -102,20 +103,26 @@ public class JsHandler extends AbstractCajolingHandler {
       JsTokenQueue tq = new JsTokenQueue(new JsLexer(cp), is);
       Block input = new Parser(tq, mq).parse();
       tq.expectEmpty();
-
-      Rewriter vrw = new DefaultValijaRewriter(mq, false /* logging */);
-      Rewriter crw = new CajitaRewriter(buildInfo, mq, false /* logging */);
       UncajoledModule ucm = new UncajoledModule(input);
-      if (transform == null ||
-          (transform.equals(CajolingService.Transform.CAJOLE) &&
-              directive.contains(CajolingService.Directive.CAJITA))) {
-        output.append(renderJavascript(
-          (CajoledModule) crw.expand(ucm),
-          moduleCallback));
+      if (!directive.contains(CajolingService.Directive.SES)) {
+        Rewriter vrw = new DefaultValijaRewriter(mq, false /* logging */);
+        Rewriter crw = new CajitaRewriter(buildInfo, mq, false /* logging */);
+        if (transform == null ||
+            (transform.equals(CajolingService.Transform.CAJOLE) &&
+            directive.contains(CajolingService.Directive.CAJITA))) {
+          output.append(renderJavascript(
+              (CajoledModule) crw.expand(ucm),
+              moduleCallback));
+        } else {
+          output.append(renderJavascript(
+              (CajoledModule) crw.expand(vrw.expand(ucm)),
+              moduleCallback)); 
+        }
       } else {
+        Rewriter srw = new SESRewriter(buildInfo, mq, false /* logging */);
         output.append(renderJavascript(
-          (CajoledModule) crw.expand(vrw.expand(ucm)),
-          moduleCallback));
+            (CajoledModule) srw.expand(ucm),
+            moduleCallback));
       }
     } catch (ParseException e) {
       e.toMessageQueue(mq);

@@ -145,6 +145,9 @@ public final class Config {
       "pg", "goals",
       "Space separated properties as described in help text.", true);
 
+  private final Option SES = defineBooleanOption(
+      "ses", "ses", "Set to use SES translation instead of valija/cajita.");
+  
   public enum SourceRenderMode {
     MINIFY,
     PRETTY,
@@ -175,6 +178,7 @@ public final class Config {
   private Planner.PlanState posGoals = Planner.EMPTY;
   private Planner.PlanState negPreconds = Planner.EMPTY;
   private Planner.PlanState posPreconds = Planner.EMPTY;
+  private boolean ses;
 
   public Config(Class<?> mainClass, PrintStream stderr, String usageText) {
     this(mainClass, new PrintWriter(stderr), usageText);
@@ -234,6 +238,8 @@ public final class Config {
   public Planner.PlanState preconditions(Planner.PlanState ps) {
     return ps.without(negPreconds).with(posPreconds);
   }
+
+  public boolean getSES() { return ses; }
 
   public boolean processArguments(String[] argv) {
     try {
@@ -371,6 +377,7 @@ public final class Config {
       }
 
       boolean debugMode = cl.hasOption(DEBUG_MODE.getOpt());
+      ses = cl.hasOption(SES.getOpt());
       boolean onlyJsEmitted = cl.hasOption(ONLY_JS_EMITTED.getOpt());
       if (debugMode) {
         negGoals = negGoals.with(PipelineMaker.ONE_CAJOLED_MODULE);

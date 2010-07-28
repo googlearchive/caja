@@ -58,7 +58,7 @@ public final class ValidateJavascriptStage implements Pipeline.Stage<Jobs> {
       URI baseUri = job.getBaseUri();
       Statement s = (Statement) job.getRoot();
       ParseTreeNode result = new ExpressionSanitizerCaja(mgr, baseUri)
-          .sanitize(uncajoledModule(s));
+          .sanitize(uncajoledModule(s), jobs.getPluginMeta().getEnableSES());
       if (!(result instanceof CajoledModule)) {
         // Rewriter failed to rewrite so returned its input.
         // There should be details on the message queue.

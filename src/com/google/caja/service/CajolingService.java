@@ -234,7 +234,8 @@ public class CajolingService {
 
   public static enum Directive {
     CAJITA,
-    STRICT;
+    STRICT,
+    SES;
   }
 
   public static enum Transform {

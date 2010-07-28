@@ -25,6 +25,7 @@ import com.google.caja.parser.quasiliteral.IllegalReferenceCheckRewriter;
 import com.google.caja.parser.quasiliteral.ModuleManager;
 import com.google.caja.parser.quasiliteral.NonAsciiCheckVisitor;
 import com.google.caja.parser.quasiliteral.Rewriter;
+import com.google.caja.parser.quasiliteral.SESRewriter;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.MessageLevel;
 
@@ -43,6 +44,10 @@ public class ExpressionSanitizerCaja {
   }
 
   public ParseTreeNode sanitize(ParseTreeNode input) {
+    return sanitize(input, false);
+  }
+
+  public ParseTreeNode sanitize(ParseTreeNode input, boolean useSES) {
     MessageQueue mq = mgr.getMessageQueue();
     ParseTreeNode result = null;
     if (input instanceof UncajoledModule) {
@@ -55,11 +60,15 @@ public class ExpressionSanitizerCaja {
         result = input;
       }
     }
-    if (result == null) {
-      result = newValijaRewriter(mq).expand(input);
-    }
-    if (!mq.hasMessageAtLevel(MessageLevel.ERROR)) {
-      result = newCajitaRewriter(mgr).expand(result);
+    if (useSES) {
+      result = newSESRewriter(mq).expand(input);
+    } else {
+      if (result == null) {
+        result = newValijaRewriter(mq).expand(input);
+      }
+      if (!mq.hasMessageAtLevel(MessageLevel.ERROR)) {
+        result = newCajitaRewriter(mgr).expand(result);
+      }
     }
     if (!mq.hasMessageAtLevel(MessageLevel.ERROR)) {
       result = new IllegalReferenceCheckRewriter(mq, false).expand(result);
@@ -75,6 +84,10 @@ public class ExpressionSanitizerCaja {
     return new CajitaRewriter(baseUri, mgr, false);
   }
 
+  protected Rewriter newSESRewriter(MessageQueue mq) {
+    return new SESRewriter(baseUri, mgr, false);
+  }
+  
   protected Rewriter newValijaRewriter(MessageQueue mq) {
     return new DefaultValijaRewriter(mq, false);
   }

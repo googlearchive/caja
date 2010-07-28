@@ -28,6 +28,7 @@ public final class PluginMeta {
    * they can avoid overlaps.
    */
   private String idClass;
+  private boolean enableSES;
 
   public PluginMeta() {
     this(UriFetcher.NULL_NETWORK, UriPolicy.DENY_ALL);
@@ -63,4 +64,11 @@ public final class PluginMeta {
   public String getIdClass() { return idClass; }
 
   public void setIdClass(String idClass) { this.idClass = idClass; }
+
+  /**
+   * Tells the cajoler to use the new SES translator instead of the old
+   * cajita / valija translator.
+   */
+  public boolean getEnableSES() { return enableSES; }
+  public void setEnableSES(boolean enableSES) { this.enableSES = enableSES; }
 }
