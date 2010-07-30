@@ -1597,6 +1597,8 @@ jsunitRegister('testSpecialStyleNames',
 jsunitRegister('testReadOnlyNotEditable',
                function testReadOnlyNotEditable() {
   function $(id) { return documentRO.getElementById(id); }
+  assertEquals("I am indelible", $('indelible').innerHTML);
+      // test we can access it and aren't just failing unconditionally
   expectFailure(
       function () {
         documentRO.createElement('SPAN');

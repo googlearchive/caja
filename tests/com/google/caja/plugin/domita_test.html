@@ -457,8 +457,8 @@
       // Create a readonly mirror of document so that we can test that mutations
       // fail when they should.
       var documentHolder = isValija ? testImports.outers : testImports;
-      documentHolder.documentRO = new testImports.TameHTMLDocument___(
-          document, testDomContainer, false);
+      cajita.setPub(documentHolder, "documentRO",
+        new testImports.TameHTMLDocument___(document, testDomContainer, false));
 
       testImports.htmlEmitter___ = new HtmlEmitter(
           testDomContainer, testImports.document);
