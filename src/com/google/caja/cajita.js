@@ -4202,7 +4202,14 @@ var safeJSON;
       var x = json.stringify({"a":3, "b__":4}, function replacer(k, v) {
         return (/__$/.test(k) ? void 0 : v);
       });
-      return x === '{"a":3}';
+      if (x !== '{"a":3}') {
+        return false;
+      }
+      // ie8 has a buggy JSON unless this update has been applied:
+      //   http://support.microsoft.com/kb/976662
+      // test for one of the known bugs.
+      x = json.stringify(void 0, 'invalid');
+      return x === void 0;
     } catch (e) {
       return false;
     }
