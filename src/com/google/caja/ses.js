@@ -238,10 +238,10 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
     // (t.FERAL_TWIN___ === f && hasOwnProp(t, 'FERAL_TWIN___')), then we
     // could decide to more delicately rely on this invariant and test
     // the backpointing rather than hasOwnProp below.
-    if (obj.TAMED_TWIN___ && hasOwnProp(obj, 'TAMED_TWIN___')) { 
+    if (obj.TAMED_TWIN___ && obj.hasOwnProperty___('TAMED_TWIN___')) { 
       throw new TypeError('Already tames to something: ', obj); 
     }
-    if (obj.FERAL_TWIN___ && hasOwnProp(obj, 'FERAL_TWIN___')) { 
+    if (obj.FERAL_TWIN___ && obj.hasOwnProperty___('FERAL_TWIN___')) { 
       throw new TypeError('Already untames to something: ', obj); 
     }
 
@@ -502,7 +502,7 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
    * partial set of arguments in <tt>var_args</tt>. Return the curried
    * result as a new function object.
    */
-    Function.prototype.bind = markFunc(function(self, var_args) {
+  Function.prototype.bind = markFunc(function(self, var_args) {
       var thisFunc = safeDis(this);
       var leftArgs = Array___.slice___(arguments, 1);
       function funcBound(var_args) {
@@ -526,8 +526,10 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
       return this.apply___(safeDis(dis), Array___.slice___(as));
     });
 
-  // Replace global, {@code undefined} and {@code null} by
-  // {@code USELESS} for use as {@code this}.
+  // Replace {@code undefined} and {@code null} by
+  // {@code USELESS} for use as {@code this}.  If dis is a global
+  // (which we try to detect by looking for the ___ property),
+  // then we throw an error (external hull breach).
   function safeDis(dis) {
     if (dis === null || dis === void 0) { return USELESS; }
     if (Type(dis) !== 'Object') { return dis; }
@@ -826,6 +828,10 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
 
   function isFunction(obj) {
     return Object___.prototype.toString___.call___(obj) === '[object Function]';
+  }
+
+  function isError(obj) {
+    return Object___.prototype.toString___.call___(obj) === '[object Error]';
   }
 
   function allEnumKeys(obj) {
@@ -1615,7 +1621,7 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
         case 'object': {
           if (ex === null) { return null; }
           if (ex.throwable___) { return ex; }
-          if (({}).toString.call(ex) === '[object Error]') {
+          if (isError(ex)) {
             return freeze(ex);
           }
           return '' + ex;
@@ -2327,11 +2333,6 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
   /**
    * Creates a well formed SES record from a list of alternating
    * keys and values. 
-   * <p>
-   * The translator translates SES object literals into calls to
-   * {@code initializeMap} so that a potentially toxic function
-   * cannot be made the {@code toString} property of even a temporary
-   * object. 
    */
   function initializeMap(list) {
     var result = {};
@@ -2352,6 +2353,7 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
             });
       }
     }
+    return result;
   }
 
   // 11.2.3
@@ -2544,28 +2546,20 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
   Object.getPrototypeOf___ = Object.getPrototypeOf;
 
   // 15.2.3.3
-  function getOwnPropertyDescriptor(obj, P) {
-    // 1. If Type(object) is not Object throw a TypeError exception. 
-    if (Type(obj) !== 'Object') {
-      throw new TypeError('Expected an object.');
-    }
-    // 2. Let name be ToString(P).
-    var name = '' + P;
-    // 3. Let desc be the result of calling the [[GetOwnProperty]]
-    //    internal method of obj with argument name.
-    var desc = obj.GetOwnProperty___(name);
-    // 4. Return the result of calling FromPropertyDescriptor(desc).
-    return FromPropertyDescriptor(desc);
-  }
-  var guestGetOwnPropertyDescriptor = getOwnPropertyDescriptor;
+  Object.getOwnPropertyDescriptor = function(obj, P) {
+      // 1. If Type(object) is not Object throw a TypeError exception. 
+      if (Type(obj) !== 'Object') {
+        throw new TypeError('Expected an object.');
+      }
+      // 2. Let name be ToString(P).
+      var name = '' + P;
+      // 3. Let desc be the result of calling the [[GetOwnProperty]]
+      //    internal method of obj with argument name.
+      var desc = obj.GetOwnProperty___(name);
+      // 4. Return the result of calling FromPropertyDescriptor(desc).
+      return FromPropertyDescriptor(desc);
+    };
 
-  Object.DefineOwnProperty___('getOwnPropertyDescriptor', {
-      get: function() { return guestGetOwnPropertyDescriptor; },
-      set: function(newValue) { guestGetOwnPropertyDescriptor = newValue; },
-      enumerable: false,
-      configurable: false
-    });
-  
   // 15.2.3.4
   Object.getOwnPropertyNames = ownKeys;
 
@@ -2851,7 +2845,7 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
 
   // 15.2.4.4
   markFunc(Object.prototype.valueOf);
-  Object.prototype.DefineOwnProperty('valueOf', {
+  Object.prototype.DefineOwnProperty___('valueOf', {
       get: markFunc(function () {
           return this.valueOf.orig___ ? this.valueOf.orig___ : this.valueOf;
         }),
@@ -2881,7 +2875,7 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
 
   // 15.2.4.7
   Object.prototype.propertyIsEnumerable = function (V) {
-      return isEnumerable(this, String___(V));
+      return isEnumerable(this, '' + V);
     };
 
   // 15.2.4.3, 5--7
@@ -2909,19 +2903,30 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
   freeze(Object.prototype);
 
   // 15.3 Function
+  var FakeFunction = function () {
+      throw new
+          Error('Internal: FakeFunction should not be directly invocable.');
+    };
+
+  FakeFunction.toString = (function (str) { 
+      return function () {
+          return str;
+        };
+    })(Function.toString());
 
   // 15.3.1
-  Function.f___ = markFunc(function() {
+  Function.f___ = FakeFunction.f___ = markFunc(function() {
       throw new Error('Invoking the Function constructor is unsupported.');
     });
 
   // 15.3.2
-  Function.new___ = markFunc(function () {
+  Function.new___ = FakeFunction.new___ = markFunc(function () {
       throw new Error('Constructing functions dynamically is unsupported.');
     });
 
   // 15.3.3.1
-  Function.DefineOwnProperty___('prototype', {
+  FakeFunction.DefineOwnProperty___('prototype', {
+      value: Function.prototype,
       writable: false,
       enumerable: false,
       configurable: false
@@ -2929,6 +2934,7 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
 
   // 15.3.4.1
   Function.prototype.DefineOwnProperty___('constructor', {
+      value: FakeFunction,
       writable: true,
       enumerable: false,
       configurable: false
@@ -2939,6 +2945,7 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
 
   // 15.3.4.3
   Function.prototype.DefineOwnProperty___('call', {
+      value: Function.prototype.call,
       writable: true,
       enumerable: false,
       configurable: true
@@ -2946,6 +2953,7 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
 
   // 15.3.4.4
   Function.prototype.DefineOwnProperty___('apply', {
+      value: Function.prototype.apply,
       writable: true,
       enumerable: false,
       configurable: true
@@ -2953,6 +2961,7 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
 
   // 15.3.4.5
   Function.prototype.DefineOwnProperty___('bind', {
+      value: Function.prototype.bind,
       writable: true,
       enumerable: false,
       configurable: true
@@ -2964,7 +2973,8 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
   markFunc(Array);
 
   // 15.4.3.1
-  Array.DefineOwnProperty('prototype', {
+  Array.DefineOwnProperty___('prototype', {
+      value: Array.prototype,
       writable: false,
       enumerable: false,
       configurable: false
@@ -2974,7 +2984,8 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
   Array.isArray = markFunc(function (obj) {
       return Object___.prototype.toString___.call___(obj) === '[object Array]';
     });
-  Array.DefineOwnProperty('isArray', {
+  Array.DefineOwnProperty___('isArray', {
+      value: Array.isArray,
       writable: true,
       enumerable: false,
       configurable: true
@@ -2982,6 +2993,7 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
 
   // 15.4.4.1
   Array.prototype.DefineOwnProperty___('constructor', {
+      value: Array.prototype.constructor,
       writable: true,
       enumerable: false,
       configurable: false
@@ -3049,11 +3061,13 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
       return -1;
     };
 
-  // For protecting against inner hull breaches.
-  // We don't want cajoled code to be able to use {@code sort} to invoke a
-  // toxic function as a comparator, for instance.
+  // For protecting methods that use the map-reduce API against
+  // inner hull breaches. For example, we don't want cajoled code
+  // to be able to use {@code every} to invoke a toxic function as
+  // a filter, for instance.
+  //
   // {@code createOrWrap} assumes that the function expects
-  // - a function {@code block} to use (like the comparator in {@code sort})
+  // - a function {@code block} to use (like the filter in {@code every})
   // - an optional object {@code thisp} to use as {@code this}
   // It wraps {@code block} in a function that invokes its taming.
   function createOrWrap(obj, name, fun) {
@@ -3065,11 +3079,12 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
       obj[name] = (function (orig) {
           return function (block) { //, thisp
               var a = Array___.slice___(arguments, 0);
-              a[0] = (function(origBlock){
-                  return markFunc(function(var_args) {
-                      return origBlock.f___(this, arguments);
-                    });
-                })(block);
+              // Replace block with the taming of block
+              a[0] = markFunc(function(var_args) {
+                  return block.f___(this, arguments);
+                });
+              // Invoke the original function on the tamed
+              // {@code block} and optional {@code thisp}.
               return orig.apply___(this, a);
             };
         })(obj[name]);
@@ -3234,6 +3249,7 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
       if (Array.prototype[name]) {
         markFunc(Array.prototype[name]);
         Array.prototype.DefineOwnProperty___(name, {
+            value: Array.prototype[name],
             writable: true,
             enumerable: false,
             configurable: true
@@ -3248,11 +3264,17 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
   markFunc(String);
 
   // 15.5.3.1
-  grantValue(String, 'prototype');
+  String.DefineOwnProperty___('prototype', {
+      value: String.prototype,
+      writable: false,
+      enumerable: false,
+      configurable: false
+    });
 
   // 15.5.3.
   markFunc(String.fromCharCode);
   String.DefineOwnProperty___('fromCharCode', {
+      value: String.fromCharCode,
       writable: true,
       enumerable: false,
       configurable: true
@@ -3260,6 +3282,7 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
 
   // 15.5.4.1
   String.prototype.DefineOwnProperty___('constructor', {
+      value: String.prototype.constructor,
       writable: true,
       enumerable: false,
       configurable: false
@@ -3289,7 +3312,7 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
   function tameStringRegExp(orig) {
     return markFunc(function (regexp) {
         var cast = enforceMatchable(regexp);
-        return orig.call___(this, cast ? String___(regexp) : regexp);
+        return orig.call___(this, cast ? ('' + regexp) : regexp);
       });
   }
 
@@ -3304,11 +3327,11 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
       if (isFunction(replacement)) {
         replacement = asFirstClass(replacement);
       } else {
-        replacement = String___(replacement);
+        replacement = '' + replacement;
       }
       return String___.prototype.replace___.call___(
           this, 
-          cast ? String___(searcher) : searcher, 
+          cast ? ('' + searcher) : searcher, 
           replacement
         );
     });
@@ -3318,7 +3341,7 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
   var trimBeginRegexp = /^\s\s*/;
   var trimEndRegexp = /\s\s*$/;
   String.prototype.trim = function () {
-      return String___(this).
+      return ('' + this).
           replace___(trimBeginRegexp, '').
           replace___(trimEndRegexp, '');
     };
@@ -3346,6 +3369,7 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
     for (i = 0; i < len; ++i) {
       markFunc(String.prototype[methods[i]]);
       String.prototype.DefineOwnProperty___(methods[i], {
+          value: String.prototype[methods[i]],
           writable: true,
           enumerable: false,
           configurable: true
@@ -3359,8 +3383,8 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
   markFunc(Boolean);
 
   // 15.6.3.1
-  grantValue(Boolean, 'prototype');
   Boolean.DefineOwnProperty___('prototype', {
+      value: Boolean.prototype,
       writable: false,
       enumerable: false,
       configurable: false
@@ -3368,6 +3392,7 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
 
   // 15.6.4.1
   Boolean.prototype.DefineOwnProperty___('constructor', {
+      value: Boolean.prototype.constructor,
       writable: true,
       enumerable: false,
       configurable: false
@@ -3384,13 +3409,14 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
         'prototype',
         'MAX_VALUE',
         'MIN_VALUE',
-        'NaN',
+        // 'NaN' is automatically readable since it's a numeric property
         'NEGATIVE_INFINITY',
         'POSITIVE_INFINITY'
       ];
     var i, len = props.length;
     for (i = 0; i < len; ++i) {
-      Number.DefineProperty___(props[i], {
+      Number.DefineOwnProperty___(props[i], {
+          value: Number[props[i]],
           writable: false,
           enumerable: false,
           configurable: false
@@ -3398,15 +3424,9 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
     }
   })();
 
-  // 15.7.4
-  Number.DefineProperty___('prototype', {
-      writable: false,
-      enumerable: false,
-      configurable: false
-    });
-
   // 15.7.4.1
-  Number.prototype.DefineProperty___('constructor', {
+  Number.prototype.DefineOwnProperty___('constructor', {
+      value: Number.prototype.constructor,
       writable: true,
       enumerable: false,
       configurable: false
@@ -3429,7 +3449,8 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
     var i, len = methods.length;
     for (i = 0; i < len; ++i) {
       markFunc(Number.prototype[methods[i]]);
-      Number.prototype.DefineProperty___(methods[i], {
+      Number.prototype.DefineOwnProperty___(methods[i], {
+          value: Number.prototype[methods[i]],
           writable: true,
           enumerable: false,
           configurable: true
@@ -3453,7 +3474,8 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
       ];
     var i, len = props.length;
     for (i = 0; i < len; ++i) {
-      Math.DefineProperty___(props[i], {
+      Math.DefineOwnProperty___(props[i], {
+          value: Math[props[i]],
           writable: false,
           enumerable: false,
           configurable: false
@@ -3486,7 +3508,8 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
     var i, len = methods.length;
     for (i = 0; i < len; ++i) {
       markFunc(Math[methods[i]]);
-      Math.DefineProperty___(methods[i], {
+      Math.DefineOwnProperty___(methods[i], {
+          value: Math[methods[i]],
           writable: true,
           enumerable: false,
           configurable: true
@@ -3502,14 +3525,15 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
   markFunc(Date);
 
   // 15.9.4.1
-  Date.DefineProperty___('prototype', {
+  Date.DefineOwnProperty___('prototype', {
+      value: Date.prototype,
       writable: false,
       enumerable: false,
       configurable: false
     });
 
   // 15.9.4.2--4
-  (function (){
+  (function () {
     var staticMethods = [
         'parse',
         'UTC',
@@ -3518,7 +3542,8 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
     var i, len = staticMethods.length;
     for (i = 0; i < len; ++i) {
       markFunc(Date[staticMethods[i]]);
-      Date.DefineProperty___(staticMethods[i], {
+      Date.DefineOwnProperty___(staticMethods[i], {
+          value: Date[staticMethods[i]],
           writable: true,
           enumerable: false,
           configurable: true
@@ -3527,7 +3552,8 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
   })();
 
   // 15.9.5.1
-  Date.prototype.DefineProperty___('constructor', {
+  Date.prototype.DefineOwnProperty___('constructor', {
+      value: Date.prototype.constructor,
       writable: true,
       enumerable: false,
       configurable: false
@@ -3536,51 +3562,11 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
   // 15.9.5.2
   markFunc(Date.prototype.toString);
 
-  // 15.9.5.3
-  markFunc(Date.prototype.toDateString);
-  Date.prototype.DefineProperty___('toDateString', {
-      writable: true,
-      enumerable: false,
-      configurable: true
-    });
-
-  // 15.9.5.4
-  markFunc(Date.prototype.toTimeString);
-  Date.prototype.DefineProperty___('toTimeString', {
-      writable: true,
-      enumerable: false,
-      configurable: true
-    });
-
-  // 15.9.5.5
-  markFunc(Date.prototype.toLocaleString);
-  Date.prototype.DefineProperty___('toLocaleString', {
-      writable: true,
-      enumerable: false,
-      configurable: true
-    });
-
-  // 15.9.5.6
-  markFunc(Date.prototype.toLocaleDateString);
-  Date.prototype.DefineProperty___('toLocaleDateString', {
-      writable: true,
-      enumerable: false,
-      configurable: true
-    });
-
-  // 15.9.5.7
-  markFunc(Date.prototype.toLocaleTimeString);
-  Date.prototype.DefineProperty___('toLocaleTimeString', {
-      writable: true,
-      enumerable: false,
-      configurable: true
-    });
-
   // 15.9.5.8
   markFunc(Date.prototype.valueOf);
 
   // 15.9.5.9
-  Date.prototype.DefineProperty___('now', {
+  Date.prototype.DefineOwnProperty___('now', {
       value: markFunc(function () {
           return new Date().getTime();
         }),
@@ -3589,201 +3575,315 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
       configurable: true
     });
 
-  // 15.9.5.10
-  markFunc(Date.prototype.getFullYear);
-  Date.prototype.DefineProperty___('getFullYear', {
-      writable: true,
-      enumerable: false,
-      configurable: true
-    });
+  // 15.9.5.3--7, 10--44 (No UTC yet)
+  (function () {
+    var methods = [
+        'toDateString',
+        'toTimeString',
+        'toLocaleString',
+        'toLocaleDateString',
+        'toLocaleTimeString',
+        'getFullYear',
+        'getMonth',
+        'getDate',
+        'getDay',
+        'getHours',
+        'getMinutes',
+        'getSeconds',
+        'getMilliseconds',
+        'getTimezoneOffset',
+        'setFullYear',
+        'setMonth',
+        'setDate',
+        'setHours',
+        'setMinutes',
+        'setSeconds',
+        'setMilliseconds',
+        'toISOString',
+        'toJSON'
+      ];
+    for (var i = 0; i < methods.length; ++i) {
+      markFunc(Date.prototype[methods[i]]);
+      Date.prototype.DefineOwnProperty___(  {
+          value: Date.prototype[methods[i]],
+          writable: true,
+          enumerable: false,
+          configurable: true
+        });
+    }
+  })();
 
-  // 15.9.5.11
-  // TODO
+  ////////////////////////////////////////////////////////////////////////
+  // Module loading
+  ////////////////////////////////////////////////////////////////////////
 
-  // 15.9.5.12
-  markFunc(Date.prototype.getMonth);
-  Date.prototype.DefineProperty___('getMonth', {
-      writable: true,
-      enumerable: false,
-      configurable: true
-    });
+  var myNewModuleHandler;
 
-  // 15.9.5.13
-  // TODO
-  
-  // 15.9.5.14
-  markFunc(Date.prototype.getDate);
-  Date.prototype.DefineProperty___('getDate', {
-      writable: true,
-      enumerable: false,
-      configurable: true
-    });
+  /**
+   * Gets the current module handler.
+   */
+  function getNewModuleHandler() {
+    return myNewModuleHandler;
+  }
 
-  // 15.9.5.15
-  // TODO
+  /**
+   * Registers a new-module-handler, to be called back when a new
+   * module is loaded.
+   * <p>
+   * This callback mechanism is provided so that translated Cajita
+   * modules can be loaded from a trusted site with the
+   * &lt;script&gt; tag, which runs its script as a statement, not
+   * an expression. The callback is of the form
+   * <tt>newModuleHandler.handle(newModule)</tt>.
+   */
+  function setNewModuleHandler(newModuleHandler) {
+    myNewModuleHandler = newModuleHandler;
+  }
 
-  // 15.9.5.16
-  markFunc(Date.prototype.getDay);
-  Date.prototype.DefineProperty___('getDay', {
-      writable: true,
-      enumerable: false,
-      configurable: true
-    });
+  /**
+   * A new-module-handler which returns the new module without
+   * instantiating it.
+   */
+  var obtainNewModule = freeze({
+    handle: markFuncFreeze(function handleOnly(newModule){ return newModule; })
+  });
 
-  // 15.9.5.17
-  // TODO
+  /**
+   * Enable the use of Closure Inspector, nee LavaBug
+   */
+  function registerClosureInspector(module) {
+    if (this && this.CLOSURE_INSPECTOR___ 
+        && this.CLOSURE_INSPECTOR___.supportsCajaDebugging) {
+      this.CLOSURE_INSPECTOR___.registerCajaModule(module);
+    }
+  }
 
-  // 15.9.5.18
-  markFunc(Date.prototype.getHours);
-  Date.prototype.DefineProperty___('getHours', {
-      writable: true,
-      enumerable: false,
-      configurable: true
-    });
+  /**
+   * Makes a mutable copy of an object.
+   * <p>
+   * Even if the original is frozen, the copy will still be mutable.
+   * It does a shallow copy, i.e., if record y inherits from record x,
+   * ___.copy(y) will also inherit from x.
+   * Copies all whitelisted properties, not just enumerable ones.
+   * All resulting properties are writable, enumerable, and configurable.
+   */
+  function copy(obj) {
+    var result = Array___.isArray(obj) ? [] : {};
+    var keys = ownKeys(obj), len = keys.length;
+    for (var i = 0; i < len; ++i) {
+      var k = keys[i], v = obj[k];
+      if (isNumericName(k)) { result[k] = v; }
+      else {
+        result.DefineOwnProperty___(k, {
+            value: v,
+            writable: true,
+            enumerable: true,
+            configurable: true
+          });
+      }
+    }
+    return result;
+  }
 
-  // 15.9.5.19
-  // TODO
+  /**
+   * Makes and returns a fresh "normal" module handler whose imports
+   * are initialized to a copy of the sharedImports.
+   * <p>
+   * This handles a new module by calling it, passing it the imports
+   * object held in this handler. Successive modules handled by the
+   * same "normal" handler thereby see a simulation of successive
+   * updates to a shared global scope.
+   */
+  function makeNormalNewModuleHandler() {
+    var imports = void 0;
+    var lastOutcome = void 0;
+    function getImports() {
+      if (!imports) { imports = copy(sharedImports); }
+      return imports;
+    }
+    return freeze(initializeMap([
+      'getImports', markFuncFreeze(getImports),
+      'setImports', markFuncFreeze(function setImports(newImports) {
+          imports = newImports;
+        }),
 
-  // 15.9.5.20
-  markFunc(Date.prototype.getMinutes);
-  Date.prototype.DefineProperty___('getMinutes', {
-      writable: true,
-      enumerable: false,
-      configurable: true
-    });
+      /**
+       * An outcome is a pair of a success flag and a value.
+       * <p>
+       * If the success flag is true, then the value is the normal
+       * result of calling the module function. If the success flag is
+       * false, then the value is the thrown error by which the module
+       * abruptly terminated.
+       * <p>
+       * An html page is cajoled to a module that runs to completion,
+       * but which reports as its outcome the outcome of its last
+       * script block. In order to reify that outcome and report it
+       * later, the html page initializes moduleResult___ to
+       * NO_RESULT, the last script block is cajoled to set
+       * moduleResult___ to something other than NO_RESULT on success
+       * but to call handleUncaughtException() on
+       * failure, and the html page returns moduleResult___ on
+       * completion. handleUncaughtException() records a failed
+       * outcome. This newModuleHandler's handle() method will not
+       * overwrite an already reported outcome with NO_RESULT, so the
+       * last script-block's outcome will be preserved.
+       */
+      'getLastOutcome', markFuncFreeze(function getLastOutcome() {
+          return lastOutcome;
+        }),
 
-  // 15.9.5.21
-  // TODO
+      /**
+       * If the last outcome is a success, returns its value;
+       * otherwise <tt>undefined</tt>.
+       */
+      'getLastValue', markFuncFreeze(function getLastValue() {
+          if (lastOutcome && lastOutcome[0]) {
+            return lastOutcome[1];
+          } else {
+            return void 0;
+          }
+        }),
 
-  // 15.9.5.22
-  markFunc(Date.prototype.getSeconds);
-  Date.prototype.DefineProperty___('getSeconds', {
-      writable: true,
-      enumerable: false,
-      configurable: true
-    });
+      /**
+       * Runs the newModule's module function.
+       * <p>
+       * Updates the last outcome to report the module function's
+       * reported outcome. Propagate this outcome by terminating in
+       * the same manner.
+       */
+      'handle', markFuncFreeze(function handle(newModule) {
+          registerClosureInspector(newModule);
+          var outcome = void 0;
+          try {
+            var result = newModule.instantiate(___, getImports());
+            if (result !== NO_RESULT) {
+              outcome = [true, result];
+            }
+          } catch (ex) {
+            outcome = [false, ex];
+          }
+          lastOutcome = outcome;
+          if (outcome) {
+            if (outcome[0]) {
+              return outcome[1];
+            } else {
+              throw outcome[1];
+            }
+          } else {
+            return void 0;
+          }
+        }),
 
-  // 15.9.5.23
-  // TODO
+      /**
+       * This emulates HTML5 exception handling for scripts as discussed at
+       * http://code.google.com/p/google-caja/wiki/UncaughtExceptionHandling
+       * and see HtmlCompiler.java for the code that calls this.
+       * @param exception a raw exception.  Since {@code throw} can raise any
+       *   value, exception could be any value accessible to cajoled code, or
+       *   any value thrown by an API imported by cajoled code.
+       * @param onerror the value of the raw reference "onerror" in top level
+       *   cajoled code.  This will likely be undefined much of the time, but
+       *   could be anything.  If it is a func, it can be called with
+       *   three strings (message, source, lineNum) as the
+       *   {@code window.onerror} event handler.
+       * @param {string} source a URI describing the source file from which the
+       *   error originated.
+       * @param {string} lineNum the approximate line number in source at which
+       *   the error originated.
+       */
+      'handleUncaughtException', markFuncFreeze(
+          function handleUncaughtException(exception,
+                                           onerror,
+                                           source,
+                                           lineNum) {
+            lastOutcome = [false, exception];
 
-  // 15.9.5.24
-  markFunc(Date.prototype.getMilliseconds);
-  Date.prototype.DefineProperty___('getMilliseconds', {
-      writable: true,
-      enumerable: false,
-      configurable: true
-    });
+            // Cause exception to be rethrown if it is uncatchable.
+            tameException(exception);
 
-  // 15.9.5.25
-  // TODO
+            var message = 'unknown';
+            if ('object' === typeOf(exception) && exception !== null) {
+              message = '' + (exception.message || exception.desc || message);
+            }
 
-  // 15.9.5.26
-  markFunc(Date.prototype.getTimezoneOffset);
-  Date.prototype.DefineProperty___('getTimezoneOffset', {
-      writable: true,
-      enumerable: false,
-      configurable: true
-    });
+            // If we wanted to provide a hook for containers to get uncaught
+            // exceptions, it would go here before onerror is invoked.
 
-  // 15.9.5.27
-  // TODO
+            // See the HTML5 discussion for the reasons behind this rule.
+            if (!isFunction(onerror)) {
+              throw new TypeError('Expected onerror to be a function.');
+            }
+            var shouldReport = onerror.f___(
+                USELESS,
+                message,
+                '' + source,
+                '' + lineNum);
+            if (shouldReport !== false) {
+              log(source + ':' + lineNum + ': ' + message);
+            }
+          })
+    ]));
+  }
 
-  // 15.9.5.28
-  markFunc(Date.prototype.setMilliseconds);
-  Date.prototype.DefineProperty___('setMilliseconds', {
-      writable: true,
-      enumerable: false,
-      configurable: true
-    });
+  /**
+   * Produces a function module given an object literal module
+   */
+  function prepareModule(module, load) {
+    registerClosureInspector(module);
+    function theModule(imports) {
+      // The supplied 'imports' contain arguments supplied by the caller of the
+      // module. We need to add the primordials (Array, Object, ...) to these
+      // before invoking the Cajita module.
+      var completeImports = copy(sharedImports);
+      completeImports.load = load;
+      // Copy all properties, including Cajita-unreadable ones since these may
+      // be used by privileged code.
+      var k;
+      for (k in imports) {
+        if (imports.hasOwnProperty___(k)) { completeImports[k] = imports[k]; }
+      }
+      return module.instantiate(___, freeze(completeImports));
+    }
 
-  // 15.9.5.29
-  // TODO
+    // Whitelist certain module properties as visible to Cajita code. These
+    // are all primitive values that do not allow two Cajita entities with
+    // access to the same module object to communicate.
+    var props = ['cajolerName', 'cajolerVersion', 'cajoledDate', 'moduleURL'];
+    for (var i = 0; i < props.length; ++i) {
+      theModule.DefineOwnProperty___(props[i], {
+          value: module[props[i]],
+          writable: false,
+          enumerable: true,
+          configurable: false
+        });
+    }
+    // The below is a transitive freeze because includedModules is an array
+    // of strings.
+    if (!!module.includedModules) {
+      theModule.DefineOwnProperty___('includedModules', {
+          value: freeze(module.includedModules),
+          writable: false,
+          enumerable: true,
+          configurable: false
+        });
+    }
 
-  // 15.9.5.30
-  markFunc(Date.prototype.setSeconds);
-  Date.prototype.DefineProperty___('setSeconds', {
-      writable: true,
-      enumerable: false,
-      configurable: true
-    });
+    return markFuncFreeze(theModule);
+  }
 
-  // 15.9.5.31
-  // TODO
-
-  // 15.9.5.32
-  markFunc(Date.prototype.setMinutes);
-  Date.prototype.DefineProperty___('setMinutes', {
-      writable: true,
-      enumerable: false,
-      configurable: true
-    });
-
-  // 15.9.5.33
-  // TODO
-
-  // 15.9.5.34
-  markFunc(Date.prototype.setHours);
-  Date.prototype.DefineProperty___('setHours', {
-      writable: true,
-      enumerable: false,
-      configurable: true
-    });
-
-  // 15.9.5.35
-  // TODO
-
-  // 15.9.5.36
-  markFunc(Date.prototype.setDate);
-  Date.prototype.DefineProperty___('setDate', {
-      writable: true,
-      enumerable: false,
-      configurable: true
-    });
-
-  // 15.9.5.37
-  // TODO
-
-  // 15.9.5.38
-  markFunc(Date.prototype.setMonth);
-  Date.prototype.DefineProperty___('setMonth', {
-      writable: true,
-      enumerable: false,
-      configurable: true
-    });
-
-  // 15.9.5.39
-  // TODO
-
-  // 15.9.5.40
-  markFunc(Date.prototype.setFullYear);
-  Date.prototype.DefineProperty___('setFullYear', {
-      writable: true,
-      enumerable: false,
-      configurable: true
-    });
-
-  // 15.9.5.41
-  // TODO
-
-  // 15.9.5.42
-  // TODO
-
-  // 15.9.5.43
-  markFunc(Date.prototype.toISOString);
-  Date.prototype.DefineProperty___('toISOString', {
-      writable: true,
-      enumerable: false,
-      configurable: true
-    });
-
-  // 15.9.5.44
-  markFunc(Date.prototype.toJSON);
-  Date.prototype.DefineProperty___('toJSON', {
-      writable: true,
-      enumerable: false,
-      configurable: true
-    });
-
+  /**
+   * A module is an object literal containing metadata and an
+   * <code>instantiate</code> member, which is a plugin-maker function.
+   * <p>
+   * loadModule(module) marks module's <code>instantiate</code> member as a
+   * func, freezes the module, asks the current new-module-handler to handle it
+   * (thereby notifying the handler), and returns the new module.
+   */
+  function loadModule(module) {
+    freeze(module);
+    markFuncFreeze(module.instantiate);
+    return myNewModuleHandler.m___('handle', [module]);
+  }
 
   ses = {
       // Diagnostics and condition enforcement
@@ -3812,6 +3912,7 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
       makeSealerUnsealerPair: makeSealerUnsealerPair,
   
       // Other
+      isFunction: isFunction,
       USELESS: USELESS,
       manifest: manifest,
       allKeys: allKeys,
@@ -3848,6 +3949,7 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
       Number: Number,
       Date: Date,
       RegExp: RegExp,
+      Function: FakeFunction,
   
       Error: Error,
       EvalError: EvalError,
@@ -3869,7 +3971,7 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
       var m = this.Get___(name);
       if (!m) {
         throw new TypeError(
-            "The property '" + name + "' is not a function.");
+            "The property '" + name + "' is falsey, thus not a function.");
       }
       // Fastpath the method on the object pointed to by name_v___
       // which is truthy iff it's a data property
@@ -3881,7 +3983,6 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
     };
 
   ___ = {
-      NO_RESULT: NO_RESULT,
       USELESS: USELESS,
       readImport: readImport,
       tameException: tameException,
@@ -3891,6 +3992,15 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
       beget: beget,
       iM: initializeMap,
       markFunc: markFunc,
-      markFuncFreeze: markFuncFreeze
+      markFuncFreeze: markFuncFreeze,
+      // Module loading
+      getNewModuleHandler: getNewModuleHandler,
+      setNewModuleHandler: setNewModuleHandler,
+      obtainNewModule: obtainNewModule,
+      makeNormalNewModuleHandler: makeNormalNewModuleHandler,
+      prepareModule: prepareModule,
+      loadModule: loadModule,
+      NO_RESULT: NO_RESULT
     };
+  setNewModuleHandler(makeNormalNewModuleHandler());
 })();
