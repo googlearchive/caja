@@ -61,7 +61,10 @@ public class CajolingServiceTest extends ServiceTestCase {
   // Tests error messages are escaped.
   public final void testErrorMessagesEscaped() throws Exception {
     registerUri("http://foo/bar.js", "with(){};", "text/javascript");
-    assertEquals("ERROR",
+    // If javascript is requested, always produce javascript
+    // If there's an error, the safest output that is still valid javascript
+    // is empty.
+    assertEquals("",
         (String)requestGet("?url=http://foo/bar.js&mime-type=text/javascript"));
   }
 

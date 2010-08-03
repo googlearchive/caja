@@ -134,26 +134,20 @@ public class HtmlHandler extends AbstractCajolingHandler {
       if (okToContinue) {
         okToContinue &= compiler.run();
       }
-      if (okToContinue) {
-        if (outputType == ContentType.JS) {
-          renderAsJavascript(compiler.getJavascript(),
-                             moduleCallback,
-                             output);
-        } else if (outputType == ContentType.JSON) {
-          renderAsJSON(
-              compiler.getStaticHtml(),
-              compiler.getJavascript(),
-              moduleCallback,
-              mq,
-              output);
-        } else {
-          assert outputType == ContentType.HTML;
-          renderAsHtml(doc,
-                       compiler.getStaticHtml(),
-                       compiler.getJavascript(),
-                       moduleCallback,
-                       output);
-        }
+      if (outputType == ContentType.JS) {
+        renderAsJavascript(okToContinue ? compiler.getJavascript() : null,
+            moduleCallback, output);
+      } else if (outputType == ContentType.JSON) {
+        renderAsJSON(
+            okToContinue ? compiler.getStaticHtml() : null,
+            okToContinue ? compiler.getJavascript() : null,
+            moduleCallback, mq, output);
+      } else {
+        assert outputType == ContentType.HTML;
+        renderAsHtml(doc,
+            okToContinue ? compiler.getStaticHtml() : null,
+            okToContinue ? compiler.getJavascript() : null,
+            moduleCallback, output);
       }
     } catch (ParseException e) {
       e.toMessageQueue(mq);

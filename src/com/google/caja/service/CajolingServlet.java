@@ -19,7 +19,6 @@ import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.escaping.Escaping;
 import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessageContext;
-import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.SimpleMessageQueue;
 
@@ -69,10 +68,10 @@ public class CajolingServlet extends HttpServlet {
    * @param error an error message.
    */
   private static void closeBadRequest(HttpServletResponse resp,
-                                      String error)
+      int httpStatus, String error)
       throws ServletException {
     try {
-      resp.sendError(HttpServletResponse.SC_BAD_REQUEST, error);
+      resp.sendError(httpStatus, error);
     } catch (IOException ex) {
       throw (ServletException) new ServletException().initCause(ex);
     }
@@ -82,12 +81,13 @@ public class CajolingServlet extends HttpServlet {
    * Set an error status on a servlet response and close its stream cleanly.
    *
    * @param resp a servlet response.
+   * @param httpStatus status response level.
    * @param mq a {@link MessageQueue} with messages to include as an error page.
    */
   private static void closeBadRequest(HttpServletResponse resp,
-                                      MessageQueue mq)
+      int httpStatus, MessageQueue mq)
       throws ServletException {
-    closeBadRequest(resp, serializeMessageQueue(mq));
+    closeBadRequest(resp, httpStatus, serializeMessageQueue(mq));
   }
 
   // TODO(jasvir): The service like the gwt version should accumulate
@@ -107,7 +107,8 @@ public class CajolingServlet extends HttpServlet {
   public void doPost(HttpServletRequest req, HttpServletResponse resp)
       throws ServletException {
     if (req.getContentType() == null) {
-      closeBadRequest(resp, "Supplied Content-type is null");
+      closeBadRequest(resp, HttpServletResponse.SC_BAD_REQUEST, 
+          "Supplied Content-type is null");
       return;
     }
 
@@ -118,7 +119,8 @@ public class CajolingServlet extends HttpServlet {
           req.getCharacterEncoding(),
           InputSource.UNKNOWN);
     } catch (IOException e) {
-      closeBadRequest(resp, "Error decoding POST data");
+      closeBadRequest(resp, HttpServletResponse.SC_BAD_REQUEST,
+          "Error decoding POST data");
       return;
     }
 
@@ -137,8 +139,8 @@ public class CajolingServlet extends HttpServlet {
       throws ServletException {
     MessageQueue mq = new SimpleMessageQueue();
     FetchedData result = service.handle(inputFetchedData, args, mq);
-    if (result == null || mq.hasMessageAtLevel(MessageLevel.ERROR)) {
-      closeBadRequest(resp, mq);
+    if (result == null) {
+      closeBadRequest(resp, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, mq);
       return;
     }
 

@@ -303,4 +303,25 @@ public class HtmlHandlerTest extends ServiceTestCase {
     assertHtml2Js("text/html", "text/javascript", null);
     assertHtml2Js("text/html", "text/javascript", "foo.bar.baz");
   }
+
+  public final void testErrors2Js() throws Exception {
+    registerUri("http://foo/bar.html",
+      "<script>with(foo){}</script>", "text/html");
+
+    Object result = json((String) requestGet(
+        requestString("text/html", "application/json", null)));
+    
+    assertTrue(result instanceof JSONObject);
+    JSONObject json = (JSONObject) result;
+
+    assertTrue(json.containsKey("messages"));
+    JSONArray messages = (JSONArray)json.get("messages");
+    boolean containsError = false;
+    for (Object msg : messages) {
+      JSONObject jsonMsg = (JSONObject) msg;
+      containsError = containsError || jsonMsg.get("name").equals("ERROR");
+    }
+    assertTrue(containsError);
+  }
+  
 }

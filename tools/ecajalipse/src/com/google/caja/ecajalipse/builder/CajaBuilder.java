@@ -22,8 +22,13 @@ import com.google.caja.lexer.JsTokenQueue;
 import com.google.caja.lexer.ParseException;
 import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.parser.ParseTreeNode;
+import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.Parser;
-import com.google.caja.parser.quasiliteral.DefaultCajaRewriter;
+import com.google.caja.parser.js.UncajoledModule;
+import com.google.caja.parser.quasiliteral.CajitaRewriter;
+import com.google.caja.parser.quasiliteral.DefaultValijaRewriter;
+import com.google.caja.parser.quasiliteral.Rewriter;
+import com.google.caja.reporting.BuildInfo;
 import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessageLevel;
@@ -110,7 +115,7 @@ public class CajaBuilder extends IncrementalProjectBuilder {
     private int mapError(MessageLevel level) {
       if (level.compareTo(MessageLevel.WARNING) < 0)
         return IMarker.SEVERITY_INFO;
-      else if (level.compareTo(MessageLevel.CRITICAL_WARNING) > 0)
+      else if (level.compareTo(MessageLevel.WARNING) == 0)
         return IMarker.SEVERITY_WARNING;
       else
         return IMarker.SEVERITY_ERROR;        
@@ -206,7 +211,7 @@ public class CajaBuilder extends IncrementalProjectBuilder {
   private String render(ParseTreeNode node) {
     StringBuilder sb = new StringBuilder();
     TokenConsumer tc = node.makeRenderer(sb, null);
-    node.render(new RenderContext(mc, tc));
+    node.render(new RenderContext(tc));
     tc.noMoreTokens();
     return sb.toString();
   }
@@ -214,23 +219,20 @@ public class CajaBuilder extends IncrementalProjectBuilder {
   private void cajoleJs(URI inputUri, Reader cajaInput, 
       Appendable output) {
     InputSource is = new InputSource (inputUri);    
-    CharProducer cp = CharProducer.Factory.create(cajaInput,is);
     try {
-      ParseTreeNode input;
-      JsLexer lexer = new JsLexer(cp);
-      JsTokenQueue tq = new JsTokenQueue(lexer, is);
-      Parser p = new Parser(tq, mq);
-      input = p.parse();
+      CharProducer cp = CharProducer.Factory.create(cajaInput,is);
+      JsTokenQueue tq = new JsTokenQueue(new JsLexer(cp), is);
+      Block input = new Parser(tq, mq).parse();
       tq.expectEmpty();
-
-      DefaultCajaRewriter dcr = new DefaultCajaRewriter();
-      output.append(render(dcr.expand(input, mq)));
+      UncajoledModule ucm = new UncajoledModule(input);
+      Rewriter vrw = new DefaultValijaRewriter(mq, false /* logging */);
+      Rewriter crw = new CajitaRewriter(BuildInfo.getInstance(),
+          mq, false /* logging */);
+      output.append(render(crw.expand(vrw.expand(ucm)))); 
     } catch (ParseException e) {
-      e.printStackTrace();
-    } catch (IllegalArgumentException e) {
-      e.printStackTrace();
+      // Exception details on the message queue
     } catch (IOException e) {
-      e.printStackTrace();
+      // Exception details on the message queue
     }
   }
 
@@ -238,7 +240,6 @@ public class CajaBuilder extends IncrementalProjectBuilder {
     if (resource instanceof IFile && resource.getName().endsWith(".js")) {
       IFile file = (IFile) resource;
       deleteMarkers(file);
-      EclipseMessageQueue reporter = new EclipseMessageQueue(file);
       Reader inputReader = new InputStreamReader(file.getContents());
       mq = new EclipseMessageQueue(file);
       mc = new MessageContext();

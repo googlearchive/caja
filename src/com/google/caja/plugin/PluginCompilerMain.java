@@ -63,7 +63,6 @@ import java.io.FileNotFoundException;
 import java.io.FileInputStream;
 import java.net.URI;
 import java.net.URL;
-import java.net.URLConnection;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
