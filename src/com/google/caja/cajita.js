@@ -1621,16 +1621,16 @@ var safeJSON;
 
     /**
      * Since there's no constructor, to have a general cross-frame
-     * pseudo-function test, we test CLASS___ ===
-     * 'PseudoFunction'. This CLASS___ will also cause a cajoled
-     * ({}).toString.call(pseudoFunc) to return 
-     * "[object PseudoFunction]". 
-     * <p>
-     * TODO(erights): In Cajita, it might be better to return 
-     * "[object Object]"; it's not clear. In Valija, it would
-     * definitely be better to return "[object Function]".
+     * pseudo-function test, we test the truthiness of PFUNC___.
      */
-    CLASS___: 'PseudoFunction',
+    PFUNC___: true,
+
+    /**
+     * For Valija code, this has to be 'Function' or the standard cross-frame
+     * test fails.  We can't override ObjectPrototype.toString in Valija
+     * because of issue 953.
+     */
+    CLASS___: 'Function',
 
     /**
      * A pseudo-function untames to an exophoric feral function.
@@ -1716,7 +1716,7 @@ var safeJSON;
     return func && !!func.XO4A___;
   }
   function isPseudoFunc(fun) {
-    return fun && fun.CLASS___ === 'PseudoFunction';
+    return fun && fun.PFUNC___;
   }
 
   /**

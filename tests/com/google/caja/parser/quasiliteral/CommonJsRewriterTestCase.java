@@ -668,6 +668,16 @@ public abstract class CommonJsRewriterTestCase extends RewriterTestCase {
 
             "");
   }
+
+  /**
+   * Tests that cajoled code expecting a function can use the standard
+   * cross-frame test.
+   * @throws Exception
+   */
+  public final void testFunctionClass() throws Exception {
+    rewriteAndExecute(
+        "assertTrue(({}).toString.call(function(){})==='[object Function]')");
+  }
 }
 
 
