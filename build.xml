@@ -621,6 +621,19 @@
       <input file="${src}/com/google/caja/plugin/domita.js"/>
     </transform>
     <transform>
+      <output file="${lib}/com/google/caja/plugin/domita-ses-minified.js"
+       language="javascript" renderer="minify"/>
+      <input file="${third_party}/js/json_sans_eval/json_sans_eval.js"/>
+      <input file="${src}/com/google/caja/ses.js"/>
+      <input file="${src}/com/google/caja/plugin/unicode.js"/>
+      <input file="${lib}/com/google/caja/plugin/css-defs.js"/>
+      <input file="${lib}/com/google/caja/plugin/html4-defs.js"/>
+      <input file="${src}/com/google/caja/plugin/html-sanitizer.js"/>
+      <input file="${src}/com/google/caja/plugin/html-emitter.js"/>
+      <input file="${src}/com/google/caja/plugin/bridal.js"/>
+      <input file="${src}/com/google/caja/plugin/domita.js"/>
+    </transform>
+    <transform>
       <output file="${lib}/com/google/caja/plugin/module-promise-minified.js"
        language="javascript" renderer="minify"/>
       <input file="${src}/com/google/caja/plugin/uri.js"/>

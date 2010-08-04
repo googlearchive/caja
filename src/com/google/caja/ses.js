@@ -42,19 +42,17 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
   // https://bugzilla.mozilla.org/show_bug.cgi?id=507453
   if (arguments[-2] !== void 0) {
     // TODO: Make this an error.
-    alert('Firefox versions below 3.5 not supported.');
+    alert('Firefox versions that use negative indices ' +
+        'on arguments are not supported.');
   }
-  if (Object.create) {
-    throw new Error('Already an ES5 platform.');
-  }
-  
+
   // Provide original definitions for closures.
   var Object___ = Object;
   var Array___ = Array;
   var String___ = String;
   var Number___ = Number;
   var Boolean___ = Boolean;
-  
+
   /**
    * Caja-specific properties
    * 
@@ -897,11 +895,11 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
    * diagnostic purposes only) its name.
    */
   function Token(name) {
-    name = String___(name);
-    return freeze({
+    name = '' + name;
+    return snowWhite({
         toString: markFuncFreeze(function tokenToString() { 
-          return name; 
-        }),
+            return name; 
+          }),
         throwable___: true
       });
   }
@@ -928,7 +926,7 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
    *   {@code typeof n === 'number'} or {@code 'string'}
    */
   function isNumericName(n) {
-    return typeof n === 'number' || String___(+n) === n;
+    return typeof n === 'number' || ('' + (+n)) === n;
   }
 
   ////////////////////////////////////////////////////////////////////////
@@ -969,7 +967,7 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
   goodJSON.stringify = markFunc(jsonStringifyOk(JSON) ?
     JSON.stringify : json_sans_eval.stringify);
 
-  safeJSON = freeze({
+  safeJSON = snowWhite({
       CLASS___: 'JSON',
       parse: markFunc(function (text, opt_reviver) {
         var reviver = void 0;
@@ -1047,7 +1045,7 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
   /**
    * Calls the currently registered logging function.
    */
-  function log(str) { myLogFunc(String___(str)); }
+  function log(str) { myLogFunc('' + str); }
 
   /**
    * Like an assert that can't be turned off.
@@ -1219,7 +1217,7 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
     }
 
     if (opt_useKeyLifetime) {
-      return freeze({
+      return snowWhite({
           set: markFuncFreeze(setOnKey),
           get: markFuncFreeze(getOnKey)
         });
@@ -1286,7 +1284,7 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
       }
     }
 
-    return freeze({
+    return snowWhite({
         set: markFuncFreeze(setOnTable),
         get: markFuncFreeze(getOnTable)
       });
@@ -1406,11 +1404,11 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
    * escape. 
    */
   function makeTrademark(typename, table) {
-    typename = String___(typename);
-    return freeze({
+    typename = '' + typename;
+    return snowWhite({
         toString: markFuncFreeze(function() { return typename + 'Mark'; }),
   
-        stamp: freeze({
+        stamp: snowWhite({
           toString: markFuncFreeze(function() { return typename + 'Stamp'; }),
           mark___: markFuncFreeze(function(obj) {
             table.set(obj, true);
@@ -1573,7 +1571,7 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
         return payload;
       }
     }
-    return freeze({
+    return snowWhite({
         seal: markFuncFreeze(seal),
         unseal: markFuncFreeze(unseal)
       });
@@ -1596,7 +1594,7 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
    * those properties from module_imports that are visible to ES5/3 code.
    */
   function readImport(module_imports, name, opt_permitsUsed) {
-    name = String___(name);
+    name = '' + name;
     if (!module_imports.HasProperty___(name)) {
       log('Linkage warning: ' + name + ' not importable');
       return void 0;
@@ -1968,7 +1966,7 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
 
   // 8.12.3
   Object.prototype.Get___ = function (P) {
-      P = String___(P);
+      P = '' + P;
       if (isNumericName(P)) { return this[P]; }
       assertValidPropertyName(P);
       // Is P an accessor property on this?
@@ -1982,7 +1980,7 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
   // 8.12.5
   Object.prototype.Put___ = function (P, V) {
       var thisExtensible = isExtensible(this);
-      P = String___(P);
+      P = '' + P;
       assertValidPropertyName(P);
       if (!thisExtensible) {
         if (wouldExtend(this, P)) {
@@ -2515,7 +2513,7 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
   Object.f___ = markFunc(function (dis, as) {
       var len = as.length;
       if (len === 0 || as[0] === null || as[0] === void 0) {
-        return initializeMap([]);
+        return {};
       }
       return ToObject(as[0]);
     });
@@ -2743,6 +2741,27 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
     // Cache frozen state.
     obj.z___ = obj;
     return obj;
+  }
+
+  /**
+   * Whitelists all the object's own properties that do not
+   * end in __ and freezes it.  For internal use only.
+   */
+  function snowWhite(obj) {
+    var i;
+    for (i in obj) {
+      if (obj.hasOwnProperty___(i) && !endsWith__.test(i)) {
+        obj[i + '_v___'] = obj;
+        obj[i + '_w___'] = false;
+        obj[i + '_gw___'] = false;
+        obj[i + '_e___'] = obj;
+        obj[i + '_c___'] = false;
+        obj[i + '_g___'] = void 0;
+        obj[i + '_s___'] = void 0;
+        obj[i + '_m___'] = false;
+      }
+    }
+    return freeze(obj);
   }
 
   Object.freeze = freeze;
@@ -3651,7 +3670,7 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
    * A new-module-handler which returns the new module without
    * instantiating it.
    */
-  var obtainNewModule = freeze({
+  var obtainNewModule = snowWhite({
     handle: markFuncFreeze(function handleOnly(newModule){ return newModule; })
   });
 
@@ -3708,9 +3727,9 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
       if (!imports) { imports = copy(sharedImports); }
       return imports;
     }
-    return freeze(initializeMap([
-      'getImports', markFuncFreeze(getImports),
-      'setImports', markFuncFreeze(function setImports(newImports) {
+    return snowWhite({
+      getImports: markFuncFreeze(getImports),
+      setImports: markFuncFreeze(function setImports(newImports) {
           imports = newImports;
         }),
 
@@ -3735,7 +3754,7 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
        * overwrite an already reported outcome with NO_RESULT, so the
        * last script-block's outcome will be preserved.
        */
-      'getLastOutcome', markFuncFreeze(function getLastOutcome() {
+      getLastOutcome: markFuncFreeze(function getLastOutcome() {
           return lastOutcome;
         }),
 
@@ -3743,7 +3762,7 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
        * If the last outcome is a success, returns its value;
        * otherwise <tt>undefined</tt>.
        */
-      'getLastValue', markFuncFreeze(function getLastValue() {
+      getLastValue: markFuncFreeze(function getLastValue() {
           if (lastOutcome && lastOutcome[0]) {
             return lastOutcome[1];
           } else {
@@ -3758,7 +3777,7 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
        * reported outcome. Propagate this outcome by terminating in
        * the same manner.
        */
-      'handle', markFuncFreeze(function handle(newModule) {
+      handle: markFuncFreeze(function handle(newModule) {
           registerClosureInspector(newModule);
           var outcome = void 0;
           try {
@@ -3798,7 +3817,7 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
        * @param {string} lineNum the approximate line number in source at which
        *   the error originated.
        */
-      'handleUncaughtException', markFuncFreeze(
+      handleUncaughtException: markFuncFreeze(
           function handleUncaughtException(exception,
                                            onerror,
                                            source,
@@ -3829,7 +3848,7 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
               log(source + ':' + lineNum + ': ' + message);
             }
           })
-    ]));
+    });
   }
 
   /**
@@ -4000,6 +4019,8 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
       iM: initializeMap,
       markFunc: markFunc,
       markFuncFreeze: markFuncFreeze,
+      Trademark: Trademark,
+      makeSealerUnsealerPair: makeSealerUnsealerPair,
       // Module loading
       getNewModuleHandler: getNewModuleHandler,
       setNewModuleHandler: setNewModuleHandler,
