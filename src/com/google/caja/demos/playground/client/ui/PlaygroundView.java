@@ -74,7 +74,7 @@ public class PlaygroundView {
   private DecoratedTabPanel editorPanel;
   private Label version = new Label("Unknown");
   private Playground controller;
-  private TextArea sourceText;
+  private PlaygroundEditor sourceText;
   private TextArea policyText;
   private String currentPolicy;
   private HorizontalPanel loadingLabel;
@@ -136,7 +136,7 @@ public class PlaygroundView {
     logoPanel.add(loadingLabel);
     return logoPanel;
   }
-
+  
   private Widget createSourcePanel() {
     sourceExamples = new MultiWordSuggestOracle();
     for (Example eg : Example.values()) {
@@ -185,8 +185,7 @@ public class PlaygroundView {
     addressBar.setWidget(0, item++, cajoleButton);
     addressBar.setWidth("95%");
 
-    sourceText = new TextArea();
-    sourceText.setText("<script>\n\n</script>");
+    sourceText = new PlaygroundEditor();
     sourceText.setSize("95%", "100%");
 
     VerticalPanel mainPanel = new VerticalPanel();
@@ -382,10 +381,10 @@ public class PlaygroundView {
 
   private native void setupNativeSelectLineBridge() /*-{
     var that = this;
-    $wnd.selectLine = function (uri, lineNumber) {
+    $wnd.selectLine = function (uri, start, sOffset, end, eOffset) {
       that.@com.google.caja.demos.playground.client.ui.PlaygroundView::selectTab(Lcom/google/caja/demos/playground/client/ui/PlaygroundView$Tabs;)(
           @com.google.caja.demos.playground.client.ui.PlaygroundView.Tabs::SOURCE);
-      that.@com.google.caja.demos.playground.client.ui.PlaygroundView::highlightSource(Ljava/lang/String;I)(uri, lineNumber);
+      that.@com.google.caja.demos.playground.client.ui.PlaygroundView::highlightSource(Ljava/lang/String;IIII)(uri, start, sOffset, end, eOffset);
     }
   }-*/;
 
@@ -576,22 +575,9 @@ public class PlaygroundView {
   }
 
   /** @param uri unused but provided for consistency with native GWT caller. */
-  public void highlightSource(String uri, int lineNumber) {
-    String content = sourceText.getText();
-    content.replaceAll("\\r\\n?", "\\n");
-    int currentStart = 0;
-    int currentEnd = 0;
-    for (int line = 0; line < lineNumber; line++) {
-      currentStart = currentEnd + 1;
-      currentEnd = content.indexOf('\n', currentStart);
-      if (currentEnd < 0) {
-        break;
-      }
-    }
-    if (currentEnd >= 0) {
-      sourceText.setCursorPos(currentStart);
-      sourceText.setSelectionRange(currentStart, currentEnd - currentStart + 1);
-    }
+  public void highlightSource(String uri, int start, int sOffset, int end, int eOffset) {
+    sourceText.setCursorPos(start);
+    sourceText.setSelectionRange(start, sOffset, end, eOffset);
   }
 
   public enum Tabs {

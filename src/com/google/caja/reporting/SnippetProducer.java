@@ -123,7 +123,7 @@ public class SnippetProducer {
       end -= left;
     }
 
-    formatSnippet(
+    formatSnippet(pos,
         FilePosition.instance(src, lineNo, 1, line.length() + 1),
         line, start, end, out);
   }
@@ -132,19 +132,21 @@ public class SnippetProducer {
    * May be overridden to format a snippet differently, e.g. by HTML escaping
    * line and inserting tags around {@code line[start:end]}.
    *
+   * @param errorPosition actual unmodified error fileposition
+   * @param snippetPos line granularity error position of the snippet
    * @param end >= start.  Implementations should take care to provide some
    *   useful information if end == start, since a zero length range might
    *   be used to indicate where information is missing, or where inferred
    *   content was inserted.
    * @throws IOException only if out raised an IOException.
    */
-  protected void formatSnippet(
-      FilePosition pos, CharSequence line, int start, int end, Appendable out)
+  protected void formatSnippet(FilePosition errorPosition,
+      FilePosition snippetPos, CharSequence line, int start, int end,
+      Appendable out)
       throws IOException {
-
     // Write out "file:14: <line-of-sourcecode>"
     StringBuilder posBuf = new StringBuilder();
-    formatFilePosition(pos, posBuf);
+    formatFilePosition(snippetPos, posBuf);
     posBuf.append(": ");
     int filePosLength = posBuf.length();
 

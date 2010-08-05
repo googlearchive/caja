@@ -87,6 +87,17 @@ h1 {
   color: red;
 }
 
+.CodeMirror-line-numbers {
+  width: 2.2em;
+  color: #aaa;
+  background-color: #eee;
+  text-align: right;
+  padding: .4em;
+  margin: 0;
+  font-family: monospace;
+  font-size: 10pt;
+}
+
 /** Set ids using widget.getElement().setId("idOfElement") **/
 #closeButton {
   margin: 15px 6px 6px;

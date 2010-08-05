@@ -25,7 +25,8 @@ import java.util.Map;
  * of using <tt>^^^</tt> style markers like the default snippet producer.
  *
  * <p>The containing page should define a {@code .problem} style rule and
- * a javascript function {@code selectLine(uri, lineNumber)}.</p>
+ * a javascript function
+ * {@code selectLine(uri, startLine, startOffset, endLine, endOffset)}.</p>
  *
  * @author mikesamuel@gmail.com
  */
@@ -39,11 +40,11 @@ public class HtmlSnippetProducer extends SnippetProducer {
 
   // Override the default behavior to create messages that link nicely.
   @Override
-  protected void formatSnippet(
-      FilePosition pos, CharSequence line, int start, int end,
+  protected void formatSnippet(FilePosition errorPosition,
+      FilePosition snippetPos, CharSequence line, int start, int end,
       Appendable out)
       throws IOException {
-    formatFilePosition(pos, out);
+    formatFilePosition(errorPosition, out);
     out.append(": ")
       .append(html(line.subSequence(0, start)))
       .append("<span class=\"problem\">")
@@ -62,6 +63,12 @@ public class HtmlSnippetProducer extends SnippetProducer {
       .append(html(js(pos.source().getUri().toString())))
       .append(",")
       .append(String.valueOf(pos.startLineNo()))
+      .append(",")
+      .append(String.valueOf(pos.startCharInLine()))
+      .append(",")
+      .append(String.valueOf(pos.endLineNo()))
+      .append(",")
+      .append(String.valueOf(pos.endCharInLine()))
       .append(")\">")
       .append(html(filename))
       .append(":")

@@ -34,7 +34,7 @@ public class HtmlSnippetProducerTest extends CajaTestCase {
         ""
         + "<a href=\"#\" class=\"filepos nocode\""
         + " onclick=\"selectLine(&#39;"
-        + "test://example.org/testSnippetEscaped&#39;,1)\">"
+        + "test://example.org/testSnippetEscaped&#39;,1,24,1,45)\">"
         + "testSnippetEscaped:1</a>"
         + ": &lt;style&gt;background: url("
         + "<span class=\"problem\">"

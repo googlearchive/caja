@@ -904,6 +904,10 @@
         <include name="favicon.ico" />
         <include name="setup-valija.js" />
       </fileset>
+      <fileset dir="${third_party}/js/codemirror">
+        <include name="js/*.js" />
+        <include name="css/*.css" />
+      </fileset>
       <fileset dir="${src}/com/google/caja/demos/flash">
         <include name="Boxed.swf" />
       </fileset>
