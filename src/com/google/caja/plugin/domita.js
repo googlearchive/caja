@@ -61,7 +61,6 @@ var domitaModules;
 if (!domitaModules) { domitaModules = {}; }
 
 domitaModules.classUtils = function() {
-
   /**
    * Add setter and getter hooks so that the caja {@code node.innerHTML = '...'}
    * works as expected.
@@ -199,6 +198,65 @@ domitaModules.TameXMLHttpRequest = function(
         ['onreadystatechange', 'readyState', 'responseText', 'responseXML',
          'status', 'statusText']);
   }
+  var FROZEN = "Object is frozen.";
+  var INVALID_SUFFIX = "Property names may not end in '__'.";
+  var endsWith__ = /__$/;
+  TameXMLHttpRequest.prototype.handleRead___ = function (name) {
+    name = '' + name;
+    if (endsWith__.test(name)) { return void 0; }
+    var handlerName = name + '_getter___';
+    if (this[handlerName]) {
+      return this[handlerName]();
+    }
+    if (___.hasOwnProp(this.xhr___.properties___, name)) {
+      return this.xhr___.properties___[name];
+    } else {
+      return void 0;
+    }
+  };
+  TameXMLHttpRequest.prototype.handleCall___ = function (name, args) {
+    name = '' + name;
+    if (endsWith__.test(name)) { throw new Error(INVALID_SUFFIX); }
+    var handlerName = name + '_handler___';
+    if (this[handlerName]) {
+      return this[handlerName].call(this, args);
+    }
+    if (___.hasOwnProp(this.xhr___.properties___, name)) {
+      return this.xhr___.properties___[name].call(this, args);
+    } else {
+      throw new TypeError(name + ' is not a function.');
+    }
+  };
+  TameXMLHttpRequest.prototype.handleSet___ = function (name, val) {
+    name = '' + name;
+    if (endsWith__.test(name)) { throw new Error(INVALID_SUFFIX); }
+    if (___.isFrozen(this)) { throw new Error(FROZEN); }
+    var handlerName = name + '_setter___';
+    if (this[handlerName]) {
+      return this[handlerName](val);
+    }
+    if (!this.xhr___.properties___) {
+      this.xhr___.properties___ = {};
+    }
+    this[name + '_canEnum___'] = true;
+    return this.xhr___.properties___[name] = val;
+  };
+  TameXMLHttpRequest.prototype.handleDelete___ = function (name) {
+    name = '' + name;
+    if (endsWith__.test(name)) { throw new Error(INVALID_SUFFIX); }
+    if (___.isFrozen(this)) { throw new Error(FROZEN); }
+    var handlerName = name + '_deleter___';
+    if (this[handlerName]) {
+      return this[handlerName]();
+    }
+    if (this.xhr___.properties___) {
+      return (
+          delete this.xhr___.properties___[name]
+          && delete this[name + '_canEnum___']);
+    } else {
+      return true;
+    }
+  };
   TameXMLHttpRequest.prototype.setOnreadystatechange = function (handler) {
     // TODO(ihab.awad): Do we need more attributes of the event than 'target'?
     // May need to implement full "tame event" wrapper similar to DOM events.
@@ -1390,7 +1448,7 @@ var attachDocumentStub = (function () {
     var UNSAFE_TAGNAME = "Unsafe tag name.";
     var UNKNOWN_TAGNAME = "Unknown tag name.";
     var INDEX_SIZE_ERROR = "Index size error.";
-
+  
     // Implementation of EventTarget::addEventListener
     function tameAddEventListener(name, listener, useCapture) {
       if (!this.editable___) { throw new Error(NOT_EDITABLE); }
@@ -3113,10 +3171,6 @@ var attachDocumentStub = (function () {
       if (this[handlerName]) {
         return this[handlerName]();
       }
-      handlerName = handlerName.toLowerCase();
-      if (this[handlerName]) {
-        return this[handlerName]();
-      }
       if (___.hasOwnProp(this.event___.properties___, name)) {
         return this.event___.properties___[name];
       } else {
@@ -3127,10 +3181,6 @@ var attachDocumentStub = (function () {
       name = String(name);
       if (endsWith__.test(name)) { throw new Error(INVALID_SUFFIX); }
       var handlerName = name + '_handler___';
-      if (this[handlerName]) {
-        return this[handlerName].call(this, args);
-      }
-      handlerName = handlerName.toLowerCase();
       if (this[handlerName]) {
         return this[handlerName].call(this, args);
       }
@@ -3147,10 +3197,6 @@ var attachDocumentStub = (function () {
       if (this[handlerName]) {
         return this[handlerName](val);
       }
-      handlerName = handlerName.toLowerCase();
-      if (this[handlerName]) {
-        return this[handlerName](val);
-      }
       if (!this.event___.properties___) {
         this.event___.properties___ = {};
       }
@@ -3161,10 +3207,6 @@ var attachDocumentStub = (function () {
       name = String(name);
       if (endsWith__.test(name)) { throw new Error(INVALID_SUFFIX); }
       var handlerName = name + '_deleter___';
-      if (this[handlerName]) {
-        return this[handlerName]();
-      }
-      handlerName = handlerName.toLowerCase();
       if (this[handlerName]) {
         return this[handlerName]();
       }
@@ -3919,10 +3961,6 @@ var attachDocumentStub = (function () {
       if (this[handlerName]) {
         return this[handlerName]();
       }
-      handlerName = handlerName.toLowerCase();
-      if (this[handlerName]) {
-        return this[handlerName]();
-      }
       if (___.hasOwnProp(this, name)) {
         return this[name];
       } else {
@@ -3936,10 +3974,6 @@ var attachDocumentStub = (function () {
       if (this[handlerName]) {
         return this[handlerName](val);
       }
-      handlerName = handlerName.toLowerCase();
-      if (this[handlerName]) {
-        return this[handlerName](val);
-      }
       this[name + '_canEnum___'] = true;
       this[name + '_canRead___'] = true;
       return this[name] = val;
@@ -3948,10 +3982,6 @@ var attachDocumentStub = (function () {
       name = String(name);
       if (endsWith__.test(name)) { throw new Error(INVALID_SUFFIX); }
       var handlerName = name + '_deleter___';
-      if (this[handlerName]) {
-        return this[handlerName]();
-      }
-      handlerName = handlerName.toLowerCase();
       if (this[handlerName]) {
         return this[handlerName]();
       }

@@ -108,12 +108,13 @@ public class Linter implements BuildCommand {
     lint(lintJobs, env, mq);
     if (!ignores.isEmpty()) {
       for (Iterator<Message> it = mq.getMessages().iterator(); it.hasNext();) {
-	if (ignores.contains(it.next().getMessageType().name())) {
-	  it.remove();
-	}
+        if (ignores.contains(it.next().getMessageType().name())) {
+          it.remove();
+        }
       }
     }
-    if (output.getName().endsWith(".stamp")) {
+    if (output.getName().endsWith(".stamp") ||
+        output.getName().endsWith(".tstamp")) {
       if (ErrorReporter.reportErrors(contentMap, mc, mq, System.out)
           .compareTo(MessageLevel.WARNING) < 0) {
         // Touch the time-stamp file to make it clear that the inputs were

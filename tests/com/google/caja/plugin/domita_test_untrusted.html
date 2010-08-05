@@ -314,6 +314,8 @@
 
 <p class="testcontainer" id="test-props-on-nodes">Original Text</p>
 
+<div class="testcontainer" id="test-xhr-instance-props">XHR instance props</div>
+
 <div class="testcontainer" id="test-xhr-sync">XHR sync</div>
 
 <div class="waiting testcontainer" id="test-xhr-async">XHR async</div>
@@ -2230,6 +2232,14 @@ jsunitRegister('testPropsOnNodes',
   assertNotEquals("innerHTML should not be treated as an attribute",
                   str, div.getAttribute("innerHTML"));
   pass('test-props-on-nodes');
+});
+
+jsunitRegister('testXhrInstanceProps',
+               function testXhrInstanceProps() {
+  var xhr = new window.XMLHttpRequest();
+  xhr.x = 1;
+  assertEquals(1, xhr.x);
+  pass('test-xhr-instance-props');
 });
 
 jsunitRegister('testXhrSync',
