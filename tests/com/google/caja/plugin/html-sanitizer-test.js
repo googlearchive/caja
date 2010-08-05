@@ -25,7 +25,7 @@ function nmTokenPrefixer(prefix) {
  *     apply to names, ids, and classes.
  * @return {string} html
  */
-function html_sanitize(htmlText, opt_urlPolicy, opt_nmTokenPolicy) {
+function html_sanitize(htmlText, opt_uriPolicy, opt_nmTokenPolicy) {
   var out = [];
   html.makeHtmlSanitizer(
       function sanitizeAttribs(tagName, attribs) {
@@ -40,7 +40,7 @@ function html_sanitize(htmlText, opt_urlPolicy, opt_nmTokenPolicy) {
             var atype = html4.ATTRIBS[attribKey];
             switch (atype) {
               case html4.atype.URI:
-                value = opt_urlPolicy && opt_urlPolicy(value);
+                value = opt_uriPolicy && opt_uriPolicy(value);
                 break;
               case html4.atype.SCRIPT:
               case html4.atype.STYLE:

@@ -149,8 +149,8 @@ myLink.innerHTML = 'My Image';
     the <code>HTMLLinkElement</code> vtable which defines a setter for the
     <code>href</code> element.
     The <code>href</code> property has type URI and so the sanitizer invokes
-    the container's URL policy to validate and possibly rewrite the URL before
-    doing the set.  The URL policy can proxy the URL through a server that
+    the container's URI policy to validate and possibly rewrite the URL before
+    doing the set.  The URI policy can proxy the URL through a server that
     does additional security checks.
   <li>The assignment succeeds, and returns <code>'foo.png'</code> instead of
     the actual sanitized version, so that assignments chain properly.

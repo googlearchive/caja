@@ -476,13 +476,13 @@ html.makeHtmlSanitizer = function (sanitizeAttributes) {
 /**
  * Strips unsafe tags and attributes from html.
  * @param {string} htmlText to sanitize
- * @param {Function} opt_urlPolicy -- a transform to apply to url attribute
+ * @param {Function} opt_uriPolicy -- a transform to apply to uri/url attribute
  *     values.
  * @param {Function} opt_nmTokenPolicy : string -> string? -- a transform to
  *     apply to names, ids, and classes.
  * @return {string} html
  */
-function html_sanitize(htmlText, opt_urlPolicy, opt_nmTokenPolicy) {
+function html_sanitize(htmlText, opt_uriPolicy, opt_nmTokenPolicy) {
   var out = [];
   html.makeHtmlSanitizer(
       function sanitizeAttribs(tagName, attribs) {
@@ -510,7 +510,7 @@ function html_sanitize(htmlText, opt_urlPolicy, opt_nmTokenPolicy) {
                 value = opt_nmTokenPolicy ? opt_nmTokenPolicy(value) : value;
                 break;
               case html4.atype.URI:
-                value = opt_urlPolicy && opt_urlPolicy(value);
+                value = opt_uriPolicy && opt_uriPolicy(value);
                 break;
               case html4.atype.URI_FRAGMENT:
                 if (value && '#' === value.charAt(0)) {

@@ -23,8 +23,9 @@ import java.util.Map;
  * or computed by cajoled scripts to URLs which the container can secure.
  *
  * <p>See the
- * <a href="http://code.google.com/p/google-caja/wiki/UrlPolicy">UrlPolicy</a>
- * wiki for a discussion of the various kinds of URIs seen in web applications.
+ * <a href="http://code.google.com/p/google-caja/wiki/UriPolicy">UriPolicy</a>
+ * wiki page for a discussion of the various kinds of URIs seen in web
+ * applications.
  *
  * @author mikesamuel@gmail.com
  */

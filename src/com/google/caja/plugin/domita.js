@@ -2762,7 +2762,7 @@ var attachDocumentStub = (function () {
 
     /**
      * A script element wrapper that allows setting of a src that has been
-     * rewritten by a URL policy, but not modifying of textual content.
+     * rewritten by a URI policy, but not modifying of textual content.
      */
     function TameScriptElement(node, editable) {
       // Make the child list immutable so that text content can't be added
