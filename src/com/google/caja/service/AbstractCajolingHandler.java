@@ -179,7 +179,9 @@ public abstract class AbstractCajolingHandler implements ContentHandler {
   protected void renderAsJavascript(CajoledModule javascript,
       Expression moduleCallback, Appendable output)
       throws IOException {
-    output.append(renderJavascript(javascript, moduleCallback));
+    if (null != javascript) {
+      output.append(renderJavascript(javascript, moduleCallback));
+    }
   }
 
   protected String renderJavascript(CajoledModule javascript,

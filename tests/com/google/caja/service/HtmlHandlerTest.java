@@ -305,6 +305,16 @@ public class HtmlHandlerTest extends ServiceTestCase {
   }
 
   public final void testErrors2Js() throws Exception {
+    String testWithError = "<script>with(foo){}</script>";
+    String charSet = "UTF-8";
+    byte[] content = testWithError.getBytes(charSet);
+    
+    assertEquals("", (String) requestPost(
+        requestString("text/html", "text/javascript", null),
+        content, "text/html", charSet));
+  }
+
+  public final void testErrors2Json() throws Exception {
     registerUri("http://foo/bar.html",
       "<script>with(foo){}</script>", "text/html");
 

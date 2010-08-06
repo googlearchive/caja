@@ -110,19 +110,16 @@ public class JsHandler extends AbstractCajolingHandler {
         if (transform == null ||
             (transform.equals(CajolingService.Transform.CAJOLE) &&
             directive.contains(CajolingService.Directive.CAJITA))) {
-          output.append(renderJavascript(
-              (CajoledModule) crw.expand(ucm),
-              moduleCallback));
+          renderAsJavascript((CajoledModule) crw.expand(ucm),
+              moduleCallback, output);
         } else {
-          output.append(renderJavascript(
-              (CajoledModule) crw.expand(vrw.expand(ucm)),
-              moduleCallback)); 
+          renderAsJavascript((CajoledModule) crw.expand(vrw.expand(ucm)),
+              moduleCallback, output); 
         }
       } else {
         Rewriter esrw = new ES53Rewriter(buildInfo, mq, false /* logging */);
-        output.append(renderJavascript(
-            (CajoledModule) esrw.expand(ucm),
-            moduleCallback));
+        renderAsJavascript((CajoledModule) esrw.expand(ucm),
+            moduleCallback, output);
       }
     } catch (ParseException e) {
       e.toMessageQueue(mq);

@@ -118,20 +118,25 @@ public class HtmlHandler extends AbstractCajolingHandler {
     InputSource is = new InputSource (inputUri);
     boolean okToContinue = true;
     try {
-      DomParser p = new DomParser(new HtmlLexer(cp), false, is, mq);
-
-      Dom html = new Dom(p.parseFragment());
-      Document doc = html.getValue().getOwnerDocument();
-      p.getTokenQueue().expectEmpty();
-
       PluginCompiler compiler = new PluginCompiler(buildInfo, meta, mq);
       if (outputType == ContentType.JS) {
         compiler.setGoals(
             compiler.getGoals().without(PipelineMaker.HTML_SAFE_STATIC));
       }
 
-      compiler.addInput(html, inputUri);
+      Dom html = null;
+      Document doc = null;
+      try {
+        DomParser p = new DomParser(new HtmlLexer(cp), false, is, mq);
+        html = new Dom(p.parseFragment());
+        doc = html.getValue().getOwnerDocument();
+        p.getTokenQueue().expectEmpty();
+      } catch (ParseException e) {
+        okToContinue = false;
+      }
+      
       if (okToContinue) {
+        compiler.addInput(html, inputUri);
         okToContinue &= compiler.run();
       }
       if (outputType == ContentType.JS) {
@@ -149,8 +154,6 @@ public class HtmlHandler extends AbstractCajolingHandler {
             okToContinue ? compiler.getJavascript() : null,
             moduleCallback, output);
       }
-    } catch (ParseException e) {
-      e.toMessageQueue(mq);
     } catch (IOException e) {
       mq.addMessage(
           ServiceMessageType.IO_ERROR,
