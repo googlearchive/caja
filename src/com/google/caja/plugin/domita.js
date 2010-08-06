@@ -986,6 +986,8 @@ var attachDocumentStub = (function () {
      */
     function rewriteAttribute(tagName, attribName, type, value) {
       switch (type) {
+        case html4.atype.NONE:
+          return String(value);
         case html4.atype.CLASSES:
           // note, className is arbitrary CDATA.
           value = String(value);
@@ -1066,11 +1068,10 @@ var attachDocumentStub = (function () {
             css.push(propName + ' : ' + propValue);
           }
           return css.join(' ; ');
+        // Frames are ambient, so disallow reference.
         case html4.atype.FRAME_TARGET:
-          // Frames are ambient, so disallow reference.
-          return null;
         default:
-          return String(value);
+          return null;
       }
     }
 

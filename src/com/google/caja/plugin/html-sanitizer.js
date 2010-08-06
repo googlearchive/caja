@@ -223,7 +223,7 @@ var html = (function () {
       // End of tag captured in group 3.
       + '|(/?>)'
       // Don't capture cruft
-      + '|.[^\\w\\s>]*)',
+      + '|.[^a-z\\s>]*)',
       'i');
 
   var OUTSIDE_TAG_TOKEN = new RegExp(
@@ -498,10 +498,12 @@ function html_sanitize(htmlText, opt_uriPolicy, opt_nmTokenPolicy) {
           }
           if (atype !== null) {
             switch (atype) {
+              case html4.atype.NONE: break;
               case html4.atype.SCRIPT:
               case html4.atype.STYLE:
                 value = null;
                 break;
+              case html4.atype.ID:
               case html4.atype.IDREF:
               case html4.atype.IDREFS:
               case html4.atype.GLOBAL_NAME:
@@ -519,6 +521,9 @@ function html_sanitize(htmlText, opt_uriPolicy, opt_nmTokenPolicy) {
                 } else {
                   value = null;
                 }
+                break;
+              default:
+                value = null;
                 break;
             }
           } else {
