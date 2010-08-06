@@ -38,7 +38,7 @@
 var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
 
 (function () {
-  // ES5/3 does not support FF2 or 3.0 because of
+  // ES5/3 does not support FF2 thru 3.5 because of
   // https://bugzilla.mozilla.org/show_bug.cgi?id=507453
   if (arguments[-2] !== void 0) {
     // TODO: Make this an error.
@@ -46,12 +46,14 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
         'on arguments are not supported.');
   }
 
-  // Provide original definitions for closures.
+  // Provide original definitions for safe use.
   var Object___ = Object;
   var Array___ = Array;
   var String___ = String;
   var Number___ = Number;
   var Boolean___ = Boolean;
+  var Error___ = Error;
+  var TypeError___ = TypeError;
 
   /**
    * Caja-specific properties
@@ -173,11 +175,11 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
   function tamesTo(f, t) {
     var ftype = typeof f;
     if (!f || (ftype !== 'function' && ftype !== 'object')) { 
-      throw new TypeError('Unexpected feral primitive: ', f); 
+      throw new TypeError___('Unexpected feral primitive: ', f); 
     }
     var ttype = typeof t;
     if (!t || (ttype !== 'function' && ttype !== 'object')) {
-      throw new TypeError('Unexpected tame primitive: ', t); 
+      throw new TypeError___('Unexpected tame primitive: ', t); 
     }
 
     if (f.TAMED_TWIN___ === t && t.FERAL_TWIN___ === f) { 
@@ -194,16 +196,16 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
     // the backpointing rather than hasOwnProp below.
 
     if (f.TAMED_TWIN___ && f.hasOwnProperty___('TAMED_TWIN___')) { 
-      throw new TypeError('Already tames to something: ', f); 
+      throw new TypeError___('Already tames to something: ', f); 
     }
     if (t.FERAL_TWIN___ && t.hasOwnProperty___('FERAL_TWIN___')) { 
-      throw new TypeError('Already untames to something: ', t); 
+      throw new TypeError___('Already untames to something: ', t); 
     }
     if (f.FERAL_TWIN___ && f.hasOwnProperty___('FERAL_TWIN___')) { 
-      throw new TypeError('Already tame: ', f); 
+      throw new TypeError___('Already tame: ', f); 
     }
     if (t.TAMED_TWIN___ && t.hasOwnProperty___('TAMED_TWIN___')) { 
-      throw new TypeError('Already feral: ', t); 
+      throw new TypeError___('Already feral: ', t); 
     }
 
     f.TAMED_TWIN___ = t;
@@ -222,7 +224,7 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
   function tamesToSelf(obj) {
     var otype = typeof obj;
     if (!obj || (otype !== 'function' && otype !== 'object')) { 
-      throw new TypeError('Unexpected primitive: ', obj); 
+      throw new TypeError___('Unexpected primitive: ', obj); 
     }
     if (obj.TAMED_TWIN___ === obj && obj.FERAL_TWIN___ === obj) { 
       // Just a transient diagnostic until we understand how often
@@ -237,10 +239,10 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
     // could decide to more delicately rely on this invariant and test
     // the backpointing rather than hasOwnProp below.
     if (obj.TAMED_TWIN___ && obj.hasOwnProperty___('TAMED_TWIN___')) { 
-      throw new TypeError('Already tames to something: ', obj); 
+      throw new TypeError___('Already tames to something: ', obj); 
     }
     if (obj.FERAL_TWIN___ && obj.hasOwnProperty___('FERAL_TWIN___')) { 
-      throw new TypeError('Already untames to something: ', obj); 
+      throw new TypeError___('Already untames to something: ', obj); 
     }
 
     obj.TAMED_TWIN___ = obj.FERAL_TWIN___ = obj;
@@ -358,16 +360,89 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
     return undefined;
   }
 
+  /**
+   * Initialize argument constructor <i>feralCtor</i> so that it
+   * represents a "subclass" of argument constructor <i>someSuper</i>,
+   * and return a non-invokable taming of <i>feralCtor</i>. 
+   *
+   * Given: 
+   *
+   *   function FeralFoo() { ... some uncajoled constructor ... }
+   *   var Foo = extend(FeralFoo, FeralSuper, 'Foo');
+   *
+   * it will be the case that:
+   *
+   *   new FeralFoo() instanceof Foo
+   *
+   * however -- and this is the crucial property -- cajoled code will get an
+   * error if it invokes either of:
+   *
+   *   new Foo()
+   *   Foo()
+   *
+   * This allows us to expose the tame Foo to cajoled code, allowing
+   * it to sense that all the FeralFoo instances we give it are
+   * instanceof Foo, without granting to cajoled code the means to
+   * create any new such instances.
+   * 
+   * extend() also sets <i>feralCtor</i>.prototype to set up the
+   * prototype chain so that 
+   *
+   *   new FeralFoo() instanceof FeralSuper
+   * and
+   *   new FeralFoo() instanceof Super
+   *
+   * @param feralCtor An feral-only uncajoled constructor. This must
+   *        NOT be exposed to cajoled code by any other mechanism.
+   * @param someSuper Some constructor representing the
+   *        superclass. This can be <ul>
+   *        <li>a feralCtor that had been provided as a first argument
+   *            in a previous call to extend(), 
+   *        <li>an inertCtor as returned by a previous call to
+   *            extend(), or 
+   *        <li>a constructor that has been marked as such by ___.markCtor().
+   *        </ul>
+   *        In all cases, someSuper.prototype.constructor must be
+   *        a constructor that has been marked as such by
+   *        ___.markCtor(). 
+   * @param opt_name If the returned inert constructor is made
+   *        available this should be the property name used.
+   *
+   * @return a tame inert class constructor as described above.
+   */
+  function extend(feralCtor, someSuper, opt_name) {
+    if (!('function' === typeof feralCtor)) {
+      fail('Internal: Feral constructor is not a function');
+    }
+    someSuper = someSuper.prototype.constructor;
+    var noop = function () {};
+    if (someSuper.new___ === noop.new___) {
+      throw new TypeError___('Internal: toxic function encountered!');
+    }
+    noop.prototype = someSuper.prototype;
+    feralCtor.prototype = new noop();
+    feralCtor.prototype.Prototype___ = someSuper.prototype;
+
+    var inert = function() {
+        throw new TypeError___('This constructor cannot be called directly.');
+      };
+
+    inert.prototype = feralCtor.prototype;
+    feralCtor.prototype.constructor = inert;
+    tamesTo(feralCtor, inert);
+    return markFuncFreeze(inert);
+  }
+
   ////////////////////////////////////////////////////////////////////////
   // Taming helpers to be called only by tame() and untame().
   ////////////////////////////////////////////////////////////////////////
 
   AS_TAMED___ = function() {
-      throw new Error('Internal: global object almost leaked');
+      throw new Error___('Internal: global object almost leaked');
     };
 
   AS_FERAL___ = function() {
-      var err = new Error('Internal: global object leaked');
+      var err = new Error___('Internal: global object leaked');
       err.UNCATCHABLE___ = true;
       throw err;
     };
@@ -467,7 +542,7 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
   Array.prototype.length_s___ = function (val) {
       // Freezing an array needs to freeze the length property.
       if (this.z___ === this) {
-        throw new TypeError('Cannot change the length of a frozen array.');
+        throw new TypeError___('Cannot change the length of a frozen array.');
       }
       val = ToUint32(val);
       // Since increasing the length does not add properties,
@@ -480,7 +555,7 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
       if (!this.hasNumerics___() || this.NUM____c___ === this) {
         return this.length = val;
       }
-      throw new TypeError(
+      throw new TypeError___(
           'Shortening the array may delete non-configurable elements.');
     };
 
@@ -532,7 +607,7 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
     if (dis === null || dis === void 0) { return USELESS; }
     if (Type(dis) !== 'Object') { return dis; }
     if ('___' in dis) { 
-      var err = new Error('Internal: toxic global!'); 
+      var err = new Error___('Internal: toxic global!'); 
       err.UNCATCHABLE___ = true;
       throw err;
     }
@@ -564,12 +639,12 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
 
   function assertValidPropertyName(P) {
     if (endsWith__.test(P)) { 
-      throw new TypeError('Properties may not end in double underscore.');
+      throw new TypeError___('Properties may not end in double underscore.');
     }
   }
 
   function callFault(var_args) {
-    var err = new Error('Internal: toxic function encountered!');
+    var err = new Error___('Internal: toxic function encountered!');
     err.UNCATCHABLE___ = true;
     throw err;
   }
@@ -697,7 +772,7 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
   //     Array.prototype.peek = function () { return this[0]; }
   function markFunc(fn) {
     if (!isFunction(fn)) {
-      throw new TypeError('Expected a function.'); 
+      throw new TypeError___('Expected a function.'); 
     }
     fn.f___ = fn.apply___;
     fn.new___ = fn;
@@ -987,7 +1062,7 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
       stringify: markFunc(function (obj, opt_replacer, opt_space) {
         switch (typeof opt_space) {
           case 'number': case 'string': case 'undefined': break;
-          default: throw new TypeError('space must be a number or string');
+          default: throw new TypeError___('space must be a number or string');
         }
         var replacer;
         if (opt_replacer) {
@@ -1060,7 +1135,7 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
    * </pre>
    */
   function enforce(test, var_args) {
-    if (!test) { throw new Error(Array___.slice___(arguments, 1).join('')); }
+    if (!test) { throw new Error___(Array___.slice___(arguments, 1).join('')); }
     return true;
   }
 
@@ -1074,9 +1149,9 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
    * specimen used only to generate friendlier error messages.
    */
   function enforceType(specimen, typename, opt_name) {
-    if (typeOf(specimen) !== typename) {
-      throw new TypeError('expected ' + typename + ' instead of ' +
-          typeOf(specimen) + ': ' + (opt_name || specimen));
+    if (typeof specimen !== typename) {
+      throw new TypeError___('expected ' + typename + ' instead of ' +
+          typeof specimen + ': ' + (opt_name || specimen));
     }
     return specimen;
   }
@@ -1091,18 +1166,18 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
   function enforceNat(specimen) {
     enforceType(specimen, 'number');
     if (Math.floor(specimen) !== specimen) {
-      throw new TypeError('Must be integral: ' + specimen);
+      throw new TypeError___('Must be integral: ' + specimen);
     }
     if (specimen < 0) {
-      throw new TypeError('Must not be negative: ' + specimen);
+      throw new TypeError___('Must not be negative: ' + specimen);
     }
     // Could pre-compute precision limit, but probably not faster
     // enough to be worth it.
     if (Math.floor(specimen - 1) !== specimen - 1) {
-      throw new TypeError('Beyond precision limit: ' + specimen);
+      throw new TypeError___('Beyond precision limit: ' + specimen);
     }
     if (Math.floor(specimen - 1) >= specimen) {
-      throw new TypeError('Must not be infinite: ' + specimen);
+      throw new TypeError___('Must not be infinite: ' + specimen);
     }
     return specimen;
   }
@@ -1177,7 +1252,7 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
     function setOnKey(key, value) {
       var ktype = typeof key;
       if (!key || (ktype !== 'function' && ktype !== 'object')) { 
-        throw new TypeError("Can't use key lifetime on primitive keys: " + key);
+        throw new TypeError___("Can't use key lifetime on primitive keys: " + key);
       }
       var list = key[myMagicIndexName];
       // To distinguish key from objects that derive from it,
@@ -1203,7 +1278,7 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
     function getOnKey(key) {
       var ktype = typeof key;
       if (!key || (ktype !== 'function' && ktype !== 'object')) { 
-        throw new TypeError("Can't use key lifetime on primitive keys: " + key);
+        throw new TypeError___("Can't use key lifetime on primitive keys: " + key);
       }
       var list = key[myMagicIndexName];
       if (!list || list[0] !== key) {
@@ -1290,6 +1365,78 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
       });
   }
 
+  var registeredImports = [];
+
+  /**
+   * Gets or assigns the id associated with this (assumed to be)
+   * imports object, registering it so that
+   * <tt>getImports(getId(imports)) === imports</tt>.
+   * <p>
+   * This system of registration and identification allows us to
+   * cajole html such as
+   * <pre>&lt;a onmouseover="alert(1)"&gt;Mouse here&lt;/a&gt;</pre>
+   * into html-writing JavaScript such as<pre>
+   * ___IMPORTS___.document.innerHTML = "
+   *  &lt;a onmouseover=\"
+   *    (function(___IMPORTS___) {
+   *      ___IMPORTS___.alert(1);
+   *    })(___.getImports(" + ___.getId(___IMPORTS___) + "))
+   *  \"&gt;Mouse here&lt;/a&gt;
+   * ";
+   * </pre>
+   * If this is executed by a plugin whose imports is assigned id 42,
+   * it generates html with the same meaning as<pre>
+   * &lt;a onmouseover="___.getImports(42).alert(1)"&gt;Mouse here&lt;/a&gt;
+   * </pre>
+   * <p>
+   * An imports is not registered and no id is assigned to it until the
+   * first call to <tt>getId</tt>. This way, an imports that is never
+   * registered, or that has been <tt>unregister</tt>ed since the last
+   * time it was registered, will still be garbage collectable.
+   */
+  function getId(imports) {
+    enforceType(imports, 'object', 'imports');
+    var id;
+    if ('id___' in imports) {
+      id = enforceType(imports.id___, 'number', 'id');
+    } else {
+      id = imports.id___ = registeredImports.length;
+    }
+    registeredImports[id] = imports;
+    return id;
+  }
+
+  /**
+   * Gets the imports object registered under this id.
+   * <p>
+   * If it has been <tt>unregistered</tt> since the last
+   * <tt>getId</tt> on it, then <tt>getImports</tt> will fail.
+   */
+  function getImports(id) {
+    var result = registeredImports[enforceType(id, 'number', 'id')];
+    if (result === void 0) {
+      throw new Error___('Internal: imports#', id, ' unregistered');
+    }
+    return result;
+  }
+
+  /**
+   * If you know that this <tt>imports</tt> no longer needs to be
+   * accessed by <tt>getImports</tt>, then you should
+   * <tt>unregister</tt> it so it can be garbage collected.
+   * <p>
+   * After unregister()ing, the id is not reassigned, and the imports
+   * remembers its id. If asked for another <tt>getId</tt>, it
+   * reregisters itself at its old id.
+   */
+  function unregister(imports) {
+    enforceType(imports, 'object', 'imports');
+    if ('id___' in imports) {
+      var id = enforceType(imports.id___, 'number', 'id');
+      registeredImports[id] = void 0;
+    }
+  }
+
   ////////////////////////////////////////////////////////////////////////
   // Guards and Trademarks
   ////////////////////////////////////////////////////////////////////////
@@ -1356,7 +1503,7 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
     var stash = void 0;
     function ejector(result) {
       if (disabled) {
-        throw new Error('ejector disabled');
+        throw new Error___('ejector disabled');
       } else {
         // don't disable here.
         stash = result;
@@ -1389,9 +1536,9 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
   function eject(opt_ejector, result) {
     if (opt_ejector) {
       callPub(opt_ejector, 'call', [USELESS, result]);
-      throw new Error('Ejector did not exit: ', opt_ejector);
+      throw new Error___('Ejector did not exit: ', opt_ejector);
     } else {
-      throw new Error(result);
+      throw new Error___(result);
     }
   }
   
@@ -1511,10 +1658,10 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
    */
   function stamp(stamps, record) {
     if (!isRecord(record)) {
-      throw new TypeError('Can only stamp records: ' + record);
+      throw new TypeError___('Can only stamp records: ' + record);
     }
     if (isFrozen(record)) {
-      throw new TypeError("Can't stamp frozen objects: " + record);
+      throw new TypeError___("Can't stamp frozen objects: " + record);
     }
     stamps = Array___.slice___(stamps, 0);
     var numStamps = stamps.length >>> 0;
@@ -1522,7 +1669,7 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
     // the record.
     for (var i = 0; i < numStamps; i++) {
       if (!('mark___' in stamps[i])) {
-        throw new TypeError("Can't stamp with a non-stamp: " + stamps[i]);
+        throw new TypeError___("Can't stamp with a non-stamp: " + stamps[i]);
       }
     }
     // Looping again over the same untrusted stamps alleged-array is safe
@@ -1564,7 +1711,7 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
     function unseal(box) {
       var payload = table.get(box);
       if (payload === void 0) {
-        throw new TypeError('Sealer/Unsealer mismatch'); 
+        throw new TypeError___('Sealer/Unsealer mismatch'); 
       } else if (payload === undefinedStandin) {
         return void 0;
       } else {
@@ -1626,7 +1773,7 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
         case 'object': {
           if (ex === null) { return null; }
           if (ex.throwable___) { return ex; }
-          if (isError(ex)) {
+          if (isError___(ex)) {
             return freeze(ex);
           }
           return '' + ex;
@@ -1728,7 +1875,7 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
   // 8.7.1
   function GetValue(obj, name) {
     if (obj === null || obj === void 0) {
-      throw new TypeError(obj + ' has no properties.');
+      throw new TypeError___(obj + ' has no properties.');
     }
     return obj.Get___(name);
   }
@@ -1736,7 +1883,7 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
   // 8.7.2
   function PutValue(obj, name, val) {
     if (obj === null || obj === void 0) {
-      throw new TypeError(obj + ' has no properties.');
+      throw new TypeError___(obj + ' has no properties.');
     }
     return obj.Put___(name, val);
   }
@@ -1832,9 +1979,9 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
 
   // 8.10.5
   function ToPropertyDescriptor(Obj) {
-    // 1. If Type(Obj) is not Object throw a TypeError exception.
+    // 1. If Type(Obj) is not Object throw a TypeError___ exception.
     if (Type(Obj) !== 'Object') { 
-      throw new TypeError('Expected an object.'); 
+      throw new TypeError___('Expected an object.'); 
     }
     // 2. Let desc be the result of creating a new Property 
     //    Descriptor that initially has no fields.
@@ -1878,9 +2025,9 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
       //    internal method of Obj with argument "get".
       var getter = GetValue(Obj, 'get');
       // b. If IsCallable(getter) is false and getter is not
-      //    undefined, then throw a TypeError exception.
+      //    undefined, then throw a TypeError___ exception.
       if (!isFunction(getter) && getter !== void 0) {
-        throw new TypeError('Getter attributes must be functions or undef.');
+        throw new TypeError___('Getter attributes must be functions or undef.');
       }
       // c. Set the [[Get]] field of desc to getter.
       desc.get = getter;
@@ -1892,9 +2039,9 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
       //    internal method of Obj with argument "set".
       var setter = GetValue(Obj, 'set');
       // b. If IsCallable(setter) is false and setter is not
-      //    undefined, then throw a TypeError exception.
+      //    undefined, then throw a TypeError___ exception.
       if (!isFunction(setter) && setter !== void 0) {
-        throw new TypeError('Setter attributes must be functions or undef.');
+        throw new TypeError___('Setter attributes must be functions or undef.');
       }
       // c. Set the [[Set]] field of desc to setter.
       desc.set = setter;
@@ -1902,12 +2049,12 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
     // 9. If either desc.[[Get]] or desc.[[Set]] are present, then
     if ('set' in desc || 'get' in desc) {
       // a. If either desc.[[Value]] or desc.[[Writable]] are present,
-      //    then throw a TypeError exception.
+      //    then throw a TypeError___ exception.
       if ('value' in desc) { 
-        throw new TypeError('Accessor properties must not have a value.'); 
+        throw new TypeError___('Accessor properties must not have a value.'); 
       }
       if ('writable' in desc) { 
-        throw new TypeError('Accessor properties must not be writable.'); 
+        throw new TypeError___('Accessor properties must not be writable.'); 
       }
     }
     // 10. Return desc.
@@ -1984,7 +2131,7 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
       assertValidPropertyName(P);
       if (!thisExtensible) {
         if (wouldExtend(this, P)) {
-          throw new TypeError("Could not create the property '" + 
+          throw new TypeError___("Could not create the property '" + 
               P + "': " + this + " is not extensible.");
         }
       }
@@ -1996,7 +2143,7 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
         if (isWritable(this, 'NUM___') || !this.hasNumerics___()) {
           return this[P] = V;
         } else {
-          throw new TypeError("The property '" + P + "' is not writable.");
+          throw new TypeError___("The property '" + P + "' is not writable.");
         }
       }
       assertValidPropertyName(this, P);
@@ -2019,7 +2166,7 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
           });
         return V;
       }
-      throw new TypeError("The property '" + P + "' is not writable.");
+      throw new TypeError___("The property '" + P + "' is not writable.");
     };
 
   // 8.12.6
@@ -2060,9 +2207,9 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
         // b. Return true.
         return true;
       }
-      // 4. Else if Throw, then throw a TypeError exception.
+      // 4. Else if Throw, then throw a TypeError___ exception.
       // [This is strict mode, so Throw is always true.]
-      throw new TypeError("Cannot delete '" + P + "' on " + obj);
+      throw new TypeError___("Cannot delete '" + P + "' on " + obj);
       // 5. Return false.
     };
 
@@ -2072,7 +2219,7 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
   //   P is a number or a string.
   Object.prototype.DefineOwnProperty___ = function (P, Desc) {
       if (isNumericName(P)) {
-        throw new TypeError('Cannot define numeric properties.');
+        throw new TypeError___('Cannot define numeric properties.');
       }
       var O = this;
       // 1. Let current be the result of calling the [[GetOwnProperty]]
@@ -2083,7 +2230,7 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
       var extensible = isExtensible(O);
       // 3. If current is undefined and extensible is false, then Reject.
       if (!current && !extensible) {
-        throw new TypeError('This object is not extensible.');
+        throw new TypeError___('This object is not extensible.');
       }
       // 4. If current is undefined and extensible is true, then
       if (!current && extensible) {
@@ -2152,14 +2299,14 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
       if (!current.configurable) {
         // a. Reject, if the [Cofigurable]] field of Desc is true.
         if (Desc.configurable) { 
-          throw new TypeError("The property '" + P +
+          throw new TypeError___("The property '" + P +
               "' is not configurable.");
         }
         // b. Reject, if the [[Enumerable]] field of Desc is present
         //    and the [[Enumerable]] fields of current and Desc are
         //    the Boolean negation of each other.
         if ('enumerable' in Desc && Desc.enumerable !== current.enumerable) {
-          throw new TypeError("The property '" + P +
+          throw new TypeError___("The property '" + P +
               "' is not configurable.");
         }
       }
@@ -2175,7 +2322,7 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
       else if (iddCurrent !== iddDesc) {
         // a. Reject, if the [[Configurable]] field of current is false.
         if (!current.configurable) { 
-          throw new TypeError("The property '" + P +
+          throw new TypeError___("The property '" + P +
               "' is not configurable.");
         }
         // b. If IsDataDescriptor(current) is true, then
@@ -2220,7 +2367,7 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
           // i. Reject, if the [[Writable]] field of current is false
           //    and the [[Writable]] field of Desc is true. 
           if (!current.writable && Desc.writable) {
-            throw new TypeError("The property '" + P +
+            throw new TypeError___("The property '" + P +
                 "' is not configurable.");
           }
           // ii. If the [[Writable]] field of current is false, then
@@ -2228,7 +2375,7 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
             // 1. Reject, if the [[Value]] field of Desc is present and 
             //    SameValue(Desc.[[Value]], current.[[Value]]) is false.
             if ('value' in Desc && !SameValue(Desc.value, current.value)) {
-              throw new TypeError("The property '" + P +
+              throw new TypeError___("The property '" + P +
                   "' is not writable.");
             }
           }
@@ -2247,7 +2394,7 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
           //     SameValue(Desc.[[Get]], current.[[Get]]) is false.
           if (('set' in Desc && !SameValue(Desc.set, current.set)) ||
               ('get' in Desc && !SameValue(Desc.get, current.get))) {
-            throw new TypeError("The property '" + P +
+            throw new TypeError___("The property '" + P +
                 "' is not configurable.");
           }
         }
@@ -2289,7 +2436,7 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
     switch(t) {
       case 'Undefined':
       case 'Null':
-        throw new TypeError();
+        throw new TypeError___();
       case 'Boolean':
         return new Boolean___.new___(input);
       case 'Number':
@@ -2327,7 +2474,7 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
    */
   function asFirstClass(value) {
     if (isFunction(value) && value.f___ === Function.prototype.f___) {
-      var err = new Error('Internal: toxic function encountered!');
+      var err = new Error___('Internal: toxic function encountered!');
       err.UNCATCHABLE___ = true;
       throw err;
     }
@@ -2363,13 +2510,13 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
 
   // 11.2.3
   /**
-   * Makes a [[ThrowTypeError]] function, as defined in section 13.2.3
+   * Makes a [[ThrowTypeError___]] function, as defined in section 13.2.3
    * of the ES5 spec.
    * 
-   * <p>The informal name for the [[ThrowTypeError]] function, defined
+   * <p>The informal name for the [[ThrowTypeError___]] function, defined
    * in section 13.2.3 of the ES5 spec, is the "poison pill". The poison
    * pill is simply a no-argument function that, when called, always
-   * throws a TypeError. Since we wish this TypeError to carry useful
+   * throws a TypeError___. Since we wish this TypeError___ to carry useful
    * diagnostic info, we violate the ES5 spec by defining 4 poison
    * pills with 4 distinct identities.
    * 
@@ -2382,7 +2529,7 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
    */
   function makePoisonPill(badThing) {
     function poisonPill() {
-      throw new TypeError('' + badThing + ' is forbidden by ES5/strict');
+      throw new TypeError___('' + badThing + ' is forbidden by ES5/strict');
     }
     return markFunc(poisonPill);
   }
@@ -2494,7 +2641,7 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
   function isIn(name, obj) {
     var t = Type(obj);
     if (t !== 'Object') { 
-      throw new TypeError('Invalid "in" operand: ' + obj); 
+      throw new TypeError___('Invalid "in" operand: ' + obj); 
     }
     return obj.HasProperty___(name);
   }
@@ -2534,16 +2681,13 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
   // 15.2.3.2
   Object.getPrototypeOf = function (obj) {
       if (!Object___.hasOwnProperty___('Prototype___')) {
-        // I know I said not to feature test for __proto__. But if we're
-        // feature testing for getOwnProperty anyway, we may as well
-        // feature test for __proto__ also.
         if ({}.__proto__ === Object___.prototype) {
           obj.Prototype___ = obj.__proto__;
         } else {
           // FIXME: Adapt tricks from cajita.js to find the prototype
           // and, if successful, store the result on obj.Prototype___.
           // Otherwise throw.
-          throw new Error("Not supported in this browser.");
+          throw new Error___("Not supported on this platform.");
         }
       }
       return obj.Prototype___;
@@ -2552,9 +2696,9 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
 
   // 15.2.3.3
   Object.getOwnPropertyDescriptor = function(obj, P) {
-      // 1. If Type(object) is not Object throw a TypeError exception. 
+      // 1. If Type(object) is not Object throw a TypeError___ exception. 
       if (Type(obj) !== 'Object') {
-        throw new TypeError('Expected an object.');
+        throw new TypeError___('Expected an object.');
       }
       // 2. Let name be ToString(P).
       var name = '' + P;
@@ -2574,10 +2718,10 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
    */
   function beget(proto) {
     if (proto === null) {
-      throw new TypeError('Cannot beget from null.');
+      throw new TypeError___('Cannot beget from null.');
     }
     if (proto === (void 0)) {
-      throw new TypeError('Cannot beget from undefined.');
+      throw new TypeError___('Cannot beget from undefined.');
     }
     function F() {}
     F.prototype = proto;
@@ -2588,10 +2732,10 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
   // The algorithm below doesn't care whether Properties is absent
   // or undefined, so we can simplify.
   Object.create = function (O, opt_Properties) {
-      // 1. If Type(O) is not Object or Null throw a TypeError exception.
+      // 1. If Type(O) is not Object or Null throw a TypeError___ exception.
       // (ES3 doesn't support null prototypes.)
       if (Type(obj) !== 'Object') {
-        throw new TypeError('Expected an object.');
+        throw new TypeError___('Expected an object.');
       }
       // 2. Let obj be the result of creating a new object
       //    as if by the expression new Object() where Object
@@ -2611,9 +2755,9 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
 
   // 15.2.3.6
   Object.defineProperty = function (O, P, Attributes) {
-      // 1. If Type(O) is not Object throw a TypeError exception.
+      // 1. If Type(O) is not Object throw a TypeError___ exception.
       if (Type(O) !== 'Object') {
-        throw new TypeError('Expected an object.');
+        throw new TypeError___('Expected an object.');
       }
       // 2. Let name be ToString(P).
       var name = '' + P;
@@ -2630,9 +2774,9 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
 
   // 15.2.3.7
   Object.defineProperties = function (O, Properties) {
-      // 1. If Type(O) is not Object throw a TypeError exception.
+      // 1. If Type(O) is not Object throw a TypeError___ exception.
       if (Type(O) !== 'Object') {
-        throw new TypeError('Expected an object.');
+        throw new TypeError___('Expected an object.');
       }
       // 2. Let props be ToObject(Properties).
       var props = ToObject(Properties);
@@ -2676,9 +2820,9 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
 
   // 15.2.3.8
   Object.seal = function (O) {
-      // 1. If Type(O) is not Object throw a TypeError exception.
+      // 1. If Type(O) is not Object throw a TypeError___ exception.
       if (Type(O) !== 'Object') {
-        throw new TypeError('Only objects may be sealed.');
+        throw new TypeError___('Only objects may be sealed.');
       }
       // 2. For each own property name P of O,
       var keys = ownKeys(O), len = keys.length;
@@ -2712,7 +2856,7 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
   // 15.2.3.9
   function freeze(obj) {
     if (Type(obj) !== 'Object') {
-      throw new TypeError('Only objects may be frozen.');
+      throw new TypeError___('Only objects may be frozen.');
     }
     // Frozen means all the properties are neither writable nor
     // configurable, and the object itself is not extensible.
@@ -2784,9 +2928,9 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
 
   // 15.2.3.11
   Object.isSealed = function (O) {
-      // 1. If Type(O) is not Object throw a TypeError exception.
+      // 1. If Type(O) is not Object throw a TypeError___ exception.
       if (Type(O) !== 'Object') {
-        throw new TypeError('Only objects may be frozen.');
+        throw new TypeError___('Only objects may be frozen.');
       }
       // 2. For each named own property name P of O,
       // a. Let desc be the result of calling the [[GetOwnProperty]]
@@ -2857,7 +3001,7 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
       }),
       set: markFunc(function (val) {
         if (!isFunction(val)) {
-          throw new TypeError('Expected a function.');
+          throw new TypeError___('Expected a function.');
         }
         val = asFirstClass(val);
         this.toString = markFunc(function (var_args) {
@@ -2877,7 +3021,7 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
         }),
       set: markFunc(function (val) {
           if (!isFunction(val)) {
-            throw new TypeError('Expected a function.');
+            throw new TypeError___('Expected a function.');
           }
           val = asFirstClass(val);
           this.valueOf = markFunc(function (var_args) {
@@ -2896,7 +3040,7 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
 
   // 15.2.4.6
   Object.prototype.isPrototypeOf = function(V) {
-      throw new Error('isPrototypeOf is not supported.');
+      throw new Error___('isPrototypeOf is not supported.');
     };
 
   // 15.2.4.7
@@ -2931,7 +3075,7 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
   // 15.3 Function
   var FakeFunction = function () {
       throw new
-          Error('Internal: FakeFunction should not be directly invocable.');
+          Error___('Internal: FakeFunction should not be directly invocable.');
     };
 
   FakeFunction.toString = (function (str) { 
@@ -2942,12 +3086,12 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
 
   // 15.3.1
   Function.f___ = FakeFunction.f___ = markFunc(function() {
-      throw new Error('Invoking the Function constructor is unsupported.');
+      throw new Error___('Invoking the Function constructor is unsupported.');
     });
 
   // 15.3.2
   Function.new___ = FakeFunction.new___ = markFunc(function () {
-      throw new Error('Constructing functions dynamically is unsupported.');
+      throw new Error___('Constructing functions dynamically is unsupported.');
     });
 
   // 15.3.3.1
@@ -3034,12 +3178,12 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
       // This taming assumes that sort only modifies {@code this},
       // even though it may read numeric properties on the prototype chain.
       if (!isWritable(this, 'NUM___')) {
-        throw new TypeError(
+        throw new TypeError___(
             'Cannot sort an object whose ' +
             'numeric properties are not writable.');
       }
       if (!isExtensible(this)) {
-        throw new TypeError(
+        throw new TypeError___(
             'Cannot sort an object that is not extensible.');
       }
       return comparefn ? 
@@ -3150,7 +3294,7 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
   createOrWrap(Array.prototype, 'map', function (fun, thisp) {
       var len = this.length >>> 0;
       if (!isFunction(fun)) {
-        throw new TypeError('Expected a function.');
+        throw new TypeError___('Expected a function.');
       }
       var res = new Array(len);
       for (var i = 0; i < len; i++) {
@@ -3181,11 +3325,11 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
       var len = this.length >>> 0;
       if (Type(fun) !== 'Function') {
         // As you've defined it, Type(x) will never return 'Function'
-        throw new TypeError('Expected a function.');
+        throw new TypeError___('Expected a function.');
       }
       // no value to return if no initial value and an empty array
       if (len === 0 && arguments.length === 1) {
-        throw new TypeError('Expected an initial value or a non-empty array.');
+        throw new TypeError___('Expected an initial value or a non-empty array.');
       }
       var i = 0;
       if (arguments.length >= 2) {
@@ -3198,7 +3342,7 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
           }
           // if array contains no values, no initial value to return
           if (++i >= len) {
-            throw new TypeError('Expected non-empty array.');
+            throw new TypeError___('Expected non-empty array.');
           }
         } while (true);
       }
@@ -3216,11 +3360,11 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
       var len = this.length >>> 0;
       if (Type(fun) !== 'Function') {
         // As you've defined it, Type(x) will never return 'Function'
-        throw new TypeError('Expected a function.');
+        throw new TypeError___('Expected a function.');
       }
       // no value to return if no initial value, empty array
       if (len === 0 && arguments.length === 1) {
-        throw new TypeError('Expected an initial value or a non-empty array.');
+        throw new TypeError___('Expected an initial value or a non-empty array.');
       }
       var i = len - 1;
       if (arguments.length >= 2) {
@@ -3233,7 +3377,7 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
           }
           // if array contains no values, no initial value to return
           if (--i < 0) {
-            throw new TypeError('Expected a non-empty array.');
+            throw new TypeError___('Expected a non-empty array.');
           }
         } while (true);
       }
@@ -3328,7 +3472,7 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
   function enforceMatchable(regexp) {
     if (regexp instanceof RegExp) {
       if (isFrozen(regexp)) {
-        throw new Error("Can't match with frozen RegExp: " + regexp);
+        throw new Error___("Can't match with frozen RegExp: " + regexp);
       }
       return false;
     }
@@ -3837,7 +3981,7 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
 
             // See the HTML5 discussion for the reasons behind this rule.
             if (!isFunction(onerror)) {
-              throw new TypeError('Expected onerror to be a function.');
+              throw new TypeError___('Expected onerror to be a function.');
             }
             var shouldReport = onerror.f___(
                 USELESS,
@@ -3996,7 +4140,7 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
       }
       var m = this.Get___(name);
       if (!m) {
-        throw new TypeError(
+        throw new TypeError___(
             "The property '" + name + "' is falsey, thus not a function.");
       }
       // Fastpath the method on the object pointed to by name_v___
@@ -4014,6 +4158,7 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
       tameException: tameException,
       args: args,
       wrap: wrap,
+      copy: copy,
       i: isIn,
       beget: beget,
       iM: initializeMap,
@@ -4021,6 +4166,11 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
       markFuncFreeze: markFuncFreeze,
       Trademark: Trademark,
       makeSealerUnsealerPair: makeSealerUnsealerPair,
+      getId: getId,
+      getImports: getImports,
+      unregister: unregister,
+      newTable: newTable,
+      extend: extend,
       // Module loading
       getNewModuleHandler: getNewModuleHandler,
       setNewModuleHandler: setNewModuleHandler,
