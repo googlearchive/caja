@@ -130,7 +130,7 @@ public class PlaygroundView {
     loadingLabel = new HorizontalPanel();
     loadingLabel.setHorizontalAlignment(HasHorizontalAlignment.ALIGN_CENTER);
     loadingLabel.add(new Label("Loading... "));
-    loadingLabel.add(new Image("ajax-loader.gif"));
+    loadingLabel.add(new Image(PlaygroundResource.INSTANCE.loading().getURL()));
     loadingLabel.setStyleName("loadingLabel");
     loadingLabel.setVisible(false);
     logoPanel.add(loadingLabel);

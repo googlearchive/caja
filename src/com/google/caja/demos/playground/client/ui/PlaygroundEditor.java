@@ -31,7 +31,6 @@ public class PlaygroundEditor extends Composite {
   
   public PlaygroundEditor() {
     feralTextArea = new TextArea();
-    feralTextArea.getElement().setId("sourceText___");
     initWidget(feralTextArea);
   }
 
