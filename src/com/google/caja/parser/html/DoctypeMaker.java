@@ -61,6 +61,7 @@ class DoctypeMaker {
   static {
     // S             ::=  (#x20 | #x9 | #xD | #xA)+
     String s = "[ \\t\\r\\n]+";
+    String sStar = "[ \\t\\r\\n]*";
     // NameStartChar ::=  ":" | [A-Z] | "_" | [a-z] | [#xC0-#xD6] | [#xD8-#xF6]
     //                 |  [#xF8-#x2FF] | [#x370-#x37D] | [#x37F-#x1FFF]
     //                 |  [#x200C-#x200D] | [#x2070-#x218F] | [#x2C00-#x2FEF]
@@ -89,8 +90,9 @@ class DoctypeMaker {
     String externalId = (
         "(?:SYSTEM" + s + "(" + systemLiteral + ")"
         + "|PUBLIC" + s + "("+ pubidLiteral + ")"
-        // XML does not allow the system id to be omitted, but HTML does
-        + "(?:" + s + "(" + systemLiteral + "))?)");
+        // XML does not allow the system id to be omitted, but HTML does.
+        // Also, whitespaces between public id and system id can be omitted.
+        + "(?:" + sStar + "(" + systemLiteral + "))?)");
     String intSubset = "[^\\]>]*";
     // '<!DOCTYPE' S  Name (S  ExternalID)? S? ('[' intSubset ']' S?)? '>'
     // Groups: Name 1, SystemLiteral 2 or 4, PubidLiteral 3.

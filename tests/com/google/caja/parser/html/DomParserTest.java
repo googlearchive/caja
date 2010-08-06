@@ -42,6 +42,7 @@ import java.util.List;
 import java.util.NoSuchElementException;
 
 import org.w3c.dom.Attr;
+import org.w3c.dom.Document;
 import org.w3c.dom.DocumentFragment;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
@@ -1990,6 +1991,38 @@ public class DomParserTest extends CajaTestCase {
         // We have one of these type guessing tests parse a fragment to tests
         // the behavior of fragments around DOCTYPEs.
         true);
+  }
+
+  public final void testFindDoctypeIgnoresLeadingWhitespace() throws Exception {
+    String[] htmlInput = {
+        " \t\r\n <!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 1.0 Transitional//EN\"",
+        "\"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\">",
+        "<xmp><br/></xmp>" };
+    TokenQueue<HtmlTokenType> tq = tokenizeTestInput(
+        Join.join("\n", htmlInput), false, true);
+    DomParser parser = new DomParser(tq, false, mq);
+
+    Document doc = parser.parseDocument().getOwnerDocument();
+    assertEquals("-//W3C//DTD HTML 1.0 Transitional//EN",
+                 doc.getDoctype().getPublicId());
+    assertEquals("http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd",
+                 doc.getDoctype().getSystemId());
+    assertEquals("html",
+                 doc.getDoctype().getName());
+
+    assertParsedMarkup(Arrays.asList(htmlInput),
+        Arrays.asList(
+            "Element : html 4+1-4+17",
+            "  Element : head 4+1-4+1",
+            "  Element : body 4+1-4+17",
+            "    Element : xmp 4+1-4+17",
+            "      Text : <br/> 4+6-4+11"
+            ),
+        Arrays.<String>asList(),
+        Arrays.asList(
+            "<html><head></head><body><xmp><br/></xmp></body></html>"
+            ),
+        false, false);
   }
 
   public final void testDoctypeGuessAsXhtml() throws Exception {

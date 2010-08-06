@@ -23,8 +23,8 @@ import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.ParseException;
 import com.google.caja.lexer.Token;
 import com.google.caja.lexer.TokenQueue;
-import com.google.caja.lexer.TokenStream;
 import com.google.caja.lexer.TokenQueue.Mark;
+import com.google.caja.lexer.TokenStream;
 import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
@@ -159,7 +159,7 @@ public class DomParser {
         domImpl = DOMImplementationRegistry.newInstance()
             .getDOMImplementation(features);
       } catch (ClassNotFoundException ex) {
-    	  throw new SomethingWidgyHappenedError(
+        throw new SomethingWidgyHappenedError(
             "Missing DOM implementation.  Is Xerces on the classpath?", ex);
       } catch (IllegalAccessException ex) {
         throw new SomethingWidgyHappenedError(
@@ -178,7 +178,6 @@ public class DomParser {
     DocumentType doctype = doctypeMaker != null
         ? doctypeMaker.apply(domImpl) : null;
     return domImpl.createDocument(null, null, doctype);
-
   }
 
   public static Document makeDocument(
@@ -657,6 +656,7 @@ public class DomParser {
     if (tokens.isEmpty()) { return null; }
     Function<DOMImplementation, DocumentType> doctypeMaker = null;
     Mark start = tokens.mark();
+
     doctypeloop:
     while (!tokens.isEmpty()) {
       Token<HtmlTokenType> t = tokens.peek();
@@ -665,6 +665,7 @@ public class DomParser {
         case IGNORABLE:
           tokens.pop();
           break;
+
         case DIRECTIVE:
           tokens.pop();
           final Function<DOMImplementation, DocumentType> maker
@@ -681,7 +682,19 @@ public class DomParser {
             break doctypeloop;
           }
           break;
-        default: break doctypeloop;
+
+        case TEXT:
+          String text = t.text;
+          if (text.trim().equals("")) {
+            // Ignore beginning whitespace.
+            tokens.pop();
+            break;
+          }
+          // Otherwise no doctype.
+          break doctypeloop;
+
+        default:
+          break doctypeloop;
       }
     }
     tokens.rewind(start);

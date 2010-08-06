@@ -162,6 +162,20 @@ public class DoctypeMakerTest extends TestCase {
     assertDoctype("html", null, null, "<!DOCTYPE HTML>");
 
     assertDoctype("html", null, null, "<!DOCTYPE html>");
+
+    // Test whether omitting whitespace b/w public id and system id allows
+    // doctype to be parsed correctly.
+    assertDoctype("html", "-//W3C//DTD HTML 4.01 Transitional//EN",
+                  "http://www.w3.org/TR/html4/loose.dtd",
+                  "<!DOCTYPE HTML PUBLIC "
+                  + "\"-//W3C//DTD HTML 4.01 Transitional//EN\""
+                  + "\"http://www.w3.org/TR/html4/loose.dtd\">");
+
+    assertDoctype("html", "-//W3C//DTD XHTML 1.0 Transitional//EN",
+                  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd",
+                  "<!DOCTYPE html PUBLIC "
+                  + "\"-//W3C//DTD XHTML 1.0 Transitional//EN\" "
+                  + "\"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\">");
 }
 
   private void assertDoctype(
