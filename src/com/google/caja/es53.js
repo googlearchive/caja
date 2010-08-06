@@ -13,12 +13,12 @@
 // limitations under the License.
 
 /**
- * @fileoverview the SES runtime library.
- * It is written in Javascript, not SES, and would be rejected by the SES
- * translator. This module exports two globals intended for normal use:<ol>
- * <li>"___" for use by the output of the SES translator and by some
+ * @fileoverview the ES5/3 runtime library.
+ * It is written in Javascript, not ES5, and would be rejected by the
+ * ES53Rewriter. This module exports two globals intended for normal use:<ol>
+ * <li>"___" for use by the output of the ES53Rewriter and by some
  *     other untranslated Javascript code.
- * <li>"ses" providing some common services to the SES programmer.
+ * <li>"es53" providing some common services to the ES5/3 programmer.
  * </ol>
  * <p>It also exports the following additional globals:<ul>
  * <li>"safeJSON" why is this being exported?
@@ -28,17 +28,17 @@
  *
  * @author metaweta@gmail.com
  * @requires this, json_sans_eval
- * @provides ___, ses, safeJSON, AS_TAMED___, AS_FERAL___
+ * @provides ___, es53, safeJSON, AS_TAMED___, AS_FERAL___
  * @overrides Array, Boolean, Date, Function, Number, Object, RegExp, String
  * @overrides Error, EvalError, RangeError, ReferenceError, SyntaxError,
  *   TypeError, URIError
  * @overrides escape, JSON
  */
 
-var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
+var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
 
 (function () {
-  // ES5/3 does not support FF2 thru 3.5 because of
+  // ES5/3 does not support FF2 or 3.0 because of
   // https://bugzilla.mozilla.org/show_bug.cgi?id=507453
   if (arguments[-2] !== void 0) {
     // TODO: Make this an error.
@@ -1187,7 +1187,7 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
    * {@code func}, but that logs a deprecation warning on first use.
    * <p>
    * Currently for internal use only, though may make this available
-   * on {@code ___} or even {@code ses} at a later time, after
+   * on {@code ___} or even {@code es53} at a later time, after
    * making it safe for such use. Forwards only arguments to
    * {@code func} and returns results back, without forwarding
    * {@code this}. If you want to deprecate an exophoric function,
@@ -1773,7 +1773,7 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
         case 'object': {
           if (ex === null) { return null; }
           if (ex.throwable___) { return ex; }
-          if (isError___(ex)) {
+          if (isError(ex)) {
             return freeze(ex);
           }
           return '' + ex;
@@ -2207,7 +2207,7 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
         // b. Return true.
         return true;
       }
-      // 4. Else if Throw, then throw a TypeError___ exception.
+      // 4. Else if Throw, then throw a TypeError exception.
       // [This is strict mode, so Throw is always true.]
       throw new TypeError___("Cannot delete '" + P + "' on " + obj);
       // 5. Return false.
@@ -2483,7 +2483,7 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
 
   // 11.1.5
   /**
-   * Creates a well formed SES record from a list of alternating
+   * Creates a well-formed ES5 record from a list of alternating
    * keys and values. 
    */
   function initializeMap(list) {
@@ -2510,13 +2510,13 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
 
   // 11.2.3
   /**
-   * Makes a [[ThrowTypeError___]] function, as defined in section 13.2.3
+   * Makes a [[ThrowTypeError]] function, as defined in section 13.2.3
    * of the ES5 spec.
    * 
-   * <p>The informal name for the [[ThrowTypeError___]] function, defined
+   * <p>The informal name for the [[ThrowTypeError]] function, defined
    * in section 13.2.3 of the ES5 spec, is the "poison pill". The poison
    * pill is simply a no-argument function that, when called, always
-   * throws a TypeError___. Since we wish this TypeError___ to carry useful
+   * throws a TypeError. Since we wish this TypeError to carry useful
    * diagnostic info, we violate the ES5 spec by defining 4 poison
    * pills with 4 distinct identities.
    * 
@@ -2634,7 +2634,7 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
 
   // 11.8.7
   /**
-   * Implements SES's {@code <i>name</i> in <i>obj</i>}
+   * Implements ES5's {@code <i>name</i> in <i>obj</i>}
    * 
    * Precondition: name is a string
    */
@@ -2696,7 +2696,7 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
 
   // 15.2.3.3
   Object.getOwnPropertyDescriptor = function(obj, P) {
-      // 1. If Type(object) is not Object throw a TypeError___ exception. 
+      // 1. If Type(object) is not Object throw a TypeError exception. 
       if (Type(obj) !== 'Object') {
         throw new TypeError___('Expected an object.');
       }
@@ -2732,7 +2732,7 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
   // The algorithm below doesn't care whether Properties is absent
   // or undefined, so we can simplify.
   Object.create = function (O, opt_Properties) {
-      // 1. If Type(O) is not Object or Null throw a TypeError___ exception.
+      // 1. If Type(O) is not Object or Null throw a TypeError exception.
       // (ES3 doesn't support null prototypes.)
       if (Type(obj) !== 'Object') {
         throw new TypeError___('Expected an object.');
@@ -2755,7 +2755,7 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
 
   // 15.2.3.6
   Object.defineProperty = function (O, P, Attributes) {
-      // 1. If Type(O) is not Object throw a TypeError___ exception.
+      // 1. If Type(O) is not Object throw a TypeError exception.
       if (Type(O) !== 'Object') {
         throw new TypeError___('Expected an object.');
       }
@@ -2774,7 +2774,7 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
 
   // 15.2.3.7
   Object.defineProperties = function (O, Properties) {
-      // 1. If Type(O) is not Object throw a TypeError___ exception.
+      // 1. If Type(O) is not Object throw a TypeError exception.
       if (Type(O) !== 'Object') {
         throw new TypeError___('Expected an object.');
       }
@@ -2820,7 +2820,7 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
 
   // 15.2.3.8
   Object.seal = function (O) {
-      // 1. If Type(O) is not Object throw a TypeError___ exception.
+      // 1. If Type(O) is not Object throw a TypeError exception.
       if (Type(O) !== 'Object') {
         throw new TypeError___('Only objects may be sealed.');
       }
@@ -2928,7 +2928,7 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
 
   // 15.2.3.11
   Object.isSealed = function (O) {
-      // 1. If Type(O) is not Object throw a TypeError___ exception.
+      // 1. If Type(O) is not Object throw a TypeError exception.
       if (Type(O) !== 'Object') {
         throw new TypeError___('Only objects may be frozen.');
       }
@@ -4055,7 +4055,7 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
     return myNewModuleHandler.m___('handle', [module]);
   }
 
-  ses = {
+  es53 = {
       // Diagnostics and condition enforcement
       log: log,
       enforce: enforce,
@@ -4092,7 +4092,7 @@ var ___, ses, safeJSON, AS_TAMED___, AS_FERAL___;
     };
 
   sharedImports = {
-      ses: ses,
+      es53: es53,
   
       'null': null,
       'false': false,

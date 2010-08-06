@@ -145,8 +145,8 @@ public final class Config {
       "pg", "goals",
       "Space separated properties as described in help text.", true);
 
-  private final Option SES = defineBooleanOption(
-      "ses", "ses", "Set to use SES translation instead of valija/cajita.");
+  private final Option ES53 = defineBooleanOption(
+      "es53", "es53", "Set to use ES5/3 translation instead of valija/cajita.");
   
   public enum SourceRenderMode {
     MINIFY,
@@ -178,7 +178,7 @@ public final class Config {
   private Planner.PlanState posGoals = Planner.EMPTY;
   private Planner.PlanState negPreconds = Planner.EMPTY;
   private Planner.PlanState posPreconds = Planner.EMPTY;
-  private boolean ses;
+  private boolean es53;
 
   public Config(Class<?> mainClass, PrintStream stderr, String usageText) {
     this(mainClass, new PrintWriter(stderr), usageText);
@@ -239,7 +239,7 @@ public final class Config {
     return ps.without(negPreconds).with(posPreconds);
   }
 
-  public boolean getSES() { return ses; }
+  public boolean getES53() { return es53; }
 
   public boolean processArguments(String[] argv) {
     try {
@@ -377,7 +377,7 @@ public final class Config {
       }
 
       boolean debugMode = cl.hasOption(DEBUG_MODE.getOpt());
-      ses = cl.hasOption(SES.getOpt());
+      es53 = cl.hasOption(ES53.getOpt());
       boolean onlyJsEmitted = cl.hasOption(ONLY_JS_EMITTED.getOpt());
       if (debugMode) {
         negGoals = negGoals.with(PipelineMaker.ONE_CAJOLED_MODULE);

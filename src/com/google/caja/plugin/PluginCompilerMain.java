@@ -173,7 +173,7 @@ public final class PluginCompilerMain {
 
       PluginMeta meta = new PluginMeta(fetcher, policy);
       meta.setIdClass(config.getIdClass());
-      meta.setEnableSES(config.getSES());
+      meta.setEnableES53(config.getES53());
       PluginCompiler compiler = new PluginCompiler(
           BuildInfo.getInstance(), meta, mq);
       Planner.PlanState preconds = compiler.getPreconditions();

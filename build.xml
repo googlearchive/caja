@@ -621,10 +621,10 @@
       <input file="${src}/com/google/caja/plugin/domita.js"/>
     </transform>
     <transform>
-      <output file="${lib}/com/google/caja/plugin/domita-ses-minified.js"
+      <output file="${lib}/com/google/caja/plugin/domita-es53-minified.js"
        language="javascript" renderer="minify"/>
       <input file="${third_party}/js/json_sans_eval/json_sans_eval.js"/>
-      <input file="${src}/com/google/caja/ses.js"/>
+      <input file="${src}/com/google/caja/es53.js"/>
       <input file="${src}/com/google/caja/plugin/unicode.js"/>
       <input file="${lib}/com/google/caja/plugin/css-defs.js"/>
       <input file="${lib}/com/google/caja/plugin/html4-defs.js"/>

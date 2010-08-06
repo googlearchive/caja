@@ -28,7 +28,7 @@ public final class PluginMeta {
    * they can avoid overlaps.
    */
   private String idClass;
-  private boolean enableSES;
+  private boolean enableES53;
 
   public PluginMeta() {
     this(UriFetcher.NULL_NETWORK, UriPolicy.DENY_ALL);
@@ -69,6 +69,6 @@ public final class PluginMeta {
    * Tells the cajoler to use the new SES translator instead of the old
    * cajita / valija translator.
    */
-  public boolean getEnableSES() { return enableSES; }
-  public void setEnableSES(boolean enableSES) { this.enableSES = enableSES; }
+  public boolean getEnableES53() { return enableES53; }
+  public void setEnableES53(boolean enableES53) { this.enableES53 = enableES53; }
 }

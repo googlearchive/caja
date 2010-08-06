@@ -87,11 +87,11 @@ import java.util.Set;
     name="Caja Transformation Rules",
     synopsis="Default set of transformations used by Caja"
   )
-public class SESRewriter extends Rewriter {
+public class ES53Rewriter extends Rewriter {
   private final BuildInfo buildInfo;
   private final URI baseUri;
   private final ModuleManager moduleManager;
-  // TODO: move this into scope if we use a single SESRewriter to rewrite
+  // TODO: move this into scope if we use a single ES53Rewriter to rewrite
   // multiple modules
   private final Set<StringLiteral> includedModules = Sets.newTreeSet(
       new Comparator<StringLiteral>() {
@@ -527,7 +527,7 @@ public class SESRewriter extends Rewriter {
           matches="for (@k in @o) @ss;",
           substitutes=(
               ""
-              + "for (@tkeys = ses.allEnumKeys(@o),"
+              + "for (@tkeys = es53.allEnumKeys(@o),"
               + "     @tidx = 0,"
               + "     @tlen = @tkeys.length;\n"
               + "     @tidx < @tlen; ++@tidx) {\n"
@@ -2054,7 +2054,7 @@ public class SESRewriter extends Rewriter {
     }
   };
 
-  public SESRewriter(
+  public ES53Rewriter(
       URI baseUri, ModuleManager moduleManager, boolean logging) {
     super(moduleManager.getMessageQueue(), true, logging);
     this.buildInfo = moduleManager.getBuildInfo();
@@ -2063,7 +2063,7 @@ public class SESRewriter extends Rewriter {
     initRules();
   }
 
-  public SESRewriter(BuildInfo buildInfo, MessageQueue mq, boolean logging) {
+  public ES53Rewriter(BuildInfo buildInfo, MessageQueue mq, boolean logging) {
     super(mq, true, logging);
     this.buildInfo = buildInfo;
     this.baseUri = null;

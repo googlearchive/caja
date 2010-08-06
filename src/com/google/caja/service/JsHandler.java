@@ -34,7 +34,7 @@ import com.google.caja.parser.quasiliteral.CajitaRewriter;
 import com.google.caja.parser.quasiliteral.DefaultValijaRewriter;
 import com.google.caja.parser.quasiliteral.QuasiBuilder;
 import com.google.caja.parser.quasiliteral.Rewriter;
-import com.google.caja.parser.quasiliteral.SESRewriter;
+import com.google.caja.parser.quasiliteral.ES53Rewriter;
 import com.google.caja.reporting.BuildInfo;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
@@ -104,7 +104,7 @@ public class JsHandler extends AbstractCajolingHandler {
       Block input = new Parser(tq, mq).parse();
       tq.expectEmpty();
       UncajoledModule ucm = new UncajoledModule(input);
-      if (!directive.contains(CajolingService.Directive.SES)) {
+      if (!directive.contains(CajolingService.Directive.ES53)) {
         Rewriter vrw = new DefaultValijaRewriter(mq, false /* logging */);
         Rewriter crw = new CajitaRewriter(buildInfo, mq, false /* logging */);
         if (transform == null ||
@@ -119,9 +119,9 @@ public class JsHandler extends AbstractCajolingHandler {
               moduleCallback)); 
         }
       } else {
-        Rewriter srw = new SESRewriter(buildInfo, mq, false /* logging */);
+        Rewriter esrw = new ES53Rewriter(buildInfo, mq, false /* logging */);
         output.append(renderJavascript(
-            (CajoledModule) srw.expand(ucm),
+            (CajoledModule) esrw.expand(ucm),
             moduleCallback));
       }
     } catch (ParseException e) {

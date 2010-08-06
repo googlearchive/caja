@@ -25,7 +25,7 @@ import com.google.caja.parser.quasiliteral.IllegalReferenceCheckRewriter;
 import com.google.caja.parser.quasiliteral.ModuleManager;
 import com.google.caja.parser.quasiliteral.NonAsciiCheckVisitor;
 import com.google.caja.parser.quasiliteral.Rewriter;
-import com.google.caja.parser.quasiliteral.SESRewriter;
+import com.google.caja.parser.quasiliteral.ES53Rewriter;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.MessageLevel;
 
@@ -61,7 +61,7 @@ public class ExpressionSanitizerCaja {
       }
     }
     if (useSES) {
-      result = newSESRewriter(mq).expand(input);
+      result = newES53Rewriter(mq).expand(input);
     } else {
       if (result == null) {
         result = newValijaRewriter(mq).expand(input);
@@ -84,8 +84,8 @@ public class ExpressionSanitizerCaja {
     return new CajitaRewriter(baseUri, mgr, false);
   }
 
-  protected Rewriter newSESRewriter(MessageQueue mq) {
-    return new SESRewriter(baseUri, mgr, false);
+  protected Rewriter newES53Rewriter(MessageQueue mq) {
+    return new ES53Rewriter(baseUri, mgr, false);
   }
   
   protected Rewriter newValijaRewriter(MessageQueue mq) {
