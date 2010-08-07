@@ -1,0 +1,11 @@
+<table>
+  <caption><strong>Cajoling error! Log:</strong></caption>
+{% for message in response.messages %}{% ifnotequal message.type "CHECKPOINT" %}
+  <tr>
+    <!--<td>{{ message.level|escape }}</td>-->
+    <td>{{ message.name|escape }}:</td>
+    <!--<td>{{ message.type|escape }}</td>-->
+    <td>{{ message.message|escape }}</td>
+  </tr>
+{% endifnotequal %}{% endfor %}
+</table>

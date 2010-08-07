@@ -12,12 +12,11 @@ changes to work outside of App Engine or if you don't want it to touch memcache.
 
 from google.appengine.api import memcache, urlfetch
 
+from google.appengine.ext.webapp import template
+
 from django.utils import simplejson as json
 
-import urllib2
-import hashlib
-import logging
-import re
+import urllib2, hashlib, logging, re, os
 
 # config
 cajaServer = "http://caja.appspot.com/"
@@ -31,17 +30,30 @@ cajoleRequestURL = cajaServer + "cajole?input-mime-type=text/html" \
 dummyModule = "___.loadModule({'instantiate': function () {}})"
 requestBodyEncoding = "utf-8"
 
+def mimeTypeFromUrllib2(response):
+  # For some reason response.info().gettype() is returning text/plain, at least
+  # in the dev server.
+  return response.info().getheader("Content-Type").split(";")[0]
+
 def cajolingErrorModule(e):
   """Given a HTTP 400 error (as presented by urllib2), return a cajoling-result
   dict showing the error."""
-  # mmm, kludge. TODO(kpreid): After
-  # <http://code.google.com/p/google-caja/issues/detail?id=1250>.
-  # is fixed, make use of it here.
-  errorHtml = e.read()
-  errorMatch = re.search(r'(?s)(<pre>.*</pre>)', errorHtml)
-  if errorMatch:
-    errorHtml = errorMatch.group(1)
-  errorHtml = "<div><strong>Cajoling error</strong></div>" + errorHtml
+  # For some reason e.info().gettype() is returning text/plain.
+  mimetype = mimeTypeFromUrllib2(e)
+  if mimetype == "application/json":
+    value = json.load(e)
+    errorHtml = template.render(os.path.join(os.path.dirname(__file__),
+                                             "cajole-error.t.html"),
+                                {"response": value})
+  elif mimetype == "text/html":
+    # kludge for before issue 1250, kept in case of glitch/reversion
+    errorHtml = e.read()
+    errorMatch = re.search(r'(?s)(<pre>.*</pre>)', errorHtml)
+    if errorMatch:
+      errorHtml = errorMatch.group(1)
+    errorHtml = "<div><strong>Cajoling error</strong></div>" + errorHtml
+  else:
+    errorHtml = "<div><strong>(Error interpreting cajoling error)</strong></div>"
   return {"html": errorHtml, "js": dummyModule, "error": True}
 
 def cajole(html):
@@ -71,6 +83,9 @@ def cajole(html):
             "Content-Type": "text/html;charset="+requestBodyEncoding,
             "Accept": "application/json",
           }))
+        if mimeTypeFromUrllib2(result) != 'application/json':
+          raise Exception("Unexpected mime-type from cajoler: " +
+              result.info().gettype())
         value = json.load(result)
       except urllib2.HTTPError, e:
         logging.exception("Error in invoking cajoler (matched HTTPError).")
