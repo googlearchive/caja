@@ -424,7 +424,7 @@ domitaModules.CssPropertiesCollection =
 /**
  * Add a tamed document implementation to a Gadget's global scope.
  *
- * Has the side effect of adding the classes "vdoc-body___" and 
+ * Has the side effect of adding the classes "vdoc-body___" and
  * idSuffix.substring(1) to the pseudoBodyNode.
  *
  * @param {string} idSuffix a string suffix appended to all node IDs.
@@ -1163,6 +1163,7 @@ var attachDocumentStub = (function () {
           throw 'Internal: Attr nodes cannot be generically wrapped';
           break;
         case 3:  // Text
+        case 4:  // CDATA Section Node
           tamed = new TameTextNode(node, editable);
           break;
         case 8:  // Comment
@@ -1449,7 +1450,7 @@ var attachDocumentStub = (function () {
     var UNSAFE_TAGNAME = "Unsafe tag name.";
     var UNKNOWN_TAGNAME = "Unknown tag name.";
     var INDEX_SIZE_ERROR = "Index size error.";
-  
+
     // Implementation of EventTarget::addEventListener
     function tameAddEventListener(name, listener, useCapture) {
       if (!this.editable___) { throw new Error(NOT_EDITABLE); }
@@ -2085,7 +2086,8 @@ var attachDocumentStub = (function () {
       }
 
       TameBackedNode.call(this, node, editable, editable);
-      classUtils.exportFields(this, ['nodeValue', 'data']);
+      classUtils.exportFields(
+          this, ['nodeValue', 'data', 'textContent', 'innerText']);
     }
     inertCtor(TameTextNode, TameBackedNode, 'Text');
     TameTextNode.prototype.setNodeValue = function (value) {
@@ -2093,8 +2095,10 @@ var attachDocumentStub = (function () {
       this.node___.nodeValue = String(value || '');
       return value;
     };
-    TameTextNode.prototype.getData = TameTextNode.prototype.getNodeValue;
-    TameTextNode.prototype.setData = TameTextNode.prototype.setNodeValue;
+    TameTextNode.prototype.getTextContent = TameTextNode.prototype.getInnerText
+        = TameTextNode.prototype.getData = TameTextNode.prototype.getNodeValue;
+    TameTextNode.prototype.setTextContent = TameTextNode.prototype.setInnerText
+        = TameTextNode.prototype.setData = TameTextNode.prototype.setNodeValue;
     TameTextNode.prototype.toString = function () {
       return '#text';
     };
@@ -2211,7 +2215,7 @@ var attachDocumentStub = (function () {
       classUtils.exportFields(
           this,
           ['className', 'id', 'innerHTML', 'tagName', 'style',
-           'offsetParent', 'title', 'dir']);
+           'offsetParent', 'title', 'dir', 'innerText', 'textContent']);
       classUtils.applyAccessors(this, commonElementPropertyHandlers);
       registerElementScriptAttributeHandlers(this);
     }
@@ -2344,6 +2348,46 @@ var attachDocumentStub = (function () {
     TameElement.prototype.setDir = function (classes) {
       if (!this.editable___) { throw new Error(NOT_EDITABLE); }
       return this.setAttribute('dir', String(classes));
+    };
+    function innerTextOf(rawNode, out) {
+      switch (rawNode.nodeType) {
+        case 1:  // Element
+          var tagName = rawNode.tagName.toLowerCase();
+          if (html4.ELEMENTS.hasOwnProperty(tagName)
+              && !(html4.ELEMENTS[tagName] & html4.eflags.UNSAFE)) {
+            // Not an opaque node.
+            for (var c = rawNode.firstChild; c; c = c.nextSibling) {
+              innerTextOf(c, out);
+            }
+          }
+          break;
+        case 3:  // Text Node
+        case 4:  // CDATA Section Node
+          out[out.length] = rawNode.data;
+          break;
+        case 11:  // Document Fragment
+          for (var c = rawNode.firstChild; c; c = c.nextSibling) {
+            innerTextOf(c, out);
+          }
+          break;
+      }
+    }
+    TameElement.prototype.getTextContent = TameElement.prototype.getInnerText
+        = function () {
+      var text = [];
+      innerTextOf(this.node___, text);
+      return text.join('');
+    };
+    TameElement.prototype.setTextContent = TameElement.prototype.setInnerText
+        = function (newText) {
+      if (!this.editable___) { throw new Error(NOT_EDITABLE); }
+      var newTextStr = newText != null ? String(newText) : '';
+      var el = this.node___;
+      for (var c; (c = el.firstChild);) { el.removeChild(c); }
+      if (newTextStr) {
+        el.appendChild(el.ownerDocument.createTextNode(newTextStr));
+      }
+      return newText;
     };
     TameElement.prototype.getTagName = TameBackedNode.prototype.getNodeName;
     TameElement.prototype.getInnerHTML = function () {
@@ -4184,7 +4228,7 @@ function plugin_dispatchEvent___(thisNode, event, pluginId, handler) {
   var imports = ___.getImports(pluginId);
   var node = imports.tameNode___(thisNode, true);
   return plugin_dispatchToHandler___(
-      pluginId, handler, [ node, imports.tameEvent___(event), node ]); 
+      pluginId, handler, [ node, imports.tameEvent___(event), node ]);
 }
 
 function plugin_dispatchToHandler___(pluginId, handler, args) {

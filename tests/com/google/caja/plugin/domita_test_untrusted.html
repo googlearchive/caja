@@ -524,6 +524,8 @@ Static CommonJS Module</p>
 ></map
 ><img usemap="#foo" src="mappic.gif"></p>
 
+<p class="testcontainer" id="test-inner-text">Hello, <b>World!</b></p>
+
 <p class="testcontainer" id="test-document-body-appendChild"
  >I should be the last element until something is appended to document.body</p>
 
@@ -3272,6 +3274,40 @@ jsunitRegister('testUsemap',
           'uri=(base)/'));
 
   pass('test-usemap');
+});
+
+jsunitRegister('testInnerText',
+               function testInnerText() {
+  var testInnerTextNode = document.getElementById('test-inner-text');
+  assertEquals('IT1', 'Hello, World!', testInnerTextNode.innerText);
+  assertEquals('TC1', 'Hello, World!', testInnerTextNode.textContent);
+  assertEquals('IT1T', 'Hello, ', testInnerTextNode.firstChild.innerText);
+  assertEquals('TC1T', 'Hello, ', testInnerTextNode.firstChild.textContent);
+  assertEquals('IH1', 'Hello, <b>World!<\/b>', testInnerTextNode.innerHTML);
+
+  testInnerTextNode.innerText = 'Goodbye cruel plain <b>text<\/b>!';
+  assertEquals(
+      'IH2', 'Goodbye cruel plain &lt;b&gt;text&lt;/b&gt;!',
+      testInnerTextNode.innerHTML);
+  assertEquals(
+      'IT2', 'Goodbye cruel plain <b>text</b>!',
+      testInnerTextNode.firstChild.innerText);
+  assertEquals('CL2', 1, testInnerTextNode.childNodes.length);
+  testInnerTextNode.innerText = '';
+  assertEquals('CL3', 0, testInnerTextNode.childNodes.length);
+  assertEquals('IT3', '', testInnerTextNode.innerText);
+  testInnerTextNode.innerText = null;
+  assertEquals('CL4', 0, testInnerTextNode.childNodes.length);
+  testInnerTextNode.innerText = 42;
+  assertEquals('CL5', 1, testInnerTextNode.childNodes.length);
+  assertEquals('IT5', '42', testInnerTextNode.innerText);
+
+  // Opaque nodes appear to be empty.
+  assertEquals(
+      'ITON', 'abc',
+      document.getElementById('test-opaque-nodes').innerText);
+
+  pass('test-inner-text');
 });
 
 jsunitRegister('testDocumentBodyAppendChild',
