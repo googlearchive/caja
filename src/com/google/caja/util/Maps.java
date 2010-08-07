@@ -96,7 +96,7 @@ public final class Maps {
   public static final class ImmutableMapBuilder<K, V> {
     private Map<K, V> map;
     private boolean canUseEnumMap = true;
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings("rawtypes")
     private Class<? extends Enum> enumKeyType;
     ImmutableMapBuilder(Map<K, V> emptyMap) { this.map = emptyMap; }
 
@@ -145,7 +145,7 @@ public final class Maps {
 
   // This is legit because enumKeyType above is both an enum type (checked at
   // runtime in the EnumMap ctor) and is the type of a subclass of K.
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings({ "rawtypes", "unchecked" })
   private static <K, V>
   Map<K, V> makeEnumMap(Class<? extends Enum> t) { return new EnumMap(t); }
 

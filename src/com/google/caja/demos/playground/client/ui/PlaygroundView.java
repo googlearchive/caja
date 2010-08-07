@@ -64,7 +64,7 @@ import com.google.gwt.user.client.ui.Widget;
  */
 public class PlaygroundView {
   private final boolean EXPERIMENTAL_MODE = false;
-  
+
   private HTML renderPanel;
   private TextBox renderResult;
   private HTML cajoledSource;
@@ -91,7 +91,7 @@ public class PlaygroundView {
     policyAddressField.setText(url);
     policyExamples.add(url);
   }
-  
+
   public void setUrl(String url) {
     addressField.setText(url);
     sourceExamples.add(url);
@@ -179,7 +179,7 @@ public class PlaygroundView {
     addressBar.setStyleName("playgroundUI");
     addressBar.setWidget(0, item, addressField);
     addressBar.getCellFormatter().setWidth(0, item++, "80%");
-    
+
     addressBar.setWidget(0, item++, debugModeButton);
     addressBar.setWidget(0, item++, goButton);
     addressBar.setWidget(0, item++, cajoleButton);
@@ -209,7 +209,7 @@ public class PlaygroundView {
     });
     policyAddressField.setText("http://");
     policyAddressField.setWidth("100%");
-    
+
     final Button clearButton = new Button("Clear");
     clearButton.addClickHandler(new ClickHandler() {
       public void onClick(ClickEvent event) {
@@ -217,7 +217,7 @@ public class PlaygroundView {
         controller.clearPolicy();
       }
     });
-    
+
     final Button loadButton = new Button("\u21B4\u00A0Load");
     loadButton.addClickHandler(new ClickHandler() {
       public void onClick(ClickEvent event) {
@@ -261,7 +261,7 @@ public class PlaygroundView {
     currentPolicy = PlaygroundResource.INSTANCE.defaultPolicy().getText();
     policyText.setText(currentPolicy);
   }
-  
+
   private Widget createCajoledSourcePanel() {
     FlowPanel fp = new FlowPanel();
     cajoledSource = new HTML();
@@ -537,7 +537,7 @@ public class PlaygroundView {
     script.setInnerText(text);
     return script;
   }
-  
+
   public void setRenderedResult(String policy, String html, String js) {
     if (html == null && js == null) {
       renderPanel.setText("There were cajoling errors");
@@ -551,7 +551,7 @@ public class PlaygroundView {
     // Make the cajoled content visible so that the DOM will be laid out before
     // the script checks DOM geometry.
     editorPanel.selectTab(2);
-    
+
     Element parent = renderPanel.getElement();
     parent.appendChild(scriptOf(policy));
     parent.appendChild(scriptOf("caja___.enable()"));

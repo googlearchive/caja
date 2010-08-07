@@ -60,4 +60,8 @@ public class ImageHandler implements ContentHandler {
       return null;
     }
   }
+
+  public boolean sandboxLinksAndImages(URI inputUri) {
+    throw new UnsupportedOperationException();
+  }
 }

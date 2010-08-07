@@ -74,4 +74,10 @@ public interface ContentHandler {
                                     OutputStream response,
                                     MessageQueue mq)
       throws UnsupportedContentTypeException;
+
+  /**
+   * True if links should be sandboxed.
+   * TODO: get rid of this once we have URI policies specified in JS.
+   */
+  public boolean sandboxLinksAndImages(URI inputUri);
 }

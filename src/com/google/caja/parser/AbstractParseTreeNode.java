@@ -26,7 +26,6 @@ import com.google.caja.util.SyntheticAttributes;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 
@@ -94,7 +93,7 @@ public abstract class AbstractParseTreeNode implements MutableParseTreeNode {
     return this.attributes;
   }
   @SuppressWarnings("unchecked")
-  public void setComments(List<? extends Token> comments) {
+  public void setComments(List<? extends Token<?>> comments) {
     List<Token<?>> tokens = (List<Token<?>>) comments;
     this.comments = !comments.isEmpty()
         ? Collections.unmodifiableList(new ArrayList<Token<?>>(tokens))
@@ -382,12 +381,8 @@ public abstract class AbstractParseTreeNode implements MutableParseTreeNode {
       return insertBefore(toAppend, null);
     }
 
-    @SuppressWarnings("unchecked")
     public Mutation appendChildren(Iterable<? extends ParseTreeNode> nodes) {
-      for (Iterator it=nodes.iterator(); it.hasNext(); ) {
-        ParseTreeNode node = (ParseTreeNode)it.next();
-        changes.add(new Insertion(node, null));
-      }
+      for (ParseTreeNode node : nodes) { insertBefore(node, null); }
       return this;
     }
 

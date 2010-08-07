@@ -129,4 +129,8 @@ public class JsHandler extends AbstractCajolingHandler {
           MessagePart.Factory.valueOf(e.getMessage()));
     }
   }
+
+  public boolean sandboxLinksAndImages(URI inputUri) {
+    throw new UnsupportedOperationException();
+  }
 }

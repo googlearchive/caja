@@ -127,7 +127,7 @@ public class ParseTreeNodes {
     return (Constructor<T>) cloneCtorCache.get(clazz);
   }
 
-  @SuppressWarnings({"unchecked", "cast"})
+  @SuppressWarnings({"cast", "rawtypes", "unchecked"})
   private static <T> List<Constructor<T>> declaredCtors(Class<T> clazz) {
     // This is typesafe because a constructor yields exactly the type T,
     // never a subclass.  Unfortunately getDeclaredConstructors loses type info

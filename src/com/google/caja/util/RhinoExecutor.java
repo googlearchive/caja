@@ -129,10 +129,11 @@ public final class RhinoExecutor implements Executor {
         }
       });
       context.setWrapFactory(new WrapFactory() {
-        @SuppressWarnings("unchecked")  // Overridden method is not generic
         @Override
         public Object wrap(
-            Context cx, Scriptable scope, Object javaObject, Class staticType) {
+            Context cx, Scriptable scope, Object javaObject,
+            @SuppressWarnings("rawtypes")  // Overridden method is not generic
+            Class staticType) {
           // Deny reflective access up front.  This should not be triggered due
           // to getter filtering, but let's be paranoid.
           if (javaObject != null
@@ -161,10 +162,11 @@ public final class RhinoExecutor implements Executor {
           return super.wrap(cx, scope, javaObject, staticType);
         }
 
-        @SuppressWarnings("unchecked")  // Overridden method is not generic
         @Override
         public Scriptable wrapAsJavaObject(
-            Context cx, Scriptable scope, Object javaObject, Class staticType) {
+            Context cx, Scriptable scope, Object javaObject,
+            @SuppressWarnings("rawtypes")  // Overridden method is not generic
+            Class staticType) {
           return new NativeJavaObject(scope, javaObject, staticType) {
             @Override
             public Object get(String name, Scriptable start) {

@@ -49,6 +49,7 @@ import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.Callback;
 import com.google.caja.util.Lists;
 import com.google.caja.util.Pair;
+import com.google.caja.util.Strings;
 
 /**
  * Common parent class for handlers that invoke the cajoler
@@ -59,21 +60,36 @@ import com.google.caja.util.Pair;
 public abstract class AbstractCajolingHandler implements ContentHandler {
   protected final BuildInfo buildInfo;
   protected final UriFetcher uriFetcher;
-  protected final UriPolicy uriPolicy;
+  protected final String hostedService;
 
   public AbstractCajolingHandler(
-      BuildInfo buildInfo, final String hostedService,
-      final UriFetcher uriFetcher) {
+      BuildInfo buildInfo, String hostedService, UriFetcher uriFetcher) {
     this.buildInfo = buildInfo;
+    this.hostedService = hostedService;
     this.uriFetcher = uriFetcher != null ? uriFetcher : UriFetcher.NULL_NETWORK;
-    this.uriPolicy = new UriPolicy() {
+  }
+
+  protected UriPolicy makeUriPolicy(final URI inputUri) {
+    return new UriPolicy() {
       public String rewriteUri(
           ExternalReference u, UriEffect effect, LoaderType loader,
           Map<String, ?> hints) {
+        URI uri = u.getUri();
+        if (((effect == UriEffect.NEW_DOCUMENT
+              && loader == LoaderType.UNSANDBOXED)
+             || (effect == UriEffect.SAME_DOCUMENT
+                 && loader == LoaderType.SANDBOXED))
+            && !sandboxLinksAndImages(inputUri)) {
+          String protocol = Strings.toLowerCase(uri.getScheme());
+          if ("http".equals(protocol) || "https".equals(protocol)) {
+            return uri.toString();
+          }
+        }
         if (hostedService != null) {
           return hostedService
-              + "?url=" + UriUtil.encode(u.getUri().toString())
-              + "&effect=" + effect + "&loader=" + loader;
+              + "?url=" + UriUtil.encode(uri.toString())
+              + "&effect=" + effect + "&loader=" + loader
+              + "&sext=" + sandboxLinksAndImages(inputUri);
         } else {
           return null;
         }

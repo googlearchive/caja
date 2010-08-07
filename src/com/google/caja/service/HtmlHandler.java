@@ -16,9 +16,13 @@ package com.google.caja.service;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.io.UnsupportedEncodingException;
 import java.net.URI;
+import java.net.URLEncoder;
 import java.util.List;
 import org.w3c.dom.Document;
+
+import com.google.caja.SomethingWidgyHappenedError;
 import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.FetchedData;
 import com.google.caja.lexer.HtmlLexer;
@@ -46,8 +50,8 @@ import com.google.caja.util.Pair;
  */
 public class HtmlHandler extends AbstractCajolingHandler {
 
-  public HtmlHandler(BuildInfo buildInfo, final String hostedService,
-      final UriFetcher uriFetcher) {
+  public HtmlHandler(
+      BuildInfo buildInfo, final String hostedService, UriFetcher uriFetcher) {
     super(buildInfo, hostedService, uriFetcher);
   }
 
@@ -75,7 +79,7 @@ public class HtmlHandler extends AbstractCajolingHandler {
                                    OutputStream response,
                                    MessageQueue mq)
       throws UnsupportedContentTypeException {
-    PluginMeta meta = new PluginMeta(uriFetcher, uriPolicy);
+    PluginMeta meta = new PluginMeta(uriFetcher, makeUriPolicy(uri));
     ContentType outputType = ContentType.fromMimeType(outputContentType);
     if (outputType == null) {
       if (outputContentType.matches("\\*/\\*(\\s*;.*)?")) {
@@ -159,5 +163,30 @@ public class HtmlHandler extends AbstractCajolingHandler {
           ServiceMessageType.IO_ERROR,
           MessagePart.Factory.valueOf(e.getMessage()));
     }
+  }
+
+  public boolean sandboxLinksAndImages(URI inputUri) {
+    return !(hasParameter(inputUri.getRawQuery(), "sext=false"));
+  }
+
+  private static boolean hasParameter(String query, String param) {
+    if (query == null) { return false; }
+    int pos = 0;
+    int n = query.length();
+    if (n >= 1 && query.charAt(0) == '?') { pos = 1; }
+    while (pos < n) {
+      int end = query.indexOf('&', pos);
+      if (end < 0) { end = n; }
+      String rawParam = query.substring(pos, end);
+      try {
+        if (URLEncoder.encode(rawParam, "UTF-8").equals(param)) {
+          return true;
+        }
+      } catch (UnsupportedEncodingException ex) {
+        throw new SomethingWidgyHappenedError(ex);
+      }
+      pos = end + 1;
+    }
+    return false;
   }
 }

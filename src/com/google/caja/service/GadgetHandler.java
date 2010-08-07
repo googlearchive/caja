@@ -83,8 +83,8 @@ public class GadgetHandler implements ContentHandler {
     }
   }
 
-  private void cajoleGadget(URI inputUri, CharProducer cajaInput,
-      Appendable output, MessageQueue mq)
+  private void cajoleGadget(
+      URI inputUri, CharProducer cajaInput, Appendable output, MessageQueue mq)
       throws ParseException, GadgetRewriteException, IOException {
     DefaultGadgetRewriter rewriter = new DefaultGadgetRewriter(buildInfo, mq);
 
@@ -102,4 +102,6 @@ public class GadgetHandler implements ContentHandler {
     };
     rewriter.rewrite(inputUri, cajaInput, fetcher, policy, "canvas", output);
   }
+
+  public boolean sandboxLinksAndImages(URI inputUri) { return true; }
 }
