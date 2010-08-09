@@ -138,10 +138,23 @@ domitaModules.classUtils = function() {
     }
   }
 
+  function defAttributeAlias(ctor, name, toValue, fromValue) {
+    var getterSetterSuffix = String.fromCharCode(name.charCodeAt(0) & ~32)
+        + name.substring(1);
+    ctor.prototype['get' + getterSetterSuffix] = function () {
+      return toValue(this.getAttribute(name));
+    };
+    ctor.prototype['set' + getterSetterSuffix] = function (value) {
+      this.setAttribute(name, fromValue(value));
+      return value;
+    };
+  }
+
   return {
     exportFields: exportFields,
     ensureValidCallback: ensureValidCallback,
-    applyAccessors: applyAccessors
+    applyAccessors: applyAccessors,
+    defAttributeAlias: defAttributeAlias
   };
 };
 
@@ -3013,7 +3026,9 @@ var attachDocumentStub = (function () {
 
     function TameTableElement(node, editable) {
       TameTableCompElement.call(this, node, editable);
-      classUtils.exportFields(this, ['tBodies', 'tHead', 'tFoot']);
+      classUtils.exportFields(
+          this,
+          ['tBodies', 'tHead', 'tFoot', 'cellPadding', 'cellSpacing', 'border']);
     }
     inertCtor(TameTableElement, TameTableCompElement, 'HTMLTableElement');
     TameTableElement.prototype.getTBodies = function () {
@@ -3060,6 +3075,13 @@ var attachDocumentStub = (function () {
       requireIntIn(index, -1, this.node___.rows.length);
       this.node___.deleteRow(index);
     };
+    function fromInt(x) { return '' + (x | 0); }  // coerce null and false to 0
+    classUtils.defAttributeAlias(
+        TameTableElement, 'cellPadding', Number, fromInt);
+    classUtils.defAttributeAlias(
+        TameTableElement, 'cellSpacing', Number, fromInt);
+    classUtils.defAttributeAlias(
+        TameTableElement, 'border', Number, fromInt);
 
     ___.all2(___.grantTypedMethod, TameTableElement.prototype,
              ['createTHead', 'deleteTHead', 'createTFoot', 'deleteTFoot',

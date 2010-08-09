@@ -419,7 +419,7 @@ can test window.scrollBy with a positive x value with a visible effect.
 </p>
 
 <div class="testcontainer" id="test-table-elements">
-  <table>
+  <table id='test-table-elements-table'>
     <thead>
       <tr>
         <td>h00</td>
@@ -3102,6 +3102,9 @@ jsunitRegister('testTableElements',
   var tr_b1 = document.getElementById('test-table-elements-tr-b1');
   assertEquals(1, tr_b1.sectionRowIndex);
   assertEquals(2, tr_b1.rowIndex);
+  var table = document.getElementById('test-table-elements-table');
+  assertEquals(0, table.cellPadding);
+  assertEquals(0, table.cellSpacing);
   pass('test-table-elements');
 });
 
