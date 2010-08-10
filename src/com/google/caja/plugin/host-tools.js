@@ -89,7 +89,8 @@ var HostTools;
         // This is primarily useful when used from caja.js (Caja in an iframe),
         // since the host page doesn't have eval of the frame
 
-        var moduleFunc;
+        var pumpkin = {};
+        var moduleFunc = pumpkin;
         var oldModuleHandler = ___.getNewModuleHandler();
         var newModuleHandler = ___.makeNormalNewModuleHandler();
         newModuleHandler.handle = ___.markFuncFreeze(
@@ -104,6 +105,10 @@ var HostTools;
           eval(js);
         } finally {
           ___.setNewModuleHandler(oldModuleHandler);
+        }
+        if (moduleFunc === pumpkin) {
+          throw new Error("runCajoledModuleString: the provided code did not " +
+            "invoke the new module handler");
         }
         return moduleFunc(imports);
       }
