@@ -405,7 +405,7 @@ public class PlaygroundView {
     editorPanel.setSize("100%", "100%");
     editorPanel.getDeckPanel().setSize("100%", "100%");
 
-    editorPanel.selectTab(0);
+    selectTab(Tabs.SOURCE);
     return editorPanel;
   }
 
@@ -544,18 +544,18 @@ public class PlaygroundView {
       return;
     }
     renderPanel.setHTML(
-    "<div id=\"cajoled-output\">\n" +
-      html +
-    "</div>\n");
+        "<div id=\"cajoled-output\">\n"
+	+ (html != null ? html : "")
+	+ "</div>\n");
 
     // Make the cajoled content visible so that the DOM will be laid out before
     // the script checks DOM geometry.
-    editorPanel.selectTab(2);
+    selectTab(Tabs.RENDER);
 
     Element parent = renderPanel.getElement();
     parent.appendChild(scriptOf(policy));
     parent.appendChild(scriptOf("caja___.enable()"));
-    parent.appendChild(scriptOf(js));
+    if (js != null) { parent.appendChild(scriptOf(js)); }
 
     renderResult.setText(getRenderResult());
   }
