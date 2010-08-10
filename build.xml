@@ -657,7 +657,7 @@
       <input file="${src}/com/google/caja/plugin/html-emitter.js"/>
       <input file="${src}/com/google/caja/plugin/bridal.js"/>
       <input file="${src}/com/google/caja/plugin/domita.js"/>
-      <input file="${src}/com/google/caja/demos/playground/setup-valija.js"/>
+      <input file="${src}/com/google/caja/plugin/capture-valija.js"/>
       <input file="${lib}/com/google/caja/plugin/valija.out.js"/>
       <input file="${src}/com/google/caja/plugin/uri.js"/>
       <input file="${src}/com/google/caja/cajita-module.js"/>
@@ -678,7 +678,7 @@
        <input file="${src}/com/google/caja/plugin/html-emitter.js"/>
        <input file="${src}/com/google/caja/plugin/bridal.js"/>
        <input file="${src}/com/google/caja/plugin/domita.js"/>
-       <input file="${src}/com/google/caja/demos/playground/setup-valija.js"/>
+       <input file="${src}/com/google/caja/plugin/capture-valija.js"/>
        <input file="${lib}/com/google/caja/plugin/valija.out.js"/>
        <input file="${src}/com/google/caja/plugin/uri.js"/>
        <input file="${src}/com/google/caja/cajita-module.js"/>
