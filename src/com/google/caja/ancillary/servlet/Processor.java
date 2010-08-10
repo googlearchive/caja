@@ -64,6 +64,7 @@ import com.google.caja.render.CssPrettyPrinter;
 import com.google.caja.render.JsMinimalPrinter;
 import com.google.caja.render.JsPrettyPrinter;
 import com.google.caja.reporting.DevNullMessageQueue;
+import com.google.caja.reporting.MarkupRenderMode;
 import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessagePart;
@@ -381,7 +382,9 @@ class Processor {
         throw new AssertionError(ot.name());
     }
     RenderContext rc = new RenderContext(tc);
-    rc = rc.withAsXml(ot == ContentType.XML);
+    rc = rc.withMarkupRenderMode(
+        ot == ContentType.XML
+        ? MarkupRenderMode.XML : MarkupRenderMode.HTML);
     rc = rc.withAsciiOnly(req.asciiOnly);
     rc = rc.withJson(ot == ContentType.JSON);
     rc = rc.withRawObjKeys(req.minify);

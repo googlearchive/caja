@@ -15,6 +15,7 @@
 package com.google.caja.parser.html;
 
 import com.google.caja.render.Concatenator;
+import com.google.caja.reporting.MarkupRenderMode;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.CajaTestCase;
 
@@ -153,7 +154,8 @@ public class NodesTest extends CajaTestCase {
     Namespaces ns = new Namespaces(
         Namespaces.HTML_DEFAULT, "svg", Namespaces.XML_NAMESPACE_URI);
     StringBuilder sb = new StringBuilder();
-    RenderContext rc = new RenderContext(new Concatenator(sb)).withAsXml(true);
+    RenderContext rc = new RenderContext(new Concatenator(sb))
+        .withMarkupRenderMode(MarkupRenderMode.XML);
     Nodes.render(fragment, ns, rc);
     rc.getOut().noMoreTokens();
     assertEquals(
@@ -173,7 +175,8 @@ public class NodesTest extends CajaTestCase {
     Namespaces ns = new Namespaces(
         Namespaces.HTML_DEFAULT, "html", Namespaces.HTML_NAMESPACE_URI);
     StringBuilder sb = new StringBuilder();
-    RenderContext rc = new RenderContext(new Concatenator(sb)).withAsXml(false);
+    RenderContext rc = new RenderContext(new Concatenator(sb))
+        .withMarkupRenderMode(MarkupRenderMode.HTML);
     Nodes.render(el, ns, rc);
     rc.getOut().noMoreTokens();
     assertEquals("<html:span title=\"Howdy\"></html:span>", sb.toString());
@@ -281,6 +284,21 @@ public class NodesTest extends CajaTestCase {
         "<html><head></head><body><a href=\"foo.html\">bar</a></body></html>",
         Nodes.render(new NullLocalNameMembrane().wrap(el, Element.class)));
   }
+
+  public final void testRenderModes() throws Exception {
+    DocumentFragment f = htmlFragment(fromString(
+        "<input checked name=foo type=checkbox>"));
+    assertEquals(
+        "<input checked=\"checked\" name=\"foo\" type=\"checkbox\" />",
+        Nodes.render(f, MarkupRenderMode.XML));
+    assertEquals(
+        "<input checked=\"checked\" name=\"foo\" type=\"checkbox\" />",
+        Nodes.render(f, MarkupRenderMode.HTML));
+    assertEquals(
+        "<input checked name=\"foo\" type=\"checkbox\">",
+        Nodes.render(f, MarkupRenderMode.HTML4_BACKWARDS_COMPAT));
+  }
+
 
   public final void testRenderSpeed() throws Exception {
     Element doc = html(fromResource("amazon.com.html"));

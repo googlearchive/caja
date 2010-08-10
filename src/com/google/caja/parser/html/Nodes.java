@@ -21,12 +21,15 @@ import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.lexer.escaping.Escaping;
 import com.google.caja.render.Concatenator;
+import com.google.caja.reporting.MarkupRenderMode;
 import com.google.caja.reporting.RenderContext;
+import com.google.caja.util.Sets;
 import com.google.caja.util.SparseBitSet;
 import com.google.caja.util.Strings;
 
 import java.util.Iterator;
 import java.util.NoSuchElementException;
+import java.util.Set;
 
 import org.w3c.dom.Attr;
 import org.w3c.dom.Element;
@@ -215,7 +218,7 @@ public class Nodes {
    */
   public static void render(Node node, Namespaces ns, RenderContext rc) {
     StringBuilder sb = new StringBuilder(1 << 18);
-    new Renderer(sb, rc.asXml(), rc.isAsciiOnly()).render(node, ns);
+    new Renderer(sb, rc.markupRenderMode(), rc.isAsciiOnly()).render(node, ns);
     TokenConsumer out = rc.getOut();
     FilePosition pos = getFilePositionFor(node);
     out.mark(FilePosition.startOf(pos));
@@ -237,9 +240,13 @@ public class Nodes {
   }
 
   public static String render(Node node, boolean asXml) {
+    return render(node, asXml ? MarkupRenderMode.XML : MarkupRenderMode.HTML);
+  }
+
+  public static String render(Node node, MarkupRenderMode renderMode) {
     StringBuilder sb = new StringBuilder();
     RenderContext rc = new RenderContext(new Concatenator(sb, null))
-        .withAsXml(asXml);
+        .withMarkupRenderMode(renderMode);
     render(node, rc);
     rc.getOut().noMoreTokens();
     return sb.toString();
@@ -250,12 +257,14 @@ public class Nodes {
 
 final class Renderer {
   final StringBuilder out;
+  final MarkupRenderMode mode;
   final boolean asXml;
   final boolean isAsciiOnly;
 
-  Renderer(StringBuilder out, boolean asXml, boolean isAsciiOnly) {
+  Renderer(StringBuilder out, MarkupRenderMode mode, boolean isAsciiOnly) {
     this.out = out;
-    this.asXml = asXml;
+    this.mode = mode;
+    this.asXml = mode == MarkupRenderMode.XML;
     this.isAsciiOnly = isAsciiOnly;
   }
 
@@ -334,7 +343,8 @@ final class Renderer {
           // This is safe regardless of whether the output is XML or HTML since
           // we only skip the end tag for HTML elements that don't require one,
           // and the slash will cause XML to treat it as a void tag.
-          out.append(" />");
+          out.append(
+              mode != MarkupRenderMode.HTML4_BACKWARDS_COMPAT ? " />" : ">");
         } else {
           out.append('>');
           if (!asXml) {
@@ -456,10 +466,16 @@ final class Renderer {
         throw new IllegalStateException();
       }
     }
-    emitLocalName(localName, isHtml);
-    out.append("=\"");
-    Escaping.escapeXml(a.getValue(), isAsciiOnly, out);
-    out.append("\"");
+    localName = emitLocalName(localName, isHtml);
+    // http://www.w3.org/TR/html401/intro/sgmltut.html#didx-boolean_attribute:
+    // Authors should be aware that many user agents only recognize the
+    // minimized form of boolean attributes and not the full form.
+    if (!(isHtml && mode == MarkupRenderMode.HTML4_BACKWARDS_COMPAT
+          && BooleanAttrs.isBooleanAttr(localName))) {
+      out.append("=\"");
+      Escaping.escapeXml(a.getValue(), isAsciiOnly, out);
+      out.append("\"");
+    }
   }
 
   private static final boolean[] CASE_SENS_NAME_CHARS = new boolean['z' + 1];
@@ -476,7 +492,7 @@ final class Renderer {
     }
   }
 
-  private void emitLocalName(String name, boolean isHtml) {
+  private String emitLocalName(String name, boolean isHtml) {
     // speed up common case where we already have lower-cased letters and
     // digits.
     boolean[] simple = isHtml ? CASE_INSENS_NAME_CHARS : CASE_SENS_NAME_CHARS;
@@ -485,10 +501,11 @@ final class Renderer {
       if (ch > 'z' || !simple[ch]) {
         if (isHtml) { name = Strings.toLowerCase(name); }
         Escaping.escapeXml(name, isAsciiOnly, out);
-        return;
+        return name;
       }
     }
     out.append(name);
+    return name;
   }
 
   private static boolean containsEndTag(StringBuilder sb) {
@@ -544,4 +561,21 @@ final class Renderer {
       0xc0, 0xd7, 0xd8, 0xf7, 0x2ff, 0x37e, 0x37f, 0x2000, 0x200c, 0x200e,
       0x203f, 0x2041, 0x2070, 0x2190, 0x2c00, 0x2ff0, 0x3001, 0xd800,
       0xf900, 0xfdd0, 0xfdf0, 0xfffe, 0x10000, 0xf0000);
+}
+
+final class BooleanAttrs {
+  /**
+   * The set of HTML4.01 attributes that have the sole value {@code (<name>)}
+   * where {@code <name>} is the attribute name and that are #IMPLIED.
+   * @see <a href="http://www.w3.org/TR/html401/index/attributes.html">
+   *    the HTML4.01 attributes index</a>
+   */
+  private static final Set<String> BOOLEAN_ATTR_NAMES = Sets.immutableSet(
+      "checked", "compact", "declare", "defer", "disabled", "ismap", "multiple",
+      "nohref", "noresize", "noshade", "nowrap", "readonly", "selected");
+
+  // http://www.w3.org/TR/html401/index/attributes.html
+  static boolean isBooleanAttr(String htmlAttrLocalName) {
+    return BOOLEAN_ATTR_NAMES.contains(htmlAttrLocalName);
+  }
 }

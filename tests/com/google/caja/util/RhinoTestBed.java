@@ -35,6 +35,7 @@ import com.google.caja.parser.js.Directive;
 import com.google.caja.parser.quasiliteral.CajitaRewriter;
 import com.google.caja.parser.quasiliteral.DefaultValijaRewriter;
 import com.google.caja.reporting.EchoingMessageQueue;
+import com.google.caja.reporting.MarkupRenderMode;
 import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.RenderContext;
@@ -211,7 +212,7 @@ public class RhinoTestBed {
   private static String render(ParseTreeNode n) {
     StringBuilder sb = new StringBuilder();
     TokenConsumer tc = n.makeRenderer(sb, null);
-    n.render(new RenderContext(tc).withAsXml(true));
+    n.render(new RenderContext(tc).withMarkupRenderMode(MarkupRenderMode.XML));
     tc.noMoreTokens();
     return sb.toString();
   }

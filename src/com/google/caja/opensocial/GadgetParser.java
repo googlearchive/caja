@@ -27,6 +27,7 @@ import com.google.caja.parser.html.DomParser;
 import com.google.caja.parser.html.Namespaces;
 import com.google.caja.parser.html.Nodes;
 import com.google.caja.render.Concatenator;
+import com.google.caja.reporting.MarkupRenderMode;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.Callback;
@@ -192,7 +193,8 @@ public class GadgetParser {
         throw new RenderFailure(e);
       }
     });
-    RenderContext rc = new RenderContext(tc).withAsXml(true);
+    RenderContext rc = new RenderContext(tc).withMarkupRenderMode(
+        MarkupRenderMode.XML);
     Nodes.render(rootElement, MODULE_NS, rc);
     tc.noMoreTokens();
   }

@@ -24,6 +24,7 @@ import com.google.caja.lexer.Token;
 import com.google.caja.parser.html.Namespaces;
 import com.google.caja.parser.html.Nodes;
 import com.google.caja.render.Concatenator;
+import com.google.caja.reporting.MarkupRenderMode;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.RenderContext;
@@ -184,7 +185,7 @@ public class Localizer {
       // <ph> elements.
       StringBuilder xhtml = new StringBuilder();
       RenderContext rc = new RenderContext(new Concatenator(xhtml))
-          .withAsXml(true).withAsciiOnly(true);
+          .withMarkupRenderMode(MarkupRenderMode.XML).withAsciiOnly(true);
       for (Node c : Nodes.childrenOf(message)) {
         Nodes.render(c, rc);
       }

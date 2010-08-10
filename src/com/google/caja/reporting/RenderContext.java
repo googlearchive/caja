@@ -29,7 +29,7 @@ public class RenderContext {
   /** Should javascript output be rendered using JSON conventions. */
   private final boolean json;
   /** True iff DOM tree nodes should be rendered as XML. */
-  private final boolean asXml;
+  private final MarkupRenderMode markupMode;
   /**
    * True iff object ctor keys that are JS identifiers can be rendered without
    * quotes.
@@ -38,17 +38,17 @@ public class RenderContext {
   private final TokenConsumer out;
 
   public RenderContext(TokenConsumer out) {
-    this(true, false, false, false, false, out);
+    this(true, false, false, MarkupRenderMode.HTML, false, out);
   }
 
   private RenderContext(
-      boolean asciiOnly, boolean embeddable, boolean json, boolean asXml,
-      boolean rawObjKeys, TokenConsumer out) {
+      boolean asciiOnly, boolean embeddable, boolean json,
+      MarkupRenderMode markupMode, boolean rawObjKeys, TokenConsumer out) {
     if (null == out) { throw new NullPointerException(); }
     this.embeddable = embeddable;
     this.asciiOnly = asciiOnly;
     this.json = json;
-    this.asXml = asXml;
+    this.markupMode = markupMode;
     this.rawObjKeys = rawObjKeys;
     this.out = out;
   }
@@ -65,30 +65,41 @@ public class RenderContext {
   public final boolean isAsciiOnly() { return asciiOnly; }
   public final boolean asJson() { return json; }
   /** True iff DOM tree nodes should be rendered as XML. */
-  public final boolean asXml() { return asXml; }
+  public final boolean asXml() { return markupMode == MarkupRenderMode.XML; }
+  public final MarkupRenderMode markupRenderMode() { return markupMode; }
   public final boolean rawObjKeys() { return rawObjKeys; }
   public final TokenConsumer getOut() { return out; }
 
   public RenderContext withAsciiOnly(boolean b) {
     return b != asciiOnly
-        ? new RenderContext(b, embeddable, json, asXml, rawObjKeys, out) : this;
+        ? new RenderContext(b, embeddable, json, markupMode, rawObjKeys, out)
+        : this;
   }
   public RenderContext withEmbeddable(boolean b) {
     return b != embeddable
-        ? new RenderContext(asciiOnly, b, json, asXml, rawObjKeys, out) : this;
+        ? new RenderContext(asciiOnly, b, json, markupMode, rawObjKeys, out)
+        : this;
   }
   public RenderContext withJson(boolean b) {
     return b != json
-        ? new RenderContext(asciiOnly, embeddable, b, asXml, rawObjKeys, out)
+        ? new RenderContext(
+            asciiOnly, embeddable, b, markupMode, rawObjKeys, out)
         : this;
   }
-  public RenderContext withAsXml(boolean b) {
-    return b != this.asXml
-        ? new RenderContext(asciiOnly, embeddable, json, b, rawObjKeys, out)
+  public RenderContext withMarkupRenderMode(MarkupRenderMode markupMode) {
+    return markupMode != this.markupMode
+        ? new RenderContext(
+            asciiOnly, embeddable, json, markupMode, rawObjKeys, out)
         : this;
+  }
+  @Deprecated
+  public RenderContext withAsXml(boolean b) {
+    return withMarkupRenderMode(
+        b ? MarkupRenderMode.XML : MarkupRenderMode.HTML);
   }
   public RenderContext withRawObjKeys(boolean b) {
-    return b != this.asXml
-        ? new RenderContext(asciiOnly, embeddable, json, asXml, b, out) : this;
+    return b != this.rawObjKeys
+        ? new RenderContext(asciiOnly, embeddable, json, markupMode, b, out)
+        : this;
   }
 }
