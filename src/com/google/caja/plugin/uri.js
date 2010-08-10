@@ -17,6 +17,7 @@
  * Implements RFC 3986 for parsing/formatting URIs.
  *
  * @author mikesamuel@gmail.com
+ * @provides URI
  */
 
 var URI = (function () {
@@ -460,9 +461,9 @@ URI.prototype.setAllParameters = function (params) {
   this.paramCache_ = null;
   var queryBuf = [];
   var separator = '';
-  for (var i = 0; i < params.length;) {
-    var k = params[i++];
-    var v = params[i++];
+  for (var j = 0; j < params.length;) {
+    var k = params[j++];
+    var v = params[j++];
     queryBuf.push(separator, encodeURIComponent(k.toString()));
     separator = '&';
     if (v) {

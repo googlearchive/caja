@@ -706,15 +706,24 @@
     <genrule class="com.google.caja.ancillary.linter.Linter"
      unless="${tools.ancillary.disable}">
       <input file="${src}/com/google/caja/cajita-debugmode.js"/>
+      <input file="${lib}/com/google/caja/cajita-module.js"/>
+      <input file="${lib}/com/google/caja/cajita-promise.js"/>
       <input file="${src}/com/google/caja/cajita.js"/>
       <input file="${src}/com/google/caja/plugin/bridal.js"/>
+      <input file="${lib}/com/google/caja/plugin/caja.js"/>
+      <!-- <input file="${src}/com/google/caja/plugin/capture-valija.js"/> 
+           Can't do this because it as well as valija-cajita provide
+           valijaMaker. -->
       <input file="${lib}/com/google/caja/plugin/css-defs.js"/>
       <input file="${lib}/com/google/caja/plugin/cssparser.js"/>
       <input file="${src}/com/google/caja/plugin/domita.js"/>
+      <input file="${src}/com/google/caja/plugin/host-iframe-final.js"/>
+      <input file="${src}/com/google/caja/plugin/host-tools.js"/>
       <input file="${src}/com/google/caja/plugin/html-emitter.js"/>
       <input file="${src}/com/google/caja/plugin/html-sanitizer.js"/>
       <input file="${lib}/com/google/caja/plugin/html4-defs.js"/>
       <input file="${src}/com/google/caja/plugin/unicode.js"/>
+      <input file="${lib}/com/google/caja/plugin/uri.js"/>
       <input file="${src}/com/google/caja/valija-cajita.js"/>
       <output file="${lib}/AllTests.Linter.tstamp"/>
     </genrule>

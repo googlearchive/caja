@@ -7,10 +7,12 @@
  * Implementation of promise for Cajita
  * Export Q to the global scope
  * 
- * @contributor: maoziqing@gmail.com
- * 
  * Mostly taken from the ref_send implementation by Tyler Close
  * Add the isPromise___ flag to support function promise
+ * 
+ * @contributor: maoziqing@gmail.com
+ * @requires setTimeout, ___
+ * @provides Q
  */
 
 var Q;

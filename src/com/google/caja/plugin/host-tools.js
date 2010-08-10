@@ -15,13 +15,16 @@
 /**
  * @fileoverview Utilities for common patterns in host pages.
  *
- * @author kpreid@switchb.org
- * @requires document, ___, cajita, attachDocumentStub, valijaMaker,
- *           Q, defaultCajolerFinder, 
- * @provides HostTools
- *
  * (HostTools can also work without cajita-module, i.e. without
  * defaultCajolerFinder, at the cost of sandbox.run() functionality.)
+ *
+ * @author kpreid@switchb.org
+ * @requires eval, window, document, ___, cajita, attachDocumentStub,
+ *           valijaMaker, Q,
+ *           defaultCajolerFinder, scriptModuleLoadMaker,
+ *           defaultModuleIdResolver, CajolingServiceFinder,
+ *           HtmlEmitter
+ * @provides HostTools
  */
 
 var HostTools;
@@ -153,5 +156,5 @@ var HostTools;
       setCajolerService: setCajolerService,
       Sandbox: Sandbox
     });
-  }
+  };
 })();

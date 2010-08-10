@@ -12,7 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// This file exists to be concatenated into the single file that caja.js (the
-// iframed-Caja-runtime loader) loads as the very last thing to give an on-load
-// callback.
+/**
+ * @fileoverview
+ * This file exists to be concatenated into the single file that caja.js (the
+ * iframed-Caja-runtime loader) loads as the very last thing to give an on-load
+ * callback.
+ *
+ * @author kpreid@switchb.org
+ * @requires cajaIframeDone
+ */
+
 cajaIframeDone();

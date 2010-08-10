@@ -13,14 +13,6 @@
 // limitations under the License.
 
 /**
- * @author maoziqing@gmail.com, kpreid@switchb.org
- * @requires ___, bridal, Q, URI
- * @provides xhrModuleLoadMaker, scriptModuleLoadMaker, clearModuleCache,
- *           defaultModuleIdResolver, defaultCajolerFinder,
- *           CajolingServiceFinder
- * To obtain the dependencies of this file, load:
- *   cajita.js, bridal.js, uri.js, cajita-promise.js
- *
  * Each load maker object, given the absolute URL of the current module, an
  * identifier resolver, and a cajoler finder, returns a load object.
  *
@@ -42,8 +34,16 @@
  * Note that this system never actually fetches the module absolute URL, only
  * passes it to the cajoler. But it *is* used as a key in the cache of loaded
  * modules, so a module absolute URL should always have the same module.
- *
+ * 
+ * To obtain the dependencies of this file, load:
+ *   cajita.js, bridal.js, uri.js, cajita-promise.js
+ * 
  * TODO(kpreid): explain static (sync) loading module id semantics.
+ * @author maoziqing@gmail.com, kpreid@switchb.org
+ * @requires eval, document, ___, bridal, Q, URI
+ * @provides xhrModuleLoadMaker, scriptModuleLoadMaker, clearModuleCache,
+ *           defaultModuleIdResolver, defaultCajolerFinder,
+ *           CajolingServiceFinder
  */
 var xhrModuleLoadMaker;
 var scriptModuleLoadMaker;
@@ -348,7 +348,7 @@ var clearModuleCache;
   scriptModuleLoadMaker = makeConcreteLoadMaker(scriptAsyncLoad);
 
   clearModuleCache = ___.markFuncFreeze(function() {
-    cajita.forOwnKeys(cache, ___.markFuncFreeze(function(k, v) {
+    ___.forOwnKeys(cache, ___.markFuncFreeze(function(k, v) {
       delete cache[k];
     }));
   });
