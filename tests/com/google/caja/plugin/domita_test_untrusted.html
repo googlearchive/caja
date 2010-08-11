@@ -2356,6 +2356,16 @@ jsunitRegister('testSetStyle', function testSetStyle() {
   el.setAttribute('style', 'cursor:help');
   assertEquals('help', cursor(el));
 
+  el.style.cssText = 'cursor:wait';
+  assertEquals('wait', cursor(el));
+
+  el.style.cssText = '';
+  var defaultCursor = cursor(el);
+
+  el.style.cssText = 'cssText: "cursor:help"';
+  assertEquals(defaultCursor, cursor(el));
+  assertFalse(defaultCursor, defaultCursor == 'help');
+
   pass('test-set-style');
 });
 

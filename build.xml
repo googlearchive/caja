@@ -290,6 +290,7 @@
       <input file="${src}/com/google/caja/plugin/html-emitter.js"/>
       <input file="${src}/com/google/caja/plugin/html-sanitizer.js"/>
       <input file="${src}/com/google/caja/plugin/bridal.js"/>
+      <input file="${src}/com/google/caja/plugin/cssparser.js"/>
       <input file="${src}/com/google/caja/plugin/domita.js"/>
       <depend file="${src}/com/google/caja/ancillary/jsdoc/jsdoc.js"/>
       <depend
@@ -618,6 +619,7 @@
       <input file="${src}/com/google/caja/plugin/html-sanitizer.js"/>
       <input file="${src}/com/google/caja/plugin/html-emitter.js"/>
       <input file="${src}/com/google/caja/plugin/bridal.js"/>
+      <input file="${src}/com/google/caja/plugin/cssparser.js"/>
       <input file="${src}/com/google/caja/plugin/domita.js"/>
     </transform>
     <transform>
@@ -631,6 +633,7 @@
       <input file="${src}/com/google/caja/plugin/html-sanitizer.js"/>
       <input file="${src}/com/google/caja/plugin/html-emitter.js"/>
       <input file="${src}/com/google/caja/plugin/bridal.js"/>
+      <input file="${src}/com/google/caja/plugin/cssparser.js"/>
       <input file="${src}/com/google/caja/plugin/domita.js"/>
     </transform>
     <transform>
@@ -656,6 +659,7 @@
       <input file="${src}/com/google/caja/plugin/html-sanitizer.js"/>
       <input file="${src}/com/google/caja/plugin/html-emitter.js"/>
       <input file="${src}/com/google/caja/plugin/bridal.js"/>
+      <input file="${src}/com/google/caja/plugin/cssparser.js"/>
       <input file="${src}/com/google/caja/plugin/domita.js"/>
       <input file="${src}/com/google/caja/plugin/capture-valija.js"/>
       <input file="${lib}/com/google/caja/plugin/valija.out.js"/>
@@ -677,6 +681,7 @@
        <input file="${src}/com/google/caja/plugin/html-sanitizer.js"/>
        <input file="${src}/com/google/caja/plugin/html-emitter.js"/>
        <input file="${src}/com/google/caja/plugin/bridal.js"/>
+       <input file="${src}/com/google/caja/plugin/cssparser.js"/>
        <input file="${src}/com/google/caja/plugin/domita.js"/>
        <input file="${src}/com/google/caja/plugin/capture-valija.js"/>
        <input file="${lib}/com/google/caja/plugin/valija.out.js"/>
@@ -882,6 +887,7 @@
       </fileset>
       <fileset dir="${src}/com/google/caja/plugin">
         <include name="bridal.js" />
+        <include name="cssparser.js"/>
         <include name="domita.js" />
         <include name="html-emitter.js" />
         <include name="html-sanitizer.js" />
@@ -1301,6 +1307,7 @@
         <include name="valija.out.js"/>
         <include name="module-promise-minified.js"/>
         <include name="bridal.js"/>
+        <include name="cssparser.js"/>
         <include name="domita.js"/>
         <include name="domita-minified.js"/>
         <include name="html-sanitizer-minified.js"/>

@@ -50,7 +50,7 @@
  *
  * @author mikesamuel@gmail.com
  * @requires console
- * @requires clearInterval, clearTimeout, setInterval, setTimeout
+ * @requires clearInterval, clearTimeout, setInterval, setTimeout, cssparser
  * @requires ___, bridal, bridalMaker, css, html, html4, unicode
  * @provides attachDocumentStub, plugin_dispatchEvent___,
  *     plugin_dispatchToHandler___
@@ -576,18 +576,15 @@ var attachDocumentStub = (function () {
    */
   function sanitizeStyleAttrValue(styleAttrValue) {
     var sanitizedDeclarations = [];
-    var declarations = styleAttrValue.split(/;/g);
-
-    for (var i = 0; declarations && i < declarations.length; i++) {
-      var parts = declarations[i].split(':');
-      var property = trimCssSpaces(parts[0]).toLowerCase();
-      var value = trimCssSpaces(parts.slice(1).join(":"));
-      if (css.properties.hasOwnProperty(property)
-          && css.properties[property].test(value + '')) {
-        sanitizedDeclarations.push(property + ': ' + value);
-      }
-    }
-
+    cssparser.parse(
+        String(styleAttrValue),
+        function (property, value) {
+          property = property.toLowerCase();
+          if (css.properties.hasOwnProperty(property)
+              && css.properties[property].test(value + '')) {
+            sanitizedDeclarations.push(property + ': ' + value);
+          }
+        });
     return sanitizedDeclarations.join(' ; ');
   }
 
@@ -2453,7 +2450,7 @@ var attachDocumentStub = (function () {
       return this.getStyle();
     };
     TameElement.prototype.getStyle = function () {
-      return new TameStyle(this.node___.style, this.editable___);
+      return new TameStyle(this.node___.style, this.editable___, this);
     };
     TameElement.prototype.updateStyle = function (style) {
       if (!this.editable___) { throw new Error(NOT_EDITABLE); }
@@ -3619,9 +3616,13 @@ var attachDocumentStub = (function () {
     var historyInsensitiveCssProperties = domitaModules.CssPropertiesCollection(
         css.HISTORY_INSENSITIVE_STYLE_WHITELIST, document.documentElement, css);
 
-    function TameStyle(style, editable) {
+    /**
+     * http://www.w3.org/TR/DOM-Level-2-Style/css.html#CSS-CSSStyleDeclaration
+     */
+    function TameStyle(style, editable, tameEl) {
       this.style___ = style;
       this.editable___ = editable;
+      this.tameEl___ = tameEl;
     }
     inertCtor(TameStyle, Object, 'Style');
     TameStyle.prototype.readByCanonicalName___ = function(canonName) {
@@ -3664,6 +3665,19 @@ var attachDocumentStub = (function () {
     };
     TameStyle.prototype.handleSet___ = function (stylePropertyName, value) {
       if (!this.editable___) { throw new Error('style not editable'); }
+      stylePropertyName = String(stylePropertyName);
+      if (stylePropertyName === 'cssText') {
+        if (typeof this.style___.cssText === 'string') {
+          this.style___.cssText = sanitizeStyleAttrValue(value);
+        } else {
+          // If the browser doesn't support setting cssText, then fall back to
+          // setting the style attribute of the containing element.  This won't
+          // work for style declarations that are part of stylesheets and not
+          // attached to elements.
+          this.tameEl___.setAttribute('style', value);
+        }
+        return value;
+      }
       if (!allCssProperties.isCanonicalProp(stylePropertyName)) {
         throw new Error('Unknown CSS property name ' + stylePropertyName);
       }
