@@ -93,6 +93,4 @@ public class InnocentHandler implements ContentHandler {
           MessagePart.Factory.valueOf(e.getMessage()));
     }
   }
-
-  public boolean sandboxLinksAndImages(URI inputUri) { return true; }
 }

@@ -18,6 +18,7 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
 import com.google.caja.reporting.MessageLevel;
+import com.google.caja.util.Join;
 
 /**
  * @author jasvir@google.com (Jasvir Nagra)
@@ -131,14 +132,81 @@ public class HtmlHandlerTest extends ServiceTestCase {
     assertHtml2Json("text/html", "application/json", "foo.bar.baz");
   }
 
+  public final void testSandboxedLink() throws Exception {
+    registerUri(
+        "http://foo/bar.css", "a { background-image: url(baz.png) }",
+        "text/css");
+    registerUri(
+        "http://foo/index.html",
+        "<link rel=stylesheet href=bar.css><a href=\"shizzle.html\">Clicky</a>",
+        "text/html");
+    String result = (String) requestGet(
+        "?url=http://foo/index.html&mime-type=text/html"
+        + "&output-mime-type=text/html&sext=true&idclass=foo___");
+    assertEquals(
+        Join.join(
+            "",
+            "<style type=\"text/css\">\n",
+            ".foo___ a {\n",
+            "  background-image: url('http://caja.appspot.com/cajole?url=http%3a%2f%2fcaja.appspot.com%2fcajole%3furl%3dhttp%253a%252f%252ffoo%252fbaz.png%26effect%3dSAME%5fDOCUMENT%26loader%3dSANDBOXED%26sext%3dtrue&effect=SAME%5fDOCUMENT&loader=SANDBOXED&sext=true')\n",
+            "}</style>",
+            "<a href=\"http://caja.appspot.com/cajole",
+              "?url=http%3a%2f%2ffoo%2fshizzle.html&amp;effect=NEW_DOCUMENT",
+              "&amp;loader=UNSANDBOXED&amp;sext=true\" target=\"_blank\">",
+            "Clicky",
+            "</a>",
+            "<script type=\"text/javascript\">{",
+              "___.loadModule({",
+                "'instantiate':function(___,IMPORTS___){return},",
+                "'cajolerName':'com.google.caja',",
+                "'cajolerVersion':'testBuildVersion',",
+                "'cajoledDate':0})",
+              "}",
+            "</script>"),
+        result);
+  }
+
+  public final void testUnsandboxedLink() throws Exception {
+    registerUri(
+        "http://foo/bar.css", "a { background-image: url(baz.png) }",
+        "text/css");
+    registerUri(
+        "http://foo/index.html",
+        "<link rel=stylesheet href=bar.css><a href=\"shizzle.html\">Clicky</a>",
+        "text/html");
+    String result = (String) requestGet(
+        "?url=http://foo/index.html&mime-type=text/html"
+        + "&output-mime-type=text/html&sext=false&idclass=foo___");
+    assertEquals(
+        Join.join(
+            "",
+            "<style type=\"text/css\">\n",
+            ".foo___ a {\n",
+            "  background-image: url('http://foo/baz.png')\n",
+            "}</style>",
+            "<a href=\"http://foo/shizzle.html\" target=\"_blank\">",
+            "Clicky",
+            "</a>",
+            "<script type=\"text/javascript\">{",
+              "___.loadModule({",
+                "'instantiate':function(___,IMPORTS___){return},",
+                "'cajolerName':'com.google.caja',",
+                "'cajolerVersion':'testBuildVersion',",
+                "'cajoledDate':0})",
+              "}",
+            "</script>"),
+        result);
+  }
+
   private void assertHtml2Json(String inputMimeType,
                                String outputMimeType,
                                String moduleCallback)
       throws Exception {
-    registerUri("http://foo/bar.html", "<p>hi</p><script>42;</script><p>bye</p>",
-      "text/html");
+    registerUri(
+        "http://foo/bar.html", "<p>hi</p><script>42;</script><p>bye</p>",
+        "text/html");
 
-    Object result = json((String)requestGet(
+    Object result = json((String) requestGet(
         requestString(inputMimeType, outputMimeType, moduleCallback)));
     assertTrue(result instanceof JSONObject);
     JSONObject json = (JSONObject) result;
@@ -308,7 +376,7 @@ public class HtmlHandlerTest extends ServiceTestCase {
     String testWithError = "<script>with(foo){}</script>";
     String charSet = "UTF-8";
     byte[] content = testWithError.getBytes(charSet);
-    
+
     assertEquals("", (String) requestPost(
         requestString("text/html", "text/javascript", null),
         content, "text/html", charSet));
@@ -320,7 +388,7 @@ public class HtmlHandlerTest extends ServiceTestCase {
 
     Object result = json((String) requestGet(
         requestString("text/html", "application/json", null)));
-    
+
     assertTrue(result instanceof JSONObject);
     JSONObject json = (JSONObject) result;
 
@@ -333,5 +401,5 @@ public class HtmlHandlerTest extends ServiceTestCase {
     }
     assertTrue(containsError);
   }
-  
+
 }

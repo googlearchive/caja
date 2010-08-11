@@ -79,7 +79,8 @@ public class HtmlHandler extends AbstractCajolingHandler {
                                    OutputStream response,
                                    MessageQueue mq)
       throws UnsupportedContentTypeException {
-    PluginMeta meta = new PluginMeta(uriFetcher, makeUriPolicy(uri));
+    PluginMeta meta = new PluginMeta(uriFetcher, makeUriPolicy(args));
+    meta.setIdClass(args.get("idclass"));
     ContentType outputType = ContentType.fromMimeType(outputContentType);
     if (outputType == null) {
       if (outputContentType.matches("\\*/\\*(\\s*;.*)?")) {
@@ -138,7 +139,7 @@ public class HtmlHandler extends AbstractCajolingHandler {
       } catch (ParseException e) {
         okToContinue = false;
       }
-      
+
       if (okToContinue) {
         compiler.addInput(html, inputUri);
         okToContinue &= compiler.run();

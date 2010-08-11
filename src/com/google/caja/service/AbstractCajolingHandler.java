@@ -69,17 +69,18 @@ public abstract class AbstractCajolingHandler implements ContentHandler {
     this.uriFetcher = uriFetcher != null ? uriFetcher : UriFetcher.NULL_NETWORK;
   }
 
-  protected UriPolicy makeUriPolicy(final URI inputUri) {
+  protected UriPolicy makeUriPolicy(final ContentHandlerArgs args) {
     return new UriPolicy() {
       public String rewriteUri(
           ExternalReference u, UriEffect effect, LoaderType loader,
           Map<String, ?> hints) {
         URI uri = u.getUri();
+        boolean sandboxLinksAndImages = !"false".equals(args.get("sext"));
         if (((effect == UriEffect.NEW_DOCUMENT
               && loader == LoaderType.UNSANDBOXED)
              || (effect == UriEffect.SAME_DOCUMENT
                  && loader == LoaderType.SANDBOXED))
-            && !sandboxLinksAndImages(inputUri)) {
+            && !sandboxLinksAndImages) {
           String protocol = Strings.toLowerCase(uri.getScheme());
           if ("http".equals(protocol) || "https".equals(protocol)) {
             return uri.toString();
@@ -89,7 +90,7 @@ public abstract class AbstractCajolingHandler implements ContentHandler {
           return hostedService
               + "?url=" + UriUtil.encode(uri.toString())
               + "&effect=" + effect + "&loader=" + loader
-              + "&sext=" + sandboxLinksAndImages(inputUri);
+              + "&sext=" + sandboxLinksAndImages;
         } else {
           return null;
         }

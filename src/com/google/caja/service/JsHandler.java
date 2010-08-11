@@ -114,7 +114,7 @@ public class JsHandler extends AbstractCajolingHandler {
               moduleCallback, output);
         } else {
           renderAsJavascript((CajoledModule) crw.expand(vrw.expand(ucm)),
-              moduleCallback, output); 
+              moduleCallback, output);
         }
       } else {
         Rewriter esrw = new ES53Rewriter(buildInfo, mq, false /* logging */);
@@ -128,9 +128,5 @@ public class JsHandler extends AbstractCajolingHandler {
           ServiceMessageType.IO_ERROR,
           MessagePart.Factory.valueOf(e.getMessage()));
     }
-  }
-
-  public boolean sandboxLinksAndImages(URI inputUri) {
-    throw new UnsupportedOperationException();
   }
 }

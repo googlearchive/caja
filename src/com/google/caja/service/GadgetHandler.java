@@ -102,6 +102,4 @@ public class GadgetHandler implements ContentHandler {
     };
     rewriter.rewrite(inputUri, cajaInput, fetcher, policy, "canvas", output);
   }
-
-  public boolean sandboxLinksAndImages(URI inputUri) { return true; }
 }
