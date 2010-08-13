@@ -16,20 +16,20 @@
  * @fileoverview Utilities for common patterns in host pages.
  *
  * (HostTools can also work without cajita-module, i.e. without
- * defaultCajolerFinder, at the cost of sandbox.run() functionality.)
+ * scriptModuleLoadMaker, at the cost of sandbox.run() functionality.)
  *
  * @author kpreid@switchb.org
  * @requires eval, window, document, ___, cajita, attachDocumentStub,
  *           valijaMaker, Q,
- *           defaultCajolerFinder, scriptModuleLoadMaker,
- *           defaultModuleIdResolver, CajolingServiceFinder,
+ *           scriptModuleLoadMaker, defaultModuleIdResolver,
+ *           CajolingServiceFinder,
  *           HtmlEmitter
  * @provides HostTools
  */
 
 var HostTools;
 (function () {
-  var hasModuleLoader = "defaultCajolerFinder" in window;
+  var hasModuleLoader = "scriptModuleLoadMaker" in window;
   var toolsInstanceCounter = 0;
   
   HostTools = function () {
@@ -37,10 +37,12 @@ var HostTools;
     var gadgetInstanceCounter = 0;
 
     // user-modifiable state
-    var cajolerFinder = hasModuleLoader ? defaultCajolerFinder : null;
+    var cajolingService = "http://caja.appspot.com/cajole";
     var baseURL = document.location.toString();
     // TODO(kpreid): the above probably does the wrong thing in the case where
     // the document has a <base>; fix.
+    
+    // cache
     var load;
     
     // internal functions
@@ -50,9 +52,10 @@ var HostTools;
       } else {
         // TODO(kpreid): allow subbing module id resolver
         // TODO(kpreid): Using XHR loader didn't work; why?
-        load = scriptModuleLoadMaker(baseURL,
-                                     defaultModuleIdResolver,
-                                     cajolerFinder);
+        load = scriptModuleLoadMaker(
+          baseURL,
+          defaultModuleIdResolver,
+          new CajolingServiceFinder(cajolingService));
       }
     }
     updateLoad();
@@ -60,7 +63,7 @@ var HostTools;
     // public methods
     
     function setCajolerService(url) {
-      cajolerFinder = new CajolingServiceFinder(url);
+      cajolingService = url;
       updateLoad();
     }
     
@@ -70,11 +73,32 @@ var HostTools;
     }
     
     function Sandbox() {
+      var attached = false;
+      
       // user-modifiable state
       var imports = ___.copy(___.sharedImports);
-      
+      var uriPolicy = cajita.freeze({
+        rewrite: function (uri, mimeType) {
+          // TODO(kpreid): This needs to be redefined in terms of effect/loader;
+          // we don't necessarily know the actual specific mime type before
+          // making the request.
+          return cajolingService +
+              '?url=' + encodeURIComponent(uri) +
+              '&input-mime-type=' + encodeURIComponent(mimeType) +
+              '&output-mime-type=' + encodeURIComponent(mimeType);
+          
+        }
+      });
+  
       // public methods
       
+      function setURIPolicy(newPolicy) {
+        if (attached) {
+          throw("setURIPolicy() must be used before attach()");
+        }
+        uriPolicy = newPolicy;
+      }
+
       function run(mid) {
         if (load == null) {
           throw new Error("HostTools: Loaded without cajita-module.js, so " +
@@ -117,6 +141,8 @@ var HostTools;
       }
       
       function attach(vdocBody, options) {
+        attached = true;
+
         // Generate unique element id suffix for Domita.
         // There are two counters just to make them a little more decodable.
         var gadgetInstanceIndex = ++gadgetInstanceCounter;
@@ -130,13 +156,7 @@ var HostTools;
         
         if (options.valija) { imports.outers = imports; }
         
-        // TODO(kpreid): provide control over this
-        var uriCallback = cajita.freeze({
-            rewrite: function() {
-                return null;
-            }
-        });
-        attachDocumentStub(idSuffix, uriCallback, imports, vdocBody);
+        attachDocumentStub(idSuffix, uriPolicy, imports, vdocBody);
         imports.htmlEmitter___ = new HtmlEmitter(vdocBody, imports.document);
         
         if (options.valija) { imports.$v = valijaMaker.CALL___(imports.outers); }
@@ -144,6 +164,7 @@ var HostTools;
       
       return cajita.freeze({
         attach: attach,
+        setURIPolicy: setURIPolicy,
         imports: imports,
         run: run,
         runCajoledModuleString: runCajoledModuleString

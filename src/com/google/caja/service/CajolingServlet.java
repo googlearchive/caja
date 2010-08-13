@@ -53,7 +53,12 @@ public class CajolingServlet extends HttpServlet {
 
   private final CajolingService service;
 
-  //Appengine insists on a zero-argument constructor
+  /**
+   * Appengine insists on a zero-argument constructor
+   *
+   * @deprecated Do not use this; instead pass in a CajolingService you've
+   *             constructed with the correct host argument (self URL).
+   */
   public CajolingServlet() {
     this(new CajolingService());
   }

@@ -14,6 +14,8 @@
 
 package com.google.caja.plugin;
 
+import com.google.caja.reporting.BuildInfo;
+import com.google.caja.service.CajolingService;
 import com.google.caja.service.CajolingServlet;
 import com.google.caja.util.CajaTestCase;
 
@@ -50,10 +52,12 @@ public abstract class BrowserTestCase extends CajaTestCase {
     resource_handler.setResourceBase(".");
     
     // caja (=playground for now) server under /caja directory
-    final ContextHandler caja = new ContextHandler("/caja");
+    final String subdir = "/caja";
+    final ContextHandler caja = new ContextHandler(subdir);
     {
       // TODO(kpreid): deploy the already-configured war instead of manually
       // plumbing 
+      final String service = "/cajole";
       
       // static file serving
       final ResourceHandler caja_static = new ResourceHandler();
@@ -62,7 +66,13 @@ public abstract class BrowserTestCase extends CajaTestCase {
       // cajoling service -- Servlet setup code gotten from
       // <http://docs.codehaus.org/display/JETTY/Embedding+Jetty> @ 2010-06-30
       Context servlets = new Context(server, "/", Context.NO_SESSIONS);
-      servlets.addServlet(new ServletHolder(new CajolingServlet()), "/cajole");
+      servlets.addServlet(
+        new ServletHolder(
+          new CajolingServlet(
+            new CajolingService(BuildInfo.getInstance(),
+                                "http://localhost:" + portNumber() + 
+                                    subdir + service))),
+        service);
 
       final HandlerList handlers = new HandlerList();
       handlers.setHandlers(new Handler[] {

@@ -184,3 +184,77 @@ jsunitRegister("testEvalModule",
   jsunit.pass();
 });
 
+jsunitRegister("testDefaultURIPolicy",
+               function testDefaultURIPolicy() {
+  var e = document.createElement("div");
+  document.body.appendChild(e);
+  var s = new tools.Sandbox();
+  s.attach(e);
+  
+  Q.when(s.run(
+      "host-tools-test-gadget-uri-policy.html"),
+      jsunitCallback(function (moduleResult) {
+      
+    // TODO(kpreid): When the whole URI-policy-implementation thing is cleaned
+    // up, enable this test.
+    //assertEquals("dynamic equals static",
+    //    e.childNodes[0].href,
+    //    e.childNodes[1].href);
+
+    // testing what we can for now
+    assertEquals("static rewritten URI",
+        "http://localhost:8000/caja/cajole?url=http%3a%2f%2fwww.example.com" +
+        "%2ffoo&effect=NEW_DOCUMENT&loader=UNSANDBOXED&sext=true",
+        e.childNodes[0].href);
+    assertEquals("dynamic rewritten URI",
+        "http://localhost:8000/caja/cajole?url=http%3A%2F%2Fwww.example.com" +
+        "%2Ffoo&input-mime-type=*%2F*&output-mime-type=*%2F*",
+        e.childNodes[1].href);
+    
+    jsunit.pass();
+  }), jsunitCallback(function (reason) {
+    throw reason;
+  }));
+});
+
+jsunitRegister("testSettingURIPolicy",
+               function testSettingURIPolicy() {
+  var e = document.createElement("div");
+  document.body.appendChild(e);
+
+  // Test the usefulness check
+  var s = new tools.Sandbox();
+  s.attach(e);
+  assertThrows(function () {
+    s.setURIPolicy({rewrite: function () {}});
+  }, "setURIPolicy() must be used before attach()");
+  
+  // Construct sandbox for actual test
+  s = new tools.Sandbox();
+  s.setURIPolicy({
+    rewrite: function (uri) {
+      return "data:," + uri;
+    }
+  });
+  s.attach(e);
+  
+  Q.when(s.run(
+      "host-tools-test-gadget-uri-policy.html"),
+      jsunitCallback(function (moduleResult) {
+        
+    // Static URI policy is unaffected by this setting -- as yet.
+    assertEquals("static rewrite",
+        "http://localhost:8000/caja/cajole?url=http%3a%2f%2fwww.example.com" +
+        "%2ffoo&effect=NEW_DOCUMENT&loader=UNSANDBOXED&sext=true",
+        e.childNodes[0].href);
+    
+    // Check that specified policy took effect on a dynamic link
+    assertEquals("dynamic rewrite",
+                 "data:,http://www.example.com/foo",
+                 e.childNodes[1].href);
+    jsunit.pass();
+  }), jsunitCallback(function (reason) {
+    throw reason;
+  }));
+});
+
