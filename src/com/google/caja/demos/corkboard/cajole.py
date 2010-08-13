@@ -25,8 +25,11 @@ timeToCacheErrors = 120
 timeToCacheTimeouts = 10
 
 # constants
-cajoleRequestURL = cajaServer + "cajole?input-mime-type=text/html" \
-                                    + "&output-mime-type=application/json"
+cajoleRequestURL = (cajaServer + "cajole?input-mime-type=text/html"
+                               + "&output-mime-type=application/json"
+                               + "&effect=SAME_DOCUMENT"
+                               + "&loader=SANDBOXED"
+                               + "&sext=false")
 dummyModule = "___.loadModule({'instantiate': function () {}})"
 requestBodyEncoding = "utf-8"
 

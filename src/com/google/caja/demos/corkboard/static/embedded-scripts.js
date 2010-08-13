@@ -20,16 +20,33 @@
 var registerForScript, loadScripts;
 (function () {
   var scriptHooks = [];
-
+  
+  var uriPolicy = {
+    // TODO(kpreid): have a sensible default instead of this app needing it
+    // In particular, in cajole.py we specify "sext=false" (which is itself a
+    // temporary kludge); there should be a single switch, or at least two
+    // similarly-exzpressed ones, which do that and also change the client-side
+    // policy.
+    rewrite: function (uri, mimeType) {
+      if ((/^https?:/i).test(uri)) { 
+        // TODO: unsafe, need to check mimeType but that's not sufficient
+        return uri;
+      } else {
+        return "data:,URI%20rejected";
+      }
+    }
+  };
+  
   registerForScript = function (vdocId, moduleText) {
     scriptHooks.push([vdocId, moduleText]);
   }
-
+  
   function go(caja) {
     for (var i = 0; i < scriptHooks.length; i++) {
       var id         = scriptHooks[i][0];
       var moduleText = scriptHooks[i][1];
       var sandbox = new caja.hostTools.Sandbox();
+      sandbox.setURIPolicy(uriPolicy);
       sandbox.attach(document.getElementById(id));
       sandbox.runCajoledModuleString(moduleText);
     }
