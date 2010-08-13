@@ -318,6 +318,7 @@ public abstract class Operation extends AbstractExpression {
       // They can be the right hand of assignments, but they won't parse
       // unparenthesized if used as the first operand in a call, followed by a
       // postfix op, or as part of the condition in a ternary op.
+      // ({ x: 3 }).x is OK, but { x: 3 }.x can be confused with a statement.
       return firstOp;
     }
 
@@ -399,10 +400,24 @@ public abstract class Operation extends AbstractExpression {
       // RIGHT: a = b = c -> a = (b = c)
       // And we'd need to parenthesize left in (a = b) = c if that were legal
 
-      // -(-a) is right associative but does not need to be parenthesized.
-      // The JS printers prevent the two - signs from being merged into a
-      // single -- token.
-      if (op.getType() == OperatorType.PREFIX) { return false; }
+      if (op.getType() == OperatorType.PREFIX) {
+        if (op == Operator.CONSTRUCTOR) {
+          // The new operator tends to steal parentheses from calls.
+          // There are two forms of the new operator:
+          //   (1) new <Expression>
+          //   (2) new <Expression>()
+          // If the <Expression> has parentheses, then they might be stolen by
+          // the new operator turning form 1 into form 2, as when <Expression>
+          // is:
+          //   foo().bar
+          return mightHaveParenthesesStealableByNew((Operation) child);
+        } else {
+          // -(-a) is right associative but does not need to be parenthesized.
+          // The JS printers prevent the two - signs from being merged into a
+          // single -- token.
+          return false;
+        }
+      }
 
       // ?: is right associative, so in a ? b : c, a would be parenthesized were
       // it a ternary op.
@@ -818,5 +833,27 @@ public abstract class Operation extends AbstractExpression {
     } else {
       return false;
     }
+  }
+
+  private static boolean mightHaveParenthesesStealableByNew(Operation oper) {
+    Operator op = oper.getOperator();
+    if (op == Operator.FUNCTION_CALL) { return true; }
+    if (op.getPrecedence() > Operator.CONSTRUCTOR.getPrecedence()) {
+      return false;
+    }
+    int lastToCheck;
+    switch (op) {
+      case SQUARE_BRACKET: lastToCheck = 1; break;
+      case MEMBER_ACCESS: lastToCheck = 2; break;
+      default: return true;
+    }
+    for (int i = 0; i < lastToCheck; ++i) {
+      Expression child = oper.children().get(i);
+      if (child instanceof Operation
+          && mightHaveParenthesesStealableByNew((Operation) child)) {
+        return true;
+      }
+    }
+    return false;
   }
 }

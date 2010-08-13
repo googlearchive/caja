@@ -84,3 +84,75 @@ Block
               Identifier : Bar
         Reference
           Identifier : baz
+  ExpressionStmt
+    SpecialOperation : FUNCTION_CALL
+      SpecialOperation : MEMBER_ACCESS
+        SpecialOperation : FUNCTION_CALL
+          SpecialOperation : CONSTRUCTOR
+            Reference
+              Identifier : Foo
+        Reference
+          Identifier : Bar
+  ExpressionStmt
+    SpecialOperation : FUNCTION_CALL
+      SpecialOperation : MEMBER_ACCESS
+        SpecialOperation : FUNCTION_CALL
+          SpecialOperation : CONSTRUCTOR
+            Reference
+              Identifier : Foo
+        Reference
+          Identifier : Bar
+  ExpressionStmt
+    SpecialOperation : FUNCTION_CALL
+      SpecialOperation : CONSTRUCTOR
+        SpecialOperation : MEMBER_ACCESS
+          SpecialOperation : FUNCTION_CALL
+            Reference
+              Identifier : Foo
+          Reference
+            Identifier : Bar
+  ExpressionStmt
+    SpecialOperation : CONSTRUCTOR
+      SpecialOperation : FUNCTION_CALL
+        SpecialOperation : MEMBER_ACCESS
+          SpecialOperation : FUNCTION_CALL
+            Reference
+              Identifier : Foo
+          Reference
+            Identifier : Bar
+  ExpressionStmt
+    SpecialOperation : FUNCTION_CALL
+      SpecialOperation : MEMBER_ACCESS
+        SpecialOperation : FUNCTION_CALL
+          SpecialOperation : CONSTRUCTOR
+            Reference
+              Identifier : Foo
+        Reference
+          Identifier : Bar
+  ExpressionStmt
+    SpecialOperation : FUNCTION_CALL
+      SpecialOperation : MEMBER_ACCESS
+        SpecialOperation : FUNCTION_CALL
+          SpecialOperation : CONSTRUCTOR
+            Reference
+              Identifier : Foo
+        Reference
+          Identifier : Bar
+  ExpressionStmt
+    SimpleOperation : NEGATION
+      ControlOperation : TERNARY
+        Reference
+          Identifier : a
+        Reference
+          Identifier : b
+        Reference
+          Identifier : c
+  ExpressionStmt
+    SpecialOperation : CONSTRUCTOR
+      ControlOperation : TERNARY
+        Reference
+          Identifier : a
+        Reference
+          Identifier : b
+        Reference
+          Identifier : c
