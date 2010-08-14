@@ -51,10 +51,11 @@ try:
 except ImportError:
   from md5 import md5
 
-try:
-  import readline
-except ImportError:
-  pass
+if __name__ == "__main__":
+  try:
+    import readline
+  except ImportError:
+    pass
 
 # The logging verbosity:
 #  0: Errors only.
