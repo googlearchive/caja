@@ -17,6 +17,8 @@ package com.google.caja.lexer;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.google.caja.util.Strings;
+
 public class HtmlEntities {
   public static final PunctuationTrie<Integer> ENTITY_TRIE;
 
@@ -122,6 +124,30 @@ public class HtmlEntities {
     } else {
       return ((end + 1L) << 32) | codepoint;
     }
+  }
+
+  /** A possible entity name like "amp" or "gt". */
+  public static boolean isEntityName(String name) {
+    PunctuationTrie<Integer> t = HtmlEntities.ENTITY_TRIE;
+    int n = name.length();
+
+    // Treat AMP the same amp, but not Amp.
+    boolean isUcase = true;
+    for (int i = 0; i < n; ++i) {
+      char ch = name.charAt(i);
+      if (!('A' <= ch && ch <= 'Z')) {
+        isUcase = false;
+        break;
+      }
+    }
+
+    if (isUcase) { name = Strings.toLowerCase(name); }
+
+    for (int i = 0; i < n; ++i) {
+      t = t.lookup(name.charAt(i));
+      if (t == null) { return false; }
+    }
+    return t.isTerminal();
   }
 
   static {

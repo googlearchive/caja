@@ -214,4 +214,10 @@ class XmlElementStack extends AbstractElementStack {
           Nodes.getFilePositionFor(openEl)));
     }
   }
+
+  /** We do no entity fixup in XML mode. */
+  @Override
+  public String fixBrokenEntities(String rawText, FilePosition textPos) {
+    return rawText;
+  }
 }

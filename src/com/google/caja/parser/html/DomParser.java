@@ -506,7 +506,7 @@ public class DomParser {
               }
             } else {
               attribs = Lists.newArrayList();
-              end = parseTagAttributes(t.pos, attribs);
+              end = parseTagAttributes(t.pos, attribs, out);
             }
             try {
               out.processTag(t, end, attribs);
@@ -536,7 +536,7 @@ public class DomParser {
    * token.
    */
   private Token<HtmlTokenType> parseTagAttributes(
-      FilePosition start, List<? super AttrStub> attrs)
+      FilePosition start, List<? super AttrStub> attrs, OpenElementStack out)
       throws ParseException {
     Token<HtmlTokenType> last;
     tokloop:
@@ -551,7 +551,7 @@ public class DomParser {
         tokens.advance();
         break tokloop;
       case ATTRNAME:
-        AttrStub a = parseAttrib();
+        AttrStub a = parseAttrib(out);
         if (a != null) { attrs.add(a); }
         break;
       default:
@@ -566,7 +566,7 @@ public class DomParser {
   /**
    * Parses an element from a token stream.
    */
-  private AttrStub parseAttrib() throws ParseException {
+  private AttrStub parseAttrib(OpenElementStack out) throws ParseException {
     Token<HtmlTokenType> name = tokens.pop();
     Token<HtmlTokenType> value = tokens.peek();
     if (value.type == HtmlTokenType.ATTRVALUE) {
@@ -586,6 +586,9 @@ public class DomParser {
       value = Token.instance(name.text, HtmlTokenType.ATTRVALUE, name.pos);
     }
     String rawValue = value.text;
+    if (!asXml) {
+      rawValue = out.fixBrokenEntities(rawValue, value.pos);
+    }
     String decodedValue;
     int vlen = rawValue.length();
     if (vlen >= 2) {

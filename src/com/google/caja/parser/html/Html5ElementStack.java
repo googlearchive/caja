@@ -16,6 +16,7 @@ package com.google.caja.parser.html;
 
 import com.google.caja.SomethingWidgyHappenedError;
 import com.google.caja.lexer.FilePosition;
+import com.google.caja.lexer.HtmlEntities;
 import com.google.caja.lexer.HtmlTokenType;
 import com.google.caja.lexer.Token;
 import com.google.caja.reporting.Message;
@@ -31,6 +32,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.w3c.dom.Attr;
 import org.w3c.dom.DOMException;
@@ -484,7 +487,10 @@ public class Html5ElementStack implements OpenElementStack {
     }
     // htmlparser doesn't recognize \r as whitespace.
     String text = textToken.text.replaceAll("\r\n?", "\n");
-    if (!text.equals(textToken.text)) {
+    if (textToken.type == HtmlTokenType.TEXT) {
+      text = fixBrokenEntities(text, textToken.pos);
+    }
+    if (text.equals(textToken.text)) {
       textToken = Token.instance(text, textToken.type, textToken.pos);
     }
     char[] chars;
@@ -501,5 +507,51 @@ public class Html5ElementStack implements OpenElementStack {
     } catch (SAXException ex) {
       throw new SomethingWidgyHappenedError(ex);
     }
+  }
+
+  /**
+   * Matches possible HTML entities that lack a closing semicolon.
+   */
+  private static final Pattern BROKEN_ENTITY = Pattern.compile(
+      ""
+      + "&(?:"
+        // A named entity.
+        + "[A-Za-z][0-9A-Za-z]{1,11}(?![;0-9A-Za-z])"
+        // A numeric entity.
+        + "|#(?:"
+          // A decimal entity
+          + "[0-9]{1,7}(?![;0-9])"
+          // A hexadecimal entity.
+          + "|[Xx][0-9A-Fa-f]{1,6}(?![;0-9A-Fa-f])"
+        + ")"
+      + ")"
+      );
+  public String fixBrokenEntities(String rawText, FilePosition fp) {
+    int amp = rawText.indexOf('&');
+    if (amp >= 0) {
+      Matcher m = BROKEN_ENTITY.matcher(rawText);
+      if (m.find(amp)) {
+        StringBuilder sb = new StringBuilder(rawText.length() + 16);
+        int pos = 0;
+        do {
+          String entity = m.group();
+          if (entity.charAt(1) == '#'
+              || HtmlEntities.isEntityName(entity.substring(1))) {
+            sb.append(rawText, pos, m.end()).append(';');
+            pos = m.end();
+            if (needsDebugData) {
+              mq.addMessage(
+                  MessageType.MALFORMED_HTML_ENTITY, fp,
+                  MessagePart.Factory.valueOf(entity));
+            }
+          }
+        } while (m.find());
+        if (pos != 0) {
+          sb.append(rawText, pos, rawText.length());
+          return sb.toString();
+        }
+      }
+    }
+    return rawText;
   }
 }

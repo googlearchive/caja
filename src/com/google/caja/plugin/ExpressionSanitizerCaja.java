@@ -61,7 +61,7 @@ public class ExpressionSanitizerCaja {
       }
     }
     if (useSES) {
-      result = newES53Rewriter(mq).expand(input);
+      result = newES53Rewriter().expand(input);
     } else {
       if (result == null) {
         result = newValijaRewriter(mq).expand(input);
@@ -84,10 +84,10 @@ public class ExpressionSanitizerCaja {
     return new CajitaRewriter(baseUri, mgr, false);
   }
 
-  protected Rewriter newES53Rewriter(MessageQueue mq) {
+  protected Rewriter newES53Rewriter() {
     return new ES53Rewriter(baseUri, mgr, false);
   }
-  
+
   protected Rewriter newValijaRewriter(MessageQueue mq) {
     return new DefaultValijaRewriter(mq, false);
   }

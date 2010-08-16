@@ -41,6 +41,8 @@ public enum MessageType implements MessageTypeInt {
   MALFORMED_STRING("%s: Illegal char in string '%s'", MessageLevel.FATAL_ERROR),
   MALFORMED_URI("%s: Not a valid uri: '%s'", MessageLevel.FATAL_ERROR),
   MALFORMED_XHTML("%s: malformed xhtml: %s", MessageLevel.FATAL_ERROR),
+  MALFORMED_HTML_ENTITY(
+      "%s: HTML entity missing closing semicolon %s", MessageLevel.WARNING),
   REDUNDANT_ESCAPE_SEQUENCE(
       "%s: escape %s is redundant in a quoted string", MessageLevel.LINT),
   AMBIGUOUS_ESCAPE_SEQUENCE(
