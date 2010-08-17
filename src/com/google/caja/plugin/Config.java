@@ -62,6 +62,8 @@ public final class Config {
       "i", "input", "Input URI containing HTML (with optional "
       + "script and style blocks)", true);
 
+  // This output HTML is not standalone, and requires a container to load the
+  // supporting JS and set up a virtual document root.
   private final Option OUTPUT_HTML = defineOption(
       "h", "output_html",
       "Output file path for translated HTML (defaults to input with "
@@ -147,7 +149,7 @@ public final class Config {
 
   private final Option ES53 = defineBooleanOption(
       "es53", "es53", "Set to use ES5/3 translation instead of valija/cajita.");
-  
+
   public enum SourceRenderMode {
     MINIFY,
     PRETTY,
@@ -298,23 +300,17 @@ public final class Config {
           return false;
         }
       } else {
-        URI inputUri = inputUris.get(0);
-
         outputJsFile = cl.getOptionValue(OUTPUT_JS.getOpt()) == null
-            ? toFileWithExtension(inputUri, "out.js")
-            : new File(cl.getOptionValue(OUTPUT_JS.getOpt()));
+            ? null : new File(cl.getOptionValue(OUTPUT_JS.getOpt()));
 
-        if (outputJsFile == null) {
-          usage("Please specify js output via " + OUTPUT_JS.getLongOpt(),
-                stderr);
-        }
         outputHtmlFile = cl.getOptionValue(OUTPUT_HTML.getOpt()) == null
-            ? toFileWithExtension(inputUri, "out.html")
-            : new File(cl.getOptionValue(OUTPUT_HTML.getOpt()));
+            ? null : new File(cl.getOptionValue(OUTPUT_HTML.getOpt()));
 
-        if (outputHtmlFile == null) {
-          usage("Please specify js output via " + OUTPUT_HTML.getLongOpt(),
+        if (outputJsFile == null && outputHtmlFile == null) {
+          usage("Please specify js output via " + OUTPUT_JS.getLongOpt()
+                + " &| html output via " + OUTPUT_HTML.getLongOpt(),
                 stderr);
+          return false;
         }
       }
 
@@ -468,19 +464,12 @@ public final class Config {
     }
   }
 
-  private static File toFileWithExtension(URI uri, String extension) {
-    if (!Strings.equalsIgnoreCase("file", uri.getScheme())) {
-      return null;
-    }
-    return substituteExtension(new File(uri.getPath()), extension);
-  }
-
   private static File substituteExtension(File file, String extension) {
     String fileName = file.getName();
     int lastDot = fileName.lastIndexOf('.');
     if (lastDot < 0) { lastDot = fileName.length(); }
     return new File(file.getParentFile(),
-                    fileName.substring(0, lastDot) + "." + extension);
+                    fileName.substring(0, lastDot) + extension);
   }
 
   private static WhiteList whitelist(URI uri, MessageQueue mq) {

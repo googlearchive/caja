@@ -119,6 +119,9 @@ public final class PluginCompilerMain {
     String compiledHtmlOutput = null;
     File fileLimitAncestor = config.getFetcherBase();
 
+    File jsOutputDest = config.getOutputJsFile();
+    File htmlOutputDest = config.getOutputHtmlFile();
+
     try {
       UriFetcher fetcher;
       UriPolicy policy;
@@ -177,7 +180,13 @@ public final class PluginCompilerMain {
       PluginCompiler compiler = new PluginCompiler(
           BuildInfo.getInstance(), meta, mq);
       Planner.PlanState preconds = compiler.getPreconditions();
-      Planner.PlanState goals = compiler.getGoals();
+      Planner.PlanState goals;
+      if (htmlOutputDest == null) {
+        goals = compiler.getGoals()
+            .without(PipelineMaker.HTML_SAFE_STATIC).with(PipelineMaker.JS);
+      } else {
+        goals = compiler.getGoals();
+      }
       compiler.setPreconditions(config.preconditions(preconds));
       compiler.setGoals(config.goals(goals));
 
@@ -199,12 +208,26 @@ public final class PluginCompilerMain {
     }
 
     if (success) {
-      writeFile(config.getOutputJsFile(), compiledJsOutput);
-      writeFile(config.getOutputHtmlFile(), compiledHtmlOutput);
+      if (jsOutputDest != null) {
+        writeFile(jsOutputDest, compiledJsOutput);
+      } else {
+        StringBuilder compiledJsOutputBuf = new StringBuilder();
+        compiledJsOutputBuf.append("<script>");
+        try {
+          writeFile(compiledJsOutputBuf, compiledJsOutput);
+        } catch (IOException ex) {
+          throw new SomethingWidgyHappenedError(ex);
+        }
+        compiledJsOutputBuf.append("</script>");
+        compiledHtmlOutput += compiledJsOutputBuf;
+      }
+      if (htmlOutputDest != null) {
+        writeFile(htmlOutputDest, compiledHtmlOutput);
+      }
     } else {
       // Make sure there is no previous output file from a failed run.
-      config.getOutputJsFile().delete();
-      config.getOutputHtmlFile().delete();
+      if (jsOutputDest != null) { jsOutputDest.delete(); }
+      if (htmlOutputDest != null) { htmlOutputDest.delete(); }
       // If it wasn't there in the first place, or is not writable, that's OK,
       // so ignore the return value.
     }
@@ -298,14 +321,9 @@ public final class PluginCompilerMain {
 
     try {
       out = new OutputStreamWriter(new FileOutputStream(f), Charsets.UTF_8);
-      if (config.renderer() == Config.SourceRenderMode.DEBUGGER) {
-        // Debugger rendering is weird enough to warrant its own method
-        writeFileWithDebug(out, module);
-      } else {
-        writeFileNonDebug(out, module);
-      }
+      writeFile(out, module);
     } catch (IOException ex) {
-      exHandler.handle(ex);
+      ex.printStackTrace();
     } finally {
       if (out != null) {
         try {
@@ -317,7 +335,17 @@ public final class PluginCompilerMain {
     }
   }
 
-  private void writeFileNonDebug(Writer out, CajoledModule module)
+  private void writeFile(Appendable out, CajoledModule module)
+      throws IOException {
+    if (config.renderer() == Config.SourceRenderMode.DEBUGGER) {
+      // Debugger rendering is weird enough to warrant its own method
+      writeFileWithDebug(out, module);
+    } else {
+      writeFileNonDebug(out, module);
+    }
+  }
+
+  private void writeFileNonDebug(Appendable out, CajoledModule module)
       throws IOException {
     TokenConsumer tc;
     switch (config.renderer()) {
@@ -342,7 +370,7 @@ public final class PluginCompilerMain {
     out.append('\n');
   }
 
-  private void writeFileWithDebug(Writer out, CajoledModule module)
+  private void writeFileWithDebug(Appendable out, CajoledModule module)
       throws IOException {
     module.renderWithDebugSymbols(
         buildOriginalInputCharSequences(),
