@@ -1197,13 +1197,13 @@ jsunitRegister('testPseudoElements',
   var title = document.getElementsByTagName('title')[0];
   var html = document.getElementsByTagName('html')[0];
 
-  assertEquals('BODY', body.getTagName());
+  assertEquals('BODY', body.tagName);
   assertEquals(null, body.getAttribute('foo'));
-  assertEquals('HEAD', head.getTagName());
+  assertEquals('HEAD', head.tagName);
   assertEquals(null, head.getAttribute('foo'));
-  assertEquals('TITLE', title.getTagName());
+  assertEquals('TITLE', title.tagName);
   assertEquals(null, title.getAttribute('foo'));
-  assertEquals('HTML', html.getTagName());
+  assertEquals('HTML', html.tagName);
   assertEquals(null, html.getAttribute('foo'));
 
   pass('test-pseudo-elements');
@@ -2365,6 +2365,11 @@ jsunitRegister('testSetStyle', function testSetStyle() {
   el.style.cssText = 'cssText: "cursor:help"';
   assertEquals(defaultCursor, cursor(el));
   assertFalse(defaultCursor, defaultCursor == 'help');
+
+  // setStyle can be overridden by libraries like jQuery.
+  assertEquals(void 0, el.setStyle);
+  el.setStyle = 42;
+  assertEquals(42, el.setStyle);
 
   pass('test-set-style');
 });
