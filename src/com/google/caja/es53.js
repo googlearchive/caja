@@ -46,15 +46,6 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
         'on arguments are not supported.');
   }
 
-  // Provide original definitions for safe use.
-  var Object___ = Object;
-  var Array___ = Array;
-  var String___ = String;
-  var Number___ = Number;
-  var Boolean___ = Boolean;
-  var Error___ = Error;
-  var TypeError___ = TypeError;
-
   /**
    * Caja-specific properties
    * 
@@ -66,7 +57,7 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
    * 
    * {@code obj[name + '_v___'] === obj}  means that {@code name} is
    *                                      a data property on {@code obj}.
-   * {@code obj.hasOwnProperty___(name + '_v___') &&
+   * {@code obj.hasOwnProperty(name + '_v___') &&
    *       obj[name + '_v___'] === false} means that {@code name} is an
    *                                      accessor property on {@code obj}.
    * {@code obj[name + '_w___'] === obj}  means that {@code name} is
@@ -81,6 +72,8 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
    *                                      {@code name} on {@code obj}.
    * {@code obj[name + '_s___']}          is the setter for 
    *                                      {@code name} on {@code obj}.
+   * {@code obj[name + '_virt___]}        is the virtual version of a primordial
+   *                                      method that's exposed to guest code.
    * {@code obj[name + '_m___'] === obj}  means that {@code name} is
    *                                      callable as a method (fastpath).
    * 
@@ -128,20 +121,13 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
    *                                      the inherited {@code AS_TAMED___}
    *                                      method.
    * {@code ___.untame(obj)}              is similar, but goes the other way.
-   * 
    */
 
-  Array.prototype.slice___ = Array.prototype.slice;
   if (!Array.slice) {
-    Array.slice___ = function (dis, startIndex, endIndex) {
-        return Array___.prototype.slice___.call___(dis, startIndex, endIndex);
+    Array.slice = function (dis, startIndex, endIndex) {
+        return Array.prototype.slice.call(dis, startIndex, endIndex);
       };
-  } else {
-    Array.slice___ = Array.slice;
   }
-  Array.prototype.push___ = Array.prototype.push;
-  Array.prototype.shift___ = Array.prototype.shift;
-  Array.prototype.concat___ = Array.prototype.concat;
 
   ////////////////////////////////////////////////////////////////////////
   // Primitive objective membrane
@@ -175,11 +161,11 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
   function tamesTo(f, t) {
     var ftype = typeof f;
     if (!f || (ftype !== 'function' && ftype !== 'object')) { 
-      throw new TypeError___('Unexpected feral primitive: ', f); 
+      throw new TypeError('Unexpected feral primitive: ', f); 
     }
     var ttype = typeof t;
     if (!t || (ttype !== 'function' && ttype !== 'object')) {
-      throw new TypeError___('Unexpected tame primitive: ', t); 
+      throw new TypeError('Unexpected tame primitive: ', t); 
     }
 
     if (f.TAMED_TWIN___ === t && t.FERAL_TWIN___ === f) { 
@@ -195,17 +181,17 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
     // could decide to more delicately rely on this invariant and test
     // the backpointing rather than hasOwnProp below.
 
-    if (f.TAMED_TWIN___ && f.hasOwnProperty___('TAMED_TWIN___')) { 
-      throw new TypeError___('Already tames to something: ', f); 
+    if (f.TAMED_TWIN___ && f.hasOwnProperty('TAMED_TWIN___')) { 
+      throw new TypeError('Already tames to something: ', f); 
     }
-    if (t.FERAL_TWIN___ && t.hasOwnProperty___('FERAL_TWIN___')) { 
-      throw new TypeError___('Already untames to something: ', t); 
+    if (t.FERAL_TWIN___ && t.hasOwnProperty('FERAL_TWIN___')) { 
+      throw new TypeError('Already untames to something: ', t); 
     }
-    if (f.FERAL_TWIN___ && f.hasOwnProperty___('FERAL_TWIN___')) { 
-      throw new TypeError___('Already tame: ', f); 
+    if (f.FERAL_TWIN___ && f.hasOwnProperty('FERAL_TWIN___')) { 
+      throw new TypeError('Already tame: ', f); 
     }
-    if (t.TAMED_TWIN___ && t.hasOwnProperty___('TAMED_TWIN___')) { 
-      throw new TypeError___('Already feral: ', t); 
+    if (t.TAMED_TWIN___ && t.hasOwnProperty('TAMED_TWIN___')) { 
+      throw new TypeError('Already feral: ', t); 
     }
 
     f.TAMED_TWIN___ = t;
@@ -224,7 +210,7 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
   function tamesToSelf(obj) {
     var otype = typeof obj;
     if (!obj || (otype !== 'function' && otype !== 'object')) { 
-      throw new TypeError___('Unexpected primitive: ', obj); 
+      throw new TypeError('Unexpected primitive: ', obj); 
     }
     if (obj.TAMED_TWIN___ === obj && obj.FERAL_TWIN___ === obj) { 
       // Just a transient diagnostic until we understand how often
@@ -238,11 +224,11 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
     // (t.FERAL_TWIN___ === f && hasOwnProp(t, 'FERAL_TWIN___')), then we
     // could decide to more delicately rely on this invariant and test
     // the backpointing rather than hasOwnProp below.
-    if (obj.TAMED_TWIN___ && obj.hasOwnProperty___('TAMED_TWIN___')) { 
-      throw new TypeError___('Already tames to something: ', obj); 
+    if (obj.TAMED_TWIN___ && obj.hasOwnProperty('TAMED_TWIN___')) { 
+      throw new TypeError('Already tames to something: ', obj); 
     }
-    if (obj.FERAL_TWIN___ && obj.hasOwnProperty___('FERAL_TWIN___')) { 
-      throw new TypeError___('Already untames to something: ', obj); 
+    if (obj.FERAL_TWIN___ && obj.hasOwnProperty('FERAL_TWIN___')) { 
+      throw new TypeError('Already untames to something: ', obj); 
     }
 
     obj.TAMED_TWIN___ = obj.FERAL_TWIN___ = obj;
@@ -417,14 +403,14 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
     someSuper = someSuper.prototype.constructor;
     var noop = function () {};
     if (someSuper.new___ === noop.new___) {
-      throw new TypeError___('Internal: toxic function encountered!');
+      throw new TypeError('Internal: toxic function encountered!');
     }
     noop.prototype = someSuper.prototype;
     feralCtor.prototype = new noop();
     feralCtor.prototype.Prototype___ = someSuper.prototype;
 
     var inert = function() {
-        throw new TypeError___('This constructor cannot be called directly.');
+        throw new TypeError('This constructor cannot be called directly.');
       };
 
     inert.prototype = feralCtor.prototype;
@@ -438,11 +424,11 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
   ////////////////////////////////////////////////////////////////////////
 
   AS_TAMED___ = function() {
-      throw new Error___('Internal: global object almost leaked');
+      throw new Error('Internal: global object almost leaked');
     };
 
   AS_FERAL___ = function() {
-      var err = new Error___('Internal: global object leaked');
+      var err = new Error('Internal: global object leaked');
       err.UNCATCHABLE___ = true;
       throw err;
     };
@@ -502,7 +488,6 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
   /**
    * Objects can't override this, so it can be invoked safely as a method.
    */
-  Object.prototype.hasOwnProperty___ = Object.prototype.hasOwnProperty;
   Object.prototype.toString___ = Object.prototype.toString;
 
   /**
@@ -539,10 +524,10 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
    * Setter for {@code length}.  This is necessary because
    * shortening an array by setting its length may delete numeric properties.
    */
-  Array.prototype.length_s___ = function (val) {
+  Array.prototype.length_s___ = markFunc(function (val) {
       // Freezing an array needs to freeze the length property.
       if (this.z___ === this) {
-        throw new TypeError___('Cannot change the length of a frozen array.');
+        throw new TypeError('Cannot change the length of a frozen array.');
       }
       val = ToUint32(val);
       // Since increasing the length does not add properties,
@@ -555,49 +540,16 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
       if (!this.hasNumerics___() || this.NUM____c___ === this) {
         return this.length = val;
       }
-      throw new TypeError___(
+      throw new TypeError(
           'Shortening the array may delete non-configurable elements.');
-    };
+    });
 
   /**
    * Getter for {@code length}.  Only necessary for returning
    * a property descriptor map and dynamic lookups, since reading
    * {@code length} is automatically whitelisted.
    */
-  Array.prototype.length_g___ = function () { return this.length; };
-
-  // Store the original call and apply properties
-  Function.prototype.call___ = Function.prototype.call;
-  Function.prototype.apply___ = Function.prototype.apply;
-  /**
-   * Bind this function to <tt>self</tt>, which will serve
-   * as the value of <tt>this</tt> during invocation. Curry on a
-   * partial set of arguments in <tt>var_args</tt>. Return the curried
-   * result as a new function object.
-   */
-  Function.prototype.bind = markFunc(function(self, var_args) {
-      var thisFunc = safeDis(this);
-      var leftArgs = Array___.slice___(arguments, 1);
-      function funcBound(var_args) {
-        var args = leftArgs.concat___(Array___.slice___(arguments, 0));
-        return thisFunc.apply___(safeDis(self), args);
-      }
-      // 15.3.5.2
-      delete funcBound.prototype;
-      funcBound.f___ = funcBound.apply___;
-      funcBound.new___ = function () {
-          throw "Constructing the result of a bind() not yet implemented.";
-        };
-      return funcBound;
-    });
-  Function.prototype.bind___ = Function.prototype.bind;
-  // Set up safer versions
-  Function.prototype.call = markFunc(function (dis, var_args) {
-      return this.apply___(safeDis(dis), Array___.slice___(arguments,1));
-    });
-  Function.prototype.apply = markFunc(function (dis, as) {
-      return this.apply___(safeDis(dis), Array___.slice___(as));
-    });
+  Array.prototype.length_g___ = markFunc(function () { return this.length; });
 
   // Replace {@code undefined} and {@code null} by
   // {@code USELESS} for use as {@code this}.  If dis is a global
@@ -607,7 +559,7 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
     if (dis === null || dis === void 0) { return USELESS; }
     if (Type(dis) !== 'Object') { return dis; }
     if ('___' in dis) { 
-      var err = new Error___('Internal: toxic global!'); 
+      var err = new Error('Internal: toxic global!'); 
       err.UNCATCHABLE___ = true;
       throw err;
     }
@@ -639,12 +591,12 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
 
   function assertValidPropertyName(P) {
     if (endsWith__.test(P)) { 
-      throw new TypeError___('Properties may not end in double underscore.');
+      throw new TypeError('Properties may not end in double underscore.');
     }
   }
 
   function callFault(var_args) {
-    var err = new Error___('Internal: toxic function encountered!');
+    var err = new Error('Internal: toxic function encountered!');
     err.UNCATCHABLE___ = true;
     throw err;
   }
@@ -702,27 +654,7 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
    */
   function hasOwnAccessor(obj, name) {
     var valueFlag = name + '_v___';
-    return obj.hasOwnProperty___(valueFlag) && !obj[valueFlag];
-  }
-
-  /**
-   * Precondition:
-   * {@code obj} must not be {@code null} or {@code undefined}.
-   * {@code name} must be a string that is not the string encoding of
-   *              a number; {@code name} may be {@code 'NUM___'}. 
-   */
-  function grantValue(obj, name) {
-    obj[name + '_v___'] = obj;
-  }
-
-  /**
-   * Precondition:
-   * {@code obj} must not be {@code null} or {@code undefined}.
-   * {@code name} must be a string that is not the string encoding of
-   *              a number; {@code name} may be {@code 'NUM___'}. 
-   */
-  function grantWrite(obj, name) {
-    obj[name + '_gw___'] = obj;
+    return obj.hasOwnProperty(valueFlag) && !obj[valueFlag];
   }
 
   /**
@@ -743,38 +675,24 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
    * {@code name} must be a string that is not the string encoding of
    *              a number; {@code name} may be {@code 'NUM___'}. 
    */
-  function grantConfigure(obj, name) {
-    obj[name + '_c___'] = obj;
-  }
-
-  /**
-   * Precondition:
-   * {@code obj} must not be {@code null} or {@code undefined}.
-   * {@code name} must be a string that is not the string encoding of
-   *              a number; {@code name} may be {@code 'NUM___'}. 
-   */
-  function grantEnumerate(obj, name) {
-    obj[name + '_e___'] = obj;
-  }
-
-  /**
-   * Precondition:
-   * {@code obj} must not be {@code null} or {@code undefined}.
-   * {@code name} must be a string that is not the string encoding of
-   *              a number; {@code name} may be {@code 'NUM___'}. 
-   */
   function fastpathMethod(obj, name) {
     obj[name + '_w___'] = false;
     obj[name + '_m___'] = obj;
   }
 
-  // For taming a simple function or a safe exophoric function like
-  //     Array.prototype.peek = function () { return this[0]; }
+  /**
+   * For taming a simple function or a safe exophoric function (only reads
+   * whitelisted properties of {@code this}).
+   */ 
   function markFunc(fn) {
     if (!isFunction(fn)) {
-      throw new TypeError___('Expected a function.'); 
+      throw new TypeError('Expected a function instead of ' + fn); 
     }
-    fn.f___ = fn.apply___;
+    if (fn.f___ !== Function.prototype.f___ &&
+        fn.f___ !== fn.apply) {
+      throw new TypeError('Already tamed!\n' + fn.f___);
+    }
+    fn.f___ = fn.apply;
     fn.new___ = fn;
     return fn;
   }
@@ -815,8 +733,8 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
    * {@code name} must be a string that is not the string encoding
    *              of a number; {@code name} may be {@code 'NUM___'}.
    */
-  function hasOwnProperty(obj, name) {
-    return obj.hasOwnProperty___(name + '_v___') || name === 'NUM___';
+  function guestHasOwnProperty(obj, name) {
+    return obj.hasOwnProperty(name + '_v___') || name === 'NUM___';
   }
 
   /**
@@ -872,10 +790,7 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
   }
 
   function isExtensible(obj) {
-    var o; 
-    try { o = ToObject(obj); // TODO: What is this about?
-    } catch (e) { return false; }
-    return o.ne___ !== o;
+    return Type(obj) === 'Object' && obj.ne___ !== obj;
   }
 
   /**
@@ -888,7 +803,7 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
   function wouldExtend(obj, name) {
     // Would assigning to a numeric index extend the object?
     if (isNumericName(name)) {
-      return !obj.hasOwnProperty___(name);
+      return !obj.hasOwnProperty(name);
     }
     // If name is an own data property, then writing to it won't extend obj.
     if (hasOwnValue(obj, name)) { return false; }
@@ -900,11 +815,11 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
   }
 
   function isFunction(obj) {
-    return Object___.prototype.toString___.call___(obj) === '[object Function]';
+    return Object.prototype.toString___.call(obj) === '[object Function]';
   }
 
   function isError(obj) {
-    return Object___.prototype.toString___.call___(obj) === '[object Error]';
+    return Object.prototype.toString___.call(obj) === '[object Error]';
   }
 
   function allEnumKeys(obj) {
@@ -915,7 +830,7 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
       } else {
         if (startsWithNUM___.test(i)) { continue; }
         m = i.match(endsWith_e___);
-        if (m) { result.push(m[1]); }
+        if (m && obj[i]) { result.push(m[1]); }
       }
     }
     return result;
@@ -929,7 +844,7 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
       } else {
         if (startsWithNUM___.test(i)) { continue; }
         m = i.match(endsWith_v___);
-        if (m) { result.push(m[1]); }
+        if (m && obj[i]) { result.push(m[1]); }
       }
     }
     return result;
@@ -938,7 +853,7 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
   function ownEnumKeys(obj) {
     var i, m, result = [];
     for (i in obj) {
-      if (!obj.hasOwnProperty___(i)) { continue; }
+      if (!obj.hasOwnProperty(i)) { continue; }
       if (isNumericName(i)) {
         result.push(i);
       } else {
@@ -953,7 +868,7 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
   function ownKeys(obj) {
     var i, m, result = [];
     for (i in obj) {
-      if (!obj.hasOwnProperty___(i)) { continue; }
+      if (!obj.hasOwnProperty(i)) { continue; }
       if (isNumericName(i)) {
         result.push(i);
       } else {
@@ -1049,7 +964,7 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
         if (opt_reviver) {
           opt_reviver = toFunc(opt_reviver);
           reviver = function (key, value) {
-            return opt_reviver.apply___(this, arguments);
+            return opt_reviver.apply(this, arguments);
           };
         }
         return goodJSON.parse(
@@ -1062,14 +977,14 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
       stringify: markFunc(function (obj, opt_replacer, opt_space) {
         switch (typeof opt_space) {
           case 'number': case 'string': case 'undefined': break;
-          default: throw new TypeError___('space must be a number or string');
+          default: throw new TypeError('space must be a number or string');
         }
         var replacer;
         if (opt_replacer) {
           opt_replacer = toFunc(opt_replacer);
           replacer = function (key, value) {
               if (!this.HasProperty___(key)) { return void 0; }
-              return opt_replacer.apply___(this, arguments);
+              return opt_replacer.apply(this, arguments);
             };
         } else {
           replacer = function (key, value) {
@@ -1099,6 +1014,7 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
    * Gets the currently registered logging function.
    */
   function getLogFunc() { return myLogFunc; }
+  markFunc(getLogFunc);
 
   /**
    * Register newLogFunc as the current logging function, to be called
@@ -1116,11 +1032,13 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
    * </ul>
    */
   function setLogFunc(newLogFunc) { myLogFunc = newLogFunc; }
+  markFunc(setLogFunc);
 
   /**
    * Calls the currently registered logging function.
    */
   function log(str) { myLogFunc('' + str); }
+  markFunc(log);
 
   /**
    * Like an assert that can't be turned off.
@@ -1135,12 +1053,12 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
    * </pre>
    */
   function enforce(test, var_args) {
-    if (!test) { throw new Error___(Array___.slice___(arguments, 1).join('')); }
+    if (!test) { throw new Error(Array.slice(arguments, 1).join('')); }
     return true;
   }
 
   /**
-   * Enforces {@code typeOf(specimen) === typename}, in which case
+   * Enforces {@code typeof specimen === typename}, in which case
    * specimen is returned.
    * <p>
    * If not, throws an informative TypeError
@@ -1150,7 +1068,7 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
    */
   function enforceType(specimen, typename, opt_name) {
     if (typeof specimen !== typename) {
-      throw new TypeError___('expected ' + typename + ' instead of ' +
+      throw new TypeError('expected ' + typename + ' instead of ' +
           typeof specimen + ': ' + (opt_name || specimen));
     }
     return specimen;
@@ -1166,18 +1084,18 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
   function enforceNat(specimen) {
     enforceType(specimen, 'number');
     if (Math.floor(specimen) !== specimen) {
-      throw new TypeError___('Must be integral: ' + specimen);
+      throw new TypeError('Must be integral: ' + specimen);
     }
     if (specimen < 0) {
-      throw new TypeError___('Must not be negative: ' + specimen);
+      throw new TypeError('Must not be negative: ' + specimen);
     }
     // Could pre-compute precision limit, but probably not faster
     // enough to be worth it.
     if (Math.floor(specimen - 1) !== specimen - 1) {
-      throw new TypeError___('Beyond precision limit: ' + specimen);
+      throw new TypeError('Beyond precision limit: ' + specimen);
     }
     if (Math.floor(specimen - 1) >= specimen) {
-      throw new TypeError___('Must not be infinite: ' + specimen);
+      throw new TypeError('Must not be infinite: ' + specimen);
     }
     return specimen;
   }
@@ -1200,7 +1118,7 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
           log('"' + badName + '" is deprecated.\n' + advice);
           warningNeeded = false;
         }
-        return func.apply___(USELESS, arguments);
+        return func.apply(USELESS, arguments);
       };
   }
 
@@ -1231,7 +1149,7 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
   /**
    * 
    * Creates a new mutable associative table mapping from the
-   * identity of arbitrary keys (as defined by tt>identical()</tt>) to
+   * identity of arbitrary keys (as defined by <tt>identical()</tt>) to
    * arbitrary values.
    * 
    * <p>Operates as specified by <a href=
@@ -1252,7 +1170,7 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
     function setOnKey(key, value) {
       var ktype = typeof key;
       if (!key || (ktype !== 'function' && ktype !== 'object')) { 
-        throw new TypeError___("Can't use key lifetime on primitive keys: " + key);
+        throw new TypeError("Can't use key lifetime on primitive keys: " + key);
       }
       var list = key[myMagicIndexName];
       // To distinguish key from objects that derive from it,
@@ -1278,7 +1196,7 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
     function getOnKey(key) {
       var ktype = typeof key;
       if (!key || (ktype !== 'function' && ktype !== 'object')) { 
-        throw new TypeError___("Can't use key lifetime on primitive keys: " + key);
+        throw new TypeError("Can't use key lifetime on primitive keys: " + key);
       }
       var list = key[myMagicIndexName];
       if (!list || list[0] !== key) {
@@ -1376,11 +1294,11 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
    * cajole html such as
    * <pre>&lt;a onmouseover="alert(1)"&gt;Mouse here&lt;/a&gt;</pre>
    * into html-writing JavaScript such as<pre>
-   * ___IMPORTS___.document.innerHTML = "
+   * IMPORTS___.document.innerHTML = "
    *  &lt;a onmouseover=\"
-   *    (function(___IMPORTS___) {
-   *      ___IMPORTS___.alert(1);
-   *    })(___.getImports(" + ___.getId(___IMPORTS___) + "))
+   *    (function(IMPORTS___) {
+   *      IMPORTS___.alert(1);
+   *    })(___.getImports(" + ___.getId(IMPORTS___) + "))
    *  \"&gt;Mouse here&lt;/a&gt;
    * ";
    * </pre>
@@ -1415,7 +1333,7 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
   function getImports(id) {
     var result = registeredImports[enforceType(id, 'number', 'id')];
     if (result === void 0) {
-      throw new Error___('Internal: imports#', id, ' unregistered');
+      throw new Error('Internal: imports#', id, ' unregistered');
     }
     return result;
   }
@@ -1503,7 +1421,7 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
     var stash = void 0;
     function ejector(result) {
       if (disabled) {
-        throw new Error___('ejector disabled');
+        throw new Error('ejector disabled');
       } else {
         // don't disable here.
         stash = result;
@@ -1513,13 +1431,13 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
     markFuncFreeze(ejector);
     try {
       try {
-        return callPub(attemptFunc, 'call', [USELESS, ejector]);
+        return attemptFunc.m___('call', [USELESS, ejector]);
       } finally {
         disabled = true;
       }
     } catch (e) {
       if (e === token) {
-        return callPub(failFunc, 'call', [USELESS, stash]);
+        return failFunc.m___('call', [USELESS, stash]);
       } else {
         throw e;
       }
@@ -1535,10 +1453,10 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
    */
   function eject(opt_ejector, result) {
     if (opt_ejector) {
-      callPub(opt_ejector, 'call', [USELESS, result]);
-      throw new Error___('Ejector did not exit: ', opt_ejector);
+      opt_ejector.m___('call', [USELESS, result]);
+      throw new Error('Ejector did not exit: ', opt_ejector);
     } else {
-      throw new Error___(result);
+      throw new Error(result);
     }
   }
   
@@ -1650,30 +1568,26 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
 
   /**
    * Given that {@code stamps} is a list of stamps and
-   * {@code record} is a non-frozen record, this marks record with
+   * {@code record} is a non-frozen object, this marks record with
    * the trademarks of all of these stamps, and then freezes and
    * returns the record.
    * <p>
    * If any of these conditions do not hold, this throws.
    */
   function stamp(stamps, record) {
-    if (!isRecord(record)) {
-      throw new TypeError___('Can only stamp records: ' + record);
-    }
+    // TODO: Should nonextensible objects be stampable?
     if (isFrozen(record)) {
-      throw new TypeError___("Can't stamp frozen objects: " + record);
+      throw new TypeError("Can't stamp frozen objects: " + record);
     }
-    stamps = Array___.slice___(stamps, 0);
-    var numStamps = stamps.length >>> 0;
+    stamps = Array.slice(stamps, 0);
+    var numStamps = stamps.length;
     // First ensure that we will succeed before applying any stamps to
     // the record.
     for (var i = 0; i < numStamps; i++) {
       if (!('mark___' in stamps[i])) {
-        throw new TypeError___("Can't stamp with a non-stamp: " + stamps[i]);
+        throw new TypeError("Can't stamp with a non-stamp: " + stamps[i]);
       }
     }
-    // Looping again over the same untrusted stamps alleged-array is safe
-    // assuming single-threaded execution and non-mutating accessors.
     for (var i = 0; i < numStamps; i++) {
       // Only works for real stamps, postponing the need for a
       // user-implementable auditing protocol.
@@ -1711,7 +1625,7 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
     function unseal(box) {
       var payload = table.get(box);
       if (payload === void 0) {
-        throw new TypeError___('Sealer/Unsealer mismatch'); 
+        throw new TypeError('Sealer/Unsealer mismatch'); 
       } else if (payload === undefinedStandin) {
         return void 0;
       } else {
@@ -1734,26 +1648,6 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
   function manifest(ignored) {}
 
   /**
-   * Privileged code attempting to read an imported value from a module's
-   * {@code IMPORTS___}. This function is NOT available to ES5/3 code.
-   * <p>
-   * This delegates to {@code Get___}, and so will only read
-   * those properties from module_imports that are visible to ES5/3 code.
-   */
-  function readImport(module_imports, name, opt_permitsUsed) {
-    name = '' + name;
-    if (!module_imports.HasProperty___(name)) {
-      log('Linkage warning: ' + name + ' not importable');
-      return void 0;
-    }
-    var result = module_imports.Get___(name);
-    if (opt_permitsUsed) {
-      enforceStaticPath(result, opt_permitsUsed);
-    }
-    return result;
-  }
-
-  /**
    * Receives whatever was caught by a user defined try/catch block.
    *
    * @param ex A value caught in a try block.
@@ -1762,7 +1656,7 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
   function tameException(ex) {
     if (ex && ex.UNCATCHABLE___) { throw ex; }
     try {
-      switch (typeOf(ex)) {
+      switch (typeof ex) {
         case 'string':
         case 'number':
         case 'boolean': 
@@ -1803,8 +1697,8 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
           return markFuncFreeze(inLieuOfThrownFunction, name);
         }
         default: {
-          log('Unrecognized exception type: ' + (typeOf(ex)));
-          return 'Unrecognized exception type: ' + (typeOf(ex));
+          log('Unrecognized exception type: ' + (typeof ex));
+          return 'Unrecognized exception type: ' + (typeof ex);
         }
       }
     } catch (_) {
@@ -1875,7 +1769,7 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
   // 8.7.1
   function GetValue(obj, name) {
     if (obj === null || obj === void 0) {
-      throw new TypeError___(obj + ' has no properties.');
+      throw new TypeError(obj + ' has no properties.');
     }
     return obj.Get___(name);
   }
@@ -1883,7 +1777,7 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
   // 8.7.2
   function PutValue(obj, name, val) {
     if (obj === null || obj === void 0) {
-      throw new TypeError___(obj + ' has no properties.');
+      throw new TypeError(obj + ' has no properties.');
     }
     return obj.Put___(name, val);
   }
@@ -1979,9 +1873,9 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
 
   // 8.10.5
   function ToPropertyDescriptor(Obj) {
-    // 1. If Type(Obj) is not Object throw a TypeError___ exception.
+    // 1. If Type(Obj) is not Object throw a TypeError exception.
     if (Type(Obj) !== 'Object') { 
-      throw new TypeError___('Expected an object.'); 
+      throw new TypeError('Expected an object.'); 
     }
     // 2. Let desc be the result of creating a new Property 
     //    Descriptor that initially has no fields.
@@ -2025,9 +1919,9 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
       //    internal method of Obj with argument "get".
       var getter = GetValue(Obj, 'get');
       // b. If IsCallable(getter) is false and getter is not
-      //    undefined, then throw a TypeError___ exception.
+      //    undefined, then throw a TypeError exception.
       if (!isFunction(getter) && getter !== void 0) {
-        throw new TypeError___('Getter attributes must be functions or undef.');
+        throw new TypeError('Getter attributes must be functions or undef.');
       }
       // c. Set the [[Get]] field of desc to getter.
       desc.get = getter;
@@ -2039,9 +1933,9 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
       //    internal method of Obj with argument "set".
       var setter = GetValue(Obj, 'set');
       // b. If IsCallable(setter) is false and setter is not
-      //    undefined, then throw a TypeError___ exception.
+      //    undefined, then throw a TypeError exception.
       if (!isFunction(setter) && setter !== void 0) {
-        throw new TypeError___('Setter attributes must be functions or undef.');
+        throw new TypeError('Setter attributes must be functions or undef.');
       }
       // c. Set the [[Set]] field of desc to setter.
       desc.set = setter;
@@ -2049,12 +1943,12 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
     // 9. If either desc.[[Get]] or desc.[[Set]] are present, then
     if ('set' in desc || 'get' in desc) {
       // a. If either desc.[[Value]] or desc.[[Writable]] are present,
-      //    then throw a TypeError___ exception.
+      //    then throw a TypeError exception.
       if ('value' in desc) { 
-        throw new TypeError___('Accessor properties must not have a value.'); 
+        throw new TypeError('Accessor properties must not have a value.'); 
       }
       if ('writable' in desc) { 
-        throw new TypeError___('Accessor properties must not be writable.'); 
+        throw new TypeError('Accessor properties must not be writable.'); 
       }
     }
     // 10. Return desc.
@@ -2072,7 +1966,7 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
   Object.prototype.GetOwnProperty___ = function (P) {
       var O = this;
       if (isNumericName(P)) {
-        if (O.hasOwnProperty___(P)) {
+        if (O.hasOwnProperty(P)) {
           return {
               value: O[P],
               writable: isWritable(O, 'NUM___'),
@@ -2085,7 +1979,7 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
       }
       assertValidPropertyName(P);
       // 1. If O doesn't have an own property with name P, return undefined.
-      if (!hasOwnProperty(O, P)) { return void 0; }
+      if (!guestHasOwnProperty(O, P)) { return void 0; }
       // 2. Let D be a newly created Property Descriptor with no fields.
       var D = {};
       // 3. Let X be O's own property named P.
@@ -2121,6 +2015,8 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
       if (g) { return g.f___(this); }
       // Is it whitelisted as a value?
       if (hasValue(this, P)) { return this[P]; }
+      // Temporary support for Cajita's keeper interface
+      if (this.handleRead___) { return this.handleRead___(P); }
       return void 0;
     };
 
@@ -2131,7 +2027,7 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
       assertValidPropertyName(P);
       if (!thisExtensible) {
         if (wouldExtend(this, P)) {
-          throw new TypeError___("Could not create the property '" + 
+          throw new TypeError("Could not create the property '" + 
               P + "': " + this + " is not extensible.");
         }
       }
@@ -2143,7 +2039,7 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
         if (isWritable(this, 'NUM___') || !this.hasNumerics___()) {
           return this[P] = V;
         } else {
-          throw new TypeError___("The property '" + P + "' is not writable.");
+          throw new TypeError("The property '" + P + "' is not writable.");
         }
       }
       assertValidPropertyName(this, P);
@@ -2156,8 +2052,12 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
         fastpathWrite(this, P);
         return this[P] = V;
       }
+
+      // Temporary support for Cajita's keeper interface
+      if (this.handleSet___) { return this.handleSet___(P, V); }
+
       // If it doesn't exist, is the object extensible?
-      if (!this.hasOwnProperty___(P) && isExtensible(this)) {
+      if (!this.hasOwnProperty(P) && isExtensible(this)) {
         this.DefineOwnProperty___(P, {
             value: V,
             writable: true,
@@ -2166,7 +2066,7 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
           });
         return V;
       }
-      throw new TypeError___("The property '" + P + "' is not writable.");
+      throw new TypeError("The property '" + P + "' is not writable.");
     };
 
   // 8.12.6
@@ -2187,7 +2087,11 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
       //    internal method of O with property name P. 
       var desc = O.GetOwnProperty___(P);
       // 2. If desc is undefined, then return true.
-      if (!desc) { return true; }
+      if (!desc) {
+        // Temporary support for Cajita's keeper interface.
+        if (this.handleDelete___) { return this.handleDelete___(P); }
+        return true;
+      }
       // 3. If desc.[[Configurable]] is true, then
       if (desc.configurable) {
         if (isNumericName(P)) {
@@ -2209,7 +2113,7 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
       }
       // 4. Else if Throw, then throw a TypeError exception.
       // [This is strict mode, so Throw is always true.]
-      throw new TypeError___("Cannot delete '" + P + "' on " + obj);
+      throw new TypeError("Cannot delete '" + P + "' on " + obj);
       // 5. Return false.
     };
 
@@ -2219,7 +2123,7 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
   //   P is a number or a string.
   Object.prototype.DefineOwnProperty___ = function (P, Desc) {
       if (isNumericName(P)) {
-        throw new TypeError___('Cannot define numeric properties.');
+        throw new TypeError('Cannot define numeric properties.');
       }
       var O = this;
       // 1. Let current be the result of calling the [[GetOwnProperty]]
@@ -2230,7 +2134,7 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
       var extensible = isExtensible(O);
       // 3. If current is undefined and extensible is false, then Reject.
       if (!current && !extensible) {
-        throw new TypeError___('This object is not extensible.');
+        throw new TypeError('This object is not extensible.');
       }
       // 4. If current is undefined and extensible is true, then
       if (!current && extensible) {
@@ -2260,7 +2164,7 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
           //    [[Configurable]] attribute values are described by
           //    Desc. If the value of an attribute field of Desc is
           //    absent, the attribute of the newly created property is
-          //    set to its default value. 
+          //    set to its default value.
           if (Desc.configurable) { O[P] = void 0; }
           O[P + '_v___'] = false;
           O[P + '_w___'] =  O[P + '_gw___'] = false;
@@ -2288,7 +2192,7 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
       //    SameValue algorithm (9.12). 
       var allHaveAppearedAndAreTheSame = true;
       for (var i in Desc) {
-        if (!Desc.hasOwnProperty___(i)) { continue; }
+        if (!Desc.hasOwnProperty(i)) { continue; }
         if (!SameValue(GetValue(current, i), Desc[i])) {
           allHaveAppearedAndAreTheSame = false;
           break;
@@ -2299,14 +2203,14 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
       if (!current.configurable) {
         // a. Reject, if the [Cofigurable]] field of Desc is true.
         if (Desc.configurable) { 
-          throw new TypeError___("The property '" + P +
+          throw new TypeError("The property '" + P +
               "' is not configurable.");
         }
         // b. Reject, if the [[Enumerable]] field of Desc is present
         //    and the [[Enumerable]] fields of current and Desc are
         //    the Boolean negation of each other.
         if ('enumerable' in Desc && Desc.enumerable !== current.enumerable) {
-          throw new TypeError___("The property '" + P +
+          throw new TypeError("The property '" + P +
               "' is not configurable.");
         }
       }
@@ -2322,7 +2226,7 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
       else if (iddCurrent !== iddDesc) {
         // a. Reject, if the [[Configurable]] field of current is false.
         if (!current.configurable) { 
-          throw new TypeError___("The property '" + P +
+          throw new TypeError("The property '" + P +
               "' is not configurable.");
         }
         // b. If IsDataDescriptor(current) is true, then
@@ -2367,7 +2271,7 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
           // i. Reject, if the [[Writable]] field of current is false
           //    and the [[Writable]] field of Desc is true. 
           if (!current.writable && Desc.writable) {
-            throw new TypeError___("The property '" + P +
+            throw new TypeError("The property '" + P +
                 "' is not configurable.");
           }
           // ii. If the [[Writable]] field of current is false, then
@@ -2375,7 +2279,7 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
             // 1. Reject, if the [[Value]] field of Desc is present and 
             //    SameValue(Desc.[[Value]], current.[[Value]]) is false.
             if ('value' in Desc && !SameValue(Desc.value, current.value)) {
-              throw new TypeError___("The property '" + P +
+              throw new TypeError("The property '" + P +
                   "' is not writable.");
             }
           }
@@ -2394,7 +2298,7 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
           //     SameValue(Desc.[[Get]], current.[[Get]]) is false.
           if (('set' in Desc && !SameValue(Desc.set, current.set)) ||
               ('get' in Desc && !SameValue(Desc.get, current.get))) {
-            throw new TypeError___("The property '" + P +
+            throw new TypeError("The property '" + P +
                 "' is not configurable.");
           }
         }
@@ -2436,13 +2340,13 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
     switch(t) {
       case 'Undefined':
       case 'Null':
-        throw new TypeError___();
+        throw new TypeError();
       case 'Boolean':
-        return new Boolean___.new___(input);
+        return new Boolean.new___(input);
       case 'Number':
-        return new Number___.new___(input);
+        return new Number.new___(input);
       case 'String':
-        return new String___.new___(input);
+        return new String.new___(input);
       case 'Object':
         return input;
     }
@@ -2474,7 +2378,7 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
    */
   function asFirstClass(value) {
     if (isFunction(value) && value.f___ === Function.prototype.f___) {
-      var err = new Error___('Internal: toxic function encountered!');
+      var err = new Error('Internal: toxic function encountered!');
       err.UNCATCHABLE___ = true;
       throw err;
     }
@@ -2529,7 +2433,7 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
    */
   function makePoisonPill(badThing) {
     function poisonPill() {
-      throw new TypeError___('' + badThing + ' is forbidden by ES5/strict');
+      throw new TypeError('' + badThing + ' is forbidden by ES5/strict');
     }
     return markFunc(poisonPill);
   }
@@ -2539,11 +2443,11 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
   /**
    * Function calls g(args) get translated to g.f___(___.USELESS, args)
    * Tamed functions and cajoled functions install an overriding fastpath f___
-   * to apply___, the original Function.prototype.apply.
+   * to apply, the original Function.prototype.apply.
    */
   Function.prototype.f___ = callFault;
   Function.prototype.i___ = function(var_args) {
-      return this.f___(___.USELESS, Array___.slice___(arguments, 0));
+      return this.f___(___.USELESS, Array.slice(arguments, 0));
     };
   Function.prototype.new___ = callFault;
   Function.prototype.DefineOwnProperty___(
@@ -2572,10 +2476,10 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
    * Cajita's emulation of an ES5/strict arguments object.
    */
   function args(original) {
-    // Throw away {@code dis___}.
-    Array___.prototype.shift___.call___(original);
     var result = initializeMap(['length', 0]);
-    Array___.prototype.push___.apply___(result, original);
+    Array.prototype.push.apply(result, original);
+    // Throw away {@code dis___}.
+    Array.prototype.shift.call(result);
     result.CLASS___ = 'Arguments';
     result.DefineOwnProperty___(
         'callee',
@@ -2609,27 +2513,46 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
   function wrap(disfunction, name) {
     // For providing to uncajoled code
     function f(var_args) {
-      var a = Array___.slice___(arguments, 0);
+      var a = Array.slice(arguments, 0);
       a.unshift('___' in this ? void 0: this);
-      return disfunction.apply___(USELESS, a);
+      return disfunction.apply(USELESS, a);
     }
-    f.call = disfunction;
+    f.call = markFunc(disfunction);
     f.apply = markFunc(function (dis___, as) {
-        var a = Array___.slice___(as, 0);
+        var a = Array.slice(as, 0);
         a.unshift(dis___);
-        return disfunction.apply___(USELESS, a);
+        return disfunction.apply(USELESS, a);
       });
     // The cajoler translates an invocation
     // g(args) to g.f___(___.USELESS, [args])
-    f.f___ = f.apply___;
+    f.f___ = f.apply;
     f.new___ = f;
-    // TODO: remove dis___ in the parameter list
     f.toString = (function (str) {
+        var sig;
         return markFunc(function () {
-            return str;
+            if (sig) { return sig; }
+            return sig = str.replace(/dis___,\s*/,'')
+                .replace(/function\s*\(/,'function ' + name + '(');
           });
       })(disfunction.toString());
+    f.DefineOwnProperty___('prototype', {
+        value: f.prototype,
+        writable: true,
+        enumerable: false,
+        configurable: false
+      });
+    f.name = name;
     return f;
+  }
+
+  // Fixed-point combinator Y finds the fixed-point of the given maker
+  function Y(maker) {
+    function recurse(x) {
+      return maker(markFunc(function (var_args) {
+          return x(x).apply(this, arguments);
+        }));
+    }
+    return recurse(recurse);
   }
 
   // 11.8.7
@@ -2641,7 +2564,7 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
   function isIn(name, obj) {
     var t = Type(obj);
     if (t !== 'Object') { 
-      throw new TypeError___('Invalid "in" operand: ' + obj); 
+      throw new TypeError('Invalid "in" operand: ' + obj); 
     }
     return obj.HasProperty___(name);
   }
@@ -2649,6 +2572,35 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
   /**
    * 15 Standard Built-in ECMAScript Objects
    */
+
+  // Sets up a per-object getter and setter.  Necessary to prevent
+  // guest code from messing with expectations of host and innocent code.
+  // If innocent code needs access to the guest properties, explicitly tame
+  // it that way.
+  function virtualize(obj, name) {
+    var vname = name + '_virt___'; 
+    obj[vname] = obj[name] ? markFunc(obj[name]) : void 0;
+    obj.DefineOwnProperty___(name, {
+        get: markFunc(function () {
+            return this[vname];
+          }),
+        set: markFunc(function (val) {
+            if (!isFunction(val)) {
+              throw new TypeError('Expected a function instead of ' + val);
+            }
+            if (isFrozen(this)) {
+              throw new TypeError('This object is frozen.');
+            }
+            if (!isExtensible(this) && 
+                !this.hasOwnProperty(vname)) {
+              throw new TypeError('This object is not extensible.')
+            }
+            this[vname] = asFirstClass(val);
+          }),
+        enumerable: false,
+        configurable: false
+      });
+  }
 
   // 15.1.3.1--4
   markFunc(decodeURI);
@@ -2667,7 +2619,7 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
 
   // 15.2.2.1
   Object.new___ = markFunc(function (value) {
-      return Object___.f___(USELESS, [value]);
+      return Object.f___(USELESS, [value]);
     });
 
   // 15.2.3.1
@@ -2680,25 +2632,24 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
 
   // 15.2.3.2
   Object.getPrototypeOf = function (obj) {
-      if (!Object___.hasOwnProperty___('Prototype___')) {
-        if ({}.__proto__ === Object___.prototype) {
+      if (!Object.hasOwnProperty('Prototype___')) {
+        if ({}.__proto__ === Object.prototype) {
           obj.Prototype___ = obj.__proto__;
         } else {
           // FIXME: Adapt tricks from cajita.js to find the prototype
           // and, if successful, store the result on obj.Prototype___.
           // Otherwise throw.
-          throw new Error___("Not supported on this platform.");
+          throw new Error("Not supported on this platform.");
         }
       }
       return obj.Prototype___;
     };
-  Object.getPrototypeOf___ = Object.getPrototypeOf;
 
   // 15.2.3.3
   Object.getOwnPropertyDescriptor = function(obj, P) {
       // 1. If Type(object) is not Object throw a TypeError exception. 
       if (Type(obj) !== 'Object') {
-        throw new TypeError___('Expected an object.');
+        throw new TypeError('Expected an object.');
       }
       // 2. Let name be ToString(P).
       var name = '' + P;
@@ -2718,10 +2669,10 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
    */
   function beget(proto) {
     if (proto === null) {
-      throw new TypeError___('Cannot beget from null.');
+      throw new TypeError('Cannot beget from null.');
     }
     if (proto === (void 0)) {
-      throw new TypeError___('Cannot beget from undefined.');
+      throw new TypeError('Cannot beget from undefined.');
     }
     function F() {}
     F.prototype = proto;
@@ -2735,7 +2686,7 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
       // 1. If Type(O) is not Object or Null throw a TypeError exception.
       // (ES3 doesn't support null prototypes.)
       if (Type(obj) !== 'Object') {
-        throw new TypeError___('Expected an object.');
+        throw new TypeError('Expected an object.');
       }
       // 2. Let obj be the result of creating a new object
       //    as if by the expression new Object() where Object
@@ -2747,7 +2698,7 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
       // as if by calling the standard built-in function
       // Object.defineProperties with arguments obj and Properties.
       if (opt_Properties !== void 0) {
-        Object___.defineProperties___(obj, opt_Properties);
+        DefineProperties(obj, opt_Properties);
       }
       // 5. Return obj. 
       return obj;
@@ -2757,7 +2708,7 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
   Object.defineProperty = function (O, P, Attributes) {
       // 1. If Type(O) is not Object throw a TypeError exception.
       if (Type(O) !== 'Object') {
-        throw new TypeError___('Expected an object.');
+        throw new TypeError('Expected an object.');
       }
       // 2. Let name be ToString(P).
       var name = '' + P;
@@ -2773,56 +2724,56 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
     };
 
   // 15.2.3.7
-  Object.defineProperties = function (O, Properties) {
-      // 1. If Type(O) is not Object throw a TypeError exception.
-      if (Type(O) !== 'Object') {
-        throw new TypeError___('Expected an object.');
-      }
-      // 2. Let props be ToObject(Properties).
-      var props = ToObject(Properties);
-      // 3. Let names be an internal list containing
-      //    the names of each enumerable own property of props.
-      var names = ownEnumKeys(props);
-      // 4. Let descriptors be an empty internal List.
-      var descriptors = [];
-      // 5. For each element P of names in list order,
-      var len = names.length;
-      for (var i = 0; i < len; ++i) {
-        var P = names[i];
-        // a. Let descObj be the result of calling the [[Get]]
-        //    internal method of props with P as the argument.
-        var descObj = props.Get___[P];
-        // b. Let desc be the result of calling ToPropertyDescriptor
-        //    with descObj as the argument.
-        var desc = ToPropertyDescriptor(descObj);
-        // c. Append desc to the end of descriptors.
-        descriptors.push___(desc);
-      }
-      // 6. For each element desc of descriptors in list order,
-        // a. Call the [[DefineOwnProperty]] internal method
-        //    of O with arguments P, desc, and true.
-      // This part of the spec is nonsense.  I'm following Besen's
-      // interpretation: see line 31479 of
-      // http://besen.svn.sourceforge.net/viewvc/besen/trunk/src/BESEN.pas?revision=27&view=markup
+  function DefineProperties(O, Properties) {
+    // 1. If Type(O) is not Object throw a TypeError exception.
+    if (Type(O) !== 'Object') {
+      throw new TypeError('Expected an object.');
+    }
+    // 2. Let props be ToObject(Properties).
+    var props = ToObject(Properties);
+    // 3. Let names be an internal list containing
+    //    the names of each enumerable own property of props.
+    var names = ownEnumKeys(props);
+    // 4. Let descriptors be an empty internal List.
+    var descriptors = [];
+    // 5. For each element P of names in list order,
+    var len = names.length;
+    for (var i = 0; i < len; ++i) {
+      var P = names[i];
+      // a. Let descObj be the result of calling the [[Get]]
+      //    internal method of props with P as the argument.
+      var descObj = props.Get___[P];
+      // b. Let desc be the result of calling ToPropertyDescriptor
+      //    with descObj as the argument.
+      var desc = ToPropertyDescriptor(descObj);
+      // c. Append desc to the end of descriptors.
+      descriptors.push(desc);
+    }
+    // 6. For each element desc of descriptors in list order,
+      // a. Call the [[DefineOwnProperty]] internal method
+      //    of O with arguments P, desc, and true.
+    // This part of the spec is nonsense.  I'm following Besen's
+    // interpretation: see line 31479 of
+    // http://besen.svn.sourceforge.net/viewvc/besen/trunk/src/BESEN.pas?revision=27&view=markup
 
-      // TODO: The latest draft errata fixes this. We'll be ratifying
-      // these errata at the upcoming EcmaScript meeting on 7/28 &
-      // 7/29. Watch this space.
-      for (i = 0; i < len; ++i) {
-        P = names[i];
-        desc = descriptors[i];
-        O.DefineOwnProperty___(P, desc);
-      }
-      // 7. Return O.
-      return O;
-    };
-  Object.defineProperties___ = Object.defineProperties;
+    // TODO: The latest draft errata fixes this. We'll be ratifying
+    // these errata at the upcoming EcmaScript meeting on 7/28 &
+    // 7/29. Watch this space.
+    for (i = 0; i < len; ++i) {
+      P = names[i];
+      desc = descriptors[i];
+      O.DefineOwnProperty___(P, desc);
+    }
+    // 7. Return O.
+    return O;
+  }
+  Object.defineProperties = DefineProperties;
 
   // 15.2.3.8
   Object.seal = function (O) {
       // 1. If Type(O) is not Object throw a TypeError exception.
       if (Type(O) !== 'Object') {
-        throw new TypeError___('Only objects may be sealed.');
+        throw new TypeError('Only objects may be sealed.');
       }
       // 2. For each own property name P of O,
       var keys = ownKeys(O), len = keys.length;
@@ -2856,7 +2807,7 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
   // 15.2.3.9
   function freeze(obj) {
     if (Type(obj) !== 'Object') {
-      throw new TypeError___('Only objects may be frozen.');
+      throw new TypeError('Only objects may be frozen.');
     }
     // Frozen means all the properties are neither writable nor
     // configurable, and the object itself is not extensible.
@@ -2866,7 +2817,7 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
     if (obj.z___ === obj) { return obj; }
     obj.ne___ = obj;
     for (var i in obj) {
-      if (!hasOwnProperty(obj,i)) { continue; }
+      if (!guestHasOwnProperty(obj,i)) { continue; }
       if (isNumericName(i)) { continue; }
       obj[i + '_c___'] = false;
       obj[i + '_gw___'] = false;
@@ -2889,12 +2840,12 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
 
   /**
    * Whitelists all the object's own properties that do not
-   * end in __ and freezes it.  For internal use only.
+   * end in __.
    */
-  function snowWhite(obj) {
+  function whitelistAll(obj) {
     var i;
     for (i in obj) {
-      if (obj.hasOwnProperty___(i) && !endsWith__.test(i)) {
+      if (obj.hasOwnProperty(i) && !endsWith__.test(i)) {
         obj[i + '_v___'] = obj;
         obj[i + '_w___'] = false;
         obj[i + '_gw___'] = false;
@@ -2903,9 +2854,19 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
         obj[i + '_g___'] = void 0;
         obj[i + '_s___'] = void 0;
         obj[i + '_m___'] = false;
+        if (isFunction(obj[i])) {
+          if (obj[i].f___ === Function.prototype.f___) {
+            markFunc(obj[i]);
+          }
+        }
       }
     }
-    return freeze(obj);
+    return obj;
+  }
+
+  // TODO: Where this is used, do we really want immutability?
+  function snowWhite(obj) {
+    return freeze(whitelistAll(obj));
   }
 
   Object.freeze = freeze;
@@ -2930,7 +2891,7 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
   Object.isSealed = function (O) {
       // 1. If Type(O) is not Object throw a TypeError exception.
       if (Type(O) !== 'Object') {
-        throw new TypeError___('Only objects may be frozen.');
+        throw new TypeError('Only objects may be frozen.');
       }
       // 2. For each named own property name P of O,
       // a. Let desc be the result of calling the [[GetOwnProperty]]
@@ -2964,7 +2925,7 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
         'getOwnPropertyNames',
         'create',
         'defineProperty',
-        'defineProperties', 
+        'defineProperties',
         'seal',
         'freeze',
         'preventExtensions',
@@ -2995,13 +2956,17 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
 
   // 15.2.4.2
   // TODO: report the CLASS___ property
+  markFunc(Object.prototype.toString);
   Object.prototype.DefineOwnProperty___('toString', {
       get: markFunc(function () {
         return this.toString.orig___ ? this.toString.orig___ : this.toString;
       }),
       set: markFunc(function (val) {
         if (!isFunction(val)) {
-          throw new TypeError___('Expected a function.');
+          throw new TypeError('Expected a function instead of ' + val);
+        }
+        if (isFrozen(this)) {
+          throw new TypeError("Won't set toString on a frozen object.")
         }
         val = asFirstClass(val);
         this.toString = markFunc(function (var_args) {
@@ -3021,7 +2986,10 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
         }),
       set: markFunc(function (val) {
           if (!isFunction(val)) {
-            throw new TypeError___('Expected a function.');
+            throw new TypeError('Expected a function instead of ' + val);
+          }
+          if (isFrozen(this)) {
+            throw new TypeError("Won't set valueOf on a frozen object.")
           }
           val = asFirstClass(val);
           this.valueOf = markFunc(function (var_args) {
@@ -3034,37 +3002,27 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
     });
 
   // 15.2.4.5
-  Object.prototype.hasOwnProperty = function (V) {
-      return hasOwnProperty(this, V);
-    };
-
-  // 15.2.4.6
-  Object.prototype.isPrototypeOf = function(V) {
-      throw new Error___('isPrototypeOf is not supported.');
-    };
+  virtualize(Object.prototype, 'hasOwnProperty');
+  Object.prototype.hasOwnProperty_virt___ = markFunc(function (P) {
+      return guestHasOwnProperty(this, P);
+    });
 
   // 15.2.4.7
-  Object.prototype.propertyIsEnumerable = function (V) {
+  virtualize(Object.prototype, 'propertyIsEnumerable');
+  Object.prototype.propertyIsEnumerable_virt___ = markFunc(function (V) {
       return isEnumerable(this, '' + V);
-    };
+    });
 
   // 15.2.4.3, 5--7
   (function () {
     var methods = [
         'toLocaleString',
-        'hasOwnProperty',
         'isPrototypeOf',
-        'propertyIsEnumerable'
       ];
     var i, len = methods.length;
     for (i = 0; i < len; ++i) {
-    var name = methods[i];
-    Object.prototype.DefineOwnProperty___(name, {
-        value: markFunc(Object.prototype[name]),
-        writable: true,
-        enumerable: false,
-        configurable: true
-      });
+      var name = methods[i];
+      virtualize(Object.prototype, name);
     }
   })();
 
@@ -3075,7 +3033,7 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
   // 15.3 Function
   var FakeFunction = function () {
       throw new
-          Error___('Internal: FakeFunction should not be directly invocable.');
+          Error('Internal: FakeFunction should not be directly invocable.');
     };
 
   FakeFunction.toString = (function (str) { 
@@ -3086,12 +3044,12 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
 
   // 15.3.1
   Function.f___ = FakeFunction.f___ = markFunc(function() {
-      throw new Error___('Invoking the Function constructor is unsupported.');
+      throw new Error('Invoking the Function constructor is unsupported.');
     });
 
   // 15.3.2
   Function.new___ = FakeFunction.new___ = markFunc(function () {
-      throw new Error___('Constructing functions dynamically is unsupported.');
+      throw new Error('Constructing functions dynamically is unsupported.');
     });
 
   // 15.3.3.1
@@ -3113,29 +3071,37 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
   // 15.3.4.2
   markFunc(Function.prototype.toString);
 
-  // 15.3.4.3
-  Function.prototype.DefineOwnProperty___('call', {
-      value: Function.prototype.call,
-      writable: true,
-      enumerable: false,
-      configurable: true
+  // 15.3.4.3--5
+  virtualize(Function.prototype, 'call');
+  Function.prototype.call_virt___ = markFunc(function (dis, var_args) {
+      return this.apply(safeDis(dis), Array.slice(arguments, 1));
     });
-
-  // 15.3.4.4
-  Function.prototype.DefineOwnProperty___('apply', {
-      value: Function.prototype.apply,
-      writable: true,
-      enumerable: false,
-      configurable: true
+  virtualize(Function.prototype, 'apply');
+  Function.prototype.apply_virt___ = markFunc(function (dis, as) {
+      return this.apply(safeDis(dis), Array.slice(as));
     });
-
-  // 15.3.4.5
-  Function.prototype.DefineOwnProperty___('bind', {
-      value: Function.prototype.bind,
-      writable: true,
-      enumerable: false,
-      configurable: true
+  /**
+   * Bind this function to <tt>self</tt>, which will serve
+   * as the value of <tt>this</tt> during invocation. Curry on a
+   * partial set of arguments in <tt>var_args</tt>. Return the curried
+   * result as a new function object.
+   */
+  Function.prototype.bind = markFunc(function(self, var_args) {
+      var thisFunc = safeDis(this);
+      var leftArgs = Array.slice(arguments, 1);
+      function funcBound(var_args) {
+        var args = leftArgs.concat(Array.slice(arguments, 0));
+        return thisFunc.apply(safeDis(self), args);
+      }
+      // 15.3.5.2
+      delete funcBound.prototype;
+      funcBound.f___ = funcBound.apply;
+      funcBound.new___ = function () {
+          throw "Constructing the result of a bind() not yet implemented.";
+        };
+      return funcBound;
     });
+  virtualize(Function.prototype, 'bind', true);
 
   // 15.4 Array
 
@@ -3152,7 +3118,7 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
 
   // 15.4.3.2
   Array.isArray = markFunc(function (obj) {
-      return Object___.prototype.toString___.call___(obj) === '[object Array]';
+      return Object.prototype.toString___.call(obj) === '[object Array]';
     });
   Array.DefineOwnProperty___('isArray', {
       value: Array.isArray,
@@ -3172,29 +3138,76 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
   // 15.4.4.2
   markFunc(Array.prototype.toString);
 
+  // 15.4.4.3--6
+  (function () {
+    // Reverse can create own numeric properties.
+    var methods = [
+        'toLocaleString',
+        'concat',
+        'join',
+        'pop'
+      ];
+    for (var i = 0, len = methods.length; i < len; ++i) {
+      virtualize(Array.prototype, methods[i]);
+    }
+  })();
+
+  // 15.4.4.7--9
+  function guardedVirtualize(obj, name) {
+    virtualize(obj, name);
+    var orig = obj[name];
+    obj[name + '_virt___'] = markFunc(function (var_args) {
+        if (!isExtensible(this)) {
+          throw new TypeError("This array is not extensible.");
+        }
+        return orig.apply(safeDis(this), arguments);
+      });
+  }
+
+  (function () {
+    // Reverse can create own numeric properties.
+    var methods = [
+        'push',
+        'reverse',
+        'shift'
+      ];
+    for (var i = 0, len = methods.length; i < len; ++i) {
+      guardedVirtualize(Array.prototype, methods[i]);
+    }
+  })();
+
+  // 15.4.4.10
+  virtualize(Array.prototype, 'slice');
+
   // 15.4.4.11
-  Array.prototype.sort___ = Array.prototype.sort;
-  Array.prototype.sort = markFunc(function (comparefn) {
+  virtualize(Array.prototype, 'sort');
+  Array.prototype.sort_virt___ = markFunc(function (comparefn) {
       // This taming assumes that sort only modifies {@code this},
       // even though it may read numeric properties on the prototype chain.
       if (!isWritable(this, 'NUM___')) {
-        throw new TypeError___(
+        throw new TypeError(
             'Cannot sort an object whose ' +
             'numeric properties are not writable.');
       }
       if (!isExtensible(this)) {
-        throw new TypeError___(
+        throw new TypeError(
             'Cannot sort an object that is not extensible.');
       }
       return comparefn ? 
-          Array___.prototype.sort___.call___(
+          Array.prototype.sort.call(
               this, 
               markFunc(function(var_args){
                 return comparefn.f___(this, arguments);
               })
             ) :
-          Array___.prototype.sort___.call___(this);
+          Array.prototype.sort.call(this);
     });
+
+  // 15.4.4.12
+  virtualize(Array.prototype, 'splice');
+
+  // 15.4.4.13
+  virtualize(Array.prototype, 'unshift');
 
   // 15.4.4.14
   Array.prototype.indexOf = markFunc(function (value, fromIndex) {
@@ -3205,7 +3218,7 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
       if (i >= len) { return -1; }
       if (i < 0) { i += len; }
       for (; i < len; i++) {
-        if (!this.hasOwnProperty___(i)) {
+        if (!this.hasOwnProperty(i)) {
           continue;
         }
         // Numerics are always readable
@@ -3213,6 +3226,7 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
       }
       return -1;
     });
+  virtualize(Array.prototype, 'indexOf');
 
   // 15.4.4.15
   Array.prototype.lastIndexOf = function (value, fromIndex) {
@@ -3223,13 +3237,14 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
       if (i < 0) { i += len; }
       i = Math.min___(i, len - 1);
       for (; i >= 0; i--) {
-        if (!this.hasOwnProperty___(i)) {
+        if (!this.hasOwnProperty(i)) {
           continue;
         }
         if (value === this[i]) { return i; }
       }
       return -1;
     };
+  virtualize(Array.prototype, 'lastIndexOf');
 
   // For protecting methods that use the map-reduce API against
   // inner hull breaches. For example, we don't want cajoled code
@@ -3241,21 +3256,23 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
   // - an optional object {@code thisp} to use as {@code this}
   // It wraps {@code block} in a function that invokes its taming.
   function createOrWrap(obj, name, fun) {
+    virtualize(obj, name);
+    var vname = name + '_virt___';
     if (!obj[name]) {
       // Create
-      obj[name] = fun;
+      obj[vname] = fun;
     } else {
       // Wrap
-      obj[name] = (function (orig) {
+      obj[vname] = (function (orig) {
           return function (block) { //, thisp
-              var a = Array___.slice___(arguments, 0);
+              var a = Array.slice(arguments, 0);
               // Replace block with the taming of block
               a[0] = markFunc(function(var_args) {
                   return block.f___(this, arguments);
                 });
               // Invoke the original function on the tamed
               // {@code block} and optional {@code thisp}.
-              return orig.apply___(this, a);
+              return orig.apply(this, a);
             };
         })(obj[name]);
     }
@@ -3294,7 +3311,7 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
   createOrWrap(Array.prototype, 'map', function (fun, thisp) {
       var len = this.length >>> 0;
       if (!isFunction(fun)) {
-        throw new TypeError___('Expected a function.');
+        throw new TypeError('Expected a function instead of ' + fun);
       }
       var res = new Array(len);
       for (var i = 0; i < len; i++) {
@@ -3311,7 +3328,7 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
       var len = this.length >>> 0;
       for (var i = 0; i < len; i++) {
         if (block.f___(thisp, [this[i]])) {
-          values.push___(this[i]);
+          values.push(this[i]);
         }
       }
       return values;
@@ -3323,13 +3340,12 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
       // {@code fun} is of the form
       // function(previousValue, currentValue, index, array) { ... }
       var len = this.length >>> 0;
-      if (Type(fun) !== 'Function') {
-        // As you've defined it, Type(x) will never return 'Function'
-        throw new TypeError___('Expected a function.');
+      if (!isFunction(fun)) {
+        throw new TypeError('Expected a function instead of ' + fun);
       }
       // no value to return if no initial value and an empty array
       if (len === 0 && arguments.length === 1) {
-        throw new TypeError___('Expected an initial value or a non-empty array.');
+        throw new TypeError('Expected an initial value or a non-empty array.');
       }
       var i = 0;
       if (arguments.length >= 2) {
@@ -3342,7 +3358,7 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
           }
           // if array contains no values, no initial value to return
           if (++i >= len) {
-            throw new TypeError___('Expected non-empty array.');
+            throw new TypeError('Expected non-empty array.');
           }
         } while (true);
       }
@@ -3358,13 +3374,12 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
   // https://developer.mozilla.org/en/Core_JavaScript_1.5_Reference/Objects/Array/reduceRight
   createOrWrap(Array.prototype, 'reduceRight', function(fun) { // , initial
       var len = this.length >>> 0;
-      if (Type(fun) !== 'Function') {
-        // As you've defined it, Type(x) will never return 'Function'
-        throw new TypeError___('Expected a function.');
+      if (!isFunction(Fun)) {
+        throw new TypeError('Expected a function instead of ' + fun);
       }
       // no value to return if no initial value, empty array
       if (len === 0 && arguments.length === 1) {
-        throw new TypeError___('Expected an initial value or a non-empty array.');
+        throw new TypeError('Expected an initial value or a non-empty array.');
       }
       var i = len - 1;
       if (arguments.length >= 2) {
@@ -3377,7 +3392,7 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
           }
           // if array contains no values, no initial value to return
           if (--i < 0) {
-            throw new TypeError___('Expected a non-empty array.');
+            throw new TypeError('Expected a non-empty array.');
           }
         } while (true);
       }
@@ -3388,45 +3403,6 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
       }
       return rv;
     });
-
-  // 15.4.4.3 -- 15.4.4.22
-  (function () {
-    var methods = [
-        'toLocaleString',
-        'concat',
-        'join',
-        'pop',
-        'push',
-        'reverse',
-        'shift',
-        'slice',
-        'sort',
-        'splice',
-        'unshift',
-        'indexOf',
-        'lastIndexOf',
-        'every',
-        'some',
-        'forEach',
-        'map',
-        'filter',
-        'reduce',
-        'reduceRight'
-      ];
-    var len = methods.length;
-    for (var i = 0; i < len; ++i) {
-      var name = methods[i];
-      if (Array.prototype[name]) {
-        markFunc(Array.prototype[name]);
-        Array.prototype.DefineOwnProperty___(name, {
-            value: Array.prototype[name],
-            writable: true,
-            enumerable: false,
-            configurable: true
-          });
-      }
-    }
-  })();
 
   // 15.5 String
 
@@ -3441,14 +3417,8 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
       configurable: false
     });
 
-  // 15.5.3.
-  markFunc(String.fromCharCode);
-  String.DefineOwnProperty___('fromCharCode', {
-      value: String.fromCharCode,
-      writable: true,
-      enumerable: false,
-      configurable: true
-    });
+  // 15.5.3.2
+  virtualize(String, 'fromCharCode');
 
   // 15.5.4.1
   String.prototype.DefineOwnProperty___('constructor', {
@@ -3457,6 +3427,37 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
       enumerable: false,
       configurable: false
     });
+
+  // 15.5.4.2
+  markFunc(String.prototype.toString);
+
+  // 15.5.4.3
+  markFunc(String.prototype.valueOf);
+
+  // 15.5.4.4--9, 13, 15--20 
+  // and the nonstandard but universally implemented substr.
+  (function () {
+    var methods = [
+        'charAt',
+        'charCodeAt',
+        'concat',
+        'indexOf',
+        'lastIndexOf',
+        'localeCompare',
+        'slice',
+        'substring',
+        'toLowerCase',
+        'toLocaleLowerCase',
+        'toUpperCase',
+        'toLocaleUpperCase',
+        'trim',
+        'substr'
+      ];
+    var i, len = methods.length;
+    for (i = 0; i < len; ++i) {
+      virtualize(String.prototype, methods[i]);
+    }
+  })();
 
   // 15.5.4.10, 12, 14
   /**
@@ -3472,7 +3473,7 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
   function enforceMatchable(regexp) {
     if (regexp instanceof RegExp) {
       if (isFrozen(regexp)) {
-        throw new Error___("Can't match with frozen RegExp: " + regexp);
+        throw new Error("Can't match with frozen RegExp: " + regexp);
       }
       return false;
     }
@@ -3482,24 +3483,33 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
   function tameStringRegExp(orig) {
     return markFunc(function (regexp) {
         var cast = enforceMatchable(regexp);
-        return orig.call___(this, cast ? ('' + regexp) : regexp);
+        return orig.call(this, cast ? ('' + regexp) : regexp);
       });
   }
 
-  String.prototype.match = tameStringRegExp(String.prototype.match);
-  String.prototype.search = tameStringRegExp(String.prototype.search);
-  String.prototype.split = tameStringRegExp(String.prototype.split);
+  (function () {
+    var methods = [
+        'match',
+        'search',
+        'split'
+      ];
+    for (var i = 0, len = methods.length; i < len; ++i) {
+      virtualize(String.prototype, methods[i]);
+      String.prototype[methods[i] + '_virt___'] =
+          tameStringRegExp(String.prototype[methods[i]]);
+    }
+  })();
 
   // 15.5.4.11
-  String.prototype.replace___ = String.prototype.replace;
-  String.prototype.replace = markFunc(function (searcher, replacement) {
+  virtualize(String.prototype, 'replace');
+  String.prototype.replace_virt___ = markFunc(function (searcher, replacement) {
       var cast = enforceMatchable(searcher);
       if (isFunction(replacement)) {
         replacement = asFirstClass(replacement);
       } else {
         replacement = '' + replacement;
       }
-      return String___.prototype.replace___.call___(
+      return String.prototype.replace.call(
           this, 
           cast ? ('' + searcher) : searcher, 
           replacement
@@ -3510,42 +3520,12 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
   // http://blog.stevenlevithan.com/archives/faster-trim-javascript
   var trimBeginRegexp = /^\s\s*/;
   var trimEndRegexp = /\s\s*$/;
-  String.prototype.trim = function () {
+  String.prototype.trim_virt___ = function () {
       return ('' + this).
-          replace___(trimBeginRegexp, '').
-          replace___(trimEndRegexp, '');
+          replace(trimBeginRegexp, '').
+          replace(trimEndRegexp, '');
     };
 
-  (function () {
-    var methods = [
-        'toString',
-        'valueOf',
-        'charAt',
-        'charCodeAt',
-        'concat',
-        'indexOf',
-        'lastIndexOf',
-        'localeCompare',
-        'replace',
-        'slice',
-        'substring',
-        'toLowerCase',
-        'toLocaleLowerCase',
-        'toUpperCase',
-        'toLocaleUpperCase',
-        'trim'
-      ];
-    var i, len = methods.length;
-    for (i = 0; i < len; ++i) {
-      markFunc(String.prototype[methods[i]]);
-      String.prototype.DefineOwnProperty___(methods[i], {
-          value: String.prototype[methods[i]],
-          writable: true,
-          enumerable: false,
-          configurable: true
-        });
-    }
-  })();
 
   // 15.6 Boolean
 
@@ -3618,13 +3598,7 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
       ];
     var i, len = methods.length;
     for (i = 0; i < len; ++i) {
-      markFunc(Number.prototype[methods[i]]);
-      Number.prototype.DefineOwnProperty___(methods[i], {
-          value: Number.prototype[methods[i]],
-          writable: true,
-          enumerable: false,
-          configurable: true
-        });
+      virtualize(Number.prototype, methods[i]);
     }
   })();
 
@@ -3677,17 +3651,9 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
       ];
     var i, len = methods.length;
     for (i = 0; i < len; ++i) {
-      markFunc(Math[methods[i]]);
-      Math.DefineOwnProperty___(methods[i], {
-          value: Math[methods[i]],
-          writable: true,
-          enumerable: false,
-          configurable: true
-        });
+      virtualize(Math, methods[i]);
     }
   })();
-
-  Math.min__ = Math.min;
 
   // 15.9 Date
 
@@ -3711,13 +3677,7 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
       ];
     var i, len = staticMethods.length;
     for (i = 0; i < len; ++i) {
-      markFunc(Date[staticMethods[i]]);
-      Date.DefineOwnProperty___(staticMethods[i], {
-          value: Date[staticMethods[i]],
-          writable: true,
-          enumerable: false,
-          configurable: true
-        });
+      virtualize(Date, staticMethods[i]);
     }
   })();
 
@@ -3735,17 +3695,7 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
   // 15.9.5.8
   markFunc(Date.prototype.valueOf);
 
-  // 15.9.5.9
-  Date.prototype.DefineOwnProperty___('now', {
-      value: markFunc(function () {
-          return new Date().getTime();
-        }),
-      writable: true,
-      enumerable: false,
-      configurable: true
-    });
-
-  // 15.9.5.3--7, 10--44 (No UTC yet)
+  // 15.9.5.3--7, 9--44 (No UTC yet)
   (function () {
     var methods = [
         'toDateString',
@@ -3753,6 +3703,7 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
         'toLocaleString',
         'toLocaleDateString',
         'toLocaleTimeString',
+        'getTime',
         'getFullYear',
         'getMonth',
         'getDate',
@@ -3773,15 +3724,90 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
         'toJSON'
       ];
     for (var i = 0; i < methods.length; ++i) {
-      markFunc(Date.prototype[methods[i]]);
-      Date.prototype.DefineOwnProperty___(methods[i], {
-          value: Date.prototype[methods[i]],
-          writable: true,
-          enumerable: false,
-          configurable: true
-        });
+      virtualize(Date.prototype, methods[i]);
     }
   })();
+
+  // 15.10 RegExp
+
+  // 15.10.5
+  RegExp.f___ = markFunc(function (dis___, as) {
+      var pattern = as[0], flags = as[1];
+      if (Object.prototype.toString___.call(pattern) === '[object RegExp]'
+          && flags === void 0) {
+        return pattern;
+      }
+      switch (as.length) {
+        case 0:
+          return new RegExp.new___();
+        case 1:
+          return new RegExp.new___(pattern);
+        default:
+          return new RegExp.new___(pattern, flags);
+      }
+    });
+
+  RegExp.new___ = markFunc(function (pattern, flags){
+      var re;
+      switch (arguments.length) {
+        case 0:
+          re = new RegExp();
+          break;
+        case 1:
+          re = new RegExp(pattern);
+          break;
+        default:
+          re = new RegExp(pattern, flags);
+      }
+      var instanceProps = [
+          'source',
+          'global',
+          'ignoreCase',
+          'multiline'
+        ];
+      for (var i = 0; i < instanceProps.length; ++i) {
+        re.DefineOwnProperty___(instanceProps[i], {
+            value: re[instanceProps[i]],
+            writable: false,
+            enumerable: false,
+            configurable: false
+          });
+      }
+      re.DefineOwnProperty___('lastIndex', {
+          value: re.lastIndex,
+          writable: true,
+          enumerable: false,
+          configurable: false
+        });
+      return re;
+    });
+
+  // 15.10.5.1
+  RegExp.DefineOwnProperty___('prototype', {
+      value: RegExp.prototype,
+      writable: false,
+      enumerable: false,
+      configurable: false
+    });
+
+  RegExp.prototype.DefineOwnProperty___('constructor', {
+      value: RegExp,
+      writable: true,
+      enumerable: false,
+      configurable: false
+    });
+
+  // 15.10.6.2
+  virtualize(RegExp.prototype, 'exec');
+  RegExp.exec_virt___ = markFunc(function (specimen) {
+      return RegExp.prototype.exec.call(safeDis(this), specimen);
+    });
+
+  // 15.10.6.3
+  virtualize(RegExp.prototype, 'test');
+  RegExp.prototype.test_virt___ = markFunc(function (specimen) {
+      return RegExp.prototype.test.call(safeDis(this), specimen);
+    });
 
   ////////////////////////////////////////////////////////////////////////
   // Module loading
@@ -3838,7 +3864,7 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
    * All resulting properties are writable, enumerable, and configurable.
    */
   function copy(obj) {
-    var result = Array___.isArray(obj) ? [] : {};
+    var result = Array.isArray(obj) ? [] : {};
     var keys = ownKeys(obj), len = keys.length;
     for (var i = 0; i < len; ++i) {
       var k = keys[i], v = obj[k];
@@ -3972,7 +3998,7 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
             tameException(exception);
 
             var message = 'unknown';
-            if ('object' === typeOf(exception) && exception !== null) {
+            if ('object' === typeof exception && exception !== null) {
               message = '' + (exception.message || exception.desc || message);
             }
 
@@ -3981,10 +4007,10 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
 
             // See the HTML5 discussion for the reasons behind this rule.
             if (!isFunction(onerror)) {
-              throw new TypeError___('Expected onerror to be a function.');
+              throw new TypeError(
+                  'Expected onerror to be a function or undefined.');
             }
-            var shouldReport = onerror.f___(
-                USELESS,
+            var shouldReport = onerror.i___(
                 message,
                 '' + source,
                 '' + lineNum);
@@ -4001,18 +4027,8 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
   function prepareModule(module, load) {
     registerClosureInspector(module);
     function theModule(imports) {
-      // The supplied 'imports' contain arguments supplied by the caller of the
-      // module. We need to add the primordials (Array, Object, ...) to these
-      // before invoking the Cajita module.
-      var completeImports = copy(sharedImports);
-      completeImports.load = load;
-      // Copy all properties, including Cajita-unreadable ones since these may
-      // be used by privileged code.
-      var k;
-      for (k in imports) {
-        if (imports.hasOwnProperty___(k)) { completeImports[k] = imports[k]; }
-      }
-      return module.instantiate(___, freeze(completeImports));
+      imports.w___('load', load);
+      return module.instantiate(___, imports);
     }
 
     // Whitelist certain module properties as visible to Cajita code. These
@@ -4055,14 +4071,178 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
     return myNewModuleHandler.m___('handle', [module]);
   }
 
-  es53 = {
+  // *********************************************************************
+  // * Cajita Taming API
+  // * Reproduced here for Domita's and Shindig's use; new
+  // * tamings should be done with the ES5 API.
+  // *********************************************************************
+  
+  function grantFunc(obj, name) {
+    obj.DefineOwnProperty___(name, {
+        value: markFuncFreeze(obj[name]),
+        writable: false,
+        enumerable: false,
+        configurable: false
+      });
+  }
+
+  function grantRead(obj, name) {
+    obj.DefineOwnProperty___(name, {
+        value: obj[name],
+        writable: false,
+        enumerable: false,
+        configurable: false
+      });
+  }
+
+  /**
+   * Install a getter for proto[name] that returns a wrapper that
+   * first verifies that {@code this} inherits from proto.
+   * <p>
+   * When a pre-existing Javascript method may do something unsafe
+   * when applied to a {@code this} of the wrong type, we need to
+   * prevent such mis-application.
+   */
+  function grantTypedMethod(proto, name) {
+    name = '' + name;
+    var original = proto[name];
+    var f = function () {};
+    f.prototype = proto;
+    proto.DefineOwnProperty___(name, {
+        value: markFunc(function guardedApplier(var_args) {
+            if (!(this instanceof f)) {
+              throw new TypeError(
+                  'Tamed method applied to the wrong class of object.');
+            }
+            return original.apply(this, Array.slice(arguments, 0));
+          }),
+        enumerable: false,
+        configurable: true,
+        writable: true
+      });
+  }
+
+  /**
+   * Install a getter for proto[name] under the assumption
+   * that the original is a generic innocent method.
+   * <p>
+   * As an innocent method, we assume it is exophoric (uses its
+   * <tt>this</tt> parameter), requires a feral <tt>this</tt> and
+   * arguments, and returns a feral result. As a generic method, we
+   * assume that its <tt>this</tt> may be bound to objects that do not
+   * inherit from <tt>proto</tt>.
+   * <p>
+   * The wrapper will untame <tt>this</tt>. Note that typically
+   * <tt>this</tt> will be a constructed object and so will untame to
+   * itself. The wrapper will also untame the arguments and tame and
+   * return the result.
+   */
+  function grantInnocentMethod(proto, name) {
+    var original = proto[name];
+    proto.DefineOwnProperty___(name, {
+        enumerable: false,
+        configurable: false,
+        get: function () {
+            return function guardedApplier(var_args) {
+                var feralThis = safeDis(untame(this));
+                var feralArgs = untame(Array.slice(arguments, 0));
+                var feralResult = original.apply(feralThis, feralArgs);
+                return tame(feralResult);
+              };
+          },
+        set: void 0
+      });
+  }
+
+  /**
+   * A shorthand that happens to be useful here.
+   * <p>
+   * For all i in arg2s: func2(arg1,arg2s[i]).
+   */
+  function all2(func2, arg1, arg2s) {
+    var len = arg2s.length;
+    for (var i = 0; i < len; i += 1) {
+      func2(arg1, arg2s[i]);
+    }
+  }
+
+  /**
+   * Inside a <tt>___.forOwnKeys()</tt> or <tt>___.forAllKeys()</tt>, the
+   * body function can terminate early, as if with a conventional
+   * <tt>break;</tt>, by doing a <pre>return ___.BREAK;</pre>
+   */
+  var BREAK = Token('BREAK');
+
+  /**
+   * A unique value that should never be made accessible to untrusted
+   * code, for distinguishing the absence of a result from any
+   * returnable result.
+   * <p>
+   * See makeNewModuleHandler's getLastOutcome().
+   */
+  var NO_RESULT = Token('NO_RESULT');
+
+  /**
+   * Used in domita with the name "forOwnKeys" for iterating over
+   * JSON containers.
+   */
+  function forOwnNonCajaKeys(obj, fn) {
+    for (var i in obj) {
+      if (!obj.hasOwnProperty(i)) { continue; }
+      if (endsWith__.test(i)) { continue; }
+      if (fn(i, obj[i]) === BREAK) {
+        return;
+      }
+    }
+  }
+
+  // TODO(metaweta): Deprecate this API, since it requires that we leave
+  // configurable set to true in order to use both a getter and a setter.
+  function useGetHandler(obj, name, getHandler) {
+    setHandler = markFunc(getHandler);
+    var desc = obj.GetOwnProperty___(name);
+    if (!desc || !IsAccessorDescriptor(desc)) {
+      desc = {
+          enumerable: false,
+          configurable: true,
+          get: getHandler,
+          set: void 0
+        };
+    } else {
+      desc.get = getHandler;
+    }
+    obj.DefineOwnProperty___(name, desc);
+  }
+
+  function useSetHandler(obj, name, setHandler) {
+    setHandler = markFunc(setHandler);
+    var desc = obj.GetOwnProperty___(name);
+    if (!IsAccessorDescriptor(desc)) {
+      desc = {
+          enumerable: false,
+          configurable: true,
+          get: void 0,
+          set: setHandler
+        };
+    } else {
+      desc.set = setHandler;
+    }
+    obj.DefineOwnProperty___(name, desc);
+  }
+
+  function hasOwnProp(obj, name) {
+    return obj && obj.hasOwnProperty(name);
+  }
+
+  // *********************************************************************
+  // * Exports
+  // *********************************************************************
+
+  cajaVM = whitelistAll({
       // Diagnostics and condition enforcement
       log: log,
       enforce: enforce,
       enforceType: enforceType,
-  
-      // walking prototype chain, checking object types
-      Type: Type,
   
       // Object indistinguishability and object-keyed tables
       Token: Token,
@@ -4089,10 +4269,25 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
       allEnumKeys: allEnumKeys,
       ownKeys: ownKeys,
       ownEnumKeys: ownEnumKeys
-    };
+    });
 
-  sharedImports = {
-      es53: es53,
+  function readImport(imports, name) {
+    name = '' + name;
+    if (imports.HasProperty___(name)) {
+      return imports.v___(name);
+    }
+    throw new ReferenceError(name + ' is not defined.');
+  }
+
+  function declareImport(imports, name) {
+    if (imports.HasProperty___(name)) {
+      return;
+    }
+    imports.w___(name, void 0);
+  }
+
+  sharedImports = whitelistAll({
+      cajaVM: cajaVM,
   
       'null': null,
       'false': false,
@@ -4128,7 +4323,7 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
       SyntaxError: SyntaxError,
       TypeError: TypeError,
       URIError: URIError
-    };
+    });
 
   Object.prototype.v___ = Object.prototype.Get___;
   Object.prototype.w___ = Object.prototype.Put___;
@@ -4140,7 +4335,9 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
       }
       var m = this.Get___(name);
       if (!m) {
-        throw new TypeError___(
+        // Temporary support for Cajita's keeper interface
+        if (this.handleCall___) { return this.handleCall___(name, as); }
+        throw new TypeError(
             "The property '" + name + "' is falsey, thus not a function.");
       }
       // Fastpath the method on the object pointed to by name_v___
@@ -4153,8 +4350,9 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
     };
 
   ___ = {
+      sharedImports: sharedImports,
       USELESS: USELESS,
-      readImport: readImport,
+      BREAK: BREAK,
       tameException: tameException,
       args: args,
       wrap: wrap,
@@ -4171,6 +4369,30 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
       unregister: unregister,
       newTable: newTable,
       extend: extend,
+      whitelistAll: whitelistAll,
+      snowWhite: snowWhite,
+      Y: Y,
+      ri: readImport,
+      di: declareImport,
+      // Cajita API
+      grantRead: grantRead,
+      grantFunc: grantFunc,
+      grantTypedMethod: grantTypedMethod,
+      grantInnocentMethod: grantInnocentMethod,
+      all2: all2,
+      hasOwnProp: hasOwnProp,
+      forOwnKeys: forOwnNonCajaKeys,
+      markCtor: markFuncFreeze,
+      useGetHandler: useGetHandler,
+      useSetHandler: useSetHandler,
+      primFreeze: snowWhite,
+      isJSONContainer: isExtensible,
+      getLogFunc: getLogFunc,
+      setLogFunc: setLogFunc,
+      callPub: function (obj, name, args) { return obj.m___(name, args); },
+      readPub: function (obj, name) { return obj.v___(name); },
+      canRead: function (obj, name) { return (name + '_v___') in obj; },
+      freeze: freeze,
       // Module loading
       getNewModuleHandler: getNewModuleHandler,
       setNewModuleHandler: setNewModuleHandler,
@@ -4180,5 +4402,9 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
       loadModule: loadModule,
       NO_RESULT: NO_RESULT
     };
+  var es53keys = ownEnumKeys(es53);
+  for (var i = 0; i < es53keys.length; ++i) {
+    ___[es53keys[i]] = es53[es53keys[i]];
+  }
   setNewModuleHandler(makeNormalNewModuleHandler());
 })();

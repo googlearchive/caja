@@ -120,9 +120,9 @@ public class ES53Rewriter extends Rewriter {
 
   /**
    * Generate the header that should be placed at the beginning of the body
-   * of the translation of an SES function body.
+   * of the translation of an ES5/3 function body.
    * 
-   * @param scope The scope that results from expanding (cajoling) the SES
+   * @param scope The scope that results from expanding (cajoling) the ES5/3
    *              function body.
    * @return If the function body contains a free use of <tt>arguments</tt>,
    *         translate to an initialization of cajoled arguments based on
@@ -290,7 +290,7 @@ public class ES53Rewriter extends Rewriter {
             }
           } else {
             mq.addMessage(
-                RewriterMessageType.CANNOT_LOAD_A_DYNAMIC_SES_MODULE,
+                RewriterMessageType.CANNOT_LOAD_A_DYNAMIC_ES53_MODULE,
                 node.getFilePosition());
             return node;
           }
@@ -375,11 +375,11 @@ public class ES53Rewriter extends Rewriter {
       @Override
       @RuleDescription(
           name="module",
-          synopsis="Import free vars. Return last expr-statement",
-          reason="Builds the module body encapsulation around the SES "
+          synopsis="Return last expr-statement",
+          reason="Builds the module body encapsulation around the ES5/3 "
               + "code block.",
           matches="{@ss*;}",
-          substitutes="@importedvars*; @startStmts*; @expanded*;")
+          substitutes="var dis___ = IMPORTS___; @startStmts*; @expanded*;")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
         if (node instanceof Block && scope == null) {
           Scope s2 = Scope.fromProgram((Block) node, mq);
@@ -389,47 +389,7 @@ public class ES53Rewriter extends Rewriter {
             if (expandedC instanceof Noop) { continue; }
             expanded.add(expandedC);
           }
-          List<ParseTreeNode> importedVars = Lists.newArrayList();
-
-          Set<String> importNames = s2.getImportedVariables();
-          // Order imports so that Array and Object appear first, and so that
-          // they appear before any use of the [] and {} shorthand syntaxes
-          // since those are specified in ES3 by looking up the identifiers
-          // "Array" and "Object" in the local scope.
-          // SpiderMonkey actually implements this behavior, though it is fixed
-          // in FF3, and ES5 specifies the behavior of [] and {} in terms
-          // of the original Array and Object constructors for that context.
-          Set<String> orderedImportNames = Sets.newLinkedHashSet();
-          if (importNames.contains("Array")) {
-            orderedImportNames.add("Array");
-          }
-          if (importNames.contains("Object")) {
-            orderedImportNames.add("Object");
-          }
-          orderedImportNames.addAll(importNames);
-
-          for (String k : orderedImportNames) {
-            Identifier kid = new Identifier(UNK, k);
-            Expression permitsUsed = s2.getPermitsUsed(kid);
-            if (null == permitsUsed
-                || "Array".equals(k) || "Object".equals(k)) {
-              importedVars.add(
-                  QuasiBuilder.substV(
-                      "var @vIdent = ___.readImport(IMPORTS___, @vName);",
-                      "vIdent", s(kid),
-                      "vName", toStringLiteral(kid)));
-            } else {
-              importedVars.add(
-                  QuasiBuilder.substV(
-                      "var @vIdent = ___.readImport(IMPORTS___, @vName, @permits);",
-                      "vIdent", s(kid),
-                      "vName", toStringLiteral(kid),
-                      "permits", permitsUsed));
-            }
-          }
-
           return substV(
-              "importedvars", new ParseTreeNodeContainer(importedVars),
               "startStmts", new ParseTreeNodeContainer(s2.getStartStatements()),
               "expanded", new ParseTreeNodeContainer(expanded));
         }
@@ -451,7 +411,7 @@ public class ES53Rewriter extends Rewriter {
           reason="Nested named function declarations are illegal in ES3 but are "
               + "universally supported by all JavaScript implementations, "
               + "though in different ways. The compromise semantics currently "
-              + "supported by SES is to hoist the declaration of a variable "
+              + "supported by ES5/3 is to hoist the declaration of a variable "
               + "with the function's name to the beginning of the enclosing "
               + "function body or module top level, and to initialize this "
               + "variable to a new anonymous function every time control "
@@ -459,7 +419,7 @@ public class ES53Rewriter extends Rewriter {
               + "\n"
               + "Note that ES-Harmony will specify a better and safer semantics "
               + "-- block level lexical scoping -- that we'd like to adopt into "
-              + "SES eventually. However, it is so challenging to implement this "
+              + "ES5/3 eventually. However, it is so challenging to implement this "
               + "semantics by translation to currently-implemented JavaScript "
               + "that we provide something quicker and dirtier for now.",
           matches="{@ss*;}",
@@ -711,17 +671,16 @@ public class ES53Rewriter extends Rewriter {
       @RuleDescription(
           name="varArgs",
           synopsis="Make all references to the magic \"arguments\" variable "
-              + "into references to a frozen array containing a snapshot of the "
-              + "actual arguments taken when the function was first entered.",
+              + "into references to a fake arguments object",
           reason="ES3 specifies that the magic \"arguments\" variable is a "
               + "dynamic (\"joined\") mutable array-like reflection of the "
               + "values of the parameter variables. However, the typical usage "
               + "is to pass it to provide access to one's original arguments -- "
               + "without the intention of providing the ability to mutate the "
-              + "caller's parameter variables. By making a frozen array "
-              + "snapshot with no \"callee\" property, we provide the least "
+              + "caller's parameter variables. By making a fake arguments "
+              + "object with no \"callee\" property, we provide the least "
               + "authority assumed by this typical use.\n"
-              + "The snapshot is made with a \"var a___ = "
+              + "The fake is made with a \"var a___ = "
               + "___.args(arguments);\" generated at the beginning of the "
               + "function body.",
           matches="arguments",
@@ -789,6 +748,31 @@ public class ES53Rewriter extends Rewriter {
     new Rule() {
       @Override
       @RuleDescription(
+          name="varGlobal",
+          synopsis="Global vars are rewritten to be properties of IMPORTS___.",
+          reason="",
+          matches="@v",
+          substitutes="___.ri(IMPORTS___, @'v')")
+      public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
+        Map<String, ParseTreeNode> bindings = match(node);
+        if (bindings != null) {
+          ParseTreeNode v = bindings.get("v");
+          if (v instanceof Reference) {
+            Reference vRef = (Reference) v;
+            if (scope.isOuter(vRef.getIdentifierName())) {
+              return QuasiBuilder.substV(
+                  "___.ri(IMPORTS___, @vname)",
+                  "vname", toStringLiteral(v));
+            }
+          }
+        }
+        return NONE;
+      }
+    },
+
+    new Rule() {
+      @Override
+      @RuleDescription(
           name="varDefault",
           synopsis="Any remaining uses of a variable name are preserved.",
           reason="",
@@ -825,34 +809,6 @@ public class ES53Rewriter extends Rewriter {
               RewriterMessageType.PROPERTIES_CANNOT_END_IN_DOUBLE_UNDERSCORE,
               node.getFilePosition(), this, node);
           return node;
-        }
-        return NONE;
-      }
-    },
-
-    new Rule() {
-      @Override
-      @RuleDescription(
-          name="permittedRead",
-          synopsis="When @o.@m is a statically permitted read, translate directly.",
-          reason="The static permissions check is recorded so that, when the base of " +
-                 "@o is imported, we check that this static permission was actually " +
-                 "safe to assume.",
-          matches="@o.@m",
-          substitutes="@o.@m")
-      public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
-        Map<String, ParseTreeNode> bindings = match(node);
-        if (bindings != null) {
-          ParseTreeNode o = bindings.get("o");
-          Permit oPermit = scope.permitRead(o);
-          if (null != oPermit) {
-            Reference m = (Reference) bindings.get("m");
-            if (null != oPermit.canRead(m)) {
-              return substV(
-                  "o",  expand(o, scope),
-                  "m",  noexpand(m));
-            }
-          }
         }
         return NONE;
       }
@@ -959,31 +915,70 @@ public class ES53Rewriter extends Rewriter {
     new Rule() {
       @Override
       @RuleDescription(
-          name="setBadFreeVariable",
-          synopsis="Statically reject if an expression assigns to a free "
-              + "variable.",
-          reason="The rationale is to prevent code that's nested lexically within a "
-              + "module to from introducing mutable state outside its local "
-              + "function-body scope. Without this rule, two nested blocks "
-              + "within the same module could communicate via a pseudo-imported "
-              + "variable that is not declared or used at the outer scope of "
-              + "the module body.",
-          matches="@import = @y",
-          substitutes="<reject>")
+          name="initGlobalVar",
+          synopsis="",
+          reason="",
+          matches="/* in outer scope */ var @v = @r",
+          substitutes="IMPORTS___.w___('@v', @r)")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
-        Map<String, ParseTreeNode> bindings = match(node);
-        if (bindings != null && bindings.get("import") instanceof Reference) {
-          String name = ((Reference) bindings.get("import")).getIdentifierName();
-          if (Scope.UNMASKABLE_IDENTIFIERS.contains(name)) {
-            mq.addMessage(
-                RewriterMessageType.CANNOT_MASK_IDENTIFIER,
-                node.getFilePosition(), MessagePart.Factory.valueOf(name));
-          } else if (scope.isImported(name)) {
-            mq.addMessage(
-                RewriterMessageType.CANNOT_ASSIGN_TO_FREE_VARIABLE,
-                node.getFilePosition(), this, node);
-            return node;
+        Map<String, ParseTreeNode> bindings = this.match(node);
+        if (bindings != null) {
+          Identifier v = (Identifier) bindings.get("v");
+          String vname = v.getName();
+          if (scope.isOuter(vname)) {
+            ParseTreeNode r = bindings.get("r");
+            return newExprStmt((Expression) substV(
+                "v", v,
+                "r", expand(nymize(r, vname, "var"), scope)));
           }
+        }
+        return NONE;
+      }
+    },
+
+    new Rule() {
+      @Override
+      @RuleDescription(
+          name="setGlobalVar",
+          synopsis="",
+          reason="",
+          matches="/* declared in outer scope */ @v = @r",
+          substitutes="IMPORTS___.w___('@v', @r)")
+      public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
+        Map<String, ParseTreeNode> bindings = this.match(node);
+        if (bindings != null) {
+          ParseTreeNode v = bindings.get("v");
+          if (v instanceof Reference) {
+            String vname = ((Reference) v).getIdentifierName();
+            if (scope.isOuter(vname)) {
+              ParseTreeNode r = bindings.get("r");
+              return substV(
+                  "v", v,
+                  "r", expand(nymize(r, vname, "var"), scope));
+            }
+          }
+        }
+        return NONE;
+      }
+    },
+
+    new Rule() {
+      @Override
+      @RuleDescription(
+          name="declGlobalVar",
+          synopsis="",
+          reason="",
+          matches="/* in outer scope */ var @v",
+          substitutes="___.di(IMPORTS___, '@v')")
+      public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
+        Map<String, ParseTreeNode> bindings = this.match(node);
+        if (bindings != null &&
+            bindings.get("v") instanceof Identifier &&
+            scope.isOuter(((Identifier) bindings.get("v")).getName())) {
+          ExpressionStmt es = newExprStmt(
+              (Expression) substV("v", bindings.get("v")));
+          Scope.markForSideEffect(es);
+          return es;
         }
         return NONE;
       }
@@ -1507,35 +1502,6 @@ public class ES53Rewriter extends Rewriter {
     new Rule() {
       @Override
       @RuleDescription(
-          name="permittedCall",
-          synopsis="When @o.@m is a statically permitted call, translate directly.",
-          reason="The static permissions check is recorded so that, when the " +
-              "base of @o is imported, we check that this static permission " +
-              "was actually safe to assume.",
-          matches="@o.@m(@as*)",
-          substitutes="@o.@m(@as*)")
-      public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
-        Map<String, ParseTreeNode> bindings = match(node);
-        if (bindings != null) {
-          ParseTreeNode o = bindings.get("o");
-          Permit oPermit = scope.permitRead(o);
-          if (null != oPermit) {
-            Reference m = (Reference) bindings.get("m");
-            if (null != oPermit.canCall(m)) {
-              return substV(
-                  "o",  expand(o, scope),
-                  "m",  noexpand(m),
-                  "as", expandAll(bindings.get("as"), scope));
-            }
-          }
-        }
-        return NONE;
-      }
-    },
-
-    new Rule() {
-      @Override
-      @RuleDescription(
           name="callPublic",
           synopsis="",
           reason="",
@@ -1621,22 +1587,26 @@ public class ES53Rewriter extends Rewriter {
       }
     },
 
+    // References to {@code fname} in the body should refer to the result of
+    // {@code wrap}. The anonymous function around the call to {@code wrap}
+    // is a maker that takes a function {@code fname}.  The fixed point of this
+    // maker is the desired potentially recursive function.
     new Rule() {
       @Override
       @RuleDescription(
-          name="funcNamedTopDecl",
-          synopsis="A non-nested named function doesn't need a maker",
+          name="funcNamedDecl",
+          synopsis="",
           reason="",
           matches="function @fname(@ps*) { @bs*; }",
-          substitutes="@fnameRef = ___.wrap(function (dis___, @ps*) {\n"
-            + "    @fh*;\n"
-            + "    @stmts*;\n"
-            + "    @bs*;\n"
-            + "  }, '@fname');\n")
+          substitutes="@fRef = ___.Y(function (@fParam){\n"
+            + "    return ___.wrap(function (dis___, @ps*) {\n"
+            + "        @fh*;\n"
+            + "        @stmts*;\n"
+            + "        @bs*;\n"
+            + "      }, '@fname');\n"
+            + "  });")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
-        if (node instanceof FunctionDeclaration
-            && scope == scope.getClosestDeclarationContainer()) {
-
+        if (node instanceof FunctionDeclaration && !scope.isOuter()) {
           Map<String, ParseTreeNode> bindings = match(
               ((FunctionDeclaration) node).getInitializer());
           // Named simple function declaration
@@ -1646,9 +1616,11 @@ public class ES53Rewriter extends Rewriter {
             ParseTreeNodeContainer ps = (ParseTreeNodeContainer) bindings.get("ps");
             checkFormals(ps);
             Identifier fname = noexpand((Identifier) bindings.get("fname"));
+            scope.declareStartOfScopeVariable(fname);
             Expression expr = (Expression) substV(
                 "fname", fname,
-                "fnameRef", new Reference(fname),
+                "fParam", new FormalParam(fname),
+                "fRef", new Reference(fname),
                 "ps", noexpandParams(ps),
                 // It's important to expand bs before computing fh and stmts.
                 "bs", withoutNoops(expand(bindings.get("bs"), s2)),
@@ -1666,48 +1638,41 @@ public class ES53Rewriter extends Rewriter {
     new Rule() {
       @Override
       @RuleDescription(
-          name="funcNamedSimpleDecl",
-          synopsis="Simulate a nested named function declaration with a top "
-                   + "level named function declaration inside an anon "
-                   + "function expression.",
-          reason="Current (pre-ES5) browsers have wacky scoping semantics "
-            + "for nested named function declarations.",
+          name="funcNamedTopDecl",
+          synopsis="",
+          reason="",
           matches="function @fname(@ps*) { @bs*; }",
-          substitutes="@fname = ___.wrap(function(dis___, @ps*) {\n"
-                    + "    @fh*;\n"
-                    + "    @stmts*;\n"
-                    + "    @bs*;\n"
-                    + "  }, @rf);\n")
+          substitutes="IMPORTS___.w___('@fname', ___.Y(function (@fParam){\n"
+            + "    return ___.wrap(function (dis___, @ps*) {\n"
+            + "        @fh*;\n"
+            + "        @stmts*;\n"
+            + "        @bs*;\n"
+            + "      }, '@fname');\n"
+            + "  }));")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
-        Map<String, ParseTreeNode> bindings = (
-            node instanceof FunctionDeclaration)
-            ? match(((FunctionDeclaration) node).getInitializer())
-            : null;
-        // Named simple function declaration
-        if (bindings != null) {
-          Scope s2 = Scope.fromFunctionConstructor(
-              scope,
+        if (node instanceof FunctionDeclaration && scope.isOuter()) {
+          Map<String, ParseTreeNode> bindings = match(
               ((FunctionDeclaration) node).getInitializer());
-          ParseTreeNodeContainer ps = (ParseTreeNodeContainer) bindings.get("ps");
-          checkFormals(ps);
-          Identifier fname = noexpand((Identifier) bindings.get("fname"));
-          scope.declareStartOfScopeVariable(fname);
-          Expression expr = (Expression) QuasiBuilder.substV(
-              "@fRef = ___.wrap(function (dis___, @ps*) {\n"
-              + "    @fh*;\n"
-              + "    @stmts*;\n"
-              + "    @bs*;\n"
-              + "  }, @rf);\n",
-              "fRef", new Reference(fname),
-              "rf", toStringLiteral(fname),
-              "ps", noexpandParams(ps),
-              // It's important to expand bs before computing fh and stmts.
-              "bs", withoutNoops(expand(bindings.get("bs"), s2)),
-              "fh", getFunctionHeadDeclarations(s2),
-              "stmts", new ParseTreeNodeContainer(s2.getStartStatements()));
-          scope.addStartStatement(
-              new ExpressionStmt(node.getFilePosition(), expr));
-          return new Noop(FilePosition.UNKNOWN);
+          // Named simple function declaration
+          if (bindings != null) {
+            Scope s2 = Scope.fromFunctionConstructor(
+                scope, ((FunctionDeclaration) node).getInitializer());
+            ParseTreeNodeContainer ps = (ParseTreeNodeContainer) bindings.get("ps");
+            checkFormals(ps);
+            Identifier fname = noexpand((Identifier) bindings.get("fname"));
+            Expression expr = (Expression) substV(
+                "fname", fname,
+                "fRef", new Reference(fname),
+                "fParam", new FormalParam(fname),
+                "ps", noexpandParams(ps),
+                // It's important to expand bs before computing fh and stmts.
+                "bs", withoutNoops(expand(bindings.get("bs"), s2)),
+                "fh", getFunctionHeadDeclarations(s2),
+                "stmts", new ParseTreeNodeContainer(s2.getStartStatements()));
+            scope.addStartStatement(
+                new ExpressionStmt(node.getFilePosition(), expr));
+            return new Noop(FilePosition.UNKNOWN);
+          }
         }
         return NONE;
       }
@@ -1716,15 +1681,17 @@ public class ES53Rewriter extends Rewriter {
     new Rule() {
       @Override
       @RuleDescription(
-          name="funcNamedSimpleValue",
+          name="funcNamedValue",
           synopsis="",
           reason="",
           matches="function @fname(@ps*) { @bs*; }",
-          substitutes="___.wrap(function @fname(dis___, @ps*) {\n"
-              + "    @fh*;\n"
-              + "    @stmts*;\n"
-              + "    @bs*;\n"
-              + "  }, @rf);")
+          substitutes="___.Y(function (@fParam) {\n"
+              + "    return ___.wrap(function (dis___, @ps*) {\n"
+              + "        @fh*;\n"
+              + "        @stmts*;\n"
+              + "        @bs*;\n"
+              + "      }, @fStr);"
+              + "  });")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
         Map<String, ParseTreeNode> bindings = match(node);
         // Named simple function expression
@@ -1735,9 +1702,8 @@ public class ES53Rewriter extends Rewriter {
           checkFormals(ps);
           Identifier fname = noexpand((Identifier) bindings.get("fname"));
           return substV(
-              "fname", fname,
-              "fRef", new Reference(fname),
-              "rf", toStringLiteral(fname),
+              "fParam", new FormalParam(fname),
+              "fStr", toStringLiteral(fname),
               "ps", noexpandParams(ps),
               // It's important to expand bs before computing fh and stmts.
               "bs", withoutNoops(expand(bindings.get("bs"), s2)),
@@ -1982,7 +1948,7 @@ public class ES53Rewriter extends Rewriter {
           reason="So that every use of a regex literal creates a new instance"
               + " to prevent state from leaking via interned literals. This"
               + " is consistent with the way ES4 treates regex literals.",
-          substitutes="new RegExp(@pattern, @modifiers?)")
+          substitutes="new RegExp.new___(@pattern, @modifiers?)")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
         if (node instanceof RegexpLiteral) {
           RegexpLiteral.RegexpWrapper re = ((RegexpLiteral) node).getValue();
