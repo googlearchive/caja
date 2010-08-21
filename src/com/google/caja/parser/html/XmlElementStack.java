@@ -216,7 +216,6 @@ class XmlElementStack extends AbstractElementStack {
   }
 
   /** We do no entity fixup in XML mode. */
-  @Override
   public String fixBrokenEntities(String rawText, FilePosition textPos) {
     return rawText;
   }
