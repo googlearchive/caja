@@ -218,33 +218,43 @@ public final class CssParser {
     //   : [ CHARSET_SYM STRING ';' ]?
     //     [S|CDO|CDC]* [ import [S|CDO|CDC]* ]*
     //     [ [ ruleset | media | page ] [S|CDO|CDC]* ]*
-    Mark m = tq.mark();
-    List<CssTree.CssStatement> stmts = Lists.newArrayList();
-    while (true) {
-      skipTopLevelIgnorables();
-      if (!lookaheadSymbol("@import")) { break; }
-      addIfNotNull(stmts, parseImport());
+    try {
+      Mark m = tq.mark();
+      List<CssTree.CssStatement> stmts = Lists.newArrayList();
+      while (true) {
+        skipTopLevelIgnorables();
+        if (!lookaheadSymbol("@import")) { break; }
+        addIfNotNull(stmts, parseImport());
+      }
+      while (true) {
+        skipTopLevelIgnorables();
+        if (tq.isEmpty()) { break; }
+        addIfNotNull(stmts, parseStatement());
+      }
+      return new CssTree.StyleSheet(pos(m), stmts);
+    } catch (RuntimeException e) {
+      throw new ParseException(new Message(MessageType.PARSE_ERROR,
+          tq.currentPosition()), e);
     }
-    while (true) {
-      skipTopLevelIgnorables();
-      if (tq.isEmpty()) { break; }
-      addIfNotNull(stmts, parseStatement());
-    }
-    return new CssTree.StyleSheet(pos(m), stmts);
   }
 
   /** Parse a series of CSS properties as seen in an XHTML style attribute. */
   public CssTree.DeclarationGroup parseDeclarationGroup()
       throws ParseException {
-    Mark m = tq.mark();
-    List<CssTree.Declaration> decls = Lists.newArrayList();
-    while (!tq.isEmpty()) {
-      while (tq.lookaheadToken(";")) { tq.advance(); }
-      if (tq.isEmpty()) { break; }
-      addIfNotNull(decls, parseDeclaration());
-      if (!tq.checkToken(";")) { break; }
+    try {
+      Mark m = tq.mark();
+      List<CssTree.Declaration> decls = Lists.newArrayList();
+      while (!tq.isEmpty()) {
+        while (tq.lookaheadToken(";")) { tq.advance(); }
+        if (tq.isEmpty()) { break; }
+        addIfNotNull(decls, parseDeclaration());
+        if (!tq.checkToken(";")) { break; }
+      }
+      return new CssTree.DeclarationGroup(pos(m), decls);
+    } catch (RuntimeException e) {
+      throw new ParseException(new Message(MessageType.PARSE_ERROR,
+          tq.currentPosition()), e);
     }
-    return new CssTree.DeclarationGroup(pos(m), decls);
   }
 
   public boolean isTolerant() {

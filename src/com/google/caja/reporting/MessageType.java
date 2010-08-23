@@ -66,7 +66,7 @@ public enum MessageType implements MessageTypeInt {
       "%s: Duplicate formal parameter %s", MessageLevel.ERROR),
   UNRECOGNIZED_REGEX_MODIFIERS(
       "%s: Unrecognized regular expression modifiers %s", MessageLevel.ERROR),
-  PARSE_ERROR("%s: Parse error in %s", MessageLevel.ERROR),
+  PARSE_ERROR("%s: Parse error", MessageLevel.ERROR),
   AMBIGUOUS_ATTRIBUTE_VALUE(
       "%s: attribute %s has ambiguous value \"%s\"", MessageLevel.WARNING),
   MISSING_ATTRIBUTE_VALUE(

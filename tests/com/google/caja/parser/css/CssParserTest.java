@@ -166,6 +166,12 @@ public class CssParserTest extends CajaTestCase {
     assertEquals("2", vl1.getValue());
   }
 
+  // TODO(jasvir): Should whitespace after the units in quantities be escaped
+  // S 4.3.10 of CSS2 spec says no, but 4/4 browsers say yes.
+  public final void testUnexpectedErrors() throws Exception {
+    throwsParseException("div { top:58px\\9;}");
+  }
+
   public final void testErrorMessages() throws Exception {
     runTestCssParser(
         fromString("p { color:e# }"),
