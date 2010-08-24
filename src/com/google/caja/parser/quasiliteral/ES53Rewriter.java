@@ -487,7 +487,7 @@ public class ES53Rewriter extends Rewriter {
           matches="for (@k in @o) @ss;",
           substitutes=(
               ""
-              + "for (@tkeys = es53.allEnumKeys(@o),"
+              + "for (@tkeys = ___.allEnumKeys(@o),"
               + "     @tidx = 0,"
               + "     @tlen = @tkeys.length;\n"
               + "     @tidx < @tlen; ++@tidx) {\n"
@@ -855,7 +855,7 @@ public class ES53Rewriter extends Rewriter {
     new Rule() {
       @Override
       @RuleDescription(
-          name="readNumPublic",
+          name="readNum",
           synopsis="Recognize that array indexing is inherently safe.",
           reason="When the developer knows that their index expression is" +
               " an array index, they can indicate this with the" +
@@ -898,7 +898,7 @@ public class ES53Rewriter extends Rewriter {
     new Rule() {
       @Override
       @RuleDescription(
-          name="readIndexPublic",
+          name="readIndex",
           synopsis="",
           reason="",
           matches="@o[@s]",
@@ -1007,13 +1007,9 @@ public class ES53Rewriter extends Rewriter {
     new Rule() {
       @Override
       @RuleDescription(
-          name="setPublic",
-          synopsis="Set a public property.",
-          reason="If the object is an unfrozen JSONContainer (a record or "
-              + "array), then this will create the own property if needed. If "
-              + "it is an unfrozen constructed object, then clients can assign "
-              + "to existing public own properties, but cannot directly create "
-              + "such properties.",
+          name="set",
+          synopsis="Set a property.",
+          reason="",
           matches="@o.@p = @r",
           substitutes="<approx> @o.w___(@'p', @r);")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
@@ -1040,7 +1036,63 @@ public class ES53Rewriter extends Rewriter {
     new Rule() {
       @Override
       @RuleDescription(
-          name="setIndexPublic",
+          name="setNumericIndex",
+          synopsis="Set a property marked as numeric.",
+          reason="",
+          matches="@o[+@p] = @r",
+          substitutes="<approx> @o.w___(+@'p', @r);")
+      public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
+        Map<String, ParseTreeNode> bindings = match(node);
+        if (bindings != null) {
+          Pair<Expression, Expression> oPair = reuse(bindings.get("o"), scope);
+          Reference p = (Reference) bindings.get("p");
+          String propertyName = p.getIdentifierName();
+          ParseTreeNode r = bindings.get("r");
+          Pair<Expression, Expression> rPair = reuse(nymize(r, propertyName, "meth"), scope);
+          return commas(oPair.b, rPair.b, (Expression) QuasiBuilder.substV(
+              "@oRef.NUM____w___ === @oRef ? (@oRef[+@p] = @rRef) : " +
+              "                           @oRef.w___(+@p, @rRef);",
+              "oRef", oPair.a,
+              "rRef", rPair.a,
+              "p", noexpand(p)));
+        }
+        return NONE;
+      }
+    },
+
+    new Rule() {
+      @Override
+      @RuleDescription(
+          name="setNumericLiteralIndex",
+          synopsis="Set a numeric literal property.",
+          reason="",
+          matches="@o[@numLiteral] = @r",
+          substitutes="<approx> @o.w___(@numLiteral, @r);")
+      public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
+        Map<String, ParseTreeNode> bindings = match(node);
+        if (bindings != null) {
+          ParseTreeNode index = bindings.get("numLiteral");
+          if (index instanceof NumberLiteral) {
+            Pair<Expression, Expression> oPair = reuse(bindings.get("o"), scope);
+            ParseTreeNode r = bindings.get("r");
+            Pair<Expression, Expression> rPair = 
+                reuse(nymize(r, index.toString(), "meth"), scope);
+            return commas(oPair.b, rPair.b, (Expression) QuasiBuilder.substV(
+                "@oRef.NUM____w___ === @oRef ? (@oRef[@numLiteral] = @rRef) : " +
+                "                           @oRef.w___(@numLiteral, @rRef);",
+                "oRef", oPair.a,
+                "rRef", rPair.a,
+                "numLiteral", index));
+          }
+        }
+        return NONE;
+      }
+    },
+
+    new Rule() {
+      @Override
+      @RuleDescription(
+          name="setIndex",
           synopsis="",
           reason="",
           matches="@o[@s] = @r",
@@ -1377,28 +1429,6 @@ public class ES53Rewriter extends Rewriter {
     new Rule() {
       @Override
       @RuleDescription(
-          name="deleteBadValueOf",
-          synopsis="Prohibit deletion of valueOf.",
-          reason="Although a non-existent valueOf should behave the same way "
-              + "asthe default one as regards [[DefaultValue]], for simplicity "
-              + "weonly want to have to consider one of those cases.",
-          matches="delete @o.valueOf",
-          substitutes="<reject>")
-      public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
-        Map<String, ParseTreeNode> bindings = match(node);
-        if (bindings != null) {
-          mq.addMessage(
-              RewriterMessageType.VALUEOF_PROPERTY_MUST_NOT_BE_DELETED,
-              node.getFilePosition(), this, node);
-          return node;
-        }
-        return NONE;
-      }
-    },
-
-    new Rule() {
-      @Override
-      @RuleDescription(
           name="deleteBadSuffix",
           synopsis="",
           reason="",
@@ -1419,7 +1449,7 @@ public class ES53Rewriter extends Rewriter {
     new Rule() {
       @Override
       @RuleDescription(
-          name="deletePublic",
+          name="delete",
           synopsis="",
           reason="",
           matches="delete @o.@p",
@@ -1440,7 +1470,7 @@ public class ES53Rewriter extends Rewriter {
     new Rule() {
       @Override
       @RuleDescription(
-          name="deleteIndexPublic",
+          name="deleteIndex",
           synopsis="",
           reason="",
           matches="delete @o[@s]",
@@ -1502,7 +1532,7 @@ public class ES53Rewriter extends Rewriter {
     new Rule() {
       @Override
       @RuleDescription(
-          name="callPublic",
+          name="callMethod",
           synopsis="",
           reason="",
           matches="@o.@m(@as*)",
@@ -1530,7 +1560,7 @@ public class ES53Rewriter extends Rewriter {
     new Rule() {
       @Override
       @RuleDescription(
-          name="callIndexPublic",
+          name="callIndexedMethod",
           synopsis="",
           reason="",
           matches="@o[@s](@as*)",
@@ -1858,8 +1888,8 @@ public class ES53Rewriter extends Rewriter {
     new Rule() {
       @Override
       @RuleDescription(
-          name="inPublic",
-          synopsis="Is a public property present on the object?",
+          name="in",
+          synopsis="Is a property present on the object?",
           reason="",
           matches="@i in @o",
           substitutes="___.i('' + @i, @o)")
@@ -1964,6 +1994,8 @@ public class ES53Rewriter extends Rewriter {
       }
     },
 
+    // TODO: use a whitelist, deactivate the rest by replacing with
+    // {@code '' + @directive}
     new Rule() {
       @Override
       @RuleDescription(

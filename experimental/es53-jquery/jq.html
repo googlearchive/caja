@@ -1,0 +1,16 @@
+<script src="jquery-1.4.2.js"></script>
+<script type="text/javascript"> 
+$(document).ready(function(){
+  $("#start").click(function(){
+  $("#box").animate({height:300},"slow");
+  $("#box").animate({width:300},"slow");
+  $("#box").animate({height:100},"slow");
+  $("#box").animate({width:100},"slow");
+  });
+});
+</script> 
+<p><span id="start">Start Animation</span></p>
+
+<div id="box"
+style="background:#98bf21;height:100px;width:100px;position:relative">
+</div>

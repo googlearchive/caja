@@ -55,6 +55,10 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
    * If the special descriptor is absent, it defaults to
    * {writable:true, configurable:true, enumerable:true, get:void 0, set:void 0}
    * 
+   * Note that each of the six attributes starts with a different letter.
+   * Each property has eight associated properties: six for the attributes
+   * and two for writable and callable fastpath flags
+   * 
    * {@code obj[name + '_v___'] === obj}  means that {@code name} is
    *                                      a data property on {@code obj}.
    * {@code obj.hasOwnProperty(name + '_v___') &&
@@ -72,8 +76,6 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
    *                                      {@code name} on {@code obj}.
    * {@code obj[name + '_s___']}          is the setter for 
    *                                      {@code name} on {@code obj}.
-   * {@code obj[name + '_virt___]}        is the virtual version of a primordial
-   *                                      method that's exposed to guest code.
    * {@code obj[name + '_m___'] === obj}  means that {@code name} is
    *                                      callable as a method (fastpath).
    * 
@@ -85,6 +87,17 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
    * defined directly for {@code name}. Instead, the effective
    * attributes of {@code name} are covered by the actual attributes
    * of {@code 'NUM___'}.
+   * 
+   * Another property suffix commonly used in the code is for virtualized
+   * methods; since innocent code and existing host code like domita rely
+   * on the original bindings of primordial methods, guest code should not
+   * be allowed to change the original bindings; {@code virtualize} installs
+   * ES5 getters and setters that store the guest view of the property.
+   * 
+   * {@code obj[name + '_virt___']}       is the virtual version of a primordial
+   *                                      method that's exposed to guest code.
+   * 
+   * Per-object properties:
    * 
    * {@code obj.ne___ === obj}            means that {@code obj} is not
    *                                      extensible.
@@ -485,10 +498,8 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
     }
   }
 
-  /**
-   * Objects can't override this, so it can be invoked safely as a method.
-   */
-  Object.prototype.toString___ = Object.prototype.toString;
+  // For computing the [[Class]] internal property
+  var classProp = Object.prototype.toString;
 
   /**
    * The property descriptor for numerics
@@ -559,7 +570,7 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
     if (dis === null || dis === void 0) { return USELESS; }
     if (Type(dis) !== 'Object') { return dis; }
     if ('___' in dis) { 
-      var err = new Error('Internal: toxic global!'); 
+      var err = new Error('Internal: toxic global!');
       err.UNCATCHABLE___ = true;
       throw err;
     }
@@ -755,6 +766,14 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
     }
     // Frozen and preventExtensions implies hasNumerics
     if (name === 'NUM___' && !obj.hasNumerics___()) {
+      obj.NUM____v___ = obj;
+      obj.NUM____gw___ = obj;
+      obj.NUM____w___ = false;
+      obj.NUM____c___ = obj;
+      obj.NUM____e___ = obj;
+      obj.NUM____g___ = void 0;
+      obj.NUM____s___ = void 0;
+      obj.NUM____m___ = false;
       return true;
     }
     return false;
@@ -815,11 +834,11 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
   }
 
   function isFunction(obj) {
-    return Object.prototype.toString___.call(obj) === '[object Function]';
+    return classProp.call(obj) === '[object Function]';
   }
 
   function isError(obj) {
-    return Object.prototype.toString___.call(obj) === '[object Error]';
+    return classProp.call(obj) === '[object Error]';
   }
 
   function allEnumKeys(obj) {
@@ -828,7 +847,7 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
       if (isNumericName(i)) {
         result.push(i);
       } else {
-        if (startsWithNUM___.test(i)) { continue; }
+        if (startsWithNUM___.test(i) && endsWith__.test(i)) { continue; }
         m = i.match(endsWith_e___);
         if (m && obj[i]) { result.push(m[1]); }
       }
@@ -842,7 +861,7 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
       if (isNumericName(i)) {
         result.push(i);
       } else {
-        if (startsWithNUM___.test(i)) { continue; }
+        if (startsWithNUM___.test(i) && endsWith__.test(i)) { continue; }
         m = i.match(endsWith_v___);
         if (m && obj[i]) { result.push(m[1]); }
       }
@@ -857,7 +876,7 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
       if (isNumericName(i)) {
         result.push(i);
       } else {
-        if (startsWithNUM___.test(i)) { continue; }
+        if (startsWithNUM___.test(i) && endsWith__.test(i)) { continue; }
         m = i.match(endsWith_e___);
         if (m) { result.push(m[1]); }
       }
@@ -872,7 +891,7 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
       if (isNumericName(i)) {
         result.push(i);
       } else {
-        if (startsWithNUM___.test(i)) { continue; }
+        if (startsWithNUM___.test(i) && endsWith__.test(i)) { continue; }
         m = i.match(endsWith_v___);
         if (m) { result.push(m[1]); }
       }
@@ -1763,26 +1782,6 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
   }
 
   /**
-   * 8.7 The Reference Specification Type
-   */
-
-  // 8.7.1
-  function GetValue(obj, name) {
-    if (obj === null || obj === void 0) {
-      throw new TypeError(obj + ' has no properties.');
-    }
-    return obj.Get___(name);
-  }
-  
-  // 8.7.2
-  function PutValue(obj, name, val) {
-    if (obj === null || obj === void 0) {
-      throw new TypeError(obj + ' has no properties.');
-    }
-    return obj.Put___(name, val);
-  }
-
-  /**
    * 8.10 The Property Descriptor and Property Identifier Specification Types
    */
 
@@ -1886,7 +1885,7 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
     //      internal method of Obj with "enumerable".
     //   b. Set the [[Enumerable]] field of desc to ToBoolean(enum).
     if (Obj.HasProperty___('enumerable')) { 
-      desc.enumerable = !!GetValue(Obj, 'enumerable'); 
+      desc.enumerable = !!Obj.v___('enumerable'); 
     }
     // 4. If the result of calling the [[HasProperty]]
     //    internal method of Obj with argument "configurable" is true, then
@@ -1894,7 +1893,7 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
     //      internal method of Obj with argument "configurable".
     //   b. Set the [[Configurable]] field of desc to ToBoolean(conf).
     if (Obj.HasProperty___('configurable')) { 
-      desc.configurable = !!GetValue(Obj, 'configurable'); 
+      desc.configurable = !!Obj.v___('configurable'); 
     }
     // 5. If the result of calling the [[HasProperty]]
     //    internal method of Obj with argument "value" is true, then
@@ -1902,7 +1901,7 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
     //      internal method of Obj with argument "value".
     //   b. Set the [[Value]] field of desc to value.
     if (Obj.HasProperty___('value')) {
-      desc.value = GetValue(Obj, 'value'); 
+      desc.value = Obj.v___('value'); 
     }
     // 6. If the result of calling the [[HasProperty]]
     //    internal method of Obj with argument "writable" is true, then
@@ -1910,14 +1909,14 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
     //    internal method of Obj with argument "writable".
     // b. Set the [[Writable]] field of desc to ToBoolean(writable).
     if (Obj.HasProperty___('writable')) {
-      desc.writable = !!GetValue(Obj, 'writable');
+      desc.writable = !!Obj.v___('writable');
     }
     // 7. If the result of calling the [[HasProperty]]
     //    internal method of Obj with argument "get" is true, then
     if (Obj.HasProperty___('get')) {
       // a. Let getter be the result of calling the [[Get]]
       //    internal method of Obj with argument "get".
-      var getter = GetValue(Obj, 'get');
+      var getter = Obj.v___('get');
       // b. If IsCallable(getter) is false and getter is not
       //    undefined, then throw a TypeError exception.
       if (!isFunction(getter) && getter !== void 0) {
@@ -1931,7 +1930,7 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
     if (Obj.HasProperty___('set')) {
       // a. Let setter be the result of calling the [[Get]]
       //    internal method of Obj with argument "set".
-      var setter = GetValue(Obj, 'set');
+      var setter = Obj.v___('set');
       // b. If IsCallable(setter) is false and setter is not
       //    undefined, then throw a TypeError exception.
       if (!isFunction(setter) && setter !== void 0) {
@@ -2006,7 +2005,7 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
     };
 
   // 8.12.3
-  Object.prototype.Get___ = function (P) {
+  Object.prototype.v___ = function (P) {
       P = '' + P;
       if (isNumericName(P)) { return this[P]; }
       assertValidPropertyName(P);
@@ -2021,7 +2020,7 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
     };
 
   // 8.12.5
-  Object.prototype.Put___ = function (P, V) {
+  Object.prototype.w___ = function (P, V) {
       var thisExtensible = isExtensible(this);
       P = '' + P;
       assertValidPropertyName(P);
@@ -2081,7 +2080,7 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
 
   // 8.12.7
   /** Precondition: P is a number or a string */
-  Object.prototype.Delete___ = function (P) {
+  Object.prototype.c___ = function (P) {
       var O = this;
       // 1. Let desc be the result of calling the [[GetOwnProperty]]
       //    internal method of O with property name P. 
@@ -2193,7 +2192,7 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
       var allHaveAppearedAndAreTheSame = true;
       for (var i in Desc) {
         if (!Desc.hasOwnProperty(i)) { continue; }
-        if (!SameValue(GetValue(current, i), Desc[i])) {
+        if (!SameValue(current.v___(i), Desc[i])) {
           allHaveAppearedAndAreTheSame = false;
           break;
         }
@@ -2517,11 +2516,26 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
       a.unshift('___' in this ? void 0: this);
       return disfunction.apply(USELESS, a);
     }
-    f.call = markFunc(disfunction);
-    f.apply = markFunc(function (dis___, as) {
-        var a = Array.slice(as, 0);
-        a.unshift(dis___);
-        return disfunction.apply(USELESS, a);
+    // While we could rely on the whitelisting of call and apply on
+    // Function.prototype, we shouldn't.  In general, we're susceptible
+    // to the situation where objects begotten from tamed objects may have
+    // overridden whitelisted properties without being tamed themselves,
+    // but es53.js will still view them as having been tamed.
+    f.DefineOwnProperty___('call', {
+        value: markFunc(disfunction),
+        writable: true,
+        enumerable: false,
+        configurable: true
+      });
+    f.DefineOwnProperty___('apply', {
+        value: markFunc(function (dis___, as) {
+            var a = Array.slice(as, 0);
+            a.unshift(dis___);
+            return disfunction.apply(USELESS, a);
+          }),
+        writable: true,
+        enumerable: false,
+        configurable: true
       });
     // The cajoler translates an invocation
     // g(args) to g.f___(___.USELESS, [args])
@@ -2531,7 +2545,7 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
         var sig;
         return markFunc(function () {
             if (sig) { return sig; }
-            return sig = str.replace(/dis___,\s*/,'')
+            return sig = str.replace(/dis___,?\s*/,'')
                 .replace(/function\s*\(/,'function ' + name + '(');
           });
       })(disfunction.toString());
@@ -2577,9 +2591,9 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
   // guest code from messing with expectations of host and innocent code.
   // If innocent code needs access to the guest properties, explicitly tame
   // it that way.
-  function virtualize(obj, name) {
+  function virtualize(obj, name, fun) {
     var vname = name + '_virt___'; 
-    obj[vname] = obj[name] ? markFunc(obj[name]) : void 0;
+    obj[vname] = fun ? markFunc(fun) : obj[name] ? markFunc(obj[name]) : void 0;
     obj.DefineOwnProperty___(name, {
         get: markFunc(function () {
             return this[vname];
@@ -2742,7 +2756,7 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
       var P = names[i];
       // a. Let descObj be the result of calling the [[Get]]
       //    internal method of props with P as the argument.
-      var descObj = props.Get___[P];
+      var descObj = props.v___[P];
       // b. Let desc be the result of calling ToPropertyDescriptor
       //    with descObj as the argument.
       var desc = ToPropertyDescriptor(descObj);
@@ -2864,7 +2878,8 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
     return obj;
   }
 
-  // TODO: Where this is used, do we really want immutability?
+  // TODO: Where this is used, do we really want frozenness
+  // that is transitive across property traversals?
   function snowWhite(obj) {
     return freeze(whitelistAll(obj));
   }
@@ -3002,14 +3017,12 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
     });
 
   // 15.2.4.5
-  virtualize(Object.prototype, 'hasOwnProperty');
-  Object.prototype.hasOwnProperty_virt___ = markFunc(function (P) {
+  virtualize(Object.prototype, 'hasOwnProperty', function (P) {
       return guestHasOwnProperty(this, P);
     });
 
   // 15.2.4.7
-  virtualize(Object.prototype, 'propertyIsEnumerable');
-  Object.prototype.propertyIsEnumerable_virt___ = markFunc(function (V) {
+  virtualize(Object.prototype, 'propertyIsEnumerable', function (V) {
       return isEnumerable(this, '' + V);
     });
 
@@ -3072,12 +3085,10 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
   markFunc(Function.prototype.toString);
 
   // 15.3.4.3--5
-  virtualize(Function.prototype, 'call');
-  Function.prototype.call_virt___ = markFunc(function (dis, var_args) {
+  virtualize(Function.prototype, 'call', function (dis, var_args) {
       return this.apply(safeDis(dis), Array.slice(arguments, 1));
     });
-  virtualize(Function.prototype, 'apply');
-  Function.prototype.apply_virt___ = markFunc(function (dis, as) {
+  virtualize(Function.prototype, 'apply', function (dis, as) {
       return this.apply(safeDis(dis), Array.slice(as));
     });
   /**
@@ -3101,7 +3112,7 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
         };
       return funcBound;
     });
-  virtualize(Function.prototype, 'bind', true);
+  virtualize(Function.prototype, 'bind');
 
   // 15.4 Array
 
@@ -3118,7 +3129,7 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
 
   // 15.4.3.2
   Array.isArray = markFunc(function (obj) {
-      return Object.prototype.toString___.call(obj) === '[object Array]';
+      return classProp.call(obj) === '[object Array]';
     });
   Array.DefineOwnProperty___('isArray', {
       value: Array.isArray,
@@ -3154,9 +3165,8 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
 
   // 15.4.4.7--9
   function guardedVirtualize(obj, name) {
-    virtualize(obj, name);
     var orig = obj[name];
-    obj[name + '_virt___'] = markFunc(function (var_args) {
+    virtualize(obj, name, function (var_args) {
         if (!isExtensible(this)) {
           throw new TypeError("This array is not extensible.");
         }
@@ -3169,7 +3179,9 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
     var methods = [
         'push',
         'reverse',
-        'shift'
+        'shift',
+        'splice',
+        'unshift'
       ];
     for (var i = 0, len = methods.length; i < len; ++i) {
       guardedVirtualize(Array.prototype, methods[i]);
@@ -3180,8 +3192,7 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
   virtualize(Array.prototype, 'slice');
 
   // 15.4.4.11
-  virtualize(Array.prototype, 'sort');
-  Array.prototype.sort_virt___ = markFunc(function (comparefn) {
+  virtualize(Array.prototype, 'sort', function (comparefn) {
       // This taming assumes that sort only modifies {@code this},
       // even though it may read numeric properties on the prototype chain.
       if (!isWritable(this, 'NUM___')) {
@@ -3202,12 +3213,6 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
             ) :
           Array.prototype.sort.call(this);
     });
-
-  // 15.4.4.12
-  virtualize(Array.prototype, 'splice');
-
-  // 15.4.4.13
-  virtualize(Array.prototype, 'unshift');
 
   // 15.4.4.14
   Array.prototype.indexOf = markFunc(function (value, fromIndex) {
@@ -3494,15 +3499,15 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
         'split'
       ];
     for (var i = 0, len = methods.length; i < len; ++i) {
-      virtualize(String.prototype, methods[i]);
-      String.prototype[methods[i] + '_virt___'] =
-          tameStringRegExp(String.prototype[methods[i]]);
+      virtualize(
+          String.prototype, 
+          methods[i], 
+          tameStringRegExp(String.prototype[methods[i]]));
     }
   })();
 
   // 15.5.4.11
-  virtualize(String.prototype, 'replace');
-  String.prototype.replace_virt___ = markFunc(function (searcher, replacement) {
+  virtualize(String.prototype, 'replace', function (searcher, replacement) {
       var cast = enforceMatchable(searcher);
       if (isFunction(replacement)) {
         replacement = asFirstClass(replacement);
@@ -3520,12 +3525,11 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
   // http://blog.stevenlevithan.com/archives/faster-trim-javascript
   var trimBeginRegexp = /^\s\s*/;
   var trimEndRegexp = /\s\s*$/;
-  String.prototype.trim_virt___ = function () {
+  virtualize(String.prototype, 'trim', function () {
       return ('' + this).
           replace(trimBeginRegexp, '').
           replace(trimEndRegexp, '');
-    };
-
+    });
 
   // 15.6 Boolean
 
@@ -3733,7 +3737,7 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
   // 15.10.5
   RegExp.f___ = markFunc(function (dis___, as) {
       var pattern = as[0], flags = as[1];
-      if (Object.prototype.toString___.call(pattern) === '[object RegExp]'
+      if (classProp.call(pattern) === '[object RegExp]'
           && flags === void 0) {
         return pattern;
       }
@@ -3797,15 +3801,16 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
       configurable: false
     });
 
+  // Invoking exec and test with no arguments uses ambient data,
+  // so we force them to be called with an argument, even if undefined.
+
   // 15.10.6.2
-  virtualize(RegExp.prototype, 'exec');
-  RegExp.exec_virt___ = markFunc(function (specimen) {
+  virtualize(RegExp.prototype, 'exec', function (specimen) {
       return RegExp.prototype.exec.call(safeDis(this), specimen);
     });
 
   // 15.10.6.3
-  virtualize(RegExp.prototype, 'test');
-  RegExp.prototype.test_virt___ = markFunc(function (specimen) {
+  virtualize(RegExp.prototype, 'test', function (specimen) {
       return RegExp.prototype.test.call(safeDis(this), specimen);
     });
 
@@ -4325,15 +4330,12 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
       URIError: URIError
     });
 
-  Object.prototype.v___ = Object.prototype.Get___;
-  Object.prototype.w___ = Object.prototype.Put___;
-  Object.prototype.c___ = Object.prototype.Delete___;
   Object.prototype.m___ = function (name, as) {
       name = String(name);
       if (this[name + '_m___']) {
         return this[name].f___(this, as);
       }
-      var m = this.Get___(name);
+      var m = this.v___(name);
       if (!m) {
         // Temporary support for Cajita's keeper interface
         if (this.handleCall___) { return this.handleCall___(name, as); }
@@ -4402,9 +4404,9 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
       loadModule: loadModule,
       NO_RESULT: NO_RESULT
     };
-  var es53keys = ownEnumKeys(es53);
-  for (var i = 0; i < es53keys.length; ++i) {
-    ___[es53keys[i]] = es53[es53keys[i]];
+  var cajaVMKeys = ownEnumKeys(cajaVM);
+  for (var i = 0; i < cajaVMKeys.length; ++i) {
+    ___[cajaVMKeys[i]] = cajaVM[cajaVMKeys[i]];
   }
   setNewModuleHandler(makeNormalNewModuleHandler());
 })();

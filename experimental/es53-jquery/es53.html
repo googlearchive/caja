@@ -1,0 +1,82 @@
+<html>
+<head>
+  <base href="file:///Users/stay/caja/svn-changes/pristine/google-caja/">
+</head>
+<body>
+  <script src="ant-lib/com/google/caja/plugin/html-sanitizer-minified.js"></script>
+  <script src="third_party/js/json_sans_eval/json_sans_eval.js"></script>
+  <script src="src/com/google/caja/es53.js"></script>
+  <script src="src/com/google/caja/plugin/unicode.js"></script>
+  <script src="ant-lib/com/google/caja/plugin/css-defs.js"></script>
+  <script src="ant-lib/com/google/caja/plugin/html4-defs.js"></script>
+  <script src="src/com/google/caja/plugin/html-sanitizer.js"></script>
+  <script src="src/com/google/caja/plugin/html-emitter.js"></script>
+  <script src="src/com/google/caja/plugin/bridal.js"></script>
+  <script src="src/com/google/caja/plugin/cssparser.js"></script>
+  <script src="src/com/google/caja/plugin/domita.js"></script>
+  <script>
+  var allImports = [];
+  init = function(div, scriptUrl) {
+    // Make a copy of the standard objects
+    var imports = ___.copy(___.whitelistAll(___.sharedImports));
+    allImports.push(imports);
+    imports.onerror = ___.markFunc(function(x){
+        var e;
+        document.body.appendChild(e=document.createElement('pre'),e.innerHTML="Log: "+x,e);
+        document.body.appendChild(document.createElement("br"));
+      });
+    ___.setLogFunc(imports.onerror);
+      
+    Object.prototype.toSource_v___ = Object.prototype;
+    ___.markFunc(Object.prototype.toSource);
+    String.prototype.toSource_v___ = String.prototype;
+    ___.markFunc(String.prototype.toSource);
+    Array.prototype.toSource_v___ = Array.prototype;
+    ___.markFunc(Array.prototype.toSource);
+    Number.prototype.toSource_v___ = Number.prototype;
+    ___.markFunc(Number.prototype.toSource);
+    Function.prototype.toSource_v___ = Function.prototype;
+    ___.markFunc(Function.prototype.toSource);
+
+    // The function attachDocumentStub() copies each property of
+    // imports.outers to tameWindow, a constructed object, then sets 
+    //   imports.outers = tameWindow
+    // so after this call, imports.outers !== imports.  Also, if
+    // you set a property on imports.outers after this point, 
+    // you have to grant access to it explicitly.
+    attachDocumentStub(
+        "-" + div.id,
+        // Don't proxy urls
+        { rewrite: function(uri, mimetype) { return uri; } },
+        imports,
+        div);
+
+    // Create a fake document object, attach it to the given div,
+    // and put a reference in imports
+    imports.htmlEmitter___ = new HtmlEmitter(div, imports.document);
+    imports.getCssContainer___ = function () {
+      return div;
+    };
+
+    // Use these imports
+    for (i in imports) {
+      imports.window[i] = imports[i];
+    }
+    imports = imports.window;
+    imports.domitaTrace___ = 1;
+    imports.alert = ___.markFunc(function (x) { alert(x); });
+    ___.getNewModuleHandler().setImports(___.whitelistAll(imports));
+    imports.handleSet___ = void 0;
+
+    // Instead of getting a script name, get the json description,
+    // set div.innerHTML = response.html and eval(response.code)
+    // or stick the code into a text node under a script tag and
+    // insert that.
+    var s = document.createElement('script');
+    s.src = scriptUrl;
+    document.body.appendChild(s);
+  };
+  parent.onReady(init);
+  </script>
+</body>
+</html>
