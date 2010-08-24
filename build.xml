@@ -366,7 +366,13 @@
       <classpath refid="classpath.compile"/>
       <include name="**/caja/lang/css/CssPropertyPatterns.java"/>
       <include name="**/caja/lang/css/HtmlDefinitions.java"/>
+      <include name="**/caja/tools/EnumsToJs.java"/>
     </javac>
+    <genrule class="com.google.caja.tools.EnumsToJs">
+      <input file="${lib}/com/google/caja/plugin/LoaderType.class"/>
+      <input file="${lib}/com/google/caja/plugin/UriEffect.class"/>
+      <output file="${lib}/com/google/caja/plugin/enums.js"/>
+    </genrule>
     <genrule class="com.google.caja.lang.css.CssPropertyPatterns$Builder">
       <output file="${lib}/com/google/caja/plugin/css-defs.js"/>
       <input file="${src}/com/google/caja/lang/css/css-extensions.json"/>

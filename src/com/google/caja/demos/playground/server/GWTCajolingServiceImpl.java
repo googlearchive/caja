@@ -19,6 +19,8 @@ import com.google.caja.lexer.escaping.UriUtil;
 import com.google.caja.opensocial.DefaultGadgetRewriter;
 import com.google.caja.opensocial.GadgetRewriteException;
 import com.google.caja.parser.ParseTreeNode.ReflectiveCtor;
+import com.google.caja.plugin.LoaderType;
+import com.google.caja.plugin.UriEffect;
 import com.google.caja.plugin.UriFetcher;
 import com.google.caja.plugin.UriPolicy;
 import com.google.caja.reporting.BuildInfo;

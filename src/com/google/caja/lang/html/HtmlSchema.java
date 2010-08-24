@@ -21,7 +21,8 @@ import com.google.caja.lexer.ParseException;
 import com.google.caja.parser.html.AttribKey;
 import com.google.caja.parser.html.ElKey;
 import com.google.caja.parser.html.Namespaces;
-import com.google.caja.plugin.UriPolicy;
+import com.google.caja.plugin.LoaderType;
+import com.google.caja.plugin.UriEffect;
 import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.SimpleMessageQueue;
@@ -141,12 +142,12 @@ public final class HtmlSchema {
       }
       String loaderTypeStr = (String) def.get("loaderType", null);
       // TODO(mikesamuel): divert IllegalArgumentExceptions to MessageQueue
-      UriPolicy.LoaderType loaderType = loaderTypeStr != null
-          ? UriPolicy.LoaderType.valueOf(loaderTypeStr) : null;
+      LoaderType loaderType = loaderTypeStr != null
+          ? LoaderType.valueOf(loaderTypeStr) : null;
       String uriEffectStr = (String) def.get("uriEffect", null);
       // TODO(mikesamuel): divert IllegalArgumentExceptions to MessageQueue
-      UriPolicy.UriEffect uriEffect = uriEffectStr != null
-          ? UriPolicy.UriEffect.valueOf(uriEffectStr) : null;
+      UriEffect uriEffect = uriEffectStr != null
+          ? UriEffect.valueOf(uriEffectStr) : null;
       RegularCriterion elCriterion = criteria.get(elAndAttrib);
       RegularCriterion wcCriterion = criteria.get(elAndAttrib.onAnyElement());
       RegularCriterion criterion = conjunction(elCriterion, wcCriterion);

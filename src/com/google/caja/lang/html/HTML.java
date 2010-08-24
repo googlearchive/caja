@@ -16,7 +16,8 @@ package com.google.caja.lang.html;
 
 import com.google.caja.parser.html.AttribKey;
 import com.google.caja.parser.html.ElKey;
-import com.google.caja.plugin.UriPolicy;
+import com.google.caja.plugin.LoaderType;
+import com.google.caja.plugin.UriEffect;
 import com.google.caja.util.Lists;
 
 import java.util.Collections;
@@ -192,18 +193,18 @@ public final class HTML {
     private final boolean optional_;
 
     /** For URI attributes. */
-    private final UriPolicy.LoaderType loaderType_;
+    private final LoaderType loaderType_;
 
     /** For URI attributes. */
-    private final UriPolicy.UriEffect effect_;
+    private final UriEffect effect_;
 
     private final RegularCriterion valueCriterion_;
 
     /** Construct an Attribute */
     public Attribute(
         AttribKey key, Type type, String defaultValue, String safeValue,
-        boolean valueless, boolean optional, UriPolicy.LoaderType loaderType,
-        UriPolicy.UriEffect effect, RegularCriterion valueCriterion) {
+        boolean valueless, boolean optional, LoaderType loaderType,
+        UriEffect effect, RegularCriterion valueCriterion) {
       assert key != null;
       assert type != null;
       // HACK: null should not be allowed
@@ -262,9 +263,9 @@ public final class HTML {
       return optional_;
     }
 
-    public UriPolicy.UriEffect getUriEffect() { return effect_; }
+    public UriEffect getUriEffect() { return effect_; }
 
-    public UriPolicy.LoaderType getLoaderType() { return loaderType_; }
+    public LoaderType getLoaderType() { return loaderType_; }
 
     /**
      * @return attribute name (name only, not proper HTML).

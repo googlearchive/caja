@@ -17,7 +17,8 @@ package com.google.caja.lang.html;
 import com.google.caja.parser.html.AttribKey;
 import com.google.caja.parser.html.ElKey;
 import com.google.caja.parser.html.Namespaces;
-import com.google.caja.plugin.UriPolicy;
+import com.google.caja.plugin.LoaderType;
+import com.google.caja.plugin.UriEffect;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.SimpleMessageQueue;
 
@@ -71,16 +72,16 @@ public class HtmlSchemaTest extends TestCase {
 
   public final void testAttributeMimeTypes() {
     assertEquals(
-        UriPolicy.LoaderType.SANDBOXED,
+        LoaderType.SANDBOXED,
         lookupAttribute("img", "src").getLoaderType());
     assertEquals(
-        UriPolicy.UriEffect.SAME_DOCUMENT,
+        UriEffect.SAME_DOCUMENT,
         lookupAttribute("img", "src").getUriEffect());
     assertEquals(
-        UriPolicy.LoaderType.UNSANDBOXED,
+        LoaderType.UNSANDBOXED,
         lookupAttribute("script", "src").getLoaderType());
     assertEquals(
-        UriPolicy.UriEffect.SAME_DOCUMENT,
+        UriEffect.SAME_DOCUMENT,
         lookupAttribute("script", "src").getUriEffect());
     assertNull(lookupAttribute("table", "cellpadding").getLoaderType());
     assertNull(lookupAttribute("table", "cellpadding").getUriEffect());

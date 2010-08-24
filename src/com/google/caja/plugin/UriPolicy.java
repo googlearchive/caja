@@ -66,49 +66,4 @@ public interface UriPolicy {
       return u.getUri().toString();
     }
   };
-
-  /** Explains the effect that allowing a URI to load has. */
-  public enum UriEffect {
-    /** Describes a URI that is not loaded.  E.g. {@code <base href>}. */
-    NOT_LOADED,
-    /**
-     * Describes a URI that is automatically loaded into the current document's
-     * origin.
-     * E.g. {@code <img src>}.
-     */
-    SAME_DOCUMENT,
-    /**
-     * Describes a URI that is loaded on user interaction, replacing the current
-     * document with a new document, and that is loaded into the origin implied
-     * in the URI.
-     * This may or may not unload the current document.
-     */
-    NEW_DOCUMENT,
-    ;
-  }
-
-  /** Explains what kind of entity is loading the URI. */
-  public enum LoaderType {
-    /**
-     * A loader that will automatically interpret the result as code
-     * (or that might embed code like CSS or HTML) with access to the
-     * document.
-     */
-    UNSANDBOXED,
-    /**
-     * A loader that will interpret the result as code without access to the
-     * document in which it is embedded.  For example, an image tag or a
-     * video player : both automatically interpret structured content that might
-     * have dynamic behavior but that do not have access to the embedding
-     * document.
-     */
-    SANDBOXED,
-    /**
-     * A loader that will receive the result as data and not automatically
-     * interpret it.  For example, {@code XMLHttpRequest} receives the result
-     * as data.
-     */
-    DATA,
-    ;
-  }
 }

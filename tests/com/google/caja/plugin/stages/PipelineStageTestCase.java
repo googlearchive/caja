@@ -27,7 +27,9 @@ import com.google.caja.parser.html.Dom;
 import com.google.caja.plugin.DataUriFetcher;
 import com.google.caja.plugin.Job;
 import com.google.caja.plugin.Jobs;
+import com.google.caja.plugin.LoaderType;
 import com.google.caja.plugin.PluginMeta;
+import com.google.caja.plugin.UriEffect;
 import com.google.caja.plugin.UriFetcher;
 import com.google.caja.plugin.UriPolicy;
 import com.google.caja.reporting.RenderContext;
@@ -185,7 +187,7 @@ public abstract class PipelineStageTestCase extends CajaTestCase {
   private static class TestUriFetcher implements UriFetcher {
     private List<Pair<URI, CharProducer>> filesToLoad = Lists.newArrayList();
     private DataUriFetcher dataFetcher = new DataUriFetcher();
-    
+
     public FetchedData fetch(ExternalReference ref, String mimeType)
         throws UriFetchException {
       URI uri = ref.getUri();

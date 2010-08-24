@@ -643,8 +643,7 @@ public final class CssRewriter {
                   uri, content.getFilePosition());
               Name propertyPart = propertyPart(node);  // TODO
               if (uriPolicy.rewriteUri(
-                      ref, UriPolicy.UriEffect.SAME_DOCUMENT,
-                      UriPolicy.LoaderType.SANDBOXED,
+                      ref, UriEffect.SAME_DOCUMENT, LoaderType.SANDBOXED,
                       Collections.singletonMap(
                           UriPolicyHintKey.CSS_PROP.key, propertyPart))
                       == null) {
@@ -744,8 +743,7 @@ public final class CssRewriter {
                 ExternalReference ref = new ExternalReference(
                     uri, content.getFilePosition());
                 String rewrittenUri = uriPolicy.rewriteUri(
-                    ref, UriPolicy.UriEffect.SAME_DOCUMENT,
-                    UriPolicy.LoaderType.SANDBOXED,
+                    ref, UriEffect.SAME_DOCUMENT, LoaderType.SANDBOXED,
                     Collections.singletonMap(
                         UriPolicyHintKey.CSS_PROP.key, propertyPart));
                 CssTree.UriLiteral replacement = new CssTree.UriLiteral(

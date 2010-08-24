@@ -37,6 +37,8 @@ import com.google.caja.parser.js.IntegerLiteral;
 import com.google.caja.parser.js.ObjectConstructor;
 import com.google.caja.parser.js.StringLiteral;
 import com.google.caja.parser.js.ValueProperty;
+import com.google.caja.plugin.LoaderType;
+import com.google.caja.plugin.UriEffect;
 import com.google.caja.plugin.UriFetcher;
 import com.google.caja.plugin.UriPolicy;
 import com.google.caja.render.Concatenator;
