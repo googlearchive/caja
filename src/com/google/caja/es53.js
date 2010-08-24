@@ -971,7 +971,7 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
             json_sans_eval.checkSyntax(text, function (key) {
               return key !== 'valueOf' && 
                   key !== 'toString' && 
-                  !endsWith__(key);
+                  !endsWith__.test(key);
             }), reviver);
       }),
       stringify: markFunc(function (obj, opt_replacer, opt_space) {
