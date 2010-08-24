@@ -179,16 +179,9 @@ public final class PluginCompilerMain {
       meta.setEnableES53(config.getES53());
       PluginCompiler compiler = new PluginCompiler(
           BuildInfo.getInstance(), meta, mq);
-      Planner.PlanState preconds = compiler.getPreconditions();
-      Planner.PlanState goals;
-      if (htmlOutputDest == null) {
-        goals = compiler.getGoals()
-            .without(PipelineMaker.HTML_SAFE_STATIC).with(PipelineMaker.JS);
-      } else {
-        goals = compiler.getGoals();
-      }
-      compiler.setPreconditions(config.preconditions(preconds));
-      compiler.setGoals(config.goals(goals));
+      compiler.setPreconditions(
+          config.preconditions(compiler.getPreconditions()));
+      compiler.setGoals(config.goals(compiler.getGoals()));
 
       mc = compiler.getMessageContext();
       compiler.setCssSchema(config.getCssSchema(mq));

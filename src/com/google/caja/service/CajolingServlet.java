@@ -59,6 +59,7 @@ public class CajolingServlet extends HttpServlet {
    * @deprecated Do not use this; instead pass in a CajolingService you've
    *             constructed with the correct host argument (self URL).
    */
+  @Deprecated
   public CajolingServlet() {
     this(new CajolingService());
   }
@@ -113,7 +114,7 @@ public class CajolingServlet extends HttpServlet {
   public void doPost(HttpServletRequest req, HttpServletResponse resp)
       throws ServletException {
     if (req.getContentType() == null) {
-      closeBadRequest(resp, HttpServletResponse.SC_BAD_REQUEST, 
+      closeBadRequest(resp, HttpServletResponse.SC_BAD_REQUEST,
           "Supplied Content-type is null");
       return;
     }

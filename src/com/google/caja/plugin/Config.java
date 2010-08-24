@@ -70,10 +70,6 @@ public final class Config {
       + "\".out.html\")",
       true);
 
-  private final Option ONLY_JS_EMITTED = defineBooleanOption(
-      "s", "only_js_emitted",
-      "Whether input HTML should be collapsed into one output JS file.");
-
   private final Option OUTPUT_JS = defineOption(
       "j", "output_js",
       "Output file path for translated JS (defaults to input with \".out.js\")",
@@ -374,7 +370,8 @@ public final class Config {
 
       boolean debugMode = cl.hasOption(DEBUG_MODE.getOpt());
       es53 = cl.hasOption(ES53.getOpt());
-      boolean onlyJsEmitted = cl.hasOption(ONLY_JS_EMITTED.getOpt());
+      boolean onlyJsEmitted = cl.hasOption(OUTPUT_JS.getOpt())
+          && !cl.hasOption(OUTPUT_HTML.getOpt());
       if (debugMode) {
         negGoals = negGoals.with(PipelineMaker.ONE_CAJOLED_MODULE);
         posGoals = posGoals.with(PipelineMaker.ONE_CAJOLED_MODULE_DEBUG);
