@@ -1040,21 +1040,20 @@ public class ES53Rewriter extends Rewriter {
           synopsis="Set a property marked as numeric.",
           reason="",
           matches="@o[+@p] = @r",
-          substitutes="<approx> @o.w___(+@'p', @r);")
+          substitutes="<approx> @o.w___(+@p, @r);")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
         Map<String, ParseTreeNode> bindings = match(node);
         if (bindings != null) {
           Pair<Expression, Expression> oPair = reuse(bindings.get("o"), scope);
-          Reference p = (Reference) bindings.get("p");
-          String propertyName = p.getIdentifierName();
+          Expression p = (Expression) bindings.get("p");
           ParseTreeNode r = bindings.get("r");
-          Pair<Expression, Expression> rPair = reuse(nymize(r, propertyName, "meth"), scope);
+          Pair<Expression, Expression> rPair = reuse(nymize(r, "", "meth"), scope);
           return commas(oPair.b, rPair.b, (Expression) QuasiBuilder.substV(
               "@oRef.NUM____w___ === @oRef ? (@oRef[+@p] = @rRef) : " +
               "                           @oRef.w___(+@p, @rRef);",
               "oRef", oPair.a,
               "rRef", rPair.a,
-              "p", noexpand(p)));
+              "p", expand(p, scope)));
         }
         return NONE;
       }
@@ -1082,7 +1081,7 @@ public class ES53Rewriter extends Rewriter {
                 "                           @oRef.w___(@numLiteral, @rRef);",
                 "oRef", oPair.a,
                 "rRef", rPair.a,
-                "numLiteral", index));
+                "numLiteral", noexpand((NumberLiteral)index)));
           }
         }
         return NONE;
