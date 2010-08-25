@@ -3455,7 +3455,6 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
         'toLocaleLowerCase',
         'toUpperCase',
         'toLocaleUpperCase',
-        'trim',
         'substr'
       ];
     var i, len = methods.length;
