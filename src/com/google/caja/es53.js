@@ -2112,7 +2112,7 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
       }
       // 4. Else if Throw, then throw a TypeError exception.
       // [This is strict mode, so Throw is always true.]
-      throw new TypeError("Cannot delete '" + P + "' on " + obj);
+      throw new TypeError("Cannot delete '" + P + "' on " + O);
       // 5. Return false.
     };
 
@@ -2391,22 +2391,47 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
    */
   function initializeMap(list) {
     var result = {};
+    var accessors = {};
     for (var i = 0; i < list.length; i += 2) {
-      // Call asFirstClass() here to prevent, for example, a toxic
-      // function being used as the toString property of an object
-      // literal.
-      if (isNumericName(list[i])) {
-        result[list[i]] = asFirstClass(list[i + 1]);
+      if (typeof list[i] === 'string') {
+        if (result.hasOwnProperty(list[i])) {
+          throw new SyntaxError('Duplicate keys: ' + list[i]);
+        }
+        if (isNumericName(list[i])) {
+          result[list[i]] = asFirstClass(list[i + 1]);
+        } else {
+          result.DefineOwnProperty___(
+              list[i], 
+              {
+                value: asFirstClass(list[i + 1]),
+                writable: true,
+                enumerable: true,
+                configurable: true
+              });
+        }
       } else {
-        result.DefineOwnProperty___(
-            list[i], 
-            {
-              value: asFirstClass(list[i + 1]),
-              writable: true,
-              enumerable: true,
-              configurable: true
-            });
+        var name = list[i][0];
+        if (isNumericName(name)) {
+          throw new TypeError('Accessors not supported for numerics.');
+        }
+        var type = list[i][1];
+        accessors[name] = accessors[name] || {};
+        if (accessors[name].hasOwnProperty(type)) {
+          throw new SyntaxError('Duplicate accessor keys: ' +
+              type + ' ' + list[i]);
+        }
+        accessors[name][type] = asFirstClass(list[i + 1]); 
       }
+    }
+    for (i in accessors) {
+      if (endsWith__.test(i)) { continue; }
+      if (!accessors.hasOwnProperty(i)) { continue; }
+      result.DefineOwnProperty___(i, {
+          get: accessors[i].get,
+          set: accessors[i].set,
+          enumerable: true,
+          configurable: true
+        });
     }
     return result;
   }
@@ -2530,7 +2555,7 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
     f.DefineOwnProperty___('apply', {
         value: markFunc(function (dis___, as) {
             var a = Array.slice(as, 0);
-            a.unshift(dis___);
+            a.unshift(dis___ === USELESS ? void 0 : dis___);
             return disfunction.apply(USELESS, a);
           }),
         writable: true,
@@ -2552,6 +2577,12 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
     f.DefineOwnProperty___('prototype', {
         value: f.prototype,
         writable: true,
+        enumerable: false,
+        configurable: false
+      });
+    f.DefineOwnProperty___('length', {
+        value: disfunction.length - 1,
+        writable: false,
         enumerable: false,
         configurable: false
       });
@@ -2914,6 +2945,7 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
       // b. If desc.[[Configurable]] is true, then return false.
       for (var i in O) {
         if (endsWith__.test(i)) { continue; }
+        if (!O.hasOwnProperty(i)) { continue; }
         if (isNumericName(i)) { continue; }
         if (O[i + '_c___']) { return false; }
       }
@@ -4290,6 +4322,19 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
     imports.w___(name, void 0);
   }
 
+  function writeImport(imports, name, value) {
+    if (imports.HasProperty___(name)) {
+      imports.w___(name, value);
+      return value;
+    }
+    throw new ReferenceError(name + ' is not defined.');
+  }
+
+  function goodParseInt(n) {
+    n = '' + n;
+    return parseInt(n.replace(/^\s*([+-]?)\s*0*/, ''));
+  }
+
   sharedImports = whitelistAll({
       cajaVM: cajaVM,
   
@@ -4299,7 +4344,7 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
       'NaN': NaN,
       'Infinity': Infinity,
       'undefined': void 0,
-      parseInt: markFunc(parseInt),
+      parseInt: markFunc(goodParseInt),
       parseFloat: markFunc(parseFloat),
       isNaN: markFunc(isNaN),
       isFinite: markFunc(isFinite),
@@ -4375,6 +4420,7 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
       Y: Y,
       ri: readImport,
       di: declareImport,
+      wi: writeImport,
       // Cajita API
       grantRead: grantRead,
       grantFunc: grantFunc,

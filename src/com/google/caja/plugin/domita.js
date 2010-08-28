@@ -3532,6 +3532,7 @@ var attachDocumentStub = (function () {
     }
 
     function TameComputedStyle(rawElement, pseudoElement) {
+      rawElement = rawElement || document.createElement('div');
       TameStyle.call(
           this,
           bridal.getComputedStyle(rawElement, pseudoElement),

@@ -35,6 +35,7 @@ import com.google.caja.parser.js.ExpressionStmt;
 import com.google.caja.parser.js.FormalParam;
 import com.google.caja.parser.js.FunctionConstructor;
 import com.google.caja.parser.js.FunctionDeclaration;
+import com.google.caja.parser.js.GetterProperty;
 import com.google.caja.parser.js.Identifier;
 import com.google.caja.parser.js.IntegerLiteral;
 import com.google.caja.parser.js.LabeledStatement;
@@ -912,6 +913,31 @@ public class ES53Rewriter extends Rewriter {
     // set - assignments
     ////////////////////////////////////////////////////////////////////////
 
+    // TODO: It's not masking, it's replacing; invent a different error.
+    new Rule() {
+      @Override
+      @RuleDescription(
+          name="setBadVariable",
+          synopsis="Statically reject if an expression assigns to an "
+              + "unmaskable variable.",
+          reason="arguments and eval are not allowed to be written to.",
+          matches="@import = @y",
+          substitutes="<reject>")
+      public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
+        Map<String, ParseTreeNode> bindings = match(node);
+        if (bindings != null && bindings.get("import") instanceof Reference) {
+          String name = ((Reference) bindings.get("import")).getIdentifierName();
+          if (Scope.UNMASKABLE_IDENTIFIERS.contains(name)) {
+            mq.addMessage(
+                RewriterMessageType.CANNOT_MASK_IDENTIFIER,
+                node.getFilePosition(), MessagePart.Factory.valueOf(name));
+            return node;
+          }
+        }
+        return NONE;
+      }
+    },
+
     new Rule() {
       @Override
       @RuleDescription(
@@ -943,7 +969,7 @@ public class ES53Rewriter extends Rewriter {
           synopsis="",
           reason="",
           matches="/* declared in outer scope */ @v = @r",
-          substitutes="IMPORTS___.w___('@v', @r)")
+          substitutes="___.wi(IMPORTS___, '@v', @r)")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
         Map<String, ParseTreeNode> bindings = this.match(node);
         if (bindings != null) {
@@ -1830,10 +1856,14 @@ public class ES53Rewriter extends Rewriter {
                      nymize(prop.getValueExpr(), prop.getPropertyName(), "lit"),
                      scope)));
           } else {
-            mq.addMessage(
-                RewriterMessageType.GETTERS_SETTERS_NOT_SUPPORTED,
-                node.getFilePosition(), this);
-            return node;
+            StringLiteral k = (StringLiteral) node.children().get(0);
+            String kType = (node instanceof GetterProperty ? "get" : "set");
+            String kName = k.getUnquotedValue() +
+                (node instanceof GetterProperty ? "_g___" : "_s___");
+            Expression v = (Expression) node.children().get(1);
+            return new ParseTreeNodeContainer(Arrays.asList(
+                QuasiBuilder.substV("[@k, '" + kType + "']", "k", noexpand(k)),
+                (Expression) expand(nymize(v, kName, "lit"), scope)));
           }
         }
         return NONE;
