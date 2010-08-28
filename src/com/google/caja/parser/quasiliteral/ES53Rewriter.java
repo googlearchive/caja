@@ -1904,11 +1904,36 @@ public class ES53Rewriter extends Rewriter {
     new Rule() {
       @Override
       @RuleDescription(
+          name="typeofGlobal",
+          synopsis="Don't throw a ReferenceError",
+          reason="",
+          matches="typeof @v",
+          substitutes="typeof @v")
+      public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
+        Map<String, ParseTreeNode> bindings = match(node);
+        if (bindings != null) {
+          ParseTreeNode v = bindings.get("v");
+          if (v instanceof Reference) {
+            Reference vRef = (Reference) v;
+            if (scope.isOuter(vRef.getIdentifierName())) {
+              return QuasiBuilder.substV(
+                  "typeof IMPORTS___.v___(@vname)",
+                  "vname", toStringLiteral(v));
+            }
+          }
+        }
+        return NONE;
+      }
+    },
+
+    new Rule() {
+      @Override
+      @RuleDescription(
           name="typeof",
           synopsis="Typeof translates simply",
           reason="",
-          matches="typeof @f",
-          substitutes="typeof @f")
+          matches="typeof @v",
+          substitutes="typeof @v")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
         return transform(node, scope);
       }

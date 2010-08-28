@@ -2478,7 +2478,7 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
       'arguments',
       {
         enumerable: false,
-        configurable: true,
+        configurable: false,
         get: poisonFuncArgs,
         set: poisonFuncArgs
       });
@@ -2486,7 +2486,7 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
       'caller',
       {
         enumerable: false,
-        configurable: true,
+        configurable: false,
         get: poisonFuncCaller,
         set: poisonFuncCaller
       });
@@ -3002,8 +3002,10 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
     });
 
   // 15.2.4.2
-  // TODO: report the CLASS___ property
-  markFunc(Object.prototype.toString);
+  Object.prototype.toString = markFunc(function() {
+      if (this.CLASS___) { return '[object ' + this.CLASS___ + ']'; }
+      return classProp.call(this);
+    });
   Object.prototype.DefineOwnProperty___('toString', {
       get: markFunc(function () {
         return this.toString.orig___ ? this.toString.orig___ : this.toString;
