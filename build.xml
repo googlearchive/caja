@@ -285,6 +285,7 @@
     <genrule class="com.google.caja.ancillary.jsdoc.JsdocMain$Builder">
       <output file="${docs}/js/"/>
       <input file="${src}/com/google/caja/cajita.js"/>
+      <input file="${src}/com/google/caja/es53.js"/>
       <input file="${src}/com/google/caja/valija-cajita.js"/>
       <input file="${src}/com/google/caja/plugin/unicode.js"/>
       <input file="${src}/com/google/caja/plugin/html-emitter.js"/>
@@ -434,6 +435,7 @@
     <copy todir="${lib}">
       <fileset dir="${src}">
         <include name="com/google/caja/cajita.js"/>
+        <include name="com/google/caja/es53.js"/>
       </fileset>
     </copy>
     <mkdir dir="${reports}/benchmarks"/>
@@ -812,6 +814,7 @@
         <include name="**/caja/cajita-module.js"/>
         <include name="**/caja/cajita-promise.js"/>
         <include name="**/caja/cajita.js"/>
+        <include name="**/caja/es53.js"/>
         <include name="**/caja/console.js"/>
         <include name="**/caja/log-to-console.js"/>
         <include name="**/caja/plugin/bridal.js"/>
