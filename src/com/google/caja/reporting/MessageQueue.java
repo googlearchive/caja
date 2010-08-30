@@ -29,6 +29,9 @@ public interface MessageQueue {
   List<Message> getMessages();
 
   /** Adds a message to this group's message list. */
+  void addMessage(Message msg);
+  
+  /** Adds a message to this group's message list. */
   void addMessage(MessageTypeInt type, MessagePart... parts);
 
   /** Adds a message to this group's message list. */

@@ -110,6 +110,11 @@ public final class DevNullMessageQueue implements MessageQueue {
     // do nothing
   }
 
+  @Override
+  public void addMessage(Message msg) {
+    // do nothing
+  }
+
   public boolean hasMessageAtLevel(MessageLevel lvl) {
     return false;
   }
@@ -117,4 +122,5 @@ public final class DevNullMessageQueue implements MessageQueue {
   private static class Singleton {
     static MessageQueue singleton = new DevNullMessageQueue();
   }
+
 }

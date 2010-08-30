@@ -25,6 +25,10 @@ public abstract class AbstractMessageQueue implements MessageQueue {
     getMessages().add(new Message(type, parts));
   }
 
+  public void addMessage(Message msg) {
+    getMessages().add(msg);
+  }
+
   public void addMessage(
       MessageTypeInt type, MessageLevel lvl, MessagePart... parts) {
     getMessages().add(new Message(type, lvl, parts));
