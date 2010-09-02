@@ -111,7 +111,7 @@ public class GWTCajolingServiceImpl extends RemoteServiceServlet
   // TODO(jasvir): Outline this and all the other examples of cajole
   // into a more usable api for the cajoler
   public CajolingServiceResult cajole(
-      String url, String input, boolean debugMode) {
+      String url, String input, boolean es53Mode) {
     MessageContext mc = new MessageContext();
     MessageQueue mq = new SimpleMessageQueue();
 
@@ -122,6 +122,7 @@ public class GWTCajolingServiceImpl extends RemoteServiceServlet
         = Collections.singletonMap(new InputSource(guessURI(url)), input);
     
     PluginMeta meta = new PluginMeta(fetcher, uriPolicy);
+    meta.setEnableES53(es53Mode);
     PluginCompiler compiler = makePluginCompiler(meta, mq);
     compiler.setMessageContext(mc);
     

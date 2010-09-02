@@ -33,31 +33,68 @@ var caja___ = (function () {
     }
   }
 
-  function enable(divElId) {
-    divElId = divElId || 'cajoled-output';
+  var uriPolicy = {
+      rewrite: function (uri, mimeType) {
+        if (!/^https?:\/\//i.test(uri)) { return null; }
+        if (/^image[/]/.test(mimeType)) { return uri; }
+        return ('http://caja.appspot.com/cajole?url='
+            + encodeURIComponent(uri)
+            + '&mime-type=' + encodeURIComponent(mimeType));
+      }
+  };
+
+  var id = "cajoled-output" + '-' + cajaDomSuffix;
+  function configureHTML(parent, html) {
+    var gadgetRoot = document.createElement('div');
+    gadgetRoot.id = id;
+    gadgetRoot.className = id;
+    gadgetRoot.innerHTML = html;
+    parent.appendChild(gadgetRoot);
+  }
+  
+  function enableCajita(parent, policy, html, js) {
+    configureHTML(parent, html);
+    var gadgetRoot = document.getElementById(id);
     var imports = ___.copy(___.sharedImports);
     imports.outers = imports;
-    var uriCallback = {
-      rewrite: function (uri, mimeType) {
-          if (!/^https?:\/\//i.test(uri)) { return null; }
-          if (/^image[/]/.test(mimeType)) { return uri; }
-          return ('http://caja.appspot.com/cajole?url='
-              + encodeURIComponent(uri)
-              + '&mime-type=' + encodeURIComponent(mimeType));
-      }
-    };
-    var gadgetRoot = document.getElementById(divElId);
-    gadgetRoot.className += ' ' + divElId + '-' + cajaDomSuffix;
-
-    attachDocumentStub('-' + divElId + '-' + cajaDomSuffix, uriCallback,
-        imports, gadgetRoot);
+    attachDocumentStub('-' + id, uriPolicy, imports, gadgetRoot);
     imports.htmlEmitter___ = new HtmlEmitter(gadgetRoot, imports.document);
     imports.$v = valijaMaker.CALL___(imports.outers);
+    ___.setLogFunc(function(x) { caja___.logFunc(x); })
     ___.getNewModuleHandler().setImports(imports);
+    eval(policy);
     grantAdditionalPowers(imports);
+    eval(js);
   }
 
+  var cajoledJS = "";
+  var currentFrame = null;
+  function enableES53(parent, policy, html, js) {
+    configureHTML(parent, html);
+    
+    var hiddenDiv = document.getElementById("es53frames");
+    currentFrame = document.createElement('iframe');
+    currentFrame.src = "es53.html";
+    cajoledJS = js;
+    hiddenDiv.appendChild(currentFrame);
+  }
+  
+  function onReady(init, childFrame) {
+    init(document.getElementById(id), uriPolicy, cajoledJS);
+  }
+  
+  function enable(es53, parent, policy, html, js) {
+    document.getElementById("es53frames").innerHTML = "";
+    if (es53) {
+      enableES53(parent, policy, html, js);
+    } else {
+      enableCajita(parent, policy, html, js);
+    }
+  }
+  
   return {
-    enable: enable
-  };
+    enable: enable,
+    onReady: onReady,
+    logFunc: function noOp() {}
+  }
 })();

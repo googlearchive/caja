@@ -1,0 +1,69 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<!--
+ - Copyright (C) 2010 Google Inc.
+ -
+ - Licensed under the Apache License, Version 2.0 (the "License");
+ - you may not use this file except in compliance with the License.
+ - You may obtain a copy of the License at
+ -
+ -      http://www.apache.org/licenses/LICENSE-2.0
+ -
+ - Unless required by applicable law or agreed to in writing, software
+ - distributed under the License is distributed on an "AS IS" BASIS,
+ - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ - See the License for the specific language governing permissions and
+ - limitations under the License.
+-->
+
+<html>
+  <head>
+    <title>Caja ES5/3</title>
+    <meta http-equiv="content-language" content="en">
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <meta http-equiv="cache-control" content="no-cache">
+    <meta http-equiv="pragma" content="no-cache">  
+    <meta name="description" content="Source of a new set of ES5/3 primordials">
+    <meta name="copyright" content="Apache Public License">
+    <meta name="robots" content="nofollow,noindex">
+  </head>
+  <body>
+  <script src="json_sans_eval.js"></script>
+  <script src="es53.js"></script>
+  <script src="unicode.js"></script>
+  <script src="css-defs.js"></script>
+  <script src="html4-defs.js"></script>
+  <script src="html-sanitizer.js"></script>
+  <script src="html-emitter.js"></script>
+  <script src="bridal.js"></script>
+  <script src="cssparser.js"></script>
+  <script src="domita.js"></script>
+  <script>
+  initJS = function(div, uriPolicy, cajoledJS) {
+    var imports = ___.copy(___.whitelistAll(___.sharedImports));
+    imports.onerror = ___.markFunc(function(x){
+      parent.caja___.logFunc(x);
+    });
+    ___.setLogFunc(imports.onerror);
+
+    attachDocumentStub("-" + div.id, uriPolicy, imports, div);
+
+    imports.htmlEmitter___ = new HtmlEmitter(div, imports.document);
+    imports.getCssContainer___ = function () { return div; };
+
+    // Use these imports
+    for (i in imports) {
+      imports.window[i] = imports[i];
+    }
+    imports = imports.window;
+    imports.domitaTrace___ = 1;
+    imports.alert = ___.markFunc(function (x) { alert(x); });
+    ___.getNewModuleHandler().setImports(___.whitelistAll(imports));
+    imports.handleSet___ = void 0;
+
+    eval(cajoledJS);
+  };
+  
+  parent.caja___.onReady(initJS, window.frameElement);
+  </script>
+</body>
+</html>

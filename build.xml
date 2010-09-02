@@ -891,6 +891,7 @@
         <include name="json_sans_eval.js" />
       </fileset>
       <fileset dir="${src}/com/google/caja">
+        <include name="es53.js" />
         <include name="cajita.js" />
         <include name="cajita-debugmode.js" />
       </fileset>
@@ -922,6 +923,7 @@
         <include name="ajax-loader.gif" />
         <include name="Playground.html" />
         <include name="Playground.css" />
+        <include name="es53.html" />
         <include name="testbed.js" />
         <include name="taming.js" />
         <include name="policy.js" />

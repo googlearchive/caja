@@ -47,11 +47,11 @@ import com.google.gwt.user.client.ui.Image;
 import com.google.gwt.user.client.ui.Label;
 import com.google.gwt.user.client.ui.MultiWordSuggestOracle;
 import com.google.gwt.user.client.ui.PopupPanel;
+import com.google.gwt.user.client.ui.RadioButton;
 import com.google.gwt.user.client.ui.RootPanel;
 import com.google.gwt.user.client.ui.SuggestBox;
 import com.google.gwt.user.client.ui.TextArea;
 import com.google.gwt.user.client.ui.TextBox;
-import com.google.gwt.user.client.ui.ToggleButton;
 import com.google.gwt.user.client.ui.Tree;
 import com.google.gwt.user.client.ui.TreeItem;
 import com.google.gwt.user.client.ui.VerticalPanel;
@@ -82,6 +82,8 @@ public class PlaygroundView {
   private SuggestBox policyAddressField;
   private MultiWordSuggestOracle sourceExamples;
   private MultiWordSuggestOracle policyExamples;
+  private RadioButton es53ModeButton;
+  private RadioButton valijaModeButton;
 
   public void setVersion(String v) {
     version.setText(v);
@@ -159,8 +161,11 @@ public class PlaygroundView {
 
     final Button cajoleButton = new Button("Cajole\u00A0\u21B1");
 
-    final ToggleButton debugModeButton = new ToggleButton("No Debug", "Debug");
-    debugModeButton.setDown(true);
+    es53ModeButton = new RadioButton("inputLanguage", "ES5");
+    es53ModeButton.setTitle("Input in ES5 targetting ES3 browsers");
+    valijaModeButton = new RadioButton("inputLanguage", "Valija");
+    valijaModeButton.setTitle("Input in Valija targetting ES3 browsers");
+    valijaModeButton.setValue(true);
 
     cajoleButton.addClickHandler(new ClickHandler() {
       public void onClick(ClickEvent event) {
@@ -170,18 +175,19 @@ public class PlaygroundView {
         renderPanel.setText("");
         controller.cajole(
             addressField.getText(), sourceText.getText(), currentPolicy,
-            Boolean.TRUE.equals(debugModeButton.isDown()));
+            Boolean.TRUE.equals(es53ModeButton.getValue()));
       }
     });
 
-    Grid addressBar = new Grid(1,4);
+    Grid addressBar = new Grid(1,5);
     int item = 0;
     addressBar.setStyleName("playgroundUI");
     addressBar.setWidget(0, item, addressField);
     addressBar.getCellFormatter().setWidth(0, item++, "80%");
 
-    addressBar.setWidget(0, item++, debugModeButton);
     addressBar.setWidget(0, item++, goButton);
+    addressBar.setWidget(0, item++, es53ModeButton);
+    addressBar.setWidget(0, item++, valijaModeButton);
     addressBar.setWidget(0, item++, cajoleButton);
     addressBar.setWidth("95%");
 
@@ -374,9 +380,9 @@ public class PlaygroundView {
 
   private native void setupNativeRuntimeMessageBridge() /*-{
     var that = this;
-    $wnd.___.setLogFunc(function logMessage (msg) {
+    $wnd.caja___.logFunc = function logFunc (msg) {
       that.@com.google.caja.demos.playground.client.ui.PlaygroundView::addRuntimeMessage(Ljava/lang/String;)(msg);
-    });
+    };
   }-*/;
 
   private native void setupNativeSelectLineBridge() /*-{
@@ -543,22 +549,22 @@ public class PlaygroundView {
       renderPanel.setText("There were cajoling errors");
       return;
     }
-    renderPanel.setHTML(
-        "<div id=\"cajoled-output\">\n"
-	+ (html != null ? html : "")
-	+ "</div>\n");
 
     // Make the cajoled content visible so that the DOM will be laid out before
     // the script checks DOM geometry.
     selectTab(Tabs.RENDER);
 
-    Element parent = renderPanel.getElement();
-    parent.appendChild(scriptOf(policy));
-    parent.appendChild(scriptOf("caja___.enable()"));
-    if (js != null) { parent.appendChild(scriptOf(js)); }
+    setRenderedResultBridge(Boolean.TRUE.equals(es53ModeButton.getValue()),
+        renderPanel.getElement(),
+        policy, html != null ? html : "", js != null ? js : "");
 
     renderResult.setText(getRenderResult());
   }
+  
+  private native void setRenderedResultBridge(boolean es53,
+      Element div, String policy, String html, String js) /*-{
+    $wnd.caja___.enable(es53, div, policy, html, js);
+  }-*/;
 
   private native String getRenderResult() /*-{
     return "" + $wnd.___.getNewModuleHandler().getLastValue();
@@ -566,12 +572,12 @@ public class PlaygroundView {
 
   public void addCompileMessage(String item) {
     compileMessages.insertRow(0);
-    compileMessages.setHTML(0, 0, item);
+    compileMessages.setWidget(0, 0, new Label(item));
   }
 
   public void addRuntimeMessage(String item) {
     runtimeMessages.insertRow(0);
-    runtimeMessages.setText(0, 0, item);
+    runtimeMessages.setWidget(0, 0, new Label(item));
   }
 
   /** @param uri unused but provided for consistency with native GWT caller. */
