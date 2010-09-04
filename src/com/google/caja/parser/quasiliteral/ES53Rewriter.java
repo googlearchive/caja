@@ -122,7 +122,7 @@ public class ES53Rewriter extends Rewriter {
   /**
    * Generate the header that should be placed at the beginning of the body
    * of the translation of an ES5/3 function body.
-   * 
+   *
    * @param scope The scope that results from expanding (cajoling) the ES5/3
    *              function body.
    * @return If the function body contains a free use of <tt>arguments</tt>,
@@ -137,7 +137,7 @@ public class ES53Rewriter extends Rewriter {
           "var @la = ___.args(@ga);",
           "la", s(new Identifier(
               FilePosition.UNKNOWN, ReservedNames.LOCAL_ARGUMENTS)),
-          "ga", Rule.newReference(FilePosition.UNKNOWN, 
+          "ga", Rule.newReference(FilePosition.UNKNOWN,
                                   ReservedNames.ARGUMENTS)));
     }
     return new ParseTreeNodeContainer(stmts);
@@ -1100,7 +1100,7 @@ public class ES53Rewriter extends Rewriter {
           if (index instanceof NumberLiteral) {
             Pair<Expression, Expression> oPair = reuse(bindings.get("o"), scope);
             ParseTreeNode r = bindings.get("r");
-            Pair<Expression, Expression> rPair = 
+            Pair<Expression, Expression> rPair =
                 reuse(nymize(r, index.toString(), "meth"), scope);
             return commas(oPair.b, rPair.b, (Expression) QuasiBuilder.substV(
                 "@oRef.NUM____w___ === @oRef ? (@oRef[@numLiteral] = @rRef) : " +
@@ -1863,7 +1863,7 @@ public class ES53Rewriter extends Rewriter {
             Expression v = (Expression) node.children().get(1);
             return new ParseTreeNodeContainer(Arrays.asList(
                 QuasiBuilder.substV("[@k, '" + kType + "']", "k", noexpand(k)),
-                (Expression) expand(nymize(v, kName, "lit"), scope)));
+                expand(nymize(v, kName, "lit"), scope)));
           }
         }
         return NONE;

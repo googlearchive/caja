@@ -19,6 +19,7 @@ import java.util.List;
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.reporting.RenderContext;
+import com.google.javascript.jscomp.jsonml.JsonML;
 
 /**
  * FIXME(metaweta): document me
@@ -57,4 +58,7 @@ public final class QuotedExpression extends AbstractExpression {
   public Expression unquote() { return (Expression) children().get(0); }
 
   public String typeOf() { return null; }
+
+  @Override
+  public JsonML toJsonML() { return unquote().toJsonML(); }
 }

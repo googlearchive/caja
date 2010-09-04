@@ -28,7 +28,10 @@ public abstract class SwitchCase extends AbstractStatement {
 
   public boolean hasHangingConditional() { return false; }
 
-  public abstract Statement getBody();
+  // TODO: instead of using a block, introduce a statement collection as a super
+  // class of Block since Block is going to have specific semantics as a scoping
+  // construct in ES6.
+  public abstract Block getBody();
 
   protected abstract void renderHead(RenderContext rc);
 
@@ -38,11 +41,8 @@ public abstract class SwitchCase extends AbstractStatement {
     renderHead(rc);
     out.consume(":");
     out.consume("\n");
-    Statement body = getBody();
-    if (body instanceof Block) {
-      ((Block) body).renderBody(rc);
-    } else if (!(body instanceof Noop)) {
-      body.renderBlock(rc, true);
-    }
+    Block body = getBody();
+    rc.getOut().mark(body.getFilePosition());
+    body.renderBody(rc);
   }
 }

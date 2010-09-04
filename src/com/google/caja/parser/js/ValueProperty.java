@@ -3,6 +3,9 @@ package com.google.caja.parser.js;
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.reporting.RenderContext;
+import com.google.javascript.jscomp.jsonml.JsonML;
+import com.google.javascript.jscomp.jsonml.TagAttr;
+import com.google.javascript.jscomp.jsonml.TagType;
 
 import java.util.List;
 
@@ -46,5 +49,13 @@ public class ValueProperty extends ObjProperty {
       value.render(rc);
       out.consume(")");
     }
+  }
+
+  @Override
+  public JsonML toJsonML() {
+    return JsonMLBuilder.builder(TagType.DataProp, getFilePosition())
+        .setAttribute(TagAttr.NAME, this.getPropertyName())
+        .addChild(getValueExpr())
+        .build();
   }
 }

@@ -18,6 +18,8 @@ import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.reporting.RenderContext;
+import com.google.javascript.jscomp.jsonml.JsonML;
+import com.google.javascript.jscomp.jsonml.TagType;
 
 import java.util.List;
 import java.util.Collections;
@@ -119,4 +121,34 @@ public final class FunctionConstructor
   }
 
   public String typeOf() { return "function"; }
+
+  public JsonML toJsonML() {
+    JsonMLBuilder builder = JsonMLBuilder.builder(
+        TagType.FunctionExpr, getFilePosition());
+    builder.addChild(getIdentifier());
+    {
+      FilePosition paramPos = null;
+      for (FormalParam p : getParams()) {
+        paramPos = paramPos == null
+            ? p.getFilePosition()
+            : FilePosition.span(paramPos, p.getFilePosition());
+      }
+      if (paramPos == null) {
+        paramPos = FilePosition.endOf(getIdentifier().getFilePosition());
+      }
+      JsonMLBuilder params = JsonMLBuilder.builder(TagType.ParamDecl, paramPos);
+      for (FormalParam p : getParams()) {
+        params.addChild(p.getIdentifier());
+      }
+      builder.addChild(params.build());
+    }
+    for (Statement s : getBody().children()) {
+      if (s instanceof DirectivePrologue) {
+        ((DirectivePrologue) s).addJsonMLTo(builder);
+      } else {
+        builder.addChild(s);
+      }
+    }
+    return builder.build();
+  }
 }

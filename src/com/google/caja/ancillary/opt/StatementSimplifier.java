@@ -193,7 +193,8 @@ public class StatementSimplifier {
       List<ParseTreeNode> newChildren = null;
       boolean childNeedsBlock = (
           n instanceof FunctionConstructor || n instanceof TryStmt
-          || n instanceof CatchStmt || n instanceof FinallyStmt);
+          || n instanceof CatchStmt || n instanceof FinallyStmt
+          || n instanceof SwitchCase);
       for (int i = 0; i < nChildren; ++i) {
         ParseTreeNode child = children.get(i);
         ParseTreeNode newChild = optimize(child, childNeedsBlock);
@@ -811,8 +812,8 @@ public class StatementSimplifier {
     for (int i = newChildren.size(); --i >= 1;) {
       SwitchCase cs = (SwitchCase) newChildren.get(i);
       if (!(cs instanceof DefaultCaseStmt)) { continue; }
-      Statement body = cs.getBody();
-      if (body instanceof Noop) {
+      Block body = cs.getBody();
+      if (body.children().isEmpty()) {
         changed = true;
         newChildren.remove(i);
       } else if (isBlankBreak(body)) {
@@ -832,7 +833,7 @@ public class StatementSimplifier {
     if (!hasDefault) {
       for (int i = newChildren.size(); --i >= 1;) {
         CaseStmt cs = (CaseStmt) newChildren.get(i);
-        Statement body = cs.getBody();
+        Block body = cs.getBody();
         if (!isBlankBreak(body)) { continue; }
         if (cs.getCaseValue().simplifyForSideEffect() != null) { continue; }
         if (i != 1) {
@@ -851,7 +852,7 @@ public class StatementSimplifier {
     SwitchCase last = null;
     for (int i = 1; i < newChildren.size(); ++i) {
       SwitchCase cs = (SwitchCase) newChildren.get(i);
-      if (last != null && !(last.getBody() instanceof Noop)
+      if (last != null && !last.getBody().children().isEmpty()
           && ParseTreeNodes.deepEquals(last.getBody(), cs.getBody())) {
         newChildren.set(i - 1, withoutBody(last));
         changed = true;
@@ -864,18 +865,13 @@ public class StatementSimplifier {
 
       Statement lastBody = last.getBody();
       boolean changedOne = false;
-      if (lastBody instanceof Block) {
+      if (lastBody instanceof Block && !lastBody.children().isEmpty()) {
         // Eliminate trailing break statement.
         List<? extends Statement> stmts = ((Block) lastBody).children();
         int n = stmts.size();
         if (n > 0 && isBlankBreak(stmts.get(n - 1))) {
           stmts = stmts.subList(0, n - 1);
-          Statement newBody = null;
-          switch (stmts.size()) {
-            case 0: newBody = new Noop(lastBody.getFilePosition()); break;
-            case 1: newBody = stmts.get(0); break;
-            default: newBody = new Block(lastBody.getFilePosition(), stmts);
-          }
+          Block newBody = new Block(lastBody.getFilePosition(), stmts);
           newChildren.set(newChildren.size() - 1, withBody(last, newBody));
           changedOne = true;
         }
@@ -884,7 +880,7 @@ public class StatementSimplifier {
         // => switch (...) { default: ... case foo: }
         newChildren.set(lastIndex, withoutBody(last));
         changedOne = true;
-      } else if (!hasDefault && lastBody instanceof Noop) {
+      } else if (!hasDefault && lastBody instanceof Block) {
         CaseStmt cs = (CaseStmt) last;  // OK since !hasDefault
         //    switch (...) { ... case 4: case 5: break; }
         // => switch (...) { ... }
@@ -907,10 +903,10 @@ public class StatementSimplifier {
   }
 
   private static SwitchCase withoutBody(SwitchCase sc) {
-    return withBody(sc, new Noop(sc.getBody().getFilePosition()));
+    return withBody(sc, new Block(sc.getBody().getFilePosition()));
   }
 
-  private static SwitchCase withBody(SwitchCase sc, Statement body) {
+  private static SwitchCase withBody(SwitchCase sc, Block body) {
     if (sc instanceof DefaultCaseStmt) {
       return new DefaultCaseStmt(sc.getFilePosition(), body);
     } else {
@@ -920,13 +916,27 @@ public class StatementSimplifier {
   }
 
   private static boolean isBlankBreak(Statement s) {
+    while (s instanceof Block) {
+      Block block = (Block) s;
+      if (block.children().size() != 1) { return false; }
+      s = block.children().get(0);
+    }
     return s instanceof BreakStmt && "".equals(((BreakStmt) s).getLabel());
   }
 
-  private static Statement combine(Statement a, Statement b) {
+  private static Block combine(Block a, Block b) {
+    if (b.children().isEmpty()) { return a; }
+    if (a.children().isEmpty()) { return b; }
     FilePosition pos = FilePosition.span(
         a.getFilePosition(), b.getFilePosition());
-    return combine(pos, a, b);
+    Statement s = combine(pos, a, b);
+    if (s instanceof Block) {
+      return (Block) s;
+    } else if (s instanceof Noop) {
+      return new Block(pos);
+    } else {
+      return new Block(pos, Collections.singletonList(s));
+    }
   }
 
   private static Statement combine(FilePosition pos, Statement a, Statement b) {

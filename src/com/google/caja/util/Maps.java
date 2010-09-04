@@ -117,13 +117,13 @@ public final class Maps {
       return this;
     }
 
-    public ImmutableMapBuilder<K, V> putAll(Map<K, V> map) {
+    public ImmutableMapBuilder<K, V> putAll(Map<? extends K, ? extends V> map) {
       if (canUseEnumMap) {
-        for (Map.Entry<K, V> e : map.entrySet()) {
+        for (Map.Entry<? extends K, ? extends V> e : map.entrySet()) {
           put(e.getKey(), e.getValue());
         }
       } else {
-        map.putAll(map);
+        this.map.putAll(map);
       }
       return this;
     }

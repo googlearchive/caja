@@ -26,22 +26,22 @@ import java.util.Map;
  *
  * @author mikesamuel@gmail.com
  */
-public interface Statement extends ParseTreeNode {
-  // TODO(mikesamuel): breaksReaching should probably take a paremeter of type
+public interface Statement extends ParseTreeNode, JsonMLCompatible {
+  // TODO(mikesamuel): breaksReaching should probably take a parameter of type
   // Map<? super String, ? super BreakStmt>, and equivalently for contsReaching.
   // TODO(mikesamuel): rename breaks and continues to collectBreakTargets and
   // collectContinueTargets respectively.
 
   /**
    * Accumulates the set of labels that may be broken out of by statements
-   * under this node.  The empty String represents a labelless break.
+   * under this node.  The empty String represents a label-less break.
    * @param breaksReaching a mutable map.  Modified in place.
    */
   void breaks(Map<String, List<BreakStmt>> breaksReaching);
 
   /**
    * Accumulates the set of labels that may be continued to by statements
-   * under this node.  The empty String represents a labelless continue.
+   * under this node.  The empty String represents a label-less continue.
    * @param contsReaching a mutable map.  Modified in place.
    */
   void continues(Map<String, List<ContinueStmt>> contsReaching);

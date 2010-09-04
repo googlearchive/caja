@@ -19,6 +19,10 @@ import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.lexer.escaping.Escaping;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.reporting.RenderContext;
+import com.google.javascript.jscomp.jsonml.JsonML;
+import com.google.javascript.jscomp.jsonml.TagAttr;
+import com.google.javascript.jscomp.jsonml.TagType;
+
 import java.util.List;
 
 /**
@@ -166,4 +170,12 @@ public final class RegexpLiteral extends Literal {
 
   // "function" on some interpreters, "object" on others.
   public String typeOf() { return null; }
+
+  @Override
+  public JsonML toJsonML() {
+    return JsonMLBuilder.builder(TagType.RegExpExpr, getFilePosition())
+        .setAttribute(TagAttr.BODY, value.getMatchText())
+        .setAttribute(TagAttr.FLAGS, value.getModifiers())
+        .build();
+  }
 }

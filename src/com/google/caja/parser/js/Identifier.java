@@ -24,9 +24,11 @@ import com.google.caja.render.Concatenator;
 import com.google.caja.render.JsPrettyPrinter;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.Callback;
+import com.google.javascript.jscomp.jsonml.JsonML;
+import com.google.javascript.jscomp.jsonml.TagAttr;
+import com.google.javascript.jscomp.jsonml.TagType;
 
 import java.io.IOException;
-
 import java.util.List;
 
 /**
@@ -34,7 +36,8 @@ import java.util.List;
  *
  * @author ihab.awad@gmail.com
  */
-public final class Identifier extends AbstractParseTreeNode {
+public final class Identifier extends AbstractParseTreeNode
+    implements JsonMLCompatible {
   private final String name;
 
   @ReflectiveCtor
@@ -76,5 +79,14 @@ public final class Identifier extends AbstractParseTreeNode {
   public final TokenConsumer makeRenderer(
       Appendable out, Callback<IOException> exHandler) {
     return new JsPrettyPrinter(new Concatenator(out, exHandler));
+  }
+
+  public JsonML toJsonML() {
+    if (name != null) {
+      return JsonMLBuilder.builder(TagType.IdPatt, getFilePosition())
+          .setAttribute(TagAttr.NAME, name).build();
+    } else {
+      return JsonMLBuilder.builder(TagType.Empty, getFilePosition()).build();
+    }
   }
 }

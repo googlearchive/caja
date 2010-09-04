@@ -16,6 +16,8 @@ package com.google.caja.parser.js;
 
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.reporting.RenderContext;
+import com.google.javascript.jscomp.jsonml.JsonML;
+import com.google.javascript.jscomp.jsonml.TagType;
 
 import java.util.List;
 
@@ -70,4 +72,11 @@ public final class ReturnStmt extends AbstractStatement {
   }
 
   public boolean hasHangingConditional() { return false; }
+
+  @Override
+  public JsonML toJsonML() {
+    return JsonMLBuilder.builder(TagType.ReturnStmt, getFilePosition())
+        .addChildIfNotNull(returnValue)
+        .build();
+  }
 }

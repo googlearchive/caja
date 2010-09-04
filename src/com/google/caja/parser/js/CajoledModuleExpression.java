@@ -17,6 +17,9 @@ package com.google.caja.parser.js;
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.parser.quasiliteral.QuasiBuilder;
 import com.google.caja.reporting.RenderContext;
+import com.google.javascript.jscomp.jsonml.JsonML;
+import com.google.javascript.jscomp.jsonml.TagAttr;
+import com.google.javascript.jscomp.jsonml.TagType;
 
 import java.util.List;
 
@@ -66,4 +69,20 @@ public class CajoledModuleExpression extends AbstractExpression {
   }
 
   public String typeOf() { return null; }
+
+  @Override
+  public JsonML toJsonML() {
+    FilePosition pos = getFilePosition();
+    JsonML prepareModuleFnName = JsonMLBuilder.builder(
+        TagType.LiteralExpr, FilePosition.startOf(pos))
+        .setAttribute(TagAttr.TYPE, "string")
+        .setAttribute(TagAttr.VALUE, "prepareModule").build();
+    return JsonMLBuilder.builder(TagType.InvokeExpr, pos)
+        .addChild(JsonMLBuilder.builder(
+             TagType.LiteralExpr, FilePosition.startOf(pos))
+             .setAttribute(TagAttr.NAME, "___").build())
+        .addChild(prepareModuleFnName)
+        .addChild(getCajoledModule().getModuleBody())
+        .build();
+  }
 }

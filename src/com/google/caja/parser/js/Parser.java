@@ -35,6 +35,7 @@ import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.Lists;
 import com.google.caja.util.Pair;
 import com.google.caja.util.Sets;
+import com.google.javascript.jscomp.jsonml.JsonML;
 
 import java.math.BigDecimal;
 import java.util.Collections;
@@ -362,10 +363,10 @@ public final class Parser extends ParserBase {
           || !Directive.RecognizedValue.isDirectiveStringRecognized(unquoted)) {
         mq.addMessage(
             MessageType.UNRECOGNIZED_DIRECTIVE_IN_PROLOGUE,
-            quotedString.pos, MessagePart.Factory.valueOf(decoded));
+            quotedString.pos, MessagePart.Factory.valueOf(unquoted));
       }
 
-      Directive d = new Directive(posFrom(quotedString.pos), decoded);
+      Directive d = new Directive(posFrom(quotedString.pos), unquoted);
       finish(d, startOfDirective);
       directives.add(d);
     }
@@ -509,22 +510,13 @@ public final class Parser extends ParserBase {
                    || tq.lookaheadToken(Punctuation.RCURLY))) {
             caseBodyContents.add(parseTerminatedStatement());
           }
-          Statement caseBody;
-          switch (caseBodyContents.size()) {
-            case 0:
-              caseBody = noop(FilePosition.endOf(colonPos));
-              break;
-            case 1:
-              caseBody = caseBodyContents.get(0);
-              break;
-            default:
-              caseBody = new Block(posFrom(caseBodyStart), caseBodyContents);
-              finish((AbstractParseTreeNode) caseBody, caseBodyStart);
-              break;
-          }
+          FilePosition caseBodyPos = caseBodyContents.isEmpty()
+              ? FilePosition.endOf(colonPos) : posFrom(caseBodyStart);
+          Block caseBody = new Block(caseBodyPos, caseBodyContents);
+          finish(caseBody, caseBodyStart);
           SwitchCase caseStmt = (null != caseValue)
-            ? new CaseStmt(posFrom(caseMark), caseValue, caseBody)
-            : new DefaultCaseStmt(posFrom(caseMark), caseBody);
+              ? new CaseStmt(posFrom(caseMark), caseValue, caseBody)
+              : new DefaultCaseStmt(posFrom(caseMark), caseBody);
           finish(caseStmt, caseMark);
           cases.add(caseStmt);
         }
@@ -1123,7 +1115,7 @@ public final class Parser extends ParserBase {
                 for (Mark cm = tq.mark(); tq.checkToken(Punctuation.COMMA);
                      cm = tq.mark()) {
                   comma = cm;
-                  Operation vl = Operation.undefined(posFrom(cm));
+                  Elision vl = new Elision(posFrom(cm));
                   finish(vl, cm);
                   elements.add(vl);
                 }
@@ -1501,6 +1493,9 @@ public final class Parser extends ParserBase {
     }
 
     public String typeOf() { return null; }
+
+    @Override
+    public JsonML toJsonML() { throw new UnsupportedOperationException(); }
   }
 
   private static void issueLintWarningsForProblematicEscapes(

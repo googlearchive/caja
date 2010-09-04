@@ -20,7 +20,7 @@ import com.google.caja.parser.MutableParseTreeNode;
  *
  * @author mikesamuel@gmail.com
  */
-public interface Expression extends MutableParseTreeNode {
+public interface Expression extends MutableParseTreeNode, JsonMLCompatible {
   boolean isLeftHandSide();
 
   /**

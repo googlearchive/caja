@@ -22,6 +22,9 @@ import com.google.caja.render.Concatenator;
 import com.google.caja.render.JsPrettyPrinter;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.Callback;
+import com.google.javascript.jscomp.jsonml.JsonML;
+import com.google.javascript.jscomp.jsonml.TagAttr;
+import com.google.javascript.jscomp.jsonml.TagType;
 
 import java.io.IOException;
 import java.util.List;
@@ -32,7 +35,8 @@ import java.util.List;
  * @author mikesamuel@gmail.com
  * @see DirectivePrologue
  */
-public final class Directive extends AbstractParseTreeNode {
+public final class Directive extends AbstractParseTreeNode
+    implements JsonMLCompatible {
 
   /**
    * The directive strings recognized by Caja.
@@ -97,19 +101,27 @@ public final class Directive extends AbstractParseTreeNode {
   public void render(RenderContext rc) {
     StringBuilder escaped = new StringBuilder();
     escaped.append('\'');  // Not allowed in JSON so always use single quotes.
-    Escaping.escapeJsString(directiveString, true, true, escaped);
+    Escaping.escapeJsString(getValue(), true, true, escaped);
     escaped.append('\'');
-    if (!escaped.toString().contains(directiveString)) {
+    String escapedString = escaped.toString();
+    if (!escapedString.contains(directiveString)) {
       // Escaping has modified the directive. Render nothing.
       // See http://code.google.com/p/google-caja/issues/detail?id=1111
       return;
     }
-    rc.getOut().consume(escaped.toString());
+    rc.getOut().consume(escapedString);
     rc.getOut().consume(";");
   }
 
   public final TokenConsumer makeRenderer(
       Appendable out, Callback<IOException> exHandler) {
     return new JsPrettyPrinter(new Concatenator(out, exHandler));
+  }
+
+  @Override
+  public JsonML toJsonML() {
+    return JsonMLBuilder.builder(TagType.PrologueDecl, getFilePosition())
+        .setAttribute(TagAttr.VALUE, StringLiteral.unescapeJsString(getValue()))
+        .setAttribute(TagAttr.DIRECTIVE, getDirectiveString()).build();
   }
 }

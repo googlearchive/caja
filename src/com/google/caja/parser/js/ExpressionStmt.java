@@ -17,6 +17,7 @@ package com.google.caja.parser.js;
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.reporting.RenderContext;
+import com.google.javascript.jscomp.jsonml.JsonML;
 
 import java.util.List;
 
@@ -86,4 +87,6 @@ public final class ExpressionStmt extends AbstractStatement {
   }
 
   public boolean hasHangingConditional() { return false; }
+
+  @Override public JsonML toJsonML() { return expr.toJsonML(); }
 }

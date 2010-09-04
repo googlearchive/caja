@@ -18,6 +18,8 @@ import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.reporting.RenderContext;
+import com.google.javascript.jscomp.jsonml.JsonML;
+import com.google.javascript.jscomp.jsonml.TagType;
 
 import java.util.List;
 
@@ -105,5 +107,15 @@ public final class ForEachLoop extends LabeledStatement implements NestedScope {
 
   public boolean hasHangingConditional() {
     return body.hasHangingConditional();
+  }
+
+  @Override
+  public JsonML toJsonML() {
+    return wrapIfLabelled(
+        JsonMLBuilder.builder(TagType.ForInStmt, getFilePosition())
+        .addChild(keyReceiver)
+        .addChild(container)
+        .addChild(body)
+        .build());
   }
 }

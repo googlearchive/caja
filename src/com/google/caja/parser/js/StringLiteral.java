@@ -18,6 +18,10 @@ import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.escaping.Escaping;
 import com.google.caja.reporting.RenderContext;
+import com.google.javascript.jscomp.jsonml.JsonML;
+import com.google.javascript.jscomp.jsonml.TagAttr;
+import com.google.javascript.jscomp.jsonml.TagType;
+
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -172,4 +176,11 @@ public final class StringLiteral extends Literal {
   }
 
   public String typeOf() { return "string"; }
+
+  public JsonML toJsonML() {
+    return JsonMLBuilder.builder(TagType.LiteralExpr, getFilePosition())
+        .setAttribute(TagAttr.TYPE, "string")
+        .setAttribute(TagAttr.VALUE, getUnquotedValue())
+        .build();
+  }
 }

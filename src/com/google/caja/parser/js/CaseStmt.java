@@ -17,6 +17,8 @@ package com.google.caja.parser.js;
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.reporting.RenderContext;
+import com.google.javascript.jscomp.jsonml.JsonML;
+import com.google.javascript.jscomp.jsonml.TagType;
 
 import java.util.List;
 
@@ -35,16 +37,16 @@ import java.util.List;
  */
 public final class CaseStmt extends SwitchCase {
   private Expression caseValue;
-  private Statement body;
+  private Block body;
 
   /** @param value unused.  This ctor is provided for reflection. */
   @ReflectiveCtor
   public CaseStmt(
       FilePosition pos, Void value, List<? extends ParseTreeNode> children) {
-    this(pos, (Expression) children.get(0), (Statement) children.get(1));
+    this(pos, (Expression) children.get(0), (Block) children.get(1));
   }
 
-  public CaseStmt(FilePosition pos, Expression caseValue, Statement body) {
+  public CaseStmt(FilePosition pos, Expression caseValue, Block body) {
     super(pos);
     createMutation()
         .appendChild(caseValue)
@@ -55,7 +57,7 @@ public final class CaseStmt extends SwitchCase {
   public Expression getCaseValue() { return caseValue; }
 
   @Override
-  public Statement getBody() { return body; }
+  public Block getBody() { return body; }
 
   @Override
   protected void renderHead(RenderContext rc) {
@@ -68,9 +70,17 @@ public final class CaseStmt extends SwitchCase {
     super.childrenChanged();
     List<? extends ParseTreeNode> children = children();
     this.caseValue = (Expression) children.get(0);
-    this.body = (Statement) children.get(1);
+    this.body = (Block) children.get(1);
   }
 
   @Override
   public Object getValue() { return null; }
+
+  @Override
+  public JsonML toJsonML() {
+    return JsonMLBuilder.builder(TagType.Case, getFilePosition())
+        .addChild(caseValue)
+        .addChildren(body.children())
+        .build();
+  }
 }

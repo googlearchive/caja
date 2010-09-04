@@ -17,6 +17,9 @@ package com.google.caja.parser.js;
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.Keyword;
 import com.google.caja.parser.ParseTreeNode;
+import com.google.javascript.jscomp.jsonml.JsonML;
+import com.google.javascript.jscomp.jsonml.TagAttr;
+import com.google.javascript.jscomp.jsonml.TagType;
 
 import java.util.List;
 
@@ -62,4 +65,12 @@ public final class NullLiteral extends Literal {
   }
 
   public String typeOf() { return "object"; }
+
+  @Override
+  public JsonML toJsonML() {
+    return JsonMLBuilder.builder(TagType.LiteralExpr, getFilePosition())
+        .setAttribute(TagAttr.TYPE, "null")
+        .setAttribute(TagAttr.VALUE, null)
+        .build();
+  }
 }

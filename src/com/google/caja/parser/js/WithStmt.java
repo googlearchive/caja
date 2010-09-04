@@ -18,6 +18,8 @@ import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.reporting.RenderContext;
+import com.google.javascript.jscomp.jsonml.JsonML;
+import com.google.javascript.jscomp.jsonml.TagType;
 
 import java.util.List;
 
@@ -74,5 +76,11 @@ public final class WithStmt extends AbstractStatement
 
   public boolean hasHangingConditional() {
     return getBody().hasHangingConditional();
+  }
+
+  @Override
+  public JsonML toJsonML() {
+    return JsonMLBuilder.builder(TagType.WithStmt, getFilePosition())
+        .addChild(getScopeObject()).addChild(getBody()).build();
   }
 }

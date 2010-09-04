@@ -35,7 +35,8 @@ import java.util.List;
  *
  * @author mikesamuel@gmail.com
  */
-public abstract class ObjProperty extends AbstractParseTreeNode {
+public abstract class ObjProperty extends AbstractParseTreeNode
+    implements JsonMLCompatible {
   public ObjProperty(StringLiteral name, Expression value) {
     this(FilePosition.span(name.getFilePosition(), value.getFilePosition()),
          name, value);

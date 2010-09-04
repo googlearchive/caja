@@ -17,6 +17,9 @@ package com.google.caja.parser.js;
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.reporting.RenderContext;
+import com.google.javascript.jscomp.jsonml.JsonML;
+import com.google.javascript.jscomp.jsonml.TagAttr;
+import com.google.javascript.jscomp.jsonml.TagType;
 
 import java.util.List;
 
@@ -83,5 +86,13 @@ public final class GetterProperty extends ObjProperty {
     FunctionConstructor fn = getFunction();
     fn.renderActuals(r);
     fn.renderBody(r);
+  }
+
+  @Override
+  public JsonML toJsonML() {
+    return JsonMLBuilder.builder(TagType.GetterProp, getFilePosition())
+        .setAttribute(TagAttr.NAME, this.getPropertyName())
+        .addChild(getFunction())
+        .build();
   }
 }

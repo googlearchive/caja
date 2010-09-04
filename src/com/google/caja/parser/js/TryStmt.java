@@ -16,6 +16,8 @@ package com.google.caja.parser.js;
 
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.reporting.RenderContext;
+import com.google.javascript.jscomp.jsonml.JsonML;
+import com.google.javascript.jscomp.jsonml.TagType;
 
 import java.util.List;
 
@@ -94,4 +96,20 @@ public final class TryStmt extends AbstractStatement {
   }
 
   public boolean hasHangingConditional() { return false; }
+
+  @Override
+  public JsonML toJsonML() {
+    JsonMLBuilder builder = JsonMLBuilder.builder(
+        TagType.TryStmt, getFilePosition());
+    builder.addChild(body);
+    builder.addChild(
+        cat != null
+        ? cat.toJsonML()
+        : JsonMLBuilder.builder(
+            TagType.Empty, FilePosition.endOf(body.getFilePosition())).build());
+    if (fin != null) {
+      builder.addChild(fin);  // Yes, just output as a block.
+    }
+    return builder.build();
+  }
 }

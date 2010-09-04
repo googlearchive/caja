@@ -16,6 +16,8 @@ package com.google.caja.parser.js;
 
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.reporting.RenderContext;
+import com.google.javascript.jscomp.jsonml.JsonML;
+import com.google.javascript.jscomp.jsonml.TagType;
 
 import java.util.List;
 
@@ -24,16 +26,16 @@ import java.util.List;
  * @author mikesamuel@gmail.com
  */
 public final class DefaultCaseStmt extends SwitchCase {
-  private Statement body;
+  private Block body;
 
   /** @param value unused.  This ctor is provided for reflection. */
   @ReflectiveCtor
   public DefaultCaseStmt(
-      FilePosition pos, Void value, List<? extends Statement> children) {
+      FilePosition pos, Void value, List<? extends Block> children) {
     this(pos, children.get(0));
   }
 
-  public DefaultCaseStmt(FilePosition pos, Statement body) {
+  public DefaultCaseStmt(FilePosition pos, Block body) {
     super(pos);
     appendChild(body);
   }
@@ -41,17 +43,24 @@ public final class DefaultCaseStmt extends SwitchCase {
   @Override
   protected void childrenChanged() {
     super.childrenChanged();
-    this.body = (Statement) children().get(0);
+    this.body = (Block) children().get(0);
   }
 
   @Override
   public Object getValue() { return null; }
 
   @Override
-  public Statement getBody() { return body; }
+  public Block getBody() { return body; }
 
   @Override
   protected void renderHead(RenderContext rc) {
     rc.getOut().consume("default");
+  }
+
+  @Override
+  public JsonML toJsonML() {
+    return JsonMLBuilder.builder(TagType.DefaultCase, getFilePosition())
+        .addChildren(body.children())
+        .build();
   }
 }

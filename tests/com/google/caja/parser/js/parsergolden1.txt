@@ -117,7 +117,7 @@ Block
         IntegerLiteral : 9
         IntegerLiteral : 10
         IntegerLiteral : 11
-        SpecialOperation : VOID
+        Elision : VOID
           IntegerLiteral : 0
         IntegerLiteral : 13
   ForLoop : 
@@ -163,17 +163,19 @@ Block
         Identifier : foo
     CaseStmt
       IntegerLiteral : 1
-      ReturnStmt
-        StringLiteral : "panic"
+      Block
+        ReturnStmt
+          StringLiteral : "panic"
     CaseStmt
       IntegerLiteral : 2
-      Conditional
-        SimpleOperation : STRICTLY_EQUAL
-          Reference
-            Identifier : a
-          IntegerLiteral : 4
-        Block
-          BreakStmt : 
+      Block
+        Conditional
+          SimpleOperation : STRICTLY_EQUAL
+            Reference
+              Identifier : a
+            IntegerLiteral : 4
+          Block
+            BreakStmt : 
     CaseStmt
       Reference
         Identifier : BAR
@@ -234,7 +236,7 @@ Block
       Identifier : n
     CaseStmt
       IntegerLiteral : 0
-      Noop
+      Block
     CaseStmt
       IntegerLiteral : 1
       Block
@@ -245,16 +247,18 @@ Block
                 Identifier : foo
         BreakStmt : 
     DefaultCaseStmt
-      ExpressionStmt
-        SpecialOperation : FUNCTION_CALL
-          Reference
-            Identifier : panic
+      Block
+        ExpressionStmt
+          SpecialOperation : FUNCTION_CALL
+            Reference
+              Identifier : panic
     CaseStmt
       IntegerLiteral : 2
-      ExpressionStmt
-        SpecialOperation : FUNCTION_CALL
-          Reference
-            Identifier : bar
+      Block
+        ExpressionStmt
+          SpecialOperation : FUNCTION_CALL
+            Reference
+              Identifier : bar
   Declaration
     Identifier : n
     SimpleOperation : DIVISION
@@ -280,7 +284,8 @@ Block
       Identifier : x
     CaseStmt
       IntegerLiteral : 4
-      BreakStmt : label
+      Block
+        BreakStmt : label
   LabeledStmtWrapper : useless
     ExpressionStmt
       Reference

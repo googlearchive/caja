@@ -75,12 +75,16 @@
     <pathelement path="${third_party}/java/jetty/lib/jetty.jar"/>
     <pathelement path="${third_party}/java/jetty/lib/jetty-util.jar"/>
   </path>
-  <path id="classpath.compile">
+  <path id="classpath.common">
     <path refid="classpath.web"/>
+    <pathelement path="${third_party}/java/json_simple/json_simple.jar"/>
+    <pathelement path="${third_party}/java/jsonml/jsonml.jar"/>
+  </path>
+  <path id="classpath.compile">
+    <path refid="classpath.common"/>
     <pathelement path="${third_party}/java/jakarta_commons/commons-codec-1.4.jar"/>
     <pathelement path="${third_party}/java/jakarta_commons/commons-cli.jar"/>
     <pathelement path="${third_party}/java/jchardet/chardet.jar"/>
-    <pathelement path="${third_party}/java/json_simple/json_simple.jar"/>
     <pathelement path="${third_party}/java/rhino/js.jar"/>
     <pathelement path="${third_party}/java/xerces/xercesImpl.jar"/>
     <pathelement path="${jars}/htmlparser.jar"/>
@@ -90,7 +94,7 @@
     <path refid="classpath.compile"/>
   </path>
   <path id="classpath.tests.compile">
-    <path refid="classpath.web"/>
+    <path refid="classpath.common"/>
     <path refid="classpath.gwt"/>
     <pathelement path="${third_party}/java/junit/junit.jar"/>
     <pathelement path="${third_party}/java/json_simple/json_simple.jar"/>
@@ -493,6 +497,9 @@
       <fileset dir="${third_party}/java/jetty/lib">
         <include name="jetty.jar"/>
         <include name="jetty-util.jar"/>
+      </fileset>
+      <fileset dir="${third_party}/java/jsonml">
+        <include name="jsonml.jar"/>
       </fileset>
       <fileset dir="${third_party}/java/xerces">
         <include name="xercesImpl.jar"/>

@@ -17,6 +17,7 @@ package com.google.caja.parser.js;
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.reporting.RenderContext;
+import com.google.javascript.jscomp.jsonml.JsonML;
 
 import java.util.Collections;
 import java.util.LinkedHashSet;
@@ -105,5 +106,14 @@ public final class DirectivePrologue extends AbstractStatement {
     return true;
   }
 
-  public boolean hasHangingConditional() { return false; }  
+  public boolean hasHangingConditional() { return false; }
+
+  @Override
+  public JsonML toJsonML() {
+    throw new UnsupportedOperationException();
+  }
+
+  void addJsonMLTo(JsonMLBuilder out) {
+    out.addChildren(children());
+  }
 }

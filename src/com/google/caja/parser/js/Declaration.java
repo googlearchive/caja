@@ -18,6 +18,8 @@ import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.reporting.RenderContext;
+import com.google.javascript.jscomp.jsonml.JsonML;
+import com.google.javascript.jscomp.jsonml.TagType;
 
 import java.util.List;
 
@@ -104,4 +106,23 @@ public class Declaration extends AbstractStatement {
   }
 
   public boolean hasHangingConditional() { return false; }
+
+  @Override
+  public JsonML toJsonML() {
+    return JsonMLBuilder.builder(TagType.VarDecl, getFilePosition())
+       .addChild(toInitOrIdPatt()).build();
+  }
+
+  JsonML toInitOrIdPatt() {
+    Expression initializer = getInitializer();
+    JsonML id = getIdentifier().toJsonML();
+    if (initializer != null) {
+      return JsonMLBuilder.builder(TagType.InitPatt, getFilePosition())
+          .addChild(id)
+          .addChild(initializer)
+          .build();
+    } else {
+      return id;
+    }
+  }
 }

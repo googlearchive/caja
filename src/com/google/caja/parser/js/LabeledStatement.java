@@ -18,6 +18,9 @@ import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.escaping.Escaping;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.reporting.RenderContext;
+import com.google.javascript.jscomp.jsonml.JsonML;
+import com.google.javascript.jscomp.jsonml.TagAttr;
+import com.google.javascript.jscomp.jsonml.TagType;
 
 import java.util.List;
 import java.util.Map;
@@ -75,5 +78,13 @@ public abstract class LabeledStatement extends AbstractStatement {
     StringBuilder escapedLabel = new StringBuilder();
     Escaping.escapeJsIdentifier(label, rc.isAsciiOnly(), escapedLabel);
     return escapedLabel.toString();
+  }
+
+  protected JsonML wrapIfLabelled(JsonML unlabelled) {
+    if (label == null || "".equals(label)) { return unlabelled; }
+    return JsonMLBuilder.builder(TagType.LabelledStmt, getFilePosition())
+        .setAttribute(TagAttr.LABEL, label)
+        .addChild(unlabelled)
+        .build();
   }
 }

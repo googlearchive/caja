@@ -27,10 +27,12 @@ import com.google.caja.render.SourceSpansRenderer;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.Callback;
 import com.google.caja.util.Lists;
+import com.google.javascript.jscomp.jsonml.JsonML;
 
 import java.io.IOException;
 import java.net.URI;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -44,7 +46,8 @@ import java.util.Map;
  *
  * @author ihab.awad@gmail.com
  */
-public final class CajoledModule extends AbstractParseTreeNode {
+public final class CajoledModule extends AbstractParseTreeNode
+    implements JsonMLCompatible {
   // A stub file name by which to call the (otherwise anonymous) cajoled output.
   private static final InputSource CAJOLED_OUTPUT_FILE_NAME =
       new InputSource(URI.create("file:///CAJOLED-OUTPUT"));
@@ -141,6 +144,16 @@ public final class CajoledModule extends AbstractParseTreeNode {
             "___.loadModule(@body)",
             "body", getModuleBody()),
         rc);
+  }
+
+  public JsonML toJsonML() {
+    Expression loadModuleCall = (Expression) QuasiBuilder.substV(
+        "___.loadModule(@body)",
+        "body", getModuleBody());
+    Block program = new Block(
+        loadModuleCall.getFilePosition(),
+        Collections.singletonList(new ExpressionStmt(loadModuleCall)));
+    return program.toJsonMLAsProgram();
   }
 
   /**
