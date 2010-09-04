@@ -70,7 +70,6 @@ public final class BreakStmt extends AbstractStatement {
 
   public boolean hasHangingConditional() { return false; }
 
-  @Override
   public JsonML toJsonML() {
     return JsonMLBuilder.builder(TagType.BreakStmt, getFilePosition())
         .setAttributeIfNotBlank(TagAttr.LABEL, label).build();

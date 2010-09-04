@@ -1494,7 +1494,6 @@ public final class Parser extends ParserBase {
 
     public String typeOf() { return null; }
 
-    @Override
     public JsonML toJsonML() { throw new UnsupportedOperationException(); }
   }
 

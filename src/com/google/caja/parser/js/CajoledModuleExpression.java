@@ -70,7 +70,6 @@ public class CajoledModuleExpression extends AbstractExpression {
 
   public String typeOf() { return null; }
 
-  @Override
   public JsonML toJsonML() {
     FilePosition pos = getFilePosition();
     JsonML prepareModuleFnName = JsonMLBuilder.builder(

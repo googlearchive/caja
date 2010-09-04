@@ -73,7 +73,6 @@ public class DoWhileLoop extends Loop {
 
   public boolean hasHangingConditional() { return false; }
 
-  @Override
   public JsonML toJsonML() {
     return wrapIfLabelled(JsonMLBuilder.builder(
         TagType.DoWhileStmt, getFilePosition())

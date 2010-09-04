@@ -108,7 +108,6 @@ public final class DirectivePrologue extends AbstractStatement {
 
   public boolean hasHangingConditional() { return false; }
 
-  @Override
   public JsonML toJsonML() {
     throw new UnsupportedOperationException();
   }

@@ -84,7 +84,6 @@ public final class MultiDeclaration extends AbstractStatement {
 
   public boolean hasHangingConditional() { return false; }
 
-  @Override
   public JsonML toJsonML() {
     JsonMLBuilder builder = JsonMLBuilder.builder(
         TagType.VarDecl, getFilePosition());

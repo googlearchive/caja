@@ -106,7 +106,6 @@ public final class SwitchStmt extends LabeledStatement {
   public boolean hasHangingConditional() { return false; }
 
   @SuppressWarnings("unchecked")
-  @Override
   public JsonML toJsonML() {
     return wrapIfLabelled(
         JsonMLBuilder.builder(TagType.SwitchStmt, getFilePosition())

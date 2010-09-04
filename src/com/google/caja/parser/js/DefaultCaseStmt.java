@@ -57,7 +57,6 @@ public final class DefaultCaseStmt extends SwitchCase {
     rc.getOut().consume("default");
   }
 
-  @Override
   public JsonML toJsonML() {
     return JsonMLBuilder.builder(TagType.DefaultCase, getFilePosition())
         .addChildren(body.children())

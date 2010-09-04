@@ -85,7 +85,6 @@ public final class Reference extends AbstractExpression {
 
   public String typeOf() { return null; }
 
-  @Override
   public JsonML toJsonML() {
     String name = getIdentifierName();
     if (Keyword.THIS.toString().equals(name)) {

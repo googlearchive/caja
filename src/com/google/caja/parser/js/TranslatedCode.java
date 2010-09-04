@@ -83,5 +83,5 @@ public final class TranslatedCode extends AbstractStatement {
     return true;
   }
 
-  @Override public JsonML toJsonML() { return getTranslation().toJsonML(); }
+  public JsonML toJsonML() { return getTranslation().toJsonML(); }
 }

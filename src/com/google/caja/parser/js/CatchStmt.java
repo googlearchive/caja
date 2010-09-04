@@ -74,7 +74,6 @@ public final class CatchStmt extends AbstractStatement {
 
   public boolean hasHangingConditional() { return false; }
 
-  @Override
   public JsonML toJsonML() {
     return JsonMLBuilder.builder(TagType.CatchClause, getFilePosition())
         .addChild(exception.getIdentifier())

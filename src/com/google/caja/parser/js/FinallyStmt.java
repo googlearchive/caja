@@ -59,5 +59,5 @@ public final class FinallyStmt extends AbstractStatement {
 
   public boolean hasHangingConditional() { return false; }
 
-  @Override public JsonML toJsonML() { return body.toJsonML(); }
+  public JsonML toJsonML() { return body.toJsonML(); }
 }

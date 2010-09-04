@@ -47,7 +47,6 @@ public final class Noop extends AbstractStatement {
 
   @Override public boolean isTerminal() { return true; }
 
-  @Override
   public JsonML toJsonML() {
     return JsonMLBuilder.builder(TagType.EmptyStmt, getFilePosition()).build();
   }

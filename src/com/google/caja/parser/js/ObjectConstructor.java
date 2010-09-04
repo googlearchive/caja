@@ -104,7 +104,6 @@ public final class ObjectConstructor extends AbstractExpression {
 
   public String typeOf() { return "object"; }
 
-  @Override
   public JsonML toJsonML() {
     return JsonMLBuilder.builder(TagType.ObjectExpr, getFilePosition())
         .addChildren(children()).build();

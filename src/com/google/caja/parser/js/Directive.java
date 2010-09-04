@@ -118,7 +118,6 @@ public final class Directive extends AbstractParseTreeNode
     return new JsPrettyPrinter(new Concatenator(out, exHandler));
   }
 
-  @Override
   public JsonML toJsonML() {
     return JsonMLBuilder.builder(TagType.PrologueDecl, getFilePosition())
         .setAttribute(TagAttr.VALUE, StringLiteral.unescapeJsString(getValue()))

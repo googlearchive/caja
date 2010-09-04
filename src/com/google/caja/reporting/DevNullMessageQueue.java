@@ -110,7 +110,6 @@ public final class DevNullMessageQueue implements MessageQueue {
     // do nothing
   }
 
-  @Override
   public void addMessage(Message msg) {
     // do nothing
   }

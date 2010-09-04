@@ -79,7 +79,6 @@ public final class LabeledStmtWrapper extends LabeledStatement {
     return body.hasHangingConditional();
   }
 
-  @Override
   public JsonML toJsonML() {
     return wrapIfLabelled(body.toJsonML());
   }

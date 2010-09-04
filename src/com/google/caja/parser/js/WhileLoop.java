@@ -74,7 +74,6 @@ public class WhileLoop extends Loop {
     return body.hasHangingConditional();
   }
 
-  @Override
   public JsonML toJsonML() {
     return wrapIfLabelled(
         JsonMLBuilder.builder(TagType.WhileStmt, getFilePosition())

@@ -79,7 +79,6 @@ public final class ArrayConstructor extends AbstractExpression {
 
   public String typeOf() { return "object"; }
 
-  @Override
   public JsonML toJsonML() {
     JsonMLBuilder builder = JsonMLBuilder.builder(
         TagType.ArrayExpr, getFilePosition());

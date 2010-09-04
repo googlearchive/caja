@@ -88,7 +88,6 @@ public final class GetterProperty extends ObjProperty {
     fn.renderBody(r);
   }
 
-  @Override
   public JsonML toJsonML() {
     return JsonMLBuilder.builder(TagType.GetterProp, getFilePosition())
         .setAttribute(TagAttr.NAME, this.getPropertyName())

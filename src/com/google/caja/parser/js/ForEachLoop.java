@@ -109,7 +109,6 @@ public final class ForEachLoop extends LabeledStatement implements NestedScope {
     return body.hasHangingConditional();
   }
 
-  @Override
   public JsonML toJsonML() {
     return wrapIfLabelled(
         JsonMLBuilder.builder(TagType.ForInStmt, getFilePosition())

@@ -66,7 +66,6 @@ public final class NullLiteral extends Literal {
 
   public String typeOf() { return "object"; }
 
-  @Override
   public JsonML toJsonML() {
     return JsonMLBuilder.builder(TagType.LiteralExpr, getFilePosition())
         .setAttribute(TagAttr.TYPE, "null")

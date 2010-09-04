@@ -69,7 +69,6 @@ public final class ContinueStmt extends AbstractStatement {
 
   public boolean hasHangingConditional() { return false; }
 
-  @Override
   public JsonML toJsonML() {
     return JsonMLBuilder.builder(TagType.ContinueStmt, getFilePosition())
         .setAttributeIfNotBlank(TagAttr.LABEL, label).build();

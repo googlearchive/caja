@@ -59,6 +59,5 @@ public final class QuotedExpression extends AbstractExpression {
 
   public String typeOf() { return null; }
 
-  @Override
   public JsonML toJsonML() { return unquote().toJsonML(); }
 }

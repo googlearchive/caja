@@ -107,7 +107,6 @@ public final class Block extends AbstractStatement implements NestedScope {
 
   public boolean hasHangingConditional() { return false; }
 
-  @Override
   public JsonML toJsonML() {
     return JsonMLBuilder.builder(TagType.BlockStmt, getFilePosition())
         .addChildren(children()).build();

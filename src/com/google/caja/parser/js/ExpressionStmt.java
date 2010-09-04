@@ -88,5 +88,5 @@ public final class ExpressionStmt extends AbstractStatement {
 
   public boolean hasHangingConditional() { return false; }
 
-  @Override public JsonML toJsonML() { return expr.toJsonML(); }
+  public JsonML toJsonML() { return expr.toJsonML(); }
 }

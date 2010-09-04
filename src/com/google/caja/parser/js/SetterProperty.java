@@ -88,7 +88,6 @@ public final class SetterProperty extends ObjProperty {
     fn.renderBody(r);
   }
 
-  @Override
   public JsonML toJsonML() {
     return JsonMLBuilder.builder(TagType.SetterProp, getFilePosition())
         .setAttribute(TagAttr.NAME, this.getPropertyName())

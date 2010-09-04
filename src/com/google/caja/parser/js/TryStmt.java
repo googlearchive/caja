@@ -97,7 +97,6 @@ public final class TryStmt extends AbstractStatement {
 
   public boolean hasHangingConditional() { return false; }
 
-  @Override
   public JsonML toJsonML() {
     JsonMLBuilder builder = JsonMLBuilder.builder(
         TagType.TryStmt, getFilePosition());

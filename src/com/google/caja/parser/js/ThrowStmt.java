@@ -64,7 +64,6 @@ public final class ThrowStmt extends AbstractStatement {
 
   public boolean hasHangingConditional() { return false; }
 
-  @Override
   public JsonML toJsonML() {
     return JsonMLBuilder.builder(TagType.ThrowStmt, getFilePosition())
         .addChildIfNotNull(exception).build();

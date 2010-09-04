@@ -107,7 +107,6 @@ public class Declaration extends AbstractStatement {
 
   public boolean hasHangingConditional() { return false; }
 
-  @Override
   public JsonML toJsonML() {
     return JsonMLBuilder.builder(TagType.VarDecl, getFilePosition())
        .addChild(toInitOrIdPatt()).build();

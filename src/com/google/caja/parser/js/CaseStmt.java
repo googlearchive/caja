@@ -76,7 +76,6 @@ public final class CaseStmt extends SwitchCase {
   @Override
   public Object getValue() { return null; }
 
-  @Override
   public JsonML toJsonML() {
     return JsonMLBuilder.builder(TagType.Case, getFilePosition())
         .addChild(caseValue)

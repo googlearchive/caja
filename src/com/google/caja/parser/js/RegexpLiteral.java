@@ -171,7 +171,6 @@ public final class RegexpLiteral extends Literal {
   // "function" on some interpreters, "object" on others.
   public String typeOf() { return null; }
 
-  @Override
   public JsonML toJsonML() {
     return JsonMLBuilder.builder(TagType.RegExpExpr, getFilePosition())
         .setAttribute(TagAttr.BODY, value.getMatchText())

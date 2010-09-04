@@ -51,7 +51,6 @@ public class ValueProperty extends ObjProperty {
     }
   }
 
-  @Override
   public JsonML toJsonML() {
     return JsonMLBuilder.builder(TagType.DataProp, getFilePosition())
         .setAttribute(TagAttr.NAME, this.getPropertyName())

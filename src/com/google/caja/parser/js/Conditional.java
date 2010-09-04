@@ -102,7 +102,6 @@ public final class Conditional extends AbstractStatement {
     return ((Statement) children.get(n - 1)).hasHangingConditional();
   }
 
-  @Override
   public JsonML toJsonML() {
     FilePosition tailPos = FilePosition.endOf(getFilePosition());
     JsonML tail;

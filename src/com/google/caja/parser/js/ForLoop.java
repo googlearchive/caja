@@ -105,7 +105,6 @@ public final class ForLoop extends Loop implements NestedScope {
     return body.hasHangingConditional();
   }
 
-  @Override
   public JsonML toJsonML() {
     return wrapIfLabelled(JsonMLBuilder.builder(
         TagType.ForStmt, getFilePosition())

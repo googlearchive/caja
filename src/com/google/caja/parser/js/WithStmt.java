@@ -78,7 +78,6 @@ public final class WithStmt extends AbstractStatement
     return getBody().hasHangingConditional();
   }
 
-  @Override
   public JsonML toJsonML() {
     return JsonMLBuilder.builder(TagType.WithStmt, getFilePosition())
         .addChild(getScopeObject()).addChild(getBody()).build();

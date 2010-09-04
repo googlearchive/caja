@@ -73,7 +73,6 @@ public final class ReturnStmt extends AbstractStatement {
 
   public boolean hasHangingConditional() { return false; }
 
-  @Override
   public JsonML toJsonML() {
     return JsonMLBuilder.builder(TagType.ReturnStmt, getFilePosition())
         .addChildIfNotNull(returnValue)
