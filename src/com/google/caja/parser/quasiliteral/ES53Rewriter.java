@@ -134,6 +134,7 @@ public class ES53Rewriter extends Rewriter {
 
     if (scope.hasFreeArguments()) {
       stmts.add(QuasiBuilder.substV(
+          "___.deodorize(@ga, -6);" +
           "var @la = ___.args(@ga);",
           "la", s(new Identifier(
               FilePosition.UNKNOWN, ReservedNames.LOCAL_ARGUMENTS)),

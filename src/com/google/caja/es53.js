@@ -38,13 +38,38 @@
 var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
 
 (function () {
-  // ES5/3 does not support FF2 or 3.0 because of
+  // Workarounds for FF2 and FF3.0 for
   // https://bugzilla.mozilla.org/show_bug.cgi?id=507453
-  if (arguments[-2] !== void 0) {
-    // TODO: Make this an error.
-    alert('Firefox versions that use negative indices ' +
-        'on arguments are not supported.');
+
+  var antidote = function() { return void 0; };
+  function deodorize(original, end) {
+    if (original.__defineGetter__) {
+      for (var i = end; i < 0; ++i) {
+        original.__defineGetter__(i, antidote);
+      }
+    }
   }
+  
+  function isDeodorized(original, sprop) {
+    if (original.__lookupGetter__) {
+      return original.__lookupGetter__(sprop) === antidote;
+    }
+    return false;
+  }
+  
+  // Blacklist built from:
+  // http://www.thespanner.co.uk/2009/07/14/hidden-firefox-properties-revisited/
+  // [args, actuals length, callee, formals length, func name, caller]
+  deodorize(Function.prototype, -6);
+
+  // [string length]
+  deodorize(String.prototype, -1);
+
+  // [source, global, ignore case, last index, multiline, sticky]
+  deodorize(RegExp.prototype, -6);
+
+  // [input, multiline, last match, last capture, lcontext, rcontext]
+  deodorize(RegExp, -6);
 
   /**
    * Caja-specific properties
@@ -2094,8 +2119,13 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
       // 3. If desc.[[Configurable]] is true, then
       if (desc.configurable) {
         if (isNumericName(P)) {
-          delete O[P];
-          return true;
+          if (isDeodorized(O, P)) {
+            throw new TypeError("Cannot delete Firefox-specific antidote '"
+                + P + "' on " + O);
+          } else {
+            delete O[P];
+            return true;
+          }
         }
         // a. Remove the own property with name P from O.
         delete O[P];
@@ -4403,6 +4433,7 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
       BREAK: BREAK,
       tameException: tameException,
       args: args,
+      deodorize: deodorize,
       wrap: wrap,
       copy: copy,
       i: isIn,

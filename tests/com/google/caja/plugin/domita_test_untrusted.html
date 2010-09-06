@@ -461,6 +461,10 @@ Test row cell
 
 <p class="testcontainer" id="test-negative-indices">Test negative indices</p>
 
+<p class="testcontainer" id="test-negative-indices-workaround">
+  Test negative indices workaround for Firefox
+</p>
+
 <div class="testcontainer" id="test-iframe-shim">Test Iframe Shim</div>
 
 <!-- this sequence of interleaved html/text/script triggers bug 1060 -->
@@ -3213,10 +3217,40 @@ jsunitRegister('testNegativeIndices',
     for (i = -1; i > -10; --i) {
       assertEquals(f[i], void 0);
       assertEquals(void 0, (new RegExp('.'))[i]);
+      assertEquals(void 0, "abc"[i]);
+      assertEquals(void 0, (new String('abc'))[i]);
+      assertEquals(void 0, RegExp[i]);
       assertEquals(void 0, arguments[i]);
     }
   })();
   pass('test-negative-indices');
+});
+
+jsunitRegister('testNegativeIndicesWorkaround',
+               function testNegativeIndices() {
+  // Test potential weakness of the ES53 workaround for the negative index bug
+  var i;
+  function f(a, b, c) {}
+  (function () {
+    for (i = -1; i > -10; --i) {
+      assertFailsSafe(
+          function() { delete f[i]; },
+          function() { assertEquals(f[i], void 0); });
+      assertFailsSafe(
+          function() { delete (new RegExp('.'))[i]; },
+          function() { assertEquals(void 0, (new RegExp('.'))[i]); });
+      assertFailsSafe(
+          function() { delete "abc"[i]; },
+          function() { assertEquals(void 0, "abc"[i]); });
+      assertFailsSafe(
+          function() { delete RegExp[i]; },
+          function() { assertEquals(void 0, RegExp[i]); });
+      assertFailsSafe(
+          function() { delete arguments[i]; },
+          function() { assertEquals(void 0, arguments[i]); });
+    }
+  })();
+  pass('test-negative-indices-workaround');
 });
 
 jsunitRegister('testIframeShim',
