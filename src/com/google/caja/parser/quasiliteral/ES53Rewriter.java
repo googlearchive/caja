@@ -747,6 +747,7 @@ public class ES53Rewriter extends Rewriter {
       }
     },
 
+    // TODO(metaweta): Use fastpath
     new Rule() {
       @Override
       @RuleDescription(
@@ -939,6 +940,7 @@ public class ES53Rewriter extends Rewriter {
       }
     },
 
+    // TODO (metaweta): Use fastpath.
     new Rule() {
       @Override
       @RuleDescription(
@@ -963,6 +965,7 @@ public class ES53Rewriter extends Rewriter {
       }
     },
 
+    // TODO (metaweta): Use fastpath.
     new Rule() {
       @Override
       @RuleDescription(
@@ -1613,6 +1616,9 @@ public class ES53Rewriter extends Rewriter {
     // function - function definitions
     ////////////////////////////////////////////////////////////////////////
 
+    // TODO (metaweta): Do a lighter-weight wrapping when the function
+    // does not use {@code this}.
+
     new Rule() {
       @Override
       @RuleDescription(
@@ -1647,6 +1653,8 @@ public class ES53Rewriter extends Rewriter {
     // {@code wrap}. The anonymous function around the call to {@code wrap}
     // is a maker that takes a function {@code fname}.  The fixed point of this
     // maker is the desired potentially recursive function.
+    
+    // TODO:(metaweta) Only use Y combinator if it's really recursive. 
     new Rule() {
       @Override
       @RuleDescription(

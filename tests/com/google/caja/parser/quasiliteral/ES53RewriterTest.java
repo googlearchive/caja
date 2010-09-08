@@ -1,18 +1,48 @@
+// Copyright (C) 2007 Google Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package com.google.caja.parser.quasiliteral;
 
 import java.io.IOException;
 import java.net.URI;
+import java.util.Arrays;
+import java.util.EnumSet;
 import java.util.List;
+
+import junit.framework.AssertionFailedError;
 
 import com.google.caja.lexer.ExternalReference;
 import com.google.caja.lexer.FetchedData;
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.ParseException;
+import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.js.Block;
+import com.google.caja.parser.js.FormalParam;
+import com.google.caja.parser.js.FunctionConstructor;
+import com.google.caja.parser.js.FunctionDeclaration;
+import com.google.caja.parser.js.Identifier;
+import com.google.caja.parser.js.Operation;
+import com.google.caja.parser.js.Operator;
+import com.google.caja.parser.js.Reference;
+import com.google.caja.parser.js.ReturnStmt;
 import com.google.caja.parser.js.Statement;
+import com.google.caja.parser.js.SyntheticNodes;
 import com.google.caja.parser.js.UncajoledModule;
 import com.google.caja.plugin.UriFetcher;
+import com.google.caja.reporting.MessageLevel;
+import com.google.caja.reporting.MessageType;
 import com.google.caja.reporting.TestBuildInfo;
 import com.google.caja.util.Executor;
 import com.google.caja.util.Lists;
@@ -43,6 +73,1014 @@ public class ES53RewriterTest extends CommonJsRewriterTestCase {
     super.setUp();
     es53Rewriter = new ES53Rewriter(TestBuildInfo.getInstance(), mq, false);
     setRewriter(es53Rewriter);
+  }
+
+  public final void testToString() throws Exception {
+    assertConsistent(
+        "var z = { toString: function () { return 'blah'; } };" +
+        "try {" +
+        "  '' + z;" +
+        "} catch (e) {" +
+        "  throw new Error('PlusPlus error: ' + e);" +
+        "}");
+    assertConsistent(
+        "  function foo() {"
+        + "  var x = 1;"
+        + "  return {"
+        + "    toString: function () {"
+        + "      return x;"
+        + "    }"
+        + "  };"
+        + "}"
+        + "'' + (new foo);");
+  }
+
+  public final void testToStringToxicity() throws Exception {
+    rewriteAndExecute(
+        "",
+        "function objMaker(f) {return {toString:f};}",
+        "assertThrows(function() {testImports.objMaker(function(){return '1';});});"
+        );
+  }
+
+  public final void testInitializeMap() throws Exception {
+    assertConsistent("var zerubabel = {bobble:2, apple:1}; zerubabel.apple;");
+  }
+
+  public final void testValueOf() throws Exception {
+    assertConsistent("''+{valueOf:function(){return 5;}}");
+  }
+
+  public final void testAssertEqualsCajoled() throws Exception {
+    try {
+      rewriteAndExecute("assertEquals(1, 2);");
+    } catch (AssertionFailedError e) {
+      return;
+    }
+    fail("Assertions do not work in cajoled mode");
+  }
+
+  public final void testAssertThrowsCajoledNoError() throws Exception {
+    rewriteAndExecute(
+        "  assertThrows(function() { throw 'foo'; });");
+    rewriteAndExecute(
+        "  assertThrows("
+        + "    function() { throw 'foo'; },"
+        + "    'foo');");
+  }
+
+  public final void testAssertThrowsCajoledErrorNoMsg() throws Exception {
+    try {
+      rewriteAndExecute("assertThrows(function() {});");
+    } catch (AssertionFailedError e) {
+      return;
+    }
+    fail("Assertions do not work in cajoled mode");
+  }
+
+  public final void testAssertThrowsCajoledErrorWithMsg() throws Exception {
+    try {
+      rewriteAndExecute("assertThrows(function() {}, 'foo');");
+    } catch (AssertionFailedError e) {
+      return;
+    }
+    fail("Assertions do not work in cajoled mode");
+  }
+
+  public final void testConstructionWithFunction() throws Exception {
+    assertConsistent(
+        "  function Point() {}"
+        + "var p = new Point();"
+        + "(p !== undefined);");
+    assertConsistent(
+        "  var Point = function() {};"
+        + "var p = new Point();"
+        + "(p !== undefined);");
+  }
+
+  public final void testReflectiveMethodInvocation() throws Exception {
+    assertConsistent(
+        "(function (first, second) { return 'a' + first + 'b' + second; })"
+        + ".call([], 8, 9);");
+    assertConsistent(
+        "var a = []; [].push.call(a, 5, 6); a;");
+    assertConsistent(
+        "(function (a, b) { return 'a' + a + 'b' + b; }).apply([], [8, 9]);");
+    assertConsistent(
+        "var a = []; [].push.apply(a, [5, 6]); a;");
+    assertConsistent(
+        "[].sort.apply([6, 5]);");
+    assertConsistent(
+        "(function (first, second) { return 'a' + first + 'b' + second; })"
+        + ".bind([], 8)(9);");
+  }
+
+  /**
+   * Tests that <a href=
+   * "http://code.google.com/p/google-caja/issues/detail?id=242"
+   * >bug#242</a> is fixed.
+   * <p>
+   * The actual Function.bind() method used to be whitelisted and written to return a frozen
+   * simple-function, allowing it to be called from all code on all functions. As a result,
+   * if an <i>outer hull breach</i> occurs -- if Caja code
+   * obtains a reference to a JavaScript function value not marked as Caja-callable -- then
+   * that Caja code could call the whitelisted bind() on it, and then call the result,
+   * causing an <i>inner hull breach</i> which threatens kernel integrity.
+   */
+  public final void testToxicBind() throws Exception {
+    rewriteAndExecute(
+        "var confused = false;" +
+        "testImports.keystone = function keystone() { confused = true; };",
+        "assertThrows(function() {keystone.bind()();});",
+        "assertFalse(confused);");
+  }
+
+  /**
+   * Tests that <a href=
+   * "http://code.google.com/p/google-caja/issues/detail?id=590"
+   * >bug#590</a> is fixed.
+   * <p>
+   * As a client of an object, Caja code must only be able to directly delete
+   * <i>public</i> properties of non-frozen JSON containers. Due to this bug, Caja
+   * code was able to delete properties in the Caja namespace.
+   */
+  public final void testBadDelete() throws Exception {
+    rewriteAndExecute(
+        "testImports.badContainer = {secret__: 3469};",
+        "assertThrows(function() {delete badContainer['secret__'];});",
+        "assertEquals(testImports.badContainer.secret__, 3469);");
+    rewriteAndExecute(
+        "assertThrows(function() {delete ({})['proto___'];});");
+  }
+
+  /**
+   * Tests that apply works.
+   */
+  public final void testApply() throws Exception {
+    rewriteAndExecute(
+        "",
+        "var x = 0;" +
+        "function f() { x = 1 }\n" +
+        "f.apply({});",
+        "assertEquals(testImports.x, 1);");
+    // TODO(erights): Need more tests.
+  }
+
+  /**
+   * Tests that <a href=
+   * "http://code.google.com/p/google-caja/issues/detail?id=347"
+   * >bug#347</a> is fixed.
+   * <p>
+   * The <tt>in</tt> operator should only test for properties visible to Caja.
+   */
+  public final void testInVeil() throws Exception {
+    rewriteAndExecute(
+        "assertFalse('f___' in Object);");
+  }
+
+  ////////////////////////////////////////////////////////////////////////
+  // Handling of synthetic nodes
+  ////////////////////////////////////////////////////////////////////////
+
+  public final void testSyntheticIsUntouched() throws Exception {
+    String source = "function foo() { this; arguments; }";
+    ParseTreeNode input = js(fromString(source));
+    syntheticTree(input);
+    checkSucceeds(input, js(fromString("var dis___ = IMPORTS___;" + source)));
+  }
+
+  public final void testSyntheticMemberAccess() throws Exception {
+    ParseTreeNode input = js(fromString("({}).foo"));
+    syntheticTree(input);
+    checkSucceeds(input, js(fromString("var dis___ = IMPORTS___; ___.iM([]).foo;")));
+  }
+
+  public final void testSyntheticFormals() throws Exception {
+    FilePosition unk = FilePosition.UNKNOWN;
+    FunctionConstructor fc = new FunctionConstructor(
+        unk,
+        new Identifier(unk, "f"),
+        Arrays.asList(
+            new FormalParam(new Identifier(unk, "x")),
+            new FormalParam(
+                SyntheticNodes.s(new Identifier(unk, "y___")))),
+        new Block(
+            unk,
+            Arrays.<Statement>asList(new ReturnStmt(
+                unk,
+                Operation.createInfix(
+                    Operator.MULTIPLICATION,
+                    Operation.createInfix(
+                        Operator.ADDITION,
+                        new Reference(new Identifier(unk, "x")),
+                        new Reference(SyntheticNodes.s(
+                            new Identifier(unk, "y___")))),
+                    new Reference(new Identifier(unk, "z")))))));
+    checkSucceeds(
+        new Block(
+            unk,
+            Arrays.asList(
+                new FunctionDeclaration((FunctionConstructor) fc.clone()))),
+        js(fromString(
+            ""
+            // x and y___ are formals, but z is free to the function.
+            + "var dis___ = IMPORTS___;"
+            + "IMPORTS___.w___('f', ___.Y(function (f) {"
+            + "  return ___.wrap(function (dis___, x, y___) {"
+            + "    return (x + y___) * ___.ri(IMPORTS___, 'z');"
+            + "  }, 'f');"
+            + "}));")));
+
+    SyntheticNodes.s(fc);
+    checkSucceeds(
+        new Block(
+            unk,
+            Arrays.asList(
+                new FunctionDeclaration((FunctionConstructor) fc.clone()))),
+        js(fromString(
+            ""
+            // x and y___ are formals, but z is free to the function.
+            + "var dis___ = IMPORTS___;"
+            + "function f(x, y___) {"
+            + "  return (x + y___) * ___.ri(IMPORTS___, 'z');"
+            + "}"
+            // Since the function is synthetic, it is not marked.
+            )));
+  }
+
+  ////////////////////////////////////////////////////////////////////////
+  // Specific rules
+  ////////////////////////////////////////////////////////////////////////
+
+  public final void testWith() throws Exception {
+    checkFails("with (dreams || ambiguousScoping) anything.isPossible();",
+               "\"with\" blocks are not allowed");
+    checkFails("with (dreams || ambiguousScoping) { anything.isPossible(); }",
+               "\"with\" blocks are not allowed");
+  }
+
+  public final void testTryCatch() throws Exception {
+    checkAddsMessage(js(fromString(
+        "try {" +
+        "  throw 2;" +
+        "} catch (e) {" +
+        "  var e;" +
+        "}")),
+        MessageType.MASKING_SYMBOL,
+        MessageLevel.ERROR);
+    checkAddsMessage(js(fromString(
+        "var e;" +
+        "try {" +
+        "  throw 2;" +
+        "} catch (e) {" +
+        "}")),
+        MessageType.MASKING_SYMBOL,
+        MessageLevel.ERROR);
+    checkAddsMessage(js(fromString(
+        "try {} catch (x__) { }")),
+        RewriterMessageType.VARIABLES_CANNOT_END_IN_DOUBLE_UNDERSCORE);
+    checkAddsMessage(js(fromString(
+        "var x;" +
+        "try {" +
+        "  g[x + 0];" +
+        "  g[x + 1];" +
+        "} catch (e) {" +
+        "  g[x + 2];" +
+        "  e;" +
+        "  g[x + 3];" +
+        "}" +
+        "var e;")),
+        MessageType.MASKING_SYMBOL,
+        MessageLevel.ERROR);
+    rewriteAndExecute(
+        "var handled = false;" +
+        "try {" +
+        "  throw null;" +
+        "} catch (ex) {" +
+        "  assertEquals(null, ex);" +  // Right value in ex.
+        "  handled = true;" +
+        "}" +
+        "assertTrue(handled);");  // Control reached and left the catch block.
+    rewriteAndExecute(
+        "var handled = false;" +
+        "try {" +
+        "  throw undefined;" +
+        "} catch (ex) {" +
+        "  assertEquals(undefined, ex);" +
+        "  handled = true;" +
+        "}" +
+        "assertTrue(handled);");
+    rewriteAndExecute(
+        "var handled = false;" +
+        "try {" +
+        "  throw true;" +
+        "} catch (ex) {" +
+        "  assertEquals(true, ex);" +
+        "  handled = true;" +
+        "}" +
+        "assertTrue(handled);");
+    rewriteAndExecute(
+        "var handled = false;" +
+        "try {" +
+        "  throw 37639105;" +
+        "} catch (ex) {" +
+        "  assertEquals(37639105, ex);" +
+        "  handled = true;" +
+        "}" +
+        "assertTrue(handled);");
+    rewriteAndExecute(
+        "var handled = false;" +
+        "try {" +
+        "  throw 'panic';" +
+        "} catch (ex) {" +
+        "  assertEquals('panic', ex);" +
+        "  handled = true;" +
+        "}" +
+        "assertTrue(handled);");
+    rewriteAndExecute(
+        "var handled = false;" +
+        "try {" +
+        "  throw new Error('hello');" +
+        "} catch (ex) {" +
+        "  assertEquals('hello', ex.message);" +
+        "  assertEquals('Error', ex.name);" +
+        "  handled = true;" +
+        "}" +
+        "assertTrue(handled);");
+    rewriteAndExecute(
+        "var handled = false;" +
+        "try {" +
+        "  throw function foo() { throw 'should not be called'; };" +
+        "} catch (ex) {" +
+        "  assertEquals('In lieu of thrown function: foo', ex());" +
+        "  handled = true;" +
+        "}" +
+        "assertTrue(handled);");
+    rewriteAndExecute(
+        "var handled = false;" +
+        "try {" +
+        "  throw { toString: function () { return 'hiya'; }, y: 4 };" +
+        "} catch (ex) {" +
+        "  assertEquals('string', typeof ex);" +
+        "  assertEquals('hiya', ex);" +
+        "  handled = true;" +
+        "}" +
+        "assertTrue(handled);");
+    rewriteAndExecute(
+        "var handled = false;" +
+        "try {" +
+        "  throw { toString: function () { throw new Error(); } };" +
+        "} catch (ex) {" +
+        "  assertEquals('Exception during exception handling.', ex);" +
+        "  handled = true;" +
+        "}" +
+        "assertTrue(handled);");
+  }
+
+  public final void testTryCatchFinally() throws Exception {
+    checkAddsMessage(js(fromString(
+        "try {" +
+        "} catch (e) {" +
+        "  var e;" +
+        "} finally {" +
+        "}")),
+        MessageType.MASKING_SYMBOL,
+        MessageLevel.ERROR);
+    checkAddsMessage(js(fromString(
+        "var e;" +
+        "try {" +
+        "} catch (e) {" +
+        "} finally {" +
+        "}")),
+        MessageType.MASKING_SYMBOL,
+        MessageLevel.ERROR);
+    checkAddsMessage(js(fromString(
+        "try {} catch (x__) { } finally { }")),
+        RewriterMessageType.VARIABLES_CANNOT_END_IN_DOUBLE_UNDERSCORE);
+  }
+
+  public final void testTryFinally() throws Exception {
+    assertConsistent(
+        "var out = 0;" +
+        "try {" +
+        "  try {" +
+        "    throw 2;" +
+        "  } finally {" +
+        "    out = 1;" +
+        "  }" +
+        "  out = 2;" +
+        "} catch (e) {" +
+        "}" +
+        "out;");
+  }
+
+  public final void testVarBadSuffix() throws Exception {
+    checkFails(
+        "function() { foo__; };",
+        "Variables cannot end in \"__\"");
+    // Make sure *single* underscore is okay
+    checkSucceeds(
+        "function() { var foo_ = 3; };",
+        "var dis___ = IMPORTS___;" +
+        "___.wrap(function (dis___) {" +
+        "    var foo_;" +
+        "    foo_ = 3;" +
+        "  }, '');");
+  }
+
+  public final void testVarBadSuffixDeclaration() throws Exception {
+    checkFails(
+        "function foo__() { }",
+        "Variables cannot end in \"__\"");
+    checkFails(
+        "var foo__ = 3;",
+        "Variables cannot end in \"__\"");
+    checkFails(
+        "var foo__;",
+        "Variables cannot end in \"__\"");
+    checkFails(
+        "function() { function foo__() { } };",
+        "Variables cannot end in \"__\"");
+    checkFails(
+        "function() { var foo__ = 3; };",
+        "Variables cannot end in \"__\"");
+    checkFails(
+        "function() { var foo__; };",
+        "Variables cannot end in \"__\"");
+  }
+
+  public final void testVarFuncFreeze() throws Exception {
+    // We can cajole and refer to a function
+    rewriteAndExecute(
+        "function foo() {}" +
+        "foo();");
+    // We can assign a dotted property of a variable
+    rewriteAndExecute(
+        "var foo = {};" +
+        "foo.x = 3;" +
+        "assertEquals(foo.x, 3);");
+    assertConsistent(
+        "function foo() {}" +
+        "var bar = foo;" +
+        "bar.x = 3;" +
+        "bar.x;");
+  }
+
+  public final void testReadBadSuffix() throws Exception {
+    checkFails(
+        "x.y__;",
+        "Properties cannot end in \"__\"");
+  }
+
+  /**
+   * Tests assignment to unmaskable and maskable globals.
+   */
+  public final void testSetBadFreeVariable() throws Exception {
+    // Array is in Scope.UNMASKABLE_IDENTIFIERS
+    checkAddsMessage(
+        js(fromString("Array = function () { return [] };")),
+        RewriterMessageType.CANNOT_MASK_IDENTIFIER);
+    // Throws a ReferenceError
+    rewriteAndExecute("assertThrows(function () { x = 1; })");
+  }
+
+  public final void testSetBadSuffix() throws Exception {
+    checkFails(
+        "x.y__ = z;",
+        "Properties cannot end in \"__\"");
+  }
+
+  public final void testSetBadInitialize() throws Exception {
+    checkFails(
+        "var x__ = 3;",
+        "Variables cannot end in \"__\"");
+  }
+
+  public final void testSetBadDeclare() throws Exception {
+    checkFails(
+        "var x__;",
+        "Variables cannot end in \"__\"");
+  }
+
+  public final void testSetVar() throws Exception {
+    checkAddsMessage(
+        js(fromString("try {} catch (x__) { x__ = 3; }")),
+        RewriterMessageType.VARIABLES_CANNOT_END_IN_DOUBLE_UNDERSCORE);
+  }
+
+  public final void testSetReadModifyWriteLocalVar() throws Exception {
+    checkFails("x__ *= 2;", "");
+    checkFails("x *= y__;", "");
+
+    assertConsistent("var x = 3; x *= 2;");
+    assertConsistent("var x = 1; x += 7;");
+    assertConsistent("var x = 1; x /= '2';");
+    assertConsistent("var o = { x: 'a' }; o.x += 'b'; o;");
+
+    EnumSet<Operator> ops = EnumSet.of(
+        Operator.ASSIGN_MUL,
+        Operator.ASSIGN_DIV,
+        Operator.ASSIGN_MOD,
+        Operator.ASSIGN_SUM,
+        Operator.ASSIGN_SUB,
+        Operator.ASSIGN_LSH,
+        Operator.ASSIGN_RSH,
+        Operator.ASSIGN_USH,
+        Operator.ASSIGN_AND,
+        Operator.ASSIGN_XOR,
+        Operator.ASSIGN_OR
+        );
+    for (Operator op : ops) {
+      assertConsistent("var x = 41, y = 0, g = [17]; x " + op.getSymbol() + " g[y];");
+    }
+  }
+
+  public final void testSetIncrDecr() throws Exception {
+    checkFails("x__--;", "");
+    assertConsistent(
+        "var x = 2;" +
+        "var arr = [--x, x, x--, x, ++x, x, x++, x];" +
+        "assertEquals('1,1,1,0,1,1,1,2', arr.join(','));" +
+        "arr;");
+    assertConsistent(
+        "var x = '2';" +
+        "var arr = [--x, x, x--, x, ++x, x, x++, x];" +
+        "assertEquals('1,1,1,0,1,1,1,2', arr.join(','));" +
+        "arr;");
+  }
+
+  public final void testSetIncrDecrOnLocals() throws Exception {
+    checkFails("++x__;", "");
+    assertConsistent(
+        "(function () {" +
+        "  var x = 2;" +
+        "  var arr = [--x, x, x--, x, ++x, x, x++, x];" +
+        "  assertEquals('1,1,1,0,1,1,1,2', arr.join(','));" +
+        "  return arr;" +
+        "})();");
+  }
+
+  public final void testSetIncrDecrOfComplexLValues() throws Exception {
+    checkFails("arr[x__]--;", "Variables cannot end in \"__\"");
+    checkFails("arr__[x]--;", "Variables cannot end in \"__\"");
+
+    assertConsistent(
+        "(function () {" +
+        "  var o = { x: 2 };" +
+        "  var arr = [--o.x, o.x, o.x--, o.x, ++o.x, o.x, o.x++, o.x];" +
+        "  assertEquals('1,1,1,0,1,1,1,2', arr.join(','));" +
+        "  return arr;" +
+        "})();");
+  }
+
+  public final void testSetIncrDecrOrderOfAssignment() throws Exception {
+    assertConsistent(
+        "(function () {" +
+        "  var arrs = [1, 2];" +
+        "  var j = 0;" +
+        "  arrs[++j] *= ++j;" +
+        "  assertEquals(2, j);" +
+        "  assertEquals(1, arrs[0]);" +
+        "  assertEquals(4, arrs[1]);" +
+        "  return arrs;" +
+        "})();");
+    assertConsistent(
+        "(function () {" +
+        "  var foo = (function () {" +
+        "               var k = 0;" +
+        "               return function () {" +
+        "                 switch (k++) {" +
+        "                   case 0: return [10, 20, 30];" +
+        "                   case 1: return 1;" +
+        "                   case 2: return 2;" +
+        "                   default: throw new Error(k);" +
+        "                 }" +
+        "               };" +
+        "             })();" +
+        "  return foo()[foo()] -= foo();" +
+        "})();"
+        );
+  }
+
+  public final void testDeletePub() throws Exception {
+    checkFails("delete x.foo___;", "Properties cannot end in \"__\"");
+    assertConsistent(
+        "(function() {" +
+        "  var o = { x: 3, y: 4 };" +    // A JSON object.
+        "  function ptStr(o) { return '(' + o.x + ',' + o.y + ')'; }" +
+        "  var history = [ptStr(o)];" +  // Record state before deletion.
+        "  delete o.y;" +                // Delete
+        "  delete o.z;" +                // Not present.  Delete a no-op
+        "  history.push(ptStr(o));" +    // Record state after deletion.
+        "  return history.toString();" +
+        "})();");
+    assertConsistent(
+        "var alert = 'a';" +
+        "var o = { a: 1 };" +
+        "delete o[alert];" +
+        "assertEquals(undefined, o.a);" +
+        "o;");
+  }
+
+  public final void testDeleteFails() throws Exception {
+    rewriteAndExecute(
+        "assertThrows(function (){delete (function f(){}).name;});");
+  }
+
+  public final void testDeleteNonLvalue() throws Exception {
+    checkFails("delete 4;", "Invalid operand to delete");
+  }
+
+  public final void testFuncAnonSimple() throws Exception {
+    assertConsistent(
+        "var foo = (function () {" +
+        "             function foo() {}" +
+        "             foo.x = 3;" +
+        "             return foo;" +
+        "           })();" +
+        "foo();" +
+        "foo.x;");
+  }
+
+  public final void testFuncNamedSimpleDecl() throws Exception {
+    rewriteAndExecute(
+        "(function () {" +
+        "  function foo() {}" +
+        "  Object.freeze(foo);" +
+        "  foo();" +
+        "  try {" +
+        "    foo.x = 3;" +
+        "  } catch (e) { return; }" +
+        "  fail('mutated frozen function');" +
+        "})();");
+    assertConsistent(
+        "function foo() {}" +
+        "foo.x = 3;" +
+        "foo();" +
+        "foo.x;");
+    rewriteAndExecute(
+        "  function f_() { return 31415; }"
+        + "var x = f_();"
+        + "assertEquals(x, 31415);");
+  }
+
+  public final void testMapSingle() throws Exception {
+    checkFails("var o = { x___: p.x, k1: p.y };",
+               "Properties cannot end in \"__\"");
+  }
+
+  public final void testInstanceof() throws Exception {
+    assertConsistent("[ (({}) instanceof Object)," +
+                     "  ((new Date) instanceof Date)," +
+                     "  (({}) instanceof Date)" +
+                     "];");
+    assertConsistent("function foo() {}  (new foo) instanceof foo;");
+    assertConsistent("function foo() {}  !(({}) instanceof foo);");
+  }
+
+  public final void testTypeof() throws Exception {
+    rewriteAndExecute("assertThrows(function () { return typeof ___; })");
+    assertConsistent("typeof true;");
+    assertConsistent("typeof 0;");
+    assertConsistent("typeof undefined;");
+    assertConsistent("typeof null;");
+    assertConsistent("typeof 'string';");
+    assertConsistent("typeof function () {};");
+    assertConsistent("typeof ({});");
+  }
+
+  public final void testMaskingFunction() throws Exception {
+    assertAddsMessage(
+        "function Goo() { function Goo() {} }",
+        MessageType.SYMBOL_REDEFINED,
+        MessageLevel.ERROR );
+    assertAddsMessage(
+        "function Goo() { var Goo = 1; }",
+        MessageType.MASKING_SYMBOL,
+        MessageLevel.LINT );
+    assertMessageNotPresent(
+        "function Goo() { this.x = 1; }",
+        MessageType.MASKING_SYMBOL );
+  }
+
+  public final void testMapBadKeySuffix() throws Exception {
+    checkAddsMessage(
+        js(fromString("var o = { x__: 3 };")),
+        RewriterMessageType.PROPERTIES_CANNOT_END_IN_DOUBLE_UNDERSCORE);
+  }
+
+  public final void testMapNonEmpty() throws Exception {
+    // Ensure that calling an untamed function throws
+    rewriteAndExecute(
+        "testImports.f = function() {};",
+        "assertThrows(function() { f(); });",
+        ";");
+    // Ensure that calling a tamed function in an object literal works
+    rewriteAndExecute(
+        "  var f = function() {};"
+        + "var m = { f : f };"
+        + "m.f();");
+    // Ensure that putting an untamed function into an object literal
+    // causes an exception.
+    rewriteAndExecute(
+        "testImports.f = function() {};",
+        "assertThrows(function(){({ isPrototypeOf : f });});",
+        ";");
+  }
+
+  public final void testLabeledStatement() throws Exception {
+    checkFails("IMPORTS___: 1;", "Labels cannot end in \"__\"");
+    checkFails("IMPORTS___: while (1);", "Labels cannot end in \"__\"");
+    checkFails("while (1) { break x__; }", "Labels cannot end in \"__\"");
+    checkFails("while (1) { continue x__; }", "Labels cannot end in \"__\"");
+    assertConsistent(
+        "var k = 0;" +
+        "a: for (var i = 0; i < 10; ++i) {" +
+        "  b: for (var j = 0; j < 10; ++j) {" +
+        "    if (++k > 5) break a;" +
+        "  }" +
+        "}" +
+        "k;");
+    assertConsistent(
+        "var k = 0;" +
+        "a: for (var i = 0; i < 10; ++i) {" +
+        "  b: for (var j = 0; j < 10; ++j) {" +
+        "    if (++k > 5) break b;" +
+        "  }" +
+        "}" +
+        "k;");
+  }
+
+  /**
+   * Tests that the container can get access to
+   * "virtual globals" defined in cajoled code.
+   */
+  public final void testWrapperAccess() throws Exception {
+    rewriteAndExecute(
+        "",
+        "var x = 'test';",
+        "if (___.getNewModuleHandler().getImports().x != 'test') {" +
+          "fail('Cannot see inside the wrapper');" +
+        "}");
+  }
+
+  /**
+   * Tests that Object.prototype cannot be modified.
+   */
+  public final void testFrozenObjectPrototype() throws Exception {
+    rewriteAndExecute(
+        "var success = false;" +
+        "try {" +
+          "Object.prototype.x = 'X';" +
+        "} catch (e){" +
+          "success = true;" +
+        "}" +
+        "if (!success) { fail('Object.prototype not frozen.'); }");
+  }
+
+  public final void testStamp() throws Exception {
+    rewriteAndExecute(
+        "function Foo(){}" +
+        "var foo = new Foo();" +
+        "Object.freeze(foo);" +
+        "var TestMark = cajaVM.Trademark('Test');" +
+        "var passed = false;" +
+        "try { " +
+        "  cajaVM.stamp([TestMark.stamp], foo);" +
+        "} catch (e) {" +
+        "  if (e.message !== 'Can\\'t stamp frozen objects: [object Object]') {" +
+        "    fail(e.message);" +
+        "  }" +
+        "  passed = true;" +
+        "}" +
+        "if (!passed) { fail ('Able to stamp frozen objects.'); }");
+    rewriteAndExecute(
+        // Shows how privileged or uncajoled code can stamp
+        // frozen objects anyway.
+        "___.getNewModuleHandler().getImports().DefineOwnProperty___('stampAnyway', {" +
+        "    value: ___.markFuncFreeze(function(stamp, obj) {" +
+        "        stamp.mark___(obj);" +
+        "      })," +
+        "    enumerable: false," +
+        "    writable: true," +
+        "    configurable: false" +
+        "  });",
+        "function Foo(){}" +
+        "var foo = new Foo();" +
+        "Object.freeze(foo);" +
+        "var TestMark = cajaVM.Trademark('Test');" +
+        "try { " +
+        "  stampAnyway(TestMark.stamp, foo);" +
+        "} catch (e) {" +
+        "  fail(e.message);" +
+        "}" +
+        "cajaVM.guard(TestMark.guard, foo);",
+        "");
+    rewriteAndExecute(
+        "var foo = {};" +
+        "var TestMark = cajaVM.Trademark('Test');" +
+        "cajaVM.stamp([TestMark.stamp], foo);" +
+        "cajaVM.guard(TestMark.guard, foo);");
+    rewriteAndExecute(
+        "var foo = {};" +
+        "var TestMark = cajaVM.Trademark('Test');" +
+        "cajaVM.stamp([TestMark.stamp], foo);" +
+        "TestMark.guard.coerce(foo);");
+    rewriteAndExecute(
+        "var foo = {};" +
+        "var TestMark = cajaVM.Trademark('Test');" +
+        "var passed = false;" +
+        "try { " +
+        "  cajaVM.guard(TestMark.guard, foo);" +
+        "} catch (e) {" +
+        "  if (e.message !== 'Specimen does not have the \"Test\" trademark') {" +
+        "    fail(e.message);" +
+        "  }" +
+        "  passed = true;" +
+        "}" +
+        "if (!passed) { fail ('Able to forge trademarks.'); }");
+    rewriteAndExecute(
+        "var foo = {};" +
+        "var T1Mark = cajaVM.Trademark('T1');" +
+        "var T2Mark = cajaVM.Trademark('T2');" +
+        "var passed = false;" +
+        "try { " +
+        "  cajaVM.stamp([T1Mark.stamp], foo);" +
+        "  cajaVM.guard(T2Mark.guard, foo);" +
+        "} catch (e) {" +
+        "  if (e.message !== 'Specimen does not have the \"T2\" trademark') {" +
+        "    fail(e.message);" +
+        "  }" +
+        "  passed = true;" +
+        "}" +
+        "if (!passed) { fail ('Able to forge trademarks.'); }");
+    rewriteAndExecute(
+        "var foo = {};" +
+        "var bar = Object.create(foo);" +
+        "var baz = Object.create(bar);" +
+        "var TestMark = cajaVM.Trademark('Test');" +
+        "cajaVM.stamp([TestMark.stamp], bar);" +
+        "assertFalse(cajaVM.passesGuard(TestMark.guard, foo));" +
+        "assertTrue(cajaVM.passesGuard(TestMark.guard, bar));" +
+        "assertFalse(cajaVM.passesGuard(TestMark.guard, baz));");
+  }
+
+  public final void testIndexOf() throws Exception {
+    assertConsistent("''.indexOf('1');");
+  }
+
+  public final void testCallback() throws Exception {
+    // These two cases won't work in Valija since every Valija disfunction has
+    // its own non-generic call and apply methods.
+    assertConsistent(
+        "(function(){}).apply.call(function(a, b) {return a + b;}, {}, [3, 4]);"
+        );
+    assertConsistent(
+        "(function(){}).call.call(function(a, b) {return a + b;}, {}, 3, 4);");
+    rewriteAndExecute("",
+        "var a = [], b = {x:3};\n" +
+        "for (var i in b) { a.push(i, b[i]); };" +
+        "assertEquals(a.toString(), 'x,3');",
+        "");
+  }
+
+  /**
+   * Tests the cajaVM.newTable(opt_useKeyLifetime) abstraction.
+   * <p>
+   * From here, we are not in a position to test the weak-GC properties this
+   * abstraction is designed to provide, nor its O(1) complexity measure.
+   * However, we can test that it works as a simple lookup table.
+   */
+  public final void testTable() throws Exception {
+    rewriteAndExecute(
+        "var t = cajaVM.newTable();" +
+        "var k1 = {};" +
+        "var k2 = {};" +
+        "var k3 = {};" +
+        "t.set(k1, 'v1');" +
+        "t.set(k2, 'v2');" +
+        "assertEquals(t.get(k1), 'v1');" +
+        "assertEquals(t.get(k2), 'v2');" +
+        "assertTrue(t.get(k3) === void 0);");
+    rewriteAndExecute(
+        "var t = cajaVM.newTable(true);" +
+        "var k1 = {};" +
+        "var k2 = {};" +
+        "var k3 = {};" +
+        "t.set(k1, 'v1');" +
+        "t.set(k2, 'v2');" +
+        "assertEquals(t.get(k1), 'v1');" +
+        "assertEquals(t.get(k2), 'v2');" +
+        "assertTrue(t.get(k3) === void 0);");
+    rewriteAndExecute(
+        "var t = cajaVM.newTable();" +
+        "t.set('foo', 'v1');" +
+        "t.set(null, 'v2');" +
+        "assertEquals(t.get('foo'), 'v1');" +
+        "assertEquals(t.get(null), 'v2');" +
+        "assertTrue(t.get({toString: function(){return 'foo';}}) === void 0);");
+    rewriteAndExecute(
+        "var t = cajaVM.newTable(true);" +
+        "assertThrows(function(){t.set('foo', 'v1');});");
+    rewriteAndExecute(
+        "var t = cajaVM.newTable(true);" +
+        "var k1 = {};" +
+        "var k2 = Object.create(k1);" +
+        "var k3 = Object.create(k2);" +
+        "var k4 = Object.create(k3);" +
+        "t.set(k2, 'foo');" +
+        "t.set(k3, 'bar');" +
+        "assertEquals(t.get(k2), 'foo');\n" +
+        "assertEquals(t.get(k3), 'bar');\n" +
+        "assertTrue(t.get(k1) === void 0);\n" +
+        "assertTrue(t.get(k4) === void 0);");
+    rewriteAndExecute(
+        "var t = cajaVM.newTable();" +
+        "var k1 = {};" +
+        "var k2 = Object.create(k1);" +
+        "var k3 = Object.create(k2);" +
+        "var k4 = Object.create(k3);" +
+        "t.set(k2, 'foo');" +
+        "t.set(k3, 'bar');" +
+        "assertEquals(t.get(k2), 'foo');\n" +
+        "assertEquals(t.get(k3), 'bar');\n" +
+        "assertTrue(t.get(k1) === void 0);\n" +
+        "assertTrue(t.get(k4) === void 0);");
+    rewriteAndExecute(
+        "var t1 = cajaVM.newTable(true);" +
+        "var t2 = cajaVM.newTable(true);" +
+        "var k = {};" +
+        "t1.set(k, 'foo');" +
+        "t2.set(k, 'bar');" +
+        "assertEquals(t1.get(k), 'foo');" +
+        "assertEquals(t2.get(k), 'bar');" +
+        "t1.set(k, void 0);" +
+        "assertTrue(t1.get(k) === void 0);" +
+        "assertEquals(t2.get(k), 'bar');");
+    rewriteAndExecute(
+        "var t1 = cajaVM.newTable();" +
+        "var t2 = cajaVM.newTable();" +
+        "var k = {};" +
+        "t1.set(k, 'foo');" +
+        "t2.set(k, 'bar');" +
+        "assertEquals(t1.get(k), 'foo');" +
+        "assertEquals(t2.get(k), 'bar');" +
+        "t1.set(k, void 0);" +
+        "assertTrue(t1.get(k) === void 0);" +
+        "assertEquals(t2.get(k), 'bar');");
+  }
+
+  /**
+   * Tests that begetting works.
+   */
+  public final void testInheritance() throws Exception {
+    rewriteAndExecute(
+        "var x = {a:8}, y = Object.create(x); assertTrue(y.a === 8);");
+  }
+
+  /**
+   * Tests that neither Cajita nor Valija code can cause a privilege
+   * escalation by calling a tamed exophoric function with null as the
+   * this-value.
+   * <p>
+   * The uncajoled branch of the tests below establish that a null does cause
+   * a privilege escalation for normal non-strict JavaScript.
+   */
+  public final void testNoPrivilegeEscalation() throws Exception {
+    rewriteAndExecute("assertTrue([].valueOf.call(null) === cajaVM.USELESS);");
+    rewriteAndExecute("assertTrue([].valueOf.apply(null) === cajaVM.USELESS);");
+    rewriteAndExecute("assertTrue([].valueOf.bind(null)() === cajaVM.USELESS);");
+  }
+
+  /**
+   * Tests that the apparent [[Class]] of the tamed JSON object is 'JSON', as
+   * it should be according to ES5.
+   *
+   * See issue 1086
+   */
+  public final void testJSONClass() throws Exception {
+    // In neither Cajita nor Valija is it possible to mask the real toString()
+    // when used implicitly by a primitive JS coercion rule.
+    rewriteAndExecute("assertTrue(''+JSON === '[object JSON]');");
+    rewriteAndExecute("assertTrue(({}).toString.call(JSON) === '[object JSON]');");
+  }
+
+  /**
+   * Tests that an inherited <tt>*_w___</tt> flag does not enable
+   * bogus writability.
+   * <p>
+   * See <a href="http://code.google.com/p/google-caja/issues/detail?id=1052"
+   * >issue 1052</a>.
+   */
+  public final void testNoCanSetInheritance() throws Exception {
+    rewriteAndExecute(
+            "(function() {" +
+            "  var a = {};" +
+            "  var b = Object.freeze(Object.create(a));" +
+            "  a.x = 8;" +
+            "  assertThrows(function(){b.x = 9;});" +
+            "  assertEquals(b.x, 8);" +
+            "})();");
   }
 
   @Override
@@ -88,7 +1126,6 @@ public class ES53RewriterTest extends CommonJsRewriterTestCase {
           .append("___.grantRead(testImports, '" + f + "');");
     }
     importsSetup.append(
-        "testImports.handleSet___ = void 0;" +
         "___.getNewModuleHandler().setImports(___.whitelistAll(testImports));");
 
     Object result = RhinoTestBed.runJs(

@@ -38,6 +38,9 @@
 var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
 
 (function () {
+  // For computing the [[Class]] internal property
+  var classProp = Object.prototype.toString;
+
   // Workarounds for FF2 and FF3.0 for
   // https://bugzilla.mozilla.org/show_bug.cgi?id=507453
 
@@ -161,11 +164,18 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
    * {@code ___.untame(obj)}              is similar, but goes the other way.
    */
 
-  if (!Array.slice) {
-    Array.slice = function (dis, startIndex, endIndex) {
+  // We have to define it even on Firefox, since the built-in slice doesn't
+  // throw when given null or undefined.
+  Array.slice = markFunc(function (dis, startIndex) { // , endIndex
+      dis = ToObject(dis);
+      if (arguments.length > 2) {
+        var edIndex = aguments[2];
         return Array.prototype.slice.call(dis, startIndex, endIndex);
-      };
-  }
+      } else {
+        return Array.prototype.slice.call(dis, startIndex);
+      }
+    });
+
 
   ////////////////////////////////////////////////////////////////////////
   // Primitive objective membrane
@@ -523,9 +533,6 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
     }
   }
 
-  // For computing the [[Class]] internal property
-  var classProp = Object.prototype.toString;
-
   /**
    * The property descriptor for numerics
    */
@@ -733,7 +740,16 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
     return fn;
   }
 
-  function markFuncFreeze(fn) {
+  function markFuncFreeze(fn, name) {
+    if (name) {
+      name = '' + name;
+      fn.DefineOwnProperty___('name', {
+          get: markFunc(function () { return name; }),
+          set: void 0,
+          enumerable: false,
+          configurable: false
+        });
+    }
     return freeze(markFunc(fn));
   }
 
@@ -888,7 +904,7 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
       } else {
         if (startsWithNUM___.test(i) && endsWith__.test(i)) { continue; }
         m = i.match(endsWith_v___);
-        if (m && obj[i]) { result.push(m[1]); }
+        if (m) { result.push(m[1]); }
       }
     }
     return result;
@@ -903,7 +919,7 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
       } else {
         if (startsWithNUM___.test(i) && endsWith__.test(i)) { continue; }
         m = i.match(endsWith_e___);
-        if (m) { result.push(m[1]); }
+        if (m && obj[i]) { result.push(m[1]); }
       }
     }
     return result;
@@ -1525,14 +1541,14 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
           })
         }),
   
-        guard: {
+        guard: snowWhite({
           toString: markFuncFreeze(function() { return typename + 'T'; }),
           coerce: markFuncFreeze(function(specimen, opt_ejector) {
             if (table.get(specimen)) { return specimen; }
             eject(opt_ejector,
                   'Specimen does not have the "' + typename + '" trademark');
           })
-        }
+        })
       });
   }
 
@@ -1734,7 +1750,7 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
           // problems as with.
 
           // We return a different, powerless function instead.
-          var name = '' + (ex.name || ex);
+          var name = '' + (ex.v___('name') || ex);
           function inLieuOfThrownFunction() {
             return 'In lieu of thrown function: ' + name;
           }
@@ -2113,7 +2129,13 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
       // 2. If desc is undefined, then return true.
       if (!desc) {
         // Temporary support for Cajita's keeper interface.
-        if (this.handleDelete___) { return this.handleDelete___(P); }
+        if (O.handleDelete___) {
+          var result = this.handleDelete___(P);
+          // ES5 strict can't return false.
+          if (!result) {
+            throw new TypeError('Cannot delete ' + P + ' on ' + O);
+          }
+        }
         return true;
       }
       // 3. If desc.[[Configurable]] is true, then
@@ -2369,7 +2391,7 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
     switch(t) {
       case 'Undefined':
       case 'Null':
-        throw new TypeError();
+        throw new TypeError('Cannot convert ' + t + ' to Object.');
       case 'Boolean':
         return new Boolean.new___(input);
       case 'Number':
@@ -2565,33 +2587,13 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
    * bound to the global object. 
    */
   function wrap(disfunction, name) {
+    name = '' + name;
     // For providing to uncajoled code
     function f(var_args) {
       var a = Array.slice(arguments, 0);
       a.unshift('___' in this ? void 0: this);
       return disfunction.apply(USELESS, a);
     }
-    // While we could rely on the whitelisting of call and apply on
-    // Function.prototype, we shouldn't.  In general, we're susceptible
-    // to the situation where objects begotten from tamed objects may have
-    // overridden whitelisted properties without being tamed themselves,
-    // but es53.js will still view them as having been tamed.
-    f.DefineOwnProperty___('call', {
-        value: markFunc(disfunction),
-        writable: true,
-        enumerable: false,
-        configurable: true
-      });
-    f.DefineOwnProperty___('apply', {
-        value: markFunc(function (dis___, as) {
-            var a = Array.slice(as, 0);
-            a.unshift(dis___ === USELESS ? void 0 : dis___);
-            return disfunction.apply(USELESS, a);
-          }),
-        writable: true,
-        enumerable: false,
-        configurable: true
-      });
     // The cajoler translates an invocation
     // g(args) to g.f___(___.USELESS, [args])
     f.f___ = f.apply;
@@ -2616,7 +2618,13 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
         enumerable: false,
         configurable: false
       });
-    f.name = name;
+    // name is not writable on Rhino
+    f.DefineOwnProperty___('name', {
+        get: markFunc(function () { return name; }),
+        set: void 0,
+        enumerable: false,
+        configurable: false
+      });
     return f;
   }
 
@@ -2760,7 +2768,7 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
   Object.create = function (O, opt_Properties) {
       // 1. If Type(O) is not Object or Null throw a TypeError exception.
       // (ES3 doesn't support null prototypes.)
-      if (Type(obj) !== 'Object') {
+      if (Type(O) !== 'Object') {
         throw new TypeError('Expected an object.');
       }
       // 2. Let obj be the result of creating a new object
@@ -3082,6 +3090,7 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
 
   // 15.2.4.5
   virtualize(Object.prototype, 'hasOwnProperty', function (P) {
+      if (isNumericName(P)) { return this.hasOwnProperty(P); }
       return guestHasOwnProperty(this, P);
     });
 
@@ -3153,7 +3162,7 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
       return this.apply(safeDis(dis), Array.slice(arguments, 1));
     });
   virtualize(Function.prototype, 'apply', function (dis, as) {
-      return this.apply(safeDis(dis), Array.slice(as));
+      return this.apply(safeDis(dis), as ? Array.slice(as, 0) : undefined);
     });
   /**
    * Bind this function to <tt>self</tt>, which will serve
@@ -3201,6 +3210,9 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
       enumerable: false,
       configurable: true
     });
+
+  // Array.slice
+  virtualize(Array, 'slice');
 
   // 15.4.4.1
   Array.prototype.DefineOwnProperty___('constructor', {
@@ -3877,6 +3889,55 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
       return RegExp.prototype.test.call(safeDis(this), specimen);
     });
 
+
+  // 15.11 Error
+
+  // 15.11.1, 2
+  markFunc(Error);
+
+  // 15.11.3.1
+  Error.DefineOwnProperty___('prototype', {
+      value: Error.prototype,
+      enumerable: false,
+      configurable: false,
+      writable: true
+    });
+
+  // 15.11.4.1
+  Error.prototype.DefineOwnProperty___('constructor', {
+      value: Error,
+      enumerable: false,
+      configurable: false,
+      writable: true
+    });
+
+  // 15.11.4.2
+  Error.prototype.DefineOwnProperty___('name', {
+      value: 'Error',
+      enumerable: false,
+      configurable: false,
+      writable: true
+    });
+
+  // 15.11.4.3
+  Error.prototype.DefineOwnProperty___('message', {
+      value: '',
+      enumerable: false,
+      configurable: false,
+      writable: true
+    });
+
+  // 15.11.4.4
+  markFunc(Error.prototype.toString);
+
+  // 15.11.6
+  markFunc(EvalError);
+  markFunc(RangeError);
+  markFunc(ReferenceError);
+  markFunc(SyntaxError);
+  markFunc(TypeError);
+  markFunc(URIError);
+
   ////////////////////////////////////////////////////////////////////////
   // Module loading
   ////////////////////////////////////////////////////////////////////////
@@ -4335,8 +4396,6 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
       manifest: manifest,
       allKeys: allKeys,
       allEnumKeys: allEnumKeys,
-      ownKeys: ownKeys,
-      ownEnumKeys: ownEnumKeys
     });
 
   function readImport(imports, name) {
@@ -4412,11 +4471,11 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
         return this[name].f___(this, as);
       }
       var m = this.v___(name);
-      if (!m) {
+      if (typeof m !== 'function') {
         // Temporary support for Cajita's keeper interface
         if (this.handleCall___) { return this.handleCall___(name, as); }
         throw new TypeError(
-            "The property '" + name + "' is falsey, thus not a function.");
+            "The property '" + name + "' is not a function.");
       }
       // Fastpath the method on the object pointed to by name_v___
       // which is truthy iff it's a data property
@@ -4437,7 +4496,6 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
       wrap: wrap,
       copy: copy,
       i: isIn,
-      beget: beget,
       iM: initializeMap,
       markFunc: markFunc,
       markFuncFreeze: markFuncFreeze,
