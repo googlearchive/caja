@@ -421,9 +421,10 @@ public class ES53Rewriter extends Rewriter {
               + "\n"
               + "Note that ES-Harmony will specify a better and safer semantics "
               + "-- block level lexical scoping -- that we'd like to adopt into "
-              + "ES5/3 eventually. However, it is so challenging to implement this "
-              + "semantics by translation to currently-implemented JavaScript "
-              + "that we provide something quicker and dirtier for now.",
+              + "ES5/3 eventually. However, it is so challenging to implement "
+              + "this semantics by translation to currently-implemented "
+              + "JavaScript that we provide something quicker and dirtier "
+              + "for now.",
           matches="{@ss*;}",
           substitutes="@startStmts*; @ss*;")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
@@ -459,7 +460,7 @@ public class ES53Rewriter extends Rewriter {
               + "very hard to write a Scope that works. "
               + "http://yuiblog.com/blog/2006/04/11/with-statement-considered-harmful/ "
               + "briefly touches on why `with` is bad for programmers. For "
-              + "reviewers -- matching of references with declarations can only "
+              + "reviewers: matching of references with declarations can only "
               + "be done at runtime. All other secure JS subsets that we know "
               + "of (ADSafe, Jacaranda, & FBJS) also disallow `with`.",
           matches="with (@scope) @body;",
@@ -677,7 +678,7 @@ public class ES53Rewriter extends Rewriter {
           reason="ES3 specifies that the magic \"arguments\" variable is a "
               + "dynamic (\"joined\") mutable array-like reflection of the "
               + "values of the parameter variables. However, the typical usage "
-              + "is to pass it to provide access to one's original arguments -- "
+              + "is to pass it to provide access to one's original arguments, "
               + "without the intention of providing the ability to mutate the "
               + "caller's parameter variables. By making a fake arguments "
               + "object with no \"callee\" property, we provide the least "
@@ -697,7 +698,8 @@ public class ES53Rewriter extends Rewriter {
       @RuleDescription(
           name="varThis",
           synopsis="Replace \"this\" with \"dis___\".",
-          reason="The rules for binding of \"this\" in JavaScript are dangerous.",
+          reason="The rules for binding of \"this\" in "
+              + "JavaScript are dangerous.",
           matches="this",
           substitutes="dis___")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
@@ -928,7 +930,8 @@ public class ES53Rewriter extends Rewriter {
       public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
         Map<String, ParseTreeNode> bindings = match(node);
         if (bindings != null && bindings.get("import") instanceof Reference) {
-          String name = ((Reference) bindings.get("import")).getIdentifierName();
+          String name =
+              ((Reference) bindings.get("import")).getIdentifierName();
           if (Scope.UNMASKABLE_IDENTIFIERS.contains(name)) {
             mq.addMessage(
                 RewriterMessageType.CANNOT_MASK_IDENTIFIER,
@@ -1049,7 +1052,8 @@ public class ES53Rewriter extends Rewriter {
           Reference p = (Reference) bindings.get("p");
           String propertyName = p.getIdentifierName();
           ParseTreeNode r = bindings.get("r");
-          Pair<Expression, Expression> rPair = reuse(nymize(r, propertyName, "meth"), scope);
+          Pair<Expression, Expression> rPair =
+              reuse(nymize(r, propertyName, "meth"), scope);
           return commas(oPair.b, rPair.b, (Expression) QuasiBuilder.substV(
               "@oRef.@pWritable === @oRef ? (@oRef.@p = @rRef) : " +
               "                           @oRef.w___(@pName, @rRef);",
@@ -1077,7 +1081,8 @@ public class ES53Rewriter extends Rewriter {
           Pair<Expression, Expression> oPair = reuse(bindings.get("o"), scope);
           Expression p = (Expression) bindings.get("p");
           ParseTreeNode r = bindings.get("r");
-          Pair<Expression, Expression> rPair = reuse(nymize(r, "", "meth"), scope);
+          Pair<Expression, Expression> rPair =
+              reuse(nymize(r, "", "meth"), scope);
           return commas(oPair.b, rPair.b, (Expression) QuasiBuilder.substV(
               "@oRef.NUM____w___ === @oRef ? (@oRef[+@p] = @rRef) : " +
               "                           @oRef.w___(+@p, @rRef);",
@@ -1102,13 +1107,15 @@ public class ES53Rewriter extends Rewriter {
         if (bindings != null) {
           ParseTreeNode index = bindings.get("numLiteral");
           if (index instanceof NumberLiteral) {
-            Pair<Expression, Expression> oPair = reuse(bindings.get("o"), scope);
+            Pair<Expression, Expression> oPair =
+                reuse(bindings.get("o"), scope);
             ParseTreeNode r = bindings.get("r");
             Pair<Expression, Expression> rPair =
                 reuse(nymize(r, index.toString(), "meth"), scope);
             return commas(oPair.b, rPair.b, (Expression) QuasiBuilder.substV(
-                "@oRef.NUM____w___ === @oRef ? (@oRef[@numLiteral] = @rRef) : " +
-                "                           @oRef.w___(@numLiteral, @rRef);",
+                "(@oRef.NUM____w___ === @oRef) ? " + 
+                "    (@oRef[@numLiteral] = @rRef) : " +
+                "    @oRef.w___(@numLiteral, @rRef);",
                 "oRef", oPair.a,
                 "rRef", rPair.a,
                 "numLiteral", noexpand((NumberLiteral)index)));
@@ -1286,7 +1293,8 @@ public class ES53Rewriter extends Rewriter {
           name="setReadModifyWriteLocalVar",
           synopsis="",
           reason="",
-          matches="<approx> @x @op= @y",  // TODO(mikesamuel): better lower limit
+          // TODO(mikesamuel): better lower limit
+          matches="<approx> @x @op= @y",
           substitutes="<approx> @x = @x @op @y")
       // Handle x += 3 and similar ops by rewriting them using the assignment
       // delegate, "x += y" => "x = x + y", with deconstructReadAssignOperand
@@ -1616,7 +1624,7 @@ public class ES53Rewriter extends Rewriter {
     // function - function definitions
     ////////////////////////////////////////////////////////////////////////
 
-    // TODO (metaweta): Do a lighter-weight wrapping when the function
+    // TODO(metaweta): Do a lighter-weight wrapping when the function
     // does not use {@code this}.
 
     new Rule() {
@@ -1635,8 +1643,11 @@ public class ES53Rewriter extends Rewriter {
         Map<String, ParseTreeNode> bindings = match(node);
         // Anonymous simple function constructor
         if (bindings != null) {
-          Scope s2 = Scope.fromFunctionConstructor(scope, (FunctionConstructor) node);
-          ParseTreeNodeContainer ps = (ParseTreeNodeContainer) bindings.get("ps");
+          Scope s2 = Scope.fromFunctionConstructor(
+              scope, 
+              (FunctionConstructor) node);
+          ParseTreeNodeContainer ps =
+              (ParseTreeNodeContainer) bindings.get("ps");
           checkFormals(ps);
           return substV(
               "ps", noexpandParams(ps),
@@ -1650,11 +1661,14 @@ public class ES53Rewriter extends Rewriter {
     },
 
     // References to {@code fname} in the body should refer to the result of
-    // {@code wrap}. The anonymous function around the call to {@code wrap}
-    // is a maker that takes a function {@code fname}.  The fixed point of this
-    // maker is the desired potentially recursive function.
-    
-    // TODO:(metaweta) Only use Y combinator if it's really recursive. 
+    // {@code wrap}.
+    //
+    // While under FF3.6/Firebug 1.5 there don't seem to be any issues,
+    // this translation has triggered the "cannot access optimized closure"
+    // bug on other version combinations.
+    // https://bugzilla.mozilla.org/show_bug.cgi?id=505001
+    // Using a Y combinator can fix that, but is harder to understand.
+    // TODO(metaweta): Only use closure if it's really recursive.
     new Rule() {
       @Override
       @RuleDescription(
@@ -1662,13 +1676,14 @@ public class ES53Rewriter extends Rewriter {
           synopsis="",
           reason="",
           matches="function @fname(@ps*) { @bs*; }",
-          substitutes="@fRef = ___.Y(function (@fParam){\n"
-            + "    return ___.wrap(function (dis___, @ps*) {\n"
+          substitutes="@fRef = (function (){\n"
+            + "    var @fname;"
+            + "    return @fRef = ___.wrap(function @fMangle(dis___, @ps*) {\n"
             + "        @fh*;\n"
             + "        @stmts*;\n"
             + "        @bs*;\n"
             + "      }, '@fname');\n"
-            + "  });")
+            + "  })();")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
         if (node instanceof FunctionDeclaration && !scope.isOuter()) {
           Map<String, ParseTreeNode> bindings = match(
@@ -1677,14 +1692,17 @@ public class ES53Rewriter extends Rewriter {
           if (bindings != null) {
             Scope s2 = Scope.fromFunctionConstructor(
                 scope, ((FunctionDeclaration) node).getInitializer());
-            ParseTreeNodeContainer ps = (ParseTreeNodeContainer) bindings.get("ps");
+            ParseTreeNodeContainer ps =
+                (ParseTreeNodeContainer) bindings.get("ps");
             checkFormals(ps);
             Identifier fname = noexpand((Identifier) bindings.get("fname"));
             scope.declareStartOfScopeVariable(fname);
             Expression expr = (Expression) substV(
                 "fname", fname,
-                "fParam", new FormalParam(fname),
                 "fRef", new Reference(fname),
+                "fMangle", new Identifier(  // For Firebug stack traces
+                    fname.getFilePosition(),
+                    fname.getName() + "$_dis"),
                 "ps", noexpandParams(ps),
                 // It's important to expand bs before computing fh and stmts.
                 "bs", withoutNoops(expand(bindings.get("bs"), s2)),
@@ -1706,13 +1724,14 @@ public class ES53Rewriter extends Rewriter {
           synopsis="",
           reason="",
           matches="function @fname(@ps*) { @bs*; }",
-          substitutes="IMPORTS___.w___('@fname', ___.Y(function (@fParam){\n"
-            + "    return ___.wrap(function (dis___, @ps*) {\n"
+          substitutes="IMPORTS___.w___('@fname', (function () {\n"
+            + "    var @fname;"
+            + "    return @fRef = ___.wrap(function @fMangle(dis___, @ps*) {\n"
             + "        @fh*;\n"
             + "        @stmts*;\n"
             + "        @bs*;\n"
             + "      }, '@fname');\n"
-            + "  }));")
+            + "  })());")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
         if (node instanceof FunctionDeclaration && scope.isOuter()) {
           Map<String, ParseTreeNode> bindings = match(
@@ -1721,13 +1740,16 @@ public class ES53Rewriter extends Rewriter {
           if (bindings != null) {
             Scope s2 = Scope.fromFunctionConstructor(
                 scope, ((FunctionDeclaration) node).getInitializer());
-            ParseTreeNodeContainer ps = (ParseTreeNodeContainer) bindings.get("ps");
+            ParseTreeNodeContainer ps =
+                (ParseTreeNodeContainer) bindings.get("ps");
             checkFormals(ps);
             Identifier fname = noexpand((Identifier) bindings.get("fname"));
             Expression expr = (Expression) substV(
                 "fname", fname,
                 "fRef", new Reference(fname),
-                "fParam", new FormalParam(fname),
+                "fMangle", new Identifier( // For Firebug stack traces
+                    fname.getFilePosition(),
+                    fname.getName() + "$_dis"),
                 "ps", noexpandParams(ps),
                 // It's important to expand bs before computing fh and stmts.
                 "bs", withoutNoops(expand(bindings.get("bs"), s2)),
@@ -1749,25 +1771,30 @@ public class ES53Rewriter extends Rewriter {
           synopsis="",
           reason="",
           matches="function @fname(@ps*) { @bs*; }",
-          substitutes="___.Y(function (@fParam) {\n"
-              + "    return ___.wrap(function (dis___, @ps*) {\n"
+          substitutes="(function () {\n"
+              + "    var @fname;"
+              + "    return @fRef = ___.wrap(function @fMangle(dis___, @ps*) {\n"
               + "        @fh*;\n"
               + "        @stmts*;\n"
               + "        @bs*;\n"
-              + "      }, @fStr);"
-              + "  });")
+              + "      }, '@fname');"
+              + "  })();")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
         Map<String, ParseTreeNode> bindings = match(node);
         // Named simple function expression
         if (bindings != null) {
           Scope s2 = Scope.fromFunctionConstructor(
               scope, (FunctionConstructor) node);
-          ParseTreeNodeContainer ps = (ParseTreeNodeContainer) bindings.get("ps");
+          ParseTreeNodeContainer ps =
+              (ParseTreeNodeContainer) bindings.get("ps");
           checkFormals(ps);
           Identifier fname = noexpand((Identifier) bindings.get("fname"));
           return substV(
-              "fParam", new FormalParam(fname),
-              "fStr", toStringLiteral(fname),
+              "fname", fname,
+              "fRef", new Reference(fname),
+              "fMangle", new Identifier( // For Firebug stack traces
+                  fname.getFilePosition(),
+                  fname.getName() + "$_dis"),
               "ps", noexpandParams(ps),
               // It's important to expand bs before computing fh and stmts.
               "bs", withoutNoops(expand(bindings.get("bs"), s2)),

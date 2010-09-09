@@ -2602,10 +2602,17 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
         var sig;
         return markFunc(function () {
             if (sig) { return sig; }
-            return sig = str.replace(/dis___,?\s*/,'')
-                .replace(/function\s*\(/,'function ' + name + '(');
+            // Grab the parameters, then remove dis and an optional comma.
+            var params = str.match(/\(([^\)]*)\)/)[1].replace(/dis___,?\s*/,'');
+            return sig = 'function ' + name + '(' + params + ') {\n' +
+                '  [cajoled code]\n' +
+                '}';
           });
       })(disfunction.toString());
+    // The guest version of Function.prototype.{@code toString} looks here
+    // first.  We do this so that we can return a useful string rather than the
+    // boilerplate body of {@code f} above.
+    f.toString___ = f.toString;
     f.DefineOwnProperty___('prototype', {
         value: f.prototype,
         writable: true,
@@ -3155,7 +3162,13 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
     });
 
   // 15.3.4.2
-  markFunc(Function.prototype.toString);
+  (function () {
+    var orig = Function.prototype.toString;
+    Function.prototype.toString = markFunc(function () {
+        if (this.toString___) { return this.toString___() };
+        return orig.call(this);
+      });
+    })();
 
   // 15.3.4.3--5
   virtualize(Function.prototype, 'call', function (dis, var_args) {
@@ -3227,7 +3240,6 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
 
   // 15.4.4.3--6
   (function () {
-    // Reverse can create own numeric properties.
     var methods = [
         'toLocaleString',
         'concat',
@@ -3240,13 +3252,30 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
   })();
 
   // 15.4.4.7--9
+  
+  // Array generics can add a length property; static accesses are
+  // whitelisted by the cajoler, but dynamic ones need this.
+  function whitelistLengthIfItExists(dis) {
+    if (('length' in dis) && !('length_v___' in dis)) {
+      dis.DefineOwnProperty___('length', {
+          value: dis.length,
+          writable: true,
+          configurable: true,
+          enumerable: true
+        });
+    }
+  }
+
   function guardedVirtualize(obj, name) {
     var orig = obj[name];
     virtualize(obj, name, function (var_args) {
         if (!isExtensible(this)) {
-          throw new TypeError("This array is not extensible.");
+          throw new TypeError("This object is not extensible.");
         }
-        return orig.apply(safeDis(this), arguments);
+        var dis = safeDis(this);
+        var result = orig.apply(dis, arguments);
+        whitelistLengthIfItExists(dis);
+        return result;
       });
   }
 
@@ -3280,14 +3309,16 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
         throw new TypeError(
             'Cannot sort an object that is not extensible.');
       }
-      return comparefn ? 
+      var result = (comparefn ? 
           Array.prototype.sort.call(
               this, 
               markFunc(function(var_args){
                 return comparefn.f___(this, arguments);
               })
             ) :
-          Array.prototype.sort.call(this);
+          Array.prototype.sort.call(this));
+      whitelistLengthIfItExists(this);
+      return result;
     });
 
   // 15.4.4.14
@@ -4395,7 +4426,7 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
       USELESS: USELESS,
       manifest: manifest,
       allKeys: allKeys,
-      allEnumKeys: allEnumKeys,
+      allEnumKeys: allEnumKeys
     });
 
   function readImport(imports, name) {

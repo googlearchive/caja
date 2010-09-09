@@ -68,11 +68,375 @@ public class ES53RewriterTest extends CommonJsRewriterTestCase {
 
   private Rewriter es53Rewriter;
 
-  @Override
-  public void setUp() throws Exception {
-    super.setUp();
-    es53Rewriter = new ES53Rewriter(TestBuildInfo.getInstance(), mq, false);
-    setRewriter(es53Rewriter);
+  /**
+   * Tests that an inherited <tt>*_w___</tt> flag does not enable
+   * bogus writability.
+   * <p>
+   * See <a href="http://code.google.com/p/google-caja/issues/detail?id=1052"
+   * >issue 1052</a>.
+   */
+  public final void testNoFastpathWritableInheritance() throws Exception {
+    rewriteAndExecute(
+            "(function() {" +
+            "  var a = {};" +
+            "  var b = Object.freeze(Object.create(a));" +
+            "  a.x = 8;" +
+            "  assertThrows(function(){b.x = 9;});" +
+            "  assertEquals(b.x, 8);" +
+            "})();");
+  }
+
+  public final void testConstant() throws Exception {
+    assertConsistent("1;");
+  }
+
+  public final void testInit() throws Exception {
+    assertConsistent("var a = 0; a;");
+  }
+
+  public final void testNew() throws Exception {
+    assertConsistent(
+        "function f() { this.x = 1; }" +
+        "var g = new f();" +
+        "g.x;");
+  }
+
+  public final void testThrowCatch() throws Exception {
+    assertConsistent(
+        "var x = 0; try { throw 1; }" +
+        "catch (e) { x = e; }" +
+        "x;");
+    assertConsistent(
+        "var x = 0; try { throw { a: 1 }; }" +
+        "catch (e) { x = e; }" +
+        "'' + x;");
+    assertConsistent(
+        "var x = 0; try { throw 'err'; }" +
+        "catch (e) { x = e; }" +
+        "x;");
+    assertConsistent(
+        "var x = 0; try { throw new Error('err'); }" +
+        "catch (e) { x = e.message; }" +
+        "x;");
+    assertConsistent(
+        "var x = 0; try { throw 1; }" +
+        "catch (e) { x = e; }" +
+        "finally { x = 2; }" +
+        "x;");
+    assertConsistent(
+        "var x = 0; try { throw { a: 1 }; }" +
+        "catch (e) { x = e; }" +
+        "finally { x = 2; }" +
+        "x;");
+    assertConsistent(
+        "var x = 0; try { throw 'err'; }" +
+        "catch (e) { x = e; }" +
+        "finally { x = 2; }" +
+        "x;");
+    assertConsistent(
+        "var x = 0; try { throw new Error('err'); }" +
+        "catch (e) { x = e.message; }" +
+        "finally { x = 2; }" +
+        "x;");
+  }
+
+  public final void testProtoCall() throws Exception {
+    assertConsistent("Array.prototype.sort.call([3, 1, 2]);");
+    assertConsistent("[3, 1, 2].sort();");
+    assertConsistent("[3, 1, 2].sort.call([4, 2, 7]);");
+
+    assertConsistent("String.prototype.indexOf.call('foo', 'o');");
+    assertConsistent("'foo'.indexOf('o');");
+
+    assertConsistent("'foo'.indexOf.call('bar', 'o');");
+    assertConsistent("'foo'.indexOf.call('bar', 'a');");
+  }
+
+  public final void testInherit() throws Exception {
+    assertConsistent(
+        "function Point(x) { this.x = x; }\n" +
+        "Point.prototype.toString = function () {\n" +
+        "  return '<' + this.x + '>';\n" +
+        "};\n" +
+        "function WP(x) { Point.call(this,x); }\n" +
+        "WP.prototype = Object.create(Point.prototype);\n" +
+        "var pt = new WP(3);\n" +
+        "pt.toString();");
+  }
+
+  /** See bug 528 */
+  public final void testRegExpLeak() throws Exception {
+    rewriteAndExecute(
+        "assertEquals('' + (/(.*)/).exec(), 'undefined,undefined');");
+  }
+
+  public final void testClosure() throws Exception {
+    assertConsistent(
+        "function f() {" +
+        "  var y = 2; " +
+        "  this.x = function() {" +
+        "    return y;" +
+        "  }; " +
+        "}" +
+        "var g = new f();" +
+        "var h = {};" +
+        "f.call(h);" +
+        "h.y = g.x;" +
+        "h.x() + h.y();");
+  }
+
+  public final void testNamedFunctionShadow() throws Exception {
+    assertConsistent("function f() { return f; } f === f();");
+    assertConsistent(
+        "(function () { function f() { return f; } return f === f(); })();");
+  }
+
+  public final void testArray() throws Exception {
+    assertConsistent("[3, 2, 1].sort();");
+    assertConsistent("[3, 2, 1].sort.call([4, 2, 7]);");
+  }
+
+  public final void testObject() throws Exception {
+    assertConsistent("({ x: 1, y: 2 });");
+  }
+
+  public final void testFunctionToStringCall() throws Exception {
+    rewriteAndExecute(
+        "function foo() {}\n"
+        + "assertEquals(foo.toString(),\n"
+        + "             'function foo() {\\n  [cajoled code]\\n}');");
+    rewriteAndExecute(
+        "function foo (a, b) { xx; }\n"
+        + "assertEquals(foo.toString(),\n"
+        + "             'function foo(a, b) {\\n  [cajoled code]\\n}');");
+    rewriteAndExecute(
+        "function foo() {}\n"
+        + "assertEquals(Function.prototype.toString.call(foo),\n"
+        + "             'function foo() {\\n  [cajoled code]\\n}');");
+    rewriteAndExecute(
+        "var foo = function (x$x, y_y) {};\n"
+        + "assertEquals("
+        + "    Function.prototype.toString.call(foo),\n"
+        + "    'function foo$_var(x$x, y_y) {\\n  [cajoled code]\\n}');");
+  }
+
+  public final void testDate() throws Exception {
+    assertConsistent("(new Date(0)).getTime();");
+    assertConsistent("'' + (new Date(0));");
+    rewriteAndExecute(
+        ""
+        + "var time = (new Date - 1);"
+        + "assertFalse(isNaN(time));"
+        + "assertEquals('number', typeof time);");
+  }
+
+  public final void testMultiDeclaration2() throws Exception {
+    rewriteAndExecute("var a, b, c;");
+    rewriteAndExecute(
+        ""
+        + "var a = 0, b = ++a, c = ++a;"
+        + "assertEquals(++a * b / c, 1.5);");
+  }
+
+  public final void testDelete() throws Exception {
+    assertConsistent(
+        "(function () { var a = { x: 1 }; delete a.x; return typeof a.x; })();"
+        );
+    assertConsistent("var a = { x: 1 }; delete a.x; typeof a.x;");
+  }
+
+  public final void testIn2() throws Exception {
+    assertConsistent(
+        "(function () {" +
+        "  var a = { x: 1 };\n" +
+        "  return '' + ('x' in a) + ('y' in a);" +
+        "})();");
+    assertConsistent(
+        "var a = { x: 1 };\n" +
+        "[('x' in a), ('y' in a)];");
+  }
+
+  /**
+   * Try to construct some class instances.
+   */
+  public final void testFuncCtor() throws Exception {
+    rewriteAndExecute(
+        "function Foo(x) { this.x = x; }" +
+        "var foo = new Foo(2);" +
+        "if (!foo) { fail('Failed to construct a global object.'); }" +
+        "assertEquals(foo.x, 2);");
+    rewriteAndExecute(
+        "(function () {" +
+        "  function Foo(x) { this.x = x; }" +
+        "  var foo = new Foo(2);" +
+        "  if (!foo) { fail('Failed to construct a local object.'); }" +
+        "  assertEquals(foo.x, 2);" +
+        "})();");
+    rewriteAndExecute(
+        "function Foo() { }" +
+        "var foo = new Foo();" +
+        "if (!foo) {" +
+        "  fail('Failed to use a simple named function as a constructor.');" +
+        "}");
+  }
+
+  public final void testFuncArgs() throws Exception {
+    rewriteAndExecute(
+        ""
+        + "var x = 0;"
+        + "function f() { x = arguments[0]; }"
+        + "f(3);"
+        + "assertEquals(3, x);");
+  }
+
+  public final void testStatic() throws Exception {
+    assertConsistent("Array.slice([3, 4, 5, 6], 1);");
+  }
+
+  public final void testConcatArgs() throws Exception {
+    rewriteAndExecute("", "(function(x, y){ return [x, y]; })",
+        "var f = ___.getNewModuleHandler().getLastValue();"
+        + "function g(var_args) { return f.apply(___.USELESS, arguments); }"
+        + "assertEquals(g(3, 4).toString(), [3, 4].toString());");
+  }
+
+  public final void testReformedGenerics() throws Exception {
+    assertConsistent(
+        "var x = [33];" +
+        "x.foo = [].push;" +
+        "x.foo(44);" +
+        "x;");
+    assertConsistent(
+        "var x = {blue:'green'};" +
+        "x.foo = [].push;" +
+        "x.foo(44);" +
+        "var keys = [];" +
+        "for (var i in x) { if (x.hasOwnProperty(i)) { keys.push(i); } }" +
+        "keys.sort();");
+    assertConsistent(
+        "var x = [33];" +
+        "Array.prototype.push.apply(x, [3,4,5]);" +
+        "x;");
+    assertConsistent(
+        "var x = {blue:'green'};" +
+        "Array.prototype.push.apply(x, [3,4,5]);" +
+        "var keys = [];" +
+        "for (var i in x) { if (x.hasOwnProperty(i)) { keys.push(i); } }" +
+        "keys.sort();");
+    assertConsistent(
+        "var x = {blue:'green'};" +
+        "x.foo = [].push;" +
+        "x.foo.call(x, 44);" +
+        "var keys = [];" +
+        "for (var i in x) { if (x.hasOwnProperty(i)) { keys.push(i); } }" +
+        "keys.sort();");
+  }
+
+  public final void testMonkeyPatchPrimordialFunction() throws Exception {
+    assertConsistent(
+        "isNaN.foo = 'bar';" +
+        "isNaN.foo;");
+  }
+
+  public final void testInMonkeyDelete() throws Exception {
+    assertConsistent(
+        "var x = {y:1 };" +
+        "delete x.y;" +
+        "('y' in x);");
+  }
+
+  public final void testMonkeyOverride() throws Exception {
+    assertConsistent(
+        // TODO(erights): Fix when bug 953 is fixed.
+        "Date.prototype.propertyIsEnumerable = function(p) { return true; };" +
+        "(new Date()).propertyIsEnumerable('foo');");
+  }
+
+  public final void testEmbeddedcajaVM() throws Exception {
+    assertConsistent(
+        ""
+        + "\"use strict,cajaVM\"; \n"
+        + "var foo; \n"
+        + "(function () { \n"
+        + "  foo = function () { return 8; }; \n"
+        + "})(); \n"
+        + "foo();"
+        );
+  }
+
+  /**
+   * Tests that Error objects are frozen
+   *
+   * See issue 1097, issue 1038,
+   *     and {@link CommonJsRewriterTestCase#testErrorTaming()}}.
+   */
+  public final void testErrorFreeze() throws Exception {
+    rewriteAndExecute(
+            "try {" +
+            "  throw new Error('foo');" +
+            "} catch (ex) {" +
+            "  assertTrue(Object.isFrozen(ex));" +
+            "}");
+  }
+
+  /**
+   *
+   */
+  public final void testObjectFreeze() throws Exception {
+    rewriteAndExecute(
+        "var r = Object.freeze({});" +
+        "assertThrows(function(){r.foo = 8;});");
+    rewriteAndExecute(
+        "var f = function(){};" +
+        "f.foo = 8;");
+    rewriteAndExecute(
+        "var f = Object.freeze(function(){});" +
+        "assertThrows(function(){f.foo = 8;});");
+    rewriteAndExecute(
+        "function Point(x,y) {" +
+        "  this.x = x;" +
+        "  this.y = y;" +
+        "}" +
+        "var pt = new Point(3,5);" +
+        "pt.x = 8;" +
+        "Object.freeze(pt);" +
+        "assertThrows(function(){pt.y = 9;});");
+  }
+
+  /**
+   * Tests that the special handling of null on tamed exophora works.
+   * <p>
+   * The reification of tamed exophoric functions contains
+   * special cases for when the first argument to call, bind, or apply
+   * is null or undefined, in order to protect against privilege escalation.
+   * {@code #testNoPrivilegeEscalation()} tests that we do prevent the
+   * privilege escalation. Here, we test that this special case preserves
+   * correct functionality.
+   */
+  public final void testTamedXo4aOkOnNull() throws Exception {
+    rewriteAndExecute("this.foo = 8;",
+
+        "var x = Object.create(cajaVM.USELESS);" +
+        "assertFalse(({foo: 7}).hasOwnProperty.call(null, 'foo'));" +
+        "assertTrue(cajaVM.USELESS.isPrototypeOf(x));" +
+        "assertTrue(({foo: 7}).isPrototypeOf.call(null, x));",
+
+        "assertTrue(({}).hasOwnProperty.call(null, 'foo'));" +
+        "assertFalse(({bar: 7}).hasOwnProperty.call(null, 'bar'));");
+    rewriteAndExecute("this.foo = 8;",
+
+        "var x = Object.create(cajaVM.USELESS);" +
+        "assertFalse(({foo: 7}).hasOwnProperty.apply(null, ['foo']));" +
+        "assertTrue(cajaVM.USELESS.isPrototypeOf(x));" +
+        "assertTrue(({foo: 7}).isPrototypeOf.apply(null, [x]));",
+
+        "assertTrue(({}).hasOwnProperty.apply(null, ['foo']));" +
+        "assertFalse(({bar: 7}).hasOwnProperty.apply(null, ['bar']));");
+    rewriteAndExecute(
+        "var x = Object.create(cajaVM.USELESS);" +
+        "assertFalse(({foo: 7}).hasOwnProperty.bind(null)('foo'));" +
+        "assertTrue(cajaVM.USELESS.isPrototypeOf(x));" +
+        "assertTrue(({foo: 7}).isPrototypeOf.bind(null)(x));");
   }
 
   public final void testToString() throws Exception {
@@ -99,7 +463,9 @@ public class ES53RewriterTest extends CommonJsRewriterTestCase {
     rewriteAndExecute(
         "",
         "function objMaker(f) {return {toString:f};}",
-        "assertThrows(function() {testImports.objMaker(function(){return '1';});});"
+        ""
+        + "assertThrows("
+        + "    function() {testImports.objMaker(function(){return '1';});});"
         );
   }
 
@@ -180,12 +546,14 @@ public class ES53RewriterTest extends CommonJsRewriterTestCase {
    * "http://code.google.com/p/google-caja/issues/detail?id=242"
    * >bug#242</a> is fixed.
    * <p>
-   * The actual Function.bind() method used to be whitelisted and written to return a frozen
-   * simple-function, allowing it to be called from all code on all functions. As a result,
-   * if an <i>outer hull breach</i> occurs -- if Caja code
-   * obtains a reference to a JavaScript function value not marked as Caja-callable -- then
-   * that Caja code could call the whitelisted bind() on it, and then call the result,
-   * causing an <i>inner hull breach</i> which threatens kernel integrity.
+   * The actual Function.bind() method used to be whitelisted and
+   * written to return a frozen simple-function, allowing it to be called
+   * from all code on all functions. As a result, if an <i>outer hull breach</i>
+   * occurs -- if Caja code obtains a reference to a JavaScript
+   * function value not marked as Caja-callable -- then
+   * that Caja code could call the whitelisted bind() on it,
+   * and then call the result, causing an <i>inner hull breach</i>,
+   * which threatens kernel integrity.
    */
   public final void testToxicBind() throws Exception {
     rewriteAndExecute(
@@ -201,8 +569,8 @@ public class ES53RewriterTest extends CommonJsRewriterTestCase {
    * >bug#590</a> is fixed.
    * <p>
    * As a client of an object, Caja code must only be able to directly delete
-   * <i>public</i> properties of non-frozen JSON containers. Due to this bug, Caja
-   * code was able to delete properties in the Caja namespace.
+   * <i>public</i> properties of non-frozen JSON containers. Due to this bug,
+   * Caja code was able to delete properties in the Caja namespace.
    */
   public final void testBadDelete() throws Exception {
     rewriteAndExecute(
@@ -252,7 +620,9 @@ public class ES53RewriterTest extends CommonJsRewriterTestCase {
   public final void testSyntheticMemberAccess() throws Exception {
     ParseTreeNode input = js(fromString("({}).foo"));
     syntheticTree(input);
-    checkSucceeds(input, js(fromString("var dis___ = IMPORTS___; ___.iM([]).foo;")));
+    checkSucceeds(
+        input,
+        js(fromString("var dis___ = IMPORTS___; ___.iM([]).foo;")));
   }
 
   public final void testSyntheticFormals() throws Exception {
@@ -285,11 +655,12 @@ public class ES53RewriterTest extends CommonJsRewriterTestCase {
             ""
             // x and y___ are formals, but z is free to the function.
             + "var dis___ = IMPORTS___;"
-            + "IMPORTS___.w___('f', ___.Y(function (f) {"
-            + "  return ___.wrap(function (dis___, x, y___) {"
-            + "    return (x + y___) * ___.ri(IMPORTS___, 'z');"
-            + "  }, 'f');"
-            + "}));")));
+            + "IMPORTS___.w___('f', (function () {"
+            + "    var f;"
+            + "    return f = ___.wrap(function f$_dis(dis___, x, y___) {"
+            + "        return (x + y___) * ___.ri(IMPORTS___, 'z');"
+            + "      }, 'f');"
+            + "  })());")));
 
     SyntheticNodes.s(fc);
     checkSucceeds(
@@ -591,7 +962,8 @@ public class ES53RewriterTest extends CommonJsRewriterTestCase {
         Operator.ASSIGN_OR
         );
     for (Operator op : ops) {
-      assertConsistent("var x = 41, y = 0, g = [17]; x " + op.getSymbol() + " g[y];");
+      assertConsistent("var x = 41, y = 0, g = [17]; x " +
+          op.getSymbol() + " g[y];");
     }
   }
 
@@ -848,7 +1220,8 @@ public class ES53RewriterTest extends CommonJsRewriterTestCase {
         "try { " +
         "  cajaVM.stamp([TestMark.stamp], foo);" +
         "} catch (e) {" +
-        "  if (e.message !== 'Can\\'t stamp frozen objects: [object Object]') {" +
+        "  if (e.message !== " +
+        "      'Can\\'t stamp frozen objects: [object Object]') {" +
         "    fail(e.message);" +
         "  }" +
         "  passed = true;" +
@@ -857,14 +1230,15 @@ public class ES53RewriterTest extends CommonJsRewriterTestCase {
     rewriteAndExecute(
         // Shows how privileged or uncajoled code can stamp
         // frozen objects anyway.
-        "___.getNewModuleHandler().getImports().DefineOwnProperty___('stampAnyway', {" +
-        "    value: ___.markFuncFreeze(function(stamp, obj) {" +
-        "        stamp.mark___(obj);" +
-        "      })," +
-        "    enumerable: false," +
-        "    writable: true," +
-        "    configurable: false" +
-        "  });",
+        "___.getNewModuleHandler()." +
+        "    getImports().DefineOwnProperty___('stampAnyway', {" +
+        "      value: ___.markFuncFreeze(function(stamp, obj) {" +
+        "          stamp.mark___(obj);" +
+        "        })," +
+        "      enumerable: false," +
+        "      writable: true," +
+        "      configurable: false" +
+        "    });",
         "function Foo(){}" +
         "var foo = new Foo();" +
         "Object.freeze(foo);" +
@@ -893,7 +1267,8 @@ public class ES53RewriterTest extends CommonJsRewriterTestCase {
         "try { " +
         "  cajaVM.guard(TestMark.guard, foo);" +
         "} catch (e) {" +
-        "  if (e.message !== 'Specimen does not have the \"Test\" trademark') {" +
+        "  if (e.message !== " +
+        "      'Specimen does not have the \"Test\" trademark') {" +
         "    fail(e.message);" +
         "  }" +
         "  passed = true;" +
@@ -930,8 +1305,6 @@ public class ES53RewriterTest extends CommonJsRewriterTestCase {
   }
 
   public final void testCallback() throws Exception {
-    // These two cases won't work in Valija since every Valija disfunction has
-    // its own non-generic call and apply methods.
     assertConsistent(
         "(function(){}).apply.call(function(a, b) {return a + b;}, {}, [3, 4]);"
         );
@@ -942,6 +1315,28 @@ public class ES53RewriterTest extends CommonJsRewriterTestCase {
         "for (var i in b) { a.push(i, b[i]); };" +
         "assertEquals(a.toString(), 'x,3');",
         "");
+    assertConsistent(
+        "Function.prototype.apply.call(" +
+        "    function(a, b) {" +
+        "      return a + b;" +
+        "    }, " +
+        "    {}, " +
+        "    [3, 4]);");  
+    assertConsistent(
+        "Function.prototype.call.call(" +
+        "    function(a, b) {" +
+        "      return a + b;" +
+        "    }," +
+        "    {}," +
+        "    3," +
+        "    4);"); 
+    assertConsistent(
+        "Function.prototype.bind.call(" +
+        "    function(a, b) {" +
+        "      return a + b;" +
+        "    }," +
+        "    {}," +
+        "    3)(4);");
   }
 
   /**
@@ -1039,7 +1434,7 @@ public class ES53RewriterTest extends CommonJsRewriterTestCase {
   }
 
   /**
-   * Tests that neither Cajita nor Valija code can cause a privilege
+   * Tests that ES5/3 code can't cause a privilege
    * escalation by calling a tamed exophoric function with null as the
    * this-value.
    * <p>
@@ -1049,7 +1444,8 @@ public class ES53RewriterTest extends CommonJsRewriterTestCase {
   public final void testNoPrivilegeEscalation() throws Exception {
     rewriteAndExecute("assertTrue([].valueOf.call(null) === cajaVM.USELESS);");
     rewriteAndExecute("assertTrue([].valueOf.apply(null) === cajaVM.USELESS);");
-    rewriteAndExecute("assertTrue([].valueOf.bind(null)() === cajaVM.USELESS);");
+    rewriteAndExecute(
+        "assertTrue([].valueOf.bind(null)() === cajaVM.USELESS);");
   }
 
   /**
@@ -1059,10 +1455,9 @@ public class ES53RewriterTest extends CommonJsRewriterTestCase {
    * See issue 1086
    */
   public final void testJSONClass() throws Exception {
-    // In neither Cajita nor Valija is it possible to mask the real toString()
-    // when used implicitly by a primitive JS coercion rule.
     rewriteAndExecute("assertTrue(''+JSON === '[object JSON]');");
-    rewriteAndExecute("assertTrue(({}).toString.call(JSON) === '[object JSON]');");
+    rewriteAndExecute(
+        "assertTrue(({}).toString.call(JSON) === '[object JSON]');");
   }
 
   /**
@@ -1083,6 +1478,13 @@ public class ES53RewriterTest extends CommonJsRewriterTestCase {
             "})();");
   }
 
+  @Override
+  public void setUp() throws Exception {
+    super.setUp();
+    es53Rewriter = new ES53Rewriter(TestBuildInfo.getInstance(), mq, false);
+    setRewriter(es53Rewriter);
+  }
+  
   @Override
   protected Object executePlain(String caja) throws IOException {
     mq.getMessages().clear();
