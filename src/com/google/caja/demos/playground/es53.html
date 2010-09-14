@@ -42,6 +42,7 @@
     var imports = ___.copy(___.whitelistAll(___.sharedImports));
     imports.onerror = ___.markFunc(function(x){
       parent.caja___.logFunc(x);
+      return false;
     });
     ___.setLogFunc(imports.onerror);
 

@@ -3426,9 +3426,7 @@ var safeJSON;
         lastOutcome = [false, exception];
 
         // Cause exception to be rethrown if it is uncatchable.
-        tameException(exception);
-
-        var message = 'unknown';
+        var message = tameException(exception);
         if ('object' === typeOf(exception) && exception !== null) {
           message = String(exception.message || exception.desc || message);
         }

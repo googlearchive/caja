@@ -4155,9 +4155,7 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
             lastOutcome = [false, exception];
 
             // Cause exception to be rethrown if it is uncatchable.
-            tameException(exception);
-
-            var message = 'unknown';
+            var message = tameException(exception);
             if ('object' === typeof exception && exception !== null) {
               message = '' + (exception.message || exception.desc || message);
             }

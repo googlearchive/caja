@@ -572,7 +572,7 @@ public class PlaygroundView {
 
   public void addCompileMessage(String item) {
     compileMessages.insertRow(0);
-    compileMessages.setWidget(0, 0, new Label(item));
+    compileMessages.setWidget(0, 0, new HTML(item));
   }
 
   public void addRuntimeMessage(String item) {
