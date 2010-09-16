@@ -764,7 +764,9 @@ public class ES53Rewriter extends Rewriter {
           synopsis="Global vars are rewritten to be properties of IMPORTS___.",
           reason="",
           matches="@v",
-          substitutes="___.ri(IMPORTS___, @'v')")
+          substitutes="IMPORTS___.@fp ?" +
+              "IMPORTS___.@v :" +
+              "___.ri(IMPORTS___, @'v')")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
         Map<String, ParseTreeNode> bindings = match(node);
         if (bindings != null) {
@@ -774,6 +776,10 @@ public class ES53Rewriter extends Rewriter {
             if (scope.isOuter(vRef.getIdentifierName())) {
               return QuasiBuilder.substV(
                   "___.ri(IMPORTS___, @vname)",
+                  "fp", newReference(
+                      vRef.getFilePosition(),
+                      vRef.getIdentifierName() + "_v___"),
+                  "v", noexpand(vRef),
                   "vname", toStringLiteral(v));
             }
           }
@@ -983,17 +989,23 @@ public class ES53Rewriter extends Rewriter {
           synopsis="",
           reason="",
           matches="/* declared in outer scope */ @v = @r",
-          substitutes="___.wi(IMPORTS___, '@v', @r)")
+          substitutes="IMPORTS___.@fp ?" +
+              "IMPORTS___.@v = @r :" +
+              "___.wi(IMPORTS___, '@v', @r)")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
         Map<String, ParseTreeNode> bindings = this.match(node);
         if (bindings != null) {
           ParseTreeNode v = bindings.get("v");
           if (v instanceof Reference) {
-            String vname = ((Reference) v).getIdentifierName();
+            Reference vRef = (Reference) v;
+            String vname = vRef.getIdentifierName();
             if (scope.isOuter(vname)) {
               ParseTreeNode r = bindings.get("r");
               return substV(
-                  "v", v,
+                  "v", noexpand(vRef),
+                  "fp", newReference(
+                      vRef.getFilePosition(),
+                      vRef.getIdentifierName() + "_w___"),
                   "r", expand(nymize(r, vname, "var"), scope));
             }
           }
