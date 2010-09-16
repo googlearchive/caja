@@ -23,7 +23,7 @@
         "description": "http://www.whatwg.org/specs/web-apps/current-work/multipage/common-input-element-attributes.html#attr-input-autocomplete",
         "optional": true, "default": "on", "values": "off",
         "comment": "The on value is explicitly excluded from the values list."
-      },
+      }
 
       ],
 
