@@ -70,10 +70,10 @@ var cssparser = (function ()
   var HASH = '#' + NAME;
 
   // string1                 \"([^\n\r\f\\"]|\\{nl}|{escape})*\"  ; "string"
-  var STRING1 = '"(?:[^\\"\\\\]|\\\\[\s\S])*"';
+  var STRING1 = '"(?:[^\\"\\\\]|\\\\[\\s\\S])*"';
 
   // string2                 \'([^\n\r\f\\']|\\{nl}|{escape})*\'  ; 'string'
-  var STRING2 = "'(?:[^\\'\\\\]|\\\\[\s\S])*'";
+  var STRING2 = "'(?:[^\\'\\\\]|\\\\[\\s\\S])*'";
 
   // string                  {string1}|{string2}
   var STRING = '(?:' + STRING1 + '|' + STRING2 + ')';
