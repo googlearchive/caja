@@ -127,7 +127,10 @@ public class ES53Rewriter extends Rewriter {
    *              function body.
    * @return If the function body contains a free use of <tt>arguments</tt>,
    *         translate to an initialization of cajoled arguments based on
-   *         an entry snapshot of the real ones.
+   *         an entry snapshot of the real ones. If the function body 
+   *         contains a free use of <tt>this</tt>, translate to an 
+   *         initialization of <tt>dis___</tt> to a sanitized this, by
+   *         replacing the global object with <tt>void 0</tt>.
    */
   public static ParseTreeNode getFunctionHeadDeclarations(Scope scope) {
     List<ParseTreeNode> stmts = Lists.newArrayList();
@@ -140,6 +143,10 @@ public class ES53Rewriter extends Rewriter {
               FilePosition.UNKNOWN, ReservedNames.LOCAL_ARGUMENTS)),
           "ga", Rule.newReference(FilePosition.UNKNOWN,
                                   ReservedNames.ARGUMENTS)));
+    }
+    if (scope.hasFreeThis()) {
+      stmts.add(QuasiBuilder.substV(
+          "var dis___ = (this && this.___) ? void 0 : this;"));
     }
     return new ParseTreeNodeContainer(stmts);
   }
@@ -1634,11 +1641,12 @@ public class ES53Rewriter extends Rewriter {
           synopsis="",
           reason="",
           matches="function (@ps*) { @bs*; }",
-          substitutes="___.wrap(function (dis___, @ps*) {\n"
-              + "    @fh*;\n"
-              + "    @stmts*;\n"
-              + "    @bs*;\n"
-              + "  }, '')")
+          substitutes=""
+              + "___.f(function (@ps*) {\n"
+              + "  @fh*;\n"
+              + "  @stmts*;\n"
+              + "  @bs*;\n"
+              + "})")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
         Map<String, ParseTreeNode> bindings = match(node);
         // Anonymous simple function constructor
@@ -1676,14 +1684,13 @@ public class ES53Rewriter extends Rewriter {
           synopsis="",
           reason="",
           matches="function @fname(@ps*) { @bs*; }",
-          substitutes="@fRef = (function (){\n"
-            + "    var @fname;"
-            + "    return @fRef = ___.wrap(function @fMangle(dis___, @ps*) {\n"
-            + "        @fh*;\n"
-            + "        @stmts*;\n"
-            + "        @bs*;\n"
-            + "      }, '@fname');\n"
-            + "  })();")
+          substitutes=""
+            + "function @fname(@ps*) {\n"
+            + "  @fh*;\n"
+            + "  @stmts*;\n"
+            + "  @bs*;\n"
+            + "}\n"
+            + "___.f(@fRef, '@fname');")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
         if (node instanceof FunctionDeclaration && !scope.isOuter()) {
           Map<String, ParseTreeNode> bindings = match(
@@ -1697,19 +1704,15 @@ public class ES53Rewriter extends Rewriter {
             checkFormals(ps);
             Identifier fname = noexpand((Identifier) bindings.get("fname"));
             scope.declareStartOfScopeVariable(fname);
-            Expression expr = (Expression) substV(
+            Statement stmt = (Statement) substV(
                 "fname", fname,
                 "fRef", new Reference(fname),
-                "fMangle", new Identifier(  // For Firebug stack traces
-                    fname.getFilePosition(),
-                    fname.getName() + "$_dis"),
                 "ps", noexpandParams(ps),
                 // It's important to expand bs before computing fh and stmts.
                 "bs", withoutNoops(expand(bindings.get("bs"), s2)),
                 "fh", getFunctionHeadDeclarations(s2),
                 "stmts", new ParseTreeNodeContainer(s2.getStartStatements()));
-            scope.addStartStatement(
-                new ExpressionStmt(node.getFilePosition(), expr));
+            scope.addStartStatement(stmt);
             return new Noop(FilePosition.UNKNOWN);
           }
         }
@@ -1724,14 +1727,13 @@ public class ES53Rewriter extends Rewriter {
           synopsis="",
           reason="",
           matches="function @fname(@ps*) { @bs*; }",
-          substitutes="IMPORTS___.w___('@fname', (function () {\n"
-            + "    var @fname;"
-            + "    return @fRef = ___.wrap(function @fMangle(dis___, @ps*) {\n"
-            + "        @fh*;\n"
-            + "        @stmts*;\n"
-            + "        @bs*;\n"
-            + "      }, '@fname');\n"
-            + "  })());")
+          substitutes=""
+            + "function @fname(@ps*) {\n"
+            + "  @fh*;\n"
+            + "  @stmts*;\n"
+            + "  @bs*;\n"
+            + "}\n"
+            + "IMPORTS___.w___('@fname', ___.f(@fRef, '@fname'));")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
         if (node instanceof FunctionDeclaration && scope.isOuter()) {
           Map<String, ParseTreeNode> bindings = match(
@@ -1744,19 +1746,15 @@ public class ES53Rewriter extends Rewriter {
                 (ParseTreeNodeContainer) bindings.get("ps");
             checkFormals(ps);
             Identifier fname = noexpand((Identifier) bindings.get("fname"));
-            Expression expr = (Expression) substV(
+            Statement stmt = (Statement) substV(
                 "fname", fname,
                 "fRef", new Reference(fname),
-                "fMangle", new Identifier( // For Firebug stack traces
-                    fname.getFilePosition(),
-                    fname.getName() + "$_dis"),
                 "ps", noexpandParams(ps),
                 // It's important to expand bs before computing fh and stmts.
                 "bs", withoutNoops(expand(bindings.get("bs"), s2)),
                 "fh", getFunctionHeadDeclarations(s2),
                 "stmts", new ParseTreeNodeContainer(s2.getStartStatements()));
-            scope.addStartStatement(
-                new ExpressionStmt(node.getFilePosition(), expr));
+            scope.addStartStatement(stmt);
             return new Noop(FilePosition.UNKNOWN);
           }
         }
@@ -1771,14 +1769,15 @@ public class ES53Rewriter extends Rewriter {
           synopsis="",
           reason="",
           matches="function @fname(@ps*) { @bs*; }",
-          substitutes="(function () {\n"
-              + "    var @fname;"
-              + "    return @fRef = ___.wrap(function @fMangle(dis___, @ps*) {\n"
-              + "        @fh*;\n"
-              + "        @stmts*;\n"
-              + "        @bs*;\n"
-              + "      }, '@fname');"
-              + "  })();")
+          substitutes=""
+              + "(function () {\n"
+              + "  function @fname(@ps*) {\n"
+              + "    @fh*;\n"
+              + "    @stmts*;\n"
+              + "    @bs*;\n"
+              + "  }\n"
+              + "  return ___.f(@fRef, '@fname');"
+              + "})()")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
         Map<String, ParseTreeNode> bindings = match(node);
         // Named simple function expression
@@ -1792,9 +1791,6 @@ public class ES53Rewriter extends Rewriter {
           return substV(
               "fname", fname,
               "fRef", new Reference(fname),
-              "fMangle", new Identifier( // For Firebug stack traces
-                  fname.getFilePosition(),
-                  fname.getName() + "$_dis"),
               "ps", noexpandParams(ps),
               // It's important to expand bs before computing fh and stmts.
               "bs", withoutNoops(expand(bindings.get("bs"), s2)),
