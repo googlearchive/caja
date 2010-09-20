@@ -199,8 +199,6 @@ public final class JsonMLConverter {
         String regex = "/" + jsonML.getAttribute(TagAttr.BODY) + "/" + flags;
         return new RegexpLiteral(pos, regex);
       }
-      case ResultExpr:
-        throw new IllegalArgumentException(jsonML.toString());
       case ThisExpr:
         return new Reference(new Identifier(pos, "this"));
       case BlockStmt: case Program:

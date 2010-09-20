@@ -138,7 +138,7 @@ public class PlaygroundView {
     logoPanel.add(loadingLabel);
     return logoPanel;
   }
-  
+
   private Widget createSourcePanel() {
     sourceExamples = new MultiWordSuggestOracle();
     for (Example eg : Example.values()) {
@@ -536,6 +536,7 @@ public class PlaygroundView {
     return $wnd.prettyPrintOne($wnd.indentAndWrapCode(result));
   }-*/;
 
+  @SuppressWarnings("unused")  // Used in native GWT methods
   private ScriptElement scriptOf(String text) {
     Element el = DOM.createElement("script");
     ScriptElement script = ScriptElement.as(el);
@@ -560,7 +561,7 @@ public class PlaygroundView {
 
     renderResult.setText(getRenderResult());
   }
-  
+
   private native void setRenderedResultBridge(boolean es53,
       Element div, String policy, String html, String js) /*-{
     $wnd.caja___.enable(es53, div, policy, html, js);

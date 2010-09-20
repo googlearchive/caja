@@ -37,8 +37,8 @@ import com.google.caja.util.Strings;
  */
 public final class EnumsToJs implements BuildCommand {
 
-  public boolean build(List<File> inputs, List<File> dependencies, File output)
-      throws IOException {
+  public boolean build(
+      List<File> inputs, List<File> dependencies, File output) {
     List<Class<? extends Enum<?>>> enumClasses = loadEnumClasses(
         inputs, System.err);
     if (enumClasses == null) { return false; }

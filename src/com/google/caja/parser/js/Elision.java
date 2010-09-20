@@ -35,8 +35,8 @@ public final class Elision extends SpecialOperation {
 
   /**
    * This ctor is provided for reflection.
-   * @param value unused.
-   * @param children unused.
+   * @param op unused.
+   * @param operands unused.
    */
   @ReflectiveCtor
   public Elision(

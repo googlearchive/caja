@@ -77,8 +77,9 @@ public class CajoledModuleExpression extends AbstractExpression {
         .setAttribute(TagAttr.TYPE, "string")
         .setAttribute(TagAttr.VALUE, "prepareModule").build();
     return JsonMLBuilder.builder(TagType.InvokeExpr, pos)
+        .setAttribute(TagAttr.OP, ".")
         .addChild(JsonMLBuilder.builder(
-             TagType.LiteralExpr, FilePosition.startOf(pos))
+             TagType.IdExpr, FilePosition.startOf(pos))
              .setAttribute(TagAttr.NAME, "___").build())
         .addChild(prepareModuleFnName)
         .addChild(getCajoledModule().getModuleBody())

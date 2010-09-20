@@ -22,13 +22,14 @@ import com.google.gwt.dom.client.Element;
 
 /**
  * Editor that is a thin wrapper around CodeMirror
- * 
+ *
  * @author jasvir@gmail.com (Jasvir Nagra)
  */
 public class PlaygroundEditor extends Composite {
+  @SuppressWarnings("unused")  // Used in GWT native methods
   private JavaScriptObject editor;
   private TextArea feralTextArea;
-  
+
   public PlaygroundEditor() {
     feralTextArea = new TextArea();
     initWidget(feralTextArea);
@@ -38,7 +39,7 @@ public class PlaygroundEditor extends Composite {
   public void onLoad() {
     editor = initialize(feralTextArea.getElement());
   }
-  
+
   public native JavaScriptObject initialize(Element el) /*-{
     var jsEditor = $wnd.CodeMirror.fromTextArea(el, {
       parserfile: ["parsecss.js", "tokenizejavascript.js",
@@ -52,8 +53,8 @@ public class PlaygroundEditor extends Composite {
       breakPoints: true,
     });
     return jsEditor;
-  }-*/;  
-  
+  }-*/;
+
   public native String getText() /*-{
     var e = this.
         @com.google.caja.demos.playground.client.ui.PlaygroundEditor::editor;

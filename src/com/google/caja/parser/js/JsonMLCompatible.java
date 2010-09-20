@@ -28,7 +28,7 @@ import java.util.List;
  * format that can then be converted into a parse tree for another tool such as
  * closure compiler.
  *
- * @athor Mike Samuel <mikesamuel@gmail.com>
+ * @author Mike Samuel <mikesamuel@gmail.com>
  */
 public interface JsonMLCompatible {
 

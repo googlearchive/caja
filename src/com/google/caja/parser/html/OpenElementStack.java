@@ -101,9 +101,9 @@ public interface OpenElementStack {
   boolean needsNamespaceFixup();
 
   /**
-   * Returns text with semicolons added to entities that lack them.
-   * This may emit {@link MessageType#MALFORMED_HTML_ENTITY} messages about
-   * missing semicolons.
+   * Returns text with semicolons added to entities that lack them.  This may
+   * emit {@link com.google.caja.reporting.MessageType#MALFORMED_HTML_ENTITY}
+   * messages about missing semicolons.
    * @param textPos the position of rawText in the input.
    */
   String fixBrokenEntities(String rawText, FilePosition textPos);

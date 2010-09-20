@@ -137,7 +137,7 @@ public final class RhinoExecutor implements Executor {
           // Deny reflective access up front.  This should not be triggered due
           // to getter filtering, but let's be paranoid.
           if (javaObject != null
-              && (javaObject instanceof Class
+              && (javaObject instanceof Class<?>
                   || javaObject instanceof ClassLoader
                   || "java.lang.reflect".equals(
                       javaObject.getClass().getPackage().getName()))) {
