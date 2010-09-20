@@ -14,6 +14,11 @@
 
 package com.google.caja.demos.benchmarks;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.util.zip.GZIPOutputStream;
+
 import com.google.caja.lexer.ParseException;
 import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.CajoledModule;
@@ -22,15 +27,7 @@ import com.google.caja.plugin.PluginMeta;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.TestBuildInfo;
 import com.google.caja.util.CajaTestCase;
-import com.google.caja.util.Maps;
 import com.google.caja.util.TestUtil;
-
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-
-import java.util.Map;
-import java.util.zip.GZIPOutputStream;
 
 /**
  * Unit test which measures the size of cajoled javascript
@@ -59,27 +56,32 @@ public class BenchmarkSize extends CajaTestCase {
   };
 
   public final void testOverhead() throws IOException {
-    varzOverhead("valija", "minify", "plain",
-        size(charset(plain(fromResource("../../plugin/domita-minified.js")))) +
-        size(charset(plain(fromResource("../../plugin/valija.out.js")))) +
-        size(charset(plain(
-            fromResource("../../plugin/html-sanitizer-minified.js")))));
-    varzOverhead("valija", "minify", "gzip",
-        size(gzip(charset(plain(
-            fromResource("../../plugin/domita-minified.js"))))) +
-        size(gzip(charset(plain(fromResource("../../plugin/valija.out.js"))))) +
-        size(gzip(charset(plain(
-            fromResource("../../plugin/html-sanitizer-minified.js"))))));
+    String plainCajita =
+      plain(fromResource("../../plugin/domita-minified.js"))
+      + plain(fromResource("../../plugin/html-sanitizer-minified.js"));
 
-    varzOverhead("cajita", "minify", "plain",
-        size(charset(plain(fromResource("../../plugin/domita-minified.js")))) +
-        size(charset(plain(
-            fromResource("../../plugin/html-sanitizer-minified.js")))));
-    varzOverhead("cajita", "minify", "gzip",
-        size(gzip(charset(plain(
-            fromResource("../../plugin/domita-minified.js"))))) +
-        size(gzip(charset(plain(
-            fromResource("../../plugin/html-sanitizer-minified.js"))))));
+    String plainValija = plainCajita
+        + plain(fromResource("../../plugin/valija.out.js"));
+    
+    String plainES53 =
+      plain(fromResource("../../plugin/domita-es53-minified.js"));
+
+    byte[] plainCajitaBytes = charset(plainCajita);
+    byte[] plainValijaBytes = charset(plainValija);
+    byte[] plainES53Bytes = charset(plainES53);
+    
+    byte[] gzipCajitaBytes = gzip(plainCajitaBytes);
+    byte[] gzipValijaBytes = gzip(plainValijaBytes);
+    byte[] gzipES53Bytes = gzip(plainES53Bytes);
+        
+    varzOverhead("valija", "minify", "plain", size(plainValijaBytes));
+    varzOverhead("valija", "minify", "gzip", size(gzipValijaBytes));
+
+    varzOverhead("cajita", "minify", "plain", size(plainCajitaBytes));
+    varzOverhead("cajita", "minify", "gzip", size(gzipCajitaBytes));
+
+    varzOverhead("es53", "minify", "plain", size(plainES53Bytes));
+    varzOverhead("es53", "minify", "gzip", size(gzipES53Bytes));
   }
 
   /**
@@ -90,35 +92,62 @@ public class BenchmarkSize extends CajaTestCase {
    *               .<pretty|minified>.<plain|gzip>
    */
   public final void testJavascript() throws ParseException, IOException {
+    
     for (String[] pair : pureJs) {
       String js = pair[0];
       String name = pair[1];
+
+      String originalPrettyPlain = plain(fromResource(js));
+      byte[] originalPrettyPlainBytes = charset(originalPrettyPlain);
+      byte[] originalPrettyGzipBytes = gzip(originalPrettyPlainBytes);
+
+      String originalMinifyPlain = minify(js(fromResource(js)));
+      byte[] originalMinifyPlainBytes = charset(originalMinifyPlain);
+      byte[] originalMinifyGzipBytes = gzip(originalMinifyPlainBytes);
+      
+      String cajitaPrettyPlain = render(cajita(js(fromResource(js))));
+      byte[] cajitaPrettyPlainBytes = charset(cajitaPrettyPlain);
+      byte[] cajitaPrettyGzipBytes = gzip(cajitaPrettyPlainBytes);
+
+      String cajitaMinifyPlain = minify(cajita(js(fromResource(js))));
+      byte[] cajitaMinifyPlainBytes = charset(cajitaMinifyPlain);
+      byte[] cajitaMinifyGzipBytes = gzip(cajitaMinifyPlainBytes);
+
+      String valijaPrettyPlain = render(valija(js(fromResource(js))));
+      byte[] valijaPrettyPlainBytes = charset(valijaPrettyPlain);
+      byte[] valijaPrettyGzipBytes = gzip(valijaPrettyPlainBytes);
+
+      String valijaMinifyPlain = minify(valija(js(fromResource(js))));
+      byte[] valijaMinifyPlainBytes = charset(valijaMinifyPlain);
+      byte[] valijaMinifyGzipBytes = gzip(valijaMinifyPlainBytes);
+
       varzJS(name, "original", "pretty", "plain",
-          size(charset(plain(fromResource(js)))));
+          size(originalPrettyPlainBytes));
       varzJS(name, "original", "pretty", "gzip",
-          size(gzip(charset((plain(fromResource(js)))))));
+          size(originalPrettyGzipBytes));
+
       varzJS(name, "original", "minify", "plain",
-          size(charset(minify(js(fromResource(js))))));
+          size(originalMinifyPlainBytes));
       varzJS(name, "original", "minify", "gzip",
-          size(gzip(charset(minify(js(fromResource(js)))))));
+          size(originalMinifyGzipBytes));
 
-      varzJS(name, "cajita", "pretty", "plain",
-          size(charset(render(cajita(js(fromResource(js)))))));
-      varzJS(name, "cajita", "pretty", "gzip",
-          size(gzip(charset(render(cajita(js(fromResource(js))))))));
-      varzJS(name, "cajita", "minify", "plain",
-          size(charset(minify(cajita(js(fromResource(js)))))));
-      varzJS(name, "cajita", "minify", "gzip",
-          size(gzip(charset(minify(cajita(js(fromResource(js))))))));
+      varzJS(name, "cajita", "pretty", "plain", size(cajitaPrettyPlainBytes));
+      varzJS(name, "cajita", "pretty", "gzip", size(cajitaPrettyGzipBytes));
+      
+      varzJS(name, "cajita", "minify", "plain", size(cajitaMinifyPlainBytes));
+      varzJS(name, "cajita", "minify", "gzip", size(cajitaMinifyGzipBytes));
 
-      varzJS(name, "valija", "pretty", "plain",
-          size(charset(render(valija(js(fromResource(js)))))));
-      varzJS(name, "valija", "pretty", "gzip",
-          size(gzip(charset(render(valija(js(fromResource(js))))))));
-      varzJS(name, "valija", "minify", "plain",
-          size(charset(minify(valija(js(fromResource(js)))))));
-      varzJS(name, "valija", "minify", "gzip",
-          size(gzip(charset(minify(valija(js(fromResource(js))))))));
+      varzJS(name, "valija", "pretty", "plain", size(valijaPrettyPlainBytes));
+      varzJS(name, "valija", "pretty", "gzip", size(valijaPrettyGzipBytes));
+      
+      varzJS(name, "valija", "minify", "plain", size(valijaMinifyPlainBytes));
+      varzJS(name, "valija", "minify", "gzip", size(valijaMinifyGzipBytes));
+      
+      varzJS(name, "es53", "pretty", "plain", size(valijaPrettyPlainBytes));
+      varzJS(name, "es53", "pretty", "gzip", size(valijaPrettyGzipBytes));
+      
+      varzJS(name, "es53", "minify", "plain", size(valijaMinifyPlainBytes));
+      varzJS(name, "es53", "minify", "gzip", size(valijaMinifyGzipBytes));
     }
   }
 
@@ -160,14 +189,25 @@ public class BenchmarkSize extends CajaTestCase {
   public CajoledModule cajita(Block plain) {
     return cajole(plain, false);
   }
-
-  Map<Block,CajoledModule> cMemo = Maps.newHashMap();
-  Map<Block, CajoledModule> vMemo = Maps.newHashMap();
-  public CajoledModule cajole(Block js, boolean valija) {
-    CajoledModule result = (valija ? vMemo : cMemo).get(js);
-    if (result != null) {
+  
+  public CajoledModule es53(Block plain) {
+    CajoledModule result = null;
+    PluginMeta meta = new PluginMeta();
+    meta.setEnableES53(true);
+    MessageQueue mq = TestUtil.createTestMessageQueue(this.mc);
+    PluginCompiler pc = new PluginCompiler(
+        TestBuildInfo.getInstance(), meta, mq);
+    pc.addInput(plain, null);
+    if (pc.run()) {
+      result = pc.getJavascript();
       return result;
+    } else {
+      return null;
     }
+  }
+
+  public CajoledModule cajole(Block js, boolean valija) {
+    CajoledModule result = null;
     PluginMeta meta = new PluginMeta();
     MessageQueue mq = TestUtil.createTestMessageQueue(this.mc);
     if (!valija) { js = BenchmarkUtils.addUseCajitaDirective(js); }
@@ -176,7 +216,6 @@ public class BenchmarkSize extends CajaTestCase {
     pc.addInput(js, null);
     if (pc.run()) {
       result = pc.getJavascript();
-      (valija ? vMemo : cMemo).put(js, result);
       return result;
     } else {
       return null;
