@@ -766,7 +766,7 @@ public class ES53Rewriter extends Rewriter {
           matches="@v",
           substitutes="IMPORTS___.@fp ?" +
               "IMPORTS___.@v :" +
-              "___.ri(IMPORTS___, @'v')")
+              "___.ri(IMPORTS___, @vname)")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
         Map<String, ParseTreeNode> bindings = match(node);
         if (bindings != null) {
@@ -774,8 +774,7 @@ public class ES53Rewriter extends Rewriter {
           if (v instanceof Reference) {
             Reference vRef = (Reference) v;
             if (scope.isOuter(vRef.getIdentifierName())) {
-              return QuasiBuilder.substV(
-                  "___.ri(IMPORTS___, @vname)",
+              return substV(
                   "fp", newReference(
                       vRef.getFilePosition(),
                       vRef.getIdentifierName() + "_v___"),

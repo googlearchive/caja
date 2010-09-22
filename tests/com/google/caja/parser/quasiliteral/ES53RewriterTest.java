@@ -660,7 +660,10 @@ public class ES53RewriterTest extends CommonJsRewriterTestCase {
             + "var dis___ = IMPORTS___;"
             + "{"
             + "  function f(x, y___) {"
-            + "    return (x + y___) * ___.ri(IMPORTS___, 'z');"
+            + "    return (x + y___) *"
+            + "        (IMPORTS___.z_v___ ?"
+            + "        IMPORTS___.z :"
+            + "        ___.ri(IMPORTS___, 'z'));"
             + "  }"
             + "  IMPORTS___.w___('f', ___.f(f, 'f'));"
             + "}")));
@@ -676,7 +679,10 @@ public class ES53RewriterTest extends CommonJsRewriterTestCase {
             // x and y___ are formals, but z is free to the function.
             + "var dis___ = IMPORTS___;"
             + "function f(x, y___) {"
-            + "  return (x + y___) * ___.ri(IMPORTS___, 'z');"
+            + "  return (x + y___) *"
+            + "        (IMPORTS___.z_v___ ?"
+            + "        IMPORTS___.z :"
+            + "        ___.ri(IMPORTS___, 'z'));"
             + "}"
             // Since the function is synthetic, it is not marked.
             )));
