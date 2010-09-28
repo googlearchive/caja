@@ -37,12 +37,21 @@
   <script src="bridal.js"></script>
   <script src="cssparser.js"></script>
   <script src="domita.js"></script>
+  
   <script>
-  initJS = function(div, uriPolicy, cajoledJS) {
+  var grantAdditionalPowers = function(tamings___, ___, imports) {
+    for (var tamer in tamings___) {
+      if (tamings___.hasOwnProperty(tamer)) {
+        tamings___[tamer].call(___.USELESS, ___, imports);
+      }
+    }
+  }
+  
+  initJS = function(div, uriPolicy, policyJS, cajoledJS) {
     var imports = ___.copy(___.whitelistAll(___.sharedImports));
     imports.onerror = ___.markFunc(function(x){
       parent.caja___.logFunc(x);
-      return false;
+      return true;
     });
     ___.setLogFunc(imports.onerror);
 
@@ -56,11 +65,13 @@
       imports.window[i] = imports[i];
     }
     imports = imports.window;
+    imports.outers = imports;
     imports.domitaTrace___ = 1;
-    imports.alert = ___.markFunc(function (x) { alert(x); });
-    ___.getNewModuleHandler().setImports(___.whitelistAll(imports));
-    imports.handleSet___ = void 0;
 
+    imports.handleSet___ = void 0;
+    eval(policyJS);
+    grantAdditionalPowers(tamings___, ___, imports);
+    ___.getNewModuleHandler().setImports(___.whitelistAll(imports));
     eval(cajoledJS);
   };
   

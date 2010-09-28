@@ -163,8 +163,8 @@ public class PlaygroundView {
 
     es53ModeButton = new RadioButton("inputLanguage", "ES5");
     es53ModeButton.setTitle("Input in ES5 targetting ES3 browsers");
-    valijaModeButton = new RadioButton("inputLanguage", "Valija");
-    valijaModeButton.setTitle("Input in Valija targetting ES3 browsers");
+    valijaModeButton = new RadioButton("inputLanguage", "ES3");
+    valijaModeButton.setTitle("Input in ES3 targetting ES3 browsers");
     valijaModeButton.setValue(true);
 
     cajoleButton.addClickHandler(new ClickHandler() {

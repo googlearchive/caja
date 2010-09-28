@@ -1,14 +1,14 @@
 // Playground policy
 //  - exposes flash
 //  - exposes alert
-
+tamings___ = [];
 /**
  * Simple flash taming
  *   - exposes a taming of the swfobject API
  *   - ensures version of flash > 9 (defaults to v10)
  *   - adds parameters to limit network and prevent script access
  */
-tamings___.push(function tameSimpleFlash(imports) {
+tamings___.push(function tameSimpleFlash(___, imports) {
   imports.outers.swfobject = {};
   imports.outers.swfobject.embedSWF = function(swfUrl, id, width, height, 
       version, expressInstall, flashvars, params, attributes, cb) {
@@ -40,24 +40,15 @@ tamings___.push(function tameSimpleFlash(imports) {
  *   - ensures that after 10 alerts the user has the option of redirecting
  *     remaining calls to alert to cajita.log instead
  */
-tamings___.push(function tameAlert(imports) {
+tamings___.push(function tameAlert(___, imports) {
   imports.outers.alert = (function() {
     var remainingAlerts = 10;
-    var useConsole = false;
     function tameAlert(msg) {
-      if (useConsole) {
-        cajita.log(msg);
-      } else {
-        if (remainingAlerts > 0) {
-          remainingAlerts--;
-          alert(msg);
-        } else {
-          if (confirm("Redirect remaining alerts to console?")) {
-            useConsole = true;
-          } else {
-            remainingAlerts = 10;
-          }
-        }
+      if (remainingAlerts > 0) {
+        remainingAlerts--;
+        alert("Untrusted gadget says: " + msg);
+      } else if (remainingAlerts == 0) {
+        remainingAlerts = confirm("Ignore remaining alerts?") ? -1 : 10;
       }
     };
     return tameAlert;

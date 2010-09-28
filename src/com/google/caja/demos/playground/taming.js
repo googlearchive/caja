@@ -25,10 +25,10 @@
 var tamings___ = tamings___ || [];
 var caja___ = (function () {
   var cajaDomSuffix = 'g___';
-  var grantAdditionalPowers = function(imports) {
+  var grantAdditionalPowers = function(___, imports) {
     for (var tamer in tamings___) {
       if (tamings___.hasOwnProperty(tamer)) {
-        tamings___[tamer].call(___.USELESS, imports);
+        tamings___[tamer].call(___.USELESS, ___, imports);
       }
     }
   }
@@ -63,28 +63,40 @@ var caja___ = (function () {
     ___.setLogFunc(function(x) { caja___.logFunc(x); })
     ___.getNewModuleHandler().setImports(imports);
     eval(policy);
-    grantAdditionalPowers(imports);
+    grantAdditionalPowers(___, imports);
     eval(js);
   }
 
   var cajoledJS = "";
+  var policyJS = "";
   var currentFrame = null;
   function enableES53(parent, policy, html, js) {
     configureHTML(parent, html);
     
     var hiddenDiv = document.getElementById("es53frames");
     currentFrame = document.createElement('iframe');
-    currentFrame.src = "es53.html";
+    currentFrame.src = "es53.html?rnd=" + Math.floor(Math.random() * 10000);
+    currentFrame.id = "es53frame";
+    policyJS = policy;
     cajoledJS = js;
     hiddenDiv.appendChild(currentFrame);
   }
   
-  function onReady(init, childFrame) {
-    init(document.getElementById(id), uriPolicy, cajoledJS);
+  function onReady(initJS, childFrame) {
+    initJS(document.getElementById(id), uriPolicy, policyJS, cajoledJS,
+        grantAdditionalPowers);
+  }
+  
+  function tearDownES53() {
+    try {
+      document.body.removeChild(document.getElementById("es53frame"));
+    } catch (e) {
+      // failure is an option
+    }    
   }
   
   function enable(es53, parent, policy, html, js) {
-    document.getElementById("es53frames").innerHTML = "";
+    tearDownES53();
     if (es53) {
       enableES53(parent, policy, html, js);
     } else {

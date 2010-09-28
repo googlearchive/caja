@@ -81,7 +81,12 @@ public class GWTCajolingServiceImpl extends RemoteServiceServlet
     public String rewriteUri(
         ExternalReference u, UriEffect effect, LoaderType loader,
         Map<String, ?> hints) {
-      if (LoaderType.SANDBOXED == loader) { return u.getUri().toString(); }
+      if ((effect == UriEffect.NEW_DOCUMENT ||
+          (effect == UriEffect.SAME_DOCUMENT &&
+              loader == LoaderType.SANDBOXED))) {
+        return u.getUri().toString();
+      }
+
       return (
           "http://caja.appspot.com/cajole"
           + "?url=" + UriUtil.encode(u.getUri().toString())
