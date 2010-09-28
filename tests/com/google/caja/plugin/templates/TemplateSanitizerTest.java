@@ -16,6 +16,7 @@ package com.google.caja.plugin.templates;
 
 import com.google.caja.lang.html.HtmlSchema;
 import com.google.caja.parser.html.Nodes;
+import com.google.caja.reporting.MarkupRenderMode;
 import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessageLevel;
 import com.google.caja.util.CajaTestCase;
@@ -340,7 +341,7 @@ public class TemplateSanitizerTest extends CajaTestCase {
     assertEquals(valid, validated);
 
     if (golden != null) {
-      assertEquals(golden, Nodes.render(input, true));
+      assertEquals(golden, Nodes.render(input, MarkupRenderMode.XML));
     }
   }
 }

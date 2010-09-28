@@ -98,12 +98,16 @@ public class NodesTest extends CajaTestCase {
   public final void testRenderOfEmbeddedXml() throws Exception {
     assertEquals(
         "<td width=\"10\"><svg:Rect width=\"50\"></svg:Rect></td>",
-        Nodes.render(xmlFragment(fromString(
-            "<html:td width='10'><svg:Rect width='50'/></html:td>")), false));
+        Nodes.render(
+            xmlFragment(fromString(
+                "<html:td width='10'><svg:Rect width='50'/></html:td>")),
+            MarkupRenderMode.HTML));
     assertEquals(
         "<td width=\"10\"><svg:Rect width=\"50\" /></td>",
-        Nodes.render(xmlFragment(fromString(
-            "<html:td width='10'><svg:Rect width='50'/></html:td>")), true));
+        Nodes.render(
+            xmlFragment(fromString(
+                "<html:td width='10'><svg:Rect width='50'/></html:td>")),
+            MarkupRenderMode.XML));
   }
 
   public final void testRenderWithNonstandardNamespaces() throws Exception {
@@ -114,7 +118,7 @@ public class NodesTest extends CajaTestCase {
             + "<html:td width='10' xmlns:s='http://www.w3.org/2000/svg'>"
             + "<s:Rect width='50'/>"
             + "</html:td>")),
-            true));
+            MarkupRenderMode.XML));
   }
 
   public final void testRenderWithUnknownNamespace() throws Exception {
@@ -130,7 +134,7 @@ public class NodesTest extends CajaTestCase {
             + " xmlns:bar='http://bobs.house.of/XML&BBQ'>"
             + "<bar:baz boo='howdy' xml:lang='es'/>"
             + "</foo>")),
-            true));
+            MarkupRenderMode.XML));
   }
 
   public final void testRenderWithMaskedInputNamespace1() throws Exception {
@@ -184,8 +188,7 @@ public class NodesTest extends CajaTestCase {
 
   public final void testNoSneakyNamespaceDecls1() throws Exception {
     Document doc = DomParser.makeDocument(null, null);
-    Element el = doc.createElementNS(
-        Namespaces.SVG_NAMESPACE_URI, "span");
+    Element el = doc.createElementNS(Namespaces.SVG_NAMESPACE_URI, "span");
     try {
       el.setAttributeNS(
           Namespaces.SVG_NAMESPACE_URI, "xmlns", Namespaces.HTML_NAMESPACE_URI);
@@ -201,17 +204,16 @@ public class NodesTest extends CajaTestCase {
     el.appendChild(doc.createElementNS(Namespaces.SVG_NAMESPACE_URI, "br"));
     String rendered;
     try {
-      rendered = Nodes.render(el);
+      rendered = Nodes.render(el, MarkupRenderMode.XML);
     } catch (RuntimeException ex) {
       return;  // Failure is an option.
     }
-    assertEquals("<svg:span><svg:br/></svg:span>", rendered);
+    assertEquals("<svg:span><svg:br /></svg:span>", rendered);
   }
 
   public final void testNoSneakyNamespaceDecls2() throws Exception {
     Document doc = DomParser.makeDocument(null, null);
-    Element el = doc.createElementNS(
-        Namespaces.SVG_NAMESPACE_URI, "span");
+    Element el = doc.createElementNS(Namespaces.SVG_NAMESPACE_URI, "span");
     try {
       el.setAttributeNS(
           Namespaces.XMLNS_NAMESPACE_URI, "svg", Namespaces.HTML_NAMESPACE_URI);
@@ -227,17 +229,34 @@ public class NodesTest extends CajaTestCase {
     el.appendChild(doc.createElementNS(Namespaces.SVG_NAMESPACE_URI, "br"));
     String rendered;
     try {
-      rendered = Nodes.render(el);
+      rendered = Nodes.render(el, MarkupRenderMode.XML);
     } catch (RuntimeException ex) {
       return;  // Failure is an option.
     }
-    assertEquals("<svg:span><svg:br/></svg:span>", rendered);
+    assertEquals("<svg:span><svg:br /></svg:span>", rendered);
+  }
+
+  public final void testNoSneakyNamespaceDecls3() throws Exception {
+    Document doc = DomParser.makeDocument(null, null);
+    Element el = doc.createElementNS(
+        Namespaces.SVG_NAMESPACE_URI, "span");
+    // Override a definition used elsewhere.
+    el.setAttribute("xmlns:svg", Namespaces.HTML_NAMESPACE_URI);
+
+    el.appendChild(doc.createElementNS(Namespaces.SVG_NAMESPACE_URI, "br"));
+    String rendered;
+    try {
+      rendered = Nodes.render(el, MarkupRenderMode.XML);
+    } catch (RuntimeException ex) {
+      return;  // Failure is an option.
+    }
+    assertEquals("<svg:span><svg:br /></svg:span>", rendered);
   }
 
   public final void testProcessingInstructions() {
     Document doc = DomParser.makeDocument(null, null);
     ProcessingInstruction pi = doc.createProcessingInstruction("foo", "bar");
-    assertEquals("<?foo bar?>", Nodes.render(pi, true));
+    assertEquals("<?foo bar?>", Nodes.render(pi, MarkupRenderMode.XML));
   }
 
   public final void testBadProcessingInstructions() {
@@ -250,7 +269,7 @@ public class NodesTest extends CajaTestCase {
       try {
         ProcessingInstruction pi = doc.createProcessingInstruction(
             badPi[0], badPi[1]);
-        Nodes.render(pi, true);
+        Nodes.render(pi, MarkupRenderMode.XML);
       } catch (IllegalStateException ex) {
         continue;  // OK
       } catch (DOMException ex) {
@@ -268,9 +287,9 @@ public class NodesTest extends CajaTestCase {
     el.appendChild(pi);
     assertEquals(
         "<div><?foo <script>alert(1)</script>?></div>",
-        Nodes.render(el, /* XML */true));
+        Nodes.render(el, MarkupRenderMode.XML));
     try {
-      Nodes.render(el, /* HTML */false);
+      Nodes.render(el, MarkupRenderMode.HTML);
     } catch (IllegalStateException ex) {
       // OK
       return;

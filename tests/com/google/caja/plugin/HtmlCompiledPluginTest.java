@@ -23,6 +23,7 @@ import com.google.caja.parser.html.Nodes;
 import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.CajoledModule;
 import com.google.caja.parser.js.UncajoledModule;
+import com.google.caja.reporting.MarkupRenderMode;
 import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessageType;
 import com.google.caja.reporting.TestBuildInfo;
@@ -258,7 +259,8 @@ public class HtmlCompiledPluginTest extends CajaTestCase {
       fail();
     } else {
       CajoledModule jsTree = compiler.getJavascript();
-      String staticHtml = Nodes.render(compiler.getStaticHtml(), true);
+      String staticHtml = Nodes.render(
+          compiler.getStaticHtml(), MarkupRenderMode.XML);
       String js = render(jsTree);
 
       Block valijaOrigNode = js(fromResource(

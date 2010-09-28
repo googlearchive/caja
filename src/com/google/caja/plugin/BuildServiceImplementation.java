@@ -33,6 +33,7 @@ import com.google.caja.parser.js.Minify;
 import com.google.caja.parser.js.ObjectConstructor;
 import com.google.caja.parser.js.Parser;
 import com.google.caja.parser.js.Statement;
+import com.google.caja.reporting.MarkupRenderMode;
 import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessageLevel;
@@ -251,7 +252,8 @@ public class BuildServiceImplementation implements BuildService {
 
       String htmlOut = "";
       if (outputHtml != null) {
-        htmlOut = Nodes.render(outputHtml, asXml);
+        htmlOut = Nodes.render(
+            outputHtml, asXml ? MarkupRenderMode.XML : MarkupRenderMode.HTML);
       }
 
       String translatedCode;
@@ -261,7 +263,8 @@ public class BuildServiceImplementation implements BuildService {
         Element script = doc.createElementNS(ns, "script");
         script.setAttributeNS(ns, "type", "text/javascript");
         script.appendChild(doc.createCDATASection(jsOut.toString()));
-        translatedCode = htmlOut + Nodes.render(script, asXml);
+        translatedCode = htmlOut + Nodes.render(
+            script, asXml ? MarkupRenderMode.XML : MarkupRenderMode.HTML);
       } else {
         if (!"".equals(htmlOut)) {
           throw new RuntimeException("Can't emit HTML to " + output);

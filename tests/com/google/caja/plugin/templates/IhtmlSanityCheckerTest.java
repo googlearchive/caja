@@ -20,6 +20,7 @@ import com.google.caja.parser.html.DomParser;
 import com.google.caja.parser.html.ElKey;
 import com.google.caja.parser.html.Namespaces;
 import com.google.caja.parser.html.Nodes;
+import com.google.caja.reporting.MarkupRenderMode;
 import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessagePart;
@@ -522,7 +523,7 @@ public class IhtmlSanityCheckerTest extends CajaTestCase {
     }
     assertMessagesLessSevereThan(MessageLevel.WARNING);
 
-    String checkedIhtml = Nodes.render(ihtmlRoot, true);
+    String checkedIhtml = Nodes.render(ihtmlRoot, MarkupRenderMode.XML);
     assertEquals(goldenIhtml, checkedIhtml);
   }
 

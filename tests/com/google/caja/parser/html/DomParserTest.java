@@ -23,6 +23,7 @@ import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.ParseException;
 import com.google.caja.lexer.TokenQueue;
 import com.google.caja.reporting.DevNullMessageQueue;
+import com.google.caja.reporting.MarkupRenderMode;
 import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.MessageType;
@@ -309,8 +310,6 @@ public class DomParserTest extends CajaTestCase {
             "    Value : en 5+63-5+67",
             "  Attrib : xml:lang 5+44-5+52",
             "    Value : en 5+53-5+57",
-            // xmlns declarations do not appear in output since they are not
-            // real attributes.
             "  Element : head 6+1-7+8",
             "    Text : \\n 6+7-7+1",
             "  Text : \\n 7+8-8+1",
@@ -2437,7 +2436,7 @@ public class DomParserTest extends CajaTestCase {
         + "<![CDATA[ 1 < 2 && 3 > 4 ]]>\n"
         + "<xmp>1 &lt; 2</xmp>\n"
         + "<script> foo() &lt; bar() </script>",
-        Nodes.render(t, true));
+        Nodes.render(t, MarkupRenderMode.XML));
     // Rendered as HTML
     assertEquals(
         ""
@@ -2446,15 +2445,17 @@ public class DomParserTest extends CajaTestCase {
         + " 1 &lt; 2 &amp;&amp; 3 &gt; 4 \n"
         + "<xmp>1 < 2</xmp>\n"
         + "<script> foo() < bar() </script>",
-        Nodes.render(t, false));
+        Nodes.render(t, MarkupRenderMode.HTML));
   }
 
   public final void testUnrenderableXMLTree1() throws Exception {
     DocumentFragment t = xmlFragment(
         fromString("<xmp><![CDATA[ </xmp> ]]></xmp>"));
-    assertEquals("<xmp><![CDATA[ </xmp> ]]></xmp>", Nodes.render(t, true));
+    assertEquals(
+        "<xmp><![CDATA[ </xmp> ]]></xmp>",
+        Nodes.render(t, MarkupRenderMode.XML));
     try {
-      String badness = Nodes.render(t, false);
+      String badness = Nodes.render(t, MarkupRenderMode.HTML);
       fail("Bad HTML rendered: " + badness);
     } catch (IllegalStateException ex) {
       // Cannot produce <xmp></xmp></xmp> safely in HTML.
@@ -2464,9 +2465,11 @@ public class DomParserTest extends CajaTestCase {
   public final void testUnrenderableXMLTree2() throws Exception {
     DocumentFragment t = xmlFragment(
         fromString("<xmp><![CDATA[ </xM]]>p </xmp>"));
-    assertEquals("<xmp><![CDATA[ </xM]]>p </xmp>", Nodes.render(t, true));
+    assertEquals(
+        "<xmp><![CDATA[ </xM]]>p </xmp>",
+        Nodes.render(t, MarkupRenderMode.XML));
     try {
-      String badness = Nodes.render(t, false);
+      String badness = Nodes.render(t, MarkupRenderMode.HTML);
       fail("Bad HTML rendered: " + badness);
     } catch (IllegalStateException ex) {
       // Cannot produce <xmp> </xMp </xmp> safely in HTML.
@@ -2476,9 +2479,10 @@ public class DomParserTest extends CajaTestCase {
   public final void testUnrenderableXMLTree3() throws Exception {
     DocumentFragment t = xmlFragment(
         fromString("<xmp> &lt;/XM<!-- -->P&gt; </xmp>"));
-    assertEquals("<xmp> &lt;/XMP&gt; </xmp>", Nodes.render(t, true));
+    assertEquals(
+        "<xmp> &lt;/XMP&gt; </xmp>", Nodes.render(t, MarkupRenderMode.XML));
     try {
-      String badness = Nodes.render(t, false);
+      String badness = Nodes.render(t, MarkupRenderMode.HTML);
       fail("Bad HTML rendered: " + badness);
     } catch (IllegalStateException ex) {
       // Cannot produce <xmp> </XMP> </xmp> safely in HTML.
@@ -2488,8 +2492,8 @@ public class DomParserTest extends CajaTestCase {
   public final void testCommentsHidingCdataEnd() throws Exception {
     DocumentFragment t = xmlFragment(
         fromString("<xmp> <!-- </xmp> --> </xmp>"));
-    assertEquals("<xmp>  </xmp>", Nodes.render(t, true));
-    assertEquals("<xmp>  </xmp>", Nodes.render(t, false));
+    assertEquals("<xmp>  </xmp>", Nodes.render(t, MarkupRenderMode.XML));
+    assertEquals("<xmp>  </xmp>", Nodes.render(t, MarkupRenderMode.HTML));
   }
 
   public final void testEofMessageDueToMismatchedQuotes() {
@@ -2531,6 +2535,21 @@ public class DomParserTest extends CajaTestCase {
         ""
         + "<script type=\"text/os-data\">\n"
         + "  <os:ViewerRequest key=\"viewer\"/>\n"
+        + "</script>",
+        Nodes.render(f));
+  }
+
+  public final void testIssue1211DefaultXmlnsOnScript() throws Exception {
+    DocumentFragment f = htmlFragment(fromString(
+        ""
+        + "<script type=\"text/os-data\"\n"
+        + "    xmlns=\"http://ns.opensocial.org/2008/markup\">\n"
+        + "  <ViewerRequest key=\"viewer\"/>\n"
+        + "</script>"));
+    assertEquals(
+        ""
+        + "<script type=\"text/os-data\">\n"
+        + "  <ViewerRequest key=\"viewer\"/>\n"
         + "</script>",
         Nodes.render(f));
   }
@@ -2677,13 +2696,14 @@ public class DomParserTest extends CajaTestCase {
     }
     MoreAsserts.assertListsEqual(expectedMessages, actualMessages, 0);
 
+    MarkupRenderMode rm = asXml ? MarkupRenderMode.XML : MarkupRenderMode.HTML;
     MoreAsserts.assertListsEqual(
         expectedOutputHtml,
-        Arrays.asList(Nodes.render(tree, asXml).split("\n")));
+        Arrays.asList(Nodes.render(tree, rm).split("\n")));
     Node clone = tree.cloneNode(true);
     MoreAsserts.assertListsEqual(
         expectedOutputHtml,
-        Arrays.asList(Nodes.render(clone, asXml).split("\n")));
+        Arrays.asList(Nodes.render(clone, rm).split("\n")));
 
     // Make sure that parsing with and without debug data return the same tree
     // structure.

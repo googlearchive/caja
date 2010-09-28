@@ -239,6 +239,7 @@ public class Nodes {
     return render(node, false);
   }
 
+  @Deprecated
   public static String render(Node node, boolean asXml) {
     return render(node, asXml ? MarkupRenderMode.XML : MarkupRenderMode.HTML);
   }
@@ -318,7 +319,6 @@ final class Renderer {
         }
         NamedNodeMap attrs = el.getAttributes();
         for (int i = 0, n = attrs.getLength(); i < n; ++i) {
-          out.append(' ');
           Attr a = (Attr) attrs.item(i);
           String attrUri = a.getNamespaceURI();
           // Attributes created via setAttribute calls for ISINDEX elements
@@ -327,10 +327,14 @@ final class Renderer {
             Namespaces attrNs = ns.forUri(attrUri);
             if (attrNs == null) {
               attrNs = ns = addNamespace(ns, attrUri);
-              renderNamespace(attrNs);
               out.append(' ');
+              renderNamespace(attrNs);
+            } else if ("xmlns".equals(attrNs.prefix)) {
+              continue;
             }
-            out.append(attrNs.prefix).append(':');
+            out.append(' ').append(attrNs.prefix).append(':');
+          } else {
+            out.append(' ');
           }
           renderAttr(a, HTML_NS.equals(attrUri));
         }
@@ -463,7 +467,7 @@ final class Renderer {
     if (localName == null) {
       localName = a.getName();
       if (localName.indexOf(':') >= 0 || localName.startsWith("xmlns")) {
-        throw new IllegalStateException();
+        throw new IllegalArgumentException(localName);
       }
     }
     localName = emitLocalName(localName, isHtml);

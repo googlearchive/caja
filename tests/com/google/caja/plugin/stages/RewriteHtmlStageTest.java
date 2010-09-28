@@ -27,6 +27,7 @@ import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageType;
 import com.google.caja.util.ContentType;
+import com.google.caja.util.Join;
 import com.google.caja.util.Lists;
 
 import org.w3c.dom.Element;
@@ -91,28 +92,34 @@ public final class RewriteHtmlStageTest extends PipelineStageTestCase {
 
   public final void testDataUris() throws Exception {
     assertPipeline(
-        job("foo<script src='data:text/javascript,extracted();'>bar</script>baz", ContentType.HTML),
+        job("foo<script src='data:text/javascript,extracted();'>"
+            + "bar</script>baz",
+            ContentType.HTML),
         job("foo<span jobnum=\"1\"></span>baz", ContentType.HTML),
         job("{ extracted(); }", ContentType.JS)
         );
     assertNoErrors();
 
     assertPipeline(
-        job("foo<script src='data:,extracted();'>bar</script>baz", ContentType.HTML),
+        job("foo<script src='data:,extracted();'>bar</script>baz",
+            ContentType.HTML),
         job("foo<span jobnum=\"1\"></span>baz", ContentType.HTML),
         job("{ extracted(); }", ContentType.JS)
         );
     assertNoErrors();
 
     assertPipeline(
-        job("foo<script src='data:iso-8859-7;charset=utf-8,extracted%28%29%3B'>bar</script>baz", ContentType.HTML),
+        job("foo<script src='data:iso-8859-7;charset=utf-8,extracted%28%29%3B'>"
+            + "bar</script>baz", ContentType.HTML),
         job("foo<span jobnum=\"1\"></span>baz", ContentType.HTML),
         job("{ extracted(); }", ContentType.JS)
         );
     assertNoErrors();
 
     assertPipeline(
-        job("foo<script src='data:text/javascript;charset=utf-8;base64,ZXh0cmFjdGVkKCk7'>bar</script>baz", ContentType.HTML),
+        job("foo<script src="
+            + "'data:text/javascript;charset=utf-8;base64,ZXh0cmFjdGVkKCk7'>"
+            + "bar</script>baz", ContentType.HTML),
         job("foo<span jobnum=\"1\"></span>baz", ContentType.HTML),
         job("{ extracted(); }", ContentType.JS)
         );
@@ -230,6 +237,28 @@ public final class RewriteHtmlStageTest extends PipelineStageTestCase {
             ContentType.HTML),
         job("IMPORTS___.htmlEmitter___.addBodyClasses('foo')",
             ContentType.JS));
+  }
+
+  public final void testOSMLScriptElements() throws Exception {
+    assertPipeline(
+        job(Join.join(
+                "\n",
+                "Before OS Template",
+                "<script type=\"text/opensocial\"",
+                " xmlns:os=\"http://ns.opensocial.org/2008/markup\">",
+                "  a ? Hello <os:template",
+                "  name=\"bob\"> World",
+                "  1 </os:template>/",
+                "</script>",
+                "After OS Template"),
+            ContentType.HTML),
+        // Script element removed, but not parsed as JS.
+        job("Before OS Template\n\nAfter OS Template",
+            ContentType.HTML));
+    assertMessage(
+        true, PluginMessageType.UNRECOGNIZED_CONTENT_TYPE, MessageLevel.WARNING,
+        MessagePart.Factory.valueOf("text/opensocial"));
+    assertNoWarnings();
   }
 
   @Override

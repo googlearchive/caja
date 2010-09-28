@@ -334,7 +334,6 @@ public class DomParser {
         Document doc = el.getOwnerDocument();
         // First, look at any xmlns:* attributes and add to the inScope
         // namespace.
-        boolean hasNamespaceAttrs = false;
         {
           NamedNodeMap attrs = el.getAttributes();
           for (int i = 0, n = attrs.getLength(); i < n; ++i) {
@@ -343,7 +342,6 @@ public class DomParser {
             String name = a.getName();
             if (name.startsWith(AttributeNameFixup.XMLNS_PREFIX)) {
               String qname = AttributeNameFixup.qnameFromFixupName(name);
-              hasNamespaceAttrs = true;
               String prefix = qname.substring(6);  // "xmlns:".length()
               String uri = a.getValue();
               ns = new Namespaces(ns, prefix, uri);
@@ -394,13 +392,6 @@ public class DomParser {
             {
               String name = a.getName();
               if (!name.startsWith(AttributeNameFixup.PREFIX)) { continue; }
-              if (hasNamespaceAttrs
-                  && name.startsWith(AttributeNameFixup.XMLNS_PREFIX)) {
-                el.removeAttributeNode(a);
-                modifiedAttrs = true;
-                n = attrs.getLength();
-                continue;
-              }
               if (a.getNamespaceURI() != null) { continue; }
               qname = AttributeNameFixup.qnameFromFixupName(name);
             }

@@ -23,6 +23,7 @@ import com.google.caja.lexer.ParseException;
 import com.google.caja.lexer.Token;
 import com.google.caja.parser.html.DomParser;
 import com.google.caja.parser.html.Nodes;
+import com.google.caja.reporting.MarkupRenderMode;
 import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.util.CajaTestCase;
@@ -116,7 +117,8 @@ public class LocalizerTest extends CajaTestCase {
         + "  ore-May poofs and-ay ake-may em-thay cheesy, ease-play!\n"
         + "  <a href=\"bar\">inkLay2</a> ommakay <a href=\"foo\">inkLay1</a>\n"
         + "</ihtml:template>",
-        Nodes.render(ihtmlRoot, true).replaceAll("\n[ \n]*\n", "\n"));
+        Nodes.render(ihtmlRoot, MarkupRenderMode.XML)
+            .replaceAll("\n[ \n]*\n", "\n"));
     assertMessage(
         true, IhtmlMessageType.UNTRANSLATED_MESSAGE, MessageLevel.WARNING,
         FilePosition.fromLinePositions(is, 4, 3, 8, 19),
@@ -194,7 +196,7 @@ public class LocalizerTest extends CajaTestCase {
     assertEquals(
         Nodes.render(xmlFragment(fromString(
             "<ihtml:ph name=startLink />Click<ihtml:ph name=endLink />")),
-            true),
+            MarkupRenderMode.XML),
         msg.getSerializedForm());
     assertEquals(
         Nodes.render(xmlFragment(fromString(
@@ -203,7 +205,7 @@ public class LocalizerTest extends CajaTestCase {
             + " title='click me'>"
             + "Click"
             + "</button>"
-            + "<br clear='all'/>")), true),
+            + "<br clear='all'/>")), MarkupRenderMode.XML),
         Nodes.render(msg.substitute(
             DomParser.makeDocument(null, null),
             new LocalizedHtml.PlaceholderHandler() {
@@ -242,7 +244,7 @@ public class LocalizerTest extends CajaTestCase {
                   }
                 };
               }
-            }), true));
+            }), MarkupRenderMode.XML));
     assertNoErrors();
   }
 }

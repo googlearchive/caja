@@ -42,6 +42,7 @@ import com.google.caja.plugin.UriEffect;
 import com.google.caja.plugin.UriFetcher;
 import com.google.caja.plugin.UriPolicy;
 import com.google.caja.plugin.UriPolicyHintKey;
+import com.google.caja.reporting.MarkupRenderMode;
 import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.util.CajaTestCase;
@@ -740,6 +741,15 @@ public class TemplateCompilerTest extends CajaTestCase {
         new Block(), false);
   }
 
+  public final void testXmlnsAttrs() throws Exception {
+    // XMLNS attributes stripped out.
+    assertSafeHtml(
+        htmlFragment(fromString(
+            "<div xmlns:os=\"http://ns.opensocial.org/2008/markup\"></div>")),
+        htmlFragment(fromString("<div></div>")),
+        new Block(), true);
+  }
+
   private void assertSafeHtml(
       DocumentFragment input, DocumentFragment htmlGolden, Block jsGolden)
       throws ParseException {
@@ -782,7 +792,8 @@ public class TemplateCompilerTest extends CajaTestCase {
     assertEquals(safeContent.a.getOwnerDocument(), doc);
 
     assertEquals(
-        Nodes.render(htmlGolden, true), Nodes.render(safeContent.a, true));
+        Nodes.render(htmlGolden, MarkupRenderMode.XML),
+        Nodes.render(safeContent.a, MarkupRenderMode.XML));
     assertEquals(
         renderProgram(jsGolden), renderProgram(consolidate(safeContent.b)));
  }
