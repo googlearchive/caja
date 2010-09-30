@@ -4496,7 +4496,6 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
       getImports: getImports,
       unregister: unregister,
       newTable: newTable,
-      extend: extend,
       whitelistAll: whitelistAll,
       snowWhite: snowWhite,
       Y: Y,
@@ -4529,7 +4528,13 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
       makeNormalNewModuleHandler: makeNormalNewModuleHandler,
       prepareModule: prepareModule,
       loadModule: loadModule,
-      NO_RESULT: NO_RESULT
+      NO_RESULT: NO_RESULT,
+      // Taming
+      tame: tame,
+      untame: untame,
+      tamesTo: tamesTo,
+      tamesToSelf: tamesToSelf,
+      extend: extend
     };
   var cajaVMKeys = ownEnumKeys(cajaVM);
   for (var i = 0; i < cajaVMKeys.length; ++i) {
