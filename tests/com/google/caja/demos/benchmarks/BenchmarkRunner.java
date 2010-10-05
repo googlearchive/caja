@@ -72,7 +72,6 @@ public class BenchmarkRunner extends CajaTestCase {
     runBenchmark("loop-sum.js");
   }
 
-
   /**
    * Runs the given benchmark
    * Accumulates the result and formats it for consumption by varz
@@ -82,40 +81,27 @@ public class BenchmarkRunner extends CajaTestCase {
    */
   private void runBenchmark(String filename) throws Exception {
     double uncajoledTime = runUncajoled(filename);
-    double cajitaTime = runCajoled(filename, false, false);
-    double valijaTime = runCajoled(filename, true, false);
-    double valijaWrappedTime = runCajoled(filename, true, true);
-    double cajitaWrappedTime = runCajoled(filename, false, true);
+    double cajitaTime = runCajoledLegacy(filename, false);
+    double valijaTime = runCajoledLegacy(filename, true);
+    double es53Time = runCajoledES53(filename);
 
     varz(getName(), "uncajoled", "time", uncajoledTime);
     varz(getName(), "valija", "time", valijaTime);
     varz(getName(), "cajita", "time", cajitaTime);
-
+    varz(getName(), "es53", "time", es53Time);
+    
     varz(getName(), "valija", "timeratio",
         valijaTime < 0 ? -1 : valijaTime / uncajoledTime);
     varz(getName(), "cajita", "timeratio",
         cajitaTime < 0 ? -1 : cajitaTime / uncajoledTime);
-
-    // We rename the test here because wrapping globals is an optimization
-    // that changes the benchmark -- albeit a trivial one that is easy for
-    // developers to perform on their own code.
-    varz(getName() + "WrapGlobals", "valija", "time", valijaWrappedTime);
-    varz(getName() + "WrapGlobals", "cajita", "time", cajitaWrappedTime);
-
-    varz(getName() + "WrapGlobals", "valija", "timeratio",
-        valijaWrappedTime < 0 ? -1 : valijaWrappedTime / uncajoledTime);
-    varz(getName() + "WrapGlobals", "cajita", "timeratio",
-        cajitaWrappedTime < 0 ? -1 : cajitaWrappedTime / uncajoledTime);
+    varz(getName(), "es53", "timeratio",
+        es53Time < 0 ? -1 : es53Time / uncajoledTime);
   }
 
   private void varz(String name, String lang, String feature, double value) {
     System.out.println(
         "VarZ:benchmark." + name + "." + feature + "." + lang +
         ".nodebug.rhino.cold=" + value);
-  }
-
-  private String wrapGlobals(String nakedJS) {
-    return "(function() {" + nakedJS + "})();";
   }
 
   private double runUncajoled(String filename) throws Exception {
@@ -127,14 +113,11 @@ public class BenchmarkRunner extends CajaTestCase {
     return elapsed.doubleValue();
   }
 
-  private double runCajoled(String filename, boolean valija,
-      boolean wrapGlobals) throws Exception {
+  private double runCajoledLegacy(String filename, boolean valija) throws Exception {
     PluginMeta meta = new PluginMeta();
     MessageQueue mq = new SimpleMessageQueue();
     PluginCompiler pc = new PluginCompiler(new TestBuildInfo(), meta, mq);
-    CharProducer src = wrapGlobals ?
-        fromString(wrapGlobals(plain(fromResource(filename)))):
-            fromString(plain(fromResource(filename)));
+    CharProducer src = fromString(plain(fromResource(filename)));
     pc.addInput(
         valija ? BenchmarkUtils.addUseCajitaDirective(js(src)) : js(src),
         is.getUri());
@@ -143,8 +126,7 @@ public class BenchmarkRunner extends CajaTestCase {
     }
     String cajoledJs = render(pc.getJavascript());
     System.err.println("-- Cajoled:" + filename +
-          "(wrapped: " + wrapGlobals +
-          ", valija:" + valija + ") --\n" + cajoledJs + "\n---\n");
+          "(valija:" + valija + ") --\n" + cajoledJs + "\n---\n");
     Number elapsed = (Number) RhinoTestBed.runJs(
         new Executor.Input(getClass(),
             "../../../../../js/json_sans_eval/json_sans_eval.js"),
@@ -175,4 +157,41 @@ public class BenchmarkRunner extends CajaTestCase {
             "elapsed"));
     return elapsed.doubleValue();
   }
+  
+  private double runCajoledES53(String filename) throws Exception {
+    PluginMeta meta = new PluginMeta();
+    meta.setEnableES53(true);
+    MessageQueue mq = new SimpleMessageQueue();
+    PluginCompiler pc = new PluginCompiler(new TestBuildInfo(), meta, mq);
+    CharProducer src = fromString(plain(fromResource(filename)));
+    pc.addInput(js(src), is.getUri());
+
+    if (!pc.run()) {
+      return -1;
+    }
+    String cajoledJs = render(pc.getJavascript());
+    System.err.println("-- Cajoled:" + filename +
+          "(es53: true" + ") --\n" + cajoledJs + "\n---\n");
+    Number elapsed = (Number) RhinoTestBed.runJs(
+        new Executor.Input(getClass(),
+            "../../../../../js/json_sans_eval/json_sans_eval.js"),
+        new Executor.Input(getClass(), "../../es53.js"),
+        new Executor.Input(
+            // Set up the imports environment.
+            ""
+            + "var imports = ___.copy(___.whitelistAll(___.sharedImports));"
+            + "imports.onerror = ___.markFunc(function(x){ return true; });"
+            + "___.setLogFunc(imports.onerror);"
+            + "imports.benchmark = ___.whitelistAll({startTime:0});"
+            + "___.getNewModuleHandler().setImports(___.whitelistAll(imports));"
+
+            + "imports.benchmark.startTime = new Date();",
+          "benchmark-container"),
+        new Executor.Input(cajoledJs, getName()),
+        new Executor.Input(
+            "(new Date() - imports.benchmark.startTime)",
+            "elapsed"));
+    return elapsed.doubleValue();
+  }
+
 }
