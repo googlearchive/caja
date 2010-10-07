@@ -404,6 +404,28 @@ public class ES53RewriterTest extends CommonJsRewriterTestCase {
         "pt.x = 8;" +
         "Object.freeze(pt);" +
         "assertThrows(function(){pt.y = 9;});");
+    // Check that deferred creation of prototype property doesn't make it
+    // writable.
+    rewriteAndExecute(
+        "function f(){}" +
+        "Object.freeze(f);" +
+        "assertThrows(function() { f.prototype = {}; });");
+  }
+
+  /**
+   * Tests that the {@code prototype}, {@code name}, and {@code length}
+   * properties of function instances are set properly.
+   */
+  public final void testFunctionInstance() throws Exception {
+    rewriteAndExecute(
+        "assertTrue(!!((function(){}).prototype));");
+    rewriteAndExecute(
+        "assertEquals((function(a,b,c){}).length, 3);");
+    rewriteAndExecute(
+        "assertEquals((function x(a,b,c){}).name, 'x');");
+    // Check frozen functions created early in es53.js
+    rewriteAndExecute(
+        "assertTrue(!!(cajaVM.USELESS.toString.prototype));");
   }
 
   /**

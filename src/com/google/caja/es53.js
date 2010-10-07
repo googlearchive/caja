@@ -36,7 +36,7 @@
  * @overrides escape, JSON
  */
 
-var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
+var ___, cajaVM, safeJSON, AS_TAMED___, AS_FERAL___;
 
 (function () {
   // For computing the [[Class]] internal property
@@ -167,6 +167,14 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
    *                                      the inherited {@code AS_TAMED___}
    *                                      method.
    * {@code ___.untame(obj)}              is similar, but goes the other way.
+   * 
+   * Since creating function instances is a common pattern and reading
+   * properties of a function instance is not, we defer whitelisting the
+   * prototype, length, and name properties.
+   * 
+   * {@code f.name___}                    holds the value of the deferred name
+   *                                      property of a function instance until
+   *                                      it's installed.
    */
 
   // We have to define it even on Firefox, since the built-in slice doesn't
@@ -174,7 +182,7 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
   Array.slice = markFunc(function (dis, startIndex) { // , endIndex
       dis = ToObject(dis);
       if (arguments.length > 2) {
-        var edIndex = aguments[2];
+        var edIndex = arguments[2];
         return slice.call(dis, startIndex, endIndex);
       } else {
         return slice.call(dis, startIndex);
@@ -729,6 +737,78 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
   }
 
   /**
+   * We defer the creation of these properties until they're asked for.
+   */
+  function installFunctionInstanceProps(f) {
+    var name = f.name___;
+    delete f.name___;
+    // Object.prototype.DefineOwnProperty___ may not be defined yet
+    f.prototype_v___ = f;
+    f.prototype_w___ = f;
+    f.prototype_gw___ = f;
+    f.prototype_c___ = false;
+    f.prototype_e___ = false;
+    f.prototype_g___ = void 0;
+    f.prototype_s___ = void 0;
+    f.prototype_m___ = false;
+    f.length_v___ = f;
+    f.length_w___ = false;
+    f.length_gw___ = false;
+    f.length_c___ = false;
+    f.length_e___ = false;
+    f.length_g___ = void 0;
+    f.length_s___ = void 0;
+    f.length_m___ = false;
+    // Rhino prohibits setting the name property of function instances,
+    // so we install a getter instead.
+    f.name_v___ = false;
+    f.name_w___ = false;
+    f.name_gw___ = false;
+    f.name_c___ = false;
+    f.name_e___ = false;
+    f.name_g___ = markFunc(function() {return name;});
+    f.name_s___ = void 0;
+    f.name_m___ = false;
+  }
+
+  function deferredV(name) {
+    delete this.v___;
+    delete this.w___;
+    delete this.c___;
+    delete this.DefineOwnProperty___;
+    installFunctionInstanceProps(this);
+    // Object.prototype.v___ may not be defined yet
+    return this.v___ ? this.v___(name) : void 0;
+  }
+
+  function deferredW(name, val) {
+    delete this.v___;
+    delete this.w___;
+    delete this.c___;
+    delete this.DefineOwnProperty___;
+    installFunctionInstanceProps(this);
+    return this.w___(name, val);
+  }
+
+  function deferredC(name) {
+    delete this.v___;
+    delete this.w___;
+    delete this.c___;
+    delete this.DefineOwnProperty___;
+    installFunctionInstanceProps(this);
+    return this.c___(name);
+  }
+
+  function deferredDOP(name, desc) {
+    delete this.v___;
+    delete this.w___;
+    delete this.c___;
+    delete this.DefineOwnProperty___;
+    installFunctionInstanceProps(this);
+    return this.DefineOwnProperty___(name, desc);
+  }
+
+  /**
    * For taming a simple function or a safe exophoric function (only reads
    * whitelisted properties of {@code this}).
    */
@@ -742,30 +822,11 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
     }
     fn.f___ = fn.apply;
     fn.new___ = fn;
-    if (fn.DefineOwnProperty___) {
-      fn.DefineOwnProperty___('prototype', {
-          value: fn.prototype,
-          writable: true,
-          enumerable: false,
-          configurable: false
-        });
-      fn.DefineOwnProperty___('length', {
-          value: fn.length,
-          writable: false,
-          enumerable: false,
-          configurable: false
-        });
-      if (name) {
-        name = '' + name;
-        // name is not writable on Rhino
-        fn.DefineOwnProperty___('name', {
-            get: markFunc(function () { return name; }),
-            set: void 0,
-            enumerable: false,
-            configurable: false
-          });
-      }
-    }
+    fn.name___ = '' + name;
+    fn.v___ = deferredV;
+    fn.w___ = deferredW;
+    fn.c___ = deferredC;
+    fn.DefineOwnProperty___ = deferredDOP;
     return fn;
   }
 
@@ -2556,22 +2617,18 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
       return this.f___(___.USELESS, slice.call(arguments, 0));
     };
   Function.prototype.new___ = callFault;
-  Function.prototype.DefineOwnProperty___(
-      'arguments',
-      {
-        enumerable: false,
-        configurable: false,
-        get: poisonFuncArgs,
-        set: poisonFuncArgs
-      });
-  Function.prototype.DefineOwnProperty___(
-      'caller',
-      {
-        enumerable: false,
-        configurable: false,
-        get: poisonFuncCaller,
-        set: poisonFuncCaller
-      });
+  Function.prototype.DefineOwnProperty___('arguments', {
+      enumerable: false,
+      configurable: false,
+      get: poisonFuncArgs,
+      set: poisonFuncArgs
+    });
+  Function.prototype.DefineOwnProperty___('caller', {
+      enumerable: false,
+      configurable: false,
+      get: poisonFuncCaller,
+      set: poisonFuncCaller
+    });
 
   // 11.2.4
   var poisonArgsCallee = makePoisonPill('arguments.callee');
@@ -2876,6 +2933,11 @@ var ___, es53, safeJSON, AS_TAMED___, AS_FERAL___;
     // fail like any other attempt to change the properties.
     // Tamed setters should check before changing a property.
     if (obj.z___ === obj) { return obj; }
+    // Allow function instances to install their instance properties
+    // before freezing them.
+    if (obj.v___ === deferredV) {
+      obj.v___('length');
+    }
     obj.ne___ = obj;
     for (var i in obj) {
       if (!guestHasOwnProperty(obj,i)) { continue; }
