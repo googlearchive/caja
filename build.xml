@@ -244,12 +244,30 @@
       <report format="frames" todir="${reports}/tests"
        styledir="${third_party}/ant/etc"/>
     </junitreport>
+    <condition property="runtests.success">
+      <and>
+        <isfalse value="runtests.error"/>
+        <isfalse value="runtests.failure"/>
+      </and>
+    </condition>
+    <antcall target="CacheTestSuccess"/>
     <fail message=
      "One or more tests failed. For details, see ${reports}/tests/index.html"
      if="runtests.error"/>
     <fail message=
      "One or more tests failed. For details, see ${reports}/tests/index.html"
      if="runtests.failure"/>
+  </target>
+
+  <target name="CacheTestSuccess" >
+    <!-- Snapshot the change being tested to reduce rerunning tests on submit -->
+    <exec output="${lib}/runtests.success.patch"
+        executable="svn"
+        failonerror="false"
+        failifexecutionfails="false"
+        dir=".">
+      <arg value="diff"/>
+    </exec>
   </target>
 
   <target name="runbrowserstub" depends="AllTests">

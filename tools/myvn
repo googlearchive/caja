@@ -276,8 +276,16 @@ function makeEclipseGenfiles() {
 }
 
 function runAntTests() {
-  echo Running tests before submission
-  ant runtests
+  local current_diff="ant-lib/runtests.current.patch"
+  local success_diff="ant-lib/runtests.success.patch"
+  rm -rf "$current_diff"
+  "$svn" diff > "$current_diff"
+  if diff "$current_diff" "$success_diff" >& /dev/null; then
+    echo No changes since the last successful test
+  else 
+    echo Running tests before submission
+    ant runtests
+  fi
 }
 
 myvn "$@"
