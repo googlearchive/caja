@@ -1200,6 +1200,7 @@ jsunitRegister('testPseudoElements',
   var head = document.getElementsByTagName('head')[0];
   var title = document.getElementsByTagName('title')[0];
   var html = document.getElementsByTagName('html')[0];
+  var all = document.getElementsByTagName('*');
 
   assertEquals('BODY', body.tagName);
   assertEquals(null, body.getAttribute('foo'));
@@ -1209,6 +1210,10 @@ jsunitRegister('testPseudoElements',
   assertEquals(null, title.getAttribute('foo'));
   assertEquals('HTML', html.tagName);
   assertEquals(null, html.getAttribute('foo'));
+  assertEquals(html, all[0]);
+  assertEquals(head, all[1]);
+  assertEquals(title, all[2]);
+  assertEquals(body, all[3]);
 
   pass('test-pseudo-elements');
 });

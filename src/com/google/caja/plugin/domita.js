@@ -3227,8 +3227,15 @@ var attachDocumentStub = (function () {
         case 'title': return fakeNodeList([ this.getTitle___() ]);
         case 'html': return fakeNodeList([ this.getDocumentElement___() ]);
         default:
-          return tameGetElementsByTagName(
+          var nodes = tameGetElementsByTagName(
               this.body___, tagName, this.editable___);
+          if (tagName === '*') {
+            nodes.unshift(this.getBody___());
+            nodes.unshift(this.getTitle___());
+            nodes.unshift(this.getHead___());
+            nodes.unshift(this.getDocumentElement___());
+          }
+          return nodes;
       }
     };
     TameHTMLDocument.prototype.getDocumentElement___ = function () {
