@@ -481,11 +481,6 @@
       <report format="frames" todir="${reports}/benchmarks"
        styledir="${third_party}/ant/etc"/>
     </junitreport>
-    <fail message=
-     "One or more tests failed. For details, see ${reports}/tests/index.html"
-     if="benchmarks.error"/>
-    <fail message="One or more tests failed to compile."
-     if="benchmarks.failure"/>
   </target>
 
   <target name="jars" depends="pluginc,CajoledValija,MinifiedJs"
