@@ -267,13 +267,14 @@ public class ES53RewriterTest extends CommonJsRewriterTestCase {
         "function Foo(x) { this.x = x; }" +
         "var foo = new Foo(2);" +
         "if (!foo) { fail('Failed to construct a global object.'); }" +
-        "assertEquals(foo.x, 2);");
+        "assertEquals(2, foo.x);" +
+        "assertEquals(Foo, foo.constructor);");
     rewriteAndExecute(
         "(function () {" +
         "  function Foo(x) { this.x = x; }" +
         "  var foo = new Foo(2);" +
         "  if (!foo) { fail('Failed to construct a local object.'); }" +
-        "  assertEquals(foo.x, 2);" +
+        "  assertEquals(2, foo.x);" +
         "})();");
     rewriteAndExecute(
         "function Foo() { }" +
