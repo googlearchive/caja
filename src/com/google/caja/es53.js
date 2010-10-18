@@ -1115,48 +1115,50 @@ var ___, cajaVM, safeJSON, AS_TAMED___, AS_FERAL___;
   }
 
   var goodJSON = {};
-  goodJSON.parse = markFunc(jsonParseOk(JSON) ?
-    JSON.parse : json_sans_eval.parse);
+  var parser = jsonParseOk(JSON) ? JSON.parse : json_sans_eval.parse;
+  goodJSON.parse = markFunc(function () {
+      return whitelistAll(parser.apply(this, arguments), true);
+    });
   goodJSON.stringify = markFunc(jsonStringifyOk(JSON) ?
-    JSON.stringify : json_sans_eval.stringify);
+      JSON.stringify : json_sans_eval.stringify);
 
   safeJSON = snowWhite({
       CLASS___: 'JSON',
       parse: markFunc(function (text, opt_reviver) {
-        var reviver = void 0;
-        if (opt_reviver) {
-          opt_reviver = toFunc(opt_reviver);
-          reviver = function (key, value) {
-            return opt_reviver.apply(this, arguments);
-          };
-        }
-        return goodJSON.parse(
-            json_sans_eval.checkSyntax(text, function (key) {
-              return key !== 'valueOf' &&
-                  key !== 'toString' &&
-                  !endsWith__.test(key);
-            }), reviver);
-      }),
+          var reviver = void 0;
+          if (opt_reviver) {
+            reviver = markFunc(function (key, value) {
+                return opt_reviver.f___(this, arguments);
+              });
+          }
+          return goodJSON.parse(
+              json_sans_eval.checkSyntax(
+                  text,
+                  function (key) {
+                    return !endsWith__.test(key);
+                  }),
+              reviver);
+        }),
       stringify: markFunc(function (obj, opt_replacer, opt_space) {
-        switch (typeof opt_space) {
-          case 'number': case 'string': case 'undefined': break;
-          default: throw new TypeError('space must be a number or string');
-        }
-        var replacer;
-        if (opt_replacer) {
-          opt_replacer = toFunc(opt_replacer);
-          replacer = function (key, value) {
-              if (!this.HasProperty___(key)) { return void 0; }
-              return opt_replacer.apply(this, arguments);
-            };
-        } else {
-          replacer = function (key, value) {
-              // TODO: fix this!  canReadPub doesn't exist any more
-              return (this.HasProperty___(key)) ? value : void 0;
-            };
-        }
-        return goodJSON.stringify(obj, replacer, opt_space);
-      })
+          switch (typeof opt_space) {
+            case 'number': case 'string': case 'undefined': break;
+            default: throw new TypeError('space must be a number or string');
+          }
+          var replacer;
+          if (opt_replacer) {
+            replacer = markFunc(function (key, value) {
+                if (!this.HasProperty___(key)) { return void 0; }
+                return opt_replacer.f___(this, arguments);
+              });
+          } else {
+            replacer = markFunc(function (key, value) {
+                return (this.HasProperty___(key) || key === '') ?
+                    value :
+                    void 0;
+              });
+          }
+          return goodJSON.stringify(obj, replacer, opt_space);
+        })
     });
 
 
@@ -2972,12 +2974,17 @@ var ___, cajaVM, safeJSON, AS_TAMED___, AS_FERAL___;
 
   /**
    * Whitelists all the object's own properties that do not
-   * end in __.
+   * end in __.  If opt_deep is true, recurses on objects and
+   * assumes the object has no cycles through accessible keys.
    */
-  function whitelistAll(obj) {
+  function whitelistAll(obj, opt_deep) {
     var i;
     for (i in obj) {
       if (obj.hasOwnProperty(i) && !endsWith__.test(i)) {
+        var isObj = (typeof obj[i]) === 'object';
+        if (opt_deep && isObj) {
+          whitelistAll(obj[i], true);
+        }
         obj[i + '_v___'] = obj;
         obj[i + '_w___'] = false;
         obj[i + '_gw___'] = false;

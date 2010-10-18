@@ -1342,11 +1342,10 @@ public class ES53RewriterTest extends CommonJsRewriterTestCase {
         );
     assertConsistent(
         "(function(){}).call.call(function(a, b) {return a + b;}, {}, 3, 4);");
-    rewriteAndExecute("",
+    rewriteAndExecute(
         "var a = [], b = {x:3};\n" +
         "for (var i in b) { a.push(i, b[i]); };" +
-        "assertEquals(a.toString(), 'x,3');",
-        "");
+        "assertEquals(a.toString(), 'x,3');");
     assertConsistent(
         "Function.prototype.apply.call(" +
         "    function(a, b) {" +
@@ -1482,7 +1481,7 @@ public class ES53RewriterTest extends CommonJsRewriterTestCase {
 
   /**
    * Tests that the apparent [[Class]] of the tamed JSON object is 'JSON', as
-   * it should be according to ES5.
+   * it should be according to ES5.  Also tests parse and stringify.
    *
    * See issue 1086
    */
@@ -1490,6 +1489,20 @@ public class ES53RewriterTest extends CommonJsRewriterTestCase {
     rewriteAndExecute("assertTrue(''+JSON === '[object JSON]');");
     rewriteAndExecute(
         "assertTrue(({}).toString.call(JSON) === '[object JSON]');");
+    rewriteAndExecute(
+        "var x = JSON.parse('{\"a\":[{\"b\":33}]}');" +
+        "assertEquals(33, x.a[0].b);");
+    rewriteAndExecute(
+        "var x = JSON.stringify({a:33});" +
+        "assertEquals('{\"a\":33}', x);");
+    rewriteAndExecute(
+        "var pass = false;" +
+        "try { var x = JSON.parse('{\"b\":1, \"a___\":33}'); }" +
+        "catch (e) { " +
+        "  assertTrue(e.message.indexOf('a___') !== -1);" +
+        "  pass = true;" +
+        "}" +
+        "assertTrue(pass);");
   }
 
   /**
