@@ -979,7 +979,12 @@ public final class Parser extends ParserBase {
   }
 
   private strictfp long toInteger(Token<JsTokenType> t) {
-    Long longValue = Long.decode(t.text);
+    Number longValue;
+    try {
+      longValue = Long.decode(t.text);
+    } catch (NumberFormatException e) {
+      longValue = new BigDecimal(t.text);
+    }
 
     // Make sure that the number fits in a 51 bit mantissa
     long lv = longValue.longValue();
@@ -993,7 +998,12 @@ public final class Parser extends ParserBase {
   }
 
   private NumberLiteral toIntegerLiteral(Token<JsTokenType> t) {
-    Long longValue = Long.decode(t.text);
+    Number longValue;
+    try {
+      longValue = Long.decode(t.text);
+    } catch (NumberFormatException e) {
+      longValue = new BigDecimal(t.text);
+    }
 
     // Make sure that the number fits in a 51 bit mantissa
     long lv = longValue.longValue();
