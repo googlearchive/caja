@@ -372,9 +372,9 @@ domitaModules.TameXMLHttpRequest = function(
     return (result === undefined || result === null) ?
       result : String(result);
   };
-  TameXMLHttpRequest.prototype.toString = function () {
+  TameXMLHttpRequest.prototype.toString = ___.markFuncFreeze(function () {
     return 'Not a real XMLHttpRequest';
-  };
+  });
   ___.markCtor(TameXMLHttpRequest, Object, 'TameXMLHttpRequest');
   ___.all2(___.grantTypedMethod, TameXMLHttpRequest.prototype,
            ['open', 'setRequestHeader', 'send', 'abort',
@@ -464,8 +464,8 @@ var attachDocumentStub = (function () {
   // This does not actually use the trademarking functions since trademarks
   // cannot be applied to strings.
   function Html(htmlFragment) { this.html___ = String(htmlFragment || ''); }
-  Html.prototype.valueOf = Html.prototype.toString
-      = function () { return this.html___; };
+  Html.prototype.valueOf = Html.prototype.toString =
+      ___.markFuncFreeze(function () { return this.html___; });
   function safeHtml(htmlFragment) {
     return (htmlFragment instanceof Html)
         ? htmlFragment.html___
@@ -2083,9 +2083,9 @@ var attachDocumentStub = (function () {
     TamePseudoElement.prototype.getGeometryDelegate___ = function () {
       return this.geometryDelegate___;
     };
-    TamePseudoElement.prototype.toString = function () {
+    TamePseudoElement.prototype.toString = ___.markFuncFreeze(function () {
       return '<' + this.tagName___ + '>';
-    };
+    });
     ___.all2(___.grantTypedMethod, TamePseudoElement.prototype,
              ['getAttribute', 'setAttribute',
               'hasAttribute', 'removeAttribute',
@@ -2169,18 +2169,18 @@ var attachDocumentStub = (function () {
         = TameTextNode.prototype.setInnerText___
         = TameTextNode.prototype.setData___
         = TameTextNode.prototype.setNodeValue___;
-    TameTextNode.prototype.toString = function () {
+    TameTextNode.prototype.toString = ___.markFuncFreeze(function () {
       return '#text';
-    };
+    });
 
     function TameCommentNode(node, editable) {
       assert(node.nodeType === 8);
       TameBackedNode.call(this, node, editable, editable);
     }
     inertCtor(TameCommentNode, TameBackedNode, 'CommentNode');
-    TameCommentNode.prototype.toString = function () {
+    TameCommentNode.prototype.toString = ___.markFuncFreeze(function () {
       return '#comment';
-    };
+    });
 
     function getAttributeType(tagName, attribName) {
       var attribKey;
@@ -2249,9 +2249,10 @@ var attachDocumentStub = (function () {
     TameBackedAttributeNode.prototype.getAttributes___ = function () {
       throw new Error ("Not implemented.");
     };
-    TameBackedAttributeNode.prototype.toString = function () {
-      return '[Fake attribute node]';
-    };
+    TameBackedAttributeNode.prototype.toString = 
+        ___.markFuncFreeze(function () {
+          return '[Fake attribute node]';
+        });
 
     // Register set handlers for onclick, onmouseover, etc.
     function registerElementScriptAttributeHandlers(aTameElement) {
@@ -2527,9 +2528,9 @@ var attachDocumentStub = (function () {
     TameElement.prototype.getGeometryDelegate___ = function () {
       return this.node___;
     };
-    TameElement.prototype.toString = function () {
+    TameElement.prototype.toString = ___.markFuncFreeze(function () {
       return '<' + this.node___.tagName + '>';
-    };
+    });
     TameElement.prototype.addEventListener = tameAddEventListener;
     TameElement.prototype.removeEventListener = tameRemoveEventListener;
     ___.all2(
@@ -3021,7 +3022,8 @@ var attachDocumentStub = (function () {
       var kc = this.event___.keyCode;
       return kc && Number(kc);
     };
-    TameEvent.prototype.toString = function () { return '[Fake Event]'; };
+    TameEvent.prototype.toString = 
+        ___.markFuncFreeze(function () { return '[Fake Event]'; });
     ___.all2(___.grantTypedMethod, TameEvent.prototype,
              ['stopPropagation', 'preventDefault']);
 
@@ -3096,9 +3098,9 @@ var attachDocumentStub = (function () {
       }
       return [];
     };
-    TameCustomHTMLEvent.prototype.toString = function () {
+    TameCustomHTMLEvent.prototype.toString = ___.markFuncFreeze(function () {
       return '[Fake CustomEvent]';
-    };
+    });
     ___.grantTypedMethod(TameCustomHTMLEvent.prototype, 'initEvent');
 
     function TameHTMLDocument(doc, body, domain, editable) {
@@ -3320,9 +3322,9 @@ var attachDocumentStub = (function () {
     TameHTMLDocument.prototype.getCompatMode___ = function () {
       return 'CSS1Compat';
     };
-    TameHTMLDocument.prototype.toString = function () {
+    TameHTMLDocument.prototype.toString = ___.markFuncFreeze(function () {
       return '[Fake Document]';
-    };
+    });
     // http://www.w3.org/TR/DOM-Level-2-Events/events.html
     // #Events-DocumentEvent-createEvent
     TameHTMLDocument.prototype.createEvent = function (type) {
@@ -3528,7 +3530,8 @@ var attachDocumentStub = (function () {
       this.writeByCanonicalName___(canonName, val);
       return value;
     };
-    TameStyle.prototype.toString = function () { return '[Fake Style]'; };
+    TameStyle.prototype.toString =
+        ___.markFuncFreeze(function () { return '[Fake Style]'; });
 
     function isNestedInAnchor(rawElement) {
       for ( ; rawElement && rawElement != pseudoBodyNode;
@@ -3562,9 +3565,9 @@ var attachDocumentStub = (function () {
     TameComputedStyle.prototype.writeByCanonicalName___ = function(canonName) {
       throw 'Computed styles not editable: This code should be unreachable';
     };
-    TameComputedStyle.prototype.toString = function () {
+    TameComputedStyle.prototype.toString = ___.markFuncFreeze(function () {
       return '[Fake Computed Style]';
-    };
+    });
 
     // Note: nodeClasses.XMLHttpRequest is a ctor that *can* be directly
     // called by cajoled code, so we do not use inertCtor().

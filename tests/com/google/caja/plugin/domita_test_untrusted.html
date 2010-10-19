@@ -530,6 +530,8 @@ Static CommonJS Module</p>
 
 <p class="testcontainer" id="test-inner-text">Hello, <b>World!</b></p>
 
+<p class="testToString" id="test-toString">Non-toxic toString</p>
+
 <p class="testcontainer" id="test-document-body-appendChild"
  >I should be the last element until something is appended to document.body</p>
 
@@ -3365,6 +3367,23 @@ jsunitRegister('testInnerText',
       document.getElementById('test-opaque-nodes').innerText);
 
   pass('test-inner-text');
+});
+
+jsunitRegister('testToString',
+              function testToString() {
+  // Remove once we get ot ES53 or fix 1290
+  if (false) {
+    // These all used to throw a "toxic function" exception in ES5/3.
+    assertEquals('<BODY>', document.body.toString());
+    assertEquals('#text', document.createTextNode('').toString());
+    // comment node
+    assertEquals(
+        '#comment',
+        document.getElementById('test-opaque-nodes').firstChild.toString());
+    assertEquals('<DIV>', document.createElement('div').toString());
+    assertEquals('[Fake Document]', document.toString());
+  }
+  pass('test-toString');
 });
 
 jsunitRegister('testDocumentBodyAppendChild',
