@@ -828,14 +828,19 @@ var ___, cajaVM, safeJSON, AS_TAMED___, AS_FERAL___;
     fn.c___ = deferredC;
     fn.DefineOwnProperty___ = deferredDOP;
     var p = fn.prototype;
-    p.constructor_v___ = p;
-    p.constructor_w___ = p;
-    p.constructor_gw___ = p;
-    p.constructor_c___ = p;
-    p.constructor_e___ = false;
-    p.constructor_g___ = void 0;
-    p.constructor_s___ = void 0;
-    p.constructor_m___ = false;
+    if (p && // must be truthy
+        typeof p === 'object' && // must be an object
+        // must not already have constructor whitelisted.
+        !p.hasOwnProperty('constructor_v___')) {
+      p.constructor_v___ = p;
+      p.constructor_w___ = p;
+      p.constructor_gw___ = p;
+      p.constructor_c___ = p;
+      p.constructor_e___ = false;
+      p.constructor_g___ = void 0;
+      p.constructor_s___ = void 0;
+      p.constructor_m___ = false;
+    }
     return fn;
   }
 
