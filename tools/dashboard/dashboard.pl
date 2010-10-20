@@ -153,7 +153,7 @@ sub collectCodeStats() {
   extractCoverageSummary("$REPORTS_DIR/coverage/index.html", \@status_log);
 
   print STDERR "running benchmarks\n";
-  track(\&build, ['-Xmx=512m', 'benchmarks'], 'benchmarks', \@status_log);
+  track(\&build, ['benchmarks'], 'benchmarks', \@status_log);
   extractBenchmarkSummary(
       "$REPORTS_DIR/benchmarks/TESTS-TestSuites.xml", \@status_log);
 

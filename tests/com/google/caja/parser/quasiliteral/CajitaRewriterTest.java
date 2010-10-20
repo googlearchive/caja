@@ -54,6 +54,7 @@ import junit.framework.AssertionFailedError;
 
 /**
  * @author ihab.awad@gmail.com
+ * @author erights@gmail.com
  */
 public class CajitaRewriterTest extends CommonJsRewriterTestCase {
 
@@ -86,8 +87,6 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
   /**
    * Welds together a string representing the repeated pattern of
    * expected test output for assigning to an outer variable.
-   *
-   * @author erights@gmail.com
    */
   private static String weldSetPub(String obj,
                                    String varName,
@@ -105,8 +104,6 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
   /**
    * Welds together a string representing the repeated pattern of
    * expected test output for reading an outer variable.
-   *
-   * @author erights@gmail.com
    */
   private static String weldReadPub(String obj, String varName, String tempObj) {
     return weldReadPub(obj, varName, tempObj, false);

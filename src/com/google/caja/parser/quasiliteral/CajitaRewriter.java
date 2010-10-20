@@ -84,8 +84,8 @@ import java.util.Set;
  * @author ihab.awad@gmail.com (Ihab Awad)
  */
 @RulesetDescription(
-    name="Caja Transformation Rules",
-    synopsis="Default set of transformations used by Caja"
+    name="Cajita Transformation Rules",
+    synopsis="Default set of transformations used by Cajita"
   )
 public class CajitaRewriter extends Rewriter {
   private final BuildInfo buildInfo;
@@ -2316,8 +2316,10 @@ public class CajitaRewriter extends Rewriter {
 
   public CajitaRewriter(
       URI baseUri, ModuleManager moduleManager, boolean logging) {
-    super(moduleManager.getMessageQueue(), true, logging);
-    this.buildInfo = moduleManager.getBuildInfo();
+    super(null == moduleManager ? null : moduleManager.getMessageQueue(),
+        true, logging);
+    this.buildInfo =
+      null == moduleManager ? null : moduleManager.getBuildInfo();
     this.baseUri = baseUri;
     this.moduleManager = moduleManager;
     initRules();

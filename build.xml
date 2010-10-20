@@ -282,7 +282,7 @@
 
   <target name="javadocs" description="Builds javadoc documentation.">
     <mkdir dir="${javadocs}"/>
-    <javadoc sourcepath="${src}" destdir="${javadocs}" access="private"
+    <javadoc sourcepath="${src}:${tests}" destdir="${javadocs}" access="private"
      author="true"
      bottom="Copyright (C) 2008 Google Inc.&lt;br&gt;
              &lt;a href=&#34;http://www.apache.org/licenses/LICENSE-2.0&#34;&gt;
@@ -306,6 +306,7 @@
     </copy>
     <genrule class="com.google.caja.ancillary.jsdoc.JsdocMain$Builder">
       <output file="${docs}/js/"/>
+      <input file="${third_party}/js/json_sans_eval/json_sans_eval.js"/>
       <input file="${src}/com/google/caja/cajita.js"/>
       <input file="${src}/com/google/caja/es53.js"/>
       <input file="${src}/com/google/caja/valija-cajita.js"/>
@@ -328,6 +329,10 @@
     <mkdir dir="${ruledocs}"/>
     <ruledoclet output="html" outputdir="${ruledocs}"
      rewriter="com.google.caja.parser.quasiliteral.CajitaRewriter"/>
+    <ruledoclet output="html" outputdir="${ruledocs}"
+     rewriter="com.google.caja.parser.quasiliteral.DefaultValijaRewriter"/>
+    <ruledoclet output="html" outputdir="${ruledocs}"
+     rewriter="com.google.caja.parser.quasiliteral.ES53Rewriter"/>
   </target>
 
   <target name="tools" depends="PluginCompiler">
