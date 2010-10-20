@@ -1,0 +1,141 @@
+<!--
+ - Copyright (C) 2010 Google Inc.
+ -
+ - Licensed under the Apache License, Version 2.0 (the "License");
+ - you may not use this file except in compliance with the License.
+ - You may obtain a copy of the License at
+ -
+ -      http://www.apache.org/licenses/LICENSE-2.0
+ -
+ - Unless required by applicable law or agreed to in writing, software
+ - distributed under the License is distributed on an "AS IS" BASIS,
+ - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ - See the License for the specific language governing permissions and
+ - limitations under the License.
+-->
+
+<style type="text/css">
+div.inputForm {
+  border: 1px solid #ffff00;
+  padding: 3px;
+  margin: 3px;
+  background-color: #d0d0d0;
+  display: none;
+}
+
+.display {
+  border: 1px solid #ff00ff;
+  padding: 3px;
+  margin: 3px;
+}
+
+.inputForm > table, #purses > table {
+  font-size: 9pt;
+}
+
+</style>
+
+<div id="makePurseForm" class="inputForm">
+  <span class="title">Endow a new purse from the reserve</span>  
+  <table>
+    <tr><td>Amount:</td><td><input id="makePurseAmount"></input></td></tr>
+    <tr><td>Name:</td><td><input id="makePurseName"></input></td></tr>        
+    <tr><td colspan="2"><div class="button" id="makePurseOk">Make</div></td></tr>
+  </table>
+</div>
+
+<div id="enterReserveForm" class="inputForm">
+  <span class="title">Initialize bank by entering a reserve</span>
+  <table>
+    <tr><td>Amount:</td><td><input id="enterReserveAmount"></input></td></tr>
+    <tr><td colspan="2"><div class="button" id="enterReserveOk">Ok</div></td></tr>
+  </table>
+</div>
+
+<div class="display">
+  <table id="purses">
+  </table>
+</div>
+
+<script type="text/javascript">
+var $ = function(a) { return document.getElementById(a); };
+$.create = function(n) { return document.createElement(n); };
+
+var model = undefined;
+var dragSourceByPurse = cajita.newTable();
+
+var makeDragSource = function(purse) {
+  return ;
+};
+
+var renderPurse = function(purse) {
+
+  var name = $.create('td');
+  var dollar = $.create('td');
+  var balance = $.create('td');
+  var dragSource = $.create('td');
+  var row = $.create('tr');
+
+  row.appendChild(name);
+  row.appendChild(dollar);
+  row.appendChild(balance);
+  row.appendChild(dragSource);
+
+  name.innerHTML = purse.getName();
+  dollar.innerHTML = '$';
+  balance.innerHTML = purse.getBalance();
+  balance.style.textAlign = 'right';
+
+  if (purse !== model.reserve) {
+    if (dragSourceByPurse.get(purse) === undefined) {
+      dragSourceByPurse.set(
+          purse,
+          photon.makeDragSource(
+              'com.example.Purse',
+              'A purse',
+              function() { return purse; }));
+    }
+    dragSourceByPurse.get(purse).createView(dragSource);
+  }
+
+  $('purses').appendChild(row);
+};
+
+var display = function() {
+  if (model == undefined) { return; }
+  $('purses').innerHTML = '';
+  for (var i = 0; i < model.purses.length(); i++) {
+    renderPurse(model.purses.getAt(i));
+  }
+};
+
+var makeBank = function(reserve) {
+  'use strict';
+  'use cajita';
+  return load('bank')({
+    reserve: reserve
+  });
+};
+
+var pursesListener = function() {
+  display();
+};
+
+$('enterReserveOk').onclick = function() {
+  var reserve = Number($('enterReserveAmount').value);
+  model = makeBank(reserve);
+  $('enterReserveForm').style.display = 'none';
+  $('makePurseForm').style.display = 'block';
+  model.listen('purses', pursesListener);
+  display();
+};
+
+$('makePurseOk').onclick = function() {
+  var purse = model.reserve.newPurse($('makePurseName').value);
+  purse.depositFrom(model.reserve, Number($('makePurseAmount').value));
+  $('makePurseAmount').value = $('makePurseName').value = '';
+  display();
+};
+
+$('enterReserveForm').style.display = 'block';
+</script>

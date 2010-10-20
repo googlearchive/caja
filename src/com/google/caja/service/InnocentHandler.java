@@ -25,11 +25,12 @@ import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.JsLexer;
 import com.google.caja.lexer.JsTokenQueue;
 import com.google.caja.lexer.ParseException;
+import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.Parser;
 import com.google.caja.parser.quasiliteral.InnocentCodeRewriter;
 import com.google.caja.parser.quasiliteral.Rewriter;
-import com.google.caja.reporting.MessagePart;
+import com.google.caja.reporting.BuildInfo;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.util.Charsets;
 import com.google.caja.util.Pair;
@@ -39,15 +40,18 @@ import com.google.caja.util.Pair;
  *
  * @author jasvir@google.com (Jasvir Nagra)
  */
-public class InnocentHandler implements ContentHandler {
-
+public class InnocentHandler extends AbstractCajolingHandler {
+  public InnocentHandler(BuildInfo buildInfo) {
+    super(buildInfo, null /* hostedService */,
+        null /* uriFetcher */);
+  }
+  
   public boolean canHandle(URI uri, CajolingService.Transform transform,
       List<CajolingService.Directive> directives,
-      String inputContentType, String outputContentType,
+      String inputContentType,
       ContentTypeCheck checker) {
     return CajolingService.Transform.INNOCENT.equals(transform)
-      && checker.check("text/javascript", inputContentType)
-      && checker.check(outputContentType, "text/javascript");
+      && checker.check("text/javascript", inputContentType);
   }
 
   public Pair<String,String> apply(URI uri,
@@ -55,42 +59,39 @@ public class InnocentHandler implements ContentHandler {
                                    List<CajolingService.Directive> directives,
                                    ContentHandlerArgs args,
                                    String inputContentType,
-                                   String outputContentType,
                                    ContentTypeCheck checker,
                                    FetchedData input,
                                    OutputStream response,
                                    MessageQueue mq)
       throws UnsupportedContentTypeException {
-    if (!CajolingService.Transform.INNOCENT.equals(transform)) {
-      return null;
-    }
+    String jsonpCallback = CajaArguments.CALLBACK.get(args);
     try {
       OutputStreamWriter writer = new OutputStreamWriter(response,
           Charsets.UTF_8.name());
-      innocentJs(uri, input.getTextualContent(), writer, mq);
+      innocentJs(uri, input.getTextualContent(), writer, jsonpCallback, mq);
       writer.flush();
     } catch (IOException e) {
+      // TODO(ihab.awad): Fix the "unrecoverable" error responses throughout
       throw new UnsupportedContentTypeException();
     }
     return Pair.pair("text/javascript", Charsets.UTF_8.name());
   }
 
   private void innocentJs(
-      URI inputUri, CharProducer cp, Appendable output, MessageQueue mq) {
+      URI inputUri, CharProducer cp, Appendable output,
+      String jsonpCallback, MessageQueue mq)
+      throws IOException {
+    ParseTreeNode result = null;
     InputSource is = new InputSource (inputUri);
     try {
       JsTokenQueue tq = new JsTokenQueue(new JsLexer(cp), is);
       Block input = new Parser(tq, mq).parse();
       tq.expectEmpty();
-
       Rewriter rw = new InnocentCodeRewriter(mq, false /* logging */);
-      output.append(Rewriter.render(rw.expand(input)));
+      result = rw.expand(input);
     } catch (ParseException e) {
       e.toMessageQueue(mq);
-    } catch (IOException e) {
-      mq.addMessage(
-          ServiceMessageType.IO_ERROR,
-          MessagePart.Factory.valueOf(e.getMessage()));
     }
+    this.renderAsJSON(null, result, jsonpCallback, mq, output);
   }
 }

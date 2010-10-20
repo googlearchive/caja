@@ -1,0 +1,47 @@
+===============================================================================
+Copyright (C) 2010 Google Inc.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+     http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+===============================================================================
+
+Google Caja - "Photon" gadgets demo
+-----------------------------------
+
+1. Establish a Caja cajoling service at some URL. For this example, we will
+   assume that the service is at:
+
+     http://caja.appspot.com/
+
+   If you wish to run your own server, go to the top level of the google-caja
+   directory and run the Ant task:
+
+     ant runserver
+
+   This will run a cajoling service at the URL:
+
+     http://localhost:8080/
+
+2. Publish the directory containing this file at some other URL which *must*
+   be accessible to the cajoling service. For this example, we will asssume
+   that you have published the directory such that the file you are reading is
+   accessible as:
+
+     http://example.com/photon/README
+
+3. With your browser, open the following URL (shown broken into several lines
+   for readability):
+
+     http://example.com/photon/photon/index.html
+       ?cajaServer=http://caja.appspot.com/
+       &rootModule=http://example.com/photon/photonGadgets/gadgetsModule.html
+       

@@ -1,0 +1,69 @@
+<!--
+ - Copyright (C) 2010 Google Inc.
+ -
+ - Licensed under the Apache License, Version 2.0 (the "License");
+ - you may not use this file except in compliance with the License.
+ - You may obtain a copy of the License at
+ -
+ -      http://www.apache.org/licenses/LICENSE-2.0
+ -
+ - Unless required by applicable law or agreed to in writing, software
+ - distributed under the License is distributed on an "AS IS" BASIS,
+ - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ - See the License for the specific language governing permissions and
+ - limitations under the License.
+-->
+
+<link href="gadgetsModule.css" rel="stylesheet" type="text/css"/>
+
+<div id="topContent">
+
+  <div id="stationeryPanel">
+
+    <div id="addStationeryForm" class="popup">
+      <table border="0">
+        <tr>
+          <td class="buttonLabel">Label</td>
+          <td><input type="text" id="addStationeryFormLabel"/></td>
+        </tr>
+        <tr>
+          <td class="buttonLabel">URL</td>
+          <td><input type="text" id="addStationeryFormUrl"/></td>
+        </tr>
+        <tr>
+          <td class="buttonLabel" colspan="2">
+            <div class="button" id="addStationeryFormSubmit">Add</div>
+          </td>
+        </tr>
+      </table>
+    </div>
+
+    <div id="addGadgetForm" class="popup">
+      <table border="0">
+        <tr>
+          <td class="buttonLabel">Name</td>
+          <td><input type="text" id="addGadgetFormLabel"/></td>
+        </tr>
+        <tr>
+          <td class="buttonLabel" colspan="2">
+            <div class="button" id="addGadgetFormSubmit">Add</div>
+          </td>
+        </tr>
+      </table>
+    </div>
+
+    <table id="stationeryList" class="popup"></table>
+
+    <span id="addStationery" class="button">+stationery</span>
+
+    <span id="addGadget" class="button">+gadget</span>
+
+  </div>
+
+  <div id="logoHeading"><span>Photon Gadgets</span></div>
+
+  <div id="contentPanel"></div>
+
+</div>
+
+<script type="text/javascript" src="gadgetsModule.js"></script>

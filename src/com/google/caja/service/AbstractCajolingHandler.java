@@ -20,18 +20,27 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
+import com.google.caja.lexer.CharProducer;
+import com.google.caja.lexer.InputSource;
+import com.google.caja.lexer.JsLexer;
+import com.google.caja.lexer.JsTokenQueue;
+import com.google.caja.lexer.ParseException;
+import com.google.caja.parser.ParseTreeNode;
+import com.google.caja.parser.js.Identifier;
+import com.google.caja.parser.js.Parser;
+import com.google.caja.parser.js.Reference;
+import com.google.caja.parser.quasiliteral.QuasiBuilder;
+import com.google.caja.render.JsMinimalPrinter;
+import com.google.caja.reporting.SimpleMessageQueue;
+import com.google.caja.util.Maps;
 import org.w3c.dom.Node;
 
 import com.google.caja.lexer.ExternalReference;
 import com.google.caja.lexer.FetchedData;
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.escaping.UriUtil;
-import com.google.caja.parser.html.Namespaces;
 import com.google.caja.parser.html.Nodes;
 import com.google.caja.parser.js.ArrayConstructor;
-import com.google.caja.parser.js.CajoledModule;
 import com.google.caja.parser.js.Expression;
 import com.google.caja.parser.js.IntegerLiteral;
 import com.google.caja.parser.js.ObjectConstructor;
@@ -42,7 +51,6 @@ import com.google.caja.plugin.UriEffect;
 import com.google.caja.plugin.UriFetcher;
 import com.google.caja.plugin.UriPolicy;
 import com.google.caja.render.Concatenator;
-import com.google.caja.render.JsMinimalPrinter;
 import com.google.caja.reporting.BuildInfo;
 import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessageLevel;
@@ -103,7 +111,7 @@ public abstract class AbstractCajolingHandler implements ContentHandler {
   public abstract boolean canHandle(URI uri,
       CajolingService.Transform transform,
       List<CajolingService.Directive> directives,
-      String inputContentType, String outputContentType,
+      String inputContentType,
       ContentTypeCheck checker);
 
   public abstract Pair<String,String> apply(URI uri,
@@ -111,29 +119,11 @@ public abstract class AbstractCajolingHandler implements ContentHandler {
       List<CajolingService.Directive> directives,
       ContentHandlerArgs args,
       String inputContentType,
-      String outputContentType,
       ContentTypeCheck checker,
       FetchedData input,
       OutputStream response,
       MessageQueue mq)
       throws UnsupportedContentTypeException;
-
-  protected void renderAsHtml(Document doc,
-      Node staticHtml, CajoledModule javascript,
-      Expression moduleCallback, Appendable output)
-      throws IOException {
-    if (staticHtml != null) {
-      output.append(Nodes.render(staticHtml));
-    }
-    if (javascript != null) {
-      String htmlNs = Namespaces.HTML_NAMESPACE_URI;
-      Element script = doc.createElementNS(htmlNs, "script");
-      script.setAttributeNS(htmlNs, "type", "text/javascript");
-      script.appendChild(doc.createTextNode(
-          renderJavascript(javascript, moduleCallback)));
-      output.append(Nodes.render(script));
-    }
-  }
 
   private static StringLiteral lit(String s) {
     return StringLiteral.valueOf(FilePosition.UNKNOWN, s);
@@ -155,9 +145,41 @@ public abstract class AbstractCajolingHandler implements ContentHandler {
     return new ValueProperty(FilePosition.UNKNOWN, lit(key), e);
   }
 
+  /**
+   * Checks whether a string is a JavaScript Identifier.
+   */
+  /* visible for testing */ static boolean checkIdentifier(String candidate) {
+    // Using a simple regex is possible if we reject anything but 7-bit ASCII.
+    // However, this implementation ensures Caja has a single point of truth
+    // regarding what constitutes a JS identifier.
+    MessageQueue mq = new SimpleMessageQueue();
+    Parser parser = new Parser(
+        new JsTokenQueue(
+            new JsLexer(
+                CharProducer.Factory.fromString(
+                    "var " + candidate + ";",
+                    InputSource.UNKNOWN)),
+            InputSource.UNKNOWN),
+        mq);
+    ParseTreeNode node;
+    try { node = parser.parse(); } catch (ParseException e) { return false; }
+    if (node == null || !mq.getMessages().isEmpty()) { return false; }
+    Map<String, ParseTreeNode> bindings = Maps.newHashMap();
+    if (!QuasiBuilder.match("{ var @p; }", node, bindings)) { return false; }
+    if (bindings.size() != 1) { return false; }
+    if (bindings.get("p") == null) { return false; }
+    if (!(bindings.get("p") instanceof Identifier)) { return false; }
+    Identifier p = (Identifier) bindings.get("p");
+    if (!candidate.equals(p.getName())) { return false; }
+    return true;
+  }
+
   protected void renderAsJSON(
-      Node staticHtml, CajoledModule javascript, Expression moduleCallback,
-      MessageQueue mq, Appendable output)
+      Node staticHtml,
+      ParseTreeNode javascript,
+      String jsonpCallback,
+      MessageQueue mq,
+      Appendable output)
       throws IOException {
     List<ValueProperty> props = Lists.newArrayList();
 
@@ -165,7 +187,7 @@ public abstract class AbstractCajolingHandler implements ContentHandler {
       props.add(prop("html", lit(Nodes.render(staticHtml))));
     }
     if (javascript != null) {
-      props.add(prop("js", lit(renderJavascript(javascript, moduleCallback))));
+      props.add(prop("js", lit(renderJavascript(javascript))));
     }
     if (mq.hasMessageAtLevel(MessageLevel.LOG)) {
       List<Expression> messages = Lists.newArrayList();
@@ -186,30 +208,34 @@ public abstract class AbstractCajolingHandler implements ContentHandler {
       }
     }
 
+    if (jsonpCallback != null && !checkIdentifier(jsonpCallback)) {
+      throw new RuntimeException("Detected XSS attempt; aborting request");
+    }
+
+    ParseTreeNode result = (jsonpCallback == null)
+        ? obj(props)
+        : QuasiBuilder.substV("@c(@o);",
+            "c", new Reference(
+                     new Identifier(
+                         FilePosition.UNKNOWN,
+                         jsonpCallback)),
+            "o", obj(props));
+
     IOCallback callback = new IOCallback();
     RenderContext rc = new RenderContext(new JsMinimalPrinter(new Concatenator(
         output, callback)))
         .withJson(true);
-    obj(props).render(rc);
+    result.render(rc);
     rc.getOut().noMoreTokens();
     if (callback.ex != null) { throw callback.ex; }
   }
 
-  protected void renderAsJavascript(CajoledModule javascript,
-      Expression moduleCallback, Appendable output)
-      throws IOException {
-    if (null != javascript) {
-      output.append(renderJavascript(javascript, moduleCallback));
-    }
-  }
-
-  protected String renderJavascript(CajoledModule javascript,
-      Expression moduleCallback) {
+  protected String renderJavascript(ParseTreeNode javascript) {
     StringBuilder jsOut = new StringBuilder();
     RenderContext rc = new RenderContext(
         new JsMinimalPrinter(new Concatenator(jsOut)))
         .withEmbeddable(true);
-    javascript.render(moduleCallback, rc);
+    javascript.render(rc);
     rc.getOut().noMoreTokens();
     return jsOut.toString();
   }

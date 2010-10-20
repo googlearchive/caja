@@ -25,7 +25,7 @@ public class ImageHandlerTest extends ServiceTestCase {
                         (byte) 0x39, (byte) 0x38, (byte) 0x61 };
     registerUri("http://foo/bar.gif", byteData, "image/gif", null);
     assertTrue(Arrays.equals(
-        (byte[]) requestGet("?url=http://foo/bar.gif&mime-type=image/*"),
+        (byte[]) requestGet("?url=http://foo/bar.gif&input-mime-type=image/*"),
         byteData));
   }
 }

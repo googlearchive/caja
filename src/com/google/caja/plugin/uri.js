@@ -378,6 +378,7 @@ URI.prototype.getPort = function () {
 };
 URI.prototype.setPort = function (newPort) {
   if (newPort) {
+    newPort = Number(newPort);
     if (newPort !== (newPort & 0xffff)) {
       throw new Error('Bad port number ' + newPort);
     }

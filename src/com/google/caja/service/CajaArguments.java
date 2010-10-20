@@ -21,21 +21,6 @@ package com.google.caja.service;
 public enum CajaArguments {
 
   /**
-   * In case the output is, or contains, a Caja module, the name of a
-   * JSONP-style callback function to use for loading the module. If this
-   * argument is not specified, the output looks like:
-   *
-   * <p>
-   * <code>___.loadModule({</code><em>cajaModule</em><code>})</code>
-   *
-   * <p>whereas, if this argument is specified, the output looks like:
-   *
-   * <p>
-   * <em>module-callback</em><code>({</code><em>cajaModule</em><code>})</code>
-   */
-  MODULE_CALLBACK("module-callback"),
-
-  /**
    * The expected MIME type of an input document that Caja is being asked to
    * process. Caja may return an error if the actual MIME type of the document
    * is different from what is expected. This parameter is provided as a sanity
@@ -44,16 +29,15 @@ public enum CajaArguments {
   INPUT_MIME_TYPE("input-mime-type"),
 
   /**
-   * @see #INPUT_MIME_TYPE
+   * Boolean indicating whether or not the cajoler should produce HTML output
+   * as part of the JavaScript.
    */
-  @Deprecated OLD_INPUT_MIME_TYPE("mime-type"),
+  EMIT_HTML_IN_JS("emit-html-in-js"),
 
   /**
-   * The requested MIME type of the output that Caja is being asked to produce.
-   * Caja will return an error if it cannot process the input into output of
-   * the requested type.
+   * Name of the JSONP callback function desired in the output.
    */
-  OUTPUT_MIME_TYPE("output-mime-type"),
+  CALLBACK("callback"),
 
   /**
    * The Caja transform that is being requested. Valid values are:

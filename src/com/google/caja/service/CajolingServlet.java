@@ -19,7 +19,6 @@ import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.escaping.Escaping;
 import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessageContext;
-import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.SimpleMessageQueue;
 
@@ -151,9 +150,7 @@ public class CajolingServlet extends HttpServlet {
       return;
     }
 
-    int status = mq.hasMessageAtLevel(MessageLevel.ERROR) ?
-        HttpServletResponse.SC_BAD_REQUEST : HttpServletResponse.SC_OK;
-    resp.setStatus(status);
+    resp.setStatus(HttpServletResponse.SC_OK);
 
     String responseContentType = result.getContentType();
     if (result.getCharSet() != null) {

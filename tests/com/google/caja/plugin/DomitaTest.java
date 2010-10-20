@@ -68,7 +68,7 @@ public class DomitaTest extends BrowserTestCase {
       }
     });
 
-    poll(10000, 1000, new Check() {
+    poll(20000, 1000, new Check() {
       private List<WebElement> waitingList = null;
       @Override public String toString() {
         return "completion (Remaining elements = " +

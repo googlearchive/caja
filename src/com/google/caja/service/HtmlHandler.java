@@ -20,7 +20,6 @@ import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.util.List;
-import org.w3c.dom.Document;
 
 import com.google.caja.SomethingWidgyHappenedError;
 import com.google.caja.lexer.CharProducer;
@@ -30,8 +29,6 @@ import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.ParseException;
 import com.google.caja.parser.html.Dom;
 import com.google.caja.parser.html.DomParser;
-import com.google.caja.parser.js.Expression;
-import com.google.caja.parser.quasiliteral.QuasiBuilder;
 import com.google.caja.plugin.PipelineMaker;
 import com.google.caja.plugin.PluginCompiler;
 import com.google.caja.plugin.PluginMeta;
@@ -58,13 +55,10 @@ public class HtmlHandler extends AbstractCajolingHandler {
   @Override
   public boolean canHandle(URI uri, CajolingService.Transform transform,
       List<CajolingService.Directive> directives,
-      String inputContentType, String outputContentType,
+      String inputContentType,
       ContentTypeCheck checker) {
     return checker.check("text/html", inputContentType)
-        && (checker.check(outputContentType, "text/html")
-            || checker.check(outputContentType, "*/*")
-            || checker.check(outputContentType, "application/json")
-            || checker.check(outputContentType, "text/javascript"));
+        && (transform == null || transform == CajolingService.Transform.CAJOLE);
   }
 
   @Override
@@ -73,7 +67,6 @@ public class HtmlHandler extends AbstractCajolingHandler {
                                    List<CajolingService.Directive> directives,
                                    ContentHandlerArgs args,
                                    String inputContentType,
-                                   String outputContentType,
                                    ContentTypeCheck checker,
                                    FetchedData input,
                                    OutputStream response,
@@ -81,60 +74,45 @@ public class HtmlHandler extends AbstractCajolingHandler {
       throws UnsupportedContentTypeException {
     PluginMeta meta = new PluginMeta(uriFetcher, makeUriPolicy(args));
     meta.setIdClass(args.get("idclass"));
-    ContentType outputType = ContentType.fromMimeType(outputContentType);
-    if (outputType == null) {
-      if (outputContentType.matches("\\*/\\*(\\s*;.*)?")) {
-        outputType = ContentType.HTML;
-      } else {
-        throw new UnsupportedContentTypeException(outputContentType);
-      }
-    } else {
-      switch (outputType) {
-        case JS: case HTML: case JSON: break;
-        default:
-          throw new UnsupportedContentTypeException(outputContentType);
-      }
-    }
 
-    String moduleCallbackString = CajaArguments.MODULE_CALLBACK.get(args);
-    Expression moduleCallback = (Expression)
-        (moduleCallbackString == null
-            ? null
-            : QuasiBuilder.substV(moduleCallbackString));
+    boolean htmlInline =
+        CajaArguments.EMIT_HTML_IN_JS.get(args) != null
+        && Boolean.valueOf(CajaArguments.EMIT_HTML_IN_JS.get(args));
+
+    String jsonpCallback = CajaArguments.CALLBACK.get(args);
 
     try {
       OutputStreamWriter writer = new OutputStreamWriter(
           response, Charsets.UTF_8);
       cajoleHtml(
           uri, input.getTextualContent(),
-          meta, moduleCallback, outputType, writer, mq);
+          meta, jsonpCallback, htmlInline, writer, mq);
       writer.flush();
     } catch (IOException e) {
       // TODO(mikesamuel): this is not a valid assumption.
       throw new UnsupportedContentTypeException();
     }
 
-    return Pair.pair(outputType.mimeType, Charsets.UTF_8.name());
+    return Pair.pair(ContentType.JSON.mimeType, Charsets.UTF_8.name());
   }
 
   private void cajoleHtml(URI inputUri, CharProducer cp, PluginMeta meta,
-                          Expression moduleCallback, ContentType outputType,
-                          Appendable output, MessageQueue mq) {
+                          String jsonpCallback,
+                          boolean htmlInline, Appendable output,
+                          MessageQueue mq) {
     InputSource is = new InputSource (inputUri);
     boolean okToContinue = true;
     try {
       PluginCompiler compiler = new PluginCompiler(buildInfo, meta, mq);
-      if (outputType == ContentType.JS) {
+      if (htmlInline) {
         compiler.setGoals(
             compiler.getGoals().without(PipelineMaker.HTML_SAFE_STATIC));
       }
 
       Dom html = null;
-      Document doc = null;
       try {
         DomParser p = new DomParser(new HtmlLexer(cp), false, is, mq);
         html = new Dom(p.parseFragment());
-        doc = html.getValue().getOwnerDocument();
         p.getTokenQueue().expectEmpty();
       } catch (ParseException e) {
         okToContinue = false;
@@ -144,21 +122,10 @@ public class HtmlHandler extends AbstractCajolingHandler {
         compiler.addInput(html, inputUri);
         okToContinue &= compiler.run();
       }
-      if (outputType == ContentType.JS) {
-        renderAsJavascript(okToContinue ? compiler.getJavascript() : null,
-            moduleCallback, output);
-      } else if (outputType == ContentType.JSON) {
-        renderAsJSON(
-            okToContinue ? compiler.getStaticHtml() : null,
-            okToContinue ? compiler.getJavascript() : null,
-            moduleCallback, mq, output);
-      } else {
-        assert outputType == ContentType.HTML;
-        renderAsHtml(doc,
-            okToContinue ? compiler.getStaticHtml() : null,
-            okToContinue ? compiler.getJavascript() : null,
-            moduleCallback, output);
-      }
+      renderAsJSON(
+          okToContinue ? compiler.getStaticHtml() : null,
+          okToContinue ? compiler.getJavascript() : null,
+          jsonpCallback, mq, output);
     } catch (IOException e) {
       mq.addMessage(
           ServiceMessageType.IO_ERROR,

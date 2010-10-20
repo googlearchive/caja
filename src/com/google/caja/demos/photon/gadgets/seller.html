@@ -1,0 +1,125 @@
+<!--
+ - Copyright (C) 2010 Google Inc.
+ -
+ - Licensed under the Apache License, Version 2.0 (the "License");
+ - you may not use this file except in compliance with the License.
+ - You may obtain a copy of the License at
+ -
+ -      http://www.apache.org/licenses/LICENSE-2.0
+ -
+ - Unless required by applicable law or agreed to in writing, software
+ - distributed under the License is distributed on an "AS IS" BASIS,
+ - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ - See the License for the specific language governing permissions and
+ - limitations under the License.
+-->
+
+<style type="text/css">
+div.inputForm {
+  border: 1px solid #ffff00;
+  padding: 3px;
+  margin: 3px;
+  background-color: #d0d0d0;
+  display: none;
+}
+
+.display {
+  border: 1px solid #ff00ff;
+  padding: 3px;
+  margin: 3px;
+}
+
+.inputForm > table, #purses > table {
+  font-size: 9pt;
+}
+
+</style>
+
+<div id="requestPurseForm" class="inputForm">
+  <span class="title">Please provide a purse</span>  
+  <table>
+    <tr><td>Purse:</td><td><div id="requestPursePurse"></div></td></tr>
+  </table>
+</div>
+
+<div id="provideItemForm" class="inputForm">
+  <span class="title">For sale: the right to display messages on my billboard!</span>  
+  <table>
+    <tr><td>Item:</td><td><div id="provideItemItem"></div></td></tr>
+  </table>
+</div>
+
+<div class="display">
+  <ol id="log"></ol>
+</div>
+
+<script type="text/javascript">
+var $ = function(a) { return document.getElementById(a); };
+$.create = function(n) { return document.createElement(n); };
+
+function log(s) {
+  $('log').innerHTML += '<li>' + s + '</li>';
+}
+
+var price = 199;
+  
+// Define each step here to avoid relying on forward declarations
+var requestPurse = undefined;
+var provideItem = undefined;
+var makeItemForSale = undefined;
+var item = undefined;
+
+requestPurse = function() {
+  var purseDt = photon.makeDropTarget(
+      'com.example.Purse',
+      'A purse to use',
+      function(purse) {
+        $('requestPurseForm').style.display = 'none';
+        log('Got a purse containing $' + purse.getBalance());
+        purseDt.destroy();
+        provideItem(purse);
+      });
+  purseDt.createView($('requestPursePurse'));
+  $('requestPurseForm').style.display = 'block';
+};
+
+provideItem = function(purse) {
+  var itemDs = photon.makeDragSource(
+      'com.example.Item',
+      'An item for sale',
+      function() {
+        $('provideItemForm').style.display = 'none';
+        log('Someone offered to buy my item');
+        itemDs.destroy();
+        return makeItemForSale(purse);
+      });
+  itemDs.createView($('provideItemItem'));
+  $('provideItemForm').style.display = 'block';
+};
+
+makeItemForSale = function(purse) {
+  return cajita.freeze({
+    getPrice: function() {
+      return price;
+    },
+    purchase: function(payment, callback) {
+      try {
+        purse.depositFrom(payment);
+        log('Got payment, thank you');
+        log('Providing goods');
+        callback(goods);
+      } catch (e) {
+        log('Problem with payment: ' + e);
+      }
+    }
+  });
+};
+
+goods = cajita.freeze({
+  display: function(s) {
+    log('Sponsored message: <span style="color: blue">' + String(s) + '</span>');
+  }
+});
+
+requestPurse();
+</script>

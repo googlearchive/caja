@@ -34,10 +34,9 @@ public class ImageHandler implements ContentHandler {
 
   public boolean canHandle(URI uri, CajolingService.Transform transform,
       List<CajolingService.Directive> directives,
-      String inputContentType, String outputContentType,
+      String inputContentType,
       ContentTypeCheck checker) {
-    return checker.check("image/*", inputContentType)
-        && checker.check(outputContentType, inputContentType);
+    return checker.check("image/*", inputContentType);
   }
 
   public Pair<String, String> apply(URI uri,
@@ -45,7 +44,6 @@ public class ImageHandler implements ContentHandler {
                                     List<CajolingService.Directive> directives,
                                     ContentHandlerArgs args,
                                     String inputContentType,
-                                    String outputContentType,
                                     ContentTypeCheck checker,
                                     FetchedData input,
                                     OutputStream response,

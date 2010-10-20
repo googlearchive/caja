@@ -1,0 +1,68 @@
+<!--
+ - Copyright (C) 2010 Google Inc.
+ -
+ - Licensed under the Apache License, Version 2.0 (the "License");
+ - you may not use this file except in compliance with the License.
+ - You may obtain a copy of the License at
+ -
+ -      http://www.apache.org/licenses/LICENSE-2.0
+ -
+ - Unless required by applicable law or agreed to in writing, software
+ - distributed under the License is distributed on an "AS IS" BASIS,
+ - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ - See the License for the specific language governing permissions and
+ - limitations under the License.
+-->
+
+<table id="t" style="font-size: 9pt"/>
+
+<script type="text/javascript">
+var t = document.getElementById('t');
+  
+var addRow = function(label, content) {
+  var tr = document.createElement('tr');
+  var labelCell = document.createElement('td');
+  var contentCell = document.createElement('td');
+  labelCell.innerHTML = label;
+  contentCell.appendChild(content);
+  tr.appendChild(labelCell);
+  tr.appendChild(contentCell);
+  t.appendChild(tr);
+};
+
+var addDnd = function(label, dndObject) {
+  var div = document.createElement('div');
+  dndObject.createView(div);
+  addRow(label, div);
+};
+  
+var addDragSource = function(dataType, description, handler) {
+  addDnd(
+    'Source of ' + dataType,
+    photon.makeDragSource(dataType, description, handler));
+};
+
+var addDropTarget = function(dataType, description, handler) {
+  addDnd(
+    'Target of ' + dataType,
+    photon.makeDropTarget(dataType, description, handler));
+};
+
+addDragSource(
+    'com.google.caja.Document',
+    'A document about my summer vacation',
+    function() {});
+addDragSource(
+    'com.google.caja.Picture',
+    'A picture of flowers',
+    function() {});
+
+addDropTarget(
+    'com.google.caja.Document',
+    'A document to print',
+    function() {});
+addDropTarget(
+    'com.google.caja.Picture',
+    'A picture to share with friends',
+    function() {});
+</script>

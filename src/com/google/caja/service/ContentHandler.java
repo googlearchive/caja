@@ -36,7 +36,6 @@ public interface ContentHandler {
    * @param uri URI of content
    * @param transform Type of rewriting to perform
    * @param inputContentType The actual input content-type
-   * @param outputContentType Requested output content-type
    * @param checker Used to check whether two content-types are compatible
    * @return true if this content-handler is appropriate for this URL and content-type
    */
@@ -44,7 +43,6 @@ public interface ContentHandler {
                            CajolingService.Transform transform,
                            List<CajolingService.Directive> directives,
                            String inputContentType,
-                           String outputContentType,
                            ContentTypeCheck checker);
 
   /**
@@ -56,7 +54,6 @@ public interface ContentHandler {
    * @param trans Type of rewriting to perform
    * @param args Handler-specific arguments
    * @param inputContentType The actual input content-type
-   * @param outputContentType Requested output content-type
    * @param checker Used to check whether two content-types are compatible
    * @param input content from uri
    * @param response writes modified content to user
@@ -68,7 +65,6 @@ public interface ContentHandler {
                                     List<CajolingService.Directive> directives,
                                     ContentHandlerArgs args,
                                     String inputContentType,
-                                    String outputContentType,
                                     ContentTypeCheck checker,
                                     FetchedData input,
                                     OutputStream response,

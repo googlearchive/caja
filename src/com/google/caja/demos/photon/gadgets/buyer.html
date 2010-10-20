@@ -1,0 +1,158 @@
+<!--
+ - Copyright (C) 2010 Google Inc.
+ -
+ - Licensed under the Apache License, Version 2.0 (the "License");
+ - you may not use this file except in compliance with the License.
+ - You may obtain a copy of the License at
+ -
+ -      http://www.apache.org/licenses/LICENSE-2.0
+ -
+ - Unless required by applicable law or agreed to in writing, software
+ - distributed under the License is distributed on an "AS IS" BASIS,
+ - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ - See the License for the specific language governing permissions and
+ - limitations under the License.
+-->
+
+<style type="text/css">
+div.inputForm {
+  border: 1px solid #ffff00;
+  padding: 3px;
+  margin: 3px;
+  background-color: #d0d0d0;
+  display: none;
+}
+
+.display {
+  border: 1px solid #ff00ff;
+  padding: 3px;
+  margin: 3px;
+}
+
+.inputForm > table, #purses > table {
+  font-size: 9pt;
+}
+
+</style>
+
+<div id="requestPurseForm" class="inputForm">
+  <span class="title">Please provide a purse</span>  
+  <table>
+    <tr><td>Account:</td><td><div id="requestPursePurse"></div></td></tr>
+  </table>
+</div>
+
+<div id="requestItemForm" class="inputForm">
+  <span class="title">Please provide an item for sale</span>  
+  <table>
+    <tr><td>Item:</td><td><div id="requestItemItem"></div></td></tr>
+  </table>
+</div>
+
+<div id="createPaymentForm" class="inputForm">
+  <span class="title">Create payment purse</span>  
+  <table>
+    <tr><td colspan="2"><div class="button" id="createPaymentCreate">Create</div></td></tr>    
+  </table>
+</div>
+
+<div id="purchaseForm" class="inputForm">
+  <span class="title">Purchase from item</span>  
+  <table>
+    <tr><td colspan="2"><div class="button" id="purchasePurchase">Purchase</div></td></tr>    
+  </table>
+</div>
+
+<div id="destroyPaymentForm" class="inputForm">
+  <span class="title">Destroy payment purse</span>  
+  <table>
+    <tr><td colspan="2"><div class="button" id="destroyPaymentDestroy">Destroy</div></td></tr>    
+  </table>
+</div>
+
+<div class="display">
+  <ol id="log"></ol>
+</div>
+
+<script type="text/javascript">
+var $ = function(a) { return document.getElementById(a); };
+$.create = function(n) { return document.createElement(n); };
+
+function log(s) {
+  $('log').innerHTML += '<li>' + s + '</li>';
+}
+
+// Define each step here to avoid relying on forward declarations
+var requestPurse = undefined;
+var requestItem = undefined;
+var createPayment = undefined;
+var purchase = undefined;
+var destroyPayment = undefined;
+
+requestPurse = function() {
+  var purseDt = photon.makeDropTarget(
+      'com.example.Purse',
+      'A bank account to use',
+      function(purse) {
+        $('requestPurseForm').style.display = 'none';
+        log('Got a purse containing $' + purse.getBalance());
+        purseDt.destroy();
+        requestItem(purse);
+      });
+  purseDt.createView($('requestPursePurse'));
+  $('requestPurseForm').style.display = 'block';
+};
+
+requestItem = function(purse) {
+  var itemDt = photon.makeDropTarget(
+      'com.example.Item',
+      'A item to transact with',
+      function(item) {
+        $('requestItemForm').style.display = 'none';
+        log('Got a item asking for $' + item.getPrice());
+        itemDt.destroy();
+        if (item.getPrice() > purse.getBalance()) {
+          log('I cannot afford this item; choose again');
+          requestItem(purse);
+        } else {
+          createPayment(purse, item);
+        }
+      });
+  itemDt.createView($('requestItemItem'));  
+  $('requestItemForm').style.display = 'block';
+};
+
+createPayment = function(purse, item) {
+  $('createPaymentCreate').onclick = function() {
+    $('createPaymentForm').style.display = 'none';
+    var payment = purse.newPurse('Temporary purse for payment');
+    payment.depositFrom(purse, item.getPrice());
+    purchase(payment, item);
+  };
+  $('createPaymentForm').style.display = 'block';
+};
+
+purchase = function(payment, item) {
+  $('purchasePurchase').onclick = function() {
+    $('purchaseForm').style.display = 'none';
+    item.purchase(payment, function(goods) {
+      log('Hooray, got my goods');
+      goods.display('Hello world! How are you?')  
+      destroyPayment(payment);
+    });
+    log('Sent payment; hope to get my goods');
+  };
+  $('purchaseForm').style.display = 'block';
+};
+
+destroyPayment = function(payment) {
+  $('destroyPaymentDestroy').onclick = function() {
+    $('destroyPaymentForm').style.display = 'none';
+    payment.destroy();
+    log('Destroyed payment purse');
+  };
+  $('destroyPaymentForm').style.display = 'block';
+};
+
+requestPurse();
+</script>

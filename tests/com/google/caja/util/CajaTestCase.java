@@ -245,6 +245,19 @@ public abstract class CajaTestCase extends TestCase {
     return CssParser.makeTokenQueue(cp, mq, substs);
   }
 
+  public static String render(MessageQueue mq) {
+    StringBuilder sb = new StringBuilder();
+    for (Message m : mq.getMessages()) {
+      try {
+        m.format(new MessageContext(), sb);
+      } catch (IOException e) {
+        sb.append(e.toString());
+      }
+      sb.append("\n");
+    }
+    return sb.toString();
+  }
+
   public static String render(ParseTreeNode node) {
     if (node == null) {
       return null;

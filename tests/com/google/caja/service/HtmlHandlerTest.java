@@ -18,118 +18,23 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
 import com.google.caja.reporting.MessageLevel;
-import com.google.caja.util.Join;
 
 /**
  * @author jasvir@google.com (Jasvir Nagra)
  */
 public class HtmlHandlerTest extends ServiceTestCase {
-  private String requestString(String inputMimeType,
-                               String outputMimeType,
-                               String moduleCallback) {
+  private String requestString(String inputMimeType) {
     String result = "?url=http://foo/bar.html";
     if (inputMimeType != null) {
-      result += "&mime-type=" + inputMimeType;
-    }
-    if (outputMimeType != null) {
-      result += "&output-mime-type=" + outputMimeType;
-    }
-    if (moduleCallback != null) {
-      result += "&module-callback=" + moduleCallback;
+      result += "&input-mime-type=" + inputMimeType;
     }
     return result;
   }
 
-  private String moduleCallbackPrefix(String moduleCallback) {
-    return moduleCallback == null ?
-        "___.loadModule(" : moduleCallback + "(___.prepareModule(";
-  }
-
-  private String moduleCallbackSuffix(String moduleCallback) {
-    return moduleCallback == null ?
-        ")" : "))";
-  }
-
-  private void assertHtml2Html(String inputMimeType,
-                               String outputMimeType,
-                               String moduleCallback)
-      throws Exception {
-    String htmlEnvelope = (
-        "<html>" +
-        "<head><title>Caja Test</title></head>" +
-        "<body>" +
-        "%s" +
-        "</body>" +
-        "</html>");
-
-    registerUri("http://foo/bar.js", "foo()", "text/javascript");
-    registerUri("http://foo/bar.html",
-                String.format(
-                    htmlEnvelope,
-                    "<p>Hello, World!</p><script src=bar.js></script>"),
-                "text/html");
-    assertMessagesLessSevereThan(MessageLevel.WARNING);
-    assertEquals(
-        "<p>Hello, World!</p><script type=\"text/javascript\">{"
-        + moduleCallbackPrefix(moduleCallback) + "{"
-          + "'instantiate':function(___,IMPORTS___){"
-            + "return ___.prepareModule({"
-                + "'instantiate':function(___,IMPORTS___){"
-                  + "var\n$v=___.readImport(IMPORTS___,'$v',{"
-                      + "'getOuters':{'()':{}},"
-                      + "'initOuter':{'()':{}},"
-                      + "'cf':{'()':{}},"
-                      + "'ro':{'()':{}}"
-                  + "});"
-                  + "var\nmoduleResult___,$dis;"
-                  + "moduleResult___=___.NO_RESULT;"
-                  + "$dis=$v.getOuters();"
-                  + "$v.initOuter('onerror');"
-                  + "try{"
-                    + "{moduleResult___=$v.cf($v.ro('foo'),[])}"
-                  + "}catch(ex___){"
-                    + "___.getNewModuleHandler().handleUncaughtException("
-                        + "ex___,$v.ro('onerror'),'bar.js','1')"
-                  + "}"
-                  + "return moduleResult___"
-                + "},"
-                + "'cajolerName':'com.google.caja',"
-                + "'cajolerVersion':'testBuildVersion',"
-                + "'cajoledDate':0"
-              + "})(IMPORTS___),___.prepareModule({"
-                + "'instantiate':function(___,IMPORTS___){"
-                  + "var\nmoduleResult___;"
-                  + "moduleResult___=___.NO_RESULT;"
-                  + "{"
-                    + "IMPORTS___.htmlEmitter___.signalLoaded()"
-                  + "}"
-                  + "return moduleResult___"
-                + "},"
-                + "'cajolerName':'com.google.caja',"
-                + "'cajolerVersion':'testBuildVersion',"
-                + "'cajoledDate':0"
-              + "})(IMPORTS___)"
-            + "},"
-          + "'cajolerName':'com.google.caja',"
-          + "'cajolerVersion':'testBuildVersion',"
-          + "'cajoledDate':0"
-          + "}" + moduleCallbackSuffix(moduleCallback)
-        + "}</script>",
-        (String) requestGet(
-            requestString(inputMimeType, outputMimeType, moduleCallback)));
-  }
-
-  public final void testHtml2Html() throws Exception {
-    assertHtml2Html("*/*", "text/html", null);
-    assertHtml2Html("*/*", "*/*", null);  // HTML -> HTML is default
-    assertHtml2Html("text/html", "text/html", null);
-    assertHtml2Html("text/html", "text/html", "foo.bar.baz");
-  }
-
   public final void testHtml2Json() throws Exception {
-    assertHtml2Json("*/*", "application/json", null);
-    assertHtml2Json("text/html", "application/json", null);
-    assertHtml2Json("text/html", "application/json", "foo.bar.baz");
+    assertHtml2Json("*/*");
+    assertHtml2Json("text/html");
+    assertHtml2Json("text/html");
   }
 
   public final void testSandboxedLink() throws Exception {
@@ -141,29 +46,17 @@ public class HtmlHandlerTest extends ServiceTestCase {
         "<link rel=stylesheet href=bar.css><a href=\"shizzle.html\">Clicky</a>",
         "text/html");
     String result = (String) requestGet(
-        "?url=http://foo/index.html&mime-type=text/html"
+        "?url=http://foo/index.html&input-mime-type=text/html"
         + "&output-mime-type=text/html&sext=true&idclass=foo___");
-    assertEquals(
-        Join.join(
-            "",
-            "<style type=\"text/css\">\n",
-            ".foo___ a {\n",
-            "  background-image: url('http://caja.appspot.com/cajole?url=http%3a%2f%2fcaja.appspot.com%2fcajole%3furl%3dhttp%253a%252f%252ffoo%252fbaz.png%26effect%3dSAME%5fDOCUMENT%26loader%3dSANDBOXED%26sext%3dtrue&effect=SAME%5fDOCUMENT&loader=SANDBOXED&sext=true')\n",
-            "}</style>",
-            "<a href=\"http://caja.appspot.com/cajole",
-              "?url=http%3a%2f%2ffoo%2fshizzle.html&amp;effect=NEW_DOCUMENT",
-              "&amp;loader=UNSANDBOXED&amp;sext=true\" target=\"_blank\">",
-            "Clicky",
-            "</a>",
-            "<script type=\"text/javascript\">{",
-              "___.loadModule({",
-                "'instantiate':function(___,IMPORTS___){return},",
-                "'cajolerName':'com.google.caja',",
-                "'cajolerVersion':'testBuildVersion',",
-                "'cajoledDate':0})",
-              "}",
-            "</script>"),
-        result);
+    JSONObject json = (JSONObject) json(result);
+    assertContainsIgnoreSpace(
+        (String) json.get("html"),
+        " background-image: url('http://caja.appspot.com/cajole?url=http%3a%2f%2fcaja.appspot.com%2fcajole%3furl%3dhttp%253a%252f%252ffoo%252fbaz.png%26effect%3dSAME%5fDOCUMENT%26loader%3dSANDBOXED%26sext%3dtrue&effect=SAME%5fDOCUMENT&loader=SANDBOXED&sext=true')");
+    assertContainsIgnoreSpace(
+        (String) json.get("html"),
+        "<a href=\"http://caja.appspot.com/cajole"
+        + "?url=http%3a%2f%2ffoo%2fshizzle.html&amp;effect=NEW_DOCUMENT"
+        + "&amp;loader=UNSANDBOXED&amp;sext=true\" target=\"_blank\">");
   }
 
   public final void testUnsandboxedLink() throws Exception {
@@ -175,39 +68,25 @@ public class HtmlHandlerTest extends ServiceTestCase {
         "<link rel=stylesheet href=bar.css><a href=\"shizzle.html\">Clicky</a>",
         "text/html");
     String result = (String) requestGet(
-        "?url=http://foo/index.html&mime-type=text/html"
+        "?url=http://foo/index.html&input-mime-type=text/html"
         + "&output-mime-type=text/html&sext=false&idclass=foo___");
-    assertEquals(
-        Join.join(
-            "",
-            "<style type=\"text/css\">\n",
-            ".foo___ a {\n",
-            "  background-image: url('http://foo/baz.png')\n",
-            "}</style>",
-            "<a href=\"http://foo/shizzle.html\" target=\"_blank\">",
-            "Clicky",
-            "</a>",
-            "<script type=\"text/javascript\">{",
-              "___.loadModule({",
-                "'instantiate':function(___,IMPORTS___){return},",
-                "'cajolerName':'com.google.caja',",
-                "'cajolerVersion':'testBuildVersion',",
-                "'cajoledDate':0})",
-              "}",
-            "</script>"),
-        result);
+    JSONObject json = (JSONObject) json(result);
+    assertContainsIgnoreSpace(
+        (String) json.get("html"),
+        "background-image: url('http://foo/baz.png')");
+    assertContainsIgnoreSpace(
+        (String) json.get("html"),
+        "<a href=\"http://foo/shizzle.html\" target=\"_blank\">Clicky</a>");
   }
 
-  private void assertHtml2Json(String inputMimeType,
-                               String outputMimeType,
-                               String moduleCallback)
+  private void assertHtml2Json(String inputMimeType)
       throws Exception {
     registerUri(
         "http://foo/bar.html", "<p>hi</p><script>42;</script><p>bye</p>",
         "text/html");
 
     Object result = json((String) requestGet(
-        requestString(inputMimeType, outputMimeType, moduleCallback)));
+        requestString(inputMimeType)));
     assertTrue(result instanceof JSONObject);
     JSONObject json = (JSONObject) result;
 
@@ -215,7 +94,7 @@ public class HtmlHandlerTest extends ServiceTestCase {
     assertEquals("<p>hi<span id=\"id_1___\"></span></p><p>bye</p>",
         (String)json.get("html"));
     assertEquals("{"
-        + moduleCallbackPrefix(moduleCallback) + "{"
+        + "___.loadModule({"
         + "'instantiate':function(___,IMPORTS___){"
           + "return ___.prepareModule({"
               + "'instantiate':function(___,IMPORTS___){"
@@ -271,7 +150,7 @@ public class HtmlHandlerTest extends ServiceTestCase {
           + "'cajolerName':'com.google.caja',"
           + "'cajolerVersion':'testBuildVersion',"
           + "'cajoledDate':0"
-          + "}" + moduleCallbackSuffix(moduleCallback)
+          + "})"
         + "}",
       (String)json.get("js"));
 
@@ -280,114 +159,11 @@ public class HtmlHandlerTest extends ServiceTestCase {
     assertMessagesLessSevereThan(messages, MessageLevel.ERROR);
   }
 
-  private void assertHtml2Js(String inputMimeType,
-                             String outputMimeType,
-                             String moduleCallback)
-      throws Exception {
-    registerUri("http://foo/bar.html",
-                "<p>hi</p><script>42;</script><p>bye</p>",
-                "text/html");
-    String escapedHtmlString =
-        "'<p>hi<span id=\\\"id_1___\\\"></span></p><p>bye</p>'"
-        .replace("<", "\\x3c")
-        .replace(">", "\\x3e");
-    assertEquals(
-          "{" + moduleCallbackPrefix(moduleCallback) + "{"
-            + "'instantiate':function(___,IMPORTS___){"
-              + "return ___.prepareModule({"
-              + "'instantiate':function(___,IMPORTS___){"
-                + "var\nmoduleResult___;moduleResult___=___.NO_RESULT;"
-                + "{IMPORTS___.htmlEmitter___.emitStatic("
-                      + escapedHtmlString + ")}"
-                + "return moduleResult___"
-              + "},"
-              + "'cajolerName':'com.google.caja',"
-              + "'cajolerVersion':'testBuildVersion',"
-              + "'cajoledDate':0"
-            + "})(IMPORTS___),___.prepareModule({"
-              + "'instantiate':function(___,IMPORTS___){"
-                + "var\nmoduleResult___,el___,emitter___;"
-                + "moduleResult___=___.NO_RESULT;"
-                + "{"
-                  + "emitter___=IMPORTS___.htmlEmitter___;"
-                  + "emitter___.discard(emitter___.attach('id_1___'))"
-                + "}"
-                + "return moduleResult___"
-              + "},"
-              + "'cajolerName':'com.google.caja',"
-              + "'cajolerVersion':'testBuildVersion',"
-              + "'cajoledDate':0"
-            + "})(IMPORTS___),___.prepareModule({"
-              + "'instantiate':function(___,IMPORTS___){"
-                + "var\n$v=___.readImport(IMPORTS___,'$v',{"
-                    + "'getOuters':{'()':{}},"
-                    + "'initOuter':{'()':{}},"
-                    + "'ro':{'()':{}}"
-                  + "});"
-                + "var\nmoduleResult___,$dis;"
-                + "moduleResult___=___.NO_RESULT;"
-                + "$dis=$v.getOuters();"
-                + "$v.initOuter('onerror');"
-                + "try{"
-                  + "{moduleResult___=42}"
-                + "}catch(ex___){"
-                  + "___.getNewModuleHandler().handleUncaughtException("
-                      + "ex___,$v.ro('onerror'),'bar.html','1')"
-                + "}"
-                + "return moduleResult___"
-              + "},"
-              + "'cajolerName':'com.google.caja',"
-              + "'cajolerVersion':'testBuildVersion',"
-              + "'cajoledDate':0"
-            + "})(IMPORTS___),___.prepareModule({"
-              + "'instantiate':function(___,IMPORTS___){"
-                + "var\nmoduleResult___,el___,emitter___;"
-                + "moduleResult___=___.NO_RESULT;"
-                + "{"
-                  + "emitter___=IMPORTS___.htmlEmitter___;"
-                  + "el___=emitter___.finish();"
-                  + "emitter___.signalLoaded()"
-                + "}"
-                + "return moduleResult___"
-              + "},"
-              + "'cajolerName':'com.google.caja',"
-              + "'cajolerVersion':'testBuildVersion',"
-              + "'cajoledDate':0"
-            + "})(IMPORTS___)"
-          + "},"
-          + "'cajolerName':'com.google.caja',"
-          + "'cajolerVersion':'testBuildVersion',"
-          + "'cajoledDate':0"
-          + "}" + moduleCallbackSuffix(moduleCallback)
-        + "}",
-        (String) requestGet(
-            requestString(inputMimeType, outputMimeType, moduleCallback)));
-  }
-
-  public final void testHtml2Js() throws Exception {
-    assertHtml2Js("*/*", "text/javascript", null);
-    assertHtml2Js("*/*", "application/javascript", null);
-    assertHtml2Js("text/html", "application/javascript", null);
-    assertHtml2Js("text/html", "text/javascript", null);
-    assertHtml2Js("text/html", "text/javascript", "foo.bar.baz");
-  }
-
-  public final void testErrors2Js() throws Exception {
-    String testWithError = "<script>with(foo){}</script>";
-    String charSet = "UTF-8";
-    byte[] content = testWithError.getBytes(charSet);
-
-    assertEquals("", (String) requestPost(
-        requestString("text/html", "text/javascript", null),
-        content, "text/html", charSet));
-  }
-
   public final void testErrors2Json() throws Exception {
     registerUri("http://foo/bar.html",
       "<script>with(foo){}</script>", "text/html");
 
-    Object result = json((String) requestGet(
-        requestString("text/html", "application/json", null)));
+    Object result = json((String) requestGet(requestString("text/html")));
 
     assertTrue(result instanceof JSONObject);
     JSONObject json = (JSONObject) result;
@@ -401,5 +177,4 @@ public class HtmlHandlerTest extends ServiceTestCase {
     }
     assertTrue(containsError);
   }
-
 }

@@ -205,15 +205,34 @@
         jsunitFilter(new RegExp(decodeURIComponent(filter[1])));
       }
 
-      function cajolerFinder(moduleURL) {
-        return moduleURL + '.out.js';
-      }
+      var xhrCajolingServiceFinder = function(moduleUrl, jsonpCallback) {
+        if (/\.js$/.test(moduleUrl)) {
+          moduleUrl = moduleUrl.substr(0, moduleUrl.length - 3) + '.out.js';
+        }
+        return moduleUrl;
+      };
 
       var xhrModuleLoad = xhrModuleLoadMaker(
-          document.location.href, defaultModuleIdResolver, cajolerFinder);
+          document.location.href, defaultModuleIdResolver,
+          xhrCajolingServiceFinder);
+
+      var scriptCajolingServiceFinder = (function() {
+        var csf = new CajolingServiceFinder(
+            "http://localhost:8000/caja/cajole");
+        return function(moduleUrl, jsonpCallback) {
+          if (!/\.js$/.test(moduleUrl) && !/\.html$/.test(moduleUrl)) {
+            moduleUrl = moduleUrl + '.js';
+          }
+          return csf(moduleUrl, jsonpCallback);
+        };
+      })();
 
       var scriptModuleLoad = scriptModuleLoadMaker(
-          document.location.href, defaultModuleIdResolver, cajolerFinder);
+          document.location.href, defaultModuleIdResolver,
+          scriptCajolingServiceFinder);
+
+      console.log('xhrModuleLoad = ' + xhrModuleLoad.toSource());
+      console.log('scriptModuleLoad = ' + scriptModuleLoad.toSource());
     </script>
 
     <script type="text/javascript">

@@ -20,6 +20,8 @@ import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.InputSource;
 import com.google.caja.plugin.UriFetcher;
 import com.google.caja.reporting.BuildInfo;
+import com.google.caja.reporting.Message;
+import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.util.Lists;
@@ -114,9 +116,6 @@ public class CajolingService {
 
     String expectedInputContentType = CajaArguments.INPUT_MIME_TYPE.get(args);
     if (expectedInputContentType == null) {
-      expectedInputContentType = CajaArguments.OLD_INPUT_MIME_TYPE.get(args);
-    }
-    if (expectedInputContentType == null) {
       mq.addMessage(
           ServiceMessageType.MISSING_ARGUMENT,
           MessagePart.Factory.valueOf(
@@ -143,11 +142,6 @@ public class CajolingService {
           MessagePart.Factory.valueOf(expectedInputContentType),
           MessagePart.Factory.valueOf(inputFetchedData.getContentType()));
       return null;
-    }
-
-    String outputContentType = CajaArguments.OUTPUT_MIME_TYPE.get(args);
-    if (outputContentType == null) {
-      outputContentType = "*/*";
     }
 
     String transformName = CajaArguments.TRANSFORM.get(args);
@@ -188,7 +182,6 @@ public class CajolingService {
           directive,
           args,
           inputFetchedData.getContentType(),
-          outputContentType,
           inputFetchedData,
           intermediateResponse,
           mq);
@@ -209,23 +202,35 @@ public class CajolingService {
         new InputSource(inputUri));
   }
 
+  public static String render(MessageQueue mq) {
+    StringBuilder sb = new StringBuilder();
+    for (Message m : mq.getMessages()) {
+      try {
+        m.format(new MessageContext(), sb);
+      } catch (IOException e) {
+        sb.append(e.toString());
+      }
+      sb.append("\n");
+    }
+    return sb.toString();
+  }
+
   private void registerHandlers(BuildInfo buildInfo) {
     handlers.add(new JsHandler(buildInfo));
     handlers.add(new ImageHandler());
-    handlers.add(new InnocentHandler());
+    handlers.add(new InnocentHandler(buildInfo));
     handlers.add(new HtmlHandler(buildInfo, host, uriFetcher));
   }
 
   private Pair<String, String> applyHandler(
       URI uri, Transform t, List<Directive> d, ContentHandlerArgs args,
-      String inputContentType, String outputContentType,
+      String inputContentType,
       FetchedData input, OutputStream response, MessageQueue mq)
       throws UnsupportedContentTypeException {
     for (ContentHandler handler : handlers) {
-      if (handler.canHandle(uri, t, d, inputContentType,
-          outputContentType, typeCheck)) {
+      if (handler.canHandle(uri, t, d, inputContentType, typeCheck)) {
         return handler.apply(uri, t, d, args, inputContentType,
-            outputContentType, typeCheck, input, response, mq);
+            typeCheck, input, response, mq);
       }
     }
     throw new UnsupportedContentTypeException();

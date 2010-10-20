@@ -3385,8 +3385,12 @@ var attachDocumentStub = (function () {
 
     // For JavaScript handlers.  See plugin_dispatchEvent___ below
     imports.handlers___ = [];
-    imports.tameNode___ = defaultTameNode;
     imports.TameHTMLDocument___ = TameHTMLDocument;  // Exposed for testing
+    imports.tameNode___ = defaultTameNode;
+    imports.feralNode___ = ___.markFuncFreeze(function(tameNode) {
+      tameNode = TameNodeT.coerce(tameNode);
+      return tameNode.node___;
+    });
     imports.tameEvent___ = tameEvent;
     imports.blessHtml___ = blessHtml;
     imports.blessCss___ = function (var_args) {
@@ -3670,6 +3674,8 @@ var attachDocumentStub = (function () {
         String(optPseudoWindowLocation.hostname || 'nosuchhost.fake'),
         true);
     imports.document = tameDocument;
+    imports.document.tameNode___ = imports.tameNode___;
+    imports.document.feralNode___ = imports.feralNode___;
 
     // TODO(mikesamuel): figure out a mechanism by which the container can
     // specify the gadget's apparent URL.

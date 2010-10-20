@@ -545,6 +545,8 @@
   <!-- Cajoles test resources that contain cajita to javascript. -->
   <target name="CajoledTests" depends="pluginc,dirs,CajoledValija">
     <property name="libplugin" location="${lib}/com/google/caja/plugin"/>
+
+    <!-- Create Cajita and Valija versions of the Domita test cases -->
     <copy file="${tests}/com/google/caja/plugin/domita_test_untrusted.html"
         tofile="${libplugin}/domita_test_untrusted_valija.html"/>
     <copy file="${tests}/com/google/caja/plugin/domita_test_untrusted.html"
@@ -557,6 +559,8 @@
      <replacetoken>/*@@cajaLanguageSelectionStatements@@*/</replacetoken>
      <replacevalue></replacevalue>
     </replace>
+
+    <!-- The root files of the Domita test cases are statically cajoled -->
     <transform>
       <input file="${libplugin}/domita_test_untrusted_valija.html"/>
       <output file="${libplugin}/domita_test_untrusted_valija.out.html"
@@ -567,6 +571,8 @@
       <output file="${libplugin}/domita_test_untrusted_cajita.out.html"
        language="caja"/>
     </transform>
+
+    <!-- Statically cajole all the tests for use by the XHR module loader -->
     <transform>
      <input file="${tests}/com/google/caja/a.js"/>
      <output file="${lib}/com/google/caja/a.out.js" language="caja"/>
@@ -615,11 +621,32 @@
      <input file="${tests}/com/google/caja/sum.js"/>
      <output file="${lib}/com/google/caja/sum.out.js" language="caja"/>
     </transform>
+
+    <!-- Copy the test files to make them available for the script module
+         loader via dynamic cajoling, as well -->
+    <copy todir="${lib}">
+      <fileset dir="${tests}">
+        <include name="com/google/caja/a.js"/>
+        <include name="com/google/caja/foo/b.js"/>
+        <include name="com/google/caja/c.js"/>
+        <include name="com/google/caja/recursion.js"/>
+        <include name="com/google/caja/x.js"/>
+        <include name="com/google/caja/foo/inc.js"/>
+        <include name="com/google/caja/add.js"/>
+        <include name="com/google/caja/commonJsRecursion.js"/>
+        <include name="com/google/caja/foo/f.js"/>
+        <include name="com/google/caja/foo/staticinc.js"/>
+        <include name="com/google/caja/sum.js"/>
+     </fileset>
+    </copy>
+
+    <!-- All our HTML files are copied verbatim -->
     <copy todir="${lib}">
       <fileset dir="${src}" includes="**/*.html"/>
       <fileset dir="${tests}" includes="**/*.html"/>
     </copy>
   </target>
+
   <target name="CajoledValija" depends="pluginc">
     <transform>
       <output file="${lib}/com/google/caja/plugin/valija.out.js"
@@ -1066,7 +1093,11 @@
 
   <target name="runserver" depends="playground"
     description="Starts the development server.">
-    <dev_appserver war="${war}" />
+    <dev_appserver war="${war}">
+      <options>
+        <arg value="--jvm_flag=-Xmx4096m"/>
+      </options>
+    </dev_appserver>
   </target>
 
   <target name="Config" depends="Reporting">

@@ -39,8 +39,8 @@
  *   cajita.js, bridal.js, uri.js, cajita-promise.js
  * 
  * TODO(kpreid): explain static (sync) loading module id semantics.
- * @author maoziqing@gmail.com, kpreid@switchb.org
- * @requires eval, document, ___, bridal, Q, URI
+ * @author maoziqing@gmail.com, kpreid@switchb.org, ihab.awad@gmail.com
+ * @requires eval, document, ___, bridal, Q, URI, cajita, window
  * @provides xhrModuleLoadMaker, scriptModuleLoadMaker, clearModuleCache,
  *           defaultModuleIdResolver, defaultCajolerFinder,
  *           CajolingServiceFinder
@@ -57,14 +57,17 @@ var clearModuleCache;
   var cache = {};
 
   defaultModuleIdResolver = function(thisModURL, mid) {
+    if (!/\.js$/.test(mid) && !/\.html$/.test(mid)) {
+      mid = mid + '.js';
+    }
     return URI.resolve(URI.parse(thisModURL), URI.parse(mid)).toString();
   };
-  
+
   /**
    * Constructor for a cajoler finder given the URL of a cajoling service.
    */
   CajolingServiceFinder = function(serviceURL) {
-    function cajolingServiceFinder(uncajoledSourceURL) {
+    return  function cajolingServiceFinder(uncajoledSourceURL, jsonpCallback) {
       var inputMimeType;
       if (/\.js$/.test(uncajoledSourceURL)) {
         inputMimeType = 'application/javascript';
@@ -74,19 +77,30 @@ var clearModuleCache;
         inputMimeType = 'application/javascript';
       }
 
-      return serviceURL +
-          '?url=' + encodeURIComponent(uncajoledSourceURL) +
-          '&input-mime-type=' + inputMimeType +
-          '&output-mime-type=application/javascript';
-    }
-    return cajolingServiceFinder;
+      return jsonpCallback
+          ? serviceURL +
+              '?url=' + encodeURIComponent(uncajoledSourceURL) +
+              '&renderer=pretty' +
+              '&input-mime-type=' + inputMimeType +
+              '&output-mime-type=application/json' +
+              '&emit-html-in-js=true' +
+              (jsonpCallback ? '&callback=' + jsonpCallback : '')
+          : serviceURL +
+              '?url=' + encodeURIComponent(uncajoledSourceURL) +
+              '&renderer=pretty' +
+              '&input-mime-type=' + inputMimeType +
+              '&output-mime-type=application/javascript';
+    };
   };
+  
   defaultCajolerFinder = new CajolingServiceFinder(
       'http://caja.appspot.com/cajole');
 
   function syncLoad(modURL) {
     if (cache[modURL] === undefined || Q.near(cache[modURL]).isPromise___) {
-      throw new Error("The static module " + modURL + " cannot be resolved.");
+      var msg = "The static module " + modURL + " cannot be resolved.";
+      cajita.log(msg);
+      throw new Error(msg);
     }
     return Q.near(cache[modURL]);
   }
@@ -178,6 +192,18 @@ var clearModuleCache;
     });
   }
 
+  function messagesToLog(moduleURL, cajolerMessages) {
+    if (!cajolerMessages) { return; }
+    cajita.log("Messages cajoling " + moduleURL);
+    var msg;
+    for (var i = 0; i < cajolerMessages.length; i++) {
+      msg = cajolerMessages[i];
+      cajita.log(
+          msg.name + '(' + msg.level + ') '
+          + msg.type + ': ' + msg.message);
+    }
+  }
+
   function xhrAsyncLoad(modURL, midResolver, cajolerFinder) {
     if (cache[modURL] !== undefined) {
       return cache[modURL];
@@ -195,7 +221,7 @@ var clearModuleCache;
           ___.setNewModuleHandler(___.primFreeze({
             handle: ___.markFuncFreeze(function theHandler(module) {
               try {
-                var load = loadMaker(modURL, midResolver, cajolerFinder, 
+                var load = loadMaker(modURL, midResolver, cajolerFinder,
                                      xhrAsyncLoad);
                 module.moduleURL = modURL;
                 var securedModule = ___.prepareModule(module, load);
@@ -227,7 +253,7 @@ var clearModuleCache;
         }
       }
     };
-    
+
     var cajoledModURL = cajolerFinder(modURL);
 
     xhr.open("GET", cajoledModURL, true);
@@ -240,9 +266,7 @@ var clearModuleCache;
 
   xhrModuleLoadMaker = makeConcreteLoadMaker(xhrAsyncLoad);
 
-  var head = 0;
-  var queue = [];
-  var busy = false;
+  var jsonpCallbackCount = 0;
 
   function scriptAsyncLoad(modURL, midResolver, cajolerFinder) {
     if (cache[modURL] !== undefined) {
@@ -252,95 +276,41 @@ var clearModuleCache;
     var r = Q.defer();
     cache[modURL] = r.promise;
 
-    function dequeue() {
-      if (head < queue.length) {
-        busy = true;
-        var savedHead = head;
+    var load = loadMaker(modURL, midResolver, cajolerFinder, scriptAsyncLoad);
 
-        // TODO(ihab.awad): Modifying a frozen structure (the new module
-        // handler) in un-cajoled code is possible but poor practice.
+    var jsonpCallbackName = '___caja_mod_' + jsonpCallbackCount++ + '___';
 
-        // TODO(ihab.awad): Consider refactoring the <script> module loader to
-        // always use a JSONP-style callback function so that it does not
-        // trample on code that uses the standard ___.loadModule().
+    function prepareModule(moduleText) {
+      var rawModule = undefined;
+      (function() {
+        var ___ = { loadModule: function(m) { rawModule = m; } };
+        eval(moduleText);
+      })();
+      return ___.prepareModule(rawModule, load);
+    }
 
-        // TODO(ihab.awad): Consider deprecating the entire newModuleHandler
-        // system since it relies on globally visible modifications to "___";
-        // instead maybe we should just cajole to a well-known callback if none
-        // is supplied, like:
-        //     cajaModuleCallback___(___.prepareModule({ ... module ... }));
+    var w = window;  // Caja linter rejects direct assignment to 'window'
 
-        var newModuleHandler = ___.makeNormalNewModuleHandler();
-        newModuleHandler.handle = ___.markFuncFreeze(
-            function theHandler(module) {
-              if (savedHead === head) {
-                var r = queue[head].defer;
-                try {
-                  var curModURL = queue[head].modURL;
-                  var load = loadMaker(curModURL, midResolver, cajolerFinder,
-                                       scriptAsyncLoad);
-                  module.moduleURL = modURL;
-                  var securedModule = ___.prepareModule(module, load);
+    w[jsonpCallbackName] = function(moduleJson) {
 
-                  var dependency = resolveDependency(module, load);
-                  Q.when(dependency,
-                      function(result) {
-                        r.resolve(securedModule);
-                      },
-                      function(reason) {
-                        r.resolve(Q.reject(
-                            "Resolving dependency for the module "
-                            + curModURL + " failed."));
-                      });
-                } catch (e) {
-                  r.resolve(Q.reject(e));
-                }
-                delete queue[head];
-                head++;
-                dequeue();
-              } else {
-                throw new Error('Module queue got out of sync');
-              }
-            });
-        // TODO: don't we need to save the old module handler here so we
-        // can restore it in timeout.
-        ___.setNewModuleHandler(newModuleHandler);
-
-        var timeout = function () {
-          // Don't prevent GC
-          script.onreadystatechange = script.onerror = null;
-          if (savedHead === head) {
-            var r = queue[head].defer;
-            r.resolve(Q.reject(
-                "Retrieving the module " + queue[head].modURL + " failed."));
-            delete queue[head];
-            head++;
-            dequeue();
-          } else {
-            // the module has been loaded successfully
-          }
-        };
-
-        var script = document.createElement("script");
-        script.src = cajolerFinder(queue[head].modURL);
-        script.onerror = timeout;
-        script.onreadystatechange = function() {
-          if (script.readyState === 'loaded'
-              || script.readyState === 'complete') {
-            timeout();
-          }
-        };
-        document.getElementsByTagName('head')[0].appendChild(script);
+      delete w[jsonpCallbackName];
+      if (moduleJson.js) {
+        var preparedModule = prepareModule(moduleJson.js);
+        Q.when(resolveDependency(preparedModule, load),
+            function(result) { r.resolve(preparedModule); },
+            function(reason) { r.resolve(Q.reject(reason)); });
       } else {
-        busy = false;
+        r.resolve(Q.reject('Cajoling module ' + modURL + ' failed'));
       }
-    }
+      messagesToLog(modURL, moduleJson.messages);
+    };
 
-    queue.push({ modURL: modURL, defer: r });
-
-    if (!busy) {
-      dequeue();
-    }
+    var script = document.createElement('script');
+    script.src = cajolerFinder(modURL, jsonpCallbackName);
+    script.onerror = function() {
+      r.resolve(Q.reject('Error loading cajoled module ' + modURL));
+    };
+    document.getElementsByTagName('head')[0].appendChild(script);
 
     return r.promise;
   }

@@ -47,25 +47,9 @@ public class CajolingServiceTest extends ServiceTestCase {
     registerUri("http://foo/bar.js", "foo()", "text/javascript");
     registerUri("http://foo/bar.html", "<b>Hello</b>", "text/html");
     assertFalse("ERROR".equals(
-        requestGet("?url=http://foo/bar.js&mime-type=text/javascript")));
+        requestGet("?url=http://foo/bar.js&input-mime-type=text/javascript")));
     assertFalse("ERROR".equals(
-        requestGet("?url=http://foo/bar.html&mime-type=text/html")));
-    assertFalse("ERROR".equals(
-        requestGet("?url=http://foo/bar.html&input-mime-type=text/html&" +
-                   "output-mime-type=text/javascript")));
-    assertEquals("ERROR",
-        requestGet("?url=http://foo/bar.js&input-mime-type=text/javascript&" +
-                   "output-mime-type=text/html"));
-  }
-
-  // Tests error messages are escaped.
-  public final void testErrorMessagesEscaped() throws Exception {
-    registerUri("http://foo/bar.js", "with(){};", "text/javascript");
-    // If javascript is requested, always produce javascript
-    // If there's an error, the safest output that is still valid javascript
-    // is empty.
-    assertEquals("",
-        (String)requestGet("?url=http://foo/bar.js&mime-type=text/javascript"));
+        requestGet("?url=http://foo/bar.html&input-mime-type=text/html")));
   }
 
   // Tests that POST-ing to the service works just as well as GET-ting from it.
@@ -74,7 +58,7 @@ public class CajolingServiceTest extends ServiceTestCase {
                         (byte) 0x39, (byte) 0x38, (byte) 0x61 };
     assertTrue(Arrays.equals(
         (byte[]) requestPost(
-            "?url=http://foo/bar.gif&mime-type=image/*",
+            "?url=http://foo/bar.gif&input-mime-type=image/*",
             byteData,
             "image/gif",
             null),
@@ -84,7 +68,7 @@ public class CajolingServiceTest extends ServiceTestCase {
   public final void testUnexpectedMimeType() throws Exception {
     registerUri("http://foo/bar.gif", "foo()", "text/javascript");
     assertEquals("ERROR",
-        requestGet("?url=http://foo/bar.gif&mime-type=image/*"));
+        requestGet("?url=http://foo/bar.gif&input-mime-type=image/*"));
   }
 
   public final void testEmptyContent() throws Exception {

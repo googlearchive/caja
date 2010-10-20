@@ -68,7 +68,7 @@ public abstract class ServiceTestCase extends CajaTestCase {
     super.tearDown();
   }
 
-  protected Object json(String json) {
+  protected static Object json(String json) {
     return JSONValue.parse(json);
   }
 
@@ -197,5 +197,30 @@ public abstract class ServiceTestCase extends CajaTestCase {
     }
     sb.append(suffix);
     return sb.toString();
+  }
+
+  private static String normStringSpaces(String s) {
+    return s.replaceAll("[ \r\n\t]+", " ")
+        .replaceAll("^ | $|(?<=\\W) | (?=\\W)", "");
+  }
+
+  protected static void assertContainsIgnoreSpace(
+      String full,
+      String substring) {
+    assertTrue(
+        "Substring <" + substring + "> not part of <" + full + ">",
+        normStringSpaces(full).contains(normStringSpaces(substring)));
+  }
+
+  protected static void assertSubstringInJson(
+      String emitted,
+      String jsonProperty,
+      String... expectedSubstrings) throws Exception {
+    JSONObject json = (JSONObject) json(emitted);
+    assertTrue(json.containsKey(jsonProperty));
+    String value = (String) json.get(jsonProperty);
+    for (String s : expectedSubstrings) {
+      assertContainsIgnoreSpace(value, s);
+    }
   }
 }

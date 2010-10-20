@@ -27,18 +27,17 @@ import com.google.caja.lexer.JsTokenQueue;
 import com.google.caja.lexer.ParseException;
 import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.CajoledModule;
-import com.google.caja.parser.js.Expression;
 import com.google.caja.parser.js.Parser;
 import com.google.caja.parser.js.UncajoledModule;
 import com.google.caja.parser.quasiliteral.CajitaRewriter;
 import com.google.caja.parser.quasiliteral.DefaultValijaRewriter;
-import com.google.caja.parser.quasiliteral.QuasiBuilder;
-import com.google.caja.parser.quasiliteral.Rewriter;
 import com.google.caja.parser.quasiliteral.ES53Rewriter;
+import com.google.caja.parser.quasiliteral.Rewriter;
 import com.google.caja.reporting.BuildInfo;
-import com.google.caja.reporting.MessagePart;
+import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.util.Charsets;
+import com.google.caja.util.ContentType;
 import com.google.caja.util.Pair;
 
 /**
@@ -56,50 +55,44 @@ public class JsHandler extends AbstractCajolingHandler {
   @Override
   public boolean canHandle(URI uri, CajolingService.Transform transform,
       List<CajolingService.Directive> directives, String inputContentType,
-      String outputContentType, ContentTypeCheck checker) {
+      ContentTypeCheck checker) {
     return checker.check("text/javascript", inputContentType)
-        && checker.check(outputContentType, "text/javascript")
-        && (transform == null
-            || transform.equals(CajolingService.Transform.CAJOLE));
+        && (transform == null || transform == CajolingService.Transform.CAJOLE);
   }
 
   @Override
   public Pair<String,String> apply(URI uri,
-      CajolingService.Transform transform, List<CajolingService.Directive> directive,
+      CajolingService.Transform transform,
+      List<CajolingService.Directive> directive,
       ContentHandlerArgs args,
-      String inputContentType, String outputContentType,
+      String inputContentType,
       ContentTypeCheck checker,
       FetchedData input,
       OutputStream response,
       MessageQueue mq)
       throws UnsupportedContentTypeException {
-    String moduleCallbackString = CajaArguments.MODULE_CALLBACK.get(args);
-    Expression moduleCallback = (Expression)
-        (moduleCallbackString == null
-            ? null
-            : QuasiBuilder.substV(moduleCallbackString));
-
+    String jsonpCallback = CajaArguments.CALLBACK.get(args);
     try {
       OutputStreamWriter writer = new OutputStreamWriter(response,
           Charsets.UTF_8.name());
-      cajoleJs(uri, input.getTextualContent(),
-          transform, directive, moduleCallback, writer, mq);
+      cajoleJs(uri, input.getTextualContent(), directive,
+          jsonpCallback, writer, mq);
       writer.flush();
     } catch (IOException e) {
       throw new UnsupportedContentTypeException();
     }
-    return Pair.pair("text/javascript", Charsets.UTF_8.name());
+    return Pair.pair(ContentType.JSON.mimeType, Charsets.UTF_8.name());
   }
 
   private void cajoleJs(URI inputUri,
                         CharProducer cp,
-                        CajolingService.Transform transform,
                         List<CajolingService.Directive> directive,
-                        Expression moduleCallback,
+                        String jsonpCallback,
                         Appendable output,
                         MessageQueue mq) {
-    InputSource is = new InputSource (inputUri);
+    CajoledModule cajoledModule = null;
     try {
+      InputSource is = new InputSource (inputUri);
       JsTokenQueue tq = new JsTokenQueue(new JsLexer(cp), is);
       Block input = new Parser(tq, mq).parse();
       tq.expectEmpty();
@@ -107,26 +100,26 @@ public class JsHandler extends AbstractCajolingHandler {
       if (!directive.contains(CajolingService.Directive.ES53)) {
         Rewriter vrw = new DefaultValijaRewriter(mq, false /* logging */);
         Rewriter crw = new CajitaRewriter(buildInfo, mq, false /* logging */);
-        if (transform == null ||
-            (transform.equals(CajolingService.Transform.CAJOLE) &&
-            directive.contains(CajolingService.Directive.CAJITA))) {
-          renderAsJavascript((CajoledModule) crw.expand(ucm),
-              moduleCallback, output);
+        if (directive.contains(CajolingService.Directive.CAJITA)) {
+          cajoledModule = (CajoledModule) crw.expand(ucm);
         } else {
-          renderAsJavascript((CajoledModule) crw.expand(vrw.expand(ucm)),
-              moduleCallback, output);
+          cajoledModule = (CajoledModule) crw.expand(vrw.expand(ucm));
         }
       } else {
         Rewriter esrw = new ES53Rewriter(buildInfo, mq, false /* logging */);
-        renderAsJavascript((CajoledModule) esrw.expand(ucm),
-            moduleCallback, output);
+        cajoledModule = (CajoledModule) esrw.expand(ucm);
       }
     } catch (ParseException e) {
       e.toMessageQueue(mq);
+    }
+    if (mq.hasMessageAtLevel(MessageLevel.ERROR)) {
+      cajoledModule = null;
+    }
+    try {
+      renderAsJSON(null, cajoledModule, jsonpCallback, mq, output);
     } catch (IOException e) {
-      mq.addMessage(
-          ServiceMessageType.IO_ERROR,
-          MessagePart.Factory.valueOf(e.getMessage()));
+      // Low level server error; must return HTTP status code
+      throw new RuntimeException(e);
     }
   }
 }

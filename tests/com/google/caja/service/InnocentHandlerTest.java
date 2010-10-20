@@ -21,15 +21,11 @@ public class InnocentHandlerTest extends ServiceTestCase {
   public final void testInnocentJs() throws Exception {
     registerUri("http://foo/innocent.js", "for (var k in x) { k; }",
         "text/javascript");
-    assertEquals("{\n" +
-        "  var x0___;\n" +
-        "  for (x0___ in x) {\n" +
-        "    if (x0___.match(/___$/)) { continue; }\n" +
-        "    k = x0___;\n" +
-        "    { k; }\n" +
-        "  }\n" +
-        "}",
-        requestGet("?url=http://foo/innocent.js&mime-type=text/javascript" +
-                "&transform=INNOCENT"));
+    assertSubstringInJson(
+        (String) requestGet("?url=http://foo/innocent.js"
+            + "&input-mime-type=text/javascript"
+            + "&transform=INNOCENT"),
+        "js",
+        "if (x0___.match(/___$/)) { continue }");
   }
 }

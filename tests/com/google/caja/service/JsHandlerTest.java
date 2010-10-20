@@ -14,55 +14,63 @@
 
 package com.google.caja.service;
 
+import junit.framework.AssertionFailedError;
+
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 /**
  * @author jasvir@google.com (Jasvir Nagra)
  */
 public class JsHandlerTest extends ServiceTestCase {
-  private static String normStringSpaces(String s) {
-    return s.replaceAll("[ \r\n\t]+", " ")
-        .replaceAll("^ | $|(?<=\\W) | (?=\\W)", "");
-  }
-  // TODO(ihab.awad): Change tests to use structural equality (via quasi
-  // matches) rather than golden text to avoid this.
-  @Override
-  protected void assertEqualsIgnoreSpace(String expected, String actual) {
-    assertEquals(normStringSpaces(expected), normStringSpaces(actual));
+  private static void checkWithCallback(
+      String jsonpCallback,
+      String emitted,
+      String... expectedSubstrings) throws Exception {
+    Pattern p = Pattern.compile("^" + jsonpCallback + "\\((\\{.*\\})\\)$");
+    Matcher m = p.matcher(emitted);
+    assertTrue(m.matches());
+    assertSubstringInJson(m.group(1), "js", expectedSubstrings);
   }
 
-  public final void testSimpleJs() throws Exception {
+  public final void testJs() throws Exception {
     registerUri("http://foo/bar.js", "g(1);", "text/javascript");
-    assertEqualsIgnoreSpace(
-        valijaModule("moduleResult___ = $v.cf($v.ro('g'), [ 1 ]);"),
-        (String) requestGet("?url=http://foo/bar.js&mime-type=text/javascript" +
-                "&transform=CAJOLE"));
+    assertSubstringInJson(
+        (String) requestGet("?url=http://foo/bar.js"
+            + "&input-mime-type=text/javascript"),
+        "js",
+        "moduleResult___=$v.cf($v.ro('g'),[1]);");
   }
 
-  public final void testAltJscriptMimeType() throws Exception {
-    registerUri(
-        "http://foo/bar.js", "f();", "application/x-javascript");
-    assertEqualsIgnoreSpace(
-        valijaModule("moduleResult___ = $v.cf($v.ro('f'), [ ]);"),
-        (String) requestGet("?url=http://foo/bar.js&mime-type=text/javascript" +
-            "&transform=CAJOLE"));
-  }
-
-  public final void testJsWithCallback() throws Exception {
+  public final void testJsWithJsonpCallback() throws Exception {
     registerUri("http://foo/bar.js", "g(1);", "text/javascript");
-    assertEqualsIgnoreSpace(
-        valijaModuleWithCallback("foo.bar.baz",
-            "moduleResult___ = $v.cf($v.ro('g'), [ 1 ]);"),
-        (String) requestGet("?url=http://foo/bar.js&mime-type=text/javascript"
-            + "&transform=CAJOLE"
-            + "&module-callback=foo.bar.baz"));
+    checkWithCallback(
+        "foo",
+        (String) requestGet("?url=http://foo/bar.js"
+            + "&input-mime-type=text/javascript"
+            + "&callback=foo"),
+        "moduleResult___=$v.cf($v.ro('g'),[1]);");
+    try {
+      checkWithCallback(
+          "foo.bar",
+          (String) requestGet("?url=http://foo/bar.js"
+              + "&input-mime-type=text/javascript"
+              + "&callback=foo.bar"),
+          "moduleResult___=$v.cf($v.ro('g'),[1]);");
+      fail("Failed to reject non-identifier JSONP callback");
+    } catch (AssertionFailedError e) {
+      // Success
+    }
   }
 
-  public final void testSimpleCajitaJs() throws Exception {
+  public final void testCajitaJs() throws Exception {
     registerUri("http://foo/bar.js", "g(1);", "text/javascript");
-    assertEqualsIgnoreSpace(
-        cajitaModule(
-            "var g=___.readImport(IMPORTS___,'g');",
-            "moduleResult___=g.CALL___(1);"),
-        (String) requestGet("?url=http://foo/bar.js&mime-type=text/javascript" +
-                "&transform=CAJOLE&directive=CAJITA"));
+    assertSubstringInJson(
+        (String) requestGet("?url=http://foo/bar.js"
+            + "&input-mime-type=text/javascript"
+            + "&directive=CAJITA"),
+        "js",
+        "var g=___.readImport(IMPORTS___,'g');",
+        "moduleResult___=g.CALL___(1);");
   }
 }
