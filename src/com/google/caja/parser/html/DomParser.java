@@ -39,9 +39,12 @@ import java.io.Reader;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
 import org.w3c.dom.Attr;
+import org.w3c.dom.DOMException;
 import org.w3c.dom.DOMImplementation;
 import org.w3c.dom.Document;
 import org.w3c.dom.DocumentFragment;
@@ -63,6 +66,8 @@ import org.w3c.dom.bootstrap.DOMImplementationRegistry;
  * @author mikesamuel@gmail.com
  */
 public class DomParser {
+  private static final Logger logger = Logger.getLogger(
+      DomParser.class.getName());
   private final TokenQueue<HtmlTokenType> tokens;
   private final boolean asXml;
   private final MessageQueue mq;
@@ -327,7 +332,7 @@ public class DomParser {
     }
   }
 
-  private Node fixup(Node node, Namespaces ns) {
+  private Node fixup(Node node, Namespaces ns) throws ParseException {
     switch (node.getNodeType()) {
       case Node.ELEMENT_NODE:
         Element el = (Element) node;
@@ -400,20 +405,13 @@ public class DomParser {
               ns = attrNs = AbstractElementStack.unknownNamespace(
                   Nodes.getFilePositionFor(a), ns, qname, mq);
             }
-            Attr newAttr = doc.createAttributeNS(attrNs.uri, qname);
-            newAttr.setValue(a.getValue());
-            if (needsDebugData) {
-              Nodes.setFilePositionFor(newAttr, Nodes.getFilePositionFor(a));
-              Nodes.setFilePositionForValue(
-                  newAttr, Nodes.getFilePositionForValue(a));
-              Nodes.setRawValue(newAttr, Nodes.getRawValue(a));
-            }
+
             // This may screw up the count or change the order of attributes in
             // attrs, so we do this operation in a loop to make sure that all
             // attributes are considered.
-            el.removeAttributeNode(a);
-            el.setAttributeNodeNS(newAttr);
+            createAttributeAndAddToElement(doc, attrNs.uri, qname, a, el);
             modifiedAttrs = true;
+            n = el.getAttributes().getLength();
           }
         } while (modifiedAttrs);
         break;
@@ -425,6 +423,53 @@ public class DomParser {
       fixup(c, ns);
     }
     return node;
+  }
+
+  /**
+   * Helper method for creating a new attribute with the fixed up namespace
+   * name. Ignores DOMException's raised by {@code createAttributeNS()} in case
+   * the document being processed is html (removing the attribute that caused
+   * the exception), rethrows it as a ParseException otherwise.
+   *
+   * @param doc The document being parsed.
+   * @param attrNsUri The namespace uri for the attribute.
+   * @param qname The fully qualified name of the attribute to insert.
+   * @param attr The attribute to copy value from.
+   * @param el The element to insert the attribute to.
+   * @throws ParseException In case of errors.
+   */
+  void createAttributeAndAddToElement(Document doc, String attrNsUri,
+                                      String qname, Attr attr, Element el)
+      throws ParseException {
+    Attr newAttr;
+    try {
+      newAttr = doc.createAttributeNS(attrNsUri, qname);
+    } catch (DOMException e) {
+      // Ignore DOMException's like NAMESPACE_ERR if the document being
+      // processed is html. Also, remove the associated attribute node.
+      if (!asXml) {
+        mq.addMessage(DomParserMessageType.IGNORING_TOKEN,
+                      Nodes.getFilePositionFor(attr),
+                      MessagePart.Factory.valueOf("'" + qname + "'"));
+        el.removeAttributeNode(attr);
+        logger.log(Level.FINE, "Ignoring exception: ", e);
+        return;
+      }
+      throw new ParseException(new Message(DomParserMessageType.IGNORING_TOKEN,
+          Nodes.getFilePositionFor(attr),
+          MessagePart.Factory.valueOf("'" + qname + "'")), e);
+    }
+
+    newAttr.setValue(attr.getValue());
+    if (needsDebugData) {
+      Nodes.setFilePositionFor(newAttr, Nodes.getFilePositionFor(attr));
+      Nodes.setFilePositionForValue(
+          newAttr, Nodes.getFilePositionForValue(attr));
+      Nodes.setRawValue(newAttr, Nodes.getRawValue(attr));
+    }
+
+    el.removeAttributeNode(attr);
+    el.setAttributeNodeNS(newAttr);
   }
 
   /**

@@ -32,6 +32,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -63,6 +65,8 @@ import nu.validator.htmlparser.impl.Tokenizer;
  * @author mikesamuel@gmail.com
  */
 public class Html5ElementStack implements OpenElementStack {
+  public static final Logger logger = Logger.getLogger(
+      Html5ElementStack.class.getName());
   private final CajaTreeBuilder builder;
   private final char[] charBuf = new char[1024];
   private final MessageQueue mq;
@@ -75,6 +79,7 @@ public class Html5ElementStack implements OpenElementStack {
   private boolean processingFirstTag = true;
 
   /**
+   * @param doc The document being processed.
    * @param needsDebugData see {@link DomParser#setNeedsDebugData(boolean)}
    * @param queue will receive error messages from html5lib.
    */
@@ -339,11 +344,19 @@ public class Html5ElementStack implements OpenElementStack {
             isAttrHtml = isHtml && checkName(qname);
             if (isAttrHtml) {
               name = Strings.toLowerCase(qname);
-              attrNode = doc.createAttributeNS(
-                  Namespaces.HTML_NAMESPACE_URI, name);
+              attrNode = maybeCreateAttributeNs(Namespaces.HTML_NAMESPACE_URI,
+                                                name, as);
+              if (attrNode == null) {
+                // Ignore this attribute.
+                continue;
+              }
             } else {
               name = AttributeNameFixup.fixupNameFromQname(qname);
-              attrNode = doc.createAttribute(name);
+              attrNode = maybeCreateAttribute(name, as);
+              if (attrNode == null) {
+                // Ignore this attribute.
+                continue;
+              }
             }
           }
           attrNode.setValue(as.value);
@@ -553,5 +566,54 @@ public class Html5ElementStack implements OpenElementStack {
       }
     }
     return rawText;
+  }
+
+  /**
+   * Creates a w3c dom attribute.
+   *
+   * @param attrName Attribute name.
+   * @param as The attribute stub.
+   * @return A w3c attribute if the attribute name is valid, null otherwise.
+   */
+  public Attr maybeCreateAttribute(String attrName, AttrStub as) {
+    try {
+      return doc.createAttribute(attrName);
+    } catch (DOMException e) {
+      // Ignore DOMException's like INVALID_CHARACTER_ERR since its an html
+      // document.
+      mq.addMessage(DomParserMessageType.IGNORING_TOKEN, as.nameTok.pos,
+                    MessagePart.Factory.valueOf("'" + as.nameTok.text + "'"));
+      logger.log(Level.FINE, "Ignoring DOMException in maybeCreateAttribute",
+                 e);
+      return null;
+    }
+  }
+
+  /**
+   * Creates a w3c dom attribute in the given namespace.
+   *
+   * @param nsUri The namespace uri to use.
+   * @param attrName Attribute name.
+   * @param as The attribute stub.
+   * @return A w3c attribute if the attribute name is valid, null otherwise.
+   */
+  public Attr maybeCreateAttributeNs(String nsUri, String attrName,
+                                     AttrStub as) {
+    try {
+      return doc.createAttributeNS(nsUri, attrName);
+    } catch (DOMException e) {
+      // Ignore DOMException's like INVALID_CHARACTER_ERR since its an html
+      // document.
+      mq.addMessage(DomParserMessageType.IGNORING_TOKEN, as.nameTok.pos,
+                    MessagePart.Factory.valueOf("'" + as.nameTok.text + "'"));
+      logger.log(Level.FINE, "Ignoring DOMException in maybeCreateAttributeNs",
+                 e);
+      return null;
+    }
+  }
+
+  // For testing.
+  Element builderRootElement() {
+    return builder.getRootElement();
   }
 }

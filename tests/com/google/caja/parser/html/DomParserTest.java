@@ -208,6 +208,62 @@ public class DomParserTest extends CajaTestCase {
     }, xmlConfigs, needsDebugData, wantsComments);
   }
 
+  public final void testIllegalAttributes() throws Exception {
+    String helloTag =
+        "<hello "
+        + "xmlns:data = 'http://1.com' "
+        + "attr = 'value' "
+        + "data:attr = 'value2' "
+
+        // Illegal attribute caught in maybeCreateAttributeNS.
+        + "hi~ = 'v' "
+
+        // Illegal attribute caught in maybeCreateAttribute.
+        + "data:hi~ = 'v' "
+
+        // Illegal attribute caught in DomParser.createAttributeAndAddToElement.
+        + "data: = 'buff' "
+        + "xmlns: = 'buffalo' "
+
+        // Illegal attribute caught by error check in
+        // Html5ElementStack.processTag code for disallowing overriding of the
+        // default namespace.
+        + "xmlns = 'http://xmlns/index.html'>";
+
+    String[] htmlInput = {
+        "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 1.0 Transitional//EN\"",
+        "\"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\">",
+        "<html><body>",
+        helloTag,
+        "</hello>",
+        "</body></html>" };
+    TokenQueue<HtmlTokenType> tq = tokenizeTestInput(
+        Join.join("\n", htmlInput), false, true);
+    DomParser parser = new DomParser(tq, false, mq);
+
+    Document doc = parser.parseDocument().getOwnerDocument();
+    assertEquals(5, mq.getMessages().size());
+
+    final String TEST_NAME = "test://example.org/testIllegalAttributes";
+    assertEquals(TEST_NAME+ ":4+72 - 75: ignoring token 'hi~'",
+                 mq.getMessages().get(0).toString());
+    assertEquals(TEST_NAME + ":4+82 - 90: ignoring token 'data:hi~'",
+                 mq.getMessages().get(1).toString());
+    assertEquals(TEST_NAME +
+                 ":4+131 - 136: cannot override default XML namespace in HTML",
+                 mq.getMessages().get(2).toString());
+    assertEquals(TEST_NAME + ":4+97 - 102: ignoring token 'data:'",
+                 mq.getMessages().get(3).toString());
+    assertEquals(TEST_NAME + ":4+112 - 118: ignoring token 'xmlns:'",
+                 mq.getMessages().get(4).toString());
+
+    Element elem = (Element) doc.getElementsByTagName("hello").item(0);
+    assertEquals(3, elem.getAttributes().getLength());
+    assertEquals("value", elem.getAttribute("attr"));
+    assertEquals("value2", elem.getAttribute("data:attr"));
+    assertEquals("http://1.com", elem.getAttribute("xmlns:data"));
+  }
+
   public final void testParseDom() throws Exception {
     TokenQueue<HtmlTokenType> tq = tokenizeTestInput(DOM1_XML, true, false);
     Element el = new DomParser(tq, true, mq).parseDocument();
@@ -2324,7 +2380,7 @@ public class DomParserTest extends CajaTestCase {
             "    Text : first part of the text</> second part 1+15-1+52"
             ),
         Arrays.asList(
-            "WARNING testShortTags:1+3 - 5: Malformed identifier <a"),
+            "WARNING testShortTags:1+3 - 5: ignoring token '<a'"),
         Arrays.asList(
             "<p href=\"/\">first part of the text&lt;/&gt; second part</p>"
             )
