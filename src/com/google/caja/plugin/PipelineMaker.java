@@ -26,6 +26,7 @@ import com.google.caja.plugin.stages.InferFilePositionsStage;
 import com.google.caja.plugin.stages.InlineCssImportsStage;
 import com.google.caja.plugin.stages.LegacyNamespaceFixupStage;
 import com.google.caja.plugin.stages.OpenTemplateStage;
+import com.google.caja.plugin.stages.OptimizeJavascriptStage;
 import com.google.caja.plugin.stages.ResolveUriStage;
 import com.google.caja.plugin.stages.RewriteCssStage;
 import com.google.caja.plugin.stages.RewriteHtmlStage;
@@ -232,6 +233,7 @@ public final class PipelineMaker {
 
         new Tool() {
           public void operate(PlanInputs in, List<Pipeline.Stage<Jobs>> out) {
+            out.add(new OptimizeJavascriptStage());
             out.add(new ValidateJavascriptStage(in.moduleManager));
           }
         }.given(JS).produces(CAJOLED_MODULE),

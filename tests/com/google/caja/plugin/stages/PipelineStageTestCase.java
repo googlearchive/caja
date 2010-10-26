@@ -35,6 +35,7 @@ import com.google.caja.plugin.UriPolicy;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.CajaTestCase;
 import com.google.caja.util.ContentType;
+import com.google.caja.util.Join;
 import com.google.caja.util.Lists;
 import com.google.caja.util.MoreAsserts;
 import com.google.caja.util.Pair;
@@ -69,6 +70,8 @@ public abstract class PipelineStageTestCase extends CajaTestCase {
     meta = null;
     uriFetcher = null;
   }
+
+  public PluginMeta getMeta() { return meta; }
 
   /**
    * Asserts that {@link #runPipeline} runs to completion on the given inputJob
@@ -146,6 +149,10 @@ public abstract class PipelineStageTestCase extends CajaTestCase {
   /** Create a stub job object. */
   protected static JobStub job(String content, ContentType type) {
     return new JobStub(content, type);
+  }
+
+  protected static JobStub job(ContentType type, String... contentLines) {
+    return new JobStub(Join.join("\n", contentLines), type);
   }
 
   protected static final class JobStub {

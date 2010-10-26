@@ -84,7 +84,7 @@ public final class CajoledModule extends AbstractParseTreeNode
   @Override
   protected void childrenChanged() {
     super.childrenChanged();
-    if (children().size() != 1) {
+    if (children().size() != 1 && getModuleBody() != null) {
       throw new IllegalStateException(
           "A CajoledModule may only have one child");
     }
@@ -93,8 +93,13 @@ public final class CajoledModule extends AbstractParseTreeNode
   @Override
   public Object getValue() { return null; }
 
+  @Override
+  public List<? extends ObjectConstructor> children() {
+    return childrenAs(ObjectConstructor.class);
+  }
+
   public ObjectConstructor getModuleBody() {
-    return childrenAs(ObjectConstructor.class).get(0);
+    return children().get(0);
   }
 
   /** The URI from which the module was loaded. */

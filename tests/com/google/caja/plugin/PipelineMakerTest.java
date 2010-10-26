@@ -39,6 +39,7 @@ public class PipelineMakerTest extends CajaTestCase {
         "ValidateCssStage",
         "RewriteCssStage",
         "HtmlToBundleStage",
+        "OptimizeJavascriptStage",
         "ValidateJavascriptStage",
         "ConsolidateCodeStage",
         "CheckForErrorsStage");
@@ -56,6 +57,7 @@ public class PipelineMakerTest extends CajaTestCase {
         "ValidateCssStage",
         "RewriteCssStage",
         "HtmlToJsStage",
+        "OptimizeJavascriptStage",
         "ValidateJavascriptStage",
         "ConsolidateCodeStage",
         "CheckForErrorsStage");
@@ -75,6 +77,7 @@ public class PipelineMakerTest extends CajaTestCase {
         "ValidateCssStage",
         "RewriteCssStage",
         "HtmlToBundleStage",
+        "OptimizeJavascriptStage",
         "ValidateJavascriptStage",
         "ConsolidateCodeStage",
         "InferFilePositionsStage",  // extra
@@ -93,6 +96,7 @@ public class PipelineMakerTest extends CajaTestCase {
         "ValidateCssStage",
         "RewriteCssStage",
         "HtmlToBundleStage",
+        "OptimizeJavascriptStage",
         "ValidateJavascriptStage",
         "ConsolidateCodeStage",
         "CheckForErrorsStage");
@@ -102,6 +106,7 @@ public class PipelineMakerTest extends CajaTestCase {
     assertPipeline(
         PipelineMaker.JS,
         PipelineMaker.ONE_CAJOLED_MODULE.with(PipelineMaker.SANITY_CHECK),
+        "OptimizeJavascriptStage",
         "ValidateJavascriptStage",
         "ConsolidateCodeStage",
         "CheckForErrorsStage");
