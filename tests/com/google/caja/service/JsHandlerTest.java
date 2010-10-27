@@ -23,19 +23,9 @@ import java.util.regex.Pattern;
  * @author jasvir@google.com (Jasvir Nagra)
  */
 public class JsHandlerTest extends ServiceTestCase {
-  private static void checkWithCallback(
-      String jsonpCallback,
-      String emitted,
-      String... expectedSubstrings) throws Exception {
-    Pattern p = Pattern.compile("^" + jsonpCallback + "\\((\\{.*\\})\\)$");
-    Matcher m = p.matcher(emitted);
-    assertTrue(m.matches());
-    assertSubstringInJson(m.group(1), "js", expectedSubstrings);
-  }
-
   public final void testJs() throws Exception {
     registerUri("http://foo/bar.js", "g(1);", "text/javascript");
-    assertSubstringInJson(
+    assertSubstringsInJson(
         (String) requestGet("?url=http://foo/bar.js"
             + "&input-mime-type=text/javascript"),
         "js",
@@ -44,20 +34,48 @@ public class JsHandlerTest extends ServiceTestCase {
 
   public final void testJsWithJsonpCallback() throws Exception {
     registerUri("http://foo/bar.js", "g(1);", "text/javascript");
-    checkWithCallback(
-        "foo",
-        (String) requestGet("?url=http://foo/bar.js"
-            + "&input-mime-type=text/javascript"
-            + "&callback=foo"),
-        "moduleResult___=$v.cf($v.ro('g'),[1]);");
+
+    {
+      String s = (String) requestGet("?url=http://foo/bar.js"
+          + "&input-mime-type=text/javascript"
+          + "&alt=json-in-script"
+          + "&callback=foo");
+      assertCallbackInJsonp(s, "foo");
+      assertSubstringsInJsonp(s, "js",
+          "moduleResult___=$v.cf($v.ro('g'),[1]);");
+    }
+
     try {
-      checkWithCallback(
-          "foo.bar",
+      assertCallbackInJsonp(
+          (String) requestGet("?url=http://foo/bar.js"
+              + "&input-mime-type=text/javascript"
+              + "&alt=json-in-script"
+              + "&callback=foo.bar"),
+          "foo.bar");
+      fail("Failed to reject non-identifier JSONP callback");
+    } catch (AssertionFailedError e) {
+      // Success
+    }
+
+    try {
+      assertCallbackInJsonp(
           (String) requestGet("?url=http://foo/bar.js"
               + "&input-mime-type=text/javascript"
               + "&callback=foo.bar"),
-          "moduleResult___=$v.cf($v.ro('g'),[1]);");
-      fail("Failed to reject non-identifier JSONP callback");
+          "foo.bar");
+      fail("Added JSONP callback when not requested");
+    } catch (AssertionFailedError e) {
+      // Success
+    }
+
+    try {
+      assertCallbackInJsonp(
+          (String) requestGet("?url=http://foo/bar.js"
+              + "&input-mime-type=text/javascript"
+              + "&alt=json"
+              + "&callback=foo.bar"),
+          "foo.bar");
+      fail("Added JSONP callback when not requested");
     } catch (AssertionFailedError e) {
       // Success
     }
@@ -65,7 +83,7 @@ public class JsHandlerTest extends ServiceTestCase {
 
   public final void testCajitaJs() throws Exception {
     registerUri("http://foo/bar.js", "g(1);", "text/javascript");
-    assertSubstringInJson(
+    assertSubstringsInJson(
         (String) requestGet("?url=http://foo/bar.js"
             + "&input-mime-type=text/javascript"
             + "&directive=CAJITA"),

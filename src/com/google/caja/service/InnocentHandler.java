@@ -33,6 +33,7 @@ import com.google.caja.parser.quasiliteral.Rewriter;
 import com.google.caja.reporting.BuildInfo;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.util.Charsets;
+import com.google.caja.util.ContentType;
 import com.google.caja.util.Pair;
 
 /**
@@ -64,17 +65,18 @@ public class InnocentHandler extends AbstractCajolingHandler {
                                    OutputStream response,
                                    MessageQueue mq)
       throws UnsupportedContentTypeException {
-    String jsonpCallback = CajaArguments.CALLBACK.get(args);
+    Pair<ContentType, String> contentParams = getReturnedContentParams(args);
+
     try {
       OutputStreamWriter writer = new OutputStreamWriter(response,
           Charsets.UTF_8.name());
-      innocentJs(uri, input.getTextualContent(), writer, jsonpCallback, mq);
+      innocentJs(uri, input.getTextualContent(), writer, contentParams.b, mq);
       writer.flush();
     } catch (IOException e) {
       // TODO(ihab.awad): Fix the "unrecoverable" error responses throughout
       throw new UnsupportedContentTypeException();
     }
-    return Pair.pair("text/javascript", Charsets.UTF_8.name());
+    return Pair.pair(contentParams.a.mimeType, Charsets.UTF_8.name());
   }
 
   private void innocentJs(

@@ -35,15 +35,33 @@ public enum CajaArguments {
   EMIT_HTML_IN_JS("emit-html-in-js"),
 
   /**
-   * Name of the JSONP callback function desired in the output.
+   * Name of the JSONP callback function desired in the output. See the
+   * <a href="http://code.google.com/apis/gdata/docs/2.0/reference.html">GData
+   * API</a>
+   * and the guide to
+   * <a href="http://code.google.com/apis/gdata/docs/json.html">using JSON</a>.
    */
   CALLBACK("callback"),
 
   /**
+   * Alternative representation type of the desired result.
+   * See the
+   * <a href="http://code.google.com/apis/gdata/docs/2.0/reference.html">GData
+   * API</a>.
+   *
+   * <p>Valid values are:
+   * <ul>
+   *   <li>{@code alt=json} the default.</li>
+   *   <li>{@code alt=json-in-script} as described in the GData reference.</li>
+   * </ul>
+   */
+  ALT("alt"),
+
+  /**
    * The Caja transform that is being requested. Valid values are:
    * <ul>
-   *   <li>{@code cajole} the Cajita language.</li>
-   *   <li>{@code innocent} the innocent code transform.</li>
+   *   <li>{@code transform=cajole} the Caja language.</li>
+   *   <li>{@code transform=innocent} the innocent code transform.</li>
    * </ul>
    *
    * <p>All these transforms are applicable to {@code text/javascript} input.

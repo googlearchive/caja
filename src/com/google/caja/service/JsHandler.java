@@ -71,17 +71,18 @@ public class JsHandler extends AbstractCajolingHandler {
       OutputStream response,
       MessageQueue mq)
       throws UnsupportedContentTypeException {
-    String jsonpCallback = CajaArguments.CALLBACK.get(args);
+    Pair<ContentType, String> contentParams = getReturnedContentParams(args);
+
     try {
       OutputStreamWriter writer = new OutputStreamWriter(response,
           Charsets.UTF_8.name());
       cajoleJs(uri, input.getTextualContent(), directive,
-          jsonpCallback, writer, mq);
+          contentParams.b, writer, mq);
       writer.flush();
     } catch (IOException e) {
       throw new UnsupportedContentTypeException();
     }
-    return Pair.pair(ContentType.JSON.mimeType, Charsets.UTF_8.name());
+    return Pair.pair(contentParams.a.mimeType, Charsets.UTF_8.name());
   }
 
   private void cajoleJs(URI inputUri,

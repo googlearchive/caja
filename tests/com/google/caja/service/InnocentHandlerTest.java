@@ -14,6 +14,8 @@
 
 package com.google.caja.service;
 
+import junit.framework.AssertionFailedError;
+
 /**
  * @author jasvir@google.com (Jasvir Nagra)
  */
@@ -21,11 +23,67 @@ public class InnocentHandlerTest extends ServiceTestCase {
   public final void testInnocentJs() throws Exception {
     registerUri("http://foo/innocent.js", "for (var k in x) { k; }",
         "text/javascript");
-    assertSubstringInJson(
+    assertSubstringsInJson(
         (String) requestGet("?url=http://foo/innocent.js"
             + "&input-mime-type=text/javascript"
             + "&transform=INNOCENT"),
         "js",
         "if (x0___.match(/___$/)) { continue }");
+  }
+  
+  public final void testInnocentJsWithJsonpCallback() throws Exception {
+    registerUri("http://foo/innocent.js", "for (var k in x) { k; }",
+        "text/javascript");
+
+    {
+      String s = (String) requestGet("?url=http://foo/innocent.js"
+          + "&input-mime-type=text/javascript"
+          + "&transform=INNOCENT"
+          + "&alt=json-in-script"
+          + "&callback=foo");
+      assertCallbackInJsonp(s, "foo");
+      assertSubstringsInJsonp(
+          s,
+          "js",
+          "if (x0___.match(/___$/)) { continue }");
+    }
+
+    try {
+      assertCallbackInJsonp(
+          (String) requestGet("?url=http://foo/innocent.js"
+              + "&input-mime-type=text/javascript"
+              + "&transform=INNOCENT"
+              + "&alt=json-in-script"
+              + "&callback=foo.bar"),
+          "foo.bar");
+      fail("Failed to reject non-identifier JSONP callback");
+    } catch (AssertionFailedError e) {
+      // Success
+    }
+
+    try {
+      assertCallbackInJsonp(
+          (String) requestGet("?url=http://foo/innocent.js"
+              + "&input-mime-type=text/javascript"
+              + "&transform=INNOCENT"
+              + "&callback=foo.bar"),
+          "foo.bar");
+      fail("Added JSONP callback when not requested");
+    } catch (AssertionFailedError e) {
+      // Success
+    }
+
+    try {
+      assertCallbackInJsonp(
+          (String) requestGet("?url=http://foo/innocent.js"
+              + "&input-mime-type=text/javascript"
+              + "&transform=INNOCENT"
+              + "&alt=json"
+              + "&callback=foo.bar"),
+          "foo.bar");
+      fail("Added JSONP callback when not requested");
+    } catch (AssertionFailedError e) {
+      // Success
+    }
   }
 }

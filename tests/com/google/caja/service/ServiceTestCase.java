@@ -32,6 +32,8 @@ import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.net.URI;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -212,15 +214,35 @@ public abstract class ServiceTestCase extends CajaTestCase {
         normStringSpaces(full).contains(normStringSpaces(substring)));
   }
 
-  protected static void assertSubstringInJson(
+  protected static void assertSubstringsInJson(
       String emitted,
       String jsonProperty,
       String... expectedSubstrings) throws Exception {
+    assertNotNull(emitted);
     JSONObject json = (JSONObject) json(emitted);
+    assertNotNull(json);
     assertTrue(json.containsKey(jsonProperty));
     String value = (String) json.get(jsonProperty);
     for (String s : expectedSubstrings) {
       assertContainsIgnoreSpace(value, s);
     }
+  }
+
+  protected static void assertSubstringsInJsonp(
+      String emitted,
+      String jsonProperty,
+      String... expectedSubstrings) throws Exception {
+    Pattern p = Pattern.compile("^[a-zA-Z_]+\\((\\{.*\\})\\)$");
+    Matcher m = p.matcher(emitted);
+    assertTrue(m.matches());
+    assertSubstringsInJson(m.group(1), jsonProperty, expectedSubstrings);
+  }
+
+  protected static void assertCallbackInJsonp(
+      String emitted,
+      String jsonpCallback) throws Exception {
+    Pattern p = Pattern.compile("^" + jsonpCallback + "\\((\\{.*\\})\\)$");
+    Matcher m = p.matcher(emitted);
+    assertTrue(m.matches());
   }
 }

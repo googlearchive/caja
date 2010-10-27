@@ -14,6 +14,7 @@
 
 package com.google.caja.service;
 
+import junit.framework.AssertionFailedError;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
@@ -23,18 +24,58 @@ import com.google.caja.reporting.MessageLevel;
  * @author jasvir@google.com (Jasvir Nagra)
  */
 public class HtmlHandlerTest extends ServiceTestCase {
-  private String requestString(String inputMimeType) {
-    String result = "?url=http://foo/bar.html";
-    if (inputMimeType != null) {
-      result += "&input-mime-type=" + inputMimeType;
-    }
-    return result;
-  }
-
   public final void testHtml2Json() throws Exception {
     assertHtml2Json("*/*");
     assertHtml2Json("text/html");
     assertHtml2Json("text/html");
+  }
+
+  public final void testHtmlWithJsonpCallback() throws Exception {
+    registerUri("http://foo/bar.html", "<p>some random text</p>", "text/html");
+
+    {
+      String s = (String) requestGet("?url=http://foo/bar.html"
+          + "&input-mime-type=text/html"
+          + "&alt=json-in-script"
+          + "&callback=foo");
+      assertCallbackInJsonp(s, "foo");
+      assertSubstringsInJsonp(s, "html", "some random text");
+    }
+
+    try {
+      assertCallbackInJsonp(
+          (String) requestGet("?url=http://foo/bar.html"
+              + "&input-mime-type=text/html"
+              + "&alt=json-in-script"
+              + "&callback=foo.bar"),
+          "foo.bar");
+      fail("Failed to reject non-identifier JSONP callback");
+    } catch (AssertionFailedError e) {
+      // Success
+    }
+
+    try {
+      assertCallbackInJsonp(
+          (String) requestGet("?url=http://foo/bar.html"
+              + "&input-mime-type=text/html"
+              + "&callback=foo.bar"),
+          "foo.bar");
+      fail("Added JSONP callback when not requested");
+    } catch (AssertionFailedError e) {
+      // Success
+    }
+
+    try {
+      assertCallbackInJsonp(
+          (String) requestGet("?url=http://foo/bar.html"
+              + "&input-mime-type=text/html"
+              + "&alt=json"
+              + "&callback=foo.bar"),
+          "foo.bar");
+      fail("Added JSONP callback when not requested");
+    } catch (AssertionFailedError e) {
+      // Success
+    }
   }
 
   public final void testSandboxedLink() throws Exception {
@@ -86,7 +127,8 @@ public class HtmlHandlerTest extends ServiceTestCase {
         "text/html");
 
     Object result = json((String) requestGet(
-        requestString(inputMimeType)));
+        "?url=http://foo/bar.html&input-mime-type=" + inputMimeType));
+    assertNotNull(result);
     assertTrue(result instanceof JSONObject);
     JSONObject json = (JSONObject) result;
 
@@ -163,8 +205,8 @@ public class HtmlHandlerTest extends ServiceTestCase {
     registerUri("http://foo/bar.html",
       "<script>with(foo){}</script>", "text/html");
 
-    Object result = json((String) requestGet(requestString("text/html")));
-
+    Object result = json((String) requestGet(
+        "?url=http://foo/bar.html&input-mime-type=text/html"));
     assertTrue(result instanceof JSONObject);
     JSONObject json = (JSONObject) result;
 

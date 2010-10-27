@@ -79,21 +79,21 @@ public class HtmlHandler extends AbstractCajolingHandler {
         CajaArguments.EMIT_HTML_IN_JS.get(args) != null
         && Boolean.valueOf(CajaArguments.EMIT_HTML_IN_JS.get(args));
 
-    String jsonpCallback = CajaArguments.CALLBACK.get(args);
+    Pair<ContentType, String> contentParams = getReturnedContentParams(args);
 
     try {
       OutputStreamWriter writer = new OutputStreamWriter(
           response, Charsets.UTF_8);
       cajoleHtml(
           uri, input.getTextualContent(),
-          meta, jsonpCallback, htmlInline, writer, mq);
+          meta, contentParams.b, htmlInline, writer, mq);
       writer.flush();
     } catch (IOException e) {
       // TODO(mikesamuel): this is not a valid assumption.
       throw new UnsupportedContentTypeException();
     }
 
-    return Pair.pair(ContentType.JSON.mimeType, Charsets.UTF_8.name());
+    return Pair.pair(contentParams.a.mimeType, Charsets.UTF_8.name());
   }
 
   private void cajoleHtml(URI inputUri, CharProducer cp, PluginMeta meta,

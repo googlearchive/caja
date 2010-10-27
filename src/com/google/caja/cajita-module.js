@@ -84,12 +84,15 @@ var clearModuleCache;
               '&input-mime-type=' + inputMimeType +
               '&output-mime-type=application/json' +
               '&emit-html-in-js=true' +
-              (jsonpCallback ? '&callback=' + jsonpCallback : '')
+              '&callback=' + jsonpCallback +
+              '&alt=json-in-script'
           : serviceURL +
               '?url=' + encodeURIComponent(uncajoledSourceURL) +
               '&renderer=pretty' +
               '&input-mime-type=' + inputMimeType +
-              '&output-mime-type=application/javascript';
+              '&output-mime-type=application/javascript' +
+              '&emit-html-in-js=true' +
+              '&alt=json';
     };
   };
   

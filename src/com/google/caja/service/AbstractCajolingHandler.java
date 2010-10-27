@@ -32,6 +32,7 @@ import com.google.caja.parser.js.Reference;
 import com.google.caja.parser.quasiliteral.QuasiBuilder;
 import com.google.caja.render.JsMinimalPrinter;
 import com.google.caja.reporting.SimpleMessageQueue;
+import com.google.caja.util.ContentType;
 import com.google.caja.util.Maps;
 import org.w3c.dom.Node;
 
@@ -238,5 +239,24 @@ public abstract class AbstractCajolingHandler implements ContentHandler {
     javascript.render(rc);
     rc.getOut().noMoreTokens();
     return jsOut.toString();
+  }
+
+  protected Pair<ContentType, String> getReturnedContentParams(
+      ContentHandlerArgs args) {
+    String alt = CajaArguments.ALT.get(args);
+    if ("json".equals(alt) || alt == null) {
+      return Pair.pair(ContentType.JSON, null);
+    } else if ("json-in-script".equals(alt)) {
+      String callback = CajaArguments.CALLBACK.get(args);
+      if (callback == null) {
+        throw new RuntimeException(
+            "Missing value for parameter " + CajaArguments.CALLBACK);
+      } else {
+        return Pair.pair(ContentType.JS, callback);
+      }
+    } else {
+      throw new RuntimeException(
+          "Invalid value " + alt + " for parameter " + CajaArguments.ALT);
+    }
   }
 }
