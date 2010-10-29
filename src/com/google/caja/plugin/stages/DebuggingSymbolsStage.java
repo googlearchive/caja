@@ -22,6 +22,7 @@ import com.google.caja.parser.js.StringLiteral;
 import com.google.caja.parser.js.ObjectConstructor;
 import com.google.caja.parser.quasiliteral.QuasiBuilder;
 import com.google.caja.plugin.Job;
+import com.google.caja.plugin.JobEnvelope;
 import com.google.caja.plugin.Jobs;
 import com.google.caja.plugin.PluginMessageType;
 import com.google.caja.reporting.MessageQueue;
@@ -69,8 +70,10 @@ public final class DebuggingSymbolsStage implements Pipeline.Stage<Jobs> {
 
   public boolean apply(Jobs jobs) {
     MessageQueue mq = jobs.getMessageQueue();
-    for (ListIterator<Job> it = jobs.getJobs().listIterator(); it.hasNext();) {
-      Job job = it.next();
+    for (ListIterator<JobEnvelope> it = jobs.getJobs().listIterator();
+         it.hasNext();) {
+      JobEnvelope env = it.next();
+      Job job = env.job;
       if (job.getType() != ContentType.JS
           // May occur if the cajita rewriter does not run due to errors.
           || !(job.getRoot() instanceof CajoledModule)) {
@@ -91,8 +94,7 @@ public final class DebuggingSymbolsStage implements Pipeline.Stage<Jobs> {
         if (DEBUG) {
           System.err.println("\n\nPost\n===\n" + js.toStringDeep() + "\n\n");
         }
-        it.set(Job.cajoledJob(
-            job.getCacheKeys(), attachSymbols(symbols, js, mq)));
+        it.set(env.withJob(Job.cajoledJob(attachSymbols(symbols, js, mq))));
       }
     }
     return jobs.hasNoFatalErrors();

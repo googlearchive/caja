@@ -25,6 +25,7 @@ import com.google.caja.parser.MutableParseTreeNode;
 import com.google.caja.parser.css.CssParser;
 import com.google.caja.parser.css.CssTree;
 import com.google.caja.plugin.Job;
+import com.google.caja.plugin.JobEnvelope;
 import com.google.caja.plugin.Jobs;
 import com.google.caja.plugin.PluginMessageType;
 import com.google.caja.plugin.UriFetcher;
@@ -85,7 +86,9 @@ import java.util.Set;
  */
 public class InlineCssImportsStage implements Pipeline.Stage<Jobs> {
   public boolean apply(Jobs jobs) {
-    for (Job job : jobs.getJobsByType(ContentType.CSS)) {
+    for (JobEnvelope env : jobs.getJobsByType(ContentType.CSS)) {
+      Job job = env.job;
+      if (env.fromCache) { continue; }
       inlineImports((CssTree.StyleSheet) job.getRoot(),
                     job.getBaseUri(), MAXIMUM_IMPORT_DEPTH,
                     jobs.getPluginMeta().getUriFetcher(),

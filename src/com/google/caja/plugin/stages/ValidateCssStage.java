@@ -20,7 +20,7 @@ import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.css.CssTree;
 import com.google.caja.plugin.CssRewriter;
 import com.google.caja.plugin.CssValidator;
-import com.google.caja.plugin.Job;
+import com.google.caja.plugin.JobEnvelope;
 import com.google.caja.plugin.Jobs;
 import com.google.caja.reporting.MessageLevel;
 import com.google.caja.util.ContentType;
@@ -57,16 +57,18 @@ public final class ValidateCssStage implements Pipeline.Stage<Jobs> {
         jobs.getPluginMeta().getUriPolicy(), cssSchema,
         jobs.getMessageQueue());
 
-    v.withInvalidNodeMessageLevel(MessageLevel.WARNING);
-    rw.withInvalidNodeMessageLevel(MessageLevel.WARNING);
-    for (Job job : jobs.getJobsByType(ContentType.CSS)) {
-      validate(v, rw, AncestorChain.instance((CssTree) job.getRoot()));
-    }
-
-    v.withInvalidNodeMessageLevel(MessageLevel.ERROR);
-    rw.withInvalidNodeMessageLevel(MessageLevel.ERROR);
-    for (Job job : jobs.getJobsByType(ContentType.CSS)) {
-      validate(v, rw, AncestorChain.instance((CssTree) job.getRoot()));
+    for (MessageLevel level : new MessageLevel[] {
+           // First try to remove unsafe constructs with warnings.
+           MessageLevel.WARNING,
+           // If there are still problems, error out.
+           MessageLevel.ERROR
+         }) {
+      v.withInvalidNodeMessageLevel(level);
+      rw.withInvalidNodeMessageLevel(level);
+      for (JobEnvelope env : jobs.getJobsByType(ContentType.CSS)) {
+        if (env.fromCache) { continue; }
+        validate(v, rw, AncestorChain.instance((CssTree) env.job.getRoot()));
+      }
     }
 
     return jobs.hasNoFatalErrors();

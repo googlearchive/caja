@@ -16,7 +16,7 @@ package com.google.caja.plugin.stages;
 
 import com.google.caja.lang.html.HtmlSchema;
 import com.google.caja.parser.html.Dom;
-import com.google.caja.plugin.Job;
+import com.google.caja.plugin.JobEnvelope;
 import com.google.caja.plugin.Jobs;
 import com.google.caja.plugin.templates.TemplateSanitizer;
 import com.google.caja.util.ContentType;
@@ -43,8 +43,9 @@ public final class SanitizeHtmlStage implements Pipeline.Stage<Jobs> {
         htmlSchema, jobs.getMessageQueue());
 
     boolean valid = true;
-    for (Job job : jobs.getJobsByType(ContentType.HTML)) {
-      if (!s.sanitize(((Dom) job.getRoot()).getValue())) {
+    for (JobEnvelope env : jobs.getJobsByType(ContentType.HTML)) {
+      if (env.fromCache) { continue; }
+      if (!s.sanitize(((Dom) env.job.getRoot()).getValue())) {
         valid = false;
         // Keep going so that we can display error messages for all inputs.
       }

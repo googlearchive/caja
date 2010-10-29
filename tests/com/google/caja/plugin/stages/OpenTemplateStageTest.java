@@ -22,6 +22,7 @@ import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.ExpressionStmt;
 import com.google.caja.parser.js.Statement;
 import com.google.caja.plugin.Job;
+import com.google.caja.plugin.JobEnvelope;
 import com.google.caja.plugin.Jobs;
 import com.google.caja.plugin.PluginMeta;
 import com.google.caja.util.CajaTestCase;
@@ -105,7 +106,7 @@ public final class OpenTemplateStageTest extends CajaTestCase {
     Block node = js(fromString(input));
     PluginMeta meta = new PluginMeta();
     Jobs jobs = new Jobs(mc, mq, meta);
-    jobs.getJobs().add(Job.jsJob(null, node, null));
+    jobs.getJobs().add(JobEnvelope.of(Job.jsJob(node, null)));
 
     assertTrue(pipeline.apply(jobs));
     assertEquals(
@@ -113,7 +114,7 @@ public final class OpenTemplateStageTest extends CajaTestCase {
         passes, jobs.hasNoErrors());
     assertEquals("" + jobs.getJobs(), 1, jobs.getJobs().size());
 
-    ParseTreeNode bare = stripBoilerPlate(jobs.getJobs().get(0).getRoot());
+    ParseTreeNode bare = stripBoilerPlate(jobs.getJobs().get(0).job.getRoot());
     assertEquals(golden, render(bare));
   }
 
@@ -127,15 +128,15 @@ public final class OpenTemplateStageTest extends CajaTestCase {
 
   private static class Consolidator implements Pipeline.Stage<Jobs> {
     public boolean apply(Jobs jobs) {
-      List<Job> jsJobs = jobs.getJobsByType(ContentType.JS);
+      List<JobEnvelope> jsJobs = jobs.getJobsByType(ContentType.JS);
       if (jsJobs.size() == 1) { return true; }
       jobs.getJobs().remove(jsJobs);
       Block block = new Block(FilePosition.UNKNOWN);
-      for (Job job : jsJobs) {
-        Statement s = (Statement) job.getRoot();
+      for (JobEnvelope env : jsJobs) {
+        Statement s = (Statement) env.job.getRoot();
         block.appendChild(s);
       }
-      jobs.getJobs().add(Job.jsJob(null, block, null));
+      jobs.getJobs().add(JobEnvelope.of(Job.jsJob(block, null)));
       return true;
     }
   }

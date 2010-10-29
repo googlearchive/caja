@@ -26,6 +26,7 @@ import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.html.Dom;
 import com.google.caja.plugin.DataUriFetcher;
 import com.google.caja.plugin.Job;
+import com.google.caja.plugin.JobEnvelope;
 import com.google.caja.plugin.Jobs;
 import com.google.caja.plugin.LoaderType;
 import com.google.caja.plugin.PluginMeta;
@@ -99,13 +100,13 @@ public abstract class PipelineStageTestCase extends CajaTestCase {
 
   private void assertOutputJobs(JobStub[] outputJobs, Jobs jobs) {
     List<JobStub> actualJobs = Lists.newArrayList();
-    for (Job job : jobs.getJobs()) {
+    for (JobEnvelope env : jobs.getJobs()) {
       StringBuilder sb = new StringBuilder();
-      ParseTreeNode node = job.getRoot();
+      ParseTreeNode node = env.job.getRoot();
       TokenConsumer tc = node.makeRenderer(sb, null);
       node.render(new RenderContext(tc));
       tc.noMoreTokens();
-      actualJobs.add(new JobStub(sb.toString(), job.getType()));
+      actualJobs.add(new JobStub(sb.toString(), env.job.getType()));
     }
     MoreAsserts.assertListsEqual(Arrays.asList(outputJobs), actualJobs);
   }
@@ -114,19 +115,17 @@ public abstract class PipelineStageTestCase extends CajaTestCase {
       throws ParseException {
     switch (inputJob.type) {
       case HTML:
-        outputJobs.getJobs().add(
-            Job.domJob(
-                null, new Dom(htmlFragment(fromString(inputJob.content, is))),
-                is.getUri()));
+        outputJobs.getJobs().add(JobEnvelope.of(Job.domJob(
+            new Dom(htmlFragment(fromString(inputJob.content, is))),
+            is.getUri())));
         break;
       case CSS:
-        outputJobs.getJobs().add(
-            Job.cssJob(null, css(fromString(inputJob.content, is)), is.getUri())
-            );
+        outputJobs.getJobs().add(JobEnvelope.of(
+            Job.cssJob(css(fromString(inputJob.content, is)), is.getUri())));
         break;
       case JS:
-        outputJobs.getJobs().add(
-            Job.jsJob(null, js(fromString(inputJob.content, is)), null));
+        outputJobs.getJobs().add(JobEnvelope.of(
+            Job.jsJob(js(fromString(inputJob.content, is)), null)));
         break;
       default:
         throw new IllegalArgumentException(inputJob.type.name());

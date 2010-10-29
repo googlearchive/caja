@@ -19,8 +19,8 @@ import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.util.ContentType;
+import com.google.caja.util.Lists;
 
-import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
 
@@ -35,7 +35,7 @@ public class Jobs {
   private MessageContext mc;
   private final MessageQueue mq;
   private final PluginMeta meta;
-  private final List<Job> jobs = new ArrayList<Job>();
+  private final List<JobEnvelope> jobs = Lists.newArrayList();
 
   public Jobs(MessageContext mc, MessageQueue mq, PluginMeta meta) {
     if (mc == null) { throw new NullPointerException(); }
@@ -55,13 +55,14 @@ public class Jobs {
   public PluginMeta getPluginMeta() { return meta; }
 
   /** May be mutated in place. */
-  public List<Job> getJobs() { return jobs; }
+  public List<JobEnvelope> getJobs() { return jobs; }
 
-  public List<Job> getJobsByType(ContentType type, ContentType... others) {
-    List<Job> matches = new ArrayList<Job>();
+  public List<JobEnvelope> getJobsByType(
+      ContentType type, ContentType... others) {
+    List<JobEnvelope> matches = Lists.newArrayList();
     EnumSet<ContentType> types = EnumSet.of(type, others);
-    for (Job job : jobs) {
-      if (types.contains(job.getType())) { matches.add(job); }
+    for (JobEnvelope env : jobs) {
+      if (types.contains(env.job.getType())) { matches.add(env); }
     }
     return matches;
   }
@@ -81,5 +82,10 @@ public class Jobs {
       }
     }
     return true;
+  }
+
+  @Override
+  public String toString() {
+    return jobs.toString();  // For debugging.
   }
 }

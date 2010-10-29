@@ -17,11 +17,10 @@ package com.google.caja.plugin.stages;
 import com.google.caja.parser.css.CssTree;
 import com.google.caja.plugin.CssRuleRewriter;
 import com.google.caja.plugin.Job;
+import com.google.caja.plugin.JobEnvelope;
 import com.google.caja.plugin.Jobs;
 import com.google.caja.util.ContentType;
 import com.google.caja.util.Pipeline;
-
-import java.util.ListIterator;
 
 /**
  * Compiles CSS style-sheets to JavaScript which outputs the same CSS, but with
@@ -32,9 +31,9 @@ import java.util.ListIterator;
  */
 public final class RewriteCssStage implements Pipeline.Stage<Jobs> {
   public boolean apply(Jobs jobs) {
-    for (ListIterator<Job> it = jobs.getJobs().listIterator(); it.hasNext();) {
-      Job job = it.next();
-      if (job.getType() != ContentType.CSS) { continue; }
+    for (JobEnvelope env : jobs.getJobsByType(ContentType.CSS)) {
+      if (env.fromCache) { continue; }
+      Job job = env.job;
 
       new CssRuleRewriter(jobs.getPluginMeta()).rewriteCss(
           (CssTree.StyleSheet) job.getRoot());

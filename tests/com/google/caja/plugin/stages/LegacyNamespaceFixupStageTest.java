@@ -18,6 +18,7 @@ import com.google.caja.lexer.InputSource;
 import com.google.caja.parser.html.Dom;
 import com.google.caja.parser.html.DomParser;
 import com.google.caja.plugin.Job;
+import com.google.caja.plugin.JobEnvelope;
 import com.google.caja.plugin.Jobs;
 import com.google.caja.plugin.PluginMessageType;
 import com.google.caja.plugin.PluginMeta;
@@ -26,7 +27,6 @@ import com.google.caja.reporting.MessagePart;
 import com.google.caja.util.CajaTestCase;
 import com.google.caja.util.Lists;
 
-import java.util.Arrays;
 import java.util.List;
 
 import org.w3c.dom.Document;
@@ -111,11 +111,13 @@ public class LegacyNamespaceFixupStageTest extends CajaTestCase {
 
   private void assertFixed(String golden, Job... inputs) {
     Jobs jobs = new Jobs(mc, mq, new PluginMeta());
-    jobs.getJobs().addAll(Arrays.asList(inputs));
+    for (Job input : inputs) {
+      jobs.getJobs().add(JobEnvelope.of(input));
+    }
     new LegacyNamespaceFixupStage().apply(jobs);
     StringBuilder sb = new StringBuilder();
-    for (Job job : jobs.getJobs()) {
-      sb.append(render(job.getRoot()));
+    for (JobEnvelope env : jobs.getJobs()) {
+      sb.append(render(env.job.getRoot()));
       sb.append('\n');
     }
     assertEquals(golden, sb.toString().trim());
@@ -134,7 +136,7 @@ public class LegacyNamespaceFixupStageTest extends CajaTestCase {
 
     Job job() {
       assertEquals(stack, Lists.newArrayList(root));
-      return Job.domJob(null, new Dom(root), InputSource.UNKNOWN.getUri());
+      return Job.domJob(new Dom(root), InputSource.UNKNOWN.getUri());
     }
     NamespaceUnawareBuilder open(String qname) {
       Element el = doc.createElement(qname);

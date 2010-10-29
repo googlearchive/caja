@@ -18,6 +18,7 @@ import com.google.caja.parser.js.CajoledModule;
 import com.google.caja.parser.quasiliteral.CajitaModuleRewriter;
 import com.google.caja.parser.quasiliteral.ModuleManager;
 import com.google.caja.plugin.Job;
+import com.google.caja.plugin.JobEnvelope;
 import com.google.caja.plugin.Jobs;
 import com.google.caja.util.ContentType;
 import com.google.caja.util.Lists;
@@ -37,18 +38,20 @@ public final class ConsolidateCodeStage implements Pipeline.Stage<Jobs> {
   public ConsolidateCodeStage(ModuleManager mgr) { this.mgr = mgr; }
 
   public boolean apply(Jobs jobs) {
-    List<Job> jsJobs = jobs.getJobsByType(ContentType.JS);
+    // Consolidate JS.
+    List<JobEnvelope> jsJobs = jobs.getJobsByType(ContentType.JS);
     List<CajoledModule> modules = Lists.newArrayList();
-    for (Job job : jsJobs) {
-      CajoledModule module = (CajoledModule) job.getRoot();
+    for (JobEnvelope env : jsJobs) {
+      CajoledModule module = (CajoledModule) env.job.getRoot();
       if (module.getSrc() == null) {
         // Is top level.  Not a loaded module from ValidateJavaScriptStage.
         modules.add(module);
       }
     }
     jobs.getJobs().removeAll(jsJobs);
+
     CajitaModuleRewriter rw = new CajitaModuleRewriter(mgr);
-    jobs.getJobs().add(Job.cajoledJob(null, rw.rewrite(modules)));
+    jobs.getJobs().add(JobEnvelope.of(Job.cajoledJob(rw.rewrite(modules))));
     return jobs.hasNoFatalErrors();
   }
 }

@@ -21,6 +21,7 @@ import com.google.caja.parser.html.Namespaces;
 import com.google.caja.parser.js.Block;
 import com.google.caja.plugin.ExtractedHtmlContent;
 import com.google.caja.plugin.Job;
+import com.google.caja.plugin.JobEnvelope;
 import com.google.caja.plugin.Jobs;
 import com.google.caja.plugin.PluginMessageType;
 import com.google.caja.reporting.MessageLevel;
@@ -28,7 +29,6 @@ import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageType;
 import com.google.caja.util.ContentType;
 import com.google.caja.util.Join;
-import com.google.caja.util.Lists;
 
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -268,8 +268,8 @@ public final class RewriteHtmlStageTest extends PipelineStageTestCase {
     boolean result = new ResolveUriStage(schema).apply(jobs)
         && new RewriteHtmlStage(schema).apply(jobs);
     // Dump the extracted script bits on the queue.
-    for (Job job : Lists.newArrayList(jobs.getJobsByType(ContentType.HTML))) {
-      extractScripts(((Dom) job.getRoot()).getValue(), jobs);
+    for (JobEnvelope env : jobs.getJobsByType(ContentType.HTML)) {
+      extractScripts(((Dom) env.job.getRoot()).getValue(), jobs);
     }
     return result;
   }
@@ -283,7 +283,7 @@ public final class RewriteHtmlStageTest extends PipelineStageTestCase {
           int jobNum = jobs.getJobs().size();
           el.setAttributeNS(
               Namespaces.HTML_NAMESPACE_URI, "jobnum", "" + jobNum);
-          jobs.getJobs().add(Job.jsJob(null, extracted, null));
+          jobs.getJobs().add(JobEnvelope.of(Job.jsJob(extracted, null)));
         }
         for (Node c = el.getFirstChild(); c != null; c = c.getNextSibling()) {
           extractScripts(c, jobs);

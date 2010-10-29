@@ -23,6 +23,7 @@ import com.google.caja.parser.html.Dom;
 import com.google.caja.parser.html.ElKey;
 import com.google.caja.parser.html.Nodes;
 import com.google.caja.plugin.Job;
+import com.google.caja.plugin.JobEnvelope;
 import com.google.caja.plugin.Jobs;
 import com.google.caja.plugin.PluginMessageType;
 import com.google.caja.reporting.MessagePart;
@@ -113,9 +114,11 @@ public class ResolveUriStage implements Pipeline.Stage<Jobs> {
 
   public boolean apply(Jobs jobs) {
     MessageQueue mq = jobs.getMessageQueue();
-    ListIterator<Job> it = jobs.getJobs().listIterator();
-    while (it.hasNext()) {
-      Job job = it.next();
+    for (ListIterator<JobEnvelope> it = jobs.getJobs().listIterator();
+         it.hasNext();) {
+      JobEnvelope env = it.next();
+      if (env.fromCache) { continue; }
+      Job job = env.job;
       if (job.getType() != ContentType.HTML) { continue; }
       Dom dom = (Dom) job.getRoot();
       Node node = dom.getValue();
@@ -132,7 +135,7 @@ public class ResolveUriStage implements Pipeline.Stage<Jobs> {
       }
       if (baseUri != null) {
         resolveRelativeUrls(node, baseUri, mq);
-        it.set(Job.domJob(job.getCacheKeys(), dom, baseUri));
+        it.set(env.withJob(Job.domJob(dom, baseUri)));
       }
     }
     return true;

@@ -15,7 +15,7 @@
 package com.google.caja.plugin.stages;
 
 import com.google.caja.parser.quasiliteral.opt.ArrayIndexOptimization;
-import com.google.caja.plugin.Job;
+import com.google.caja.plugin.JobEnvelope;
 import com.google.caja.plugin.Jobs;
 import com.google.caja.util.ContentType;
 import com.google.caja.util.Pipeline.Stage;
@@ -23,8 +23,9 @@ import com.google.caja.util.Pipeline.Stage;
 public final class OptimizeJavascriptStage implements Stage<Jobs> {
   public boolean apply(Jobs jobs) {
     if (jobs.getPluginMeta().getEnableES53()) {
-      for (Job job : jobs.getJobsByType(ContentType.JS)) {
-        ArrayIndexOptimization.optimize(job.getRoot());
+      for (JobEnvelope env : jobs.getJobsByType(ContentType.JS)) {
+        if (env.fromCache) { continue; }
+        ArrayIndexOptimization.optimize(env.job.getRoot());
       }
     }
     return jobs.hasNoFatalErrors();

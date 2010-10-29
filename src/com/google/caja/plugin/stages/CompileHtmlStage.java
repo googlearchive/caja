@@ -23,10 +23,12 @@ import com.google.caja.parser.html.Dom;
 import com.google.caja.parser.html.DomParser;
 import com.google.caja.parser.js.Block;
 import com.google.caja.plugin.Job;
+import com.google.caja.plugin.JobEnvelope;
 import com.google.caja.plugin.Jobs;
 import com.google.caja.plugin.templates.TemplateCompiler;
 import com.google.caja.plugin.templates.TemplateSanitizer;
 import com.google.caja.reporting.MessageQueue;
+import com.google.caja.util.ContentType;
 import com.google.caja.util.Lists;
 import com.google.caja.util.Multimap;
 import com.google.caja.util.Multimaps;
@@ -57,13 +59,14 @@ abstract class CompileHtmlStage implements Pipeline.Stage<Jobs> {
 
   public boolean apply(Jobs jobs) {
     Multimap<JobCache.Keys, Job> byKey = Multimaps.newListHashMultimap();
-    for (Iterator<Job> jobIt = jobs.getJobs().iterator(); jobIt.hasNext();) {
-      Job job = jobIt.next();
-      switch (job.getType()) {
+    for (Iterator<JobEnvelope> it = jobs.getJobs().iterator(); it.hasNext();) {
+      JobEnvelope env = it.next();
+      if (env.fromCache) { continue; }
+      switch (env.job.getType()) {
         case CSS:
         case HTML:
-          byKey.put(job.getCacheKeys(), job);
-          jobIt.remove();
+          byKey.put(env.cacheKeys, env.job);
+          it.remove();
           break;
         default: break;
       }
@@ -103,16 +106,18 @@ abstract class CompileHtmlStage implements Pipeline.Stage<Jobs> {
       Pair<Node, List<Block>> htmlAndJs = tc.getSafeHtml(
           DomParser.makeDocument(null, null));
 
-      Job outJob = makeJobFromHtml(cacheKeys, htmlAndJs.a, baseUri);
-      jobs.getJobs().add(outJob);
+      Job outJob = makeJobFromHtml(htmlAndJs.a, baseUri);
+      jobs.getJobs().add(
+          new JobEnvelope(null, cacheKeys, ContentType.HTML, false, outJob));
 
       for (Block bl : htmlAndJs.b) {
-        jobs.getJobs().add(Job.jsJob(cacheKeys, bl, baseUri));
+        jobs.getJobs().add(new JobEnvelope(
+            null, cacheKeys, ContentType.JS, false, Job.jsJob(bl, baseUri)));
       }
     }
 
     return jobs.hasNoFatalErrors();
   }
 
-  abstract Job makeJobFromHtml(JobCache.Keys keys, Node html, URI baseUri);
+  abstract Job makeJobFromHtml(Node html, URI baseUri);
 }

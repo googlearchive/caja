@@ -37,6 +37,7 @@ import com.google.caja.parser.js.StringLiteral;
 import com.google.caja.parser.quasiliteral.QuasiBuilder;
 import com.google.caja.plugin.ExtractedHtmlContent;
 import com.google.caja.plugin.Job;
+import com.google.caja.plugin.JobEnvelope;
 import com.google.caja.plugin.Jobs;
 import com.google.caja.plugin.PluginMessageType;
 import com.google.caja.plugin.templates.HtmlAttributeRewriter;
@@ -89,11 +90,12 @@ public class RewriteHtmlStage implements Pipeline.Stage<Jobs> {
   public boolean apply(Jobs jobs) {
     MessageQueue mq = jobs.getMessageQueue();
     MessageContext mc = jobs.getMessageContext();
-    for (Job job : jobs.getJobsByType(ContentType.HTML)) {
-      Node root = ((Dom) job.getRoot()).getValue();
-      extractBodyInfo(root, job.getCacheKeys(), job.getBaseUri(), jobs);
+    for (JobEnvelope env : jobs.getJobsByType(ContentType.HTML)) {
+      if (env.fromCache) { continue; }
+      Node root = ((Dom) env.job.getRoot()).getValue();
+      extractBodyInfo(root, env.job.getBaseUri(), jobs);
       HtmlEmbeddedContentFinder finder = new HtmlEmbeddedContentFinder(
-          htmlSchema, job.getBaseUri(), mq, mc);
+          htmlSchema, env.job.getBaseUri(), mq, mc);
       for (EmbeddedContent content : finder.findEmbeddedContent(root)) {
         Node src = content.getSource();
         if (content.getSource() instanceof Element) {
@@ -108,9 +110,9 @@ public class RewriteHtmlStage implements Pipeline.Stage<Jobs> {
           if (SCRIPT.is(el)) {
             rewriteScriptEl(root, content, jobs);
           } else if (STYLE.is(el)) {
-            rewriteStyleEl(job.getCacheKeys(), content, jobs);
+            rewriteStyleEl(content, jobs);
           } else if (LINK.is(el)) {
-            rewriteLinkEl(job.getCacheKeys(), content, jobs);
+            rewriteLinkEl(content, jobs);
           } else {
             throw new SomethingWidgyHappenedError(src.getNodeName());
           }
@@ -175,23 +177,22 @@ public class RewriteHtmlStage implements Pipeline.Stage<Jobs> {
     return placeholder;
   }
 
-  private void rewriteStyleEl(
-      JobCache.Keys keys, EmbeddedContent c, Jobs jobs) {
+  private void rewriteStyleEl(EmbeddedContent c, Jobs jobs) {
     Element styleEl = (Element) c.getSource();
     styleEl.getParentNode().removeChild(styleEl);
-    extractStyles(keys, styleEl, c, null, jobs);
+    extractStyles(styleEl, c, null, jobs);
   }
 
-  private void rewriteLinkEl(JobCache.Keys keys, EmbeddedContent c, Jobs jobs) {
+  private void rewriteLinkEl(EmbeddedContent c, Jobs jobs) {
     Element linkEl = (Element) c.getSource();
     linkEl.getParentNode().removeChild(linkEl);
     Attr media = linkEl.getAttributeNodeNS(
         Namespaces.HTML_NAMESPACE_URI, "media");
-    extractStyles(keys, linkEl, c, media, jobs);
+    extractStyles(linkEl, c, media, jobs);
   }
 
   private void extractStyles(
-      JobCache.Keys keys, Element el, EmbeddedContent c, Attr media, Jobs jobs) {
+      Element el, EmbeddedContent c, Attr media, Jobs jobs) {
     MessageQueue mq = jobs.getMessageQueue();
     CssTree.StyleSheet stylesheet = null;
     try {
@@ -249,7 +250,7 @@ public class RewriteHtmlStage implements Pipeline.Stage<Jobs> {
       }
     }
 
-    jobs.getJobs().add(Job.cssJob(keys, stylesheet, c.getBaseUri()));
+    jobs.getJobs().add(JobEnvelope.of(Job.cssJob(stylesheet, c.getBaseUri())));
   }
 
   /**
@@ -286,12 +287,11 @@ public class RewriteHtmlStage implements Pipeline.Stage<Jobs> {
    * Find any class attributes on the {@code <body>} element and use the HTML
    * emitter to attach the classes to the virtual document body.
    */
-  private void extractBodyInfo(
-      Node node, JobCache.Keys keys, URI base, Jobs jobs) {
+  private void extractBodyInfo(Node node, URI base, Jobs jobs) {
     switch (node.getNodeType()) {
       case Node.DOCUMENT_FRAGMENT_NODE:
         for (Node child : Nodes.childrenOf(node)) {
-          extractBodyInfo(child, keys, base, jobs);
+          extractBodyInfo(child, base, jobs);
         }
         break;
       case Node.ELEMENT_NODE:
@@ -299,7 +299,7 @@ public class RewriteHtmlStage implements Pipeline.Stage<Jobs> {
         ElKey elKey = ElKey.forElement(el);
         if (HTML.equals(elKey)) {
           for (Node child : Nodes.childrenOf(node)) {
-            extractBodyInfo(child, keys, base, jobs);
+            extractBodyInfo(child, base, jobs);
           }
         } else if (BODY.equals(elKey)) {
           Attr classAttr = el.getAttributeNodeNS(
@@ -326,7 +326,7 @@ public class RewriteHtmlStage implements Pipeline.Stage<Jobs> {
                         + "IMPORTS___.htmlEmitter___"
                         + "    ./*@synthetic*/addBodyClasses(@idents);",
                         "idents", e));
-                jobs.getJobs().add(Job.jsJob(keys, s, base));
+                jobs.getJobs().add(JobEnvelope.of(Job.jsJob(s, base)));
               }
             }
           }

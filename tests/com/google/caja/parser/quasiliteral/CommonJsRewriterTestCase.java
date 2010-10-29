@@ -50,7 +50,7 @@ public abstract class CommonJsRewriterTestCase extends RewriterTestCase {
         "if (flag) { fail ('should throw TypeError'); }" +
         "true;");
   }
-  
+
   /**
    * @see <a href="http://code.google.com/p/google-caja/issues/detail?id=1238"
    *      >issue 1238</a>
@@ -115,7 +115,7 @@ public abstract class CommonJsRewriterTestCase extends RewriterTestCase {
       "}" +
       "f();");
   }
-    
+
   /**
    * Tests that arguments.caller is unsettable.
    */
@@ -141,7 +141,7 @@ public abstract class CommonJsRewriterTestCase extends RewriterTestCase {
       "}" +
       "f();");
   }
-  
+
   /**
    * Tests that func.caller is unsettable.
    */
@@ -167,7 +167,7 @@ public abstract class CommonJsRewriterTestCase extends RewriterTestCase {
       "}" +
       "f();");
   }
-  
+
   /**
    * Tests that arguments.callee is unsettable.
    */
@@ -196,7 +196,7 @@ public abstract class CommonJsRewriterTestCase extends RewriterTestCase {
       "}" +
       "f(false);");
   }
-  
+
   /**
    * Tests that func.arguments is unsettable.
    */
@@ -213,7 +213,7 @@ public abstract class CommonJsRewriterTestCase extends RewriterTestCase {
       "}" +
       "f(false);");
   }
-  
+
 
   /**
   * Tests that arguments are immutable from another function's scope even if
@@ -441,7 +441,6 @@ public abstract class CommonJsRewriterTestCase extends RewriterTestCase {
   /**
    * Tests that cajoled code expecting a function can use the standard
    * cross-frame test.
-   * @throws Exception
    */
   public final void testFunctionClass() throws Exception {
     rewriteAndExecute(

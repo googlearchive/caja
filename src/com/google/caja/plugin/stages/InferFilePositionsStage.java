@@ -18,7 +18,7 @@ import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.InputSource;
 import com.google.caja.parser.AbstractParseTreeNode;
 import com.google.caja.parser.ParseTreeNode;
-import com.google.caja.plugin.Job;
+import com.google.caja.plugin.JobEnvelope;
 import com.google.caja.plugin.Jobs;
 import com.google.caja.util.Pipeline;
 
@@ -49,9 +49,9 @@ import java.util.List;
  */
 public class InferFilePositionsStage implements Pipeline.Stage<Jobs> {
   public boolean apply(Jobs jobs) {
-    for (Job job : jobs.getJobs()) {
-      inferFilePositions(job.getRoot());
-      inferFilePositions(job.getRoot());
+    for (JobEnvelope env : jobs.getJobs()) {
+      inferFilePositions(env.job.getRoot());
+      inferFilePositions(env.job.getRoot());  // TODO: Once I have network access, figure out if this is here because of a mis-merge?
     }
     return true;
   }

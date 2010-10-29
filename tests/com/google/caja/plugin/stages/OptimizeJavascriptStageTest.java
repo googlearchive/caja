@@ -21,6 +21,7 @@ import com.google.caja.parser.js.ObjectConstructor;
 import com.google.caja.parser.js.ValueProperty;
 import com.google.caja.parser.quasiliteral.ModuleManager;
 import com.google.caja.plugin.Job;
+import com.google.caja.plugin.JobEnvelope;
 import com.google.caja.plugin.Jobs;
 import com.google.caja.plugin.UriFetcher;
 import com.google.caja.reporting.TestBuildInfo;
@@ -98,13 +99,15 @@ public class OptimizeJavascriptStageTest extends PipelineStageTestCase {
   }
 
   private boolean discardBoilerPlate(Jobs jobs) {
-    for (Job job : jobs.getJobsByType(ContentType.JS)) {
+    for (JobEnvelope env : jobs.getJobsByType(ContentType.JS)) {
+      Job job = env.job;
       if (job.getRoot() instanceof CajoledModule) {
-        jobs.getJobs().remove(job);
+        jobs.getJobs().remove(env);
         ObjectConstructor cs = ((CajoledModule) job.getRoot()).getModuleBody();
         FunctionConstructor instantiate = (FunctionConstructor)
-        ((ValueProperty) cs.propertyWithName("instantiate")).getValueExpr();
-        jobs.getJobs().add(Job.jsJob(null, instantiate.getBody(), null));
+            ((ValueProperty) cs.propertyWithName("instantiate")).getValueExpr();
+        jobs.getJobs().add(
+            JobEnvelope.of(Job.jsJob(instantiate.getBody(), null)));
       }
     }
     return true;

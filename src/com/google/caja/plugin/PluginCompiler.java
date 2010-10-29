@@ -35,6 +35,7 @@ import com.google.caja.util.Pipeline;
 import java.net.URI;
 import java.util.List;
 
+import org.w3c.dom.DocumentFragment;
 import org.w3c.dom.Node;
 
 /**
@@ -97,7 +98,7 @@ public final class PluginCompiler {
   }
 
   public void addInput(ParseTreeNode input, URI baseUri) {
-    jobs.getJobs().add(Job.job(null, input, baseUri));
+    jobs.getJobs().add(JobEnvelope.of(Job.job(input, baseUri)));
     jobs.getMessageContext().addInputSource(input.getFilePosition().source());
   }
 
@@ -141,7 +142,8 @@ public final class PluginCompiler {
     ModuleManager moduleMgr = new ModuleManager(
         buildInfo, jobs.getPluginMeta().getUriFetcher(), true,
         jobs.getMessageQueue());
-    new PipelineMaker(cssSchema, htmlSchema, moduleMgr, preconditions, goals)
+    new PipelineMaker(
+        cssSchema, htmlSchema, moduleMgr, preconditions, goals)
         .populate(compilationPipeline.getStages());
   }
 
@@ -157,6 +159,22 @@ public final class PluginCompiler {
    * @return null if no HTML portion.
    */
   public Node getStaticHtml() {
+    List<JobEnvelope> htmlJobs = jobs.getJobsByType(ContentType.HTML);
+    if (htmlJobs.size() > 1) {
+      htmlJobs = Lists.newArrayList(htmlJobs);
+      DocumentFragment fragment = null;
+      for (JobEnvelope env : htmlJobs) {
+        Node root = ((Dom) env.job.getRoot()).getValue();
+        if (fragment == null) {
+          fragment = root.getOwnerDocument().getImplementation().createDocument(
+              null, null, root.getOwnerDocument().getDoctype())
+              .createDocumentFragment();
+        }
+        fragment.appendChild(
+            fragment.getOwnerDocument().importNode(root, true));
+      }
+      return fragment;
+    }
     Job soleHtmlJob = getConsolidatedOutput(new Criterion<Job>() {
           public boolean accept(Job job) {
             return job.getType() == ContentType.HTML;
@@ -182,13 +200,13 @@ public final class PluginCompiler {
 
   private Job getConsolidatedOutput(Criterion<Job> filter) {
     Job match = null;
-    for (Job job : this.jobs.getJobs()) {
-      if (filter.accept(job)) {
+    for (JobEnvelope env : this.jobs.getJobs()) {
+      if (filter.accept(env.job)) {
         if (match != null) {
           throw new SomethingWidgyHappenedError(
               "Not consolidated.  Check your pipeline.");
         }
-        match = job;
+        match = env.job;
       }
     }
     return match;

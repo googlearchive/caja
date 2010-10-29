@@ -48,8 +48,8 @@ public final class HtmlToJsStage extends CompileHtmlStage {
   }
 
   @Override
-  Job makeJobFromHtml(JobCache.Keys keys, Node html, URI baseUri) {
-    return Job.jsJob(keys, makeEmitStaticStmt(html), baseUri);
+  Job makeJobFromHtml(Node html, URI baseUri) {
+    return Job.jsJob(makeEmitStaticStmt(html), baseUri);
   }
 
   private static Statement makeEmitStaticStmt(Node node) {

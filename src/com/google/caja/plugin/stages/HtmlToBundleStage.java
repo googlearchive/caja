@@ -35,7 +35,7 @@ public final class HtmlToBundleStage extends CompileHtmlStage {
   }
 
   @Override
-  Job makeJobFromHtml(JobCache.Keys cacheKeys, Node html, URI baseUri) {
-    return Job.domJob(cacheKeys, new Dom(html), baseUri);
+  Job makeJobFromHtml(Node html, URI baseUri) {
+    return Job.domJob(new Dom(html), baseUri);
   }
 }

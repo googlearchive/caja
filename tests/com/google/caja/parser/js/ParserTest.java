@@ -37,7 +37,6 @@ import com.google.caja.util.Strings;
 import com.google.caja.util.TestUtil;
 
 import java.io.IOException;
-import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -331,8 +330,7 @@ public class ParserTest extends CajaTestCase {
   }
 
   public final void testOutOfRangeLiterals2() throws Exception {
-    NumberLiteral l =
-      (NumberLiteral) jsExpr(fromString("99999999999999999999999"));
+    jsExpr(fromString("99999999999999999999999"));
     assertMessage(
         MessageType.UNREPRESENTABLE_INTEGER_LITERAL, MessageLevel.WARNING);
   }

@@ -26,6 +26,7 @@ import com.google.caja.parser.js.UncajoledModule;
 import com.google.caja.parser.quasiliteral.ModuleManager;
 import com.google.caja.plugin.ExpressionSanitizerCaja;
 import com.google.caja.plugin.Job;
+import com.google.caja.plugin.JobEnvelope;
 import com.google.caja.plugin.Jobs;
 import com.google.caja.util.ContentType;
 import com.google.caja.util.Maps;
@@ -50,10 +51,13 @@ public final class ValidateJavascriptStage implements Pipeline.Stage<Jobs> {
 
   public boolean apply(Jobs jobs) {
     Map<String, JobCache.Keys> keys = Maps.newHashMap();
-    for (ListIterator<Job> it = jobs.getJobs().listIterator(); it.hasNext();) {
-      Job job = it.next();
+    for (ListIterator<JobEnvelope> it = jobs.getJobs().listIterator();
+         it.hasNext();) {
+      JobEnvelope env = it.next();
+
+      if (env.fromCache) { continue; }
+      Job job = env.job;
       if (job.getType() != ContentType.JS) { continue; }
-      JobCache.Keys cacheKeys = job.getCacheKeys();
 
       URI baseUri = job.getBaseUri();
       Statement s = (Statement) job.getRoot();
@@ -66,19 +70,21 @@ public final class ValidateJavascriptStage implements Pipeline.Stage<Jobs> {
         continue;
       }
       CajoledModule validated = (CajoledModule) result;
-      it.set(Job.cajoledJob(cacheKeys, validated));
+      it.set(env.withJob(Job.cajoledJob(validated)));
 
-      if (cacheKeys.iterator().hasNext()) {
+      if (env.cacheKeys.iterator().hasNext()) {
         ArrayConstructor deps = validated.getInlinedModules();
-        for (Expression moduleName : deps.children()) {
-          String moduleUri = ((StringLiteral) moduleName).getUnquotedValue();
-          JobCache.Keys forUri = keys.get(moduleUri);
-          if (forUri == null) {
-            forUri = cacheKeys;
-          } else {
-            forUri = forUri.union(cacheKeys);
+        if (deps != null) {
+          for (Expression moduleName : deps.children()) {
+            String moduleUri = ((StringLiteral) moduleName).getUnquotedValue();
+            JobCache.Keys forUri = keys.get(moduleUri);
+            if (forUri == null) {
+              forUri = env.cacheKeys;
+            } else {
+              forUri = forUri.union(env.cacheKeys);
+            }
+            keys.put(moduleUri, env.cacheKeys);
           }
-          keys.put(moduleUri, cacheKeys);
         }
       }
     }
@@ -87,7 +93,12 @@ public final class ValidateJavascriptStage implements Pipeline.Stage<Jobs> {
     // show up in the appropriate caches.
     for (CajoledModule module : mgr.getModuleMap()) {
       String src = module.getSrc();
-      jobs.getJobs().add(Job.cajoledJob(keys.get(src), module));
+      JobCache.Keys keysForModule = keys.get(src);
+      if (keysForModule == null) {
+        keysForModule = JobCache.none();
+      }
+      jobs.getJobs().add(new JobEnvelope(
+          null, keysForModule, ContentType.JS, false, Job.cajoledJob(module)));
     }
 
     return jobs.hasNoFatalErrors();
