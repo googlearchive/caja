@@ -218,6 +218,12 @@ public class ArrayIndexOptimizationTest extends CajaTestCase {
     assertEquals(render(golden), render(b));
   }
 
+  public final void testBug1292() throws Exception {
+    Block b = js(fromString("this;"));
+    ArrayIndexOptimization.optimize(b);
+    assertEquals("this;", renderProgram(b));
+  }
+
   /** Correspond to the global vars defined in array-opt-operator-test.js */
   private static Reference[] REFERENCES = {
     new Reference(ident("undefined")),

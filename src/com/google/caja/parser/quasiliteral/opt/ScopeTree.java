@@ -87,7 +87,11 @@ public final class ScopeTree implements AbstractScope {
           AncestorChain<Identifier> id, ScopeTree useSite,
           ScopeTree definingSite) {
         if (definingSite != null) {  // Not a global
-          definingSite.uses.get(id.node.getName()).add(id);
+          Set<AncestorChain<Identifier>> uses
+              = definingSite.uses.get(id.node.getName());
+          if (uses != null) {  // Null for non declared names like "this".
+            uses.add(id);
+          }
         }
       }
 

@@ -238,8 +238,7 @@ public abstract class ScopeAnalyzer<S extends AbstractScope> {
     if ("this".equals(symbolName)) {
       // "this" is defined in function & program scopes, and cannot be declared.
       for (ScopeTree<S> s = useSite; s != null; s = s.outer) {
-        if (s.type == ScopeType.FUNCTION
-            || s.type == ScopeType.PROGRAM) {
+        if (s.type == ScopeType.FUNCTION || s.type == ScopeType.PROGRAM) {
           return s;
         }
       }
