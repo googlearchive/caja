@@ -132,10 +132,10 @@ $('addStationeryFormSubmit').onclick = function() {
 };
 
 
-addStationery('Bank', 'http://localhost:8000/gadgets/bank.html');
-addStationery('Buyer', 'http://localhost:8000/gadgets/buyer.html');
-addStationery('Seller', 'http://localhost:8000/gadgets/seller.html');
+addStationery('Bank', '/photon/gadgets/bank.html');
+addStationery('Buyer', '/photon/gadgets/buyer.html');
+addStationery('Seller', '/photon/gadgets/seller.html');
 
-addGadget('A bank',  'http://localhost:8000/gadgets/bank.html');
-addGadget('A buyer', 'http://localhost:8000/gadgets/buyer.html');
-addGadget('A seller', 'http://localhost:8000/gadgets/seller.html');
+addGadget('A bank',  '/photon/gadgets/bank.html');
+addGadget('A buyer', '/photon/gadgets/buyer.html');
+addGadget('A seller', '/photon/gadgets/seller.html');

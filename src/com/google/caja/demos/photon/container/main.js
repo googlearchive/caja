@@ -45,15 +45,9 @@ var getUrlParamDefault = function(name, defaultValue) {
   return result;
 };
 
-var cajaServer = getUrlParamErr('cajaServer',
-    'Must specify a Caja server as:\n' +
-    '    ...?cajaServer=<em>value</em>\n' +
-    'where <em>value</em> is a URL like "http://caja.appspot.com/"\n');
-
-var rootModule = getUrlParamErr('rootModule',
-    'Must specify a root module URL as:\n' +
-    '    ...?rootModule=<em>value</em>\n' +
-    'where <em>value</em> is the URL of an HTML page\n');
+var cajaServer = getUrlParamDefault('cajaServer', 'http://caja.appspot.com/');
+var rootModule = getUrlParamDefault('rootModule',
+    'http://caja.appspot.com/photon/gadgets/gadgetsModule.html');
 
 var debug = Boolean(getUrlParamDefault('debug', 'false'));
 

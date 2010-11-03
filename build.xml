@@ -1236,6 +1236,17 @@
     </javac>
   </target>
 
+  <target name="photon" depends="dirs,MinifiedJs,jars"
+   description="Photon demo">
+    <mkdir dir="${war}/photon"/>
+    <copy todir="${war}/photon">
+      <fileset dir="${src}/com/google/caja/demos/photon">
+        <include name="container/**"/>
+        <include name="gadgets/**"/>
+      </fileset>
+    </copy>
+  </target>
+	
   <target name="containers" depends="dirs,MinifiedJs,jars"
    description="Examples of hosting gadgets/modules.">
     <mkdir dir="${www}/container"/>

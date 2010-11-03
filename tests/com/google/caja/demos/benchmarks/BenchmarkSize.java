@@ -121,6 +121,14 @@ public class BenchmarkSize extends CajaTestCase {
       byte[] valijaMinifyPlainBytes = charset(valijaMinifyPlain);
       byte[] valijaMinifyGzipBytes = gzip(valijaMinifyPlainBytes);
 
+      String es53PrettyPlain = render(es53(js(fromResource(js))));
+      byte[] es53PrettyPlainBytes = charset(es53PrettyPlain);
+      byte[] es53PrettyGzipBytes = gzip(es53PrettyPlainBytes);
+
+      String es53MinifyPlain = minify(es53(js(fromResource(js))));
+      byte[] es53MinifyPlainBytes = charset(es53MinifyPlain);
+      byte[] es53MinifyGzipBytes = gzip(es53MinifyPlainBytes);
+
       varzJS(name, "original", "pretty", "plain",
           size(originalPrettyPlainBytes));
       varzJS(name, "original", "pretty", "gzip",
@@ -143,11 +151,11 @@ public class BenchmarkSize extends CajaTestCase {
       varzJS(name, "valija", "minify", "plain", size(valijaMinifyPlainBytes));
       varzJS(name, "valija", "minify", "gzip", size(valijaMinifyGzipBytes));
       
-      varzJS(name, "es53", "pretty", "plain", size(valijaPrettyPlainBytes));
-      varzJS(name, "es53", "pretty", "gzip", size(valijaPrettyGzipBytes));
+      varzJS(name, "es53", "pretty", "plain", size(es53PrettyPlainBytes));
+      varzJS(name, "es53", "pretty", "gzip", size(es53PrettyGzipBytes));
       
-      varzJS(name, "es53", "minify", "plain", size(valijaMinifyPlainBytes));
-      varzJS(name, "es53", "minify", "gzip", size(valijaMinifyGzipBytes));
+      varzJS(name, "es53", "minify", "plain", size(es53MinifyPlainBytes));
+      varzJS(name, "es53", "minify", "gzip", size(es53MinifyGzipBytes));
     }
   }
 
