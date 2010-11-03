@@ -85,6 +85,7 @@
     <pathelement path="${third_party}/java/jakarta_commons/commons-codec-1.4.jar"/>
     <pathelement path="${third_party}/java/jakarta_commons/commons-cli.jar"/>
     <pathelement path="${third_party}/java/jchardet/chardet.jar"/>
+    <pathelement path="${third_party}/java/jsr305/jsr305.jar"/>
     <pathelement path="${third_party}/java/rhino/js.jar"/>
     <pathelement path="${third_party}/java/xerces/xercesImpl.jar"/>
     <pathelement path="${jars}/htmlparser.jar"/>

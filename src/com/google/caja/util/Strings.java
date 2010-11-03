@@ -14,11 +14,14 @@
 
 package com.google.caja.util;
 
+import javax.annotation.Nullable;
+import javax.annotation.ParametersAreNonnullByDefault;
+
 /**
  * Locale independent versions of String case-insensitive operations.
  * <p>
  * The normal case insensitive operators {@link String#toLowerCase}
- * and {@link String#equalsIgnoreCase} depend upon the current Locale.
+ * and {@link String#equalsIgnoreCase} depend upon the current locale.
  * They will fold the letters "i" and "I" differently if the locale is
  * Turkish than if it is English.
  * <p>
@@ -35,8 +38,9 @@ package com.google.caja.util;
  *
  * @author mikesamuel@gmail.com
  */
+@ParametersAreNonnullByDefault
 public final class Strings {
-  public static boolean equalsIgnoreCase(String a, String b) {
+  public static boolean equalsIgnoreCase(@Nullable String a, @Nullable String b) {
     if (a == null) { return b == null; }
     if (b == null) { return false; }
     int length = a.length();
