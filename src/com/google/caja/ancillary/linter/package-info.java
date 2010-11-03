@@ -9,4 +9,4 @@ line, passing in JS file paths, or use it as an ANT build command.
  groups thread</a>.</p>
 </body>
 */
-package com.google.caja.ancillar.linter;
+package com.google.caja.ancillary.linter;
