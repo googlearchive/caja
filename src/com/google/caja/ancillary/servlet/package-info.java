@@ -1,4 +1,4 @@
-<body>
+/**
 A servlet that provides a web interface to the linter, minifier, and
 jsdoc documentation generator.
 
@@ -15,4 +15,5 @@ output, serves the output embedded in HTML, with messages, or packages
 documentation up into a
 {@link com.google.caja.ancillary.servlet.ZipFileSystem ZIP file} for
 easy download.
-</body>
+*/
+  package com.google.caja.ancillary.servlet;

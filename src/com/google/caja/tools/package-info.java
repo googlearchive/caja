@@ -1,3 +1,4 @@
-<body>
+/**
 Custom ANT Tasks that allow cajoling from ANT builds.
-</body>
+*/
+package com.google.caja.tools;

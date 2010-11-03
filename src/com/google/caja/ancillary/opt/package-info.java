@@ -1,7 +1,7 @@
-<title>Optimizations that take into account knowledge about specific
-user-agents to reduce download size</title>
+/**
+Optimizations that take into account knowledge about specific
+user-agents to reduce download size
 
-<body>
 <h1 id="User-Agent_Specific_Cajoling">User-Agent Specific Cajoling</h1>
 
 <h2 id="Background">Background</h2>
@@ -140,4 +140,5 @@ must incorporate a proxy for the user-agent into the cache key.  A
 good key to use would be
 <tt>userAgentJson[&#x27;navigator.userAgent&#x27;]</tt> along with the
 user&#x27;s locale if the input contained message strings.</p>
-</body>
+*/
+package com.google.caja.ancillary.opt;

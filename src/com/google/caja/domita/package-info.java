@@ -1,3 +1,7 @@
+/**
+A tamed version of the
+<a href="http://www.w3.org/TR/DOM-Level-2-Core/core.html">DOM Level 2 APIs</a>.
+
 <style>
 .todo { font-weight: bold; color: red }
 dt { font-weight: bold }
@@ -17,9 +21,6 @@ dt { font-weight: bold }
 ></script>
 <link rel=stylesheet
  href="http://google-code-prettify.googlecode.com/svn/trunk/src/prettify.css">
-<body bgcolor=white onload="prettyPrint()">
-A tamed version of the
-<a href="http://www.w3.org/TR/DOM-Level-2-Core/core.html">DOM Level 2 APIs</a>.
 
 <h2>Goals</h2>
 A mechanism for taming the DOM2 EcmaScript wrappers as implemented on
@@ -64,38 +65,38 @@ on DOM nodes, and by partitioning the DOM into multiple virtual documents.
 Below I show an untamed DOM, and several snippets of caja code and I walk
 through the interactions between the cajoled code and the untamed DOM.
 <h3>The untamed DOM after loading two modules</h3>
-<xmp class="prettyprint"
-><head>
-  <style>
-    /* Styles created as a result of loading module 1. */
+<pre class="prettyprint"
+>&lt;head&gt;
+  &lt;style&gt;
+    /&#42; Styles created as a result of loading module 1. &#42;/
     .cajaModule-0123___ p { color: purple }
-    /* Styles created as a result of loading module 2. */
+    /&#42; Styles created as a result of loading module 2. &#42;/
     .cajaModule-4567___ p { color: pink }
 
-    /*
-     * These styles do not interfere with one-another since different
-     * virtual documents' bodies have different unmentionable class markers.
-     */
-  </style>
-</head>
-<body>
-  <h1 id="foo">Container Title</h1>
-  <div class="vdoc-doc___" id="module-a-root">
-    <div class="vdoc-html___">
-      <div class="vdoc-body___ cajaModule-0123___">
-        <p><a id=":foo">Module A Link</a></p>
-      </div>
-    </div>
-  </div>
-  <div class="vdoc-doc___" id="module-b-root">
-    <div class="vdoc-html___">
-      <div class="vdoc-body___ cajaModule-4567___">
-        <p><a id=":foo">Module B Link</a></p>
-      </div>
-    </div>
-  </div>
-</body>
-</xmp>
+    /&#42;
+     &#42; These styles do not interfere with one-another since different
+     &#42; virtual documents' bodies have different unmentionable class markers.
+     &#42;/
+  &lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+  &lt;h1 id="foo"&gt;Container Title&lt;/h1&gt;
+  &lt;div class="vdoc-doc___" id="module-a-root"&gt;
+    &lt;div class="vdoc-html___"&gt;
+      &lt;div class="vdoc-body___ cajaModule-0123___"&gt;
+        &lt;p&gt;&lt;a id=":foo"&gt;Module A Link&lt;/a&gt;&lt;/p&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;
+  &lt;div class="vdoc-doc___" id="module-b-root"&gt;
+    &lt;div class="vdoc-html___"&gt;
+      &lt;div class="vdoc-body___ cajaModule-4567___"&gt;
+        &lt;p&gt;&lt;a id=":foo"&gt;Module B Link&lt;/a&gt;&lt;/p&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;
+&lt;/body&gt;
+</pre>
 
 <h3>Code example 1 &mdash; modifying an element retrieved by ID</h3>
 <pre class="prettyprint">
@@ -176,8 +177,8 @@ document.body.appendChild(myDiv);
     to <code>document.getElementById</code>.
   <li>The type for the argument to <code>createElement</code> is TAG_NAME
     which is checked against the HTML element
-    <a href="http://code.google.com/p/google-caja/wiki/CajaWhitelists"
-     >whitelist<a/>.  Element names like <code>OBJECT</code> are rejected
+    <a href="http://code.google.com/p/google-caja/wiki/CajaWhitelists">whitelist<a/>.
+     Element names like <code>OBJECT</code> are rejected
      as are unrecognized names.
   <li>The return type for <code>createElement</code> is ORPHAN_NODE which
     side-steps the usual in-same-document check.
@@ -460,7 +461,7 @@ n.childNodes.length)</code>, <code>n.childNodes[i] instanceof Node
 &amp;&amp; n.childNodes[i].parentNode === n</code>.  CAVEAT: If a
 virtual document is nested inside another, it is possible that this
 will not hold.  This, and the fact that a non-root node may
-have <code>nodeType === 9 /* DOCUMENT */</code> may confuse legacy code
+have <code>nodeType === 9 /&#42; DOCUMENT &#42;/</code> may confuse legacy code
 that assumes otherwise.  Containers may decline to provide a mechanism
 by which cajoled code can create virtual documents, which should
 ensure that legacy code assumptions are not violated.  Containers that
@@ -525,7 +526,7 @@ if (vtable) {
   <li><code>vtable.lookupVTable</code> finds a vtable for a javascript object.
     <pre class="prettyprint lang-js">
 if (isDomNode(obj)) {
-  if (obj.nodeType === 1 /* ELEMENT */) {
+  if (obj.nodeType === 1 /&#42; ELEMENT &#42;/) {
     // check vdoc.getClassName() and see whether to use the virtual doc,
     // BODY element, and HTML element vtables.
     // check tagName against the schema
@@ -775,5 +776,6 @@ TODO
   }
   walk(document.body);
 })();
-</script>
-</body>
+prettyPrint()</script>
+*/
+package com.google.caja.domita;

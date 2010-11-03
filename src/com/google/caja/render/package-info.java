@@ -1,4 +1,4 @@
-<body>
+/**
 
 <p>TokenConsumers that format code to an output buffer.</p>
 
@@ -7,7 +7,7 @@
   <dt>JS Renderer</dt>
   <dd>Render languages that use <code>{...}</code> to delimit statement blocks;
     <code>(...)</code> and <code>[...]</code> to delimit expression blocks;
-    and <code>/*...*/</code> and <code>//...</code> style comments.</dd>
+    and <code>/&#42;...&#42;/</code> and <code>//...</code> style comments.</dd>
   <dt>CSS Renderer</dt>
   <dd>Like the JS Renderer but sensitive to the ways in which adding whitespace
   between tokens can change the meaning of CSS.</dd>
@@ -23,5 +23,5 @@ make the block structure clear.  Others try to produce the most
 renderer which tries to wrap code to appear on the same lines as the mark
 positions, and the <b>side-by-side</b> renderer which interleaves original
 and translated source code.</p>
-
-</body>
+*/
+package com.google.caja.render;

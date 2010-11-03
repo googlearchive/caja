@@ -1,4 +1,4 @@
-<body>
+/**
 Extracts documentation from JavaScript source files.
 
 <h3>Documentation Syntax</h3>
@@ -50,19 +50,19 @@ an EcmaScript 4 style type system onto EcmaScript 3,
 <p>JavaDoc has <code>&#64;param</code> and <code>&#64;return</code> annotations
 and JSDoc supports the java syntax but adds an optional syntax where the
 first element is a type in curly brackets.<pre class="prettyprint">
-/**
- * &#64;param {<u>string</u>} html the HTML to translate
- * &#64;return {<u>string</u>} the plain text equivalent of the input HTML
- */
+/&#42;*
+ &#42; &#64;param {<u>string</u>} html the HTML to translate
+ &#42; &#64;return {<u>string</u>} the plain text equivalent of the input HTML
+ &#42;/
 function htmlToText(html) { &hellip; }
 </pre>
 
 <p>The new <code>&#64;type</code> annotation describes the type of the
 declaration.<pre class="prettyprint">
-/**
- * The ratio of a circle's circumference to its diameter.
- * &#64;type {<u>number</u>}
- */
+/&#42;*
+ &#42; The ratio of a circle's circumference to its diameter.
+ &#42; &#64;type {<u>number</u>}
+ &#42;/
 var PI = 3.141592654;
 </pre>
 
@@ -77,9 +77,9 @@ for describing functions.
 <p>JSDoc will warn you if identifiers that appear in types are not
 valid symbols in the current scope.  For example, in
 <pre class="prettyprint">
-/**
- * &#64;type {<u>Array</u>.&lt;<u>foo.Bar</u>&gt;}
- */
+/&#42;*
+ &#42; &#64;type {<u>Array</u>.&lt;<u>foo.Bar</u>&gt;}
+ &#42;/
 </pre>
 JSDoc will look for the symbols <code>Array</code> and
 <code>foo.Bar</code> in the scope in which the comment appears.  If
@@ -190,7 +190,7 @@ recurse to their properties.  The snapshotting process looks like this<ol>
 <li>Walk the object graph assigning names to nodes.  Be sure not to
 miss intrinsics like <tt>Array</tt> that are <tt>in</tt> the global
 object, but that are missed by <tt>for (k in global)</tt>.
-<li>Resolve "promises".  In <pre>/** &#64;see foo */</pre> the documentation
+<li>Resolve "promises".  In <pre>/&#42;* &#64;see foo &#42;/</pre> the documentation
 depends on the name by which <code>foo</code> is reachable from the global
 scope, not the local scope.  Since names are derived <b>after</b> execution,
 the code that attaches delays linking documentation by putting the result in
@@ -221,7 +221,7 @@ there will be an <code>Array</code> entry in the resulting JSON.
 <tr><th><th><tt>JavaDoc</tt><th><tt>Pydoc</tt><th><tt>JSDoc</tt><th>Reason</tr>
 <tr>
   <th>Doc Strings</th>
-  <td>In <code>/** &hellip; *<!---->/</code> comments</td>
+  <td>In <code>/&#42;* &hellip; &#42;<!---->/</code> comments</td>
   <td>In the first string of the body</td>
   <td>As JavaDoc</td>
   <td>JS's comments are the same as java's (modulo unicode escapes)</td>
@@ -245,9 +245,9 @@ there will be an <code>Array</code> entry in the resulting JSON.
 <p>Since JavaScript is a dynamic language, it's hard to tell statically from
 a declaration site which annotations are appropriate in any comment.
 E.g.<pre class="prettyprint">
-/**
- * &#64;param {number} x the x-coordinate
- */
+/&#42;*
+ &#42; &#64;param {number} x the x-coordinate
+ &#42;/
 var setX;
 </pre>
 looks like it defines a function, but we can only check that it is and it has
@@ -273,7 +273,7 @@ necessary.
 <table summary="rewrite to attach documentation on scope exit">
 <tr>
 <td style="border:1px dotted black"><pre class="prettyprint"
->/** &#64;param {number} x */
+>/&#42;* &#64;param {number} x &#42;/
 var setX;
 ...
 setX = function (x) { return -x; };</pre></td>
@@ -340,5 +340,5 @@ TODO
 
 <h4>Rewriting Rules</h4>
 TODO
-
-</body>
+*/
+package com.google.caja.ancillary.jsdoc;

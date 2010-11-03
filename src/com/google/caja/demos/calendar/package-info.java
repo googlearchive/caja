@@ -1,9 +1,5 @@
-<html>
-<head>
-<title>Caja Calendar Demo</title>
-</head>
-<body>
-<p>A demo application that extracts
+/**
+A demo application that extracts
 <a href="http://microformats.org/wiki/hcalendar">&mu;formatted calendar data</a>
 from a read only DOM and displays it on a calendar widget.
 
@@ -71,6 +67,5 @@ which is another good candidate for optimization.</p>
 
 <h2>Calendar Grid</h2>
 <p>TODO(mikesamuel): write me
-
-</body>
-</html>
+*/
+package com.google.caja.demos.calendar;

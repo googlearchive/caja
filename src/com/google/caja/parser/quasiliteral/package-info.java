@@ -1,4 +1,4 @@
-<body>
+/**
 Quasiliterals for matching and transforming Javascript parse trees.
 
 <h2>Glossary</h2>
@@ -90,5 +90,5 @@ emits a <tt>StringLiteral</tt> whose content is the identifier name.  Fails to
 substitute otherwise.</td>
 </tr>
 </table>
-
-</body>
+*/
+package com.google.caja.parser.quasiliteral;
