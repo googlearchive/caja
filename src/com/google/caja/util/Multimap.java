@@ -22,7 +22,7 @@ import java.util.Set;
  *
  * @author mikesamuel@gmail.com
  */
-public interface Multimap<K, V> {
+public interface Multimap<K, V> extends Cloneable {
   /** The set of keys with a non empty value collection. */
   Set<K> keySet();
   /**

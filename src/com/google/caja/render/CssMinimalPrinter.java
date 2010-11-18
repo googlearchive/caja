@@ -17,6 +17,8 @@ package com.google.caja.render;
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.TokenConsumer;
 
+import javax.annotation.Nullable;
+
 /**
  * A formatter that renders CSS with the minimal amount of whitespace that
  * does not change meaning.
@@ -38,7 +40,7 @@ public final class CssMinimalPrinter extends AbstractRenderer {
     super(out);
   }
 
-  public void mark(FilePosition pos) { out.mark(pos); }
+  public void mark(@Nullable FilePosition pos) { out.mark(pos); }
 
   @Override
   public void consume(String text) {

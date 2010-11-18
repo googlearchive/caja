@@ -24,6 +24,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 
+import javax.annotation.Nullable;
+
 import org.w3c.dom.Attr;
 import org.w3c.dom.DocumentFragment;
 import org.w3c.dom.Element;
@@ -217,7 +219,7 @@ public class PositionInfererTest extends CajaTestCase {
   private static void doInference(Node n, final FilePosition spanningPos) {
     PositionInferer inferer = new PositionInferer(spanningPos) {
       @Override
-      protected FilePosition getPosForNode(Object o) {
+      protected FilePosition getPosForNode(@Nullable Object o) {
         // We use a fake null node, as a convenient way to cause
         // the entire tree falls within the spanningPos.
         if (o == null) { return spanningPos; }
@@ -225,7 +227,7 @@ public class PositionInfererTest extends CajaTestCase {
       }
 
       @Override
-      protected void setPosForNode(Object o, FilePosition pos) {
+      protected void setPosForNode(@Nullable Object o, FilePosition pos) {
         if (o == null) { return; }
         Node n = (Node) o;
         FilePosition old = Nodes.getFilePositionFor(n);

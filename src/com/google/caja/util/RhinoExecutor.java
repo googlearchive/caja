@@ -334,12 +334,18 @@ public final class RhinoExecutor implements Executor {
           // to files openable by the JVM, and does not allow deletion or
           // writing.
           String path = uri.getPath();
+
+          StringBuilder sb = new StringBuilder();
+
           Reader in = new InputStreamReader(
               getClass().getClassLoader().getResourceAsStream(path), "UTF-8");
-          StringBuilder sb = new StringBuilder();
-          char[] buf = new char[4096];
-          for (int n; (n = in.read(buf)) > 0;) {
-            sb.append(buf, 0, n);
+          try {
+            char[] buf = new char[4096];
+            for (int n; (n = in.read(buf)) > 0;) {
+              sb.append(buf, 0, n);
+            }
+          } finally {
+            in.close();
           }
           responseBody = sb.toString();
         } else if ("content".equals(scheme)) {

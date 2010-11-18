@@ -434,6 +434,10 @@ public final class CssParser {
     Mark m = tq.mark();
     String ident = expectIdent();
     if (ident == null && isTolerant) { return null; }
+
+    // When !isTolerant, expectIdent throws instead of returning null.
+    assert ident != null;
+
     return new CssTree.Property(pos(m), Name.css(ident));
   }
 

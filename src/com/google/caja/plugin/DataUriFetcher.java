@@ -42,11 +42,10 @@ public class DataUriFetcher implements UriFetcher {
    *   data       := *urlchar
    *   parameter  := attribute "=" value
    */
-  private final Pattern DATA_URI_RE =
-    Pattern.compile("([^,]*?)(;base64)?,(.*)",
-        Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
+  private static final Pattern DATA_URI_RE = Pattern.compile(
+      "([^,]*?)(;base64)?,(.*)", Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
   private enum DATA_URI { ALL, TYPE, BASE64, DATA; }
-  private final String DATA_URI_DEFAULT_CHARSET = "US-ASCII";
+  private static final String DATA_URI_DEFAULT_CHARSET = "US-ASCII";
 
   private boolean isDataUri(URI uri) {
     if (null != uri  && "data".equals(uri.getScheme())

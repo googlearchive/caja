@@ -30,7 +30,7 @@ public class JsFunFuzz extends CajaTestCase {
   /**
    * Number of fuzzed cases to generate
    */
-  private final int MAX_NUMBER_OF_TESTS = 10;
+  private static final int MAX_NUMBER_OF_TESTS = 10;
 
   /**
    * Generate and return a new javascript string

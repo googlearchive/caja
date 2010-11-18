@@ -14,6 +14,8 @@
 
 package com.google.caja.lexer;
 
+import javax.annotation.Nullable;
+
 import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.CssLexer;
 import com.google.caja.lexer.CssTokenType;
@@ -48,7 +50,8 @@ public final class GuessContentType {
    * @return a known {@link ContentType} or null if none could be found.
    */
   public static ContentType guess(
-      String mimeType, String path, CharSequence code) {
+      @Nullable String mimeType, @Nullable String path,
+      @Nullable CharSequence code) {
     ContentType contentType = null;
     if (mimeType != null) { contentType = ContentType.fromMimeType(mimeType); }
     if (contentType == null && path != null) {

@@ -15,6 +15,8 @@ package com.google.caja.lexer;
 
 import java.net.URI;
 
+import javax.annotation.Nullable;
+
 /**
  * A reference to an external resource from an input.
  *
@@ -70,7 +72,7 @@ public final class ExternalReference {
   }
 
   @Override
-  public boolean equals(Object o) {
+  public boolean equals(@Nullable Object o) {
     if (!(o instanceof ExternalReference)) { return false; }
     ExternalReference that = (ExternalReference) o;
     return this.uri.equals(that.uri);

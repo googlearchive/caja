@@ -63,7 +63,7 @@ import com.google.gwt.user.client.ui.Widget;
  * @author Jasvir Nagra (jasvir@gmail.com)
  */
 public class PlaygroundView {
-  private final boolean EXPERIMENTAL_MODE = false;
+  private static final boolean EXPERIMENTAL_MODE = false;
 
   private HTML renderPanel;
   private TextBox renderResult;

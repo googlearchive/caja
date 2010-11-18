@@ -212,7 +212,7 @@ public final class TestHttpServletRequest implements HttpServletRequest {
   }
 
   public Map<String, List<String>> getParameterMap() {
-    return Collections.unmodifiableMap(this.getParameterMap());
+    return Collections.unmodifiableMap(params);
   }
 
   public RequestDispatcher getRequestDispatcher(String arg0) {

@@ -39,6 +39,8 @@ import java.util.Locale;
 import java.util.Set;
 import java.util.regex.Pattern;
 
+import javax.annotation.Nullable;
+
 /**
  * A node in a CSS parse tree.
  *
@@ -1486,7 +1488,8 @@ public abstract class CssTree extends AbstractParseTreeNode {
   }
 
   private static void renderStatements(
-      List<? extends CssTree> children, FilePosition pos, RenderContext r) {
+      List<? extends CssTree> children, @Nullable FilePosition pos,
+      RenderContext r) {
     TokenConsumer out = r.getOut();
     out.mark(pos);
     out.consume("{");

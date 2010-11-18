@@ -228,7 +228,9 @@ public class CajaWebToolsServlet extends HttpServlet {
       // Parse all the inputs.
       for (Input input : req.inputs) {
         if ("".equals(input.code.trim())) { continue; }
-        InputSource is = new InputSource(req.baseUri.resolve(input.path));
+        InputSource is = new InputSource(
+            (req.baseUri != null ? req.baseUri : URI.create("src:///"))
+            .resolve(input.path));
         CharProducer cp = CharProducer.Factory.fromString(input.code, is);
         req.srcMap.put(is, cp.clone());
         req.mc.addInputSource(is);

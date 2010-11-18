@@ -102,7 +102,7 @@ public class Nodes {
     return new Iterable<T>() {
       public Iterator<T> iterator() {
         return new Iterator<T>() {
-          int i = 0, n = nl != null ? nl.getLength() : null;
+          int i = 0, n = nl != null ? nl.getLength() : 0;
           public boolean hasNext() {
             return i < n;
           }

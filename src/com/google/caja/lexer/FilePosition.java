@@ -18,6 +18,8 @@ import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessagePart;
 import java.io.IOException;
 
+import javax.annotation.Nullable;
+
 /**
  * The range of characters in a source file occupied by a token or a group of
  * tokens.
@@ -149,7 +151,7 @@ public final class FilePosition implements MessagePart {
         fp.getBreaks(), fp.startCharInFile() + fp.length(), 0);
   }
 
-  public static FilePosition endOfOrNull(FilePosition fp) {
+  public static FilePosition endOfOrNull(@Nullable FilePosition fp) {
     return fp != null ? endOf(fp) : null;
   }
 
@@ -199,7 +201,7 @@ public final class FilePosition implements MessagePart {
   }
 
   @Override
-  public final boolean equals(Object o) {
+  public final boolean equals(@Nullable Object o) {
     if (!(o instanceof FilePosition)) { return false; }
     FilePosition that = (FilePosition) o;
     // equals and hashCode depend only on information available

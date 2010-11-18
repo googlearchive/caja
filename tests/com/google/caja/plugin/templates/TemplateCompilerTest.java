@@ -427,7 +427,7 @@ public class TemplateCompilerTest extends CajaTestCase {
             + "}")));
   }
 
-  private class Holder<T> { T value; }
+  private static final class Holder<T> { T value; }
 
   public final void testUriAttributeResolution() throws Exception {
     // Ensure that the TemplateCompiler calls its PluginEnvironment with the

@@ -62,7 +62,7 @@ enum TokenClassification {
           break;
         case '-': case '+':
           if (ch1 == '.') { ch1 = n >= 3 ? text.charAt(2) : 0; }
-          // fall through
+          // $FALL-THROUGH$
         case '.':
           if (Character.isLetterOrDigit(ch1)) {
             return OTHER;

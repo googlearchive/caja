@@ -14,6 +14,8 @@
 
 package com.google.caja.parser.js;
 
+import javax.annotation.Nullable;
+
 import com.google.caja.parser.MutableParseTreeNode;
 
 /**
@@ -36,7 +38,7 @@ public interface Expression extends MutableParseTreeNode, JsonMLCompatible {
    * does not throw an exception.  If the expression provably always throws
    * an exception, then it may return any result.
    */
-  Boolean conditionResult();
+  @Nullable Boolean conditionResult();
 
   /**
    * {@code null} or the result of applying the {@code typeof} operator to

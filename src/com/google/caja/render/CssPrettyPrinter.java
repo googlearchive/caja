@@ -16,9 +16,11 @@ package com.google.caja.render;
 
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.TokenConsumer;
+import com.google.caja.util.Lists;
 
-import java.util.ArrayList;
 import java.util.List;
+
+import javax.annotation.Nullable;
 
 /**
  * A formatter that indents code for CSS paying careful attention to where
@@ -35,7 +37,7 @@ public final class CssPrettyPrinter extends AbstractRenderer {
    * A non-negative number indicates a curly bracket indentation and a negative
    * number a parenthetical indentation.
    */
-  private List<Integer> indentStack = new ArrayList<Integer>();
+  private List<Integer> indentStack = Lists.newArrayList();
   /** Number of characters written to out since the last line-break. */
   private int charInLine;
 
@@ -49,7 +51,7 @@ public final class CssPrettyPrinter extends AbstractRenderer {
     super(out);
   }
 
-  public void mark(FilePosition pos) { out.mark(pos); }
+  public void mark(@Nullable FilePosition pos) { out.mark(pos); }
 
   @Override
   public void consume(String text) {

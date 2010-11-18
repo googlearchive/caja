@@ -256,7 +256,7 @@ public abstract class RewriterTestCase extends CajaTestCase {
   }
 
   protected ParseTreeNode emulateIE6FunctionConstructors(ParseTreeNode node) {
-    Rewriter w = new Rewriter(mq, true, false) { /* concrete */ };
+    final Rewriter w = new Rewriter(mq, true, false) { /* concrete */ };
     w.addRule(new Rule() {
       @Override
       @RuleDescription(
@@ -267,7 +267,7 @@ public abstract class RewriterTestCase extends CajaTestCase {
         if (node instanceof Block) {
           Scope s2;
           if (scope == null) {
-            s2 = Scope.fromProgram((Block) node, getRewriter().mq);
+            s2 = Scope.fromProgram((Block) node, w.mq);
           } else {
             s2 = Scope.fromPlainBlock(scope);
           }

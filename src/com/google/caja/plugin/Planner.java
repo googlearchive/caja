@@ -121,7 +121,7 @@ public final class Planner {
     return plan;
   }
 
-  private final class PartialPlan<TOOL extends Tool> {
+  private static final class PartialPlan<TOOL extends Tool> {
     final PlanState state;
     final PartialPlan<TOOL> prior;
     final TOOL tool;

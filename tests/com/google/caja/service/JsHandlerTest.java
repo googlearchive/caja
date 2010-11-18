@@ -16,9 +16,6 @@ package com.google.caja.service;
 
 import junit.framework.AssertionFailedError;
 
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
 /**
  * @author jasvir@google.com (Jasvir Nagra)
  */

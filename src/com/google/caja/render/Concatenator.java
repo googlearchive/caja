@@ -21,6 +21,8 @@ import com.google.caja.util.Callback;
 import java.io.Flushable;
 import java.io.IOException;
 
+import javax.annotation.Nullable;
+
 /**
  * A {@link com.google.caja.reporting.RenderContext} renderer that concatenates
  * tokens.  Suitable for rendering {@link org.w3c.dom.Node HTML parse trees}.
@@ -47,7 +49,7 @@ public final class Concatenator implements TokenConsumer {
 
   public Concatenator(StringBuilder out) { this(out, null); }
 
-  public void mark(FilePosition pos) { /* noop */ }
+  public void mark(@Nullable FilePosition pos) { /* noop */ }
 
   public void consume(String text) {
     append(text);

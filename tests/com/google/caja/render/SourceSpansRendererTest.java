@@ -31,7 +31,7 @@ public class SourceSpansRendererTest extends OrigSourceRendererTestCase {
   // bunch of file position mapping data structures as well. We wrap it here
   // with something that generates a single piece of plain text out of the lot,
   // so we can test it using the superclass's framework.
-  private class WrapperRenderer implements TokenConsumer {
+  private static final class WrapperRenderer implements TokenConsumer {
     private final RenderContext rc;
     private final SourceSpansRenderer delegate;
 

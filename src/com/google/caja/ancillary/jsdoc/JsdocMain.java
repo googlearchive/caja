@@ -143,12 +143,16 @@ public class JsdocMain {
         out = new OutputStreamWriter(new FileOutputStream(output), "UTF-8");
       }
 
-      Writer buf = new StringWriter();
-      if (!jsdm.run(initPaths, pathList(inputs), docDir, buf)) { return false; }
-      if (out != null) {
-        try {
+      try {
+        Writer buf = new StringWriter();
+        if (!jsdm.run(initPaths, pathList(inputs), docDir, buf)) {
+          return false;
+        }
+        if (out != null) {
           out.write(buf.toString());
-        } finally {
+        }
+      } finally {
+        if (out != null) {
           out.close();
         }
       }

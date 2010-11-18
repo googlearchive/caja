@@ -22,6 +22,8 @@ import java.net.URI;
 import java.net.URL;
 import java.net.URLConnection;
 
+import javax.annotation.Nullable;
+
 /**
  * @author ihab.awad@gmail.com (Ihab Awad)
  */
@@ -31,7 +33,8 @@ public class FetchedDataTest extends CajaTestCase {
     private String contentType;
     private boolean connected;
 
-    public TestURLConnection(URL url, String data, String contentType) {
+    public TestURLConnection(
+        URL url, String data, @Nullable String contentType) {
       super(url);
       this.data = data;
       this.contentType = contentType;
@@ -44,7 +47,7 @@ public class FetchedDataTest extends CajaTestCase {
     }
 
     @Override
-    public String getContentType() {
+    public @Nullable String getContentType() {
       return contentType;
     }
 
@@ -71,7 +74,7 @@ public class FetchedDataTest extends CajaTestCase {
   }
 
   private void assertCharSet(
-      String expectedCharSet, String urlConnectionContentType)
+      String expectedCharSet, @Nullable String urlConnectionContentType)
       throws Exception {
     String testContent = "abcdef";
     FetchedData fd = FetchedData.fromConnection(

@@ -18,15 +18,17 @@ import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.util.Join;
+import com.google.caja.util.Lists;
+import com.google.caja.util.Maps;
 import com.google.caja.util.Pair;
 
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import javax.annotation.Nullable;
 
 /**
  * Renders rewritten source code interleaved with the original.  E.g.
@@ -40,19 +42,18 @@ import java.util.regex.Pattern;
  */
 public abstract class SideBySideRenderer implements TokenConsumer {
   private final Map<InputSource, String[]> originalSourceLines;
-  private final Map<InputSource, Integer> maxLineSeen
-      = new HashMap<InputSource, Integer>();
+  private final Map<InputSource, Integer> maxLineSeen = Maps.newHashMap();
   private final TokenConsumer renderer;
   private FilePosition lastPos;
   private FilePosition mark;
   private FilePosition chunkStart;
   /** Chunks of original source. */
-  private final List<Chunk> chunks = new ArrayList<Chunk>();
+  private final List<Chunk> chunks = Lists.newArrayList();
   private StringBuilder renderedBuf;
 
   public SideBySideRenderer(
       Map<InputSource, ? extends CharSequence> originalSource) {
-    this.originalSourceLines = new HashMap<InputSource, String[]>();
+    this.originalSourceLines = Maps.newHashMap();
     for (Map.Entry<InputSource, ? extends CharSequence> e
          : originalSource.entrySet()) {
       this.originalSourceLines.put(
@@ -86,7 +87,7 @@ public abstract class SideBySideRenderer implements TokenConsumer {
 
   protected abstract TokenConsumer makeRenderer(StringBuilder renderedSrc);
 
-  public void mark(FilePosition pos) {
+  public void mark(@Nullable FilePosition pos) {
     if (pos != null) { this.mark = pos; }
     renderer.mark(pos);
   }
@@ -160,7 +161,7 @@ public abstract class SideBySideRenderer implements TokenConsumer {
     Pattern p = Pattern.compile(" */\\*@([0-9]+)\\*/(?:\n|\r\n?|$)");
     Matcher m = p.matcher(renderedSrc);
     int start = 0;
-    List<Pair<String, Integer>> chunks = new ArrayList<Pair<String, Integer>>();
+    List<Pair<String, Integer>> chunks = Lists.newArrayList();
     while (m.find()) {
       int chunkIndex = Integer.parseInt(m.group(1));
       chunks.add(

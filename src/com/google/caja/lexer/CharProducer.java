@@ -27,7 +27,7 @@ import java.util.Arrays;
  *
  * @author mikesamuel@gmail.com
  */
-public abstract class CharProducer implements CharSequence {
+public abstract class CharProducer implements CharSequence, Cloneable {
   private int offset;
   private final int limit;
   private final char[] buf;
@@ -147,7 +147,7 @@ public abstract class CharProducer implements CharSequence {
     }
 
     public static CharProducer fromString(CharSequence s, FilePosition pos) {
-      char[] buf = new char[s.length()];
+      char[] buf;
       if (s instanceof String) {
         buf = ((String) s).toCharArray();
       } else {

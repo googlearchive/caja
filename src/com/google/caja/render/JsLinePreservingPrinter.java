@@ -14,6 +14,8 @@
 
 package com.google.caja.render;
 
+import javax.annotation.Nullable;
+
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.InputSource;
 
@@ -42,8 +44,8 @@ public class JsLinePreservingPrinter extends AbstractRenderer {
     pendingSpace = " ";
   }
 
-  public void mark(FilePosition pos) {
-    if (is.equals(pos.source())) {
+  public void mark(@Nullable FilePosition pos) {
+    if (pos != null && is.equals(pos.source())) {
       int line = pos.startLineNo();
       StringBuilder sb = new StringBuilder();
       while (lineNumber < line) {

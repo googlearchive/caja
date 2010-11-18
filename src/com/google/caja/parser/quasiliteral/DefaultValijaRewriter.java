@@ -78,12 +78,12 @@ public class DefaultValijaRewriter extends Rewriter {
   }
 
 
-  private int tempVarCount = 1;
-  private final String tempVarPrefix = "$caja$";
+  private int tempVarCount;
+  private static final String TEMP_VAR_PREFIX = "$caja$";
 
   Reference newTempVar(Scope scope) {
     Identifier t = new Identifier(
-        FilePosition.UNKNOWN, tempVarPrefix + tempVarCount++);
+        FilePosition.UNKNOWN, TEMP_VAR_PREFIX + ++tempVarCount);
     scope.declareStartOfScopeVariable(t);
     return new Reference(t);
   }

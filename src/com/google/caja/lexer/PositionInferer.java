@@ -21,6 +21,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import javax.annotation.Nullable;
+
 /**
  * Does some simple constraint solving to assign reasonable position values
  * to generated parse tree nodes.
@@ -71,7 +73,7 @@ public abstract class PositionInferer {
    * @param container a valid node descriptor.
    * @param contained a valid node descriptor.
    */
-  public void contains(Object container, Object contained) {
+  public void contains(@Nullable Object container, @Nullable Object contained) {
     Region aBounds = boundsForNode(container);
     Region bBounds = boundsForNode(contained);
     Relation left = new LessThanRelation(aBounds.start, bBounds.start);
@@ -160,7 +162,7 @@ public abstract class PositionInferer {
    *   {@link InputSource#UNKNOWN unknown} if the node does not have accurate
    *   position info.
    */
-  protected abstract FilePosition getPosForNode(Object o);
+  protected abstract FilePosition getPosForNode(@Nullable Object o);
 
   /**
    * Informs the client that it has inferred a position for the given node.
@@ -172,9 +174,9 @@ public abstract class PositionInferer {
    * @param o a node descriptor.
    * @param pos non null.
    */
-  protected abstract void setPosForNode(Object o, FilePosition pos);
+  protected abstract void setPosForNode(@Nullable Object o, FilePosition pos);
 
-  private Region boundsForNode(Object o) {
+  private Region boundsForNode(@Nullable Object o) {
     Region r = boundsByNode.get(o);
     if (r == null) {
       r = new Region(new Boundary(true, o), new Boundary(false, o));

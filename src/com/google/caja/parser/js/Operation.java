@@ -28,6 +28,8 @@ import com.google.javascript.jscomp.jsonml.TagType;
 import java.util.Arrays;
 import java.util.List;
 
+import javax.annotation.Nullable;
+
 /**
  * An expression that applies an {@link Operator} to a number of operands.
  *
@@ -142,7 +144,7 @@ public abstract class Operation extends AbstractExpression {
   }
 
   @Override
-  public Boolean conditionResult() {
+  public @Nullable Boolean conditionResult() {
     Boolean opResult;
     List<? extends Expression> operands = children();
     switch (op) {

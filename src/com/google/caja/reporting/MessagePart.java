@@ -18,11 +18,14 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
 
+import javax.annotation.ParametersAreNonnullByDefault;
+
 /**
  * A part that may substitute for a placeholder in an error or logging message.
  *
  * @author mikesamuel@gmail.com
  */
+@ParametersAreNonnullByDefault
 public interface MessagePart {
 
   /**
@@ -40,7 +43,7 @@ public interface MessagePart {
       return new MessagePartWrapper(s);
     }
 
-    public static MessagePart valueOf(final Number n) {
+    public static MessagePart valueOf(Number n) {
       return new MessagePartWrapper(n);
     }
 

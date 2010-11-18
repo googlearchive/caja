@@ -850,7 +850,7 @@ public class ParseTreeKB {
     double dv = n.doubleValue();
     long lv = n.longValue();
     // Convert 1.0 to 1, but do not convert -0.0 to 0.
-    if (dv == lv && (dv != 0d || (1 / dv) == Double.POSITIVE_INFINITY)) {
+    if (dv == lv && (dv != 0d || (1 / dv) > 0)) {
       return new IntegerLiteral(rl.getFilePosition(), lv);
     }
     return rl;

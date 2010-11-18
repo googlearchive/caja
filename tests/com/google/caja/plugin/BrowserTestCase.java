@@ -44,25 +44,25 @@ public abstract class BrowserTestCase extends CajaTestCase {
   /**
    * Start a local web server on the port specified by portNumber().
    */
-  protected void StartLocalServer() {
+  protected void startLocalServer() {
     server = new Server(portNumber());
 
     // static file serving for tests
     final ResourceHandler resource_handler = new ResourceHandler();
     resource_handler.setResourceBase(".");
-    
+
     // caja (=playground for now) server under /caja directory
     final String subdir = "/caja";
     final ContextHandler caja = new ContextHandler(subdir);
     {
       // TODO(kpreid): deploy the already-configured war instead of manually
-      // plumbing 
+      // plumbing
       final String service = "/cajole";
-      
+
       // static file serving
       final ResourceHandler caja_static = new ResourceHandler();
       caja_static.setResourceBase("./ant-war/");
-    
+
       // cajoling service -- Servlet setup code gotten from
       // <http://docs.codehaus.org/display/JETTY/Embedding+Jetty> @ 2010-06-30
       Context servlets = new Context(server, "/", Context.NO_SESSIONS);
@@ -70,7 +70,7 @@ public abstract class BrowserTestCase extends CajaTestCase {
         new ServletHolder(
           new CajolingServlet(
             new CajolingService(BuildInfo.getInstance(),
-                                "http://localhost:" + portNumber() + 
+                                "http://localhost:" + portNumber() +
                                     subdir + service))),
         service);
 
@@ -99,7 +99,7 @@ public abstract class BrowserTestCase extends CajaTestCase {
   /**
    * Stop the local web server
    */
-  protected void StopLocalServer() {
+  protected void stopLocalServer() {
     try {
       server.stop();
     } catch (Exception e) {
@@ -120,7 +120,7 @@ public abstract class BrowserTestCase extends CajaTestCase {
    */
   protected void runBrowserTest(String pageName) {
     if (checkHeadless()) return;  // TODO: print a warning here?
-    StartLocalServer();
+    startLocalServer();
     try {
       WebDriver driver = new FirefoxDriver();
 
@@ -131,7 +131,7 @@ public abstract class BrowserTestCase extends CajaTestCase {
       // Note that if the tests fail, this will not be reached and the browser
       // will not be quit. This is useful for debugging test failures.
     } finally {
-      StopLocalServer();
+      stopLocalServer();
     }
   }
 

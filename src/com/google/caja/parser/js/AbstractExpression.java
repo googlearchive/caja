@@ -24,6 +24,8 @@ import com.google.caja.util.Callback;
 
 import java.io.IOException;
 
+import javax.annotation.Nullable;
+
 /**
  *
  * @author mikesamuel@gmail.com
@@ -45,7 +47,7 @@ public abstract class AbstractExpression
 
   public Expression simplifyForSideEffect() { return this; }
 
-  public Boolean conditionResult() { return null; }
+  public @Nullable Boolean conditionResult() { return null; }
 
   public Expression fold(boolean isFn) { return this; }
 }

@@ -863,11 +863,11 @@ public class StatementSimplifier {
       int lastIndex = newChildren.size() - 1;
       last = (SwitchCase) newChildren.get(lastIndex);
 
-      Statement lastBody = last.getBody();
+      Block lastBody = last.getBody();
       boolean changedOne = false;
-      if (lastBody instanceof Block && !lastBody.children().isEmpty()) {
+      if (!lastBody.children().isEmpty()) {
         // Eliminate trailing break statement.
-        List<? extends Statement> stmts = ((Block) lastBody).children();
+        List<? extends Statement> stmts = lastBody.children();
         int n = stmts.size();
         if (n > 0 && isBlankBreak(stmts.get(n - 1))) {
           stmts = stmts.subList(0, n - 1);
@@ -880,7 +880,7 @@ public class StatementSimplifier {
         // => switch (...) { default: ... case foo: }
         newChildren.set(lastIndex, withoutBody(last));
         changedOne = true;
-      } else if (!hasDefault && lastBody instanceof Block) {
+      } else if (!hasDefault) {
         CaseStmt cs = (CaseStmt) last;  // OK since !hasDefault
         //    switch (...) { ... case 4: case 5: break; }
         // => switch (...) { ... }

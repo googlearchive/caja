@@ -888,7 +888,7 @@ public final class AnnotationHandlers {
         }
         mq.addMessage(
             JsdocMessageType.EXPECTED_TYPE, a.getFilePosition(),
-            MessagePart.Factory.valueOf(s));
+            MessagePart.Factory.valueOf(s != null ? s : "<null>"));
         return null;
       }
     };

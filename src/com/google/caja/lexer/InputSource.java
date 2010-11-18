@@ -21,6 +21,8 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 
+import javax.annotation.Nullable;
+
 /**
  * A file of source code.  This is identified by a URI, since it may not
  * correspond to an actual file on disk.  The URI is assumed to uniquely
@@ -62,7 +64,7 @@ public final class InputSource implements MessagePart {
   public String toString() { return uriStr; }
 
   @Override
-  public boolean equals(Object o) {
+  public boolean equals(@Nullable Object o) {
     return (o instanceof InputSource)
         && this.uri.equals(((InputSource) o).uri);
   }

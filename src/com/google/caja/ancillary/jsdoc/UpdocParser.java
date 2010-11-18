@@ -71,7 +71,7 @@ final class UpdocParser {
     return updoc;
   }
 
-  class UpdocLexer implements TokenStream<JsTokenType> {
+  static final class UpdocLexer implements TokenStream<JsTokenType> {
     private final JsLexer l;
     UpdocLexer(CharProducer cp) {
       this.l = new JsLexer(cp, false);

@@ -37,6 +37,8 @@ import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 
+import javax.annotation.Nullable;
+
 /**
  * A {@link TokenConsumer} that prints its output, and gives the original
  * {@link FilePosition} source of each character of the output.
@@ -90,7 +92,7 @@ public class SourceSpansRenderer implements TokenConsumer {
     ((JsPrettyPrinter) delegateRenderer).setBreakAfterComment(false);
   }
 
-  public void mark(FilePosition pos) {
+  public void mark(@Nullable FilePosition pos) {
     delegateRenderer.mark(pos);
     delegateRenderer.consume("/*@" + marks.size() + "*/");
     marks.add(pos == null ? FilePosition.UNKNOWN : pos);

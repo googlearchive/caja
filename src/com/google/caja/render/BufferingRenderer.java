@@ -18,8 +18,11 @@ import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.JsLexer;
 import com.google.caja.lexer.TokenConsumer;
-import java.util.ArrayList;
+import com.google.caja.util.Lists;
+
 import java.util.List;
+
+import javax.annotation.Nullable;
 
 /**
  * An abstract renderer for JavaScript tokens that ensures that implementations
@@ -28,7 +31,7 @@ import java.util.List;
  * @author mikesamuel@gmail.com
  */
 abstract class BufferingRenderer implements TokenConsumer {
-  private final List<Object> pending = new ArrayList<Object>();
+  private final List<Object> pending = Lists.newArrayList();
   private final Concatenator out;
 
   /**
@@ -64,11 +67,11 @@ abstract class BufferingRenderer implements TokenConsumer {
         // token.  If the canBreakBetween check fails, then remove any
         // line-breaks by rewriting the comment.
         // We have to rewrite multi-line block comments, since ES3 and ES5 say
-        // that a multi-line comment is replaced with a newline for the 
+        // that a multi-line comment is replaced with a newline for the
         // purposes of semicolon insertion.
         //
-        // This is inconsistently implemented, but the rewriting works 
-        // regardless of whether an implementation actually treats the 
+        // This is inconsistently implemented, but the rewriting works
+        // regardless of whether an implementation actually treats the
         // comment as a newline for semicolon insertion.
         String nextToken = null;
         for (int j = i + 1; j < nTokens; ++j) {
@@ -120,7 +123,7 @@ abstract class BufferingRenderer implements TokenConsumer {
     pending.add(text);
   }
 
-  public final void mark(FilePosition mark) {
+  public final void mark(@Nullable FilePosition mark) {
     if (mark != null && !InputSource.UNKNOWN.equals(mark.source())) {
       pending.add(mark);
     }

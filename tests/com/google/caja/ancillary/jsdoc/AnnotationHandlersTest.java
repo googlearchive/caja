@@ -506,6 +506,7 @@ public class AnnotationHandlersTest extends CajaTestCase {
         break;
       }
     }
+    assert toTest != null;
 
     mq.getMessages().clear();
     Expression actual = handlers.handlerFor(toTest).handle(toTest, mq);

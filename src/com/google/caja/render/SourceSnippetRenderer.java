@@ -29,6 +29,8 @@ import java.util.Formatter;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import javax.annotation.Nullable;
+
 /**
  * A {@link TokenConsumer} that prints its output by writing out the
  * original source in comments, followed by the translated source.
@@ -37,7 +39,7 @@ import java.util.regex.Pattern;
  */
 public class SourceSnippetRenderer implements TokenConsumer {
 
-  private class OriginalSourceLine {
+  private static final class OriginalSourceLine {
     private final int lineNo;
     private final String text;
     private Map<Integer, Integer> evidence = Maps.newHashMap();
@@ -145,7 +147,7 @@ public class SourceSnippetRenderer implements TokenConsumer {
     renderedLines.add(new RenderedSourceLine(""));
   }
 
-  public void mark(FilePosition pos) {
+  public void mark(@Nullable FilePosition pos) {
     delegateRenderer.mark(pos);
     delegateRenderer.consume("/*@" + marks.size() + "*/");
     marks.add(pos);

@@ -26,11 +26,13 @@ import com.google.caja.parser.js.StringLiteral;
 import com.google.caja.render.Concatenator;
 import com.google.caja.render.CssPrettyPrinter;
 import com.google.caja.reporting.RenderContext;
+import com.google.caja.util.Lists;
 import com.google.caja.util.Strings;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+
+import javax.annotation.Nullable;
 
 /**
  * Compiles CSS style-sheets to JavaScript which outputs the same CSS, but with
@@ -159,12 +161,12 @@ public final class CssRuleRewriter {
     //    noMoreTokens()  ""        ["ab", "c", "d"]
     // Which has he property that the output list joined with the placeholder
     // produces the concatenation of the original string.
-    final List<Expression> cssParts = new ArrayList<Expression>();
+    final List<Expression> cssParts = Lists.newArrayList();
     TokenConsumer cssCompiler = new TokenConsumer() {
           final StringBuilder sb = new StringBuilder();
           final CssPrettyPrinter pp
               = new CssPrettyPrinter(new Concatenator(sb));
-          public void mark(FilePosition p) { pp.mark(p); }
+          public void mark(@Nullable FilePosition p) { pp.mark(p); }
           public void consume(String s) {
             pp.consume(s);
             // Introduce a break in the array, which will be filled by the join

@@ -14,6 +14,8 @@
 
 package com.google.caja.lexer;
 
+import javax.annotation.Nullable;
+
 /**
  * Receives a set of tokens corresponding to a rendered parse tree.
  *
@@ -21,11 +23,11 @@ package com.google.caja.lexer;
  */
 public interface TokenConsumer {
   /**
-   * Marks tokens {@link #consume consumed} before the next call as falling in 
+   * Marks tokens {@link #consume consumed} before the next call as falling in
    * this range of file positions.
    * @param pos null indicates don't know.
    */
-  void mark(FilePosition pos);
+  void mark(@Nullable FilePosition pos);
 
   /** Receives tokens from rendered parse trees. */
   void consume(String text);

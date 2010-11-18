@@ -94,7 +94,7 @@ public class ModuleFormatTest extends CajaTestCase {
 
     assertTrue(bindings.get("cajoledDate") instanceof IntegerLiteral);
     assertEquals(
-        new Long(new TestBuildInfo().getCurrentTime()),
+        Long.valueOf(new TestBuildInfo().getCurrentTime()),
         bindings.get("cajoledDate").getValue());
   }
 

@@ -15,7 +15,8 @@
 package com.google.caja.render;
 
 import com.google.caja.lexer.FilePosition;
-import java.util.ArrayList;
+import com.google.caja.util.Lists;
+
 import java.util.List;
 
 /**
@@ -56,7 +57,7 @@ public final class JsMinimalPrinter extends BufferingRenderer {
 
   @Override
   List<String> splitTokens(List<Object> tokens) {
-    List<String> outputTokens = new ArrayList<String>();
+    List<String> outputTokens = Lists.newArrayList();
 
     for (Object tokenEl : tokens) {
       if (tokenEl instanceof FilePosition) { continue; }
