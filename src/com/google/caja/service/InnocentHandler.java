@@ -67,10 +67,14 @@ public class InnocentHandler extends AbstractCajolingHandler {
       throws UnsupportedContentTypeException {
     Pair<ContentType, String> contentParams = getReturnedContentParams(args);
 
+    boolean pretty = CajolingService.RENDER_PRETTY.equals(
+        CajaArguments.RENDERER.get(args));
+    
     try {
       OutputStreamWriter writer = new OutputStreamWriter(response,
           Charsets.UTF_8.name());
-      innocentJs(uri, input.getTextualContent(), writer, contentParams.b, mq);
+      innocentJs(uri, input.getTextualContent(), writer,
+          contentParams.b, pretty, mq);
       writer.flush();
     } catch (IOException e) {
       // TODO(ihab.awad): Fix the "unrecoverable" error responses throughout
@@ -81,7 +85,7 @@ public class InnocentHandler extends AbstractCajolingHandler {
 
   private void innocentJs(
       URI inputUri, CharProducer cp, Appendable output,
-      String jsonpCallback, MessageQueue mq)
+      String jsonpCallback, boolean pretty, MessageQueue mq)
       throws IOException {
     ParseTreeNode result = null;
     InputSource is = new InputSource (inputUri);
@@ -94,6 +98,6 @@ public class InnocentHandler extends AbstractCajolingHandler {
     } catch (ParseException e) {
       e.toMessageQueue(mq);
     }
-    this.renderAsJSON(null, result, jsonpCallback, mq, output);
+    this.renderAsJSON(null, result, jsonpCallback, mq, output, pretty);
   }
 }

@@ -40,12 +40,11 @@
  * 
  * TODO(kpreid): explain static (sync) loading module id semantics.
  * @author maoziqing@gmail.com, kpreid@switchb.org, ihab.awad@gmail.com
- * @requires eval, document, ___, bridal, Q, URI, cajita, window
- * @provides xhrModuleLoadMaker, scriptModuleLoadMaker, clearModuleCache,
+ * @requires eval, document, ___, Q, URI, window, console
+ * @provides scriptModuleLoadMaker, clearModuleCache,
  *           defaultModuleIdResolver, defaultCajolerFinder,
  *           CajolingServiceFinder
  */
-var xhrModuleLoadMaker;
 var scriptModuleLoadMaker;
 var defaultModuleIdResolver;
 var defaultCajolerFinder;
@@ -66,7 +65,7 @@ var clearModuleCache;
   /**
    * Constructor for a cajoler finder given the URL of a cajoling service.
    */
-  CajolingServiceFinder = function(serviceURL) {
+  CajolingServiceFinder = function(serviceURL, debug) {
     return  function cajolingServiceFinder(uncajoledSourceURL, jsonpCallback) {
       var inputMimeType;
       if (/\.js$/.test(uncajoledSourceURL)) {
@@ -80,18 +79,20 @@ var clearModuleCache;
       return jsonpCallback
           ? serviceURL +
               '?url=' + encodeURIComponent(uncajoledSourceURL) +
-              '&renderer=pretty' +
+              '&directive=ES53' +
+              '&emit-html-in-js=true' +
+              '&renderer=' + (debug ? 'pretty' : 'minimal') +
               '&input-mime-type=' + inputMimeType +
               '&output-mime-type=application/json' +
-              '&emit-html-in-js=true' +
               '&callback=' + jsonpCallback +
               '&alt=json-in-script'
           : serviceURL +
               '?url=' + encodeURIComponent(uncajoledSourceURL) +
-              '&renderer=pretty' +
+              '&directive=ES53' +
+              '&emit-html-in-js=true' +
+              '&renderer=' + (debug ? 'pretty' : 'minimal') +
               '&input-mime-type=' + inputMimeType +
               '&output-mime-type=application/javascript' +
-              '&emit-html-in-js=true' +
               '&alt=json';
     };
   };
@@ -102,7 +103,7 @@ var clearModuleCache;
   function syncLoad(modURL) {
     if (cache[modURL] === undefined || Q.near(cache[modURL]).isPromise___) {
       var msg = "The static module " + modURL + " cannot be resolved.";
-      cajita.log(msg);
+      console.log(msg);
       throw new Error(msg);
     }
     return Q.near(cache[modURL]);
@@ -144,10 +145,19 @@ var clearModuleCache;
       return r.promise();
     };
 
-    load.FUNC___ = 'load';
-    ___.setStatic(load, 'async', ___.markFuncFreeze(async));
-    ___.setStatic(load, 'asyncAll', ___.markFuncFreeze(asyncAll));
-    return ___.primFreeze(load);
+    load.DefineOwnProperty___('async', {
+          value: ___.markFuncFreeze(async),
+          writable: false,
+          enumerable: true,
+          configurable: false
+        });
+    load.DefineOwnProperty___('asyncAll', {
+          value: ___.markFuncFreeze(asyncAll),
+          writable: false,
+          enumerable: true,
+          configurable: false
+        });
+    return ___.markFuncFreeze(load);
   }
 
   function resolveDependency(module, load) {
@@ -195,81 +205,19 @@ var clearModuleCache;
     });
   }
 
+  var jsonpCallbackCount = 0;
+
   function messagesToLog(moduleURL, cajolerMessages) {
     if (!cajolerMessages) { return; }
-    cajita.log("Messages cajoling " + moduleURL);
+    console.log("Messages cajoling " + moduleURL);
     var msg;
     for (var i = 0; i < cajolerMessages.length; i++) {
       msg = cajolerMessages[i];
-      cajita.log(
+      console.log(
           msg.name + '(' + msg.level + ') '
           + msg.type + ': ' + msg.message);
     }
   }
-
-  function xhrAsyncLoad(modURL, midResolver, cajolerFinder) {
-    if (cache[modURL] !== undefined) {
-      return cache[modURL];
-    }
-
-    var r = Q.defer();
-    cache[modURL] = r.promise;
-
-    var xhr = bridal.makeXhr();
-    xhr.onreadystatechange = function() {
-      if (xhr.readyState === 4) {
-        xhr.onreadystatechange = noop;  // avoid memory leak
-        if (xhr.status === 200) {
-          var savedModuleHandler = ___.getNewModuleHandler();
-          ___.setNewModuleHandler(___.primFreeze({
-            handle: ___.markFuncFreeze(function theHandler(module) {
-              try {
-                var load = loadMaker(modURL, midResolver, cajolerFinder,
-                                     xhrAsyncLoad);
-                module.moduleURL = modURL;
-                var securedModule = ___.prepareModule(module, load);
-                var dependency = resolveDependency(module, load);
-                Q.when(dependency, function(result) {
-                                     r.resolve(securedModule);
-                                   },
-                                   function(reason) {
-                                     r.resolve(Q.reject(
-                                         "Resolving dependency for the"
-                                         + "module " + modURL + " failed."));
-                                   });
-              } catch (e) {
-                r.resolve(Q.reject(e));
-              }
-            }),
-            handleUncaughtException: savedModuleHandler.handleUncaughtException
-          }));
-          //TODO: validate the response before eval it
-          try {
-            eval(xhr.responseText);
-          } finally {
-            ___.setNewModuleHandler(savedModuleHandler);
-          }
-        } else {
-          r.resolve(Q.reject(
-              "Retrieving the module " + modURL + " failed, "
-              + "status code = " + xhr.status));
-        }
-      }
-    };
-
-    var cajoledModURL = cajolerFinder(modURL);
-
-    xhr.open("GET", cajoledModURL, true);
-    if (typeof xhr.overrideMimeType === 'function') {
-      xhr.overrideMimeType("application/javascript");
-    }
-    xhr.send(null);
-    return r.promise;
-  }
-
-  xhrModuleLoadMaker = makeConcreteLoadMaker(xhrAsyncLoad);
-
-  var jsonpCallbackCount = 0;
 
   function scriptAsyncLoad(modURL, midResolver, cajolerFinder) {
     if (cache[modURL] !== undefined) {

@@ -246,4 +246,7 @@ public class CajolingService {
     INNOCENT,
     CAJOLE;
   }
+
+  public static final String RENDER_PRETTY = "pretty";
+  public static final String RENDER_MINIMIZE = "minimize";  
 }

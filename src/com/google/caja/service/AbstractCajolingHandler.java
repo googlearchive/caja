@@ -25,12 +25,14 @@ import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.JsLexer;
 import com.google.caja.lexer.JsTokenQueue;
 import com.google.caja.lexer.ParseException;
+import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.js.Identifier;
 import com.google.caja.parser.js.Parser;
 import com.google.caja.parser.js.Reference;
 import com.google.caja.parser.quasiliteral.QuasiBuilder;
 import com.google.caja.render.JsMinimalPrinter;
+import com.google.caja.render.JsPrettyPrinter;
 import com.google.caja.reporting.SimpleMessageQueue;
 import com.google.caja.util.ContentType;
 import com.google.caja.util.Maps;
@@ -175,12 +177,20 @@ public abstract class AbstractCajolingHandler implements ContentHandler {
     return true;
   }
 
-  protected void renderAsJSON(
+  private static class IOCallback implements Callback<IOException> {
+    public IOException ex = null;
+    public void handle(IOException e) {
+      if (this.ex != null) { this.ex = e; }
+    }
+  }
+
+  protected static void renderAsJSON(
       Node staticHtml,
       ParseTreeNode javascript,
       String jsonpCallback,
       MessageQueue mq,
-      Appendable output)
+      Appendable output,
+      boolean pretty)
       throws IOException {
     List<ValueProperty> props = Lists.newArrayList();
 
@@ -188,7 +198,7 @@ public abstract class AbstractCajolingHandler implements ContentHandler {
       props.add(prop("html", lit(Nodes.render(staticHtml))));
     }
     if (javascript != null) {
-      props.add(prop("js", lit(renderJavascript(javascript))));
+      props.add(prop("js", lit(renderJavascript(javascript, pretty))));
     }
     if (mq.hasMessageAtLevel(MessageLevel.LOG)) {
       List<Expression> messages = Lists.newArrayList();
@@ -200,13 +210,6 @@ public abstract class AbstractCajolingHandler implements ContentHandler {
             prop("message", lit(m.toString())))));
       }
       props.add(prop("messages", arr(messages)));
-    }
-
-    class IOCallback implements Callback<IOException> {
-      IOException ex;
-      public void handle(IOException e) {
-        if (this.ex != null) { this.ex = e; }
-      }
     }
 
     if (jsonpCallback != null && !checkIdentifier(jsonpCallback)) {
@@ -223,25 +226,36 @@ public abstract class AbstractCajolingHandler implements ContentHandler {
             "o", obj(props));
 
     IOCallback callback = new IOCallback();
-    RenderContext rc = new RenderContext(new JsMinimalPrinter(new Concatenator(
-        output, callback)))
-        .withJson(true);
+    RenderContext rc = makeRenderContext(output, callback, pretty, false, true);
     result.render(rc);
     rc.getOut().noMoreTokens();
     if (callback.ex != null) { throw callback.ex; }
   }
 
-  protected String renderJavascript(ParseTreeNode javascript) {
+  private static String renderJavascript(
+      ParseTreeNode javascript, boolean pretty)
+      throws IOException {
     StringBuilder jsOut = new StringBuilder();
-    RenderContext rc = new RenderContext(
-        new JsMinimalPrinter(new Concatenator(jsOut)))
-        .withEmbeddable(true);
+    IOCallback callback = new IOCallback();
+    RenderContext rc = makeRenderContext(jsOut, callback, pretty, true, false);
     javascript.render(rc);
     rc.getOut().noMoreTokens();
+    if (callback.ex != null) { throw callback.ex; }
     return jsOut.toString();
   }
 
-  protected Pair<ContentType, String> getReturnedContentParams(
+  private static RenderContext makeRenderContext(
+      Appendable a, IOCallback cb,
+      boolean pretty,
+      boolean embeddable,
+      boolean json) {
+    TokenConsumer tc = pretty
+        ? new JsPrettyPrinter(new Concatenator(a, cb))
+        : new JsMinimalPrinter(new Concatenator(a, cb));
+    return new RenderContext(tc).withEmbeddable(embeddable).withJson(json);
+  }
+
+  protected static Pair<ContentType, String> getReturnedContentParams(
       ContentHandlerArgs args) {
     String alt = CajaArguments.ALT.get(args);
     if ("json".equals(alt) || alt == null) {

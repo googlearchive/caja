@@ -19,7 +19,7 @@
  * callback.
  *
  * @author kpreid@switchb.org
- * @requires cajaIframeDone
+ * @requires cajaIframeDone___
  */
 
-cajaIframeDone();
+cajaIframeDone___();

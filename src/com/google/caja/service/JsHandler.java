@@ -73,11 +73,14 @@ public class JsHandler extends AbstractCajolingHandler {
       throws UnsupportedContentTypeException {
     Pair<ContentType, String> contentParams = getReturnedContentParams(args);
 
+    boolean pretty = CajolingService.RENDER_PRETTY.equals(
+        CajaArguments.RENDERER.get(args));
+
     try {
       OutputStreamWriter writer = new OutputStreamWriter(response,
           Charsets.UTF_8.name());
       cajoleJs(uri, input.getTextualContent(), directive,
-          contentParams.b, writer, mq);
+          contentParams.b, writer, pretty, mq);
       writer.flush();
     } catch (IOException e) {
       throw new UnsupportedContentTypeException();
@@ -90,6 +93,7 @@ public class JsHandler extends AbstractCajolingHandler {
                         List<CajolingService.Directive> directive,
                         String jsonpCallback,
                         Appendable output,
+                        boolean pretty,
                         MessageQueue mq) {
     CajoledModule cajoledModule = null;
     try {
@@ -117,7 +121,7 @@ public class JsHandler extends AbstractCajolingHandler {
       cajoledModule = null;
     }
     try {
-      renderAsJSON(null, cajoledModule, jsonpCallback, mq, output);
+      renderAsJSON(null, cajoledModule, jsonpCallback, mq, output, pretty);
     } catch (IOException e) {
       // Low level server error; must return HTTP status code
       throw new RuntimeException(e);

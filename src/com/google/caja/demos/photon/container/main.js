@@ -121,7 +121,7 @@ var loadingTimeout = window.setTimeout(function() {
 }, 1000);
 
 var cajaScript = document.createElement('script');
-cajaScript.setAttribute('src', cajaServer + 'caja.js');
+cajaScript.setAttribute('src', cajaServer + 'caja-orig.js');
 cajaScript.onload = function() {
   window.clearTimeout(loadingTimeout);
   try {

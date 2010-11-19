@@ -1,0 +1,39 @@
+<!--
+ - Copyright (C) 2010 Google Inc.
+ -
+ - Licensed under the Apache License, Version 2.0 (the "License");
+ - you may not use this file except in compliance with the License.
+ - You may obtain a copy of the License at
+ -
+ -      http://www.apache.org/licenses/LICENSE-2.0
+ -
+ - Unless required by applicable law or agreed to in writing, software
+ - distributed under the License is distributed on an "AS IS" BASIS,
+ - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ - See the License for the specific language governing permissions and
+ - limitations under the License.
+-->
+
+<!--
+ - Browser test case driver. See browser_test_case.js for documentation.
+-->
+<html>
+  <head>
+    <title>Browser test case</title>
+    <style type="text/css">
+      .testcontainer { background: yellow; border: 2px solid yellow }
+      .clickme { border: 2px solid fuchsia; }
+      .waiting { border: 2px solid aqua; }
+      .manual { background: #eef; border: 2px solid #00f; }
+      .passed { background: #c0ffc0; border: 2px solid #c0ffc0 }
+    </style>
+    <script type="text/javascript" src="../console.js"></script>
+    <script type="text/javascript" src="../../../../js/jsunit/2.2/jsUnitCore.js"></script>
+    <script type="text/javascript" src="jsunit.js"></script>
+    <script type="text/javascript" src="caja.js"></script>
+    <script type="text/javascript" src="browser-test-case.js"></script>
+  </head>
+  <body onload="pageLoaded___()">
+    <div id="automatedTestingReadyIndicator"></div>
+  </body>
+</html>

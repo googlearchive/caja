@@ -3661,6 +3661,19 @@ var attachDocumentStub = (function () {
         function (x) { imports.domitaTrace___ = x; }
     );
 
+   function assignToImports(target, name, value) {
+     if (target.DefineOwnProperty___) {
+        target.DefineOwnProperty___(name, {
+          value: value,
+          writable: false,
+          enumerable: true,
+          configurable: false
+        });
+     } else {
+       target[name] =  value;
+     }
+   }
+
     // TODO(mikesamuel): remove these, and only expose them via window once
     // Valija works
     imports.setTimeout = tameSetTimeout;
@@ -3673,7 +3686,9 @@ var attachDocumentStub = (function () {
         pseudoBodyNode,
         String(optPseudoWindowLocation.hostname || 'nosuchhost.fake'),
         true);
-    imports.document = tameDocument;
+    assignToImports(imports, 'document', tameDocument);
+    imports.document.tameNode___ = imports.tameNode___;
+    imports.document.feralNode___ = imports.feralNode___;
     imports.document.tameNode___ = imports.tameNode___;
     imports.document.feralNode___ = imports.feralNode___;
 
@@ -4068,7 +4083,7 @@ var attachDocumentStub = (function () {
       }));
       imports.outers = tameWindow;
     } else {
-      imports.window = tameWindow;
+      assignToImports(imports, 'window', tameWindow);
     }
   }
 

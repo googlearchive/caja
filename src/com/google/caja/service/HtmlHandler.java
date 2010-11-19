@@ -74,10 +74,14 @@ public class HtmlHandler extends AbstractCajolingHandler {
       throws UnsupportedContentTypeException {
     PluginMeta meta = new PluginMeta(uriFetcher, makeUriPolicy(args));
     meta.setIdClass(args.get("idclass"));
+    meta.setEnableES53(directives.contains(CajolingService.Directive.ES53));
 
     boolean htmlInline =
         CajaArguments.EMIT_HTML_IN_JS.get(args) != null
         && Boolean.valueOf(CajaArguments.EMIT_HTML_IN_JS.get(args));
+
+    boolean pretty = CajolingService.RENDER_PRETTY.equals(
+        CajaArguments.RENDERER.get(args));
 
     Pair<ContentType, String> contentParams = getReturnedContentParams(args);
 
@@ -86,7 +90,7 @@ public class HtmlHandler extends AbstractCajolingHandler {
           response, Charsets.UTF_8);
       cajoleHtml(
           uri, input.getTextualContent(),
-          meta, contentParams.b, htmlInline, writer, mq);
+          meta, contentParams.b, htmlInline, writer, pretty, mq);
       writer.flush();
     } catch (IOException e) {
       // TODO(mikesamuel): this is not a valid assumption.
@@ -99,7 +103,7 @@ public class HtmlHandler extends AbstractCajolingHandler {
   private void cajoleHtml(URI inputUri, CharProducer cp, PluginMeta meta,
                           String jsonpCallback,
                           boolean htmlInline, Appendable output,
-                          MessageQueue mq) {
+                          boolean pretty, MessageQueue mq) {
     InputSource is = new InputSource (inputUri);
     boolean okToContinue = true;
     try {
@@ -125,7 +129,7 @@ public class HtmlHandler extends AbstractCajolingHandler {
       renderAsJSON(
           okToContinue ? compiler.getStaticHtml() : null,
           okToContinue ? compiler.getJavascript() : null,
-          jsonpCallback, mq, output);
+          jsonpCallback, mq, output, pretty);
     } catch (IOException e) {
       mq.addMessage(
           ServiceMessageType.IO_ERROR,

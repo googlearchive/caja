@@ -78,7 +78,18 @@ public enum CajaArguments {
   /**
    * The URL of the input document that Caja is being asked to process.
    */
-  URL("url");
+  URL("url"),
+
+  /**
+   * Renderer for the code.
+   *
+   * <p>Valid values are:
+   * <ul>
+   *   <li>{@code renderer=minimal} the default, saves space.</li>
+   *   <li>{@code renderer=pretty} pretty print for debugging.</li>
+   * </ul>
+   */
+  RENDERER("renderer");
 
   private final String argKeyword;
 

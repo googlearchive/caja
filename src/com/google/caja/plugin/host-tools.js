@@ -101,8 +101,8 @@ var HostTools;
 
       function run(mid) {
         if (load == null) {
-          throw new Error("HostTools: Loaded without cajita-module.js, so " +
-              "cannot dynamically load modules.");
+          throw new Error("HostTools: Loaded without cajita-module-orig.js, "
+              + "so cannot dynamically load modules.");
         }
         
         // TODO: review error handling -- are errors propagated and descriptive?
@@ -123,7 +123,7 @@ var HostTools;
         newModuleHandler.handle = ___.markFuncFreeze(
             function theHandler(module) {
               // TODO: does not support dependencies. Needs to tie in to
-              // cajita-module.js for that and to give the module a proper
+              // cajita-module-orig.js for that and to give the module a proper
               // relative load function.
               moduleFunc = ___.prepareModule(module, load);
             });

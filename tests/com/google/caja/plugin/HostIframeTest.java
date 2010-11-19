@@ -14,6 +14,7 @@
 
 package com.google.caja.plugin;
 
+import com.google.caja.util.FailureIsAnOption;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
@@ -26,6 +27,7 @@ import java.util.List;
  * @author kpreid@switchb.org
  */
 public class HostIframeTest extends BrowserTestCase {
+  @FailureIsAnOption
   public final void testHostIframe() {
     runBrowserTest("host-iframe-test.html");
   }

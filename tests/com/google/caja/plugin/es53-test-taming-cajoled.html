@@ -1,0 +1,516 @@
+<!--
+ - Copyright (C) 2010 Google Inc.
+ -
+ - Licensed under the Apache License, Version 2.0 (the "License");
+ - you may not use this file except in compliance with the License.
+ - You may obtain a copy of the License at
+ -
+ -      http://www.apache.org/licenses/LICENSE-2.0
+ -
+ - Unless required by applicable law or agreed to in writing, software
+ - distributed under the License is distributed on an "AS IS" BASIS,
+ - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ - See the License for the specific language governing permissions and
+ - limitations under the License.
+-->
+
+<script type="text/javascript">
+  function assertKeys(o, expectedKeys) {
+    expectedKeys = expectedKeys.slice(0).sort();
+    var actualKeys = [];
+    for (var k in o) {
+      actualKeys.push(k);
+    }
+    actualKeys.sort();
+    assertEquals(expectedKeys.length, actualKeys.length);
+    for (var i = 0; i < expectedKeys.length; i++) {
+      assertEquals(expectedKeys[i], actualKeys[i]);
+    }
+  }
+</script>
+
+<div id="testReadOnlyRecord" class="testcontainer">
+  testReadOnlyRecord
+</div>
+<script type="text/javascript">
+  jsunitRegister('testReadOnlyRecord',
+                 function testReadOnlyRecord() {
+    assertEquals(42, tamedApi.readOnlyRecord.x);
+    assertEquals(undefined, tamedApi.readOnlyRecord.foo);
+    assertKeys(tamedApi.readOnlyRecord, [ 'x', '17' ]);
+    expectFailure(function() {
+      tamedApi.readOnlyRecord.x = 19;
+    });
+    expectFailure(function() {
+      tamedApi.readOnlyRecord.foo = 23;
+    });
+    assertEquals(42, tamedApi.readOnlyRecord.x);
+    assertEquals(undefined, tamedApi.readOnlyRecord.foo);
+    tamedApi.setReadOnlyRecordField('x', 31);
+    tamedApi.setReadOnlyRecordField('foo', 47);
+    tamedApi.setReadOnlyRecordField('bar', 51);
+    assertEquals(31, tamedApi.readOnlyRecord.x);
+    assertEquals(47, tamedApi.readOnlyRecord.foo);
+    assertEquals(51, tamedApi.readOnlyRecord.bar);
+    assertKeys(tamedApi.readOnlyRecord, [ 'x', 'foo', 'bar', '17' ]);
+    // Numeric indices work a little strangely. Direct access does not work
+    // since we fastpath numerics:
+    assertEquals(undefined, tamedApi.readOnlyRecord[17]);
+    assertEquals(undefined, tamedApi.readOnlyRecord[19]);  
+    // However, if we can make it so the compiler does not know it is a numeric
+    // index, then the indexing works fine:
+    assertEquals('seventeen', tamedApi.readOnlyRecord[new Number('17')]);
+    pass('testReadOnlyRecord');
+  });
+</script>
+
+<div id="testArray" class="testcontainer">
+  testArray
+</div>
+<script type="text/javascript">
+  jsunitRegister('testArray',
+                 function testArray() {
+    assertEquals(42, tamedApi.array[0]);
+    // If the following assertion succeeds, it means that the array elements
+    // have been tamed correctly on being passed into guest code.
+    assertTrue(tamedApi.readOnlyRecord === tamedApi.array[1]);
+    // If the following assertion succeeds, it means that the array elements
+    // have been *un*tamed correctly on being passed back into host code (since
+    // assertEquals is itself a tamed function implemented in host code).
+    assertEquals(tamedApi.readOnlyRecord, tamedApi.array[1]);
+    assertEquals(2, tamedApi.array.length);
+    var a = tamedApi.array;
+    // Arrays tamed from host to guest code should tame to a frozen copy
+    // of themselves. Frozen means, of course, that modifications fail.
+    expectFailure(function() {
+      a[2] = 19;
+    });
+    assertEquals(2, a.length);
+    // Properties of the object 'tamedApi' are implemented by proxying, which
+    // means a getter is called every time. This in turn means that changing
+    // the underlying value and re-getting it should give us a new value.
+    tamedApi.setArrayField(2, 19);
+    var b = tamedApi.array;
+    assertEquals(19, b[2]);
+    assertEquals(3, b.length);
+    // But the new array 'b' should be a copy, not the one we got before:
+    assertFalse(a === b);
+    pass('testArray');
+  });
+</script>
+
+<div id="testReadWriteRecord" class="testcontainer">
+  testReadWriteRecord
+</div>
+<script type="text/javascript">
+  jsunitRegister('testReadWriteRecord',
+                 function testReadWriteRecord() {
+    assertEquals(42, tamedApi.readWriteRecord.x);
+    assertEquals(undefined, tamedApi.readWriteRecord.foo);
+    assertKeys(tamedApi.readWriteRecord, [ 'x', '17' ]);
+    tamedApi.readWriteRecord.x = 19;
+    tamedApi.readWriteRecord.foo = 23;
+    assertEquals(19, tamedApi.readWriteRecord.x);
+    assertEquals(23, tamedApi.readWriteRecord.foo);
+    assertKeys(tamedApi.readWriteRecord, [ 'x', 'foo', '17' ]);
+    tamedApi.setReadWriteRecordField('x', 31);
+    tamedApi.setReadWriteRecordField('foo', 47);
+    tamedApi.setReadWriteRecordField('bar', 51);
+    assertEquals(31, tamedApi.readWriteRecord.x);
+    assertEquals(47, tamedApi.readWriteRecord.foo);
+    assertEquals(51, tamedApi.readWriteRecord.bar);
+    assertKeys(tamedApi.readWriteRecord, [ 'x', 'foo', 'bar', '17' ]);
+    // Numeric indices work a little strangely. Direct access does not work
+    // since we fastpath numerics:
+    assertEquals(undefined, tamedApi.readWriteRecord[17]);
+    assertEquals(undefined, tamedApi.readWriteRecord[19]);
+    // Writes to the record actually succeed ...
+    tamedApi.readWriteRecord[19] = 'nineteen';
+    // But we cannot see them by direct indexing ...
+    assertEquals(undefined, tamedApi.readWriteRecord[19]);
+    // Though we can see them by indirect access
+    assertEquals('seventeen', tamedApi.readWriteRecord[Number('17')]);  
+    assertEquals('nineteen', tamedApi.readWriteRecord[Number('19')]);
+    pass('testReadWriteRecord');
+  });
+</script>
+
+<div id="testPrimordialsOfTamedObjectsAreFrozen" class="testcontainer">
+  testPrimordialsOfTamedObjectsAreFrozen
+</div>
+<script type="text/javascript">
+  jsunitRegister('testPrimordialsOfTamedObjectsAreFrozen',
+                 function testPrimordialsOfTamedObjectsAreFrozen() {
+    expectFailure(function() {
+      tamingFrameObject.foo = 'bar';
+    });
+    expectFailure(function() {
+      tamingFrameArray.foo = 'bar';
+    });
+    expectFailure(function() {
+      tamingFrameObject.prototype.toString = function evil() { };
+    });
+    expectFailure(function() {
+      tamingFrameArray.prototype.sort = function evil() { };
+    });
+    pass('testPrimordialsOfTamedObjectsAreFrozen');
+  });
+</script>
+    
+<div id="testFunctionReturningPrimitive" class="testcontainer">
+  testFunctionReturningPrimitive
+</div>
+<script type="text/javascript">
+  jsunitRegister('testFunctionReturningPrimitive',
+                 function testFunctionReturningPrimitive() {
+    assertTrue('not instanceof Function',
+        tamedApi.functionReturningPrimitive instanceof Function);
+    assertTrue('typeof not function',
+        (typeof tamedApi.functionReturningPrimitive) === 'function');
+    assertEquals(55, tamedApi.functionReturningPrimitive(13));
+    var frp = tamedApi.functionReturningPrimitive;
+    assertEquals(55, frp(13));
+    pass('testFunctionReturningPrimitive');
+  });
+</script>
+
+<!-- ********************************************************************* -->
+
+<script type="text/javascript">
+  function testCtor(o) {
+    assertTrue('not instanceof Function', tamedApi.Ctor instanceof Function);
+    assertTrue('typeof not function', (typeof tamedApi.Ctor) === 'function');
+    assertTrue(o instanceof tamedApi.Ctor);
+  }
+</script>
+
+<div id="testDirectlyConstructed" class="testcontainer">
+  testDirectlyConstructed
+</div>
+<script type="text/javascript">
+  jsunitRegister('testDirectlyConstructed',
+                 function testDirectlyConstructed() {
+    testCtor(new tamedApi.Ctor(17));
+    pass('testDirectlyConstructed');
+  });
+</script>
+
+<div id="testReturnedConstructed" class="testcontainer">
+  testReturnedConstructed
+</div>
+<script type="text/javascript">
+  jsunitRegister('testReturnedConstructed',
+                 function testReturnedConstructed() {
+    testCtor(tamedApi.functionReturningConstructed(17));
+    pass('testReturnedConstructed');
+  });
+</script>    
+
+<!-- ********************************************************************* -->
+
+<script type="text/javascript">
+  function testCtorMethodsWorkOk(o) {
+    assertKeys(tamedApi.Ctor.prototype, [ ]);        
+    assertKeys(o, [ ]);
+    assertEquals(17, o.getX());
+    o.setX(42);
+    assertEquals(42, o.getX());
+  }
+</script>
+
+<div id="testDirectlyConstructedMethodsWorkOk" class="testcontainer">
+  testDirectlyConstructedMethodsWorkOk
+</div>
+<script type="text/javascript">
+  jsunitRegister('testDirectlyConstructedMethodsWorkOk',
+                 function testDirectlyConstructedMethodsWorkOk() {
+    testCtorMethodsWorkOk(new tamedApi.Ctor(17));
+    pass('testDirectlyConstructedMethodsWorkOk');
+  });
+</script>
+
+<div id="testReturnedConstructedMethodsWorkOk" class="testcontainer">
+  testReturnedConstructedMethodsWorkOk
+</div>
+<script type="text/javascript">
+  jsunitRegister('testReturnedConstructedMethodsWorkOk',
+                 function testReturnedConstructedMethodsWorkOk() {
+    testCtorMethodsWorkOk(tamedApi.functionReturningConstructed(17));
+    pass('testReturnedConstructedMethodsWorkOk');
+  });
+</script>
+    
+<!-- ********************************************************************* -->
+
+<script type="text/javascript">
+  function testCtorMethodsAreSafe(o) {
+    // Guest code must not be able to extract a method property of a
+    // constructor's prototype, and the result must be a function.
+    var getXProto = tamedApi.Ctor.prototype.getX;
+    assertTrue('not instanceof Function', getXProto instanceof Function);
+    assertTrue('typeof not function', (typeof getXProto) === 'function');
+    // It must not be possible for the guest to rebind the method to a
+    // different 'this' value.
+    assertTrue(getXProto.call({ x: 13 }) !== 13);
+    assertTrue(getXProto.apply({ x: 13 }, []) !== 13);
+    // Guest code must be able to extract a method property of a tamed
+    // constructed object, and the result must be a function.
+    var getX = o.getX;
+    assertTrue('not instanceof Function', getX instanceof Function);
+    assertTrue('typeof not function', (typeof getX) === 'function');
+    // The extracted method must be a bound method.
+    assertEquals(17, getX());
+    o.setX(42);
+    assertEquals(42, getX());
+    // It must not be possible for the guest to rebind the method to a
+    // different 'this' value.
+    assertEquals(42, getX.call({ x: 13 }));
+    assertEquals(42, getX.apply({ x: 13 }, []));
+    // Guest code must not be able to directly read a variable of a tamed
+    // constructed object.
+    expectFailure(function () {
+      var x = o.x;
+    });
+    // Tamed constructed objects must be read-only. This means:
+    // (1) Existing properties must not be modifiable; and
+    expectFailure(function () {
+      o.x = 23;
+    });
+    // (2) It must not be possible to create new properties.
+    expectFailure(function () {
+      o.foo = 19;
+    });
+  }
+</script>
+
+<div id="testDirectlyConstructedMethodsAreSafe" class="testcontainer">
+  testDirectlyConstructedMethodsAreSafe
+</div>
+<script type="text/javascript">
+  jsunitRegister('testDirectlyConstructedMethodsAreSafe',
+                 function testDirectlyConstructedMethodsAreSafe() {
+    testCtorMethodsAreSafe(new tamedApi.Ctor(17));
+    pass('testDirectlyConstructedMethodsAreSafe');
+  });
+</script>
+
+<div id="testReturnedConstructedMethodsAreSafe" class="testcontainer">
+  testReturnedConstructedMethodsAreSafe
+</div>
+<script type="text/javascript">
+  jsunitRegister('testReturnedConstructedMethodsAreSafe',
+                 function testReturnedConstructedMethodsAreSafe() {
+    testCtorMethodsAreSafe(tamedApi.functionReturningConstructed(17));
+    pass('testReturnedConstructedMethodsAreSafe');
+  });
+</script>    
+    
+<!-- ********************************************************************* -->
+    
+<div id="testSubCtor" class="testcontainer">
+  testSubCtor
+</div>
+<script type="text/javascript">
+  jsunitRegister('testSubCtor',
+                 function testSubCtor() {
+    assertTrue('not instanceof Function', tamedApi.SubCtor instanceof Function);
+    assertTrue('typeof not function', (typeof tamedApi.SubCtor) === 'function');
+    var o = new tamedApi.SubCtor(17, 19);
+    assertTrue(o instanceof tamedApi.SubCtor);
+    assertTrue(o instanceof tamedApi.Ctor);
+    pass('testSubCtor');
+  });
+</script>
+
+<div id="testSubCtorMethodsWorkOk" class="testcontainer">
+  testSubCtorMethodsWorkOk
+</div>
+<script type="text/javascript">
+  jsunitRegister('testSubCtorMethodsWorkOk',
+                 function testSubCtorMethodsWorkOk() {
+    assertKeys(tamedApi.SubCtor.prototype, [ ]);
+    var o = new tamedApi.SubCtor(17, 19);
+    assertKeys(o, [ ]);
+    assertEquals(19, o.getY());
+    assertEquals(17, o.getX());
+    o.setY(9);
+    o.setX(7);
+    assertEquals(9, o.getY());
+    assertEquals(7, o.getX());
+    assertEquals(7 * 7 + 9 * 9, o.getMagSquared());
+    pass('testSubCtorMethodsWorkOk');
+  });
+</script>
+
+<div id="testSubCtorMethodsAreSafe" class="testcontainer">
+  testSubCtorMethodsAreSafe
+</div>
+<script type="text/javascript">
+  jsunitRegister('testSubCtorMethodsAreSafe',
+                 function testSubCtorMethodsAreSafe() {
+    // Guest code must not be able to extract a method property of a
+    // constructor's prototype, and the result must be a function.
+    var getXProto = tamedApi.Ctor.prototype.getX;
+    var getYProto = tamedApi.SubCtor.prototype.getY;
+    assertTrue('not instanceof Function', getXProto instanceof Function);
+    assertTrue('typeof not function', (typeof getXProto) === 'function');
+    assertTrue('not instanceof Function', getYProto instanceof Function);
+    assertTrue('typeof not function', (typeof getYProto) === 'function');
+    // It must not be possible for the guest to rebind the method to a
+    // different 'this' value.
+    assertTrue(getXProto.call({ x: 13 }) !== 13);
+    assertTrue(getXProto.apply({ x: 13 }, []) !== 13);
+    assertTrue(getYProto.call({ y: 13 }) !== 13);
+    assertTrue(getYProto.apply({ y: 13 }, []) !== 13);
+    // Construct an instance
+    var o = new tamedApi.SubCtor(17, 19);
+    // Guest code must be able to extract a method property of a tamed
+    // constructed object, and the result must be a function.
+    var getX = o.getX;
+    var getY = o.getY;
+    assertTrue('not instanceof Function', getX instanceof Function);
+    assertTrue('not instanceof Function', getY instanceof Function);
+    assertTrue('typeof not function', (typeof getX) === 'function');
+    assertTrue('typeof not function', (typeof getY) === 'function');
+    // The extracted method must be a bound method.
+    assertEquals(17, getX());
+    assertEquals(19, getY());
+    o.setX(42);
+    o.setY(49);
+    assertEquals(42, getX());
+    assertEquals(49, getY());  
+    // It must not be possible for the guest to rebind the method to a
+    // different 'this' value.
+    assertEquals(42, getX.call({ x: 13 }));
+    assertEquals(42, getX.apply({ x: 13 }, []));
+    assertEquals(49, getY.call({ y: 13 }));
+    assertEquals(49, getY.apply({ y: 13 }, []));
+    // Guest code must not be able to directly read a variable of a tamed
+    // constructed object.
+    expectFailure(function () {
+      var x = o.x;
+    });
+    expectFailure(function () {
+      var y = o.y;
+    });
+    // Tamed constructed objects must be read-only. This means:
+    // (1) Existing properties must not be modifiable; and
+    expectFailure(function () {
+      o.x = 23;
+    });
+    expectFailure(function () {
+      o.y = 23;
+    });
+    // (2) It must not be possible to create new properties.
+    expectFailure(function () {
+      o.foo = 19;
+    });
+    pass('testSubCtorMethodsAreSafe');
+  });
+</script>    
+    
+<!-- ********************************************************************* -->
+    
+<div id="testReturningRecord" class="testcontainer">
+  testReturningRecord
+</div>
+<script type="text/javascript">
+  jsunitRegister('testReturningRecord',
+                 function testReturningRecord() {
+    var o = tamedApi.functionReturningRecord(29);
+    assertEquals(29, o.x);
+    assertKeys(o, [ 'x' ]);        
+    pass('testReturningRecord');
+  });
+</script>
+
+<div id="testReturningFunction" class="testcontainer">
+  testReturningFunction
+</div>
+<script type="text/javascript">
+  jsunitRegister('testReturningFunction',
+                 function testReturningFunction() {
+    var f = tamedApi.functionReturningFunction(29);
+    assertEquals(42, f(13));
+    pass('testReturningFunction');
+  });
+</script>
+    
+<div id="testCallingMyFunction" class="testcontainer">
+  testCallingMyFunction
+</div>
+<script type="text/javascript">
+  jsunitRegister('testCallingMyFunction',
+                 function testCallingMyFunction() {
+    var called = false;
+    var f = function(x) { called = true; return x + 19; };
+    assertEquals(32, tamedApi.functionCallingMyFunction(f, 13));
+    assertTrue(called);
+    pass('testCallingMyFunction');
+  });
+</script>
+
+<div id="testReturningMyFunction" class="testcontainer">
+  testReturningMyFunction
+</div>
+<script type="text/javascript">
+  jsunitRegister('testReturningMyFunction',
+                 function testReturningMyFunction() {
+    var called = false;
+    var f = function(x) { called = true; return x + 19; };
+    var r = tamedApi.functionReturningMyFunction(f);
+    assertFalse(called);
+    assertEquals(32, r(13));
+    assertTrue(called);
+    pass('testReturningMyFunction');
+  });
+</script>
+
+<div id="testPureFunctionReturningThis" class="testcontainer">
+  testPureFunctionReturningThis
+</div>
+<script type="text/javascript">
+  jsunitRegister('testPureFunctionReturningThis',
+                 function testPureFunctionReturningThis() {
+    var record = { f: tamedApi.pureFunctionReturningThis };
+    assertEquals(USELESS, record.f());
+    pass('testPureFunctionReturningThis');
+  });
+</script>
+
+<div id="testXo4aUsingThis" class="testcontainer">
+  testXo4aUsingThis
+</div>
+<script type="text/javascript">
+  jsunitRegister('testXo4aUsingThis',
+                 function testXo4aUsingThis() {
+    var record = { f : tamedApi.xo4aUsingThis, x: 19 };
+    assertEquals(19 + 11, record.f(11));
+    pass('testXo4aUsingThis');
+  });
+</script>
+    
+<div id="testXo4aReturningThis" class="testcontainer">
+  testXo4aReturningThis
+</div>
+<script type="text/javascript">
+  jsunitRegister('testXo4aReturningThis',
+                 function testXo4aReturningThis() {
+    var record = { f : tamedApi.xo4aReturningThis };
+    assertEquals(record, record.f());
+    pass('testXo4aReturningThis');
+  });
+</script>
+
+<div id="testCajaObjectsTameToSelf" class="testcontainer">
+  testCajaObjectsTameToSelf
+</div>
+<script type="text/javascript">
+  jsunitRegister('testCajaObjectsTameToSelf',
+                 function testCajaObjectsTameToSelf() {
+    var cajaObject = {};
+    assertTrue(cajaObject === directTaming(cajaObject));
+    pass('testCajaObjectsTameToSelf');
+  });
+</script>
+    

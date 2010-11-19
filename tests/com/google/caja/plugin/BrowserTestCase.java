@@ -14,6 +14,7 @@
 
 package com.google.caja.plugin;
 
+import com.google.caja.lexer.escaping.Escaping;
 import com.google.caja.reporting.BuildInfo;
 import com.google.caja.service.CajolingService;
 import com.google.caja.service.CajolingServlet;
@@ -28,8 +29,12 @@ import org.mortbay.jetty.handler.ResourceHandler;
 import org.mortbay.jetty.servlet.Context;
 import org.mortbay.jetty.servlet.ServletHolder;
 
+import org.openqa.selenium.By;
+import org.openqa.selenium.WebElement;
 import org.openqa.selenium.firefox.FirefoxDriver;
 import org.openqa.selenium.WebDriver;
+
+import java.util.List;
 
 /**
  * Test case class with tools for controlling a web browser running pages from a
@@ -114,6 +119,11 @@ public abstract class BrowserTestCase extends CajaTestCase {
     return 8000;
   }
 
+  private static final String START_AND_WAIT_FLAG =
+      "caja.BrowserTestCase.startAndWait";
+  private static final long START_AND_WAIT_MILLIS =
+      1000 * 60 * 60 * 24;  // 24 hours
+
   /**
    * Start the web server and browser, go to pageName, call driveBrowser(driver,
    * pageName), and then clean up.
@@ -121,6 +131,13 @@ public abstract class BrowserTestCase extends CajaTestCase {
   protected void runBrowserTest(String pageName) {
     if (checkHeadless()) return;  // TODO: print a warning here?
     startLocalServer();
+    if (System.getProperty(START_AND_WAIT_FLAG) != null) {
+      try {
+        Thread.sleep(START_AND_WAIT_MILLIS);
+      } catch (InterruptedException e) {
+        throw new RuntimeException(e);
+      }
+    }
     try {
       WebDriver driver = new FirefoxDriver();
 
@@ -135,16 +152,66 @@ public abstract class BrowserTestCase extends CajaTestCase {
     }
   }
 
+  protected void runTestDriver(String testDriver) {
+    runBrowserTest("browser-test-case.html?test-driver=" + testDriver);
+  }
+
+  protected void runTestCase(String testCase) {
+    runBrowserTest("browser-test-case.html?test-case=" + testCase);
+  }
+
   /**
    * Do what should be done with the browser.
    */
-  abstract protected void driveBrowser(WebDriver driver, String pageName);
+  protected void driveBrowser(final WebDriver driver, final String pageName) {
+    poll(20000, 200, new Check() {
+      @Override public String toString() { return "startup"; }
+      public boolean run() {
+        List<WebElement> readyElements = driver.findElements(
+            By.xpath("//*[@class='readytotest']"));
+        return readyElements.size() != 0;
+      }
+    });
+
+    poll(10000, 1000, new Check() {
+      private List<WebElement> clickingList = null;
+      @Override public String toString() {
+        return "clicking done (Remaining elements = " +
+            renderElements(clickingList) + ")";
+      }
+      public boolean run() {
+        clickingList = driver.findElements(By.xpath(
+            "//*[contains(@class,'clickme')]/*"));
+        for (WebElement e : clickingList) {
+          e.click();
+        }
+        return clickingList.isEmpty();
+      }
+    });
+
+    poll(20000, 1000, new Check() {
+      private List<WebElement> waitingList = null;
+      @Override public String toString() {
+        return "completion (Remaining elements = " +
+            renderElements(waitingList) + ")";
+      }
+      public boolean run() {
+        waitingList =
+            driver.findElements(By.xpath("//*[contains(@class,'waiting')]"));
+        return waitingList.isEmpty();
+      }
+    });
+
+    // check the title of the document
+    String title = driver.getTitle();
+    assertTrue("The title shows " + title, title.contains("all tests passed"));
+  }
 
   /**
    * Run 'c' every 'intervalMillis' milliseconds until it returns true or
    * 'timeoutSecs' seconds have passed (in which case, fail).
    */
-  public static void poll(
+  protected static void poll(
       int timeoutMillis, int intervalMillis, Check c) {
     int rounds = 0;
     int limit = timeoutMillis / intervalMillis;
@@ -161,6 +228,31 @@ public abstract class BrowserTestCase extends CajaTestCase {
     assertTrue(
         timeoutMillis + " ms passed while waiting for: " + c + ".",
         rounds < limit);
+  }
+
+  protected static String renderElements(List<WebElement> elements) {
+    StringBuilder sb = new StringBuilder();
+    sb.append('[');
+    for (int i = 0, n = elements.size(); i < n; i++) {
+      if (i != 0) { sb.append(", "); }
+      WebElement el = elements.get(i);
+      sb.append('<').append(el.getTagName());
+      String id = el.getAttribute("id");
+      if (id != null) {
+        sb.append(" id=\"");
+        Escaping.escapeXml(id, false, sb);
+        sb.append('"');
+      }
+      String className = el.getAttribute("class");
+      if (className != null) {
+        sb.append(" class=\"");
+        Escaping.escapeXml(className, false, sb);
+        sb.append('"');
+      }
+      sb.append('>');
+    }
+    sb.append(']');
+    return sb.toString();
   }
 
   public interface Check {

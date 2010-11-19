@@ -23,20 +23,18 @@
  * </ol>
  * <p>It also exports the following additional globals:<ul>
  * <li>"safeJSON" why is this being exported?
- * <li>"AS_TAMED___" and "AS_FERAL___" are exported only to catch any
- *     attempts to tame or untame the global object.
  * </ul>
  *
  * @author metaweta@gmail.com
  * @requires this, json_sans_eval
- * @provides ___, es53, safeJSON, AS_TAMED___, AS_FERAL___
+ * @provides ___, es53, safeJSON
  * @overrides Array, Boolean, Date, Function, Number, Object, RegExp, String
  * @overrides Error, EvalError, RangeError, ReferenceError, SyntaxError,
  *   TypeError, URIError
  * @overrides escape, JSON
  */
 
-var ___, cajaVM, safeJSON, AS_TAMED___, AS_FERAL___;
+var ___, cajaVM, safeJSON;
 
 (function () {
   // For computing the [[Class]] internal property
@@ -158,14 +156,9 @@ var ___, cajaVM, safeJSON, AS_TAMED___, AS_FERAL___;
    * {@code ___.tamesTo(feral, tamed)}    installs inverse properties
    *                                      {@code feral.TAMED_TWIN___ = tamed},
    *                                      {@code tamed.FERAL_TWIN___ = feral}.
-   * {@code g.AS_TAMED___}                constructs a tamed twin for {@code g}
-   *                                      and calls {@code ___.tamesTo}.
-   * {@code g.AS_FERAL___}                constructs a feral twin for {@code g}
-   *                                      and calls {@code ___.tamesTo}
    * {@code ___.tame(obj)}                uses the {@code *_TWIN___} fastpath.
-   *                                      if possible; if that fails, it uses
-   *                                      the inherited {@code AS_TAMED___}
-   *                                      method.
+   *                                      if possible; if that fails, it invokes
+   *                                      explicit taming functions.
    * {@code ___.untame(obj)}              is similar, but goes the other way.
    * 
    * Since creating function instances is a common pattern and reading
@@ -211,9 +204,6 @@ var ___, cajaVM, safeJSON, AS_TAMED___, AS_FERAL___;
    * check that a derived object does not get markings that conflict
    * with the markings on its base object.
    * <p>
-   * Initialization code can express some taming decisions by calling
-   * tamesTo to preregister some feral/tame pairs.
-   * <p>
    * Unlike the subjective membranes created by Domita, in this one,
    * the objects in a tame/feral pair point directly at each other,
    * and thereby retain each other. So long as one is non-garbage the
@@ -230,10 +220,7 @@ var ___, cajaVM, safeJSON, AS_TAMED___, AS_FERAL___;
     }
 
     if (f.TAMED_TWIN___ === t && t.FERAL_TWIN___ === f) {
-      // Just a transient diagnostic until we understand how often
-      // this happens.
-      log('multiply tamed: ' + f + ', ' + t);
-      return;
+      throw new TypeError('Attempt to multiply tame: ' + f + ', ' + t);
     }
 
     // TODO(erights): Given that we maintain the invariant that
@@ -241,58 +228,52 @@ var ___, cajaVM, safeJSON, AS_TAMED___, AS_FERAL___;
     // (t.FERAL_TWIN___ === f && hasOwnProp(t, 'FERAL_TWIN___')), then we
     // could decide to more delicately rely on this invariant and test
     // the backpointing rather than hasOwnProp below.
-
     if (f.TAMED_TWIN___ && f.hasOwnProperty('TAMED_TWIN___')) {
-      throw new TypeError('Already tames to something: ', f);
+      throw new TypeError('Inconsistently tames to something: ', f);
     }
     if (t.FERAL_TWIN___ && t.hasOwnProperty('FERAL_TWIN___')) {
-      throw new TypeError('Already untames to something: ', t);
-    }
-    if (f.FERAL_TWIN___ && f.hasOwnProperty('FERAL_TWIN___')) {
-      throw new TypeError('Already tame: ', f);
-    }
-    if (t.TAMED_TWIN___ && t.hasOwnProperty('TAMED_TWIN___')) {
-      throw new TypeError('Already feral: ', t);
+      throw new TypeError('Inconsistently untames to something: ', t);
     }
 
     f.TAMED_TWIN___ = t;
     t.FERAL_TWIN___ = f;
   }
 
-  /**
-   * ___.tamesToSelf(obj) marks obj as both tame and feral.
-   * <p>
-   * Most tamed objects should be both feral and tame, i.e.,
-   * safe to be accessed from both the feral and tame worlds.
-   * <p>
-   * This is equivalent to tamesTo(obj, obj) but a bit faster by
-   * exploiting the knowledge that f and t are the same object.
-   */
-  function tamesToSelf(obj) {
-    var otype = typeof obj;
-    if (!obj || (otype !== 'function' && otype !== 'object')) {
-      throw new TypeError('Unexpected primitive: ', obj);
+  function markTameAsConstructed(o) {
+    var ftype = typeof o;
+    if (ftype !== 'object') {
+      throw new TypeError('Cannot tame ' + ftype + ' as constructed');
     }
-    if (obj.TAMED_TWIN___ === obj && obj.FERAL_TWIN___ === obj) {
-      // Just a transient diagnostic until we understand how often
-      // this happens.
-      log('multiply tamed: ' + obj);
-      return;
-    }
+    o.CONSTRUCTED___ = true;
+  }
 
-    // TODO(erights): Given that we maintain the invariant that
-    // (f.TAMED_TWIN___ === t && hasOwnProp(f, 'TAMED_TWIN___')) iff
-    // (t.FERAL_TWIN___ === f && hasOwnProp(t, 'FERAL_TWIN___')), then we
-    // could decide to more delicately rely on this invariant and test
-    // the backpointing rather than hasOwnProp below.
-    if (obj.TAMED_TWIN___ && obj.hasOwnProperty('TAMED_TWIN___')) {
-      throw new TypeError('Already tames to something: ', obj);
+  function markTameAsReadWrite(o) {
+    var ftype = typeof o;
+    if (ftype !== 'object') {
+      throw new TypeError('Cannot tame ' + ftype + ' as read/write');
     }
-    if (obj.FERAL_TWIN___ && obj.hasOwnProperty('FERAL_TWIN___')) {
-      throw new TypeError('Already untames to something: ', obj);
-    }
+    o.READ_WRITE___ = true;
+  }
 
-    obj.TAMED_TWIN___ = obj.FERAL_TWIN___ = obj;
+  function markTameAsCtor(ctor, opt_super) {
+    var ctype = typeof ctor;
+    var stype = typeof opt_super;
+    if (ctype !== 'function') {
+      throw new TypeError('Cannot tame ' + ftype + ' as ctor');
+    }
+    if (opt_super && stype !== 'function') {
+      throw new TypeError('Cannot tame ' + stype + ' as superclass ctor');
+    }
+    ctor.CTOR___ = true;
+    if (opt_super) { ctor.SUPER_CTOR___ = opt_super; }
+  }
+
+  function markTameAsXo4a(f) {
+    var ftype = typeof f;
+    if (ftype !== 'function') {
+      throw new TypeError('Cannot tame ' + ftype + ' as xo4a');
+    }
+    f.XO4A___ = true;
   }
 
   /**
@@ -303,54 +284,52 @@ var ___, cajaVM, safeJSON, AS_TAMED___, AS_FERAL___;
    *     undefined is only a valid failure indication after checking
    *     that the argument is not undefined.
    * <li>If f has a registered tame twin, return that.
-   * <li>If f is marked tame, then f already is a tame object
-   *     representing f, so return f.
-   * <li>If f has an AS_TAMED___() method, call it and then register
-   *     the result as f's tame twin. Unlike the tame/feral
-   *     registrations, this method applies even if it is inherited.
-   * <li>If f is a Record, call tameRecord(f). We break Records out as
-   *     a special case since the only thing all Records inherit from
-   *     is Object.prototype, which everything else inherits from as
-   *     well.
+   * <li>If f is a Record, call tameRecordWithPureFunctions(f).
+   *     We break Records out as a special case since the only thing
+   *     all Records inherit from is Object.prototype, which everything
+   *     else inherits from as well.
+   * <li>If f is a Function, call tameFunction(f).
    * <li>Indicate failure by returning undefined.
    * </ol>
    * Record taming does not (yet?) deal with record inheritance.
-   * <p>
-   * The AS_TAMED___() methods may assume that they are called only by
-   * tame() and only on unmarked non-primitive objects. They must
-   * therefore either return another unmarked non-primitive object
-   * (possibly the same one) or undefined for failure. On returning
-   * successfully, tame() will register the pair so AS_TAMED___() does
-   * not need to.
    */
   function tame(f) {
+    // Caja objects tame to themselves
+    if (f !== null && f !== undefined && f.IS_CAJA_FRAME_OBJECT___) {
+      return f;
+    }
     var ftype = typeof f;
     if (!f || (ftype !== 'function' && ftype !== 'object')) {
       return f;
+    } else if (isArray(f)) {
+      // No tamesTo(...) for arrays; we copy across the membrane
+      return tameArray(f);
     }
-    var t = f.TAMED_TWIN___;
     // Here we do use the backpointing test as a cheap hasOwnProp test.
-    if (t && t.FERAL_TWIN___ === f) { return t; }
+    if (f.TAMED_TWIN___
+        && f.TAMED_TWIN___.FERAL_TWIN___ === f) {
+      return f.TAMED_TWIN___;
+    }
+    var t = undefined;
+    if (ftype === 'object') {
+      if (f.CONSTRUCTED___) {
+        t = tamePreviouslyConstructedObject(f);
+      } else {
+        t = tameRecord(f);
+      }
+    } else if (ftype === 'function') {
+      t = tameFunction(f);
+    }
+    if (t) { tamesTo(f, t); }
+    return t;
+  }
 
-    var realFeral = f.FERAL_TWIN___;
-    if (realFeral && realFeral.TAMED_TWIN___ === f) {
-      // If f has a feral twin, then f itself is tame.
-      log('Tame-only object from feral side: ' + f);
-      return f;
+  function untameArguments(ta) {
+    var fa = [];
+    for (var i = 0; i < ta.length; i++) {
+      fa[i] = untame(ta[i]);
     }
-    if (f.AS_TAMED___) {
-      t = f.AS_TAMED___();
-      if (t) { tamesTo(f, t); }
-      return t;
-    }
-    if (isRecord(f)) {
-      t = tameRecord(f);
-      // tameRecord does not actually have any possibility of failure,
-      // but we can't assume that here.
-      if (t) { tamesTo(f, t); }
-      return t;
-    }
-    return undefined;
+    return fa;
   }
 
   /**
@@ -360,51 +339,180 @@ var ___, cajaVM, safeJSON, AS_TAMED___, AS_FERAL___;
    *     undefined is only a valid failure indication after checking
    *     that the argument is not undefined.
    * <li>If t has a registered feral twin, return that.
-   * <li>If t is marked feral, then t already is a feral object
-   *     representing t, so return t.
-   * <li>If t has an AS_FERAL___() method, call it and then register
-   *     the result as t's feral twin. Unlike the tame/feral
-   *     registrations, this method applies even if it is inherited.
-   * <li>If t is a Record, call untameRecord(t).
-   * <li>Indicate failure by returning undefined.
-   * </ol>
-   * Record untaming does not (yet?) deal with record inheritance.
-   * <p>
-   * The AS_FERAL___() methods may assume that they are called only by
-   * untame() and only on unmarked non-primitive objects. They must
-   * therefore either return another unmarked non-primitive object
-   * (possibly the same one) or undefined for failure. On returning
-   * successfully, untame() will register the pair so AS_FERAL___() does
-   * not need to.
    */
   function untame(t) {
+    // Caja objects untame to themselves
+    if (t !== null && t !== undefined && isCajaFrameObject(t)) {
+      return t;
+    }
     var ttype = typeof t;
     if (!t || (ttype !== 'function' && ttype !== 'object')) {
       return t;
+    } else if (isArray(t)) {
+      return untameArray(t);
     }
-    var f = t.FERAL_TWIN___;
-    // Here we do use the backpointing test as a cheap hasOwnProp test.
-    if (f && f.TAMED_TWIN___ === t) { return f; }
-
-    var realTame = t.TAMED_TWIN___;
-    if (realTame && realTame.FERAL_TWIN___ === t) {
-      // If t has a tamed twin, then t itself is feral.
-      log('Feral-only object from tame side: ' + t);
-      return t;
-    }
-    if (t.AS_FERAL___) {
-      f = t.AS_FERAL___();
-      if (f) { tamesTo(f, t); }
-      return f;
-    }
-    if (isRecord(t)) {
-      f = untameRecord(t); // TODO: untameRecord isn't defined yet
-      // untameRecord does not actually have any possibility of
-      // failure, but we can't assume that here.
-      if (f) { tamesTo(f, t); }
-      return f;
+    if (t.FERAL_TWIN___
+        && t.FERAL_TWIN___.TAMED_TWIN___
+        && t.FERAL_TWIN___.TAMED_TWIN___ === t) {
+      return t.FERAL_TWIN___;
     }
     return undefined;
+  }
+
+  function tameArray(f) {
+    var t = [];
+    for (var i = 0; i < f.length; i++) {
+      t[i] = tame(f[i]);
+    }
+    return freeze(t);
+  }
+
+  function untameArray(t) {
+    var f = [];
+    for (var i = 0; i < t.length; i++) {
+      f[i] = untame(t[i]);
+    }
+    return f;
+  }
+
+  function tameFunction(f) {
+    if (f.CTOR___) { return tameCtor(f, f.SUPER_CTOR___); }
+    else if (f.XO4A___) { return tameXo4a(f); }
+    else { return tamePureFunction(f); }
+  }
+
+  var TAME_CTOR_CREATE_OBJECT_ONLY = {};
+
+  function tameCtor(f, fSuper) {
+    var instantiator = function () { };
+    instantiator.prototype = f.prototype;
+
+    var tPrototype = (function() {
+      if (!fSuper) { return {}; }
+      var tSuper = fSuper.TAMED_TWIN___;
+      if (!tSuper) { throw new TypeError('Super ctor not yet tamed'); }
+      function tmp() { }
+      tmp.prototype = tSuper.prototype;
+      return new tmp();
+    })();
+
+    tameObjectWithMethods(f.prototype, tPrototype);
+
+    var t = function (_) {
+      if (arguments.length > 0
+          && arguments[0] === TAME_CTOR_CREATE_OBJECT_ONLY) {
+        return;
+      }
+      var o = new instantiator();
+      f.apply(o, untameArguments(arguments));
+      tameObjectWithMethods(o, this);
+    };
+    t.prototype = tPrototype;
+
+    return markFuncFreeze(t);
+  }
+
+  function tamePureFunction(f) {
+    return markFuncFreeze(function(_) {
+      return tame(f.apply(USELESS, untameArguments(arguments)));
+    });
+  }
+
+  function tameXo4a(f) {
+    return markFuncFreeze(function(_) {
+      return tame(f.apply(this, untameArguments(arguments)));
+    });
+  }
+
+  function tameRecord(f, t) {
+    if (!t) { t = {}; }
+    t.v___ = function (p) {  // [[Get]]
+      p = '' + p;
+      if (isNumericName(p) || !endsWith__.test(p)) {
+        return tame(f[p]);
+      }
+      throw new TypeError('Not readable: ' + p);
+    };
+    t.w___ = function (p, v) {  // [[Put]]
+      p = '' + p;
+      if (isNumericName(p) || !endsWith__.test(p)) {
+        if (f.READ_WRITE___) {
+          f[p] = untame(v);
+          return;
+        }
+      }
+      throw new TypeError('Not writeable: ' + p);
+    };
+    t.c___ = function (p) {  // [[Delete]]
+      p = '' + p;
+      if (isNumericName(p) || !endsWith__.test(p)) {
+        if (f.READ_WRITE___) {
+          delete f[p];
+          return;
+        }
+      }
+      throw new TypeError('Not deleteable: ' + p);
+    };
+    t.m___ = function (p, as) {  // invoke method
+      p = '' + p;
+      if (isNumericName(p) || !endsWith__.test(p)) {
+        if (typeof f[p] === 'function') {
+          return tame(f[p].apply(USELESS, untameArguments(as)));        
+        }
+      }
+      throw new TypeError('Not a function: ' + p);
+    };
+    t.Enumerate___ = function() {
+      var result = [];
+      for (var p in f) {
+        if (isNumericName(p) || !endsWith__.test(p)) {
+          result.push(p);
+        }
+      }
+      return result;
+    };
+    return t;
+  }
+
+  function tameObjectWithMethods(f, t) {
+    if (!t) { t = {}; }
+    t.v___ = function (p) {  // [[Get]]
+      p = '' + p;
+      var fv = f[p];
+      if (typeof fv !== 'function') {
+        throw new TypeError('Not readable: ' + p + ' -- typeof is ' + (typeof fv) + ' and value is ' + fv);
+      }
+      return markFuncFreeze(function (_) {
+        return tame(f[p].apply(f, untameArguments(arguments)));
+      });
+    };
+    t.w___ = function (p, v) {  // [[Put]]
+      throw new TypeError('Not writeable: ' + p);
+    };
+    t.c___ = function (p) {  // [[Delete]]
+      throw new TypeError('Not deleteable: ' + p);
+    };
+    t.m___ = function (p, as) {  // invoke method
+      p = '' + p;
+      if (isNumericName(p) || !endsWith__.test(p)) {
+        if (typeof f[p] === 'function') {
+          return tame(f[p].apply(f, untameArguments(as)));
+        }
+      }
+      throw new TypeError('Not a function: ' + p);
+    };
+    t.Enumerate___ = function() {
+      return [];
+    };
+    return t;
+  }
+
+  function tamePreviouslyConstructedObject(f) {
+    var fc = f.constructor;
+    var tc = tame(fc);
+    var t = new tc(TAME_CTOR_CREATE_OBJECT_ONLY);
+    tameObjectWithMethods(f, t);
+    return t;
   }
 
   /**
@@ -480,70 +588,13 @@ var ___, cajaVM, safeJSON, AS_TAMED___, AS_FERAL___;
     return markFuncFreeze(inert);
   }
 
-  ////////////////////////////////////////////////////////////////////////
-  // Taming helpers to be called only by tame() and untame().
-  ////////////////////////////////////////////////////////////////////////
-
-  AS_TAMED___ = function() {
-      throw new Error('Internal: global object almost leaked');
-    };
-
-  AS_FERAL___ = function() {
-      var err = new Error('Internal: global object leaked');
-      err.UNCATCHABLE___ = true;
-      throw err;
-    };
-
   /**
-   * Used in lieu of an AS_TAMED___() method for Records.
-   * <p>
-   * Assume f is an unmarked Record. Recursively tame all its
-   * mentionable enumerable[*] own properties, being careful to
-   * handle cycles. Failure to tame a property value only causes
-   * that property to be omitted. Freeze the resulting record. If
-   * the original record were frozen and all properties tame to
-   * themselves, then the Record should tame to itself.
-   *
-   * <p>[*] Clarify that "enumerable" here is at the uncajoled level
-   * of abstraction and is distinct from the emulated enumerability
-   * presented to cajoled code.
+   * A marker for all objects created within this frame.
    */
-  function tameRecord(f) {
-    var t = {};
-    var changed = !isFrozen(f);
-    // To handle cycles, provisionally mark f as taming to a fresh
-    // t going in and see how the rest tames. Set up a try/finally
-    // block to remove these provisional markings even on
-    // exceptional exit.
-    tamesTo(f, t);
-    try {
-      var keys = ownKeys(f);
-      var len = keys.length;
-      for (var i = 0; i < len; i++) {
-        var k = keys[i];
-        var fv = f[k];
-        var tv = tame(fv);
-        if (tv === void 0 && fv !== void 0) {
-          changed = true;
-        } else {
-          if (fv !== tv && fv === fv) { // I hate NaNs
-            changed = true;
-          }
-          t[k] = tv;
-        }
-      }
-    } finally {
-      delete f.TAMED_TWIN___;
-      delete t.FERAL_TWIN___;
-    }
-    if (changed) {
-      // Although the provisional marks have been removed, our caller
-      // will restore them. We do it this way to make tameRecord()
-      // more similar to AS_TAMED___() methods.
-      return freeze(t);
-    } else {
-      return f;
-    }
+  Object.prototype.IS_CAJA_FRAME_OBJECT___ = { };
+
+  function isCajaFrameObject(o) {
+    return o.IS_CAJA_FRAME_OBJECT___;
   }
 
   /**
@@ -621,24 +672,6 @@ var ___, cajaVM, safeJSON, AS_TAMED___, AS_FERAL___;
     }
     return dis;
   }
-
-  /**
-   * Functions tame to themselves by default.
-   */
-  Function.prototype.AS_TAMED___ = function defaultTameFunc() {
-      var f = this;
-      if (isFunction(f)) { return f; }
-      return void 0;
-    };
-
-  /**
-   * Functions untame to themselves by default.
-   */
-  Function.prototype.AS_FERAL___ = function defaultUntameFunc() {
-      var t = this;
-      if (isFunction(t)) { return t; }
-      return void 0;
-    };
 
   var endsWith__ = /__$/;
   var endsWith_e___ = /(.*?)_e___$/;
@@ -982,6 +1015,10 @@ var ___, cajaVM, safeJSON, AS_TAMED___, AS_FERAL___;
     return true;
   }
 
+  function isArray(obj) {
+    return classProp.call(obj) === '[object Array]';
+  }
+
   function isFunction(obj) {
     return classProp.call(obj) === '[object Function]';
   }
@@ -990,19 +1027,30 @@ var ___, cajaVM, safeJSON, AS_TAMED___, AS_FERAL___;
     return classProp.call(obj) === '[object Error]';
   }
 
-  function allEnumKeys(obj) {
+  /**
+   * Get the enumerable property names, both own and inherited.
+   *
+   * <p>ES-Harmony proposal <a href=
+   * "http://wiki.ecmascript.org/doku.php?id=harmony:proxies_semantics#modifications_to_the_evaluation_of_expressions_and_statements"
+   * >The for-in Statement</a>.
+   *
+   * <p>The proposal does not name this as an internal method. But
+   * since it triggers the "enumerate" trap, "Enumerate___" seems like a
+   * good name.
+   */
+  Object.prototype.Enumerate___ = function() {
     var i, m, result = [];
-    for (i in obj) {
+    for (i in this) {
       if (isNumericName(i)) {
         result.push(i);
       } else {
         if (startsWithNUM___.test(i) && endsWith__.test(i)) { continue; }
         m = i.match(endsWith_e___);
-        if (m && obj[i]) { result.push(m[1]); }
+        if (m && this[i]) { result.push(m[1]); }
       }
     }
     return result;
-  }
+  };
 
   function allKeys(obj) {
     var i, m, result = [];
@@ -1043,6 +1091,16 @@ var ___, cajaVM, safeJSON, AS_TAMED___, AS_FERAL___;
         if (startsWithNUM___.test(i) && endsWith__.test(i)) { continue; }
         m = i.match(endsWith_v___);
         if (m) { result.push(m[1]); }
+      }
+    }
+    return result;
+  }
+
+  function ownUntamedKeys(obj) {
+    var i, m, result = [];
+    for (i in obj) {
+      if (obj.hasOwnProperty(i) && (isNumericName(i) || !endsWith__.test(i))) {
+        result.push(i);
       }
     }
     return result;
@@ -3268,9 +3326,7 @@ var ___, cajaVM, safeJSON, AS_TAMED___, AS_FERAL___;
     });
 
   // 15.4.3.2
-  Array.isArray = markFunc(function (obj) {
-      return classProp.call(obj) === '[object Array]';
-    });
+  Array.isArray = markFunc(isArray);
   Array.DefineOwnProperty___('isArray', {
       value: Array.isArray,
       writable: true,
@@ -4078,6 +4134,7 @@ var ___, cajaVM, safeJSON, AS_TAMED___, AS_FERAL___;
    * All resulting properties are writable, enumerable, and configurable.
    */
   function copy(obj) {
+    // TODO(ihab.awad): Primordials may not be frozen; is this safe?
     var result = Array.isArray(obj) ? [] : {};
     var keys = ownKeys(obj), len = keys.length;
     for (var i = 0; i < len; ++i) {
@@ -4469,7 +4526,7 @@ var ___, cajaVM, safeJSON, AS_TAMED___, AS_FERAL___;
       USELESS: USELESS,
       manifest: manifest,
       allKeys: allKeys,
-      allEnumKeys: allEnumKeys
+      allEnumKeys: function(obj) { return obj ? obj.Enumerate___() : []; }
     });
 
   function readImport(imports, name) {
@@ -4616,7 +4673,10 @@ var ___, cajaVM, safeJSON, AS_TAMED___, AS_FERAL___;
       tame: tame,
       untame: untame,
       tamesTo: tamesTo,
-      tamesToSelf: tamesToSelf,
+      markTameAsConstructed: markTameAsConstructed,
+      markTameAsReadWrite: markTameAsReadWrite,
+      markTameAsCtor: markTameAsCtor,
+      markTameAsXo4a: markTameAsXo4a,
       extend: extend
     };
   var cajaVMKeys = ownEnumKeys(cajaVM);
