@@ -56,6 +56,7 @@ import java.util.Map;
 import junit.framework.Assert;
 import junit.framework.AssertionFailedError;
 
+import org.mozilla.javascript.ScriptableObject;
 import org.w3c.dom.Attr;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -75,10 +76,15 @@ public class RhinoTestBed {
    * result.
    */
   public static Object runJs(Executor.Input... inputs) {
+    return runJs(null, inputs);
+  }
+
+  public static Object runJs(Object eval, Executor.Input... inputs) {
     try {
       Map<String, Object> actuals = Maps.newHashMap();
       actuals.put("stderr", System.err);
       actuals.put("_junit_", new JunitSandBoxSafe());
+      actuals.put("caja___", eval);
       RhinoExecutor exec = new RhinoExecutor(inputs);
       return exec.run(actuals, Object.class);
     } catch (AbnormalExitException ex) {

@@ -101,7 +101,8 @@ public final class RhinoExecutor implements Executor {
       URI.class.getName(),
       WeakHashMap.class.getName(),
       WrappedException.class.getName(),
-      "org.apache.xerces.*");
+      "org.apache.xerces.*",
+      "com.google.caja.parser.quasiliteral.ES53ConformanceTest$Caja");
 
   private static final ContextFactory SANDBOXINGFACTORY = new ContextFactory() {
     @Override
@@ -221,9 +222,12 @@ public final class RhinoExecutor implements Executor {
       globalScope.defineProperty(
           "scriptEngine___", new ScriptPowerBox(context, globalScope),
           ScriptableObject.DONTENUM);
+      Object eval = actuals.remove("eval___");
+      ScriptableObject.putProperty(globalScope, "eval___", eval);
       for (Map.Entry<String, ?> e : actuals.entrySet()) {
         globalScope.defineProperty(
-            e.getKey(), Context.javaToJS(e.getValue(), globalScope),
+            e.getKey(), 
+            Context.javaToJS(e.getValue(), globalScope),
             ScriptableObject.DONTENUM);
       }
 

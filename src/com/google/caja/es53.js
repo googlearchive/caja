@@ -2720,7 +2720,7 @@ var ___, cajaVM, safeJSON;
         'callee',
         {
           enumerable: false,
-          configurable: true,
+          configurable: false,
           get: poisonArgsCallee,
           set: poisonArgsCallee
         });
@@ -2728,7 +2728,7 @@ var ___, cajaVM, safeJSON;
         'caller',
         {
           enumerable: false,
-          configurable: true,
+          configurable: false,
           get: poisonArgsCaller,
           set: poisonArgsCaller
         });
@@ -3473,7 +3473,8 @@ var ___, cajaVM, safeJSON;
   // to be able to use {@code every} to invoke a toxic function as
   // a filter, for instance.
   //
-  // {@code createOrWrap} assumes that the function expects
+  // {@code fun} must not be marked as callable.
+  // {@code fun} expects
   // - a function {@code block} to use (like the filter in {@code every})
   // - an optional object {@code thisp} to use as {@code this}
   // It wraps {@code block} in a function that invokes its taming.
@@ -3498,6 +3499,7 @@ var ___, cajaVM, safeJSON;
             };
         })(obj[name]);
     }
+    markFunc(obj[vname]);
   }
 
   // 15.4.4.16
@@ -3596,7 +3598,7 @@ var ___, cajaVM, safeJSON;
   // https://developer.mozilla.org/en/Core_JavaScript_1.5_Reference/Objects/Array/reduceRight
   createOrWrap(Array.prototype, 'reduceRight', function(fun) { // , initial
       var len = this.length >>> 0;
-      if (!isFunction(Fun)) {
+      if (!isFunction(fun)) {
         throw new TypeError('Expected a function instead of ' + fun);
       }
       // no value to return if no initial value, empty array
