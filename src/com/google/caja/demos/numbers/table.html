@@ -1,0 +1,110 @@
+<!--
+ - Copyright (C) 2010 Google Inc.
+ -
+ - Licensed under the Apache License, Version 2.0 (the "License");
+ - you may not use this file except in compliance with the License.
+ - You may obtain a copy of the License at
+ -
+ -      http://www.apache.org/licenses/LICENSE-2.0
+ -
+ - Unless required by applicable law or agreed to in writing, software
+ - distributed under the License is distributed on an "AS IS" BASIS,
+ - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ - See the License for the specific language governing permissions and
+ - limitations under the License.
+-->
+
+<style type="text/css">
+  .header {
+    border-bottom: 1px solid black;
+    text-align: center;
+  }
+  .data-row {
+    font-family: courier;
+    font-size: 8pt;
+  }
+  .data-row-even {
+    background-color:#e0e0e0;
+  }
+  .data-row-odd {
+    background-color:#ffffff;
+  }
+  .selected {
+    background-color: #00ffff;
+  }
+</style>
+
+<table id="table"></table>
+
+<script type="text/javascript" src="utils.js"></script>
+
+<script type="text/javascript">
+var table = document.getElementById('table');
+
+(function() {
+  var tr = document.createElement('tr');
+  var td = document.createElement('td');
+  td.setAttribute('class', 'header');
+  td.innerHTML = '&nbsp;';
+  tr.appendChild(td);
+  for (var i = 0; i < api.data.getNumCols(); i++) {
+    td = document.createElement('td');
+    td.setAttribute('class', 'header');
+    td.innerHTML =
+        '<strong>' + api.data.getColHeader(i).name + '</strong>' +
+        '<br/>' +
+        '<em>' + api.data.getColHeader(i).units + '</em>';
+    tr.appendChild(td);
+  }
+  table.appendChild(tr);
+})();
+
+(function() {
+  var selectedCell = undefined;
+
+  var findCell = function(i, j) {
+    var k;
+    var row = table.firstChild.nextSibling;
+    for (k = 0; k < i; k++) { row = row.nextSibling; }
+    var col = row.firstChild.nextSibling;
+    for (k = 0; k < j; k++) { col = col.nextSibling; }
+    return col;
+  };
+
+  api.addSelectionListener(function() {
+    if (selectedCell) {
+      deselectNode(selectedCell);
+      selectedCell = undefined;
+    }
+    var s = api.getSelection();
+    if (!s) { return; }
+    var td = findCell(s[0], s[1]);
+    selectNode(td);
+    selectedCell = td;
+  });
+
+  var onclick = function(i, j) {
+    return function() { api.setSelection([i, j]); }
+  };
+
+  for (var i = 0; i < api.data.getNumRows(); i++) {
+    var tr = document.createElement('tr');
+    var td = document.createElement('td');
+    td.setAttribute('class',
+        'data-row ' +
+        (i % 2 === 0 ? 'data-row-even' : 'data-row-odd'));
+    td.innerHTML = '' + (i + 1);
+    tr.appendChild(td);
+    for (var j = 0; j < api.data.getNumCols(); j++) {
+      td = document.createElement('td');
+      td.setAttribute('class',
+          'data-row ' +
+          (i % 2 === 0 ? 'data-row-even' : 'data-row-odd'));
+      td.innerHTML = '' + api.data.get(i, j);
+      td.onclick = onclick(i, j);
+      tr.appendChild(td);
+    }
+    table.appendChild(tr);
+  }
+})();
+</script>

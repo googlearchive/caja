@@ -1,0 +1,188 @@
+<!--
+ - Copyright (C) 2010 Google Inc.
+ -
+ - Licensed under the Apache License, Version 2.0 (the "License");
+ - you may not use this file except in compliance with the License.
+ - You may obtain a copy of the License at
+ -
+ -      http://www.apache.org/licenses/LICENSE-2.0
+ -
+ - Unless required by applicable law or agreed to in writing, software
+ - distributed under the License is distributed on an "AS IS" BASIS,
+ - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ - See the License for the specific language governing permissions and
+ - limitations under the License.
+-->
+
+<style type="text/css">
+.graph {
+  background-color: #f0f0ff;
+  border: 1px solid black;
+  position: absolute;
+}
+
+.selector {
+  border: 1px solid black;
+  padding: 5px;
+  position: absolute;
+}
+
+.swatch {
+  margin: 3px;
+  width: 20px;
+  height: 20px;
+}
+
+.point {
+  position: absolute;
+}
+
+.selected {
+  border: 2px solid blue;
+}
+
+td {
+  vertical-align: top;
+}
+</style>
+
+<table>
+  <tr style="position: absolute;">
+    <td><div id="graph" class="graph"></div></td>
+    <td><div id="selector" class="selector"></div></td>
+  </tr>
+</table>
+
+<script type="text/javascript" src="utils.js"></script>
+
+<script type="text/javascript">
+var graphWidth = 500;
+var graphHeight = 500;
+
+var pointWidth = 6;
+var pointHeight = 6;
+
+var graph = document.getElementById('graph');
+var selector = document.getElementById('selector');
+var pointColumns = new Array(api.data.getNumCols());
+
+graph.style.width  = '' + graphWidth  + 'px';
+graph.style.height = '' + graphHeight + 'px';
+
+selector.style.left = (graphWidth + 10) + 'px';
+
+var selectedPoint = undefined;
+
+function updateSelection() {
+  if (selectedPoint) {
+    deselectNode(selectedPoint);
+    selectedPoint = undefined;
+  }
+  var s = api.getSelection();
+  if (!s) { return; }
+  var c = pointColumns[s[1]];
+  if (!c) { return; }
+  var p = c[s[0]];
+  if (!p) { return; }
+  selectNode(p);
+  selectedPoint = p;
+};
+
+api.addSelectionListener(updateSelection);
+
+function makeColor(j) {
+  function hex2(j) {
+    var s = j.toString(16);
+    while (s.length < 2) { s = '0' + s; }
+    return s;
+  }
+  j += 131;
+  return '#'
+    + hex2((j *  19) % 256)
+    + hex2((j *  93) % 256)
+    + hex2((j * 191) % 256);
+}
+
+function plotColumn(j) {
+  if (pointColumns[j]) { return; }
+
+  var color = makeColor(j);
+
+  var col = api.data.getColHeader(j);
+
+  function posX(el, i) {
+    return Math.floor((i / api.data.getNumRows()) * graphWidth)
+        - Math.floor(pointWidth / 2);
+  }
+
+  function posY(el, i) {
+    return graphHeight
+        - Math.floor((api.data.get(i, j) - col.min) / (col.max - col.min) * graphHeight)
+        - Math.floor(pointHeight / 2);
+  }
+
+  pointColumns[j] = [];
+
+  for (var i = 0; i < api.data.getNumRows(); i++) {
+    (function(i) {
+      var el = document.createElement('div');
+      el.setAttribute('class', 'point');
+      el.style.left   = '' + posX(el, i) + 'px';
+      el.style.top    = '' + posY(el, i) + 'px';
+      el.style.width  = '' + pointWidth  + 'px';
+      el.style.height = '' + pointHeight + 'px';
+      el.style.backgroundColor = color;
+      el.onclick = function() { api.setSelection([i, j]); };
+      pointColumns[j].push(el);
+      graph.appendChild(el);
+    })(i);
+  }
+
+  updateSelection();
+}
+
+function clearColumn(j) {
+  if (!pointColumns[j]) { return; }
+  for (var i = 0; i < pointColumns[j].length; i++) {
+    graph.removeChild(pointColumns[j][i]);
+  }
+  pointColumns[j] = undefined;
+  updateSelection();
+}
+
+(function() {
+  for (var j = 0; j < api.data.getNumCols(); j++) {
+    (function(j) {
+      var d = document.createElement('div');
+
+      var color = makeColor(j);
+
+      var swatch = document.createElement('div');
+      swatch.setAttribute('class', 'swatch');
+      swatch.style.backgroundColor = color;
+      d.appendChild(swatch);
+
+      var text = document.createElement('div');
+      text.innerHTML = api.data.getColHeader(j).name;
+      d.appendChild(text);
+
+      function show() {
+        plotColumn(j);
+        addClass(d, 'selected');
+        d.onclick = hide;
+      }
+
+      function hide() {
+        clearColumn(j);
+        removeClass(d, 'selected');
+        d.onclick = show;
+      }
+
+      d.onclick = show;
+
+      selector.appendChild(d);
+    })(j);
+  }
+})();
+
+</script>
