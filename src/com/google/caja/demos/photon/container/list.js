@@ -19,7 +19,6 @@
  */
 
 'use strict';
-'use cajita';
 
 // Array Remove - By John Resig (MIT Licensed)
 var arrayRemove = function(array, from, to) {
@@ -29,10 +28,10 @@ var arrayRemove = function(array, from, to) {
 };
 
 var contents = [];
-var stop = cajita.freeze({});
+var stop = Object.freeze({});
 
 var self = {
-  stop: cajita.freeze({}),
+  stop: Object.freeze({}),
   push: function(o) {
     contents.push(o);
   },
@@ -66,16 +65,16 @@ var self = {
         }
       }
     } catch (e) {
-      cajita.log('Sadness: ' + e);
+      cajaVM.log('Sadness: ' + e);
     }
   }
 };
 
-self.asReadOnly = cajita.freeze({
+self.asReadOnly = Object.freeze({
   stop: self.stop,
   length: self.length,
   getAt: self.getAt,
   each: self.each
 });
 
-/* return */ cajita.freeze(self)
+/* return */ Object.freeze(self)

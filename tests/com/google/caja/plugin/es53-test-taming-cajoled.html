@@ -29,6 +29,21 @@
   }
 </script>
 
+<div id="testNonTamedPrimordials" class="testcontainer">
+  testNonTamedPrimordials
+</div>
+<script type="text/javascript">
+  jsunitRegister('testNonTamedPrimordials',
+                 function testNonTamedPrimordials() {
+    // This test ensures that, despite all the taming gymnastics, objects
+    // created and used within the guest frame itself work correctly.
+    assertTrue(({}) instanceof Object);
+    assertTrue(([]) instanceof Array);
+    assertTrue((function() {}) instanceof Function);
+    pass('testNonTamedPrimordials');
+  });
+</script>
+    
 <div id="testReadOnlyRecord" class="testcontainer">
   testReadOnlyRecord
 </div>
@@ -163,8 +178,7 @@
 <script type="text/javascript">
   jsunitRegister('testFunctionReturningPrimitive',
                  function testFunctionReturningPrimitive() {
-    assertTrue('not instanceof Function',
-        tamedApi.functionReturningPrimitive instanceof Function);
+    // Gotcha: tamedApi.functionReturningPrimitive not instanceof Function
     assertTrue('typeof not function',
         (typeof tamedApi.functionReturningPrimitive) === 'function');
     assertEquals(55, tamedApi.functionReturningPrimitive(13));
@@ -178,7 +192,7 @@
 
 <script type="text/javascript">
   function testCtor(o) {
-    assertTrue('not instanceof Function', tamedApi.Ctor instanceof Function);
+    // Gotcha: tamedApi.Ctor not instanceof Function
     assertTrue('typeof not function', (typeof tamedApi.Ctor) === 'function');
     assertTrue(o instanceof tamedApi.Ctor);
   }
@@ -247,7 +261,7 @@
     // Guest code must not be able to extract a method property of a
     // constructor's prototype, and the result must be a function.
     var getXProto = tamedApi.Ctor.prototype.getX;
-    assertTrue('not instanceof Function', getXProto instanceof Function);
+    // Gotcha: getXProto not instanceof Function
     assertTrue('typeof not function', (typeof getXProto) === 'function');
     // It must not be possible for the guest to rebind the method to a
     // different 'this' value.
@@ -256,7 +270,7 @@
     // Guest code must be able to extract a method property of a tamed
     // constructed object, and the result must be a function.
     var getX = o.getX;
-    assertTrue('not instanceof Function', getX instanceof Function);
+    // Gotcha: getX not instanceof Function
     assertTrue('typeof not function', (typeof getX) === 'function');
     // The extracted method must be a bound method.
     assertEquals(17, getX());
@@ -313,7 +327,7 @@
 <script type="text/javascript">
   jsunitRegister('testSubCtor',
                  function testSubCtor() {
-    assertTrue('not instanceof Function', tamedApi.SubCtor instanceof Function);
+    // Gotcha: tamedApi.SubCtor not instanceof Function
     assertTrue('typeof not function', (typeof tamedApi.SubCtor) === 'function');
     var o = new tamedApi.SubCtor(17, 19);
     assertTrue(o instanceof tamedApi.SubCtor);
@@ -352,9 +366,9 @@
     // constructor's prototype, and the result must be a function.
     var getXProto = tamedApi.Ctor.prototype.getX;
     var getYProto = tamedApi.SubCtor.prototype.getY;
-    assertTrue('not instanceof Function', getXProto instanceof Function);
+    // Gotcha: getXProto not instanceof Function
     assertTrue('typeof not function', (typeof getXProto) === 'function');
-    assertTrue('not instanceof Function', getYProto instanceof Function);
+    // Gotcha: getYProto not instanceof Function
     assertTrue('typeof not function', (typeof getYProto) === 'function');
     // It must not be possible for the guest to rebind the method to a
     // different 'this' value.
@@ -368,8 +382,8 @@
     // constructed object, and the result must be a function.
     var getX = o.getX;
     var getY = o.getY;
-    assertTrue('not instanceof Function', getX instanceof Function);
-    assertTrue('not instanceof Function', getY instanceof Function);
+    // Gotcha: getX not instanceof Function
+    // Gotcha: getY not instanceof Function
     assertTrue('typeof not function', (typeof getX) === 'function');
     assertTrue('typeof not function', (typeof getY) === 'function');
     // The extracted method must be a bound method.

@@ -15,12 +15,23 @@
 var rootContainerDiv = document.getElementById('container');
 var rootChromeDiv = document.getElementById('chrome');
 
+// The following variables are just an aid for debugging
 var LASTDIV = undefined;
 var LASTMOD = undefined;
 
 var error = function(msg) {
   rootContainerDiv.innerHTML = '<pre>\n' + msg + '</pre>';
   throw 'Error';
+};
+
+var joinUrl = function(base, path) {
+  while (base[base.length - 1] === '/') {
+    base = base.slice(0, base.length - 1);
+  }
+  while (path[0] === '/') {
+    path = path.slice(1, path.length);
+  }
+  return base + '/' + path;
 };
 
 // URL parameter parsing code from blog at:
@@ -47,68 +58,51 @@ var getUrlParamDefault = function(name, defaultValue) {
 
 var cajaServer = getUrlParamDefault('cajaServer', 'http://caja.appspot.com/');
 var rootModule = getUrlParamDefault('rootModule',
-    'http://caja.appspot.com/photon/gadgets/gadgetsModule.html');
+    joinUrl(cajaServer, '/photon/gadgets/gadgetsModule.html'));
 
 var debug = Boolean(getUrlParamDefault('debug', 'false'));
 
-var initializeRootModule = function(caja) {
+var defaultURIPolicy = {
+  rewrite: function(uri, mimeType) {
+    return uri;
+  }
+};
 
-  caja.Q.when(caja.hostTools.getLoad().async('photon.js'),
-      function(photonModule) {
+var log = function(str) {
+  console.log('+++ ' + str);
+};
 
-    var instantiateModule = function(
-        feralContainerDiv, moduleUrl, extraOuters) {
-      var sandbox = new caja.hostTools.Sandbox();
-      sandbox.setURIPolicy({
-        rewrite: function(uri, mimeType) {
-	  return uri;
-	}
-      });
-  
-      feralContainerDiv.innerHTML = '';
-      sandbox.attach(feralContainerDiv);
-  
-      if (extraOuters) {
-        for (var p in extraOuters) {
-          if (/.*___$/.test(p)) { continue; }
-	  if (Object.prototype.hasOwnProperty.call(extraOuters, p)) {
-            caja.cajita.setPub(sandbox.imports.outers, p, extraOuters[p]);
-	  }
+var initialize = function (frameGroup) {
+
+  var instantiateModule = function (feralContainerDiv,
+                                    moduleUrl,
+                                    extraOuters,
+                                    resultCallback) {
+    frameGroup.makeES5Frame(feralContainerDiv,
+                            defaultURIPolicy,
+                            function (frame) {
+      frame.run(moduleUrl, extraOuters, function (result) {
+        if (resultCallback) {
+          resultCallback(result);
         }
-      }
-  
-      return sandbox.run(moduleUrl);
-    };
-  
-    var instantiateInTameElement =
-        function(tameContainingElement, moduleUrl, extraOuters) {
-
-      var feralInnerDiv = document.createElement('div');
-      feralInnerDiv.setAttribute('class', 'innerHull');
-      
-      var feralOuterDiv = document.createElement('div');
-      feralOuterDiv.setAttribute('class', 'outerHull');
-
-      var feralContainingElement =
-          caja.cajita.readPub(tameContainingElement, 'ownerDocument')
-          .feralNode___(tameContainingElement);
-
-      LASTDIV = feralContainingElement;
-      LASTMOD = moduleUrl;
-
-      feralContainingElement.innerHTML = '';
-      feralContainingElement.appendChild(feralOuterDiv);
-
-      feralOuterDiv.appendChild(feralInnerDiv);
-
-      return instantiateModule(feralInnerDiv, moduleUrl, extraOuters);
-    };
-  
-    var photonInstance = photonModule({ 
-      instantiateInTameElement:
-          caja.___.markFuncFreeze(instantiateInTameElement)
+      });
     });
+  };
 
+  var instantiateInTameElement = function(tameContainingElement,
+                                          moduleUrl,
+                                          extraOuters) {
+    var feralContainingElement = tameContainingElement
+        ? tameContainingElement.v___('ownerDocument')
+            .feralNode___(tameContainingElement)
+        : undefined;
+    return instantiateModule(feralContainingElement, moduleUrl, extraOuters);
+  };
+
+  instantiateModule(undefined, 'photon.js', {
+    instantiateInTameElement: frameGroup.tame(instantiateInTameElement),
+    log: frameGroup.tame(log)
+  }, function (photonInstance) {
     instantiateModule(rootContainerDiv, "bootstrap.html", {
       photonInstance: photonInstance,
       rootModule: rootModule
@@ -116,19 +110,19 @@ var initializeRootModule = function(caja) {
   });
 };
 
-var loadingTimeout = window.setTimeout(function() {
+var loadingTimeout = window.setTimeout(function () {
   error('Cannot contact Caja server at "' + cajaServer + '"');
 }, 1000);
 
 var cajaScript = document.createElement('script');
-cajaScript.setAttribute('src', cajaServer + 'caja-orig.js');
-cajaScript.onload = function() {
+cajaScript.setAttribute('src', cajaServer + '/caja.js');
+cajaScript.onload = function () {
   window.clearTimeout(loadingTimeout);
   try {
-    loadCaja(initializeRootModule, {
+    caja.configure({
       cajaServer: cajaServer,
       debug: debug
-    });
+    }, initialize);
   } catch (e) {
     error(e);
   }

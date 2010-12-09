@@ -23,6 +23,7 @@ import com.google.caja.parser.quasiliteral.ModuleManager;
 import com.google.caja.plugin.Job;
 import com.google.caja.plugin.JobEnvelope;
 import com.google.caja.plugin.Jobs;
+import com.google.caja.plugin.PluginMeta;
 import com.google.caja.plugin.UriFetcher;
 import com.google.caja.reporting.TestBuildInfo;
 import com.google.caja.util.ContentType;
@@ -93,7 +94,8 @@ public class OptimizeJavascriptStageTest extends PipelineStageTestCase {
     getMeta().setEnableES53(true);
     return new OptimizeJavascriptStage().apply(jobs)
         && new ValidateJavascriptStage(new ModuleManager(
-            TestBuildInfo.getInstance(), UriFetcher.NULL_NETWORK, false, mq))
+                new PluginMeta(), TestBuildInfo.getInstance(),
+                UriFetcher.NULL_NETWORK, false, mq))
             .apply(jobs)
         && discardBoilerPlate(jobs);
   }

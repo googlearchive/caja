@@ -25,6 +25,7 @@ import com.google.caja.parser.js.ObjectConstructor;
 import com.google.caja.parser.js.Operation;
 import com.google.caja.parser.js.Operator;
 import com.google.caja.parser.js.StringLiteral;
+import com.google.caja.plugin.PluginMeta;
 import com.google.caja.plugin.UriFetcher;
 import com.google.caja.reporting.BuildInfo;
 import com.google.caja.reporting.MessageQueue;
@@ -67,9 +68,13 @@ public class CajitaModuleRewriter {
     }
     Expression moduleInvocations = null;
     for (CajoledModule module : modules) {
-      Expression invocation = (Expression) QuasiBuilder.substV(
-          "___.prepareModule(@moduleBody)(IMPORTS___)",
-          "moduleBody", module.getModuleBody());
+      Expression invocation = mgr.getPluginMeta().getEnableES53()
+          ? (Expression) QuasiBuilder.substV(
+              "___.prepareModule(@moduleBody).instantiate___(___, IMPORTS___)",
+              "moduleBody", module.getModuleBody())
+          : (Expression) QuasiBuilder.substV(
+              "___.prepareModule(@moduleBody)(IMPORTS___)",
+              "moduleBody", module.getModuleBody());
       moduleInvocations = moduleInvocations != null
           ? Operation.createInfix(Operator.COMMA, moduleInvocations, invocation)
           : invocation;
@@ -100,13 +105,14 @@ public class CajitaModuleRewriter {
   }
 
   public CajitaModuleRewriter(
-      BuildInfo buildInfo, UriFetcher uriFetcher,
+      PluginMeta meta, BuildInfo buildInfo, UriFetcher uriFetcher,
       boolean isFromValija, MessageQueue mq) {
-    this(new ModuleManager(buildInfo, uriFetcher, isFromValija, mq));
+    this(new ModuleManager(meta, buildInfo, uriFetcher, isFromValija, mq));
   }
 
   public CajitaModuleRewriter(
-      BuildInfo buildInfo, boolean isFromValija, MessageQueue mq) {
-    this(buildInfo, UriFetcher.NULL_NETWORK, isFromValija, mq);
+      PluginMeta meta, BuildInfo buildInfo,
+      boolean isFromValija, MessageQueue mq) {
+    this(meta, buildInfo, UriFetcher.NULL_NETWORK, isFromValija, mq);
   }
 }

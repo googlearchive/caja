@@ -126,7 +126,8 @@ public class PipelineMakerTest extends CajaTestCase {
     PipelineMaker pm = new PipelineMaker(
         CssSchema.getDefaultCss21Schema(mq), HtmlSchema.getDefault(mq),
         new ModuleManager(
-            TestBuildInfo.getInstance(), UriFetcher.NULL_NETWORK, false, mq),
+            new PluginMeta(), TestBuildInfo.getInstance(),
+            UriFetcher.NULL_NETWORK, false, mq),
         PipelineMaker.HTML, PipelineMaker.CSS);
     long t0 = System.nanoTime();
     try {
@@ -147,7 +148,8 @@ public class PipelineMakerTest extends CajaTestCase {
     PipelineMaker pm = new PipelineMaker(
         CssSchema.getDefaultCss21Schema(mq), HtmlSchema.getDefault(mq),
         new ModuleManager(
-            TestBuildInfo.getInstance(), UriFetcher.NULL_NETWORK, false, mq),
+            new PluginMeta(), TestBuildInfo.getInstance(),
+            UriFetcher.NULL_NETWORK, false, mq),
         preconds, goals);
     {
       long t0 = System.nanoTime();

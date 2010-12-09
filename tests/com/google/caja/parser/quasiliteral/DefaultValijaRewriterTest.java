@@ -33,6 +33,7 @@ import com.google.caja.parser.js.ReturnStmt;
 import com.google.caja.parser.js.Statement;
 import com.google.caja.parser.js.SyntheticNodes;
 import com.google.caja.parser.js.UncajoledModule;
+import com.google.caja.plugin.PluginMeta;
 import com.google.caja.plugin.UriFetcher;
 import com.google.caja.util.Executor;
 import com.google.caja.util.FailureIsAnOption;
@@ -74,7 +75,7 @@ public class DefaultValijaRewriterTest extends CommonJsRewriterTestCase {
     super.setUp();
     valijaRewriter = new DefaultValijaRewriter(mq, false);
     cajitaModuleRewriter = new CajitaModuleRewriter(
-        new TestBuildInfo(), new TestUriFetcher(), true, mq);
+        new PluginMeta(), new TestBuildInfo(), new TestUriFetcher(), true, mq);
     innocentCodeRewriter = new InnocentCodeRewriter(mq, false);
     // Start with this one, then switch later to CajitaRewriter for
     // the second pass.

@@ -200,17 +200,15 @@ public abstract class AbstractCajolingHandler implements ContentHandler {
     if (javascript != null) {
       props.add(prop("js", lit(renderJavascript(javascript, pretty))));
     }
-    if (mq.hasMessageAtLevel(MessageLevel.LOG)) {
-      List<Expression> messages = Lists.newArrayList();
-      for (Message m : mq.getMessages()) {
-        messages.add(obj(Arrays.asList(
-            prop("level", lit(m.getMessageLevel().ordinal())),
-            prop("name", lit(m.getMessageLevel().name())),
-            prop("type", lit(m.getMessageType().name())),
-            prop("message", lit(m.toString())))));
-      }
-      props.add(prop("messages", arr(messages)));
+    List<Expression> messages = Lists.newArrayList();
+    for (Message m : mq.getMessages()) {
+      messages.add(obj(Arrays.asList(
+          prop("level", lit(m.getMessageLevel().ordinal())),
+          prop("name", lit(m.getMessageLevel().name())),
+          prop("type", lit(m.getMessageType().name())),
+          prop("message", lit(m.toString())))));
     }
+    props.add(prop("messages", arr(messages)));
 
     if (jsonpCallback != null && !checkIdentifier(jsonpCallback)) {
       throw new RuntimeException("Detected XSS attempt; aborting request");

@@ -21,6 +21,16 @@
  */
 
 var caja = (function () {
+  function joinUrl(base, path) {
+    while (base[base.length - 1] === '/') {
+      base = base.slice(0, base.length - 1);
+    }
+    while (path[0] === '/') {
+      path = path.slice(1, path.length);
+    }
+    return base + '/' + path;
+  }
+
   function documentBaseUrl() {
     var bases = document.getElementsByTagName('base');
     if (bases.length == 0) {
@@ -59,16 +69,13 @@ var caja = (function () {
     fd.body.appendChild(fscript);
   }
 
-  function copyImports(target, source) {
-    if (!source) { return; }
+  function copyToImports(imports, source) {
     for (var p in source) {
-      if (source.hasOwnProperty(p) && !/__$/.test(p)) {
-        target.DefineOwnProperty___(p, {
-          value: source[p],
-          writable: false,
-          enumerable: true,
-          configurable: false
-        });
+      if (source.hasOwnProperty(p)) {
+        // No need to use DefineOwnProperty___ since this is native code and
+        // the module function created in es53.js "prepareModule" does the
+        // necessary conversion.
+        imports[p] = source[p];
       }
     }
   }
@@ -101,19 +108,22 @@ var caja = (function () {
     function loadCajaFrame(filename, callback) {
       var iframe = createIframe();
 
-      // If this is done immediately instead of deferred, then on Firefox 3.6
-      // the iframe silently fails to show any DOM changes or load any scripts.
-      setTimeout(function () {
-        var url = cajaServer + debug
-            ? filename + '.js'
-            : filename + '-minified.js';
-        installScript(iframe, url);
-      }, 0);
+      var url = joinUrl(cajaServer,
+          debug ? filename + '.js' : filename + '-minified.js');
 
-      // arrange to be notified when the frame is ready
-      iframe.contentWindow.cajaIframeDone___ = function () {
-        callback(iframe);
-      };
+      // The particular interleaving of async events shown below has been found
+      // necessary to get the right behavior on Firefox 3.6. Otherwise, the
+      // iframe silently fails to invoke the cajaIframeDone___ callback.
+      setTimeout(function () {
+        // Arrange to be notified when the frame is ready. For Firefox, it is
+        // important that we do this before we do the async installScript below.
+        iframe.contentWindow.cajaIframeDone___ = function () {
+          callback(iframe);
+        };
+        setTimeout(function() {
+          installScript(iframe, url);
+        }, 0);
+      }, 0);
     }
 
     loadCajaFrame('es53-taming-frame', function (tamingFrame) {
@@ -187,19 +197,32 @@ var caja = (function () {
        *     constructed ES5 frame has been created.
        */
       function makeES5Frame(div, uriCallback, callback) {
+        if (div && (document !== div.ownerDocument)) {
+          throw '<div> provided for ES5 frame must be in main document';
+        }
+      
         loadCajaFrame('es53-guest-frame', function (guestFrame) {
           var guestWindow = guestFrame.contentWindow;
           // Imports are from *taming* (not *guest*) frame so primordials
           // (e.g. imports.Function, ...) are consistent with taming.
-          var imports = tamingWindow.___.copy(tamingWindow.___.sharedImports);
+          var imports = {};
 
           var loader = guestWindow.scriptModuleLoadMaker(
               documentBaseUrl(),
               undefined,  // default module ID resolver
               new guestWindow.CajolingServiceFinder(
-                  cajaServer + '/cajole', debug));
+                  joinUrl(cajaServer, 'cajole'), debug));
 
           if (div) {
+            var outerContainer = div.ownerDocument.createElement('div');
+            var innerContainer = div.ownerDocument.createElement('div');
+
+            outerContainer.setAttribute('class', 'caja_outerContainer___');
+            innerContainer.setAttribute('class', 'caja_innerContainer___');                                    
+
+            div.appendChild(outerContainer);
+            outerContainer.appendChild(innerContainer);
+
             // The Domita implementation is obtained from the taming window,
             // since we wish to protect Domita and its dependencies from the
             // ability of guest code to modify the shared primordials.
@@ -207,9 +230,9 @@ var caja = (function () {
                 '-CajaGadget-' + guestDocumentIdIndex++ + '___',
                 uriCallback,
                 imports,
-                div);
+                innerContainer);
             imports.htmlEmitter___ =
-                new tamingWindow.HtmlEmitter(div, imports.document);
+                new tamingWindow.HtmlEmitter(innerContainer, imports.document);
           }
 
           /**
@@ -223,14 +246,12 @@ var caja = (function () {
            */
           function run(url, extraImports, callback) {
             if (!extraImports.hasOwnProperty('onerror')) {
-              copyImports(imports, {
-                onerror: tame(function (message, source, lineNum) {
-                  console.log('Uncaught script error: ' + message
-                      + ' in source: "' + source + '" at line: ' + lineNum);
-                })
+              extraImports.onerror = tame(function (message, source, lineNum) {
+                console.log('Uncaught script error: ' + message
+                    + ' in source: "' + source + '" at line: ' + lineNum);
               });
             }
-            copyImports(imports, extraImports);
+            copyToImports(imports, extraImports);
             guestWindow.Q.when(loader.async(url), function (moduleFunc) {
               callback(moduleFunc(imports));
             });
@@ -258,6 +279,27 @@ var caja = (function () {
       });
     });
   }
+
+  // Apply styles to current document
+  (function() {
+    var style = document.createElement('style');
+    style.setAttribute('type', 'text/css');
+    style.innerHTML =
+        '.caja_outerContainer___ {' +
+        '  padding: 0px;' +
+        '  margin: 0px;' +
+        '  display: inline;' +
+        '}' +
+        '.caja_innerContainer___, .caja_outerContainer___ > * {' +
+        '  padding: 0px;' +
+        '  margin: 0px;' +
+        '  height: 100%;' +
+        '  position: relative;' +
+        '  overflow: hidden;' +
+        '  clip: rect(0px, 0px, 0px, 0px);' +
+        '}';
+    document.getElementsByTagName('head')[0].appendChild(style);
+  })();
 
   // The global singleton Caja object
   return {

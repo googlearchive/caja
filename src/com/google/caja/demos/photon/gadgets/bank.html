@@ -62,7 +62,7 @@ var $ = function(a) { return document.getElementById(a); };
 $.create = function(n) { return document.createElement(n); };
 
 var model = undefined;
-var dragSourceByPurse = cajita.newTable();
+var dragSourceByPurse = cajaVM.newTable();
 
 var makeDragSource = function(purse) {
   return ;
@@ -110,8 +110,6 @@ var display = function() {
 };
 
 var makeBank = function(reserve) {
-  'use strict';
-  'use cajita';
   return load('bank')({
     reserve: reserve
   });

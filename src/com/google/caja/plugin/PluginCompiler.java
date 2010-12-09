@@ -140,8 +140,8 @@ public final class PluginCompiler {
     };
 
     ModuleManager moduleMgr = new ModuleManager(
-        buildInfo, jobs.getPluginMeta().getUriFetcher(), true,
-        jobs.getMessageQueue());
+        jobs.getPluginMeta(), buildInfo, jobs.getPluginMeta().getUriFetcher(),
+        true, jobs.getMessageQueue());
     new PipelineMaker(
         cssSchema, htmlSchema, moduleMgr, preconditions, goals)
         .populate(compilationPipeline.getStages());

@@ -34,6 +34,7 @@ import com.google.caja.parser.js.Statement;
 import com.google.caja.parser.js.StringLiteral;
 import com.google.caja.parser.js.SyntheticNodes;
 import com.google.caja.parser.js.UncajoledModule;
+import com.google.caja.plugin.PluginMeta;
 import com.google.caja.plugin.UriFetcher;
 import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessageType;
@@ -2463,7 +2464,8 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
     // CajitaModuleRewriter only accepts an UncajoledModule, so it does not work
     // for those tests that run against other ParseTreeNodes
     final CajitaModuleRewriter moduleRewriter = new CajitaModuleRewriter(
-        TestBuildInfo.getInstance(), new TestUriFetcher(), false, mq);
+        new PluginMeta(), TestBuildInfo.getInstance(),
+        new TestUriFetcher(), false, mq);
 
     setRewriter(new Rewriter(mq, true, false) {{
       addRule(new Rule("UncajoledModule", this) {

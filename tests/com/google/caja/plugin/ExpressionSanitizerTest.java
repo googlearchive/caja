@@ -72,7 +72,8 @@ public class ExpressionSanitizerTest extends CajaTestCase {
 
   private ExpressionSanitizerCaja newPassThruSanitizer() {
     ModuleManager mgr = new ModuleManager(
-        TestBuildInfo.getInstance(), UriFetcher.NULL_NETWORK, false, mq);
+        new PluginMeta(), TestBuildInfo.getInstance(),
+        UriFetcher.NULL_NETWORK, false, mq);
     return new ExpressionSanitizerCaja(mgr, null) {
       @Override
       protected Rewriter newCajitaRewriter(ModuleManager mgr) {
@@ -96,7 +97,8 @@ public class ExpressionSanitizerTest extends CajaTestCase {
       throws Exception {
     Block inputNode = js(fromString(input));
     ModuleManager mgr = new ModuleManager(
-        TestBuildInfo.getInstance(), UriFetcher.NULL_NETWORK, false, mq);
+        new PluginMeta(), TestBuildInfo.getInstance(),
+        UriFetcher.NULL_NETWORK, false, mq);
     ParseTreeNode sanitized = new ExpressionSanitizerCaja(mgr, null)
         .sanitize(inputNode);
     String inputCmp = render(sanitized);

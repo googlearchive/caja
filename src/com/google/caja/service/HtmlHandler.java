@@ -104,10 +104,13 @@ public class HtmlHandler extends AbstractCajolingHandler {
                           String jsonpCallback,
                           boolean htmlInline, Appendable output,
                           boolean pretty, MessageQueue mq) {
-    InputSource is = new InputSource (inputUri);
+    PluginCompiler compiler = null;
     boolean okToContinue = true;
+
     try {
-      PluginCompiler compiler = new PluginCompiler(buildInfo, meta, mq);
+      InputSource is = new InputSource (inputUri);
+      compiler = new PluginCompiler(buildInfo, meta, mq);
+
       if (htmlInline) {
         compiler.setGoals(
             compiler.getGoals().without(PipelineMaker.HTML_SAFE_STATIC));
@@ -126,14 +129,26 @@ public class HtmlHandler extends AbstractCajolingHandler {
         compiler.addInput(html, inputUri);
         okToContinue &= compiler.run();
       }
-      renderAsJSON(
-          okToContinue ? compiler.getStaticHtml() : null,
-          okToContinue ? compiler.getJavascript() : null,
-          jsonpCallback, mq, output, pretty);
-    } catch (IOException e) {
-      mq.addMessage(
-          ServiceMessageType.IO_ERROR,
+    } catch (Exception e) {
+      mq.addMessage(ServiceMessageType.EXCEPTION_IN_SERVICE,
           MessagePart.Factory.valueOf(e.getMessage()));
+      okToContinue = false;
+    }
+
+    try {
+      if (okToContinue && compiler != null) {
+        renderAsJSON(
+            compiler.getStaticHtml(),
+            compiler.getJavascript(),
+            jsonpCallback, mq, output, pretty);
+      } else {
+        renderAsJSON(
+            null,
+            null,
+            jsonpCallback, mq, output, pretty);
+      }
+    } catch (IOException e) {
+      throw new RuntimeException(e);
     }
   }
 

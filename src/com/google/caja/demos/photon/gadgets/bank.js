@@ -19,35 +19,28 @@
  */
 
 'use strict';
-'use cajita';
 
-// TODO INSECURE TODO INSECURE TODO INSECURE TODO INSECURE TODO INSECURE TODO INSECURE TODO INSECURE
-// TODO INSECURE TODO INSECURE TODO INSECURE TODO INSECURE TODO INSECURE TODO INSECURE TODO INSECURE
-// TODO INSECURE TODO INSECURE TODO INSECURE TODO INSECURE TODO INSECURE TODO INSECURE TODO INSECURE
-// TODO INSECURE TODO INSECURE TODO INSECURE TODO INSECURE TODO INSECURE TODO INSECURE TODO INSECURE
-// ASK erights FOR SECURE IMPL
-
-var balanceByPurse = cajita.newTable();
+var balanceByPurse = cajaVM.newTable();
 var purses = load('../container/list')({});
 var events = load('../container/events')({
   names: [ 'purses' ]
 });
 
 var privateNewPurse = function(balance, name) {
-  cajita.enforceNat(balance);
-  var purse = cajita.freeze({
+  cajaVM.enforceNat(balance);
+  var purse = Object.freeze({
     depositFrom: function(aPurse, amount) {
       if (amount === undefined) {
         amount = aPurse.getBalance();
       }
-      cajita.enforceNat(amount);
+      cajaVM.enforceNat(amount);
       if (balanceByPurse.get(aPurse) === undefined) {
-	throw 'Source is not a purse in this bank';
+        throw 'Source is not a purse in this bank';
       }
       if (amount > balanceByPurse.get(aPurse)) {
-	throw 'Source purse has inadequate funds';
+        throw 'Source purse has inadequate funds';
       }
-      cajita.enforceNat(balanceByPurse.get(purse) + amount);
+      cajaVM.enforceNat(balanceByPurse.get(purse) + amount);
       balanceByPurse.set(aPurse, balanceByPurse.get(aPurse) - amount);
       balanceByPurse.set(purse, balanceByPurse.get(purse) + amount);
       events.fire('purses');  // Hack; we don't listen to individual purses
@@ -63,7 +56,7 @@ var privateNewPurse = function(balance, name) {
     },
     destroy: function() {
       if (balanceByPurse.get(purse) > 0) {
-	throw 'Cannot destroy a nonempty purse';
+        throw 'Cannot destroy a nonempty purse';
       }
       balanceByPurse.set(purse, undefined);
       purses.remove(purse);
@@ -77,7 +70,7 @@ var privateNewPurse = function(balance, name) {
   return purse;
 };
 
-/* return */ cajita.freeze({
+/* return */ Object.freeze({
   reserve: privateNewPurse(reserve, 'Reserve'),
   purses: purses.asReadOnly,
   listen: events.listen,

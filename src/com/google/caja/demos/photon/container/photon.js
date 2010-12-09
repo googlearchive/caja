@@ -24,7 +24,6 @@
  */
 
 'use strict';
-'use cajita';
 
 var self = {};
 
@@ -48,9 +47,9 @@ self.instantiateInElement = function(element, moduleUrl, outers) {
 self.makeDragSource = introducer.makeDragSource;
 self.makeDropTarget = introducer.makeDropTarget;
 
-/* return */ cajita.freeze({
-  publicFacet: cajita.freeze(self),
-  friendFacet: cajita.freeze({
+/* return */ Object.freeze({
+  publicFacet: Object.freeze(self),
+  friendFacet: Object.freeze({
     createIntroducerView: introducer.createView
   })
 });

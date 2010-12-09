@@ -19,9 +19,8 @@
  * @param photon the Photon object.
  */
 'use strict';
-'use cajita';
 
-var states = cajita.freeze({
+var states = Object.freeze({
   HIDDEN:   'hidden',
   DISABLED: 'disabled',
   ENABLED:  'enabled',
@@ -73,7 +72,7 @@ var makeDndController = function(
     cancel();
   };
 
-  return cajita.freeze({
+  return Object.freeze({
     onInitiatorActivated: onInitiatorActivated,
     onReceptorActivated: onReceptorActivated,
     cancel: cancel
@@ -139,10 +138,10 @@ var makeDndModel = function(
     }
   };
 
-  dndList.push(cajita.freeze(iFriend));
+  dndList.push(Object.freeze(iFriend));
 
   // The public interface is for suspect (non-Photon) components
-  return cajita.freeze({
+  return Object.freeze({
     createView: iFriend.createView,
     destroy: iFriend.destroy,
     listen: iFriend.listen,
@@ -163,7 +162,7 @@ var doRendezvous = function(dragSource, dropTarget) {
     var value = dragSourceCb.call(undefined);
     dropTargetCb.call(undefined, value);
   } catch (e) {
-    cajita.log('Exception completing drag/drop: ' + e);
+    cajaVM.log('Exception completing drag/drop: ' + e);
   }
 };
 
@@ -236,7 +235,7 @@ var providers = load('list')({});
  */
 var makeProvider = function(dataTypes, description, createView) {
 
-  var provider = cajita.freeze({
+  var provider = Object.freeze({
     dataTypes: dataTypes,
     description: description,
     createView: createView
@@ -244,7 +243,7 @@ var makeProvider = function(dataTypes, description, createView) {
 
   providers.push(provider);
 
-  return cajita.freeze({
+  return Object.freeze({
     destroy: function() {
       providers.remove(provider);
     }
@@ -261,7 +260,7 @@ var makeProvider = function(dataTypes, description, createView) {
 var createView = function(anElement) {
   return photon.instantiateInElement(anElement, 'introducerChrome.html', {
     photon: photon,
-    model: cajita.freeze({
+    model: Object.freeze({
       getHighlighted: function() {
         return highlightedDnd;
       },
@@ -279,7 +278,7 @@ var createView = function(anElement) {
   });
 };
 
-/* return */ cajita.freeze({
+/* return */ Object.freeze({
   states: states,
   makeDragSource: makeDragSource,
   makeDropTarget: makeDropTarget,

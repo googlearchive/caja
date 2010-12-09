@@ -320,7 +320,7 @@ public class DebuggingSymbolsStageTest extends CajaTestCase {
     Pipeline<Jobs> pipeline = new Pipeline<Jobs>();
     TestBuildInfo buildInfo = TestBuildInfo.getInstance();
     ModuleManager mgr = new ModuleManager(
-        buildInfo, UriFetcher.NULL_NETWORK, false, mq);
+        new PluginMeta(), buildInfo, UriFetcher.NULL_NETWORK, false, mq);
     pipeline.getStages().add(new ValidateJavascriptStage(mgr));
     pipeline.getStages().add(new ConsolidateCodeStage(mgr));
     pipeline.getStages().add(new InferFilePositionsStage());

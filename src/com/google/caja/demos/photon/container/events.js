@@ -20,7 +20,6 @@
  */
 
 'use strict';
-'use cajita';
 
 var listeners = {};
 
@@ -54,7 +53,7 @@ function fire(name) {
   }
 }
 
-/* return */ cajita.freeze({
+/* return */ Object.freeze({
   listen: listen,
   unlisten: unlisten,
   fire: fire

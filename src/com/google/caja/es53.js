@@ -480,7 +480,7 @@ var ___, cajaVM, safeJSON;
       p = '' + p;
       var fv = f[p];
       if (typeof fv !== 'function') {
-        throw new TypeError('Not readable: ' + p + ' -- typeof is ' + (typeof fv) + ' and value is ' + fv);
+        throw new TypeError('Not readable: ' + p);
       }
       return markFuncFreeze(function (_) {
         return tame(f[p].apply(f, untameArguments(arguments)));
@@ -4292,13 +4292,36 @@ var ___, cajaVM, safeJSON;
     });
   }
 
+  function copyToImports(imports, source) {
+    for (var p in source) {
+      if (source.hasOwnProperty(p)) {
+        if (/__$/.test(p)) {
+          // Caja hidden property on IMPORTS -- these are used by Domita
+          imports[p] = source[p];
+        } else {
+          imports.DefineOwnProperty___(p, {
+            value: source[p],
+            writable: false,
+            enumerable: true,
+            configurable: false
+          });
+        }
+      }
+    }
+  }
+
   /**
    * Produces a function module given an object literal module
    */
   function prepareModule(module, load) {
     registerClosureInspector(module);
-    function theModule(imports) {
-      imports.w___('load', load);
+    function theModule(extraImports) {
+      var imports = copy(sharedImports);
+      copyToImports({
+        load: load,
+        cajaVM: cajaVM
+      });
+      copyToImports(imports, extraImports);
       return module.instantiate(___, imports);
     }
 
@@ -4324,6 +4347,11 @@ var ___, cajaVM, safeJSON;
           configurable: false
         });
     }
+
+    // Provide direct access to 'instantiate' for privileged use 
+    theModule.instantiate___ = function(___, IMPORTS___) {
+      return module.instantiate(___, IMPORTS___);
+    };
 
     return markFuncFreeze(theModule);
   }
@@ -4505,6 +4533,7 @@ var ___, cajaVM, safeJSON;
       log: log,
       enforce: enforce,
       enforceType: enforceType,
+      enforceNat: enforceNat,
 
       // Object indistinguishability and object-keyed tables
       Token: Token,

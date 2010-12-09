@@ -1063,6 +1063,10 @@
         <include name="caja-orig.js"/>
         <include name="caja-iframe.js"/>
         <include name="caja-iframe-minified.js"/>
+        <include name="es53-guest-frame.js"/>
+        <include name="es53-guest-frame-minified.js"/>
+        <include name="es53-taming-frame.js"/>                                
+        <include name="es53-taming-frame-minified.js"/>
       </fileset>
     </copy>
   </target>
@@ -1142,11 +1146,21 @@
     <appcfg action="update" war="${war}" />
   </target>
 
-  <target name="runserver" depends="playground"
+  <target name="runserver" depends="playground,photon"
     description="Starts the development server.">
     <dev_appserver war="${war}">
       <options>
         <arg value="--jvm_flag=-Xmx4096m"/>
+      </options>
+    </dev_appserver>
+  </target>
+
+  <target name="runserver-debug" depends="playground,photon"
+    description="Starts the development server with debug port.">
+    <dev_appserver war="${war}">
+      <options>
+        <arg value="--jvm_flag=-Xmx4096m"/>
+        <arg value="--jvm_flag=-Xrunjdwp:transport=dt_socket,address=9999,server=y,suspend=n"/>
       </options>
     </dev_appserver>
   </target>

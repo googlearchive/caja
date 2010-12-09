@@ -28,6 +28,7 @@ import com.google.caja.parser.js.Parser;
 import com.google.caja.parser.js.StringLiteral;
 import com.google.caja.parser.js.UncajoledModule;
 import com.google.caja.parser.js.ValueProperty;
+import com.google.caja.plugin.PluginMeta;
 import com.google.caja.plugin.UriFetcher;
 import com.google.caja.reporting.BuildInfo;
 import com.google.caja.reporting.MessagePart;
@@ -53,6 +54,7 @@ import java.util.Map;
  * @author maoziqing@gmail.com
  */
 public class ModuleManager {
+  private final PluginMeta meta;
   private final BuildInfo buildInfo;
   private final UriFetcher uriFetcher;
   private final boolean isValija;
@@ -63,9 +65,10 @@ public class ModuleManager {
   private final List<CajoledModule> modules = Lists.newArrayList();
 
   public ModuleManager(
-      BuildInfo buildInfo, UriFetcher uriFetcher, boolean isValija,
-      MessageQueue mq) {
+      PluginMeta meta, BuildInfo buildInfo, UriFetcher uriFetcher,
+      boolean isValija, MessageQueue mq) {
     assert uriFetcher != null;
+    this.meta = meta;
     this.buildInfo = buildInfo;
     this.uriFetcher = uriFetcher;
     this.isValija = isValija;
@@ -75,6 +78,8 @@ public class ModuleManager {
   public List<CajoledModule> getModuleMap() {
     return Collections.unmodifiableList(modules);
   }
+
+  public PluginMeta getPluginMeta() { return meta; }
 
   public BuildInfo getBuildInfo() { return buildInfo; }
 
@@ -173,16 +178,19 @@ public class ModuleManager {
       Block input = new Parser(tq, mq).parse();
       tq.expectEmpty();
 
-      Block intermediate;
-      if (isValija) {
-        intermediate = (Block) new DefaultValijaRewriter(mq).expand(input);
-      } else {
-        intermediate = input;
-      }
+      CajoledModule cajoledModule = null;
 
-      CajitaRewriter cr = new CajitaRewriter(absoluteUri, this, false);
-      UncajoledModule uncajoledModule = new UncajoledModule(intermediate);
-      CajoledModule cajoledModule = (CajoledModule) cr.expand(uncajoledModule);
+      if (meta.getEnableES53()) {
+        ES53Rewriter rewriter = new ES53Rewriter(absoluteUri, this, false);
+        cajoledModule = (CajoledModule)
+            rewriter.expand(new UncajoledModule(input));
+      } else {
+        Block intermediate = isValija ?
+          (Block) new DefaultValijaRewriter(mq).expand(input) : input;
+        CajitaRewriter cr = new CajitaRewriter(absoluteUri, this, false);
+        UncajoledModule uncajoledModule = new UncajoledModule(intermediate);
+        cajoledModule = (CajoledModule) cr.expand(uncajoledModule);
+      }
 
       // Attach the name to the cajoledModule so that we can thread cache keys
       // through with cajoled modules.

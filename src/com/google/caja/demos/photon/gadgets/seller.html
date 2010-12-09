@@ -68,6 +68,7 @@ var requestPurse = undefined;
 var provideItem = undefined;
 var makeItemForSale = undefined;
 var item = undefined;
+var goods = undefined;
 
 requestPurse = function() {
   var purseDt = photon.makeDropTarget(
@@ -98,7 +99,7 @@ provideItem = function(purse) {
 };
 
 makeItemForSale = function(purse) {
-  return cajita.freeze({
+  return Object.freeze({
     getPrice: function() {
       return price;
     },
@@ -115,7 +116,7 @@ makeItemForSale = function(purse) {
   });
 };
 
-goods = cajita.freeze({
+goods = Object.freeze({
   display: function(s) {
     log('Sponsored message: <span style="color: blue">' + String(s) + '</span>');
   }
