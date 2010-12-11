@@ -36,7 +36,7 @@ var caja___ = (function () {
   var uriPolicy = {
       rewrite: function (uri, mimeType) {
         if (!/^https?:\/\//i.test(uri)) { return null; }
-        if (/^image[/]/.test(mimeType)) { return uri; }
+        if (/^image[\/]/.test(mimeType)) { return uri; }
         return ('http://caja.appspot.com/cajole?url='
             + encodeURIComponent(uri)
             + '&mime-type=' + encodeURIComponent(mimeType));

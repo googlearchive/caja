@@ -1039,6 +1039,9 @@
       <fileset dir="${src}/com/google/caja/demos/flash">
         <include name="Boxed.swf" />
       </fileset>
+      <fileset dir="${src}/com/google/caja/flash">
+        <include name="flashbridge.swf" />
+      </fileset>
 
       <!-- Needed by container-dynamic.html which references the playground
         -  server so as to be standalone. -->
