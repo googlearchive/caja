@@ -94,14 +94,23 @@ public class GWTCajolingServiceImpl extends RemoteServiceServlet
     }
   };
 
-  private static URI guessURI(String guess) {
+  private static URI guessURI(String base, String guess) {
+    URI unknown = URI.create("unknown:///unknown");
     try {
-      guess = UriUtil.normalizeUri(guess);
-      if (guess != null) { return new URI(guess); }
+      base = null == base ? null : UriUtil.normalizeUri(base);
+      guess = null == guess ? null : UriUtil.normalizeUri(guess);
+      if (null != base && null != guess) {
+        return unknown.resolve(base).resolve(guess);
+      }
+      if (null != guess) {
+        return unknown.resolve(guess);
+      }
     } catch (URISyntaxException e) {
-      // fallback below
+      return unknown;
+    } catch (IllegalArgumentException e) {
+      return unknown;
     }
-    return URI.create("unknown:///unknown");
+    return unknown;
   }
 
   public String[] getMessageLevels() {
@@ -116,7 +125,7 @@ public class GWTCajolingServiceImpl extends RemoteServiceServlet
   // TODO(jasvir): Outline this and all the other examples of cajole
   // into a more usable api for the cajoler
   public CajolingServiceResult cajole(
-      String url, String input, boolean es53Mode) {
+      String base, String url, String input, boolean es53Mode) {
     MessageContext mc = new MessageContext();
     MessageQueue mq = new SimpleMessageQueue();
 
@@ -124,14 +133,14 @@ public class GWTCajolingServiceImpl extends RemoteServiceServlet
     Node outputHtml;
 
     Map<InputSource, ? extends CharSequence> originalSources
-        = Collections.singletonMap(new InputSource(guessURI(url)), input);
+        = Collections.singletonMap(new InputSource(guessURI(base, url)), input);
     
     PluginMeta meta = new PluginMeta(fetcher, uriPolicy);
     meta.setEnableES53(es53Mode);
     PluginCompiler compiler = makePluginCompiler(meta, mq);
     compiler.setMessageContext(mc);
     
-    URI uri = guessURI(url);
+    URI uri = guessURI(base, url);
     InputSource is = new InputSource(uri);
     CharProducer cp = CharProducer.Factory.fromString(input, is);
     boolean okToContinue = true;
@@ -201,9 +210,13 @@ public class GWTCajolingServiceImpl extends RemoteServiceServlet
     return compiler;
   }
 
-  public String fetch(String uri) {
+  public String fetch(String base, String uri) {
     try {
       URI address = new URI(uri);
+      if (!address.isAbsolute()) {
+        URI baseAddress = new URI(base);
+        address = baseAddress.resolve(address);
+      }
       return fetcher.fetch(
           new ExternalReference(address, FilePosition.UNKNOWN), "*/*")
           .getTextualContent().toString();

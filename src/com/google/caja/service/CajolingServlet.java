@@ -21,6 +21,7 @@ import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.SimpleMessageQueue;
+import com.google.caja.util.Pair;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -36,6 +37,8 @@ import java.io.IOException;
  */
 public class CajolingServlet extends HttpServlet {
   private static final long serialVersionUID = 5055670217887121398L;
+  private static final Pair<String, String> UMP =
+    Pair.pair("Access-Control-Allow-Origin", "*");
 
   private static class HttpContentHandlerArgs extends ContentHandlerArgs {
     private final HttpServletRequest request;
@@ -136,6 +139,7 @@ public class CajolingServlet extends HttpServlet {
   @Override
   public void doGet(HttpServletRequest req, HttpServletResponse resp)
       throws ServletException {
+    HttpContentHandlerArgs args = new HttpContentHandlerArgs(req);
     handle(resp, new HttpContentHandlerArgs(req), null);
   }
 
@@ -164,6 +168,7 @@ public class CajolingServlet extends HttpServlet {
       byte[] content = result.getByteContent();
       resp.setContentType(responseContentType);
       resp.setContentLength(content.length);
+      resp.setHeader(UMP.a, UMP.b);
 
       resp.getOutputStream().write(content);
       resp.getOutputStream().close();

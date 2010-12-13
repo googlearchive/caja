@@ -79,6 +79,11 @@ public enum CajaArguments {
    * The URL of the input document that Caja is being asked to process.
    */
   URL("url"),
+  
+  /**
+   * Optional content that Caja is being asked to process.
+   */
+  CONTENT("content"),
 
   /**
    * Renderer for the code.

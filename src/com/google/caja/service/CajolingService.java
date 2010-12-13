@@ -24,12 +24,14 @@ import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
+import com.google.caja.util.Charsets;
 import com.google.caja.util.Lists;
 import com.google.caja.util.Pair;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.StringReader;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;
@@ -76,6 +78,10 @@ public class CajolingService {
     registerHandlers(buildInfo);
   }
 
+  private boolean emptyOrNull(String str) {
+    return null == str || "".equals(str);
+  }
+  
   /**
    * Main entry point for the cajoling service.
    *
@@ -96,7 +102,8 @@ public class CajolingService {
                             MessageQueue mq) {
     String inputUrlString = CajaArguments.URL.get(args);
     URI inputUri;
-    if (inputUrlString == null && inputFetchedData == null) {
+    if (inputUrlString == null && inputFetchedData == null && 
+        emptyOrNull(CajaArguments.CONTENT.get(args))) {
       mq.addMessage(
           ServiceMessageType.MISSING_ARGUMENT,
           MessagePart.Factory.valueOf(CajaArguments.URL.toString()));
@@ -124,13 +131,24 @@ public class CajolingService {
     }
 
     if (inputFetchedData == null) {
-      try {
-        inputFetchedData = uriFetcher.fetch(
-            new ExternalReference(inputUri, FilePosition.UNKNOWN),
-            expectedInputContentType);
-      } catch (UriFetcher.UriFetchException ex) {
-        ex.toMessageQueue(mq);
-        return null;
+      String content = CajaArguments.CONTENT.get(args);
+      if (emptyOrNull(content)) {
+        try {
+          inputFetchedData = uriFetcher.fetch(
+              new ExternalReference(inputUri, FilePosition.UNKNOWN),
+              expectedInputContentType);
+        } catch (UriFetcher.UriFetchException ex) {
+          ex.toMessageQueue(mq);
+          return null;
+        }
+      } else {
+        try {
+          inputFetchedData = FetchedData.fromReader(new StringReader(content),
+              new InputSource(inputUri), expectedInputContentType,
+              Charsets.UTF_8.displayName());
+        } catch (IOException e) {
+          return null;
+        }
       }
     }
 

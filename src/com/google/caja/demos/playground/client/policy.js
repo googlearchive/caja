@@ -197,3 +197,15 @@ tamings___.push(function tameAlert(___, imports) {
   })();
   ___.grantFunc(imports.outers, 'alert');
 });
+
+/**
+ * Expose a "record" function used by sunspider benchmarks
+ */
+tamings___.push(function tameRecord(___, imports) {
+  imports.outers.recordResult = function recordResult(number) {
+    if (!!console && !!console.log) {
+      console.log("Time taken: " + number);
+    }
+  };
+  ___.grantFunc(imports.outers, 'recordResult');
+});

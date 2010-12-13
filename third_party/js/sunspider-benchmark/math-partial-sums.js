@@ -3,10 +3,12 @@
 // contributed by Isaac Gouy
 
 function partial(n){
-    var a1 = a2 = a3 = a4 = a5 = a6 = a7 = a8 = a9 = 0.0;
+    var a1, a2, a3, a4, a5, a6, a7, a8, a9;
+    a1 = a2 = a3 = a4 = a5 = a6 = a7 = a8 = a9 = 0.0;
     var twothirds = 2.0/3.0;
     var alt = -1.0;
-    var k2 = k3 = sk = ck = 0.0;
+    var k2, k3, sk, ck;
+    k2 = k3 = sk = ck = 0.0;
     
     for (var k = 1; k <= n; k++){
         k2 = k*k;

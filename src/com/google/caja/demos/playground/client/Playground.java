@@ -16,6 +16,7 @@ package com.google.caja.demos.playground.client;
 import com.google.caja.demos.playground.client.ui.PlaygroundView;
 import com.google.gwt.core.client.EntryPoint;
 import com.google.gwt.core.client.GWT;
+import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.rpc.AsyncCallback;
 
 /**
@@ -30,9 +31,13 @@ public class Playground implements EntryPoint {
     GWT.create(PlaygroundService.class);
 
   public void loadSource(String url) {
+    loadSource(Window.Location.getHref(), url);
+  }
+
+  public void loadSource(String base, String url) {
     gui.setLoading(true);
     gui.setUrl(url);
-    cajolingService.fetch(url, new AsyncCallback<String>() {
+    cajolingService.fetch(base, url, new AsyncCallback<String>() {
       public void onFailure(Throwable caught) {
         gui.setLoading(false);
         gui.addCompileMessage(caught.getMessage());
@@ -55,25 +60,26 @@ public class Playground implements EntryPoint {
   public void loadPolicy(String url) {
     gui.setLoading(true);
     gui.setPolicyUrl(url);
-    cajolingService.fetch(url, new AsyncCallback<String>() {
-      public void onFailure(Throwable caught) {
-        gui.setLoading(false);
-        gui.addCompileMessage(caught.getMessage());
-        gui.selectTab(PlaygroundView.Tabs.COMPILE_WARNINGS);
-      }
-
-      public void onSuccess(String result) {
-        gui.setLoading(false);
-        gui.setPolicySource(result);
-        gui.selectTab(PlaygroundView.Tabs.POLICY);
-      }
-    });
+    cajolingService.fetch(Window.Location.getHref(), url,
+        new AsyncCallback<String>() {
+          public void onFailure(Throwable caught) {
+            gui.setLoading(false);
+            gui.addCompileMessage(caught.getMessage());
+            gui.selectTab(PlaygroundView.Tabs.COMPILE_WARNINGS);
+          }
+    
+          public void onSuccess(String result) {
+            gui.setLoading(false);
+            gui.setPolicySource(result);
+            gui.selectTab(PlaygroundView.Tabs.POLICY);
+          }
+        });
   }
 
   public void cajole(String uri, String input, final String policy,
       boolean debugMode) {
     gui.setLoading(true);
-    cajolingService.cajole(uri, input, debugMode,
+    cajolingService.cajole(Window.Location.getHref(), uri, input, debugMode,
                            new AsyncCallback<CajolingServiceResult>() {
       public void onFailure(Throwable caught) {
         gui.setLoading(false);

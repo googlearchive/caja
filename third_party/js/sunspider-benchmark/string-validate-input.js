@@ -1,6 +1,6 @@
-letters = new Array("a","b","c","d","e","f","g","h","i","j","k","l","m","n","o","p","q","r","s","t","u","v","w","x","y","z");
-numbers = new Array(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26);
-colors  = new Array("FF","CC","99","66","33","00");
+var letters = new Array("a","b","c","d","e","f","g","h","i","j","k","l","m","n","o","p","q","r","s","t","u","v","w","x","y","z");
+var numbers = new Array(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26);
+var colors  = new Array("FF","CC","99","66","33","00");
 
 var endResult;
 
@@ -11,8 +11,8 @@ function doTest()
    // make up email address
    for (var k=0;k<4000;k++)
    {
-      name = makeName(6);
-      (k%2)?email=name+"@mac.com":email=name+"(at)mac.com";
+      var name = makeName(6);
+      var email = (k%2) ? name+"@mac.com" : name+"(at)mac.com";
 
       // validate the email address
       var pattern = /^[a-zA-Z0-9\-\._]+@[a-zA-Z0-9\-_]+(\.?[a-zA-Z0-9\-_]*)\.[a-zA-Z]{2,3}$/;

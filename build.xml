@@ -1042,6 +1042,10 @@
       <fileset dir="${src}/com/google/caja/flash">
         <include name="flashbridge.swf" />
       </fileset>
+      <fileset dir="${third_party}/js/sunspider-benchmark">
+        <include name="sunspider-record-result.js" />
+        <include name="*.html" />
+      </fileset>
 
       <!-- Needed by container-dynamic.html which references the playground
         -  server so as to be standalone. -->

@@ -23,7 +23,8 @@ public interface PlaygroundService extends RemoteService {
    * @param input Source to cajole
    * @return cajoled html, js and cajoling messages
    */
-  CajolingServiceResult cajole(String uri, String input, boolean debugMode);
+  CajolingServiceResult cajole(String base, String uri, String input,
+      boolean debugMode);
 
   /**
    * Returns build info as a string
@@ -36,5 +37,5 @@ public interface PlaygroundService extends RemoteService {
    * @return the document if it exists, null else
    */
   // TODO(jasvir): Fetching ought to be done via a separate service
-  String fetch(String url);
+  String fetch(String base, String url);
 }

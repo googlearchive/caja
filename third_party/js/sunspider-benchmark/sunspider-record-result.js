@@ -23,6 +23,9 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 
  */
 
-var bitwiseAndValue = 4294967296;
-for (var i = 0; i < 600000; i++)
-    bitwiseAndValue = bitwiseAndValue & i;
+function record(time) {
+    document.getElementById("console").innerHTML = time + "ms";
+    if (window.parent) {
+        parent.recordResult(time);
+    }
+}
