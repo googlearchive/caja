@@ -184,7 +184,12 @@
   </target>
 
   <target name="runtests" depends="AllTests"
-   description="Runs unittests.  To filter tests: $ ant -Dtest.filter=My\*Test">
+   description="Runs unittests.  To filter tests: $ ant -Dtest.filter=My\*Test.
+   To remote debug tests (on port 9999): $ ant -Dtest.debug=true">
+   <condition property="jvmarg"
+     value="-Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=9999" else="">
+     <isset property="test.debug"/>
+   </condition>
     <!-- Instrument the compiled class files to gather code coverage stats -->
     <emma enabled="${emma.enabled}">
       <instr instrpath="${lib}" destdir="${instr}" mode="fullcopy"
@@ -202,6 +207,7 @@
      -->
     <junit printsummary="yes" fork="yes" maxmemory="512m">
       <assertions><enable/></assertions>  <!-- ignored unless fork="yes" -->
+      <jvmarg line="${jvmarg}"/>
       <classpath refid="classpath.tests.run"/>
       <formatter type="xml" usefile="true" unless="emma.enabled"/>
       <batchtest todir="${reports}/tests" unless="emma.enabled">
