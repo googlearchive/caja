@@ -112,13 +112,26 @@ public class LegacyNamespaceFixupStage implements Pipeline.Stage<Jobs> {
     private void fixAttr(String elNsUri, Attr a) {
       Element e = a.getOwnerElement();
       String ns = guessNamespaceAndWarn(elNsUri, a);
-      Attr newA = a.getOwnerDocument().createAttributeNS(ns, a.getName());
-      newA.setNodeValue(a.getValue());
-      Nodes.setFilePositionFor(newA, Nodes.getFilePositionFor(a));
-      Nodes.setFilePositionForValue(newA, Nodes.getFilePositionForValue(a));
-      Nodes.setRawValue(newA, Nodes.getRawValue(a));
-      e.removeAttributeNode(a);
-      e.setAttributeNodeNS(newA);
+      if ("xmlns".equals(a.getName())) {
+        e.removeAttributeNode(a);
+        if (!a.getValue().equals(ns)) {
+          mq.addMessage(
+              PluginMessageType.CONFLICTING_XML_NAMESPACE, MessageLevel.WARNING,
+              Nodes.getFilePositionFor(a),
+              MessagePart.Factory.valueOf(a.getValue()),
+              MessagePart.Factory.valueOf(ns),
+              MessagePart.Factory.valueOf(e.getNodeName()));
+        }
+        e.getOwnerDocument().renameNode(e, ns, e.getNodeName());
+      } else {
+        Attr newA = a.getOwnerDocument().createAttributeNS(ns, a.getName());
+        newA.setNodeValue(a.getValue());
+        Nodes.setFilePositionFor(newA, Nodes.getFilePositionFor(a));
+        Nodes.setFilePositionForValue(newA, Nodes.getFilePositionForValue(a));
+        Nodes.setRawValue(newA, Nodes.getRawValue(a));
+        e.removeAttributeNode(a);
+        e.setAttributeNodeNS(newA);
+      }
     }
 
     private String guessNamespaceAndWarn(String defaultNsUri, Node n) {

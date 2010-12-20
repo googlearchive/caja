@@ -17,6 +17,7 @@ package com.google.caja.plugin.stages;
 import com.google.caja.lexer.InputSource;
 import com.google.caja.parser.html.Dom;
 import com.google.caja.parser.html.DomParser;
+import com.google.caja.parser.html.Namespaces;
 import com.google.caja.plugin.Job;
 import com.google.caja.plugin.JobEnvelope;
 import com.google.caja.plugin.Jobs;
@@ -63,6 +64,37 @@ public class LegacyNamespaceFixupStageTest extends CajaTestCase {
     assertMessage(
         true, PluginMessageType.MISSING_XML_NAMESPACE, MessageLevel.LINT,
         MessagePart.Factory.valueOf("xml:lang"));
+    assertTrue(mq.getMessages().isEmpty());
+  }
+
+  public final void testNoXmlnsAttr() {
+    assertFixed(
+        ""
+        + "<a href=\"bar.html\">Foo</a>",
+        builder().open("a").attr("href", "bar.html")
+            .text("Foo").close().job());
+    assertTrue(mq.getMessages().isEmpty());
+  }
+
+  public final void testSameXmlnsAttr() {
+    assertFixed(
+        ""
+        + "<a href=\"bar.html\">Foo</a>",
+        builder().open("a").attr("href", "bar.html")
+        .attr("xmlns", Namespaces.HTML_NAMESPACE_URI).text("Foo")
+        .close().job());
+    assertTrue(mq.getMessages().isEmpty());
+  }
+
+  public final void testNewXmlnsAttr() {
+    assertFixed(
+        ""
+        + "<a href=\"bar.html\">Foo</a>",
+        builder().open("a").attr("href", "bar.html")
+            .attr("xmlns", "http://foo.com").text("Foo").close().job());
+    assertMessage(
+        true, PluginMessageType.CONFLICTING_XML_NAMESPACE, MessageLevel.WARNING,
+        MessagePart.Factory.valueOf("a"));
     assertTrue(mq.getMessages().isEmpty());
   }
 
