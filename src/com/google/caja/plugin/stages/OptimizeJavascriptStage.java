@@ -25,7 +25,7 @@ public final class OptimizeJavascriptStage implements Stage<Jobs> {
     if (jobs.getPluginMeta().getEnableES53()) {
       for (JobEnvelope env : jobs.getJobsByType(ContentType.JS)) {
         if (env.fromCache) { continue; }
-        ArrayIndexOptimization.optimize(env.job.getRoot());
+        // ArrayIndexOptimization.optimize(env.job.getRoot());
       }
     }
     return jobs.hasNoFatalErrors();
