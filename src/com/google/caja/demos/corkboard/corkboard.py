@@ -58,8 +58,12 @@ class PostHandler(webapp.RequestHandler):
     else:
       posting = Posting.get(keystr)
 
-    if not posting.editable() or not verifyCaptcha(self.request):
-      # TODO: nice retry page on captcha
+    if not posting.editable():
+      self.error(403)
+      return
+
+    if not (users.get_current_user() or verifyCaptcha(self.request)):
+      # TODO: present a nice retry-your-submission page
       self.error(403)
       return
 
