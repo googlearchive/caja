@@ -80,7 +80,23 @@
       {% else %}Anon{% endif %}
     </span>
     (<a href="{{ account_url|escape }}">{{ account_link|escape }}</a>), just now
-    </p>
+  </p>
+  {% if user %}
+  {% else %}
+  <div class="captcha">
+    <script type="text/javascript"
+       src="http://www.google.com/recaptcha/api/challenge?k={{ recaptcha_public_key|urlencode|escape }}">
+    </script>
+    <noscript>
+       <iframe src="http://www.google.com/recaptcha/api/noscript?k={{ recaptcha_public_key|urlencode|escape }}"
+           height="300" width="500" frameborder="0"></iframe><br>
+       <textarea name="recaptcha_challenge_field" rows="3" cols="40">
+       </textarea>
+       <input type="hidden" name="recaptcha_response_field"
+           value="manual_challenge">
+    </noscript>
+  </div>
+  {% endif %}
   <div class="buttons"><input type="submit" value="Post This" /></div>
 </form>
 

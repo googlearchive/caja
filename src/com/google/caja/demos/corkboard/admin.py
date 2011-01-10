@@ -31,9 +31,17 @@ class FlushCacheHandler(webapp.RequestHandler):
     memcache.flush_all()
     self.redirect('/admin/')
 
+class UpdateCaptchaKeysHandler(webapp.RequestHandler):
+  def post(self):
+    cb_common.getCaptchaKeys().private = self.request.get("private")
+    cb_common.getCaptchaKeys().public = self.request.get("public")
+    cb_common.getCaptchaKeys().put()
+    self.redirect('/admin/')
+
 application = webapp.WSGIApplication([
   ('/admin/', AdminPage),
   ('/admin/flush', FlushCacheHandler),
+  ('/admin/set-recaptcha-keys', UpdateCaptchaKeysHandler),
 ], debug=True)
 
 def main():

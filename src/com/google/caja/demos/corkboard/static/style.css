@@ -106,6 +106,12 @@ form.posting textarea {
   width: 90%;
 }
 
+form.posting .captcha {
+  display: table;
+  margin: 1em auto 1.6em auto;
+  text-align: center;
+}
+
 /* nth-of-type and transform are CSS3 not-yet-standardized features */
 .posting:nth-of-type(12n+1 ) { -webkit-transform: rotate(-.6deg); }
 .posting:nth-of-type(12n+2 ) { -webkit-transform: rotate(  3deg); }

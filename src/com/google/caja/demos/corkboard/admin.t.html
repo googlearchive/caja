@@ -16,6 +16,12 @@
 
 <h1>Caja Corkboard Demo Admin</h1>
 
+<form action="set-recaptcha-keys" method="post">
+  <div><label>Public: <input name="public" value="{{ recaptcha_public_key|urlencode|escape }}"></label></div>
+  <div><label>Private: <input name="private" value="******"></label></div>
+  <input type="submit" value="Set reCaptcha Keys">
+</form>
+
 <form action="flush" method="post">
   <input type="submit" value="Flush Cache (including cajoled content)">
 </form>

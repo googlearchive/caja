@@ -25,7 +25,7 @@ import logging
 # application-defined modules
 from paged_query import paged_query
 import cajole
-from cb_common import Posting, doTemplate
+from cb_common import Posting, doTemplate, verifyCaptcha
 
 # ------------------------------------------------------------------------------
 #
@@ -58,7 +58,8 @@ class PostHandler(webapp.RequestHandler):
     else:
       posting = Posting.get(keystr)
 
-    if not posting.editable():
+    if not posting.editable() or not verifyCaptcha(self.request):
+      # TODO: nice retry page on captcha
       self.error(403)
       return
 
