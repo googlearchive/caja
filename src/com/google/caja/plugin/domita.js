@@ -459,6 +459,10 @@ var attachDocumentStub = (function () {
   var TameNodeT = TameNodeMark.guard;
   var TameEventMark = ___.Trademark('TameEvent');
   var TameEventT = TameEventMark.guard;
+  var TameImageDataMark = ___.Trademark('TameImageData');
+  var TameImageDataT = TameImageDataMark.guard;
+  var TameGradientMark = ___.Trademark('TameGradient');
+  var TameGradientT = TameGradientMark.guard;
 
   // Define a wrapper type for known safe HTML, and a trademarker.
   // This does not actually use the trademarking functions since trademarks
@@ -1110,6 +1114,9 @@ var attachDocumentStub = (function () {
           switch (tagName) {
             case 'a':
               tamed = new TameAElement(node, editable);
+              break;
+            case 'canvas':
+              tamed = new TameCanvasElement(node, editable);
               break;
             case 'form':
               tamed = new TameFormElement(node, editable);
@@ -2549,6 +2556,559 @@ var attachDocumentStub = (function () {
     }
     inertCtor(TameAElement, TameElement, 'HTMLAnchorElement');
     defProperty(TameAElement, 'href', false, identity, true, identity);
+
+    // http://dev.w3.org/html5/spec/Overview.html#the-canvas-element
+    var TameCanvasElement = (function() {
+      function isFont(value) {
+        return typeof(value) == "string" && css.properties.font.test(value);
+      }
+      function isColor(value) {
+        // Note: we're testing against the pattern for the CSS "color:"
+        // property, but what is actually referenced by the draft canvas spec is
+        // the CSS syntactic element <color>, which is why we need to
+        // specifically exclude "inherit".
+        return typeof(value) == "string" && css.properties.color.test(value) &&
+            value !== "inherit";
+      }
+      var colorNameTable = {
+        // http://dev.w3.org/csswg/css3-color/#html4 as cited by
+        // http://dev.w3.org/html5/2dcontext/#dom-context-2d-fillstyle
+        // TODO(kpreid): avoid duplication with table in CssRewriter.java
+        " black":   "#000000",
+        " silver":  "#c0c0c0",
+        " gray":    "#808080",
+        " white":   "#ffffff",
+        " maroon":  "#800000",
+        " red":     "#ff0000",
+        " purple":  "#800080",
+        " fuchsia": "#ff00ff",
+        " green":   "#008000",
+        " lime":    "#00ff00",
+        " olive":   "#808000",
+        " yellow":  "#ffff00",
+        " navy":    "#000080",
+        " blue":    "#0000ff",
+        " teal":    "#008080",
+        " aqua":    "#00ffff"
+      };
+      function StringTest(strings) {
+        var table = {};
+        // The table itself as a value is a marker to avoid running into
+        // Object.prototype properties.
+        for (var i = strings.length; --i >= 0;) { table[strings[i]] = table; }
+        return ___.markFuncFreeze(function (string) {
+          return typeof string === 'string' && table[string] === table;
+        });
+      }
+      function canonColor(colorString) {
+        // http://dev.w3.org/html5/2dcontext/ says the color shall be returned
+        // only as #hhhhhh, not as names.
+        return colorNameTable[" " + colorString] || colorString;
+      }
+      function TameImageData(imageData) {
+        // Since we can't interpose indexing, we can't wrap the CanvasPixelArray
+        // so we have to copy the pixel data. This is horrible, bad, and awful.
+        var tameImageData = {
+          toString: ___.markFuncFreeze(function () {
+              return "[Domita Canvas ImageData]"; }),
+          width: ___.enforceType(imageData.width, "number"),
+          height: ___.enforceType(imageData.height, "number"),
+        
+          // used to unwrap for passing to putImageData
+          bare___: imageData,
+        
+           // lazily constructed tame copy, backs .data accessor; also used to
+           // test whether we need to write-back the copy before a putImageData
+          tamePixelArray___: undefined
+        };
+        ___.tamesTo(imageData, tameImageData);
+        TameImageDataMark.stamp.mark___(tameImageData);
+        classUtils.applyAccessors(tameImageData, {
+          data: {
+            // Accessor used so we don't need to copy if the client is just
+            // blitting (getImageData -> putImageData) rather than inspecting
+            // the pixels.
+            get: ___.markFuncFreeze(function () {
+              if (!tameImageData.tamePixelArray___) {
+                var bareArray = imageData.data;
+                var length = bareArray.length;
+                var tamePixelArray = { // not frozen, user-modifiable
+                  // TODO: Investigate whether it would be an optimization to
+                  // make this an array with properties added.
+                  toString: ___.markFuncFreeze(function () {
+                      return "[Domita CanvasPixelArray]"; }),
+                  canvas_writeback___: function () {
+                    // This is invoked just before each putImageData
+                    for (var i = length-1; i >= 0; i--) {
+                      bareArray[i] = tamePixelArray[i];
+                    }
+                  }
+                };
+                for (var i = length-1; i >= 0; i--) {
+                  tamePixelArray[i] = bareArray[i];
+                }
+                tameImageData.tamePixelArray___ = tamePixelArray;
+              }
+              return tameImageData.tamePixelArray___;
+            })
+          }
+        });
+        return ___.primFreeze(tameImageData);
+      }
+      function TameGradient(gradient) {
+        var tameGradient = {
+          toString: ___.markFuncFreeze(function () {
+              return "[Domita CanvasGradient]"; }),
+          addColorStop: ___.markFuncFreeze(function (offset, color) {
+            ___.enforceType(offset, 'number', 'color stop offset');
+            if (!(0 <= offset && offset <= 1)) {
+              throw new Error(INDEX_SIZE_ERROR);
+              // TODO(kpreid): should be a DOMException per spec
+            }
+            if (!isColor(color)) {
+              throw new Error("SYNTAX_ERR");
+              // TODO(kpreid): should be a DOMException per spec
+            }
+            gradient.addColorStop(offset, color);
+          })
+        };
+        ___.tamesTo(gradient, tameGradient);
+        TameGradientMark.stamp.mark___(tameGradient);
+        return ___.primFreeze(tameGradient);
+      }
+      function enforceFinite(value, name) {
+        ___.enforceType(value, 'number', name);
+        if (!isFinite(value)) {
+          throw new Error("NOT_SUPPORTED_ERR");
+          // TODO(kpreid): should be a DOMException per spec
+        }
+      }
+
+      function TameCanvasElement(node, editable) {
+        TameElement.call(this, node, editable, editable);
+        classUtils.exportFields(
+            this,
+            ['height', 'width']);
+      
+        // helpers for tame context
+        var context = node.getContext('2d');
+        function tameFloatsOp(count, verb) {
+          return ___.markFuncFreeze(function () {
+            if (arguments.length !== count) {
+              throw new Error(verb + ' takes ' + count + ' args, not ' +
+                              arguments.length);
+            }
+            for (var i = 0; i < count; i++) {
+              ___.enforceType(arguments[i], 'number', verb + ' argument ' + i);
+            }
+            context[verb].apply(context, arguments);
+          });
+        }
+        function tameRectMethod(m, hasResult) {
+          return ___.markFuncFreeze(function (x, y, w, h) {
+            if (arguments.length !== 4) {
+              throw new Error(m + ' takes 4 args, not ' +
+                              arguments.length);
+            }
+            ___.enforceType(x, 'number', 'x');
+            ___.enforceType(y, 'number', 'y');
+            ___.enforceType(w, 'number', 'width');
+            ___.enforceType(h, 'number', 'height');
+            if (hasResult) {
+              return m.call(context, x, y, w, h);            
+            } else {
+              m.call(context, x, y, w, h);
+            }
+          });
+        }
+        function tameDrawText(m) {
+          return ___.markFuncFreeze(function (text, x, y, maxWidth) {
+            ___.enforceType(text, 'string', 'text');
+            ___.enforceType(x, 'number', 'x');
+            ___.enforceType(y, 'number', 'y');
+            switch (arguments.length) {
+            case 3:
+              m.apply(context, arguments);
+              return;
+            case 4:
+              ___.enforceType(maxWidth, 'number', 'maxWidth');
+              m.apply(context, arguments);
+              return;
+            default:
+              throw new Error(m + ' cannot accept ' + arguments.length +
+                                  ' arguments');
+            }
+          });
+        }
+        function tameGetMethod(prop) {
+          return ___.markFuncFreeze(function () { return context[prop]; });
+        }
+        function tameSetMethod(prop, validator) {
+          return ___.markFuncFreeze(function (newValue) {
+            if (validator(newValue)) {
+              context[prop] = newValue;
+            }
+            return newValue;
+          });
+        }
+        function tameGetStyleMethod(prop) {
+          return ___.markFuncFreeze(function () {
+            var value = context[prop];
+            if (typeof(value) == "string") {
+              return canonColor(value);
+            } else if (___.passesGuard(TameGradientT, ___.tame(value))) {
+              return ___.tame(value);
+            } else {
+              throw("Internal: Can't tame value " + value + " of " + prop);
+            }
+          });
+        }
+        function tameSetStyleMethod(prop) {
+          return ___.markFuncFreeze(function (newValue) {
+            if (isColor(newValue)) {
+              context[prop] = newValue;
+            } else if (typeof(newValue) === "object" &&
+                       ___.passesGuard(TameGradientT, newValue)) {
+              context[prop] = ___.untame(newValue);
+            } // else do nothing
+            return newValue;
+          });
+        }
+        function tameSimpleOp(m) {  // no return value
+          return ___.markFuncFreeze(function () {
+            if (arguments.length !== 0) {
+              throw new Error(m + ' takes no args, not ' + arguments.length);
+            }
+            m.call(context);
+          });
+        }
+      
+        // Design note: We generally reject the wrong number of arguments,
+        // unlike default JS behavior. This is because we are just passing data
+        // through to the underlying implementation, but we don't want to pass
+        // on anything which might be an extension we don't know about, and it
+        // is better to fail explicitly than to leave the client wondering about
+        // why their extension usage isn't working.
+      
+        // http://dev.w3.org/html5/2dcontext/
+        this.tameContext2d___ = {
+          toString: ___.markFuncFreeze(function () {
+              return "[Domita CanvasRenderingContext2D]"; }),
+
+          save: tameSimpleOp(context.save),
+          restore: tameSimpleOp(context.restore),
+        
+          scale: tameFloatsOp(2, 'scale'),
+          rotate: tameFloatsOp(1, 'rotate'),
+          translate: tameFloatsOp(2, 'translate'),
+          transform: tameFloatsOp(6, 'transform'),
+          setTransform: tameFloatsOp(6, 'setTransform'),
+        
+          createLinearGradient: ___.markFuncFreeze(function (x0, y0, x1, y1) {
+            if (arguments.length !== 4) {
+              throw new Error('createLinearGradient takes 4 args, not ' +
+                              arguments.length);
+            }
+            ___.enforceType(x0, 'number', 'x0');
+            ___.enforceType(y0, 'number', 'y0');
+            ___.enforceType(x1, 'number', 'x1');
+            ___.enforceType(y1, 'number', 'y1');
+            return TameGradient(context.createLinearGradient(x0, y0, x1, y1));
+          }),
+          createRadialGradient: ___.markFuncFreeze(function (x0, y0, r0, x1, y1, r1) {
+            if (arguments.length !== 6) {
+              throw new Error('createRadialGradient takes 6 args, not ' +
+                              arguments.length);
+            }
+            ___.enforceType(x0, 'number', 'x0');
+            ___.enforceType(y0, 'number', 'y0');
+            ___.enforceType(r0, 'number', 'r0');
+            ___.enforceType(x1, 'number', 'x1');
+            ___.enforceType(y1, 'number', 'y1');
+            ___.enforceType(r1, 'number', 'r1');
+            return TameGradient(context.createRadialGradient(x0, y0, r0, x1, y1, r1));
+          }),
+
+          createPattern: ___.markFuncFreeze(function (imageElement, repetition) {
+            // Consider what policy to have wrt reading the pixels from image
+            // elements before implementing this.
+            throw new Error('Domita: canvas createPattern not yet implemented');
+          }),
+        
+                
+          clearRect:  tameRectMethod(context.clearRect,  false),
+          fillRect:   tameRectMethod(context.fillRect,   false),
+          strokeRect: tameRectMethod(context.strokeRect, false),
+
+          beginPath: tameSimpleOp(context.beginPath),
+          closePath: tameSimpleOp(context.closePath),
+          moveTo: tameFloatsOp(2, 'moveTo'),
+          lineTo: tameFloatsOp(2, 'lineTo'),
+          quadraticCurveTo: tameFloatsOp(4, 'quadraticCurveTo'),
+          bezierCurveTo: tameFloatsOp(6, 'bezierCurveTo'),
+          arcTo: tameFloatsOp(5, 'arcTo'),
+          rect: tameFloatsOp(4, 'rect'),
+          arc: ___.markFuncFreeze(function (x, y, radius, startAngle, endAngle,
+                                            anticlockwise) {
+            if (arguments.length !== 6) {
+              throw new Error('arc takes 6 args, not ' + arguments.length);
+            }
+            ___.enforceType(x, 'number', 'x');
+            ___.enforceType(y, 'number', 'y');
+            ___.enforceType(radius, 'number', 'radius');
+            ___.enforceType(startAngle, 'number', 'startAngle');
+            ___.enforceType(endAngle, 'number', 'endAngle');
+            ___.enforceType(anticlockwise, 'boolean', 'anticlockwise');
+            if (radius < 0) {
+              throw new Error(INDEX_SIZE_ERROR);
+              // TODO(kpreid): should be a DOMException per spec
+            }
+            context.arc(x, y, radius, startAngle, endAngle, anticlockwise);
+          }),
+          fill: tameSimpleOp(context.fill),
+          stroke: tameSimpleOp(context.stroke),
+          clip: tameSimpleOp(context.clip),
+        
+          isPointInPath: ___.markFuncFreeze(function (x, y) {
+            ___.enforceType(x, 'number', 'x');
+            ___.enforceType(y, 'number', 'y');
+            return ___.enforceType(context.isPointInPath(x, y), 'boolean');
+          }),
+        
+          fillText: tameDrawText(context.fillText),
+          strokeText: tameDrawText(context.strokeText),
+          measureText: ___.markFuncFreeze(function (string) {
+            if (arguments.length !== 1) {
+              throw new Error('measureText takes 1 arg, not ' + arguments.length);
+            }
+            ___.enforceType(string, 'string', 'measureText argument');
+            return context.measureText(string);
+          }),
+        
+          drawImage: ___.markFuncFreeze(function (imageElement) {
+            // Consider what policy to have wrt reading the pixels from image
+            // elements before implementing this.
+            throw new Error('Domita: canvas drawImage not yet implemented');
+          }),
+        
+          createImageData: ___.markFuncFreeze(function (sw, sh) {
+            if (arguments.length !== 2) {
+              throw new Error('createImageData takes 2 args, not ' +
+                              arguments.length);
+            }
+            ___.enforceType(sw, 'number', 'sw');
+            ___.enforceType(sh, 'number', 'sh');
+            return TameImageData(context.createImageData(sw, sh));
+          }),
+          getImageData: tameRectMethod(function (sx, sy, sw, sh) {
+            return TameImageData(context.getImageData(sx, sy, sw, sh));
+          }, true),
+          putImageData: ___.markFuncFreeze(function 
+              (tameImageData, dx, dy, dirtyX, dirtyY, dirtyWidth, dirtyHeight) {
+            tameImageData = TameImageDataT.coerce(tameImageData);
+            enforceFinite(dx, 'dx');
+            enforceFinite(dy, 'dy');
+            switch (arguments.length) {
+            case 3:
+              dirtyX = 0;
+              dirtyY = 0;
+              dirtyWidth = tameImageData.width;
+              dirtyHeight = tameImageData.height;
+              break;
+            case 7:
+              enforceFinite(dirtyX, 'dirtyX');
+              enforceFinite(dirtyY, 'dirtyY');
+              enforceFinite(dirtyWidth, 'dirtyWidth');
+              enforceFinite(dirtyHeight, 'dirtyHeight');
+              break;
+            default:
+              throw 'putImageData cannot accept ' + arguments.length +
+                  ' arguments';
+            }
+            if (tameImageData.tamePixelArray___) {
+              tameImageData.tamePixelArray___.canvas_writeback___();
+            }
+            context.putImageData(tameImageData.bare___, dx, dy, dirtyX, dirtyY,
+                                 dirtyWidth, dirtyHeight);
+          })
+        };
+      
+        if ("drawFocusRing" in context) {
+          this.tameContext2d___.drawFocusRing = ___.markFuncFreeze(function
+              (tameElement, x, y, canDrawCustom) {
+            switch (arguments.length) {
+            case 3:
+              canDrawCustom = false;
+              break;
+            case 4:
+              break;
+            default:
+              throw 'drawFocusRing cannot accept ' + arguments.length +
+                  ' arguments';
+            }
+            tameElement = TameNodeT.coerce(tameElement);
+            ___.enforceType(x, 'number', 'x');
+            ___.enforceType(y, 'number', 'y');
+            ___.enforceType(canDrawCustom, 'boolean', 'canDrawCustom');
+          
+            // On safety of using the untamed node here: The only information
+            // drawFocusRing takes from the node is whether it is focused.
+            return ___.enforceType(
+                context.drawFocusRing(tameElement.node___, x, y, canDrawCustom),
+                'boolean');
+          });
+        }
+      
+        classUtils.applyAccessors(this.tameContext2d___, {
+          // We filter the values supplied to setters in case some browser
+          // extension makes them more powerful, e.g. containing scripting or a
+          // URL.
+          // TODO(kpreid): Do we want to filter the *getters* as well? Scenarios:
+          // (a) canvas shared with innocent code, (b) browser quirks?? If we do,
+          // then what should be done with a bad value?
+          globalAlpha: {
+            get: tameGetMethod('globalAlpha'),
+            set: tameSetMethod('globalAlpha',
+                function (v) { return typeof v === "number" &&
+                                      0.0 <= v && v <= 1.0;     })
+          },
+          globalCompositeOperation: {
+            get: tameGetMethod('globalCompositeOperation'),
+            set: tameSetMethod('globalCompositeOperation',
+                StringTest([
+                  "source-atop",
+                  "source-in",
+                  "source-out",
+                  "source-over",
+                  "destination-atop",
+                  "destination-in",
+                  "destination-out",
+                  "destination-over",
+                  "lighter",
+                  "copy",
+                  "xor"
+                ]))
+          },
+          strokeStyle: {
+            get: tameGetStyleMethod('strokeStyle'),
+            set: tameSetStyleMethod('strokeStyle')
+          },
+          fillStyle: {
+            get: tameGetStyleMethod('fillStyle'),
+            set: tameSetStyleMethod('fillStyle')
+          },
+          lineWidth: {
+            get: tameGetMethod('lineWidth'),
+            set: tameSetMethod('lineWidth',
+                function (v) { return typeof v === "number" &&
+                                      0.0 < v && v !== Infinity; })
+          },
+          lineCap: {
+            get: tameGetMethod('lineCap'),
+            set: tameSetMethod('lineCap', StringTest([
+              "butt",
+              "round",
+              "square"
+            ]))
+          },
+          lineJoin: {
+            get: tameGetMethod('lineJoin'),
+            set: tameSetMethod('lineJoin', StringTest([
+              "bevel",
+              "round",
+              "miter"
+            ]))
+          },
+          miterLimit: {
+            get: tameGetMethod('miterLimit'),
+            set: tameSetMethod('miterLimit',
+                function (v) { return typeof v === "number" &&
+                                      0 < v && v !== Infinity; })
+          },
+          shadowOffsetX: {
+            get: tameGetMethod('shadowOffsetX'),
+            set: tameSetMethod('shadowOffsetX',
+                function (v) { return typeof v === "number" && isFinite(v); })
+          },
+          shadowOffsetY: {
+            get: tameGetMethod('shadowOffsetY'),
+            set: tameSetMethod('shadowOffsetY',
+                function (v) { return typeof v === "number" && isFinite(v); })
+          },
+          shadowBlur: {
+            get: tameGetMethod('shadowBlur'),
+            set: tameSetMethod('shadowBlur',
+                function (v) { return typeof v === "number" &&
+                                      0.0 <= v && v !== Infinity; })
+          },
+          shadowColor: {
+            get: tameGetStyleMethod('shadowColor'),
+            set: tameSetMethod('shadowColor', isColor)
+          },
+        
+          font: {
+            get: tameGetMethod('font'),
+            set: tameSetMethod('font', isFont)
+          },
+          textAlign: {
+            get: tameGetMethod('textAlign'),
+            set: tameSetMethod('textAlign', StringTest([
+              "start",
+              "end",
+              "left",
+              "right",
+              "center"
+            ]))
+          },
+          textBaseline: {
+            get: tameGetMethod('textBaseline'),
+            set: tameSetMethod('textBaseline', StringTest([
+              "top",
+              "hanging",
+              "middle",
+              "alphabetic",
+              "ideographic",
+              "bottom"
+            ]))
+          }
+        });
+        ___.primFreeze(this.tameContext2d___);
+      }  // end of TameCanvasElement
+      inertCtor(TameCanvasElement, TameElement, 'HTMLCanvasElement');
+      TameCanvasElement.prototype.getContext = function (contextId) {
+      
+        // TODO(kpreid): We can refine this by inventing a ReadOnlyCanvas object
+        // to return in this situation, which allows getImageData and so on but
+        // not any drawing. Not bothering to do that for now; if you have a use
+        // for it let us know.
+        if (!this.editable___) { throw new Error(NOT_EDITABLE); }
+      
+        ___.enforceType(contextId, 'string', 'contextId');
+        switch (contextId) {
+          case '2d':
+            return this.tameContext2d___;
+          default:
+            // http://dev.w3.org/html5/spec/the-canvas-element.html#the-canvas-element
+            // says: The getContext(contextId, args...) method of the canvas
+            // element, when invoked, must run the following steps:
+            // [...]
+            //     If contextId is not the name of a context supported by the
+            //     user agent, return null and abort these steps.
+            //
+            // However, Mozilla throws and WebKit returns undefined instead.
+            // Returning undefined rather than null is closer to the spec than
+            // throwing.
+            return undefined;
+            throw new Error('Unapproved canvas contextId');
+        }
+      };
+      defProperty(TameCanvasElement, 'height', false, identity, false, Number);
+      defProperty(TameCanvasElement, 'width', false, identity, false, Number);
+      ___.all2(___.grantTypedMethod, TameCanvasElement.prototype,
+               ['getContext']);
+      
+      return TameCanvasElement;
+    })();
 
     // http://www.w3.org/TR/DOM-Level-2-HTML/html.html#ID-40002357
     function TameFormElement(node, editable) {

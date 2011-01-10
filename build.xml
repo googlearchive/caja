@@ -426,9 +426,16 @@
     </genrule>
     <genrule class="com.google.caja.lang.html.HtmlDefinitions$Builder">
       <output file="${lib}/com/google/caja/plugin/html4-defs.js"/>
-      <input file="${src}/com/google/caja/lang/html/html4-elements.json"/>
+      <input
+       file="${src}/com/google/caja/lang/html/html4-elements-extensions.json"/>
+      <depend
+       file="${src}/com/google/caja/lang/html/html4-elements.json"/>
       <depend
        file="${src}/com/google/caja/lang/html/html4-elements-defs.json"/>
+      <depend
+       file="${src}/com/google/caja/lang/html/html4-elements-extensions-defs.json"/>
+      <depend
+       file="${src}/com/google/caja/lang/html/html4-elements-extensions-whitelist.json"/>
       <depend
        file="${src}/com/google/caja/lang/html/html4-elements-whitelist.json"/>
       <input

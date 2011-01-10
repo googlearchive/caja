@@ -1,5 +1,11 @@
 {
   "types": [
+      { "key":         "CANVAS",
+        "empty":       false,
+        "optionalEnd": false,
+        "deprecated":  false,
+        "description": "region which may be drawn in by scripts"
+      },
       { "key":         "NOBR",
         "empty":       false,
         "optionalEnd": false,

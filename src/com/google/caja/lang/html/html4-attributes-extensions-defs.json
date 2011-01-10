@@ -13,6 +13,12 @@
           "HTML5 defines onload for every element.  In particular,",
           "<img onload=> is useful and supported by most browsers." ] },
 
+      { "key": "CANVAS::HEIGHT", "description": "canvas height",
+        "pattern": "[0-9]+", "optional": true },
+
+      { "key": "CANVAS::WIDTH", "description": "canvas width",
+        "pattern": "[0-9]+", "optional": true },
+
       { "key": "FORM::AUTOCOMPLETE",
         "description": "http://www.whatwg.org/specs/web-apps/current-work/multipage/forms.html#attr-form-autocomplete",
         "optional": true, "default": "on", "values": "off",
@@ -29,6 +35,8 @@
 
   "allowed": [
       "*::ONLOAD",
+      "CANVAS::HEIGHT",
+      "CANVAS::WIDTH",
       "FORM::AUTOCOMPLETE",
       "INPUT::AUTOCOMPLETE"
       ]
