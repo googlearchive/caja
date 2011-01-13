@@ -22,6 +22,7 @@ import java.io.PrintStream;
 import java.io.Writer;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import com.google.caja.lexer.escaping.Escaping;
@@ -38,7 +39,7 @@ import com.google.caja.util.Strings;
 public final class EnumsToJs implements BuildCommand {
 
   public boolean build(
-      List<File> inputs, List<File> dependencies, File output) {
+      List<File> inputs, List<File> dependencies, Map<String, Object> options, File output) {
     List<Class<? extends Enum<?>>> enumClasses = loadEnumClasses(
         inputs, System.err);
     if (enumClasses == null) { return false; }

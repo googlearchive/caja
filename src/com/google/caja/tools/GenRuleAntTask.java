@@ -40,7 +40,7 @@ public class GenRuleAntTask extends AbstractCajaAntTask {
     boolean succeeded = false;
     try {
       if (!unless) {
-        succeeded = clazz.newInstance().build(inputs, depends, output);
+        succeeded = clazz.newInstance().build(inputs, depends, options, output);
       }
     } catch (IOException ex) {
       throw new BuildException(ex);

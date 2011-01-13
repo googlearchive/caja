@@ -259,7 +259,7 @@ var ___, cajaVM, safeJSON;
     var ctype = typeof ctor;
     var stype = typeof opt_super;
     if (ctype !== 'function') {
-      throw new TypeError('Cannot tame ' + ftype + ' as ctor');
+      throw new TypeError('Cannot tame ' + ctype + ' as ctor');
     }
     if (opt_super && stype !== 'function') {
       throw new TypeError('Cannot tame ' + stype + ' as superclass ctor');

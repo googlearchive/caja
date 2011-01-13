@@ -743,6 +743,7 @@
       <input file="${src}/com/google/caja/cajita-module.js"/>
       <input file="${src}/com/google/caja/cajita-promise.js"/>
       <input file="${src}/com/google/caja/plugin/taming-frame.js"/>
+      <input file="${src}/com/google/caja/plugin/prepare-modules.js"/>
       <input file="${src}/com/google/caja/plugin/caja-iframe-done.js"/>
     </transform>
     <concat destfile="${lib}/com/google/caja/plugin/es53-guest-frame.js">
@@ -753,6 +754,7 @@
         <file name="${src}/com/google/caja/cajita-module.js"/>
         <file name="${src}/com/google/caja/cajita-promise.js"/>
         <file name="${src}/com/google/caja/plugin/taming-frame.js"/>
+        <file name="${src}/com/google/caja/plugin/prepare-modules.js"/>
         <file name="${src}/com/google/caja/plugin/caja-iframe-done.js"/>
       </filelist>
     </concat>
@@ -811,6 +813,23 @@
        <input file="${src}/com/google/caja/plugin/host-tools.js"/>
        <input file="${src}/com/google/caja/plugin/caja-iframe-done.js"/>
     </transform>
+  </target>
+
+  <target name="IframeSupportingJs" depends="MinifiedJs">
+    <genrule class="com.google.caja.tools.JsToVar">
+      <input file="${lib}/com/google/caja/plugin/es53-taming-frame.js"/>
+      <output file="${lib}/com/google/caja/plugin/tamingFrameScript.js"/>
+    </genrule>
+    <genrule class="com.google.caja.tools.JsToVar">
+      <input file="${lib}/com/google/caja/plugin/es53-guest-frame.js"/>
+      <output file="${lib}/com/google/caja/plugin/guestFrameScript.js"/>
+    </genrule>
+    <concat destfile="${lib}/com/google/caja/plugin/es53-single-frame-vars.js">
+      <filelist>
+        <file name="${lib}/com/google/caja/plugin/tamingFrameScript.js"/>
+        <file name="${lib}/com/google/caja/plugin/guestFrameScript.js"/>
+      </filelist>
+    </concat>
   </target>
 
   <target name="AllTests"

@@ -99,8 +99,8 @@ public class Linter implements BuildCommand {
     this.ignores = ignores;
   }
 
-  public boolean build(List<File> inputs, List<File> dependencies, File output)
-      throws IOException {
+  public boolean build(List<File> inputs, List<File> dependencies, Map<String, Object> options,
+      File output) throws IOException {
     MessageContext mc = new MessageContext();
     Map<InputSource, CharSequence> contentMap = Maps.newLinkedHashMap();
     MessageQueue mq = new SimpleMessageQueue();
@@ -706,7 +706,7 @@ public class Linter implements BuildCommand {
       out = new File(outDir, "jslint.txt");
     }
     Environment env = new Environment(outers);
-    (new Linter(env, ignores)).build(inputs, deps, out);
+    (new Linter(env, ignores)).build(inputs, deps, null, out);
   }
 
   private static void checkGlobalsDefined(

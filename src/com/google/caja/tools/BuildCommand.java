@@ -17,12 +17,13 @@ package com.google.caja.tools;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Public instances with a zero-argument constructor can be used to create
  * ANT build rules with dependency checking.
  */
 public interface BuildCommand {
-  boolean build(List<File> inputs, List<File> dependencies, File output)
-      throws IOException;
+  boolean build(List<File> inputs, List<File> dependencies,
+      Map<String, Object> options, File output) throws IOException;
 }

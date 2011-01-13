@@ -203,8 +203,6 @@ var caja = (function () {
       
         loadCajaFrame('es53-guest-frame', function (guestFrame) {
           var guestWindow = guestFrame.contentWindow;
-          // Imports are from *taming* (not *guest*) frame so primordials
-          // (e.g. imports.Function, ...) are consistent with taming.
           var imports = {};
 
           var loader = guestWindow.scriptModuleLoadMaker(

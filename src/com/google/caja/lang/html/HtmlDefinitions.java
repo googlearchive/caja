@@ -249,8 +249,8 @@ public final class HtmlDefinitions {
   }
 
   public static class Builder implements BuildCommand {
-    public boolean build(List<File> inputs, List<File> deps, File output)
-        throws IOException {
+    public boolean build(List<File> inputs, List<File> deps, Map<String, Object> options,
+        File output) throws IOException {
       File elementsFile = null;
       File attrsFile = null;
       for (File input : inputs) {

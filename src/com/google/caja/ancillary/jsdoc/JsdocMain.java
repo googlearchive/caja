@@ -51,6 +51,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -122,8 +123,8 @@ public class JsdocMain {
   }
 
   public static class Builder implements BuildCommand {
-    public boolean build(List<File> inputs, List<File> deps, File output)
-        throws IOException {
+    public boolean build(List<File> inputs, List<File> deps, Map<String, Object> options,
+        File output) throws IOException {
       List<String> initPaths = new ArrayList<String>();
       initPaths.add(resourceToPath("/js/jqueryjs/runtest/env.js"));
       initPaths.add(resourceToPath("jsdoc_init.js"));

@@ -47,7 +47,7 @@ public enum PluginMessageType implements MessageTypeInt {
   BAD_IDENTIFIER("%s: bad identifier %s", MessageLevel.FATAL_ERROR),
   ATTRIBUTE_CANNOT_BE_DYNAMIC(
       "%s: tag %s cannot have dynamic attribute %s", MessageLevel.ERROR),
-  DISALLOWED_URI("%s: url %s cannot be linked to", MessageLevel.FATAL_ERROR),
+  DISALLOWED_URI("%s: url %s cannot be linked to", MessageLevel.WARNING),
   MALFORMED_URL("%s: malformed url %s", MessageLevel.FATAL_ERROR),
   MALFORMED_CSS_PROPERTY_VALUE(
       "%s: css property %s has bad value: %s", MessageLevel.WARNING),
