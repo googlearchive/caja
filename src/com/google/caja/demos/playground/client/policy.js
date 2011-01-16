@@ -10,6 +10,15 @@ tamings___ = [];
  */
 
 tamings___.push(function tameSimpleFlash(___, imports) {
+  if (!parent.___) {
+    imports.outers.swfobject = {
+      embedSWF: function() { console.log("Flash is not supported on ES3"); }
+    };
+    ___.grantRead(imports.outers, 'swfobject');
+    ___.grantFunc(imports.outers.swfobject, 'embedSWF');
+
+    return;
+  }
   // Get a frame with no Caja in it.
   var ifr = document.createElement('iframe');
   document.body.appendChild(ifr);
