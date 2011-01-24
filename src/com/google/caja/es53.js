@@ -2254,7 +2254,6 @@ var ___, cajaVM, safeJSON;
           throw new TypeError("The property '" + P + "' is not writable.");
         }
       }
-      assertValidPropertyName(this, P);
       // Is name an accessor property on obj?
       var s = setter(this, P);
       if (s) { return s.f___(this, [V]); }
