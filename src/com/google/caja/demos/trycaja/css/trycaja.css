@@ -1,0 +1,217 @@
+/* Derived from Try Haskell design by Chris Done */
+body {
+    font-family:"DejaVu Sans",sans-serif;
+}
+a {
+    text-decoration:none;
+    color: #382567
+}
+.sprites { 
+    background:url(../images/sprites.gif)
+}
+.bgs { 
+    background:url(../images/bgs.gif)
+}
+.bgs2 { 
+    background:url(../images/bgs2.png)
+}
+div.page-wrap {
+    width:800px; margin:10px auto;
+}
+div.primary-content {
+    width:600px;margin-left:100px;
+    float:left
+}
+div.main-wrapper { 
+
+}
+div.main-wrapper-top {
+    height:5px;background-position: 0px -75px; background-repeat: no-repeat;
+    font-size:0 /* IE6, go figure */
+}
+div.main-wrapper-bottom {
+    height:4px;background-position: 0px -80px; background-repeat: no-repeat;
+    font-size:0 /* IE6, go figure */
+}
+div.main-wrapper-borders {
+    background-position: -1731px 0; padding:15px;
+    background-repeat:repeat-y;
+}
+div.console-wrapper {
+    margin:0px auto 10px auto;width:566px;
+    cursor:text;
+    font-family:monospace;
+}
+div.console-wrapper-top {
+    height:3px;background-position: -50px -48px; background-repeat: no-repeat;
+    font-size:0 /* IE6, go figure */
+}
+div.console-wrapper-bottom {
+    height:3px;background-position: -50px -51px; background-repeat: no-repeat;
+    font-size:0 /* IE6, go figure */
+}
+div.console-wrapper-borders {
+    background-position: 0px 0px; padding:15px;
+    background-repeat:repeat-y;
+}
+div.guide-wrapper {
+    color:#fff; width:566px;margin-left:2px
+}
+div.guide-wrapper-top {
+    height:4px;background-position: 0 -65px;
+    font-size:0 /* IE6, go figure */
+}
+div.guide-wrapper-bottom {
+    height:4px;background-position: 0 -70px;
+    font-size:0 /* IE6, go figure */
+}
+div.guide-wrapper-borders {
+    background-position: -1166px 0px;padding:15px;
+    background-repeat:repeat-y;
+}
+div.dom-wrapper {
+    background-position: 0px -2350px;
+    margin:10px auto;width:600px;
+    font-family:"DejaVu Sans",sans-serif;
+    margin-bottom:20px
+}
+div.dom-wrapper-top {
+    height:3px;background-position: -50px -48px; background-repeat: no-repeat;
+    font-size:0 /* IE6, go figure */
+}
+div.dom-wrapper-bottom {
+    height:3px;background-position: -50px -51px; background-repeat: no-repeat;
+    font-size:0 /* IE6, go figure */
+}
+div.dom-wrapper-borders {
+    background-position: 0px 0px; padding:15px;
+    background-repeat:repeat-y;
+}
+div.footer-wrapper {
+    background-position: 0px -2350px;
+    margin:10px auto;width:600px;
+    font-family:"DejaVu Sans",sans-serif;
+    margin-bottom:20px
+}
+div.footer-wrapper a:hover {
+  text-decoration: underline;
+}
+div.footer-wrapper-top {
+    height:5px;background-position:  -50px -54px;
+    font-size:0 /* IE6, go figure */
+}
+div.footer-wrapper-bottom {
+    height:5px;background-position: -50px -59px;background-repeat:no-repeat;
+    font-size:0 /* IE6, go figure */
+}
+div.footer-wrapper-borders {
+    background-position: -566px 0px; padding:10px;
+    background-repeat:repeat-y;
+    font-size:12px
+}
+h1.main-header { 
+    text-indent:-9999px; background-position: -99px 3px;
+    background-repeat: no-repeat;
+    width:268px; height:50px; margin-bottom:20px;
+    float:left
+}
+h1.main-logo { 
+    text-indent:-9999px; background-position: 0px 0px;
+    background-repeat: no-repeat;
+    width:48px; height:51px; margin-bottom:15px;
+    float:left
+}
+div.console {
+    height:150px;
+    cursor:text;
+}
+div.dom {
+    height:150px;
+}
+div.footer {
+    line-height: 1.3em;
+}
+div.console { background:#fff;font-size:14px; position:relative }
+div.console div.jquery-console-inner 
+{ height:150px; overflow:auto; background:white}
+div.console div.jquery-console-prompt-box
+{ color:#437375; font-family:monospace; margin-top:0.5em; }
+div.console div.jquery-console-prompt-box .prompt-done
+{ cursor: pointer }
+div.console div.jquery-console-prompt-box .prompt-done:hover
+{ background:#453D5B; color: white; }
+div.console div.jquery-console-focus span.jquery-console-cursor 
+{ background:#666; color:#fff; }
+div.console div.jquery-console-message-error {
+    color:#ef0505; font-family:sans-serif; font-weight:bold;
+    padding-left:1em;padding-top:0.25em 
+}
+div.console div.jquery-console-message-alert {
+    color:#0505ef; font-family:sans-serif; font-weight:bold;
+    padding-left:1em;padding-top:0.25em 
+}
+div.console div.jquery-console-message-value
+{ color:#000; font-family:monospace;padding-left:1em;padding-top:0.25em; font-weight: bold; }
+div.console div.jquery-console-message-type
+{ color:#382567; font-family:monospace;padding-left:1em;padding-top:0.25em; font-size:.9em  }
+div.console span.jquery-console-prompt-label { font-weight:bold }
+div.console div.jquery-console-welcome { font-family:"DejaVu Sans",sans-serif; }
+
+div.guide { background:#453d5b;font-size:14px; position:relative }
+div.guide h2,h3 { font-weight:bold;margin-bottom:1em }
+div.guide p { margin-bottom:0.5em }
+div.guide ul { margin-left:1em; margin-bottom:1em }
+div.guide li { line-height:2em }
+div.guide code { color:#8ae0c2; font-family:monospace; background:#2d2542;padding:0.2em;cursor:default }
+div.guide code span.highlight { color:#fff }
+div.guide .spoiler { background: #2d2542; color: #2d2542; }
+div.guide .spoiler:hover { background: #2d2542; color:#8ae0c2; }
+div.guide code:hover { color:#8ae0c2; background:#2d2542 }
+div.guide div.indent { margin-left: 10px }
+div.guide p { line-height: 1.7em }
+div.guide p em { font-style:italic }
+div.guide p strong { text-decoration:underline;color:#fff;font-weight:bold; }
+div.guide ol { margin-left:50px; list-style-type:decimal;margin-bottom:5px}
+div.guide a { color:white; text-decoration:underline; }
+div.guide small.note { color:#ed9fda; font-size:0.9em}
+div.guide div.note { font-size:0.8em;color:#ac739e;margin-top:2em }
+div.guide div.note code { color:#6eb29a; }
+div.guide div.lesson { color:#ed9fda; font-size:0.8em; display:block;
+  position:absolute; right: 0px; bottom: 0px; }
+
+div.share-wrapper { font-size:12px;padding:10px 0em 0em 10px }
+div.share-wrapper strong { font-weight: bold }
+
+.clearfix:after { content:"."; display:block; height:0; clear:both; visibility:hidden }
+div.menu {
+    float:right;
+    margin-right:2px;
+    margin-top:40px;
+    margin-bottom:5px
+}
+a.reset-btn {
+    float:left;
+    display:block;
+    width:59px;
+    height:24px;
+    background-position: -427px -18px; background-repeat: no-repeat;
+}
+a.reset-btn span { display:none }
+
+div.clear { clear:both }
+
+div.console-wrapper .notice {
+    position:absolute;
+    bottom:0;right:0;
+    margin:10px;
+    background:#eee;
+    color:black;
+    padding:10px;
+    font-size:12px;
+    font-family:sans-serif;
+    font-weight:bold;
+}
+p.ajax-loader { background:url(../images/ajax-loader.gif); width:16px; height:16px;text-indent:-9999px }
+
+.notice a { padding:3px;background:#333;color:white}
+.notice .action { text-align: right }

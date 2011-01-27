@@ -1,0 +1,129 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+  <head>
+    <title>Try Caja! An interactive tutorial in your browser</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta name="description" content="Try Caja in your browser! An interactive tutorial for the Caja subset of JavaScript.">
+    <link rel="stylesheet" href="css/reset.css" type="text/css" media="screen">
+    <link rel="stylesheet" href="css/trycaja.css" type="text/css" media="screen">
+    <!--[if lte IE 6]>
+        <style type="text/css" media="screen">
+          div.primary-content { width:600px;margin-left:70px;float:left }
+        </style>
+        <![endif]-->
+    <script type="text/javascript" src="js/lib.min.js"></script>
+    <script type="text/javascript">
+      jQuery.noConflict(); 
+    </script>
+    <script type="text/javascript" src="js/jquery.console.js"></script>
+    <script type="text/javascript" src="js/jsDump.js"></script>
+    <script type="text/javascript" src="js/util.js"></script>
+
+    <!-- Lessons -->
+    <script type="text/javascript" src="lessons/basics.js"></script>
+    <script type="text/javascript" src="lessons/dom.js"></script>
+    <script type="text/javascript" src="lessons/type.js"></script>
+    <script type="text/javascript" src="lessons/internals.js"></script>
+
+    <script type="text/javascript" src="js/trycaja.js"></script>
+
+    <!-- Load scripts in body so that document.body is available in IE 6 -->
+    <script type="text/javascript" src="http://localhost:8080/taming.js"></script>
+  </head>
+  <body>
+    <div id="es53frames" style="display: none;"></div>
+    <div class="page-wrap">
+      <div class="primary-content">
+        <div class="main-wrapper bgs2">
+          <div class="main-wrapper-top sprites"></div>
+          <div class="main-wrapper-borders bgs">
+            <h1 class="main-logo sprites">Caja</h1>
+            <h1 class="main-header sprites">Try Caja! An interactive tutorial in your browser</h1>
+            <div class="menu clearfix">
+              <a class="reset-btn sprites" href="javascript:">
+                <span>Reset</span>
+              </a>
+            </div>
+            <div class="clear"></div>
+            <div class="console-wrapper">
+              <div class="console-wrapper-top sprites"></div>
+              <div class="console-wrapper-borders bgs">
+                <div class="console">
+                </div>
+              </div>
+              <div class="console-wrapper-bottom sprites"></div>
+            </div>
+            <div class="guide-wrapper">
+              <div class="guide-wrapper-top sprites"></div>
+              <div class="guide-wrapper-borders bgs">
+                <div class="guide">
+                  <p>
+                    Welcome to your first taste of Caja!
+                  </p>
+                  <h3>Beginners</h3>
+                  <div class="indent">
+                    <p>Type <code>help</code> to start the
+                      tutorial. Type <code>lessons</code> to see the
+                      list of lessons.</p>
+                    <p>Or try typing these out and see what happens
+                      <small class="note">(click to insert)</small>:</p>
+                    <ul>
+                      <li>
+                        <code>23*36</code>
+                      </li>
+                      <li>
+                        <code>"Best of times".replace("Be", "Wor")</code>
+                      </li>
+                    </ul>
+                    Check out
+                    <a href="http://code.google.com/p/google-caja/"
+                      title="Caja home page">Caja code site</a>
+                    for more information about Caja.
+                    For more fun, use the <a href="http://caja.appspot.com/">playground</a>
+                    to run full Caja programs.
+                  </div>
+                </div>
+              </div>
+              <div class="guide-wrapper-bottom sprites"></div>
+            </div>
+          </div>
+          <div class="main-wrapper-bottom sprites"></div>
+        </div>
+        <div class="footer-wrapper bgs2 clearfix">
+          <div class="footer-wrapper-top sprites"></div>
+          <div class="footer-wrapper-borders bgs">
+            <div class="footer">
+              <p>
+                Cajoling service
+                and <a href="http://code.google.com/p/google-caja">Try
+                  Caja</a> by
+                <a href="http://www.thinkfu.com/">
+                  Jasvir Nagra
+                </a><br>
+                Concept, code and interface blatantly lifted from
+                <a href="http://tryruby.org/"
+                  title="_why's Try Ruby">
+                  _why's Try Ruby!</a> and
+                <a href="http://tryhaskell.org/"
+                  title="Chris Done's Try Haskell">
+                  Chris Done's Try Haskell!</a>.
+              </p>
+            </div>
+          </div>
+          <div class="footer-wrapper-bottom sprites"></div>
+        </div>
+      </div>
+      <div id="cajaDisplayContainer" style="width: 635px; height: 500px; float:left;display: none;">
+        <div class="dom-wrapper-top sprites"></div>
+        <div class="dom-wrapper-borders bgs">
+          <div class="dom">
+            <div id="cajaDisplay">
+              <h3>Cajoled Content</h3>
+            </div>
+          </div>
+        </div>
+        <div class="dom-wrapper-bottom sprites"></div>
+      </div>
+    </div>
+  </body>
+</html>

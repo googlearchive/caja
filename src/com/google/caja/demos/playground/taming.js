@@ -70,21 +70,26 @@ var caja___ = (function () {
   var cajoledJS = "";
   var policyJS = "";
   var currentFrame = null;
-  function enableES53(parent, policy, html, js) {
+  var callback = null;
+  function enableES53(parent, policy, html, js, c, cache) {
     configureHTML(parent, html);
     
     var hiddenDiv = document.getElementById("es53frames");
     currentFrame = document.createElement('iframe');
-    currentFrame.src = "es53.html?rnd=" + Math.floor(Math.random() * 10000);
+    currentFrame.src = "/es53.html?rnd=" + Math.floor(Math.random() * 10000);
     currentFrame.id = "es53frame";
     policyJS = policy;
     cajoledJS = js;
+    callback = c;
     hiddenDiv.appendChild(currentFrame);
   }
   
   function onReady(initJS, childFrame) {
-    initJS(document.getElementById(id), uriPolicy, policyJS, cajoledJS,
-        grantAdditionalPowers);
+    var result = initJS(document.getElementById(id), uriPolicy, policyJS,
+        cajoledJS, grantAdditionalPowers);
+    if ('function' == typeof callback) {
+      callback(result);
+    }
   }
   
   function tearDownES53() {
@@ -95,12 +100,12 @@ var caja___ = (function () {
     }    
   }
   
-  function enable(es53, parent, policy, html, js) {
+  function enable(es53, parent, policy, html, js, callback, cache) {
     tearDownES53();
     if (es53) {
-      enableES53(parent, policy, html, js);
+      enableES53(parent, policy, html, js, callback, cache);
     } else {
-      enableCajita(parent, policy, html, js);
+      enableCajita(parent, policy, html, js, callback, cache);
     }
   }
   

@@ -1349,6 +1349,16 @@
       </fileset>
     </copy>
   </target>
+
+  <target name="trycaja" depends="dirs,MinifiedJs,jars"
+   description="TryCaja tutorial">
+    <mkdir dir="${war}/trycaja"/>
+    <copy todir="${war}/trycaja">
+      <fileset dir="${src}/com/google/caja/demos/trycaja">
+        <include name="**"/>
+      </fileset>
+    </copy>
+  </target>
 	
   <target name="containers" depends="dirs,MinifiedJs,jars"
    description="Examples of hosting gadgets/modules.">

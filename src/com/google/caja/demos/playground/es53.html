@@ -48,7 +48,7 @@
     }
   }
   
-  initJS = function(div, uriPolicy, policyJS, cajoledJS) {
+  function initJS(div, uriPolicy, policyJS, cajoledJS) {
     var imports = ___.copy(___.whitelistAll(___.sharedImports));
     imports.onerror = ___.markFunc(function(x){
       parent.caja___.logFunc(x);
@@ -70,10 +70,21 @@
     imports.domitaTrace___ = 1;
 
     imports.handleSet___ = void 0;
+    var tamings___ = [];
     eval(policyJS);
     grantAdditionalPowers(tamings___, ___, imports);
     ___.getNewModuleHandler().setImports(___.whitelistAll(imports));
-    eval(cajoledJS);
+    try {
+      eval(cajoledJS);
+      var outcome = ___.getNewModuleHandler().getLastOutcome();
+      var success = outcome && outcome[0];
+      var result = success ? outcome[1] : undefined;
+      return { success: success,
+                   result: result };
+    } catch (e) {
+      return { success: false,
+                   exception: e };
+    }
   };
   
   parent.caja___.onReady(initJS, window.frameElement);
