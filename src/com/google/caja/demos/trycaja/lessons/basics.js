@@ -69,6 +69,7 @@ mypages.push({
             + "<p>You can do stuff with lists. Maybe you want the lottery " 
             + "numbers sorted in the right order, try this: " 
             + "<code>[42,13,22].sort()</code></p>"
+            + "<p>You're now ready to move on to <code>lesson2</code>!"
       },
       trigger: function (result) {
         return true;
