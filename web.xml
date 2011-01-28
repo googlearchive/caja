@@ -6,6 +6,7 @@
 <web-app>
   <welcome-file-list>
     <welcome-file>Playground.html</welcome-file>
+    <welcome-file>index.html</welcome-file>
   </welcome-file-list>
   
   <!-- Servlets -->

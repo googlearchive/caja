@@ -95,9 +95,9 @@
           controller.scrollToBottom();
           cajole(line, function(resp){
               if (commandRef.ignore) { return; }
-              controller.finishCommand();
               caja___.enable(true, document.getElementById("cajaDisplay"), "",
                   "", resp.js, function(runtimeResult) {
+                      controller.finishCommand();
                       var result = { 
                         result: runtimeResult.result, 
                         success: runtimeResult.success,
@@ -242,6 +242,15 @@
       pageTrigger = 0;
       return true;
     }
+    case 'next': {
+      if (pageTrigger < pages.length) {
+        setTutorialPage(undefined,pageTrigger+1);
+        pageTrigger++;
+        report();
+        return true;
+      }
+      break;
+    }
     case 'back': {
       if (pageTrigger > 0) {
         setTutorialPage(undefined,pageTrigger-1);
@@ -338,9 +347,16 @@
           else
             tutorialGuide.html(pages[n].guide);
           var back = '';
-          if (pageTrigger>0)
+          if (pageTrigger>0 && pageTrigger < pages.length)
+            back = 'You\'re at <code>step' + (n+1)
+              + '</code>. Type <code>back</code> to go back.'
+              + 'Type <code>next</code> to go forward.';
+          else if (pageTrigger>0)
             back = 'You\'re at <code>step' + (n+1)
               + '</code>. Type <code>back</code> to go back.';
+          else if (pageTrigger < pages.length)
+            back = 'You\'re at <code>step' + (n+1)
+              + '</code>. Type <code>next</code> to go forward.';
           else
             back = 'You\'re at step' + (n+1) + '. Type <code>step' + (n+1)
               + '</code> to return here.';
