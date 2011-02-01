@@ -40,6 +40,9 @@
   a capability based security model.
   </description>
 
+  <!-- Make the build reproducible/warning-free on newer versions of ant -->
+  <property name="build.sysclasspath" value="ignore" />
+
   <!--== inputs ==-->
   <property name="src"         location="src"/>
   <property name="tests"       location="tests"/>
