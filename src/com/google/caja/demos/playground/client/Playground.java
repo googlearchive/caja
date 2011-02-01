@@ -16,6 +16,8 @@ package com.google.caja.demos.playground.client;
 import com.google.caja.demos.playground.client.ui.PlaygroundView;
 import com.google.gwt.core.client.EntryPoint;
 import com.google.gwt.core.client.GWT;
+import com.google.gwt.user.client.History;
+import com.google.gwt.user.client.HistoryListener;
 import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.rpc.AsyncCallback;
 
@@ -24,7 +26,7 @@ import com.google.gwt.user.client.rpc.AsyncCallback;
  *
  * @author Jasvir Nagra (jasvir@gmail.com)
  */
-public class Playground implements EntryPoint {
+public class Playground implements EntryPoint, HistoryListener {
   private PlaygroundView gui;
 
   private PlaygroundServiceAsync cajolingService =
@@ -37,6 +39,9 @@ public class Playground implements EntryPoint {
   public void loadSource(String base, String url) {
     gui.setLoading(true);
     gui.setUrl(url);
+    if (!url.equals(History.getToken())) {
+      History.newItem(url);
+    }
     cajolingService.fetch(base, url, new AsyncCallback<String>() {
       public void onFailure(Throwable caught) {
         gui.setLoading(false);
@@ -109,6 +114,12 @@ public class Playground implements EntryPoint {
     });
   }
 
+  public void onHistoryChanged(String historyToken) {
+      if (null == historyToken || "".equals(historyToken))
+        return;
+      loadSource(historyToken);
+  }
+
   public void onModuleLoad() {
     gui = new PlaygroundView(this);
     gui.setLoading(true);
@@ -124,5 +135,7 @@ public class Playground implements EntryPoint {
         gui.setVersion(result);
       }
     });
+    History.addHistoryListener(this);
+    History.fireCurrentHistoryState();
   }
 }
