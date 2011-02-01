@@ -38,10 +38,10 @@ Google Caja - "Photon" gadgets demo
 
      http://example.com/photon/README
 
-3. With your browser, open the following URL (shown broken into several lines
-   for readability):
+3. With your browser, open the following URL to use caja.appspot.com:
 
-     http://example.com/photon/photon/index.html
-       ?cajaServer=http://caja.appspot.com/
-       &rootModule=http://example.com/photon/photonGadgets/gadgetsModule.html
-       
+     http://example.com/photon/container/index.html
+
+   and the following to use your localhost cajoling service:
+
+     http://example.com/photon/container/index.html?cajaServer=http://localhost:8080/

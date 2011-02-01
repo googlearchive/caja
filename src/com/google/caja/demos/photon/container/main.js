@@ -57,8 +57,7 @@ var getUrlParamDefault = function(name, defaultValue) {
 };
 
 var cajaServer = getUrlParamDefault('cajaServer', 'http://caja.appspot.com/');
-var rootModule = getUrlParamDefault('rootModule',
-    joinUrl(cajaServer, '/photon/gadgets/gadgetsModule.html'));
+var rootModule = getUrlParamDefault('rootModule', '../gadgets/gadgetsModule.html');
 
 var debug = Boolean(getUrlParamDefault('debug', 'false'));
 
