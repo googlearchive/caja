@@ -3036,13 +3036,16 @@ var ___, cajaVM, safeJSON;
 
   /**
    * Whitelists all the object's own properties that do not
-   * end in __.  If opt_deep is true, recurses on objects and
+   * end in __ and have not already been whitelisted.  
+   * If opt_deep is true, recurses on objects and
    * assumes the object has no cycles through accessible keys.
    */
   function whitelistAll(obj, opt_deep) {
     var i;
     for (i in obj) {
-      if (obj.hasOwnProperty(i) && !endsWith__.test(i)) {
+      if (obj.hasOwnProperty(i) && 
+          !endsWith__.test(i) &&
+          !((i + '_v___') in obj)) {
         var isObj = (typeof obj[i]) === 'object';
         if (opt_deep && isObj) {
           whitelistAll(obj[i], true);
@@ -4488,7 +4491,7 @@ var ___, cajaVM, safeJSON;
   // TODO(metaweta): Deprecate this API, since it requires that we leave
   // configurable set to true in order to use both a getter and a setter.
   function useGetHandler(obj, name, getHandler) {
-    setHandler = markFunc(getHandler);
+    getHandler = markFunc(getHandler);
     var desc = obj.GetOwnProperty___(name);
     if (!desc || !IsAccessorDescriptor(desc)) {
       desc = {

@@ -187,7 +187,7 @@
    description="Runs unittests.  To filter tests: $ ant -Dtest.filter=My\*Test.
    To remote debug tests (on port 9999): $ ant -Dtest.debug=true">
    <condition property="jvmarg"
-     value="-Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=9999" else="">
+     value="-Xdebug -Xmx2G -Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=9999" else="">
      <isset property="test.debug"/>
    </condition>
     <!-- Instrument the compiled class files to gather code coverage stats -->
