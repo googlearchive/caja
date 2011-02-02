@@ -455,7 +455,12 @@ public class PlaygroundView {
       entryMap.put(it, eg);
     }
 
+    boolean first = true;
     for (TreeItem menuItem : menuMap.values()) {
+      if (first) {
+        first = false;
+        menuItem.setState(true);
+      }
       exampleTree.addItem(menuItem);
     }
 
