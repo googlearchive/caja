@@ -18,7 +18,9 @@ import com.google.caja.lexer.ExternalReference;
 import com.google.caja.lexer.FetchedData;
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.InputSource;
+import com.google.caja.plugin.DataUriFetcher;
 import com.google.caja.plugin.UriFetcher;
+import com.google.caja.plugin.UriFetcher.ChainingUriFetcher;
 import com.google.caja.reporting.BuildInfo;
 import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessageContext;
@@ -59,17 +61,19 @@ public class CajolingService {
   public CajolingService(BuildInfo buildInfo) { this(buildInfo, null); }
 
   public CajolingService(BuildInfo buildInfo, String host) {
-    this(buildInfo, host, new UriFetcher() {
-      public FetchedData fetch(ExternalReference ref, String mimeType)
-          throws UriFetchException {
-        try {
-          return FetchedData.fromConnection(
-              ref.getUri().toURL().openConnection());
-        } catch (IOException ex) {
-          throw new UriFetchException(ref, mimeType, ex);
-        }
-      }
-    });
+    this(buildInfo, host, ChainingUriFetcher.make(
+        new DataUriFetcher(),
+        new UriFetcher() {
+          public FetchedData fetch(ExternalReference ref, String mimeType)
+              throws UriFetchException {
+            try {
+              return FetchedData.fromConnection(
+                  ref.getUri().toURL().openConnection());
+            } catch (IOException ex) {
+              throw new UriFetchException(ref, mimeType, ex);
+            }
+          }
+        }));
   }
 
   public CajolingService(BuildInfo buildInfo, String host, UriFetcher fetcher) {

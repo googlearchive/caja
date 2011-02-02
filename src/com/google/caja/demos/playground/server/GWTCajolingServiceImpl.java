@@ -26,11 +26,13 @@ import com.google.caja.parser.ParseTreeNode.ReflectiveCtor;
 import com.google.caja.parser.html.Dom;
 import com.google.caja.parser.html.DomParser;
 import com.google.caja.parser.html.Nodes;
+import com.google.caja.plugin.DataUriFetcher;
 import com.google.caja.plugin.LoaderType;
 import com.google.caja.plugin.PluginCompiler;
 import com.google.caja.plugin.PluginMeta;
 import com.google.caja.plugin.UriEffect;
 import com.google.caja.plugin.UriFetcher;
+import com.google.caja.plugin.UriFetcher.ChainingUriFetcher;
 import com.google.caja.plugin.UriPolicy;
 import com.google.caja.render.Concatenator;
 import com.google.caja.render.JsPrettyPrinter;
@@ -61,17 +63,19 @@ public class GWTCajolingServiceImpl extends RemoteServiceServlet
 
   @ReflectiveCtor
   public GWTCajolingServiceImpl() {
-    this(new UriFetcher() {
-      public FetchedData fetch(ExternalReference ref, String mimeType)
-          throws UriFetchException {
-        try {
-          return FetchedData.fromConnection(
-              ref.getUri().toURL().openConnection());
-        } catch (IOException ex) {
-          throw new UriFetchException(ref, mimeType, ex);
-        }
-      }
-    });
+    this(ChainingUriFetcher.make(
+        new DataUriFetcher(),
+        new UriFetcher() {
+          public FetchedData fetch(ExternalReference ref, String mimeType)
+              throws UriFetchException {
+            try {
+              return FetchedData.fromConnection(
+                  ref.getUri().toURL().openConnection());
+            } catch (IOException ex) {
+              throw new UriFetchException(ref, mimeType, ex);
+            }
+          }
+        }));
   }
 
   private static final UriPolicy uriPolicy = new UriPolicy() {
