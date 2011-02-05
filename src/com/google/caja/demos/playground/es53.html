@@ -37,7 +37,6 @@
   <script src="bridal.js"></script>
   <script src="cssparser.js"></script>
   <script src="domita.js"></script>
-
   <script>
   var swfobject = parent.swfobject;
   var grantAdditionalPowers = function(tamings___, ___, imports) {
@@ -48,7 +47,7 @@
     }
   }
   
-  function initJS(div, uriPolicy, policyJS, cajoledJS) {
+  function initJS(div, uriPolicy, policyJS, cajoled) {
     var imports = ___.copy(___.whitelistAll(___.sharedImports));
     imports.onerror = ___.markFunc(function(x){
       parent.caja___.logFunc(x);
@@ -75,15 +74,21 @@
     grantAdditionalPowers(tamings___, ___, imports);
     ___.getNewModuleHandler().setImports(___.whitelistAll(imports));
     try {
-      eval(cajoledJS);
+      if (cajoled.js) {
+        eval(cajoled.js);
+      } else if (cajoled.url) {
+        var s = document.createElement('script');
+        s.src = cajoled.url;
+        document.body.appendChild(s);
+      } else {
+        throw "Malformed cajoled object";
+      }
       var outcome = ___.getNewModuleHandler().getLastOutcome();
       var success = outcome && outcome[0];
       var result = success ? outcome[1] : undefined;
-      return { success: success,
-                   result: result };
+      return { success: success, result: result };
     } catch (e) {
-      return { success: false,
-                   exception: e };
+      return { success: false, exception: e };
     }
   };
   

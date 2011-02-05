@@ -67,7 +67,7 @@ var caja___ = (function () {
     eval(js);
   }
 
-  var cajoledJS = "";
+  var cajoled = {};
   var policyJS = "";
   var currentFrame = null;
   var callback = null;
@@ -79,14 +79,14 @@ var caja___ = (function () {
     currentFrame.src = "/es53.html?rnd=" + Math.floor(Math.random() * 10000);
     currentFrame.id = "es53frame";
     policyJS = policy;
-    cajoledJS = js;
+    cajoled = { js: js };
     callback = c;
     hiddenDiv.appendChild(currentFrame);
   }
   
   function onReady(initJS, childFrame) {
     var result = initJS(document.getElementById(id), uriPolicy, policyJS,
-        cajoledJS, grantAdditionalPowers);
+        cajoled, grantAdditionalPowers);
     if ('function' == typeof callback) {
       callback(result);
     }

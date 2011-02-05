@@ -32,8 +32,8 @@ import org.apache.tools.ant.BuildException;
  *   <input file="baz/input1.js"/>
  *   <input file="baz/input2.css"/>
  *   <depend file="baz/boo.css"/>
- *   <output language="cajita" debug="false" file="output-file-1.js"/>
- *   <output language="valija" debug="true" file="output-file-2.js"
+ *   <output language="cajita" debug="false" file="output-file-1.js" canLink="thinkfu.com" />
+ *   <output language="valija" debug="true" file="output-file-2.js" canLink="bar.com foo.com"
  *    ignore="YOUR_CODES_ARE_ON_FIRE"/>
  * </transform>
  * }
@@ -52,6 +52,10 @@ import org.apache.tools.ant.BuildException;
  * "pretty" is the default and uses the
  * {@link com.google.caja.render.JsPrettyPrinter}.
  * "minify" to use {@link com.google.caja.render.JsMinimalPrinter}.
+ * <p>
+ * The optional {@code canLink} attribute specifies a set of urls that cajoled code is allowed
+ * to link to.
+ * The default is none.
  * <p>
  * The optional {@code ignore} attribute specifies a set of message names to
  * ignore if the build otherwise succeeds.
@@ -83,6 +87,7 @@ public class TransformAntTask extends AbstractCajaAntTask {
     private String language;
     private String renderer = "pretty";
     private Set<String> messagesToIgnore = Sets.newHashSet();
+    private Set<String> allowedToLink = Sets.newHashSet();
 
     @Override
     public Map<String, Object> getOptions() {
@@ -93,6 +98,7 @@ public class TransformAntTask extends AbstractCajaAntTask {
       options.put("toIgnore", messagesToIgnore);
       options.put("rename", rename);
       options.put("onlyJsEmitted", onlyJsEmitted);
+      options.put("canLink", allowedToLink);
       return options;
     }
 
@@ -105,11 +111,18 @@ public class TransformAntTask extends AbstractCajaAntTask {
     public void setLanguage(String language) { this.language = language; }
     public void setRenderer(String renderer) { this.renderer = renderer; }
     public void setIgnore(String messageTypeNames) {
-      messageTypeNames = messageTypeNames.trim();
-      if (!"".equals(messageTypeNames)) {
-        this.messagesToIgnore.addAll(Arrays.asList(
-            messageTypeNames.split("[\\s,]+")));
+      this.messagesToIgnore = split(messageTypeNames);
+    }
+    public void setCanlink(String links) {
+      this.allowedToLink = split(links);
+    }
+    private Set<String> split(String spaceSeparated) {
+      Set<String> result = Sets.newHashSet();
+      spaceSeparated = spaceSeparated.trim();
+      if (!"".equals(spaceSeparated)) {
+        result.addAll(Arrays.asList(spaceSeparated.split("[\\s,]+")));
       }
+      return result;
     }
   }
 }

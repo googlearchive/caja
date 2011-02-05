@@ -130,7 +130,8 @@ public class BuildServiceImplementation implements BuildService {
         }
       };
 
-    UriPolicy policy = new UriPolicy() {
+    UriPolicy policy;
+    final UriPolicy prePolicy = new UriPolicy() {
       public String rewriteUri(
           ExternalReference u, UriEffect effect, LoaderType loader,
           Map<String, ?> hints) {
@@ -143,6 +144,20 @@ public class BuildServiceImplementation implements BuildService {
             .toString();
       }
     };
+    final Set<?> lUrls = (Set<?>) options.get("canLink");
+    if (!lUrls.isEmpty()) {
+      policy = new UriPolicy() {
+        public String rewriteUri(
+            ExternalReference u, UriEffect effect,
+            LoaderType loader, Map<String, ?> hints) {
+          String uri = u.getUri().toString();
+          if (lUrls.contains(uri)) { return uri; }
+          return prePolicy.rewriteUri(u, effect, loader, hints);
+        }
+      };
+    } else {
+      policy = prePolicy;
+    }
 
     MessageContext mc = new MessageContext();
 
@@ -151,9 +166,11 @@ public class BuildServiceImplementation implements BuildService {
     boolean passed = true;
     ParseTreeNode outputJs;
     Node outputHtml;
-    if ("caja".equals(language)) {
+    if ("caja".equals(language) || "valija".equals(language)) {
+      PluginMeta meta = new PluginMeta(fetcher, policy);
+      meta.setEnableES53("caja".equals(language));
       PluginCompiler compiler = new PluginCompiler(
-          BuildInfo.getInstance(), new PluginMeta(fetcher, policy), mq);
+          BuildInfo.getInstance(), meta, mq);
       compiler.setMessageContext(mc);
       if (Boolean.TRUE.equals(options.get("debug"))) {
         compiler.setGoals(compiler.getGoals()

@@ -39,6 +39,7 @@
   A subset of javascript that allow an application to securely embed plugins via
   a capability based security model.
   </description>
+  <property name="build.sysclasspath" value="ignore" />
 
   <!-- Make the build reproducible/warning-free on newer versions of ant -->
   <property name="build.sysclasspath" value="ignore" />
@@ -371,7 +372,7 @@
       </fileset>
     </copy>
     <taskdef name="transform" classname="com.google.caja.tools.TransformAntTask"
-     classpathref="classpath.run"/>
+     classpathref="classpath.run" />
     <taskdef name="innocent" classname="com.google.caja.tools.InnocentAntTask"
      classpathref="classpath.run"/>
     <taskdef name="genrule" classname="com.google.caja.tools.GenRuleAntTask"
@@ -557,6 +558,89 @@
     <jar destfile="${jars}/pluginc-src.jar" basedir="${src}"/>
   </target>
 
+  <macrodef name="JQueryTestCase">
+    <attribute name="testcase" />
+    <sequential>
+      <copy file="${lib}/js/jqueryjs/test/index-template.html" tofile="${lib}/js/jqueryjs/test/@{testcase}-uncajoled.html" />
+      <replace file="${lib}/js/jqueryjs/test/@{testcase}-uncajoled.html" value="@{testcase}">
+        <replacetoken><![CDATA[@jquery-testcase@]]></replacetoken>
+      </replace>
+      <copy file="${lib}/js/jqueryjs/test/hostpage-template.html" tofile="${lib}/js/jqueryjs/test/@{testcase}.html" />
+      <replace file="${lib}/js/jqueryjs/test/@{testcase}.html" value="@{testcase}">
+        <replacetoken><![CDATA[@jquery-testcase@]]></replacetoken>
+      </replace>
+      <transform>
+        <input file="${lib}/js/jqueryjs/test/@{testcase}-uncajoled.html" />
+        <output file="${lib}/js/jqueryjs/test/@{testcase}-cajoled.js"
+            onlyJsEmitted="true"
+            language="caja"
+            canLink="http://simon.incutio.com/archive/2003/03/25#getElementsBySelector \
+                           http://www.google.com/ \
+                           http://groups.google.com/ \
+                           http://smin/ \
+                           http://diveintomark.org/ \
+                           http://www.yahoo.com/ \
+                           http://simon.incutio.com/"
+        />
+  
+        <depend file="${lib}/js/jqueryjs/test/data/ua.txt"/>
+        <depend file="${lib}/js/jqueryjs/test/qunit/qunit/qunit.css"/>
+        <depend file="${lib}/js/jqueryjs/test/data/testsuite.css"/>
+        <depend file="${lib}/js/jqueryjs/test/data/testinit.js"/>
+        <depend file="${lib}/js/jqueryjs/test/../src/core.js"/>
+        <depend file="${lib}/js/jqueryjs/test/../src/support.js"/>
+        <depend file="${lib}/js/jqueryjs/test/../src/data.js"/>
+        <depend file="${lib}/js/jqueryjs/test/../src/queue.js"/>
+        <depend file="${lib}/js/jqueryjs/test/../src/attributes.js"/>
+        <depend file="${lib}/js/jqueryjs/test/../src/event.js"/>
+        <depend file="${lib}/js/jqueryjs/test/../src/sizzle/sizzle.js"/>
+        <depend file="${lib}/js/jqueryjs/test/../src/sizzle-jquery.js"/>
+        <depend file="${lib}/js/jqueryjs/test/../src/traversing.js"/>
+        <depend file="${lib}/js/jqueryjs/test/../src/manipulation.js"/>
+        <depend file="${lib}/js/jqueryjs/test/../src/css.js"/>
+        <depend file="${lib}/js/jqueryjs/test/../src/ajax.js"/>
+        <depend file="${lib}/js/jqueryjs/test/../src/effects.js"/>
+        <depend file="${lib}/js/jqueryjs/test/../src/offset.js"/>
+        <depend file="${lib}/js/jqueryjs/test/../src/dimensions.js"/>
+        <depend file="${lib}/js/jqueryjs/test/qunit/qunit/qunit.js"/>
+        <depend file="${lib}/js/jqueryjs/test/data/testrunner.js"/>
+        <depend file="${lib}/js/jqueryjs/test/unit/core.js"/>
+        <depend file="${lib}/js/jqueryjs/test/unit/data.js"/>
+        <depend file="${lib}/js/jqueryjs/test/unit/queue.js"/>
+        <depend file="${lib}/js/jqueryjs/test/unit/attributes.js"/>
+        <depend file="${lib}/js/jqueryjs/test/unit/event.js"/>
+        <depend file="${lib}/js/jqueryjs/test/unit/selector.js"/>
+        <depend file="${lib}/js/jqueryjs/test/unit/traversing.js"/>
+        <depend file="${lib}/js/jqueryjs/test/unit/manipulation.js"/>
+        <depend file="${lib}/js/jqueryjs/test/unit/css.js"/>
+        <depend file="${lib}/js/jqueryjs/test/unit/ajax.js"/>
+        <depend file="${lib}/js/jqueryjs/test/unit/effects.js"/>
+        <depend file="${lib}/js/jqueryjs/test/unit/offset.js"/>
+        <depend file="${lib}/js/jqueryjs/test/unit/dimensions.js"/>
+      </transform>
+    </sequential>
+  </macrodef>
+
+  <target name="jquery" depends="pluginc,dirs,CajoledValija">
+    <!-- The root files of the Domita test cases are statically cajoled -->
+    <JQueryTestCase testcase="core" />
+    <JQueryTestCase testcase="data" />
+    <JQueryTestCase testcase="queue" />
+    <JQueryTestCase testcase="attributes" />
+    <JQueryTestCase testcase="event" />
+    <JQueryTestCase testcase="selector" />
+    <JQueryTestCase testcase="traversing" />
+    <JQueryTestCase testcase="manipulation" />
+    <JQueryTestCase testcase="css" />
+    <JQueryTestCase testcase="ajax" />
+    <JQueryTestCase testcase="effects" />
+    <JQueryTestCase testcase="offset" />
+    <JQueryTestCase testcase="dimensions" />
+    <copy todir="${war}/jquery">
+      <fileset dir="${lib}/js/jqueryjs/test/" />
+    </copy>
+  </target>
+
   <target name="demos" depends="calendar,containers,lolcat-search,slides"
    description="Puts all the demo files together for easy browsing."/>
 
@@ -582,62 +666,62 @@
     <transform>
       <input file="${libplugin}/domita_test_untrusted_valija.html"/>
       <output file="${libplugin}/domita_test_untrusted_valija.out.html"
-          language="caja"/>
+          language="valija" />
     </transform>
     <transform>
       <input file="${libplugin}/domita_test_untrusted_cajita.html"/>
       <output file="${libplugin}/domita_test_untrusted_cajita.out.html"
-       language="caja"/>
+       language="valija" />
     </transform>
 
     <!-- Statically cajole all the tests for use by the XHR module loader -->
     <transform>
      <input file="${tests}/com/google/caja/a.js"/>
-     <output file="${lib}/com/google/caja/a.out.js" language="caja"/>
+     <output file="${lib}/com/google/caja/a.out.js" language="valija"/>
     </transform>
     <transform>
      <input file="${tests}/com/google/caja/foo/b.js"/>
-     <output file="${lib}/com/google/caja/foo/b.out.js" language="caja"/>
+     <output file="${lib}/com/google/caja/foo/b.out.js" language="valija"/>
     </transform>
     <transform>
      <input file="${tests}/com/google/caja/c.js"/>
-     <output file="${lib}/com/google/caja/c.out.js" language="caja"/>
+     <output file="${lib}/com/google/caja/c.out.js" language="valija"/>
     </transform>
     <transform>
      <input file="${tests}/com/google/caja/recursion.js"/>
-     <output file="${lib}/com/google/caja/recursion.out.js" language="caja"/>
+     <output file="${lib}/com/google/caja/recursion.out.js" language="valija"/>
     </transform>
     <transform>
      <input file="${tests}/com/google/caja/x.js"/>
-     <output file="${lib}/com/google/caja/x.out.js" language="caja"/>
+     <output file="${lib}/com/google/caja/x.out.js" language="valija"/>
     </transform>
     <transform>
      <input file="${tests}/com/google/caja/foo/inc.js"/>
-     <output file="${lib}/com/google/caja/foo/inc.out.js" language="caja"/>
+     <output file="${lib}/com/google/caja/foo/inc.out.js" language="valija"/>
     </transform>
     <transform>
      <input file="${tests}/com/google/caja/add.js"/>
-     <output file="${lib}/com/google/caja/add.out.js" language="caja"/>
+     <output file="${lib}/com/google/caja/add.out.js" language="valija"/>
     </transform>
     <transform>
      <input file="${tests}/com/google/caja/commonJsRecursion.js"/>
      <output file="${lib}/com/google/caja/commonJsRecursion.out.js"
-      language="caja"/>
+      language="valija"/>
     </transform>
     <transform>
      <input file="${tests}/com/google/caja/foo/f.js"/>
-     <output file="${lib}/com/google/caja/foo/f.out.js" language="caja"/>
+     <output file="${lib}/com/google/caja/foo/f.out.js" language="valija"/>
      <depend file="${tests}/com/google/caja/c.js"/>
     </transform>
     <transform>
      <input file="${tests}/com/google/caja/foo/staticinc.js"/>
      <output file="${lib}/com/google/caja/foo/staticinc.out.js"
-       language="caja"/>
+       language="valija"/>
      <depend file="${tests}/com/google/caja/sum.js"/>
     </transform>
     <transform>
      <input file="${tests}/com/google/caja/sum.js"/>
-     <output file="${lib}/com/google/caja/sum.out.js" language="caja"/>
+     <output file="${lib}/com/google/caja/sum.out.js" language="valija"/>
     </transform>
 
     <!-- These and other HTML and JS files are copied verbatim -->
@@ -650,12 +734,12 @@
   <target name="CajoledValija" depends="pluginc">
     <transform>
       <output file="${lib}/com/google/caja/plugin/valija.out.js"
-       language="caja"/>
+       language="valija"/>
       <input file="${src}/com/google/caja/valija-cajita.js"/>
     </transform>
     <transform>
       <output file="${lib}/com/google/caja/plugin/commonjs-sandbox.out.js"
-        language="caja"/>
+        language="valija"/>
       <input file="${src}/com/google/caja/commonjs-sandbox.js"/>
     </transform>
   </target>
@@ -942,8 +1026,7 @@
       <compilerarg line="-Xlint:unchecked"/>
     </javac>
     <copy todir="${lib}">
-      <fileset dir="${third_party}">
-      </fileset>
+      <fileset dir="${third_party}" />
       <fileset dir="${src}">
         <include name="**/caja/cajita-debugmode.js"/>
         <include name="**/caja/cajita-module-orig.js"/>        
@@ -1082,6 +1165,12 @@
         <include name="*.html" />
       </fileset>
 
+      <!-- Needed by jqueryTest which references the playground
+        -  server so as to be standalone. -->
+      <fileset dir="${lib}/js/jqueryjs/test/">
+        <include name="core.html"/>
+      </fileset>
+
       <!-- Needed by container-dynamic.html which references the playground
         -  server so as to be standalone. -->
       <fileset dir="${src}/com/google/caja">
@@ -1188,7 +1277,7 @@
     <appcfg action="update" war="${war}" />
   </target>
 
-  <target name="runserver" depends="playground,photon"
+  <target name="runserver" depends="playground,photon,jquery,trycaja"
     description="Starts the development server.">
     <dev_appserver war="${war}">
       <options>
@@ -1370,13 +1459,13 @@
     <transform>
       <output
        file="${lib}/com/google/caja/demos/container/gadget-library.out.js"
-       language="caja" onlyJsEmitted="true" debug="false"/>
+       language="valija" onlyJsEmitted="true" debug="false"/>
       <input file="${demos}/container/gadget-library.js"/>
     </transform>
     <transform>
       <output
        file="${lib}/com/google/caja/demos/container/gadget-trivial.out.js"
-       language="caja" onlyJsEmitted="true" debug="false"/>
+       language="valija" onlyJsEmitted="true" debug="false"/>
       <input file="${demos}/container/gadget-trivial.html"/>
     </transform>
 
@@ -1408,14 +1497,14 @@
    description="IM IN UR BUILD DEMOING UR GADGETZ">
     <transform>
       <output file="${www}/lolcat-search/searchbox.out.js"
-          language="caja" onlyJsEmitted="true"/>
+          language="valija" onlyJsEmitted="true"/>
       <input file="${demos}/lolcat-search/searchbox.html"/>
       <depend file="${demos}/lolcat-search/searchbox.css"/>
       <depend file="${demos}/lolcat-search/searchbox.js"/>
     </transform>
     <transform>
       <output file="${www}/lolcat-search/kittens.out.js"
-          language="caja" onlyJsEmitted="true"/>
+          language="valija" onlyJsEmitted="true"/>
       <input file="${demos}/lolcat-search/kittens.html"/>
       <depend file="${demos}/lolcat-search/katTranzlator.js"/>
       <depend file="${demos}/lolcat-search/kittens.js"/>
@@ -1448,31 +1537,31 @@
    depends="dirs,pluginc,MinifiedJs,CajoledValija,lolcat-search"
    description="Explain Caja">
     <transform>
-      <output file="${www}/slides/redirection.out.js" language="caja"
+      <output file="${www}/slides/redirection.out.js" language="valija"
        ignore="UNSAFE_TAG DISALLOWED_CSS_PROPERTY_IN_SELECTOR"
        onlyJsEmitted="true"/>
       <input file="${demos}/slides/redirection.html"/>
     </transform>
     <transform>
-      <output file="${www}/slides/history.out.js" language="caja"
+      <output file="${www}/slides/history.out.js" language="valija"
        ignore="UNSAFE_TAG DISALLOWED_CSS_PROPERTY_IN_SELECTOR"
        onlyJsEmitted="true"/>
       <input file="${demos}/slides/history.html"/>
     </transform>
     <transform>
-      <output file="${www}/slides/cookie.out.js" language="caja"
+      <output file="${www}/slides/cookie.out.js" language="valija"
        ignore="UNSAFE_TAG DISALLOWED_CSS_PROPERTY_IN_SELECTOR"
        onlyJsEmitted="true"/>
       <input file="${demos}/slides/cookie.html"/>
     </transform>
     <transform>
-      <output file="${www}/slides/script-injection.out.js" language="caja"
+      <output file="${www}/slides/script-injection.out.js" language="valija"
        ignore="UNSAFE_TAG DISALLOWED_CSS_PROPERTY_IN_SELECTOR"
        onlyJsEmitted="true"/>
       <input file="${demos}/slides/script-injection.html"/>
     </transform>
     <transform>
-      <output file="${www}/slides/tame-alert.out.js" language="caja"
+      <output file="${www}/slides/tame-alert.out.js" language="valija"
        ignore="UNSAFE_TAG DISALLOWED_CSS_PROPERTY_IN_SELECTOR"
        onlyJsEmitted="true"/>
       <input file="${demos}/slides/tame-alert.html"/>
@@ -1480,14 +1569,14 @@
 
     <transform>
       <output file="${www}/slides/searchbox.out.js"
-          language="caja" onlyJsEmitted="true"/>
+          language="valija" onlyJsEmitted="true"/>
       <input file="${demos}/lolcat-search/searchbox.html"/>
       <depend file="${demos}/lolcat-search/searchbox.css"/>
       <depend file="${demos}/lolcat-search/searchbox.js"/>
     </transform>
     <transform>
       <output file="${www}/slides/kittens.out.js"
-          language="caja" onlyJsEmitted="true"/>
+          language="valija" onlyJsEmitted="true"/>
       <input file="${demos}/lolcat-search/kittens.html"/>
       <depend file="${demos}/lolcat-search/katTranzlator.js"/>
       <depend file="${demos}/lolcat-search/kittens.js"/>
@@ -1588,7 +1677,7 @@
     </transform>
     <transform>
       <output file="${lib}/com/google/caja/demos/calendar/calendar.out.js"
-       language="caja" debug="false"/>
+       language="valija" debug="false"/>
       <input file="${demos}/calendar/widget.css"/>
       <input file="${demos}/calendar/util.js"/>
       <input file="${demos}/calendar/bitset.js"/>
@@ -1646,11 +1735,11 @@
   <target name="yuitest" depends="pluginc,dirs,CajoledValija">
     <transform>
       <input file="yuitest/yahoo-dom.js"/>
-      <output file="yuitest/yahoo-dom.out.js" language="caja"/>
+      <output file="yuitest/yahoo-dom.out.js" language="valija"/>
     </transform>
     <transform>
       <input file="yuitest/dom_test.html"/>
-      <output file="yuitest/dom_test.out.html" language="caja"/>
+      <output file="yuitest/dom_test.out.html" language="valija"/>
     </transform>
   </target>
 

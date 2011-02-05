@@ -1,0 +1,22 @@
+<html>
+<body>
+<div id='d___' class='d___'></div>
+<script>
+var caja___ = (function() {
+  function logFunc(x) {
+    console.log(x);
+  } 
+  
+  function onReady(initJs) {
+    initJs(document.getElementById('d___'), 
+        { rewrite: function(uri, mimetype) { return uri; } },
+        "",
+        { url :  "/jquery/@jquery-testcase@-cajoled.js" });
+  }
+  return {
+    logFunc: logFunc,
+    onReady: onReady
+  }
+})();
+</script>
+<iframe src="/es53.html" width=1000> border=0 frameborder=0 style="display: none;">
