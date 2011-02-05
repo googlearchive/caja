@@ -38,6 +38,7 @@ import java.util.List;
 import junit.framework.AssertionFailedError;
 
 public class ArrayIndexOptimizationTest extends CajaTestCase {
+
   public final void testIsNumberOrUndefOperator() throws IOException {
     List<Statement> stmts = new ArrayList<Statement>();
     for (Operator op : Operator.values()) {
@@ -224,6 +225,31 @@ public class ArrayIndexOptimizationTest extends CajaTestCase {
     assertEquals("this;", renderProgram(b));
   }
 
+  public final void testBug1307() throws Exception {
+    assertNotChangedByOptimizer(
+        ""
+        + "(function (){\n"
+        + "  var x = {a:1, b:2};\n"
+        + "  for (var i in x) { alert(x[i]); }\n"
+        + "})();");
+    assertNotChangedByOptimizer(
+        ""
+        + "(function (){\n"
+        + "  var x = {a:1, b:2}, i;\n"
+        + "  for (i in x) { alert(x[i]); }\n"
+        + "})();");
+    assertNotChangedByOptimizer(
+        ""
+        + "(function (){\n"
+        + "  var x = {a:1, b:2}, i;\n"
+        + "  try {\n"
+        + "    throw 'a';\n"
+        + "  } catch (i) {\n"
+        + "    alert(x[i]);\n"
+        + "  }\n"
+        + "})();");
+  }
+
   /** Correspond to the global vars defined in array-opt-operator-test.js */
   private static Reference[] REFERENCES = {
     new Reference(ident("undefined")),
@@ -269,5 +295,12 @@ public class ArrayIndexOptimizationTest extends CajaTestCase {
 
   private static Identifier ident(String name) {
     return new Identifier(FilePosition.UNKNOWN, name);
+  }
+
+  private void assertNotChangedByOptimizer(String jsSrc) throws Exception {
+    Block b = js(fromString(jsSrc));
+    ArrayIndexOptimization.optimize(b);
+    ParseTreeNode golden = js(fromString(jsSrc));
+    assertEquals(render(b), render(golden), render(b));
   }
 }

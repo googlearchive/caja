@@ -56,7 +56,6 @@ import com.google.caja.plugin.UriPolicy;
 import com.google.caja.render.Concatenator;
 import com.google.caja.reporting.BuildInfo;
 import com.google.caja.reporting.Message;
-import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.Callback;

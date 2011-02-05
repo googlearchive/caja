@@ -112,7 +112,7 @@ public final class ScopeTree implements AbstractScope {
         return child;
       }
 
-      public void enterScope(ScopeTree Scope) {
+      public void enterScope(ScopeTree scope) {
         // NOP
       }
 

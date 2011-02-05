@@ -56,7 +56,6 @@ import java.util.Map;
 import junit.framework.Assert;
 import junit.framework.AssertionFailedError;
 
-import org.mozilla.javascript.ScriptableObject;
 import org.w3c.dom.Attr;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;

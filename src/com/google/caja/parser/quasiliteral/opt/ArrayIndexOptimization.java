@@ -20,6 +20,7 @@ import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.js.CatchStmt;
 import com.google.caja.parser.js.Declaration;
 import com.google.caja.parser.js.Expression;
+import com.google.caja.parser.js.ForEachLoop;
 import com.google.caja.parser.js.FormalParam;
 import com.google.caja.parser.js.Identifier;
 import com.google.caja.parser.js.NumberLiteral;
@@ -128,6 +129,9 @@ public final class ArrayIndexOptimization {
          : scopeTree.usesOf(r.getIdentifierName())) {
       if (use.parent.node instanceof Reference) {
         AncestorChain<?> gp = use.parent.parent;
+        if (isKeyReceiver(use.parent)) {
+          return false;
+        }
         // If it's the LHS of an assignment, check the RHS
         if (gp.node instanceof Operation
             && use.parent.node == gp.node.children().get(0)) {
@@ -161,6 +165,8 @@ public final class ArrayIndexOptimization {
           if (!isVisiblePropertyExpr(init, scopeTree, identifiersExpanding)) {
             return false;
           }
+        } else if (isKeyReceiver(use)) {
+          return false;
         }
       }
     }
@@ -289,5 +295,17 @@ public final class ArrayIndexOptimization {
   }
   static boolean hasNumericResult(Operator o) {
     return NUMERIC_OPERATORS.contains(o);
+  }
+
+  static boolean isKeyReceiver(AncestorChain<?> ac) {
+    if (ac == null || ac.parent == null) { return false; }
+    if (!(ac.parent.node instanceof CatchStmt)) {
+      ac = ac.parent;
+      if (ac.parent == null) { return false; }
+      if (!(ac.parent.node instanceof ForEachLoop)) {
+        return false;
+      }
+    }
+    return ac.node == ac.parent.node.children().get(0);
   }
 }

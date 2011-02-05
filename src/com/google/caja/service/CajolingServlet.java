@@ -139,7 +139,6 @@ public class CajolingServlet extends HttpServlet {
   @Override
   public void doGet(HttpServletRequest req, HttpServletResponse resp)
       throws ServletException {
-    HttpContentHandlerArgs args = new HttpContentHandlerArgs(req);
     handle(resp, new HttpContentHandlerArgs(req), null);
   }
 

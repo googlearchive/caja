@@ -16,33 +16,21 @@ package com.google.caja.tools;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
-import java.io.PrintStream;
-import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.util.Date;
-import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import com.google.caja.SomethingWidgyHappenedError;
-import com.google.caja.lexer.CharProducer;
-import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.escaping.Escaping;
-import com.google.caja.parser.js.Block;
-import com.google.caja.parser.js.Statement;
-import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.Charsets;
-import com.google.caja.util.Lists;
-import com.google.caja.util.Strings;
 
 /**
- * Takes as input a JS file and outputs a JS file that has a variable 
+ * Takes as input a JS file and outputs a JS file that has a variable
  * initialized to its contents.
  *
  * @author Jasvir Nagra <jasvir@gmail.com>
@@ -77,7 +65,7 @@ public final class JsToVar implements BuildCommand {
     }
     return true;
   }
-  
+
   private String varName(File output) {
     String name = output.getName();
     return name.endsWith(".js") ? name.substring(0, name.length() - 3) : name;
