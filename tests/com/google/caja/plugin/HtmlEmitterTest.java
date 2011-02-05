@@ -17,22 +17,29 @@ package com.google.caja.plugin;
 import com.google.caja.lang.css.CssSchema;
 import com.google.caja.lang.html.HtmlSchema;
 import com.google.caja.lexer.ParseException;
-import com.google.caja.parser.css.CssTree;
 import com.google.caja.parser.html.DomParser;
 import com.google.caja.parser.html.Namespaces;
 import com.google.caja.parser.html.Nodes;
 import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.Noop;
 import com.google.caja.parser.js.Statement;
+import com.google.caja.plugin.stages.JobCache;
+import com.google.caja.plugin.templates.IhtmlRoot;
+import com.google.caja.plugin.templates.SafeHtmlChunk;
+import com.google.caja.plugin.templates.SafeJsChunk;
+import com.google.caja.plugin.templates.ScriptPlaceholder;
 import com.google.caja.plugin.templates.TemplateCompiler;
+import com.google.caja.plugin.templates.ValidatedStylesheet;
 import com.google.caja.render.Concatenator;
 import com.google.caja.render.JsPrettyPrinter;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.CajaTestCase;
+import com.google.caja.util.ContentType;
 import com.google.caja.util.Lists;
 import com.google.caja.util.MoreAsserts;
 import com.google.caja.util.Pair;
 import com.google.caja.util.RhinoTestBed;
+import com.google.caja.util.Strings;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -57,21 +64,25 @@ public class HtmlEmitterTest extends CajaTestCase {
         + "<h1>Foo <b><script>c()</script>Bar</b> Baz</h1>\n"
         + "<h2 id='x'>Boo</h2>\n");
     PluginMeta meta = new PluginMeta();
+    List<ScriptPlaceholder> extractedScripts = Lists.newArrayList();
     TemplateCompiler tc = new TemplateCompiler(
-        Collections.singletonList(
-            Pair.pair(htmlWithExtractedScripts(input), is.getUri())),
-        Collections.<CssTree.StyleSheet>emptyList(),
+        Collections.singletonList(new IhtmlRoot(
+            new JobEnvelope(
+                null, JobCache.none(), ContentType.HTML, false, null),
+            htmlWithScriptsExtracted(input, extractedScripts), is.getUri())),
+        Collections.<ValidatedStylesheet>emptyList(), extractedScripts,
         CssSchema.getDefaultCss21Schema(mq), HtmlSchema.getDefault(mq),
         meta, mc, mq);
-    Pair<Node, List<Block>> htmlAndJs = tc.getSafeHtml(
+    Pair<List<SafeHtmlChunk>, List<SafeJsChunk>> htmlAndJs = tc.getSafeHtml(
         DomParser.makeDocument(null, null));
+
     assertEquals(
         ""
         + "<p>Hi</p>"
         + "<div id=\"id_1___\">Hello <span id=\"id_2___\"></span>World!!!</div>"
         + "<h1>Foo <b id=\"id_3___\">Bar</b> Baz</h1>"
         + "<h2 id=\"id_4___\">Boo</h2>",
-        Nodes.render(htmlAndJs.a));
+        renderAll(htmlAndJs.a));
     // If you change this JS, also update the tests in html-emitter-test.html.
     List<String> jsLines =  Arrays.asList(
         "'use cajita'; /* Start translated code */",
@@ -133,28 +144,37 @@ public class HtmlEmitterTest extends CajaTestCase {
         jsLines, Arrays.asList(renderConsolidated(htmlAndJs.b).split("\n")));
   }
 
-  private Node htmlWithExtractedScripts(String html) throws ParseException {
-    Node n = htmlFragment(fromString(html));
-    return extract(n);
+  private Node htmlWithScriptsExtracted(
+      String html, List<ScriptPlaceholder> extractedScripts)
+      throws ParseException {
+    return extract(htmlFragment(fromString(html)), extractedScripts);
   }
 
-  private Node extract(Node n) throws ParseException {
-    if (n.getNodeType() == 1 && "script".equals(n.getNodeName())) {
+  private Node extract(
+      Node n, List<ScriptPlaceholder> extractedScripts)
+      throws ParseException {
+    if (n.getNodeType() == 1
+        && Strings.equalsIgnoreCase("script", n.getNodeName())) {
       String HTML_NS = Namespaces.HTML_NAMESPACE_URI;
-      Element span = n.getOwnerDocument().createElementNS(HTML_NS, "span");
-      ExtractedHtmlContent.setExtractedScriptFor(
-          span, js(fromString(n.getFirstChild().getNodeValue())));
-      n.getParentNode().replaceChild(span, n);
-      n = span;
+      Element placeholder = n.getOwnerDocument().createElementNS(
+          HTML_NS, "span");
+      String id = "$" + extractedScripts.size();
+      placeholder.setAttributeNS(
+          Placeholder.ID_ATTR.ns.uri, Placeholder.ID_ATTR.localName, id);
+      extractedScripts.add(new ScriptPlaceholder(
+          new JobEnvelope(id, JobCache.none(), ContentType.JS, false, null),
+          js(fromString(n.getFirstChild().getNodeValue()))));
+      n.getParentNode().replaceChild(placeholder, n);
+      n = placeholder;
     }
-    for (Node c : Nodes.childrenOf(n)) { extract(c); }
+    for (Node c : Nodes.childrenOf(n)) { extract(c, extractedScripts); }
     return n;
   }
 
-  private static String renderConsolidated(List<Block> blocks) {
+  private static String renderConsolidated(List<SafeJsChunk> blocks) {
     List<Statement> statements = Lists.newArrayList();
-    for (Block block : blocks) {
-      for (Statement s : block.children()) {
+    for (SafeJsChunk js : blocks) {
+      for (Statement s : ((Block) js.body).children()) {
         if (s instanceof Noop) { continue; }
         if (s instanceof Block) {
           statements.addAll(((Block) s).children());
@@ -171,6 +191,14 @@ public class HtmlEmitterTest extends CajaTestCase {
       if (!s.isTerminal()) { rc.getOut().consume(";"); }
     }
     rc.getOut().noMoreTokens();
+    return sb.toString();
+  }
+
+  private static String renderAll(Iterable<? extends SafeHtmlChunk> html) {
+    StringBuilder sb = new StringBuilder();
+    for (SafeHtmlChunk chunk : html) {
+      sb.append(Nodes.render(chunk.root));
+    }
     return sb.toString();
   }
 }

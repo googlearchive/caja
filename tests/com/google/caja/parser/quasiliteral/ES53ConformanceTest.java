@@ -803,7 +803,7 @@ public class ES53ConformanceTest extends RewriterTestCase {
     es53Rewriter = new ES53Rewriter(TestBuildInfo.getInstance(), mq, false);
     setRewriter(es53Rewriter);
   }
-  
+
   @Override
   protected Object executePlain(String caja) throws IOException {
     mq.getMessages().clear();
@@ -817,7 +817,6 @@ public class ES53ConformanceTest extends RewriterTestCase {
   }
 
   public class Caja {
-    public Caja() {}
     public String cajole(String source) throws ParseException {
       List<Statement> children = Lists.newArrayList();
       children.add(js(fromString(source, is)));
@@ -830,12 +829,12 @@ public class ES53ConformanceTest extends RewriterTestCase {
   }
 
   @Override
-  protected Object rewriteAndExecute(String pre, String caja, String post) 
+  protected Object rewriteAndExecute(String pre, String caja, String post)
       throws ParseException, IOException {
     return rewriteAndExecute(null, pre, caja, post);
   }
 
-  protected Object rewriteAndExecute(CharProducer testPath) 
+  protected Object rewriteAndExecute(CharProducer testPath)
       throws ParseException, IOException {
     return rewriteAndExecute(testPath, "", null, "");
   }
@@ -851,7 +850,7 @@ public class ES53ConformanceTest extends RewriterTestCase {
     List<Statement> children = Lists.newArrayList();
     children.add(js(
         testPath == null ?
-        fromString(caja, is) : 
+        fromString(caja, is) :
         testPath));
     String cajoledJs = render(rewriteTopLevelNode(
         new UncajoledModule(new Block(FilePosition.UNKNOWN, children))));

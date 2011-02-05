@@ -35,17 +35,20 @@ import com.google.caja.parser.js.FunctionDeclaration;
 import com.google.caja.parser.js.Identifier;
 import com.google.caja.parser.js.TranslatedCode;
 import com.google.caja.plugin.CssRuleRewriter;
-import com.google.caja.plugin.ExtractedHtmlContent;
+import com.google.caja.plugin.JobEnvelope;
 import com.google.caja.plugin.LoaderType;
+import com.google.caja.plugin.Placeholder;
 import com.google.caja.plugin.PluginMeta;
 import com.google.caja.plugin.UriEffect;
 import com.google.caja.plugin.UriFetcher;
 import com.google.caja.plugin.UriPolicy;
 import com.google.caja.plugin.UriPolicyHintKey;
+import com.google.caja.plugin.stages.JobCache;
 import com.google.caja.reporting.MarkupRenderMode;
 import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.util.CajaTestCase;
+import com.google.caja.util.ContentType;
 import com.google.caja.util.Lists;
 import com.google.caja.util.Pair;
 
@@ -772,61 +775,79 @@ public class TemplateCompilerTest extends CajaTestCase {
   private void assertSafeHtml(
       List<DocumentFragment> inputs, DocumentFragment htmlGolden,
       Block jsGolden, boolean checkErrors) throws ParseException {
-    List<Pair<Node, URI>> html = Lists.newArrayList();
-    List<CssTree.StyleSheet> css = Lists.newArrayList();
+    List<IhtmlRoot> html = Lists.newArrayList();
+    List<ValidatedStylesheet> css = Lists.newArrayList();
+    List<ScriptPlaceholder> extractedScripts = Lists.newArrayList();
     for (DocumentFragment input : inputs) {
-      extractScriptsAndStyles(input, URI.create("file:///"), html, css);
+      extractScriptsAndStyles(
+          input, URI.create("file:///"), html, css, extractedScripts);
     }
 
     TemplateCompiler tc = new TemplateCompiler(
-        html, css, CssSchema.getDefaultCss21Schema(mq),
+        html, css, extractedScripts, CssSchema.getDefaultCss21Schema(mq),
         HtmlSchema.getDefault(mq), meta, mc, mq);
     Document doc = DomParser.makeDocument(null, null);
-    Pair<Node, List<Block>> safeContent = tc.getSafeHtml(doc);
+    Pair<List<SafeHtmlChunk>, List<SafeJsChunk>> safeContent
+        = tc.getSafeHtml(doc);
 
     if (checkErrors) {
       assertNoErrors();
       // No warnings about skipped elements.  Warning is not the compiler's job.
     }
 
-    assertEquals(safeContent.a.getOwnerDocument(), doc);
-
+    StringBuilder renderedHtml = new StringBuilder();
+    for (SafeHtmlChunk safeHtml : safeContent.a) {
+      assertEquals(safeHtml.root.getOwnerDocument(), doc);
+      renderedHtml.append(Nodes.render(safeHtml.root, MarkupRenderMode.XML));
+    }
     assertEquals(
         Nodes.render(htmlGolden, MarkupRenderMode.XML),
-        Nodes.render(safeContent.a, MarkupRenderMode.XML));
+        renderedHtml.toString());
     assertEquals(
         renderProgram(jsGolden), renderProgram(consolidate(safeContent.b)));
  }
 
   private void extractScriptsAndStyles(
-      Node n, URI baseUri, List<Pair<Node, URI>> htmlOut,
-      List<CssTree.StyleSheet> cssOut)
+      Node n, URI baseUri, List<IhtmlRoot> htmlOut,
+      List<ValidatedStylesheet> cssOut,
+      List<ScriptPlaceholder> extractedScripts)
       throws ParseException {
-    n = extractScripts(n);
-    htmlOut.add(Pair.pair(n, baseUri));
+    n = extractScripts(n, extractedScripts);
+    htmlOut.add(new IhtmlRoot(
+        new JobEnvelope(null, JobCache.none(), ContentType.HTML, false, null),
+        n, baseUri));
     extractStyles(n, cssOut);
   }
 
   private static String HTML_NS = Namespaces.HTML_NAMESPACE_URI;
-  private Node extractScripts(Node n) throws ParseException {
+  private Node extractScripts(Node n, List<ScriptPlaceholder> extractedScripts)
+      throws ParseException {
     if (n instanceof Element && "script".equals(n.getLocalName())
         && HTML_NS.equals(n.getNamespaceURI())) {
-      Element span = n.getOwnerDocument().createElementNS(HTML_NS, "span");
+      Element placeholder = n.getOwnerDocument().createElementNS(
+          HTML_NS, "span");
+      String id = "$" + extractedScripts.size();
+      placeholder.setAttributeNS(
+          Placeholder.ID_ATTR.ns.uri, Placeholder.ID_ATTR.localName, id);
       if (n.getParentNode() != null) {
-        n.getParentNode().replaceChild(span, n);
+        n.getParentNode().replaceChild(placeholder, n);
       }
       FilePosition pos = Nodes.getFilePositionFor(n);
       String text = n.getFirstChild().getNodeValue();
       Block js = js(fromString(text, pos));
-      ExtractedHtmlContent.setExtractedScriptFor(span, js);
-      Nodes.setFilePositionFor(span, Nodes.getFilePositionFor(n));
-      return span;
+      extractedScripts.add(new ScriptPlaceholder(
+          new JobEnvelope(id, JobCache.none(), ContentType.JS, false, null),
+          js));
+      Nodes.setFilePositionFor(placeholder, Nodes.getFilePositionFor(n));
+      return placeholder;
     }
-    for (Node child : Nodes.childrenOf(n)) { extractScripts(child); }
+    for (Node child : Nodes.childrenOf(n)) {
+      extractScripts(child, extractedScripts);
+    }
     return n;
   }
 
-  private void extractStyles(Node n, List<CssTree.StyleSheet> styles)
+  private void extractStyles(Node n, List<ValidatedStylesheet> styles)
       throws ParseException {
     if (n instanceof Element && "style".equals(n.getNodeName())
         && HTML_NS.equals(n.getNamespaceURI())) {
@@ -837,7 +858,10 @@ public class TemplateCompilerTest extends CajaTestCase {
         CssRuleRewriter rrw = new CssRuleRewriter(meta);
         rrw.rewriteCss(css);
         assertMessagesLessSevereThan(MessageLevel.ERROR);
-        styles.add(css);
+        styles.add(new ValidatedStylesheet(
+            new JobEnvelope(
+                null, JobCache.none(), ContentType.CSS, false, null),
+            css, is.getUri()));
       }
       n.getParentNode().removeChild(n);
       return;
@@ -845,14 +869,15 @@ public class TemplateCompilerTest extends CajaTestCase {
     for (Node child : Nodes.childrenOf(n)) { extractStyles(child, styles); }
   }
 
-  private Block consolidate(List<Block> blocks) {
+  private Block consolidate(List<SafeJsChunk> chunks) {
     Block consolidated = new Block();
     MutableParseTreeNode.Mutation mut = consolidated.createMutation();
     FilePosition unk = FilePosition.UNKNOWN;
-    for (Block bl : blocks) {
+    for (SafeJsChunk chunk : chunks) {
       Identifier ident = new Identifier(unk, "module");
       mut.appendChild(new FunctionDeclaration(new FunctionConstructor(
-          unk, ident, Collections.<FormalParam>emptyList(), bl)));
+          unk, ident, Collections.<FormalParam>emptyList(),
+          (Block) chunk.body)));
     }
     mut.execute();
     stripTranslatedCode(consolidated);

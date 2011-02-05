@@ -1,4 +1,4 @@
-// Copyright (C) 2009 Google Inc.
+// Copyright (C) 2010 Google Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,19 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.caja.plugin;
+package com.google.caja.plugin.templates;
 
-/**
- * Perform the domita test automatically.
- *
- * @author maoziqing@gmail.com (Ziqing Mao)
- */
-public class DomitaTest extends BrowserTestCase {
-  public final void testDomitaCajita() {
-    runBrowserTest("domita_test.html");
+import com.google.caja.parser.ParseTreeNode;
+import com.google.caja.parser.js.Block;
+import com.google.caja.plugin.JobEnvelope;
+
+public final class ScriptPlaceholder {
+  public final JobEnvelope source;
+  public final ParseTreeNode body;
+
+  public ScriptPlaceholder(JobEnvelope source, ParseTreeNode body) {
+    assert source.fromCache || body instanceof Block;
+    this.source = source;
+    this.body = body;
   }
 
-  public final void testDomitaValija() {
-    runBrowserTest("domita_test.html?valija=1");
+  @Override
+  public String toString() {
+    return body.toString();
   }
 }

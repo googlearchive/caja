@@ -1,4 +1,4 @@
-// Copyright (C) 2009 Google Inc.
+// Copyright (C) 2010 Google Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,19 +12,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.caja.plugin;
+package com.google.caja.plugin.templates;
+
+import com.google.caja.plugin.JobEnvelope;
+
+import java.net.URI;
+
+import org.w3c.dom.Node;
 
 /**
- * Perform the domita test automatically.
+ * An input to the template compiler that contains references to extracted
+ * content.
  *
- * @author maoziqing@gmail.com (Ziqing Mao)
+ * @author Mike Samuel <mikesamuel@gmail.com>
  */
-public class DomitaTest extends BrowserTestCase {
-  public final void testDomitaCajita() {
-    runBrowserTest("domita_test.html");
-  }
+public final class IhtmlRoot {
+  public final JobEnvelope source;
+  public final Node root;
+  public final URI baseUri;
 
-  public final void testDomitaValija() {
-    runBrowserTest("domita_test.html?valija=1");
+  public IhtmlRoot(JobEnvelope source, Node root, URI baseUri) {
+    this.source = source;
+    this.root = root;
+    this.baseUri = baseUri;
   }
 }

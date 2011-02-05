@@ -259,8 +259,7 @@ function HtmlEmitter(base, opt_tameDocument) {
     placeholder.parentNode.removeChild(placeholder);
   }
   /**
-   * Reattach any remaining detached bits, free resources, and fire a document
-   * loaded event.
+   * Reattach any remaining detached bits, free resources.
    */
   function finish() {
     insertionPoint = null;

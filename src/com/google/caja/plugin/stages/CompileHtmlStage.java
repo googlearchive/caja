@@ -14,24 +14,25 @@
 
 package com.google.caja.plugin.stages;
 
-import com.google.caja.SomethingWidgyHappenedError;
 import com.google.caja.lang.css.CssSchema;
 import com.google.caja.lang.html.HtmlSchema;
-import com.google.caja.lexer.InputSource;
 import com.google.caja.parser.css.CssTree;
 import com.google.caja.parser.html.Dom;
 import com.google.caja.parser.html.DomParser;
 import com.google.caja.parser.js.Block;
+import com.google.caja.parser.js.CajoledModule;
 import com.google.caja.plugin.Job;
 import com.google.caja.plugin.JobEnvelope;
 import com.google.caja.plugin.Jobs;
+import com.google.caja.plugin.templates.IhtmlRoot;
+import com.google.caja.plugin.templates.SafeHtmlChunk;
+import com.google.caja.plugin.templates.SafeJsChunk;
+import com.google.caja.plugin.templates.ScriptPlaceholder;
 import com.google.caja.plugin.templates.TemplateCompiler;
 import com.google.caja.plugin.templates.TemplateSanitizer;
+import com.google.caja.plugin.templates.ValidatedStylesheet;
 import com.google.caja.reporting.MessageQueue;
-import com.google.caja.util.ContentType;
 import com.google.caja.util.Lists;
-import com.google.caja.util.Multimap;
-import com.google.caja.util.Multimaps;
 import com.google.caja.util.Pair;
 import com.google.caja.util.Pipeline;
 
@@ -42,7 +43,7 @@ import java.util.List;
 import org.w3c.dom.Node;
 
 /**
- * Compile the HTML and CSS to javascript.
+ * Compile the HTML, CSS, and JS to HTML and JS.
  *
  * @author mikesamuel@gmail.com
  */
@@ -58,61 +59,71 @@ abstract class CompileHtmlStage implements Pipeline.Stage<Jobs> {
   }
 
   public boolean apply(Jobs jobs) {
-    Multimap<JobCache.Keys, Job> byKey = Multimaps.newListHashMultimap();
+    List<IhtmlRoot> html = Lists.newArrayList();
+    List<ValidatedStylesheet> css = Lists.newArrayList();
+    List<ScriptPlaceholder> js = Lists.newArrayList();
+
     for (Iterator<JobEnvelope> it = jobs.getJobs().iterator(); it.hasNext();) {
       JobEnvelope env = it.next();
-      if (env.fromCache) { continue; }
-      switch (env.job.getType()) {
+      Job job = env.job;
+      switch (env.sourceType) {
         case CSS:
+          if (!env.fromCache) {
+            css.add(new ValidatedStylesheet(
+                env, (CssTree.StyleSheet) job.getRoot(), job.getBaseUri()));
+            it.remove();
+          }
+          break;
         case HTML:
-          byKey.put(env.cacheKeys, env.job);
+          html.add(new IhtmlRoot(
+              env, ((Dom) job.getRoot()).getValue(), job.getBaseUri()));
           it.remove();
+          break;
+        case JS:
+          if (env.placeholderId != null) {
+            js.add(new ScriptPlaceholder(env, env.job.getRoot()));
+            it.remove();
+          }
           break;
         default: break;
       }
     }
 
-    for (JobCache.Keys cacheKeys : byKey.keySet()) {
-      URI baseUri = null;
-      List<Pair<Node, URI>> ihtmlRoots = Lists.newArrayList();
-      List<CssTree.StyleSheet> stylesheets = Lists.newArrayList();
-      for (Job job : byKey.get(cacheKeys)) {
-        switch (job.getType()) {
-          case HTML:
-            // TODO(ihab.awad): We do *not* want to support multiple HTML files
-            // being cajoled at once since this can be mis-used for modularity
-            // and we set up expectations on the part of our users to
-            // maintain this behavior, regardless of whatever complexity that
-            // might entail.
-            ihtmlRoots.add(Pair.pair(
-                ((Dom) job.getRoot()).getValue(), job.getBaseUri()));
-            if (baseUri == null) { baseUri = job.getBaseUri(); }
-            break;
-          case CSS:
-            stylesheets.add((CssTree.StyleSheet) job.getRoot());
-            break;
-          default: throw new SomethingWidgyHappenedError(job.getType().name());
-        }
+    // TODO(ihab.awad): We do *not* want to support multiple HTML files
+    // being cajoled at once since this can be mis-used for modularity
+    // and we set up expectations on the part of our users to
+    // maintain this behavior, regardless of whatever complexity that
+    // might entail.
+
+    MessageQueue mq = jobs.getMessageQueue();
+
+    TemplateSanitizer ts = new TemplateSanitizer(htmlSchema, mq);
+    for (IhtmlRoot ihtmlRoot : html) {
+      ts.sanitize(ihtmlRoot.root);
+    }
+
+    TemplateCompiler tc = new TemplateCompiler(
+        html, css, js, cssSchema, htmlSchema,
+        jobs.getPluginMeta(), jobs.getMessageContext(), mq);
+    Pair<List<SafeHtmlChunk>, List<SafeJsChunk>> htmlAndJs = tc.getSafeHtml(
+        DomParser.makeDocument(null, null));
+
+    for (SafeHtmlChunk outputHtml : htmlAndJs.a) {
+      Job outJob = makeJobFromHtml(outputHtml.root, outputHtml.baseUri);
+      if (outJob != null) {
+        jobs.getJobs().add(outputHtml.source.withJob(outJob));
       }
-      if (baseUri == null) { baseUri = InputSource.UNKNOWN.getUri(); }
+    }
 
-      MessageQueue mq = jobs.getMessageQueue();
-
-      TemplateSanitizer ts = new TemplateSanitizer(htmlSchema, mq);
-      for (Pair<Node, URI> ihtmlRoot : ihtmlRoots) { ts.sanitize(ihtmlRoot.a); }
-      TemplateCompiler tc = new TemplateCompiler(
-          ihtmlRoots, stylesheets, cssSchema, htmlSchema,
-          jobs.getPluginMeta(), jobs.getMessageContext(), mq);
-      Pair<Node, List<Block>> htmlAndJs = tc.getSafeHtml(
-          DomParser.makeDocument(null, null));
-
-      Job outJob = makeJobFromHtml(htmlAndJs.a, baseUri);
-      jobs.getJobs().add(
-          new JobEnvelope(null, cacheKeys, ContentType.HTML, false, outJob));
-
-      for (Block bl : htmlAndJs.b) {
-        jobs.getJobs().add(new JobEnvelope(
-            null, cacheKeys, ContentType.JS, false, Job.jsJob(bl, baseUri)));
+    for (SafeJsChunk outputJs : htmlAndJs.b) {
+      if (outputJs.body instanceof Block) {  // Further processing required.
+        assert !outputJs.source.fromCache;
+        jobs.getJobs().add(outputJs.source.withJob(Job.jsJob(
+            (Block) outputJs.body, null)));
+      } else {  // Routed through from cache.
+        assert outputJs.source.fromCache;
+        jobs.getJobs().add(outputJs.source.withJob(Job.cajoledJob(
+            (CajoledModule) outputJs.body)));
       }
     }
 

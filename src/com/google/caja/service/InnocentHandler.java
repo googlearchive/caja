@@ -46,7 +46,8 @@ public class InnocentHandler extends AbstractCajolingHandler {
     super(buildInfo, null /* hostedService */,
         null /* uriFetcher */);
   }
-  
+
+  @Override
   public boolean canHandle(URI uri, CajolingService.Transform transform,
       List<CajolingService.Directive> directives,
       String inputContentType,
@@ -55,6 +56,7 @@ public class InnocentHandler extends AbstractCajolingHandler {
       && checker.check("text/javascript", inputContentType);
   }
 
+  @Override
   public Pair<String,String> apply(URI uri,
                                    CajolingService.Transform transform,
                                    List<CajolingService.Directive> directives,
@@ -69,7 +71,7 @@ public class InnocentHandler extends AbstractCajolingHandler {
 
     boolean pretty = CajolingService.RENDER_PRETTY.equals(
         CajaArguments.RENDERER.get(args));
-    
+
     try {
       OutputStreamWriter writer = new OutputStreamWriter(response,
           Charsets.UTF_8.name());
@@ -98,6 +100,6 @@ public class InnocentHandler extends AbstractCajolingHandler {
     } catch (ParseException e) {
       e.toMessageQueue(mq);
     }
-    this.renderAsJSON(null, result, jsonpCallback, mq, output, pretty);
+    renderAsJSON(null, result, jsonpCallback, mq, output, pretty);
   }
 }

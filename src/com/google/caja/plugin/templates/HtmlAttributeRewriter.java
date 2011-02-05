@@ -44,6 +44,7 @@ import com.google.caja.parser.quasiliteral.QuasiBuilder;
 import com.google.caja.parser.quasiliteral.ReservedNames;
 import com.google.caja.plugin.CssRewriter;
 import com.google.caja.plugin.CssValidator;
+import com.google.caja.plugin.JobEnvelope;
 import com.google.caja.plugin.PluginMessageType;
 import com.google.caja.plugin.PluginMeta;
 import com.google.caja.plugin.UriPolicyHintKey;
@@ -80,7 +81,7 @@ public final class HtmlAttributeRewriter {
   /** Maps handler attribute source to handler names. */
   private final Map<String, String> handlerCache = Maps.newHashMap();
   /** Extracted event handler functions. */
-  private final List<Statement> handlers = Lists.newArrayList();
+  private final List<EventHandler> handlers = Lists.newArrayList();
 
   public static final SyntheticAttributeKey<String> HANDLER_NAME
       = new SyntheticAttributeKey<String>(String.class, "handlerName");
@@ -98,10 +99,11 @@ public final class HtmlAttributeRewriter {
   public PluginMeta getPluginMeta() { return meta; }
   public CssSchema getCssSchema() { return cssSchema; }
   public HtmlSchema getHtmlSchema() { return htmlSchema; }
-  public List<Statement> getHandlers() {
+  public List<EventHandler> getHandlers() {
     return Collections.unmodifiableList(handlers);
   }
   public static abstract class AttrValue {
+    final JobEnvelope env;
     final Attr src;
     final FilePosition valuePos;
     final HTML.Attribute attrInfo;
@@ -109,15 +111,18 @@ public final class HtmlAttributeRewriter {
     abstract String getPlainValue();
     abstract String getRawValue();
 
-    AttrValue(Attr src, FilePosition valuePos, HTML.Attribute attr) {
+    AttrValue(
+        JobEnvelope env, Attr src, FilePosition valuePos, HTML.Attribute attr) {
+      this.env = env;
       this.src = src;
       this.valuePos = valuePos;
       this.attrInfo = attr;
     }
   }
 
-  public static AttrValue fromAttr(final Attr a, HTML.Attribute attr) {
-    return new AttrValue(a, Nodes.getFilePositionForValue(a), attr) {
+  public static AttrValue fromAttr(
+      final Attr a, HTML.Attribute attr, JobEnvelope source) {
+    return new AttrValue(source, a, Nodes.getFilePositionForValue(a), attr) {
       @Override
       Expression getValueExpr() {
         return StringLiteral.valueOf(valuePos, getPlainValue());
@@ -200,7 +205,7 @@ public final class HtmlAttributeRewriter {
               "handlerName", SyntheticNodes.s(
                   new Identifier(FilePosition.UNKNOWN, handlerFnName)),
               "body", new ParseTreeNodeContainer(b.children()));
-          handlers.add(handler);
+          handlers.add(new EventHandler(attr.env, handler));
           handlerCache.put(value, handlerFnName);
         }
 
@@ -259,7 +264,7 @@ public final class HtmlAttributeRewriter {
               + "        /*@synthetic*/function () { @body*; })) - 1;",
               "handlerIndex", handlerIndex,
               "body", new ParseTreeNodeContainer(b.children()));
-          handlers.add(handler);
+          handlers.add(new EventHandler(attr.env, handler));
           handlerCache.put(value, handlerIndexName);
 
           Operation urlAdapter = (Operation) QuasiBuilder.substV(

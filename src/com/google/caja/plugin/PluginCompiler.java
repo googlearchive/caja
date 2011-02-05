@@ -22,6 +22,8 @@ import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.html.Dom;
 import com.google.caja.parser.js.CajoledModule;
 import com.google.caja.parser.quasiliteral.ModuleManager;
+import com.google.caja.plugin.stages.JobCache;
+import com.google.caja.plugin.stages.StubJobCache;
 import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
@@ -54,6 +56,7 @@ public final class PluginCompiler {
   private Pipeline<Jobs> compilationPipeline;
   private CssSchema cssSchema;
   private HtmlSchema htmlSchema;
+  private JobCache jobCache;
   private Planner.PlanState preconditions;
   private Planner.PlanState goals;
 
@@ -62,6 +65,7 @@ public final class PluginCompiler {
     this.jobs = new Jobs(new MessageContext(), mq, meta);
     this.cssSchema = CssSchema.getDefaultCss21Schema(mq);
     this.htmlSchema = HtmlSchema.getDefault(mq);
+    this.jobCache = new StubJobCache();
     this.preconditions = PipelineMaker.DEFAULT_PRECONDS;
     this.goals = PipelineMaker.DEFAULT_GOALS;
   }
@@ -143,7 +147,7 @@ public final class PluginCompiler {
         jobs.getPluginMeta(), buildInfo, jobs.getPluginMeta().getUriFetcher(),
         true, jobs.getMessageQueue());
     new PipelineMaker(
-        cssSchema, htmlSchema, moduleMgr, preconditions, goals)
+        cssSchema, htmlSchema, moduleMgr, jobCache, preconditions, goals)
         .populate(compilationPipeline.getStages());
   }
 

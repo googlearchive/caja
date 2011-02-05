@@ -15,20 +15,20 @@
 package com.google.caja.plugin.templates;
 
 import com.google.caja.lexer.FilePosition;
-import com.google.caja.parser.css.CssTree;
 import com.google.caja.parser.html.Namespaces;
 import com.google.caja.parser.html.Nodes;
 import com.google.caja.parser.js.ArrayConstructor;
 import com.google.caja.parser.js.Expression;
 import com.google.caja.parser.js.ExpressionStmt;
-import com.google.caja.parser.js.Statement;
 import com.google.caja.parser.js.StringLiteral;
 import com.google.caja.parser.quasiliteral.QuasiBuilder;
 import com.google.caja.parser.quasiliteral.ReservedNames;
 import com.google.caja.plugin.CssRuleRewriter;
+import com.google.caja.plugin.JobEnvelope;
 import com.google.caja.util.Lists;
-import com.google.caja.util.Pair;
 
+import java.net.URI;
+import java.util.Collections;
 import java.util.List;
 
 import org.w3c.dom.Document;
@@ -42,24 +42,53 @@ import org.w3c.dom.Element;
  * @author mikesamuel@gmail.com
  */
 final class SafeCssMaker {
-  private final List<CssTree.StyleSheet> validatedStylesheets;
+  private final List<? extends ValidatedStylesheet> validatedStylesheets;
   private final Document doc;
 
-  SafeCssMaker(List<CssTree.StyleSheet> validatedStylesheets, Document doc) {
+  SafeCssMaker(
+      List<? extends ValidatedStylesheet> validatedStylesheets,
+      Document doc) {
     this.validatedStylesheets = validatedStylesheets;
     this.doc = doc;
   }
 
-  Pair<Statement, Element> make() {
-    if (validatedStylesheets.isEmpty()) { return Pair.pair(null, null); }
+  List<SafeStylesheet> make() {
+    if (validatedStylesheets.isEmpty()) { return Collections.emptyList(); }
+
+    List<SafeStylesheet> out = Lists.newArrayList();
+
+    JobEnvelope currentSource = validatedStylesheets.get(0).source;
+    URI currentUri = validatedStylesheets.get(0).baseUri;
+    int pos = 0;
+    int n = validatedStylesheets.size();
+    for (int i = 0; i < n; ++i) {
+      ValidatedStylesheet vss = validatedStylesheets.get(i);
+      if (!(vss.source.areFromSameSource(currentSource)
+            && vss.baseUri.equals(currentUri))) {
+        out.add(make(
+            validatedStylesheets.subList(pos, i), currentSource, currentUri));
+        currentSource = vss.source;
+        currentUri = vss.baseUri;
+        pos = i;
+      }
+    }
+    out.add(make(
+        validatedStylesheets.subList(pos, n), currentSource, currentUri));
+
+    return out;
+  }
+
+  private SafeStylesheet make(
+      List<? extends ValidatedStylesheet> validatedStylesheets,
+      JobEnvelope source, URI baseUri) {
 
     // Accumulates dynamic CSS that will be added to the JS.
     List<Expression> cssParts = Lists.newArrayList();
     // Accumulate static CSS that can be embedded in the DOM.
     StringBuilder css = new StringBuilder();
     FilePosition staticPos = null, dynamicPos = null;
-    for (CssTree.StyleSheet ss : validatedStylesheets) {
-      ArrayConstructor ac = CssRuleRewriter.cssToJs(ss);
+    for (ValidatedStylesheet ss : validatedStylesheets) {
+      ArrayConstructor ac = CssRuleRewriter.cssToJs(ss.ss);
       List<? extends Expression> children = ac.children();
       if (children.isEmpty()) { continue; }
       FilePosition acPos = ac.getFilePosition();
@@ -126,6 +155,8 @@ final class SafeCssMaker {
       staticCss = style;
     }
 
-    return Pair.pair((Statement) dynamicCss, staticCss);
+    return staticCss != null
+        ? new SafeStylesheet(source, staticCss, baseUri)
+        : new SafeStylesheet(source, dynamicCss, baseUri);
   }
 }

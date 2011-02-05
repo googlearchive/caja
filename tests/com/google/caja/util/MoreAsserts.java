@@ -32,9 +32,6 @@ public final class MoreAsserts {
    * Fails iff the contents of the two lists differ according to
    * {@code Object.equals}.
    * Tries to present the differences as nice diffs.
-   * <p>
-   * TODO(mikesamuel): maybe actually diff using
-   *     http://www.incava.org/projects/java/java-diff/
    */
   public static <T> void assertListsEqual(
       List<? extends T> expected, List<? extends T> actual) {
@@ -94,8 +91,7 @@ public final class MoreAsserts {
                   Math.min(n, n - commonSuffix + diffContext), 84)
         + "\n}}}",
         snippet(expected, 0, expected.size(), Integer.MAX_VALUE),
-        snippet(actual, 0, actual.size(), Integer.MAX_VALUE)
-        );
+        snippet(actual, 0, actual.size(), Integer.MAX_VALUE));
   }
 
   private static String snippet(List<?> a, int start, int end, int maxlen) {
@@ -111,7 +107,7 @@ public final class MoreAsserts {
       if (item != null) {
         String type = item.getClass().getSimpleName();
         f.format("\t%3d %s: %s", Integer.valueOf(index),
-                 abbreviatedString("" + item, maxlen - type.length()), type);
+            abbreviatedString("" + item, maxlen - type.length()), type);
       } else {
         f.format("\t%3d <null>", Integer.valueOf(index));
       }

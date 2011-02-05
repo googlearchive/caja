@@ -1,0 +1,529 @@
+// Copyright (C) 2010 Google Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package com.google.caja.plugin;
+
+import com.google.caja.lang.css.CssSchema;
+import com.google.caja.lang.html.HtmlSchema;
+import com.google.caja.lexer.InputSource;
+import com.google.caja.parser.ParseTreeNode;
+import com.google.caja.parser.js.CajoledModule;
+import com.google.caja.parser.js.Statement;
+import com.google.caja.parser.quasiliteral.ModuleManager;
+import com.google.caja.plugin.stages.JobCache;
+import com.google.caja.plugin.stages.PipelineStageTestCase;
+import com.google.caja.plugin.stages.PipelineStoreStage;
+import com.google.caja.plugin.stages.JobCache.Key;
+import com.google.caja.plugin.stages.JobCache.Keys;
+import com.google.caja.reporting.EchoingMessageQueue;
+import com.google.caja.reporting.TestBuildInfo;
+import com.google.caja.util.ContentType;
+import com.google.caja.util.Join;
+import com.google.caja.util.Lists;
+import com.google.caja.util.Maps;
+import com.google.caja.util.Pipeline;
+import com.google.caja.util.Sets;
+
+import java.net.URI;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
+import java.util.ListIterator;
+import java.util.Map;
+import java.util.Set;
+
+public class PipelineCacheTest extends PipelineStageTestCase {
+  private TestJobCache cache;
+
+  static final class TestKey implements JobCache.Key {
+    final ContentType type;
+    final String content;
+
+    TestKey(ContentType type, String content) {
+      this.type = type;
+      this.content = content;
+    }
+
+    public Keys asSingleton() {
+      return new TestKeys(Collections.singleton(this));
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (!(o instanceof TestKey)) { return false; }
+      TestKey that = (TestKey) o;
+      return this.type == that.type && this.content.equals(that.content);
+    }
+
+    @Override public int hashCode() { return content.hashCode(); }
+
+    @Override public String toString() {
+      return "(Key " + type + " " + (content.hashCode() & 0xffffffffL) + " : "
+          + content.replace("\n", "\\n") + ")";
+    }
+  }
+
+  static final class TestKeys implements JobCache.Keys {
+    final Set<TestKey> keys;
+
+    TestKeys(Set<TestKey> keys) { this.keys = keys; }
+
+    public Keys union(Keys other) {
+      if (!other.iterator().hasNext()) { return this; }
+      Set<TestKey> all = Sets.newHashSet();
+      all.addAll(keys);
+      all.addAll(((TestKeys) other).keys);
+      return new TestKeys(all);
+    }
+
+    public Iterator<JobCache.Key> iterator() {
+      final Iterator<TestKey> it = keys.iterator();
+      return new Iterator<JobCache.Key>() {
+        public boolean hasNext() { return it.hasNext(); }
+        public Key next() { return it.next(); }
+        public void remove() { throw new UnsupportedOperationException(); }
+      };
+    }
+
+    @Override public String toString() {
+      return keys.toString();
+    }
+
+    @Override
+    public int hashCode() { return keys.hashCode(); }
+
+    @Override
+    public boolean equals(Object o) {
+      return o instanceof TestKeys && keys.equals(((TestKeys) o).keys);
+    }
+  }
+
+  static final class TestJobCache extends JobCache {
+    final Map<TestKey, List<Job>> jobMap = Maps.newLinkedHashMap();
+    int nServedFromCache = 0;
+
+    @Override public List<Job> fetch(Key k) {
+      List<Job> cached = jobMap.get(k);
+      if (cached == null) { return null; }
+      nServedFromCache += cached.size();
+      System.err.println("FETCHING " + k);
+      // HACK DEBUG
+      for (Job job : cached) {
+        System.err.println("    " + render(job.getRoot()).replace("\n", "\\n"));
+      }
+      // END HACK
+      return cloneJobList(cached);
+    }
+
+    private List<Job> cloneJobList(List<? extends Job> jobs) {
+      List<Job> out = Lists.newArrayList();
+      for (Job job : jobs) {
+        out.add(Job.job(job.getRoot().clone(), job.getBaseUri()));
+      }
+      return out;
+    }
+
+    @Override
+    public Key forJob(ContentType type, ParseTreeNode node) {
+      return new TestKey(type, render(node));
+    }
+
+    @Override
+    public void store(Key k, List<? extends Job> derivatives) {
+      System.err.println("STORING  " + k);
+      for (Job derivative : derivatives) {
+        System.err.println(
+            "    " + render(derivative.getRoot()).replace("\n", "\\n"));
+      }
+      List<Job> old = jobMap.put((TestKey) k, cloneJobList(derivatives));
+      if (old != null) {
+        throw new IllegalStateException(
+            "Tests shouldn't overwrite cache entries");
+      }
+    }
+  }
+
+  @Override protected PluginMeta createPluginMeta() {
+    PluginMeta meta = super.createPluginMeta();
+    meta.setIdClass("foo123___");
+    return meta;
+  }
+
+  @Override protected void setUp() throws Exception {
+    super.setUp();
+    cache = new TestJobCache();
+    is = new InputSource(URI.create(
+        "test://example.org/" + getClass().getSimpleName()));
+  }
+
+  @Override protected void tearDown() throws Exception {
+    super.tearDown();
+    cache = null;
+  }
+
+  private static final String CACHEABLE_HELLO_WORLD_CSS
+      = "<style>b { color: blue; font-weight: inherit }</style>";
+  private static final String REWRITTEN_HELLO_WORLD_CSS = Join.join(
+      "\n",
+      "<style type=\"text/css\">",
+      ".foo123___ b {",
+      "  color: blue;",
+      "  font-weight: inherit",
+      "}</style>");
+
+  private static final String CACHEABLE_HELLO_WORLD_CSS_VARIANT
+      = "<style>p { color: purple }</style>";
+  private static final String REWRITTEN_HELLO_WORLD_CSS_VARIANT = Join.join(
+      "\n",
+      "<style type=\"text/css\">",
+      ".foo123___ p {",
+      "  color: purple",
+      "}</style>");
+
+
+  private static final String CACHEABLE_HELLO_WORLD_HTML
+      = "<b onclick=alert('Hello')>Hello, World!</b>";
+  private static final String REWRITTEN_HELLO_WORLD_HTML
+      = "<b id=\"id_3___\">Hello, World!</b>";
+  private static final String REWRITTEN_HELLO_WORLD_HTML_HELPER_JS = Join.join(
+      "\n",
+      "{",
+      "  var $v = ___.readImport(IMPORTS___, '$v', {",
+      "      'getOuters': { '()': {} },",
+      "      'initOuter': { '()': {} },",
+      "      'cf': { '()': {} },",
+      "      'ro': { '()': {} }",
+      "    });",
+      "  var moduleResult___, $dis, el___, emitter___, c_2___;",
+      "  moduleResult___ = ___.NO_RESULT;",
+      "  $dis = $v.getOuters();",
+      "  $v.initOuter('onerror');",
+      "  {",
+      "    emitter___ = IMPORTS___.htmlEmitter___;",
+      "    el___ = emitter___.byId('id_3___');",
+      "    c_2___ = ___.markFuncFreeze(function (event, thisNode___) {",
+      "        $v.cf($v.ro('alert'), [ 'Hello' ]);",
+      "      });",
+      "    el___.onclick = function (event) {",
+      ("      return plugin_dispatchEvent___"
+       + "(this, event, ___.getId(IMPORTS___),"),
+      "        c_2___);",
+      "    };",
+      "    el___.removeAttribute('id');",
+      "    el___ = emitter___.finish();",
+      "    emitter___.signalLoaded();",
+      "  }",
+      "  return moduleResult___;",
+      "}");
+  private static final String REWRITTEN_HELLO_WORLD_HTML_HELPER_JS_NO_LOAD
+      = REWRITTEN_HELLO_WORLD_HTML_HELPER_JS
+        .replaceFirst("\n *emitter___\\.signalLoaded\\(\\);", "");
+
+
+  private static final String CACHEABLE_HELLO_WORLD_JS
+      = "<script>'use cajita'; alert('Hello');</script>";
+  private static final String CACHEABLE_HELLO_WORLD_JS_DEFERRED
+      = "<script defer>'use cajita'; alert('Hello');</script>";
+  private static final String REWRITTEN_HELLO_WORLD_JS = Join.join(
+      "\n",
+      "{",
+      "  var $v = ___.readImport(IMPORTS___, '$v', {",
+      "      'getOuters': { '()': {} },",
+      "      'initOuter': { '()': {} },",
+      "      'ro': { '()': {} }",
+      "    });",
+      "  var alert = ___.readImport(IMPORTS___, 'alert');",
+      "  var moduleResult___, $dis;",
+      "  moduleResult___ = ___.NO_RESULT;",
+      "  $dis = $v.getOuters();",
+      "  $v.initOuter('onerror');",
+      "  try {",
+      "    {",
+      "      moduleResult___ = alert.CALL___('Hello');",
+      "    }",
+      "  } catch (ex___) {",
+      "    ___.getNewModuleHandler().handleUncaughtException("
+            + "ex___, $v.ro('onerror'),",
+      "      'PipelineCacheTest', '1');",
+      "  }",
+      "  return moduleResult___;",
+      "}");
+
+  private static final String CACHEABLE_HELLO_WORLD_JS_VARIANT
+      = "<script>'use cajita'; alert('Howdy');</script>";
+  private static final String CACHEABLE_HELLO_WORLD_JS_VARIANT_DEFERRED
+     = "<script defer>'use cajita'; alert('Howdy');</script>";
+  private static final String REWRITTEN_HELLO_WORLD_JS_VARIANT = Join.join(
+      "\n",
+      "{",
+      "  var $v = ___.readImport(IMPORTS___, '$v', {",
+      "      'getOuters': { '()': {} },",
+      "      'initOuter': { '()': {} },",
+      "      'ro': { '()': {} }",
+      "    });",
+      "  var alert = ___.readImport(IMPORTS___, 'alert');",
+      "  var moduleResult___, $dis;",
+      "  moduleResult___ = ___.NO_RESULT;",
+      "  $dis = $v.getOuters();",
+      "  $v.initOuter('onerror');",
+      "  try {",
+      "    {",
+      "      moduleResult___ = alert.CALL___('Howdy');",
+      "    }",
+      "  } catch (ex___) {",
+      "    ___.getNewModuleHandler().handleUncaughtException("
+            + "ex___, $v.ro('onerror'),",
+      "      'PipelineCacheTest', '1');",
+      "  }",
+      "  return moduleResult___;",
+      "}");
+
+  private static final String SIGNAL_LOADED_JS = Join.join(
+      "\n",
+      "{",
+      "  var moduleResult___;",
+      "  moduleResult___ = ___.NO_RESULT;",
+      "  {",
+      "    IMPORTS___.htmlEmitter___.signalLoaded();",
+      "  }",
+      "  return moduleResult___;",
+      "}");
+
+  public final void testEmptyCache() throws Exception {
+    ((EchoingMessageQueue) mq).setDumpStack(true);
+    JobStub[] golden = new JobStub[] {
+        job(REWRITTEN_HELLO_WORLD_CSS, ContentType.HTML),
+        job(REWRITTEN_HELLO_WORLD_HTML, ContentType.HTML),
+        job(REWRITTEN_HELLO_WORLD_JS, ContentType.JS),
+        job(REWRITTEN_HELLO_WORLD_HTML_HELPER_JS, ContentType.JS),
+        //job(SIGNAL_LOADED_JS, ContentType.JS),
+    };
+    assertPipeline(
+        job(
+            CACHEABLE_HELLO_WORLD_CSS + CACHEABLE_HELLO_WORLD_JS
+            + CACHEABLE_HELLO_WORLD_HTML,
+            ContentType.HTML),
+        golden);
+    assertEquals(0, cache.nServedFromCache);
+
+    meta = createPluginMeta();
+    assertPipeline(
+        job(
+            CACHEABLE_HELLO_WORLD_CSS + CACHEABLE_HELLO_WORLD_JS
+            + CACHEABLE_HELLO_WORLD_HTML,
+            ContentType.HTML),
+        golden);
+    // The CSS and JS are served from the cache, but not the HTML since the JS
+    // has to be integrated back into the HTML.
+    assertEquals(2, cache.nServedFromCache);
+  }
+
+  public final void testMixAndMatchJs() throws Exception {
+    // Prime the cache.
+    assertPipeline(
+        job(
+            CACHEABLE_HELLO_WORLD_CSS + CACHEABLE_HELLO_WORLD_HTML
+            + CACHEABLE_HELLO_WORLD_JS,
+            ContentType.HTML),
+        job(REWRITTEN_HELLO_WORLD_CSS, ContentType.HTML),
+        job(REWRITTEN_HELLO_WORLD_HTML, ContentType.HTML),
+        job(REWRITTEN_HELLO_WORLD_HTML_HELPER_JS_NO_LOAD, ContentType.JS),
+        job(REWRITTEN_HELLO_WORLD_JS, ContentType.JS),
+        job(SIGNAL_LOADED_JS, ContentType.JS));
+    assertEquals(0, cache.nServedFromCache);
+
+    meta = createPluginMeta();
+    assertPipeline(
+        job(
+            CACHEABLE_HELLO_WORLD_CSS + CACHEABLE_HELLO_WORLD_HTML
+            + CACHEABLE_HELLO_WORLD_JS_VARIANT,
+            ContentType.HTML),
+        job(REWRITTEN_HELLO_WORLD_CSS, ContentType.HTML),
+        job(REWRITTEN_HELLO_WORLD_HTML, ContentType.HTML),
+        job(REWRITTEN_HELLO_WORLD_HTML_HELPER_JS_NO_LOAD, ContentType.JS),
+        job(REWRITTEN_HELLO_WORLD_JS_VARIANT, ContentType.JS),
+        job(SIGNAL_LOADED_JS, ContentType.JS));
+    // The CSS was served from the cache, but not the JS.
+    assertEquals(1, cache.nServedFromCache);
+  }
+
+  public final void testMixAndMatchCss() throws Exception {
+    // Prime the cache.
+    assertPipeline(
+        job(
+            CACHEABLE_HELLO_WORLD_CSS + CACHEABLE_HELLO_WORLD_HTML
+            + CACHEABLE_HELLO_WORLD_JS,
+            ContentType.HTML),
+        job(REWRITTEN_HELLO_WORLD_CSS, ContentType.HTML),
+        job(REWRITTEN_HELLO_WORLD_HTML, ContentType.HTML),
+        job(REWRITTEN_HELLO_WORLD_HTML_HELPER_JS_NO_LOAD, ContentType.JS),
+        job(REWRITTEN_HELLO_WORLD_JS, ContentType.JS),
+        job(SIGNAL_LOADED_JS, ContentType.JS));
+    assertEquals(0, cache.nServedFromCache);
+    System.err.println("Done");
+
+    meta = createPluginMeta();
+    assertPipeline(
+        job(
+            CACHEABLE_HELLO_WORLD_CSS_VARIANT + CACHEABLE_HELLO_WORLD_HTML
+            + CACHEABLE_HELLO_WORLD_JS,
+            ContentType.HTML),
+        job(REWRITTEN_HELLO_WORLD_CSS_VARIANT, ContentType.HTML),
+        job(REWRITTEN_HELLO_WORLD_HTML, ContentType.HTML),
+        job(REWRITTEN_HELLO_WORLD_HTML_HELPER_JS_NO_LOAD, ContentType.JS),
+        job(REWRITTEN_HELLO_WORLD_JS, ContentType.JS),
+        job(SIGNAL_LOADED_JS, ContentType.JS));
+    // The JS was served from the cache, but not the CSS.
+    assertEquals(1, cache.nServedFromCache);
+  }
+
+  public final void testCssCacheOrdering() throws Exception {
+    // Prime the cache.
+    assertPipeline(
+        job(
+            CACHEABLE_HELLO_WORLD_CSS + CACHEABLE_HELLO_WORLD_CSS_VARIANT
+            + CACHEABLE_HELLO_WORLD_HTML + CACHEABLE_HELLO_WORLD_JS,
+            ContentType.HTML),
+        job(REWRITTEN_HELLO_WORLD_CSS, ContentType.HTML),
+        job(REWRITTEN_HELLO_WORLD_CSS_VARIANT, ContentType.HTML),
+        job(REWRITTEN_HELLO_WORLD_HTML, ContentType.HTML),
+        job(REWRITTEN_HELLO_WORLD_HTML_HELPER_JS_NO_LOAD, ContentType.JS),
+        job(REWRITTEN_HELLO_WORLD_JS, ContentType.JS),
+        job(SIGNAL_LOADED_JS, ContentType.JS));
+    assertEquals(0, cache.nServedFromCache);
+
+    // Now render, but with the order of CSS changed.
+    // CSS order is significant because when rule overlap, the later one wins.
+    // So the text is blue in
+    //   <style>p{color:red}</style><style>p{color:blue}</style><p>Hi</p>.
+    meta = createPluginMeta();
+    assertPipeline(
+        job(
+            CACHEABLE_HELLO_WORLD_CSS_VARIANT + CACHEABLE_HELLO_WORLD_CSS
+            + CACHEABLE_HELLO_WORLD_HTML + CACHEABLE_HELLO_WORLD_JS,
+            ContentType.HTML),
+        job(REWRITTEN_HELLO_WORLD_CSS_VARIANT, ContentType.HTML),
+        job(REWRITTEN_HELLO_WORLD_CSS, ContentType.HTML),
+        job(REWRITTEN_HELLO_WORLD_HTML, ContentType.HTML),
+        job(REWRITTEN_HELLO_WORLD_HTML_HELPER_JS_NO_LOAD, ContentType.JS),
+        job(REWRITTEN_HELLO_WORLD_JS, ContentType.JS),
+        job(SIGNAL_LOADED_JS, ContentType.JS));
+    // The JS was served from the cache as well as both CSS blocks.
+    assertEquals(3, cache.nServedFromCache);
+  }
+
+  private static String rewriteGeneratedIds(String src) {
+    return src.replaceAll("\\bc_2___\\b", "c_3___")
+        .replaceAll("\\bid_3___\\b", "id_4___");
+  }
+
+  public final void testDeferredJsCacheOrdering() throws Exception {
+    // Prime the cache.
+    assertPipeline(
+        job(
+            CACHEABLE_HELLO_WORLD_JS + CACHEABLE_HELLO_WORLD_JS_VARIANT_DEFERRED
+            + CACHEABLE_HELLO_WORLD_HTML,
+            ContentType.HTML),
+        job(rewriteGeneratedIds(REWRITTEN_HELLO_WORLD_HTML), ContentType.HTML),
+        job(REWRITTEN_HELLO_WORLD_JS, ContentType.JS),
+        job(rewriteGeneratedIds(REWRITTEN_HELLO_WORLD_HTML_HELPER_JS_NO_LOAD),
+            ContentType.JS),
+        job(REWRITTEN_HELLO_WORLD_JS_VARIANT, ContentType.JS),
+        job(SIGNAL_LOADED_JS, ContentType.JS));
+    assertEquals(0, cache.nServedFromCache);
+
+    // Make sure deferring scripts doesn't cause them to execute out of order.
+    meta = createPluginMeta();
+    assertPipeline(
+        job(
+            CACHEABLE_HELLO_WORLD_JS_DEFERRED + CACHEABLE_HELLO_WORLD_JS_VARIANT
+            + CACHEABLE_HELLO_WORLD_HTML,
+            ContentType.HTML),
+        job(rewriteGeneratedIds(REWRITTEN_HELLO_WORLD_HTML), ContentType.HTML),
+        job(REWRITTEN_HELLO_WORLD_JS_VARIANT, ContentType.JS),
+        job(rewriteGeneratedIds(REWRITTEN_HELLO_WORLD_HTML_HELPER_JS_NO_LOAD),
+            ContentType.JS),
+        job(REWRITTEN_HELLO_WORLD_JS, ContentType.JS),
+        job(SIGNAL_LOADED_JS, ContentType.JS));
+    // Both JS blocks were served from the cache.
+    assertEquals(2, cache.nServedFromCache);
+  }
+
+  public final void testJsCacheOrdering() throws Exception {
+    // Prime the cache.
+    assertPipeline(
+        job(
+            CACHEABLE_HELLO_WORLD_JS + CACHEABLE_HELLO_WORLD_JS_VARIANT
+            + CACHEABLE_HELLO_WORLD_HTML,
+            ContentType.HTML),
+        job(rewriteGeneratedIds(REWRITTEN_HELLO_WORLD_HTML), ContentType.HTML),
+        job(REWRITTEN_HELLO_WORLD_JS, ContentType.JS),
+        job(REWRITTEN_HELLO_WORLD_JS_VARIANT, ContentType.JS),
+        job(rewriteGeneratedIds(REWRITTEN_HELLO_WORLD_HTML_HELPER_JS),
+            ContentType.JS));
+    assertEquals(0, cache.nServedFromCache);
+
+    // Make sure reordering scripts doesn't cause them to execute out of order.
+    meta = createPluginMeta();
+    assertPipeline(
+        job(
+            CACHEABLE_HELLO_WORLD_JS_VARIANT + CACHEABLE_HELLO_WORLD_JS
+            + CACHEABLE_HELLO_WORLD_HTML,
+            ContentType.HTML),
+        job(rewriteGeneratedIds(REWRITTEN_HELLO_WORLD_HTML), ContentType.HTML),
+        job(REWRITTEN_HELLO_WORLD_JS_VARIANT, ContentType.JS),
+        job(REWRITTEN_HELLO_WORLD_JS, ContentType.JS),
+        job(rewriteGeneratedIds(REWRITTEN_HELLO_WORLD_HTML_HELPER_JS),
+            ContentType.JS));
+    // Both JS blocks were served from the cache.
+    assertEquals(2, cache.nServedFromCache);
+  }
+
+  @Override
+  protected boolean runPipeline(Jobs jobs) throws Exception {
+    Pipeline<Jobs> pl = new Pipeline<Jobs>();
+    PipelineMaker plm = new PipelineMaker(
+        CssSchema.getDefaultCss21Schema(mq),
+        HtmlSchema.getDefault(mq),
+        new ModuleManager(
+            meta, TestBuildInfo.getInstance(), UriFetcher.NULL_NETWORK, false,
+            mq),
+        cache,
+        PipelineMaker.DEFAULT_PRECONDS,
+        PipelineMaker.CAJOLED_MODULES.with(PipelineMaker.HTML_SAFE_STATIC)
+            .with(PipelineMaker.SANITY_CHECK)
+        );
+    plm.populate(pl.getStages());
+    pl.getStages().add(new PipelineStoreStage(cache));
+    pl.getStages().add(new Pipeline.Stage<Jobs>() {
+      @Override
+      public boolean apply(Jobs jobs) {
+        for (ListIterator<JobEnvelope> it = jobs.getJobs().listIterator();
+             it.hasNext();) {
+          JobEnvelope env = it.next();
+          Job j = env.job;
+          if (env.fromCache || j.getType() != ContentType.JS) { continue; }
+          if (!(j.getRoot() instanceof CajoledModule)) {
+            throw new IllegalStateException("Some content not cajoled");
+          }
+          CajoledModule m = (CajoledModule) j.getRoot();
+          Statement body = m.getInstantiateMethod().getBody();
+          it.set(env.withJob(Job.jsJob(body, j.getBaseUri())));
+        }
+        return true;
+      }
+    });
+    return pl.apply(jobs);
+  }
+}

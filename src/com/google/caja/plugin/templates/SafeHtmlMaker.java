@@ -22,6 +22,7 @@ import com.google.caja.parser.html.ElKey;
 import com.google.caja.parser.html.Namespaces;
 import com.google.caja.parser.html.Nodes;
 import com.google.caja.parser.js.Block;
+import com.google.caja.parser.js.CajoledModule;
 import com.google.caja.parser.js.Declaration;
 import com.google.caja.parser.js.Directive;
 import com.google.caja.parser.js.DirectivePrologue;
@@ -34,15 +35,16 @@ import com.google.caja.parser.js.Statement;
 import com.google.caja.parser.js.StringLiteral;
 import com.google.caja.parser.js.SyntheticNodes;
 import com.google.caja.parser.js.TranslatedCode;
-import com.google.caja.plugin.ExtractedHtmlContent;
+import com.google.caja.plugin.JobEnvelope;
+import com.google.caja.plugin.Placeholder;
 import com.google.caja.plugin.PluginMeta;
+import com.google.caja.plugin.stages.JobCache;
 import com.google.caja.reporting.MessageContext;
 import com.google.caja.util.Lists;
 import com.google.caja.util.Maps;
 import com.google.caja.util.Pair;
 import com.google.caja.util.Sets;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -50,7 +52,6 @@ import java.util.regex.Pattern;
 
 import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
-import org.w3c.dom.DocumentFragment;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.Text;
@@ -71,7 +72,7 @@ import org.w3c.dom.Text;
  *     style-sheets and most IDs which is enough for a fully styled static view.
  *     </dd>
  *   <dt>Inline Script</dt>
- *     <dd>A script block as extracted by {@link ExtractedHtmlContent} that
+ *     <dd>A script block as specified by a {@link Placeholder} that
  *     needs to run in the context of the portion of the static HTML that
  *     precedes it.  Scripts need to happen in the right context when they
  *     generate new content as in
@@ -104,19 +105,30 @@ final class SafeHtmlMaker {
   private static final AttribKey ID = AttribKey.forHtmlAttrib(
       ElKey.HTML_WILDCARD, "id");
 
+  /**
+   * A source for content that doesn't correspond to any input jobs but which
+   * may bracket the processed output jobs.
+   */
+  private static final JobEnvelope SYNTHETIC_SOURCE
+      = new JobEnvelope(null, JobCache.none(), null, false, null);
+
   private final PluginMeta meta;
   private final MessageContext mc;
   private final Document doc;
-  private final List<Block> js = Lists.newArrayList();
+  private final List<SafeJsChunk> js = Lists.newArrayList();
   private final Map<Node, ParseTreeNode> scriptsPerNode;
-  private final List<Node> roots;
-  private final Map<String, Declaration> handlers = Maps.newHashMap();
-  private final List<Statement> unnamedHandlers = Lists.newArrayList();
+  private final Map<String, ScriptPlaceholder> scriptsPerPlaceholder;
+  private final List<IhtmlRoot> roots;
+  private final Map<String, Pair<JobEnvelope, Declaration>> handlers
+      = Maps.newHashMap();
+  private final List<EventHandler> unnamedHandlers = Lists.newArrayList();
   /** The set of handlers defined in the current module. */
   private final Set<String> handlersUsedInModule = Sets.newHashSet();
   private Block currentBlock = null;
   /** True iff the current block is in a {@link TranslatedCode} section. */
   private boolean currentBlockStyle;
+  /** The cache keys for the current block. */
+  private JobEnvelope currentSource;
   /** True iff the HTML emitter has been invoked to split up the static HTML. */
   private boolean started = false;
   /** True iff JS contains the definitions required by HtmlEmitter calls. */
@@ -129,29 +141,42 @@ final class SafeHtmlMaker {
    */
   SafeHtmlMaker(PluginMeta meta, MessageContext mc, Document doc,
                 Map<Node, ParseTreeNode> scriptsPerNode,
-                List<Node> roots, List<Statement> handlers) {
+                Map<String, ScriptPlaceholder> scriptsPerPlaceholder,
+                List<IhtmlRoot> roots,
+                List<EventHandler> handlers) {
     this.meta = meta;
     this.mc = mc;
     this.doc = doc;
     this.scriptsPerNode = scriptsPerNode;
+    this.scriptsPerPlaceholder = scriptsPerPlaceholder;
     this.roots = roots;
-    for (Statement handler : handlers) {
-      if (handler instanceof Declaration) {
-        Declaration d = (Declaration) handler;
-        this.handlers.put(d.getIdentifierName(), d);
+    for (EventHandler handler : handlers) {
+      if (handler.handler instanceof Declaration) {
+        Declaration d = (Declaration) handler.handler;
+        this.handlers.put(d.getIdentifierName(), Pair.pair(handler.source, d));
       } else {
         unnamedHandlers.add(handler);
       }
     }
   }
 
-  Pair<Node, List<Block>> make(Pair<Statement, Element> css) {
+  Pair<List<SafeHtmlChunk>, List<SafeJsChunk>> make(List<SafeStylesheet> css) {
     js.clear();
     currentBlock = null;
 
-    if (css.a != null) { emitStatement(css.a, true); }
+    List<SafeHtmlChunk> safe = Lists.newArrayList(
+        roots.size() + css.size() + 1);
+    for (SafeStylesheet ss : css) {
+      if (ss.jsVersion != null) {
+        emitStatement(ss.jsVersion, true, ss.source);
+      } else if (ss.htmlVersion != null) {
+        safe.add(new SafeHtmlChunk(ss.source, ss.htmlVersion, ss.baseUri));
+      }
+    }
 
-    for (Statement handler : unnamedHandlers) { emitHandler(handler); }
+    for (EventHandler handler : unnamedHandlers) {
+      emitHandler(handler.handler, handler.source);
+    }
 
     // Build the HTML and the javascript that adds dynamic attributes and that
     // executes inline scripts.
@@ -160,35 +185,37 @@ final class SafeHtmlMaker {
     // which include element start tags, text nodes, and embedded scripts in
     // depth-first order.
     List<DomBone> domSkeleton = Lists.newArrayList();
-    List<Node> safe = Lists.newArrayList(roots.size() + 1);
-    for (Node root : roots) {
-      Node one = makeSkeleton(root, domSkeleton);
-      if (one != null) { safe.add(one); }
+    for (IhtmlRoot root : roots) {
+      Node one = makeSkeleton(root.root, root.source, domSkeleton);
+      if (one != null) {
+        safe.add(new SafeHtmlChunk(root.source, one, root.baseUri));
+      }
     }
 
     fleshOutSkeleton(domSkeleton);
 
-    Node safeHtml = consolidateHtml(safe);
-    if (css.b != null) {
-      if (safeHtml instanceof DocumentFragment) {
-        safeHtml.insertBefore(css.b, safeHtml.getFirstChild());
-      } else {
-        safeHtml = consolidateHtml(Arrays.asList(css.b, safeHtml));
-      }
-    }
-    return Pair.pair(safeHtml, Lists.newArrayList(js));
+    return Pair.pair(safe, Lists.newArrayList(js));
   }
 
   /** Part of a DOM skeleton. */
-  private static class DomBone { /* marker base class */ }
+  private static class DomBone {
+    final JobEnvelope source;
 
-  private static class NodeBone extends DomBone {
+    DomBone(JobEnvelope source) {
+      this.source = source;
+    }
+  }
+
+  private static final class NodeBone extends DomBone {
     final Node node;
     final Node safeNode;
-    NodeBone(Node node, Node safeNode) {
+
+    NodeBone(JobEnvelope source, Node node, Node safeNode) {
+      super(source);
       this.node = node;
       this.safeNode = safeNode;
     }
+
     @Override
     public String toString() {
       return "(" + getClass().getSimpleName()
@@ -196,10 +223,12 @@ final class SafeHtmlMaker {
     }
   }
 
-  private static class ScriptBone extends DomBone {
-    final Block script;
-    ScriptBone(Block script) {
-      this.script = script;
+  private static final class ScriptBone extends DomBone {
+    final ParseTreeNode body;
+
+    ScriptBone(JobEnvelope source, ParseTreeNode body) {
+      super(source);
+      this.body = body;
     }
     @Override
     public String toString() {
@@ -216,37 +245,38 @@ final class SafeHtmlMaker {
    * results in
    * {@code ((Node UL) (Node LI) (Text "Hello ") (Script foo()) (Text " Bar"))}.
    */
-  private Node makeSkeleton(Node n, List<DomBone> bones) {
+  private Node makeSkeleton(Node n, JobEnvelope src, List<DomBone> bones) {
+    String placeholderId = getPlaceholderId(n);
+    if (placeholderId != null) {
+      ScriptPlaceholder ph = scriptsPerPlaceholder.get(placeholderId);
+      bones.add(new ScriptBone(ph.source, ph.body));
+      return null;
+    }
+
     if (!scriptsPerNode.containsKey(n)) { return null; }
     Node safe;
     switch (n.getNodeType()) {
       case Node.ELEMENT_NODE:
         Element el = (Element) n;
-        Block script = ExtractedHtmlContent.getExtractedScriptFor(el);
-        if (script != null) {
-          bones.add(new ScriptBone(script));
-          return null;
-        } else {
-          FilePosition pos = Nodes.getFilePositionFor(el);
-          safe = doc.createElementNS(el.getNamespaceURI(), el.getTagName());
-          Nodes.setFilePositionFor(safe, pos);
-          bones.add(new NodeBone(n, safe));
+        FilePosition pos = Nodes.getFilePositionFor(el);
+        safe = doc.createElementNS(el.getNamespaceURI(), el.getTagName());
+        Nodes.setFilePositionFor(safe, pos);
+        bones.add(new NodeBone(src, n, safe));
 
-          for (Node child : Nodes.childrenOf(el)) {
-            Node safeChild = makeSkeleton(child, bones);
-            if (safeChild != null) { safe.appendChild(safeChild); }
-          }
+        for (Node child : Nodes.childrenOf(el)) {
+          Node safeChild = makeSkeleton(child, src, bones);
+          if (safeChild != null) { safe.appendChild(safeChild); }
         }
         break;
       case Node.TEXT_NODE:
         safe = doc.createTextNode(n.getNodeValue());
         Nodes.setFilePositionFor(safe, Nodes.getFilePositionFor(n));
-        bones.add(new NodeBone(n, safe));
+        bones.add(new NodeBone(src, n, safe));
         break;
       case Node.DOCUMENT_FRAGMENT_NODE:
         safe = doc.createDocumentFragment();
         for (Node child : Nodes.childrenOf(n)) {
-          Node safeChild = makeSkeleton(child, bones);
+          Node safeChild = makeSkeleton(child, src, bones);
           if (safeChild != null) { safe.appendChild(safeChild); }
         }
         break;
@@ -268,22 +298,23 @@ final class SafeHtmlMaker {
            && bones.get(firstDeferredScriptIndex - 1) instanceof ScriptBone) {
       --firstDeferredScriptIndex;
     }
+
     for (int i = 0; i < n; ++i) {
+      if (i == firstDeferredScriptIndex) {
+        finish();
+      }
       DomBone bone = bones.get(i);
       if (bone instanceof ScriptBone) {
-        fleshOutScriptBlock(((ScriptBone) bone).script);
+        fleshOutScriptBlock((ScriptBone) bone);
       } else {
         NodeBone nb = (NodeBone) bone;
         boolean splitDom = i + 1 < n && bones.get(i + 1) instanceof ScriptBone
             && i + 1 != firstDeferredScriptIndex;
-        if (splitDom) { requireModuleDefs(); }
+        if (splitDom) { requireModuleDefs(bone.source); }
         if (nb.node instanceof Text) {
-          if (splitDom) { insertPlaceholderAfter(nb.safeNode); }
+          if (splitDom) { insertPlaceholderAfter(nb); }
         } else {
-          fleshOutElement((Element) nb.node, (Element) nb.safeNode, splitDom);
-        }
-        if (i + 1 == firstDeferredScriptIndex) {
-          finish();
+          fleshOutElement(nb, splitDom);
         }
       }
     }
@@ -292,10 +323,12 @@ final class SafeHtmlMaker {
   }
 
   /** Define bits needed by the emitter calls and the attribute fixup. */
-  private void requireModuleDefs() {
+  private void requireModuleDefs(JobEnvelope source) {
+    maybeBreakBlock(true, source);
     if (!moduleDefs) {
-      emitStatement(quasiStmt("var el___;"));
-      emitStatement(quasiStmt("var emitter___ = IMPORTS___.htmlEmitter___;"));
+      emitStatement(quasiStmt("var el___;"), source);
+      emitStatement(
+          quasiStmt("var emitter___ = IMPORTS___.htmlEmitter___;"), source);
       started = moduleDefs = true;
     }
   }
@@ -303,48 +336,61 @@ final class SafeHtmlMaker {
   /** Release resources held by the emitter. */
   private void finish() {
     if (started && !finished) {
-      requireModuleDefs();
-      emitStatement(quasiStmt("el___ = emitter___./*@synthetic*/finish();"));
+      requireModuleDefs(SYNTHETIC_SOURCE);
+      emitStatement(
+          quasiStmt("el___ = emitter___./*@synthetic*/finish();"),
+          SYNTHETIC_SOURCE);
       finished = true;
     }
   }
 
-  /** Call the document's "onload" listeners. */
   private void signalLoaded() {
+    maybeBreakBlock(true, SYNTHETIC_SOURCE);
     if (moduleDefs) {
-      emitStatement(quasiStmt("emitter___./*@synthetic*/signalLoaded();"));
+      emitStatement(
+          quasiStmt("emitter___./*@synthetic*/signalLoaded();"),
+          SYNTHETIC_SOURCE);
     } else if (!js.isEmpty()) {
-      emitStatement(quasiStmt(
-          "IMPORTS___.htmlEmitter___./*@synthetic*/signalLoaded();"));
+      emitStatement(
+          quasiStmt("IMPORTS___.htmlEmitter___./*@synthetic*/signalLoaded();"),
+          SYNTHETIC_SOURCE);
     }
   }
 
   /** Emit an inlined script. */
-  private void fleshOutScriptBlock(Block script) {
+  private void fleshOutScriptBlock(ScriptBone bone) {
     FilePosition unk = FilePosition.UNKNOWN;
 
-    String sourcePath = mc.abbreviate(script.getFilePosition().source());
-    finishBlock();
-    emitStatement(quasiStmt(
-        ""
-        + "try {"
-        + "  @scriptBody;"
-        + "} catch (ex___) {"
-        + "  ___./*@synthetic*/ getNewModuleHandler()"
-        // getNewModuleHandler is appropriate here since there can't be multiple
-        // module handlers in play while loadModule is being called, and all
-        // these exception handlers are only reachable while control is in
-        // loadModule.
-        + "      ./*@synthetic*/ handleUncaughtException("
-        + "          ex___, onerror, @sourceFile, @line);"
-        + "}",
-        // TODO(ihab.awad): Will add UncajoledModule wrapper when we no longer
-        // "consolidate" all scripts in an HTML file into one Caja module.
-        "scriptBody", script,
-        "sourceFile", StringLiteral.valueOf(unk, sourcePath),
-        "line", StringLiteral.valueOf(
-            unk, String.valueOf(script.getFilePosition().startLineNo()))
-        ), false);
+    FilePosition pos = bone.body.getFilePosition();
+    String sourcePath = mc.abbreviate(pos.source());
+    if (bone.source.fromCache) {
+      CajoledModule scriptFromCache = (CajoledModule) bone.body;
+      finishBlock();
+      this.js.add(new SafeJsChunk(bone.source, scriptFromCache));
+    } else {
+      Block scriptToWrapAndProcess = (Block) bone.body;
+      emitStatement(quasiStmt(
+          ""
+          + "try {"
+          + "  @scriptBody;"
+          + "} catch (ex___) {"
+          + "  ___./*@synthetic*/ getNewModuleHandler()"
+          // getNewModuleHandler is appropriate since there can't be multiple
+          // module handlers in play while loadModule is being called, and all
+          // these exception handlers are only reachable while control is in
+          // loadModule.
+          + "      ./*@synthetic*/ handleUncaughtException("
+          + "          ex___, onerror, @sourceFile, @line);"
+          + "}",
+          // TODO(ihab.awad): Will add UncajoledModule wrapper when we no longer
+          // "consolidate" all scripts in an HTML file into one Caja module.
+          "scriptBody", scriptToWrapAndProcess,
+          "sourceFile", StringLiteral.valueOf(unk, sourcePath),
+          "line", StringLiteral.valueOf(unk, String.valueOf(pos.startLineNo()))
+          ),
+          false,
+          bone.source);
+    }
   }
 
   /**
@@ -353,16 +399,17 @@ final class SafeHtmlMaker {
    * @param preceder a node that is safe, e.g. not in a context where it would
    *     cause code to execute.
    */
-  private void insertPlaceholderAfter(Node preceder) {
+  private void insertPlaceholderAfter(NodeBone preceder) {
     String dynId = meta.generateUniqueName(ID.localName);
     emitStatement(quasiStmt(
         ""
         + "emitter___./*@synthetic*/discard("
         + "    emitter___./*@synthetic*/attach(@id));",
-        "id", StringLiteral.valueOf(FilePosition.UNKNOWN, dynId)));
+        "id", StringLiteral.valueOf(FilePosition.UNKNOWN, dynId)),
+        preceder.source);
 
-    Node follower = preceder.getNextSibling();
-    Node parent = preceder.getParentNode();
+    Node follower = preceder.safeNode.getNextSibling();
+    Node parent = preceder.safeNode.getParentNode();
     if (containsOnlyText(parent)) {
       // Elements like <textarea> and <pre> can't contain elements, so move
       // the placeholder into the parent, where it will be in the same
@@ -403,23 +450,26 @@ final class SafeHtmlMaker {
   /**
    * Attaches attributes to the safe DOM node corresponding to those on el.
    *
-   * @param el an element in the input DOM.
-   * @param safe the element in the safe HTML DOM corresponding to el.
+   * @param bone wraps an element in the input DOM and the element in the safe
+   *     HTML DOM corresponding to el.
    * @param splitDom true if this text node is immediately followed by an inline
    *     script block.
    */
-  private void fleshOutElement(Element el, Element safe, boolean splitDom) {
+  private void fleshOutElement(NodeBone bone, boolean splitDom) {
+    Element el = (Element) bone.node;
+    Element safe = (Element) bone.safeNode;
     FilePosition pos = Nodes.getFilePositionFor(el);
 
     // An ID we attach to a node so that we can retrieve it to add dynamic
     // attributes later.
     String dynId = null;
     if (splitDom) {
-      dynId = makeDynamicId(null, pos);
+      dynId = makeDynamicId(null, pos, bone.source);
       // Emit first since this makes sure the node is in the DOM.
       emitStatement(quasiStmt(
           "emitter___./*@synthetic*/attach(@id);",
-          "id", StringLiteral.valueOf(FilePosition.UNKNOWN, dynId)));
+          "id", StringLiteral.valueOf(FilePosition.UNKNOWN, dynId)),
+          bone.source);
     }
     Nodes.setFilePositionFor(safe, pos);
 
@@ -437,7 +487,7 @@ final class SafeHtmlMaker {
             || dynamicValue instanceof StringLiteral) {
           emitStaticAttr(a, (StringLiteral) dynamicValue, safe);
         } else {
-          dynId = makeDynamicId(dynId, pos);
+          dynId = makeDynamicId(dynId, pos, bone.source);
           String handlerName = dynamicValue.getAttributes().get(
               HtmlAttributeRewriter.HANDLER_NAME);
           if (handlerName != null
@@ -445,7 +495,7 @@ final class SafeHtmlMaker {
               && handlersUsedInModule.add(handlerName)) {
             emitHandler(handlerName);
           }
-          emitDynamicAttr(a, dynamicValue);
+          emitDynamicAttr(a, dynamicValue, bone.source);
         }
       } else {
         // A previous HTML parsing step should have ensured that each element
@@ -462,8 +512,8 @@ final class SafeHtmlMaker {
               || dynamicValue instanceof StringLiteral)) {
         emitStaticAttr(id, (StringLiteral) dynamicValue, safe);
       } else {
-        dynId = makeDynamicId(dynId, pos);
-        emitDynamicAttr(id, dynamicValue);
+        dynId = makeDynamicId(dynId, pos, bone.source);
+        emitDynamicAttr(id, dynamicValue, bone.source);
       }
     }
 
@@ -472,7 +522,9 @@ final class SafeHtmlMaker {
       assert !safe.hasAttributeNS(ID.ns.uri, ID.localName);
       safe.setAttributeNS(ID.ns.uri, ID.localName, dynId);
       if (id == null) {
-        emitStatement(quasiStmt("el___./*@synthetic*/removeAttribute('id');"));
+        emitStatement(
+            quasiStmt("el___./*@synthetic*/removeAttribute('id');"),
+            bone.source);
       }
     }
   }
@@ -488,34 +540,43 @@ final class SafeHtmlMaker {
     safe.setAttributeNodeNS(safeAttr);
   }
 
-  private void emitDynamicAttr(Attr a, Expression dynamicValue) {
+  private void emitDynamicAttr(
+      Attr a, Expression dynamicValue, JobEnvelope source) {
     FilePosition pos = Nodes.getFilePositionFor(a);
     String name = a.getName();
     // Emit a statement to attach the dynamic attribute.
     if (dynamicValue instanceof FunctionConstructor) {
-      emitStatement(quasiStmt(
-          "el___.@name = @eventAdapter;",
-          "name", new Reference(SyntheticNodes.s(new Identifier(pos, name))),
-          "eventAdapter", dynamicValue));
+      emitStatement(
+          quasiStmt(
+              "el___.@name = @eventAdapter;",
+              "name", new Reference(
+                  SyntheticNodes.s(new Identifier(pos, name))),
+              "eventAdapter", dynamicValue),
+          source);
     } else {
-      emitStatement(quasiStmt(
-          "emitter___./*@synthetic*/setAttr(el___, @name, @value);",
-          "name", StringLiteral.valueOf(pos, name),
-          "value", dynamicValue));
+      emitStatement(
+          quasiStmt(
+              "emitter___./*@synthetic*/setAttr(el___, @name, @value);",
+              "name", StringLiteral.valueOf(pos, name),
+              "value", dynamicValue),
+          source);
     }
     // TODO(mikesamuel): do we need to emit a static attribute when the
     // default value does not match the value criterion?
   }
 
-  private String makeDynamicId(String dynId, FilePosition pos) {
-    requireModuleDefs();
+  private String makeDynamicId(
+      String dynId, FilePosition pos, JobEnvelope source) {
+    requireModuleDefs(source);
     if (dynId == null) {
       // We need a dynamic ID so that we can find the node so that
       // we can attach dynamic attributes.
       dynId = meta.generateUniqueName(ID.localName);
-      emitStatement(quasiStmt(
-          "el___ = emitter___./*@synthetic*/byId(@id);",
-          "id", StringLiteral.valueOf(pos, dynId)));
+      emitStatement(
+          quasiStmt(
+              "el___ = emitter___./*@synthetic*/byId(@id);",
+              "id", StringLiteral.valueOf(pos, dynId)),
+          source);
     }
     assert isDynamicId(dynId);
     return dynId;
@@ -530,16 +591,23 @@ final class SafeHtmlMaker {
     return QuasiUtil.quasiStmt(quasi, args);
   }
 
-  private void emitStatement(Statement s) { emitStatement(s, true); }
+  private void emitStatement(Statement s, JobEnvelope source) {
+    emitStatement(s, true, source);
+  }
 
-  private void emitStatement(Statement s, boolean translated) {
-    if (translated != currentBlockStyle) {
-      currentBlock = null;
+  private void maybeBreakBlock(boolean translated, JobEnvelope source) {
+    if (translated != currentBlockStyle
+        || !source.areFromSameSource(currentSource)) {
+      finishBlock();
     }
+  }
+
+  private void emitStatement(Statement s, boolean translated, JobEnvelope src) {
+    maybeBreakBlock(translated, src);
     if (currentBlock == null) {
       handlersUsedInModule.clear();
       Block block = new Block();
-      js.add(block);
+      js.add(new SafeJsChunk(src, block));
       if (translated) {
         // May be downgraded based on emitHandler below.
         block.appendChild(new DirectivePrologue(
@@ -551,6 +619,7 @@ final class SafeHtmlMaker {
       } else {
         currentBlock = block;
       }
+      currentSource = src;
       currentBlockStyle = translated;
       moduleDefs = false;
     }
@@ -558,13 +627,14 @@ final class SafeHtmlMaker {
   }
 
   private void emitHandler(String handlerName) {
-    emitHandler(handlers.get(handlerName));
+    Pair<JobEnvelope, Declaration> handler = handlers.get(handlerName);
+    emitHandler(handler.b, handler.a);
   }
 
- private void emitHandler(Statement handler) {
-    emitStatement(handler, true);
+ private void emitHandler(Statement handler, JobEnvelope source) {
+    emitStatement(handler, true, source);
     if (hasNonStrictFn(handler)) {
-      Block block = js.get(js.size() - 1);
+      Block block = (Block) js.get(js.size() - 1).body;
       Statement s = block.children().get(0);
       // Do not put a block in cajita mode when we're outputting a non-strict
       // handler.
@@ -577,35 +647,10 @@ final class SafeHtmlMaker {
     }
   }
 
-  private Node consolidateHtml(List<Node> nodes) {
-    if (nodes.isEmpty()) { return doc.createDocumentFragment(); }
-    Node first = nodes.get(0);
-    List<Node> rest = nodes.subList(1, nodes.size());
-    if (rest.isEmpty()) { return first; }
-    FilePosition pos = Nodes.getFilePositionFor(first);
-    DocumentFragment f;
-    if (first instanceof DocumentFragment) {
-      f = (DocumentFragment) first;
-    } else {
-      f = doc.createDocumentFragment();
-      f.appendChild(first);
-    }
-    for (Node one : rest) {
-      pos = FilePosition.span(pos, Nodes.getFilePositionFor(one));
-      if (one instanceof DocumentFragment) {
-        for (Node c = one.getFirstChild(), next; c != null; c = next) {
-          next = c.getNextSibling();
-          f.appendChild(c);
-        }
-      } else {
-        f.appendChild(one);
-      }
-    }
-    Nodes.setFilePositionFor(f, pos);
-    return f;
+  private void finishBlock() {
+    currentBlock = null;
+    moduleDefs = false;
   }
-
-  private void finishBlock() { currentBlock = null; }
 
   private static boolean hasNonStrictFn(ParseTreeNode n) {
     if (n instanceof FunctionConstructor) {
@@ -626,5 +671,17 @@ final class SafeHtmlMaker {
       }
       return false;
     }
+  }
+
+  private static String getPlaceholderId(Node n) {
+    if (n.getNodeType() != Node.ELEMENT_NODE) {
+      return null;
+    }
+    if (!"span".equals(n.getLocalName())) {
+      return null;
+    }
+    Attr a = ((Element) n).getAttributeNodeNS(
+        Placeholder.ID_ATTR.ns.uri, Placeholder.ID_ATTR.localName);
+    return a != null ? a.getValue() : null;
   }
 }

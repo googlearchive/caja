@@ -16,12 +16,6 @@ package com.google.caja.plugin.stages;
 
 import com.google.caja.lang.html.HtmlSchema;
 import com.google.caja.lexer.FilePosition;
-import com.google.caja.parser.html.Dom;
-import com.google.caja.parser.html.Namespaces;
-import com.google.caja.parser.js.Block;
-import com.google.caja.plugin.ExtractedHtmlContent;
-import com.google.caja.plugin.Job;
-import com.google.caja.plugin.JobEnvelope;
 import com.google.caja.plugin.Jobs;
 import com.google.caja.plugin.PluginMessageType;
 import com.google.caja.reporting.MessageLevel;
@@ -29,9 +23,6 @@ import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageType;
 import com.google.caja.util.ContentType;
 import com.google.caja.util.Join;
-
-import org.w3c.dom.Element;
-import org.w3c.dom.Node;
 
 /**
  *
@@ -41,8 +32,8 @@ public final class RewriteHtmlStageTest extends PipelineStageTestCase {
   public final void testScriptExtraction() throws Exception {
     assertPipeline(
         job("foo<script>extracted();</script>baz", ContentType.HTML),
-        // The "jobnum" attribute was added by the extractScript method below.
-        job("foo<span jobnum=\"1\"></span>baz", ContentType.HTML),
+        // The "id" attribute was added by the RewriteHtmlStage.
+        job("foo<span __phid__=\"$1\"></span>baz", ContentType.HTML),
         job("{ extracted(); }", ContentType.JS)
         );
     assertNoErrors();
@@ -55,10 +46,11 @@ public final class RewriteHtmlStageTest extends PipelineStageTestCase {
     assertMessage(
         PluginMessageType.UNRECOGNIZED_CONTENT_TYPE, MessageLevel.WARNING);
 
+    meta = createPluginMeta();
     assertPipeline(
         job("foo<script type=\"text/javascript\">var x = 1;</script>baz",
             ContentType.HTML),
-        job("foo<span jobnum=\"1\"></span>baz", ContentType.HTML),
+        job("foo<span __phid__=\"$1\"></span>baz", ContentType.HTML),
         job("{\n  var x = 1;\n}", ContentType.JS)
         );
     assertNoErrors();
@@ -75,10 +67,11 @@ public final class RewriteHtmlStageTest extends PipelineStageTestCase {
         FilePosition.instance(is, 1, 42, 42, 1),
         MessagePart.Factory.valueOf("<"));
 
+    meta = createPluginMeta();
     assertPipeline(
         job("foo<script type=text/javascript>extracted();</script>baz",
             ContentType.HTML),
-        job("foo<span jobnum=\"1\"></span>baz", ContentType.HTML),
+        job("foo<span __phid__=\"$1\"></span>baz", ContentType.HTML),
         job("{ extracted(); }", ContentType.JS)
         );
     assertNoErrors();
@@ -95,32 +88,35 @@ public final class RewriteHtmlStageTest extends PipelineStageTestCase {
         job("foo<script src='data:text/javascript,extracted();'>"
             + "bar</script>baz",
             ContentType.HTML),
-        job("foo<span jobnum=\"1\"></span>baz", ContentType.HTML),
+        job("foo<span __phid__=\"$1\"></span>baz", ContentType.HTML),
         job("{ extracted(); }", ContentType.JS)
         );
     assertNoErrors();
 
+    meta = createPluginMeta();
     assertPipeline(
         job("foo<script src='data:,extracted();'>bar</script>baz",
             ContentType.HTML),
-        job("foo<span jobnum=\"1\"></span>baz", ContentType.HTML),
+        job("foo<span __phid__=\"$1\"></span>baz", ContentType.HTML),
         job("{ extracted(); }", ContentType.JS)
         );
     assertNoErrors();
 
+    meta = createPluginMeta();
     assertPipeline(
         job("foo<script src='data:iso-8859-7;charset=utf-8,extracted%28%29%3B'>"
             + "bar</script>baz", ContentType.HTML),
-        job("foo<span jobnum=\"1\"></span>baz", ContentType.HTML),
+        job("foo<span __phid__=\"$1\"></span>baz", ContentType.HTML),
         job("{ extracted(); }", ContentType.JS)
         );
     assertNoErrors();
 
+    meta = createPluginMeta();
     assertPipeline(
         job("foo<script src="
             + "'data:text/javascript;charset=utf-8;base64,ZXh0cmFjdGVkKCk7'>"
             + "bar</script>baz", ContentType.HTML),
-        job("foo<span jobnum=\"1\"></span>baz", ContentType.HTML),
+        job("foo<span __phid__=\"$1\"></span>baz", ContentType.HTML),
         job("{ extracted(); }", ContentType.JS)
         );
     assertNoErrors();
@@ -129,15 +125,15 @@ public final class RewriteHtmlStageTest extends PipelineStageTestCase {
   public final void testStyleExtraction() throws Exception {
     assertPipeline(
         job("Foo<style>p { color: blue }</style><p>Bar", ContentType.HTML),
-        job("Foo<p>Bar</p>", ContentType.HTML),
-        job("p {\n  color: blue\n}", ContentType.CSS));
+        job("p {\n  color: blue\n}", ContentType.CSS),
+        job("Foo<p>Bar</p>", ContentType.HTML));
     assertNoErrors();
 
     assertPipeline(
         job("Foo<link rel=stylesheet href=content:p+%7Bcolor%3A+blue%7D><p>Bar",
             ContentType.HTML),
-        job("Foo<p>Bar</p>", ContentType.HTML),
-        job("p {\n  color: blue\n}", ContentType.CSS));
+        job("p {\n  color: blue\n}", ContentType.CSS),
+        job("Foo<p>Bar</p>", ContentType.HTML));
     assertNoErrors();
 
     assertPipeline(
@@ -150,7 +146,7 @@ public final class RewriteHtmlStageTest extends PipelineStageTestCase {
     assertPipeline(
         job("<body onload=init();>Foo</body>", ContentType.HTML),
         job("<html><head></head>"
-            + "<body>Foo<span jobnum=\"1\"></span></body></html>",
+            + "<body>Foo<span __phid__=\"$1\"></span></body></html>",
             ContentType.HTML),
         job("{ init(); }", ContentType.JS));
     assertNoErrors();
@@ -159,8 +155,8 @@ public final class RewriteHtmlStageTest extends PipelineStageTestCase {
   public final void testImportedStyles() throws Exception {
     assertPipeline(
         job("<style>@import 'styles.css';</style>", ContentType.HTML),
-        job("", ContentType.HTML),
-        job("@import url('styles.css');", ContentType.CSS)
+        job("@import url('styles.css');", ContentType.CSS),
+        job("", ContentType.HTML)
         );
     assertNoErrors();
   }
@@ -169,30 +165,30 @@ public final class RewriteHtmlStageTest extends PipelineStageTestCase {
     assertPipeline(
         job("<link rel=stylesheet media=screen href=content:p+%7B%7D>",
             ContentType.HTML),
-        job("", ContentType.HTML),
-        job("@media screen {\n  p {\n  }\n}", ContentType.CSS));
+        job("@media screen {\n  p {\n  }\n}", ContentType.CSS),
+        job("", ContentType.HTML));
     assertNoErrors();
 
     assertPipeline(
         job("<link rel=stylesheet type=text/css href=content:p+%7B%7D>",
             ContentType.HTML),
-        job("", ContentType.HTML),
-        job("p {\n}", ContentType.CSS));
+        job("p {\n}", ContentType.CSS),
+        job("", ContentType.HTML));
     assertNoErrors();
 
     assertPipeline(
         job("<link rel=stylesheet media=all href=content:p+%7B%7D>",
             ContentType.HTML),
-        job("", ContentType.HTML),
-        job("p {\n}", ContentType.CSS));
+        job("p {\n}", ContentType.CSS),
+        job("", ContentType.HTML));
     assertNoErrors();
 
     assertPipeline(
         job("<link rel=stylesheet media=braille,tty type=text/css"
             + " href=content:p+%7B%7D>",
             ContentType.HTML),
-        job("", ContentType.HTML),
-        job("@media braille, tty {\n  p {\n  }\n}", ContentType.CSS));
+        job("@media braille, tty {\n  p {\n  }\n}", ContentType.CSS),
+        job("", ContentType.HTML));
     assertNoErrors();
   }
 
@@ -204,13 +200,15 @@ public final class RewriteHtmlStageTest extends PipelineStageTestCase {
             + "<script src=content:d(); defer=no></script>"
             + "<br>",
             ContentType.HTML),
-        job("<span jobnum=\"1\"></span><span jobnum=\"2\"></span><br />"
-            + "<span jobnum=\"3\"></span><span jobnum=\"4\"></span>",
+        job("<span __phid__=\"$1\"></span>"   // a()
+            + "<span __phid__=\"$4\"></span><br />"  // d()
+            + "<span __phid__=\"$2\"></span>"  // b()
+            + "<span __phid__=\"$3\"></span>",  // c()
             ContentType.HTML),
         job("{ a(); }", ContentType.JS),
-        job("{ d(); }", ContentType.JS),
         job("{ b(); }", ContentType.JS),
-        job("{ c(); }", ContentType.JS));
+        job("{ c(); }", ContentType.JS),
+        job("{ d(); }", ContentType.JS));
     assertNoErrors();
   }
 
@@ -220,8 +218,9 @@ public final class RewriteHtmlStageTest extends PipelineStageTestCase {
             + "<script src=\"http://bogus.com/bogus.js#'!\"></script>"
             + "<script src=content:foo()></script>",
             ContentType.HTML),
-        job("<span jobnum=\"1\"></span><span jobnum=\"2\"></span>"
-            + "<span jobnum=\"3\"></span>",
+        job("<span __phid__=\"$1\"></span>"
+            + "<span __phid__=\"$2\"></span>"
+            + "<span __phid__=\"$3\"></span>",
             ContentType.HTML),
         job("{ onerror = panic; }", ContentType.JS),
         job("{\n  throw new Error('Failed to load bogus.js#%27%21');\n}",
@@ -265,35 +264,7 @@ public final class RewriteHtmlStageTest extends PipelineStageTestCase {
   protected boolean runPipeline(Jobs jobs) throws Exception {
     mq.getMessages().clear();
     HtmlSchema schema = HtmlSchema.getDefault(mq);
-    boolean result = new ResolveUriStage(schema).apply(jobs)
-        && new RewriteHtmlStage(schema).apply(jobs);
-    // Dump the extracted script bits on the queue.
-    for (JobEnvelope env : jobs.getJobsByType(ContentType.HTML)) {
-      extractScripts(((Dom) env.job.getRoot()).getValue(), jobs);
-    }
-    return result;
-  }
-
-  private void extractScripts(Node node, Jobs jobs) {
-    switch (node.getNodeType()) {
-      case Node.ELEMENT_NODE:
-        Element el = (Element) node;
-        Block extracted = ExtractedHtmlContent.getExtractedScriptFor(el);
-        if (extracted != null) {
-          int jobNum = jobs.getJobs().size();
-          el.setAttributeNS(
-              Namespaces.HTML_NAMESPACE_URI, "jobnum", "" + jobNum);
-          jobs.getJobs().add(JobEnvelope.of(Job.jsJob(extracted, null)));
-        }
-        for (Node c = el.getFirstChild(); c != null; c = c.getNextSibling()) {
-          extractScripts(c, jobs);
-        }
-        break;
-      case Node.DOCUMENT_FRAGMENT_NODE: case Node.DOCUMENT_NODE:
-        for (Node c = node.getFirstChild(); c != null; c = c.getNextSibling()) {
-          extractScripts(c, jobs);
-        }
-        break;
-    }
+    return new ResolveUriStage(schema).apply(jobs)
+        && new RewriteHtmlStage(schema, new StubJobCache()).apply(jobs);
   }
 }

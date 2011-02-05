@@ -24,9 +24,12 @@ import com.google.caja.plugin.stages.HtmlToBundleStage;
 import com.google.caja.plugin.stages.HtmlToJsStage;
 import com.google.caja.plugin.stages.InferFilePositionsStage;
 import com.google.caja.plugin.stages.InlineCssImportsStage;
+import com.google.caja.plugin.stages.JobCache;
 import com.google.caja.plugin.stages.LegacyNamespaceFixupStage;
 import com.google.caja.plugin.stages.OpenTemplateStage;
 import com.google.caja.plugin.stages.OptimizeJavascriptStage;
+import com.google.caja.plugin.stages.PipelineFetchStage;
+import com.google.caja.plugin.stages.PipelineStoreStage;
 import com.google.caja.plugin.stages.ResolveUriStage;
 import com.google.caja.plugin.stages.RewriteCssStage;
 import com.google.caja.plugin.stages.RewriteHtmlStage;
@@ -63,8 +66,8 @@ public final class PipelineMaker {
 
   PipelineMaker(
       CssSchema cssSchema, HtmlSchema htmlSchema, ModuleManager mgr,
-      Planner.PlanState inputs, Planner.PlanState goals) {
-    this.in = new PlanInputs(cssSchema, htmlSchema, mgr);
+      JobCache cache, Planner.PlanState inputs, Planner.PlanState goals) {
+    this.in = new PlanInputs(cssSchema, htmlSchema, mgr, cache);
     this.inputs = inputs;
     this.goals = goals;
   }
@@ -155,7 +158,7 @@ public final class PipelineMaker {
   public static final Planner.PlanState HTML_SAFE_STATIC = makeGoal(
       "html+safe+static",
       "to output HTML.  Not exlusive with cajoled_module.");
-  private static final Planner.PlanState CAJOLED_MODULE = makeInner(
+  public static final Planner.PlanState CAJOLED_MODULES = makeInner(
       "cajoled_module");
   public static final Planner.PlanState ONE_CAJOLED_MODULE = makeGoal(
       "cajoled_module+one", "to output a bundle of JS.");
@@ -188,7 +191,8 @@ public final class PipelineMaker {
 
         new Tool() {
           public void operate(PlanInputs in, List<Pipeline.Stage<Jobs>> out) {
-            out.add(new RewriteHtmlStage(in.htmlSchema));
+            out.add(new RewriteHtmlStage(in.htmlSchema, in.cache));
+            out.add(new PipelineFetchStage(in.cache));
           }
         }.given(HTML_ABSURI_XMLNS)
          .produces(CSS).produces(JS).produces(HTML_STATIC),
@@ -236,13 +240,14 @@ public final class PipelineMaker {
             out.add(new OptimizeJavascriptStage());
             out.add(new ValidateJavascriptStage(in.moduleManager));
           }
-        }.given(JS).produces(CAJOLED_MODULE),
+        }.given(JS).produces(CAJOLED_MODULES),
 
         new Tool() {
           public void operate(PlanInputs in, List<Pipeline.Stage<Jobs>> out) {
+            out.add(new PipelineStoreStage(in.cache));
             out.add(new ConsolidateCodeStage(in.moduleManager));
           }
-        }.given(CAJOLED_MODULE).produces(ONE_CAJOLED_MODULE),
+        }.given(CAJOLED_MODULES).produces(ONE_CAJOLED_MODULE),
 
         new Tool() {
           public void operate(PlanInputs in, List<Pipeline.Stage<Jobs>> out) {
@@ -282,15 +287,23 @@ public final class PipelineMaker {
     }
   }
 
-  private static class PlanInputs {
+  // Visible for testing
+  PlanInputs getPlanInputs() { return in; }
+
+  // Visible for testing
+  static final class PlanInputs {
     final CssSchema cssSchema;
     final HtmlSchema htmlSchema;
     final ModuleManager moduleManager;
+    final JobCache cache;
 
-    PlanInputs(CssSchema cssSchema, HtmlSchema htmlSchema, ModuleManager mgr) {
+    PlanInputs(
+        CssSchema cssSchema, HtmlSchema htmlSchema, ModuleManager mgr,
+        JobCache cache) {
       this.cssSchema = cssSchema;
       this.htmlSchema = htmlSchema;
       this.moduleManager = mgr;
+      this.cache = cache;
     }
   }
 }

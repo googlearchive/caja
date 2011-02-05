@@ -49,7 +49,8 @@ public final class HtmlToJsStage extends CompileHtmlStage {
 
   @Override
   Job makeJobFromHtml(Node html, URI baseUri) {
-    return Job.jsJob(makeEmitStaticStmt(html), baseUri);
+    return hasContent(html)
+        ? Job.jsJob(makeEmitStaticStmt(html), baseUri) : null;
   }
 
   private static Statement makeEmitStaticStmt(Node node) {
@@ -69,5 +70,20 @@ public final class HtmlToJsStage extends CompileHtmlStage {
     TokenConsumer tc = new Concatenator(stringBuilder);
     Nodes.render(node, new RenderContext(tc).withEmbeddable(true));
     return StringLiteral.valueOf(Nodes.getFilePositionFor(node), stringBuilder);
+  }
+
+  private static boolean hasContent(Node n) {
+    switch (n.getNodeType()) {
+      case Node.DOCUMENT_FRAGMENT_NODE:
+        for (Node c : Nodes.childrenOf(n)) {
+          if (hasContent(c)) { return true; }
+        }
+        return false;
+      case Node.COMMENT_NODE: return false;
+      case Node.TEXT_NODE:
+        return n.getNodeValue().length() != 0;
+      default:
+        return true;
+    }
   }
 }

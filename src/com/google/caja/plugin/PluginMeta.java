@@ -51,6 +51,8 @@ public final class PluginMeta {
     return prefix + "_" + (++guidCounter) + "___";
   }
 
+  public int generateGuid() { return ++guidCounter; }
+
   /** Describes how resources external to the plugin definition are resolved. */
   public UriPolicy getUriPolicy() { return uriPolicy; }
 

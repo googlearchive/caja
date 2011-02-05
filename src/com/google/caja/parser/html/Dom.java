@@ -62,4 +62,6 @@ public final class Dom extends AbstractParseTreeNode {
     }
     out.append(html);
   }
+
+  @Override public Dom clone() { return new Dom(n.cloneNode(true)); }
 }

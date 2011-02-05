@@ -56,13 +56,18 @@ import java.util.Map;
  */
 public abstract class PipelineStageTestCase extends CajaTestCase {
   protected PluginMeta meta;
+  protected JobCache cache = new StubJobCache();
   private TestUriFetcher uriFetcher;
+
+  protected PluginMeta createPluginMeta() {
+    return new PluginMeta(uriFetcher, new TestUriPolicy());
+  }
 
   @Override
   protected void setUp() throws Exception {
     super.setUp();
     uriFetcher = new TestUriFetcher();
-    meta = new PluginMeta(uriFetcher, new TestUriPolicy());
+    meta = createPluginMeta();
   }
 
   @Override
@@ -108,6 +113,13 @@ public abstract class PipelineStageTestCase extends CajaTestCase {
       tc.noMoreTokens();
       actualJobs.add(new JobStub(sb.toString(), env.job.getType()));
     }
+    // HACK DEBUG
+    if (!Arrays.asList(outputJobs).equals(actualJobs)) {
+      assertEquals(
+          prettyPrintedJobStubs(Arrays.asList(outputJobs)),
+          prettyPrintedJobStubs(actualJobs));
+    }
+    // END HACK
     MoreAsserts.assertListsEqual(Arrays.asList(outputJobs), actualJobs);
   }
 
@@ -227,5 +239,15 @@ public abstract class PipelineStageTestCase extends CajaTestCase {
       return "http://proxy/?uri=" + UriUtil.encode(u.getUri().toString())
           + "&effect=" + effect + "&loader=" + loader;
     }
+  }
+
+  private static String prettyPrintedJobStubs(
+      Iterable<? extends JobStub> stubs) {
+    StringBuilder sb = new StringBuilder();
+    int i = 0;
+    for (JobStub goldenStub : stubs) {
+      sb.append(i++).append('\n').append(goldenStub.content).append('\n');
+    }
+    return sb.toString();
   }
 }

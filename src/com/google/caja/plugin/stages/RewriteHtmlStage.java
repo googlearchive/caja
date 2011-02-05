@@ -35,13 +35,12 @@ import com.google.caja.parser.js.ExpressionStmt;
 import com.google.caja.parser.js.Statement;
 import com.google.caja.parser.js.StringLiteral;
 import com.google.caja.parser.quasiliteral.QuasiBuilder;
-import com.google.caja.plugin.ExtractedHtmlContent;
 import com.google.caja.plugin.Job;
 import com.google.caja.plugin.JobEnvelope;
 import com.google.caja.plugin.Jobs;
+import com.google.caja.plugin.Placeholder;
 import com.google.caja.plugin.PluginMessageType;
 import com.google.caja.plugin.templates.HtmlAttributeRewriter;
-import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.util.ContentType;
@@ -82,47 +81,77 @@ import org.w3c.dom.Node;
  */
 public class RewriteHtmlStage implements Pipeline.Stage<Jobs> {
   private final HtmlSchema htmlSchema;
+  private final JobCache jobCache;
 
-  public RewriteHtmlStage(HtmlSchema htmlSchema) {
+  public RewriteHtmlStage(HtmlSchema htmlSchema, JobCache jobCache) {
     this.htmlSchema = htmlSchema;
+    this.jobCache = jobCache;
   }
 
   public boolean apply(Jobs jobs) {
-    MessageQueue mq = jobs.getMessageQueue();
-    MessageContext mc = jobs.getMessageContext();
+
     for (JobEnvelope env : jobs.getJobsByType(ContentType.HTML)) {
       if (env.fromCache) { continue; }
-      Node root = ((Dom) env.job.getRoot()).getValue();
-      extractBodyInfo(root, env.job.getBaseUri(), jobs);
-      HtmlEmbeddedContentFinder finder = new HtmlEmbeddedContentFinder(
-          htmlSchema, env.job.getBaseUri(), mq, mc);
-      for (EmbeddedContent content : finder.findEmbeddedContent(root)) {
-        Node src = content.getSource();
-        if (content.getSource() instanceof Element) {
-          // Rewrite styles and scripts.
-          // <script>foo()</script>  ->  <script>(cajoled foo)</script>
-          // <style>foo { ... }</style>  ->  <style>foo { ... }</style>
-          // <script src=foo.js></script>
-          //     ->  <script>(cajoled, inlined foo)</script>
-          // <link rel=stylesheet href=foo.css>
-          //     ->  <style>(cajoled, inlined styles)</style>
-          Element el = (Element) content.getSource();
-          if (SCRIPT.is(el)) {
-            rewriteScriptEl(root, content, jobs);
-          } else if (STYLE.is(el)) {
-            rewriteStyleEl(content, jobs);
-          } else if (LINK.is(el)) {
-            rewriteLinkEl(content, jobs);
-          } else {
-            throw new SomethingWidgyHappenedError(src.getNodeName());
-          }
-        } else if (BODY_ONLOAD.is((Attr) src)) {
-          moveOnLoadHandlerToEndOfBody(content, jobs);
-        }
-        // Attribute extraction handled elsewhere.
+      if (new HtmlExtractor(htmlSchema, jobCache, jobs, env).extract()) {
+        // We can't cache HTML with placeholders since we need to reincorporate
+        // the cached jobs in particular places.
+        // This doesn't prevent us from caching the really expensive
+        // transformations though, which are the JS validation.
+        env.job.getRoot().getAttributes().set(JobCache.NO_CACHE, true);
       }
     }
     return jobs.hasNoFatalErrors();
+  }
+}
+
+final class HtmlExtractor {
+  final HtmlSchema htmlSchema;
+  final JobCache jobCache;
+  final Jobs jobs;
+  final JobEnvelope htmlEnv;
+
+  HtmlExtractor(
+      HtmlSchema htmlSchema, JobCache jobCache, Jobs jobs,
+      JobEnvelope htmlEnv) {
+    this.htmlSchema = htmlSchema;
+    this.jobCache = jobCache;
+    this.jobs = jobs;
+    this.htmlEnv = htmlEnv;
+  }
+
+  boolean extract() {
+    boolean hasPlaceholders = false;
+    Node root = ((Dom) htmlEnv.job.getRoot()).getValue();
+    extractBodyInfo(root, htmlEnv);
+    HtmlEmbeddedContentFinder finder = new HtmlEmbeddedContentFinder(
+        htmlSchema, htmlEnv.job.getBaseUri(),
+        jobs.getMessageQueue(), jobs.getMessageContext());
+    for (EmbeddedContent content : finder.findEmbeddedContent(root)) {
+      Node src = content.getSource();
+      if (content.getSource() instanceof Element) {
+        // Rewrite styles and scripts.
+        // <script>foo()</script>  ->  <script>(cajoled foo)</script>
+        // <style>foo { ... }</style>  ->  <style>foo { ... }</style>
+        // <script src=foo.js></script>
+        //     ->  <script>(cajoled, inlined foo)</script>
+        // <link rel=stylesheet href=foo.css>
+        //     ->  <style>(cajoled, inlined styles)</style>
+        Element el = (Element) content.getSource();
+        if (SCRIPT.is(el)) {
+          hasPlaceholders |= rewriteScriptEl(root, content);
+        } else if (STYLE.is(el)) {
+          rewriteStyleEl(content);
+        } else if (LINK.is(el)) {
+          rewriteLinkEl(content);
+        } else {
+          throw new SomethingWidgyHappenedError(src.getNodeName());
+        }
+      } else if (BODY_ONLOAD.is((Attr) src)) {
+        moveOnLoadHandlerToEndOfBody(content);
+      }
+      // Attribute extraction handled elsewhere.
+    }
+    return hasPlaceholders;
   }
 
   private static final ElKey HTML = ElKey.forHtmlElement("html");
@@ -135,7 +164,7 @@ public class RewriteHtmlStage implements Pipeline.Stage<Jobs> {
   private static final AttribKey BODY_CLASS
       = AttribKey.forHtmlAttrib(BODY, "class");
 
-  private void rewriteScriptEl(Node root, EmbeddedContent c, Jobs jobs) {
+  private boolean rewriteScriptEl(Node root, EmbeddedContent c) {
     Element scriptEl = (Element) c.getSource();
     Node parent = scriptEl.getParentNode();
 
@@ -148,11 +177,12 @@ public class RewriteHtmlStage implements Pipeline.Stage<Jobs> {
     } catch (ParseException ex) {
       ex.toMessageQueue(jobs.getMessageQueue());
       parent.removeChild(scriptEl);
-      return;
+      return false;
     }
 
     if (parsedScriptBody == null || parsedScriptBody.children().isEmpty()) {
       parent.removeChild(scriptEl);
+      return false;
     } else {
       Element placeholder = placeholderFor(scriptEl, parsedScriptBody);
       // Replace the script tag with a placeholder that points to the inlined
@@ -163,36 +193,44 @@ public class RewriteHtmlStage implements Pipeline.Stage<Jobs> {
       } else {
         parent.replaceChild(placeholder, scriptEl);
       }
+      return true;
     }
   }
 
   // Build a replacement element, <span/>, and link it to the extracted
-  // javascript, so that when the DOM is rendered, we can properly interleave
+  // JavaScript, so that when the DOM is rendered, we can properly interleave
   // the extract scripts with the scripts that generate markup.
   private Element placeholderFor(Node n, Block parsedScriptBody) {
     Element placeholder = n.getOwnerDocument().createElementNS(
         Namespaces.HTML_NAMESPACE_URI, "span");
     Nodes.setFilePositionFor(placeholder, Nodes.getFilePositionFor(n));
-    ExtractedHtmlContent.setExtractedScriptFor(placeholder, parsedScriptBody);
+    URI baseUri = htmlEnv.job.getBaseUri();
+    String id = "$" + jobs.getPluginMeta().generateGuid();
+    placeholder.setAttributeNS(
+        Placeholder.ID_ATTR.ns.uri, Placeholder.ID_ATTR.localName, id);
+
+    jobs.getJobs().add(new JobEnvelope(
+        id, jobCache.forJob(ContentType.JS, parsedScriptBody).asSingleton(),
+        ContentType.JS, false,
+        Job.jsJob(parsedScriptBody, baseUri)));
     return placeholder;
   }
 
-  private void rewriteStyleEl(EmbeddedContent c, Jobs jobs) {
+  private void rewriteStyleEl(EmbeddedContent c) {
     Element styleEl = (Element) c.getSource();
     styleEl.getParentNode().removeChild(styleEl);
-    extractStyles(styleEl, c, null, jobs);
+    extractStyles(styleEl, c, null);
   }
 
-  private void rewriteLinkEl(EmbeddedContent c, Jobs jobs) {
+  private void rewriteLinkEl(EmbeddedContent c) {
     Element linkEl = (Element) c.getSource();
     linkEl.getParentNode().removeChild(linkEl);
     Attr media = linkEl.getAttributeNodeNS(
         Namespaces.HTML_NAMESPACE_URI, "media");
-    extractStyles(linkEl, c, media, jobs);
+    extractStyles(linkEl, c, media);
   }
 
-  private void extractStyles(
-      Element el, EmbeddedContent c, Attr media, Jobs jobs) {
+  private void extractStyles(Element el, EmbeddedContent c, Attr media) {
     MessageQueue mq = jobs.getMessageQueue();
     CssTree.StyleSheet stylesheet = null;
     try {
@@ -250,7 +288,17 @@ public class RewriteHtmlStage implements Pipeline.Stage<Jobs> {
       }
     }
 
-    jobs.getJobs().add(JobEnvelope.of(Job.cssJob(stylesheet, c.getBaseUri())));
+    URI baseUri = c.getBaseUri();
+
+    jobs.getJobs().add(
+        // Insert CSS stylesheets before the HTML job so that stylesheets always
+        // are loaded before the HTML job even if they have different cache
+        // keys.
+        jobs.getJobs().indexOf(htmlEnv),
+        new JobEnvelope(
+            null, jobCache.forJob(ContentType.CSS, stylesheet).asSingleton(),
+            ContentType.CSS, false,
+            Job.cssJob(stylesheet, baseUri)));
   }
 
   /**
@@ -264,7 +312,7 @@ public class RewriteHtmlStage implements Pipeline.Stage<Jobs> {
    *                                &lt;/body&gt;
    * </pre>
    */
-  private void moveOnLoadHandlerToEndOfBody(EmbeddedContent c, Jobs jobs) {
+  private void moveOnLoadHandlerToEndOfBody(EmbeddedContent c) {
     Attr onload = (Attr) c.getSource();
     Element body = onload.getOwnerElement();
     body.removeAttributeNode(onload);
@@ -287,11 +335,11 @@ public class RewriteHtmlStage implements Pipeline.Stage<Jobs> {
    * Find any class attributes on the {@code <body>} element and use the HTML
    * emitter to attach the classes to the virtual document body.
    */
-  private void extractBodyInfo(Node node, URI base, Jobs jobs) {
+  private void extractBodyInfo(Node node, JobEnvelope source) {
     switch (node.getNodeType()) {
       case Node.DOCUMENT_FRAGMENT_NODE:
         for (Node child : Nodes.childrenOf(node)) {
-          extractBodyInfo(child, base, jobs);
+          extractBodyInfo(child, source);
         }
         break;
       case Node.ELEMENT_NODE:
@@ -299,7 +347,7 @@ public class RewriteHtmlStage implements Pipeline.Stage<Jobs> {
         ElKey elKey = ElKey.forElement(el);
         if (HTML.equals(elKey)) {
           for (Node child : Nodes.childrenOf(node)) {
-            extractBodyInfo(child, base, jobs);
+            extractBodyInfo(child, source);
           }
         } else if (BODY.equals(elKey)) {
           Attr classAttr = el.getAttributeNodeNS(
@@ -315,7 +363,8 @@ public class RewriteHtmlStage implements Pipeline.Stage<Jobs> {
                   jobs.getMessageQueue());
               HtmlAttributeRewriter.SanitizedAttr sanitized
                   = rw.sanitizeStringValue(HtmlAttributeRewriter.fromAttr(
-                      classAttr, htmlSchema.lookupAttribute(BODY_CLASS)));
+                      classAttr, htmlSchema.lookupAttribute(BODY_CLASS),
+                      source));
               if (sanitized.isSafe) {
                 FilePosition pos = Nodes.getFilePositionForValue(classAttr);
                 Expression e = sanitized.result;
@@ -326,7 +375,9 @@ public class RewriteHtmlStage implements Pipeline.Stage<Jobs> {
                         + "IMPORTS___.htmlEmitter___"
                         + "    ./*@synthetic*/addBodyClasses(@idents);",
                         "idents", e));
-                jobs.getJobs().add(JobEnvelope.of(Job.jsJob(s, base)));
+                jobs.getJobs().add(new JobEnvelope(
+                    null, htmlEnv.cacheKeys, ContentType.JS, false,
+                    Job.jsJob(s, htmlEnv.job.getBaseUri())));
               }
             }
           }

@@ -162,6 +162,7 @@ public abstract class BrowserTestCase extends CajaTestCase {
 
   /**
    * Do what should be done with the browser.
+   * @param pageName The tail of a URL.  Unused in this implementation
    */
   protected void driveBrowser(final WebDriver driver, final String pageName) {
     poll(20000, 200, new Check() {

@@ -123,6 +123,11 @@ public final class CajoledModule extends AbstractParseTreeNode
     return p != null ? (ArrayConstructor) p.getValueExpr() : null;
   }
 
+  public FunctionConstructor getInstantiateMethod() {
+    return (FunctionConstructor) ((ValueProperty)
+        getModuleBody().propertyWithName("instantiate")).getValueExpr();
+  }
+
   public final TokenConsumer makeRenderer(
       Appendable out, Callback<IOException> exHandler) {
     return new JsPrettyPrinter(new Concatenator(out, exHandler));

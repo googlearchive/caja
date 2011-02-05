@@ -259,9 +259,10 @@ public class HtmlCompiledPluginTest extends CajaTestCase {
       fail();
     } else {
       CajoledModule jsTree = compiler.getJavascript();
-      String staticHtml = Nodes.render(
-          compiler.getStaticHtml(), MarkupRenderMode.XML);
-      String js = render(jsTree);
+      Node htmlTree = compiler.getStaticHtml();
+      String staticHtml = htmlTree != null
+          ? Nodes.render(htmlTree, MarkupRenderMode.HTML) : "";
+      String js = jsTree != null ? render(jsTree) : "";
 
       Block valijaOrigNode = js(fromResource(
           "/com/google/caja/valija-cajita.js"));

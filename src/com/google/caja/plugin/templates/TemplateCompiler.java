@@ -18,14 +18,12 @@ import com.google.caja.lang.css.CssSchema;
 import com.google.caja.lang.html.HTML;
 import com.google.caja.lang.html.HtmlSchema;
 import com.google.caja.parser.ParseTreeNode;
-import com.google.caja.parser.css.CssTree;
 import com.google.caja.parser.html.AttribKey;
 import com.google.caja.parser.html.ElKey;
 import com.google.caja.parser.html.Nodes;
-import com.google.caja.parser.js.Block;
-import com.google.caja.parser.js.Statement;
 import com.google.caja.parser.js.UncajoledModule;
-import com.google.caja.plugin.ExtractedHtmlContent;
+import com.google.caja.plugin.JobEnvelope;
+import com.google.caja.plugin.Placeholder;
 import com.google.caja.plugin.PluginMeta;
 import com.google.caja.plugin.stages.EmbeddedContent;
 import com.google.caja.plugin.stages.HtmlEmbeddedContentFinder;
@@ -36,7 +34,6 @@ import com.google.caja.util.Lists;
 import com.google.caja.util.Maps;
 import com.google.caja.util.Pair;
 
-import java.net.URI;
 import java.util.List;
 import java.util.Map;
 
@@ -53,15 +50,15 @@ import org.w3c.dom.Text;
  * executes inline scripts.
  *
  * <p>
- * Requires that CSS be rewritten, that inline scripts have been
- * {@link ExtractedHtmlContent extracted}, and that the output JS be run through
+ * Requires that CSS be rewritten, that inline scripts have been replaced with
+ * {@link Placeholder placeholders}, and that the output JS be run through
  * the CajitaRewriter.
  *
  * @author mikesamuel@gmail.com
  */
 public class TemplateCompiler {
-  private final List<Pair<Node, URI>> ihtmlRoots;
-  private final List<CssTree.StyleSheet> safeStylesheets;
+  private final List<IhtmlRoot> ihtmlRoots;
+  private final List<ValidatedStylesheet> validatedStylesheets;
   private final HtmlSchema htmlSchema;
   private final PluginMeta meta;
   private final MessageContext mc;
@@ -90,26 +87,44 @@ public class TemplateCompiler {
   private final Map<Node, ParseTreeNode> scriptsPerNode
       = Maps.newIdentityHashMap();
 
+  /**
+   * Maps placeholder IDs to JS programs.
+   *
+   * We extract scripts early on and turn them into separate jobs, so that we
+   * can use cached results for scripts even when the non-script details of the
+   * containing HTML page changes.
+   */
+  private final Map<String, ScriptPlaceholder> scriptsPerPlaceholder
+      = Maps.newHashMap();
+
   private final Map<Attr, EmbeddedContent> embeddedContent
       = Maps.newIdentityHashMap();
 
   /**
    * @param ihtmlRoots roots of trees to process and the baseURI used to resolve
    *     URIs in those nodes.
-   * @param safeStylesheets CSS style-sheets that have had unsafe
+   * @param validatedStylesheets CSS style-sheets that have had unsafe
    *     constructs removed and had rules rewritten.
+   * @param placeholderScripts placeholder IDs per unsanitized JS programs.
+   *     We extract scripts early on and turn them into separate jobs, so that
+   *     we can use cached results for scripts even when the non-script details
+   *     of the containing HTML page changes.
    * @param meta specifies how URLs and other attributes are rewritten.
    * @param cssSchema specifies how STYLE attributes are rewritten.
    * @param htmlSchema specifies how elements and attributes are handled.
    * @param mq receives messages about invalid attribute values.
    */
   public TemplateCompiler(
-      List<Pair<Node, URI>> ihtmlRoots,
-      List<? extends CssTree.StyleSheet> safeStylesheets,
+      List<? extends IhtmlRoot> ihtmlRoots,
+      List<? extends ValidatedStylesheet> validatedStylesheets,
+      List<? extends ScriptPlaceholder> placeholderScripts,
       CssSchema cssSchema, HtmlSchema htmlSchema,
       PluginMeta meta, MessageContext mc, MessageQueue mq) {
     this.ihtmlRoots = Lists.newArrayList(ihtmlRoots);
-    this.safeStylesheets = Lists.newArrayList(safeStylesheets);
+    this.validatedStylesheets = Lists.newArrayList(validatedStylesheets);
+    for (ScriptPlaceholder ph : placeholderScripts) {
+      scriptsPerPlaceholder.put(ph.source.placeholderId, ph);
+    }
     this.htmlSchema = htmlSchema;
     this.meta = meta;
     this.mc = mc;
@@ -124,28 +139,29 @@ public class TemplateCompiler {
    */
   private void inspect() {
     if (!mq.hasMessageAtLevel(MessageLevel.FATAL_ERROR)) {
-      for (Pair<Node, URI> ihtmlRoot : ihtmlRoots) {
+      for (IhtmlRoot ihtmlRoot : ihtmlRoots) {
         HtmlEmbeddedContentFinder finder = new HtmlEmbeddedContentFinder(
-            htmlSchema, ihtmlRoot.b, mq, mc);
-        for (EmbeddedContent c : finder.findEmbeddedContent(ihtmlRoot.a)) {
+            htmlSchema, ihtmlRoot.baseUri, mq, mc);
+        for (EmbeddedContent c : finder.findEmbeddedContent(ihtmlRoot.root)) {
           Node src = c.getSource();
           if (src instanceof Attr) { embeddedContent.put((Attr) src, c); }
         }
-        inspect(ihtmlRoot.a, ElKey.forHtmlElement("div"));
+        inspect(ihtmlRoot.source, ihtmlRoot.root, ElKey.forHtmlElement("div"));
       }
     }
   }
 
-  private void inspect(Node n, ElKey containingHtmlElement) {
+  private void inspect(
+      JobEnvelope source, Node n, ElKey containingHtmlElement) {
     switch (n.getNodeType()) {
       case Node.ELEMENT_NODE:
-        inspectElement((Element) n, containingHtmlElement);
+        inspectElement(source, (Element) n, containingHtmlElement);
         break;
       case Node.TEXT_NODE: case Node.CDATA_SECTION_NODE:
         inspectText((Text) n, containingHtmlElement);
         break;
       case Node.DOCUMENT_FRAGMENT_NODE:
-        inspectFragment((DocumentFragment) n, containingHtmlElement);
+        inspectFragment(source, (DocumentFragment) n, containingHtmlElement);
         break;
       default:
         // Since they don't show in the scriptsPerNode map, they won't appear in
@@ -159,13 +175,14 @@ public class TemplateCompiler {
    *     If the HTML element is contained inside a template construct then this
    *     name may differ from el's immediate parent.
    */
-  private void inspectElement(Element el, ElKey containingHtmlElement) {
+  private void inspectElement(
+      JobEnvelope source, Element el, ElKey containingHtmlElement) {
     ElKey elKey = ElKey.forElement(el);
 
     // Recurse early so that ihtml:dynamic elements have been parsed before we
     // process the attributes element list.
     for (Node child : Nodes.childrenOf(el)) {
-      inspect(child, elKey);
+      inspect(source, child, elKey);
     }
 
     // For each attribute allowed on this element type, ensure that
@@ -209,7 +226,7 @@ public class TemplateCompiler {
           el.setAttributeNodeNS(attr);
         }
         if (attr != null) {
-          inspectHtmlAttribute(attr, a);
+          inspectHtmlAttribute(source, attr, a);
         }
       }
     }
@@ -222,14 +239,14 @@ public class TemplateCompiler {
   }
 
   private void inspectFragment(
-      DocumentFragment f, ElKey containingHtmlElement) {
+      JobEnvelope source, DocumentFragment f, ElKey containingHtmlElement) {
     scriptsPerNode.put(f, null);
     for (Node child : Nodes.childrenOf(f)) {
       // We know that top level text nodes in a document fragment
       // are not significant if they are just newlines and indentation.
       // This decreases output size significantly.
       if (isWhitespaceOnlyTextNode(child)) { continue; }
-      inspect(child, containingHtmlElement);
+      inspect(source, child, containingHtmlElement);
     }
   }
   private static boolean isWhitespaceOnlyTextNode(Node child) {
@@ -245,11 +262,18 @@ public class TemplateCompiler {
    * The expression is null if the current value is fine, or a StringLiteral
    * if it can be statically rewritten.
    */
-  private void inspectHtmlAttribute(Attr attr, HTML.Attribute info) {
-    HtmlAttributeRewriter.SanitizedAttr r = aRewriter.sanitizeStringValue(
-        HtmlAttributeRewriter.fromAttr(attr, info));
-    if (r.isSafe) {
-      scriptsPerNode.put(attr, r.result);
+  private void inspectHtmlAttribute(
+      JobEnvelope source, Attr attr, HTML.Attribute info) {
+    if (Placeholder.ID_ATTR.is(attr)
+        && scriptsPerPlaceholder.containsKey(attr.getValue())) {
+      scriptsPerNode.put(attr, null);
+    } else {
+      HtmlAttributeRewriter.SanitizedAttr r = aRewriter.sanitizeStringValue(
+          HtmlAttributeRewriter.fromAttr(attr, info, source));
+      if (r.isSafe) {
+        scriptsPerNode.put(attr, r.result);
+      }
+      // Otherwise the SanitizeHtmlStage should have emitted a warning.
     }
   }
 
@@ -258,7 +282,7 @@ public class TemplateCompiler {
    * If there are embedded script elements, then these will be removed, and
    * nodes may have synthetic IDs added so that the generated code can split
    * them into the elements present when each script is executed.
-   *
+   * <p>
    * On introspection, the code will find that the output DOM is missing the
    * SCRIPT elements originally on the page. We consider this a known observable
    * fact of our transformation. If we wish to hid that as well, we could
@@ -267,22 +291,22 @@ public class TemplateCompiler {
    * nodes would *still* not be identical to the original.
    *
    * @param doc a DOM {@link Document} object to be used as a factory for DOM
-   * nodes; it is not processed or transformed in any way.
+   *     nodes; it is not processed or transformed in any way.
    */
-  public Pair<Node, List<Block>> getSafeHtml(Document doc) {
+  public Pair<List<SafeHtmlChunk>, List<SafeJsChunk>> getSafeHtml(
+      Document doc) {
     // Inspect the document.
     inspect();
 
     // Compile CSS to HTML when appropriate or to JS where not.
     // It always ends up at the top either way.
-    Pair<Statement, Element> css = new SafeCssMaker(
-        safeStylesheets, doc).make();
+    List<SafeStylesheet> css = new SafeCssMaker(
+        validatedStylesheets, doc).make();
 
     // Emit safe HTML with JS which attaches dynamic attributes.
-    List<Node> roots = Lists.newArrayList();
-    for (Pair<Node, URI> root : ihtmlRoots) { roots.add(root.a); }
     SafeHtmlMaker htmlMaker = new SafeHtmlMaker(
-        meta, mc, doc, scriptsPerNode, roots, aRewriter.getHandlers());
+        meta, mc, doc, scriptsPerNode, scriptsPerPlaceholder,
+        ihtmlRoots, aRewriter.getHandlers());
     return htmlMaker.make(css);
   }
 }

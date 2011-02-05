@@ -20,6 +20,7 @@ import com.google.caja.lang.html.HtmlSchema;
 import com.google.caja.parser.html.AttribKey;
 import com.google.caja.parser.html.ElKey;
 import com.google.caja.parser.html.Nodes;
+import com.google.caja.plugin.Placeholder;
 import com.google.caja.plugin.PluginMessageType;
 import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessageLevel;
@@ -145,12 +146,14 @@ public final class TemplateSanitizer {
     AttribKey attrKey = AttribKey.forAttribute(elKey, attrib);
     HTML.Attribute a = schema.lookupAttribute(attrKey);
     if (null == a) {
-      if (!ignore) {
-        mq.getMessages().add(new Message(
-            PluginMessageType.UNKNOWN_ATTRIBUTE, MessageLevel.WARNING,
-            Nodes.getFilePositionFor(attrib), attrKey, elKey));
+      if (!Placeholder.ID_ATTR.is(attrib)) {
+        if (!ignore) {
+          mq.getMessages().add(new Message(
+              PluginMessageType.UNKNOWN_ATTRIBUTE, MessageLevel.WARNING,
+              Nodes.getFilePositionFor(attrib), attrKey, elKey));
+        }
+        valid &= removeBadAttribute(el, attrKey);
       }
-      valid &= removeBadAttribute(el, attrKey);
     } else if (!schema.isAttributeAllowed(attrKey)) {
       if (!ignore) {
         mq.addMessage(

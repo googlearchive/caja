@@ -100,7 +100,6 @@ public class CajolingService {
    * @return the output content, or {@code null} if a serious error occurred
    *     that prevented the content from being generated.
    */
-  @SuppressWarnings("deprecation")
   public FetchedData handle(FetchedData inputFetchedData,
                             ContentHandlerArgs args,
                             MessageQueue mq) {

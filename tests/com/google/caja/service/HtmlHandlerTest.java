@@ -133,8 +133,8 @@ public class HtmlHandlerTest extends ServiceTestCase {
     JSONObject json = (JSONObject) result;
 
     // Check html generation is correct
-    assertEquals("<p>hi<span id=\"id_1___\"></span></p><p>bye</p>",
-        (String)json.get("html"));
+    assertEquals("<p>hi<span id=\"id_2___\"></span></p><p>bye</p>",
+                 (String) json.get("html"));
     assertEquals("{"
         + "___.loadModule({"
         + "'instantiate':function(___,IMPORTS___){"
@@ -144,7 +144,7 @@ public class HtmlHandlerTest extends ServiceTestCase {
                 +	"moduleResult___=___.NO_RESULT;"
                 + "{"
                   +	"emitter___=IMPORTS___.htmlEmitter___;"
-                  + "emitter___.discard(emitter___.attach('id_1___'))"
+                  + "emitter___.discard(emitter___.attach('id_2___'))"
                 + "}"
                 + "return moduleResult___"
               + "},"

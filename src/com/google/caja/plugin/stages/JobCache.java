@@ -51,7 +51,7 @@ public abstract class JobCache {
      * <p>
      * Implementation note: implementations may elect to raise a runtime
      * exception if other was not produced by the same {@code JobCache}
-     * instance <b>and</b> other is not {@link JobCache#none none} but must
+     * instance <b>and</b> other is not {@link JobCache#none none}, but must
      * support none by returning {@code this} or an equal instance.
      */
     Keys union(Keys other);

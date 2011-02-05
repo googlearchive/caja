@@ -42,7 +42,6 @@ public class OptimizeJavascriptStageTest extends PipelineStageTestCase {
             "}"));
   }
 
-/*
   public final void testLoopCounter() throws Exception {
     assertPipeline(
         job(ContentType.JS,
@@ -89,8 +88,6 @@ public class OptimizeJavascriptStageTest extends PipelineStageTestCase {
                 "  return moduleResult___;",
                 "}")));
   }
-
-*/
 
   @Override
   protected boolean runPipeline(Jobs jobs) {
