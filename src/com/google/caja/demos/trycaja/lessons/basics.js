@@ -113,14 +113,16 @@ mypages.push({
             + "<li><code>var capitalsMap = {"
             + "\"fiji\" : \"suva\", \"new zealand\" : \"wellington\" };</code>"
             + "</ul></p>"
-            + "<p>You can access the value of a property by using the keys either"
-            + " with the dot (<code>.</code>) notation or using brackets"
-            + " (<code>[]</code>) like this:<ul>"
-            + " <li><code>var myMap = { \"a\": 1, \"b\" : 2 }; myMap.a;</code> or"
-            + " <li><code>var myMap = { \"a\": 1, \"b\" : 2 }; myMap['a'];</code>"
+            + "<p>Once you've defined such a map, you can access the value of"
+            + " a property using the keys either with the dot (<code>.</code>)"
+            + " notation like this: <ul>"
+            + "<li><code>capitalsMap.fiji;</code></li>"
+            + "</ul>or using brackets (<code>[]</code>) like this:<ul>"
+            + " <li><code>capitalsMap['new zealand'];</code></li>"
             + "</ul>";
       },
       trigger: function (result) {
+        alert(result);
         return "number" === typeof result;
       }
     },

@@ -25,16 +25,17 @@
 
   $(document).ready(function(){
       $('.reset-btn').click(function(){
-          if (confirm("Are you sure you want to reset? " +
-              "You will lose your current state.")) {
-              controller.reset();
-              tutorialGuide.animate({opacity:0,height:0},'fast',function(){
-                  tutorialGuide.html(initalGuide);
-                  tutorialGuide.css({height:'auto'});
-                  tutorialGuide.animate({opacity:1},'fast');
-              });
-              makeGuidSamplesClickable();
-          }
+        if (confirm("Are you sure you want to reset? " +
+                    "You will lose your current state.")) {
+          controller.reset();
+          caja___.reset();
+          tutorialGuide.animate({opacity:0,height:0},'fast',function(){
+              tutorialGuide.html(initalGuide);
+              tutorialGuide.css({height:'auto'});
+              tutorialGuide.animate({opacity:1},'fast');
+          });
+          makeGuidSamplesClickable();
+        }
       });
 
       ////////////////////////////////////////////////////////////////////////
@@ -55,7 +56,7 @@
       }
 
       function cajole(line, callback) {
-        jsonp("http://caja.appspot.com/cajole?"
+        jsonp("/cajole?"
               + "input-mime-type=text/javascript&"
               + "callback=handleJSON&"
               + "alt=json-in-script&"
@@ -157,7 +158,7 @@
                                " result didn't make sense. Check your expression and try again.",
                                'prompt');
                       }
-              });
+                    }, true /*reuse imports*/);
           })
         },
         charInsertTrigger:function(){

@@ -46,9 +46,9 @@
       }
     }
   }
-  
-  function initJS(div, uriPolicy, policyJS, cajoled) {
-    var imports = ___.copy(___.whitelistAll(___.sharedImports));
+
+  function configureImports(div, uriPolicy, policyJS, grantAdditionalPowers) {
+    var imports =___.copy(___.whitelistAll(___.sharedImports));
     imports.onerror = ___.markFunc(function(x){
       parent.caja___.logFunc(x);
       return true;
@@ -72,7 +72,11 @@
     var tamings___ = [];
     eval(policyJS);
     grantAdditionalPowers(tamings___, ___, imports);
-    ___.getNewModuleHandler().setImports(___.whitelistAll(imports));
+    return ___.whitelistAll(imports);
+  }
+
+  function run(imports, cajoled) {
+    ___.getNewModuleHandler().setImports(imports);
     try {
       if (cajoled.js) {
         eval(cajoled.js);
@@ -90,9 +94,20 @@
     } catch (e) {
       return { success: false, exception: e };
     }
+  }
+  
+  function initJS(div, uriPolicy, policyJS, cajoled, grantAdditionalPowers) {
+    var imports = configureImports(div, uriPolicy, policyJS,
+       grantAdditionalPowers);
+    return run(imports, cajoled);
   };
   
-  parent.caja___.onReady(initJS, window.frameElement);
+  var es53api = {
+    initJS: initJS,
+    configureImports: configureImports,
+    run : run
+  };
+  parent.caja___.onReady(es53api, window.frameElement);
   </script>
 </body>
 </html>

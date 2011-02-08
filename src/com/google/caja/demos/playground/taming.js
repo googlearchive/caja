@@ -23,6 +23,7 @@
  * @provides caja___, tamings___
  */
 var tamings___ = tamings___ || [];
+var onReadyCallbacks___ = onReadyCallbacks___ || [];
 var caja___ = (function () {
   var cajaDomSuffix = 'g___';
   var grantAdditionalPowers = function(___, imports) {
@@ -67,29 +68,36 @@ var caja___ = (function () {
     eval(js);
   }
 
-  var cajoled = {};
-  var policyJS = "";
-  var currentFrame = null;
-  var callback = null;
-  function enableES53(parent, policy, html, js, c, cache) {
+  var cachedImports;
+  function reset() {
+    cachedImports = undefined;
+  }
+
+  function enableES53(parent, policy, html, js, callback, cache) {
     configureHTML(parent, html);
     
     var hiddenDiv = document.getElementById("es53frames");
-    currentFrame = document.createElement('iframe');
+    var currentFrame = document.createElement('iframe');
     currentFrame.src = "/es53.html?rnd=" + Math.floor(Math.random() * 10000);
     currentFrame.id = "es53frame";
-    policyJS = policy;
-    cajoled = { js: js };
-    callback = c;
+
+    onReadyCallbacks___.push(function(api, childFrame) {
+        var result;
+        if (cache) {
+          if (!cachedImports) {
+            cachedImports = api.configureImports(
+              document.getElementById(id), uriPolicy, policy, grantAdditionalPowers);
+          }
+          result = api.run(cachedImports, {js : js});
+        } else {
+          result = api.initJS(document.getElementById(id), uriPolicy, policy,
+              {js : js}, grantAdditionalPowers);
+        }
+        if ('function' == typeof callback) {
+          callback(result);
+        }
+    });
     hiddenDiv.appendChild(currentFrame);
-  }
-  
-  function onReady(initJS, childFrame) {
-    var result = initJS(document.getElementById(id), uriPolicy, policyJS,
-        cajoled, grantAdditionalPowers);
-    if ('function' == typeof callback) {
-      callback(result);
-    }
   }
   
   function tearDownES53() {
@@ -108,8 +116,18 @@ var caja___ = (function () {
       enableCajita(parent, policy, html, js, callback, cache);
     }
   }
-  
+
+  function onReady(api, frameElement) {
+    var callback;
+    for (callback in onReadyCallbacks___) {
+      if (/___$/.test(callback)) { continue; }
+      onReadyCallbacks___[callback](api, frameElement);
+    }
+    onReadyCallbacks___ = [];
+  }
+
   return {
+    reset: reset,
     enable: enable,
     onReady: onReady,
     logFunc: function noOp() {}
