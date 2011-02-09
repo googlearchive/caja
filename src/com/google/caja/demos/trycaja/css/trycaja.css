@@ -15,12 +15,17 @@ a {
 .bgs2 { 
     background:url(../images/bgs2.png)
 }
+div.cajaContainer { 
+  vertical-align: top;
+  width: 570px;
+  height: 500px;
+  display: none;
+}
 div.page-wrap {
     width:800px; margin:10px auto;
 }
 div.primary-content {
-    width:600px;margin-left:100px;
-    float:left
+    width:600px;margin-left:100px; display:inline-block;
 }
 div.main-wrapper { 
 
@@ -76,11 +81,11 @@ div.dom-wrapper {
     margin-bottom:20px
 }
 div.dom-wrapper-top {
-    height:3px;background-position: -50px -48px; background-repeat: no-repeat;
+    height:5px;background-position: -50px -48px; background-repeat: no-repeat;
     font-size:0 /* IE6, go figure */
 }
 div.dom-wrapper-bottom {
-    height:3px;background-position: -50px -51px; background-repeat: no-repeat;
+    height:5px;background-position: -50px -51px; background-repeat: no-repeat;
     font-size:0 /* IE6, go figure */
 }
 div.dom-wrapper-borders {
@@ -126,7 +131,7 @@ div.console {
     cursor:text;
 }
 div.dom {
-    height:150px;
+    height:553px;
 }
 div.footer {
     line-height: 1.3em;

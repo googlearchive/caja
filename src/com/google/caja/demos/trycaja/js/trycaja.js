@@ -8,11 +8,10 @@
   function showDomita(report) {
     if (!cajaDisplayed) {
       cajaDisplayed = true;
-      document.getElementById('cajaDisplay').style.display = '';
-      document.getElementById('cajaDisplayContainer').style.display = '';
+      document.getElementById('cajaDisplayContainer').style.display = 'inline-block';
       // Extend page wrap to fit console and chat
-      $('.page-wrap').css({width:'1000px'});
-      $('.primary-content').css('margin-left',50);
+      $('.page-wrap').css({width:'1200px'});
+      $('.primary-content').css('margin-left', 0);
     }
     report();
   }
