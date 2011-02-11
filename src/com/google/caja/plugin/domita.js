@@ -287,7 +287,7 @@ domitaModules.TameXMLHttpRequest = function(
     // If the uriCallback rejects the URL, we throw an exception, but we do not
     // put the URI in the exception so as not to put the caller at risk of some
     // code in its stack sniffing the URI.
-    if (safeUri === void 0) { throw 'URI violates security policy'; }
+    if ("string" !== typeof safeUri) { throw 'URI violates security policy'; }
     switch (arguments.length) {
     case 2:
       this.async___ = true;

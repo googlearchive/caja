@@ -2302,6 +2302,18 @@ jsunitRegister('testXhrInstanceProps',
   pass('test-xhr-instance-props');
 });
 
+jsunitRegister('testXhrToDisallowedUrl',
+               function testXhrToDisallowedUrl() {
+  var xhr;
+
+  xhr = new window.XMLHttpRequest();
+  expectFailure(function() {
+      xhr.open('GET', 'badscheme://xhrTest.txt', false);
+      xhr.send();
+    }, 'xhr to disallowed url');
+  pass('test-xhr-to-disallowed-url');
+});
+
 jsunitRegister('testXhrSync',
                function testXhrSync() {
   var xhr;
