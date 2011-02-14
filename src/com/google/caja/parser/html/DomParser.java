@@ -26,6 +26,7 @@ import com.google.caja.lexer.TokenQueue;
 import com.google.caja.lexer.TokenQueue.Mark;
 import com.google.caja.lexer.TokenStream;
 import com.google.caja.reporting.Message;
+import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.MessageType;
@@ -39,8 +40,6 @@ import java.io.Reader;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
 import org.w3c.dom.Attr;
@@ -66,8 +65,6 @@ import org.w3c.dom.bootstrap.DOMImplementationRegistry;
  * @author mikesamuel@gmail.com
  */
 public class DomParser {
-  private static final Logger logger = Logger.getLogger(
-      DomParser.class.getName());
   private final TokenQueue<HtmlTokenType> tokens;
   private final boolean asXml;
   private final MessageQueue mq;
@@ -363,7 +360,27 @@ public class DomParser {
             ns = elNs = AbstractElementStack.unknownNamespace(
                 pos, ns, qname, mq);
           }
-          Element replacement = doc.createElementNS(elNs.uri, qname);
+
+          Element replacement;
+          try {
+            replacement = doc.createElementNS(elNs.uri, qname);
+          } catch (DOMException e) {
+            FilePosition pos = Nodes.getFilePositionFor(el);
+            mq.addMessage(MessageType.INVALID_TAG_NAME, MessageLevel.WARNING,
+                          FilePosition.startOf(pos),
+                          MessagePart.Factory.valueOf(qname));
+            if (!asXml) {
+              // Try creating a non namespaced element as most likely so will
+              // the browser.
+              // At this point, we can be sure that createElement will not fail
+              // because Html5ElementStack did not ignore this element.
+              replacement = doc.createElement(qname);
+            } else {
+              throw new ParseException(new Message(
+                  DomParserMessageType.IGNORING_TOKEN, pos,
+                  MessagePart.Factory.valueOf("'" + qname + "'")), e);
+            }
+          }
           el.getParentNode().replaceChild(replacement, el);
           for (Node child; (child = el.getFirstChild()) != null; ) {
             replacement.appendChild(child);
@@ -452,7 +469,6 @@ public class DomParser {
                       Nodes.getFilePositionFor(attr),
                       MessagePart.Factory.valueOf("'" + qname + "'"));
         el.removeAttributeNode(attr);
-        logger.log(Level.FINE, "Ignoring exception: ", e);
         return;
       }
       throw new ParseException(new Message(DomParserMessageType.IGNORING_TOKEN,

@@ -382,9 +382,15 @@ public class Html5ElementStack implements OpenElementStack {
         }
       }
     }
+
     ElementName elName = elNames.get(tagName);
     if (elName == null) {
       elName = ElementName.elementNameByString(tagName);
+      if (!checkElementNameIsValid(elName, start.pos)) {
+        // Bad element name, ignore.
+        return;
+      }
+
       // Store element names because the underlying tree builder compares them
       // using ==.
       elNames.put(tagName, elName);
@@ -609,6 +615,31 @@ public class Html5ElementStack implements OpenElementStack {
       logger.log(Level.FINE, "Ignoring DOMException in maybeCreateAttributeNs",
                  e);
       return null;
+    }
+  }
+
+  /**
+   * Checks that the element name is valid.
+   *
+   * @param elName Element name.
+   * @param pos The current file position.
+   * @return True if elName is a valid w3c element name, false otherwise.
+   */
+  public boolean checkElementNameIsValid(ElementName elName, FilePosition pos) {
+    if (!elName.custom) {
+      return true;
+    }
+
+    // Custom element. We should validate it.
+    try {
+      return doc.createElement(elName.name) != null;
+    } catch (DOMException e) {
+      // Ignore DOMException's like INVALID_CHARACTER_ERR since its an html
+      // document.
+      mq.addMessage(MessageType.INVALID_TAG_NAME, MessageLevel.WARNING,
+                    FilePosition.startOf(pos),
+                    MessagePart.Factory.valueOf(elName.name));
+      return false;
     }
   }
 

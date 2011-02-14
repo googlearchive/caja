@@ -3,11 +3,12 @@ package com.google.caja.parser.html;
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.HtmlTokenType;
 import com.google.caja.lexer.Token;
+import com.google.caja.reporting.MessageLevel;
+import com.google.caja.reporting.MessagePart;
+import com.google.caja.reporting.MessageType;
 import com.google.caja.reporting.SimpleMessageQueue;
+import com.google.caja.util.CajaTestCase;
 import com.google.caja.util.Lists;
-
-import junit.framework.TestCase;
-
 import org.w3c.dom.DOMImplementation;
 import org.w3c.dom.Document;
 import org.w3c.dom.DocumentType;
@@ -19,15 +20,28 @@ import java.util.List;
 /**
  * Tests for Html5ElementStack.
  */
-public class Html5ElementStackTest extends TestCase {
-  DOMImplementation domImpl;
+public class Html5ElementStackTest extends CajaTestCase {
+  Html5ElementStack stack;
 
   @Override
   public void setUp() throws Exception {
     super.setUp();
     DOMImplementationRegistry registry =
         DOMImplementationRegistry.newInstance();
-    domImpl = registry.getDOMImplementation("XML 1.0 Traversal 2.0");
+    DOMImplementation domImpl = registry.getDOMImplementation(
+        "XML 1.0 Traversal 2.0");
+
+    String qname = "html";
+    String systemId = "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd";
+    String publicId = "-//W3C//DTD XHTML 1.0 Transitional//EN";
+
+    DocumentType documentType = domImpl.createDocumentType(
+        qname, publicId, systemId);
+    Document doc = domImpl.createDocument(null, null, documentType);
+    mq = new SimpleMessageQueue();
+
+    stack = new Html5ElementStack(doc, false, mq);
+    stack.open(false);
   }
 
   // Helper method to create an attribute stub.
@@ -40,18 +54,6 @@ public class Html5ElementStackTest extends TestCase {
   }
 
   public final void testProcessTag() {
-    String qname = "html";
-    String systemId = "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd";
-    String publicId = "-//W3C//DTD XHTML 1.0 Transitional//EN";
-
-    DocumentType documentType = domImpl.createDocumentType(
-        qname, publicId, systemId);
-    Document doc = domImpl.createDocument(null, null, documentType);
-
-    SimpleMessageQueue mq = new SimpleMessageQueue();
-    Html5ElementStack stack = new Html5ElementStack(doc, false, mq);
-    stack.open(false);
-
     Token<HtmlTokenType> start = Token.instance(
         "<helloTag", HtmlTokenType.TAGBEGIN, FilePosition.UNKNOWN);
     Token<HtmlTokenType> end = Token.instance(
@@ -104,5 +106,22 @@ public class Html5ElementStackTest extends TestCase {
         AttributeNameFixup.fixupNameFromQname("data:attr")));
     assertEquals("value3", e.getAttribute(
         AttributeNameFixup.fixupNameFromQname("xmlns:buffalo")));
+  }
+
+  public final void testProcessTagMalformedTagName() {
+    Token<HtmlTokenType> start = Token.instance(
+        "<img.jpg\"", HtmlTokenType.TAGBEGIN, FilePosition.UNKNOWN);
+    Token<HtmlTokenType> end = Token.instance(
+        ">", HtmlTokenType.ATTRVALUE, FilePosition.UNKNOWN);
+    List<AttrStub> list = Lists.newArrayList();
+
+    stack.processTag(start, end, list);
+
+    assertEquals(1, mq.getMessages().size());
+    assertMessage(MessageType.INVALID_TAG_NAME, MessageLevel.WARNING,
+        FilePosition.UNKNOWN,
+        MessagePart.Factory.valueOf("img.jpg\""));
+
+    assertNull(stack.builderRootElement());
   }
 }

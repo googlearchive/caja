@@ -25,6 +25,8 @@ import com.google.caja.lexer.TokenQueue;
 import com.google.caja.reporting.DevNullMessageQueue;
 import com.google.caja.reporting.MarkupRenderMode;
 import com.google.caja.reporting.Message;
+import com.google.caja.reporting.MessageLevel;
+import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.MessageType;
 import com.google.caja.util.CajaTestCase;
@@ -262,6 +264,75 @@ public class DomParserTest extends CajaTestCase {
     assertEquals("value", elem.getAttribute("attr"));
     assertEquals("value2", elem.getAttribute("data:attr"));
     assertEquals("http://1.com", elem.getAttribute("xmlns:data"));
+  }
+
+  public final void testIllegalElementInBuilderStartTag() throws Exception {
+    String[] htmlInput = {
+        "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 1.0 Transitional//EN\"",
+        "\"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\">",
+        "<html><body>",
+        "<li><a href='url'>MY BOOK ON AMAZON<img.jpg\"><blah>hello</blah></a>",
+        "</body></html>" };
+    TokenQueue<HtmlTokenType> tq = tokenizeTestInput(
+        Join.join("\n", htmlInput), false, true);
+    DomParser parser = new DomParser(tq, false, mq);
+
+    Document doc = parser.parseDocument().getOwnerDocument();
+    assertEquals(1, mq.getMessages().size());
+    assertMessage(MessageType.INVALID_TAG_NAME, MessageLevel.WARNING);
+
+    Element elem = (Element) doc.getElementsByTagName("blah").item(0);
+    assertEquals("hello", elem.getTextContent());
+
+    String expected =
+        "<html><head></head><body>\n" +
+        "<li><a href=\"url\">MY BOOK ON AMAZON<blah>hello</blah></a>\n" +
+        "</li></body></html>";
+    String serialized = Nodes.render(doc);
+    assertEquals(expected, serialized);
+  }
+
+  // TODO(gagan): Refactor this test to use assertParsedHtml.
+  public final void testIllegalElementInFixup() throws Exception {
+    // Browsers like chrome and firefox do create elements like "a:b~", but
+    // it's not a valid w3c attribute name.
+    String[] htmlInput = {
+        "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 1.0 Transitional//EN\"",
+        "\"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\">",
+        "<html><body>",
+        "<a href='url1'>Deal?; Tracking the Oil> ",
+        "<Sect: blah News; Intl</a><BR>",
+        "<a:b~>helo helo <p>helloo</p></a:b~>",
+        "</body></html>" };
+    TokenQueue<HtmlTokenType> tq = tokenizeTestInput(
+        Join.join("\n", htmlInput), false, true);
+    DomParser parser = new DomParser(tq, false, mq);
+
+    Document doc = parser.parseDocument().getOwnerDocument();
+    assertEquals(8, mq.getMessages().size());
+
+    assertMessage(MessageType.INVALID_TAG_NAME, MessageLevel.WARNING,
+        FilePosition.instance(is, 6, 207, 0),
+        MessagePart.Factory.valueOf("a:b~"));
+    assertMessage(MessageType.INVALID_TAG_NAME, MessageLevel.WARNING,
+        FilePosition.instance(is, 6, 236, 0),
+        MessagePart.Factory.valueOf("a:b~"));
+    assertMessage(DomParserMessageType.GENERIC_SAX_ERROR, MessageLevel.LINT,
+        FilePosition.instance(is, 7, 244, 0, 7),
+        MessagePart.Factory.valueOf("End tag for 'body' seen but there were " +
+            "unclosed elements."));
+    assertMessage(MessageType.INVALID_TAG_NAME, MessageLevel.WARNING,
+        FilePosition.instance(is, 5, 176, 0),
+        MessagePart.Factory.valueOf("Sect:"));
+
+    Node sectNode = doc.getElementsByTagName("Sect:").item(0);
+    assertEquals("Sect:", sectNode.getNodeName());
+    assertEquals(1, sectNode.getAttributes().getLength());
+    assertNotNull(sectNode.getAttributes().getNamedItem("blah"));
+
+    // sectNode.outerHtml:
+    // <sect: blah="blah"><br />helo helo <p>helloo</p></sect:>
+    assertEquals(4, sectNode.getChildNodes().getLength());
   }
 
   public final void testParseDom() throws Exception {

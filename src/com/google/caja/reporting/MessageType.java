@@ -61,6 +61,7 @@ public enum MessageType implements MessageTypeInt {
   RESERVED_WORD_USED_AS_IDENTIFIER(
       "%s: Reserved word %s used as an identifier", MessageLevel.ERROR),
   INVALID_IDENTIFIER("%s: Malformed identifier %s", MessageLevel.ERROR),
+  INVALID_TAG_NAME("%s: Malformed tag name %s", MessageLevel.ERROR),
   UNEXPECTED_TOKEN("%s: Unexpected token %s", MessageLevel.ERROR),
   DUPLICATE_FORMAL_PARAM(
       "%s: Duplicate formal parameter %s", MessageLevel.ERROR),
