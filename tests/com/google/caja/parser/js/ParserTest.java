@@ -19,6 +19,7 @@ import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.Keyword;
 import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.lexer.ParseException;
+import com.google.caja.lexer.escaping.Escaping;
 import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.MutableParseTreeNode;
 import com.google.caja.parser.ParseTreeNode;
@@ -308,6 +309,42 @@ public class ParserTest extends CajaTestCase {
 
   public final void testNUL() throws Exception {
     assertEquals("'\\x00'", render(jsExpr(fromString("'\0'"))));
+  }
+  
+  private String expand(String template, String value) throws ParseException {
+    // Use string replace rather than quasis to avoid invoking the parser when
+    // creating tests for the parser
+    return template.replace("@@", value);
+  }
+
+  private String unicodeMunge(String k) throws IOException {
+    StringBuilder munged = new StringBuilder();
+    munged.append(k, 0, k.length()-1);
+    Escaping.unicodeEscape(k.charAt(k.length()-1), munged);
+    return munged.toString();
+  }
+  
+  public final void testUnicodeInKeywords() throws Exception {
+    String[] templates = {
+        "function @@ (a){}",
+        "function foo(@@) {}",
+        "function foo(a, @@) {}",
+        "function foo(a, b) { @@(){}; }",
+        "function foo(a, b) { @@: bar(){}; }"
+    };
+    for (Keyword k : Keyword.values()) {
+      for (String template : templates) {
+        String mungedKeyword = unicodeMunge(k.toString());
+        String candidate = expand(template, mungedKeyword);
+        try {
+          ParseTreeNode ptn = js(fromString(candidate));
+        } catch (Exception e) {
+          assertTrue(e instanceof ParseException);
+        }
+        assertMessage(true, MessageType.RESERVED_WORD_USED_AS_IDENTIFIER,
+            MessageLevel.ERROR);
+      }
+    }
   }
 
   public final void testRenderingOfMalformedRegexSafe() {

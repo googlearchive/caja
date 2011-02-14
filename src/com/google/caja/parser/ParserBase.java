@@ -58,6 +58,13 @@ public abstract class ParserBase {
     String s = t.text;
     switch (t.type) {
       case WORD:
+        if (!allowReservedWords) {
+          Keyword k = Keyword.fromString(decodeIdentifier(s));
+          if (null != k) {
+            mq.addMessage(MessageType.RESERVED_WORD_USED_AS_IDENTIFIER,
+                tq.currentPosition(), k);
+          }
+        }
         if (!isIdentifier(s)) {
           throw new ParseException(
               new Message(MessageType.INVALID_IDENTIFIER,

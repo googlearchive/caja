@@ -620,7 +620,7 @@ public class Escaping {
         .append("0123456789abcdef".charAt(ch & 0xf));
   }
 
-  static void unicodeEscape(char ch, Appendable out) throws IOException {
+  public static void unicodeEscape(char ch, Appendable out) throws IOException {
     out.append("\\u").append("0123456789abcdef".charAt((ch >> 12) & 0xf))
         .append("0123456789abcdef".charAt((ch >> 8) & 0xf))
         .append("0123456789abcdef".charAt((ch >> 4) & 0xf))
