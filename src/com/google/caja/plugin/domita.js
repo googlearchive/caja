@@ -1052,7 +1052,7 @@ var attachDocumentStub = (function () {
         case html4.atype.URI_FRAGMENT:
           value = String(value);
           if (value.charAt(0) === '#' && isValidId(value.substring(1))) {
-            return '#' + value + idSuffix;
+            return value + idSuffix;
           }
           return null;
         case html4.atype.STYLE:

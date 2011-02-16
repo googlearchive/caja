@@ -575,6 +575,10 @@ Static CommonJS Module</p>
 ></map
 ><img usemap="#foo" src="mappic.gif"></p>
 
+<p class="testcontainer" id="test-usemap-fragment">
+  <img src="mappic.gif">
+</p>
+
 <p class="testcontainer" id="test-inner-text">Hello, <b>World!</b></p>
 
 <p class="testToString" id="test-toString">Non-toxic toString</p>
@@ -3392,6 +3396,14 @@ jsunitRegister('testUsemap',
           'uri=(base)/'));
 
   pass('test-usemap');
+});
+
+jsunitRegister('testUsemapFragment',
+               function testUsemapFragment() {
+  var el = document.getElementById('test-usemap-fragment');
+  el.setAttribute('usemap', '#foo');
+  assertEquals('#foo', el.getAttribute('usemap'));
+  pass('test-usemap-fragment');
 });
 
 jsunitRegister('testInnerText',
