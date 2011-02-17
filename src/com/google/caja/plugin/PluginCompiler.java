@@ -89,6 +89,10 @@ public final class PluginCompiler {
 
   public void setGoals(Planner.PlanState s) { goals = s; }
 
+  public final JobCache getJobCache() { return jobCache; }
+
+  public void setJobCache(JobCache c) { jobCache = c; }
+
   public Jobs getJobs() { return jobs; }
 
   public void setCssSchema(CssSchema cssSchema) {

@@ -85,6 +85,10 @@ public final class Job {
     this.baseUri = baseUri;
   }
 
+  public Job clone() {
+    return new Job(root.clone(), type, baseUri);
+  }
+
   public ParseTreeNode getRoot() { return root; }
 
   /** Indicates the type of parse tree returned by {@link #getRoot}. */
