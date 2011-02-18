@@ -116,9 +116,6 @@ public final class Config {
       "The port on which cajoling service is run.",
       true);
 
-  private final Option VIEW = defineOption(
-      "v", "view", "Gadget view to render (default is 'canvas')", true);
-
   private final Option ID_CLASS = defineOption(
       "c",
       "id_class",
@@ -166,7 +163,6 @@ public final class Config {
   private URI htmlElementWhitelistUri;
   private URI baseUri;
   private File fetcherBase;
-  private String gadgetView;
   private SourceRenderMode renderer;
   private Set<String> fUris;
   private Set<String> lUris;
@@ -218,8 +214,6 @@ public final class Config {
         whitelist(htmlElementWhitelistUri, mq),
         whitelist(htmlAttributeWhitelistUri, mq));
   }
-
-  public String getGadgetView() { return gadgetView; }
 
   public String getIdClass() { return idClass; }
 
@@ -340,7 +334,6 @@ public final class Config {
         fetcherBase = new File(baseUri).getParentFile();
       }
 
-      gadgetView = cl.getOptionValue(VIEW.getOpt(), "canvas");
       idClass = cl.getOptionValue(ID_CLASS.getOpt(), null);
 
       String servicePortString;

@@ -454,7 +454,7 @@
            '-xyz___',
            {
              rewrite:
-                 function (uri, mimeType) {
+                 function (uri, uriEffect, loaderType, hints) {
                    // TODO(mikesamuel): write this properly.
                    // Whitelisting via regexp is not correct.
                    var m = uri.match(
@@ -464,8 +464,12 @@
                      return uri;
                    }
                    if (!/^https?:\/\//i.test(uri)) { return null; }
-                   return 'http://gadget-proxy/?url=' + encodeURIComponent(uri)
-                       + '&mimeType=' + encodeURIComponent(mimeType);
+                   if (hints && hints.MIME_TYPE) {
+                     return 'http://gadget-proxy/?url=' + encodeURIComponent(uri)
+                         + '&input-mime-type=' + encodeURIComponent(String(hints.MIME_TYPE));
+                   } else {
+                     return 'http://gadget-proxy/?url=' + encodeURIComponent(uri);
+                   }
                  }
            },
            testImports,

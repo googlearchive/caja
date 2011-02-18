@@ -35,12 +35,14 @@ var caja___ = (function () {
   }
 
   var uriPolicy = {
-      rewrite: function (uri, mimeType) {
+      rewrite: function (uri, uriEffect, loaderType, hints) {
         if (!/^https?:\/\//i.test(uri)) { return void 0; }
-        if (/^image[\/]/.test(mimeType)) { return uri; }
-        return ('http://caja.appspot.com/cajole?url='
-            + encodeURIComponent(uri)
-            + '&input-mime-type=' + encodeURIComponent(mimeType));
+        if (uriEffect === html4.ueffect.NEW_DOCUMENT ||
+            (uriEffect === html4.ueffect.SAME_DOCUMENT &&
+             loaderType === html4.ltype.SANDBOXED)) {
+          return uri;
+        }
+        return null;
       }
   };
 

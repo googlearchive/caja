@@ -283,7 +283,8 @@ domitaModules.TameXMLHttpRequest = function(
     method = String(method);
     // The XHR interface does not tell us the MIME type in advance, so we
     // must assume the broadest possible.
-    var safeUri = uriCallback.rewrite(String(URL), "*/*");
+    var safeUri = uriCallback.rewrite(
+        String(URL), html4.ueffects.SAME_DOCUMENT, html4.ltypes.SANDBOXED);
     // If the uriCallback rejects the URL, we throw an exception, but we do not
     // put the URI in the exception so as not to put the caller at risk of some
     // code in its stack sniffing the URI.
@@ -436,8 +437,13 @@ domitaModules.CssPropertiesCollection =
  * @param {string} idSuffix a string suffix appended to all node IDs.
  *     It should begin with "-" and end with "___".
  * @param {Object} uriCallback an object like <pre>{
- *       rewrite: function (uri, mimeType) { return safeUri }
+ *       rewrite: function (uri, uriEffect, loaderType, hints) { return safeUri }
  *     }</pre>.
+ *       * uri: the uri to be rewritten
+ *       * uriEffect: the effect that allowing a URI to load has (@see UriEffect.java).
+ *       * loaderType: type of loader that would load the URI or the rewritten version.
+ *       * hints: record that describes the context in which the URI appears.  If a hint is not 
+ *         present it should not be relied upon.
  *     The rewrite function should be idempotent to allow rewritten HTML
  *     to be reinjected.
  * @param {Object} imports the gadget's global scope.
@@ -1046,9 +1052,9 @@ var attachDocumentStub = (function () {
         case html4.atype.URI:
           value = String(value);
           if (!uriCallback) { return null; }
-          // TODO(mikesamuel): determine mime type properly.
           return uriCallback.rewrite(
-              value, mimeTypeForAttr(tagName, attribName)) || null;
+              value, getUriEffect(tagName, attribName), getLoaderType(tagName, attribName),
+              { "XML_ATTR": attribName}) || null;
         case html4.atype.URI_FRAGMENT:
           value = String(value);
           if (value.charAt(0) === '#' && isValidId(value.substring(1))) {
@@ -2189,17 +2195,26 @@ var attachDocumentStub = (function () {
       return '#comment';
     });
 
-    function getAttributeType(tagName, attribName) {
+    function lookupAttribute(map, tagName, attribName) {
       var attribKey;
       attribKey = tagName + '::' + attribName;
-      if (html4.ATTRIBS.hasOwnProperty(attribKey)) {
-        return html4.ATTRIBS[attribKey];
+      if (map.hasOwnProperty(attribKey)) {
+        return map[attribKey];
       }
       attribKey = '*::' + attribName;
-      if (html4.ATTRIBS.hasOwnProperty(attribKey)) {
-        return html4.ATTRIBS[attribKey];
+      if (map.hasOwnProperty(attribKey)) {
+        return map[attribKey];
       }
       return void 0;
+    }
+    function getAttributeType(tagName, attribName) {
+      return lookupAttribute(html4.ATTRIBS, tagName, attribName);
+    }
+    function getLoaderType(tagName, attribName) {
+      return lookupAttribute(html4.LOADERTYPES, tagName, attribName);
+    }
+    function getUriEffect(tagName, attribName) {
+      return lookupAttribute(html4.URIEFFECTS, tagName, attribName);
     }
 
     /**
@@ -4073,7 +4088,9 @@ var attachDocumentStub = (function () {
           function (_, url) {
             var decodedUrl = decodeCssString(url);
             var rewrittenUrl = uriCallback
-                ? uriCallback.rewrite(decodedUrl, 'image/*')
+                ? uriCallback.rewrite(
+                    decodedUrl, html4.ueffects.SAME_DOCUMENT, html4.ltypes.SANDBOXED,
+                    { "CSS_PROP": cssPropertyName})
                 : null;
             if (!rewrittenUrl) {
               rewrittenUrl = 'about:blank';

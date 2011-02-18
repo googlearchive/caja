@@ -28,11 +28,13 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.Map.Entry;
 
 import com.google.caja.SomethingWidgyHappenedError;
 import com.google.caja.config.AllowedFileResolver;
 import com.google.caja.config.ConfigUtil;
 import com.google.caja.config.ImportResolver;
+import com.google.caja.lang.html.HTML.Attribute;
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.HtmlTextEscapingMode;
 import com.google.caja.lexer.InputSource;
@@ -43,10 +45,14 @@ import com.google.caja.parser.html.ElKey;
 import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.Expression;
 import com.google.caja.parser.js.ExpressionStmt;
+import com.google.caja.parser.js.Identifier;
 import com.google.caja.parser.js.IntegerLiteral;
+import com.google.caja.parser.js.Reference;
 import com.google.caja.parser.js.Statement;
 import com.google.caja.parser.js.StringLiteral;
 import com.google.caja.parser.quasiliteral.QuasiBuilder;
+import com.google.caja.plugin.LoaderType;
+import com.google.caja.plugin.UriEffect;
 import com.google.caja.reporting.EchoingMessageQueue;
 import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessageQueue;
@@ -54,6 +60,8 @@ import com.google.caja.reporting.RenderContext;
 import com.google.caja.reporting.SimpleMessageQueue;
 import com.google.caja.tools.BuildCommand;
 import com.google.caja.util.Charsets;
+import com.google.caja.util.Function;
+import com.google.caja.util.Lists;
 import com.google.caja.util.Maps;
 
 /**
@@ -89,30 +97,50 @@ public final class HtmlDefinitions {
 
   private static final AttribKey SCRIPT_SRC = AttribKey.forHtmlAttrib(
       ElKey.forHtmlElement("script"), "src");
-  public static Block generateJavascriptDefinitions(HtmlSchema schema) {
+  
+  private static <U> ExpressionStmt mapFromEnum(
+      Iterable<U> entries, String key,
+      Function<U, String> keyMaker, Function<U, Integer> valueMaker) {
     FilePosition unk = FilePosition.UNKNOWN;
+    List<StringLiteral> keys = Lists.newArrayList();
+    List<IntegerLiteral> values = Lists.newArrayList();
+    for (U e : entries) {
+      keys.add(StringLiteral.valueOf(unk, keyMaker.apply(e)));
+      values.add(new IntegerLiteral(unk, valueMaker.apply(e)));
+    }
+    return new ExpressionStmt(unk,
+        (Expression) QuasiBuilder.substV(
+            "html4.@i = { @k*: @v* };",
+            "i", new Reference(new Identifier(unk, key)),
+            "k", new ParseTreeNodeContainer(keys),
+            "v", new ParseTreeNodeContainer(values)));
+  }
+  
+  public static Block generateJavascriptDefinitions(HtmlSchema schema) {
+    final FilePosition unk = FilePosition.UNKNOWN;
     Map<AttribKey, HTML.Attribute.Type> atypes = attributeTypes(schema);
     Map<ElKey, EnumSet<EFlag>> eflags = elementFlags(schema);
+    Map<AttribKey, UriEffect> uriEffects = uriEffects(schema);
+    Map<AttribKey, LoaderType> ltypes = loaderTypes(schema);
 
     Block definitions = new Block();
     definitions.appendChild(QuasiBuilder.substV("var html4 = {};"));
 
-    EnumSet<HTML.Attribute.Type> atypesUsed
-        = EnumSet.noneOf(HTML.Attribute.Type.class);
-    atypesUsed.addAll(atypes.values());
-    {
-      List<StringLiteral> keys = new ArrayList<StringLiteral>();
-      List<IntegerLiteral> values = new ArrayList<IntegerLiteral>();
-      for (HTML.Attribute.Type t : atypesUsed) {
-        keys.add(StringLiteral.valueOf(unk, t.name()));
-        values.add(new IntegerLiteral(unk, A_TYPE_MAP.get(t)));
-      }
-      definitions.appendChild(new ExpressionStmt(unk, (Expression)
-          QuasiBuilder.substV(
-              "html4.atype = { @k*: @v* };",
-              "k", new ParseTreeNodeContainer(keys),
-              "v", new ParseTreeNodeContainer(values))));
-    }
+    definitions.appendChild(mapFromEnum(
+        EnumSet.allOf(HTML.Attribute.Type.class),
+        "atype",
+        new Function<HTML.Attribute.Type, String>() {
+          public String apply(HTML.Attribute.Type f) {
+            return f.name();
+          }
+        },
+        new Function<HTML.Attribute.Type, Integer>() {
+          public Integer apply(HTML.Attribute.Type f) {
+            return A_TYPE_MAP.get(f);
+          }
+        })
+    );
+    
     {
       List<StringLiteral> keys = new ArrayList<StringLiteral>();
       List<IntegerLiteral> values = new ArrayList<IntegerLiteral>();
@@ -132,22 +160,22 @@ public final class HtmlDefinitions {
               "k", new ParseTreeNodeContainer(keys),
               "v", new ParseTreeNodeContainer(values))));
     }
+    
+    definitions.appendChild(mapFromEnum(
+        EnumSet.allOf(EFlag.class),
+        "eflags",
+        new Function<EFlag, String>() {
+          public String apply(EFlag f) {
+            return f.name();
+          }
+        },
+        new Function<EFlag, Integer>() {
+          public Integer apply(EFlag f) {
+            return f.bitMask;
+          }
+        })
+    );
 
-    EnumSet<EFlag> eflagsUsed = EnumSet.noneOf(EFlag.class);
-    for (EnumSet<EFlag> flags : eflags.values()) { eflagsUsed.addAll(flags); }
-    {
-      List<StringLiteral> keys = new ArrayList<StringLiteral>();
-      List<IntegerLiteral> values = new ArrayList<IntegerLiteral>();
-      for (EFlag f : eflagsUsed) {
-        keys.add(StringLiteral.valueOf(unk, f.name()));
-        values.add(new IntegerLiteral(unk, f.bitMask));
-      }
-      definitions.appendChild(new ExpressionStmt(unk, (Expression)
-          QuasiBuilder.substV(
-              "html4.eflags = { @k*: @v* };",
-              "k", new ParseTreeNodeContainer(keys),
-              "v", new ParseTreeNodeContainer(values))));
-    }
     {
       List<StringLiteral> keys = new ArrayList<StringLiteral>();
       List<IntegerLiteral> values = new ArrayList<IntegerLiteral>();
@@ -164,6 +192,66 @@ public final class HtmlDefinitions {
               "k", new ParseTreeNodeContainer(keys),
               "v", new ParseTreeNodeContainer(values))));
     }
+
+    definitions.appendChild(mapFromEnum(
+        EnumSet.allOf(UriEffect.class),
+        "ueffects",
+        new Function<UriEffect, String>() {
+          public String apply(UriEffect f) {
+            return f.name();
+          }
+        },
+        new Function<UriEffect, Integer>() {
+          public Integer apply(UriEffect f) {
+            return A_UEFFECT_MAP.get(f);
+          }
+        })
+    );
+
+    definitions.appendChild(mapFromEnum(
+        uriEffects.entrySet(),
+        "URIEFFECTS",
+        new Function<Entry<AttribKey, UriEffect>, String>() {
+          public String apply(Entry<AttribKey, UriEffect> f) {
+            return f.getKey().toString();
+          }
+        },
+        new Function<Entry<AttribKey, UriEffect>, Integer>() {
+          public Integer apply(Entry<AttribKey, UriEffect> f) {
+            return A_UEFFECT_MAP.get(f.getValue());
+          }
+        })
+    );
+
+    definitions.appendChild(mapFromEnum(
+        EnumSet.allOf(LoaderType.class),
+        "ltypes",
+        new Function<LoaderType, String>() {
+          public String apply(LoaderType f) {
+            return f.name();
+          }
+        },
+        new Function<LoaderType, Integer>() {
+          public Integer apply(LoaderType f) {
+            return L_TYPE_MAP.get(f);
+          }
+        })
+    );
+
+    definitions.appendChild(mapFromEnum(
+        ltypes.entrySet(),
+        "LOADERTYPES",
+        new Function<Entry<AttribKey, LoaderType>, String>() {
+          public String apply(Entry<AttribKey, LoaderType> f) {
+            return f.getKey().toString();
+          }
+        },
+        new Function<Entry<AttribKey, LoaderType>, Integer>() {
+          public Integer apply(Entry<AttribKey, LoaderType> f) {
+            return L_TYPE_MAP.get(f.getValue());
+          }
+        })
+    );
 
     return definitions;
   }
@@ -195,8 +283,52 @@ public final class HtmlDefinitions {
     }
   }
 
+  /** Maps urieffects to integers for use in the JavaScript output. */
+  private static final Map<UriEffect, Integer> A_UEFFECT_MAP
+      = new EnumMap<UriEffect, Integer>(UriEffect.class);
+  static {
+    // Under no circumstances should this be changed to use Enum.ordinal().
+    // This type to integer mapping must stay the same, or version skew
+    // will mean that the HTML definitions JavaScript can only be used with
+    // the same version of the cajoler that cajoled the gadget.
+    A_UEFFECT_MAP.put(UriEffect.NOT_LOADED, 0);
+    A_UEFFECT_MAP.put(UriEffect.SAME_DOCUMENT, 1);
+    A_UEFFECT_MAP.put(UriEffect.NEW_DOCUMENT, 2);
+    for (UriEffect u : UriEffect.values()) {
+      if (!A_UEFFECT_MAP.containsKey(u)) {
+        throw new IllegalStateException("Not all UriEffects mapped");
+      }
+    }
+  }
+
+  /** Maps attribute types to integers for use in the JavaScript output. */
+  private static final Map<LoaderType, Integer> L_TYPE_MAP
+      = new EnumMap<LoaderType, Integer>(LoaderType.class);
+  static {
+    // Under no circumstances should this be changed to use Enum.ordinal().
+    // This type to integer mapping must stay the same, or version skew
+    // will mean that the HTML definitions JavaScript can only be used with
+    // the same version of the cajoler that cajoled the gadget.
+    L_TYPE_MAP.put(LoaderType.DATA, 0);
+    L_TYPE_MAP.put(LoaderType.SANDBOXED, 1);
+    L_TYPE_MAP.put(LoaderType.UNSANDBOXED, 2);
+    for (LoaderType t : LoaderType.values()) {
+      if (!L_TYPE_MAP.containsKey(t)) {
+        throw new IllegalStateException("Not all Loader Types mapped");
+      }
+    }
+  }
+
   public static int getJavascriptValueForAType(HTML.Attribute.Type atype) {
     return A_TYPE_MAP.get(atype);
+  }
+
+  public static int getJavascriptValueForUEffect(UriEffect uEffect) {
+    return A_UEFFECT_MAP.get(uEffect);
+  }
+
+  public static int getJavascriptValueForLType(LoaderType ltype) {
+    return L_TYPE_MAP.get(ltype);
   }
 
   private static Map<AttribKey, HTML.Attribute.Type> attributeTypes(
@@ -210,6 +342,43 @@ public final class HtmlDefinitions {
       }
     }
     return attributeFlags;
+  }
+  
+  private interface SchemaExtractor<Result> { Result extract(HTML.Attribute attr); }
+  
+  private static <A> Map<AttribKey, A> deriveMapFromSchema(
+      HtmlSchema schema, SchemaExtractor<A> extractor) {
+    Map<AttribKey, A> result = Maps.newTreeMap();
+    for (AttribKey attribKey : schema.getAttributeNames()) {
+      if (schema.isAttributeAllowed(attribKey)) {
+        HTML.Attribute a = schema.lookupAttribute(attribKey);
+        A type = extractor.extract(a);
+        if (null != type) {
+          result.put(attribKey, type);
+        }
+      }
+    }
+    return result;
+  }
+
+  private static Map<AttribKey, UriEffect> uriEffects(
+      HtmlSchema schema) {
+    return deriveMapFromSchema(schema, new SchemaExtractor<UriEffect>() {
+      @Override
+      public UriEffect extract(Attribute attr) {
+        return attr.getUriEffect();
+      }
+    });
+  }
+
+  private static Map<AttribKey, LoaderType> loaderTypes(
+      HtmlSchema schema) {
+    return deriveMapFromSchema(schema, new SchemaExtractor<LoaderType>() {
+      @Override
+      public LoaderType extract(Attribute attr) {
+        return attr.getLoaderType();
+      }
+    });
   }
 
   private static Map<ElKey, EnumSet<EFlag>> elementFlags(HtmlSchema schema) {

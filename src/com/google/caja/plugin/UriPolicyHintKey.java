@@ -50,6 +50,12 @@ public final class UriPolicyHintKey<T> {
   public static final UriPolicyHintKey<String> XML_ATTR
       = inst(String.class, "XML_ATTR");
 
+  /**
+   * An {@link AttribKey} describing the expected mime-type for an attribute
+   */
+  public static final UriPolicyHintKey<String> MIME_TYPE
+      = inst(String.class, "MIME_TYPE");
+
   public T valueFrom(Map<String, ?> hints) {
     return valueType.cast(hints.get(key));
   }
