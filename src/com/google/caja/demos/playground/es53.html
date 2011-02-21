@@ -39,16 +39,9 @@
   <script src="domita.js"></script>
   <script>
   var swfobject = parent.swfobject;
-  var grantAdditionalPowers = function(tamings___, ___, imports) {
-    for (var tamer in tamings___) {
-      if (tamings___.hasOwnProperty(tamer)) {
-        tamings___[tamer].call(___.USELESS, ___, imports);
-      }
-    }
-  }
 
   function configureImports(div, uriPolicy, policyJS, grantAdditionalPowers) {
-    var imports =___.copy(___.whitelistAll(___.sharedImports));
+    var imports =___.copy(___.sharedImports);
     imports.onerror = ___.markFunc(function(x){
       parent.caja___.logFunc(x);
       return true;

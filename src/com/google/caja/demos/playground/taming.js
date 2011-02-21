@@ -26,11 +26,9 @@ var tamings___ = tamings___ || [];
 var onReadyCallbacks___ = onReadyCallbacks___ || [];
 var caja___ = (function () {
   var cajaDomSuffix = 'g___';
-  var grantAdditionalPowers = function(___, imports) {
-    for (var tamer in tamings___) {
-      if (tamings___.hasOwnProperty(tamer)) {
-        tamings___[tamer].call(___.USELESS, ___, imports);
-      }
+  var grantAdditionalPowers = function(tamings___, ___, imports) {
+    for (var tamer = 0; tamer < tamings___.length; ++tamer) {
+      tamings___[tamer].call(___.USELESS, ___, imports);
     }
   }
 
@@ -66,7 +64,7 @@ var caja___ = (function () {
     ___.setLogFunc(function(x) { caja___.logFunc(x); })
     ___.getNewModuleHandler().setImports(imports);
     eval(policy);
-    grantAdditionalPowers(___, imports);
+    grantAdditionalPowers(tamings___, ___, imports);
     eval(js);
   }
 
@@ -121,8 +119,7 @@ var caja___ = (function () {
 
   function onReady(api, frameElement) {
     var callback;
-    for (callback in onReadyCallbacks___) {
-      if (/___$/.test(callback)) { continue; }
+    for (callback = 0; callback < onReadyCallbacks___.length; callback++) {
       onReadyCallbacks___[callback](api, frameElement);
     }
     onReadyCallbacks___ = [];
