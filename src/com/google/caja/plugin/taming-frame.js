@@ -21,15 +21,20 @@
  * @requires ___
  */
 
-(function() {
-  var primordials = [
-    Array, Boolean, Date, Function, Number, Object, RegExp, String,
-    Error, EvalError, RangeError, ReferenceError, SyntaxError,
-    TypeError, URIError
-  ];
-  for (var i = 0; i < primordials.length; i++) {
-    var p = primordials[i];
-    ___.freeze(p);
-    ___.freeze(p.prototype);
-  }
-})();
+___.def([
+    Array,
+    Boolean,
+    Date,
+    Error,
+    EvalError,
+    Function,
+    Number,
+    Object,
+    RangeError,
+    ReferenceError,
+    RegExp,
+    String,
+    SyntaxError,
+    TypeError,
+    URIError
+]);

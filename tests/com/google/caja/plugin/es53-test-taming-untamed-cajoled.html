@@ -1,0 +1,197 @@
+<!--
+ - Copyright (C) 2010 Google Inc.
+ -
+ - Licensed under the Apache License, Version 2.0 (the "License");
+ - you may not use this file except in compliance with the License.
+ - You may obtain a copy of the License at
+ -
+ -      http://www.apache.org/licenses/LICENSE-2.0
+ -
+ - Unless required by applicable law or agreed to in writing, software
+ - distributed under the License is distributed on an "AS IS" BASIS,
+ - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ - See the License for the specific language governing permissions and
+ - limitations under the License.
+-->
+
+<script type="text/javascript">
+  function assertKeys(o, expectedKeys) {
+    expectedKeys = expectedKeys.slice(0).sort();
+    var actualKeys = [];
+    for (var k in o) {
+      actualKeys.push(k);
+    }
+    actualKeys.sort();
+    assertEquals(expectedKeys.length, actualKeys.length);
+    for (var i = 0; i < expectedKeys.length; i++) {
+      assertEquals(expectedKeys[i], actualKeys[i]);
+    }
+  }
+
+  function beget(o) {
+    var f = function() {};
+    f.prototype = o;
+    return new f();
+  }
+</script>
+
+<div id="testRecord" class="testcontainer">
+  testRecord
+</div>
+<script type="text/javascript">
+  jsunitRegister('testRecord',
+                 function testRecord() {
+    var r = { foo: 17 };
+    tameEval('assertEquals(17, a.foo);', r);
+    tameEval('assertTrue("foo" in a);', r);
+    tameEval('assertFalse("bar" in a);', r);
+    r.foo = 42;
+    tameEval('assertEquals(42, a.foo);', r);
+    tameEval('a.foo = 19;', r);
+    assertEquals(19, r.foo);
+    pass('testRecord');
+  });
+</script>
+
+<div id="testRecordNumerics" class="testcontainer">
+  testRecordNumerics
+</div>
+<script type="text/javascript">
+  jsunitRegister('testRecordNumerics',
+                 function testRecordNumerics() {
+    // Numeric indices on records are very gotcha-ey
+    var r = { };
+    r[3] = 23;
+    assertEquals(23, r[3]);
+    // Un-taming the record eviscerates, so the guest-side getter now
+    // sees nothing due to the numeric-index optimization.
+    tameEval('1;', r);  // Cause 'r' to get un-tamed
+    assertEquals(undefined, r[3]);
+    // Even though host code can now see the value just fine
+    tameEval('assertEquals(23, a[3]);', r);
+    // And host code can write the value and see it change
+    tameEval('a[3] = 19;', r);
+    tameEval('assertEquals(19, a[3]);', r);
+    // But guest code still can't
+    assertEquals(undefined, r[3]);
+    pass('testRecordNumerics');
+  });
+</script>
+
+<div id="testArray" class="testcontainer">
+  testArray
+</div>
+<script type="text/javascript">
+  jsunitRegister('testArray',
+                 function testArray() {
+    var a = [ 'foo', 'bar' ];
+    tameEval('assertEquals("foo", a[0]);', a)
+    tameEval('assertEquals("bar", a[1]);', a)
+    tameEval('assertEquals(2, a.length);', a)
+    // Array un-taming is pass-by-copy
+    tameEval('a[2] = "bee"', a);
+    assertEquals(2, a.length);
+    assertEquals(undefined, a[2]);
+    pass('testArray');
+  });
+</script>
+
+<div id="testPureFunction" class="testcontainer">
+  testPureFunction
+</div>
+<script type="text/javascript">
+  jsunitRegister('testPureFunction',
+                 function testPureFunction() {
+    function foo(x) { return x + 11; } 
+    tameEval('assertEquals(24, a(13));', foo);
+    tameEval('assertEquals(24, a.call({}, 13));', foo);
+    tameEval('assertEquals(24, a.apply({}, [ 13 ]));', foo);
+    tameEval('assertEquals(24, a.bind({})(13));', foo);
+    pass('testPureFunction');
+  });
+</script>
+
+<div id="testExophoricUsage" class="testcontainer">
+  testExophoricUsage
+</div>
+<script type="text/javascript">
+  jsunitRegister('testExophoricUsage',
+                 function testExophoricUsage() {
+    (function() {
+      var called = false;
+      function f() {
+        // 'this' is undefined because the host function call passes the global
+        // 'window' object which, due to compiled-in code from the ES53
+        // translator, gets neutered down to undefined.
+        assertEquals(undefined, this);
+        called = true;
+      }
+      tameEval('a();', f);
+      assertTrue(called);
+    })();
+    function checkSeventeen(s) {
+      var called = false;
+      function f() {
+        assertEquals(17, this.foo);
+        called = true;
+      }
+      tameEval(s, f);
+      assertTrue(called);
+    }
+    checkSeventeen('({ foo: 17, bar: a }).bar();');
+    checkSeventeen('a.call({ foo: 17 });');
+    checkSeventeen('a.apply({ foo: 17 }, [ ]);');
+    checkSeventeen('a.bind({ foo: 17 })();');
+    pass('testExophoricUsage');
+  });
+</script>
+
+<div id="testConstructedObjects" class="testcontainer">
+  testConstructedObjects
+</div>
+<script type="text/javascript">
+  jsunitRegister('testConstructedObjects',
+                 function testConstructedObjects() {
+    // First demonstrate that what should trivially work actually does
+    var o = new Object();
+    o.foo = 17;
+    tameEval('assertEquals(17, a.foo);', o);
+    // Now test the expected failure cases
+    function Ctor() {}
+    expectFailure(function() {
+      tameEval('1', new Ctor());
+    });
+    function SubCtor() {}
+    SubCtor.prototype = new Ctor();
+    expectFailure(function() {
+      tameEval('1', new SubCtor());
+    });
+    // Constructed instances of builtins are not exempt
+    expectFailure(function() {
+      tameEval('1', new Date());
+    });
+    pass('testConstructedObjects');
+  });
+</script>
+
+<div id="testPropertiesOnFunctions" class="testcontainer">
+  testPropertiesOnFunctions
+</div>
+<script type="text/javascript">
+  jsunitRegister('testPropertiesOnFunctions',
+                 function testPropertiesOnFunctions() {
+    // Setting properties on functions that are un-tamed is gotcha-ridden
+    function f() {}
+    tameEval('a.foo = 17;', f);
+    tameEval('assertEquals(17, a.foo);', f);
+    // The property set on the host side is not seen by the guest
+    assertEquals(undefined, f.foo);
+    assertFalse('foo' in f);
+    f.bar = 19;
+    assertEquals(19, f.bar);
+    // The property set on the guest side is not seen by the host
+    tameEval('assertEquals(undefined, a.bar);', f);
+    tameEval('assertFalse("bar" in a);', f);
+    pass('testPropertiesOnFunctions');
+  });
+</script>

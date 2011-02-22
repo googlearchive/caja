@@ -74,19 +74,20 @@ var HostTools;
     
     function Sandbox() {
       var attached = false;
-      
+
       // user-modifiable state
       var imports = ___.copy(___.sharedImports);
       var uriPolicy = cajita.freeze({
-        rewrite: function (uri, mimeType) {
+        rewrite: function (uri, uriEffect, loaderType, hints) {
           // TODO(kpreid): This needs to be redefined in terms of effect/loader;
           // we don't necessarily know the actual specific mime type before
           // making the request.
+          // TODO(ihab.awad): Hack to make MIME types both '*/*' since we are
+          // going to deprecate this file anyway. Breakage introduced at r4372.
           return cajolingService +
               '?url=' + encodeURIComponent(uri) +
-              '&input-mime-type=' + encodeURIComponent(mimeType) +
-              '&output-mime-type=' + encodeURIComponent(mimeType);
-          
+              '&input-mime-type=*%2F*' +
+              '&output-mime-type=*%2F*';
         }
       });
   

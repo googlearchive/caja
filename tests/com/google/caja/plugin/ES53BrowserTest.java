@@ -18,12 +18,23 @@ package com.google.caja.plugin;
  * @author ihab.awad@gmail.com
  */
 public class ES53BrowserTest extends BrowserTestCase {
-  /*
   public final void testBasicFunctions() {
     runTestCase("es53-test-basic-functions-cajoled.html");
   }
-  */
-  public final void testTaming() {
-    runTestDriver("es53-test-taming.js");
+
+  public final void testTamingTamed() {
+    runTestDriver("es53-test-taming-tamed.js");
+  }
+
+  public final void testTamingUntamed() {
+    runTestDriver("es53-test-taming-untamed.js");
+  }
+
+  public final void testTamingInout() {
+    runTestDriver("es53-test-taming-inout.js");
+  }
+
+  public final void testTamingErrors() {
+    runTestDriver("es53-test-taming-errors.js");
   }
 }

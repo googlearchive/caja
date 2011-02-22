@@ -182,10 +182,161 @@ var ___, cajaVM, safeJSON;
       }
     });
 
+  ////////////////////////////////////////////////////////////////////////
+  // Functions to walk the prototype chain
+  ////////////////////////////////////////////////////////////////////////
 
-   ////////////////////////////////////////////////////////////////////////
+  /**
+   * An object is prototypical iff its 'constructor' property points
+   * at a genuine function whose 'prototype' property points back at
+   * it.
+   */
+  function isPrototypical(obj) {
+    if ((typeof obj) !== 'object') { return false; }
+    if (obj === null) { return false; }
+    var constr = obj.constructor;
+    if ((typeof constr) !== 'function') { return false; }
+    return constr.prototype === obj;
+  }
+
+  var BASE_OBJECT_CONSTRUCTOR = {};
+
+  /**
+   * Returns the 'constructor' property of obj's prototype.
+   * <p>
+   * By "obj's prototype", we mean the prototypical object that obj
+   * most directly inherits from, not the value of its 'prototype'
+   * property. We memoize the apparent prototype into 'proto___' to
+   * speed up future queries.
+   * <p>
+   * If obj is a function or not an object, return undefined.
+   * <p>
+   * If the object is determined to be directly constructed by the 'Object'
+   * function in *some* frame, we return distinguished marker value
+   * BASE_OBJECT_CONSTRUCTOR.
+   */
+  function directConstructor(obj) {
+    if (obj === null) { return void 0; }
+    if (obj === void 0) { return void 0; }
+    if ((typeof obj) !== 'object') {
+      // Regarding functions, since functions return undefined,
+      // directConstructor() doesn't provide access to the
+      // forbidden Function constructor.
+      // Otherwise, we don't support finding the direct constructor
+      // of a primitive.
+      return void 0;
+    }
+    var result;
+    if (obj.hasOwnProperty('proto___')) {
+      var proto = obj.proto___;
+      // At this point we know that (typeOf(proto) === 'object')
+      if (proto === null) { return void 0; }
+      result = proto.constructor;
+      // rest of: if (!isPrototypical(result))
+      if (result.prototype !== proto || (typeof result) !== 'function') {
+        result = directConstructor(proto);
+      }
+    } else {
+      if (!obj.hasOwnProperty('constructor')) {
+        // TODO(erights): Detect whether this is a valid constructor
+        // property in the sense that result is a proper answer. If
+        // not, at least give a sensible error, which will be hard to
+        // phrase.
+        result = obj.constructor;
+      } else {
+        var oldConstr = obj.constructor;
+        // TODO(erights): This code assumes that any 'constructor' property
+        // revealed by deleting the own 'constructor' must be the constructor
+        // we're interested in.
+        if (delete obj.constructor) {
+          result = obj.constructor;
+          obj.constructor = oldConstr;
+        } else if (isPrototypical(obj)) {
+          log('Guessing the directConstructor of : ' + obj);
+          return BASE_OBJECT_CONSTRUCTOR;
+        } else {
+          throw new TypeError('Discovery of direct constructors unsupported '
+              + 'when the constructor property is not deletable: '
+              + obj + '.constructor === ' + oldConstr);
+        }
+      }
+
+      if ((typeof result) !== 'function' || !(obj instanceof result)) {
+        throw new TypeError('Discovery of direct constructors for foreign '
+            + 'begotten objects not implemented on this platform');
+      }
+      if (result.prototype.constructor === result) {
+        // Memoize, so it'll be faster next time.
+        obj.proto___ = result.prototype;
+      }
+    }
+    // If the result is marked as the 'Object' constructor from some feral
+    // frame, return the distinguished marker value.
+    if (result === result.FERAL_FRAME_OBJECT___) {
+      return BASE_OBJECT_CONSTRUCTOR;
+    }
+    // If the result is the 'Object' constructor from some Caja frame,
+    // return the distinguished marker value.
+    if (result === obj.CAJA_FRAME_OBJECT___) {
+      return BASE_OBJECT_CONSTRUCTOR;
+    }
+    return result;
+  }
+
+  ////////////////////////////////////////////////////////////////////////
   // Primitive objective membrane
   ////////////////////////////////////////////////////////////////////////
+
+  // Property whitelisting markers on tamings of host objects. This is disjoint
+  // from the ES5/3 property descriptor material to allow local reasoning about
+  // the taming layer in isolation. The markers are deliberately inheritable
+  // via the prototype chain.
+  //
+  // Attribute suffixes ending with '_twl___' (for "taming white list") are
+  // claimed by this implementation.
+  //
+  // For any given property called 'name', and a tamed twin 't', we have:
+  //
+  //   t[name + '_r_twl___'] is truthy    means 'name' is tamed as whitelisted
+  //                                      for reading
+  //
+  //   t[name + '_w_twl___'] is truthy    means 'name' is tamed as whitelisted
+  //                                      for writing or deleting
+  //
+  //   t[name + '_m_twl___'] is truthy    means 'name' is tamed as whitelisted
+  //                                      for invocation as a method
+  //
+  // Additionally, the following marker is supported:
+  //
+  //   t['readonly_twl___'] is truthy     means the tame object 't' is tamed
+  //                                      such that it appears to Caja code as
+  //                                      read-only.
+
+  // TODO(ihab.awad): Test that host objects created using beget() -- in other
+  // words, their prototype is neither 'Object' nor the prototype of a
+  // previously tamed constructor function -- behave safely (even if the
+  // behavior is a corner case).
+
+  // The arguments to the following functions are as follows:
+  //     t      -- a tamed twin
+  //     mode   -- one of 'r', 'w' or 'm'
+  //     p      -- a property name
+
+  function isWhitelistedProperty(t, mode, p) {
+    return !!t[p + '_' + mode + '_twl___'];
+  }
+
+  function whitelistProperty(t, mode, p) {
+    t[p + '_' + mode + '_twl___'] = t;
+  }
+
+  function isWhitelistedReadOnly(t) {
+    return !!t['readonly_twl___'];
+  }
+
+  function whitelistReadOnly(t) {
+    t['readonly_twl___'] = t;
+  }
 
   /**
    * Records that f is t's feral twin and t is f's tame twin.
@@ -239,45 +390,26 @@ var ___, cajaVM, safeJSON;
     t.FERAL_TWIN___ = f;
   }
 
-  function markTameAsConstructed(o) {
-    var ftype = typeof o;
-    if (ftype !== 'object') {
-      throw new TypeError('Cannot tame ' + ftype + ' as constructed');
+  /**
+   * Private utility functions to tame and untame arrays.
+   */
+  function tameArray(fa) {
+    var ta = [];
+    for (var i = 0; i < fa.length; i++) {
+      ta[i] = tame(fa[i]);
     }
-    o.CONSTRUCTED___ = true;
+    return freeze(ta);
   }
 
-  function markTameAsReadWrite(o) {
-    var ftype = typeof o;
-    if (ftype !== 'object') {
-      throw new TypeError('Cannot tame ' + ftype + ' as read/write');
+  function untameArray(ta) {
+    var fa = [];
+    for (var i = 0; i < ta.length; i++) {
+      fa[i] = untame(ta[i]);
     }
-    o.READ_WRITE___ = true;
-  }
-
-  function markTameAsCtor(ctor, opt_super) {
-    var ctype = typeof ctor;
-    var stype = typeof opt_super;
-    if (ctype !== 'function') {
-      throw new TypeError('Cannot tame ' + ctype + ' as ctor');
-    }
-    if (opt_super && stype !== 'function') {
-      throw new TypeError('Cannot tame ' + stype + ' as superclass ctor');
-    }
-    ctor.CTOR___ = true;
-    if (opt_super) { ctor.SUPER_CTOR___ = opt_super; }
-  }
-
-  function markTameAsXo4a(f) {
-    var ftype = typeof f;
-    if (ftype !== 'function') {
-      throw new TypeError('Cannot tame ' + ftype + ' as xo4a');
-    }
-    f.XO4A___ = true;
+    return fa;
   }
 
   /**
-   *
    * Returns a tame object representing f, or undefined on failure.
    * <ol>
    * <li>All primitives tame and untame to themselves. Therefore,
@@ -294,42 +426,287 @@ var ___, cajaVM, safeJSON;
    * Record taming does not (yet?) deal with record inheritance.
    */
   function tame(f) {
-    // Caja objects tame to themselves
-    if (f !== null && f !== undefined && f.IS_CAJA_FRAME_OBJECT___) {
-      return f;
+    if (!f) { return f; }
+    // Here we do use the backpointing test as a cheap hasOwnProp test.
+    if (f.TAMED_TWIN___ && f.TAMED_TWIN___.FERAL_TWIN___ === f) {
+      return f.TAMED_TWIN___;
     }
     var ftype = typeof f;
-    if (!f || (ftype !== 'function' && ftype !== 'object')) {
+    if (ftype !== 'function' && ftype !== 'object') {
+      // Primitive value; tames to self
       return f;
     } else if (isArray(f)) {
       // No tamesTo(...) for arrays; we copy across the membrane
       return tameArray(f);
     }
-    // Here we do use the backpointing test as a cheap hasOwnProp test.
-    if (f.TAMED_TWIN___
-        && f.TAMED_TWIN___.FERAL_TWIN___ === f) {
-      return f.TAMED_TWIN___;
-    }
-    var t = undefined;
+    if (isDefinedInCajaFrame(f)) { return f; }
+    var t = void 0;
     if (ftype === 'object') {
-      if (f.CONSTRUCTED___) {
-        t = tamePreviouslyConstructedObject(f);
-      } else {
+      var ctor = directConstructor(f);
+      if (ctor === void 0) {
+        throw new TypeError('Cannot determine ctor of: ' + f);
+      } else if (ctor === BASE_OBJECT_CONSTRUCTOR) {
         t = tameRecord(f);
+      } else {
+        t = tamePreviouslyConstructedObject(f, ctor);
       }
     } else if (ftype === 'function') {
-      t = tameFunction(f);
+      // If not previously tamed via a 'markTameAs*' call, then it is
+      // not a whitelisted function and should be neutered
+      t = void 0;
     }
     if (t) { tamesTo(f, t); }
     return t;
   }
 
-  function untameArguments(ta) {
-    var fa = [];
-    for (var i = 0; i < ta.length; i++) {
-      fa[i] = untame(ta[i]);
+  function makeWhitelistingHasProperty(t, f, propertyModesToCheck) {
+    return function(p) {
+      p = '' + p;
+      if (!(p in f)) { return false; }
+      if (isNumericName(p)) { return false; }
+      // 'propertyModesToCheck' is always statically defined to have
+      // one or two elements. This method is *not* linear in the number
+      // of properties an object has.
+      for (var i = 0; i < propertyModesToCheck.length; i++) {
+        if (isWhitelistedProperty(t, propertyModesToCheck[i], p)) {
+            return true;
+        }
+      }
+      return false;
+    };
+  }
+
+  function makeEnumerate(t, f) {
+    return function() {
+      var tt = t;
+      var ff = f;
+      var result = [];
+      for (var p in f) {
+        if (t.HasProperty___(p)) {
+          result.push(p);
+        }
+      }
+      return result;
+    };
+  }
+
+  function addFunctionPropertyHandlers(t, f) {
+    t.v___ = function (p) {  // [[Get]]
+      p = '' + p;
+      if (p === 'call' || p === 'bind' || p === 'apply') {
+        return Function.prototype.v___.call(t, p);
+      }
+      if (isNumericName(p)) { return void 0; }
+      if (!endsWith__.test(p)) {
+        if (isWhitelistedProperty(t, 'r', p)) {
+          return tame(f[p]);
+        }
+      }
+      return void 0;
+    };
+    t.w___ = function (p, v) {  // [[Put]]
+      p = '' + p;
+      if (!isNumericName(p) && !endsWith__.test(p)) {
+        if (isWhitelistedProperty(t, 'w', p) && !isWhitelistedReadOnly(t)) {
+          f[p] = untame(v);
+          return v;
+        }
+      }
+      throw new TypeError('Not writeable: ' + p);
+    };
+    t.c___ = function (p) {  // [[Delete]]
+      p = '' + p;
+      if (!isNumericName(p) && !endsWith__.test(p)) {
+        if (isWhitelistedProperty(t, 'w', p) && !isWhitelistedReadOnly(t)) {
+          if (delete f[p]) { return true; }
+        }
+      }
+      throw new TypeError('Not deleteable: ' + p);
+    };
+    t.HasProperty___ = makeWhitelistingHasProperty(t, f, [ 'r' ]);
+    t.Enumerate___ = makeEnumerate(t, f);
+  }
+
+  function tameCtor(f, fSuper, name) {
+    // TODO(ihab.awad): assign 'name'
+    var instantiator = function () { };
+    instantiator.prototype = f.prototype;
+
+    var tPrototype = (function() {
+      if (!fSuper || (fSuper === fSuper.FERAL_FRAME_OBJECT___)) { return {}; }
+      var tSuper = fSuper.TAMED_TWIN___;
+      if (!tSuper) { throw new TypeError('Super ctor not yet tamed'); }
+      function tmp() { }
+      tmp.prototype = tSuper.prototype;
+      return new tmp();
+    })();
+
+    whitelistProperty(tPrototype, 'r', 'constructor');
+    tameObjectWithMethods(f.prototype, tPrototype);
+    tamesTo(f.prototype, tPrototype);
+
+    var t = markFunc(function (_) {
+      if (arguments.length > 0
+          && arguments[0] === TAME_CTOR_CREATE_OBJECT_ONLY) {
+        return;
+      }
+      var o = new instantiator();
+      f.apply(o, untameArray(arguments));
+      tameObjectWithMethods(o, this);
+      tamesTo(o, this);
+    });
+    t.prototype = tPrototype;
+    tPrototype.constructor = t;
+    t.IS_TAMED_CTOR___ = t;
+
+    addFunctionPropertyHandlers(t, f);
+
+    whitelistProperty(t, 'r', 'prototype');
+
+    return t;
+  }
+
+  function tamePureFunction(f, name) {
+    // TODO(ihab.awad): assign 'name'
+    var t = markFunc(function(_) {
+      // Since it's by definition useless, there's no reason to bother
+      // passing untame(USELESS); we just pass USELESS itself.
+      return tame(f.apply(USELESS, untameArray(arguments)));
+    });
+
+    addFunctionPropertyHandlers(t, f);
+
+    return t;
+  }
+
+  function tameXo4a(f, name) {
+    // TODO(ihab.awad): assign 'name'
+    var t = markFunc(function(_) {
+      return tame(f.apply(untame(this), untameArray(arguments)));
+    });
+
+    addFunctionPropertyHandlers(t, f);
+
+    return t;
+  }
+
+  function tameRecord(f, t) {
+    if (!t) { t = {}; }
+    t.v___ = function (p) {  // [[Get]]
+      p = '' + p;
+      if (isNumericName(p)) { return void 0; }
+      if (!endsWith__.test(p)) {
+        return tame(f[p]);
+      }
+      return void 0;
+    };
+    t.w___ = function (p, v) {  // [[Put]]
+      p = '' + p;
+      if (!isNumericName(p) && !endsWith__.test(p)) {
+        if (!isWhitelistedReadOnly(t)) {
+          f[p] = untame(v);
+          return v;
+        }
+      }
+      throw new TypeError('Not writeable: ' + p);
+    };
+    t.c___ = function (p) {  // [[Delete]]
+      p = '' + p;
+      if (!isNumericName(p) && !endsWith__.test(p)) {
+        if (!isWhitelistedReadOnly(t)) {
+          if (delete f[p]) { return true; }
+          return;
+        }
+      }
+      throw new TypeError('Not deleteable: ' + p);
+    };
+    t.m___ = function (p, as) {  // invoke method
+      p = '' + p;
+      var tf = t.v___(p);
+      if ((typeof tf) === 'function') {
+        // The property value is whitelisted to tame to a function, so call it
+        return tf.apply(USELESS, as);
+      }
+      throw new TypeError('Not a function: ' + p);
+    };
+    t.HasProperty___ = function(p) {
+      p = '' + p;
+      if (!(p in f)) { return false; }
+      return !isNumericName(p) && !endsWith__.test(p);
+    };
+    t.Enumerate___ = makeEnumerate(t, f);
+
+    return t;
+  }
+
+  function tameObjectWithMethods(f, t) {
+    if (!t) { t = {}; }
+    t.v___ = function (p) {  // [[Get]]
+      p = '' + p;
+      var fv = f[p];
+      var fvt = typeof fv;
+      if (fvt === 'function' && p === 'constructor') {
+        // Special case to retrieve 'constructor' property,
+        // which we automatically whitelist for reading
+        return tame(f[p]);
+      } else {
+        if (fvt === 'function' && p !== 'constructor') {
+          if (isWhitelistedProperty(t, 'm', p)) {
+            return markFuncFreeze(function (_) {
+              return tame(f[p].apply(f, untameArray(arguments)));
+            });
+          }
+        } else if (isWhitelistedProperty(t, 'r', p)) {
+          return tame(f[p]);
+        }
+      }
+      return void 0;
+    };
+    t.w___ = function (p, v) {  // [[Put]]
+      p = '' + p;
+      if (!isNumericName(p) && !endsWith__.test(p)) {
+        if (isWhitelistedProperty(t, 'w', p) && !isWhitelistedReadOnly(t)) {
+          f[p] = untame(v);
+          return v;
+        }
+      }
+      throw new TypeError('Not writeable: ' + p);
+    };
+    t.c___ = function (p) {  // [[Delete]]
+      p = '' + p;
+      if (!isNumericName(p) && !endsWith__.test(p)) {
+        if (isWhitelistedProperty(t, 'w', p) && !isWhitelistedReadOnly(t)) {
+          if (delete f[p]) { return true; }
+        }
+      }
+      throw new TypeError('Not deleteable: ' + p);
+    };
+    t.m___ = function (p, as) {  // invoke method
+      p = '' + p;
+      if (!isNumericName(p) && !endsWith__.test(p)) {
+        if (typeof f[p] === 'function') {
+          if (isWhitelistedProperty(t, 'm', p)) {
+            return tame(f[p].apply(f, untameArray(as)));
+          }
+        }
+      }
+      throw new TypeError('Not a function: ' + p);
+    };
+    t.HasProperty___ = makeWhitelistingHasProperty(t, f, [ 'r', 'm' ]);
+    t.Enumerate___ = makeEnumerate(t, f);
+
+    return t;
+  }
+
+  function tamePreviouslyConstructedObject(f, fc) {
+    var tc = tame(fc);
+    if (tc.IS_TAMED_CTOR___) {
+      var t = new tc(TAME_CTOR_CREATE_OBJECT_ONLY);
+      tameObjectWithMethods(f, t);
+      return t;
+    } else {
+      return void 0;
     }
-    return fa;
   }
 
   /**
@@ -341,178 +718,176 @@ var ___, cajaVM, safeJSON;
    * <li>If t has a registered feral twin, return that.
    */
   function untame(t) {
-    // Caja objects untame to themselves
-    if (t !== null && t !== undefined && isCajaFrameObject(t)) {
-      return t;
-    }
-    var ttype = typeof t;
-    if (!t || (ttype !== 'function' && ttype !== 'object')) {
-      return t;
-    } else if (isArray(t)) {
-      return untameArray(t);
-    }
-    if (t.FERAL_TWIN___
-        && t.FERAL_TWIN___.TAMED_TWIN___
-        && t.FERAL_TWIN___.TAMED_TWIN___ === t) {
+    if (!t) { return t; }
+    // Here we do use the backpointing test as a cheap hasOwnProp test.
+    if (t.FERAL_TWIN___ && t.FERAL_TWIN___.TAMED_TWIN___ === t) {
       return t.FERAL_TWIN___;
     }
-    return undefined;
-  }
-
-  function tameArray(f) {
-    var t = [];
-    for (var i = 0; i < f.length; i++) {
-      t[i] = tame(f[i]);
+    var ttype = typeof t;
+    if (ttype !== 'function' && ttype !== 'object') {
+      // Primitive value; untames to self
+      return t;
+    } else if (isArray(t)) {
+      // No tamesTo(...) for arrays; we copy across the membrane
+      return untameArray(t);
     }
-    return freeze(t);
-  }
-
-  function untameArray(t) {
-    var f = [];
-    for (var i = 0; i < t.length; i++) {
-      f[i] = untame(t[i]);
+    if (!isDefinedInCajaFrame(t)) {
+      throw new TypeError('Host object leaked without being tamed');
     }
+    var f = void 0;
+    if (ttype === 'object') {
+      var ctor = directConstructor(t);
+      if (ctor === BASE_OBJECT_CONSTRUCTOR) {
+        f = untameCajaRecord(t);
+      } else {
+        throw new TypeError(
+            'Untaming of guest constructed objects unsupported: ' + t);
+      }
+    } else if (ttype === 'function') {
+      f = untameCajaFunction(t);
+    }
+    if (f) { tamesTo(f, t); }
     return f;
   }
 
-  function tameFunction(f) {
-    if (f.CTOR___) { return tameCtor(f, f.SUPER_CTOR___); }
-    else if (f.XO4A___) { return tameXo4a(f); }
-    else { return tamePureFunction(f); }
+  function untameCajaRecord(t) {
+    var f = {};
+    eviscerate(t, f);
+    tameRecord(f, t);
+    return f;
   }
 
-  var TAME_CTOR_CREATE_OBJECT_ONLY = {};
-
-  function tameCtor(f, fSuper) {
-    var instantiator = function () { };
-    instantiator.prototype = f.prototype;
-
-    var tPrototype = (function() {
-      if (!fSuper) { return {}; }
-      var tSuper = fSuper.TAMED_TWIN___;
-      if (!tSuper) { throw new TypeError('Super ctor not yet tamed'); }
-      function tmp() { }
-      tmp.prototype = tSuper.prototype;
-      return new tmp();
-    })();
-
-    tameObjectWithMethods(f.prototype, tPrototype);
-
-    var t = function (_) {
-      if (arguments.length > 0
-          && arguments[0] === TAME_CTOR_CREATE_OBJECT_ONLY) {
-        return;
-      }
-      var o = new instantiator();
-      f.apply(o, untameArguments(arguments));
-      tameObjectWithMethods(o, this);
+  function untameCajaFunction(t) {
+    // Taming of *constructors* which are defined in Caja is unsupported.
+    // We tame all functions defined in Caja as xo4a (they receive the
+    // 'this' value supplied by the host-side caller because the
+    // ES53 compiler adds the necessary checks to make sure the
+    // 'this' value they receive is safe.
+    return function(_) {
+      return untame(t.apply(tame(this), tameArray(arguments)));
     };
-    t.prototype = tPrototype;
-
-    return markFuncFreeze(t);
   }
 
-  function tamePureFunction(f) {
-    return markFuncFreeze(function(_) {
-      return tame(f.apply(USELESS, untameArguments(arguments)));
-    });
+  function eviscerate(t, f) {
+    var k;
+    for (k in t) {
+      if (!t.hasOwnProperty(k)) { continue; }
+      if (!endsWith__.test(k)) { f[k] = untame(t[k]); }
+      if (!delete t[k]) {
+        throw new TypeError(
+            'Eviscerating: ' + t + ' failed to delete prop: ' + k);
+      }
+    }
   }
 
-  function tameXo4a(f) {
-    return markFuncFreeze(function(_) {
-      return tame(f.apply(this, untameArguments(arguments)));
-    });
+  function markTameAsReadOnlyRecord(f) {
+    if (isDefinedInCajaFrame(f)) {
+      throw new TypeError('Taming controls not for Caja objects: ' + f);
+    }
+    if (f.TAMED_TWIN___) {
+      throw new TypeError('Already tamed: ' + f);
+    }
+    var ftype = typeof f;
+    if (ftype === 'object') {
+       var ctor = directConstructor(f);
+      if (ctor === BASE_OBJECT_CONSTRUCTOR) {
+        var t =  tameRecord(f);
+        whitelistReadOnly(t);
+        tamesTo(f, t);
+        return f;
+      } else {
+        throw new TypeError('Not instanceof Object: ' + f);
+      }
+    } else {
+      throw new TypeError('Not an object: ' + f);
+    }
   }
 
-  function tameRecord(f, t) {
-    if (!t) { t = {}; }
-    t.v___ = function (p) {  // [[Get]]
-      p = '' + p;
-      if (isNumericName(p) || !endsWith__.test(p)) {
-        return tame(f[p]);
-      }
-      throw new TypeError('Not readable: ' + p);
-    };
-    t.w___ = function (p, v) {  // [[Put]]
-      p = '' + p;
-      if (isNumericName(p) || !endsWith__.test(p)) {
-        if (f.READ_WRITE___) {
-          f[p] = untame(v);
-          return;
-        }
-      }
-      throw new TypeError('Not writeable: ' + p);
-    };
-    t.c___ = function (p) {  // [[Delete]]
-      p = '' + p;
-      if (isNumericName(p) || !endsWith__.test(p)) {
-        if (f.READ_WRITE___) {
-          delete f[p];
-          return;
-        }
-      }
-      throw new TypeError('Not deleteable: ' + p);
-    };
-    t.m___ = function (p, as) {  // invoke method
-      p = '' + p;
-      if (isNumericName(p) || !endsWith__.test(p)) {
-        if (typeof f[p] === 'function') {
-          return tame(f[p].apply(USELESS, untameArguments(as)));        
-        }
-      }
-      throw new TypeError('Not a function: ' + p);
-    };
-    t.Enumerate___ = function() {
-      var result = [];
-      for (var p in f) {
-        if (isNumericName(p) || !endsWith__.test(p)) {
-          result.push(p);
-        }
-      }
-      return result;
-    };
-    return t;
+  function markTameAsFunction(f, name) {
+    if (isDefinedInCajaFrame(f)) {
+      throw new TypeError('Taming controls not for Caja objects: ' + f);
+    }
+    if (f.TAMED_TWIN___) {
+      throw new TypeError('Already tamed: ' + f);
+    }
+    if (isDefinedInCajaFrame(f)) {
+      throw new TypeError('Cannot tame a Caja object: ' + f);
+    }
+    var t = tamePureFunction(f);
+    tamesTo(f, t);
+    return f;
   }
 
-  function tameObjectWithMethods(f, t) {
-    if (!t) { t = {}; }
-    t.v___ = function (p) {  // [[Get]]
-      p = '' + p;
-      var fv = f[p];
-      if (typeof fv !== 'function') {
-        throw new TypeError('Not readable: ' + p);
-      }
-      return markFuncFreeze(function (_) {
-        return tame(f[p].apply(f, untameArguments(arguments)));
-      });
-    };
-    t.w___ = function (p, v) {  // [[Put]]
-      throw new TypeError('Not writeable: ' + p);
-    };
-    t.c___ = function (p) {  // [[Delete]]
-      throw new TypeError('Not deleteable: ' + p);
-    };
-    t.m___ = function (p, as) {  // invoke method
-      p = '' + p;
-      if (isNumericName(p) || !endsWith__.test(p)) {
-        if (typeof f[p] === 'function') {
-          return tame(f[p].apply(f, untameArguments(as)));
-        }
-      }
-      throw new TypeError('Not a function: ' + p);
-    };
-    t.Enumerate___ = function() {
-      return [];
-    };
-    return t;
+  function markTameAsCtor(ctor, opt_super, name) {
+    if (isDefinedInCajaFrame(ctor)) {
+      throw new TypeError('Taming controls not for Caja objects: ' + ctor);
+    }
+    if (ctor.TAMED_TWIN___) {
+      throw new TypeError('Already tamed: ' + ctor);
+    }
+    if (isDefinedInCajaFrame(ctor)) {
+      throw new TypeError('Cannot tame a Caja object: ' + ctor);
+    }
+    var ctype = typeof ctor;
+    var stype = typeof opt_super;
+    if (ctype !== 'function') {
+      throw new TypeError('Cannot tame ' + ftype + ' as ctor');
+    }
+    if (opt_super && stype !== 'function') {
+      throw new TypeError('Cannot tame ' + stype + ' as superclass ctor');
+    }
+    var t = tameCtor(ctor, opt_super, name);
+    tamesTo(ctor, t);
+    return ctor;
   }
 
-  function tamePreviouslyConstructedObject(f) {
-    var fc = f.constructor;
-    var tc = tame(fc);
-    var t = new tc(TAME_CTOR_CREATE_OBJECT_ONLY);
-    tameObjectWithMethods(f, t);
-    return t;
+  function markTameAsXo4a(f, name) {
+    if (isDefinedInCajaFrame(f)) {
+      throw new TypeError('Taming controls not for Caja objects: ' + f);
+    }
+    if (f.TAMED_TWIN___) {
+      throw new TypeError('Already tamed: ' + f);
+    }
+    if ((typeof f) !== 'function') {
+      throw new TypeError('Not a function: ' + f);
+    }
+    if (isDefinedInCajaFrame(f)) {
+      throw new TypeError('Cannot tame a Caja object: ' + f);
+    }
+    var t = tameXo4a(f);
+    tamesTo(f, t);
+    return f;
+  }
+
+  function grantTameAsMethod(ctor, name) {
+    if (isDefinedInCajaFrame(ctor)) {
+      throw new TypeError('Taming controls not for Caja objects: ' + ctor);
+    }
+    if (!ctor.TAMED_TWIN___) {
+      throw new TypeError('Not yet tamed: ' + ctor);
+    }
+    if (!ctor.TAMED_TWIN___.IS_TAMED_CTOR___ === ctor.TAMED_TWIN___) {
+      throw new TypeError('Not a tamed ctor: ' + ctor);
+    }
+    var tameProto = tame(ctor.prototype);
+    whitelistProperty(tameProto, 'm', name);
+  }
+
+  function grantTameAsRead(f, name) {
+    if (isDefinedInCajaFrame(f)) {
+      throw new TypeError('Taming controls not for Caja objects: ' + f);
+    }
+    var t = tame(f);
+    whitelistProperty(t, 'r', name);
+  }
+
+  function grantTameAsReadWrite(f, name) {
+    if (isDefinedInCajaFrame(f)) {
+      throw new TypeError('Taming controls not for Caja objects: ' + f);
+    }
+    var t = tame(f);
+    whitelistProperty(t, 'r', name);
+    whitelistProperty(t, 'w', name);
   }
 
   /**
@@ -589,12 +964,12 @@ var ___, cajaVM, safeJSON;
   }
 
   /**
-   * A marker for all objects created within this frame.
+   * A marker for all objects created within a Caja frame.
    */
-  Object.prototype.IS_CAJA_FRAME_OBJECT___ = { };
+  Object.prototype.CAJA_FRAME_OBJECT___ = Object;
 
-  function isCajaFrameObject(o) {
-    return o.IS_CAJA_FRAME_OBJECT___;
+  function isDefinedInCajaFrame(o) {
+    return !!o.CAJA_FRAME_OBJECT___;
   }
 
   /**
@@ -769,6 +1144,21 @@ var ___, cajaVM, safeJSON;
     obj[name + '_m___'] = obj;
   }
 
+  ////////////////////////////////////////////////////////////////////////
+  // Creating defensible (transitively frozen) objects
+  ////////////////////////////////////////////////////////////////////////
+
+  // We defer actual definition of the structure since we cannot create the
+  // necessary data structures (newTable()) yet
+  var deferredDefended = [];
+  var addToDefended = function(root) {
+    deferredDefended.push(root);
+  };
+
+  var functionInstanceVoidNameGetter = markFunc(function() { return ''; });
+  // Must freeze in a separate step to break circular dependency
+  addToDefended(freeze(functionInstanceVoidNameGetter));
+
   /**
    * We defer the creation of these properties until they're asked for.
    */
@@ -799,9 +1189,16 @@ var ___, cajaVM, safeJSON;
     f.name_gw___ = false;
     f.name_c___ = false;
     f.name_e___ = false;
-    f.name_g___ = markFunc(function() {return name;});
+    f.name_g___ = ((name === '')
+        ? functionInstanceVoidNameGetter
+        : markFuncFreeze(function() {return name;}));
     f.name_s___ = void 0;
     f.name_m___ = false;
+
+    // Add to the list of defended (transitively frozen) objects so that
+    // the def(...) function does not encounter these (newly created) functions
+    // and go into an infinite loop freezing them.
+    addToDefended(f.name_g___);
   }
 
   function deferredV(name) {
@@ -855,7 +1252,9 @@ var ___, cajaVM, safeJSON;
     }
     fn.f___ = fn.apply;
     fn.new___ = fn;
-    fn.name___ = '' + name;
+    // Anonymous functions get a 'name' that is the empty string
+    fn.name___ = ((name === '' || name === void 0)
+        ? '' : '' + name);
     fn.v___ = deferredV;
     fn.w___ = deferredW;
     fn.c___ = deferredC;
@@ -1119,21 +1518,6 @@ var ___, cajaVM, safeJSON;
         throwable___: true
       });
   }
-
-  /**
-   * When a {@code this} value must be provided but nothing is
-   * suitable, provide this useless object instead.
-   */
-  var USELESS = Token('USELESS');
-
-  /**
-   * A unique value that should never be made accessible to untrusted
-   * code, for distinguishing the absence of a result from any
-   * returnable result.
-   * <p>
-   * See makeNewModuleHandler's getLastOutcome().
-   */
-  var NO_RESULT = Token('NO_RESULT');
 
   /**
    * Checks if {@code n} is governed by the {@code NUM___} property descriptor.
@@ -1582,6 +1966,74 @@ var ___, cajaVM, safeJSON;
       registeredImports[id] = void 0;
     }
   }
+
+  ////////////////////////////////////////////////////////////////////////
+  // Creating defensible (transitively frozen) objects.
+  ////////////////////////////////////////////////////////////////////////
+
+  var defended = newTable();
+  /**
+   * To define a defended object is to freeze it and all objects
+   * transitively reachable from it via transitive reflective
+   * property traversal.
+   */
+  var def = markFuncFreeze(function(root) {
+    var defending = newTable();
+    var defendingList = [];
+    function recur(val) {
+      if (val !== Object(val) || defended.get(val) || defending.get(val)) {
+        return;
+      }
+      defending.set(val, true);
+      defendingList.push(val);
+      Object.freeze(val);
+      recur(Object.getPrototypeOf(val));
+      Object.getOwnPropertyNames(val).forEach(function(p) {
+        var desc = Object.getOwnPropertyDescriptor(val, p);
+        recur(desc.value);
+        recur(desc.get);
+        recur(desc.set);
+      });
+    }
+    recur(root);
+    defendingList.forEach(function(obj) {
+      defended.set(obj, true);
+    });
+    return root;
+  });
+
+  addToDefended = markFuncFreeze(function(root) {
+    defended.set(root, true);
+  });
+
+  deferredDefended.forEach(function(o) { addToDefended(o); });
+  deferredDefended = void 0;
+
+  ////////////////////////////////////////////////////////////////////////
+  // Tokens
+  ////////////////////////////////////////////////////////////////////////
+
+  /**
+   * When a {@code this} value must be provided but nothing is
+   * suitable, provide this useless object instead.
+   */
+  var USELESS = Token('USELESS');
+
+  /**
+   * A unique value that should never be made accessible to untrusted
+   * code, for distinguishing the absence of a result from any
+   * returnable result.
+   * <p>
+   * See makeNewModuleHandler's getLastOutcome().
+   */
+  var NO_RESULT = Token('NO_RESULT');
+
+  /**
+   * A value that makes a tamed constructor merely instantiate a tamed twin
+   * with the proper prototype chain and return, rather than completing the
+   * semantics of the original constructor. This value is private to this file.
+   */
+  var TAME_CTOR_CREATE_OBJECT_ONLY = Token('TAME_CTOR_CREATE_OBJECT_ONLY');
 
   ////////////////////////////////////////////////////////////////////////
   // Guards and Trademarks
@@ -4554,6 +5006,9 @@ var ___, cajaVM, safeJSON;
       // Sealing & Unsealing
       makeSealerUnsealerPair: makeSealerUnsealerPair,
 
+      // Defensible objects
+      def: def,
+
       // Other
       isFunction: isFunction,
       USELESS: USELESS,
@@ -4702,14 +5157,19 @@ var ___, cajaVM, safeJSON;
       prepareModule: prepareModule,
       loadModule: loadModule,
       NO_RESULT: NO_RESULT,
+      // Defensible objects
+      def: def,
       // Taming
       tame: tame,
       untame: untame,
       tamesTo: tamesTo,
-      markTameAsConstructed: markTameAsConstructed,
-      markTameAsReadWrite: markTameAsReadWrite,
+      markTameAsReadOnlyRecord: markTameAsReadOnlyRecord,
+      markTameAsFunction: markTameAsFunction,
       markTameAsCtor: markTameAsCtor,
       markTameAsXo4a: markTameAsXo4a,
+      grantTameAsMethod: grantTameAsMethod,
+      grantTameAsRead: grantTameAsRead,
+      grantTameAsReadWrite: grantTameAsReadWrite,
       extend: extend
     };
   var cajaVMKeys = ownEnumKeys(cajaVM);

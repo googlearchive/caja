@@ -141,44 +141,89 @@ var caja = (function () {
       }
 
       /**
-       * Mark a host object as "constructed" for the purposes of taming.
-       * This must be done before <code>tame()</code> reaches the object.
+       * Freeze an object, such that guest code cannot change the values of
+       * its properties, or add or delete properties.
        *
-       * @param o a host object (not a function).
+       * @param o an object.
        */
-      function markConstructed(o) {
-        tamingWindow.___.markTameAsConstructed(o);
+      function markReadOnlyRecord(o) {
+        return tamingWindow.___.markTameAsReadOnlyRecord(o);
       }
 
       /**
-       * Mark a host object as "read/write" for the purposes of taming.
-       * This must be done before <code>tame()</code> reaches the object.
-       *
-       * @param o a host object (not a function).
-       */
-      function markReadWrite(o) {
-        tamingWindow.___.markTameAsReadWrite(o);
-      }
-
-      /**
-       * Mark a host function as a constructor for the purposes of taming.
-       * This must be done before <code>tame()</code> reaches the function.
-       *
-       * @param ctor a constructor function.
-       * @param opt_super the "superclass" constructor function of "ctor".
-       */
-      function markCtor(ctor, opt_super) {
-        tamingWindow.___.markTameAsCtor(ctor, opt_super);
-      }
-
-      /**
-       * Mark a host function as exophoric for the purposes of taming.
-       * This must be done before <code>tame()</code> reaches the function.
+       * Mark a host function such that <code>tame()</code> allows guest
+       * code to call it. This function will be tamed as a "pure function",
+       * in other words, the <code>this</code> value supplied by the guest
+       * caller will not be transmitted through the taming boundary.
        *
        * @param f a function.
        */
+      function markFunction(f) {
+        return tamingWindow.___.markTameAsFunction(f);
+      }
+
+      /**
+       * Mark a host function such that <code>tame()</code> allows guest
+       * code to call it. This function will be tamed as a constructor,
+       * in other words, guest code will be able to invoke it via
+       * <code>new</code>, and will see the resulting objects as being
+       * <code>instanceof</code> this function.
+       *
+       * @param c a constructor function.
+       * @param opt_super the superclass constructor function.
+       * @param name the name of the constructor, provided to help improve
+       *     debugging and error messages.
+       */
+      function markCtor(c, opt_super, name) {
+        return tamingWindow.___.markTameAsCtor(c, opt_super, name);
+      }
+
+      /**
+       * Mark a host function such that <code>tame()</code> allows guest
+       * code to call it. This function will be tamed as an exophoric
+       * function, in other words, the <code>this</code> value supplied by
+       * the guest caller will be transmitted through the taming boundary.
+       *
+       * @param f an exophoric function.
+       */
       function markXo4a(f) {
-        tamingWindow.___.markTameAsXo4a(f);
+        return tamingWindow.___.markTameAsXo4a(f);
+      }
+
+      /**
+       * Grant access to a method of a constructor such that <code>tame()</code>
+       * will allow guest code to call it on instances of the constructor.
+       *
+       * @param c a constructor function, which must previously have been
+       *     marked via <code>markCtor()</code>.
+       * @param name a method name.
+       */
+      function grantMethod(c, name) {
+        tamingWindow.___.grantTameAsMethod(c, name);
+      }
+
+      /**
+       * Grant access to a field of an object such that <code>tame</code> will
+       * allow guest code to read the field. This grant is inherited along the
+       * JavaScript prototype chain.
+       *
+       * @param o an object.
+       * @pram name a property name.
+       */
+      function grantRead(o, name) {
+        tamingWindow.___.grantTameAsRead(o, name);
+      }
+
+      /**
+       * Grant access to a field of an object such that <code>tame</code> will
+       * allow guest code to read and write the field. This grant is inherited
+       * along the JavaScript prototype chain.
+       *
+       * @param o an object.
+       * @pram name a property name.
+       */
+      function grantReadWrite(o, name) {
+        tamingWindow.___.grantTameAsReadWrite(o, name);
       }
 
       /**
@@ -244,10 +289,11 @@ var caja = (function () {
            */
           function run(url, extraImports, callback) {
             if (!extraImports.hasOwnProperty('onerror')) {
-              extraImports.onerror = tame(function (message, source, lineNum) {
-                console.log('Uncaught script error: ' + message
-                    + ' in source: "' + source + '" at line: ' + lineNum);
-              });
+              extraImports.onerror = markFunction(
+                  function (message, source, lineNum) {
+                    console.log('Uncaught script error: ' + message
+                        + ' in source: "' + source + '" at line: ' + lineNum);
+                  });
             }
             copyToImports(imports, extraImports);
             guestWindow.Q.when(loader.async(url), function (moduleFunc) {
@@ -268,19 +314,22 @@ var caja = (function () {
       // A frame group
       callback({
         tame: tame,
-        markConstructed: markConstructed,
-        markReadWrite: markReadWrite,
+        markReadOnlyRecord: markReadOnlyRecord,
+        markFunction: markFunction,
         markCtor: markCtor,
         markXo4a: markXo4a,
+        grantMethod: grantMethod,
+        grantRead: grantRead,
+        grantReadWrite: grantReadWrite,
         iframe: tamingFrame,
         makeES5Frame: makeES5Frame
       });
     });
   }
 
-  // Apply styles to current document
-  (function() {
-    var style = document.createElement('style');
+  function initFeralFrame(aWindow) {
+    // Apply styles to current document
+    var style = aWindow.document.createElement('style');
     style.setAttribute('type', 'text/css');
     style.innerHTML =
         '.caja_outerContainer___ {' +
@@ -293,14 +342,19 @@ var caja = (function () {
         '  margin: 0px;' +
         '  height: 100%;' +
         '  position: relative;' +
-        '  overflow: hidden;' +
+        '  overflow: auto;' +
         '  clip: rect(0px, 0px, 0px, 0px);' +
         '}';
-    document.getElementsByTagName('head')[0].appendChild(style);
-  })();
+    aWindow.document.getElementsByTagName('head')[0].appendChild(style);
+    // Attach safety marker to 'window' object
+    aWindow.___ = aWindow;
+    // Attach recognition marker to 'Object' constructor
+    aWindow.Object.FERAL_FRAME_OBJECT___ = aWindow.Object;
+  }
 
   // The global singleton Caja object
   return {
-    configure: configure
+    configure: configure,
+    initFeralFrame: initFeralFrame
   };
 })();

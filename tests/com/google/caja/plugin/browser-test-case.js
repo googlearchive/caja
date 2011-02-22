@@ -78,7 +78,7 @@
  *
  *       Functions expected by jsUnit that the test driver may override.
  *
- *   jsunitRegister, jsunitRun, assertTrue(), assertEquals(), ...
+ *   eeterter, jsunitRun, assertTrue(), assertEquals(), ...
  *
  *       All jsUnit objects and functions are available at the top level.
  *
@@ -110,6 +110,7 @@ function getUrlParam(name) {
 }
 
 function pageLoaded___() {
+  caja.initFeralFrame(window);
   var scriptTag = document.createElement('script');
   scriptTag.setAttribute('src',
       getUrlParam('test-driver')
@@ -131,32 +132,41 @@ function createDiv() {
 function createExtraImportsForTesting(frameGroup, frame) {
   var standardImports = {};
 
-  standardImports.readyToTest = frameGroup.tame(readyToTest);
-  standardImports.jsunitRun = frameGroup.tame(jsunitRun);
-  standardImports.jsunitRegister = frameGroup.tame(jsunitRegister);
-  standardImports.jsunitCallback = jsunitCallback;
-  standardImports.console = frameGroup.tame({
-    log: function () {
+  standardImports.readyToTest =
+      frameGroup.tame(frameGroup.markFunction(readyToTest));
+  standardImports.jsunitRun =
+      frameGroup.tame(frameGroup.markFunction(jsunitRun));
+  standardImports.jsunitRegister =
+      frameGroup.tame(frameGroup.markFunction(jsunitRegister));
+  standardImports.jsunitCallback =
+      frameGroup.tame(frameGroup.markFunction(jsunitCallback));
+
+  var fakeConsole = {
+    log: frameGroup.markFunction(function () {
       console.log.apply(console, arguments);
-    },
-    warn: function () {
+    }),
+    warn: frameGroup.markFunction(function () {
       console.warn.apply(console, arguments);
-    },
-    error: function () {
+    }),
+    error: frameGroup.markFunction(function () {
       console.error.apply(console, arguments);
-    },
-    trace: function () {
+    }),
+    trace: frameGroup.markFunction(function () {
       console.trace ? console.trace()
           : console.error.apply(console, arguments);
-    }
-  });
+    })
+  };
 
-  standardImports.$ = frameGroup.tame(function(id) {
+  standardImports.console = frameGroup.tame(fakeConsole);
+
+  standardImports.$ = frameGroup.tame(frameGroup.markFunction(function(id) {
     return frame.imports.document.getElementById(id);
-  });
+  }));
+
+  var ___ = frameGroup.iframe.contentWindow.___;
 
   // Give unfiltered DOM access so we can check the results of actions.
-  standardImports.directAccess = frameGroup.tame({
+  var directAccess = {
     // Allow testing of emitHtml by exposing it for testing
     click: function (tameNode) {
       tameNode.node___.click();
@@ -171,7 +181,8 @@ function createExtraImportsForTesting(frameGroup, frame) {
       return tameNode.node___.getAttribute(name);
     },
     getBodyNode: function () {
-      return frame.imports.tameNode___(/* TODO(ihab.awad) ??? */ testDomContainer);
+      return frame.imports.tameNode___(
+          /* TODO(ihab.awad): ??? */ testDomContainer);
     },
     getComputedStyle: function (tameNode, styleProp) {
       var node = tameNode.node___;
@@ -194,11 +205,26 @@ function createExtraImportsForTesting(frameGroup, frame) {
       var s = document.createElement('script');
       s.appendChild(document.createTextNode('/* intentionally blank */'));
       return frame.imports.tameNode___(s, true);
-    },
-  });
+    }
+  };
+
+  function makeCallable(f) { f.f___ = f; }
+
+  makeCallable(directAccess.click);
+  makeCallable(directAccess.emitCssHook);
+  makeCallable(directAccess.getInnerHTML);
+  makeCallable(directAccess.getAttribute);
+  makeCallable(directAccess.getBodyNode);
+  makeCallable(directAccess.getComputedStyle);
+  makeCallable(directAccess.makeUnattachedScriptNode);
+
+  standardImports.directAccess = {
+    v___: function(p) { return directAccess[p]; },
+    m___: function(p, as) { return directAccess[p].apply({}, as); }
+  };
 
   // Marks a container green to indicate that test passed
-  standardImports.pass = frameGroup.tame(function (id) {
+  standardImports.pass = frameGroup.tame(frameGroup.markFunction(function (id) {
     jsunit.pass(id);
     var node = frame.imports.document.getElementById(id);
     if (!node) return;
@@ -208,30 +234,12 @@ function createExtraImportsForTesting(frameGroup, frame) {
     cl = cl.replace(/\b(clickme|waiting)\b\s*/g, '');
     cl += ' passed';
     node.className = cl;
-  });
+  }));
 
-  /** Aim high and you might miss the moon! */
   standardImports.expectFailure =
-      frameGroup.tame(function (shouldFail, opt_msg, opt_failFilter) {
-        try {
-          shouldFail();
-        } catch (e) {
-          if (opt_failFilter && !opt_failFilter(e)) { throw e; }
-          console.log('Caught expected failure ' + e + ' (' + e.message + ')');
-          return;
-        }
-        fail(opt_msg || 'Expected failure');
-      });
-
+      frameGroup.tame(frameGroup.markFunction(expectFailure));
   standardImports.assertFailsSafe =
-      frameGroup.tame(function (canFail, assertionsIfPasses) {
-        try {
-          canFail();
-        } catch (e) {
-          return;
-        }
-        assertionsIfPasses();
-      });
+      frameGroup.tame(frameGroup.markFunction(assertFailsSafe));
 
   var jsunitFns = [
       'assert', 'assertContains', 'assertEquals', 'assertEvaluatesToFalse',
@@ -245,7 +253,8 @@ function createExtraImportsForTesting(frameGroup, frame) {
     if (standardImports.hasOwnProperty(name)) {
       throw new Error('already defined', name);
     }
-    standardImports[name] = frameGroup.tame(window[name]);
+    standardImports[name] =
+        frameGroup.tame(frameGroup.markFunction(window[name]));
   }
 
   return standardImports;

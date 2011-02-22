@@ -179,7 +179,7 @@ function jsunitRun(opt_testNames) {
     startLogMessagesGroup(testName);
     try {
       (typeof setUp === 'function') && setUp();
-      jsunit.tests[testName].call(this);
+      jsunit.tests[testName].call();
       (typeof tearDown === 'function') && tearDown();
     } catch (e) {
       firstFailure = firstFailure || e;
@@ -224,4 +224,26 @@ function jsunitCallback(aFunction, opt_id) {
   return typeof ___ !== 'undefined'
            ? ___.markFuncFreeze(callback)
            : callback;
+}
+
+/** Aim high and you might miss the moon! */
+function expectFailure(shouldFail, opt_msg, opt_failFilter) {
+  try {
+    shouldFail();
+  } catch (e) {
+    if (opt_failFilter && !opt_failFilter(e)) { throw e; }
+    console.log(
+        'Caught expected failure ' + e + ' (' + e.message + ')');
+    return;
+  }
+  fail(opt_msg || 'Expected failure');
+}
+
+function assertFailsSafe(canFail, assertionsIfPasses) {
+  try {
+    canFail();
+  } catch (e) {
+    return;
+  }
+  assertionsIfPasses();
 }
