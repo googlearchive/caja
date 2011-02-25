@@ -26,7 +26,7 @@
         -->
       <groupId>nu.validator.htmlparser</groupId>
       <artifactId>htmlparser</artifactId>
-      <version>1.0.7</version>
+      <version>r4209</version>
     </dependency>
     <dependency>
       <groupId>com.googlecode.json-simple</groupId>
