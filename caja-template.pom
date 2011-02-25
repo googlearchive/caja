@@ -24,7 +24,7 @@
         - Includes trunk/third_party/java/htmlparser 
         - as described at http://about.validator.nu/htmlparser/
         -->
-      <groupId>nu.validator.htmlparser</groupId>
+      <groupId>caja</groupId>
       <artifactId>htmlparser</artifactId>
       <version>r4209</version>
     </dependency>
