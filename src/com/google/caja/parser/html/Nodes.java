@@ -218,7 +218,8 @@ public class Nodes {
    */
   public static void render(Node node, Namespaces ns, RenderContext rc) {
     StringBuilder sb = new StringBuilder(1 << 18);
-    new Renderer(sb, rc.markupRenderMode(), rc.isAsciiOnly()).render(node, ns);
+    new Renderer(sb, rc.markupRenderMode(), rc.isAsciiOnly(), ns)
+        .render(node, ns);
     TokenConsumer out = rc.getOut();
     FilePosition pos = getFilePositionFor(node);
     out.mark(FilePosition.startOf(pos));
@@ -261,12 +262,16 @@ final class Renderer {
   final MarkupRenderMode mode;
   final boolean asXml;
   final boolean isAsciiOnly;
+  final int namespaceDepthAtStart;
 
-  Renderer(StringBuilder out, MarkupRenderMode mode, boolean isAsciiOnly) {
+  Renderer(
+      StringBuilder out, MarkupRenderMode mode, boolean isAsciiOnly,
+      Namespaces ns) {
     this.out = out;
     this.mode = mode;
     this.asXml = mode == MarkupRenderMode.XML;
     this.isAsciiOnly = isAsciiOnly;
+    this.namespaceDepthAtStart = depth(ns);
   }
 
   private static final String HTML_NS = Namespaces.HTML_NAMESPACE_URI;
@@ -290,7 +295,7 @@ final class Renderer {
           if (nsUri == null) { nsUri = HTML_NS; }
           elNs = ns.forUri(nsUri);
           if (elNs == null) {
-            elNs = ns = addNamespace(ns, nsUri);
+            elNs = ns = addNamespace(ns, nsUri, el.getPrefix());
             addElNs = true;
           }
         }
@@ -305,7 +310,7 @@ final class Renderer {
         if (localName == null) {
           localName = el.getTagName();
           if (localName.indexOf(':') >= 0) {
-            throw new IllegalStateException();
+            throw new IllegalStateException(localName);
           }
         }
         boolean isHtml = elNs.uri == HTML_NS;
@@ -321,22 +326,52 @@ final class Renderer {
         for (int i = 0, n = attrs.getLength(); i < n; ++i) {
           Attr a = (Attr) attrs.item(i);
           String attrUri = a.getNamespaceURI();
-          // Attributes created via setAttribute calls for ISINDEX elements
-          // have no namespace URI.
+          // Attributes created via setAttribute calls for ISINDEX elements and
+          // xmlns attributes have no namespace URI.
+          String attrLocalName = a.getLocalName();
+
+          if (Namespaces.XMLNS_NAMESPACE_URI.equals(attrUri)) {
+            String nsPrefix = attrLocalName;
+            Namespaces added = addNamespaceFromAttribute(
+                nsPrefix, a.getValue(), ns);
+            if (added == null) { continue; }
+            ns = added;
+          } else if (attrLocalName == null) {
+            attrLocalName = a.getName();
+            if (isXmlnsDecl(attrLocalName)) {
+              String nsPrefix = "";
+              if (attrLocalName.length() > 5) {
+                nsPrefix = attrLocalName.substring(6);
+              }
+              Namespaces added = addNamespaceFromAttribute(
+                  nsPrefix, a.getValue(), ns);
+              if (added == null) { continue; }
+              ns = added;
+            } else if (attrLocalName.indexOf(':') >= 0) {
+              throw new IllegalStateException();
+            }
+          }
+          out.append(' ');
           if (attrUri != null && (attrUri = attrUri.intern()) != elNs.uri) {
             Namespaces attrNs = ns.forUri(attrUri);
             if (attrNs == null) {
-              attrNs = ns = addNamespace(ns, attrUri);
-              out.append(' ');
+              attrNs = ns = addNamespace(ns, attrUri, a.getPrefix());
               renderNamespace(attrNs);
-            } else if ("xmlns".equals(attrNs.prefix)) {
-              continue;
+              out.append(' ');
             }
-            out.append(' ').append(attrNs.prefix).append(':');
-          } else {
-            out.append(' ');
+            out.append(attrNs.prefix).append(':');
           }
-          renderAttr(a, HTML_NS.equals(attrUri));
+          attrLocalName = emitLocalName(attrLocalName, isHtml);
+          // http://www.w3.org/TR/html401/intro/sgmltut.html
+	  // #didx-boolean_attribute
+          // Authors should be aware that many user agents only recognize the
+          // minimized form of boolean attributes and not the full form.
+          if (!(isHtml && mode == MarkupRenderMode.HTML4_BACKWARDS_COMPAT
+                && BooleanAttrs.isBooleanAttr(attrLocalName))) {
+            out.append("=\"");
+            Escaping.escapeXml(a.getValue(), isAsciiOnly, out);
+            out.append('"');
+          }
         }
 
         HtmlTextEscapingMode m = asXml || !isHtml
@@ -412,7 +447,14 @@ final class Renderer {
         break;
       case Node.ATTRIBUTE_NODE: {
         Attr a = (Attr) node;
-        renderAttr(a, HTML_NS.equals(a.getNamespaceURI()));
+        String localName = a.getLocalName();
+        if (localName == null) {
+          localName = a.getName();
+        }
+        emitLocalName(localName, HTML_NS.equals(a.getNamespaceURI()));
+        out.append("=\"");
+        Escaping.escapeXml(a.getValue(), isAsciiOnly, out);
+        out.append('"');
         break;
       }
       case Node.PROCESSING_INSTRUCTION_NODE: {
@@ -440,13 +482,30 @@ final class Renderer {
   }
 
   private static final int COMMON_NS_DEPTH = depth(Namespaces.COMMON);
-  private Namespaces addNamespace(Namespaces base, String uri) {
+  private Namespaces addNamespace(
+      Namespaces base, String uri, String suggestedPrefix) {
+    if (isAlphaNumericId(suggestedPrefix)
+        && base.forPrefix(suggestedPrefix) == null) {
+      return new Namespaces(base, suggestedPrefix, uri);
+    }
     // We subtract COMMON_NS_DEPTH so that when we modify Namespaces.COMMON,
     // we do not change the output for documents that do not depend on the
     // added or removed namespaces.
     // It is alright for depth to be negative since dashes can appear in
     // namespace prefixes.
     return new Namespaces(base, "_ns" + (depth(base) - COMMON_NS_DEPTH), uri);
+  }
+
+  private Namespaces addNamespaceFromAttribute(
+      String nsPrefix, String nsUri, Namespaces ns) {
+    Namespaces masked = ns.forPrefix(nsPrefix);
+    if (masked != null) {
+      if (!masked.uri.equals(nsUri) && depth(masked) <= namespaceDepthAtStart) {
+        // Don't output masking declarations.
+        return null;
+      }
+    }
+    return new Namespaces(ns, nsPrefix, nsUri);
   }
 
   private static int depth(Namespaces ns) {
@@ -461,24 +520,14 @@ final class Renderer {
     out.append('"');
   }
 
-  private void renderAttr(Attr a, boolean isHtml) {
-    String localName = a.getLocalName();
-    // TODO: do away with these once shindig has gotten rid of Neko
-    if (localName == null) {
-      localName = a.getName();
-      if (localName.indexOf(':') >= 0 || localName.startsWith("xmlns")) {
-        throw new IllegalArgumentException(localName);
-      }
-    }
-    localName = emitLocalName(localName, isHtml);
-    // http://www.w3.org/TR/html401/intro/sgmltut.html#didx-boolean_attribute:
-    // Authors should be aware that many user agents only recognize the
-    // minimized form of boolean attributes and not the full form.
-    if (!(isHtml && mode == MarkupRenderMode.HTML4_BACKWARDS_COMPAT
-          && BooleanAttrs.isBooleanAttr(localName))) {
-      out.append("=\"");
-      Escaping.escapeXml(a.getValue(), isAsciiOnly, out);
-      out.append("\"");
+  private static boolean isXmlnsDecl(String attrName) {
+    int length = attrName.length();
+    if (length == 5) {
+      return "xmlns".equals(attrName);
+    } else if (length > 6) {
+      return attrName.startsWith("xmlns:");
+    } else {
+      return false;
     }
   }
 
@@ -510,6 +559,21 @@ final class Renderer {
     }
     out.append(name);
     return name;
+  }
+
+  private boolean isAlphaNumericId(String s) {
+    if (s == null) { return false; }
+    int n = s.length();
+    if (n == 0) { return false; }
+    char ch0 = s.charAt(0);
+    if (!(('A' <= ch0 && ch0 <= 'Z') || ('a' <= ch0 && ch0 <= 'z'))) {
+      return false;
+    }
+    for (int i = 1; i < n; ++i) {
+      char ch = s.charAt(i);
+      if (ch > 'z' || !CASE_SENS_NAME_CHARS[ch]) { return false; }
+    }
+    return true;
   }
 
   private static boolean containsEndTag(StringBuilder sb) {

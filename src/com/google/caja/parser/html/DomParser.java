@@ -356,9 +356,15 @@ public class DomParser {
           String qname = el.getTagName();
           elNs = ns.forElementName(qname);
           if (elNs == null) {
-            FilePosition pos = Nodes.getFilePositionFor(el);
-            ns = elNs = AbstractElementStack.unknownNamespace(
-                pos, ns, qname, mq);
+            // Try lower-casing the name to avoid HTML name fuzziness.
+            String lQname = Strings.toLowerCase(qname);
+            if (lQname != qname && (elNs = ns.forElementName(lQname)) != null) {
+              qname = lQname;
+            } else {
+              FilePosition pos = Nodes.getFilePositionFor(el);
+              ns = elNs = AbstractElementStack.unknownNamespace(
+                  pos, ns, qname, mq);
+            }
           }
 
           Element replacement;
@@ -419,8 +425,14 @@ public class DomParser {
             }
             Namespaces attrNs = ns.forAttrName(elNs, qname);
             if (attrNs == null) {
-              ns = attrNs = AbstractElementStack.unknownNamespace(
-                  Nodes.getFilePositionFor(a), ns, qname, mq);
+              String lQname = Strings.toLowerCase(qname);
+              if (lQname != qname
+                  && (attrNs = ns.forAttrName(elNs, lQname)) != null) {
+                qname = lQname;
+              } else {
+                ns = attrNs = AbstractElementStack.unknownNamespace(
+                    Nodes.getFilePositionFor(a), ns, qname, mq);
+              }
             }
 
             // This may screw up the count or change the order of attributes in
@@ -437,7 +449,7 @@ public class DomParser {
       default: return node;
     }
     for (Node c = node.getFirstChild(); c != null; c = c.getNextSibling()) {
-      fixup(c, ns);
+      c = fixup(c, ns);
     }
     return node;
   }

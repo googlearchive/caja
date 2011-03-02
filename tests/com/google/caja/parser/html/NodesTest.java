@@ -21,6 +21,7 @@ import com.google.caja.util.CajaTestCase;
 
 import java.util.Arrays;
 
+import org.w3c.dom.Attr;
 import org.w3c.dom.DOMException;
 import org.w3c.dom.Document;
 import org.w3c.dom.DocumentFragment;
@@ -122,19 +123,26 @@ public class NodesTest extends CajaTestCase {
   }
 
   public final void testRenderWithUnknownNamespace() throws Exception {
+    DocumentFragment fragment = xmlFragment(fromString(
+        ""
+        + "<foo xmlns='http://www.w3.org/XML/1998/namespace'"
+        + " xmlns:bar='http://bobs.house.of/XML&BBQ'>"
+        + "<bar:baz boo='howdy' xml:lang='es'/>"
+        + "</foo>"));
+    // Remove any XMLNS attributes and prefixes.
+    Element el = (Element) fragment.getFirstChild();
+    while (el.getAttributes().getLength() != 0) {
+      el.removeAttributeNode((Attr) el.getAttributes().item(0));
+    }
+    el.setPrefix("");
+    el.getFirstChild().setPrefix("");
     assertEquals(
         ""
         + "<xml:foo>"
         + "<_ns1:baz xmlns:_ns1=\"http://bobs.house.of/XML&amp;BBQ\""
         + " boo=\"howdy\" xml:lang=\"es\" />"
         + "</xml:foo>",
-        Nodes.render(xmlFragment(fromString(
-            ""
-            + "<foo xmlns='http://www.w3.org/XML/1998/namespace'"
-            + " xmlns:bar='http://bobs.house.of/XML&BBQ'>"
-            + "<bar:baz boo='howdy' xml:lang='es'/>"
-            + "</foo>")),
-            MarkupRenderMode.XML));
+        Nodes.render(fragment, MarkupRenderMode.XML));
   }
 
   public final void testRenderWithMaskedInputNamespace1() throws Exception {
@@ -198,7 +206,7 @@ public class NodesTest extends CajaTestCase {
             Namespaces.HTML_NAMESPACE_URI, "xmlns",
             Namespaces.HTML_NAMESPACE_URI);
       } catch (Exception ex2) {
-        el.setAttribute("xmlns", Namespaces.HTML_NAMESPACE_URI);
+        // OK
       }
     }
     el.appendChild(doc.createElementNS(Namespaces.SVG_NAMESPACE_URI, "br"));
@@ -216,16 +224,11 @@ public class NodesTest extends CajaTestCase {
     Element el = doc.createElementNS(Namespaces.SVG_NAMESPACE_URI, "span");
     try {
       el.setAttributeNS(
-          Namespaces.XMLNS_NAMESPACE_URI, "svg", Namespaces.HTML_NAMESPACE_URI);
-    } catch (Exception ex) {
-      try {
-        el.setAttributeNS(
             Namespaces.HTML_NAMESPACE_URI, "xmlns:svg",
             Namespaces.HTML_NAMESPACE_URI);
       } catch (Exception ex2) {
-        el.setAttribute("xmlns:svg", Namespaces.HTML_NAMESPACE_URI);
+      // OK
       }
-    }
     el.appendChild(doc.createElementNS(Namespaces.SVG_NAMESPACE_URI, "br"));
     String rendered;
     try {

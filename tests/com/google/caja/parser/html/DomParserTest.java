@@ -30,6 +30,7 @@ import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.MessageType;
 import com.google.caja.util.CajaTestCase;
+import com.google.caja.util.FailureIsAnOption;
 import com.google.caja.util.Function;
 import com.google.caja.util.Join;
 import com.google.caja.util.Lists;
@@ -333,6 +334,65 @@ public class DomParserTest extends CajaTestCase {
     // sectNode.outerHtml:
     // <sect: blah="blah"><br />helo helo <p>helloo</p></sect:>
     assertEquals(4, sectNode.getChildNodes().getLength());
+  }
+
+
+  public final void testXmlnsTags() throws Exception {
+    assertParsedHtml(
+        Arrays.asList(
+            "<HTML xmlns:fb=\"http://www.facebook.com/2008/fbml\" >",
+            "<body>",
+            "<FB:LIKE width=\"300\" ></FB:LIKE>",
+            "</body></html>"
+        ),
+        Arrays.asList(
+            "Element : html 1+1-4+15",
+            "  Attrib : xmlns:fb 1+7-1+15",
+            "    Value : http://www.facebook.com/2008/fbml 1+16-1+51",
+            "  Element : head 2+1-2+1",
+            "  Element : body 2+1-4+8",
+            "    Text : \\n 2+7-3+1",
+            "    Element : fb:like 3+1-3+33",
+            "      Attrib : width 3+10-3+15",
+            "        Value : 300 3+16-3+21",
+            "    Text : \\n 3+33-4+1"
+        ),
+        Arrays.<String>asList(
+            "LINT testXmlnsTags:3+1 - 23:"
+            + " Element name 'FB:LIKE' cannot be represented as XML 1.0."
+        ),
+        Arrays.asList(
+            ("<html xmlns:fb=\"http://www.facebook.com/2008/fbml\">"
+             + "<head></head><body>"),
+            "<fb:like width=\"300\"></fb:like>",
+            "</body></html>"
+        )
+    );
+  }
+
+
+  @FailureIsAnOption  // We don't yet render prefixless xmlns declarations.
+  public final void testXmlnsMissingTags() throws Exception {
+    assertParsedHtml(
+        Arrays.asList(
+            "<HTML xmlns=\"http://www.w3.org/1999/xhtml\" >",
+            "<body>",
+            "</body></html>"
+        ),
+        Arrays.asList(
+            "Element : html 1+1-3+15",
+            "  Element : head 2+1-2+1",
+            "  Element : body 2+1-3+8",
+            "    Text : \\n 2+7-3+1"
+        ),
+        Arrays.<String>asList(
+        ),
+        Arrays.asList(
+            ("<html xmlns=\"http://www.w3.org/1999/xhtml\">"
+             + "<head></head><body>"),
+            "</body></html>"
+        )
+    );
   }
 
   public final void testParseDom() throws Exception {
@@ -2660,7 +2720,8 @@ public class DomParserTest extends CajaTestCase {
         + "</script>"));
     assertEquals(
         ""
-        + "<script type=\"text/os-data\">\n"
+        + "<script type=\"text/os-data\""
+        + " xmlns:os=\"http://ns.opensocial.org/2008/markup\">\n"
         + "  <os:ViewerRequest key=\"viewer\"/>\n"
         + "</script>",
         Nodes.render(f));
@@ -2689,7 +2750,7 @@ public class DomParserTest extends CajaTestCase {
         + "</div>"));
     assertEquals(
         ""
-        + "<div>\n"
+        + "<div xmlns:os=\"http://ns.opensocial.org/2008/markup\">\n"
         + "  <os:ViewerRequest key=\"viewer\">\n"
         + "</os:ViewerRequest></div>",
         Nodes.render(f));
@@ -2703,9 +2764,35 @@ public class DomParserTest extends CajaTestCase {
         + "</div>"));
     assertEquals(
         ""
-        + "<div>\n"
-        + "  <os:foo bar=\"baz\" boo=\"far\">\n"
-        + "</os:foo></div>",
+        + "<div xmlns:f=\"http://ns.opensocial.org/2008/markup\">\n"
+        + "  <f:foo bar=\"baz\" boo=\"far\">\n"
+        + "</f:foo></div>",
+        Nodes.render(f));
+  }
+
+  public final void testIssueOSTemplateMarkup() throws Exception {
+    String data = ""
+      + "<div xmlns:osx=\"http://ns.opensocial.org/2008/extensions\">\n"
+      + "<osx:NavigateToApp>\n"
+      + "<img border=\"0\" title=\"Justin\" src=\"foo.gif\">\n"
+      + "</osx:NavigateToApp>\n"
+      // The second time osx:NavigateToApp appears it has a null namespace uri
+      // This causes getLocalName during rendering to return null and thus
+      // throw a IllegalStateException
+      + "<osx:NavigateToApp>\n"
+      + "<span class=\"profile-link\">foo</span>"
+      + "</osx:NavigateToApp>"
+      + "</div>";
+    DocumentFragment f = htmlFragment(fromString(data));
+    assertEquals(""
+        + "<div xmlns:osx=\"http://ns.opensocial.org/2008/extensions\">\n"
+        + "<osx:NavigateToApp>\n"
+        + "<img border=\"0\" src=\"foo.gif\" title=\"Justin\" />\n"
+        + "</osx:NavigateToApp>\n"
+        + "<osx:NavigateToApp>\n"
+        + "<span class=\"profile-link\">foo</span>"
+        + "</osx:NavigateToApp>"
+        + "</div>",
         Nodes.render(f));
   }
 

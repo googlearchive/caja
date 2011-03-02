@@ -310,8 +310,8 @@ public class ParserTest extends CajaTestCase {
   public final void testNUL() throws Exception {
     assertEquals("'\\x00'", render(jsExpr(fromString("'\0'"))));
   }
-  
-  private String expand(String template, String value) throws ParseException {
+
+  private String expand(String template, String value) {
     // Use string replace rather than quasis to avoid invoking the parser when
     // creating tests for the parser
     return template.replace("@@", value);
@@ -323,7 +323,7 @@ public class ParserTest extends CajaTestCase {
     Escaping.unicodeEscape(k.charAt(k.length()-1), munged);
     return munged.toString();
   }
-  
+
   public final void testUnicodeInKeywords() throws Exception {
     String[] templates = {
         "function @@ (a){}",
@@ -337,12 +337,12 @@ public class ParserTest extends CajaTestCase {
         String mungedKeyword = unicodeMunge(k.toString());
         String candidate = expand(template, mungedKeyword);
         try {
-          ParseTreeNode ptn = js(fromString(candidate));
+          js(fromString(candidate));
         } catch (Exception e) {
           assertTrue(e instanceof ParseException);
         }
         assertMessage(true, MessageType.RESERVED_WORD_USED_AS_IDENTIFIER,
-            MessageLevel.ERROR);
+                      MessageLevel.ERROR);
       }
     }
   }

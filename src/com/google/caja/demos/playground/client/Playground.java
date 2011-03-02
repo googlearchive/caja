@@ -61,7 +61,7 @@ public class Playground implements EntryPoint, HistoryListener {
   public void clearPolicy() {
     gui.setPolicySource("");
   }
-  
+
   public void loadPolicy(String url) {
     gui.setLoading(true);
     gui.setPolicyUrl(url);
@@ -72,7 +72,7 @@ public class Playground implements EntryPoint, HistoryListener {
             gui.addCompileMessage(caught.getMessage());
             gui.selectTab(PlaygroundView.Tabs.COMPILE_WARNINGS);
           }
-    
+
           public void onSuccess(String result) {
             gui.setLoading(false);
             gui.setPolicySource(result);

@@ -85,6 +85,7 @@ public final class Job {
     this.baseUri = baseUri;
   }
 
+  @Override
   public Job clone() {
     return new Job(root.clone(), type, baseUri);
   }

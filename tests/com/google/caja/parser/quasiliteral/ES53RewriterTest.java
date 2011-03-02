@@ -206,21 +206,21 @@ public class ES53RewriterTest extends CommonJsRewriterTestCase {
   public final void testFunctionToStringCall() throws Exception {
     rewriteAndExecute(
         "function foo() {}\n"
-        + "assertEquals(foo.toString(),\n"
-        + "             'function foo() {\\n  [cajoled code]\\n}');");
+        + "assertEquals('function foo() {\\n  [cajoled code]\\n}',\n"
+        + "             foo.toString());");
     rewriteAndExecute(
         "function foo (a, b) { xx; }\n"
-        + "assertEquals(foo.toString(),\n"
-        + "             'function foo(a, b) {\\n  [cajoled code]\\n}');");
+        + "assertEquals('function foo(a, b) {\\n  [cajoled code]\\n}',\n"
+        + "             foo.toString());");
     rewriteAndExecute(
         "function foo() {}\n"
-        + "assertEquals(Function.prototype.toString.call(foo),\n"
-        + "             'function foo() {\\n  [cajoled code]\\n}');");
+        + "assertEquals('function foo() {\\n  [cajoled code]\\n}',\n"
+        + "             Function.prototype.toString.call(foo));");
     rewriteAndExecute(
         "var foo = function (x$x, y_y) {};\n"
         + "assertEquals("
-        + "    Function.prototype.toString.call(foo),\n"
-        + "    'function foo$_var(x$x, y_y) {\\n  [cajoled code]\\n}');");
+        + "    'function foo$_var(x$x, y_y) {\\n  [cajoled code]\\n}',\n"
+        + "    Function.prototype.toString.call(foo));");
   }
 
   public final void testDate() throws Exception {
@@ -1352,7 +1352,7 @@ public class ES53RewriterTest extends CommonJsRewriterTestCase {
         "      return a + b;" +
         "    }, " +
         "    {}, " +
-        "    [3, 4]);");  
+        "    [3, 4]);");
     assertConsistent(
         "Function.prototype.call.call(" +
         "    function(a, b) {" +
@@ -1360,7 +1360,7 @@ public class ES53RewriterTest extends CommonJsRewriterTestCase {
         "    }," +
         "    {}," +
         "    3," +
-        "    4);"); 
+        "    4);");
     assertConsistent(
         "Function.prototype.bind.call(" +
         "    function(a, b) {" +
@@ -1529,7 +1529,7 @@ public class ES53RewriterTest extends CommonJsRewriterTestCase {
     es53Rewriter = new ES53Rewriter(TestBuildInfo.getInstance(), mq, false);
     setRewriter(es53Rewriter);
   }
-  
+
   @Override
   protected Object executePlain(String caja) throws IOException {
     mq.getMessages().clear();
