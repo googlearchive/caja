@@ -39,3 +39,15 @@
     pass('testDynamicDom');
   });
 </script>
+
+<div id="testGlobalWindow" class="testcontainer">testGlobalWindow</div>
+<script type="text/javascript">
+ var foo = 0;
+ jsunitRegister('testGlobalWindow',
+                function testGlobalWindow() {
+   assertEquals(0, foo);
+   window.foo = 1;
+   assertEquals(1, foo);
+   pass('testGlobalWindow');
+ });
+</script>

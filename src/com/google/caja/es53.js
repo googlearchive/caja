@@ -4752,6 +4752,9 @@ var ___, cajaVM, safeJSON;
         if (/__$/.test(p)) {
           // Caja hidden property on IMPORTS -- these are used by Domita
           imports[p] = source[p];
+        } else if (isNumericName(p)) {
+          // Set directly
+          imports[p] = source[p];
         } else {
           imports.DefineOwnProperty___(p, {
             value: source[p],
@@ -4764,13 +4767,26 @@ var ___, cajaVM, safeJSON;
     }
   }
 
+  function copyImports(source) {
+    var imports = copy(sharedImports);
+    copyToImports(imports, source);
+    return imports;
+  }
+
   /**
    * Produces a function module given an object literal module
    */
   function prepareModule(module, load) {
     registerClosureInspector(module);
     function theModule(extraImports) {
-      var imports = copy(sharedImports);
+      var imports;
+      if (extraImports.window) {
+        imports = extraImports.window;
+        extraImports = copyImports(extraImports);
+        delete extraImports.window;
+      } else {
+        imports = copy(sharedImports);
+      }
       copyToImports({
         load: load,
         cajaVM: cajaVM

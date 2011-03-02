@@ -4450,39 +4450,41 @@ var attachDocumentStub = (function () {
       TameDefaultView.prototype[propertyName] = value;
       ___.grantRead(TameDefaultView.prototype, propertyName);
     }));
-    TameWindow.prototype.handleRead___ = function (name) {
-      name = String(name);
-      if (endsWith__.test(name)) { return void 0; }
-      var handlerName = name + '_getter___';
-      if (this[handlerName]) {
-        return this[handlerName]();
-      }
-      if (___.hasOwnProp(this, name)) {
-        return this[name];
-      } else {
-        return void 0;
-      }
-    };
-    TameWindow.prototype.handleSet___ = function (name, val) {
-      name = String(name);
-      if (endsWith__.test(name)) { throw new Error(INVALID_SUFFIX); }
-      var handlerName = name + '_setter___';
-      if (this[handlerName]) {
-        return this[handlerName](val);
-      }
-      this[name + '_canEnum___'] = true;
-      this[name + '_canRead___'] = true;
-      return this[name] = val;
-    };
-    TameWindow.prototype.handleDelete___ = function (name) {
-      name = String(name);
-      if (endsWith__.test(name)) { throw new Error(INVALID_SUFFIX); }
-      var handlerName = name + '_deleter___';
-      if (this[handlerName]) {
-        return this[handlerName]();
-      }
-      return ___.deleteFieldEntirely(this, name);
-    };
+    if (!Object.defineProperty) {
+      TameWindow.prototype.handleRead___ = function (name) {
+        name = String(name);
+        if (endsWith__.test(name)) { return void 0; }
+        var handlerName = name + '_getter___';
+        if (this[handlerName]) {
+          return this[handlerName]();
+        }
+        if (___.hasOwnProp(this, name)) {
+          return this[name];
+        } else {
+          return void 0;
+        }
+      };
+      TameWindow.prototype.handleSet___ = function (name, val) {
+        name = String(name);
+        if (endsWith__.test(name)) { throw new Error(INVALID_SUFFIX); }
+        var handlerName = name + '_setter___';
+        if (this[handlerName]) {
+          return this[handlerName](val);
+        }
+        this[name + '_canEnum___'] = true;
+        this[name + '_canRead___'] = true;
+        return this[name] = val;
+      };
+      TameWindow.prototype.handleDelete___ = function (name) {
+        name = String(name);
+        if (endsWith__.test(name)) { throw new Error(INVALID_SUFFIX); }
+        var handlerName = name + '_deleter___';
+        if (this[handlerName]) {
+          return this[handlerName]();
+        }
+        return ___.deleteFieldEntirely(this, name);
+      };
+    }
 
     var tameWindow = new TameWindow();
     var tameDefaultView = new TameDefaultView(tameDocument.editable___);
