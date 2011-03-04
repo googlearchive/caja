@@ -26,7 +26,6 @@
   });
 </script>
 
-
 <div id="testDynamicDom" class="testcontainer"></div>
 <script type="text/javascript">
   jsunitRegister('testDynamicDom',
@@ -40,14 +39,68 @@
   });
 </script>
 
-<div id="testGlobalWindow" class="testcontainer">testGlobalWindow</div>
+<div id="testGlobalWindowProperties" class="testcontainer">
+  testGlobalWindowProperties
+</div>
 <script type="text/javascript">
- var foo = 0;
- jsunitRegister('testGlobalWindow',
-                function testGlobalWindow() {
-   assertEquals(0, foo);
-   window.foo = 1;
-   assertEquals(1, foo);
-   pass('testGlobalWindow');
- });
+  var foo = 0;
+  jsunitRegister('testGlobalWindowProperties',
+                 function testGlobalWindowProperties() {
+    assertEquals(0, foo);
+    window.foo = 1;
+    assertEquals(1, foo);
+    pass('testGlobalWindowProperties');
+  });
+</script>
+
+<script type="text/javascript">
+  // Capture global 'this' for later use by the tests
+  var globalThis = this;
+</script>
+
+<div id="testGlobalWindowReassignment" class="testcontainer">
+  testGlobalWindowReassignment
+</div>
+<script type="text/javascript">
+  jsunitRegister('testGlobalWindowReassignment',
+                 function testGlobalWindowReassignment() {
+    assertEquals(globalThis, window);
+    var origWindow = window;
+    window = 1;
+    assertEquals(1, window);
+    window = origWindow;
+    assertEquals(origWindow, window);
+    pass('testGlobalWindowReassignment');
+  });
+</script>
+
+<div id="testGlobalSelfReassignment" class="testcontainer">
+  testGlobalSelfReassignment
+</div>
+<script type="text/javascript">
+  jsunitRegister('testGlobalSelfReassignment',
+                 function testGlobalSelfReassignment() {
+    assertEquals(globalThis, self);
+    var origSelf = self;
+    self = 1;
+    assertEquals(1, self);
+    self = origSelf;
+    assertEquals(origSelf, self);
+    pass('testGlobalSelfReassignment');
+  });
+</script>
+
+<div id="testGlobalNodeClassesReassignment" class="testcontainer">
+  testGlobalNodeClassesReassignment
+</div>
+<script type="text/javascript">
+  jsunitRegister('testGlobalNodeClassesReassignment',
+                 function testGlobalNodeClassesReassignment() {
+    var origElement = HTMLElement;
+    HTMLElement = 1;
+    assertEquals(1, window.HTMLElement);
+    window.HTMLElement = origElement;
+    assertEquals(origElement, HTMLElement);
+    pass('testGlobalNodeClassesReassignment');
+  });
 </script>

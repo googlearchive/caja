@@ -1621,6 +1621,8 @@ var attachDocumentStub = (function () {
       }
       this.node___ = node;
       this.childrenEditable___ = editable && childrenEditable;
+      this.FERAL_TWIN___ = node;
+      node.TAMED_TWIN___ = this;
       TameNode.call(this, editable);
     }
     ___.extend(TameBackedNode, TameNode);
@@ -1877,6 +1879,7 @@ var attachDocumentStub = (function () {
     function TamePseudoNode(editable) {
       TameNode.call(this, editable);
       this.properties___ = {};
+      this.TAMED_TWIN___ = this.FERAL_TWIN___ = this;
     }
     ___.extend(TamePseudoNode, TameNode);
     TamePseudoNode.prototype.appendChild =
@@ -4242,9 +4245,9 @@ var attachDocumentStub = (function () {
      if (target.DefineOwnProperty___) {
         target.DefineOwnProperty___(name, {
           value: value,
-          writable: false,
+          writable: true,
           enumerable: true,
-          configurable: false
+          configurable: true
         });
      } else {
        target[name] =  value;
@@ -4313,6 +4316,7 @@ var attachDocumentStub = (function () {
      */
     function TameWindow() {
       this.properties___ = {};
+      this.FERAL_TWIN___ = this.TAMED_TWIN___ = this;
     }
 
     /**
@@ -4571,8 +4575,17 @@ var attachDocumentStub = (function () {
     var wpLen = windowProps.length;
     for (var i = 0; i < wpLen; ++i) {
       var prop = windowProps[i];
-      tameWindow[prop] = tameWindow;
-      ___.grantRead(tameWindow, prop);
+      if (Object.prototype.DefineOwnProperty___) {
+        tameWindow.DefineOwnProperty___(prop, {
+          value: tameWindow,
+          writable: true,
+          enumerable: true,
+          configurable: true
+        });
+      } else {
+        tameWindow[prop] = tameWindow;
+        ___.grantRead(tameWindow, prop);
+      }
     }
 
     if (tameDocument.editable___) {
@@ -4586,8 +4599,17 @@ var attachDocumentStub = (function () {
     // under their DOM Level 2 standard name.
     ___.forOwnKeys(nodeClasses, ___.markFuncFreeze(function(name, ctor) {
       ___.primFreeze(ctor);
-      tameWindow[name] = ctor;
-      ___.grantRead(tameWindow, name);
+      if (Object.defineProperty) {
+        tameWindow.DefineOwnProperty___(name, {
+          value: ctor,
+          writable: true,
+          enumerable: true,
+          configurable: true
+        });
+      } else {
+        tameWindow[name] = ctor;
+        ___.grantRead(tameWindow, name);
+      }
     }));
 
     // TODO(ihab.awad): Build a more sophisticated virtual class hierarchy by
@@ -4647,8 +4669,17 @@ var attachDocumentStub = (function () {
 
     var defaultNodeClassCtor = nodeClasses.Element;
     for (var i = 0; i < defaultNodeClasses.length; i++) {
-      tameWindow[defaultNodeClasses[i]] = defaultNodeClassCtor;
-      ___.grantRead(tameWindow, defaultNodeClasses[i]);
+      if (Object.defineProperty) {
+        TameWindow.DefineOwnProperty___(defaultNodeClasses[i], {
+          value: defaultNodeClassCtor,
+          writable: true,
+          enumerable: true,
+          configurable: true
+        });
+      } else {
+        tameWindow[defaultNodeClasses[i]] = defaultNodeClassCtor;
+        ___.grantRead(tameWindow, defaultNodeClasses[i]);
+      }
     }
 
     var outers = imports.outers;
@@ -4656,6 +4687,8 @@ var attachDocumentStub = (function () {
       // For Valija, use the window object as outers.
       ___.forOwnKeys(outers, ___.markFuncFreeze(function(k, v) {
         if (!(k in tameWindow)) {
+          // No need to check for Object.defineProperty; this case
+          // occurs iff we are in Valija, not ES53.
           tameWindow[k] = v;
           ___.grantRead(tameWindow, k);
         }

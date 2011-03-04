@@ -4746,31 +4746,38 @@ var ___, cajaVM, safeJSON;
     });
   }
 
+  function isFlag(name) {
+    return /_v___$/ .test(name)
+        || /_w___$/ .test(name)
+        || /_gw___$/.test(name)
+        || /_c___$/ .test(name)
+        || /_e___$/ .test(name)
+        || /_g___$/ .test(name)
+        || /_s___$/ .test(name)
+        || /_m___$/ .test(name);
+  }
+
   function copyToImports(imports, source) {
     for (var p in source) {
       if (source.hasOwnProperty(p)) {
         if (/__$/.test(p)) {
-          // Caja hidden property on IMPORTS -- these are used by Domita
-          imports[p] = source[p];
+          if (!isFlag(p)) {
+            // Caja hidden property on IMPORTS -- these are used by Domita
+            imports[p] = source[p];
+          }
         } else if (isNumericName(p)) {
           // Set directly
           imports[p] = source[p];
         } else {
           imports.DefineOwnProperty___(p, {
             value: source[p],
-            writable: false,
+            writable: true,
             enumerable: true,
-            configurable: false
+            configurable: true
           });
         }
       }
     }
-  }
-
-  function copyImports(source) {
-    var imports = copy(sharedImports);
-    copyToImports(imports, source);
-    return imports;
   }
 
   /**
@@ -4782,8 +4789,7 @@ var ___, cajaVM, safeJSON;
       var imports;
       if (extraImports.window) {
         imports = extraImports.window;
-        extraImports = copyImports(extraImports);
-        delete extraImports.window;
+        copyToImports(imports, sharedImports);
       } else {
         imports = copy(sharedImports);
       }
@@ -4795,8 +4801,8 @@ var ___, cajaVM, safeJSON;
       return module.instantiate(___, imports);
     }
 
-    // Whitelist certain module properties as visible to Cajita code. These
-    // are all primitive values that do not allow two Cajita entities with
+    // Whitelist certain module properties as visible to guest code. These
+    // are all primitive values that do not allow two guest entities with
     // access to the same module object to communicate.
     var props = ['cajolerName', 'cajolerVersion', 'cajoledDate', 'moduleURL'];
     for (var i = 0; i < props.length; ++i) {
