@@ -4454,7 +4454,7 @@ var attachDocumentStub = (function () {
       TameDefaultView.prototype[propertyName] = value;
       ___.grantRead(TameDefaultView.prototype, propertyName);
     }));
-    if (!Object.defineProperty) {
+    if (!Object.prototype.DefineOwnProperty___) {
       TameWindow.prototype.handleRead___ = function (name) {
         name = String(name);
         if (endsWith__.test(name)) { return void 0; }
@@ -4599,7 +4599,7 @@ var attachDocumentStub = (function () {
     // under their DOM Level 2 standard name.
     ___.forOwnKeys(nodeClasses, ___.markFuncFreeze(function(name, ctor) {
       ___.primFreeze(ctor);
-      if (Object.defineProperty) {
+      if (Object.prototype.DefineOwnProperty___) {
         tameWindow.DefineOwnProperty___(name, {
           value: ctor,
           writable: true,
@@ -4669,7 +4669,7 @@ var attachDocumentStub = (function () {
 
     var defaultNodeClassCtor = nodeClasses.Element;
     for (var i = 0; i < defaultNodeClasses.length; i++) {
-      if (Object.defineProperty) {
+      if (Object.prototype.DefineOwnProperty___) {
         TameWindow.DefineOwnProperty___(defaultNodeClasses[i], {
           value: defaultNodeClassCtor,
           writable: true,
@@ -4687,7 +4687,7 @@ var attachDocumentStub = (function () {
       // For Valija, use the window object as outers.
       ___.forOwnKeys(outers, ___.markFuncFreeze(function(k, v) {
         if (!(k in tameWindow)) {
-          // No need to check for Object.defineProperty; this case
+          // No need to check for DefineOwnProperty___; this case
           // occurs iff we are in Valija, not ES53.
           tameWindow[k] = v;
           ___.grantRead(tameWindow, k);
