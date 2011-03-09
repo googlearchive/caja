@@ -79,6 +79,14 @@ public abstract class ObjProperty extends AbstractParseTreeNode
     return ((StringLiteral) children().get(0)).getUnquotedValue();
   }
 
+  public boolean isPropertyNameQuoted() {
+    StringLiteral name = (StringLiteral) children().get(0);
+    String rawName = name.getValue();
+    if (rawName.length() == 0) { return false; }
+    char ch0 = rawName.charAt(0);
+    return ch0 == '"' || ch0 == '\'';
+  }
+
   public final TokenConsumer makeRenderer(
       Appendable out, Callback<IOException> handler) {
     return new JsPrettyPrinter(new Concatenator(out, handler));

@@ -464,6 +464,13 @@ public class ParserTest extends CajaTestCase {
     fail("Commas not required");
   }
 
+  public final void testQuotedPropertyNames() throws ParseException {
+    ObjectConstructor obj = (ObjectConstructor)
+        jsExpr(fromString("{ notquoted: 0, 'quoted': 1 }"));
+    assertFalse(obj.propertyWithName("notquoted").isPropertyNameQuoted());
+    assertTrue(obj.propertyWithName("quoted").isPropertyNameQuoted());
+  }
+
   private void assertParseKeywordAsIdentifier(Keyword k) {
     assertAllowKeywordPropertyAccessor(k);
     assertAllowKeywordPropertyDeclaration(k);

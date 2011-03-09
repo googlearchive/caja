@@ -1184,7 +1184,7 @@ public final class Parser extends ParserBase {
                     break;
                   default:
                     String ident = parseIdentifier(true);
-                    key = StringLiteral.valueOf(posFrom(km), ident);
+                    key = new StringLiteral(posFrom(km), ident);
                     break;
                 }
                 finish(key, beforeProperty);
