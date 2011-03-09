@@ -1438,7 +1438,7 @@ public class DomParserTest extends CajaTestCase {
     // Test how we deal with missing semicolons.
     assertParsedHtmlFragment(
         Arrays.asList(
-            "Hello, &lt;World&gt!<b title='Foo &hellip'>",
+            "Hello, &lt;World&gt!<b title='Foo &iexcl'>",
             "&amp &AMP &Amp &bogus &#123 &#123; Foo &#x7D &#X7d</b>",
             "<script>if (x&lt&gt) { alert('hello'); }</script>"
             ),
@@ -1447,10 +1447,10 @@ public class DomParserTest extends CajaTestCase {
             "  Text : Hello, <World>! 1+1-1+21",  // entity in text fixed
             "  Element : b 1+21-2+55",
             "    Attrib : title 1+24-1+29",
-            "      Value : Foo \u2026 1+30-1+43", // entity values fixed
+            "      Value : Foo \u00A1 1+30-1+42", // entity values fixed
             // mixed case names not fixed.  upper case names fixed.
             // numeric entities fixed.  bogus entity names not affected.
-            "    Text : \\n& & &Amp &bogus { { Foo } } 1+44-2+51",
+            "    Text : \\n& & &Amp &bogus { { Foo } } 1+43-2+51",
             "  Text : \\n 2+55-3+1",
             "  Element : script 3+1-3+50",
             // &lt &gt are not rewritten because they are in CDATA.
@@ -1459,21 +1459,21 @@ public class DomParserTest extends CajaTestCase {
         Arrays.asList(
             "WARNING testEntities:1+1 - 21:"
             + " HTML entity missing closing semicolon &gt",
-            "WARNING testEntities:1+30 - 43:"
-            + " HTML entity missing closing semicolon &hellip",
-            "WARNING testEntities:1+44 - 2+51:"
+            "WARNING testEntities:1+30 - 42:"
+            + " HTML entity missing closing semicolon &iexcl",
+            "WARNING testEntities:1+43 - 2+51:"
             + " HTML entity missing closing semicolon &amp",
-            "WARNING testEntities:1+44 - 2+51:"
+            "WARNING testEntities:1+43 - 2+51:"
             + " HTML entity missing closing semicolon &AMP",
-            "WARNING testEntities:1+44 - 2+51:"
+            "WARNING testEntities:1+43 - 2+51:"
             + " HTML entity missing closing semicolon &#123",
-            "WARNING testEntities:1+44 - 2+51:"
+            "WARNING testEntities:1+43 - 2+51:"
             + " HTML entity missing closing semicolon &#x7D",
-            "WARNING testEntities:1+44 - 2+51:"
+            "WARNING testEntities:1+43 - 2+51:"
             + " HTML entity missing closing semicolon &#X7d"
             ),
         Arrays.asList(
-            "Hello, &lt;World&gt;!<b title=\"Foo &#8230;\">",
+            "Hello, &lt;World&gt;!<b title=\"Foo &#161;\">",
             "&amp; &amp; &amp;Amp &amp;bogus { { Foo } }</b>",
             "<script>if (x&lt&gt) { alert('hello'); }</script>"
             )

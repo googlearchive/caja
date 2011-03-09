@@ -19,9 +19,28 @@ import java.util.Map;
 
 import com.google.caja.util.Strings;
 
+
+/**
+ * Utilities for decoding HTML entities.
+ */
 public class HtmlEntities {
+
+  /** A trie that maps entity names to codepoints. */
   public static final PunctuationTrie<Integer> ENTITY_TRIE;
 
+  /**
+   * Decodes any HTML entity at the given location.  This handles both named and
+   * numeric entities.
+   *
+   * @param chars HTML text.
+   * @param offset the position of the sequence to decode.
+   * @param limit the last position in chars that could be part of the sequence
+   *    to decode.
+   * @return The offset after the end of the decoded sequence and the decoded
+   *    codepoint or code-unit packed into a long.
+   *    The first 32 bits are the offset, and the second 32 bits are a codepoint
+   *    or a code-unit.
+   */
   public static long decodeEntityAt(char[] chars, int offset, int limit) {
     char ch = chars[offset];
     if ('&' != ch) {

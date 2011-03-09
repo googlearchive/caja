@@ -529,19 +529,44 @@ public class Html5ElementStack implements OpenElementStack {
   }
 
   /**
+   * The set of named entities that do not need to be followed by a semicolon.
+   * This was derived empirically by testing webkit based browsers.
+   */
+  private static final String FIXABLE_ENTITY_NAMES = (
+      "(?:AACUTE|ACIRC|ACUTE|AELIG|AGRAVE|AMP|ARING|ATILDE|AUML|Aacute|Acirc"
+      + "|Agrave|Aring|Atilde|Auml|BRVBAR|CCEDIL|CEDIL|CENT|COPY|CURREN|Ccedil"
+      + "|DEG|DIVIDE|EACUTE|ECIRC|EGRAVE|ETH|EUML|Eacute|Ecirc|Egrave|Euml"
+      + "|FRAC12|FRAC14|FRAC34|GT|IACUTE|ICIRC|IEXCL|IGRAVE|IQUEST|IUML|Iacute"
+      + "|Icirc|Igrave|Iuml|LAQUO|LT|MACR|MICRO|MIDDOT|NBSP|NOT|NTILDE|Ntilde"
+      + "|OACUTE|OCIRC|OGRAVE|ORDF|ORDM|OSLASH|OTILDE|OUML|Oacute|Ocirc|Ograve"
+      + "|Oslash|Otilde|Ouml|PARA|PLUSMN|POUND|QUOT|RAQUO|REG|SECT|SHY|SUP1"
+      + "|SUP2|SUP3|SZLIG|THORN|TIMES|UACUTE|UCIRC|UGRAVE|UML|UUML|Uacute|Ucirc"
+      + "|Ugrave|Uuml|YACUTE|YEN|YUML|Yacute|aacute|acirc|acute|aelig|agrave"
+      + "|amp|aring|atilde|auml|brvbar|ccedil|cedil|cent|copy|curren|deg|divide"
+      + "|eacute|ecirc|egrave|eth|euml|frac12|frac14|frac34|gt|iacute|icirc"
+      + "|iexcl|igrave|iquest|iuml|laquo|lt|macr|micro|middot|nbsp|not|ntilde"
+      + "|oacute|ocirc|ograve|ordf|ordm|oslash|otilde|ouml|para|plusmn|pound"
+      + "|quot|raquo|reg|sect|shy|sup1|sup2|sup3|szlig|thorn|times|uacute|ucirc"
+      + "|ugrave|uml|uuml|yacute|yen|yuml)");
+
+  /**
    * Matches possible HTML entities that lack a closing semicolon.
    */
   private static final Pattern BROKEN_ENTITY = Pattern.compile(
       ""
       + "&(?:"
         // A named entity.
-        + "[A-Za-z][0-9A-Za-z]{1,11}(?![;0-9A-Za-z])"
+        // We require that the entity name not be followed by an ASCII
+        // identifier character or an equals sign.
+        // If it were followed by an equals sign, then it is likely part of a
+        // URL query parameter.
+        + FIXABLE_ENTITY_NAMES + "(?![=;0-9A-Za-z])"
         // A numeric entity.
         + "|#(?:"
-          // A decimal entity
-          + "[0-9]{1,7}(?![;0-9])"
+          // A decimal entity.
+          + "[0-9]{1,7}(?![=;0-9])"
           // A hexadecimal entity.
-          + "|[Xx][0-9A-Fa-f]{1,6}(?![;0-9A-Fa-f])"
+          + "|[Xx][0-9A-Fa-f]{1,6}(?![=;0-9A-Za-z])"
         + ")"
       + ")"
       );
@@ -553,16 +578,12 @@ public class Html5ElementStack implements OpenElementStack {
         StringBuilder sb = new StringBuilder(rawText.length() + 16);
         int pos = 0;
         do {
-          String entity = m.group();
-          if (entity.charAt(1) == '#'
-              || HtmlEntities.isEntityName(entity.substring(1))) {
-            sb.append(rawText, pos, m.end()).append(';');
-            pos = m.end();
-            if (needsDebugData) {
-              mq.addMessage(
-                  MessageType.MALFORMED_HTML_ENTITY, fp,
-                  MessagePart.Factory.valueOf(entity));
-            }
+          sb.append(rawText, pos, m.end()).append(';');
+          pos = m.end();
+          if (needsDebugData) {
+            mq.addMessage(
+                MessageType.MALFORMED_HTML_ENTITY, fp,
+                MessagePart.Factory.valueOf(m.group()));
           }
         } while (m.find());
         if (pos != 0) {
