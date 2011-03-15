@@ -1648,8 +1648,10 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
   }
 
   public final void testMapNonEmpty() throws Exception {
+    // TODO(felix): unquoted keynames should work
+    // http://code.google.com/p/google-caja/issues/detail?id=1331
     checkSucceeds(
-        "var o = { k0: g().x, k1: g().y };",
+        "var o = { 'k0': g().x, 'k1': g().y };",
         weldPrelude("g")
         + "var o, x0___, x1___;"
         + "o = ___.iM("
@@ -1675,7 +1677,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
 
   public final void testMapSingle() throws Exception {
     checkSucceeds(
-        "var o = { k0: p.x };",
+        "var o = { 'k0': p.x };",
         weldPrelude("p")
         + "var o;"
         + "o = ___.iM(['k0', p.x_canRead___ ? p.x : ___.readPub(p, 'x')]);");
@@ -1687,7 +1689,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
 
   public final void testMapPlural() throws Exception {
     checkSucceeds(
-        "var o = { k0: p.x, k1: p.y };",
+        "var o = { 'k0': p.x, 'k1': p.y };",
         weldPrelude("p")
         + "var o;"
         + "o = ___.iM(['k0', p.x_canRead___ ? p.x : ___.readPub(p, 'x'),"
@@ -2396,7 +2398,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
     checkSucceeds(
         ""
         + "function foo(){debugger;}"
-        + "var x = {bar: function() {foo();}};"
+        + "var x = {'bar': function() {foo();}};"
         + "x.baz = function(){x.bar();};"
         + "var zip = function(){x.baz();};"
         + "var zap;"

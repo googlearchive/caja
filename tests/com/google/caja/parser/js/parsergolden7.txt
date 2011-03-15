@@ -14,34 +14,34 @@ Block
         StringLiteral : '1.23456789012345678901e+29'
         StringLiteral : '8 digits stripped from key'
       ValueProperty
-        StringLiteral : 'NaN'
+        StringLiteral : NaN
         StringLiteral : 'Strange but true'
       ValueProperty
-        StringLiteral : 'Infinity'
+        StringLiteral : Infinity
         StringLiteral : "and beyond!"
       ValueProperty
-        StringLiteral : 'null'
+        StringLiteral : null
         NullLiteral : null
       ValueProperty
-        StringLiteral : 'undefined'
+        StringLiteral : undefined
         SimpleOperation : NOT
           Reference
             Identifier : defined
       ValueProperty
-        StringLiteral : 'false'
+        StringLiteral : false
         BooleanLiteral : false
       ValueProperty
         StringLiteral : ''
         StringLiteral : ''
       ValueProperty
+        StringLiteral : if
         StringLiteral : 'if'
-        StringLiteral : 'if'
       ValueProperty
+        StringLiteral : function
         StringLiteral : 'function'
-        StringLiteral : 'function'
       ValueProperty
-        StringLiteral : 'with'
+        StringLiteral : with
         StringLiteral : 'with'
       ValueProperty
-        StringLiteral : 'debugger'
+        StringLiteral : debugger
         StringLiteral : 'debugger'

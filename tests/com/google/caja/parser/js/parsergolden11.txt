@@ -2,26 +2,26 @@ Block
   ExpressionStmt
     ObjectConstructor
       ValueProperty
-        StringLiteral : 'foo'
+        StringLiteral : foo
         Reference
           Identifier : bar
       ValueProperty
-        StringLiteral : 'get'
+        StringLiteral : get
         Reference
           Identifier : set
       ValueProperty
-        StringLiteral : 'set'
+        StringLiteral : set
         Reference
           Identifier : get
       GetterProperty
-        StringLiteral : 'x'
+        StringLiteral : x
         FunctionConstructor
           Identifier
           Block
             ReturnStmt
               IntegerLiteral : 1
       SetterProperty
-        StringLiteral : 'x'
+        StringLiteral : x
         FunctionConstructor
           Identifier
           FormalParam
@@ -49,7 +49,7 @@ Block
               Reference
                 Identifier : n
       GetterProperty
-        StringLiteral : 'get'
+        StringLiteral : get
         FunctionConstructor
           Identifier
           FormalParam

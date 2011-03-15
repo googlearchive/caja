@@ -82,13 +82,13 @@ Block
       SpecialOperation : MEMBER_ACCESS
         ObjectConstructor
           ValueProperty
-            StringLiteral : 'x'
+            StringLiteral : x
             IntegerLiteral : 4
           ValueProperty
-            StringLiteral : 'y'
+            StringLiteral : y
             IntegerLiteral : 5
           ValueProperty
-            StringLiteral : 'invoke'
+            StringLiteral : invoke
             FunctionConstructor
               Identifier
               Block
@@ -118,7 +118,7 @@ Block
   ExpressionStmt
     ObjectConstructor
       ValueProperty
-        StringLiteral : 'objet'
+        StringLiteral : objet
         IntegerLiteral : 4
   ExpressionStmt
     SpecialOperation : FUNCTION_CALL

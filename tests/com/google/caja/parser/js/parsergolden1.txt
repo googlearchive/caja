@@ -152,10 +152,10 @@ Block
     Identifier : obj
     ObjectConstructor
       ValueProperty
-        StringLiteral : 'x'
+        StringLiteral : x
         IntegerLiteral : 2
       ValueProperty
-        StringLiteral : 'y'
+        StringLiteral : y
         IntegerLiteral : 3
   SwitchStmt : 
     SpecialOperation : FUNCTION_CALL

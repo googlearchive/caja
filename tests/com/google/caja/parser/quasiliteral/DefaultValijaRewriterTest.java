@@ -576,7 +576,7 @@ public class DefaultValijaRewriterTest extends CommonJsRewriterTestCase {
         "})());" +
         ";" +
         "$v.so('x',{" +
-        "  'bar': (function () {" +
+        "  bar: (function () {" +
         "    function bar$_lit$($dis) {" +
         "      $v.cf($v.ro('foo'), []);" +
         "    }" +
