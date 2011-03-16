@@ -41,10 +41,11 @@ public class PlaygroundEditor extends Composite {
   }
 
   public native JavaScriptObject initialize(Element el) /*-{
+    el.focus();
     var jsEditor = $wnd.CodeMirror.fromTextArea(el, {
       parserfile: ["parsecss.js", "tokenizejavascript.js",
         "parsejavascript.js", "parsexml.js", "parsehtmlmixed.js" ],
-      stylesheet: ["css/xmlcolors.css","css/jscolors.css","css/csscolors.css"],
+      stylesheet: ["/css/xmlcolors.css","/css/jscolors.css","/css/csscolors.css"],
       autoMatchParens : true,
       path : '/js/',
       height : '100%',
@@ -63,10 +64,8 @@ public class PlaygroundEditor extends Composite {
 
   public native void setText(String html) /*-{
     var e = this.
-        @com.google.caja.demos.playground.client.ui.PlaygroundEditor::editor;
-    $wnd.setTimeout(function(){
-        e.setCode(html);
-    }, 0);
+      @com.google.caja.demos.playground.client.ui.PlaygroundEditor::editor;
+    e.setCode(html);
   }-*/;
 
   public native void setCursorPos(int start) /*-{

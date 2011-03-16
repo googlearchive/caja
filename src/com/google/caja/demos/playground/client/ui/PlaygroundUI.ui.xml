@@ -1,0 +1,159 @@
+<!DOCTYPE ui:UiBinder SYSTEM "http://dl.google.com/gwt/DTD/xhtml.ent">
+<ui:UiBinder xmlns:ui="urn:ui:com.google.gwt.uibinder"
+  xmlns:g="urn:import:com.google.gwt.user.client.ui"
+  xmlns:caja="urn:import:com.google.caja.demos.playground.client.ui">
+  <ui:with field='res'
+      type='com.google.caja.demos.playground.client.PlaygroundResource' />
+  
+  <ui:style>
+  	body { font-family: arial,sans-serif,helvetica }
+	  .playgroundUI { background: #92C1F0; }
+  
+		.pginfo { font-weight: bold; font-size: 120% }
+  	.loadingLabel { display: hidden; }
+  	.menuItems { margin: 5px;	}
+  </ui:style>
+  <g:DockLayoutPanel>
+    <g:north size="80">
+      <g:VerticalPanel width="100%">
+
+        <!-- Feedback Panel -->
+        <g:HorizontalPanel ui:field="feedbackPanel">
+        </g:HorizontalPanel>
+
+        <!-- Logo Panel -->
+        <g:HorizontalPanel>
+          <g:Image resource="{res.logo}"></g:Image>
+          <g:VerticalPanel styleName="{style.pginfo}">
+            <g:Label>Caja Playground</g:Label>
+            <g:Label ui:field="version">Unknown</g:Label>
+          </g:VerticalPanel>
+
+          <g:HorizontalPanel ui:field="loadingLabel"
+            styleName="{style.loadingLabel}" >
+            <g:Label text="Loading..."></g:Label>
+            <g:Image resource="{res.loading}"></g:Image>
+          </g:HorizontalPanel>
+        </g:HorizontalPanel>
+      </g:VerticalPanel>
+      
+    </g:north>
+    <g:center>
+      <g:TabLayoutPanel ui:field="editorPanel" barUnit='PX' barHeight='30'>
+        <g:tab>
+          <g:header size='7'>Source</g:header>
+          <g:DockLayoutPanel unit='PX'>
+            <g:center>
+              <caja:PlaygroundEditor ui:field="sourceText">
+              </caja:PlaygroundEditor>
+            </g:center>
+            <g:north size="30">
+              <g:DockLayoutPanel styleName="{style.playgroundUI}" unit='PX'>
+                <g:center>
+                  <g:SuggestBox ui:field="addressField" width="100%">
+                  </g:SuggestBox>
+                </g:center>
+                <g:east size="200">
+                  <g:HorizontalPanel>
+                    <g:Button width="100" ui:field="goButton">
+                      Load
+                    </g:Button>
+                    <g:Button width="100" ui:field="cajoleButton">
+                      Cajole
+                    </g:Button>
+                  </g:HorizontalPanel>
+                </g:east>
+              </g:DockLayoutPanel>
+            </g:north>
+          </g:DockLayoutPanel>
+        </g:tab>
+        <g:tab>
+          <g:header size='7'>Policy</g:header>
+            <g:DockLayoutPanel unit='PX'>
+              <g:center>
+                <g:TextArea ui:field="policyText">
+                </g:TextArea>
+              </g:center>
+              <g:north size="30">
+                <g:DockLayoutPanel styleName="{style.playgroundUI}" unit='PX'>
+                  <g:center>
+                    <g:SuggestBox ui:field="policyAddressField" width="100%">
+                    </g:SuggestBox>
+                  </g:center>
+                  <g:east size="250">
+                    <g:HorizontalPanel>
+                      <g:Button ui:field="loadButton">
+                        Load
+                      </g:Button>
+                      <g:Button ui:field="applyButton">
+                        Apply
+                      </g:Button>
+                      <g:Button ui:field="clearButton">
+                        Clear
+                      </g:Button>
+                    </g:HorizontalPanel>
+                  </g:east>
+                </g:DockLayoutPanel>
+              </g:north>
+            </g:DockLayoutPanel>
+        </g:tab>
+        <g:tab>
+          <g:header size='7'>Cajoled Source</g:header>
+          <g:DockLayoutPanel>
+          <g:north size="30">
+            <g:HTML styleName="{style.playgroundUI}"></g:HTML>          
+          </g:north>
+          <g:center>
+            <g:ScrollPanel>
+              <g:HTML ui:field="cajoledSource">
+              </g:HTML>
+            </g:ScrollPanel>
+          </g:center>
+          </g:DockLayoutPanel>
+        </g:tab>
+        <g:tab>
+          <g:header size='7'>Rendered Result</g:header>
+          <g:DockLayoutPanel unit='PX'>
+            <g:center>
+              <g:ScrollPanel>
+                <g:HTML ui:field="renderPanel"></g:HTML>
+              </g:ScrollPanel>
+            </g:center>
+            <g:north size="50">
+              <g:DisclosurePanel styleName="{style.playgroundUI}" width="100%">
+                <g:header>Eval Result</g:header>
+                <g:TextBox ui:field="renderResult" width="100%">
+                </g:TextBox>
+              </g:DisclosurePanel>
+            </g:north>
+          </g:DockLayoutPanel>
+        </g:tab>
+        <g:tab>
+          <g:header size='7'>Compiler Messages</g:header>
+          <g:ScrollPanel>
+            <g:HTML ui:field="compileMessages">
+            </g:HTML>
+          </g:ScrollPanel>
+        </g:tab>
+        <g:tab>
+          <g:header size='7'>Runtime Messages</g:header>
+          <g:ScrollPanel>
+            <g:HTML ui:field="runtimeMessages">
+            </g:HTML>
+  	      </g:ScrollPanel>
+        </g:tab>
+      </g:TabLayoutPanel>
+    </g:center>
+    <g:west size="200">
+      <g:TabLayoutPanel barUnit='PX' barHeight='30'>
+        <g:tab>
+          <g:header size='7'>Examples</g:header>
+          <g:ScrollPanel>
+            <g:Tree ui:field="exampleTree"></g:Tree>
+          </g:ScrollPanel>
+        </g:tab>
+      </g:TabLayoutPanel>
+    </g:west>
+  </g:DockLayoutPanel>
+  
+</ui:UiBinder> 

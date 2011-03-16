@@ -25,37 +25,16 @@ import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
 import com.google.gwt.event.dom.client.FocusEvent;
 import com.google.gwt.event.dom.client.FocusHandler;
-import com.google.gwt.event.logical.shared.ResizeEvent;
-import com.google.gwt.event.logical.shared.ResizeHandler;
 import com.google.gwt.event.logical.shared.SelectionEvent;
 import com.google.gwt.event.logical.shared.SelectionHandler;
 import com.google.gwt.user.client.DOM;
-import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.ui.Anchor;
-import com.google.gwt.user.client.ui.Button;
-import com.google.gwt.user.client.ui.DecoratedTabPanel;
-import com.google.gwt.user.client.ui.DisclosurePanel;
-import com.google.gwt.user.client.ui.FlexTable;
-import com.google.gwt.user.client.ui.FlowPanel;
-import com.google.gwt.user.client.ui.Grid;
-import com.google.gwt.user.client.ui.HTML;
-import com.google.gwt.user.client.ui.HasHorizontalAlignment;
-import com.google.gwt.user.client.ui.HasVerticalAlignment;
 import com.google.gwt.user.client.ui.HorizontalPanel;
-import com.google.gwt.user.client.ui.HorizontalSplitPanel;
-import com.google.gwt.user.client.ui.Image;
-import com.google.gwt.user.client.ui.Label;
 import com.google.gwt.user.client.ui.MultiWordSuggestOracle;
-import com.google.gwt.user.client.ui.PopupPanel;
-import com.google.gwt.user.client.ui.RadioButton;
-import com.google.gwt.user.client.ui.RootPanel;
+import com.google.gwt.user.client.ui.RootLayoutPanel;
 import com.google.gwt.user.client.ui.SuggestBox;
 import com.google.gwt.user.client.ui.TextArea;
-import com.google.gwt.user.client.ui.TextBox;
-import com.google.gwt.user.client.ui.Tree;
 import com.google.gwt.user.client.ui.TreeItem;
-import com.google.gwt.user.client.ui.VerticalPanel;
-import com.google.gwt.user.client.ui.Widget;
 
 /**
  * GUI elements of the playground client
@@ -63,237 +42,111 @@ import com.google.gwt.user.client.ui.Widget;
  * @author Jasvir Nagra (jasvir@gmail.com)
  */
 public class PlaygroundView {
-  private static final boolean EXPERIMENTAL_MODE = false;
-
-  private HTML renderPanel;
-  private TextBox renderResult;
-  private HTML cajoledSource;
-  private FlexTable compileMessages;
-  private FlexTable runtimeMessages;
-  private Button speedtracerManifestButton;
-  private DecoratedTabPanel editorPanel;
-  private Label version = new Label("Unknown");
   private Playground controller;
-  private PlaygroundEditor sourceText;
-  private TextArea policyText;
   private String currentPolicy;
-  private HorizontalPanel loadingLabel;
-  private SuggestBox addressField;
-  private SuggestBox policyAddressField;
   private MultiWordSuggestOracle sourceExamples;
   private MultiWordSuggestOracle policyExamples;
-  private RadioButton es53ModeButton;
-  private RadioButton valijaModeButton;
 
+  private PlaygroundUI playgroundUI;
+  
   public void setVersion(String v) {
-    version.setText(v);
+    playgroundUI.version.setText(v);
   }
 
   public void setPolicyUrl(String url) {
-    policyAddressField.setText(url);
+    playgroundUI.policyAddressField.setText(url);
     policyExamples.add(url);
   }
 
   public void setUrl(String url) {
-    addressField.setText(url);
+    playgroundUI.addressField.setText(url);
     sourceExamples.add(url);
   }
 
   public void selectTab(Tabs tab) {
-    editorPanel.selectTab(tab.ordinal());
+    playgroundUI.editorPanel.selectTab(tab.ordinal());
   }
 
-  private Widget createFeedbackPanel() {
-    HorizontalPanel feedbackPanel = new HorizontalPanel();
-    feedbackPanel.setWidth("100%");
-    feedbackPanel.setHorizontalAlignment(HasHorizontalAlignment.ALIGN_RIGHT);
+  private void initSourcePanel() {
+    for (Example eg : Example.values()) {
+      sourceExamples.add(eg.url);
+    }
+    playgroundUI.addressField.getTextBox().addFocusHandler(new FocusHandler() {
+      public void onFocus(FocusEvent event) {
+        playgroundUI.addressField.showSuggestionList();
+      }
+    });
+    playgroundUI.addressField.setText("http://");
+    
+    playgroundUI.goButton.addClickHandler(new ClickHandler() {
+      public void onClick(ClickEvent event) {
+        controller.loadSource(playgroundUI.addressField.getText());
+      }
+    });
+    playgroundUI.cajoleButton.addClickHandler(new ClickHandler() {
+      public void onClick(ClickEvent event) {
+        playgroundUI.runtimeMessages.setText("");
+        playgroundUI.compileMessages.setText("");
+        playgroundUI.cajoledSource.setText("");
+        playgroundUI.renderPanel.setText("");
+        controller.cajole(
+            playgroundUI.addressField.getText(),
+            playgroundUI.sourceText.getText(), 
+            currentPolicy,
+            true /* es53 */
+        );
+      }
+    });
+  }
+  
+  private void initFeedbackPanel() {
+    playgroundUI.feedbackPanel.setHorizontalAlignment(
+        HorizontalPanel.ALIGN_RIGHT);
     for (Menu menu : Menu.values()) {
       Anchor menuItem = new Anchor();
       menuItem.setHTML(menu.description);
       menuItem.setHref(menu.url);
       menuItem.setWordWrap(false);
       menuItem.addStyleName("menuItems");
-      feedbackPanel.add(menuItem);
-      feedbackPanel.setCellWidth(menuItem, "100%");
+      playgroundUI.feedbackPanel.add(menuItem);
+      playgroundUI.feedbackPanel.setCellWidth(menuItem, "100%");
     }
-    return feedbackPanel;
   }
 
-  private Widget createLogoPanel() {
-    HorizontalPanel logoPanel = new HorizontalPanel();
-    VerticalPanel infoPanel = new VerticalPanel();
-    Label title = new Label("Caja Playground");
-    infoPanel.add(title);
-    infoPanel.add(version);
-    infoPanel.setStyleName("pg_info");
-    logoPanel.add(new Image(PlaygroundResource.INSTANCE.logo().getURL()));
-    logoPanel.add(infoPanel);
-
-    loadingLabel = new HorizontalPanel();
-    loadingLabel.setHorizontalAlignment(HasHorizontalAlignment.ALIGN_CENTER);
-    loadingLabel.add(new Label("Loading... "));
-    loadingLabel.add(new Image(PlaygroundResource.INSTANCE.loading().getURL()));
-    loadingLabel.setStyleName("loadingLabel");
-    loadingLabel.setVisible(false);
-    logoPanel.add(loadingLabel);
-    return logoPanel;
-  }
-
-  private Widget createSourcePanel() {
-    sourceExamples = new MultiWordSuggestOracle();
-    for (Example eg : Example.values()) {
-      sourceExamples.add(eg.url);
-    }
-    addressField = new SuggestBox(sourceExamples);
-    addressField.getTextBox().addFocusHandler(new FocusHandler() {
-      public void onFocus(FocusEvent event) {
-        addressField.showSuggestionList();
-      }
-    });
-    addressField.setText("http://");
-    addressField.setWidth("100%");
-    final Button goButton = new Button("\u21B4\u00A0Load");
-    goButton.addClickHandler(new ClickHandler() {
-      public void onClick(ClickEvent event) {
-        controller.loadSource(addressField.getText());
-      }
-    });
-
-    final Button cajoleButton = new Button("Cajole\u00A0\u21B1");
-
-    es53ModeButton = new RadioButton("inputLanguage", "ES5");
-    es53ModeButton.setTitle("Input in ES5 targetting ES3 browsers");
-    valijaModeButton = new RadioButton("inputLanguage", "ES3");
-    valijaModeButton.setTitle("Input in ES3 targetting ES3 browsers");
-    valijaModeButton.setValue(true);
-
-    cajoleButton.addClickHandler(new ClickHandler() {
-      public void onClick(ClickEvent event) {
-        runtimeMessages.clear();
-        compileMessages.clear();
-        cajoledSource.setText("");
-        renderPanel.setText("");
-        controller.cajole(
-            addressField.getText(), sourceText.getText(), currentPolicy,
-            Boolean.TRUE.equals(es53ModeButton.getValue()));
-      }
-    });
-
-    Grid addressBar = new Grid(1,5);
-    int item = 0;
-    addressBar.setStyleName("playgroundUI");
-    addressBar.setWidget(0, item, addressField);
-    addressBar.getCellFormatter().setWidth(0, item++, "80%");
-
-    addressBar.setWidget(0, item++, goButton);
-    addressBar.setWidget(0, item++, es53ModeButton);
-    addressBar.setWidget(0, item++, valijaModeButton);
-    addressBar.setWidget(0, item++, cajoleButton);
-    addressBar.setWidth("95%");
-
-    sourceText = new PlaygroundEditor();
-    sourceText.setSize("95%", "100%");
-
-    VerticalPanel mainPanel = new VerticalPanel();
-    mainPanel.setWidth("100%");
-    mainPanel.setVerticalAlignment(HasVerticalAlignment.ALIGN_TOP);
-    mainPanel.add(addressBar);
-    mainPanel.setCellHeight(addressBar, "0%");
-    mainPanel.add(sourceText);
-    mainPanel.setCellHeight(sourceText, "100%");
-
-    return mainPanel;
-  }
-
-  private Widget createPolicyPanel() {
+  private void initPolicyPanel() {
     policyExamples = new MultiWordSuggestOracle();
-    policyAddressField = new SuggestBox(policyExamples);
-    policyAddressField.getTextBox().addFocusHandler(new FocusHandler() {
+    playgroundUI.policyAddressField = new SuggestBox(policyExamples);
+    playgroundUI.policyAddressField.getTextBox().addFocusHandler(new FocusHandler() {
       public void onFocus(FocusEvent event) {
-        policyAddressField.showSuggestionList();
+        playgroundUI.policyAddressField.showSuggestionList();
       }
     });
-    policyAddressField.setText("http://");
-    policyAddressField.setWidth("100%");
+    playgroundUI.policyAddressField.setText("http://");
 
-    final Button clearButton = new Button("Clear");
-    clearButton.addClickHandler(new ClickHandler() {
+    playgroundUI.clearButton.addClickHandler(new ClickHandler() {
       public void onClick(ClickEvent event) {
         currentPolicy = "";
         controller.clearPolicy();
       }
     });
 
-    final Button loadButton = new Button("\u21B4\u00A0Load");
-    loadButton.addClickHandler(new ClickHandler() {
+    playgroundUI.loadButton.addClickHandler(new ClickHandler() {
       public void onClick(ClickEvent event) {
-        controller.loadPolicy(policyAddressField.getText());
+        controller.loadPolicy(playgroundUI.policyAddressField.getText());
       }
     });
 
-    final Button applyButton = new Button("Apply\u00A0\u21B1");
-    applyButton.addClickHandler(new ClickHandler() {
+    playgroundUI.applyButton.addClickHandler(new ClickHandler() {
       public void onClick(ClickEvent event) {
-        currentPolicy = policyText.getText();
+        currentPolicy = playgroundUI.policyText.getText();
       }
     });
-
-    Grid addressBar = new Grid(1,4);
-    int item = 0;
-    addressBar.setStyleName("playgroundUI");
-    addressBar.setWidget(0, item, policyAddressField);
-    addressBar.getCellFormatter().setWidth(0, item++, "80%");
-    addressBar.setWidget(0, item++, loadButton);
-    addressBar.setWidget(0, item++, applyButton);
-    addressBar.setWidget(0, item++, clearButton);
-    addressBar.setWidth("95%");
-
-    policyText = new TextArea();
-    setDefaultPolicy(policyText);
-    policyText.setSize("95%", "100%");
-
-    VerticalPanel mainPanel = new VerticalPanel();
-    mainPanel.setWidth("100%");
-    mainPanel.setVerticalAlignment(HasVerticalAlignment.ALIGN_TOP);
-    mainPanel.add(addressBar);
-    mainPanel.setCellHeight(addressBar, "0%");
-    mainPanel.add(policyText);
-    mainPanel.setCellHeight(policyText, "100%");
-
-    return mainPanel;
+    setDefaultPolicy(playgroundUI.policyText);
   }
 
   private void setDefaultPolicy(TextArea policyText) {
     currentPolicy = PlaygroundResource.INSTANCE.defaultPolicy().getText();
     policyText.setText(currentPolicy);
-  }
-
-  private Widget createCajoledSourcePanel() {
-    FlowPanel fp = new FlowPanel();
-    cajoledSource = new HTML();
-    cajoledSource.setSize("100%", "100%");
-    cajoledSource.getElement().setClassName("prettyPrint");
-    fp.add(cajoledSource);
-    return fp;
-  }
-
-  private Widget createCompileMessagesPanel() {
-    FlowPanel hp = new FlowPanel();
-    hp.setSize("100%", "100%");
-    compileMessages = new FlexTable();
-    compileMessages.setWidth("100%");
-    hp.add(compileMessages);
-    return hp;
-  }
-
-  private Widget createRuntimeMessagesPanel() {
-    FlowPanel hp = new FlowPanel();
-    hp.setSize("100%", "100%");
-    runtimeMessages = new FlexTable();
-    runtimeMessages.setWidth("100%");
-    hp.add(runtimeMessages);
-    setupNativeRuntimeMessageBridge();
-    return hp;
   }
 
   native static String encodeURIComponent(String uri) /*-{
@@ -337,6 +190,7 @@ public class PlaygroundView {
     }
   }-*/;
 
+  /*
   private Widget createSpeedtracerPanel() {
     FlowPanel hp = new FlowPanel();
     hp.setSize("100%", "100%");
@@ -377,6 +231,7 @@ public class PlaygroundView {
     hp.add(speedtracerManifestButton);
     return hp;
   }
+  */
 
   private native void setupNativeRuntimeMessageBridge() /*-{
     var that = this;
@@ -394,43 +249,13 @@ public class PlaygroundView {
     }
   }-*/;
 
-  private Widget createEditorPanel() {
-    editorPanel = new DecoratedTabPanel();
-    editorPanel.setStyleName("clearPadding");
-    editorPanel.add(createSourcePanel(), "Source");
-    editorPanel.add(createPolicyPanel(), "Policy");
-    editorPanel.add(createCajoledSourcePanel(), "Cajoled Source");
-    editorPanel.add(createRenderPanel(), "Rendered Result");
-    editorPanel.add(createCompileMessagesPanel(), "Compile Warnings/Errors");
-    editorPanel.add(createRuntimeMessagesPanel(), "Runtime Warnings/Errors");
-    if (EXPERIMENTAL_MODE) {
-      editorPanel.add(createSpeedtracerPanel(), "Speedtracer");
-    }
-
+  private void initEditor() {
+    setupNativeRuntimeMessageBridge();
     setupNativeSelectLineBridge();
-    editorPanel.setSize("100%", "100%");
-    editorPanel.getDeckPanel().setSize("100%", "100%");
-
     selectTab(Tabs.SOURCE);
-    return editorPanel;
   }
 
-  private Widget createRenderPanel() {
-    DisclosurePanel resultBar = new DisclosurePanel("Eval Result");
-    resultBar.setStyleName("playgroundUI");
-    renderResult = new TextBox();
-    renderResult.setWidth("100%");
-    resultBar.add(renderResult);
-    resultBar.setWidth("100%");
-    renderPanel = new HTML();
-    FlowPanel mainPanel = new FlowPanel();
-    mainPanel.add(resultBar);
-    mainPanel.add(renderPanel);
-    renderPanel.setSize("100%", "100%");
-    return mainPanel;
-  }
-
-  private TreeItem addExampleItem(Map<Example.Type, TreeItem> menu,
+  private static TreeItem addExampleItem(Map<Example.Type, TreeItem> menu,
       Example eg) {
     if (!menu.containsKey(eg.type)) {
       TreeItem menuItem = new TreeItem(eg.type.description);
@@ -441,15 +266,12 @@ public class PlaygroundView {
     return egItem;
   }
 
-  private Widget createExamplePanel() {
-    DecoratedTabPanel cp = new DecoratedTabPanel();
-    cp.setStyleName("clearPadding");
-    Tree exampleTree = new Tree();
+  private void initExamples() {
     Map<Example.Type, TreeItem> menuMap = new TreeMap<Example.Type, TreeItem>();
     final Map<TreeItem, Example> entryMap =
       new HashMap<TreeItem, Example>();
 
-    exampleTree.setTitle("Select an example");
+    playgroundUI.exampleTree.setTitle("Select an example");
     for (Example eg : Example.values()) {
       TreeItem it = addExampleItem(menuMap, eg);
       entryMap.put(it, eg);
@@ -461,10 +283,10 @@ public class PlaygroundView {
         first = false;
         menuItem.setState(true);
       }
-      exampleTree.addItem(menuItem);
+      playgroundUI.exampleTree.addItem(menuItem);
     }
 
-    exampleTree.addSelectionHandler(new SelectionHandler<TreeItem>() {
+    playgroundUI.exampleTree.addSelectionHandler(new SelectionHandler<TreeItem>() {
       public void onSelection(SelectionEvent<TreeItem> event) {
         Example eg = entryMap.get(event.getSelectedItem());
         // No associated example - e.g. when opening a subtree menu
@@ -473,68 +295,52 @@ public class PlaygroundView {
         }
         controller.loadSource(eg.url);
       }
-
     });
-    cp.setSize("100%", "auto");
-    cp.add(exampleTree, "Examples");
-    cp.selectTab(0);
-    return cp;
-  }
-
-  public Widget createMainPanel() {
-    HorizontalSplitPanel mainPanel = new HorizontalSplitPanel();
-    mainPanel.add(createExamplePanel());
-    mainPanel.add(createEditorPanel());
-    mainPanel.setSplitPosition("15%");
-    mainPanel.setSize("100%", "100%");
-    return mainPanel;
   }
 
   public PlaygroundView(Playground controller) {
     this.controller = controller;
-
-    // Necessary to make full screen and eliminate scrollbars
-    final FlowPanel vp = new FlowPanel();
-    vp.add(createFeedbackPanel());
-    vp.add(createLogoPanel());
-    vp.add(createMainPanel());
-    vp.setSize("100%", "100%");
-    vp.setHeight(Window.getClientHeight() + "px");
-    Window.addResizeHandler(new ResizeHandler() {
-      public void onResize(ResizeEvent event) {
-        vp.setSize(event.getWidth() + "px", event.getHeight() + "px");
-      }
-    });
-    RootPanel.get().add(vp);
+    this.sourceExamples = new MultiWordSuggestOracle();
+    this.policyExamples = new MultiWordSuggestOracle();
+    
+    this.playgroundUI =
+      new com.google.caja.demos.playground.client.ui.PlaygroundUI(
+          sourceExamples, policyExamples);
+    RootLayoutPanel.get().add(playgroundUI);
+    initSourcePanel();
+    initPolicyPanel();
+    initFeedbackPanel();
+    initExamples();
+    initEditor();
   }
 
   public void setOriginalSource(String result) {
     if (result == null) {
-      sourceText.setText("");
+      playgroundUI.sourceText.setText("");
     } else {
-      sourceText.setText(result);
+      playgroundUI.sourceText.setText(result);
     }
   }
 
   public void setPolicySource(String result) {
     if (result == null) {
-      policyText.setText("");
+      playgroundUI.policyText.setText("");
     } else {
-      policyText.setText(result);
+      playgroundUI.policyText.setText(result);
     }
   }
 
   public void setCajoledSource(String html, String js) {
     if (html == null && js == null) {
-      cajoledSource.setText("There were cajoling errors");
+      playgroundUI.cajoledSource.setText("There were cajoling errors");
       return;
     }
-    cajoledSource.setHTML(prettyPrint(html) +
+    playgroundUI.cajoledSource.setHTML(prettyPrint(html) +
       "&lt;script&gt;" + prettyPrint(js) + "&lt;/script&gt;");
   }
 
   public void setLoading(boolean isLoading) {
-    loadingLabel.setVisible(isLoading);
+    playgroundUI.loadingLabel.setVisible(isLoading);
   }
 
   private native String prettyPrint(String result) /*-{
@@ -552,7 +358,7 @@ public class PlaygroundView {
 
   public void setRenderedResult(String policy, String html, String js) {
     if (html == null && js == null) {
-      renderPanel.setText("There were cajoling errors");
+      playgroundUI.renderResult.setText("There were cajoling errors");
       return;
     }
 
@@ -560,11 +366,11 @@ public class PlaygroundView {
     // the script checks DOM geometry.
     selectTab(Tabs.RENDER);
 
-    setRenderedResultBridge(Boolean.TRUE.equals(es53ModeButton.getValue()),
-        renderPanel.getElement(),
+    setRenderedResultBridge(true /* es53 */,
+        playgroundUI.renderPanel.getElement(),
         policy, html != null ? html : "", js != null ? js : "");
 
-    renderResult.setText(getRenderResult());
+    playgroundUI.renderResult.setText(getRenderResult());
   }
 
   private native void setRenderedResultBridge(boolean es53,
@@ -577,19 +383,20 @@ public class PlaygroundView {
   }-*/;
 
   public void addCompileMessage(String item) {
-    compileMessages.insertRow(0);
-    compileMessages.setWidget(0, 0, new HTML(item));
+    playgroundUI.compileMessages.setHTML(
+        playgroundUI.compileMessages.getHTML() + "<br>" + item);
   }
 
   public void addRuntimeMessage(String item) {
-    runtimeMessages.insertRow(0);
-    runtimeMessages.setWidget(0, 0, new Label(item));
+    playgroundUI.runtimeMessages.setHTML(
+        playgroundUI.runtimeMessages.getHTML() + "<br>" + item);
   }
 
   /** @param uri unused but provided for consistency with native GWT caller. */
-  public void highlightSource(String uri, int start, int sOffset, int end, int eOffset) {
-    sourceText.setCursorPos(start);
-    sourceText.setSelectionRange(start, sOffset, end, eOffset);
+  public void highlightSource(String uri,
+      int start, int sOffset, int end, int eOffset) {
+    playgroundUI.sourceText.setCursorPos(start);
+    playgroundUI.sourceText.setSelectionRange(start, sOffset, end, eOffset);
   }
 
   public enum Tabs {

@@ -22,28 +22,6 @@
 
 @import url("caja-gadget.css");
 
-body { font-family: arial,sans-serif,helvetica }
-
-p,td,span,input,label { font-family: arial,sans-serif, helvetica;
-                        font-size:12px }
-
-form { display: inline }
-
-h1 {
-  font-size: 2em;
-  font-weight: bold;
-  color: #777777;
-  margin: 40px 0px 70px;
-  text-align: center;
-}
-
-/** Most GWT widgets already have a style name defined **/
-.gwt-DialogBox {
-  width: 400px;
-}
-
-.pg_info { font-weight: bold; font-size: 120% }
-
 .menuItems {
   margin: 5px;	
 }
@@ -53,38 +31,11 @@ h1 {
   overflow: hidden;
 }
 
-.playgroundUI {
-  background: #92C1F0;
-}
-
 .indentedblock {
   margin-left: 1em;
 }
 .line-of-code {
   text-indent: 0em;
-}
-
-/** Label shown during asynchronous calls **/
-.loadingLabel {
-  padding: 1px;
-}
-
-/** Contains user input to be sent to  the cajoling service eg. src, taming **/
-.inputTab {
-  background-color: blue;  
-}
-
-/** Contains output from the cajoling service eg. error messages **/
-.outputTab {
-  background-color: green;
-}
-
-.outputTab-containsErrors {
-  background-color: red;  
-}
-
-.serverResponseLabelError {
-  color: red;
 }
 
 .CodeMirror-line-numbers {
@@ -98,7 +49,3 @@ h1 {
   font-size: 10pt;
 }
 
-/** Set ids using widget.getElement().setId("idOfElement") **/
-#closeButton {
-  margin: 15px 6px 6px;
-}
