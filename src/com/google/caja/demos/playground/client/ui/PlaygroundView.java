@@ -347,7 +347,6 @@ public class PlaygroundView {
     return $wnd.prettyPrintOne($wnd.indentAndWrapCode(result));
   }-*/;
 
-  @SuppressWarnings("unused")  // Used in native GWT methods
   private ScriptElement scriptOf(String text) {
     Element el = DOM.createElement("script");
     ScriptElement script = ScriptElement.as(el);

@@ -16,7 +16,6 @@ package com.google.caja.parser.html;
 
 import com.google.caja.SomethingWidgyHappenedError;
 import com.google.caja.lexer.FilePosition;
-import com.google.caja.lexer.HtmlEntities;
 import com.google.caja.lexer.HtmlTokenType;
 import com.google.caja.lexer.Token;
 import com.google.caja.reporting.Message;

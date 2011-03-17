@@ -26,7 +26,6 @@ import com.google.gwt.dom.client.Element;
  * @author jasvir@gmail.com (Jasvir Nagra)
  */
 public class PlaygroundEditor extends Composite {
-  @SuppressWarnings("unused")  // Used in GWT native methods
   private JavaScriptObject editor;
   private TextArea feralTextArea;
 
