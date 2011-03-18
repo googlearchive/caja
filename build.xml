@@ -1271,6 +1271,19 @@
 
   <target name="playground"
    depends="CajolingServlet, PlaygroundBE, PlaygroundFE">
+    <!-- In some situations, browsers disagree on what location
+      to assign to a constructed iframe, which makes it awkward
+      to use relative pathnames that will work in all browsers.
+      A straightforward workaround is to make the necessary files
+      available in both locations.
+      http://groups.google.com/group/google-caja-discuss/msg/b908b16edbc6a112
+      -->
+    <copy todir="${war}/playground/">
+      <fileset dir="${third_party}/js/codemirror">
+        <include name="js/*.js" />
+        <include name="css/*.css" />
+      </fileset>
+    </copy>
   </target>
 
   <target name="deploy" depends="production,playground">

@@ -44,9 +44,9 @@ public class PlaygroundEditor extends Composite {
     var jsEditor = $wnd.CodeMirror.fromTextArea(el, {
       parserfile: ["parsecss.js", "tokenizejavascript.js",
         "parsejavascript.js", "parsexml.js", "parsehtmlmixed.js" ],
-      stylesheet: ["/css/xmlcolors.css","/css/jscolors.css","/css/csscolors.css"],
+      stylesheet: ["css/xmlcolors.css","css/jscolors.css","css/csscolors.css"],
       autoMatchParens : true,
-      path : '/js/',
+      path : 'js/',
       height : '100%',
       textWrapping: false,
       lineNumbers: true,
