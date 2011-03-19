@@ -14,26 +14,39 @@
 
 package com.google.caja.plugin;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.io.Reader;
+import java.io.Writer;
+import java.net.URI;
+import java.net.URL;
+import java.util.Collection;
+import java.util.Map;
+import java.util.Set;
+
+import org.w3c.dom.Node;
+
 import com.google.caja.SomethingWidgyHappenedError;
-import com.google.caja.lexer.CharProducer;
-import com.google.caja.lexer.CssTokenType;
 import com.google.caja.lexer.ExternalReference;
 import com.google.caja.lexer.FetchedData;
-import com.google.caja.lexer.HtmlLexer;
 import com.google.caja.lexer.InputSource;
-import com.google.caja.lexer.JsLexer;
-import com.google.caja.lexer.JsTokenQueue;
 import com.google.caja.lexer.ParseException;
 import com.google.caja.lexer.TokenConsumer;
-import com.google.caja.lexer.TokenQueue;
 import com.google.caja.parser.ParseTreeNode;
-import com.google.caja.parser.css.CssParser;
-import com.google.caja.parser.html.Dom;
-import com.google.caja.parser.html.DomParser;
+import com.google.caja.parser.ParserContext;
 import com.google.caja.parser.html.Nodes;
 import com.google.caja.parser.js.CajoledModule;
-import com.google.caja.parser.js.Parser;
 import com.google.caja.plugin.UriFetcher.ChainingUriFetcher;
+import com.google.caja.render.Concatenator;
+import com.google.caja.render.JsMinimalPrinter;
+import com.google.caja.render.SourceSnippetRenderer;
+import com.google.caja.reporting.BuildInfo;
 import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessageLevel;
@@ -42,32 +55,10 @@ import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.MessageType;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.reporting.SimpleMessageQueue;
-import com.google.caja.reporting.BuildInfo;
 import com.google.caja.util.Callback;
 import com.google.caja.util.CapturingReader;
 import com.google.caja.util.Charsets;
 import com.google.caja.util.Maps;
-import com.google.caja.render.Concatenator;
-import com.google.caja.render.JsMinimalPrinter;
-import com.google.caja.render.SourceSnippetRenderer;
-
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.io.Writer;
-import java.io.Reader;
-import java.io.FileNotFoundException;
-import java.io.FileInputStream;
-import java.net.URI;
-import java.net.URL;
-import java.util.Collection;
-import java.util.Map;
-import java.util.Set;
-
-import org.w3c.dom.Node;
 
 /**
  * An executable that invokes the {@link PluginCompiler}.
@@ -77,6 +68,8 @@ import org.w3c.dom.Node;
 public final class PluginCompilerMain {
   private final MessageQueue mq;
   private final MessageContext mc;
+  private final Map<InputSource, CharSequence> originalSources
+      = Maps.newHashMap();
   private final Map<InputSource, CapturingReader> originalInputs
       = Maps.newHashMap();
   private final Config config = new Config(
@@ -177,6 +170,7 @@ public final class PluginCompilerMain {
       PluginMeta meta = new PluginMeta(fetcher, policy);
       meta.setIdClass(config.getIdClass());
       meta.setEnableES53(config.getES53());
+      
       PluginCompiler compiler = new PluginCompiler(
           BuildInfo.getInstance(), meta, mq);
       compiler.setPreconditions(
@@ -232,7 +226,11 @@ public final class PluginCompilerMain {
     boolean parsePassed = true;
     for (URI input : inputs) {
       try {
-        ParseTreeNode parseTree = parseInput(input);
+        ParseTreeNode parseTree = new ParserContext(mq)
+            .withInput(new InputSource(input))
+            .withConfig(mc)
+            .withSourceMap(originalSources)
+            .build();
         if (null != parseTree) { pluginc.addInput(parseTree, input); }
       } catch (ParseException ex) {
         ex.toMessageQueue(mq);
@@ -244,51 +242,6 @@ public final class PluginCompilerMain {
       }
     }
     return parsePassed;
-  }
-
-  /** Parse one input from a URI. */
-  private ParseTreeNode parseInput(URI input)
-      throws IOException, ParseException {
-    InputSource is = new InputSource(input);
-    mc.addInputSource(is);
-
-    CharProducer cp = CharProducer.Factory.create(
-        createReader(is, input.toURL().openStream()), is);
-    return parseInput(is, cp, mq);
-  }
-
-  /** Classify an input by extension and use the appropriate parser. */
-  static ParseTreeNode parseInput(
-      InputSource is, CharProducer cp, MessageQueue mq)
-      throws ParseException {
-
-    String path = is.getUri().getPath();
-
-    ParseTreeNode input;
-    if (path.endsWith(".js")) {
-      JsLexer lexer = new JsLexer(cp);
-      JsTokenQueue tq = new JsTokenQueue(lexer, is);
-      if (tq.isEmpty()) { return null; }
-      Parser p = new Parser(tq, mq);
-      input = p.parse();
-      tq.expectEmpty();
-    } else if (path.endsWith(".css")) {
-      TokenQueue<CssTokenType> tq = CssParser.makeTokenQueue(cp, mq, false);
-      if (tq.isEmpty()) { return null; }
-
-      CssParser p = new CssParser(tq, mq, MessageLevel.WARNING);
-      input = p.parseStyleSheet();
-      tq.expectEmpty();
-    } else if (path.endsWith(".html") || path.endsWith(".xhtml")
-               || (!cp.isEmpty() && cp.getBuffer()[cp.getOffset()] == '<')) {
-      DomParser p = new DomParser(new HtmlLexer(cp), false, is, mq);
-      if (p.getTokenQueue().isEmpty()) { return null; }
-      input = new Dom(p.parseFragment());
-      p.getTokenQueue().expectEmpty();
-    } else {
-      throw new SomethingWidgyHappenedError("Can't classify input " + is);
-    }
-    return input;
   }
 
   /** Write the given HTML to the given file. */
@@ -350,7 +303,7 @@ public final class PluginCompilerMain {
         break;
       case SIDEBYSIDE:
         tc = new SourceSnippetRenderer(
-            buildOriginalInputCharSequences(), mc,
+            originalSources, mc,
             makeRenderContext(new Concatenator(out, exHandler)));
         break;
       default:
@@ -366,7 +319,7 @@ public final class PluginCompilerMain {
   private void writeFileWithDebug(Appendable out, CajoledModule module)
       throws IOException {
     module.renderWithDebugSymbols(
-        buildOriginalInputCharSequences(),
+        originalSources,
         makeRenderContext(new Concatenator(out, exHandler)));
   }
 

@@ -24,11 +24,10 @@ import java.util.List;
 import com.google.caja.SomethingWidgyHappenedError;
 import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.FetchedData;
-import com.google.caja.lexer.HtmlLexer;
 import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.ParseException;
+import com.google.caja.parser.ParserContext;
 import com.google.caja.parser.html.Dom;
-import com.google.caja.parser.html.DomParser;
 import com.google.caja.plugin.PipelineMaker;
 import com.google.caja.plugin.PluginCompiler;
 import com.google.caja.plugin.PluginMeta;
@@ -118,9 +117,11 @@ public class HtmlHandler extends AbstractCajolingHandler {
 
       Dom html = null;
       try {
-        DomParser p = new DomParser(new HtmlLexer(cp), false, is, mq);
-        html = new Dom(p.parseFragment());
-        p.getTokenQueue().expectEmpty();
+        html = (Dom) new ParserContext(mq)
+            .withInput(cp)
+            .withInput(is)
+            .withInput(ContentType.HTML)
+            .build();
       } catch (ParseException e) {
         okToContinue = false;
       }

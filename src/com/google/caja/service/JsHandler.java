@@ -22,12 +22,10 @@ import java.util.List;
 import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.FetchedData;
 import com.google.caja.lexer.InputSource;
-import com.google.caja.lexer.JsLexer;
-import com.google.caja.lexer.JsTokenQueue;
 import com.google.caja.lexer.ParseException;
+import com.google.caja.parser.ParserContext;
 import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.CajoledModule;
-import com.google.caja.parser.js.Parser;
 import com.google.caja.parser.js.UncajoledModule;
 import com.google.caja.parser.quasiliteral.CajitaRewriter;
 import com.google.caja.parser.quasiliteral.DefaultValijaRewriter;
@@ -35,7 +33,9 @@ import com.google.caja.parser.quasiliteral.ES53Rewriter;
 import com.google.caja.parser.quasiliteral.Rewriter;
 import com.google.caja.reporting.BuildInfo;
 import com.google.caja.reporting.MessageLevel;
+import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
+import com.google.caja.reporting.MessageType;
 import com.google.caja.util.Charsets;
 import com.google.caja.util.ContentType;
 import com.google.caja.util.Pair;
@@ -97,10 +97,12 @@ public class JsHandler extends AbstractCajolingHandler {
                         MessageQueue mq) {
     CajoledModule cajoledModule = null;
     try {
-      InputSource is = new InputSource (inputUri);
-      JsTokenQueue tq = new JsTokenQueue(new JsLexer(cp), is);
-      Block input = new Parser(tq, mq).parse();
-      tq.expectEmpty();
+      Block input = (Block) new ParserContext(mq)
+          .withInput(new InputSource(inputUri))
+          .withInput(ContentType.JS)
+          .withInput(cp)
+          .build();
+
       UncajoledModule ucm = new UncajoledModule(input);
       if (!directive.contains(CajolingService.Directive.ES53)) {
         Rewriter vrw = new DefaultValijaRewriter(mq, false /* logging */);
@@ -116,6 +118,11 @@ public class JsHandler extends AbstractCajolingHandler {
       }
     } catch (ParseException e) {
       e.toMessageQueue(mq);
+    } catch (IllegalStateException e) {
+      mq.addMessage(MessageType.INTERNAL_ERROR, 
+          MessagePart.Factory.valueOf(e.getMessage()));
+    } catch (IOException e) {
+      // Message already on queue
     }
     if (mq.hasMessageAtLevel(MessageLevel.ERROR)) {
       cajoledModule = null;

@@ -1388,6 +1388,7 @@
       <classpath refid="classpath.compile"/>
       <include name="**/caja/parser/*.java"/>
       <exclude name="**/caja/parser/ParserBase.java"/>
+      <exclude name="**/caja/parser/ParserContext.java"/>
       <compilerarg line="-Xlint:unchecked"/>
     </javac>
   </target>

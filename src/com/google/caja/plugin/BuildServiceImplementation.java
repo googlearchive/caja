@@ -25,6 +25,7 @@ import com.google.caja.lexer.ParseException;
 import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.lexer.escaping.UriUtil;
 import com.google.caja.parser.ParseTreeNode;
+import com.google.caja.parser.ParserContext;
 import com.google.caja.parser.html.DomParser;
 import com.google.caja.parser.html.Namespaces;
 import com.google.caja.parser.html.Nodes;
@@ -186,7 +187,10 @@ public class BuildServiceImplementation implements BuildService {
       for (File f : inputs) {
         try {
           URI fileUri = f.getCanonicalFile().toURI();
-          ParseTreeNode parsedInput = parseInput(new InputSource(fileUri), mq);
+          ParseTreeNode parsedInput = new ParserContext(mq)
+              .withInput(new InputSource(fileUri))
+              .withConfig(meta)
+              .build();
           if (parsedInput == null) {
             passed = false;
           } else {
@@ -194,6 +198,13 @@ public class BuildServiceImplementation implements BuildService {
           }
         } catch (IOException ex) {
           logger.println("Failed to read " + f);
+          passed = false;
+        } catch (ParseException ex) {
+          logger.println("Failed to parse " + f);
+          ex.toMessageQueue(mq);
+          passed = false;
+        } catch (IllegalStateException e) {
+          logger.println("Failed to configure parser " + e.getMessage());
           passed = false;
         }
       }
@@ -204,6 +215,7 @@ public class BuildServiceImplementation implements BuildService {
       outputJs = passed ? compiler.getJavascript() : null;
       outputHtml = passed ? compiler.getStaticHtml() : null;
     } else if ("javascript".equals(language)) {
+      PluginMeta meta = new PluginMeta(fetcher, policy);
       passed = true;
       JsOptimizer optimizer = new JsOptimizer(mq);
       for (File f : inputs) {
@@ -211,14 +223,23 @@ public class BuildServiceImplementation implements BuildService {
           if (f.getName().endsWith(".env.json")) {
             loadEnvJsonFile(f, optimizer, mq);
           } else {
-            ParseTreeNode parsedInput = parseInput(
-                new InputSource(f.getCanonicalFile().toURI()), mq);
+            ParseTreeNode parsedInput = new ParserContext(mq)
+            .withInput(new InputSource(f.getCanonicalFile().toURI()))
+            .withConfig(meta)
+            .build();
             if (parsedInput != null) {
               optimizer.addInput((Statement) parsedInput);
             }
           }
         } catch (IOException ex) {
           logger.println("Failed to read " + f);
+          passed = false;
+        } catch (ParseException ex) {
+          logger.println("Failed to parse " + f);
+          ex.toMessageQueue(mq);
+          passed = false;
+        } catch (IllegalStateException e) {
+          logger.println("Failed to configure parser " + e.getMessage());
           passed = false;
         }
       }
@@ -324,17 +345,6 @@ public class BuildServiceImplementation implements BuildService {
       originalSources.put(is, content);
     }
     return content;
-  }
-
-  private ParseTreeNode parseInput(InputSource is, MessageQueue mq)
-      throws IOException {
-    CharProducer cp = CharProducer.Factory.fromString(getSourceContent(is), is);
-    try {
-      return PluginCompilerMain.parseInput(is, cp, mq);
-    } catch (ParseException ex) {
-      ex.toMessageQueue(mq);
-      return null;
-    }
   }
 
   /**
