@@ -1,4 +1,4 @@
-// Copyright (C) 2005 Google Inc.
+// Copyright (C) 2011 Google Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -115,7 +115,7 @@ public enum MessageType implements MessageTypeInt {
 
   // logging
   CHECKPOINT("Checkpoint: %s at T+%s seconds", MessageLevel.LOG),
-  BUILD_INFO("Google Caja. Copyright (C) 2008, Google Inc. Rev %s built on %s.",
+  BUILD_INFO("Google Caja. Copyright (C) 2011, Google Inc. Rev %s built on %s.",
              MessageLevel.LOG),
   ;
 
