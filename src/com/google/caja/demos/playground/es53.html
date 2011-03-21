@@ -64,7 +64,9 @@
     imports.handleSet___ = void 0;
     var tamings___ = [];
     eval(policyJS);
-    grantAdditionalPowers(tamings___, ___, imports);
+    if ('function' === typeof grantAdditionalPowers) {
+      grantAdditionalPowers(tamings___, ___, imports);
+    }
     return ___.whitelistAll(imports);
   }
 

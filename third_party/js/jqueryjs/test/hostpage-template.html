@@ -7,8 +7,8 @@ var caja___ = (function() {
     console.log(x);
   } 
   
-  function onReady(initJs) {
-    initJs(document.getElementById('d___'), 
+  function onReady(api) {
+    api.initJS(document.getElementById('d___'), 
         { rewrite: function(uri, mimetype) { return uri; } },
         "",
         { url :  "/jquery/@jquery-testcase@-cajoled.js" });
