@@ -1,0 +1,20 @@
+A script can construct and add URLs to a page then check its computed style to deduce whether a user has visited a site.
+<style type="text/css">
+  a.visitattack { display: none; color: #0000ff; }
+  a.visitattack:link { display: none; color: #0000ff; }
+  a.visitattack:visited { display: none; color: #ff0000; }
+</style>
+The following link is blue if the user hasn't visited http://www.google.com recently and red if she has:
+<a id="googlesniff" class="visitattack" href="http://www.google.com">Link to Google.com</a><br>
+<label for="toplocation">User recently visited Google.com:</label><div id="googlesniff-result"></div>
+<script>
+  var link = document.getElementById("googlesniff");
+  var computedColor;
+  if(document.defaultView) {
+    computedStyle = document.defaultView.getComputedStyle(link, null);
+    try {computedColor = computedStyle.getPropertyValue('color');} catch(e){}
+  } else {
+    computedColor = link.currentStyle && link.currentStyle['color'];
+  }
+  document.getElementById("googlesniff-result").innerHTML = computedColor == '#ff0000' || computedColor == 'rgb(255, 0, 0)' ? "Yes!" : "Unknown";
+</script>

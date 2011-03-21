@@ -1,0 +1,7 @@
+A script which is inlined on a page can redirect the page:
+
+<script>var godoevil = function() { try { top.location = "http://www.thinkfu.com/evil.gif"; document.getElementById("redirection-result").innerHTML = "Gadget trying to redirect page"; } catch(e) {}  };</script>
+<form>
+  <input type="button" value="Go Do Evil Redirection" onclick="godoevil()" >
+</form>
+<label for="redirection-result">Result:</label><div id="redirection-result"></div>

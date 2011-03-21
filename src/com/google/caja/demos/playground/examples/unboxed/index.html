@@ -1,0 +1,238 @@
+<style> 
+  table {
+    border: none;
+    border-spacing: 0px;
+  }
+  td {
+    padding: 0px; 
+  }
+</style> 
+<div align="center" id="board"></div>   
+<div align="center" id="messages"></div>
+<button id="restart" disabled="disabled">Restart?</button>   
+ 
+<script> 
+  var modelMaker = function () {
+    var width = 8;
+    var height = 8;
+    var logicBombs = 10;
+    var remaining = width*height - logicBombs;
+    var bombs;
+    var hints;
+    var wrapped;
+    
+    function plantBombs(bombs) {
+      for (var c=0; c < logicBombs; c++) {
+        while (true) {
+          var i = Math.floor(Math.random() * 8);
+          var j = Math.floor(Math.random() * 8);
+          if (!bombs[i][j]) {
+            bombs[i][j] = true;
+            break;
+          }
+        }
+      }
+    };
+ 
+    function inBounds(i, j) {
+      return !(i < 0 || i >= width || j < 0 || j >= height);
+    }
+ 
+    function countAt(bombs, i, j) {
+      if (inBounds(i, j) && bombs[i][j]) {
+        return 1;
+      } else {
+        return 0;
+      }
+    }
+ 
+    function unwrapCell(i, j) {
+      if (wrapped[i][j]) {
+        remaining--;
+        wrapped[i][j] = false;
+      }
+      return remaining;
+    }
+ 
+    function plantHints(hints, bombs) {
+      for (var i=0; i < height; i++) {
+        for (var j=0; j < width; j++) {
+          if (bombs[i][j]) {
+            hints[i][j] = Infinity;
+          } else {
+            hints[i][j] = countAt(bombs, i-1, j-1) 
+                        + countAt(bombs, i, j-1) 
+                        + countAt(bombs, i+1, j-1)
+                        + countAt(bombs, i-1, j) 
+                        + countAt(bombs, i+1, j)
+                        + countAt(bombs, i-1, j+1) 
+                        + countAt(bombs, i, j+1) 
+                        + countAt(bombs, i+1, j+1);
+          }
+        }
+      }
+    }
+ 
+    function initialize(board, width, height, val) {
+      for (var i=0; i < height; i++) {
+        board[i] = [];
+        for (var j=0; j < width; j++) {
+          board[i][j] = val;
+        }
+      }
+    }
+
+    function reset() {
+      debugger;
+      bombs = [];
+      hints = [];
+      wrapped = [];
+
+      initialize(bombs, width, height, false);
+      initialize(hints, width, height, 0);
+      initialize(wrapped, width, height, true);
+
+      logicBombs = 10;
+      remaining = width*height - logicBombs;
+   
+      plantBombs(bombs);
+      plantHints(hints, bombs);
+    }
+
+    reset();
+   
+    return {
+      initialize: initialize,
+      reset: reset,
+      bombs: bombs,
+      hints: hints,
+      wrapped: wrapped,
+      inBounds: inBounds,
+      height: height,
+      width: width,
+      unwrapCell: unwrapCell
+    };
+  };
+ 
+  var viewMaker = function (model, display, restart) {
+    var controller;
+    function setController(myController) {
+      controller = myController;
+    }
+ 
+    function clicked(i, j) {
+      if (controller) {
+        controller.notifyCellClicked(i, j);
+      }
+    }
+ 
+    function displayWrapped(i, j) {
+      document.getElementById('cell-' + i + '-' + j).src = 'wrapped.png';
+    }
+ 
+    function displayLost() {
+      alert('You lost');
+    }
+ 
+    function displayWin() {
+      alert('You won');
+    }
+ 
+    function displayUnwrapped(i, j) {
+      var img = document.getElementById('cell-' + i + '-' + j);
+      img.src = model.bombs[i][j] ? 'bomb.png' : 
+        "http://www.thinkfu.com/unboxed/" + model.hints[i][j] + '-unwrapped.png';
+    }
+
+    function configureDisplay(model, display) {
+      var table = document.createElement('table');
+      for (var i=0; i < model.height; i++) {
+        var tr = document.createElement('tr');
+        for (var j=0; j < model.width; j++) {
+          var td = document.createElement('td');
+          var img = document.createElement('img');
+          img.src = 'http://www.thinkfu.com/unboxed/wrapped.png';
+          img.id = 'cell-' + i + '-' + j;
+          img.onclick = (function(i, j) { 
+            return function () { clicked(i, j); };
+          })(i, j);
+          td.appendChild(img);
+          tr.appendChild(td);
+        }
+        table.appendChild(tr);
+      }
+      display.innerHTML = "";
+      display.appendChild(table);
+    }
+
+    function configureRestart(model, restart) {
+      restart.onclick = function () {
+        controller.reset();
+        reset();
+      }
+      restart.disabled = false;
+    }
+ 
+    function init (model, display, restart) {
+      configureRestart(model, restart);
+      configureDisplay(model, display);
+    }
+
+    function reset() {
+      init(model, display, restart);
+    }
+
+    reset();
+
+    return {
+      reset: reset,
+      clicked: clicked,
+      setController: setController,
+      displayWrapped: displayWrapped,
+      displayUnwrapped: displayUnwrapped,
+      displayLost: displayLost,
+      displayWin: displayWin
+    };
+   };
+ 
+  var controllerMaker = function(model, view) {
+    function clearCell(i, j) {
+      if (!model.inBounds(i, j) || !model.wrapped[i][j])
+        return;
+      view.displayUnwrapped(i, j);
+      if (model.bombs[i][j]) {
+        view.displayLost();
+      } else {
+        var remaining = model.unwrapCell(i, j);
+        if (remaining <= 0)
+          view.displayWin();
+      }
+      if (model.hints[i][j] == 0) {
+        clearCell(i-1, j-1);
+        clearCell(i-1, j);
+        clearCell(i-1, j+1);
+        clearCell(i, j-1);
+        clearCell(i, j+1);
+        clearCell(i+1, j-1);
+        clearCell(i+1, j);
+        clearCell(i+1, j+1);
+      }
+    };
+
+    function reset() {
+      model.reset();
+      view.reset();
+    }
+    return {
+      notifyCellClicked: clearCell,
+      reset: reset
+    };
+  };
+ 
+  var model = modelMaker();
+  var view = viewMaker(model, 
+      document.getElementById('board'),
+      document.getElementById('restart'));
+  var controller = controllerMaker(model, view);
+  view.setController(controller);
+</script> 

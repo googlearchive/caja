@@ -1,0 +1,39 @@
+<p>
+Caja does not allow <code>object</code> or <code>embed</code> tags in HTML.
+However, a container may provide an JavaScript API for embedding flash
+on a page.  A common library that provides this functionality is <a
+href="http://code.google.com/p/swfobject/">SWFObject</a>.  The Caja Playground provides a tamed version
+of the <code>swfobject.embedSWF</code> which you can use to embed flash
+objects which to not need to interact with scripts on the page.
+<p>
+For example, here is a YouTube video.
+<p>
+  <div id="status">Loading...</div>
+  <div id="ytapiplayer">
+    You need Flash player 8+ and JavaScript enabled to view this video.
+  </div>
+  <script type="text/javascript">
+
+    var params = { allowScriptAccess: "always" };
+    var atts = { id: "myytplayer" };
+    swfobject.embedSWF("http://www.youtube.com/v/0AqMb-edXlc", // Flash video
+                       "ytapiplayer", // id of div to place flash object
+                       "425", "356",  // width and height
+                       "8",           // minimum version
+                       null,          // expressInstall
+                       null, params, atts, // flashvars, params and attributes
+                       function () { document.getElementById('status').innerHTML = ""; }); // callback
+  </script>
+<p>
+This works by creating a <code>div</code> where the Flash object will be
+placed.  A tame version of SWFObject is exposed to the gadget which in
+turn uses the real SWFObject to add the flash in a cross-browser
+supported fashion.  Some of the parameters maybe modified by the
+container before being passed to the real SWFObject.  For example, the
+Caja Playground requires a minimum Flash version of 9 and does not
+allow script access to the page, inspite of what was requested by the
+gadget.
+<p>
+Other Caja containers (such as iGoogle or Orkut) may give you a
+different JavaScript API for embedding flash in your page and possibly
+allow your Flash object to interact with the rest of the page.

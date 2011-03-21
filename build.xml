@@ -1164,6 +1164,12 @@
         <include name="sunspider-record-result.js" />
         <include name="*.html" />
       </fileset>
+      <fileset dir="${src}/com/google/caja/demos/playground">
+        <include name="examples/*.gif" />
+        <include name="examples/*.html" />
+        <include name="examples/unboxed/*.html" />
+        <include name="examples/unboxed/*.png" />
+      </fileset>
 
       <!-- Needed by jqueryTest which references the playground
         -  server so as to be standalone. -->

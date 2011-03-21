@@ -18,21 +18,21 @@ package com.google.caja.demos.playground.client.ui;
  * @author jasvir@google.com (Jasvir Nagra)
  */
 public enum Example {
-  HISTORY("http://www.thinkfu.com/history.html", 
+  HISTORY("examples/history.html", 
       Type.ATTACK, "Sniffing history"),
-  REDIRECTION("http://www.thinkfu.com/redirection.html", 
+  REDIRECTION("examples/redirection.html", 
       Type.ATTACK, "Redirecting the window"),
-  COOKIES("http://www.thinkfu.com/cookies.html", 
+  COOKIES("examples/cookies.html", 
       Type.ATTACK, "Stealing cookies"),
-  CLOCK("http://www.thinkfu.com/clock.html", 
-          Type.APPS, "Canvas Clock"),
-  UNBOXED("http://www.thinkfu.com/unboxed/index.html", 
-          Type.APPS, "Unboxed Game"),
-  MARKDOWN("http://www.thinkfu.com/markdown.html", 
+  CLOCK("examples/clock.html", 
+      Type.APPS, "Canvas Clock"),
+  UNBOXED("examples/unboxed/index.html", 
+      Type.APPS, "Unboxed Game"),
+  MARKDOWN("examples/markdown.html", 
       Type.APPS, "Markdown Editor"),
-  FLASH("http://www.thinkfu.com/flash.html", 
-        Type.APPS, "Embed Flash"),
-  LIFE("http://www.thinkfu.com/cajalife/index.php", 
+  FLASH("examples/flash.html", 
+      Type.APPS, "Embed Flash"),
+  LIFE("examples/cajalife.html", 
       Type.APPS, "Game of Life"),
 
   // Benchmarks
