@@ -289,11 +289,11 @@ var caja = (function () {
            */
           function run(url, extraImports, callback) {
             if (!extraImports.hasOwnProperty('onerror')) {
-              extraImports.onerror = markFunction(
+              extraImports.onerror = tame(markFunction(
                   function (message, source, lineNum) {
                     console.log('Uncaught script error: ' + message
                         + ' in source: "' + source + '" at line: ' + lineNum);
-                  });
+                  }));
             }
             copyToImports(imports, extraImports);
             guestWindow.Q.when(loader.async(url), function (moduleFunc) {

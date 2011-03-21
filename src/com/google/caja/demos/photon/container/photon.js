@@ -21,6 +21,7 @@
  *     a Domita tamed element, an HTML module URL and an optional
  *     map of outer variables and instantiates the module within
  *     the provided element.
+ * @param log a tamed function that logs messages to the console.
  */
 
 'use strict';
@@ -42,6 +43,10 @@ var introducer = load('introducer')({
  */
 self.instantiateInElement = function(element, moduleUrl, outers) {
   instantiateInTameElement(element, moduleUrl, outers);
+};
+
+self.log = function(msg) {
+  log(String(msg));
 };
 
 self.makeDragSource = introducer.makeDragSource;

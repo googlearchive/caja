@@ -62,6 +62,7 @@ abstract class CompileHtmlStage implements Pipeline.Stage<Jobs> {
     List<IhtmlRoot> html = Lists.newArrayList();
     List<ValidatedStylesheet> css = Lists.newArrayList();
     List<ScriptPlaceholder> js = Lists.newArrayList();
+    URI baseUriForJsModules = null;
 
     for (Iterator<JobEnvelope> it = jobs.getJobs().iterator(); it.hasNext();) {
       JobEnvelope env = it.next();
@@ -77,6 +78,12 @@ abstract class CompileHtmlStage implements Pipeline.Stage<Jobs> {
         case HTML:
           html.add(new IhtmlRoot(
               env, ((Dom) job.getRoot()).getValue(), job.getBaseUri()));
+          // Module loading in embedded <script>s should use the URI of the
+          // HTML file as the base URI. We use a heuristic that there's only
+          // one HTML file per compilation task, and use the URI of that.
+          if (baseUriForJsModules == null) {
+            baseUriForJsModules = job.getBaseUri();
+          }
           it.remove();
           break;
         case JS:
@@ -119,7 +126,7 @@ abstract class CompileHtmlStage implements Pipeline.Stage<Jobs> {
       if (outputJs.body instanceof Block) {  // Further processing required.
         assert !outputJs.source.fromCache;
         jobs.getJobs().add(outputJs.source.withJob(Job.jsJob(
-            (Block) outputJs.body, null)));
+            (Block) outputJs.body, baseUriForJsModules)));
       } else {  // Routed through from cache.
         assert outputJs.source.fromCache;
         jobs.getJobs().add(outputJs.source.withJob(Job.cajoledJob(

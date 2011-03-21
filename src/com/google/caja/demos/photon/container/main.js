@@ -15,10 +15,6 @@
 var rootContainerDiv = document.getElementById('container');
 var rootChromeDiv = document.getElementById('chrome');
 
-// The following variables are just an aid for debugging
-var LASTDIV = undefined;
-var LASTMOD = undefined;
-
 var error = function(msg) {
   rootContainerDiv.innerHTML = '<pre>\n' + msg + '</pre>';
   throw 'Error';
@@ -56,8 +52,12 @@ var getUrlParamDefault = function(name, defaultValue) {
   return result;
 };
 
-var cajaServer = getUrlParamDefault('cajaServer', 'http://caja.appspot.com/');
-var rootModule = getUrlParamDefault('rootModule', '../gadgets/gadgetsModule.html');
+// By default, we point 'cajaServer' to the root URL of wherever this file
+// is getting served from. This makes our Caja demo server (invoked via
+// the 'ant runserver' command) work out of the box.
+var cajaServer = getUrlParamDefault('cajaServer', '/');
+var rootModule = getUrlParamDefault('rootModule',
+    '../gadgets/gadgetsModule.html');
 
 var debug = Boolean(getUrlParamDefault('debug', 'false'));
 
@@ -88,19 +88,22 @@ var initialize = function (frameGroup) {
     });
   };
 
+  // This function is not tamed because 'extraOuters' needs to be passed as
+  // imports via privileged code to newly instantiated modules, and passing this
+  // through an untame()/tame() cycle somehow breaks things.
   var instantiateInTameElement = function(tameContainingElement,
                                           moduleUrl,
                                           extraOuters) {
     var feralContainingElement = tameContainingElement
-        ? tameContainingElement.v___('ownerDocument')
-            .feralNode___(tameContainingElement)
+        ? tameContainingElement.FERAL_TWIN___
         : undefined;
     return instantiateModule(feralContainingElement, moduleUrl, extraOuters);
   };
+  instantiateInTameElement.i___ = instantiateInTameElement;
 
   instantiateModule(undefined, 'photon.js', {
-    instantiateInTameElement: frameGroup.tame(instantiateInTameElement),
-    log: frameGroup.tame(log)
+    instantiateInTameElement: instantiateInTameElement,
+    log: frameGroup.tame(frameGroup.markFunction(log))
   }, function (photonInstance) {
     instantiateModule(rootContainerDiv, "bootstrap.html", {
       photonInstance: photonInstance,
@@ -114,7 +117,7 @@ var loadingTimeout = window.setTimeout(function () {
 }, 1000);
 
 var cajaScript = document.createElement('script');
-cajaScript.setAttribute('src', cajaServer + '/caja.js');
+cajaScript.setAttribute('src', joinUrl(cajaServer, 'caja.js'));
 cajaScript.onload = function () {
   window.clearTimeout(loadingTimeout);
   try {

@@ -15,6 +15,7 @@
 -->
 
 <div id="testStaticDom" class="testcontainer">
+  testStaticDom
   <p>Foo bar baz</p>
 </div>
 <script type="text/javascript">
@@ -26,7 +27,9 @@
   });
 </script>
 
-<div id="testDynamicDom" class="testcontainer"></div>
+<div id="testDynamicDom" class="testcontainer">
+  testDynamicDom
+</div>
 <script type="text/javascript">
   jsunitRegister('testDynamicDom',
                  function testDynamicDom() {
@@ -36,6 +39,17 @@
     var s = directAccess.getInnerHTML($('testDynamicDom'));
     assertNotEquals(-1, s.indexOf('Foo bar baz'));
     pass('testDynamicDom');
+  });
+</script>
+
+<div id="testModuleLoading" class="testcontainer">
+  testModuleLoading
+</div>
+<script type="text/javascript">
+  jsunitRegister('testModuleLoading',
+                 function testModuleLoading() {
+    assertEquals(12, load('jsmodules/test')({ x: 3, y: 4 }));
+    pass('testModuleLoading');
   });
 </script>
 
