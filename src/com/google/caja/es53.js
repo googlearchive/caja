@@ -181,6 +181,24 @@ var ___, cajaVM, safeJSON;
         return slice.call(dis, startIndex);
       }
     });
+  
+  // Missing on IE
+  if (!Array.prototype.forEach) {
+    Array.prototype.forEach = function(fun) { //, thisp
+      var dis = ToObject(this);
+      var len = dis.length >>> 0;
+      if ('function' !== typeof fun) {
+        throw new TypeError("Expected function but got " + (typeof fun));
+      }
+
+      var thisp = arguments[1];
+      for (var i = 0; i < len; i++) {
+        if (i in dis) {
+          fun.call(thisp, dis[i], i, dis);
+        }
+      }
+    };
+  }
 
   ////////////////////////////////////////////////////////////////////////
   // Functions to walk the prototype chain
@@ -3975,7 +3993,7 @@ var ___, cajaVM, safeJSON;
     });
 
   // 15.4.4.18
-  createOrWrap(Array.prototype, 'forEach', function (block, thisp) {
+  virtualize(Array.prototype, 'forEach', function (block, thisp) {
       var len = this.length >>> 0;
       for (var i = 0; i < len; i++) {
         if (i in this) {
