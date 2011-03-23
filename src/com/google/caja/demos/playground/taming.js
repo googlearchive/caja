@@ -34,7 +34,7 @@ var caja___ = (function () {
 
   var uriPolicy = {
       rewrite: function (uri, uriEffect, loaderType, hints) {
-        if (!/^https?:\/\//i.test(uri)) { return void 0; }
+        if (!/^https?:/i.test(uri)) { return void 0; }
         if (uriEffect === html4.ueffects.NEW_DOCUMENT ||
             (uriEffect === html4.ueffects.SAME_DOCUMENT &&
              loaderType === html4.ltypes.SANDBOXED)) {

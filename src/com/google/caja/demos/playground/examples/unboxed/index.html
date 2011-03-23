@@ -17,9 +17,9 @@
     var height = 8;
     var logicBombs = 10;
     var remaining = width*height - logicBombs;
-    var bombs;
-    var hints;
-    var wrapped;
+    var bombs = [];
+    var hints = [];
+    var wrapped = [];
     
     function plantBombs(bombs) {
       for (var c=0; c < logicBombs; c++) {
@@ -83,11 +83,6 @@
     }
 
     function reset() {
-      debugger;
-      bombs = [];
-      hints = [];
-      wrapped = [];
-
       initialize(bombs, width, height, false);
       initialize(hints, width, height, 0);
       initialize(wrapped, width, height, true);
@@ -122,12 +117,13 @@
  
     function clicked(i, j) {
       if (controller) {
-        controller.notifyCellClicked(i, j);
+        controller.openCell(i, j);
       }
     }
  
     function displayWrapped(i, j) {
-      document.getElementById('cell-' + i + '-' + j).src = 'wrapped.png';
+      document.getElementById('cell-' + i + '-' + j).src =
+        'http:examples/unboxed/wrapped.png';
     }
  
     function displayLost() {
@@ -141,7 +137,7 @@
     function displayUnwrapped(i, j) {
       var img = document.getElementById('cell-' + i + '-' + j);
       img.src = model.bombs[i][j] ? 'bomb.png' : 
-        "http://www.thinkfu.com/unboxed/" + model.hints[i][j] + '-unwrapped.png';
+        "http:examples/unboxed/" + model.hints[i][j] + '-unwrapped.png';
     }
 
     function configureDisplay(model, display) {
@@ -151,7 +147,7 @@
         for (var j=0; j < model.width; j++) {
           var td = document.createElement('td');
           var img = document.createElement('img');
-          img.src = 'http://www.thinkfu.com/unboxed/wrapped.png';
+          img.src = 'http:examples/unboxed/wrapped.png';
           img.id = 'cell-' + i + '-' + j;
           img.onclick = (function(i, j) { 
             return function () { clicked(i, j); };
@@ -196,7 +192,7 @@
    };
  
   var controllerMaker = function(model, view) {
-    function clearCell(i, j) {
+    function openCell(i, j) {
       if (!model.inBounds(i, j) || !model.wrapped[i][j])
         return;
       view.displayUnwrapped(i, j);
@@ -208,14 +204,14 @@
           view.displayWin();
       }
       if (model.hints[i][j] == 0) {
-        clearCell(i-1, j-1);
-        clearCell(i-1, j);
-        clearCell(i-1, j+1);
-        clearCell(i, j-1);
-        clearCell(i, j+1);
-        clearCell(i+1, j-1);
-        clearCell(i+1, j);
-        clearCell(i+1, j+1);
+        openCell(i-1, j-1);
+        openCell(i-1, j);
+        openCell(i-1, j+1);
+        openCell(i, j-1);
+        openCell(i, j+1);
+        openCell(i+1, j-1);
+        openCell(i+1, j);
+        openCell(i+1, j+1);
       }
     };
 
@@ -224,7 +220,7 @@
       view.reset();
     }
     return {
-      notifyCellClicked: clearCell,
+      openCell: openCell,
       reset: reset
     };
   };
