@@ -4414,6 +4414,7 @@ var ___, cajaVM, safeJSON;
         'setMinutes',
         'setSeconds',
         'setMilliseconds',
+        'setTime',
         'toISOString',
         'toJSON'
       ];

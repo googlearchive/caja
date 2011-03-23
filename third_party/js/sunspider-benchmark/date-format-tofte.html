@@ -33,7 +33,14 @@
 <h3>date-format-tofte</h3>
 <div id="console">
 </div>
-<script src="sunspider-record-result.js"></script>
+<script>
+function record(time) {
+    document.getElementById("console").innerHTML = time + "ms";
+    if (window.parent) {
+        parent.recordResult(time);
+    }
+}
+</script>
 <script>
 
 var _sunSpiderStartDate = new Date();
@@ -63,9 +70,6 @@ Date.prototype.formatDate = function (input,time) {
     // unsupported:
     // I (capital i), T, Z    
 
-    var switches =    ["a", "A", "B", "d", "D", "F", "g", "G", "h", "H", 
-                       "i", "j", "l", "L", "m", "M", "n", "O", "r", "s", 
-                       "S", "t", "U", "w", "W", "y", "Y", "z"];
     var daysLong =    ["Sunday", "Monday", "Tuesday", "Wednesday", 
                        "Thursday", "Friday", "Saturday"];
     var daysShort =   ["Sun", "Mon", "Tue", "Wed", 
@@ -82,16 +86,19 @@ Date.prototype.formatDate = function (input,time) {
                       "nd", "rd", "th", "th", "th", "th", "th", // 22nd - 28th
                       "th", "th", "st"];                        // 29th - 31st
 
-    function a() {
+    var formatters = {};
+
+    var a = formatters.a = function a() {
         // Lowercase Ante meridiem and Post meridiem
         return self.getHours() > 11? "pm" : "am";
     }
-    function A() {
+
+    var A = formatters.A = function A() {
         // Uppercase Ante meridiem and Post meridiem
         return self.getHours() > 11? "PM" : "AM";
     }
 
-    function B(){
+    var B = formatters.B = function B(){
         // Swatch internet time. code simply grabbed from ppk,
         // since I was feeling lazy:
         // http://www.xs4all.nl/~ppk/js/beat.html
@@ -106,29 +113,34 @@ Date.prototype.formatDate = function (input,time) {
         if ((""+beat).length == 2) beat = "0"+beat;
         return beat;
     }
-    
-    function d() {
+
+    var d = formatters.d = function d() {
         // Day of the month, 2 digits with leading zeros
         return new String(self.getDate()).length == 1?
         "0"+self.getDate() : self.getDate();
     }
-    function D() {
+
+    var D = formatters.D = function D() {
         // A textual representation of a day, three letters
         return daysShort[self.getDay()];
     }
-    function F() {
+
+    var F = formatters.F = function F() {
         // A full textual representation of a month
         return monthsLong[self.getMonth()];
     }
-    function g() {
+
+    var g = formatters.g = function g() {
         // 12-hour format of an hour without leading zeros
         return self.getHours() > 12? self.getHours()-12 : self.getHours();
     }
-    function G() {
+
+    var G = formatters.G = function G() {
         // 24-hour format of an hour without leading zeros
         return self.getHours();
     }
-    function h() {
+
+    var h = formatters.h = function h() {
         // 12-hour format of an hour with leading zeros
         if (self.getHours() > 12) {
           var s = new String(self.getHours()-12);
@@ -140,25 +152,30 @@ Date.prototype.formatDate = function (input,time) {
           "0"+self.getHours() : self.getHours();
         }  
     }
-    function H() {
+
+    var H = formatters.H = function H() {
         // 24-hour format of an hour with leading zeros
         return new String(self.getHours()).length == 1?
         "0"+self.getHours() : self.getHours();
     }
-    function i() {
+
+    var i = formatters.i = function i() {
         // Minutes with leading zeros
         return new String(self.getMinutes()).length == 1? 
         "0"+self.getMinutes() : self.getMinutes(); 
     }
-    function j() {
+
+    var j = formatters.j = function j() {
         // Day of the month without leading zeros
         return self.getDate();
-    }    
-    function l() {
+    }
+
+    var l = formatters.l = function l() {
         // A full textual representation of the day of the week
         return daysLong[self.getDay()];
     }
-    function L() {
+
+    var L = formatters.L = function L() {
         // leap year or not. 1 if leap year, 0 if not.
         // the logic should match iso's 8601 standard.
         var y_ = Y();
@@ -171,21 +188,25 @@ Date.prototype.formatDate = function (input,time) {
             return 0;
         }
     }
-    function m() {
+
+    var m = formatters.m = function m() {
         // Numeric representation of a month, with leading zeros
         return self.getMonth() < 9?
         "0"+(self.getMonth()+1) : 
         self.getMonth()+1;
     }
-    function M() {
+
+    var M = formatters.M = function M() {
         // A short textual representation of a month, three letters
         return monthsShort[self.getMonth()];
     }
-    function n() {
+
+    var n = formatters.n = function n() {
         // Numeric representation of a month, without leading zeros
         return self.getMonth()+1;
     }
-    function O() {
+
+    var O = formatters.O = function O() {
         // Difference to Greenwich time (GMT) in hours
         var os = Math.abs(self.getTimezoneOffset());
         var h = ""+Math.floor(os/60);
@@ -194,7 +215,8 @@ Date.prototype.formatDate = function (input,time) {
         m.length == 1? m = "0"+m:1;
         return self.getTimezoneOffset() < 0 ? "+"+h+m : "-"+h+m;
     }
-    function r() {
+
+    var r = formatters.r = function r() {
         // RFC 822 formatted date
         var result; // result
         //  Thu    ,     21          Dec         2000
@@ -203,27 +225,31 @@ Date.prototype.formatDate = function (input,time) {
             " " + H() + ":" + i() + ":" + s() + " " + O();
         return result;
     }
-    function S() {
+
+    var S = formatters.S = function S() {
         // English ordinal suffix for the day of the month, 2 characters
         return daysSuffix[self.getDate()-1];
     }
-    function s() {
+
+    var s = formatters.s = function s() {
         // Seconds, with leading zeros
         return new String(self.getSeconds()).length == 1?
         "0"+self.getSeconds() : self.getSeconds();
     }
-    function t() {
 
+    var t = formatters.t = function t() {
         // thanks to Matt Bannon for some much needed code-fixes here!
         var daysinmonths = [null,31,28,31,30,31,30,31,31,30,31,30,31];
         if (L()==1 && n()==2) return 29; // leap day
         return daysinmonths[n()];
     }
-    function U() {
+
+    var U = formatters.U = function U() {
         // Seconds since the Unix Epoch (January 1 1970 00:00:00 GMT)
         return Math.round(self.getTime()/1000);
     }
-    function W() {
+
+    var W = formatters.W = function W() {
         // Weeknumber, as per ISO specification:
         // http://www.cl.cam.ac.uk/~mgk25/iso-time.html
         
@@ -263,19 +289,20 @@ Date.prototype.formatDate = function (input,time) {
             return 1 + Math.floor( ( z() - ( 7 - nyDay ) ) / 7 );
         }
     }
-    function w() {
+
+    var w = formatters.w = function w() {
         // Numeric representation of the day of the week
         return self.getDay();
     }
-    
-    function Y() {
+
+    var Y = formatters.Y = function Y() {
         // A full numeric representation of a year, 4 digits
 
         // we first check, if getFullYear is supported. if it
         // is, we just use that. ppks code is nice, but wont
         // work with dates outside 1900-2038, or something like that
         if (self.getFullYear) {
-            var newDate = new Date("January 1 2001 00:00:00 +0000");
+            var newDate = new Date("January 2 2001 00:00:00 +0000");
             var x = newDate .getFullYear();
             if (x == 2001) {              
                 // i trust the method now
@@ -290,12 +317,14 @@ Date.prototype.formatDate = function (input,time) {
         y += (y < 38) ? 2000 : 1900;
         return y;
     }
-    function y() {
+
+    var y = formatters.y = function y() {
         // A two-digit representation of a year
         var z = Y()+"";
         return z.substring(z.length-2,z.length);
     }
-    function z() {
+
+    var z = formatters.z = function z() {
         // The day of the year, zero indexed! 0 through 366
         var t = new Date("January 1 " + Y() + " 00:00:00");
         var diff = self.getTime() - t.getTime();
@@ -316,8 +345,8 @@ Date.prototype.formatDate = function (input,time) {
             // this is our way of allowing users to escape stuff
             ia.splice(ij,1);
         } else {
-            if (arrayExists(switches,ia[ij])) {
-                ia[ij] = eval(ia[ij] + "()");
+            if (formatters.hasOwnProperty(ia[ij])) {
+                ia[ij] = formatters[ia[ij]]();
             }
         }
         ij++;

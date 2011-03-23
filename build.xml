@@ -1160,10 +1160,6 @@
       <fileset dir="${src}/com/google/caja/flash">
         <include name="flashbridge.swf" />
       </fileset>
-      <fileset dir="${third_party}/js/sunspider-benchmark">
-        <include name="sunspider-record-result.js" />
-        <include name="*.html" />
-      </fileset>
       <fileset dir="${src}/com/google/caja/demos/playground">
         <include name="examples/*.gif" />
         <include name="examples/*.html" />
@@ -1204,6 +1200,12 @@
         <include name="es53-guest-frame-minified.js"/>
         <include name="es53-taming-frame.js"/>                                
         <include name="es53-taming-frame-minified.js"/>
+      </fileset>
+    </copy>
+    <copy todir="${war}/sunspider">
+      <fileset dir="${third_party}/js/sunspider-benchmark">
+        <include name="sunspider-record-result.js" />
+        <include name="*.html" />
       </fileset>
     </copy>
   </target>
