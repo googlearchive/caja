@@ -1,20 +1,33 @@
-A script can construct and add URLs to a page then check its computed style to deduce whether a user has visited a site.
+<p>A script can examine a link's computed style to deduce whether
+  the user has visited that site.</p>
+
 <style type="text/css">
-  a.visitattack { display: none; color: #0000ff; }
-  a.visitattack:link { display: none; color: #0000ff; }
-  a.visitattack:visited { display: none; color: #ff0000; }
+  a.visitattack { color: #0000ff; }
+  a.visitattack:link { color: #0000ff; }
+  a.visitattack:visited { color: #ff0000; }
 </style>
-The following link is blue if the user hasn't visited http://www.google.com recently and red if she has:
-<a id="googlesniff" class="visitattack" href="http://www.google.com">Link to Google.com</a><br>
-<label for="toplocation">User recently visited Google.com:</label><div id="googlesniff-result"></div>
+
+<p>The following link is red if you've visited
+  www.google.com recently and blue if you haven't:
+  <a id="googlesniff" class="visitattack"
+     href="http://www.google.com/">link</a></p>
+
+<p>Does getComputedStyle say you've visited www.google.com?
+  <span id="googlesniff-result"></span></p>
+
 <script>
   var link = document.getElementById("googlesniff");
   var computedColor;
-  if(document.defaultView) {
-    computedStyle = document.defaultView.getComputedStyle(link, null);
+  if (document.defaultView) {
+    var computedStyle = document.defaultView.getComputedStyle(link, null);
     try {computedColor = computedStyle.getPropertyValue('color');} catch(e){}
   } else {
     computedColor = link.currentStyle && link.currentStyle['color'];
   }
-  document.getElementById("googlesniff-result").innerHTML = computedColor == '#ff0000' || computedColor == 'rgb(255, 0, 0)' ? "Yes!" : "Unknown";
+  var resultEl = document.getElementById('googlesniff-result');
+  if (computedColor == '#ff0000' || computedColor == 'rgb(255, 0, 0)') {
+    resultEl.innerHTML = 'Yes!';
+  } else {
+    resultEl.innerHTML = 'No';
+  }
 </script>
