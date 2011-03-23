@@ -78,7 +78,7 @@ var caja___ = (function () {
     
     var hiddenDiv = document.getElementById("es53frames");
     var currentFrame = document.createElement('iframe');
-    currentFrame.src = "es53.html?rnd=" + Math.floor(Math.random() * 10000);
+    currentFrame.src = "/es53.html?rnd=" + Math.floor(Math.random() * 10000);
     currentFrame.id = "es53frame";
 
     onReadyCallbacks___.push(function(api, childFrame) {
