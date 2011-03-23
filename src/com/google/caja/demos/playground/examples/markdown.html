@@ -1666,12 +1666,14 @@ Like code blocks, code spans will be displayed in a monospaced typeface.  Markdo
 var r=document.getElementById("result");
 var t=document.getElementById("source");
 var w=document.getElementById("working");
+var valueRendered = '';
 var dirty = 1;
 function f() {
-  if (dirty) {
+  if (dirty && t.value !== valueRendered) {
     dirty = 0;
     w.innerHTML="Working...";
     r.innerHTML=converter.makeHtml(t.value);
+    valueRendered = t.value;
     w.innerHTML="";
   }
   setTimeout(f, 250);
