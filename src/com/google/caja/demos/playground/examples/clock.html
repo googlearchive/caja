@@ -1,13 +1,20 @@
 <html>
  <head>
   <script type="application/javascript">
-  function init(){
+var intervalId;
+function init(){
   clock();
-  setInterval(clock,1000);
+  intervalId = setInterval(clock, 1000);
 }
 function clock(){
+  // no notification when we get unloaded/replaced, so check here
+  var canv = document.getElementById('canvas');
+  if (!canv) {
+    clearInterval(intervalId);
+    return;
+  }
   var now = new Date();
-  var ctx = document.getElementById('canvas').getContext('2d');
+  var ctx = canv.getContext('2d');
   ctx.save();
   ctx.clearRect(0,0,150,150);
   ctx.translate(75,75);
