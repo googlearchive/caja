@@ -312,11 +312,11 @@
       };
       extraImports.evalInHost.i___ = extraImports.evalInHost;
       
-      frame.run('es53-test-taming-tamed-cajoled.html', extraImports,
-          function (_) {
-            readyToTest();
-            jsunitRun();
-          });
+      frame.url('es53-test-taming-tamed-cajoled.html')
+           .run(extraImports, function (_) {
+               readyToTest();
+               jsunitRun();
+             });
     });
   });
 })();

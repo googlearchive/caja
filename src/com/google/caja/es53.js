@@ -149,7 +149,7 @@ var ___, cajaVM, safeJSON;
    * {@code g.f___(dis, [as])}            is the tamed version of {@code g},
    *                                      though it uses {@code apply}'s
    *                                      interface.
-   * {@code g.i___(as)}                   = g.f___(___.USELESS, [as])
+   * {@code g.i___(as)}                   = g.f___(USELESS, [as])
    * {@code g.new___(as)}                 is the tamed version of {@code g}
    *                                      used for constructing an object of
    *                                      class {@code g}.
@@ -3151,13 +3151,13 @@ var ___, cajaVM, safeJSON;
   var poisonFuncArgs = makePoisonPill("A function's .arguments");
 
   /**
-   * Function calls g(args) get translated to g.f___(___.USELESS, args)
+   * Function calls g(args) get translated to g.f___(USELESS, args)
    * Tamed functions and cajoled functions install an overriding fastpath f___
    * to apply, the original Function.prototype.apply.
    */
   Function.prototype.f___ = callFault;
   Function.prototype.i___ = function(var_args) {
-      return this.f___(___.USELESS, slice.call(arguments, 0));
+      return this.f___(USELESS, slice.call(arguments, 0));
     };
   Function.prototype.new___ = callFault;
   Function.prototype.DefineOwnProperty___('arguments', {
@@ -4060,7 +4060,7 @@ var ___, cajaVM, safeJSON;
       }
       for (; i < len; i++) {
         if (i in this) {
-          rv = fun.f___(___.USELESS, [rv, this[i], i, this]);
+          rv = fun.f___(USELESS, [rv, this[i], i, this]);
         }
       }
       return rv;
@@ -4094,7 +4094,7 @@ var ___, cajaVM, safeJSON;
       }
       for (; i >= 0; i--) {
         if (i in this) {
-          rv = fun.f___(___.USELESS, [rv, this[i], i, this]);
+          rv = fun.f___(USELESS, [rv, this[i], i, this]);
         }
       }
       return rv;

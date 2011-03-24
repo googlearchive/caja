@@ -80,11 +80,12 @@ var initialize = function (frameGroup) {
     frameGroup.makeES5Frame(feralContainerDiv,
                             defaultURIPolicy,
                             function (frame) {
-      frame.run(moduleUrl, extraOuters, function (result) {
-        if (resultCallback) {
-          resultCallback(result);
-        }
-      });
+      frame.url(moduleUrl)
+           .run(extraOuters, function (result) {
+              if (resultCallback) {
+                resultCallback(result);
+              }
+            });
     });
   };
 

@@ -59,11 +59,11 @@
             return eval(String(s));
           }));
 
-      frame.run('es53-test-taming-untamed-cajoled.html', extraImports,
-          function (_) {
-            readyToTest();
-           jsunitRun();
-         });
+      frame.url('es53-test-taming-untamed-cajoled.html')
+           .run(extraImports, function (_) {
+               readyToTest();
+               jsunitRun();
+             });
     });
   });
 })();

@@ -232,16 +232,16 @@ var caja = (function () {
        * @param div a <DIV> in the parent document within which the guest HTML's
        *     virtual document will be confined. This parameter may be undefined,
        *     in which case a secure DOM document will not be constructed.
-       * @param uriCallback a policy callback that is called to allow or
+       * @param uriPolicy a policy callback that is called to allow or
        *     disallow access each time guest code attempts to fetch from a URI.
-       *     This is of the form <code>uriCallback(uri, mimeType)</code>, where
+       *     This is of the form <code>uriPolicy(uri, mimeType)</code>, where
        *     <code>uri</code> is a string URI, and <code>mimeType</code> is a
        *     string MIME type based on the context in which the URI is being
        *     requested.
        * @param callback a function that is called back when the newly
        *     constructed ES5 frame has been created.
        */
-      function makeES5Frame(div, uriCallback, callback) {
+      function makeES5Frame(div, uriPolicy, callback) {
         if (div && (document !== div.ownerDocument)) {
           throw '<div> provided for ES5 frame must be in main document';
         }
@@ -261,7 +261,13 @@ var caja = (function () {
             var innerContainer = div.ownerDocument.createElement('div');
 
             outerContainer.setAttribute('class', 'caja_outerContainer___');
-            innerContainer.setAttribute('class', 'caja_innerContainer___');                                    
+            innerContainer.setAttribute('class', 'caja_innerContainer___');
+
+            // Copy over any existing children (like static HTML produced by
+            // the cajoler) into the inner container.
+            while (div.childNodes[0]) {
+              innerContainer.appendChild(div.childNodes[0]);
+            }
 
             div.appendChild(outerContainer);
             outerContainer.appendChild(innerContainer);
@@ -271,43 +277,117 @@ var caja = (function () {
             // ability of guest code to modify the shared primordials.
             tamingWindow.attachDocumentStub(
                 '-CajaGadget-' + guestDocumentIdIndex++ + '___',
-                uriCallback,
+                uriPolicy,
                 imports,
                 innerContainer);
             imports.htmlEmitter___ =
                 new tamingWindow.HtmlEmitter(innerContainer, imports.document);
+            guestWindow.plugin_dispatchEvent___ =
+                tamingWindow.plugin_dispatchEvent___;
+            guestWindow.plugin_dispatchToHandler___ =
+                tamingWindow.plugin_dispatchToHandler___;
           }
 
-          /**
-           * Run some guest code in this ES5 frame.
-           *
-           * @param url the URL of a cajoleable "guest" HTML file to load.
-           * @param extraImports a map of extra imports to be provided as global
-           *     variables to the guest HTML.
-           * @param callback a function that is called providing the completion
-           *     value of the guest code.
-           */
-          function run(url, extraImports, callback) {
-            if (!extraImports.hasOwnProperty('onerror')) {
-              extraImports.onerror = tame(markFunction(
-                  function (message, source, lineNum) {
-                    console.log('Uncaught script error: ' + message
-                        + ' in source: "' + source + '" at line: ' + lineNum);
-                  }));
+          function runMaker(func) {
+            return {
+                /**
+                 * Run some guest code in this ES5 frame.
+                 *
+                 * @param extraImports a map of extra imports to be provided
+                 *     as global variables to the guest HTML.
+                 * @param callback a function that is called providing the
+                 *     completion value of the guest code.
+                 */
+                run: function(extraImports, opt_callback) {
+                    if (!extraImports.hasOwnProperty('onerror')) {
+                      extraImports.onerror = tame(markFunction(
+                          function (message, source, lineNum) {
+                            console.log('Uncaught script error: ' + message +
+                                ' in source: "' + source +
+                                '" at line: ' + lineNum);
+                          }));
+                    }
+                    copyToImports(imports, extraImports);
+                    func(imports, opt_callback);
+                  }
+              };
+          }
+
+          function cajoledRunner(baseUrl, cajoledJs, opt_staticHtml) {
+            if (!div && opt_staticHtml) {
+              throw new Error('Must have supplied a div in order to ' +
+                'set staticHtml.');
             }
-            copyToImports(imports, extraImports);
-            guestWindow.Q.when(loader.async(url), function (moduleFunc) {
-              callback(moduleFunc(imports));
-            });
+            // TODO: How to tell the module to use baseUrl?
+            // Or does that have to happen at cajoling time?
+            return function(imports, opt_callback) {
+                if (opt_staticHtml) {
+                  innerContainer.innerHTML = opt_staticHtml;
+                }
+                var preparedModule = guestWindow.prepareModuleFromText___(
+                   cajoledJs);
+                var result = preparedModule(imports);
+                // If a callback is provided, we call it 
+                // with the completion value.
+                if (opt_callback) {
+                  opt_callback(result);
+                }
+              };
           }
 
-          // An ES5 frame
+          function contentCajoled(baseUrl, cajoledJs, opt_staticHtml) {
+            return runMaker(cajoledRunner(baseUrl, cajoledJs, opt_staticHtml));
+          }
+
+          function urlCajoled(url) {
+            return runMaker(function (imports, opt_callback) {
+                // XHR get the cajoled content.
+                // cajoledRunner(
+                //     url,
+                //     content.js,
+                //     content.staticHtml)(
+                //     imports,
+                //     opt_callback);
+                throw new Error("Not yet implemented.");
+              });
+          }
+
+          function content(baseUrl, html) {
+            return runMaker(function (imports, opt_callback) {
+                // XHR post the html through the cajoler to get
+                //   cajoled content.
+                // cajoledRunner(
+                //     baseUrl,
+                //     content.js,
+                //     content.staticHtml)(
+                //     imports,
+                //     opt_callback);
+                throw new Error('Not yet implemented.');
+              });
+          }
+
+          function url(theUrl) {
+            return runMaker(function (imports, opt_callback) {
+                guestWindow.Q.when(
+                    loader.async(theUrl),
+                    function (moduleFunc) {
+                      var result = moduleFunc(imports);
+                      if (opt_callback) {
+                        opt_callback(result);
+                      }
+                    });
+              });
+          }
+
           callback({
-            run: run,
-            iframe: guestFrame,
-            imports: imports,
-            loader: loader
-          });
+              url: url,
+              urlCajoled: urlCajoled,
+              content: content,
+              contentCajoled: contentCajoled,
+              iframe: guestFrame,
+              imports: imports,
+              loader: loader
+            });
         });
       }
 

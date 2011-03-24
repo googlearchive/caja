@@ -114,11 +114,11 @@
       extraImports.getTamedTestObject = getTamedTestObject;
       extraImports.evalInHost = evalInHost;
 
-      frame.run('es53-test-taming-inout-cajoled.html', extraImports,
-          function (_) {
-            readyToTest();
-            jsunitRun();
-          });
+      frame.url('es53-test-taming-inout-cajoled.html')
+           .run(extraImports, function (_) {
+               readyToTest();
+               jsunitRun();
+             });
     });
   });
 })();

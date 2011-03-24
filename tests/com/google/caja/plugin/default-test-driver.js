@@ -23,13 +23,12 @@ if (testCase) {
         createDiv(),
         function(uri, mimeType) { return uri; },
         function(frame) {
-          frame.run(
-              testCase,
-              createExtraImportsForTesting(frameGroup, frame),
-              function(result) {
-                readyToTest();
-                jsunitRun();
-              });
+          frame.url(testCase)
+               .run(createExtraImportsForTesting(frameGroup, frame),
+                   function(result) {
+                     readyToTest();
+                     jsunitRun();
+                   });
         });
   });
 } else {
