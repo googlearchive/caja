@@ -104,8 +104,9 @@
     <pathelement path="${third_party}/java/junit/junit.jar"/>
     <pathelement path="${third_party}/java/json_simple/json_simple.jar"/>
     <pathelement path="${third_party}/java/rhino/js.jar"/>
-    <pathelement path="${third_party}/java/webdriver/webdriver-all.jar"/>
-    <pathelement path="${third_party}/java/webdriver/json-20080701.jar"/>
+    <pathelement path="${third_party}/java/webdriver/selenium-java-2.0b3.jar"/>
+    <pathelement path="${third_party}/java/webdriver/libs/guava-r08.jar"/>
+    <pathelement path="${third_party}/java/webdriver/libs/json-20080701.jar"/>
   </path>
   <path id="classpath.tests.run">
     <pathelement path="${third_party}/java/emma/emma.jar"/>
