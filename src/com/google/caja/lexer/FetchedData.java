@@ -169,7 +169,7 @@ public abstract class FetchedData {
    */
   public String getCharSet() { return charSet; }
 
-  private static int MAX_RESPONSE_SIZE_BYTES = 1 << 18;  // 256kB
+  private static int MAX_RESPONSE_SIZE_BYTES = 1 << 20;  // 1MB
   protected static byte[] readStream(InputStream is) throws IOException {
     try {
       ByteArrayOutputStream buffer = new ByteArrayOutputStream();

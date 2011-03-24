@@ -36,6 +36,7 @@ public enum Example {
       Type.APPS, "Game of Life"),
 
   // Benchmarks
+  COMBINED("sunspider/combined.html", Type.BENCHMARK, "combined"),
   THREED_CUBE("sunspider/3d-cube.html", Type.BENCHMARK, "3d-cube"),
   THREED_MORPH("sunspider/3d-morph.html", Type.BENCHMARK, "3d-morph"),
   THREED_RAYTRACE("sunspider/3d-raytrace.html", Type.BENCHMARK, "3d-raytrace"),
