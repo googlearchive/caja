@@ -244,14 +244,8 @@ public final class ParserContext {
       InputSource is, CharProducer cp, String content) throws IOException {
     if (null != sourceMap) {
       if (null == content) {
-        CharProducer newCp = cp.clone();
-        StringBuffer contentBuffer = new StringBuffer();
-        while (!newCp.isEmpty()) {
-          char[] buf = newCp.getBuffer();
-          contentBuffer.append(buf);
-          newCp.consume(buf.length);
-        }
-        content = contentBuffer.toString();
+        content = new String(cp.getBuffer(), cp.getOffset(),
+            cp.getLength());
       }
       
       if (null != content) {

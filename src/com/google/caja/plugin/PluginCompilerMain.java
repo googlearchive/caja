@@ -181,7 +181,8 @@ public final class PluginCompilerMain {
       compiler.setCssSchema(config.getCssSchema(mq));
       compiler.setHtmlSchema(config.getHtmlSchema(mq));
 
-      success = parseInputs(config.getInputUris(), compiler) && compiler.run();
+      success = parseInputs(meta, config.getInputUris(), compiler)
+          && compiler.run();
       if (success) {
         compiledJsOutput = compiler.getJavascript();
         compiledDomOutput = compiler.getStaticHtml();
@@ -222,12 +223,14 @@ public final class PluginCompilerMain {
     return success ? 0 : -1;
   }
 
-  private boolean parseInputs(Collection<URI> inputs, PluginCompiler pluginc) {
+  private boolean parseInputs(PluginMeta meta, Collection<URI> inputs,
+      PluginCompiler pluginc) {
     boolean parsePassed = true;
     for (URI input : inputs) {
       try {
         ParseTreeNode parseTree = new ParserContext(mq)
             .withInput(new InputSource(input))
+            .withConfig(meta)
             .withConfig(mc)
             .withSourceMap(originalSources)
             .build();
