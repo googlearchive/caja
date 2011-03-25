@@ -55,7 +55,7 @@
       }
 
       function cajole(line, callback) {
-        jsonp("/cajole?"
+        jsonp("../cajole?"
               + "input-mime-type=text/javascript&"
               + "callback=handleJSON&"
               + "alt=json-in-script&"

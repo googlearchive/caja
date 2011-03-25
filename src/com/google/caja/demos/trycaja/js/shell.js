@@ -884,7 +884,7 @@ function toHex(n){
                 if (libTrigger(line,report)) return;
                 controller.inner.append(controller.ajaxloader);
                 controller.scrollToBottom();
-                jsonp("http://localhost:8080/cajole?input-mime-type=text/javascript&callback=handleJSON&alt=json-in-script&directive=ES53&content=0;" + encodeURIComponent(line) + "&random=" + Math.random(),
+                jsonp("../cajole?input-mime-type=text/javascript&callback=handleJSON&alt=json-in-script&directive=ES53&content=0;" + encodeURIComponent(line) + "&random=" + Math.random(),
                       function(resp){
                           if (commandRef.ignore) { return; }
                           controller.finishCommand();

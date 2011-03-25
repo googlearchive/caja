@@ -25,6 +25,7 @@
 var tamings___ = tamings___ || [];
 var onReadyCallbacks___ = onReadyCallbacks___ || [];
 var caja___ = (function () {
+  var myPath = '';
   var cajaDomSuffix = 'g___';
   var grantAdditionalPowers = function(tamings___, ___, imports) {
     for (var tamer = 0; tamer < tamings___.length; ++tamer) {
@@ -78,7 +79,8 @@ var caja___ = (function () {
     
     var hiddenDiv = document.getElementById("es53frames");
     var currentFrame = document.createElement('iframe');
-    currentFrame.src = "/es53.html?rnd=" + Math.floor(Math.random() * 10000);
+    currentFrame.src = myPath +
+      "es53.html?rnd=" + Math.floor(Math.random() * 10000);
     currentFrame.id = "es53frame";
 
     onReadyCallbacks___.push(function(api, childFrame) {
@@ -107,6 +109,10 @@ var caja___ = (function () {
       // failure is an option
     }    
   }
+
+  function setPath(path) {
+    myPath = path;
+  }
   
   function enable(es53, parent, policy, html, js, callback, cache) {
     tearDownES53();
@@ -129,6 +135,7 @@ var caja___ = (function () {
     reset: reset,
     enable: enable,
     onReady: onReady,
+    setPath: setPath,
     logFunc: function noOp() {}
   }
 })();
