@@ -508,8 +508,9 @@
     </junitreport>
   </target>
 
-  <target name="jars" depends="pluginc,CajoledValija,MinifiedJs"
-   description="Place all jars needed to run the cajoler under ${jars}">
+  <target name="jars"
+      depends="pluginc,CajoledValija,MinifiedJs,CajolingServlet"
+      description="Place all jars needed to run the cajoler under ${jars}">
     <copy todir="${jars}">
       <fileset dir="${third_party}/java/jakarta_commons">
         <include name="commons-cli.jar"/>
@@ -1766,7 +1767,7 @@
     </transform>
   </target>
 
-  <target name="maven" depends="jars,dirs,build.info, CajolingServlet">
+  <target name="maven" depends="jars,dirs,build.info">
     <copy file="${jars}/pluginc.jar"
           tofile="${maven}/caja-r${build.svnVersion}.jar"/>
     <copy file="${jars}/pluginc-src.jar"
