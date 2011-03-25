@@ -339,7 +339,7 @@ var caja = (function () {
             return runMaker(cajoledRunner(baseUrl, cajoledJs, opt_staticHtml));
           }
 
-          function urlCajoled(url) {
+          function urlCajoled(baseUrl, cajoledJsUrl, opt_staticHtmlUrl) {
             return runMaker(function (imports, opt_callback) {
                 // XHR get the cajoled content.
                 // cajoledRunner(
@@ -352,7 +352,7 @@ var caja = (function () {
               });
           }
 
-          function content(baseUrl, html) {
+          function content(baseUrl, inputContent, contentType) {
             return runMaker(function (imports, opt_callback) {
                 // XHR post the html through the cajoler to get
                 //   cajoled content.

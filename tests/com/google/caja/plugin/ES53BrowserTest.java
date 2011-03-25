@@ -18,8 +18,12 @@ package com.google.caja.plugin;
  * @author ihab.awad@gmail.com
  */
 public class ES53BrowserTest extends BrowserTestCase {
+  public final void testCajaJsInvocations() {
+    runTestDriver("es53-test-cajajs-invocation.js");
+  }
+
   public final void testBasicFunctions() {
-    runTestCase("es53-test-basic-functions-cajoled.html");
+    runTestCase("es53-test-basic-functions-guest.html");
   }
 
   public final void testTamingTamed() {

@@ -726,6 +726,18 @@
      <output file="${lib}/com/google/caja/sum.out.js" language="valija"/>
     </transform>
 
+    <!-- Statically cajole some tests for caja.js testing -->
+    <transform>
+     <input file="${tests}/com/google/caja/plugin/es53-test-guest.js"/>
+     <output file="${lib}/com/google/caja/plugin/es53-test-guest.out.js"
+             language="caja"/>
+    </transform>
+    <transform>
+     <input file="${tests}/com/google/caja/plugin/es53-test-guest.html"/>
+     <output file="${lib}/com/google/caja/plugin/es53-test-guest.out.html"
+             language="caja"/>
+    </transform>
+
     <!-- These and other HTML and JS files are copied verbatim -->
     <copy todir="${lib}">
       <fileset dir="${src}" includes="**/*.html,**/*.js"/>
