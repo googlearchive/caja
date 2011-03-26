@@ -60,6 +60,28 @@ var bridalMaker = function(document) {
         }
       })();
 
+  // HTML5 compatibility on IE
+  // Standard html5 but non-html4 tags cause IE to throw
+  // Workaround from http://remysharp.com/html5-enabling-script
+  function html5shim() {
+    var html5_elements =["abbr", "article", "aside", "audio", "canvas",
+        "details", "figcaption", "figure", "footer", "header", "hgroup", "mark",
+        "meter", "nav", "output", "progress", "section", "summary", "time",
+        "video"];
+    var documentFragment = document.createDocumentFragment();
+    for (var i = 0; i < html5_elements.length; i++) {
+      try {
+        document.createElement(html5_elements[i]);
+        documentFragment.createElement(html5_elements[i]);
+      } catch (e) {
+        // failure in the shim is not a real failure
+      }
+    }
+  }
+  if (isIE) {
+    html5shim();
+  }
+
   var CUSTOM_EVENT_TYPE_SUFFIX = '_custom___';
   function tameEventType(type, opt_isCustom, opt_tagName) {
     type = String(type);
