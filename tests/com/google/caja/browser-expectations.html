@@ -402,5 +402,24 @@
     });
     </script>
 
+    <script>
+    jsunitRegister('testRegexpNullArg',
+                   function testRegexpNullArg() {
+      // In some browsers, re.test() is equivalent to re.test(re.input),
+      // which is potentially an information leak.  We guard against that
+      // by avoiding the zero-arg call.  But a buggy js might think
+      // re.test(null) is re.test(), instead of re.test('').
+      var re = /c/;
+      assertTrue(re.test('abc'));
+      assertFalse(re.test(undefined));
+      assertTrue(re.test('abc'));
+      assertFalse(re.test(null));
+      assertNotNull(re.exec('abc'));
+      assertNull(re.exec(undefined));
+      assertNotNull(re.exec('abc'));
+      assertNull(re.exec(null));
+      jsunit.pass();
+    });
+    </script>
   </body>
 </html>
