@@ -380,10 +380,19 @@ public class ParserTest extends CajaTestCase {
     assertEquals("57",render(jsExpr(fromString("071"))));
     assertMessage(
         MessageType.OCTAL_LITERAL, MessageLevel.LINT);
+    mq.getMessages().clear();
 
     jsExpr(fromString("0x" + Long.toHexString(1L << 51)));
     assertMessage(
         MessageType.UNREPRESENTABLE_INTEGER_LITERAL, MessageLevel.WARNING);
+    mq.getMessages().clear();
+    
+    assertParseFails(
+        "var o = { 1E111111111111111111111111111111111111111111111111111:123};"
+        );
+    assertMessage(
+        MessageType.MALFORMED_NUMBER,
+        MessageLevel.FATAL_ERROR);
   }
 
   public final void testRedundantEscapeSequences() throws Exception {

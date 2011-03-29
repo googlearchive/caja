@@ -971,8 +971,15 @@ public final class Parser extends ParserBase {
     return Double.parseDouble(t.text);
   }
 
-  private String floatToString(Token<JsTokenType> t) {
-    return NumberLiteral.numberToString(new BigDecimal(t.text));
+  private String floatToString(Token<JsTokenType> t) throws ParseException {
+    try {
+      return NumberLiteral.numberToString(new BigDecimal(t.text));
+    } catch (NumberFormatException e) {
+      throw new ParseException(
+          new Message(
+              MessageType.MALFORMED_NUMBER, t.pos,
+              MessagePart.Factory.valueOf(t.text)));
+    }
   }
 
   private NumberLiteral toNumberLiteral(Token<JsTokenType> t) {
