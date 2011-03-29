@@ -372,6 +372,20 @@ public class ParserTest extends CajaTestCase {
         MessageType.UNREPRESENTABLE_INTEGER_LITERAL, MessageLevel.WARNING);
   }
 
+  public final void testEncodedLiterals() throws Exception {
+    assertEquals("255",render(jsExpr(fromString("0xff"))));
+    assertEquals(Long.toString(1L << 50),  
+        render(jsExpr(fromString("0x" + Long.toHexString(1L << 50)))));
+
+    assertEquals("57",render(jsExpr(fromString("071"))));
+    assertMessage(
+        MessageType.OCTAL_LITERAL, MessageLevel.LINT);
+
+    jsExpr(fromString("0x" + Long.toHexString(1L << 51)));
+    assertMessage(
+        MessageType.UNREPRESENTABLE_INTEGER_LITERAL, MessageLevel.WARNING);
+  }
+
   public final void testRedundantEscapeSequences() throws Exception {
     // Should issue a warning if there is an escape sequence in a string where
     // the escaped character is not interpreted differently, and the escaped

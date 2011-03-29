@@ -38,6 +38,7 @@ import com.google.caja.util.Sets;
 import com.google.javascript.jscomp.jsonml.JsonML;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -978,42 +979,68 @@ public final class Parser extends ParserBase {
     return new RealLiteral(t.pos, toNumber(t));
   }
 
+  private static BigInteger MAX_REPRESENTABLE =
+    BigInteger.valueOf((1L << 51) -1);
+  private static BigInteger MIN_REPRESENTABLE = 
+    BigInteger.valueOf(-(1L << 51));
   private strictfp long toInteger(Token<JsTokenType> t) {
-    Number longValue;
     try {
-      longValue = Long.decode(t.text);
+      Number longValue = Long.decode(t.text);
+      // Make sure that the number fits in a 51 bit mantissa
+      long lv = longValue.longValue();
+      if (0 != ((lv < 0 ? ~lv : lv) & ~((1L << 51) - 1))) {
+        mq.addMessage(MessageType.UNREPRESENTABLE_INTEGER_LITERAL,
+                      t.pos, MessagePart.Factory.valueOf(t.text));
+        double dv = lv;  // strictfp affects this.
+        return (long) dv;
+      }
+      return lv;
     } catch (NumberFormatException e) {
-      longValue = new BigDecimal(t.text);
+      Pair<String, Integer> p = breakOutRadix(t.text);
+      BigInteger bi = new BigInteger(p.a, p.b);
+      if (bi.compareTo(MIN_REPRESENTABLE) < 0 ||
+          bi.compareTo(MAX_REPRESENTABLE) > 0) {
+        mq.addMessage(MessageType.UNREPRESENTABLE_INTEGER_LITERAL,
+            t.pos, MessagePart.Factory.valueOf(t.text));
+      }
+      return bi.longValue();
     }
+  }
 
-    // Make sure that the number fits in a 51 bit mantissa
-    long lv = longValue.longValue();
-    if (0 != ((lv < 0 ? ~lv : lv) & ~((1L << 51) - 1))) {
-      mq.addMessage(MessageType.UNREPRESENTABLE_INTEGER_LITERAL,
-                    t.pos, MessagePart.Factory.valueOf(t.text));
-      double dv = lv;  // strictfp affects this.
-      return (long) dv;
+  private Pair<String, Integer> breakOutRadix(String n) {
+    if (n.startsWith("0X") || n.startsWith("0x")) {
+      return Pair.pair(n.substring(2), 16);
+    } else if (n.startsWith("0")) {
+      return Pair.pair(n.substring(1), 8);
+    } else {
+      return Pair.pair(n, 10);
     }
-    return lv;
   }
 
   private NumberLiteral toIntegerLiteral(Token<JsTokenType> t) {
-    Number longValue;
     try {
-      longValue = Long.decode(t.text);
+      Number longValue = Long.decode(t.text);
+
+      // Make sure that the number fits in a 51 bit mantissa
+      long lv = longValue.longValue();
+      if (0 != ((lv < 0 ? ~lv : lv) & ~((1L << 51) - 1))) {
+        mq.addMessage(MessageType.UNREPRESENTABLE_INTEGER_LITERAL,
+                      t.pos, MessagePart.Factory.valueOf(t.text));
+        return new RealLiteral(t.pos, lv);
+      }
+
+      return new IntegerLiteral(t.pos, lv);
     } catch (NumberFormatException e) {
-      longValue = new BigDecimal(t.text);
+      Pair<String, Integer> p = breakOutRadix(t.text);
+      BigInteger bi = new BigInteger(p.a, p.b);
+      if (bi.compareTo(MIN_REPRESENTABLE) < 0 ||
+          bi.compareTo(MAX_REPRESENTABLE) > 0) {
+        mq.addMessage(MessageType.UNREPRESENTABLE_INTEGER_LITERAL,
+            t.pos, MessagePart.Factory.valueOf(t.text));
+        return new RealLiteral(t.pos, bi.longValue());
+      }
+      return new IntegerLiteral(t.pos, bi.longValue());
     }
-
-    // Make sure that the number fits in a 51 bit mantissa
-    long lv = longValue.longValue();
-    if (0 != ((lv < 0 ? ~lv : lv) & ~((1L << 51) - 1))) {
-      mq.addMessage(MessageType.UNREPRESENTABLE_INTEGER_LITERAL,
-                    t.pos, MessagePart.Factory.valueOf(t.text));
-      return new RealLiteral(t.pos, lv);
-    }
-
-    return new IntegerLiteral(t.pos, lv);
   }
 
   @SuppressWarnings("fallthrough")
