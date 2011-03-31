@@ -59,7 +59,7 @@
             return eval(String(s));
           }));
 
-      frame.url('es53-test-taming-untamed-cajoled.html')
+      frame.url('es53-test-taming-untamed-guest.html')
            .run(extraImports, function (_) {
                readyToTest();
                jsunitRun();

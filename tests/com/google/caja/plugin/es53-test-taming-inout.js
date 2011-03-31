@@ -114,7 +114,7 @@
       extraImports.getTamedTestObject = getTamedTestObject;
       extraImports.evalInHost = evalInHost;
 
-      frame.url('es53-test-taming-inout-cajoled.html')
+      frame.url('es53-test-taming-inout-guest.html')
            .run(extraImports, function (_) {
                readyToTest();
                jsunitRun();
