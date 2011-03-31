@@ -14,10 +14,12 @@
 
 package com.google.caja.parser.html;
 
+import com.google.caja.lexer.ParseException;
 import com.google.caja.render.Concatenator;
 import com.google.caja.reporting.MarkupRenderMode;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.CajaTestCase;
+import com.google.caja.util.MoreAsserts;
 
 import java.util.Arrays;
 
@@ -262,6 +264,44 @@ public class NodesTest extends CajaTestCase {
     assertEquals("<?foo bar?>", Nodes.render(pi, MarkupRenderMode.XML));
   }
 
+  public final void testDocumentType() throws ParseException {
+    String[] docTypes = { 
+        "<!DOCTYPE html PUBLIC "
+        + "\"-//W3C//DTD HTML 4.01 Transitional//EN\" "
+        + "\"http://www.w3.org/TR/html4/loose.dtd\">",
+        "<!DOCTYPE html PUBLIC "
+        + "\"-//W3C//DTD XHTML 1.0 Transitional//EN\" "
+        + "\"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\">",
+        "<!DOCTYPE html>"
+    };
+    for (String docType : docTypes) {
+      Document doc = DomParser.makeDocument(DoctypeMaker.parse(docType), null);
+      Element el = html(fromString("<html><b>my text</b></html>"));
+      doc.appendChild(doc.adoptNode(el));
+      MoreAsserts.assertStartsWith(docType,
+          Nodes.render(doc.getDoctype(), el, null));
+    }
+  }
+
+  public final void testBadDocumentType() throws ParseException {
+    // bad system id
+    assertDocType(
+        "<!DOCTYPE html PUBLIC "
+        + "\"-//W3C//DTD HTML 4.01 Transitional//EN\">",
+        "<!DOCTYPE html PUBLIC "
+        + "\"-//W3C//DTD HTML 4.01 Transitional//EN\" "
+        + "\"javascript:alert(1);\">");
+    /*
+     *  unrecognized doctype
+     *  if needed, the whitelist of good doctypes can be expanded without
+     *  violating security as long as its a content type that the rewriter
+     *  knows how to contain.
+     */
+    assertNoDocType(
+        "<!DOCTYPE svg PUBLIC \"-//W3C//DTD SVG 1.1//EN\" " 
+        + "\"http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd\">");
+  }
+
   public final void testBadProcessingInstructions() {
     Document doc = DomParser.makeDocument(null, null);
     for (String[] badPi : new String[][] {
@@ -321,7 +361,6 @@ public class NodesTest extends CajaTestCase {
         Nodes.render(f, MarkupRenderMode.HTML4_BACKWARDS_COMPAT));
   }
 
-
   public final void testRenderSpeed() throws Exception {
     Element doc = html(fromResource("amazon.com.html"));
     benchmark(100, doc);  // prime the JIT
@@ -336,5 +375,23 @@ public class NodesTest extends CajaTestCase {
     long t0 = System.nanoTime();
     for (int i = nRuns; --i >= 0;) { Nodes.render(el); }
     return (int) ((((double) (System.nanoTime() - t0)) / nRuns) / 1e3);
+  }
+  
+  private void assertNoDocType(String docType) 
+      throws ParseException {
+    Document doc = DomParser.makeDocument(DoctypeMaker.parse(docType), null);
+    Element el = html(fromString("TEST NODE"));
+    doc.appendChild(doc.adoptNode(el));
+    assertFalse(Nodes.render(doc.getDoctype(), el, null)
+        .matches("[<][!]DOCTYPE"));
+  }
+
+  private void assertDocType(String expected, String docType) 
+      throws ParseException {
+    Document doc = DomParser.makeDocument(DoctypeMaker.parse(docType), null);
+    Element el = html(fromString("TEST NODE"));
+    doc.appendChild(doc.adoptNode(el));
+    MoreAsserts.assertStartsWith(expected,
+        Nodes.render(doc.getDoctype(), el, null));
   }
 }

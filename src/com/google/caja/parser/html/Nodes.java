@@ -27,11 +27,16 @@ import com.google.caja.util.Sets;
 import com.google.caja.util.SparseBitSet;
 import com.google.caja.util.Strings;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.Set;
 
+import javax.annotation.Nullable;
+
 import org.w3c.dom.Attr;
+import org.w3c.dom.DocumentType;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
@@ -228,6 +233,61 @@ public class Nodes {
   }
 
   /**
+   * Returns a rendering of document type.  This is handled explicitly here
+   * rather than in {@link Nodes#render(Node, MarkupRenderMode)} to avoid
+   * rendering a document type in the middle of a document.
+   * 
+   * @return null if nothing to render or docType is invalid.
+   */
+  private static @Nullable String renderDocumentType(DocumentType docType) {
+    String publicId = docType.getPublicId();
+    String systemId = docType.getSystemId();
+    String nodeName;
+    
+    if (null != docType.getOwnerDocument() &&
+        null != docType.getOwnerDocument().getDocumentElement() &&
+        null != docType.getOwnerDocument().getDocumentElement().getNodeName()) {
+      nodeName = docType.getOwnerDocument()
+        .getDocumentElement()
+        .getNodeName();
+    } else {
+      return null;
+    }
+    
+    if (!DoctypeMaker.isHtml(nodeName, publicId, systemId)) {
+      return null;
+    }
+    
+    StringBuilder sb = new StringBuilder();
+    sb.append("<!DOCTYPE ").append(nodeName);
+    // The Name in the document type declaration must match the element type
+    // of the root element.
+    if (null != publicId && publicId.length() > 0) {
+      sb.append(" PUBLIC ")
+        .append('"')
+        .append(publicId.replaceAll("\"", "%22"))
+        .append('"');
+    }
+    if (null != systemId && systemId.length() > 0) {
+      // Sanity check - system urls should parse as an absolute uris
+      try {
+        URI u = new URI(systemId);
+        if (u.isAbsolute() && 
+            ("http".equals(u.getScheme()) || "https".equals(u.getScheme()))) {
+          sb.append(" ")
+            .append('"')
+            .append(systemId.replaceAll("\"", "%22"))
+            .append('"');
+        }
+      } catch (URISyntaxException e) {
+        return null;
+      }
+    }
+    sb.append(">");
+    return sb.toString();
+  }
+  
+  /**
    * Serializes the given DOM node to HTML or XML.
    * @param rc a context where the token consumer is typically a
    *   {@link Concatenator}, and the {@link RenderContext#asXml} is significant.
@@ -251,6 +311,19 @@ public class Nodes {
         .withMarkupRenderMode(renderMode);
     render(node, rc);
     rc.getOut().noMoreTokens();
+    return sb.toString();
+  }
+
+  public static String render(DocumentType docType, Node node,
+      MarkupRenderMode renderMode) {
+    StringBuilder sb = new StringBuilder();
+    if (null != docType) {
+      String rendering = renderDocumentType(docType);
+      if (null != rendering) {
+        sb.append(rendering);
+      }
+    }
+    sb.append(render(node, renderMode));
     return sb.toString();
   }
 
