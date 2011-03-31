@@ -231,8 +231,13 @@
           document.location.href, defaultModuleIdResolver,
           scriptCajolingServiceFinder);
 
-      console.log('xhrModuleLoad = ' + xhrModuleLoad.toSource());
-      console.log('scriptModuleLoad = ' + scriptModuleLoad.toSource());
+      if (xhrModuleLoad.toSource) {
+        console.log('xhrModuleLoad = ' + xhrModuleLoad.toSource());
+        console.log('scriptModuleLoad = ' + scriptModuleLoad.toSource());
+      } else {
+        console.log('xhrModuleLoad = ' + xhrModuleLoad);
+        console.log('scriptModuleLoad = ' + scriptModuleLoad);
+      }
     </script>
 
     <script type="text/javascript">

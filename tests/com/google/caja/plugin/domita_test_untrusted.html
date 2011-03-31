@@ -2397,13 +2397,13 @@ jsunitRegister('testComputedStyle',
   var NO_RESULT = {};
   var pseudoElementsSupported = false;
   try {
-    var unused = window.getComputedStyle(fakie, 'first-line').display;
+    var unused = window.getComputedStyle(fakie, 'first-char').display;
     pseudoElementsSupported = true;
   } catch (ex) {
     // Not supported on all browsers
   }
   if (pseudoElementsSupported) {
-    assertComputedStyle(fakie, 'first-line', 'display', 'inline');
+    assertComputedStyle(fakie, 'first-char', 'display', 'inline');
   }
   assertComputedStyle(invisible, null, 'display', 'none');
   assertComputedStyle(invisible, null, 'float', 'left');
