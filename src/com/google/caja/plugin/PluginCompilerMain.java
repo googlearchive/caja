@@ -45,7 +45,6 @@ import com.google.caja.parser.js.CajoledModule;
 import com.google.caja.plugin.UriFetcher.ChainingUriFetcher;
 import com.google.caja.render.Concatenator;
 import com.google.caja.render.JsMinimalPrinter;
-import com.google.caja.render.SourceSnippetRenderer;
 import com.google.caja.reporting.BuildInfo;
 import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessageContext;
@@ -304,11 +303,6 @@ public final class PluginCompilerMain {
       case MINIFY:
         tc = new JsMinimalPrinter(new Concatenator(out,  exHandler));
         break;
-      case SIDEBYSIDE:
-        tc = new SourceSnippetRenderer(
-            originalSources, mc,
-            makeRenderContext(new Concatenator(out, exHandler)));
-        break;
       default:
         throw new SomethingWidgyHappenedError(
             "Unrecognized renderer: " + config.renderer());
@@ -372,23 +366,13 @@ public final class PluginCompilerMain {
   private Reader createReader(InputSource is, InputStream stream) {
     InputStreamReader isr = new InputStreamReader(stream, Charsets.UTF_8);
 
-    if (config.renderer() == Config.SourceRenderMode.SIDEBYSIDE ||
-        config.renderer() == Config.SourceRenderMode.DEBUGGER) {
+    if (config.renderer() == Config.SourceRenderMode.DEBUGGER) {
       CapturingReader cr = new CapturingReader(isr);
       originalInputs.put(is, cr);
       return cr;
     } else {
       return isr;
     }
-  }
-
-  private Map<InputSource, CharSequence> buildOriginalInputCharSequences()
-      throws IOException {
-    Map<InputSource, CharSequence> results = Maps.newHashMap();
-    for (InputSource is : originalInputs.keySet()) {
-      results.put(is, originalInputs.get(is).getCapture());
-    }
-    return results;
   }
 
   public static void main(String[] args) {
