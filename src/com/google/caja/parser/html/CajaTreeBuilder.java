@@ -24,6 +24,7 @@ import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.MessageType;
 import com.google.caja.util.Sets;
 
+import java.util.List;
 import java.util.Set;
 
 import org.w3c.dom.Attr;
@@ -240,16 +241,30 @@ final class CajaTreeBuilder extends TreeBuilder<Node> {
   @Override
   protected void addAttributesToElement(Node node, HtmlAttributes attributes) {
     Element el = (Element) node;
-    for (Attr a : Html5ElementStack.getAssociatedAttrs(attributes)) {
-      if (!el.hasAttributeNS(a.getNamespaceURI(), a.getLocalName())) {
-        el.setAttributeNodeNS(a);
-      } else {
-        String name = a.getName();
-        mq.addMessage(
-            MessageType.DUPLICATE_ATTRIBUTE, Nodes.getFilePositionFor(a),
-            MessagePart.Factory.valueOf(name),
-            Nodes.getFilePositionFor(
-                el.getAttributeNodeNS(a.getNamespaceURI(), a.getLocalName())));
+    {
+      List<Attr> associatedAttrs
+          = Html5ElementStack.getAssociatedAttrs(attributes);
+      int n = associatedAttrs.size();
+      if (n != 0) {
+        boolean hasXmlnsDeclaration = (
+            associatedAttrs.get(n - 1) == Html5ElementStack.XMLNS_ATTR_MARKER);
+        if (hasXmlnsDeclaration) {
+          Nodes.markAsHavingXmlnsDeclaration(el);
+          --n;
+        }
+        for (int j = 0; j < n; ++j) {
+          Attr a = associatedAttrs.get(j);
+          if (!el.hasAttributeNS(a.getNamespaceURI(), a.getLocalName())) {
+            el.setAttributeNodeNS(a);
+          } else {
+            String name = a.getName();
+            mq.addMessage(
+                MessageType.DUPLICATE_ATTRIBUTE, Nodes.getFilePositionFor(a),
+                MessagePart.Factory.valueOf(name),
+                Nodes.getFilePositionFor(el.getAttributeNodeNS(
+                    a.getNamespaceURI(), a.getLocalName())));
+          }
+        }
       }
     }
     if (attributes.getLength() != 0) {

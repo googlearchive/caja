@@ -30,7 +30,6 @@ import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.MessageType;
 import com.google.caja.util.CajaTestCase;
-import com.google.caja.util.FailureIsAnOption;
 import com.google.caja.util.Function;
 import com.google.caja.util.Join;
 import com.google.caja.util.Lists;
@@ -371,7 +370,6 @@ public class DomParserTest extends CajaTestCase {
   }
 
 
-  @FailureIsAnOption  // We don't yet render prefixless xmlns declarations.
   public final void testXmlnsMissingTags() throws Exception {
     assertParsedHtml(
         Arrays.asList(
@@ -506,7 +504,8 @@ public class DomParserTest extends CajaTestCase {
         Arrays.<String>asList(
             ),
         Arrays.asList(
-            "<html lang=\"en\" xml:lang=\"en\"><head>",
+            ("<html xmlns=\"http://www.w3.org/1999/xhtml\""
+             + " lang=\"en\" xml:lang=\"en\"><head>"),
             "</head>",
             "<body>",
             "",

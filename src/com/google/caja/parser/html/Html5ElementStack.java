@@ -322,6 +322,7 @@ public class Html5ElementStack implements OpenElementStack {
     if (isHtml) { tagName = Strings.toLowerCase(tagName); }
 
     HtmlAttributes htmlAttrs = new HtmlAttributes(AttributeName.HTML);
+    boolean hasXmlns = false;
     List<Attr> attrs = Lists.newArrayList();
     if (!attrStubs.isEmpty()) {
       for (AttrStub as : attrStubs) {
@@ -337,6 +338,8 @@ public class Html5ElementStack implements OpenElementStack {
               mq.addMessage(
                   MessageType.CANNOT_OVERRIDE_DEFAULT_NAMESPACE_IN_HTML,
                   as.nameTok.pos);
+            } else {
+              hasXmlns = true;
             }
             continue;
           } else {
@@ -440,8 +443,9 @@ public class Html5ElementStack implements OpenElementStack {
           }
         }
       } else {
-        builder.startTag(elName, toHtmlAttributes(attrs, htmlAttrs),
-                         end.text.equals("/>"));
+        if (hasXmlns) { attrs.add(XMLNS_ATTR_MARKER); }
+        builder.startTag(
+            elName, toHtmlAttributes(attrs, htmlAttrs), end.text.equals("/>"));
       }
     } catch (SAXException ex) {
       throw new SomethingWidgyHappenedError(ex);
@@ -667,4 +671,15 @@ public class Html5ElementStack implements OpenElementStack {
   Element builderRootElement() {
     return builder.getRootElement();
   }
+
+  /**
+   * Marker stuck at the end of an associated attribute list to communicate the
+   * fact that the element included an {@code xmlns="<namespace-uri>"}
+   * declaration which cannot be represented, in a straightforward way, by a
+   * DOM attribute.
+   * This sleight-of-hand is used to communicate the attribute from where it
+   * is parsed to all the elements derived by the CajaTreeBuilder after all
+   * the adoption agency algorithm tricks have been handled.
+   */
+  static final Attr XMLNS_ATTR_MARKER = null;
 }

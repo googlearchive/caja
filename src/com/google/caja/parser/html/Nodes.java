@@ -43,6 +43,7 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.w3c.dom.ProcessingInstruction;
 import org.w3c.dom.Text;
+import org.w3c.dom.UserDataHandler;
 
 /**
  * Utilities for dealing with HTML/XML DOM trees.
@@ -52,6 +53,24 @@ import org.w3c.dom.Text;
 public class Nodes {
   private static final String FP_KEY = "caja:filePosition";
   private static final String RAW_TEXT_KEY = "caja:rawHtml";
+  private static final String HAS_XMLNS_DECLARATION_KEY = "caja:hasXmlns";
+
+  /**
+   * Used to copy the has-xmlns-declaration bit from an element to elements
+   * cloned/imported from it.
+   */
+  private static final UserDataHandler HAS_XMLNS_DECLARATION_DATA_HANDLER
+      = new UserDataHandler() {
+        public void handle(
+            short operation, String key, Object data, Node src, Node dest) {
+          switch (operation) {
+            case UserDataHandler.NODE_CLONED:
+            case UserDataHandler.NODE_IMPORTED:
+              dest.setUserData(HAS_XMLNS_DECLARATION_KEY, Boolean.TRUE, this);
+              break;
+          }
+        }
+      };
 
   /** A left to right {@link Iterable} over the children of the given node. */
   public static Iterable<? extends Node> childrenOf(final Node n) {
@@ -146,6 +165,23 @@ public class Nodes {
 
   public static void setFilePositionForValue(Attr a, FilePosition pos) {
     setFilePositionFor(a.getFirstChild(), pos);
+  }
+
+  /**
+   * @see #hasXmlnsDeclaration(Element)
+   */
+  public static void markAsHavingXmlnsDeclaration(Element el) {
+    el.setUserData(
+        HAS_XMLNS_DECLARATION_KEY, Boolean.TRUE,
+        HAS_XMLNS_DECLARATION_DATA_HANDLER);
+  }
+
+  /**
+   * True for elements that had an {@code xmlns="<namespace-uri>"} declaration
+   * when parsed so that the renderer can include one where it is safe to do so.
+   */
+  public static boolean hasXmlnsDeclaration(Element el) {
+    return Boolean.TRUE.equals(el.getUserData(HAS_XMLNS_DECLARATION_KEY));
   }
 
   /**
@@ -394,6 +430,13 @@ final class Renderer {
         if (addElNs) {
           out.append(' ');
           renderNamespace(elNs);
+        } else if (elNs.prefix == "" && Nodes.hasXmlnsDeclaration(el)) {
+          // Since the prefix of the namespace is blank, adding an xmlns cannot
+          // possibly change the namespace resolution of contained elements or
+          // attributes.
+          out.append(" xmlns=\"");
+          Escaping.escapeXml(elNs.uri, isAsciiOnly, out);
+          out.append('"');
         }
         NamedNodeMap attrs = el.getAttributes();
         for (int i = 0, n = attrs.getLength(); i < n; ++i) {
