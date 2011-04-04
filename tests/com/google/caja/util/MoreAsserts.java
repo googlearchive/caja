@@ -18,8 +18,8 @@ import java.util.Formatter;
 import java.util.List;
 import java.util.ListIterator;
 
+import junit.framework.Assert;
 import junit.framework.ComparisonFailure;
-import junit.framework.TestCase;
 
 /**
  * Extensions to junit.framework.Asserts that can be statically imported as by
@@ -97,13 +97,13 @@ public final class MoreAsserts {
 
   public static void assertStartsWith(String expected, String actual) {
     if (expected.length() > actual.length()) {
-      TestCase.fail("Expected string that starts with: {{{\n"
+      Assert.fail("Expected string that starts with: {{{\n"
           + expected
           + "\n}}} != {{{\n"
           + actual
           + "\n}}}");
     } else {
-      TestCase.assertEquals(expected, actual.substring(0, expected.length()));
+      Assert.assertEquals(expected, actual.substring(0, expected.length()));
     }
   }
 

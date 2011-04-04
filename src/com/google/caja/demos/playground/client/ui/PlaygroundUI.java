@@ -1,5 +1,5 @@
 /**
- * 
+ *
  */
 package com.google.caja.demos.playground.client.ui;
 
@@ -45,20 +45,22 @@ public class PlaygroundUI extends Composite {
 
   @UiField(provided=true)
   protected SuggestBox addressField;
-  
+
   @UiField(provided=true)
   protected SuggestBox policyAddressField;
 
-  private static PlaygroundUiBinder uiBinder = 
+  private static final PlaygroundUiBinder UI_BINDER =
     GWT.create(PlaygroundUiBinder.class);
 
-  interface PlaygroundUiBinder extends UiBinder<Widget, PlaygroundUI> {}
+  interface PlaygroundUiBinder extends UiBinder<Widget, PlaygroundUI> {
+    // No new methods.  Just a parameterized UiBinder.
+  }
 
   public PlaygroundUI(MultiWordSuggestOracle sourceSuggestions,
       MultiWordSuggestOracle policySuggestions) {
     addressField = new SuggestBox(sourceSuggestions);
     policyAddressField = new SuggestBox(policySuggestions);
-    
-    initWidget(uiBinder.createAndBindUi(this));
+
+    initWidget(UI_BINDER.createAndBindUi(this));
   }
 }

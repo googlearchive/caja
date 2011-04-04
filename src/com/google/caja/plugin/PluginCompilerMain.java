@@ -169,7 +169,7 @@ public final class PluginCompilerMain {
       PluginMeta meta = new PluginMeta(fetcher, policy);
       meta.setIdClass(config.getIdClass());
       meta.setEnableES53(config.getES53());
-      
+
       PluginCompiler compiler = new PluginCompiler(
           BuildInfo.getInstance(), meta, mq);
       compiler.setPreconditions(
@@ -313,8 +313,7 @@ public final class PluginCompilerMain {
     out.append('\n');
   }
 
-  private void writeFileWithDebug(Appendable out, CajoledModule module)
-      throws IOException {
+  private void writeFileWithDebug(Appendable out, CajoledModule module) {
     module.renderWithDebugSymbols(
         originalSources,
         makeRenderContext(new Concatenator(out, exHandler)));

@@ -56,6 +56,32 @@ public final class Strings {
     return true;
   }
 
+  /**
+   * Locale-insensitive version of {@code String.regionMatches} that works for
+   * arbitrary char sequences.
+   *
+   * @param ai start index of region in a.
+   * @param bi start index of region in b.
+   * @param n length of regions to check.
+   * @throws IndexOutOfBoundsException if a or b do not contain a region of
+   *   length n starting at ai and bi respectively.
+   */
+  public static boolean regionMatchesIgnoreCase(
+      CharSequence a, int ai, CharSequence b, int bi, int n) {
+    while (--n >= 0) {
+      char c = a.charAt(ai++), d = b.charAt(bi++);
+      if (c != d) {
+        if (c <= 'z' && c >= 'A') {
+          if (c <= 'Z') { c |= 0x20; }
+          if (d <= 'Z' && d >= 'A') { d |= 0x20; }
+          if (c == d) { continue; }
+        }
+        return false;
+      }
+    }
+    return true;
+  }
+
   /** True iff {@code s.equals(String.toLowerCase(s))}. */
   public static boolean isLowerCase(CharSequence s) {
     for (int i = s.length(); --i >= 0;) {

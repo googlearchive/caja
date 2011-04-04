@@ -272,14 +272,14 @@ public class Nodes {
    * Returns a rendering of document type.  This is handled explicitly here
    * rather than in {@link Nodes#render(Node, MarkupRenderMode)} to avoid
    * rendering a document type in the middle of a document.
-   * 
+   *
    * @return null if nothing to render or docType is invalid.
    */
   private static @Nullable String renderDocumentType(DocumentType docType) {
     String publicId = docType.getPublicId();
     String systemId = docType.getSystemId();
     String nodeName;
-    
+
     if (null != docType.getOwnerDocument() &&
         null != docType.getOwnerDocument().getDocumentElement() &&
         null != docType.getOwnerDocument().getDocumentElement().getNodeName()) {
@@ -289,11 +289,11 @@ public class Nodes {
     } else {
       return null;
     }
-    
+
     if (!DoctypeMaker.isHtml(nodeName, publicId, systemId)) {
       return null;
     }
-    
+
     StringBuilder sb = new StringBuilder();
     sb.append("<!DOCTYPE ").append(nodeName);
     // The Name in the document type declaration must match the element type
@@ -308,7 +308,7 @@ public class Nodes {
       // Sanity check - system urls should parse as an absolute uris
       try {
         URI u = new URI(systemId);
-        if (u.isAbsolute() && 
+        if (u.isAbsolute() &&
             ("http".equals(u.getScheme()) || "https".equals(u.getScheme()))) {
           sb.append(" ")
             .append('"')
@@ -322,7 +322,7 @@ public class Nodes {
     sb.append(">");
     return sb.toString();
   }
-  
+
   /**
    * Serializes the given DOM node to HTML or XML.
    * @param rc a context where the token consumer is typically a
@@ -514,18 +514,16 @@ final class Renderer {
                 }
               }
               // Make sure that the CDATA section does not contain a close
-              // tag.
-              if (containsEndTag(cdataContent)) {
-                String lcaseContent = Strings.toLowerCase(
-                    cdataContent.toString());
-                for (int p = 1;
-                     (p = lcaseContent.indexOf(localName, p + 1)) >= 0;) {
-                  if (lcaseContent.regionMatches(p - 2, "</", 0, 2)) {
-                    throw new IllegalStateException(
-                        "XML document not renderable as HTML due to </"
-                        + localName + " in CDATA tag");
-                  }
-                }
+              // tag or unbalanced <!-- ... -->.
+              int problemIndex = checkHtmlCdataCloseable(
+                  localName, cdataContent);
+              if (problemIndex != -1) {
+                throw new IllegalArgumentException(
+                    "XML document not renderable as HTML due to '"
+                    + cdataContent.subSequence(
+                        problemIndex,
+                        Math.min(cdataContent.length(), problemIndex + 10))
+                    + "' in CDATA element");
               }
               out.append(cdataContent);
             } else {
@@ -549,6 +547,14 @@ final class Renderer {
         break;
       }
       case Node.TEXT_NODE:
+        // This is required for all PCDATA content to distinguish it from tags.
+        // This is not only appropriate for RCDATA, but is required.
+        // http://dev.w3.org/html5/markup/aria/syntax.html#escaping-text-span:
+        //   The text in style, script, title, and textarea elements must not
+        //   have an escaping text span start that is not followed by an
+        //   escaping text span end.
+        // The script and style mentioned above have CDATA content, not RCDATA,
+        // but title and textarea are the RCDATA to which this is relevant.
         Escaping.escapeXml(node.getNodeValue(), isAsciiOnly, out);
         break;
       case Node.CDATA_SECTION_NODE:
@@ -692,18 +698,71 @@ final class Renderer {
     return true;
   }
 
-  private static boolean containsEndTag(StringBuilder sb) {
-    for (int i = 0, n = sb.length(); i < n; i += 2) {
-      switch (sb.charAt(i)) {
+  /**
+   * Check that the content of a CDATA element does not contain a close tag
+   * for that element or unbalanced escaping text spans.
+   *
+   * @return -1 if the content is safe, or the start index of a close tag or
+   *     escaping text span boundary otherwise.
+   */
+  private static int checkHtmlCdataCloseable(
+      String localName, StringBuilder sb) {
+    int escapingTextSpanStart = -1;
+    for (int i = 0, n = sb.length(); i < n; ++i) {
+      char ch = sb.charAt(i);
+      switch (ch) {
         case '<':
-          if (i + 1 < n && sb.charAt(i + 1) == '/') { return true; }
+          if (i + 3 < n
+              && '!' == sb.charAt(i + 1)
+              && '-' == sb.charAt(i + 2)
+              && '-' == sb.charAt(i + 3)) {
+            if (escapingTextSpanStart == -1) {
+              escapingTextSpanStart = i;
+            } else {
+              return escapingTextSpanStart;
+            }
+          } else if (i + 1 + localName.length() < n
+                     && '/' == sb.charAt(i + 1)
+                     && Strings.regionMatchesIgnoreCase(
+                         sb, i + 2, localName, 0, localName.length())) {
+            // A close tag contained in the content.
+            if (escapingTextSpanStart < 0) {
+              // We could try some recovery strategies here.
+              // E.g. prepending "/<!--\n" to sb if "script".equals(localName)
+              return i;
+            }
+            if (!"script".equals(localName)) {
+              // Script tags are commonly included inside script tags.
+              // <script><!--document.write('<script>f()</script>');--></script>
+              // but this does not happen in other CDATA element types.
+              // Actually allowing an end tag inside others is problematic.
+              // Specifically,
+              // <style><!--</style>-->/* foo */</style>
+              // displays the text "/* foo */" on some browsers.
+              return i;
+            }
+          }
           break;
-        case '/':
-          if (i > 0 && sb.charAt(i - 1) == '<') { return true; }
+        case '>':
+          // From the HTML5 spec:
+          //    The text in style, script, title, and textarea elements must not
+          //    have an escaping text span start that is not followed by an
+          //    escaping text span end.
+          // We look left since the HTML 5 spec allows the escaping text span
+          // end to share dashes with the start.
+          if (i >= 2 && '-' == sb.charAt(i - 1) && '-' == sb.charAt(i - 2)) {
+            if (escapingTextSpanStart < 0) { return i - 2; }
+            escapingTextSpanStart = -1;
+          }
           break;
       }
     }
-    return false;
+    if (escapingTextSpanStart >= 0) {
+      // We could try recovery strategies here.
+      // E.g. appending "//-->" to the buffer if "script".equals(localName)
+      return escapingTextSpanStart;
+    }
+    return -1;
   }
 
   /** As defined in section 2.6 of XML version 5. */

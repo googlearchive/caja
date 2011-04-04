@@ -265,7 +265,7 @@ public class NodesTest extends CajaTestCase {
   }
 
   public final void testDocumentType() throws ParseException {
-    String[] docTypes = { 
+    String[] docTypes = {
         "<!DOCTYPE html PUBLIC "
         + "\"-//W3C//DTD HTML 4.01 Transitional//EN\" "
         + "\"http://www.w3.org/TR/html4/loose.dtd\">",
@@ -298,7 +298,7 @@ public class NodesTest extends CajaTestCase {
      *  knows how to contain.
      */
     assertNoDocType(
-        "<!DOCTYPE svg PUBLIC \"-//W3C//DTD SVG 1.1//EN\" " 
+        "<!DOCTYPE svg PUBLIC \"-//W3C//DTD SVG 1.1//EN\" "
         + "\"http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd\">");
   }
 
@@ -361,12 +361,73 @@ public class NodesTest extends CajaTestCase {
         Nodes.render(f, MarkupRenderMode.HTML4_BACKWARDS_COMPAT));
   }
 
+  public final void testEscapingTextSpansStyle() {
+    checkEscapingTextSpans("style", "body { font-family: \"<!--\" }", null);
+    checkEscapingTextSpans("style", "body { font-family: \"-->\" }", null);
+    checkEscapingTextSpans("style", "<!-- body { color: #000 }  -->", true);
+    checkEscapingTextSpans("style", "<!-- /* </style> */ -->", false);
+    checkEscapingTextSpans(
+        "style", "<!-- /* </style */ a > b\n{ color: alert(1337) } -->", false);
+  }
+
+  public final void testEscapingTextSpansScript() {
+    checkEscapingTextSpans("script", "a <!--b", null);
+    checkEscapingTextSpans("script", "a--> b", null);
+    checkEscapingTextSpans("script", "a <!--b && c--> d", true);
+    checkEscapingTextSpans(
+        "script", "<!--document.write('<script>f()</script>')-->", true);
+  }
+
+  public final void testEscapingTextSpansTitle() {
+    checkEscapingTextSpans("title", "<!--", null);
+    checkEscapingTextSpans("title", "-->", null);
+    checkEscapingTextSpans("title", "<!-- wtf -->", true);
+  }
+
+  public final void testEscapingTextSpansTextarea() {
+    checkEscapingTextSpans("textarea", "<!--", null);
+    checkEscapingTextSpans("textarea", "-->", null);
+    checkEscapingTextSpans("textarea", "<!-- text -->", true);
+  }
+
+  public final void testEscapingTextSpansNoscript() {
+    checkEscapingTextSpans("noscript", "<!--", null);
+    checkEscapingTextSpans("noscript", "-->", null);
+    checkEscapingTextSpans("noscript", "<!-- no script here -->", true);
+    checkEscapingTextSpans("noscript", "<!-- </noscript> -->", false);
+  }
+
+  private void checkEscapingTextSpans(
+      String elName, String textContent, Boolean pass) {
+    Document doc = DomParser.makeDocument(null, null);
+    Element el = doc.createElementNS(Namespaces.HTML_NAMESPACE_URI, elName);
+    el.appendChild(doc.createTextNode(textContent));
+    try {
+      String s = Nodes.render(el, MarkupRenderMode.HTML);
+      // There is either no <!-- or a following -->.
+      if (s.contains("<!--")) {
+        assertTrue(s, s.indexOf("<!--") < s.indexOf("-->"));
+      } else {
+        assertFalse(s, s.contains("-->"));
+      }
+      if (pass != null) {
+        assertTrue(pass);
+      }
+    } catch (IllegalArgumentException ex) {
+      if (pass != null) {
+        assertFalse(pass);
+      }
+    }
+  }
+
   public final void testRenderSpeed() throws Exception {
     Element doc = html(fromResource("amazon.com.html"));
     benchmark(100, doc);  // prime the JIT
     Thread.sleep(250);  // Let the JIT kick-in.
     int microsPerRun = benchmark(250, doc);
     // See extractVarZ in "tools/dashboard/dashboard.pl".
+    // This should be named usPerRun, but there is already history with the
+    // broken name.
     System.out.println(
         " VarZ:" + getClass().getName() + ".msPerRun=" + microsPerRun);
   }
@@ -376,8 +437,8 @@ public class NodesTest extends CajaTestCase {
     for (int i = nRuns; --i >= 0;) { Nodes.render(el); }
     return (int) ((((double) (System.nanoTime() - t0)) / nRuns) / 1e3);
   }
-  
-  private void assertNoDocType(String docType) 
+
+  private void assertNoDocType(String docType)
       throws ParseException {
     Document doc = DomParser.makeDocument(DoctypeMaker.parse(docType), null);
     Element el = html(fromString("TEST NODE"));
@@ -386,7 +447,7 @@ public class NodesTest extends CajaTestCase {
         .matches("[<][!]DOCTYPE"));
   }
 
-  private void assertDocType(String expected, String docType) 
+  private void assertDocType(String expected, String docType)
       throws ParseException {
     Document doc = DomParser.makeDocument(DoctypeMaker.parse(docType), null);
     Element el = html(fromString("TEST NODE"));

@@ -119,9 +119,32 @@ public enum HtmlTextEscapingMode {
    * True iff the content following the given tag allows escaping text
    * spans: {@code <!--&hellip;-->} that escape even things that might
    * be an end tag for the corresponding open tag.
+   * @see <a href="http://dev.w3.org/html5/markup/aria/syntax.html#escaping-text-span">HTML 5</a>
    */
   public static boolean allowsEscapingTextSpan(String canonTagName) {
-    // <xmp> and <plaintext> do not admit escaping text spans.
+    // From the HTML5 spec:
+    //    The text in style, script, title, and textarea elements must not have
+    //    an escaping text span start that is not followed by an escaping text
+    //    span end.
+    // So the tags listed can contain HTML escaping text spans or things that
+    // look like them, but <xmp> and <plaintext> do not admit escaping text
+    // spans.
+    //
+    // From the HTML5 spec:
+    //    A start tag whose tag name is "noscript", if the scripting flag is
+    //    enabled
+    //    A start tag whose tag name is one of: "noframes", "style"
+    //      Follow the generic CDATA element parsing algorithm.
+    //
+    //    A start tag whose tag name is "noscript", if the scripting flag is
+    //    disabled
+    //      Insert an HTML element for the token.
+    //      Switch the insertion mode to "in head noscript".
+    // So the <noscript> element can contain HTML comments when scripting is
+    // disabled, but otherwise behaves like the <style> element which can
+    // contain escaping text spans.
+    // This class assumes that scripting is not disabled, and that frames and
+    // embeds are not disabled.
     return "style".equals(canonTagName) || "script".equals(canonTagName)
         || "title".equals(canonTagName) || "textarea".equals(canonTagName)
         || "noembed".equals(canonTagName) || "noscript".equals(canonTagName)

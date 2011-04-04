@@ -30,7 +30,6 @@ enum TokenClassification {
   OTHER,
   ;
 
-  @SuppressWarnings("fallthrough")
   static TokenClassification classify(CharSequence text) {
     if ("".equals(text)) { return null; }
 
@@ -62,7 +61,10 @@ enum TokenClassification {
           break;
         case '-': case '+':
           if (ch1 == '.') { ch1 = n >= 3 ? text.charAt(2) : 0; }
-          // $FALL-THROUGH$
+          if (Character.isLetterOrDigit(ch1)) {
+            return OTHER;
+          }
+          break;
         case '.':
           if (Character.isLetterOrDigit(ch1)) {
             return OTHER;

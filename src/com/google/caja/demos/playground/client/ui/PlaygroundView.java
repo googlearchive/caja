@@ -13,9 +13,9 @@
 
 package com.google.caja.demos.playground.client.ui;
 
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.TreeMap;
 
 import com.google.caja.demos.playground.client.Playground;
 import com.google.caja.demos.playground.client.PlaygroundResource;
@@ -29,7 +29,7 @@ import com.google.gwt.event.logical.shared.SelectionEvent;
 import com.google.gwt.event.logical.shared.SelectionHandler;
 import com.google.gwt.user.client.DOM;
 import com.google.gwt.user.client.ui.Anchor;
-import com.google.gwt.user.client.ui.HorizontalPanel;
+import com.google.gwt.user.client.ui.HasHorizontalAlignment;
 import com.google.gwt.user.client.ui.MultiWordSuggestOracle;
 import com.google.gwt.user.client.ui.RootLayoutPanel;
 import com.google.gwt.user.client.ui.SuggestBox;
@@ -48,7 +48,7 @@ public class PlaygroundView {
   private MultiWordSuggestOracle policyExamples;
 
   private PlaygroundUI playgroundUI;
-  
+
   public void setVersion(String v) {
     playgroundUI.version.setText(v);
   }
@@ -77,7 +77,7 @@ public class PlaygroundView {
       }
     });
     playgroundUI.addressField.setText("http://");
-    
+
     playgroundUI.goButton.addClickHandler(new ClickHandler() {
       public void onClick(ClickEvent event) {
         controller.loadSource(playgroundUI.addressField.getText());
@@ -91,17 +91,17 @@ public class PlaygroundView {
         playgroundUI.renderPanel.setText("");
         controller.cajole(
             playgroundUI.addressField.getText(),
-            playgroundUI.sourceText.getText(), 
+            playgroundUI.sourceText.getText(),
             currentPolicy,
             true /* es53 */
         );
       }
     });
   }
-  
+
   private void initFeedbackPanel() {
     playgroundUI.feedbackPanel.setHorizontalAlignment(
-        HorizontalPanel.ALIGN_RIGHT);
+        HasHorizontalAlignment.ALIGN_RIGHT);
     for (Menu menu : Menu.values()) {
       Anchor menuItem = new Anchor();
       menuItem.setHTML(menu.description);
@@ -267,9 +267,9 @@ public class PlaygroundView {
   }
 
   private void initExamples() {
-    Map<Example.Type, TreeItem> menuMap = new TreeMap<Example.Type, TreeItem>();
-    final Map<TreeItem, Example> entryMap =
-      new HashMap<TreeItem, Example>();
+    Map<Example.Type, TreeItem> menuMap = new EnumMap<Example.Type, TreeItem>(
+        Example.Type.class);
+    final Map<TreeItem, Example> entryMap = new HashMap<TreeItem, Example>();
 
     playgroundUI.exampleTree.setTitle("Select an example");
     for (Example eg : Example.values()) {
@@ -302,7 +302,7 @@ public class PlaygroundView {
     this.controller = controller;
     this.sourceExamples = new MultiWordSuggestOracle();
     this.policyExamples = new MultiWordSuggestOracle();
-    
+
     this.playgroundUI =
       new com.google.caja.demos.playground.client.ui.PlaygroundUI(
           sourceExamples, policyExamples);
