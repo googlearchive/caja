@@ -51,7 +51,7 @@ public abstract class CssTree extends AbstractParseTreeNode {
     super(pos, CssTree.class);
     createMutation().appendChildren(children).execute();
   }
-  private <T extends CssTree> CssTree(
+  protected <T extends CssTree> CssTree(
       FilePosition pos, Class<T> subType, List<? extends T> children) {
     super(pos, subType);
     createMutation().appendChildren(children).execute();
@@ -947,7 +947,7 @@ public abstract class CssTree extends AbstractParseTreeNode {
      * @param inputValue the unescaped inputValue.  Any unicode escapes have
      *   been converted to the corresponding character.
      */
-    CssLiteral(FilePosition pos, String inputValue) {
+    protected CssLiteral(FilePosition pos, String inputValue) {
       super(pos, Collections.<Expr>emptyList());
       setValue(inputValue);
     }

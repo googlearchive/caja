@@ -14,6 +14,8 @@
 
 package com.google.caja.plugin;
 
+import javax.annotation.Nullable;
+
 /**
  * For a plugin, determines how its external dependencies are translated.
  */
@@ -27,7 +29,7 @@ public final class PluginMeta {
    * module ID to be assigned dynamically but for those clients who know that
    * they can avoid overlaps.
    */
-  private String idClass;
+  private @Nullable String idClass;
   private boolean enableES53;
 
   public PluginMeta() {
@@ -60,12 +62,12 @@ public final class PluginMeta {
   public UriFetcher getUriFetcher() { return uriFetcher; }
 
   /**
-   * Null if the module ID is not known statically.
+   * {@code null} if the module ID is not known statically.
    * See {@code imports.getIdClass___()} defined in "domita.js".
    */
-  public String getIdClass() { return idClass; }
+  public @Nullable String getIdClass() { return idClass; }
 
-  public void setIdClass(String idClass) { this.idClass = idClass; }
+  public void setIdClass(@Nullable String idClass) { this.idClass = idClass; }
 
   /**
    * Tells the cajoler to use the new SES translator instead of the old
