@@ -18,11 +18,7 @@
 <html>
   <head>
     <title>Trivial Caja Container</title>
-    
-    <!-- Provides rules for visually confining vdoc-body___ elements -->
-    <link rel="stylesheet" href="caja-gadget.css" type="text/css">
-    
-    <script src="http://caja.appspot.com/caja-orig.js"
+    <script src="http://caja.appspot.com/caja.js"
             type="text/javascript"></script>
   </head>
 
@@ -40,22 +36,20 @@
         // This is an asynchronous load because it constructs an iframe which
         // all the sandbox stuff is hidden in, so you have to provide a 
         // callback.
-        loadCaja(function (caja) {
-
-          // There should be one Sandbox per gadget
-          var sandbox = new caja.hostTools.Sandbox();
+        caja.configure({
+          cajaServer: "http://caja.appspot.com/"
+        }, function (frameGroup) {
+          // Create a new sandbox group for this gadget
 
           // Specify the DOM node which is the virtual <body> of the gadget
-          sandbox.attach(document.getElementById("theGadget"));
-          
-          // Load the gadget
-          sandbox.run("gadget-trivial.html");
-          
-        }, {
-          // Specify the Caja server -- since we are using local files this
-          // must be a local server.
-          cajaServer: "http://localhost:8080/"
-        });
+          frameGroup.makeES5Frame(document.getElementById("theGadget"),
+              { /* Grant this gadget no network access */ },
+              function (frame) {
+                // Load and run the gadget
+                frame.url("gadget-trivial.html")
+                     .run({});
+              });
+            });
     </script>
 
     <p>See comments in the source of this page for more information.</p>
