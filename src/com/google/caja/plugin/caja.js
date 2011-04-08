@@ -299,7 +299,10 @@ var caja = (function () {
                  *     completion value of the guest code.
                  */
                 run: function(extraImports, opt_callback) {
-                    if (!extraImports.hasOwnProperty('onerror')) {
+                    if (!!extraImports) {
+                      extraImports = {};
+                    }
+                    if (!('onerror' in extraImports)) {
                       extraImports.onerror = tame(markFunction(
                           function (message, source, lineNum) {
                             console.log('Uncaught script error: ' + message +

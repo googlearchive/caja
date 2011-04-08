@@ -86,6 +86,22 @@
       });
     });
 
+    jsunitRegister('testNoImports', function testNoImports() {
+      fetch('es53-test-guest.out.html', function(resp) {
+        var htmlAndScript = splitHtmlAndScript(resp);
+        var div = createDiv();
+        frameGroup.makeES5Frame(div, uriCallback, function (frame) {
+          frame.contentCajoled('http://localhost:8080/',
+                               htmlAndScript[1], htmlAndScript[0])
+               .run(undefined, function (result) {
+            assertStringContains('static html', div.innerHTML);
+            assertStringContains('dynamic html', div.innerHTML);
+            jsunit.pass('testNoImports');
+          });
+        });
+      });
+    });
+
     // TODO(ihab.awad): Implement 'urlCajoled' case and enable the below.
     // jsunitRegister('testUrlCajoledHtml', function testUrlCajoledHtml() { });
     // jsunitRegister('testUrlCajoledJs', function testUrlCajoledJs() { });
