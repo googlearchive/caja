@@ -109,7 +109,7 @@ var caja = (function () {
       var iframe = createIframe();
 
       var url = joinUrl(cajaServer,
-          debug ? filename + '.js' : filename + '-minified.js');
+          debug ? filename + '.js' : filename + '.opt.js');
 
       // The particular interleaving of async events shown below has been found
       // necessary to get the right behavior on Firefox 3.6. Otherwise, the

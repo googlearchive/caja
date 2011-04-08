@@ -798,7 +798,7 @@
       <input file="${src}/com/google/caja/cajita-promise.js"/>
     </transform>
     <transform>
-      <output file="${lib}/com/google/caja/plugin/es53-taming-frame-minified.js"
+      <output file="${lib}/com/google/caja/plugin/es53-taming-frame.opt.js"
        language="javascript" renderer="minify"/>
       <input file="${third_party}/js/json_sans_eval/json_sans_eval.js"/>
       <input file="${src}/com/google/caja/es53.js"/>
@@ -836,7 +836,7 @@
       </filelist>
     </concat>
     <transform>
-      <output file="${lib}/com/google/caja/plugin/es53-guest-frame-minified.js"
+      <output file="${lib}/com/google/caja/plugin/es53-guest-frame.opt.js"
        language="javascript" renderer="minify"/>
       <input file="${third_party}/js/json_sans_eval/json_sans_eval.js"/>
       <input file="${src}/com/google/caja/es53.js"/>
