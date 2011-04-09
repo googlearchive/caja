@@ -24,6 +24,7 @@ import com.google.caja.util.SyntheticAttributeKey;
 import com.google.caja.util.SyntheticAttributes;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
@@ -35,7 +36,10 @@ import java.util.NoSuchElementException;
  *
  * @author mikesamuel@gmail.com
  */
-public abstract class AbstractParseTreeNode implements MutableParseTreeNode {
+public abstract class AbstractParseTreeNode implements MutableParseTreeNode,
+    Serializable {
+  private static final long serialVersionUID = 871767772158380954L;
+
   private FilePosition pos;
   private List<Token<?>> comments = Collections.<Token<?>>emptyList();
   private SyntheticAttributes attributes;
@@ -75,7 +79,8 @@ public abstract class AbstractParseTreeNode implements MutableParseTreeNode {
   @SuppressWarnings("unchecked")
   protected <T2> List<T2> childrenPart(
       int start, int end, Class<T2> cl) {
-    List<ParseTreeNode> sub = children.getImmutableFacet().subList(start, end);
+    List<ParseTreeNode> sub =
+      new ArrayList(children.getImmutableFacet().subList(start, end));
     for (ParseTreeNode el : sub) {
       if (!cl.isInstance(el)) {
         throw new ClassCastException(

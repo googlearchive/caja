@@ -26,6 +26,7 @@ import java.util.List;
  * @author mikesamuel@gmail.com
  */
 public final class DefaultCaseStmt extends SwitchCase {
+  private static final long serialVersionUID = -5369371880677191461L;
   private Block body;
 
   /** @param value unused.  This ctor is provided for reflection. */

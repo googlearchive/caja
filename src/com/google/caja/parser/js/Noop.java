@@ -27,6 +27,8 @@ import java.util.List;
  * @author mikesamuel@gmail.com
  */
 public final class Noop extends AbstractStatement {
+  private static final long serialVersionUID = 7334467105913341242L;
+
   /** @param value unused.  This ctor is provided for reflection. */
   @ReflectiveCtor
   public Noop(FilePosition p, Void value, List<? extends Statement> children) {

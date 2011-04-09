@@ -47,6 +47,8 @@ import javax.annotation.Nullable;
  * @author mikesamuel@gmail.com
  */
 public abstract class CssTree extends AbstractParseTreeNode {
+  private static final long serialVersionUID = 6020901117890226169L;
+
   private CssTree(FilePosition pos, List<? extends CssTree> children) {
     super(pos, CssTree.class);
     createMutation().appendChildren(children).execute();
@@ -95,6 +97,8 @@ public abstract class CssTree extends AbstractParseTreeNode {
    * </pre>
    */
   public static final class StyleSheet extends CssTree {
+    private static final long serialVersionUID = -8643612233981773251L;
+
     /** @param novalue ignored but required for reflection. */
     @ReflectiveCtor
     public StyleSheet(
@@ -119,6 +123,8 @@ public abstract class CssTree extends AbstractParseTreeNode {
    * the root node of CSS parsed from an XHTML <code>style</code> attribute.
    */
   public static final class DeclarationGroup extends CssTree {
+    private static final long serialVersionUID = 8362287756047209631L;
+
     /** @param novalue ignored but required for reflection. */
     @ReflectiveCtor
     public DeclarationGroup(
@@ -162,6 +168,8 @@ public abstract class CssTree extends AbstractParseTreeNode {
 
   /** Part of a stylesheet. */
   public abstract static class CssStatement extends CssTree {
+    private static final long serialVersionUID = 5015116074218591197L;
+
     CssStatement(FilePosition pos, List<? extends CssTree> children) {
       super(pos, children);
     }
@@ -174,6 +182,8 @@ public abstract class CssTree extends AbstractParseTreeNode {
    * </pre>
    */
   public static final class Import extends CssStatement {
+    private static final long serialVersionUID = 7450104631861052290L;
+
     private static <T> List<T> join(List<? extends T> a, List<? extends T> b) {
       List<T> l = new ArrayList<T>(a.size() + b.size());
       l.addAll(a);
@@ -227,6 +237,8 @@ public abstract class CssTree extends AbstractParseTreeNode {
    * </pre>
    */
   public static final class Media extends CssStatement {
+    private static final long serialVersionUID = 1634406326897941926L;
+
     /** @param novalue ignored but required for reflection. */
     @ReflectiveCtor
     public Media(
@@ -273,6 +285,7 @@ public abstract class CssTree extends AbstractParseTreeNode {
    * </pre>
    */
   public static final class Medium extends CssTree {
+    private static final long serialVersionUID = 2141132767716482740L;
     final Name ident;
 
     /** @param none ignored but required for reflection. */
@@ -302,6 +315,7 @@ public abstract class CssTree extends AbstractParseTreeNode {
    * </pre>
    */
   public static final class Page extends CssStatement {
+    private static final long serialVersionUID = -7846795622671557446L;
     final Name ident;
 
     @ReflectiveCtor
@@ -336,6 +350,7 @@ public abstract class CssTree extends AbstractParseTreeNode {
    * A part of a CSS statement.
    */
   public abstract static class PageElement extends CssTree {
+    private static final long serialVersionUID = -8981557551867893004L;
     PageElement(FilePosition pos, List<? extends CssTree> children) {
       super(pos, children);
     }
@@ -352,6 +367,7 @@ public abstract class CssTree extends AbstractParseTreeNode {
    * </pre>
    */
   public static final class PseudoPage extends PageElement {
+    private static final long serialVersionUID = -5954522226216988819L;
     final Name ident;
 
     /** @param none ignored but required for reflection. */
@@ -383,6 +399,8 @@ public abstract class CssTree extends AbstractParseTreeNode {
    * </pre>
    */
   public static final class FontFace extends CssStatement {
+    private static final long serialVersionUID = 3992274759318256076L;
+
     /** @param novalue ignored but required for reflection. */
     @ReflectiveCtor
     public FontFace(
@@ -420,6 +438,7 @@ public abstract class CssTree extends AbstractParseTreeNode {
    * </pre>
    */
   public static final class Property extends CssTree {
+    private static final long serialVersionUID = 5350602163562229685L;
     private final Name ident;
     /** @param none ignored but required for reflection. */
     @ReflectiveCtor
@@ -454,6 +473,8 @@ public abstract class CssTree extends AbstractParseTreeNode {
    * </pre>
    */
   public static final class RuleSet extends CssStatement {
+    private static final long serialVersionUID = -1370546279860143576L;
+
     /** @param novalue ignored but required for reflection. */
     @ReflectiveCtor
     public RuleSet(
@@ -489,6 +510,7 @@ public abstract class CssTree extends AbstractParseTreeNode {
    * </pre>
    */
   public static final class Selector extends CssTree {
+    private static final long serialVersionUID = -465995012590018227L;
     /** @param novalue ignored but required for reflection. */
     @ReflectiveCtor
     public Selector(
@@ -529,6 +551,8 @@ public abstract class CssTree extends AbstractParseTreeNode {
    * </pre>
    */
   public static final class SimpleSelector extends CssTree {
+    private static final long serialVersionUID = -7674557532295492300L;
+
     /** @param novalue ignored but required for reflection. */
     @ReflectiveCtor
     public SimpleSelector(
@@ -561,6 +585,8 @@ public abstract class CssTree extends AbstractParseTreeNode {
    * </pre>
    */
   public static final class WildcardElement extends CssTree {
+    private static final long serialVersionUID = -6481902550898050210L;
+
     /**
      * @param novalue ignored but required for reflection.
      * @param none ignored but required for reflection.
@@ -594,6 +620,7 @@ public abstract class CssTree extends AbstractParseTreeNode {
    * </pre>
    */
   public static final class Attrib extends CssTree {
+    private static final long serialVersionUID = 5081385158465914021L;
     final String ident;
 
     @ReflectiveCtor
@@ -653,6 +680,7 @@ public abstract class CssTree extends AbstractParseTreeNode {
 
   /** <pre>[ '=' | INCLUDES | DASHMATCH ]</pre> */
   public static final class AttribOperation extends CssTree {
+    private static final long serialVersionUID = 5881502462250726237L;
     final AttribOperator op;
     /** @param none ignored but required for reflection. */
     @ReflectiveCtor
@@ -682,6 +710,8 @@ public abstract class CssTree extends AbstractParseTreeNode {
    * </pre>
    */
   public static final class Pseudo extends CssTree {
+    private static final long serialVersionUID = -8355980992414290494L;
+
     /** @param novalue ignored but required for reflection. */
     @ReflectiveCtor
     public Pseudo(
@@ -714,6 +744,11 @@ public abstract class CssTree extends AbstractParseTreeNode {
    * has no analog in the spec since it models a browser hack.
    */
   public static abstract class Declaration extends PageElement {
+    /**
+     * 
+     */
+    private static final long serialVersionUID = -3579944514104809928L;
+
     Declaration(FilePosition pos, List<? extends CssTree> children) {
       super(pos, children);
     }
@@ -731,6 +766,8 @@ public abstract class CssTree extends AbstractParseTreeNode {
    * </pre>
    */
   public static final class EmptyDeclaration extends Declaration {
+    private static final long serialVersionUID = -2714362083044209218L;
+
     /**
      * @param novalue ignored but required for reflection.
      * @param none ignored but required for reflection.
@@ -758,6 +795,7 @@ public abstract class CssTree extends AbstractParseTreeNode {
    * </pre>
    */
   public static final class PropertyDeclaration extends Declaration {
+    private static final long serialVersionUID = 6744488790926852402L;
     private Property prop;
     private Expr expr;
     private Prio prio;
@@ -808,6 +846,7 @@ public abstract class CssTree extends AbstractParseTreeNode {
    * </pre>
    */
   public static final class Prio extends CssTree {
+    private static final long serialVersionUID = -882058488526090512L;
     final String value;
 
     /** @param none ignored but required for reflection. */
@@ -838,6 +877,8 @@ public abstract class CssTree extends AbstractParseTreeNode {
    * </pre>
    */
   public static final class Expr extends CssTree {
+    private static final long serialVersionUID = 5011229222727740788L;
+
     /** @param novalue ignored but required for reflection. */
     @ReflectiveCtor
     public Expr(
@@ -879,6 +920,7 @@ public abstract class CssTree extends AbstractParseTreeNode {
    * </pre>
    */
   public static final class Term extends CssTree {
+    private static final long serialVersionUID = 2376339117176355282L;
     private final UnaryOperator op;
     @ReflectiveCtor
     public Term(FilePosition pos, UnaryOperator op,
@@ -911,6 +953,7 @@ public abstract class CssTree extends AbstractParseTreeNode {
    * See also http://www.w3.org/TR/REC-CSS2/syndata.html#values
    */
   public abstract static class CssExprAtom extends CssTree {
+    private static final long serialVersionUID = 8065698386622189655L;
     CssExprAtom(FilePosition pos, List<? extends CssTree> children) {
       super(pos, children);
     }
@@ -942,6 +985,7 @@ public abstract class CssTree extends AbstractParseTreeNode {
    * Color, or keyword value.
    */
   public abstract static class CssLiteral extends CssExprAtom {
+    private static final long serialVersionUID = -779702592080387558L;
     private String value;
     /**
      * @param inputValue the unescaped inputValue.  Any unicode escapes have
@@ -970,6 +1014,7 @@ public abstract class CssTree extends AbstractParseTreeNode {
    * An ID in a selector, like {@code #foo}.
    */
   public static final class IdLiteral extends CssLiteral {
+    private static final long serialVersionUID = -165713497054691362L;
     /** @param none ignored but required for reflection. */
     @ReflectiveCtor
     public IdLiteral(
@@ -992,6 +1037,7 @@ public abstract class CssTree extends AbstractParseTreeNode {
    * A class name in a selector like {@code .foo}.
    */
   public static final class ClassLiteral extends CssLiteral {
+    private static final long serialVersionUID = 4976309939926023380L;
     /** @param none ignored but required for reflection. */
     @ReflectiveCtor
     public ClassLiteral(
@@ -1014,6 +1060,7 @@ public abstract class CssTree extends AbstractParseTreeNode {
    * A string literal in a property value like {@code 'foo'}.
    */
   public static final class StringLiteral extends CssLiteral {
+    private static final long serialVersionUID = -4074928917829475004L;
     /** @param none ignored but required for reflection. */
     @ReflectiveCtor
     public StringLiteral(
@@ -1035,6 +1082,7 @@ public abstract class CssTree extends AbstractParseTreeNode {
    * A color value in a property value like {@code #AABBCC}.
    */
   public static final class HashLiteral extends CssLiteral {
+    private static final long serialVersionUID = -7288354377390397932L;
     /** @param none ignored but required for reflection. */
     @ReflectiveCtor
     public HashLiteral(
@@ -1064,6 +1112,7 @@ public abstract class CssTree extends AbstractParseTreeNode {
    * A numeric quantity like {@code 5cm}, {@code 100%}, or {@code 0}.
    */
   public static final class QuantityLiteral extends CssLiteral {
+    private static final long serialVersionUID = -5886777675781113368L;
     /** @param none ignored but required for reflection. */
     @ReflectiveCtor
     public QuantityLiteral(
@@ -1087,6 +1136,7 @@ public abstract class CssTree extends AbstractParseTreeNode {
    * A range of unicode code-points.
    */
   public static final class UnicodeRangeLiteral extends CssLiteral {
+    private static final long serialVersionUID = -8514138506941567407L;
     /** @param none ignored but required for reflection. */
     @ReflectiveCtor
     public UnicodeRangeLiteral(
@@ -1110,6 +1160,7 @@ public abstract class CssTree extends AbstractParseTreeNode {
    * A uri literal like {@code url('foo/bar.css')}.
    */
   public static final class UriLiteral extends CssLiteral {
+    private static final long serialVersionUID = -8141374453739246763L;
     /** @param none ignored but required for reflection. */
     @ReflectiveCtor
     public UriLiteral(
@@ -1150,6 +1201,7 @@ public abstract class CssTree extends AbstractParseTreeNode {
    * value like {@code auto}.
    */
   public static final class IdentLiteral extends CssLiteral {
+    private static final long serialVersionUID = 1891747834449899600L;
     /** @param none ignored but required for reflection. */
     @ReflectiveCtor
     public IdentLiteral(
@@ -1176,6 +1228,7 @@ public abstract class CssTree extends AbstractParseTreeNode {
    * </pre>
    */
   public static final class FunctionCall extends CssExprAtom {
+    private static final long serialVersionUID = -3808281332587033458L;
     private final Name name;
     @ReflectiveCtor
     public FunctionCall(
@@ -1212,6 +1265,7 @@ public abstract class CssTree extends AbstractParseTreeNode {
    * http://msdn.microsoft.com/en-us/library/ms532847(VS.85).aspx.
    */
   public static final class ProgId extends CssExprAtom {
+    private static final long serialVersionUID = -3169418029705076457L;
     private final Name name;
 
     @ReflectiveCtor
@@ -1247,6 +1301,7 @@ public abstract class CssTree extends AbstractParseTreeNode {
   }
 
   public static final class ProgIdAttribute extends CssTree {
+    private static final long serialVersionUID = 8691919563227649133L;
     private final Name name;
 
     @ReflectiveCtor
@@ -1291,6 +1346,8 @@ public abstract class CssTree extends AbstractParseTreeNode {
    * is set.
    */
   public static final class Substitution extends CssLiteral {
+    private static final long serialVersionUID = 805807688991145511L;
+
     /** @param none ignored but required for reflection. */
     public Substitution(
         FilePosition pos, String value, List<? extends CssTree> none) {
@@ -1331,6 +1388,7 @@ public abstract class CssTree extends AbstractParseTreeNode {
 
   /** See http://www.w3.org/TR/REC-CSS2/selector.html#q2 */
   public static final class Combination extends CssTree {
+    private static final long serialVersionUID = -1805916464027890613L;
     final Combinator comb;
 
     /** @param none ignored but required for reflection. */
@@ -1357,6 +1415,7 @@ public abstract class CssTree extends AbstractParseTreeNode {
 
   /** See http://www.w3.org/TR/REC-CSS2/selector.html#q2 */
   public static final class Operation extends CssTree {
+    private static final long serialVersionUID = -3771062755116184740L;
     final Operator op;
 
     /** @param none ignored but required for reflection. */
@@ -1440,6 +1499,7 @@ public abstract class CssTree extends AbstractParseTreeNode {
    * </pre>
    */
   public static final class UserAgentHack extends Declaration {
+    private static final long serialVersionUID = -3920735297551152675L;
     private final EnumSet<UserAgent> enabledOn;
 
     @ReflectiveCtor

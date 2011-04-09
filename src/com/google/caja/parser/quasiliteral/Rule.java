@@ -62,6 +62,7 @@ public abstract class Rule implements MessagePart {
    */
   public static final ParseTreeNode NONE =
       new AbstractParseTreeNode(FilePosition.UNKNOWN) {
+        private static final long serialVersionUID = -2661372462823134153L;
         @Override public Object getValue() { return null; }
         public void render(RenderContext r) {
           throw new UnsupportedOperationException();

@@ -26,6 +26,7 @@ import java.util.List;
  * @author mikesamuel@gmail.com
  */
 public final class ThrowStmt extends AbstractStatement {
+  private static final long serialVersionUID = 6894047499156075804L;
   private Expression exception;
 
   /** @param value unused.  This ctor is provided for reflection. */

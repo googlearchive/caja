@@ -17,6 +17,7 @@ package com.google.caja.lexer;
 import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessagePart;
 import java.io.IOException;
+import java.io.Serializable;
 
 import javax.annotation.Nullable;
 
@@ -43,7 +44,9 @@ import javax.annotation.Nullable;
  *
  * @author mikesamuel@gmail.com
  */
-public final class FilePosition implements MessagePart {
+public final class FilePosition implements MessagePart, Serializable {
+  private static final long serialVersionUID = 1867023076917057795L;
+
   public static final FilePosition UNKNOWN = FilePosition.instance(
       InputSource.UNKNOWN, 1, 0, 0);
 

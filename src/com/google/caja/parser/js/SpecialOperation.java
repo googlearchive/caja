@@ -23,6 +23,8 @@ import java.util.List;
  * @author erights@gmail.com
  */
 public class SpecialOperation extends Operation {
+  private static final long serialVersionUID = -613442694743562988L;
+
   @ReflectiveCtor
   public SpecialOperation(
       FilePosition pos, Operator op, List<? extends Expression> operands) {

@@ -19,6 +19,7 @@ import com.google.caja.reporting.MessagePart;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.Serializable;
 import java.net.URI;
 
 import javax.annotation.Nullable;
@@ -31,7 +32,8 @@ import javax.annotation.Nullable;
  *
  * @author mikesamuel@gmail.com
  */
-public final class InputSource implements MessagePart {
+public final class InputSource implements MessagePart, Serializable {
+  private static final long serialVersionUID = 7244581658470949868L;
   private URI uri;
   private String uriStr;
 

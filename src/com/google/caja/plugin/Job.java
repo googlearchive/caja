@@ -24,12 +24,14 @@ import com.google.caja.parser.js.Statement;
 import com.google.caja.parser.js.UncajoledModule;
 import com.google.caja.util.ContentType;
 
+import java.io.Serializable;
 import java.net.URI;
 
 /**
  * A parse tree that is awaiting rewriting, compiling, or rendering.
  */
-public final class Job {
+public final class Job implements Serializable {
+  private static final long serialVersionUID = -8600982817211362662L;
   private final ParseTreeNode root;
   private final ContentType type;
   private final URI baseUri;

@@ -25,6 +25,8 @@ import java.util.List;
  * @author mikesamuel@gmail.com
  */
 public final class FormalParam extends Declaration {
+  private static final long serialVersionUID = 5841430129235689345L;
+
   @ReflectiveCtor
   public FormalParam(
       FilePosition pos, Void value, List<? extends Expression> children) {

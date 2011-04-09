@@ -32,6 +32,7 @@ import java.util.List;
  * @author mikesamuel@gmail.com
  */
 public final class Reference extends AbstractExpression {
+  private static final long serialVersionUID = -9159066877661689445L;
   private Identifier identifier;
 
   /** @param value unused.  This ctor is provided for reflection. */

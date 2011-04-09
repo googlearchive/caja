@@ -32,6 +32,7 @@ import java.util.regex.Pattern;
  * @author mikesamuel@gmail.com
  */
 public final class StringLiteral extends Literal {
+  private static final long serialVersionUID = 6251403659182707540L;
   /** Undecoded value. */
   private final String value;
 

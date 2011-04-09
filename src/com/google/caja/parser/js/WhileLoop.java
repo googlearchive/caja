@@ -28,6 +28,7 @@ import java.util.List;
  * @author mikesamuel@gmail.com
  */
 public class WhileLoop extends Loop {
+  private static final long serialVersionUID = 7249095800014132203L;
   private Expression condition;
   private Statement body;
 

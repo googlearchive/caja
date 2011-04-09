@@ -30,6 +30,8 @@ import java.util.List;
  * @author mikesamuel@gmail.com
  */
 public final class Conditional extends AbstractStatement {
+  private static final long serialVersionUID = 7726408694815849867L;
+
   /** @param value unused.  This ctor is provided for reflection. */
   @ReflectiveCtor
   public Conditional(

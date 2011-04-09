@@ -24,6 +24,8 @@ import java.util.List;
  * @author erights@gmail.com
  */
 public final class SimpleOperation extends Operation {
+  private static final long serialVersionUID = 5200781674229059403L;
+
   @ReflectiveCtor
   public SimpleOperation(
       FilePosition pos, Operator value, List<? extends Expression> children) {

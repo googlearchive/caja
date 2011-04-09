@@ -30,6 +30,8 @@ import java.util.List;
  * @author mikesamuel@gmail.com
  */
 public final class SetterProperty extends ObjProperty {
+  private static final long serialVersionUID = 1472590418386289731L;
+
   public SetterProperty(StringLiteral name, FunctionConstructor fn) {
     super(name, fn);
   }

@@ -29,6 +29,7 @@ import java.util.List;
  * @author mikesamuel@gmail.com
  */
 public final class LabeledStmtWrapper extends LabeledStatement {
+  private static final long serialVersionUID = 3431046080336293584L;
   // TODO(mikesamuel): Investigate whether use of continue to a non loop
   // functions as goto, and whether that can introduces vulnerabilities.
   // TODO(mikesamuel): Do we want to remove labelling of non-loop statements

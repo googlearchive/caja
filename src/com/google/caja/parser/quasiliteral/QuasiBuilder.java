@@ -57,6 +57,8 @@ import java.util.Set;
 public class QuasiBuilder {
   private static final Map<String, QuasiNode> patternCache
       = Collections.synchronizedMap(new LinkedHashMap<String, QuasiNode>() {
+        private static final long serialVersionUID = 8370964871936109547L;
+
         @Override
         public boolean removeEldestEntry(Map.Entry<String, QuasiNode> e) {
           return this.size() > 256;

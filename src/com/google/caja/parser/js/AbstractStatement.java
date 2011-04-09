@@ -34,6 +34,8 @@ import java.util.Map;
  */
 public abstract class AbstractStatement
     extends AbstractParseTreeNode implements Statement {
+  private static final long serialVersionUID = -3327463812140885737L;
+
   @ReflectiveCtor
   public AbstractStatement(
       FilePosition pos, Class<? extends ParseTreeNode> childClass) {

@@ -31,6 +31,8 @@ import java.math.RoundingMode;
  * @author mikesamuel@gmail.com
  */
 public abstract class NumberLiteral extends Literal {
+  private static final long serialVersionUID = -5974378121634749014L;
+
   protected NumberLiteral(FilePosition pos) { super(pos); }
 
   @Override

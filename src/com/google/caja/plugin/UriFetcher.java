@@ -44,6 +44,7 @@ public interface UriFetcher {
   public static final UriFetcher NULL_NETWORK = new DataUriFetcher();
 
   public static class UriFetchException extends CajaException {
+    private static final long serialVersionUID = -7915784512753732116L;
     public final ExternalReference ref;
     public final String expectedMimeType;
 

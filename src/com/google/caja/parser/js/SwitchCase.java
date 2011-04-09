@@ -24,6 +24,8 @@ import com.google.caja.reporting.RenderContext;
  * @see SwitchStmt
  */
 public abstract class SwitchCase extends AbstractStatement {
+  private static final long serialVersionUID = 3781500259502644405L;
+
   protected SwitchCase(FilePosition pos) { super(pos, ParseTreeNode.class); }
 
   public boolean hasHangingConditional() { return false; }

@@ -28,6 +28,8 @@ import java.util.List;
  * @author mikesamuel@gmail.com
  */
 public final class ArrayConstructor extends AbstractExpression {
+  private static final long serialVersionUID = 8714728842332999365L;
+
   /** @param value unused.  This ctor is provided for reflection. */
   @ReflectiveCtor
   public ArrayConstructor(

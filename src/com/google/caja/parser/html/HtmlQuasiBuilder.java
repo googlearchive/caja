@@ -72,6 +72,8 @@ import org.w3c.dom.Text;
 public class HtmlQuasiBuilder {
   private static Map<String, Node> QUASI_CACHE = Collections.synchronizedMap(
       new LinkedHashMap<String, Node>() {
+        private static final long serialVersionUID = 5261642907670842806L;
+
         @Override
         public boolean removeEldestEntry(Map.Entry<String, Node> eldest) {
           return this.size() > 100;

@@ -30,6 +30,8 @@ import java.util.List;
  * @author mikesamuel@gmail.com
  */
 public final class DebuggerStmt extends AbstractStatement {
+  private static final long serialVersionUID = 2458000650731417741L;
+
   /**
    * This ctor is provided for reflection.
    * @param value unused.

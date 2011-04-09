@@ -15,6 +15,7 @@ import java.util.List;
  * @author mikesamuel@gmail.com
  */
 public class ValueProperty extends ObjProperty {
+  private static final long serialVersionUID = -8361603805798322752L;
 
   public ValueProperty(StringLiteral name, Expression value) {
     super(name, value);

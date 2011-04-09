@@ -27,6 +27,7 @@ import java.util.List;
  * @author mikesamuel@gmail.com
  */
 public final class TryStmt extends AbstractStatement {
+  private static final long serialVersionUID = 8846827862159681652L;
   private Block body;
   private CatchStmt cat;
   private FinallyStmt fin;

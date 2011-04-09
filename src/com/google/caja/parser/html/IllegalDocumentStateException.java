@@ -24,6 +24,8 @@ import com.google.caja.reporting.Message;
  * @author mikesamuel@gmail.com
  */
 public class IllegalDocumentStateException extends CajaException {
+  private static final long serialVersionUID = 7645237112700560790L;
+
   public IllegalDocumentStateException(Message msg, Throwable cause) {
     super(msg, cause);
   }

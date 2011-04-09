@@ -27,6 +27,8 @@ import java.util.List;
  * @author erights@gmail.com
  */
 public final class AssignOperation extends Operation {
+  private static final long serialVersionUID = 2900230672961082638L;
+
   @ReflectiveCtor
   public AssignOperation(
       FilePosition pos, Operator value, List<? extends Expression> children) {

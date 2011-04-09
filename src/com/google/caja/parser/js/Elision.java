@@ -27,6 +27,7 @@ import java.util.List;
  * @author mikesamuel@gmail.com
  */
 public final class Elision extends SpecialOperation {
+  private static final long serialVersionUID = -4885250718985438681L;
 
   private static Operator checkOp(Operator op) {
     if (op != Operator.VOID) { throw new SomethingWidgyHappenedError(); }

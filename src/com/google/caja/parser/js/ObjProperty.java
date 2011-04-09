@@ -37,6 +37,8 @@ import java.util.List;
  */
 public abstract class ObjProperty extends AbstractParseTreeNode
     implements JsonMLCompatible {
+  private static final long serialVersionUID = 3384973990326624609L;
+
   public ObjProperty(StringLiteral name, Expression value) {
     this(FilePosition.span(name.getFilePosition(), value.getFilePosition()),
          name, value);

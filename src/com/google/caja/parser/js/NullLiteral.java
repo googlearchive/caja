@@ -29,6 +29,7 @@ import java.util.List;
  * @author mikesamuel@gmail.com
  */
 public final class NullLiteral extends Literal {
+  private static final long serialVersionUID = -1719066448853208388L;
 
   /**
    * This ctor is provided for reflection.

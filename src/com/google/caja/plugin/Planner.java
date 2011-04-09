@@ -359,6 +359,8 @@ public final class Planner {
   }
 
   static final class UnsatisfiableGoalException extends Exception {
+    private static final long serialVersionUID = -314824992249157529L;
+
     UnsatisfiableGoalException(String msg) { super(msg); }
   }
 }

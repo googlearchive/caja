@@ -26,6 +26,7 @@ import java.util.List;
  * @author mikesamuel@gmail.com
  */
 public final class ReturnStmt extends AbstractStatement {
+  private static final long serialVersionUID = 4757771638977210517L;
   private Expression returnValue;
 
   /** @param value unused.  This ctor is provided for reflection. */

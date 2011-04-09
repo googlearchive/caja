@@ -34,6 +34,7 @@ import java.util.List;
  */
 public final class WithStmt extends AbstractStatement
     implements NestedScope {
+  private static final long serialVersionUID = -466457790772474853L;
 
   /** @param value unused.  This ctor is provided for reflection. */
   @ReflectiveCtor

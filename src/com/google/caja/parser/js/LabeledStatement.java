@@ -38,6 +38,7 @@ import java.util.Map;
  * @author mikesamuel@gmail.com
  */
 public abstract class LabeledStatement extends AbstractStatement {
+  private static final long serialVersionUID = -1825047573111985986L;
   private final String label;
 
   protected LabeledStatement(

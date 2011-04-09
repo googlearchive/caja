@@ -34,6 +34,8 @@ import java.util.List;
  * @author ihab.awad@gmail.com (Ihab Awad)
  */
 public class ParseTreeNodeContainer extends AbstractParseTreeNode {
+  private static final long serialVersionUID = -1979856467228608958L;
+
   /** @param value unused.  This ctor is provided for reflection. */
   @ReflectiveCtor
   public ParseTreeNodeContainer(

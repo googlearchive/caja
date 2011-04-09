@@ -32,6 +32,8 @@ import javax.annotation.Nullable;
  */
 public abstract class AbstractExpression
     extends AbstractParseTreeNode implements Expression {
+  private static final long serialVersionUID = 6796876031318912717L;
+
   @ReflectiveCtor
   public AbstractExpression(
       FilePosition pos, Class<? extends ParseTreeNode> childClass) {

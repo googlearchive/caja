@@ -25,6 +25,7 @@ import java.util.List;
  * @author mikesamuel@gmail.com
  */
 public final class FinallyStmt extends AbstractStatement {
+  private static final long serialVersionUID = -3205499024908646434L;
   private Block body;
 
   /** @param value unused.  This ctor is provided for reflection. */

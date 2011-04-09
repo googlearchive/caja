@@ -35,6 +35,7 @@ import java.util.Collections;
  */
 public final class FunctionConstructor
     extends AbstractExpression implements NestedScope {
+  private static final long serialVersionUID = 4183249730129328478L;
   private Identifier identifier;
   private List<FormalParam> params;
   private Block body;

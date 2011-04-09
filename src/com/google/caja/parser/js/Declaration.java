@@ -29,6 +29,7 @@ import java.util.List;
  * @author mikesamuel@gmail.com
  */
 public class Declaration extends AbstractStatement {
+  private static final long serialVersionUID = 8412211687133669346L;
   private Identifier identifier;
   private Expression initializer;
 

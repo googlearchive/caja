@@ -29,6 +29,7 @@ import java.util.List;
  * @author mikesamuel@gmail.com
  */
 public final class ForEachLoop extends LabeledStatement implements NestedScope {
+  private static final long serialVersionUID = 5611785542136135478L;
   private Statement keyReceiver;
   private Expression container;
   private Statement body;

@@ -33,6 +33,7 @@ import java.io.Serializable;
  * @author mikesamuel@gmail.com
  */
 public final class Message implements Serializable {
+  private static final long serialVersionUID = -8562715364342936493L;
   private MessageTypeInt type;
   private MessageLevel level;
   private MessagePart[] parts;

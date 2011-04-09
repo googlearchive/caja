@@ -53,6 +53,8 @@ import java.util.Set;
  * @author mikesamuel@gmail.com
  */
 public final class DirectivePrologue extends AbstractStatement {
+  private static final long serialVersionUID = 2485949503702983868L;
+
   /** @param value unused.  This ctor is provided for reflection. */
   @ReflectiveCtor
   public DirectivePrologue(

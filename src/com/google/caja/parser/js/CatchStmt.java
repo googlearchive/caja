@@ -29,6 +29,7 @@ import java.util.List;
  * @author mikesamuel@gmail.com
  */
 public final class CatchStmt extends AbstractStatement {
+  private static final long serialVersionUID = 7105207645966261505L;
   private Declaration exception;
   private Block body;
 

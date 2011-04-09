@@ -28,6 +28,7 @@ import java.util.List;
  * @author ihab.awad@gmail.com
  */
 public class DoWhileLoop extends Loop {
+  private static final long serialVersionUID = 2725383192455487592L;
   private Statement body;
   private Expression condition;
 

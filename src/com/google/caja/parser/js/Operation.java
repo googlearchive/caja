@@ -36,6 +36,7 @@ import javax.annotation.Nullable;
  * @author mikesamuel@gmail.com
  */
 public abstract class Operation extends AbstractExpression {
+  private static final long serialVersionUID = -4339753364752801666L;
   private final Operator op;
 
   protected Operation(

@@ -23,6 +23,8 @@ import com.google.caja.parser.ParseTreeNode;
  * @author mikesamuel@gmail.com
  */
 public abstract class Loop extends LabeledStatement {
+  private static final long serialVersionUID = -4732426661456039338L;
+
   @ReflectiveCtor
   public Loop(
       FilePosition pos, String label,

@@ -27,6 +27,7 @@ import java.util.List;
  * @author mikesamuel@gmail.com
  */
 public final class RealLiteral extends NumberLiteral {
+  private static final long serialVersionUID = -2331544091012208500L;
   private final double value;
 
   /** @param children unused.  This ctor is provided for reflection. */

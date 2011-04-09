@@ -24,6 +24,7 @@ package com.google.caja.service;
  * @author ihab.awad@gmail.com (Ihab Awad)
  */
 public class InvalidArgumentsException extends Exception {
+  private static final long serialVersionUID = 4477255992360724145L;
 
   /**
    * @param detail detail information about the exception.

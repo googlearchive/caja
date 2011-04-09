@@ -29,6 +29,8 @@ import java.util.List;
  * @author mikesamuel@gmail.com
  */
 public final class FunctionDeclaration extends Declaration {
+  private static final long serialVersionUID = 4973243536242692075L;
+
   @ReflectiveCtor
   public FunctionDeclaration(
       FilePosition pos, Void value, List<? extends ParseTreeNode> children) {

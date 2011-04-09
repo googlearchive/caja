@@ -14,6 +14,7 @@
 
 package com.google.caja.parser;
 
+import java.io.Serializable;
 import java.util.AbstractList;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -25,7 +26,9 @@ import java.util.List;
  *
  * @author ihab.awad@gmail.com
  */
-final class ChildNodes<T extends ParseTreeNode> {
+final class ChildNodes<T extends ParseTreeNode> implements Serializable {
+  private static final long serialVersionUID = -3349416361229204091L;
+
   /**
    * The actual storage of collection elements. Constructed lazily in case it
    * is never used.
@@ -57,7 +60,9 @@ final class ChildNodes<T extends ParseTreeNode> {
    * but implementing it as a named class allows us to instantiate it lazily
    * (see getMutableFacet()).
    */
-  private class MutableFacet extends AbstractList<T> {
+  private class MutableFacet extends AbstractList<T> implements Serializable {
+    private static final long serialVersionUID = 3989291162782482786L;
+
     @Override
     public int size() { return getBackingList().size(); }
 

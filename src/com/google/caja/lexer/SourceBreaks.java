@@ -14,13 +14,16 @@
 
 package com.google.caja.lexer;
 
+import java.io.Serializable;
+
 /**
  * Encapsulates an {@link InputSource} and the positions of newlines in that
  * source file.
  *
  * @author mikesamuel@gmail.com
  */
-public final class SourceBreaks {
+public final class SourceBreaks implements Serializable {
+  private static final long serialVersionUID = 7399048719164090106L;
   private final InputSource src;
   private int nLines;
   /**

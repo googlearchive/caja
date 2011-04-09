@@ -35,6 +35,8 @@ import java.util.List;
  * @author ihab.awad@gmail.com
  */
 public final class UncajoledModule extends AbstractParseTreeNode {
+  private static final long serialVersionUID = 4647984501924442035L;
+
   /** @param value unused.  This ctor is provided for reflection. */
   @ReflectiveCtor
   public UncajoledModule(FilePosition pos,

@@ -29,6 +29,7 @@ import java.util.List;
  * @author mikesamuel@gmail.com
  */
 public final class ForLoop extends Loop implements NestedScope {
+  private static final long serialVersionUID = 295928890053083020L;
   private Statement initializer;
   private Expression condition;
   private Statement increment;

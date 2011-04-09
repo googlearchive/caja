@@ -37,6 +37,7 @@ import java.util.List;
  */
 public final class Directive extends AbstractParseTreeNode
     implements JsonMLCompatible {
+  private static final long serialVersionUID = 946831596035589021L;
 
   /**
    * The directive strings recognized by Caja.

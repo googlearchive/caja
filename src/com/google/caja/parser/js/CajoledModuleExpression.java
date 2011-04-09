@@ -30,6 +30,8 @@ import java.util.List;
  * @author maoziqing@gmail.com
  */
 public class CajoledModuleExpression extends AbstractExpression {
+  private static final long serialVersionUID = 4211878475486824928L;
+
   /**
    * @param value not used but required for reflection.
    */

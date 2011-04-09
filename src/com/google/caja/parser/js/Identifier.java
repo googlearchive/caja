@@ -38,6 +38,7 @@ import java.util.List;
  */
 public final class Identifier extends AbstractParseTreeNode
     implements JsonMLCompatible {
+  private static final long serialVersionUID = 4119434470934007127L;
   private final String name;
 
   @ReflectiveCtor

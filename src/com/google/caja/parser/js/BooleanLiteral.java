@@ -28,6 +28,7 @@ import java.util.List;
  * @author mikesamuel@gmail.com
  */
 public final class BooleanLiteral extends Literal {
+  private static final long serialVersionUID = 4249944021539711269L;
   public final boolean value;
 
   /** @param children unused.  This ctor is provided for reflection. */

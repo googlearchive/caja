@@ -24,6 +24,8 @@ import com.google.caja.reporting.RenderContext;
  * @author mikesamuel@gmail.com
  */
 public abstract class Literal extends AbstractExpression {
+  private static final long serialVersionUID = 2713667134417886694L;
+
   protected Literal(FilePosition pos) { super(pos, NoChildren.class); }
 
   @Override

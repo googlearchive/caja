@@ -31,6 +31,7 @@ import java.util.List;
  * @author mikesamuel@gmail.com
  */
 public final class RegexpLiteral extends Literal {
+  private static final long serialVersionUID = 4158496971004173179L;
   private final RegexpWrapper value;
 
   /** @param children unused.  This ctor is provided for reflection. */

@@ -22,6 +22,7 @@ package com.google.caja.service;
  * @author jasvir@gmail.com (Jasvir Nagra)
  */
 public class UnsupportedContentTypeException extends Exception {
+  private static final long serialVersionUID = -6268704959998061330L;
 
     public UnsupportedContentTypeException() {
       this("Unknown content type requested");

@@ -1519,6 +1519,8 @@ public final class Parser extends ParserBase {
    * final tree.
    */
   private static class ActualList extends AbstractExpression {
+    private static final long serialVersionUID = 4826666277822756805L;
+
     ActualList(List<Expression> actuals) {
       super(FilePosition.UNKNOWN, Expression.class);
       createMutation().appendChildren(actuals).execute();

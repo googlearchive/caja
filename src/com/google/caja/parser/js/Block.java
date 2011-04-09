@@ -30,6 +30,8 @@ import java.util.List;
  * @author mikesamuel@gmail.com
  */
 public final class Block extends AbstractStatement implements NestedScope {
+  private static final long serialVersionUID = 9160842282840140257L;
+
   /** @param value unused.  This ctor is provided for reflection. */
   @ReflectiveCtor
   public Block(

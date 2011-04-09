@@ -33,6 +33,8 @@ import java.util.List;
  * @author mikesamuel@gmail.com
  */
 public final class MultiDeclaration extends AbstractStatement {
+  private static final long serialVersionUID = 4634282561782526243L;
+
   /** @param value unused.  This ctor is provided for reflection. */
   @ReflectiveCtor
   public MultiDeclaration(

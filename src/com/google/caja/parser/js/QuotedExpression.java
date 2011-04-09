@@ -27,6 +27,8 @@ import com.google.javascript.jscomp.jsonml.JsonML;
  * @author metaweta@gmail.com (Mike Stay)
  */
 public final class QuotedExpression extends AbstractExpression {
+  private static final long serialVersionUID = 2833674333751082835L;
+
   /** @param value unused.  This ctor is provided for reflection. */
   @ReflectiveCtor
   public QuotedExpression(

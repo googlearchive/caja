@@ -38,6 +38,8 @@ import java.util.List;
  * @author mikesamuel@gmail.com
  */
 public final class ObjectConstructor extends AbstractExpression {
+  private static final long serialVersionUID = -6215544894374731498L;
+
   /** @param value unused.  This ctor is provided for reflection. */
   @ReflectiveCtor
   public ObjectConstructor(

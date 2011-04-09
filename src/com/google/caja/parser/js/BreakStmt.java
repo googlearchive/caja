@@ -31,6 +31,7 @@ import java.util.Map;
  * @author mikesamuel@gmail.com
  */
 public final class BreakStmt extends AbstractStatement {
+  private static final long serialVersionUID = -8486796747707954777L;
   private final String label;
 
   /** @param children unused.  This ctor is provided for reflection. */

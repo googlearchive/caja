@@ -27,6 +27,7 @@ import java.util.List;
  * @author mikesamuel@gmail.com
  */
 public final class IntegerLiteral extends NumberLiteral {
+  private static final long serialVersionUID = -8933353016397006347L;
   /**
    * The minimum value that can be represented in IEEE-754 64b floating point.
    * With a 52 bit mantissa, this is -(1 << 52).

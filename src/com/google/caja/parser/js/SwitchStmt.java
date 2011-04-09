@@ -30,6 +30,8 @@ import java.util.Map;
  * @author mikesamuel@gmail.com
  */
 public final class SwitchStmt extends LabeledStatement {
+  private static final long serialVersionUID = -7284973291082281855L;
+
   @ReflectiveCtor
   public SwitchStmt(
       FilePosition pos, String label, List<? extends ParseTreeNode> children) {

@@ -144,6 +144,7 @@ public final class NameContext<NAME, BINDING> {
   public Iterator<String> getNameGenerator() { return nameGenerator; }
 
   public static class RedeclarationException extends CajaException {
+    private static final long serialVersionUID = -1818955396015380126L;
     public RedeclarationException(Message m, Throwable th) { super(m, th); }
     public RedeclarationException(Message m) { this(m, null); }
   }

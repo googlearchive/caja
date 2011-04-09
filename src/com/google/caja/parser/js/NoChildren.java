@@ -26,6 +26,8 @@ import com.google.javascript.jscomp.jsonml.JsonML;
  * @author mikesamuel@gmail.com
  */
 public final class NoChildren extends AbstractExpression {
+  private static final long serialVersionUID = -7279409933773260296L;
+
   private NoChildren() { super(null, null); /* Not instantiable. */ }
   @Override
   public Object getValue() { throw new SomethingWidgyHappenedError(); }

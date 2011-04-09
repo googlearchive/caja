@@ -36,6 +36,7 @@ import java.util.List;
  * @author mikesamuel@gmail.com
  */
 public final class CaseStmt extends SwitchCase {
+  private static final long serialVersionUID = -7270883914072075826L;
   private Expression caseValue;
   private Block body;
 

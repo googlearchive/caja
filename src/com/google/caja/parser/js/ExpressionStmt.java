@@ -29,6 +29,7 @@ import java.util.List;
  * @author mikesamuel@gmail.com
  */
 public final class ExpressionStmt extends AbstractStatement {
+  private static final long serialVersionUID = 4277971387206538109L;
   private Expression expr;
 
   /** @param value unused.  This ctor is provided for reflection. */

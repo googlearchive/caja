@@ -30,6 +30,8 @@ import java.util.List;
  * @author mikesamuel@gmail.com
  */
 public final class TranslatedCode extends AbstractStatement {
+  private static final long serialVersionUID = -6877925345465957418L;
+
   /** @param value unused.  This ctor is provided for reflection. */
   @ReflectiveCtor
   public TranslatedCode(

@@ -14,6 +14,8 @@
 
 package com.google.caja.util;
 
+import java.io.Serializable;
+
 /**
  * A key into {@link SyntheticAttributes} which asserts the type of the
  * corresponding value.
@@ -21,8 +23,8 @@ package com.google.caja.util;
  * @author mikesamuel@gmail.com
  */
 public final class SyntheticAttributeKey<T>
-    implements Comparable<SyntheticAttributeKey<?>> {
-
+    implements Comparable<SyntheticAttributeKey<?>>, Serializable {
+  private static final long serialVersionUID = -419622209228551075L;
   private final Class<T> type;
   private final String name;
 

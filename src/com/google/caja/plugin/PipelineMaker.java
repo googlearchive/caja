@@ -84,11 +84,13 @@ public final class PipelineMaker {
 
   private static final Map<String, List<Tool>> PLAN_CACHE
       = Collections.synchronizedMap(new LinkedHashMap<String, List<Tool>>() {
-    @Override
-    public boolean removeEldestEntry(Map.Entry<String, List<Tool>> e) {
-      return this.size() > 32;
-    }
-  });
+        private static final long serialVersionUID = 8484573795809352579L;
+
+        @Override
+        public boolean removeEldestEntry(Map.Entry<String, List<Tool>> e) {
+          return this.size() > 32;
+        }
+      });
 
   /**
    * Appends pipeline stages to the argument.

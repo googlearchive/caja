@@ -14,6 +14,7 @@
 
 package com.google.caja.util;
 
+import java.io.Serializable;
 import java.util.AbstractMap;
 import java.util.Collections;
 import java.util.HashMap;
@@ -27,7 +28,9 @@ import java.util.Set;
  * @author mikesamuel@gmail.com
  */
 public final class SyntheticAttributes
-    extends AbstractMap<SyntheticAttributeKey<?>, Object> {
+    extends AbstractMap<SyntheticAttributeKey<?>, Object>
+    implements Serializable {
+  private static final long serialVersionUID = 1124793823020078634L;
   /**
    * True iff this has its own copy without clobbering another maps attributes.
    * The copy constructor below does copy-on-write of the underlying map.
