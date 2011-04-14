@@ -17,6 +17,7 @@ package com.google.caja.tools;
 import com.google.caja.plugin.BuildServiceImplementation;
 import com.google.caja.util.Lists;
 import com.google.caja.util.Sets;
+import com.google.caja.util.Strings;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -59,6 +60,9 @@ public abstract class AbstractCajaAntTask extends Task {
 
   @Override
   public void execute() throws BuildException {
+    // TODO(jasvir): No-op that forces Strings to be loaded and initialized
+    // before classloading classes that use it eg. in "ant jsdocs"
+    Strings.toLowerCase("");
     try {
       for (FileGroup input : inputs) { input.requireExecutable(); }
       for (Output output : outputs) { output.requireExecutable(); }
