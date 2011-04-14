@@ -718,7 +718,7 @@ var ___, cajaVM, safeJSON;
 
   function tamePreviouslyConstructedObject(f, fc) {
     var tc = tame(fc);
-    if (tc.IS_TAMED_CTOR___) {
+    if (tc && tc.IS_TAMED_CTOR___) {
       var t = new tc(TAME_CTOR_CREATE_OBJECT_ONLY);
       tameObjectWithMethods(f, t);
       return t;
