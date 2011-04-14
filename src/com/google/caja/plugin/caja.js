@@ -102,7 +102,7 @@ var caja = (function () {
    *     the newly created frame group.
    */
   function configure(config, callback) {
-    var cajaServer = String(config.cajaServer) || 'http://caja.appspot.com/';
+    var cajaServer = String(config.cajaServer || 'http://caja.appspot.com/');
     var debug = Boolean(config.debug);
 
     function loadCajaFrame(filename, callback) {
@@ -128,6 +128,12 @@ var caja = (function () {
 
     loadCajaFrame('es53-taming-frame', function (tamingFrame) {
       var tamingWindow = tamingFrame.contentWindow;
+      var cajolingServiceClient =
+          tamingWindow.cajolingServiceClientMaker(
+              joinUrl(cajaServer, 'cajole'),
+              tamingWindow.jsonRestTransportMaker(),
+              true,
+              config.debug);
 
       /**
        * Tame an object graph by applying reasonable defaults to all structures
@@ -250,11 +256,9 @@ var caja = (function () {
           var guestWindow = guestFrame.contentWindow;
           var imports = {};
 
-          var loader = guestWindow.scriptModuleLoadMaker(
+          var loader = guestWindow.loadModuleMaker(
               documentBaseUrl(),
-              undefined,  // default module ID resolver
-              new guestWindow.CajolingServiceFinder(
-                  joinUrl(cajaServer, 'cajole'), debug));
+              cajolingServiceClient);
 
           if (div) {
             var outerContainer = div.ownerDocument.createElement('div');
@@ -299,7 +303,7 @@ var caja = (function () {
                  *     completion value of the guest code.
                  */
                 run: function(extraImports, opt_callback) {
-                    if (!!extraImports) {
+                    if (!extraImports) {
                       extraImports = {};
                     }
                     if (!('onerror' in extraImports)) {

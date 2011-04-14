@@ -1,0 +1,191 @@
+<!--
+ - Copyright (C) 2011 Google Inc.
+ -
+ - Licensed under the Apache License, Version 2.0 (the "License");
+ - you may not use this file except in compliance with the License.
+ - You may obtain a copy of the License at
+ -
+ -      http://www.apache.org/licenses/LICENSE-2.0
+ -
+ - Unless required by applicable law or agreed to in writing, software
+ - distributed under the License is distributed on an "AS IS" BASIS,
+ - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ - See the License for the specific language governing permissions and
+ - limitations under the License.
+-->
+
+<html>
+  <head>
+    <title>Browser test case</title>
+
+    <link rel="stylesheet" href="browser-test.css" type="text/css">
+
+    <script type="text/javascript" src="../console.js"></script>
+    <script type="text/javascript" src="../../../../js/jsunit/2.2/jsUnitCore.js"></script>
+    <script type="text/javascript" src="jsunit.js"></script>
+    <script type="text/javascript" src="../es53.js"></script>
+    <script type="text/javascript" src="../cajita-promise.js"></script>
+    <script type="text/javascript" src="uri.js"></script>
+    <script type="text/javascript" src="json-rest-transport.js"></script>
+
+    <script type="text/javascript" src="cajoling-service-client.js"></script>
+  </head>
+  <body>
+    <div id="automatedTestingReadyIndicator"></div>
+
+    <div id="testBasicStuff" class="testcontainer waiting">
+      testBasicStuff
+    </div>
+    <script type="text/javascript">
+      jsunitRegister('testBasicStuff',
+                     function testBasicStuff() {
+        var c = cajolingServiceClientMaker(
+            'http://localhost:8000/caja/cajole',
+            jsonRestTransportMaker(),
+            true,
+            true);
+        assertEquals('function', (typeof c.cajoleContent));
+        assertEquals('function', (typeof c.cajoleUrl));
+        jsunitPass('testBasicStuff');
+      });
+    </script>
+
+    <div id="testCajoleUrl" class="testcontainer waiting">
+      testCajoleUrl
+    </div>
+    <script type="text/javascript">
+      jsunitRegister('testCajoleUrl',
+                     function testCajoleUrl() {
+        var c = cajolingServiceClientMaker(
+            'http://localhost:8000/caja/cajole',
+            jsonRestTransportMaker(),
+            true,
+            true);
+        Q.when(
+            c.cajoleUrl(
+                'http://localhost:8000/ant-lib/com/google/caja/a.js',
+                'application/javascript'),
+            jsunitCallback(function(m) {
+              assertTrue(/___\.loadModule/.test(m.js));
+              jsunitPass('testCajoleUrl');
+            }),
+            jsunitCallback(function(e) {
+              throw e;
+            }));
+        console.log('exiting testCajoleUrl');
+      });
+    </script>
+
+    <div id="testCajoleContent" class="testcontainer waiting">
+      testCajoleContent
+    </div>
+    <script type="text/javascript">
+      jsunitRegister('testCajoleContent',
+                     function testCajoleContent() {
+        var c = cajolingServiceClientMaker(
+            'http://localhost:8000/caja/cajole',
+            jsonRestTransportMaker(),
+            true,
+            true);
+        Q.when(
+            c.cajoleContent(
+                'http://example.com/foo.js',
+                'var x = a + b;',
+                'application/javascript'),
+            jsunitCallback(function(m) {
+              assertTrue(/___\.loadModule/.test(m.js));
+              jsunitPass('testCajoleContent');
+            }),
+            jsunitCallback(function(e) {
+              throw e;
+            }));
+      });
+    </script>
+    
+    <div id="testCajolingError" class="testcontainer waiting">
+      testCajolingError
+    </div>
+    <script type="text/javascript">
+      jsunitRegister('testCajolingError',
+                     function testCajolingError() {
+        var c = cajolingServiceClientMaker(
+            'http://localhost:8000/caja/cajole',
+            jsonRestTransportMaker(),
+            true,
+            true);
+        Q.when(
+            c.cajoleContent(
+                'http://example.com/foo.js',
+                'var var x;',  // Syntax error
+                'application/javascript'),
+            jsunitCallback(function(m) {
+              throw 'Should not have returned content';
+            }),
+            jsunitCallback(function(e) {
+              jsunitPass('testCajolingError');
+            }));
+      });
+    </script>
+
+    <div id="testEmitHtmlInJsTrue" class="testcontainer waiting">
+      testEmitHtmlInJsTrue
+    </div>
+    <script type="text/javascript">
+      jsunitRegister('testEmitHtmlInJsTrue',
+                     function testEmitHtmlInJsTrue() {
+        var c = cajolingServiceClientMaker(
+            'http://localhost:8000/caja/cajole',
+            jsonRestTransportMaker(),
+            true,
+            true);
+        Q.when(
+            c.cajoleContent(
+                'http://example.com/foo.html',
+                '<p>some html content</p>',
+                'text/html'),
+            jsunitCallback(function(m) {
+              assertTrue(/___\.loadModule/.test(m.js));
+              assertTrue(/some html content/.test(m.js));
+              jsunitPass('testEmitHtmlInJsTrue');
+            }),
+            jsunitCallback(function(e) {
+              throw e;
+            }));
+      });
+    </script>
+
+    <div id="testEmitHtmlInJsFalse" class="testcontainer waiting">
+      testEmitHtmlInJsFalse
+    </div>
+    <script type="text/javascript">
+      jsunitRegister('testEmitHtmlInJsFalse',
+                     function testEmitHtmlInJsFalse() {
+        var c = cajolingServiceClientMaker(
+            'http://localhost:8000/caja/cajole',
+            jsonRestTransportMaker(),
+            false,
+            true);
+        Q.when(
+            c.cajoleContent(
+                'http://example.com/foo.html',
+                '<p>some html content</p>',
+                'text/html'),
+            jsunitCallback(function(m) {
+              assertTrue(/___\.loadModule/.test(m.js));
+              assertFalse(/some html content/.test(m.js));
+              assertTrue(/some html content/.test(m.html));
+              jsunitPass('testEmitHtmlInJsFalse');
+            }),
+            jsunitCallback(function(e) {
+              throw e;
+            }));
+      });
+    </script>
+    
+    <script type="text/javascript">
+      document.getElementById('automatedTestingReadyIndicator')
+          .className = 'readytotest';
+      jsunitRun();
+    </script>
+  </body>
+</html>

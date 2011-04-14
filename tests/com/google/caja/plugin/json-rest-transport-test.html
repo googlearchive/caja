@@ -1,0 +1,130 @@
+<!--
+ - Copyright (C) 2011 Google Inc.
+ -
+ - Licensed under the Apache License, Version 2.0 (the "License");
+ - you may not use this file except in compliance with the License.
+ - You may obtain a copy of the License at
+ -
+ -      http://www.apache.org/licenses/LICENSE-2.0
+ -
+ - Unless required by applicable law or agreed to in writing, software
+ - distributed under the License is distributed on an "AS IS" BASIS,
+ - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ - See the License for the specific language governing permissions and
+ - limitations under the License.
+-->
+
+<html>
+  <head>
+    <title>Browser test case</title>
+
+    <link rel="stylesheet" href="browser-test.css" type="text/css">
+
+    <script type="text/javascript" src="../console.js"></script>
+    <script type="text/javascript" src="../../../../js/jsunit/2.2/jsUnitCore.js"></script>
+    <script type="text/javascript" src="jsunit.js"></script>
+    <script type="text/javascript" src="../es53.js"></script>
+    <script type="text/javascript" src="../cajita-promise.js"></script>
+    <script type="text/javascript" src="uri.js"></script>
+    
+    <script type="text/javascript" src="json-rest-transport.js"></script>
+  </head>
+  <body>
+    <div id="automatedTestingReadyIndicator"></div>
+
+    <div id="testNoContent" class="testcontainer waiting">
+      testNoContent
+    </div>
+    <script type="text/javascript">
+      jsunitRegister('testNoContent',
+                     function testNoContent() {
+        var c = jsonRestTransportMaker().request(
+            'http://localhost:8000/caja/jsonTest?testParam=abc123');
+        Q.when(c, function(result) {
+          assertTrue(result.sanityCheck === 'sane');
+          assertTrue(result.testParam === 'abc123');
+          assertTrue(result.content === '');
+          assertTrue(result.contentType === '');
+          jsunitPass('testNoContent');
+        });
+      });
+    </script>
+
+    <div id="testWithContent" class="testcontainer waiting">
+      testWithContent
+    </div>
+    <script type="text/javascript">
+      jsunitRegister('testWithContent',
+                     function testWithContent() {
+        var c = jsonRestTransportMaker().request(
+            'http://localhost:8000/caja/jsonTest?testParam=abc123',
+            'hello world from testWithContent',
+            'text/plain');
+        Q.when(c, function(result) {
+          assertTrue(result.sanityCheck === 'sane');
+          assertTrue(result.testParam === 'abc123');
+          assertTrue(result.content === 'hello world from testWithContent');
+          assertTrue(/text\/plain.*/.test(result.contentType));
+          jsunitPass('testWithContent');
+        });
+      });
+    </script>
+
+    <div id="testFailure" class="testcontainer waiting">
+      testFailure
+    </div>
+    <script type="text/javascript">
+      jsunitRegister('testFailure',
+                     function testFailure() {
+        var c = jsonRestTransportMaker().request(
+            'http://localhost:8000/non-existent-pathname-that-fails',
+            'hello world from testFailure',
+            'text/plain');
+        Q.when(c, function(result) {
+          throw new Error('Test must fail');
+        }, function(err) {
+          jsunitPass('testFailure');
+        });
+      });
+    </script>
+    
+    <div id="testJsonpTransport" class="testcontainer waiting">
+      testJsonpTransport
+    </div>
+    <script type="text/javascript">
+      jsunitRegister('testJsonpTransport',
+                     function testJsonpTransport() {
+        var c = jsonRestTransportMaker('jsonp').request(
+            'http://localhost:8000/caja/jsonTest?testParam=abc123');
+        Q.when(c, function(result) {
+          assertTrue(result.sanityCheck === 'sane');
+          assertTrue(result.testParam === 'abc123');
+          assertTrue(result.content === '');
+          assertTrue(result.contentType === '');
+          jsunitPass('testJsonpTransport');
+        });
+      });
+    </script>
+
+    <div id="testInputUrlWithNoParams" class="testcontainer waiting">
+      testInputUrlWithNoParams
+    </div>
+    <script type="text/javascript">
+      jsunitRegister('testInputUrlWithNoParams',
+                     function testInputUrlWithNoParams() {
+        var c = jsonRestTransportMaker().request(
+            'http://localhost:8000/caja/jsonTest');
+        Q.when(c, function(result) {
+          assertTrue(result.sanityCheck === 'sane');
+          jsunitPass('testInputUrlWithNoParams');
+        });
+      });
+    </script>
+
+    <script type="text/javascript">
+      document.getElementById('automatedTestingReadyIndicator')
+          .className = 'readytotest';
+      jsunitRun();
+    </script>
+  </body>
+</html>

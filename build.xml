@@ -818,8 +818,9 @@
       <input file="${src}/com/google/caja/plugin/cssparser.js"/>
       <input file="${src}/com/google/caja/plugin/domita.js"/>
       <input file="${src}/com/google/caja/plugin/uri.js"/>
-      <input file="${src}/com/google/caja/cajita-module.js"/>
       <input file="${src}/com/google/caja/cajita-promise.js"/>
+      <input file="${src}/com/google/caja/plugin/json-rest-transport.js"/>
+      <input file="${src}/com/google/caja/plugin/cajoling-service-client.js"/>
       <input file="${src}/com/google/caja/plugin/taming-frame.js"/>      
       <input file="${src}/com/google/caja/plugin/caja-iframe-done.js"/>
     </transform>
@@ -836,8 +837,9 @@
         <file name="${src}/com/google/caja/plugin/cssparser.js"/>
         <file name="${src}/com/google/caja/plugin/domita.js"/>
         <file name="${src}/com/google/caja/plugin/uri.js"/>
-        <file name="${src}/com/google/caja/cajita-module.js"/>
         <file name="${src}/com/google/caja/cajita-promise.js"/>
+        <file name="${src}/com/google/caja/plugin/json-rest-transport.js"/>
+        <file name="${src}/com/google/caja/plugin/cajoling-service-client.js"/>
         <file name="${src}/com/google/caja/plugin/taming-frame.js"/>      
         <file name="${src}/com/google/caja/plugin/caja-iframe-done.js"/>
       </filelist>
@@ -848,10 +850,9 @@
       <input file="${third_party}/js/json_sans_eval/json_sans_eval.js"/>
       <input file="${src}/com/google/caja/es53.js"/>
       <input file="${src}/com/google/caja/plugin/uri.js"/>
-      <input file="${src}/com/google/caja/cajita-module.js"/>
       <input file="${src}/com/google/caja/cajita-promise.js"/>
-      <input file="${src}/com/google/caja/plugin/taming-frame.js"/>
       <input file="${src}/com/google/caja/plugin/prepare-modules.js"/>
+      <input file="${src}/com/google/caja/plugin/load-module.js"/>
       <input file="${src}/com/google/caja/plugin/caja-iframe-done.js"/>
     </transform>
     <concat destfile="${lib}/com/google/caja/plugin/es53-guest-frame.js">
@@ -859,10 +860,9 @@
         <file name="${third_party}/js/json_sans_eval/json_sans_eval.js"/>
         <file name="${src}/com/google/caja/es53.js"/>
         <file name="${src}/com/google/caja/plugin/uri.js"/>
-        <file name="${src}/com/google/caja/cajita-module.js"/>
         <file name="${src}/com/google/caja/cajita-promise.js"/>
-        <file name="${src}/com/google/caja/plugin/taming-frame.js"/>
         <file name="${src}/com/google/caja/plugin/prepare-modules.js"/>
+        <file name="${src}/com/google/caja/plugin/load-module.js"/>
         <file name="${src}/com/google/caja/plugin/caja-iframe-done.js"/>
       </filelist>
     </concat>
@@ -1052,7 +1052,6 @@
       <fileset dir="${src}">
         <include name="**/caja/cajita-debugmode.js"/>
         <include name="**/caja/cajita-module-orig.js"/>        
-        <include name="**/caja/cajita-module.js"/>
         <include name="**/caja/cajita-promise.js"/>
         <include name="**/caja/cajita.js"/>
         <include name="**/caja/es53.js"/>

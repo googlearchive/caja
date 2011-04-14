@@ -79,6 +79,9 @@ public abstract class BrowserTestCase extends CajaTestCase {
                                     subdir + service))),
         service);
 
+      // Hook for subclass to add more servlets
+      addServlets(servlets);
+
       final HandlerList handlers = new HandlerList();
       handlers.setHandlers(new Handler[] {
           caja_static,
@@ -255,6 +258,13 @@ public abstract class BrowserTestCase extends CajaTestCase {
     sb.append(']');
     return sb.toString();
   }
+
+  /**
+   * Add servlets as desired specific to a given test case.
+   *
+   * @param servlets a Jetty Context to which servlets can be added.
+   */
+  protected void addServlets(Context servlets) { }
 
   public interface Check {
     boolean run();

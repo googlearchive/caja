@@ -50,6 +50,15 @@
 
   function uriCallback(uri, mimeType) { return uri; }
 
+  function registerTest(name, f) {
+    var e = document.createElement('div');
+    e.innerHTML = 'Test ' + name;
+    e.setAttribute('id', name);
+    e.setAttribute('class', 'testcontainer waiting');
+    document.body.appendChild(e);
+    jsunitRegister(name, f);
+  }
+
   caja.configure({
     cajaServer: 'http://localhost:8000/caja',
     debug: true
@@ -57,7 +66,7 @@
 
     // TODO(ihab.awad): Test 'base url' functionality, esp. for "content" cases
 
-    jsunitRegister('testContentCajoledHtml', function testContentCajoledHtml() {
+    registerTest('testContentCajoledHtml', function testContentCajoledHtml() {
       fetch('es53-test-guest.out.html', function(resp) {
         var htmlAndScript = splitHtmlAndScript(resp);
         var div = createDiv();
@@ -67,20 +76,20 @@
                .run({}, function (result) {
             assertStringContains('static html', div.innerHTML);
             assertStringContains('dynamic html', div.innerHTML);
-            jsunit.pass('testContentCajoledHtml');
+            jsunitPass('testContentCajoledHtml');
           });
         });
       });
     });
 
-    jsunitRegister('testContentCajoledJs', function testContentCajoledJs() {
+    registerTest('testContentCajoledJs', function testContentCajoledJs() {
       fetch('es53-test-guest.out.js', function(script) {
         frameGroup.makeES5Frame(undefined, uriCallback, function (frame) {
           var extraImports = { x: 4, y: 3 };
           frame.contentCajoled(undefined, script, undefined)
                .run(extraImports, function (result) {
             assertEquals(12, result);
-            jsunit.pass('testContentCajoledJs');
+            jsunitPass('testContentCajoledJs');
           });
         });
       });
@@ -110,23 +119,23 @@
     // jsunitRegister('testContentHtml', function testContentHtml() { });
     // jsunitRegister('testContentJs', function testContentJs() { });
 
-    jsunitRegister('testUrlHtml', function testUrlHtml() {
+    registerTest('testUrlHtml', function testUrlHtml() {
       var div = createDiv();
       frameGroup.makeES5Frame(div, uriCallback, function (frame) {
         frame.url('es53-test-guest.html').run({}, function (result) {
           assertStringContains('static html', div.innerHTML);
           assertStringContains('dynamic html', div.innerHTML);
-          jsunit.pass('testUrlHtml');
+          jsunitPass('testUrlHtml');
         });
       });
     });
 
-    jsunitRegister('testUrlJs', function testUrlJs() {
+    registerTest('testUrlJs', function testUrlJs() {
       frameGroup.makeES5Frame(undefined, uriCallback, function (frame) {
         var extraImports = { x: 4, y: 3 };
         frame.url('es53-test-guest.js').run(extraImports, function (result) {
           assertEquals(12, result);
-          jsunit.pass('testUrlCajoledJs');
+          jsunitPass('testUrlJs');
         });
       });
     });

@@ -226,6 +226,17 @@ function jsunitCallback(aFunction, opt_id) {
            : callback;
 }
 
+function jsunitPass(id) {
+  jsunit.pass(id);
+  var node = document.getElementById(id);
+  if (!node) return;
+  node.appendChild(document.createTextNode('Passed ' + id));
+  var cl = node.className || '';
+  cl = cl.replace(/\b(clickme|waiting)\b\s*/g, '');
+  cl += ' passed';
+  node.className = cl;
+}
+
 /** Aim high and you might miss the moon! */
 function expectFailure(shouldFail, opt_msg, opt_failFilter) {
   try {
