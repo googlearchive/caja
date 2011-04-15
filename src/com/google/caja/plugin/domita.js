@@ -1622,7 +1622,13 @@ var attachDocumentStub = (function () {
       this.node___ = node;
       this.childrenEditable___ = editable && childrenEditable;
       this.FERAL_TWIN___ = node;
-      node.TAMED_TWIN___ = this;
+      try {
+        // bug 1330 IE<=8 doesn't allow arbitrary properties on text nodes,
+        // so this can fail, but failures are mostly harmless.
+        node.TAMED_TWIN___ = this;
+      } catch (ex) {
+        ___.log("Warning: couldn't set TAMED_TWIN___ for " + node);
+      }
       TameNode.call(this, editable);
     }
     ___.extend(TameBackedNode, TameNode);

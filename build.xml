@@ -1103,10 +1103,11 @@
 
   <target name="PlaygroundFE" depends="PlaygroundTimestamp, PlaygroundSupportingFiles"
     unless="uptodate.playground" description="Playground Front End">
-    <condition property="gwt.target.module"
-        value="com.google.caja.demos.playground.Playground"
-        else="com.google.caja.demos.playground.Playground_dev">
-      <istrue value="${gwt.productionMode}"/>
+    <condition
+        property="gwt.target.module"
+        value="com.google.caja.demos.playground.Playground_dev"
+        else="com.google.caja.demos.playground.Playground">
+      <istrue value="${gwt.devground}"/>
     </condition>
     <java failonerror="true" fork="true"
      classname="com.google.gwt.dev.Compiler">
@@ -1830,7 +1831,11 @@
     <property name="tools.ancillary.excludes" value="**/caja/tools/**/*.java" />
   </target>
 
-  <target name="production" depends="" description="Turns on multiple gwt permutations.">
-    <property name="gwt.productionMode" value="true" />
+  <target name="production" depends="" description="obsolete, ignored"/>
+
+  <target name="devground" depends=""
+          description="playground with only one GWT permutation">
+    <property name="gwt.devground" value="true"/>
+    <antcall target="playground"/>
   </target>
 </project>

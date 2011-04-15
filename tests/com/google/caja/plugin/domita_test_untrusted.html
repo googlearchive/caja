@@ -485,6 +485,8 @@ Test row cell
   </select>
 </div>
 
+<div class="testcontainer" id="test-text-node">text</div>
+
 <p class="testcontainer" id="test-body-classes">
   <span id="test-body-classes-yes">italic since body has class foo</span> /
   <span id="test-body-classes-no">normal since body has no class bar</span><br>
@@ -3513,6 +3515,14 @@ jsunitRegister('testSelectedIndex',
   assertEquals(2, document.getElementById('test-selected-index-1').
       options.selectedIndex);
   pass('test-selected-index');
+});
+
+// bug 1330, text nodes on IE
+jsunitRegister('testTextNode',
+               function testTextNode() {
+  var el = document.getElementById('test-text-node');
+  assertEquals('text', el.firstChild.nodeValue);
+  pass('test-text-node');
 });
 
 // form:onreset uses the same logic path as input:onfocus
