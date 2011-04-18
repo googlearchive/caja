@@ -807,6 +807,8 @@
     <transform>
       <output file="${lib}/com/google/caja/plugin/es53-taming-frame.opt.js"
        language="javascript" renderer="minify"/>
+      <output file="${lib}/com/google/caja/plugin/es53-taming-frame.js"
+       language="javascript" renderer="concat"/>
       <input file="${third_party}/js/json_sans_eval/json_sans_eval.js"/>
       <input file="${src}/com/google/caja/es53.js"/>
       <input file="${src}/com/google/caja/plugin/unicode.js"/>
@@ -824,29 +826,11 @@
       <input file="${src}/com/google/caja/plugin/taming-frame.js"/>      
       <input file="${src}/com/google/caja/plugin/caja-iframe-done.js"/>
     </transform>
-    <concat destfile="${lib}/com/google/caja/plugin/es53-taming-frame.js">
-      <filelist>
-        <file name="${third_party}/js/json_sans_eval/json_sans_eval.js"/>
-        <file name="${src}/com/google/caja/es53.js"/>
-        <file name="${src}/com/google/caja/plugin/unicode.js"/>
-        <file name="${lib}/com/google/caja/plugin/css-defs.js"/>
-        <file name="${lib}/com/google/caja/plugin/html4-defs.js"/>
-        <file name="${src}/com/google/caja/plugin/html-sanitizer.js"/>
-        <file name="${src}/com/google/caja/plugin/html-emitter.js"/>
-        <file name="${src}/com/google/caja/plugin/bridal.js"/>
-        <file name="${src}/com/google/caja/plugin/cssparser.js"/>
-        <file name="${src}/com/google/caja/plugin/domita.js"/>
-        <file name="${src}/com/google/caja/plugin/uri.js"/>
-        <file name="${src}/com/google/caja/cajita-promise.js"/>
-        <file name="${src}/com/google/caja/plugin/json-rest-transport.js"/>
-        <file name="${src}/com/google/caja/plugin/cajoling-service-client.js"/>
-        <file name="${src}/com/google/caja/plugin/taming-frame.js"/>      
-        <file name="${src}/com/google/caja/plugin/caja-iframe-done.js"/>
-      </filelist>
-    </concat>
     <transform>
       <output file="${lib}/com/google/caja/plugin/es53-guest-frame.opt.js"
        language="javascript" renderer="minify"/>
+      <output file="${lib}/com/google/caja/plugin/es53-guest-frame.js"
+       language="javascript" renderer="concat"/>
       <input file="${third_party}/js/json_sans_eval/json_sans_eval.js"/>
       <input file="${src}/com/google/caja/es53.js"/>
       <input file="${src}/com/google/caja/plugin/uri.js"/>
@@ -855,17 +839,6 @@
       <input file="${src}/com/google/caja/plugin/load-module.js"/>
       <input file="${src}/com/google/caja/plugin/caja-iframe-done.js"/>
     </transform>
-    <concat destfile="${lib}/com/google/caja/plugin/es53-guest-frame.js">
-      <filelist>
-        <file name="${third_party}/js/json_sans_eval/json_sans_eval.js"/>
-        <file name="${src}/com/google/caja/es53.js"/>
-        <file name="${src}/com/google/caja/plugin/uri.js"/>
-        <file name="${src}/com/google/caja/cajita-promise.js"/>
-        <file name="${src}/com/google/caja/plugin/prepare-modules.js"/>
-        <file name="${src}/com/google/caja/plugin/load-module.js"/>
-        <file name="${src}/com/google/caja/plugin/caja-iframe-done.js"/>
-      </filelist>
-    </concat>
     <transform>
       <output file="${lib}/com/google/caja/plugin/module-promise-minified.js"
        language="javascript" renderer="minify"/>
@@ -874,11 +847,8 @@
       <input file="${src}/com/google/caja/cajita-promise.js"/>
     </transform>
     <transform>
-      <!-- This file is loaded into an iframe by caja.js in debug mode -->
       <output file="${lib}/com/google/caja/plugin/caja-iframe.js"
-       language="javascript" renderer="pretty"/>
-      <!-- TODO(kpreid): use a renderer that doesn't alter the formatting and
-           just concats. -->
+       language="javascript" renderer="concat"/>
       <input file="${third_party}/js/json_sans_eval/json_sans_eval.js"/>
       <input file="${src}/com/google/caja/cajita.js"/>
       <input file="${src}/com/google/caja/cajita-debugmode.js"/> <!-- added -->
@@ -900,26 +870,25 @@
       <input file="${src}/com/google/caja/plugin/caja-iframe-done.js"/>
     </transform>
     <transform>
-      <!-- This file is loaded into an iframe by caja.js in production mode -->
       <output file="${lib}/com/google/caja/plugin/caja-iframe-minified.js"
        language="javascript" renderer="minify"/>
-       <input file="${third_party}/js/json_sans_eval/json_sans_eval.js"/>
-       <input file="${src}/com/google/caja/cajita.js"/>
-       <input file="${src}/com/google/caja/plugin/unicode.js"/>
-       <input file="${lib}/com/google/caja/plugin/css-defs.js"/>
-       <input file="${lib}/com/google/caja/plugin/html4-defs.js"/>
-       <input file="${src}/com/google/caja/plugin/html-sanitizer.js"/>
-       <input file="${src}/com/google/caja/plugin/html-emitter.js"/>
-       <input file="${src}/com/google/caja/plugin/bridal.js"/>
-       <input file="${src}/com/google/caja/plugin/cssparser.js"/>
-       <input file="${src}/com/google/caja/plugin/domita.js"/>
-       <input file="${src}/com/google/caja/plugin/capture-valija.js"/>
-       <input file="${lib}/com/google/caja/plugin/valija.out.js"/>
-       <input file="${src}/com/google/caja/plugin/uri.js"/>
-       <input file="${src}/com/google/caja/cajita-module-orig.js"/>
-       <input file="${src}/com/google/caja/cajita-promise.js"/>
-       <input file="${src}/com/google/caja/plugin/host-tools.js"/>
-       <input file="${src}/com/google/caja/plugin/caja-iframe-done.js"/>
+      <input file="${third_party}/js/json_sans_eval/json_sans_eval.js"/>
+      <input file="${src}/com/google/caja/cajita.js"/>
+      <input file="${src}/com/google/caja/plugin/unicode.js"/>
+      <input file="${lib}/com/google/caja/plugin/css-defs.js"/>
+      <input file="${lib}/com/google/caja/plugin/html4-defs.js"/>
+      <input file="${src}/com/google/caja/plugin/html-sanitizer.js"/>
+      <input file="${src}/com/google/caja/plugin/html-emitter.js"/>
+      <input file="${src}/com/google/caja/plugin/bridal.js"/>
+      <input file="${src}/com/google/caja/plugin/cssparser.js"/>
+      <input file="${src}/com/google/caja/plugin/domita.js"/>
+      <input file="${src}/com/google/caja/plugin/capture-valija.js"/>
+      <input file="${lib}/com/google/caja/plugin/valija.out.js"/>
+      <input file="${src}/com/google/caja/plugin/uri.js"/>
+      <input file="${src}/com/google/caja/cajita-module-orig.js"/>
+      <input file="${src}/com/google/caja/cajita-promise.js"/>
+      <input file="${src}/com/google/caja/plugin/host-tools.js"/>
+      <input file="${src}/com/google/caja/plugin/caja-iframe-done.js"/>
     </transform>
   </target>
 

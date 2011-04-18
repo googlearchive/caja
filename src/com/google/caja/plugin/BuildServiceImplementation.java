@@ -70,6 +70,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -162,8 +163,13 @@ public class BuildServiceImplementation implements BuildService {
 
     MessageContext mc = new MessageContext();
 
-    // Set up the cajoler
     String language = (String) options.get("language");
+    String rendererType = (String) options.get("renderer");
+
+    if ("javascript".equals(language) && "concat".equals(rendererType)) {
+      return concat(inputs, output, logger);
+    }
+
     boolean passed = true;
     ParseTreeNode outputJs;
     Node outputHtml;
@@ -276,7 +282,6 @@ public class BuildServiceImplementation implements BuildService {
 
       StringBuilder jsOut = new StringBuilder();
       TokenConsumer renderer;
-      String rendererType = (String) options.get("renderer");
       if ("pretty".equals(rendererType)) {
         renderer = new JsPrettyPrinter(new Concatenator(jsOut));
       } else if ("minify".equals(rendererType)) {
@@ -310,19 +315,68 @@ public class BuildServiceImplementation implements BuildService {
         translatedCode = jsOut.toString();
       }
 
-      try {
-        Writer w = new OutputStreamWriter(new FileOutputStream(output));
-        try {
-          w.write(translatedCode);
-        } finally {
-          w.close();
-        }
-      } catch (IOException ex) {
-        logger.println("Failed to write " + output);
-        return false;
-      }
+      passed = write(translatedCode, output, logger);
     }
     return passed;
+  }
+
+  private boolean write(String string, File output, PrintWriter logger) {
+    try {
+      Writer w = new OutputStreamWriter(new FileOutputStream(output));
+      try {
+        w.write(string);
+      } finally {
+        w.close();
+      }
+    } catch (IOException ex) {
+      logger.println("Failed to write " + output);
+      return false;
+    }
+    return true;
+  }
+
+  private boolean concat(List<File> inputs, File output, PrintWriter logger) {
+    StringBuilder result = new StringBuilder();
+    boolean ok = true;
+    boolean first = true;
+    File oneStrict = null;
+    File oneNonstrict = null;
+    for (File f : inputs) {
+      if (!first) {
+        result.append(";\n");
+      }
+      first = false;
+      try {
+        CharSequence contents = read(f);
+        if (isStrict(contents)) {
+          oneStrict = f;
+        } else {
+          oneNonstrict = f;
+        }
+        result.append(contents);
+      } catch (IOException ex) {
+        logger.println("Failed to read " + f);
+        ok = false;
+      }
+    }
+    if (oneStrict != null && oneNonstrict != null) {
+      logger.println("Can't naively concatenate strict and non-strict JS: "
+          + oneStrict + " " + oneNonstrict);
+      ok = false;
+    }
+    if (ok) {
+      ok = write(result.toString(), output, logger);
+    }
+    return ok;
+  }
+
+  // match a top-level strict declaration.
+  private static Pattern strictRE = Pattern.compile(
+      "^[^{]*['\"]use\\s+strict['\"]");
+
+  // TODO(felix8a): implement this in a non-stupid way
+  private boolean isStrict(CharSequence js) {
+    return strictRE.matcher(js).find(); 
   }
 
   private String getSourceContent(InputSource is) throws IOException {

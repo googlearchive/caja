@@ -52,6 +52,8 @@ import org.apache.tools.ant.BuildException;
  * "pretty" is the default and uses the
  * {@link com.google.caja.render.JsPrettyPrinter}.
  * "minify" to use {@link com.google.caja.render.JsMinimalPrinter}.
+ * "concat" does no parsing and just copies inputs to the output,
+ *   with ";" inserted between the inputs.
  * <p>
  * The optional {@code canLink} attribute specifies a set of urls that cajoled code is allowed
  * to link to.
