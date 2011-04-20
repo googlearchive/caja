@@ -28,7 +28,7 @@
 /**
  * @namespace
  */
-var html = (function () {
+var html = (function (html4) {
   var lcase;
   // The below may not be true on browsers in the Turkish locale.
   if ('script' === 'SCRIPT'.toLowerCase()) {
@@ -366,26 +366,18 @@ var html = (function () {
     };
   }
 
-  return {
-    normalizeRCData: normalizeRCData,
-    escapeAttrib: escapeAttrib,
-    unescapeEntities: unescapeEntities,
-    makeSaxParser: makeSaxParser
-  };
-})();
-
-/**
- * Returns a function that strips unsafe tags and attributes from html.
- * @param {Function} sanitizeAttributes
- *     maps from (tagName, attribs[]) to null or a sanitized attribute array.
- *     The attribs array can be arbitrarily modified, but the same array
- *     instance is reused, so should not be held.
- * @return {Function} from html to sanitized html
- */
-html.makeHtmlSanitizer = function (sanitizeAttributes) {
-  var stack;
-  var ignoring;
-  return html.makeSaxParser({
+  /**
+   * Returns a function that strips unsafe tags and attributes from html.
+   * @param {Function} sanitizeAttributes
+   *     maps from (tagName, attribs[]) to null or a sanitized attribute array.
+   *     The attribs array can be arbitrarily modified, but the same array
+   *     instance is reused, so should not be held.
+   * @return {Function} from html to sanitized html
+   */
+  function makeHtmlSanitizer(sanitizeAttributes) {
+    var stack;
+    var ignoring;
+    return makeSaxParser({
         startDoc: function (_) {
           stack = [];
           ignoring = false;
@@ -413,7 +405,7 @@ html.makeHtmlSanitizer = function (sanitizeAttributes) {
               var attribName = attribs[i],
                   value = attribs[i + 1];
               if (value !== null && value !== void 0) {
-                out.push(' ', attribName, '="', html.escapeAttrib(value), '"');
+                out.push(' ', attribName, '="', escapeAttrib(value), '"');
               }
             }
             out.push('>');
@@ -433,7 +425,8 @@ html.makeHtmlSanitizer = function (sanitizeAttributes) {
               for (index = stack.length; --index >= 0;) {
                 var stackEl = stack[index];
                 if (stackEl === tagName) { break; }
-                if (!(html4.ELEMENTS[stackEl] & html4.eflags.OPTIONAL_ENDTAG)) {
+                if (!(html4.ELEMENTS[stackEl]
+                      & html4.eflags.OPTIONAL_ENDTAG)) {
                   // Don't pop non optional end tags looking for a match.
                   return;
                 }
@@ -446,7 +439,8 @@ html.makeHtmlSanitizer = function (sanitizeAttributes) {
             if (index < 0) { return; }  // Not opened.
             for (var i = stack.length; --i > index;) {
               var stackEl = stack[i];
-              if (!(html4.ELEMENTS[stackEl] & html4.eflags.OPTIONAL_ENDTAG)) {
+              if (!(html4.ELEMENTS[stackEl]
+                    & html4.eflags.OPTIONAL_ENDTAG)) {
                 out.push('</', stackEl, '>');
               }
             }
@@ -470,21 +464,20 @@ html.makeHtmlSanitizer = function (sanitizeAttributes) {
           stack.length = 0;
         }
       });
-};
+  }
 
-
-/**
- * Strips unsafe tags and attributes from html.
- * @param {string} htmlText to sanitize
- * @param {Function} opt_uriPolicy -- a transform to apply to uri/url attribute
- *     values.
- * @param {Function} opt_nmTokenPolicy : string -> string? -- a transform to
- *     apply to names, ids, and classes.
- * @return {string} html
- */
-function html_sanitize(htmlText, opt_uriPolicy, opt_nmTokenPolicy) {
-  var out = [];
-  html.makeHtmlSanitizer(
+  /**
+   * Strips unsafe tags and attributes from html.
+   * @param {string} htmlText to sanitize
+   * @param {Function} opt_uriPolicy -- a transform to apply to uri/url
+   *     attribute values.
+   * @param {Function} opt_nmTokenPolicy : string -> string? -- a transform to
+   *     apply to names, ids, and classes.
+   * @return {string} html
+   */
+  function sanitize(htmlText, opt_uriPolicy, opt_nmTokenPolicy) {
+    var out = [];
+    makeHtmlSanitizer(
       function sanitizeAttribs(tagName, attribs) {
         for (var i = 0; i < attribs.length; i += 2) {
           var attribName = attribs[i];
@@ -533,5 +526,18 @@ function html_sanitize(htmlText, opt_uriPolicy, opt_nmTokenPolicy) {
         }
         return attribs;
       })(htmlText, out);
-  return out.join('');
-}
+    return out.join('');
+  }
+
+  return {
+    escapeAttrib: escapeAttrib,
+    makeHtmlSanitizer: makeHtmlSanitizer,
+    makeSaxParser: makeSaxParser,
+    normalizeRCData: normalizeRCData,
+    sanitize: sanitize,
+    unescapeEntities: unescapeEntities
+  };
+})(html4);
+
+var html_sanitize = html.sanitize;
+

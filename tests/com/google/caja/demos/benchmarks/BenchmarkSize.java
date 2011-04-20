@@ -57,8 +57,7 @@ public class BenchmarkSize extends CajaTestCase {
 
   public final void testOverhead() throws IOException {
     String plainCajita =
-      plain(fromResource("../../plugin/domita-minified.js"))
-      + plain(fromResource("../../plugin/html-sanitizer-minified.js"));
+      plain(fromResource("../../plugin/domita-minified.js"));
 
     String plainValija = plainCajita
         + plain(fromResource("../../plugin/valija.out.js"));
