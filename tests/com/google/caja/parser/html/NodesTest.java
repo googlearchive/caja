@@ -19,15 +19,21 @@ import com.google.caja.render.Concatenator;
 import com.google.caja.reporting.MarkupRenderMode;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.CajaTestCase;
+import com.google.caja.lexer.HtmlTokenType;
+import com.google.caja.lexer.TokenQueue;
+import com.google.caja.lexer.FilePosition;
 import com.google.caja.util.MoreAsserts;
 
 import java.util.Arrays;
+import java.io.IOException;
+import java.io.StringReader;
 
 import org.w3c.dom.Attr;
 import org.w3c.dom.DOMException;
 import org.w3c.dom.Document;
 import org.w3c.dom.DocumentFragment;
 import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 import org.w3c.dom.ProcessingInstruction;
 
 public class NodesTest extends CajaTestCase {
@@ -122,6 +128,73 @@ public class NodesTest extends CajaTestCase {
             + "<s:Rect width='50'/>"
             + "</html:td>")),
             MarkupRenderMode.XML));
+  }
+
+  final String TEST_XML = (
+      "<foo>\n"
+      + "before <!-- Test Data --> after \n"
+      + "<!-- [if IE ]>"
+      + "<link href=\"iecss.css\" rel=\"stylesheet\" type=\"text/css\">"
+      + "<![endif]-->"
+      + "</foo>");
+  final String RENDER_WITH_COMMENTS = TEST_XML;
+  final String RENDER_NO_COMMENTS = "<foo>\n"
+      + "before  after \n"
+      + "</foo>";
+  public final void testCommentsRemoved() throws Exception {
+    TokenQueue<HtmlTokenType> tq = DomParser.makeTokenQueue(
+        FilePosition.startOfFile(is), new StringReader(TEST_XML), true, true);
+    Element el = new DomParser(tq, true, mq).parseDocument();
+    assertEquals(RENDER_NO_COMMENTS, Nodes.render(el, MarkupRenderMode.HTML));
+    assertEquals(RENDER_NO_COMMENTS, Nodes.render(el, MarkupRenderMode.XML));
+  }
+
+  public final void testCommentsPreservedInUnsafeMode() throws Exception {
+    Node el = parse(TEST_XML);
+    assertRendersUnsafe(RENDER_WITH_COMMENTS, el, MarkupRenderMode.HTML);
+    assertRendersUnsafe(RENDER_WITH_COMMENTS, el, MarkupRenderMode.XML);
+  }
+  
+  public final void testIllegalCharactersInComment() throws Exception {
+    assertFailsToRenderUnsafe("<!-- -- -->", MarkupRenderMode.HTML,
+        "XML/HTML comment", "contains '--'");
+    assertFailsToRenderUnsafe("<!-- -- -->", MarkupRenderMode.XML,
+        "XML/HTML comment", "contains '--'");
+    assertFailsToRenderUnsafe("<!-->>>-->", MarkupRenderMode.HTML,
+        "XML/HTML comment", "starts with '>'");
+    assertFailsToRenderUnsafe("<!-->>>-->", MarkupRenderMode.XML,
+        "XML/HTML comment", "starts with '>'");
+  }
+
+  private Node parse(String xml) throws Exception {
+    TokenQueue<HtmlTokenType> tq = DomParser.makeTokenQueue(
+        FilePosition.startOfFile(is), new StringReader(xml), true, true);
+    return new DomParser(tq, true, mq).parseFragment();
+  }
+  
+  private void assertRendersUnsafe(String expected, Node el,
+      MarkupRenderMode mode) throws Exception {
+    try {
+      assertEquals(expected, Nodes.renderUnsafe(el, mode));
+    } catch (IllegalStateException e) {
+      fail(e.getMessage());
+    }
+  }
+
+  private void assertFailsToRenderUnsafe(
+      String xml, MarkupRenderMode mode, String... messages) 
+      throws Exception {
+    try {
+      TokenQueue<HtmlTokenType> tq = DomParser.makeTokenQueue(
+          FilePosition.startOfFile(is), new StringReader(xml), true, true);
+      DocumentFragment el = new DomParser(tq, true, mq).parseFragment();
+      Nodes.renderUnsafe(el, mode);
+      fail("No error rendering illegal fragment");
+    } catch (IllegalStateException e) {
+      for (String m : messages) {
+        assertTrue("Missing message:" + m, e.getMessage().contains(m));
+      }
+    }
   }
 
   public final void testRenderWithUnknownNamespace() throws Exception {

@@ -47,6 +47,10 @@ import org.w3c.dom.UserDataHandler;
 
 /**
  * Utilities for dealing with HTML/XML DOM trees.
+ * 
+ * WARNING: The renderUnsafe methods in this class are unsafe for cajoled
+ * code because the Caja pipeline does not sanitize comments.  In particular
+ * IE comments rendered by renderUnsafe will be executable.
  *
  * @author mikesamuel@gmail.com
  */
@@ -258,9 +262,22 @@ public class Nodes {
    *   {@link Concatenator}, and the {@link RenderContext#asXml} is significant.
    */
   public static void render(Node node, Namespaces ns, RenderContext rc) {
+    render(node, ns, rc, false);
+  }
+  
+  /**
+   * @deprecated For use only by non-caja clients of the parser/render
+   */
+  @Deprecated
+  public static void renderUnsafe(Node node, Namespaces ns, RenderContext rc) {
+    render(node, ns, rc, true);
+  }
+
+  private static void render(Node node, Namespaces ns, RenderContext rc,
+      boolean wantsComments) {
     StringBuilder sb = new StringBuilder(1 << 18);
     new Renderer(sb, rc.markupRenderMode(), rc.isAsciiOnly(), ns)
-        .render(node, ns);
+        .render(node, ns, wantsComments);
     TokenConsumer out = rc.getOut();
     FilePosition pos = getFilePositionFor(node);
     out.mark(FilePosition.startOf(pos));
@@ -329,11 +346,32 @@ public class Nodes {
    *   {@link Concatenator}, and the {@link RenderContext#asXml} is significant.
    */
   public static void render(Node node, RenderContext rc) {
-    render(node, Namespaces.HTML_DEFAULT, rc);
+    render(node, rc, false);
+  }
+
+  /**
+   * @deprecated For use only by non-caja clients of the parser/render
+   */
+  @Deprecated
+  public static void renderUnsafe(Node node, RenderContext rc) {
+    render(node, Namespaces.HTML_DEFAULT, rc, true);
+  }
+
+  private static void render(Node node, RenderContext rc,
+      boolean wantsComments) {
+    render(node, Namespaces.HTML_DEFAULT, rc, wantsComments);
   }
 
   public static String render(Node node) {
     return render(node, false);
+  }
+
+  /**
+   * @deprecated For use only by non-caja clients of the parser/render
+   */
+  @Deprecated
+  public static String renderUnsafe(Node node) {
+    return renderUnsafe(node, MarkupRenderMode.HTML);
   }
 
   @Deprecated
@@ -342,16 +380,43 @@ public class Nodes {
   }
 
   public static String render(Node node, MarkupRenderMode renderMode) {
+    return render(node, renderMode, false);
+  }
+
+  /**
+   * @deprecated For use only by non-caja clients of the parser/render
+   */
+  @Deprecated
+  public static String renderUnsafe(Node node, MarkupRenderMode renderMode) {
+    return render(node, renderMode, true);
+  }
+
+  private static String render(Node node, MarkupRenderMode renderMode,
+      boolean wantsComments) {
     StringBuilder sb = new StringBuilder();
     RenderContext rc = new RenderContext(new Concatenator(sb, null))
         .withMarkupRenderMode(renderMode);
-    render(node, rc);
+    render(node, rc, wantsComments);
     rc.getOut().noMoreTokens();
     return sb.toString();
   }
 
   public static String render(DocumentType docType, Node node,
       MarkupRenderMode renderMode) {
+    return render(docType, node, renderMode, false);
+  }
+
+  /**
+   * @deprecated For use only by non-caja clients of the parser/render
+   */
+  @Deprecated
+  public static String renderUnsafe(DocumentType docType, Node node,
+        MarkupRenderMode renderMode) {
+    return render(docType, node, renderMode, true);
+  }
+  
+  private static String render(DocumentType docType, Node node,
+      MarkupRenderMode renderMode, boolean wantsComments) {
     StringBuilder sb = new StringBuilder();
     if (null != docType) {
       String rendering = renderDocumentType(docType);
@@ -359,7 +424,7 @@ public class Nodes {
         sb.append(rendering);
       }
     }
-    sb.append(render(node, renderMode));
+    sb.append(render(node, renderMode, wantsComments));
     return sb.toString();
   }
 
@@ -385,12 +450,24 @@ final class Renderer {
 
   private static final String HTML_NS = Namespaces.HTML_NAMESPACE_URI;
 
+  /**
+   * @deprecated For use only by non-caja clients of the parser/render
+   */
+  @Deprecated
+  void renderUnsafe(Node node, Namespaces ns) {
+    render(node, ns, true);
+  }
+  
   void render(Node node, Namespaces ns) {
+    render(node, ns, false);
+  }
+  
+  void render(Node node, Namespaces ns, boolean wantsComments) {
     switch (node.getNodeType()) {
       case Node.DOCUMENT_NODE: case Node.DOCUMENT_FRAGMENT_NODE:
         for (Node c = node.getFirstChild();
              c != null; c = c.getNextSibling()) {
-          render(c, ns);
+          render(c, ns, wantsComments);
         }
         break;
       case Node.ELEMENT_NODE: {
@@ -479,7 +556,7 @@ final class Renderer {
           }
           attrLocalName = emitLocalName(attrLocalName, isHtml);
           // http://www.w3.org/TR/html401/intro/sgmltut.html
-	  // #didx-boolean_attribute
+    // #didx-boolean_attribute
           // Authors should be aware that many user agents only recognize the
           // minimized form of boolean attributes and not the full form.
           if (!(isHtml && mode == MarkupRenderMode.HTML4_BACKWARDS_COMPAT
@@ -528,12 +605,12 @@ final class Renderer {
               out.append(cdataContent);
             } else {
               for (Node c = first; c != null; c = c.getNextSibling()) {
-                render(c, ns);
+                render(c, ns, wantsComments);
               }
             }
           } else {
             for (Node c = first; c != null; c = c.getNextSibling()) {
-              render(c, ns);
+              render(c, ns, wantsComments);
             }
           }
           // This is not correct for HTML <plaintext> nodes, but live with it,
@@ -600,6 +677,38 @@ final class Renderer {
         out.append("<?").append(target).append(' ').append(data).append("?>");
         break;
       }
+      case Node.COMMENT_NODE: {
+        if (wantsComments) {
+          String text = node.getNodeValue();
+          // HTML5 spec 11.1.6
+          // Comments must start with the four character sequence (<!--).
+          // Following this sequence, the comment may have text, with the
+          // additional restriction that the text must not start with a
+          // single U+003E GREATER-THAN SIGN character (>), nor start with a
+          // U+002D HYPHEN-MINUS character (-) followed by a U+003E
+          // GREATER-THAN SIGN (>) character, nor contain two consecutive
+          // U+002D HYPHEN-MINUS characters (--), nor end with a U+002D 
+          // HYPHEN-MINUS character (-). Finally, the comment must be ended
+          // by the three character sequence (-->).
+
+          // XML 1.0 spec 2.5
+          // Comment ::= '<!--' ((Char - '-') | ('-' (Char - '-')))* '-->'
+
+          String problem = null;
+          problem = text.startsWith(">") ? "starts with '>'" : problem;
+          problem = text.startsWith("-") ? "starts with '-'" : problem;
+          problem = text.contains("--") ? "contains '--'" : problem;
+          problem = text.endsWith("-") ? "ends with '-'" : problem;
+          if (null != problem) {
+            throw new IllegalStateException(
+                "XML/HTML comment unrenderable because it " + problem);
+          }
+          out.append("<!--");
+          out.append(node.getNodeValue());
+          out.append("-->");
+        }
+      }
+      break;
     }
   }
 
