@@ -88,6 +88,8 @@
   </path>
   <path id="classpath.common">
     <path refid="classpath.web"/>
+  	<!-- TODO(jasvir): Check in guava in third_party and update link --> 
+    <pathelement path="${third_party}/java/webdriver/libs/guava-r08.jar"/>
     <pathelement path="${third_party}/java/json_simple/json_simple.jar"/>
     <pathelement path="${third_party}/java/jsonml/jsonml.jar"/>
     <pathelement path="${third_party}/java/jsr305/jsr305.jar"/>
@@ -109,10 +111,10 @@
     <path refid="classpath.common"/>
     <path refid="classpath.gwt"/>
     <pathelement path="${third_party}/java/junit/junit.jar"/>
+    <pathelement path="${third_party}/java/webdriver/libs/guava-r08.jar"/>
     <pathelement path="${third_party}/java/json_simple/json_simple.jar"/>
     <pathelement path="${third_party}/java/rhino/js.jar"/>
     <pathelement path="${third_party}/java/webdriver/selenium-java-2.0b3.jar"/>
-    <pathelement path="${third_party}/java/webdriver/libs/guava-r08.jar"/>
     <pathelement path="${third_party}/java/webdriver/libs/json-20080701.jar"/>
   </path>
   <path id="classpath.tests.run">
@@ -530,6 +532,9 @@
       </fileset>
       <fileset dir="${third_party}/java/javamail">
         <include name="mail.jar"/>
+      </fileset>
+      <fileset dir="${third_party}/java/webdriver/libs">
+        <include name="guava-r08.jar"/>
       </fileset>
       <fileset dir="${third_party}/java/json_simple">
         <include name="json_simple.jar"/>
@@ -1127,6 +1132,7 @@
       <fileset dir="${jars}">
         <include name="htmlparser.jar" />
         <include name="json_simple.jar" />
+        <include name="guava-r08.jar" />
         <include name="xercesImpl.jar" />
       </fileset>
       <fileset dir="${src}/com/google/caja/demos/playground">
@@ -1187,9 +1193,9 @@
         <include name="caja-iframe.js"/>
         <include name="caja-iframe-minified.js"/>
         <include name="es53-guest-frame.js"/>
-        <include name="es53-guest-frame-minified.js"/>
+        <include name="es53-guest-frame.opt.js"/>
         <include name="es53-taming-frame.js"/>                                
-        <include name="es53-taming-frame-minified.js"/>
+        <include name="es53-taming-frame.opt.js"/>
       </fileset>
     </copy>
     <copy todir="${war}/sunspider">
@@ -1228,6 +1234,9 @@
       </fileset>
       <fileset dir="${third_party}/java/xerces/">
         <include name="xercesImpl.jar" />
+      </fileset>
+      <fileset dir="${third_party}/java/webdriver/libs">
+        <include name="guava-r08.jar" />
       </fileset>
       <fileset dir="${third_party}/java/json_simple/">
         <include name="json_simple.jar" />

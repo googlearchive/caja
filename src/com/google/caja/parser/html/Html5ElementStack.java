@@ -26,11 +26,11 @@ import com.google.caja.reporting.MessageType;
 import com.google.caja.util.Lists;
 import com.google.caja.util.Maps;
 import com.google.caja.util.Strings;
+import com.google.common.collect.MapMaker;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.WeakHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -485,7 +485,8 @@ public class Html5ElementStack implements OpenElementStack {
   }
 
   private static final Map<HtmlAttributes, List<Attr>> HTML_ASSOCIATED_ATTRS
-      = new WeakHashMap<HtmlAttributes, List<Attr>>();
+      = new MapMaker().weakKeys().makeMap();
+
   private static HtmlAttributes toHtmlAttributes(
       List<Attr> attrs, HtmlAttributes blank) {
     HTML_ASSOCIATED_ATTRS.put(blank, attrs);
