@@ -193,7 +193,6 @@ class SuffixedClassOrIdLiteral extends CssTree.CssLiteral {
     super(pos, value);
   }
 
-  @Override
   public void render(RenderContext r) {
     TokenConsumer tc = r.getOut();
     tc.mark(getFilePosition());
@@ -290,7 +289,6 @@ class EmbeddedJsExpressionTokenConsumer implements TokenConsumer {
     return arrayElements;
   }
 
-  @Override
   public void mark(FilePosition pos) {
     cssTokenConsumer.mark(pos);
     if (inJsString && positionAtStartOfStringLiteral == null) {
@@ -299,7 +297,6 @@ class EmbeddedJsExpressionTokenConsumer implements TokenConsumer {
     last = pos;
   }
 
-  @Override
   public void consume(String text) {
     if (!inJsString) {
       startPartialJsStringLiteral();
@@ -313,7 +310,6 @@ class EmbeddedJsExpressionTokenConsumer implements TokenConsumer {
     inJsString = true;
   }
 
-  @Override
   public void noMoreTokens() {
     cssTokenConsumer.noMoreTokens();
     endArrayElement(false);

@@ -18,7 +18,6 @@ import com.google.caja.lexer.escaping.Escaping;
 import com.google.caja.util.Lists;
 import com.google.caja.util.Sets;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -390,7 +389,7 @@ abstract class JSRE {
     int i = 0;
     while (i < n && a.get(i).equals(b.get(i))) { ++i; }
     // Wrapping in a new array list because List.subList is not serializable
-    return new ArrayList(a.subList(0, i));
+    return Lists.<T>newArrayList(a.subList(0, i));
   }
 
   private static <T> List<T> commonSuffix(List<T> a, List<T> b) {
@@ -400,7 +399,7 @@ abstract class JSRE {
       // work done in condition
     }
     // Wrapping in a new array list because List.subList is not serializable
-    return new ArrayList(a.subList(i + 1, m));
+    return Lists.<T>newArrayList(a.subList(i + 1, m));
   }
 
   static final class Concatenation extends JSRE {

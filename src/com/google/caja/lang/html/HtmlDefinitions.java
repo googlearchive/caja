@@ -97,7 +97,7 @@ public final class HtmlDefinitions {
 
   private static final AttribKey SCRIPT_SRC = AttribKey.forHtmlAttrib(
       ElKey.forHtmlElement("script"), "src");
-  
+
   private static <U> ExpressionStmt mapFromEnum(
       Iterable<U> entries, String key,
       Function<U, String> keyMaker, Function<U, Integer> valueMaker) {
@@ -115,7 +115,7 @@ public final class HtmlDefinitions {
             "k", new ParseTreeNodeContainer(keys),
             "v", new ParseTreeNodeContainer(values)));
   }
-  
+
   public static Block generateJavascriptDefinitions(HtmlSchema schema) {
     final FilePosition unk = FilePosition.UNKNOWN;
     Map<AttribKey, HTML.Attribute.Type> atypes = attributeTypes(schema);
@@ -140,7 +140,7 @@ public final class HtmlDefinitions {
           }
         })
     );
-    
+
     {
       List<StringLiteral> keys = new ArrayList<StringLiteral>();
       List<IntegerLiteral> values = new ArrayList<IntegerLiteral>();
@@ -160,7 +160,7 @@ public final class HtmlDefinitions {
               "k", new ParseTreeNodeContainer(keys),
               "v", new ParseTreeNodeContainer(values))));
     }
-    
+
     definitions.appendChild(mapFromEnum(
         EnumSet.allOf(EFlag.class),
         "eflags",
@@ -343,9 +343,9 @@ public final class HtmlDefinitions {
     }
     return attributeFlags;
   }
-  
+
   private interface SchemaExtractor<Result> { Result extract(HTML.Attribute attr); }
-  
+
   private static <A> Map<AttribKey, A> deriveMapFromSchema(
       HtmlSchema schema, SchemaExtractor<A> extractor) {
     Map<AttribKey, A> result = Maps.newTreeMap();
@@ -364,7 +364,6 @@ public final class HtmlDefinitions {
   private static Map<AttribKey, UriEffect> uriEffects(
       HtmlSchema schema) {
     return deriveMapFromSchema(schema, new SchemaExtractor<UriEffect>() {
-      @Override
       public UriEffect extract(Attribute attr) {
         return attr.getUriEffect();
       }
@@ -374,7 +373,6 @@ public final class HtmlDefinitions {
   private static Map<AttribKey, LoaderType> loaderTypes(
       HtmlSchema schema) {
     return deriveMapFromSchema(schema, new SchemaExtractor<LoaderType>() {
-      @Override
       public LoaderType extract(Attribute attr) {
         return attr.getLoaderType();
       }

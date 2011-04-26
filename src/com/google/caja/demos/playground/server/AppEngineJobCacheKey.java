@@ -111,8 +111,9 @@ final class AppEngineJobCacheKey implements JobCache.Key, Serializable {
     }
 
     private void hash(Node node) {
-      hash((short) node.getNodeType());
-      switch (node.getNodeType()) {
+      short nodeType = node.getNodeType();
+      hash(nodeType);
+      switch (nodeType) {
         case Node.ATTRIBUTE_NODE:
         case Node.ELEMENT_NODE:
           hash(node.getNodeName());
@@ -125,7 +126,7 @@ final class AppEngineJobCacheKey implements JobCache.Key, Serializable {
 
       hash((short) node.getChildNodes().getLength());
 
-      if (node.getNodeType() == Node.ELEMENT_NODE) {
+      if (nodeType == Node.ELEMENT_NODE) {
         NamedNodeMap attrs = node.getAttributes();
         int nAttrs = attrs.getLength();
         hash((short) nAttrs);

@@ -18,7 +18,6 @@ import java.util.List;
 import java.util.Collections;
 
 import net.sf.jsr107cache.Cache;
-import net.sf.jsr107cache.CacheException;
 import net.sf.jsr107cache.CacheManager;
 
 import com.google.caja.parser.ParseTreeNode;
@@ -34,7 +33,7 @@ import com.google.caja.util.Lists;
  */
 final class AppEngineJobCache extends JobCache {
   private Cache l1cache;
-  
+
   AppEngineJobCache() {
     try {
       this.l1cache = CacheManager.getInstance().getCacheFactory()
@@ -44,10 +43,13 @@ final class AppEngineJobCache extends JobCache {
     }
   }
 
+  @Override
   public AppEngineJobCacheKey forJob(ContentType type, ParseTreeNode node) {
     return new AppEngineJobCacheKey(type, node);
   }
 
+  @SuppressWarnings("unchecked")
+  @Override
   public List<? extends Job> fetch(JobCache.Key k) {
     if (null == l1cache) { return null; }
     if (!(k instanceof AppEngineJobCacheKey)) { return null; }
@@ -59,6 +61,7 @@ final class AppEngineJobCache extends JobCache {
     return cloneJobs(cachedJobs);
   }
 
+  @Override
   public void store(Key k, List<? extends Job> derivatives) {
     if (!(k instanceof AppEngineJobCacheKey)) {
       throw new IllegalArgumentException(k.getClass().getName());

@@ -42,6 +42,7 @@ import com.google.caja.parser.js.OperatorCategory;
 import com.google.caja.parser.js.Reference;
 import com.google.caja.parser.js.ReturnStmt;
 import com.google.caja.parser.js.Statement;
+import com.google.caja.parser.js.StringLiteral;
 import com.google.caja.parser.js.SwitchCase;
 import com.google.caja.parser.js.SwitchStmt;
 import com.google.caja.parser.js.ThrowStmt;
@@ -645,11 +646,26 @@ public class StatementSimplifier {
               && ParseTreeNodes.deepEquals(xoperands.get(0), yoperands.get(0))
               ) {
             // c ? (x + 1 : x + 2)  ->  x + (c ? 1 : 2)
-            return Operation.create(
-                pos, xoper, xoperands.get(0),
-                optimizeExpressionFlow(
-                    Operation.createTernary(
-                        c, xoperands.get(1), yoperands.get(1))));
+            if (xoper != Operator.MEMBER_ACCESS) {
+              return Operation.create(
+                  pos, xoper, xoperands.get(0),
+                  optimizeExpressionFlow(
+                      Operation.createTernary(
+                          c, xoperands.get(1), yoperands.get(1))));
+            } else {
+              Reference xref = (Reference) xoperands.get(1);
+              Reference yref = (Reference) yoperands.get(1);
+              StringLiteral xname = StringLiteral.valueOf(
+                  xref.getFilePosition(), xref.getIdentifierName());
+              StringLiteral yname = StringLiteral.valueOf(
+                  yref.getFilePosition(), yref.getIdentifierName());
+              return Operation.create(
+                  pos, Operator.SQUARE_BRACKET,
+                  xoperands.get(0),
+                  optimizeExpressionFlow(
+                       Operation.createTernary(
+                         c, xname, yname)));
+            }
           }
         }
       }

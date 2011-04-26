@@ -42,7 +42,6 @@ public class StubJobCache extends JobCache {
 
     public TrivialJobCacheKey(String pos) { this.pos = pos; }
 
-    @Override
     public JobCache.Keys asSingleton() {
       return new TrivialJobCacheKeys(
           Collections.<JobCache.Key>singletonList(this));
@@ -56,7 +55,6 @@ public class StubJobCache extends JobCache {
 
     TrivialJobCacheKeys(List<JobCache.Key> keys) { this.keys = keys; }
 
-    @Override
     public JobCache.Keys union(JobCache.Keys other) {
       if (!other.iterator().hasNext()) { return this; }
       List<JobCache.Key> keys = Lists.newArrayList();
@@ -65,7 +63,7 @@ public class StubJobCache extends JobCache {
       return new TrivialJobCacheKeys(Collections.unmodifiableList(keys));
     }
 
-    @Override public Iterator<JobCache.Key> iterator() {
+    public Iterator<JobCache.Key> iterator() {
       return keys.iterator();
     }
 

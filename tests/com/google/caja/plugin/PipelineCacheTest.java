@@ -507,7 +507,6 @@ public class PipelineCacheTest extends PipelineStageTestCase {
     plm.populate(pl.getStages());
     pl.getStages().add(new PipelineStoreStage(cache));
     pl.getStages().add(new Pipeline.Stage<Jobs>() {
-      @Override
       public boolean apply(Jobs jobs) {
         for (ListIterator<JobEnvelope> it = jobs.getJobs().listIterator();
              it.hasNext();) {

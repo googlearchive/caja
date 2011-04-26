@@ -25,7 +25,6 @@ import com.google.caja.lexer.FilePosition;
 import com.google.caja.util.MoreAsserts;
 
 import java.util.Arrays;
-import java.io.IOException;
 import java.io.StringReader;
 
 import org.w3c.dom.Attr;
@@ -154,7 +153,7 @@ public class NodesTest extends CajaTestCase {
     assertRendersUnsafe(RENDER_WITH_COMMENTS, el, MarkupRenderMode.HTML);
     assertRendersUnsafe(RENDER_WITH_COMMENTS, el, MarkupRenderMode.XML);
   }
-  
+
   public final void testIllegalCharactersInComment() throws Exception {
     assertFailsToRenderUnsafe("<!-- -- -->", MarkupRenderMode.HTML,
         "XML/HTML comment", "contains '--'");
@@ -171,7 +170,8 @@ public class NodesTest extends CajaTestCase {
         FilePosition.startOfFile(is), new StringReader(xml), true, true);
     return new DomParser(tq, true, mq).parseFragment();
   }
-  
+
+  @SuppressWarnings("deprecation")
   private void assertRendersUnsafe(String expected, Node el,
       MarkupRenderMode mode) throws Exception {
     try {
@@ -181,8 +181,9 @@ public class NodesTest extends CajaTestCase {
     }
   }
 
+  @SuppressWarnings("deprecation")
   private void assertFailsToRenderUnsafe(
-      String xml, MarkupRenderMode mode, String... messages) 
+      String xml, MarkupRenderMode mode, String... messages)
       throws Exception {
     try {
       TokenQueue<HtmlTokenType> tq = DomParser.makeTokenQueue(

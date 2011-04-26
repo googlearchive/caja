@@ -64,13 +64,27 @@ public abstract class Operation extends AbstractExpression {
   @Override
   protected void childrenChanged() {
     super.childrenChanged();
-    int nChildren = children().size();
+    List<? extends Expression> children = children();
+    int nChildren = children.size();
     if (nChildren < minArity(op)) {
       throw new IllegalArgumentException(
           "Too few of children " + nChildren + " for operator " + op);
     } else if (nChildren > maxArity(op)) {
       throw new IllegalArgumentException(
           "Too many children " + nChildren + " for operator " + op);
+    }
+    if (Operator.MEMBER_ACCESS == op) {
+      if (!(children.get(1) instanceof Reference)) {
+        throw new IllegalArgumentException(
+            "Bad child of . operator : " + children().get(1));
+      }
+    }
+    if (OperatorCategory.ASSIGNMENT == op.getCategory()) {
+      if (!children.get(0).isLeftHandSide()) {
+        throw new IllegalArgumentException(
+            "Invalid assignment " + op + " with left hand side "
+            + children.get(0));
+      }
     }
   }
 

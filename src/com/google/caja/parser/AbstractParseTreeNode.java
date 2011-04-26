@@ -20,6 +20,7 @@ import com.google.caja.lexer.Token;
 import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.util.Join;
+import com.google.caja.util.Lists;
 import com.google.caja.util.SyntheticAttributeKey;
 import com.google.caja.util.SyntheticAttributes;
 
@@ -79,8 +80,8 @@ public abstract class AbstractParseTreeNode implements MutableParseTreeNode,
   @SuppressWarnings("unchecked")
   protected <T2> List<T2> childrenPart(
       int start, int end, Class<T2> cl) {
-    List<ParseTreeNode> sub =
-      new ArrayList(children.getImmutableFacet().subList(start, end));
+    List<ParseTreeNode> sub = Lists.newArrayList(
+        children.getImmutableFacet().subList(start, end));
     for (ParseTreeNode el : sub) {
       if (!cl.isInstance(el)) {
         throw new ClassCastException(

@@ -22,6 +22,7 @@ import com.google.caja.render.Concatenator;
 import com.google.caja.render.JsMinimalPrinter;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.CajaTestCase;
+import com.google.caja.util.Join;
 
 import java.util.Collections;
 
@@ -82,6 +83,28 @@ public class JsOptimizerTest extends CajaTestCase {
         js(fromString("alert(a?(foo(),bar(),baz()):boo())")),
         js(fromString("alert(function(){ if (a) { foo(); bar(); return baz(); }"
                       + "else return boo(); }());")));
+  }
+
+  public final void testIssue1348() throws Exception {
+    String input = Join.join(
+        "\n",
+        "if (XMLHttpRequest && 'withCredentials' in new XMLHttpRequest()) {",
+        "  // FF 3.5+ and Safari 4",
+        "  request = requestFunctions['w3cxhr'];",
+        "} else if (XDomainRequest) {",
+        "  // IE8",
+        "  request = requestFunctions['msxdr'];",
+        "} else {",
+        "  // Older browser; fallback",
+        "  request = requestFunctions['jsonp'];",
+        "}");
+    assertOptimized(
+        js(fromString(
+          "XMLHttpRequest && 'withCredentials' in new XMLHttpRequest"
+          + "? (request = requestFunctions.w3cxhr)"
+          + ": (request = requestFunctions[XDomainRequest ? 'msxdr' : 'jsonp'])"
+          )),
+        js(fromString(input)));
   }
 
   private void assertOptimized(Statement golden, Block... inputs) {
