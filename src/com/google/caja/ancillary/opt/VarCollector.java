@@ -22,6 +22,7 @@ import com.google.caja.parser.Visitor;
 import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.CatchStmt;
 import com.google.caja.parser.js.Declaration;
+import com.google.caja.parser.js.DirectivePrologue;
 import com.google.caja.parser.js.Expression;
 import com.google.caja.parser.js.ExpressionStmt;
 import com.google.caja.parser.js.ForEachLoop;
@@ -83,9 +84,13 @@ public class VarCollector {
         decl = new MultiDeclaration(
             FilePosition.startOf(body.getFilePosition()), decls);
       }
-      Statement firstChild = null;
-      if (!body.children().isEmpty()) { firstChild = body.children().get(0); }
-      body.insertBefore(decl, firstChild);
+      Statement declFollower = null;
+      List<? extends Statement> bodyChildren = body.children();
+      if (!bodyChildren.isEmpty()) { declFollower = bodyChildren.get(0); }
+      if (declFollower instanceof DirectivePrologue) {
+        declFollower = bodyChildren.size() == 1 ? null : bodyChildren.get(1);
+      }
+      body.insertBefore(decl, declFollower);
     }
     for (FunctionConstructor inner : inners) {
       Set<Identifier> formals = newIdentSet();

@@ -101,6 +101,23 @@ public class VarCollectorTest extends CajaTestCase {
         "try { foo(); } catch (e) { throw new Error(e); }");
   }
 
+  public final void testFunctionBodyPrologue() throws ParseException {
+    assertOptimized(
+        ""
+        + "function f(x) {"
+        + " 'use strict';"
+        + "  var i, xsq;"
+        + "  xsq = x * x;"
+        + "  for (i = 0; i < 10; ++i) alert(i + x);"
+        + "}",
+        ""
+        + "function f(x) {"
+        + " 'use strict';"
+        + "  var xsq = x * x;"
+        + "  for (var i = 0; i < 10; ++i) alert(i + x);"
+        + "}");
+  }
+
   private void assertOptimized(String golden, String input)
       throws ParseException {
     Block program = js(fromString(input));
