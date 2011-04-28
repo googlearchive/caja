@@ -41,22 +41,21 @@ var registerForScript, loadScripts;
     scriptHooks.push([vdocId, moduleText]);
   }
   
-  function go(caja) {
+  loadScripts = function (server) {
     for (var i = 0; i < scriptHooks.length; i++) {
       var id         = scriptHooks[i][0];
       var moduleText = scriptHooks[i][1];
-      var sandbox = new caja.hostTools.Sandbox();
-      sandbox.setURIPolicy(uriPolicy);
-      sandbox.attach(document.getElementById(id));
-      sandbox.runCajoledModuleString(moduleText);
+      caja.configure({
+        cajaServer: server,
+        debug: true
+      }, function (frameGroup) {
+        frameGroup.makeES5Frame(document.getElementById(id), uriPolicy,
+            function (frame) {
+              frame.contentCajoled('gadget:' + id, moduleText)
+                   .run({});
+            });
+      });
     }
     scriptHooks = [];
-  }
-  
-  loadScripts = function (server) {
-    loadCaja(go, {
-      debug: true,
-      cajaServer: server
-    });
   }
 })();

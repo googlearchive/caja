@@ -27,6 +27,7 @@ timeToCacheTimeouts = 10
 # constants
 cajoleRequestURL = (cajaServer + "cajole?input-mime-type=text/html"
                                + "&output-mime-type=application/json"
+                               + "&directive=ES53"
                                + "&effect=SAME_DOCUMENT"
                                + "&loader=SANDBOXED"
                                + "&sext=false")
