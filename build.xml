@@ -774,6 +774,8 @@
     <transform>
       <output file="${lib}/com/google/caja/plugin/html-sanitizer-minified.js"
        language="javascript" renderer="minify"/>
+      <output file="${lib}/com/google/caja/plugin/html-sanitizer-bundle.js"
+       language="javascript" renderer="concat"/>
       <input file="${lib}/com/google/caja/plugin/html4-defs.js"/>
       <input file="${src}/com/google/caja/plugin/html-sanitizer.js"/>
     </transform>

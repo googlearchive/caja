@@ -282,3 +282,12 @@ jsunitRegister('testDigitsInAttrNames',
           '<div style1="expression(\'alert(1)\')">Hello</div>'
           ));
 });
+
+jsunitRegister('testIncompleteTagOpen',
+               function testIncompleteTagOpen() {
+  assertEquals('x', html_sanitize('x<a'));
+  assertEquals('x', html_sanitize('x<a '));
+  assertEquals('x', html_sanitize('x<a\n'));
+  assertEquals('x', html_sanitize('x<a bc'));
+  assertEquals('x', html_sanitize('x<a\nbc'));
+});

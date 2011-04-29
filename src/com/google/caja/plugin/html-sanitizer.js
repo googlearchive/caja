@@ -223,7 +223,7 @@ var html = (function (html4) {
       // End of tag captured in group 3.
       + '|(/?>)'
       // Don't capture cruft
-      + '|.[^a-z\\s>]*)',
+      + '|[\\s\\S][^a-z\\s>]*)',
       'i');
 
   var OUTSIDE_TAG_TOKEN = new RegExp(
