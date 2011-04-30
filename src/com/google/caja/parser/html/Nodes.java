@@ -269,13 +269,38 @@ public class Nodes {
    * @deprecated For use only by non-caja clients of the parser/render
    */
   @Deprecated
+  public static void renderUnsafe(DocumentType docType, Node node,
+      Namespaces ns, RenderContext rc) {
+    render(docType, node, ns, rc, true);
+  }
+
+  public static void render(DocumentType docType, Node node, Namespaces ns,
+      RenderContext rc) {
+    render(docType, node, ns, rc, false);
+  }
+
+  /**
+   * @deprecated For use only by non-caja clients of the parser/render
+   */
+  @Deprecated
   public static void renderUnsafe(Node node, Namespaces ns, RenderContext rc) {
     render(node, ns, rc, true);
   }
 
-  private static void render(Node node, Namespaces ns, RenderContext rc,
-      boolean wantsComments) {
+  private static void render(Node node, Namespaces ns,
+      RenderContext rc, boolean wantsComments) {
+    render(null, node, ns, rc, wantsComments);
+  }
+  
+  private static void render(DocumentType docType, Node node, Namespaces ns,
+      RenderContext rc, boolean wantsComments) {
     StringBuilder sb = new StringBuilder(1 << 18);
+    if (null != docType) {
+      String rendering = renderDocumentType(docType);
+      if (null != rendering) {
+        sb.append(rendering);
+      }
+    }
     new Renderer(sb, rc.markupRenderMode(), rc.isAsciiOnly(), ns)
         .render(node, ns, wantsComments);
     TokenConsumer out = rc.getOut();
