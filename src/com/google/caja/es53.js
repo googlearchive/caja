@@ -39,6 +39,9 @@ var ___, cajaVM, safeJSON;
 (function () {
   // For computing the [[Class]] internal property
   var classProp = Object.prototype.toString;
+  // Given an object defined in an es53 frame, we can tell which
+  // Object.prototype it inherits from.
+  Object.prototype.baseProto___ = Object.prototype;
 
   var slice = Array.prototype.slice;
   var push = Array.prototype.push;
@@ -1995,6 +1998,10 @@ var ___, cajaVM, safeJSON;
    * transitively reachable from it via transitive reflective
    * property traversal.
    */
+
+  // Defined where Object's methods are. 
+  var origGetPrototypeOf, origGetOwnPropertyDescriptor;
+
   var def = markFuncFreeze(function(root) {
     var defending = newTable();
     var defendingList = [];
@@ -2004,10 +2011,10 @@ var ___, cajaVM, safeJSON;
       }
       defending.set(val, true);
       defendingList.push(val);
-      Object.freeze(val);
-      recur(Object.getPrototypeOf(val));
-      Object.getOwnPropertyNames(val).forEach(function(p) {
-        var desc = Object.getOwnPropertyDescriptor(val, p);
+      freeze(val);
+      recur(origGetPrototypeOf(val));
+      ownKeys(val).forEach(function(p) {
+        var desc = origGetOwnPropertyDescriptor(val, p);
         recur(desc.value);
         recur(desc.get);
         recur(desc.set);
@@ -3292,19 +3299,30 @@ var ___, cajaVM, safeJSON;
     });
 
   // 15.2.3.2
-  Object.getPrototypeOf = function (obj) {
-      if (!Object.hasOwnProperty('Prototype___')) {
-        if ({}.__proto__ === Object.prototype) {
-          obj.Prototype___ = obj.__proto__;
-        } else {
-          // FIXME: Adapt tricks from cajita.js to find the prototype
-          // and, if successful, store the result on obj.Prototype___.
-          // Otherwise throw.
-          throw new Error("Not supported on this platform.");
+  // Prefer the browser's built-in version.
+  if (!Object.getPrototypeOf) {
+    Object.getPrototypeOf = function (obj) {
+        if (TypeOf(obj) !== 'Object') {
+          throw new TypeError('Not an object.');
         }
-      }
-      return obj.Prototype___;
-    };
+        if (!Object.hasOwnProperty('Prototype___')) {
+          // If there's no built-in version, fall back to __proto__.
+          if ({}.__proto__ === Object.prototype) {
+            obj.Prototype___ = obj.__proto__;
+          } else {
+            // If that fails, use directConstructor to give our best guess.
+            var constr = directConstructor(obj);
+            if (constr === BASE_OBJECT_CONTRUCTOR) {
+              obj.Prototype___ = obj.baseProto___;
+            } else {
+              obj.Prototype___ = constr.prototype;
+            }
+          }
+        }
+        return obj.Prototype___;
+      };
+  }
+  origGetPrototypeOf = Object.getPrototypeOf;
 
   // 15.2.3.3
   Object.getOwnPropertyDescriptor = function(obj, P) {
@@ -3320,6 +3338,7 @@ var ___, cajaVM, safeJSON;
       // 4. Return the result of calling FromPropertyDescriptor(desc).
       return FromPropertyDescriptor(desc);
     };
+  origGetOwnPropertyDescriptor = Object.getOwnPropertyDescriptor;
 
   // 15.2.3.4
   Object.getOwnPropertyNames = ownKeys;
