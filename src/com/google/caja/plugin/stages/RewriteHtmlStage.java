@@ -296,7 +296,9 @@ final class HtmlExtractor {
         // keys.
         jobs.getJobs().indexOf(htmlEnv),
         new JobEnvelope(
-            null, jobCache.forJob(ContentType.CSS, stylesheet).asSingleton(),
+            null,
+            // jobCache.forJob(ContentType.CSS, stylesheet).asSingleton(),
+            JobCache.none(),
             ContentType.CSS, false,
             Job.cssJob(stylesheet, baseUri)));
   }

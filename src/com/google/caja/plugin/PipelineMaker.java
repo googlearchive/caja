@@ -194,7 +194,6 @@ public final class PipelineMaker {
         new Tool() {
           public void operate(PlanInputs in, List<Pipeline.Stage<Jobs>> out) {
             out.add(new RewriteHtmlStage(in.htmlSchema, in.cache));
-            out.add(new PipelineFetchStage(in.cache));
           }
         }.given(HTML_ABSURI_XMLNS)
          .produces(CSS).produces(JS).produces(HTML_STATIC),
@@ -239,6 +238,7 @@ public final class PipelineMaker {
 
         new Tool() {
           public void operate(PlanInputs in, List<Pipeline.Stage<Jobs>> out) {
+            out.add(new PipelineFetchStage(in.cache));
             out.add(new OptimizeJavascriptStage());
             out.add(new ValidateJavascriptStage(in.moduleManager));
           }

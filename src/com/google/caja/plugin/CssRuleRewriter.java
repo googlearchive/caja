@@ -320,7 +320,11 @@ class EmbeddedJsExpressionTokenConsumer implements TokenConsumer {
   protected Expression endPartialJsStringLiteral() {
     String s = partialJsStringLiteral.toString();
     partialJsStringLiteral.setLength(0);
-    FilePosition pos = positionAtStartOfStringLiteral != null
+    FilePosition pos = (
+        positionAtStartOfStringLiteral != null
+        && (positionAtStartOfStringLiteral.source().equals(last.source()))
+        && positionAtStartOfStringLiteral.startCharInFile()
+           <= last.endCharInFile())
         ? FilePosition.span(positionAtStartOfStringLiteral, last)
         : FilePosition.UNKNOWN;
     positionAtStartOfStringLiteral = null;

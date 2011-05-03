@@ -17,6 +17,7 @@ package com.google.caja.plugin.stages;
 import com.google.caja.plugin.Job;
 import com.google.caja.plugin.JobEnvelope;
 import com.google.caja.plugin.Jobs;
+import com.google.caja.util.ContentType;
 import com.google.caja.util.Pipeline;
 
 import java.util.List;
@@ -44,7 +45,9 @@ public final class PipelineFetchStage implements Pipeline.Stage<Jobs> {
     for (ListIterator<JobEnvelope> it = jobs.getJobs().listIterator();
          it.hasNext();) {
       JobEnvelope env = it.next();
-      if (env.fromCache
+      // The JS optimization stage is the computationally expensive stage, so
+      // we lookup pre-optimized version of JS jobs from the cache.
+      if (env.fromCache || env.job.getType() != ContentType.JS
           || env.job.getRoot().getAttributes().is(JobCache.NO_CACHE)) {
         continue;
       }

@@ -191,24 +191,77 @@ public class PipelineCacheTest extends PipelineStageTestCase {
       "  color: purple",
       "}</style>");
 
+  private static final String REWRITTEN_HELLO_WORLD_CSS_AND_VARIANT = Join.join(
+      "\n",
+      "<style type=\"text/css\">",
+      ".foo123___ b {",
+      "  color: blue;",
+      "  font-weight: inherit",
+      "}",
+      ".foo123___ p {",
+      "  color: purple",
+      "}</style>");
+
+  private static final String REWRITTEN_HELLO_WORLD_VARIANT_AND_CSS = Join.join(
+      "\n",
+      "<style type=\"text/css\">",
+      ".foo123___ p {",
+      "  color: purple",
+      "}",
+      ".foo123___ b {",
+      "  color: blue;",
+      "  font-weight: inherit",
+      "}</style>");
+
+
+  private static final String jsModulePrefix(
+      String[] importMembers, String[] vars, String[] imports) {
+    StringBuilder sb = new StringBuilder();
+    sb.append("{\n");
+    sb.append("  var $v = ___.readImport(IMPORTS___, '$v', {\n");
+    sb.append("      'getOuters': { '()': {} },\n");
+    sb.append("      'initOuter': { '()': {} },\n");
+    for (int i = 0, n = importMembers.length; i < n; ++i) {
+      sb.append("      '").append(importMembers[i]).append("': { '()': {} }");
+      sb.append(i + 1 < n ? ",\n" : "\n");
+    }
+    sb.append("    });\n");
+    for (String importName : imports) {
+      sb.append("  var ").append(importName)
+          .append(" = ___.readImport(IMPORTS___, '")
+          .append(importName).append("');\n");
+    }
+    sb.append("  var moduleResult___, $dis");
+    for (String var : vars) {
+      sb.append(", ").append(var);
+    }
+    sb.append(";\n");
+    sb.append("  moduleResult___ = ___.NO_RESULT;\n");
+    sb.append("  $dis = $v.getOuters();\n");
+    sb.append("  $v.initOuter('onerror');\n");
+    return sb.toString();
+  }
+
+  private static final String JS_MODULE_SUFFIX = Join.join(
+      "\n",
+      "",
+      "    el___ = emitter___.finish();",
+      "    emitter___.signalLoaded();",
+      "  }",
+      "  return moduleResult___;",
+      "}");
 
   private static final String CACHEABLE_HELLO_WORLD_HTML
       = "<b onclick=alert('Hello')>Hello, World!</b>";
   private static final String REWRITTEN_HELLO_WORLD_HTML
       = "<b id=\"id_3___\">Hello, World!</b>";
-  private static final String REWRITTEN_HELLO_WORLD_HTML_HELPER_JS = Join.join(
+  private static final String REWRITTEN_HELLO_WORLD_HTML_HELPER_JS
+      = jsModulePrefix(
+          new String[] { "cf", "ro" },
+          new String[] { "el___", "emitter___", "c_2___" },
+          new String[0])
+      + Join.join(
       "\n",
-      "{",
-      "  var $v = ___.readImport(IMPORTS___, '$v', {",
-      "      'getOuters': { '()': {} },",
-      "      'initOuter': { '()': {} },",
-      "      'cf': { '()': {} },",
-      "      'ro': { '()': {} }",
-      "    });",
-      "  var moduleResult___, $dis, el___, emitter___, c_2___;",
-      "  moduleResult___ = ___.NO_RESULT;",
-      "  $dis = $v.getOuters();",
-      "  $v.initOuter('onerror');",
       "  {",
       "    emitter___ = IMPORTS___.htmlEmitter___;",
       "    el___ = emitter___.byId('id_3___');",
@@ -220,12 +273,9 @@ public class PipelineCacheTest extends PipelineStageTestCase {
        + "(this, event, ___.getId(IMPORTS___),"),
       "        c_2___);",
       "    };",
-      "    el___.removeAttribute('id');",
-      "    el___ = emitter___.finish();",
-      "    emitter___.signalLoaded();",
-      "  }",
-      "  return moduleResult___;",
-      "}");
+      "    el___.removeAttribute('id');")
+      + JS_MODULE_SUFFIX;
+
   private static final String REWRITTEN_HELLO_WORLD_HTML_HELPER_JS_NO_LOAD
       = REWRITTEN_HELLO_WORLD_HTML_HELPER_JS
         .replaceFirst("\n *emitter___\\.signalLoaded\\(\\);", "");
@@ -235,19 +285,13 @@ public class PipelineCacheTest extends PipelineStageTestCase {
       = "<script>'use cajita'; alert('Hello');</script>";
   private static final String CACHEABLE_HELLO_WORLD_JS_DEFERRED
       = "<script defer>'use cajita'; alert('Hello');</script>";
-  private static final String REWRITTEN_HELLO_WORLD_JS = Join.join(
+  private static final String REWRITTEN_HELLO_WORLD_JS
+      = jsModulePrefix(
+          new String[] { "ro" },
+          new String[0],
+          new String[] { "alert" })
+      + Join.join(
       "\n",
-      "{",
-      "  var $v = ___.readImport(IMPORTS___, '$v', {",
-      "      'getOuters': { '()': {} },",
-      "      'initOuter': { '()': {} },",
-      "      'ro': { '()': {} }",
-      "    });",
-      "  var alert = ___.readImport(IMPORTS___, 'alert');",
-      "  var moduleResult___, $dis;",
-      "  moduleResult___ = ___.NO_RESULT;",
-      "  $dis = $v.getOuters();",
-      "  $v.initOuter('onerror');",
       "  try {",
       "    {",
       "      moduleResult___ = alert.CALL___('Hello');",
@@ -264,19 +308,13 @@ public class PipelineCacheTest extends PipelineStageTestCase {
       = "<script>'use cajita'; alert('Howdy');</script>";
   private static final String CACHEABLE_HELLO_WORLD_JS_VARIANT_DEFERRED
      = "<script defer>'use cajita'; alert('Howdy');</script>";
-  private static final String REWRITTEN_HELLO_WORLD_JS_VARIANT = Join.join(
+  private static final String REWRITTEN_HELLO_WORLD_JS_VARIANT
+      = jsModulePrefix(
+          new String[] { "ro" },
+          new String[0],
+          new String[] { "alert" })
+      + Join.join(
       "\n",
-      "{",
-      "  var $v = ___.readImport(IMPORTS___, '$v', {",
-      "      'getOuters': { '()': {} },",
-      "      'initOuter': { '()': {} },",
-      "      'ro': { '()': {} }",
-      "    });",
-      "  var alert = ___.readImport(IMPORTS___, 'alert');",
-      "  var moduleResult___, $dis;",
-      "  moduleResult___ = ___.NO_RESULT;",
-      "  $dis = $v.getOuters();",
-      "  $v.initOuter('onerror');",
       "  try {",
       "    {",
       "      moduleResult___ = alert.CALL___('Howdy');",
@@ -354,8 +392,8 @@ public class PipelineCacheTest extends PipelineStageTestCase {
         job(REWRITTEN_HELLO_WORLD_HTML_HELPER_JS_NO_LOAD, ContentType.JS),
         job(REWRITTEN_HELLO_WORLD_JS_VARIANT, ContentType.JS),
         job(SIGNAL_LOADED_JS, ContentType.JS));
-    // The CSS was served from the cache, but not the JS.
-    assertEquals(1, cache.nServedFromCache);
+    // Some compiled JS was served from the cache.
+    assertEquals(2, cache.nServedFromCache);
   }
 
   public final void testMixAndMatchCss() throws Exception {
@@ -385,7 +423,7 @@ public class PipelineCacheTest extends PipelineStageTestCase {
         job(REWRITTEN_HELLO_WORLD_JS, ContentType.JS),
         job(SIGNAL_LOADED_JS, ContentType.JS));
     // The JS was served from the cache, but not the CSS.
-    assertEquals(1, cache.nServedFromCache);
+    assertEquals(3, cache.nServedFromCache);
   }
 
   public final void testCssCacheOrdering() throws Exception {
@@ -395,8 +433,7 @@ public class PipelineCacheTest extends PipelineStageTestCase {
             CACHEABLE_HELLO_WORLD_CSS + CACHEABLE_HELLO_WORLD_CSS_VARIANT
             + CACHEABLE_HELLO_WORLD_HTML + CACHEABLE_HELLO_WORLD_JS,
             ContentType.HTML),
-        job(REWRITTEN_HELLO_WORLD_CSS, ContentType.HTML),
-        job(REWRITTEN_HELLO_WORLD_CSS_VARIANT, ContentType.HTML),
+        job(REWRITTEN_HELLO_WORLD_CSS_AND_VARIANT, ContentType.HTML),
         job(REWRITTEN_HELLO_WORLD_HTML, ContentType.HTML),
         job(REWRITTEN_HELLO_WORLD_HTML_HELPER_JS_NO_LOAD, ContentType.JS),
         job(REWRITTEN_HELLO_WORLD_JS, ContentType.JS),
@@ -413,8 +450,7 @@ public class PipelineCacheTest extends PipelineStageTestCase {
             CACHEABLE_HELLO_WORLD_CSS_VARIANT + CACHEABLE_HELLO_WORLD_CSS
             + CACHEABLE_HELLO_WORLD_HTML + CACHEABLE_HELLO_WORLD_JS,
             ContentType.HTML),
-        job(REWRITTEN_HELLO_WORLD_CSS_VARIANT, ContentType.HTML),
-        job(REWRITTEN_HELLO_WORLD_CSS, ContentType.HTML),
+        job(REWRITTEN_HELLO_WORLD_VARIANT_AND_CSS, ContentType.HTML),
         job(REWRITTEN_HELLO_WORLD_HTML, ContentType.HTML),
         job(REWRITTEN_HELLO_WORLD_HTML_HELPER_JS_NO_LOAD, ContentType.JS),
         job(REWRITTEN_HELLO_WORLD_JS, ContentType.JS),
@@ -456,8 +492,8 @@ public class PipelineCacheTest extends PipelineStageTestCase {
             ContentType.JS),
         job(REWRITTEN_HELLO_WORLD_JS, ContentType.JS),
         job(SIGNAL_LOADED_JS, ContentType.JS));
-    // Both JS blocks were served from the cache.
-    assertEquals(2, cache.nServedFromCache);
+    // Little JS blocks were served from the cache.
+    assertEquals(4, cache.nServedFromCache);
   }
 
   public final void testJsCacheOrdering() throws Exception {
@@ -486,8 +522,45 @@ public class PipelineCacheTest extends PipelineStageTestCase {
         job(REWRITTEN_HELLO_WORLD_JS, ContentType.JS),
         job(rewriteGeneratedIds(REWRITTEN_HELLO_WORLD_HTML_HELPER_JS),
             ContentType.JS));
-    // Both JS blocks were served from the cache.
-    assertEquals(2, cache.nServedFromCache);
+    // Some JS blocks were served from the cache.
+    assertEquals(3, cache.nServedFromCache);
+  }
+
+  public final void testIhabsHeadache() throws Exception {
+    JobStub[] goldens = {
+        job("<p id=\"id_2___\">1337</p>", ContentType.HTML),
+        job(jsModulePrefix(
+            new String[] { "cf", "ro" },
+            new String[] { "el___", "emitter___", "c_1___" }, new String[0])
+            + Join.join(
+                "\n",
+                "  {",
+                "    emitter___ = IMPORTS___.htmlEmitter___;",
+                "    el___ = emitter___.byId('id_2___');",
+                "    c_1___ = ___.markFuncFreeze(function (event, thisNode___) {",
+                "        $v.cf($v.ro('alert'), [ 1337 ]);",
+                "      });",
+                "    el___.onclick = function (event) {",
+                "      return plugin_dispatchEvent___(this, event, ___.getId(IMPORTS___),",
+                "        c_1___);",
+                "    };",
+                "    el___.removeAttribute('id');")
+                + JS_MODULE_SUFFIX, ContentType.JS)
+    };
+
+    // Prime the cache.
+    assertPipeline(
+        job("<p onclick=\"alert(1337);\">1337</p>", ContentType.HTML),
+        goldens);
+    assertEquals(0, cache.nServedFromCache);
+
+    // Make sure that rerunning doesn't cause problems.
+    meta = createPluginMeta();
+    assertPipeline(
+        job("<p onclick=\"alert(1337);\">1337</p>", ContentType.HTML),
+        goldens);
+    // The JS block was served from the cache.
+    assertEquals(1, cache.nServedFromCache);
   }
 
   @Override
