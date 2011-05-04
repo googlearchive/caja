@@ -1506,21 +1506,18 @@ public class ES53RewriterTest extends CommonJsRewriterTestCase {
   }
 
   /**
-   * Tests that an inherited <tt>*_w___</tt> flag does not enable
-   * bogus writability.
-   * <p>
-   * See <a href="http://code.google.com/p/google-caja/issues/detail?id=1052"
-   * >issue 1052</a>.
+   * Tests Object.getPrototypeOf().
    */
-  public final void testNoCanSetInheritance() throws Exception {
+
+  public final void testGetPrototypeOf() throws Exception {
     rewriteAndExecute(
-            "(function() {" +
-            "  var a = {};" +
-            "  var b = Object.freeze(Object.create(a));" +
-            "  a.x = 8;" +
-            "  assertThrows(function(){b.x = 9;});" +
-            "  assertEquals(b.x, 8);" +
-            "})();");
+        "assertEquals(Object.getPrototypeOf({}), Object.prototype);");
+    rewriteAndExecute(
+        "assertEquals(Object.getPrototypeOf([]), Array.prototype);");
+    rewriteAndExecute(
+        "function Foo() {}" +
+        "var foo = new Foo();" +
+        "assertEquals(Object.getPrototypeOf(foo), Foo.prototype);");
   }
 
   @Override

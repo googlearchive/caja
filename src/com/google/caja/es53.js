@@ -3302,7 +3302,7 @@ var ___, cajaVM, safeJSON;
   // Prefer the browser's built-in version.
   if (!Object.getPrototypeOf) {
     Object.getPrototypeOf = function (obj) {
-        if (TypeOf(obj) !== 'Object') {
+        if (Type(obj) !== 'Object') {
           throw new TypeError('Not an object.');
         }
         if (!Object.hasOwnProperty('Prototype___')) {
