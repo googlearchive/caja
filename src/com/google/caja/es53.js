@@ -227,7 +227,7 @@ var ___, cajaVM, safeJSON;
    * <p>
    * By "obj's prototype", we mean the prototypical object that obj
    * most directly inherits from, not the value of its 'prototype'
-   * property. We memoize the apparent prototype into 'proto___' to
+   * property. We memoize the apparent prototype into 'Prototype___' to
    * speed up future queries.
    * <p>
    * If obj is a function or not an object, return undefined.
@@ -248,8 +248,8 @@ var ___, cajaVM, safeJSON;
       return void 0;
     }
     var result;
-    if (obj.hasOwnProperty('proto___')) {
-      var proto = obj.proto___;
+    if (obj.hasOwnProperty('Prototype___')) {
+      var proto = obj.Prototype___;
       // At this point we know that (typeOf(proto) === 'object')
       if (proto === null) { return void 0; }
       result = proto.constructor;
@@ -283,12 +283,15 @@ var ___, cajaVM, safeJSON;
       }
 
       if ((typeof result) !== 'function' || !(obj instanceof result)) {
+        if (obj === obj.baseProto___) {
+          return void 0;
+        }
         throw new TypeError('Discovery of direct constructors for foreign '
             + 'begotten objects not implemented on this platform');
       }
       if (result.prototype.constructor === result) {
         // Memoize, so it'll be faster next time.
-        obj.proto___ = result.prototype;
+        obj.Prototype___ = result.prototype;
       }
     }
     // If the result is marked as the 'Object' constructor from some feral
@@ -3312,8 +3315,10 @@ var ___, cajaVM, safeJSON;
           } else {
             // If that fails, use directConstructor to give our best guess.
             var constr = directConstructor(obj);
-            if (constr === BASE_OBJECT_CONTRUCTOR) {
+            if (constr === BASE_OBJECT_CONSTRUCTOR) {
               obj.Prototype___ = obj.baseProto___;
+            } else if (constr === void 0) {
+              obj.Prototype___ = null;
             } else {
               obj.Prototype___ = constr.prototype;
             }
