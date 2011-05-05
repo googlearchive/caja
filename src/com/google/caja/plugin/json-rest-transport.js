@@ -34,8 +34,7 @@
  * @provides jsonRestTransportMaker
  */
 var jsonRestTransportMaker = function(opt_transportType) {
-
-  if (!window.hasOwnProperty('___caja_mod_count___')) {
+  if (!Object.hasOwnProperty.call(window, '___caja_mod_count___')) {
     window['___caja_mod_count___'] = 0;
   }
 
@@ -153,10 +152,10 @@ var jsonRestTransportMaker = function(opt_transportType) {
       throw new Error('Transport type not found: ' + opt_transportType);
     }
   } else {
-    if (XMLHttpRequest && 'withCredentials' in new XMLHttpRequest()) {
+    if (window.XMLHttpRequest && 'withCredentials' in new XMLHttpRequest()) {
       // FF 3.5+ and Safari 4
       request = requestFunctions['w3cxhr'];
-    } else if (XDomainRequest) {
+    } else if (window.XDomainRequest) {
       // IE8
       request = requestFunctions['msxdr'];
     } else {
