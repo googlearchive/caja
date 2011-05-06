@@ -21,8 +21,8 @@
 'use strict';
 
 var balanceByPurse = cajaVM.newTable();
-var purses = load('../container/list')({});
-var events = load('../container/events')({
+var purses = load('../container/list.js')({});
+var events = load('../container/events.js')({
   names: [ 'purses' ]
 });
 

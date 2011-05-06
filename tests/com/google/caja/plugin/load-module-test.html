@@ -44,7 +44,7 @@
         t.addModule(
             'http://foo.com/a/b.js',
             'application/javascript',
-            [ '../c/d', 'http://bar.com/test.html' ]);
+            [ '../c/d.js', 'http://bar.com/test.html' ]);
         t.addModule(
             'http://foo.com/c/d.js',
             'application/javascript',
@@ -54,7 +54,7 @@
             'text/html',
             [ ]);
         Q.when(
-            t.loadModule.async('/a/b'),
+            t.loadModule.async('/a/b.js'),
             function(_) {
               assertEquals(1, t.requests.get('http://foo.com/a/b.js'));
               assertEquals(1, t.requests.get('http://foo.com/c/d.js'));
@@ -74,23 +74,23 @@
         t.addModule(
             'http://foo.com/a.js',
             'application/javascript',
-            [ 'b' ]);
+            [ 'b.js' ]);
         t.addModule(
             'http://foo.com/b.js',
             'application/javascript',
             [ ]);
         Q.when(
-            t.loadModule.async('/b'),
+            t.loadModule.async('/b.js'),
             function(_) {
               assertEquals(undefined, t.requests.get('http://foo.com/a.js'));
               assertEquals(1, t.requests.get('http://foo.com/b.js'));
               Q.when(
-                  t.loadModule.async('/a'),
+                  t.loadModule.async('/a.js'),
                   function(_) {
                     assertEquals(1, t.requests.get('http://foo.com/a.js'));
                     assertEquals(1, t.requests.get('http://foo.com/b.js'));
                     Q.when(
-                        t.loadModule.async('/a'),
+                        t.loadModule.async('/a.js'),
                         function(_) {
                           assertEquals(1,
                               t.requests.get('http://foo.com/a.js'));
@@ -99,6 +99,26 @@
                           jsunitPass('testPartial');
                         });
                   });
+            });
+      });
+    </script>
+
+    <div id="testMimeTypeHeuristic" class="testcontainer waiting">
+      testUrlResolution
+    </div>
+    <script type="text/javascript">
+      jsunitRegister('testMimeTypeHeuristic',
+                     function testUrlResolution() {
+        var t = createTest('http://foo.com/index.html');
+        t.addModule(
+            'http://foo.com/z.js?foo=1.html',
+            'application/javascript',
+            [ ]);
+        Q.when(
+            t.loadModule.async('/z.js?foo=1.html'),
+            function(_) {
+              assertEquals(1, t.requests.get('http://foo.com/z.js?foo=1.html'));
+              jsunitPass('testMimeTypeHeuristic');
             });
       });
     </script>

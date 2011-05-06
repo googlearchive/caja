@@ -373,10 +373,10 @@ var caja = (function () {
               });
           }
 
-          function url(theUrl) {
+          function url(theUrl, contentType) {
             return runMaker(function (imports, opt_callback) {
                 guestWindow.Q.when(
-                    loader.async(theUrl),
+                    loader.async(theUrl, contentType),
                     function (moduleFunc) {
                       var result = moduleFunc(imports);
                       if (opt_callback) {

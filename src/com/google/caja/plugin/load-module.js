@@ -25,16 +25,14 @@
  */
 var loadModuleMaker = function(rootUrl, cajolingServiceClient) {
   var resolveModuleUrl = function (base, url) {
-    if (!/\.js$/.test(url) && !/\.html$/.test(url)) {
-      url = url + '.js';
-    }
     return base
         ? URI.resolve(URI.parse(base), URI.parse(url)).toString()
         : url;
   };
 
   var getInputMimeType = function(uncajoledSourceUrl) {
-    if (/\.html$/.test(uncajoledSourceUrl)) {
+    var url = URI.parse(uncajoledSourceUrl);
+    if (/\.html$/.test(url.getPath())) {
       return 'text/html';
     } else {
       return 'application/javascript';
@@ -90,15 +88,16 @@ var loadModuleMaker = function(rootUrl, cajolingServiceClient) {
       return Q.near(moduleCache.get(fullUrl));
     };
 
-    var async = function(url) {
+    var async = function(url, contentType) {
       var fullUrl = resolveModuleUrl(baseUrl, url);
       if (moduleCache.get(fullUrl)) {
         // Return the promise in the cache (may be as of yet unfulfilled)
         return moduleCache.get(fullUrl);
       }
       var moduleDeferred = Q.defer();
+      var mimeType = contentType || getInputMimeType(url);
       Q.when(
-          cajolingServiceClient.cajoleUrl(fullUrl, getInputMimeType(url)),
+          cajolingServiceClient.cajoleUrl(fullUrl, mimeType),
           function(responseJson) {
             var moduleObj = evalModuleObjFromJson(responseJson);
             var loadForThisModule = makeLoad(fullUrl);
@@ -123,14 +122,14 @@ var loadModuleMaker = function(rootUrl, cajolingServiceClient) {
       return moduleDeferred.promise;
     };
 
-    var asyncAll = function(moduleUrls) {
+    var asyncAll = function(moduleUrls, contentType) {
       var result = Q.defer();
       var i;
       var modulePromises = [];
       var modules = {};
 
       for (i = 0; i < moduleUrls.length; ++i) {
-        modulePromises[i] = async(moduleUrls[i]);
+        modulePromises[i] = async(moduleUrls[i], contentType);
       }
 
       var waitNext = function(idx) {

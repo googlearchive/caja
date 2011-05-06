@@ -4031,7 +4031,7 @@ jsunitRegister('testCanvasNotEditable',
 function testAsyncModuleLoader(load, includeScript, prefix) {
   directAccess.clearModuleCache();
   if (!valijaMode) {
-    var m = load.async('../a');
+    var m = load.async('../a.js');
     var f1 = jsunitCallback(function f1cb(module) {
       var r = module({x: 1, y: 2});
       assertEquals(r, 3);
@@ -4077,7 +4077,7 @@ jsunitRegister('testScriptModuleLoader',
 function testAsyncModuleLoader2(load, prefix) {
   directAccess.clearModuleCache();
   if (!valijaMode) {
-    var m = load.async('../foo/b');
+    var m = load.async('../foo/b.js');
     var f1 = jsunitCallback(function f1cb(module) {
       var r = module({x: 1, y: 2, Q: Q, fail: fail});
       Q.when(r, jsunitCallback(function(result) {
@@ -4120,7 +4120,7 @@ function testAsyncModuleLoaderFailure(load, includeScript, prefix) {
   });
 
   if (!valijaMode) {
-    var m = xhrModuleLoad.async('../b');
+    var m = xhrModuleLoad.async('../b.js');
     Q.when(m, f1, f2);
   } else {
     var m = xhrIncludeScript.async('../foo/x');
@@ -4142,7 +4142,7 @@ jsunitRegister('testRecursiveModule',
                function testRecursiveModule() {
   directAccess.clearModuleCache();
   if (!valijaMode) {
-    var m = scriptModuleLoad.async('../recursion');
+    var m = scriptModuleLoad.async('../recursion.js');
     var f1 = jsunitCallback(function f1cb(module) {
       var r = module({x: 5, Q: Q});
         Q.when(r, jsunitCallback(function(result) {
@@ -4211,7 +4211,7 @@ jsunitRegister('testCommonJsRecursiveModule',
 function testUnbundledModuleLoader(load, prefix) {
   //directAccess.clearModuleCache();
   if (!valijaMode) {
-    var m = load.async('../foo/f');
+    var m = load.async('../foo/f.js');
     var f1 = jsunitCallback(function f1cb(module) {
                var result = module({x: 1, y: 2});
                assertEquals(result, 5);

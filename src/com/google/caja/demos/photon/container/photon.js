@@ -28,7 +28,7 @@
 
 var self = {};
 
-var introducer = load('introducer')({ 
+var introducer = load('introducer.js')({ 
   photon: self
 });
 

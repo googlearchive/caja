@@ -27,7 +27,7 @@ var states = Object.freeze({
   ACTIVE:   'active'
 });
 
-var introducerEvents = load('events')({
+var introducerEvents = load('events.js')({
   names: [ 'highlight', 'active', 'providerVisible' ]
 });
 
@@ -88,7 +88,7 @@ var makeDndModel = function(
   myInitiatorController.cancel();
   myReceptorController.cancel();
 
-  var events = load('events')({
+  var events = load('events.js')({
     names: [ 'state', 'destroyed' ]
   });
 
@@ -149,8 +149,8 @@ var makeDndModel = function(
   });
 };
 
-var dragSources = load('list')({});
-var dropTargets = load('list')({});
+var dragSources = load('list.js')({});
+var dropTargets = load('list.js')({});
 
 var activeDragSourceSlot = { value: undefined };
 var activeDropTargetSlot = { value: undefined };
@@ -222,7 +222,7 @@ var makeDropTarget = function(dataType, description, handler) {
       handler);
 };
 
-var providers = load('list')({});
+var providers = load('list.js')({});
 
 /**
  * Put a source into the introducer's chrome.

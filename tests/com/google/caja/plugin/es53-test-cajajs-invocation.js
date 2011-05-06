@@ -129,13 +129,25 @@
         });
       });
     });
-
+    
     registerTest('testUrlJs', function testUrlJs() {
       frameGroup.makeES5Frame(undefined, uriCallback, function (frame) {
         var extraImports = { x: 4, y: 3 };
         frame.url('es53-test-guest.js').run(extraImports, function (result) {
           assertEquals(12, result);
           jsunitPass('testUrlJs');
+        });
+      });
+    });
+
+    registerTest('testUrlHtmlWithMimeType', function testUrlHtml() {
+      var div = createDiv();
+      frameGroup.makeES5Frame(div, uriCallback, function (frame) {
+        frame.url('es53-test-guest.html', 'text/html').run({},
+            function (result) {
+          assertStringContains('static html', div.innerHTML);
+          assertStringContains('dynamic html', div.innerHTML);
+          jsunitPass('testUrlHtmlWithMimeType');
         });
       });
     });

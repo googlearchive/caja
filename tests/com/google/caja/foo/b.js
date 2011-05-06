@@ -20,7 +20,7 @@
  * 
  * A test file for asynchronous module loading in Cajita
  */
-var m = load.async('../c');
+var m = load.async('../c.js');
 var f1 = function(module) {
   var r1 = module({x: x});
   var r2 = module({x: y});
