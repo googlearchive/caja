@@ -483,6 +483,14 @@ public final class Parser extends ParserBase {
         Expression cond = parseExpressionInt(true);
         tq.expectToken(Punctuation.RPAREN);
         s = new DoWhileLoop(posFrom(start), label, body, cond);
+        // http://code.google.com/p/google-caja/issues/detail?id=1316
+        // ES[35] requires ; after do-while, but browsers are ok without it.
+        // Here we either eat a ; or warn if it's missing.
+        if (!tq.checkToken(Punctuation.SEMI)) { 
+          FilePosition pos = FilePosition.endOf(tq.lastPosition());
+          mq.addMessage(
+              MessageType.SEMICOLON_INSERTED, MessageLevel.LINT, pos);
+        }
         break;
       }
       case SWITCH:
@@ -1335,7 +1343,10 @@ public final class Parser extends ParserBase {
     if (s instanceof LabeledStmtWrapper) {
       return isTerminal(((LabeledStmtWrapper) s).getBody());
     }
-    return ((s instanceof Loop && !(s instanceof DoWhileLoop))
+    // http://code.google.com/p/google-caja/issues/detail?id=1316
+    // Note since DoWhileLoop is a Loop, we're allowing do-while to omit
+    // the semicolon, which deviates from ES[35] but is allowed by browsers.
+    return (s instanceof Loop
             || s instanceof Conditional || s instanceof FunctionDeclaration
             || s instanceof Block || s instanceof TryStmt
             || s instanceof ForEachLoop || s instanceof SwitchStmt)

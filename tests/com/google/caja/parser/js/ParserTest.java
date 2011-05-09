@@ -25,6 +25,7 @@ import com.google.caja.parser.MutableParseTreeNode;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.Visitor;
 import com.google.caja.render.Concatenator;
+import com.google.caja.render.JsMinimalPrinter;
 import com.google.caja.render.JsPrettyPrinter;
 import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessageContext;
@@ -476,6 +477,19 @@ public class ParserTest extends CajaTestCase {
     assertMessage(true, MessageType.MAYBE_MISSING_SEMI, MessageLevel.WARNING);
     assertTrue(mq.getMessages().isEmpty());
   }
+  
+  public final void testDoWhileSemis() throws Exception {
+    js(fromString("do {;} while (0)1"));
+    assertMessage(true, MessageType.SEMICOLON_INSERTED, MessageLevel.LINT);
+    js(fromString("do {;} while (0) 1"));
+    assertMessage(true, MessageType.SEMICOLON_INSERTED, MessageLevel.LINT);
+    js(fromString("do {;} while (0)\n1"));
+    assertMessage(true, MessageType.SEMICOLON_INSERTED, MessageLevel.LINT);
+    js(fromString("do {;} while (0);1"));
+    assertTrue(mq.getMessages().isEmpty());
+    assertRender("{do{;}while(0)1}", "{\n  do {; } while (0);\n  1;\n}");
+    assertMinified("{do{;}while(0)1}", "{do{;}while(0);1}");
+  }
 
   public final void testCommas() {
     try {
@@ -636,6 +650,17 @@ public class ParserTest extends CajaTestCase {
       throws Exception {
     StringBuilder sb = new StringBuilder();
     TokenConsumer tc = new JsPrettyPrinter(new Concatenator(sb));
+    RenderContext rc = new RenderContext(tc)
+        .withAsciiOnly(true).withEmbeddable(true);
+    js(fromString(code)).children().get(0).render(rc);
+    tc.noMoreTokens();
+    assertEquals(code, expectedRendering, sb.toString());
+  }
+
+  private void assertMinified(String code, String expectedRendering)
+      throws Exception {
+    StringBuilder sb = new StringBuilder();
+    TokenConsumer tc = new JsMinimalPrinter(new Concatenator(sb));
     RenderContext rc = new RenderContext(tc)
         .withAsciiOnly(true).withEmbeddable(true);
     js(fromString(code)).children().get(0).render(rc);
