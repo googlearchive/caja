@@ -425,14 +425,13 @@ var caja = (function () {
         '  padding: 0px;' +
         '  margin: 0px;' +
         '  display: inline;' +
+        '  position: relative;' +
+        '  overflow: auto;' +
         '}' +
         '.caja_innerContainer___, .caja_outerContainer___ > * {' +
         '  padding: 0px;' +
         '  margin: 0px;' +
         '  height: 100%;' +
-        '  position: relative;' +
-        '  overflow: auto;' +
-        '  clip: rect(0px, 0px, 0px, 0px);' +
         '}';
     aWindow.document.getElementsByTagName('head')[0].appendChild(style);
     // Attach safety marker to 'window' object

@@ -132,6 +132,8 @@ div.console {
 }
 div.dom {
     height:553px;
+    overflow:hidden;
+    position:relative;
 }
 div.footer {
     line-height: 1.3em;

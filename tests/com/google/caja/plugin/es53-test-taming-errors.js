@@ -37,13 +37,13 @@
       assertTrue(!!win.Object.FERAL_FRAME_OBJECT___);
       assertEquals(win.Object, win.Object.FERAL_FRAME_OBJECT___);
 
-      var inner = doc.createElement('div');
-      inner.setAttribute('class', 'caja_innerContainer___');
-      doc.body.appendChild(inner);
+      var outer = doc.createElement('div');
+      outer.setAttribute('class', 'caja_outerContainer___');
+      doc.body.appendChild(outer);
 
       assertEquals(
           'relative',
-          win.getComputedStyle(inner, null)
+          win.getComputedStyle(outer, null)
               .getPropertyValue('position'));
 
       jsunit.pass('testInitFeralFrameOther');
