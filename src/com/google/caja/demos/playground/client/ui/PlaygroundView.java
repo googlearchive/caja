@@ -30,6 +30,8 @@ import com.google.gwt.event.logical.shared.SelectionHandler;
 import com.google.gwt.user.client.DOM;
 import com.google.gwt.user.client.ui.Anchor;
 import com.google.gwt.user.client.ui.HasHorizontalAlignment;
+import com.google.gwt.user.client.ui.HTML;
+import com.google.gwt.user.client.ui.Label;
 import com.google.gwt.user.client.ui.MultiWordSuggestOracle;
 import com.google.gwt.user.client.ui.RootLayoutPanel;
 import com.google.gwt.user.client.ui.SuggestBox;
@@ -85,8 +87,8 @@ public class PlaygroundView {
     });
     playgroundUI.cajoleButton.addClickHandler(new ClickHandler() {
       public void onClick(ClickEvent event) {
-        playgroundUI.runtimeMessages.setText("");
-        playgroundUI.compileMessages.setText("");
+        playgroundUI.runtimeMessages.clear();
+        playgroundUI.compileMessages.clear();
         playgroundUI.cajoledSource.setText("");
         playgroundUI.renderPanel.setText("");
         controller.cajole(
@@ -382,13 +384,15 @@ public class PlaygroundView {
   }-*/;
 
   public void addCompileMessage(String item) {
-    playgroundUI.compileMessages.setHTML(
-        playgroundUI.compileMessages.getHTML() + "<br>" + item);
+    // Rendered using HTMLSnippetProducer serverside
+    HTML i = new HTML(item);
+    playgroundUI.compileMessages.add(i);
   }
 
   public void addRuntimeMessage(String item) {
-    playgroundUI.runtimeMessages.setHTML(
-        playgroundUI.runtimeMessages.getHTML() + "<br>" + item);
+    // Unsafe as HTML
+    Label i = new Label(item);
+    playgroundUI.runtimeMessages.add(i);
   }
 
   /** @param uri unused but provided for consistency with native GWT caller. */

@@ -131,16 +131,16 @@
         <g:tab>
           <g:header size='7'>Compiler Messages</g:header>
           <g:ScrollPanel>
-            <g:HTML ui:field="compileMessages">
-            </g:HTML>
+            <g:VerticalPanel ui:field="compileMessages">
+            </g:VerticalPanel>
           </g:ScrollPanel>
         </g:tab>
         <g:tab>
           <g:header size='7'>Runtime Messages</g:header>
           <g:ScrollPanel>
-            <g:HTML ui:field="runtimeMessages">
-            </g:HTML>
-  	      </g:ScrollPanel>
+            <g:VerticalPanel ui:field="runtimeMessages">
+            </g:VerticalPanel>
+          </g:ScrollPanel>
         </g:tab>
       </g:TabLayoutPanel>
     </g:center>

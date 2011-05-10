@@ -17,6 +17,7 @@ import com.google.gwt.user.client.ui.TabLayoutPanel;
 import com.google.gwt.user.client.ui.TextArea;
 import com.google.gwt.user.client.ui.TextBox;
 import com.google.gwt.user.client.ui.Tree;
+import com.google.gwt.user.client.ui.VerticalPanel;
 import com.google.gwt.user.client.ui.Widget;
 
 /**
@@ -27,8 +28,8 @@ import com.google.gwt.user.client.ui.Widget;
 public class PlaygroundUI extends Composite {
   @UiField protected TextBox renderResult;
   @UiField protected HTML renderPanel;
-  @UiField protected HTML compileMessages;
-  @UiField protected HTML runtimeMessages;
+  @UiField protected VerticalPanel compileMessages;
+  @UiField protected VerticalPanel runtimeMessages;
   @UiField protected HTML cajoledSource;
   @UiField protected TabLayoutPanel editorPanel;
   @UiField protected PlaygroundEditor sourceText;
