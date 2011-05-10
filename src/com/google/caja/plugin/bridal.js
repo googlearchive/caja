@@ -385,6 +385,19 @@ var bridalMaker = function(document) {
     return clone;
   }
 
+  function initCanvasElements(doc) {
+    var els = doc.getElementsByTagName('canvas');
+    for (var i = 0; i < els.length; i++) {
+      initCanvasElement(els[i]);
+    }
+  }
+
+  function initCanvasElement(el) {
+    if (window.G_vmlCanvasManager) {
+      window.G_vmlCanvasManager.initElement(el);
+    }
+  }
+
   function createElement(tagName, attribs) {
     if (featureExtendedCreateElement) {
       var tag = ['<', tagName];
@@ -703,7 +716,9 @@ var bridalMaker = function(document) {
     untameEventType: untameEventType,
     extendedCreateElementFeature: featureExtendedCreateElement,
     getComputedStyle: getComputedStyle,
-    makeXhr: makeXhr
+    makeXhr: makeXhr,
+    initCanvasElement: initCanvasElement,
+    initCanvasElements: initCanvasElements
   };
 };
 

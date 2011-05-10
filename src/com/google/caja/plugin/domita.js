@@ -866,6 +866,9 @@ var attachDocumentStub = (function () {
       return attribs;
     };
 
+    // On IE, turn an <canvas> tags into canvas elements that explorercanvas
+    // will recognize 
+    bridal.initCanvasElements(pseudoBodyNode);
 
     /** Sanitize HTML applying the appropriate transformations. */
     function sanitizeHtml(htmlText) {
@@ -3872,6 +3875,9 @@ var attachDocumentStub = (function () {
         return null;
       }
       var newEl = this.doc___.createElement(tagName);
+      if ("canvas" == tagName) {
+        bridal.initCanvasElement(newEl);
+      }
       if (elementPolicies.hasOwnProperty(tagName)) {
         var attribs = elementPolicies[tagName]([]);
         if (attribs) {

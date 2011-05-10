@@ -1126,6 +1126,9 @@
         <include name="html4-defs.js" />
         <include name="valija.out.js" />
       </fileset>
+      <fileset dir="${third_party}/js/excanvas">
+        <include name="excanvas.js" />
+      </fileset>
       <fileset dir="${third_party}/js/prettify">
         <include name="lang-css.js" />
         <include name="prettify.js" />
