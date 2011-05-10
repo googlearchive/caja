@@ -22,8 +22,8 @@
 
 (function () {
 
-  jsunitRegister('testInitFeralFrame',
-                 function testInitFeralFrame() {
+  jsunitRegister('testInitFeralFrameOther',
+                 function testInitFeralFrameOther() {
     var frame = document.createElement('iframe');
     document.body.appendChild(frame);
 
@@ -46,7 +46,7 @@
           win.getComputedStyle(inner, null)
               .getPropertyValue('position'));
 
-      jsunit.pass('testInitFeralFrame');
+      jsunit.pass('testInitFeralFrameOther');
     }, 0);
   });
 
@@ -54,6 +54,14 @@
     cajaServer: 'http://localhost:8000/caja',
     debug: true
   }, function (frameGroup) {
+
+    jsunitRegister('testInitFeralFrameSelf',
+                   function testInitFeralFrameSelf() {
+      assertTrue(!!window.___);
+      assertTrue(!!window.Object.FERAL_FRAME_OBJECT___);
+      assertEquals(window.Object, window.Object.FERAL_FRAME_OBJECT___);
+      jsunit.pass('testInitFeralFrameSelf');
+    });
 
     jsunitRegister('testToxicSuperCtorFails',
                    function testToxicSuperCtorFails() {

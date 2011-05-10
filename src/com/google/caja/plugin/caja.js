@@ -16,7 +16,7 @@
  * @fileoverview ... TODO ihab.awad
  * @author kpreid@switchb.org
  * @author ihab.awad@gmail.com
- * @requires document, setTimeout, console
+ * @requires document, setTimeout, console, window
  * @provides caja
  */
 
@@ -102,6 +102,8 @@ var caja = (function () {
    *     the newly created frame group.
    */
   function configure(config, callback) {
+    if (!window.Object.FERAL_FRAME_OBJECT___) { initFeralFrame(window); }
+
     var cajaServer = String(config.cajaServer || 'http://caja.appspot.com/');
     var debug = Boolean(config.debug);
 

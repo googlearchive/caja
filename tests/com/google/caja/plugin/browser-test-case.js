@@ -110,7 +110,6 @@ function getUrlParam(name) {
 }
 
 function pageLoaded___() {
-  caja.initFeralFrame(window);
   var scriptTag = document.createElement('script');
   scriptTag.setAttribute('src',
       getUrlParam('test-driver')
