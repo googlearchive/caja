@@ -1520,6 +1520,21 @@ public class ES53RewriterTest extends CommonJsRewriterTestCase {
         "assertEquals(Object.getPrototypeOf(foo), Foo.prototype);");
   }
 
+  /**
+   * Tests Array.forEach
+   */
+  public final void testArrayForEach() throws Exception {
+    rewriteAndExecute(
+        "var testArray = ['a', 'b', 'c'];" +
+        "var expectedI = 0;" +
+        "testArray.forEach(function(item, index, orig) {" +
+        "  assertEquals(item, testArray[expectedI]);" +
+        "  assertEquals(index, expectedI);" +
+        "  assertEquals(orig, testArray);" +
+        "  expectedI++; " +
+        "});");
+  }
+
   @Override
   public void setUp() throws Exception {
     super.setUp();

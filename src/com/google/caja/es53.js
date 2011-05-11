@@ -4021,7 +4021,7 @@ var ___, cajaVM, safeJSON;
       var len = this.length >>> 0;
       for (var i = 0; i < len; i++) {
         if (i in this) {
-          block.f___(thisp, [this[i]], i, this);
+          block.f___(thisp, [this[i], i, this]);
         }
       }
     });
@@ -4036,7 +4036,7 @@ var ___, cajaVM, safeJSON;
       var res = new Array(len);
       for (var i = 0; i < len; i++) {
         if (i in this) {
-          res[i] = fun.f___(thisp, [this[i]], i, this);
+          res[i] = fun.f___(thisp, [this[i], i, this]);
         }
       }
       return res;
