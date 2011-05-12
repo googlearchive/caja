@@ -23,7 +23,7 @@ import com.google.caja.parser.js.ExpressionStmt;
 import com.google.caja.parser.js.StringLiteral;
 import com.google.caja.parser.quasiliteral.QuasiBuilder;
 import com.google.caja.parser.quasiliteral.ReservedNames;
-import com.google.caja.plugin.CssRuleRewriter;
+import com.google.caja.plugin.CssDynamicExpressionRewriter;
 import com.google.caja.plugin.JobEnvelope;
 import com.google.caja.util.Lists;
 
@@ -88,14 +88,15 @@ final class SafeCssMaker {
     StringBuilder css = new StringBuilder();
     FilePosition staticPos = null, dynamicPos = null;
     for (ValidatedStylesheet ss : validatedStylesheets) {
-      ArrayConstructor ac = CssRuleRewriter.cssToJs(ss.ss);
+      ArrayConstructor ac = CssDynamicExpressionRewriter.cssToJs(ss.ss);
       List<? extends Expression> children = ac.children();
       if (children.isEmpty()) { continue; }
       FilePosition acPos = ac.getFilePosition();
       Expression child0 = children.get(0);
-      // The CssRuleRewriter gets to distinguish between static and dynamic.
-      // If the output is a single string, then joining it on the idClass would
-      // not add any information, so we can put it in the static HTML.
+      // The CssDynamicExpressionRewriter gets to distinguish between static and
+      // dynamic. If the output is a single string, then joining it on the
+      // idClass would not add any information, so we can put it in the static
+      // HTML.
       if (children.size() == 1 && child0 instanceof StringLiteral) {
         css.append('\n').append(((StringLiteral) child0).getUnquotedValue());
         staticPos = staticPos == null

@@ -43,21 +43,11 @@
     xhr.send(null);
   }
 
-  function assertStringContains(chunk, text) {
-    if (new RegExp(chunk).test(text)) { return; }
-    fail('Cannot find <<' + chunk + '>> in <<' + text + '>>');
-  }
-
-  function uriCallback(uri, mimeType) { return uri; }
-
-  function registerTest(name, f) {
-    var e = document.createElement('div');
-    e.innerHTML = 'Test ' + name;
-    e.setAttribute('id', name);
-    e.setAttribute('class', 'testcontainer waiting');
-    document.body.appendChild(e);
-    jsunitRegister(name, f);
-  }
+  // NOTE: Identity URI rewriter (as shown below) is for testing only; this
+  // would be unsafe for production code!
+  var uriCallback = {
+    rewrite: function (uri) { return uri; }
+  };
 
   caja.configure({
     cajaServer: 'http://localhost:8000/caja',

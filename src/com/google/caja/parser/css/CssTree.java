@@ -1159,7 +1159,7 @@ public abstract class CssTree extends AbstractParseTreeNode {
   /**
    * A uri literal like {@code url('foo/bar.css')}.
    */
-  public static final class UriLiteral extends CssLiteral {
+  public static class UriLiteral extends CssLiteral {
     private static final long serialVersionUID = -8141374453739246763L;
     /** @param none ignored but required for reflection. */
     @ReflectiveCtor

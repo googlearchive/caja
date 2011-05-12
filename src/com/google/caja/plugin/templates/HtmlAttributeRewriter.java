@@ -278,8 +278,16 @@ public final class HtmlAttributeRewriter {
           urlAdapter.getAttributes().set(HANDLER_NAME, handlerIndexName);
           dynamicValue = urlAdapter;
         } else {
+          URI uri;
           try {
-            URI uri = new URI(UriUtil.normalizeUri(value));
+            uri = new URI(UriUtil.normalizeUri(value));
+          } catch (URISyntaxException ex) {
+            mq.addMessage(
+                IhtmlMessageType.MALFORMED_URI, pos,
+                MessagePart.Factory.valueOf(value));
+            return noResult(attr);
+          }
+          if (meta.getUriPolicy() != null) {
             ExternalReference ref = new ExternalReference(uri, pos);
             String rewrittenUri = meta.getUriPolicy().rewriteUri(
                 ref, attr.attrInfo.getUriEffect(),
@@ -295,11 +303,17 @@ public final class HtmlAttributeRewriter {
             }
             dynamicValue = StringLiteral.valueOf(
                 ref.getReferencePosition(), rewrittenUri);
-          } catch (URISyntaxException ex) {
-            mq.addMessage(
-                IhtmlMessageType.MALFORMED_URI, pos,
-                MessagePart.Factory.valueOf(value));
-            return noResult(attr);
+          } else {
+            dynamicValue = (Expression) QuasiBuilder.substV(
+                ""
+                + "IMPORTS___./*@synthetic*/rewriteUriInAttribute___("
+                + "    @value, @tagName, @attribName)",
+                "value", new StringLiteral(
+                    pos, uri.toString()),
+                "tagName", new StringLiteral(
+                    pos, attr.src.getOwnerElement().getTagName()),
+                "attribName", new StringLiteral(
+                    pos, attr.src.getName()));
           }
         }
         break;

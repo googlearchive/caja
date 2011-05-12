@@ -26,6 +26,10 @@ public class ES53BrowserTest extends BrowserTestCase {
     runTestCase("es53-test-basic-functions-guest.html");
   }
 
+  public final void testClientUriRewriting() {
+    runTestDriver("es53-test-client-uri-rewriting.js");
+  }
+
   public final void testTamingTamed() {
     runTestDriver("es53-test-taming-tamed.js");
   }

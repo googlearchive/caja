@@ -23,7 +23,7 @@ public final class PluginMeta {
   /** Used to generate names that are unique within the plugin's namespace. */
   private int guidCounter;
   private final UriFetcher uriFetcher;
-  private final UriPolicy uriPolicy;
+  private final @Nullable UriPolicy uriPolicy;
   /**
    * The DOM ID suffix if known at Cajole time.  Most clients should allow the
    * module ID to be assigned dynamically but for those clients who know that
@@ -36,8 +36,8 @@ public final class PluginMeta {
     this(UriFetcher.NULL_NETWORK, UriPolicy.DENY_ALL);
   }
 
-  public PluginMeta(UriFetcher uriFetcher, UriPolicy uriPolicy) {
-    if (uriFetcher == null || uriPolicy == null) {
+  public PluginMeta(UriFetcher uriFetcher, @Nullable UriPolicy uriPolicy) {
+    if (uriFetcher == null) {
       throw new NullPointerException();
     }
     this.uriFetcher = uriFetcher;
@@ -56,7 +56,7 @@ public final class PluginMeta {
   public int generateGuid() { return ++guidCounter; }
 
   /** Describes how resources external to the plugin definition are resolved. */
-  public UriPolicy getUriPolicy() { return uriPolicy; }
+  public @Nullable UriPolicy getUriPolicy() { return uriPolicy; }
 
   /** Describes how resources external to the plugin definition are resolved. */
   public UriFetcher getUriFetcher() { return uriFetcher; }

@@ -15,7 +15,7 @@
 package com.google.caja.plugin.stages;
 
 import com.google.caja.parser.css.CssTree;
-import com.google.caja.plugin.CssRuleRewriter;
+import com.google.caja.plugin.CssDynamicExpressionRewriter;
 import com.google.caja.plugin.Job;
 import com.google.caja.plugin.JobEnvelope;
 import com.google.caja.plugin.Jobs;
@@ -35,7 +35,7 @@ public final class RewriteCssStage implements Pipeline.Stage<Jobs> {
       if (env.fromCache) { continue; }
       Job job = env.job;
 
-      new CssRuleRewriter(jobs.getPluginMeta()).rewriteCss(
+      new CssDynamicExpressionRewriter(jobs.getPluginMeta()).rewriteCss(
           (CssTree.StyleSheet) job.getRoot());
     }
     return jobs.hasNoFatalErrors();

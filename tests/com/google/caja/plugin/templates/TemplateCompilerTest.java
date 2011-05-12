@@ -34,7 +34,7 @@ import com.google.caja.parser.js.FunctionConstructor;
 import com.google.caja.parser.js.FunctionDeclaration;
 import com.google.caja.parser.js.Identifier;
 import com.google.caja.parser.js.TranslatedCode;
-import com.google.caja.plugin.CssRuleRewriter;
+import com.google.caja.plugin.CssDynamicExpressionRewriter;
 import com.google.caja.plugin.JobEnvelope;
 import com.google.caja.plugin.LoaderType;
 import com.google.caja.plugin.Placeholder;
@@ -91,6 +91,15 @@ public class TemplateCompilerTest extends CajaTestCase {
         htmlFragment(fromResource("template-compiler-input1.html", is)),
         htmlFragment(fromResource("template-compiler-golden1-dynamic.html")),
         js(fromResource("template-compiler-golden1-dynamic.js")));
+  }
+
+  public final void testSafeHtmlWithNullUriPolicy() throws Exception {
+    // Null URI policy also implies dynamic module ID
+    meta = new PluginMeta(UriFetcher.NULL_NETWORK, null);
+    assertSafeHtml(
+        htmlFragment(fromResource("template-compiler-input1.html", is)),
+        htmlFragment(fromResource("template-compiler-golden1-nulluripol.html")),
+        js(fromResource("template-compiler-golden1-nulluripol.js")));
   }
 
   public final void testSafeHtmlWithStaticModuleId() throws Exception {
@@ -855,7 +864,8 @@ public class TemplateCompilerTest extends CajaTestCase {
       if (n.getFirstChild() != null) {
         String text = n.getFirstChild().getNodeValue();
         CssTree.StyleSheet css = css(fromString(text, pos));
-        CssRuleRewriter rrw = new CssRuleRewriter(meta);
+        CssDynamicExpressionRewriter rrw =
+            new CssDynamicExpressionRewriter(meta);
         rrw.rewriteCss(css);
         assertMessagesLessSevereThan(MessageLevel.ERROR);
         styles.add(new ValidatedStylesheet(

@@ -15,7 +15,9 @@
 package com.google.caja.plugin;
 
 import com.google.caja.lexer.ParseException;
+import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.ParseTreeNode;
+import com.google.caja.parser.Visitor;
 import com.google.caja.parser.css.CssTree;
 import com.google.caja.parser.js.ArrayConstructor;
 import com.google.caja.render.Concatenator;
@@ -23,7 +25,11 @@ import com.google.caja.render.JsPrettyPrinter;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.CajaTestCase;
 
-public class CssRuleRewriterTest extends CajaTestCase {
+import java.net.URI;
+import java.util.Arrays;
+import java.util.List;
+
+public class CssDynamicExpressionRewriterTest extends CajaTestCase {
   public final void testSimpleRule() {
     assertCompiledCss(
         "p {color:purple}",
@@ -95,21 +101,96 @@ public class CssRuleRewriterTest extends CajaTestCase {
         false);
   }
 
+  public final void testRewriteUnsafeUris1() throws Exception {
+    assertRewriteUris(
+        "  p { background: url(foo.png) }"
+        + "a { background: url(bar.png) }",
+        "[ '.', ' p {\\n  background: url(\\'foo.png\\')\\n}\\n.', "
+        + "' a {\\n  background: "
+        + "url(' + IMPORTS___.rewriteUriInCss___('bar.png') + ')\\n}' ]",
+        Arrays.asList("foo.png"),
+        Arrays.asList("bar.png"));
+  }
+
+  public final void testRewriteUnsafeUris2() throws Exception {
+    assertRewriteUris(
+        "  p { background: url(\"foo'.png\") }"
+        + "a { background: url(\"bar'.png\") }",
+        "[ '.', ' p {\\n  background: url(\\'foo%27.png\\')\\n}\\n.', "
+        + "' a {\\n  background: "
+        + "url(' + IMPORTS___.rewriteUriInCss___('bar\\'.png') + ')\\n}' ]",
+        Arrays.asList("foo'.png"),
+        Arrays.asList("bar'.png"));
+  }
+
+  private void assertRewriteUris(String input,
+                                 String golden,
+                                 List<String> safeUris,
+                                 List<String> unsafeUris)
+      throws Exception {
+    assertCompiledCss(
+        safeUnsafe(
+            css(fromString(input)),
+            safeUris,
+            unsafeUris),
+        golden);
+  }
+
   private void assertCompiledCss(String input, String golden) {
     assertCompiledCss(input, golden, true);
   }
 
+  private void assertCompiledCss(CssTree.StyleSheet css, String golden) {
+    assertCompiledCss(css, golden, true);
+  }
+
   private void assertCompiledCss(String input, String golden, boolean dynamic) {
     try {
-      PluginMeta pm = new PluginMeta();
-      if (!dynamic) { pm.setIdClass("xyz___"); }
-      CssTree.StyleSheet css = css(fromString(input));
-      new CssRuleRewriter(pm).rewriteCss(css);
-      ArrayConstructor ac = CssRuleRewriter.cssToJs(css);
-      assertEquals(golden, render(ac, 160));
+      assertCompiledCss(css(fromString(input)), golden, dynamic);
     } catch (ParseException ex) {
       fail(input);
     }
+  }
+
+  private void assertCompiledCss(
+      CssTree.StyleSheet css,
+      String golden,
+      boolean dynamic) {
+    PluginMeta pm = new PluginMeta();
+    if (!dynamic) { pm.setIdClass("xyz___"); }
+    new CssDynamicExpressionRewriter(pm).rewriteCss(css);
+    ArrayConstructor ac = CssDynamicExpressionRewriter.cssToJs(css);
+    assertEquals(golden, render(ac, 160));
+  }
+
+  private CssTree.StyleSheet safeUnsafe(CssTree.StyleSheet css,
+                                        final List<String> safeUris,
+                                        final List<String> unsafeUris) {
+    css.acceptPreOrder(new Visitor() {
+      public boolean visit(AncestorChain<?> ancestors) {
+        ParseTreeNode node = ancestors.node;
+        if (node instanceof CssTree.UriLiteral) {
+          CssTree parent = (CssTree) ancestors.parent.node;
+          assert(null != parent);
+          String value = ((CssTree.CssLiteral) node).getValue();
+          CssTree.UriLiteral repl = null;
+          if (safeUris.contains(value)) {
+            repl = new SafeUriLiteral(
+                node.getFilePosition(), URI.create(value));
+          } else if (unsafeUris.contains(value)) {
+            repl = new UnsafeUriLiteral(
+                node.getFilePosition(), URI.create(value));
+          }
+          if (repl != null) {
+            parent.replaceChild(repl, node);
+          } else {
+            fail("URI literal " + value + " unaccounted for by test");
+          }
+        }
+        return true;
+      }
+    }, null);
+    return css;
   }
 
   private static String render(ParseTreeNode node, int limit) {

@@ -238,7 +238,6 @@ public class CajolingService {
 
   private void registerHandlers(BuildInfo buildInfo) {
     handlers.add(new JsHandler(buildInfo));
-    handlers.add(new ImageHandler());
     handlers.add(new InnocentHandler(buildInfo));
     handlers.add(new HtmlHandler(buildInfo, host, uriFetcher));
   }

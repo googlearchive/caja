@@ -54,15 +54,13 @@ public class CajolingServiceTest extends ServiceTestCase {
 
   // Tests that POST-ing to the service works just as well as GET-ting from it.
   public final void testPost() throws Exception {
-    byte[] byteData = { (byte) 0x47, (byte) 0x49, (byte) 0x46,
-                        (byte) 0x39, (byte) 0x38, (byte) 0x61 };
-    assertTrue(Arrays.equals(
-        (byte[]) requestPost(
-            "?url=http://foo/bar.gif&input-mime-type=image/*",
-            byteData,
-            "image/gif",
+    assertContainsIgnoreSpace(
+        (String) requestPost(
+            "?url=http://foo/bar.html&input-mime-type=text/html&alt=json",
+            "<p>Foo bar</p>".getBytes("UTF-8"),
+            "text/html",
             null),
-        byteData));
+        "Foo bar");
   }
 
   public final void testUnexpectedMimeType() throws Exception {

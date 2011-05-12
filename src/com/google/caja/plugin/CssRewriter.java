@@ -66,7 +66,6 @@ public final class CssRewriter {
 
   public CssRewriter(UriPolicy uriPolicy, CssSchema schema, MessageQueue mq) {
     assert null != mq;
-    assert null != uriPolicy;
     this.uriPolicy = uriPolicy;
     this.schema = schema;
     this.mq = mq;
@@ -109,6 +108,8 @@ public final class CssRewriter {
     // Do this again to make sure no earlier changes introduce unsafe constructs
     removeUnsafeConstructs(t);
 
+    // Translate embedded URLs to either "safe" or "unsafe" variant depending
+    // on whether a server-side URI policy has been provided.
     translateUrls(t);
   }
 
@@ -642,7 +643,8 @@ public final class CssRewriter {
               ExternalReference ref = new ExternalReference(
                   uri, content.getFilePosition());
               Name propertyPart = propertyPart(node);  // TODO
-              if (uriPolicy.rewriteUri(
+              if (uriPolicy != null &&
+                  uriPolicy.rewriteUri(
                       ref, UriEffect.SAME_DOCUMENT, LoaderType.SANDBOXED,
                       Collections.singletonMap(
                           UriPolicyHintKey.CSS_PROP.key, propertyPart))
@@ -742,12 +744,18 @@ public final class CssRewriter {
                 // mime-type of text/*.
                 ExternalReference ref = new ExternalReference(
                     uri, content.getFilePosition());
-                String rewrittenUri = uriPolicy.rewriteUri(
-                    ref, UriEffect.SAME_DOCUMENT, LoaderType.SANDBOXED,
-                    Collections.singletonMap(
-                        UriPolicyHintKey.CSS_PROP.key, propertyPart));
-                CssTree.UriLiteral replacement = new CssTree.UriLiteral(
-                        content.getFilePosition(), URI.create(rewrittenUri));
+                CssTree.UriLiteral replacement;
+                if (uriPolicy != null) {
+                  String rewrittenUri = uriPolicy.rewriteUri(
+                      ref, UriEffect.SAME_DOCUMENT, LoaderType.SANDBOXED,
+                      Collections.singletonMap(
+                          UriPolicyHintKey.CSS_PROP.key, propertyPart));
+                  replacement = new SafeUriLiteral(
+                          content.getFilePosition(), URI.create(rewrittenUri));
+                } else {
+                  replacement = new UnsafeUriLiteral(
+                          content.getFilePosition(), uri);
+                }
                 replacement.getAttributes().putAll(content.getAttributes());
                 term.replaceChild(replacement, content);
               } catch (URISyntaxException ex) {

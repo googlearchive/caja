@@ -122,6 +122,83 @@ function readyToTest() {
       .className = 'readytotest';
 }
 
+function registerTest(name, f) {
+  var e = document.createElement('div');
+  e.innerHTML = 'Test ' + name;
+  e.setAttribute('id', name);
+  e.setAttribute('class', 'testcontainer waiting');
+  document.body.appendChild(e);
+  jsunitRegister(name, f);
+}
+
+/**
+ * Canonicalize innerHTML output:
+ *   - collapse all whitespace to a single space
+ *   - remove whitespace between adjacent tags
+ *   - lowercase tagnames and attribute names
+ *   - sort attributes by name
+ *   - quote attribute values
+ *
+ * Without this step, it's impossible to compare innerHTML cross-browser.
+ */
+function canonInnerHtml(s) {
+  // Sort attributes.
+  var htmlAttribute = new RegExp(
+      '\\s*(\\w+)(?:\\s*=\\s*("[^\\"]*"|\'[^\\\']*\'|[^\\\'\\"\\s>]+))?');
+  var quot = new RegExp('"', 'g');
+  var tagBody = '(?:"[^"]*"|\'[^\']*\'|[^>"\']+)*';
+  var htmlStartTag = new RegExp('(<\\w+)(' + tagBody + ')>', 'g');
+  var htmlTag = new RegExp('(<\/?)(\\w+)(' + tagBody + ')>', 'g');
+  var ignorableWhitespace = new RegExp('^[ \\t]*(\\r\\n?|\\n)|\\s+$', 'g');
+  var tagEntityOrText = new RegExp(
+      '(?:(</?\\w[^>]*>|&[a-zA-Z#]|[^<&>]+)|([<&>]))', 'g');
+  s = s.replace(
+      htmlStartTag,
+      function (_, tagStart, tagBody) {
+        var attrs = [];
+        for (var m; tagBody && (m = tagBody.match(htmlAttribute));) {
+          var name = m[1].toLowerCase();
+          var value = m[2];
+          var hasValue = value != null;
+          if (hasValue && (new RegExp('^["\']')).test(value)) {
+            value = value.substring(1, value.length - 1);
+          }
+          attrs.push(
+              hasValue
+              ? name + '="' + value.replace(quot, '&quot;') + '"'
+              : name);
+          tagBody = tagBody.substring(m[0].length);
+        }
+        attrs.sort();
+        attrs.unshift(tagStart);
+        return attrs.join(' ') + '>';
+      });
+  s = s.replace(
+      htmlTag,
+      function (_, open, name, body) {
+        return open + name.toLowerCase() + (body || '') + '>';
+      });
+  // Collapse whitespace.
+  s = s.replace(new RegExp('\\s+', 'g'), ' ');
+  s = s.replace(new RegExp('^ | $', 'g'), '');
+  s = s.replace(new RegExp('[>]\\s+[<]', 'g'), '><');
+  // Normalize escaping of text nodes since Safari doesn't escape loose >.
+  s = s.replace(
+      tagEntityOrText,
+      function (_, good, bad) {
+        return good
+            ? good
+            : (bad.replace(new RegExp('&', 'g'), '&amp;')
+               .replace(new RegExp('>', 'g'), '&gt;'));
+      });
+  return s;
+}
+
+function assertStringContains(chunk, text) {
+  if (text.indexOf(chunk) !== -1) { return; }
+  fail('Cannot find <<' + chunk + '>> in <<' + text + '>>');
+}
+
 function createDiv() {
   var d = document.createElement('div');
   document.body.appendChild(d);
@@ -139,6 +216,10 @@ function createExtraImportsForTesting(frameGroup, frame) {
       frameGroup.tame(frameGroup.markFunction(jsunitRegister));
   standardImports.jsunitCallback =
       frameGroup.tame(frameGroup.markFunction(jsunitCallback));
+  standardImports.canonInnerHtml =
+      frameGroup.tame(frameGroup.markFunction(canonInnerHtml));
+  standardImports.assertStringContains =
+      frameGroup.tame(frameGroup.markFunction(assertStringContains));
 
   var fakeConsole = {
     log: frameGroup.markFunction(function () {

@@ -38,10 +38,8 @@ import com.google.caja.util.ContentType;
 import com.google.caja.util.Maps;
 import org.w3c.dom.Node;
 
-import com.google.caja.lexer.ExternalReference;
 import com.google.caja.lexer.FetchedData;
 import com.google.caja.lexer.FilePosition;
-import com.google.caja.lexer.escaping.UriUtil;
 import com.google.caja.parser.html.Nodes;
 import com.google.caja.parser.js.ArrayConstructor;
 import com.google.caja.parser.js.Expression;
@@ -49,10 +47,7 @@ import com.google.caja.parser.js.IntegerLiteral;
 import com.google.caja.parser.js.ObjectConstructor;
 import com.google.caja.parser.js.StringLiteral;
 import com.google.caja.parser.js.ValueProperty;
-import com.google.caja.plugin.LoaderType;
-import com.google.caja.plugin.UriEffect;
 import com.google.caja.plugin.UriFetcher;
-import com.google.caja.plugin.UriPolicy;
 import com.google.caja.render.Concatenator;
 import com.google.caja.reporting.BuildInfo;
 import com.google.caja.reporting.Message;
@@ -61,7 +56,6 @@ import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.Callback;
 import com.google.caja.util.Lists;
 import com.google.caja.util.Pair;
-import com.google.caja.util.Strings;
 
 /**
  * Common parent class for handlers that invoke the cajoler
@@ -79,35 +73,6 @@ public abstract class AbstractCajolingHandler implements ContentHandler {
     this.buildInfo = buildInfo;
     this.hostedService = hostedService;
     this.uriFetcher = uriFetcher != null ? uriFetcher : UriFetcher.NULL_NETWORK;
-  }
-
-  protected UriPolicy makeUriPolicy(final ContentHandlerArgs args) {
-    return new UriPolicy() {
-      public String rewriteUri(
-          ExternalReference u, UriEffect effect, LoaderType loader,
-          Map<String, ?> hints) {
-        URI uri = u.getUri();
-        boolean sandboxLinksAndImages = !"false".equals(args.get("sext"));
-        if (((effect == UriEffect.NEW_DOCUMENT
-              && loader == LoaderType.UNSANDBOXED)
-             || (effect == UriEffect.SAME_DOCUMENT
-                 && loader == LoaderType.SANDBOXED))
-            && !sandboxLinksAndImages) {
-          String protocol = Strings.toLowerCase(uri.getScheme());
-          if ("http".equals(protocol) || "https".equals(protocol)) {
-            return uri.toString();
-          }
-        }
-        if (hostedService != null) {
-          return hostedService
-              + "?url=" + UriUtil.encode(uri.toString())
-              + "&effect=" + effect + "&loader=" + loader
-              + "&sext=" + sandboxLinksAndImages;
-        } else {
-          return null;
-        }
-      }
-    };
   }
 
   public abstract boolean canHandle(URI uri,

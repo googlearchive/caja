@@ -71,7 +71,7 @@ public class HtmlHandler extends AbstractCajolingHandler {
                                    OutputStream response,
                                    MessageQueue mq)
       throws UnsupportedContentTypeException {
-    PluginMeta meta = new PluginMeta(uriFetcher, makeUriPolicy(args));
+    PluginMeta meta = new PluginMeta(uriFetcher, null);
     meta.setIdClass(args.get("idclass"));
     meta.setEnableES53(directives.contains(CajolingService.Directive.ES53));
 
@@ -151,30 +151,5 @@ public class HtmlHandler extends AbstractCajolingHandler {
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
-  }
-
-  public boolean sandboxLinksAndImages(URI inputUri) {
-    return !(hasParameter(inputUri.getRawQuery(), "sext=false"));
-  }
-
-  private static boolean hasParameter(String query, String param) {
-    if (query == null) { return false; }
-    int pos = 0;
-    int n = query.length();
-    if (n >= 1 && query.charAt(0) == '?') { pos = 1; }
-    while (pos < n) {
-      int end = query.indexOf('&', pos);
-      if (end < 0) { end = n; }
-      String rawParam = query.substring(pos, end);
-      try {
-        if (URLEncoder.encode(rawParam, "UTF-8").equals(param)) {
-          return true;
-        }
-      } catch (UnsupportedEncodingException ex) {
-        throw new SomethingWidgyHappenedError(ex);
-      }
-      pos = end + 1;
-    }
-    return false;
   }
 }

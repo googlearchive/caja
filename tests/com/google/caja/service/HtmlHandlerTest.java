@@ -78,9 +78,9 @@ public class HtmlHandlerTest extends ServiceTestCase {
     }
   }
 
-  public final void testSandboxedLink() throws Exception {
+  public final void testEmbeddedUris() throws Exception {
     registerUri(
-        "http://foo/bar.css", "a { background-image: url(baz.png) }",
+        "http://foo/bar.css", "a { background-image: url(http://foo/baz.png) }",
         "text/css");
     registerUri(
         "http://foo/index.html",
@@ -91,33 +91,18 @@ public class HtmlHandlerTest extends ServiceTestCase {
         + "&output-mime-type=text/html&sext=true&idclass=foo___");
     JSONObject json = (JSONObject) json(result);
     assertContainsIgnoreSpace(
-        (String) json.get("html"),
-        " background-image: url('http://caja.appspot.com/cajole?url=http%3a%2f%2fcaja.appspot.com%2fcajole%3furl%3dhttp%253a%252f%252ffoo%252fbaz.png%26effect%3dSAME%5fDOCUMENT%26loader%3dSANDBOXED%26sext%3dtrue&effect=SAME%5fDOCUMENT&loader=SANDBOXED&sext=true')");
+        (String) json.get("js"),
+        "background-image: url('+"
+        + "IMPORTS___.rewriteUriInCss___('http://foo/baz.png')+"
+        + "')");
     assertContainsIgnoreSpace(
         (String) json.get("html"),
-        "<a href=\"http://caja.appspot.com/cajole"
-        + "?url=http%3a%2f%2ffoo%2fshizzle.html&amp;effect=NEW_DOCUMENT"
-        + "&amp;loader=UNSANDBOXED&amp;sext=true\" target=\"_blank\">");
-  }
-
-  public final void testUnsandboxedLink() throws Exception {
-    registerUri(
-        "http://foo/bar.css", "a { background-image: url(baz.png) }",
-        "text/css");
-    registerUri(
-        "http://foo/index.html",
-        "<link rel=stylesheet href=bar.css><a href=\"shizzle.html\">Clicky</a>",
-        "text/html");
-    String result = (String) requestGet(
-        "?url=http://foo/index.html&input-mime-type=text/html"
-        + "&output-mime-type=text/html&sext=false&idclass=foo___");
-    JSONObject json = (JSONObject) json(result);
+        "<a id=\"id_1___\" target=\"_blank\">");
     assertContainsIgnoreSpace(
-        (String) json.get("html"),
-        "background-image: url('http://foo/baz.png')");
-    assertContainsIgnoreSpace(
-        (String) json.get("html"),
-        "<a href=\"http://foo/shizzle.html\" target=\"_blank\">Clicky</a>");
+        (String) json.get("js"),
+        "IMPORTS___.rewriteUriInAttribute___("
+        + "'http://foo/shizzle.html','a','href'"
+        + ")");
   }
 
   private void assertHtml2Json(String inputMimeType)

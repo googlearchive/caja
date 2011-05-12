@@ -20,6 +20,8 @@ import com.google.caja.lexer.ExternalReference;
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.ParseException;
 import com.google.caja.parser.AncestorChain;
+import com.google.caja.parser.ParseTreeNode;
+import com.google.caja.parser.Visitor;
 import com.google.caja.parser.css.CssTree;
 import com.google.caja.parser.html.ElKey;
 import com.google.caja.parser.html.Namespaces;
@@ -35,6 +37,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -352,6 +355,74 @@ public class CssRewriterTest extends CajaTestCase {
         + "      src='bar.png', sizingMethod='image');"
         + "}",
         "filter::prog-id::prog-id-alpha-image-loader::page-url");
+  }
+
+  private void assertUriPolicy(
+      UriPolicy uriPolicy,
+      String css,
+      List<String> urisExpectedSafe,
+      List<String> urisExpectedUnsafe)
+      throws Exception {
+    final List<String> urisFoundSafe = Lists.newArrayList();
+    final List<String> urisFoundUnsafe = Lists.newArrayList();
+    CssTree t = css(fromString(css), false);
+    new CssValidator(CssSchema.getDefaultCss21Schema(mq),
+        HtmlSchema.getDefault(mq), mq)
+        .validateCss(AncestorChain.instance(t));
+    new CssRewriter(uriPolicy, CssSchema.getDefaultCss21Schema(mq), mq)
+        .rewrite(AncestorChain.instance(t));
+    t.acceptPreOrder(new Visitor() {
+      public boolean visit(AncestorChain<?> ancestors) {
+        ParseTreeNode node = ancestors.node;
+        if (node instanceof CssTree.UriLiteral) {
+          String value = ((CssTree.CssLiteral) node).getValue();
+          if (node instanceof SafeUriLiteral) {
+            urisFoundSafe.add(value);
+          } else if (node instanceof UnsafeUriLiteral) {
+            urisFoundUnsafe.add(value);
+          } else {
+            fail("Tree should not contain any plain CssTree.UriLiteral");
+          }
+        }
+        return true;
+      }
+    }, null);
+    MoreAsserts.assertListsEqual(
+        urisExpectedSafe,
+        Lists.newArrayList(urisFoundSafe));
+    MoreAsserts.assertListsEqual(
+        urisExpectedUnsafe,
+        Lists.newArrayList(urisFoundUnsafe));
+  }
+
+  public final void testUriPolicyPresent() throws Exception {
+    assertUriPolicy(
+        UriPolicy.IDENTITY,
+        ""
+            + "div { background: url(bar.png); }",
+        Arrays.asList("test://example.org/bar.png"),
+        Arrays.<String>asList());
+    assertUriPolicy(
+        UriPolicy.IDENTITY,
+        ""
+        + "div { background: 'bar.png' }",
+        Arrays.asList("test://example.org/bar.png"),
+        Arrays.<String>asList());
+  }
+
+  public final void testUriPolicyAbsent() throws Exception {
+    assertUriPolicy(
+        null,
+        ""
+        + "div { background-image: url(bar.png); }",
+        Arrays.<String>asList(),
+        Arrays.asList("test://example.org/bar.png"));
+    assertUriPolicy(
+        null,
+        ""
+        + "div { background-image: url(bar.png); }",
+        Arrays.<String>asList(),
+        Arrays.asList("test://example.org/bar.png"));
   }
 
   private void runTest(String css, String golden) throws Exception {

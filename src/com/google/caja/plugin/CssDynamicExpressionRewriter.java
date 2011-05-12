@@ -26,6 +26,7 @@ import com.google.caja.parser.js.Expression;
 import com.google.caja.parser.js.Operation;
 import com.google.caja.parser.js.Operator;
 import com.google.caja.parser.js.StringLiteral;
+import com.google.caja.parser.quasiliteral.QuasiBuilder;
 import com.google.caja.render.Concatenator;
 import com.google.caja.render.CssPrettyPrinter;
 import com.google.caja.reporting.RenderContext;
@@ -45,11 +46,11 @@ import javax.annotation.OverridingMethodsMustInvokeSuper;
  *
  * @author mikesamuel@gmail.com
  */
-public final class CssRuleRewriter {
+public final class CssDynamicExpressionRewriter {
 
   private final @Nullable String gadgetNameSuffix;
 
-  public CssRuleRewriter(PluginMeta meta) {
+  public CssDynamicExpressionRewriter(PluginMeta meta) {
     String idSuffix = meta.getIdClass();
     this.gadgetNameSuffix = idSuffix;
   }
@@ -68,6 +69,14 @@ public final class CssRuleRewriter {
     // =>  '.' + IMPORTS___.getIdClass___() + '___ p { }'   ; Cajoled rule
     // =>  '.gadget123___ p { }'                            ; In the browser
     restrictRulesToSubtreeWithGadgetClass(ss);
+    // Rewrite any UnsafeUriLiterals to JavaScript expressions that are
+    // presented to the client-side URI policy when the content is rendered.
+    //     'p { background: url(unsafe.png) }'              ; The original rule
+    // =>  'p { background: url('                           ; Cajoled rule
+    //       + IMPORTS___.rewriteUriInCss___('unsafe.png')  ;
+    //       + ') }'                                        ;
+    // =>  'p { background: url(safe.png) }'                ; In the browser
+    rewriteUnsafeUriLiteralsToExpressions(ss);
   }
 
   private void rewriteIds(CssTree.StyleSheet ss) {
@@ -143,6 +152,28 @@ public final class CssRuleRewriter {
           }
         }, null);
   }
+  private void rewriteUnsafeUriLiteralsToExpressions(CssTree.StyleSheet ss) {
+    ss.acceptPreOrder(new Visitor() {
+          public boolean visit(AncestorChain<?> ancestors) {
+            ParseTreeNode node = ancestors.node;
+            if (node instanceof UnsafeUriLiteral) {
+              UnsafeUriLiteral uul = (UnsafeUriLiteral) node;
+              CssTree parent = (CssTree) ancestors.parent.node;
+              assert(null != parent);
+              parent.replaceChild(
+                  new JsExpressionUriLiteral(
+                      uul.getFilePosition(),
+                      (Expression) QuasiBuilder.substV(
+                          "IMPORTS___./*@synthetic*/rewriteUriInCss___(@uri)",
+                          "uri", StringLiteral.valueOf(
+                                     uul.getFilePosition(),
+                                     uul.getValue()))),
+                  uul);
+            }
+            return true;
+          }
+        }, null);
+  }
 
   /**
    * Returns an array containing chunks of CSS text that can be joined on a
@@ -193,6 +224,7 @@ class SuffixedClassOrIdLiteral extends CssTree.CssLiteral {
     super(pos, value);
   }
 
+  @Override
   public void render(RenderContext r) {
     TokenConsumer tc = r.getOut();
     tc.mark(getFilePosition());
@@ -214,6 +246,39 @@ class SuffixedClassOrIdLiteral extends CssTree.CssLiteral {
         || value.startsWith(".");
   }
 
+}
+
+
+/**
+ * A Uri literal evaluated by calling a JavaScript Expression at run time.
+ */
+class JsExpressionUriLiteral extends CssTree.CssLiteral {
+  private final Expression expr;
+
+  JsExpressionUriLiteral(FilePosition pos, Expression expr) {
+    super(pos, null);
+    this.expr = expr;
+  }
+
+  @Override
+  public void render(RenderContext r) {
+    TokenConsumer tc = r.getOut();
+    tc.mark(getFilePosition());
+    tc.consume("url(");
+    if (tc instanceof EmbeddedJsExpressionTokenConsumer) {
+      ((EmbeddedJsExpressionTokenConsumer) tc).consume(expr);
+    } else {
+      // Emit a buster that will cause the CSS parser to error out but not out
+      // of the current block.
+      // This allows us to debug the output of this stage, but does not
+      // compromise security if the CSS is rendered by naive code.
+      tc.consume("UNSAFE_JS_EXPRESSION_LITERAL:;");
+    }
+    tc.consume(")");
+  }
+
+  @Override
+  protected boolean checkValue(String value) { return true; }
 }
 
 
@@ -279,7 +344,8 @@ class EmbeddedJsExpressionTokenConsumer implements TokenConsumer {
 
   /**
    * The members of the array of JS string expressions built by prior calls to
-   * {@link #consume}, and {@link #endArrayElement}.
+   * {@link #consume(String)}, {@link #consume(Expression)}, and
+   * {@link #endArrayElement}.
    */
   public List<Expression> getArrayMembers() {
     if (inJsString || pendingExpression != null) {
@@ -289,6 +355,7 @@ class EmbeddedJsExpressionTokenConsumer implements TokenConsumer {
     return arrayElements;
   }
 
+  @Override
   public void mark(FilePosition pos) {
     cssTokenConsumer.mark(pos);
     if (inJsString && positionAtStartOfStringLiteral == null) {
@@ -297,6 +364,7 @@ class EmbeddedJsExpressionTokenConsumer implements TokenConsumer {
     last = pos;
   }
 
+  @Override
   public void consume(String text) {
     if (!inJsString) {
       startPartialJsStringLiteral();
@@ -310,6 +378,7 @@ class EmbeddedJsExpressionTokenConsumer implements TokenConsumer {
     inJsString = true;
   }
 
+  @Override
   public void noMoreTokens() {
     cssTokenConsumer.noMoreTokens();
     endArrayElement(false);
@@ -320,11 +389,7 @@ class EmbeddedJsExpressionTokenConsumer implements TokenConsumer {
   protected Expression endPartialJsStringLiteral() {
     String s = partialJsStringLiteral.toString();
     partialJsStringLiteral.setLength(0);
-    FilePosition pos = (
-        positionAtStartOfStringLiteral != null
-        && (positionAtStartOfStringLiteral.source().equals(last.source()))
-        && positionAtStartOfStringLiteral.startCharInFile()
-           <= last.endCharInFile())
+    FilePosition pos = positionAtStartOfStringLiteral != null
         ? FilePosition.span(positionAtStartOfStringLiteral, last)
         : FilePosition.UNKNOWN;
     positionAtStartOfStringLiteral = null;

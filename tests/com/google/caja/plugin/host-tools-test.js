@@ -203,8 +203,8 @@ jsunitRegister("testDefaultURIPolicy",
 
     // testing what we can for now
     assertEquals("static rewritten URI",
-        "http://localhost:8000/caja/cajole?url=http%3a%2f%2fwww.example.com" +
-        "%2ffoo&effect=NEW_DOCUMENT&loader=UNSANDBOXED&sext=true",
+        "http://localhost:8000/caja/cajole?url=http%3A%2F%2Fwww.example.com" +
+        "%2Ffoo&input-mime-type=*%2F*&output-mime-type=*%2F*",
         e.childNodes[0].href);
     assertEquals("dynamic rewritten URI",
         "http://localhost:8000/caja/cajole?url=http%3A%2F%2Fwww.example.com" +
@@ -242,11 +242,10 @@ jsunitRegister("testSettingURIPolicy",
       "host-tools-test-gadget-uri-policy.html"),
       jsunitCallback(function (moduleResult) {
         
-    // Static URI policy is unaffected by this setting -- as yet.
+    // Static URI should be set at initialization time
     assertEquals("static rewrite",
-        "http://localhost:8000/caja/cajole?url=http%3a%2f%2fwww.example.com" +
-        "%2ffoo&effect=NEW_DOCUMENT&loader=UNSANDBOXED&sext=true",
-        e.childNodes[0].href);
+                 "data:,http://www.example.com/foo",
+                 e.childNodes[0].href);
     
     // Check that specified policy took effect on a dynamic link
     assertEquals("dynamic rewrite",

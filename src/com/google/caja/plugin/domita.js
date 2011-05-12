@@ -4019,6 +4019,18 @@ var attachDocumentStub = (function () {
       }
       return out.join(' ');
     };
+    imports.rewriteUriInCss___ = function(value) {
+      return value
+        ? uriCallback.rewrite(value, html4.ueffects.SAME_DOCUMENT,
+              html4.ltypes.SANDBOXED, {})
+        : void 0;
+    };
+    imports.rewriteUriInAttribute___ = function(value, tagName, attribName) {
+      return value
+        ? uriCallback.rewrite(value, getUriEffect(tagName, attribName),
+              getLoaderType(tagName, attribName), {"XML_ATTR": attribName})
+        : void 0;
+    };
 
     var allCssProperties = domitaModules.CssPropertiesCollection(
         css.properties, document.documentElement, css);

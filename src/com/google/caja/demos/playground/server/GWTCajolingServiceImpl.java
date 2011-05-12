@@ -41,13 +41,10 @@ import com.google.caja.parser.html.Dom;
 import com.google.caja.parser.html.DomParser;
 import com.google.caja.parser.html.Nodes;
 import com.google.caja.plugin.DataUriFetcher;
-import com.google.caja.plugin.LoaderType;
 import com.google.caja.plugin.PluginCompiler;
 import com.google.caja.plugin.PluginMeta;
-import com.google.caja.plugin.UriEffect;
 import com.google.caja.plugin.UriFetcher;
 import com.google.caja.plugin.UriFetcher.ChainingUriFetcher;
-import com.google.caja.plugin.UriPolicy;
 import com.google.caja.render.Concatenator;
 import com.google.caja.render.JsPrettyPrinter;
 import com.google.caja.reporting.BuildInfo;
@@ -92,26 +89,6 @@ public class GWTCajolingServiceImpl extends RemoteServiceServlet
         }));
   }
 
-  private static final UriPolicy uriPolicy = new UriPolicy() {
-    // TODO(jasvir): URIs in some contexts (such as links to new pages) should
-    // point back to the gwt cajoling service, while others that load media into
-    // an existing page should go through a configurable cajoling service
-    public String rewriteUri(
-        ExternalReference u, UriEffect effect, LoaderType loader,
-        Map<String, ?> hints) {
-      if ((effect == UriEffect.NEW_DOCUMENT ||
-          (effect == UriEffect.SAME_DOCUMENT &&
-              loader == LoaderType.SANDBOXED))) {
-        return u.getUri().toString();
-      }
-
-      return (
-          "http://caja.appspot.com/cajole"
-          + "?url=" + UriUtil.encode(u.getUri().toString())
-          + "&loader=" + loader + "&effect=" + effect);
-    }
-  };
-
   private static URI guessURI(String base, String guess) {
     URI unknown = URI.create("unknown:///unknown");
     try {
@@ -153,7 +130,7 @@ public class GWTCajolingServiceImpl extends RemoteServiceServlet
     Map<InputSource, ? extends CharSequence> originalSources
         = Collections.singletonMap(new InputSource(guessURI(base, url)), input);
     
-    PluginMeta meta = new PluginMeta(fetcher, uriPolicy);
+    PluginMeta meta = new PluginMeta(fetcher, null);
     meta.setEnableES53(es53Mode);
     PluginCompiler compiler = makePluginCompiler(meta, mq);
     compiler.setJobCache(new AppEngineJobCache());
