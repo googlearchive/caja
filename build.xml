@@ -896,6 +896,28 @@
       <input file="${src}/com/google/caja/plugin/host-tools.js"/>
       <input file="${src}/com/google/caja/plugin/caja-iframe-done.js"/>
     </transform>
+    <concat destfile="${lib}/com/google/caja/ses/initSES.js">
+      <!-- Makes initSES.js -->
+      <filelist>
+        <file name="${src}/com/google/caja/ses/es5shim.js"/>
+        <file name="${src}/com/google/caja/ses/WeakMap.js"/>
+        <file name="${src}/com/google/caja/ses/whitelist.js"/>
+        <file name="${src}/com/google/caja/ses/atLeastFreeVarNames.js"/>
+        <file name="${src}/com/google/caja/ses/startSES.js"/>
+        <file name="${src}/com/google/caja/ses/hookupSES.js"/>       
+      </filelist>
+    </concat>
+    <transform>
+      <!-- Makes initSES-minified.js -->
+      <output file="${lib}/com/google/caja/ses/initSES-minified.js"
+       language="javascript" renderer="minify"/>
+       <input file="${src}/com/google/caja/ses/es5shim.js"/>
+       <input file="${src}/com/google/caja/ses/WeakMap.js"/>
+       <input file="${src}/com/google/caja/ses/whitelist.js"/>
+       <input file="${src}/com/google/caja/ses/atLeastFreeVarNames.js"/>
+       <input file="${src}/com/google/caja/ses/startSES.js"/>
+       <input file="${src}/com/google/caja/ses/hookupSES.js"/>       
+    </transform>
   </target>
 
   <target name="IframeSupportingJs" depends="MinifiedJs">

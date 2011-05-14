@@ -65,7 +65,8 @@ public final class Block extends AbstractStatement implements NestedScope {
       if (first) {
         first = false;
       } else if (child instanceof DirectivePrologue) {
-        throw new IllegalArgumentException("Misplaced directive prologoue");
+        throw new IllegalArgumentException("Misplaced directive prologoue " +
+                                           child.getFilePosition());
       }
       if (!(child instanceof Statement)) {
         throw new ClassCastException("Expected statement, not " + child);
