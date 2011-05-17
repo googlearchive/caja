@@ -3346,7 +3346,9 @@ var ___, cajaVM, safeJSON;
   origGetOwnPropertyDescriptor = Object.getOwnPropertyDescriptor;
 
   // 15.2.3.4
-  Object.getOwnPropertyNames = ownKeys;
+  // virtualized to avoid confusing the webkit/safari/chrome debugger
+  virtualize(Object, 'getOwnPropertyNames', ownKeys);
+  // TODO(felix8a): spec says this should be configurable: true
 
   // 15.2.3.5
   /**
@@ -3616,13 +3618,15 @@ var ___, cajaVM, safeJSON;
   Object.isExtensible = isExtensible;
 
   // 15.2.3.14
-  Object.keys = ownEnumKeys;
+  // virtualized to avoid confusing the webkit/safari/chrome debugger
+  virtualize(Object, 'keys', ownEnumKeys);
+  // TODO(felix8a): ES5 says this should be configurable: true
 
   (function () {
     var objectStaticMethods = [
         'getPrototypeOf',
         'getOwnPropertyDescriptor',
-        'getOwnPropertyNames',
+        // getOwnPropertyNames is virtual
         'create',
         'defineProperty',
         'defineProperties',
@@ -3631,8 +3635,8 @@ var ___, cajaVM, safeJSON;
         'preventExtensions',
         'isSealed',
         'isFrozen',
-        'isExtensible',
-        'keys'
+        'isExtensible'
+        // keys is virtual
       ];
     var i, len = objectStaticMethods.length;
     for (i = 0; i < len; ++i) {
