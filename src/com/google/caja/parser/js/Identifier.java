@@ -50,7 +50,8 @@ public final class Identifier extends AbstractParseTreeNode
 
   public Identifier(FilePosition pos, String name) {
     super(pos);
-    if (!(name == null || ParserBase.isQuasiIdentifier(name))) {
+    if (!(name == null || "".equals(name) ||
+        ParserBase.isQuasiIdentifier(name))) {
       // Disallowed in Parser, so no code should ever produce something that
       // reaches here unless it concatenates two strings together without
       // normalizing the result.
@@ -71,9 +72,13 @@ public final class Identifier extends AbstractParseTreeNode
   public void render(RenderContext r) {
     if (name != null) {
       StringBuilder escapedName = new StringBuilder();
-      Escaping.escapeJsIdentifier(name, r.isAsciiOnly(), escapedName);
-      r.getOut().mark(getFilePosition());
-      r.getOut().consume(escapedName.toString());
+      if ("".equals(name)) {
+        escapedName.append("(blank identifier)"); // break parser
+      } else {
+        Escaping.escapeJsIdentifier(name, r.isAsciiOnly(), escapedName);
+        r.getOut().mark(getFilePosition());
+        r.getOut().consume(escapedName.toString());
+      }
     }
   }
 

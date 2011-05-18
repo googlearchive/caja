@@ -980,6 +980,26 @@ public class ES53Rewriter extends Rewriter {
       }
     },
 
+    new Rule() {
+      @Override
+      @RuleDescription(
+          name="setBadGlobalVar",
+          synopsis="Statically reject if a global with `__` suffix is found.",
+          reason="Caja reserves the `__` suffix for internal use.",
+          matches="/* declared in outer scope */ @v__ = @r",
+          substitutes="<reject>")
+      public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
+        Map<String, ParseTreeNode> bindings = match(node);
+        if (bindings != null) {
+          mq.addMessage(
+              RewriterMessageType.VARIABLES_CANNOT_END_IN_DOUBLE_UNDERSCORE,
+              node.getFilePosition(), this, node);
+          return node;
+        }
+        return NONE;
+      }
+    },
+
     // TODO (metaweta): Use fastpath.
     new Rule() {
       @Override

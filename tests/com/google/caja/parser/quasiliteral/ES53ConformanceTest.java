@@ -158,6 +158,8 @@ public class ES53ConformanceTest extends RewriterTestCase {
         "TestCases/./chapter11/11.1/11.1.5/11.1.5_4-4-a-1-s.js"));
   }
 
+  @FailureIsAnOption
+  // Uses double score variable names reserved by caja
   public final void test11_13_1_1_5_s() throws Exception {
     rewriteAndExecute(fromResource("../../../../../js/es5conform/" +
         "TestCases/./chapter11/11.13/11.13.1/11.13.1-1-5-s.js"));

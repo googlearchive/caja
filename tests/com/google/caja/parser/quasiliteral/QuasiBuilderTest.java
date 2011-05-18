@@ -18,6 +18,7 @@ import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.InputSource;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.ParseTreeNodeContainer;
+import com.google.caja.parser.js.Identifier;
 import com.google.caja.parser.js.IntegerLiteral;
 import com.google.caja.parser.js.StringLiteral;
 import com.google.caja.util.CajaTestCase;
@@ -59,5 +60,17 @@ public class QuasiBuilderTest extends CajaTestCase {
         "d", StringLiteral.valueOf(FilePosition.UNKNOWN, "d"));
     assertEquals(
         render(jsExpr(fromString("{ a: 'b', '@c': 'd' }"))), render(n));
+  }
+  
+  public final void testIdsWithUnderscores() throws Exception {
+    String[] underscoreIds = {"x__", "x\u005f\u005f", "__", "\u005f\u005f" };
+    for (String id : underscoreIds) {
+      ParseTreeNode specimen = QuasiBuilder.substV(
+          "{ var @idWithUnderscore = 1; }",
+          "idWithUnderscore", new Identifier(FilePosition.UNKNOWN, id)
+      );
+      assertTrue("Valid id failed to parse: " + id,
+          QuasiBuilder.match("{ var @x__ = 1; }", specimen));
+    }
   }
 }

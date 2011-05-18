@@ -877,6 +877,33 @@ public class ES53RewriterTest extends CommonJsRewriterTestCase {
         "out;");
   }
 
+  public final void testGlobalBadSuffix() throws Exception {
+    checkFails(
+        "x__ = 1;",
+        "Variables cannot end in \"__\"");
+    checkFails(
+        "var x__ = 1;",
+        "Variables cannot end in \"__\"");
+    checkFails(
+        "var x = x__;",
+        "Variables cannot end in \"__\"");
+    checkFails(
+        "var x\\u005f\\u005f;",
+        "Variables cannot end in \"__\"");
+    checkFails(
+        "var x__;",
+        "Variables cannot end in \"__\"");
+    checkFails(
+        "x\u005F\u005F = 1;",
+        "Variables cannot end in \"__\"");
+    checkFails(
+        "__ = 1;",
+        "Variables cannot end in \"__\"");
+    checkFails(
+        "\u005F\u005F = 1;",
+        "Variables cannot end in \"__\"");
+  }
+  
   public final void testVarBadSuffix() throws Exception {
     checkFails(
         "function() { foo__; };",
