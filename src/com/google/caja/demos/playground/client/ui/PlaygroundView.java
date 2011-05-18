@@ -45,7 +45,6 @@ import com.google.gwt.user.client.ui.TreeItem;
  */
 public class PlaygroundView {
   private Playground controller;
-  private String currentPolicy;
   private MultiWordSuggestOracle sourceExamples;
   private MultiWordSuggestOracle policyExamples;
 
@@ -94,7 +93,7 @@ public class PlaygroundView {
         controller.cajole(
             playgroundUI.addressField.getText(),
             playgroundUI.sourceText.getText(),
-            currentPolicy,
+            playgroundUI.policyText.getText(),
             true /* es53 */
         );
       }
@@ -127,7 +126,6 @@ public class PlaygroundView {
 
     playgroundUI.clearButton.addClickHandler(new ClickHandler() {
       public void onClick(ClickEvent event) {
-        currentPolicy = "";
         controller.clearPolicy();
       }
     });
@@ -138,17 +136,17 @@ public class PlaygroundView {
       }
     });
 
-    playgroundUI.applyButton.addClickHandler(new ClickHandler() {
+    playgroundUI.defaultButton.addClickHandler(new ClickHandler() {
       public void onClick(ClickEvent event) {
-        currentPolicy = playgroundUI.policyText.getText();
+        setPolicySource(defaultPolicy());
       }
     });
-    setDefaultPolicy(playgroundUI.policyText);
+
+    setPolicySource(defaultPolicy());
   }
 
-  private void setDefaultPolicy(TextArea policyText) {
-    currentPolicy = PlaygroundResource.INSTANCE.defaultPolicy().getText();
-    policyText.setText(currentPolicy);
+  private String defaultPolicy() {
+    return PlaygroundResource.INSTANCE.defaultPolicy().getText();
   }
 
   native static String encodeURIComponent(String uri) /*-{

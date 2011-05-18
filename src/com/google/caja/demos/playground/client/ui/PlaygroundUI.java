@@ -39,8 +39,8 @@ public class PlaygroundUI extends Composite {
   @UiField protected Button goButton;
   @UiField protected Button cajoleButton;
   @UiField protected Button loadButton;
-  @UiField protected Button applyButton;
   @UiField protected Button clearButton;
+  @UiField protected Button defaultButton;
   @UiField protected Tree exampleTree;
   @UiField protected HorizontalPanel feedbackPanel;
 

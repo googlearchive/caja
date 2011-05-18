@@ -85,11 +85,11 @@
                       <g:Button ui:field="loadButton">
                         Load
                       </g:Button>
-                      <g:Button ui:field="applyButton">
-                        Apply
-                      </g:Button>
                       <g:Button ui:field="clearButton">
                         Clear
+                      </g:Button>
+                      <g:Button ui:field="defaultButton">
+                        Default
                       </g:Button>
                     </g:HorizontalPanel>
                   </g:east>
