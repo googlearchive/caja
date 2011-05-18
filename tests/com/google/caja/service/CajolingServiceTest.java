@@ -14,8 +14,6 @@
 
 package com.google.caja.service;
 
-import java.util.Arrays;
-
 import org.json.simple.JSONObject;
 
 /**
