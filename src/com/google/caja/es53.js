@@ -2640,8 +2640,6 @@ var ___, cajaVM, safeJSON;
 
   /**
    * 8.12 Algorithms for Object Internal Methods
-   *
-   * Preconditions: {@code P} is a number or a string.
    */
   // 8.12.1
   // Note that the returned descriptor is for internal use only, so
@@ -2661,6 +2659,7 @@ var ___, cajaVM, safeJSON;
           return void 0;
         }
       }
+      P = '' + P;
       //inline assertValidPropertyName(P);
       if (endsWith__.test(P)) {
         throw new TypeError('Properties may not end in double underscore.');
@@ -2771,9 +2770,9 @@ var ___, cajaVM, safeJSON;
     };
 
   // 8.12.7
-  /** Precondition: P is a number or a string */
   Object.prototype.c___ = function (P) {
       var O = this;
+      P = '' + P;
       // 1. Let desc be the result of calling the [[GetOwnProperty]]
       //    internal method of O with property name P.
       var desc = O.GetOwnProperty___(P);
@@ -2829,6 +2828,7 @@ var ___, cajaVM, safeJSON;
         throw new TypeError('Cannot define numeric properties.');
       }
       var O = this;
+      P = '' + P;
       // 1. Let current be the result of calling the [[GetOwnProperty]]
       //    internal method of O with property name P.
       var current = O.GetOwnProperty___(P);
@@ -5013,6 +5013,7 @@ var ___, cajaVM, safeJSON;
   // configurable set to true in order to use both a getter and a setter.
   function useGetHandler(obj, name, getHandler) {
     getHandler = markFunc(getHandler);
+    name = '' + name;
     var desc = obj.GetOwnProperty___(name);
     if (!desc || !IsAccessorDescriptor(desc)) {
       desc = {
@@ -5029,6 +5030,7 @@ var ___, cajaVM, safeJSON;
 
   function useSetHandler(obj, name, setHandler) {
     setHandler = markFunc(setHandler);
+    name = '' + name;
     var desc = obj.GetOwnProperty___(name);
     if (!IsAccessorDescriptor(desc)) {
       desc = {

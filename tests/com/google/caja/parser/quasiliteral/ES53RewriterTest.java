@@ -246,6 +246,13 @@ public class ES53RewriterTest extends CommonJsRewriterTestCase {
         "(function () { var a = { x: 1 }; delete a.x; return typeof a.x; })();"
         );
     assertConsistent("var a = { x: 1 }; delete a.x; typeof a.x;");
+    // Tests for the gotcha rather than the spec'ed behavior.
+    // See http://code.google.com/p/google-caja/wiki/DifferencesBetweenES5Over3AndES5
+    rewriteAndExecute(
+        "var x = {a:1, '[object Object]':2};" +
+        "delete x[{valueOf:function(){return 'a';}}];" +
+        "assertEquals(x.a, void 0);" +
+        "assertEquals(x['[object Object]'], 2);");
   }
 
   public final void testIn2() throws Exception {
