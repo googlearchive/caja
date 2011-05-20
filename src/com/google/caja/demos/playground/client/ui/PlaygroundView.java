@@ -20,22 +20,24 @@ import java.util.Map;
 import com.google.caja.demos.playground.client.Playground;
 import com.google.caja.demos.playground.client.PlaygroundResource;
 import com.google.gwt.dom.client.Element;
-import com.google.gwt.dom.client.ScriptElement;
+import com.google.gwt.dom.client.Style.Unit;
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
 import com.google.gwt.event.dom.client.FocusEvent;
 import com.google.gwt.event.dom.client.FocusHandler;
 import com.google.gwt.event.logical.shared.SelectionEvent;
 import com.google.gwt.event.logical.shared.SelectionHandler;
-import com.google.gwt.user.client.DOM;
 import com.google.gwt.user.client.ui.Anchor;
-import com.google.gwt.user.client.ui.HasHorizontalAlignment;
+import com.google.gwt.user.client.ui.Button;
+import com.google.gwt.user.client.ui.DialogBox;
+import com.google.gwt.user.client.ui.DockLayoutPanel;
 import com.google.gwt.user.client.ui.HTML;
+import com.google.gwt.user.client.ui.HasHorizontalAlignment;
 import com.google.gwt.user.client.ui.Label;
 import com.google.gwt.user.client.ui.MultiWordSuggestOracle;
 import com.google.gwt.user.client.ui.RootLayoutPanel;
+import com.google.gwt.user.client.ui.ScrollPanel;
 import com.google.gwt.user.client.ui.SuggestBox;
-import com.google.gwt.user.client.ui.TextArea;
 import com.google.gwt.user.client.ui.TreeItem;
 
 /**
@@ -233,13 +235,6 @@ public class PlaygroundView {
   }
   */
 
-  private native void setupNativeRuntimeMessageBridge() /*-{
-    var that = this;
-    $wnd.caja___.logFunc = function logFunc (msg) {
-      that.@com.google.caja.demos.playground.client.ui.PlaygroundView::addRuntimeMessage(Ljava/lang/String;)(msg);
-    };
-  }-*/;
-
   private native void setupNativeSelectLineBridge() /*-{
     var that = this;
     $wnd.selectLine = function (uri, start, sOffset, end, eOffset) {
@@ -250,7 +245,6 @@ public class PlaygroundView {
   }-*/;
 
   private void initEditor() {
-    setupNativeRuntimeMessageBridge();
     setupNativeSelectLineBridge();
     selectTab(Tabs.SOURCE);
   }
@@ -335,25 +329,17 @@ public class PlaygroundView {
       playgroundUI.cajoledSource.setText("There were cajoling errors");
       return;
     }
-    playgroundUI.cajoledSource.setHTML(prettyPrint(html) +
-      "&lt;script&gt;" + prettyPrint(js) + "&lt;/script&gt;");
+    playgroundUI.cajoledSource.setHTML(prettyPrint(html, "html") +
+      "&lt;script&gt;" + prettyPrint(js, "lang-js") + "&lt;/script&gt;");
   }
 
   public void setLoading(boolean isLoading) {
     playgroundUI.loadingLabel.setVisible(isLoading);
   }
 
-  private native String prettyPrint(String result) /*-{
-    return $wnd.prettyPrintOne($wnd.indentAndWrapCode(result));
+  private native String prettyPrint(String result, String lang) /*-{
+    return $wnd.prettyPrintOne($wnd.indentAndWrapCode(result), lang);
   }-*/;
-
-  private ScriptElement scriptOf(String text) {
-    Element el = DOM.createElement("script");
-    ScriptElement script = ScriptElement.as(el);
-    script.setType("text/javascript");
-    script.setInnerText(text);
-    return script;
-  }
 
   public void setRenderedResult(String policy, String html, String js) {
     if (html == null && js == null) {
@@ -368,17 +354,81 @@ public class PlaygroundView {
     setRenderedResultBridge(true /* es53 */,
         playgroundUI.renderPanel.getElement(),
         policy, html != null ? html : "", js != null ? js : "");
-
-    playgroundUI.renderResult.setText(getRenderResult());
+  }
+  
+  private void setRenderedResult(String result) {
+    playgroundUI.renderResult.setText(result);
   }
 
+  private void alert(String msg) {
+    final DialogBox alertBox = new DialogBox();
+    alertBox.setGlassEnabled(true);
+    alertBox.setText("Cajoled gadget says");
+    DockLayoutPanel dock = new DockLayoutPanel(Unit.PX);
+    dock.add(new ScrollPanel(new Label(msg)));
+    dock.addSouth(new Button("Ok", new ClickHandler() {
+      @Override
+      public void onClick(ClickEvent arg0) {
+        alertBox.hide();
+      }
+    }), 20);
+    dock.setSize("200px", "200px");
+    alertBox.add(dock);
+    alertBox.center();
+    alertBox.show();
+  }
+  
   private native void setRenderedResultBridge(boolean es53,
       Element div, String policy, String html, String js) /*-{
-    $wnd.caja___.enable(es53, div, policy, html, js);
-  }-*/;
-
-  private native String getRenderResult() /*-{
-    return "" + $wnd.___.getNewModuleHandler().getLastValue();
+    var that = this;
+    $wnd.caja.configure({
+      cajaServer: 'http://localhost:8080/',
+    }, function (frameGroup) {
+      var extraImports = {};
+      try {
+        var tamings___ = eval(policy);
+      } catch (e) {
+        that.@com.google.caja.demos.playground.client.ui.PlaygroundView::addRuntimeMessage(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)
+            (e, "evaluating policy");
+      }
+      for (var i=0; i < tamings___.length; i++) {
+        try {
+          tamings___[i].call(undefined, frameGroup, extraImports);
+        } catch (e) {
+          that.@com.google.caja.demos.playground.client.ui.PlaygroundView::addRuntimeMessage(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)
+              (e, "evaluating " + i + "th policy function");
+        }
+      }
+      
+      extraImports.onerror = frameGroup.tame(frameGroup.markFunction(
+        function (message, source, lineNum) {
+          that.@com.google.caja.demos.playground.client.ui.PlaygroundView::addRuntimeMessage(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)
+              (message, source, lineNum);
+        }));
+      extraImports.alert = frameGroup.tame(frameGroup.markFunction(
+        function (message) {
+          that.@com.google.caja.demos.playground.client.ui.PlaygroundView::alert(Ljava/lang/String;)
+              (message);
+        }));
+      
+      frameGroup.makeES5Frame(div, {
+          rewrite: function (uri, uriEffect, loaderType, hints) {
+            if (!/^https?:/i.test(uri)) { return void 0; }
+            if (uriEffect === $wnd.html4.ueffects.NEW_DOCUMENT ||
+                (uriEffect === $wnd.html4.ueffects.SAME_DOCUMENT &&
+                 loaderType === $wnd.html4.ltypes.SANDBOXED)) {
+              return uri;
+            }
+            return null;
+          }
+        }, function (frame) {
+        frame.contentCajoled('http://localhost:8080/',
+           js, html).run(extraImports, function (result) {
+            that.@com.google.caja.demos.playground.client.ui.PlaygroundView::setRenderedResult(Ljava/lang/String;)
+                (result)
+           });
+      });
+    });
   }-*/;
 
   public void addCompileMessage(String item) {
@@ -387,9 +437,12 @@ public class PlaygroundView {
     playgroundUI.compileMessages.add(i);
   }
 
-  public void addRuntimeMessage(String item) {
+  public void addRuntimeMessage(String message, String source, String lineNum) {
     // Unsafe as HTML
-    Label i = new Label(item);
+    Label i = new Label(
+        "Uncaught script error: '" + message +
+        "' in source: '" + source +
+        "' at line: " + lineNum + "\n");
     playgroundUI.runtimeMessages.add(i);
   }
 
