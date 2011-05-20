@@ -361,17 +361,29 @@ var caja = (function () {
               });
           }
 
-          function content(baseUrl, inputContent, contentType) {
+          function content(url, inputContent, mimeType) {
             return runMaker(function (imports, opt_callback) {
-                // XHR post the html through the cajoler to get
-                //   cajoled content.
-                // cajoledRunner(
-                //     baseUrl,
-                //     content.js,
-                //     content.staticHtml)(
-                //     imports,
-                //     opt_callback);
-                throw new Error('Not yet implemented.');
+                tamingWindow.Q.when(
+                    cajolingServiceClient.cajoleContent(
+                        url,
+                        inputContent,
+                        mimeType),
+                    function (moduleJson) {
+                      guestWindow.Q.when(
+                          loader.loadCajoledJson___(url, moduleJson),
+                          function(moduleFunc) {
+                            var result = moduleFunc(imports);
+                            if (opt_callback) {
+                              opt_callback(result);
+                            }
+                          },
+                          function(ex) {
+                            throw new Error(ex);
+                          });
+                    },
+                    function (err) {
+                      throw new Error('Error cajoling content: ' + err);
+                    });
               });
           }
 

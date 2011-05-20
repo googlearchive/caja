@@ -88,6 +88,43 @@ var loadModuleMaker = function(rootUrl, cajolingServiceClient) {
       return Q.near(moduleCache.get(fullUrl));
     };
 
+    var evalAndResolveFromJson = function(url, moduleJson) {
+      var result = Q.defer();
+      var loadForThisModule = makeLoad(url);
+      var moduleObj = evalModuleObjFromJson(moduleJson);
+      Q.when(
+          resolveDependencies(moduleObj, loadForThisModule),
+          function(_) {
+            try {
+              result.resolve(
+                  ___.prepareModule(moduleObj, loadForThisModule));
+            } catch (ex) {
+              result.resolve(Q.reject(ex));
+            }
+          },
+          function(ex) {
+            result.resolve(Q.reject(ex));
+          });
+      return result.promise();
+    };
+
+    var loadCajoledJson___ = function(url, moduleJson) {
+      if (moduleCache.get(url)) {
+        throw new Error('Module already loaded: ' + url);
+      }
+      var moduleDeferred = Q.defer();
+      Q.when(
+          evalAndResolveFromJson(url, moduleJson),
+          function(module) {
+            moduleDeferred.resolve(module);
+          },
+          function(ex) {
+            moduleDeferred.resolve(Q.reject(ex));
+          });
+      moduleCache.set(url, moduleDeferred.promise);
+      return moduleDeferred.promise;
+    };
+
     var async = function(url, contentType) {
       var fullUrl = resolveModuleUrl(baseUrl, url);
       if (moduleCache.get(fullUrl)) {
@@ -97,19 +134,12 @@ var loadModuleMaker = function(rootUrl, cajolingServiceClient) {
       var moduleDeferred = Q.defer();
       var mimeType = contentType || getInputMimeType(url);
       Q.when(
-          cajolingServiceClient.cajoleUrl(fullUrl, mimeType),
-          function(responseJson) {
-            var moduleObj = evalModuleObjFromJson(responseJson);
-            var loadForThisModule = makeLoad(fullUrl);
+          cajolingServiceClient.cajoleUrl(fullUrl, getInputMimeType(url)),
+          function(moduleJson) {
             Q.when(
-                resolveDependencies(moduleObj, loadForThisModule),
-                function(_) {
-                  try {
-                    moduleDeferred.resolve(
-                        ___.prepareModule(moduleObj, loadForThisModule));
-                  } catch (ex) {
-                    moduleDeferred.resolve(Q.reject(ex));
-                  }
+                evalAndResolveFromJson(fullUrl, moduleJson),
+                function(module) {
+                  moduleDeferred.resolve(module);
                 },
                 function(ex) {
                   moduleDeferred.resolve(Q.reject(ex));
@@ -165,6 +195,7 @@ var loadModuleMaker = function(rootUrl, cajolingServiceClient) {
           enumerable: true,
           configurable: false
         });
+    load.loadCajoledJson___ = loadCajoledJson___;
     return ___.markFuncFreeze(load);
   };
 
