@@ -5156,7 +5156,7 @@ var ___, cajaVM, safeJSON;
     });
 
   Object.prototype.m___ = function (name, as) {
-      name = String(name);
+      name = '' + name;
       if (this[name + '_m___']) {
         return this[name].f___(this, as);
       }
