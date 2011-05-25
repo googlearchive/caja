@@ -4408,7 +4408,7 @@ var ___, cajaVM, safeJSON;
   // 15.9.5.8
   markFunc(Date.prototype.valueOf);
 
-  // 15.9.5.3--7, 9--44 (No UTC yet)
+  // 15.9.5.3--7, 9--44
   (function () {
     var methods = [
         'toDateString',
@@ -4424,6 +4424,13 @@ var ___, cajaVM, safeJSON;
         'getHours',
         'getMinutes',
         'getSeconds',
+        'getUTCSeconds',
+        'getUTCMinutes',
+        'getUTCHours',
+        'getUTCDay',
+        'getUTCDate',
+        'getUTCMonth',
+        'getUTCFullYear',
         'getMilliseconds',
         'getTimezoneOffset',
         'setFullYear',
