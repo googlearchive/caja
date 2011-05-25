@@ -834,9 +834,6 @@ var ___, cajaVM, safeJSON;
     if (f.TAMED_TWIN___) {
       throw new TypeError('Already tamed: ' + f);
     }
-    if (isDefinedInCajaFrame(f)) {
-      throw new TypeError('Cannot tame a Caja object: ' + f);
-    }
     var t = tamePureFunction(f);
     tamesTo(f, t);
     return f;
@@ -848,9 +845,6 @@ var ___, cajaVM, safeJSON;
     }
     if (ctor.TAMED_TWIN___) {
       throw new TypeError('Already tamed: ' + ctor);
-    }
-    if (isDefinedInCajaFrame(ctor)) {
-      throw new TypeError('Cannot tame a Caja object: ' + ctor);
     }
     var ctype = typeof ctor;
     var stype = typeof opt_super;
@@ -874,9 +868,6 @@ var ___, cajaVM, safeJSON;
     }
     if ((typeof f) !== 'function') {
       throw new TypeError('Not a function: ' + f);
-    }
-    if (isDefinedInCajaFrame(f)) {
-      throw new TypeError('Cannot tame a Caja object: ' + f);
     }
     var t = tameXo4a(f);
     tamesTo(f, t);
