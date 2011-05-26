@@ -157,14 +157,14 @@ public class NodesTest extends CajaTestCase {
   }
 
   public final void testIllegalCharactersInComment() throws Exception {
-    assertFailsToRenderUnsafe("<!-- -- -->", MarkupRenderMode.HTML,
-        "XML/HTML comment", "contains '--'");
-    assertFailsToRenderUnsafe("<!-- -- -->", MarkupRenderMode.XML,
-        "XML/HTML comment", "contains '--'");
+    assertRendersUnsafe("<!-- -- -->", parse("<!-- -- -->"),
+        MarkupRenderMode.HTML);
+    assertRendersUnsafe("<!-- -- -->", parse("<!-- -- -->"),
+        MarkupRenderMode.HTML);
     assertFailsToRenderUnsafe("<!-->>>-->", MarkupRenderMode.HTML,
-        "XML/HTML comment", "starts with '>'");
+        "XML comment", "starts with '>'");
     assertFailsToRenderUnsafe("<!-->>>-->", MarkupRenderMode.XML,
-        "XML/HTML comment", "starts with '>'");
+        "XML comment", "starts with '>'");
   }
 
   private Node parse(String xml) throws Exception {

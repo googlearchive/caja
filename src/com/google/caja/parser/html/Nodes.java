@@ -288,12 +288,12 @@ public class Nodes {
   }
 
   private static void render(Node node, Namespaces ns,
-      RenderContext rc, boolean wantsComments) {
-    render(null, node, ns, rc, wantsComments);
+      RenderContext rc, boolean renderUnsafe) {
+    render(null, node, ns, rc, renderUnsafe);
   }
   
   private static void render(DocumentType docType, Node node, Namespaces ns,
-      RenderContext rc, boolean wantsComments) {
+      RenderContext rc, boolean renderUnsafe) {
     StringBuilder sb = new StringBuilder(1 << 18);
     if (null != docType) {
       String rendering = renderDocumentType(docType);
@@ -302,7 +302,7 @@ public class Nodes {
       }
     }
     new Renderer(sb, rc.markupRenderMode(), rc.isAsciiOnly(), ns)
-        .render(node, ns, wantsComments);
+        .render(node, ns, renderUnsafe);
     TokenConsumer out = rc.getOut();
     FilePosition pos = getFilePositionFor(node);
     out.mark(FilePosition.startOf(pos));
@@ -383,8 +383,8 @@ public class Nodes {
   }
 
   private static void render(Node node, RenderContext rc,
-      boolean wantsComments) {
-    render(node, Namespaces.HTML_DEFAULT, rc, wantsComments);
+      boolean renderUnsafe) {
+    render(node, Namespaces.HTML_DEFAULT, rc, renderUnsafe);
   }
 
   public static String render(Node node) {
@@ -417,11 +417,11 @@ public class Nodes {
   }
 
   private static String render(Node node, MarkupRenderMode renderMode,
-      boolean wantsComments) {
+      boolean renderUnsafe) {
     StringBuilder sb = new StringBuilder();
     RenderContext rc = new RenderContext(new Concatenator(sb, null))
         .withMarkupRenderMode(renderMode);
-    render(node, rc, wantsComments);
+    render(node, rc, renderUnsafe);
     rc.getOut().noMoreTokens();
     return sb.toString();
   }
@@ -441,7 +441,7 @@ public class Nodes {
   }
   
   private static String render(DocumentType docType, Node node,
-      MarkupRenderMode renderMode, boolean wantsComments) {
+      MarkupRenderMode renderMode, boolean renderUnsafe) {
     StringBuilder sb = new StringBuilder();
     if (null != docType) {
       String rendering = renderDocumentType(docType);
@@ -449,7 +449,7 @@ public class Nodes {
         sb.append(rendering);
       }
     }
-    sb.append(render(node, renderMode, wantsComments));
+    sb.append(render(node, renderMode, renderUnsafe));
     return sb.toString();
   }
 
@@ -487,12 +487,12 @@ final class Renderer {
     render(node, ns, false);
   }
   
-  void render(Node node, Namespaces ns, boolean wantsComments) {
+  void render(Node node, Namespaces ns, boolean renderUnsafe) {
     switch (node.getNodeType()) {
       case Node.DOCUMENT_NODE: case Node.DOCUMENT_FRAGMENT_NODE:
         for (Node c = node.getFirstChild();
              c != null; c = c.getNextSibling()) {
-          render(c, ns, wantsComments);
+          render(c, ns, renderUnsafe);
         }
         break;
       case Node.ELEMENT_NODE: {
@@ -630,12 +630,12 @@ final class Renderer {
               out.append(cdataContent);
             } else {
               for (Node c = first; c != null; c = c.getNextSibling()) {
-                render(c, ns, wantsComments);
+                render(c, ns, renderUnsafe);
               }
             }
           } else {
             for (Node c = first; c != null; c = c.getNextSibling()) {
-              render(c, ns, wantsComments);
+              render(c, ns, renderUnsafe);
             }
           }
           // This is not correct for HTML <plaintext> nodes, but live with it,
@@ -703,7 +703,7 @@ final class Renderer {
         break;
       }
       case Node.COMMENT_NODE: {
-        if (wantsComments) {
+        if (renderUnsafe) {
           String text = node.getNodeValue();
           // HTML5 spec 11.1.6
           // Comments must start with the four character sequence (<!--).
@@ -722,11 +722,15 @@ final class Renderer {
           String problem = null;
           problem = text.startsWith(">") ? "starts with '>'" : problem;
           problem = text.startsWith("-") ? "starts with '-'" : problem;
-          problem = text.contains("--") ? "contains '--'" : problem;
           problem = text.endsWith("-") ? "ends with '-'" : problem;
+          // Comment nodes are only rendered in unsafe mode
+          // TODO: Uncommenting the following check makes the comment rendering
+          // html5/xml compliant, however, breaks some webpages which rely on
+          // broken behaviour in browsers.
+          // problem = text.contains("--") ? "contains '--'" : problem;
           if (null != problem) {
             throw new IllegalStateException(
-                "XML/HTML comment unrenderable because it " + problem);
+                "XML comment unrenderable because it " + problem);
           }
           out.append("<!--");
           out.append(node.getNodeValue());

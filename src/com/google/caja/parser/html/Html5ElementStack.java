@@ -459,6 +459,9 @@ public class Html5ElementStack implements OpenElementStack {
     String text = commentToken.text.substring(
         "<!--".length(), commentToken.text.lastIndexOf("--"));
     commentToken = Token.instance(text, commentToken.type, commentToken.pos);
+    if (text.contains("--")) {
+      mq.addMessage(MessageType.INVALID_HTML_COMMENT, commentToken.pos);
+    }
     char[] chars;
     int n = text.length();
     if (n <= charBuf.length) {

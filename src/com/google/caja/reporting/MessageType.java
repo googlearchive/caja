@@ -86,6 +86,8 @@ public enum MessageType implements MessageTypeInt {
   CANNOT_OVERRIDE_DEFAULT_NAMESPACE_IN_HTML(
       "%s: cannot override default XML namespace in HTML",
       MessageLevel.WARNING),
+  INVALID_HTML_COMMENT(
+      "%s: invalid '--' in html/xml comment", MessageLevel.WARNING),
 
   // platform context
   NOT_IE("%s: Will not work in IE", MessageLevel.WARNING),
