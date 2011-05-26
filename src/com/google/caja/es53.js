@@ -1263,7 +1263,8 @@ var ___, cajaVM, safeJSON;
     }
     if (fn.f___ !== Function.prototype.f___ &&
         fn.f___ !== fn.apply) {
-      throw new TypeError('Already tamed!\n' + fn.f___);
+      throw new TypeError('The function is already tamed ' +
+         'or not from this frame.\n' + fn.f___);
     }
     fn.f___ = fn.apply;
     fn.new___ = fn;
