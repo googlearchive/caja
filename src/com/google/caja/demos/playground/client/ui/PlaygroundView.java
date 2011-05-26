@@ -382,7 +382,8 @@ public class PlaygroundView {
       Element div, String policy, String html, String js) /*-{
     var that = this;
     $wnd.caja.configure({
-      cajaServer: 'http://localhost:8080/',
+      cajaServer: '/',
+      debug: true
     }, function (frameGroup) {
       var extraImports = {};
       try {
@@ -422,7 +423,7 @@ public class PlaygroundView {
             return null;
           }
         }, function (frame) {
-        frame.contentCajoled('http://localhost:8080/',
+        frame.contentCajoled('http://fake.url/',
            js, html).run(extraImports, function (result) {
             that.@com.google.caja.demos.playground.client.ui.PlaygroundView::setRenderedResult(Ljava/lang/String;)
                 (result)
