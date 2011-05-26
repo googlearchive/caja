@@ -2728,16 +2728,19 @@ var ___, cajaVM, safeJSON;
       var s = setter(this, P);
       if (s) { return s.f___(this, [V]); }
 
-      // Does the property exist and is it whitelisted as writable?
-      if (isWritable(this, P)) {
-        fastpathWrite(this, P);
-        return this[P] = V;
+      // If P is inherited or an own property, write or throw.
+      if (P + '_v___' in this) {
+        if (isWritable(this, P)) {
+          fastpathWrite(this, P);
+          return this[P] = V;
+        }
+        throw new TypeError("The property '" + P + "' is not writable.");
       }
 
       // Temporary support for Cajita's keeper interface
       if (this.handleSet___) { return this.handleSet___(P, V); }
 
-      // If it doesn't exist, is the object extensible?
+      // If P doesn't exist, is the object extensible?
       if (!this.hasOwnProperty(P) && isExtensible(this)) {
         this.DefineOwnProperty___(P, {
             value: V,

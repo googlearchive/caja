@@ -1569,6 +1569,29 @@ public class ES53RewriterTest extends CommonJsRewriterTestCase {
         "});");
   }
 
+  /**
+   * Tests assigning to an inherited read-only property
+   */
+  public final void testCanPut() throws Exception {
+    rewriteAndExecute(
+        "function F(){}" +
+        "Object.defineProperty(F.prototype, 'constructor', {writable:false});" +
+        "var G = function (){};" +
+        "G.prototype = Object.create(F.prototype);" +
+        "assertThrows(function(){G.prototype.constructor = G;});");
+    // Should be able to mask inherited read-only properties with
+    // Object.defineProperty().
+    rewriteAndExecute(
+        "function F(){}" +
+        "Object.defineProperty(F.prototype, 'constructor', {writable:false});" +
+        "var G = function (){};" +
+        "G.prototype = Object.create(F.prototype);" +
+        "Object.defineProperty(G.prototype, 'constructor'," +
+        "    {value:undefined, writable:true, configurable:true});" +
+        "G.prototype.constructor = G;" +
+        "assertEquals(G.prototype.constructor, G);");
+  }
+
   @Override
   public void setUp() throws Exception {
     super.setUp();
