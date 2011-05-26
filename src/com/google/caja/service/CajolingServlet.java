@@ -113,6 +113,19 @@ public class CajolingServlet extends HttpServlet {
   }
 
   @Override
+  protected void doOptions(HttpServletRequest req, HttpServletResponse resp)
+      throws ServletException, IOException {
+    // CORS requires that browsers do an OPTIONS request before allowing
+    // cross-site POSTs.  UMP does not require this, but no browser implements
+    // UMP at this time.  So, we reply to the OPTIONS request to trick
+    // browsers into effectively implementing UMP.
+    resp.setHeader("Access-Control-Allow-Origin", "*");
+    resp.setHeader("Access-Control-Allow-Methods", "GET, POST");
+    resp.setHeader("Access-Control-Allow-Headers", "Content-Type");
+    resp.setHeader("Access-Control-Max-Age", "86400");
+  }
+
+  @Override
   public void doPost(HttpServletRequest req, HttpServletResponse resp)
       throws ServletException {
     if (req.getContentType() == null) {
