@@ -31,8 +31,13 @@ licenses and/or has source available from other locations.
   License: Apache License v. 2.0 
   Source code availability: http://ant.apache.org/
   Bundled in lib/impl/appengine-local-runtime.jar under org/apache/tools/ant
-  lib/shared/jsp/repackaged-appengine-ant-1.6.5.jar
-  lib/shared/jsp/repackaged-appengine-ant-launcher-1.6.5.jar
+  lib/shared/jsp/repackaged-appengine-ant-1.7.1.jar
+  lib/shared/jsp/repackaged-appengine-ant-launcher-1.7.1.jar
+
+* Apache HttpComponents
+  License: Apache License v. 2.0 
+  Source code availability: http://hc.apache.org/
+  Bundled in lib/impl/appengine-api-stubs.jar under org/apache/http
 
 * Jakarta Commons Logging 
     License: Apache License v. 2.0 
@@ -109,3 +114,8 @@ licenses and/or has source available from other locations.
     lib/tools/orm/datanucleus-enhancer-1.1.4.jar
     lib/user/orm/datanucleus-core-1.1.5.jar
     lib/user/orm/datanucleus-jpa-1.1.5.jar
+
+* YamlBeans
+    License: MIT
+    Source code availability: http://code.google.com/p/yamlbeans/
+    Bundled in lib/appengine-api-tools.jar under com/google/appengine/repackaged/net/sourceforge/yamlbeans

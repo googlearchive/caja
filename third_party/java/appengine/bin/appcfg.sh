@@ -1,9 +1,18 @@
 #!/bin/bash
-# Launches AppCfg
+# Copyright 2009 Google Inc. All Rights Reserved.
+#
+# Launches the AppCfg utility, which allows Google App Engine
+# developers to deploy their application to the cloud.
+#
 [ -z "${DEBUG}" ] || set -x  # trace if $DEBUG env. var. is non-zero
-SDK_BIN=`dirname $0 | sed -e "s#^\\([^/]\\)#${PWD}/\\1#"` # sed makes absolute
-SDK_LIB=$SDK_BIN/../lib
-SDK_CONFIG=$SDK_BIN/../config/sdk
+SDK_BIN="`dirname "$0" | sed -e "s#^\\([^/]\\)#${PWD}/\\1#"`" # sed makes absolute
+SDK_LIB="$SDK_BIN/../lib"
+SDK_CONFIG="$SDK_BIN/../config/sdk"
+JAR_FILE="$SDK_LIB/appengine-tools-api.jar"
 
-java -cp "$SDK_LIB/appengine-tools-api.jar" \
-    com.google.appengine.tools.admin.AppCfg $*
+if [ ! -e "$JAR_FILE" ]; then
+    echo "$JAR_FILE not found"
+    exit 1
+fi
+
+java -cp "$JAR_FILE" com.google.appengine.tools.admin.AppCfg $*

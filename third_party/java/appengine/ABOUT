@@ -6,6 +6,7 @@ This product includes software developed by:
  - The Apache Software Foundation (http://www.apache.org/).
    - The servlet specification classes: servlet-api-2.5.jar, jsp-api-2.1.jar, el-api-2.1.jar
    - Apache Ant (http://ant.apache.org/)
+   - Apache HttpComponents (http://hc.apache.org/index.html)
    - Jakarta Commons Logging (http://commons.apache.org/logging/)
    - Jakarta Commons HttpClient (http://jakarta.apache.org/commons/httpclient/)
    - Jakarta Commons Codec (http://commons.apache.org/codec/)
