@@ -35,7 +35,7 @@
  * is the best we can do without VM support.
  *
  * <p>The API implemented here is approximately the API as implemented
- * in FF6.0a1 and agreed to MarkM, Andreas Gal, and Dave Herman,
+ * in FF6.0a1 and agreed to by MarkM, Andreas Gal, and Dave Herman,
  * rather than the offially approved proposal page. TODO(erights):
  * upgrade the ecmascript WeakMap proposal page to explain this API
  * change and present to EcmaScript committee for their approval.
@@ -46,7 +46,7 @@
  * what would be the hidden internal properties of a primitive
  * implementation. Whereas the FF6.0a1 WeakMap.prototype methods
  * require their {@code this} to be a genuine WeakMap instance (i.e.,
- * and object of {@code [[Class]]} "WeakMap}), since there is nothing
+ * an object of {@code [[Class]]} "WeakMap}), since there is nothing
  * unforgeable about the pseudo-internal method names used here,
  * nothing prevents these emulated prototype methods from being
  * applied to non-WeakMaps with pseudo-internal methods of the same
@@ -107,19 +107,12 @@ var WeakMap;
    * MUST either have different identities, or at least one of their
    * identities MUST be {@code NO_IDENT}.
    *
-   * <p><b>Plan</b>: An identity is either a string or a const
-   * function returning a mostly-unique string. The identity of an
-   * object is always either NO_IDENT or such a function. The
-   * egal-identity of the function itself is used to resolve
-   * collisions on the string returned by the function. For now, if
-   * the key is not an object (i.e., a primitive, null, or undefined),
-   * then identity(key) throws a TypeError.
-   *
-   * <p><b>What's currently implemented</b>: An identity is either a
-   * string or a frozen singleton array containing a mostly-unique
-   * string. The identity of an object is always either NO_IDENT or
-   * such an array. The egal-identity of the array itself is used to
-   * resolve collisions on the string within the array.
+   * An identity is either a string or a const function returning a
+   * mostly-unique string. The identity of an object is always either
+   * NO_IDENT or such a function. The egal-identity of the function
+   * itself is used to resolve collisions on the string returned by
+   * the function. If the key is not an object (i.e., a primitive,
+   * null, or undefined), then identity(key) throws a TypeError.
    *
    * <p>When a map stores a key's identity rather than the key itself,
    * the map does not cause the key to be retained. See the emulated
@@ -134,15 +127,14 @@ var WeakMap;
    *     chance, and
    * <li>reasonably hiding the existence of this new property from
    *     most JavaScript code.
-   * <li><b>Unimplemented plan</b> preventing <i>identity theft</i>,
-   *     where one object is created falsely claiming to have the
-   *     identity of another object.
+   * <li>Preventing <i>identity theft</i>, where one object is created
+   *     falsely claiming to have the identity of another object.
    * </ul>
    * We do so by
    * <ul>
    * <li>Making the hidden property non-enumerable, so we need not
    *     worry about for-in loops or {@code Object.keys},
-   * <li><b>Plan</b>: Making the hidden property an accessor property,
+   * <li>Making the hidden property an accessor property,
    *     where the hidden property's getter is the identity, and the
    *     value the getter returns is the mostly unique string.
    * <li>monkey patching those reflective methods that would
@@ -161,40 +153,39 @@ var WeakMap;
    *     property. The property access operations also reveal the
    *     randomness provided by {@code Math.random}. This is not
    *     currently an issue but may become one if SES otherwise seeks
-   *     to hide Math.random.
+   *     to hide {@code Math.random}.
    * </ul>
    * These are not easily fixed because they are primitive operations
-   * which cannot be monkey patched. However, because (<b>Plan</b>)
-   * we're representing the precious identity by the identity of the
+   * which cannot be monkey patched. However, because we're
+   * representing the precious identity by the identity of the
    * property's getter rather than the value gotten, this identity
    * itself cannot leak or be installed by the above non-transparent
    * operations.
-   *
-   * <p>Due to <a href=
-   * "https://bugzilla.mozilla.org/show_bug.cgi?id=637994">Bug:
-   * Inherited accessor properties (sometimes?) reported as own
-   * properties</a> we're reverting the logic of <a href=
-   * "http://code.google.com/p/es-lab/source/browse/trunk/src/ses/WeakMap.js"
-   * >WeakMap.js</a> from getter based as in r493 to array-based as in
-   * r491. This leaves us open to the identity theft attack, and so is
-   * weaker than the security we actually require.
    */
   function identity(key) {
+    var name;
+    function identGetter() { return name; }
     if (key !== Object(key)) {
       throw new TypeError('Not an object: ' + key);
     }
-    if (hop.call(key, 'ident___')) { return key.ident___; }
+    var desc = originalProps.getOwnPropertyDescriptor(key, 'ident___');
+    if (desc) { return desc.get; }
     if (!originalProps.isExtensible(key)) { return NO_IDENT; }
-    var name = 'hash:' + Math.random();
-    var result = originalProps.freeze([name]);
+
+    name = 'hash:' + Math.random();
+    // If the following two lines a swapped, Safari WebKit Nightly
+    // Version 5.0.5 (5533.21.1, r87697) crashes.
+    // See https://bugs.webkit.org/show_bug.cgi?id=61758
+    originalProps.freeze(identGetter.prototype);
+    originalProps.freeze(identGetter);
 
     defProp(key, 'ident___', {
-      value: result,
-      writable: false,
+      get: identGetter,
+      set: undefined,
       enumerable: false,
       configurable: false
     });
-    return result;
+    return identGetter;
   }
 
   /**
@@ -286,11 +277,12 @@ var WeakMap;
         name = id;
         id = key;
       } else {
-        name = id[0];
+        name = id();
       }
       var opt_ids = identities[name];
       var i = opt_ids ? opt_ids.indexOf(id) : -1;
-      return Object.freeze({
+      // Using original freeze is safe since this record can't escape.
+      return originalProps.freeze({
         name: name,
         id: id,
         opt_ids: opt_ids,
