@@ -430,6 +430,7 @@ var caja = (function () {
   }
 
   function initFeralFrame(aWindow) {
+    if (aWindow.Object.FERAL_FRAME_OBJECT___ === aWindow.Object) { return; }
     // Apply styles to current document
     var style = aWindow.document.createElement('style');
     style.setAttribute('type', 'text/css');

@@ -382,10 +382,12 @@ public class PlaygroundView {
       Element div, String policy, String html, String js) /*-{
     var that = this;
     $wnd.caja.configure({
-      cajaServer: '/',
+      cajaServer: '',
       debug: true
     }, function (frameGroup) {
       var extraImports = {};
+      // add the feral marker to GWT's frame
+      $wnd.caja.initFeralFrame(window);  // note 'window' not '$wnd'
       try {
         var tamings___ = eval(policy);
       } catch (e) {
