@@ -46,7 +46,7 @@ var caja = (function () {
     }
   }
 
-  function createIframe() {
+  function createIframe(opt_className) {
     // create iframe to load Cajita runtime in
     // TODO: Put a class on this so if the host page cares about 'all iframes'
     // it can filter this out?
@@ -55,6 +55,7 @@ var caja = (function () {
     frame.style.display = "none";
     frame.width = 0;
     frame.height = 0;
+    frame.className = opt_className || '';
     // stick it arbitrarily in the document
     document.body.appendChild(frame);
     return frame;
@@ -108,7 +109,7 @@ var caja = (function () {
     var debug = Boolean(config.debug);
 
     function loadCajaFrame(filename, callback) {
-      var iframe = createIframe();
+      var iframe = createIframe(filename);
 
       var url = joinUrl(cajaServer,
           debug ? filename + '.js' : filename + '.opt.js');
