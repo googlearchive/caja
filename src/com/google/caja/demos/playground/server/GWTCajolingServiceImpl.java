@@ -16,8 +16,10 @@ package com.google.caja.demos.playground.server;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URLConnection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -80,8 +82,13 @@ public class GWTCajolingServiceImpl extends RemoteServiceServlet
           public FetchedData fetch(ExternalReference ref, String mimeType)
               throws UriFetchException {
             try {
-              return FetchedData.fromConnection(
-                  ref.getUri().toURL().openConnection());
+              HttpURLConnection conn = (HttpURLConnection)
+                  ref.getUri().toURL().openConnection();
+              // appengine has a caching http proxy; this limits it
+              conn.setRequestProperty("Cache-Control", "max-age=10");
+              return FetchedData.fromConnection(conn);
+            } catch (ClassCastException ex) {
+              throw new UriFetchException(ref, mimeType, ex);
             } catch (IOException ex) {
               throw new UriFetchException(ref, mimeType, ex);
             }
