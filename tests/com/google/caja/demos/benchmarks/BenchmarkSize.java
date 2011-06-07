@@ -63,7 +63,7 @@ public class BenchmarkSize extends CajaTestCase {
         + plain(fromResource("../../plugin/valija.out.js"));
     
     String plainES53 =
-      plain(fromResource("../../plugin/domita-es53-minified.js"));
+      plain(fromResource("../../plugin/es53-taming-frame.opt.js"));
 
     byte[] plainCajitaBytes = charset(plainCajita);
     byte[] plainValijaBytes = charset(plainValija);
