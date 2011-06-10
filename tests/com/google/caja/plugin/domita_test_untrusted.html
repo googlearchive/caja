@@ -1950,8 +1950,11 @@ jsunitRegister('testArraySlice',
   // These cases are critical, because they affect the correctness of
   // valija's fn.apply() implementation.  IE is the problem case, because
   // it throws an error when you Array.prototype.slice.call(null).
-  assertArray([], Array.slice(null), 'null');
-  assertArray([], Array.slice(void 0), 'void 0');
+  // ES5 says Array.slice(null) and Array.slice(undefined) should
+  // throw an error.  Commenting these out until we move domita tests to
+  // ES5/3
+  // assertThrows(function(){Array.slice(null)});
+  // assertThrows(function(){Array.slice(void 0)});
 
   // These are expected behavior that work fine on all browsers.
   assertArray([9], Array.slice([9]), '([9])');
