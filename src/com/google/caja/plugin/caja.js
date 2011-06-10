@@ -81,6 +81,95 @@ var caja = (function () {
     }
   }
 
+  /**
+   * Enforces {@code typeof specimen === typename}, in which case
+   * specimen is returned.
+   * <p>
+   * If not, throws an informative TypeError
+   * <p>
+   * opt_name, if provided, should be a name or description of the
+   * specimen used only to generate friendlier error messages.
+   */
+  function enforceType(specimen, typename, opt_name) {
+    if (typeof specimen !== typename) {
+      throw new TypeError('expected ' + typename + ' instead of ' +
+          typeof specimen + ': ' + (opt_name || specimen));
+    }
+    return specimen;
+  }
+
+  var registeredImports = [];
+
+  /**
+   * Gets or assigns the id associated with this (assumed to be)
+   * imports object, registering it so that
+   * <tt>getImports(getId(imports)) === imports</tt>.
+   * <p>
+   * This system of registration and identification allows us to
+   * cajole html such as
+   * <pre>&lt;a onmouseover="alert(1)"&gt;Mouse here&lt;/a&gt;</pre>
+   * into html-writing JavaScript such as<pre>
+   * IMPORTS___.document.innerHTML = "
+   *  &lt;a onmouseover=\"
+   *    (function(IMPORTS___) {
+   *      IMPORTS___.alert(1);
+   *    })(___.getImports(" + ___.getId(IMPORTS___) + "))
+   *  \"&gt;Mouse here&lt;/a&gt;
+   * ";
+   * </pre>
+   * If this is executed by a plugin whose imports is assigned id 42,
+   * it generates html with the same meaning as<pre>
+   * &lt;a onmouseover="___.getImports(42).alert(1)"&gt;Mouse here&lt;/a&gt;
+   * </pre>
+   * <p>
+   * An imports is not registered and no id is assigned to it until the
+   * first call to <tt>getId</tt>. This way, an imports that is never
+   * registered, or that has been <tt>unregister</tt>ed since the last
+   * time it was registered, will still be garbage collectable.
+   */
+  function getId(imports) {
+    enforceType(imports, 'object', 'imports');
+    var id;
+    if ('id___' in imports) {
+      id = enforceType(imports.id___, 'number', 'id');
+    } else {
+      id = imports.id___ = registeredImports.length;
+    }
+    registeredImports[id] = imports;
+    return id;
+  }
+
+  /**
+   * Gets the imports object registered under this id.
+   * <p>
+   * If it has been <tt>unregistered</tt> since the last
+   * <tt>getId</tt> on it, then <tt>getImports</tt> will fail.
+   */
+  function getImports(id) {
+    var result = registeredImports[enforceType(id, 'number', 'id')];
+    if (result === void 0) {
+      throw new Error('Internal: imports#', id, ' unregistered');
+    }
+    return result;
+  }
+
+  /**
+   * If you know that this <tt>imports</tt> no longer needs to be
+   * accessed by <tt>getImports</tt>, then you should
+   * <tt>unregister</tt> it so it can be garbage collected.
+   * <p>
+   * After unregister()ing, the id is not reassigned, and the imports
+   * remembers its id. If asked for another <tt>getId</tt>, it
+   * reregisters itself at its old id.
+   */
+  function unregister(imports) {
+    enforceType(imports, 'object', 'imports');
+    if ('id___' in imports) {
+      var id = enforceType(imports.id___, 'number', 'id');
+      registeredImports[id] = void 0;
+    }
+  }
+
   var guestDocumentIdIndex = 0;
 
   /**
@@ -289,10 +378,29 @@ var caja = (function () {
                 innerContainer);
             imports.htmlEmitter___ =
                 new tamingWindow.HtmlEmitter(innerContainer, imports.document);
+            var divWindow = div.ownerDocument.defaultView ||
+                div.ownerDocument.parentWindow;
+            divWindow.___.getId =
+                tamingWindow.___.getId =
+                guestWindow.___.getId = getId;
+            divWindow.___.getImports =
+                tamingWindow.___.getImports =
+                guestWindow.___.getImports = getImports;
+            divWindow.___.unregister =
+                tamingWindow.___.unregister =
+                guestWindow.___.unregister = unregister;
+            getId(imports);
+            if (!divWindow.___.tamingFrames) {
+              divWindow.___.tamingFrames = {};
+            }
+            divWindow.___.tamingFrames[imports.id___] = tamingWindow;
             guestWindow.plugin_dispatchEvent___ =
                 tamingWindow.plugin_dispatchEvent___;
-            guestWindow.plugin_dispatchToHandler___ =
-                tamingWindow.plugin_dispatchToHandler___;
+            divWindow.plugin_dispatchToHandler___ = 
+                function (pluginId, handler, args) {
+                  return divWindow.___.tamingFrames[pluginId].
+                      plugin_dispatchToHandler___(pluginId, handler, args);
+                };
           }
 
           function runMaker(func) {
@@ -449,7 +557,7 @@ var caja = (function () {
         '}';
     aWindow.document.getElementsByTagName('head')[0].appendChild(style);
     // Attach safety marker to 'window' object
-    aWindow.___ = aWindow;
+    aWindow.___ = {};
     // Attach recognition marker to 'Object' constructor
     aWindow.Object.FERAL_FRAME_OBJECT___ = aWindow.Object;
   }
