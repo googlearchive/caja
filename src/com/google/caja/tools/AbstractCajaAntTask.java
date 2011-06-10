@@ -32,6 +32,7 @@ import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.DirectoryScanner;
 import org.apache.tools.ant.Task;
 import org.apache.tools.ant.types.FileSet;
+import org.w3c.dom.DOMException;
 
 /**
  * An ANT task that operates on a set of files to produce a single output file
@@ -210,6 +211,14 @@ public abstract class AbstractCajaAntTask extends Task {
           } else {
             throw new BuildException("Failed to build " + output);
           }
+        } catch (DOMException e) {
+          // Report a more understandble message for Ant bug
+          if (DOMException.NAMESPACE_ERR == e.code) {
+            throw new RuntimeException("\n\nCaja encountered a bug in Ant. " +
+                "Please rerun ant with xercesImpl.jar on the path eg.:\n" +
+                "CLASSPATH=third_party/java/xerces/xercesImpl.jar: ant", e);
+          }
+          throw e;
         } finally {
           if (!success) {
             if (outputTimeFile.exists()) { outputTimeFile.delete(); }
