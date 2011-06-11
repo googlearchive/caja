@@ -1,4 +1,4 @@
-(function($){
+(function($) {
   var cajaDisplayed = false;  
   var tutorialGuide;
 
@@ -8,7 +8,8 @@
   function showDomita(report) {
     if (!cajaDisplayed) {
       cajaDisplayed = true;
-      document.getElementById('cajaDisplayContainer').style.display = 'inline-block';
+      document.getElementById('cajaDisplayContainer').style.display =
+          'inline-block';
       // Extend page wrap to fit console and chat
       $('.page-wrap').css({width:'1200px'});
       $('.primary-content').css('margin-left', 0);
@@ -22,185 +23,223 @@
   var lastLine;
   var debug = false;
 
-  $(document).ready(function(){
-      $('.reset-btn').click(function(){
-        if (confirm("Are you sure you want to reset? " +
-                    "You will lose your current state.")) {
-          controller.reset();
-          caja___.reset();
-          tutorialGuide.animate({opacity:0,height:0},'fast',function(){
-              tutorialGuide.html(initalGuide);
-              tutorialGuide.css({height:'auto'});
-              tutorialGuide.animate({opacity:1},'fast');
+  $(document).ready(caja.configure({debug : true}, function (frameGroup) {
+    frameGroup.makeES5Frame(document.getElementById("cajaDisplay"),
+        {
+          rewrite: function (uri, uriEffect, loaderType, hints) {
+            if (!/^https?:/i.test(uri)) { return void 0; }
+            if (uriEffect === html4.ueffects.NEW_DOCUMENT ||
+                (uriEffect === html4.ueffects.SAME_DOCUMENT &&
+                 loaderType === html4.ltypes.SANDBOXED)) {
+              return uri;
+            }
+            return null;
+          }
+        },
+        function (frame) {
+          $('.reset-btn').click(function() {
+            if (confirm("Are you sure you want to reset? " +
+                        "You will lose your current state.")) {
+              controller.reset();
+              frame.imports = undefined;
+              tutorialGuide.animate({opacity:0,height:0},'fast',function(){
+                  tutorialGuide.html(initalGuide);
+                  tutorialGuide.css({height:'auto'});
+                  tutorialGuide.animate({opacity:1},'fast');
+              });
+              makeGuidSamplesClickable();
+            }
           });
-          makeGuidSamplesClickable();
-        }
-      });
-
-      ////////////////////////////////////////////////////////////////////////
-      // Guide globals
-      // Get the guide element.
-      tutorialGuide = $('.guide');
-      var initalGuide = tutorialGuide.html();
-      var tellAboutRet;
-
-      function jsonp(url,func) {
-        var script = $('<script type="text/javascript" src="' + encodeURI(url) + '"></script>');
-        handleJSON = function(r){
-          script.remove();
-          func(r);
-        };
-        script.attr('src',url);
-        $('body').append(script);
-      }
-
-      function cajole(line, callback) {
-        jsonp("../cajole?"
-              + "input-mime-type=text/javascript&"
-              + "callback=handleJSON&"
-              + "alt=json-in-script&"
-              + "directive=ES53&"
-              // work around for "use " directives
-              + "content=0;" + encodeURIComponent(line) + "&"
-              // Bust cache
-              + "random=" + Math.random(), callback);
-      }
-
-
-      ////////////////////////////////////////////////////////////////////////
-      // Create console
-      var console = $('.console');
-      controller = console.console({
-        promptLabel: '> ',
-        commandValidate: function(line){
-          if (line == "") return false; // Empty line is invalid
-          return true;
-        },
-        cancelHandle:function(){
-          controller.commandRef.ignore = true;
-          controller.finishCommand();
-          controller.report();
-        },
-        commandHandle:function(line,report){
-          controller.ajaxloader = $('<p class="ajax-loader">Loading...</p>');
-          var commandRef = {};
-          controller.currentLine = line;
-          controller.commandRef = commandRef;
-          controller.report = report;
-          if (tellAboutRet) tellAboutRet.fadeOut(function(){
-            $(this).remove();
-          });
-          if (libTrigger(line,report)) return;
-          controller.inner.append(controller.ajaxloader);
-          controller.scrollToBottom();
-          cajole(line, function(resp){
-              if (commandRef.ignore) { return; }
-              caja___.enable(true, document.getElementById("cajaDisplay"), "",
-                  "", resp.js, function(runtimeResult) {
-                      controller.finishCommand();
-                      var result = { 
-                        result: runtimeResult.result, 
-                        success: runtimeResult.success,
-                        exception: runtimeResult.exception,
-                        expr: line,
-                        js: resp.js,
-                        messages: resp.messages
-                      };
-                      if (pageTrigger > -1 && result.success) {
-                        triggerTutorialPage(pageTrigger,result);
-                      }
-                      if (!result.js) {
-                        report([{
-                          msg:result.messages[0].message,
-                          className: "jquery-console-message-error jquery-console-message-compile-error"
-                        }]);
-                        notice('compile-error',
-                               "A compile-time error! "+
-                               "It just means the expression wasn't quite right. " +
-                               "Try again.",
-                               'prompt');
-                      } else if (result.exception) {
-                        var err = explainServerError(result.exception);
-                        report([{
-                            msg:err.message,
-                            className:"jquery-console-message-error jquery-console-message-exception"
-                        }]);
-                        if (err == result.exception) {
-                          notice('compile-error',
-                                 "A run-time error! The expression was right but the"+
-                                 " result didn't make sense. Check your expression and try again.",
-                                 'prompt');
-                        }
-                      } else if (result.internal) {
-                        report([{
-                            msg: explainServerError(result.internal),
-                            className:"jquery-console-message-error jquery-console-message-internal"
-                        }]);
-                      } else if (result.success) {
-                        if (debug) {
-                          report([{
-                              msg: renderObj(result.result),
-                              className:"jquery-console-message-value"
-                            }, { 
-                              msg: result.js,
-                              className:"jquery-console-message-type"
-                            }]);
-                        } else {
-                          report([{
-                            msg: renderObj(result.result),
-                            className:"jquery-console-message-value"
-                          }]);
-                        }
-                      } else {
-                        notice('compile-error',
-                               "A run-time error! The expression was right but the"+
-                               " result didn't make sense. Check your expression and try again.",
-                               'prompt');
-                      }
-                    }, true /*reuse imports*/);
-          })
-        },
-        charInsertTrigger:function(){
-          var t = notice('tellaboutreturn',
-              "Hit Return when you're "+
-              "finished typing your expression.");
-          if (t) tellAboutRet = t;
-          return true;
-        },
-        autofocus:true,
-        promptHistory:true,
-        historyPreserveColumn:true,
-        welcomeMessage:'Type Caja expressions in here.'
-      });
-
-      controller.finishCommand = function() {
-          controller.ajaxloader.remove();
-          $('.jquery-console-prompt :last').each(function() {
-              lastLine = controller.currentLine;
-              if (!$(this).hasClass('prompt-done')) {
-                $(this).addClass('prompt-done');
-                $(this).click(function(){
-                    controller.promptText(controller.currentLine);
-                });
+    
+          //////////////////////////////////////////////////////////////////////
+          // Guide globals
+          // Get the guide element.
+          tutorialGuide = $('.guide');
+          var initalGuide = tutorialGuide.html();
+          var tellAboutRet;
+    
+          function jsonp(url,func) {
+            var script = $('<script type="text/javascript" src="' +
+                encodeURI(url) + '"></script>');
+            handleJSON = function(r){
+              script.remove();
+              func(r);
+            };
+            script.attr('src',url);
+            $('body').append(script);
+          }
+    
+          function cajole(line, callback) {
+            jsonp("../cajole?"
+                  + "input-mime-type=text/javascript&"
+                  + "callback=handleJSON&"
+                  + "alt=json-in-script&"
+                  + "directive=ES53&"
+                  // work around for "use " directives
+                  + "content=0;" + encodeURIComponent(line) + "&"
+                  // Bust cache
+                  + "random=" + Math.random(), callback);
+          }
+    
+          function updateConsole(report,
+              runtimeResult, success, exception, line, js, messages) {
+            var result = { 
+                result: runtimeResult, 
+                success: success,
+                exception: exception,
+                expr: line,
+                js: js,
+                messages: messages
+            };
+            if (pageTrigger > -1 && result.success) {
+              triggerTutorialPage(pageTrigger,result);
+            }
+            if (!result.js) {
+              report([{
+                msg:result.messages[0].message,
+                className: "jquery-console-message-error " + 
+                  "jquery-console-message-compile-error"
+              }]);
+              notice('compile-error',
+                     "A compile-time error! "+
+                     "It just means the expression wasn't quite right. " +
+                     "Try again.",
+                     'prompt');
+            } else if (result.exception) {
+              var err = explainServerError(result.exception);
+              report([{
+                  msg:renderObj(err),
+                  className:"jquery-console-message-error" +
+                    " jquery-console-message-exception"
+              }]);
+              if (err == result.exception) {
+                notice('compile-error',
+                       "A run-time error! The expression was right but the" +
+                       " result didn't make sense. Check your expression and" +
+                       " try again.",
+                       'prompt');
               }
-      });
-    }
-
-    makeGuidSamplesClickable();
-
-    var match = window.location.href.match(/#([0-9]+)$/);
-    if (match) {
-      pageTrigger = match[1]-1;
-      setTutorialPage(undefined,match[1]-1);
-    }
-
-    match = window.location.href.match(/\?input=([^&]+)/);
-    if (match) {
-      controller.promptText(urlDecode(match[1]));
-      controller.inner.click();
-      controller.typer.consoleInsert(13);
-    }
-  });
+            } else if (result.internal) {
+              report([{
+                  msg: explainServerError(result.internal),
+                  className:"jquery-console-message-error" +
+                      " jquery-console-message-internal"
+              }]);
+            } else if (result.success) {
+              if (debug) {
+                report([{
+                  msg: renderObj(result.result),
+                  className:"jquery-console-message-value"
+                }, { 
+                  msg: result.js,
+                  className:"jquery-console-message-type"
+                }]);
+              } else {
+                report([{
+                  msg: renderObj(result.result),
+                  className:"jquery-console-message-value"
+                }]);
+              }
+            } else {
+              notice('compile-error',
+                     "A run-time error! The expression was right but the" +
+                     " result didn't make sense. Check your expression and" +
+                     " try again.",
+                     'prompt');
+            }
+          }
+    
+          //////////////////////////////////////////////////////////////////////
+          // Create console
+          var console = $('.console');
+          controller = console.console({
+            promptLabel: '> ',
+            commandValidate: function(line){
+              if (line == "") return false; // Empty line is invalid
+              return true;
+            },
+            cancelHandle: function() {
+              controller.commandRef.ignore = true;
+              controller.finishCommand();
+              controller.report();
+            },
+            commandHandle: function (line,report) {
+              controller.ajaxloader =
+                $('<p class="ajax-loader">Loading...</p>');
+              var commandRef = {};
+              controller.currentLine = line;
+              controller.commandRef = commandRef;
+              controller.report = report;
+              if (tellAboutRet) tellAboutRet.fadeOut(function(){
+                $(this).remove();
+              });
+              if (libTrigger(line,report)) return;
+              controller.inner.append(controller.ajaxloader);
+              controller.scrollToBottom();
+              if (commandRef.ignore) { return; }
+              cajole(line, function (resp) {
+                if (resp.js) {
+                  try {
+                    frame.contentCajoled(top.location, resp.js, "")
+                    .run({}, function(runtimeResult) {
+                      controller.finishCommand();
+                      updateConsole(report, runtimeResult, true, undefined,
+                          line, resp.js, resp.messages)
+                    });
+                  } catch (e) {
+                    controller.finishCommand();
+                    updateConsole(report, undefined, false, e,
+                        line, resp.js, resp.messages)
+                  }
+                } else {
+                  controller.finishCommand();
+                  updateConsole(report, undefined, false, undefined,
+                      line, resp.js, resp.messages)
+                }
+              });
+            },
+            charInsertTrigger: function() {
+              var t = notice('tellaboutreturn',
+                  "Hit Return when you're "+
+                  "finished typing your expression.");
+              if (t) tellAboutRet = t;
+              return true;
+            },
+            autofocus:true,
+            promptHistory:true,
+            historyPreserveColumn:true,
+            welcomeMessage:'Type Caja expressions in here.'
+          });
+    
+          controller.finishCommand = function() {
+              controller.ajaxloader.remove();
+              $('.jquery-console-prompt :last').each(function() {
+                  lastLine = controller.currentLine;
+                  if (!$(this).hasClass('prompt-done')) {
+                    $(this).addClass('prompt-done');
+                    $(this).click(function(){
+                        controller.promptText(controller.currentLine);
+                    });
+                  }
+              });
+          };
+    
+          makeGuidSamplesClickable();
+      
+          var match = window.location.href.match(/#([0-9]+)$/);
+          if (match) {
+            pageTrigger = match[1]-1;
+            setTutorialPage(undefined,match[1]-1);
+          }
+      
+          match = window.location.href.match(/\?input=([^&]+)/);
+          if (match) {
+            controller.promptText(urlDecode(match[1]));
+            controller.inner.click();
+            controller.typer.consoleInsert(13);
+          }
+        });
+  }));
 
   function urlDecode (encodedString) {
     var output = encodedString;
