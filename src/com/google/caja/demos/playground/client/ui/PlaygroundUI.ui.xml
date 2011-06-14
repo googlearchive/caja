@@ -6,12 +6,12 @@
       type='com.google.caja.demos.playground.client.PlaygroundResource' />
   
   <ui:style>
-  	body { font-family: arial,sans-serif,helvetica }
-	  .playgroundUI { background: #92C1F0; }
+    body { font-family: arial,sans-serif,helvetica }
+    .playgroundUI { background: #92C1F0; }
   
-		.pginfo { font-weight: bold; font-size: 120% }
-  	.loadingLabel { display: hidden; }
-  	.menuItems { margin: 5px;	}
+    .pginfo { font-weight: bold; font-size: 120% }
+    .loadingLabel { display: hidden; }
+    .menuItems { margin: 5px;  }
   </ui:style>
   <g:DockLayoutPanel>
     <g:north size="80">
@@ -22,18 +22,25 @@
         </g:HorizontalPanel>
 
         <!-- Logo Panel -->
-        <g:HorizontalPanel>
-          <g:Image resource="{res.logo}"></g:Image>
+        <g:HorizontalPanel width="100%" >
+          <g:cell width="155" height="55">
+            <g:Image resource="{res.logo}"></g:Image>
+          </g:cell>
           <g:VerticalPanel styleName="{style.pginfo}">
             <g:Label>Caja Playground</g:Label>
             <g:Label ui:field="version">Unknown</g:Label>
           </g:VerticalPanel>
-
           <g:HorizontalPanel ui:field="loadingLabel"
             styleName="{style.loadingLabel}" >
             <g:Label text="Loading..."></g:Label>
             <g:Image resource="{res.loading}"></g:Image>
           </g:HorizontalPanel>
+          <g:cell
+            horizontalAlignment="ALIGN_RIGHT" verticalAlignment="ALIGN_MIDDLE">
+           <g:HTML>
+             <div id="plusone"></div>
+           </g:HTML>
+          </g:cell>
         </g:HorizontalPanel>
       </g:VerticalPanel>
       

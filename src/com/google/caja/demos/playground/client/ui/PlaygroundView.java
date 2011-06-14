@@ -248,6 +248,14 @@ public class PlaygroundView {
     setupNativeSelectLineBridge();
     selectTab(Tabs.SOURCE);
   }
+  
+  private native void initPlusOne() /*-{
+    try {
+      $wnd.gapi.plusone.render("plusone",{size: "medium"});
+    } catch (e) {
+      // failure to initialize +1 button should not prevent load of page
+    }
+  }-*/;
 
   private static TreeItem addExampleItem(Map<Example.Type, TreeItem> menu,
       Example eg) {
@@ -306,6 +314,7 @@ public class PlaygroundView {
     initFeedbackPanel();
     initExamples();
     initEditor();
+    initPlusOne();
   }
 
   public void setOriginalSource(String result) {
