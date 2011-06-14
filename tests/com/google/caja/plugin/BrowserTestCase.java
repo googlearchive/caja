@@ -264,7 +264,9 @@ public abstract class BrowserTestCase extends CajaTestCase {
    *
    * @param servlets a Jetty Context to which servlets can be added.
    */
-  protected void addServlets(Context servlets) { }
+  protected void addServlets(Context servlets) {
+    // Adds none but may be overridden.
+  }
 
   public interface Check {
     boolean run();

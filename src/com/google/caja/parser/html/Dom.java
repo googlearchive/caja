@@ -25,14 +25,13 @@ import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.Callback;
 
 import java.io.IOException;
-import java.io.Serializable;
 
 import org.w3c.dom.Node;
 
 /**
  * A parse tree wrapper for an org.w3c.DOM node.
  */
-public final class Dom extends AbstractParseTreeNode implements Serializable {
+public final class Dom extends AbstractParseTreeNode {
   private static final long serialVersionUID = -5111504015682453850L;
   private final Node n;
 

@@ -19,7 +19,6 @@ import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URLConnection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -136,13 +135,13 @@ public class GWTCajolingServiceImpl extends RemoteServiceServlet
 
     Map<InputSource, ? extends CharSequence> originalSources
         = Collections.singletonMap(new InputSource(guessURI(base, url)), input);
-    
+
     PluginMeta meta = new PluginMeta(fetcher, null);
     meta.setEnableES53(es53Mode);
     PluginCompiler compiler = makePluginCompiler(meta, mq);
     compiler.setJobCache(new AppEngineJobCache());
     compiler.setMessageContext(mc);
-    
+
     URI uri = guessURI(base, url);
     InputSource is = new InputSource(uri);
     CharProducer cp = CharProducer.Factory.fromString(input, is);
@@ -156,17 +155,17 @@ public class GWTCajolingServiceImpl extends RemoteServiceServlet
       mq.addMessage(e.getCajaMessage());
       okToContinue = false;
     }
-    
+
     if (okToContinue && inputNode != null) {
       compiler.addInput(inputNode, uri);
       okToContinue &= compiler.run();
     }
-    
+
     outputJs = okToContinue ? compiler.getJavascript() : null;
     outputHtml = okToContinue ? compiler.getStaticHtml() : null;
-    
+
     String[] messages = formatMessages(originalSources, mc, mq);
-    
+
     StringBuilder jsOut = new StringBuilder();
     TokenConsumer renderer = new JsPrettyPrinter(new Concatenator(jsOut));
     RenderContext rc = new RenderContext(renderer)

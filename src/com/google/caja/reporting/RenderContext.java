@@ -41,7 +41,7 @@ public class RenderContext {
     this(true, false, false, MarkupRenderMode.HTML, false, out);
   }
 
-  private RenderContext(
+  protected RenderContext(
       boolean asciiOnly, boolean embeddable, boolean json,
       MarkupRenderMode markupMode, boolean rawObjKeys, TokenConsumer out) {
     if (null == out) { throw new NullPointerException(); }
@@ -70,26 +70,42 @@ public class RenderContext {
   public final boolean rawObjKeys() { return rawObjKeys; }
   public final TokenConsumer getOut() { return out; }
 
+  /** Must be overridden by subclasses to return an instance of the subclass. */
+  protected RenderContext derive(
+      boolean asciiOnly, boolean embeddable, boolean json,
+      MarkupRenderMode markupMode, boolean rawObjKeys) {
+    return new RenderContext(
+        asciiOnly, embeddable, json, markupMode, rawObjKeys, out);
+  }
+
+  private RenderContext deriveChecked(
+      boolean asciiOnly, boolean embeddable, boolean json,
+      MarkupRenderMode markupMode, boolean rawObjKeys) {
+    RenderContext derived = derive(
+        asciiOnly, embeddable, json, markupMode, rawObjKeys);
+    // Enforce that derive has been overridden.
+    assert derived.getClass() == getClass();
+    return derived;
+  }
+
   public RenderContext withAsciiOnly(boolean b) {
     return b != asciiOnly
-        ? new RenderContext(b, embeddable, json, markupMode, rawObjKeys, out)
+        ? deriveChecked(b, embeddable, json, markupMode, rawObjKeys)
         : this;
   }
   public RenderContext withEmbeddable(boolean b) {
     return b != embeddable
-        ? new RenderContext(asciiOnly, b, json, markupMode, rawObjKeys, out)
+        ? deriveChecked(asciiOnly, b, json, markupMode, rawObjKeys)
         : this;
   }
   public RenderContext withJson(boolean b) {
     return b != json
-        ? new RenderContext(
-            asciiOnly, embeddable, b, markupMode, rawObjKeys, out)
+        ? deriveChecked(asciiOnly, embeddable, b, markupMode, rawObjKeys)
         : this;
   }
   public RenderContext withMarkupRenderMode(MarkupRenderMode markupMode) {
     return markupMode != this.markupMode
-        ? new RenderContext(
-            asciiOnly, embeddable, json, markupMode, rawObjKeys, out)
+        ? deriveChecked(asciiOnly, embeddable, json, markupMode, rawObjKeys)
         : this;
   }
   @Deprecated
@@ -99,7 +115,7 @@ public class RenderContext {
   }
   public RenderContext withRawObjKeys(boolean b) {
     return b != this.rawObjKeys
-        ? new RenderContext(asciiOnly, embeddable, json, markupMode, b, out)
+        ? deriveChecked(asciiOnly, embeddable, json, markupMode, b)
         : this;
   }
 }
