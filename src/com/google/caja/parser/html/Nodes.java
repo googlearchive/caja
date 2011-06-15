@@ -47,7 +47,7 @@ import org.w3c.dom.UserDataHandler;
 
 /**
  * Utilities for dealing with HTML/XML DOM trees.
- * 
+ *
  * WARNING: The renderUnsafe methods in this class are unsafe for cajoled
  * code because the Caja pipeline does not sanitize comments.  In particular
  * IE comments rendered by renderUnsafe will be executable.
@@ -264,7 +264,7 @@ public class Nodes {
   public static void render(Node node, Namespaces ns, RenderContext rc) {
     render(node, ns, rc, false);
   }
-  
+
   /**
    * @deprecated For use only by non-caja clients of the parser/render
    */
@@ -291,9 +291,10 @@ public class Nodes {
       RenderContext rc, boolean renderUnsafe) {
     render(null, node, ns, rc, renderUnsafe);
   }
-  
-  private static void render(DocumentType docType, Node node, Namespaces ns,
-      RenderContext rc, boolean renderUnsafe) {
+
+  private static void render(
+      DocumentType docType, Node node, Namespaces ns, RenderContext rc,
+      boolean renderUnsafe) {
     StringBuilder sb = new StringBuilder(1 << 18);
     if (null != docType) {
       String rendering = renderDocumentType(docType);
@@ -301,7 +302,7 @@ public class Nodes {
         sb.append(rendering);
       }
     }
-    new Renderer(sb, rc.markupRenderMode(), rc.isAsciiOnly(), ns)
+    new Renderer(rc, sb, rc.markupRenderMode(), rc.isAsciiOnly(), ns)
         .render(node, ns, renderUnsafe);
     TokenConsumer out = rc.getOut();
     FilePosition pos = getFilePositionFor(node);
@@ -439,7 +440,7 @@ public class Nodes {
         MarkupRenderMode renderMode) {
     return render(docType, node, renderMode, true);
   }
-  
+
   private static String render(DocumentType docType, Node node,
       MarkupRenderMode renderMode, boolean renderUnsafe) {
     StringBuilder sb = new StringBuilder();
@@ -457,6 +458,7 @@ public class Nodes {
 }
 
 final class Renderer {
+  final RenderContext rc;
   final StringBuilder out;
   final MarkupRenderMode mode;
   final boolean asXml;
@@ -464,8 +466,9 @@ final class Renderer {
   final int namespaceDepthAtStart;
 
   Renderer(
-      StringBuilder out, MarkupRenderMode mode, boolean isAsciiOnly,
-      Namespaces ns) {
+      RenderContext rc, StringBuilder out, MarkupRenderMode mode,
+      boolean isAsciiOnly, Namespaces ns) {
+    this.rc = rc;
     this.out = out;
     this.mode = mode;
     this.asXml = mode == MarkupRenderMode.XML;
@@ -482,11 +485,11 @@ final class Renderer {
   void renderUnsafe(Node node, Namespaces ns) {
     render(node, ns, true);
   }
-  
+
   void render(Node node, Namespaces ns) {
     render(node, ns, false);
   }
-  
+
   void render(Node node, Namespaces ns, boolean renderUnsafe) {
     switch (node.getNodeType()) {
       case Node.DOCUMENT_NODE: case Node.DOCUMENT_FRAGMENT_NODE:
@@ -581,7 +584,7 @@ final class Renderer {
           }
           attrLocalName = emitLocalName(attrLocalName, isHtml);
           // http://www.w3.org/TR/html401/intro/sgmltut.html
-    // #didx-boolean_attribute
+          // #didx-boolean_attribute
           // Authors should be aware that many user agents only recognize the
           // minimized form of boolean attributes and not the full form.
           if (!(isHtml && mode == MarkupRenderMode.HTML4_BACKWARDS_COMPAT
@@ -617,15 +620,40 @@ final class Renderer {
               }
               // Make sure that the CDATA section does not contain a close
               // tag or unbalanced <!-- ... -->.
+              // If it does, try a fallback strategy.
               int problemIndex = checkHtmlCdataCloseable(
                   localName, cdataContent);
               if (problemIndex != -1) {
-                throw new IllegalArgumentException(
-                    "XML document not renderable as HTML due to '"
-                    + cdataContent.subSequence(
-                        problemIndex,
-                        Math.min(cdataContent.length(), problemIndex + 10))
-                    + "' in CDATA element");
+                if (rc instanceof MarkupFixupRenderContext) {
+                  MarkupFixupRenderContext markupFixup
+                    = (MarkupFixupRenderContext) rc;
+                  String cdataContentString = cdataContent.toString();
+                  do {
+                    @Nullable String fixedCdataContentString
+                        = markupFixup.fixUnclosableCdataElement(
+                            el, cdataContentString, problemIndex);
+                    if (fixedCdataContentString == null
+                        // Avoid most common source of inf. looping.
+                        || fixedCdataContentString.equals(cdataContentString)) {
+                      break;
+                    }
+                    cdataContentString = fixedCdataContentString;
+                    // The fixed content needs to be put back in cdataContent.
+                    cdataContent.setLength(0);
+                    cdataContent.append(cdataContentString);
+                    problemIndex = checkHtmlCdataCloseable(
+                        localName, cdataContent);
+                  } while (problemIndex != -1);
+                  // If problemIndex is -1 then we have fixed the problem.
+                }
+                if (problemIndex != -1) {
+                  throw new IllegalArgumentException(
+                      "XML document not renderable as HTML due to '"
+                      + cdataContent.subSequence(
+                          problemIndex,
+                          Math.min(cdataContent.length(), problemIndex + 10))
+                      + "' in CDATA element");
+                }
               }
               out.append(cdataContent);
             } else {
@@ -712,7 +740,7 @@ final class Renderer {
           // single U+003E GREATER-THAN SIGN character (>), nor start with a
           // U+002D HYPHEN-MINUS character (-) followed by a U+003E
           // GREATER-THAN SIGN (>) character, nor contain two consecutive
-          // U+002D HYPHEN-MINUS characters (--), nor end with a U+002D 
+          // U+002D HYPHEN-MINUS characters (--), nor end with a U+002D
           // HYPHEN-MINUS character (-). Finally, the comment must be ended
           // by the three character sequence (-->).
 

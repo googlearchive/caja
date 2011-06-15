@@ -369,14 +369,14 @@ public class NodesTest extends CajaTestCase {
         + "\"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\">",
         "<!DOCTYPE html>"
     };
-    
+
     boolean[] asAsciiModes = { true, false };
     boolean[] asEmbeddableModes = { true, false };
-    
+
     List<Pair<MarkupRenderMode, String>> expectedPairs = List.of(
-        Pair.pair(MarkupRenderMode.HTML, 
+        Pair.pair(MarkupRenderMode.HTML,
             "<html><head></head><body><b>my text</b></body></html>"),
-        Pair.pair(MarkupRenderMode.XML, 
+        Pair.pair(MarkupRenderMode.XML,
             "<html><head /><body><b>my text</b></body></html>")
     );
     for (String docType : docTypes) {
@@ -387,7 +387,7 @@ public class NodesTest extends CajaTestCase {
                 DoctypeMaker.parse(docType), null);
             Element el = html(fromString("<html><b>my text</b></html>"));
             doc.appendChild(doc.adoptNode(el));
-      
+
             StringBuilder sb = new StringBuilder();
             RenderContext rc = new RenderContext(new Concatenator(sb))
                 .withAsciiOnly(asAscii)
@@ -397,13 +397,13 @@ public class NodesTest extends CajaTestCase {
             rc.getOut().noMoreTokens();
             String actual = sb.toString();
             MoreAsserts.assertStartsWith(docType, actual);
-            assertTrue(actual, actual.contains(expectedPair.b)); 
+            assertTrue(actual, actual.contains(expectedPair.b));
           }
         }
       }
     }
   }
-  
+
   public final void testBadDocumentType() throws ParseException {
     // bad system id
     assertDocType(
@@ -497,6 +497,7 @@ public class NodesTest extends CajaTestCase {
     checkEscapingTextSpans("script", "a <!--b && c--> d", true);
     checkEscapingTextSpans(
         "script", "<!--document.write('<script>f()</script>')-->", true);
+    checkEscapingTextSpans("script", "a <!--b && c--> d", true);
   }
 
   public final void testEscapingTextSpansTitle() {
