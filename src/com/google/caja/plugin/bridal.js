@@ -21,8 +21,8 @@
  * @author ihab.awad@gmail.com
  * @author jasvir@gmail.com
  * @provides bridalMaker, bridal
- * @requires ___, cajita, document, html, html4, navigator, window,
- *     XMLHttpRequest, ActiveXObject 
+ * @requires document, html, html4, navigator, window,
+ *     XMLHttpRequest, ActiveXObject
  */
 
 var bridalMaker = function(document) {
@@ -208,13 +208,16 @@ var bridalMaker = function(document) {
     if (originalAttribs) {
       var attribs = {};
       clone.attributes___ = attribs;
-      cajita.forOwnKeys(originalAttribs, ___.markFuncFreeze(function (k, v) {
+      var k, v;
+      for (k in originalAttribs) {
+        if (/__$/.test(k)) { continue; }
+        v = originalAttribs[k];
         switch (typeof v) {
           case 'string': case 'number': case 'boolean':
             attribs[k] = v;
             break;
         }
-      }));
+      };
     }
   }
 
@@ -671,8 +674,15 @@ var bridalMaker = function(document) {
   function getComputedStyle(element, pseudoElement) {
     if (element.currentStyle && pseudoElement === void 0) {
       return element.currentStyle;
-    } else if (window.getComputedStyle) {
-      return window.getComputedStyle(element, pseudoElement);
+    }
+
+    // TODO(ihab.awad): Hack using window.top to get computed style b/c
+    // there seem to be cross-frame miseries somewhere causing computed
+    // style to be returned as undefined. Investigate the specific problem
+    // and at least document it here, if not find a better solution.
+
+    else if (window.top.getComputedStyle) {
+      return window.top.getComputedStyle(element, pseudoElement);
     } else {
       throw new Error(
           'Computed style not available for pseudo element '

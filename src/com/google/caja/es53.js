@@ -2768,19 +2768,20 @@ var ___, cajaVM, safeJSON;
   Object.prototype.c___ = function (P) {
       var O = this;
       P = '' + P;
+      // Temporary support for Cajita's keeper interface.
+      if (O.handleDelete___) {
+        var result = this.handleDelete___(P);
+        // ES5 strict can't return false.
+        if (!result) {
+          throw new TypeError('Cannot delete ' + P + ' on ' + O);
+        }
+        return true;
+      }
       // 1. Let desc be the result of calling the [[GetOwnProperty]]
       //    internal method of O with property name P.
       var desc = O.GetOwnProperty___(P);
       // 2. If desc is undefined, then return true.
       if (!desc) {
-        // Temporary support for Cajita's keeper interface.
-        if (O.handleDelete___) {
-          var result = this.handleDelete___(P);
-          // ES5 strict can't return false.
-          if (!result) {
-            throw new TypeError('Cannot delete ' + P + ' on ' + O);
-          }
-        }
         return true;
       }
       // 3. If desc.[[Configurable]] is true, then

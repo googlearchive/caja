@@ -205,6 +205,89 @@ function createDiv() {
   return d;
 }
 
+// TODO: async requirements are not counted in the test status.
+
+// Define an asynchronous test mechanism so that we can test things like
+// XHR, dynamic script loading, setTimeout, etc.
+// This allows test code to register conditions that must be true.
+// The conditions can be run periodically until all are satisfied or
+// the test times out.
+// If a condition returns true once, it is never evaluated again.
+// TODO(mikesamuel): rewrite XHR and setTimeout tests to use this scheme.
+var asyncRequirements = (function () {
+  var req = [];
+  var intervalId = null;
+  var TIMEOUT_MILLIS = 250;
+
+  /**
+   * Registers a requirement for later checking.
+   * @param {string} msg descriptive text used in error messages.
+   * @param {function () : boolean} predicate returns true to indicate
+   *     the requirement has been satisfied.
+   */
+  var assert = function (msg, predicate) {
+    req.push({ message: String(msg), predicate: predicate });
+  };
+
+  /**
+   * Start checking the asynchronous requirements.
+   * @param {function (boolean) : void} handler called with the value
+   *     {@code true} when and if all requirements are satisfied.
+   *     Called with false if more than TIMEOUT_MILLIS time passes
+   *     and requirements still aren't satisfied.
+   */
+  var evaluate = function (handler) {
+    if (!handler) {
+      handler = function (pass) {
+        if (!pass) {
+          document.title = document.title.replace(
+              /all tests passed/, 'async tests failed');
+        }
+      };
+    }
+    if (intervalId !== null) { throw new Error('dupe handler'); }
+    if (req.length === 0) {
+      handler(true);
+    } else {
+      var timeoutTime = (new Date).getTime() + TIMEOUT_MILLIS;
+      intervalId = setInterval(function () {
+        for (var i = req.length; --i >= 0;) {
+          var msgAndPredicate = req[i];
+          try {
+            if (true === msgAndPredicate.predicate()) {
+              // Requirement satisfied.
+              req[i] = req[req.length - 1];
+              --req.length;
+            }
+          } catch (e) {
+            console.error(
+                'Asynchronous failure : ' + msgAndPredicate.message);
+          }
+        }
+        if (req.length === 0 || (new Date).getTime() >= timeoutTime) {
+          clearInterval(intervalId);
+          intervalId = null;
+
+          var failures = req.length !== 0;
+          if (failures) {
+            for (var i = req.length; --i >= 0;) {
+              console.error('async test timeout: ' + req[i].message);
+            }
+            req.length = 0;
+          }
+
+          handler(!failures);
+        }
+      }, 50);
+    }
+  };
+
+  return {
+    assert: assert,
+    evaluate: evaluate
+  };
+})();
+
 function createExtraImportsForTesting(frameGroup, frame) {
   var standardImports = {};
 
@@ -214,12 +297,25 @@ function createExtraImportsForTesting(frameGroup, frame) {
       frameGroup.tame(frameGroup.markFunction(jsunitRun));
   standardImports.jsunitRegister =
       frameGroup.tame(frameGroup.markFunction(jsunitRegister));
+  standardImports.jsunitPass =
+      frameGroup.tame(frameGroup.markFunction(jsunitPass));
   standardImports.jsunitCallback =
-      frameGroup.tame(frameGroup.markFunction(jsunitCallback));
+      frameGroup.tame(frameGroup.markFunction(function(cb, opt_id) {
+        return jsunitCallback(cb, opt_id, frameGroup);
+      }));
   standardImports.canonInnerHtml =
       frameGroup.tame(frameGroup.markFunction(canonInnerHtml));
   standardImports.assertStringContains =
       frameGroup.tame(frameGroup.markFunction(assertStringContains));
+
+  // Create a readonly mirror of document so that we can test that mutations
+  // fail when they should.
+  standardImports.documentRO =
+    new frame.imports.TameHTMLDocument___(
+        document,          // Document of host frame
+        frame.div,         // Containing div in host frame
+        'nosuchhost.fake', // Fake domain name
+        false);            // Not writeable
 
   var fakeConsole = {
     log: frameGroup.markFunction(function () {
@@ -252,7 +348,7 @@ function createExtraImportsForTesting(frameGroup, frame) {
       tameNode.node___.click();
     },
     emitCssHook: function (css) {
-      standardImports.emitCss___(css.join('xyz___'));
+      frame.imports.emitCss___(css.join(frame.idSuffix));
     },
     getInnerHTML: function (tameNode) {
       return tameNode.node___.innerHTML;
@@ -261,8 +357,7 @@ function createExtraImportsForTesting(frameGroup, frame) {
       return tameNode.node___.getAttribute(name);
     },
     getBodyNode: function () {
-      return frame.imports.tameNode___(
-          /* TODO(ihab.awad): ??? */ testDomContainer);
+      return frame.imports.tameNode___(frame.innerContainer);
     },
     getComputedStyle: function (tameNode, styleProp) {
       var node = tameNode.node___;
@@ -285,6 +380,9 @@ function createExtraImportsForTesting(frameGroup, frame) {
       var s = document.createElement('script');
       s.appendChild(document.createTextNode('/* intentionally blank */'));
       return frame.imports.tameNode___(s, true);
+    },
+    getIdSuffix: function() {
+      return frame.idSuffix;
     }
   };
 
@@ -320,6 +418,32 @@ function createExtraImportsForTesting(frameGroup, frame) {
       frameGroup.tame(frameGroup.markFunction(expectFailure));
   standardImports.assertFailsSafe =
       frameGroup.tame(frameGroup.markFunction(assertFailsSafe));
+
+  standardImports.assertColor = frameGroup.tame(frameGroup.markFunction(
+      function(expected, cssColorString) {
+        if (typeof cssColorString === 'string') {
+          cssColorString = cssColorString.toLowerCase();
+        }
+        if (cssColorString === expected.name) { return; }
+        if (cssColorString === '"' + expected.name + '"') { return; }
+        var hexSix = expected.rgb.toString(16);
+        while (hexSix.length < 6) { hexSix = '0' + hexSix; }
+        if (cssColorString === '#' + hexSix) { return; }
+        var hexThree = hexSix.charAt(0) + hexSix.charAt(2) + hexSix.charAt(4);
+        if (cssColorString === '#' + hexThree) { return; }
+
+        var stripped = cssColorString.replace(new RegExp(' ', 'g'), '');
+        if (('rgb(' + (expected.rgb >> 16)
+             + ',' + ((expected.rgb >> 8) & 0xff)
+             + ',' + (expected.rgb & 0xff) + ')') === stripped) {
+          return;
+        }
+
+        fail(cssColorString + ' != #' + hexSix);
+      }));
+
+  standardImports.assertAsynchronousRequirement =
+      frameGroup.tame(frameGroup.markFunction(asyncRequirements.assert));
 
   var jsunitFns = [
       'assert', 'assertContains', 'assertEquals', 'assertEvaluatesToFalse',

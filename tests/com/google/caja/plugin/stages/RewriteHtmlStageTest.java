@@ -234,7 +234,7 @@ public final class RewriteHtmlStageTest extends PipelineStageTestCase {
         job("<body class=foo><b>Hello, World!</b></body>", ContentType.HTML),
         job("<html><head></head><body><b>Hello, World!</b></body></html>",
             ContentType.HTML),
-        job("IMPORTS___.htmlEmitter___.addBodyClasses('foo')",
+        job("{\n  IMPORTS___.htmlEmitter___.addBodyClasses('foo');\n}",
             ContentType.JS));
   }
 

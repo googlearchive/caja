@@ -91,13 +91,7 @@ function HtmlEmitter(base, opt_tameDocument) {
       throw new Error('Host page error: HtmlEmitter.emitStatic called after' +
           ' document finish()ed');
     }
-    // TODO: We could append the cajoled HTML to existing contents of the
-    // 'base' element, thus allowing the host page to pre-populate it prior to
-    // adding cajoled content. However, no clients need that yet.
-    if (base.firstChild) {
-      throw new Error('Host page error: Virtual document element is not empty');
-    }
-    base.innerHTML = htmlString;
+    base.innerHTML += htmlString;
   }
   
   // Below we define the attach, detach, and finish operations.

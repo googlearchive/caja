@@ -1,0 +1,461 @@
+<!--
+ - Copyright (C) 2011 Google Inc.
+ -
+ - Licensed under the Apache License, Version 2.0 (the "License");
+ - you may not use this file except in compliance with the License.
+ - You may obtain a copy of the License at
+ -
+ -      http://www.apache.org/licenses/LICENSE-2.0
+ -
+ - Unless required by applicable law or agreed to in writing, software
+ - distributed under the License is distributed on an "AS IS" BASIS,
+ - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ - See the License for the specific language governing permissions and
+ - limitations under the License.
+-->
+
+<div>Derived from domita_test_untrusted.html as of r4471</div>
+
+<p class="manual testcontainer" id="test-related-target-mouse-container">
+  <span id="test-related-target-mouse">
+    Move mouse here to see event.relatedTarget.
+    Rapid motion from outside sandbox should show a null relatedTarget.
+  </span>
+  <br />
+  <span id="test-related-target-mouse-info">&nbsp;</span>
+</p>
+<p class="clickme testcontainer" id="test-related-target">
+  <b id="test-related-target-child">click me (test-related-target)
+  </b>
+</p>
+<script type="text/javascript">
+  jsunitRegister('testRelatedTarget',
+                 function testRelatedTarget() {
+    var childClick = jsunitCallback(function (event) {
+      // get should work.  in manual clicks, relatedTarget is null, but in
+      // webdriver simulated clicks, it's non-null.
+      assertEquals(event.relatedTarget, event.relatedTarget);
+      // set doesn't have to work, but shouldn't throw an error
+      event.relatedTarget = [];
+      pass('test-related-target');
+    });
+
+    var child = document.getElementById('test-related-target-child');
+    child.addEventListener('click', childClick, false);
+
+    // TODO: webdriver doesn't have a good way of testing relatedTarget.
+    // there are two cases we care about: relatedTarget is an element in the
+    // sandbox, and relatedTarget is an element outside the sandbox.
+
+    var mouseReport = jsunitCallback(function (event) {
+      var r = event.relatedTarget;
+      r = r && (r.tagName + '#' + r.id);
+      info.innerHTML = event.type + ' ' + String(r);
+    });
+
+    var mouse = document.getElementById('test-related-target-mouse');
+    var info = document.getElementById('test-related-target-mouse-info');
+    mouse.addEventListener('mouseover', mouseReport, false);
+    mouse.addEventListener('mouseout', mouseReport, false);
+  });
+</script>
+
+<p class="clickme testcontainer" id="test-add-event-listener">
+  <b id="test-add-event-listener-label">click me</b>
+</p>
+<script type="text/javascript">
+  jsunitRegister('testAddEventListener',
+                 function testAddEventListener() {
+    var container = document.getElementById('test-add-event-listener-label');
+    container.addEventListener(
+        'click',
+        jsunitCallback(
+            function eventListener(event) {
+              console.log('received event');
+              assertEquals('B', event.target.tagName);
+              assertEquals('click', event.type);
+              pass('test-add-event-listener');
+            }));
+    expectFailure(
+        function() {
+          container.addEventListener('foo');
+        },
+        'addEventListener of a string');
+    expectFailure(
+        function() {
+          container.addEventListener({});
+        },
+        'addEventListener of an ordinary object');
+  });
+</script>
+
+<p class="clickme testcontainer" id="test-remove-event-listener">
+  <b id="test-remove-event-listener-label">click me</b>
+</p>
+<script type="text/javascript">
+  jsunitRegister('testRemoveEventListener',
+                 function testRemoveEventListener() {
+    var container = document.getElementById('test-remove-event-listener-label');
+    var firstFired = false;
+    var failed = false;
+    var second = jsunitCallback(
+        function secondcb(event) {
+          console.log('received event');
+          if (failed) { return; }
+          assertEquals('B', event.target.tagName);
+          assertEquals('click', event.type);
+          event.target.innerHTML = 'All done!';
+          pass('test-remove-event-listener');
+        });
+    var first = jsunitCallback(
+        function firstcb(event) {
+          if (firstFired) {
+            event.target.innerHTML =
+                '<b>FAILED - event handler was not removed!</b>';
+            failed = true;
+            return;
+          }
+          firstFired = true;
+          console.log('received event');
+          assertEquals('B', event.target.tagName);
+          assertEquals('click', event.type);
+          event.target.innerHTML = 'Thank you, click me again please';
+          container.removeEventListener('click', first);
+          container.addEventListener('click', second);
+        });
+    container.addEventListener('click', first);
+  });
+</script>
+
+<p class="waiting testcontainer" id="test-timeout-and-interval">
+  Timeouts and Intervals<br>
+</p>
+<script type="text/javascript">
+  jsunitRegister('testTimeoutAndInterval',
+                 function testTimeoutAndInterval() {
+    var timeout1Ran = false,
+        timeout2Ran = false;
+    var timeout1Id = setTimeout(jsunitCallback(
+        function to1Id() { timeout1Ran = true; }), 50);
+    var timeout2Id = setTimeout(jsunitCallback(
+        function to2Id() { timeout2Ran = true; }), 50);
+    clearTimeout(timeout1Id);
+
+    var intervalRunIndex = -1;
+    var interval1RunCount = 0,
+        interval2RunCount = 0;
+    var interval1Id = setInterval(jsunitCallback(
+        function iv1id() { ++interval1RunCount; }), 50);
+    var interval2Id = setInterval(jsunitCallback(
+        function iv2id() { ++interval2RunCount; }), 50);
+
+    // Check that null is a noop as a timeout or interval value, and that the
+    // return value works with clearTimeout and clearInterval and does not
+    // inadvertently clear existing timeouts or intervals.
+    clearTimeout(setTimeout(null, 0));
+    clearInterval(setInterval(null, 0));
+
+    // Check that clearInterval and clearTimeout ignore null
+    // and undefined intervalId's
+    clearInterval(null);
+    clearInterval(void 0);
+    clearInterval('1');
+    clearInterval({ intervalId : 1 });
+    clearInterval(clearInterval);
+    clearInterval(timeout2Id);
+    clearTimeout(null);
+    clearTimeout(void 0);
+    clearTimeout('1');
+    clearTimeout({ intervalId : 1 });
+    clearTimeout(clearTimeout);
+    clearTimeout(interval1Id);
+
+    setTimeout(
+        jsunitCallback(function () {
+          clearInterval(interval2Id);
+          setTimeout(
+              jsunitCallback(function () {
+                if (!timeout1Ran && timeout2Ran
+                    && interval1RunCount > interval2RunCount) {
+                  clearInterval(interval1Id);
+                  pass('test-timeout-and-interval');
+                }
+              }),
+              500);
+        }),
+        200);
+  });
+</script>
+
+<!--
+
+    TODO(ihab.awad): Pending http://codereview.appspot.com/4530099/
+
+<p class="clickme testcontainer" id="test-innerhtml-onclick">
+  <b>do not click yet</b>
+</p>
+<script type="text/javascript">
+  window.innerhtmlClicked = function() {
+    pass('test-innerhtml-onclick');
+  };
+
+  jsunitRegister('testInnerhtmlOnclick',
+                 function testInnerhtmlOnclick() {
+    var el = document.getElementById('test-innerhtml-onclick');
+    el.innerHTML = '<b onclick="innerhtmlClicked();">Click me to call innerhtmlClicked()</b>';
+  });
+</script>
+
+-->
+
+<p class="clickme testcontainer" id="test-onclick-handler">
+  <b id="test-onclick-handler-label"
+     onclick="pass('test-onclick-handler');">click me</b>
+</p>
+<script type="text/javascript">
+  jsunitRegister('testOnclickHandler',
+                 function testOnclickHandler() {
+    // Nothing to do here.  pass call in test-onclick-handler HTML.
+  });
+</script>
+
+<!--
+
+    TODO(ihab.awad): Pending http://codereview.appspot.com/4530099/
+
+<p class="clickme testcontainer" id="test-jsuri">
+  <a id="test-jsuri-label" href="javascript:pass('test-jsuri')">click JS URL</a>
+</p>
+<script type="text/javascript">
+  jsunitRegister('testJsUri',
+                 function testJsUriHandler() {
+    // Nothing to do here.  pass call in test-jsuri HTML.
+  });
+</script>
+
+-->
+
+<p class="clickme testcontainer" id="test-current-target">
+  <b id="test-current-target-child">click me</b>
+</p>
+<script type="text/javascript">
+  jsunitRegister('testCurrentTarget',
+                 function testCurrentTarget() {
+    var parent = document.getElementById('test-current-target');
+    var child = document.getElementById('test-current-target-child');
+    var gotChildClick = false;
+
+    var childClick = jsunitCallback(function (event) {
+      assertEquals('test-current-target-child', event.currentTarget.id);
+      gotChildClick = true;
+    });
+
+    var parentClick = jsunitCallback(function (event) {
+      assertEquals('test-current-target', event.currentTarget.id);
+      assertTrue(gotChildClick);
+      pass('test-current-target');
+    });
+
+    parent.addEventListener('click', parentClick, false);
+    child.addEventListener('click', childClick, false);
+  });
+</script>
+
+<p class="testcontainer" id="test-onload-listener">Onload</p>
+<script type="text/javascript">
+  jsunitRegister('testOnLoadListener',
+                 function testOnLoadListener() {
+    var b1 = false;
+    var b2 = false;
+    var b3 = false;
+    var setb1 = jsunitCallback(
+        function setb1cb() {
+          console.log('set onload b1');
+          b1 = true;
+        });
+    var setb2 = jsunitCallback(
+        function setb2cb() {
+          console.log('set onload b2');
+          b2 = true;
+        });
+     var setb3 = jsunitCallback(
+         function setb3cb() {
+           console.log('set onload b3');
+           b3 = true;
+         });
+
+    window.addEventListener('load', setb1);
+    window.addEventListener('load', setb2);
+    window.removeEventListener('load', setb1);
+    window.onload = setb3;
+    //TODO(felix8a): also need to test when onload isn't set
+
+    assertAsynchronousRequirement(
+        'onload listeners',
+        jsunitCallback(
+            function checkb1b2b3cb() {
+              if (!b1 && b2 && b3) {
+                pass('test-onload-listener');
+                return true;
+              }
+              return false;
+            }));
+
+    assertFalse(b1);
+    assertFalse(b2);
+    assertFalse(b3);
+  });
+</script>
+
+<div id="test-xhr-instance-props" class="testcontainer">XHR instance props</div>
+<script type="text/javascript">
+  jsunitRegister('testXhrInstanceProps',
+                 function testXhrInstanceProps() {
+    var xhr = new window.XMLHttpRequest();
+    xhr.x = 1;
+    assertEquals(1, xhr.x);
+    pass('test-xhr-instance-props');
+  });
+</script>
+
+<div id="test-xhr-to-disallowed-url" class="testcontainer">
+  XHR to disallowed URL
+</div>
+<script type="text/javascript">
+  jsunitRegister('testXhrToDisallowedUrl',
+                 function testXhrToDisallowedUrl() {
+    var xhr;
+
+    xhr = new window.XMLHttpRequest();
+    expectFailure(function() {
+        xhr.open('GET', 'badscheme://xhrTest.txt', false);
+        xhr.send();
+      }, 'xhr to disallowed url');
+    pass('test-xhr-to-disallowed-url');
+  });
+</script>
+
+<div id="test-xhr-sync" class="testcontainer">XHR sync</div>
+<script type="text/javascript">
+  jsunitRegister('testXhrSync',
+                 function testXhrSync() {
+    var xhr;
+
+    // Check that response text is available after a synchronous XHR
+    xhr = new window.XMLHttpRequest();
+    xhr.open('GET', './xhrTest.txt', false);
+    console.log('About to do sync xhr.send() - may get preempted');
+    xhr.send();
+    assertEquals('The quick brown fox', xhr.responseText);
+
+    // Check that a synchronous XHR invokes its callback in ready state 4
+    var responseText;
+    xhr = new window.XMLHttpRequest();
+    // Note we specify test id since we get preempted by xhr.send()
+    xhr.onreadystatechange = jsunitCallback(
+        function onreadystatechangecb() {
+          if (xhr.readyState == 4) { responseText = xhr.responseText; }
+        },
+        'testXhrSync');
+    xhr.open('GET', './xhrTest.txt', false);
+    console.log('About to do sync xhr.send() - may get preempted');
+    xhr.send();
+    assertEquals('The quick brown fox', responseText);
+
+    pass('test-xhr-sync');
+  });
+</script>
+
+<div id="test-xhr-async" class="waiting testcontainer">XHR async</div>
+<script type="text/javascript">
+  jsunitRegister('testXhrAsync',
+                 function testXhrAsync() {
+    var cont = document.getElementById('test-xhr-async');
+    var xhr = new window.XMLHttpRequest();
+    xhr.open('GET', './xhrTest.txt', true);
+    var asyncFlag = 'PRE';
+    xhr.onreadystatechange = jsunitCallback(function(event) {
+      assertEquals(xhr, event.target);
+      if (event.target.readyState === 4) {
+        assertNotEquals(4, asyncFlag);
+        asyncFlag = 'DONE';
+        assertEquals('The quick brown fox', event.target.responseText);
+        pass('test-xhr-async');
+      }
+      asyncFlag = event.target.readyState;
+    });
+    xhr.send();
+  });
+</script>
+
+<!--
+
+    TODO(ihab.awad): Pending debugging of custom event logic.
+
+<p id="test-custom-events" class="testcontainer">Custom Events<br></p>
+<script type="text/javascript">
+  jsunitRegister('testCustomEvents',
+                 function testCustomEvents() {
+    assertTrue('createEvent exists', !!document.createEvent);
+
+    // Event dispatch for custom events is synchronous
+    var fired = false;
+    var eventToSend = undefined;
+    var myHandler = jsunitCallback(function (event) {
+      // assertEquals("received correct event", eventToSend, event);
+      assertEquals("received correct details", 'hiya', event.details);
+      fired = true;
+    });
+
+    var eventTarget = document.getElementById('test-custom-events');
+    eventTarget.addEventListener('howdy', myHandler, true);
+
+    eventToSend = document.createEvent('HTMLEvents');
+    eventToSend.details = 'hiya';
+    eventToSend.initEvent('howdy', true, true);
+    assertEquals('initEvent correct', 'hiya', eventToSend.details);
+
+    eventTarget.dispatchEvent(eventToSend);
+    assertTrue("event did fire", fired);
+
+    pass('test-custom-events');
+  });
+</script>
+
+-->
+
+<!--
+
+    TODO(ihab.awad): This is invalid for ES53; look at it and
+    see if there's anything useful left.
+
+<p class="testcontainer" id="test-this-in-event-handlers"
+ ><input type="checkbox" id="test-this-in-event-handlers-1" />
+</p>
+<script type="text/javascript">
+  jsunitRegister('testThisInEventHandlers',
+                 function testThisInEventHandlers() {
+    var inp = document.getElementById('test-this-in-event-handlers-1');
+
+    // By declaring f() to be cajita, but supplying it as the 'call'
+    // property of the object passed to the event listener, we get
+    // access to the value the function is supposed to use for the
+    // 'this' keyword, even in cajita.
+    var f = jsunitCallback(
+        function fcb($dis, event, thisNode) {
+          'use strict';
+          'use cajita';
+          // In an event handler, "this" should be bound to the node.
+          assertEquals($dis, thisNode);
+          pass('test-this-in-event-handlers');
+        });
+    inp.addEventListener('click', {call: f}, false);
+    directAccess.click(inp);
+  });
+</script>
+
+-->
+
+<script type="text/javascript">
+  jsunitRun();
+</script>

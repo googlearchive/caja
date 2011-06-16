@@ -123,6 +123,14 @@ domitaModules.classUtils = function() {
     }));
   }
 
+  function hasGetHandler(object, propertyName) {
+    return !!object[propertyName + '_g___'];
+  }
+
+  function hasSetHandler(object, propertyName) {
+    return !!object[propertyName + '_s___'];
+  }
+
   /**
    * Checks that a user-supplied callback is either a Cajita function or a
    * Valija Disfuction. Return silently if the callback is valid; throw an
@@ -131,23 +139,17 @@ domitaModules.classUtils = function() {
    * @param aCallback some user-supplied "function-like" callback.
    */
   function ensureValidCallback(aCallback) {
-
-    // ????????
-    // ___.asFunc(___.readPub(aListener, 'call'))
-
-    if ('function' !== typeof aCallback
-        // Allow disfunctions
-        && !('object' === (typeof aCallback) && aCallback !== null
-             && ___.canCallPub(aCallback, 'call'))) {
-      throw new Error('Expected function not ' + typeof aCallback);
-    }
+    if (typeof aCallback === 'function' && aCallback.i___) { return; }
+    throw new Error('Expected valid guest function not ' + typeof aCallback);
   }
 
   return {
     exportFields: exportFields,
     ensureValidCallback: ensureValidCallback,
     applyAccessors: applyAccessors,
-    getterSetterSuffix: getterSetterSuffix
+    getterSetterSuffix: getterSetterSuffix,
+    hasGetHandler: hasGetHandler,
+    hasSetHandler: hasSetHandler
   };
 };
 
@@ -198,7 +200,8 @@ domitaModules.TameXMLHttpRequest = function(
   // per http://www.ilinsky.com/articles/XMLHttpRequest/
 
   function TameXMLHttpRequest() {
-    this.xhr___ = new xmlHttpRequestMaker();
+    this.xhr___ = this.FERAL_TWIN___ = new xmlHttpRequestMaker();
+    this.FERAL_TWIN___.TAMED_TWIN___ = this;
     classUtils.exportFields(
         this,
         ['onreadystatechange', 'readyState', 'responseText', 'responseXML',
@@ -236,7 +239,7 @@ domitaModules.TameXMLHttpRequest = function(
   TameXMLHttpRequest.prototype.handleSet___ = function (name, val) {
     name = '' + name;
     if (endsWith__.test(name)) { throw new Error(INVALID_SUFFIX); }
-    if (___.isFrozen(this)) { throw new Error(FROZEN); }
+    if (Object.isFrozen(this)) { throw new Error(FROZEN); }
     var handlerName = name + '_setter___';
     if (this[handlerName]) {
       return this[handlerName](val);
@@ -244,13 +247,15 @@ domitaModules.TameXMLHttpRequest = function(
     if (!this.xhr___.properties___) {
       this.xhr___.properties___ = {};
     }
-    this[name + '_canEnum___'] = true;
+    this[name + '_c___'] = this;
+    this[name + '_v___'] = false;
+    this[name + '_e___'] = this;
     return this.xhr___.properties___[name] = val;
   };
   TameXMLHttpRequest.prototype.handleDelete___ = function (name) {
     name = '' + name;
     if (endsWith__.test(name)) { throw new Error(INVALID_SUFFIX); }
-    if (___.isFrozen(this)) { throw new Error(FROZEN); }
+    if (Object.isFrozen(this)) { throw new Error(FROZEN); }
     var handlerName = name + '_deleter___';
     if (this[handlerName]) {
       return this[handlerName]();
@@ -258,7 +263,9 @@ domitaModules.TameXMLHttpRequest = function(
     if (this.xhr___.properties___) {
       return (
           delete this.xhr___.properties___[name]
-          && delete this[name + '_canEnum___']);
+          && delete this[name + '_c___']
+          && delete this[name + '_e___']
+          && delete this[name + '_v___']);
     } else {
       return true;
     }
@@ -268,7 +275,13 @@ domitaModules.TameXMLHttpRequest = function(
     // May need to implement full "tame event" wrapper similar to DOM events.
     var self = this;
     this.xhr___.onreadystatechange = function(event) {
-      var evt = { target: self };
+      var evt = {};
+      evt.DefineOwnProperty___('target', {
+        value: self,
+        writable: true,
+        enumerable: true,
+        configurable: true
+      });
       return ___.callPub(handler, 'call', [void 0, evt]);
     };
     // Store for later direct invocation if need be
@@ -1273,6 +1286,8 @@ var attachDocumentStub = (function () {
         return tamed[k] || null;
       });
 
+      ___.grantFunc(tamed, 'item');
+
       return tamed;
     }
 
@@ -1294,7 +1309,11 @@ var attachDocumentStub = (function () {
      * @return an array that duck types to a node list.
      */
     function fakeNodeList(array) {
-      array.item = ___.markFuncFreeze(function(i) { return array[i]; });
+      var f = function(i) {
+        return array[i];
+      };
+      array.item = ___.markFuncFreeze(f);
+      ___.grantFunc(array, 'item');
       return ___.freeze(array);
     }
 
@@ -1331,8 +1350,10 @@ var attachDocumentStub = (function () {
         ___.markFuncFreeze(function (name, tameNodes) {
           if (tameNodes.length > 1) {
             tamed[name] = fakeNodeList(tameNodes);
+            ___.grantRead(tamed, name);
           } else {
             tamed[name] = tameNodes[0];
+            ___.grantRead(tamed, name);
           }
         }));
 
@@ -1347,6 +1368,7 @@ var attachDocumentStub = (function () {
         }
         return null;
       });
+      ___.grantFunc(tamed, 'namedItem');
 
       return tamed;
     }
@@ -1737,13 +1759,11 @@ var attachDocumentStub = (function () {
     TameBackedNode.prototype.handleRead___ = function (name) {
       name = String(name);
       if (endsWith__.test(name)) { return void 0; }
-      var handlerName = name + '_getter___';
-      if (this[handlerName]) {
-        return this[handlerName]();
+      if (classUtils.hasGetHandler(this, name)) {
+        return this.v___(name);
       }
-      handlerName = handlerName.toLowerCase();
-      if (this[handlerName]) {
-        return this[handlerName]();
+      if (classUtils.hasGetHandler(this, name.toLowerCase())) {
+        return this.v___(name.toLowerCase());
       }
       if (___.hasOwnProp(this.node___.properties___, name)) {
         return this.node___.properties___[name];
@@ -1772,18 +1792,18 @@ var attachDocumentStub = (function () {
       name = String(name);
       if (endsWith__.test(name)) { throw new Error(INVALID_SUFFIX); }
       if (!this.editable___) { throw new Error(NOT_EDITABLE); }
-      var handlerName = name + '_setter___';
-      if (this[handlerName]) {
-        return this[handlerName](val);
+      if (classUtils.hasSetHandler(this, name)) {
+        return this.w___(name, val);
       }
-      handlerName = handlerName.toLowerCase();
-      if (this[handlerName]) {
-        return this[handlerName](val);
+      if (classUtils.hasSetHandler(this, name.toLowerCase())) {
+        return this.w___(name.toLowerCase(), val);
       }
       if (!this.node___.properties___) {
         this.node___.properties___ = {};
       }
-      this[name + '_canEnum___'] = true;
+      this[name + '_c___'] = this;
+      this[name + '_v___'] = false;
+      this[name + '_e___'] = this;
       return this.node___.properties___[name] = val;
     };
     TameBackedNode.prototype.handleDelete___ = function (name) {
@@ -1801,7 +1821,9 @@ var attachDocumentStub = (function () {
       if (this.node___.properties___) {
         return (
             delete this.node___.properties___[name]
-            && delete this[name + '_canEnum___']);
+            && delete this[name + '_c___']
+            && delete this[name + '_e___']
+            && delete this[name + '_v___']);
       } else {
         return true;
       }
@@ -1973,7 +1995,9 @@ var attachDocumentStub = (function () {
       if (!this.properties___) {
         this.properties___ = {};
       }
-      this[name + '_canEnum___'] = true;
+      this[name + '_c___'] = this;
+      this[name + '_v___'] = false;
+      this[name + '_e___'] = this;
       return this.properties___[name] = val;
     };
     TamePseudoNode.prototype.handleDelete___ = function (name) {
@@ -1991,7 +2015,9 @@ var attachDocumentStub = (function () {
       if (this.properties___) {
         return (
             delete this.properties___[name]
-            && delete this[name + '_canEnum___']);
+            && delete this[name + '_c___']
+            && delete this[name + '_e___']
+            && delete this[name + '_v___']);
       } else {
         return true;
       }
@@ -2417,17 +2443,25 @@ var attachDocumentStub = (function () {
         this.node___.removeAttribute(attribName);
       }
     };
+    function simpleProp(o, name, value) {
+      o.DefineOwnProperty___(name, {
+        value: value,
+        writable: true,
+        enumerable: true,
+        configurable: true
+      });
+    }
     TameElement.prototype.getBoundingClientRect = function () {
       var elRect = bridal.getBoundingClientRect(this.node___);
       var vbody = bridal.getBoundingClientRect(
           this.getOwnerDocument___().body___);
       var vbodyLeft = vbody.left, vbodyTop = vbody.top;
-      return ({
-                top: elRect.top - vbodyTop,
-                left: elRect.left - vbodyLeft,
-                right: elRect.right - vbodyLeft,
-                bottom: elRect.bottom - vbodyTop
-              });
+      var r = {};
+      simpleProp(r, 'top',    elRect.top    - vbodyTop);
+      simpleProp(r, 'left',   elRect.left   - vbodyLeft);
+      simpleProp(r, 'right',  elRect.right  - vbodyLeft);
+      simpleProp(r, 'bottom', elRect.bottom - vbodyTop);
+      return r;
     };
     TameElement.prototype.getClassName___ = function () {
       return this.getAttribute('class') || '';
@@ -3487,13 +3521,14 @@ var attachDocumentStub = (function () {
               'createCaption', 'deleteCaption', 'insertRow', 'deleteRow']);
 
     function tameEvent(event) {
-      if (event.tamed___) { return event.tamed___; }
-      return event.tamed___ = new TameEvent(event);
+      if (event.TAMED_TWIN___) { return event.TAMED_TWIN___; }
+      return new TameEvent(event);
     }
 
     function TameEvent(event) {
       assert(!!event);
-      this.event___ = event;
+      this.event___ = this.FERAL_TWIN___ = event;
+      event.TAMED_TWIN___ = this;
       TameEventMark.stamp.mark___(this);
       classUtils.exportFields(
           this,
@@ -3659,7 +3694,9 @@ var attachDocumentStub = (function () {
       if (!this.event___.properties___) {
         this.event___.properties___ = {};
       }
-      this[name + '_canEnum___'] = true;
+      this[name + '_c___'] = this;
+      this[name + '_v___'] = false;
+      this[name + '_e___'] = this;
       return this.event___.properties___[name] = val;
     };
     TameCustomHTMLEvent.prototype.handleDelete___ = function (name) {
@@ -3672,7 +3709,9 @@ var attachDocumentStub = (function () {
       if (this.event___.properties___) {
         return (
             delete this.event___.properties___[name]
-            && delete this[name + '_canEnum___']);
+            && delete this[name + '_c___']
+            && delete this[name + '_e___']
+            && delete this[name + '_v___']);
       } else {
         return true;
       }
@@ -3935,8 +3974,8 @@ var attachDocumentStub = (function () {
         rawEvent = document.createEventObject();
         rawEvent.eventType = 'ondataavailable';
       }
+      rawEvent.creatorDoc___ = document;
       var tamedEvent = new TameCustomHTMLEvent(rawEvent);
-      rawEvent.tamed___ = tamedEvent;
       return tamedEvent;
     };
     TameHTMLDocument.prototype.getOwnerDocument___ = function () {
@@ -3944,11 +3983,7 @@ var attachDocumentStub = (function () {
     };
     // Called by the html-emitter when the virtual document has been loaded.
     TameHTMLDocument.prototype.signalLoaded___ = function () {
-      var onload = ((___.canRead(imports, '$v')
-                     && ___.canCallPub(imports.$v, 'ros')
-                     && imports.$v.ros('onload'))
-                    || (imports.window &&
-                        ___.readPub(imports.window, 'onload')));
+      var onload = imports.window && imports.window.v___('onload');
       if (onload) {
         setTimeout(
             function () { ___.callPub(onload, 'call', [___.USELESS]); },
@@ -4301,12 +4336,13 @@ var attachDocumentStub = (function () {
     // See http://www.whatwg.org/specs/web-apps/current-work/multipage/history.html#location0
     var tameLocation = ___.primFreeze({
       toString: ___.markFuncFreeze(function () { return tameLocation.href; }),
-      href: String(optPseudoWindowLocation.href || 'http://nosuchhost.fake/'),
+      href: String(optPseudoWindowLocation.href
+                   || 'http://nosuchhost.fake:80/'),
       hash: String(optPseudoWindowLocation.hash || ''),
-      host: String(optPseudoWindowLocation.host || 'nosuchhost.fake'),
+      host: String(optPseudoWindowLocation.host || 'nosuchhost.fake:80'),
       hostname: String(optPseudoWindowLocation.hostname || 'nosuchhost.fake'),
       pathname: String(optPseudoWindowLocation.pathname || '/'),
-      port: String(optPseudoWindowLocation.port || ''),
+      port: String(optPseudoWindowLocation.port || '80'),
       protocol: String(optPseudoWindowLocation.protocol || 'http:'),
       search: String(optPseudoWindowLocation.search || '')
       });
@@ -4374,6 +4410,7 @@ var attachDocumentStub = (function () {
       // tameDocument via document.defaultView would allow escalation of
       // authority.
       assert(tameDocument.editable___);
+      this.FERAL_TWIN___ = this.TAMED_TWIN___ = this;
       ___.grantRead(this, 'document');
     }
 
@@ -4499,8 +4536,9 @@ var attachDocumentStub = (function () {
         if (this[handlerName]) {
           return this[handlerName](val);
         }
-        this[name + '_canEnum___'] = true;
-        this[name + '_canRead___'] = true;
+        this[name + '_c___'] = this;
+        this[name + '_v___'] = false;
+        this[name + '_e___'] = this;
         return this[name] = val;
       };
       TameWindow.prototype.handleDelete___ = function (name) {
@@ -4510,7 +4548,9 @@ var attachDocumentStub = (function () {
         if (this[handlerName]) {
           return this[handlerName]();
         }
-        return ___.deleteFieldEntirely(this, name);
+        return delete this[name + '_c___']
+            && delete this[name + '_e___']
+            && delete this[name + '_v___'];
       };
     }
 
@@ -4694,7 +4734,7 @@ var attachDocumentStub = (function () {
     var defaultNodeClassCtor = nodeClasses.Element;
     for (var i = 0; i < defaultNodeClasses.length; i++) {
       if (Object.prototype.DefineOwnProperty___) {
-        TameWindow.DefineOwnProperty___(defaultNodeClasses[i], {
+        tameWindow.DefineOwnProperty___(defaultNodeClasses[i], {
           value: defaultNodeClassCtor,
           writable: true,
           enumerable: true,

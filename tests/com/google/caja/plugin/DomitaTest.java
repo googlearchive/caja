@@ -14,16 +14,20 @@
 
 package com.google.caja.plugin;
 
+import com.google.caja.util.FailureIsAnOption;
+
 /**
  * Perform the domita test automatically.
  *
  * @author maoziqing@gmail.com (Ziqing Mao)
  */
 public class DomitaTest extends BrowserTestCase {
+  @FailureIsAnOption
   public final void testDomitaCajita() {
     runBrowserTest("domita_test.html");
   }
 
+  @FailureIsAnOption
   public final void testDomitaValija() {
     runBrowserTest("domita_test.html?valija=1");
   }

@@ -130,8 +130,13 @@ function jsunitFilter(filter) {
   jsunitFilter.filter = filter;
 }
 
+var jsunitTestsRun = false;
+
 /** Run tests. */
 function jsunitRun(opt_testNames) {
+  if (jsunitTestsRun) { return; }
+  jsunitTestsRun = true;
+
   document.title += ' (' + (navigator.appName
                             ? navigator.appName + ' ' + navigator.appVersion
                             : navigator.userAgent) + ')';
@@ -203,7 +208,10 @@ function jsunitRun(opt_testNames) {
 }
 
 /** Register a callback within a running test. */
-function jsunitCallback(aFunction, opt_id) {
+function jsunitCallback(aFunction, opt_id, opt_frameGroup) {
+  if (!aFunction || typeof aFunction !== 'function') {
+    throw new Error('TEST ERROR: jsunitCallback without a valid function');
+  }
   if (!jsunit.getCurrentTestId() && !opt_id) {
     throw new Error('TEST ERROR: jsunitCallback without a test ID');
   }
@@ -222,7 +230,9 @@ function jsunitCallback(aFunction, opt_id) {
     return result;
   }
   return typeof ___ !== 'undefined'
-           ? ___.markFuncFreeze(callback)
+           ? (opt_frameGroup
+               ? opt_frameGroup.markFunction(callback)
+               : ___.markFuncFreeze(callback))
            : callback;
 }
 

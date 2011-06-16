@@ -1,0 +1,576 @@
+<!--
+ - Copyright (C) 2011 Google Inc.
+ -
+ - Licensed under the Apache License, Version 2.0 (the "License");
+ - you may not use this file except in compliance with the License.
+ - You may obtain a copy of the License at
+ -
+ -      http://www.apache.org/licenses/LICENSE-2.0
+ -
+ - Unless required by applicable law or agreed to in writing, software
+ - distributed under the License is distributed on an "AS IS" BASIS,
+ - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ - See the License for the specific language governing permissions and
+ - limitations under the License.
+-->
+
+<div>Derived from domita_test_untrusted.html as of r4471</div>
+
+<p id="test-canvas-element" class="testcontainer">
+  Canvas element
+  <canvas id="test-canvas-element-canvas"
+          width="113" height="131">fallback</canvas>
+</p>
+<script type="text/javascript">
+  jsunitRegister('testCanvasElement',
+                 function testCanvasElement() {
+    var canvas = document.getElementById('test-canvas-element-canvas');
+
+    // Does it survive cajoling?
+    assertEquals("canvas.tagName", "CANVAS", canvas.tagName);
+
+    // Canvas element attributes
+    // (These initial widths and heights are chosen to be unlikely to be
+    // browser defaults/accidents.)
+    assertEquals("initial canvas width", 113, canvas.width);
+    assertEquals("initial canvas height", 131, canvas.height);
+    canvas.width = 20;
+    canvas.height = 10;
+    assertEquals("set canvas width", 20, canvas.width);
+    assertEquals("set canvas height", 10, canvas.height);
+
+    // Getting the context
+    expectFailure(
+        function() {
+          canvas.getContext();
+        },
+        'getContext with no argument');
+    expectFailure(
+        function() {
+          canvas.getContext(1);
+        },
+        'getContext with non-string');
+    assertUndefined('getContext with unapproved contextId',
+        canvas.getContext("foo"));
+    var context = canvas.getContext("2d");
+    assertNotNull("context", context);
+    assertNotUndefined("context", context);
+    assertEquals("context equals itself", context,
+       document.getElementById('test-canvas-element-canvas').getContext("2d"));
+
+    // TODO: toDataURL
+
+    pass('test-canvas-element');
+  });
+</script>
+
+<p id="test-canvas-context-props" class="testcontainer">
+  Canvas context props
+  <canvas id="test-canvas-context-props-canvas"
+          height="20" width="120">fallback</canvas>
+</p>
+<script type="text/javascript">
+  jsunitRegister('testCanvasContextProps',
+                 function testCanvasContextProps() {
+    var context = document.getElementById('test-canvas-context-props-canvas')
+                          .getContext('2d');
+    var VARIES = Object.freeze({});
+
+    /**
+     * Check that assignments work, the initial value, and that bad values are
+     * ignored.
+     */
+    function testProperty(prop, initial, good, bads) {
+      if (initial === VARIES) { initial = context[prop]; }
+      assertEquals("initial " + prop, initial, context[prop]);
+      context.save();
+      {
+        Object.getOwnPropertyNames(bads).forEach(function (k) {
+          context[prop] = bads[k];
+          assertEquals("unchanged " + prop + " " + k, initial, context[prop]);
+        });
+        context[prop] = good;
+        assertEquals("changed " + prop, good, context[prop]);
+      }
+      context.restore();
+      assertEquals("restored " + prop, initial, context[prop]);
+    }
+
+    // context.globalAlpha
+    testProperty("globalAlpha", 1.0, 0.5,
+                 [NaN, Infinity, -Infinity, 2.0, "aardvarks",
+                  {toString:function(){return "0.5";}}]);
+
+    // context.globalCompositeOperation
+    testProperty("globalCompositeOperation", "source-over", "xor",
+                 ["aardvarks", {toString:function(){return "xor";}}]);
+
+    // context.fillStyle
+    testProperty("fillStyle", "#000000", "#ff0000",
+                 ["aardvarks", 999, {toString:function(){return "#ff0000";}},
+                  "inherit"]);
+    context.fillStyle = "black";
+    assertEquals("named fillStyle", "#000000", context.fillStyle);
+
+    // context.strokeStyle
+    // assume strokeStyle has the same taming structure as fillStyle,
+    // just check it exists.
+    context.strokeStyle = "red";
+    assertEquals("strokeStyle", "#ff0000", context.strokeStyle);
+
+    // context.lineWidth
+    testProperty("lineWidth", 1.0, 10.0,
+                 [0, NaN, Infinity, -Infinity, -1.0, "aardvarks",
+                  {toString:function(){return "5.0";}}]);
+    // context.lineCap
+    testProperty("lineCap", "butt", "round",
+                 [0, "aardvarks", {toString:function(){return "square";}}]);
+    // context.lineJoin
+    testProperty("lineJoin", "miter", "round",
+                 [0, "aardvarks", {toString:function(){return "bevel";}}]);
+    // context.miterLimit
+    testProperty("miterLimit", 10.0, 5.0,
+                 [0, NaN, Infinity, -Infinity, -1.0, "aardvarks",
+                  {toString:function(){return "5.0";}}]);
+
+    // context.shadowOffsetX
+    testProperty("shadowOffsetX", 0, -4,
+                 [NaN, Infinity, -Infinity, "aardvarks",
+                  {toString:function(){return "-4";}}]);
+    // context.shadowOffsetY
+    testProperty("shadowOffsetY", 0, -4,
+                 [NaN, Infinity, -Infinity, "aardvarks",
+                  {toString:function(){return "-4";}}]);
+    // context.shadowBlur
+    testProperty("shadowBlur", 0, 5,
+                 [NaN, Infinity, -Infinity, -3, "aardvarks",
+                  {toString:function(){return "5";}}]);
+    // context.shadowColor
+    testProperty("shadowColor", VARIES, // should be "rgba(0, 0, 0, 0.0)", is
+                                        // #000000 on Safari 5.0 (5533.16)
+                                "#abcdef",
+                 ["aardvarks", 999, {toString:function(){return "#ff0000";}}]);
+
+    // context.font
+    testProperty("font", "10px sans-serif", "bold 2em monospace",
+                 // "bold" a workaround for issue 1257 (css.properties.font
+                 // incorrectly translated)
+                 ["'sans-serif", 123,
+                  {toString:function(){return "sans-serif";}},
+                  "url(http://www.example.com/font.ttf)"]);
+    // context.textAlign
+    testProperty("textAlign", "start", "center",
+                 [123, "finish", {toString:function(){return "right";}}]);
+    // context.textBaseline
+    testProperty("textBaseline", "alphabetic", "middle",
+                 [123, "center", {toString:function(){return "bottom";}}]);
+
+    pass('test-canvas-context-props');
+  });
+</script>
+
+<p id="test-canvas-context-methods" class="testcontainer">
+  Canvas context methods
+  <canvas id="test-canvas-context-methods-canvas"
+          height="120" width="120">fallback</canvas>
+</p>
+<script type="text/javascript">
+  jsunitRegister('testCanvasContextMethods',
+                 function testCanvasContextMethods() {
+    var context = document.getElementById('test-canvas-context-methods-canvas')
+                          .getContext('2d');
+
+    // TODO(kpreid): Check for conformance with "Except where otherwise
+    // specified, for the 2D context interface, any method call with a
+    // numeric argument whose value is infinite or a NaN value must be
+    // ignored."
+
+    // Can we draw something and get it back?
+    context.fillStyle = "#ff0000";
+    context.fillRect(10, 10, 20, 20);
+    var idata = context.getImageData(19, 19, 1, 1);
+    assertEquals("idata.data[0]", 255, idata.data[0]);
+    assertEquals("idata.data[1]",   0, idata.data[1]);
+    assertEquals("idata.data[2]",   0, idata.data[2]);
+    assertEquals("idata.data[3]", 255, idata.data[3]);
+
+    // The initial state of the canvas is "transparent black", per the draft
+    // spec. These would test that, but not all implementations follow the
+    // spec here, so they are disabled.
+    //idata = context.getImageData(20, 19, 1, 1);
+    //assertEquals("idata.data[0]", 0, idata.data[0]);
+    //assertEquals("idata.data[1]", 0, idata.data[1]);
+    //assertEquals("idata.data[2]", 0, idata.data[2]);
+    //assertEquals("idata.data[3]", 0, idata.data[3]);
+
+    // save and restore
+    context.strokeStyle = "#000000";
+    context.restore(); // empty stack, explicitly not an error
+    assertEquals("after bogus restore()", "#000000", context.strokeStyle);
+    context.save();
+    {
+      context.strokeStyle = "#123456";
+      context.save();
+      {
+        context.strokeStyle = "#654321";
+      }
+      context.restore();
+      assertEquals("after restore() 1", "#123456", context.strokeStyle);
+    }
+    context.restore();
+    assertEquals("after restore() 2", "#000000", context.strokeStyle);
+
+    // Testing effects for methods such as drawing lines would be impractical
+    // (due to antialiasing and resolution), and we're not trying to be a
+    // canvas conformance test suite, so we'll just call them to verify
+    // existence and non-failure.
+
+    function assertFloatOp(verb, count) {
+      assertNotUndefined(verb, context[verb]);
+      var args = [];
+      for (var i = 0; i < count-1; i++) {
+        args.push(i + 1);
+      }
+      expectFailure(function () {
+        context[verb].apply(context, args);
+      }, verb + ' too few args');
+      args.push(1);
+      console.log("about to run normal " + verb + ":" + args);
+      var ret = context[verb].apply(context, args); // expect non-failure
+      console.log("just ran normal " + verb);
+      assertUndefined(verb + ' return value', ret);
+      args.push(1);
+      expectFailure(function () {
+        context[verb].apply(context, args);
+      }, verb + ' too many args');
+      args.pop();
+      for (var i = 0; i < count; i++) {
+        args[i] = i.toString();
+        expectFailure(function () {
+          context[verb].apply(context, args);
+        }, verb + ' nonnumeric arg ' + i);
+        args[i] = i + 1;
+      }
+    }
+
+    // scale
+    context.save();
+    {
+      assertFloatOp('scale', 2);
+    }
+    context.restore();
+
+    // rotate
+    // (show it exists; has the same taming implementation as scale)
+    context.save();
+    {
+      context.rotate(-2);
+    }
+    context.restore();
+
+    // translate
+    // (show it exists; has the same taming implementation as scale)
+    context.save();
+    {
+      context.translate(1, 1);
+    }
+    context.restore();
+
+    // transform
+    // (show it exists; has the same taming implementation as scale)
+    context.save();
+    {
+      context.transform(0, -1, 0, 1, -10, 10);
+    }
+    context.restore();
+
+    // setTransform
+    // (show it exists; has the same taming implementation as scale)
+    context.save();
+    {
+      context.setTransform(0, -1, 0, 1, -10, 10);
+    }
+    context.restore();
+
+    // createLinearGradient
+    var g = context.createLinearGradient(0, 0, 100, 100);
+    assertNotUndefined("linear gradient", g);
+    assertUndefined("addColorStop retval", g.addColorStop(0, "red"));
+    expectFailure(function () {
+      g.addColorStop(0.5, "aardvarks");
+    }, 'addColorStop bad color name');
+    expectFailure(function () {
+      g.addColorStop(0.5, 123);
+    }, 'addColorStop not a color string');
+    expectFailure(function () {
+      g.addColorStop("0.5", "red");
+    }, 'addColorStop not a number');
+    expectFailure(function () {
+      g.addColorStop(-1, "red");
+    }, 'addColorStop too small');
+    expectFailure(function () {
+      g.addColorStop(1.5, "red");
+    }, 'addColorStop too large');
+    expectFailure(function () {
+      g.addColorStop(NaN, "red");
+    }, 'addColorStop NaN');
+    g.addColorStop(1, "green");
+    context.fillStyle = g;
+    context.fillRect(0, 0, 100, 100);
+
+    // createRadialGradient
+    g = context.createRadialGradient(100, 50, 0, 100, 50, 50);
+    assertNotUndefined("radial gradient", g);
+    g.addColorStop(0, "red");
+    g.addColorStop(1, "green");
+    context.fillStyle = g;
+    context.beginPath();
+    context.arc(100, 50, 50, 0, 2*Math.PI, false);
+    context.fill();
+
+    assertFloatOp('clearRect', 4);
+    assertFloatOp('fillRect', 4);
+    assertFloatOp('strokeRect', 4);
+
+    // beginPath, closePath
+    context.beginPath();
+    context.closePath();
+
+    // path operations
+    // In principle, we could test all of these using isPointInPath.
+    // In practice, this is not a canvas conformance test suite!
+    context.save();
+    {
+      assertFloatOp('moveTo', 2);
+      assertFloatOp('lineTo', 2);
+      assertFloatOp('quadraticCurveTo', 4);
+      assertFloatOp('bezierCurveTo', 6);
+      assertFloatOp('arcTo', 5);
+
+      expectFailure(function () {
+        context.arcTo(10, 20, 30, 40, -2);
+      }, 'arcTo negative radius');
+
+      // arc's 6th argument is not a float but a boolean, can't
+      // use assertFloatOp
+      context.arc(10, 20, 30, 40, 50, false);
+      expectFailure(function () {
+        context.arc(10, 20, 30, 40, 50, "false");
+      }, 'arc anticlockwise not a boolean');
+      expectFailure(function () {
+        context.arc(10, 20, -1, 30, 40, false);
+      }, 'arc negative radius');
+
+      assertFloatOp('rect', 4);
+
+      context.fill();
+      context.stroke();
+      context.clip();
+    }
+    context.restore();
+
+    // isPointInPath is in a separate test.
+    // drawFocusRing is in a separate test.
+
+    Object.getOwnPropertyNames({fillText:0,strokeText:0}).forEach(
+        function (verb) {
+          context[verb]("hello world", 1, 2);
+          context[verb]("hello world", 1, 2, 20);
+          expectFailure(function () {
+            context[verb]("hello world", 1, 2, 20, 30);
+          }, verb + ' too many args');
+          expectFailure(function () {
+            context[verb](1, 2, 3);
+          }, verb + ' not string text');
+          expectFailure(function () {
+            context[verb]("hello world", "2", 3);
+          }, verb + ' not number x');
+          expectFailure(function () {
+            context[verb]("hello world", 2, "3");
+          }, verb + ' not number y');
+        });
+
+    // measureText
+    context.measureText("hello world");
+    expectFailure(function () {
+      context.measureText("hello world", 1, 2);
+    }, 'measureText too many args');
+    expectFailure(function () {
+      context.measureText(1);
+    }, 'measureText not string text');
+
+    expectFailure(function () {
+      context.drawImage(
+          document.getElementById('test-canvas-imageelem'), 0, 0);
+    }, 'drawImage should fail');
+
+    // TODO(kpreid): add and test drawImage and createPattern. They raise
+    // information-leakage issues (the client can see the contents of an image,
+    // possibly from another source, which they can't otherwise) so they've
+    // been deferred for now.
+
+    pass('test-canvas-context-methods');
+  });
+</script>
+
+<p id="test-canvas-pointInPath" class="testcontainer">
+  Canvas pointInPath
+  <!-- Zoomed in for visual inspection -->
+  <canvas id="test-canvas-pointInPath-canvas"
+          width="8" height="8"
+          style="width: 80px; height: 80px;">fallback</canvas>
+</p>
+<script type="text/javascript">
+  jsunitRegister('testCanvasPointInPath',
+             function testCanvasPointInPath() {
+    var context = document.getElementById('test-canvas-pointInPath-canvas')
+                          .getContext('2d');
+
+    // This is in a separate test because some of the arbitrary mucking about
+    // done by testCanvasContextMethods made this test not work on Firefox
+    // but not Safari. Isolating effects in anything where we're doing
+    // read-back is probably a good idea anyway.
+    context.beginPath();
+    context.moveTo(1, 1);
+    context.lineTo(4, 1);
+    context.lineTo(1, 4);
+    context.closePath();
+    context.fill();
+    assertTrue ("isPointInPath 1", context.isPointInPath(2, 2));
+    assertFalse("isPointInPath 2", context.isPointInPath(0, 0));
+    assertFalse("isPointInPath 3", context.isPointInPath(3, 3));
+    assertTrue ("isPointInPath 4", context.isPointInPath(1, 1));
+    assertFalse("isPointInPath 5", context.isPointInPath(-5, 1));
+
+
+    pass('test-canvas-pointInPath');
+  });
+</script>
+
+<p id="test-canvas-context-imagedata" class="testcontainer">
+  Canvas imagedata
+  <!-- Zoomed in for visual inspection -->
+  <canvas id="test-canvas-context-imagedata-canvas"
+          width="9" height="3"
+          style="width: 90px; height: 30px;">fallback</canvas>
+</p>
+<script type="text/javascript">
+  jsunitRegister('testCanvasContextImageData',
+             function testCanvasContextImageData() {
+    var context =
+        document.getElementById('test-canvas-context-imagedata-canvas')
+                .getContext('2d');
+
+    // Note: Image data resolution can differ from the canvas coordinate space.
+    // These tests have not been exercised in that situation.
+
+    var x = 1;
+    var y = 1;
+
+    // Does putImageData reject mock instances?
+    expectFailure(function () {
+      context.putImageData({width:1,height:1,data:[255,0,0,255]}, 0, 0);
+    }, 'putImageData not an ImageData');
+
+    // Attempt to create a bitmap
+    var constructed = context.createImageData(1, 1);
+    assertNotUndefined(constructed);
+    assertEquals("createImageData width", "number",
+        typeof(constructed.width));
+    assertEquals("createImageData width", "number",
+        typeof(constructed.height));
+    constructed.data[2] = 222; // an arbitrary blue
+    constructed.data[3] = 255;
+
+    // Write the bitmap, read it back.
+    context.putImageData(constructed, 1, 1);
+    var read = context.getImageData(x, y, 1, 1);
+    assertEquals("result of putImageData", 222, read.data[2]);
+
+    x += 3;
+
+    // Write the read ImageData without having looked at its .data (which is a
+    // different code path)
+    context.putImageData(read, x, y);
+    var read2 = context.getImageData(x, y, 1, 1);
+    assertEquals("result of unaltered putImageData R",   0, read2.data[0]);
+    assertEquals("result of unaltered putImageData B", 222, read2.data[2]);
+
+    x += 3;
+
+    // Modify and write again
+    read2.data[0] = 255;  // now purple
+    context.putImageData(read2, x, y);
+    var read3 = context.getImageData(x, y, 1, 1);
+    assertEquals("result of altered putImageData R", 255, read3.data[0]);
+    assertEquals("result of altered putImageData B", 222, read3.data[2]);
+
+    pass('test-canvas-context-imagedata');
+  });
+</script>
+
+<div id="test-canvas-context-focus" class="testcontainer">
+  Canvas drawFocusRing
+  <canvas id="test-canvas-context-focus-canvas" height="20" width="50">
+    <form>
+      <input type="text" id="test-canvas-context-focus-field-1">
+      <input type="text" id="test-canvas-context-focus-field-2">
+    </form>
+  </canvas>
+</div>
+<script type="text/javascript">
+  jsunitRegister('testCanvasContextFocus',
+                 function testCanvasContextFocus() {
+    var context = document.getElementById('test-canvas-context-focus-canvas')
+                          .getContext('2d');
+
+    if ("drawFocusRing" in context) {
+      var focusElem1 =
+          document.getElementById('test-canvas-context-focus-field-1');
+      var focusElem2 =
+          document.getElementById('test-canvas-context-focus-field-2');
+
+      // Establish a path
+      context.beginPath();
+      context.rect(0, 0, 10, 10);
+
+      focusElem1.focus();
+      focusElem1.blur();
+      // nothing of ours is focused
+
+      var res;
+
+      res = context.drawFocusRing(focusElem1, 5, 5);
+      assertFalse('drawFocusRing without canDrawCustom without focus', res);
+
+      res = context.drawFocusRing(focusElem1, 5, 5, true);
+      assertFalse('drawFocusRing with canDrawCustom without focus', res);
+
+      focusElem1.focus();
+      res = context.drawFocusRing(focusElem1, 5, 5, true);
+      assertTrue('drawFocusRing with canDrawCustom with focus', res);
+      // Might be false, per the spec, but it's more relevant to test this case
+      // than the chance the 'user requires focus rings' case holds
+    } else {
+      console.log("no drawFocusRing, skipping test.");
+    }
+
+    pass('test-canvas-context-focus');
+  });
+</script>
+
+<p id="test-canvas-not-editable" class="testcontainer">
+  Canvas context without editability
+  <canvas id="test-canvas-not-editable-canvas"
+          height="1" width="1">fallback</canvas>
+</p>
+<script type="text/javascript">
+  jsunitRegister('testCanvasNotEditable',
+                 function testCanvasNotEditable() {
+    var canvas = documentRO.getElementById('test-canvas-not-editable-canvas');
+    expectFailure(function () {
+      canvas.getContext('2d');
+    }, "can't get context for a RO canvas ref");
+    pass('test-canvas-not-editable');
+  });
+</script>

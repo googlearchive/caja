@@ -377,9 +377,10 @@ final class HtmlExtractor {
                         + "IMPORTS___.htmlEmitter___"
                         + "    ./*@synthetic*/addBodyClasses(@idents);",
                         "idents", e));
+                Block b = new Block(FilePosition.UNKNOWN, Collections.singletonList(s));
                 jobs.getJobs().add(new JobEnvelope(
                     null, htmlEnv.cacheKeys, ContentType.JS, false,
-                    Job.jsJob(s, htmlEnv.job.getBaseUri())));
+                    Job.jsJob(b, htmlEnv.job.getBaseUri())));
               }
             }
           }

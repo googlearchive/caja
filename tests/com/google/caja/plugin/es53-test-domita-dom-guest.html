@@ -1,0 +1,2281 @@
+<!--
+ - Copyright (C) 2011 Google Inc.
+ -
+ - Licensed under the Apache License, Version 2.0 (the "License");
+ - you may not use this file except in compliance with the License.
+ - You may obtain a copy of the License at
+ -
+ -      http://www.apache.org/licenses/LICENSE-2.0
+ -
+ - Unless required by applicable law or agreed to in writing, software
+ - distributed under the License is distributed on an "AS IS" BASIS,
+ - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ - See the License for the specific language governing permissions and
+ - limitations under the License.
+-->
+
+<div>Derived from domita_test_untrusted.html as of r4471</div>
+
+<style type="text/css">
+  .invisible { display: none; float: left }
+  .inline { display: inline }
+  body.foo #test-body-classes-yes,
+  body.bar #test-body-classes-no { font-style: italic }
+</style>
+
+<body class="foo">
+
+<script type="text/javascript">
+  /**
+   * Checks the structure of a DOM structure against a skeleton describing
+   * details of the node.
+   * @param skeleton an acyclic Object whose own properties describe aspects
+   *   of the node such as 'nodeType', 'tagName', etc.  See the switch for
+   *   supported member names.
+   * @param node the node to check against skeleton.
+   */
+  function assertDomTree(skeleton, node, opt_stack) {
+    var stack = opt_stack || '(#root:' + node.nodeName + ')';
+    Object.getOwnPropertyNames(skeleton).forEach(
+        function (key) {
+          var msg = stack + ':' + key;
+          var v = skeleton[key];
+          switch (key) {
+            case 'nodeType':
+              assertEquals(msg, v, node.nodeType);
+              break;
+            case 'nodeName':
+              assertEquals(msg, v, node.nodeName);
+              break;
+            case 'nodeValue':
+              assertEquals(msg, v, node.nodeValue);
+              break;
+            case 'tagName':
+              assertEquals(msg, v, node.tagName);
+              assertEquals(msg, v, node.nodeName);
+              break;
+            case 'innerHTML':
+              assertEquals(msg, v, node.innerHTML);
+              break;
+            case 'sameAs':
+              assertEquals(msg, v, node);
+              break;
+            case 'attributes':
+              var attrs = node.attributes;
+              var specified = [];
+              var names = [];
+              for (var i = 0, n = attrs.length; i < n; ++i) {
+                var attr = attrs[i];
+                if (attr.specified) {
+                  specified.push(attr);
+                  names.push(attr.name);
+                }
+              }
+              assertEquals(
+                  msg + ' #attrs (' + names + ')', v.length, specified.length);
+              for (var i = 0, n = v.length; i < n; ++i) {
+                assertDomTree(
+                    v[i], specified[i],
+                    stack + '@(#' + i + ':' + specified[i].nodeName + ')');
+              }
+              break;
+            case 'children':
+              var children = node.childNodes;
+              assertEquals(msg + ' #children', v.length, children.length);
+              for (var i = 0, n = v.length; i < n; ++i) {
+                assertDomTree(
+                    v[i], children[i],
+                    stack + '/(#' + i + ':' + children[i].nodeName + ')');
+              }
+              for (var i = 0, n = v.length, c = node.firstChild; i < n;
+                   ++i, c = c.nextSibling) {
+                // TODO(mikesamuel): enable for all node-types
+                // once EQ fixed on IE
+                if (c.nodeType === 1) {
+                  assertEquals(msg + ' firstChild check ' + i, c, children[i]);
+                }
+              }
+              for (var i = n = v.length, c = node.lastChild; --i >= 0;
+                   c = c.previousSibling) {
+                // TODO(mikesamuel): enable for all node-types
+                // once EQ fixed on IE
+                if (c.nodeType === 1) {
+                  assertEquals(msg + ' lastChild check' + i, c, children[i]);
+                }
+              }
+              break;
+            default:
+              fail(msg + ' unrecognized key');
+              break;
+          }
+        });
+  }
+
+  /**
+   * Canonicalize innerHTML output:
+   *   - collapse all whitespace to a single space
+   *   - remove whitespace between adjacent tags
+   *   - lowercase tagnames and attribute names
+   *   - sort attributes by name
+   *   - quote attribute values
+   *
+   * Without this step, it's impossible to compare innerHTML cross-browser.
+   */
+  function canonInnerHtml(s) {
+    // Sort attributes.
+    var htmlAttribute = new RegExp(
+        '\\s*(\\w+)(?:\\s*=\\s*("[^\\"]*"|\'[^\\\']*\'|[^\\\'\\"\\s>]+))?');
+    var quot = new RegExp('"', 'g');
+    var tagBody = '(?:"[^"]*"|\'[^\']*\'|[^>"\']+)*';
+    var htmlStartTag = new RegExp('(<\\w+)(' + tagBody + ')>', 'g');
+    var htmlTag = new RegExp('(<\/?)(\\w+)(' + tagBody + ')>', 'g');
+    var ignorableWhitespace = new RegExp('^[ \\t]*(\\r\\n?|\\n)|\\s+$', 'g');
+    var tagEntityOrText = new RegExp(
+        '(?:(</?\\w[^>]*>|&[a-zA-Z#]|[^<&>]+)|([<&>]))', 'g');
+    s = s.replace(
+        htmlStartTag,
+        function (_, tagStart, tagBody) {
+          var attrs = [];
+          for (var m; tagBody && (m = tagBody.match(htmlAttribute));) {
+            var name = m[1].toLowerCase();
+            var value = m[2];
+            var hasValue = value != null;
+            if (hasValue && (new RegExp('^["\']')).test(value)) {
+              value = value.substring(1, value.length - 1);
+            }
+            attrs.push(
+                hasValue
+                ? name + '="' + value.replace(quot, '&quot;') + '"'
+                : name);
+            tagBody = tagBody.substring(m[0].length);
+          }
+          attrs.sort();
+          attrs.unshift(tagStart);
+          return attrs.join(' ') + '>';
+        });
+    s = s.replace(
+        htmlTag,
+        function (_, open, name, body) {
+          return open + name.toLowerCase() + (body || '') + '>';
+        });
+    // Collapse whitespace.
+    s = s.replace(new RegExp('\\s+', 'g'), ' ');
+    s = s.replace(new RegExp('^ | $', 'g'), '');
+    s = s.replace(new RegExp('[>]\\s+[<]', 'g'), '><');
+    // Normalize escaping of text nodes since Safari doesn't escape loose >.
+    s = s.replace(
+        tagEntityOrText,
+        function (_, good, bad) {
+          return good
+              ? good
+              : (bad.replace(new RegExp('&', 'g'), '&amp;')
+                 .replace(new RegExp('>', 'g'), '&gt;'));
+        });
+    return s;
+  }
+</script>
+
+<p id="test-dom-class-hierarchy" class="clickme testcontainer">
+  <b>Click me</b>
+</p>
+<script type="text/javascript">
+  jsunitRegister('testDomClassHierarchy',
+                 function testDomClassHierarchy() {
+    assertTrue('document < Node', document instanceof window.Node);
+    assertTrue('document < HTMLDocument',
+               document instanceof window.HTMLDocument);
+
+    assertTrue('<DIV> < Node',
+               document.createElement('div') instanceof window.Node);
+    assertTrue('<DIV> < Element',
+               document.createElement('div') instanceof window.Element);
+
+    console.log('window.HTMLDivElement = ' + window.HTMLDivElement);
+
+    assertTrue('<DIV> < HTMLDivElement',
+               document.createElement('div') instanceof window.HTMLDivElement);
+
+    assertTrue('<INPUT> < Node',
+               document.createElement('input') instanceof window.Node);
+    assertTrue('<INPUT> < Element',
+               document.createElement('input') instanceof window.Element);
+    assertTrue('<INPUT> < HTMLInputElement',
+               document.createElement('input')
+               instanceof window.HTMLInputElement);
+
+    assertTrue('<A> < Node',
+               document.createElement('a') instanceof window.Node);
+    assertTrue('<A> < Element',
+               document.createElement('a') instanceof window.Element);
+    assertTrue('<A> < HTMLAnchorElement',
+               document.createElement('a') instanceof window.HTMLAnchorElement);
+
+    assertTrue('<IMG> < Node',
+               document.createElement('img') instanceof window.Node);
+    assertTrue('<IMG> < Element',
+               document.createElement('img') instanceof window.Element);
+    assertTrue('<IMG> < HTMLImageElement',
+               document.createElement('img')
+                   instanceof window.HTMLImageElement);
+
+    // TODO(ihab.awad): Add negative tests when virtual hierarchy is improved:
+    //assertFalse('<IMG> !< HTMLDivElement',
+    //            document.createElement('img')
+    //                instanceof window.HTMLDivElement);
+
+    document.getElementById('test-dom-class-hierarchy').addEventListener(
+        'click',
+        jsunitCallback(
+            function onclick(event) {
+              assertTrue(event instanceof window.Event);
+              pass('test-dom-class-hierarchy');
+            }));
+  });
+</script>
+
+<div id="test-case-insensitive-attrs" class="clickme testcontainer">
+  <table id="is-red">
+    <tr>
+      <td><strong>Click me if this is red</strong></td>
+    </tr>
+  </table>
+</div>
+<script type="text/javascript">
+  jsunitRegister('testCaseInsensitiveAttrs',
+                 function testCaseInsensitiveAttrs() {
+    var tableNode = document.getElementById('is-red');
+    tableNode.setAttribute('bgColor', 'red');
+    tableNode.addEventListener(
+        'click',
+        jsunitCallback(
+            function onclick(event) {
+              pass('test-case-insensitive-attrs');
+            }));
+  });
+</script>
+
+<div id="test-document-write" class="testcontainer">
+  <div>
+    <p>Before <code>document.write</code></p>
+    <script type="text/javascript">
+      document.write(
+          '<p id=test-document-write-foo>Document written<\/p></div><div>',
+          '<p>Written afterwards<p>More written afterwards');
+    </script>
+    <p>After <code>document.write</code>
+  </div>
+</div>
+<br>
+<script type="text/javascript">
+  jsunitRegister('testDocumentWrite',
+                 function testDocumentWrite() {
+    // TODO(mikesamuel): This is wrong because we don't allow the
+    // insertion point to move above its starting position
+    var el = document.getElementById('test-document-write');
+    assertEquals(
+        ''
+        + '<div>'
+          + '<p>Before <code>document.write</code></p>'
+          + '<p id="test-document-write-foo">Document written</p>'
+          + '<p>After <code>document.write</code></p>'
+        + '</div>'
+        + '<div>'
+          + '<p>Written afterwards</p>'
+          + '<p>More written afterwards</p>'
+        + '</div>',
+        canonInnerHtml(el.innerHTML));
+    pass('test-document-write');
+  });
+</script>
+
+<p id="test-window-mutable" class="testcontainer">
+<script type="text/javascript">window.myProp = 1234;</script>
+</p>
+<script type="text/javascript">
+  jsunitRegister('testWindowMutable',
+                 function testWindowMutable() {
+    function contains(arr, el) {
+      for (var i = arr.length; --i >= 0;) {
+        if (el === arr[i]) { return true; }
+      }
+      return false;
+    }
+    assertEquals(1234, window.myProp);
+    window.myOtherProp = 2345;
+    var props = Object.getOwnPropertyNames(window);
+    assertTrue(contains(props, 'myProp'));
+    assertTrue(contains(props, 'myOtherProp'));
+    delete window.myProp;
+    assertEquals(void 0, window.myProp);
+    props = Object.getOwnPropertyNames(window);
+    assertFalse(contains(props, 'myProp'));
+    assertTrue(contains(props, 'myOtherProp'));
+    pass('test-window-mutable');
+  });
+</script>
+
+<div id="test-attrs-declared-in-markup" class="testcontainer"
+    ><form title="test title"></form>
+  <b>Test attributes in markup</b>
+</div>
+<script type="text/javascript">
+  jsunitRegister('testAttrsDeclaredInMarkup',
+                 function testAttrsDeclaredInMarkup() {
+    var d = document.getElementById('test-attrs-declared-in-markup').firstChild;
+
+    assertTrue(d.hasAttribute('title'));
+    assertEquals('test title', d.getAttribute('title'));
+    d.setAttribute('title', 'another title');
+    assertTrue(d.hasAttribute('title'));
+    assertEquals('another title', d.getAttribute('title'));
+    d.removeAttribute('title');
+    assertFalse(d.hasAttribute('title'));
+    assertEquals(null, d.getAttribute('title'));
+    // Removing twice should be harmless
+    d.removeAttribute('title');
+    assertFalse(d.hasAttribute('title'));
+    assertEquals(null, d.getAttribute('title'));
+
+    pass('test-attrs-declared-in-markup');
+  });
+</script>
+
+<div id="test-attrs-not-in-markup" class="testcontainer"
+    ><form></form>
+  <b>Test attributes not in markup</b>
+</div>
+<script type="text/javascript">
+  jsunitRegister('testAttrsNotInMarkup',
+                 function testAttrsNotInMarkup() {
+    var d = document.getElementById('test-attrs-not-in-markup').firstChild;
+
+    assertFalse(d.hasAttribute('title'));
+    assertEquals(null, d.getAttribute('title'));
+    d.setAttribute('title', 'another title');
+    assertTrue(d.hasAttribute('title'));
+    assertEquals('another title', d.getAttribute('title'));
+    d.removeAttribute('title');
+    assertFalse(d.hasAttribute('title'));
+    assertEquals(null, d.getAttribute('title'));
+
+    // Removing twice should be harmless
+    d.removeAttribute('title');
+    assertFalse(d.hasAttribute('title'));
+    assertEquals(null, d.getAttribute('title'));
+
+    pass('test-attrs-not-in-markup');
+  });
+</script>
+
+<div id="test-attrs-nonstandard-permitted" class="testcontainer"
+    ><form></form>
+  <b>Test attributes nonstandard permitted</b>
+</div>
+<script type="text/javascript">
+  jsunitRegister('testAttrsNonstandardPermitted',
+                 function testAttrsNonstandardPermitted() {
+    var d = document.getElementById('test-attrs-nonstandard-permitted')
+        .firstChild;
+
+    assertFalse(d.hasAttribute('flavor'));
+    assertEquals(null, d.getAttribute('flavor'));
+    d.setAttribute('flavor', 'chocolate');
+    assertTrue(d.hasAttribute('flavor'));
+    assertEquals('chocolate', d.getAttribute('flavor'));
+    d.removeAttribute('flavor');
+    assertFalse(d.hasAttribute('flavor'));
+    assertEquals(null, d.getAttribute('flavor'));
+
+    // Removing twice should be harmless
+    d.removeAttribute('flavor');
+    assertFalse(d.hasAttribute('flavor'));
+    assertEquals(null, d.getAttribute('flavor'));
+
+    // Should be case insensitive
+    d.setAttribute('flavor', 'peach');
+    assertEquals('peach', d.getAttribute('FLAvor'));
+
+    pass('test-attrs-nonstandard-permitted');
+  });
+</script>
+
+<p id="test-property-attribute-interaction" class="testcontainer">
+  <span id="test-property-attribute-interaction-label">
+    Test property attribute interaction
+  </span><br>
+</p>
+<script type="text/javascript">
+  // TODO(metaweta): This test should be replaced by ones for the proper
+  // behavior once we get property names into the HTML schema.
+  jsunitRegister('testPropertyAttributeInteraction',
+                 function testPropertyAttributeInteraction() {
+    var d = document.getElementById(
+        'test-property-attribute-interaction-label');
+    d.setAttribute('foo', 'hi');
+    d.setAttribute('title', 'there');
+    assertEquals(void 0, d.FOO);
+    assertEquals(void 0, d.foo);
+    assertEquals('hi', d.getAttribute('FOO'));
+    assertEquals('hi', d.getAttribute('foo'));
+    assertEquals('there', d.TITLE);
+    assertEquals('there', d.title);
+    assertEquals('there', d.getAttribute('title'));
+    assertEquals('there', d.getAttribute('TITLE'));
+    d.title = 'bob';
+    assertEquals('bob', d.getAttribute('title'));
+    pass('test-property-attribute-interaction');
+  });
+</script>
+
+<p id="test-pseudo-elements" class="testcontainer">
+  Test pseudo-elements
+</p>
+<script type="text/javascript">
+  jsunitRegister('testPseudoElements',
+                 function testPseudoElements() {
+    var body = document.getElementsByTagName('body')[0];
+    var head = document.getElementsByTagName('head')[0];
+    var title = document.getElementsByTagName('title')[0];
+    var html = document.getElementsByTagName('html')[0];
+    var all = document.getElementsByTagName('*');
+
+    assertEquals('BODY', body.tagName);
+    assertEquals(null, body.getAttribute('foo'));
+    assertEquals('HEAD', head.tagName);
+    assertEquals(null, head.getAttribute('foo'));
+    assertEquals('TITLE', title.tagName);
+    assertEquals(null, title.getAttribute('foo'));
+    assertEquals('HTML', html.tagName);
+    assertEquals(null, html.getAttribute('foo'));
+    assertEquals(html, all[0]);
+    assertEquals(head, all[1]);
+    assertEquals(title, all[2]);
+    assertEquals(body, all[3]);
+
+    pass('test-pseudo-elements');
+  });
+</script>
+
+<p id="test-editability-in-node-lists" class="testcontainer">
+  editability in node lists<br>
+</p>
+<script type="text/javascript">
+  jsunitRegister('testEditabilityInNodeLists',
+                 function testEditabilityInNodeLists() {
+    var paragraph = document.getElementsByTagName('p')[0];
+    // Make sure the node is editable.
+    paragraph.foo = 1;
+    assertEquals('1', String(paragraph.foo));
+    delete paragraph.foo;
+    assertEquals(undefined, paragraph.foo);
+
+    paragraph = document.getElementsByClassName('testcontainer')[0];
+    // Make sure the node is editable.
+    paragraph.foo = 1;
+    assertEquals('1', String(paragraph.foo));
+    delete paragraph.foo;
+    assertEquals(undefined, paragraph.foo);
+
+    pass('test-editability-in-node-lists');
+  });
+</script>
+
+<p id="test-nonexistent-style-property" class="testcontainer">
+  <span id="test-nonexistent-style-property-label"
+   >I ain&apos;t got no style</span>
+  <br>
+</p>
+<script type="text/javascript">
+  jsunitRegister('testNonexistentStyleProperty',
+                 function testNonexistentStyleProperty() {
+    var container = document.getElementById(
+        'test-nonexistent-style-property-label');
+    assertEquals(undefined, container.style.noSuchProperty);
+    pass('test-nonexistent-style-property');
+  });
+</script>
+
+<div id="test-get-element-by-id" class="testcontainer"></div>
+<script type="text/javascript">
+  jsunitRegister('testGetElementById',
+                 function testGetElementById() {
+    assertEquals(null, document.getElementById('foo'));
+    assertEquals(null, document.getElementById('bar'));
+    assertEquals(null, document.getElementById('no_such_node'));
+    assertTrue(document.getElementById('test-get-element-by-id') != null);
+
+    pass('test-get-element-by-id');
+  });
+</script>
+
+<div id="test-get-element-by-id-2" class="testcontainer"></div>
+<script type="text/javascript">
+  jsunitRegister('testGetElementById2',
+                 function testGetElementById2() {
+    assertEquals(null, document.getElementById('xyz-test-get-element-by-id'));
+    assertTrue(document.getElementById('test-get-element-by-id-2') != null);
+
+    pass('test-get-element-by-id-2');
+  });
+</script>
+
+<p id="test-contains" class="testcontainer"></p>
+<p id="test-contains-after"></p>
+<script type="text/javascript">
+  jsunitRegister('testContains',
+                 function testContains() {
+    // Some nodes that are not under the document element.
+    var disconnectedEl = document.createElement('DIV');
+    var disconnectedChild = document.createElement('B');
+    var result = disconnectedEl.appendChild(disconnectedChild);
+    assertEquals(result, disconnectedChild);
+
+    var testContainer = document.getElementById('test-contains');
+    var testContainerChild = document.createElement('SPAN');
+    result = testContainer.appendChild(testContainerChild);
+    assertEquals(result, testContainerChild);
+    // This test assume that test-contains-after follows
+    // test-contains in the HTML above.
+    var follower = document.getElementById('test-contains-after');
+
+    var hasContains = 'contains' in testContainer;
+    var hasCompare = 'compareDocumentPosition' in testContainer;
+    assertTrue('neither contains nor compare present',
+               hasContains || hasCompare);
+
+    if (hasContains) {
+      assertTrue('dEl > dCh', disconnectedEl.contains(disconnectedChild));
+      assertFalse('dCh > dEl', disconnectedChild.contains(disconnectedEl));
+      assertTrue('tCo > tCo', testContainer.contains(testContainer));
+      assertFalse('tCo > fo', testContainer.contains(follower));
+      assertFalse('fo > tCo', follower.contains(testContainer));
+      assertTrue('tCo > tCh', testContainer.contains(testContainerChild));
+      assertFalse('tCh > tCo', testContainerChild.contains(testContainer));
+    }
+
+    if (hasCompare) {
+      var DOCUMENT_POSITION_DISCONNECTED = 0x01;
+      var DOCUMENT_POSITION_PRECEDING = 0x02;
+      var DOCUMENT_POSITION_FOLLOWING = 0x04;
+      var DOCUMENT_POSITION_CONTAINS = 0x08;
+      var DOCUMENT_POSITION_IS_CONTAINED = 0x10;
+
+      assertEquals(
+          'dEl cmp tCo',
+          DOCUMENT_POSITION_DISCONNECTED,
+          disconnectedEl.compareDocumentPosition(testContainer));
+      assertEquals(
+          'tCo cmp dEl',
+          DOCUMENT_POSITION_DISCONNECTED,
+          testContainer.compareDocumentPosition(disconnectedEl));
+      assertEquals(
+          'tCo cmp fo',
+          DOCUMENT_POSITION_FOLLOWING,
+          testContainer.compareDocumentPosition(follower));
+      assertEquals(
+          'fo cmp tCo',
+          DOCUMENT_POSITION_PRECEDING,
+          follower.compareDocumentPosition(testContainer));
+      assertEquals(
+          'tCp cmp tCh',
+          DOCUMENT_POSITION_FOLLOWING | DOCUMENT_POSITION_IS_CONTAINED,
+          testContainer.compareDocumentPosition(testContainerChild));
+      assertEquals(
+          'tCh cmp tCo',
+          DOCUMENT_POSITION_PRECEDING | DOCUMENT_POSITION_CONTAINS,
+          testContainerChild.compareDocumentPosition(testContainer));
+      assertEquals(
+          'tCo cmp tCo',
+          0,
+          testContainer.compareDocumentPosition(testContainer));
+    }
+
+    pass('test-contains');
+  });
+</script>
+
+<p id="test-element-id" class="testcontainer"></p>
+<script type="text/javascript">
+  jsunitRegister('testElementId',
+                 function testElementId() {
+    var el = document.getElementById('test-element-id');
+    assertEquals('test-element-id', el.id);
+    assertEquals('test-element-id', el.getAttribute('id'));
+
+    pass('test-element-id');
+  });
+</script>
+
+<p id="test-create-element" class="testcontainer"></p>
+<script type="text/javascript">
+  jsunitRegister('testCreateElement',
+                 function testCreateElement() {
+    var newNode = document.createElement('DIV');
+    assertEquals('', newNode.id);
+    newNode.id = 'newNodeId';
+    assertEquals('newNodeId', newNode.id);
+
+    newNode.id = '#bog<us>';  // Not set
+    assertEquals('newNodeId', newNode.id);
+
+    newNode.id = 'not:bogus';
+    assertEquals('not:bogus', newNode.id);
+    assertEquals(1, newNode.nodeType);
+
+    var el = document.getElementById('test-create-element');
+    el.appendChild(newNode);
+
+    assertEquals(document.getElementById('not:bogus').tagName,
+                 newNode.tagName);
+    assertEquals(newNode.tagName, el.firstChild.tagName);
+    assertEquals(newNode.tagName, el.lastChild.tagName);
+
+    var text = document.createTextNode(
+        { toString: function () { return 'howdy <there>'; } });
+    assertEquals(3, text.nodeType);
+    assertEquals('howdy <there>', text.data);
+    newNode.appendChild(text);
+    assertEquals(3, newNode.firstChild.nodeType);
+    assertEquals('howdy &lt;there&gt;', canonInnerHtml(newNode.innerHTML));
+
+    pass('test-create-element');
+  });
+</script>
+
+<ol id="test-get-elements-by-tag-name" class="testcontainer">
+  <li>One
+  <li>Two
+  <li>Three
+    <ol><li>Pi</li><li>sqrt(10)</li></ol>
+</ol>
+<script type="text/javascript">
+  jsunitRegister('testGetElementsByTagName',
+                 function testGetElementsByTagName() {
+    var container = document.getElementById('test-get-elements-by-tag-name');
+    var items = container.getElementsByTagName('li');
+    assertEquals(5, items.length);
+    for (var i = 0; i < items.length; ++i) {
+      assertEquals('LI', items[i].tagName);
+    }
+    assertEquals('One', canonInnerHtml(items[0].innerHTML));
+    assertEquals('Two', canonInnerHtml(items[1].innerHTML));
+    assertEquals('Three', canonInnerHtml(items[2].firstChild.data));
+    assertEquals('Pi', canonInnerHtml(items[3].innerHTML));
+    assertEquals('sqrt(10)', canonInnerHtml(items[4].innerHTML));
+    pass('test-get-elements-by-tag-name');
+  });
+</script>
+
+<!--
+  - The getElementsByClassName tests are derived from those at
+  - http://code.google.com/p/doctype/wiki/DocumentGetElementsByClassNameMethod
+  - which are themselves derived from the HTML5 spec.
+ -->
+<div id="test-get-elements-by-class-name" class="testcontainer">
+  <p class="aaa bbb">AAA BBB</p>
+  <div class="aaa">AAA</div>
+  <p class="bbb ccc">BBB CCC</p>
+</div>
+<script type="text/javascript">
+  jsunitRegister('testGetElementsByClassName',
+                 function testGetElementsByTagName() {
+    function assertNodeListTextContent(classes, textContent) {
+      var nodeList = document.getElementsByClassName(classes);
+      var len = nodeList.length;
+      assertEquals(textContent.length, len);
+      for (var i = 0; i < len; ++i) {
+        assertEquals(textContent[i], canonInnerHtml(nodeList[i].innerHTML));
+      }
+    }
+
+    assertNodeListTextContent('aaa', ['AAA BBB', 'AAA']);
+    assertNodeListTextContent('ccc bbb', ['BBB CCC']);
+    assertNodeListTextContent('bbb ccc', ['BBB CCC']);
+    assertNodeListTextContent(' bbb \tccc ', ['BBB CCC']);
+    assertNodeListTextContent('aaa,bbb', []);
+
+    pass('test-get-elements-by-class-name');
+  });
+</script>
+
+<p id="test-class-set-by-emitter" class="testcontainer"></p>
+<script type="text/javascript">
+  jsunitRegister('testClassSetByEmitter',
+                 function testClassSetByEmitter() {
+    // Make sure that the HTML emitter correctly sets the class.
+    // A testcontainer node should be yellow until it has been marked as having
+    // passed.
+    var cont = document.getElementById('test-class-set-by-emitter');
+    var computedColor = directAccess.getComputedStyle(cont, 'background-color');
+
+    cont.innerHTML = '(background-color=' + computedColor + ')';
+
+    assertColor({ name: 'yellow', rgb: 0xffff00 }, computedColor);
+    pass('test-class-set-by-emitter');
+  });
+</script>
+
+<div id="test-dynamic-styles" class="testcontainer">
+  <span id="test-dynamic-styles1">I should be bold</span><br>
+  <span id="test-dynamic-styles2" style="font-weight: bold"
+   >I should not be bold</span><br>
+  <span id="test-dynamic-styles3"
+   >There&apos;s no such thing as super-bold</span><br>
+</div>
+<script type="text/javascript">
+  jsunitRegister('testDynamicStyles',
+                 function testDynamicStyles() {
+    function $(id) { return document.getElementById(id); }
+    $('test-dynamic-styles1').style.fontWeight = 'bold';
+    $('test-dynamic-styles2').style.fontWeight = '';  // Can unset a style.
+    expectFailure(
+        function () {
+          $('test-dynamic-styles3').style.fontWeight = 'super-bold';
+        },
+        'set to super-bold');
+    pass('test-dynamic-styles');
+  });
+</script>
+
+<p id="test-special-style-names" class="testcontainer">
+  (<span>(fluffy (little) cloud)</span>)
+</p>
+<script type="text/javascript">
+  jsunitRegister('testSpecialStyleNames',
+                 function testSpecialStyleNames() {
+    function getFloatySpanFloat() {
+      return directAccess.getComputedStyle(floatySpan, 'float')
+          || directAccess.getComputedStyle(floatySpan, 'cssFloat')
+          || directAccess.getComputedStyle(floatySpan, 'styleFloat');
+    }
+
+    // Some style names conflict with reserved keywords in many languages,
+    // e.g. float.
+    var floatySpan = document.getElementById('test-special-style-names')
+        .getElementsByTagName('SPAN')[0];
+    assertEquals('none', getFloatySpanFloat());
+    assertEquals('left', (floatySpan.style.cssFloat = 'left'));
+    assertEquals('left', floatySpan.style.cssFloat);
+    assertEquals('left', getFloatySpanFloat());
+    assertEquals('left', floatySpan.style.getPropertyValue('float'));
+    try {
+      floatySpan.style.styleFloat = 'right';
+      console.log('styleFloat supported');
+    } catch (styleFloatWorksOnIE) {
+      floatySpan.style.cssFloat = 'right';
+    }
+    assertEquals('right', getFloatySpanFloat());
+    assertEquals('right', floatySpan.style.cssFloat);
+    assertEquals('right', floatySpan.style.getPropertyValue('float'));
+
+    pass('test-special-style-names');
+  });
+</script>
+
+<p id="test-read-only" class="testcontainer">
+  <span id="indelible">I am indelible</span>
+</p>
+<script type="text/javascript">
+  jsunitRegister('testReadOnly',
+                 function testReadOnly() {
+    function $(id) { return documentRO.getElementById(id); }
+    assertEquals("I am indelible", $('indelible').innerHTML);
+        // test we can access it and aren't just failing unconditionally
+    expectFailure(
+        function () {
+          documentRO.createElement('SPAN');
+        },
+        'successfully created element');
+    expectFailure(
+        function () {
+          var el = document.createElement('SPAN');
+          el.id = 'test-read-only-1';
+          $('test-read-only').appendChild(el);
+          assertEquals(null, $('test-read-only-1'));
+        },
+        'successfully appended element');
+    expectFailure(
+        function () {
+          assertTrue($('indelible') !== null);
+          $('test-read-only').removeChild($('indelible'));
+          assertEquals(null, $('test-read-only-1'));
+        },
+        'successfully removed element');
+    expectFailure(
+        function () {
+          var el = document.createElement('SPAN');
+          el.id = 'test-read-only-2';
+          $('test-read-only').replaceChild($('indelible'), el);
+          assertEquals(null, $('test-read-only-2'));
+          assertTrue($('indelible') !== null);
+        },
+        'successfully replaced element');
+    pass('test-read-only');
+  });
+</script>
+
+<p id="test-remove-child" class="testcontainer"
+  >hello<span id="test-remove-child-1">world</span></p>
+<script type="text/javascript">
+  jsunitRegister('testRemoveChild',
+                 function testRemoveChild() {
+    var parent = document.getElementById('test-remove-child');
+    var child = document.getElementById('test-remove-child-1');
+    var result = parent.removeChild(child);
+    assertEquals(child, result);
+    assertEquals('hello', canonInnerHtml(parent.innerHTML));
+    pass('test-remove-child');
+  });
+</script>
+
+<p id="test-replace-child" class="testcontainer"
+  ><span id="test-replace-child-1">alpha</span
+  >bravo<span id="test-replace-child-2">charlie</span></p>
+<script type="text/javascript">
+  jsunitRegister('testReplaceChild',
+                 function testReplaceChild() {
+    var parent = document.getElementById('test-replace-child');
+    var newChild = document.getElementById('test-replace-child-1');
+    var oldChild = document.getElementById('test-replace-child-2');
+    var result = parent.replaceChild(newChild, oldChild);
+    assertEquals(oldChild, result);
+    assertEquals(
+        'bravo<span id="test-replace-child-1">alpha</span>',
+        canonInnerHtml(parent.innerHTML));
+    pass('test-replace-child');
+  });
+</script>
+
+<p id="test-insert-before" class="testcontainer">zero</p>
+<script type="text/javascript">
+  jsunitRegister('testInsertBefore',
+                 function testInsertBefore() {
+    var el = document.getElementById('test-insert-before');
+    function assertChildren(var_args) {
+      var children = [];
+      for (var child = el.firstChild; child; child = child.nextSibling) {
+        children.push(child.nodeValue);
+      }
+      assertEquals([].join.call(arguments, ','), children.join(','));
+    }
+    var one = document.createTextNode('one');
+    var two = document.createTextNode('two');
+    var three = document.createTextNode('three');
+    var four = document.createTextNode('four');
+    var result = el.insertBefore(three, null);
+    assertEquals(three, result);
+    assertChildren('zero', 'three');
+    el.insertBefore(one, three);
+    assertChildren('zero', 'one', 'three');
+    el.insertBefore(two, null);
+    assertChildren('zero', 'one', 'three', 'two');
+    el.insertBefore(four, two);
+    assertChildren('zero', 'one', 'three', 'four', 'two');
+    el.insertBefore(two, one);
+    assertChildren('zero', 'two', 'one', 'three', 'four');
+    el.insertBefore(one, two);
+    assertChildren('zero', 'one', 'two', 'three', 'four');
+    el.insertBefore(four, void 0);
+    assertChildren('zero', 'one', 'two', 'three', 'four');
+    pass('test-insert-before');
+  });
+</script>
+
+<ul id="test-node-lists" class="testcontainer"
+ ><li>One<li><b>Two</b><li>Three</ul>
+<script type="text/javascript">
+  jsunitRegister('testNodeLists',
+                 function testNodeLists() {
+    function $(id) { return document.getElementById(id); }
+    var descendants = $('test-node-lists').getElementsByTagName('*');
+    assertEquals(4, descendants.length);
+
+    assertEquals('LI', descendants[0].tagName);
+    assertEquals('LI', descendants[1].tagName);
+    assertEquals('B', descendants[2].tagName);
+    assertEquals('LI', descendants[3].tagName);
+
+    assertEquals('LI', descendants.item(0).tagName);
+    assertEquals('LI', descendants.item(1).tagName);
+    assertEquals('B', descendants.item(2).tagName);
+    assertEquals('LI', descendants.item(3).tagName);
+
+    var item = descendants.item;
+    // Check does not access properties of global.
+    assertEquals('LI', item(0).tagName);
+
+    // TODO(mikesamuel): test that getElementsByTagName and
+    // getElementsByClassName do not return the body.
+
+    pass('test-node-lists');
+  });
+</script>
+
+<div id="test-name-attr" class="testcontainer"></div>
+<script type="text/javascript">
+  jsunitRegister('testNameAttr',
+                 function testNameAttr() {
+    var testDiv = document.getElementById('test-name-attr');
+    testDiv.innerHTML = '<span name="test-span">text</span>';
+    var nameAttr = directAccess.getAttribute(testDiv.firstChild, 'name');
+    assertFalse('test-span' === nameAttr); // Should have been renamed
+    pass('test-name-attr');
+  });
+</script>
+
+<div id="test-target-attr" class="testcontainer"></div>
+<script type="text/javascript">
+  jsunitRegister('testTargetAttr',
+                 function testTargetAttr() {
+    var testDiv = document.getElementById('test-target-attr');
+    testDiv.innerHTML = '<a target="foo">text1</a><a>text2</a>';
+    var node = testDiv.firstChild;
+    assertEquals('_blank', directAccess.getAttribute(node, 'target'));
+    node = node.nextSibling;
+    assertEquals('_blank', directAccess.getAttribute(node, 'target'));
+    pass('test-target-attr');
+  });
+</script>
+
+<p id="test-child-nodes" class="testcontainer"></p>
+<script type="text/javascript">
+  jsunitRegister('testChildNodes',
+                 function testChildNodes() {
+    var container = document.getElementById('test-child-nodes');
+    container.innerHTML = '<b>foo</b> <i>bar</i> <u>baz</u>';
+    var childNodes = container.childNodes;
+    assertEquals(5, childNodes.length);
+    assertEquals('B', childNodes[0].nodeName);
+    assertEquals('#text', childNodes[1].nodeName);
+    assertEquals('I', childNodes[2].nodeName);
+    assertEquals('#text', childNodes[3].nodeName);
+    assertEquals('U', childNodes[4].nodeName);
+    pass('test-child-nodes');
+  });
+</script>
+
+<!-- TODO(ihab.awad): The following test should really be invoked by
+     a custom test driver so that we can be sure that the default style
+     for <a> elements is to be blue!!
+-->
+<div id="test-emit-css" class="testcontainer">
+  <a id="not-blue" href="#">I am not blue</a>
+</div>
+<script type="text/javascript">
+  jsunitRegister('testEmitCss',
+                 function testCss() {
+    directAccess.emitCssHook(['.', ' a#not-blue-', ' { color: #00ff00 }']);
+    var computedColor = directAccess.getComputedStyle(
+        document.getElementById('not-blue'), 'color');
+    assertColor({ rgb: 0x00ff00, name: 'green' }, computedColor);
+    pass('test-emit-css');
+  });
+</script>
+
+<div id="test-bug-731" class="testcontainer"
+ >The input should be a radio button:
+<form><input id="bug-731" type="radio" /></form></div>
+<script type="text/javascript">
+  jsunitRegister('testBug731',
+                 function testBug731() {
+    // Tests that attributes set before node added to DOM so that side-effects
+    // such as network requests happen all at once.  This is especially
+    // important on IE.
+
+    var bug_731_input = document.getElementById('bug-731');
+    assertEquals('radio', bug_731_input.type);
+    pass('test-bug-731');
+  });
+</script>
+
+<p id="test-bug-920" class="testcontainer"><input id="bug-920" /></p>
+<script type="text/javascript">
+  jsunitRegister('testBug920',
+                 function testBug920() {
+    var bug_920_input = document.getElementById('bug-920');
+    assertEquals('text', bug_920_input.type);
+    pass('test-bug-920');
+  });
+</script>
+
+<form id="test-input-default-values" class="testcontainer">
+  <input type="text" value="one">
+  <input id="x" type="text" value="two">
+  <input checked type="checkbox">
+  <input type="checkbox">
+</form>
+<script type="text/javascript">
+  jsunitRegister('testInputDefaultValues',
+                 function testInputDefaultValues() {
+    var form = document.getElementById('test-input-default-values');
+    var text1 = form.elements[0];
+    var text2 = form.elements[1];
+    var check1 = form.elements[2];
+    var check2 = form.elements[3];
+
+    assertEquals('one', text1.value);
+    assertEquals('two', text2.value);
+    assertTrue(check1.checked);
+    assertFalse(check2.checked);
+
+    text1.value = 'First';
+    text2.value = 'Second';
+    check1.checked = false;
+    check2.checked = true;
+
+    assertEquals('First', text1.value);
+    assertEquals('Second', text2.value);
+    assertFalse(check1.checked);
+    assertTrue(check2.checked);
+
+    form.reset();
+
+    assertEquals('one', text1.value);
+    assertEquals('two', text2.value);
+    assertTrue(check1.checked);
+    assertFalse(check2.checked);
+
+    pass('test-input-default-values');
+  });
+</script>
+
+<p id="test-event-handler-attributes" class="testcontainer">
+  <input onclick="autoclicky.click(0)" id="autoclicker" type="checkbox">
+  <input id="set-onclick-on-me" type="checkbox">
+</p>
+<script type="text/javascript">
+  var autoclicky = {
+    clicked: [false, false],
+    click: jsunitCallback(
+        function autoclickyClick(i) {
+          console.log('clicking');
+          autoclicky.clicked[i] = true;
+        },
+        "testEventHandlerAttributes")
+  };
+  jsunitRegister('testEventHandlerAttributes',
+                 function testEventHandlerAttributes() {
+    assertFalse('initially unclicked', autoclicky.clicked[0]);
+    directAccess.click(document.getElementById('autoclicker'));
+    assertTrue('zero clicked', autoclicky.clicked[0]);
+    var setOnclickOnMe = document.getElementById('set-onclick-on-me');
+    assertFalse('one not clicked', autoclicky.clicked[1]);
+    directAccess.click(setOnclickOnMe);
+    assertFalse('one still not clicked', autoclicky.clicked[1]);
+    setOnclickOnMe.onclick = jsunitCallback(
+        function autoclickyClick() {
+          autoclicky.click(1);
+        });
+    directAccess.click(setOnclickOnMe);
+    assertTrue('one clicked', autoclicky.clicked[1]);
+
+    pass('test-event-handler-attributes');
+  });
+</script>
+
+<p id="test-event-listeners-on-document" class="testcontainer">
+  <input type="checkbox">
+</p>
+<script type="text/javascript">
+  jsunitRegister('testEventListenersOnDocument',
+                 function testEventListenersOnDocument() {
+    var clickCounter = 0;
+    var clickHandler = jsunitCallback(
+        function clickHandlerCb() {
+          ++clickCounter;
+        });
+
+    var inp = document.getElementById('test-event-listeners-on-document')
+        .getElementsByTagName('INPUT')[0];
+
+    assertEquals('initially unclicked', 0, clickCounter);
+    directAccess.click(inp);
+    assertEquals('clicked before handler added', 0, clickCounter);
+    document.addEventListener('click', clickHandler);
+    directAccess.click(inp);
+    assertEquals('clicked after handler added', 1, clickCounter);
+    document.removeEventListener('click', clickHandler);
+    assertEquals('clicked after handler removed', 1, clickCounter);
+
+    pass('test-event-listeners-on-document');
+  });
+</script>
+
+<p id="test-inner-HTML-style-sanitizer" class="testcontainer"></p>
+<script type="text/javascript">
+  jsunitRegister('testInnerHTMLStyleSanitizer',
+                 function testInnerHTMLStyleSanitizer() {
+    function colorOf(id) {
+      return directAccess.getComputedStyle(
+          document.getElementById(id), 'color');
+    }
+    function backgroundOf(id) {
+      return directAccess.getComputedStyle(
+          document.getElementById(id), 'background-color');
+    }
+
+    var cont = document.getElementById('test-inner-HTML-style-sanitizer');
+
+    cont.innerHTML = '<span style="color: #00f" id="style-html">Blue</span>';
+    assertColor({ name: 'blue', rgb: 0x0000ff }, colorOf('style-html'));
+
+    cont.innerHTML = (
+        '<span style="color: red; background-color: purple"'
+        + ' id="style-html">Red on purple</span>');
+    assertColor({ name: 'red', rgb: 0xff0000 }, colorOf('style-html'));
+    assertColor({ name: 'purple', rgb: 0x800080 }, backgroundOf('style-html'));
+
+    pass('test-inner-HTML-style-sanitizer');
+  });
+</script>
+
+<p id="test-offset-parent" class="testcontainer" style="position:relative">
+<span id="test-offset-parent-inner">inner</span>
+</p>
+<script type="text/javascript">
+  jsunitRegister('testOffsetParent',
+                 function testOffsetParent() {
+    var outer = document.getElementById('test-offset-parent');
+    var inner = document.getElementById('test-offset-parent-inner');
+    assertEquals("wrong inner.offsetParent: " + inner.offsetParent,
+                 outer, inner.offsetParent);
+    assertEquals("wrong outer.offsetParent: " + outer.offsetParent,
+                 document.body, outer.offsetParent);
+    assertEquals("wrong body.offsetParent: " + document.body.offsetParent,
+                 undefined, document.body.offsetParent);
+    pass('test-offset-parent');
+  });
+</script>
+
+<script type="text/javascript">
+  function assertWithin(msg, golden, actual, tolerance) {
+    if (!(Math.abs(golden - actual) <= tolerance)) {
+      assertEquals(msg, golden, actual);
+    }
+  }
+</script>
+
+<div id="test-whitespace-nodes-1" class="testcontainer">
+  <div style="width: 150px; border: 1px solid blue; margin: 0; padding: 2px"
+   id="whitespace-outer">
+    <p class="redp" style="margin: 10px; border: 1px dotted red; padding: 2px"
+     >hi</p>
+    <p class="redp" style="margin: 10px; border: 1px dotted red; padding: 2px"
+     >hi</p>
+  </div>
+  <p id="text-only" style="margin: 0; border-width: 0; padding: 0">hi</p>
+</div>
+<script type="text/javascript">
+  jsunitRegister('testWhitespaceNodes1',
+                 function testWhitespaceNodes1() {
+    var outerDiv = document.getElementById('whitespace-outer');
+    var textOnlyP = document.getElementById('text-only');
+    assertWithin('outer DIV width', 156, outerDiv.offsetWidth, 2);
+    //
+    // +---------+ outer top border
+    // |         | outer top padding
+    // |         | inner1 top margin
+    // | +-----+ | inner1 top border
+    // | |     | | inner1 top padding
+    // | | hi  | | textOnly height
+    // | |     | | inner1 bottom padding
+    // | +-----+ | inner1 bottom border
+    // |         | ceiling(inner1 bottom margin, inner2 top margin)
+    // | +-----+ | inner2 top border
+    // | |     | | inner2 top padding
+    // | | hi  | | textOnly height
+    // | |     | | inner2 bottom padding
+    // | +-----+ | inner2 bottom border
+    // |         | inner2 bottom margin
+    // |         | outer bottom padding
+    // +---------+ outer bottom border
+
+    assertWithin('outer DIV height',
+                 2 * textOnlyP.offsetHeight
+                 + 2 * 4  // inner padding
+                 + 30     // inner margin, top/middle/bottom
+                 + 2 * 2  // inner borders
+                 + 4      // outer padding
+                 + 2,     // outer border -- may be skipped
+                 3,       // slop for outer border & rounding
+                 outerDiv.offsetHeight);
+    pass('test-whitespace-nodes-1');
+  });
+</script>
+
+<div id="test-whitespace-nodes-2" class="testcontainer" style="padding: 0px">
+  <div id="twn2-0">
+   <p style="margin: 0; border-width: 0; padding: 0">hi</p>
+  </div>
+  <p style="margin: 0; border-width: 0; padding: 0" id="twn2-1">hi</p>
+</div>
+<script type="text/javascript">
+  jsunitRegister('testWhitespaceNodes2',
+                 function testWhitespaceNodes1() {
+    var cont = document.getElementById('test-whitespace-nodes-2');
+
+    var node1 = document.getElementById('twn2-0');
+    var node2 = document.getElementById('twn2-1');
+
+    // These two nodes should be immediately adjacent vertically.
+    assertWithin(
+        'stacked paragraphs', node2.offsetHeight * 2, cont.offsetHeight, 4);
+
+    pass('test-whitespace-nodes-2');
+  });
+</script>
+
+<form id="test-radio-buttons" class="testcontainer">
+  <input type="radio" value="0" id="test-radio-button-0" name="number" checked>
+  <input type="radio" value="1" id="test-radio-button-1" name="number">
+  <input type="radio" value="2" id="test-radio-button-2" name="number">
+</form>
+<script type="text/javascript">
+  jsunitRegister('testRadioButtons',
+                 function testRadioButtons() {
+    var form = document.getElementById('test-radio-buttons');
+    var radio0 = form.elements[0],
+        radio1 = form.elements[1],
+        radio2 = form.elements[2];
+
+    assertTrue('radio0 should be checked initially', radio0.checked);
+    assertFalse('radio1 should not be checked initially', radio1.checked);
+    assertFalse('radio2 should not be checked initially', radio2.checked);
+
+    radio1.checked = true;
+
+    assertFalse('radio0 should not be checked after 1 checked', radio0.checked);
+    assertTrue('radio1 should be checked after 1 checked', radio1.checked);
+    assertFalse('radio2 should not be checked after 1 checked', radio2.checked);
+
+    radio2.checked = true;
+
+    assertFalse('radio0 should not be checked after 2 checked', radio0.checked);
+    assertFalse('radio1 should not be checked after 2 checked', radio1.checked);
+    assertTrue('radio2 should be checked after 2 checked', radio2.checked);
+
+    form.reset();
+
+    assertTrue('radio0 should be checked after reset', radio0.checked);
+    assertFalse('radio1 should not be checked after reset', radio1.checked);
+    assertFalse('radio2 should not be checked after reset', radio2.checked);
+
+    pass('test-radio-buttons');
+  });
+</script>
+
+<p id="test-props-on-nodes" class="testcontainer">Original Text</p>
+<script type="text/javascript">
+  jsunitRegister('testPropsOnNodes',
+                 function testPropsOnNodes() {
+    var div = document.getElementById("test-props-on-nodes");
+    var str = "";
+    var i;
+
+    div.newProp = 1;
+    Object.getOwnPropertyNames(div).forEach(function (i){
+      str += i + ": " + div[i] + "<br>";
+    });
+    assertTrue("newProp should be among the enumerated properties",
+               (new RegExp('\\bnewProp: 1\\b')).test(str));
+    div.innerHTML = str;
+    assertNotEquals("innerHTML should not be treated as an attribute",
+                    str, div.getAttribute("innerHTML"));
+    pass('test-props-on-nodes');
+  });
+</script>
+
+
+<div id="test-set-style" class="testcontainer"
+     style="cursor:move">test-set-style</div>
+<script type="text/javascript">
+  jsunitRegister('testSetStyle', function testSetStyle() {
+    function cursor(el) {
+      return directAccess.getComputedStyle(el, 'cursor');
+    }
+
+    var el = document.getElementById('test-set-style');
+    assertEquals('move', cursor(el));
+
+    el.style = 'cursor:wait';
+    assertEquals('wait', cursor(el));
+
+    var value = el.getAttribute('style');
+    assertTrue(new RegExp('wait').test(value));
+
+    el.setAttribute('style', 'cursor:help');
+    assertEquals('help', cursor(el));
+
+    el.style.cssText = 'cursor:wait';
+    assertEquals('wait', cursor(el));
+
+    el.style.cssText = '';
+    var defaultCursor = cursor(el);
+
+    el.style.cssText = 'cssText: "cursor:help"';
+    assertEquals(defaultCursor, cursor(el));
+    assertFalse(defaultCursor, defaultCursor == 'help');
+
+    // setStyle can be overridden by libraries like jQuery.
+    assertEquals(void 0, el.setStyle);
+    el.setStyle = 42;
+    assertEquals(42, el.setStyle);
+
+    pass('test-set-style');
+  });
+</script>
+
+<div>Before
+<p id="test-class-names" class="testcontainer">I am inline.</p>
+After
+</div>
+<script type="text/javascript">
+  jsunitRegister('testClassNames', function testClassNames() {
+
+    function assertClassIs(className, el, note) {
+      note = note || className;
+      assertEquals(note + ' className', className, el.className);
+      assertEquals(note + ' getAttribute', className, el.getAttribute('class'));
+      assertTrue(note + ' hasAttribute', el.hasAttribute('class'));
+    }
+
+    var el = document.getElementById('test-class-names');
+    assertEquals('before class added',
+                 'block', window.getComputedStyle(el, null).display);
+
+    el.className += ' inline';
+
+    assertEquals('after class added',
+        'inline', window.getComputedStyle(el, null).display);
+    assertClassIs('testcontainer inline', el);
+
+    el.className = '$-.:;()[]=';
+    assertClassIs('$-.:;()[]=', el);
+
+    el.className = '!@{} ok__1';
+    assertClassIs('!@{} ok__1', el);
+
+    el.setAttribute('class', 'foo');
+    assertClassIs('foo', el);
+
+    el.className = 'simple';
+    assertClassIs('simple', el);
+
+    el.className = 'ok bad__';
+    assertClassIs('simple', el, 'set class "ok bad__"');
+
+    el.className = 'ok bad__ ';
+    assertClassIs('simple', el, 'set class "ok bad__ "');
+
+    el.className = 'bad__ ok';
+    assertClassIs('simple', el, 'set class "bad__ ok"');
+
+    el.setAttribute('class', 'bad__ ok2');
+    assertClassIs('simple', el, 'set class "bad__ ok2"');
+
+    el.className = '';
+    assertClassIs('', el, 'set className ""');
+
+    el.className = 'x';
+    assertClassIs('x', el);
+
+    el.setAttribute('class', '');
+    assertClassIs('', el, 'setAttribute class ""');
+
+    pass('test-class-names');
+  });
+</script>
+
+<div id="test-illegal-suffixes" class="testcontainer"></div>
+<script type="text/javascript">
+  jsunitRegister('testIllegalSuffixes', function testIllegalSuffixes() {
+    var el = document.getElementById('test-illegal-suffixes');
+
+    el.innerHTML = '<input id="bad1__" name="bad2__">';
+    assertFalse('id="bad1__"', !!el.firstChild.getAttribute('id'));
+    assertFalse('name="bad2__"', !!el.firstChild.getAttribute('name'));
+
+    el.innerHTML = '<input id="bad1__ " name="bad2__ ">';
+    assertFalse('id="bad1__ "', !!el.firstChild.getAttribute('id'));
+    assertFalse('name="bad2__ "', !!el.firstChild.getAttribute('name'));
+
+    el.innerHTML = '<input id="b__ c" name="d__ e">';
+    assertFalse('id="b__ c"', !!el.firstChild.getAttribute('id'));
+    assertFalse('name="d__ e"', !!el.firstChild.getAttribute('name'));
+
+    pass('test-illegal-suffixes');
+  });
+</script>
+
+<div id="test-id-refs-rewriting" class="testcontainer"></div>
+<script type="text/javascript">
+  jsunitRegister('testIdRefsRewriting', function testIdRefsRewriting() {
+    var el = document.getElementById('test-id-refs-rewriting');
+    el.innerHTML =
+        '<table><tr><td id="tirr1" headers="aa bb"></td></tr></table>';
+    var tirr1 = document.getElementById('tirr1');
+    var real = directAccess.getAttribute(tirr1, 'headers');
+    assertEquals(
+        'real ids',
+        'aa-' + directAccess.getIdSuffix()
+        + ' bb-' + directAccess.getIdSuffix(),
+        real);
+    assertEquals('rewritten ids', 'aa bb', tirr1.getAttribute('headers'));
+    var html = el.innerHTML;
+    assertTrue('innerHTML', new RegExp('"aa bb"').test(html));
+    pass('test-id-refs-rewriting');
+  });
+</script>
+
+<div id="test-strange-ids" class="testcontainer"></div>
+<script type="text/javascript">
+  jsunitRegister('testStrangeIds', function testStrangeIds() {
+    function $(id) { return document.getElementById(id); }
+    var el = $('test-strange-ids');
+    el.innerHTML = (
+        "<input id='test-strange-ids-1' name='tag[]'>\n"
+        + "<input id='test-strange-ids-2' name='form$location'>\n"
+        + "<span id='23skiddoo'></span>\n"
+        + "<span id='8675309'></span>\n"
+        + "<span id='$-.:;()[]='></span>\n");
+    assertEquals('tag[]', $('test-strange-ids-1').name);
+    assertEquals('form$location', $('test-strange-ids-2').name);
+    assertEquals('23skiddoo', $('23skiddoo').id);
+    assertEquals('8675309', $('8675309').id);
+    assertEquals('$-.:;()[]=', $('$-.:;()[]=').id);
+    pass('test-strange-ids');
+  });
+</script>
+
+<div id="test-clone-node-structure" class="testcontainer">
+  <p class="cloneable">some <label for="x">content</label></p>
+</div>
+<script type="text/javascript">
+  jsunitRegister('testCloneNodeStructure', function testCloneNodeStructure() {
+    var p = document.getElementById('test-clone-node-structure')
+        .getElementsByTagName('P')[0];
+    assertDomTree(
+        {
+          nodeType: 1,
+          tagName: 'P',
+          attributes: [
+            { nodeName: 'class', nodeValue: 'cloneable' }
+          ],
+          children: [
+            // shallow clones contain attrs but not children.
+          ]
+        },
+        p.cloneNode(false));
+    assertDomTree(
+        {
+          nodeType: 1,
+          tagName: 'P',
+          attributes: [
+            { nodeName: 'class', nodeValue: 'cloneable' }
+          ],
+          children: [
+            {
+              nodeType: 3,
+              nodeValue: 'some '
+            },
+            {
+              nodeType: 1,
+              nodeName: 'LABEL',
+              attributes: [
+                { nodeName: 'for', nodeValue: 'x' }
+              ],
+              children: [
+                {
+                  nodeType: 3,
+                  nodeValue: 'content'
+                }
+              ]
+            }
+          ]
+        },
+        p.cloneNode(true));
+    pass('test-clone-node-structure');
+  });
+</script>
+
+<div id="test-clone-node-listeners" class="testcontainer">
+  <input id="test-clone-node-clickable" type="checkbox">
+</div>
+<script type="text/javascript">
+  jsunitRegister('testCloneNodeListeners', function testCloneNodeListeners() {
+    var clicked = false;
+    function clickListener(event) {
+      clicked = true;
+    }
+
+    var original = document.getElementById('test-clone-node-clickable');
+
+    // Add an event to the input so we can test that event listeners are copied
+    // and that clone.removeEventListener modifies only clone.
+    original.addEventListener('click', clickListener);
+    directAccess.click(original);
+    assertTrue('initially clickable', clicked);
+    clicked = false;
+
+    var clone = original.cloneNode();
+    original.parentNode.insertBefore(clone, original.nextSibling);
+    // Check that listeners are not copied over.
+    directAccess.click(clone);
+    assertFalse('clone clickable', clicked);
+    clicked = false;
+
+    // Check that the original is still clickable.
+    directAccess.click(original);
+    assertTrue('original still clickable', clicked);
+    clicked = false;
+
+    pass('test-clone-node-listeners');
+  });
+</script>
+
+<div id="test-clone-node-defaults" class="testcontainer">
+  <form>
+    I should reset to the proper state.
+    <input value="default" name="text">
+    <input type="checkbox" checked name="checkbox_checked" value="on">
+    <input type="checkbox" name="checkbox_unchecked" value="on">
+    <input type="radio" name="radio" value="A">
+    <input type="radio" name="radio" checked value="B">
+    <select name="selectlist">
+      <option selected value="1">1</option>
+      <option value="2">2</option>
+    </select>
+  </form>
+</div>
+<script type="text/javascript">
+  jsunitRegister('testCloneNodeDefaults', function testCloneNodeDefaults() {
+    function queryStringForForm(form, useDefaults) {
+      var parts = [];
+      var els = form.elements;
+      for (var j = 0, n = els.length; j < n; ++j) {
+        var el = els[j];
+        if (!el.name) { continue; }
+        var values = null;
+        switch (el.tagName) {
+          case 'INPUT':
+            switch (el.type.toUpperCase()) {
+              case 'CHECKBOX':
+              case 'RADIO':
+                values = (useDefaults ? el.defaultChecked : el.checked)
+                    ? [el.value] : null;
+                break;
+              default:
+                values = [useDefaults ? el.defaultValue : el.value];
+                break;
+            }
+            break;
+          case 'TEXTAREA':
+            values = [useDefaults ? el.defaultValue : el.value];
+            break;
+          case 'SELECT':
+            values = [];
+            for (var i = 0, opt; (opt = el.options[i]); ++i) {
+              if (useDefaults ? opt.defaultSelected : opt.selected) {
+                values.push(opt.value);
+              }
+            }
+            break;
+        }
+        if (values !== null) {
+          for (var i = 0; i < values.length; ++i) {
+            parts.push(encodeURIComponent(el.name) + '='
+                       + encodeURIComponent(values[i]));
+          }
+        }
+      }
+      return parts.join('&');
+    }
+
+    var form = document.getElementById('test-clone-node-defaults')
+        .getElementsByTagName('FORM')[0];
+    assertEquals(
+        'initial form state',
+        'text=default&checkbox_checked=on&radio=B&selectlist=1',
+        queryStringForForm(form));
+
+    // Change the values on the original
+    form.elements.text.value = 'changed';
+    form.elements.checkbox_checked.checked = false;
+    form.elements.checkbox_unchecked.checked = true;
+    form.elements[3].checked = true;
+    form.elements.selectlist.options[1].selected = true;
+    assertEquals(
+        'changed form state',
+        'text=changed&checkbox_unchecked=on&radio=A&selectlist=2',
+        queryStringForForm(form));
+
+    // Check the values in the clone
+    var clone = form.cloneNode(true);
+    // Add the clone to the DOM, or reset() below will have no effect on it
+    // on Firefox.  Heisenbug.
+    form.parentNode.insertBefore(clone, form);
+    // HACK(mikesamuel): IE6&7 fail to update the checked state for radio
+    // buttons, and IE 6 fails to updated the checked state for checkboxes
+    // until the form containing it is part of the DOM.
+    if (!','.split(new RegExp(',')).length) {
+      clone.elements[3].checked = true;
+      clone.elements.checkbox_unchecked.checked = true;
+      clone.elements.checkbox_checked.checked = false;
+    }
+    assertEquals(
+        'clone state',
+        'text=changed&checkbox_unchecked=on&radio=A&selectlist=2',
+        queryStringForForm(clone));
+    assertEquals(
+        'clone defaults',
+        'text=default&checkbox_checked=on&radio=B&selectlist=1',
+        queryStringForForm(clone, true));
+
+    // Reset both and check the values on each
+    clone.reset();
+    assertEquals(
+        'form state post clone reset',
+        'text=changed&checkbox_unchecked=on&radio=A&selectlist=2',
+        queryStringForForm(form));
+    assertEquals(
+        'clone state post reset',
+        'text=default&checkbox_checked=on&radio=B&selectlist=1',
+        queryStringForForm(clone));
+    form.reset();
+    assertEquals(
+        'clone state post form reset',
+        'text=default&checkbox_checked=on&radio=B&selectlist=1',
+        queryStringForForm(clone));
+    assertEquals(
+        'form state post reset',
+        'text=default&checkbox_checked=on&radio=B&selectlist=1',
+        queryStringForForm(form));
+
+    pass('test-clone-node-defaults');
+  });
+</script>
+
+<p id="test-clone-node-custom-attrs" class="testcontainer">
+  I will have a custom attribute
+</p>
+<script type="text/javascript">
+  jsunitRegister('testCloneNodeCustomAttrs', function testCloneNodeCustomAttrs() {
+    var node = document.getElementById('test-clone-node-custom-attrs');
+    node.setAttribute('bogus', 'foo');
+
+    var clone = node.cloneNode(true);
+    assertEquals('clone value', 'foo', clone.getAttribute('bogus'));
+    assertTrue('clone has attr', clone.hasAttribute('bogus'));
+    assertTrue('original has attr', node.hasAttribute('bogus'));
+
+    clone.setAttribute('bogus', 'bar');
+    assertEquals('clone changed', 'bar', clone.getAttribute('bogus'));
+    assertEquals('original unchanged', 'foo', node.getAttribute('bogus'));
+
+    clone.removeAttribute('bogus');
+    assertEquals('clone deleted', null, clone.getAttribute('bogus'));
+    assertFalse('deleted things do not exist', clone.hasAttribute('bogus'));
+    assertEquals('original not deleted', 'foo', node.getAttribute('bogus'));
+    assertTrue('original attr exists', node.hasAttribute('bogus'));
+
+    node.setAttribute('bogus', 'boo');
+    assertEquals('clone still deleted', null, clone.getAttribute('bogus'));
+    assertFalse('deleted things still do not exist',
+                clone.hasAttribute('bogus'));
+    assertEquals('original changed', 'boo', node.getAttribute('bogus'));
+    assertTrue('original attr still exists', node.hasAttribute('bogus'));
+
+    pass('test-clone-node-custom-attrs');
+  });
+</script>
+
+<p id="test-compat-mode" class="testcontainer">Compat Mode:</p>
+<script type="text/javascript">
+  jsunitRegister('testCompatMode',
+                 function testCompatMode() {
+    assertEquals('CSS1Compat', document.compatMode);
+    pass('test-compat-mode');
+  });
+</script>
+
+<p id="test-domita-globals-accessible" class="testcontainer">
+  Test Domita globals accessible
+</p>
+<script type="text/javascript">
+  jsunitRegister('testDomitaGlobalsAccessible',
+                 function testDomitaGlobalsAccessible() {
+    assertTrue(!!HTMLElement);
+    assertTrue(!!Node);
+    assertTrue(!!Event);
+    assertTrue(!!Text);
+    assertTrue(!!window.HTMLElement);
+    assertTrue(!!window.Node);
+    assertTrue(!!window.Event);
+    assertTrue(!!window.Text);
+
+    assertEquals('function', typeof HTMLElement);
+    assertEquals('function', typeof Node);
+    assertEquals('function', typeof Event);
+    assertEquals('function', typeof Text);
+    assertEquals('function', typeof window.HTMLElement);
+    assertEquals('function', typeof window.Node);
+    assertEquals('function', typeof window.Event);
+    assertEquals('function', typeof window.Text);
+
+    pass('test-domita-globals-accessible');
+  });
+</script>
+
+<p id="test-factories-not-bypassable" class="testcontainer">
+  Test factories not bypassable
+</p>
+<script type="text/javascript">
+  jsunitRegister('testFactoriesNotBypassable',
+                 function testFactoriesNotBypassable() {
+    // It's not possible to create an element by (new HTMLElement) in any
+    // browser since factories choose the underlying implementation.
+    expectFailure(
+        function () { new window.HTMLElement({ nodeType: 1 }, false); },
+        'HTMLElement');
+    expectFailure(
+        function () { new window.Node({ nodeType: 0 }, false); },
+        'Node');
+    expectFailure(
+        function () { new window.Event({}); },
+        'Event');
+    expectFailure(
+        function () { new window.Text({ nodeType: 3 }, false); },
+        'Text');
+    pass('test-factories-not-bypassable');
+  });
+</script>
+
+<div id="test-size-properties" class="testcontainer"
+ style="
+    width: 100px;
+    height: 50px;
+    border: 2px solid black;
+    padding: 3px;
+    margin: 7px"
+ ></div>
+<script type="text/javascript">
+  jsunitRegister('testSizeProperties',
+                 function testSizeProperties() {
+    assertEquals('number', typeof window.pageXOffset);
+    assertEquals('number', typeof window.pageYOffset);
+    assertTrue('sign of pageXOffset', window.pageXOffset >= 0);
+    assertTrue('sign of pageYOffset', window.pageYOffset >= 0);
+
+    var el = document.getElementById('test-size-properties');
+    // includes 2*padding
+    assertEquals(106, el.clientWidth);
+    assertEquals(56, el.clientHeight);
+    // includes 2*padding + 2*border
+    assertEquals(110, el.offsetWidth);
+    assertEquals(60, el.offsetHeight);
+
+    pass('test-size-properties');
+  });
+</script>
+
+<p id="test-default-view" class="testcontainer">Test document.defaultView</p>
+<script type="text/javascript">
+  jsunitRegister('testDefaultView',
+                 function testDefaultView() {
+    assertNotEquals(window, document.defaultView);
+    pass('test-default-view');
+  });
+</script>
+
+<p id="test-document-element" class="testcontainer">Test Document Element</p>
+<script type="text/javascript">
+    jsunitRegister('testDocumentElement',
+                   function testDocumentElement() {
+      assertDomTree({
+          nodeType: 9,
+          nodeName: '#document',
+          attributes: [],
+          nodeValue: null,
+          children: [
+            {
+              nodeType: 1,
+              tagName: 'HTML',
+              nodeValue: null,
+              attributes: [],
+              children: [
+                {
+                  nodeType: 1,
+                  tagName: 'HEAD',
+                  nodeValue: null,
+                  attributes: [],
+                  innerHTML: '<title>&lt;Untrusted Content Title&gt;</title>',
+                  children: [
+                    {
+                      nodeType: 1,
+                      tagName: 'TITLE',
+                      nodeValue: null,
+                      attributes: [],
+                      innerHTML: '&lt;Untrusted Content Title&gt;',
+                      children: [ {
+                        nodeType: 3,
+                        nodeValue: '<Untrusted Content Title>'
+                      } ]
+                    }
+                  ]
+                },
+                {
+                  nodeType: 1,
+                  tagName: 'BODY',
+                  nodeValue: null,
+                  attributes: [],
+                  sameAs: document.body
+                }
+              ]
+            }
+          ]
+        }, document);
+
+      var html = document.documentElement.innerHTML;
+      assertTrue(!!html.match(
+        '<head><title>&lt;Untrusted Content Title&gt;</title></head><body>'));
+
+      pass('test-document-element');
+    });
+</script>
+
+<p id="test-window-object" class="testcontainer">Test Window Object</p>
+<script type="text/javascript">
+  var testWindowObjectVariable;
+
+  jsunitRegister('testWindowObject',
+                 function testWindowObject() {
+    // Check to see that globals are properties of window
+    testWindowObjectVariable = 3;
+    assertEquals(testWindowObjectVariable, window.testWindowObjectVariable);
+    assertEquals(testWindowObjectVariable, 3);
+    pass('test-window-object');
+  });
+</script>
+
+<p id="test-attribute-nodes" class="testcontainer">
+  <input id="test-attribute-nodes-onclick" type="checkbox" onclick="return 0;">
+  Test Attribute Nodes
+</p>
+<script type="text/javascript">
+  jsunitRegister('testAttributeNodes',
+                 function testAttributeNodes() {
+    var cb = document.getElementById('test-attribute-nodes-onclick');
+
+    var attrNode = cb.getAttributeNode('id');
+    assertEquals('test-attribute-nodes-onclick', attrNode.value);
+    assertEquals(true, attrNode.specified);
+    assertEquals(cb, attrNode.ownerElement);
+    assertEquals('id', attrNode.name);
+
+    assertNoAttr(cb.getAttributeNode('name'));
+
+    function assertNoAttr(attrNode) {
+      if (attrNode === null) { return; }
+      assertFalse('specified ' + attrNode.name, attrNode.specified);
+      assertEquals(
+          'non blank value for ' + attrNode.name, '', attrNode.value || '');
+    }
+
+    function checkScriptAttrNode(attrNode) {
+      if (attrNode == null || !attrNode.specified) {
+        return;  // Works if node not present.
+      }
+      // If it is present, it had better be rewritten.
+      var scriptAttrRE = new RegExp('\\bplugin_dispatchEvent___\\(');
+
+      function assertScript(value) {
+        value = '' + value;
+        assertTrue(scriptAttrRE.test(value));
+      }
+
+      assertScript(attrNode.value);
+      assertScript(attrNode.nodeValue);
+    }
+
+    var onclickAttrNode = cb.getAttributeNode('onclick');
+    checkScriptAttrNode(onclickAttrNode);
+
+    try {
+      cb.onclick = 'globalSideEffect();';
+    } catch (ex) {}
+    if (onclickAttrNode) {
+      try {
+        onclickAttrNode.value = 'globalSideEffect();';
+      } catch (ex) {}
+    }
+    checkScriptAttrNode(onclickAttrNode);
+
+    pass('test-attribute-nodes');
+  });
+</script>
+
+<p id="test-shorthand-css" class="testcontainer"
+ >Test shorthand css</p>
+<script type="text/javascript">
+  jsunitRegister('testShorthandCss',
+                 function testShorthandCss() {
+    var body = document.body;
+    var container = document.getElementById('test-shorthand-css');
+    var el = document.createElement('DIV');
+    el.id = 'foo';
+    el.innerHTML = 'style me shortly';
+    container.appendChild(el);
+    el.style.border = '5px dashed blue';
+    assertEquals('shorthand width set', el.style.borderTopWidth, '5px');
+    assertColor({ name: 'blue', rgb: 0x0000ff }, el.style.borderTopColor);
+    assertEquals('shorthand style set', el.style.borderTopStyle, 'dashed');
+
+    pass('test-shorthand-css');
+  });
+</script>
+
+<div id="test-table-elements" class="testcontainer" >
+  <table id='test-table-elements-table'>
+    <thead>
+      <tr>
+        <td>h00</td>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>b00</td>
+        <td>b01</td>
+      </tr>
+      <tr id="test-table-elements-tr-b1">
+       <td>b10</td>
+       <td>b11</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+<script type="text/javascript">
+  jsunitRegister('testTableElements',
+                 function testTableElements() {
+    var tr_b1 = document.getElementById('test-table-elements-tr-b1');
+    assertEquals(1, tr_b1.sectionRowIndex);
+    assertEquals(2, tr_b1.rowIndex);
+    var table = document.getElementById('test-table-elements-table');
+    assertEquals(0, table.cellPadding);
+    assertEquals(0, table.cellSpacing);
+    pass('test-table-elements');
+  });
+</script>
+
+<p id="test-focus-blur" class="testcontainer"
+ ><input id="test-focus-blur-1">
+</p>
+<script type="text/javascript">
+  jsunitRegister('testFocusBlur',
+                 function testFocusBlur() {
+    var input = document.getElementById('test-focus-blur-1');
+    input.focus();
+    input.blur();
+    // IE specific methods
+    if (input.hasFocus) {
+      assertEquals('boolean', typeof input.hasFocus());
+    }
+    if (input.setActive) {
+      input.setActive();
+    }
+    // TODO: can't verify focus changes in webdriver, because webdriver runs
+    // without focusing the browser window, so onfocus never gets fired.
+    pass('test-focus-blur');
+  });
+</script>
+
+<p id="test-for-attribute" class="testcontainer">for attribute</p>
+<script type="text/javascript">
+  // http://code.google.com/p/google-caja/issues/detail?id=1066
+  jsunitRegister('testForAttribute', function testForAttribute() {
+    var label = document.createElement('label');
+    assertFalse(label.hasAttribute('for'));
+    label.setAttribute('for', 'X');
+    assertEquals('X', label.getAttribute('for'));
+    assertEquals('X', label.htmlFor);
+    assertTrue(label.hasAttribute('for'));
+    label.htmlFor = 'Y';
+    assertEquals('Y', label.getAttribute('for'));
+    assertEquals('Y', label.htmlFor);
+    assertTrue(label.hasAttribute('for'));
+    pass('test-for-attribute');
+  });
+</script>
+
+<p id="test-button-mutation" class="testcontainer">
+<button id="test-button-mutation-1">test-button-mutation</button>
+</p>
+<script type="text/javascript">
+  jsunitRegister('testButtonMutation', function testButtonMutation() {
+    var el = document.getElementById('test-button-mutation-1');
+    // this never works on IE[67], but it shouldn't throw an error.
+    try {
+      el.setAttribute('type', 'reset');
+    } catch (e) {
+      fail('testButtonMutation got error: ' + e.message);
+    }
+    pass('test-button-mutation');
+  });
+</script>
+
+<div id="test-row-cell" class="testcontainer">
+Test row cell
+  <table id="test-row-cell-1">
+    <tbody id="test-row-cell-2"></tbody>
+  </table>
+</div>
+<script type="text/javascript">
+  jsunitRegister('testRowCell',
+                 function testRowCell() {
+    var table = document.getElementById('test-row-cell-1');
+    assertEquals(0, table.rows.length);
+    table.insertRow(-1);
+    assertEquals(table.rows.length, 1);
+    assertEquals(0, table.rows.item(0).cells.length);
+    table.rows.item(0).insertCell(-1);
+    var cell = table.rows.item(0).insertCell(-1);
+    assertEquals(1, cell.cellIndex);
+    assertEquals(2, table.rows.item(0).cells.length);
+    table.rows.item(0).deleteCell(1);
+    table.rows.item(0).deleteCell(0);
+    assertEquals(0, table.rows.item(0).cells.length);
+    var tableDeleteRow = false, tbodyDeleteRow = false;
+    try {
+      table.deleteRow(2);
+    } catch (e) {
+      assertTrue(new RegExp('Index size error').test(e.message));
+      tableDeleteRow = true;
+    }
+    try {
+      document.getElementById('test-row-cell-2').deleteRow(2);
+    } catch (e) {
+      assertTrue(new RegExp('Index size error').test(e.message));
+      tbodyDeleteRow = true;
+    }
+    if (tableDeleteRow === true && tbodyDeleteRow === true) {
+      pass('test-row-cell');
+    }
+  });
+</script>
+
+
+<div id="test-iframe-shim" class="testcontainer">Test Iframe Shim</div>
+<script type="text/javascript">
+  jsunitRegister('testIframeShim',
+                 function testIframeShim() {
+    var ifr = document.createElement('iframe');
+    ifr.height = 5;
+    ifr.width = 6;
+    ifr.frameBorder = 1;
+    ifr.name = 'test';
+    ifr.src = 'http://www.google.com';
+    ifr.setAttribute('application', 'yes');
+    document.getElementById('test-iframe-shim').appendChild(ifr);
+    assertEquals('5', ifr.getAttribute('height'));
+    assertEquals('6', ifr.getAttribute('width'));
+    assertEquals('1', ifr.getAttribute('frameBorder'));
+    assertEquals(null, ifr.getAttribute('name'));
+    assertEquals(null, ifr.getAttribute('src'));
+    assertEquals(void 0, ifr.name);
+    assertEquals(void 0, ifr.src);
+    pass('test-iframe-shim');
+  });
+</script>
+
+<!-- this sequence of interleaved html/text/script triggers bug 1060 -->
+<div id="test-emitter-ie" class="testcontainer">
+  <div id="test-emitter-ie-0">duck-0</div>duck-2
+  <script type="text/javascript">1</script>
+  <div id="test-emitter-ie-1">duck-1</div>duck-3
+  <script type="text/javascript">2</script>
+  duck-4
+</div>
+<script type="text/javascript">
+  jsunitRegister('testEmitterIe',
+                 function testEmitterIe() {
+    // did emitter finish removing marker spans?
+    var el = document.getElementById('test-emitter-ie');
+    var kids = el.getElementsByTagName('span');
+    assertEquals(0, kids.length);
+
+    // did emitter reattach everything?
+    var html = el.innerHTML;
+    for (var k = 0; k < 5; ++k) {
+      var duck = 'duck-' + k;
+      assertNotEquals(duck, -1, html.indexOf(duck));
+    }
+
+    pass('test-emitter-ie');
+  });
+</script>
+
+<div id="test-selected-index" class="testcontainer">Test selectedIndex
+  <select id="test-selected-index-1">
+    <option value="0">Zeroth</option>
+    <option value="1">First</option>
+    <option selected value="2">Second</option>
+  </select>
+</div>
+<script type="text/javascript">
+  jsunitRegister('testSelectedIndex',
+                 function testSelectedIndex() {
+    assertEquals(2, document.getElementById('test-selected-index-1').
+        options.selectedIndex);
+    pass('test-selected-index');
+  });
+</script>
+
+<div id="test-text-node" class="testcontainer">text</div>
+<script type="text/javascript">
+  // bug 1330, text nodes on IE
+  jsunitRegister('testTextNode',
+                 function testTextNode() {
+    var el = document.getElementById('test-text-node');
+    assertEquals('text', el.firstChild.nodeValue);
+    pass('test-text-node');
+  });
+</script>
+
+<p id="test-body-classes" class="testcontainer">
+  <span id="test-body-classes-yes">italic since body has class foo</span> /
+  <span id="test-body-classes-no">normal since body has no class bar</span><br>
+</p>
+<script type="text/javascript">
+  jsunitRegister('testBodyClasses',
+                 function testBodyClasses() {
+    function s(id) {
+      return window.getComputedStyle(document.getElementById(id), null);
+    }
+    assertEquals('italic', s('test-body-classes-yes').fontStyle);
+    assertEquals('normal', s('test-body-classes-no').fontStyle);
+    pass('test-body-classes');
+  });
+</script>
+
+<p id="test-usemap" class="testcontainer"
+><map name="foo"><area href="areatarget.html"
+></map
+><img usemap="#foo" src="mappic.gif"></p>
+<script type="text/javascript">
+  jsunitRegister('testUsemap',
+                 function testUsemap() {
+    var el = document.getElementById('test-usemap');
+    assertEquals(
+        (''
+         + '<map name="foo-' + directAccess.getIdSuffix() + '">'
+         + '<area href="http://example.com/'
+         + '?effect=NEW_DOCUMENT&amp;loader=UNSANDBOXED'
+         + '&amp;uri=(base)/areatarget.html" target="_blank">'
+         + '</map>'
+         + '<img'
+         + ' src="http://example.com/'
+         + '?effect=SAME_DOCUMENT&amp;loader=SANDBOXED'
+         + '&amp;uri=(base)/mappic.gif" usemap="#foo-'
+         + directAccess.getIdSuffix() + '"'
+         + '>'),
+        canonInnerHtml(directAccess.getInnerHTML(el)).replace(
+            // Normalize the base URI
+            new RegExp('\\buri=[^\x22<>]*?(%2[Ff]|/)plugin(%2[Ff]|/)', 'g'),
+            'uri=(base)/'));
+
+    pass('test-usemap');
+  });
+</script>
+
+<p id="test-usemap-fragment" class="testcontainer">
+  <img src="mappic.gif">
+</p>
+<script type="text/javascript">
+  jsunitRegister('testUsemapFragment',
+                 function testUsemapFragment() {
+    var el = document.getElementById('test-usemap-fragment');
+    el.setAttribute('usemap', '#foo');
+    assertEquals('#foo', el.getAttribute('usemap'));
+    pass('test-usemap-fragment');
+  });
+</script>
+
+<p class="testToString" id="test-toString">Non-toxic toString</p>
+<script type="text/javascript">
+  jsunitRegister('testToString',
+                function testToString() {
+    // Remove once we get ot ES53 or fix 1290
+    if (false) {
+      // These all used to throw a "toxic function" exception in ES5/3.
+      assertEquals('<BODY>', document.body.toString());
+      assertEquals('#text', document.createTextNode('').toString());
+      // comment node
+      assertEquals(
+          '#comment',
+          document.getElementById('test-opaque-nodes').firstChild.toString());
+      assertEquals('<DIV>', document.createElement('div').toString());
+      assertEquals('[Fake Document]', document.toString());
+    }
+    pass('test-toString');
+  });
+</script>
+
+<form id="test-onreset-form">
+  <div class="clickme testcontainer" id="test-onreset">
+    <input type="reset" value="click me">
+  </div>
+</form>
+<script type="text/javascript">
+  // form:onreset uses the same logic path as input:onfocus
+  jsunitRegister('testOnReset',
+                 function testOnReset() {
+    var form = document.getElementById('test-onreset-form');
+    form.addEventListener('reset',
+        jsunitCallback(
+            function onreset() { pass('test-onreset'); }),
+        false);
+  });
+</script>
+
+<p class="testcontainer" id="test-document-body-appendChild"
+ >I should be the last element until something is appended to document.body</p>
+<script type="text/javascript">
+  jsunitRegister('testDocumentBodyAppendChild',
+                 function testDocumentBodyAppendChild() {
+    var notWhitespaceRe = new RegExp('\\S');
+    function getPrevNonWhitespace(prev) {
+      while (prev.nodeType === 3 && !notWhitespaceRe.test(prev.nodeValue)) {
+        prev = prev.previousSibling;
+      }
+      return prev;
+    }
+
+    function getNextNonWhitespace(next) {
+      while (next.nodeType === 3 && !notWhitespaceRe.test(next.nodeValue)) {
+        next = next.nextSibling;
+      }
+      return next;
+    }
+
+    var body = document.body;
+    var container = document.getElementById('test-document-body-appendChild');
+    var last = getPrevNonWhitespace(document.body.lastChild);
+    assertEquals('container is not last', container, last);
+
+    var lastest = document.createElement('DIV');
+    lastest.innerHTML = 'lastest';
+    body.appendChild(lastest);
+    assertEquals('lastest in wrong place',
+                 lastest, getNextNonWhitespace(last.nextSibling));
+    assertEquals('lastest is not last',
+                 lastest, getPrevNonWhitespace(body.lastChild));
+    assertEquals('body changed', body, document.body);
+    assertEquals('parent is not body', lastest.parentNode, body);
+    pass('test-document-body-appendChild');
+  });
+</script>
+
+<script type="text/javascript">
+//  jsunitRun('testPropertyAttributeInteraction');
+</script>
+
+</body>

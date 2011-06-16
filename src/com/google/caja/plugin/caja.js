@@ -343,7 +343,31 @@ var caja = (function () {
         if (div && (document !== div.ownerDocument)) {
           throw '<div> provided for ES5 frame must be in main document';
         }
-      
+
+        var idSuffix = 'CajaGadget-' + guestDocumentIdIndex++ + '___';
+
+        var outerContainer;
+        var innerContainer;
+
+        if (div) {
+          outerContainer = div.ownerDocument.createElement('div');
+          innerContainer = div.ownerDocument.createElement('div');
+
+          outerContainer.setAttribute('class', 'caja_outerContainer___');
+          innerContainer.setAttribute('class', 'caja_innerContainer___');
+
+          innerContainer.setAttribute('title', '<Untrusted Content Title>');
+
+          // Copy over any existing children (like static HTML produced by
+          // the cajoler) into the inner container.
+          while (div.childNodes[0]) {
+            innerContainer.appendChild(div.childNodes[0]);
+          }
+
+          div.appendChild(outerContainer);
+          outerContainer.appendChild(innerContainer);
+        }
+
         loadCajaFrame('es53-guest-frame', function (guestFrame) {
           var guestWindow = guestFrame.contentWindow;
           var imports = {};
@@ -353,26 +377,11 @@ var caja = (function () {
               cajolingServiceClient);
 
           if (div) {
-            var outerContainer = div.ownerDocument.createElement('div');
-            var innerContainer = div.ownerDocument.createElement('div');
-
-            outerContainer.setAttribute('class', 'caja_outerContainer___');
-            innerContainer.setAttribute('class', 'caja_innerContainer___');
-
-            // Copy over any existing children (like static HTML produced by
-            // the cajoler) into the inner container.
-            while (div.childNodes[0]) {
-              innerContainer.appendChild(div.childNodes[0]);
-            }
-
-            div.appendChild(outerContainer);
-            outerContainer.appendChild(innerContainer);
-
             // The Domita implementation is obtained from the taming window,
             // since we wish to protect Domita and its dependencies from the
             // ability of guest code to modify the shared primordials.
             tamingWindow.attachDocumentStub(
-                '-CajaGadget-' + guestDocumentIdIndex++ + '___',
+                '-' + idSuffix,
                 uriPolicy,
                 imports,
                 innerContainer);
@@ -505,6 +514,9 @@ var caja = (function () {
                       if (opt_callback) {
                         opt_callback(result);
                       }
+                    },
+                    function (err) {
+                      console.log('Error in module loading: ' + err);
                     });
               });
           }
@@ -514,6 +526,10 @@ var caja = (function () {
               urlCajoled: urlCajoled,
               content: content,
               contentCajoled: contentCajoled,
+              div: div,
+              innerContainer: innerContainer,
+              outerContainer: outerContainer,
+              idSuffix: idSuffix,
               iframe: guestFrame,
               imports: imports,
               loader: loader
@@ -554,6 +570,7 @@ var caja = (function () {
         '  padding: 0px;' +
         '  margin: 0px;' +
         '  height: 100%;' +
+        '  position: relative;' +
         '}';
     aWindow.document.getElementsByTagName('head')[0].appendChild(style);
     // Attach safety marker to 'window' object

@@ -45,4 +45,32 @@ public class ES53BrowserTest extends BrowserTestCase {
   public final void testTamingErrors() {
     runTestDriver("es53-test-taming-errors.js");
   }
+
+  public final void testDomitaCanvas() {
+    runTestCase("es53-test-domita-canvas-guest.html");
+  }
+
+  public final void testDomitaDom() {
+    runTestCase("es53-test-domita-dom-guest.html");
+  }
+
+  public final void testDomitaEvents() {
+    runTestDriver("es53-test-domita-events.js");
+  }
+
+  public final void testDomitaForms() {
+    runTestCase("es53-test-domita-forms-guest.html");
+  }
+
+  public final void testDomitaScripts() {
+    runTestCase("es53-test-domita-scripts-guest.html");
+  }
+
+  public final void testDomitaSpecial() {
+    runTestDriver("es53-test-domita-special.js");
+  }
+
+  public final void testLanguage() {
+    runTestCase("es53-test-language-guest.html");
+  }
 }

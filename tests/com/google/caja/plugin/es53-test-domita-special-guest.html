@@ -1,0 +1,440 @@
+<!--
+ - Copyright (C) 2011 Google Inc.
+ -
+ - Licensed under the Apache License, Version 2.0 (the "License");
+ - you may not use this file except in compliance with the License.
+ - You may obtain a copy of the License at
+ -
+ -      http://www.apache.org/licenses/LICENSE-2.0
+ -
+ - Unless required by applicable law or agreed to in writing, software
+ - distributed under the License is distributed on an "AS IS" BASIS,
+ - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ - See the License for the specific language governing permissions and
+ - limitations under the License.
+-->
+
+<div>Derived from domita_test_untrusted.html as of r4471</div>
+
+<p id="test-anchor-computed-styles-dont-leak-history" class="testcontainer">
+  Test anchor computed styles don't leak history
+  <br/>
+  <!-- Ensure http://www.google.com/favicon.ico is :visited -->
+  <img src="http://www.google.com/favicon.ico"/>
+  <br/>
+  <!-- http://www.google.com/favicon.ico has been visited
+       by the above IMG tag -->
+  <a id="direct-visited" href="http://www.google.com/favicon.ico">
+    Direct visited
+  </a>
+  <br/>
+  <a href="http://www.google.com/">
+    <span id="nested-visited">Nested visited</span>
+  </a>
+  <br/>
+  <!-- http://www.example.com/ is reserved by RFC2606 -->
+  <a id="direct-link" href="http://www.example.com/foo/someRandomLink.html">
+    Direct link
+  </a>
+  <br/>
+  <a href="http://www.example.com/foo/someRandomLink.html">
+    <span id="nested-link">Nested link</span>
+  </a>
+</p>
+<script type="text/javascript">
+  jsunitRegister('testAnchorComputedStylesDontLeakHistory',
+                 function testAnchorComputedStylesDontLeakHistory() {
+    function getColor(id) {
+      return window.getComputedStyle(document.getElementById(id), null).color;
+    }
+
+    assertColor({rgb: 0x030609}, getColor('direct-visited'));
+    assertColor({rgb: 0x030609}, getColor('nested-visited'));
+    assertColor({rgb: 0x030609}, getColor('direct-link'));
+    assertColor({rgb: 0x030609}, getColor('nested-link'));
+
+    function getColorPV(id) {
+      return window.getComputedStyle(document.getElementById(id), null)
+          .getPropertyValue('color');
+    }
+
+    assertColor({rgb: 0x030609}, getColorPV('direct-visited'));
+    assertColor({rgb: 0x030609}, getColorPV('nested-visited'));
+    assertColor({rgb: 0x030609}, getColorPV('direct-link'));
+    assertColor({rgb: 0x030609}, getColorPV('nested-link'));
+
+    var a = document.createElement('a');
+    var p0 = document.createElement('p');
+    var p1 = document.createElement('p');
+
+    var container = document.getElementById(
+        'test-anchor-computed-styles-dont-leak-history');
+
+    container.appendChild(p0);
+    container.appendChild(a);
+    a.appendChild(p1);
+
+    // The COLOR property is history sensitive
+    p0.style.color = p1.style.color = '#c0c0c0';
+    // The PADDING-LEFT property is history insensitive
+    p0.style.paddingLeft = p1.style.paddingLeft = '123px';
+
+    // The 'p0' element should have computed style values exactly as were
+    // explicitly set, since nothing on a DIV is history sensitive.
+    assertColor(
+        {rgb: 0xc0c0c0},
+        window.getComputedStyle(p0, null).color);
+    assertColor(
+        {rgb: 0xc0c0c0},
+        window.getComputedStyle(p0, null).getPropertyValue('color'));
+    assertEquals(
+        '123px',
+        window.getComputedStyle(p0, null).paddingLeft);
+    assertEquals(
+         '123px',
+         window.getComputedStyle(p0, null).getPropertyValue('padding-left'));
+
+    // The 'p1' element, since it is contained within an A element, should have
+    // computed COLOR value inherited from the top-level container element of
+    // this DOMita instance (since COLOR is an allowed history-sensitive
+    // property), and a computed PADDING-LEFT value exactly as explicitly set
+    // (since the CSS rewriter does not allow PADDING-LEFT to be assigned in a
+    // history sensitive manner).
+    assertColor(
+        {rgb: 0x030609},
+        window.getComputedStyle(p1, null).color);
+    assertColor(
+        {rgb: 0x030609},
+         window.getComputedStyle(p1, null).getPropertyValue('color'));
+    assertEquals(
+        '123px',
+        window.getComputedStyle(p1, null).paddingLeft);
+    assertEquals(
+        '123px',
+        window.getComputedStyle(p1, null).getPropertyValue('padding-left'));
+
+    pass('test-anchor-computed-styles-dont-leak-history');
+  });
+</script>
+
+<div id="test-computed-style" class="testcontainer">
+  <div id="test-computed-style-block">Block</div>
+  <span id="test-computed-style-inline">Inline</span>
+  <div id="test-computed-style-fakie" style="display: inline">???</div>
+  <div id="test-computed-style-invisible" class="invisible">Not here</div>
+</div>
+<script type="text/javascript">
+  jsunitRegister('testComputedStyle',
+                 function testComputedStyle() {
+    function strip(value) {
+      return value.replace(new RegExp(' ', 'g'), '');
+    }
+    function assertComputedStyle(element, pseudoElt, styleName, styleValue) {
+      var msg = element.tagName + (element.id && '#' + element.id)
+          + (pseudoElt ? ':' + pseudoElt : '')
+          + ' { ' + styleName + ': ' + styleValue + ' }';
+      var winStyle = window.getComputedStyle(element, pseudoElt),
+          viewStyle = document.defaultView.getComputedStyle(element, pseudoElt);
+      var propertyName = styleName.replace(
+           new RegExp('([a-z])([A-Z])', 'g'),
+           function (_, lc, uc) { return lc + '-' + uc.toLowerCase(); });
+      assertEquals(msg, styleValue, strip(winStyle[styleName]));
+      assertEquals(msg, styleValue || '',
+                   strip(winStyle.getPropertyValue(propertyName)));
+      assertEquals(msg, styleValue, strip(viewStyle[styleName]));
+      assertEquals(msg, styleValue || '',
+                   strip(viewStyle.getPropertyValue(propertyName)));
+    }
+
+    var block = document.getElementById('test-computed-style-block');
+    var inline = document.getElementById('test-computed-style-inline');
+    var fakie = document.getElementById('test-computed-style-fakie');
+    var invisible = document.getElementById('test-computed-style-invisible');
+    assertComputedStyle(block, null, 'display', 'block');
+    assertComputedStyle(inline, null, 'display', 'inline');
+    assertComputedStyle(fakie, null, 'display', 'inline');
+    var NO_RESULT = {};
+    var pseudoElementsSupported = false;
+    try {
+      var unused = window.getComputedStyle(fakie, 'first-char').display;
+      pseudoElementsSupported = true;
+    } catch (ex) {
+      // Not supported on all browsers
+    }
+    if (pseudoElementsSupported) {
+      assertComputedStyle(fakie, 'first-char', 'display', 'inline');
+    }
+    assertComputedStyle(invisible, null, 'display', 'none');
+    assertComputedStyle(invisible, null, 'float', 'left');
+    assertComputedStyle(block, null, 'cursor', 'crosshair');
+    assertComputedStyle(block, null, 'float', 'none');
+
+    pass('test-computed-style');
+  });
+</script>
+
+<script type="text/javascript">
+  jsunitRegister('testInnerHtml',
+                 function testInnerHtml() {
+    var container = document.getElementById('test-inner-html');
+
+    // Strips out non-prefixed id from link, and target=_parent.
+    // Leaves id for <em> but strips the prefix.
+    // Escapes trailing title, href, and > after </em>.
+    assertEquals(
+        '<a class="link" href="http://foo.com?a&#61;b&amp;c&#61;d"'
+        + ' title="&lt;click me!&gt;">'
+        + 'Test <em id="em">Not</em>&gt; run yet.</a>',
+        canonInnerHtml(container.innerHTML));
+
+    // Set innerHTML
+    container.innerHTML = (
+        '<a  id="foo" class="green blue" href="http://bar.com/baz"'
+        + ' target="foo" title="A link" >'
+        + 'A & B &amp; C<</a >');
+
+    assertEquals(
+        '<a class="green blue" href="[[http://bar.com/baz]]" '
+        + 'id="foo-' + directAccess.getIdSuffix() + '"'
+        + ' target="_blank" title="A link">A &amp; B &amp; C&lt;</a>',
+        canonInnerHtml(directAccess.getInnerHTML(container)));
+
+    var span = document.createElement('SPAN');
+    container.appendChild(span);
+    // See Issue 714 for the derivation of these tests.
+    var inputsAndGoldens = [
+        [null, ''],
+        [undefined, 'undefined'],
+        [4, '4'],
+        [{}, '[object Object]'],
+        ['my_string', 'my_string']];
+    for (var i = 0; i < inputsAndGoldens.length; ++i) {
+      var pair = inputsAndGoldens[i];
+      span.innerHTML = pair[0];
+      assertEquals(pair[1], span.innerHTML);
+    }
+
+    pass('test-inner-html');
+  });
+</script>
+
+<p id="test-inner-text" class="testcontainer">Hello, <b>World!</b></p>
+<script type="text/javascript">
+  jsunitRegister('testInnerText',
+                 function testInnerText() {
+    var testInnerTextNode = document.getElementById('test-inner-text');
+    assertEquals('IT1', 'Hello, World!', testInnerTextNode.innerText);
+    assertEquals('TC1', 'Hello, World!', testInnerTextNode.textContent);
+    assertEquals('IT1T', 'Hello, ', testInnerTextNode.firstChild.innerText);
+    assertEquals('TC1T', 'Hello, ', testInnerTextNode.firstChild.textContent);
+    assertEquals('IH1', 'Hello, <b>World!<\/b>', testInnerTextNode.innerHTML);
+
+    testInnerTextNode.innerText = 'Goodbye cruel plain <b>text<\/b>!';
+    assertEquals(
+        'IH2', 'Goodbye cruel plain &lt;b&gt;text&lt;/b&gt;!',
+        testInnerTextNode.innerHTML);
+    assertEquals(
+        'IT2', 'Goodbye cruel plain <b>text</b>!',
+        testInnerTextNode.firstChild.innerText);
+    assertEquals('CL2', 1, testInnerTextNode.childNodes.length);
+    testInnerTextNode.innerText = '';
+    assertEquals('CL3', 0, testInnerTextNode.childNodes.length);
+    assertEquals('IT3', '', testInnerTextNode.innerText);
+    testInnerTextNode.innerText = null;
+    assertEquals('CL4', 0, testInnerTextNode.childNodes.length);
+    testInnerTextNode.innerText = 42;
+    assertEquals('CL5', 1, testInnerTextNode.childNodes.length);
+    assertEquals('IT5', '42', testInnerTextNode.innerText);
+
+    // Opaque nodes appear to be empty.
+    assertEquals(
+        'ITON', 'abc',
+        document.getElementById('test-opaque-nodes').innerText);
+
+    pass('test-inner-text');
+  });
+</script>
+
+<script type="text/javascript">
+  jsunitRegister('testOpaqueNodes',
+                 function testOpaqueNodes() {
+    var noText = document.createTextNode('');
+    // See bug 589.  We need to keep unsafe nodes in the DOM so that DOM
+    // navigation works, but we can't allow inspection or editing of such nodes.
+    var container = document.getElementById('test-opaque-nodes');
+
+    var child = container.firstChild;
+    assertEquals(8, child.nodeType);
+    assertEquals('#comment', child.nodeName);
+    assertEquals(' Comment ', child.nodeValue);
+
+    child = child.nextSibling;
+    assertEquals(3, child.nodeType);
+    assertEquals('#text', child.nodeName);
+    assertEquals('a', child.nodeValue);
+    child.nodeValue = 'Foo';
+    assertEquals('Foo', child.nodeValue);
+
+    child = child.nextSibling;
+    assertEquals(1, child.nodeType);
+    assertEquals('SCRIPT', child.nodeName);
+    assertEquals(null, child.nodeValue);
+    expectFailure(function () { child.appendChild(noText); },
+                  'script node was editable');
+
+    child = child.nextSibling;
+    assertEquals(3, child.nodeType);
+    assertEquals('#text', child.nodeName);
+    assertEquals('b', child.nodeValue);
+    child.nodeValue = 'Foo';
+    assertEquals('Foo', child.nodeValue);
+
+    child = child.nextSibling;
+    assertEquals(1, child.nodeType);
+    assertEquals('OBJECT', child.nodeName);
+    assertEquals(null, child.nodeValue);
+    expectFailure(function () { child.appendChild(noText); },
+                  'object node was editable');
+
+    child = child.nextSibling;
+    assertEquals(3, child.nodeType);
+    assertEquals('#text', child.nodeName);
+    assertEquals('c', child.nodeValue);
+    child.nodeValue = 'Foo';
+    assertEquals('Foo', child.nodeValue);
+
+    pass('test-opaque-nodes');
+  });
+</script>
+
+<p id="test-bounding-client-rect" class="testcontainer"
+>Test Bounding Client Rect</p>
+<script type="text/javascript">
+  jsunitRegister('testBoundingClientRect',
+                 function testBoundingClientRect() {
+    // Grab two elements defined in domita_test.html
+    var absPos = document.getElementById('absolutely-positioned');
+    var relPos = document.getElementById('relatively-positioned');
+
+    window.scrollLeft = window.scrollTop = 0;
+    var absRect = absPos.getBoundingClientRect();
+    var relRect = relPos.getBoundingClientRect();
+
+    function rectToString(rect) {
+      return ('top: ' + rect.top + ', left: ' + rect.left
+              + ', right: ' + rect.right + ', bottom: ' + rect.bottom);
+    }
+
+    assertEquals('absRect', 'top: 3, left: 11, right: 111, bottom: 43',
+                 rectToString(absRect));
+    // Since the first rect is absolutely positioned, it does not occupy space in
+    // its parent, so both rects overlap.
+    assertEquals('relRect', 'top: 0, left: 9, right: 109, bottom: 40',
+                 rectToString(relRect));
+
+    pass('test-bounding-client-rect');
+  });
+</script>
+
+<p id="test-resizing" class="testcontainer">Resizing</p>
+<script type="text/javascript">
+  jsunitRegister('testResizing',
+                 function testResizing() {
+    function windowDims() {
+      assertEquals('document.defaultView.clientWidth',
+                   window.clientWidth, document.defaultView.clientWidth);
+      assertEquals('document.defaultView.clientHeight',
+                   window.clientHeight, document.defaultView.clientHeight);
+      assertEquals('document.body.clientWidth',
+                   window.clientWidth, document.body.clientWidth);
+      assertEquals('document.body.clientHeight',
+                   window.clientHeight, document.body.clientHeight);
+      assertEquals('document.documentElement.clientWidth',
+                   window.clientWidth, document.documentElement.clientWidth);
+      assertEquals('document.documentElement.clientHeight',
+                   window.clientHeight, document.documentElement.clientHeight);
+      assertEquals('window.innerWidth', window.clientWidth, window.innerWidth);
+      assertEquals('window.innerHeight', window.clientHeight, window.innerHeight);
+      return String([window.clientWidth, window.clientHeight]);
+    }
+
+    function windowStyleWidth() {
+      return directAccess.getComputedStyle(directAccess.getBodyNode(), 'width');
+    }
+
+    assertEquals('initial scrollable dimensions', '600,400', windowDims());
+    assertEquals('initial width', '600px', windowStyleWidth());
+
+    window.resizeBy(0, 0);
+    assertEquals('scrollable dimensions 1', '600,400', windowDims());
+    assertEquals('width 1', '600px', windowStyleWidth());
+
+    window.resizeBy(-100, 200);
+    assertEquals('scrollable dimensions 2', '500,600', windowDims());
+    assertEquals('width 2', '500px', windowStyleWidth());
+
+    document.defaultView.resizeTo(600, 400);
+    assertEquals('scrollable dimensions 3', '600,400', windowDims());
+    assertEquals('width 3', '600px', windowStyleWidth());
+
+    pass('test-resizing');
+  });
+</script>
+
+<!--
+
+    TODO(ihab.awad): Test fails because the new caja.js "double nested div" structure
+    makes it not work as originally intended.
+
+<p id="test-scrolling" class="testcontainer"><nobr
+>A really loooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooong
+line that will force the viewport to have a horizontal scroll bar so that we
+can test window.scrollBy with a positive x value with a visible effect.
+</nobr><br></p>
+<script type="text/javascript">
+  jsunitRegister('testScrolling',
+                 function testScrolling() {
+    var initialViewPort = String([
+        window.scrollLeft, window.scrollTop,
+        document.defaultView.scrollLeft, document.defaultView.scrollTop]);
+    assertEquals(
+        'hidden',
+        directAccess.getComputedStyle(directAccess.getBodyNode(), 'overflow'));
+
+    window.scrollBy(0, 0);
+    assertEquals(initialViewPort, String([
+        window.scrollLeft, window.scrollTop,
+        document.defaultView.scrollLeft, document.defaultView.scrollTop]));
+    assertEquals(
+        'hidden',
+        directAccess.getComputedStyle(directAccess.getBodyNode(), 'overflow'));
+
+    window.scrollTo(0, 10);
+    assertEquals(
+        'auto',
+        directAccess.getComputedStyle(directAccess.getBodyNode(), 'overflow'));
+    assertEquals('0,10,0,10', String([
+        window.scrollLeft, window.scrollTop,
+        document.defaultView.scrollLeft, document.defaultView.scrollTop]));
+
+    window.scrollBy(10, -5);
+    assertEquals(
+        'auto',
+        directAccess.getComputedStyle(directAccess.getBodyNode(), 'overflow'));
+    assertEquals('10,5,10,5', String([
+        window.scrollLeft, window.scrollTop,
+        document.defaultView.scrollLeft, document.defaultView.scrollTop]));
+
+    document.defaultView.scrollTo(0, 0);
+    assertEquals(
+        'auto',
+        directAccess.getComputedStyle(directAccess.getBodyNode(), 'overflow'));
+    assertEquals('0,0,0,0', String([
+        window.scrollLeft, window.scrollTop,
+        document.defaultView.scrollLeft, document.defaultView.scrollTop]));
+
+    pass('test-scrolling');
+  });
+</script>
+
+-->

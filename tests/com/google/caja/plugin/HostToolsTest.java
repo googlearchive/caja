@@ -16,6 +16,7 @@ package com.google.caja.plugin;
 
 import java.util.List;
 
+import com.google.caja.util.FailureIsAnOption;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
@@ -29,6 +30,7 @@ import org.openqa.selenium.WebElement;
  * @author kpreid@switchb.org
  */
 public class HostToolsTest extends BrowserTestCase {
+  @FailureIsAnOption
   public final void testHostTools() {
     runBrowserTest("host-tools-test.html");
   }
