@@ -15,10 +15,8 @@
 package com.google.caja.parser.quasiliteral.opt;
 
 import com.google.caja.lexer.FilePosition;
-import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.ParseTreeNode;
-import com.google.caja.parser.ParseTreeNodes;
 import com.google.caja.parser.js.CatchStmt;
 import com.google.caja.parser.js.Declaration;
 import com.google.caja.parser.js.Expression;
@@ -29,9 +27,6 @@ import com.google.caja.parser.js.NumberLiteral;
 import com.google.caja.parser.js.Operation;
 import com.google.caja.parser.js.Operator;
 import com.google.caja.parser.js.Reference;
-import com.google.caja.render.Concatenator;
-import com.google.caja.render.JsMinimalPrinter;
-import com.google.caja.reporting.RenderContext;
 
 import java.util.Arrays;
 import java.util.EnumSet;
@@ -88,35 +83,14 @@ import java.util.Set;
  */
 public final class ArrayIndexOptimization {
 
-
-  private static String render(ParseTreeNode n, boolean minimal) {
-    StringBuilder sb = new StringBuilder();
-    TokenConsumer tc = minimal
-        ? new JsMinimalPrinter(new Concatenator(sb))
-        : n.makeRenderer(sb, null);
-    RenderContext rc = new RenderContext(tc);
-    n.render(rc);
-    tc.noMoreTokens();
-    return sb.toString();
-  }
-
-
-
   /**
    * Adds the unary + operator to square bracket operator indices where the
    * index is provably numeric.
    * @param root the root of a javascript tree.
    */
   public static void optimize(ParseTreeNode root) {
-    System.err.println("About to optimize: " + render(root, false));
     ScopeTree scopeRoot = ScopeTree.create(AncestorChain.instance(root));
-
-    try {
     optimize(root, scopeRoot);
-    } catch (RuntimeException e) {
-      System.err.println("Optimizing failed with: "+ e);
-      throw e;
-    }
   }
 
   public static boolean hasNumericResult(Expression e) {
