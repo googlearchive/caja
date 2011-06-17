@@ -492,18 +492,22 @@ public class ES53Rewriter extends Rewriter {
       @Override
       @RuleDescription(
           name="foreachExpr",
-          synopsis="Get the keys, then iterate over them.",
+          synopsis="Filter nonenumerable keys.",
           reason="",
           matches="for (@k in @o) @ss;",
           substitutes=(
-              ""
-              + "for (@tkeys = ___.allEnumKeys(@o),"
-              + "     @tidx = 0,"
-              + "     @tlen = @tkeys.length;\n"
-              + "     @tidx < @tlen; ++@tidx) {\n"
-              + "  @assign;\n"
-              + "  @ss;\n"
-              + "}"))
+              "@ot = @o;" +
+              "for (@kts in @ot) {" +
+              "  if (typeof @kt === 'number' || ('' + (+@kt)) === @kt) {" +
+              "    @assign1; /* k = kt; */" +
+              "  } else {" +
+              "    if (/^NUM___/.test(@kt) && /__$/.test(@kt)) { continue; }" +
+              "    @m = @kt.match(/([\\s\\S]*)_e___$/);" +
+              "    if (!@m || !@ot[@kt]) { continue; }" +
+              "    @assign2; /* k = @m[1]; */" +
+              "  }" +
+              "  @ss;" +
+              "}"))
       public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
         Map<String, ParseTreeNode> bindings = this.match(node);
         if (bindings != null) {
@@ -523,29 +527,31 @@ public class ES53Rewriter extends Rewriter {
             // start of scope.
             scope.addStartOfScopeStatement((Statement) expand(d, scope));
           }
-
-          Reference tkeys = new Reference(
+          Reference m = new Reference(
               scope.declareStartOfScopeTempVariable());
-          Reference tidx = new Reference(
+          Reference kt = new Reference(
               scope.declareStartOfScopeTempVariable());
-          Reference tlen = new Reference(
+          Reference ot = new Reference(
               scope.declareStartOfScopeTempVariable());
 
           FilePosition unk = FilePosition.UNKNOWN;
-          Expression assign = Operation.create(
-              unk, Operator.ASSIGN, k,
-              Operation.create(
-                  unk, Operator.SQUARE_BRACKET, tkeys,
-                  Operation.create(unk, Operator.TO_NUMBER, tidx)));
-          assign.getAttributes().set(ParseTreeNode.TAINTED, true);
+          Expression assign1 = Operation.create(unk, Operator.ASSIGN, k, kt);
+          assign1.getAttributes().set(ParseTreeNode.TAINTED, true);
+          Expression assign2 = Operation.create(unk, Operator.ASSIGN, k, 
+              Operation.create(unk, Operator.SQUARE_BRACKET, (Expression) m,
+              new IntegerLiteral(unk, 1)));
+          assign2.getAttributes().set(ParseTreeNode.TAINTED, true);
 
-          return substV(
-              "tidx", tidx,
-              "tlen", tlen,
-              "tkeys", tkeys,
+          ParseTreeNode result = substV(
+              "m", m,
+              "kt", kt,
+              "kts", newExprStmt(kt),
+              "ot", ot,
               "o", expand(bindings.get("o"), scope),
-              "assign", newExprStmt((Expression) expand(assign, scope)),
+              "assign1", newExprStmt((Expression) expand(assign1, scope)),
+              "assign2", newExprStmt((Expression) expand(assign2, scope)),
               "ss", expand(bindings.get("ss"), scope));
+          return result;
         } else {
           return NONE;
         }
