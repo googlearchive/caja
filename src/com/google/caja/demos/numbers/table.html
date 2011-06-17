@@ -78,13 +78,14 @@ var table = document.getElementById('table');
     }
     var s = api.getSelection();
     if (!s) { return; }
+    log('Setting selection to ' + s[0] + ', ' + s[1]);
     var td = findCell(s[0], s[1]);
     selectNode(td);
     selectedCell = td;
   });
 
   var onclick = function(i, j) {
-    return function() { api.setSelection([i, j]); }
+    return function() { api.setSelection([i, j]); };
   };
 
   for (var i = 0; i < api.data.getNumRows(); i++) {

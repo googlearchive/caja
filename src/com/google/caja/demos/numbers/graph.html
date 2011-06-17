@@ -78,6 +78,7 @@ function updateSelection() {
   }
   var s = api.getSelection();
   if (!s) { return; }
+  log('Setting selection to ' + s[0] + ', ' + s[1]);
   var c = pointColumns[s[1]];
   if (!c) { return; }
   var p = c[s[0]];
