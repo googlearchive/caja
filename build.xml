@@ -34,7 +34,8 @@
   - To run with assertions enabled, set the environment variable ANT_FLAGS="-ea"
  -->
 
-<project name="caja" default="default" basedir=".">
+<project name="caja" default="default" basedir="." 
+         xmlns:artifact="urn:maven-artifact-ant">
   <description>
   A subset of javascript that allow an application to securely embed plugins via
   a capability based security model.
@@ -63,7 +64,12 @@
     See http://code.google.com/webtoolkit/doc/1.6/ReleaseNotes_1_6.html
   -->
   <property name="war"         location="ant-war"/>
-  <property name="maven"       location="ant-maven"/>  <!-- maven distro -->
+  <property name="maven"       location="ant-maven"/>
+  <property name="maven-repository-url" value="https://oss.sonatype.org/service/local/staging/deploy/maven2/" />
+  <property name="maven-repository-id" value="sonatype-nexus-staging" />
+
+  <!-- maven -->
+  <property name="maven.ant.tasks.jar" value="third_party/ant/maven-ant-tasks-2.1.1.jar"/>
 
   <!--== classpaths ==-->
   <path id="classpath.gwt">
@@ -315,6 +321,7 @@
      includenosourcepackages="true"
      linksource="yes"/>
     <!-- overview="${src}/overview.html" -->
+    <jar destfile="${jars}/pluginc-javadocs.jar" basedir="${javadocs}"/>
   </target>
 
   <target name="jsdocs" description="Javascript documentation." depends="tools">
@@ -1530,17 +1537,82 @@
     </transform>
   </target>
 
-  <target name="maven" depends="jars,dirs,build.info">
-    <copy file="${jars}/pluginc.jar"
-          tofile="${maven}/caja-r${build.svnVersion}.jar"/>
-    <copy file="${jars}/pluginc-src.jar"
-          tofile="${maven}/caja-r${build.svnVersion}-src.jar"/>
-    <copy file="caja-template.pom"
-          tofile="${maven}/caja-r${build.svnVersion}.pom"/>
-    <replace file="${maven}/caja-r${build.svnVersion}.pom"
-             token="%%build.svnVersion%%"
-             value="r${build.svnVersion}"/>
+  <target name="init.maven.tasks">
+    <path id="maven.ant.tasks.classpath" path="${maven.ant.tasks.jar}" />
+    <typedef resource="org/apache/maven/artifact/ant/antlib.xml" 
+             uri="urn:maven-artifact-ant" 
+             classpathref="maven.ant.tasks.classpath" /> 
   </target>
+
+
+  <!-- Generate pom.xml with the proper svn build number -->
+  <target name="pom" depends="init.maven.tasks,build.info">
+    <copy file="caja-template.pom" tofile="${maven}/pom.xml">
+      <filterset>
+        <filter token="build.svnVersion" value="${build.svnVersion}"/>
+      </filterset>
+    </copy>
+
+    <property name="maven-jarfile-nodeps" value="${jars}/pluginc.jar" />
+    <property name="maven-jarfile-javadoc" value="${jars}/pluginc-javadocs.jar"/>
+    <property name="maven-jarfile-sources" value="${jars}/pluginc-src.jar" />
+
+    <artifact:pom id="project" file="${maven}/pom.xml" />
+  </target>
+
+
+  <target name="mvn-install" depends="init.maven.tasks,build.info,dirs,jars,javadocs,build.info,CajolingServlet,pom">
+    <artifact:install file="${maven-jarfile-nodeps}">
+      <pom refid="project"/>
+      <attach file="${maven-jarfile-javadoc}" classifier="javadoc"/>
+      <attach file="${maven-jarfile-sources}" classifier="sources"/>
+    </artifact:install>
+  </target>
+
+  <!-- The mvn-deploy target takes the generated maven artifacts and pushes
+       them to the Sonatype repository.  You will need to have a
+       gpg key defined and account set up. More docs on how to do this here:
+
+       https://docs.sonatype.org/display/Repository/Sonatype+OSS+Maven+Repository+Usage+Guide
+  -->
+
+  <target name="mvn-deploy"
+    depends="mvn-install"
+    description="Signs and Deploys caja artifacts to the central maven repo">
+
+    <!-- sign and deploy the main artifact -->
+    <artifact:mvn>
+      <arg value="org.apache.maven.plugins:maven-gpg-plugin:1.1:sign-and-deploy-file" />
+      <arg value="-Durl=${maven-repository-url}" />
+      <arg value="-DrepositoryId=${maven-repository-id}" />
+      <arg value="-DpomFile=${maven}/pom.xml" />
+      <arg value="-Dfile=${maven-jarfile-nodeps}" />
+      <arg value="-Pgpg" />
+    </artifact:mvn>
+
+    <!-- sign and deploy the sources artifact -->
+    <artifact:mvn>
+      <arg value="org.apache.maven.plugins:maven-gpg-plugin:1.1:sign-and-deploy-file" />
+      <arg value="-Durl=${maven-repository-url}" />
+      <arg value="-DrepositoryId=${maven-repository-id}" />
+      <arg value="-DpomFile=${maven}/pom.xml" />
+      <arg value="-Dfile=${maven-jarfile-sources}" />
+      <arg value="-Dclassifier=sources" />
+      <arg value="-Pgpg" />
+    </artifact:mvn>
+
+    <!-- sign and deploy the javadoc artifact -->
+    <artifact:mvn>
+      <arg value="org.apache.maven.plugins:maven-gpg-plugin:1.1:sign-and-deploy-file" />
+      <arg value="-Durl=${maven-repository-url}" />
+      <arg value="-DrepositoryId=${maven-repository-id}" />
+      <arg value="-DpomFile=${maven}/pom.xml" />
+      <arg value="-Dfile=${maven-jarfile-javadoc}" />
+      <arg value="-Dclassifier=javadoc" />
+      <arg value="-Pgpg" />
+    </artifact:mvn>
+  </target>
+
 
   <!--
     - Enable Emma

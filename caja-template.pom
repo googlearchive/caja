@@ -1,23 +1,70 @@
+<!--
+ Copyright 2009 Google Inc.
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+     http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-->
 <project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
+
+  <groupId>com.google.javascript</groupId>
   <artifactId>caja</artifactId>
-  <groupId>caja</groupId>
-  <version>%%build.svnVersion%%</version>
+  <packaging>jar</packaging>
+
   <name>Caja</name>
+  <version>r@build.svnVersion@</version>
+
   <url>http://code.google.com/p/google-caja</url>
+
   <description>
-    Caja is a JavaScript/HTML/CSS rewriter that makes javascript code obey object capabilities rules.
+    Caja is a HTML/CSS/JavaScript compiler which allows websites to safely embed web applications
+    from third parties, and enables rich interaction between the embedding page and the embedded
+    applications using an object-capability security model.
   </description>
+  <inceptionYear>2007</inceptionYear>
+
+  <scm>
+    <connection>scm:svn:http://google-caja.googlecode.com/svn/trunk</connection>
+    <developerConnection>scm:svn:https://google-caja.googlecode.com/svn/trunk</developerConnection>
+    <url>http://code.google.com/p/google-caja/source/browse/#svn/trunk</url>
+  </scm>
+
+  <issueManagement>
+    <system>code.google.com</system>
+    <url>http://code.google.com/p/google-caja/issues</url>
+  </issueManagement>
+
   <organization>
     <name>Google</name>
     <url>http://www.google.com</url>
   </organization>
+
   <licenses>
     <license>
       <name>Apache 2.0</name>
       <url>http://www.apache.org/licenses/LICENSE-2.0.html</url>
+      <distribution>repo</distribution>
     </license>
   </licenses>
+
+  <developers>
+    <developer>
+      <id>jasvir</id>
+      <name>Jasvir Nagra</name>
+      <email>jasvir@gmail.com</email>
+    </developer>
+    <!-- TODO add more developers -->
+  </developers>
+
   <dependencies>
     <dependency>
       <!--
