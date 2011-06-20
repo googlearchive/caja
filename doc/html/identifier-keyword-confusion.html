@@ -1,0 +1,86 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<html> <head>
+<title>Identifier / Keyword Confusion</title>
+<style>
+.pass { background: #efe }
+.fail { background: #fee; font-weight: bold }
+</style>
+</head>
+<body>
+I was mucking around with some tests of how browsers deal with identifiers whose decoded value is the same as a reserved identifier.
+
+Many interpreters seem to diverge wildly from the spec and from each other w.r.t. encoded versions of the keyword "this".
+
+I don't see any relationship between the identifier "this" and ThisBinding in the spec, so I believe the below is correct.  Am I missing something?
+
+<h1>Identifier / Keyword Confusion</h1>
+
+<table><tbody id=rows></tbody></table>
+<script>
+      var rows = document.getElementById("rows");
+
+      function addRow(msg, pass) {
+        var row = document.createElement("TR");
+        rows.appendChild(row);
+        var cell = document.createElement("TD");
+        row.appendChild(cell);
+        cell.appendChild(document.createTextNode(msg));
+        cell = document.createElement("TD");
+        row.appendChild(cell);
+        cell.appendChild(document.createTextNode(pass ? "OK" : "BAD"));
+        row.className = pass ? "pass" : "fail";
+     }
+
+      function assertTrue(msg, cond) {
+        addRow(msg, cond === true);
+      }
+
+      function assertFalse(msg, cond) {
+        addRow(msg, cond === false);
+      }
+
+
+      assertTrue("Sanity check thi\\u0073", "this" === "thi\u0073");
+
+      (function () {
+        var thi\u0073 = 42;
+        assertFalse("var thi\\u0073 masks/equals this", this === 42);
+        assertTrue("this masks/equals var thi\\u0073", thi\u0073 === 42);
+      }());
+
+      (function (thi\u0073) {
+        assertFalse("formal param thi\u0073 masks/equals this", this === 42);
+        assertTrue("this masks/equals formal param this", thi\u0073 === 42);
+      }(42));
+
+      (function thi\u0073() {
+        assertFalse("function name thi\\u0073 masks/equals this",
+                    "function" === typeof this);
+        assertTrue("this masks/equals function name thi\\u0073",
+                   "function" === typeof thi\u0073);
+      }());
+
+      var called = false, bodyReached = false;
+      var \u0069\u0066 = function (x) {
+        assertFalse("call value is false", x);
+        called = true;
+      };
+
+      assertTrue("Sanity check \\u0069\\u0066", "if" === "\u0069\u0066");
+
+      \u0069\u0066(false)
+      {
+        bodyReached = true;
+      }
+      assertTrue("\\u0069\\u0066(...) treated as function call", called);
+      assertTrue("block after call to \\u0069\\u0066 not treated as if body",
+                 bodyReached);
+
+</script>
+</head>
+
+
+<hr>
+<address></address>
+<!-- hhmts start -->Last modified: Mon Jun 20 13:48:08 PDT 2011 <!-- hhmts end -->
+</body> </html>
