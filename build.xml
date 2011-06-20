@@ -1373,6 +1373,15 @@
       <exclude name="nu/validator/htmlparser/xom/**/*.java"/>
       <compilerarg line="-Xlint:none"/>
     </javac>
+    <jar basedir="${third_party}/java/htmlparser/src/"
+     destfile="${jars}/htmlparser-src.jar">
+      <include name="**/*.java"/>
+      <exclude name="nu/validator/htmlparser/dom/**/*.java"/>
+      <exclude name="nu/validator/htmlparser/extra/**/*.java"/>
+      <exclude name="nu/validator/htmlparser/io/**/*.java"/>
+      <exclude name="nu/validator/htmlparser/sax/**/*.java"/>
+      <exclude name="nu/validator/htmlparser/xom/**/*.java"/>
+    </jar>
     <jar destfile="${jars}/htmlparser.jar"
      basedir="${third_party}/java/htmlparser/lib" />
     <javac destdir="${lib}" debug="true" target="1.5" source="1.5">
