@@ -25,6 +25,7 @@ import com.google.caja.render.Concatenator;
 import com.google.caja.render.JsPrettyPrinter;
 import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.RenderContext;
+import com.google.caja.util.CajaTestCase;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -32,12 +33,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import junit.framework.TestCase;
-
 /**
  * @author mikesamuel@gmail.com (Mike Samuel)
  */
-public class ParseTreeNodeTest extends TestCase {
+public class ParseTreeNodeTest extends CajaTestCase {
   LabeledStmtWrapper root;
   LabeledStmtWrapper b9;
 
@@ -676,6 +675,15 @@ public class ParseTreeNodeTest extends TestCase {
     root.acceptPreOrder(ie, null);
     assertEquals("[0, 1, 2, 3, 4, 5, 9, 10, 11, 12]",
                  ie.getNums().toString());
+  }
+  
+  public final void testSerializable() throws Exception {
+    assertSerializable(root);
+  }
+  
+  public final void testIssue1369() throws Exception {
+    ParseTreeNode p = js(fromString("var x = /asdf/;"));
+    assertSerializable(p);
   }
 
   static class IntEnqueuer implements Visitor {

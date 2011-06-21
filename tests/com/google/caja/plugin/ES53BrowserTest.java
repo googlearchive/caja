@@ -14,6 +14,8 @@
 
 package com.google.caja.plugin;
 
+import com.google.caja.util.FailureIsAnOption;
+
 /**
  * @author ihab.awad@gmail.com
  */
@@ -30,6 +32,7 @@ public class ES53BrowserTest extends BrowserTestCase {
     runTestDriver("es53-test-client-uri-rewriting.js");
   }
 
+  @FailureIsAnOption
   public final void testTamingTamed() {
     runTestDriver("es53-test-taming-tamed.js");
   }

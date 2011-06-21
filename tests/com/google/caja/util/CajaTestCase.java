@@ -55,9 +55,11 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
 import java.awt.GraphicsEnvironment;
+import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.ObjectOutputStream;
 import java.io.StringReader;
 import java.lang.reflect.Method;
 import java.net.URI;
@@ -410,6 +412,14 @@ public abstract class CajaTestCase extends TestCase {
     for (Message msg : mq.getMessages()) {
       if (msg.getMessageType() == type) { fail(msg.format(mc)); }
     }
+  }
+  
+  protected void assertSerializable(Object o) throws Exception {
+    ByteArrayOutputStream out = new ByteArrayOutputStream();
+    ObjectOutputStream oos = new ObjectOutputStream(out);
+    oos.writeObject(o);
+    oos.close();
+    assertTrue(out.toByteArray().length > 0);
   }
 
   private static int partsMissing(Message msg, MessagePart... parts) {

@@ -23,6 +23,7 @@ import com.google.javascript.jscomp.jsonml.JsonML;
 import com.google.javascript.jscomp.jsonml.TagAttr;
 import com.google.javascript.jscomp.jsonml.TagType;
 
+import java.io.Serializable;
 import java.util.List;
 
 /**
@@ -88,7 +89,8 @@ public final class RegexpLiteral extends Literal {
     }
   }
 
-  public static class RegexpWrapper {
+  public static class RegexpWrapper implements Serializable {
+    private static final long serialVersionUID = -5707593923346724185L;
     private final String regexpText;
 
     public RegexpWrapper(String s) {
