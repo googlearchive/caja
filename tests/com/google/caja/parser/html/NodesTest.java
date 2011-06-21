@@ -19,14 +19,15 @@ import com.google.caja.render.Concatenator;
 import com.google.caja.reporting.MarkupRenderMode;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.CajaTestCase;
+import com.google.caja.util.Lists;
 import com.google.caja.util.Pair;
 import com.google.caja.lexer.HtmlTokenType;
 import com.google.caja.lexer.TokenQueue;
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.util.MoreAsserts;
-import com.sun.tools.javac.util.List;
 
 import java.util.Arrays;
+import java.util.List;
 import java.io.StringReader;
 
 import org.w3c.dom.Attr;
@@ -373,7 +374,8 @@ public class NodesTest extends CajaTestCase {
     boolean[] asAsciiModes = { true, false };
     boolean[] asEmbeddableModes = { true, false };
 
-    List<Pair<MarkupRenderMode, String>> expectedPairs = List.of(
+    @SuppressWarnings("unchecked")
+    List<Pair<MarkupRenderMode, String>> expectedPairs = Lists.newArrayList(
         Pair.pair(MarkupRenderMode.HTML,
             "<html><head></head><body><b>my text</b></body></html>"),
         Pair.pair(MarkupRenderMode.XML,
