@@ -3425,7 +3425,7 @@ var ___, cajaVM, safeJSON;
       var P = names[i];
       // a. Let descObj be the result of calling the [[Get]]
       //    internal method of props with P as the argument.
-      var descObj = props.v___[P];
+      var descObj = props.v___(P);
       // b. Let desc be the result of calling ToPropertyDescriptor
       //    with descObj as the argument.
       var desc = ToPropertyDescriptor(descObj);

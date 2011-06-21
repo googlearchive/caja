@@ -1591,6 +1591,21 @@ public class ES53RewriterTest extends CommonJsRewriterTestCase {
         "G.prototype.constructor = G;" +
         "assertEquals(G.prototype.constructor, G);");
   }
+  
+  /**
+   * Regression test: Object.defineProperties was nonfunctional.
+   */
+  public final void testDefineProperties() throws Exception {
+    rewriteAndExecute(
+        "var o = {};" +
+        "Object.defineProperties(o, " +
+        "  {p1: {value:1}, p2: {value:2, enumerable:true}});" +
+        "function pd(p) { return Object.getOwnPropertyDescriptor(o, p); }" +
+        "assertEquals(pd('p1').enumerable, false);" +
+        "assertEquals(pd('p2').enumerable, true);" +
+        "assertEquals(o.p1, 1);" +
+        "assertEquals(o.p2, 2);");
+  }
 
   @Override
   public void setUp() throws Exception {
