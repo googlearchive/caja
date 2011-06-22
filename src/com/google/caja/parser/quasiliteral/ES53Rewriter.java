@@ -496,7 +496,7 @@ public class ES53Rewriter extends Rewriter {
           reason="",
           matches="for (@k in @o) @ss;",
           substitutes=(
-              "@ot = @o;" +
+              "@ot = Object(@o).e___();" +
               "for (@kts in @ot) {" +
               "  if (typeof @kt === 'number' || ('' + (+@kt)) === @kt) {" +
               "    @assign1; /* k = kt; */" +

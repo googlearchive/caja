@@ -504,10 +504,10 @@ var ___, cajaVM, safeJSON;
     return function() {
       var tt = t;
       var ff = f;
-      var result = [];
+      var result = {};
       for (var p in f) {
         if (t.HasProperty___(p)) {
-          result.push(p);
+          result.DefineOwnProperty___(p, {enumerable: true});
         }
       }
       return result;
@@ -548,7 +548,7 @@ var ___, cajaVM, safeJSON;
       throw new TypeError('Not deleteable: ' + p);
     };
     t.HasProperty___ = makeWhitelistingHasProperty(t, f, [ 'r' ]);
-    t.Enumerate___ = makeEnumerate(t, f);
+    t.e___ = makeEnumerate(t, f);
   }
 
   function tameCtor(f, fSuper, name) {
@@ -658,7 +658,7 @@ var ___, cajaVM, safeJSON;
       if (!(p in f)) { return false; }
       return !isNumericName(p) && !endsWith__.test(p);
     };
-    t.Enumerate___ = makeEnumerate(t, f);
+    t.e___ = makeEnumerate(t, f);
 
     return t;
   }
@@ -717,7 +717,7 @@ var ___, cajaVM, safeJSON;
       throw new TypeError('Not a function: ' + p);
     };
     t.HasProperty___ = makeWhitelistingHasProperty(t, f, [ 'r', 'm' ]);
-    t.Enumerate___ = makeEnumerate(t, f);
+    t.e___ = makeEnumerate(t, f);
 
     return t;
   }
@@ -1448,24 +1448,10 @@ var ___, cajaVM, safeJSON;
    * <p>ES-Harmony proposal <a href=
    * "http://wiki.ecmascript.org/doku.php?id=harmony:proxies_semantics#modifications_to_the_evaluation_of_expressions_and_statements"
    * >The for-in Statement</a>.
-   *
-   * <p>The proposal does not name this as an internal method. But
-   * since it triggers the "enumerate" trap, "Enumerate___" seems like a
-   * good name.
    */
-  Object.prototype.Enumerate___ = function() {
-    var i, m, result = [];
-    for (i in this) {
-      if (isNumericName(i)) {
-        result.push(i);
-      } else {
-        if (startsWithNUM___.test(i) && endsWith__.test(i)) { continue; }
-        m = i.match(endsWith_e___);
-        if (m && this[i]) { result.push(m[1]); }
-      }
-    }
-    return result;
-  };
+  Object.prototype.e___ = function() {
+      return this;
+    };
 
   function allKeys(obj) {
     var i, m, result = [];
@@ -5087,8 +5073,7 @@ var ___, cajaVM, safeJSON;
       isFunction: isFunction,
       USELESS: USELESS,
       manifest: manifest,
-      allKeys: allKeys,
-      allEnumKeys: function(obj) { return obj ? obj.Enumerate___() : []; }
+      allKeys: allKeys
     });
 
   function readImport(imports, name) {
