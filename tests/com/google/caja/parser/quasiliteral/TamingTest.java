@@ -15,10 +15,12 @@
 package com.google.caja.parser.quasiliteral;
 
 import com.google.caja.util.CajaTestCase;
+import com.google.caja.util.FailureIsAnOption;
 import com.google.caja.util.RhinoTestBed;
 
 /** See taming_test.html */
 public class TamingTest extends CajaTestCase {
+  @FailureIsAnOption("TamingTest not compatible with ES53")
   public final void testInRhino() throws Exception {
     RhinoTestBed.runJsUnittestFromHtml(html(fromResource("taming_test.html")));
   }

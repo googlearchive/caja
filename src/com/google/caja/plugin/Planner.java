@@ -58,7 +58,7 @@ public final class Planner {
   public PlanState planState(boolean novelPropNames, String... strs) {
     Set<Long> prods = Sets.newHashSet();
     for (String s : strs) {
-      if (s == null) { continue; }
+      if (s == null || "".equals(s.trim())) { continue; }
       if (!s.matches("\\w+(?:\\+\\w+)*")) {
         throw new IllegalArgumentException(s);
       }

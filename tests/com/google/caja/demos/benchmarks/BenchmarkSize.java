@@ -200,7 +200,6 @@ public class BenchmarkSize extends CajaTestCase {
   public CajoledModule es53(Block plain) {
     CajoledModule result = null;
     PluginMeta meta = new PluginMeta();
-    meta.setEnableES53(true);
     MessageQueue mq = TestUtil.createTestMessageQueue(this.mc);
     PluginCompiler pc = new PluginCompiler(
         TestBuildInfo.getInstance(), meta, mq);

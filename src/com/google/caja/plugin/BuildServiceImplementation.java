@@ -173,9 +173,8 @@ public class BuildServiceImplementation implements BuildService {
     boolean passed = true;
     ParseTreeNode outputJs;
     Node outputHtml;
-    if ("caja".equals(language) || "valija".equals(language)) {
+    if ("caja".equals(language)) {
       PluginMeta meta = new PluginMeta(fetcher, policy);
-      meta.setEnableES53("caja".equals(language));
       PluginCompiler compiler = new PluginCompiler(
           BuildInfo.getInstance(), meta, mq);
       compiler.setMessageContext(mc);

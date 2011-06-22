@@ -35,10 +35,10 @@ import com.google.caja.util.RhinoTestBed;
  */
 public class DebuggingSymbolsStageTest extends CajaTestCase {
 
+  @FailureIsAnOption("DebuggingSymbolStage not compatible with ES53")
   public final void testDereferenceNull() throws Exception {
     assertStackTrace(
          "'use strict';\n"
-        + "'use cajita';\n"
         + "var x = null;\n"
         + "var xDotFoo = (x).foo;",
         //                ^^^^^^ 4+16-22
@@ -46,10 +46,10 @@ public class DebuggingSymbolsStageTest extends CajaTestCase {
         "testDereferenceNull:4+16 - 22");
   }
 
+  @FailureIsAnOption("DebuggingSymbolStage not compatible with ES53")
   public final void testCallOnNullObject() throws Exception {
     assertStackTrace(
         "'use strict';\n"
-       + "'use cajita';\n"
         + "{\n"
         + "  function f(x) { return x.foo(); }\n"
         //                          ^^^^^ 4+26-31
@@ -65,10 +65,10 @@ public class DebuggingSymbolsStageTest extends CajaTestCase {
         + "testCallOnNullObject:4+26 - 31");
   }
 
+  @FailureIsAnOption("DebuggingSymbolStage not compatible with ES53")
   public final void testCallUndefinedMethod() throws Exception {
     assertStackTrace(
         "'use strict';\n"
-        + "'use cajita';\n"
         + "{\n"
         + "  function f(x) { return x.noSuchMethod(); }\n"
         //                          ^^^^^^^^^^^^^^ 4+26-40
@@ -84,26 +84,25 @@ public class DebuggingSymbolsStageTest extends CajaTestCase {
         + "testCallUndefinedMethod:4+26 - 40");
   }
 
+  @FailureIsAnOption("DebuggingSymbolStage not compatible with ES53")
   public final void testReflectiveInvocation() throws Exception {
     // Constructors cannot be called or applied unless they are also simple fns.
     assertStackTrace(
         "'use strict';\n"
-        + "'use cajita';\n"
         + "Date.call({}, 4);\n",
         //^^^^^^^^^^^^^^ 3+1 - 16
         "testReflectiveInvocation:3+1 - 16");
     assertStackTrace(
         "'use strict';\n"
-        + "'use cajita';\n"
         + "Date.apply({}, 4);\n",
         //^^^^^^^^^^^^^^^ 3+1 - 17
         "testReflectiveInvocation:3+1 - 17");
   }
 
+  @FailureIsAnOption("DebuggingSymbolStage not compatible with ES53")
   public final void testInaccessibleProperty() throws Exception {
     assertStackTrace(
         "'use strict';\n"
-        + "'use cajita';\n"
         + "{\n"
         + "  function f(x, k) { return x['foo_'] = 0; }\n"
         //                             ^^^^^^^^^^^^^ 4+29-42
@@ -115,41 +114,41 @@ public class DebuggingSymbolsStageTest extends CajaTestCase {
         + "testInaccessibleProperty:4+29 - 42");
   }
 
+  @FailureIsAnOption("DebuggingSymbolStage not compatible with ES53")
   public final void testSetOfNullObject() throws Exception {
     assertStackTrace(
         "'use strict';\n"
-        + "'use cajita';\n"
         + "(null).x = 0;",
         //^^^^^^^^^^^ 3+2-13
         "testSetOfNullObject:3+2 - 13");
   }
 
+  @FailureIsAnOption("DebuggingSymbolStage not compatible with ES53")
   public final void testDeleteOfNullObject() throws Exception {
     assertStackTrace(
         "'use strict';\n"
-         + "'use cajita';\n"
         + "{ delete (null).x; }",
         // ^^^^^^^^^^^^^^^ 3+3-18
         "testDeleteOfNullObject:3+3 - 18");
   }
 
+  @FailureIsAnOption("DebuggingSymbolStage not compatible with ES53")
   public final void testSetOfFrozenObject() throws Exception {
     assertStackTrace(
         ""
         + "'use strict';\n"
-        + "'use cajita';\n"
-        + "var o = cajita.freeze({ x: 1 });\n"
+        + "var o = Object.freeze({ x: 1 });\n"
         + "(null).x = 0;",
         //  ^^^^^^^^^^^ 4+2-13
         "testSetOfFrozenObject:4+2 - 13");
   }
 
+  @FailureIsAnOption("DebuggingSymbolStage not compatible with ES53")
   public final void testDeleteOfFrozenObject() throws Exception {
     assertStackTrace(
         ""
         + "'use strict';\n"
-        + "'use cajita';\n"
-        + "var o = cajita.freeze({ x: 1 });\n"
+        + "var o = Object.freeze({ x: 1 });\n"
         + "delete (null).x;",
         // ^^^^^^^^^^^^^^^ 4+1-16
         "testDeleteOfFrozenObject:4+1 - 16");
@@ -160,7 +159,6 @@ public class DebuggingSymbolsStageTest extends CajaTestCase {
     assertStackTrace(
         ""
         + "'use strict';\n"
-        + "'use cajita';\n"
         + "{\n"
         + "  (function () {\n"
         //    ^ 4+4
@@ -177,11 +175,11 @@ public class DebuggingSymbolsStageTest extends CajaTestCase {
         + "testEnumerateOfNull:6+19 - 24");
   }
 
+  @FailureIsAnOption("DebuggingSymbolStage not compatible with ES53")
   public final void testPropertyInNull() throws Exception {
     assertStackTrace(
         ""
         + "'use strict';\n"
-        + "'use cajita';\n"
         + "(function (x) {\n"
         //  ^ 3+2
         + "  return 'k' in x;\n"
@@ -193,11 +191,11 @@ public class DebuggingSymbolsStageTest extends CajaTestCase {
         + "testPropertyInNull:4+10 - 18");
   }
 
+  @FailureIsAnOption("DebuggingSymbolStage not compatible with ES53")
   public final void testConstruction() throws Exception {
     assertStackTrace(
         ""
         + "'use strict';\n"
-        + "'use cajita';\n"
         + "var foo = function () { throw new Error('hi'); };\n"
         //                         ^^^^^^^^^^^^^^^^^^^^^ 3+25-46
         + "new foo();",
@@ -208,10 +206,10 @@ public class DebuggingSymbolsStageTest extends CajaTestCase {
         );
   }
 
+  @FailureIsAnOption("DebuggingSymbolStage not compatible with ES53")
   public final void testIllegalAccessInsideHoistedFunction() throws Exception {
     assertStackTrace(
         "'use strict';\n"
-        + "'use cajita';\n"
         + "var x = true;\n"
         + "var foo = {};\n"
         + "if (x) {\n"
@@ -229,6 +227,7 @@ public class DebuggingSymbolsStageTest extends CajaTestCase {
         + "testIllegalAccessInsideHoistedFunction:9+5 - 15");
   }
 
+  @FailureIsAnOption("DebuggingSymbolStage not compatible with ES53")
   public final void testWrappedConstructors() throws Exception {
     // Normally, trying to subclass a Date results in an object whose
     // methods fail with 'Method "<name>" called on incompatible object.'
@@ -282,23 +281,20 @@ public class DebuggingSymbolsStageTest extends CajaTestCase {
                + "try {                                                "
                + "  %s                                                 "
                + "} catch (e) {                                        "
-               + "  stack = e.cajitaStack___;                          "
-               + "  if (!stack) { throw e; }                           "
-               + "  stack = stack.join('\\n');  "
+               + "  stack = e.toString();                              "
                + "}                                                    "
                + "stack                                               ");
   }
 
   private void assertConsistent(String js) throws Exception {
-    // Execute js in the presence of cajita so it can use Caja symbols.
+    // Execute js in the presence of es53 so it can use Caja symbols.
     Object golden = RhinoTestBed.runJs(
         new Executor.Input(
             getClass(), "/js/json_sans_eval/json_sans_eval.js"),
-        new Executor.Input(getClass(), "/com/google/caja/cajita.js"),
+        new Executor.Input(getClass(), "/com/google/caja/es53.js"),
         new Executor.Input(js, getName()));
     runCajoled(
         "'use strict';\n"
-        + "'use cajita';\n"
         + "result(" + js + ");",
         golden,
         "  var output = '<no-output>';"
@@ -344,10 +340,8 @@ public class DebuggingSymbolsStageTest extends CajaTestCase {
           new Executor.Input(
               getClass(), "/js/json_sans_eval/json_sans_eval.js"),
           new Executor.Input(getClass(), "../console-stubs.js"),
-          new Executor.Input(getClass(), "/com/google/caja/cajita.js"),
+          new Executor.Input(getClass(), "/com/google/caja/es53.js"),
           new Executor.Input(getClass(), "/com/google/caja/log-to-console.js"),
-          new Executor.Input(
-              getClass(), "/com/google/caja/cajita-debugmode.js"),
           new Executor.Input(cajoledText, getName()));
       assertEquals(golden, actual);
     } catch (Exception ex) {

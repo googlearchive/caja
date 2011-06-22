@@ -180,17 +180,9 @@ public class ModuleManager {
 
       CajoledModule cajoledModule = null;
 
-      if (meta.getEnableES53()) {
-        ES53Rewriter rewriter = new ES53Rewriter(absoluteUri, this, false);
-        cajoledModule = (CajoledModule)
-            rewriter.expand(new UncajoledModule(input));
-      } else {
-        Block intermediate = isValija ?
-          (Block) new DefaultValijaRewriter(mq).expand(input) : input;
-        CajitaRewriter cr = new CajitaRewriter(absoluteUri, this, false);
-        UncajoledModule uncajoledModule = new UncajoledModule(intermediate);
-        cajoledModule = (CajoledModule) cr.expand(uncajoledModule);
-      }
+      ES53Rewriter rewriter = new ES53Rewriter(absoluteUri, this, false);
+      cajoledModule = (CajoledModule)
+          rewriter.expand(new UncajoledModule(input));
 
       // Attach the name to the cajoledModule so that we can thread cache keys
       // through with cajoled modules.

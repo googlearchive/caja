@@ -22,11 +22,9 @@ import com.google.caja.util.Pipeline.Stage;
 
 public final class OptimizeJavascriptStage implements Stage<Jobs> {
   public boolean apply(Jobs jobs) {
-    if (jobs.getPluginMeta().getEnableES53()) {
-      for (JobEnvelope env : jobs.getJobsByType(ContentType.JS)) {
-        if (env.fromCache) { continue; }
-        ArrayIndexOptimization.optimize(env.job.getRoot());
-      }
+    for (JobEnvelope env : jobs.getJobsByType(ContentType.JS)) {
+      if (env.fromCache) { continue; }
+      ArrayIndexOptimization.optimize(env.job.getRoot());
     }
     return jobs.hasNoFatalErrors();
   }

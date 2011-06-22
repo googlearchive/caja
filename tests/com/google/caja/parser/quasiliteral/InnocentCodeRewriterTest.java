@@ -164,7 +164,7 @@ public class InnocentCodeRewriterTest extends RewriterTestCase {
     return RhinoTestBed.runJs(
         new Executor.Input(
             getClass(), "../../../../../js/json_sans_eval/json_sans_eval.js"),
-        new Executor.Input(getClass(), "/com/google/caja/cajita.js"),
+        new Executor.Input(getClass(), "/com/google/caja/es53.js"),
         new Executor.Input(
             getClass(), "../../../../../js/jsunit/2.2/jsUnitCore.js"),
         new Executor.Input(caja, getName() + "-uncajoled"));
@@ -189,7 +189,7 @@ public class InnocentCodeRewriterTest extends RewriterTestCase {
             getClass(), "/com/google/caja/plugin/console-stubs.js"),
         new Executor.Input(
             getClass(), "../../../../../js/json_sans_eval/json_sans_eval.js"),
-        new Executor.Input(getClass(), "/com/google/caja/cajita.js"),
+        new Executor.Input(getClass(), "/com/google/caja/es53.js"),
         new Executor.Input(pre, getName()),
         new Executor.Input(transJs, getName()),
         new Executor.Input(post, getName()));

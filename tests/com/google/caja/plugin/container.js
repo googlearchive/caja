@@ -15,19 +15,43 @@
 /**
  * @fileoverview
  * Sets up a caja container for hosting the cajoled tests.
- * Requires that cajita.js, jsUnitCore.js and env.js be loaded first.
+ * Requires that es53.js, jsUnitCore.js and env.js be loaded first.
  */
 
 var imports = ___.copy(___.sharedImports);
 var exports = {};
-imports.fail = ___.markFuncFreeze(fail);
-imports.assertEquals = ___.markFuncFreeze(assertEquals);
-imports.assertTrue = ___.markFuncFreeze(assertTrue);
-imports.assertFalse = ___.markFuncFreeze(assertFalse);
-imports.assertThrows = ___.markFuncFreeze(assertThrows);
+imports.DefineOwnProperty___('onerror', {
+  value: ___.markFuncFreeze(function(a,b,c){}),
+  enumerable: true,
+  writable: true,
+  configurable: true});
+imports.DefineOwnProperty___('fail', {
+  value: ___.markFuncFreeze(fail),
+  enumerable: true,
+  writable: false,
+  configurable: false});
+imports.DefineOwnProperty___('assertEquals', {
+  value: ___.markFuncFreeze(assertEquals),
+  enumerable: true,
+  writable: false,
+  configurable: false});
+imports.DefineOwnProperty___('assertTrue', {
+  value: ___.markFuncFreeze(assertTrue),
+  enumerable: true,
+  writable: false,
+  configurable: false});
+imports.DefineOwnProperty___('assertFalse', {
+  value: ___.markFuncFreeze(assertFalse),
+  enumerable: true,
+  writable: false,
+  configurable: false});
+imports.DefineOwnProperty___('assertThrows', {
+  value: ___.markFuncFreeze(assertThrows),
+  enumerable: true,
+  writable: false,
+  configurable: false});
 imports.document = document;
 imports.console = console;
-imports.$v = valijaMaker.CALL___(imports);
 ___.markFuncFreeze(console.log);
 // Included in order to test this function;
 // stamp should never be made available to real caja code.
@@ -43,9 +67,8 @@ if (typeof _junit_ !== 'undefined') {
           if (_junit_.isAssertionFailedError(exception)) {
             throw exception;
           }
-          return orig.call(cajita.USELESS, exception, onerror, source, lineNum);
+          return orig.call(___.USELESS, exception, onerror, source, lineNum);
         };
       })(___.getNewModuleHandler().handleUncaughtException);
 }
 imports.htmlEmitter___ = new HtmlEmitter(document.getElementById("test-test"));
-imports.window = {};

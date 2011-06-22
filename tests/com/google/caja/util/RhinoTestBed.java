@@ -32,8 +32,7 @@ import com.google.caja.parser.js.UncajoledModule;
 import com.google.caja.parser.js.Statement;
 import com.google.caja.parser.js.DirectivePrologue;
 import com.google.caja.parser.js.Directive;
-import com.google.caja.parser.quasiliteral.CajitaRewriter;
-import com.google.caja.parser.quasiliteral.DefaultValijaRewriter;
+import com.google.caja.parser.quasiliteral.ES53Rewriter;
 import com.google.caja.reporting.EchoingMessageQueue;
 import com.google.caja.reporting.MarkupRenderMode;
 import com.google.caja.reporting.MessageContext;
@@ -209,9 +208,9 @@ public class RhinoTestBed {
   }
 
   private static ParseTreeNode cajole(Block program, MessageQueue mq) {
-    DefaultValijaRewriter vrw = new DefaultValijaRewriter(mq, false);
-    CajitaRewriter crw = new CajitaRewriter(new TestBuildInfo(), mq, false);
-    return crw.expand(vrw.expand(new UncajoledModule(program)));
+    ES53Rewriter esrw =
+      new ES53Rewriter(TestBuildInfo.getInstance(), mq, false);
+    return esrw.expand(new UncajoledModule(program));
   }
 
   private static String render(ParseTreeNode n) {

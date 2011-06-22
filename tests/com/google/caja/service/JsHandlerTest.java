@@ -26,7 +26,8 @@ public class JsHandlerTest extends ServiceTestCase {
         (String) requestGet("?url=http://foo/bar.js"
             + "&input-mime-type=text/javascript"),
         "js",
-        "moduleResult___=$v.cf($v.ro('g'),[1]);");
+        "moduleResult___=" +
+        "(IMPORTS___.g_v___?IMPORTS___.g:___.ri(IMPORTS___,'g')).i___(1);");
   }
 
   public final void testJsWithJsonpCallback() throws Exception {
@@ -39,7 +40,8 @@ public class JsHandlerTest extends ServiceTestCase {
           + "&callback=foo");
       assertCallbackInJsonp(s, "foo");
       assertSubstringsInJsonp(s, "js",
-          "moduleResult___=$v.cf($v.ro('g'),[1]);");
+          "moduleResult___=" +
+          "(IMPORTS___.g_v___?IMPORTS___.g:___.ri(IMPORTS___,'g')).i___(1);");
     }
 
     try {
@@ -76,16 +78,5 @@ public class JsHandlerTest extends ServiceTestCase {
     } catch (AssertionFailedError e) {
       // Success
     }
-  }
-
-  public final void testCajitaJs() throws Exception {
-    registerUri("http://foo/bar.js", "g(1);", "text/javascript");
-    assertSubstringsInJson(
-        (String) requestGet("?url=http://foo/bar.js"
-            + "&input-mime-type=text/javascript"
-            + "&directive=CAJITA"),
-        "js",
-        "var g=___.readImport(IMPORTS___,'g');",
-        "moduleResult___=g.CALL___(1);");
   }
 }

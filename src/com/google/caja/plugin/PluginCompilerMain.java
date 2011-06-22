@@ -168,7 +168,6 @@ public final class PluginCompilerMain {
 
       PluginMeta meta = new PluginMeta(fetcher, policy);
       meta.setIdClass(config.getIdClass());
-      meta.setEnableES53(config.getES53());
 
       PluginCompiler compiler = new PluginCompiler(
           BuildInfo.getInstance(), meta, mq);

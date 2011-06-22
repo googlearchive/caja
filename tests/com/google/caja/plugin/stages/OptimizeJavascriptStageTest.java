@@ -91,7 +91,6 @@ public class OptimizeJavascriptStageTest extends PipelineStageTestCase {
 
   @Override
   protected boolean runPipeline(Jobs jobs) {
-    getMeta().setEnableES53(true);
     return new OptimizeJavascriptStage().apply(jobs)
         && new ValidateJavascriptStage(new ModuleManager(
                 new PluginMeta(), TestBuildInfo.getInstance(),

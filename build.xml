@@ -336,9 +336,7 @@
     <genrule class="com.google.caja.ancillary.jsdoc.JsdocMain$Builder">
       <output file="${docs}/js/"/>
       <input file="${third_party}/js/json_sans_eval/json_sans_eval.js"/>
-      <input file="${src}/com/google/caja/cajita.js"/>
       <input file="${src}/com/google/caja/es53.js"/>
-      <input file="${src}/com/google/caja/valija-cajita.js"/>
       <input file="${src}/com/google/caja/plugin/unicode.js"/>
       <input file="${src}/com/google/caja/plugin/html-emitter.js"/>
       <input file="${src}/com/google/caja/plugin/html-sanitizer.js"/>
@@ -356,10 +354,6 @@
   <target name="ruledocs" description="Caja rule documentation."
    depends="RuleDoclet">
     <mkdir dir="${ruledocs}"/>
-    <ruledoclet output="html" outputdir="${ruledocs}"
-     rewriter="com.google.caja.parser.quasiliteral.CajitaRewriter"/>
-    <ruledoclet output="html" outputdir="${ruledocs}"
-     rewriter="com.google.caja.parser.quasiliteral.DefaultValijaRewriter"/>
     <ruledoclet output="html" outputdir="${ruledocs}"
      rewriter="com.google.caja.parser.quasiliteral.ES53Rewriter"/>
   </target>
@@ -469,7 +463,7 @@
   </target>
 
   <target name="benchmarks" description="Runs benchmarks."
-   depends="dirs,pluginc,MinifiedJs,CajoledValija,jars">
+   depends="dirs,pluginc,MinifiedJs,jars">
     <copy todir="${lib}/com/google/caja/demos/benchmarks">
       <fileset dir="${third_party}/js/sunspider-benchmark/">
         <include name="v8-crypto.js"/>
@@ -492,7 +486,6 @@
     </copy>
     <copy todir="${lib}">
       <fileset dir="${src}">
-        <include name="com/google/caja/cajita.js"/>
         <include name="com/google/caja/es53.js"/>
       </fileset>
     </copy>
@@ -520,7 +513,7 @@
   </target>
 
   <target name="jars"
-      depends="pluginc,CajoledValija,MinifiedJs,CajolingServlet"
+      depends="pluginc,MinifiedJs,CajolingServlet"
       description="Place all jars needed to run the cajoler under ${jars}">
     <copy todir="${jars}">
       <fileset dir="${third_party}/java/jakarta_commons">
@@ -637,7 +630,7 @@
     </sequential>
   </macrodef>
 
-  <target name="jquery" depends="pluginc,dirs,CajoledValija">
+  <target name="jquery" depends="pluginc,dirs">
     <!-- The root files of the Domita test cases are statically cajoled -->
     <JQueryTestCase testcase="core" />
     <JQueryTestCase testcase="data" />
@@ -660,85 +653,18 @@
   <target name="demos" depends="containers"
    description="Puts all the demo files together for easy browsing."/>
 
-  <!-- Cajoles test resources that contain cajita to javascript. -->
-  <target name="CajoledTests" depends="pluginc,dirs,CajoledValija">
+  <!-- Cajoles test resources that contain es53 to javascript. -->
+  <target name="CajoledTests" depends="pluginc,dirs">
     <property name="libplugin" location="${lib}/com/google/caja/plugin"/>
 
-    <!-- Create Cajita and Valija versions of the Domita test cases -->
-    <copy file="${tests}/com/google/caja/plugin/domita_test_untrusted.html"
-        tofile="${libplugin}/domita_test_untrusted_valija.html"/>
-    <copy file="${tests}/com/google/caja/plugin/domita_test_untrusted.html"
-        tofile="${libplugin}/domita_test_untrusted_cajita.html"/>
-    <replace file="${libplugin}/domita_test_untrusted_cajita.html">
-     <replacetoken>/*@@cajaLanguageSelectionStatements@@*/</replacetoken>
-     <replacevalue>"use cajita";</replacevalue>
-    </replace>
-    <replace file="${libplugin}/domita_test_untrusted_valija.html">
-     <replacetoken>/*@@cajaLanguageSelectionStatements@@*/</replacetoken>
-     <replacevalue></replacevalue>
-    </replace>
-
     <!-- The root files of the Domita test cases are statically cajoled -->
+    <!-- TODO: Uncomment once domita tests are ported to es53
     <transform>
-      <input file="${libplugin}/domita_test_untrusted_valija.html"/>
-      <output file="${libplugin}/domita_test_untrusted_valija.out.html"
-          language="valija" />
+      <input file="${tests}/com/google/caja/plugin/domita_test_untrusted.html"/>
+      <output file="${libplugin}/domita_test_untrusted_es53.out.html"
+          language="caja" />
     </transform>
-    <transform>
-      <input file="${libplugin}/domita_test_untrusted_cajita.html"/>
-      <output file="${libplugin}/domita_test_untrusted_cajita.out.html"
-       language="valija" />
-    </transform>
-
-    <!-- Statically cajole all the tests for use by the XHR module loader -->
-    <transform>
-     <input file="${tests}/com/google/caja/a.js"/>
-     <output file="${lib}/com/google/caja/a.out.js" language="valija"/>
-    </transform>
-    <transform>
-     <input file="${tests}/com/google/caja/foo/b.js"/>
-     <output file="${lib}/com/google/caja/foo/b.out.js" language="valija"/>
-    </transform>
-    <transform>
-     <input file="${tests}/com/google/caja/c.js"/>
-     <output file="${lib}/com/google/caja/c.out.js" language="valija"/>
-    </transform>
-    <transform>
-     <input file="${tests}/com/google/caja/recursion.js"/>
-     <output file="${lib}/com/google/caja/recursion.out.js" language="valija"/>
-    </transform>
-    <transform>
-     <input file="${tests}/com/google/caja/x.js"/>
-     <output file="${lib}/com/google/caja/x.out.js" language="valija"/>
-    </transform>
-    <transform>
-     <input file="${tests}/com/google/caja/foo/inc.js"/>
-     <output file="${lib}/com/google/caja/foo/inc.out.js" language="valija"/>
-    </transform>
-    <transform>
-     <input file="${tests}/com/google/caja/add.js"/>
-     <output file="${lib}/com/google/caja/add.out.js" language="valija"/>
-    </transform>
-    <transform>
-     <input file="${tests}/com/google/caja/commonJsRecursion.js"/>
-     <output file="${lib}/com/google/caja/commonJsRecursion.out.js"
-      language="valija"/>
-    </transform>
-    <transform>
-     <input file="${tests}/com/google/caja/foo/f.js"/>
-     <output file="${lib}/com/google/caja/foo/f.out.js" language="valija"/>
-     <depend file="${tests}/com/google/caja/c.js"/>
-    </transform>
-    <transform>
-     <input file="${tests}/com/google/caja/foo/staticinc.js"/>
-     <output file="${lib}/com/google/caja/foo/staticinc.out.js"
-       language="valija"/>
-     <depend file="${tests}/com/google/caja/sum.js"/>
-    </transform>
-    <transform>
-     <input file="${tests}/com/google/caja/sum.js"/>
-     <output file="${lib}/com/google/caja/sum.out.js" language="valija"/>
-    </transform>
+    -->
 
     <!-- Statically cajole some tests for caja.js testing -->
     <transform>
@@ -759,20 +685,7 @@
     </copy>
   </target>
 
-  <target name="CajoledValija" depends="pluginc">
-    <transform>
-      <output file="${lib}/com/google/caja/plugin/valija.out.js"
-       language="valija"/>
-      <input file="${src}/com/google/caja/valija-cajita.js"/>
-    </transform>
-    <transform>
-      <output file="${lib}/com/google/caja/plugin/commonjs-sandbox.out.js"
-        language="valija"/>
-      <input file="${src}/com/google/caja/commonjs-sandbox.js"/>
-    </transform>
-  </target>
-
-  <target name="MinifiedJs" depends="pluginc,CajoledValija">
+  <target name="MinifiedJs" depends="pluginc">
     <transform>
       <output file="${lib}/com/google/caja/plugin/html-sanitizer-minified.js"
        language="javascript" renderer="minify"/>
@@ -780,20 +693,6 @@
        language="javascript" renderer="concat"/>
       <input file="${lib}/com/google/caja/plugin/html4-defs.js"/>
       <input file="${src}/com/google/caja/plugin/html-sanitizer.js"/>
-    </transform>
-    <transform>
-      <output file="${lib}/com/google/caja/plugin/domita-minified.js"
-       language="javascript" renderer="minify"/>
-      <input file="${third_party}/js/json_sans_eval/json_sans_eval.js"/>
-      <input file="${src}/com/google/caja/cajita.js"/>
-      <input file="${src}/com/google/caja/plugin/unicode.js"/>
-      <input file="${lib}/com/google/caja/plugin/css-defs.js"/>
-      <input file="${lib}/com/google/caja/plugin/html4-defs.js"/>
-      <input file="${src}/com/google/caja/plugin/html-sanitizer.js"/>
-      <input file="${src}/com/google/caja/plugin/html-emitter.js"/>
-      <input file="${src}/com/google/caja/plugin/bridal.js"/>
-      <input file="${src}/com/google/caja/plugin/cssparser.js"/>
-      <input file="${src}/com/google/caja/plugin/domita.js"/>
     </transform>
     <transform>
       <output file="${lib}/com/google/caja/plugin/es53-taming-frame.opt.js"
@@ -837,50 +736,6 @@
       <input file="${src}/com/google/caja/cajita-module-orig.js"/>
       <input file="${src}/com/google/caja/cajita-promise.js"/>
     </transform>
-    <transform>
-      <output file="${lib}/com/google/caja/plugin/caja-iframe.js"
-       language="javascript" renderer="concat"/>
-      <input file="${third_party}/js/json_sans_eval/json_sans_eval.js"/>
-      <input file="${src}/com/google/caja/cajita.js"/>
-      <input file="${src}/com/google/caja/cajita-debugmode.js"/> <!-- added -->
-      <input file="${src}/com/google/caja/log-to-console.js"/> <!-- added -->
-      <input file="${src}/com/google/caja/plugin/unicode.js"/>
-      <input file="${lib}/com/google/caja/plugin/css-defs.js"/>
-      <input file="${lib}/com/google/caja/plugin/html4-defs.js"/>
-      <input file="${src}/com/google/caja/plugin/html-sanitizer.js"/>
-      <input file="${src}/com/google/caja/plugin/html-emitter.js"/>
-      <input file="${src}/com/google/caja/plugin/bridal.js"/>
-      <input file="${src}/com/google/caja/plugin/cssparser.js"/>
-      <input file="${src}/com/google/caja/plugin/domita.js"/>
-      <input file="${src}/com/google/caja/plugin/capture-valija.js"/>
-      <input file="${lib}/com/google/caja/plugin/valija.out.js"/>
-      <input file="${src}/com/google/caja/plugin/uri.js"/>
-      <input file="${src}/com/google/caja/cajita-module-orig.js"/>
-      <input file="${src}/com/google/caja/cajita-promise.js"/>
-      <input file="${src}/com/google/caja/plugin/host-tools.js"/>
-      <input file="${src}/com/google/caja/plugin/caja-iframe-done.js"/>
-    </transform>
-    <transform>
-      <output file="${lib}/com/google/caja/plugin/caja-iframe-minified.js"
-       language="javascript" renderer="minify"/>
-      <input file="${third_party}/js/json_sans_eval/json_sans_eval.js"/>
-      <input file="${src}/com/google/caja/cajita.js"/>
-      <input file="${src}/com/google/caja/plugin/unicode.js"/>
-      <input file="${lib}/com/google/caja/plugin/css-defs.js"/>
-      <input file="${lib}/com/google/caja/plugin/html4-defs.js"/>
-      <input file="${src}/com/google/caja/plugin/html-sanitizer.js"/>
-      <input file="${src}/com/google/caja/plugin/html-emitter.js"/>
-      <input file="${src}/com/google/caja/plugin/bridal.js"/>
-      <input file="${src}/com/google/caja/plugin/cssparser.js"/>
-      <input file="${src}/com/google/caja/plugin/domita.js"/>
-      <input file="${src}/com/google/caja/plugin/capture-valija.js"/>
-      <input file="${lib}/com/google/caja/plugin/valija.out.js"/>
-      <input file="${src}/com/google/caja/plugin/uri.js"/>
-      <input file="${src}/com/google/caja/cajita-module-orig.js"/>
-      <input file="${src}/com/google/caja/cajita-promise.js"/>
-      <input file="${src}/com/google/caja/plugin/host-tools.js"/>
-      <input file="${src}/com/google/caja/plugin/caja-iframe-done.js"/>
-    </transform>
     <concat destfile="${lib}/com/google/caja/ses/initSES.js">
       <!-- Makes initSES.js -->
       <filelist>
@@ -905,6 +760,7 @@
     </transform>
   </target>
 
+	<!-- TODO(jasvir): This is not needed any longer -->
   <target name="IframeSupportingJs" depends="MinifiedJs">
     <genrule class="com.google.caja.tools.JsToVar">
       <input file="${lib}/com/google/caja/plugin/es53-taming-frame.js"/>
@@ -939,27 +795,19 @@
 
     <genrule class="com.google.caja.ancillary.linter.Linter"
      unless="${tools.ancillary.disable}">
-      <input file="${src}/com/google/caja/cajita-debugmode.js"/>
       <input file="${lib}/com/google/caja/cajita-module-orig.js"/>
       <input file="${lib}/com/google/caja/cajita-promise.js"/>
-      <input file="${src}/com/google/caja/cajita.js"/>
       <input file="${src}/com/google/caja/plugin/bridal.js"/>
-      <input file="${lib}/com/google/caja/plugin/caja-orig.js"/>
       <input file="${lib}/com/google/caja/plugin/caja.js"/>
-      <!-- <input file="${src}/com/google/caja/plugin/capture-valija.js"/> 
-           Can't do this because it as well as valija-cajita provide
-           valijaMaker. -->
       <input file="${lib}/com/google/caja/plugin/css-defs.js"/>
       <input file="${lib}/com/google/caja/plugin/cssparser.js"/>
       <input file="${src}/com/google/caja/plugin/domita.js"/>
       <input file="${src}/com/google/caja/plugin/caja-iframe-done.js"/>
-      <input file="${src}/com/google/caja/plugin/host-tools.js"/>
       <input file="${src}/com/google/caja/plugin/html-emitter.js"/>
       <input file="${src}/com/google/caja/plugin/html-sanitizer.js"/>
       <input file="${lib}/com/google/caja/plugin/html4-defs.js"/>
       <input file="${src}/com/google/caja/plugin/unicode.js"/>
       <input file="${lib}/com/google/caja/plugin/uri.js"/>
-      <input file="${src}/com/google/caja/valija-cajita.js"/>
       <output file="${lib}/AllTests.Linter.tstamp"/>
     </genrule>
 
@@ -1032,10 +880,8 @@
     <copy todir="${lib}">
       <fileset dir="${third_party}" />
       <fileset dir="${src}">
-        <include name="**/caja/cajita-debugmode.js"/>
         <include name="**/caja/cajita-module-orig.js"/>        
         <include name="**/caja/cajita-promise.js"/>
-        <include name="**/caja/cajita.js"/>
         <include name="**/caja/es53.js"/>
         <include name="**/caja/console.js"/>
         <include name="**/caja/log-to-console.js"/>
@@ -1043,7 +889,6 @@
         <include name="**/caja/plugin/caja-gadget.css"/>
         <include name="**/caja/plugin/cssparser.js"/>
         <include name="**/caja/plugin/domita.js"/>
-        <include name="**/caja/plugin/caja-orig.js"/>
         <include name="**/caja/plugin/caja.js"/>
         <include name="**/caja/plugin/host-tools.js"/>
         <include name="**/caja/plugin/html-emitter.js"/>
@@ -1052,7 +897,6 @@
         <include name="**/caja/plugin/templates/*.json"/>
         <include name="**/caja/plugin/unicode.js"/>
         <include name="**/caja/plugin/uri.js"/>
-        <include name="**/caja/valija-cajita.js"/>
       </fileset>
 
       <!-- These came from AllTests; They are moved here to reduce the "results
@@ -1115,8 +959,6 @@
       </fileset>
       <fileset dir="${src}/com/google/caja">
         <include name="es53.js" />
-        <include name="cajita.js" />
-        <include name="cajita-debugmode.js" />
       </fileset>
       <fileset dir="${src}/com/google/caja/plugin">
         <include name="bridal.js" />
@@ -1130,7 +972,6 @@
       <fileset dir="${lib}/com/google/caja/plugin">
         <include name="css-defs.js" />
         <include name="html4-defs.js" />
-        <include name="valija.out.js" />
       </fileset>
       <fileset dir="${third_party}/js/excanvas">
         <include name="excanvas.js" />
@@ -1155,7 +996,6 @@
         <include name="taming.js" />
         <include name="policy.js" />
         <include name="favicon.ico" />
-        <include name="setup-valija.js" />
       </fileset>
       <fileset dir="${third_party}/js/codemirror">
         <include name="js/*.js" />
@@ -1187,22 +1027,11 @@
         <include name="cajita-module-orig.js"/>
         <include name="cajita-promise.js"/>
       </fileset>
-      <fileset dir="${src}/com/google/caja/plugin">
-        <include name="uri.js"/>
-        <include name="host-tools.js"/>
-      </fileset>
-      <fileset dir="${lib}/com/google/caja/plugin">
-        <include name="domita-minified.js"/>
-        <include name="valija.out.js"/>
-      </fileset>
 
       <!-- For iframe-based Caja loading - TODO(kpreid): this should become
            part of a "Caja server" package separate from the playground. -->
       <fileset dir="${lib}/com/google/caja/plugin">
         <include name="caja.js"/>
-        <include name="caja-orig.js"/>
-        <include name="caja-iframe.js"/>
-        <include name="caja-iframe-minified.js"/>
         <include name="es53-guest-frame.js"/>
         <include name="es53-guest-frame.opt.js"/>
         <include name="es53-taming-frame.js"/>                                
@@ -1501,13 +1330,13 @@
     <transform>
       <output
        file="${lib}/com/google/caja/demos/container/gadget-library.out.js"
-       language="valija" onlyJsEmitted="true" debug="false"/>
+       language="caja" onlyJsEmitted="true" debug="false"/>
       <input file="${demos}/container/gadget-library.js"/>
     </transform>
     <transform>
       <output
        file="${lib}/com/google/caja/demos/container/gadget-trivial.out.js"
-       language="valija" onlyJsEmitted="true" debug="false"/>
+       language="caja" onlyJsEmitted="true" debug="false"/>
       <input file="${demos}/container/gadget-trivial.html"/>
     </transform>
 
@@ -1528,21 +1357,17 @@
         <include name="gadget-*.html"/>
         <include name="gadget-*.js"/>
       </fileset>
-      <fileset dir="${lib}/com/google/caja/plugin">
-        <include name="domita-minified.js"/>
-        <include name="valija.out.js"/>
-      </fileset>
     </copy>
   </target>
 
-  <target name="yuitest" depends="pluginc,dirs,CajoledValija">
+  <target name="yuitest" depends="pluginc,dirs">
     <transform>
       <input file="yuitest/yahoo-dom.js"/>
-      <output file="yuitest/yahoo-dom.out.js" language="valija"/>
+      <output file="yuitest/yahoo-dom.out.js" language="caja"/>
     </transform>
     <transform>
       <input file="yuitest/dom_test.html"/>
-      <output file="yuitest/dom_test.out.html" language="valija"/>
+      <output file="yuitest/dom_test.out.html" language="caja"/>
     </transform>
   </target>
 

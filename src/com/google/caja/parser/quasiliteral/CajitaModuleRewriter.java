@@ -68,12 +68,8 @@ public class CajitaModuleRewriter {
     }
     Expression moduleInvocations = null;
     for (CajoledModule module : modules) {
-      Expression invocation = mgr.getPluginMeta().getEnableES53()
-          ? (Expression) QuasiBuilder.substV(
+      Expression invocation = (Expression) QuasiBuilder.substV(
               "___.prepareModule(@moduleBody).instantiate___(___, IMPORTS___)",
-              "moduleBody", module.getModuleBody())
-          : (Expression) QuasiBuilder.substV(
-              "___.prepareModule(@moduleBody)(IMPORTS___)",
               "moduleBody", module.getModuleBody());
       moduleInvocations = moduleInvocations != null
           ? Operation.createInfix(Operator.COMMA, moduleInvocations, invocation)

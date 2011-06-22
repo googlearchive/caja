@@ -27,8 +27,6 @@ import com.google.caja.parser.ParserContext;
 import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.CajoledModule;
 import com.google.caja.parser.js.UncajoledModule;
-import com.google.caja.parser.quasiliteral.CajitaRewriter;
-import com.google.caja.parser.quasiliteral.DefaultValijaRewriter;
 import com.google.caja.parser.quasiliteral.ES53Rewriter;
 import com.google.caja.parser.quasiliteral.Rewriter;
 import com.google.caja.reporting.BuildInfo;
@@ -104,18 +102,8 @@ public class JsHandler extends AbstractCajolingHandler {
           .build();
 
       UncajoledModule ucm = new UncajoledModule(input);
-      if (!directive.contains(CajolingService.Directive.ES53)) {
-        Rewriter vrw = new DefaultValijaRewriter(mq, false /* logging */);
-        Rewriter crw = new CajitaRewriter(buildInfo, mq, false /* logging */);
-        if (directive.contains(CajolingService.Directive.CAJITA)) {
-          cajoledModule = (CajoledModule) crw.expand(ucm);
-        } else {
-          cajoledModule = (CajoledModule) crw.expand(vrw.expand(ucm));
-        }
-      } else {
-        Rewriter esrw = new ES53Rewriter(buildInfo, mq, false /* logging */);
-        cajoledModule = (CajoledModule) esrw.expand(ucm);
-      }
+      Rewriter esrw = new ES53Rewriter(buildInfo, mq, false /* logging */);
+      cajoledModule = (CajoledModule) esrw.expand(ucm);
     } catch (ParseException e) {
       e.toMessageQueue(mq);
     } catch (IllegalStateException e) {

@@ -137,7 +137,6 @@ public class GWTCajolingServiceImpl extends RemoteServiceServlet
         = Collections.singletonMap(new InputSource(guessURI(base, url)), input);
 
     PluginMeta meta = new PluginMeta(fetcher, null);
-    meta.setEnableES53(es53Mode);
     PluginCompiler compiler = makePluginCompiler(meta, mq);
     compiler.setJobCache(new AppEngineJobCache());
     compiler.setMessageContext(mc);

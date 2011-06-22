@@ -32,8 +32,7 @@ import org.apache.tools.ant.BuildException;
  *   <input file="baz/input1.js"/>
  *   <input file="baz/input2.css"/>
  *   <depend file="baz/boo.css"/>
- *   <output language="cajita" debug="false" file="output-file-1.js" canLink="thinkfu.com" />
- *   <output language="valija" debug="true" file="output-file-2.js" canLink="bar.com foo.com"
+ *   <output language="caja" debug="true" file="output-file-1.js" canLink="bar.com foo.com"
  *    ignore="YOUR_CODES_ARE_ON_FIRE"/>
  * </transform>
  * }
@@ -45,8 +44,8 @@ import org.apache.tools.ant.BuildException;
  * The cajole element current serves no purpose, but can be extended to provide
  * options over a bunch of jobs, such as a debugging/production mode switch.
  * <p>
- * The {@code language} attribute takes the values "cajita" to cajole cajita,
- * "valija" to cajole valija, and "javascript" to skip cajoling.
+ * The {@code language} attribute takes the values "caja" to cajole es53,
+ * and "javascript" to skip cajoling.
  * <p>
  * The optional {@code renderer} attribute specifies how to render the output.
  * "pretty" is the default and uses the
@@ -55,8 +54,8 @@ import org.apache.tools.ant.BuildException;
  * "concat" does no parsing and just copies inputs to the output,
  *   with ";" inserted between the inputs.
  * <p>
- * The optional {@code canLink} attribute specifies a set of urls that cajoled code is allowed
- * to link to.
+ * The optional {@code canLink} attribute specifies a set of urls that cajoled
+ * code is allowed to link to.
  * The default is none.
  * <p>
  * The optional {@code ignore} attribute specifies a set of message names to

@@ -50,8 +50,6 @@ import org.apache.commons.cli.Options;
 
 /**
  * Flag processing for main methods.
- * TODO(mikesamuel): make this subclassable so opensocial specific flags can be
- * separated out.
  *
  * @author mikesamuel@gmail.com
  */
@@ -140,9 +138,6 @@ public final class Config {
       "pg", "goals",
       "Space separated properties as described in help text.", true);
 
-  private final Option ES53 = defineBooleanOption(
-      "es53", "es53", "Set to use ES5/3 translation instead of valija/cajita.");
-
   public enum SourceRenderMode {
     MINIFY,
     PRETTY,
@@ -171,7 +166,6 @@ public final class Config {
   private Planner.PlanState posGoals = Planner.EMPTY;
   private Planner.PlanState negPreconds = Planner.EMPTY;
   private Planner.PlanState posPreconds = Planner.EMPTY;
-  private boolean es53;
 
   public Config(Class<?> mainClass, PrintStream stderr, String usageText) {
     this(mainClass, new PrintWriter(stderr), usageText);
@@ -229,8 +223,6 @@ public final class Config {
   public Planner.PlanState preconditions(Planner.PlanState ps) {
     return ps.without(negPreconds).with(posPreconds);
   }
-
-  public boolean getES53() { return es53; }
 
   public boolean processArguments(String[] argv) {
     try {
@@ -361,7 +353,6 @@ public final class Config {
       }
 
       boolean debugMode = cl.hasOption(DEBUG_MODE.getOpt());
-      es53 = cl.hasOption(ES53.getOpt());
       boolean onlyJsEmitted = cl.hasOption(OUTPUT_JS.getOpt())
           && !cl.hasOption(OUTPUT_HTML.getOpt());
       if (debugMode) {

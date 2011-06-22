@@ -218,27 +218,16 @@ public class PipelineCacheTest extends PipelineStageTestCase {
       String[] importMembers, String[] vars, String[] imports) {
     StringBuilder sb = new StringBuilder();
     sb.append("{\n");
-    sb.append("  var $v = ___.readImport(IMPORTS___, '$v', {\n");
-    sb.append("      'getOuters': { '()': {} },\n");
-    sb.append("      'initOuter': { '()': {} },\n");
-    for (int i = 0, n = importMembers.length; i < n; ++i) {
-      sb.append("      '").append(importMembers[i]).append("': { '()': {} }");
-      sb.append(i + 1 < n ? ",\n" : "\n");
+    sb.append("  var dis___ = IMPORTS___;\n");
+    for (String importMember : importMembers) {
+      sb.append(importMember).append("\n");
     }
-    sb.append("    });\n");
-    for (String importName : imports) {
-      sb.append("  var ").append(importName)
-          .append(" = ___.readImport(IMPORTS___, '")
-          .append(importName).append("');\n");
-    }
-    sb.append("  var moduleResult___, $dis");
+    sb.append("  var moduleResult___");
     for (String var : vars) {
       sb.append(", ").append(var);
     }
     sb.append(";\n");
     sb.append("  moduleResult___ = ___.NO_RESULT;\n");
-    sb.append("  $dis = $v.getOuters();\n");
-    sb.append("  $v.initOuter('onerror');\n");
     return sb.toString();
   }
 
@@ -257,7 +246,7 @@ public class PipelineCacheTest extends PipelineStageTestCase {
       = "<b id=\"id_3___\">Hello, World!</b>";
   private static final String REWRITTEN_HELLO_WORLD_HTML_HELPER_JS
       = jsModulePrefix(
-          new String[] { "cf", "ro" },
+          new String[] {},
           new String[] { "el___", "emitter___", "c_2___" },
           new String[0])
       + Join.join(
@@ -266,7 +255,9 @@ public class PipelineCacheTest extends PipelineStageTestCase {
       "    emitter___ = IMPORTS___.htmlEmitter___;",
       "    el___ = emitter___.byId('id_3___');",
       "    c_2___ = ___.markFuncFreeze(function (event, thisNode___) {",
-      "        $v.cf($v.ro('alert'), [ 'Hello' ]);",
+      "        (IMPORTS___.alert_v___? IMPORTS___.alert:"
+        + " ___.ri(IMPORTS___, 'alert'))",
+      "        .i___('Hello');",
       "      });",
       "    el___.onclick = function (event) {",
       ("      return plugin_dispatchEvent___"
@@ -287,42 +278,44 @@ public class PipelineCacheTest extends PipelineStageTestCase {
       = "<script defer>'use cajita'; alert('Hello');</script>";
   private static final String REWRITTEN_HELLO_WORLD_JS
       = jsModulePrefix(
-          new String[] { "ro" },
+          new String[] {},
           new String[0],
           new String[] { "alert" })
       + Join.join(
       "\n",
       "  try {",
       "    {",
-      "      moduleResult___ = alert.CALL___('Hello');",
+      "      moduleResult___ = (IMPORTS___.alert_v___? IMPORTS___.alert:",
+      "        ___.ri(IMPORTS___, 'alert')).i___('Hello');",
       "    }",
       "  } catch (ex___) {",
-      "    ___.getNewModuleHandler().handleUncaughtException("
-            + "ex___, $v.ro('onerror'),",
-      "      'PipelineCacheTest', '1');",
+      "    ___.getNewModuleHandler().handleUncaughtException(ex___,",
+      "      IMPORTS___.onerror_v___? IMPORTS___.onerror: ___.ri(IMPORTS___,",
+      "        'onerror'), 'PipelineCacheTest', '1');",
       "  }",
       "  return moduleResult___;",
       "}");
-
+  
   private static final String CACHEABLE_HELLO_WORLD_JS_VARIANT
       = "<script>'use cajita'; alert('Howdy');</script>";
   private static final String CACHEABLE_HELLO_WORLD_JS_VARIANT_DEFERRED
      = "<script defer>'use cajita'; alert('Howdy');</script>";
   private static final String REWRITTEN_HELLO_WORLD_JS_VARIANT
       = jsModulePrefix(
-          new String[] { "ro" },
+          new String[] {},
           new String[0],
           new String[] { "alert" })
       + Join.join(
       "\n",
       "  try {",
       "    {",
-      "      moduleResult___ = alert.CALL___('Howdy');",
+      "      moduleResult___ = (IMPORTS___.alert_v___? IMPORTS___.alert:",
+      "        ___.ri(IMPORTS___, 'alert')).i___('Howdy');",
       "    }",
       "  } catch (ex___) {",
-      "    ___.getNewModuleHandler().handleUncaughtException("
-            + "ex___, $v.ro('onerror'),",
-      "      'PipelineCacheTest', '1');",
+      "    ___.getNewModuleHandler().handleUncaughtException(ex___,",
+      "      IMPORTS___.onerror_v___? IMPORTS___.onerror: ___.ri(IMPORTS___,",
+      "        'onerror'), 'PipelineCacheTest', '1');",
       "  }",
       "  return moduleResult___;",
       "}");
@@ -330,6 +323,7 @@ public class PipelineCacheTest extends PipelineStageTestCase {
   private static final String SIGNAL_LOADED_JS = Join.join(
       "\n",
       "{",
+      "  var dis___ = IMPORTS___;",
       "  var moduleResult___;",
       "  moduleResult___ = ___.NO_RESULT;",
       "  {",
@@ -530,7 +524,7 @@ public class PipelineCacheTest extends PipelineStageTestCase {
     JobStub[] goldens = {
         job("<p id=\"id_2___\">1337</p>", ContentType.HTML),
         job(jsModulePrefix(
-            new String[] { "cf", "ro" },
+            new String[] {},
             new String[] { "el___", "emitter___", "c_1___" }, new String[0])
             + Join.join(
                 "\n",
@@ -538,7 +532,9 @@ public class PipelineCacheTest extends PipelineStageTestCase {
                 "    emitter___ = IMPORTS___.htmlEmitter___;",
                 "    el___ = emitter___.byId('id_2___');",
                 "    c_1___ = ___.markFuncFreeze(function (event, thisNode___) {",
-                "        $v.cf($v.ro('alert'), [ 1337 ]);",
+                "        (IMPORTS___.alert_v___? IMPORTS___.alert:"
+                + " ___.ri(IMPORTS___, 'alert'))",
+                "        .i___(1337);",
                 "      });",
                 "    el___.onclick = function (event) {",
                 "      return plugin_dispatchEvent___(this, event, ___.getId(IMPORTS___),",

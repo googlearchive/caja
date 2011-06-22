@@ -160,7 +160,6 @@ public class BenchmarkRunner extends CajaTestCase {
   
   private double runCajoledES53(String filename) throws Exception {
     PluginMeta meta = new PluginMeta();
-    meta.setEnableES53(true);
     MessageQueue mq = new SimpleMessageQueue();
     PluginCompiler pc = new PluginCompiler(new TestBuildInfo(), meta, mq);
     CharProducer src = fromString(plain(fromResource(filename)));

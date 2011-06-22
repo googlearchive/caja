@@ -19,8 +19,6 @@ import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.DirectivePrologue;
 import com.google.caja.parser.js.TranslatedCode;
 import com.google.caja.parser.js.UncajoledModule;
-import com.google.caja.parser.quasiliteral.CajitaRewriter;
-import com.google.caja.parser.quasiliteral.DefaultValijaRewriter;
 import com.google.caja.parser.quasiliteral.IllegalReferenceCheckRewriter;
 import com.google.caja.parser.quasiliteral.ModuleManager;
 import com.google.caja.parser.quasiliteral.NonAsciiCheckVisitor;
@@ -44,10 +42,6 @@ public class ExpressionSanitizerCaja {
   }
 
   public ParseTreeNode sanitize(ParseTreeNode input) {
-    return sanitize(input, false);
-  }
-
-  public ParseTreeNode sanitize(ParseTreeNode input, boolean useSES) {
     MessageQueue mq = mgr.getMessageQueue();
     ParseTreeNode result = null;
     if (input instanceof UncajoledModule) {
@@ -60,16 +54,7 @@ public class ExpressionSanitizerCaja {
         result = input;
       }
     }
-    if (useSES) {
-      result = newES53Rewriter().expand(input);
-    } else {
-      if (result == null) {
-        result = newValijaRewriter(mq).expand(input);
-      }
-      if (!mq.hasMessageAtLevel(MessageLevel.ERROR)) {
-        result = newCajitaRewriter(mgr).expand(result);
-      }
-    }
+    result = newES53Rewriter(mgr).expand(input);
     if (!mq.hasMessageAtLevel(MessageLevel.ERROR)) {
       result = new IllegalReferenceCheckRewriter(mq, false).expand(result);
       if (!mq.hasMessageAtLevel(MessageLevel.ERROR)) {
@@ -79,16 +64,7 @@ public class ExpressionSanitizerCaja {
     return result;
   }
 
-  /** Visible for testing. */
-  protected Rewriter newCajitaRewriter(ModuleManager mgr) {
-    return new CajitaRewriter(baseUri, mgr, false);
-  }
-
-  protected Rewriter newES53Rewriter() {
+  protected Rewriter newES53Rewriter(ModuleManager mgr) {
     return new ES53Rewriter(baseUri, mgr, false);
-  }
-
-  protected Rewriter newValijaRewriter(MessageQueue mq) {
-    return new DefaultValijaRewriter(mq, false);
   }
 }

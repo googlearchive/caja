@@ -45,11 +45,10 @@ public class ExpressionSanitizerTest extends CajaTestCase {
   public final void testBasicRewriting() throws Exception {
     assertSanitize(
         "  'use strict';"
-        + "'use cajita';"
         + "g[i];",
-        "  var g = ___.readImport(IMPORTS___, 'g');"
-        + "var i = ___.readImport(IMPORTS___, 'i');"
-        + "___.readPub(g, i);");
+        "var dis___ = IMPORTS___;"
+        + "(IMPORTS___.g_v___? IMPORTS___.g: ___.ri(IMPORTS___, 'g'))"
+        + ".v___(IMPORTS___.i_v___? IMPORTS___.i: ___.ri(IMPORTS___, 'i'));");
   }
 
   public final void testNoSpuriousRewriteErrorFound() {
@@ -76,7 +75,7 @@ public class ExpressionSanitizerTest extends CajaTestCase {
         UriFetcher.NULL_NETWORK, false, mq);
     return new ExpressionSanitizerCaja(mgr, null) {
       @Override
-      protected Rewriter newCajitaRewriter(ModuleManager mgr) {
+      protected Rewriter newES53Rewriter(ModuleManager mgr) {
         return new Rewriter(mq, true, true) {{
           addRule(new Rule() {
             @Override

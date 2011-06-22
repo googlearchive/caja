@@ -70,7 +70,6 @@ public class HtmlHandler extends AbstractCajolingHandler {
       throws UnsupportedContentTypeException {
     PluginMeta meta = new PluginMeta(uriFetcher, null);
     meta.setIdClass(args.get("idclass"));
-    meta.setEnableES53(directives.contains(CajolingService.Directive.ES53));
 
     boolean htmlInline =
         CajaArguments.EMIT_HTML_IN_JS.get(args) != null

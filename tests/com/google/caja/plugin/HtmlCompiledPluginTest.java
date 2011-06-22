@@ -15,14 +15,10 @@
 package com.google.caja.plugin;
 
 import com.google.caja.lexer.FilePosition;
-import com.google.caja.parser.ParseTreeNode;
-import com.google.caja.parser.quasiliteral.CajitaRewriter;
 import com.google.caja.parser.html.Dom;
 import com.google.caja.parser.html.DomParser;
 import com.google.caja.parser.html.Nodes;
-import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.CajoledModule;
-import com.google.caja.parser.js.UncajoledModule;
 import com.google.caja.reporting.MarkupRenderMode;
 import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessageType;
@@ -138,91 +134,37 @@ public class HtmlCompiledPluginTest extends CajaTestCase {
         "");
   }
 
-  public final void testCajitaBlocks() throws Exception {
-    execGadget(
-        ""
-        + "<script>"
-        + "  'use strict';"
-        + "  Object.prototype.hello = 'there';"  // Monkey patch
-        + "</script>"
-        + "<script>"
-        + "  'use strict';"
-        + "  'use cajita';"
-        + "  assertEquals('not visible in cajita', undefined, ({}).hello);"
-        + "</script>"
-        + "<script>"
-        + "  'use strict';"
-        + "  assertEquals('visible in valija', 'there', ({}).hello);"
-        + "</script>"
-        + "<script>"
-        + "  assertEquals("
-        + "      'nested cajita fns not patched',"
-        + "      'there,,',"
-        + "      [ ({}).hello,"
-        + "        (function () {"
-        + "          'use strict';"
-        + "          'use cajita';"
-        + "          return {}.hello;"
-        + "        })(),"
-        + "        (function f() {"
-        + "          'use strict';"
-        + "          'use cajita';"
-        + "          return {}.hello;"
-        + "        })() ]"
-        + "      .join(','));"
-        + "</script>"
-        + "<script>"
-        + "  assertEquals('cajita fn decls hoisted to block', undefined, f);"
-        + "  {"
-        + "    function f() { 'use strict'; 'use cajita'; return {}.hello; }"
-        + "    assertEquals('cajita fns not patchable', undefined, f());"
-        + "    assertThrows(function () { f.foo = 'bar'; });"
-        + "    assertEquals('cajita fns frozen', undefined, f.foo);"
-        + "  }"
-        + "</script>",
-
-        // Not visible when uncajoled.
-        "assertEquals(undefined, ({}).hello);");
-  }
-
   public final void testCustomOnErrorHandler() throws Exception {
     execGadget(
         "<script>\n" +
-        "  'use cajita';\n" +
-        "  window.a = 0, window.b = 0;\n" +
+        "  var a = 0, b = 0;\n" +
+        "  var messages = [];\n" +
         "</script>\n" +
         "<script>\n" +
-        "  'use cajita';\n" +
-        "  window.messages = [];\n" +
-        "  $v.so('onerror',\n" +
-        "        function onerror(message, source, lineNumber) {\n" +
-        "          window.messages.push(\n" +
-        "              source + ':' + lineNumber + ': ' + message);\n" +
-        "        });\n" +
+        "  function onerror(message, source, lineNumber) {\n" +
+        "    messages.push(\n" +
+        "      source + ':' + lineNumber + ': ' + message);\n" +
+        "  }\n" +
         "</script>\n" +
         "<script>\n" +
-        "  'use cajita';\n" +
         // The below is line 15
         "  throw new Error('panic');\n" +
-        "  window.a = 1;</script>\n" +
+        "  a = 1;</script>\n" +
         "<script>\n" +
-        "  'use cajita';\n" +
-        "  window.b = 1;\n" +
+        "  b = 1;\n" +
         "</script>\n" +
         "<script>\n" +
-        "  'use cajita';\n" +
-        "  assertEquals('window.a', 0, window.a);\n" +
-        "  assertEquals('window.b', 1, window.b);\n" +
+        "  assertEquals('a', 0, a);\n" +
+        "  assertEquals('b', 1, b);\n" +
         "</script>\n" +
         "<script>\n" +
-        "  'use cajita';\n" +
-        "  assertEquals('# messages', 1, window.messages.length);\n" +
+        "  assertEquals('# messages', 1, messages.length);\n" +
         "  assertEquals(\n" +
-        "      'testCustomOnErrorHandler:15: panic', window.messages[0]);\n" +
+        "      'testCustomOnErrorHandler:12: panic', messages[0]);\n" +
         "</script>",
 
         // Sanity check to make sure that cajoled asserts ran properly.
-        "assertEquals(1, imports.window.messages.length);");
+        "assertEquals(1, imports.messages.length);");
   }
 
   public final void testPartialScript() throws Exception {
@@ -264,13 +206,6 @@ public class HtmlCompiledPluginTest extends CajaTestCase {
           ? Nodes.render(htmlTree, MarkupRenderMode.HTML) : "";
       String js = jsTree != null ? render(jsTree) : "";
 
-      Block valijaOrigNode = js(fromResource(
-          "/com/google/caja/valija-cajita.js"));
-      ParseTreeNode valijaCajoledNode = new CajitaRewriter(
-          TestBuildInfo.getInstance(), mq, false)
-          .expand(new UncajoledModule(valijaOrigNode));
-      String valijaCajoled = render(valijaCajoledNode);
-
       String htmlStubUrl = TestUtil.makeContentUrl(
           "<html><head/><body><div id=\"test-test\">"
           + staticHtml
@@ -293,21 +228,13 @@ public class HtmlCompiledPluginTest extends CajaTestCase {
             // Plugin Framework
             new Executor.Input(
                 getClass(), "../../../../js/json_sans_eval/json_sans_eval.js"),
-            new Executor.Input(getClass(), "../cajita.js"),
+            new Executor.Input(getClass(), "../es53.js"),
             new Executor.Input(
-                "___.setLogFunc(function(s, opt_stop) { console.log(s); });",
-                "setLogFunc-setup"),
-            new Executor.Input(
-                "var valijaMaker = {};\n" +
                 "var testImports = ___.copy(___.sharedImports);\n" +
-                "testImports.loader = {\n" +
-                "  provide: ___.markFuncFreeze(\n" +
-                "      function(v) { valijaMaker = v; })\n" +
-                "};\n" +
-                "testImports.outers = ___.copy(___.sharedImports);\n" +
-                "___.getNewModuleHandler().setImports(testImports);",
-                getName() + "valija-setup"),
-            new Executor.Input(valijaCajoled, "valija-cajoled"),
+                "___.setLogFunc(function (s) { console.log(s); });\n" +
+                "var imports = ___.whitelistAll(testImports);" +
+                "___.getNewModuleHandler().setImports(imports);",
+                getName() + "es53-setup"),
             new Executor.Input(getClass(), "html4-defs.js"),
             new Executor.Input(getClass(), "html-sanitizer.js"),
             new Executor.Input(getClass(), "bridal.js"),
