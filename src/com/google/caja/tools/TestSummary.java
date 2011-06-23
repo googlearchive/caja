@@ -85,6 +85,7 @@ public final class TestSummary extends Task {
     scanner.scan();
     for (String resultFileName : scanner.getIncludedFiles()) {
       File resultFile = new File(baseDir, resultFileName);
+      if (resultFile.length() == 0) { continue; }
       log("processing file " + resultFileName, Project.MSG_VERBOSE);
       Document result;
       try {
