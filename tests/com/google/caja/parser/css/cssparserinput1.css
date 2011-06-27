@@ -58,6 +58,7 @@ UL UL, OL OL    { margin-top: 0; margin-bottom: 0 }
 U, INS          { text-decoration: underline }
 CENTER          { text-align: center }
 BR:before       { content: "\A" }
+COLOR_NOHASH	{ color:987E81 }
 
 /* An example of style for HTML 4.0's ABBR/ACRONYM elements */
 

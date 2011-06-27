@@ -752,7 +752,19 @@ public final class CssParser {
     Token<CssTokenType> t = tq.pop();
     switch (t.type) {
       case QUANTITY:
-        return new CssTree.QuantityLiteral(pos(m), unescape(t));
+        try {
+          return new CssTree.QuantityLiteral(pos(m), unescape(t));
+        } catch (IllegalArgumentException e) {
+          try {
+            // Try adding a hash to get a HashLiteral.
+            // In case of color literals, #s are missed sometimes.
+            return new CssTree.HashLiteral(pos(m), "#" + unescape(t));
+          } catch (IllegalArgumentException e2) {
+            return throwOrReport(
+                MessageType.UNEXPECTED_TOKEN, t.pos,
+                MessagePart.Factory.valueOf(t.text));
+          }
+        }
       case STRING:
       {
         String value = unescape(t);

@@ -625,6 +625,15 @@ StyleSheet
   RuleSet
     Selector
       SimpleSelector
+        IdentLiteral : COLOR_NOHASH
+    PropertyDeclaration
+      Property : color
+      Expr
+        Term
+          HashLiteral : #987E81
+  RuleSet
+    Selector
+      SimpleSelector
         IdentLiteral : ABBR
     Selector
       SimpleSelector

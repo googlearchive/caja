@@ -122,6 +122,9 @@ CENTER {
 BR:before {
   content: '\A '
 }
+COLOR_NOHASH {
+  color: #987E81
+}
 ABBR, ACRONYM {
   font-variant: small-caps;
   letter-spacing: 0.1em
