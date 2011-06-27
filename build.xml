@@ -739,7 +739,7 @@
     <concat destfile="${lib}/com/google/caja/ses/initSES.js">
       <!-- Makes initSES.js -->
       <filelist>
-        <file name="${src}/com/google/caja/ses/es5shim.js"/>
+        <file name="${src}/com/google/caja/ses/repairES5.js"/>
         <file name="${src}/com/google/caja/ses/WeakMap.js"/>
         <file name="${src}/com/google/caja/ses/whitelist.js"/>
         <file name="${src}/com/google/caja/ses/atLeastFreeVarNames.js"/>
@@ -751,7 +751,7 @@
       <!-- Makes initSES-minified.js -->
       <output file="${lib}/com/google/caja/ses/initSES-minified.js"
        language="javascript" renderer="minify"/>
-       <input file="${src}/com/google/caja/ses/es5shim.js"/>
+       <input file="${src}/com/google/caja/ses/repairES5.js"/>
        <input file="${src}/com/google/caja/ses/WeakMap.js"/>
        <input file="${src}/com/google/caja/ses/whitelist.js"/>
        <input file="${src}/com/google/caja/ses/atLeastFreeVarNames.js"/>

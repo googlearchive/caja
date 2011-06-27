@@ -17,8 +17,8 @@
  * environment following object-capability rules.
  */
 
-(function() {
+(function(global) {
   "use strict";
 
-  startSES(window, whitelist, atLeastFreeVarNames);
-})();
+  startSES(global, whitelist, atLeastFreeVarNames);
+})(this);
