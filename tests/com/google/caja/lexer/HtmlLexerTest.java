@@ -98,6 +98,20 @@ public class HtmlLexerTest extends CajaTestCase {
         "TAGEND: >");
   }
 
+  public final void testIEConditionalComments() throws Exception {
+    String ieCondComment1 =
+        "<!-- [if lte IE6]>"
+        + "<link href=\"iecss.css\" rel=\"stylesheet\" type=\"text/css\">"
+        + "<!--Text--><![endif]-->";
+    assertTokens(ieCondComment1, false, "IE_COMMENT: " + ieCondComment1);
+
+    String ieCondComment2 =
+        "<!-- [if lte IE6]>"
+        + "<script>alert(\"This could be an --> IE 6 browser.\");</script>"
+        + "<![endif]-->";
+    assertTokens(ieCondComment2, false, "IE_COMMENT: " + ieCondComment2);
+  }
+
   public final void testShortTags() throws Exception {
     // See comments in html-sanitizer-test.js as to why we don't bother with
     // short tags.  In short, they are not in HTML5 and not implemented properly

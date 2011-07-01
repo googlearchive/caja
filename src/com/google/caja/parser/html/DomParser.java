@@ -585,6 +585,7 @@ public class DomParser {
           out.processText(t);
           return;
         case COMMENT:
+        case IE_COMMENT:
           out.processComment(t);
           return;
         default:
@@ -729,6 +730,7 @@ public class DomParser {
       Token<HtmlTokenType> t = tokens.peek();
       switch (t.type) {
         case COMMENT:
+        case IE_COMMENT:
         case IGNORABLE:
           tokens.pop();
           break;

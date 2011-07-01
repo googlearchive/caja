@@ -143,35 +143,49 @@ public class NodesTest extends CajaTestCase {
   final String RENDER_NO_COMMENTS = "<foo>\n"
       + "before  after \n"
       + "</foo>";
+  final String IE_COMMENTS_TEST_XML = (
+      "before <!-- Test Data --> after \n"
+      + "<!-- [if IE ]>"
+      + "<link href=\"iecss.css\" rel=\"stylesheet\" type=\"text/css\" />"
+      + "<!-- with htc -->"
+      + "<![endif]-->");
+  
   public final void testCommentsRemoved() throws Exception {
-    TokenQueue<HtmlTokenType> tq = DomParser.makeTokenQueue(
-        FilePosition.startOfFile(is), new StringReader(TEST_XML), true, true);
-    Element el = new DomParser(tq, true, mq).parseDocument();
+    Node el = parse(TEST_XML, false);
     assertEquals(RENDER_NO_COMMENTS, Nodes.render(el, MarkupRenderMode.HTML));
+    el = parse(TEST_XML, true);
     assertEquals(RENDER_NO_COMMENTS, Nodes.render(el, MarkupRenderMode.XML));
   }
 
   public final void testCommentsPreservedInUnsafeMode() throws Exception {
-    Node el = parse(TEST_XML);
+    Node el = parse(TEST_XML, false);
     assertRendersUnsafe(RENDER_WITH_COMMENTS, el, MarkupRenderMode.HTML);
+    el = parse(TEST_XML, true);
     assertRendersUnsafe(RENDER_WITH_COMMENTS, el, MarkupRenderMode.XML);
   }
 
+  public final void testIECommentsPreservedInUnsafeMode() throws Exception {
+    Node el = parse(IE_COMMENTS_TEST_XML, false);
+    assertRendersUnsafe(IE_COMMENTS_TEST_XML, el, MarkupRenderMode.HTML);
+    el = parse(IE_COMMENTS_TEST_XML, true);
+    assertRendersUnsafe(IE_COMMENTS_TEST_XML, el, MarkupRenderMode.XML);
+  }
+
   public final void testIllegalCharactersInComment() throws Exception {
-    assertRendersUnsafe("<!-- -- -->", parse("<!-- -- -->"),
+    assertRendersUnsafe("before <!-- -- -->", parse("before <!-- -- -->", false),
         MarkupRenderMode.HTML);
-    assertRendersUnsafe("<!-- -- -->", parse("<!-- -- -->"),
+    assertRendersUnsafe("before <!-- -- -->", parse("before <!-- -- -->", false),
         MarkupRenderMode.HTML);
-    assertFailsToRenderUnsafe("<!-->>>-->", MarkupRenderMode.HTML,
+    assertFailsToRenderUnsafe("before <!-->>>-->", false, MarkupRenderMode.HTML,
         "XML comment", "starts with '>'");
-    assertFailsToRenderUnsafe("<!-->>>-->", MarkupRenderMode.XML,
+    assertFailsToRenderUnsafe("before <!-->>>-->", true, MarkupRenderMode.XML,
         "XML comment", "starts with '>'");
   }
 
-  private Node parse(String xml) throws Exception {
-    TokenQueue<HtmlTokenType> tq = DomParser.makeTokenQueue(
-        FilePosition.startOfFile(is), new StringReader(xml), true, true);
-    return new DomParser(tq, true, mq).parseFragment();
+  private Node parse(String xml, boolean asXml) throws Exception {
+    TokenQueue<HtmlTokenType> tq = DomParser.makeTokenQueue(        
+        FilePosition.startOfFile(is), new StringReader(xml), asXml, true);
+    return new DomParser(tq, asXml, mq).parseFragment();
   }
 
   @SuppressWarnings("deprecation")
@@ -186,12 +200,12 @@ public class NodesTest extends CajaTestCase {
 
   @SuppressWarnings("deprecation")
   private void assertFailsToRenderUnsafe(
-      String xml, MarkupRenderMode mode, String... messages)
+      String xml, boolean asXml, MarkupRenderMode mode, String... messages)
       throws Exception {
     try {
       TokenQueue<HtmlTokenType> tq = DomParser.makeTokenQueue(
-          FilePosition.startOfFile(is), new StringReader(xml), true, true);
-      DocumentFragment el = new DomParser(tq, true, mq).parseFragment();
+          FilePosition.startOfFile(is), new StringReader(xml), asXml, true);
+      DocumentFragment el = new DomParser(tq, asXml, mq).parseFragment();
       Nodes.renderUnsafe(el, mode);
       fail("No error rendering illegal fragment");
     } catch (IllegalStateException e) {

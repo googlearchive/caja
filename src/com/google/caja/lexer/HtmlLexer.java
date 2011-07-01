@@ -350,7 +350,10 @@ final class HtmlInputSplitter extends AbstractTokenStream<HtmlTokenType> {
     COMMENT,
     COMMENT_DASH,
     COMMENT_DASH_DASH,
+    IE_COMMENT,
+    IE_COMMENT_END,
     DIRECTIVE,
+    DIRECTIVE_OR_IE_COMMENT,
     DONE,
     APP_DIRECTIVE,
     APP_DIRECTIVE_QMARK,
@@ -557,7 +560,7 @@ final class HtmlInputSplitter extends AbstractTokenStream<HtmlTokenType> {
                   } else if ('-' == ch) {
                     state = State.BANG_DASH;
                   } else {
-                    state = State.DIRECTIVE;
+                    state = State.DIRECTIVE_OR_IE_COMMENT;
                   }
                   break;
                 case CDATA:
@@ -588,6 +591,8 @@ final class HtmlInputSplitter extends AbstractTokenStream<HtmlTokenType> {
                 case COMMENT:
                   if ('-' == ch) {
                     state = State.COMMENT_DASH;
+                  } else if ('[' == ch) {
+                    state = State.DIRECTIVE_OR_IE_COMMENT;
                   }
                   break;
                 case COMMENT_DASH:
@@ -608,6 +613,25 @@ final class HtmlInputSplitter extends AbstractTokenStream<HtmlTokenType> {
                 case DIRECTIVE:
                   if ('>' == ch) {
                     type = HtmlTokenType.DIRECTIVE;
+                    state = State.DONE;
+                  }
+                  break;
+                case DIRECTIVE_OR_IE_COMMENT:
+                  if (lookahead(buffer, end, limit, "if ") ||
+                      lookahead(buffer, end, limit, "endif")) {
+                    state = State.IE_COMMENT;
+                  } else {
+                    state = State.DIRECTIVE;
+                  }
+                  break;
+                case IE_COMMENT:
+                  if (lookahead(buffer, end, limit, "<![")) {
+                    state = State.IE_COMMENT_END;
+                  }
+                  break;
+                case IE_COMMENT_END:
+                  if ('>' == ch) {
+                    type = HtmlTokenType.IE_COMMENT;
                     state = State.DONE;
                   }
                   break;
@@ -697,6 +721,10 @@ final class HtmlInputSplitter extends AbstractTokenStream<HtmlTokenType> {
                 case COMMENT_DASH_DASH:
                   type = HtmlTokenType.COMMENT;
                   break;
+                case IE_COMMENT:
+                case IE_COMMENT_END:
+                  type = HtmlTokenType.IE_COMMENT;
+                  break;
                 case DIRECTIVE:
                 case APP_DIRECTIVE:
                 case APP_DIRECTIVE_QMARK:
@@ -734,6 +762,18 @@ final class HtmlInputSplitter extends AbstractTokenStream<HtmlTokenType> {
   protected String name(String tagName) {
     return asXml || tagName.indexOf(':') >= 0
         ? tagName : Strings.toLowerCase(tagName);
+  }
+
+  private boolean lookahead(char [] buffer, int end, int limit, String textToMatch) {
+    String currentStr = "";
+    int i = end;
+    int j = i + textToMatch.length();
+    if (j <= limit) {
+      for (; i < j; ++i) {
+        currentStr += buffer[i];
+      }
+    }
+    return currentStr.equals(textToMatch);
   }
 
   private String name(int start, int end) {

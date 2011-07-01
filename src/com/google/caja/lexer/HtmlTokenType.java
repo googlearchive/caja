@@ -36,6 +36,10 @@ public enum HtmlTokenType implements TokenType {
    * <tt>&lt;?xml version=1.0?&gt;</tt> or an XML processing instruction.
    */
   DIRECTIVE,
+  /** An html or xml style IE conditional comment,
+   * <tt>&lt;!--[if lte IE 7]> HTML Code <![endif]--></tt>.
+   */
+  IE_COMMENT,
   /** Unescaped tag, for instance, inside a script, or xmp tag. */
   UNESCAPED,
   /**
