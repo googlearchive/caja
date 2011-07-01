@@ -2806,6 +2806,45 @@ public class DomParserTest extends CajaTestCase {
         Nodes.render(f));
   }
 
+  public final void testOrphanedQuotesInTags() throws Exception {
+    String input = "<html><head></head>"
+    + "<body><div \"></div>"
+    + "<div a=\"b\" ></div>"
+    + "<div \"test\" ></div>"
+    + "<div id=\"test\" \"></div>"
+    + "</body></html>";
+
+    String output = "<html><head></head>"
+    + "<body><div></div>"
+    + "<div a=\"b\"></div>"
+    + "<div></div>"
+    + "<div id=\"test\"></div>"
+    + "</body></html>";
+
+    assertParsedHtml(Arrays.asList(input),
+        Arrays.asList(
+            "Element : html 1+1-1+113",
+            "  Element : head 1+7-1+20",
+            "  Element : body 1+20-1+106",
+            "    Element : div 1+26-1+39",
+            "    Element : div 1+39-1+57",
+            "      Attrib : a 1+44-1+45",
+            "        Value : b 1+46-1+49",
+            "    Element : div 1+57-1+76",
+            "    Element : div 1+76-1+99",
+            "      Attrib : id 1+81-1+83",
+            "        Value : test 1+84-1+90"
+            ),
+        Arrays.asList(
+            "WARNING testOrphanedQuotesInTags:1+31 - 32: ignoring token '\"'",
+            "WARNING testOrphanedQuotesInTags:1+62 - 63: ignoring token '\"'",
+            "WARNING testOrphanedQuotesInTags:1+63 - 68: ignoring token"
+                + " 'test\"'",
+            "WARNING testOrphanedQuotesInTags:1+91 - 92: ignoring token '\"'"),
+        Arrays.asList(output)
+        );
+  }
+
   public final void testIssue1212() throws Exception {
     Node fragment = htmlFragment(fromString("<b>Hello, world</b><!---->"));
     assertEquals("<b>Hello, world</b>", Nodes.render(fragment));

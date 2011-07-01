@@ -393,6 +393,7 @@ final class HtmlInputSplitter extends AbstractTokenStream<HtmlTokenType> {
   }
 
   private String lastNonIgnorable = null;
+
   /**
    * Breaks the character stream into tokens.
    * This method returns a stream of tokens such that each token starts where
@@ -430,13 +431,17 @@ final class HtmlInputSplitter extends AbstractTokenStream<HtmlTokenType> {
       } else if ('=' == ch) {
         type = HtmlTokenType.TEXT;
       } else if ('"' == ch || '\'' == ch) {
-        type = HtmlTokenType.QSTRING;
-        int delim = ch;
-        for (; end < limit; ++end) {
-          if (buffer[end] == delim) {
-            ++end;
-            break;
+        if ("=".equals(lastNonIgnorable)) {
+          type = HtmlTokenType.QSTRING;
+          int delim = ch;
+          for (; end < limit; ++end) {
+            if (buffer[end] == delim) {
+              ++end;
+              break;
+            }
           }
+        } else {
+          type = HtmlTokenType.TEXT;
         }
       } else if (!Character.isWhitespace(ch)) {
         type = HtmlTokenType.TEXT;
