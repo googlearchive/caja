@@ -749,8 +749,21 @@ final class Renderer {
 
           String problem = null;
           problem = text.startsWith(">") ? "starts with '>'" : problem;
-          problem = text.startsWith("-") ? "starts with '-'" : problem;
-          problem = text.endsWith("-") ? "ends with '-'" : problem;
+          if (rc.markupRenderMode() != MarkupRenderMode.HTML) {
+            problem = text.startsWith("-") ? "starts with '-'" : problem;
+            problem = text.endsWith("-") ? "ends with '-'" : problem;
+          } else {
+            // If the comment starts or ends with "-", we remove these to make
+            // it spec-compliant as far as possible.
+            if (text.startsWith("-") || text.endsWith("-")) {
+              while (text.startsWith("-")) {
+                text = text.substring(1);
+              }
+              while (text.endsWith("-")) {
+                text = text.substring(0, text.length() - 1);
+              }
+            }
+          }
           // Comment nodes are only rendered in unsafe mode
           // TODO: Uncommenting the following check makes the comment rendering
           // html5/xml compliant, however, breaks some webpages which rely on
@@ -761,7 +774,7 @@ final class Renderer {
                 "XML comment unrenderable because it " + problem);
           }
           out.append("<!--");
-          out.append(node.getNodeValue());
+          out.append(text);
           out.append("-->");
         }
       }

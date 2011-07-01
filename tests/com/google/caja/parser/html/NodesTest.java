@@ -172,10 +172,16 @@ public class NodesTest extends CajaTestCase {
   }
 
   public final void testIllegalCharactersInComment() throws Exception {
+    assertRendersUnsafe("before <!-- Long Comment -->",
+        parse("before <!---- Long Comment ---->", false),
+        MarkupRenderMode.HTML);
+    assertRendersUnsafe("before <!-- Long -- Comment -->",
+            parse("before <!--- Long -- Comment --->", false),
+            MarkupRenderMode.HTML);
     assertRendersUnsafe("before <!-- -- -->", parse("before <!-- -- -->", false),
         MarkupRenderMode.HTML);
-    assertRendersUnsafe("before <!-- -- -->", parse("before <!-- -- -->", false),
-        MarkupRenderMode.HTML);
+    assertRendersUnsafe("before <!-- -- -->", parse("before <!-- -- -->", true),
+        MarkupRenderMode.XML);
     assertFailsToRenderUnsafe("before <!-->>>-->", false, MarkupRenderMode.HTML,
         "XML comment", "starts with '>'");
     assertFailsToRenderUnsafe("before <!-->>>-->", true, MarkupRenderMode.XML,
