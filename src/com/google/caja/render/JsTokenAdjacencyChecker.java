@@ -16,6 +16,8 @@ package com.google.caja.render;
 
 import com.google.caja.lexer.JsLexer;
 import com.google.caja.lexer.PunctuationTrie;
+import com.google.caja.parser.ParserBase;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -87,8 +89,7 @@ final class JsTokenAdjacencyChecker {
           spaceBefore = true;
         } else if (lastClass == TokenClassification.OTHER
                    && text.startsWith(".")
-                   && Character.isDigit(
-                         lastToken.charAt(lastToken.length() - 1))) {
+                   && mightCombineWithDecimalPoint(lastToken)) {
           // Separate numbers from . and similar operators.
           spaceBefore = true;
         }
@@ -119,6 +120,18 @@ final class JsTokenAdjacencyChecker {
     lastToken = text;
 
     return spaceBefore;
+  }
+
+  /**
+   * True if a dot adjacent to this token might be treated as a decimal point
+   * instead of a dot operator.
+   * Matches 1, 1.2, 1e3, .5, .5e-2, etc. but not foo1 or all hex literals
+   * 0xabcd.
+   */
+  private static boolean mightCombineWithDecimalPoint(String token) {
+    char last = token.charAt(token.length() - 1);
+    return ('0' <= last && last <= '9')
+        && !ParserBase.isJavascriptIdentifier(token.substring(0, 1));
   }
 
   private static final PunctuationTrie<?> START_TRIE;

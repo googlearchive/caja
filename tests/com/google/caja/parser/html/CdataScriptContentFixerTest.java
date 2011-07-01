@@ -22,6 +22,7 @@ import org.w3c.dom.Node;
 import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.render.Concatenator;
 import com.google.caja.reporting.MarkupRenderMode;
+import com.google.caja.reporting.PropertyNameQuotingMode;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.CajaTestCase;
 
@@ -103,9 +104,9 @@ public class CdataScriptContentFixerTest extends CajaTestCase {
     }
 
     CdataContentFixupRenderContext(
-        boolean asciiOnly, boolean embeddable, boolean json,
-        MarkupRenderMode markupMode, boolean rawObjKeys, TokenConsumer out) {
-      super(asciiOnly, embeddable, json, markupMode, rawObjKeys, out);
+        boolean asciiOnly, boolean embeddable, MarkupRenderMode markupMode,
+        PropertyNameQuotingMode propertyNameQuotingMode, TokenConsumer out) {
+      super(asciiOnly, embeddable, markupMode, propertyNameQuotingMode, out);
     }
 
 
@@ -118,10 +119,10 @@ public class CdataScriptContentFixerTest extends CajaTestCase {
 
     @Override
     protected RenderContext derive(
-        boolean asciiOnly, boolean embeddable, boolean json,
-        MarkupRenderMode markupMode, boolean rawObjKeys) {
+        boolean asciiOnly, boolean embeddable, MarkupRenderMode markupMode,
+        PropertyNameQuotingMode propertyNameQuotingMode) {
       return new CdataContentFixupRenderContext(
-          asciiOnly, embeddable, json, markupMode, rawObjKeys, getOut());
+          asciiOnly, embeddable, markupMode, propertyNameQuotingMode, getOut());
     }
   }
 }

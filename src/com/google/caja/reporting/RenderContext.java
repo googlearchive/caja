@@ -26,30 +26,27 @@ public class RenderContext {
   private final boolean embeddable;
   /** Produce output that only contains lower 7-bit characters. */
   private final boolean asciiOnly;
-  /** Should javascript output be rendered using JSON conventions. */
-  private final boolean json;
   /** True iff DOM tree nodes should be rendered as XML. */
   private final MarkupRenderMode markupMode;
   /**
-   * True iff object ctor keys that are JS identifiers can be rendered without
-   * quotes.
+   * Specify how property names are quoted.
    */
-  private final boolean rawObjKeys;
+  private final PropertyNameQuotingMode propertyNameQuotingMode;
   private final TokenConsumer out;
 
   public RenderContext(TokenConsumer out) {
-    this(true, false, false, MarkupRenderMode.HTML, false, out);
+    this(true, false, MarkupRenderMode.HTML, PropertyNameQuotingMode.DEFAULT,
+         out);
   }
 
   protected RenderContext(
-      boolean asciiOnly, boolean embeddable, boolean json,
-      MarkupRenderMode markupMode, boolean rawObjKeys, TokenConsumer out) {
+      boolean asciiOnly, boolean embeddable, MarkupRenderMode markupMode,
+      PropertyNameQuotingMode propertyNameQuotingMode, TokenConsumer out) {
     if (null == out) { throw new NullPointerException(); }
     this.embeddable = embeddable;
     this.asciiOnly = asciiOnly;
-    this.json = json;
     this.markupMode = markupMode;
-    this.rawObjKeys = rawObjKeys;
+    this.propertyNameQuotingMode = propertyNameQuotingMode;
     this.out = out;
   }
 
@@ -63,26 +60,35 @@ public class RenderContext {
    * {@code [\1-\x7f]}.
    */
   public final boolean isAsciiOnly() { return asciiOnly; }
-  public final boolean asJson() { return json; }
+  public final boolean asJson() {
+    return propertyNameQuotingMode == PropertyNameQuotingMode.DOUBLE_QUOTES;
+  }
   /** True iff DOM tree nodes should be rendered as XML. */
   public final boolean asXml() { return markupMode == MarkupRenderMode.XML; }
   public final MarkupRenderMode markupRenderMode() { return markupMode; }
-  public final boolean rawObjKeys() { return rawObjKeys; }
+  public final PropertyNameQuotingMode propertyNameQuotingMode() {
+    return propertyNameQuotingMode;
+  }
+  /** Use {@link #propertyNameQuotingMode} instead. */
+  @Deprecated
+  public final boolean rawObjKeys() {
+    return propertyNameQuotingMode == PropertyNameQuotingMode.NO_QUOTES;
+  }
   public final TokenConsumer getOut() { return out; }
 
   /** Must be overridden by subclasses to return an instance of the subclass. */
   protected RenderContext derive(
-      boolean asciiOnly, boolean embeddable, boolean json,
-      MarkupRenderMode markupMode, boolean rawObjKeys) {
+      boolean asciiOnly, boolean embeddable, MarkupRenderMode markupMode,
+      PropertyNameQuotingMode propertyNameQuotingMode) {
     return new RenderContext(
-        asciiOnly, embeddable, json, markupMode, rawObjKeys, out);
+        asciiOnly, embeddable, markupMode, propertyNameQuotingMode, out);
   }
 
   private RenderContext deriveChecked(
-      boolean asciiOnly, boolean embeddable, boolean json,
-      MarkupRenderMode markupMode, boolean rawObjKeys) {
+      boolean asciiOnly, boolean embeddable, MarkupRenderMode markupMode,
+      PropertyNameQuotingMode propertyNameQuotingMode) {
     RenderContext derived = derive(
-        asciiOnly, embeddable, json, markupMode, rawObjKeys);
+        asciiOnly, embeddable, markupMode, propertyNameQuotingMode);
     // Enforce that derive has been overridden.
     assert derived.getClass() == getClass();
     return derived;
@@ -90,32 +96,40 @@ public class RenderContext {
 
   public RenderContext withAsciiOnly(boolean b) {
     return b != asciiOnly
-        ? deriveChecked(b, embeddable, json, markupMode, rawObjKeys)
+        ? deriveChecked(b, embeddable, markupMode, propertyNameQuotingMode)
         : this;
   }
   public RenderContext withEmbeddable(boolean b) {
     return b != embeddable
-        ? deriveChecked(asciiOnly, b, json, markupMode, rawObjKeys)
+        ? deriveChecked(asciiOnly, b, markupMode, propertyNameQuotingMode)
         : this;
   }
   public RenderContext withJson(boolean b) {
-    return b != json
-        ? deriveChecked(asciiOnly, embeddable, b, markupMode, rawObjKeys)
-        : this;
+    return withPropertyNameQuotingMode(
+        b ? PropertyNameQuotingMode.DOUBLE_QUOTES
+        : PropertyNameQuotingMode.DEFAULT);
   }
   public RenderContext withMarkupRenderMode(MarkupRenderMode markupMode) {
     return markupMode != this.markupMode
-        ? deriveChecked(asciiOnly, embeddable, json, markupMode, rawObjKeys)
+        ? deriveChecked(asciiOnly, embeddable, markupMode,
+                        propertyNameQuotingMode)
         : this;
   }
+  /** Use {@link #withMarkupRenderMode} instead. */
   @Deprecated
   public RenderContext withAsXml(boolean b) {
     return withMarkupRenderMode(
         b ? MarkupRenderMode.XML : MarkupRenderMode.HTML);
   }
+  /** Use {@link #withPropertyNameQuotingMode} instead. */
+  @Deprecated
   public RenderContext withRawObjKeys(boolean b) {
-    return b != this.rawObjKeys
-        ? deriveChecked(asciiOnly, embeddable, json, markupMode, b)
+    return b ? withPropertyNameQuotingMode(PropertyNameQuotingMode.NO_QUOTES)
+        : withPropertyNameQuotingMode(PropertyNameQuotingMode.DEFAULT);
+  }
+  public RenderContext withPropertyNameQuotingMode(PropertyNameQuotingMode m) {
+    return this.propertyNameQuotingMode != m
+        ? deriveChecked(asciiOnly, embeddable, markupMode, m)
         : this;
   }
 }

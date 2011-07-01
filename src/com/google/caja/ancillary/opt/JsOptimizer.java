@@ -35,6 +35,7 @@ import com.google.caja.reporting.DevNullMessageQueue;
 import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessageQueue;
+import com.google.caja.reporting.PropertyNameQuotingMode;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.reporting.SimpleMessageQueue;
 import com.google.caja.util.Lists;
@@ -166,7 +167,8 @@ public class JsOptimizer {
     }
     JsMinimalPrinter printer = new JsMinimalPrinter(
         new Concatenator(System.out, null));
-    RenderContext rc = new RenderContext(printer).withRawObjKeys(true);
+    RenderContext rc = new RenderContext(printer)
+        .withPropertyNameQuotingMode(PropertyNameQuotingMode.NO_QUOTES);
     if (out instanceof Block) {
       ((Block) out).renderBody(rc);
     } else {

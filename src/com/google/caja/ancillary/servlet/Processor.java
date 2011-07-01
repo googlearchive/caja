@@ -70,6 +70,7 @@ import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.MessageTypeInt;
+import com.google.caja.reporting.PropertyNameQuotingMode;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.ContentType;
 import com.google.caja.util.Lists;
@@ -382,12 +383,15 @@ class Processor {
         throw new AssertionError(ot.name());
     }
     RenderContext rc = new RenderContext(tc);
-    rc = rc.withMarkupRenderMode(
-        ot == ContentType.XML
-        ? MarkupRenderMode.XML : MarkupRenderMode.HTML);
-    rc = rc.withAsciiOnly(req.asciiOnly);
-    rc = rc.withJson(ot == ContentType.JSON);
-    rc = rc.withRawObjKeys(req.minify);
+    rc = rc
+        .withMarkupRenderMode(
+            ot == ContentType.XML
+            ? MarkupRenderMode.XML : MarkupRenderMode.HTML)
+        .withAsciiOnly(req.asciiOnly)
+        .withJson(ot == ContentType.JSON);
+    if (req.minify) {
+      rc = rc.withPropertyNameQuotingMode(PropertyNameQuotingMode.NO_QUOTES);
+    }
     return rc;
   }
 

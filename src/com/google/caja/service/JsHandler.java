@@ -77,8 +77,8 @@ public class JsHandler extends AbstractCajolingHandler {
     try {
       OutputStreamWriter writer = new OutputStreamWriter(response,
           Charsets.UTF_8.name());
-      cajoleJs(uri, input.getTextualContent(), directive,
-          contentParams.b, writer, pretty, mq);
+      cajoleJs(
+          uri, input.getTextualContent(), contentParams.b, writer, pretty, mq);
       writer.flush();
     } catch (IOException e) {
       throw new UnsupportedContentTypeException();
@@ -88,7 +88,6 @@ public class JsHandler extends AbstractCajolingHandler {
 
   private void cajoleJs(URI inputUri,
                         CharProducer cp,
-                        List<CajolingService.Directive> directive,
                         String jsonpCallback,
                         Appendable output,
                         boolean pretty,
@@ -107,7 +106,7 @@ public class JsHandler extends AbstractCajolingHandler {
     } catch (ParseException e) {
       e.toMessageQueue(mq);
     } catch (IllegalStateException e) {
-      mq.addMessage(MessageType.INTERNAL_ERROR, 
+      mq.addMessage(MessageType.INTERNAL_ERROR,
           MessagePart.Factory.valueOf(e.getMessage()));
     } catch (IOException e) {
       // Message already on queue

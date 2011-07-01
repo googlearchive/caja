@@ -215,7 +215,7 @@ public class PipelineCacheTest extends PipelineStageTestCase {
 
 
   private static final String jsModulePrefix(
-      String[] importMembers, String[] vars, String[] imports) {
+      String[] importMembers, String[] vars) {
     StringBuilder sb = new StringBuilder();
     sb.append("{\n");
     sb.append("  var dis___ = IMPORTS___;\n");
@@ -247,8 +247,7 @@ public class PipelineCacheTest extends PipelineStageTestCase {
   private static final String REWRITTEN_HELLO_WORLD_HTML_HELPER_JS
       = jsModulePrefix(
           new String[] {},
-          new String[] { "el___", "emitter___", "c_2___" },
-          new String[0])
+          new String[] { "el___", "emitter___", "c_2___" })
       + Join.join(
       "\n",
       "  {",
@@ -279,8 +278,7 @@ public class PipelineCacheTest extends PipelineStageTestCase {
   private static final String REWRITTEN_HELLO_WORLD_JS
       = jsModulePrefix(
           new String[] {},
-          new String[0],
-          new String[] { "alert" })
+          new String[] {})
       + Join.join(
       "\n",
       "  try {",
@@ -295,7 +293,7 @@ public class PipelineCacheTest extends PipelineStageTestCase {
       "  }",
       "  return moduleResult___;",
       "}");
-  
+
   private static final String CACHEABLE_HELLO_WORLD_JS_VARIANT
       = "<script>'use cajita'; alert('Howdy');</script>";
   private static final String CACHEABLE_HELLO_WORLD_JS_VARIANT_DEFERRED
@@ -303,8 +301,7 @@ public class PipelineCacheTest extends PipelineStageTestCase {
   private static final String REWRITTEN_HELLO_WORLD_JS_VARIANT
       = jsModulePrefix(
           new String[] {},
-          new String[0],
-          new String[] { "alert" })
+          new String[] {})
       + Join.join(
       "\n",
       "  try {",
@@ -525,7 +522,7 @@ public class PipelineCacheTest extends PipelineStageTestCase {
         job("<p id=\"id_2___\">1337</p>", ContentType.HTML),
         job(jsModulePrefix(
             new String[] {},
-            new String[] { "el___", "emitter___", "c_1___" }, new String[0])
+            new String[] { "el___", "emitter___", "c_1___" })
             + Join.join(
                 "\n",
                 "  {",

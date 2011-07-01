@@ -98,7 +98,23 @@ public abstract class ObjProperty extends AbstractParseTreeNode
       RenderContext rc, boolean preferUnquoted) {
     StringLiteral key = (StringLiteral) children().get(0);
     TokenConsumer out = rc.getOut();
-    if (rc.rawObjKeys() || preferUnquoted) {
+    boolean unquoted = preferUnquoted;
+    switch (rc.propertyNameQuotingMode()) {
+      case NO_QUOTES: unquoted = true; break;
+      case PRESERVE_QUOTES:
+        String name = key.getValue();
+        if (name.length() == 0) {
+          unquoted = true;
+        } else {
+          char ch = name.charAt(0);
+          if (ch != '"' && ch != '\'') {
+            unquoted = true;
+          }
+        }
+        break;
+      default: break;
+    }
+    if (unquoted || preferUnquoted) {
       String uqVal = key.getUnquotedValue();
       if (ParserBase.isJavascriptIdentifier(uqVal)
           && !("get".equals(uqVal) || "set".equals(uqVal))) {

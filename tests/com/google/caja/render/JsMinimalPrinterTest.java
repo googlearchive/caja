@@ -202,6 +202,10 @@ public class JsMinimalPrinterTest extends CajaTestCase {
     assertTokens("2 .toString()", "2", ".", "toString", "(", ")");
     assertTokens("2..toString()", "2.", ".", "toString", "(", ")");
     assertTokens("2. .5", "2.", ".5");
+    assertTokens("html4.bar", "html4", ".", "bar");
+    assertTokens("html. 4 .bar", "html", ".", "4", ".", "bar");
+    assertTokens("e4.bar", "e4", ".", "bar");
+    assertTokens("1e4 .bar", "1e4", ".", "bar");
   }
 
   public final void testRestrictedSemicolonInsertion() throws Exception {

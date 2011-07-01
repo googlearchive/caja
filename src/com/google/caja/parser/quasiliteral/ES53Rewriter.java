@@ -127,8 +127,8 @@ public class ES53Rewriter extends Rewriter {
    *              function body.
    * @return If the function body contains a free use of <tt>arguments</tt>,
    *         translate to an initialization of cajoled arguments based on
-   *         an entry snapshot of the real ones. If the function body 
-   *         contains a free use of <tt>this</tt>, translate to an 
+   *         an entry snapshot of the real ones. If the function body
+   *         contains a free use of <tt>this</tt>, translate to an
    *         initialization of <tt>dis___</tt> to a sanitized this, by
    *         replacing the global object with <tt>void 0</tt>.
    */
@@ -537,8 +537,8 @@ public class ES53Rewriter extends Rewriter {
           FilePosition unk = FilePosition.UNKNOWN;
           Expression assign1 = Operation.create(unk, Operator.ASSIGN, k, kt);
           assign1.getAttributes().set(ParseTreeNode.TAINTED, true);
-          Expression assign2 = Operation.create(unk, Operator.ASSIGN, k, 
-              Operation.create(unk, Operator.SQUARE_BRACKET, (Expression) m,
+          Expression assign2 = Operation.create(unk, Operator.ASSIGN, k,
+              Operation.create(unk, Operator.SQUARE_BRACKET, m,
               new IntegerLiteral(unk, 1)));
           assign2.getAttributes().set(ParseTreeNode.TAINTED, true);
 
@@ -1157,7 +1157,7 @@ public class ES53Rewriter extends Rewriter {
             Pair<Expression, Expression> rPair =
                 reuse(nymize(r, index.toString(), "meth"), scope);
             return commas(oPair.b, rPair.b, (Expression) QuasiBuilder.substV(
-                "(@oRef.NUM____w___ === @oRef) ? " + 
+                "(@oRef.NUM____w___ === @oRef) ? " +
                 "    (@oRef[@numLiteral] = @rRef) : " +
                 "    @oRef.w___(@numLiteral, @rRef);",
                 "oRef", oPair.a,
@@ -1689,7 +1689,7 @@ public class ES53Rewriter extends Rewriter {
         // Anonymous simple function constructor
         if (bindings != null) {
           Scope s2 = Scope.fromFunctionConstructor(
-              scope, 
+              scope,
               (FunctionConstructor) node);
           ParseTreeNodeContainer ps =
               (ParseTreeNodeContainer) bindings.get("ps");

@@ -56,6 +56,7 @@ import com.google.caja.plugin.UriEffect;
 import com.google.caja.reporting.EchoingMessageQueue;
 import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessageQueue;
+import com.google.caja.reporting.PropertyNameQuotingMode;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.reporting.SimpleMessageQueue;
 import com.google.caja.tools.BuildCommand;
@@ -105,7 +106,9 @@ public final class HtmlDefinitions {
     List<StringLiteral> keys = Lists.newArrayList();
     List<IntegerLiteral> values = Lists.newArrayList();
     for (U e : entries) {
-      keys.add(StringLiteral.valueOf(unk, keyMaker.apply(e)));
+      // Use an unquoted key for consistency with . usage in JS.
+      // This makes Closure compiler advanced mode happier.
+      keys.add(new StringLiteral(unk, keyMaker.apply(e)));
       values.add(new IntegerLiteral(unk, valueMaker.apply(e)));
     }
     return new ExpressionStmt(unk,
@@ -481,7 +484,9 @@ public final class HtmlDefinitions {
       out.write(" */\n");
       try {
         Block node = generateJavascriptDefinitions(schema);
-        RenderContext rc = new RenderContext(node.makeRenderer(out, null));
+        RenderContext rc = new RenderContext(node.makeRenderer(out, null))
+            .withPropertyNameQuotingMode(
+                PropertyNameQuotingMode.PRESERVE_QUOTES);
         for (Statement s : node.children()) {
           s.render(rc);
           if (!s.isTerminal()) { rc.getOut().consume(";"); }
