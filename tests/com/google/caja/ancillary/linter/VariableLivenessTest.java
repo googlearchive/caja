@@ -1505,6 +1505,17 @@ public class VariableLivenessTest extends CajaTestCase {
         "  DirectivePrologue",
         "    Directive : use strict");
   }
+  
+  public final void testDebugger() throws Exception {
+    assertLiveness(
+        js(fromString("debugger; var x = 3; debugger;")),
+        "Block",
+        "  DebuggerStmt",
+        "  Declaration",
+        "    Identifier : x",
+        "    IntegerLiteral : 3",
+        "  DebuggerStmt ; liveness=(x)");
+  }
 
   private static ExitModes setup(ParseTreeNode js) {
     ScopeAnalyzer sa = new ScopeAnalyzer();

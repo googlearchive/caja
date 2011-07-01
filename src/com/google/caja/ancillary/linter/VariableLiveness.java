@@ -22,6 +22,7 @@ import com.google.caja.parser.js.CaseStmt;
 import com.google.caja.parser.js.CatchStmt;
 import com.google.caja.parser.js.Conditional;
 import com.google.caja.parser.js.ContinueStmt;
+import com.google.caja.parser.js.DebuggerStmt;
 import com.google.caja.parser.js.Declaration;
 import com.google.caja.parser.js.DefaultCaseStmt;
 import com.google.caja.parser.js.DirectivePrologue;
@@ -212,6 +213,8 @@ final class VariableLiveness {
       return processLabeledStmtWrapper((LabeledStmtWrapper) s, onEntry);
     } else if (s instanceof DirectivePrologue) {
       return processDirectivePrologue(onEntry);
+    } else if (s instanceof DebuggerStmt) {
+      return new LiveCalc(onEntry, ExitModes.COMPLETES);
     } else {
       throw new RuntimeException(s.getClass().getName());
     }
