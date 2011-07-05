@@ -149,6 +149,14 @@ public class NodesTest extends CajaTestCase {
       + "<link href=\"iecss.css\" rel=\"stylesheet\" type=\"text/css\" />"
       + "<!-- with htc -->"
       + "<![endif]-->");
+  final String IE_COMMENTS_WITH_CDATA_TEST_XML = (
+      "before <!--[if lt IE 7]>"
+      + "<script type=\"text/javascript\">"
+      + "//<![CDATA["
+      + "var x = 1;"
+      + "//]]>"
+      + "</script>"
+      + "<![endif]-->");
   
   public final void testCommentsRemoved() throws Exception {
     Node el = parse(TEST_XML, false);
@@ -169,6 +177,16 @@ public class NodesTest extends CajaTestCase {
     assertRendersUnsafe(IE_COMMENTS_TEST_XML, el, MarkupRenderMode.HTML);
     el = parse(IE_COMMENTS_TEST_XML, true);
     assertRendersUnsafe(IE_COMMENTS_TEST_XML, el, MarkupRenderMode.XML);
+  }
+
+  public final void testIECommentsWithCdataPreservedInUnsafeMode()
+      throws Exception {
+    Node el = parse(IE_COMMENTS_WITH_CDATA_TEST_XML, false);
+    assertRendersUnsafe(IE_COMMENTS_WITH_CDATA_TEST_XML,
+                        el, MarkupRenderMode.HTML);
+    el = parse(IE_COMMENTS_WITH_CDATA_TEST_XML, true);
+    assertRendersUnsafe(IE_COMMENTS_WITH_CDATA_TEST_XML,
+                        el, MarkupRenderMode.XML);
   }
 
   public final void testIllegalCharactersInComment() throws Exception {

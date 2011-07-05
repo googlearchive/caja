@@ -622,15 +622,14 @@ final class HtmlInputSplitter extends AbstractTokenStream<HtmlTokenType> {
                   }
                   break;
                 case DIRECTIVE_OR_IE_COMMENT:
-                  if (lookahead(buffer, end, limit, "if ") ||
-                      lookahead(buffer, end, limit, "endif")) {
+                  if (lookahead(buffer, end, limit, "if ")) {
                     state = State.IE_COMMENT;
                   } else {
                     state = State.DIRECTIVE;
                   }
                   break;
                 case IE_COMMENT:
-                  if (lookahead(buffer, end, limit, "<![")) {
+                  if (lookahead(buffer, end, limit, "<![endif")) {
                     state = State.IE_COMMENT_END;
                   }
                   break;
