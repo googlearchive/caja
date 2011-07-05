@@ -232,6 +232,43 @@ public abstract class CssTree extends AbstractParseTreeNode {
 
   /**
    * <pre>
+   * charset
+   *   : CHARSET_SYM STRING ';'    
+   * </pre>
+   */
+  public static final class Charset extends CssStatement {
+    private static final long serialVersionUID = -1098593776699942573L;
+
+    String charset;
+
+    /** @param none ignored but required for reflection. */
+    @ReflectiveCtor
+    public Charset(
+        FilePosition pos, String charset, List<? extends CssTree> none) {
+      this(pos, charset);
+    }
+    public Charset(FilePosition pos, String charset) {
+      super(pos, Collections.<CssTree>emptyList());
+      this.charset = charset;
+    }
+
+    @Override
+    public String getValue() { return charset; }
+
+    public void render(RenderContext r) {
+      TokenConsumer out = r.getOut();
+      out.mark(getFilePosition());
+      out.consume("@");
+      out.consume("charset");
+      out.consume(" ");
+      renderCssString(charset, r);
+      out.consume(";");
+      out.consume("\n");
+    }
+  }
+
+  /**
+   * <pre>
    * media
    *   : MEDIA_SYM S* medium [ ',' S* medium ]* '{' S* ruleset* '}' S*
    * </pre>

@@ -221,6 +221,11 @@ public final class CssParser {
     try {
       Mark m = tq.mark();
       List<CssTree.CssStatement> stmts = Lists.newArrayList();
+
+      if (lookaheadSymbol("@charset ", false)) {
+        addIfNotNull(stmts, parseCharset());
+      }
+
       while (true) {
         skipTopLevelIgnorables();
         if (!lookaheadSymbol("@import")) { break; }
@@ -262,6 +267,37 @@ public final class CssParser {
   }
 
   // All the non-public parse methods below may return null in tolerant mode.
+
+  private CssTree.Charset parseCharset() throws ParseException {
+    Mark m = tq.mark();
+    expectSymbol("@charset ", false);
+
+    Token<CssTokenType> t = tq.pop();
+    String charset = null;
+    if (CssTokenType.STRING == t.type) {
+      String s = unescape(t);
+      charset = s.substring(1, s.length() - 1);
+      // TODO(pulkitgoyal2000): Handle non utf-8 charset
+      if (!"utf-8".equalsIgnoreCase(charset)) {
+        Message msg = new Message(MessageType.EXPECTED_TOKEN,
+            MessageLevel.WARNING, t.pos, MessagePart.Factory.valueOf("utf-8"),
+            MessagePart.Factory.valueOf(charset));
+        mq.addMessage(msg);
+        SKIP_TO_CHUNK_END_FROM_OUTSIDE_BLOCK.recover(this, m);
+        return null;
+      }
+    }
+
+    if (charset == null) {
+      SKIP_TO_CHUNK_END_FROM_OUTSIDE_BLOCK.recover(this, m);
+      return null;
+    }
+
+    if (expect(";", SKIP_TO_CHUNK_END_FROM_OUTSIDE_BLOCK, m)) {
+      return null;
+    }
+    return new CssTree.Charset(pos(m), charset);
+  }
 
   private CssTree.Import parseImport() throws ParseException {
     Mark m = tq.mark();
@@ -997,16 +1033,27 @@ public final class CssParser {
   }
 
   private boolean lookaheadSymbol(String symbol) throws ParseException {
+    return lookaheadSymbol(symbol, true);
+  }
+
+  private boolean lookaheadSymbol(
+      String symbol, boolean unescape) throws ParseException {
     if (tq.isEmpty()) { return false; }
     Token<CssTokenType> t = tq.peek();
     return t.type == CssTokenType.SYMBOL
-        && Strings.equalsIgnoreCase(symbol, unescape(t));
+        && Strings.equalsIgnoreCase(symbol, (unescape ? unescape(t) : t.text));
   }
 
   private void expectSymbol(String symbol) throws ParseException {
+    expectSymbol(symbol, true);
+  }
+
+  private void expectSymbol(
+      String symbol, boolean unescape) throws ParseException {
     Token<CssTokenType> t = tq.pop();
     if (t.type == CssTokenType.SYMBOL
-        && Strings.equalsIgnoreCase(symbol, unescape(t))) {
+        && Strings.equalsIgnoreCase(
+        symbol, (unescape ? unescape(t) : t.text))) {
       return;
     }
     throw new ParseException(
@@ -1257,3 +1304,4 @@ public final class CssParser {
     }
   }
 }
+

@@ -40,6 +40,10 @@ public class CssTreeTest extends CajaTestCase {
     runRenderTest("cssrendergolden4.txt", "cssparserinput4.css", true);
   }
 
+  public final void testRender6() throws Exception {
+    runRenderTest("cssrendergolden6.txt", "cssparserinput6.css", true);
+  }
+
   public final void testRenderFilters() throws Exception {
     runRenderTest("cssrendergolden-filters.css", "cssparserinput-filters.css",
                   false);

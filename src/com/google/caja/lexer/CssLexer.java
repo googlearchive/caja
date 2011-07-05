@@ -339,10 +339,15 @@ final class CssSplitter implements TokenStream<CssTokenType> {
         // "@page"         PAGE_SYM
         // "@media"        MEDIA_SYM
         // "@font-face"    FONT_FACE_SYM
-        // "@charset"      CHARSET_SYM
+        // "@charset "      CHARSET_SYM
         // "@"{ident}      ATKEYWORD
         type = CssTokenType.SYMBOL;
         end = identEnd;
+        // In http://www.w3.org/TR/CSS21/grammar.html, the CHARSET_SYM is
+        // allowed to match only "@charset "
+        if ((end - start) == 8 && parseMatch(cp, start, "@charset ") > 0) {
+          ++end;
+        }
       } else {
         //        .        *yytext
         type = CssTokenType.PUNCTUATION;

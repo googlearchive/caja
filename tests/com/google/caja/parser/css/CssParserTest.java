@@ -93,17 +93,18 @@ public class CssParserTest extends CajaTestCase {
     runTestCssParser("cssparserinput4.css", "cssparsergolden4.txt", false);
   }
 
-  public final void testTolerantParsing() throws Exception {
-    String inputFile = "cssparserinput5.css";
-    InputSource inputSource = new InputSource(
-        TestUtil.getResource(getClass(), inputFile));
-    runTestCssParser(inputFile, "cssparsergolden5.txt", true);
-    assertEquals(
-        TestUtil.readResource(getClass(), "csssnippets5.txt").trim(),
-        renderSnippets(
-            Collections.singletonMap(
-                inputSource,
-                TestUtil.readResource(getClass(), inputFile))));
+  public final void testTolerantParsing5() throws Exception {
+    runTolerantParsing(
+        "cssparserinput5.css", "cssparsergolden5.txt", "csssnippets5.txt");
+  }
+
+  public final void testCssParser6() throws Exception {
+    runTestCssParser("cssparserinput6.css", "cssparsergolden6.txt", false);
+  }
+
+  public final void testTolerantParsing7() throws Exception {
+    runTolerantParsing(
+        "cssparserinput7.css", "cssparsergolden7.txt", "csssnippets7.txt");
   }
 
   public final void testFilters() throws Exception {
@@ -188,6 +189,19 @@ public class CssParserTest extends CajaTestCase {
         MessagePart.Factory.valueOf(";"), MessagePart.Factory.valueOf("#"));
     assertMessage(true, MessageType.SKIPPING, MessageLevel.WARNING);
     assertMessagesLessSevereThan(MessageLevel.WARNING);
+  }
+
+  private void runTolerantParsing(
+      String cssFile, String goldenFile, String snippetFile) throws Exception {
+    InputSource inputSource = new InputSource(
+        TestUtil.getResource(getClass(), cssFile));
+    runTestCssParser(cssFile, goldenFile, true);
+    assertEquals(
+        TestUtil.readResource(getClass(), snippetFile).trim(),
+        renderSnippets(
+            Collections.singletonMap(
+                inputSource,
+                TestUtil.readResource(getClass(), cssFile))));
   }
 
   private void runTestCssParser(
