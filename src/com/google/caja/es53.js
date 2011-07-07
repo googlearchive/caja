@@ -1348,8 +1348,9 @@ var ___, cajaVM, safeJSON;
   /**
    * Tests whether the fast-path _w___ flag is set, or grantWrite() has been
    * called, on this object itself as an own (non-inherited) attribute.
+   * Determines the value of the writable: attribute of property descriptors.
    *
-   * Precondition:
+   * Preconditions:
    * {@code obj} must not be {@code null} or {@code undefined}.
    * {@code name} must be a string that is not the string encoding
    *              of a number; {@code name} may be {@code 'NUM___'}.
@@ -1374,6 +1375,18 @@ var ___, cajaVM, safeJSON;
       return true;
     }
     return false;
+  }
+
+  /**
+   * Tests whether a data property is writable in an assignment operation.
+   * 
+   * Preconditions:
+   * {@code obj} must not be {@code null} or {@code undefined}.
+   * {@code name} must be a string that is not the string encoding
+   *              of a number; {@code name} may be {@code 'NUM___'}.
+   */
+  function isAssignable(obj, name) {
+    return isWritable(obj, name) || obj[name + '_gw___'];
   }
 
   /**
@@ -2705,7 +2718,7 @@ var ___, cajaVM, safeJSON;
       // At this point, obj is either extensible or
       // non-extensible but already has the property in question.
       if(isNumericName(P)) {
-        if (isWritable(this, 'NUM___') || !this.hasNumerics___()) {
+        if (isAssignable(this, 'NUM___') || !this.hasNumerics___()) {
           return this[P] = V;
         } else {
           throw new TypeError("The property '" + P + "' is not writable.");
@@ -2713,11 +2726,11 @@ var ___, cajaVM, safeJSON;
       }
       // Is name an accessor property on obj?
       var s = setter(this, P);
-      if (s) { return s.f___(this, [V]); }
+      if (s) { s.f___(this, [V]); return V; }
 
       // If P is inherited or an own property, write or throw.
       if (P + '_v___' in this) {
-        if (isWritable(this, P)) {
+        if (isAssignable(this, P)) {
           fastpathWrite(this, P);
           return this[P] = V;
         }
@@ -2725,7 +2738,7 @@ var ___, cajaVM, safeJSON;
       }
 
       // Temporary support for Cajita's keeper interface
-      if (this.handleSet___) { return this.handleSet___(P, V); }
+      if (this.handleSet___) { this.handleSet___(P, V); return V; }
 
       // If P doesn't exist, is the object extensible?
       if (!this.hasOwnProperty(P) && isExtensible(this)) {
@@ -3557,8 +3570,8 @@ var ___, cajaVM, safeJSON;
   // 15.2.3.10
   Object.preventExtensions = function (O) {
       if (!O.hasNumerics___()) {
-        O.NUM____v___ = obj;
-        O.NUM____e___ = obj;
+        O.NUM____v___ = O;
+        O.NUM____e___ = O;
         O.NUM____g___ = void 0;
         O.NUM____s___ = void 0;
         O.NUM____c___ = O;
@@ -3892,7 +3905,7 @@ var ___, cajaVM, safeJSON;
   virtualize(Array.prototype, 'sort', function (comparefn) {
       // This taming assumes that sort only modifies {@code this},
       // even though it may read numeric properties on the prototype chain.
-      if (!isWritable(this, 'NUM___')) {
+      if (!isAssignable(this, 'NUM___')) {
         throw new TypeError(
             'Cannot sort an object whose ' +
             'numeric properties are not writable.');
@@ -4726,6 +4739,7 @@ var ___, cajaVM, safeJSON;
             if (outcome[0]) {
               return outcome[1];
             } else {
+              log(outcome[1]);
               throw outcome[1];
             }
           } else {

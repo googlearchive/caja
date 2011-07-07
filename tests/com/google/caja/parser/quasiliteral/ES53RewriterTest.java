@@ -1607,6 +1607,37 @@ public class ES53RewriterTest extends CommonJsRewriterTestCase {
         "assertEquals(o.p2, 2);");
   }
 
+  /**
+   * Test that objects inheriting properties marked as writable but not yet
+   * fastpathed are actually writable.
+   */
+  public final void testWritableInheritance() throws Exception {
+    rewriteAndExecute(
+        "var o = {};" +
+        "o.x = 1;" +
+        "var o2 = Object.create(o);" +
+        "o2.x = 2;");
+  }
+
+  /**
+   * Tests that assignment returns the rhs, not the result of a setter.
+   */
+  public final void testAssignmentReturnValue() throws Exception {
+    rewriteAndExecute(
+        "var o = {};" +
+        "Object.defineProperty(o, 'x', {set:function(v) { return 5; }});" +
+        "assertEquals(1, o.x=1);");
+  }
+
+  public final void testExtensibile() throws Exception {
+    rewriteAndExecute(
+        "var o = {};" +
+        "o.x = 1;" +
+        "var o2 = Object.create(o);" +
+        "Object.preventExtensions(o2);" +
+        "assertThrows(function () { o2.x = 2; });");
+  }
+
   @Override
   public void setUp() throws Exception {
     super.setUp();
