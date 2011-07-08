@@ -418,7 +418,6 @@
       <classpath refid="classpath.compile"/>
       <include name="**/caja/lang/css/CssPropertyPatterns.java"/>
       <include name="**/caja/lang/css/HtmlDefinitions.java"/>
-      <include name="**/caja/tools/EnumsToJs.java"/>
     </javac>
     <genrule class="com.google.caja.lang.css.CssPropertyPatterns$Builder">
       <output file="${lib.caja}/plugin/css-defs.js"/>
