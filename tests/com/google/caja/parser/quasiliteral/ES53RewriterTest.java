@@ -1636,6 +1636,11 @@ public class ES53RewriterTest extends CommonJsRewriterTestCase {
         "var o2 = Object.create(o);" +
         "Object.preventExtensions(o2);" +
         "assertThrows(function () { o2.x = 2; });");
+    rewriteAndExecute(
+        "var o = {};" +
+        "var o2 = Object.create(o);" +
+        "Object.preventExtensions(o2);" +
+        "assertThrows(function () { Array.prototype.sort.call(o2); });");
   }
 
   @Override

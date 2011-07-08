@@ -148,6 +148,8 @@ var ___, cajaVM, safeJSON;
    * {@code obj.m___(p, [as])}            invokes {@code p} as a method safely;
    *                                      it may set the {@code '_m___'}
    *                                      fastpath on {@code obj}.
+   * {@code obj.e___()                    returns an object whose enumerable
+   *                                      keys are the ones to iterate over.
    *
    * {@code g.f___(dis, [as])}            is the tamed version of {@code g},
    *                                      though it uses {@code apply}'s
@@ -1386,7 +1388,8 @@ var ___, cajaVM, safeJSON;
    *              of a number; {@code name} may be {@code 'NUM___'}.
    */
   function isAssignable(obj, name) {
-    return isWritable(obj, name) || obj[name + '_gw___'];
+    return (isWritable(obj, name) || obj[name + '_gw___']) && 
+        (obj.ne___ !== obj);
   }
 
   /**
@@ -1456,11 +1459,9 @@ var ___, cajaVM, safeJSON;
   }
 
   /**
-   * Get the enumerable property names, both own and inherited.
-   *
-   * <p>ES-Harmony proposal <a href=
-   * "http://wiki.ecmascript.org/doku.php?id=harmony:proxies_semantics#modifications_to_the_evaluation_of_expressions_and_statements"
-   * >The for-in Statement</a>.
+   * Returns an object whose enumerable keys are the ones to iterate over.
+   * For most objects, this will be the object itself; for proxies and tamings
+   * it may be different.
    */
   Object.prototype.e___ = function() {
       return this;
