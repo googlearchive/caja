@@ -47,14 +47,17 @@
 
   <!--== inputs ==-->
   <property name="src"         location="src"/>
+  <property name="src.caja"    location="${src}/com/google/caja"/>
   <property name="tests"       location="tests"/>
+  <property name="tests.caja"  location="${tests}/com/google/caja"/>
   <property name="test.filter" value="*Test"/>
   <property name="third_party" location="third_party"/>
-  <property name="demos"       location="src/com/google/caja/demos"/>
+  <property name="demos"       location="${src.caja}/demos"/>
   <!--== outputs ==-->
   <property name="reports"     location="ant-reports"/>  <!-- emma reports -->
   <property name="instr"       location="ant-instr"/>  <!-- instrumented src -->
   <property name="lib"         location="ant-lib"/>
+  <property name="lib.caja"    location="${lib}/com/google/caja"/>
   <property name="docs"        location="ant-docs"/>
   <property name="ruledocs"    location="${docs}/rules"/>
   <property name="javadocs"    location="${docs}/java"/>
@@ -326,28 +329,26 @@
 
   <target name="jsdocs" description="Javascript documentation." depends="tools">
     <mkdir dir="${docs}/js"/>
-    <copy todir="${lib}">
-      <fileset dir="${src}">
-        <include name="com/google/caja/ancillary/jsdoc/*.js"/>
-        <include name="com/google/caja/ancillary/jsdoc/jsdoc.css"/>
-        <include name="com/google/caja/ancillary/jsdoc/jsdoc_index.html"/>
+    <copy todir="${lib.caja}">
+      <fileset dir="${src.caja}">
+        <include name="ancillary/jsdoc/*.js"/>
+        <include name="ancillary/jsdoc/jsdoc.css"/>
+        <include name="ancillary/jsdoc/jsdoc_index.html"/>
       </fileset>
     </copy>
     <genrule class="com.google.caja.ancillary.jsdoc.JsdocMain$Builder">
       <output file="${docs}/js/"/>
       <input file="${third_party}/js/json_sans_eval/json_sans_eval.js"/>
-      <input file="${src}/com/google/caja/es53.js"/>
-      <input file="${src}/com/google/caja/plugin/unicode.js"/>
-      <input file="${src}/com/google/caja/plugin/html-emitter.js"/>
-      <input file="${src}/com/google/caja/plugin/html-sanitizer.js"/>
-      <input file="${src}/com/google/caja/plugin/bridal.js"/>
-      <input file="${src}/com/google/caja/plugin/cssparser.js"/>
-      <input file="${src}/com/google/caja/plugin/domita.js"/>
-      <depend file="${src}/com/google/caja/ancillary/jsdoc/jsdoc.js"/>
-      <depend
-       file="${src}/com/google/caja/ancillary/jsdoc/jsdoc_html_formatter.js"
-       />
-      <depend file="${src}/com/google/caja/ancillary/jsdoc/jsdoc_renderer.js"/>
+      <input file="${src.caja}/es53.js"/>
+      <input file="${src.caja}/plugin/unicode.js"/>
+      <input file="${src.caja}/plugin/html-emitter.js"/>
+      <input file="${src.caja}/plugin/html-sanitizer.js"/>
+      <input file="${src.caja}/plugin/bridal.js"/>
+      <input file="${src.caja}/plugin/cssparser.js"/>
+      <input file="${src.caja}/plugin/domita.js"/>
+      <depend file="${src.caja}/ancillary/jsdoc/jsdoc.js"/>
+      <depend file="${src.caja}/ancillary/jsdoc/jsdoc_html_formatter.js"/>
+      <depend file="${src.caja}/ancillary/jsdoc/jsdoc_renderer.js"/>
     </genrule>
   </target>
 
@@ -420,51 +421,41 @@
       <include name="**/caja/tools/EnumsToJs.java"/>
     </javac>
     <genrule class="com.google.caja.lang.css.CssPropertyPatterns$Builder">
-      <output file="${lib}/com/google/caja/plugin/css-defs.js"/>
-      <input file="${src}/com/google/caja/lang/css/css-extensions.json"/>
-      <depend file="${src}/com/google/caja/lang/css/css21.json"/>
-      <depend file="${src}/com/google/caja/lang/css/css21-defs.json"/>
-      <depend file="${src}/com/google/caja/lang/css/css21-whitelist.json"/>
-      <depend file="${src}/com/google/caja/lang/css/css-extensions.json"/>
-      <depend file="${src}/com/google/caja/lang/css/css-extensions-defs.json"/>
-      <depend
-       file="${src}/com/google/caja/lang/css/css-extensions-whitelist.json"/>
-      <input file="${src}/com/google/caja/lang/css/css21-fns.json"/>
-      <depend file="${src}/com/google/caja/lang/css/css21-fns-defs.json"/>
-      <depend file="${src}/com/google/caja/lang/css/css21-fns-whitelist.json"/>
-      <depend file="${src}/com/google/caja/lang/css/CssPropertyPatterns.java"/>
+      <output file="${lib.caja}/plugin/css-defs.js"/>
+      <input file="${src.caja}/lang/css/css-extensions.json"/>
+      <depend file="${src.caja}/lang/css/css21.json"/>
+      <depend file="${src.caja}/lang/css/css21-defs.json"/>
+      <depend file="${src.caja}/lang/css/css21-whitelist.json"/>
+      <depend file="${src.caja}/lang/css/css-extensions.json"/>
+      <depend file="${src.caja}/lang/css/css-extensions-defs.json"/>
+      <depend file="${src.caja}/lang/css/css-extensions-whitelist.json"/>
+      <input file="${src.caja}/lang/css/css21-fns.json"/>
+      <depend file="${src.caja}/lang/css/css21-fns-defs.json"/>
+      <depend file="${src.caja}/lang/css/css21-fns-whitelist.json"/>
+      <depend file="${src.caja}/lang/css/CssPropertyPatterns.java"/>
     </genrule>
     <genrule class="com.google.caja.lang.html.HtmlDefinitions$Builder">
-      <output file="${lib}/com/google/caja/plugin/html4-defs.js"/>
-      <input
-       file="${src}/com/google/caja/lang/html/html4-elements-extensions.json"/>
+      <output file="${lib.caja}/plugin/html4-defs.js"/>
+      <input file="${src.caja}/lang/html/html4-elements-extensions.json"/>
+      <depend file="${src.caja}/lang/html/html4-elements.json"/>
+      <depend file="${src.caja}/lang/html/html4-elements-defs.json"/>
+      <depend file="${src.caja}/lang/html/html4-elements-extensions-defs.json"/>
       <depend
-       file="${src}/com/google/caja/lang/html/html4-elements.json"/>
+       file="${src.caja}/lang/html/html4-elements-extensions-whitelist.json"/>
+      <depend file="${src.caja}/lang/html/html4-elements-whitelist.json"/>
+      <input file="${src.caja}/lang/html/html4-attributes-extensions.json"/>
+      <depend file="${src.caja}/lang/html/html4-attributes.json"/>
+      <depend file="${src.caja}/lang/html/html4-attributes-defs.json"/>
       <depend
-       file="${src}/com/google/caja/lang/html/html4-elements-defs.json"/>
-      <depend
-       file="${src}/com/google/caja/lang/html/html4-elements-extensions-defs.json"/>
-      <depend
-       file="${src}/com/google/caja/lang/html/html4-elements-extensions-whitelist.json"/>
-      <depend
-       file="${src}/com/google/caja/lang/html/html4-elements-whitelist.json"/>
-      <input
-       file="${src}/com/google/caja/lang/html/html4-attributes-extensions.json"
-       />
-      <depend file="${src}/com/google/caja/lang/html/html4-attributes.json"/>
-      <depend
-       file="${src}/com/google/caja/lang/html/html4-attributes-defs.json"/>
-      <depend
-       file="${src}/com/google/caja/lang/html/html4-attributes-extensions-defs.json"/>
-      <depend
-       file="${src}/com/google/caja/lang/html/html4-attributes-whitelist.json"/>
-      <depend file="${src}/com/google/caja/lang/html/HtmlDefinitions.java"/>
+       file="${src.caja}/lang/html/html4-attributes-extensions-defs.json"/>
+      <depend file="${src.caja}/lang/html/html4-attributes-whitelist.json"/>
+      <depend file="${src.caja}/lang/html/HtmlDefinitions.java"/>
     </genrule>
   </target>
 
   <target name="benchmarks" description="Runs benchmarks."
    depends="dirs,pluginc,MinifiedJs,jars">
-    <copy todir="${lib}/com/google/caja/demos/benchmarks">
+    <copy todir="${lib.caja}/demos/benchmarks">
       <fileset dir="${third_party}/js/sunspider-benchmark/">
         <include name="v8-crypto.js"/>
         <include name="v8-earley-boyer.js"/>
@@ -484,9 +475,9 @@
         <include name="loop-sum.js"/>
       </fileset>
     </copy>
-    <copy todir="${lib}">
-      <fileset dir="${src}">
-        <include name="com/google/caja/es53.js"/>
+    <copy todir="${lib.caja}">
+      <fileset dir="${src.caja}">
+        <include name="es53.js"/>
       </fileset>
     </copy>
     <mkdir dir="${reports}/benchmarks"/>
@@ -655,12 +646,12 @@
 
   <!-- Cajoles test resources that contain es53 to javascript. -->
   <target name="CajoledTests" depends="pluginc,dirs">
-    <property name="libplugin" location="${lib}/com/google/caja/plugin"/>
+    <property name="libplugin" location="${lib.caja}/plugin"/>
 
     <!-- The root files of the Domita test cases are statically cajoled -->
     <!-- TODO: Uncomment once domita tests are ported to es53
     <transform>
-      <input file="${tests}/com/google/caja/plugin/domita_test_untrusted.html"/>
+      <input file="${tests.caja}/plugin/domita_test_untrusted.html"/>
       <output file="${libplugin}/domita_test_untrusted_es53.out.html"
           language="caja" />
     </transform>
@@ -668,13 +659,13 @@
 
     <!-- Statically cajole some tests for caja.js testing -->
     <transform>
-     <input file="${tests}/com/google/caja/plugin/es53-test-guest.js"/>
-     <output file="${lib}/com/google/caja/plugin/es53-test-guest.out.js"
+     <input file="${tests.caja}/plugin/es53-test-guest.js"/>
+     <output file="${lib.caja}/plugin/es53-test-guest.out.js"
              language="caja"/>
     </transform>
     <transform>
-     <input file="${tests}/com/google/caja/plugin/es53-test-guest.html"/>
-     <output file="${lib}/com/google/caja/plugin/es53-test-guest.out.html"
+     <input file="${tests.caja}/plugin/es53-test-guest.html"/>
+     <output file="${lib.caja}/plugin/es53-test-guest.out.html"
              language="caja"/>
     </transform>
 
@@ -687,93 +678,93 @@
 
   <target name="MinifiedJs" depends="pluginc">
     <transform>
-      <output file="${lib}/com/google/caja/plugin/html-sanitizer-minified.js"
+      <output file="${lib.caja}/plugin/html-sanitizer-minified.js"
        language="javascript" renderer="minify"/>
-      <output file="${lib}/com/google/caja/plugin/html-sanitizer-bundle.js"
+      <output file="${lib.caja}/plugin/html-sanitizer-bundle.js"
        language="javascript" renderer="concat"/>
-      <input file="${lib}/com/google/caja/plugin/html4-defs.js"/>
-      <input file="${src}/com/google/caja/plugin/html-sanitizer.js"/>
+      <input file="${lib.caja}/plugin/html4-defs.js"/>
+      <input file="${src.caja}/plugin/html-sanitizer.js"/>
     </transform>
     <transform>
-      <output file="${lib}/com/google/caja/plugin/es53-taming-frame.opt.js"
+      <output file="${lib.caja}/plugin/es53-taming-frame.opt.js"
        language="javascript" renderer="minify"/>
-      <output file="${lib}/com/google/caja/plugin/es53-taming-frame.js"
-       language="javascript" renderer="concat"/>
-      <input file="${third_party}/js/json_sans_eval/json_sans_eval.js"/>
-      <input file="${src}/com/google/caja/es53.js"/>
-      <input file="${src}/com/google/caja/plugin/unicode.js"/>
-      <input file="${lib}/com/google/caja/plugin/css-defs.js"/>
-      <input file="${lib}/com/google/caja/plugin/html4-defs.js"/>
-      <input file="${src}/com/google/caja/plugin/html-sanitizer.js"/>
-      <input file="${src}/com/google/caja/plugin/html-emitter.js"/>
-      <input file="${src}/com/google/caja/plugin/bridal.js"/>
-      <input file="${src}/com/google/caja/plugin/cssparser.js"/>
-      <input file="${src}/com/google/caja/plugin/domita.js"/>
-      <input file="${src}/com/google/caja/plugin/uri.js"/>
-      <input file="${src}/com/google/caja/cajita-promise.js"/>
-      <input file="${src}/com/google/caja/plugin/json-rest-transport.js"/>
-      <input file="${src}/com/google/caja/plugin/cajoling-service-client.js"/>
-      <input file="${src}/com/google/caja/plugin/taming-frame.js"/>      
-      <input file="${src}/com/google/caja/plugin/caja-iframe-done.js"/>
-    </transform>
-    <transform>
-      <output file="${lib}/com/google/caja/plugin/es53-guest-frame.opt.js"
-       language="javascript" renderer="minify"/>
-      <output file="${lib}/com/google/caja/plugin/es53-guest-frame.js"
+      <output file="${lib.caja}/plugin/es53-taming-frame.js"
        language="javascript" renderer="concat"/>
       <input file="${third_party}/js/json_sans_eval/json_sans_eval.js"/>
-      <input file="${src}/com/google/caja/es53.js"/>
-      <input file="${src}/com/google/caja/plugin/uri.js"/>
-      <input file="${src}/com/google/caja/cajita-promise.js"/>
-      <input file="${src}/com/google/caja/plugin/prepare-modules.js"/>
-      <input file="${src}/com/google/caja/plugin/load-module.js"/>
-      <input file="${src}/com/google/caja/plugin/caja-iframe-done.js"/>
+      <input file="${src.caja}/es53.js"/>
+      <input file="${src.caja}/plugin/unicode.js"/>
+      <input file="${lib.caja}/plugin/css-defs.js"/>
+      <input file="${lib.caja}/plugin/html4-defs.js"/>
+      <input file="${src.caja}/plugin/html-sanitizer.js"/>
+      <input file="${src.caja}/plugin/html-emitter.js"/>
+      <input file="${src.caja}/plugin/bridal.js"/>
+      <input file="${src.caja}/plugin/cssparser.js"/>
+      <input file="${src.caja}/plugin/domita.js"/>
+      <input file="${src.caja}/plugin/uri.js"/>
+      <input file="${src.caja}/cajita-promise.js"/>
+      <input file="${src.caja}/plugin/json-rest-transport.js"/>
+      <input file="${src.caja}/plugin/cajoling-service-client.js"/>
+      <input file="${src.caja}/plugin/taming-frame.js"/>
+      <input file="${src.caja}/plugin/caja-iframe-done.js"/>
     </transform>
     <transform>
-      <output file="${lib}/com/google/caja/plugin/module-promise-minified.js"
+      <output file="${lib.caja}/plugin/es53-guest-frame.opt.js"
        language="javascript" renderer="minify"/>
-      <input file="${src}/com/google/caja/plugin/uri.js"/>
-      <input file="${src}/com/google/caja/cajita-module-orig.js"/>
-      <input file="${src}/com/google/caja/cajita-promise.js"/>
+      <output file="${lib.caja}/plugin/es53-guest-frame.js"
+       language="javascript" renderer="concat"/>
+      <input file="${third_party}/js/json_sans_eval/json_sans_eval.js"/>
+      <input file="${src.caja}/es53.js"/>
+      <input file="${src.caja}/plugin/uri.js"/>
+      <input file="${src.caja}/cajita-promise.js"/>
+      <input file="${src.caja}/plugin/prepare-modules.js"/>
+      <input file="${src.caja}/plugin/load-module.js"/>
+      <input file="${src.caja}/plugin/caja-iframe-done.js"/>
     </transform>
-    <concat destfile="${lib}/com/google/caja/ses/initSES.js">
+    <transform>
+      <output file="${lib.caja}/plugin/module-promise-minified.js"
+       language="javascript" renderer="minify"/>
+      <input file="${src.caja}/plugin/uri.js"/>
+      <input file="${src.caja}/cajita-module-orig.js"/>
+      <input file="${src.caja}/cajita-promise.js"/>
+    </transform>
+    <concat destfile="${lib.caja}/ses/initSES.js">
       <!-- Makes initSES.js -->
       <filelist>
-        <file name="${src}/com/google/caja/ses/repairES5.js"/>
-        <file name="${src}/com/google/caja/ses/WeakMap.js"/>
-        <file name="${src}/com/google/caja/ses/whitelist.js"/>
-        <file name="${src}/com/google/caja/ses/atLeastFreeVarNames.js"/>
-        <file name="${src}/com/google/caja/ses/startSES.js"/>
-        <file name="${src}/com/google/caja/ses/hookupSES.js"/>       
+        <file name="${src.caja}/ses/repairES5.js"/>
+        <file name="${src.caja}/ses/WeakMap.js"/>
+        <file name="${src.caja}/ses/whitelist.js"/>
+        <file name="${src.caja}/ses/atLeastFreeVarNames.js"/>
+        <file name="${src.caja}/ses/startSES.js"/>
+        <file name="${src.caja}/ses/hookupSES.js"/>
       </filelist>
     </concat>
     <transform>
       <!-- Makes initSES-minified.js -->
-      <output file="${lib}/com/google/caja/ses/initSES-minified.js"
+      <output file="${lib.caja}/ses/initSES-minified.js"
        language="javascript" renderer="minify"/>
-       <input file="${src}/com/google/caja/ses/repairES5.js"/>
-       <input file="${src}/com/google/caja/ses/WeakMap.js"/>
-       <input file="${src}/com/google/caja/ses/whitelist.js"/>
-       <input file="${src}/com/google/caja/ses/atLeastFreeVarNames.js"/>
-       <input file="${src}/com/google/caja/ses/startSES.js"/>
-       <input file="${src}/com/google/caja/ses/hookupSES.js"/>       
+       <input file="${src.caja}/ses/repairES5.js"/>
+       <input file="${src.caja}/ses/WeakMap.js"/>
+       <input file="${src.caja}/ses/whitelist.js"/>
+       <input file="${src.caja}/ses/atLeastFreeVarNames.js"/>
+       <input file="${src.caja}/ses/startSES.js"/>
+       <input file="${src.caja}/ses/hookupSES.js"/>
     </transform>
   </target>
 
 	<!-- TODO(jasvir): This is not needed any longer -->
   <target name="IframeSupportingJs" depends="MinifiedJs">
     <genrule class="com.google.caja.tools.JsToVar">
-      <input file="${lib}/com/google/caja/plugin/es53-taming-frame.js"/>
-      <output file="${lib}/com/google/caja/plugin/tamingFrameScript.js"/>
+      <input file="${lib.caja}/plugin/es53-taming-frame.js"/>
+      <output file="${lib.caja}/plugin/tamingFrameScript.js"/>
     </genrule>
     <genrule class="com.google.caja.tools.JsToVar">
-      <input file="${lib}/com/google/caja/plugin/es53-guest-frame.js"/>
-      <output file="${lib}/com/google/caja/plugin/guestFrameScript.js"/>
+      <input file="${lib.caja}/plugin/es53-guest-frame.js"/>
+      <output file="${lib.caja}/plugin/guestFrameScript.js"/>
     </genrule>
-    <concat destfile="${lib}/com/google/caja/plugin/es53-single-frame-vars.js">
+    <concat destfile="${lib.caja}/plugin/es53-single-frame-vars.js">
       <filelist>
-        <file name="${lib}/com/google/caja/plugin/tamingFrameScript.js"/>
-        <file name="${lib}/com/google/caja/plugin/guestFrameScript.js"/>
+        <file name="${lib.caja}/plugin/tamingFrameScript.js"/>
+        <file name="${lib.caja}/plugin/guestFrameScript.js"/>
       </filelist>
     </concat>
   </target>
@@ -795,19 +786,19 @@
 
     <genrule class="com.google.caja.ancillary.linter.Linter"
      unless="${tools.ancillary.disable}">
-      <input file="${lib}/com/google/caja/cajita-module-orig.js"/>
-      <input file="${lib}/com/google/caja/cajita-promise.js"/>
-      <input file="${src}/com/google/caja/plugin/bridal.js"/>
-      <input file="${lib}/com/google/caja/plugin/caja.js"/>
-      <input file="${lib}/com/google/caja/plugin/css-defs.js"/>
-      <input file="${lib}/com/google/caja/plugin/cssparser.js"/>
-      <input file="${src}/com/google/caja/plugin/domita.js"/>
-      <input file="${src}/com/google/caja/plugin/caja-iframe-done.js"/>
-      <input file="${src}/com/google/caja/plugin/html-emitter.js"/>
-      <input file="${src}/com/google/caja/plugin/html-sanitizer.js"/>
-      <input file="${lib}/com/google/caja/plugin/html4-defs.js"/>
-      <input file="${src}/com/google/caja/plugin/unicode.js"/>
-      <input file="${lib}/com/google/caja/plugin/uri.js"/>
+      <input file="${lib.caja}/cajita-module-orig.js"/>
+      <input file="${lib.caja}/cajita-promise.js"/>
+      <input file="${src.caja}/plugin/bridal.js"/>
+      <input file="${lib.caja}/plugin/caja.js"/>
+      <input file="${lib.caja}/plugin/css-defs.js"/>
+      <input file="${lib.caja}/plugin/cssparser.js"/>
+      <input file="${src.caja}/plugin/domita.js"/>
+      <input file="${src.caja}/plugin/caja-iframe-done.js"/>
+      <input file="${src.caja}/plugin/html-emitter.js"/>
+      <input file="${src.caja}/plugin/html-sanitizer.js"/>
+      <input file="${lib.caja}/plugin/html4-defs.js"/>
+      <input file="${src.caja}/plugin/unicode.js"/>
+      <input file="${lib.caja}/plugin/uri.js"/>
       <output file="${lib}/AllTests.Linter.tstamp"/>
     </genrule>
 
@@ -840,13 +831,13 @@
      failifexecutionfails="false"
      dir="."/>
     <echo append="false"
-     file="${lib}/com/google/caja/reporting/buildInfo.properties"
+     file="${lib.caja}/reporting/buildInfo.properties"
      message="# Caja Build Information${line.separator}"/>
     <echo append="true"
-     file="${lib}/com/google/caja/reporting/buildInfo.properties"
+     file="${lib.caja}/reporting/buildInfo.properties"
      message="svnVersion: ${build.svnVersion}${line.separator}"/>
     <echo append="true"
-     file="${lib}/com/google/caja/reporting/buildInfo.properties"
+     file="${lib.caja}/reporting/buildInfo.properties"
      message="timestamp: ${build.timestamp}${line.separator}"/>
   </target>
 
@@ -921,8 +912,8 @@
   <target name="PlaygroundTimestamp"
     description="Checks if playground needs rebuilding">
       <uptodate property="uptodate.playground" targetfile="${war}/playground/playground.nocache.js">
-         <srcfiles dir="${src}/com/google/caja/demos/playground/client" includes="**/*.java"/>
-         <srcfiles dir="${src}/com/google/caja/demos/playground" includes="Playground*.gwt.xml"/>
+         <srcfiles dir="${src.caja}/demos/playground/client" includes="**/*.java"/>
+         <srcfiles dir="${src.caja}/demos/playground" includes="Playground*.gwt.xml"/>
       </uptodate>
    </target>
 
@@ -957,10 +948,10 @@
       <fileset dir="${third_party}/js/json_sans_eval">
         <include name="json_sans_eval.js" />
       </fileset>
-      <fileset dir="${src}/com/google/caja">
+      <fileset dir="${src.caja}">
         <include name="es53.js" />
       </fileset>
-      <fileset dir="${src}/com/google/caja/plugin">
+      <fileset dir="${src.caja}/plugin">
         <include name="bridal.js" />
         <include name="cssparser.js"/>
         <include name="domita.js" />
@@ -969,7 +960,7 @@
         <include name="unicode.js" />
         <include name="caja-gadget.css" />
       </fileset>
-      <fileset dir="${lib}/com/google/caja/plugin">
+      <fileset dir="${lib.caja}/plugin">
         <include name="css-defs.js" />
         <include name="html4-defs.js" />
       </fileset>
@@ -987,7 +978,7 @@
         <include name="guava-r08.jar" />
         <include name="xercesImpl.jar" />
       </fileset>
-      <fileset dir="${src}/com/google/caja/demos/playground">
+      <fileset dir="${src.caja}/demos/playground">
         <include name="ajax-loader.gif" />
         <include name="Playground.html" />
         <include name="Playground.css" />
@@ -1001,13 +992,13 @@
         <include name="js/*.js" />
         <include name="css/*.css" />
       </fileset>
-      <fileset dir="${src}/com/google/caja/demos/flash">
+      <fileset dir="${src.caja}/demos/flash">
         <include name="Boxed.swf" />
       </fileset>
-      <fileset dir="${src}/com/google/caja/flash">
+      <fileset dir="${src.caja}/flash">
         <include name="flashbridge.swf" />
       </fileset>
-      <fileset dir="${src}/com/google/caja/demos/playground">
+      <fileset dir="${src.caja}/demos/playground">
         <include name="examples/*.gif" />
         <include name="examples/*.html" />
         <include name="examples/unboxed/*.html" />
@@ -1022,7 +1013,7 @@
 
       <!-- Needed by container-dynamic.html which references the playground
         -  server so as to be standalone. -->
-      <fileset dir="${src}/com/google/caja">
+      <fileset dir="${src.caja}">
         <include name="log-to-console.js"/>
         <include name="cajita-module-orig.js"/>
         <include name="cajita-promise.js"/>
@@ -1030,7 +1021,7 @@
 
       <!-- For iframe-based Caja loading - TODO(kpreid): this should become
            part of a "Caja server" package separate from the playground. -->
-      <fileset dir="${lib}/com/google/caja/plugin">
+      <fileset dir="${lib.caja}/plugin">
         <include name="caja.js"/>
         <include name="es53-guest-frame.js"/>
         <include name="es53-guest-frame.opt.js"/>
@@ -1056,7 +1047,7 @@
       </fileset>
     </copy>
     <replace file="${war}/WEB-INF/appengine-web.xml"
-        propertyFile="${lib}/com/google/caja/reporting/buildInfo.properties" >
+        propertyFile="${lib.caja}/reporting/buildInfo.properties" >
       <replacefilter token="%VERSION%" property="svnVersion" />
     </replace>
     <copy todir="${war}/WEB-INF/lib" flatten="true">
@@ -1306,7 +1297,7 @@
    description="Photon demo">
     <mkdir dir="${war}/photon"/>
     <copy todir="${war}/photon">
-      <fileset dir="${src}/com/google/caja/demos/photon">
+      <fileset dir="${src.caja}/demos/photon">
         <include name="container/**"/>
         <include name="gadgets/**"/>
       </fileset>
@@ -1317,7 +1308,7 @@
    description="TryCaja tutorial">
     <mkdir dir="${war}/trycaja"/>
     <copy todir="${war}/trycaja">
-      <fileset dir="${src}/com/google/caja/demos/trycaja">
+      <fileset dir="${src.caja}/demos/trycaja">
         <include name="**"/>
       </fileset>
     </copy>
@@ -1329,27 +1320,27 @@
 
     <transform>
       <output
-       file="${lib}/com/google/caja/demos/container/gadget-library.out.js"
+       file="${lib.caja}/demos/container/gadget-library.out.js"
        language="caja" onlyJsEmitted="true" debug="false"/>
       <input file="${demos}/container/gadget-library.js"/>
     </transform>
     <transform>
       <output
-       file="${lib}/com/google/caja/demos/container/gadget-trivial.out.js"
+       file="${lib.caja}/demos/container/gadget-trivial.out.js"
        language="caja" onlyJsEmitted="true" debug="false"/>
       <input file="${demos}/container/gadget-trivial.html"/>
     </transform>
 
     <copy todir="${www}/container">
-      <fileset dir="${src}/com/google/caja">
+      <fileset dir="${src.caja}">
         <include name="log-to-console.js"/>
       </fileset>
-      <fileset dir="${src}/com/google/caja/plugin">
+      <fileset dir="${src.caja}/plugin">
         <include name="caja-gadget.css"/>
         <include name="caja-orig"/>
         <include name="caja.js"/>
       </fileset>
-      <fileset dir="${lib}/com/google/caja/demos/container">
+      <fileset dir="${lib.caja}/demos/container">
         <include name="*.out.js"/>
       </fileset>
       <fileset dir="${demos}/container">
