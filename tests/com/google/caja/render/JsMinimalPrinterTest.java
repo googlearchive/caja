@@ -124,6 +124,16 @@ public class JsMinimalPrinterTest extends CajaTestCase {
     assertLexed("!=|| =", "!= || =");
   }
 
+  public final void testIdentifierNameDoesNotRunIntoRegExpFlags()
+      throws Exception {
+    assertRendered(
+        "/foo/ instanceof RegExp",
+        jsExpr(fromString("/foo/ instanceof RegExp")));
+    assertRendered(
+        "/foo/i instanceof RegExp",
+        jsExpr(fromString("/foo/i instanceof RegExp")));
+  }
+
   public final void testNegatedNegativeNumericConstants() {
     assertRendered(
         "-(-3)",  // not --3
