@@ -456,8 +456,11 @@ public class Html5ElementStack implements OpenElementStack {
    * Adds the given comment node to the DOM.
    */
   public void processComment(Token<HtmlTokenType> commentToken) {
-    String text = commentToken.text.substring(
-        "<!--".length(), commentToken.text.lastIndexOf("--"));
+    String text = commentToken.text;
+    if (text.startsWith("<!--") && text.endsWith("-->")) {
+      // Either standard HTML comment or IE downlevel-hidden comment.
+      text = text.substring("<!--".length(), text.lastIndexOf("--"));
+    }
     commentToken = Token.instance(text, commentToken.type, commentToken.pos);
     if (text.contains("--")) {
       mq.addMessage(MessageType.INVALID_HTML_COMMENT, commentToken.pos);

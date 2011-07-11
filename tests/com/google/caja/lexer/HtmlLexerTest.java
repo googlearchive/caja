@@ -103,13 +103,37 @@ public class HtmlLexerTest extends CajaTestCase {
         "<!-- [if lte IE6]>"
         + "<link href=\"iecss.css\" rel=\"stylesheet\" type=\"text/css\">"
         + "<!--Text--><![endif]-->";
-    assertTokens(ieCondComment1, false, "IE_COMMENT: " + ieCondComment1);
+    assertTokens(ieCondComment1, false, "COMMENT: " + ieCondComment1);
+    // Test this in XML mode to make sure it does not attempt to recognize IE
+    // conditional comments.
+    assertTokens(ieCondComment1,
+        true,
+        "COMMENT: <!-- [if lte IE6]><link href=\"iecss.css\" "
+        + "rel=\"stylesheet\" type=\"text/css\"><!--Text-->",
+        "CDATA: <![endif]-->");
 
     String ieCondComment2 =
         "<!-- [if lte IE6]>"
         + "<script>alert(\"This could be an --> IE 6 browser.\");</script>"
         + "<![endif]-->";
-    assertTokens(ieCondComment2, false, "IE_COMMENT: " + ieCondComment2);
+    assertTokens(ieCondComment2, false, "COMMENT: " + ieCondComment2);
+        
+    // Downlevel-revealed type of comments.
+    String ieCondComment3 =
+        "<![if !IE | gte IE 7]>"
+        + "<link rel=\"stylesheet\" href=\"special.css\" type=\"text/css\" />"
+        + "<![endif]>";
+    assertTokens(ieCondComment3, false,
+        "IE_DR_COMMENT_BEGIN: <![if !IE | gte IE 7]>",
+        "TAGBEGIN: <link",
+        "ATTRNAME: rel",
+        "ATTRVALUE: \"stylesheet\"",
+        "ATTRNAME: href",
+        "ATTRVALUE: \"special.css\"",
+        "ATTRNAME: type",
+        "ATTRVALUE: \"text/css\"",
+        "TAGEND: />",
+        "IE_DR_COMMENT_END: <![endif]>");
   }
 
   public final void testShortTags() throws Exception {

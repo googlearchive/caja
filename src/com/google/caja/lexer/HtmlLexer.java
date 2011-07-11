@@ -350,10 +350,11 @@ final class HtmlInputSplitter extends AbstractTokenStream<HtmlTokenType> {
     COMMENT,
     COMMENT_DASH,
     COMMENT_DASH_DASH,
-    IE_COMMENT,
-    IE_COMMENT_END,
+    IE_DH_COMMENT_BEGIN,
+    IE_DH_COMMENT_END,
+    IE_DR_COMMENT_BEGIN,
+    IE_DR_COMMENT_END,
     DIRECTIVE,
-    DIRECTIVE_OR_IE_COMMENT,
     DONE,
     APP_DIRECTIVE,
     APP_DIRECTIVE_QMARK,
@@ -523,6 +524,8 @@ final class HtmlInputSplitter extends AbstractTokenStream<HtmlTokenType> {
               break;
           }
           if (null != state) {
+            // Number of open IE downlevel-hidden begin markers seen.
+            int ieDhCommentsBeginMarkersSeen = 0;
             charloop:
             while (end < limit) {
               ch = buffer[end];
@@ -564,8 +567,13 @@ final class HtmlInputSplitter extends AbstractTokenStream<HtmlTokenType> {
                     state = State.CDATA;
                   } else if ('-' == ch) {
                     state = State.BANG_DASH;
+                  } else if (!asXml && lookahead(buffer, end, limit, "[if ")) {
+                    state = State.IE_DR_COMMENT_BEGIN;
+                  } else if (!asXml &&
+                             lookahead(buffer, end, limit, "[endif]>")) {
+                    state = State.IE_DR_COMMENT_END;
                   } else {
-                    state = State.DIRECTIVE_OR_IE_COMMENT;
+                    state = State.DIRECTIVE;
                   }
                   break;
                 case CDATA:
@@ -596,8 +604,9 @@ final class HtmlInputSplitter extends AbstractTokenStream<HtmlTokenType> {
                 case COMMENT:
                   if ('-' == ch) {
                     state = State.COMMENT_DASH;
-                  } else if ('[' == ch) {
-                    state = State.DIRECTIVE_OR_IE_COMMENT;
+                  } else if (!asXml && lookahead(buffer, end, limit, "[if ")) {
+                    ++ieDhCommentsBeginMarkersSeen;
+                    state = State.IE_DH_COMMENT_BEGIN;
                   }
                   break;
                 case COMMENT_DASH:
@@ -621,21 +630,33 @@ final class HtmlInputSplitter extends AbstractTokenStream<HtmlTokenType> {
                     state = State.DONE;
                   }
                   break;
-                case DIRECTIVE_OR_IE_COMMENT:
-                  if (lookahead(buffer, end, limit, "if ")) {
-                    state = State.IE_COMMENT;
-                  } else {
-                    state = State.DIRECTIVE;
+                case IE_DH_COMMENT_BEGIN:
+                  if (!asXml) {
+                    if (lookahead(buffer, end, limit, "<!--[if ")) {
+                      ++ieDhCommentsBeginMarkersSeen;
+                    } else if (lookahead(buffer, end, limit, "[endif]-->")) {
+                      --ieDhCommentsBeginMarkersSeen;
+                    }
+                    if (ieDhCommentsBeginMarkersSeen == 0){
+                      state = State.IE_DH_COMMENT_END;
+                    }
                   }
                   break;
-                case IE_COMMENT:
-                  if (lookahead(buffer, end, limit, "<![endif")) {
-                    state = State.IE_COMMENT_END;
-                  }
-                  break;
-                case IE_COMMENT_END:
+                case IE_DH_COMMENT_END:
                   if ('>' == ch) {
-                    type = HtmlTokenType.IE_COMMENT;
+                    type = HtmlTokenType.COMMENT;
+                    state = State.DONE;
+                  }
+                  break;
+                case IE_DR_COMMENT_BEGIN:
+                  if ('>' == ch) {
+                    type = HtmlTokenType.IE_DR_COMMENT_BEGIN;
+                    state = State.DONE;
+                  }
+                  break;
+                case IE_DR_COMMENT_END:
+                  if ('>' == ch) {
+                    type = HtmlTokenType.IE_DR_COMMENT_END;
                     state = State.DONE;
                   }
                   break;
@@ -725,10 +746,12 @@ final class HtmlInputSplitter extends AbstractTokenStream<HtmlTokenType> {
                 case COMMENT_DASH_DASH:
                   type = HtmlTokenType.COMMENT;
                   break;
-                case IE_COMMENT:
-                case IE_COMMENT_END:
-                  type = HtmlTokenType.IE_COMMENT;
+                case IE_DR_COMMENT_BEGIN:
+                  type = HtmlTokenType.IE_DR_COMMENT_BEGIN;
                   break;
+                case IE_DR_COMMENT_END:
+                  type = HtmlTokenType.IE_DR_COMMENT_END;
+                  break;         
                 case DIRECTIVE:
                 case APP_DIRECTIVE:
                 case APP_DIRECTIVE_QMARK:

@@ -403,7 +403,7 @@ public class DomParserTest extends CajaTestCase {
     for (DomParser p : allPossibleConfigurations(DOM1_XML, true)) {
       String config = (
           "asXml=" + p.asXml() + ", needsDebugData=" + p.getNeedsDebugData()
-          + ", wantsComments=" + p.getWantsComments());
+          + ", wantsComments=" + p.wantsComments());
       Node document = p.parseDocument();
       assertEquals(config, DOM1_XML_RENDERED_GOLDEN, Nodes.render(document));
     }
@@ -413,7 +413,7 @@ public class DomParserTest extends CajaTestCase {
     for (DomParser p : allPossibleConfigurations(DOM2_HTML, false)) {
       String config = (
           "asXml=" + p.asXml() + ", needsDebugData=" + p.getNeedsDebugData()
-          + ", wantsComments=" + p.getWantsComments());
+          + ", wantsComments=" + p.wantsComments());
       Node document = p.parseDocument();
       assertEquals(config, DOM2_HTML_RENDERED_GOLDEN, Nodes.render(document));
     }
@@ -450,7 +450,7 @@ public class DomParserTest extends CajaTestCase {
     for (DomParser p : allPossibleConfigurations(DOM3_XML, false)) {
       String config = (
           "asXml=" + p.asXml() + ", needsDebugData=" + p.getNeedsDebugData()
-          + ", wantsComments=" + p.getWantsComments());
+          + ", wantsComments=" + p.wantsComments());
       Node fragment = p.parseFragment();
       assertEquals(config, DOM3_XML_RENDERED_GOLDEN, Nodes.render(fragment));
     }
@@ -933,6 +933,7 @@ public class DomParserTest extends CajaTestCase {
             )
         );
   }
+
 
   public final void testFragmentWithTopLevelHtmlNodeRetained()
       throws Exception {

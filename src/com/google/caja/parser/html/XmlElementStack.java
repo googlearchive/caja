@@ -178,6 +178,7 @@ class XmlElementStack extends AbstractElementStack {
     String text = commentToken.text.substring("<!--".length(),
         commentToken.text.lastIndexOf("--"));
     Comment comment = doc.createComment(text);
+    comment.setUserData("COMMENT_TYPE", commentToken.type.toString() , null);
     if (needsDebugData) {
       Nodes.setFilePositionFor(comment, commentToken.pos);
     }

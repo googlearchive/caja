@@ -136,7 +136,7 @@ public class NodesTest extends CajaTestCase {
       "<foo>\n"
       + "before <!-- Test Data --> after \n"
       + "<!-- [if IE ]>"
-      + "<link href=\"iecss.css\" rel=\"stylesheet\" type=\"text/css\">"
+      + "<link href=\"iecss.css\" rel=\"stylesheet\" type=\"text/css\" />"
       + "<![endif]-->"
       + "</foo>");
   final String RENDER_WITH_COMMENTS = TEST_XML;
@@ -157,58 +157,151 @@ public class NodesTest extends CajaTestCase {
       + "//]]>"
       + "</script>"
       + "<![endif]-->");
-  
+  final String IE_DOWNLEVEL_REVEALED_COMMENTS_TEST_XML = (
+      "before <![if !IE | gte IE 7]>"
+      + "<link href=\"special.css\" rel=\"stylesheet\" type=\"text/css\" />"
+      + "<![endif]>");
+  final String IE_DOWNLEVEL_REVEALED_COMMENTS_WITH_CDATA_TEST_XML = (
+      "before <![if !IE | gte IE 7]>"
+      + "<link href=\"special.css\" rel=\"stylesheet\" type=\"text/css\" />"
+      + "<script type=\"text/javascript\">"
+      + "//<![CDATA["
+      + "var x = 1;"
+      + "//]]>"
+      + "</script>"
+      + "<![endif]>");
+  final String IE_NESTED_CONDITIONAL_COMMENTS_TEST_XML = (
+      "before <!--[if gte IE 5]>"
+       + "<p>Greater than IE 5.</p>"
+       + "<!--[if gte IE 6]>"
+       + "<p>Also greater than IE 6.</p>"
+       + "<![endif]-->"
+       + "<p>Back to greater than IE 5.</p>"
+       + "<![endif]-->");
+  final String IE_NESTED_CONDITIONAL_COMMENTS2_TEST_XML = (
+      "before <!--[if gte IE 5]>"
+       + "<p>Greater than IE 5.</p>"
+       + "<![if IE 7]>"
+       + "<p>This is actually IE 7.</p>"
+       + "<![endif]>"
+       + "<p>Back to greater than IE 5.</p>"
+       + "<![endif]-->");
+
+  final String RENDER_NO_NESTED_COMMENTS = ("before ");
+   
+
   public final void testCommentsRemoved() throws Exception {
-    Node el = parse(TEST_XML, false);
+    Node el = parse(TEST_XML, false, false);
     assertEquals(RENDER_NO_COMMENTS, Nodes.render(el, MarkupRenderMode.HTML));
-    el = parse(TEST_XML, true);
+    el = parse(TEST_XML, true, false);
     assertEquals(RENDER_NO_COMMENTS, Nodes.render(el, MarkupRenderMode.XML));
+    el = parse(IE_NESTED_CONDITIONAL_COMMENTS_TEST_XML, false, false);
+    assertEquals(RENDER_NO_NESTED_COMMENTS,
+            Nodes.render(el, MarkupRenderMode.HTML));
+    el = parse(IE_NESTED_CONDITIONAL_COMMENTS2_TEST_XML, false, false);
+    assertEquals(RENDER_NO_NESTED_COMMENTS,
+            Nodes.render(el, MarkupRenderMode.HTML));
   }
 
   public final void testCommentsPreservedInUnsafeMode() throws Exception {
-    Node el = parse(TEST_XML, false);
+    Node el = parse(TEST_XML, false, true);
     assertRendersUnsafe(RENDER_WITH_COMMENTS, el, MarkupRenderMode.HTML);
-    el = parse(TEST_XML, true);
+    el = parse(TEST_XML, true, true);
     assertRendersUnsafe(RENDER_WITH_COMMENTS, el, MarkupRenderMode.XML);
   }
 
   public final void testIECommentsPreservedInUnsafeMode() throws Exception {
-    Node el = parse(IE_COMMENTS_TEST_XML, false);
+    Node el = parse(IE_COMMENTS_TEST_XML, false, true);
     assertRendersUnsafe(IE_COMMENTS_TEST_XML, el, MarkupRenderMode.HTML);
-    el = parse(IE_COMMENTS_TEST_XML, true);
-    assertRendersUnsafe(IE_COMMENTS_TEST_XML, el, MarkupRenderMode.XML);
+    // We don't repeat this test in XML mode, because it needs exact IE
+    // conditional comment handling for matching the <![endif]-->.
   }
 
   public final void testIECommentsWithCdataPreservedInUnsafeMode()
       throws Exception {
-    Node el = parse(IE_COMMENTS_WITH_CDATA_TEST_XML, false);
+    Node el = parse(IE_COMMENTS_WITH_CDATA_TEST_XML, false, true);
     assertRendersUnsafe(IE_COMMENTS_WITH_CDATA_TEST_XML,
                         el, MarkupRenderMode.HTML);
-    el = parse(IE_COMMENTS_WITH_CDATA_TEST_XML, true);
+    el = parse(IE_COMMENTS_WITH_CDATA_TEST_XML, true, true);
     assertRendersUnsafe(IE_COMMENTS_WITH_CDATA_TEST_XML,
                         el, MarkupRenderMode.XML);
   }
 
-  public final void testIllegalCharactersInComment() throws Exception {
-    assertRendersUnsafe("before <!-- Long Comment -->",
-        parse("before <!---- Long Comment ---->", false),
-        MarkupRenderMode.HTML);
-    assertRendersUnsafe("before <!-- Long -- Comment -->",
-            parse("before <!--- Long -- Comment --->", false),
-            MarkupRenderMode.HTML);
-    assertRendersUnsafe("before <!-- -- -->", parse("before <!-- -- -->", false),
-        MarkupRenderMode.HTML);
-    assertRendersUnsafe("before <!-- -- -->", parse("before <!-- -- -->", true),
-        MarkupRenderMode.XML);
-    assertFailsToRenderUnsafe("before <!-->>>-->", false, MarkupRenderMode.HTML,
-        "XML comment", "starts with '>'");
-    assertFailsToRenderUnsafe("before <!-->>>-->", true, MarkupRenderMode.XML,
-        "XML comment", "starts with '>'");
+  public final void testIEDownlevelRevealedPreservedInUnsafeMode()
+      throws Exception {
+    Node el = parse(IE_DOWNLEVEL_REVEALED_COMMENTS_TEST_XML, false, true);
+    assertRendersUnsafe(IE_DOWNLEVEL_REVEALED_COMMENTS_TEST_XML,
+                        el, MarkupRenderMode.HTML);
+    el = parse(IE_DOWNLEVEL_REVEALED_COMMENTS_TEST_XML, false, false);
+    assertRendersUnsafe(IE_DOWNLEVEL_REVEALED_COMMENTS_TEST_XML,
+                        el, MarkupRenderMode.HTML);
+    // We don't repeat this test in XML mode, because it needs exact IE
+    // conditional comment handling for matching the <![if ...] piece.
   }
 
-  private Node parse(String xml, boolean asXml) throws Exception {
+  public final void testIEDownlevelRevealedWithCdataPreservedInUnsafeMode()
+      throws Exception {
+    Node el = parse(IE_DOWNLEVEL_REVEALED_COMMENTS_WITH_CDATA_TEST_XML,
+                    false, true);
+    assertRendersUnsafe(IE_DOWNLEVEL_REVEALED_COMMENTS_WITH_CDATA_TEST_XML,
+                        el, MarkupRenderMode.HTML);
+    el = parse(IE_DOWNLEVEL_REVEALED_COMMENTS_WITH_CDATA_TEST_XML,
+               false, false);
+    assertRendersUnsafe(IE_DOWNLEVEL_REVEALED_COMMENTS_WITH_CDATA_TEST_XML,
+                        el, MarkupRenderMode.HTML);
+
+    // We don't repeat this test in XML mode, because it needs exact IE
+    // conditional comment handling for matching the <![if ...] piece.
+  }
+
+  public final void testIENestedConditionalCommentsPreservedInUnsafeMode()
+      throws Exception {
+    Node el = parse(IE_NESTED_CONDITIONAL_COMMENTS_TEST_XML, false, true);
+    assertRendersUnsafe(IE_NESTED_CONDITIONAL_COMMENTS_TEST_XML,
+                        el, MarkupRenderMode.HTML);
+    el = parse(IE_NESTED_CONDITIONAL_COMMENTS_TEST_XML, false, false);
+    assertRendersUnsafe(RENDER_NO_NESTED_COMMENTS,
+                        el, MarkupRenderMode.HTML);
+    // We don't repeat this test in XML mode, because it needs exact IE
+    // conditional comment handling for matching the <![if ...] piece.
+  }
+
+  public final void testIENestedConditionalComments2PreservedInUnsafeMode()
+      throws Exception {
+    Node el = parse(IE_NESTED_CONDITIONAL_COMMENTS2_TEST_XML, false, true);
+    assertRendersUnsafe(IE_NESTED_CONDITIONAL_COMMENTS2_TEST_XML,
+                        el, MarkupRenderMode.HTML);
+    el = parse(IE_NESTED_CONDITIONAL_COMMENTS_TEST_XML, false, false);
+    assertRendersUnsafe(RENDER_NO_NESTED_COMMENTS,
+                        el, MarkupRenderMode.HTML);
+    // We don't repeat this test in XML mode, because it needs exact IE
+    // conditional comment handling for matching the <![if ...] piece.
+  }
+
+  public final void testIllegalCharactersInComment() throws Exception {
+    assertRendersUnsafe("before <!-- Long Comment -->",
+        parse("before <!---- Long Comment ---->", false, true),
+        MarkupRenderMode.HTML);
+    assertRendersUnsafe("before <!-- Long -- Comment -->",
+        parse("before <!--- Long -- Comment --->", false, true),
+        MarkupRenderMode.HTML);
+    assertRendersUnsafe("before <!-- -- -->",
+        parse("before <!-- -- -->", false, true),
+        MarkupRenderMode.HTML);
+    assertRendersUnsafe("before <!-- -- -->",
+        parse("before <!-- -- -->", true, true),
+        MarkupRenderMode.XML);
+    assertFailsToRenderUnsafe("before <!-->>>-->", false,
+        MarkupRenderMode.HTML, "XML comment", "starts with '>'");
+    assertFailsToRenderUnsafe("before <!-->>>-->", true,
+        MarkupRenderMode.XML, "XML comment", "starts with '>'");
+  }
+
+  private Node parse(String xml, boolean asXml, boolean wantsComments)
+      throws Exception {
     TokenQueue<HtmlTokenType> tq = DomParser.makeTokenQueue(        
-        FilePosition.startOfFile(is), new StringReader(xml), asXml, true);
+        FilePosition.startOfFile(is), new StringReader(xml),
+        asXml, wantsComments);
     return new DomParser(tq, asXml, mq).parseFragment();
   }
 

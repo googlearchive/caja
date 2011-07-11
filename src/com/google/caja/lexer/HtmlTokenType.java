@@ -27,7 +27,13 @@ public enum HtmlTokenType implements TokenType {
   ATTRNAME,
   /** An html value, possibly a quoted string. */
   ATTRVALUE,
-  /** An html or xml style comment, <tt>&lt;!-- for example --></tt>. */
+  /**
+   * An html or xml style comment, <tt>&lt;!-- for example --></tt>.
+   * Html IE downlevel-hidden conditional comments of the form:
+   * <tt>&lt;!--[if lte IE 7]> HTML Code <![endif]--></tt>
+   * (http://msdn.microsoft.com/en-us/library/ms537512(VS.85).aspx#syntax)
+   * are also denoted by this token type.
+   */
   COMMENT,
   /** A cdata block, <tt>&lt;![CDATA[ for example ]]></tt>. */
   CDATA,
@@ -36,10 +42,16 @@ public enum HtmlTokenType implements TokenType {
    * <tt>&lt;?xml version=1.0?&gt;</tt> or an XML processing instruction.
    */
   DIRECTIVE,
-  /** An html or xml style IE conditional comment,
-   * <tt>&lt;!--[if lte IE 7]> HTML Code <![endif]--></tt>.
+  /**
+   * Html IE downlevel-revealed conditional comments are of the form:
+   * <tt>&lt;[if !IE]> HTML Code <![endif]></tt>
+   * (http://msdn.microsoft.com/en-us/library/ms537512(VS.85).aspx#syntax)
+   * 
+   * Begin and end markers for IE conditional comments of downlevel-revealed
+   * (DR) types are denoted by the following token types.
    */
-  IE_COMMENT,
+  IE_DR_COMMENT_BEGIN,
+  IE_DR_COMMENT_END,
   /** Unescaped tag, for instance, inside a script, or xmp tag. */
   UNESCAPED,
   /**

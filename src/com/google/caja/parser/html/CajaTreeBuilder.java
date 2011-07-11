@@ -156,6 +156,7 @@ final class CajaTreeBuilder extends TreeBuilder<Node> {
   @Override
   protected void appendComment(Node el, char[] buf, int start, int length) {
     Comment comment = doc.createComment(new String(buf, start, length));
+    comment.setUserData("COMMENT_TYPE", startTok.type.toString(), null);
     el.appendChild(comment);
     if (needsDebugData) {
       Nodes.setFilePositionFor(comment, startTok.pos);

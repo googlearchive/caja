@@ -1,41 +1,41 @@
-DIRECTIVE  [<?xml version="1.0" ?>]  :  htmllexerinput2.xml:1+1@1 - 23@23
-TEXT       [\n\n]  :  htmllexerinput2.xml:1+23@23 - 3+1@25
-DIRECTIVE  [<!DOCTYPE foo>]  :  htmllexerinput2.xml:3+1@25 - 15@39
-TEXT       [\n\n]  :  htmllexerinput2.xml:3+15@39 - 5+1@41
-COMMENT    [<!-- A Comment -->]  :  htmllexerinput2.xml:5+1@41 - 19@59
-TEXT       [\n\n]  :  htmllexerinput2.xml:5+19@59 - 7+1@61
-TAGBEGIN   [<foo]  :  htmllexerinput2.xml:7+1@61 - 5@65
-TAGEND     [>]  :  htmllexerinput2.xml:7+5@65 - 6@66
-TEXT       [\n\n  ]  :  htmllexerinput2.xml:7+6@66 - 9+3@70
-TAGBEGIN   [<title]  :  htmllexerinput2.xml:9+3@70 - 9@76
-TAGEND     [>]  :  htmllexerinput2.xml:9+9@76 - 10@77
-TEXT       [Not RCDATA]  :  htmllexerinput2.xml:9+10@77 - 20@87
-TAGBEGIN   [</title]  :  htmllexerinput2.xml:9+20@87 - 27@94
-TAGEND     [>]  :  htmllexerinput2.xml:9+27@94 - 28@95
-TEXT       [\n\n  ]  :  htmllexerinput2.xml:9+28@95 - 11+3@99
-TAGBEGIN   [<bar]  :  htmllexerinput2.xml:11+3@99 - 7@103
-TAGEND     [>]  :  htmllexerinput2.xml:11+7@103 - 8@104
-TEXT       [Bar &amp; bar]  :  htmllexerinput2.xml:11+8@104 - 21@117
-TAGBEGIN   [</bar]  :  htmllexerinput2.xml:11+21@117 - 26@122
-TAGEND     [>]  :  htmllexerinput2.xml:11+26@122 - 27@123
-TEXT       [\n\n  ]  :  htmllexerinput2.xml:11+27@123 - 13+3@127
-TAGBEGIN   [<baz]  :  htmllexerinput2.xml:13+3@127 - 7@131
-TAGEND     [/>]  :  htmllexerinput2.xml:13+7@131 - 9@133
-TEXT       [\n\n  ]  :  htmllexerinput2.xml:13+9@133 - 15+3@137
-TAGBEGIN   [<boo]  :  htmllexerinput2.xml:15+3@137 - 7@141
-TAGEND     [>]  :  htmllexerinput2.xml:15+7@141 - 8@142
-CDATA      [<![CDATA[ 1 < 2 &amp;& 4 ]> 3 ]]>]  :  htmllexerinput2.xml:15+8@142 - 41@175
-TAGBEGIN   [</boo]  :  htmllexerinput2.xml:15+41@175 - 46@180
-TAGEND     [>]  :  htmllexerinput2.xml:15+46@180 - 47@181
-TEXT       [\n\n  ]  :  htmllexerinput2.xml:15+47@181 - 17+3@185
-TAGBEGIN   [<plaintext]  :  htmllexerinput2.xml:17+3@185 - 13@195
-ATTRNAME   [attrib]  :  htmllexerinput2.xml:17+14@196 - 20@202
-ATTRVALUE  ["value"]  :  htmllexerinput2.xml:17+21@203 - 28@210
-TAGEND     [>]  :  htmllexerinput2.xml:17+28@210 - 29@211
-TEXT       [Not CDATA]  :  htmllexerinput2.xml:17+29@211 - 38@220
-TAGBEGIN   [</plaintext]  :  htmllexerinput2.xml:17+38@220 - 49@231
-TAGEND     [>]  :  htmllexerinput2.xml:17+49@231 - 50@232
-TEXT       [\n\n]  :  htmllexerinput2.xml:17+50@232 - 19+1@234
-TAGBEGIN   [</foo]  :  htmllexerinput2.xml:19+1@234 - 6@239
-TAGEND     [>]  :  htmllexerinput2.xml:19+6@239 - 7@240
-TEXT       [\n]  :  htmllexerinput2.xml:19+7@240 - 20+1@241
+DIRECTIVE           [<?xml version="1.0" ?>]  :  htmllexerinput2.xml:1+1@1 - 23@23
+TEXT                [\n\n]  :  htmllexerinput2.xml:1+23@23 - 3+1@25
+DIRECTIVE           [<!DOCTYPE foo>]  :  htmllexerinput2.xml:3+1@25 - 15@39
+TEXT                [\n\n]  :  htmllexerinput2.xml:3+15@39 - 5+1@41
+COMMENT             [<!-- A Comment -->]  :  htmllexerinput2.xml:5+1@41 - 19@59
+TEXT                [\n\n]  :  htmllexerinput2.xml:5+19@59 - 7+1@61
+TAGBEGIN            [<foo]  :  htmllexerinput2.xml:7+1@61 - 5@65
+TAGEND              [>]  :  htmllexerinput2.xml:7+5@65 - 6@66
+TEXT                [\n\n  ]  :  htmllexerinput2.xml:7+6@66 - 9+3@70
+TAGBEGIN            [<title]  :  htmllexerinput2.xml:9+3@70 - 9@76
+TAGEND              [>]  :  htmllexerinput2.xml:9+9@76 - 10@77
+TEXT                [Not RCDATA]  :  htmllexerinput2.xml:9+10@77 - 20@87
+TAGBEGIN            [</title]  :  htmllexerinput2.xml:9+20@87 - 27@94
+TAGEND              [>]  :  htmllexerinput2.xml:9+27@94 - 28@95
+TEXT                [\n\n  ]  :  htmllexerinput2.xml:9+28@95 - 11+3@99
+TAGBEGIN            [<bar]  :  htmllexerinput2.xml:11+3@99 - 7@103
+TAGEND              [>]  :  htmllexerinput2.xml:11+7@103 - 8@104
+TEXT                [Bar &amp; bar]  :  htmllexerinput2.xml:11+8@104 - 21@117
+TAGBEGIN            [</bar]  :  htmllexerinput2.xml:11+21@117 - 26@122
+TAGEND              [>]  :  htmllexerinput2.xml:11+26@122 - 27@123
+TEXT                [\n\n  ]  :  htmllexerinput2.xml:11+27@123 - 13+3@127
+TAGBEGIN            [<baz]  :  htmllexerinput2.xml:13+3@127 - 7@131
+TAGEND              [/>]  :  htmllexerinput2.xml:13+7@131 - 9@133
+TEXT                [\n\n  ]  :  htmllexerinput2.xml:13+9@133 - 15+3@137
+TAGBEGIN            [<boo]  :  htmllexerinput2.xml:15+3@137 - 7@141
+TAGEND              [>]  :  htmllexerinput2.xml:15+7@141 - 8@142
+CDATA               [<![CDATA[ 1 < 2 &amp;& 4 ]> 3 ]]>]  :  htmllexerinput2.xml:15+8@142 - 41@175
+TAGBEGIN            [</boo]  :  htmllexerinput2.xml:15+41@175 - 46@180
+TAGEND              [>]  :  htmllexerinput2.xml:15+46@180 - 47@181
+TEXT                [\n\n  ]  :  htmllexerinput2.xml:15+47@181 - 17+3@185
+TAGBEGIN            [<plaintext]  :  htmllexerinput2.xml:17+3@185 - 13@195
+ATTRNAME            [attrib]  :  htmllexerinput2.xml:17+14@196 - 20@202
+ATTRVALUE           ["value"]  :  htmllexerinput2.xml:17+21@203 - 28@210
+TAGEND              [>]  :  htmllexerinput2.xml:17+28@210 - 29@211
+TEXT                [Not CDATA]  :  htmllexerinput2.xml:17+29@211 - 38@220
+TAGBEGIN            [</plaintext]  :  htmllexerinput2.xml:17+38@220 - 49@231
+TAGEND              [>]  :  htmllexerinput2.xml:17+49@231 - 50@232
+TEXT                [\n\n]  :  htmllexerinput2.xml:17+50@232 - 19+1@234
+TAGBEGIN            [</foo]  :  htmllexerinput2.xml:19+1@234 - 6@239
+TAGEND              [>]  :  htmllexerinput2.xml:19+6@239 - 7@240
+TEXT                [\n]  :  htmllexerinput2.xml:19+7@240 - 20+1@241

@@ -37,6 +37,9 @@ public enum DomParserMessageType implements MessageTypeInt {
   MOVING_TO_HEAD("%s: moving element %s to head", MessageLevel.LINT),
   MISSING_DOCUMENT_ELEMENT("%s: no document element", MessageLevel.ERROR),
   GENERIC_SAX_ERROR("%s: %s", MessageLevel.FATAL_ERROR),
+  NOT_IGNORING_DOWNLEVEL_REVEALED_COMMENT(
+          "%s: not ignoring downlevel revealed comment %s",
+          MessageLevel.WARNING),
   ;
 
   private final String formatString;

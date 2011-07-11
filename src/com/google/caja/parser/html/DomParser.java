@@ -114,7 +114,7 @@ public class DomParser {
 
   public boolean asXml() { return asXml; }
   public boolean getNeedsDebugData() { return needsDebugData; }
-  public boolean getWantsComments() {
+  public boolean wantsComments() {
     return tokens.getTokenFilter().accept(Token.instance(
         "<!-- -->", HtmlTokenType.COMMENT, FilePosition.UNKNOWN));
   }
@@ -548,7 +548,7 @@ public class DomParser {
    *   parse, or if there is a problem parsing the underlying stream.
    */
   private void parseDom(OpenElementStack out) throws ParseException {
-    while (true) {
+    while (!tokens.isEmpty()) {
       Token<HtmlTokenType> t = tokens.pop();
       switch (t.type) {
         case TAGBEGIN:
@@ -585,9 +585,17 @@ public class DomParser {
           out.processText(t);
           return;
         case COMMENT:
-        case IE_COMMENT:
           out.processComment(t);
           return;
+        case IE_DR_COMMENT_BEGIN:
+        case IE_DR_COMMENT_END:
+          out.processComment(t);
+          if (!wantsComments()) {
+            mq.addMessage(DomParserMessageType
+                              .NOT_IGNORING_DOWNLEVEL_REVEALED_COMMENT,
+                          t.pos, MessagePart.Factory.valueOf(t.text));
+          }
+          break;
         default:
           throw new ParseException(new Message(
               MessageType.MALFORMED_XHTML, t.pos,
@@ -730,7 +738,6 @@ public class DomParser {
       Token<HtmlTokenType> t = tokens.peek();
       switch (t.type) {
         case COMMENT:
-        case IE_COMMENT:
         case IGNORABLE:
           tokens.pop();
           break;

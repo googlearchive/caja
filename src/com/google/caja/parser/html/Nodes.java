@@ -17,6 +17,7 @@ package com.google.caja.parser.html;
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.HtmlEntities;
 import com.google.caja.lexer.HtmlTextEscapingMode;
+import com.google.caja.lexer.HtmlTokenType;
 import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.lexer.escaping.Escaping;
@@ -731,8 +732,29 @@ final class Renderer {
         break;
       }
       case Node.COMMENT_NODE: {
-        if (renderUnsafe) {
-          String text = node.getNodeValue();
+        // Comment nodes could either be of the standard HTML comment type,
+        // or of the downlevel-hidden type of IE comments or
+        // or of the downlevel-revealed type of IE comments.
+        // 1) Standard HTML comments and IE downlevel-hidden comments are
+        // have HtmlTokenType.COMMENT present in the userData of the node
+        // These are only rendered if renderUnsafe is true, and these need
+        // <!-- and --> to be attached to them, along with extra sanitization
+        // to make sure they match the specs.
+        // 2) IE downlevel-revealed comment markers do not need either
+        // <!-- or --> and these should be rendered even if renderUnsafe is
+        // false, because these are directives processed by non-IE browsers
+        // as well.
+        String commentType =
+                node.getUserData("COMMENT_TYPE") != null ?
+                node.getUserData("COMMENT_TYPE").toString() :
+                // TODO(anupama): We need to have COMMENT as default because
+                // Node.cloneNode does not copy over userData for nodes.
+                // Figure out how we can fix this to behave correctly.
+                HtmlTokenType.COMMENT.toString();
+        String text = node.getNodeValue();
+        boolean isStandardComment =
+            HtmlTokenType.COMMENT.toString().equals(commentType);
+        if (renderUnsafe && isStandardComment) {
           // HTML5 spec 11.1.6
           // Comments must start with the four character sequence (<!--).
           // Following this sequence, the comment may have text, with the
@@ -776,6 +798,9 @@ final class Renderer {
           out.append("<!--");
           out.append(text);
           out.append("-->");
+        } else if (!isStandardComment) {
+          // Downlevel-revealed comment.
+          out.append(text);
         }
       }
       break;
