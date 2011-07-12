@@ -309,7 +309,23 @@
   </target>
 
   <target name="docs" description="Builds all Caja documentation."
-   depends="javadocs,ruledocs,jsdocs"/>
+   depends="javadocs,ruledocs,jsdocs,cajajsdocs"/>
+
+  <target name="cajajsdocs">
+    <mkdir dir="${docs}/cajajs"/>
+    <xslt in="doc/cajajs/cajajs.xml"
+          out="${docs}/cajajs/index.html"
+          style="doc/cajajs/apidoc.xsl"/>
+    <copy todir="${docs}/cajajs">
+      <fileset dir="doc/cajajs">
+        <include name="apidoc.css"/>
+        <include name="apidoc.js"/>
+      </fileset>
+      <fileset dir="third_party/js/">
+        <include name="prettify/**"/>
+      </fileset>
+    </copy>
+  </target>
 
   <target name="javadocs" description="Builds javadoc documentation.">
     <mkdir dir="${javadocs}"/>

@@ -1,0 +1,100 @@
+/*
+ * Copyright (C) 2011 Google Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+p {
+  padding: 0px;
+  margin-top: 5px;
+  margin-bottom: 0px;
+  margin-left: 0px;
+  margin-right: 0px;
+}
+
+ul, ol {
+  margin-top: 5px;
+}
+
+.content {
+  display: none;
+}
+
+pre.prettyprint {
+  margin-left: 2em;
+  margin-right: 4em;
+  border: none;
+  padding: 5px;
+  background-color: #f8f8f8;
+}
+
+.container {
+  margin-left: 15px;
+  margin-top: 3px;
+  margin-bottom: 3px;
+  margin-right: 3px;
+  border: 1px solid #e0e0e0;
+}
+
+.page-name {
+  padding: 3px;
+  font-family: helvetica;
+  font-size: 18pt;
+  background-color: #f0e0f0;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.object-name {
+  padding: 1px;
+  font-family: helvetica;
+  font-size: 10pt;
+  background-color: #bdedff;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.section-header {
+  padding: 1px;
+  font-family: helvetica;
+  font-size: 10pt;
+  background-color: #f0e0e0;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.item-header {
+  padding: 1px;
+  font-size: 10pt;
+  font-family: helvetica;
+  background-color: #e0f0e0;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.sub-item-header {
+  padding: 1px;
+  font-size: 10pt;
+  font-family: helvetica;
+  background-color: #e0e0f0;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.doc {
+  margin-left: 3px;
+  font-family: helvetica;
+  font-size: 10pt;
+}
+
+.footer {
+  font-size: 8pt;
+  font-family: helvetica;
+  margin-top: 10px;
+  margin-left: 15px;
+}
