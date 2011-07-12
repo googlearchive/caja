@@ -3053,7 +3053,6 @@ jsunitRegister('testBoundingClientRect',
 jsunitRegister('testAttributeNodes',
                function testAttributeNodes() {
   var cb = document.getElementById('test-attribute-nodes-onclick');
-
   var attrNode = cb.getAttributeNode('id');
   assertEquals('test-attribute-nodes-onclick', attrNode.value);
   assertEquals(true, attrNode.specified);
