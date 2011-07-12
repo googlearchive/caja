@@ -146,6 +146,53 @@
   });
 </script>
 
+<div id="testAccessors" class="testcontainer waiting">
+  testAccessors
+</div>
+<script type="text/javascript">
+  jsunitRegister('testAccessors',
+                 function testAccessors() {
+    // Does an accessor property survive the object getting untamed?
+    var stuff = null;
+    var r = {
+      foo: 17,
+    };
+    
+    Object.defineProperty(r, "bargh", {
+      enumerable: true,
+      get: function () { return 42; }
+    })
+    Object.defineProperty(r, "bars", {  // also tests non-enumerability
+      set: function (x) { stuff = x; }
+    })
+    Object.defineProperty(r, "barges", {
+      enumerable: true,
+      get: function () { return stuff + 1; },
+      set: function (x) { stuff = x; }
+    })
+    tameEval('assertEquals(17, a.foo);', r);  // cause object to be untamed
+    
+    assertEquals(42, r.bargh);
+    assertThrows(function() {
+      r.bargh = "sorry, no setter";
+    });
+    tameEval('assertFalse("bargh" in a);', r);
+    assertEquals(42, r.bargh);
+
+    assertEquals(undefined, r.bars);
+    r.bars = 64;
+    assertEquals(64, stuff);
+
+    assertEquals(65, r.barges);
+    r.barges = 256;
+    assertEquals(257, r.barges);
+    
+    assertKeys(r, ["barges", "bargh", "foo"]);
+    
+    pass('testAccessors');
+  });
+</script>
+
 <div id="testConstructedObjects" class="testcontainer waiting">
   testConstructedObjects
 </div>

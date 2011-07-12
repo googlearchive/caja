@@ -622,6 +622,15 @@ var ___, cajaVM, safeJSON;
       p = '' + p;
       if (isNumericName(p)) { return void 0; }
       if (!endsWith__.test(p)) {
+        // Is p an accessor property? Used only for eviscerated t.
+        var g = getter(t, p);
+        if (g) { return g.f___(this); }
+        
+        // Accessor property with only setter
+        if (hasAccessor(t, p)) {
+          return void 0;
+        }
+        
         return tame(f[p]);
       }
       return void 0;
@@ -629,7 +638,13 @@ var ___, cajaVM, safeJSON;
     t.w___ = function (p, v) {  // [[Put]]
       p = '' + p;
       if (!isNumericName(p) && !endsWith__.test(p)) {
-        if (!isWhitelistedReadOnly(t)) {
+        // Is p an accessor property? Used only for eviscerated t.
+        var s = setter(t, p);
+        if (s) { s.f___(t, [v]); return v; }
+
+        // Write value property if it is not a read-only accessor property
+        // and the object itself is not read-only.
+        if (!hasAccessor(t, p) && !isWhitelistedReadOnly(t)) {
           f[p] = untame(v);
           return v;
         }
@@ -640,7 +655,13 @@ var ___, cajaVM, safeJSON;
       p = '' + p;
       if (!isNumericName(p) && !endsWith__.test(p)) {
         if (!isWhitelistedReadOnly(t)) {
-          if (delete f[p]) { return true; }
+          if (t[p + '_v___']) {
+            // Delete the local property if present. This only happens when
+            // p is an accessor property on an eviscerated t.
+            return Object.prototype.c___.call(t, p);
+          } else {
+            if (delete f[p]) { return true; }
+          }
           return;
         }
       }
@@ -657,10 +678,26 @@ var ___, cajaVM, safeJSON;
     };
     t.HasProperty___ = function(p) {
       p = '' + p;
-      if (!(p in f)) { return false; }
-      return !isNumericName(p) && !endsWith__.test(p);
+      if (isNumericName(p)) { return false; }
+      return (p + '_v___' in this)
+          || ((p in f) && !endsWith__.test(p));
     };
-    t.e___ = makeEnumerate(t, f);
+    
+    var feralEnumerate = makeEnumerate(t, f);
+    t.e___ = function() {
+      var result = feralEnumerate();
+      
+      // For eviscerated t, add remaining properties from t (which will be
+      // accessor properties only).
+      for (var p in t) {
+        if (!t.hasOwnProperty(p)) { continue; }
+        if (isNumericName(p)) { continue; }
+        if (startsWithNUM___.test(p) && endsWith__.test(p)) { continue; }
+        m = p.match(endsWith_e___);
+        if (m) { result[p] = t[p]; }
+      }
+      return result;
+    };
 
     return t;
   }
@@ -794,16 +831,25 @@ var ___, cajaVM, safeJSON;
     };
   }
 
+  // Remove own value properties from tame object t and copy untame(them) to 
+  // feral object f, because t is about to be made into an object that forwards
+  // to f.
+  //
+  // Accessor properties are left alone, because they cannot be implemented
+  // on the host side.
   function eviscerate(t, f) {
-    var k;
-    for (k in t) {
-      if (!t.hasOwnProperty(k)) { continue; }
-      if (!endsWith__.test(k)) { f[k] = untame(t[k]); }
-      if (!delete t[k]) {
-        throw new TypeError(
-            'Eviscerating: ' + t + ' failed to delete prop: ' + k);
+    ownKeys(t).forEach(function(p) {
+      if (t[p + '_v___'] || isNumericName(p)) {
+        // is a data property (not an accessor property)
+
+        f[p] = untame(t[p]);
+
+        if (!rawDelete(t, p)) {
+          throw new TypeError(
+              'Eviscerating: ' + t + ' failed to delete prop: ' + p);
+        }
       }
-    }
+    });
   }
 
   function markTameAsReadOnlyRecord(f) {
@@ -2764,6 +2810,19 @@ var ___, cajaVM, safeJSON;
       return (P + '_v___' in this);
     };
 
+  // Delete the own property P from O without refusing non-configurability.
+  function rawDelete(O, P) {
+    return delete O[P]
+        && delete O[P + '_v___']
+        && delete O[P + '_w___']
+        && delete O[P + '_gw___']
+        && delete O[P + '_g___']
+        && delete O[P + '_s___']
+        && delete O[P + '_c___']
+        && delete O[P + '_e___']
+        && delete O[P + '_m___'];
+  }
+
   // 8.12.7
   Object.prototype.c___ = function (P) {
       var O = this;
@@ -2796,15 +2855,7 @@ var ___, cajaVM, safeJSON;
           }
         }
         // a. Remove the own property with name P from O.
-        delete O[P];
-        delete O[P + '_v___'];
-        delete O[P + '_w___'];
-        delete O[P + '_gw___'];
-        delete O[P + '_g___'];
-        delete O[P + '_s___'];
-        delete O[P + '_c___'];
-        delete O[P + '_e___'];
-        delete O[P + '_m___'];
+        rawDelete(O, P);
         // b. Return true.
         return true;
       }
