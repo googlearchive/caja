@@ -62,7 +62,7 @@
     <method>
       <name>setDefaults</name>
       <doc><p>Sets the default parameters for Caja.</p><p>This method
-      must be called before any calls to <code>onReady</code> or
+      must be called before any calls to <code>whenReady</code> or
       <code>load</code>. If either of these is called first, a built-in
       set of parameters will be used and any subsequent calls to
       <code>setDefaults</code> will throw. The resulting exceptions leave
@@ -85,7 +85,7 @@
     </method>
 
     <method>
-      <name>onReady</name>
+      <name>whenReady</name>
       <doc><p>Registers a function to be called back when Caja is
       ready to provide services.</p></doc>
       <arg>
@@ -344,11 +344,11 @@ caja.setDefaults({
       <doc>
 <pre class="prettyprint lang-javascript">
 /* <strong>host page code</strong> */
-caja.onReady(function() { /* ... */ });
+caja.whenReady(function() { /* ... */ });
 caja.setDefaults({ /* ... */ });
 </pre>
         <p>The call to <code>setDefaults</code> throws since
-        <code>onReady</code> has already been called.</p>
+        <code>whenReady</code> has already been called.</p>
       </doc>
     </example>
 
@@ -386,7 +386,7 @@ caja.markTameAsFunction( /* ... */ );
 <pre class="prettyprint lang-javascript">
 /* <strong>host page code</strong> */
 /* in a top-level script */
-caja.onReady(function() {
+caja.whenReady(function() {
   caja.tame( /* ... */ );
   caja.markTameAsFunction( /* ... */ );
 });
@@ -472,7 +472,7 @@ var restrictedAlert = function(s) {
 };
 
 caja.setDefaults({ cajaServer: 'http://caja.appspot.com' });
-caja.onReady(function() {
+caja.whenReady(function() {
   caja.markTameAsFunction(restrictedAlert);
 });
 
