@@ -5,7 +5,6 @@
  * @author mikesamuel@gmail.com
  */
 
-var undefined;
 var nullValue;
 var zero;
 var negOne;

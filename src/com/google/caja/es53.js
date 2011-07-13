@@ -1112,8 +1112,8 @@ var ___, cajaVM, safeJSON;
   }
 
   var endsWith__ = /__$/;
-  var endsWith_e___ = /(.*?)_e___$/;
-  var endsWith_v___ = /(.*?)_v___$/;
+  var endsWith_e___ = /([\s\S]*)_e___$/;
+  var endsWith_v___ = /([\s\S]*)_v___$/;
   var startsWithNUM___ = /^NUM___/;
 
   function assertValidPropertyName(P) {
@@ -3556,11 +3556,14 @@ var ___, cajaVM, safeJSON;
     }
     obj.ne___ = obj;
     for (var i in obj) {
-      if (!guestHasOwnProperty(obj,i)) { continue; }
+      if (!obj.hasOwnProperty(i)) { continue; }
       if (isNumericName(i)) { continue; }
-      obj[i + '_c___'] = false;
-      obj[i + '_gw___'] = false;
-      obj[i + '_w___'] = false;
+      var m = i.match(endsWith_v___);
+      if (!m) { continue; }
+      var j = m[1];
+      obj[j + '_c___'] = false;
+      obj[j + '_gw___'] = false;
+      obj[j + '_w___'] = false;
     }
     if (!obj.hasNumerics___()) {
       obj.NUM____v___ = obj;
