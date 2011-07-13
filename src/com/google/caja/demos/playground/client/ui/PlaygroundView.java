@@ -420,7 +420,7 @@ public class PlaygroundView {
       extraImports.alert = frameGroup.tame(frameGroup.markFunction(
         function (message) {
           that.@com.google.caja.demos.playground.client.ui.PlaygroundView::alert(Ljava/lang/String;)
-              (message);
+              ('' + message);
         }));
       
       frameGroup.makeES5Frame(div, {
