@@ -112,25 +112,9 @@ var whitelist;
       eval: t,
       Function: t
     },
-    Q: {                             // Dr. SES support
-      get: t,
-      post: t,
-      put: t,
-      'delete': t,
-      when: t,
-      defer: t,
-      reject: t,
-      ref: t,
-      near: t,
-      defined: t,
-      run: t,
-      Promise: t,
-      isPromise: t,
-      def: t
-    },
     WeakMap: {       // ES-Harmony proposal as currently implemented by FF6.0a1
       prototype: {
-        // Note: coordinate this list with maintenance of es5shim.js
+        // Note: coordinate this list with maintenance of repairES5.js
         get: t,
         set: t,
         has: t,
@@ -146,7 +130,7 @@ var whitelist;
     Object: {
       getPropertyDescriptor: t,      // ES-Harmony proposal
       getPropertyNames: t,           // ES-Harmony proposal
-      identical: t,                  // ES-Harmony proposal
+      is: t,                         // ES-Harmony proposal
       prototype: {
         constructor: '*',
         toString: '*',
@@ -310,7 +294,7 @@ var whitelist;
     },
     Date: {                          // no-arg Date constructor is questionable
       prototype: {
-        // Note: coordinate this list with maintanence of es5shim.js
+        // Note: coordinate this list with maintanence of repairES5.js
         getYear: t,                  // ES5 Appendix B
         setYear: t,                  // ES5 Appendix B
         toGMTString: t,              // ES5 Appendix B

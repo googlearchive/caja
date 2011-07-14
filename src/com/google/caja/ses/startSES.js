@@ -181,25 +181,6 @@ function startSES(global, whitelist, atLeastFreeVarNames) {
   // rely on ES5.
 
   /**
-   * Workaround for http://code.google.com/p/v8/issues/detail?id=1321
-   * and https://bugs.webkit.org/show_bug.cgi?id=58338
-   *
-   * <p>This switch simply reflects that not all almost-ES5 browsers
-   * yet implement strict mode.
-   *
-   * <p>This kludge is <b>not</b> safety preserving. By proceeding
-   * without a full strict mode implementation, many of the security
-   * properties SES relies on, like non-leakage of the global object,
-   * are lost.
-   *
-   * <p>See also https://bugzilla.mozilla.org/show_bug.cgi?id=482298
-   * TODO(erights): verify that all the open bugs this one depends do
-   * not matter for SES security.
-   */
-  //var REQUIRE_STRICT = true;
-  var REQUIRE_STRICT = false;
-
-  /**
    * <p>TODO(erights): isolate and report this.
    *
    * <p>Workaround for Chrome debugger's own use of 'eval'
@@ -230,13 +211,9 @@ function startSES(global, whitelist, atLeastFreeVarNames) {
     fail('No built-in WeakMaps, so WeakMap.js must be loaded first');
   }
 
-  if (REQUIRE_STRICT && (function() { return this; })()) {
-    fail('Requires at least ES5 support');
-  }
-
   /**
-   * Code being eval'ed sees <tt>root</tt> as its <tt>this</tt>, as if
-   * <tt>root</tt> were the global object.
+   * Code being eval'ed sees <tt>root</tt> as its top-level
+   * <tt>this</tt>, as if <tt>root</tt> were the global object.
    *
    * <p>Root's properties are exactly the whitelisted global variable
    * references. These properties, both as they appear on the global
@@ -627,7 +604,8 @@ function startSES(global, whitelist, atLeastFreeVarNames) {
    */
   function read(base, name) {
     var desc = Object.getOwnPropertyDescriptor(base, name);
-    if (desc && 'value' in desc && !desc.writable && !desc.configurable) {
+    if (!desc) { return undefined; }
+    if ('value' in desc && !desc.writable && !desc.configurable) {
       return desc.value;
     }
 
@@ -791,7 +769,7 @@ function startSES(global, whitelist, atLeastFreeVarNames) {
 
   if (cantNeuter.length >= 1) {
     var complaint = cantNeuter.map(function(p) {
-      var desc = Object.getPropertyDescriptor(p.base, p.name);
+      var desc = Object.getOwnPropertyDescriptor(p.base, p.name);
       if (!desc) {
         return '  Missing ' + p.name;
       }

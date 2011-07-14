@@ -18,19 +18,19 @@
 # (3) Muck around with some source files
 #       See Eclipse steps below
 # (4) Prepare a changelist
-#       $ myvn change
+#       $ tools/myvn change
 #     Should pop up an editor.  Check the EDITOR, or SVNEDITOR environment
 #     variables if it doesn't
 # (5) Send it off for review
-#       $ myvn mail --reviewer your-friendly-neighborhood-cajador@gmail.com
+#       $ tools/myvn mail --reviewer friendly-neighborhood-cajador@gmail.com
 #     This will automatically CC google-caja-discuss
 # (6) Look for the review at codereview.appspot.com.
 #     If you forget the changelist number, run
-#       $ myvn describe
+#       $ tools/myvn describe
 # (7) Update your changes based on feedback and snapshot
-#       $ myvn snapshot
+#       $ tools/myvn snapshot
 # (8) Commit the change
-#       $ myvn submit
+#       $ tools/myvn submit
 #
 #
 # ====================
@@ -38,7 +38,7 @@
 # ====================
 # (1) Build jars
 # (2) Generate the project
-#       $ myvn eclipse
+#       $ tools/myvn eclipse
 # (3) Open Eclipse
 # (4) Choose New Java Project  (NOT new google3 project)
 # (5) From Existing Source

@@ -53,13 +53,13 @@
  * names.
  *
  * <p>Another difference is that our emulated {@code
- * WeakMap.prototype} is not itself a WeakMap. A
- * problem with the current FF6.0a1 API is that WeakMap.prototype is
- * itself a WeakMap providing ambient mutability and an ambient
- * communications channel. Thus, if a WeakMap is already present and
- * has this problem, es5shim.js wraps it in a safe wrappper in order
- * to prevent access to this channel. (See
- * PATCH_MUTABLE_FROZEN_WEAKMAP_PROTO in es5shim.js).
+ * WeakMap.prototype} is not itself a WeakMap. A problem with the
+ * current FF6.0a1 API is that WeakMap.prototype is itself a WeakMap
+ * providing ambient mutability and an ambient communications
+ * channel. Thus, if a WeakMap is already present and has this
+ * problem, repairES5.js wraps it in a safe wrappper in order to
+ * prevent access to this channel. (See
+ * PATCH_MUTABLE_FROZEN_WEAKMAP_PROTO in repairES5.js).
  */
 var WeakMap;
 
@@ -70,7 +70,7 @@ var WeakMap;
  * absent, install an approximate emulation.
  *
  * <p>If this is almost a secureable ES5 platform, then WeakMap.js
- * should be run after es5shim.js.
+ * should be run after repairES5.js.
  *
  * <p>See {@code WeakMap} for documentation of the garbage collection
  * properties of this WeakMap emulation.
@@ -86,7 +86,7 @@ var WeakMap;
 
   /**
    * Holds the orginal static properties of the Object constructor,
-   * after es5shim fixes these if necessary to be a more complete
+   * after repairES5 fixes these if necessary to be a more complete
    * secureable ES5 environment, but before installing the following
    * WeakMap emulation overrides and before any untrusted code runs.
    */
