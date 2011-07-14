@@ -178,3 +178,52 @@
     pass('test-negative-indices-workaround');
   });
 </script>
+
+<p id="test-parseInt" class="testcontainer">
+  Test parseInt
+</p>
+<script type="text/javascript">
+  jsunitRegister('testParseInt',
+                 function testParseInt() {
+    assertEquals(0, parseInt("0"));
+    assertEquals(1, parseInt("1"));
+    assertEquals(-1, parseInt("-1"));
+    assertEquals(10, parseInt("10"));
+    assertEquals(1, parseInt("0x01"));
+    assertEquals(-1, parseInt("-0x01"));
+    assertEquals(16, parseInt("0x10"));
+    assertEquals(-16, parseInt("-0x10"));
+    assertEquals(0, parseInt("00"));
+    assertEquals(1, parseInt("01"));
+    assertEquals(-1, parseInt("-01"));
+    assertEquals(10, parseInt("010"));
+
+    assertEquals(0, parseInt("0"));
+    assertEquals(1, parseInt("1", 8));
+    assertEquals(-1, parseInt("-1", 8));
+    assertEquals(8, parseInt("10", 8));
+    assertEquals(0, parseInt("0x01", 8));
+    assertEquals(0, parseInt("-0x01", 8));
+    assertEquals(0, parseInt("0x10", 8));
+    assertEquals(0, parseInt("-0x10", 8));
+    assertEquals(0, parseInt("00", 8));
+    assertEquals(1, parseInt("01", 8));
+    assertEquals(-1, parseInt("-01", 8));
+    assertEquals(8, parseInt("010", 8));
+
+    assertEquals(0, parseInt("0", 16));
+    assertEquals(1, parseInt("1", 16));
+    assertEquals(-1, parseInt("-1", 16));
+    assertEquals(16, parseInt("10", 16));
+    assertEquals(1, parseInt("0x01", 16));
+    assertEquals(-1, parseInt("-0x01", 16));
+    assertEquals(16, parseInt("0x10", 16));
+    assertEquals(-16, parseInt("-0x10", 16));
+    assertEquals(0, parseInt("00", 16));
+    assertEquals(1, parseInt("01", 16));
+    assertEquals(-1, parseInt("-01", 16));
+    assertEquals(16, parseInt("010", 16));
+
+    pass('test-parseInt');
+  });
+</script>

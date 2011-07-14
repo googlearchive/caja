@@ -5168,9 +5168,18 @@ var ___, cajaVM, safeJSON;
     throw new ReferenceError(name + ' is not defined.');
   }
 
-  function goodParseInt(n) {
+  function goodParseInt(n, radix) {
     n = '' + n;
-    return parseInt(n.replace(/^\s*([+-]?)\s*0*/, ''));
+    // This turns an undefined radix into a NaN but is ok since NaN
+    // is treated as undefined by parseInt
+    radix = +radix; 
+    var isHexOrOctal = /^\s*[+-]?\s*0(x?)/.exec(n);
+    var isOct = isHexOrOctal ? isHexOrOctal[1] !== 'x' : false;
+
+    if (isOct && (radix !== radix || 0 === radix)) {
+      return parseInt(n, 10);
+    }
+    return parseInt(n, radix);
   }
 
   var sharedImports = whitelistAll({
