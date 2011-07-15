@@ -671,7 +671,7 @@ var caja = (function () {
     }
 
     whenReady(function() {
-      frameGroup_.makeES5Frame(div, uriCallback || caja.policy.NO_NETWORK,
+      frameGroup_.makeES5Frame(div, uriCallback || caja.policy.net.NO_NETWORK,
         function (frame) {
           function run(resultCallback) {
             if (!builderState.primaryMethod) {

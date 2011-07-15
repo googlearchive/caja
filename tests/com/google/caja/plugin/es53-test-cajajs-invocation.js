@@ -92,10 +92,37 @@
     });
   });
 
+  registerTest('testBuilderApiJsNoDom', function testBuilderApiJsNoDom() {
+    caja.load(undefined, uriCallback, function (frame) {
+      var extraImports = { x: 4, y: 3 };
+      frame.code('es53-test-guest.js', 'text/javascript')
+           .api(extraImports)
+           .run(function(result) {
+             assertEquals(12, result);
+             jsunitPass('testBuilderApiJsNoDom');
+           });
+    });
+  });
+
+  registerTest('testBuilderApiNetUndefined', 
+      function testBuilderApiNetUndefined() {
+    var div = createDiv();
+    caja.load(div, undefined, function (frame) {
+      frame.code('http://localhost:8080/', 'text/html',
+          '<a href="http://fake1.url/foo">fake1</a>' + 
+          '<a href="http://fake2.url/foo">fake2</a>'
+          )
+        .run(function (result) {
+          assertStringDoesNotContain('http://fake1.url/foo', div.innerHTML);
+          assertStringDoesNotContain('http://fake2.url/foo', div.innerHTML);
+          jsunitPass('testBuilderApiNetUndefined');
+        });
+    });
+  });
+
   registerTest('testBuilderApiNetNone', function testBuilderApiNetNone() {
     var div = createDiv();
     caja.load(div, caja.policy.net.NO_NETWORK, function (frame) {
-      var div = createDiv();
       frame.code('http://localhost:8080/', 'text/html',
           '<a href="http://fake1.url/foo">fake1</a>' + 
           '<a href="http://fake2.url/foo">fake2</a>'
