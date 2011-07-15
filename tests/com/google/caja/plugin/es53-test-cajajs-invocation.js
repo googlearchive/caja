@@ -49,13 +49,164 @@
     rewrite: function (uri) { return uri; }
   };
 
+  caja.initialize({
+    cajaServer: 'http://localhost:8000/caja',
+    debug: true
+  });
+
+  registerTest('testReinitialization', function testReinitialization() {
+    try {
+      caja.initialize({
+        cajaServer: 'http://localhost:8000/caja',
+        debug: true
+      });
+    } catch (e) {
+      assertStringContains('Caja cannot be initialized more than once', 
+          String(e));
+      jsunitPass('testReinitialization');
+    }
+  });
+
+  registerTest('testBuilderApiHtml', function testBuilderApiHtml() {
+    var div = createDiv();
+    caja.load(div, uriCallback, function (frame) {
+      frame.code('es53-test-guest.html', 'text/html')
+           .run(function(result) {
+              assertStringContains('static html', div.innerHTML);
+              assertStringContains('dynamic html', div.innerHTML);
+              jsunitPass('testBuilderApiHtml');
+           });
+    });
+  });
+
+  registerTest('testBuilderApiJs', function testBuilderApiJs() {
+    var div = createDiv();
+    caja.load(div, uriCallback, function (frame) {
+      var extraImports = { x: 4, y: 3 };
+      frame.code('es53-test-guest.js', 'text/javascript')
+           .api(extraImports)
+           .run(function(result) {
+             assertEquals(12, result);
+             jsunitPass('testBuilderApiJs');
+           });
+    });
+  });
+
+  registerTest('testBuilderApiNetNone', function testBuilderApiNetNone() {
+    var div = createDiv();
+    caja.load(div, caja.policy.net.NO_NETWORK, function (frame) {
+      var div = createDiv();
+      frame.code('http://localhost:8080/', 'text/html',
+          '<a href="http://fake1.url/foo">fake1</a>' + 
+          '<a href="http://fake2.url/foo">fake2</a>'
+          )
+        .run(function (result) {
+          assertStringDoesNotContain('http://fake1.url/foo', div.innerHTML);
+          assertStringDoesNotContain('http://fake2.url/foo', div.innerHTML);
+          jsunitPass('testBuilderApiNetNone');
+        });
+    });
+  });
+
+  registerTest('testBuilderApiNetAll', function testBuilderApiNetAll() {
+    var div = createDiv();
+    caja.load(div, caja.policy.net.ALL, function (frame) {
+      frame.code('http://localhost:8080/', 'text/html',
+          '<a href="http://fake1.url/foo">fake1</a>' + 
+          '<a href="http://fake2.url/foo">fake2</a>'
+          )
+        .run(function (result) {
+          assertStringContains('http://fake1.url/foo', div.innerHTML);
+          assertStringContains('http://fake2.url/foo', div.innerHTML);
+          jsunitPass('testBuilderApiNetAll');
+        });
+    });
+  });
+
+  registerTest('testBuilderApiNetHost', function testBuilderApiNetHost() {
+    var div = createDiv();
+    caja.load(div,
+        caja.policy.net.only("http://fake1.url/foo"), function (frame) {
+      frame.code('http://localhost:8080/', 'text/html',
+          '<a href="http://fake1.url/foo">fake1</a>' + 
+          '<a href="http://fake2.url/foo">fake2</a>' 
+          )
+        .run(function (result) {
+          assertStringContains('http://fake1.url/foo', div.innerHTML);
+          assertStringDoesNotContain('http://fake2.url/foo', div.innerHTML);
+          jsunitPass('testBuilderApiNetHost');
+        });
+    });
+  });
+
+  registerTest('testBuilderApiContentHtml',
+      function testBuilderApiContentHtml() {
+    var div = createDiv();
+    caja.load(div, uriCallback, function (frame) {
+        fetch('es53-test-guest.html', function(resp) {
+          frame.code('http://localhost:8080/', 'text/html', resp)
+            .run(function (result) {
+              assertStringContains('static html', div.innerHTML);
+              assertStringContains('dynamic html', div.innerHTML);
+              jsunitPass('testBuilderApiContentHtml');
+            });
+        });
+    });
+  });
+
+  registerTest('testBuilderApiContentJs', function testBuilderApiContentJs() {
+    caja.load(createDiv(), uriCallback, function (frame) {
+      var extraImports = { x: 4, y: 3 };
+      fetch('es53-test-guest.js', function(resp) {
+        frame.code('http://localhost:8080/', 'application/javascript', resp)
+             .api(extraImports)
+             .run(function (result) {
+               assertEquals(12, result);
+               jsunitPass('testBuilderApiContentJs');
+             });
+      });
+    });
+  });
+
+  registerTest('testBuilderApiContentCajoledHtml',
+      function testBuilderApiContentCajoledHtml() {
+    var div = createDiv();
+    caja.load(div, uriCallback, function (frame) {
+      fetch('es53-test-guest.out.html', function(resp) {
+        var htmlAndJs = splitHtmlAndScript(resp);
+
+        frame.cajoled('http://localhost:8080/', htmlAndJs[1], htmlAndJs[0])
+          .run(function (result) {
+            assertStringContains('static html', div.innerHTML);
+            assertStringContains('dynamic html', div.innerHTML);
+            jsunitPass('testBuilderApiContentCajoledHtml');
+          });
+      });
+    });
+  });
+
+  registerTest('testBuilderApiContentCajoledJs',
+      function testBuilderApiContentCajoledJs() {
+    var div = createDiv();
+    caja.load(div, uriCallback, function (frame) {
+      var extraImports = { x: 4, y: 3 };
+      fetch('es53-test-guest.out.js', function(script) {
+        frame.cajoled(undefined, script, undefined)
+             .api(extraImports)
+             .run(function (result) {
+               assertEquals(12, result);
+               jsunitPass('testBuilderApiContentCajoledJs');
+             });
+      });
+    });
+  });
+
   caja.configure({
     cajaServer: 'http://localhost:8000/caja',
     debug: true
   }, function (frameGroup) {
 
     // TODO(ihab.awad): Test 'base url' functionality, esp. for "content" cases
-
     registerTest('testContentCajoledHtml', function testContentCajoledHtml() {
       fetch('es53-test-guest.out.html', function(resp) {
         var htmlAndScript = splitHtmlAndScript(resp);
@@ -166,8 +317,8 @@
         });
       });
     });
-
     readyToTest();
     jsunitRun();
   });
+
 })();

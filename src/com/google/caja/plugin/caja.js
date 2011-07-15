@@ -194,6 +194,7 @@ var caja = (function () {
   function configure(config, callback) {
     if (!window.Object.FERAL_FRAME_OBJECT___) { initFeralFrame(window); }
 
+    config = !config ? {} : config;
     var cajaServer = String(config.cajaServer || 'http://caja.appspot.com/');
     var debug = Boolean(config.debug);
 
@@ -475,7 +476,7 @@ var caja = (function () {
                 //     content.staticHtml)(
                 //     imports,
                 //     opt_callback);
-                throw new Error("Not yet implemented.");
+                throw new Error('Not yet implemented.');
               });
           }
 
@@ -579,9 +580,187 @@ var caja = (function () {
     aWindow.Object.FERAL_FRAME_OBJECT___ = aWindow.Object;
   }
 
+  // Initialization state machine for this caja object
+  var UNREADY = 0;
+  var PENDING = 1;
+  var READY = 2;
+  var initializationState = UNREADY;
+
+  // Stub which throws an error if called before caja is READY
+  function errorMaker(name) {
+    return function() {
+      throw new Error('Calling method "' + name + '" before caja is ready');
+    };
+  }
+
+  var policy = {
+      net: {
+        NO_NETWORK: { rewrite: function () { return null; } },
+        ALL: { rewrite: function(uri) { return uri; } },
+        only: function(url) {
+            var whitelistedUrl = String(url);
+            return {
+              rewrite: function(uri) {
+                var candidateUrl = String(uri);
+                return whitelistedUrl === candidateUrl ? whitelistedUrl : null;
+              }
+            };
+          }
+      }
+  };
+
+  var frameGroup_;
+  var callbacks_ = [];
+  function initialize(config) {
+    if (initializationState != UNREADY) {
+      throw new Error('Caja cannot be initialized more than once');
+    }
+    initializationState = PENDING;
+    caja.configure(config, function (frameGroup) {
+      frameGroup_ = frameGroup;
+      caja.tame = frameGroup_.tame;
+      caja.markReadOnlyRecord = frameGroup_.markReadOnlyRecord;
+      caja.markFunction = frameGroup_.markFunction;
+      caja.markCtor = frameGroup_.markCtor;
+      caja.markXo4a = frameGroup_.markXo4a;
+      caja.grantMethod = frameGroup_.grantMethod;
+      caja.grantRead = frameGroup_.grantRead;
+      caja.grantReadWrite = frameGroup_.grantReadWrite;
+      caja.iframe = frameGroup_.iframe;
+      initializationState = READY;
+      whenReady();
+    });
+  }
+
+  function whenReady(cb) {
+    callbacks_.push(cb);
+    if (initializationState == READY) {
+      for (var i = 0; i < callbacks_.length; i++) {
+        var callback = callbacks_[i];
+        if ("function" === typeof callback) {
+          setTimeout(callback, 0);
+        }
+      }
+      callbacks_ = [];
+    }
+  }
+
+  function load(div, uriCallback, loadCallback) {
+    var builderState = {
+        // Dispatcher
+        primaryMethod: undefined,
+        
+        // Authority
+        api: undefined,
+        
+        // Content
+        uri: undefined,
+        mimeType: undefined,
+        content: undefined,
+        
+        // Cache
+        cajoledUri: undefined,
+        cajoledJs: undefined,
+        cajoledHtml: undefined
+    };
+    
+    // User did not call initialize
+    // Configure with default defaults
+    if (initializationState == UNREADY) {
+      initialize({});
+    }
+
+    whenReady(function() {
+      frameGroup_.makeES5Frame(div, uriCallback || caja.policy.NO_NETWORK,
+        function (frame) {
+          function run(resultCallback) {
+            if (!builderState.primaryMethod) {
+              throw new Error('Use "code"|"cajoled" to specify content');
+            }
+            if ("content" === builderState.primaryMethod) {
+              frame.content(builderState.uri, 
+                  builderState.content, 
+                  builderState.mimeType || 'text/html')
+                  .run(builderState.api, resultCallback);
+            } else if ("url" === builderState.primaryMethod) {
+              frame.url(builderState.uri, builderState.mimeType || 'text/html')
+                  .run(builderState.api, resultCallback);
+            } else if ("contentCajoled" === builderState.primaryMethod) {
+              frame.contentCajoled(builderState.uri,
+                  builderState.cajoledJs,
+                  builderState.cajoledHtml)
+                  .run(builderState.api, resultCallback);
+            } else {
+              throw new Error('Internal error: Unknown embedding method');
+            }
+          }
+          
+          function cajoled(uri, js, html) {
+            if (undefined != builderState.primaryMethod) {
+              throw new Error('"code"|"cajoled" should be called only once');
+            }
+            builderState.primaryMethod = "contentCajoled";
+            builderState.cajoledUri = uri;
+            builderState.cajoledJs = js;
+            builderState.cajoledHtml = html;
+            return this;
+          }
+          
+          function code(uri, mimeType, content) {
+            if (undefined != builderState.primaryMethod) {
+              throw new Error('"code"|"cajoled" should be called only once');
+            }
+            if (!content) {
+              builderState.uri = uri;
+              builderState.mimeType = mimeType;
+              builderState.primaryMethod = "url";
+            } else {
+              builderState.uri = uri;
+              builderState.mimeType = mimeType;
+              builderState.content = content;
+              builderState.primaryMethod = "content";
+            }
+            return this;
+          }
+      
+          function api(apis) {
+            builderState.api = apis;
+            return this;
+          }
+      
+          loadCallback({
+            cajoled: cajoled,
+            run: run,
+            code: code,
+            api: api,
+            div: frame.div, // TODO(jasvir): Needed?
+            innerContainer: frame.innerContainer,
+            outerContainer: frame.outerContainer,
+            idSuffix: frame.idSuffix,
+            iframe: frame.iframe,
+            imports: frame.imports,
+            loader: frame.loader
+          });
+        });
+    });
+  }
+  
   // The global singleton Caja object
   return {
     configure: configure,
-    initFeralFrame: initFeralFrame
+    initFeralFrame: initFeralFrame,
+    load: load,
+    policy: policy,
+    initialize: initialize,
+    whenReady: whenReady,
+    tame: errorMaker('tame'),
+    markReadOnlyRecord: errorMaker('markReadOnlyRecord'),
+    markFunction: errorMaker('markFunction'),
+    markCtor: errorMaker('markCtor'),
+    markXo4a: errorMaker('markXo4a'),
+    grantMethod: errorMaker('grantMethod'),
+    grantRead: errorMaker('grantRead'),
+    grantReadWrite: errorMaker('grantReadWrite'),
+    iframe: errorMaker('iframe')
   };
 })();

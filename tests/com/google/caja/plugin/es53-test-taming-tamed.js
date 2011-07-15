@@ -21,10 +21,17 @@
 
 (function () {
 
-  caja.configure({
+  caja.initialize({
     cajaServer: 'http://localhost:8000/caja',
     debug: true
-  }, function (frameGroup) {
+  });
+
+  // Set up basic stuff
+
+  var div = createDiv();
+  function uriCallback(uri, mimeType) { return uri; }
+
+  caja.load(div, uriCallback, function (frame) {
 
     // An object that will contain our tamed API.
     var api = {};
@@ -38,7 +45,7 @@
       return testObject;
     };
     var getTamedTestObject = function() {
-      frameGroup.tame(testObject);  // Ensure done if not already
+      caja.tame(testObject);  // Ensure done if not already
       return testObject.TAMED_TWIN___;
     };
     getFeralTestObject.i___ = getFeralTestObject;
@@ -49,7 +56,7 @@
 
     var getTamingFrameObject = function(key) {
       key = '' + key;
-      return frameGroup.iframe.contentWindow[key];
+      return caja.iframe.contentWindow[key];
     };
     getTamingFrameObject.i___ = getTamingFrameObject;
 
@@ -65,9 +72,9 @@
       api.readOnlyRecord[k] = v;
     };
 
-    frameGroup.markFunction(api.setReadOnlyRecordField,
+    caja.markFunction(api.setReadOnlyRecordField,
         'setReadOnlyRecordField');
-    frameGroup.markReadOnlyRecord(api.readOnlyRecord);
+    caja.markReadOnlyRecord(api.readOnlyRecord);
 
     ////////////////////////////////////////////////////////////////////////
     // ARRAYS
@@ -83,7 +90,7 @@
     // array, to be sure that this gets tamed properly by the array taming.
     api.array[1] = api.readOnlyRecord;
 
-    frameGroup.markFunction(api.setArrayField, 'setArrayField');
+    caja.markFunction(api.setArrayField, 'setArrayField');
 
     ////////////////////////////////////////////////////////////////////////
     // READ WRITE RECORDS
@@ -97,7 +104,7 @@
       api.readWriteRecord[k] = v;
     };
 
-    frameGroup.markFunction(api.setReadWriteRecordField,
+    caja.markFunction(api.setReadWriteRecordField,
         'setReadWriteRecordField');
 
     ////////////////////////////////////////////////////////////////////////
@@ -107,7 +114,7 @@
       return x + 42;
     };
 
-    frameGroup.markFunction(api.functionReturningPrimitive,
+    caja.markFunction(api.functionReturningPrimitive,
         'functionReturningPrimitive');
 
     ////////////////////////////////////////////////////////////////////////
@@ -157,18 +164,18 @@
 
     // Whitelist the 'Ctor' and 'SubCtor' as constructors, and whitelist the
     // methods except the 'toxic' ones.
-    frameGroup.markCtor(api.Ctor, Object, 'Ctor');
-    frameGroup.markCtor(api.SubCtor, api.Ctor, 'SubCtor');
-    frameGroup.grantMethod(api.Ctor, 'getX');
-    frameGroup.grantMethod(api.Ctor, 'setX');
-    frameGroup.grantMethod(api.SubCtor, 'getY');
-    frameGroup.grantMethod(api.SubCtor, 'setY');
-    frameGroup.grantMethod(api.SubCtor, 'getMagSquared');
+    caja.markCtor(api.Ctor, Object, 'Ctor');
+    caja.markCtor(api.SubCtor, api.Ctor, 'SubCtor');
+    caja.grantMethod(api.Ctor, 'getX');
+    caja.grantMethod(api.Ctor, 'setX');
+    caja.grantMethod(api.SubCtor, 'getY');
+    caja.grantMethod(api.SubCtor, 'setY');
+    caja.grantMethod(api.SubCtor, 'getMagSquared');
 
-    frameGroup.grantRead(api.Ctor.prototype, 'readOnlyProperty');
-    frameGroup.grantReadWrite(api.Ctor.prototype, 'readWriteProperty');
+    caja.grantRead(api.Ctor.prototype, 'readOnlyProperty');
+    caja.grantReadWrite(api.Ctor.prototype, 'readWriteProperty');
 
-    frameGroup.markFunction(api.functionReturningConstructed,
+    caja.markFunction(api.functionReturningConstructed,
         'functionReturningConstructed');
 
     ////////////////////////////////////////////////////////////////////////
@@ -200,7 +207,7 @@
       };
     };
     api.functionReturningFunction = function (x) {
-      return frameGroup.markFunction(function (y) { return x + y; });
+      return caja.markFunction(function (y) { return x + y; });
     };
     api.functionCallingMyFunction = function (f, x) {
       return f(x);
@@ -212,15 +219,15 @@
       return this;
     };
 
-    frameGroup.markFunction(api.functionReturningRecord,
+    caja.markFunction(api.functionReturningRecord,
         'functionReturningRecord');
-    frameGroup.markFunction(api.functionReturningFunction,
+    caja.markFunction(api.functionReturningFunction,
         'functionReturningFunction');
-    frameGroup.markFunction(api.functionCallingMyFunction,
+    caja.markFunction(api.functionCallingMyFunction,
         'functionCallingMyFunction');
-    frameGroup.markFunction(api.functionReturningMyFunction,
+    caja.markFunction(api.functionReturningMyFunction,
         'functionReturningMyFunction');
-    frameGroup.markFunction(api.pureFunctionReturningThis,
+    caja.markFunction(api.pureFunctionReturningThis,
         'pureFunctionReturningThis');
 
     ////////////////////////////////////////////////////////////////////////
@@ -230,7 +237,7 @@
       return x;
     };
 
-    frameGroup.markFunction(api.identity, 'identity');
+    caja.markFunction(api.identity, 'identity');
 
     ////////////////////////////////////////////////////////////////////////
     // TOXIC FUNCTIONS
@@ -249,8 +256,8 @@
       return this;
     };
 
-    frameGroup.markXo4a(api.xo4aUsingThis, 'xo4aUsingThis');
-    frameGroup.markXo4a(api.xo4aReturningThis, 'xo4aReturningThis');
+    caja.markXo4a(api.xo4aUsingThis, 'xo4aUsingThis');
+    caja.markXo4a(api.xo4aReturningThis, 'xo4aReturningThis');
 
     ////////////////////////////////////////////////////////////////////////
     // PROPERTIES ON FUNCTIONS
@@ -269,54 +276,48 @@
       api.functionWithProperties.readOnlyProperty = x;
     };
 
-    frameGroup.markFunction(api.functionWithProperties,
+    caja.markFunction(api.functionWithProperties,
         'functionWithProperties');
-    frameGroup.grantRead(api.functionWithProperties, 'readOnlyProperty');
-    frameGroup.grantReadWrite(api.functionWithProperties, 'readWriteProperty');
-    frameGroup.markFunction(api.setReadOnlyPropertyOnFunction,
+    caja.grantRead(api.functionWithProperties, 'readOnlyProperty');
+    caja.grantReadWrite(api.functionWithProperties, 'readWriteProperty');
+    caja.markFunction(api.setReadOnlyPropertyOnFunction,
          'setReadOnlyPropertyOnFunction');
 
     ////////////////////////////////////////////////////////////////////////
 
-    frameGroup.markReadOnlyRecord(api);
-
-    // Set up basic stuff
-
-    var div = createDiv();
-    function uriCallback(uri, mimeType) { return uri; }
+    caja.markReadOnlyRecord(api);
 
     // Invoke cajoled tests, passing in the tamed API
 
-    frameGroup.makeES5Frame(div, uriCallback, function (frame) {
-      var extraImports = createExtraImportsForTesting(frameGroup, frame);
-      
-      extraImports.tamedApi = frameGroup.tame(api);
+    var extraImports = createExtraImportsForTesting(caja, frame);
+    
+    extraImports.tamedApi = caja.tame(api);
 
-      extraImports.tamingFrameUSELESS =
-          frameGroup.iframe.contentWindow.___.USELESS;
+    extraImports.tamingFrameUSELESS =
+        caja.iframe.contentWindow.___.USELESS;
 
-      extraImports.tamingFrameObject =
-          frameGroup.iframe.contentWindow.Object;
-      extraImports.tamingFrameFunction =
-          frameGroup.iframe.contentWindow.Function;
-      extraImports.tamingFrameArray =
-          frameGroup.iframe.contentWindow.Array;
+    extraImports.tamingFrameObject =
+        caja.iframe.contentWindow.Object;
+    extraImports.tamingFrameFunction =
+        caja.iframe.contentWindow.Function;
+    extraImports.tamingFrameArray =
+        caja.iframe.contentWindow.Array;
 
-      extraImports.getFeralTestObject = getFeralTestObject;
-      extraImports.getTamedTestObject = getTamedTestObject;
+    extraImports.getFeralTestObject = getFeralTestObject;
+    extraImports.getTamedTestObject = getTamedTestObject;
 
-      extraImports.getTamingFrameObject = getTamingFrameObject;
+    extraImports.getTamingFrameObject = getTamingFrameObject;
 
-      extraImports.evalInHost = function(s) {
-        return eval(String(s));
-      };
-      extraImports.evalInHost.i___ = extraImports.evalInHost;
-      
-      frame.url('es53-test-taming-tamed-guest.html')
-           .run(extraImports, function (_) {
-               readyToTest();
-               jsunitRun();
-             });
-    });
+    extraImports.evalInHost = function(s) {
+      return eval(String(s));
+    };
+    extraImports.evalInHost.i___ = extraImports.evalInHost;
+    
+    frame.code('es53-test-taming-tamed-guest.html')
+         .api(extraImports)
+         .run(function (_) {
+             readyToTest();
+             jsunitRun();
+           });
   });
 })();

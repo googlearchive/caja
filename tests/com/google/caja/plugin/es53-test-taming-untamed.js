@@ -21,49 +21,48 @@
 
 (function () {
 
-  caja.configure({
+  caja.initialize({
     cajaServer: 'http://localhost:8000/caja',
     debug: true
-  }, function (frameGroup) {
+  });
 
-    // Set up basic stuff
+  // Set up basic stuff
+  var div = createDiv();
+  function uriCallback(uri, mimeType) { return uri; }
 
-    var div = createDiv();
-    function uriCallback(uri, mimeType) { return uri; }
+  caja.load(div, uriCallback, function (frame) {
 
-    // Invoke cajoled tests
+  // Invoke cajoled tests
+    var extraImports = createExtraImportsForTesting(caja, frame);
+    
+    var tamingFrameUSELESS = caja.iframe.contentWindow.___.USELESS;
 
-    frameGroup.makeES5Frame(div, uriCallback, function (frame) {
-      var extraImports = createExtraImportsForTesting(frameGroup, frame);
-      
-      var tamingFrameUSELESS = frameGroup.iframe.contentWindow.___.USELESS;
+    extraImports.tamingFrameUSELESS =
+        caja.iframe.contentWindow.___.USELESS;
 
-      extraImports.tamingFrameUSELESS =
-          frameGroup.iframe.contentWindow.___.USELESS;
+    // An object that can be used by cajoled guest code to store some state
+    // between invocations of the "eval" functions (defined below).
+    var state = {};
 
-      // An object that can be used by cajoled guest code to store some state
-      // between invocations of the "eval" functions (defined below).
-      var state = {};
+    // A generic function to eval() code in the host.
+    // This function does *NOT* untame/tame its args/return value
+    extraImports.directEval = function(s, a, b, c) {
+      return eval(String(s));
+    };
+    extraImports.directEval.i___ = extraImports.directEval;
 
-      // A generic function to eval() code in the host.
-      // This function does *NOT* untame/tame its args/return value
-      extraImports.directEval = function(s, a, b, c) {
-        return eval(String(s));
-      };
-      extraImports.directEval.i___ = extraImports.directEval;
+    // A generic function to eval() code in the host.
+    // This function untames/tames its args/return value
+    extraImports.tameEval =
+        caja.tame(caja.markFunction(function(s, a, b, c) {
+          return eval(String(s));
+        }));
 
-      // A generic function to eval() code in the host.
-      // This function untames/tames its args/return value
-      extraImports.tameEval =
-          frameGroup.tame(frameGroup.markFunction(function(s, a, b, c) {
-            return eval(String(s));
-          }));
-
-      frame.url('es53-test-taming-untamed-guest.html')
-           .run(extraImports, function (_) {
-               readyToTest();
-               jsunitRun();
-             });
-    });
+    frame.code('es53-test-taming-untamed-guest.html')
+         .api(extraImports)
+         .run(function (_) {
+             readyToTest();
+             jsunitRun();
+           });
   });
 })();

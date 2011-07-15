@@ -199,6 +199,11 @@ function assertStringContains(chunk, text) {
   fail('Cannot find <<' + chunk + '>> in <<' + text + '>>');
 }
 
+function assertStringDoesNotContain(chunk, text) {
+  if (text.indexOf(chunk) === -1) { return; }
+  fail('Unexpectedly found <<' + chunk + '>> in <<' + text + '>>');
+}
+
 function createDiv() {
   var d = document.createElement('div');
   document.body.appendChild(d);
@@ -307,6 +312,8 @@ function createExtraImportsForTesting(frameGroup, frame) {
       frameGroup.tame(frameGroup.markFunction(canonInnerHtml));
   standardImports.assertStringContains =
       frameGroup.tame(frameGroup.markFunction(assertStringContains));
+  standardImports.assertStringDoesNotContain =
+    frameGroup.tame(frameGroup.markFunction(assertStringDoesNotContain));
 
   // Create a readonly mirror of document so that we can test that mutations
   // fail when they should.

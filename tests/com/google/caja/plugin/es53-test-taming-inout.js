@@ -35,14 +35,19 @@
  */
 
 (function () {
-
-  caja.configure({
+  caja.initialize({
     cajaServer: 'http://localhost:8000/caja',
     debug: true
-  }, function (frameGroup) {
+  });
+  
+  // Set up basic stuff
+  var div = createDiv();
+  function uriCallback(uri, mimeType) { return uri; }
+  
+  caja.load(div, uriCallback, function (frame) {
 
     // Provide access to USELESS in scope for testing purposes.
-    var USELESS = frameGroup.iframe.contentWindow.___.USELESS;
+    var USELESS = caja.iframe.contentWindow.___.USELESS;
 
     // An object that will contain our tamed API.
     var api = {};
@@ -60,7 +65,7 @@
       return testObject;
     };
     var getTamedTestObject = function() {
-      frameGroup.tame(testObject);  // Ensure done if not already
+      caja.tame(testObject);  // Ensure done if not already
       return testObject.TAMED_TWIN___;
     };
     getFeralTestObject.i___ = getFeralTestObject;
@@ -77,12 +82,12 @@
     api.tamedHostPureFunction = function(s, a, b, c) {
       return eval(String(s));
     };
-    frameGroup.markFunction(api.tamedHostPureFunction);
+    caja.markFunction(api.tamedHostPureFunction);
 
     api.tamedHostRecord = {
       prop: getFeralTestObject()
     };
-    frameGroup.grantReadWrite(api.tamedHostRecord, 'prop');
+    caja.grantReadWrite(api.tamedHostRecord, 'prop');
 
     api.Ctor = function() {
       this.prop = 42;
@@ -90,36 +95,30 @@
     api.Ctor.prototype.meth = function(s, a, b, c) {
       return eval(String(s));
     };
-    frameGroup.markCtor(api.Ctor, Object, 'Ctor');
-    frameGroup.grantReadWrite(api.Ctor.prototype, 'prop');
-    frameGroup.grantMethod(api.Ctor, 'meth');
+    caja.markCtor(api.Ctor, Object, 'Ctor');
+    caja.grantReadWrite(api.Ctor.prototype, 'prop');
+    caja.grantMethod(api.Ctor, 'meth');
 
     ////////////////////////////////////////////////////////////////////////
 
-    frameGroup.markReadOnlyRecord(api);
-
-    // Set up basic stuff
-
-    var div = createDiv();
-    function uriCallback(uri, mimeType) { return uri; }
+    caja.markReadOnlyRecord(api);
 
     // Invoke cajoled tests, passing in the tamed API
 
-    frameGroup.makeES5Frame(div, uriCallback, function (frame) {
-      var extraImports = createExtraImportsForTesting(frameGroup, frame);
-      
-      extraImports.tamedApi = frameGroup.tame(api);
+    var extraImports = createExtraImportsForTesting(caja, frame);
+    
+    extraImports.tamedApi = caja.tame(api);
 
-      extraImports.getFeralTestObject = getFeralTestObject;
-      extraImports.getTamedTestObject = getTamedTestObject;
-      extraImports.evalInHost = evalInHost;
+    extraImports.getFeralTestObject = getFeralTestObject;
+    extraImports.getTamedTestObject = getTamedTestObject;
+    extraImports.evalInHost = evalInHost;
 
-      frame.url('es53-test-taming-inout-guest.html')
-           .run(extraImports, function (_) {
-               readyToTest();
-               jsunitRun();
-             });
-    });
+    frame.code('es53-test-taming-inout-guest.html')
+         .api(extraImports)
+         .run(function (_) {
+             readyToTest();
+             jsunitRun();
+           });
   });
 })();
 

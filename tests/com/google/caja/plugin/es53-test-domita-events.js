@@ -12,22 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-caja.configure({
+caja.initialize({
   cajaServer: 'http://localhost:8000/caja',
   debug: true
-}, function(frameGroup) {
-  frameGroup.makeES5Frame(
-      createDiv(),
-      {
-        rewrite: function (uri, uriEffect, loaderType, hints) { return uri; }
-      },
-      function(frame) {
-        frame.url('es53-test-domita-events-guest.html')
-             .run(createExtraImportsForTesting(frameGroup, frame),
-                 function(result) {
-                   readyToTest();
-                   jsunitRun();
-                   asyncRequirements.evaluate();
-                 });
-      });
+});
+caja.load(
+    createDiv(),
+    {
+      rewrite: function (uri, uriEffect, loaderType, hints) { return uri; }
+    },
+    function(frame) {
+      frame.code('es53-test-domita-events-guest.html')
+           .api(createExtraImportsForTesting(caja, frame))
+           .run(function(result) {
+                 readyToTest();
+                 jsunitRun();
+                 asyncRequirements.evaluate();
+               });
 });

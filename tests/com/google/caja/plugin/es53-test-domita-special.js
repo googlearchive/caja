@@ -24,19 +24,18 @@ function fetch(url, callback) {
 }
 
 function initFrame(div, frameCallback) {
-  caja.configure({
+  caja.initialize({
     cajaServer: 'http://localhost:8000/caja',
     debug: true
-  }, function(frameGroup) {
-    frameGroup.makeES5Frame(
-        document.getElementById('untrusted_content'),
-        {
-          rewrite: function (uri) {
-            return '[[' + uri + ']]';
-          }
-        },
-        function(frame) { frameCallback(frameGroup, frame); });
   });
+  caja.load(
+      document.getElementById('untrusted_content'),
+      {
+        rewrite: function (uri) {
+          return '[[' + uri + ']]';
+        }
+      },
+      function(frame) { frameCallback(caja, frame); });
 }
 
 var idPattern = /^.*\-IDSUFFIX$/;
@@ -60,9 +59,9 @@ fetch('es53-test-domita-special-initial-state.html', function(initialHtml) {
   var virtualDoc = document.getElementById('untrusted_content');
   initFrame(virtualDoc, function(frameGroup, frame) {
     rewriteIdSuffixes(virtualDoc, frame.idSuffix);
-    frame.url('es53-test-domita-special-guest.html')
-         .run(createExtraImportsForTesting(frameGroup, frame),
-             function(result) {
+    frame.code('es53-test-domita-special-guest.html')
+         .api(createExtraImportsForTesting(frameGroup, frame))
+         .run(function(result) {
                readyToTest();
                jsunitRun();
                asyncRequirements.evaluate();

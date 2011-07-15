@@ -28,52 +28,52 @@
     }
   };
 
-  caja.configure({
+  caja.initialize({
     cajaServer: 'http://localhost:8000/caja',
     debug: true
-  }, function (frameGroup) {
-
-    registerTest('testUriInAttr', function testUriInAttr() {
-      var div = createDiv();
-      frameGroup.makeES5Frame(div, uriCallback, function (frame) {
-        frame.url('es53-test-client-uri-rewriting-guest.html')
-            .run({}, function (_) {
-          assertStringContains(
-            canonInnerHtml(
-                '<a href="URICALLBACK[['
-                + 'http://localhost:8000/ant-lib/'
-                + 'com/google/caja/plugin/bar.html'
-                + ']]" target="_blank">bar</a>'),
-            canonInnerHtml(div.innerHTML));
-          jsunitPass('testUriInAttr');
-        });
-      });
-    });
-
-    registerTest('testUriInCss', function testUriInCss() {
-      var div = createDiv();
-      frameGroup.makeES5Frame(div, uriCallback, function (frame) {
-        var emittedCss;
-        var originalEmitCss = frame.imports.emitCss___;
-        frame.imports.emitCss___ = function(cssText) {
-          if (emittedCss) { throw 'cannot handle multiple emitCss___'; }
-           emittedCss = cssText;
-           originalEmitCss.call(this, cssText);
-        };
-
-        frame.url('es53-test-client-uri-rewriting-guest.html')
-            .run({}, function (_) {
-          assertStringContains(
-            'url(URICALLBACK[['
-            + 'http://localhost:8000/ant-lib/com/google/caja/plugin/foo.png'
-            + ']])',
-            emittedCss);
-          jsunitPass('testUriInCss');
-        });
-      });
-    });
-    
-    readyToTest();
-    jsunitRun();
   });
+  
+
+  registerTest('testUriInAttr', function testUriInAttr() {
+    var div = createDiv();
+    caja.load(div, uriCallback, function (frame) {
+      frame.code('es53-test-client-uri-rewriting-guest.html')
+          .run(function (_) {
+        assertStringContains(
+          canonInnerHtml(
+              '<a href="URICALLBACK[['
+              + 'http://localhost:8000/ant-lib/'
+              + 'com/google/caja/plugin/bar.html'
+              + ']]" target="_blank">bar</a>'),
+          canonInnerHtml(div.innerHTML));
+        jsunitPass('testUriInAttr');
+      });
+    });
+  });
+
+  registerTest('testUriInCss', function testUriInCss() {
+    var div = createDiv();
+    caja.load(div, uriCallback, function (frame) {
+      var emittedCss;
+      var originalEmitCss = frame.imports.emitCss___;
+      frame.imports.emitCss___ = function(cssText) {
+        if (emittedCss) { throw 'cannot handle multiple emitCss___'; }
+         emittedCss = cssText;
+         originalEmitCss.call(this, cssText);
+      };
+
+      frame.code('es53-test-client-uri-rewriting-guest.html')
+          .run(function (_) {
+        assertStringContains(
+          'url(URICALLBACK[['
+          + 'http://localhost:8000/ant-lib/com/google/caja/plugin/foo.png'
+          + ']])',
+          emittedCss);
+        jsunitPass('testUriInCss');
+      });
+    });
+  });
+    
+  readyToTest();
+  jsunitRun();
 })();
