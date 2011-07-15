@@ -12,26 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-var shown = {};
+var hidden = {};
 
-function toggleClick(scope, target) {
-  if (shown[scope]) {
-    $(shown[scope]).hide('blind', {}, 125);
-    if ($(shown[scope]).attr('id') === $(target).attr('id')) {
-      shown[scope] = undefined;
-      return;
-    }
+function toggleClick(target) {
+  if (hidden[target]) {
+    $('#' + target).show('blind', {}, 125);
+    delete hidden[target];
+  } else {
+    $('#' + target).hide('blind', {}, 125);
+    hidden[target] = 1;
   }
-  shown[scope] = target;
-  $(target).show('blind', {}, 125);
 }
 
 function addClickable(el) {
   var hc = el.getAttribute('hidecontrol');
-  if (!hc) { return; }
-  var scope = hc.split(' ')[0];
-  var target = hc.split(' ')[1];
-  $(el).click(function() { toggleClick(scope, $('#' + target)); });
+  if (hc) {
+    $(el).click(function() { toggleClick(hc); });
+  }
 }
 
 function addClickables(el) {

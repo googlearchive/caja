@@ -34,7 +34,7 @@
         <link href="apidoc.css" type="text/css" rel="stylesheet" />
         <script type="text/javascript" src="apidoc.js" />
 
-        <title><xsl:value-of select="title" /></title>
+        <title><xsl:value-of select="objects/title" /></title>
       </head>
       <body onload="initialize();">
         <xsl:apply-templates/>
@@ -67,7 +67,7 @@
     <xsl:param name="ctx" />
     <div class="container">
       <div class="object-name">
-        <xsl:attribute name="hidecontrol">object <xsl:value-of select="$ctx" /></xsl:attribute>
+        <xsl:attribute name="hidecontrol"><xsl:value-of select="$ctx" /></xsl:attribute>
         <code><xsl:value-of select="name"/></code>
       </div>
       <div class="content">
@@ -96,7 +96,7 @@
     <xsl:if test="count(property) > 0"> 
       <div class="container">
         <div class="section-header">
-          <xsl:attribute name="hidecontrol">section <xsl:value-of select="$ctx" /></xsl:attribute>
+          <xsl:attribute name="hidecontrol"><xsl:value-of select="$ctx" /></xsl:attribute>
           Properties
         </div>
         <div class="content">
@@ -118,7 +118,7 @@
     <xsl:if test="count(method) > 0">
       <div class="container">
         <div class="section-header">
-          <xsl:attribute name="hidecontrol">section <xsl:value-of select="$ctx" /></xsl:attribute>
+          <xsl:attribute name="hidecontrol"><xsl:value-of select="$ctx" /></xsl:attribute>
           Methods
         </div>
         <div class="content">
@@ -140,7 +140,7 @@
     <xsl:if test="count(example) > 0">
       <div class="container">
         <div class="section-header">
-          <xsl:attribute name="hidecontrol">section <xsl:value-of select="$ctx" /></xsl:attribute>
+          <xsl:attribute name="hidecontrol"><xsl:value-of select="$ctx" /></xsl:attribute>
           Examples
         </div>
         <div class="content">
@@ -161,7 +161,7 @@
     <xsl:param name="ctx" />
     <div class="container">
       <div class="item-header">
-        <xsl:attribute name="hidecontrol">item <xsl:value-of select="$ctx" /></xsl:attribute>
+        <xsl:attribute name="hidecontrol"><xsl:value-of select="$ctx" /></xsl:attribute>
         <code><xsl:value-of select="name"/></code>
       </div>
       <div class="content">
@@ -177,7 +177,7 @@
     <xsl:param name="ctx" />
     <div class="container">
       <div class="item-header">
-        <xsl:attribute name="hidecontrol">item <xsl:value-of select="$ctx" /></xsl:attribute>
+        <xsl:attribute name="hidecontrol"><xsl:value-of select="$ctx" /></xsl:attribute>
         <code><xsl:call-template name="method-synopsis"/></code>
       </div>
       <div class="content">
@@ -205,7 +205,7 @@
     <xsl:param name="ctx" />
     <div class="container">
       <div class="sub-item-header">
-        <xsl:attribute name="hidecontrol">subitem <xsl:value-of select="$ctx" /></xsl:attribute>
+        <xsl:attribute name="hidecontrol"><xsl:value-of select="$ctx" /></xsl:attribute>
         Returns
       </div>
       <div class="content">
@@ -221,7 +221,7 @@
     <xsl:param name="ctx" />
     <div class="container">
       <div class="sub-item-header">
-        <xsl:attribute name="hidecontrol">subitem <xsl:value-of select="$ctx" /></xsl:attribute>
+        <xsl:attribute name="hidecontrol"><xsl:value-of select="$ctx" /></xsl:attribute>
       <code><xsl:value-of select="name"/></code></div>
       <div class="content">
         <xsl:attribute name="id"><xsl:value-of select="$ctx" /></xsl:attribute>
@@ -247,7 +247,7 @@
     <xsl:param name="ctx" />
     <div class="container">
       <div class="item-header">
-        <xsl:attribute name="hidecontrol">item <xsl:value-of select="$ctx" /></xsl:attribute>
+        <xsl:attribute name="hidecontrol"><xsl:value-of select="$ctx" /></xsl:attribute>
         <xsl:copy-of select="title/node()"/>
       </div>
       <div class="content">

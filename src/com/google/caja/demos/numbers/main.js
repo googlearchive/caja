@@ -35,9 +35,11 @@ var defaultUriPolicy = {
 };
 
 var tame = function(frameGroup, api) {
+  frameGroup.markReadOnlyRecord(api);
   frameGroup.markFunction(api.getSelection);
   frameGroup.markFunction(api.setSelection);
   frameGroup.markFunction(api.addSelectionListener);
+  frameGroup.markReadOnlyRecord(api.data);
   frameGroup.markFunction(api.data.getNumRows);
   frameGroup.markFunction(api.data.getNumCols);
   frameGroup.markFunction(api.data.getColHeader);

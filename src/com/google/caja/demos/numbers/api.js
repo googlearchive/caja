@@ -81,17 +81,10 @@ var api = (function() {
   var selection = undefined;
   var selectionListeners = [];
 
-  // The selection getter function must ensure that it does not expose
-  // mutable internal state to the guest. In this case, it returns a
-  // defensive copy of the 'selection' array. Our taming copies arrays
-  // across the taming boundary anyway, but we do not recommend that Caja
-  // users rely on this for the moment.
   var getSelection = function() {
     return selection ? selection.slice(0) : undefined;
   };
 
-  // The selection setter function is called by guest code and must defend
-  // itself against bad input
   var setSelection = function(sel) {
     if (!sel) { return; }
     var boundedNumber = function(x, bound) {
@@ -111,8 +104,6 @@ var api = (function() {
     fireSelectionChanged();
   };
 
-  // When the host calls a function provided by guest code, it must provide
-  // a safe 'this' value to avoid exposing its internal state to the guest
   var fireSelectionChanged = function() {
     for (var i = 0; i < selectionListeners.length; i++) {
       try {
@@ -123,9 +114,6 @@ var api = (function() {
     }
   };
 
-  // Host code must ensure that selection listeners provided by guest code
-  // will not cause host code to throw unexpectedly, since that may cause the
-  // host to violate its invariants
   var addSelectionListener = function(l) {
     if (typeof l === 'function') { selectionListeners.push(l); }
   };

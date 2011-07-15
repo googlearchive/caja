@@ -54,9 +54,9 @@
 
     <property>
       <name>policy</name>
-      <doc><p>A pre-configured set of <code>uriPolicies</code> for use
-      by host code, as an alternative to constructing a
-      <code>uriPolicy</code> from scratch.</p></doc>
+      <doc><p>A pre-configured set of policies (see
+      <code>policy</code>) for use by host code, as an alternative to
+      constructing a <code>uriPolicy</code> from scratch.</p></doc>
     </property>
 
     <method>
@@ -651,29 +651,29 @@ caja.load(
 
   <!-- 
     ************************************************************
-    ** uriPolicies
+    ** policy
     ************************************************************
   -->
 
   <object>
-    <name>uriPolicies</name>
+    <name>policy</name>
 
-    <doc><p>A pre-configured set of <code>uriPolicy</code> objects for
-    use by host code.</p></doc>
+    <doc><p>A pre-configured set of policies for use by host
+    code.</p></doc>
 
     <property>
-      <name>NO_NETWORK</name>
-      <doc><p>A policy that disallows all network access.</p></doc>
+      <name>net.NO_NETWORK</name>
+      <doc><p>A <code>uriPolicy</code> that disallows all network access.</p></doc>
     </property>
 
     <property>
-      <name>ALL</name>
-      <doc><p>A policy that allows all network access.</p></doc>
+      <name>net.ALL</name>
+      <doc><p>A <code>uriPolicy</code> that allows all network access.</p></doc>
     </property>
 
     <method>
-      <name>only</name>
-      <doc><p>Constructs a policy that allows only access to a
+      <name>net.only</name>
+      <doc><p>Constructs a <code>uriPolicy</code> that allows only access to a
       specified URI.</p></doc>
       <arg>
         <name>uri</name>
