@@ -43,6 +43,20 @@
     xhr.send(null);
   }
 
+  /**
+   * Assert that a cajoled and loaded es53-test-guest.html has the right 
+   * results.
+   */
+  function assertGuestHtmlCorrect(frame, div) {
+    assertStringContains('static html', div.innerHTML);
+    assertStringContains('dynamic html', div.innerHTML);
+    assertEquals('small-caps',
+        document.defaultView.getComputedStyle(
+            document.getElementById('foo-' + frame.idSuffix),
+            null).fontVariant);
+  }
+
+
   // NOTE: Identity URI rewriter (as shown below) is for testing only; this
   // would be unsafe for production code!
   var uriCallback = {
@@ -72,8 +86,7 @@
     caja.load(div, uriCallback, function (frame) {
       frame.code('es53-test-guest.html', 'text/html')
            .run(function(result) {
-              assertStringContains('static html', div.innerHTML);
-              assertStringContains('dynamic html', div.innerHTML);
+              assertGuestHtmlCorrect(frame, div);
               jsunitPass('testBuilderApiHtml');
            });
     });
@@ -173,8 +186,7 @@
         fetch('es53-test-guest.html', function(resp) {
           frame.code('http://localhost:8080/', 'text/html', resp)
             .run(function (result) {
-              assertStringContains('static html', div.innerHTML);
-              assertStringContains('dynamic html', div.innerHTML);
+              assertGuestHtmlCorrect(frame, div);
               jsunitPass('testBuilderApiContentHtml');
             });
         });
@@ -204,8 +216,7 @@
 
         frame.cajoled('http://localhost:8080/', htmlAndJs[1], htmlAndJs[0])
           .run(function (result) {
-            assertStringContains('static html', div.innerHTML);
-            assertStringContains('dynamic html', div.innerHTML);
+            assertGuestHtmlCorrect(frame, div);
             jsunitPass('testBuilderApiContentCajoledHtml');
           });
       });
@@ -242,8 +253,7 @@
           frame.contentCajoled('http://localhost:8080/',
                                htmlAndScript[1], htmlAndScript[0])
                .run({}, function (result) {
-            assertStringContains('static html', div.innerHTML);
-            assertStringContains('dynamic html', div.innerHTML);
+            assertGuestHtmlCorrect(frame, div);
             jsunitPass('testContentCajoledHtml');
           });
         });
@@ -271,8 +281,7 @@
           frame.contentCajoled('http://localhost:8080/',
                                htmlAndScript[1], htmlAndScript[0])
                .run(undefined, function (result) {
-            assertStringContains('static html', div.innerHTML);
-            assertStringContains('dynamic html', div.innerHTML);
+            assertGuestHtmlCorrect(frame, div);
             jsunitPass('testNoImports');
           });
         });
@@ -289,8 +298,7 @@
         frameGroup.makeES5Frame(div, uriCallback, function (frame) {
           frame.content('http://localhost:8080/', resp, 'text/html')
               .run({}, function (result) {
-            assertStringContains('static html', div.innerHTML);
-            assertStringContains('dynamic html', div.innerHTML);
+            assertGuestHtmlCorrect(frame, div);
             jsunitPass('testContentHtml');
           });
         });
@@ -316,8 +324,7 @@
       var div = createDiv();
       frameGroup.makeES5Frame(div, uriCallback, function (frame) {
         frame.url('es53-test-guest.html').run({}, function (result) {
-          assertStringContains('static html', div.innerHTML);
-          assertStringContains('dynamic html', div.innerHTML);
+          assertGuestHtmlCorrect(frame, div);
           jsunitPass('testUrlHtml');
         });
       });
@@ -338,8 +345,7 @@
       frameGroup.makeES5Frame(div, uriCallback, function (frame) {
         frame.url('es53-test-guest.html', 'text/html').run({},
             function (result) {
-          assertStringContains('static html', div.innerHTML);
-          assertStringContains('dynamic html', div.innerHTML);
+          assertGuestHtmlCorrect(frame, div);
           jsunitPass('testUrlHtmlWithMimeType');
         });
       });

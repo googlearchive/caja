@@ -1,6 +1,16 @@
+<style type="text/css">
+  /* Test id-suffix association of CSS with HTML */
+  #foo { font-variant: small-caps; }
+</style>
+
 <p>static html</p>
+<p id="foo"></p>
+
 <script type="text/javascript">
   var p = document.createElement('p');
   p.innerHTML = 'dynamic html';
   document.body.appendChild(p);
+
+  // Test id-suffix association of JS with HTML
+  document.getElementById('foo').innerHTML='edited html';
 </script>
