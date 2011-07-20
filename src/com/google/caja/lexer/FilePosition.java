@@ -54,7 +54,7 @@ public final class FilePosition implements MessagePart, Serializable {
   private final int startCharInFile, length;
 
   FilePosition(SourceBreaks breaks, int startCharInFile, int length) {
-    assert length >= 0;
+    assert length >= 0 : "length = " + length + " < 0";
     this.breaks = breaks;
     this.startCharInFile = startCharInFile;
     this.length = length;
@@ -138,7 +138,10 @@ public final class FilePosition implements MessagePart, Serializable {
 
   public static FilePosition span(FilePosition start, FilePosition end) {
     if (start == end) { return start; }
-    if (!start.source().equals(end.source())) { return FilePosition.UNKNOWN; }
+    if (!start.source().equalsAndNotUnknown(end.source())) {
+      return FilePosition.UNKNOWN;
+    }
+    
     return start.getBreaks().toFilePosition(
         start.startCharInFile(), end.endCharInFile());
   }

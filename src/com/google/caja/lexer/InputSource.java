@@ -71,6 +71,18 @@ public final class InputSource implements MessagePart, Serializable {
         && this.uri.equals(((InputSource) o).uri);
   }
 
+  /**
+   * Tests if {@code this} points to the same URI as {@code o}
+   * @param o inputSource to compare to
+   * @return true if this is not an UNKNOWN input source and
+   *   it's URI is the same as {@code o}
+   */
+  public boolean equalsAndNotUnknown(@Nullable Object o) {
+    return (o instanceof InputSource)
+        && this.uri.equals(((InputSource) o).uri)
+        && !this.uri.equals(UNKNOWN.uri);
+  }
+
   @Override
   public int hashCode() { return this.uri.hashCode(); }
 }

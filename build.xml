@@ -85,7 +85,7 @@
     <pathelement path="${third_party}/java/appengine/lib/user/jsr107cache-1.1.jar"/>
     <pathelement path="${third_party}/java/appengine/lib/user/appengine-api-labs-1.3.1.jar"/>
     <pathelement path="${third_party}/java/appengine/lib/user/orm/geronimo-jpa_3.0_spec-1.1.1.jar"/>
-  	<pathelement path="${third_party}/java/appengine/lib/user/orm/jdo2-api-2.3-eb.jar"/>
+    <pathelement path="${third_party}/java/appengine/lib/user/orm/jdo2-api-2.3-eb.jar"/>
     <pathelement path="${third_party}/java/jsonml/jsonml.jar"/>
   </path>
   <path id="classpath.web">
@@ -97,7 +97,7 @@
   </path>
   <path id="classpath.common">
     <path refid="classpath.web"/>
-  	<!-- TODO(jasvir): Check in guava in third_party and update link --> 
+    <!-- TODO(jasvir): Check in guava in third_party and update link --> 
     <pathelement path="${third_party}/java/webdriver/libs/guava-r09.jar"/>
     <pathelement path="${third_party}/java/json_simple/json_simple.jar"/>
     <pathelement path="${third_party}/java/jsonml/jsonml.jar"/>
@@ -281,6 +281,14 @@
         <isfalse value="runtests.failure"/>
       </and>
     </condition>
+    <!-- Capture conditions that if set invalidate caching of test results -->
+    <condition property="runtests.shouldCache">
+      <and>
+        <istrue value="${runtests.success}"/>
+        <equals arg1="${test.filter}" arg2="*Test"/>
+        <isfalse value="${caja.BrowserTestCase.startAndWait}"/>
+      </and>
+    </condition>
     <antcall target="CacheTestSuccess"/>
     <fail message=
      "One or more tests failed. For details, see ${reports}/tests/index.html"
@@ -290,7 +298,10 @@
      if="runtests.failure"/>
   </target>
 
-  <target name="CacheTestSuccess" >
+  <target name="CacheTestSuccess" if="runtests.shouldCache">
+    <echo>
+      Caching test results. If undesired, clear with "ant cleartestcache"
+    </echo>
     <!-- Snapshot the change being tested to reduce rerunning tests on submit -->
     <exec output="${lib}/runtests.success.patch"
         executable="svn"
@@ -299,6 +310,10 @@
         dir=".">
       <arg value="diff"/>
     </exec>
+  </target>
+
+  <target name="cleartestcache">
+    <delete file="${lib}/runtests.success.patch"></delete>
   </target>
 
   <target name="runbrowserstub" depends="AllTests">
@@ -766,7 +781,7 @@
     </transform>
   </target>
 
-	<!-- TODO(jasvir): This is not needed any longer -->
+  <!-- TODO(jasvir): This is not needed any longer -->
   <target name="IframeSupportingJs" depends="MinifiedJs">
     <genrule class="com.google.caja.tools.JsToVar">
       <input file="${lib.caja}/plugin/es53-taming-frame.js"/>
@@ -1328,7 +1343,7 @@
       </fileset>
     </copy>
   </target>
-	
+  
   <target name="containers" depends="dirs,MinifiedJs,jars"
    description="Examples of hosting gadgets/modules.">
     <mkdir dir="${www}/container"/>
