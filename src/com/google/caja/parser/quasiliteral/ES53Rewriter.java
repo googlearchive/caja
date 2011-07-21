@@ -30,6 +30,7 @@ import com.google.caja.parser.js.DebuggerStmt;
 import com.google.caja.parser.js.Declaration;
 import com.google.caja.parser.js.DefaultCaseStmt;
 import com.google.caja.parser.js.DirectivePrologue;
+import com.google.caja.parser.js.Elision;
 import com.google.caja.parser.js.Expression;
 import com.google.caja.parser.js.ExpressionStmt;
 import com.google.caja.parser.js.FormalParam;
@@ -2152,6 +2153,7 @@ public class ES53Rewriter extends Rewriter {
       public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
         if (node instanceof ParseTreeNodeContainer ||
             node instanceof ArrayConstructor ||
+            node instanceof Elision ||
             node instanceof CaseStmt ||
             node instanceof Conditional ||
             node instanceof DebuggerStmt ||

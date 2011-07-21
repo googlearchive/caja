@@ -1643,6 +1643,15 @@ public class ES53RewriterTest extends CommonJsRewriterTestCase {
         "assertThrows(function () { Array.prototype.sort.call(o2); });");
   }
 
+  public final void testElision() throws Exception {
+    rewriteAndExecute("var x = [0,,2,];\n" +
+        "assertEquals(3, x.length);" +
+        "assertEquals(0, x[0]);" +
+        "assertEquals(undefined, x[1]);" +
+        "assertEquals(2, x[2]);"
+    );
+  }
+
   @Override
   public void setUp() throws Exception {
     super.setUp();
