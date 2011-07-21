@@ -1,68 +1,19 @@
 function nmTokenPrefixer(prefix) {
   return function (nmTokens) {
-        var names = nmTokens.split(/\s+/);
-        var validNames;
-        for (var i = names.length; --i >= 0;) {
-          // See http://www.w3.org/TR/1998/REC-xml-19980210#NT-NameChar
-          // for the regex below.
-          if (names[i] && !/[^\-\.0-9:A-Z_a-z]/.test(names[i])) {
-            names[i] = prefix + names[i];
-            validNames = true;
-          } else {
-            names[i] = '';
-          }
-        }
-        return validNames ? names.join(' ') : null;
-      };
-}
-
-/**
- * Strips unsafe tags and attributes from html.
- * @param {string} html to sanitize
- * @param {Function} opt_urlXform : string -> string? -- a transform to apply to
- *     url attribute values.
- * @param {Function} opt_nmTokenXform : string -> string? -- a transform to
- *     apply to names, ids, and classes.
- * @return {string} html
- */
-function html_sanitize(htmlText, opt_uriPolicy, opt_nmTokenPolicy) {
-  var out = [];
-  html.makeHtmlSanitizer(
-      function sanitizeAttribs(tagName, attribs) {
-        for (var i = 0; i < attribs.length; i += 2) {
-          var attribName = attribs[i];
-          var value = attribs[i + 1];
-          var attribKey;
-          if ((attribKey = tagName + '::' + attribName,
-               html4.ATTRIBS.hasOwnProperty(attribKey))
-              || (attribKey = '*::' + attribName,
-                  html4.ATTRIBS.hasOwnProperty(attribKey))) {
-            var atype = html4.ATTRIBS[attribKey];
-            switch (atype) {
-              case html4.atype.URI:
-                value = opt_uriPolicy && opt_uriPolicy(value);
-                break;
-              case html4.atype.SCRIPT:
-              case html4.atype.STYLE:
-                value = null;
-                break;
-              case html4.atype.ID:
-              case html4.atype.IDREF:
-              case html4.atype.IDREFS:
-              case html4.atype.GLOBAL_NAME:
-              case html4.atype.LOCAL_NAME:
-              case html4.atype.CLASSES:
-                value = opt_nmTokenPolicy ? opt_nmTokenPolicy(value) : value;
-                break;
-            }
-          } else {
-            value = null;
-          }
-          attribs[i + 1] = value;
-        }
-        return attribs;
-      })(htmlText, out);
-  return out.join('');
+    var names = nmTokens.split(/\s+/);
+    var validNames;
+    for (var i = names.length; --i >= 0;) {
+      // See http://www.w3.org/TR/1998/REC-xml-19980210#NT-NameChar
+      // for the regex below.
+      if (names[i] && !/[^\-\.0-9:A-Z_a-z]/.test(names[i])) {
+        names[i] = prefix + names[i];
+        validNames = true;
+      } else {
+        names[i] = '';
+      }
+    }
+    return validNames ? names.join(' ') : null;
+  };
 }
 
 jsunitRegister('testEmpty',
@@ -290,4 +241,29 @@ jsunitRegister('testIncompleteTagOpen',
   assertEquals('x', html_sanitize('x<a\n'));
   assertEquals('x', html_sanitize('x<a bc'));
   assertEquals('x', html_sanitize('x<a\nbc'));
+});
+
+jsunitRegister('testUriPolicy',
+               function testUriPolicy() {
+  assertEquals('<a href="http://www.example.com/">hi</a>',
+      html_sanitize('<a href="http://www.example.com/">hi</a>',
+        function(uri) { return uri; }));
+  assertEquals('<a>hi</a>',
+      html_sanitize('<a href="http://www.example.com/">hi</a>',
+        function(uri) { return null; }));
+  assertEquals('<a>hi</a>',
+      html_sanitize('<a href="javascript:alert(1)">hi</a>',
+        function(uri) { return uri; }));
+  assertEquals('<a>hi</a>',
+      html_sanitize('<a href="javascript:alert(1)">hi</a>',
+        function(uri) { return null; }));
+  assertEquals('<a href="//www.example.com/">hi</a>',
+      html_sanitize('<a href="//www.example.com/">hi</a>',
+        function(uri) { return uri; }));
+  assertEquals('<a href="foo.html">hi</a>',
+      html_sanitize('<a href="foo.html">hi</a>',
+        function(uri) { return uri; }));
+  assertEquals('<a href="bar/baz.html">hi</a>',
+      html_sanitize('<a href="foo.html">hi</a>',
+        function(uri) { return "bar/baz.html"; }));
 });

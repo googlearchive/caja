@@ -466,13 +466,24 @@ var html = (function (html4) {
       });
   }
 
+  // From RFC3986
+  var URI_SCHEME_RE = new RegExp(
+        "^" +
+      "(?:" +
+        "([^:/?#]+)" +         // scheme
+      ":)?"
+      );
+
   /**
    * Strips unsafe tags and attributes from html.
    * @param {string} htmlText to sanitize
    * @param {Function} opt_uriPolicy -- a transform to apply to uri/url
-   *     attribute values.
+   *     attribute values.  If no opt_uriPolicy is provided, no uris
+   *     are allowed ie. the default uriPolicy rewrites all uris to null
    * @param {Function} opt_nmTokenPolicy : string -> string? -- a transform to
-   *     apply to names, ids, and classes.
+   *     apply to names, ids, and classes. If no opt_nmTokenPolicy is provided,
+   *     all names, ids and classes are passed through ie. the default
+   *     nmTokenPolicy is an identity transform
    * @return {string} html
    */
   function sanitize(htmlText, opt_uriPolicy, opt_nmTokenPolicy) {
@@ -505,7 +516,15 @@ var html = (function (html4) {
                 value = opt_nmTokenPolicy ? opt_nmTokenPolicy(value) : value;
                 break;
               case html4.atype.URI:
-                value = opt_uriPolicy && opt_uriPolicy(value);
+                var parsedUri = ('' + value).match(URI_SCHEME_RE);
+                if (!parsedUri) {
+                  value = null;
+                } else if (!parsedUri[1] || /^https?$/i.test(parsedUri[1])) {
+                  // Only allow uripolicy to decide http/https & relative urls
+                  value = opt_uriPolicy && opt_uriPolicy(value);
+                } else {
+                  value = null;
+                }
                 break;
               case html4.atype.URI_FRAGMENT:
                 if (value && '#' === value.charAt(0)) {
