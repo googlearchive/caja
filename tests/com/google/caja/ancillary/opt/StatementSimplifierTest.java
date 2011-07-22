@@ -792,6 +792,28 @@ public class StatementSimplifierTest extends CajaTestCase {
     assertNoErrors();
   }
 
+  public final void testIndexOutOfBoundsException() throws ParseException {
+    String src = ""
+        + "function f() {\n"
+        + "  if (x)\n"
+        + "    return 0;\n"
+        + "  else {\n"
+        + "    if (c) throw 'Fail';\n"
+        + "    return 1;\n"
+        + "  }\n"
+        + "  return 0;\n"
+        + "}\n";
+    String golden = ""
+        + "function f() {\n"
+        + "  if (x) return 0;\n"
+        + "  if (c) throw 'Fail';\n"
+        + "  return 1;\n"
+        + "}\n";
+    assertEquals(
+        norm(golden),
+        render(StatementSimplifier.optimize(jsExpr(fromString(src)), mq)));
+  }
+
   private String optFlow(String code) throws ParseException {
     return render(
         StatementSimplifier.optimizeExpressionFlow(jsExpr(fromString(code))));

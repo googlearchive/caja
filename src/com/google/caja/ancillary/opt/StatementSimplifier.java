@@ -266,7 +266,10 @@ public class StatementSimplifier {
     }
   }
 
-  /** <code>{ a; { b; c; } ; ; d }</code>  ->  <code>{ a; b; c; d; }</code> */
+  /**
+   * <code>{ a; { b; c; } ; ; d }</code>  ->  <code>{ a; b; c; d; }</code>
+   * @return {@code null} if there are no optimizations to perform on the input.
+   */
   private List<Statement> flattenBlocksAndIgnoreNoops(
       List< ? extends Statement> stmts) {
     int nStmts = stmts.size();
@@ -293,7 +296,7 @@ public class StatementSimplifier {
     //     return x;
     //     break;
     {
-      List<? extends ParseTreeNode> blockStmts = newStmts != null
+      List<? extends Statement> blockStmts = newStmts != null
           ? newStmts : stmts;
       for (int i = 0, last = blockStmts.size() - 1; i < last; ++i) {
         if (exits(blockStmts.get(i))) {
@@ -308,9 +311,9 @@ public class StatementSimplifier {
             }
           }
           if (!hasNonDecls) { break; }
-          newStmts = Lists.newArrayList(stmts.subList(0, i + 1));
+          newStmts = Lists.newArrayList(blockStmts.subList(0, i + 1));
           for (int j = i + 1; j <= last; ++j) {
-            hoistDecls((Statement) blockStmts.get(j), newStmts);
+            hoistDecls(blockStmts.get(j), newStmts);
           }
           break;
         }
