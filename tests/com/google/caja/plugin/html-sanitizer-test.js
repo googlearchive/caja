@@ -266,4 +266,10 @@ jsunitRegister('testUriPolicy',
   assertEquals('<a href="bar/baz.html">hi</a>',
       html_sanitize('<a href="foo.html">hi</a>',
         function(uri) { return "bar/baz.html"; }));
+  assertEquals('<a href="mailto:jas@example.com">mail me</a>',
+      html_sanitize('<a href="mailto:jas@example.com">mail me</a>',
+        function(uri) { return uri; }));
+  assertEquals('<a>mail me</a>',
+      html_sanitize('<a href="mailto:jas@example.com">mail me</a>',
+        function(uri) { return null; }));
 });

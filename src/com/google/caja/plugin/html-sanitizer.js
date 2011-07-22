@@ -59,6 +59,9 @@ var html = (function (html4) {
     quot : '"',
     apos : '\''
   };
+  
+  // Schemes on which to defer to uripolicy. Urls with other schemes are denied
+  var WHITELISTED_SCHEMES = /^(?:https?|mailto)$/i;
 
   var decimalEscapeRe = /^#(\d+)$/;
   var hexEscapeRe = /^#x([0-9A-Fa-f]+)$/;
@@ -519,8 +522,8 @@ var html = (function (html4) {
                 var parsedUri = ('' + value).match(URI_SCHEME_RE);
                 if (!parsedUri) {
                   value = null;
-                } else if (!parsedUri[1] || /^https?$/i.test(parsedUri[1])) {
-                  // Only allow uripolicy to decide http/https & relative urls
+                } else if (!parsedUri[1] ||
+                    WHITELISTED_SCHEMES.test(parsedUri[1])) {
                   value = opt_uriPolicy && opt_uriPolicy(value);
                 } else {
                   value = null;
