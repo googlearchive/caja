@@ -391,7 +391,7 @@ public class ES53RewriterTest extends CommonJsRewriterTestCase {
   }
 
   /**
-   *
+   * Tests freezing objects.
    */
   public final void testObjectFreeze() throws Exception {
     rewriteAndExecute(
@@ -1641,6 +1641,117 @@ public class ES53RewriterTest extends CommonJsRewriterTestCase {
         "var o2 = Object.create(o);" +
         "Object.preventExtensions(o2);" +
         "assertThrows(function () { Array.prototype.sort.call(o2); });");
+    rewriteAndExecute(
+        "var o = {};" +
+        "o.x = 1;" +
+        "var o2 = Object.create(o);" +
+        "o2.y = 1;" +
+        "Object.seal(o2);" +
+        "assertThrows(function () { o2.x = 2; });" +
+        "var desc = Object.getOwnPropertyDescriptor(o2, 'y');" +
+        "assertEquals(desc.configurable, false);");
+  }
+
+  public final void testProxy() throws Exception {
+      rewriteAndExecute(
+          "var o1 = {x: 1, y:function(x) { return x*2; }};" +
+          "var obj = Object.create(o1);" +
+          "obj.z = 3;" +
+          // Taken from http://wiki.ecmascript.org/doku.php?id=harmony:proxies
+          "function handlerMaker(obj) {" +
+          "  return {" +
+          "    getOwnPropertyDescriptor: function(name) {" +
+          "      var desc = Object.getOwnPropertyDescriptor(obj, name);" +
+          "      if (desc !== undefined) { desc.configurable = true; }" +
+          "      return desc;" +
+          "    }," +
+          "    getPropertyDescriptor: function(name) {" +
+          "      var desc = Object.getPropertyDescriptor(obj, name);" +
+          "      if (desc !== undefined) { desc.configurable = true; }" +
+          "      return desc;" +
+          "    }," +
+          "    getOwnPropertyNames: function() {" +
+          "      return Object.getOwnPropertyNames(obj);" +
+          "    }," +
+          "    getPropertyNames: function() {" +
+          "      return Object.getPropertyNames(obj);" +
+          "    }," +
+          "    defineProperty: function(name, desc) {" +
+          "      Object.defineProperty(obj, name, desc);" +
+          "    }," +
+          "    delete: function(name) { return delete obj[name]; }," +
+          "    fix: function() {" +
+          "      var names = Object.getOwnPropertyNames(obj);" +
+          "      var len = names.length;" +
+          "      var result = {};" +
+          "      for (var i = 0; i < len; ++i) {" +
+          "        result[names[i]] = Object.getOwnPropertyDescriptor(" +
+          "            obj, names[i]);" +
+          "      }" +
+          "      return result;" +
+          "    }," +
+          "    has: function(name) { return name in obj; }," +
+          "    hasOwn: function(name) {" +
+          "      return ({}).hasOwnProperty.call(obj, name);" +
+          "    }," +
+          "    get: function(name) { return obj[name]; }," +
+          "    set: function(name, val) {" +
+          "      obj[name] = val;" +
+          "      return true;" +
+          "    }, " +
+          "    enumerate: function() {" +
+          "      var result = [];" +
+          "      for (var name in obj) { result.push(name); };" +
+          "      return result;" +
+          "    }," +
+          "    keys: function() { return Object.keys(obj); }" +
+          "  };" +
+          "}" +
+          "var proxy = Proxy.create(handlerMaker(obj));" +
+          "cajaVM.log('for-in'); var keys = [];" +
+          "  for (var i in proxy) { keys.push(i); }" +
+          "  assertEquals('x,y,z', ''+keys.sort());" +
+          "cajaVM.log('get'); assertEquals(proxy.x, 1);" +
+          "cajaVM.log('method'); assertEquals(proxy.y(5), 10);" +
+          "cajaVM.log('has'); assertTrue('x' in proxy);" +
+          "cajaVM.log('hasOwn'); " +
+          "  assertTrue(({}).hasOwnProperty.call(proxy, 'z'));" +
+          "cajaVM.log('set'); proxy.x = 2; assertEquals(proxy.x, 2);" +
+          "var desc = Object.getOwnPropertyDescriptor(proxy, 'z');" +
+          "cajaVM.log('desc value'); assertEquals(desc.value, 3);" +
+          "cajaVM.log('desc conf'); assertEquals(desc.configurable, true);" +
+          "cajaVM.log('desc writ'); assertEquals(desc.writable, true);" +
+          "cajaVM.log('fix pe');" +
+          "  Object.preventExtensions(proxy);" +
+          "  assertEquals(Object.isExtensible(proxy), false);" +
+          "cajaVM.log('fix seal');" +
+          "  proxy = Proxy.create(handlerMaker(obj));" +
+          "  Object.seal(proxy);" +
+          "  assertEquals(Object.isExtensible(proxy), false);" +
+          "  desc = Object.getOwnPropertyDescriptor(proxy, 'z');" +
+          "  assertEquals(desc.configurable, false);" +
+          "cajaVM.log('fix freeze and arrays');" +
+          "  proxy = Proxy.create(handlerMaker(['hi', 'there']));" +
+          "  /* can't intercept numerics */" +
+          "  assertEquals(proxy[1], void 0);" +
+          "  Object.freeze(proxy);" +
+          "  assertTrue(Object.isFrozen(proxy));" +
+          "  /* can have numeric properties after fixing */" +
+          "  assertEquals(proxy[1], 'there');" +
+          "cajaVM.log('keys');" +
+          "  proxy = Proxy.create(handlerMaker(obj));" +
+          "  assertEquals('z', ''+Object.keys(proxy).sort());" +
+          "cajaVM.log('defineProperty');" +
+          "  Object.defineProperty(proxy, 'w', { value: 4 });" +
+          "  assertEquals(obj.w, 4);" +
+          "cajaVM.log('extensibility');" +
+          "  var o2 = {};" +
+          "  var o3 = Object.create(o2);" +
+          "  assertThrows(function(){Proxy.create(handlerMaker({}), o3);});" +
+          "  Object.preventExtensions(o3);" +
+          "  assertThrows(function(){Proxy.create(handlerMaker({}), o3);});" +
+          "  Object.preventExtensions(o2);" +
+          "  Proxy.create(handlerMaker({}), o3);");
   }
 
   public final void testElision() throws Exception {

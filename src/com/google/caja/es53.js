@@ -110,7 +110,7 @@ var ___, cajaVM, safeJSON;
    *                                      {@code name} on {@code obj}.
    * {@code obj[name + '_s___']}          is the setter for
    *                                      {@code name} on {@code obj}.
-   * {@code obj[name + '_m___'] === obj}  means that {@code name} is
+   * {@code obj[name + '_m___'] truthy}   means that {@code name} is
    *                                      callable as a method (fastpath).
    *
    * To prevent accidental misinterpretation of the above inherited
@@ -136,6 +136,7 @@ var ___, cajaVM, safeJSON;
    * {@code obj.ne___ === obj}            means that {@code obj} is not
    *                                      extensible.
    * {@code obj.z___ === obj}             means that {@code obj} is frozen.
+   * {@code obj.proxy___ === obj}         means that obj is a proxy.
    * {@code '___' in obj}                 means that {@code obj} is a global
    *                                      object and shouldn't be used as
    *                                      'this'.
@@ -148,8 +149,19 @@ var ___, cajaVM, safeJSON;
    * {@code obj.m___(p, [as])}            invokes {@code p} as a method safely;
    *                                      it may set the {@code '_m___'}
    *                                      fastpath on {@code obj}.
-   * {@code obj.e___()                    returns an object whose enumerable
+   * {@code obj.e___()}                   returns an object whose enumerable
    *                                      keys are the ones to iterate over.
+   * {@code obj.freeze___()}              freezes the object; on proxies invokes
+   *                                      the fix handler.
+   * {@code obj.pe___()}                  prevents the object from being
+   *                                      extended; on proxies it invokes the
+   *                                      fix handler.
+   * {@code obj.seal___()}                prevents the object from being
+   *                                      extended and makes all own properties
+   *                                      nonconfigurable; on proxies it invokes
+   *                                      the fix handler.
+   * {@code obj.keys___()}                returns the list of enumerable own
+   *                                      properties.
    *
    * {@code g.f___(dis, [as])}            is the tamed version of {@code g},
    *                                      though it uses {@code apply}'s
@@ -158,6 +170,7 @@ var ___, cajaVM, safeJSON;
    * {@code g.new___(as)}                 is the tamed version of {@code g}
    *                                      used for constructing an object of
    *                                      class {@code g}.
+   * {@code g.ok___ === true}             means g is non-toxic.
    * {@code ___.tamesTo(feral, tamed)}    installs inverse properties
    *                                      {@code feral.TAMED_TWIN___ = tamed},
    *                                      {@code tamed.FERAL_TWIN___ = feral}.
@@ -186,7 +199,7 @@ var ___, cajaVM, safeJSON;
         return slice.call(dis, startIndex);
       }
     });
-  
+
   // Missing on IE
   if (!Array.prototype.forEach) {
     Array.prototype.forEach = function(fun) { //, thisp
@@ -204,6 +217,45 @@ var ___, cajaVM, safeJSON;
       }
     };
   }
+
+  Object.prototype.freeze___ = function() {
+      // Frozen means all the properties are neither writable nor
+      // configurable, and the object itself is not extensible.
+      // Cajoled setters that change properties of the object will
+      // fail like any other attempt to change the properties.
+      // Tamed setters should check before changing a property.
+      if (this.z___ === this) { return this; }
+      // Allow function instances to install their instance properties
+      // before freezing them.
+      if (this.v___ === deferredV) {
+        this.v___('length');
+      }
+      for (var i in this) {
+        if (!this.hasOwnProperty(i)) { continue; }
+        if (isNumericName(i)) { continue; }
+        var m = i.match(endsWith_v___);
+        if (!m) { continue; }
+        var P = m[1];
+        this[P + '_c___'] = false;
+        this[P + '_gw___'] = false;
+        this[P + '_w___'] = false;
+      }
+      if (!this.hasNumerics___()) {
+        this.NUM____v___ = this;
+        this.NUM____e___ = this;
+        this.NUM____g___ = void 0;
+        this.NUM____s___ = void 0;
+      }
+      this['NUM____c___'] = false;
+      this['NUM____w___'] = false;
+      this['NUM____m___'] = false;
+      this['NUM____gw___'] = false;
+      // Make this non-extensible.
+      this.ne___ = this;
+      // Cache frozen state.
+      this.z___ = this;
+      return this;
+    };
 
   ////////////////////////////////////////////////////////////////////////
   // Functions to walk the prototype chain
@@ -1204,7 +1256,7 @@ var ___, cajaVM, safeJSON;
    */
   function fastpathMethod(obj, name) {
     obj[name + '_w___'] = false;
-    obj[name + '_m___'] = obj;
+    obj[name + '_m___'] = true;
   }
 
   ////////////////////////////////////////////////////////////////////////
@@ -1315,6 +1367,7 @@ var ___, cajaVM, safeJSON;
          'or not from this frame.\n' + fn.f___);
     }
     fn.f___ = fn.apply;
+    fn.ok___ = true;
     fn.new___ = fn;
     // Anonymous functions get a 'name' that is the empty string
     fn.name___ = ((name === '' || name === void 0)
@@ -1389,9 +1442,9 @@ var ___, cajaVM, safeJSON;
    * {@code name} must be a string that is not the string encoding
    *              of a number; {@code name} may be {@code 'NUM___'}.
    */
-  function guestHasOwnProperty(obj, name) {
-    return obj.hasOwnProperty(name + '_v___') || name === 'NUM___';
-  }
+  Object.prototype.HasOwnProperty___ = function (name) {
+      return this.hasOwnProperty(name + '_v___') || name === 'NUM___';
+    };
 
   /**
    * Tests whether the fast-path _w___ flag is set, or grantWrite() has been
@@ -1528,19 +1581,23 @@ var ___, cajaVM, safeJSON;
   }
 
   function ownEnumKeys(obj) {
-    var i, m, result = [];
-    for (i in obj) {
-      if (!obj.hasOwnProperty(i)) { continue; }
-      if (isNumericName(i)) {
-        result.push(i);
-      } else {
-        if (startsWithNUM___.test(i) && endsWith__.test(i)) { continue; }
-        m = i.match(endsWith_e___);
-        if (m && obj[i]) { result.push(m[1]); }
-      }
-    }
-    return result;
+    return obj.keys___();
   }
+
+  Object.prototype.keys___ = function () {
+      var i, m, result = [];
+      for (i in this) {
+        if (!this.hasOwnProperty(i)) { continue; }
+        if (isNumericName(i)) {
+          result.push(i);
+        } else {
+          if (startsWithNUM___.test(i) && endsWith__.test(i)) { continue; }
+          m = i.match(endsWith_e___);
+          if (m && this[i]) { result.push(m[1]); }
+        }
+      }
+      return result;
+    };
 
   function ownKeys(obj) {
     var i, m, result = [];
@@ -2533,6 +2590,7 @@ var ___, cajaVM, safeJSON;
   }
 
   // 8.10.4
+  // Converts an internal property descriptor to an external one.
   function FromPropertyDescriptor(Desc) {
     function copyProp(Desc, obj, name) {
       obj.DefineOwnProperty___(name, {
@@ -2593,6 +2651,7 @@ var ___, cajaVM, safeJSON;
   }
 
   // 8.10.5
+  // Converts an external property descriptor to an internal one.
   function ToPropertyDescriptor(Obj) {
     // 1. If Type(Obj) is not Object throw a TypeError exception.
     if (Type(Obj) !== 'Object') {
@@ -2645,7 +2704,7 @@ var ___, cajaVM, safeJSON;
         throw new TypeError('Getter attributes must be functions or undef.');
       }
       // c. Set the [[Get]] field of desc to getter.
-      desc.get = getter;
+      desc.get = asFirstClass(getter);
     }
     // 8. If the result of calling the [[HasProperty]]
     //    internal method of Obj with argument "set" is true, then
@@ -2659,7 +2718,7 @@ var ___, cajaVM, safeJSON;
         throw new TypeError('Setter attributes must be functions or undef.');
       }
       // c. Set the [[Set]] field of desc to setter.
-      desc.set = setter;
+      desc.set = asFirstClass(setter);
     }
     // 9. If either desc.[[Get]] or desc.[[Set]] are present, then
     if ('set' in desc || 'get' in desc) {
@@ -2680,8 +2739,7 @@ var ___, cajaVM, safeJSON;
    * 8.12 Algorithms for Object Internal Methods
    */
   // 8.12.1
-  // Note that the returned descriptor is for internal use only, so
-  // nothing is whitelisted.
+  // Returns internal property descriptor or undefined.
   Object.prototype.GetOwnProperty___ = function (P) {
       var O = this;
       //inline if (isNumericName(P)) {
@@ -2698,14 +2756,15 @@ var ___, cajaVM, safeJSON;
         }
       }
       P = '' + P;
-      //inline assertValidPropertyName(P);
+      // inline assertValidPropertyName(P);
       if (endsWith__.test(P)) {
         throw new TypeError('Properties may not end in double underscore.');
       }
 
       // 1. If O doesn't have an own property with name P, return undefined.
-      //inline if (!guestHasOwnProperty(O, P)) {
-      if (!O.hasOwnProperty(P + '_v___') && P !== 'NUM___') {
+      // Inline HasOwnProperty___.  Works with proxies because GetOwnProperty___
+      // also gets overridden.
+      if (!O.hasOwnProperty(P + '_v___')) {
         return void 0;
       }
 
@@ -2760,6 +2819,7 @@ var ___, cajaVM, safeJSON;
               P + "': " + this + " is not extensible.");
         }
       }
+      V = asFirstClass(V);
       // Numeric indices are never accessor properties
       // and are all governed by a single property descriptor.
       // At this point, obj is either extensible or
@@ -2868,7 +2928,7 @@ var ___, cajaVM, safeJSON;
   // 8.12.9
   // Preconditions:
   //   Desc is an internal property descriptor.
-  //   P is a number or a string.
+  //   P is a valid property name.
   Object.prototype.DefineOwnProperty___ = function (P, Desc) {
       //inline if (isNumericName(P)) {
       if (typeof P === 'number' || ('' + (+P)) === P) {
@@ -2945,7 +3005,7 @@ var ___, cajaVM, safeJSON;
       var allHaveAppearedAndAreTheSame = true;
       for (var i in Desc) {
         if (!Desc.hasOwnProperty(i)) { continue; }
-        if (!SameValue(current.v___(i), Desc[i])) {
+        if (!SameValue(current[i], Desc[i])) {
           allHaveAppearedAndAreTheSame = false;
           break;
         }
@@ -3119,7 +3179,7 @@ var ___, cajaVM, safeJSON;
    * Throws an exception if the value is an unmarked function.
    */
   function asFirstClass(value) {
-    if (isFunction(value) && value.f___ === Function.prototype.f___) {
+    if (isFunction(value) && !value.ok___) {
       var err = new Error('Internal: toxic function encountered!');
       err.UNCATCHABLE___ = true;
       throw err;
@@ -3259,18 +3319,6 @@ var ___, cajaVM, safeJSON;
           set: poisonArgsCaller
         });
     return result;
-  }
-
-  // 11.2.5
-
-  // Fixed-point combinator Y finds the fixed-point of the given maker
-  function Y(maker) {
-    function recurse(x) {
-      return maker(markFunc(function (var_args) {
-          return x(x).apply(this, arguments);
-        }));
-    }
-    return recurse(recurse);
   }
 
   // 11.8.7
@@ -3509,77 +3557,47 @@ var ___, cajaVM, safeJSON;
       if (Type(O) !== 'Object') {
         throw new TypeError('Only objects may be sealed.');
       }
-      // 2. For each own property name P of O,
-      var keys = ownKeys(O), len = keys.length;
-      for (var i = 0; i < len; ++i) {
-        var P = keys[i];
-        if (isNumericName(P)) { continue; }
+      return O.seal___();
+    };
+
+  Object.prototype.seal___ = function () {
+      // Allow function instances to install their instance properties
+      // before sealing them.
+      if (this.v___ === deferredV) {
+        this.v___('length');
+      }
+      // 2. For each own property name P of this,
+      for (var i in this) {
+        if (!this.hasOwnProperty(i)) { continue; }
+        if (isNumericName(i)) { continue; }
+        var m = i.match(endsWith_v___);
+        if (!m) { continue; }
+        var P = m[1];
         // a. Let desc be the result of calling the [[GetOwnProperty]]
-        //    internal method of O with P.
+        //    internal method of this with P.
         // b. If desc.[[Configurable]] is true, set
         //    desc.[[Configurable]] to false.
-        // c. Call the [[DefineOwnProperty]] internal method of O with P,
+        // c. Call the [[DefineOwnProperty]] internal method of this with P,
         //    desc, and true as arguments.
-        O[P + '_c___'] = false;
+        this[P + '_c___'] = false;
       }
-      if (!O.hasNumerics___()) {
-        O.NUM____v___ = O;
-        O.NUM____gw___ = O;
-        O.NUM____w___ = O;
-        O.NUM____m___ = false;
-        O.NUM____e___ = O;
-        O.NUM____g___ = void 0;
-        O.NUM____s___ = void 0;
+      if (!this.hasNumerics___()) {
+        this.NUM____v___ = this;
+        this.NUM____gw___ = this;
+        this.NUM____w___ = this;
+        this.NUM____m___ = false;
+        this.NUM____e___ = this;
+        this.NUM____g___ = void 0;
+        this.NUM____s___ = void 0;
       }
-      O.NUM____c___ = false;
-      // 3. Set the [[Extensible]] internal property of O to false.
-      O.ne___ = O;
-      // 4. Return O.
-      return O;
+      this.NUM____c___ = false;
+      // 3. Set the [[Extensible]] internal property of this to false.
+      this.ne___ = this;
+      // 4. Return this.
+      return this;
     };
 
   // 15.2.3.9
-  function freeze(obj) {
-    if (Type(obj) !== 'Object') {
-      throw new TypeError('Only objects may be frozen.');
-    }
-    // Frozen means all the properties are neither writable nor
-    // configurable, and the object itself is not extensible.
-    // Cajoled setters that change properties of the object will
-    // fail like any other attempt to change the properties.
-    // Tamed setters should check before changing a property.
-    if (obj.z___ === obj) { return obj; }
-    // Allow function instances to install their instance properties
-    // before freezing them.
-    if (obj.v___ === deferredV) {
-      obj.v___('length');
-    }
-    obj.ne___ = obj;
-    for (var i in obj) {
-      if (!obj.hasOwnProperty(i)) { continue; }
-      if (isNumericName(i)) { continue; }
-      var m = i.match(endsWith_v___);
-      if (!m) { continue; }
-      var j = m[1];
-      obj[j + '_c___'] = false;
-      obj[j + '_gw___'] = false;
-      obj[j + '_w___'] = false;
-    }
-    if (!obj.hasNumerics___()) {
-      obj.NUM____v___ = obj;
-      obj.NUM____e___ = obj;
-      obj.NUM____g___ = void 0;
-      obj.NUM____s___ = void 0;
-    }
-    obj['NUM____c___'] = false;
-    obj['NUM____w___'] = false;
-    obj['NUM____m___'] = false;
-    obj['NUM____gw___'] = false;
-    // Cache frozen state.
-    obj.z___ = obj;
-    return obj;
-  }
-
   /**
    * Whitelists all the object's own properties that do not
    * end in __ and have not already been whitelisted.  
@@ -3620,22 +3638,35 @@ var ___, cajaVM, safeJSON;
     return freeze(whitelistAll(obj));
   }
 
+  function freeze(obj) {
+      if (Type(obj) !== 'Object') {
+        throw new TypeError('Only objects may be frozen.');
+      }
+      return obj.freeze___();
+  }
   Object.freeze = freeze;
 
   // 15.2.3.10
-  Object.preventExtensions = function (O) {
-      if (!O.hasNumerics___()) {
-        O.NUM____v___ = O;
-        O.NUM____e___ = O;
-        O.NUM____g___ = void 0;
-        O.NUM____s___ = void 0;
-        O.NUM____c___ = O;
-        O.NUM____gw___ = O;
-        O.NUM____w___ = O;
-        O.NUM____m___ = false;
+  Object.preventExtensions = function (obj) {
+      if (Type(obj) !== 'Object') {
+        throw new TypeError('Only objects may be made non-extensible.');
       }
-      O.ne___ = O;
-      return O;
+      return obj.pe___();
+    };
+
+  Object.prototype.pe___ = function () {
+      if (!this.hasNumerics___()) {
+        this.NUM____v___ = this;
+        this.NUM____e___ = this;
+        this.NUM____g___ = void 0;
+        this.NUM____s___ = void 0;
+        this.NUM____c___ = this;
+        this.NUM____gw___ = this;
+        this.NUM____w___ = this;
+        this.NUM____m___ = false;
+      }
+      this.ne___ = this;
+      return this;
     };
 
   // 15.2.3.11
@@ -3760,7 +3791,7 @@ var ___, cajaVM, safeJSON;
   // 15.2.4.5
   virtualize(Object.prototype, 'hasOwnProperty', function (P) {
       if (isNumericName(P)) { return this.hasOwnProperty(P); }
-      return guestHasOwnProperty(this, P);
+      return this.HasOwnProperty___(P);
     });
 
   // 15.2.4.7
@@ -3889,7 +3920,7 @@ var ___, cajaVM, safeJSON;
 
   // 15.4.4.1
   Array.prototype.DefineOwnProperty___('constructor', {
-      value: Array.prototype.constructor,
+      value: Array,
       writable: true,
       enumerable: false,
       configurable: false
@@ -4640,6 +4671,444 @@ var ___, cajaVM, safeJSON;
   markFunc(URIError);
 
   ////////////////////////////////////////////////////////////////////////
+  // Proxies
+  ////////////////////////////////////////////////////////////////////////
+
+  var requiredTraps = [
+      'getOwnPropertyDescriptor',
+      'getPropertyDescriptor',
+      'getOwnPropertyNames',
+      'getPropertyNames',
+      'defineProperty',
+      'delete',
+      'fix'
+    ];
+
+  // Default implementations for derived traps invoke code supplied by
+  // the guest on objects supplied by the guest, so we have to be careful.
+  var defaultDerivedTraps = {
+      has: function(name, proxy) {
+          var dis = safeDis(this);
+          return !!(dis.getPropertyDescriptor_m___ ?
+              dis.getPropertyDescriptor(name, proxy) :
+              dis.m___('getPropertyDescriptor', [name, proxy]));
+        },
+      hasOwn: function(name, proxy) {
+          var dis = safeDis(this);
+          return !!(dis.getOwnPropertyDescriptor_m___ ?
+              dis.getOwnPropertyDescriptor(name, proxy) :
+              dis.m___('getOwnPropertyDescriptor', [name, proxy]));
+        },
+      get: function(name, proxy) {
+          var dis = safeDis(this);
+          // Test if the old "receiver" parameter was passed
+          // and if so, discard it.
+          if (typeof name !== 'string') {
+            name = proxy;
+            proxy = void 0;
+          }
+          var desc = dis.getPropertyDescriptor_m___ ? 
+              dis.getPropertyDescriptor(name) :
+              dis.m___('getPropertyDescriptor', [name]);
+          if (desc === void 0) { return void 0; }
+          if ('value_v___' in desc) {
+            return desc.value_v___ ? desc.value : desc.v___('value');
+          } else {
+            var get = desc.get_v___ ? desc.get : desc.v___('get');
+            if (!isFunction(get)) {
+              return void 0;
+            }
+            return get.f___(safeDis(proxy), []);
+          }
+        },
+      set: function(name, val, proxy) {
+          var dis = safeDis(this);
+          // Test if the old "receiver" property was passed
+          // and if so, discard it.
+          if (typeof name !== 'string') {
+            name = val;
+            val = proxy;
+            proxy = void 0;
+          }
+          var desc = dis.getOwnPropertyDescriptor_m___ ?
+              dis.getOwnPropertyDescriptor(name) :
+              dis.m___('getOwnPropertyDescriptor', [name]);
+          if (desc) {
+            if ('writable_v___' in desc) { // data
+              if (desc.writable_v___ ?
+                  desc.writable :
+                  desc.v___('writable')) {
+                desc.value_w___ === desc ?
+                    desc.value = val :
+                    desc.w___('value', val);
+                dis.defineOwnProperty_m___ ?
+                    dis.defineOwnProperty(name, desc) :
+                    dis.m___('defineOwnProperty', [name, desc]);
+                return true;
+              } else {
+                return false;
+              }
+            } else { // accessor
+              var set = desc.set_v___ ? desc.set : desc.v___('set');
+              if (isFunction(set)) {
+                set.f___(safeDis(proxy), [val]);
+                return true;
+              } else {
+                return false;
+              }
+            }
+          }
+          desc = dis.getPropertyDescriptor_m___ ?
+              dis.getPropertyDescriptor(name) :
+              dis.m___('getPropertyDescriptor', [name]);
+          if (desc) {
+            if ('writable_v___' in desc) { // data
+              if (desc.writable_v___ ?
+                  desc.writable :
+                  desc.v___('writable')) {
+                // fall through
+              } else {
+                return false;
+              }
+            } else { // accessor
+              var set = desc.set_v___ ? desc.set : desc.v___('set');
+              if (isFunction(set)) {
+                set.f___(safeDis(proxy), [val]);
+                return true;
+              } else {
+                return false;
+              }
+            }
+          }
+          desc = initializeMap([
+              'value', val,
+              'writable', true,
+              'enumerable', true,
+              'configurable', true]);
+          dis.defineProperty_m___ ?
+              dis.defineProperty(name, desc) :
+              dis.m___('defineProperty', [name, desc]);
+          return true;
+        },
+      enumerate: function(proxy) {
+          var dis = safeDis(this);
+          var names = dis.getPropertyNames_m___ ?
+              dis.getPropertyNames(proxy) :
+              dis.m___('getPropertyNames', [proxy]);
+          var filter = markFunc(function (name) {
+                var desc = dis.getPropertyDescriptor_m___ ?
+                    dis.getPropertyDescriptor(name, proxy) :
+                    dis.m___('getPropertyDescriptor', [name, proxy]);
+                return desc.enumerable_v___ ?
+                    desc.enumerable :
+                    desc.v___('enumerable');
+            });
+          return names.filter_m___ ?
+              names.filter(filter) :
+              names.m___('filter', [filter]);
+        },
+      keys: function(proxy) {
+          var dis = safeDis(this);
+          var names = dis.getOwnPropertyNames_m___ ?
+              dis.getOwnPropertyNames(proxy) :
+              dis.m___('getOwnPropertyNames', [proxy]);
+          var filter = markFunc(function (name) {
+                var desc = dis.getOwnPropertyDescriptor_m___ ?
+                    dis.getOwnPropertyDescriptor(name, proxy) :
+                    dis.m___('getOwnPropertyDescriptor', [name, proxy]);
+                return desc.enumerable_v___ ?
+                    desc.enumerable :
+                    desc.v___('enumerable');
+            });
+          return names.filter_m___ ?
+              names.filter(filter) :
+              names.m___('filter', [filter]);
+        }
+    };
+
+  var derivedTraps = [
+      'has',
+      'hasOwn',
+      'get',
+      'set',
+      'enumerate',
+      'keys'
+    ];
+
+  function prepareProxy(proxy, handler) {
+    proxy.proxy___ = proxy;
+    proxy.v___ = function (P) {
+        if (this !== proxy) {
+          throw new TypeError(
+              'Inheritance from proxies not implemented yet.');
+        }
+        P = '' + P;
+        // Inline numeric name check
+        if ('' + +P === P) { return proxy[P]; }
+        assertValidPropertyName(P);
+        var get = handler.get_v___ ? handler.get : handler.v___('get');
+        if (isFunction(get)) {
+          return get.f___(handler, [P, proxy]);
+        } else {
+          return defaultDerivedTraps.get.apply(handler, [P, proxy]);
+        }
+      };
+    proxy.w___ = function (P, V) {
+        if (this !== proxy) {
+          throw new TypeError(
+              'Inheritance from proxies not implemented yet.');
+        }
+        P = '' + P;
+        V = asFirstClass(V);
+        // Inline numeric name check
+        if ('' + +P === P) { return proxy[P] = V; }
+        assertValidPropertyName(P);
+        var result;
+        var set = handler.set_v___ ? handler.set : handler.v___('set');
+        if (isFunction(set)) {
+          result = set.f___(handler, [P, V, proxy]);
+        } else {
+          result = defaultDerivedTraps.set.apply(handler, [P, V, proxy]);
+        }
+        if (!result) { throw new TypeError('Failed to set ' + P); }
+        return V;
+      };
+    proxy.c___ = function (P) {
+        if (this !== proxy) {
+          throw new TypeError(
+              'Inheritance from proxies not implemented yet.');
+        }
+        P = '' + P;
+        if ('' + +P === P) {
+          throw new TypeError('Cannot delete numeric properties.');
+        }
+        assertValidPropertyName(P);
+        var deleter = handler.delete_v___ ? handler['delete'] :
+            handler.v___('delete');
+        var result = deleter.f___(handler, [P, proxy]);
+        if (!result) { throw new TypeError('Unable to delete ' + P); }
+        return true;
+      };
+    proxy.m___ = function (P, args) {
+        if (this !== proxy) {
+          throw new TypeError(
+              'Inheritance from proxies not implemented yet.');
+        }
+        // First look it up, then call it.
+        P = '' + P;
+        var method;
+        // Inline numeric name check
+        if ('' + +P === P) { method = proxy[P]; }
+        else {
+          assertValidPropertyName(P);
+          var get = handler.get_v___ ? handler.get : handler.v___('get');
+          method = get.f___(handler, [P, proxy]);
+        }
+        return method.f___(proxy, slice.call(args, 0));
+      };
+    proxy.e___ = function () {
+        if (this !== proxy) {
+          throw new TypeError(
+              'Inheritance from proxies not implemented yet.');
+        }
+        var names;
+        var enumerate = handler.enumerate___ ? handler.enumerate :
+            handler.v___('enumerate');
+        if (isFunction(enumerate)) {
+          names = enumerate.f___(handler, [proxy]);
+        } else {
+          names = defaultDerivedTraps.enumerate.apply(handler, [proxy]);
+        }
+        var result = {};
+        for (var i = 0, len = names.length; i < len; ++i) {
+          var name = '' + names[i];
+          assertValidPropertyName(name);
+          result.DefineOwnProperty___(name, { enumerable: true });
+        }
+        return result;
+      };
+    proxy.keys___ = function () {
+        if (this !== proxy) {
+          throw new TypeError(
+              'Inheritance from proxies not implemented yet.');
+        }
+        var names;
+        var keys = handler.keys_v___ ? handler.keys : handler.v___('keys');
+        if (isFunction(keys)) {
+          names = keys.f___(handler, [proxy]);
+        } else {
+          names = defaultDerivedTraps.keys.apply(handler, [proxy]);
+        }
+        var result = [];
+        var i, len = names.length;
+        for (i = 0; i < len; ++i) {
+          var name = '' + names[i];
+          assertValidPropertyName(name);
+          result.push('' + name);
+        }
+        return result;
+      };
+    // TODO: If we need to let the fix trap know about numeric properties
+    // set on the proxy object itself (since the proxy wasn't handling them),
+    // we can pass a map of {numeric: descriptor} pairs as a second
+    // argument to to handler.fix(), which can echo them back if it chooses to.
+    function fix() {
+      if (this !== proxy) {
+        throw new TypeError(
+            'Inheritance from proxies not implemented yet.');
+      }
+      if (proxy.fixing___) {
+        throw new TypeError('Recursive fixing prohibited.');
+      }
+      try {
+        proxy.fixing___ = true;
+        var fixer = handler.fix_v___ ? handler.fix : handler.v___('fix');
+        var descMap = fixer.f___(handler, [proxy]);
+      } finally {
+        delete proxy.fixing___;
+      }
+      if (!descMap) {
+        throw new TypeError('Unable to fix the proxy.');
+      }
+      for (var i in proxy) {
+        if (proxy.hasOwnProperty(i)) { delete proxy[i]; }
+      }
+      var keys = descMap.keys___();
+      var len = keys.length;
+      for (i = 0; i < len; ++i) {
+        if (isNumericName(keys[i])) {
+          var desc = ToPropertyDescriptor(descMap.v___(keys[i]));
+          if (!IsDataDescriptor(desc) ||
+              !desc.writable ||
+              !desc.configurable ||
+              !desc.enumerable) {
+            throw new TypeError('Numeric properties returned from a fix trap ' +
+                'must be writable, enumerable, configurable data properties.');
+          }
+          proxy[keys[i]] = desc.value;
+        } else {
+          proxy.DefineOwnProperty___(keys[i], descMap.v___(keys[i]));
+        }
+      }
+    }
+    proxy.freeze___ = function () {
+        fix.call(this);
+        // The fix function above deletes proxy.freeze___, so this call
+        // goes to Object.prototype.freeze___
+        return this.freeze___();
+      };
+    proxy.pe___ = function () {
+        fix.call(this);
+        // The fix function above deletes proxy.pe___, so this call
+        // goes to Object.prototype.pe___
+        return this.pe___();
+      };
+    proxy.seal___ = function () {
+        fix.call(this);
+        // The fix function above deletes proxy.seal___, so this call
+        // goes to Object.prototype.seal___
+        return this.seal___();
+      };
+    // desc is an internal property descriptor
+    proxy.DefineOwnProperty___ = function (P, desc) {
+        if (this !== proxy) {
+          throw new TypeError(
+              'Inheritance from proxies not implemented yet.');
+        }
+        P = '' + P;
+        var extDesc = FromPropertyDescriptor(desc);
+        return (handler.defineProperty_m___ ?
+            handler.defineProperty(P, extDesc, proxy) :
+            handler.m___('defineProperty', [P, extDesc, proxy]));
+      };
+    proxy.GetOwnProperty___ = function (P) {
+        if (this !== proxy) {
+          throw new TypeError(
+              'Inheritance from proxies not implemented yet.');
+        }
+        P = '' + P;
+        var desc = (handler.getOwnPropertyDescriptor_m___ ?
+            handler.getOwnPropertyDescriptor(P, proxy) :
+            handler.m___('getOwnPropertyDescriptor', [P, proxy]));
+        return ToPropertyDescriptor(desc);
+     };
+    proxy.HasProperty___ = function (P) {
+        if (this !== proxy) {
+          throw new TypeError(
+              'Inheritance from proxies not implemented yet.');
+        }
+        P = '' + P;
+        var has = handler.has_v___ ? handler.has : handler.v___('has');
+        if (isFunction(has)) {
+          return !!(has.f___(handler, [P, proxy]));
+        } else {
+          return defaultDerivedTraps.has.apply(handler, [P, proxy]);
+        }
+      };
+    proxy.HasOwnProperty___ = function (P) {
+        if (this !== proxy) {
+          throw new TypeError(
+              'Inheritance from proxies not implemented yet.');
+        }
+        P = '' + P;
+        var hasOwn = handler.hasOwn_v___ ? handler.hasOwn :
+            handler.v___('hasOwn');
+        if (isFunction(hasOwn)) {
+          return !!(hasOwn.f___(handler, [P, proxy]));
+        } else {
+          return defaultDerivedTraps.hasOwn.apply(handler, [P, proxy]);
+        }
+      };
+  }
+
+  var Proxy = {};
+  Proxy.DefineOwnProperty___('create', {
+      value: markFuncFreeze(function (handler, proto) {
+          var proxy;
+          if (proto === void 0 || proxy === null) {
+            proxy = {};
+          } else {
+            var typeProto = Type(proto);
+            if (typeProto !== 'Object') {
+              throw new TypeError(
+                  'Proto must be an object, not ' + typeProto);
+            }
+            if (proto.proxy___) {
+              throw new TypeError('Proxies cannot inherit from proxies.');
+            }
+            var p = proto;
+            while (p !== p.baseProto___) {
+              if (p.ne___ !== p) {
+                throw new TypeError(
+                    'Proxies cannot inherit from extensible objects.');
+              }
+              p = origGetPrototypeOf(p);
+            }
+            proxy = beget(proto);
+            // Override all the fastpath properties so a fastpath on proto
+            // doesn't give a fastpath on proxy, which must always use
+            // the handlers.
+            for (var i in proto) {
+              var m = endsWith_v___.test(i);
+              if (!m) { continue; }
+              var P = m[1];
+              proxy[P + '_v___'] = false;
+              proxy[P + '_w___'] = false;
+              proxy[P + '_gw___'] = false;
+              proxy[P + '_c___'] = false;
+              proxy[P + '_e___'] = false;
+              proxy[P + '_m___'] = false;
+              proxy[P + '_g___'] = void 0;
+              proxy[P + '_s___'] = void 0;
+            }
+          }
+          prepareProxy(proxy, handler);
+          return proxy;
+        }),
+      enumerable: true
+    });
+
+  ////////////////////////////////////////////////////////////////////////
   // Module loading
   ////////////////////////////////////////////////////////////////////////
 
@@ -5022,14 +5491,14 @@ var ___, cajaVM, safeJSON;
     proto.DefineOwnProperty___(name, {
         enumerable: false,
         configurable: false,
-        get: function () {
+        get: markFunc(function () {
             return function guardedApplier(var_args) {
                 var feralThis = safeDis(untame(this));
                 var feralArgs = untame(slice.call(arguments, 0));
                 var feralResult = original.apply(feralThis, feralArgs);
                 return tame(feralResult);
               };
-          },
+          }),
         set: void 0
       });
   }
@@ -5211,6 +5680,7 @@ var ___, cajaVM, safeJSON;
       Date: Date,
       RegExp: RegExp,
       Function: FakeFunction,
+      Proxy: Proxy,
 
       Error: Error,
       EvalError: EvalError,
@@ -5263,7 +5733,6 @@ var ___, cajaVM, safeJSON;
       newTable: newTable,
       whitelistAll: whitelistAll,
       snowWhite: snowWhite,
-      Y: Y,
       ri: readImport,
       di: declareImport,
       wi: writeImport,
