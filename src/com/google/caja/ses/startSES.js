@@ -166,8 +166,13 @@ var cajaVM;
  *        (currently only Firefox 4 and after), use {@code
  *        with(aProxy) {...}} to intercept free variables rather than
  *        atLeastFreeVarNames.
+ * @param extensions ::F([], Record(any)]) A function returning a record whose
+ *        own properties will be copied onto cajaVM. This is used for the
+ *        optional components which bring SES to feature parity with the ES5/3
+ *        runtime at the price of larger code size. This function is called when
+ *        cajaVM exists but before it is frozen, so that it can use cajaVM.def.
  */
-function startSES(global, whitelist, atLeastFreeVarNames) {
+function startSES(global, whitelist, atLeastFreeVarNames, extensions) {
   "use strict";
 
 
@@ -583,6 +588,11 @@ function startSES(global, whitelist, atLeastFreeVarNames) {
       eval: fakeEval,
       Function: FakeFunction
     };
+    var extensionsRecord = extensions();
+    Object.getOwnPropertyNames(extensionsRecord).forEach(function (p) {
+      Object.defineProperty(cajaVM, p,
+          Object.getOwnPropertyDescriptor(extensionsRecord, p));
+    });
 
   })();
 

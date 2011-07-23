@@ -62,7 +62,7 @@ var $ = function(a) { return document.getElementById(a); };
 $.create = function(n) { return document.createElement(n); };
 
 var model = undefined;
-var dragSourceByPurse = cajaVM.newTable();
+var dragSourceByPurse = new WeakMap();
 
 var makeDragSource = function(purse) {
   return ;

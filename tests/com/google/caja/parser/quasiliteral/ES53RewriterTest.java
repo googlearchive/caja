@@ -1405,7 +1405,7 @@ public class ES53RewriterTest extends CommonJsRewriterTestCase {
   }
 
   /**
-   * Tests the cajaVM.newTable(opt_useKeyLifetime) abstraction.
+   * Tests the WeakMap(opt_useKeyLifetime) abstraction.
    * <p>
    * From here, we are not in a position to test the weak-GC properties this
    * abstraction is designed to provide, nor its O(1) complexity measure.
@@ -1413,7 +1413,7 @@ public class ES53RewriterTest extends CommonJsRewriterTestCase {
    */
   public final void testTable() throws Exception {
     rewriteAndExecute(
-        "var t = cajaVM.newTable();" +
+        "var t = new WeakMap();" +
         "var k1 = {};" +
         "var k2 = {};" +
         "var k3 = {};" +
@@ -1423,7 +1423,7 @@ public class ES53RewriterTest extends CommonJsRewriterTestCase {
         "assertEquals(t.get(k2), 'v2');" +
         "assertTrue(t.get(k3) === void 0);");
     rewriteAndExecute(
-        "var t = cajaVM.newTable(true);" +
+        "var t = new WeakMap(true);" +
         "var k1 = {};" +
         "var k2 = {};" +
         "var k3 = {};" +
@@ -1433,17 +1433,17 @@ public class ES53RewriterTest extends CommonJsRewriterTestCase {
         "assertEquals(t.get(k2), 'v2');" +
         "assertTrue(t.get(k3) === void 0);");
     rewriteAndExecute(
-        "var t = cajaVM.newTable();" +
+        "var t = new WeakMap();" +
         "t.set('foo', 'v1');" +
         "t.set(null, 'v2');" +
         "assertEquals(t.get('foo'), 'v1');" +
         "assertEquals(t.get(null), 'v2');" +
         "assertTrue(t.get({toString: function(){return 'foo';}}) === void 0);");
     rewriteAndExecute(
-        "var t = cajaVM.newTable(true);" +
+        "var t = new WeakMap(true);" +
         "assertThrows(function(){t.set('foo', 'v1');});");
     rewriteAndExecute(
-        "var t = cajaVM.newTable(true);" +
+        "var t = new WeakMap(true);" +
         "var k1 = {};" +
         "var k2 = Object.create(k1);" +
         "var k3 = Object.create(k2);" +
@@ -1455,7 +1455,7 @@ public class ES53RewriterTest extends CommonJsRewriterTestCase {
         "assertTrue(t.get(k1) === void 0);\n" +
         "assertTrue(t.get(k4) === void 0);");
     rewriteAndExecute(
-        "var t = cajaVM.newTable();" +
+        "var t = new WeakMap();" +
         "var k1 = {};" +
         "var k2 = Object.create(k1);" +
         "var k3 = Object.create(k2);" +
@@ -1467,8 +1467,8 @@ public class ES53RewriterTest extends CommonJsRewriterTestCase {
         "assertTrue(t.get(k1) === void 0);\n" +
         "assertTrue(t.get(k4) === void 0);");
     rewriteAndExecute(
-        "var t1 = cajaVM.newTable(true);" +
-        "var t2 = cajaVM.newTable(true);" +
+        "var t1 = new WeakMap(true);" +
+        "var t2 = new WeakMap(true);" +
         "var k = {};" +
         "t1.set(k, 'foo');" +
         "t2.set(k, 'bar');" +
@@ -1478,8 +1478,8 @@ public class ES53RewriterTest extends CommonJsRewriterTestCase {
         "assertTrue(t1.get(k) === void 0);" +
         "assertEquals(t2.get(k), 'bar');");
     rewriteAndExecute(
-        "var t1 = cajaVM.newTable();" +
-        "var t2 = cajaVM.newTable();" +
+        "var t1 = new WeakMap();" +
+        "var t2 = new WeakMap();" +
         "var k = {};" +
         "t1.set(k, 'foo');" +
         "t2.set(k, 'bar');" +

@@ -27,14 +27,14 @@
  *
  * @author metaweta@gmail.com
  * @requires this, json_sans_eval
- * @provides ___, es53, safeJSON
+ * @provides ___, safeJSON, WeakMap
  * @overrides Array, Boolean, Date, Function, Number, Object, RegExp, String
  * @overrides Error, EvalError, RangeError, ReferenceError, SyntaxError,
  *   TypeError, URIError
  * @overrides escape, JSON
  */
 
-var ___, cajaVM, safeJSON;
+var ___, cajaVM, safeJSON, WeakMap;
 
 (function () {
   // For computing the [[Class]] internal property
@@ -1940,10 +1940,27 @@ var ___, cajaVM, safeJSON;
       }
     }
 
+    function hasOnKey(key) {
+      var ktype = typeof key;
+      if (!key || (ktype !== 'function' && ktype !== 'object')) {
+        throw new TypeError("Can't use key lifetime on primitive keys: " + key);
+      }
+      var list = key[myMagicIndexName];
+      if (!list || list[0] !== key) {
+        return false;
+      } else {
+        for (var i = 1; i < list.length; i += 2) {
+          if (list[i] === MAGIC_TOKEN) { return true; }
+        }
+        return false;
+      }
+    }
+
     if (opt_useKeyLifetime) {
       return snowWhite({
           set: markFuncFreeze(setOnKey),
-          get: markFuncFreeze(getOnKey)
+          get: markFuncFreeze(getOnKey),
+          has: markFuncFreeze(hasOnKey)
         });
     }
 
@@ -2008,9 +2025,26 @@ var ___, cajaVM, safeJSON;
       }
     }
 
+    /**
+     * Returns whether this table contains the {@code key}.
+     */
+    function hasOnTable(key) {
+      switch (typeof key) {
+        case 'object':
+        case 'function': {
+          if (null === key) { return 'prim_null' in myValues; }
+          var index = getOnKey(key);
+          return void 0 !== index;
+        }
+        case 'string': { return ('str_' + key) in myValues; }
+        default: { return ('prim_' + key) in myValues; }
+      }
+    }
+
     return snowWhite({
         set: markFuncFreeze(setOnTable),
-        get: markFuncFreeze(getOnTable)
+        get: markFuncFreeze(getOnTable),
+        has: markFuncFreeze(hasOnTable)
       });
   }
 
@@ -2398,6 +2432,26 @@ var ___, cajaVM, safeJSON;
       stamps[i].mark___(record);
     }
     return freeze(record);
+  }
+  
+  /**
+   * Create a guard which passes all objects present in {@code table}.
+   * This may be used to define trademark-like systems which do not require
+   * the object to be frozen.
+   *
+   * @param {string} typename Used for toString results.
+   * @param {string} errorMessage Used when an object does not pass the guard.
+   */
+  function makeTableGuard(table, typename, errorMessage) {
+    var g = whitelistAll({
+      toString: markFuncFreeze(function() { return typename + 'T'; }),
+      coerce: markFuncFreeze(function(specimen, opt_ejector) {
+        if (table.get(specimen)) { return specimen; }
+        eject(opt_ejector, errorMessage);
+      })
+    });
+    stamp([GuardStamp], g);
+    return g;
   }
 
   ////////////////////////////////////////////////////////////////////////
@@ -5587,9 +5641,8 @@ var ___, cajaVM, safeJSON;
       enforceType: enforceType,
       enforceNat: enforceNat,
 
-      // Object indistinguishability and object-keyed tables
+      // Object indistinguishability
       Token: Token,
-      newTable: newTable,
 
       // Guards and Trademarks
       identity: identity,
@@ -5600,6 +5653,7 @@ var ___, cajaVM, safeJSON;
       guard: guard,
       passesGuard: passesGuard,
       stamp: stamp,
+      makeTableGuard: makeTableGuard,
 
       // Sealing & Unsealing
       makeSealerUnsealerPair: makeSealerUnsealerPair,
@@ -5613,6 +5667,8 @@ var ___, cajaVM, safeJSON;
       manifest: manifest,
       allKeys: allKeys
     });
+
+  WeakMap = newTable;
 
   function readImport(imports, name) {
     name = '' + name;
@@ -5688,7 +5744,10 @@ var ___, cajaVM, safeJSON;
       ReferenceError: ReferenceError,
       SyntaxError: SyntaxError,
       TypeError: TypeError,
-      URIError: URIError
+      URIError: URIError,
+      
+      // ES-Harmony future features
+      WeakMap: WeakMap
     });
 
   Object.prototype.m___ = function (name, as) {

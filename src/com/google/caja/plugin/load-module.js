@@ -41,7 +41,7 @@ var loadModuleMaker = function(rootUrl, cajolingServiceClient) {
 
   // A cache where each key is a fully qualified module URL and each value is
   // a promise for a prepared module object.
-  var moduleCache = ___.newTable();
+  var moduleCache = new WeakMap();
 
   var evalModuleObjFromJson = function(moduleJson) {
     var moduleObj = undefined;

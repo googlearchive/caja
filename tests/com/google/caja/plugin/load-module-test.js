@@ -38,7 +38,7 @@ var createTest = function(rootUrl) {
 
   var modules = {};
 
-  var requests = ___.newTable();
+  var requests = new WeakMap();
 
   var mockCajolingServiceClient = {
     cajoleUrl: function (url, mimeType) {

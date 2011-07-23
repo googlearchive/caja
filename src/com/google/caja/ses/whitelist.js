@@ -110,7 +110,22 @@ var whitelist;
       compile: t,
       compileModule: t,              // experimental
       eval: t,
-      Function: t
+      Function: t,
+      
+      callWithEjector: t,
+      eject: t,
+      GuardT: {
+        coerce: t
+      },
+      makeTableGuard: t,
+      Trademark: {
+        stamp: t
+      },
+      guard: t,
+      passesGuard: t,
+      stamp: t,
+      makeSealerUnsealerPair: t
+      
     },
     WeakMap: {       // ES-Harmony proposal as currently implemented by FF6.0a1
       prototype: {

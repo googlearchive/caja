@@ -20,7 +20,7 @@
 
 'use strict';
 
-var balanceByPurse = cajaVM.newTable();
+var balanceByPurse = new WeakMap();
 var purses = load('../container/list.js')({});
 var events = load('../container/events.js')({
   names: [ 'purses' ]

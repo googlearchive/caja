@@ -33,7 +33,7 @@ var cajolingServiceClientMaker = function(serviceUrl,
                                           emitHtmlInJs,
                                           debug) {
   // Map from full module URLs to module JSON records.
-  var cache = ___.newTable();
+  var cache = new WeakMap();
 
   var makeServiceReference = function(uncajoledSourceUrl, mimeType) {
     return serviceUrl +

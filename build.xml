@@ -757,6 +757,8 @@
       <input file="${src.caja}/cajita-module-orig.js"/>
       <input file="${src.caja}/cajita-promise.js"/>
     </transform>
+    <!-- TODO(kpreid): Avoid the duplication of file lists in the following
+         4 outputs. -->
     <concat destfile="${lib.caja}/ses/initSES.js">
       <!-- Makes initSES.js -->
       <filelist>
@@ -766,6 +768,18 @@
         <file name="${src.caja}/ses/atLeastFreeVarNames.js"/>
         <file name="${src.caja}/ses/startSES.js"/>
         <file name="${src.caja}/ses/hookupSES.js"/>
+      </filelist>
+    </concat>
+    <concat destfile="${lib.caja}/ses/initSESPlus.js">
+      <!-- Makes initSESPlus.js -->
+      <filelist>
+        <file name="${src.caja}/ses/repairES5.js"/>
+        <file name="${src.caja}/ses/WeakMap.js"/>
+        <file name="${src.caja}/ses/whitelist.js"/>
+        <file name="${src.caja}/ses/atLeastFreeVarNames.js"/>
+        <file name="${src.caja}/ses/startSES.js"/>
+        <file name="${src.caja}/ses/ejectorsGuardsTrademarks.js"/>
+        <file name="${src.caja}/ses/hookupSESPlus.js"/>
       </filelist>
     </concat>
     <transform>
@@ -778,6 +792,18 @@
        <input file="${src.caja}/ses/atLeastFreeVarNames.js"/>
        <input file="${src.caja}/ses/startSES.js"/>
        <input file="${src.caja}/ses/hookupSES.js"/>
+    </transform>
+    <transform>
+      <!-- Makes initSESPlus-minified.js -->
+      <output file="${lib.caja}/ses/initSESPlus-minified.js"
+       language="javascript" renderer="minify"/>
+       <input file="${src.caja}/ses/repairES5.js"/>
+       <input file="${src.caja}/ses/WeakMap.js"/>
+       <input file="${src.caja}/ses/whitelist.js"/>
+       <input file="${src.caja}/ses/atLeastFreeVarNames.js"/>
+       <input file="${src.caja}/ses/startSES.js"/>
+       <input file="${src.caja}/ses/ejectorsGuardsTrademarks.js"/>
+       <input file="${src.caja}/ses/hookupSESPlus.js"/>
     </transform>
   </target>
 

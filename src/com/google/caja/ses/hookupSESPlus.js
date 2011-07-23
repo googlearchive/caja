@@ -19,6 +19,6 @@
 
 (function(global) {
   "use strict";
-
-  startSES(global, whitelist, atLeastFreeVarNames, function () { return {}; });
+  
+  startSES(global, whitelist, atLeastFreeVarNames, ejectorsGuardsTrademarks);
 })(this);
