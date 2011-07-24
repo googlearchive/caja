@@ -1711,39 +1711,40 @@ public class ES53RewriterTest extends CommonJsRewriterTestCase {
           "cajaVM.log('for-in'); var keys = [];" +
           "  for (var i in proxy) { keys.push(i); }" +
           "  assertEquals('x,y,z', ''+keys.sort());" +
-          "cajaVM.log('get'); assertEquals(proxy.x, 1);" +
-          "cajaVM.log('method'); assertEquals(proxy.y(5), 10);" +
+          "cajaVM.log('get'); assertEquals(1, proxy.x);" +
+          "cajaVM.log('method'); assertEquals(10, proxy.y(5));" +
           "cajaVM.log('has'); assertTrue('x' in proxy);" +
           "cajaVM.log('hasOwn'); " +
           "  assertTrue(({}).hasOwnProperty.call(proxy, 'z'));" +
-          "cajaVM.log('set'); proxy.x = 2; assertEquals(proxy.x, 2);" +
-          "var desc = Object.getOwnPropertyDescriptor(proxy, 'z');" +
-          "cajaVM.log('desc value'); assertEquals(desc.value, 3);" +
-          "cajaVM.log('desc conf'); assertEquals(desc.configurable, true);" +
-          "cajaVM.log('desc writ'); assertEquals(desc.writable, true);" +
+          "cajaVM.log('set'); proxy.x = 2; assertEquals(2, proxy.x);" +
+          "cajaVM.log('desc value');" +
+          "  var desc = Object.getOwnPropertyDescriptor(proxy, 'z');" +
+          "  assertEquals(3, desc.value);" +
+          "cajaVM.log('desc conf'); assertTrue(desc.configurable);" +
+          "cajaVM.log('desc writ'); assertTrue(desc.writable);" +
           "cajaVM.log('fix pe');" +
           "  Object.preventExtensions(proxy);" +
-          "  assertEquals(Object.isExtensible(proxy), false);" +
+          "  assertEquals(false, Object.isExtensible(proxy));" +
           "cajaVM.log('fix seal');" +
           "  proxy = Proxy.create(handlerMaker(obj));" +
           "  Object.seal(proxy);" +
-          "  assertEquals(Object.isExtensible(proxy), false);" +
+          "  assertEquals(false, Object.isExtensible(proxy));" +
           "  desc = Object.getOwnPropertyDescriptor(proxy, 'z');" +
-          "  assertEquals(desc.configurable, false);" +
+          "  assertEquals(false, desc.configurable);" +
           "cajaVM.log('fix freeze and arrays');" +
           "  proxy = Proxy.create(handlerMaker(['hi', 'there']));" +
           "  /* can't intercept numerics */" +
-          "  assertEquals(proxy[1], void 0);" +
+          "  assertEquals(void 0, proxy[1]);" +
           "  Object.freeze(proxy);" +
           "  assertTrue(Object.isFrozen(proxy));" +
           "  /* can have numeric properties after fixing */" +
-          "  assertEquals(proxy[1], 'there');" +
+          "  assertEquals('there', proxy[1]);" +
           "cajaVM.log('keys');" +
           "  proxy = Proxy.create(handlerMaker(obj));" +
           "  assertEquals('z', ''+Object.keys(proxy).sort());" +
           "cajaVM.log('defineProperty');" +
           "  Object.defineProperty(proxy, 'w', { value: 4 });" +
-          "  assertEquals(obj.w, 4);" +
+          "  assertEquals(4, obj.w);" +
           "cajaVM.log('extensibility');" +
           "  var o2 = {};" +
           "  var o3 = Object.create(o2);" +
@@ -1751,7 +1752,21 @@ public class ES53RewriterTest extends CommonJsRewriterTestCase {
           "  Object.preventExtensions(o3);" +
           "  assertThrows(function(){Proxy.create(handlerMaker({}), o3);});" +
           "  Object.preventExtensions(o2);" +
-          "  Proxy.create(handlerMaker({}), o3);");
+          "  Proxy.create(handlerMaker({}), o3);" +
+          "cajaVM.log('function as object');" +
+          "  var f = function joe(){return 3;};" +
+          "  proxy = Proxy.create(handlerMaker(f));" +
+          "  assertEquals('joe', proxy.name);" +
+          "cajaVM.log('function proxy');" +
+          "  proxy = Proxy.createFunction(handlerMaker(f)," +
+          "      function(){return 5;}," +
+          "      function(){" +
+          "        this.x = 1; " +
+          "        this.f = function(){return this.x;};" +
+          "      });" +
+          "  assertEquals('joe', proxy.name);" +
+          "  assertEquals(5, proxy());" +
+          "  assertEquals(1, (new proxy()).f());");
   }
 
   public final void testElision() throws Exception {

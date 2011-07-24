@@ -5162,6 +5162,43 @@ var ___, cajaVM, safeJSON, WeakMap;
       enumerable: true
     });
 
+  Proxy.DefineOwnProperty___('createFunction', {
+      value: markFuncFreeze(function (handler, callTrap, createTrap) {
+          var proto = Function.prototype;
+          // Here we know the prototype chain, so we can optimize.
+          if (!proto.ne___) {
+            throw new TypeError(
+                  'Function.prototype must not be extensible to create ' +
+                  'function proxies.');
+          }
+          var proxy = markFunc(function (var_args) {
+              return callTrap.f___(safeDis(this), slice.call(arguments, 0));
+            });
+          // Install deferred handlers
+          proxy.v___('length');
+          // Override any fastpathed properties on Function.prototype
+          for (var i in proto) {
+            var m = endsWith_v___.test(i);
+            if (!m) { continue; }
+            var P = m[1];
+            proxy[P + '_v___'] = false;
+            proxy[P + '_w___'] = false;
+            proxy[P + '_gw___'] = false;
+            proxy[P + '_c___'] = false;
+            proxy[P + '_e___'] = false;
+            proxy[P + '_m___'] = false;
+            proxy[P + '_g___'] = void 0;
+            proxy[P + '_s___'] = void 0;
+          }
+          prepareProxy(proxy, handler);
+          proxy.new___ = function (var_args) {
+              return createTrap.apply(this, slice.call(arguments, 0));
+            };
+          return proxy;
+        }),
+      enumerable: true
+    });
+
   ////////////////////////////////////////////////////////////////////////
   // Module loading
   ////////////////////////////////////////////////////////////////////////
