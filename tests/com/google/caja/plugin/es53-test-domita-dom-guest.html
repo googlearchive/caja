@@ -2236,6 +2236,60 @@ Test row cell
   });
 </script>
 
+<div id="test-location" class="testcontainer">
+  test-location
+</div>
+<script type="text/javascript">
+  jsunitRegister('testLocation',
+                 function testLocation() {
+    assertEquals(
+        window.location.host,
+        window.location.hostname + ':' + window.location.port);
+    assertEquals(
+        window.location.href,
+        window.location.protocol + '//' + window.location.hostname
+        + ':' + window.location.port + window.location.pathname
+        + window.location.search + window.location.hash);
+    assertEquals(
+        'http://nosuchhost.fake:80/',
+        window.location.href);
+    assertEquals(
+        '',
+        window.location.hash);
+    assertEquals(
+        'nosuchhost.fake:80',
+        window.location.host);
+    assertEquals(
+        'nosuchhost.fake',
+        window.location.hostname);
+    assertEquals(
+        '/',
+        window.location.pathname);
+    assertEquals(
+        '80',
+        window.location.port);
+    assertEquals(
+        'http:',
+        window.location.protocol);
+    assertEquals(
+        '',
+        window.location.search);
+    assertEquals(
+        window.location.hostname,
+        document.domain);
+    pass('test-location');
+  });
+</script>
+
+<div id="test-navigator" class="testcontainer"></div>
+<script type="text/javascript">
+  jsunitRegister('testNavigator',
+                 function testNavigator() {
+    assertNotNull(window.navigator.userAgent);
+    pass('test-navigator');
+  });
+</script>
+
 <p class="testcontainer" id="test-document-body-appendChild"
  >I should be the last element until something is appended to document.body</p>
 <script type="text/javascript">

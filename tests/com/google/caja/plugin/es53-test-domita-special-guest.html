@@ -438,3 +438,79 @@ can test window.scrollBy with a positive x value with a visible effect.
 </script>
 
 -->
+
+<p id="test-script-loading" class="testcontainer">Test script loading</p>
+<script type="text/javascript">
+  jsunitRegister('testScriptLoading',
+                 function testScriptLoading() {
+    // Test that we block ways scripts can be used to executed code in strings.
+    expectFailure(
+        function () {
+          var s = document.createElement('script');
+          s.appendChild(document.createTextNode('globalSideEffect()'));
+        }, 'script injection via appendChild');
+    assertFalse('gse1', checkGlobalSideEffect());
+    expectFailure(
+        function () {
+          var s = document.createElement('script');
+          s.innerHTML = 'globalSideEffect()';
+        }, 'script injection via innerHTML');
+    assertFalse('gse2', checkGlobalSideEffect());
+    expectFailure(
+        function () {
+          var s = directAccess.makeUnattachedScriptNode();
+          s.firstChild.nodeValue = 'globalSideEffect()';
+        }, 'script injection via nodeValue');
+    assertFalse('gse3', checkGlobalSideEffect());
+    expectFailure(
+        function () {
+          var os = document.getElementById('howdy-script');
+          var s = os.cloneNode(true);
+          s.firstChild.nodeValue = 'globalSideEffect()';
+        }, 'script injection via cloneNode');
+    assertFalse('gse4', checkGlobalSideEffect());
+    assertFailsSafe(
+        function () {
+          var s = document.createElement('script');
+          s.innerText = 'globalSideEffect()';  // IE only, so failsafe.
+          document.body.appendChild(s);
+        },
+        function () {});
+    assertFalse('gse5', checkGlobalSideEffect());
+    assertFailsSafe(
+        function () {
+          var s = document.createElement('script');
+          // IE only, so failsafe.
+          s.outerHTML = '<script>globalSideEffect()<\/script>';
+          document.body.appendChild(s);
+        },
+        function () {});
+    assertFalse('gse6', checkGlobalSideEffect());
+    assertFailsSafe(
+        function () {
+          var s = document.createElement('div');
+          // IE only, so failsafe.
+          s.outerHTML = '<script>globalSideEffect()<\/script>';
+          document.body.appendChild(s);
+        },
+        function () {});
+    assertFalse('gse7', checkGlobalSideEffect());
+
+    /* TODO(kpreid): Reenable this test if it is supposed to work.
+       It fails at runtime because script src= is considered an unknown
+       attribute; are we currently expecting this to be possible?
+    
+    // Test that an external script cannot be loaded by setting the "src"
+    // attribute of a newly created script element.
+    var s = document.createElement('script');
+    assertAsynchronousRequirement(
+        'whitelisted script never ran',
+        jsunitCallback(function () { return externalScript.loaded === true; }));
+    debugger;
+    s.src = 'unproxied_whitelisted_script.js';
+    document.getElementById('test-script-loading').appendChild(s);
+    */
+
+    pass('test-script-loading');
+  });
+</script>

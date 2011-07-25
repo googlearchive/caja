@@ -2506,7 +2506,11 @@ var attachDocumentStub = (function () {
     TameElement.prototype.setTextContent___
         = TameElement.prototype.setInnerText___
         = function (newText) {
-      if (!this.editable___) { throw new Error(NOT_EDITABLE); }
+      // This operation changes the child node list (but not other properties
+      // of the element) so it checks childrenEditable. Note that this check is
+      // critical to security, as else a client can set the innerHTML of
+      // a <script> element to execute scripts.
+      if (!this.childrenEditable___) { throw new Error(NOT_EDITABLE); }
       var newTextStr = newText != null ? String(newText) : '';
       var el = this.node___;
       for (var c; (c = el.firstChild);) { el.removeChild(c); }
@@ -2539,7 +2543,11 @@ var attachDocumentStub = (function () {
       return innerHtml;
     };
     TameElement.prototype.setInnerHTML___ = function (htmlFragment) {
-      if (!this.editable___) { throw new Error(NOT_EDITABLE); }
+      // This operation changes the child node list (but not other properties
+      // of the element) so it checks childrenEditable. Note that this check is
+      // critical to security, as else a client can set the innerHTML of
+      // a <script> element to execute scripts.
+      if (!this.childrenEditable___) { throw new Error(NOT_EDITABLE); }
       var tagName = this.node___.tagName.toLowerCase();
       if (!html4.ELEMENTS.hasOwnProperty(tagName)) { throw new Error(); }
       var flags = html4.ELEMENTS[tagName];

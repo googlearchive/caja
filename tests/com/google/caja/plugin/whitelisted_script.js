@@ -18,14 +18,4 @@
  * loading works.
  */
 
-if (typeof ___ !== undefined) {
-  (function () {
-    var mh = ___.getNewModuleHandler();
-    if (mh) {
-      var imp = mh.getImports();
-      if (imp && imp.externalScript) {
-        imp.externalScript.loaded = true;
-      }
-    }
-  })();
-}
+externalScript.loaded = true;

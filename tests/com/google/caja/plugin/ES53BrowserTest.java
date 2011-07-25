@@ -62,10 +62,6 @@ public class ES53BrowserTest extends BrowserTestCase {
     runTestCase("es53-test-domita-forms-guest.html");
   }
 
-  public final void testDomitaScripts() {
-    runTestCase("es53-test-domita-scripts-guest.html");
-  }
-
   public final void testDomitaSpecial() {
     runTestDriver("es53-test-domita-special.js");
   }
