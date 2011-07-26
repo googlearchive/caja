@@ -231,11 +231,39 @@ public class JsLexerTest extends CajaTestCase {
 
   @FailureIsAnOption
   public final void testRegexpFollowingPreincrement() {
+    // Dividing a post-incremented value
+    //     x++ /x/m
+    // is much more common than pre-incrementing a regular expression,
+    //     x=++/x/m
+    // so our lexer heuristic treats / after ++ or -- as a division
+    // operator.
     JsLexer lexer = createLexer("x = ++/x/m", false);
     assertNext(lexer, JsTokenType.WORD, "x");
     assertNext(lexer, JsTokenType.PUNCTUATION, "=");
     assertNext(lexer, JsTokenType.PUNCTUATION, "++");
     assertNext(lexer, JsTokenType.REGEXP, "/x/m");
+    assertEmpty(lexer);
+  }
+
+  @FailureIsAnOption
+  public final void testDivisionFollowingObjectConstructor() {
+    // Code like
+    //     while (x) { ... }
+    //     /foo/.test(bar) && ...
+    // is much more common than attempts to divide an object constructor
+    //     alert({ valueOf: function () { return 42; } } / 2);
+    // so our lexer heuristic treats / after a close curly bracket as
+    // a regular expression.
+    JsLexer lexer = createLexer("({f:g}/h/i)", false);
+    assertNext(lexer, JsTokenType.PUNCTUATION, "{");
+    assertNext(lexer, JsTokenType.WORD, "f");
+    assertNext(lexer, JsTokenType.PUNCTUATION, ":");
+    assertNext(lexer, JsTokenType.WORD, "g");
+    assertNext(lexer, JsTokenType.PUNCTUATION, "}");
+    assertNext(lexer, JsTokenType.PUNCTUATION, "/");
+    assertNext(lexer, JsTokenType.WORD, "h");
+    assertNext(lexer, JsTokenType.PUNCTUATION, "/");
+    assertNext(lexer, JsTokenType.WORD, "i");
     assertEmpty(lexer);
   }
 
