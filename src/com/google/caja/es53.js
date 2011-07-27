@@ -3943,6 +3943,7 @@ var ___, cajaVM, safeJSON, WeakMap;
       funcBound.new___ = function () {
           throw "Constructing the result of a bind() not yet implemented.";
         };
+      funcBound.ok___ = thisFunc.ok___;
       return funcBound;
     });
   virtualize(Function.prototype, 'bind');
@@ -4728,16 +4729,6 @@ var ___, cajaVM, safeJSON, WeakMap;
   // Proxies
   ////////////////////////////////////////////////////////////////////////
 
-  var requiredTraps = [
-      'getOwnPropertyDescriptor',
-      'getPropertyDescriptor',
-      'getOwnPropertyNames',
-      'getPropertyNames',
-      'defineProperty',
-      'delete',
-      'fix'
-    ];
-
   // Default implementations for derived traps invoke code supplied by
   // the guest on objects supplied by the guest, so we have to be careful.
   var defaultDerivedTraps = {
@@ -4755,12 +4746,6 @@ var ___, cajaVM, safeJSON, WeakMap;
         },
       get: function(name, proxy) {
           var dis = safeDis(this);
-          // Test if the old "receiver" parameter was passed
-          // and if so, discard it.
-          if (typeof name !== 'string') {
-            name = proxy;
-            proxy = void 0;
-          }
           var desc = dis.getPropertyDescriptor_m___ ? 
               dis.getPropertyDescriptor(name) :
               dis.m___('getPropertyDescriptor', [name]);
@@ -4777,13 +4762,6 @@ var ___, cajaVM, safeJSON, WeakMap;
         },
       set: function(name, val, proxy) {
           var dis = safeDis(this);
-          // Test if the old "receiver" property was passed
-          // and if so, discard it.
-          if (typeof name !== 'string') {
-            name = val;
-            val = proxy;
-            proxy = void 0;
-          }
           var desc = dis.getOwnPropertyDescriptor_m___ ?
               dis.getOwnPropertyDescriptor(name) :
               dis.m___('getOwnPropertyDescriptor', [name]);
@@ -4880,15 +4858,6 @@ var ___, cajaVM, safeJSON, WeakMap;
         }
     };
 
-  var derivedTraps = [
-      'has',
-      'hasOwn',
-      'get',
-      'set',
-      'enumerate',
-      'keys'
-    ];
-
   function prepareProxy(proxy, handler) {
     proxy.proxy___ = proxy;
     proxy.v___ = function (P) {
@@ -4956,7 +4925,11 @@ var ___, cajaVM, safeJSON, WeakMap;
         else {
           assertValidPropertyName(P);
           var get = handler.get_v___ ? handler.get : handler.v___('get');
-          method = get.f___(handler, [P, proxy]);
+          if (!isFunction(get)) {
+            method = defaultDerivedTraps.get.apply(handler, [P, proxy]);
+          } else {
+            method = get.f___(handler, [P, proxy]);
+          }
         }
         return method.f___(proxy, slice.call(args, 0));
       };

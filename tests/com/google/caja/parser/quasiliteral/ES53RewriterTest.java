@@ -1654,9 +1654,6 @@ public class ES53RewriterTest extends CommonJsRewriterTestCase {
 
   public final void testProxy() throws Exception {
       rewriteAndExecute(
-          "var o1 = {x: 1, y:function(x) { return x*2; }};" +
-          "var obj = Object.create(o1);" +
-          "obj.z = 3;" +
           // Taken from http://wiki.ecmascript.org/doku.php?id=harmony:proxies
           "function handlerMaker(obj) {" +
           "  return {" +
@@ -1666,9 +1663,12 @@ public class ES53RewriterTest extends CommonJsRewriterTestCase {
           "      return desc;" +
           "    }," +
           "    getPropertyDescriptor: function(name) {" +
-          "      var desc = Object.getPropertyDescriptor(obj, name);" +
-          "      if (desc !== undefined) { desc.configurable = true; }" +
-          "      return desc;" +
+          "      return {" +
+          "          value: obj[name]," +
+          "          configurable:true," +
+          "          enumerable:true," +
+          "          writable:true" +
+          "        };" +
           "    }," +
           "    getOwnPropertyNames: function() {" +
           "      return Object.getOwnPropertyNames(obj);" +
@@ -1707,6 +1707,9 @@ public class ES53RewriterTest extends CommonJsRewriterTestCase {
           "    keys: function() { return Object.keys(obj); }" +
           "  };" +
           "}" +
+          "var o1 = {x: 1, y:function(x) { return x*2; }};" +
+          "var obj = Object.create(o1);" +
+          "obj.z = 3;" +
           "var proxy = Proxy.create(handlerMaker(obj));" +
           "cajaVM.log('for-in'); var keys = [];" +
           "  for (var i in proxy) { keys.push(i); }" +
@@ -1766,7 +1769,14 @@ public class ES53RewriterTest extends CommonJsRewriterTestCase {
           "      });" +
           "  assertEquals('joe', proxy.name);" +
           "  assertEquals(5, proxy());" +
-          "  assertEquals(1, (new proxy()).f());");
+          "  assertEquals(1, (new proxy()).f());" +
+          "cajaVM.log('missing get');" +
+          "  var noGetHandler = handlerMaker(obj);" +
+          "  delete noGetHandler.get;" +
+          "  proxy = Proxy.create(noGetHandler);" +
+          "  assertEquals(3, proxy.z);" +
+          "  /* proxy.x assigned to 2 in set test */" +
+          "  assertEquals(2, proxy.x);");
   }
 
   public final void testElision() throws Exception {
@@ -1776,6 +1786,11 @@ public class ES53RewriterTest extends CommonJsRewriterTestCase {
         "assertEquals(undefined, x[1]);" +
         "assertEquals(2, x[2]);"
     );
+  }
+
+  public final void testBindOk() throws Exception {
+    // Checks that bound functions get marked as safe to execute.
+    rewriteAndExecute("{foo: (function (){}).bind(Number)}");
   }
 
   @Override
