@@ -2854,6 +2854,14 @@ public class DomParserTest extends CajaTestCase {
         "<html><head></head><body><b>Hello, world</b></body></html>",
         Nodes.render(doc));
   }
+  
+  public final void testRecoverExtraSlashInTag() throws Exception {
+    Node fragment = xmlFragment(fromString(
+        "<os:OwnerRequest fields=\"name\" key=\"owner\" / />"));
+    assertEquals(
+        "<os:OwnerRequest fields=\"name\" key=\"owner\"></os:OwnerRequest>",
+        Nodes.render(fragment));
+  }
 
   public final void testParserSpeed() throws Exception {
     assertFalse(CajaTreeBuilder.DEBUG);  // Don't run 100 times if verbose.

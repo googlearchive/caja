@@ -651,6 +651,12 @@ public class DomParser {
                       MessagePart.Factory.valueOf(value.text));
       }
     } else if (asXml) {
+      if ("/".equals(name.text)) {
+        mq.addMessage(MessageType.UNEXPECTED_IN_XML_TAG,
+            FilePosition.span(name.pos, value.pos),
+            MessagePart.Factory.valueOf(name.text));
+        return null;
+      }
       // XML does not allow valueless attributes.
       throw new ParseException(
           new Message(MessageType.MISSING_ATTRIBUTE_VALUE,

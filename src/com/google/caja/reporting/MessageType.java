@@ -70,6 +70,9 @@ public enum MessageType implements MessageTypeInt {
   PARSE_ERROR("%s: Parse error", MessageLevel.ERROR),
   AMBIGUOUS_ATTRIBUTE_VALUE(
       "%s: attribute %s has ambiguous value \"%s\"", MessageLevel.WARNING),
+  UNEXPECTED_IN_XML_TAG(
+      "%s: Removed unexpected \"%s\" in XML tag",
+      MessageLevel.WARNING),
   MISSING_ATTRIBUTE_VALUE(
       "%s: missing value for attribute %s", MessageLevel.FATAL_ERROR),
   OCTAL_LITERAL("%s: octal literal %s", MessageLevel.LINT),
