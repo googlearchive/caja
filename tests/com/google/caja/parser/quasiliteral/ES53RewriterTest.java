@@ -1674,7 +1674,7 @@ public class ES53RewriterTest extends CommonJsRewriterTestCase {
           "      return Object.getOwnPropertyNames(obj);" +
           "    }," +
           "    getPropertyNames: function() {" +
-          "      return Object.getPropertyNames(obj);" +
+          "      return cajaVM.allKeys(obj);" +
           "    }," +
           "    defineProperty: function(name, desc) {" +
           "      Object.defineProperty(obj, name, desc);" +
@@ -1776,7 +1776,20 @@ public class ES53RewriterTest extends CommonJsRewriterTestCase {
           "  proxy = Proxy.create(noGetHandler);" +
           "  assertEquals(3, proxy.z);" +
           "  /* proxy.x assigned to 2 in set test */" +
-          "  assertEquals(2, proxy.x);");
+          "  assertEquals(2, proxy.x);" +
+          "cajaVM.log('getOwnPropertyNames');" +
+          "  proxy = Proxy.create(handlerMaker(obj));" +
+          "  assertEquals('w,z'," +
+          "      '' + Object.getOwnPropertyNames(proxy).sort());" +
+          "  var o4 = {d:4};" +
+          "  Object.freeze(o4);" +
+          "  proxy = Proxy.create(handlerMaker({a:1, b:2, c:3}), o4);" +
+          "  assertEquals('a,b,c'," +
+          "      '' + Object.getOwnPropertyNames(proxy).sort());" +
+          "cajaVM.log('getPropertyNames');" +
+          "  var allKeys = cajaVM.allKeys(proxy).sort();" +
+          "  assertEquals('a,b,c', '' + allKeys.slice(0,3));" +
+          "  assertTrue('d' !== allKeys[3]);");
   }
 
   public final void testElision() throws Exception {

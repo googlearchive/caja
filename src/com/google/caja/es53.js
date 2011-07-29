@@ -162,6 +162,9 @@ var ___, cajaVM, safeJSON, WeakMap;
    *                                      the fix handler.
    * {@code obj.keys___()}                returns the list of enumerable own
    *                                      properties.
+   * {@code obj.ownKeys___()}             returns the list of all own
+   *                                      properties.
+   * {@code obj.allKeys___()}             returns the list of all properties.
    *
    * {@code g.f___(dis, [as])}            is the tamed version of {@code g},
    *                                      though it uses {@code apply}'s
@@ -890,7 +893,7 @@ var ___, cajaVM, safeJSON, WeakMap;
   // Accessor properties are left alone, because they cannot be implemented
   // on the host side.
   function eviscerate(t, f) {
-    ownKeys(t).forEach(function(p) {
+    t.ownKeys___().forEach(function(p) {
       if (t[p + '_v___'] || isNumericName(p)) {
         // is a data property (not an accessor property)
 
@@ -1567,8 +1570,12 @@ var ___, cajaVM, safeJSON, WeakMap;
     };
 
   function allKeys(obj) {
+    return obj.allKeys___();
+  }
+
+  Object.prototype.allKeys___ = function () {
     var i, m, result = [];
-    for (i in obj) {
+    for (i in this) {
       if (isNumericName(i)) {
         result.push(i);
       } else {
@@ -1599,10 +1606,10 @@ var ___, cajaVM, safeJSON, WeakMap;
       return result;
     };
 
-  function ownKeys(obj) {
+  Object.prototype.ownKeys___ = function () {
     var i, m, result = [];
-    for (i in obj) {
-      if (!obj.hasOwnProperty(i)) { continue; }
+    for (i in this) {
+      if (!this.hasOwnProperty(i)) { continue; }
       if (isNumericName(i)) {
         result.push(i);
       } else {
@@ -2145,7 +2152,7 @@ var ___, cajaVM, safeJSON, WeakMap;
       defendingList.push(val);
       freeze(val);
       recur(origGetPrototypeOf(val));
-      ownKeys(val).forEach(function(p) {
+      val.ownKeys___().forEach(function(p) {
         var desc = origGetOwnPropertyDescriptor(val, p);
         recur(desc.value);
         recur(desc.get);
@@ -3496,7 +3503,9 @@ var ___, cajaVM, safeJSON, WeakMap;
 
   // 15.2.3.4
   // virtualized to avoid confusing the webkit/safari/chrome debugger
-  virtualize(Object, 'getOwnPropertyNames', ownKeys);
+  virtualize(Object, 'getOwnPropertyNames', markFunc(function (obj) {
+      return obj.ownKeys___();
+    }));
   // TODO(felix8a): spec says this should be configurable: true
 
   // 15.2.3.5
@@ -4975,6 +4984,44 @@ var ___, cajaVM, safeJSON, WeakMap;
         }
         return result;
       };
+    proxy.ownKeys___ = function () {
+        if (this !== proxy) {
+          throw new TypeError(
+              'Inheritance from proxies not implemented yet.');
+        }
+        var names;
+        var keys = handler.getOwnPropertyNames_v___ ?
+            handler.getOwnPropertyNames :
+            handler.v___('getOwnPropertyNames');
+        names = keys.f___(handler, [proxy]);
+        var result = [];
+        var i, len = names.length;
+        for (i = 0; i < len; ++i) {
+          var name = '' + names[i];
+          assertValidPropertyName(name);
+          result.push('' + name);
+        }
+        return result;
+      };
+    proxy.allKeys___ = function () {
+        if (this !== proxy) {
+          throw new TypeError(
+              'Inheritance from proxies not implemented yet.');
+        }
+        var names;
+        var keys = handler.getPropertyNames_v___ ?
+            handler.getPropertyNames :
+            handler.v___('getPropertyNames');
+        names = keys.f___(handler, [proxy]);
+        var result = [];
+        var i, len = names.length;
+        for (i = 0; i < len; ++i) {
+          var name = '' + names[i];
+          assertValidPropertyName(name);
+          result.push('' + name);
+        }
+        return result;
+      };
     // TODO: If we need to let the fix trap know about numeric properties
     // set on the proxy object itself (since the proxy wasn't handling them),
     // we can pass a map of {numeric: descriptor} pairs as a second
@@ -5229,7 +5276,7 @@ var ___, cajaVM, safeJSON, WeakMap;
   function copy(obj) {
     // TODO(ihab.awad): Primordials may not be frozen; is this safe?
     var result = Array.isArray(obj) ? [] : {};
-    var keys = ownKeys(obj), len = keys.length;
+    var keys = obj.ownKeys___(), len = keys.length;
     for (var i = 0; i < len; ++i) {
       var k = keys[i], v = obj[k];
       if (isNumericName(k)) { result[k] = v; }
