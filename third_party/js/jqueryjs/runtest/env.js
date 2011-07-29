@@ -208,24 +208,23 @@ var window = this;
       return titleNode ? titleNode.innerHTML : '';
     },
 
-    get defaultView(){
+    getComputedStyle: function(elem){
       return {
-        getComputedStyle: function(elem){
-          return {
-            getPropertyValue: function(prop){
-              prop = prop.replace(/\-(\w)/g,function(m,c){
-                return c.toUpperCase();
-              });
-              var val = elem.style[prop];
+        getPropertyValue: function(prop){
+          prop = prop.replace(/\-(\w)/g,function(m,c){
+            return c.toUpperCase();
+          });
+          var val = elem.style[prop];
 
-              if ( prop == "opacity" && val == "" )
-                val = "1";
+          if ( prop == "opacity" && val == "" )
+            val = "1";
 
-              return val;
-            }
-          };
+          return val;
         }
       };
+    }, 
+    get defaultView(){
+      return window;
     },
 
     createEvent: function(){

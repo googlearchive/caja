@@ -405,8 +405,6 @@
   </span><br>
 </p>
 <script type="text/javascript">
-  // TODO(metaweta): This test should be replaced by ones for the proper
-  // behavior once we get property names into the HTML schema.
   jsunitRegister('testPropertyAttributeInteraction',
                  function testPropertyAttributeInteraction() {
     var d = document.getElementById(
@@ -415,14 +413,17 @@
     d.setAttribute('title', 'there');
     assertEquals(void 0, d.FOO);
     assertEquals(void 0, d.foo);
+    // TODO(mikesamuel): Should the expando attribute foo="hi" become a
+    // property .foo, now that we have property names in the HTML schema?
     assertEquals('hi', d.getAttribute('FOO'));
     assertEquals('hi', d.getAttribute('foo'));
-    assertEquals('there', d.TITLE);
+    assertEquals(void 0, d.TITLE);
     assertEquals('there', d.title);
     assertEquals('there', d.getAttribute('title'));
     assertEquals('there', d.getAttribute('TITLE'));
     d.title = 'bob';
     assertEquals('bob', d.getAttribute('title'));
+    assertEquals('bob', d.getAttribute('TITLE'));
     pass('test-property-attribute-interaction');
   });
 </script>
@@ -2251,16 +2252,16 @@ Test row cell
         + ':' + window.location.port + window.location.pathname
         + window.location.search + window.location.hash);
     assertEquals(
-        'http://nosuchhost.fake:80/',
+        'http://nosuchhost.invalid:80/',
         window.location.href);
     assertEquals(
         '',
         window.location.hash);
     assertEquals(
-        'nosuchhost.fake:80',
+        'nosuchhost.invalid:80',
         window.location.host);
     assertEquals(
-        'nosuchhost.fake',
+        'nosuchhost.invalid',
         window.location.hostname);
     assertEquals(
         '/',

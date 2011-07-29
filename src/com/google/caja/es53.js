@@ -5471,13 +5471,7 @@ var ___, cajaVM, safeJSON, WeakMap;
   function prepareModule(module, load) {
     registerClosureInspector(module);
     function theModule(extraImports) {
-      var imports;
-      if (extraImports.window) {
-        imports = extraImports.window;
-        copyToImports(imports, sharedImports);
-      } else {
-        imports = copy(sharedImports);
-      }
+      var imports = copy(sharedImports);
       copyToImports({
         load: load,
         cajaVM: cajaVM
@@ -5852,6 +5846,7 @@ var ___, cajaVM, safeJSON, WeakMap;
       ri: readImport,
       di: declareImport,
       wi: writeImport,
+      copyToImports: copyToImports,
       // Cajita API
       grantRead: grantRead,
       grantFunc: grantFunc,

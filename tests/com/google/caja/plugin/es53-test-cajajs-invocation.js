@@ -29,7 +29,7 @@
   }
 
   function fetch(url, cb) {
-    var xhr = bridal.makeXhr();
+    var xhr = bridalMaker(function (x){return x;}, document).makeXhr();
     xhr.open('GET', url, true);
     xhr.onreadystatechange = function() {
       if (xhr.readyState === 4) {

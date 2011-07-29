@@ -318,25 +318,26 @@ function createExtraImportsForTesting(frameGroup, frame) {
   // Create a readonly mirror of document so that we can test that mutations
   // fail when they should.
   standardImports.documentRO =
-    new frame.imports.TameHTMLDocument___(
+    new frame.domicile.TameHTMLDocument(
         document,          // Document of host frame
         frame.div,         // Containing div in host frame
         'nosuchhost.fake', // Fake domain name
         false);            // Not writeable
 
   var fakeConsole = {
+    // .prototype because Firebug console's methods have no apply method.
     log: frameGroup.markFunction(function () {
-      console.log.apply(console, arguments);
+      Function.prototype.apply.call(console.log, console, arguments);
     }),
     warn: frameGroup.markFunction(function () {
-      console.warn.apply(console, arguments);
+      Function.prototype.apply.call(console.warn, console, arguments);
     }),
     error: frameGroup.markFunction(function () {
-      console.error.apply(console, arguments);
+      Function.prototype.apply.call(console.error, console, arguments);
     }),
     trace: frameGroup.markFunction(function () {
       console.trace ? console.trace()
-          : console.error.apply(console, arguments);
+          : Function.prototype.apply.call(console.error, console, arguments);
     })
   };
 
@@ -352,22 +353,22 @@ function createExtraImportsForTesting(frameGroup, frame) {
   var directAccess = {
     // Allow testing of emitHtml by exposing it for testing
     click: function (tameNode) {
-      tameNode.node___.click();
+      frame.domicile.feralNode(tameNode).click();
     },
     emitCssHook: function (css) {
       frame.imports.emitCss___(css.join(frame.idSuffix));
     },
     getInnerHTML: function (tameNode) {
-      return tameNode.node___.innerHTML;
+      return frame.domicile.feralNode(tameNode).innerHTML;
     },
     getAttribute: function (tameNode, name) {
-      return tameNode.node___.getAttribute(name);
+      return frame.domicile.feralNode(tameNode).getAttribute(name);
     },
     getBodyNode: function () {
-      return frame.imports.tameNode___(frame.innerContainer);
+      return frame.domicile.tameNode(frame.innerContainer);
     },
     getComputedStyle: function (tameNode, styleProp) {
-      var node = tameNode.node___;
+      var node = frame.domicile.feralNode(tameNode);
       if (node.currentStyle) {
         return node.currentStyle[styleProp.replace(
             /-([a-z])/g,
@@ -386,7 +387,7 @@ function createExtraImportsForTesting(frameGroup, frame) {
     makeUnattachedScriptNode: function () {
       var s = document.createElement('script');
       s.appendChild(document.createTextNode('/* intentionally blank */'));
-      return frame.imports.tameNode___(s, true);
+      return frame.domicile.tameNode(s, true);
     },
     getIdSuffix: function() {
       return frame.idSuffix;
@@ -413,7 +414,7 @@ function createExtraImportsForTesting(frameGroup, frame) {
     jsunit.pass(id);
     var node = frame.imports.document.getElementById(id);
     if (!node) return;
-    node = node.node___;
+    node = frame.domicile.feralNode(node);
     node.appendChild(document.createTextNode('Passed ' + id));
     var cl = node.className || '';
     cl = cl.replace(/\b(clickme|waiting)\b\s*/g, '');

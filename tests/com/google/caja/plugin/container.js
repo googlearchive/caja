@@ -71,4 +71,5 @@ if (typeof _junit_ !== 'undefined') {
         };
       })(___.getNewModuleHandler().handleUncaughtException);
 }
-imports.htmlEmitter___ = new HtmlEmitter(document.getElementById("test-test"));
+imports.htmlEmitter___ = new HtmlEmitter(
+    function (n) {return n;}, document.getElementById("test-test"));

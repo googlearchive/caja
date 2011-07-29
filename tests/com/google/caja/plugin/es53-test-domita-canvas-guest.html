@@ -479,6 +479,7 @@
         typeof(constructed.width));
     assertEquals("createImageData width", "number",
         typeof(constructed.height));
+    assertNotUndefined("createImageData data", constructed.data);
     constructed.data[2] = 222; // an arbitrary blue
     constructed.data[3] = 255;
 

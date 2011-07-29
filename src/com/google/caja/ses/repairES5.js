@@ -391,6 +391,15 @@ var RegExp;
    *
    * <p>This kludge seems to be safety preserving, but the issues are
    * delicate and not well understood.
+   *
+   * <p>As support for Domado, it is possible to override this
+   * restriction by adding the flag 
+   * "ses_ignoreBug_propertyWillAppearAsOwn" to the property
+   * descriptor. We assume that applying JSON.stringify to DOM nodes
+   * is not interesting. TODO(kpreid): But does the general 
+   * possibility of creating objects which if inherited from create
+   * apparent own properties on their children break any security
+   * properties?
    */
   function test_ACCESSORS_INHERIT_AS_OWN() {
     var base = {};
@@ -767,7 +776,8 @@ var RegExp;
     var proto = constr.prototype;
     var baseToString = objToString.call(proto);
     if (baseToString !== '[object ' + classString + ']') {
-      throw new TypeError('unexpected: ' + baseToString);
+      throw new TypeError('unexpected: ' + baseToString + ' -- instead of '
+          + '[object ' + classString + ']');
     }
     if (getPrototypeOf(proto) !== Object.prototype) {
       throw new TypeError('unexpected inheritance: ' + classString);
@@ -926,7 +936,8 @@ var RegExp;
 
           if ('get' in fullDesc &&
               fullDesc.enumerable &&
-              !fullDesc.configurable) {
+              !fullDesc.configurable &&
+              !desc.ses_ignoreBug_propertyWillAppearAsOwn) {
             logger.warn(complaint);
             throw new TypeError(complaint);
           }

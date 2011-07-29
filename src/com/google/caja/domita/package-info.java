@@ -109,7 +109,7 @@ myLink.innerHTML = 'My Image';
   <li><code>document</code> is resolved against the gadget's outers object.
     In the case of module A, this returns a direct reference to
     <code>&lt;div id="module-a-root" ...&gt;</code>.
-    This binding was initialized by <code>attachDocumentStub</code> when
+    This binding was initialized by <code>attachDocument</code> when
     the container was setting up the various gadgets' virtual documents.
   <li><code>cajita.callPub</code> is invoked with the virtual document root
     and the string <code>'getElementById'</code> as arguments.

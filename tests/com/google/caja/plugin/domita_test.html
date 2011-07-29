@@ -490,7 +490,7 @@
         new testImports.TameHTMLDocument___(document, testDomContainer, false));
 
       testImports.htmlEmitter___ = new HtmlEmitter(
-          testDomContainer, testImports.document);
+          function (n) {return n;}, testDomContainer, testImports.document);
       testImports.$v = valijaModule.CALL___({
         outers: testImports.outers
       });

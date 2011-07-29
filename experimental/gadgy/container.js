@@ -41,7 +41,7 @@ var attachWindow = function(title, imports) {
 
   // We attach an HTMLEmitter so that HTML embedded in the
   // untrusted code is also emitted into the sandbox DIV
-  imports.htmlEmitter___ = new HtmlEmitter(gadgetContainer.element);
+  imports.htmlEmitter___ = new HtmlEmitter(function (n) {return n;}, gadgetContainer.element);
 
   return {
     dispose: ___.markFuncFreeze(function() {

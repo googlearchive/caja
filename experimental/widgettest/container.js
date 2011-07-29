@@ -84,6 +84,7 @@ function loadGadget(src) {
         // We attach an HTMLEmitter so that HTML embedded in the
         // untrusted code is also emitted into the sandbox DIV
         imports.htmlEmitter___ = new HtmlEmitter(
+            function (n) {return n;},
             document.getElementById(gadgetContainerId));
 
         // This must be the last step: create a Valija context within

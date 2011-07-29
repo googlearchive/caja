@@ -32,14 +32,8 @@
   <body>
   <script src="json_sans_eval.js"></script>
   <script src="es53.js"></script>
-  <script src="unicode.js"></script>
-  <script src="css-defs.js"></script>
-  <script src="html4-defs.js"></script>
-  <script src="html-sanitizer.js"></script>
-  <script src="html-emitter.js"></script>
-  <script src="bridal.js"></script>
-  <script src="cssparser.js"></script>
-  <script src="domita.js"></script>
+  <script src="capture-domado.js"></script>
+  <script src="domado.out.js"></script>
   <script>
   var swfobject = parent.swfobject;
 
@@ -50,21 +44,175 @@
       return true;
     });
     ___.setLogFunc(imports.onerror);
+    
+    
+    // TODO(kpreid): Use caja.js urlCajoled instead of es53.html. But that's
+    // not yet implemented.
+    
+    //------ paste from caja.js w/ tweaks --------------
+    var uriPolicyForTaming = ___.whitelistAll({
+      rewrite: ___.markFuncFreeze(function () {
+        return uriPolicy.rewrite.apply(uriPolicy, arguments);
+      })
+    });
 
-    attachDocumentStub("-" + div.id, uriPolicy, imports, div);
 
-    imports.htmlEmitter___ = new HtmlEmitter(div, imports.document);
+    var tamingWindow = window;
+    
+    /** 
+     * Permit this function to be called by cajoled code without modifying
+     * the arguments. This should only be used for stuff which ignores the
+     * taming membrane deliberately.
+     */
+    function markCallableWithoutMembrane(func) {
+      if (func !== undefined && !func.i___) {
+        func.i___ = function () {
+          // hide that this is being invoked as a method
+          return Function.prototype.apply.call(func, undefined, arguments);
+        };
+        func.new___ = function () {
+          if (arguments.length !== 0) {
+            throw new TypeError("construction with args not implemented");
+          } else {
+            return new func();
+          }
+        };
+        func.call_m___ = func;
+        func.apply_m___ = func;
+        tamingWindow.___.tamesTo(func, func);
+      }
+      return func;
+    }
+    markCallableWithoutMembrane(markCallableWithoutMembrane);
+    
+    /**
+     * This function adds magic ES5/3-runtime properties on an object from
+     * the host DOM such that it can be accessed as if it were a guest object.
+     * It effectively whitelists everything.
+     *
+     * This completely breaks the invariants of the ES5/3 taming membrane and
+     * the resulting object should under no circumstance be given to untrusted
+     * code.
+     * 
+     * It returns its argument, both for convenience and because bridal.js is
+     * written to be adaptable to an environment where this action requires
+     * wrappers. (Domado is not.)
+     */
+    function makeDOMAccessible(o) {
+      //console.debug('makeDOMAccessible:', o);
+      
+      // This accepts functions because some objects are incidentally
+      // functions. makeDOMAccessible does not make functions callable.        
+      //
+      // Testing for own properties, not 'in', because some quirk of Firefox
+      // makes  event objects appear as if they have the taming frame's
+      // prototype after being passed into taming frame code (!), so we want
+      // to be able to override Object.prototype.v___ etc. Except for that, it
+      // would be safer to not allow applying this to apparently defined-
+      // in-taming-frame objects.
+      if ((typeof o === 'object' || typeof o === 'function')
+              && o !== null
+              && !Object.prototype.hasOwnProperty.call(o, 'v___')) {
+        o.v___ = function (p) {
+          return this[p];
+        };
+        o.w___ = function (p, v) {
+          this[p] = v;
+        };
+        o.m___ = function (p, as) {
+          // From es53 tameObjectWithMethods without the membrane features.
+          p = '' + p;
+          if (('' + (+p)) !== p && !(/__$/).test(p)) {
+            var method = o[p];
+            if (typeof method === 'function') {
+              return method.apply(o, as);
+            }
+          }
+          throw new TypeError('Not a function: ' + p);
+        };
+        
+        o.HasProperty___ = function (p) { return p in this; };
+      }
+      return o;
+    }
+    markCallableWithoutMembrane(makeDOMAccessible);
+
+    /**
+     * Allow a guest constructed object (such as Domado's DOM wrappers) to be
+     * passed through the taming membrane (largely uselessly) by giving it a
+     * stub feral twin.
+     */
+    function permitUntaming(o) {
+      if (typeof o === 'object' || typeof o === 'function') {
+        tamingWindow.___.tamesTo(new FeralTwinStub(), o);
+      } // else let primitives go normally
+    }
+    markCallableWithoutMembrane(permitUntaming);
+    function FeralTwinStub() {}
+    FeralTwinStub.prototype.toString = function () {
+      return "[feral twin stub:" + tamingWindow.___.tame(this) + "]";
+    };
+    
+    function insiderTame(f) {
+      return tamingWindow.___.tame(f);
+    }
+    markCallableWithoutMembrane(insiderTame);
+
+    function insiderUntame(f) {
+      return tamingWindow.___.untame(f);
+    }
+    markCallableWithoutMembrane(insiderUntame);
+    
+    function insiderTamesTo(f, t) {
+      return tamingWindow.___.tamesTo(f, t);
+    }
+    markCallableWithoutMembrane(insiderTamesTo);
+    
+    function hasTameTwin(f) {
+      return "TAMED_TWIN___" in f;
+    }
+    markCallableWithoutMembrane(hasTameTwin);
+    
+    var domado = tamingWindow.Domado(tamingWindow.___.whitelistAll({
+      makeDOMAccessible: makeDOMAccessible,
+      makeFunctionAccessible: markCallableWithoutMembrane,
+      permitUntaming: permitUntaming,
+      tame: insiderTame,
+      untame: insiderUntame,
+      tamesTo: insiderTamesTo,
+      hasTameTwin: hasTameTwin
+    }));
+    tamingWindow.plugin_dispatchToHandler___ = domado.dispatchToHandler;
+    //------ paste from caja.js --------------
+
+    var domicile = domado.attachDocument("-" + div.id, uriPolicyForTaming, div);
+    var imports = domicile.window;
+
+    // Add JavaScript globals to the DOM window object.
+    tamingWindow.___.copyToImports(
+        imports, ___.sharedImports);
+    
+    imports.onerror = ___.markFuncFreeze(
+        function (message, source, lineNum) {
+          console.log('Uncaught script error: ' + message +
+              ' in source: "' + source +
+              '" at line: ' + lineNum);
+        });
+    
+    // These ___ variables are interfaces used by cajoled code.
+    imports.htmlEmitter___ = new tamingWindow.HtmlEmitter(
+        makeDOMAccessible, domicile);
+    imports.rewriteUriInCss___ = domicile.rewriteUriInCss.bind(domicile);
+    imports.rewriteUriInAttribute___ =
+        domicile.rewriteUriInAttribute.bind(domicile);
+    imports.getIdClass___ = domicile.getIdClass.bind(domicile);
+    imports.emitCss___ = domicile.emitCss.bind(domicile);
+
     imports.getCssContainer___ = function () { return div; };
 
     // Use these imports
-    for (i in imports) {
-      imports.window[i] = imports[i];
-    }
-    imports = imports.window;
-    imports.outers = imports;
-    imports.domitaTrace___ = 1;
+    domicile.domitaTrace = 1;
 
-    imports.handleSet___ = void 0;
     var tamings___ = [];
     eval(policyJS);
     if ('function' === typeof grantAdditionalPowers) {

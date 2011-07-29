@@ -376,7 +376,7 @@
       <input file="${src.caja}/plugin/html-sanitizer.js"/>
       <input file="${src.caja}/plugin/bridal.js"/>
       <input file="${src.caja}/plugin/cssparser.js"/>
-      <input file="${src.caja}/plugin/domita.js"/>
+      <input file="${src.caja}/plugin/domado.js"/>
       <depend file="${src.caja}/ancillary/jsdoc/jsdoc.js"/>
       <depend file="${src.caja}/ancillary/jsdoc/jsdoc_html_formatter.js"/>
       <depend file="${src.caja}/ancillary/jsdoc/jsdoc_renderer.js"/>
@@ -651,7 +651,7 @@
     </sequential>
   </macrodef>
 
-  <target name="jquery" depends="pluginc,dirs">
+  <target name="jquery" depends="pluginc,dirs,CajoledDomado">
     <!-- The root files of the Domita test cases are statically cajoled -->
     <JQueryTestCase testcase="core" />
     <JQueryTestCase testcase="data" />
@@ -675,7 +675,7 @@
    description="Puts all the demo files together for easy browsing."/>
 
   <!-- Cajoles test resources that contain es53 to javascript. -->
-  <target name="CajoledTests" depends="pluginc,dirs">
+  <target name="CajoledTests" depends="pluginc,dirs,CajoledDomado">
     <property name="libplugin" location="${lib.caja}/plugin"/>
 
     <!-- The root files of the Domita test cases are statically cajoled -->
@@ -706,7 +706,22 @@
     </copy>
   </target>
 
-  <target name="MinifiedJs" depends="pluginc">
+  <target name="CajoledDomado" depends="pluginc">
+    <transform>
+      <output file="${lib.caja}/plugin/domado.out.js"
+       language="caja"/>
+      <input file="${src.caja}/plugin/unicode.js"/>
+      <input file="${lib.caja}/plugin/css-defs.js"/>
+      <input file="${lib.caja}/plugin/html4-defs.js"/>
+      <input file="${src.caja}/plugin/html-sanitizer.js"/>
+      <input file="${src.caja}/plugin/html-emitter.js"/>
+      <input file="${src.caja}/plugin/cssparser.js"/>
+      <input file="${src.caja}/plugin/bridal.js"/>
+      <input file="${src.caja}/plugin/domado.js"/>
+    </transform>
+  </target>
+
+  <target name="MinifiedJs" depends="pluginc,CajoledDomado">
     <transform>
       <output file="${lib.caja}/plugin/html-sanitizer-minified.js"
        language="javascript" renderer="minify"/>
@@ -721,15 +736,9 @@
       <output file="${lib.caja}/plugin/es53-taming-frame.js"
        language="javascript" renderer="concat"/>
       <input file="${third_party}/js/json_sans_eval/json_sans_eval.js"/>
-      <input file="${src.caja}/es53.js"/>
-      <input file="${src.caja}/plugin/unicode.js"/>
-      <input file="${lib.caja}/plugin/css-defs.js"/>
-      <input file="${lib.caja}/plugin/html4-defs.js"/>
-      <input file="${src.caja}/plugin/html-sanitizer.js"/>
-      <input file="${src.caja}/plugin/html-emitter.js"/>
-      <input file="${src.caja}/plugin/bridal.js"/>
-      <input file="${src.caja}/plugin/cssparser.js"/>
-      <input file="${src.caja}/plugin/domita.js"/>
+      <input file="${src.caja}/es53.js"/>      
+      <input file="${src.caja}/plugin/capture-domado.js"/>
+      <input file="${lib.caja}/plugin/domado.out.js"/>
       <input file="${src.caja}/plugin/uri.js"/>
       <input file="${src.caja}/cajita-promise.js"/>
       <input file="${src.caja}/plugin/json-rest-transport.js"/>
@@ -840,6 +849,7 @@
       <compilerarg line="-Xlint:unchecked"/>
     </javac>
 
+    <!-- Lint the ES5/3 case -->
     <genrule class="com.google.caja.ancillary.linter.Linter"
      unless="${tools.ancillary.disable}">
       <input file="${lib.caja}/cajita-module-orig.js"/>
@@ -848,14 +858,27 @@
       <input file="${lib.caja}/plugin/caja.js"/>
       <input file="${lib.caja}/plugin/css-defs.js"/>
       <input file="${lib.caja}/plugin/cssparser.js"/>
-      <input file="${src.caja}/plugin/domita.js"/>
+      <input file="${src.caja}/plugin/domado.js"/>
       <input file="${src.caja}/plugin/caja-iframe-done.js"/>
       <input file="${src.caja}/plugin/html-emitter.js"/>
       <input file="${src.caja}/plugin/html-sanitizer.js"/>
       <input file="${lib.caja}/plugin/html4-defs.js"/>
       <input file="${src.caja}/plugin/unicode.js"/>
       <input file="${lib.caja}/plugin/uri.js"/>
-      <output file="${lib}/AllTests.Linter.tstamp"/>
+      <output file="${lib}/AllTests.Linter1.tstamp"/>
+    </genrule>
+
+    <!-- Lint the native-ES5 case -->
+    <genrule class="com.google.caja.ancillary.linter.Linter"
+     unless="${tools.ancillary.disable}">
+      <input file="${src.caja}/plugin/bridal.js"/>
+      <input file="${lib.caja}/plugin/css-defs.js"/>
+      <input file="${lib.caja}/plugin/cssparser.js"/>
+      <input file="${src.caja}/plugin/domado.js"/>
+      <input file="${lib.caja}/plugin/html4-defs.js"/>
+      <input file="${src.caja}/plugin/unicode.js"/>
+      <input file="${lib.caja}/plugin/uri.js"/>
+      <output file="${lib}/AllTests.Linter2.tstamp"/>
     </genrule>
 
     <copy todir="${lib}">
@@ -935,7 +958,7 @@
         <include name="**/caja/plugin/bridal.js"/>
         <include name="**/caja/plugin/caja-gadget.css"/>
         <include name="**/caja/plugin/cssparser.js"/>
-        <include name="**/caja/plugin/domita.js"/>
+        <include name="**/caja/plugin/domado.js"/>
         <include name="**/caja/plugin/caja.js"/>
         <include name="**/caja/plugin/host-tools.js"/>
         <include name="**/caja/plugin/html-emitter.js"/>
@@ -1009,8 +1032,9 @@
       </fileset>
       <fileset dir="${src.caja}/plugin">
         <include name="bridal.js" />
+        <include name="capture-domado.js" />
         <include name="cssparser.js"/>
-        <include name="domita.js" />
+        <include name="domado.js" />
         <include name="html-emitter.js" />
         <include name="html-sanitizer.js" />
         <include name="unicode.js" />
@@ -1019,6 +1043,7 @@
       <fileset dir="${lib.caja}/plugin">
         <include name="css-defs.js" />
         <include name="html4-defs.js" />
+        <include name="domado.out.js" />
       </fileset>
       <fileset dir="${third_party}/js/excanvas">
         <include name="excanvas.js" />
@@ -1407,7 +1432,7 @@
     </copy>
   </target>
 
-  <target name="yuitest" depends="pluginc,dirs">
+  <target name="yuitest" depends="pluginc,dirs,CajoledDomado">
     <transform>
       <input file="yuitest/yahoo-dom.js"/>
       <output file="yuitest/yahoo-dom.out.js" language="caja"/>

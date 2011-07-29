@@ -24,22 +24,29 @@
  *
  * @author mikesamuel@gmail.com
  * @provides HtmlEmitter
- * @requires bridalMaker html html4 ___
+ * @requires bridalMaker html html4 cajaVM
  */
 
 /**
+ * @param {function} makeDOMAccessible A function which will be called on base
+ *     and every object retrieved from it, recursively. This hook is available
+ *     in case HtmlEmitter is running in an environment such that unmodified DOM
+ *     objects cannot be touched. makeDOMAccessible should be idempotent. Note
+ *     that the contract here is stronger than for bridalMaker, in that
+ *     this makeDOMAccessible may not return a different object.
  * @param base a node that is the ancestor of all statically generated HTML.
- * @param opt_tameDocument a tame document that will receive a load event
- *    when the html-emitter is closed, and which will have {@code write} and
- *    {@code writeln} members attached.
+ * @param opt_domicile the domado instance that will receive a load event when
+ *     the html-emitter is closed, and which will have the {@code writeHook}
+ *     property set to the HtmlEmitter's document.write implementation.
  */
-function HtmlEmitter(base, opt_tameDocument) {
+function HtmlEmitter(makeDOMAccessible, base, opt_domicile) {
   if (!base) {
     throw new Error(
         'Host page error: Virtual document element was not provided');
   }
+  makeDOMAccessible(base);
   var insertionPoint = base;
-  var bridal = bridalMaker(base.ownerDocument);
+  var bridal = bridalMaker(makeDOMAccessible, base.ownerDocument);
 
   /**
    * Contiguous pairs of ex-descendants of base, and their ex-parent.
@@ -55,8 +62,11 @@ function HtmlEmitter(base, opt_tameDocument) {
     idMap = {};
     var descs = base.getElementsByTagName('*');
     for (var i = 0, desc; (desc = descs[i]); ++i) {
+      makeDOMAccessible(desc);
       var id = desc.getAttributeNode('id');
-      if (id && id.value) { idMap[id.value] = desc; }
+      makeDOMAccessible(id);
+      // The key is decorated to avoid name conflicts and restrictions.
+      if (id && id.value) { idMap[id.value + " map entry"] = desc; }
     }
   }
   /**
@@ -67,13 +77,13 @@ function HtmlEmitter(base, opt_tameDocument) {
    */
   function byId(id) {
     if (!idMap) { buildIdMap(); }
-    var node = idMap[id];
+    var node = idMap[id + " map entry"];
     if (node) { return node; }
     for (; (node = base.ownerDocument.getElementById(id));) {
       if (base.contains
           ? base.contains(node)
           : (base.compareDocumentPosition(node) & 0x10)) {
-        idMap[id] = node;
+        idMap[id + " map entry"] = node;
         return node;
       } else {
         node.id = '';
@@ -175,6 +185,7 @@ function HtmlEmitter(base, opt_tameDocument) {
 
     // First, store all the children.
     for (var child = limit.firstChild, next; child; child = next) {
+      makeDOMAccessible(child);
       next = child.nextSibling;  // removeChild kills nextSibling.
       out.push(child, limit);
       limit.removeChild(child);
@@ -183,7 +194,9 @@ function HtmlEmitter(base, opt_tameDocument) {
     // Second, store your ancestor's next siblings and recurse.
     for (var anc = limit, greatAnc; anc && anc !== base; anc = greatAnc) {
       greatAnc = anc.parentNode;
+      makeDOMAccessible(greatAnc);
       for (var sibling = anc.nextSibling, next; sibling; sibling = next) {
+        makeDOMAccessible(sibling);
         next = sibling.nextSibling;
         out.push(sibling, greatAnc);
         greatAnc.removeChild(sibling);
@@ -278,8 +291,8 @@ function HtmlEmitter(base, opt_tameDocument) {
   function signalLoaded() {
     // Signals the close of the document and fires any window.onload event
     // handlers.
-    var doc = opt_tameDocument;
-    if (doc) { doc.signalLoaded___(); }
+    var domicile = opt_domicile;
+    if (domicile) { domicile.signalLoaded(); }
     return this;
   }
 
@@ -292,8 +305,8 @@ function HtmlEmitter(base, opt_tameDocument) {
   this.setAttr = bridal.setAttribute;
   this.addBodyClasses = addBodyClasses;
 
-  (function (tameDoc) {
-    if (!tameDoc || tameDoc.write) { return; }
+  (function (domicile) {
+    if (!domicile || domicile.writeHook) { return; }
 
     function concat(items) {
       return Array.prototype.join.call(items, '');
@@ -319,7 +332,7 @@ function HtmlEmitter(base, opt_tameDocument) {
             || (eltype & html4.eflags.UNSAFE) !== 0) {
           return;
         }
-        tameDoc.sanitizeAttrs___(tagName, attribs);
+        domicile.sanitizeAttrs(tagName, attribs);
         var el = bridal.createElement(tagName, attribs);
         if ((eltype & html4.eflags.OPTIONAL_ENDTAG)
             && el.tagName === insertionPoint.tagName) {
@@ -354,7 +367,7 @@ function HtmlEmitter(base, opt_tameDocument) {
     // Document.write and document.writeln behave as described at
     // http://www.w3.org/TR/2009/WD-html5-20090825/embedded-content-0.html#dom-document-write
     // but with a few differences:
-    // (1) all HTML written is sanitized per the opt_tameDocument's HTML
+    // (1) all HTML written is sanitized per the opt_domicile's HTML
     //     sanitizer
     // (2) HTML written cannot change where subsequent static HTML is emitted.
     // (3) if the document has been closed (insertion point is undefined) then
@@ -364,6 +377,7 @@ function HtmlEmitter(base, opt_tameDocument) {
     //     virtual document as un-unloadable by document.write.
     // (4) document.write cannot be used to inject scripts, so the
     //     "if there is a pending external script" does not apply.
+    //     TODO(kpreid): This is going to change in the SES/client-side case.
     /**
      * A tame version of document.write.
      * @param html_varargs according to HTML5, the input to document.write is
@@ -378,11 +392,6 @@ function HtmlEmitter(base, opt_tameDocument) {
       var lexer = html.makeSaxParser(documentWriter);
       lexer(htmlText);
     };
-    tameDoc.write = ___.markFuncFreeze(tameDocWrite, 'write');
-    tameDoc.writeln = ___.markFuncFreeze(function writeln(html) {
-      tameDocWrite(concat(arguments), '\n');
-    }, 'writeln');
-    ___.grantFunc(tameDoc, 'write');
-    ___.grantFunc(tameDoc, 'writeln');
-  })(opt_tameDocument);
+    domicile.writeHook = cajaVM.def(tameDocWrite);
+  })(opt_domicile);
 }

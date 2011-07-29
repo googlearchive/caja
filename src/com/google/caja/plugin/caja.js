@@ -70,17 +70,6 @@ var caja = (function () {
     fd.body.appendChild(fscript);
   }
 
-  function copyToImports(imports, source) {
-    for (var p in source) {
-      if (source.hasOwnProperty(p)) {
-        // No need to use DefineOwnProperty___ since this is native code and
-        // the module function created in es53.js "prepareModule" does the
-        // necessary conversion.
-        imports[p] = source[p];
-      }
-    }
-  }
-
   /**
    * Enforces {@code typeof specimen === typename}, in which case
    * specimen is returned.
@@ -324,6 +313,147 @@ var caja = (function () {
       function grantReadWrite(o, name) {
         tamingWindow.___.grantTameAsReadWrite(o, name);
       }
+      
+
+      /** 
+       * Permit this function to be called by cajoled code without modifying
+       * the arguments. This should only be used for stuff which ignores the
+       * taming membrane deliberately.
+       */
+      function markCallableWithoutMembrane(func) {
+        if (func !== undefined && !func.i___) {
+          func.i___ = function () {
+            // hide that this is being invoked as a method
+            return Function.prototype.apply.call(func, undefined, arguments);
+          };
+          func.new___ = function () {
+            if (arguments.length !== 0) {
+              throw new TypeError("construction with args not implemented");
+            } else {
+              return new func();
+            }
+          };
+          func.call_m___ = func;
+          func.apply_m___ = func;
+          tamingWindow.___.tamesTo(func, func);
+        }
+        return func;
+      }
+      markCallableWithoutMembrane(markCallableWithoutMembrane);
+      
+      /**
+       * This function adds magic ES5/3-runtime properties on an object from
+       * the host DOM such that it can be accessed as if it were a guest object.
+       * It effectively whitelists everything.
+       *
+       * This completely breaks the invariants of the ES5/3 taming membrane and
+       * the resulting object should under no circumstance be given to untrusted
+       * code.
+       * 
+       * It returns its argument, both for convenience and because bridal.js is
+       * written to be adaptable to an environment where this action requires
+       * wrappers. (Domado is not.)
+       */
+      function makeDOMAccessible(o) {
+        //console.debug('makeDOMAccessible:', o);
+        
+        // This accepts functions because some objects are incidentally
+        // functions. makeDOMAccessible does not make functions callable.        
+        //
+        // Testing for own properties, not 'in', because some quirk of Firefox
+        // makes  event objects appear as if they have the taming frame's
+        // prototype after being passed into taming frame code (!), so we want
+        // to be able to override Object.prototype.v___ etc. Except for that, it
+        // would be safer to not allow applying this to apparently defined-
+        // in-taming-frame objects.
+        if ((typeof o === 'object' || typeof o === 'function')
+                && o !== null
+                && !Object.prototype.hasOwnProperty.call(o, 'v___')) {
+          o.v___ = function (p) {
+            return this[p];
+          };
+          o.w___ = function (p, v) {
+            this[p] = v;
+          };
+          o.m___ = function (p, as) {
+            // From es53 tameObjectWithMethods without the membrane features.
+            p = '' + p;
+            if (('' + (+p)) !== p && !(/__$/).test(p)) {
+              var method = o[p];
+              if (typeof method === 'function') {
+                return method.apply(o, as);
+              }
+            }
+            throw new TypeError('Not a function: ' + p);
+          };
+          
+          o.HasProperty___ = function (p) { return p in this; };
+        }
+        return o;
+      }
+      markCallableWithoutMembrane(makeDOMAccessible);
+
+      /**
+       * Allow a guest constructed object (such as Domado's DOM wrappers) to be
+       * passed through the taming membrane (largely uselessly) by giving it a
+       * stub feral twin.
+       */
+      function permitUntaming(o) {
+        if (typeof o === 'object' || typeof o === 'function') {
+          tamingWindow.___.tamesTo(new FeralTwinStub(), o);
+        } // else let primitives go normally
+      }
+      markCallableWithoutMembrane(permitUntaming);
+      function FeralTwinStub() {}
+      FeralTwinStub.prototype.toString = function () {
+        return "[feral twin stub:" + tamingWindow.___.tame(this) + "]";
+      };
+      
+      function insiderTame(f) {
+        return tame(f);
+      }
+      markCallableWithoutMembrane(insiderTame);
+
+      function insiderUntame(f) {
+        return tamingWindow.___.untame(f);
+      }
+      markCallableWithoutMembrane(insiderUntame);
+      
+      function insiderTamesTo(f, t) {
+        return tamingWindow.___.tamesTo(f, t);
+      }
+      markCallableWithoutMembrane(insiderTamesTo);
+      
+      function hasTameTwin(f) {
+        return "TAMED_TWIN___" in f;
+      }
+      markCallableWithoutMembrane(hasTameTwin);
+      
+      // On Firefox 4.0.1, at least, canvas pixel arrays cannot have added
+      // properties (such as our w___). Therefore to be able to write them we
+      // need uncajoled code to do it. An alternative approach would be to muck
+      // with the "Uint8ClampedArray" prototype.
+      function writeToPixelArray(source, target, length) {
+        for (var i = length-1; i >= 0; i--) {
+          target[+i] = source[+i];
+        }
+      }
+      markCallableWithoutMembrane(writeToPixelArray);
+      
+      var domado = tamingWindow.Domado(tame(markReadOnlyRecord({
+        makeDOMAccessible: makeDOMAccessible,
+        makeFunctionAccessible: markCallableWithoutMembrane,
+        permitUntaming: permitUntaming,
+        tame: insiderTame,
+        untame: insiderUntame,
+        tamesTo: insiderTamesTo,
+        hasTameTwin: hasTameTwin,
+        writeToPixelArray: writeToPixelArray,
+        getId: markCallableWithoutMembrane(getId),
+        getImports: markCallableWithoutMembrane(getImports)
+      })));
+      tamingWindow.plugin_dispatchToHandler___ =
+          domado.plugin_dispatchToHandler;
 
       /**
        * Make a new ES5 frame.
@@ -344,7 +474,18 @@ var caja = (function () {
         if (div && (document !== div.ownerDocument)) {
           throw '<div> provided for ES5 frame must be in main document';
         }
-
+        
+        // Needs to be accessible by Domado. But markFunction must be done at
+        // most once, so markFunction(uriPolicy.rewrite) would only work once,
+        // and having side effects on our arguments is best avoided. Another
+        // option would be to require the caller to tame the uriPolicy.
+        // TODO(kpreid): Revisit this implementation choice.
+        var uriPolicyForTaming = markReadOnlyRecord({
+          rewrite: markFunction(function () {
+            return uriPolicy.rewrite.apply(uriPolicy, arguments);
+          })
+        });
+        
         var idSuffix = 'CajaGadget-' + guestDocumentIdIndex++ + '___';
 
         var outerContainer;
@@ -371,23 +512,40 @@ var caja = (function () {
 
         loadCajaFrame('es53-guest-frame', function (guestFrame) {
           var guestWindow = guestFrame.contentWindow;
-          var imports = {};
 
           var loader = guestWindow.loadModuleMaker(
               documentBaseUrl(),
               cajolingServiceClient);
 
+          var imports, domicile;
           if (div) {
             // The Domita implementation is obtained from the taming window,
             // since we wish to protect Domita and its dependencies from the
             // ability of guest code to modify the shared primordials.
-            tamingWindow.attachDocumentStub(
+            
+            // TODO(kpreid): This is probably wrong: we're replacing the feral
+            // record imports with the tame constructed object 'window'.
+            
+            domicile = domado.attachDocument(
                 '-' + idSuffix,
-                uriPolicy,
-                imports,
+                tame(uriPolicyForTaming),
                 innerContainer);
-            imports.htmlEmitter___ =
-                new tamingWindow.HtmlEmitter(innerContainer, imports.document);
+            imports = domicile.window;
+            
+            // Add JavaScript globals to the DOM window object.
+            tamingWindow.___.copyToImports(
+                imports, guestWindow.___.sharedImports);
+            
+            // These ___ variables are interfaces used by cajoled code.
+            imports.htmlEmitter___ = new tamingWindow.HtmlEmitter(
+                makeDOMAccessible, innerContainer, domicile);
+            imports.rewriteUriInCss___ =
+                domicile.rewriteUriInCss.bind(domicile);
+            imports.rewriteUriInAttribute___ =
+                domicile.rewriteUriInAttribute.bind(domicile);
+            imports.getIdClass___ = domicile.getIdClass.bind(domicile);
+            imports.emitCss___ = domicile.emitCss.bind(domicile);
+            
             var divWindow = div.ownerDocument.defaultView ||
                 div.ownerDocument.parentWindow;
             divWindow.___.getId =
@@ -405,12 +563,24 @@ var caja = (function () {
             }
             divWindow.___.tamingFrames[imports.id___] = tamingWindow;
             guestWindow.plugin_dispatchEvent___ =
-                tamingWindow.plugin_dispatchEvent___;
+                domado.plugin_dispatchEvent;
             divWindow.plugin_dispatchToHandler___ = 
                 function (pluginId, handler, args) {
                   return divWindow.___.tamingFrames[pluginId].
                       plugin_dispatchToHandler___(pluginId, handler, args);
                 };
+          } else {
+            imports = guestWindow.___.copy(guestWindow.___.sharedImports);
+            domicile = null;
+          }
+          
+          /**
+           * Instantiate a prepared module using our imports object. This is
+           * not just module(imports) because that merely adds variables
+           * to the environment rather than replacing the global object.
+           */
+          function instModule(module) {
+            return module.instantiate___(guestWindow.___, imports);
           }
 
           function runMaker(func) {
@@ -435,7 +605,7 @@ var caja = (function () {
                                 '" at line: ' + lineNum);
                           }));
                     }
-                    copyToImports(imports, extraImports);
+                    tamingWindow.___.copyToImports(imports, extraImports);
                     func(imports, opt_callback);
                   }
               };
@@ -454,7 +624,7 @@ var caja = (function () {
                 }
                 var preparedModule = guestWindow.prepareModuleFromText___(
                    cajoledJs);
-                var result = preparedModule(imports);
+                var result = instModule(preparedModule);
                 // If a callback is provided, we call it 
                 // with the completion value.
                 if (opt_callback) {
@@ -491,7 +661,7 @@ var caja = (function () {
                       guestWindow.Q.when(
                           loader.loadCajoledJson___(url, moduleJson),
                           function(moduleFunc) {
-                            var result = moduleFunc(imports);
+                            var result = instModule(moduleFunc);
                             if (opt_callback) {
                               opt_callback(result);
                             }
@@ -511,7 +681,7 @@ var caja = (function () {
                 guestWindow.Q.when(
                     loader.async(theUrl, contentType),
                     function (moduleFunc) {
-                      var result = moduleFunc(imports);
+                      var result = instModule(moduleFunc);
                       if (opt_callback) {
                         opt_callback(result);
                       }
@@ -533,13 +703,15 @@ var caja = (function () {
               idSuffix: idSuffix,
               iframe: guestFrame,
               imports: imports,
+              domicile: domicile,  // Currently exposed only for the test suite
+                              // TODO(kpreid): Make it more obviously internal?
               loader: loader
             });
         });
       }
 
       // A frame group
-      callback({
+      var frameGroup = {
         tame: tame,
         markReadOnlyRecord: markReadOnlyRecord,
         markFunction: markFunction,
@@ -550,7 +722,9 @@ var caja = (function () {
         grantReadWrite: grantReadWrite,
         iframe: tamingFrame,
         makeES5Frame: makeES5Frame
-      });
+      };
+      
+      callback(frameGroup);
     });
   }
 
@@ -739,7 +913,8 @@ var caja = (function () {
             idSuffix: frame.idSuffix,
             iframe: frame.iframe,
             imports: frame.imports,
-            loader: frame.loader
+            loader: frame.loader,
+            domicile: frame.domicile // For test suite; see comments on frame
           });
         });
     });
