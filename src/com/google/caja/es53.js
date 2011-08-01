@@ -2864,8 +2864,6 @@ var ___, cajaVM, safeJSON, WeakMap;
       if (g) { return g.f___(this); }
       // Is it whitelisted as a value?
       if (hasValue(this, P)) { return this[P]; }
-      // Temporary support for Cajita's keeper interface
-      if (this.handleRead___) { return this.handleRead___(P); }
       return void 0;
     };
 
@@ -2904,9 +2902,6 @@ var ___, cajaVM, safeJSON, WeakMap;
         }
         throw new TypeError("The property '" + P + "' is not writable.");
       }
-
-      // Temporary support for Cajita's keeper interface
-      if (this.handleSet___) { this.handleSet___(P, V); return V; }
 
       // If P doesn't exist, is the object extensible?
       if (!this.hasOwnProperty(P) && isExtensible(this)) {
@@ -2948,15 +2943,6 @@ var ___, cajaVM, safeJSON, WeakMap;
   Object.prototype.c___ = function (P) {
       var O = this;
       P = '' + P;
-      // Temporary support for Cajita's keeper interface.
-      if (O.handleDelete___) {
-        var result = this.handleDelete___(P);
-        // ES5 strict can't return false.
-        if (!result) {
-          throw new TypeError('Cannot delete ' + P + ' on ' + O);
-        }
-        return true;
-      }
       // 1. Let desc be the result of calling the [[GetOwnProperty]]
       //    internal method of O with property name P.
       var desc = O.GetOwnProperty___(P);
@@ -5808,8 +5794,6 @@ var ___, cajaVM, safeJSON, WeakMap;
       }
       var m = this.v___(name);
       if (typeof m !== 'function') {
-        // Temporary support for Cajita's keeper interface
-        if (this.handleCall___) { return this.handleCall___(name, as); }
         throw new TypeError(
             "The property '" + name + "' is not a function.");
       }
