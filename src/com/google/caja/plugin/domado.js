@@ -32,14 +32,14 @@
  * <p>
  * TODO(ihab.awad): Our implementation of getAttribute (and friends)
  * is such that standard DOM attributes which we disallow for security
- * reasons (like 'form:enctype') are placed in the "virtual"
- * attributes map (expandoPropertyObjects.get(node)). They appear to be
- * settable and gettable, but their values are ignored and do not have
- * the expected semantics per the DOM API. This is because we do not
- * have a column in html4-defs.js stating that an attribute is valid
- * but explicitly blacklisted. Alternatives would be to always throw
- * upon access to these attributes; to make them always appear to be
- * null; etc. Revisit this decision if needed.
+ * reasons (like 'form:enctype') are placed in the "virtual" attributes
+ * map (node._d_attributes). They appear to be settable and gettable,
+ * but their values are ignored and do not have the expected semantics
+ * per the DOM API. This is because we do not have a column in
+ * html4-defs.js stating that an attribute is valid but explicitly
+ * blacklisted. Alternatives would be to always throw upon access to
+ * these attributes; to make them always appear to be null; etc. Revisit
+ * this decision if needed.
  *
  * @author mikesamuel@gmail.com (original Domita)
  * @author kpreid@switchb.org (port to ES5)
@@ -62,21 +62,24 @@ if (!domitaModules) { domitaModules = {}; }
 domitaModules.proxiesAvailable = typeof Proxy !== 'undefined';
 
 // The proxy facilities provided by Firefox and ES5/3 differ in whether the
-// proxy itself is the first or last parameter to the 'get' traps. This
-// autoswitches as needed, remapping to the (name[, value], proxy) order.
+// proxy itself (or rather 'receiver') is the first argument to the 'get' traps.
+// This autoswitches as needed, removing the first argument.
 domitaModules.permuteProxyGetSet = (function () {
   var needToSwap = false;
   
   if (domitaModules.proxiesAvailable) {
     var testHandler = {
       set: function (a, b, c) {
-        if (a === "foo" && c === proxy) {
-          // needToSwap already false
-        } else if (a === proxy && b === "foo") {
+        if (a === proxy && b === "foo" && c === 1) {
           needToSwap = true;
+        } else if (a === "foo" && b === 1 && c === proxy) {
+          // needToSwap already false
+        } else if (a === "foo" && b === 1 && c === undefined) {
+          throw new Error('Proxy implementation does not provide proxy '
+              + 'parameter: ' + Array.prototype.slice.call(arguments, 0));
         } else {
-          throw new Error("internal: Failed to understand proxy arguments: "
-              + arguments);
+          throw new Error('internal: Failed to understand proxy arguments: '
+              + Array.prototype.slice.call(arguments, 0));
         }
         return true;
       }
@@ -352,20 +355,27 @@ domitaModules.ExpandoProxyHandler = (function () {
    *
    * The client SHOULD call ExpandoProxyHandler.register(proxy, target) to
    * enable use of ExpandoProxyHandler.unwrap.
+   * TODO(kpreid): Wouldn't this mapping better be handled just by the client
+   * since this is not defensively consistent and we don't need it here?
+   * 
+   * Note the following exophoric hazard: if there are multiple expando
+   * proxies with the same {@code storage}, and an accessor property is set on
+   * one, and then that property is read on the other, the {@code this} seen
+   * by the accessor get/set functions will be the latter proxy rather than
+   * the former. Therefore, it should never be the case that two expando
+   * proxies have the same storage and provide different authority, unless every
+   * proxy which is editable provides a superset of the authority provided by
+   * all others (which is the case for the use with TameNodes in Domado).
    *
    * @param {Object} target The tame node to forward methods to.
    * @param {boolean} editable Whether modifying the properties is allowed.
-   * @param {Object} key The object to index the expando properties under.
+   * @param {Object} storage The object to store the expando properties on.
    */
-  function ExpandoProxyHandler(target, editable, key) {
+  function ExpandoProxyHandler(target, editable, storage) {
     this.editable = editable;
-    this.trademarks = undefined;
-    this.key = key;
-    
+    this.storage = storage;
     this.target = target;
-    expandoProxyTargets.set(this, target);
   }
-  var expandoPropertyObjects = new WeakMap();
   var expandoProxyTargets = new WeakMap();
   // Not doing this because it implements all the derived traps, requiring
   // us to do the same. Instead, we use its prototype selectively, whee.
@@ -383,31 +393,25 @@ domitaModules.ExpandoProxyHandler = (function () {
    * initialization.
    */
   ExpandoProxyHandler.unwrap = function (obj) {
-    //console.debug("unwrap doing something:", expandoProxyTargets.has(obj));
     return expandoProxyTargets.has(obj) ? expandoProxyTargets.get(obj) : obj;
   };
   
   ExpandoProxyHandler.prototype.getOwnPropertyDescriptor = function (name) {
-    //console.debug("ExpandoPropertyHandler getOwn ", name);
     if (name === "ident___") {
       // Caja WeakMap emulation internal property
       return Object.getOwnPropertyDescriptor(this, "ident");
-    } else if (expandoPropertyObjects.has(this.key)) {
-      return Object.getOwnPropertyDescriptor(
-          expandoPropertyObjects.get(this.key), name);
     } else {
-      return undefined;
+      return Object.getOwnPropertyDescriptor(this.storage, name);
     }
   };
   ExpandoProxyHandler.prototype.getPropertyDescriptor = function (name) {
     var desc = this.getOwnPropertyDescriptor(name)
         || getPropertyDescriptor(this.target, name);
-    //console.debug("ExpandoPropertyHandler getP ", name, desc, (desc.get || function () { return desc.value }).call(this.target));
     return desc;
   };
   ExpandoProxyHandler.prototype.getOwnPropertyNames = function () {
     return Object.getOwnPropertyNames(
-        expandoPropertyObjects.get(this.key) || {});
+        this.storage || {});
   };
   ExpandoProxyHandler.prototype.defineProperty = function (name, descriptor) {
     if (name === "ident___") {
@@ -417,11 +421,8 @@ domitaModules.ExpandoProxyHandler = (function () {
       // Forwards everything already defined (not expando).
       return ProxyHandler.prototype.defineProperty.call(this, name, descriptor);
     } else {
-      if (!expandoPropertyObjects.has(this.key)) {
-        expandoPropertyObjects.set(this.key, {});
-      }
       if (!this.editable) { throw new Error("Not editable"); }
-      Object.defineProperty(expandoPropertyObjects.get(this.key), name, descriptor);
+      Object.defineProperty(this.storage, name, descriptor);
       return true;
     }
     return false;
@@ -434,13 +435,13 @@ domitaModules.ExpandoProxyHandler = (function () {
       return ProxyHandler.prototype.delete.call(this, name);
     } else {
       if (!this.editable) { throw new Error("Not editable"); }
-      return delete expandoPropertyObjects.get(this.key, {})[name];
+      return delete this.storage[name];
     }
     return false;
   };
   ExpandoProxyHandler.prototype.fix = function () {
     // TODO(kpreid): Implement fixing, because it is possible to freeze a
-    // host DOM node and so ours should be too.
+    // host DOM node and so ours should support it too.
     return undefined;
   };
   
@@ -448,12 +449,11 @@ domitaModules.ExpandoProxyHandler = (function () {
   ExpandoProxyHandler.prototype.get = domitaModules.permuteProxyGetSet.getter(
       function (name) {
     // Written for an ES5/3 bug, but probably useful for efficiency too.
-    var o = expandoPropertyObjects.get(this.key);
     if (name === "ident___") {
       // Caja WeakMap emulation internal property
       return this.ident;
-    } else if (o && Object.prototype.hasOwnProperty.call(o, name)) {
-      return o[name];
+    } else if (Object.prototype.hasOwnProperty.call(this.storage, name)) {
+      return this.storage[name];
     } else {
       return this.target[name];
     }
@@ -463,7 +463,7 @@ domitaModules.ExpandoProxyHandler = (function () {
     // properties without it (FF 4.0.1, Firebug 1.7.1, 2011-06-02).
     var names = [];
     for (var k in this.target) names.push(k);
-    for (var k in expandoPropertyObjects.get(this.key, {})) names.push(k);
+    for (var k in this.storage) names.push(k);
     return names;
   };
   ExpandoProxyHandler.prototype.set = domitaModules.permuteProxyGetSet.setter(
@@ -471,7 +471,7 @@ domitaModules.ExpandoProxyHandler = (function () {
     // NOTE: this was defined to work around what might be a FF4 or FF4+initSES
     // bug or a bug in our get[Own]PropertyDescriptor that made the innerHTML
     // setter not be invoked.
-    // It is, in fact, an exact copy of the default derived trap code from 
+    // It is, in fact, an exact copy of the default derived trap code from
     // https://developer.mozilla.org/en/JavaScript/Reference/Global_Objects/Proxy
     // as of 2011-05-25.
     var desc = this.getOwnPropertyDescriptor(name);
@@ -1835,9 +1835,21 @@ function Domado(opt_rulebreaker) {
       })
     };
     
+    var nodeExpandos = new WeakMap(true);
+    /**
+     * Return the object which stores expando properties for a given
+     * host DOM node.
+     */
+    function getNodeExpandoStorage(node) {
+      var s = nodeExpandos.get(node);
+      if (s === undefined) {
+        nodeExpandos.set(node, s = {});
+      }
+      return s;
+    }
     
-    var editableTameNodeCache = new WeakMap();
-    var readOnlyTameNodeCache = new WeakMap();
+    var editableTameNodeCache = new WeakMap(true);
+    var readOnlyTameNodeCache = new WeakMap(true);
     
     /**
      * returns a tame DOM node.
@@ -2358,7 +2370,7 @@ function Domado(opt_rulebreaker) {
 
       if (domitaModules.proxiesAvailable) {
         np(this).proxyHandler = new (opt_proxyType || ExpandoProxyHandler)(
-            this, editable, node);
+            this, editable, getNodeExpandoStorage(node));
       }
     }
     inertCtor(TameBackedNode, TameNode);
@@ -2522,7 +2534,7 @@ function Domado(opt_rulebreaker) {
 
       if (domitaModules.proxiesAvailable) {
         // finishNode will wrap 'this' with an actual proxy later.
-        np(this).proxyHandler = new ExpandoProxyHandler(this, editable, this);
+        np(this).proxyHandler = new ExpandoProxyHandler(this, editable, {});
       }
     }
     inertCtor(TamePseudoNode, TameNode);
@@ -3784,8 +3796,8 @@ function Domado(opt_rulebreaker) {
 
     traceStartup("DT: done with canvas");
 
-    function FormElementAndExpandoProxyHandler(target, editable, expandoKey) {
-      ExpandoProxyHandler.call(this, target, editable, expandoKey);
+    function FormElementAndExpandoProxyHandler(target, editable, storage) {
+      ExpandoProxyHandler.call(this, target, editable, storage);
     }
     inherit(FormElementAndExpandoProxyHandler, ExpandoProxyHandler);
     setOwn(FormElementAndExpandoProxyHandler.prototype, 
@@ -4263,7 +4275,7 @@ function Domado(opt_rulebreaker) {
       if (domitaModules.proxiesAvailable) {
         Object.preventExtensions(this);  // required by ES5/3 proxy emulation
         self = Proxy.create(
-            new ExpandoProxyHandler(this, true, this),
+            new ExpandoProxyHandler(this, true, {}),
             TameEvent.call(this, event));
         ExpandoProxyHandler.register(self, this);
         TameEventConf.confide(self, this);
