@@ -16,6 +16,7 @@
  * @fileoverview ... TODO ihab.awad
  * @author kpreid@switchb.org
  * @author ihab.awad@gmail.com
+ * @author jasvir@gmail.com
  * @requires document, setTimeout, console, window
  * @provides caja
  */

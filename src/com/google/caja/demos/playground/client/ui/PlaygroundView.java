@@ -299,6 +299,13 @@ public class PlaygroundView {
       }
     });
   }
+  
+  private native void initCaja() /*-{
+    $wnd.caja.initialize({
+      cajaServer: '.',
+      debug: true
+    });
+  }-*/;
 
   public PlaygroundView(Playground controller) {
     this.controller = controller;
@@ -314,6 +321,7 @@ public class PlaygroundView {
     initFeedbackPanel();
     initExamples();
     initEditor();
+    initCaja();
     initPlusOne();
   }
 
@@ -390,40 +398,38 @@ public class PlaygroundView {
   private native void setRenderedResultBridge(boolean es53,
       Element div, String policy, String html, String js) /*-{
     var that = this;
-    $wnd.caja.configure({
-      cajaServer: '.',
-      debug: true
-    }, function (frameGroup) {
-      var extraImports = {};
-      // add the feral marker to GWT's frame
-      $wnd.caja.initFeralFrame(window);  // note 'window' not '$wnd'
+    var extraImports = {};
+    // add the feral marker to GWT's frame
+    $wnd.caja.initFeralFrame(window);  // note 'window' not '$wnd'
+    try {
+      var tamings___ = eval(policy);
+    } catch (e) {
+      that.@com.google.caja.demos.playground.client.ui.PlaygroundView::addRuntimeMessage(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)
+          (e, "evaluating policy");
+    }
+    for (var i=0; i < tamings___.length; i++) {
       try {
-        var tamings___ = eval(policy);
+        tamings___[i].call(undefined, $wnd.caja, extraImports);
       } catch (e) {
         that.@com.google.caja.demos.playground.client.ui.PlaygroundView::addRuntimeMessage(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)
-            (e, "evaluating policy");
+            (e, "evaluating " + i + "th policy function");
       }
-      for (var i=0; i < tamings___.length; i++) {
-        try {
-          tamings___[i].call(undefined, frameGroup, extraImports);
-        } catch (e) {
-          that.@com.google.caja.demos.playground.client.ui.PlaygroundView::addRuntimeMessage(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)
-              (e, "evaluating " + i + "th policy function");
-        }
-      }
-      
-      extraImports.onerror = frameGroup.tame(frameGroup.markFunction(
-        function (message, source, lineNum) {
-          that.@com.google.caja.demos.playground.client.ui.PlaygroundView::addRuntimeMessage(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)
-              (message, source, lineNum);
-        }));
-      extraImports.alert = frameGroup.tame(frameGroup.markFunction(
-        function (message) {
-          that.@com.google.caja.demos.playground.client.ui.PlaygroundView::alert(Ljava/lang/String;)
-              ('' + message);
-        }));
-      
-      frameGroup.makeES5Frame(div, {
+    }
+    
+    extraImports.onerror = $wnd.caja.tame($wnd.caja.markFunction(
+      function (message, source, lineNum) {
+        that.@com.google.caja.demos.playground.client.ui.PlaygroundView::addRuntimeMessage(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)
+            (message, source, lineNum);
+      }));
+    extraImports.alert = $wnd.caja.tame($wnd.caja.markFunction(
+      function (message) {
+        that.@com.google.caja.demos.playground.client.ui.PlaygroundView::alert(Ljava/lang/String;)
+            ('' + message);
+      }));
+    
+    $wnd.caja.load(
+        div, 
+        {
           rewrite: function (uri, uriEffect, loaderType, hints) {
             if (!/^https?:/i.test(uri)) { return void 0; }
             if (uriEffect === $wnd.html4.ueffects.NEW_DOCUMENT ||
@@ -434,13 +440,13 @@ public class PlaygroundView {
             return null;
           }
         }, function (frame) {
-        frame.contentCajoled('http://fake.url/',
-           js, html).run(extraImports, function (result) {
-            that.@com.google.caja.demos.playground.client.ui.PlaygroundView::setRenderedResult(Ljava/lang/String;)
-                (result)
-           });
-      });
-    });
+          frame.cajoled('http://fake.url/', js, html)
+               .api(extraImports)
+               .run(function (result) {
+                   that.@com.google.caja.demos.playground.client.ui.PlaygroundView::setRenderedResult(Ljava/lang/String;)
+                       (result)
+                   });
+        });
   }-*/;
 
   public void addCompileMessage(String item) {
