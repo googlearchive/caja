@@ -46,6 +46,21 @@ import java.util.List;
 public abstract class BrowserTestCase extends CajaTestCase {
   protected Server server;
 
+  // This being static is a horrible kludge to be able to reuse the Firefox
+  // instance between individual tests. There is no narrower scope we can use,
+  // unless we were to move to JUnit 4 style tests, which have per-class setup.
+  static final MultiWindowWebDriver mwwd = Boolean.getBoolean("test.headless")
+      ? null : new MultiWindowWebDriver();
+  static {
+    if (mwwd != null) {
+      Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
+        public void run() {
+          mwwd.stop();
+        }
+      }));
+    }
+  }
+  
   /**
    * Start a local web server on the port specified by portNumber().
    */
@@ -142,14 +157,14 @@ public abstract class BrowserTestCase extends CajaTestCase {
       }
     }
     try {
-      WebDriver driver = new FirefoxDriver();
-
-      driver.get("http://localhost:8000/ant-lib/com/google/caja/plugin/"
+      WebDriver driver = mwwd.newWindow();
+      driver.get("http://localhost:" + portNumber()
+                 + "/ant-lib/com/google/caja/plugin/"
                  + pageName);
       driveBrowser(driver, pageName);
-      driver.quit();
-      // Note that if the tests fail, this will not be reached and the browser
-      // will not be quit. This is useful for debugging test failures.
+      driver.close();
+      // Note that if the tests fail, this will not be reached and the window
+      // will not be closed. This is useful for debugging test failures.
     } finally {
       stopLocalServer();
     }
@@ -270,5 +285,58 @@ public abstract class BrowserTestCase extends CajaTestCase {
 
   public interface Check {
     boolean run();
+  }
+  
+  /**
+   * A wrapper for WebDriver providing the ability to open new windows on
+   * demand.
+   *
+   * It lazily creates the actual WebDriver upon newWindow(). There is still
+   * only one actual WebDriver.
+   *
+   * @author kpreid@switchb.org (Kevin Reid)
+   */
+  private static class MultiWindowWebDriver {
+    private WebDriver driver;
+    private String firstWindowHandle;
+    private int nextName = 0;
+
+    /**
+     * Create a new window and return the WebDriver, which has been switched
+     * to it.
+     */
+    public WebDriver newWindow() {
+      if (driver == null) {
+        driver = new FirefoxDriver();
+        driver.get("about:blank");
+        firstWindowHandle = driver.getWindowHandle();
+      }
+      
+      driver.switchTo().window(firstWindowHandle);
+      String name = "btcwin" + (nextName++);
+      driver.get("javascript:window.open('','" + name + "');'This%20is%20the%20"
+          + "BrowserTestCase%20bootstrap%20window.'");
+      driver.switchTo().window(name);
+      return driver;
+    }
+    
+    /**
+     * Close the browser if and only if all opened windows have been closed;
+     * else clean up but leave those windows open.
+     */
+    public void stop() {
+      if (driver == null) {
+        return;
+      }
+      
+      if (driver.getWindowHandles().size() <= 1) {
+        // quit if no failures (extra windows)
+        driver.quit();
+      } else {
+        // but our window-opener window is not interesting
+        driver.switchTo().window(firstWindowHandle);
+        driver.close();
+      }
+    }
   }
 }
