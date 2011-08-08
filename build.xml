@@ -377,6 +377,7 @@
       <input file="${src.caja}/plugin/bridal.js"/>
       <input file="${src.caja}/plugin/cssparser.js"/>
       <input file="${src.caja}/plugin/domado.js"/>
+      <input file="${src.caja}/flash/caja-flash.js"/>
       <depend file="${src.caja}/ancillary/jsdoc/jsdoc.js"/>
       <depend file="${src.caja}/ancillary/jsdoc/jsdoc_html_formatter.js"/>
       <depend file="${src.caja}/ancillary/jsdoc/jsdoc_renderer.js"/>
@@ -745,6 +746,7 @@
       <input file="${src.caja}/plugin/cajoling-service-client.js"/>
       <input file="${src.caja}/plugin/taming-frame.js"/>
       <input file="${src.caja}/plugin/caja-iframe-done.js"/>
+      <input file="${src.caja}/flash/caja-flash.js"/>
     </transform>
     <transform>
       <output file="${lib.caja}/plugin/es53-guest-frame.opt.js"
@@ -865,6 +867,7 @@
       <input file="${lib.caja}/plugin/html4-defs.js"/>
       <input file="${src.caja}/plugin/unicode.js"/>
       <input file="${lib.caja}/plugin/uri.js"/>
+      <input file="${src.caja}/flash/caja-flash.js"/>
       <output file="${lib}/AllTests.Linter1.tstamp"/>
     </genrule>
 
@@ -878,6 +881,7 @@
       <input file="${lib.caja}/plugin/html4-defs.js"/>
       <input file="${src.caja}/plugin/unicode.js"/>
       <input file="${lib.caja}/plugin/uri.js"/>
+      <input file="${src.caja}/flash/caja-flash.js"/>
       <output file="${lib}/AllTests.Linter2.tstamp"/>
     </genrule>
 
@@ -954,6 +958,7 @@
         <include name="**/caja/cajita-promise.js"/>
         <include name="**/caja/es53.js"/>
         <include name="**/caja/console.js"/>
+        <include name="**/caja/flash/caja-flash.js"/>
         <include name="**/caja/log-to-console.js"/>
         <include name="**/caja/plugin/bridal.js"/>
         <include name="**/caja/plugin/caja-gadget.css"/>
@@ -1077,6 +1082,7 @@
         <include name="Boxed.swf" />
       </fileset>
       <fileset dir="${src.caja}/flash">
+        <include name="caja-flash.js" />
         <include name="flashbridge.swf" />
       </fileset>
       <fileset dir="${src.caja}/demos/playground">
@@ -1415,6 +1421,9 @@
     <copy todir="${www}/container">
       <fileset dir="${src.caja}">
         <include name="log-to-console.js"/>
+      </fileset>
+      <fileset dir="${src.caja}/flash">
+        <include name="caja-flash.js"/>
       </fileset>
       <fileset dir="${src.caja}/plugin">
         <include name="caja-gadget.css"/>

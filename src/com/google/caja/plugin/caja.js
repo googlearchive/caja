@@ -570,6 +570,11 @@ var caja = (function () {
                   return divWindow.___.tamingFrames[pluginId].
                       plugin_dispatchToHandler___(pluginId, handler, args);
                 };
+            // TODO(felix8a): should be conditional on builderState.flash
+            var twc = tamingWindow.cajaFlash;
+            if (twc && twc.init) {
+              twc.init(divWindow, imports, tamingWindow, domicile);
+            }
           } else {
             imports = guestWindow.___.copy(guestWindow.___.sharedImports);
             domicile = null;
@@ -836,7 +841,10 @@ var caja = (function () {
         // Cache
         cajoledUri: undefined,
         cajoledJs: undefined,
-        cajoledHtml: undefined
+        cajoledHtml: undefined,
+
+        // Flash defaults to enabled
+        flash: true
     };
     
     // User did not call initialize
@@ -852,6 +860,7 @@ var caja = (function () {
             if (!builderState.primaryMethod) {
               throw new Error('Use "code"|"cajoled" to specify content');
             }
+            // TODO(felix8a): use builderState.flash
             if ("content" === builderState.primaryMethod) {
               frame.content(builderState.uri, 
                   builderState.content, 
@@ -902,12 +911,18 @@ var caja = (function () {
             builderState.api = apis;
             return this;
           }
-      
+
+          function flash(flag) {
+            builderState.flash = !!flag;
+            return this;
+          }
+
           loadCallback({
             cajoled: cajoled,
             run: run,
             code: code,
             api: api,
+            flash: flash,
             div: frame.div, // TODO(jasvir): Needed?
             innerContainer: frame.innerContainer,
             outerContainer: frame.outerContainer,

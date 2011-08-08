@@ -1,0 +1,111 @@
+<?xml version="1.0"?>
+<!--
+    Copyright (C) 2011 Google Inc.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+-->
+<s:Application
+   xmlns:fx="http://ns.adobe.com/mxml/2009"
+   xmlns:mx="library://ns.adobe.com/flex/mx"
+   xmlns:s="library://ns.adobe.com/flex/spark"
+   addedToStage="on_addedToStage()">
+
+  <fx:Script>
+    private function cookie():String {
+      return String(int(Math.random() * 10000));
+    }
+
+    private function message(s:String):void {
+      output.text = s + '\n' + output.text;
+    }
+
+    private function error(what:String, e:Error):void {
+      message(what + ': ' + String(e));
+    }
+
+    private function test(name:String, fn:Function):void {
+      try {
+        var c:String = cookie();
+        fn(c);
+        message(name + ' ' + c);
+      } catch (e:Error) {
+        message(name + ' ' + c + ': ' + String(e));
+      }
+    }
+
+    private function do_fscommand(c:String):void {
+      import flash.system.fscommand;
+      fscommand('hello', c);
+    }
+
+    private function do_call(c:String):void {
+      import com.google.caja.flash.external.ExternalInterface;
+      com.google.caja.flash.external.ExternalInterface.call(
+          'message', 'call', c);
+    }
+
+    private function do_navtojs(c:String):void {
+      import com.google.caja.flash.net.navigateToURL;
+      import flash.net.URLRequest;
+      var url:String = 'javascript:message("navtojs ' + c + '")';
+      com.google.caja.flash.net.navigateToURL(new URLRequest(url), '_self');
+    }
+
+    private function do_navtohttp(c:String):void {
+      import com.google.caja.flash.net.navigateToURL;
+      import flash.net.URLRequest;
+      var url:String = 'http://www.google.com/search?q=' + c;
+      com.google.caja.flash.net.navigateToURL(new URLRequest(url));
+    }
+
+    private function do_navtohttptop(c:String):void {
+      import com.google.caja.flash.net.navigateToURL;
+      import flash.net.URLRequest;
+      var url:String = 'http://www.google.com/search?q=' + c;
+      com.google.caja.flash.net.navigateToURL(new URLRequest(url), '_top');
+    }
+
+    private function on_addedToStage():void {
+      import com.google.caja.flash.external.ExternalInterface;
+      import com.google.caja.flash.FlashBridgeClient;
+      try {
+        FlashBridgeClient.init(this);
+        com.google.caja.flash.external.ExternalInterface.addCallback(
+            'message', message);
+        message('Added callbacks');
+      } catch (e:Error) {
+        message('Failed to add callbacks:' + e);
+      }
+    }
+  </fx:Script>
+
+  <s:VGroup>
+    <s:Button label="fscommand"
+              click="test('fscommand', do_fscommand)"/>
+
+    <s:Button label="ExternalInterface.call"
+              click="test('call', do_call)"/>
+
+    <s:Button label="navigateToUrl(javascript:)"
+              click="test('navtojs', do_navtojs)"/>
+
+    <s:Button label="navigateToUrl(http:)"
+              click="test('navtohttp', do_navtohttp)"/>
+
+    <s:Button label="navigateToUrl(http:,_top)"
+              click="test('navtohttptop', do_navtohttptop)"/>
+
+    <s:TextArea id="output"/>
+  </s:VGroup>
+
+</s:Application>
