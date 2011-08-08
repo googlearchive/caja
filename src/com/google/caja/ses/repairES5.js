@@ -1292,10 +1292,10 @@ var RegExp;
       seemsSafe = false;
       note = 'This platform is not SES-safe. ';
     }
-    logger[level](i + ' ' + status + ': ' +
-                  kludge.description + '. ' + note +
-                  // TODO(erights): select most relevant URL based on platform
-                  (kludge.urls[0] ? 'See ' + kludge.urls[0] : ''));
+    //logger[level](i + ' ' + status + ': ' +
+    //              kludge.description + '. ' + note +
+    //              // TODO(erights): select most relevant URL based on platform
+    //              (kludge.urls[0] ? 'See ' + kludge.urls[0] : ''));
   });
 
   // TODO(erights): If we arrive here with the platform still in a

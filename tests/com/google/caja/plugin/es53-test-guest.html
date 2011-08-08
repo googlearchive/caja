@@ -7,10 +7,13 @@
 <p id="foo"></p>
 
 <script type="text/javascript">
+  // Strings are broken so that if this script appears as text it doesn't
+  // pass tests inappropriately.
+
   var p = document.createElement('p');
-  p.innerHTML = 'dynamic html';
+  p.innerHTML = 'dynamic' + ' html';
   document.body.appendChild(p);
 
   // Test id-suffix association of JS with HTML
-  document.getElementById('foo').innerHTML='edited html';
+  document.getElementById('foo').innerHTML='edited' + ' html';
 </script>

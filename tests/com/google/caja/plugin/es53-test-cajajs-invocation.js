@@ -49,6 +49,7 @@
    */
   function assertGuestHtmlCorrect(frame, div) {
     assertStringContains('static html', div.innerHTML);
+    assertStringContains('edited html', div.innerHTML);
     assertStringContains('dynamic html', div.innerHTML);
     assertEquals('small-caps',
         document.defaultView.getComputedStyle(
