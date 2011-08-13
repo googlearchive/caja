@@ -42,19 +42,16 @@ var registerForScript, loadScripts;
   }
   
   loadScripts = function (server) {
+    caja.initialize({
+      cajaServer: server,
+      debug: true
+    });
     for (var i = 0; i < scriptHooks.length; i++) {
-      var id         = scriptHooks[i][0];
-      var moduleText = scriptHooks[i][1];
-      caja.configure({
-        cajaServer: server,
-        debug: true
-      }, function (frameGroup) {
-        frameGroup.makeES5Frame(document.getElementById(id), uriPolicy,
-            function (frame) {
-              frame.contentCajoled('gadget:' + id, moduleText)
-                   .run({});
-            });
-      });
+      (function (id, moduleText) {
+        caja.load(document.getElementById(id), uriPolicy, function (frame) {
+          frame.cajoled(undefined, moduleText, undefined).run();
+        });
+      }).apply(undefined, scriptHooks[i]);
     }
     scriptHooks = [];
   }
