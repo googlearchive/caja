@@ -773,6 +773,7 @@
     <concat destfile="${lib.caja}/ses/initSES.js">
       <!-- Makes initSES.js -->
       <filelist>
+        <file name="${src.caja}/ses/logger.js"/>
         <file name="${src.caja}/ses/repairES5.js"/>
         <file name="${src.caja}/ses/WeakMap.js"/>
         <file name="${src.caja}/ses/whitelist.js"/>
@@ -784,6 +785,7 @@
     <concat destfile="${lib.caja}/ses/initSESPlus.js">
       <!-- Makes initSESPlus.js -->
       <filelist>
+        <file name="${src.caja}/ses/logger.js"/>
         <file name="${src.caja}/ses/repairES5.js"/>
         <file name="${src.caja}/ses/WeakMap.js"/>
         <file name="${src.caja}/ses/whitelist.js"/>
@@ -797,6 +799,7 @@
       <!-- Makes initSES-minified.js -->
       <output file="${lib.caja}/ses/initSES-minified.js"
        language="javascript" renderer="minify"/>
+       <input file="${src.caja}/ses/logger.js"/>
        <input file="${src.caja}/ses/repairES5.js"/>
        <input file="${src.caja}/ses/WeakMap.js"/>
        <input file="${src.caja}/ses/whitelist.js"/>
@@ -808,6 +811,7 @@
       <!-- Makes initSESPlus-minified.js -->
       <output file="${lib.caja}/ses/initSESPlus-minified.js"
        language="javascript" renderer="minify"/>
+       <input file="${src.caja}/ses/logger.js"/>
        <input file="${src.caja}/ses/repairES5.js"/>
        <input file="${src.caja}/ses/WeakMap.js"/>
        <input file="${src.caja}/ses/whitelist.js"/>
@@ -874,6 +878,17 @@
     <!-- Lint the native-ES5 case -->
     <genrule class="com.google.caja.ancillary.linter.Linter"
      unless="${tools.ancillary.disable}">
+      <input file="${src.caja}/ses/useHTMLLogger.js"/>
+      <input file="${src.caja}/ses/logger.js"/>
+      <input file="${src.caja}/ses/repairES5.js"/>
+      <input file="${src.caja}/ses/WeakMap.js"/>
+      <input file="${src.caja}/ses/whitelist.js"/>
+      <input file="${src.caja}/ses/atLeastFreeVarNames.js"/>
+      <input file="${src.caja}/ses/startSES.js"/>
+      <input file="${src.caja}/ses/ejectorsGuardsTrademarks.js"/>
+      <input file="${src.caja}/ses/hookupSES.js"/>
+      <input file="${src.caja}/ses/hookupSESPlus.js"/>
+
       <input file="${src.caja}/plugin/bridal.js"/>
       <input file="${lib.caja}/plugin/css-defs.js"/>
       <input file="${lib.caja}/plugin/cssparser.js"/>

@@ -15,6 +15,16 @@
 /**
  * @fileoverview Install a leaky WeakMap emulation on platforms that
  * don't provide a built-in one.
+ *
+ * <p>Assumes that an ES5 platform where, if {@code WeakMap} is
+ * already present, then it conforms to the anticipated ES6
+ * specification. To run this file on an ES5 or almost ES5
+ * implementation where the {@code WeakMap} specification does not
+ * quite conform, run <code>repairES5.js</code> first.
+ *
+ * @author Mark S. Miller
+ * @requires ses
+ * @overrides WeakMap
  */
 
 /**
@@ -78,7 +88,15 @@ var WeakMap;
 (function() {
   "use strict";
 
-  if (typeof WeakMap === 'function') { return; }
+  if (typeof ses !== 'undefined' && ses.ok && !ses.ok()) {
+    // already too broken, so give up
+    return;
+  }
+
+  if (typeof WeakMap === 'function') {
+    // assumed fine, so we're done.
+    return;
+  }
 
   var hop = Object.prototype.hasOwnProperty;
   var gopn = Object.getOwnPropertyNames;
@@ -266,7 +284,7 @@ var WeakMap;
     return Object.freeze(func);
   }
 
-  WeakMap = function WeakMap() {
+  WeakMap = function() {
     var identities = {};
     var values = {};
 

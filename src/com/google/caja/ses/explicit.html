@@ -1,0 +1,102 @@
+<!DOCTYPE HTML>
+
+<!--
+ - Copyright (C) 2011 Google Inc.
+ -
+ - Licensed under the Apache License, Version 2.0 (the "License");
+ - you may not use this file except in compliance with the License.
+ - You may obtain a copy of the License at
+ -
+ -      http://www.apache.org/licenses/LICENSE-2.0
+ -
+ - Unless required by applicable law or agreed to in writing, software
+ - distributed under the License is distributed on an "AS IS" BASIS,
+ - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ - See the License for the specific language governing permissions and
+ - limitations under the License.
+-->
+
+<html>
+<head>
+<title>Testing SES/5</title>
+<style type="text/css">
+.log { color: black; }
+.info { color: navy; }
+.warn { color: olive; }
+.error { color: maroon; }
+.reports-text p { margin-top: 0.05em; margin-bottom: 0.05em; }
+.console-text p { margin-top: 0.05em; margin-bottom: 0.05em; }
+</style>
+</head>
+<body>
+<div id="reports" class="reports-text"><b>Repair Reports</b></div>
+<div id="console" class="console-text"><hr></div>
+<div id="show1">test1...</div>
+<div id="show2">test2...</div>
+<script src="useHTMLLogger.js"></script>
+<script>
+  function gebi(id) { 
+    return document.getElementById(id); 
+  };
+  useHTMLLogger(gebi("reports"), gebi("console"));
+  // This severity is too high for any use other than development.
+  ses.maxAcceptableSeverityName = 'NEW_SYMPTOM';
+</script>
+<!--
+The <script src=... tags below, from "logger.js" to "hookupSES.js", is 
+  equivalent to <script src="initSES.js"></script>, but is more 
+  pleasant to debug.
+
+The <script src="useHTMLLogger.js"> and the inline script above advises 
+  the scripts below, overriding the default logger, and overriding the
+  default maxAcceptableSeverityName.
+-->
+<script src="logger.js"></script>
+<script src="repairES5.js"></script>
+<script src="WeakMap.js"></script>
+<script src="whitelist.js"></script>
+<script src="atLeastFreeVarNames.js"></script>
+<script src="startSES.js"></script>
+<script src="hookupSES.js"></script>
+<script>
+  (function() {
+    "use strict";
+    var show1 = gebi('show1');
+    var show2 = gebi('show2');
+    if (!ses.ok()) {
+      show1.appendChild(document.createTextNode('cancelled'));
+      show2.appendChild(document.createTextNode('cancelled'));
+      return;
+    }
+
+    var output = cajaVM.eval('3+4') * cajaVM.compile('window')({window: 6});
+    var text1 = output === 42 ? 'succeeded' : 'failed: ' + output;
+    show1.appendChild(document.createTextNode(text1));
+
+    // Test ability to bootstrap support for a limited form of
+    // CommonJS modules. 
+    var modSrc = '"use noise"; exports.x = \n' +
+                 'require("foo.bar/baz"); return 77;';
+    var modMaker = cajaVM.compileModule(modSrc);
+    var required = modMaker.requirements;
+    var exported = {};
+    var returned = modMaker({
+      require: function(id) { return { foo: 88, id: id}; }, 
+      exports: exported
+    });
+    var did = JSON.stringify(cajaVM.def({
+      required: required,
+      exported: exported, 
+      returned: returned
+    }), void 0, ' ');
+    var should = JSON.stringify({ 
+      "required": [ "foo.bar/baz" ], 
+      "exported": { "x": { "foo": 88, "id": "foo.bar/baz" } }, 
+      "returned": 77 
+    }, void 0, ' ');
+    var text2 = did === should ? 'succeeded' : 'failed: ' + did;
+    show2.appendChild(document.createTextNode(text2));
+  })();
+</script>
+</body>
+</html>

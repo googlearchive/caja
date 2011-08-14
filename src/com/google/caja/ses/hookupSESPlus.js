@@ -13,12 +13,25 @@
 // limitations under the License.
 
 /**
- * @fileoverview Call startSES to turn this frame into a SES
- * environment following object-capability rules.
+ * @fileoverview Call {@code ses.startSES} to turn this frame into a
+ * SES environment following object-capability rules.
+ *
+ * <p>Assumes ES5 plus WeakMap. Compatible with ES5-strict or
+ * anticipated ES6.
+ *
+ * @author Mark S. Miller
+ * @requires ses, this
  */
 
 (function(global) {
   "use strict";
-  
-  startSES(global, whitelist, atLeastFreeVarNames, ejectorsGuardsTrademarks);
+
+  if (!ses.ok()) {
+    return;
+  }
+
+  ses.startSES(global,
+               ses.whitelist,
+               ses.atLeastFreeVarNames,
+               ses.ejectorsGuardsTrademarks);
 })(this);

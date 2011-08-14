@@ -13,16 +13,23 @@
 // limitations under the License.
 
 /**
- * @fileoverview export an "atLeastFreeVarNames" function for internal
- * use by the SES-on-ES5 implementation, which enumerates at least the
- * identifiers which occur freely in a source text string.
+ * @fileoverview Export a {@code ses.atLeastFreeVarNames} function for
+ * internal use by the SES-on-ES5 implementation, which enumerates at
+ * least the identifiers which occur freely in a source text string.
+ *
+ * <p>Assumes only ES3. Compatible with ES5, ES5-strict, or
+ * anticipated ES6.
+ *
+ * @author Mark S. Miller
+ * @overrides ses
  */
-
+var ses;
 
 /**
- * Calling atLeastFreeVarNames on a {@code programSrc} string
- * argument, the result should include at least all the free variable
- * names of {@code programSrc} as own properties.
+ * Calling {@code ses.atLeastFreeVarNames} on a {@code programSrc}
+ * string argument, the result should include at least all the free
+ * variable names of {@code programSrc} as own properties. It is
+ * harmless to include other strings as well.
  *
  * <p>Assuming a programSrc that parses as a strict Program,
  * atLeastFreeVarNames(programSrc) returns a Record whose enumerable
@@ -36,9 +43,10 @@
  * {@code with(aProxy) {...}} should reliably intercept all free
  * variable accesses without needing any prior scan.
  */
-var atLeastFreeVarNames;
 (function() {
   "use strict";
+
+   if (!ses) { ses = {}; }
 
   /////////////// KLUDGE SWITCHES ///////////////
 
@@ -76,19 +84,21 @@ var atLeastFreeVarNames;
 
   //////////////// END KLUDGE SWITCHES ///////////
 
-  atLeastFreeVarNames = function atLeastFreeVarNames(programSrc) {
+  ses.atLeastFreeVarNames = function(programSrc) {
     programSrc = String(programSrc);
     LIMIT_SRC(programSrc);
     // Now that we've temporarily limited our attention to ascii...
     var regexp = SHOULD_MATCH_IDENTIFIER();
-    var result = Object.create(null);
+    // Once we decide this file can depends on ES5, the following line
+    // should say "... = Object.create(null);" rather than "... = {};"
+    var result = {};
     var a;
     while ((a = regexp.exec(programSrc))) {
       // Note that we could have avoided the while loop by doing
       // programSrc.match(regexp), except that then we'd need
       // temporary storage proportional to the total number of
       // apparent identifiers, rather than the total number of
-      // apparent unique identifiers.
+      // apparently unique identifiers.
       var name = a[0];
       result[name] = true;
     }

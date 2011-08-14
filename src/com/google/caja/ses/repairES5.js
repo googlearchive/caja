@@ -12,14 +12,30 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-var RegExp;
-
 /**
  * @fileoverview Monkey patch almost ES5 platforms into a closer
  * emulation of full <a href=
  * "http://code.google.com/p/es-lab/wiki/SecureableES5" >secureable
  * ES5</a>.
  *
+ * <p>Assumes only ES3, but only proceeds to do useful repairs when
+ * the platform is close enough to ES5 to be worth attempting
+ * repairs. Compatible with almost-ES5, ES5, ES5-strict, and
+ * anticipated ES6.
+ *
+ * <p>Ignore the "...requires ___global_test_function___" below. We
+ * create it, use it, and delete it all within this module. But we
+ * need to lie to the linter since it can't tell.
+ *
+ * @author Mark S. Miller
+ * @requires ___global_test_function___
+ * @requires JSON, navigator, this
+ * @overrides ses, RegExp, WeakMap, Object
+ */
+var RegExp;
+var ses;
+
+/**
  * <p>Qualifying platforms generally include all JavaScript platforms
  * shown on <a href="http://kangax.github.com/es5-compat-table/"
  * >ECMAScript 5 compatibility table</a> that implement {@code
@@ -59,35 +75,167 @@ var RegExp;
 (function(global) {
   "use strict";
 
-  var logger;
-  function logNowhere(str) {}
+  /**
+   * The severity levels.
+   *
+   * <dl>
+   *   <dt>SAFE</dt><dd>no problem.
+   *   <dt>SAFE_SPEC_VIOLATION</dt>
+   *     <dd>safe (in an integrity sense) even if unrepaired. May
+   *         still lead to inappropriate failures.</dd>
+   *   <dt>UNSAFE_SPEC_VIOLATION</dt>
+   *     <dd>a safety issue only indirectly, in that this spec
+   *         violation may lead to the corruption of assumptions made
+   *         by other security critical or defensive code.</dd>
+   *   <dt>NOT_OCAP_SAFE</dt>
+   *     <dd>a violation of object-capability rules among objects
+   *         within a coarse-grained unit of isolation.</dd>
+   *   <dt>NOT_ISOLATED</dt>
+   *     <dd>an inability to reliably sandbox even coarse-grain units
+   *         of isolation.</dd>
+   *   <dt>NEW_SYMPTOM</dt>
+   *     <dd>some test failed in a way we did not expect.</dd>
+   *   <dt>NOT_SUPPORTED</dt>
+   *     <dd>this platform cannot even support SES development in an
+   *         unsafe manner.</dd>
+   * </dl>
+   */
+  ses.severities = {
+    SAFE:                  { level: 0, description: 'Safe' },
+    SAFE_SPEC_VIOLATION:   { level: 1, description: 'Safe spec violation' },
+    UNSAFE_SPEC_VIOLATION: { level: 2, description: 'Unsafe spec violation' },
+    NOT_OCAP_SAFE:         { level: 3, description: 'Not ocap safe' },
+    NOT_ISOLATED:          { level: 4, description: 'Not isolated' },
+    NEW_SYMPTOM:           { level: 5, description: 'New symptom' },
+    NOT_SUPPORTED:         { level: 6, description: 'Not supported' }
+  };
 
-  if (typeof console !== 'undefined' && 'log' in console) {
-    // We no longer test (typeof console.log === 'function') since,
-    // on IE9 and IE10preview, in violation of the ES5 spec, it
-    // is callable but has typeof "object".
-    // TODO(erights): report to MS.
+  /**
+   * Statuses.
+   *
+   * <dl>
+   *   <dt>ALL_FINE</dt>
+   *     <dd>test passed before and after.</dd>
+   *   <dt>REPAIR_FAILED</dt>
+   *     <dd>test failed before and after repair attempt.</dd>
+   *   <dt>NOT_REPAIRED</dt>
+   *     <dd>test failed before and after, with no repair to attempt.</dd>
+   *   <dt>REPAIRED_UNSAFELY</dt>
+   *     <dd>test failed before and passed after repair attempt, but
+   *         the repair is known to be inadequate for security, so the
+   *         real problem remains.</dd>
+   *   <dt>REPAIRED</dt>
+   *     <dd>test failed before and passed after repair attempt,
+   *         repairing the problem (canRepair was true).</dd>
+   *   <dt>ACCIDENTALLY_REPAIRED</dt>
+   *      <dd>test failed before and passed after, despite no repair
+   *          to attempt. (Must have been fixed by some other
+   *          attempted repair.)</dd>
+   *   <dt>BROKEN_BY_OTHER_ATTEMPTED_REPAIRS</dt>
+   *      <dd>test passed before and failed after, indicating that
+   *          some other attempted repair created the problem.</dd>
+   * </dl>
+   */
+  ses.statuses = {
+    ALL_FINE:                          'All fine',
+    REPAIR_FAILED:                     'Repair failed',
+    NOT_REPAIRED:                      'Not repaired',
+    REPAIRED_UNSAFELY:                 'Repaired unsafely',
+    REPAIRED:                          'Repaired',
+    ACCIDENTALLY_REPAIRED:             'Accidentally repaired',
+    BROKEN_BY_OTHER_ATTEMPTED_REPAIRS: 'Broken by other attempted repairs'
+  };
 
-    // TODO(erights): This assumes without checking that if
-    // console.log is present, then console has working log, info,
-    // warn, and error methods. Check that this is actually the case
-    // on all platforms we care about, or, if not, do something
-    // fancier here.
-    logger = console;
+
+  var logger = ses.logger;
+
+  /**
+   * As we start to repair, this will track the worst post-repair
+   * severity seen so far.
+   */
+  ses.maxSeverity = ses.severities.SAFE;
+
+  /**
+   * {@code ses.maxAcceptableSeverity} is the max post-repair severity
+   * that is considered acceptable for proceeding with the SES
+   * verification-only strategy.
+   *
+   * <p>Although <code>repairES5.js</code> can be used standalone for
+   * partial ES5 repairs, its primary purpose is to repair as a first
+   * stage of <code>initSES.js</code> for purposes of supporting SES
+   * security. In support of that purpose, we initialize
+   * {@code ses.maxAcceptableSeverity} to the post-repair severity
+   * level at which we should report that we are unable to adequately
+   * support SES security. By default, this is set to
+   * {@code ses.severities.SAFE_SPEC_VIOLATION}, which is the maximum
+   * severity that we believe results in no loss of SES security.
+   *
+   * <p>If {@code ses.maxAcceptableSeverityName} is already set (to a
+   * severity property name of a severity below {@code
+   * ses.NOT_SUPPORTED}), then we use that setting to initialize
+   * {@code ses.maxAcceptableSeverity} instead. For example, if we are
+   * using SES only for isolation, then we could set it to
+   * 'NOT_OCAP_SAFE', in which case repairs that are inadequate for
+   * object-capability (ocap) safety would still be judged safe for
+   * our purposes.
+   *
+   * <p>As repairs proceed, they update {@code ses.maxSeverity} to
+   * track the worst case post-repair severity seen so far. When
+   * {@code ses.ok()} is called, it return whether {@code
+   * ses.maxSeverity} is still less than or equal to
+   * {@code ses.maxAcceptableSeverity}, indicating that this platform
+   * still seems adequate for supporting SES. In the Caja context, we
+   * have the choice of using SES on those platforms which we judge to
+   * be adequately repairable, or otherwise falling back to Caja's
+   * ES5/3 translator.
+   */
+  if (ses.maxAcceptableSeverityName) {
+    var maxSev = ses.severities[ses.maxAcceptableSeverityName];
+    if (maxSev && typeof maxSev.level === 'number' &&
+        maxSev.level >= ses.severities.SAFE.level &&
+        maxSev.level < ses.severities.NOT_SUPPORTED.level) {
+      // do nothing
+    } else {
+      logger.error('Ignoring bad maxAcceptableSeverityName: ' +
+                   ses.maxAcceptableSeverityName + '.') ;
+      ses.maxAcceptableSeverityName = 'SAFE_SPEC_VIOLATION';
+    }
   } else {
-    logger = {
-      log: logNowhere,
-      info: logNowhere,
-      warn: logNowhere,
-      error: logNowhere
-    };
+    ses.maxAcceptableSeverityName = 'SAFE_SPEC_VIOLATION';
   }
+  ses.maxAcceptableSeverity = ses.severities[ses.maxAcceptableSeverityName];
 
-  if (!Object.getOwnPropertyNames) {
-    var complaint = 'Please upgrade to a JavaScript platform ' +
-      'which implements Object.getOwnPropertyNames';
-    logger.error(complaint);
-    throw new EvalError(complaint);
+  /**
+   * Once this returns false, we can give up on the SES
+   * verification-only strategy and fall back to ES5/3 translation.
+   */
+  ses.ok = function() {
+    return ses.maxSeverity.level <= ses.maxAcceptableSeverity.level;
+  };
+
+  ////////////////////// Tests /////////////////////
+  //
+  // Each test is a function of no arguments that should not leave any
+  // significant side effects, which tests for the presence of a
+  // problem. It returns either
+  // <ul>
+  // <li>false, meaning that the problem does not seem to be present.
+  // <li>true, meaning that the problem is present in a form that we expect.
+  // <li>a non-empty string, meaning that there seems to be a related
+  //     problem, but we're seeing a symptom different than what we
+  //     expect. The string should describe the new symptom. It must
+  //     be non-empty so that it is truthy.
+  // </ul>
+  // All the tests are run first to determine which corresponding
+  // repairs to attempt. Then these repairs are run. Then all the
+  // tests are rerun to see how they were effected by these repair
+  // attempts. Finally, we report what happened.
+
+  /**
+   *
+   */
+  function test_MISSING_GETOWNPROPNAMES() {
+    return !('getOwnPropertyNames' in Object);
   }
 
   /**
@@ -102,8 +250,7 @@ var RegExp;
     delete global.___global_test_function___;
     if (that === void 0) { return false; }
     if (that === global) { return true; }
-    logger.error('New symptom: this leaked as: ' + that);
-    return true;
+    return 'This leaked as: ' + that;
   }
 
   /**
@@ -113,8 +260,7 @@ var RegExp;
     var that = (function(){ return this; })();
     if (that === void 0) { return false; }
     if (that === global) { return true; }
-    logger.error('New symptom: this leaked as: ' + that);
-    return true;
+    return 'This leaked as: ' + that;
   }
 
   /**
@@ -133,9 +279,7 @@ var RegExp;
       that = v();
     } catch (err) {
       if (err instanceof TypeError) { return false; }
-      logger.error('New symptom: ' +
-                   'valueOf() threw ' + err);
-      return true;
+      return 'valueOf() threw: ' + err;
     }
     return true;
   }
@@ -173,7 +317,7 @@ var RegExp;
     function foo(){}
     if (Object.getOwnPropertyNames(foo).indexOf('callee') < 0) { return false; }
     if (foo.hasOwnProperty('callee')) {
-      logger.error('New symptom: empty strict function has own callee');
+      return 'Empty strict function has own callee';
     }
     return true;
   }
@@ -196,16 +340,19 @@ var RegExp;
     try {
       deletion = delete RegExp.leftContext;
     } catch (err) {
-      if (!(err instanceof TypeError)) {
-        logger.error('New symptom: deletion failed with ' + err);
-      }
-      return true;
+      if (err instanceof TypeError) { return true; }
+      return 'Deletion failed with: ' + err;
     }
     if (!RegExp.hasOwnProperty('leftContext')) { return false; }
     if (deletion) {
-      logger.error('New symptom: Deletion of RegExp.leftContext failed.');
+      return 'Deletion of RegExp.leftContext did not succeed.';
+    } else {
+      // This case happens on IE10preview2, indicating another bug: a
+      // strict delete should never return false. A failed strict
+      // delete should throw a TypeError. TODO(erights): check that
+      // this bug shows up in test262, or, if not, report it.
+      return true;
     }
-    return true;
   }
 
 
@@ -218,11 +365,21 @@ var RegExp;
     (/foo/).test('xfoox');
     var match = new RegExp('(.|\r|\n)*','').exec()[0];
     if (match === 'undefined') { return false; }
-    if (match !== 'xfoox') {
-      logger.error('New symptom: ' +
-                   'regExp.exec() does not match against "undefined".');
-    }
-    return true;
+    if (match === 'xfoox') { return true; }
+    return 'regExp.exec() does not match against "undefined".';
+  }
+
+
+  /**
+   * Detects http://code.google.com/p/v8/issues/detail?id=1530
+   *
+   *
+   */
+  function test_FUNCTION_PROTOTYPE_DESCRIPTOR_LIES() {
+    function foo() {}
+    Object.defineProperty(foo, 'prototype', { value: {} });
+    return foo.prototype !==
+      Object.getOwnPropertyDescriptor(foo, 'prototype').value;
   }
 
 
@@ -244,6 +401,59 @@ var RegExp;
     return !('bind' in Function.prototype);
   }
 
+  /**
+   * Workaround for http://code.google.com/p/v8/issues/detail?id=892
+   *
+   * <p>This tests whether the built-in bind method violates the spec
+   * by calling the original using its current .apply method rather
+   * than the internal [[Call]] method. The workaround is the same as
+   * for test_MISSING_BIND -- to replace the built-in bind with one
+   * written in JavaScript. This introduces a different bug though: As
+   * https://bugs.webkit.org/show_bug.cgi?id=26382#c29 explains, a
+   * bind written in JavaScript cannot emulate the specified currying
+   * over the construct behavior, and so fails to enable a var-args
+   * {@code new} operation.
+   */
+  function test_BIND_CALLS_APPLY() {
+    if (!('bind' in Function.prototype)) { return false; }
+    var applyCalled = false;
+    function foo() { return [].slice.call(arguments,0).join(','); }
+    foo.apply = function(self, args) {
+      applyCalled = true;
+      return Function.prototype.apply.call(this, self, args);
+    };
+    var b = foo.bind(33,44);
+    var answer = b(55,66);
+    if (applyCalled) { return true; }
+    if (answer === '44,55,66') { return false; }
+    return 'Bind test returned "' + answer + '" instead of "44,55,66".';
+  }
+
+  /**
+   * Demonstrates the point made by comment 29
+   * https://bugs.webkit.org/show_bug.cgi?id=26382#c29
+   *
+   * <p>Tests whether Function.prototype.bind curries over
+   * construction ({@code new}) behavior. A built-in bind should. A
+   * bind emulation written in ES5 can't.
+   */
+  function test_BIND_CANT_CURRY_NEW() {
+    function construct(f, args) {
+      var bound = Function.prototype.bind.apply(f, [null].concat(args));
+      return new bound();
+    }
+    var d;
+    try {
+      d = construct(Date, [1957, 5, 27]);
+    } catch (err) {
+      if (err instanceof TypeError) { return true; }
+      return 'Curries construction failed with: ' + err;
+    }
+    var str = objToString.call(d);
+    if (str === '[object Date]') { return false; }
+    return 'Unexpected: ' + str;
+  }
+
 
   /**
    * Workaround for http://code.google.com/p/google-caja/issues/detail?id=1362
@@ -261,18 +471,18 @@ var RegExp;
       Date.prototype.setFullYear(1957);
     } catch (err) {
       if (err instanceof TypeError) { return false; }
-      logger.error('New symptom: Mutating Date.prototype failed with ' + err);
-      return true;
+      return 'Mutating Date.prototype failed with: ' + err;
     }
     var v = Date.prototype.getFullYear();
+    Date.prototype.setFullYear(NaN); // hopefully undoes the damage
     if (v !== v && typeof v === 'number') {
       // NaN indicates we're probably ok.
+      // TODO(erights) Should we report this as a symptom anyway, so
+      // that we get the repair which gives us a reliable TypeError?
       return false;
     }
-    if (v !== 1957) {
-      logger.error('New symptom: Mutating Date.prototype did not throw');
-    }
-    return true;
+    if (v === 1957) { return true; }
+    return 'Mutating Date.prototype did not throw';
   }
 
 
@@ -297,15 +507,12 @@ var RegExp;
       WeakMap.prototype.set(x, 86);
     } catch (err) {
       if (err instanceof TypeError) { return false; }
-      logger.error('New symptom: ' +
-                   'Mutating WeakMap.prototype failed with ' + err);
-      return true;
+      return 'Mutating WeakMap.prototype failed with: ' + err;
     }
     var v = WeakMap.prototype.get(x);
-    if (v !== 86) {
-      logger.error('New symptom: Mutating WeakMap.prototype did not throw');
-    }
-    return true;
+    // Since x cannot escape, there's no observable damage to undo.
+    if (v === 86) { return true; }
+    return 'Mutating WeakMap.prototype did not throw';
   }
 
 
@@ -333,10 +540,8 @@ var RegExp;
       ['z'].forEach(function(){ Object.freeze(Array.prototype.forEach); });
       return false;
     } catch (err) {
-      if (!(err instanceof TypeError)) {
-        logger.error('New Symptom: freezing forEach failed with ' + err);
-      }
-      return true;
+      if (err instanceof TypeError) { return true; }
+      return 'freezing forEach failed with ' + err;
     }
   }
 
@@ -357,8 +562,12 @@ var RegExp;
    */
   function test_NEEDS_DUMMY_SETTER() {
     return (typeof navigator !== 'undefined' &&
-            (/Chrome/).test(navigator.userAgent));
+            (/Chrome/).test(navigator.userAgent) &&
+            !NEEDS_DUMMY_SETTER_repaired);
   }
+  /** we use this variable only because we haven't yet isolated a test
+   * for the problem. */
+  var NEEDS_DUMMY_SETTER_repaired = false;
 
 
   /**
@@ -393,14 +602,13 @@ var RegExp;
    * delicate and not well understood.
    *
    * <p>As support for Domado, it is possible to override this
-   * restriction by adding the flag 
+   * restriction by adding the flag
    * "ses_ignoreBug_propertyWillAppearAsOwn" to the property
    * descriptor. We assume that applying JSON.stringify to DOM nodes
-   * is not interesting. TODO(kpreid): But does the general 
+   * is not interesting. TODO(kpreid): But does the general
    * possibility of creating objects which if inherited from create
    * apparent own properties on their children break any security
-   * properties?
-   */
+    */
   function test_ACCESSORS_INHERIT_AS_OWN() {
     var base = {};
     var derived = Object.create(base);
@@ -414,8 +622,7 @@ var RegExp;
     if (!derived.hasOwnProperty('foo') ||
         Object.getOwnPropertyDescriptor(derived, 'foo').get !== getter ||
         Object.getOwnPropertyNames(derived).indexOf('foo') < 0) {
-      logger.error('New symptom: ' +
-                   'Accessor properties partially inherit as own properties.');
+      return 'Accessor properties partially inherit as own properties.';
     }
     Object.defineProperty(base, 'bar', {get: getter, configurable: true});
     if (!derived.hasOwnProperty('bar') &&
@@ -423,9 +630,7 @@ var RegExp;
         Object.getOwnPropertyNames(derived).indexOf('bar') < 0) {
       return true;
     }
-    logger.error('New symptom: ' +
-                 'Accessor properties inherit as own even if configurable.');
-    return true;
+    return 'Accessor properties inherit as own even if configurable.';
   }
 
 
@@ -439,8 +644,7 @@ var RegExp;
     [2,3].sort(function(x,y) { that = this; return x - y; });
     if (that === void 0) { return false; }
     if (that !== global) {
-      logger.error('New symptom: ' +
-                   'sort called comparefn with "this" === ' + that);
+      return 'sort called comparefn with "this" === ' + that;
     }
     return true;
   }
@@ -454,15 +658,21 @@ var RegExp;
    */
   function test_REPLACE_LEAKS_GLOBAL() {
     var that = 'dummy';
-    'x'.replace(/x/, function() { that = this; return 'y';});
+    function capture() { that = this; return 'y';}
+    'x'.replace(/x/, capture);
     if (that === void 0) { return false; }
+    if (that === capture) {
+      // This case happens on IE10preview2, indicating another
+      // bug. TODO(erights): report it.
+      // TODO(erights): When this happens, the kludge description is
+      // wrong.
+      return true;
+    }
     if (that !== global) {
-      logger.error('New symptom: replace called replaceValue function ' +
-                   'with "this" === ' + that);
+      return 'Replace called replaceValue function with "this" === ' + that;
     }
     return true;
   }
-
 
   /**
    * Protect an 'in' with a try/catch to workaround a bug in Safari
@@ -487,6 +697,7 @@ var RegExp;
    */
   function has(base, name, baseDesc) {
     var result = void 0;
+    var finallySkipped = true;
     try {
       result = name in base;
     } catch (err) {
@@ -496,29 +707,87 @@ var RegExp;
       result = false;
       return false;
     } finally {
+      finallySkipped = false;
       if (result === void 0) {
         logger.error('New symptom (b): (\'' +
                      name + '\' in <' + baseDesc + '>) failed');
       }
     }
+    if (finallySkipped) {
+      logger.error('New symptom (e): (\'' +
+                   name + '\' in <' + baseDesc +
+                   '>) finally inner finally skipped');
+    }
     return !!result;
   }
 
+  /**
+   * Test for https://bugs.webkit.org/show_bug.cgi?id=63398
+   *
+   * <p>If this reports a problem in the absence of "New symptom (a)",
+   * it means the error thrown by the "in" in {@code has} is skipping
+   * past the first layer of "catch" surrounding that "in". This is in
+   * fact what we're currently seeing on Safari WebKit Nightly Version
+   * 5.0.5 (5533.21.1, r91108).
+   */
+  function test_CANT_IN_CALLER() {
+    var answer = void 0;
+    try {
+      answer = has(function(){}, 'caller', 'strict_function');
+    } catch (err) {
+      if (err instanceof TypeError) { return true; }
+      return '("caller" in strict_func) failed with: ' + err;
+    } finally {}
+    if (answer) { return false; }
+    return '("caller" in strict_func) was false.';
+  }
+
+  /**
+   * Test for https://bugs.webkit.org/show_bug.cgi?id=63398
+   *
+   * <p>If this reports a problem in the absence of "New symptom (a)",
+   * it means the error thrown by the "in" in {@code has} is skipping
+   * past the first layer of "catch" surrounding that "in". This is in
+   * fact what we're currently seeing on Safari WebKit Nightly Version
+   * 5.0.5 (5533.21.1, r91108).
+   */
+  function test_CANT_IN_ARGUMENTS() {
+    var answer = void 0;
+    try {
+      answer = has(function(){}, 'arguments', 'strict_function');
+    } catch (err) {
+      if (err instanceof TypeError) { return true; }
+      return '("arguments" in strict_func) failed with: ' + err;
+    } finally {}
+    if (answer) { return false; }
+    return '("arguments" in strict_func) was false.';
+  }
+
   function has2(base, name, baseDesc) {
-    var result;
+    var result = void 0;
+    var finallySkipped = true;
     try {
       result = has(base, name, baseDesc);
     } catch (err) {
-      logger.error('New symptom (c): (\'' +
-                   name + '\' in <' + baseDesc + '>) threw: ' + err);
+      // This case should be already be reported as a failure of
+      // test_CANT_IN_CALLER or test_CANT_IN_ARGUMENTS, and so is no
+      // longer a new symptom.
+      // logger.error('New symptom (c): (\'' +
+      //              name + '\' in <' + baseDesc + '>) threw: ' + err);
       // treat this as a safe absence
       result = false;
       return false;
     } finally {
+      finallySkipped = false;
       if (result === void 0) {
         logger.error('New symptom (d): (\'' +
                      name + '\' in <' + baseDesc + '>) failed');
       }
+    }
+    if (finallySkipped) {
+      logger.error('New symptom (f): (\'' +
+                   name + '\' in <' + baseDesc +
+                   '>) finally outer finally skipped');
     }
     return !!result;
   }
@@ -543,13 +812,11 @@ var RegExp;
       caller = testfn(foo);
     } catch (err) {
       if (err instanceof TypeError) { return false; }
-      logger.error('New symptom: builtin "caller" failed with: ' + err);
-      return true;
+      return 'Built-in "caller" failed with: ' + err;
     }
     if (null === caller || void 0 === caller) { return false; }
     if (testfn === caller) { return true; }
-    logger.error('New symptom: Unexpected "caller": ' + caller);
-    return true;
+    return 'Unexpected "caller": ' + caller;
   }
 
   /**
@@ -572,8 +839,7 @@ var RegExp;
       args = testfn(foo);
     } catch (err) {
       if (err instanceof TypeError) { return false; }
-      logger.error('New symptom: builtin "arguments" failed with: ' + err);
-      return true;
+      return 'Built-in "arguments" failed with: ' + err;
     }
     if (args === void 0 || args === null) { return false; }
     return true;
@@ -591,8 +857,7 @@ var RegExp;
       delete bar.caller;
     } catch (err) { }
     if (!has2(bar, 'caller', 'a bound function')) {
-      logger.error('New symptom: "caller" on bound functions can be deleted.');
-      return true;
+      return '"caller" on bound functions can be deleted.';
     }
     // using Function so it'll be non-strict
     var testfn = Function('f', 'return f();');
@@ -601,12 +866,10 @@ var RegExp;
       caller = testfn(bar);
     } catch (err) {
       if (err instanceof TypeError) { return false; }
-      logger.error('New symptom: bound function "caller" failed with: ' + err);
-      return true;
+      return 'Bound function "caller" failed with: ' + err;
     }
     if ([testfn, void 0, null].indexOf(caller) >= 0) { return false; }
-    logger.error('New symptom: Unexpected "caller": ' + caller);
-    return true;
+    return 'Unexpected "caller": ' + caller;
   }
 
   /**
@@ -621,9 +884,7 @@ var RegExp;
       delete bar.arguments;
     } catch (err) { }
     if (!has2(bar, 'arguments', 'a bound function')) {
-      logger.error('New symptom: ' +
-                   '"arguments" on bound functions can be deleted.');
-      return true;
+      return '"arguments" on bound functions can be deleted.';
     }
     // using Function so it'll be non-strict
     var testfn = Function('f', 'return f();');
@@ -632,9 +893,7 @@ var RegExp;
       args = testfn(bar);
     } catch (err) {
       if (err instanceof TypeError) { return false; }
-      logger.error('New symptom: ' +
-                   'bound function "arguments" failed with: ' + err);
-      return true;
+      return 'Bound function "arguments" failed with: ' + err;
     }
     if (args === void 0 || args === null) { return false; }
     return true;
@@ -645,20 +904,46 @@ var RegExp;
    *
    */
   function test_JSON_PARSE_PROTO_CONFUSION() {
-    var x = JSON.parse('{"__proto__":[]}');
-    if (Object.getPrototypeOf(x) !== Object.prototype) {
-      return true;
+    var x;
+    try {
+      x = JSON.parse('{"__proto__":[]}');
+    } catch (err) {
+      if (err instanceof TypeError) {
+        // We consider it acceptable to fail this case with a
+        // TypeError, as our repair below will cause it to do.
+        return false;
+      }
+      return 'JSON.parse failed with: ' + err;
     }
-    if (!Array.isArray(x.__proto__)) {
-      logger.error('New symptom: JSON.parse did not set "__proto__" as ' +
-                   'a regular property');
-      return true;
+    if (Object.getPrototypeOf(x) !== Object.prototype) { return true; }
+    if (Array.isArray(x.__proto__)) { return false; }
+    return 'JSON.parse did not set "__proto__" as a regular property';
+  }
+
+  /**
+   *
+   */
+  function test_PROTO_NOT_FROZEN() {
+    var x = Object.preventExtensions({});
+    if (x.__proto__ === void 0 && !('__proto__' in x)) { return false; }
+    var y = {};
+    try {
+      x.__proto__ = y;
+    } catch (err) {
+      if (err instanceof TypeError) { return false; }
+      return 'Mutating __proto__ failed with: ' + err;
     }
-    return false;
+    if (y.isPrototypeOf(x)) { return true; }
+    return 'Mutating __proto__ neither failed nor succeeded';
   }
 
 
-  //////////////// END KLUDGE SWITCHES ///////////
+  ////////////////////// Repairs /////////////////////
+  //
+  // Each repair_NAME function exists primarily to repair the problem
+  // indicated by the corresponding test_NAME function. But other test
+  // failures can still trigger a given repair.
+
 
   var call = Function.prototype.call;
   var apply = Function.prototype.apply;
@@ -686,7 +971,7 @@ var RegExp;
 
   function repair_REGEXP_CANT_BE_NEUTERED() {
     var UnsafeRegExp = RegExp;
-    var FakeRegExp = function FakeRegExp(pattern, flags) {
+    var FakeRegExp = function(pattern, flags) {
       switch (arguments.length) {
         case 0: {
           return UnsafeRegExp();
@@ -745,17 +1030,73 @@ var RegExp;
                      function fakeIsExtensible(obj) { return true; });
   }
 
+  /**
+   * Actual bound functions are not supposed to have a prototype, and
+   * are supposed to curry over both the [[Call]] and [[Construct]]
+   * behavior of their original function. However, in ES5,
+   * functions written in JavaScript cannot avoid having a 'prototype'
+   * property, and cannot reliably distinguish between being called as
+   * a function vs as a constructor, i.e., by {@code new}.
+   *
+   * <p>Since the repair_MISSING_BIND emulation below produces a bound
+   * function written in JavaScript, it cannot faithfully emulate
+   * either the lack of a 'prototype' property nor the currying of the
+   * [[Construct]] behavior. So instead, we use BOGUS_BOUND_PROTOTYPE
+   * to reliably give an error for attempts to {@code new} a bound
+   * function. Since we cannot avoid exposing BOGUS_BOUND_PROTOTYPE
+   * itself, it is possible to pass in a this-binding which inherits
+   * from it without using {@code new}, which will also trigger our
+   * error case. Whether this latter error is appropriate or not, it
+   * still fails safe.
+   *
+   * <p>By making the 'prototype' of the bound function be the same as
+   * the current {@code thisFunc.prototype}, we could have emulated
+   * the [[HasInstance]] property of bound functions. But even this
+   * would have been inaccurate, since we would be unable to track
+   * changes to the original {@code thisFunc.prototype}. (We cannot
+   * make 'prototype' into an accessor to do this tracking, since
+   * 'prototype' on a function written in JavaScript is
+   * non-configurable.) And this one partially faithful emulation
+   * would have come at the cost of no longer being able to reasonably
+   * detect construction, in order to safely reject it.
+   */
+  var BOGUS_BOUND_PROTOTYPE = {
+    toString: function() { return 'bogus bound prototype'; }
+  };
+  if (Object.freeze) {
+    Object.freeze(BOGUS_BOUND_PROTOTYPE);
+  }
+
   function repair_MISSING_BIND() {
-    patchMissingProp(Function.prototype, 'bind',
-                     function fakeBind(self, var_args) {
-      var thisFunc = this;
-      var leftArgs = slice.call(arguments, 1);
-      function funcBound(var_args) {
-        var args = concat.call(leftArgs, slice.call(arguments, 0));
-        return apply.call(thisFunc, self, args);
-      }
-      delete funcBound.prototype;
-      return funcBound;
+    defProp(Function.prototype, 'bind', {
+      value: function fakeBind(self, var_args) {
+        var thisFunc = this;
+        var leftArgs = slice.call(arguments, 1);
+        function funcBound(var_args) {
+          if (this === Object(this) &&
+              Object.getPrototypeOf(this) === BOGUS_BOUND_PROTOTYPE) {
+            throw new TypeError(
+              'Cannot emulate "new" on pseudo-bound function.');
+          }
+          var args = concat.call(leftArgs, slice.call(arguments, 0));
+          return apply.call(thisFunc, self, args);
+        }
+        // We do this direct assignment first in case
+        // http://code.google.com/p/v8/issues/detail?id=1530
+        // See test_FUNCTION_PROTOTYPE_DESCRIPTOR_LIES above
+        // TODO(erights): investigate repairing this if needed by
+        // monkey patching Object.defineProperty.
+        funcBound.prototype = BOGUS_BOUND_PROTOTYPE;
+        defProp(funcBound, 'prototype', {
+          value: BOGUS_BOUND_PROTOTYPE,
+          writable: false,
+          configurable: false
+        });
+        return funcBound;
+      },
+      writable: true,
+      enumerable: false,
+      configurable: true
     });
   }
 
@@ -776,8 +1117,7 @@ var RegExp;
     var proto = constr.prototype;
     var baseToString = objToString.call(proto);
     if (baseToString !== '[object ' + classString + ']') {
-      throw new TypeError('unexpected: ' + baseToString + ' -- instead of '
-          + '[object ' + classString + ']');
+      throw new TypeError('unexpected: ' + baseToString);
     }
     if (getPrototypeOf(proto) !== Object.prototype) {
       throw new TypeError('unexpected inheritance: ' + classString);
@@ -891,6 +1231,7 @@ var RegExp;
           return defProp(base, name, fullDesc);
         }
       });
+      NEEDS_DUMMY_SETTER_repaired = true;
     })();
   }
 
@@ -1033,13 +1374,107 @@ var RegExp;
     })();
   }
 
+  function repair_JSON_PARSE_PROTO_CONFUSION() {
+    var unsafeParse = JSON.parse;
+    function validate(plainJSON) {
+      if (plainJSON !== Object(plainJSON)) {
+        // If we were trying to do a full validation, we would
+        // validate that it is not NaN, Infinity, -Infinity, or
+        // (if nested) undefined. However, we are currently only
+        // trying to repair
+        // http://code.google.com/p/v8/issues/detail?id=621
+        // That's why this special case validate function is private
+        // to this repair.
+        return;
+      }
+      var proto = Object.getPrototypeOf(plainJSON);
+      if (proto !== Object.prototype && proto !== Array.prototype) {
+        throw new TypeError(
+          'Parse resulted in invalid JSON. ' +
+            'See http://code.google.com/p/v8/issues/detail?id=621');
+      }
+      Object.keys(plainJSON).forEach(function(key) {
+        validate(plainJSON[key]);
+      });
+    }
+    defProp(JSON, 'parse', {
+      value: function(text, opt_reviver) {
+        var result = unsafeParse(text);
+        validate(result);
+        if (opt_reviver) {
+          return unsafeParse(text, opt_reviver);
+        } else {
+          return result;
+        }
+      },
+      writable: true,
+      enumerable: false,
+      configurable: true
+    });
+  }
 
-  var kludges = [
+  ////////////////////// Kludge Records /////////////////////
+  //
+  // Each kludge record has a <dl>
+  //   <dt>description:</dt>
+  //     <dd>a string describing the problem</dd>
+  //   <dt>test:</dt>
+  //     <dd>a predicate testing for the presence of the problem</dd>
+  //   <dt>repair:</dt>
+  //     <dd>a function which attempts repair, or undefined if no
+  //         repair is attempted for this problem</dd>
+  //   <dt>preSeverity:</dt>
+  //     <dd>an enum (see below) indicating the level of severity of
+  //         this problem if unrepaired. Or, if !canRepair, then
+  //         the severity whether or not repaired.</dd>
+  //   <dt>canRepair:</dt>
+  //     <dd>a boolean indicating "if the repair exists and the test
+  //         subsequently does not detect a problem, are we now ok?"</dd>
+  //   <dt>urls:</dt>
+  //     <dd>a list of URL strings, each of which points at a page
+  //         relevant for documenting or tracking the bug in
+  //         question. These are typically into bug-threads in issue
+  //         trackers for the various browsers.</dd>
+  //   <dt>sections:</dt>
+  //     <dd>a list of strings, each of which is a relevant ES5.1
+  //         section number.</dd>
+  //   <dt>tests:</dt>
+  //     <dd>a list of strings, each of which is the name of a
+  //         relevant test262 or sputnik test case.</dd>
+  // </dl>
+  // These kludge records are the meta-data driving the testing and
+  // repairing.
+
+  var severities = ses.severities;
+  var statuses = ses.statuses;
+
+  /**
+   * First test whether the platform can even support our repair
+   * attempts.
+   */
+  var baseKludges = [
+    {
+      description: 'Missing getOwnPropertyNames',
+      test: test_MISSING_GETOWNPROPNAMES,
+      repair: void 0,
+      preSeverity: severities.NOT_SUPPORTED,
+      canRepair: false,
+      urls: [],
+      sections: ['15.2.3.4'],
+      tests: []
+    }
+  ];
+
+  /**
+   * Run these only if baseKludges report success.
+   */
+  var supportedKludges = [
     {
       description: 'Global object leaks from global function calls',
       test: test_GLOBAL_LEAKS_FROM_GLOBAL_FUNCTION_CALLS,
       repair: void 0,
-      canRepairSafely: false,
+      preSeverity: severities.NOT_ISOLATED,
+      canRepair: false,
       urls: ['https://bugs.webkit.org/show_bug.cgi?id=64250'],
       sections: ['10.2.1.2', '10.2.1.2.6'],
       tests: []
@@ -1048,7 +1483,8 @@ var RegExp;
       description: 'Global object leaks from anonymous function calls',
       test: test_GLOBAL_LEAKS_FROM_ANON_FUNCTION_CALLS,
       repair: void 0,
-      canRepairSafely: false,
+      preSeverity: severities.NOT_ISOLATED,
+      canRepair: false,
       urls: [],
       sections: [],
       tests: []
@@ -1057,7 +1493,8 @@ var RegExp;
       description: 'Global object leaks from built-in methods',
       test: test_GLOBAL_LEAKS_FROM_BUILTINS,
       repair: void 0,
-      canRepairSafely: false,
+      preSeverity: severities.NOT_ISOLATED,
+      canRepair: false,
       urls: ['https://bugs.webkit.org/show_bug.cgi?id=51097',
              'https://bugs.webkit.org/show_bug.cgi?id=58338',
              'http://code.google.com/p/v8/issues/detail?id=1437'],
@@ -1068,7 +1505,8 @@ var RegExp;
       description: 'Object.freeze is missing',
       test: test_MISSING_FREEZE_ETC,
       repair: repair_MISSING_FREEZE_ETC,
-      canRepairSafely: false,
+      preSeverity: severities.NOT_OCAP_SAFE,
+      canRepair: false,           // repair for development, not safety
       urls: ['https://bugs.webkit.org/show_bug.cgi?id=55736'],
       sections: ['15.2.3.9'],
       tests: []
@@ -1077,7 +1515,8 @@ var RegExp;
       description: 'Phantom callee on strict functions',
       test: test_MISSING_CALLEE_DESCRIPTOR,
       repair: repair_MISSING_CALLEE_DESCRIPTOR,
-      canRepairSafely: true,
+      preSeverity: severities.UNSAFE_SPEC_VIOLATION,
+      canRepair: true,
       urls: ['https://bugs.webkit.org/show_bug.cgi?id=55537'],
       sections: ['15.2.3.4'],
       tests: []
@@ -1086,7 +1525,8 @@ var RegExp;
       description: 'Cannot delete ambient mutable RegExp.leftContext',
       test: test_REGEXP_CANT_BE_NEUTERED,
       repair: repair_REGEXP_CANT_BE_NEUTERED,
-      canRepairSafely: true,
+      preSeverity: severities.NOT_OCAP_SAFE,
+      canRepair: true,
       urls: ['https://bugzilla.mozilla.org/show_bug.cgi?id=591846',
              'http://wiki.ecmascript.org/doku.php?id=' +
              'conventions:make_non-standard_properties_configurable'],
@@ -1097,7 +1537,8 @@ var RegExp;
       description: 'RegExp.exec leaks match globally',
       test: test_REGEXP_TEST_EXEC_UNSAFE,
       repair: repair_REGEXP_TEST_EXEC_UNSAFE,
-      canRepairSafely: true,
+      preSeverity: severities.NOT_OCAP_SAFE,
+      canRepair: true,
       urls: ['http://code.google.com/p/v8/issues/detail?id=1393',
              'http://code.google.com/p/chromium/issues/detail?id=75740',
              'https://bugzilla.mozilla.org/show_bug.cgi?id=635017',
@@ -1106,19 +1547,54 @@ var RegExp;
       tests: ['S15.10.6.2_A12']
     },
     {
+      description: 'A function.prototype\'s descriptor lies',
+      test: test_FUNCTION_PROTOTYPE_DESCRIPTOR_LIES,
+      repair: void 0,
+      preSeverity: severities.UNSAFE_SPEC_VIOLATION,
+      canRepair: false,
+      urls: ['http://code.google.com/p/v8/issues/detail?id=1530',
+             'http://code.google.com/p/v8/issues/detail?id=1570'],
+      sections: [],
+      tests: []
+    },
+    {
       description: 'Function.prototype.bind is missing',
       test: test_MISSING_BIND,
       repair: repair_MISSING_BIND,
-      canRepairSafely: true,
-      urls: ['https://bugs.webkit.org/show_bug.cgi?id=26382'],
+      preSeverity: severities.UNSAFE_SPEC_VIOLATION,
+      canRepair: true,
+      urls: ['https://bugs.webkit.org/show_bug.cgi?id=26382',
+             'https://bugs.webkit.org/show_bug.cgi?id=42371'],
       sections: ['15.3.4.5'],
+      tests: []
+    },
+    {
+      description: 'Function.prototype.bind calls .apply rather than [[Call]]',
+      test: test_BIND_CALLS_APPLY,
+      repair: repair_MISSING_BIND,
+      preSeverity: severities.UNSAFE_SPEC_VIOLATION,
+      canRepair: true,
+      urls: ['http://code.google.com/p/v8/issues/detail?id=892',
+             'http://code.google.com/p/v8/issues/detail?id=828'],
+      sections: ['15.3.4.5.1'],
+      tests: []
+    },
+    {
+      description: 'Function.prototype.bind does not curry construction',
+      test: test_BIND_CANT_CURRY_NEW,
+      repair: void 0, // JS-based repair essentially impossible
+      preSeverity: severities.SAFE_SPEC_VIOLATION,
+      canRepair: false,
+      urls: ['https://bugs.webkit.org/show_bug.cgi?id=26382#c29'],
+      sections: ['15.3.4.5.2'],
       tests: []
     },
     {
       description: 'Date.prototype is a global communication channel',
       test: test_MUTABLE_DATE_PROTO,
       repair: repair_MUTABLE_DATE_PROTO,
-      canRepairSafely: true,
+      preSeverity: severities.NOT_OCAP_SAFE,
+      canRepair: true,
       urls: ['http://code.google.com/p/google-caja/issues/detail?id=1362'],
       sections: ['15.9.5'],
       tests: []
@@ -1127,7 +1603,8 @@ var RegExp;
       description: 'WeakMap.prototype is a global communication channel',
       test: test_MUTABLE_WEAKMAP_PROTO,
       repair: repair_MUTABLE_WEAKMAP_PROTO,
-      canRepairSafely: true,
+      preSeverity: severities.NOT_OCAP_SAFE,
+      canRepair: true,
       urls: ['https://bugzilla.mozilla.org/show_bug.cgi?id=656828'],
       sections: [],
       tests: []
@@ -1136,7 +1613,8 @@ var RegExp;
       description: 'Array forEach cannot be frozen while in progress',
       test: test_NEED_TO_WRAP_FOREACH,
       repair: repair_NEED_TO_WRAP_FOREACH,
-      canRepairSafely: true,
+      preSeverity: severities.UNSAFE_SPEC_VIOLATION,
+      canRepair: true,
       urls: ['http://code.google.com/p/v8/issues/detail?id=1447'],
       sections: ['15.4.4.18'],
       tests: ['S15.4.4.18_A1', 'S15.4.4.18_A2']
@@ -1145,7 +1623,8 @@ var RegExp;
       description: 'Workaround undiagnosed need for dummy setter',
       test: test_NEEDS_DUMMY_SETTER,
       repair: repair_NEEDS_DUMMY_SETTER,
-      canRepairSafely: true,
+      preSeverity: severities.UNSAFE_SPEC_VIOLATION,
+      canRepair: true,
       urls: [],
       sections: [],
       tests: []
@@ -1154,7 +1633,8 @@ var RegExp;
       description: 'Accessor properties inherit as own properties',
       test: test_ACCESSORS_INHERIT_AS_OWN,
       repair: repair_ACCESSORS_INHERIT_AS_OWN,
-      canRepairSafely: true,
+      preSeverity: severities.UNSAFE_SPEC_VIOLATION,
+      canRepair: true,
       urls: ['https://bugzilla.mozilla.org/show_bug.cgi?id=637994'],
       sections: [],
       tests: []
@@ -1163,7 +1643,8 @@ var RegExp;
       description: 'Array sort leaks global',
       test: test_SORT_LEAKS_GLOBAL,
       repair: repair_SORT_LEAKS_GLOBAL,
-      canRepairSafely: true,
+      preSeverity: severities.NOT_ISOLATED,
+      canRepair: true,
       urls: ['http://code.google.com/p/v8/issues/detail?id=1360'],
       sections: ['15.4.4.11'],
       tests: ['S15.4.4.11_A8']
@@ -1172,16 +1653,38 @@ var RegExp;
       description: 'String replace leaks global',
       test: test_REPLACE_LEAKS_GLOBAL,
       repair: repair_REPLACE_LEAKS_GLOBAL,
-      canRepairSafely: true,
+      preSeverity: severities.NOT_ISOLATED,
+      canRepair: true,
       urls: ['http://code.google.com/p/v8/issues/detail?id=1360'],
       sections: ['15.5.4.11'],
       tests: ['S15.5.4.11_A12']
     },
     {
+      description: 'Cannot "in" caller on strict function',
+      test: test_CANT_IN_CALLER,
+      repair: void 0,
+      preSeverity: severities.SAFE_SPEC_VIOLATION,
+      canRepair: false,
+      urls: ['https://bugs.webkit.org/show_bug.cgi?id=63398'],
+      sections: [],
+      tests: []
+    },
+    {
+      description: 'Cannot "in" arguments on strict function',
+      test: test_CANT_IN_ARGUMENTS,
+      repair: void 0,
+      preSeverity: severities.SAFE_SPEC_VIOLATION,
+      canRepair: false,
+      urls: ['https://bugs.webkit.org/show_bug.cgi?id=63398'],
+      sections: [],
+      tests: []
+    },
+    {
       description: 'Built in functions leak "caller"',
       test: test_BUILTIN_LEAKS_CALLER,
       repair: void 0,
-      canRepairSafely: false,
+      preSeverity: severities.NOT_OCAP_SAFE,
+      canRepair: false,
       urls: ['http://code.google.com/p/v8/issues/detail?id=1548',
              'https://bugzilla.mozilla.org/show_bug.cgi?id=591846',
              'http://wiki.ecmascript.org/doku.php?id=' +
@@ -1193,7 +1696,8 @@ var RegExp;
       description: 'Built in functions leak "arguments"',
       test: test_BUILTIN_LEAKS_ARGUMENTS,
       repair: void 0,
-      canRepairSafely: false,
+      preSeverity: severities.NOT_OCAP_SAFE,
+      canRepair: false,
       urls: ['http://code.google.com/p/v8/issues/detail?id=1548',
              'https://bugzilla.mozilla.org/show_bug.cgi?id=591846',
              'http://wiki.ecmascript.org/doku.php?id=' +
@@ -1205,7 +1709,8 @@ var RegExp;
       description: 'Bound functions leak "caller"',
       test: test_BOUND_FUNCTION_LEAKS_CALLER,
       repair: repair_MISSING_BIND,
-      canRepairSafely: true,
+      preSeverity: severities.NOT_OCAP_SAFE,
+      canRepair: true,
       urls: ['http://code.google.com/p/v8/issues/detail?id=893',
              'https://bugs.webkit.org/show_bug.cgi?id=63398'],
       sections: ['15.3.4.5'],
@@ -1215,7 +1720,8 @@ var RegExp;
       description: 'Bound functions leak "arguments"',
       test: test_BOUND_FUNCTION_LEAKS_ARGUMENTS,
       repair: repair_MISSING_BIND,
-      canRepairSafely: true,
+      preSeverity: severities.NOT_OCAP_SAFE,
+      canRepair: true,
       urls: ['http://code.google.com/p/v8/issues/detail?id=893',
              'https://bugs.webkit.org/show_bug.cgi?id=63398'],
       sections: ['15.3.4.5'],
@@ -1224,85 +1730,143 @@ var RegExp;
     {
       description: 'JSON.parse confused by "__proto__"',
       test: test_JSON_PARSE_PROTO_CONFUSION,
-      repair: void 0,
-      canRepairSafely: true,
+      repair: repair_JSON_PARSE_PROTO_CONFUSION,
+      preSeverity: severities.SAFE_SPEC_VIOLATION,
+      canRepair: true,
       urls: ['http://code.google.com/p/v8/issues/detail?id=621',
              'http://code.google.com/p/v8/issues/detail?id=1310'],
       sections: ['15.12.2'],
       tests: ['S15.12.2_A1']
+    },
+    {
+      description: 'Prototype still mutable on non-extensible object',
+      test: test_PROTO_NOT_FROZEN,
+      repair: void 0,
+      preSeverity: severities.NOT_OCAP_SAFE,
+      canRepair: false,
+      urls: ['https://bugs.webkit.org/show_bug.cgi?id=65832'],
+      sections: ['8.6.2'],
+      tests: []
     }
   ];
 
+  ////////////////////// Testing, Repairing, Reporting ///////////
 
-  // first run all the tests before repairing anything
-  // then repair all repairable failed tests
-  // then run all the tests again, in case some repairs break other tests
-
-  var beforeFailures = kludges.map(function(kludge) {
-    return kludge.test();
-  });
-  var repairs = [];
-  kludges.forEach(function(kludge, i) {
-    if (beforeFailures[i]) {
-      var repair = kludge.repair;
-      if (repair && repairs.lastIndexOf(repair) === -1) {
-        repair();
-        // Same repair might fix multiple problems, but run at most once.
-        repairs.push(repair);
-      }
+  /**
+   * Needs to work on ES3
+   */
+  function forEach(list, callback) {
+    for (var i = 0, len = list.length; i < len; i++) {
+      callback(list[i], i);
     }
-  });
-  var afterFailures = kludges.map(function(kludge) {
-    return kludge.test();
-  });
+  }
 
-  var seemsSafe = true;
+  /**
+   * Needs to work on ES3
+   */
+  function map(list, callback) {
+    var result = [];
+    for (var i = 0, len = list.length; i < len; i++) {
+      result.push(callback(list[i], i));
+    }
+    return result;
+  }
 
-  kludges.forEach(function(kludge, i) {
-    var status = '';
-    var level = 'warn';
-    if (beforeFailures[i]) { // failed before
-      if (afterFailures[i]) { // failed after
-        seemsSafe = false;
-        level = 'error';
-        if (kludge.repair) {
-          status = 'Repair failed';
-        } else {
-          status = 'Not repaired';
+  /**
+   * Run a set of tests & repairs, and report results.
+   *
+   * <p>First run all the tests before repairing anything.
+   * Then repair all repairable failed tests.
+   * Some repair might fix multiple problems, but run each repair at most once.
+   * Then run all the tests again, in case some repairs break other tests.
+   * And finally return a list of records of results.
+   */
+  function testRepairReport(kludges) {
+    var beforeFailures = map(kludges, function(kludge) {
+      return kludge.test();
+    });
+    var repairs = [];
+    forEach(kludges, function(kludge, i) {
+      if (beforeFailures[i]) {
+        var repair = kludge.repair;
+        if (repair && repairs.lastIndexOf(repair) === -1) {
+          repair();
+          repairs.push(repair);
         }
-      } else {
-        if (kludge.repair) {
-          status = 'Repaired';
-        } else {
-          status = 'Accidentally repaired';
+      }
+    });
+    var afterFailures = map(kludges, function(kludge) {
+      return kludge.test();
+    });
+
+    return map(kludges, function(kludge, i) {
+      var status = statuses.ALL_FINE;
+      var postSeverity = severities.SAFE;
+      var beforeFailure = beforeFailures[i];
+      var afterFailure = afterFailures[i];
+      if (beforeFailure) { // failed before
+        if (afterFailure) { // failed after
+          if (kludge.repair) {
+            postSeverity = kludge.preSeverity;
+            status = statuses.REPAIR_FAILED;
+          } else {
+            if (!kludge.canRepair) {
+              postSeverity = kludge.preSeverity;
+            } // else no repair + canRepair -> problem isn't safety issue
+            status = statuses.NOT_REPAIRED;
+          }
+        } else { // succeeded after
+          if (kludge.repair) {
+            if (!kludge.canRepair) {
+              // repair for development, not safety
+              postSeverity = kludge.preSeverity;
+              status = statuses.REPAIRED_UNSAFELY;
+            } else {
+              status = statuses.REPAIRED;
+            }
+          } else {
+            status = statuses.ACCIDENTALLY_REPAIRED;
+          }
+        }
+      } else { // succeeded before
+        if (afterFailure) { // failed after
+          if (kludge.repair || !kludge.canRepair) {
+            postSeverity = kludge.preSeverity;
+          } // else no repair + canRepair -> problem isn't safety issue
+          status = statuses.BROKEN_BY_OTHER_ATTEMPTED_REPAIRS;
+        } else { // succeeded after
+          // nothing to see here, move along
         }
       }
-    } else { // succeeded before
-      if (afterFailures[i]) { // failed after
-        seemsSafe = false;
-        level = 'error';
-        status = 'Broken by other attempted repairs';
-      } else { // succeeded after
-        // nothing to see here, move along
-        return;
-      }
-    }
-    var note = '';
-    if (!kludge.canRepairSafely) {
-      seemsSafe = false;
-      note = 'This platform is not SES-safe. ';
-    }
-    logger[level](i + ' ' + status + ': ' +
-                  kludge.description + '. ' + note +
-                  // TODO(erights): select most relevant URL based on platform
-                  (kludge.urls[0] ? 'See ' + kludge.urls[0] : ''));
-  });
 
-  // TODO(erights): If we arrive here with the platform still in a
-  // non-SES-safe state, we should indicate that somehow so that our
-  // client (such as SES) can decide to abort. We should *not* simply
-  // throw an exception, because that limits the utility of this
-  // module for non-SES uses.
-  return seemsSafe;
+      if (typeof beforeFailure === 'string' ||
+          typeof afterFailure === 'string') {
+        postSeverity = severities.NEW_SYMPTOM;
+      }
+
+      if (postSeverity.level > ses.maxSeverity.level) {
+        ses.maxSeverity = postSeverity;
+      }
+
+      return {
+        description:   kludge.description,
+        preSeverity:   kludge.preSeverity,
+        canRepair:     kludge.canRepair,
+        urls:          kludge.urls,
+        sections:      kludge.sections,
+        tests:         kludge.tests,
+        status:        status,
+        postSeverity:  postSeverity,
+        beforeFailure: beforeFailure,
+        afterFailure:  afterFailure
+      };
+    });
+  }
+
+  var reports = testRepairReport(baseKludges);
+  if (ses.ok()) {
+    reports.push.apply(reports, testRepairReport(supportedKludges));
+  }
+  logger.reportRepairs(reports);
 
 })(this);

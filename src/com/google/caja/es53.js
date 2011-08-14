@@ -181,11 +181,11 @@ var ___, cajaVM, safeJSON, WeakMap;
    *                                      if possible; if that fails, it invokes
    *                                      explicit taming functions.
    * {@code ___.untame(obj)}              is similar, but goes the other way.
-   * 
+   *
    * Since creating function instances is a common pattern and reading
    * properties of a function instance is not, we defer whitelisting the
    * prototype, length, and name properties.
-   * 
+   *
    * {@code f.name___}                    holds the value of the deferred name
    *                                      property of a function instance until
    *                                      it's installed.
@@ -680,12 +680,12 @@ var ___, cajaVM, safeJSON, WeakMap;
         // Is p an accessor property? Used only for eviscerated t.
         var g = getter(t, p);
         if (g) { return g.f___(this); }
-        
+
         // Accessor property with only setter
         if (hasAccessor(t, p)) {
           return void 0;
         }
-        
+
         return tame(f[p]);
       }
       return void 0;
@@ -717,6 +717,7 @@ var ___, cajaVM, safeJSON, WeakMap;
           } else {
             if (delete f[p]) { return true; }
           }
+          // See http://code.google.com/p/google-caja/issues/detail?id=1392
           return;
         }
       }
@@ -737,11 +738,11 @@ var ___, cajaVM, safeJSON, WeakMap;
       return (p + '_v___' in this)
           || ((p in f) && !endsWith__.test(p));
     };
-    
+
     var feralEnumerate = makeEnumerate(t, f);
     t.e___ = function() {
       var result = feralEnumerate();
-      
+
       // For eviscerated t, add remaining properties from t (which will be
       // accessor properties only).
       for (var p in t) {
@@ -886,7 +887,7 @@ var ___, cajaVM, safeJSON, WeakMap;
     };
   }
 
-  // Remove own value properties from tame object t and copy untame(them) to 
+  // Remove own value properties from tame object t and copy untame(them) to
   // feral object f, because t is about to be made into an object that forwards
   // to f.
   //
@@ -1483,14 +1484,14 @@ var ___, cajaVM, safeJSON, WeakMap;
 
   /**
    * Tests whether a data property is writable in an assignment operation.
-   * 
+   *
    * Preconditions:
    * {@code obj} must not be {@code null} or {@code undefined}.
    * {@code name} must be a string that is not the string encoding
    *              of a number; {@code name} may be {@code 'NUM___'}.
    */
   function isAssignable(obj, name) {
-    return (isWritable(obj, name) || obj[name + '_gw___']) && 
+    return (isWritable(obj, name) || obj[name + '_gw___']) &&
         (obj.ne___ !== obj);
   }
 
@@ -1585,7 +1586,7 @@ var ___, cajaVM, safeJSON, WeakMap;
       }
     }
     return result;
-  }
+  };
 
   function ownEnumKeys(obj) {
     return obj.keys___();
@@ -1619,7 +1620,7 @@ var ___, cajaVM, safeJSON, WeakMap;
       }
     }
     return result;
-  }
+  };
 
   function ownUntamedKeys(obj) {
     var i, m, result = [];
@@ -2138,7 +2139,7 @@ var ___, cajaVM, safeJSON, WeakMap;
    * property traversal.
    */
 
-  // Defined where Object's methods are. 
+  // Defined where Object's methods are.
   var origGetPrototypeOf, origGetOwnPropertyDescriptor;
 
   var def = markFuncFreeze(function(root) {
@@ -2440,7 +2441,7 @@ var ___, cajaVM, safeJSON, WeakMap;
     }
     return freeze(record);
   }
-  
+
   /**
    * Create a guard which passes all objects present in {@code table}.
    * This may be used to define trademark-like systems which do not require
@@ -3649,14 +3650,14 @@ var ___, cajaVM, safeJSON, WeakMap;
   // 15.2.3.9
   /**
    * Whitelists all the object's own properties that do not
-   * end in __ and have not already been whitelisted.  
+   * end in __ and have not already been whitelisted.
    * If opt_deep is true, recurses on objects and
    * assumes the object has no cycles through accessible keys.
    */
   function whitelistAll(obj, opt_deep) {
     var i;
     for (i in obj) {
-      if (obj.hasOwnProperty(i) && 
+      if (obj.hasOwnProperty(i) &&
           !endsWith__.test(i) &&
           !((i + '_v___') in obj)) {
         var isObj = (typeof obj[i]) === 'object';
@@ -4741,7 +4742,7 @@ var ___, cajaVM, safeJSON, WeakMap;
         },
       get: function(name, proxy) {
           var dis = safeDis(this);
-          var desc = dis.getPropertyDescriptor_m___ ? 
+          var desc = dis.getPropertyDescriptor_m___ ?
               dis.getPropertyDescriptor(name) :
               dis.m___('getPropertyDescriptor', [name]);
           if (desc === void 0) { return void 0; }
@@ -5489,7 +5490,7 @@ var ___, cajaVM, safeJSON, WeakMap;
         });
     }
 
-    // Provide direct access to 'instantiate' for privileged use 
+    // Provide direct access to 'instantiate' for privileged use
     theModule.instantiate___ = function(___, IMPORTS___) {
       return module.instantiate(___, IMPORTS___);
     };
@@ -5734,7 +5735,7 @@ var ___, cajaVM, safeJSON, WeakMap;
     n = '' + n;
     // This turns an undefined radix into a NaN but is ok since NaN
     // is treated as undefined by parseInt
-    radix = +radix; 
+    radix = +radix;
     var isHexOrOctal = /^\s*[+-]?\s*0(x?)/.exec(n);
     var isOct = isHexOrOctal ? isHexOrOctal[1] !== 'x' : false;
 
@@ -5782,7 +5783,7 @@ var ___, cajaVM, safeJSON, WeakMap;
       SyntaxError: SyntaxError,
       TypeError: TypeError,
       URIError: URIError,
-      
+
       // ES-Harmony future features
       WeakMap: WeakMap
     });
