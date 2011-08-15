@@ -20,6 +20,7 @@ import com.google.caja.parser.js.Expression;
 import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessageContext;
 import com.google.caja.util.CajaTestCase;
+import com.google.caja.util.FailureIsAnOption;
 
 import java.net.URI;
 
@@ -711,6 +712,42 @@ public class JsdocTest extends CajaTestCase {
         + "var inst = [];");
     assertJsdocMessage("testBadTypes:3+5 - 42 : Arra is not a type");
     assertJsdocMessage("testBadTypes:3+5 - 42 : MyOtherClas is not a type");
+  }
+
+  @FailureIsAnOption
+  public final void testSpecialOperation() throws Exception {
+    assertExtracted(""
+        + "{"
+        + "  '@fileoverview': {},"
+        + "  'policy': {"
+        + "    '@description': 'doc policy ',"
+        + "    '@pos': 'testSpecialOperation:1+1 - 18',"
+        + "    '@summary': 'doc policy ',"
+        + "    '@type': [ 'Object' ],"
+        + "    'net': {"
+        + "      '@description': 'doc for net ',"
+        + "      '@pos': 'testSpecialOperation:3+3 - 21',"
+        + "      '@summary': 'doc for net ',"
+        + "      '@type': [ 'Object' ],"
+        + "      'only': {"
+        + "        '@description': 'doc for only ',"
+        + "        '@pos': 'testSpecialOperation:5+5 - 23',"
+        + "        '@summary': 'doc for only ',"
+        + "        '@type': [ 'Object' ]"
+        + "      }"
+        + "    }"
+        + "  }"
+        + "}",
+        ""
+        + "/** doc policy */\n"
+        + "var policy = {\n"
+        + "  /** doc for net */\n"
+        + "  \"net\": {\n"
+        + "    /** doc for only */\n"
+        + "    \"only\": null"
+        + "  }\n"
+        + "};");
+    assertNoErrors();
   }
 
   public final void testCorrectExpressionExecution() throws Exception {
