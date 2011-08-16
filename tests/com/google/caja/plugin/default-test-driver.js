@@ -31,7 +31,8 @@ var testCase = getUrlParam('test-case');
 if (testCase) {
   caja.configure({
     cajaServer: 'http://localhost:8000/caja',
-    debug: true
+    debug: true,
+    forceES5Mode: inES5Mode
   }, function(frameGroup) {
     frameGroup.makeES5Frame(
         createDiv(),

@@ -820,6 +820,48 @@
        <input file="${src.caja}/ses/ejectorsGuardsTrademarks.js"/>
        <input file="${src.caja}/ses/hookupSESPlus.js"/>
     </transform>
+    <transform>
+      <!-- ses-taming-frame: Used by caja.js when the browser is SES-capable.
+      -->
+      <!-- TODO(kpreid): Minifier rejects top-level 'use strict' directives.
+           Refactor Domado so it does not need one, or have the minifier
+           do something clever. -->
+      <!--<output file="${lib.caja}/plugin/ses-taming-frame.opt.js"
+       language="javascript" renderer="minify"/>-->
+      <output file="${lib.caja}/plugin/ses-taming-frame.js"
+       language="javascript" renderer="concat"/>
+      <input file="${third_party}/js/json_sans_eval/json_sans_eval.js"/>
+      <input file="${src.caja}/plugin/ses-iframe-init.js"/>
+      <input file="${lib.caja}/ses/initSESPlus.js"/>
+
+      <input file="${src.caja}/plugin/unicode.js"/>
+      <input file="${lib.caja}/plugin/css-defs.js"/>
+      <input file="${lib.caja}/plugin/html4-defs.js"/>
+      <input file="${src.caja}/plugin/html-sanitizer.js"/>
+      <input file="${src.caja}/plugin/html-emitter.js"/>
+      <input file="${src.caja}/plugin/cssparser.js"/>
+      <input file="${src.caja}/plugin/bridal.js"/>
+      <input file="${src.caja}/plugin/domado.js"/>
+
+      <input file="${src.caja}/plugin/uri.js"/>
+      <input file="${src.caja}/ses-promise.js"/>
+      <input file="${src.caja}/plugin/cajoling-service-client.js"/>
+      <input file="${src.caja}/plugin/caja-iframe-done.js"/>
+    </transform>
+    <transform>
+      <!-- ses-guest-frame: Used by caja.js when the browser is SES-capable.
+      -->
+      <!-- TODO(kpreid): Minifier rejects top-level 'use strict' directives.
+           Refactor Domado so it does not need one, or have the minifier
+           do something clever. -->
+      <!--<output file="${lib.caja}/plugin/ses-guest-frame.opt.js"
+       language="javascript" renderer="minify"/>-->
+      <output file="${lib.caja}/plugin/ses-guest-frame.js"
+       language="javascript" renderer="concat"/>
+      <input file="${src.caja}/plugin/ses-iframe-init.js"/>
+      <input file="${lib.caja}/ses/initSESPlus.js"/>
+      <input file="${src.caja}/plugin/caja-iframe-done.js"/>
+    </transform>
   </target>
 
   <!-- TODO(jasvir): This is not needed any longer -->
@@ -1129,6 +1171,10 @@
         <include name="es53-guest-frame.opt.js"/>
         <include name="es53-taming-frame.js"/>                                
         <include name="es53-taming-frame.opt.js"/>
+        <include name="ses-taming-frame.js"/>                                
+        <include name="ses-taming-frame.opt.js"/>
+        <include name="ses-guest-frame.js"/>                                
+        <include name="ses-guest-frame.opt.js"/>
       </fileset>
     </copy>
     <copy todir="${war}/sunspider">

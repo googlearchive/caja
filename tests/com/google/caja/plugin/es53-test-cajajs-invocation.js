@@ -21,7 +21,6 @@
  */
 
 (function () {
-
   function splitHtmlAndScript(combinedHtml) {
     return combinedHtml.match(
       /^([\s\S]*?)<script[^>]*>([\s\S]*?)<\/script>\s*$/)
@@ -44,6 +43,20 @@
   }
 
   /**
+   * Assert that a cajoled and loaded es53-test-guest.js has the right 
+   * results.
+   */
+  function assertGuestJsCorrect(frame, div, result) {
+    // TODO(kpreid): reenable or declare completion value unsupported
+    if (!inES5Mode) {
+      assertEquals(12, result);
+    } else {
+      console.warn('JS completion value not yet supported by ES5 mode; '
+          + 'not testing.');
+    }
+  }
+
+  /**
    * Assert that a cajoled and loaded es53-test-guest.html has the right 
    * results.
    */
@@ -51,10 +64,15 @@
     assertStringContains('static html', div.innerHTML);
     assertStringContains('edited html', div.innerHTML);
     assertStringContains('dynamic html', div.innerHTML);
-    assertEquals('small-caps',
-        document.defaultView.getComputedStyle(
-            document.getElementById('foo-' + frame.idSuffix),
-            null).fontVariant);
+    if (!inES5Mode) {
+      // TODO(kpreid): Reenable after CSS works in ES5 mode
+      assertEquals('small-caps',
+          document.defaultView.getComputedStyle(
+              document.getElementById('foo-' + frame.idSuffix),
+              null).fontVariant);
+    } else {
+      console.warn('CSS not yet supported by ES5; not testing.');
+    }
   }
 
 
@@ -66,7 +84,8 @@
 
   caja.initialize({
     cajaServer: 'http://localhost:8000/caja',
-    debug: true
+    debug: true,
+    forceES5Mode: inES5Mode
   });
 
   registerTest('testReinitialization', function testReinitialization() {
@@ -82,6 +101,8 @@
     }
   });
 
+  // TODO(kpreid): Enable for ES5 once HTML scripting works
+  if (!inES5Mode)
   registerTest('testBuilderApiHtml', function testBuilderApiHtml() {
     var div = createDiv();
     caja.load(div, uriCallback, function (frame) {
@@ -100,7 +121,7 @@
       frame.code('es53-test-guest.js', 'text/javascript')
            .api(extraImports)
            .run(function(result) {
-             assertEquals(12, result);
+             assertGuestJsCorrect(frame, div, result);
              jsunitPass('testBuilderApiJs');
            });
     });
@@ -112,7 +133,7 @@
       frame.code('es53-test-guest.js', 'text/javascript')
            .api(extraImports)
            .run(function(result) {
-             assertEquals(12, result);
+             assertGuestJsCorrect(frame, undefined, result);
              jsunitPass('testBuilderApiJsNoDom');
            });
     });
@@ -180,6 +201,8 @@
     });
   });
 
+  // TODO(kpreid): Enable for ES5 once HTML scripting works
+  if (!inES5Mode)
   registerTest('testBuilderApiContentHtml',
       function testBuilderApiContentHtml() {
     var div = createDiv();
@@ -195,19 +218,21 @@
   });
 
   registerTest('testBuilderApiContentJs', function testBuilderApiContentJs() {
-    caja.load(createDiv(), uriCallback, function (frame) {
+    var div = createDiv();
+    caja.load(div, uriCallback, function (frame) {
       var extraImports = { x: 4, y: 3 };
       fetch('es53-test-guest.js', function(resp) {
         frame.code('http://localhost:8080/', 'application/javascript', resp)
              .api(extraImports)
              .run(function (result) {
-               assertEquals(12, result);
+               assertGuestJsCorrect(frame, div, result);
                jsunitPass('testBuilderApiContentJs');
              });
       });
     });
   });
 
+  if (!inES5Mode)
   registerTest('testBuilderApiContentCajoledHtml',
       function testBuilderApiContentCajoledHtml() {
     var div = createDiv();
@@ -224,6 +249,7 @@
     });
   });
 
+  if (!inES5Mode)
   registerTest('testBuilderApiContentCajoledJs',
       function testBuilderApiContentCajoledJs() {
     var div = createDiv();
@@ -233,7 +259,7 @@
         frame.cajoled(undefined, script, undefined)
              .api(extraImports)
              .run(function (result) {
-               assertEquals(12, result);
+               assertGuestJsCorrect(frame, div, result);
                jsunitPass('testBuilderApiContentCajoledJs');
              });
       });
@@ -242,10 +268,12 @@
 
   caja.configure({
     cajaServer: 'http://localhost:8000/caja',
-    debug: true
+    debug: true,
+    forceES5Mode: inES5Mode
   }, function (frameGroup) {
 
     // TODO(ihab.awad): Test 'base url' functionality, esp. for "content" cases
+    if (!inES5Mode)
     registerTest('testContentCajoledHtml', function testContentCajoledHtml() {
       fetch('es53-test-guest.out.html', function(resp) {
         var htmlAndScript = splitHtmlAndScript(resp);
@@ -261,19 +289,21 @@
       });
     });
 
+    if (!inES5Mode)
     registerTest('testContentCajoledJs', function testContentCajoledJs() {
       fetch('es53-test-guest.out.js', function(script) {
         frameGroup.makeES5Frame(undefined, uriCallback, function (frame) {
           var extraImports = { x: 4, y: 3 };
           frame.contentCajoled(undefined, script, undefined)
                .run(extraImports, function (result) {
-            assertEquals(12, result);
+            assertGuestJsCorrect(frame, undefined, result);
             jsunitPass('testContentCajoledJs');
           });
         });
       });
     });
 
+    if (!inES5Mode)
     registerTest('testNoImports', function testNoImports() {
       fetch('es53-test-guest.out.html', function(resp) {
         var htmlAndScript = splitHtmlAndScript(resp);
@@ -293,6 +323,8 @@
     // registerTest('testUrlCajoledHtml', function testUrlCajoledHtml() { });
     // registerTest('testUrlCajoledJs', function testUrlCajoledJs() { });
 
+    // TODO(kpreid): Enable for ES5 once HTML scripting works
+    if (!inES5Mode)
     registerTest('testContentHtml', function testContentHtml() {
       fetch('es53-test-guest.html', function(resp) {
         var div = createDiv();
@@ -314,13 +346,15 @@
                         resp,
                         'application/javascript')
               .run(extraImports, function (result) {
-            assertEquals(12, result);
+            assertGuestJsCorrect(frame, undefined, result);
             jsunitPass('testContentJs');
           });
         });
       });
     });
 
+    // TODO(kpreid): Enable for ES5 once HTML scripting works
+    if (!inES5Mode)
     registerTest('testUrlHtml', function testUrlHtml() {
       var div = createDiv();
       frameGroup.makeES5Frame(div, uriCallback, function (frame) {
@@ -335,12 +369,14 @@
       frameGroup.makeES5Frame(undefined, uriCallback, function (frame) {
         var extraImports = { x: 4, y: 3 };
         frame.url('es53-test-guest.js').run(extraImports, function (result) {
-          assertEquals(12, result);
+          assertGuestJsCorrect(frame, undefined, result);
           jsunitPass('testUrlJs');
         });
       });
     });
 
+    // TODO(kpreid): Enable for ES5 once HTML scripting works
+    if (!inES5Mode)
     registerTest('testUrlHtmlWithMimeType', function testUrlHtml() {
       var div = createDiv();
       frameGroup.makeES5Frame(div, uriCallback, function (frame) {

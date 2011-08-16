@@ -171,11 +171,23 @@ public abstract class BrowserTestCase extends CajaTestCase {
   }
 
   protected void runTestDriver(String testDriver) {
-    runBrowserTest("browser-test-case.html?test-driver=" + testDriver);
+    runTestDriver(testDriver, true);
+    runTestDriver(testDriver, false);
   }
 
   protected void runTestCase(String testCase) {
-    runBrowserTest("browser-test-case.html?test-case=" + testCase);
+    runTestCase(testCase, true);
+    runTestCase(testCase, false);
+  }
+
+  protected void runTestDriver(String testDriver, boolean es5) {
+    runBrowserTest("browser-test-case.html?es5=" + es5
+        + "&test-driver=" + testDriver);
+  }
+
+  protected void runTestCase(String testCase, boolean es5) {
+    runBrowserTest("browser-test-case.html?es5=" + es5
+        + "&test-case=" + testCase);
   }
 
   /**

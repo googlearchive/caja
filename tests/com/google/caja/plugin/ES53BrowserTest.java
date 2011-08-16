@@ -14,6 +14,9 @@
 
 package com.google.caja.plugin;
 
+// TODO(kpreid): Rename this file, as it now tests the ES5 as well as ES53
+// environment.
+
 /**
  * @author ihab.awad@gmail.com
  */
@@ -23,50 +26,58 @@ public class ES53BrowserTest extends BrowserTestCase {
   }
 
   public final void testBasicFunctions() {
-    runTestCase("es53-test-basic-functions-guest.html");
+    // TODO(kpreid): Enable for ES5 once HTML scripting works
+    runTestCase("es53-test-basic-functions-guest.html", false);
   }
 
   public final void testClientUriRewriting() {
-    runTestDriver("es53-test-client-uri-rewriting.js");
+    // TODO(kpreid): Enable for ES5 once HTML scripting works
+    runTestDriver("es53-test-client-uri-rewriting.js", false);
   }
 
   public final void testTamingTamed() {
-    runTestDriver("es53-test-taming-tamed.js");
+    runTestDriver("es53-test-taming-tamed.js", false);
   }
 
   public final void testTamingUntamed() {
-    runTestDriver("es53-test-taming-untamed.js");
+    runTestDriver("es53-test-taming-untamed.js", false);
   }
 
   public final void testTamingInout() {
-    runTestDriver("es53-test-taming-inout.js");
+    runTestDriver("es53-test-taming-inout.js", false);
   }
 
   public final void testTamingErrors() {
-    runTestDriver("es53-test-taming-errors.js");
+    runTestDriver("es53-test-taming-errors.js", false);
   }
 
   public final void testDomitaCanvas() {
-    runTestCase("es53-test-domita-canvas-guest.html");
+    // TODO(kpreid): Enable for ES5 once HTML scripting works
+    runTestCase("es53-test-domita-canvas-guest.html", false);
   }
 
   public final void testDomitaDom() {
-    runTestCase("es53-test-domita-dom-guest.html");
+    // TODO(kpreid): Enable for ES5 once HTML scripting works
+    runTestCase("es53-test-domita-dom-guest.html", false);
   }
 
   public final void testDomitaEvents() {
-    runTestDriver("es53-test-domita-events.js");
+    // TODO(kpreid): Enable for ES5 once HTML scripting works
+    runTestDriver("es53-test-domita-events.js", false);
   }
 
   public final void testDomitaForms() {
-    runTestCase("es53-test-domita-forms-guest.html");
+    // TODO(kpreid): Enable for ES5 once HTML scripting works
+    runTestCase("es53-test-domita-forms-guest.html", false);
   }
 
   public final void testDomitaSpecial() {
-    runTestDriver("es53-test-domita-special.js");
+    // TODO(kpreid): Enable for ES5 once HTML scripting works
+    runTestDriver("es53-test-domita-special.js", false);
   }
 
   public final void testLanguage() {
-    runTestCase("es53-test-language-guest.html");
+    // TODO(kpreid): Enable for ES5 once HTML scripting works
+    runTestCase("es53-test-language-guest.html", false);
   }
 }

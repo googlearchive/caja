@@ -49,8 +49,8 @@
  * @provides Domado
  * @overrides domitaModules
  */
-// TODO(kpreid): Make sure everything which should be frozen is.
-// TODO(kpreid): Review whether multiple uses of np() should be coalesced for efficiency.
+// TODO(kpreid): Review whether multiple uses of np() should be coalesced for
+// efficiency.
 
 'use strict';
 
@@ -106,6 +106,23 @@ domitaModules.permuteProxyGetSet = (function () {
       getter: function (getFunc) { return getFunc; },
       setter: function (setFunc) { return setFunc; }
     };
+  }
+})();
+
+domitaModules.canHaveEnumerableAccessors = (function () {
+  // Firefox bug causes enumerable accessor properties to appear as own
+  // properties of children. SES patches this by prohibiting enumerable
+  // accessor properties. We work despite the bug by making all such
+  // properties non-enumerable using this flag.
+  try {
+    Object.defineProperty({}, "foo", {
+      enumerable: true,
+      configurable: false,
+      get: function () {}
+    });
+    return true;
+  } catch (e) {
+    return false;
   }
 })();
 
@@ -179,7 +196,9 @@ domitaModules.ProxyHandler.prototype = {
   has: function(name) { return name in this.target; },
 
   // ({}).hasOwnProperty.call(proxy, name) -> boolean
-  hasOwn: function(name) { return ({}).hasOwnProperty.call(this.target, name); },
+  hasOwn: function(name) {
+    return ({}).hasOwnProperty.call(this.target, name);
+  },
 
   // proxy[name] -> any
   get: domitaModules.permuteProxyGetSet.getter(
@@ -282,7 +301,8 @@ domitaModules.Confidence = (function () {
       //console.debug("Confiding:", object);
       if (table.get(object) !== undefined) {
         if (table.get(object)._obj !== object) {
-          throw new Error("WeakMap broke! " + object + " vs. " + table.get(object)._obj);
+          throw new Error("WeakMap broke! " + object + " vs. " +
+              table.get(object)._obj);
         }
         throw new Error(typename + " has already confided in " + object);
       }
@@ -563,6 +583,7 @@ domitaModules.TameXMLHttpRequest = function(
     uriCallback) {
   var Confidence = domitaModules.Confidence;
   var setOwn = domitaModules.setOwn;
+  var canHaveEnumerableAccessors = domitaModules.canHaveEnumerableAccessors;
   // See http://www.w3.org/TR/XMLHttpRequest/
 
   // TODO(ihab.awad): Improve implementation (interleaving, memory leaks)
@@ -583,11 +604,11 @@ domitaModules.TameXMLHttpRequest = function(
   }
   Object.defineProperties(TameXMLHttpRequest.prototype, {
     onreadystatechange: {
-      ses_ignoreBug_propertyWillAppearAsOwn: true,
-      enumerable: true,
+      enumerable: canHaveEnumerableAccessors,
       set: method(function (handler) {
-        // TODO(ihab.awad): Do we need more attributes of the event than 'target'?
-        // May need to implement full "tame event" wrapper similar to DOM events.
+        // TODO(ihab.awad): Do we need more attributes of the event than
+        // 'target'? May need to implement full "tame event" wrapper similar to
+        // DOM events.
         var self = this;
         p(this).feral.onreadystatechange = rulebreaker.untame(function (event) {
           var evt = { target: self };
@@ -598,16 +619,14 @@ domitaModules.TameXMLHttpRequest = function(
       })
     },
     readyState: {
-      ses_ignoreBug_propertyWillAppearAsOwn: true,
-      enumerable: true,
+      enumerable: canHaveEnumerableAccessors,
       get: method(function () {
         // The ready state should be a number
         return Number(p(this).feral.readyState);
       })
     },
     responseText: {
-      ses_ignoreBug_propertyWillAppearAsOwn: true,
-      enumerable: true,
+      enumerable: canHaveEnumerableAccessors,
       get: method(function () {
         var result = p(this).feral.responseText;
         return (result === undefined || result === null) ?
@@ -615,17 +634,16 @@ domitaModules.TameXMLHttpRequest = function(
       })
     },
     responseXML: {
-      ses_ignoreBug_propertyWillAppearAsOwn: true,
-      enumerable: true,
+      enumerable: canHaveEnumerableAccessors,
       get: method(function () {
-        // TODO(ihab.awad): Implement a taming layer for XML. Requires generalizing
-        // the HTML node hierarchy as well so we have a unified implementation.
+        // TODO(ihab.awad): Implement a taming layer for XML. Requires
+        // generalizing the HTML node hierarchy as well so we have a unified
+        // implementation.
         return {};
       })
     },
     status: {
-      ses_ignoreBug_propertyWillAppearAsOwn: true,
-      enumerable: true,
+      enumerable: canHaveEnumerableAccessors,
       get: method(function () {
         var result = p(this).feral.status;
         return (result === undefined || result === null) ?
@@ -633,8 +651,7 @@ domitaModules.TameXMLHttpRequest = function(
       })
     },
     statusText: {
-      ses_ignoreBug_propertyWillAppearAsOwn: true,
-      enumerable: true,
+      enumerable: canHaveEnumerableAccessors,
       get: method(function () {
         var result = p(this).feral.statusText;
         return (result === undefined || result === null) ?
@@ -678,7 +695,8 @@ domitaModules.TameXMLHttpRequest = function(
       break;
     }
   });
-  TameXMLHttpRequest.prototype.setRequestHeader = method(function (label, value) {
+  TameXMLHttpRequest.prototype.setRequestHeader = method(
+      function (label, value) {
     p(this).feral.setRequestHeader(String(label), String(value));
   });
   TameXMLHttpRequest.prototype.send = method(function(opt_data) {
@@ -712,7 +730,8 @@ domitaModules.TameXMLHttpRequest = function(
     return (result === undefined || result === null) ?
       result : String(result);
   });
-  TameXMLHttpRequest.prototype.getResponseHeader = method(function (headerName) {
+  TameXMLHttpRequest.prototype.getResponseHeader = method(
+      function (headerName) {
     var result = p(this).feral.getResponseHeader(String(headerName));
     return (result === undefined || result === null) ?
       result : String(result);
@@ -848,11 +867,18 @@ function Domado(opt_rulebreaker) {
   var ProxyHandler = domitaModules.ProxyHandler;
   var ExpandoProxyHandler = domitaModules.ExpandoProxyHandler;
   var setOwn = domitaModules.setOwn;
+  var canHaveEnumerableAccessors = domitaModules.canHaveEnumerableAccessors;
     
   function traceStartup(var_args) {
-    //// Firebug console's methods have no .apply
-    //if (typeof console !== 'undefined')
-    //  Function.prototype.apply.call(console.debug, console, arguments);
+    //// In some versions, Firebug console's methods have no .apply. In other
+    //// versions, Function.prototype.apply cannot be used on them!
+    //if (typeof console !== 'undefined') {
+    //  if (console.debug.apply) {
+    //    console.debug.apply(console, arguments);
+    //  } else {
+    //    Function.prototype.apply.call(console.debug, console, arguments);
+    //  }
+    //}
   }
   
   function inherit(sub, souper) {
@@ -877,19 +903,17 @@ function Domado(opt_rulebreaker) {
    */
   function definePropertiesAwesomely(object, propDescs) {
     for (var prop in propDescs) {
-      var desc = {
-        // Affects es5shim.js. Applying this universally for minimal code 
-        // impact to Domado until the bug is fixed; we don't care about the
-        // bug because it only affects JSON.stringify, which we do not expect
-        // to be called on DOM nodes.
-        ses_ignoreBug_propertyWillAppearAsOwn: true
-      };
+      var desc = {};
       for (var k in propDescs[prop]) {
         desc[k] = propDescs[prop][k];
       }
+      if ('get' in desc || 'set' in desc) {
+        // Firefox bug workaround; see comments on canHaveEnumerableAccessors.
+        desc.enumerable = desc.enumerable && canHaveEnumerableAccessors;
+      }
       if (desc.extendedAccessors) {
         delete desc.extendedAccessors;
-        (function (prop, extGet, extSet) { // @*$#*;%#<$ non-lexical scoping
+        (function (prop, extGet, extSet) {  // @*$#*;%#<$ non-lexical scoping
           if (extGet) {
             desc.get = cajaVM.def(function () {
               return extGet.call(this, prop);
@@ -904,17 +928,18 @@ function Domado(opt_rulebreaker) {
       }
       if (desc.get && !Object.isFrozen(desc.get)) {
         if (typeof console !== 'undefined') {
-          console.warn("Getter for ", prop, " of ", object, " is not frozen; fixing.");
+          console.warn("Getter for ", prop, " of ", object,
+              " is not frozen; fixing.");
         }
         cajaVM.def(desc.get);
       }
       if (desc.set && !Object.isFrozen(desc.set)) {
         if (typeof console !== 'undefined') {
-          console.warn("Setter for ", prop, " of ", object, " is not frozen; fixing.");
+          console.warn("Setter for ", prop, " of ", object,
+              " is not frozen; fixing.");
         }
         cajaVM.def(desc.set);
       }
-      //console.debug("[DPA]", object, prop, desc, typeof desc.value, typeof desc.get, typeof desc.set);
       Object.defineProperty(object, prop, desc);
     }
   }
@@ -1605,7 +1630,9 @@ function Domado(opt_rulebreaker) {
           value = String(value);
           if (!uriCallback) { return null; }
           return uriCallback.rewrite(
-              value, getUriEffect(tagName, attribName), getLoaderType(tagName, attribName),
+              value,
+              getUriEffect(tagName, attribName),
+              getLoaderType(tagName, attribName),
               { "XML_ATTR": attribName}) || null;
         case html4.atype.URI_FRAGMENT:
           value = String(value);
@@ -2284,9 +2311,7 @@ function Domado(opt_rulebreaker) {
     definePropertiesAwesomely(TameNode.prototype, {
       // tameDocument is not yet defined at this point so can't be a constant
       ownerDocument: {
-        ses_ignoreBug_propertyWillAppearAsOwn: true,
-        enumerable: true,
-        configurable: true,  // SES workaround; will be turned off by freeze
+        enumerable: canHaveEnumerableAccessors,
         get: cajaVM.def(function () {
         return tameDocument;
       }) }
@@ -2484,7 +2509,8 @@ function Domado(opt_rulebreaker) {
       /**
        * Speced in <a href="http://www.w3.org/TR/DOM-Level-3-Core/core.html#Node3-compareDocumentPosition">DOM-Level-3</a>.
        */
-      TameBackedNode.prototype.compareDocumentPosition = nodeMethod(function (other) {
+      TameBackedNode.prototype.compareDocumentPosition = nodeMethod(
+          function (other) {
         other = TameNodeT.coerce(other);
         var otherNode = np(other).feral;
         if (!otherNode) { return 0; }
@@ -2650,13 +2676,15 @@ function Domado(opt_rulebreaker) {
       }
       return this.ownerDocument.getElementsByTagName(tagName);
     });
-    TamePseudoElement.prototype.getElementsByClassName = nodeMethod(function (className) {
+    TamePseudoElement.prototype.getElementsByClassName = nodeMethod(
+        function (className) {
       return this.ownerDocument.getElementsByClassName(className);
     });
     TamePseudoElement.prototype.getBoundingClientRect = nodeMethod(function () {
       return np(this).geometryDelegate.getBoundingClientRect();
     });
-    definePropertiesAwesomely(TamePseudoElement.prototype, commonElementPropertyHandlers);
+    definePropertiesAwesomely(TamePseudoElement.prototype,
+        commonElementPropertyHandlers);
     definePropertiesAwesomely(TamePseudoElement.prototype, {
       nodeType: P_constant(1),
       nodeValue: P_constant(null)
@@ -2689,18 +2717,12 @@ function Domado(opt_rulebreaker) {
       Object.defineProperty(
         TameOpaqueNode.prototype,
         safe,
-        (function () {
-          var desc = domitaModules.getPropertyDescriptor(
-              TameBackedNode.prototype, safe);
-          desc.ses_ignoreBug_propertyWillAppearAsOwn = true;
-          return desc;
-        })());
+        domitaModules.getPropertyDescriptor(TameBackedNode.prototype, safe));
     }
     traceStartup("DT: nonopaqueification done");
     definePropertiesAwesomely(TameOpaqueNode.prototype, {
       attributes: {
-        ses_ignoreBug_propertyWillAppearAsOwn: true,
-        enumerable: true,
+        enumerable: canHaveEnumerableAccessors,
         get: nodeMethod(function () {
           return tameNodeList([], false, undefined);
         })
@@ -2717,8 +2739,7 @@ function Domado(opt_rulebreaker) {
           TameOpaqueNode.prototype[k] = throwOpaque;
         } else {
           Object.defineProperty(TameOpaqueNode.prototype, k, {
-            ses_ignoreBug_propertyWillAppearAsOwn: true,
-            enumerable: true,
+            enumerable: canHaveEnumerableAccessors,
             get: throwOpaque
           });
         }
@@ -2869,13 +2890,21 @@ function Domado(opt_rulebreaker) {
 
     // Register set handlers for onclick, onmouseover, etc.
     function registerElementScriptAttributeHandlers(tameElementPrototype) {
+      var seenAlready = {};
       var attrNameRe = /::(.*)/;
       for (var html4Attrib in html4.ATTRIBS) {
         if (html4.atype.SCRIPT === html4.ATTRIBS[html4Attrib]) {
           (function (attribName) {
+            // Attribute names are defined per-element, so we will see
+            // duplicates here.
+            if (Object.prototype.hasOwnProperty.call(seenAlready, attribName)) {
+              return;
+            }
+            seenAlready[attribName] = true;
+            
             Object.defineProperty(tameElementPrototype, attribName, {
-              enumerable: true,
-              configurable: true,
+              enumerable: canHaveEnumerableAccessors,
+              configurable: false,
               set: nodeMethod(function eventHandlerSetter(listener) {
                 if (!np(this).editable) { throw new Error(NOT_EDITABLE); }
                 if (!listener) {  // Clear the current handler
@@ -2901,7 +2930,8 @@ function Domado(opt_rulebreaker) {
      */
     function TameElement(node, editable, childrenEditable, opt_proxyType) {
       assert(node.nodeType === 1);
-      var obj = TameBackedNode.call(this, node, editable, childrenEditable, opt_proxyType);
+      var obj = TameBackedNode.call(this, node, editable, childrenEditable,
+         opt_proxyType);
       np(this).geometryDelegate = node;
       return obj;
     }
@@ -2968,7 +2998,8 @@ function Domado(opt_rulebreaker) {
         return bridal.hasAttribute(feral, attribName);
       }
     });
-    TameElement.prototype.setAttribute = nodeMethod(function (attribName, value) {
+    TameElement.prototype.setAttribute = nodeMethod(
+        function (attribName, value) {
       //console.debug("setAttribute", this, attribName, value);
       var feral = np(this).feral;
       if (!np(this).editable) { throw new Error(NOT_EDITABLE); }
@@ -3064,7 +3095,8 @@ function Domado(opt_rulebreaker) {
           break;
       }
     }
-    definePropertiesAwesomely(TameElement.prototype, commonElementPropertyHandlers);
+    definePropertiesAwesomely(TameElement.prototype,
+        commonElementPropertyHandlers);
     var innerTextProp = { 
       enumerable: true, 
       get: nodeMethod(function () {
@@ -3135,10 +3167,10 @@ function Domado(opt_rulebreaker) {
           return innerHtml;
         }),
         set: nodeMethod(function (htmlFragment) {
-          // This operation changes the child node list (but not other properties
-          // of the element) so it checks childrenEditable. Note that this check
-          // is critical to security, as else a client can set the innerHTML of
-          // a <script> element to execute scripts.
+          // This operation changes the child node list (but not other
+          // properties of the element) so it checks childrenEditable. Note that
+          // this check is critical to security, as else a client can set the
+          // innerHTML of a <script> element to execute scripts.
           if (!np(this).childrenEditable) { throw new Error(NOT_EDITABLE); }
           var node = np(this).feral;
           var tagName = node.tagName.toLowerCase();
@@ -3306,7 +3338,9 @@ function Domado(opt_rulebreaker) {
         
         // Since we can't interpose indexing, we can't wrap the CanvasPixelArray
         // so we have to copy the pixel data. This is horrible, bad, and awful.
-        // TODO(kpreid): No longer true in ES5-land; we can interpose but not under ES5/3. Use proxies conditional on the same switch that controls liveness of node lists.
+        // TODO(kpreid): No longer true in ES5-land; we can interpose but not
+        // under ES5/3. Use proxies conditional on the same switch that controls
+        // liveness of node lists.
         var tameImageData = {
           toString: cajaVM.def(function () {
               return "[Domita Canvas ImageData]"; }),
@@ -3598,7 +3632,8 @@ function Domado(opt_rulebreaker) {
           strokeText: tameDrawText(context.strokeText),
           measureText: function (string) {
             if (arguments.length !== 1) {
-              throw new Error('measureText takes 1 arg, not ' + arguments.length);
+              throw new Error('measureText takes 1 arg, not ' +
+                  arguments.length);
             }
             enforceType(string, 'string', 'measureText argument');
             return context.measureText(string);
@@ -3928,7 +3963,8 @@ function Domado(opt_rulebreaker) {
         name: P_blacklist
       }
     });
-    // TODO(kpreid): Check these two (straight from Domita) for correctness vs. TameElement's version
+    // TODO(kpreid): Check these two (straight from Domita) for correctness 
+    // vs. TameElement's version
     setOwn(TameIFrameElement.prototype, 'getAttribute',
         nodeMethod(function (attr) {
       var attrLc = String(attr).toLowerCase();
@@ -3948,7 +3984,8 @@ function Domado(opt_rulebreaker) {
         return TameElement.prototype.setAttribute.call(this, attr, value);
       }
       if (typeof console !== 'undefined')
-        console.error('Cannot set the [' + attrLc + '] attribute of an iframe.');
+        console.error('Cannot set the [' + attrLc +
+            '] attribute of an iframe.');
       return value;
     }));
     
@@ -4306,52 +4343,83 @@ function Domado(opt_rulebreaker) {
       // the fake body element to maintain the illusion that the fake
       // document is completely defined by the nodes under the fake body.
       clientLeft: {
-        get: function () { return np(tameDocument).feralPseudoBodyNode.clientLeft; }
+        get: function () {
+          return np(tameDocument).feralPseudoBodyNode.clientLeft;
+        }
       },
       clientTop: {
-        get: function () { return np(tameDocument).feralPseudoBodyNode.clientTop; }
+        get: function () {
+          return np(tameDocument).feralPseudoBodyNode.clientTop;
+        }
       },
       clientHeight: {
-        get: function () { return np(tameDocument).feralPseudoBodyNode.clientHeight; }
+        get: function () {
+          return np(tameDocument).feralPseudoBodyNode.clientHeight;
+        }
       },
       clientWidth: {
-        get: function () { return np(tameDocument).feralPseudoBodyNode.clientWidth; }
+        get: function () {
+          return np(tameDocument).feralPseudoBodyNode.clientWidth;
+        }
       },
       offsetLeft: {
-        get: function () { return np(tameDocument).feralPseudoBodyNode.offsetLeft; }
+        get: function () {
+          return np(tameDocument).feralPseudoBodyNode.offsetLeft;
+        }
       },
       offsetTop: {
-        get: function () { return np(tameDocument).feralPseudoBodyNode.offsetTop; }
+        get: function () {
+          return np(tameDocument).feralPseudoBodyNode.offsetTop;
+        }
       },
       offsetHeight: {
-        get: function () { return np(tameDocument).feralPseudoBodyNode.offsetHeight; }
+        get: function () {
+          return np(tameDocument).feralPseudoBodyNode.offsetHeight;
+        }
       },
       offsetWidth: {
-        get: function () { return np(tameDocument).feralPseudoBodyNode.offsetWidth; }
+        get: function () {
+          return np(tameDocument).feralPseudoBodyNode.offsetWidth;
+        }
       },
       // page{X,Y}Offset appear only as members of window, not on all elements
       // but http://www.howtocreate.co.uk/tutorials/javascript/browserwindow
       // says that they are identical to the scrollTop/Left on all browsers but
       // old versions of Safari.
       pageXOffset: {
-        get: function () { return np(tameDocument).feralPseudoBodyNode.scrollLeft; }
+        get: function () {
+          return np(tameDocument).feralPseudoBodyNode.scrollLeft;
+        }
       },
       pageYOffset: {
-        get: function () { return np(tameDocument).feralPseudoBodyNode.scrollTop; }
+        get: function () {
+          return np(tameDocument).feralPseudoBodyNode.scrollTop;
+        }
       },
       scrollLeft: {
-        get: function () { return np(tameDocument).feralPseudoBodyNode.scrollLeft; },
-        set: function (x) { np(tameDocument).feralPseudoBodyNode.scrollLeft = +x; }
+        get: function () {
+          return np(tameDocument).feralPseudoBodyNode.scrollLeft;
+        },
+        set: function (x) { 
+            np(tameDocument).feralPseudoBodyNode.scrollLeft = +x; }
       },
       scrollTop: {
-        get: function () { return np(tameDocument).feralPseudoBodyNode.scrollTop; },
-        set: function (y) { np(tameDocument).feralPseudoBodyNode.scrollTop = +y; }
+        get: function () {
+          return np(tameDocument).feralPseudoBodyNode.scrollTop;
+        },
+        set: function (y) {
+          np(tameDocument).feralPseudoBodyNode.scrollTop = +y;
+        }
       },
       scrollHeight: {
-        get: function () { return np(tameDocument).feralPseudoBodyNode.scrollHeight; }
+        get: function () {
+          return np(tameDocument).feralPseudoBodyNode.scrollHeight;
+        }
       },
       scrollWidth: {
-        get: function () { return np(tameDocument).feralPseudoBodyNode.scrollWidth; }
+        get: function () {
+          return np(tameDocument).feralPseudoBodyNode.scrollWidth;
+        }
       }
     };
     forOwnKeys(viewProperties, function (prop, desc) {
@@ -4389,7 +4457,8 @@ function Domado(opt_rulebreaker) {
       }) {
         setOwn(tameBodyElement, k, tameBody[k].bind(tameBody));
       }
-      traceStartup("DT: TameHTMLDocument applying view properties", viewProperties);
+      traceStartup("DT: TameHTMLDocument applying view properties",
+          viewProperties);
       definePropertiesAwesomely(ExpandoProxyHandler.unwrap(tameBodyElement),
           viewProperties);
 
@@ -4512,7 +4581,8 @@ function Domado(opt_rulebreaker) {
       compatMode: P_constant('CSS1Compat'),
       ownerDocument: P_constant(null)
     });
-    TameHTMLDocument.prototype.getElementsByTagName = nodeMethod(function (tagName) {
+    TameHTMLDocument.prototype.getElementsByTagName = nodeMethod(
+        function (tagName) {
       tagName = String(tagName).toLowerCase();
       switch (tagName) {
         case 'body': return fakeNodeList([ this.body ]);
@@ -4535,13 +4605,15 @@ function Domado(opt_rulebreaker) {
               np(this).feralPseudoBodyNode, tagName, np(this).editable, extras);
       }
     });
-    TameHTMLDocument.prototype.getElementsByClassName = nodeMethod(function (className) {
+    TameHTMLDocument.prototype.getElementsByClassName = nodeMethod(
+        function (className) {
       return tameGetElementsByClassName(
           np(this).feralPseudoBodyNode, className, np(this).editable);
     });
     TameHTMLDocument.prototype.addEventListener =
         nodeMethod(function (name, listener, useCapture) {
-          return np(this).tamePseudoBodyNode.addEventListener(name, listener, useCapture);
+          return np(this).tamePseudoBodyNode.addEventListener(
+              name, listener, useCapture);
         });
     TameHTMLDocument.prototype.removeEventListener =
         nodeMethod(function (name, listener, useCapture) {
@@ -4757,8 +4829,7 @@ function Domado(opt_rulebreaker) {
     }));
     definePropertiesAwesomely(TameStyle.prototype, {
       cssText: {
-        ses_ignoreBug_propertyWillAppearAsOwn: true,
-        enumerable: true,
+        enumerable: canHaveEnumerableAccessors,
         set: cajaVM.def(function (value) {
           var p = TameStyleConf.p(this);
           if (typeof p.feral.cssText === 'string') {
@@ -4778,8 +4849,7 @@ function Domado(opt_rulebreaker) {
       // TODO(kpreid): make each of these generated accessors more
       // specialized for this name to reduce runtime cost.
       Object.defineProperty(TameStyle.prototype, stylePropertyName, {
-        ses_ignoreBug_propertyWillAppearAsOwn: true,
-        enumerable: true,
+        enumerable: canHaveEnumerableAccessors,
         get: cajaVM.def(function () {
           if (!TameStyleConf.p(this).feral
               || !allCssProperties.isCanonicalProp(stylePropertyName)) {
@@ -4988,10 +5058,12 @@ function Domado(opt_rulebreaker) {
     // See http://www.whatwg.org/specs/web-apps/current-work/multipage/history.html#location0
     var tameLocation = cajaVM.def({
       toString: function () { return tameLocation.href; },
-      href: String(optPseudoWindowLocation.href || 'http://nosuchhost.invalid:80/'),
+      href: String(optPseudoWindowLocation.href ||
+          'http://nosuchhost.invalid:80/'),
       hash: String(optPseudoWindowLocation.hash || ''),
       host: String(optPseudoWindowLocation.host || 'nosuchhost.invalid:80'),
-      hostname: String(optPseudoWindowLocation.hostname || 'nosuchhost.invalid'),
+      hostname: String(optPseudoWindowLocation.hostname ||
+          'nosuchhost.invalid'),
       pathname: String(optPseudoWindowLocation.pathname || '/'),
       port: String(optPseudoWindowLocation.port || '80'),
       protocol: String(optPseudoWindowLocation.protocol || 'http:'),
@@ -5137,7 +5209,9 @@ function Domado(opt_rulebreaker) {
           function (dx, dy) {
             // The window is always auto scrollable, so make the apparent window
             // body scrollable if the gadget tries to scroll it.
-            if (dx || dy) { makeScrollable(np(tameDocument).feralPseudoBodyNode); }
+            if (dx || dy) {
+              makeScrollable(np(tameDocument).feralPseudoBodyNode);
+            }
             tameScrollBy(np(tameDocument).feralPseudoBodyNode, dx, dy);
           }),
       scrollTo: cajaVM.def(
@@ -5206,7 +5280,7 @@ function Domado(opt_rulebreaker) {
           return np(tameDocument).feralPseudoBodyNode.clientWidth; }
     }, function (propertyName, handler) {
       // TODO(mikesamuel): define on prototype.
-      var desc = {enumerable: true, get: handler};
+      var desc = {enumerable: canHaveEnumerableAccessors, get: handler};
       Object.defineProperty(tameWindow, propertyName, desc);
       Object.defineProperty(tameDefaultView, propertyName, desc);
     });

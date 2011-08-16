@@ -69,6 +69,10 @@
  *       be provided to cajoled code, tamed for use by the cajoled code. The
  *       standard imports are described below.
  *
+ *   inES5Mode
+ *
+ *       Boolean whether we are running in pure ES5 or ES5/3 translation mode.
+ *
  *   caja
  *
  *       At the time the test driver is running, an instance of the "caja"
@@ -470,4 +474,12 @@ function createExtraImportsForTesting(frameGroup, frame) {
   }
 
   return standardImports;
+}
+
+if (getUrlParam('es5') === 'true') {
+  var inES5Mode = true;
+} else if (getUrlParam('es5') === 'false') {
+  var inES5Mode = false;
+} else {
+  throw new Error('es5 parameter is not "true" or "false"');
 }

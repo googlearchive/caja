@@ -600,15 +600,7 @@ var ses;
    *
    * <p>This kludge seems to be safety preserving, but the issues are
    * delicate and not well understood.
-   *
-   * <p>As support for Domado, it is possible to override this
-   * restriction by adding the flag
-   * "ses_ignoreBug_propertyWillAppearAsOwn" to the property
-   * descriptor. We assume that applying JSON.stringify to DOM nodes
-   * is not interesting. TODO(kpreid): But does the general
-   * possibility of creating objects which if inherited from create
-   * apparent own properties on their children break any security
-    */
+   */
   function test_ACCESSORS_INHERIT_AS_OWN() {
     var base = {};
     var derived = Object.create(base);
@@ -1277,10 +1269,10 @@ var ses;
 
           if ('get' in fullDesc &&
               fullDesc.enumerable &&
-              !fullDesc.configurable &&
-              !desc.ses_ignoreBug_propertyWillAppearAsOwn) {
+              !fullDesc.configurable) {
             logger.warn(complaint);
-            throw new TypeError(complaint);
+            throw new TypeError(complaint
+                + " (Object: " + base + " Property: " + name + ")");
           }
           return defProp(base, name, fullDesc);
         }
@@ -1295,7 +1287,8 @@ var ses;
                            '"' + name + '" already non-configurable');
             }
             logger.warn(complaint);
-            throw new TypeError(complaint);
+            throw new TypeError(complaint + " (During sealing. Object: "
+                + base + " Property: " + name + ")");
           }
         });
       }
