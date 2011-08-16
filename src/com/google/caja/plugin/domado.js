@@ -3223,7 +3223,13 @@ function Domado(opt_rulebreaker) {
     });
     
     // http://dev.w3.org/html5/spec/Overview.html#the-canvas-element
-    var TameCanvasElement = tamingClassesByElement['canvas'] = (function() {
+    (function() {
+      // If the host browser does not have getContext, then it must not usefully
+      // support canvas, so we don't either; skip registering the canvas element
+      // class.
+      var e = makeDOMAccessible(document.createElement('canvas'));
+      if (typeof e.getContext !== 'function')
+        return;
       
       // TODO(kpreid): snitched from Caja runtime; review whether we actually
       // need this (the Canvas spec says that invalid values should be ignored
@@ -3791,7 +3797,7 @@ function Domado(opt_rulebreaker) {
         width: NP.filter(false, identity, false, Number)
       });
       
-      return TameCanvasElement;
+      tamingClassesByElement['canvas'] = TameCanvasElement;
     })();
 
     traceStartup("DT: done with canvas");
