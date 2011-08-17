@@ -178,7 +178,49 @@ function assertEquals() {
     _validateArguments(2, arguments);
     var var1 = nonCommentArg(1, 2, arguments);
     var var2 = nonCommentArg(2, 2, arguments);
-    _assert(commentArg(2, arguments), var1 === var2, 'Expected ' + _displayStringForValue(var1) + ' but was ' + _displayStringForValue(var2));
+    var comment = commentArg(2, arguments);
+    if ("string" === typeof var1 && "string" === typeof var2 && var1 !== var2) {
+      // Come up with a minimal diff by finding any common prefix and suffix and
+      // replacing those with ... and make control characters obvious.
+      var commonPrefix = 0;
+      var len1 = var1.length, len2 = var2.length;
+      var maxPrefixLen = Math.min(len1, len2);
+      for (; commonPrefix < maxPrefixLen; ++commonPrefix) {
+        if (var1.charCodeAt(commonPrefix) !== var2.charCodeAt(commonPrefix)) {
+          break;
+        }
+      }
+      var commonSuffix = 0;
+      var maxSuffixLen = maxPrefixLen - commonPrefix;
+      for (; commonSuffix < maxSuffixLen; ++commonSuffix) {
+        if (var1.charCodeAt(len1 - commonSuffix - 1) !== var2.charCodeAt(
+              len2 - commonSuffix - 1)) {
+          break;
+        }
+      }
+      // TODO: Maybe adjust common{Pre,Suf}fix if they end up pointing into a
+      // surrogate pair.
+
+      function context(s) {
+        return '"'
+            + (commonPrefix ? "..." : "")
+            + s.substring(commonPrefix, s.length - commonSuffix)
+                .replace(/[\\\"]/g, "\\$&")
+                .replace(/\n/g, "\\n")
+                .replace(/\r/g, "\\r")
+            + (commonSuffix ? "..." : "")
+            + '"';
+      }
+      var minimalDiff = context(var1) + " != " + context(var2);
+      if (comment) {
+        comment += ' : ' + minimalDiff;
+      } else {
+        comment = minimalDiff;
+      }
+    }
+    _assert(comment, var1 === var2,
+            'Expected ' + _displayStringForValue(var1) + ' but was '
+            + _displayStringForValue(var2));
 }
 
 function assertNotEquals() {

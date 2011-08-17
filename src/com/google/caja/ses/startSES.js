@@ -548,7 +548,6 @@ ses.startSES = function(global, whitelist, atLeastFreeVarNames, extensions) {
     }
 
     if (TAME_GLOBAL_EVAL) {
-      //
       global.eval = fakeEval;
     }
 

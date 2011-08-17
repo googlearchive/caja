@@ -327,15 +327,17 @@ var html = (function (html4) {
               }
               var dataEnd = htmlLower.indexOf('</' + tagName);
               if (dataEnd < 0) { dataEnd = htmlText.length; }
-              if (eflags & html4.eflags.CDATA) {
-                if (handler.cdata) {
-                  handler.cdata(htmlText.substring(0, dataEnd), param);
-                }
-              } else if (handler.rcdata) {
-                handler.rcdata(
+              if (dataEnd) {
+                if (eflags & html4.eflags.CDATA) {
+                  if (handler.cdata) {
+                    handler.cdata(htmlText.substring(0, dataEnd), param);
+                  }
+                } else if (handler.rcdata) {
+                  handler.rcdata(
                     normalizeRCData(htmlText.substring(0, dataEnd)), param);
+                }
+                htmlText = htmlText.substring(dataEnd);
               }
-              htmlText = htmlText.substring(dataEnd);
             }
 
             tagName = eflags = openTag = void 0;
@@ -355,11 +357,10 @@ var html = (function (html4) {
             if (handler.pcdata) { handler.pcdata(m[4], param); }
           } else if (m[5]) {  // Cruft
             if (handler.pcdata) {
-              switch (m[5]) {
-                case '<': handler.pcdata('&lt;', param); break;
-                case '>': handler.pcdata('&gt;', param); break;
-                default: handler.pcdata('&amp;', param); break;
-              }
+              var ch = m[5];
+              handler.pcdata(
+                  ch === '<' ? '&lt;' : ch === '>' ? '&gt;' : '&amp;',
+                  param);
             }
           }
         }
@@ -562,4 +563,3 @@ var html = (function (html4) {
 })(html4);
 
 var html_sanitize = html.sanitize;
-

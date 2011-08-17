@@ -80,4 +80,8 @@ public class ES53BrowserTest extends BrowserTestCase {
     // TODO(kpreid): Enable for ES5 once HTML scripting works
     runTestCase("es53-test-language-guest.html", false);
   }
+
+  public final void testInlineScript() {
+    runTestCase("es53-test-inline-script.html");
+  }
 }

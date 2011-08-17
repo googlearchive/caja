@@ -414,7 +414,7 @@ var caja = (function () {
               //    imports, guestWindow.cajaVM.sharedImports);
 
               void new tamingWindow.HtmlEmitter(
-                  identity, c.innerContainer, domicile);
+                  identity, c.innerContainer, domicile, guestWindow);
               //imports.rewriteUriInCss___ =
               //    domicile.rewriteUriInCss.bind(domicile);
               //imports.rewriteUriInAttribute___ =
@@ -866,7 +866,7 @@ var caja = (function () {
             
               // These ___ variables are interfaces used by cajoled code.
               imports.htmlEmitter___ = new tamingWindow.HtmlEmitter(
-                  makeDOMAccessible, c.innerContainer, domicile);
+                  makeDOMAccessible, c.innerContainer, domicile, guestWindow);
               imports.rewriteUriInCss___ =
                   domicile.rewriteUriInCss.bind(domicile);
               imports.rewriteUriInAttribute___ =

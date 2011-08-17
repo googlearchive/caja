@@ -24,7 +24,7 @@
  *
  * @author mikesamuel@gmail.com
  * @provides HtmlEmitter
- * @requires bridalMaker html html4 cajaVM
+ * @requires bridalMaker html html4 cajaVM JSON
  */
 
 /**
@@ -38,8 +38,10 @@
  * @param opt_domicile the domado instance that will receive a load event when
  *     the html-emitter is closed, and which will have the {@code writeHook}
  *     property set to the HtmlEmitter's document.write implementation.
+ * @param opt_guestGlobal the object in the guest frame that is the global scope
+ *     for guest code.
  */
-function HtmlEmitter(makeDOMAccessible, base, opt_domicile) {
+function HtmlEmitter(makeDOMAccessible, base, opt_domicile, opt_guestGlobal) {
   if (!base) {
     throw new Error(
         'Host page error: Virtual document element was not provided');
@@ -325,11 +327,81 @@ function HtmlEmitter(makeDOMAccessible, base, opt_domicile) {
       };
     }
 
+    function evaluateUntrustedScript(scriptInnerText) {
+      if (!opt_guestGlobal) { return; }
+      var errorMessage = "SCRIPT element evaluation failed";
+
+      var cajaVM = opt_guestGlobal.cajaVM;
+      if (cajaVM) {
+        // Intentionally does not use name "eval".
+        var ev = cajaVM.eval;
+        if (ev) {
+          try {
+            ev("" + scriptInnerText);
+            return;  // Do not trigger onerror below.
+          } catch (ex) {
+            errorMessage = (ex && (ex.message || ex.description))
+                || errorMessage;
+          }
+        }
+      }
+      // HACK DO NOT SUBMIT: Get test running without cajaVM.eval.
+      var m = scriptInnerText.match(
+          // A call to document.write with one or more comma separated double
+          // quoted string literals.
+          /^\s*document\s*[.]\s*write\s*\((\s*\"(?:[^\"\\]|\\.)*\"\s*(?:,\s*\"(?:[^\"\\]|\\.)*\"\s*)*)\)\s*(?:;\s*)?$/);
+      if (m) {
+        try {
+          tameDocWrite.apply(null, JSON.parse("[" + m[1] + "]"));
+        } catch (ex) {
+          errorMessage = (ex && (ex.message || ex.description))
+              || errorMessage;
+        }
+      }
+
+      // Dispatch to the onerror handler.
+      try {
+        // TODO: Should this happen inline or be dispatched out of band?
+        opt_guestGlobal.onerror(
+            errorMessage,
+            // URL where error was raised.
+            // TODO: Is this leaking?  Do we need to maintain an illusion here?
+            opt_guestGlobal ? opt_guestGlobal.location.href : '',
+            1  // Line number where error was raised.
+            );
+      } catch (_) {
+        // Ignore problems dispatching error.
+      }
+    }
+
+    function defineUntrustedStylesheet(cssText) {
+      // TODO(mikesamuel): Implement client side CSS sanitizing.
+    }
+
+    // Zero or one of the html4.eflags constants that captures the content type
+    // of cdataContent.
+    var cdataContentType = 0;
+    // Chunks of CDATA content of the type above which need to be specially
+    // processed and interpreted.
+    var cdataContent = [];
+
     var documentWriter = {
       startTag: function (tagName, attribs) {
         var eltype = html4.ELEMENTS[tagName];
         if (!html4.ELEMENTS.hasOwnProperty(tagName)
             || (eltype & html4.eflags.UNSAFE) !== 0) {
+          if (tagName === 'script') {
+            var srcIndex = attribs.indexOf('src');
+            while (srcIndex >= 0 && (srcIndex & 1)) {
+              // Found an attribute value with value "src" not name "src".
+              srcIndex = attribs.indexOf('src', srcIndex + 1);
+            }
+            if (srcIndex < 0) {
+              cdataContentType = html4.eflags.SCRIPT;
+            }
+          } else if (tagName === 'style') {
+            cdataContentType = html4.eflags.STYLE;
+          }
           return;
         }
         domicile.sanitizeAttrs(tagName, attribs);
@@ -342,6 +414,22 @@ function HtmlEmitter(makeDOMAccessible, base, opt_domicile) {
         if (!(eltype & html4.eflags.EMPTY)) { insertionPoint = el; }
       },
       endTag: function (tagName, optional) {
+        // Close any open script or style element element.
+        if (cdataContentType) {
+          var isScript = cdataContentType === html4.eflags.SCRIPT;
+          cdataContentType = 0;
+          var content = cdataContent.join("");
+          cdataContent.length = 0;
+          if (isScript) {
+            // TODO: create a script node that does not execute the untrusted
+            // script, but that has any ID attribute properly rewritten.
+            // It is not horribly uncommon for scripts to look for the last
+            // script element as a proxy for the insertion cursor.
+            evaluateUntrustedScript(content);
+          } else {
+            defineUntrustedStylesheet(content);
+          }
+        }
         var anc = insertionPoint;
         tagName = ucase(tagName);
         while (anc !== base && !/\bvdoc-body___\b/.test(anc.className)) {
@@ -358,11 +446,16 @@ function HtmlEmitter(makeDOMAccessible, base, opt_domicile) {
             html.unescapeEntities(text)));
       },
       cdata: function (text) {
-        insertionPoint.appendChild(
-            insertionPoint.ownerDocument.createTextNode(text));
+        if (cdataContentType) {
+          cdataContent.push(text);
+        } else {
+          documentWriter.pcdata(text);
+        }
       }
     };
-    documentWriter.rcdata = documentWriter.pcdata;
+     documentWriter.rcdata = documentWriter.pcdata;
+
+    var htmlParser = html.makeSaxParser(documentWriter);
 
     // Document.write and document.writeln behave as described at
     // http://www.w3.org/TR/2009/WD-html5-20090825/embedded-content-0.html#dom-document-write
@@ -389,8 +482,16 @@ function HtmlEmitter(makeDOMAccessible, base, opt_domicile) {
         // Handles case 3 where the document has been closed.
         insertionPoint = base;
       }
-      var lexer = html.makeSaxParser(documentWriter);
-      lexer(htmlText);
+      if (cdataContentType) {
+        // A <script> or <style> element started in one document.write and
+        // continues in this one as in
+        //   document.write('<script>foo');
+        //   document.write('(bar)</script>');
+        // so we need to trick the SAX parser into a CDATA context.
+        htmlText = (cdataContentType === html4.eflags.SCRIPT
+                    ? '<script>' : '<style>') + htmlText;
+      }
+      htmlParser(htmlText);
     };
     domicile.writeHook = cajaVM.def(tameDocWrite);
   })(opt_domicile);

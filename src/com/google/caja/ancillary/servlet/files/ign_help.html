@@ -11,7 +11,9 @@
 <h1>Ignoring Messages</h1>
 
 <p>To ignore errors, warnings, or lint messages, just add the message
-name to the Ignore list.  You can find out a message's name by hovering
+name to the "Ignore" list which may be hidden under
+"<button type=button disabled>More Options</button>".
+You can find out a message's name by hovering
 over it with your mouse ; it should be an upper case string like
 <code>EXAMPLE_MESSAGE_NAME</code>.  To ignore multiple messages,
 separate them with spaces, and/or commas.
@@ -25,12 +27,12 @@ bar()
 yields the following message
 
 <blockquote>
-<h2>&hellip; Semicolon inserted</h2>
+<h4 title="SEMICOLON_INSERTED">&hellip;: Semicolon inserted</h4>
 <pre class="prettyprint lang-js">foo()<span class=problem></span></pre>
 </blockquote>
 
 <p>Semicolon insertion can be problematic as shown below, but we
-believe it's important to prioritize code reading, so to turn
+believe it's important to be able to prioritize code cleanup, so to turn
 off this warning, add <code>SEMICOLON_INSERTED</code> to the ignore
 list.
 
@@ -45,6 +47,9 @@ var alertWrapper = function (msg) { alert(msg) }<b style=background:#fbb>;</b>
 })();
 </pre></blockquote>
 
-<p>The message level also governs which messages are displayed.
+<p>You can also use the message level dropdown
+("<select disabled><option>LINT</option></select>")
+to control which messages are displayed.
+
 </body>
 </html>

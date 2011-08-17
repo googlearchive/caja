@@ -3850,17 +3850,8 @@ var ___, cajaVM, safeJSON, WeakMap;
     });
 
   // 15.2.4.3, 5--7
-  (function () {
-    var methods = [
-        'toLocaleString',
-        'isPrototypeOf'
-      ];
-    var i, len = methods.length;
-    for (i = 0; i < len; ++i) {
-      var name = methods[i];
-      virtualize(Object.prototype, name);
-    }
-  })();
+  virtualize(Object.prototype, 'toLocaleString');
+  virtualize(Object.prototype, 'isPrototypeOf');
 
   // 15.2.4
   // NOT extensible under ES5/3

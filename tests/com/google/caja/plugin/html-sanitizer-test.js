@@ -273,3 +273,86 @@ jsunitRegister('testUriPolicy',
       html_sanitize('<a href="mailto:jas@example.com">mail me</a>',
         function(uri) { return null; }));
 });
+
+function assertSAXEvents(htmlSource, param, varargs_golden) {
+  var events = [];
+  var saxParser = html.makeSaxParser({
+    startTag: function (name, attribs, param) {
+      events.push("startTag(" + name + ", [" + attribs.join(", ") + "], "
+                  + param + ")");
+    },
+    endTag:   function (name, param) {
+      events.push("endTag(" + name + ", " + param + ")");
+    },
+    pcdata:   function (text, param) {
+      events.push("pcdata(" + text + ", " + param + ")");
+    },
+    cdata:    function (text, param) {
+      events.push("cdata(" + text + ", " + param + ")");
+    },
+    rcdata:   function (text, param) {
+      events.push("rcdata(" + text + ", " + param + ")");
+    },
+    startDoc: function (param) {
+      events.push("startDoc(" + param + ")");
+    },
+    endDoc:   function (param) {
+      events.push("endDoc(" + param + ")");
+    }
+  });
+
+  saxParser(htmlSource, param);
+
+  var golden = Array.prototype.slice.call(arguments, 2);
+
+  assertEquals(golden.join("\n"), events.join("\n"));
+}
+
+jsunitRegister('testSaxParser',
+               function testSaxParser() {
+  assertSAXEvents(
+      "<p id=foo>Foo&amp;Bar</p><script>alert('<b>&amp;</b>')</script>",
+      "<param>",
+
+      "startDoc(<param>)",
+      "startTag(p, [id, foo], <param>)",
+      "pcdata(Foo, <param>)",
+      "pcdata(&amp;, <param>)",
+      "pcdata(Bar, <param>)",
+      "endTag(p, <param>)",
+      "startTag(script, [], <param>)",
+      "cdata(alert('<b>&amp;</b>'), <param>)",
+      "endTag(script, <param>)",
+      "endDoc(<param>)");
+});
+
+jsunitRegister('testSaxParserConfusingScripts',
+               function testSaxParserConfusingScripts() {
+  assertSAXEvents(
+      '<div class="testcontainer" id="test">' +
+      '<script>document.write("<b><script>");</script>' +
+      '<script>document.write("document.write(");</script>' +
+      '<script>document.write("\'Hello,</b> \'");</script>' +
+      '<script>document.write(",\'World!\');<\\/script>");</script>' +
+      '!</div>',
+
+      'PARAM',
+
+      'startDoc(PARAM)',
+      'startTag(div, [class, testcontainer, id, test], PARAM)',
+      'startTag(script, [], PARAM)',
+      'cdata(document.write("<b><script>");, PARAM)',
+      'endTag(script, PARAM)',
+      'startTag(script, [], PARAM)',
+      'cdata(document.write("document.write(");, PARAM)',
+      'endTag(script, PARAM)',
+      'startTag(script, [], PARAM)',
+      'cdata(document.write("\'Hello,</b> \'");, PARAM)',
+      'endTag(script, PARAM)',
+      'startTag(script, [], PARAM)',
+      'cdata(document.write(",\'World!\');<\\/script>");, PARAM)',
+      'endTag(script, PARAM)',
+      'pcdata(!, PARAM)',
+      'endTag(div, PARAM)',
+      'endDoc(PARAM)');
+});
