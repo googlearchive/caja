@@ -285,10 +285,6 @@
       var expected = true;
       for (var i = 0, n = styleProps.length; i < n; ++i) {
         var styleProp = styleProps[i];
-        // TODO(felix8a): chrome 11.0.696.16 crashes on these properties
-        // http://code.google.com/p/chromium/issues/detail?id=77665
-        if (styleProp === 'counterIncrement') continue;
-        if (styleProp === 'counterReset') continue;
         if (visited[styleProp] !== unvisited[styleProp]) {
           differences.push(styleProp);
           expected &= allowedDifferences.hasOwnProperty(styleProp);

@@ -369,11 +369,18 @@ public class BuildServiceImplementation implements BuildService {
     return ok;
   }
 
-  // match a top-level strict declaration.
+  // Loosely matches top-level strict declarations.
+  //    False negative:  /* {} */ "use strict"
+  //    False positive:  /* "use strict" */
+
   private static Pattern strictRE = Pattern.compile(
       "^[^{]*['\"]use\\s+strict['\"]");
 
-  // TODO(felix8a): implement this in a non-stupid way
+  /*
+   * It's ok to be loose about strictness here, because this is just a
+   * sanity check when concatenating JS files in the build process, and we
+   * control all the JS files involved.
+   */
   private boolean isStrict(CharSequence js) {
     return strictRE.matcher(js).find(); 
   }
