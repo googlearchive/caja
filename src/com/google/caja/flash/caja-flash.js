@@ -16,7 +16,7 @@
  * @fileoverview Allows containers to mimic swfobject for cajoled gadgets
  *
  * @author felixz@gmail.com
- * @requires document
+ * @requires document, window
  * @provides cajaFlash
  */
 
@@ -105,7 +105,7 @@ var cajaFlash = {};
       var baseFnName = m[1];
       var obj = docFlash.objects[context];
       if (!obj || !obj[fnName]) {
-        throw Error('bad context');
+        throw Error('bad context ' + context);
       }
       var el = domicile.tameNode(obj, true);
       if (!el) {
@@ -117,7 +117,9 @@ var cajaFlash = {};
         return taming___.tame(result);
       };
       taming___.markFuncFreeze(el[baseFnName], baseFnName);
-      taming___.grantRead(el, baseFnName);
+      if (!taming___.canRead(el, baseFnName)) {
+        taming___.grantRead(el, baseFnName);
+      }
     };
 
     // Called to service ExternalInterface.call()
@@ -130,7 +132,19 @@ var cajaFlash = {};
     };
 
     // Called to service flash.net.navigateToURL()
-    unimp(docFlash, 'onNavigateToURL');
+    docFlash.onNavigateToURL = function onNavigateToURL(context, req) {
+      if (!guestImps.rewriteUriInAttribute___) {
+        throw Error('No URI rewriter');
+      }
+      // TODO(felix8a): maybe use domicile.rewriteUri (which doesn't work)
+      var rewritten = guestImps.rewriteUriInAttribute___(req.url, 'a', 'href');
+      if (!rewritten) {
+        throw Error('URI policy denied ' + req.url);
+      }
+      if (!window.open(rewritten, '_blank')) {
+        throw Error('Failed to open ' + rewritten);
+      }
+    };
   }
 
   // http://code.google.com/p/swfobject/wiki/api
@@ -174,19 +188,17 @@ var cajaFlash = {};
       // wmode=transparent makes flash honor the html visual stack
       outParams.wmode = 'transparent';
       var outAttrs = cleanAttrs(attrs, taming___);
-      var outCb = null;
-      if (taming___.isFunction(cb)) {
-        outCb = function (args) {
-          docFlash.objects[context] = args.ref;
-          var tameArgs = {
-            success: args.success,
-            id: args.id,
-            ref: domicile.tameNode(args.ref, true)
-          };
-          tameArgs = taming___.tame(tameArgs);
-          cb.f___(taming___.USELESS, [tameArgs]);
+      var outCb = function (args) {
+        docFlash.objects[context] = args.ref;
+        if (!taming___.isFunction(cb)) { return; }
+        var tameArgs = {
+          success: args.success,
+          id: args.id,
+          ref: domicile.tameNode(args.ref, true)
         };
-      }
+        tameArgs = taming___.tame(tameArgs);
+        cb.f___(taming___.USELESS, [tameArgs]);
+      };
       docWin.swfobject.embedSWF(
         outSwfUrl, outId, outWidth, outHeight, outVersion,
         outExpressInstall, outFlashvars, outParams, outAttrs, outCb);

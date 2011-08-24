@@ -184,17 +184,24 @@ package com.google.caja.flash {
               ex,
               data));
     }
-    
+
     private function onNavigateToURL(data:Object):void {
       var ex:Error;
+      var res:Object;
       try {
-        flash.external.ExternalInterface.call(
+        res = flash.external.ExternalInterface.call(
             "caja.policy.flash.onNavigateToURL",
             cajaContext,
             data.url);
       } catch (e:Error) {
         ex = e;
       }
+      this.loader.contentLoaderInfo.sharedEvents.dispatchEvent(
+          new FunctionResponseEvent(
+              FunctionResponseEvent.FUNCTION_RESPONSE,
+              res,
+              ex,
+              data));
     }
   }
   

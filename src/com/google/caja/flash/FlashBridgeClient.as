@@ -44,6 +44,7 @@ package com.google.caja.flash {
     private static function catchResponse(ev:Object):void {
       responses[ev.originalEvent.transaction] = ev;
     }
+
     public static function emit(callEvent:FunctionCallEvent):* {
       if (!movieLoaderInfo) {
         if (ApplicationDomain.currentDomain.hasDefinition(
@@ -56,11 +57,14 @@ package com.google.caja.flash {
         }
       }
       movieLoaderInfo.sharedEvents.dispatchEvent(callEvent);
-      if (callEvent.transaction in responses) {
-        var responseEvent:Object = responses[callEvent.transaction];
-        if (responseEvent.error) {
-          throw responseEvent.error;
-        }
+      if (!(callEvent.transaction in responses)) {
+        throw new Error('No immediate response from FlashBridge');
+      }
+      var responseEvent:Object = responses[callEvent.transaction];
+      delete responses[callEvent.transaction];
+      if (responseEvent.error) {
+        throw responseEvent.error;
+      } else {
         return responseEvent.response;
       }
     }

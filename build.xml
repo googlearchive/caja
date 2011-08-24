@@ -1142,6 +1142,10 @@
         <include name="caja-flash.js" />
         <include name="flashbridge.swf" />
       </fileset>
+      <fileset dir="${src.caja}/flash/tests">
+        <include name="BridgeAware.swf" />
+        <include name="BridgeOblivious.swf" />
+      </fileset>
       <fileset dir="${src.caja}/demos/playground">
         <include name="examples/*.gif" />
         <include name="examples/*.html" />
@@ -1177,6 +1181,10 @@
         <include name="ses-guest-frame.opt.js"/>
       </fileset>
     </copy>
+    <copy file="${third_party}/js/swfobject/src/swfobject.js"
+          tofile="${war}/swfobject.js"/>
+    <copy file="${third_party}/js/swfobject/swfobject.js"
+          tofile="${war}/swfobject.opt.js"/>
     <copy todir="${war}/sunspider">
       <fileset dir="${third_party}/js/sunspider-benchmark">
         <include name="sunspider-record-result.js" />
@@ -1627,5 +1635,36 @@
           description="playground with only one GWT permutation">
     <property name="gwt.devground" value="true"/>
     <antcall target="playground"/>
+  </target>
+
+
+  <macrodef name="buildSwf">
+    <attribute name="in"/>
+    <attribute name="out"/>
+    <sequential>
+      <exec executable="mxmlc">
+        <arg value="--source-path=${src}"/>
+        <arg value="--debug=true"/>
+        <arg value="--static-link-runtime-shared-libraries"/>
+        <arg value="--show-actionscript-warnings=true"/>
+        <arg value="-o"/>
+        <arg value="@{out}"/>
+        <arg value="@{in}"/>
+      </exec>
+    </sequential>
+  </macrodef>
+
+  <property name="src.flash" value="${src.caja}/flash"/>
+
+  <!-- This is not automatic, because it requires Flex, and the
+       Flex license doesn't allow adding it to third_party -->
+  <target name="flash"
+          description="Rebuild Flash swf files">
+    <buildSwf in="${src.flash}/FlashBridge.as"
+              out="${src.flash}/flashbridge.swf"/>
+    <buildSwf in="${src.flash}/tests/BridgeAware.mxml"
+              out="${src.flash}/tests/BridgeAware.swf"/>
+    <buildSwf in="${src.flash}/tests/BridgeOblivious.mxml"
+              out="${src.flash}/tests/BridgeOblivious.swf"/>
   </target>
 </project>

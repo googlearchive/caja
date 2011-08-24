@@ -1,39 +1,85 @@
-<p>
-Caja does not allow <code>object</code> or <code>embed</code> tags in HTML.
-However, a container may provide an JavaScript API for embedding flash
-on a page.  A common library that provides this functionality is <a
-href="http://code.google.com/p/swfobject/">SWFObject</a>.  The Caja Playground provides a tamed version
-of the <code>swfobject.embedSWF</code> which you can use to embed flash
-objects which to not need to interact with scripts on the page.
-<p>
-For example, here is a YouTube video.
-<p>
-  <div id="status">Loading...</div>
-  <div id="ytapiplayer">
-    You need Flash player 8+ and JavaScript enabled to view this video.
-  </div>
-  <script type="text/javascript">
+<p>Caja provides a tamed version of <code>swfobject.embedSWF()</code>.
+Direct use of &lt;embed&gt; and &lt;object&gt; are not supported yet.</p>
 
-    var params = { allowScriptAccess: "always" };
-    var atts = { id: "myytplayer" };
-    swfobject.embedSWF("http://www.youtube.com/v/0AqMb-edXlc", // Flash video
-                       "ytapiplayer", // id of div to place flash object
-                       "480", "390",  // width and height
-                       "8",           // minimum version
-                       null,          // expressInstall
-                       null, params, atts, // flashvars, params and attributes
-                       function () { document.getElementById('status').innerHTML = ""; }); // callback
-  </script>
-<p>
-This works by creating a <code>div</code> where the Flash object will be
-placed.  A tame version of SWFObject is exposed to the gadget which in
-turn uses the real SWFObject to add the flash in a cross-browser
-supported fashion.  Some of the parameters maybe modified by the
-container before being passed to the real SWFObject.  For example, the
-Caja Playground requires a minimum Flash version of 9 and does not
-allow script access to the page, inspite of what was requested by the
-gadget.
-<p>
-Other Caja containers (such as iGoogle or Orkut) may give you a
-different JavaScript API for embedding flash in your page and possibly
-allow your Flash object to interact with the rest of the page.
+<p>Caja does not allow Flash apps to have direct script access.
+<code>ExternalInterface.call()</code> is denied by Flash's security sandbox.</p>
+
+<p>However, Flash apps can use Caja's Flash bridge API instead.</p>
+
+<style>
+  .module { border: 1px solid #ccc; }
+  .module { float: left; }
+  .module { padding: 8px; }
+  .module { margin: 8px 0 8px 8px; }
+  .title  { font-size: larger; }
+  .title  { margin: 8px 0; }
+  p { margin: 0 8px 1em 8px; }
+  p { max-width: 40em; }
+</style>
+
+<div class="module">
+  <div class="title">
+    BridgeOblivious.swf
+    (<a id="bridgeObliviousSource">source</a>)
+  </div>
+  <div id="bridgeOblivious">(BridgeOblivious.swf replaces this)</div>
+</div>
+
+<div class="module">
+  <div class="title">
+    BridgeAware.swf
+    (<a id="bridgeAwareSource">source</a>)
+  </div>
+  <div id="bridgeAware">(BridgeAware.swf replaces this)</div>
+  <div>
+    <button onclick="callFlash()">Call Flash from JS</button>
+  </div>
+</div>
+
+<div style="clear:both"></div>
+
+<div class="module yt-module">
+  <div class="title">
+    YouTube video
+  </div>
+  <div id="youtube">(YouTube video replaces this)</div>
+</div>
+
+<script type="text/javascript">
+  // This demo uses SWF files from the Caja repository,
+  // because Flash sandboxing requires the SWF to be on
+  // a site different from the container.
+
+  var rev = '4584';
+  var demoDir = '/trunk/src/com/google/caja/flash/tests/';
+  var rawLocation =
+      'http://google-caja.googlecode.com/svn-history/r' + rev + demoDir;
+  var prettyLocation =
+      'http://code.google.com/p/google-caja/source/browse' + demoDir;
+  var counter = 0;
+
+  swfobject.embedSWF(
+      rawLocation + 'BridgeOblivious.swf',
+      'bridgeOblivious', '200', '300');
+  document.getElementById('bridgeObliviousSource').href =
+      prettyLocation + 'BridgeOblivious.mxml?r=' + rev;
+
+  swfobject.embedSWF(
+      rawLocation + 'BridgeAware.swf',
+      'bridgeAware', '200', '300');
+  document.getElementById('bridgeAwareSource').href =
+      prettyLocation + 'BridgeAware.mxml?r=' + rev;
+
+  swfobject.embedSWF(
+      'http://www.youtube.com/v/unhiT2D6WvE',
+      'youtube', '480', '390');
+
+  function message(varargs) {
+    alert(Array.prototype.join.call(arguments, ' '));
+  }
+
+  function callFlash() {
+    var o = document.getElementById('bridgeAware');
+    o.message('call Flash from JS ' + (counter++));
+  }
+</script>

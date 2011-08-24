@@ -18,11 +18,37 @@
    xmlns:fx="http://ns.adobe.com/mxml/2009"
    xmlns:mx="library://ns.adobe.com/flex/mx"
    xmlns:s="library://ns.adobe.com/flex/spark"
+   height="300" width="350"
    addedToStage="on_addedToStage()">
 
+  <s:VGroup width="350">
+    <s:Label text="BridgeAware" fontSize="16" fontWeight="bold"/>
+
+    <s:HGroup>
+      <s:Button label="ExternalInterface.call"
+                click="test('call', do_call)"/>
+      <s:Button label="fscommand"
+                click="test('fscommand', do_fscommand)"/>
+    </s:HGroup>
+
+    <s:HGroup verticalAlign="baseline">
+      <s:Label text="navigateToUrl:"/>
+      <s:Button label="http"
+                click="test('navtohttp', do_navtohttp)"/>
+      <s:Button label="_top"
+                click="test('navtohttptop', do_navtohttptop)"/>
+      <s:Button label="js"
+                click="test('navtojs', do_navtojs)"/>
+    </s:HGroup>
+
+    <s:TextArea id="output" width="100%" textIndent="-20" paddingLeft="20"/>
+  </s:VGroup>
+
   <fx:Script>
+    private var counter:int = 0;
+
     private function cookie():String {
-      return String(int(Math.random() * 10000));
+      return String(counter++);
     }
 
     private function message(s:String):void {
@@ -82,30 +108,11 @@
         FlashBridgeClient.init(this);
         com.google.caja.flash.external.ExternalInterface.addCallback(
             'message', message);
-        message('Added callbacks');
+        message('Added message() callback (might have failed silently)');
       } catch (e:Error) {
         message('Failed to add callbacks:' + e);
       }
     }
   </fx:Script>
-
-  <s:VGroup>
-    <s:Button label="fscommand"
-              click="test('fscommand', do_fscommand)"/>
-
-    <s:Button label="ExternalInterface.call"
-              click="test('call', do_call)"/>
-
-    <s:Button label="navigateToUrl(javascript:)"
-              click="test('navtojs', do_navtojs)"/>
-
-    <s:Button label="navigateToUrl(http:)"
-              click="test('navtohttp', do_navtohttp)"/>
-
-    <s:Button label="navigateToUrl(http:,_top)"
-              click="test('navtohttptop', do_navtohttptop)"/>
-
-    <s:TextArea id="output"/>
-  </s:VGroup>
 
 </s:Application>

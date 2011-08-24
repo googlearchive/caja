@@ -455,6 +455,14 @@ var caja = (function () {
               domicile = null;
             }
             
+            /* TODO(felix8a): not right for multiple guests */
+            function enableFlash() {
+              var twf = tamingWindow.cajaFlash;
+              if (domicile && twf && twf.init) {
+                twf.init(divWindow, imports, tamingWindow, domicile);
+              }
+            }
+
             /**
              * Given a promise for a fetch() response record, return a promise
              * for its Caja interpretation, a function of (extraImports).
@@ -522,6 +530,7 @@ var caja = (function () {
                 idSuffix: c.idSuffix,
                 iframe: sesGuestFrame,
                 imports: imports,
+                enableFlash: enableFlash,
                 domicile: domicile  // Currently exposed only for the test suite
                                // TODO(kpreid): Make it more obviously internal?
                 //loader: loader
@@ -906,6 +915,14 @@ var caja = (function () {
               imports = guestWindow.___.copy(guestWindow.___.sharedImports);
               domicile = null;
             }
+
+            /* TODO(felix8a): not right for multiple guests */
+            function enableFlash() {
+              var twf = tamingWindow.cajaFlash;
+              if (domicile && twf && twf.init) {
+                twf.init(divWindow, imports, tamingWindow, domicile);
+              }
+            }
           
             /**
              * Instantiate a prepared module using our imports object. This is
@@ -1011,6 +1028,7 @@ var caja = (function () {
                 idSuffix: c.idSuffix,
                 iframe: guestFrame,
                 imports: imports,
+                enableFlash: enableFlash,
                 domicile: domicile,  // Currently exposed only for testing
                                // TODO(kpreid): Make it more obviously internal?
                 loader: loader
@@ -1176,7 +1194,9 @@ var caja = (function () {
             if (!builderState.primaryMethod) {
               throw new Error('Use "code"|"cajoled" to specify content');
             }
-            // TODO(felix8a): use builderState.flash
+            if (builderState.flash) {
+              frame.enableFlash();
+            }
             if ("content" === builderState.primaryMethod) {
               frame.content(builderState.uri, 
                   builderState.content, 
