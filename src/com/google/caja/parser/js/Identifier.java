@@ -51,7 +51,8 @@ public final class Identifier extends AbstractParseTreeNode
   public Identifier(FilePosition pos, String name) {
     super(pos);
     if (!(name == null || "".equals(name) ||
-        ParserBase.isQuasiIdentifier(name))) {
+        ParserBase.isQuasiIdentifier(name)) ||
+        (name != null && name.length() > 1024)) {
       // Disallowed in Parser, so no code should ever produce something that
       // reaches here unless it concatenates two strings together without
       // normalizing the result.
