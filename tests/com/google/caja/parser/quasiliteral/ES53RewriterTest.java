@@ -376,21 +376,6 @@ public class ES53RewriterTest extends CommonJsRewriterTestCase {
   }
 
   /**
-   * Tests that Error objects are frozen
-   *
-   * See issue 1097, issue 1038,
-   *     and {@link CommonJsRewriterTestCase#testErrorTaming()}}.
-   */
-  public final void testErrorFreeze() throws Exception {
-    rewriteAndExecute(
-            "try {" +
-            "  throw new Error('foo');" +
-            "} catch (ex) {" +
-            "  assertTrue(Object.isFrozen(ex));" +
-            "}");
-  }
-
-  /**
    * Tests freezing objects.
    */
   public final void testObjectFreeze() throws Exception {
@@ -820,28 +805,11 @@ public class ES53RewriterTest extends CommonJsRewriterTestCase {
     rewriteAndExecute(
         "var handled = false;" +
         "try {" +
-        "  throw function foo() { throw 'should not be called'; };" +
-        "} catch (ex) {" +
-        "  assertEquals('In lieu of thrown function: foo', ex());" +
-        "  handled = true;" +
-        "}" +
-        "assertTrue(handled);");
-    rewriteAndExecute(
-        "var handled = false;" +
-        "try {" +
         "  throw { toString: function () { return 'hiya'; }, y: 4 };" +
         "} catch (ex) {" +
-        "  assertEquals('string', typeof ex);" +
-        "  assertEquals('hiya', ex);" +
-        "  handled = true;" +
-        "}" +
-        "assertTrue(handled);");
-    rewriteAndExecute(
-        "var handled = false;" +
-        "try {" +
-        "  throw { toString: function () { throw new Error(); } };" +
-        "} catch (ex) {" +
-        "  assertEquals('Exception during exception handling.', ex);" +
+        "  assertEquals('object', typeof ex);" +
+        "  assertEquals('hiya', ex.toString());" +
+        "  assertEquals(4, ex.y);" +
         "  handled = true;" +
         "}" +
         "assertTrue(handled);");
@@ -867,6 +835,16 @@ public class ES53RewriterTest extends CommonJsRewriterTestCase {
     checkAddsMessage(js(fromString(
         "try {} catch (x__) { } finally { }")),
         RewriterMessageType.VARIABLES_CANNOT_END_IN_DOUBLE_UNDERSCORE);
+    assertConsistent(
+        "var out = '';" +
+        "try {" +
+        "  throw 'hi ';" +
+        "} catch (e) {" +
+        "  out += e;" +
+        "} finally {" +
+        "  out += 'there';" +
+        "}" +
+        "out;");
   }
 
   public final void testTryFinally() throws Exception {

@@ -140,8 +140,6 @@ var ___, cajaVM, safeJSON, WeakMap;
    * {@code '___' in obj}                 means that {@code obj} is a global
    *                                      object and shouldn't be used as
    *                                      'this'.
-   * {@code obj.UNCATCHABLE___ === true}  means that {@code obj} may not be
-   *                                      caught by a cajoled {@code catch}.
    *
    * {@code obj.v___(p)}                  = {@code obj.[[Get]](p)}
    * {@code obj.w___(p,v)}                = {@code obj.[[Put]](p,v)}
@@ -1160,9 +1158,7 @@ var ___, cajaVM, safeJSON, WeakMap;
     if (dis === null || dis === void 0) { return USELESS; }
     if (Type(dis) !== 'Object') { return dis; }
     if ('___' in dis) {
-      var err = new Error('Internal: toxic global!');
-      err.UNCATCHABLE___ = true;
-      throw err;
+      throw new Error('Internal: toxic global!');
     }
     return dis;
   }
@@ -1179,9 +1175,7 @@ var ___, cajaVM, safeJSON, WeakMap;
   }
 
   function callFault(var_args) {
-    var err = new Error('Internal: toxic function encountered!');
-    err.UNCATCHABLE___ = true;
-    throw err;
+    throw new Error('Internal: toxic function encountered!');
   }
 
   /**
@@ -2211,8 +2205,7 @@ var ___, cajaVM, safeJSON, WeakMap;
 
   /**
    * One-arg form is known in scheme as "call with escape
-   * continuation" (call/ec), and is the semantics currently
-   * proposed for EcmaScript Harmony's "return to label".
+   * continuation" (call/ec).
    *
    * <p>In this analogy, a call to {@code callWithEjector} emulates a
    * labeled statement. The ejector passed to the {@code attemptFunc}
@@ -2242,16 +2235,6 @@ var ___, cajaVM, safeJSON, WeakMap;
    * at which point the ejector is disabled. Calling a disabled
    * ejector throws.
    *
-   * <p>In order to emulate the semantics I expect of ES-Harmony's
-   * return-to-label and to prevent the reification of the internal
-   * token thrown in order to emulate call/ec, {@code tameException}
-   * immediately rethrows this token, preventing Cajita and Valija
-   * {@code catch} clauses from catching it. However,
-   * {@code finally} clauses will still be run while unwinding an
-   * ejection. If these do their own non-local exit, that takes
-   * precedence over the ejection in progress but leave the ejector
-   * live.
-   *
    * <p>Historic note: This was first invented by John C. Reynolds in
    * <a href="http://doi.acm.org/10.1145/800194.805852"
    * >Definitional interpreters for higher-order programming
@@ -2262,7 +2245,6 @@ var ___, cajaVM, safeJSON, WeakMap;
     var failFunc = opt_failFunc || identity;
     var disabled = false;
     var token = new Token('ejection');
-    token.UNCATCHABLE___ = true;
     var stash = void 0;
     function ejector(result) {
       if (disabled) {
@@ -2512,70 +2494,6 @@ var ___, cajaVM, safeJSON, WeakMap;
    * TODO(erights): Find out if this is still the plan.
    */
   function manifest(ignored) {}
-
-  /**
-   * Receives whatever was caught by a user defined try/catch block.
-   *
-   * @param ex A value caught in a try block.
-   * @return The value to make available to the cajoled catch block.
-   */
-  function tameException(ex) {
-    if (ex && ex.UNCATCHABLE___) { throw ex; }
-    try {
-      switch (typeof ex) {
-        case 'string':
-        case 'number':
-        case 'boolean':
-        case 'undefined': {
-          // Immutable.
-          return ex;
-        }
-        case 'object': {
-          if (ex === null) { return null; }
-          if (ex.throwable___) { return ex; }
-          if (isError(ex)) {
-            return freeze(ex);
-          }
-          return '' + ex;
-        }
-        case 'function': {
-          // According to Pratap Lakhsman's "JScript Deviations" S2.11
-          // If the caught object is a function, calling it within the catch
-          // supplies the head of the scope chain as the "this value".  The
-          // called function can add properties to this object.  This implies
-          // that for code of this shape:
-          //     var x;
-          //     try {
-          //       // ...
-          //     } catch (E) {
-          //       E();
-          //       return x;
-          //     }
-          // The reference to 'x' within the catch is not necessarily to the
-          // local declaration of 'x'; this gives Catch the same performance
-          // problems as with.
-
-          // We return a different, powerless function instead.
-          var name = '' + (ex.v___('name') || ex);
-          function inLieuOfThrownFunction() {
-            return 'In lieu of thrown function: ' + name;
-          }
-          return markFuncFreeze(inLieuOfThrownFunction, name);
-        }
-        default: {
-          log('Unrecognized exception type: ' + (typeof ex));
-          return 'Unrecognized exception type: ' + (typeof ex);
-        }
-      }
-    } catch (_) {
-      // Can occur if coercion to string fails, or if ex has getters
-      // that fail. This function must never throw an exception
-      // because doing so would cause control to leave a catch block
-      // before the handler fires.
-      log('Exception during exception handling.');
-      return 'Exception during exception handling.';
-    }
-  }
 
   ///////////////////////////////////////////////////////////////////
   // Specification
@@ -3228,9 +3146,7 @@ var ___, cajaVM, safeJSON, WeakMap;
    */
   function asFirstClass(value) {
     if (isFunction(value) && !value.ok___) {
-      var err = new Error('Internal: toxic function encountered!');
-      err.UNCATCHABLE___ = true;
-      throw err;
+      throw new Error('Internal: toxic function encountered!');
     }
     return value;
   }
@@ -5385,7 +5301,7 @@ var ___, cajaVM, safeJSON, WeakMap;
             lastOutcome = [false, exception];
 
             // Cause exception to be rethrown if it is uncatchable.
-            var message = tameException(exception);
+            var message = exception;
             if ('object' === typeof exception && exception !== null) {
               message = '' + (exception.message || exception.desc || message);
             }
@@ -5802,7 +5718,6 @@ var ___, cajaVM, safeJSON, WeakMap;
       sharedImports: sharedImports,
       USELESS: USELESS,
       BREAK: BREAK,
-      tameException: tameException,
       args: args,
       deodorize: deodorize,
       copy: copy,

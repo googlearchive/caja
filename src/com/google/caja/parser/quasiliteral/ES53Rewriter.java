@@ -569,35 +569,10 @@ public class ES53Rewriter extends Rewriter {
       @Override
       @RuleDescription(
           name="tryCatch",
-          synopsis="Ensure that only immutable data is thrown, and repair scope "
-              + "confusion in existing JavaScript implementations of "
-              + "try/catch.",
-          reason="When manually reviewing code for vulnerability, experience "
-              + "shows that reviewers cannot pay adequate attention to the "
-              + "pervasive possibility of thrown exceptions. These lead to four "
-              + "dangers: 1) leaking an authority-bearing object, endangering "
-              + "integrity, 2) leaking a secret, endangering secrecy, and 3) "
-              + "aborting a partially completed state update, leaving the state "
-              + "malformed, endangering integrity, and 4) preventing an "
-              + "operation that was needed, endangering availability. Caja only "
-              + "seeks to make strong claims about integrity. By ensuring that "
-              + "only immutable (transitively frozen) data is thrown, we "
-              + "prevent problem #1. For the others, programmer vigilance is "
-              + "still needed. \n"
-              + "Current JavaScript implementations fail, in different ways, to "
-              + "implement the scoping of the catch variable specified in ES3. "
-              + "We translate Caja to JavaScript so as to implement the ES3 "
-              + "specified scoping on current JavaScript implementations.",
+          synopsis="Expand the innards of a try/catch.",
+          reason="",
           matches="try { @s0*; } catch (@x) { @s1*; }",
-          substitutes="try {\n"
-              + "  @s0*;\n"
-              + "} catch (ex___) {\n"
-              + "  try {\n"
-              + "    throw ___.tameException(ex___); \n"
-              + "  } catch (@x) {\n"
-              + "    @s1*;\n"
-              + "  }\n"
-              + "}")
+          substitutes="try { @s0*; } catch (@x) { @s1*; }")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
         Map<String, ParseTreeNode> bindings = match(node);
         if (bindings != null) {
@@ -625,22 +600,10 @@ public class ES53Rewriter extends Rewriter {
       @Override
       @RuleDescription(
           name="tryCatchFinally",
-          synopsis="Finally adds no special issues beyond those explained in "
-              + "try/catch.",
-          reason="Caja is not attempting to impose determinism, so the reasons "
-              + "for Joe-E to avoid finally do not apply.",
+          synopsis="Expand the innards of a try/catch/finally.",
+          reason="",
           matches="try { @s0*; } catch (@x) { @s1*; } finally { @s2*; }",
-          substitutes="try {\n"
-              + "  @s0*;\n"
-              + "} catch (ex___) {\n"
-              + "  try {\n"
-              + "    throw ___.tameException(ex___);\n"
-              + "  } catch (@x) {\n"
-              + "    @s1*;\n"
-              + "  }\n"
-              + "} finally {\n"
-              + "  @s2*;\n"
-              + "}")
+          substitutes="try { @s0*; } catch (@x) { @s1*; } finally { @s2*; }")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
         Map<String, ParseTreeNode> bindings = match(node);
         if (bindings != null) {
@@ -669,9 +632,8 @@ public class ES53Rewriter extends Rewriter {
       @Override
       @RuleDescription(
           name="tryFinally",
-          synopsis="See bug 383. Otherwise, it's just the trivial translation.",
-          reason="try/finally actually seems to work as needed by current "
-              + "JavaScript implementations.",
+          synopsis="Expand the innards of a try/finally.",
+          reason="",
           matches="try { @s0*; } finally { @s1*; }",
           substitutes="try { @s0*; } finally { @s1*; }")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
