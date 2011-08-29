@@ -43,7 +43,7 @@ var ___, cajaVM, safeJSON, WeakMap;
   // Object.prototype it inherits from.
   Object.prototype.baseProto___ = Object.prototype;
 
-  var slice = Array.prototype.slice;
+  var slice = Array.prototype.slice; 
   var push = Array.prototype.push;
 
 
@@ -1569,18 +1569,18 @@ var ___, cajaVM, safeJSON, WeakMap;
   }
 
   Object.prototype.allKeys___ = function () {
-    var i, m, result = [];
-    for (i in this) {
-      if (isNumericName(i)) {
-        result.push(i);
-      } else {
-        if (startsWithNUM___.test(i) && endsWith__.test(i)) { continue; }
-        m = i.match(endsWith_v___);
-        if (m) { result.push(m[1]); }
+      var i, m, result = [];
+      for (i in this) {
+        if (isNumericName(i)) {
+          result.push(i);
+        } else {
+          if (startsWithNUM___.test(i) && endsWith__.test(i)) { continue; }
+          m = i.match(endsWith_v___);
+          if (m) { result.push(m[1]); }
+        }
       }
-    }
-    return result;
-  };
+      return result;
+    };
 
   function ownEnumKeys(obj) {
     return obj.keys___();
@@ -1602,19 +1602,19 @@ var ___, cajaVM, safeJSON, WeakMap;
     };
 
   Object.prototype.ownKeys___ = function () {
-    var i, m, result = [];
-    for (i in this) {
-      if (!this.hasOwnProperty(i)) { continue; }
-      if (isNumericName(i)) {
-        result.push(i);
-      } else {
-        if (startsWithNUM___.test(i) && endsWith__.test(i)) { continue; }
-        m = i.match(endsWith_v___);
-        if (m) { result.push(m[1]); }
+      var i, m, result = [];
+      for (i in this) {
+        if (!this.hasOwnProperty(i)) { continue; }
+        if (isNumericName(i)) {
+          result.push(i);
+        } else {
+          if (startsWithNUM___.test(i) && endsWith__.test(i)) { continue; }
+          m = i.match(endsWith_v___);
+          if (m) { result.push(m[1]); }
+        }
       }
-    }
-    return result;
-  };
+      return result;
+    };
 
   function ownUntamedKeys(obj) {
     var i, m, result = [];
@@ -3400,7 +3400,7 @@ var ___, cajaVM, safeJSON, WeakMap;
       //    internal method of obj with argument name.
       var desc = obj.GetOwnProperty___(name);
       // 4. Return the result of calling FromPropertyDescriptor(desc).
-      return FromPropertyDescriptor(desc);
+      return desc ? FromPropertyDescriptor(desc) : void 0;
     };
   origGetOwnPropertyDescriptor = Object.getOwnPropertyDescriptor;
 
@@ -3825,7 +3825,7 @@ var ___, cajaVM, safeJSON, WeakMap;
       return this.apply(safeDis(dis), slice.call(arguments, 1));
     });
   virtualize(Function.prototype, 'apply', function (dis, as) {
-      return this.apply(safeDis(dis), as ? slice.call(as, 0) : undefined);
+      return this.apply(safeDis(dis), as ? slice.call(as, 0) : void 0);
     });
   /**
    * Bind this function to <tt>self</tt>, which will serve
@@ -4676,9 +4676,9 @@ var ___, cajaVM, safeJSON, WeakMap;
                 desc.value_w___ === desc ?
                     desc.value = val :
                     desc.w___('value', val);
-                dis.defineOwnProperty_m___ ?
-                    dis.defineOwnProperty(name, desc) :
-                    dis.m___('defineOwnProperty', [name, desc]);
+                dis.defineProperty_m___ ?
+                    dis.defineProperty(name, desc) :
+                    dis.m___('defineProperty', [name, desc]);
                 return true;
               } else {
                 return false;
@@ -4870,11 +4870,13 @@ var ___, cajaVM, safeJSON, WeakMap;
           names = defaultDerivedTraps.keys.apply(handler, [proxy]);
         }
         var result = [];
-        var i, len = names.length;
+        var i, len = names.length, seen = {};
         for (i = 0; i < len; ++i) {
           var name = '' + names[i];
           assertValidPropertyName(name);
+          if (seen[name]) { continue; }
           result.push('' + name);
+          seen[name] = 1;
         }
         return result;
       };
@@ -4889,11 +4891,13 @@ var ___, cajaVM, safeJSON, WeakMap;
             handler.v___('getOwnPropertyNames');
         names = keys.f___(handler, [proxy]);
         var result = [];
-        var i, len = names.length;
+        var i, len = names.length, seen = {};
         for (i = 0; i < len; ++i) {
           var name = '' + names[i];
           assertValidPropertyName(name);
-          result.push('' + name);
+          if (seen[name]) { continue; }
+          result.push(name);
+          seen[name] = 1;
         }
         return result;
       };
@@ -4908,11 +4912,13 @@ var ___, cajaVM, safeJSON, WeakMap;
             handler.v___('getPropertyNames');
         names = keys.f___(handler, [proxy]);
         var result = [];
-        var i, len = names.length;
+        var i, len = names.length, seen = {};
         for (i = 0; i < len; ++i) {
           var name = '' + names[i];
           assertValidPropertyName(name);
+          if (seen[name]) { continue; }
           result.push('' + name);
+          seen[name] = 1;
         }
         return result;
       };
@@ -4938,8 +4944,14 @@ var ___, cajaVM, safeJSON, WeakMap;
       if (!descMap) {
         throw new TypeError('Unable to fix the proxy.');
       }
+      var isSafeFunc = isFunction(proxy) && proxy.ok___;
+      var constructTrap = proxy.new___;
       for (var i in proxy) {
         if (proxy.hasOwnProperty(i)) { delete proxy[i]; }
+      }
+      if (isSafeFunc) {
+        markFunc(proxy);
+        proxy.new___ = constructTrap;
       }
       var keys = descMap.keys___();
       var len = keys.length;
@@ -4984,7 +4996,7 @@ var ___, cajaVM, safeJSON, WeakMap;
               'Inheritance from proxies not implemented yet.');
         }
         P = '' + P;
-        var extDesc = FromPropertyDescriptor(desc);
+        var extDesc = desc ? FromPropertyDescriptor(desc) : void 0;
         return (handler.defineProperty_m___ ?
             handler.defineProperty(P, extDesc, proxy) :
             handler.m___('defineProperty', [P, extDesc, proxy]));
@@ -4998,7 +5010,11 @@ var ___, cajaVM, safeJSON, WeakMap;
         var desc = (handler.getOwnPropertyDescriptor_m___ ?
             handler.getOwnPropertyDescriptor(P, proxy) :
             handler.m___('getOwnPropertyDescriptor', [P, proxy]));
-        return ToPropertyDescriptor(desc);
+        var intDesc = desc ? ToPropertyDescriptor(desc) : void 0;
+        if (intDesc && !intDesc.configurable) {
+          throw new TypeError('Proxy properties must be configurable.');
+        }
+        return intDesc;
      };
     proxy.HasProperty___ = function (P) {
         if (this !== proxy) {
@@ -5032,6 +5048,9 @@ var ___, cajaVM, safeJSON, WeakMap;
   var Proxy = {};
   Proxy.DefineOwnProperty___('create', {
       value: markFuncFreeze(function (handler, proto) {
+          if (Type(handler) !== 'Object') {
+            throw new TypeError("Expected handler to be an object.");
+          }
           var proxy;
           if (proto === void 0 || proxy === null) {
             proxy = {};
@@ -5077,10 +5096,23 @@ var ___, cajaVM, safeJSON, WeakMap;
     });
 
   Proxy.DefineOwnProperty___('createFunction', {
-      value: markFuncFreeze(function (handler, callTrap, createTrap) {
+      value: markFuncFreeze(function (handler, callTrap, constructTrap) {
+          if (Type(handler) !== 'Object') {
+            throw new TypeError('Expected handler to be an object.');
+          }
+          if (!isFunction(callTrap)) {
+            throw new TypeError('Expected callTrap to be a function.');
+          }
+          if (constructTrap === void 0) {
+            constructTrap = callTrap;
+          }
+          if (!isFunction(constructTrap)) {
+            throw new 
+              TypeError("Construct trap must be a function or undefined.");
+          }
           var proto = Function.prototype;
           // Here we know the prototype chain, so we can optimize.
-          if (!proto.ne___) {
+          if (proto.ne___ !== proto) {
             throw new TypeError(
                   'Function.prototype must not be extensible to create ' +
                   'function proxies.');
@@ -5106,8 +5138,9 @@ var ___, cajaVM, safeJSON, WeakMap;
           }
           prepareProxy(proxy, handler);
           proxy.new___ = function (var_args) {
-              return createTrap.apply(this, slice.call(arguments, 0));
+              return constructTrap.apply(this, slice.call(arguments, 0));
             };
+          if (constructTrap) { proxy.prototype = constructTrap.prototype; }
           return proxy;
         }),
       enumerable: true

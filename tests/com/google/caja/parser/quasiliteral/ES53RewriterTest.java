@@ -1633,6 +1633,7 @@ public class ES53RewriterTest extends CommonJsRewriterTestCase {
   public final void testProxy() throws Exception {
       rewriteAndExecute(
           // Taken from http://wiki.ecmascript.org/doku.php?id=harmony:proxies
+          "Object.freeze(Function.prototype);" +
           "function handlerMaker(obj) {" +
           "  return {" +
           "    getOwnPropertyDescriptor: function(name) {" +

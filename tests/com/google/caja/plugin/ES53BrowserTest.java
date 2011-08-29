@@ -81,6 +81,10 @@ public class ES53BrowserTest extends BrowserTestCase {
     runTestCase("es53-test-language-guest.html", false);
   }
 
+  public final void testProxies() {
+    runTestDriver("es53-test-proxies.js");
+  }
+
   public final void testInlineScript() {
     runTestCase("es53-test-inline-script.html");
   }

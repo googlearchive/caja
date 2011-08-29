@@ -1,0 +1,27 @@
+This ES-Harmony Test Suite is an adaptation of the ES5 Conformance Test Suite that can run in a stand-alone shell (i.e. doesn't require a browser).
+
+Writing tests
+-------------
+Create *.js files adhering to the ES5 Conformance Test suite format in the TestCases subdirectory. See example.js for a skeleton unit test.
+Have a look at the bottom of the file consolerunner.js for a list of utility assertion functions.
+
+Running the tests
+-----------------
+
+In a JS Shell
+=============
+First, generate a file that loads all test code by invoking:
+gentests > tests.js
+
+To run the tests, simply load the generated file with your favorite javascript shell, e.g.:
+js tests.js
+
+The shell should support 'load(string)' and 'print(string)' globals.
+
+In a Browser
+============
+
+Generate an HTML file that loads and tests all the code by invoking:
+genhtmltests > runtests.html
+
+The gentests and genhtmltests scripts accept a single '-v' verbose option that will make the test suite print passing tests as well.
