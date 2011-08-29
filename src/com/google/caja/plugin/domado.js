@@ -665,7 +665,8 @@ domitaModules.TameXMLHttpRequest = function(
     // The XHR interface does not tell us the MIME type in advance, so we
     // must assume the broadest possible.
     var safeUri = uriCallback.rewrite(
-        String(URL), html4.ueffects.SAME_DOCUMENT, html4.ltypes.SANDBOXED);
+        String(URL), html4.ueffects.SAME_DOCUMENT, html4.ltypes.SANDBOXED,
+        { "XHR": true});
     // If the uriCallback rejects the URL, we throw an exception, but we do not
     // put the URI in the exception so as not to put the caller at risk of some
     // code in its stack sniffing the URI.

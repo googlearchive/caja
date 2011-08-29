@@ -17,6 +17,7 @@
  * in guest HTML/CSS input works properly.
  *
  * @author ihab.awad@gmail.com
+ * @author jasvir@gmail.com
  * @requires caja, jsunitRun, readyToTest
  */
 
@@ -74,7 +75,37 @@
       });
     });
   });
-    
+
+  registerTest('testDynamicUriPolicy', function testUriInCss() {
+    var div = createDiv();
+    var xhrDynamicPolicy = {
+        rewrite: function (uri, effects, ltype, hints) {
+          assert(typeof hints !== "undefined");
+          assert(hints["XHR"]);
+          return 'xhrTest.txt';
+        }
+    };
+    caja.load(div, xhrDynamicPolicy, function (frame) {
+      var extraImports = createExtraImportsForTesting(caja, frame);
+
+      frame.code('http://localhost:8080/', 'text/html', ''
+          + '<script>'
+          + '  var request = new XMLHttpRequest();'
+          + '  request.open("GET", "non-existent.html",'
+          + '    true);'
+          + '  request.onreadystatechange = function(event) {'
+          + '      if (request.readyState == 4) {'
+          + '        assertEquals("The quick brown fox", request.responseText);'
+          + '        jsunitPass("testDynamicUriPolicy");'
+          + '      }'
+          + '  };'
+          + '  request.send();'
+          + '<\/script>')
+          .api(extraImports)
+          .run()
+    });
+  });
+
   readyToTest();
   jsunitRun();
 })();
