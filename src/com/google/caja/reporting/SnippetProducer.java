@@ -91,7 +91,8 @@ public class SnippetProducer {
 
     // Pick a representative line from pos.
     int lineNo = pos.startLineNo();
-    int start = pos.startCharInLine() - 1;
+    // TODO(mikesamuel): startCharInLine shouldn't ever return a number < 1
+    int start = Math.max(0, pos.startCharInLine() - 1);
     CharSequence line = fetchLine(sourceCode, lineNo);
 
     if (line != null

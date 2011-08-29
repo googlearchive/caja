@@ -462,7 +462,6 @@ public abstract class Rule implements MessagePart {
         rewriter.mq.addMessage(
             RewriterMessageType.CANNOT_ASSIGN_TO_FREE_VARIABLE,
             operand.getFilePosition(), this, operand);
-        return null;
       }
       return sideEffectlessReadAssignOperand(operand, scope);
     } else if (operand instanceof Operation) {

@@ -227,3 +227,13 @@
     pass('test-parseInt');
   });
 </script>
+
+<script>var c = 0;</script>
+<p id="test-globalReference" class="clickme testcontainer">
+  <span onclick="assertEquals(1, ++c); pass('test-globalReference');">Test
+  global reference</span>
+</p>
+<script type="text/javascript">
+  jsunitRegister('testGlobalReference',
+                 function testGlobalReference() { });
+</script>

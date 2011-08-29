@@ -142,7 +142,7 @@ public enum RewriterMessageType implements MessageTypeInt {
 
   CANNOT_ASSIGN_TO_FREE_VARIABLE(
       "%s: Cannot assign to a free module variable: %s, %s",
-      MessageLevel.FATAL_ERROR),
+      MessageLevel.WARNING),
 
   FREE_VARIABLE("%s: free variable %s", MessageLevel.ERROR),
 
