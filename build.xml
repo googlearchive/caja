@@ -98,7 +98,7 @@
   <path id="classpath.common">
     <path refid="classpath.web"/>
     <!-- TODO(jasvir): Check in guava in third_party and update link --> 
-    <pathelement path="${third_party}/java/webdriver/libs/guava-r09.jar"/>
+    <pathelement path="${third_party}/java/guava/guava-r09.jar"/>
     <pathelement path="${third_party}/java/json_simple/json_simple.jar"/>
     <pathelement path="${third_party}/java/jsonml/jsonml.jar"/>
     <pathelement path="${third_party}/java/jsr305/jsr305.jar"/>
@@ -120,11 +120,10 @@
     <path refid="classpath.common"/>
     <path refid="classpath.gwt"/>
     <pathelement path="${third_party}/java/junit/junit.jar"/>
-    <pathelement path="${third_party}/java/webdriver/libs/guava-r09.jar"/>
+    <pathelement path="${third_party}/java/guava/guava-r09.jar"/>
     <pathelement path="${third_party}/java/json_simple/json_simple.jar"/>
     <pathelement path="${third_party}/java/rhino/js.jar"/>
-    <pathelement path="${third_party}/java/webdriver/selenium-java-2.0rc3.jar"/>
-    <pathelement path="${third_party}/java/webdriver/libs/json-20080701.jar"/>
+    <pathelement path="${third_party}/java/webdriver/selenium-server-standalone-2.5.0.jar"/>
   </path>
   <path id="classpath.tests.run">
     <pathelement path="${third_party}/java/emma/emma.jar"/>
@@ -550,7 +549,7 @@
       <fileset dir="${third_party}/java/javamail">
         <include name="mail.jar"/>
       </fileset>
-      <fileset dir="${third_party}/java/webdriver/libs">
+      <fileset dir="${third_party}/java/guava">
         <include name="guava-r09.jar"/>
       </fileset>
       <fileset dir="${third_party}/java/json_simple">
@@ -1128,7 +1127,7 @@
       <fileset dir="${jars}">
         <include name="htmlparser.jar" />
         <include name="json_simple.jar" />
-        <include name="guava-r08.jar" />
+        <include name="guava-r09.jar" />
         <include name="xercesImpl.jar" />
       </fileset>
       <fileset dir="${src.caja}/demos/playground">
@@ -1232,7 +1231,7 @@
       <fileset dir="${third_party}/java/xerces/">
         <include name="xercesImpl.jar" />
       </fileset>
-      <fileset dir="${third_party}/java/webdriver/libs">
+      <fileset dir="${third_party}/java/guava">
         <include name="guava-r09.jar" />
       </fileset>
       <fileset dir="${third_party}/java/json_simple/">
