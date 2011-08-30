@@ -29,12 +29,13 @@ import java.io.IOException;
  * @author ihab.awad@gmail.com
  */
 public enum ServiceMessageType implements MessageTypeInt {
-  CANNOT_FETCH_INPUT_URL("Cannot fetch input URL %s", MessageLevel.FATAL_ERROR),
+  WRONG_BUILD_VERSION("Build version error: Expected %s but was %s",
+      MessageLevel.FATAL_ERROR),
+  MISSING_BUILD_VERSION("Build version missing", MessageLevel.FATAL_ERROR),
   EXCEPTION_IN_SERVICE("Service threw exception %s", MessageLevel.FATAL_ERROR),
   INVALID_ARGUMENT("Invalid value %s for argument %s",
       MessageLevel.FATAL_ERROR),
   INVALID_INPUT_URL("Invalid input URL %s", MessageLevel.FATAL_ERROR),
-  IO_ERROR("I/O error: %s", MessageLevel.FATAL_ERROR),
   MISSING_ARGUMENT("Missing argument %s", MessageLevel.FATAL_ERROR),
   UNSUPPORTED_CONTENT_TYPES("Requested content types are unsupported",
       MessageLevel.FATAL_ERROR),

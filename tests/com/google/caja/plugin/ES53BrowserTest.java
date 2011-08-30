@@ -14,6 +14,8 @@
 
 package com.google.caja.plugin;
 
+import com.google.caja.reporting.BuildInfo;
+
 // TODO(kpreid): Rename this file, as it now tests the ES5 as well as ES53
 // environment.
 
@@ -21,6 +23,8 @@ package com.google.caja.plugin;
  * @author ihab.awad@gmail.com
  */
 public class ES53BrowserTest extends BrowserTestCase {
+  private final String bv = BuildInfo.getInstance().getBuildVersion();
+
   public final void testCajaJsInvocations() {
     runTestDriver("es53-test-cajajs-invocation.js");
   }
@@ -28,6 +32,57 @@ public class ES53BrowserTest extends BrowserTestCase {
   public final void testBasicFunctions() {
     // TODO(kpreid): Enable for ES5 once HTML scripting works
     runTestCase("es53-test-basic-functions-guest.html", false);
+  }
+
+  private final void addVersionRewrite(String path, String newVersion) {
+    getCajaStatic().rewrite(path, bv, newVersion);
+  }
+
+  public final void testVersionSkewCajaJs() {
+    closeWebDriver();  // Need a browser with an empty cache
+    // Changing the version baked into caja.js will cause it to load the
+    // wrongly-named files for the host and guest frames, which should cause
+    // it to never make progress in load() or whenReady() calls.
+    addVersionRewrite("/caja.js", "0000");
+    runTestDriver("es53-test-cajajs-never-starts.js");
+  }
+
+  public final void testVersionSkewTamingFrame() {
+    closeWebDriver();  // Need a browser with an empty cache
+    // Changing the version baked into the taming frame JS will cause a
+    // version mismatch error in caja.js.
+    addVersionRewrite("/es53-taming-frame-" + bv + ".opt.js", "0000");
+    runTestDriver("es53-test-cajajs-version-skew-js-files.js");
+  }
+
+  public final void testVersionSkewGuestFrame() {
+    closeWebDriver();  // Need a browser with an empty cache
+    // Changing the version baked into the guest frame JS will cause a
+    // version mismatch error in caja.js.
+    addVersionRewrite("/es53-guest-frame-" + bv + ".opt.js", "0000");
+    runTestDriver("es53-test-cajajs-version-skew-js-files.js");
+  }
+
+  public final void testVersionSkewCajolerResponse() {
+    closeWebDriver();  // Need a browser with an empty cache
+    // Changing the version baked into *all* the JS will cause an incorrect
+    // version number to be sent to the cajoler, which should then refuse
+    // to compile the given content and return an error instead.
+    addVersionRewrite("/caja.js", "0000");
+    cajaStatic.link(
+        "/es53-guest-frame-" + bv + ".opt.js",
+        "/es53-guest-frame-0000.opt.js");
+    cajaStatic.link(
+        "/es53-taming-frame-" + bv + ".opt.js",
+        "/es53-taming-frame-0000.opt.js");
+    addVersionRewrite("/es53-guest-frame-0000.opt.js", "0000");
+    addVersionRewrite("/es53-taming-frame-0000.opt.js", "0000");
+    runTestDriver("es53-test-cajajs-version-skew-cajoler-response.js");
+  }
+
+  public final void testVersionSkewCajoledModule() {
+    closeWebDriver();  // Need a browser with an empty cache
+    runTestDriver("es53-test-cajajs-version-skew-cajoled-module.js");
   }
 
   public final void testClientUriRewriting() {

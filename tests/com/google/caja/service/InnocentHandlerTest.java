@@ -14,6 +14,7 @@
 
 package com.google.caja.service;
 
+import com.google.caja.reporting.BuildInfo;
 import junit.framework.AssertionFailedError;
 
 /**
@@ -26,7 +27,8 @@ public class InnocentHandlerTest extends ServiceTestCase {
     assertSubstringsInJson(
         (String) requestGet("?url=http://foo/innocent.js"
             + "&input-mime-type=text/javascript"
-            + "&transform=INNOCENT"),
+            + "&transform=INNOCENT"
+            + "&build-version=" + BuildInfo.getInstance().getBuildVersion()),
         "js",
         "if (x0___.match(/___$/)) { continue }");
   }
@@ -40,7 +42,8 @@ public class InnocentHandlerTest extends ServiceTestCase {
           + "&input-mime-type=text/javascript"
           + "&transform=INNOCENT"
           + "&alt=json-in-script"
-          + "&callback=foo");
+          + "&callback=foo"
+          + "&build-version=" + BuildInfo.getInstance().getBuildVersion());
       assertCallbackInJsonp(s, "foo");
       assertSubstringsInJsonp(
           s,
@@ -57,8 +60,8 @@ public class InnocentHandlerTest extends ServiceTestCase {
               + "&callback=foo.bar"),
           "foo.bar");
       fail("Failed to reject non-identifier JSONP callback");
-    } catch (AssertionFailedError e) {
-      // Success
+    } catch (RuntimeException e) {
+      assertContainsIgnoreSpace(e.toString(), "Detected XSS attempt");
     }
 
     try {

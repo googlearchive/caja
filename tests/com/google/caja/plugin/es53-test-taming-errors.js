@@ -41,12 +41,13 @@
       outer.setAttribute('class', 'caja_outerContainer___');
       doc.body.appendChild(outer);
 
-      assertEquals(
-          'relative',
-          win.getComputedStyle(outer, null)
-              .getPropertyValue('position'));
-
-      jsunit.pass('testInitFeralFrameOther');
+      window.setTimeout(function() {
+        assertEquals(
+            'relative',
+            win.getComputedStyle(outer, null)
+                .getPropertyValue('position'));
+        jsunit.pass('testInitFeralFrameOther');
+      }, 0);
     }, 0);
   });
 

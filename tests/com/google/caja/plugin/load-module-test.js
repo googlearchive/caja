@@ -30,7 +30,8 @@ var createTest = function(rootUrl) {
         '    instantiate: function(___, IMPORTS___) {' +
         '      ' + instantiate +
         '    },' +
-        '    includedModules: ' + includedModules +
+        '    includedModules: ' + includedModules + ',' +
+        '    cajolerVersion: "' + cajaBuildVersion + '"' +
         '  });' +
         '}'
     };

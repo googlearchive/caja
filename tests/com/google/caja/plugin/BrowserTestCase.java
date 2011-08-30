@@ -16,6 +16,7 @@ package com.google.caja.plugin;
 
 import com.google.caja.lexer.escaping.Escaping;
 import com.google.caja.reporting.BuildInfo;
+import com.google.caja.reporting.MessageQueue;
 import com.google.caja.service.CajolingService;
 import com.google.caja.service.CajolingServlet;
 import com.google.caja.util.CajaTestCase;
@@ -60,7 +61,47 @@ public abstract class BrowserTestCase extends CajaTestCase {
       }));
     }
   }
-  
+
+  protected final RewritingResourceHandler cajaStatic =
+      new RewritingResourceHandler();
+  { cajaStatic.setResourceBase("./ant-war/"); }
+
+  protected String testBuildVersion = null;
+
+  protected final BuildInfo buildInfo = new BuildInfo() {
+    @Override public void addBuildInfo(MessageQueue mq) {
+      BuildInfo.getInstance().addBuildInfo(mq);
+    }
+    @Override public String getBuildInfo() {
+      return BuildInfo.getInstance().getBuildInfo();
+    }
+    @Override public String getBuildVersion() {
+      return (testBuildVersion != null)
+          ? testBuildVersion
+          : BuildInfo.getInstance().getBuildVersion();
+    }
+    @Override public String getBuildTimestamp() {
+      return BuildInfo.getInstance().getBuildTimestamp();
+    }
+    @Override public long getCurrentTime() {
+      return BuildInfo.getInstance().getCurrentTime();
+    }
+  };
+
+  public void setUp() throws Exception {
+    super.setUp();
+  }
+
+  public void tearDown() throws Exception {
+    cajaStatic.clear();
+    setTestBuildVersion(null);
+    super.tearDown();
+  }
+
+  protected void closeWebDriver() {
+    mwwd.stop();
+  }
+
   /**
    * Start a local web server on the port specified by portNumber().
    */
@@ -79,10 +120,6 @@ public abstract class BrowserTestCase extends CajaTestCase {
       // plumbing
       final String service = "/cajole";
 
-      // static file serving
-      final ResourceHandler caja_static = new ResourceHandler();
-      caja_static.setResourceBase("./ant-war/");
-
       // cajoling service -- Servlet setup code gotten from
       // <http://docs.codehaus.org/display/JETTY/Embedding+Jetty> @ 2010-06-30
       Context servlets = new Context(server, "/", Context.NO_SESSIONS);
@@ -99,7 +136,7 @@ public abstract class BrowserTestCase extends CajaTestCase {
 
       final HandlerList handlers = new HandlerList();
       handlers.setHandlers(new Handler[] {
-          caja_static,
+          cajaStatic,
           servlets,
           new DefaultHandler()});
       caja.setHandler(handlers);
@@ -128,6 +165,24 @@ public abstract class BrowserTestCase extends CajaTestCase {
     } catch (Exception e) {
       // the server will be turned down when the test exits
     }
+  }
+
+  /**
+   * Set a custom build version for testing. This will be used by the cajoling
+   * service to stamp outgoing cajoled modules. Set this to <code>null</code>
+   * to disable custom test build version and revert to default behavior.
+   *
+   * @param version the desired test build version.
+   */
+  protected void setTestBuildVersion(String version) {
+    testBuildVersion = version;
+  }
+
+  /**
+   * The RewritingResourceHandler used for static files.
+   */
+  protected RewritingResourceHandler getCajaStatic() {
+    return cajaStatic;
   }
 
   /**
@@ -171,13 +226,13 @@ public abstract class BrowserTestCase extends CajaTestCase {
   }
 
   protected void runTestDriver(String testDriver) {
-    runTestDriver(testDriver, true);
     runTestDriver(testDriver, false);
+    runTestDriver(testDriver, true);
   }
 
   protected void runTestCase(String testCase) {
-    runTestCase(testCase, true);
     runTestCase(testCase, false);
+    runTestCase(testCase, true);
   }
 
   protected void runTestDriver(String testDriver, boolean es5) {
@@ -204,7 +259,7 @@ public abstract class BrowserTestCase extends CajaTestCase {
       }
     });
 
-    poll(10000, 1000, new Check() {
+    poll(20000, 1000, new Check() {
       private List<WebElement> clickingList = null;
       @Override public String toString() {
         return "clicking done (Remaining elements = " +
@@ -220,7 +275,7 @@ public abstract class BrowserTestCase extends CajaTestCase {
       }
     });
 
-    poll(20000, 1000, new Check() {
+    poll(40000, 1000, new Check() {
       private List<WebElement> waitingList = null;
       @Override public String toString() {
         return "completion (Remaining elements = " +
@@ -298,7 +353,7 @@ public abstract class BrowserTestCase extends CajaTestCase {
   public interface Check {
     boolean run();
   }
-  
+
   /**
    * A wrapper for WebDriver providing the ability to open new windows on
    * demand.
@@ -323,7 +378,7 @@ public abstract class BrowserTestCase extends CajaTestCase {
         driver.get("about:blank");
         firstWindowHandle = driver.getWindowHandle();
       }
-      
+
       driver.switchTo().window(firstWindowHandle);
       String name = "btcwin" + (nextName++);
       driver.get("javascript:window.open('','" + name + "');'This%20is%20the%20"
@@ -331,7 +386,7 @@ public abstract class BrowserTestCase extends CajaTestCase {
       driver.switchTo().window(name);
       return driver;
     }
-    
+
     /**
      * Close the browser if and only if all opened windows have been closed;
      * else clean up but leave those windows open.
@@ -340,7 +395,7 @@ public abstract class BrowserTestCase extends CajaTestCase {
       if (driver == null) {
         return;
       }
-      
+
       if (driver.getWindowHandles().size() <= 1) {
         // quit if no failures (extra windows)
         driver.quit();
@@ -349,6 +404,8 @@ public abstract class BrowserTestCase extends CajaTestCase {
         driver.switchTo().window(firstWindowHandle);
         driver.close();
       }
+
+      driver = null;
     }
   }
 }

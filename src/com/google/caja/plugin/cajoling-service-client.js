@@ -24,20 +24,23 @@
  *     HTML from the input content.
  * @param debug whether debuggable cajoled code is desired (larger but more
  *     readable).
+ * @param console [optional] a console-like object to which errors are written.
  *
- * @requires ___, Q, encodeURIComponent
+ * @requires ___, Q, encodeURIComponent, cajaBuildVersion
  * @provides cajolingServiceClientMaker
  */
 var cajolingServiceClientMaker = function(serviceUrl,
                                           jsonRequestChannel,
                                           emitHtmlInJs,
-                                          debug) {
+                                          debug,
+                                          console) {
   // Map from full module URLs to module JSON records.
   var cache = new WeakMap();
 
   var makeServiceReference = function(uncajoledSourceUrl, mimeType) {
     return serviceUrl +
         '?url=' + encodeURIComponent(uncajoledSourceUrl) +
+        '&build-version=' + cajaBuildVersion +
         '&directive=ES53' +
         '&emit-html-in-js=' + emitHtmlInJs +
         '&renderer=' + (debug ? 'pretty' : 'minimal') +
@@ -46,7 +49,7 @@ var cajolingServiceClientMaker = function(serviceUrl,
 
   var messagesToLog = function(moduleURL, cajolerMessages) {
     if (!cajolerMessages) { return; }
-    if (!window.console) { return; }
+    if (!console) { return; }
     var msg;
     for (var i = 0; i < cajolerMessages.length; i++) {
       msg = cajolerMessages[i];
@@ -63,9 +66,9 @@ var cajolingServiceClientMaker = function(serviceUrl,
           messagesToLog(fullUrl, moduleJson.messages);
           if (moduleJson.js) {
             deferred.resolve(moduleJson);
-	  } else {
+          } else {
             deferred.resolve(Q.reject('Cajoling errors'));
-	  }
+          }
         },
         function(err) {
           deferred.resolve(Q.reject(err));

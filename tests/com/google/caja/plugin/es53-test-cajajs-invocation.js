@@ -21,27 +21,6 @@
  */
 
 (function () {
-  function splitHtmlAndScript(combinedHtml) {
-    return combinedHtml.match(
-      /^([\s\S]*?)<script[^>]*>([\s\S]*?)<\/script>\s*$/)
-      .slice(1);
-  }
-
-  function fetch(url, cb) {
-    var xhr = bridalMaker(function (x){return x;}, document).makeXhr();
-    xhr.open('GET', url, true);
-    xhr.onreadystatechange = function() {
-      if (xhr.readyState === 4) {
-        if (xhr.status === 200) {
-          cb(xhr.responseText);
-        } else {
-          throw new Error('Failed to load ' + url + ' : ' + xhr.status);
-        }
-      }
-    };
-    xhr.send(null);
-  }
-
   /**
    * Assert that a cajoled and loaded es53-test-guest.js has the right 
    * results.

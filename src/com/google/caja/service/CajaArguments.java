@@ -21,6 +21,18 @@ package com.google.caja.service;
 public enum CajaArguments {
 
   /**
+   * The expected Caja version number of the software making the request (which
+   * is typically the client-side component of the Caja system, or some other
+   * component tightly integrated with Caja). If this version number does not
+   * match the actual version number of Caja in the currently running service,
+   * the service will unconditionally return an error response. Since the
+   * security of Caja relies on coordination between a client-side microkernel
+   * and a server-side translation, this scheme is needed to guard against a
+   * whole class of possible "version mismatch" vulnerabilities.
+   */
+  BUILD_VERSION("build-version"),
+
+  /**
    * The expected MIME type of an input document that Caja is being asked to
    * process. Caja may return an error if the actual MIME type of the document
    * is different from what is expected. This parameter is provided as a sanity

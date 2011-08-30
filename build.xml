@@ -34,7 +34,7 @@
   - To run with assertions enabled, set the environment variable ANT_FLAGS="-ea"
  -->
 
-<project name="caja" default="default" basedir="." 
+<project name="caja" default="default" basedir="."
          xmlns:artifact="urn:maven-artifact-ant">
   <description>
   A subset of javascript that allow an application to securely embed plugins via
@@ -705,6 +705,13 @@
       <fileset dir="${src}" includes="**/*.html,**/*.js"/>
       <fileset dir="${tests}" includes="**/*.html,**/*.js"/>
     </copy>
+
+    <replace dir="${lib.caja}/plugin" propertyFile="${lib.caja}/reporting/buildInfo.properties" >
+      <replacefilter token="%VERSION%" property="svnVersion" />
+      <include name="cajoling-service-client-test.html" />
+      <include name="load-module-test.html" />
+      <include name="browser-test-case.js" />
+    </replace>
   </target>
 
   <target name="CajoledDomado" depends="pluginc">
@@ -732,10 +739,11 @@
       <input file="${src.caja}/plugin/html-sanitizer.js"/>
     </transform>
     <transform>
-      <output file="${lib.caja}/plugin/es53-taming-frame.opt.js"
+      <output file="${lib.caja}/plugin/es53-taming-frame-${build.svnVersion}.opt.js"
        language="javascript" renderer="minify"/>
-      <output file="${lib.caja}/plugin/es53-taming-frame.js"
+      <output file="${lib.caja}/plugin/es53-taming-frame-${build.svnVersion}.js"
        language="javascript" renderer="concat"/>
+      <input file="${src.caja}/plugin/caja-iframe-build-version.js"/>
       <input file="${third_party}/js/json_sans_eval/json_sans_eval.js"/>
       <input file="${src.caja}/es53.js"/>      
       <input file="${src.caja}/plugin/capture-domado.js"/>
@@ -749,10 +757,11 @@
       <input file="${src.caja}/flash/caja-flash.js"/>
     </transform>
     <transform>
-      <output file="${lib.caja}/plugin/es53-guest-frame.opt.js"
+      <output file="${lib.caja}/plugin/es53-guest-frame-${build.svnVersion}.opt.js"
        language="javascript" renderer="minify"/>
-      <output file="${lib.caja}/plugin/es53-guest-frame.js"
+      <output file="${lib.caja}/plugin/es53-guest-frame-${build.svnVersion}.js"
        language="javascript" renderer="concat"/>
+      <input file="${src.caja}/plugin/caja-iframe-build-version.js"/>
       <input file="${third_party}/js/json_sans_eval/json_sans_eval.js"/>
       <input file="${src.caja}/es53.js"/>
       <input file="${src.caja}/plugin/uri.js"/>
@@ -828,8 +837,9 @@
            do something clever. -->
       <!--<output file="${lib.caja}/plugin/ses-taming-frame.opt.js"
        language="javascript" renderer="minify"/>-->
-      <output file="${lib.caja}/plugin/ses-taming-frame.js"
+      <output file="${lib.caja}/plugin/ses-taming-frame-${build.svnVersion}.js"
        language="javascript" renderer="concat"/>
+      <input file="${src.caja}/plugin/caja-iframe-build-version.js"/>
       <input file="${third_party}/js/json_sans_eval/json_sans_eval.js"/>
       <input file="${src.caja}/plugin/ses-iframe-init.js"/>
       <input file="${lib.caja}/ses/initSESPlus.js"/>
@@ -856,30 +866,24 @@
            do something clever. -->
       <!--<output file="${lib.caja}/plugin/ses-guest-frame.opt.js"
        language="javascript" renderer="minify"/>-->
-      <output file="${lib.caja}/plugin/ses-guest-frame.js"
+      <output file="${lib.caja}/plugin/ses-guest-frame-${build.svnVersion}.js"
        language="javascript" renderer="concat"/>
+      <input file="${src.caja}/plugin/caja-iframe-build-version.js"/>
       <input file="${src.caja}/plugin/ses-iframe-init.js"/>
       <input file="${lib.caja}/ses/initSESPlus.js"/>
       <input file="${src.caja}/plugin/caja-iframe-done.js"/>
     </transform>
-  </target>
-
-  <!-- TODO(jasvir): This is not needed any longer -->
-  <target name="IframeSupportingJs" depends="MinifiedJs">
-    <genrule class="com.google.caja.tools.JsToVar">
-      <input file="${lib.caja}/plugin/es53-taming-frame.js"/>
-      <output file="${lib.caja}/plugin/tamingFrameScript.js"/>
-    </genrule>
-    <genrule class="com.google.caja.tools.JsToVar">
-      <input file="${lib.caja}/plugin/es53-guest-frame.js"/>
-      <output file="${lib.caja}/plugin/guestFrameScript.js"/>
-    </genrule>
-    <concat destfile="${lib.caja}/plugin/es53-single-frame-vars.js">
-      <filelist>
-        <file name="${lib.caja}/plugin/tamingFrameScript.js"/>
-        <file name="${lib.caja}/plugin/guestFrameScript.js"/>
-      </filelist>
-    </concat>
+    <replace dir="${lib.caja}/plugin" propertyFile="${lib.caja}/reporting/buildInfo.properties" >
+      <replacefilter token="%VERSION%" property="svnVersion" />
+      <include name="es53-taming-frame-${build.svnVersion}.opt.js" />
+      <include name="es53-taming-frame-${build.svnVersion}.js" />
+      <include name="es53-guest-frame-${build.svnVersion}.opt.js" />
+      <include name="es53-guest-frame-${build.svnVersion}.js" />
+      <include name="ses-guest-frame-${build.svnVersion}.opt.js" />
+      <include name="ses-guest-frame-${build.svnVersion}.js" />
+      <include name="ses-taming-frame-${build.svnVersion}.opt.js" />
+      <include name="ses-taming-frame-${build.svnVersion}.js" />
+    </replace>
   </target>
 
   <target name="AllTests"
@@ -907,6 +911,7 @@
       <input file="${lib.caja}/plugin/css-defs.js"/>
       <input file="${lib.caja}/plugin/cssparser.js"/>
       <input file="${src.caja}/plugin/domado.js"/>
+      <input file="${src.caja}/plugin/caja-iframe-build-version.js"/>
       <input file="${src.caja}/plugin/caja-iframe-done.js"/>
       <input file="${src.caja}/plugin/html-emitter.js"/>
       <input file="${src.caja}/plugin/html-sanitizer.js"/>
@@ -966,7 +971,7 @@
       <format property="build.timestamp" pattern="yyyy-MM-dd HH:mm:ss"/>
     </tstamp>
     <exec outputproperty="build.svnVersion"
-     executable="svnversion"
+     executable="tools/svnversion-nocolon"
      failonerror="false"
      failifexecutionfails="false"
      dir="."/>
@@ -995,7 +1000,7 @@
   </target>
 
   <target name="PluginCompiler"
-   depends="CssParser,HtmlParser,Quasiliterals,Rendering,Schemas">
+   depends="CssParser,HtmlParser,Quasiliterals,Rendering,Schemas,build.info">
     <javac destdir="${lib}" debug="true" target="1.5" source="1.5">
       <src path="${src}"/>
       <classpath refid="classpath.compile"/>
@@ -1037,6 +1042,11 @@
         <include name="**/caja/ancillary/jsdoc/*.js"/>
       </fileset>
     </copy>
+
+    <replace file="${lib.caja}/plugin/caja.js"
+        propertyFile="${lib.caja}/reporting/buildInfo.properties" >
+        <replacefilter token="%VERSION%" property="svnVersion" />
+    </replace>
   </target>
 
   <!-- Builds the cajoling service. -->
@@ -1171,14 +1181,14 @@
            part of a "Caja server" package separate from the playground. -->
       <fileset dir="${lib.caja}/plugin">
         <include name="caja.js"/>
-        <include name="es53-guest-frame.js"/>
-        <include name="es53-guest-frame.opt.js"/>
-        <include name="es53-taming-frame.js"/>                                
-        <include name="es53-taming-frame.opt.js"/>
-        <include name="ses-taming-frame.js"/>                                
-        <include name="ses-taming-frame.opt.js"/>
-        <include name="ses-guest-frame.js"/>                                
-        <include name="ses-guest-frame.opt.js"/>
+        <include name="es53-guest-frame-${build.svnVersion}.js"/>
+        <include name="es53-guest-frame-${build.svnVersion}.opt.js"/>
+        <include name="es53-taming-frame-${build.svnVersion}.js"/>
+        <include name="es53-taming-frame-${build.svnVersion}.opt.js"/>
+        <include name="ses-taming-frame-${build.svnVersion}.js"/>
+        <include name="ses-taming-frame-${build.svnVersion}.opt.js"/>
+        <include name="ses-guest-frame-${build.svnVersion}.js"/>
+        <include name="ses-guest-frame-${build.svnVersion}.opt.js"/>
       </fileset>
     </copy>
     <copy file="${third_party}/js/swfobject/src/swfobject.js"

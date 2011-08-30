@@ -14,6 +14,7 @@
 
 package com.google.caja.service;
 
+import com.google.caja.reporting.BuildInfo;
 import junit.framework.AssertionFailedError;
 
 /**
@@ -24,7 +25,8 @@ public class JsHandlerTest extends ServiceTestCase {
     registerUri("http://foo/bar.js", "g(1);", "text/javascript");
     assertSubstringsInJson(
         (String) requestGet("?url=http://foo/bar.js"
-            + "&input-mime-type=text/javascript"),
+            + "&input-mime-type=text/javascript"
+            + "&build-version=" + BuildInfo.getInstance().getBuildVersion()),
         "js",
         "moduleResult___=" +
         "(IMPORTS___.g_v___?IMPORTS___.g:___.ri(IMPORTS___,'g')).i___(1);");
@@ -37,7 +39,8 @@ public class JsHandlerTest extends ServiceTestCase {
       String s = (String) requestGet("?url=http://foo/bar.js"
           + "&input-mime-type=text/javascript"
           + "&alt=json-in-script"
-          + "&callback=foo");
+          + "&callback=foo"
+          + "&build-version=" + BuildInfo.getInstance().getBuildVersion());
       assertCallbackInJsonp(s, "foo");
       assertSubstringsInJsonp(s, "js",
           "moduleResult___=" +
@@ -49,18 +52,20 @@ public class JsHandlerTest extends ServiceTestCase {
           (String) requestGet("?url=http://foo/bar.js"
               + "&input-mime-type=text/javascript"
               + "&alt=json-in-script"
-              + "&callback=foo.bar"),
+              + "&callback=foo.bar"
+              + "&build-version=" + BuildInfo.getInstance().getBuildVersion()),
           "foo.bar");
       fail("Failed to reject non-identifier JSONP callback");
-    } catch (AssertionFailedError e) {
-      // Success
+    } catch (RuntimeException e) {
+      assertContainsIgnoreSpace(e.toString(), "Detected XSS attempt");
     }
 
     try {
       assertCallbackInJsonp(
           (String) requestGet("?url=http://foo/bar.js"
               + "&input-mime-type=text/javascript"
-              + "&callback=foo.bar"),
+              + "&callback=foo.bar"
+              + "&build-version=" + BuildInfo.getInstance().getBuildVersion()),
           "foo.bar");
       fail("Added JSONP callback when not requested");
     } catch (AssertionFailedError e) {
@@ -72,7 +77,8 @@ public class JsHandlerTest extends ServiceTestCase {
           (String) requestGet("?url=http://foo/bar.js"
               + "&input-mime-type=text/javascript"
               + "&alt=json"
-              + "&callback=foo.bar"),
+              + "&callback=foo.bar"
+              + "&build-version=" + BuildInfo.getInstance().getBuildVersion()),
           "foo.bar");
       fail("Added JSONP callback when not requested");
     } catch (AssertionFailedError e) {

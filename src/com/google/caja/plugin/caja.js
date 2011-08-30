@@ -17,11 +17,15 @@
  * @author kpreid@switchb.org
  * @author ihab.awad@gmail.com
  * @author jasvir@gmail.com
- * @requires document, setTimeout, console, window
+ * @requires document, setTimeout, window
  * @provides caja
  */
 
 var caja = (function () {
+  var cajaBuildVersion = '%VERSION%';
+
+  var console = undefined;
+
   function identity(x) { return x; }
   
   function joinUrl(base, path) {
@@ -201,7 +205,7 @@ var caja = (function () {
       var iframe = createIframe(filename);
 
       var url = joinUrl(cajaServer,
-          debug ? filename + '.js' : filename + '.opt.js');
+          filename + '-' + cajaBuildVersion + (debug ? '.js' : '.opt.js'));
 
       // The particular interleaving of async events shown below has been found
       // necessary to get the right behavior on Firefox 3.6. Otherwise, the
@@ -210,6 +214,14 @@ var caja = (function () {
         // Arrange to be notified when the frame is ready. For Firefox, it is
         // important that we do this before we do the async installScript below.
         iframe.contentWindow.cajaIframeDone___ = function () {
+          if (cajaBuildVersion !== iframe.contentWindow.cajaBuildVersion) {
+            var msg = 'Version error: ' +
+                'caja.js version ' + cajaBuildVersion + ' ' +
+                'does not match ' +
+                filename + ' version ' + iframe.contentWindow.cajaBuildVersion;
+            if (console) { console.log(msg); }
+            throw new Error(msg);
+          }
           callback(iframe);
         };
         setTimeout(function() {
@@ -264,6 +276,7 @@ var caja = (function () {
               if (!('onerror' in extraImports)) {
                 extraImports.onerror = tame(markFunction(
                     function (message, source, lineNum) {
+                      if (!console) { return; }
                       console.log('Uncaught script error: ' + message +
                           ' in source: "' + source +
                           '" at line: ' + lineNum);
@@ -288,11 +301,15 @@ var caja = (function () {
       if (ses.maxSeverity.level > ses.severities.NOT_ISOLATED.level
           && !forceES5Mode) {
         // TODO(kpreid): What severity level is sufficient to protect us here?
-        console.warn("Failed to initialize SES; switching to ES5/3 mode.");
+        if (console) {
+          console.warn("Failed to initialize SES; switching to ES5/3 mode.");
+        }
         cannotSES();
       } else {
         // TODO(kpreid): Remove noise when this case is in production
-        console.info("SES taming frame loaded!");
+        if (console) {
+          console.info("SES taming frame loaded!");
+        }
 
         var Q = tamingWindow.Q;
 
@@ -382,7 +399,9 @@ var caja = (function () {
                   opt_callback(result);
                 }
               }, function (failure) {
-                console.error("Failed to load guest content: " + failure);
+                if (console) {
+                  console.error("Failed to load guest content: " + failure);
+                }
               });
             }
 
@@ -507,7 +526,7 @@ var caja = (function () {
             }
 
             function content(url, theContent, contentType) {
-              console.log("CJ content called");
+              if (console) { console.log("CJ content called"); }
               return c.runMaker(loadContent(Q.ref({
                 contentType: contentType,
                 responseText: theContent
@@ -564,7 +583,8 @@ var caja = (function () {
                 joinUrl(cajaServer, 'cajole'),
                 tamingWindow.jsonRestTransportMaker(),
                 true,
-                config.debug);
+                config.debug,
+                console);
 
         /**
          * Tame an object graph by applying reasonable defaults to all
@@ -944,8 +964,14 @@ var caja = (function () {
                   if (opt_staticHtml) {
                     c.innerContainer.innerHTML = opt_staticHtml;
                   }
-                  var preparedModule = guestWindow.prepareModuleFromText___(
-                     cajoledJs);
+                  var preparedModule;
+                  try {
+                    preparedModule =
+                        guestWindow.prepareModuleFromText___(cajoledJs);
+                  } catch (ex) {
+                    if (console) { console.log(ex); }
+                    throw ex;
+                  }
                   var result = instModule(preparedModule);
                   // If a callback is provided, we call it 
                   // with the completion value.
@@ -992,7 +1018,9 @@ var caja = (function () {
                               }
                             },
                             function(ex) {
-                              throw new Error(ex);
+                              if (console) {
+                                console.log('Error in module loading: ' + ex);
+                              }
                             });
                       },
                       function (err) {
@@ -1012,7 +1040,9 @@ var caja = (function () {
                         }
                       },
                       function (err) {
-                        console.log('Error in module loading: ' + err);
+                        if (console) {
+                          console.log('Error in module loading: ' + err);
+                        }
                       });
                 }, executeCompiledModuleES53);
             }
@@ -1129,6 +1159,7 @@ var caja = (function () {
     if (initializationState != UNREADY) {
       throw new Error('Caja cannot be initialized more than once');
     }
+    console = config.console || window.console;
     initializationState = PENDING;
     caja.configure(config, function (frameGroup) {
       frameGroup_ = frameGroup;

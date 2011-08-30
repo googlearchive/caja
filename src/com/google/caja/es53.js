@@ -26,7 +26,7 @@
  * </ul>
  *
  * @author metaweta@gmail.com
- * @requires this, json_sans_eval
+ * @requires this, json_sans_eval, cajaBuildVersion
  * @provides ___, safeJSON, WeakMap
  * @overrides Array, Boolean, Date, Function, Number, Object, RegExp, String
  * @overrides Error, EvalError, RangeError, ReferenceError, SyntaxError,
@@ -5396,6 +5396,11 @@ var ___, cajaVM, safeJSON, WeakMap;
    * Produces a function module given an object literal module
    */
   function prepareModule(module, load) {
+    if (cajaBuildVersion !== module.cajolerVersion) {
+      throw new TypeError(
+          "Version error: Expected " + cajaBuildVersion +
+          " but was " + module.cajolerVersion);
+    }
     registerClosureInspector(module);
     function theModule(extraImports) {
       var imports = copy(sharedImports);

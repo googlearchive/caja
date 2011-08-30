@@ -14,6 +14,7 @@
 
 package com.google.caja.service;
 
+import com.google.caja.reporting.BuildInfo;
 import junit.framework.AssertionFailedError;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -37,7 +38,8 @@ public class HtmlHandlerTest extends ServiceTestCase {
       String s = (String) requestGet("?url=http://foo/bar.html"
           + "&input-mime-type=text/html"
           + "&alt=json-in-script"
-          + "&callback=foo");
+          + "&callback=foo"
+          + "&build-version=" + BuildInfo.getInstance().getBuildVersion());
       assertCallbackInJsonp(s, "foo");
       assertSubstringsInJsonp(s, "html", "some random text");
     }
@@ -47,18 +49,20 @@ public class HtmlHandlerTest extends ServiceTestCase {
           (String) requestGet("?url=http://foo/bar.html"
               + "&input-mime-type=text/html"
               + "&alt=json-in-script"
-              + "&callback=foo.bar"),
+              + "&callback=foo.bar"
+              + "&build-version=" + BuildInfo.getInstance().getBuildVersion()),
           "foo.bar");
       fail("Failed to reject non-identifier JSONP callback");
-    } catch (AssertionFailedError e) {
-      // Success
+    } catch (RuntimeException e) {
+      assertContainsIgnoreSpace(e.toString(), "Detected XSS attempt");
     }
 
     try {
       assertCallbackInJsonp(
           (String) requestGet("?url=http://foo/bar.html"
               + "&input-mime-type=text/html"
-              + "&callback=foo.bar"),
+              + "&callback=foo.bar"
+              + "&build-version=" + BuildInfo.getInstance().getBuildVersion()),
           "foo.bar");
       fail("Added JSONP callback when not requested");
     } catch (AssertionFailedError e) {
@@ -70,7 +74,8 @@ public class HtmlHandlerTest extends ServiceTestCase {
           (String) requestGet("?url=http://foo/bar.html"
               + "&input-mime-type=text/html"
               + "&alt=json"
-              + "&callback=foo.bar"),
+              + "&callback=foo.bar"
+              + "&build-version=" + BuildInfo.getInstance().getBuildVersion()),
           "foo.bar");
       fail("Added JSONP callback when not requested");
     } catch (AssertionFailedError e) {
@@ -88,7 +93,8 @@ public class HtmlHandlerTest extends ServiceTestCase {
         "text/html");
     String result = (String) requestGet(
         "?url=http://foo/index.html&input-mime-type=text/html"
-        + "&output-mime-type=text/html&sext=true&idclass=foo___");
+        + "&output-mime-type=text/html&sext=true&idclass=foo___"
+        + "&build-version=" + BuildInfo.getInstance().getBuildVersion());
     JSONObject json = (JSONObject) json(result);
     assertContainsIgnoreSpace(
         (String) json.get("js"),
@@ -112,7 +118,8 @@ public class HtmlHandlerTest extends ServiceTestCase {
         "text/html");
 
     Object result = json((String) requestGet(
-        "?url=http://foo/bar.html&input-mime-type=" + inputMimeType));
+        "?url=http://foo/bar.html&input-mime-type=" + inputMimeType
+        + "&build-version=" + BuildInfo.getInstance().getBuildVersion()));
     assertNotNull(result);
     assertTrue(result instanceof JSONObject);
     JSONObject json = (JSONObject) result;
@@ -192,7 +199,8 @@ public class HtmlHandlerTest extends ServiceTestCase {
       "<script>with(foo){}</script>", "text/html");
 
     Object result = json((String) requestGet(
-        "?url=http://foo/bar.html&input-mime-type=text/html"));
+        "?url=http://foo/bar.html&input-mime-type=text/html"
+        + "&build-version=" + BuildInfo.getInstance().getBuildVersion()));
     assertTrue(result instanceof JSONObject);
     JSONObject json = (JSONObject) result;
 

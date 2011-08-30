@@ -14,6 +14,7 @@
 
 package com.google.caja.service;
 
+import com.google.caja.SomethingWidgyHappenedError;
 import com.google.caja.lexer.ExternalReference;
 import com.google.caja.lexer.FetchedData;
 import com.google.caja.lexer.FilePosition;
@@ -27,12 +28,14 @@ import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.util.Charsets;
+import com.google.caja.util.ContentType;
 import com.google.caja.util.Lists;
 import com.google.caja.util.Pair;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.io.StringReader;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -103,6 +106,51 @@ public class CajolingService {
   public FetchedData handle(FetchedData inputFetchedData,
                             ContentHandlerArgs args,
                             MessageQueue mq) {
+    FetchedData result = doHandle(inputFetchedData, args, mq);
+    if (result == null) {
+      ByteArrayOutputStream intermediateResponse = new ByteArrayOutputStream();
+      Pair<ContentType, String> contentParams =
+          AbstractCajolingHandler.getReturnedContentParams(args);
+      OutputStreamWriter writer = new OutputStreamWriter(
+          intermediateResponse, Charsets.UTF_8);
+      try {
+        AbstractCajolingHandler.renderAsJSON(
+            null, null, contentParams.b, mq, writer, false);
+      } catch (IOException e) {
+        // Unlikely IOException to byte array; rethrow
+        throw new SomethingWidgyHappenedError(e);
+      }
+      result = FetchedData.fromBytes(
+          intermediateResponse.toByteArray(),
+          ContentType.JSON.mimeType,
+          "UTF-8",
+          InputSource.UNKNOWN);
+    }
+    return result;
+  }
+
+  public FetchedData doHandle(FetchedData inputFetchedData,
+                              ContentHandlerArgs args,
+                              MessageQueue mq) {
+    String buildVersion = CajaArguments.BUILD_VERSION.get(args);
+    if (buildVersion == null) {
+      mq.addMessage(
+          ServiceMessageType.MISSING_BUILD_VERSION);
+      return null;
+    } else {
+      boolean versionMatch =
+          BuildInfo.getInstance().getBuildVersion().equals(buildVersion);
+      if (!versionMatch) {
+        mq.addMessage(
+            ServiceMessageType.WRONG_BUILD_VERSION,
+            MessagePart.Factory.valueOf(
+                BuildInfo.getInstance().getBuildVersion()),
+            MessagePart.Factory.valueOf(
+                CajaArguments.BUILD_VERSION.get(args)));
+        return null;
+      }
+    }
+
     String inputUrlString = CajaArguments.URL.get(args);
     URI inputUri;
     if (inputUrlString == null && inputFetchedData == null && 
@@ -257,7 +305,6 @@ public class CajolingService {
   }
 
   public static enum Directive {
-    CAJITA,
     STRICT,
     ES53;
   }
@@ -268,5 +315,4 @@ public class CajolingService {
   }
 
   public static final String RENDER_PRETTY = "pretty";
-  public static final String RENDER_MINIMIZE = "minimize";  
 }

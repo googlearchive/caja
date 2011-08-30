@@ -40,7 +40,8 @@ public class BuildInfo {
 
   protected BuildInfo() {
     try {
-      properties = ResourceBundle.getBundle("com/google/caja/reporting/buildInfo");
+      properties =
+          ResourceBundle.getBundle("com/google/caja/reporting/buildInfo");
     } catch (MissingResourceException e) {
       properties = null;
     }
@@ -59,7 +60,8 @@ public class BuildInfo {
 
   private MessagePart wrapValue(final String value) {
     return new MessagePart() {
-      public void format(MessageContext context, Appendable out) throws IOException {
+      public void format(MessageContext context, Appendable out)
+          throws IOException {
         out.append(value);
       }
     };

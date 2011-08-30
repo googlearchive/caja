@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+
+# A wrapper around 'svnversion' that removes the colons
+svnversion | sed s/:/_/g

@@ -19,6 +19,7 @@ import com.google.caja.parser.html.Dom;
 import com.google.caja.parser.html.DomParser;
 import com.google.caja.parser.html.Nodes;
 import com.google.caja.parser.js.CajoledModule;
+import com.google.caja.reporting.BuildInfo;
 import com.google.caja.reporting.MarkupRenderMode;
 import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessageType;
@@ -228,6 +229,9 @@ public class HtmlCompiledPluginTest extends CajaTestCase {
             // Plugin Framework
             new Executor.Input(
                 getClass(), "../../../../js/json_sans_eval/json_sans_eval.js"),
+            new Executor.Input(
+                "var cajaBuildVersion = 'testBuildVersion';\n",
+                getName() + "es53-build-version-setup"),
             new Executor.Input(getClass(), "../es53.js"),
             new Executor.Input(
                 "var testImports = ___.copy(___.sharedImports);\n" +

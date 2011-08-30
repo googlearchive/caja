@@ -103,6 +103,9 @@
 function setUp() { }
 function tearDown() { }
 
+// Current SVN version interpolated below by "build.xml"
+var cajaBuildVersion = '%VERSION%';
+
 // URL parameter parsing code from blog at:
 // http://www.netlobo.com/url_query_string_javascript.html
 function getUrlParam(name) {
@@ -296,6 +299,27 @@ var asyncRequirements = (function () {
     evaluate: evaluate
   };
 })();
+
+function fetch(url, cb) {
+  var xhr = bridalMaker(function (x){return x;}, document).makeXhr();
+  xhr.open('GET', url, true);
+  xhr.onreadystatechange = function() {
+    if (xhr.readyState === 4) {
+      if (xhr.status === 200) {
+        cb(xhr.responseText);
+      } else {
+        throw new Error('Failed to load ' + url + ' : ' + xhr.status);
+      }
+    }
+  };
+  xhr.send(null);
+}
+
+function splitHtmlAndScript(combinedHtml) {
+  return combinedHtml.match(
+    /^([\s\S]*?)<script[^>]*>([\s\S]*?)<\/script>\s*$/)
+    .slice(1);
+}
 
 function createExtraImportsForTesting(frameGroup, frame) {
   var standardImports = {};

@@ -247,6 +247,17 @@ function jsunitPass(id) {
   node.className = cl;
 }
 
+function jsunitFail(id) {
+  var node = document.getElementById(id);
+  if (!node) return;
+  node.appendChild(document.createTextNode('Failed ' + id));
+  var cl = node.className || '';
+  cl = cl.replace(/\b(clickme|waiting)\b\s*/g, '');
+  cl += ' failed';
+  node.className = cl;
+  fail(id);
+}
+
 /** Aim high and you might miss the moon! */
 function expectFailure(shouldFail, opt_msg, opt_failFilter) {
   try {

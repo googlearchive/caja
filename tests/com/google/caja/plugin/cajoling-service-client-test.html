@@ -29,6 +29,11 @@
     <script type="text/javascript" src="json-rest-transport.js"></script>
 
     <script type="text/javascript" src="cajoling-service-client.js"></script>
+
+    <script type="text/javascript">
+      // Current SVN version interpolated below by "build.xml"
+      var cajaBuildVersion = '%VERSION%';
+    </script>
   </head>
   <body>
     <div id="automatedTestingReadyIndicator"></div>
@@ -101,7 +106,7 @@
             }));
       });
     </script>
-    
+
     <div id="testCajolingError" class="testcontainer waiting">
       testCajolingError
     </div>
@@ -122,8 +127,47 @@
               throw 'Should not have returned content';
             }),
             jsunitCallback(function(e) {
+              assertTrue(/Cajoling errors/.test(e.toString()));
               jsunitPass('testCajolingError');
             }));
+      });
+    </script>
+
+    <div id="testBuildVersionError" class="testcontainer waiting">
+      testBuildVersionError
+    </div>
+    <script type="text/javascript">
+      jsunitRegister('testBuildVersionError',
+                     function testBuildVersionError() {
+        var cajaBuildVersionOrig = window.cajaBuildVersion;
+        try {
+          // Capture console for further inspection
+          var consoleMessages = '';
+          var testConsole = { log: function(s) { consoleMessages += s; } };
+          // Hard-code the wrong version to be sent in cajoling request
+          window.cajaBuildVersion = '0000';
+          var c = cajolingServiceClientMaker(
+              'http://localhost:8000/caja/cajole',
+              jsonRestTransportMaker(),
+              true,
+              true,
+              testConsole);
+          Q.when(
+              c.cajoleContent(
+                  'http://example.com/foo.js',
+                  'var x = a + b;',
+                  'application/javascript'),
+              jsunitCallback(function(m) {
+                fail('testBuildVersionError');
+                throw 'Should not have returned content';
+              }),
+              jsunitCallback(function(e) {
+                assertTrue(/Build version error/.test(consoleMessages));
+                jsunitPass('testBuildVersionError');
+              }));
+        } finally {
+          cajaBuildVersion = cajaBuildVersionOrig;
+        }
       });
     </script>
 
@@ -181,7 +225,7 @@
             }));
       });
     </script>
-    
+
     <script type="text/javascript">
       document.getElementById('automatedTestingReadyIndicator')
           .className = 'readytotest';
