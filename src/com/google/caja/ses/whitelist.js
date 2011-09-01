@@ -70,11 +70,9 @@ var ses;
  *
  * The "skip" markings are workarounds for browser bugs or other
  * temporary problems. For each of these, there should be an
- * explanatory comment explaining why or a bug citation
- * (TODO(erights)). Any of these whose comments say "fatal" need to be
- * fixed before SES might be considered safe. Ideally, we can retire
- * all "skip" entries by the time SES is ready for secure production
- * use.
+ * explanatory comment explaining why or a bug citation. Ideally, we
+ * can retire all "skip" entries by the time SES is ready for secure
+ * production use.
  *
  * The members of the whitelist are either
  * <ul>
@@ -101,9 +99,8 @@ var ses;
  * encountered such a need. Should we need this extra expressiveness,
  * we'll need to refactor to enable a different encoding.
  *
- * <p>We factor out {@code true} and {@code "skip"} into the variables
- * {@code t} and {@code s} just to get a bit better compression from
- * simple minifiers.
+ * <p>We factor out {@code true} into the variable {@code t} just to
+ * get a bit better compression from simple minifiers.
  */
 (function() {
   "use strict";
@@ -111,15 +108,20 @@ var ses;
   if (!ses) { ses = {}; }
 
   var t = true;
-  var s = 'skip';
   ses.whitelist = {
     cajaVM: {                        // Caja support
       log: t,
       def: t,
-      compile: t,
+
+      compileExpr: t,
       compileModule: t,              // experimental
+      compileProgram: t,             // Cannot be implemented in just ES5.1.
       eval: t,
       Function: t,
+      
+      sharedImports: t,
+      makeImports: t,
+      copyToImports: t,
 
       callWithEjector: t,
       eject: t,
@@ -198,11 +200,8 @@ var ses;
         bind: t,
         prototype: '*',
         length: '*',
-        caller: s,                 // when not poison, could be fatal
-        arguments: s,              // when not poison, could be fatal
-        arity: s,                  // non-std, deprecated in favor of length
-        name: s,                   // non-std
-        isGenerator: t
+        arity: '*',                  // non-std, deprecated in favor of length
+        name: '*'                    // non-std
       }
     },
     Array: {
@@ -226,7 +225,9 @@ var ses;
         filter: t,
         reduce: t,
         reduceRight: t,
-        length: s                    // can't be redefined on Mozilla
+        length: 'skip'               // can't be redefined on Mozilla
+        // See https://bugzilla.mozilla.org/show_bug.cgi?id=591059
+        // and https://bugzilla.mozilla.org/show_bug.cgi?id=598996
       },
       isArray: t
     },
@@ -266,7 +267,7 @@ var ses;
         toUpperCase: t,
         toLocaleUpperCase: t,
         trim: t,
-        length: s                  // can't be redefined on Mozilla
+        length: '*'
       },
       fromCharCode: t
     },
@@ -373,12 +374,12 @@ var ses;
       prototype: {
         exec: t,
         test: t,
-        source: s,
-        global: s,
-        ignoreCase: s,
-        multiline: s,
-        lastIndex: s,
-        sticky: s                    // non-std
+        source: '*',
+        global: '*',
+        ignoreCase: '*',
+        multiline: '*',
+        lastIndex: '*',
+        sticky: '*'                  // non-std
       }
     },
     Error: {

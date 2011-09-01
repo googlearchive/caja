@@ -70,7 +70,7 @@ function myvn() {
   fi
 
   local svn=${SVN_BIN:-$default_svn_path}
-
+echo $svn
   local verb="$1"
   shift
   case "$verb" in

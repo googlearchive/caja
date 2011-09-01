@@ -93,12 +93,13 @@
  *           <dd>The outcome of the test associated with this record
  *               as run after all attempted repairs.</dd>
  *       </dl>
- *       The default behavior here ignores the {@code reports}
- *       argument and displays only a summary of the worst case
- *       severity seen so far, according to {@code ses.maxSeverity} as
- *       interpreted by {@code ses.logger.classify}.
- *   <dt>reportDiagnosis(severity, desc, problemList)</dt>
- *     <dd>where {@code severity} is a severity record, {@code desc}
+ *       The default behavior here is to be silent.</dd>
+ *   <dt>reportMax()</dt>
+ *     <dd>Displays only a summary of the worst case
+ *         severity seen so far, according to {@code ses.maxSeverity} as
+ *         interpreted by {@code ses.logger.classify}.</dd>
+ *   <dt>reportDiagnosis(severity, status, problemList)</dt>
+ *     <dd>where {@code severity} is a severity record, {@code status}
  *         is a brief string description of a list of problems, and
  *         {@code problemList} is a list of strings, each of which is
  *         one occurrence of the described problem.
@@ -129,13 +130,8 @@ if (!ses) { ses = {}; }
     // We no longer test (typeof console.log === 'function') since,
     // on IE9 and IE10preview, in violation of the ES5 spec, it
     // is callable but has typeof "object".
-    // TODO(erights): report to MS.
-
-    // TODO(erights): This assumes without checking that if
-    // console.log is present, then console has working log, info,
-    // warn, and error methods. Check that this is actually the case
-    // on all platforms we care about, or, if not, do something
-    // fancier here.
+    // See https://connect.microsoft.com/IE/feedback/details/685962/
+    //   console-log-and-others-are-callable-but-arent-typeof-function
 
     // We manually wrap each call to a console method because <ul>
     // <li>On some platforms, these methods depend on their
@@ -198,24 +194,33 @@ if (!ses) { ses = {}; }
   }
 
   /**
-   * By default, logs a report suitable for display on the console.
+   * By default is silent
    */
-  function defaultReportRepairs(reports) {
-    if (ses.maxSeverity.level > ses.severities.SAFE.level) {
-      var maxClassification = ses.logger.classify(ses.maxSeverity);
-      logger[maxClassification.consoleLevel](
-        'Max Severity: ' + maxClassification.note);
-    }
-  };
+  function defaultReportRepairs(reports) {}
 
   if (!logger.reportRepairs) {
     logger.reportRepairs = defaultReportRepairs;
   }
 
-  function defaultReportDiagnosis(severity, desc, problemList) {
+  /**
+   * By default, logs a report suitable for display on the console.
+   */
+  function defaultReportMax() {
+    if (ses.maxSeverity.level > ses.severities.SAFE.level) {
+      var maxClassification = ses.logger.classify(ses.maxSeverity);
+      logger[maxClassification.consoleLevel](
+        'Max Severity: ' + maxClassification.note);
+    }
+  }
+
+  if (!logger.reportMax) {
+    logger.reportMax = defaultReportMax;
+  }
+
+  function defaultReportDiagnosis(severity, status, problemList) {
     var classification = ses.logger.classify(severity);
     ses.logger[classification.consoleLevel](
-      desc + ' ' + problemList.length);
+      problemList.length + ' ' + status);
   }
 
   if (!logger.reportDiagnosis) {

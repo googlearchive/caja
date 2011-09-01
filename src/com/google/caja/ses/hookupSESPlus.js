@@ -20,7 +20,8 @@
  * anticipated ES6.
  *
  * @author Mark S. Miller
- * @requires ses, this
+ * @requires this
+ * @overrides ses
  */
 
 (function(global) {
@@ -30,8 +31,13 @@
     return;
   }
 
-  ses.startSES(global,
-               ses.whitelist,
-               ses.atLeastFreeVarNames,
-               ses.ejectorsGuardsTrademarks);
+  try {
+    ses.startSES(global,
+                 ses.whitelist,
+                 ses.atLeastFreeVarNames,
+                 ses.ejectorsGuardsTrademarks);
+  } catch (err) {
+    ses.updateMaxSeverity(ses.severities.NOT_SUPPORTED);
+    ses.logger.error('hookupSESPlus failed with: ' + err);
+  }
 })(this);

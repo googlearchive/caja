@@ -31,8 +31,10 @@
 <body>
 <div id="reports" class="reports-text"><b>Repair Reports</b></div>
 <div id="console" class="console-text"><hr></div>
-<div id="show1">test1...</div>
-<div id="show2">test2...</div>
+<div id="exprTest">exprTest...</div>
+<div id="moduleTest">moduleTest...</div>
+<div id="scriptTest">scriptTest...</div>
+
 <script src="useHTMLLogger.js"></script>
 <script>
   function gebi(id) { 
@@ -57,21 +59,27 @@ The <script src="useHTMLLogger.js"> and the inline script above advises
 <script src="whitelist.js"></script>
 <script src="atLeastFreeVarNames.js"></script>
 <script src="startSES.js"></script>
-<script src="hookupSES.js"></script>
+<script src="ejectorsGuardsTrademarks.js"></script>
+<script src="hookupSESPlus.js"></script>
 <script>
   (function() {
     "use strict";
-    var show1 = gebi('show1');
-    var show2 = gebi('show2');
+    var exprTest = gebi('exprTest');
+    var moduleTest = gebi('moduleTest');
+    var scriptTest = gebi('scriptTest');
     if (!ses.ok()) {
-      show1.appendChild(document.createTextNode('cancelled'));
-      show2.appendChild(document.createTextNode('cancelled'));
+      exprTest.appendChild(document.createTextNode('cancelled'));
+      moduleTest.appendChild(document.createTextNode('cancelled'));
+      scriptTest.appendChild(document.createTextNode('cancelled'));
       return;
     }
+    
+    var imports = cajaVM.makeImports();
+    cajaVM.copyToImports(imports, {window: 6});
 
-    var output = cajaVM.eval('3+4') * cajaVM.compile('window')({window: 6});
+    var output = cajaVM.eval('3+4') * cajaVM.compileExpr('window')(imports);
     var text1 = output === 42 ? 'succeeded' : 'failed: ' + output;
-    show1.appendChild(document.createTextNode(text1));
+    exprTest.appendChild(document.createTextNode(text1));
 
     // Test ability to bootstrap support for a limited form of
     // CommonJS modules. 
@@ -80,10 +88,10 @@ The <script src="useHTMLLogger.js"> and the inline script above advises
     var modMaker = cajaVM.compileModule(modSrc);
     var required = modMaker.requirements;
     var exported = {};
-    var returned = modMaker({
+    var returned = modMaker(cajaVM.copyToImports(imports, {
       require: function(id) { return { foo: 88, id: id}; }, 
       exports: exported
-    });
+    }));
     var did = JSON.stringify(cajaVM.def({
       required: required,
       exported: exported, 
@@ -95,8 +103,32 @@ The <script src="useHTMLLogger.js"> and the inline script above advises
       "returned": 77 
     }, void 0, ' ');
     var text2 = did === should ? 'succeeded' : 'failed: ' + did;
-    show2.appendChild(document.createTextNode(text2));
+    moduleTest.appendChild(document.createTextNode(text2));
+
+    // Tests the ability to do inter-module linkage as scripts
+    // traditionally did, by modification of (virtual) shared
+    // globals. Unfortunately, rather than say "var x = 88;" below, we
+    // must say "this.x = 88;" in order to export a global.
+    cajaVM.compileModule('this.x = 88;')(imports);
+    var text3 = cajaVM.compileExpr('x')(imports) === 88 ? 
+      'succeeded' : 'failed';
+    scriptTest.appendChild(document.createTextNode(text3));
+
   })();
+</script>
+
+<p>
+Using <span id="browserName">unknown</span> 
+ <span id="browserVersion">unknown</span>
+on <span id="browserOS">unknown</span>
+<script src="detect.js"></script>
+<script>
+(function(){
+  "use strict"
+  gebi('browserName').textContent = BrowserDetect.browser;
+  gebi('browserVersion').textContent = BrowserDetect.version;
+  gebi('browserOS').textContent = BrowserDetect.OS;  
+})();
 </script>
 </body>
 </html>

@@ -46,7 +46,7 @@ if (!ses) { ses = {}; }
 function useHTMLLogger(reportsElement, consoleElement) {
   "use strict";
 
-  var maxElement;
+  var maxElement = void 0;
 
   /**
    * Needs to work on ES3
@@ -183,11 +183,17 @@ function useHTMLLogger(reportsElement, consoleElement) {
     });
 
     if (fineElements.length >= 1) {
-      appendText(numFineElement, fineElements.length + ' fine...');
+      appendText(numFineElement, fineElements.length + ' Fine.');
       deflate(numFineElement, fineElements);
     }
+  };
 
-    maxElement = appendNew(reportsElement, 'p');
+  logger.reportMax = function() {
+    if (!maxElement) {
+      maxElement = appendNew(reportsElement, 'p');
+    } else {
+      maxElement.textContent = '';
+    }
     if (ses.maxSeverity.level > ses.severities.SAFE.level) {
       var maxClassification = ses.logger.classify(ses.maxSeverity);
       maxElement.className = maxClassification.consoleLevel;
@@ -195,12 +201,13 @@ function useHTMLLogger(reportsElement, consoleElement) {
     }
   };
 
-  logger.reportDiagnosis = function(severity, desc, problemList) {
+  logger.reportDiagnosis = function(severity, status, problemList) {
     var diagnosisElement = appendNew(reportsElement, 'p');
     var classification = ses.logger.classify(severity);
     var head = textAdder(diagnosisElement, classification.consoleLevel)(
-      desc + ' ' + problemList.length + '...');
-    var tail = textAdder(diagnosisElement, classification.consoleLevel)(
+      problemList.length + ' ' + status + '. ' + classification.note);
+    var tail = appendNew(diagnosisElement, 'blockquote');
+    textAdder(tail, classification.consoleLevel)(
       problemList.sort().join(' '));
     deflate(head, [tail]);
   };

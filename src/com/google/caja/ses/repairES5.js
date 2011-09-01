@@ -15,7 +15,7 @@
 /**
  * @fileoverview Monkey patch almost ES5 platforms into a closer
  * emulation of full <a href=
- * "http://code.google.com/p/es-lab/wiki/SecureableES5" >secureable
+ * "http://code.google.com/p/es-lab/wiki/SecureableES5">Secureable
  * ES5</a>.
  *
  * <p>Assumes only ES3, but only proceeds to do useful repairs when
@@ -29,8 +29,8 @@
  *
  * @author Mark S. Miller
  * @requires ___global_test_function___
- * @requires JSON, navigator, this
- * @overrides ses, RegExp, WeakMap, Object
+ * @requires JSON, navigator, this, eval, document
+ * @overrides ses, RegExp, WeakMap, Object, parseInt
  */
 var RegExp;
 var ses;
@@ -43,7 +43,7 @@ var ses;
  * qualifying browsers already include the latest released versions of
  * Internet Explorer (9), Firefox (4), Chrome (11), and Safari
  * (5.0.5), their corresponding standalone (e.g., server-side) JavaScript
- * engines, Rhino 1.73, BESEN.
+ * engines, Rhino 1.73, and BESEN.
  *
  * <p>On such not-quite-ES5 platforms, some elements of these
  * emulations may lose SES safety, as enumerated in the comment on
@@ -58,12 +58,12 @@ var ses;
  * as it is currently on FF7.0a1, then it will repair it in place. The
  * one non-standard element that this file uses is {@code console} if
  * present, in order to report the repairs it found necessary, in
- * which case we use its {@code log, info, warn, and error}
+ * which case we use its {@code log, info, warn}, and {@code error}
  * methods. If {@code console.log} is absent, then this file performs
  * its repairs silently.
  *
  * <p>Generally, this file should be run as the first script in a
- * JavaScript context (i.e. a browser frame), as it replies on other
+ * JavaScript context (i.e. a browser frame), as it relies on other
  * primordial objects and methods not yet being perturbed.
  *
  * <p>TODO(erights): This file tries to protects itself from most
@@ -213,6 +213,105 @@ var ses;
     return ses.maxSeverity.level <= ses.maxAcceptableSeverity.level;
   };
 
+  /**
+   * Update the max based on the provided severity.
+   *
+   * <p>If the provided severity exceeds the max so far, update the
+   * max to match.
+   */
+  ses.updateMaxSeverity = function(severity) {
+    if (severity.level > ses.maxSeverity.level) {
+      ses.maxSeverity = severity;
+    }
+  };
+
+  //////// Prepare for "caller" and "argument" testing and repair /////////
+
+  /**
+   * Needs to work on ES3, since repairES5.js may be run on an ES3
+   * platform.
+   */
+  function strictForEachFn(list, callback) {
+    for (var i = 0, len = list.length; i < len; i++) {
+      callback(list[i], i);
+    }
+  }
+
+  /**
+   * Needs to work on ES3, since repairES5.js may be run on an ES3
+   * platform.
+   *
+   * <p>Also serves as our representative strict function, by contrast
+   * to builtInMapMethod below, for testing what the "caller" and
+   * "arguments" properties of a strict function reveals.
+   */
+  function strictMapFn(list, callback) {
+    var result = [];
+    for (var i = 0, len = list.length; i < len; i++) {
+      result.push(callback(list[i], i));
+    }
+    return result;
+  }
+
+  var objToString = Object.prototype.toString;
+
+  /**
+   * Sample map early, to obtain a representative built-in for testing.
+   *
+   * <p>There is no reliable test for whether a function is a
+   * built-in, and it is possible some of the tests below might
+   * replace the built-in Array.prototype.map, though currently none
+   * do. Since we <i>assume</i> (but with no reliable way to check)
+   * that repairES5.js runs in its JavaScript context before anything
+   * which might have replaced map, we sample it now. The map method
+   * is a particularly nice one to sample, since it can easily be used
+   * to test what the "caller" and "arguments" properties on a
+   * in-progress built-in method reveals.
+   */
+  var builtInMapMethod = Array.prototype.map;
+
+  /**
+   * By the time this module exits, either this is repaired to be a
+   * function that is adequate to make the "caller" property of a
+   * strict or built-in function harmess, or this module has reported
+   * a failure to repair.
+   *
+   * <p>Start off with the optimistic assumption that nothing is
+   * needed to make the "caller" property of a strict or built-in
+   * function harmless. We are not concerned with the "caller"
+   * property of non-strict functions. It is not the responsibility of
+   * this module to actually make these "caller" properties
+   * harmless. Rather, this module only provides this function so
+   * clients such as startSES.js can use it to do so on the functions
+   * they whitelist.
+   *
+   * <p>If the "caller" property of strict functions are not already
+   * harmless, then this platform cannot be repaired to be
+   * SES-safe. The only reason why {@code makeCallerHarmless} must
+   * work on strict functions in addition to built-in is that some of
+   * the other repairs below will replace some of the built-ins with
+   * strict functions, so startSES.js will apply {@code
+   * makeCallerHarmless} blindly to both strict and built-in
+   * functions. {@code makeCallerHarmless} simply need not to complete
+   * without breaking anything when given a strict function argument.
+   */
+  ses.makeCallerHarmless = function(func, path) {
+    return 'Apparently fine';
+  };
+
+  /**
+   * By the time this module exits, either this is repaired to be a
+   * function that is adequate to make the "arguments" property of a
+   * strict or built-in function harmess, or this module has reported
+   * a failure to repair.
+   *
+   * Exactly analogous to {@code makeCallerHarmless}, but for
+   * "arguments" rather than "caller".
+   */
+  ses.makeArgumentsHarmless = function(func, path) {
+    return 'Apparently fine';
+  };
+
   ////////////////////// Tests /////////////////////
   //
   // Each test is a function of no arguments that should not leave any
@@ -232,7 +331,12 @@ var ses;
   // attempts. Finally, we report what happened.
 
   /**
+   * If {@code Object.getOwnPropertyNames} is missing, we consider
+   * this to be an ES3 browser which is unsuitable for attempting to
+   * run SES.
    *
+   * <p>If {@code Object.getOwnPropertyNames} is missing, there is no
+   * way to emulate it.
    */
   function test_MISSING_GETOWNPROPNAMES() {
     return !('getOwnPropertyNames' in Object);
@@ -254,7 +358,7 @@ var ses;
   }
 
   /**
-   *
+   * Detects whether the most painful ES3 leak is still with us.
    */
   function test_GLOBAL_LEAKS_FROM_ANON_FUNCTION_CALLS() {
     var that = (function(){ return this; })();
@@ -286,7 +390,7 @@ var ses;
 
 
   /**
-   * Workaround for https://bugs.webkit.org/show_bug.cgi?id=55736
+   * Detects https://bugs.webkit.org/show_bug.cgi?id=55736
    *
    * <p>As of this writing, the only major browser that does implement
    * Object.getOwnPropertyNames but not Object.freeze etc is the
@@ -305,7 +409,7 @@ var ses;
 
 
   /**
-   * Workaround for https://bugs.webkit.org/show_bug.cgi?id=55537
+   * Detects https://bugs.webkit.org/show_bug.cgi?id=55537
    *
    * This bug is fixed on the latest Safari beta 5.0.5 (5533.21.1,
    * r88603). When the released Safari has this fix, we can retire
@@ -324,40 +428,57 @@ var ses;
 
 
   /**
-   * Work around for https://bugzilla.mozilla.org/show_bug.cgi?id=591846
+   * A strict delete should either succeed, returning true, or it
+   * should fail by throwing a TypeError. Under no circumstances
+   * should a strict delete return false.
+   *
+   * <p>This case occurs on IE10preview2.
+   */
+  function test_STRICT_DELETE_RETURNS_FALSE() {
+    if (!RegExp.hasOwnProperty('rightContext')) { return false; }
+    var deleted;
+    try {
+      deleted = delete RegExp.rightContext;
+    } catch (err) {
+      if (err instanceof TypeError) { return false; }
+      return 'Deletion failed with: ' + err;
+    }
+    if (deleted) { return false; }
+    return true;
+  }
+
+
+  /**
+   * Detects https://bugzilla.mozilla.org/show_bug.cgi?id=591846
    * as applied to the RegExp constructor.
    *
    * <p>Note that Mozilla lists this bug as closed. But reading that
-   * bug thread clarifies that is partially because the following code
-   * allows us to work around the non-configurability of the RegExp
-   * statics.
-   *
-   * <p>This kludge is safety preserving.
+   * bug thread clarifies that is partially because the code in {@code
+   * repair_REGEXP_CANT_BE_NEUTERED} enables us to work around the
+   * non-configurability of the RegExp statics.
    */
   function test_REGEXP_CANT_BE_NEUTERED() {
     if (!RegExp.hasOwnProperty('leftContext')) { return false; }
-    var deletion;
+    var deleted;
     try {
-      deletion = delete RegExp.leftContext;
+      deleted = delete RegExp.leftContext;
     } catch (err) {
       if (err instanceof TypeError) { return true; }
       return 'Deletion failed with: ' + err;
     }
     if (!RegExp.hasOwnProperty('leftContext')) { return false; }
-    if (deletion) {
+    if (deleted) {
       return 'Deletion of RegExp.leftContext did not succeed.';
     } else {
-      // This case happens on IE10preview2, indicating another bug: a
-      // strict delete should never return false. A failed strict
-      // delete should throw a TypeError. TODO(erights): check that
-      // this bug shows up in test262, or, if not, report it.
+      // This case happens on IE10preview2, as demonstrated by
+      // test_STRICT_DELETE_RETURNS_FALSE.
       return true;
     }
   }
 
 
   /**
-   * Work around for http://code.google.com/p/v8/issues/detail?id=1393
+   * Detects http://code.google.com/p/v8/issues/detail?id=1393
    *
    * <p>This kludge is safety preserving.
    */
@@ -373,7 +494,9 @@ var ses;
   /**
    * Detects http://code.google.com/p/v8/issues/detail?id=1530
    *
-   *
+   * <p>Detects whether the value of a function's "prototype" property
+   * as seen by normal object operations might deviate from the value
+   * as seem by the reflective {@code Object.getOwnPropertyDescriptor}
    */
   function test_FUNCTION_PROTOTYPE_DESCRIPTOR_LIES() {
     function foo() {}
@@ -384,7 +507,7 @@ var ses;
 
 
   /**
-   * Workaround for https://bugs.webkit.org/show_bug.cgi?id=26382
+   * Detects https://bugs.webkit.org/show_bug.cgi?id=26382
    *
    * <p>As of this writing, the only major browser that does implement
    * Object.getOwnPropertyNames but not Function.prototype.bind is
@@ -402,7 +525,7 @@ var ses;
   }
 
   /**
-   * Workaround for http://code.google.com/p/v8/issues/detail?id=892
+   * Detects http://code.google.com/p/v8/issues/detail?id=892
    *
    * <p>This tests whether the built-in bind method violates the spec
    * by calling the original using its current .apply method rather
@@ -456,7 +579,7 @@ var ses;
 
 
   /**
-   * Workaround for http://code.google.com/p/google-caja/issues/detail?id=1362
+   * Detects http://code.google.com/p/google-caja/issues/detail?id=1362
    *
    * <p>This is an unfortunate oversight in the ES5 spec: Even if
    * Date.prototype is frozen, it is still defined to be a Date, and
@@ -487,7 +610,7 @@ var ses;
 
 
   /**
-   * Workaround for https://bugzilla.mozilla.org/show_bug.cgi?id=656828
+   * Detects https://bugzilla.mozilla.org/show_bug.cgi?id=656828
    *
    * <p>A bug in the current FF6.0a1 implementation: Even if
    * WeakMap.prototype is frozen, it is still defined to be a WeakMap,
@@ -517,7 +640,7 @@ var ses;
 
 
   /**
-   * Workaround for http://code.google.com/p/v8/issues/detail?id=1447
+   * Detects http://code.google.com/p/v8/issues/detail?id=1447
    *
    * <p>This bug is fixed as of V8 r8258 bleeding-edge, but is not yet
    * available in the latest dev-channel Chrome (13.0.782.15 dev).
@@ -571,7 +694,30 @@ var ses;
 
 
   /**
-   * Work around for https://bugzilla.mozilla.org/show_bug.cgi?id=637994
+   * Detects http://code.google.com/p/chromium/issues/detail?id=94666
+   */
+  function test_FORM_GETTERS_DISAPPEAR() {
+    function getter() { return 'gotten'; }
+
+    if (typeof document === 'undefined' ||
+       typeof document.createElement !== 'function') {
+      // likely not a browser environment
+      return false;
+    }
+    var f = document.createElement("form");
+    Object.defineProperty(f, 'foo', {
+      get: getter,
+      set: void 0
+    });
+    var desc = Object.getOwnPropertyDescriptor(f, 'foo');
+    if (desc.get === getter) { return false; }
+    if (desc.get === void 0) { return true; }
+    return 'Getter became ' + desc.get;
+  }
+
+
+  /**
+   * Detects https://bugzilla.mozilla.org/show_bug.cgi?id=637994
    *
    * <p>On Firefox 4 an inherited non-configurable accessor property
    * appears to be an own property of all objects which inherit this
@@ -627,7 +773,7 @@ var ses;
 
 
   /**
-   * Workaround for http://code.google.com/p/v8/issues/detail?id=1360
+   * Detects http://code.google.com/p/v8/issues/detail?id=1360
    *
    * Our workaround wraps {@code sort} to wrap the comparefn.
    */
@@ -643,7 +789,7 @@ var ses;
 
 
   /**
-   * Workaround for http://code.google.com/p/v8/issues/detail?id=1360
+   * Detects http://code.google.com/p/v8/issues/detail?id=1360
    *
    * <p>Our workaround wraps {@code replace} to wrap the replaceValue
    * if it's a function.
@@ -654,9 +800,10 @@ var ses;
     'x'.replace(/x/, capture);
     if (that === void 0) { return false; }
     if (that === capture) {
-      // This case happens on IE10preview2, indicating another
-      // bug. TODO(erights): report it.
-      // TODO(erights): When this happens, the kludge description is
+      // This case happens on IE10preview2. See
+      // https://connect.microsoft.com/IE/feedback/details/685928/
+      //   bad-this-binding-for-callback-in-string-prototype-replace
+      // TODO(erights): When this happens, the kludge.description is
       // wrong.
       return true;
     }
@@ -664,6 +811,59 @@ var ses;
       return 'Replace called replaceValue function with "this" === ' + that;
     }
     return true;
+  }
+
+  /**
+   * Detects
+   * https://connect.microsoft.com/IE/feedback/details/
+   *   685436/getownpropertydescriptor-on-strict-caller-throws
+   *
+   * <p>Object.getOwnPropertyDescriptor must work even on poisoned
+   * "caller" properties.
+   */
+  function test_CANT_GOPD_CALLER() {
+    var desc = null;
+    try {
+      desc = Object.getOwnPropertyDescriptor(function(){}, 'caller');
+    } catch (err) {
+      if (err instanceof TypeError) { return true; }
+      return 'getOwnPropertyDescriptor failed with: ' + err;
+    }
+    if (desc &&
+        typeof desc.get === 'function' &&
+        typeof desc.set === 'function' &&
+        !desc.configurable) {
+      return false;
+    }
+    if (desc &&
+        desc.value === null &&
+        !desc.writable &&
+        !desc.configurable) {
+      // Seen in IE9. Harmless by itself
+      return false;
+    }
+    return 'getOwnPropertyDesciptor returned unexpected caller descriptor';
+  }
+
+  /**
+   * Detects https://bugs.webkit.org/show_bug.cgi?id=63398
+   *
+   * <p>A strict function's caller should be poisoned only in a way
+   * equivalent to an accessor property with a throwing getter and
+   * setter.
+   *
+   * <p>Seen on Safari 5.0.6 through WebKit Nightly r93670
+   */
+  function test_CANT_HASOWNPROPERTY_CALLER() {
+    var answer = void 0;
+    try {
+      answer = function(){}.hasOwnProperty('caller');
+    } catch (err) {
+      if (err instanceof TypeError) { return true; }
+      return 'hasOwnProperty failed with: ' + err;
+    }
+    if (answer) { return false; }
+    return 'strict_function.hasOwnProperty("caller") was false';
   }
 
   /**
@@ -785,23 +985,63 @@ var ses;
   }
 
   /**
-   * No workaround (yet?) for
-   * https://bugzilla.mozilla.org/show_bug.cgi?id=591846 as applied to
-   * "caller"
+   * Detects whether strict function violate caller anonymity.
    */
-  function test_BUILTIN_LEAKS_CALLER() {
-    var map = Array.prototype.map;
-    if (!has(map, 'caller', 'a builtin')) { return false; }
-    try {
-      delete map.caller;
-    } catch (err) { }
-    if (!has(map, 'caller', 'a builtin')) { return false; }
-    function foo() { return map.caller; }
+  function test_STRICT_CALLER_NOT_POISONED() {
+    if (!has2(strictMapFn, 'caller', 'a strict function')) { return false; }
+    function foo(m) { return m.caller; }
     // using Function so it'll be non-strict
-    var testfn = Function('f', 'return [1].map(f)[0];');
+    var testfn = Function('m', 'f', 'return m([m], f)[0];');
     var caller;
     try {
-      caller = testfn(foo);
+      caller = testfn(strictMapFn, foo);
+    } catch (err) {
+      if (err instanceof TypeError) { return false; }
+      return 'Strict "caller" failed with: ' + err;
+    }
+    if (testfn === caller) {
+      // Seen on IE 9
+      return true;
+    }
+    return 'Unexpected "caller": ' + caller;
+  }
+
+  /**
+   * Detects whether strict functions are encapsulated.
+   */
+  function test_STRICT_ARGUMENTS_NOT_POISONED() {
+    if (!has2(strictMapFn, 'arguments', 'a strict function')) { return false; }
+    function foo(m) { return m.arguments; }
+    // using Function so it'll be non-strict
+    var testfn = Function('m', 'f', 'return m([m], f)[0];');
+    var args;
+    try {
+      args = testfn(strictMapFn, foo);
+    } catch (err) {
+      if (err instanceof TypeError) { return false; }
+      return 'Strict "arguments" failed with: ' + err;
+    }
+    if (args[1] === foo) {
+      // Seen on IE 9
+      return true;
+    }
+    return 'Unexpected arguments: ' + arguments;
+  }
+
+  /**
+   * Detects https://bugzilla.mozilla.org/show_bug.cgi?id=591846 as
+   * applied to "caller"
+   */
+  function test_BUILTIN_LEAKS_CALLER() {
+    if (!has(builtInMapMethod, 'caller', 'a builtin')) { return false; }
+    function foo(m) { return m.caller; }
+    // using Function so it'll be non-strict
+    var testfn = Function('a', 'f', 'return a.map(f)[0];');
+    var a = [builtInMapMethod];
+    a.map = builtInMapMethod;
+    var caller;
+    try {
+      caller = testfn(a, foo);
     } catch (err) {
       if (err instanceof TypeError) { return false; }
       return 'Built-in "caller" failed with: ' + err;
@@ -812,23 +1052,19 @@ var ses;
   }
 
   /**
-   * No workaround (yet?) for
-   * https://bugzilla.mozilla.org/show_bug.cgi?id=591846 as applied to
-   * "arguments"
+   * Detects https://bugzilla.mozilla.org/show_bug.cgi?id=591846 as
+   * applied to "arguments"
    */
   function test_BUILTIN_LEAKS_ARGUMENTS() {
-    var map = Array.prototype.map;
-    if (!has(map, 'arguments', 'a builtin')) { return false; }
-    try {
-      delete map.arguments;
-    } catch (err) { }
-    if (!has(map, 'arguments', 'a builtin')) { return false; }
-    function foo() { return map.arguments; }
+    if (!has(builtInMapMethod, 'arguments', 'a builtin')) { return false; }
+    function foo(m) { return m.arguments; }
     // using Function so it'll be non-strict
-    var testfn = Function('f', 'return [1].map(f)[0];');
+    var testfn = Function('a', 'f', 'return a.map(f)[0];');
+    var a = [builtInMapMethod];
+    a.map = builtInMapMethod;
     var args;
     try {
-      args = testfn(foo);
+      args = testfn(a, foo);
     } catch (err) {
       if (err instanceof TypeError) { return false; }
       return 'Built-in "arguments" failed with: ' + err;
@@ -838,21 +1074,15 @@ var ses;
   }
 
   /**
-   * Workaround for http://code.google.com/p/v8/issues/detail?id=893
+   * Detects http://code.google.com/p/v8/issues/detail?id=893
    */
   function test_BOUND_FUNCTION_LEAKS_CALLER() {
     if (!('bind' in Function.prototype)) { return false; }
     function foo() { return bar.caller; }
     var bar = foo.bind({});
     if (!has2(bar, 'caller', 'a bound function')) { return false; }
-    try {
-      delete bar.caller;
-    } catch (err) { }
-    if (!has2(bar, 'caller', 'a bound function')) {
-      return '"caller" on bound functions can be deleted.';
-    }
     // using Function so it'll be non-strict
-    var testfn = Function('f', 'return f();');
+    var testfn = Function('b', 'return b();');
     var caller;
     try {
       caller = testfn(bar);
@@ -860,26 +1090,21 @@ var ses;
       if (err instanceof TypeError) { return false; }
       return 'Bound function "caller" failed with: ' + err;
     }
-    if ([testfn, void 0, null].indexOf(caller) >= 0) { return false; }
+    if (caller === void 0 || caller === null) { return false; }
+    if (caller === testfn) { return true; }
     return 'Unexpected "caller": ' + caller;
   }
 
   /**
-   * Workaround for http://code.google.com/p/v8/issues/detail?id=893
+   * Detects http://code.google.com/p/v8/issues/detail?id=893
    */
   function test_BOUND_FUNCTION_LEAKS_ARGUMENTS() {
     if (!('bind' in Function.prototype)) { return false; }
     function foo() { return bar.arguments; }
     var bar = foo.bind({});
     if (!has2(bar, 'arguments', 'a bound function')) { return false; }
-    try {
-      delete bar.arguments;
-    } catch (err) { }
-    if (!has2(bar, 'arguments', 'a bound function')) {
-      return '"arguments" on bound functions can be deleted.';
-    }
     // using Function so it'll be non-strict
-    var testfn = Function('f', 'return f();');
+    var testfn = Function('b', 'return b();');
     var args;
     try {
       args = testfn(bar);
@@ -892,7 +1117,7 @@ var ses;
   }
 
   /**
-   * Workaround for http://code.google.com/p/v8/issues/detail?id=621
+   * Detects http://code.google.com/p/v8/issues/detail?id=621
    *
    */
   function test_JSON_PARSE_PROTO_CONFUSION() {
@@ -913,7 +1138,20 @@ var ses;
   }
 
   /**
+   * Detects https://bugs.webkit.org/show_bug.cgi?id=65832
    *
+   * <p>On a non-extensible object, it must not be possible to change
+   * its internal [[Prototype]] property, i.e., which object it
+   * inherits from.
+   *
+   * TODO(erights): investigate the following:
+   * At http://goo.gl/ycCmo Mike Stay says
+   * <blockquote>
+   * Kevin notes in domado.js that on some versions of FF, event
+   * objects switch prototypes when moving between frames. You should
+   * probably check out their behavior around freezing and sealing.
+   * </blockquote>
+   * But I couldn't find it.
    */
   function test_PROTO_NOT_FROZEN() {
     var x = Object.preventExtensions({});
@@ -929,6 +1167,33 @@ var ses;
     return 'Mutating __proto__ neither failed nor succeeded';
   }
 
+  /**
+   * Detects http://code.google.com/p/v8/issues/detail?id=1624
+   *
+   * <p>Both a direct strict eval operator and an indirect strict eval
+   * function must not leak top level declarations in the string being
+   * evaluated into their containing context.
+   */
+  function test_STRICT_EVAL_LEAKS_GLOBALS() {
+    (1,eval)('"use strict"; var ___global_test_variable___ = 88;');
+    if ('___global_test_variable___' in global) {
+      delete global.___global_test_variable___;
+      return true;
+    }
+    return false;
+  }
+
+
+  /**
+   * Detects http://code.google.com/p/v8/issues/detail?id=1645
+   */
+  function test_PARSEINT_STILL_PARSING_OCTAL() {
+    var n = parseInt('010');
+    if (n === 10) { return false; }
+    if (n === 8)  { return true; }
+    return 'parseInt("010") returned ' + n;
+  }
+
 
   ////////////////////// Repairs /////////////////////
   //
@@ -941,7 +1206,6 @@ var ses;
   var apply = Function.prototype.apply;
 
   var hop = Object.prototype.hasOwnProperty;
-  var objToString = Object.prototype.toString;
   var slice = Array.prototype.slice;
   var concat = Array.prototype.concat;
   var defProp = Object.defineProperty;
@@ -1206,6 +1470,40 @@ var ses;
               throw new TypeError('Cannot set ".' + name + '"');
             }
           }
+
+          if (objToString.call(base) === '[object HTMLFormElement]' &&
+              typeof desc.get === 'function' &&
+              desc.set === undefined &&
+              gopd(base, name) === void 0) {
+            // This repair was triggering bug
+            // http://code.google.com/p/chromium/issues/detail?id=94666
+            // on Chrome, causing
+            // http://code.google.com/p/google-caja/issues/detail?id=1401
+            // so if base is an HTMLFormElement we skip this
+            // fix. Since this repair and this situation are both
+            // Chrome only, it is ok that we're conditioning this on
+            // the unspecified [[Class]] value of base.
+            //
+            // To avoid the further bug identified at Comment 2
+            // http://code.google.com/p/chromium/issues/detail?id=94666#c2
+            // We also have to reconstruct the requested desc so that
+            // the setter is absent. This is why we additionally
+            // condition this special case on the absence of an own
+            // name property on base.
+            var desc2 = {get: desc.get};
+            if ('enumerable' in desc) {
+              desc2.enumerable = desc.enumerable;
+            }
+            if ('configurable' in desc) {
+              desc2.configurable = desc.configurable;
+            }
+            var result = defProp(base, name, desc2);
+            var newDesc = gopd(base, name);
+            if (newDesc.get === desc.get) {
+              return result;
+            }
+          }
+
           freeze(dummySetter.prototype);
           freeze(dummySetter);
 
@@ -1367,6 +1665,93 @@ var ses;
     })();
   }
 
+  function repair_CANT_GOPD_CALLER() {
+    var unsafeGOPD = Object.getOwnPropertyDescriptor;
+    function gopdWrapper(base, name) {
+      try {
+        return unsafeGOPD(base, name);
+      } catch (err) {
+        if (err instanceof TypeError &&
+            typeof base === 'function' &&
+            (name === 'caller' || name === 'arguments')) {
+          return (function(message) {
+             function fakePoison() { throw new TypeError(message); }
+             return {
+               get: fakePoison,
+               set: fakePoison,
+               enumerable: false,
+               configurable: false
+             };
+           })(err.message);
+        }
+        throw err;
+      }
+    }
+    defProp(Object, 'getOwnPropertyDescriptor', { value: gopdWrapper });
+  }
+
+  function repair_CANT_HASOWNPROPERTY_CALLER() {
+    Object.prototype.hasOwnProperty = function(name) {
+      return !!Object.getOwnPropertyDescriptor(this, name);
+    };
+  }
+
+  function makeHarmless(magicName, func, path) {
+    function poison() {
+      throw new TypeError('Cannot access property ' + path);
+    }
+    var desc = Object.getOwnPropertyDescriptor(func, magicName);
+    if ((!desc && Object.isExtensible(func)) || desc.configurable) {
+      try {
+        Object.defineProperty(func, magicName, {
+          get: poison,
+          set: poison,
+          configurable: false
+        });
+      } catch (cantPoisonErr) {
+        return 'Poisoning failed with ' + cantPoisonErr;
+      }
+      desc = Object.getOwnPropertyDescriptor(func, magicName);
+      if (desc &&
+          desc.get === poison &&
+          desc.set === poison &&
+          !desc.configurable) {
+        return 'Apparently poisoned';
+      }
+      return 'Not poisoned';
+    }
+    if ('get' in desc || 'set' in desc) {
+      return 'Apparently safe';
+    }
+    try {
+      Object.defineProperty(func, magicName, {
+        value: desc.value === null ? null : void 0,
+        writable: false,
+        configurable: false
+      });
+    } catch (cantFreezeHarmlessErr) {
+      return 'Freezing harmless failed with ' + cantFreezeHarmlessErr;
+    }
+    desc = Object.getOwnPropertyDescriptor(func, magicName);
+    if (desc &&
+        (desc.value === null || desc.value === void 0) &&
+        !desc.writable &&
+        !desc.configurable) {
+      return 'Apparently frozen harmless';
+    }
+    return 'Did not freeze harmless';
+  }
+
+  function repair_BUILTIN_LEAKS_CALLER() {
+    ses.makeCallerHarmless = makeHarmless.bind(void 0, 'caller');
+    //logger.info(ses.makeCallerHarmless(builtInMapMethod));
+  }
+
+  function repair_BUILTIN_LEAKS_ARGUMENTS() {
+    ses.makeArgumentsHarmless = makeHarmless.bind(void 0, 'arguments');
+    //logger.info(ses.makeArgumentsHarmless(builtInMapMethod));
+  }
+
   function repair_JSON_PARSE_PROTO_CONFUSION() {
     var unsafeParse = JSON.parse;
     function validate(plainJSON) {
@@ -1405,6 +1790,25 @@ var ses;
       configurable: true
     });
   }
+
+  function repair_PARSEINT_STILL_PARSING_OCTAL() {
+    var badParseInt = parseInt;
+    function goodParseInt(n, radix) {
+      n = '' + n;
+      // This turns an undefined radix into a NaN but is ok since NaN
+      // is treated as undefined by badParseInt
+      radix = +radix;
+      var isHexOrOctal = /^\s*[+-]?\s*0(x?)/.exec(n);
+      var isOct = isHexOrOctal ? isHexOrOctal[1] !== 'x' : false;
+
+      if (isOct && (radix !== radix || 0 === radix)) {
+        return badParseInt(n, 10);
+      }
+      return badParseInt(n, radix);
+    }
+    parseInt = goodParseInt;
+  }
+
 
   ////////////////////// Kludge Records /////////////////////
   //
@@ -1479,7 +1883,7 @@ var ses;
       preSeverity: severities.NOT_ISOLATED,
       canRepair: false,
       urls: [],
-      sections: [],
+      sections: ['10.4.3'],
       tests: []
     },
     {
@@ -1490,7 +1894,9 @@ var ses;
       canRepair: false,
       urls: ['https://bugs.webkit.org/show_bug.cgi?id=51097',
              'https://bugs.webkit.org/show_bug.cgi?id=58338',
-             'http://code.google.com/p/v8/issues/detail?id=1437'],
+             'http://code.google.com/p/v8/issues/detail?id=1437',
+             'https://connect.microsoft.com/IE/feedback/details/' +
+               '685430/global-object-leaks-from-built-in-methods'],
       sections: ['15.2.4.4'],
       tests: ['S15.2.4.4_A14']
     },
@@ -1515,14 +1921,30 @@ var ses;
       tests: []
     },
     {
-      description: 'Cannot delete ambient mutable RegExp.leftContext',
+      description: 'Strict delete returned false rather than throwing',
+      test: test_STRICT_DELETE_RETURNS_FALSE,
+      repair: void 0,
+      preSeverity: severities.SAFE_SPEC_VIOLATION,
+      canRepair: false,
+      urls: ['https://connect.microsoft.com/IE/feedback/details/' +
+               '685432/strict-delete-sometimes-returns-false-' +
+               'rather-than-throwing'],
+      sections: ['11.4.1'],
+      tests: []
+    },
+    {
+      description: 'Non-deletable RegExp statics are a' +
+        ' global communication channel',
       test: test_REGEXP_CANT_BE_NEUTERED,
       repair: repair_REGEXP_CANT_BE_NEUTERED,
       preSeverity: severities.NOT_OCAP_SAFE,
       canRepair: true,
       urls: ['https://bugzilla.mozilla.org/show_bug.cgi?id=591846',
              'http://wiki.ecmascript.org/doku.php?id=' +
-             'conventions:make_non-standard_properties_configurable'],
+               'conventions:make_non-standard_properties_configurable',
+             'https://connect.microsoft.com/IE/feedback/details/' +
+               '685439/non-deletable-regexp-statics-are-a-global-' +
+               'communication-channel'],
       sections: [],
       tests: []
     },
@@ -1547,7 +1969,7 @@ var ses;
       canRepair: false,
       urls: ['http://code.google.com/p/v8/issues/detail?id=1530',
              'http://code.google.com/p/v8/issues/detail?id=1570'],
-      sections: [],
+      sections: ['15.2.3.3', '15.2.3.6', '15.3.5.2'],
       tests: []
     },
     {
@@ -1623,13 +2045,24 @@ var ses;
       tests: []
     },
     {
+      description: 'Getter on HTMLFormElement disappears',
+      test: test_FORM_GETTERS_DISAPPEAR,
+      repair: repair_NEEDS_DUMMY_SETTER,
+      preSeverity: severities.UNSAFE_SPEC_VIOLATION,
+      canRepair: true,
+      urls: ['http://code.google.com/p/chromium/issues/detail?id=94666',
+             'http://code.google.com/p/google-caja/issues/detail?id=1401'],
+      sections: [],
+      tests: []
+    },
+    {
       description: 'Accessor properties inherit as own properties',
       test: test_ACCESSORS_INHERIT_AS_OWN,
       repair: repair_ACCESSORS_INHERIT_AS_OWN,
       preSeverity: severities.UNSAFE_SPEC_VIOLATION,
       canRepair: true,
       urls: ['https://bugzilla.mozilla.org/show_bug.cgi?id=637994'],
-      sections: [],
+      sections: ['8.6.1'],
       tests: []
     },
     {
@@ -1648,9 +2081,33 @@ var ses;
       repair: repair_REPLACE_LEAKS_GLOBAL,
       preSeverity: severities.NOT_ISOLATED,
       canRepair: true,
-      urls: ['http://code.google.com/p/v8/issues/detail?id=1360'],
+      urls: ['http://code.google.com/p/v8/issues/detail?id=1360',
+             'https://connect.microsoft.com/IE/feedback/details/' +
+               '685928/bad-this-binding-for-callback-in-string-' +
+               'prototype-replace'],
       sections: ['15.5.4.11'],
       tests: ['S15.5.4.11_A12']
+    },
+    {
+      description: 'getOwnPropertyDescriptor on strict "caller" throws',
+      test: test_CANT_GOPD_CALLER,
+      repair: repair_CANT_GOPD_CALLER,
+      preSeverity: severities.SAFE_SPEC_VIOLATION,
+      canRepair: true,
+      urls: ['https://connect.microsoft.com/IE/feedback/details/' +
+               '685436/getownpropertydescriptor-on-strict-caller-throws'],
+      sections: ['15.2.3.3', '13.2', '13.2.3'],
+      tests: []
+    },
+    {
+      description: 'strict_function.hasOwnProperty("caller") throws',
+      test: test_CANT_HASOWNPROPERTY_CALLER,
+      repair: repair_CANT_HASOWNPROPERTY_CALLER,
+      preSeverity: severities.SAFE_SPEC_VIOLATION,
+      canRepair: true,
+      urls: ['https://bugs.webkit.org/show_bug.cgi?id=63398#c3'],
+      sections: ['15.2.4.5', '13.2', '13.2.3'],
+      tests: []
     },
     {
       description: 'Cannot "in" caller on strict function',
@@ -1659,7 +2116,7 @@ var ses;
       preSeverity: severities.SAFE_SPEC_VIOLATION,
       canRepair: false,
       urls: ['https://bugs.webkit.org/show_bug.cgi?id=63398'],
-      sections: [],
+      sections: ['11.8.7', '13.2', '13.2.3'],
       tests: []
     },
     {
@@ -1669,32 +2126,54 @@ var ses;
       preSeverity: severities.SAFE_SPEC_VIOLATION,
       canRepair: false,
       urls: ['https://bugs.webkit.org/show_bug.cgi?id=63398'],
-      sections: [],
+      sections: ['11.8.7', '13.2', '13.2.3'],
+      tests: []
+    },
+    {
+      description: 'Strict "caller" not poisoned',
+      test: test_STRICT_CALLER_NOT_POISONED,
+      repair: void 0,
+      preSeverity: severities.NOT_OCAP_SAFE,
+      canRepair: false,
+      urls: [],
+      sections: ['13.2'],
+      tests: []
+    },
+    {
+      description: 'Strict "arguments" not poisoned',
+      test: test_STRICT_ARGUMENTS_NOT_POISONED,
+      repair: void 0,
+      preSeverity: severities.NOT_OCAP_SAFE,
+      canRepair: false,
+      urls: [],
+      sections: ['13.2'],
       tests: []
     },
     {
       description: 'Built in functions leak "caller"',
       test: test_BUILTIN_LEAKS_CALLER,
-      repair: void 0,
+      repair: repair_BUILTIN_LEAKS_CALLER,
       preSeverity: severities.NOT_OCAP_SAFE,
-      canRepair: false,
-      urls: ['http://code.google.com/p/v8/issues/detail?id=1548',
+      canRepair: true,
+      urls: ['http://code.google.com/p/v8/issues/detail?id=1643',
+             'http://code.google.com/p/v8/issues/detail?id=1548',
              'https://bugzilla.mozilla.org/show_bug.cgi?id=591846',
              'http://wiki.ecmascript.org/doku.php?id=' +
-             'conventions:make_non-standard_properties_configurable'],
+               'conventions:make_non-standard_properties_configurable'],
       sections: [],
       tests: []
     },
     {
       description: 'Built in functions leak "arguments"',
       test: test_BUILTIN_LEAKS_ARGUMENTS,
-      repair: void 0,
+      repair: repair_BUILTIN_LEAKS_ARGUMENTS,
       preSeverity: severities.NOT_OCAP_SAFE,
-      canRepair: false,
-      urls: ['http://code.google.com/p/v8/issues/detail?id=1548',
+      canRepair: true,
+      urls: ['http://code.google.com/p/v8/issues/detail?id=1643',
+             'http://code.google.com/p/v8/issues/detail?id=1548',
              'https://bugzilla.mozilla.org/show_bug.cgi?id=591846',
              'http://wiki.ecmascript.org/doku.php?id=' +
-             'conventions:make_non-standard_properties_configurable'],
+               'conventions:make_non-standard_properties_configurable'],
       sections: [],
       tests: []
     },
@@ -1740,30 +2219,30 @@ var ses;
       urls: ['https://bugs.webkit.org/show_bug.cgi?id=65832'],
       sections: ['8.6.2'],
       tests: []
+    },
+    {
+      description: 'Strict eval function leaks variable definitions',
+      test: test_STRICT_EVAL_LEAKS_GLOBALS,
+      repair: void 0,
+      preSeverity: severities.SAFE_SPEC_VIOLATION,
+      canRepair: false,
+      urls: ['http://code.google.com/p/v8/issues/detail?id=1624'],
+      sections: ['10.4.2.1'],
+      tests: []
+    },
+    {
+      description: 'parseInt still parsing octal',
+      test: test_PARSEINT_STILL_PARSING_OCTAL,
+      repair: repair_PARSEINT_STILL_PARSING_OCTAL,
+      preSeverity: severities.SAFE_SPEC_VIOLATION,
+      canRepair: true,
+      urls: ['http://code.google.com/p/v8/issues/detail?id=1645'],
+      sections: ['15.1.2.2'],
+      tests: []
     }
   ];
 
   ////////////////////// Testing, Repairing, Reporting ///////////
-
-  /**
-   * Needs to work on ES3
-   */
-  function forEach(list, callback) {
-    for (var i = 0, len = list.length; i < len; i++) {
-      callback(list[i], i);
-    }
-  }
-
-  /**
-   * Needs to work on ES3
-   */
-  function map(list, callback) {
-    var result = [];
-    for (var i = 0, len = list.length; i < len; i++) {
-      result.push(callback(list[i], i));
-    }
-    return result;
-  }
 
   /**
    * Run a set of tests & repairs, and report results.
@@ -1775,11 +2254,11 @@ var ses;
    * And finally return a list of records of results.
    */
   function testRepairReport(kludges) {
-    var beforeFailures = map(kludges, function(kludge) {
+    var beforeFailures = strictMapFn(kludges, function(kludge) {
       return kludge.test();
     });
     var repairs = [];
-    forEach(kludges, function(kludge, i) {
+    strictForEachFn(kludges, function(kludge, i) {
       if (beforeFailures[i]) {
         var repair = kludge.repair;
         if (repair && repairs.lastIndexOf(repair) === -1) {
@@ -1788,11 +2267,11 @@ var ses;
         }
       }
     });
-    var afterFailures = map(kludges, function(kludge) {
+    var afterFailures = strictMapFn(kludges, function(kludge) {
       return kludge.test();
     });
 
-    return map(kludges, function(kludge, i) {
+    return strictMapFn(kludges, function(kludge, i) {
       var status = statuses.ALL_FINE;
       var postSeverity = severities.SAFE;
       var beforeFailure = beforeFailures[i];
@@ -1837,9 +2316,7 @@ var ses;
         postSeverity = severities.NEW_SYMPTOM;
       }
 
-      if (postSeverity.level > ses.maxSeverity.level) {
-        ses.maxSeverity = postSeverity;
-      }
+      ses.updateMaxSeverity(postSeverity);
 
       return {
         description:   kludge.description,
@@ -1856,10 +2333,17 @@ var ses;
     });
   }
 
-  var reports = testRepairReport(baseKludges);
-  if (ses.ok()) {
-    reports.push.apply(reports, testRepairReport(supportedKludges));
+  try {
+    var reports = testRepairReport(baseKludges);
+    if (ses.ok()) {
+      reports.push.apply(reports, testRepairReport(supportedKludges));
+    }
+    logger.reportRepairs(reports);
+  } catch (err) {
+    ses.updateMaxSeverity(ses.severities.NOT_SUPPORTED);
+    logger.error('ES5 Repair failed with: ' + err);
   }
-  logger.reportRepairs(reports);
+
+  logger.reportMax();
 
 })(this);

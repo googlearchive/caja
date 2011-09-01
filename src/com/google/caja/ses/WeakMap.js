@@ -191,7 +191,7 @@ var WeakMap;
     if (!originalProps.isExtensible(key)) { return NO_IDENT; }
 
     name = 'hash:' + Math.random();
-    // If the following two lines a swapped, Safari WebKit Nightly
+    // If the following two lines are swapped, Safari WebKit Nightly
     // Version 5.0.5 (5533.21.1, r87697) crashes.
     // See https://bugs.webkit.org/show_bug.cgi?id=61758
     originalProps.freeze(identGetter.prototype);

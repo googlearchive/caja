@@ -507,7 +507,7 @@ var caja = (function () {
                   
                   // TODO(kpreid): needs to return completion value unless we
                   // deprecate that feature.
-                  return Q.ref(guestWindow.cajaVM.compile(
+                  return Q.ref(guestWindow.cajaVM.compileExpr(
                       '(function () {' + theContent + '})()'));
                   
                 } else if (contentType === 'text/html') {
