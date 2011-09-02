@@ -438,7 +438,8 @@ can test window.scrollBy with a positive x value with a visible effect.
 </script>
 
 -->
-
+<div id="test-dynamic-style" class="testcontainer" style="color: blue;">
+</div>
 <p id="test-script-loading" class="testcontainer">Test script loading</p>
 <script type="text/javascript">
   jsunitRegister('testScriptLoading',
@@ -495,6 +496,31 @@ can test window.scrollBy with a positive x value with a visible effect.
         },
         function () {});
     assertFalse('gse7', checkGlobalSideEffect());
+    expectFailure(
+        function () {
+          var s = document.createElement('style');
+          s.innerText = "#test-dynamic-style { color: red; }";
+          document.body.appendChild(s);
+          assertColor("blue", directAccess.getComputedStyle(s, 'color'));
+        }, 'style injection via innerText');
+    expectFailure(
+        function () {
+          var s = document.createElement('style');
+          s.innerHTML = "#test-dynamic-style { color: red; }";
+          document.body.appendChild(s);
+          assertColor("blue", directAccess.getComputedStyle(s, 'color'));
+        }, 'style injection via innerHTML');
+
+    // Test that an external script cannot be loaded by setting the "src"
+    // attribute of a newly created script element.
+    var s = document.createElement('script');
+    assertAsynchronousRequirement(
+        'non-whitelisted script ran',
+        jsunitCallback(function () { 
+          return externalScript.loaded !== true; 
+        }));
+    s.src = 'unproxied_nonwhitelisted_script.js';
+    document.getElementById('test-script-loading').appendChild(s);
 
     /* TODO(kpreid): Reenable this test if it is supposed to work.
        It fails at runtime because script src= is considered an unknown
