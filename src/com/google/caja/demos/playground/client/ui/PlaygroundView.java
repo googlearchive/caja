@@ -432,10 +432,14 @@ public class PlaygroundView {
         {
           rewrite: function (uri, uriEffect, loaderType, hints) {
             if (!/^https?:/i.test(uri)) { return void 0; }
-            if (uriEffect === $wnd.html4.ueffects.NEW_DOCUMENT ||
-                (uriEffect === $wnd.html4.ueffects.SAME_DOCUMENT &&
-                 loaderType === $wnd.html4.ltypes.SANDBOXED)) {
+            if (uriEffect === $wnd.html4.ueffects.NEW_DOCUMENT) {
               return uri;
+            }
+            if (uriEffect === $wnd.html4.ueffects.SAME_DOCUMENT &&
+                 loaderType === $wnd.html4.ltypes.SANDBOXED) {
+              return "http://www.gmodules.com/gadgets/proxy"
+                  + "?url=" + encodeURIComponent(uri)
+                  + "&container=caja";
             }
             return null;
           }
