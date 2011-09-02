@@ -205,9 +205,13 @@
      message="Require Java 1.5, not Java ${java.version} from ${java.home}" />
   </target>
 
-  <target name="runtests" depends="AllTests"
-   description="Runs unittests.  To filter tests: $ ant -Dtest.filter=My\*Test.
-   To remote debug tests (on port 9999): $ ant -Dtest.debug=true">
+  <target name="runtests" depends="AllTests,Runtests,CacheTestSuccess"
+      description="Runs unittests.  To filter tests: $ ant -Dtest.filter=My\*Test.
+      To remote debug tests (on port 9999): $ ant -Dtest.debug=true">
+  </target>
+
+  <target name="Runtests"
+   description="Internal target - actually run tests">
    <condition property="jvmarg"
      value="-Xdebug -Xmx2G -Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=9999" else="">
      <isset property="test.debug"/>
@@ -280,6 +284,9 @@
         <isfalse value="runtests.failure"/>
       </and>
     </condition>
+  </target>
+
+  <target name="CacheOrFail">
     <!-- Capture conditions that if set invalidate caching of test results -->
     <condition property="runtests.shouldCache">
       <and>
@@ -288,7 +295,6 @@
         <isfalse value="${caja.BrowserTestCase.startAndWait}"/>
       </and>
     </condition>
-    <antcall target="CacheTestSuccess"/>
     <fail message=
      "One or more tests failed. For details, see ${reports}/tests/index.html"
      if="runtests.error"/>
@@ -297,7 +303,7 @@
      if="runtests.failure"/>
   </target>
 
-  <target name="CacheTestSuccess" if="runtests.shouldCache">
+  <target name="CacheTestSuccess" depends="CacheOrFail" if="runtests.shouldCache">
     <echo>
       Caching test results. If undesired, clear with "ant cleartestcache"
     </echo>
