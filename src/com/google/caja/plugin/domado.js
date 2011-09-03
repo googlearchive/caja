@@ -4436,6 +4436,7 @@ function Domado(opt_rulebreaker) {
       np(this).feralDoc = doc;
       np(this).feralPseudoBodyNode = body;
       np(this).onLoadListeners = [];
+      np(this).onDCLListeners = [];
       
       traceStartup("DT: TameHTMLDocument done private");
       
@@ -4712,12 +4713,17 @@ function Domado(opt_rulebreaker) {
     // Called by the html-emitter when the virtual document has been loaded.
     domicile.signalLoaded = cajaVM.def(function () {
       // TODO(kpreid): Review if this rewrite of the condition here is correct
+      var self = tameDocument;
+      var listeners = np(self).onDCLListeners;
+      np(self).onDCLListeners = [];
+      for (var i = 0, n = listeners.length; i < n; ++i) {
+        window.setTimeout(listeners[+i], 0);
+      }
       var onload = tameWindow.onload;
       if (onload) {
         window.setTimeout(onload, 0);
       }
-      var self = tameDocument;
-      var listeners = np(self).onLoadListeners;
+      listeners = np(self).onLoadListeners;
       np(self).onLoadListeners = [];
       for (var i = 0, n = listeners.length; i < n; ++i) {
         window.setTimeout(listeners[+i], 0);
@@ -5181,6 +5187,9 @@ function Domado(opt_rulebreaker) {
       if (name === 'load') {
         domitaModules.ensureValidCallback(listener);
         np(tameDocument).onLoadListeners.push(listener);
+      } else if (name === 'DOMContentLoaded') {
+        domitaModules.ensureValidCallback(listener);
+        np(tameDocument).onDCLListeners.push(listener);
       } else {
         // TODO: need a testcase for this
         tameDocument.addEventListener(name, listener, useCapture);
@@ -5188,8 +5197,9 @@ function Domado(opt_rulebreaker) {
     });
     TameWindow.prototype.removeEventListener = cajaVM.def(
         function (name, listener, useCapture) {
-      if (name === 'load') {
-        var listeners = np(tameDocument).onLoadListeners;
+      if (name === 'load' || name === 'DOMContentLoaded') {
+        var listeners = np(tameDocument)[name === 'load' ?
+            'onLoadListeners' : 'onDCLListeners'];
         var k = 0;
         for (var i = 0, n = listeners.length; i < n; ++i) {
           listeners[i - k] = listeners[+i];

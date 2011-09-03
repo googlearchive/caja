@@ -306,6 +306,51 @@
   });
 </script>
 
+<p class="testcontainer" id="test-dcl-listener">DOMContentLoaded</p>
+<script>
+  jsunitRegister('testDOMContentLoadedListener',
+                 function testDOMContentLoadedListener() {
+    var b1 = false;
+    var b2 = false;
+    var b3 = false;
+    var setb1 = jsunitCallback(
+        function setb1cb() {
+          console.log('set dcl b1');
+          b1 = true;
+        });
+    var setb2 = jsunitCallback(
+        function setb2cb() {
+          console.log('set dcl b2');
+          b2 = true;
+        });
+     var setb3 = jsunitCallback(
+         function setb3cb() {
+           console.log('set dcl b3');
+           b3 = !b2; // DOMContentLoaded must fire before load
+         });
+
+    window.addEventListener('DOMContentLoaded', setb1);
+    window.addEventListener('load', setb2);
+    window.addEventListener('DOMContentLoaded', setb3);
+    window.removeEventListener('DOMContentLoaded', setb1);
+
+    assertAsynchronousRequirement(
+        'DOMContentLoaded listeners',
+        jsunitCallback(
+            function checkb1b2b3cb() {
+              if (!b1 && b2 && b3) {
+                pass('test-dcl-listener');
+                return true;
+              }
+              return false;
+            }));
+
+    assertFalse(b1);
+    assertFalse(b2);
+    assertFalse(b3);
+  });
+</script>
+
 <div id="test-xhr-instance-props" class="testcontainer">XHR instance props</div>
 <script type="text/javascript">
   jsunitRegister('testXhrInstanceProps',
