@@ -17,9 +17,11 @@ import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.google.caja.demos.gwtbeans.shared.Caja;
+import com.google.caja.demos.gwtbeans.shared.Frame;
 import com.google.caja.demos.playground.client.Playground;
 import com.google.caja.demos.playground.client.PlaygroundResource;
-import com.google.gwt.dom.client.Element;
+import com.google.gwt.core.client.JavaScriptObject;
 import com.google.gwt.dom.client.Style.Unit;
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
@@ -27,6 +29,7 @@ import com.google.gwt.event.dom.client.FocusEvent;
 import com.google.gwt.event.dom.client.FocusHandler;
 import com.google.gwt.event.logical.shared.SelectionEvent;
 import com.google.gwt.event.logical.shared.SelectionHandler;
+import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.google.gwt.user.client.ui.Anchor;
 import com.google.gwt.user.client.ui.Button;
 import com.google.gwt.user.client.ui.DialogBox;
@@ -300,12 +303,9 @@ public class PlaygroundView {
     });
   }
   
-  private native void initCaja() /*-{
-    $wnd.caja.initialize({
-      cajaServer: '.',
-      debug: true
-    });
-  }-*/;
+  private void initCaja() {
+    Caja.initialize(".");
+  }
 
   public PlaygroundView(Playground controller) {
     this.controller = controller;
@@ -358,7 +358,7 @@ public class PlaygroundView {
     return $wnd.prettyPrintOne($wnd.indentAndWrapCode(result), lang);
   }-*/;
 
-  public void setRenderedResult(String policy, String html, String js) {
+  public void setRenderedResult(final String policy, final String html, final String js) {
     if (html == null && js == null) {
       playgroundUI.renderResult.setText("There were cajoling errors");
       return;
@@ -368,9 +368,27 @@ public class PlaygroundView {
     // the script checks DOM geometry.
     selectTab(Tabs.RENDER);
 
-    setRenderedResultBridge(true /* es53 */,
+    Caja.load(
         playgroundUI.renderPanel.getElement(),
-        policy, html != null ? html : "", js != null ? js : "");
+        makeUriPolicy(),
+        new AsyncCallback<Frame>() {
+          @Override public void onFailure(Throwable t) {
+            PlaygroundView.this.addCompileMessage(t.toString());
+          }
+          @Override public void onSuccess(Frame frame) {
+            frame
+                .api(makeExtraImports(Caja.getNative(), policy))
+                .cajoled("http://fake.url/", js, html)
+                .run(new AsyncCallback<JavaScriptObject>() {
+                  @Override public void onFailure(Throwable t) {
+                    PlaygroundView.this.addCompileMessage(t.toString());
+                  }
+                  @Override public void onSuccess(JavaScriptObject r) {
+                    PlaygroundView.this.setRenderedResult(r.toString());
+                  }
+                });
+          }
+        });
   }
   
   private void setRenderedResult(String result) {
@@ -394,13 +412,12 @@ public class PlaygroundView {
     alertBox.center();
     alertBox.show();
   }
-  
-  private native void setRenderedResultBridge(boolean es53,
-      Element div, String policy, String html, String js) /*-{
+
+  private native JavaScriptObject makeExtraImports(
+      JavaScriptObject caja,
+      String policy) /*-{
     var that = this;
     var extraImports = {};
-    // add the feral marker to GWT's frame
-    $wnd.caja.initFeralFrame(window);  // note 'window' not '$wnd'
     try {
       var tamings___ = eval(policy);
     } catch (e) {
@@ -409,27 +426,29 @@ public class PlaygroundView {
     }
     for (var i=0; i < tamings___.length; i++) {
       try {
-        tamings___[i].call(undefined, $wnd.caja, extraImports);
+        tamings___[i].call(undefined, caja, extraImports);
       } catch (e) {
         that.@com.google.caja.demos.playground.client.ui.PlaygroundView::addRuntimeMessage(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)
             (e, "evaluating " + i + "th policy function");
       }
     }
-    
-    extraImports.onerror = $wnd.caja.tame($wnd.caja.markFunction(
+
+    extraImports.onerror = caja.tame(caja.markFunction(
       function (message, source, lineNum) {
         that.@com.google.caja.demos.playground.client.ui.PlaygroundView::addRuntimeMessage(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)
             (message, source, lineNum);
       }));
-    extraImports.alert = $wnd.caja.tame($wnd.caja.markFunction(
+    extraImports.alert = caja.tame(caja.markFunction(
       function (message) {
         that.@com.google.caja.demos.playground.client.ui.PlaygroundView::alert(Ljava/lang/String;)
             ('' + message);
       }));
-    
-    $wnd.caja.load(
-        div, 
-        {
+
+    return extraImports;
+  }-*/;
+
+  private native JavaScriptObject makeUriPolicy() /*-{
+        return {
           rewrite: function (uri, uriEffect, loaderType, hints) {
             if (!/^https?:/i.test(uri)) { return void 0; }
             if (uriEffect === $wnd.html4.ueffects.NEW_DOCUMENT) {
@@ -443,14 +462,7 @@ public class PlaygroundView {
             }
             return null;
           }
-        }, function (frame) {
-          frame.cajoled('http://fake.url/', js, html)
-               .api(extraImports)
-               .run(function (result) {
-                   that.@com.google.caja.demos.playground.client.ui.PlaygroundView::setRenderedResult(Ljava/lang/String;)
-                       (result)
-                   });
-        });
+        };
   }-*/;
 
   public void addCompileMessage(String item) {

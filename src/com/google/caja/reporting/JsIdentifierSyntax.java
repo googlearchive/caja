@@ -12,22 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-caja.initialize({
-  cajaServer: 'http://localhost:8000/caja',
-  debug: true,
-  forceES5Mode: inES5Mode
-});
-caja.load(
-    createDiv(),
-    {
-      rewrite: function (uri, uriEffect, loaderType, hints) { return uri; }
-    },
-    function(frame) {
-      frame.code('es53-test-domita-events-guest.html')
-           .api(createExtraImportsForTesting(caja, frame))
-           .run(function(result) {
-                 readyToTest();
-                 jsunitRun();
-                 asyncRequirements.evaluate();
-               });
-});
+package com.google.caja.reporting;
+
+/**
+ * Specifies how what JS identifier syntax a {@link RenderContext} allows
+ * in the output
+ */
+public enum JsIdentifierSyntax {
+  JAVASCRIPT,
+  QUASILITERAL,
+  GWT
+  ;
+
+  public static final JsIdentifierSyntax DEFAULT = JAVASCRIPT;
+}

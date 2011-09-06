@@ -93,7 +93,7 @@ document.body.appendChild(testDiv);
 // modified by whitelisted_script.js
 var externalScript = { loaded: false };
 
-fetch('es53-test-domita-special-initial-state.html', function(initialHtml) {
+fetch('es53-test-domado-special-initial-state.html', function(initialHtml) {
   testDiv.innerHTML = initialHtml;
   var virtualDoc = document.getElementById('untrusted_content');
   initFrame(virtualDoc, function(frameGroup, frame) {
@@ -106,7 +106,7 @@ fetch('es53-test-domita-special-initial-state.html', function(initialHtml) {
     frameGroup.grantRead(externalScript, 'loaded');
     extraImports.externalScript = frameGroup.tame(externalScript);
 
-    frame.code('es53-test-domita-special-guest.html')
+    frame.code('es53-test-domado-special-guest.html')
          .api(extraImports)
          .run(function(result) {
                readyToTest();

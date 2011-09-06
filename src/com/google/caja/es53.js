@@ -3603,6 +3603,26 @@ var ___, cajaVM, safeJSON, WeakMap;
   function snowWhite(obj) {
     return freeze(whitelistAll(obj));
   }
+      
+  function makeTrampolineFunction(f) {
+  	return markFuncFreeze(function(_) {
+  	  return f.apply(USELESS, slice.call(arguments, 0));
+  	});
+  }
+
+  function makeTrampolineObject(descriptors) {
+	var td = {};
+	for (var k in descriptors) {
+	  if (!descriptors.hasOwnProperty(k)) { continue; }
+      if (isNumericName(k)) { throw 'Cannot define numeric property: ' + k; }
+	  td.DefineOwnProperty___(k, {
+	    value: FromPropertyDescriptor(descriptors[k]),
+	    enumerable: true,
+	    writable: false
+	  }); 
+	}
+	return Object.seal(Object.create(Object.prototype, td));  
+  }
 
   function freeze(obj) {
       if (Type(obj) !== 'Object') {
@@ -5302,6 +5322,7 @@ var ___, cajaVM, safeJSON, WeakMap;
               return outcome[1];
             } else {
               log(outcome[1]);
+              if (outcome[1].stack) { log(outcome[1].stack); }
               throw outcome[1];
             }
           } else {
@@ -5772,6 +5793,8 @@ var ___, cajaVM, safeJSON, WeakMap;
       newTable: newTable,
       whitelistAll: whitelistAll,
       snowWhite: snowWhite,
+      makeTrampolineFunction: makeTrampolineFunction,
+      makeTrampolineObject: makeTrampolineObject,      
       ri: readImport,
       di: declareImport,
       wi: writeImport,

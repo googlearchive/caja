@@ -14,6 +14,7 @@
 
 package com.google.caja.parser.js;
 
+import com.google.caja.SomethingWidgyHappenedError;
 import com.google.caja.lexer.escaping.Escaping;
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.TokenConsumer;
@@ -24,12 +25,14 @@ import com.google.caja.render.Concatenator;
 import com.google.caja.render.JsPrettyPrinter;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.Callback;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.javascript.jscomp.jsonml.JsonML;
 import com.google.javascript.jscomp.jsonml.TagAttr;
 import com.google.javascript.jscomp.jsonml.TagType;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.regex.Pattern;
 
 /**
  * An identifier used in JavaScript source.
@@ -50,8 +53,7 @@ public final class Identifier extends AbstractParseTreeNode
 
   public Identifier(FilePosition pos, String name) {
     super(pos);
-    if (!(name == null || "".equals(name) ||
-        ParserBase.isQuasiIdentifier(name)) ||
+    if (!(name == null || "".equals(name) || isValid(name)) ||
         (name != null && name.length() > 1024)) {
       // Disallowed in Parser, so no code should ever produce something that
       // reaches here unless it concatenates two strings together without
@@ -72,6 +74,29 @@ public final class Identifier extends AbstractParseTreeNode
 
   public void render(RenderContext r) {
     if (name != null) {
+      switch (r.jsIdentifierSyntax()) {
+        case JAVASCRIPT:
+          if (!isValidJs(name)) {
+            throw new RuntimeException(
+                "Cannot render invalid JavaScript identifier: " + name);
+          }
+          break;
+        case QUASILITERAL:
+          if (!(isValidJs(name) || isValidQuasiliteral(name))) {
+            throw new RuntimeException(
+                "Cannot render invalid Quasiliteral identifier: " + name);
+          }
+          break;
+        case GWT:
+          if (!(isValidJs(name) || isValidGWT(name))) {
+            throw new RuntimeException(
+                "Cannot render invalid GWT identifier: " + name);
+          }
+          break;
+        default:
+          throw new SomethingWidgyHappenedError(
+              "Unrecognized JsIdentifierSyntax enum");
+      }
       StringBuilder escapedName = new StringBuilder();
       if ("".equals(name)) {
         escapedName.append("(blank identifier)"); // break parser
@@ -95,5 +120,50 @@ public final class Identifier extends AbstractParseTreeNode
     } else {
       return JsonMLBuilder.builder(TagType.Empty, getFilePosition()).build();
     }
+  }
+
+  private static boolean isValid(String name) {
+    return isValidJs(name) || isValidQuasiliteral(name) || isValidGWT(name);
+  }
+
+  private static boolean isValidJs(String name) {
+    return ParserBase.isJavascriptIdentifier(name);
+  }
+
+  private static boolean isValidQuasiliteral(String name) {
+    return ParserBase.isQuasiIdentifier(name);
+  }
+
+  private static final Pattern GWT_IDENTIFIER_RE;
+
+  static {
+    // Basic components
+    String letter = "(\\p{javaLetter})";
+    String letterOrDigit = "(\\p{javaLetterOrDigit})";
+    String identifier = "(" + letter + letterOrDigit + "*" + ")";
+
+    // Member references are like "com.foo.MyClass::myField"
+    String fullClassName = "(" + identifier + "(\\." + identifier + ")*)";
+    String memberReference = "(" + fullClassName + "\\:\\:" + identifier + ")";
+
+    // Type references are like "Ljava/lang/String;" or "Z" or "[D"
+    String fullClassTypeName = "(" + identifier + "(\\/" + identifier + ")*)";
+    String simpleTypeName = "((L" + fullClassTypeName + ";)|Z|B|C|S|I|J|F|D)";
+    String arrayTypeName = "((\\[)*" + simpleTypeName + ")";
+
+    // Method references are like "com.foo.MyClass::myMeth(Ljava/lang/String;)"
+    String methodReference =
+        "(" + memberReference + "\\(" + arrayTypeName + "*\\))";
+
+    // Identifiers start with "@" and are followed by either
+    // a member or a method reference
+    String gwtIdentifier =
+        "^@(" + memberReference + "|" + methodReference + ")$";
+
+    GWT_IDENTIFIER_RE = Pattern.compile(gwtIdentifier);
+  }
+
+  /* package private for testing */ static boolean isValidGWT(String name) {
+    return GWT_IDENTIFIER_RE.matcher(name).matches();
   }
 }

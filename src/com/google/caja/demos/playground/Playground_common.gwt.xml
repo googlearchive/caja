@@ -3,4 +3,5 @@
 <module>
   <inherits name='com.google.gwt.user.User'/>
   <inherits name='com.google.gwt.user.theme.standard.Standard'/>
+  <inherits name='com.google.caja.demos.gwtbeans.GwtBeans'/>  
 </module>

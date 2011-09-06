@@ -57,6 +57,7 @@
   <property name="reports"     location="ant-reports"/>  <!-- emma reports -->
   <property name="instr"       location="ant-instr"/>  <!-- instrumented src -->
   <property name="lib"         location="ant-lib"/>
+  <property name="gwtlib"      location="ant-gwtlib"/>	
   <property name="lib.caja"    location="${lib}/com/google/caja"/>
   <property name="docs"        location="ant-docs"/>
   <property name="ruledocs"    location="${docs}/rules"/>
@@ -76,6 +77,7 @@
 
   <!--== classpaths ==-->
   <path id="classpath.gwt">
+    <pathelement path="${gwtlib}"/>
     <pathelement path="${third_party}/java/gwt/gwt-user.jar"/>
     <pathelement path="${third_party}/java/gwt/gwt-dev.jar"/>
     <pathelement path="${third_party}/java/gwt/gwt-api-checker.jar"/>
@@ -179,6 +181,7 @@
     <delete dir="${instr}"/>
     <delete dir="${jars}"/>
     <delete dir="${lib}"/>
+    <delete dir="${gwtlib}"/>  	
     <delete dir="${www}"/>
     <delete dir="${maven}"/>
     <delete dir="${war}"/>
@@ -191,6 +194,7 @@
     <mkdir dir="${instr}"/>
     <mkdir dir="${jars}"/>
     <mkdir dir="${lib}"/>
+    <mkdir dir="${gwtlib}"/>  	  	
     <mkdir dir="${www}"/>
     <mkdir dir="${war}"/>
     <mkdir dir="${maven}"/>
@@ -1081,6 +1085,15 @@
         else="com.google.caja.demos.playground.Playground">
       <istrue value="${gwt.devground}"/>
     </condition>
+    <javac destdir="${gwtlib}" debug="true" target="1.5" source="1.5">
+      <src path="${src}"/>
+      <classpath>
+        <pathelement location="${lib}"/>
+      </classpath>
+      <classpath refid="classpath.compile"/>
+      <classpath refid="classpath.gwt"/>
+      <include name="**/caja/demos/gwtbeans/compile/*.java"/>
+    </javac>
     <java failonerror="true" fork="true"
      classname="com.google.gwt.dev.Compiler">
       <classpath>

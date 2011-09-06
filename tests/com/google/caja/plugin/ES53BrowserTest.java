@@ -106,29 +106,34 @@ public class ES53BrowserTest extends BrowserTestCase {
     runTestDriver("es53-test-taming-errors.js", false);
   }
 
-  public final void testDomitaCanvas() {
+  public final void testDomadoCanvas() {
     // TODO(kpreid): Enable for ES5 once HTML scripting works
-    runTestCase("es53-test-domita-canvas-guest.html", false);
+    runTestCase("es53-test-domado-canvas-guest.html", false);
   }
 
-  public final void testDomitaDom() {
+  public final void testDomadoDom() {
     // TODO(kpreid): Enable for ES5 once HTML scripting works
-    runTestCase("es53-test-domita-dom-guest.html", false);
+    runTestCase("es53-test-domado-dom-guest.html", false);
   }
 
-  public final void testDomitaEvents() {
+  public final void testDomadoEvents() {
     // TODO(kpreid): Enable for ES5 once HTML scripting works
-    runTestDriver("es53-test-domita-events.js", false);
+    runTestDriver("es53-test-domado-events.js", false);
   }
 
-  public final void testDomitaForms() {
+  public final void testDomadoForms() {
     // TODO(kpreid): Enable for ES5 once HTML scripting works
-    runTestCase("es53-test-domita-forms-guest.html", false);
+    runTestCase("es53-test-domado-forms-guest.html", false);
   }
 
-  public final void testDomitaSpecial() {
+  public final void testDomadoSpecial() {
     // TODO(kpreid): Enable for ES5 once HTML scripting works
-    runTestDriver("es53-test-domita-special.js", false);
+    runTestDriver("es53-test-domado-special.js", false);
+  }
+
+  public final void testDomadoOpaque() {
+    // TODO(kpreid): Enable for ES5 once HTML scripting works
+    runTestDriver("es53-test-domado-foreign.js", false);
   }
 
   public final void testLanguage() {

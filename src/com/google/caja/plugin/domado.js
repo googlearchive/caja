@@ -1878,7 +1878,42 @@ function Domado(opt_rulebreaker) {
     
     var editableTameNodeCache = new WeakMap(true);
     var readOnlyTameNodeCache = new WeakMap(true);
-    
+
+    function makeTameNodeByType(node, editable) {
+      switch (node.nodeType) {
+        case 1:  // Element
+          var tagName = node.tagName.toLowerCase();
+          if (tamingClassesByElement.hasOwnProperty(tagName)) {
+            // Known element with specialized taming class (e.g. <a> has an href
+            // property). This is deliberately before the unsafe test; for
+            // example, <script> has its own class even though it is unsafe.
+            return new (tamingClassesByElement[tagName])(node, editable);
+          } else if (!html4.ELEMENTS.hasOwnProperty(tagName)
+              || (html4.ELEMENTS[tagName] & html4.eflags.UNSAFE)) {
+            // If an unrecognized or unsafe node, return a
+            // placeholder that doesn't prevent tree navigation,
+            // but that doesn't allow mutation or leak attribute
+            // information.
+            return new TameOpaqueNode(node, editable);
+          } else {
+            return new TameElement(node, editable, editable);
+          }
+        case 2:  // Attr
+          // Cannot generically wrap since we must have access to the
+          // owner element
+          throw 'Internal: Attr nodes cannot be generically wrapped';
+        case 3:  // Text
+        case 4:  // CDATA Section Node
+          return new TameTextNode(node, editable);
+        case 8:  // Comment
+          return new TameCommentNode(node, editable);
+        case 11: // Document Fragment
+          return new TameBackedNode(node, editable, editable);
+        default:
+          return new TameOpaqueNode(node, editable);
+      }
+    }
+
     /**
      * returns a tame DOM node.
      * @param {Node} node
@@ -1886,7 +1921,7 @@ function Domado(opt_rulebreaker) {
      * @see <a href="http://www.w3.org/TR/DOM-Level-2-HTML/html.html"
      *       >DOM Level 2</a>
      */
-    function defaultTameNode(node, editable) {
+    function defaultTameNode(node, editable, foreign) {
       if (node === null || node === void 0) { return null; }
       makeDOMAccessible(node);
       // TODO(mikesamuel): make sure it really is a DOM node
@@ -1896,44 +1931,9 @@ function Domado(opt_rulebreaker) {
       if (tamed !== void 0) {
         return tamed;
       }
-      switch (node.nodeType) {
-        case 1:  // Element
-          var tagName = node.tagName.toLowerCase();
-          if (tamingClassesByElement.hasOwnProperty(tagName)) {
-            // Known element with specialized taming class (e.g. <a> has an href
-            // property). This is deliberately before the unsafe test; for
-            // example, <script> has its own class even though it is unsafe.
-            tamed = new (tamingClassesByElement[tagName])(node, editable);
-          } else if (!html4.ELEMENTS.hasOwnProperty(tagName)
-              || (html4.ELEMENTS[tagName] & html4.eflags.UNSAFE)) {
-            // If an unrecognized or unsafe node, return a
-            // placeholder that doesn't prevent tree navigation,
-            // but that doesn't allow mutation or leak attribute
-            // information.
-            tamed = new TameOpaqueNode(node, editable);
-          } else {
-            tamed = new TameElement(node, editable, editable);
-          }
-          break;
-        case 2:  // Attr
-          // Cannot generically wrap since we must have access to the
-          // owner element
-          throw 'Internal: Attr nodes cannot be generically wrapped';
-          break;
-        case 3:  // Text
-        case 4:  // CDATA Section Node
-          tamed = new TameTextNode(node, editable);
-          break;
-        case 8:  // Comment
-          tamed = new TameCommentNode(node, editable);
-          break;
-        case 11: // Document Fragment
-          tamed = new TameBackedNode(node, editable, editable);
-          break;
-        default:
-          tamed = new TameOpaqueNode(node, editable);
-          break;
-      }
+      tamed = foreign
+          ? new TameForeignNode(node, editable)
+          : makeTameNodeByType(node, editable);
       tamed = finishNode(tamed);
       
       if (node.nodeType === 1) {
@@ -1968,6 +1968,10 @@ function Domado(opt_rulebreaker) {
       } catch (e) {}
       return null;
     }
+
+    domicile.tameNodeAsForeign = function(node) {
+      return defaultTameNode(node, true, true);
+    };
 
     /**
      * Returns the length of a raw DOM Nodelist object, working around
@@ -2692,14 +2696,60 @@ function Domado(opt_rulebreaker) {
     });
     cajaVM.def(TamePseudoElement);  // and its prototype
     
-    traceStartup("DT: got to TameOpaqueNode");
-    
-    function TameOpaqueNode(node, editable) {
-      TameBackedNode.call(this, node, editable, editable);
+    traceStartup("DT: about to define makeRestrictedNodeType");
+
+    function makeRestrictedNodeType(whitelist) {
+      var nodeType = function(node, editable) {
+        TameBackedNode.call(this, node, editable, editable);
+      };
+      inherit(nodeType, TameBackedNode);
+      for (var safe in whitelist) {
+        // Any non-own property is overridden to be opaque below.
+        var descriptor = (whitelist[safe] === 0)
+            ? domitaModules.getPropertyDescriptor(
+                  TameBackedNode.prototype, safe)
+            : {
+                value: whitelist[safe],
+                writable: false,
+                configurable: false,
+                enumerable: true
+            };
+        Object.defineProperty(nodeType.prototype, safe, descriptor);
+      }
+      definePropertiesAwesomely(nodeType.prototype, {
+        attributes: {
+          enumerable: canHaveEnumerableAccessors,
+          get: nodeMethod(function () {
+            return tameNodeList([], false, undefined);
+          })
+        }
+      });
+      function throwRestricted() {
+        throw new Error('Node is restricted');
+      }
+      cajaVM.def(throwRestricted);
+      for (var i = tameNodePublicMembers.length; --i >= 0;) {
+        var k = tameNodePublicMembers[+i];
+        if (!nodeType.prototype.hasOwnProperty(k)) {
+          if (typeof TameBackedNode.prototype[k] === 'Function') {
+            nodeType.prototype[k] = throwRestricted;
+          } else {
+            Object.defineProperty(nodeType.prototype, k, {
+              enumerable: canHaveEnumerableAccessors,
+              get: throwRestricted
+            });
+          }
+        }
+      }
+      return cajaVM.def(nodeType);  // and its prototype
     }
-    inherit(TameOpaqueNode, TameBackedNode);
-    traceStartup("DT: nonopaqueification starting");
-    for (var safe in {
+
+    traceStartup("DT: about to make TameOpaqueNode");
+
+    // An opaque node is traversible but not manipulable by guest code. This
+    // is the default taming for unrecognized nodes or nodes not explicitly
+    // whitelisted.
+    var TameOpaqueNode = makeRestrictedNodeType({
       nodeValue: 0,
       nodeType: 0,
       nodeName: 0,
@@ -2713,40 +2763,34 @@ function Domado(opt_rulebreaker) {
       getElementsByTagName: 0,
       getElementsByClassName: 0,
       hasChildNodes: 0
-    }) {
-      // Any non-own property is overridden to be opaque below.
-      Object.defineProperty(
-        TameOpaqueNode.prototype,
-        safe,
-        domitaModules.getPropertyDescriptor(TameBackedNode.prototype, safe));
-    }
-    traceStartup("DT: nonopaqueification done");
-    definePropertiesAwesomely(TameOpaqueNode.prototype, {
-      attributes: {
-        enumerable: canHaveEnumerableAccessors,
-        get: nodeMethod(function () {
-          return tameNodeList([], false, undefined);
-        })
-      }
     });
-    function throwOpaque() {
-      throw new Error('Node is opaque');
-    }
-    cajaVM.def(throwOpaque);
-    for (var i = tameNodePublicMembers.length; --i >= 0;) {
-      var k = tameNodePublicMembers[+i];
-      if (!TameOpaqueNode.prototype.hasOwnProperty(k)) {
-        if (typeof TameBackedNode.prototype[k] === 'Function') {
-          TameOpaqueNode.prototype[k] = throwOpaque;
-        } else {
-          Object.defineProperty(TameOpaqueNode.prototype, k, {
-            enumerable: canHaveEnumerableAccessors,
-            get: throwOpaque
-          });
-        }
-      }
-    }
-    cajaVM.def(TameOpaqueNode);  // and its prototype
+
+    traceStartup("DT: about to make TameForeignNode");
+
+    // A foreign node is one supplied by some external system to the guest
+    // code, which the guest code may lay out within its own DOM tree but may
+    // not traverse into in any way.
+    //
+    // TODO(ihab.awad): The taming chosen for foreign nodes is very
+    // restrictive and could be relaxed, but only after careful consideration.
+    // The below choices are for simple safety, e.g., exposing a foreign node's
+    // siblings when the foreign node has been added to some DOM tree outside
+    // this domicile might be dangerous.
+    var TameForeignNode = makeRestrictedNodeType({
+      nodeValue: 0,
+      nodeType: 0,
+      nodeName: 0,
+      nextSibling: undefined,
+      previousSibling: undefined,
+      firstChild: undefined,
+      lastChild: undefined,
+      parentNode: undefined,
+      childNodes: Object.freeze([]),
+      ownerDocument: undefined,
+      getElementsByTagName: function() { return Object.freeze([]); },
+      getElementsByClassName: function() { return Object.freeze([]); },
+      hasChildNodes: function() { return false; }
+    });
 
     traceStartup("DT: about to make TameTextNode");
     

@@ -902,6 +902,8 @@ var caja = (function () {
                   domicile.rewriteUriInAttribute.bind(domicile);
               imports.getIdClass___ = domicile.getIdClass.bind(domicile);
               imports.emitCss___ = domicile.emitCss.bind(domicile);
+              imports.tameNodeAsForeign___ =
+                  domicile.tameNodeAsForeign.bind(domicile);
             
               var divWindow = div.ownerDocument.defaultView ||
                   div.ownerDocument.parentWindow;

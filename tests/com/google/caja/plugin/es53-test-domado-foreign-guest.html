@@ -1,0 +1,151 @@
+<!--
+ - Copyright (C) 2011 Google Inc.
+ -
+ - Licensed under the Apache License, Version 2.0 (the "License");
+ - you may not use this file except in compliance with the License.
+ - You may obtain a copy of the License at
+ -
+ -      http://www.apache.org/licenses/LICENSE-2.0
+ -
+ - Unless required by applicable law or agreed to in writing, software
+ - distributed under the License is distributed on an "AS IS" BASIS,
+ - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ - See the License for the specific language governing permissions and
+ - limitations under the License.
+-->
+
+<script type="text/javascript">
+  function assertBottom(msg, o) {
+    if (!(o === null || o === undefined)) {
+      console.log("Expected bottom value: " + msg);
+      fail("Expected bottom value: " + msg);
+    }
+  }
+</script>
+
+<p class="testcontainer" id="test-not-null">
+  test-not-null
+</p>
+<script type="text/javascript">
+  jsunitRegister('testNotNull',
+                 function testNotNull() {
+    // Simple sanity check to make sure test harness worked okay
+    document.getElementById('test-not-null').innerHTML +=
+        ' ' + getExternalForeignNode().toString() + ' ';
+    document.getElementById('test-not-null').innerHTML +=
+        ' ' + getEmbeddedForeignNode().toString() + ' ';
+    pass('test-not-null');
+  });
+</script>
+
+<script type="text/javascript">
+  function assertThrowsRestricted(name, f) {
+    try {
+      f();
+      fail(name + ' assertThrowsRestricted');
+    } catch (e) {
+      e = '' + e;
+      if (!/Node is restricted/.test(e)) {
+        fail(name + ' assertThrowsRestricted failed with ' + e);
+      }
+    }
+  }
+
+  function testForeign(name, node) {
+    name = name + ': ';
+
+    // Walk all of DOM interface Node to check for proper encapsulation
+    // http://www.w3.org/TR/DOM-Level-2-Core/core.html
+
+    assertEquals(name + 'nodeName', 'DIV', node.nodeName);
+    assertBottom(name + 'nodeValue', node.nodeValue);
+    assertEquals(name + 'nodeType', 1, node.nodeType);
+
+    assertBottom(name + 'localName', node.localName);
+    assertBottom(name + 'namespaceURI', node.namespaceURI);
+    assertBottom(name + 'prefix', node.prefix);
+
+    // assertFalse(name + 'hasAttributes()', node.hasAttributes());
+    assertEquals(name + 'attributes', 0, node.attributes.length);
+    assertBottom(name + 'attributes[0]', node.attributes[0]);
+
+    // assertFalse(name + 'isSupported()', node.isSupported('', ''));
+
+    assertThrowsRestricted(name + 'cloneNode(true)', function() {
+      node.cloneNode(true);
+    });
+
+    assertThrowsRestricted(name + 'cloneNode(false)', function() {
+      node.cloneNode(false);
+    });
+
+    // assertThrowsRestricted(name + 'normalize()', function() {
+    //   node.normalize();
+    // });
+
+    assertThrowsRestricted(name + 'replaceChild(Node,Node)', function() {
+      node.replaceChild(undefined /* ?? */, document.createElement('div'));
+    });
+
+    assertThrowsRestricted(name + 'insertBefore(Node,Node)', function() {
+      node.insertBefore(undefined /* ?? */, document.createElement('div'));
+    });
+
+    assertThrowsRestricted(name + 'removeChild(Node)', function() {
+      node.removeChild(document.createElement('div') /* ?? */);
+    });
+
+    assertThrowsRestricted(name + 'appendChild(Node)', function() {
+      node.appendChild(document.createElement('div') /* ?? */);
+    });
+
+    assertBottom(name + 'ownerDocument', node.ownerDocument);
+    assertBottom(name + 'parentNode', node.parentNode);
+
+    assertFalse(name + 'hasChildNodes()', node.hasChildNodes());
+    assertTrue(name + 'childNodes empty', node.childNodes.length === 0);
+    assertBottom(name + 'childNodes[0]', node.childNodes[0]);
+    assertBottom(name + 'childNodes[3]', node.childNodes[3]);
+
+    assertBottom(name + 'firstChild', node.firstChild);
+    assertBottom(name + 'lastChild', node.lastChild);
+    assertBottom(name + 'previousSibling', node.previousSibling);
+    assertBottom(name + 'nextSibling', node.nextSibling);
+
+    assertTrue(name + 'getElementsByTagName empty',
+        node.getElementsByTagName('div').length === 0);
+    assertBottom(name + 'getElementsByTagName[0]',
+        node.getElementsByTagName('div')[0]);
+    assertBottom(name + 'getElementsByTagName[3]',
+        node.getElementsByTagName('div')[3]);
+
+    assertTrue(name + 'getElementsByClassName empty',
+        node.getElementsByClassName('testclass').length === 0);
+    assertBottom(name + 'getElementsByClassName[0]',
+        node.getElementsByClassName('testclass')[0]);
+    assertBottom(name + 'getElementsByClassName[3]',
+        node.getElementsByClassName('testclass')[3]);
+  }
+</script>
+
+<p class="testcontainer" id="test-external-foreign">
+  test-external-foreign
+</p>
+<script type="text/javascript">
+  jsunitRegister('testExternalForeign',
+                 function testExternalForeign() {
+    testForeign('external-foreign', getExternalForeignNode());
+    pass('test-external-foreign');
+  });
+</script>
+
+<p class="testcontainer" id="test-embedded-foreign">
+  test-embedded-foreign
+</p>
+<script type="text/javascript">
+  jsunitRegister('testEmbeddedForeign',
+                 function testEmbeddedForeign() {
+    testForeign('embedded-foreign', getEmbeddedForeignNode());
+    pass('test-embedded-foreign');
+  });
+</script>

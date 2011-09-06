@@ -516,8 +516,8 @@ can test window.scrollBy with a positive x value with a visible effect.
     var s = document.createElement('script');
     assertAsynchronousRequirement(
         'non-whitelisted script ran',
-        jsunitCallback(function () { 
-          return externalScript.loaded !== true; 
+        jsunitCallback(function () {
+          return externalScript.loaded !== true;
         }));
     s.src = 'unproxied_nonwhitelisted_script.js';
     document.getElementById('test-script-loading').appendChild(s);

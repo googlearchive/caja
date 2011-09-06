@@ -16,6 +16,7 @@ package com.google.caja.parser.html;
 
 import javax.annotation.Nullable;
 
+import com.google.caja.reporting.JsIdentifierSyntax;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
@@ -105,8 +106,10 @@ public class CdataScriptContentFixerTest extends CajaTestCase {
 
     CdataContentFixupRenderContext(
         boolean asciiOnly, boolean embeddable, MarkupRenderMode markupMode,
-        PropertyNameQuotingMode propertyNameQuotingMode, TokenConsumer out) {
-      super(asciiOnly, embeddable, markupMode, propertyNameQuotingMode, out);
+        PropertyNameQuotingMode propertyNameQuotingMode,
+        JsIdentifierSyntax jsIdentifierSyntax, TokenConsumer out) {
+      super(asciiOnly, embeddable, markupMode, propertyNameQuotingMode,
+          jsIdentifierSyntax, out);
     }
 
 
@@ -120,9 +123,11 @@ public class CdataScriptContentFixerTest extends CajaTestCase {
     @Override
     protected RenderContext derive(
         boolean asciiOnly, boolean embeddable, MarkupRenderMode markupMode,
-        PropertyNameQuotingMode propertyNameQuotingMode) {
+        PropertyNameQuotingMode propertyNameQuotingMode,
+        JsIdentifierSyntax jsIdentifierSyntax) {
       return new CdataContentFixupRenderContext(
-          asciiOnly, embeddable, markupMode, propertyNameQuotingMode, getOut());
+          asciiOnly, embeddable, markupMode, propertyNameQuotingMode,
+          jsIdentifierSyntax, getOut());
     }
   }
 }
