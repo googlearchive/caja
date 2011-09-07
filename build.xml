@@ -89,6 +89,7 @@
     <pathelement path="${third_party}/java/appengine/lib/user/orm/geronimo-jpa_3.0_spec-1.1.1.jar"/>
     <pathelement path="${third_party}/java/appengine/lib/user/orm/jdo2-api-2.3-eb.jar"/>
     <pathelement path="${third_party}/java/jsonml/jsonml.jar"/>
+    <pathelement path="${lib}"/>
   </path>
   <path id="classpath.web">
     <pathelement path="${third_party}/java/jsdk2.1/servlet.jar"/>
@@ -1287,7 +1288,7 @@
       <src path="${src}"/>
       <classpath refid="classpath.compile"/>
       <classpath refid="classpath.gwt"/>
-      <include name="**/caja/demos/playground/**/*.java"/>
+      <include name="**/caja/demos/playground/server/**/*.java"/>
       <compilerarg line="-Xlint:unchecked"/>
     </javac>
   </target>

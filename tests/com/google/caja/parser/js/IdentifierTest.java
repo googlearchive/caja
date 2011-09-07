@@ -135,4 +135,14 @@ public class IdentifierTest extends CajaTestCase {
     renderN("@foo", JsIdentifierSyntax.GWT);
     renderY("@a.b.Foo::bar(Ljava/lang/String;)", JsIdentifierSyntax.GWT);
   }
+  
+  public final void testWeirdGwt() throws Exception {
+    renderY(""
+        + "@com.google.caja.demos.playground.client.ui.WidgetsProxyImpl"
+        + "::com_google_gwt_user_client_Element_getJso"
+        + "("
+        +   "Lcom/google/caja/demos/gwtbeans/shared/Frame;"
+        +   "Lcom/google/gwt/user/client/Element;"
+        + ")", JsIdentifierSyntax.GWT);
+  }
 }

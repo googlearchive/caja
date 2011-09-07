@@ -1,5 +1,4 @@
 // Copyright (C) 2011 Google Inc.
-//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -12,22 +11,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.caja.demos.gwtbeans.shared;
+package com.google.caja.demos.playground.client.ui;
 
-import com.google.gwt.core.client.JavaScriptObject;
-import com.google.gwt.dom.client.Element;
+import com.google.caja.demos.gwtbeans.shared.Proxy;
 
-public class ElementProxyImpl 
-    extends AbstractProxy<Element>
-    implements ElementProxy {
-  @Override
-  protected native JavaScriptObject getNative(Frame m, Element bean) /*-{
-    return m.@com.google.caja.demos.gwtbeans.shared.FrameImpl::getFrame()()
-        .imports.tameNodeAsForeign___(bean);
-  }-*/;
-  
-  @Override
-  protected String getBeanClassName() {
-    return "class com.google.gwt.dom.client.Element";
-  }
-}
+public interface WidgetsProxy extends Proxy<Widgets> {}

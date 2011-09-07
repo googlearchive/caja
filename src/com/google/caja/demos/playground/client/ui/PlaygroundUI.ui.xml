@@ -133,6 +133,9 @@
                 </g:TextBox>
               </g:DisclosurePanel>
             </g:north>
+            <g:south size="0">
+              <g:AbsolutePanel ui:field="gwtShim"></g:AbsolutePanel>
+            </g:south>
           </g:DockLayoutPanel>
         </g:tab>
         <g:tab>

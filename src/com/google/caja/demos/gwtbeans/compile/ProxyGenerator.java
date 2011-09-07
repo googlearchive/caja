@@ -36,11 +36,14 @@ import com.google.caja.parser.js.Identifier;
 import com.google.caja.parser.js.Reference;
 import com.google.caja.parser.js.StringLiteral;
 import com.google.caja.parser.quasiliteral.QuasiBuilder;
+import com.google.caja.reporting.JsIdentifierSyntax;
 import com.google.caja.reporting.RenderContext;
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.core.client.JavaScriptObject;
+import com.google.gwt.core.ext.BadPropertyValueException;
 import com.google.gwt.core.ext.Generator;
 import com.google.gwt.core.ext.GeneratorContext;
+import com.google.gwt.core.ext.PropertyOracle;
 import com.google.gwt.core.ext.TreeLogger;
 import com.google.gwt.core.ext.TreeLogger.Type;
 import com.google.gwt.core.ext.UnableToCompleteException;
@@ -65,6 +68,7 @@ public class ProxyGenerator extends Generator {
   private static final String ELEMENT_CLASS = Element.class.getCanonicalName();  
   private static final String ELEMENT_PROXY_CLASS = ElementProxy.class.getCanonicalName();
   private static final String ELEMENT_PROXY_IMPL_CLASS = ElementProxyImpl.class.getCanonicalName();
+  private static final String PROP_USER_AGENT = "user.agent";
   
   private class ProxyMeta {
     private String proxyImplTypeName;
@@ -123,7 +127,7 @@ public class ProxyGenerator extends Generator {
       TreeLogger logger,
       GeneratorContext context,
       String proxyTypeName)
-      throws UnableToCompleteException {
+      throws UnableToCompleteException, BadPropertyValueException {
     if (proxyTypeName.equals(ELEMENT_PROXY_CLASS)) {
       return ELEMENT_PROXY_IMPL_CLASS;
     }
@@ -192,11 +196,24 @@ public class ProxyGenerator extends Generator {
       throw new UnableToCompleteException();
     }
     
+    String userAgent;
+    try {
+      userAgent = context.getPropertyOracle().getSelectionProperty(logger,
+          PROP_USER_AGENT).getCurrentValue();
+    } catch (BadPropertyValueException e) {
+      logger.log(TreeLogger.ERROR, "Unable to find value for '"
+          + PROP_USER_AGENT + "'", e);
+      throw new UnableToCompleteException();
+    }
+
+    userAgent = userAgent.substring(0, 1).toUpperCase()
+        + userAgent.substring(1);
+    
     String proxyTypeShortName = proxyType.getSimpleSourceName();
     String proxyTypePackageName = proxyType.getPackage().getName();
 
-    String proxyImplTypeName = proxyTypeName + "Impl";    
-    String proxyImplTypeShortName = proxyTypeShortName + "Impl";
+    String proxyImplTypeName = proxyTypeName + userAgent + "Impl";    
+    String proxyImplTypeShortName = proxyTypeShortName + userAgent + "Impl";
 
     ProxyMeta pm = new ProxyMeta(proxyImplTypeName);
     ParseTreeNode jsBody = makeJsBody(to, pm, beanInfo);
@@ -451,7 +468,8 @@ public class ProxyGenerator extends Generator {
   private String render(ParseTreeNode node) {
     StringBuilder sb = new StringBuilder();
     TokenConsumer tc = node.makeRenderer(sb, null);
-    node.render(new RenderContext(tc));
+    node.render(new RenderContext(tc)
+        .withJsIdentiferSyntax(JsIdentifierSyntax.GWT));
     tc.noMoreTokens();
     return sb.toString();
   }

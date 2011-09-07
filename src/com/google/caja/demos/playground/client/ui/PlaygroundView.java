@@ -21,6 +21,7 @@ import com.google.caja.demos.gwtbeans.shared.Caja;
 import com.google.caja.demos.gwtbeans.shared.Frame;
 import com.google.caja.demos.playground.client.Playground;
 import com.google.caja.demos.playground.client.PlaygroundResource;
+import com.google.gwt.core.client.GWT;
 import com.google.gwt.core.client.JavaScriptObject;
 import com.google.gwt.dom.client.Style.Unit;
 import com.google.gwt.event.dom.client.ClickEvent;
@@ -376,8 +377,12 @@ public class PlaygroundView {
             PlaygroundView.this.addCompileMessage(t.toString());
           }
           @Override public void onSuccess(Frame frame) {
+            JavaScriptObject tmp = makeExtraImports(Caja.getNative(), policy);
+            augmentWith(tmp, "widgets", 
+                ((WidgetsProxy)GWT.create(WidgetsProxy.class))
+                .getJso(frame, new Widgets(playgroundUI.gwtShim)));
             frame
-                .api(makeExtraImports(Caja.getNative(), policy))
+                .api(tmp)
                 .cajoled("http://fake.url/", js, html)
                 .run(new AsyncCallback<JavaScriptObject>() {
                   @Override public void onFailure(Throwable t) {
@@ -413,6 +418,11 @@ public class PlaygroundView {
     alertBox.show();
   }
 
+  private native void augmentWith(JavaScriptObject o, String key,
+      JavaScriptObject value) /*-{
+    o[key] = value;
+  }-*/;
+  
   private native JavaScriptObject makeExtraImports(
       JavaScriptObject caja,
       String policy) /*-{

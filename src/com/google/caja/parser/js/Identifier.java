@@ -138,8 +138,8 @@ public final class Identifier extends AbstractParseTreeNode
 
   static {
     // Basic components
-    String letter = "(\\p{javaLetter})";
-    String letterOrDigit = "(\\p{javaLetterOrDigit})";
+    String letter = "(\\p{javaJavaIdentifierStart})";
+    String letterOrDigit = "(\\p{javaJavaIdentifierPart})";
     String identifier = "(" + letter + letterOrDigit + "*" + ")";
 
     // Member references are like "com.foo.MyClass::myField"

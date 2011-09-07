@@ -6,6 +6,7 @@ package com.google.caja.demos.playground.client.ui;
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.uibinder.client.UiBinder;
 import com.google.gwt.uibinder.client.UiField;
+import com.google.gwt.user.client.ui.AbsolutePanel;
 import com.google.gwt.user.client.ui.Button;
 import com.google.gwt.user.client.ui.Composite;
 import com.google.gwt.user.client.ui.HTML;
@@ -26,6 +27,7 @@ import com.google.gwt.user.client.ui.Widget;
  * @author Jasvir Nagra (jasvir@gmail.com)
  */
 public class PlaygroundUI extends Composite {
+  @UiField protected AbsolutePanel gwtShim;
   @UiField protected TextBox renderResult;
   @UiField protected HTML renderPanel;
   @UiField protected VerticalPanel compileMessages;
