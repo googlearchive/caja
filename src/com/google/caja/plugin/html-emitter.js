@@ -24,7 +24,7 @@
  *
  * @author mikesamuel@gmail.com
  * @provides HtmlEmitter
- * @requires bridalMaker html html4 cajaVM JSON
+ * @requires bridalMaker html html4 cajaVM
  */
 
 /**
@@ -333,29 +333,15 @@ function HtmlEmitter(makeDOMAccessible, base, opt_domicile, opt_guestGlobal) {
 
       var cajaVM = opt_guestGlobal.cajaVM;
       if (cajaVM) {
-        // Intentionally does not use name "eval".
-        var ev = cajaVM.eval;
-        if (ev) {
+        var compileModule = cajaVM.compileModule;
+        if (compileModule) {
           try {
-            ev("" + scriptInnerText);
+            compileModule(scriptInnerText)(opt_domicile.window);
             return;  // Do not trigger onerror below.
           } catch (ex) {
             errorMessage = (ex && (ex.message || ex.description))
                 || errorMessage;
           }
-        }
-      }
-      // HACK DO NOT SUBMIT: Get test running without cajaVM.eval.
-      var m = scriptInnerText.match(
-          // A call to document.write with one or more comma separated double
-          // quoted string literals.
-          /^\s*document\s*[.]\s*write\s*\((\s*\"(?:[^\"\\]|\\.)*\"\s*(?:,\s*\"(?:[^\"\\]|\\.)*\"\s*)*)\)\s*(?:;\s*)?$/);
-      if (m) {
-        try {
-          tameDocWrite.apply(null, JSON.parse("[" + m[1] + "]"));
-        } catch (ex) {
-          errorMessage = (ex && (ex.message || ex.description))
-              || errorMessage;
         }
       }
 

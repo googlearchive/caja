@@ -23,16 +23,25 @@
   border: 2px solid fuchsia;
 }
 
+/* test container waiting for an async event */
 .waiting {
   border: 2px solid aqua;
 }
 
+/* test container for non-automated test requiring manual interaction */
 .manual {
   background: #eef;
   border: 2px solid #00f;
 }
 
+/* test container - test passed */
 .passed {
   background: #c0ffc0;
   border: 2px solid #c0ffc0;
+}
+
+/* test container - test not run in this environment */
+.skipped {
+  background: #777;
+  border: 2px solid #777;
 }

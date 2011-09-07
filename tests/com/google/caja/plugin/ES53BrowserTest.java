@@ -30,8 +30,8 @@ public class ES53BrowserTest extends BrowserTestCase {
   }
 
   public final void testBasicFunctions() {
-    // TODO(kpreid): Enable for ES5 once HTML scripting works
-    runTestCase("es53-test-basic-functions-guest.html", false);
+    // TODO(kpreid): Enable for ES5: tests for load(), reassigning-window test
+    runTestCase("es53-test-basic-functions-guest.html");
   }
 
   private final void addVersionRewrite(String path, String newVersion) {
@@ -60,7 +60,10 @@ public class ES53BrowserTest extends BrowserTestCase {
     // Changing the version baked into the guest frame JS will cause a
     // version mismatch error in caja.js.
     addVersionRewrite("/es53-guest-frame-" + bv + ".opt.js", "0000");
-    runTestDriver("es53-test-cajajs-version-skew-js-files.js");
+    runTestDriver("es53-test-cajajs-version-skew-js-files.js", false);
+    // TODO(kpreid): This test fails (does not detect skew) under ES5 mode,
+    // since es53-guest-frame is not used. We should add version skew testing
+    // for ES5 mode as well.
   }
 
   public final void testVersionSkewCajolerResponse() {
@@ -86,49 +89,57 @@ public class ES53BrowserTest extends BrowserTestCase {
   }
 
   public final void testClientUriRewriting() {
-    // TODO(kpreid): Enable for ES5 once HTML scripting works
+    // TODO(kpreid): Enable for ES5. Fails due to relative/absolute confusion
+    // and no CSS implementation.
     runTestDriver("es53-test-client-uri-rewriting.js", false);
   }
 
   public final void testTamingTamed() {
+    // TODO(kpreid): Enable for ES5 once taming membrane implemented
     runTestDriver("es53-test-taming-tamed.js", false);
   }
 
   public final void testTamingUntamed() {
+    // TODO(kpreid): Enable for ES5 once taming membrane implemented
     runTestDriver("es53-test-taming-untamed.js", false);
   }
 
   public final void testTamingInout() {
+    // TODO(kpreid): Enable for ES5 once taming membrane implemented
     runTestDriver("es53-test-taming-inout.js", false);
   }
 
   public final void testTamingErrors() {
+    // TODO(kpreid): Enable for ES5 once taming membrane implemented
     runTestDriver("es53-test-taming-errors.js", false);
   }
 
   public final void testDomadoCanvas() {
-    // TODO(kpreid): Enable for ES5 once HTML scripting works
+    // TODO(kpreid): Enable for ES5. Fails on Firefox due to SES issues --
+    // "access to strict mode caller function is censored"; fails on Chrome
+    // due to a context property access problem.
     runTestCase("es53-test-domado-canvas-guest.html", false);
   }
 
   public final void testDomadoDom() {
-    // TODO(kpreid): Enable for ES5 once HTML scripting works
-    runTestCase("es53-test-domado-dom-guest.html", false);
+    // TODO(kpreid): Enable for ES5: various tests for unimplemented
+    // functionality.
+    runTestCase("es53-test-domado-dom-guest.html");
   }
 
   public final void testDomadoEvents() {
-    // TODO(kpreid): Enable for ES5 once HTML scripting works
-    runTestDriver("es53-test-domado-events.js", false);
+    // TODO(kpreid): Enable testOnclickHandler for ES5.
+    runTestDriver("es53-test-domado-events.js");
   }
 
   public final void testDomadoForms() {
-    // TODO(kpreid): Enable for ES5 once HTML scripting works
-    runTestCase("es53-test-domado-forms-guest.html", false);
+    runTestCase("es53-test-domado-forms-guest.html");
   }
 
   public final void testDomadoSpecial() {
-    // TODO(kpreid): Enable for ES5 once HTML scripting works
-    runTestDriver("es53-test-domado-special.js", false);
+    // TODO(kpreid): Enable for ES5. Currently fails because <script> elements
+    // are not getting inserted in the DOM properly
+    runTestDriver("es53-test-domado-special.js");
   }
 
   public final void testDomadoOpaque() {
@@ -137,8 +148,7 @@ public class ES53BrowserTest extends BrowserTestCase {
   }
 
   public final void testLanguage() {
-    // TODO(kpreid): Enable for ES5 once HTML scripting works
-    runTestCase("es53-test-language-guest.html", false);
+    runTestCase("es53-test-language-guest.html");
   }
 
   public final void testProxies() {
@@ -146,6 +156,7 @@ public class ES53BrowserTest extends BrowserTestCase {
   }
 
   public final void testInlineScript() {
-    runTestCase("es53-test-inline-script.html");
+    // TODO(kpreid): Enable for ES5. Currently fails by showing script text.
+    runTestCase("es53-test-inline-script.html", false);
   }
 }

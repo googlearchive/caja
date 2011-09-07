@@ -818,6 +818,13 @@ function Domado(opt_rulebreaker) {
   // does not contain lexical references to a particular DOM instance, but may
   // have some kind of privileged access to Domado internals.
 
+  // This is only used if opt_rulebreaker is absent (because the plugin ids are
+  // normally managed by es53 when it is not). TODO(kpreid): Is there a more
+  // sensible place to put this management, which would be used in both modes?
+  var importsToId = new WeakMap(true);
+  var idToImports = [];
+  var nextPluginId = 0;
+
   // This parameter is supplied in the ES5/3 case and not in the ES5+SES case.
   var rulebreaker = opt_rulebreaker ? opt_rulebreaker : cajaVM.def({
     // These are the stub versions used when in ES5+SES.
@@ -850,14 +857,22 @@ function Domado(opt_rulebreaker) {
       }
     },
     
-    // Use the window (imports) object itself as its own id.
-    // TODO(kpreid): Not sure if this will work robustly; pay attention as we
-    // build up the Domado-on-SES environment.
     getId: function (imports) {
-      return imports;
+      if (importsToId.has(imports)) {
+        return importsToId.get(imports);
+      } else {
+        var id = nextPluginId++;
+        importsToId.set(imports, id);
+        idToImports[id] = imports;
+        return id;
+      }
     },
     getImports: function (id) {
-      return id;
+      var imports = idToImports[id];
+      if (imports === undefined) {
+        throw new Error('Internal: imports#', id, ' unregistered');
+      }
+      return imports;
     }
   });
   
@@ -1158,14 +1173,16 @@ function Domado(opt_rulebreaker) {
       return tamed;
     }
     function tameClear(id) {
-      if (id === null || id === (void 0)) { return; }
-
       // From https://developer.mozilla.org/en/DOM/window.clearTimeout says:
       //   Notes:
       //   Passing an invalid ID to clearTimeout does not have any effect
       //   (and doesn't throw an exception).
+
+      // WeakMap will throw on these, so early exit.
+      if (typeof id !== 'object' || id == null) { return; }
+
       var feral = ids.get(id);
-      if (feral !== undefined) clear(feral);
+      if (feral !== undefined) clear(feral);  // noop if not found
     }
     target[setName] = cajaVM.def(tameSet);
     target[clearName] = cajaVM.def(tameClear);

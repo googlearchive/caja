@@ -138,6 +138,14 @@ function registerTest(name, f) {
   jsunitRegister(name, f);
 }
 
+if (getUrlParam('es5') === 'true') {
+  var inES5Mode = true;
+} else if (getUrlParam('es5') === 'false') {
+  var inES5Mode = false;
+} else {
+  throw new Error('es5 parameter is not "true" or "false"');
+}
+
 /**
  * Canonicalize innerHTML output:
  *   - collapse all whitespace to a single space
@@ -324,6 +332,7 @@ function splitHtmlAndScript(combinedHtml) {
 function createExtraImportsForTesting(frameGroup, frame) {
   var standardImports = {};
 
+
   standardImports.readyToTest =
       frameGroup.tame(frameGroup.markFunction(readyToTest));
   standardImports.jsunitRun =
@@ -374,7 +383,9 @@ function createExtraImportsForTesting(frameGroup, frame) {
   standardImports.$ = frameGroup.tame(frameGroup.markFunction(function(id) {
     return frame.imports.document.getElementById(id);
   }));
-
+  
+  standardImports.inES5Mode = inES5Mode;
+  
   var ___ = frameGroup.iframe.contentWindow.___;
 
   // Give unfiltered DOM access so we can check the results of actions.
@@ -432,10 +443,17 @@ function createExtraImportsForTesting(frameGroup, frame) {
   makeCallable(directAccess.getComputedStyle);
   makeCallable(directAccess.makeUnattachedScriptNode);
 
-  standardImports.directAccess = {
-    v___: function(p) { return directAccess[p]; },
-    m___: function(p, as) { return directAccess[p].apply({}, as); }
-  };
+  if (!inES5Mode) {
+    // TODO(kpreid): This wrapper could be replaced by the 'makeDOMAccessible'
+    // tool defined in caja.js for use by Domado.
+    standardImports.directAccess = {
+      v___: function(p) { return directAccess[p]; },
+      m___: function(p, as) { return directAccess[p].apply({}, as); }
+    };
+  } else {
+    standardImports.directAccess = directAccess;
+  }
+
 
   // Marks a container green to indicate that test passed
   standardImports.pass = frameGroup.tame(frameGroup.markFunction(function (id) {
@@ -449,6 +467,28 @@ function createExtraImportsForTesting(frameGroup, frame) {
     cl += ' passed';
     node.className = cl;
   }));
+
+  /**
+   * Like jsunitRegister, but optionally don't register and mark the 
+   * testcontainer as skipped so that BrowserTestCase.java accepts the suite
+   * anyway.
+   */
+  standardImports.jsunitRegisterIf = frameGroup.tame(frameGroup.markFunction(
+      function (okay, testName, testFunc) {
+    if (okay) {
+      jsunitRegister(testName, testFunc);
+    } else {
+      var node = frame.imports.document.getElementById(testName);
+      if (!node) return;
+      node = frame.domicile.feralNode(node);
+      node.appendChild(document.createTextNode('Skipped ' + testName));
+      var cl = node.className || '';
+      cl = cl.replace(/\b(clickme|waiting)\b\s*/g, '');
+      cl += ' skipped';
+      node.className = cl;
+    }
+  }));
+
 
   standardImports.expectFailure =
       frameGroup.tame(frameGroup.markFunction(expectFailure));
@@ -498,12 +538,4 @@ function createExtraImportsForTesting(frameGroup, frame) {
   }
 
   return standardImports;
-}
-
-if (getUrlParam('es5') === 'true') {
-  var inES5Mode = true;
-} else if (getUrlParam('es5') === 'false') {
-  var inES5Mode = false;
-} else {
-  throw new Error('es5 parameter is not "true" or "false"');
 }

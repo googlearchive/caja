@@ -80,8 +80,6 @@
     }
   });
 
-  // TODO(kpreid): Enable for ES5 once HTML scripting works
-  if (!inES5Mode)
   registerTest('testBuilderApiHtml', function testBuilderApiHtml() {
     var div = createDiv();
     caja.load(div, uriCallback, function (frame) {
@@ -180,8 +178,6 @@
     });
   });
 
-  // TODO(kpreid): Enable for ES5 once HTML scripting works
-  if (!inES5Mode)
   registerTest('testBuilderApiContentHtml',
       function testBuilderApiContentHtml() {
     var div = createDiv();
@@ -302,8 +298,6 @@
     // registerTest('testUrlCajoledHtml', function testUrlCajoledHtml() { });
     // registerTest('testUrlCajoledJs', function testUrlCajoledJs() { });
 
-    // TODO(kpreid): Enable for ES5 once HTML scripting works
-    if (!inES5Mode)
     registerTest('testContentHtml', function testContentHtml() {
       fetch('es53-test-guest.html', function(resp) {
         var div = createDiv();
@@ -332,8 +326,6 @@
       });
     });
 
-    // TODO(kpreid): Enable for ES5 once HTML scripting works
-    if (!inES5Mode)
     registerTest('testUrlHtml', function testUrlHtml() {
       var div = createDiv();
       frameGroup.makeES5Frame(div, uriCallback, function (frame) {
@@ -354,8 +346,6 @@
       });
     });
 
-    // TODO(kpreid): Enable for ES5 once HTML scripting works
-    if (!inES5Mode)
     registerTest('testUrlHtmlWithMimeType', function testUrlHtml() {
       var div = createDiv();
       frameGroup.makeES5Frame(div, uriCallback, function (frame) {

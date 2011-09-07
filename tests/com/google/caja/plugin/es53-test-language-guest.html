@@ -62,7 +62,7 @@
 
 -->
 
-<p id="test-browser-apply" class="testcontainer">test-browser-apply</p>
+<p id="testBrowserApply" class="testcontainer">test-browser-apply</p>
 <script type="text/javascript">
   // http://code.google.com/p/google-caja/issues/detail?id=1077
   jsunitRegister('testBrowserApply',
@@ -105,7 +105,7 @@
     add.apply({}, [4, 5]);
     assertEquals('add(4, 5)', 5, count);
 
-    pass('test-browser-apply');
+    pass('testBrowserApply');
   });
 </script>
 
@@ -113,17 +113,17 @@
     TODO(ihab.awad): Schlepped from old domita tests;
     not sure if this is valid any more.
 -->
-<p id="test-xo4a-apply" class="testcontainer">test-xo4a-apply</p>
+<p id="textXo4aApply" class="testcontainer">test-xo4a-apply</p>
 <script type="text/javascript">
   jsunitRegister('textXo4aApply',
                  function testXo4aApply() {
     var type = Object.prototype.toString.apply('');
     assertEquals('[object String]', type);
-    pass('test-xo4a-apply');
+    pass('textXo4aApply');
   });
 </script>
 
-<p id="test-negative-indices" class="testcontainer">Test negative indices</p>
+<p id="testNegativeIndices" class="testcontainer">Test negative indices</p>
 <script type="text/javascript">
   jsunitRegister('testNegativeIndices',
                  function testNegativeIndices() {
@@ -143,11 +143,11 @@
         assertEquals(void 0, arguments[i]);
       }
     })();
-    pass('test-negative-indices');
+    pass('testNegativeIndices');
   });
 </script>
 
-<p id="test-negative-indices-workaround" class="testcontainer">
+<p id="testNegativeIndicesWorkaround" class="testcontainer">
   Test negative indices workaround for Firefox
 </p>
 <script type="text/javascript">
@@ -175,11 +175,11 @@
             function() { assertEquals(void 0, arguments[i]); });
       }
     })();
-    pass('test-negative-indices-workaround');
+    pass('testNegativeIndicesWorkaround');
   });
 </script>
 
-<p id="test-parseInt" class="testcontainer">
+<p id="testParseInt" class="testcontainer">
   Test parseInt
 </p>
 <script type="text/javascript">
@@ -224,16 +224,18 @@
     assertEquals(-1, parseInt("-01", 16));
     assertEquals(16, parseInt("010", 16));
 
-    pass('test-parseInt');
+    pass('testParseInt');
   });
 </script>
 
 <script>var c = 0;</script>
-<p id="test-globalReference" class="clickme testcontainer">
-  <span onclick="assertEquals(1, ++c); pass('test-globalReference');">Test
+<p id="testGlobalReference" class="clickme testcontainer">
+  <span onclick="assertEquals(1, ++c); pass('testGlobalReference');">Test
   global reference</span>
 </p>
 <script type="text/javascript">
-  jsunitRegister('testGlobalReference',
-                 function testGlobalReference() { });
+// TODO(kpreid): Enable for ES5 mode and debug; onclick handler not firing.
+  jsunitRegisterIf(!inES5Mode,
+                   'testGlobalReference',
+                   function testGlobalReference() { });
 </script>

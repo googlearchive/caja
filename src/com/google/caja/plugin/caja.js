@@ -393,8 +393,14 @@ var caja = (function () {
 
             function executeCompiledModuleSES(
                 promise, extraImports, opt_callback) {
+              // TODO(kpreid): right enumerable/own behavior?
+              Object.getOwnPropertyNames(extraImports).forEach(
+                  function (i) {
+                Object.defineProperty(imports, i,
+                    Object.getOwnPropertyDescriptor(extraImports, i));
+              });
               Q.when(promise, function (compiledFunc) {
-                var result = compiledFunc(extraImports);
+                var result = compiledFunc(imports);
                 if (opt_callback) {
                   opt_callback(result);
                 }
@@ -427,10 +433,14 @@ var caja = (function () {
               // In the ES5/SES/CES world, there is no ___ suffix to hide
               // properties, so all such things must be protected by other
               // means.
+              //
+              // TODO(kpreid): All of this code should disappear as the missing
+              // features are implemented, but if it doesn't, remove it or check
+              // for what we lost.
 
               // Add JavaScript globals to the DOM window object.
-              //tamingWindow.___.copyToImports(
-              //    imports, guestWindow.cajaVM.sharedImports);
+              guestWindow.cajaVM.copyToImports(
+                  imports, guestWindow.cajaVM.sharedImports);
 
               void new tamingWindow.HtmlEmitter(
                   identity, c.innerContainer, domicile, guestWindow);
@@ -511,11 +521,13 @@ var caja = (function () {
                       '(function () {' + theContent + '})()'));
                   
                 } else if (contentType === 'text/html') {
-                  return Q.ref(function (extraImports) {
-                    // TODO(kpreid): use extraImports, once we have JS support
+                  return Q.ref(function (importsAgain) {
+                    // importsAgain always === imports, so ignored
+                    
                     // TODO(kpreid): Make fetch() support streaming download,
                     // then use it here via repeated document.write().
                     imports.document.write(theContent);
+                    domicile.signalLoaded();
                   });
                   
                 } else {
