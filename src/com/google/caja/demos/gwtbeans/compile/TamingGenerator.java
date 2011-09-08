@@ -19,12 +19,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
-import com.google.caja.demos.gwtbeans.shared.AbstractProxy;
-import com.google.caja.demos.gwtbeans.shared.ElementProxy;
-import com.google.caja.demos.gwtbeans.shared.ElementProxyImpl;
+import com.google.caja.demos.gwtbeans.shared.AbstractTaming;
+import com.google.caja.demos.gwtbeans.shared.ElementTaming;
+import com.google.caja.demos.gwtbeans.shared.ElementTamingImpl;
 import com.google.caja.demos.gwtbeans.shared.Frame;
-import com.google.caja.demos.gwtbeans.shared.HasProxy;
-import com.google.caja.demos.gwtbeans.shared.Proxy;
+import com.google.caja.demos.gwtbeans.shared.HasTaming;
+import com.google.caja.demos.gwtbeans.shared.Taming;
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.parser.ParseTreeNode;
@@ -43,7 +43,6 @@ import com.google.gwt.core.client.JavaScriptObject;
 import com.google.gwt.core.ext.BadPropertyValueException;
 import com.google.gwt.core.ext.Generator;
 import com.google.gwt.core.ext.GeneratorContext;
-import com.google.gwt.core.ext.PropertyOracle;
 import com.google.gwt.core.ext.TreeLogger;
 import com.google.gwt.core.ext.TreeLogger.Type;
 import com.google.gwt.core.ext.UnableToCompleteException;
@@ -57,17 +56,17 @@ import com.google.gwt.core.ext.typeinfo.JPrimitiveType;
 import com.google.gwt.dev.util.collect.HashSet;
 import com.google.gwt.dom.client.Element;
 
-public class ProxyGenerator extends Generator {
+public class TamingGenerator extends Generator {
   
-  private static final String PROXY_COMMON_INTERFACE = Proxy.class.getCanonicalName();
-  private static final String PROXY_COMMON_BASE_CLASS = AbstractProxy.class.getCanonicalName();
+  private static final String PROXY_COMMON_INTERFACE = Taming.class.getCanonicalName();
+  private static final String PROXY_COMMON_BASE_CLASS = AbstractTaming.class.getCanonicalName();
   private static final String FRAME_CLASS = Frame.class.getCanonicalName();
   private static final String JSO_CLASS = JavaScriptObject.class.getCanonicalName();
   private static final String GWT_CLASS = GWT.class.getCanonicalName();
   private static final String UNDEFINED = "undefined";
   private static final String ELEMENT_CLASS = Element.class.getCanonicalName();  
-  private static final String ELEMENT_PROXY_CLASS = ElementProxy.class.getCanonicalName();
-  private static final String ELEMENT_PROXY_IMPL_CLASS = ElementProxyImpl.class.getCanonicalName();
+  private static final String ELEMENT_PROXY_CLASS = ElementTaming.class.getCanonicalName();
+  private static final String ELEMENT_PROXY_IMPL_CLASS = ElementTamingImpl.class.getCanonicalName();
   private static final String PROP_USER_AGENT = "user.agent";
   
   private class ProxyMeta {
@@ -137,27 +136,27 @@ public class ProxyGenerator extends Generator {
     JClassType proxyType = to.findType(proxyTypeName);
 
     if (proxyType == null) {
-      logger.log(Type.ERROR, "Proxy type " + proxyTypeName + " not found in source path");
+      logger.log(Type.ERROR, "Taming type " + proxyTypeName + " not found in source path");
       throw new UnableToCompleteException();
     }
     
     if (proxyType.isInterface() == null) {
-      logger.log(Type.ERROR, "Proxy type " + proxyTypeName + " must must be an interface");
+      logger.log(Type.ERROR, "Taming type " + proxyTypeName + " must must be an interface");
       throw new UnableToCompleteException();      
     }
     
     if (proxyType.isGenericType() != null) {
-      logger.log(Type.ERROR, "Proxy type " + proxyTypeName + " cannot be generic");
+      logger.log(Type.ERROR, "Taming type " + proxyTypeName + " cannot be generic");
       throw new UnableToCompleteException();      
     }
     
     if (proxyType.getImplementedInterfaces().length != 1) {
-      logger.log(Type.ERROR, "Proxy type " + proxyTypeName + " must only extend one interface, " + PROXY_COMMON_INTERFACE);
+      logger.log(Type.ERROR, "Taming type " + proxyTypeName + " must only extend one interface, " + PROXY_COMMON_INTERFACE);
       throw new UnableToCompleteException();      
     }
     
     if (proxyType.getImplementedInterfaces()[0].isParameterized() == null) {
-      logger.log(Type.ERROR, "Proxy type " + proxyTypeName + " must extend " + PROXY_COMMON_INTERFACE + " parameterized by bean class or interface");
+      logger.log(Type.ERROR, "Taming type " + proxyTypeName + " must extend " + PROXY_COMMON_INTERFACE + " parameterized by bean class or interface");
       throw new UnableToCompleteException();      
     }
     
@@ -166,15 +165,15 @@ public class ProxyGenerator extends Generator {
     JClassType proxySuperRaw = to.findType(PROXY_COMMON_INTERFACE).isGenericType().getRawType();
     
     if (proxySuperParameterized.getRawType() != proxySuperRaw) {
-      logger.log(Type.ERROR, "Proxy type " + proxyTypeName + " must extend " + PROXY_COMMON_INTERFACE);
+      logger.log(Type.ERROR, "Taming type " + proxyTypeName + " must extend " + PROXY_COMMON_INTERFACE);
       throw new UnableToCompleteException();      
     }
 
     JClassType beanType = proxySuperParameterized.getTypeArgs()[0];
     String beanTypeName = beanType.getParameterizedQualifiedSourceName();
     
-    if (beanType.getAnnotation(HasProxy.class) == null) {
-      logger.log(Type.ERROR, "Bean type " + beanTypeName + " referred to by proxy type " + proxyTypeName + " must have an annotation of type " + HasProxy.class.getCanonicalName());
+    if (beanType.getAnnotation(HasTaming.class) == null) {
+      logger.log(Type.ERROR, "Bean type " + beanTypeName + " referred to by proxy type " + proxyTypeName + " must have an annotation of type " + HasTaming.class.getCanonicalName());
       throw new UnableToCompleteException();      
     }
 
@@ -266,11 +265,11 @@ public class ProxyGenerator extends Generator {
     if (beanType == to.findType(ELEMENT_CLASS)) {
       return to.findType(ELEMENT_PROXY_CLASS);
     }
-    if (beanType.getAnnotation(HasProxy.class) == null) {
+    if (beanType.getAnnotation(HasTaming.class) == null) {
       // TODO(ihab): Thread logger thru and log error properly
-      throw new RuntimeException("Bean type " + beanType.getQualifiedSourceName() + " must have an annotation of type " + HasProxy.class.getCanonicalName());
+      throw new RuntimeException("Bean type " + beanType.getQualifiedSourceName() + " must have an annotation of type " + HasTaming.class.getCanonicalName());
     }
-    HasProxy hp = beanType.getAnnotation(HasProxy.class);
+    HasTaming hp = beanType.getAnnotation(HasTaming.class);
     return to.findType(hp.type().getCanonicalName());
   }
   
@@ -433,7 +432,7 @@ public class ProxyGenerator extends Generator {
    */
   private boolean isGwtPrimitiveType(TypeOracle to, JType type) {
     // Note that we do not include GWT class Element in this list, though it is
-    // treated by GWT JSNI as a primitive. Instead, we hard-code an actual Proxy
+    // treated by GWT JSNI as a primitive. Instead, we hard-code an actual Taming
     // class for class Element that does the necessary DOM taming.
     return
         (type instanceof JPrimitiveType) ||  // TODO(ihab.awad): |long| primitives are weird in GWT

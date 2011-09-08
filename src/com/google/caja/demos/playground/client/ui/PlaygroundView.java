@@ -379,7 +379,7 @@ public class PlaygroundView {
           @Override public void onSuccess(Frame frame) {
             JavaScriptObject tmp = makeExtraImports(Caja.getNative(), policy);
             augmentWith(tmp, "widgets", 
-                ((WidgetsProxy)GWT.create(WidgetsProxy.class))
+                ((WidgetsTaming)GWT.create(WidgetsTaming.class))
                 .getJso(frame, new Widgets(playgroundUI.gwtShim)));
             frame
                 .api(tmp)

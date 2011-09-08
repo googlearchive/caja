@@ -14,6 +14,6 @@
 
 package com.google.caja.demos.gwtbeans.shared;
 
-public @interface HasProxy {
-  Class<?> type();
-}
+import com.google.gwt.dom.client.Element;
+
+public interface ElementTaming extends Taming<Element> { }

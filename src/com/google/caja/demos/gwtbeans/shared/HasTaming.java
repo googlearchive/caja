@@ -14,20 +14,6 @@
 
 package com.google.caja.demos.gwtbeans.shared;
 
-import com.google.gwt.core.client.JavaScriptObject;
-import com.google.gwt.dom.client.Element;
-
-public class ElementProxyImpl 
-    extends AbstractProxy<Element>
-    implements ElementProxy {
-  @Override
-  protected native JavaScriptObject getNative(Frame m, Element bean) /*-{
-    return m.@com.google.caja.demos.gwtbeans.shared.FrameImpl::getFrame()()
-        .imports.tameNodeAsForeign___(bean);
-  }-*/;
-  
-  @Override
-  protected String getBeanClassName() {
-    return "class com.google.gwt.dom.client.Element";
-  }
+public @interface HasTaming {
+  Class<?> type();
 }

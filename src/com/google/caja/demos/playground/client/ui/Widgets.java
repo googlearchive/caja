@@ -13,13 +13,12 @@
 
 package com.google.caja.demos.playground.client.ui;
 
-import com.google.caja.demos.gwtbeans.shared.HasProxy;
-import com.google.caja.demos.playground.client.ui.WidgetsProxy;
+import com.google.caja.demos.gwtbeans.shared.HasTaming;
 import com.google.gwt.dom.client.Element;
 import com.google.gwt.user.client.ui.AbsolutePanel;
 import com.google.gwt.user.datepicker.client.DatePicker;
 
-@HasProxy(type=WidgetsProxy.class)
+@HasTaming(type=WidgetsTaming.class)
 public class Widgets {
 
   private AbsolutePanel gwtShim;

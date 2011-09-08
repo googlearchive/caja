@@ -18,7 +18,7 @@
 <module rename-to='gwtbeans'>
   <source path='shared'/>
 
-  <generate-with class="com.google.caja.demos.gwtbeans.compile.ProxyGenerator">
-    <when-type-assignable class="com.google.caja.demos.gwtbeans.shared.Proxy" />
+  <generate-with class="com.google.caja.demos.gwtbeans.compile.TamingGenerator">
+    <when-type-assignable class="com.google.caja.demos.gwtbeans.shared.Taming" />
   </generate-with>
 </module>

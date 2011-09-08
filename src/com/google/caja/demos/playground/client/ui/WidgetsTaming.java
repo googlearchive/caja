@@ -1,5 +1,4 @@
 // Copyright (C) 2011 Google Inc.
-//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -12,11 +11,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.caja.demos.gwtbeans.shared;
+package com.google.caja.demos.playground.client.ui;
 
-import com.google.gwt.core.client.JavaScriptObject;
+import com.google.caja.demos.gwtbeans.shared.Taming;
 
-public interface Proxy<BeanType> {
-  JavaScriptObject getJso(Frame m, BeanType bean);
-  BeanType getBean(Frame m, JavaScriptObject jso);
-}
+public interface WidgetsTaming extends Taming<Widgets> {}
