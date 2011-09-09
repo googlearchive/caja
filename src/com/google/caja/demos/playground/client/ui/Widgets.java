@@ -18,7 +18,7 @@ import com.google.gwt.dom.client.Element;
 import com.google.gwt.user.client.ui.AbsolutePanel;
 import com.google.gwt.user.datepicker.client.DatePicker;
 
-@HasTaming(type=WidgetsTaming.class)
+@HasTaming(typeName="com.google.caja.demos.playground.client.ui.WidgetsTaming")
 public class Widgets {
 
   private AbsolutePanel gwtShim;
@@ -30,7 +30,11 @@ public class Widgets {
   public String getName() {
     return "constant";
   }
-  
+
+  public Blivit getBlivit(String name) {
+    return new Blivit(name);
+  }
+
   public Element getCalendar() {
     try {
       DatePicker g = new DatePicker();

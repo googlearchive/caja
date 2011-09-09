@@ -270,7 +270,7 @@ public class TamingGenerator extends Generator {
       throw new RuntimeException("Bean type " + beanType.getQualifiedSourceName() + " must have an annotation of type " + HasTaming.class.getCanonicalName());
     }
     HasTaming hp = beanType.getAnnotation(HasTaming.class);
-    return to.findType(hp.type().getCanonicalName());
+    return to.findType(hp.typeName());
   }
   
   private String getWrapperMethod(TypeOracle to, JClassType beanType) {

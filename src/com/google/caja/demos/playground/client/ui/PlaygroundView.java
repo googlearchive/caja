@@ -381,6 +381,9 @@ public class PlaygroundView {
             augmentWith(tmp, "widgets", 
                 ((WidgetsTaming)GWT.create(WidgetsTaming.class))
                 .getJso(frame, new Widgets(playgroundUI.gwtShim)));
+            augmentWith(tmp, "blivit",
+                ((BlivitTaming)GWT.create(BlivitTaming.class))
+                .getJso(frame, new Blivit("hello world")));
             frame
                 .api(tmp)
                 .cajoled("http://fake.url/", js, html)
