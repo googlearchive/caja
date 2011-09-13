@@ -169,6 +169,7 @@
    classpathref="classpath.extensions" />
 
   <!--== rules.  Lowercase are public.  Uppercase are used internally. ==-->
+
   <target name="default" depends="jars"
    description="Builds the plugin compiler."/>
 
@@ -202,21 +203,12 @@
     <mkdir dir="${third_party}/java/htmlparser/lib"/>
   </target>
 
-  <target name="JavaVersion">
-    <condition property="earlier-than-java-1.5">
-      <not><matches pattern="1[.][5-9].*" string="${java.version}" /></not>
-    </condition>
-    <fail if="earlier-than-java-1.5"
-     message="Require Java 1.5, not Java ${java.version} from ${java.home}" />
-  </target>
-
-  <target name="runtests" depends="AllTests,Runtests,CacheTestSuccess"
-      description="Runs unittests.  To filter tests: $ ant -Dtest.filter=My\*Test.
+  <target name="runtests" depends="AllTests,RuntestsRun,CacheTestSuccess"
+      description="Runs tests.  To filter tests: $ ant -Dtest.filter=My\*Test.
       To remote debug tests (on port 9999): $ ant -Dtest.debug=true">
   </target>
 
-  <target name="Runtests"
-   description="Internal target - actually run tests">
+  <target name="RuntestsRun">
    <condition property="jvmarg"
      value="-Xdebug -Xmx2G -Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=9999" else="">
      <isset property="test.debug"/>
@@ -352,7 +344,7 @@
     </copy>
   </target>
 
-  <target name="javadocs" description="Builds javadoc documentation.">
+  <target name="javadocs">
     <mkdir dir="${javadocs}"/>
     <javadoc sourcepath="${src}:${tests}" destdir="${javadocs}" access="private"
      author="true"
@@ -368,7 +360,8 @@
     <jar destfile="${jars}/pluginc-javadocs.jar" basedir="${javadocs}"/>
   </target>
 
-  <target name="jsdocs" description="Javascript documentation." depends="tools">
+  <!-- Javascript documentation -->
+  <target name="jsdocs" depends="tools">
     <mkdir dir="${docs}/js"/>
     <copy todir="${lib.caja}">
       <fileset dir="${src.caja}">
@@ -445,7 +438,7 @@
     </copy>
   </target>
 
-  <target name="pluginc" depends="dirs,PluginCompiler,build.info,tools"
+  <target name="pluginc" depends="PluginCompiler,tools"
    description="Build the plugin compiler and other main classes">
     <javac destdir="${lib}" debug="true" target="1.5" source="1.5">
       <src path="${src}"/>
@@ -495,7 +488,7 @@
   </target>
 
   <target name="benchmarks" description="Runs benchmarks."
-   depends="dirs,pluginc,MinifiedJs,jars">
+   depends="pluginc,jars">
     <copy todir="${lib.caja}/demos/benchmarks">
       <fileset dir="${third_party}/js/sunspider-benchmark/">
         <include name="v8-crypto.js"/>
@@ -662,7 +655,7 @@
     </sequential>
   </macrodef>
 
-  <target name="jquery" depends="pluginc,dirs,CajoledDomado">
+  <target name="jquery" depends="CajoledDomado">
     <!-- The root files of the Domita test cases are statically cajoled -->
     <JQueryTestCase testcase="core" />
     <JQueryTestCase testcase="data" />
@@ -682,11 +675,8 @@
     </copy>
   </target>
 
-  <target name="demos" depends="containers"
-   description="Puts all the demo files together for easy browsing."/>
-
   <!-- Cajoles test resources that contain es53 to javascript. -->
-  <target name="CajoledTests" depends="pluginc,dirs,CajoledDomado">
+  <target name="CajoledTests" depends="CajoledDomado">
     <property name="libplugin" location="${lib.caja}/plugin"/>
 
     <!-- The root files of the Domita test cases are statically cajoled -->
@@ -739,7 +729,7 @@
     </transform>
   </target>
 
-  <target name="MinifiedJs" depends="pluginc,CajoledDomado">
+  <target name="MinifiedJs" depends="CajoledDomado">
     <transform>
       <output file="${lib.caja}/plugin/html-sanitizer-minified.js"
        language="javascript" renderer="minify"/>
@@ -787,57 +777,32 @@
       <input file="${src.caja}/cajita-module-orig.js"/>
       <input file="${src.caja}/cajita-promise.js"/>
     </transform>
-    <!-- TODO(kpreid): Avoid the duplication of file lists in the following
-         4 outputs. -->
-    <concat destfile="${lib.caja}/ses/initSES.js">
-      <!-- Makes initSES.js -->
-      <filelist>
-        <file name="${src.caja}/ses/logger.js"/>
-        <file name="${src.caja}/ses/repairES5.js"/>
-        <file name="${src.caja}/ses/WeakMap.js"/>
-        <file name="${src.caja}/ses/whitelist.js"/>
-        <file name="${src.caja}/ses/atLeastFreeVarNames.js"/>
-        <file name="${src.caja}/ses/startSES.js"/>
-        <file name="${src.caja}/ses/hookupSES.js"/>
-      </filelist>
-    </concat>
-    <concat destfile="${lib.caja}/ses/initSESPlus.js">
-      <!-- Makes initSESPlus.js -->
-      <filelist>
-        <file name="${src.caja}/ses/logger.js"/>
-        <file name="${src.caja}/ses/repairES5.js"/>
-        <file name="${src.caja}/ses/WeakMap.js"/>
-        <file name="${src.caja}/ses/whitelist.js"/>
-        <file name="${src.caja}/ses/atLeastFreeVarNames.js"/>
-        <file name="${src.caja}/ses/startSES.js"/>
-        <file name="${src.caja}/ses/ejectorsGuardsTrademarks.js"/>
-        <file name="${src.caja}/ses/hookupSESPlus.js"/>
-      </filelist>
-    </concat>
     <transform>
-      <!-- Makes initSES-minified.js -->
+      <output file="${lib.caja}/ses/initSES.js"
+       language="javascript" renderer="concat"/>
       <output file="${lib.caja}/ses/initSES-minified.js"
        language="javascript" renderer="minify"/>
-       <input file="${src.caja}/ses/logger.js"/>
-       <input file="${src.caja}/ses/repairES5.js"/>
-       <input file="${src.caja}/ses/WeakMap.js"/>
-       <input file="${src.caja}/ses/whitelist.js"/>
-       <input file="${src.caja}/ses/atLeastFreeVarNames.js"/>
-       <input file="${src.caja}/ses/startSES.js"/>
-       <input file="${src.caja}/ses/hookupSES.js"/>
+      <input file="${src.caja}/ses/logger.js"/>
+      <input file="${src.caja}/ses/repairES5.js"/>
+      <input file="${src.caja}/ses/WeakMap.js"/>
+      <input file="${src.caja}/ses/whitelist.js"/>
+      <input file="${src.caja}/ses/atLeastFreeVarNames.js"/>
+      <input file="${src.caja}/ses/startSES.js"/>
+      <input file="${src.caja}/ses/hookupSES.js"/>
     </transform>
     <transform>
-      <!-- Makes initSESPlus-minified.js -->
+      <output file="${lib.caja}/ses/initSESPlus.js"
+       language="javascript" renderer="concat"/>
       <output file="${lib.caja}/ses/initSESPlus-minified.js"
        language="javascript" renderer="minify"/>
-       <input file="${src.caja}/ses/logger.js"/>
-       <input file="${src.caja}/ses/repairES5.js"/>
-       <input file="${src.caja}/ses/WeakMap.js"/>
-       <input file="${src.caja}/ses/whitelist.js"/>
-       <input file="${src.caja}/ses/atLeastFreeVarNames.js"/>
-       <input file="${src.caja}/ses/startSES.js"/>
-       <input file="${src.caja}/ses/ejectorsGuardsTrademarks.js"/>
-       <input file="${src.caja}/ses/hookupSESPlus.js"/>
+      <input file="${src.caja}/ses/logger.js"/>
+      <input file="${src.caja}/ses/repairES5.js"/>
+      <input file="${src.caja}/ses/WeakMap.js"/>
+      <input file="${src.caja}/ses/whitelist.js"/>
+      <input file="${src.caja}/ses/atLeastFreeVarNames.js"/>
+      <input file="${src.caja}/ses/startSES.js"/>
+      <input file="${src.caja}/ses/ejectorsGuardsTrademarks.js"/>
+      <input file="${src.caja}/ses/hookupSESPlus.js"/>
     </transform>
     <transform>
       <!-- ses-taming-frame: Used by caja.js when the browser is SES-capable.
@@ -897,7 +862,7 @@
   </target>
 
   <target name="AllTests"
-   depends="dirs,tools,MinifiedJs,playground,CajoledTests">
+   depends="playground,CajoledTests">
     <!-- TODO(kpreid): that this copies to ${lib} means the contents of
          pluginc.jar depends on whether AllTests was built, which is bad. -->
     <javac destdir="${lib}" debug="true" target="1.5" source="1.5">
@@ -985,14 +950,11 @@
      failonerror="false"
      failifexecutionfails="false"
      dir="."/>
-    <echo append="false"
-     file="${lib.caja}/reporting/buildInfo.properties"
+    <echo append="false" file="${lib.caja}/reporting/buildInfo.properties"
      message="# Caja Build Information${line.separator}"/>
-    <echo append="true"
-     file="${lib.caja}/reporting/buildInfo.properties"
+    <echo append="true" file="${lib.caja}/reporting/buildInfo.properties"
      message="svnVersion: ${build.svnVersion}${line.separator}"/>
-    <echo append="true"
-     file="${lib.caja}/reporting/buildInfo.properties"
+    <echo append="true" file="${lib.caja}/reporting/buildInfo.properties"
      message="timestamp: ${build.timestamp}${line.separator}"/>
   </target>
 
@@ -1002,7 +964,6 @@
       <classpath refid="classpath.compile"/>
       <include name="**/caja/quasiliteral/*Doclet.java"/>
       <include name="**/caja/tools/DocletAntTask.java"/>
-
       <compilerarg line="-Xlint:unchecked"/>
     </javac>
     <taskdef name="ruledoclet" classname="com.google.caja.tools.DocletAntTask"
@@ -1055,13 +1016,13 @@
 
     <replace file="${lib.caja}/plugin/caja.js"
         propertyFile="${lib.caja}/reporting/buildInfo.properties" >
-        <replacefilter token="%VERSION%" property="svnVersion" />
+      <replacefilter token="%VERSION%" property="svnVersion" />
     </replace>
   </target>
 
   <!-- Builds the cajoling service. -->
   <target name="CajolingServlet"
-   depends="CssParser,HtmlParser,Quasiliterals,Rendering,Schemas">
+      depends="CssParser,HtmlParser,Quasiliterals,Rendering,Schemas">
     <javac destdir="${lib}" debug="true" target="1.5" source="1.5">
       <src path="${src}"/>
       <classpath refid="classpath.compile"/>
@@ -1070,16 +1031,19 @@
     </javac>
   </target>
 
-  <target name="PlaygroundTimestamp"
-    description="Checks if playground needs rebuilding">
-      <uptodate property="uptodate.playground" targetfile="${war}/playground/playground.nocache.js">
-         <srcfiles dir="${src.caja}/demos/playground/client" includes="**/*.java"/>
-         <srcfiles dir="${src.caja}/demos/playground" includes="Playground*.gwt.xml"/>
-      </uptodate>
-   </target>
+  <!-- Checks if playground needs rebuilding -->
+  <target name="PlaygroundTimestamp">
+    <uptodate property="uptodate.playground"
+        targetfile="${war}/playground/playground.nocache.js">
+      <srcfiles dir="${src.caja}/demos/playground/client" includes="**/*.java"/>
+      <srcfiles dir="${src.caja}/demos/playground"
+          includes="Playground*.gwt.xml"/>
+    </uptodate>
+  </target>
 
-  <target name="PlaygroundFE" depends="PlaygroundTimestamp, PlaygroundSupportingFiles"
-    unless="uptodate.playground" description="Playground Front End">
+  <target name="PlaygroundFE"
+      depends="PlaygroundTimestamp, PlaygroundSupportingFiles"
+      unless="uptodate.playground">
     <condition
         property="gwt.target.module"
         value="com.google.caja.demos.playground.Playground_dev"
@@ -1109,10 +1073,10 @@
       <arg value="${war}" />
       <arg value="${gwt.target.module}"/>
     </java>
-   </target>
+  </target>
 
-  <target name="PlaygroundSupportingFiles" depends="CajoledTests,MinifiedJs"
-    description="Copies playground front end supporting files">
+  <!-- Copies playground front end supporting files -->
+  <target name="PlaygroundSupportingFiles" depends="CajoledTests,MinifiedJs">
     <copy todir="${war}">
       <!-- Needed by Playground.html -->
       <fileset dir="${third_party}/js/json_sans_eval">
@@ -1222,8 +1186,8 @@
     </copy>
   </target>
 
-  <target name="PlaygroundJars" depends="build.info"
-      description="Copy the App Engine JARs to the WAR directory">
+  <!-- Copy the App Engine JARs to the WAR directory -->
+  <target name="PlaygroundJars" depends="build.info">
     <mkdir dir="${war}/WEB-INF" />
     <copy todir="${war}/WEB-INF">
       <fileset dir="">
@@ -1269,8 +1233,8 @@
      file="${third_party}/java/appengine/config/user/logging.properties" />
   </target>
 
-  <target name="PlaygroundBE" depends="pluginc,  PlaygroundJars"
-     description="Compile the GWT backend and copies to the WAR.">
+  <!-- Compile the GWT backend and copies to the WAR -->
+  <target name="PlaygroundBE" depends="pluginc,PlaygroundJars">
     <mkdir dir="${war}/WEB-INF/classes" />
     <copy todir="${war}/WEB-INF/classes">
       <fileset dir="${lib}">
@@ -1310,7 +1274,7 @@
     </copy>
   </target>
 
-  <target name="deploy" depends="production,playground">
+  <target name="deploy" depends="playground">
     <appcfg action="update" war="${war}" />
   </target>
 
@@ -1342,7 +1306,7 @@
     </javac>
   </target>
 
-  <target name="Schemas" depends="dirs,Config">
+  <target name="Schemas" depends="Config">
     <javac destdir="${lib}" debug="true" target="1.5" source="1.5">
       <src path="${src}"/>
       <classpath refid="classpath.compile"/>
@@ -1356,7 +1320,7 @@
     </copy>
   </target>
 
-  <target name="CssParser" depends="ParserCore,dirs">
+  <target name="CssParser" depends="ParserCore">
     <javac destdir="${lib}" debug="true" target="1.5" source="1.5">
       <src path="${src}"/>
       <classpath refid="classpath.compile"/>
@@ -1365,7 +1329,7 @@
     </javac>
   </target>
 
-  <target name="HtmlParser" depends="ParserCore,dirs">
+  <target name="HtmlParser" depends="ParserCore">
     <javac destdir="${third_party}/java/htmlparser/lib" debug="true"
      target="1.5" source="1.5">
       <src path="${third_party}/java/htmlparser/src"/>
@@ -1397,7 +1361,7 @@
     </javac>
   </target>
 
-  <target name="JsParser" depends="ParserCore,dirs">
+  <target name="JsParser" depends="ParserCore">
     <javac destdir="${lib}" debug="true" target="1.5" source="1.5">
       <src path="${src}"/>
       <classpath refid="classpath.compile"/>
@@ -1407,7 +1371,7 @@
     </javac>
   </target>
 
-  <target name="Quasiliterals" depends="JsParser,dirs">
+  <target name="Quasiliterals" depends="JsParser">
     <javac destdir="${lib}" debug="true" target="1.5" source="1.5">
       <src path="${src}"/>
       <classpath refid="classpath.compile"/>
@@ -1415,7 +1379,7 @@
     </javac>
   </target>
 
-  <target name="ParserCore" depends="Primitives,Reporting,Lexer,dirs">
+  <target name="ParserCore" depends="Lexer">
     <javac destdir="${lib}" debug="true" target="1.5" source="1.5">
       <src path="${src}"/>
       <classpath refid="classpath.compile"/>
@@ -1426,7 +1390,7 @@
     </javac>
   </target>
 
-  <target name="Lexer" depends="Primitives,Reporting,dirs">
+  <target name="Lexer" depends="Reporting">
     <javac destdir="${lib}" debug="true" target="1.5" source="1.5">
       <src path="${src}"/>
       <classpath refid="classpath.compile"/>
@@ -1439,7 +1403,7 @@
     </javac>
   </target>
 
-  <target name="Reporting" depends="Primitives,dirs">
+  <target name="Reporting" depends="Primitives">
     <javac destdir="${lib}" debug="true" target="1.5" source="1.5">
       <src path="${src}"/>
       <classpath refid="classpath.compile"/>
@@ -1453,7 +1417,7 @@
     </javac>
   </target>
 
-  <target name="Rendering" depends="Lexer,Reporting">
+  <target name="Rendering" depends="Lexer">
     <javac destdir="${lib}" debug="true" target="1.5" source="1.5">
       <src path="${src}"/>
       <classpath refid="classpath.compile"/>
@@ -1478,7 +1442,7 @@
     </javac>
   </target>
 
-  <target name="photon" depends="dirs,MinifiedJs,jars"
+  <target name="photon" depends="jars"
    description="Photon demo">
     <mkdir dir="${war}/photon"/>
     <copy todir="${war}/photon">
@@ -1489,7 +1453,7 @@
     </copy>
   </target>
 
-  <target name="trycaja" depends="dirs,MinifiedJs,jars"
+  <target name="trycaja" depends="jars"
    description="TryCaja tutorial">
     <mkdir dir="${war}/trycaja"/>
     <copy todir="${war}/trycaja">
@@ -1499,7 +1463,7 @@
     </copy>
   </target>
   
-  <target name="containers" depends="dirs,MinifiedJs,jars"
+  <target name="demos" depends="jars"
    description="Examples of hosting gadgets/modules.">
     <mkdir dir="${www}/container"/>
 
@@ -1539,7 +1503,7 @@
     </copy>
   </target>
 
-  <target name="yuitest" depends="pluginc,dirs,CajoledDomado">
+  <target name="yuitest" depends="CajoledDomado">
     <transform>
       <input file="yuitest/yahoo-dom.js"/>
       <output file="yuitest/yahoo-dom.out.js" language="caja"/>
@@ -1574,7 +1538,7 @@
   </target>
 
 
-  <target name="mvn-install" depends="init.maven.tasks,build.info,dirs,jars,javadocs,build.info,CajolingServlet,pom">
+  <target name="mvn-install" depends="jars,javadocs,pom">
     <artifact:install file="${maven-jarfile-nodeps}">
       <pom refid="project"/>
       <attach file="${maven-jarfile-javadoc}" classifier="javadoc"/>
@@ -1648,24 +1612,21 @@
     <property name="emma.filter" value="com.google.*"/>
   </target>
 
-  <target name="reportAllFailure" depends=""
-   description="Do not skip known failures when running tests.">
+  <target name="reportAllFailure"
+      description="Do not skip known failures when running tests.">
     <property name="test.failureNotAnOption" value="true" />
   </target>
 
-  <target name="skipChecks" depends="" description="Turns off ancillary tools.">
+  <target name="skipChecks" description="Turns off ancillary tools.">
     <property name="tools.ancillary.disable" value="true" />
     <property name="tools.ancillary.excludes" value="**/caja/tools/**/*.java" />
   </target>
 
-  <target name="production" depends="" description="obsolete, ignored"/>
-
-  <target name="devground" depends=""
-          description="playground with only one GWT permutation">
+  <target name="devground"
+      description="playground with only one GWT permutation">
     <property name="gwt.devground" value="true"/>
     <antcall target="playground"/>
   </target>
-
 
   <macrodef name="buildSwf">
     <attribute name="in"/>
