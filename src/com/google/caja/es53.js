@@ -3604,13 +3604,13 @@ var ___, cajaVM, safeJSON, WeakMap;
     return freeze(whitelistAll(obj));
   }
       
-  function makeTrampolineFunction(f) {
+  function makeDefensibleFunction(f) {
   	return markFuncFreeze(function(_) {
   	  return f.apply(USELESS, slice.call(arguments, 0));
   	});
   }
 
-  function makeTrampolineObject(descriptors) {
+  function makeDefensibleObject(descriptors) {
 	var td = {};
 	for (var k in descriptors) {
 	  if (!descriptors.hasOwnProperty(k)) { continue; }
@@ -5793,8 +5793,8 @@ var ___, cajaVM, safeJSON, WeakMap;
       newTable: newTable,
       whitelistAll: whitelistAll,
       snowWhite: snowWhite,
-      makeTrampolineFunction: makeTrampolineFunction,
-      makeTrampolineObject: makeTrampolineObject,      
+      makeDefensibleFunction: makeDefensibleFunction,
+      makeDefensibleObject: makeDefensibleObject,
       ri: readImport,
       di: declareImport,
       wi: writeImport,

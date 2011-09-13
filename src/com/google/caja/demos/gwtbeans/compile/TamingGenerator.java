@@ -324,7 +324,7 @@ public class TamingGenerator extends Generator {
     }
     return QuasiBuilder.substV(
         "var w = $wnd.caja.iframe.contentWindow;" +
-        "return w.___.makeTrampolineObject({ @keys*: @vals* });",
+        "return w.___.makeDefensibleObject({ @keys*: @vals* });",
         "keys",  new ParseTreeNodeContainer(keys),
         "vals", new ParseTreeNodeContainer(vals));
   }
@@ -362,7 +362,7 @@ public class TamingGenerator extends Generator {
     }
     return (Expression) QuasiBuilder.substV(
         "({" +
-        "  value: w.___.makeTrampolineFunction(@method)," +
+        "  value: w.___.makeDefensibleFunction(@method)," +
         "  enumerable: true," +
         "  writable: false," +
         "  configurable: false" +        
@@ -391,24 +391,24 @@ public class TamingGenerator extends Generator {
       get = (pd.readMethod == null) ?
           new Reference(new Identifier(FilePosition.UNKNOWN, UNDEFINED)) :
           (Expression) QuasiBuilder.substV(
-              "w.___.makeTrampolineFunction(function () { return bean.@methodRef(); })",
+              "w.___.makeDefensibleFunction(function () { return bean.@methodRef(); })",
               "methodRef", getMethodAccessor(pd.readMethod));
       set = (pd.writeMethod == null) ?
           new Reference(new Identifier(FilePosition.UNKNOWN, UNDEFINED)) :          
           (Expression) QuasiBuilder.substV(
-              "w.___.makeTrampolineFunction(function (v) { bean.@methodRef(v); })",
+              "w.___.makeDefensibleFunction(function (v) { bean.@methodRef(v); })",
               "methodRef", getMethodAccessor(pd.writeMethod));
     } else {
       get = (pd.readMethod == null) ?
           new Reference(new Identifier(FilePosition.UNKNOWN, UNDEFINED)) :          
           (Expression) QuasiBuilder.substV(
-              "w.___.makeTrampolineFunction(function () { return @proxyWrapAccessor(m, bean.@methodRef()); })",
+              "w.___.makeDefensibleFunction(function () { return @proxyWrapAccessor(m, bean.@methodRef()); })",
               "proxyWrapAccessor", pm.getTypeWrapperAccessor(to, pd.type.isClassOrInterface()),
               "methodRef", getMethodAccessor(pd.readMethod));
       set = (pd.writeMethod == null) ?
           new Reference(new Identifier(FilePosition.UNKNOWN, UNDEFINED)) :          
           (Expression) QuasiBuilder.substV(
-              "w.___.makeTrampolineFunction(function (v) { bean.@methodRef(@proxyUnwrapAccessor(m, v)); })",
+              "w.___.makeDefensibleFunction(function (v) { bean.@methodRef(@proxyUnwrapAccessor(m, v)); })",
               "proxyUnwrapAccessor", pm.getTypeUnwrapperAccessor(to, pd.type.isClassOrInterface()),              
               "methodRef", getMethodAccessor(pd.writeMethod));
     }
