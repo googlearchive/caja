@@ -5185,7 +5185,7 @@ function Domado(opt_rulebreaker) {
                          // which we don't implement.
       });
       Object.defineProperty(this, "navigator", {
-        value: tameLocation,
+        value: tameNavigator,
         configurable: false,
         enumerable: true,
         writable: false

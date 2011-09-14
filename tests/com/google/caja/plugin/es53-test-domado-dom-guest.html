@@ -2338,6 +2338,8 @@ Test row cell
   jsunitRegister('testNavigator',
                  function testNavigator() {
     assertNotNull(window.navigator.userAgent);
+    assert("navigator is not a string",
+        "string" === typeof window.navigator.userAgent);
     pass('test-navigator');
   });
 </script>
