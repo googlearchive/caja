@@ -245,7 +245,8 @@ public class UriUtil {
     return Strings.equalsIgnoreCase("mailto", scheme)
         || Strings.equalsIgnoreCase("javascript", scheme)
         || Strings.equalsIgnoreCase("content", scheme)
-        || Strings.equalsIgnoreCase("data", scheme);
+        || Strings.equalsIgnoreCase("data", scheme)
+        || Strings.equalsIgnoreCase("clsid", scheme);
   }
 
   private static void normalizeAuthority(String authority, StringBuilder out)

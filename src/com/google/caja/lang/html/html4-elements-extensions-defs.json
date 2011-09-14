@@ -11,6 +11,12 @@
         "optionalEnd": false,
         "deprecated":  false,
         "description": "present in HTML5, but not in HTML4 though widely used"
-      }
+      },
+      { "key":         "NOEMBED",
+        "empty":       false,
+        "optionalEnd": false,
+        "deprecated":  true,
+        "description": "Not in HTML4. HTML5 mentions it as deprecated"
+      }                
   ]
 }

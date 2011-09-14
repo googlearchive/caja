@@ -32,6 +32,8 @@ public enum Example {
       Type.APPS, "Markdown Editor"),
   FLASH("examples/flash.html", 
       Type.APPS, "Embed Flash"),
+  FLASH2("examples/flash2.html", 
+      Type.APPS, "Embed Flash 2"),
   LIFE("examples/cajalife.html", 
       Type.APPS, "Game of Life"),
 

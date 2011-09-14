@@ -19,7 +19,6 @@ import com.google.caja.parser.html.Dom;
 import com.google.caja.parser.html.DomParser;
 import com.google.caja.parser.html.Nodes;
 import com.google.caja.parser.js.CajoledModule;
-import com.google.caja.reporting.BuildInfo;
 import com.google.caja.reporting.MarkupRenderMode;
 import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessageType;

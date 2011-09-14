@@ -219,9 +219,39 @@ var cajaFlash = {};
     taming___.whitelistAll(swf);
   }
 
+  function findElByClass(domicile, name) {
+    var nodelist = domicile.document.getElementsByClassName(name);
+    return nodelist && nodelist[0] && domicile.feralNode(nodelist[0]);
+  }
+
   // Setup functions and callbacks for tamed Flash.
-  cajaFlash.init = function init(docWin, guestImps, tamingWin, domicile) {
+  cajaFlash.init = function init(
+      docWin, guestImps, tamingWin, domicile, guestWin)
+  {
     initCallbacks(docWin, guestImps, tamingWin, domicile);
     initSwfobject(docWin, guestImps, tamingWin, domicile);
+
+    // Called from html-emitter
+    function cajaHandleEmbed(params) {
+      var el = findElByClass(domicile, params.id);
+      if (!el) { return; }
+
+      // No src is a <noembed>
+      if (!params.src) {
+        el.parentNode.removeChild(el);
+        return;
+      }
+
+      el.id = domicile.suffix(params.id);
+      // TODO(felix8a): more args
+      guestImps.swfobject.embedSWF(
+        params.src, params.id, params.width, params.height);
+    }
+
+    var taming___ = tamingWin.___;
+
+    guestWin.cajaHandleEmbed = cajaHandleEmbed;
+    taming___.markFuncFreeze(cajaHandleEmbed, 'cajaHandleEmbed');
+    taming___.grantRead(guestWin, 'cajaHandleEmbed');
   };
 })();

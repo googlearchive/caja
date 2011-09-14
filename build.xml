@@ -82,10 +82,7 @@
     <pathelement path="${third_party}/java/gwt/gwt-dev.jar"/>
     <pathelement path="${third_party}/java/gwt/gwt-api-checker.jar"/>
     <pathelement path="${third_party}/java/gwt/gwt-servlet.jar"/>
-    <pathelement path="${third_party}/java/appengine/lib/user/appengine-api-1.0-sdk-1.3.1.jar"/>
-    <pathelement path="${third_party}/java/appengine/lib/user/appengine-jsr107cache-1.3.1.jar"/>
     <pathelement path="${third_party}/java/appengine/lib/user/jsr107cache-1.1.jar"/>
-    <pathelement path="${third_party}/java/appengine/lib/user/appengine-api-labs-1.3.1.jar"/>
     <pathelement path="${third_party}/java/appengine/lib/user/orm/geronimo-jpa_3.0_spec-1.1.1.jar"/>
     <pathelement path="${third_party}/java/appengine/lib/user/orm/jdo2-api-2.3-eb.jar"/>
     <pathelement path="${third_party}/java/jsonml/jsonml.jar"/>
@@ -537,7 +534,7 @@
     </junitreport>
   </target>
 
-  <target name="jars"
+  <target name="jars-no-src"
       depends="pluginc,MinifiedJs,CajolingServlet"
       description="Place all jars needed to run the cajoler under ${jars}">
     <copy todir="${jars}">
@@ -589,6 +586,9 @@
         <include name="js/json_sans_eval/json_sans_eval.js"/>
       </fileset>
     </jar>
+  </target>
+
+  <target name="jars" depends="jars-no-src">
     <jar destfile="${jars}/pluginc-src.jar" basedir="${src}"/>
   </target>
 

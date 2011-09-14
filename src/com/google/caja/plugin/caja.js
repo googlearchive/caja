@@ -940,11 +940,6 @@ var caja = (function () {
                     return divWindow.___.tamingFrames[pluginId].
                         plugin_dispatchToHandler___(pluginId, handler, args);
                   };
-              // TODO(felix8a): should be conditional on builderState.flash
-              var twc = tamingWindow.cajaFlash;
-              if (twc && twc.init) {
-                twc.init(divWindow, imports, tamingWindow, domicile);
-              }
             } else {
               imports = guestWindow.___.copy(guestWindow.___.sharedImports);
               domicile = null;
@@ -954,7 +949,8 @@ var caja = (function () {
             function enableFlash() {
               var twf = tamingWindow.cajaFlash;
               if (domicile && twf && twf.init) {
-                twf.init(divWindow, imports, tamingWindow, domicile);
+                twf.init(
+                  divWindow, imports, tamingWindow, domicile, guestWindow);
               }
             }
           

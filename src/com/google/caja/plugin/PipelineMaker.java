@@ -20,6 +20,7 @@ import com.google.caja.parser.quasiliteral.ModuleManager;
 import com.google.caja.plugin.stages.CheckForErrorsStage;
 import com.google.caja.plugin.stages.ConsolidateCodeStage;
 import com.google.caja.plugin.stages.DebuggingSymbolsStage;
+import com.google.caja.plugin.stages.RewriteFlashStage;
 import com.google.caja.plugin.stages.HtmlToBundleStage;
 import com.google.caja.plugin.stages.HtmlToJsStage;
 import com.google.caja.plugin.stages.InferFilePositionsStage;
@@ -159,7 +160,7 @@ public final class PipelineMaker {
       "opt+opentemplate", "to desugar open(Template(...)) calls.");
   public static final Planner.PlanState HTML_SAFE_STATIC = makeGoal(
       "html+safe+static",
-      "to output HTML.  Not exlusive with cajoled_module.");
+      "to output HTML.  Not exclusive with cajoled_module.");
   public static final Planner.PlanState CAJOLED_MODULES = makeInner(
       "cajoled_module");
   public static final Planner.PlanState ONE_CAJOLED_MODULE = makeGoal(
@@ -169,13 +170,15 @@ public final class PipelineMaker {
       "instead of cajoled_module if you want debug symbols.");
   public static final Planner.PlanState SANITY_CHECK = makeGoal(
       "sanity_check", "reports errors due to ERRORs, not just FATAL_ERRORS.");
+  public static final Planner.PlanState REWROTE_FLASH = makeGoal(
+      "rewrote_flash", "marker indicating flash embeds were rewritten");
 
   /** The default preconditions for a {@code PluginCompiler} pipeline. */
   public static final Planner.PlanState DEFAULT_PRECONDS = CSS
       .with(HTML).with(JS);
   /** The default goals of a {@code PluginCompiler} pipeline. */
   public static final Planner.PlanState DEFAULT_GOALS = ONE_CAJOLED_MODULE
-      .with(HTML_SAFE_STATIC).with(SANITY_CHECK);
+      .with(HTML_SAFE_STATIC).with(SANITY_CHECK).with(REWROTE_FLASH);
 
   private static List<Tool> makeTools(Planner.PlanState goals) {
     return Arrays.asList(
@@ -263,7 +266,14 @@ public final class PipelineMaker {
             out.add(new CheckForErrorsStage());
           }
         }.given(goals).exceptNotGiven(SANITY_CHECK)
-         .produces(goals).produces(SANITY_CHECK)
+         .produces(goals).produces(SANITY_CHECK),
+         
+        new Tool() {
+          public void operate(PlanInputs in, List<Pipeline.Stage<Jobs>> out) {
+            out.add(new RewriteFlashStage());
+          }
+        }.given(HTML_STATIC)
+         .produces(HTML_STATIC).produces(JS).produces(REWROTE_FLASH)
     );
   }
 

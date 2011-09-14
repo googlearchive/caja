@@ -1,35 +1,21 @@
-<p>Caja provides a tamed version of <code>swfobject.embedSWF()</code>.
-Direct use of &lt;embed&gt; and &lt;object&gt; are not supported yet.</p>
+<p>This example demonstrates Caja's tamed version of
+<code>swfobject.embedSWF()</code>.</p>
+
+<p>Examples using &lt;embed&gt; and &lt;object&gt; are in "Flash
+Embed 2".</p>
 
 <p>Caja does not allow Flash apps to have direct script access.
 <code>ExternalInterface.call()</code> is denied by Flash's security sandbox.</p>
 
 <p>However, Flash apps can use Caja's Flash bridge API instead.</p>
 
-<style>
-  .module { border: 1px solid #ccc; }
-  .module { float: left; }
-  .module { padding: 8px; }
-  .module { margin: 8px 0 8px 8px; }
-  .title  { font-size: larger; }
-  .title  { margin: 8px 0; }
-  p { margin: 0 8px 1em 8px; }
-  p { max-width: 40em; }
-</style>
-
 <div class="module">
-  <div class="title">
-    BridgeOblivious.swf
-    (<a id="bridgeObliviousSource">source</a>)
-  </div>
+  <h4>BridgeOblivious.swf (<a id="bridgeObliviousSource">source</a>)</h4>
   <div id="bridgeOblivious">(BridgeOblivious.swf replaces this)</div>
 </div>
 
 <div class="module">
-  <div class="title">
-    BridgeAware.swf
-    (<a id="bridgeAwareSource">source</a>)
-  </div>
+  <h4>BridgeAware.swf (<a id="bridgeAwareSource">source</a>)</h4>
   <div id="bridgeAware">(BridgeAware.swf replaces this)</div>
   <div>
     <button onclick="callFlash()">Call Flash from JS</button>
@@ -39,9 +25,7 @@ Direct use of &lt;embed&gt; and &lt;object&gt; are not supported yet.</p>
 <div style="clear:both"></div>
 
 <div class="module yt-module">
-  <div class="title">
-    YouTube video
-  </div>
+  <h4>YouTube video</h4>
   <div id="youtube">(YouTube video replaces this)</div>
 </div>
 
@@ -50,7 +34,7 @@ Direct use of &lt;embed&gt; and &lt;object&gt; are not supported yet.</p>
   // because Flash sandboxing requires the SWF to be on
   // a site different from the container.
 
-  var rev = '4584';
+  var rev = '4598';
   var demoDir = '/trunk/src/com/google/caja/flash/tests/';
   var rawLocation =
       'http://google-caja.googlecode.com/svn-history/r' + rev + demoDir;
@@ -60,13 +44,13 @@ Direct use of &lt;embed&gt; and &lt;object&gt; are not supported yet.</p>
 
   swfobject.embedSWF(
       rawLocation + 'BridgeOblivious.swf',
-      'bridgeOblivious', '200', '300');
+      'bridgeOblivious', '350', '300');
   document.getElementById('bridgeObliviousSource').href =
       prettyLocation + 'BridgeOblivious.mxml?r=' + rev;
 
   swfobject.embedSWF(
       rawLocation + 'BridgeAware.swf',
-      'bridgeAware', '200', '300');
+      'bridgeAware', '350', '300');
   document.getElementById('bridgeAwareSource').href =
       prettyLocation + 'BridgeAware.mxml?r=' + rev;
 
@@ -83,3 +67,20 @@ Direct use of &lt;embed&gt; and &lt;object&gt; are not supported yet.</p>
     o.message('call Flash from JS ' + (counter++));
   }
 </script>
+
+<style>
+  .module {
+    background: #eee;
+    border: 1px solid #ccc;
+    float: left;
+    margin: 0 9px 9px 0;
+    padding: 9px;
+  }
+  h4 {
+    margin-top: 0;
+  }
+  p {
+    margin: 0 9px 1em 0;
+    max-width: 40em;
+  }
+</style>

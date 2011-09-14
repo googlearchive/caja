@@ -60,7 +60,7 @@ import org.w3c.dom.Text;
  * Produces safe static HTML from a DOM tree that has been compiled by the
  * {@link TemplateCompiler}.
  * This class emits two parse trees: safe HTML that is safe stand-alone, and
- * a number of blocks of Valija/Cajita which will add dynamic attributes to the
+ * a number of blocks of synthetic JS which will add dynamic attributes to the
  * static HTML interspersed with extracted scripts.
  *
  * <h3>Glossary</h3>

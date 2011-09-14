@@ -298,6 +298,12 @@ function HtmlEmitter(makeDOMAccessible, base, opt_domicile, opt_guestGlobal) {
     return this;
   }
 
+  function handleEmbed(params) {
+    if (!opt_guestGlobal) { return; }
+    if (!opt_guestGlobal.cajaHandleEmbed) { return; }
+    opt_guestGlobal.cajaHandleEmbed(params);
+  }
+
   this.byId = byId;
   this.attach = attach;
   this.discard = discard;
@@ -306,6 +312,7 @@ function HtmlEmitter(makeDOMAccessible, base, opt_domicile, opt_guestGlobal) {
   this.signalLoaded = signalLoaded;
   this.setAttr = bridal.setAttribute;
   this.addBodyClasses = addBodyClasses;
+  this.handleEmbed = handleEmbed;
 
   (function (domicile) {
     if (!domicile || domicile.writeHook) { return; }
