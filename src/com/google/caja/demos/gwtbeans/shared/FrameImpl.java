@@ -38,16 +38,19 @@ import com.google.gwt.user.client.rpc.AsyncCallback;
     this.frame = frame;
   }
 
+  @Override
   public native Frame cajoled(String uri, String js, String html) /*-{
     (this.@com.google.caja.demos.gwtbeans.shared.FrameImpl::frame).cajoled(uri, js, html);
     return this;
   }-*/;
 
+  @Override
   public native Frame code(String uri, String mimeType, String content) /*-{
     (this.@com.google.caja.demos.gwtbeans.shared.FrameImpl::frame).code(uri, mimeType, content);
     return this;
   }-*/;
     
+  @Override
   public Frame api(Map<String, JavaScriptObject> api) {
     JavaScriptObject apiJso = JavaScriptObject.createObject();
     for (String k : api.keySet()) {
@@ -56,19 +59,23 @@ import com.google.gwt.user.client.rpc.AsyncCallback;
     return api(apiJso);
   }
   
+  @Override
   public native Frame api(JavaScriptObject api) /*-{
     (this.@com.google.caja.demos.gwtbeans.shared.FrameImpl::frame).api(api);
     return this;
   }-*/;
 
+  @Override
   public JavaScriptObject getNative() { return frame; }
 
   private static native void addToObject(JavaScriptObject o, String key, JavaScriptObject value) /*-{
     o[key] = value;
   }-*/;
     
+  @Override
   public void run(final AsyncCallback<JavaScriptObject> callback) {
     runNative(new JsoCb() {
+      @Override
       public void cb(JavaScriptObject jso) {
         if (callback != null) { callback.onSuccess(jso); }
       }

@@ -29,6 +29,7 @@ public class Caja {
 
   public static void load(Element element, JavaScriptObject uriPolicy, final AsyncCallback<Frame> callback) {
     loadNative(element, uriPolicy, new FrameCb() {
+      @Override
       public void cb(JavaScriptObject frame) {
         callback.onSuccess(new FrameImpl(frame));
       }

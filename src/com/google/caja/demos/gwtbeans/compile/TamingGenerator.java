@@ -20,10 +20,7 @@ import java.util.List;
 import java.util.Set;
 
 import com.google.caja.demos.gwtbeans.shared.AbstractTaming;
-import com.google.caja.demos.gwtbeans.shared.ElementTaming;
-import com.google.caja.demos.gwtbeans.shared.ElementTamingImpl;
 import com.google.caja.demos.gwtbeans.shared.Frame;
-import com.google.caja.demos.gwtbeans.shared.HasTaming;
 import com.google.caja.demos.gwtbeans.shared.Taming;
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.TokenConsumer;
@@ -41,7 +38,7 @@ import com.google.caja.reporting.RenderContext;
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.core.client.JavaScriptObject;
 import com.google.gwt.core.ext.BadPropertyValueException;
-import com.google.gwt.core.ext.Generator;
+import com.google.gwt.core.ext.ConfigurationProperty;
 import com.google.gwt.core.ext.GeneratorContext;
 import com.google.gwt.core.ext.TreeLogger;
 import com.google.gwt.core.ext.TreeLogger.Type;
@@ -54,9 +51,8 @@ import com.google.gwt.core.ext.typeinfo.JType;
 import com.google.gwt.core.ext.typeinfo.TypeOracle;
 import com.google.gwt.core.ext.typeinfo.JPrimitiveType;
 import com.google.gwt.dev.util.collect.HashSet;
-import com.google.gwt.dom.client.Element;
 
-public class TamingGenerator extends Generator {
+public class TamingGenerator {
   
   private static final String PROXY_COMMON_INTERFACE = Taming.class.getCanonicalName();
   private static final String PROXY_COMMON_BASE_CLASS = AbstractTaming.class.getCanonicalName();
@@ -64,18 +60,17 @@ public class TamingGenerator extends Generator {
   private static final String JSO_CLASS = JavaScriptObject.class.getCanonicalName();
   private static final String GWT_CLASS = GWT.class.getCanonicalName();
   private static final String UNDEFINED = "undefined";
-  private static final String ELEMENT_CLASS = Element.class.getCanonicalName();  
-  private static final String ELEMENT_PROXY_CLASS = ElementTaming.class.getCanonicalName();
-  private static final String ELEMENT_PROXY_IMPL_CLASS = ElementTamingImpl.class.getCanonicalName();
   private static final String PROP_USER_AGENT = "user.agent";
+  private static final String GWT_BEAN_INFO_INTROSPECTOR_CLASS_NAME_PROP = "com.google.caja.demos.gwtbeans.introspector";
+  private static final String DEFAULT_GWT_BEAN_INFO_CLASS_NAME = com.google.caja.demos.gwtbeans.compile.DefaultGwtBeanIntrospectorImpl.class.getCanonicalName();  
   
-  private class ProxyMeta {
-    private String proxyImplTypeName;
+  private class TamingMeta {
+    private String tamingImplTypeName;
     private Set<JClassType> toWrap = new HashSet<JClassType>();
     private Set<JClassType> toUnwrap = new HashSet<JClassType>();    
 
-    public ProxyMeta(String proxyImplTypeName) {
-      this.proxyImplTypeName = proxyImplTypeName;
+    public TamingMeta(String proxyImplTypeName) {
+      this.tamingImplTypeName = proxyImplTypeName;
     }
     
     public Reference getTypeWrapperAccessor(TypeOracle to, JClassType beanType) {
@@ -83,7 +78,7 @@ public class TamingGenerator extends Generator {
       return new Reference(
           new Identifier(
               FilePosition.UNKNOWN,
-              "@" + proxyImplTypeName + "::" + getTypeWrapperMethodName(beanType) + "(" + to.findType(FRAME_CLASS).getJNISignature() + beanType.getJNISignature() + ")"));
+              "@" + tamingImplTypeName + "::" + getTypeWrapperMethodName(beanType) + "(" + to.findType(FRAME_CLASS).getJNISignature() + beanType.getJNISignature() + ")"));
     }
     
     public Reference getTypeUnwrapperAccessor(TypeOracle to, JClassType beanType) {
@@ -91,7 +86,7 @@ public class TamingGenerator extends Generator {
       return new Reference(
           new Identifier(
               FilePosition.UNKNOWN,
-              "@" + proxyImplTypeName + "::" + getTypeUnwrapperMethodName(beanType) + "(" + to.findType(FRAME_CLASS).getJNISignature() + to.findType(JSO_CLASS).getJNISignature() + ")"));
+              "@" + tamingImplTypeName + "::" + getTypeUnwrapperMethodName(beanType) + "(" + to.findType(FRAME_CLASS).getJNISignature() + to.findType(JSO_CLASS).getJNISignature() + ")"));
     }
     
     public Set<JClassType> getToWrap() {
@@ -103,60 +98,46 @@ public class TamingGenerator extends Generator {
     }
   }
   
-  @Override
-  public String generate(
-      TreeLogger logger,
-      GeneratorContext context,
-      String proxyTypeName)
-      throws UnableToCompleteException {
-    try {
-      return generateImpl(logger, context, proxyTypeName);
-    } catch (UnableToCompleteException e) {
-      logger.log(Type.ERROR, e.toString());
-      e.printStackTrace(System.err);
-      throw e;
-    } catch (Throwable e) {
-      logger.log(Type.ERROR, e.toString());
-      e.printStackTrace(System.err);
-      throw new UnableToCompleteException();
-    }
-  }
+  private final TreeLogger logger;
+  private final GeneratorContext context;
+  private final String tamingInterfaceName;
   
-  private String generateImpl(
+  public TamingGenerator(
       TreeLogger logger,
       GeneratorContext context,
-      String proxyTypeName)
-      throws UnableToCompleteException, BadPropertyValueException {
-    if (proxyTypeName.equals(ELEMENT_PROXY_CLASS)) {
-      return ELEMENT_PROXY_IMPL_CLASS;
-    }
-
+      String tamingInterfaceName) {
+    this.logger = logger;
+    this.context = context;
+    this.tamingInterfaceName = tamingInterfaceName;
+  }  
+  
+  public String generate() throws UnableToCompleteException {
     TypeOracle to = context.getTypeOracle();
     
-    JClassType proxyType = to.findType(proxyTypeName);
+    JClassType proxyType = to.findType(tamingInterfaceName);
 
     if (proxyType == null) {
-      logger.log(Type.ERROR, "Taming type " + proxyTypeName + " not found in source path");
+      logger.log(Type.ERROR, "Taming type " + tamingInterfaceName + " not found in source path");
       throw new UnableToCompleteException();
     }
     
     if (proxyType.isInterface() == null) {
-      logger.log(Type.ERROR, "Taming type " + proxyTypeName + " must must be an interface");
+      logger.log(Type.ERROR, "Taming type " + tamingInterfaceName + " must must be an interface");
       throw new UnableToCompleteException();      
     }
     
     if (proxyType.isGenericType() != null) {
-      logger.log(Type.ERROR, "Taming type " + proxyTypeName + " cannot be generic");
+      logger.log(Type.ERROR, "Taming type " + tamingInterfaceName + " cannot be generic");
       throw new UnableToCompleteException();      
     }
     
     if (proxyType.getImplementedInterfaces().length != 1) {
-      logger.log(Type.ERROR, "Taming type " + proxyTypeName + " must only extend one interface, " + PROXY_COMMON_INTERFACE);
+      logger.log(Type.ERROR, "Taming type " + tamingInterfaceName + " must only extend one interface, " + PROXY_COMMON_INTERFACE);
       throw new UnableToCompleteException();      
     }
     
     if (proxyType.getImplementedInterfaces()[0].isParameterized() == null) {
-      logger.log(Type.ERROR, "Taming type " + proxyTypeName + " must extend " + PROXY_COMMON_INTERFACE + " parameterized by bean class or interface");
+      logger.log(Type.ERROR, "Taming type " + tamingInterfaceName + " must extend " + PROXY_COMMON_INTERFACE + " parameterized by bean class or interface");
       throw new UnableToCompleteException();      
     }
     
@@ -165,36 +146,41 @@ public class TamingGenerator extends Generator {
     JClassType proxySuperRaw = to.findType(PROXY_COMMON_INTERFACE).isGenericType().getRawType();
     
     if (proxySuperParameterized.getRawType() != proxySuperRaw) {
-      logger.log(Type.ERROR, "Taming type " + proxyTypeName + " must extend " + PROXY_COMMON_INTERFACE);
+      logger.log(Type.ERROR, "Taming type " + tamingInterfaceName + " must extend " + PROXY_COMMON_INTERFACE);
       throw new UnableToCompleteException();      
     }
 
     JClassType beanType = proxySuperParameterized.getTypeArgs()[0];
     String beanTypeName = beanType.getParameterizedQualifiedSourceName();
     
-    if (beanType.getAnnotation(HasTaming.class) == null) {
-      logger.log(Type.ERROR, "Bean type " + beanTypeName + " referred to by proxy type " + proxyTypeName + " must have an annotation of type " + HasTaming.class.getCanonicalName());
-      throw new UnableToCompleteException();      
-    }
-
     if (beanType.isGenericType() != null) {
       logger.log(Type.ERROR, "Bean type " + beanTypeName + " may not be generic");
       throw new UnableToCompleteException();      
     }
     
     if (beanType.isInterface() != null) {
-      logger.log(Type.ERROR, "Bean type " + beanTypeName + " may not be an interface because GWT RTTI (java.lang.Class) does not support getInterfaces()");
+      logger.log(Type.ERROR, 
+          "Bean type " + beanTypeName + 
+          " may not be an interface because GWT RTTI (java.lang.Class)" +
+          " does not support getInterfaces()");
       throw new UnableToCompleteException();      
     }
     
-    GwtBeanInfo beanInfo;
-    try {
-      beanInfo = new GwtBeanInfo(beanType);
-    } catch (Exception e) {
-      logger.log(Type.ERROR, e.getMessage());
-      throw new UnableToCompleteException();
-    }
+    GwtBeanIntrospector introspector = getIntrospector(context, logger);
+    GwtBeanInfo beanInfo = introspector.create(context, logger, beanType);
     
+    if (beanInfo.getTamingInterface() != proxyType) {
+      logger.log(Type.ERROR,
+          "Taming type " + proxyType +
+          " claims it is the taming for bean class " + beanType +
+          " but BeanInfo says the taming is " + beanInfo.getTamingInterface());
+      throw new UnableToCompleteException();      
+    }
+
+    if (beanInfo.getTamingImplementation() != null) {
+      return beanInfo.getTamingImplementation().getQualifiedSourceName();
+    }
+
     String userAgent;
     try {
       userAgent = context.getPropertyOracle().getSelectionProperty(logger,
@@ -211,11 +197,11 @@ public class TamingGenerator extends Generator {
     String proxyTypeShortName = proxyType.getSimpleSourceName();
     String proxyTypePackageName = proxyType.getPackage().getName();
 
-    String proxyImplTypeName = proxyTypeName + userAgent + "Impl";    
+    String proxyImplTypeName = tamingInterfaceName + userAgent + "Impl";    
     String proxyImplTypeShortName = proxyTypeShortName + userAgent + "Impl";
 
-    ProxyMeta pm = new ProxyMeta(proxyImplTypeName);
-    ParseTreeNode jsBody = makeJsBody(to, pm, beanInfo);
+    TamingMeta pm = new TamingMeta(proxyImplTypeName);
+    ParseTreeNode jsBody = makeJsBody(introspector, pm, beanInfo);
     
     StringBuilder sb = new StringBuilder();
     sb.append(
@@ -237,10 +223,10 @@ public class TamingGenerator extends Generator {
         "  /*-{\n" +
         "    " + render(jsBody) + "\n" +
         "  }-*/;\n" +
-        "  " + getWrapperUnwrapperMethods(to, pm) + "\n" +
+        "  " + getWrapperUnwrapperMethods(introspector, pm) + "\n" +
         "}\n");
     
-    System.err.println("========== generate(" + proxyTypeName + ") ====================");
+    System.err.println("========== generate(" + tamingInterfaceName + ") ====================");
     System.err.println(sb.toString());
     
     PrintWriter pw = context.tryCreate(logger, proxyTypePackageName, proxyImplTypeShortName);
@@ -250,31 +236,21 @@ public class TamingGenerator extends Generator {
     return proxyImplTypeName;
   }
   
-  private String getWrapperUnwrapperMethods(TypeOracle to, ProxyMeta pm) {
+  private String getWrapperUnwrapperMethods(GwtBeanIntrospector introspector, TamingMeta pm) 
+      throws UnableToCompleteException {
     StringBuilder sb = new StringBuilder();
     for (JClassType beanType : pm.getToWrap()) {
-      sb.append(getWrapperMethod(to, beanType)).append("\n");
+      sb.append(getWrapperMethod(introspector, beanType)).append("\n");
     }
     for (JClassType beanType : pm.getToUnwrap()) {    
-      sb.append(getUnwrapperMethod(to, beanType)).append("\n");      
+      sb.append(getUnwrapperMethod(introspector, beanType)).append("\n");      
     }
     return sb.toString();
   }
 
-  private JClassType getProxyTypeForBean(TypeOracle to, JClassType beanType) {
-    if (beanType == to.findType(ELEMENT_CLASS)) {
-      return to.findType(ELEMENT_PROXY_CLASS);
-    }
-    if (beanType.getAnnotation(HasTaming.class) == null) {
-      // TODO(ihab): Thread logger thru and log error properly
-      throw new RuntimeException("Bean type " + beanType.getQualifiedSourceName() + " must have an annotation of type " + HasTaming.class.getCanonicalName());
-    }
-    HasTaming hp = beanType.getAnnotation(HasTaming.class);
-    return to.findType(hp.typeName());
-  }
-  
-  private String getWrapperMethod(TypeOracle to, JClassType beanType) {
-    JClassType proxyType = getProxyTypeForBean(to, beanType);
+  private String getWrapperMethod(GwtBeanIntrospector introspector, JClassType beanType) 
+      throws UnableToCompleteException {
+    JClassType ti = getTamingInterfaceOrFail(introspector, beanType);    
     return
         "public static " + JSO_CLASS + "\n" +
         "    " + getTypeWrapperMethodName(beanType) + "\n" +
@@ -285,15 +261,16 @@ public class TamingGenerator extends Generator {
         "  {\n" +
         "    return \n" +
         "        (\n" +        
-        "            (" + proxyType.getParameterizedQualifiedSourceName() + ")\n" +
-        "             " + GWT_CLASS + ".create(" + proxyType.getParameterizedQualifiedSourceName() + ".class)\n" +
+        "            (" + ti.getParameterizedQualifiedSourceName() + ")\n" +
+        "             " + GWT_CLASS + ".create(" + ti.getParameterizedQualifiedSourceName() + ".class)\n" +
         "        )\n" +
         "        .getJso(m, bean);\n" +        
         "  }\n";        
   }
   
-  private String getUnwrapperMethod(TypeOracle to, JClassType beanType) {
-    JClassType proxyType = getProxyTypeForBean(to, beanType);
+  private String getUnwrapperMethod(GwtBeanIntrospector introspector, JClassType beanType) 
+      throws UnableToCompleteException {
+    JClassType ti = getTamingInterfaceOrFail(introspector, beanType);
     return
         "public static " + beanType.getQualifiedSourceName() + "\n" +
         "    " + getTypeUnwrapperMethodName(beanType) + "\n" +
@@ -304,23 +281,34 @@ public class TamingGenerator extends Generator {
         "  {\n" +
         "    return \n" +
         "        (\n" +        
-        "            (" + proxyType.getParameterizedQualifiedSourceName() + ")\n" +
-        "             " + GWT_CLASS + ".create(" + proxyType.getParameterizedQualifiedSourceName() + ".class)\n" +
+        "            (" + ti.getParameterizedQualifiedSourceName() + ")\n" +
+        "             " + GWT_CLASS + ".create(" + ti.getParameterizedQualifiedSourceName() + ".class)\n" +
         "        )\n" +
         "        .getBean(m, jso);\n" +        
         "  }\n";        
   }
   
-  private ParseTreeNode makeJsBody(TypeOracle to, ProxyMeta pm, GwtBeanInfo beanInfo) {
+  private JClassType getTamingInterfaceOrFail(GwtBeanIntrospector introspector, JClassType beanType) 
+      throws UnableToCompleteException {
+    JClassType ti = introspector.create(context, logger, beanType).getTamingInterface();
+    if (ti == null) {
+      logger.log(Type.ERROR, "Unable to proceed because no taming interface found for bean type " + beanType);
+      throw new UnableToCompleteException();
+    }
+    return ti;
+  }
+  
+  private ParseTreeNode makeJsBody(GwtBeanIntrospector introspector, TamingMeta pm, GwtBeanInfo beanInfo) 
+      throws UnableToCompleteException {
     List<StringLiteral> keys = new ArrayList<StringLiteral>();
     List<Expression> vals = new ArrayList<Expression>();
     for (JMethod m : beanInfo.getMethods()) {
       keys.add(new StringLiteral(FilePosition.UNKNOWN, m.getName()));
-      vals.add(getPropertyDescriptorForMethod(to, pm, m));
+      vals.add(getPropertyDescriptorForMethod(introspector, pm, m));
     }
-    for (GwtBeanInfo.PropertyDescriptor pd : beanInfo.getProperties()) {
+    for (GwtBeanPropertyDescriptor pd : beanInfo.getProperties()) {
       keys.add(new StringLiteral(FilePosition.UNKNOWN, pd.name));
-      vals.add(getPropertyDescriptorForProperty(to, pm, pd));      
+      vals.add(getPropertyDescriptorForProperty(introspector, pm, pd));      
     }
     return QuasiBuilder.substV(
         "var w = $wnd.caja.iframe.contentWindow;" +
@@ -329,7 +317,8 @@ public class TamingGenerator extends Generator {
         "vals", new ParseTreeNodeContainer(vals));
   }
   
-  private Expression getPropertyDescriptorForMethod(TypeOracle to, ProxyMeta pm, JMethod m) {
+  private Expression getPropertyDescriptorForMethod(GwtBeanIntrospector introspector, TamingMeta pm, JMethod m) 
+      throws UnableToCompleteException {
     List<FormalParam> formals = new ArrayList<FormalParam>();
     List<Reference> actuals = new ArrayList<Reference>();
     for (JParameter p : m.getParameters()) {
@@ -340,22 +329,22 @@ public class TamingGenerator extends Generator {
     if (JPrimitiveType.VOID == m.getReturnType()) {
       method = (Expression) QuasiBuilder.substV(
           "function (@formals*) { @unwrapStatements*; bean.@methodRef(@actuals*); }",
-          "unwrapStatements", getUnwrapStatements(to, pm, m.getParameters()),
+          "unwrapStatements", getUnwrapStatements(introspector, pm, m.getParameters()),
           "methodRef", getMethodAccessor(m),
           "formals", new ParseTreeNodeContainer(formals),
           "actuals", new ParseTreeNodeContainer(actuals));
-    } else if (isGwtPrimitiveType(to, m.getReturnType())) {
+    } else if (introspector.create(context, logger, m.getReturnType()).isTamingPrimitiveType()) {
       method = (Expression) QuasiBuilder.substV(
           "function (@formals*) { @unwrapStatements*; return bean.@methodRef(@actuals*); })",
-          "unwrapStatements", getUnwrapStatements(to, pm, m.getParameters()),          
+          "unwrapStatements", getUnwrapStatements(introspector, pm, m.getParameters()),          
           "methodRef", getMethodAccessor(m),
           "formals", new ParseTreeNodeContainer(formals),
           "actuals", new ParseTreeNodeContainer(actuals));
     } else {
       method = (Expression) QuasiBuilder.substV(
           "function (@formals*) { @unwrapStatements*; return @proxyWrapAccessor(bean.@methodRef(@actuals*)); }",
-          "unwrapStatements", getUnwrapStatements(to, pm, m.getParameters()),
-          "proxyWrapAccessor", pm.getTypeWrapperAccessor(to, m.getReturnType().isClassOrInterface()),
+          "unwrapStatements", getUnwrapStatements(introspector, pm, m.getParameters()),
+          "proxyWrapAccessor", pm.getTypeWrapperAccessor(context.getTypeOracle(), m.getReturnType().isClassOrInterface()),
           "methodRef", getMethodAccessor(m),
           "formals", new ParseTreeNodeContainer(formals),
           "actuals", new ParseTreeNodeContainer(actuals));
@@ -370,24 +359,26 @@ public class TamingGenerator extends Generator {
         "method", method);
   }
 
-  private ParseTreeNodeContainer getUnwrapStatements(TypeOracle to, ProxyMeta pm, JParameter[] params) {
+  private ParseTreeNodeContainer getUnwrapStatements(GwtBeanIntrospector introspector, TamingMeta pm, JParameter[] params) 
+      throws UnableToCompleteException {
     List<ExpressionStmt> stmts = new ArrayList<ExpressionStmt>();
     for (JParameter p : params) {
-      if (!isGwtPrimitiveType(to, p.getType())) {
+      if (!introspector.create(context, logger, p.getType()).isTamingPrimitiveType()) {
         stmts.add(
             new ExpressionStmt(
                 (Expression) QuasiBuilder.substV(
                     "@argRef = @proxyUnwrapAccessor(m, @argRef)",
-                    "proxyUnwrapAccessor", pm.getTypeUnwrapperAccessor(to, p.getType().isClassOrInterface()),
+                    "proxyUnwrapAccessor", pm.getTypeUnwrapperAccessor(context.getTypeOracle(), p.getType().isClassOrInterface()),
                     "argRef", new Reference(new Identifier(FilePosition.UNKNOWN, p.getName())))));
       }
     }
     return new ParseTreeNodeContainer(stmts);
   }
   
-  private Expression getPropertyDescriptorForProperty(TypeOracle to, ProxyMeta pm, GwtBeanInfo.PropertyDescriptor pd) {
+  private Expression getPropertyDescriptorForProperty(GwtBeanIntrospector introspector, TamingMeta pm, GwtBeanPropertyDescriptor pd)
+      throws UnableToCompleteException {
     Expression get, set;
-    if (isGwtPrimitiveType(to, pd.type)) {
+    if (introspector.create(context, logger, pd.type).isTamingPrimitiveType()) {
       get = (pd.readMethod == null) ?
           new Reference(new Identifier(FilePosition.UNKNOWN, UNDEFINED)) :
           (Expression) QuasiBuilder.substV(
@@ -403,13 +394,13 @@ public class TamingGenerator extends Generator {
           new Reference(new Identifier(FilePosition.UNKNOWN, UNDEFINED)) :          
           (Expression) QuasiBuilder.substV(
               "w.___.makeDefensibleFunction(function () { return @proxyWrapAccessor(m, bean.@methodRef()); })",
-              "proxyWrapAccessor", pm.getTypeWrapperAccessor(to, pd.type.isClassOrInterface()),
+              "proxyWrapAccessor", pm.getTypeWrapperAccessor(context.getTypeOracle(), pd.type.isClassOrInterface()),
               "methodRef", getMethodAccessor(pd.readMethod));
       set = (pd.writeMethod == null) ?
           new Reference(new Identifier(FilePosition.UNKNOWN, UNDEFINED)) :          
           (Expression) QuasiBuilder.substV(
               "w.___.makeDefensibleFunction(function (v) { bean.@methodRef(@proxyUnwrapAccessor(m, v)); })",
-              "proxyUnwrapAccessor", pm.getTypeUnwrapperAccessor(to, pd.type.isClassOrInterface()),              
+              "proxyUnwrapAccessor", pm.getTypeUnwrapperAccessor(context.getTypeOracle(), pd.type.isClassOrInterface()),              
               "methodRef", getMethodAccessor(pd.writeMethod));
     }
     return (Expression) QuasiBuilder.substV(
@@ -425,29 +416,6 @@ public class TamingGenerator extends Generator {
   
   private Reference getMethodAccessor(JMethod m) {
     return new Reference(new Identifier(FilePosition.UNKNOWN, m.getJsniSignature()));
-  }
-  
-  /**
-   * Whether the supplied type is a valid GWT primitive type. 
-   */
-  private boolean isGwtPrimitiveType(TypeOracle to, JType type) {
-    // Note that we do not include GWT class Element in this list, though it is
-    // treated by GWT JSNI as a primitive. Instead, we hard-code an actual Taming
-    // class for class Element that does the necessary DOM taming.
-    return
-        (type instanceof JPrimitiveType) ||  // TODO(ihab.awad): |long| primitives are weird in GWT
-        (type == to.findType("java.lang.Number")) ||  // TODO(ihab.awad): |Number| has no direct instances, right?
-        (type == to.findType("java.lang.AtomicInteger")) ||  // TODO(ihab.awad): wtf is that?
-        (type == to.findType("java.lang.AtomicLong")) ||  // TODO(ihab.awad): |Long| objects are weird in GWT
-        (type == to.findType("java.lang.BigDecimal")) ||  // TODO(ihab.awad): |Long| objects are weird in GWT
-        (type == to.findType("java.lang.BigInteger")) ||  // TODO(ihab.awad): |Long| objects are weird in GWT
-        (type == to.findType("java.lang.Byte")) ||
-        (type == to.findType("java.lang.Double")) ||
-        (type == to.findType("java.lang.Float")) ||
-        (type == to.findType("java.lang.Integer")) ||
-        (type == to.findType("java.lang.Long")) ||  // TODO(ihab.awad): |Long| objects are weird in GWT
-        (type == to.findType("java.lang.Short")) ||
-        (type == to.findType("java.lang.String"));
   }
   
   private static String getTypeWrapperMethodName(JType beanType) {
@@ -471,5 +439,31 @@ public class TamingGenerator extends Generator {
         .withJsIdentiferSyntax(JsIdentifierSyntax.GWT));
     tc.noMoreTokens();
     return sb.toString();
+  }
+
+  private GwtBeanIntrospector getIntrospector(GeneratorContext context, TreeLogger logger)
+      throws UnableToCompleteException {
+    String introspectorClassName;
+    try {
+      ConfigurationProperty cp = context.getPropertyOracle()
+          .getConfigurationProperty(GWT_BEAN_INFO_INTROSPECTOR_CLASS_NAME_PROP);
+      if (cp.getValues().size() != 1) {
+        logger.log(Type.ERROR, "Must specify exactly one value for property " + GWT_BEAN_INFO_INTROSPECTOR_CLASS_NAME_PROP);
+        throw new UnableToCompleteException();
+      }
+      introspectorClassName = cp.getValues().get(0);
+    } catch (BadPropertyValueException e) {
+      introspectorClassName = DEFAULT_GWT_BEAN_INFO_CLASS_NAME;
+    }
+    if (introspectorClassName == null) {
+      introspectorClassName = DEFAULT_GWT_BEAN_INFO_CLASS_NAME;      
+    }
+    try {
+      return (GwtBeanIntrospector)
+          Class.forName(introspectorClassName).newInstance();
+    } catch (Exception e) {
+      logger.log(Type.ERROR, "Unable to construct GwtBeanIntrospector (" + introspectorClassName + "): " + e.toString());
+      throw new UnableToCompleteException();
+    }
   }
 }

@@ -18,7 +18,11 @@
 <module rename-to='gwtbeans'>
   <source path='shared'/>
 
-  <generate-with class="com.google.caja.demos.gwtbeans.compile.TamingGenerator">
+  <define-configuration-property
+      name="com.google.caja.demos.gwtbeans.introspector"
+      is_multi_valued="false"/>
+
+  <generate-with class="com.google.caja.demos.gwtbeans.compile.TamingGeneratorFacade">
     <when-type-assignable class="com.google.caja.demos.gwtbeans.shared.Taming" />
   </generate-with>
 </module>
