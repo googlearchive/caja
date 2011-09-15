@@ -22,7 +22,7 @@
  *
  * @author mikesamuel@gmail.com
  * @requires html4
- * @override window
+ * @overrides window
  * @provides html, html_sanitize
  */
 
