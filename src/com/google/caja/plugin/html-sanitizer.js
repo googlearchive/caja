@@ -225,7 +225,7 @@ var html = (function (html4) {
          + ')'
          )
       // End of tag captured in group 3.
-      + '|(/?>)'
+      + '|(\/?>)'
       // Don't capture cruft
       + '|[\\s\\S][^a-z\\s>]*)',
       'i');
@@ -237,7 +237,7 @@ var html = (function (html4) {
       // Comment, doctypes, and processing instructions not captured.
       + '|<\!--[\\s\\S]*?--\>|<!\\w[^>]*>|<\\?[^>*]*>'
       // '/' captured in group 2 for close tags, and name captured in group 3.
-      + '|<(/)?([a-z][a-z0-9]*)'
+      + '|<(\/)?([a-z][a-z0-9]*)'
       // Text captured in group 4.
       + '|([^<&>]+)'
       // Cruft captured in group 5.
@@ -475,7 +475,7 @@ var html = (function (html4) {
   var URI_SCHEME_RE = new RegExp(
         "^" +
       "(?:" +
-        "([^:/?#]+)" +         // scheme
+        "([^:\/?#]+)" +         // scheme
       ":)?"
       );
 
@@ -565,6 +565,9 @@ var html = (function (html4) {
 
 var html_sanitize = html.sanitize;
 
-// Exports for closure
-window['html'] = html;
-window['html_sanitize'] = html_sanitize;
+// Exports for closure compiler.  Note this file is also cajoled
+// for domado and run in an environment without 'window'
+if (typeof window !== 'undefined') {
+  window['html'] = html;
+  window['html_sanitize'] = html_sanitize;
+}
