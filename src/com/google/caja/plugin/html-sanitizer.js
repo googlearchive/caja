@@ -22,6 +22,7 @@
  *
  * @author mikesamuel@gmail.com
  * @requires html4
+ * @override window
  * @provides html, html_sanitize
  */
 
@@ -563,3 +564,7 @@ var html = (function (html4) {
 })(html4);
 
 var html_sanitize = html.sanitize;
+
+// Exports for closure
+window['html'] = html;
+window['html_sanitize'] = html_sanitize;
