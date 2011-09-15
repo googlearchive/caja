@@ -25,7 +25,6 @@ import com.google.caja.render.Concatenator;
 import com.google.caja.render.JsPrettyPrinter;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.Callback;
-import com.google.common.annotations.VisibleForTesting;
 import com.google.javascript.jscomp.jsonml.JsonML;
 import com.google.javascript.jscomp.jsonml.TagAttr;
 import com.google.javascript.jscomp.jsonml.TagType;
