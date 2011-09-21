@@ -47,6 +47,38 @@ public class ES53BrowserTest extends BrowserTestCase {
     runTestDriver("es53-test-cajajs-never-starts.js");
   }
 
+  public final void testWrongSupportingResources() {
+    closeWebDriver();  // Need a browser with an empty cache
+    // Placing the wrong resources files where caja.js is expecting them should
+    // cause it to never make progress in load() or whenReady() calls.
+    cajaStatic.link(
+        "/non-existent.js",
+        "/es53-guest-frame-" + bv + ".opt.js");
+    cajaStatic.link(
+        "/non-existent.js",
+        "/es53-taming-frame-" + bv + ".opt.js");
+    runTestDriver("es53-test-cajajs-never-starts.js");
+  }
+
+  public final void testAlternateLocationSupportingResources() {
+    closeWebDriver();  // Need a browser with an empty cache
+    // Placing the wrong resources files where caja.js is expecting them should
+    // cause it to never make progress in load() or whenReady() calls.
+    cajaStatic.link(
+        "/es53-guest-frame-" + bv + ".opt.js",
+        "/alternative/es53-guest-frame-" + bv + ".opt.js");        
+    cajaStatic.link(
+        "/es53-taming-frame-" + bv + ".opt.js",
+        "/alternative/es53-taming-frame-" + bv + ".opt.js");
+    cajaStatic.link(
+        "/non-existent.js",
+        "/es53-guest-frame-" + bv + ".opt.js");
+    cajaStatic.link(
+        "/non-existent.js",
+        "/es53-taming-frame-" + bv + ".opt.js");
+    runTestDriver("es53-test-cajajs-never-starts.js");
+  }
+
   public final void testVersionSkewTamingFrame() {
     closeWebDriver();  // Need a browser with an empty cache
     // Changing the version baked into the taming frame JS will cause a

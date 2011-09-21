@@ -175,9 +175,15 @@ var caja = (function () {
    *
    * Recognized configuration parameters are:
    *
-   *     cajaServer - whe URL to a Caja server. Except for unique cases,
+   *     @Deprecated
+   *     cajaServer - see 'server'.
+   *
+   *     server - the URL to a Caja server. Except for unique cases,
    *         this must be the server from which the "caja.js" script was
    *         sourced.
+   *
+   *     resources - the URL to a directory containing the resource files.
+   *         If not specified, it defaults to the value of 'server'.
    *
    *     debug - whether debugging is supported. At the moment, debug support
    *         means that the files loaded by Caja are un-minified to help with
@@ -196,7 +202,10 @@ var caja = (function () {
     if (!window.Object.FERAL_FRAME_OBJECT___) { initFeralFrame(window); }
 
     config = !config ? {} : config;
-    var cajaServer = String(config.cajaServer || 'http://caja.appspot.com/');
+    var cajaServer = String(config.server || config.cajaServer ||
+        'http://caja.appspot.com/');
+    var cajaResources = String(config.resources || cajaServer);
+
     var debug = Boolean(config.debug);
     var forceES5Mode = "forceES5Mode" in config
         ? Boolean(config.forceES5Mode) : undefined;
@@ -204,7 +213,7 @@ var caja = (function () {
     function loadCajaFrame(filename, callback) {
       var iframe = createIframe(filename);
 
-      var url = joinUrl(cajaServer,
+      var url = joinUrl(cajaResources,
           filename + '-' + cajaBuildVersion + (debug ? '.js' : '.opt.js'));
 
       // The particular interleaving of async events shown below has been found
