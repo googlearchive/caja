@@ -52,11 +52,11 @@ public class ES53BrowserTest extends BrowserTestCase {
     // Placing the wrong resources files where caja.js is expecting them should
     // cause it to never make progress in load() or whenReady() calls.
     cajaStatic.link(
-        "/non-existent.js",
-        "/es53-guest-frame-" + bv + ".opt.js");
+        "/" + bv + "/non-existent.js",
+        "/" + bv + "/es53-guest-frame.opt.js");
     cajaStatic.link(
-        "/non-existent.js",
-        "/es53-taming-frame-" + bv + ".opt.js");
+        "/" + bv + "/non-existent.js",
+        "/" + bv + "/es53-taming-frame.opt.js");
     runTestDriver("es53-test-cajajs-never-starts.js");
   }
 
@@ -65,17 +65,17 @@ public class ES53BrowserTest extends BrowserTestCase {
     // Placing the wrong resources files where caja.js is expecting them should
     // cause it to never make progress in load() or whenReady() calls.
     cajaStatic.link(
-        "/es53-guest-frame-" + bv + ".opt.js",
-        "/alternative/es53-guest-frame-" + bv + ".opt.js");        
+        "/" + bv + "/es53-guest-frame.opt.js",
+        "/" + bv + "/alternative/es53-guest-frame.opt.js");        
     cajaStatic.link(
-        "/es53-taming-frame-" + bv + ".opt.js",
-        "/alternative/es53-taming-frame-" + bv + ".opt.js");
+        "/" + bv + "/es53-taming-frame.opt.js",
+        "/" + bv + "/alternative/es53-taming-frame.opt.js");
     cajaStatic.link(
-        "/non-existent.js",
-        "/es53-guest-frame-" + bv + ".opt.js");
+        "/" + bv + "/non-existent.js",
+        "/" + bv + "/es53-guest-frame.opt.js");
     cajaStatic.link(
-        "/non-existent.js",
-        "/es53-taming-frame-" + bv + ".opt.js");
+        "/" + bv + "/non-existent.js",
+        "/" + bv + "/es53-taming-frame.opt.js");
     runTestDriver("es53-test-cajajs-never-starts.js");
   }
 
@@ -83,7 +83,7 @@ public class ES53BrowserTest extends BrowserTestCase {
     closeWebDriver();  // Need a browser with an empty cache
     // Changing the version baked into the taming frame JS will cause a
     // version mismatch error in caja.js.
-    addVersionRewrite("/es53-taming-frame-" + bv + ".opt.js", "0000");
+    addVersionRewrite("/" + bv + "/es53-taming-frame.opt.js", "0000");
     runTestDriver("es53-test-cajajs-version-skew-js-files.js");
   }
 
@@ -91,7 +91,7 @@ public class ES53BrowserTest extends BrowserTestCase {
     closeWebDriver();  // Need a browser with an empty cache
     // Changing the version baked into the guest frame JS will cause a
     // version mismatch error in caja.js.
-    addVersionRewrite("/es53-guest-frame-" + bv + ".opt.js", "0000");
+    addVersionRewrite("/" + bv + "/es53-guest-frame.opt.js", "0000");
     runTestDriver("es53-test-cajajs-version-skew-js-files.js", false);
     // TODO(kpreid): This test fails (does not detect skew) under ES5 mode,
     // since es53-guest-frame is not used. We should add version skew testing
@@ -105,13 +105,13 @@ public class ES53BrowserTest extends BrowserTestCase {
     // to compile the given content and return an error instead.
     addVersionRewrite("/caja.js", "0000");
     cajaStatic.link(
-        "/es53-guest-frame-" + bv + ".opt.js",
-        "/es53-guest-frame-0000.opt.js");
+        "/" + bv + "/es53-guest-frame.opt.js",
+        "/0000/es53-guest-frame.opt.js");
     cajaStatic.link(
-        "/es53-taming-frame-" + bv + ".opt.js",
-        "/es53-taming-frame-0000.opt.js");
-    addVersionRewrite("/es53-guest-frame-0000.opt.js", "0000");
-    addVersionRewrite("/es53-taming-frame-0000.opt.js", "0000");
+        "/" + bv + "/es53-taming-frame.opt.js",
+        "/0000/es53-taming-frame.opt.js");
+    addVersionRewrite("/0000/es53-guest-frame.opt.js", "0000");
+    addVersionRewrite("/0000/es53-taming-frame.opt.js", "0000");
     runTestDriver("es53-test-cajajs-version-skew-cajoler-response.js");
   }
 

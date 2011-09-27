@@ -751,9 +751,9 @@
       <input file="${src.caja}/plugin/html-sanitizer.js"/>
     </transform>
     <transform>
-      <output file="${lib.caja}/plugin/es53-taming-frame-${build.svnVersion}.opt.js"
+      <output file="${lib.caja}/plugin/es53-taming-frame.opt.js"
        language="javascript" renderer="minify"/>
-      <output file="${lib.caja}/plugin/es53-taming-frame-${build.svnVersion}.js"
+      <output file="${lib.caja}/plugin/es53-taming-frame.js"
        language="javascript" renderer="concat"/>
       <input file="${src.caja}/plugin/caja-iframe-build-version.js"/>
       <input file="${third_party}/js/json_sans_eval/json_sans_eval.js"/>
@@ -769,9 +769,9 @@
       <input file="${src.caja}/flash/caja-flash.js"/>
     </transform>
     <transform>
-      <output file="${lib.caja}/plugin/es53-guest-frame-${build.svnVersion}.opt.js"
+      <output file="${lib.caja}/plugin/es53-guest-frame.opt.js"
        language="javascript" renderer="minify"/>
-      <output file="${lib.caja}/plugin/es53-guest-frame-${build.svnVersion}.js"
+      <output file="${lib.caja}/plugin/es53-guest-frame.js"
        language="javascript" renderer="concat"/>
       <input file="${src.caja}/plugin/caja-iframe-build-version.js"/>
       <input file="${third_party}/js/json_sans_eval/json_sans_eval.js"/>
@@ -824,7 +824,7 @@
            do something clever. -->
       <!--<output file="${lib.caja}/plugin/ses-taming-frame.opt.js"
        language="javascript" renderer="minify"/>-->
-      <output file="${lib.caja}/plugin/ses-taming-frame-${build.svnVersion}.js"
+      <output file="${lib.caja}/plugin/ses-taming-frame.js"
        language="javascript" renderer="concat"/>
       <input file="${src.caja}/plugin/caja-iframe-build-version.js"/>
       <input file="${third_party}/js/json_sans_eval/json_sans_eval.js"/>
@@ -853,7 +853,7 @@
            do something clever. -->
       <!--<output file="${lib.caja}/plugin/ses-guest-frame.opt.js"
        language="javascript" renderer="minify"/>-->
-      <output file="${lib.caja}/plugin/ses-guest-frame-${build.svnVersion}.js"
+      <output file="${lib.caja}/plugin/ses-guest-frame.js"
        language="javascript" renderer="concat"/>
       <input file="${src.caja}/plugin/caja-iframe-build-version.js"/>
       <input file="${src.caja}/plugin/ses-iframe-init.js"/>
@@ -862,24 +862,15 @@
     </transform>
     <replace dir="${lib.caja}/plugin" propertyFile="${lib.caja}/reporting/buildInfo.properties" >
       <replacefilter token="%VERSION%" property="svnVersion" />
-      <include name="es53-taming-frame-${build.svnVersion}.opt.js" />
-      <include name="es53-taming-frame-${build.svnVersion}.js" />
-      <include name="es53-guest-frame-${build.svnVersion}.opt.js" />
-      <include name="es53-guest-frame-${build.svnVersion}.js" />
-      <include name="ses-guest-frame-${build.svnVersion}.opt.js" />
-      <include name="ses-guest-frame-${build.svnVersion}.js" />
-      <include name="ses-taming-frame-${build.svnVersion}.opt.js" />
-      <include name="ses-taming-frame-${build.svnVersion}.js" />
+      <include name="es53-taming-frame.opt.js" />
+      <include name="es53-taming-frame.js" />
+      <include name="es53-guest-frame.opt.js" />
+      <include name="es53-guest-frame.js" />
+      <include name="ses-guest-frame.opt.js" />
+      <include name="ses-guest-frame.js" />
+      <include name="ses-taming-frame.opt.js" />
+      <include name="ses-taming-frame.js" />
     </replace>
-    <!-- Copy frame files to un-versioned names for legacy clients -->
-    <copy file="${lib.caja}/plugin/es53-taming-frame-${build.svnVersion}.opt.js"
-          tofile="${lib.caja}/plugin/es53-taming-frame.opt.js"/>
-    <copy file="${lib.caja}/plugin/es53-taming-frame-${build.svnVersion}.js"
-          tofile="${lib.caja}/plugin/es53-taming-frame.js"/>
-    <copy file="${lib.caja}/plugin/es53-guest-frame-${build.svnVersion}.opt.js"
-          tofile="${lib.caja}/plugin/es53-guest-frame.opt.js"/>
-    <copy file="${lib.caja}/plugin/es53-guest-frame-${build.svnVersion}.js"
-          tofile="${lib.caja}/plugin/es53-guest-frame.js"/>
   </target>
 
   <target name="AllTests"
@@ -1183,19 +1174,24 @@
         <include name="cajita-module-orig.js"/>
         <include name="cajita-promise.js"/>
       </fileset>
+      <fileset dir="${lib.caja}/plugin">
+        <include name="caja.js"/>
+      </fileset>
+    </copy>
 
+    <mkdir dir="${war}/${build.svnVersion}" />
+    <copy todir="${war}/${build.svnVersion}">
       <!-- For iframe-based Caja loading - TODO(kpreid): this should become
            part of a "Caja server" package separate from the playground. -->
       <fileset dir="${lib.caja}/plugin">
-        <include name="caja.js"/>
-        <include name="es53-guest-frame-${build.svnVersion}.js"/>
-        <include name="es53-guest-frame-${build.svnVersion}.opt.js"/>
-        <include name="es53-taming-frame-${build.svnVersion}.js"/>
-        <include name="es53-taming-frame-${build.svnVersion}.opt.js"/>
-        <include name="ses-taming-frame-${build.svnVersion}.js"/>
-        <include name="ses-taming-frame-${build.svnVersion}.opt.js"/>
-        <include name="ses-guest-frame-${build.svnVersion}.js"/>
-        <include name="ses-guest-frame-${build.svnVersion}.opt.js"/>
+        <include name="es53-guest-frame.js"/>
+        <include name="es53-guest-frame.opt.js"/>
+        <include name="es53-taming-frame.js"/>
+        <include name="es53-taming-frame.opt.js"/>
+        <include name="ses-taming-frame.js"/>
+        <include name="ses-taming-frame.opt.js"/>
+        <include name="ses-guest-frame.js"/>
+        <include name="ses-guest-frame.opt.js"/>
       </fileset>
     </copy>
     <copy file="${third_party}/js/swfobject/src/swfobject.js"

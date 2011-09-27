@@ -214,7 +214,7 @@ var caja = (function () {
       var iframe = createIframe(filename);
 
       var url = joinUrl(cajaResources,
-          filename + '-' + cajaBuildVersion + (debug ? '.js' : '.opt.js'));
+          cajaBuildVersion + '/' + filename + (debug ? '.js' : '.opt.js'));
 
       // The particular interleaving of async events shown below has been found
       // necessary to get the right behavior on Firefox 3.6. Otherwise, the
