@@ -175,8 +175,13 @@ function useHTMLLogger(reportsElement, consoleElement) {
         var linkElement = appendNew(linksBlock, 'p');
         if (i === 0) { appendText(linkElement, 'See '); }
         var link = appendNew(linkElement, 'a');
+
+        // TODO(erights): Only until we have a good way to index
+        // directly into hg.ecmascript.org
+        var site = test.charAt(0) === 'S' ?
+            '+site%3Acode.google.com' : '+site%3Aes5conform.svn.codeplex.com';
         link.href = 'http://www.google.com/search?btnI=&q=' +
-                    encodeURIComponent(test) + '+site%3Acode.google.com';
+                    encodeURIComponent(test) + site;
         link.target = '_blank';
         appendText(link, 'Test ' + test);
       });
