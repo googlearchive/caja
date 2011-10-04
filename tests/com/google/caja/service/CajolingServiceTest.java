@@ -127,14 +127,12 @@ public class CajolingServiceTest extends ServiceTestCase {
     assertErrorMessage(result, "Build version error");
   }
 
-  public final void testMissingBuildVersion() throws Exception {
+  public final void testWithoutBuildVersion() throws Exception {
     registerUri("http://foo/bar.js", "foo()", "text/javascript");
     JSONObject result = requestGet(
         "?url=http://foo/bar.js&input-mime-type=text/javascript");
-    assertNull(result.get("js"));
-    assertNull(result.get("html"));
-    assertError(result);
-    assertErrorMessage(result, "Build version missing");
+    assertNotNull(result.get("js"));
+    assertNoError(result);
   }
 
   // Tests that POST-ing to the service works just as well as GET-ting from it.

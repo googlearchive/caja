@@ -133,11 +133,7 @@ public class CajolingService {
                               ContentHandlerArgs args,
                               MessageQueue mq) {
     String buildVersion = CajaArguments.BUILD_VERSION.get(args);
-    if (buildVersion == null) {
-      mq.addMessage(
-          ServiceMessageType.MISSING_BUILD_VERSION);
-      return null;
-    } else {
+    if (buildVersion != null) {
       boolean versionMatch =
           BuildInfo.getInstance().getBuildVersion().equals(buildVersion);
       if (!versionMatch) {
