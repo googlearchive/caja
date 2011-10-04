@@ -15,4 +15,6 @@ package com.google.caja.demos.playground.client.ui;
 
 import com.google.caja.demos.gwtbeans.shared.Taming;
 
-public interface BlivitTaming extends Taming<Blivit> {}
+public interface BlivitTaming extends Taming<Blivit> {
+  // Nothing added.
+}

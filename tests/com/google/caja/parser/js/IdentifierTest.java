@@ -58,16 +58,18 @@ public class IdentifierTest extends CajaTestCase {
   }
 
   private void parseY(String s) {
-    new Identifier(FilePosition.UNKNOWN, s);
+    @SuppressWarnings("unused")
+    Identifier id = new Identifier(FilePosition.UNKNOWN, s);
   }
 
   private void parseN(String s) {
+    Identifier id;
     try {
-      new Identifier(FilePosition.UNKNOWN, s);
-      fail("Identifier <" + s + "> should have been disallowed");
+      id = new Identifier(FilePosition.UNKNOWN, s);
     } catch (Exception e) {
-      // pass
+      return;
     }
+    fail("Identifier <" + id + "> should have been disallowed");
   }
 
   public final void testParse() throws Exception {
@@ -84,11 +86,15 @@ public class IdentifierTest extends CajaTestCase {
     final Object[] result = new Object[2];
     result[1] = "";
     result[0] = (new RenderContext(new TokenConsumer() {
-      @Override public void mark(@Nullable FilePosition pos) {}
+      @Override public void mark(@Nullable FilePosition pos) {
+        // Noop.
+      }
       @Override public void consume(String text) {
         result[1] = result[1] + text;
       }
-      @Override public void noMoreTokens() {}
+      @Override public void noMoreTokens() {
+        // Noop.
+      }
     })).withJsIdentiferSyntax(s);
     return result;
   }
@@ -135,7 +141,7 @@ public class IdentifierTest extends CajaTestCase {
     renderN("@foo", JsIdentifierSyntax.GWT);
     renderY("@a.b.Foo::bar(Ljava/lang/String;)", JsIdentifierSyntax.GWT);
   }
-  
+
   public final void testWeirdGwt() throws Exception {
     renderY(""
         + "@com.google.caja.demos.playground.client.ui.WidgetsProxyImpl"

@@ -128,7 +128,9 @@ public class RewriteResource extends Resource {
     // All Caja source and generated code is safe to interpret as UTF-8
     Reader in = new InputStreamReader(delegate.getInputStream(), "UTF-8");
     StringBuilder sb = new StringBuilder();
-    for (int i; (i = in.read()) != -1; sb.append((char) i)) ;
+    for (int i; (i = in.read()) != -1;) {
+      sb.append((char) i);
+    }
     return sb.toString().replaceAll(match, replace);
   }
 }

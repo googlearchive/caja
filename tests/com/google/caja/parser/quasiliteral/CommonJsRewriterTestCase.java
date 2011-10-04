@@ -410,7 +410,7 @@ public abstract class CommonJsRewriterTestCase extends RewriterTestCase {
    * Tests that Error objects are preserved by tamed try/catch and that they
    * are born non-frozen.
    *
-   * See issue 1097, issue 1038, {@link ES53RewriterTest#testErrorFreeze}.
+   * See issue 1097, issue 1038, {@link ES53RewriterTest#testObjectFreeze}.
    */
   public final void testErrorTaming() throws Exception {
     rewriteAndExecute(

@@ -38,8 +38,10 @@ public class WrapperResource extends Resource {
   }
 
   @Override
-  public void release() { }
-  
+  public void release() {
+    // Noop.
+  }
+
   @Override
   public boolean exists() { return true; }
 

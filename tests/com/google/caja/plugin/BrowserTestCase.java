@@ -88,10 +88,12 @@ public abstract class BrowserTestCase extends CajaTestCase {
     }
   };
 
+  @Override
   public void setUp() throws Exception {
     super.setUp();
   }
 
+  @Override
   public void tearDown() throws Exception {
     cajaStatic.clear();
     setTestBuildVersion(null);
