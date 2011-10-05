@@ -12,24 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.caja.demos.gwtbeans.shared;
-
-import java.util.Map;
+package com.google.caja.gwtbeans.shared;
 
 import com.google.gwt.core.client.JavaScriptObject;
-import com.google.gwt.user.client.rpc.AsyncCallback;
 
-public interface Frame {
-  
-  Frame cajoled(String uri, String js, String html);
-
-  Frame code(String uri, String mimeType, String content);
-    
-  Frame api(Map<String, JavaScriptObject> api);
-  
-  Frame api(JavaScriptObject api);  
-    
-  void run(AsyncCallback<JavaScriptObject> callback);
-
-  JavaScriptObject getNative();
+public interface Taming<BeanType> {
+  JavaScriptObject getJso(Frame m, BeanType bean);
+  BeanType getBean(Frame m, JavaScriptObject jso);
 }

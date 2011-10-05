@@ -109,11 +109,11 @@
     </script>
 
     <div id="testMimeTypeHeuristic" class="testcontainer waiting">
-      testUrlResolution
+      testMimeTypeHeuristic
     </div>
     <script type="text/javascript">
       jsunitRegister('testMimeTypeHeuristic',
-                     function testUrlResolution() {
+                     function testMimeTypeHeuristic() {
         var t = createTest('http://foo.com/index.html');
         t.addModule(
             'http://foo.com/z.js?foo=1.html',
@@ -124,6 +124,46 @@
             function(_) {
               assertEquals(1, t.requests.get('http://foo.com/z.js?foo=1.html'));
               jsunitPass('testMimeTypeHeuristic');
+            });
+      });
+    </script>
+
+    <div id="testMimeTypeJavaScript" class="testcontainer waiting">
+      testMimeTypeJavaScript
+    </div>
+    <script type="text/javascript">
+      jsunitRegister('testMimeTypeJavaScript',
+                     function testMimeTypeJavaScript() {
+        var t = createTest('http://foo.com/index.html');
+        t.addModule(
+            'http://foo.com/xyz',
+            'application/javascript',
+            [ ]);
+        Q.when(
+            t.loadModule.async('xyz', 'application/javascript'),
+            function(_) {
+              assertEquals(1, t.requests.get('http://foo.com/xyz'));
+              jsunitPass('testMimeTypeJavaScript');
+            });
+      });
+    </script>
+
+    <div id="testMimeTypeHtml" class="testcontainer waiting">
+      testMimeTypeHtml
+    </div>
+    <script type="text/javascript">
+      jsunitRegister('testMimeTypeHtml',
+                     function testMimeTypeHtml() {
+        var t = createTest('http://foo.com/index.html');
+        t.addModule(
+            'http://foo.com/xyz',
+            'text/html',
+            [ ]);
+        Q.when(
+            t.loadModule.async('xyz', 'text/html'),
+            function(_) {
+              assertEquals(1, t.requests.get('http://foo.com/xyz'));
+              jsunitPass('testMimeTypeHtml');
             });
       });
     </script>

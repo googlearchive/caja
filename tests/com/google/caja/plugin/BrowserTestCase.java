@@ -277,7 +277,7 @@ public abstract class BrowserTestCase extends CajaTestCase {
       }
     });
 
-    poll(40000, 1000, new Check() {
+    poll(80000, 1000, new Check() {
       private List<WebElement> waitingList = null;
       @Override public String toString() {
         return "completion (Remaining elements = " +

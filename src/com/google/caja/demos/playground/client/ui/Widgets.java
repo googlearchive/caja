@@ -13,7 +13,7 @@
 
 package com.google.caja.demos.playground.client.ui;
 
-import com.google.caja.demos.gwtbeans.shared.HasTaming;
+import com.google.caja.gwtbeans.shared.HasTaming;
 import com.google.gwt.dom.client.Element;
 import com.google.gwt.user.client.ui.AbsolutePanel;
 import com.google.gwt.user.datepicker.client.DatePicker;

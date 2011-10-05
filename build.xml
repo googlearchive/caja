@@ -68,6 +68,10 @@
     See http://code.google.com/webtoolkit/doc/1.6/ReleaseNotes_1_6.html
   -->
   <property name="war"         location="ant-war"/>
+  <!-- TODO(ihab.awad): Find a way for the JUnit GWT tests to be happy with a
+    WAR directory called, say, "ant-war". So far unsuccessful.
+  -->
+  <property name="gwt-war"     location="war"/>
   <property name="maven"       location="ant-maven"/>
   <property name="maven-repository-url" value="https://oss.sonatype.org/service/local/staging/deploy/maven2/" />
   <property name="maven-repository-id" value="sonatype-nexus-staging" />
@@ -97,7 +101,7 @@
   </path>
   <path id="classpath.common">
     <path refid="classpath.web"/>
-    <!-- TODO(jasvir): Check in guava in third_party and update link --> 
+    <!-- TODO(jasvir): Check in guava in third_party and update link -->
     <pathelement path="${third_party}/java/guava/guava-r09.jar"/>
     <pathelement path="${third_party}/java/json_simple/json_simple.jar"/>
     <pathelement path="${third_party}/java/jsonml/jsonml.jar"/>
@@ -184,6 +188,7 @@
     <delete dir="${www}"/>
     <delete dir="${maven}"/>
     <delete dir="${war}"/>
+    <delete dir="${gwt-war}"/>
     <delete dir="${third_party}/java/htmlparser/lib"/>
   </target>
 
@@ -196,6 +201,7 @@
     <mkdir dir="${gwtlib}"/>  	  	
     <mkdir dir="${www}"/>
     <mkdir dir="${war}"/>
+    <mkdir dir="${gwt-war}"/>
     <mkdir dir="${maven}"/>
     <mkdir dir="${third_party}/java/htmlparser/lib"/>
   </target>
@@ -217,26 +223,7 @@
       description="$ ant runtests [-Dtest.filter=My\*Test]">
   </target>
 
-  <target name="RuntestsRun">
-   <condition property="jvmarg"
-     value="-Xdebug -Xmx2G -Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=9999" else="">
-     <isset property="test.debug"/>
-   </condition>
-    <!-- Instrument the compiled class files to gather code coverage stats -->
-    <emma enabled="${emma.enabled}">
-      <instr instrpath="${lib}" destdir="${instr}" mode="fullcopy"
-       metadatafile="${reports}/coverage/metadata.em" merge="true">
-        <filter value="${emma.filter},
-                       -com.google.caja.tools.*,
-                       -com.google.caja.parser.quasiliteral.*RuleDoclet"/>
-      </instr>
-    </emma>
-    <mkdir dir="${reports}/tests"/>
-    <!--
-      - If this fails to run, try with -verbose.  If you see a problem with
-      - forking, check your JAVA and JAVA_HOME environment variables and make
-      - sure ant is using jdk1.6.
-     -->
+  <target name="RuntestsRunDefault">
     <junit printsummary="yes" fork="yes" maxmemory="512m">
       <assertions><enable/></assertions>  <!-- ignored unless fork="yes" -->
       <jvmarg line="${jvmarg}"/>
@@ -245,6 +232,7 @@
       <batchtest todir="${reports}/tests" unless="emma.enabled">
         <fileset dir="${tests}">
           <include name="**/${test.filter}.java"/>
+          <exclude name="**/gwtbeans/**"/>
         </fileset>
       </batchtest>
       <syspropertyset>
@@ -261,6 +249,48 @@
       <test name="com.google.caja.AllTests" todir="${reports}/tests"
        if="emma.enabled"/>
     </junit>
+  </target>
+
+  <target name="RuntestsRunGwtBeans">
+    <junit printsummary="yes" fork="yes" maxmemory="512m">
+      <classpath>
+        <pathelement location="${third_party}/java/gwt/gwt-user.jar"/>
+        <pathelement location="${third_party}/java/gwt/gwt-dev.jar"/>
+        <pathelement location="${third_party}/java/junit/junit.jar"/>
+        <pathelement location="${lib}"/>
+        <pathelement location="${src}"/>
+        <pathelement location="${tests}"/>
+      </classpath>
+      <assertions><enable/></assertions>  <!-- ignored unless fork="yes" -->
+      <jvmarg line="${jvmarg}"/>
+      <formatter type="xml" usefile="true" unless="emma.enabled"/>
+      <batchtest todir="${reports}/tests">
+        <fileset dir="${tests}">
+          <include name="**/com/google/caja/gwtbeans/shared/${test.filter}.java"/>
+        </fileset>
+      </batchtest>
+    </junit>
+  </target>
+
+  <target name="RuntestsRun">
+   <condition property="jvmarg"
+     value="-Xdebug -Xmx2G -Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=9999" else="">
+     <isset property="test.debug"/>
+   </condition>
+    <!-- Instrument the compiled class files to gather code coverage stats -->
+    <emma enabled="${emma.enabled}">
+      <instr instrpath="${lib}" destdir="${instr}" mode="fullcopy"
+       metadatafile="${reports}/coverage/metadata.em" merge="true">
+        <filter value="${emma.filter},
+                       -com.google.caja.tools.*,
+                       -com.google.caja.parser.quasiliteral.*RuleDoclet"/>
+      </instr>
+    </emma>
+    <mkdir dir="${reports}/tests"/>
+    <!-- Run the main tests -->
+    <antcall target="RuntestsRunDefault"/>
+    <!-- Independently run GwtBeans tests (need a different classpath) -->
+    <antcall target="RuntestsRunGwtBeans"/>
     <summarize errorProperty="runtests.error"
      failureProperty="runtests.failure">
       <fileset dir="${reports}/tests">
@@ -884,6 +914,7 @@
       <include name="**/caja/util/*.java"/>
       <include name="**/caja/**/*TestCase.java"/>
       <include name="**/caja/**/*Test.java"/>
+      <include name="**/caja/gwtbeans/compile/*.java"/>
       <include name="**/caja/plugin/BrowserTestCaseStub.java"/>
       <compilerarg line="-Xlint:unchecked"/>
     </javac>
@@ -944,6 +975,7 @@
         <include name="**/caja/**/*.js"/>
         <include name="**/caja/**/*.txt"/>
         <include name="**/caja/**/*.xml"/>
+        <include name="**/caja/gwtbeans/**"/>
       </fileset>
       <fileset dir="${third_party}">
         <include name="js/jqueryjs/runtest/env.js"/>
@@ -994,7 +1026,7 @@
       <include name="**/caja/plugin/*.java"/>
       <include name="**/caja/plugin/stages/*.java"/>
       <include name="**/caja/plugin/templates/*.java"/>
-
+      <include name="**/caja/gwtbeans/**"/>
       <exclude name="**/caja/plugin/*Main.java"/>
       <exclude name="**/caja/plugin/BuildServiceImplementation.java"/>
       <compilerarg line="-Xlint:unchecked"/>
@@ -1020,6 +1052,7 @@
         <include name="**/caja/plugin/templates/*.json"/>
         <include name="**/caja/plugin/unicode.js"/>
         <include name="**/caja/plugin/uri.js"/>
+        <include name="com/google/caja/gwtbeans/**"/>
       </fileset>
 
       <!-- These came from AllTests; They are moved here to reduce the "results
@@ -1072,7 +1105,7 @@
       </classpath>
       <classpath refid="classpath.compile"/>
       <classpath refid="classpath.gwt"/>
-      <include name="**/caja/demos/gwtbeans/compile/*.java"/>
+      <include name="**/caja/gwtbeans/compile/*.java"/>
     </javac>
     <java failonerror="true" fork="true"
      classname="com.google.gwt.dev.Compiler">

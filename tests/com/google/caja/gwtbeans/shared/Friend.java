@@ -12,8 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.caja.demos.gwtbeans.shared;
+package com.google.caja.gwtbeans.shared;
 
-public @interface HasTaming {
-  String typeName();
+@HasTaming(typeName = "com.google.caja.gwtbeans.shared.FriendTaming")
+public class Friend {
+  // Method returning void
+  public void invoke() {}
 }

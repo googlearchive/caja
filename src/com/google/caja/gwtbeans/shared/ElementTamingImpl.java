@@ -12,11 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.caja.demos.gwtbeans.shared;
+package com.google.caja.gwtbeans.shared;
 
 import com.google.gwt.core.client.JavaScriptObject;
+import com.google.gwt.dom.client.Element;
 
-public interface Taming<BeanType> {
-  JavaScriptObject getJso(Frame m, BeanType bean);
-  BeanType getBean(Frame m, JavaScriptObject jso);
+public class ElementTamingImpl
+    extends AbstractTaming<Element>
+    implements ElementTaming {
+  @Override
+  protected native JavaScriptObject getNative(Frame m, Element bean) /*-{
+    return m.@com.google.caja.gwtbeans.shared.FrameImpl::getFrame()()
+        .imports.tameNodeAsForeign___(bean);
+  }-*/;
+  
+  @Override
+  protected String getBeanClassName() {
+    return "class com.google.gwt.dom.client.Element";
+  }
 }

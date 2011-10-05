@@ -15,14 +15,18 @@
  - limitations under the License.
 -->
 
-<module rename-to='gwtbeans'>
+<module>
   <source path='shared'/>
 
   <define-configuration-property
-      name="com.google.caja.demos.gwtbeans.introspector"
+      name="com.google.caja.gwtbeans.introspectorClass"
       is_multi_valued="false"/>
 
-  <generate-with class="com.google.caja.demos.gwtbeans.compile.TamingGeneratorFacade">
-    <when-type-assignable class="com.google.caja.demos.gwtbeans.shared.Taming" />
+  <define-configuration-property
+      name="com.google.caja.gwtbeans.recognizeBeanProperties"
+      is_multi_valued="false"/>
+
+  <generate-with class="com.google.caja.gwtbeans.compile.TamingGeneratorFacade">
+    <when-type-assignable class="com.google.caja.gwtbeans.shared.Taming" />
   </generate-with>
 </module>

@@ -12,22 +12,29 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.caja.demos.gwtbeans.shared;
+package com.google.caja.gwtbeans.shared;
 
 import com.google.gwt.core.client.JavaScriptObject;
 import com.google.gwt.dom.client.Element;
 import com.google.gwt.user.client.rpc.AsyncCallback;
 
 public class Caja {
-  public static native void initialize(String cajaServer) /*-{
+  public static void initialize(String cajaServer) {
+    initialize(cajaServer, false);
+  }
+
+  public static native void initialize(String cajaServer, boolean debug) /*-{
     $wnd.caja.initFeralFrame(window);  // note 'window' not '$wnd'
     $wnd.caja.initialize({
       cajaServer: cajaServer,
-      debug: true
+      debug: debug
     });
   }-*/;
 
-  public static void load(Element element, JavaScriptObject uriPolicy, final AsyncCallback<Frame> callback) {
+  public static void load(
+      Element element,
+      JavaScriptObject uriPolicy,
+      final AsyncCallback<Frame> callback) {
     loadNative(element, uriPolicy, new FrameCb() {
       @Override
       public void cb(JavaScriptObject frame) {
@@ -46,9 +53,12 @@ public class Caja {
     void cb(JavaScriptObject frame);
   }
   
-  private static native void loadNative(Element element, JavaScriptObject uriPolicy, FrameCb cb) /*-{
+  private static native void loadNative(
+      Element element,
+      JavaScriptObject uriPolicy,
+      FrameCb cb) /*-{
     $wnd.caja.load(element, uriPolicy, function(frame) {
-      cb.@com.google.caja.demos.gwtbeans.shared.Caja.FrameCb::cb(Lcom/google/gwt/core/client/JavaScriptObject;)(frame);
+      cb.@com.google.caja.gwtbeans.shared.Caja.FrameCb::cb(Lcom/google/gwt/core/client/JavaScriptObject;)(frame);
     });
   }-*/;
 }

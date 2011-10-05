@@ -1,4 +1,5 @@
 // Copyright (C) 2011 Google Inc.
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -11,16 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.caja.demos.playground.client.ui;
+package com.google.caja.gwtbeans.shared;
 
-import com.google.caja.gwtbeans.shared.HasTaming;
+import java.util.Map;
 
-@HasTaming(typeName="com.google.caja.demos.playground.client.ui.BlivitTaming")
-public class Blivit {
+import com.google.gwt.core.client.JavaScriptObject;
+import com.google.gwt.user.client.rpc.AsyncCallback;
 
-  private final String name;
+public interface Frame {
+  
+  Frame cajoled(String uri, String js, String html);
 
-  public Blivit(String name) { this.name = name; }
+  Frame code(String uri, String mimeType, String content);
+    
+  Frame api(Map<String, JavaScriptObject> api);
+  
+  Frame api(JavaScriptObject api);  
+    
+  void run(AsyncCallback<JavaScriptObject> callback);
 
-  public String getName() { return name; }
+  JavaScriptObject getNative();
 }

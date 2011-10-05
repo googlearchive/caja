@@ -17,8 +17,8 @@ import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.google.caja.demos.gwtbeans.shared.Caja;
-import com.google.caja.demos.gwtbeans.shared.Frame;
+import com.google.caja.gwtbeans.shared.Caja;
+import com.google.caja.gwtbeans.shared.Frame;
 import com.google.caja.demos.playground.client.Playground;
 import com.google.caja.demos.playground.client.PlaygroundResource;
 import com.google.gwt.core.client.GWT;

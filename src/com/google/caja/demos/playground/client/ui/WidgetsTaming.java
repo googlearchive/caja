@@ -13,7 +13,7 @@
 
 package com.google.caja.demos.playground.client.ui;
 
-import com.google.caja.demos.gwtbeans.shared.Taming;
+import com.google.caja.gwtbeans.shared.Taming;
 
 public interface WidgetsTaming extends Taming<Widgets> {
   // Adds nothing.

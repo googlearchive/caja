@@ -134,7 +134,7 @@ var loadModuleMaker = function(rootUrl, cajolingServiceClient) {
       var moduleDeferred = Q.defer();
       var mimeType = contentType || getInputMimeType(url);
       Q.when(
-          cajolingServiceClient.cajoleUrl(fullUrl, getInputMimeType(url)),
+          cajolingServiceClient.cajoleUrl(fullUrl, mimeType),
           function(moduleJson) {
             Q.when(
                 evalAndResolveFromJson(fullUrl, moduleJson),

@@ -12,10 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.caja.demos.gwtbeans.shared;
+package com.google.caja.gwtbeans.shared;
 
-import com.google.gwt.dom.client.Element;
-
-public interface ElementTaming extends Taming<Element> {
-  // Nothing added.
+public @interface HasTaming {
+  String typeName();
 }

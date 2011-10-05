@@ -19,6 +19,7 @@ import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.regex.Pattern;
 
+import com.google.gwt.junit.client.GWTTestCase;
 import junit.framework.AssertionFailedError;
 import junit.framework.Test;
 import junit.framework.TestCase;
@@ -77,6 +78,12 @@ public class AllTests {
         + root.getName().replaceFirst("[.]java$", "");
 
     Class<? extends TestCase> testCase = mapToTestClass(className);
+
+    if (GWTTestCase.class.isAssignableFrom(testCase)) {
+      // Skip GWT tests -- they require a special classpath
+      return 0;
+    }
+
     Pattern testFilter = Pattern.compile(
         "(?:" + globToPattern(System.getProperty("test.filter", "*")) + ")$",
         Pattern.DOTALL);

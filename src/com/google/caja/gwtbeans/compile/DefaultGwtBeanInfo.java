@@ -12,16 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.caja.demos.gwtbeans.compile;
+package com.google.caja.gwtbeans.compile;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.google.caja.demos.gwtbeans.shared.ElementTaming;
-import com.google.caja.demos.gwtbeans.shared.ElementTamingImpl;
-import com.google.caja.demos.gwtbeans.shared.HasTaming;
+import com.google.caja.gwtbeans.shared.ElementTaming;
+import com.google.caja.gwtbeans.shared.ElementTamingImpl;
+import com.google.caja.gwtbeans.shared.HasTaming;
 import com.google.gwt.core.ext.GeneratorContext;
 import com.google.gwt.core.ext.TreeLogger;
 import com.google.gwt.core.ext.UnableToCompleteException;
@@ -32,11 +32,7 @@ import com.google.gwt.core.ext.typeinfo.JType;
 import com.google.gwt.dev.jjs.ast.JPrimitiveType;
 import com.google.gwt.dom.client.Element;
 
-/**
- * TODO(ihab.awad): Add tests for this once it moves out of demos/. 
- *
- */
-public final class DefaultGwtBeanInfoImpl implements GwtBeanInfo {
+public final class DefaultGwtBeanInfo implements GwtBeanInfo {
   private static final Map<String, String> knownTamingInterfaces =
       new HashMap<String, String>();
   private static final Map<String, String> knownTamingImplementations =
@@ -50,7 +46,7 @@ public final class DefaultGwtBeanInfoImpl implements GwtBeanInfo {
         ElementTaming.class.getCanonicalName(),
         ElementTamingImpl.class.getCanonicalName());
   }
-  
+
   private final JClassType type;
   private JClassType tamingInterface;
   private JClassType tamingImplementation;
@@ -59,7 +55,7 @@ public final class DefaultGwtBeanInfoImpl implements GwtBeanInfo {
   private final List<JMethod> methods =
       new ArrayList<JMethod>();  
 
-  public DefaultGwtBeanInfoImpl(
+  public DefaultGwtBeanInfo(
       GeneratorContext context,
       TreeLogger logger,
       JClassType type) 
@@ -134,11 +130,13 @@ public final class DefaultGwtBeanInfoImpl implements GwtBeanInfo {
     if (knownTamingImplementations.containsKey(
         tamingInterface.getQualifiedSourceName())) {
       tamingImplementation = context.getTypeOracle().findType(
-          knownTamingImplementations.get(tamingInterface.getQualifiedSourceName()));
+          knownTamingImplementations.get(
+              tamingInterface.getQualifiedSourceName()));
       if (tamingImplementation == null) {
         logger.log(Type.ERROR,
             "Taming implementation " +
-            knownTamingImplementations.get(tamingInterface.getQualifiedSourceName()) +
+            knownTamingImplementations.get(
+                tamingInterface.getQualifiedSourceName()) +
             " not found");
         throw new UnableToCompleteException();
       }
@@ -150,10 +148,15 @@ public final class DefaultGwtBeanInfoImpl implements GwtBeanInfo {
       return;
     }
     
-    List<JMethod> allMethods = getAllMethods(type);
-    
+    List<JMethod> allMethods = getAllPublicMethods(type);
+
+    boolean recognizeBeanProperties =
+        Properties.isRecognizeBeanProperties(context, logger);
+
     while (!allMethods.isEmpty()) {
-      String propertyName = getPropertyName(allMethods.get(0).getName());
+      String propertyName = recognizeBeanProperties
+          ? getPropertyName(allMethods.get(0).getName())
+          : null;
       if (propertyName != null) {
         properties.add(makePropertyDescriptor(allMethods, propertyName));
       } else {
@@ -284,14 +287,15 @@ public final class DefaultGwtBeanInfoImpl implements GwtBeanInfo {
     return s.substring(0, 1).toUpperCase() + s.substring(1);    
   }
   
-  private List<JMethod> getAllMethods(JClassType clazz) {
+  private List<JMethod> getAllPublicMethods(JClassType clazz) {
     Map<String, JMethod> methodsBySignature = new HashMap<String, JMethod>();
     JClassType object = clazz.getOracle().findType("java.lang.Object");
     for (JClassType t = clazz; t != object; t = t.getSuperclass()) {
       for (JMethod m : clazz.getMethods()) {
         // Note that subclass methods take priority over
         // superclass ones in our map
-        if (!methodsBySignature.containsKey(m.getJsniSignature())) {
+        if (!methodsBySignature.containsKey(m.getJsniSignature())
+            && m.isPublic()) {
           // TODO(ihab.awad): Methods overridden by subclass with contravariant
           // args are not considered by this algorithm, which could cause false
           // rejection of valid write-only Bean properties

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.caja.demos.gwtbeans.shared;
+package com.google.caja.gwtbeans.shared;
 
 import java.util.HashMap;
 import java.util.List;
@@ -40,13 +40,13 @@ import com.google.gwt.user.client.rpc.AsyncCallback;
 
   @Override
   public native Frame cajoled(String uri, String js, String html) /*-{
-    (this.@com.google.caja.demos.gwtbeans.shared.FrameImpl::frame).cajoled(uri, js, html);
+    (this.@com.google.caja.gwtbeans.shared.FrameImpl::frame).cajoled(uri, js, html);
     return this;
   }-*/;
 
   @Override
   public native Frame code(String uri, String mimeType, String content) /*-{
-    (this.@com.google.caja.demos.gwtbeans.shared.FrameImpl::frame).code(uri, mimeType, content);
+    (this.@com.google.caja.gwtbeans.shared.FrameImpl::frame).code(uri, mimeType, content);
     return this;
   }-*/;
     
@@ -61,14 +61,17 @@ import com.google.gwt.user.client.rpc.AsyncCallback;
   
   @Override
   public native Frame api(JavaScriptObject api) /*-{
-    (this.@com.google.caja.demos.gwtbeans.shared.FrameImpl::frame).api(api);
+    (this.@com.google.caja.gwtbeans.shared.FrameImpl::frame).api(api);
     return this;
   }-*/;
 
   @Override
   public JavaScriptObject getNative() { return frame; }
 
-  private static native void addToObject(JavaScriptObject o, String key, JavaScriptObject value) /*-{
+  private static native void addToObject(
+      JavaScriptObject o,
+      String key,
+      JavaScriptObject value) /*-{
     o[key] = value;
   }-*/;
     
@@ -83,9 +86,9 @@ import com.google.gwt.user.client.rpc.AsyncCallback;
   }
 
   private native void runNative(JsoCb cb) /*-{
-    (this.@com.google.caja.demos.gwtbeans.shared.FrameImpl::frame)
+    (this.@com.google.caja.gwtbeans.shared.FrameImpl::frame)
         .run(function(result) {
-          cb.@com.google.caja.demos.gwtbeans.shared.FrameImpl.JsoCb::cb(Lcom/google/gwt/core/client/JavaScriptObject;)(result);
+          cb.@com.google.caja.gwtbeans.shared.FrameImpl.JsoCb::cb(Lcom/google/gwt/core/client/JavaScriptObject;)(result);
         });
   }-*/;
   
