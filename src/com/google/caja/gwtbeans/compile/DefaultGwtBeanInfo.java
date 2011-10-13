@@ -21,7 +21,6 @@ import java.util.Map;
 
 import com.google.caja.gwtbeans.shared.ElementTaming;
 import com.google.caja.gwtbeans.shared.ElementTamingImpl;
-import com.google.caja.gwtbeans.shared.HasTaming;
 import com.google.gwt.core.ext.GeneratorContext;
 import com.google.gwt.core.ext.TreeLogger;
 import com.google.gwt.core.ext.UnableToCompleteException;
@@ -47,8 +46,10 @@ public final class DefaultGwtBeanInfo implements GwtBeanInfo {
         ElementTamingImpl.class.getCanonicalName());
   }
 
+  private final TreeLogger logger;
+  private final GeneratorContext context;
   private final JClassType type;
-  private JClassType tamingInterface;
+  private final JClassType tamingInterface;
   private JClassType tamingImplementation;
   private final List<GwtBeanPropertyDescriptor> properties =
       new ArrayList<GwtBeanPropertyDescriptor>();
@@ -56,12 +57,16 @@ public final class DefaultGwtBeanInfo implements GwtBeanInfo {
       new ArrayList<JMethod>();  
 
   public DefaultGwtBeanInfo(
-      GeneratorContext context,
       TreeLogger logger,
-      JClassType type) 
+      GeneratorContext context,
+      JClassType type,
+      JClassType tamingInterface)
       throws UnableToCompleteException {
+    this.logger = logger;
+    this.context = context;
     this.type = type;
-    build(context, logger);
+    this.tamingInterface = tamingInterface;
+    build();
   }
 
   @Override
@@ -94,39 +99,7 @@ public final class DefaultGwtBeanInfo implements GwtBeanInfo {
     return methods.toArray(new JMethod[] {});
   }
 
-  private void build(
-      GeneratorContext context,
-      TreeLogger logger) 
-      throws UnableToCompleteException {
-    if (type.getAnnotation(HasTaming.class) == null) {
-      if (knownTamingInterfaces.containsKey(type.getQualifiedSourceName())) {
-        tamingInterface = context.getTypeOracle().findType(
-            knownTamingInterfaces.get(type.getQualifiedSourceName()));
-        if (tamingInterface == null) {
-          logger.log(Type.ERROR, 
-              "Taming interface " + 
-              knownTamingInterfaces.get(type.getQualifiedSourceName()) +
-              " not found");
-          throw new UnableToCompleteException();
-        }
-      } else {
-        logger.log(Type.ERROR,
-            "Bean type " + type +
-            " must have an annotation of type " +
-            HasTaming.class.getCanonicalName());
-        throw new UnableToCompleteException();
-      }
-    } else {
-      tamingInterface = context.getTypeOracle()
-          .findType(type.getAnnotation(HasTaming.class).typeName());
-      if (tamingInterface == null) {
-        logger.log(Type.ERROR,
-            "Cannot find taming interface type " + 
-            type.getAnnotation(HasTaming.class).typeName());
-        throw new UnableToCompleteException();
-      }
-    }
-
+  private void build() throws UnableToCompleteException {
     if (knownTamingImplementations.containsKey(
         tamingInterface.getQualifiedSourceName())) {
       tamingImplementation = context.getTypeOracle().findType(
@@ -151,7 +124,7 @@ public final class DefaultGwtBeanInfo implements GwtBeanInfo {
     List<JMethod> allMethods = getAllPublicMethods(type);
 
     boolean recognizeBeanProperties =
-        Properties.isRecognizeBeanProperties(context, logger);
+        Properties.isRecognizeBeanProperties(logger, context);
 
     while (!allMethods.isEmpty()) {
       String propertyName = recognizeBeanProperties
@@ -167,86 +140,96 @@ public final class DefaultGwtBeanInfo implements GwtBeanInfo {
 
   private GwtBeanPropertyDescriptor makePropertyDescriptor(
       List<JMethod> allMethods, 
-      String propertyName) {
+      String propertyName)
+      throws UnableToCompleteException {
     JMethod is = removeOne(allMethods, getIsName(propertyName));
     JMethod get = removeOne(allMethods, getGetName(propertyName));
     JMethod write = removeOne(allMethods, getSetName(propertyName));
     if (is != null && get != null) {
-      throw new RuntimeException(
+      logger.log(Type.ERROR,
           "Found duplicate Bean-style read methods for property \"" +
           propertyName + "\"" +
           " at " + is.getJsniSignature() +
           " and " + get.getJsniSignature());
+      throw new UnableToCompleteException();
     }
     JMethod read = (is != null) ? is : get;
     if (read == null && write == null) {
       // Should never get here since we derived propertyName
       /// by looking at *some* method
-      throw new RuntimeException(
+      logger.log(Type.ERROR,
           "Found null getter and setter for property \"" +
           propertyName + "\"" +
           " (should never happen)");
+      throw new UnableToCompleteException();
     }
     JType propType;
     if (read != null) {
       // Harvest property type from reader
       propType = read.getReturnType();
       if (propType == JPrimitiveType.VOID) {
-        throw new RuntimeException(
+        logger.log(Type.ERROR,
             "Bean-style read method returns void for property \"" + 
             propertyName + "\"" +
             " at " + read.getJsniSignature());
+        throw new UnableToCompleteException();
       }
       // Ensure writer matches
       if (write != null) {
         if (write.getParameters().length != 1) {
-          throw new RuntimeException(
+          logger.log(Type.ERROR,
               "Bean-style write method for property \"" + 
               propertyName + "\"" +
               " does not declare exactly 1 parameter" +
               " at " + write.getJsniSignature());
+          throw new UnableToCompleteException();
         }
         if (write.getParameters()[0].getType() != propType) {
-          throw new RuntimeException(
+          logger.log(Type.ERROR,
               "Parameter of Bean-style write method for property \"" +
               propertyName + "\"" +
               " at " + write.getJsniSignature() +        
               " does not match return type of read method" +
               " at " + read.getJsniSignature());
+          throw new UnableToCompleteException();
         }
       }
     } else {
       // Harvest property type from writer
       if (write.getParameters().length != 1) {
-        throw new RuntimeException(
+        logger.log(Type.ERROR,
             "Bean-style write method for property \"" + 
             propertyName + "\"" +
             " does not declare exactly 1 parameter" +
             " at " + write.getJsniSignature());
+        throw new UnableToCompleteException();
       }
       propType = write.getParameters()[0].getType();
       if (propType == type.getOracle().findType("java.lang.Void")) {
-        throw new RuntimeException(
+        logger.log(Type.ERROR,
             "Bean-style write method property \"" +
             propertyName + "\"" +
             " has parameter of disallowed type java.lang.Void " +
             " at " + write.getJsniSignature());
+        throw new UnableToCompleteException();
       }
     }
     return new GwtBeanPropertyDescriptor(propertyName, propType, read, write);
   }
 
-  private JMethod removeOne(List<JMethod> allMethods, String methodName) {
+  private JMethod removeOne(List<JMethod> allMethods, String methodName)
+      throws UnableToCompleteException {
     JMethod result = null;    
     for (int i = 0; i < allMethods.size(); i++) {
       JMethod m = allMethods.get(i);
       if (methodName.equals(m.getName())) {
         if (result != null) {
-          throw new RuntimeException(
+          logger.log(Type.ERROR,
               "Found duplicate Bean-style methods called \"" +
               methodName + "\"" +
               " at " + result.getJsniSignature() +
               " and " + m.getJsniSignature());
+          throw new UnableToCompleteException();
         }
         result = m;
         allMethods.remove(i);

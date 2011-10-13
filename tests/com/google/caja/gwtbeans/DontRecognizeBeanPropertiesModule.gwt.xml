@@ -21,4 +21,10 @@
   <set-configuration-property
       name="com.google.caja.gwtbeans.recognizeBeanProperties"
       value="false"/>
+  <extend-configuration-property
+      name="com.google.caja.gwtbeans.tamingInterfaces"
+      value="com.google.caja.gwtbeans.shared.BeanTaming"/>
+  <extend-configuration-property
+      name="com.google.caja.gwtbeans.tamingInterfaces"
+      value="com.google.caja.gwtbeans.shared.FriendTaming"/>
 </module>

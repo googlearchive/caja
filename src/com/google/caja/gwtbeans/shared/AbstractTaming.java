@@ -64,7 +64,7 @@ public abstract class AbstractTaming<BeanType> implements Taming<BeanType> {
   protected abstract JavaScriptObject getNative(Frame m, BeanType bean);
   
   protected abstract String getBeanClassName();
-  
+
   private List<String> getClasses(BeanType bean) {
     List<String> result = new ArrayList<String>();
     for (Class<?> clazz = bean.getClass(); clazz != null;

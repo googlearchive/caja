@@ -5,6 +5,13 @@
   <inherits name='com.google.gwt.user.theme.standard.Standard'/>
   <inherits name='com.google.caja.gwtbeans.GwtBeans'/>
 
+  <extend-configuration-property
+      name="com.google.caja.gwtbeans.tamingInterfaces"
+      value="com.google.caja.demos.playground.client.ui.BlivitTaming"/>
+  <extend-configuration-property
+      name="com.google.caja.gwtbeans.tamingInterfaces"
+      value="com.google.caja.demos.playground.client.ui.WidgetsTaming"/>
+
   <source path='client'/>
 
 </module>

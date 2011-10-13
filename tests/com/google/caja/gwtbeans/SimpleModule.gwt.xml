@@ -18,4 +18,10 @@
 <module>
   <source path='shared'/>
   <inherits name="com.google.caja.gwtbeans.GwtBeans"/>
+  <extend-configuration-property
+      name="com.google.caja.gwtbeans.tamingInterfaces"
+      value="com.google.caja.gwtbeans.shared.BeanTaming"/>
+  <extend-configuration-property
+      name="com.google.caja.gwtbeans.tamingInterfaces"
+      value="com.google.caja.gwtbeans.shared.FriendTaming"/>
 </module>

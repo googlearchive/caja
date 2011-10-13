@@ -14,6 +14,20 @@
 
 package com.google.caja.gwtbeans.shared;
 
-public @interface HasTaming {
-  String typeName();
+import com.google.gwt.core.client.JavaScriptObject;
+
+public class ShortTamingImpl implements ShortTaming {
+  @Override
+  public native JavaScriptObject getJso(Frame m, Short bean) /*-{
+    return bean === null
+        ? null
+        : new Number(bean.@java.lang.Short::shortValue()());
+  }-*/;
+
+  @Override
+  public native Short getBean(Frame m, JavaScriptObject jso) /*-{
+    return jso === null
+        ? null
+        : @java.lang.Short::new(S)(Number(jso));
+  }-*/;
 }

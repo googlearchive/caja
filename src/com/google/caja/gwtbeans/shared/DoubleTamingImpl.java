@@ -14,7 +14,20 @@
 
 package com.google.caja.gwtbeans.shared;
 
-public class Friend {
-  // Method returning void
-  public void invoke() {}
+import com.google.gwt.core.client.JavaScriptObject;
+
+public class DoubleTamingImpl implements DoubleTaming {
+  @Override
+  public native JavaScriptObject getJso(Frame m, Double bean) /*-{
+    return bean === null
+        ? null
+        : new Number(bean.@java.lang.Double::doubleValue()());
+  }-*/;
+
+  @Override
+  public native Double getBean(Frame m, JavaScriptObject jso) /*-{
+    return jso === null
+        ? null
+        : @java.lang.Double::new(D)(Number(jso));
+  }-*/;
 }

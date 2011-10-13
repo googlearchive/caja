@@ -57,23 +57,40 @@ public abstract class GWTBeansTestCase extends GWTTestCase {
       }
       return jso[key];
     };
+
+    $wnd.log = function(s) {
+      @java.lang.System::err.@java.io.PrintStream::println(Ljava/lang/String;)(s);
+    };
   }-*/;
 
-  protected Bean bean;
-  protected Friend friend;
-  protected JavaScriptObject beanJso;
-  protected JavaScriptObject friendJso;
+  protected Frame frame;
 
-  protected void setupCaja() {
+  protected Bean bean;
+  protected Friend friend0;
+  protected Friend friend1;
+  protected Friend friend2;
+  protected JavaScriptObject beanJso;
+  protected JavaScriptObject friend0Jso;
+  protected JavaScriptObject friend1Jso;
+  protected JavaScriptObject friend2Jso;
+
+  public void gwtSetUp() throws Exception {
     setupCajaStub();
     // For our testing, there is no need to stub out any parts of the native
     // Caja |frame| object, so we just set some arbitrary non-null value.
-    Frame frame = new FrameImpl(newJso());
+    frame = new FrameImpl(newJso());
+
     bean = new Bean();
-    friend = bean.beanRetval;
+    friend0 = bean.beanRetval0;
+    friend1 = bean.beanRetval1;
+    friend2 = bean.beanRetval2;
     beanJso = ((BeanTaming) GWT.create(BeanTaming.class)).getJso(frame, bean);
-    friendJso = ((FriendTaming) GWT.create(FriendTaming.class))
-        .getJso(frame, bean.beanRetval);
+    friend0Jso = ((FriendTaming) GWT.create(FriendTaming.class))
+        .getJso(frame, bean.beanRetval0);
+    friend1Jso = ((FriendTaming) GWT.create(FriendTaming.class))
+        .getJso(frame, bean.beanRetval1);
+    friend2Jso = ((FriendTaming) GWT.create(FriendTaming.class))
+        .getJso(frame, bean.beanRetval2);
   }
 
   protected native JavaScriptObject getAttrsKey(
@@ -82,13 +99,25 @@ public abstract class GWTBeansTestCase extends GWTTestCase {
     return $wnd.getDef(jso, 'attrs')[key];
   }-*/;
 
+  protected native JavaScriptObject getMethod(
+      JavaScriptObject jso,
+      String key) /*-{
+    return $wnd.getDef($wnd.getDef(jso, 'attrs')[key].value, 'f');
+  }-*/;
+
   protected native void callMethodVoid(
       JavaScriptObject jso,
       String key) /*-{
     $wnd.getDef($wnd.getDef(jso, 'attrs')[key].value, 'f')();
   }-*/;
   
-  protected native Object callMethodReturningPrimitive(
+  protected native int callMethodReturningInt(
+      JavaScriptObject jso,
+      String key) /*-{
+    return $wnd.getDef($wnd.getDef(jso, 'attrs')[key].value, 'f')();
+  }-*/;
+
+  protected native String callMethodReturningString(
       JavaScriptObject jso,
       String key) /*-{
     return $wnd.getDef($wnd.getDef(jso, 'attrs')[key].value, 'f')();
@@ -100,13 +129,20 @@ public abstract class GWTBeansTestCase extends GWTTestCase {
     return $wnd.getDef($wnd.getDef(jso, 'attrs')[key].value, 'f')();
   }-*/;
 
-  protected native void callMethodVoidWithArgPrimitive(
+  protected native void callMethodVoidWithArgInt(
       JavaScriptObject jso,
       String key,
-      Object arg) /*-{
+      int arg) /*-{
     $wnd.getDef($wnd.getDef(jso, 'attrs')[key].value, 'f')(arg);
   }-*/;
 
+  protected native void callMethodVoidWithArgString(
+      JavaScriptObject jso,
+      String key,
+      String arg) /*-{
+    $wnd.getDef($wnd.getDef(jso, 'attrs')[key].value, 'f')(arg);
+  }-*/;
+  
   protected native void callMethodVoidWithArgJso(
       JavaScriptObject jso,
       String key,
@@ -126,16 +162,16 @@ public abstract class GWTBeansTestCase extends GWTTestCase {
     return $wnd.getDef(jso, 'attrs')[key].set;
   }-*/;
   
-  protected native Object getPropertyPrimitive(
+  protected native int getPropertyInt(
       JavaScriptObject jso,
       String key) /*-{
     return $wnd.getDef($wnd.getDef(jso, 'attrs')[key].get, 'f')();
   }-*/;
 
-  protected native void setPropertyPrimitive(
+  protected native void setPropertyInt(
       JavaScriptObject jso,
       String key,
-      Object value) /*-{
+      int value) /*-{
     $wnd.getDef($wnd.getDef(jso, 'attrs')[key].set, 'f')(value);
   }-*/;
 

@@ -14,7 +14,20 @@
 
 package com.google.caja.gwtbeans.shared;
 
-public class Friend {
-  // Method returning void
-  public void invoke() {}
+import com.google.gwt.core.client.JavaScriptObject;
+
+public class IntegerTamingImpl implements IntegerTaming {
+  @Override
+  public native JavaScriptObject getJso(Frame m, Integer bean) /*-{
+    return bean === null
+        ? null
+        : new Number(bean.@java.lang.Integer::intValue()());
+  }-*/;
+  
+  @Override
+  public native Integer getBean(Frame m, JavaScriptObject jso) /*-{
+    return jso === null
+        ? null
+        : @java.lang.Integer::new(I)(Number(jso));
+  }-*/;
 }

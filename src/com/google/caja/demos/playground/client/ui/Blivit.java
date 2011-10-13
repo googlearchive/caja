@@ -13,9 +13,6 @@
 
 package com.google.caja.demos.playground.client.ui;
 
-import com.google.caja.gwtbeans.shared.HasTaming;
-
-@HasTaming(typeName="com.google.caja.demos.playground.client.ui.BlivitTaming")
 public class Blivit {
 
   private final String name;

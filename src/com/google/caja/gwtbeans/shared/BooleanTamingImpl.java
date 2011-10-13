@@ -14,7 +14,20 @@
 
 package com.google.caja.gwtbeans.shared;
 
-public class Friend {
-  // Method returning void
-  public void invoke() {}
+import com.google.gwt.core.client.JavaScriptObject;
+
+public class BooleanTamingImpl implements BooleanTaming {
+  @Override
+  public native JavaScriptObject getJso(Frame m, Boolean bean) /*-{
+    return bean === null
+        ? null
+        : new Boolean(bean.@java.lang.Boolean::booleanValue()());
+  }-*/;
+
+  @Override
+  public native Boolean getBean(Frame m, JavaScriptObject jso) /*-{
+    return jso === null
+        ? null
+        : @java.lang.Boolean::new(Z)(Boolean(jso));
+  }-*/;
 }

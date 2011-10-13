@@ -14,7 +14,4 @@
 
 package com.google.caja.gwtbeans.shared;
 
-public class Friend {
-  // Method returning void
-  public void invoke() {}
-}
+public interface IntegerTaming extends Taming<Integer> { }

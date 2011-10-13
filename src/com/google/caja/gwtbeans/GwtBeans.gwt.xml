@@ -19,12 +19,65 @@
   <source path='shared'/>
 
   <define-configuration-property
-      name="com.google.caja.gwtbeans.introspectorClass"
-      is_multi_valued="false"/>
+      name="com.google.caja.gwtbeans.tamingInterfaces"
+      is_multi_valued="true"/>
+
+  <define-configuration-property
+      name="com.google.caja.gwtbeans.tamingImplementations"
+      is_multi_valued="true"/>
 
   <define-configuration-property
       name="com.google.caja.gwtbeans.recognizeBeanProperties"
       is_multi_valued="false"/>
+
+  <extend-configuration-property
+      name="com.google.caja.gwtbeans.tamingInterfaces"
+      value="com.google.caja.gwtbeans.shared.BooleanTaming"/>
+  <extend-configuration-property
+      name="com.google.caja.gwtbeans.tamingImplementations"
+      value="com.google.caja.gwtbeans.shared.BooleanTamingImpl"/>
+
+  <extend-configuration-property
+      name="com.google.caja.gwtbeans.tamingInterfaces"
+      value="com.google.caja.gwtbeans.shared.ByteTaming"/>
+  <extend-configuration-property
+      name="com.google.caja.gwtbeans.tamingImplementations"
+      value="com.google.caja.gwtbeans.shared.ByteTamingImpl"/>
+
+  <extend-configuration-property
+      name="com.google.caja.gwtbeans.tamingInterfaces"
+      value="com.google.caja.gwtbeans.shared.DoubleTaming"/>
+  <extend-configuration-property
+      name="com.google.caja.gwtbeans.tamingImplementations"
+      value="com.google.caja.gwtbeans.shared.DoubleTamingImpl"/>
+
+  <extend-configuration-property
+      name="com.google.caja.gwtbeans.tamingInterfaces"
+      value="com.google.caja.gwtbeans.shared.FloatTaming"/>
+  <extend-configuration-property
+      name="com.google.caja.gwtbeans.tamingImplementations"
+      value="com.google.caja.gwtbeans.shared.FloatTamingImpl"/>
+
+  <extend-configuration-property
+      name="com.google.caja.gwtbeans.tamingInterfaces"
+      value="com.google.caja.gwtbeans.shared.IntegerTaming"/>
+  <extend-configuration-property
+      name="com.google.caja.gwtbeans.tamingImplementations"
+      value="com.google.caja.gwtbeans.shared.IntegerTamingImpl"/>
+
+  <extend-configuration-property
+      name="com.google.caja.gwtbeans.tamingInterfaces"
+      value="com.google.caja.gwtbeans.shared.ShortTaming"/>
+  <extend-configuration-property
+      name="com.google.caja.gwtbeans.tamingImplementations"
+      value="com.google.caja.gwtbeans.shared.ShortTamingImpl"/>
+
+  <extend-configuration-property
+      name="com.google.caja.gwtbeans.tamingInterfaces"
+      value="com.google.caja.gwtbeans.shared.ElementTaming"/>
+  <extend-configuration-property
+      name="com.google.caja.gwtbeans.tamingImplementations"
+      value="com.google.caja.gwtbeans.shared.ElementTamingImpl"/>
 
   <generate-with class="com.google.caja.gwtbeans.compile.TamingGeneratorFacade">
     <when-type-assignable class="com.google.caja.gwtbeans.shared.Taming" />

@@ -14,7 +14,20 @@
 
 package com.google.caja.gwtbeans.shared;
 
-public class Friend {
-  // Method returning void
-  public void invoke() {}
+import com.google.gwt.core.client.JavaScriptObject;
+
+public class ByteTamingImpl implements ByteTaming {
+  @Override
+  public native JavaScriptObject getJso(Frame m, Byte bean) /*-{
+    return bean === null
+        ? null
+        : new Number(bean.@java.lang.Byte::byteValue()());
+  }-*/;
+
+  @Override
+  public native Byte getBean(Frame m, JavaScriptObject jso) /*-{
+    return jso === null
+        ? null
+        : @java.lang.Byte::new(B)(Number(jso));
+  }-*/;
 }

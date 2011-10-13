@@ -37,7 +37,7 @@ public interface GwtBeanInfo {
    * by GWT JSNI and do not constitute a security risk.
    */
   boolean isTamingPrimitiveType();
-  
+
   /**
    * @return the taming interface for this Bean class. The taming interface
    * must be an empty interface that extends interface Taming, parameterized

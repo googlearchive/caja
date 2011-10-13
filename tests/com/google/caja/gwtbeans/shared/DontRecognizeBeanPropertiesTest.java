@@ -16,8 +16,6 @@ package com.google.caja.gwtbeans.shared;
 
 public class DontRecognizeBeanPropertiesTest extends GWTBeansTestCase {
   public void testCorrectAttributes() {
-    setupCaja();
-
     // Method names (and not properties) should be present
     assertNotNull(getAttrsKey(beanJso, "invoke"));
     assertNotNull(getAttrsKey(beanJso, "fetchPrimitive"));
@@ -32,19 +30,15 @@ public class DontRecognizeBeanPropertiesTest extends GWTBeansTestCase {
   }
   
   public void testGetter() throws Exception {
-    setupCaja();
-    Object o = callMethodReturningPrimitive(beanJso, "getPrimitive");
+    int o = callMethodReturningInt(beanJso, "getPrimitive");
     assertTrue(bean.invoked);
-    assertTrue(o instanceof String);
-    assertEquals(bean.primitiveRetval, o);
+    assertEquals(bean.primitiveRetval0, o);
   }
 
   public void testSetter() throws Exception {
-    setupCaja();
-    String argSent = "hello world";
-    callMethodVoidWithArgPrimitive(beanJso, "setPrimitive", argSent);
+    callMethodVoidWithArgInt(beanJso, "setPrimitive", 42);
     assertTrue(bean.invoked);
-    assertEquals(argSent, bean.arg0);
+    assertEquals(42, bean.arg0);  // autoboxed
   }
 
   @Override

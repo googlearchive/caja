@@ -20,13 +20,16 @@ import com.google.gwt.core.ext.GeneratorContext;
 import com.google.gwt.core.ext.TreeLogger;
 import com.google.gwt.core.ext.UnableToCompleteException;
 
+import java.util.Collections;
+import java.util.List;
+
 public class Properties {
 
-  private static final String INTROSPECTOR_CLASS_PROP =
-      "com.google.caja.gwtbeans.introspectorClass";
+  private static final String TAMING_INTERFACES_PROP =
+      "com.google.caja.gwtbeans.tamingInterfaces";
 
-  private static final String DEFAULT_INTROSPECTOR_CLASS =
-      DefaultGwtBeanIntrospector.class.getCanonicalName();
+  private static final String TAMING_IMPLEMENTATIONS_PROP =
+      "com.google.caja.gwtbeans.tamingImplementations";
 
   private static final String RECOGNIZE_BEAN_PROPERTIES_PROP =
       "com.google.caja.gwtbeans.recognizeBeanProperties";
@@ -34,31 +37,38 @@ public class Properties {
   private static final boolean DEFAULT_RECOGNIZE_BEAN_PROPERTIES =
       true;
   
-  public static String getIntrospectorClass(
-      GeneratorContext context,
-      TreeLogger logger)
+  public static List<String> getTamingInterfaces(
+      TreeLogger logger,
+      GeneratorContext context)
       throws UnableToCompleteException {
     ConfigurationProperty cp =
-        getSingleValuedProperty(context, logger, INTROSPECTOR_CLASS_PROP);
-    return (cp == null || cp.getValues().get(0) == null)
-        ? DEFAULT_INTROSPECTOR_CLASS
-        : cp.getValues().get(0);
+        getMultiValuedProperty(context, TAMING_INTERFACES_PROP);
+    return (cp == null) ? Collections.EMPTY_LIST : cp.getValues();
+  }
+
+  public static List<String> getTamingImplementations(
+      TreeLogger logger,
+      GeneratorContext context)
+      throws UnableToCompleteException {
+    ConfigurationProperty cp =
+        getMultiValuedProperty(context, TAMING_IMPLEMENTATIONS_PROP);
+    return (cp == null) ? Collections.EMPTY_LIST : cp.getValues();
   }
 
   public static boolean isRecognizeBeanProperties(
-      GeneratorContext context,
-      TreeLogger logger)
+      TreeLogger logger,
+      GeneratorContext context)
       throws UnableToCompleteException {
     ConfigurationProperty cp = getSingleValuedProperty(
-        context, logger, RECOGNIZE_BEAN_PROPERTIES_PROP);
+        logger, context, RECOGNIZE_BEAN_PROPERTIES_PROP);
     return (cp == null || cp.getValues().get(0) == null)
         ? DEFAULT_RECOGNIZE_BEAN_PROPERTIES
         : Boolean.valueOf(cp.getValues().get(0));
   }
 
   private static ConfigurationProperty getSingleValuedProperty(
-      GeneratorContext context,
       TreeLogger logger,
+      GeneratorContext context,
       String name)
       throws UnableToCompleteException {
     try {
@@ -70,6 +80,17 @@ public class Properties {
         throw new UnableToCompleteException();
       }
       return cp;
+    } catch (BadPropertyValueException e) {
+      return null;
+    }
+  }
+
+  private static ConfigurationProperty getMultiValuedProperty(
+      GeneratorContext context,
+      String name)
+      throws UnableToCompleteException {
+    try {
+      return context.getPropertyOracle().getConfigurationProperty(name);
     } catch (BadPropertyValueException e) {
       return null;
     }
