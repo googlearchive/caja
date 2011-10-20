@@ -112,7 +112,10 @@ function myvn() {
       "$tools_dir/appspot.py" edit "$@"
       ;;
     submit )
-      runAntTests && "$svn" commit -F <("$tools_dir/appspot.py" show "$@")
+      runAntTests && "$svn" commit -F <("$tools_dir/appspot.py" show "$@") && tidyup
+      ;;
+    tidyup )
+      tidyup
       ;;
     mail )
       "$tools_dir/appspot.py" snapshot --send_mail "$@"
@@ -149,6 +152,20 @@ function myvn() {
       "$svn" "$verb" "$@"
       ;;
   esac
+}
+
+function tidyup() {
+  echo Clean up client for re-use?
+  select yn in "Yes" "No"; do
+    case $yn in
+        Yes ) 
+          rm -f .appspot-change
+          echo Running ant clean...
+          ant clean
+          break;;
+        No ) return;;
+    esac
+  done
 }
 
 function typeForFile() {
