@@ -21,7 +21,7 @@
  * anticipated ES6.
  *
  * @author Mark S. Miller
- * @overrides ses
+ * @overrides ses, atLeastFreeVarNamesModule
  */
 var ses;
 
@@ -43,7 +43,7 @@ var ses;
  * {@code with(aProxy) {...}} should reliably intercept all free
  * variable accesses without needing any prior scan.
  */
-(function() {
+(function atLeastFreeVarNamesModule() {
   "use strict";
 
    if (!ses) { ses = {}; }
@@ -84,7 +84,7 @@ var ses;
 
   //////////////// END KLUDGE SWITCHES ///////////
 
-  ses.atLeastFreeVarNames = function(programSrc) {
+  ses.atLeastFreeVarNames = function atLeastFreeVarNames(programSrc) {
     programSrc = String(programSrc);
     LIMIT_SRC(programSrc);
     // Now that we've temporarily limited our attention to ascii...

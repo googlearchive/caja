@@ -22,11 +22,11 @@
  *
  * @author kpreid@switchb.org
  * @requires WeakMap, cajaVM
- * @overrides ses
+ * @overrides ses, ejectorsGuardsTrademarksModule
  */
 var ses;
 
-(function(){
+(function ejectorsGuardsTrademarksModule(){
   "use strict";
 
   ses.ejectorsGuardsTrademarks = function ejectorsGuardsTrademarks() {

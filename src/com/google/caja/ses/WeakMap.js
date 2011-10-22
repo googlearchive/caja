@@ -23,8 +23,8 @@
  * quite conform, run <code>repairES5.js</code> first.
  *
  * @author Mark S. Miller
- * @requires ses
- * @overrides WeakMap
+ * @requires ses, crypto, ArrayBuffer, Uint8Array
+ * @overrides WeakMap, WeakMapModule
  */
 
 /**
@@ -33,16 +33,18 @@
  *
  * <p>As with true WeakMaps, in this emulation, a key does not
  * retain maps indexed by that key and (crucially) a map does not
- * retain the keys it indexes. A key by itself also does not retain
- * the values associated with that key.
+ * retain the keys it indexes. A map by itself also does not retain
+ * the values associated with that map.
  *
- * <p>However, the values placed in an emulated WeakMap are retained
- * so long as that map is retained and those associations are not
- * overridden. For example, when used to support membranes, all
+ * <p>However, the values associated with a key in some map are
+ * retained so long as that key is retained and those associations are
+ * not overridden. For example, when used to support membranes, all
  * values exported from a given membrane will live for the lifetime
- * of the membrane. But when the membrane is revoked, all objects
- * encapsulated within that membrane will still be collected. This
- * is the best we can do without VM support.
+ * they would have had in the absence of an interposed membrane. Even
+ * when the membrane is revoked, all objects that would have been
+ * reachable in the absence of revocation will still be reachable, as
+ * far as the GC can tell, even though they will no longer be relevant
+ * to ongoing computation.
  *
  * <p>The API implemented here is approximately the API as implemented
  * in FF6.0a1 and agreed to by MarkM, Andreas Gal, and Dave Herman,
@@ -85,7 +87,7 @@ var WeakMap;
  * <p>See {@code WeakMap} for documentation of the garbage collection
  * properties of this WeakMap emulation.
  */
-(function() {
+(function WeakMapModule() {
   "use strict";
 
   if (typeof ses !== 'undefined' && ses.ok && !ses.ok()) {
@@ -113,171 +115,191 @@ var WeakMap;
     originalProps[name] = Object[name];
   });
 
-  var NO_IDENT = 'noident:0';
+  /**
+   * Security depends on HIDDEN_NAME being both <i>unguessable</i> and
+   * <i>undiscoverable</i> by untrusted code.
+   *
+   * <p>Given the known weaknesses of Math.random() on existing
+   * browsers, it does not generate unguessability we can be confident
+   * of.
+   *
+   * <p>It is the monkey patching logic in this file that is intended
+   * to ensure undiscoverability. The basic idea is that there are
+   * three fundamental means of discovering properties of an object:
+   * The for/in loop, Object.keys(), and Object.getOwnPropertyNames(),
+   * as well as some proposed ES6 extensions that appear on our
+   * whitelist. The first two only discover enumerable properties, and
+   * we only use HIDDEN_NAME to name a non-enumerable property, so the
+   * only remaining threat should be getOwnPropertyNames and some
+   * proposed ES6 extensions that appear on our whitelist. We monkey
+   * patch them to remove HIDDEN_NAME from the list of properties they
+   * returns.
+   *
+   * <p>TODO(erights): On a platform with built-in Proxies, proxies
+   * could be used to trap and thereby discover the HIDDEN_NAME, so we
+   * need to monkey patch Proxy.create, Proxy.createFunction, etc, in
+   * order to wrap the provided handler with the real handler which
+   * filters out all traps using HIDDEN_NAME.
+   *
+   * <p>TODO(erights): Revisit Mike Stay's suggestion that we use an
+   * encapsulated function at a not-necessarily-secret name, which
+   * uses the Stiegler shared-state rights amplification pattern to
+   * reveal the associated value only to the WeakMap in which this key
+   * is associated with that value. Since only the key retains the
+   * function, the function can also remember the key without causing
+   * leakage of the key, so this doesn't violate our general gc
+   * goals. In addition, because the name need not be a guarded
+   * secret, we could efficiently handle cross-frame frozen keys.
+   */
+  var HIDDEN_NAME = 'ident:' + Math.random() + '___';
+
+  if (typeof crypto !== 'undefined' &&
+      typeof crypto.getRandomValues === 'function' &&
+      typeof ArrayBuffer === 'function' &&
+      typeof Uint8Array === 'function') {
+    var ab = new ArrayBuffer(25);
+    var u8s = new Uint8Array(ab);
+    crypto.getRandomValues(u8s);
+    HIDDEN_NAME = 'rand:' +
+      Array.prototype.map.call(u8s, function(u8) {
+        return (u8 % 36).toString(36);
+      }).join('') + '___';
+  }
 
   /**
-   * Gets a value which is either NO_IDENT or uniquely identifies the
-   * key object, for use in making maps keyed by this key object.
+   * Monkey patch getOwnPropertyNames to avoid revealing the
+   * HIDDEN_NAME.
    *
-   * <p>Two keys that are <a href=
-   * "http://wiki.ecmascript.org/doku.php?id=harmony:egal">egal</a>
-   * MUST have the same {@code identity}. Two keys that are not egal
-   * MUST either have different identities, or at least one of their
-   * identities MUST be {@code NO_IDENT}.
-   *
-   * An identity is either a string or a const function returning a
-   * mostly-unique string. The identity of an object is always either
-   * NO_IDENT or such a function. The egal-identity of the function
-   * itself is used to resolve collisions on the string returned by
-   * the function. If the key is not an object (i.e., a primitive,
-   * null, or undefined), then identity(key) throws a TypeError.
-   *
-   * <p>When a map stores a key's identity rather than the key itself,
-   * the map does not cause the key to be retained. See the emulated
-   * {@code WeakMap} below for the resulting gc properties.
-   *
-   * <p>To identify objects with reasonable efficiency on ES5 by
-   * itself (i.e., without any object-keyed collections), we need to
-   * add a reasonably hidden property to such key objects when we
-   * can. This raises three issues:
+   * <p>The ES5.1 spec requires each name to appear only once, but as
+   * of this writing, this requirement is controversial for ES6, so we
+   * made this code robust against this case. If the resulting extra
+   * search turns out to be expensive, we can probably relax this once
+   * ES6 is adequately supported on all major browsers, iff no browser
+   * versions we support at that time have relaxed this constraint
+   * without providing built-in ES6 WeakMaps.
+   */
+  defProp(Object, 'getOwnPropertyNames', {
+    value: function fakeGetOwnPropertyNames(obj) {
+      return gopn(obj).filter(function(name) {
+        return name !== HIDDEN_NAME;
+      });
+    }
+  });
+
+  /**
+   * getPropertyNames is not in ES5 but it is proposed for ES6 and
+   * does appear in our whitelist, so we need to clean it too.
+   */
+  if ('getPropertyNames' in Object) {
+    defProp(Object, 'getPropertyNames', {
+      value: function fakeGetPropertyNames(obj) {
+        return originalProps.getPropertyNames(obj).filter(function(name) {
+          return name !== HIDDEN_NAME;
+        });
+      }
+    });
+  }
+
+  /**
+   * <p>To treat objects as identity-keys with reasonable efficiency
+   * on ES5 by itself (i.e., without any object-keyed collections), we
+   * need to add a hidden property to such key objects when we
+   * can. This raises several issues:
    * <ul>
-   * <li>arranging to add this property to objects before we lose the
+   * <li>Arranging to add this property to objects before we lose the
    *     chance, and
-   * <li>reasonably hiding the existence of this new property from
-   *     most JavaScript code.
-   * <li>Preventing <i>identity theft</i>, where one object is created
-   *     falsely claiming to have the identity of another object.
+   * <li>Hiding the existence of this new property from most
+   *     JavaScript code.
+   * <li>Preventing <i>certification theft</i>, where one object is
+   *     created falsely claiming to be the key of an association
+   *     actually keyed by another object.
+   * <li>Preventing <i>value theft</i>, where untrusted code with
+   *     access to a key object but not a weak map nevertheless
+   *     obtains access to the value associated with that key in that
+   *     weak map.
    * </ul>
    * We do so by
    * <ul>
+   * <li>Making the name of the hidden property unguessable, so "[]"
+   *     indexing, which we cannot intercept, cannot be used to access
+   *     a property without knowing the name.
    * <li>Making the hidden property non-enumerable, so we need not
    *     worry about for-in loops or {@code Object.keys},
-   * <li>Making the hidden property an accessor property,
-   *     where the hidden property's getter is the identity, and the
-   *     value the getter returns is the mostly unique string.
    * <li>monkey patching those reflective methods that would
    *     prevent extensions, to add this hidden property first,
    * <li>monkey patching those methods that would reveal this
-   *     hidden property, and
-   * <li>monkey patching those methods that would overwrite this
    *     hidden property.
    * </ul>
-   * Given our parser-less verification strategy, the remaining
-   * non-transparencies which are not easily fixed are
-   * <ul>
-   * <li>The {@code delete}, {@code in}, property access
-   *     ({@code []}, and {@code .}), and property assignment
-   *     operations each reveal the presence of the hidden
-   *     property. The property access operations also reveal the
-   *     randomness provided by {@code Math.random}. This is not
-   *     currently an issue but may become one if SES otherwise seeks
-   *     to hide {@code Math.random}.
-   * </ul>
-   * These are not easily fixed because they are primitive operations
-   * which cannot be monkey patched. However, because we're
-   * representing the precious identity by the identity of the
-   * property's getter rather than the value gotten, this identity
-   * itself cannot leak or be installed by the above non-transparent
-   * operations.
+   * Unfortunately, because of same-origin iframes, we cannot reliably
+   * add this hidden property before an object becomes
+   * non-extensible. Instead, if we encounter a non-extensible object
+   * without a hidden record that we can detect (whether or not it has
+   * a hidden record stored under a name secret to us), then we just
+   * use the key object itself to represent its identity in a brute
+   * force leaky map stored in the weak map, losing all the advantages
+   * of weakness for these.
    */
-  function identity(key) {
-    var name;
-    function identGetter() { return name; }
+  function getHiddenRecord(key) {
     if (key !== Object(key)) {
       throw new TypeError('Not an object: ' + key);
     }
-    var desc = originalProps.getOwnPropertyDescriptor(key, 'ident___');
-    if (desc) { return desc.get; }
-    if (!originalProps.isExtensible(key)) { return NO_IDENT; }
-
-    name = 'hash:' + Math.random();
-    // If the following two lines are swapped, Safari WebKit Nightly
-    // Version 5.0.5 (5533.21.1, r87697) crashes.
-    // See https://bugs.webkit.org/show_bug.cgi?id=61758
-    originalProps.freeze(identGetter.prototype);
-    originalProps.freeze(identGetter);
-
-    defProp(key, 'ident___', {
-      get: identGetter,
-      set: undefined,
+    var hiddenRecord = key[HIDDEN_NAME];
+    if (hiddenRecord && hiddenRecord.key === key) { return hiddenRecord; }
+    if (!originalProps.isExtensible(key)) {
+      // Weak map must brute force, as explained in doc-comment above.
+      return void 0;
+    }
+    var gets = [];
+    var vals = [];
+    hiddenRecord = {
+      key: key,   // self pointer for quick own check above.
+      gets: gets, // get___ methods identifying weak maps
+      vals: vals  // values associated with this key in each
+                  // corresponding weak map.
+    };
+    defProp(key, HIDDEN_NAME, {
+      value: hiddenRecord,
+      writable: false,
       enumerable: false,
       configurable: false
     });
-    return identGetter;
+    return hiddenRecord;
   }
+
 
   /**
-   * Monkey patch operations that would make their first argument
+   * Monkey patch operations that would make their argument
    * non-extensible.
    *
-   * <p>The monkey patched versions throw a TypeError if their first
-   * argument is not an object, so it should only be used on functions
-   * that should throw a TypeError if their first arg is not an
+   * <p>The monkey patched versions throw a TypeError if their
+   * argument is not an object, so it should only be done to functions
+   * that should throw a TypeError anyway if their argument is not an
    * object.
    */
-  function identifyFirst(base, name) {
-    var oldFunc = base[name];
-    defProp(base, name, {
-      value: function(obj, var_args) {
-        identity(obj);
-        return oldFunc.apply(this, arguments);
+  (function(){
+    var oldFreeze = Object.freeze;
+    defProp(Object, 'freeze', {
+      value: function identifyingFreeze(obj) {
+        getHiddenRecord(obj);
+        return oldFreeze(obj);
       }
     });
-  }
-  identifyFirst(Object, 'freeze');
-  identifyFirst(Object, 'seal');
-  identifyFirst(Object, 'preventExtensions');
-  identifyFirst(Object, 'defineProperty');
-  identifyFirst(Object, 'defineProperties');
-
-  defProp(Object, 'getOwnPropertyNames', {
-    value: function fakeGetOwnPropertyNames(obj) {
-      var result = gopn(obj);
-      var i = result.indexOf('ident___');
-      if (i >= 0) { result.splice(i, 1); }
-      return result;
-    }
-  });
-
-  defProp(Object, 'getOwnPropertyDescriptor', {
-    value: function fakeGetOwnPropertyDescriptor(obj, name) {
-      if (name === 'ident___') { return undefined; }
-      return originalProps.getOwnPropertyDescriptor(obj, name);
-    }
-  });
-
-  if ('getPropertyNames' in Object) {
-    // Not in ES5 but in whitelist as expected for ES-Harmony
-    defProp(Object, 'getPropertyNames', {
-      value: function fakeGetPropertyNames(obj) {
-        var result = originalProps.getPropertyNames(obj);
-        var i = result.indexOf('ident___');
-        if (i >= 0) { result.splice(i, 1); }
-        return result;
+    var oldSeal = Object.seal;
+    defProp(Object, 'seal', {
+      value: function identifyingSeal(obj) {
+        getHiddenRecord(obj);
+        return oldSeal(obj);
       }
     });
-  }
-
-  if ('getPropertyDescriptor' in Object) {
-    // Not in ES5 but in whitelist as expected for ES-Harmony
-    defProp(Object, 'getPropertyDescriptor', {
-      value: function fakeGetPropertyDescriptor(obj, name) {
-        if (name === 'ident___') { return undefined; }
-        return originalProps.getPropertyDescriptor(obj, name);
+    var oldPreventExtensions = Object.preventExtensions;
+    defProp(Object, 'preventExtensions', {
+      value: function identifyingPreventExtensions(obj) {
+        getHiddenRecord(obj);
+        return oldPreventExtensions(obj);
       }
     });
-  }
+  })();
 
-  defProp(Object, 'create', {
-    value: function fakeCreate(parent, pdmap) {
-      var result = originalProps.create(parent);
-      identity(result);
-      if (pdmap) {
-        originalProps.defineProperties(result, pdmap);
-      }
-      return result;
-    }
-  });
 
   function constFunc(func) {
     Object.freeze(func.prototype);
@@ -285,69 +307,78 @@ var WeakMap;
   }
 
   WeakMap = function() {
-    var identities = {};
-    var values = {};
-
-    function find(key) {
-      var id = identity(key);
-      var name;
-      if (typeof id === 'string') {
-        name = id;
-        id = key;
-      } else {
-        name = id();
-      }
-      var opt_ids = identities[name];
-      var i = opt_ids ? opt_ids.indexOf(id) : -1;
-      // Using original freeze is safe since this record can't escape.
-      return originalProps.freeze({
-        name: name,
-        id: id,
-        opt_ids: opt_ids,
-        i: i
-      });
-    }
+    var keys = []; // brute force for prematurely non-extensible keys.
+    var vals = []; // brute force for corresponding values.
 
     function get___(key, opt_default) {
-      var f = find(key);
-      return (f.i >= 0) ? values[f.name][f.i] : opt_default;
+      var hr = getHiddenRecord(key);
+      var i, vs;
+      if (hr) {
+        i = hr.gets.indexOf(get___);
+        vs = hr.vals;
+      } else {
+        i = keys.indexOf(key);
+        vs = vals;
+      }
+      return (i >= 0) ? vs[i] : opt_default;
     }
 
     function has___(key) {
-      return find(key).i >= 0;
+      var hr = getHiddenRecord(key);
+      var i;
+      if (hr) {
+        i = hr.gets.indexOf(get___);
+      } else {
+        i = keys.indexOf(key);
+      }
+      return i >= 0;
     }
 
     function set___(key, value) {
-      var f = find(key);
-      var ids = f.opt_ids || (identities[f.name] = []);
-      var vals = values[f.name] || (values[f.name] = []);
-      var i = (f.i >= 0) ? f.i : ids.length;
-      ids[i] = f.id;
-      vals[i] = value;
+      var hr = getHiddenRecord(key);
+      var i;
+      if (hr) {
+        i = hr.gets.indexOf(get___);
+        if (i >= 0) {
+          hr.vals[i] = value;
+        } else {
+          hr.gets.push(get___);
+          hr.vals.push(value);
+        }
+      } else {
+        i = keys.indexOf(key);
+        if (i >= 0) {
+          vals[i] = value;
+        } else {
+          keys.push(key);
+          vals.push(value);
+        }
+      }
     }
 
     function delete___(key) {
-      var f = find(key);
-      if (f.i < 0) { return false; }
-      var ids = f.opt_ids;
-      var last = ids.length - 1;
-      if (last === 0) {
-        delete identities[f.name];
-        delete values[f.name];
+      var hr = getHiddenRecord(key);
+      var i;
+      if (hr) {
+        i = hr.gets.indexOf(get___);
+        if (i >= 0) {
+          hr.gets.splice(i, 1);
+          hr.vals.splice(i, 1);
+        }
       } else {
-        var vals = values[f.name];
-        ids[f.i] = ids[last];
-        vals[f.i] = vals[last];
-        ids.splice(last);
-        vals.splice(last);
+        i = keys.indexOf(key);
+        if (i >= 0) {
+          keys.splice(i, 1);
+          vals.splice(i, 1);
+        }
       }
       return true;
     }
 
     return Object.create(WeakMap.prototype, {
-      get___: { value: constFunc(get___) },
-      has___: { value: constFunc(has___) },
-      set___: { value: constFunc(set___) },
+      get___:    { value: constFunc(get___) },
+      has___:    { value: constFunc(has___) },
+      set___:    { value: constFunc(set___) },
       delete___: { value: constFunc(delete___) }
     });
   };

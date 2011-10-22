@@ -22,7 +22,7 @@
  * anticipated ES6.
  *
  * @author Mark S. Miller,
- * @overrides ses
+ * @overrides ses, whitelistModule
  */
 var ses;
 
@@ -102,7 +102,7 @@ var ses;
  * <p>We factor out {@code true} into the variable {@code t} just to
  * get a bit better compression from simple minifiers.
  */
-(function() {
+(function whitelistModule() {
   "use strict";
 
   if (!ses) { ses = {}; }
@@ -118,7 +118,7 @@ var ses;
       compileProgram: t,             // Cannot be implemented in just ES5.1.
       eval: t,
       Function: t,
-      
+
       sharedImports: t,
       makeImports: t,
       copyToImports: t,
@@ -147,13 +147,25 @@ var ses;
         'delete': t
       }
     },
-    Proxy: {                         // ES-Harmony proposal
-      create: t,
-      createFunction: t
-    },
+// As of this writing, the WeakMap emulation in WeakMap.js relies on
+// the unguessability and undiscoverability of HIDDEN_NAME, a
+// secret property name. However, on a platform with built-in
+// Proxies, if whitelisted but not properly monkey patched, proxies
+// could be used to trap and thereby discover HIDDEN_NAME. So until we
+// (TODO(erights)) write the needed monkey patching of proxies, we
+// omit them from our whitelist.
+//    Proxy: {                         // ES-Harmony proposal
+//      create: t,
+//      createFunction: t
+//    },
     escape: t,                       // ES5 Appendix B
     unescape: t,                     // ES5 Appendix B
     Object: {
+      // As any new methods are added here that may reveal the
+      // HIDDEN_NAME within WeakMap.js, such as the proposed
+      // getOwnPropertyDescriptors or getPropertyDescriptors, extend
+      // WeakMap.js to monkey patch these to avoid revealing
+      // HIDDEN_NAME.
       getPropertyDescriptor: t,      // ES-Harmony proposal
       getPropertyNames: t,           // ES-Harmony proposal
       is: t,                         // ES-Harmony proposal

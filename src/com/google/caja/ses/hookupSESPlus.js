@@ -21,10 +21,10 @@
  *
  * @author Mark S. Miller
  * @requires this
- * @overrides ses
+ * @overrides ses, hookupSESPlusModule
  */
 
-(function(global) {
+(function hookupSESPlusModule(global) {
   "use strict";
 
   if (!ses.ok()) {

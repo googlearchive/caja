@@ -112,12 +112,12 @@
  *
  * @author Mark S. Miller
  * @requires console
- * @overrides ses
+ * @overrides ses, loggerModule
  */
 var ses;
 if (!ses) { ses = {}; }
 
-(function() {
+(function loggerModule() {
   "use strict";
 
   var logger;
@@ -142,10 +142,10 @@ if (!ses) { ses = {}; }
     // </ul>
 
     logger = {
-      log:   function(str) { console.log(str); },
-      info:  function(str) { console.info(str); },
-      warn:  function(str) { console.warn(str); },
-      error: function(str) { console.error(str); }
+      log:   function log(str)   { console.log(str); },
+      info:  function info(str)  { console.info(str); },
+      warn:  function warn(str)  { console.warn(str); },
+      error: function error(str) { console.error(str); }
     };
   } else {
     logger = {
