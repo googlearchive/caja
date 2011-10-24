@@ -18,6 +18,8 @@ import com.google.gwt.core.client.GWT;
 import com.google.gwt.core.client.JavaScriptObject;
 import com.google.gwt.junit.client.GWTTestCase;
 
+import java.util.Date;
+
 public abstract class GWTBeansTestCase extends GWTTestCase {
 
   // Set up variables in native window to emulate the parts of Caja we use.
@@ -63,16 +65,22 @@ public abstract class GWTBeansTestCase extends GWTTestCase {
     };
   }-*/;
 
+  private native JavaScriptObject makeJsoDate() /*-{
+    return new Date(Math.pow(2, 52));
+  }-*/;
+
   protected Frame frame;
 
   protected Bean bean;
   protected Friend friend0;
   protected Friend friend1;
   protected Friend friend2;
+  protected Date date;
   protected JavaScriptObject beanJso;
   protected JavaScriptObject friend0Jso;
   protected JavaScriptObject friend1Jso;
   protected JavaScriptObject friend2Jso;
+  protected JavaScriptObject dateJso;
 
   public void gwtSetUp() throws Exception {
     setupCajaStub();
@@ -84,6 +92,7 @@ public abstract class GWTBeansTestCase extends GWTTestCase {
     friend0 = bean.beanRetval0;
     friend1 = bean.beanRetval1;
     friend2 = bean.beanRetval2;
+    date = new Date((long) Math.pow(2, 52));
     beanJso = ((BeanTaming) GWT.create(BeanTaming.class)).getJso(frame, bean);
     friend0Jso = ((FriendTaming) GWT.create(FriendTaming.class))
         .getJso(frame, bean.beanRetval0);
@@ -91,6 +100,7 @@ public abstract class GWTBeansTestCase extends GWTTestCase {
         .getJso(frame, bean.beanRetval1);
     friend2Jso = ((FriendTaming) GWT.create(FriendTaming.class))
         .getJso(frame, bean.beanRetval2);
+    dateJso = makeJsoDate();
   }
 
   protected native JavaScriptObject getAttrsKey(

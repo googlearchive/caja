@@ -14,6 +14,8 @@
 
 package com.google.caja.gwtbeans.shared;
 
+import java.util.Date;
+
 public class Bean {
 
   // Canned return values
@@ -29,6 +31,7 @@ public class Bean {
   public final Integer integerRetval = 42;
   public final Short shortRetval = (short) 42;
   public final String stringRetval = "hello world";
+  public final Date dateRetval = new Date((long) Math.pow(2, 52));
 
   // Machinery to introspect on what was called
   public boolean invoked;
@@ -190,7 +193,19 @@ public class Bean {
     invoked = true;
     return null;
   }
-
+  public void invokeWithDateObj(Date a0) {
+    invoked = true;
+    this.arg0 = a0;
+  }
+  public Date fetchDateObj() {
+    invoked = true;
+    return dateRetval;
+  }
+  public Date fetchDateObjNull() {
+    invoked = true;
+    return null;
+  }
+  
   // Methods testing taming of arrays
   
   public void invokeWithBeanArray(Friend[] a0) {

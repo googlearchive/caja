@@ -74,6 +74,13 @@
 
   <extend-configuration-property
       name="com.google.caja.gwtbeans.tamingInterfaces"
+      value="com.google.caja.gwtbeans.shared.DateTaming"/>
+  <extend-configuration-property
+      name="com.google.caja.gwtbeans.tamingImplementations"
+      value="com.google.caja.gwtbeans.shared.DateTamingImpl"/>
+
+  <extend-configuration-property
+      name="com.google.caja.gwtbeans.tamingInterfaces"
       value="com.google.caja.gwtbeans.shared.ElementTaming"/>
   <extend-configuration-property
       name="com.google.caja.gwtbeans.tamingImplementations"

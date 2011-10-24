@@ -16,6 +16,8 @@ package com.google.caja.gwtbeans.shared;
 
 import com.google.gwt.core.client.JavaScriptObject;
 
+import java.util.Date;
+
 public class SimpleTest extends GWTBeansTestCase {
   public void testCorrectAttributes() {
     // Selected method and property names should be present
@@ -335,6 +337,35 @@ public class SimpleTest extends GWTBeansTestCase {
 
   public void testMethodReturningStringNull() {
     String i = callMethodReturningString(beanJso, "fetchStringObjNull");
+    assertTrue(bean.invoked);
+    assertNull(i);
+  }
+
+  public void testMethodAcceptingDate() {
+    callMethodVoidWithArgJso(beanJso, "invokeWithDateObj", dateJso);
+    assertTrue(bean.invoked);
+    assertTrue(bean.arg0 instanceof Date);
+    assertEquals(date, bean.arg0);
+  }
+
+  public void testMethodAcceptingDateNull() {
+    callMethodVoidWithArgJso(beanJso, "invokeWithDateObj", null);
+    assertTrue(bean.invoked);
+    assertNull(bean.arg0);
+  }
+
+  private static native String getDateValue(JavaScriptObject dateJso) /*-{
+    return '' + (dateJso - 0);
+  }-*/;
+
+  public void testMethodReturningDate() {
+    JavaScriptObject i = callMethodReturningJso(beanJso, "fetchDateObj");
+    assertTrue(bean.invoked);
+    assertEquals(date.getTime(), Long.parseLong(getDateValue(i)));
+  }
+
+  public void testMethodReturningDateNull() {
+    JavaScriptObject i = callMethodReturningJso(beanJso, "fetchDateObjNull");
     assertTrue(bean.invoked);
     assertNull(i);
   }
