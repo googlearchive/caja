@@ -43,7 +43,7 @@ public class Properties {
       throws UnableToCompleteException {
     ConfigurationProperty cp =
         getMultiValuedProperty(context, TAMING_INTERFACES_PROP);
-    return (cp == null) ? Collections.EMPTY_LIST : cp.getValues();
+    return (cp == null) ? Collections.<String>emptyList() : cp.getValues();
   }
 
   public static List<String> getTamingImplementations(
@@ -52,7 +52,7 @@ public class Properties {
       throws UnableToCompleteException {
     ConfigurationProperty cp =
         getMultiValuedProperty(context, TAMING_IMPLEMENTATIONS_PROP);
-    return (cp == null) ? Collections.EMPTY_LIST : cp.getValues();
+    return (cp == null) ? Collections.<String>emptyList() : cp.getValues();
   }
 
   public static boolean isRecognizeBeanProperties(
