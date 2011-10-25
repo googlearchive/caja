@@ -91,7 +91,6 @@ public class PipelineMakerTest extends CajaTestCase {
         "PipelineStoreStage",
         "ConsolidateCodeStage",
         "InferFilePositionsStage",  // extra
-        "DebuggingSymbolsStage",  // extra
         "CheckForErrorsStage");
   }
 

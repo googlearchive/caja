@@ -19,7 +19,6 @@ import com.google.caja.lang.html.HtmlSchema;
 import com.google.caja.parser.quasiliteral.ModuleManager;
 import com.google.caja.plugin.stages.CheckForErrorsStage;
 import com.google.caja.plugin.stages.ConsolidateCodeStage;
-import com.google.caja.plugin.stages.DebuggingSymbolsStage;
 import com.google.caja.plugin.stages.RewriteFlashStage;
 import com.google.caja.plugin.stages.HtmlToBundleStage;
 import com.google.caja.plugin.stages.HtmlToJsStage;
@@ -257,7 +256,6 @@ public final class PipelineMaker {
         new Tool() {
           public void operate(PlanInputs in, List<Pipeline.Stage<Jobs>> out) {
             out.add(new InferFilePositionsStage());
-            out.add(new DebuggingSymbolsStage());
           }
         }.given(ONE_CAJOLED_MODULE).produces(ONE_CAJOLED_MODULE_DEBUG),
 
