@@ -245,6 +245,7 @@ public class SimpleTest extends GWTBeansTestCase {
   }
 
   public void testMethodAcceptingFloatNull() {
+    @SuppressWarnings("unused")
     JavaScriptObject jso = makeJsFloatingPoint(42.0);
     callMethodVoidWithArgJso(beanJso, "invokeWithFloatObj", null);
     assertTrue(bean.invoked);
@@ -423,6 +424,7 @@ public class SimpleTest extends GWTBeansTestCase {
   }-*/;
 
   public void testMethodAcceptingPrimitiveArray() {
+    @SuppressWarnings("unused")
     JavaScriptObject o = makeIntArray(
         42,
         13);

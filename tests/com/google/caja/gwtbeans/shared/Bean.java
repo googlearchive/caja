@@ -41,6 +41,7 @@ public class Bean {
   // Some fields for testing
   public String testPublicField;
   protected String testProtectedField;
+  @SuppressWarnings("unused")
   private String testPrivateField;
   String testPackagePrivateField;
 
@@ -244,13 +245,16 @@ public class Bean {
 
   // Methods that should not be visible
   protected void doProtected() {}
+  @SuppressWarnings("unused")
   private void doPrivate() {}
   void doPackagePrivate() {}
 
   // Properties that should not be visible
   protected String getProtected() { return null; }
   protected void setProtected(String s) {}
+  @SuppressWarnings("unused")
   private String getPrivate() { return null; }
+  @SuppressWarnings("unused")
   private void setPrivate(String s) {}
   String getPackagePrivate() { return null; }
   void setPackagePrivate(String s) {}
