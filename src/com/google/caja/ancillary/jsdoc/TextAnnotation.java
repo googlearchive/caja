@@ -55,19 +55,6 @@ public final class TextAnnotation extends AbstractAnnotation {
         ++scil;
       }
     }
-    int eline = sline, ecil = scil;
-    for (int i = start; i < end; ++i) {
-      char ch = value.charAt(i);
-      if (ch == '\r') {
-        if (i + 1 >= value.length() || '\n' != value.charAt(i + 1)) { ++eline; }
-        ecil = 1;
-      } else if (ch == '\n') {
-        ++eline;
-        ecil = 1;
-      } else {
-        ++ecil;
-      }
-    }
     return new TextAnnotation(
         value.substring(start, end),
         FilePosition.instance(
