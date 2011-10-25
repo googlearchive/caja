@@ -28,4 +28,4 @@ scriptdir="$(dirname "$0")"
 jardir="${scriptdir}/../ant-jars"
 classpath="$(find "$jardir" -name '*.jar' -print0 | tr '\0' ':')"
 
-"$JAVA" -Xmx512m -cp "${classpath}" "$@"
+"$JAVA" -server -Xmx512m -cp "${classpath}" "$@"

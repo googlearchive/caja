@@ -101,7 +101,6 @@
   </path>
   <path id="classpath.common">
     <path refid="classpath.web"/>
-    <!-- TODO(jasvir): Check in guava in third_party and update link -->
     <pathelement path="${third_party}/java/guava/guava-r09.jar"/>
     <pathelement path="${third_party}/java/json_simple/json_simple.jar"/>
     <pathelement path="${third_party}/java/jsonml/jsonml.jar"/>
@@ -699,6 +698,12 @@
 
   <target name="jquery" depends="CajoledDomado">
     <!-- The root files of the Domita test cases are statically cajoled -->
+    <copy todir="${lib}">
+      <fileset dir="${third_party}">
+        <include name="js/jqueryjs/**/*"/>
+        <exclude name="**/*.jar"/>
+      </fileset>
+    </copy>
     <JQueryTestCase testcase="core" />
     <JQueryTestCase testcase="data" />
     <JQueryTestCase testcase="queue" />
@@ -986,6 +991,11 @@
     <copy todir="${lib.caja}/plugin/proxies">
       <fileset dir="${third_party}/js/proxies" />
     </copy>
+    <copy todir="${lib}">
+      <fileset dir="${third_party}">
+        <include name="js/es5conform/**/*.js"/>
+      </fileset>
+    </copy>
   </target>
 
   <target name="build.info">
@@ -1032,7 +1042,6 @@
       <compilerarg line="-Xlint:unchecked"/>
     </javac>
     <copy todir="${lib}">
-      <fileset dir="${third_party}" />
       <fileset dir="${src}">
         <include name="**/caja/cajita-module-orig.js"/>        
         <include name="**/caja/cajita-promise.js"/>
@@ -1196,7 +1205,7 @@
 
       <!-- Needed by jqueryTest which references the playground
         -  server so as to be standalone. -->
-      <fileset dir="${lib}/js/jqueryjs/test/">
+      <fileset dir="${third_party}/js/jqueryjs/test/">
         <include name="core.html"/>
       </fileset>
 
