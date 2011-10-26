@@ -175,7 +175,6 @@ def editable_change(cl):
 ### Please edit the fields below, save this file, and exit your editor.
 ### Lines starting with ### and ending with : are treated as section headings.
 ### Other lines starting with ### are ignored.
-### If the file is empty or the first line the changelist will not be changed.
 
 ### Issue:
 %(issue)s
