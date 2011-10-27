@@ -22,7 +22,6 @@ import com.google.caja.lexer.JsTokenQueue;
 import com.google.caja.lexer.ParseException;
 import com.google.caja.parser.js.Expression;
 import com.google.caja.parser.js.Parser;
-import com.google.caja.render.Concatenator;
 import com.google.caja.render.JsMinimalPrinter;
 import com.google.caja.reporting.DevNullMessageQueue;
 import com.google.caja.reporting.EchoingMessageQueue;
@@ -74,8 +73,7 @@ public class EnvironmentData {
     Expression e = new Parser(tq, mq).parseExpression(true);
     tq.expectEmpty();
     StringBuilder sb = new StringBuilder(js.length() + 16);
-    RenderContext rc = new RenderContext(
-        new JsMinimalPrinter(new Concatenator(sb)));
+    RenderContext rc = new RenderContext(new JsMinimalPrinter(sb));
     e.render(rc);
     rc.getOut().noMoreTokens();
     return sb.toString();

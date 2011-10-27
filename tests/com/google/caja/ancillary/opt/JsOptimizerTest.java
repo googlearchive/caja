@@ -18,7 +18,6 @@ import com.google.caja.lexer.FilePosition;
 import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.ObjectConstructor;
 import com.google.caja.parser.js.Statement;
-import com.google.caja.render.Concatenator;
 import com.google.caja.render.JsMinimalPrinter;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.CajaTestCase;
@@ -119,8 +118,7 @@ public class JsOptimizerTest extends CajaTestCase {
 
   private static String renderProgram(Statement s) {
     StringBuilder out = new StringBuilder();
-    RenderContext rc = new RenderContext(
-        new JsMinimalPrinter(new Concatenator(out)));
+    RenderContext rc = new RenderContext(new JsMinimalPrinter(out));
     if (s instanceof Block) {
       ((Block) s).renderBody(rc);
     } else {

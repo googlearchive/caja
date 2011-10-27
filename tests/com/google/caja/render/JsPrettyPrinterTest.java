@@ -209,7 +209,7 @@ public class JsPrettyPrinterTest extends CajaTestCase {
       for (int i = 1000; --i >= 0;) {
         List<String> randomTokens = generateRandomTokens(rnd);
         StringBuilder sb = new StringBuilder();
-        JsPrettyPrinter pp = new JsPrettyPrinter(new Concatenator(sb));
+        JsPrettyPrinter pp = new JsPrettyPrinter(sb);
         for (String token : randomTokens) {
           pp.consume(token);
         }
@@ -423,7 +423,7 @@ public class JsPrettyPrinterTest extends CajaTestCase {
 
   private void assertRendered(String golden, ParseTreeNode node) {
     StringBuilder out = new StringBuilder();
-    JsPrettyPrinter pp = new JsPrettyPrinter(new Concatenator(out));
+    JsPrettyPrinter pp = new JsPrettyPrinter(out);
     node.render(new RenderContext(pp));
     pp.noMoreTokens();
 
@@ -432,7 +432,7 @@ public class JsPrettyPrinterTest extends CajaTestCase {
 
   private void assertLexed(String golden, String input) throws Exception {
     StringBuilder out = new StringBuilder();
-    JsPrettyPrinter pp = new JsPrettyPrinter(new Concatenator(out));
+    JsPrettyPrinter pp = new JsPrettyPrinter(out);
 
     JsLexer lex = new JsLexer(fromString(input));
     while (lex.hasNext()) {
@@ -447,7 +447,7 @@ public class JsPrettyPrinterTest extends CajaTestCase {
 
   private void assertTokens(String golden, String... input) {
     StringBuilder out = new StringBuilder();
-    JsPrettyPrinter pp = new JsPrettyPrinter(new Concatenator(out));
+    JsPrettyPrinter pp = new JsPrettyPrinter(out);
 
     for (String token : input) {
       pp.consume(token);

@@ -21,7 +21,6 @@ import com.google.caja.parser.js.ExpressionStmt;
 import com.google.caja.parser.js.IntegerLiteral;
 import com.google.caja.parser.js.LabeledStatement;
 import com.google.caja.parser.js.LabeledStmtWrapper;
-import com.google.caja.render.Concatenator;
 import com.google.caja.render.JsPrettyPrinter;
 import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.RenderContext;
@@ -115,7 +114,7 @@ public class ParseTreeNodeTest extends CajaTestCase {
 
   public final void testRender() {
     StringBuilder sb = new StringBuilder();
-    TokenConsumer tc = new JsPrettyPrinter(new Concatenator(sb));
+    TokenConsumer tc = new JsPrettyPrinter(sb);
     root.render(new RenderContext(tc));
     tc.noMoreTokens();
     assertEquals(
@@ -202,7 +201,7 @@ public class ParseTreeNodeTest extends CajaTestCase {
   public final void testRenderPostReplace() {
     doReplace();
     StringBuilder sb = new StringBuilder();
-    TokenConsumer tc = new JsPrettyPrinter(new Concatenator(sb));
+    TokenConsumer tc = new JsPrettyPrinter(sb);
     root.render(new RenderContext(tc));
     tc.noMoreTokens();
     assertEquals(
@@ -300,7 +299,7 @@ public class ParseTreeNodeTest extends CajaTestCase {
   public final void testRenderPostInsert() {
     doInsert(5);
     StringBuilder sb = new StringBuilder();
-    TokenConsumer tc = new JsPrettyPrinter(new Concatenator(sb));
+    TokenConsumer tc = new JsPrettyPrinter(sb);
     root.render(new RenderContext(tc));
     tc.noMoreTokens();
     assertEquals(
@@ -384,7 +383,7 @@ public class ParseTreeNodeTest extends CajaTestCase {
   public final void testRenderPostInsert2() {
     doInsert(1);
     StringBuilder sb = new StringBuilder();
-    TokenConsumer tc = new JsPrettyPrinter(new Concatenator(sb));
+    TokenConsumer tc = new JsPrettyPrinter(sb);
     root.render(new RenderContext(tc));
     tc.noMoreTokens();
     assertEquals(
@@ -468,7 +467,7 @@ public class ParseTreeNodeTest extends CajaTestCase {
   public final void testRenderPostInsert3() {
     doInsert(-1);
     StringBuilder sb = new StringBuilder();
-    TokenConsumer tc = new JsPrettyPrinter(new Concatenator(sb));
+    TokenConsumer tc = new JsPrettyPrinter(sb);
     root.render(new RenderContext(tc));
     tc.noMoreTokens();
     assertEquals(
@@ -543,7 +542,7 @@ public class ParseTreeNodeTest extends CajaTestCase {
   public final void testRenderPostRemove() {
     doRemove(5);
     StringBuilder sb = new StringBuilder();
-    TokenConsumer tc = new JsPrettyPrinter(new Concatenator(sb));
+    TokenConsumer tc = new JsPrettyPrinter(sb);
     root.render(new RenderContext(tc));
     tc.noMoreTokens();
     assertEquals(
@@ -605,7 +604,7 @@ public class ParseTreeNodeTest extends CajaTestCase {
   public final void testRenderPostRemove2() {
     doRemove(1);
     StringBuilder sb = new StringBuilder();
-    TokenConsumer tc = new JsPrettyPrinter(new Concatenator(sb));
+    TokenConsumer tc = new JsPrettyPrinter(sb);
     root.render(new RenderContext(tc));
     tc.noMoreTokens();
     assertEquals(
@@ -676,18 +675,18 @@ public class ParseTreeNodeTest extends CajaTestCase {
     assertEquals("[0, 1, 2, 3, 4, 5, 9, 10, 11, 12]",
                  ie.getNums().toString());
   }
-  
+
   public final void testSerializable() throws Exception {
     assertSerializable(root);
   }
-  
+
   public final void testIssue1369() throws Exception {
     ParseTreeNode p = js(fromString("var x = /asdf/;"));
     assertSerializable(p);
   }
 
   static class IntEnqueuer implements Visitor {
-    private List<Number> nums = new ArrayList<Number>();
+    private final List<Number> nums = new ArrayList<Number>();
 
     protected final Number processNode(ParseTreeNode n) {
       Number num;
@@ -711,7 +710,7 @@ public class ParseTreeNodeTest extends CajaTestCase {
   }
 
   static class IntEnqueuerExcept extends IntEnqueuer {
-    private long exception;
+    private final long exception;
 
     IntEnqueuerExcept(long exception) {
       this.exception = exception;
@@ -726,8 +725,8 @@ public class ParseTreeNodeTest extends CajaTestCase {
   }
 
   static class IntEnqueuerThatReplaces extends IntEnqueuer {
-    private long toReplace;
-    private ParseTreeNode replacement;
+    private final long toReplace;
+    private final ParseTreeNode replacement;
 
     IntEnqueuerThatReplaces(long toReplace, ParseTreeNode replacement) {
       this.toReplace = toReplace;
@@ -747,8 +746,8 @@ public class ParseTreeNodeTest extends CajaTestCase {
   }
 
   static class IntEnqueuerThatInserts extends IntEnqueuer {
-    private long num;
-    private ParseTreeNode toInsert;
+    private final long num;
+    private final ParseTreeNode toInsert;
 
     IntEnqueuerThatInserts(long num, ParseTreeNode toInsert) {
       this.num = num;
@@ -768,7 +767,7 @@ public class ParseTreeNodeTest extends CajaTestCase {
   }
 
   static class IntEnqueuerThatRemoves extends IntEnqueuer {
-    private long toRemove;
+    private final long toRemove;
 
     IntEnqueuerThatRemoves(long toRemove) {
       this.toRemove = toRemove;
@@ -786,9 +785,9 @@ public class ParseTreeNodeTest extends CajaTestCase {
   }
 
   static class IntEnqueuerThatMungesSiblings extends IntEnqueuer {
-    private Set<Long> toRemove;
-    private long[] toAdd;
-    private long remover;
+    private final Set<Long> toRemove;
+    private final long[] toAdd;
+    private final long remover;
 
     IntEnqueuerThatMungesSiblings(long remover, long[] toRemove, long[] toAdd) {
       this.remover = remover;

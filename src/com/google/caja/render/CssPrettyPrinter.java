@@ -37,7 +37,7 @@ public final class CssPrettyPrinter extends AbstractRenderer {
    * A non-negative number indicates a curly bracket indentation and a negative
    * number a parenthetical indentation.
    */
-  private List<Integer> indentStack = Lists.newArrayList();
+  private final List<Integer> indentStack = Lists.newArrayList();
   /** Number of characters written to out since the last line-break. */
   private int charInLine;
 
@@ -49,6 +49,10 @@ public final class CssPrettyPrinter extends AbstractRenderer {
    */
   public CssPrettyPrinter(TokenConsumer out) {
     super(out);
+  }
+
+  public CssPrettyPrinter(StringBuilder out) {
+    this(new Concatenator(out));
   }
 
   public void mark(@Nullable FilePosition pos) { out.mark(pos); }

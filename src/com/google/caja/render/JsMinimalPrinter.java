@@ -35,7 +35,7 @@ public final class JsMinimalPrinter extends BufferingRenderer {
   private int lineLengthLimit = 80;
   /** The last non-space/comment token. */
   private String lastToken;
-  private JsTokenAdjacencyChecker adjChecker = new JsTokenAdjacencyChecker();
+  private final JsTokenAdjacencyChecker adjChecker = new JsTokenAdjacencyChecker();
 
   /**
    * A non-interned version of the string {@code ";"} used to prevent
@@ -48,6 +48,10 @@ public final class JsMinimalPrinter extends BufferingRenderer {
    */
   public JsMinimalPrinter(Concatenator out) {
     super(out);
+  }
+
+  public JsMinimalPrinter(StringBuilder out) {
+    this(new Concatenator(out));
   }
 
   /** Visible for testing.  Should not be used by clients. */

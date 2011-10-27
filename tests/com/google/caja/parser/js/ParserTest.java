@@ -17,14 +17,13 @@ package com.google.caja.parser.js;
 import com.google.caja.SomethingWidgyHappenedError;
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.Keyword;
-import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.lexer.ParseException;
+import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.lexer.escaping.Escaping;
 import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.MutableParseTreeNode;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.Visitor;
-import com.google.caja.render.Concatenator;
 import com.google.caja.render.JsMinimalPrinter;
 import com.google.caja.render.JsPrettyPrinter;
 import com.google.caja.reporting.Message;
@@ -375,7 +374,7 @@ public class ParserTest extends CajaTestCase {
 
   public final void testEncodedLiterals() throws Exception {
     assertEquals("255",render(jsExpr(fromString("0xff"))));
-    assertEquals(Long.toString(1L << 50),  
+    assertEquals(Long.toString(1L << 50),
         render(jsExpr(fromString("0x" + Long.toHexString(1L << 50)))));
 
     assertEquals("57",render(jsExpr(fromString("071"))));
@@ -387,7 +386,7 @@ public class ParserTest extends CajaTestCase {
     assertMessage(
         MessageType.UNREPRESENTABLE_INTEGER_LITERAL, MessageLevel.WARNING);
     mq.getMessages().clear();
-    
+
     assertParseFails(
         "var o = { 1E111111111111111111111111111111111111111111111111111:123};"
         );
@@ -477,7 +476,7 @@ public class ParserTest extends CajaTestCase {
     assertMessage(true, MessageType.MAYBE_MISSING_SEMI, MessageLevel.WARNING);
     assertTrue(mq.getMessages().isEmpty());
   }
-  
+
   public final void testDoWhileSemis() throws Exception {
     js(fromString("do {;} while (0)1"));
     assertMessage(true, MessageType.SEMICOLON_INSERTED, MessageLevel.LINT);
@@ -649,7 +648,7 @@ public class ParserTest extends CajaTestCase {
   private void assertRender(String code, String expectedRendering)
       throws Exception {
     StringBuilder sb = new StringBuilder();
-    TokenConsumer tc = new JsPrettyPrinter(new Concatenator(sb));
+    TokenConsumer tc = new JsPrettyPrinter(sb);
     RenderContext rc = new RenderContext(tc)
         .withAsciiOnly(true).withEmbeddable(true);
     js(fromString(code)).children().get(0).render(rc);
@@ -660,7 +659,7 @@ public class ParserTest extends CajaTestCase {
   private void assertMinified(String code, String expectedRendering)
       throws Exception {
     StringBuilder sb = new StringBuilder();
-    TokenConsumer tc = new JsMinimalPrinter(new Concatenator(sb));
+    TokenConsumer tc = new JsMinimalPrinter(sb);
     RenderContext rc = new RenderContext(tc)
         .withAsciiOnly(true).withEmbeddable(true);
     js(fromString(code)).children().get(0).render(rc);
@@ -680,7 +679,7 @@ public class ParserTest extends CajaTestCase {
     checkFilePositionInvariants(parseTree);
 
     StringBuilder sb = new StringBuilder();
-    TokenConsumer tc = new JsPrettyPrinter(new Concatenator(sb));
+    TokenConsumer tc = new JsPrettyPrinter(sb);
     RenderContext rc = new RenderContext(tc)
         .withAsciiOnly(asciiOnly).withEmbeddable(embeddable);
     parseTree.render(rc);

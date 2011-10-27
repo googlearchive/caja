@@ -784,7 +784,7 @@ class Processor {
       ZipFileSystem fs = new ZipFileSystem("/jsdoc");
       StringBuilder jsonSb = new StringBuilder();
       RenderContext rc = new RenderContext(
-          new JsMinimalPrinter(new Concatenator(jsonSb))).withJson(true);
+          new JsMinimalPrinter(jsonSb)).withJson(true);
       json.render(rc);
       rc.getOut().noMoreTokens();
       HtmlRenderer.buildHtml(

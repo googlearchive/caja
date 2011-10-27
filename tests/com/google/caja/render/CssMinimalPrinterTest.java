@@ -36,7 +36,7 @@ public class CssMinimalPrinterTest extends TestCase {
 
   private void assertTokens(String golden, String... input) {
     StringBuilder out = new StringBuilder();
-    CssMinimalPrinter pp = new CssMinimalPrinter(new Concatenator(out));
+    CssMinimalPrinter pp = new CssMinimalPrinter(out);
 
     for (String token : input) {
       pp.consume(token);

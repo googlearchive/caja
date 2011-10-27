@@ -37,7 +37,6 @@ import com.google.caja.parser.html.DomParser;
 import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.Expression;
 import com.google.caja.parser.js.Parser;
-import com.google.caja.render.Concatenator;
 import com.google.caja.render.JsMinimalPrinter;
 import com.google.caja.render.JsPrettyPrinter;
 import com.google.caja.reporting.Message;
@@ -48,12 +47,6 @@ import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.MessageTypeInt;
 import com.google.caja.reporting.RenderContext;
 
-import junit.framework.TestCase;
-
-import org.w3c.dom.DocumentFragment;
-import org.w3c.dom.Element;
-import org.w3c.dom.Node;
-
 import java.awt.GraphicsEnvironment;
 import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
@@ -63,6 +56,12 @@ import java.io.ObjectOutputStream;
 import java.io.StringReader;
 import java.lang.reflect.Method;
 import java.net.URI;
+
+import junit.framework.TestCase;
+
+import org.w3c.dom.DocumentFragment;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 
 public abstract class CajaTestCase extends TestCase {
   protected InputSource is;
@@ -303,7 +302,7 @@ public abstract class CajaTestCase extends TestCase {
     if (!(node.makeRenderer(sb, null) instanceof JsPrettyPrinter)) {
       throw new ClassCastException(node.getClass().getName());
     }
-    TokenConsumer tc = new JsMinimalPrinter(new Concatenator(sb));
+    TokenConsumer tc = new JsMinimalPrinter(sb);
     node.render(new RenderContext(tc));
     tc.noMoreTokens();
     return sb.toString();
@@ -413,7 +412,7 @@ public abstract class CajaTestCase extends TestCase {
       if (msg.getMessageType() == type) { fail(msg.format(mc)); }
     }
   }
-  
+
   protected void assertSerializable(Object o) throws Exception {
     ByteArrayOutputStream out = new ByteArrayOutputStream();
     ObjectOutputStream oos = new ObjectOutputStream(out);

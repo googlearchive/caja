@@ -199,7 +199,7 @@ public class CssTreeTest extends CajaTestCase {
     String golden = TestUtil.readResource(getClass(), goldenFile);
     CssTree.StyleSheet stylesheet = css(fromResource(inputFile));
     StringBuilder sb = new StringBuilder();
-    CssPrettyPrinter csspp = new CssPrettyPrinter(new Concatenator(sb));
+    CssPrettyPrinter csspp = new CssPrettyPrinter(sb);
     RenderContext rc = new RenderContext(csspp)
         .withAsciiOnly(true).withEmbeddable(paranoid);
     stylesheet.render(rc);

@@ -28,7 +28,6 @@ import com.google.caja.parser.Visitor;
 import com.google.caja.parser.css.CssTree;
 import com.google.caja.parser.html.ElKey;
 import com.google.caja.parser.html.Namespaces;
-import com.google.caja.render.Concatenator;
 import com.google.caja.render.CssPrettyPrinter;
 import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessageLevel;
@@ -589,8 +588,7 @@ public final class CssRewriter {
               }
             } else {
               StringBuilder rendered = new StringBuilder();
-              TokenConsumer tc = new CssPrettyPrinter(
-                  new Concatenator(rendered));
+              TokenConsumer tc = new CssPrettyPrinter(rendered);
               node.render(new RenderContext(tc));
               tc.noMoreTokens();
               mq.addMessage(PluginMessageType.UNSAFE_CSS_PSEUDO_SELECTOR,

@@ -18,7 +18,6 @@ import com.google.caja.lexer.ParseException;
 import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.Expression;
 import com.google.caja.parser.js.Literal;
-import com.google.caja.render.Concatenator;
 import com.google.caja.render.JsMinimalPrinter;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.CajaTestCase;
@@ -968,7 +967,7 @@ public class ParseTreeKBTest extends CajaTestCase {
 
   private static String renderMin(Block js) {
     StringBuilder sb = new StringBuilder();
-    JsMinimalPrinter p = new JsMinimalPrinter(new Concatenator(sb));
+    JsMinimalPrinter p = new JsMinimalPrinter(sb);
     p.setLineLengthLimit(1000);
     js.renderBody(new RenderContext(p));
     p.noMoreTokens();

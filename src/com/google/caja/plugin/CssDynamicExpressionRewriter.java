@@ -27,7 +27,6 @@ import com.google.caja.parser.js.Operation;
 import com.google.caja.parser.js.Operator;
 import com.google.caja.parser.js.StringLiteral;
 import com.google.caja.parser.quasiliteral.QuasiBuilder;
-import com.google.caja.render.Concatenator;
 import com.google.caja.render.CssPrettyPrinter;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.Lists;
@@ -291,8 +290,8 @@ class EmbeddedJsExpressionTokenConsumer implements TokenConsumer {
   private final StringBuilder partialJsStringLiteral = new StringBuilder();
   private boolean inJsString;
   private FilePosition positionAtStartOfStringLiteral, last;
-  private final CssPrettyPrinter cssTokenConsumer = new CssPrettyPrinter(
-      new Concatenator(partialJsStringLiteral));
+  private final CssPrettyPrinter cssTokenConsumer =
+      new CssPrettyPrinter(partialJsStringLiteral);
   private Expression pendingExpression;
   private final List<Expression> arrayElements = Lists.newArrayList();
 

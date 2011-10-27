@@ -32,7 +32,7 @@ public class CssPrettyPrinterTest extends TestCase {
 
   private void assertTokens(String golden, String... input) {
     StringBuilder out = new StringBuilder();
-    CssPrettyPrinter pp = new CssPrettyPrinter(new Concatenator(out));
+    CssPrettyPrinter pp = new CssPrettyPrinter(out);
 
     for (String token : input) {
       pp.consume(token);

@@ -34,8 +34,8 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.regex.Pattern;
 import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.annotation.Nullable;
 
@@ -87,8 +87,7 @@ public class SourceSpansRenderer implements TokenConsumer {
       InputSource cajoledOutputFilename, RenderContext c) {
     this.cajoledOutputFilename = cajoledOutputFilename;
     this.c = c;
-    this.delegateRenderer = new JsPrettyPrinter(
-        new Concatenator(programTextAccumulator));
+    this.delegateRenderer = new JsPrettyPrinter(programTextAccumulator);
     ((JsPrettyPrinter) delegateRenderer).setBreakAfterComment(false);
   }
 
@@ -231,7 +230,7 @@ public class SourceSpansRenderer implements TokenConsumer {
         "file", fileLit,
         "count", new IntegerLiteral(unk, linePositionIndicesByLine.size()));
     StringBuilder header = new StringBuilder("/** Begin line maps. **/");
-    TokenConsumer tc = new JsMinimalPrinter(new Concatenator(header));
+    TokenConsumer tc = new JsMinimalPrinter(header);
     oc.render(new RenderContext(tc).withJson(true)
               .withAsciiOnly(c.isAsciiOnly()).withEmbeddable(c.isEmbeddable()));
     tc.noMoreTokens();

@@ -14,17 +14,6 @@
 
 package com.google.caja.demos.playground.server;
 
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.net.HttpURLConnection;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-
-import org.w3c.dom.Node;
-
 import com.google.caja.demos.playground.client.CajolingServiceResult;
 import com.google.caja.demos.playground.client.PlaygroundService;
 import com.google.caja.lexer.CharProducer;
@@ -46,7 +35,6 @@ import com.google.caja.plugin.PluginCompiler;
 import com.google.caja.plugin.PluginMeta;
 import com.google.caja.plugin.UriFetcher;
 import com.google.caja.plugin.UriFetcher.ChainingUriFetcher;
-import com.google.caja.render.Concatenator;
 import com.google.caja.render.JsPrettyPrinter;
 import com.google.caja.reporting.BuildInfo;
 import com.google.caja.reporting.HtmlSnippetProducer;
@@ -59,6 +47,17 @@ import com.google.caja.reporting.SimpleMessageQueue;
 import com.google.caja.reporting.SnippetProducer;
 import com.google.caja.util.Lists;
 import com.google.gwt.user.server.rpc.RemoteServiceServlet;
+
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.HttpURLConnection;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+
+import org.w3c.dom.Node;
 
 /**
  * Implements the GWT version of the cajoling service
@@ -166,7 +165,7 @@ public class GWTCajolingServiceImpl extends RemoteServiceServlet
     String[] messages = formatMessages(originalSources, mc, mq);
 
     StringBuilder jsOut = new StringBuilder();
-    TokenConsumer renderer = new JsPrettyPrinter(new Concatenator(jsOut));
+    TokenConsumer renderer = new JsPrettyPrinter(jsOut);
     RenderContext rc = new RenderContext(renderer)
         .withAsciiOnly(true)
         .withEmbeddable(true);

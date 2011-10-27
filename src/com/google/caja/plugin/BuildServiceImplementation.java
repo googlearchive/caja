@@ -34,6 +34,10 @@ import com.google.caja.parser.js.Minify;
 import com.google.caja.parser.js.ObjectConstructor;
 import com.google.caja.parser.js.Parser;
 import com.google.caja.parser.js.Statement;
+import com.google.caja.render.Innocent;
+import com.google.caja.render.JsMinimalPrinter;
+import com.google.caja.render.JsPrettyPrinter;
+import com.google.caja.reporting.BuildInfo;
 import com.google.caja.reporting.MarkupRenderMode;
 import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessageContext;
@@ -44,11 +48,6 @@ import com.google.caja.reporting.MessageType;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.reporting.SimpleMessageQueue;
 import com.google.caja.reporting.SnippetProducer;
-import com.google.caja.reporting.BuildInfo;
-import com.google.caja.render.Concatenator;
-import com.google.caja.render.Innocent;
-import com.google.caja.render.JsMinimalPrinter;
-import com.google.caja.render.JsPrettyPrinter;
 import com.google.caja.tools.BuildService;
 import com.google.caja.util.Charsets;
 import com.google.caja.util.Lists;
@@ -282,9 +281,9 @@ public class BuildServiceImplementation implements BuildService {
       StringBuilder jsOut = new StringBuilder();
       TokenConsumer renderer;
       if ("pretty".equals(rendererType)) {
-        renderer = new JsPrettyPrinter(new Concatenator(jsOut));
+        renderer = new JsPrettyPrinter(jsOut);
       } else if ("minify".equals(rendererType)) {
-        renderer = new JsMinimalPrinter(new Concatenator(jsOut));
+        renderer = new JsMinimalPrinter(jsOut);
       } else {
         throw new RuntimeException("Unrecognized renderer " + rendererType);
       }
@@ -382,7 +381,7 @@ public class BuildServiceImplementation implements BuildService {
    * control all the JS files involved.
    */
   private boolean isStrict(CharSequence js) {
-    return strictRE.matcher(js).find(); 
+    return strictRE.matcher(js).find();
   }
 
   private String getSourceContent(InputSource is) throws IOException {

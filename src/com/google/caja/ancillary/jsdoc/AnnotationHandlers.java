@@ -1051,7 +1051,7 @@ public final class AnnotationHandlers {
   private String render(ParseTreeNode n, boolean minimal) {
     StringBuilder sb = new StringBuilder();
     TokenConsumer tc = minimal
-        ? new JsMinimalPrinter(new Concatenator(sb))
+        ? new JsMinimalPrinter(sb)
         : n.makeRenderer(sb, null);
     RenderContext rc = new RenderContext(tc);
     n.render(rc);

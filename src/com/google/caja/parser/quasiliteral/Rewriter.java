@@ -28,7 +28,6 @@ import com.google.caja.parser.js.Identifier;
 import com.google.caja.parser.js.Literal;
 import com.google.caja.parser.js.Reference;
 import com.google.caja.parser.js.SyntheticNodes;
-import com.google.caja.render.Concatenator;
 import com.google.caja.render.JsPrettyPrinter;
 import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessageQueue;
@@ -178,7 +177,7 @@ public abstract class Rewriter {
 
   public static String render(ParseTreeNode n) {
     StringBuilder output = new StringBuilder();
-    TokenConsumer renderer = new JsPrettyPrinter(new Concatenator(output));
+    TokenConsumer renderer = new JsPrettyPrinter(output);
     n.render(new RenderContext(renderer));
     renderer.noMoreTokens();
     return output.toString();

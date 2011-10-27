@@ -36,6 +36,10 @@ public final class JsPrettyPrinter extends BufferingRenderer {
     super(out);
   }
 
+  public JsPrettyPrinter(StringBuilder out) {
+    this(new Concatenator(out));
+  }
+
   public void setLineLengthLimit(int lineLengthLimit) {
     this.lineLengthLimit = lineLengthLimit;
   }

@@ -17,6 +17,7 @@ package com.google.caja.ancillary.jsdoc;
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.parser.AbstractParseTreeNode;
+import com.google.caja.render.Concatenator;
 import com.google.caja.util.Callback;
 
 import java.io.IOException;
@@ -42,7 +43,7 @@ abstract class AbstractAnnotation extends AbstractParseTreeNode
   public final String getValue() { return value; }
   public final TokenConsumer makeRenderer(
       Appendable out, Callback<IOException> handler) {
-    return new com.google.caja.render.Concatenator(out, handler);
+    return new Concatenator(out, handler);
   }
   @Override
   public String toString() {

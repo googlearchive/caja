@@ -20,7 +20,6 @@ import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.Visitor;
 import com.google.caja.parser.css.CssTree;
 import com.google.caja.parser.js.ArrayConstructor;
-import com.google.caja.render.Concatenator;
 import com.google.caja.render.JsPrettyPrinter;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.CajaTestCase;
@@ -195,7 +194,7 @@ public class CssDynamicExpressionRewriterTest extends CajaTestCase {
 
   private static String render(ParseTreeNode node, int limit) {
     StringBuilder sb = new StringBuilder();
-    JsPrettyPrinter pp = new JsPrettyPrinter(new Concatenator(sb));
+    JsPrettyPrinter pp = new JsPrettyPrinter(sb);
     pp.setLineLengthLimit(limit);
     node.render(new RenderContext(pp));
     pp.noMoreTokens();

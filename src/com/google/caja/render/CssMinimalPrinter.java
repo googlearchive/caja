@@ -40,6 +40,10 @@ public final class CssMinimalPrinter extends AbstractRenderer {
     super(out);
   }
 
+  public CssMinimalPrinter(StringBuilder out) {
+    this(new Concatenator(out));
+  }
+
   public void mark(@Nullable FilePosition pos) { out.mark(pos); }
 
   @Override

@@ -151,7 +151,7 @@ public class JsMinimalPrinterTest extends CajaTestCase {
       for (int i = 1000; --i >= 0;) {
         List<String> randomTokens = generateRandomTokens(rnd);
         StringBuilder sb = new StringBuilder();
-        JsMinimalPrinter pp = new JsMinimalPrinter(new Concatenator(sb));
+        JsMinimalPrinter pp = new JsMinimalPrinter(sb);
         for (String token : randomTokens) {
           pp.consume(token);
         }
@@ -233,7 +233,7 @@ public class JsMinimalPrinterTest extends CajaTestCase {
         + "counter"
         ));
     StringBuilder out = new StringBuilder();
-    JsMinimalPrinter pp = new JsMinimalPrinter(new Concatenator(out));
+    JsMinimalPrinter pp = new JsMinimalPrinter(out);
     pp.setLineLengthLimit(10);
     node.render(new RenderContext(pp));
     pp.noMoreTokens();
@@ -256,7 +256,7 @@ public class JsMinimalPrinterTest extends CajaTestCase {
         "    ;",
         "}"));
     StringBuilder out = new StringBuilder();
-    JsMinimalPrinter pp = new JsMinimalPrinter(new Concatenator(out));
+    JsMinimalPrinter pp = new JsMinimalPrinter(out);
     b.render(new RenderContext(pp));
     pp.noMoreTokens();
     assertEquals(
@@ -382,7 +382,7 @@ public class JsMinimalPrinterTest extends CajaTestCase {
 
   private void assertRendered(String golden, ParseTreeNode node) {
     StringBuilder out = new StringBuilder();
-    JsMinimalPrinter pp = new JsMinimalPrinter(new Concatenator(out));
+    JsMinimalPrinter pp = new JsMinimalPrinter(out);
     node.render(new RenderContext(pp));
     pp.noMoreTokens();
 
@@ -391,7 +391,7 @@ public class JsMinimalPrinterTest extends CajaTestCase {
 
   private void assertLexed(String golden, String input) throws ParseException {
     StringBuilder out = new StringBuilder();
-    JsMinimalPrinter pp = new JsMinimalPrinter(new Concatenator(out));
+    JsMinimalPrinter pp = new JsMinimalPrinter(out);
 
     JsLexer lex = new JsLexer(fromString(input));
     while (lex.hasNext()) {
@@ -406,7 +406,7 @@ public class JsMinimalPrinterTest extends CajaTestCase {
 
   private void assertTokens(String golden, String... input) {
     StringBuilder out = new StringBuilder();
-    JsMinimalPrinter pp = new JsMinimalPrinter(new Concatenator(out));
+    JsMinimalPrinter pp = new JsMinimalPrinter(out);
 
     for (String token : input) {
       pp.consume(token);

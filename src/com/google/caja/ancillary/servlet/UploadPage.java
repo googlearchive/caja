@@ -23,7 +23,6 @@ import com.google.caja.parser.js.Expression;
 import com.google.caja.parser.js.ObjectConstructor;
 import com.google.caja.parser.js.StringLiteral;
 import com.google.caja.parser.quasiliteral.QuasiBuilder;
-import com.google.caja.render.Concatenator;
 import com.google.caja.render.JsMinimalPrinter;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.Lists;
@@ -34,6 +33,7 @@ import java.io.Writer;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -136,7 +136,7 @@ final class UploadPage {
         "uploads", new ParseTreeNodeContainer(uploads));
     StringBuilder jsBuf = new StringBuilder();
     RenderContext rc = new RenderContext(
-        new JsMinimalPrinter(new Concatenator(jsBuf))).withEmbeddable(true);
+        new JsMinimalPrinter(jsBuf)).withEmbeddable(true);
     notifyParent.render(rc);
     rc.getOut().noMoreTokens();
 

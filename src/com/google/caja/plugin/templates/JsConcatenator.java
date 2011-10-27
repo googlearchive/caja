@@ -24,7 +24,6 @@ import com.google.caja.parser.js.ObjectConstructor;
 import com.google.caja.parser.js.Operation;
 import com.google.caja.parser.js.Operator;
 import com.google.caja.parser.js.StringLiteral;
-import com.google.caja.render.Concatenator;
 import com.google.caja.render.JsMinimalPrinter;
 import com.google.caja.reporting.RenderContext;
 
@@ -353,7 +352,7 @@ final class Emitter {
       return NumberLiteral.numberToString(((NumberLiteral) l).doubleValue());
     } else {
       StringBuilder sb = new StringBuilder();
-      JsMinimalPrinter p = new JsMinimalPrinter(new Concatenator(sb));
+      JsMinimalPrinter p = new JsMinimalPrinter(sb);
       l.render(new RenderContext(p));
       p.noMoreTokens();
       return sb.toString();
