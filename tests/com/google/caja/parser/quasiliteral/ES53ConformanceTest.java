@@ -14,10 +14,6 @@
 
 package com.google.caja.parser.quasiliteral;
 
-import java.io.IOException;
-import java.net.URI;
-import java.util.List;
-
 import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.ExternalReference;
 import com.google.caja.lexer.FetchedData;
@@ -33,6 +29,10 @@ import com.google.caja.util.Executor;
 import com.google.caja.util.FailureIsAnOption;
 import com.google.caja.util.Lists;
 import com.google.caja.util.RhinoTestBed;
+
+import java.io.IOException;
+import java.net.URI;
+import java.util.List;
 
 public class ES53ConformanceTest extends RewriterTestCase {
   protected class TestUriFetcher implements UriFetcher {
@@ -750,36 +750,26 @@ public class ES53ConformanceTest extends RewriterTestCase {
         "TestCases/./chapter15/15.3/15.3.2/15.3.2.1/15.3.2.1-11-7-s.js"));
   }
 
-  @FailureIsAnOption
-  // We swap undefined for USELESS.
   public final void test15_4_4_16_5_1_s() throws Exception {
     rewriteAndExecute(fromResource("../../../../../js/es5conform/" +
         "TestCases/./chapter15/15.4/15.4.4/15.4.4.16/15.4.4.16-5-1-s.js"));
   }
 
-  @FailureIsAnOption
-  // We swap undefined for USELESS.
   public final void test15_4_4_17_5_1_s() throws Exception {
     rewriteAndExecute(fromResource("../../../../../js/es5conform/" +
         "TestCases/./chapter15/15.4/15.4.4/15.4.4.17/15.4.4.17-5-1-s.js"));
   }
 
-  @FailureIsAnOption
-  // We swap undefined for USELESS.
   public final void test15_4_4_18_5_1_s() throws Exception {
     rewriteAndExecute(fromResource("../../../../../js/es5conform/" +
         "TestCases/./chapter15/15.4/15.4.4/15.4.4.18/15.4.4.18-5-1-s.js"));
   }
 
-  @FailureIsAnOption
-  // We swap undefined for USELESS.
   public final void test15_4_4_19_5_1_s() throws Exception {
     rewriteAndExecute(fromResource("../../../../../js/es5conform/" +
         "TestCases/./chapter15/15.4/15.4.4/15.4.4.19/15.4.4.19-5-1-s.js"));
   }
 
-  @FailureIsAnOption
-  // We swap undefined for USELESS.
   public final void test15_4_4_20_5_1_s() throws Exception {
     rewriteAndExecute(fromResource("../../../../../js/es5conform/" +
         "TestCases/./chapter15/15.4/15.4.4/15.4.4.20/15.4.4.20-5-1-s.js"));

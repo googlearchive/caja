@@ -14,8 +14,6 @@
 
 package com.google.caja.parser.quasiliteral;
 
-import com.google.caja.util.FailureIsAnOption;
-
 import junit.framework.AssertionFailedError;
 
 /**
@@ -119,9 +117,7 @@ public abstract class CommonJsRewriterTestCase extends RewriterTestCase {
   /**
    * Tests that arguments.caller is unsettable.
    */
-  @FailureIsAnOption
   public final void testSetArgsCaller() throws Exception {
-    // TODO(erights): failure should no longer be an option on (S)ES5/3.
     rewriteAndExecute(
       "function f() {" +
       "  try { arguments.caller = 8; } catch (e) { return; }" +
@@ -145,9 +141,7 @@ public abstract class CommonJsRewriterTestCase extends RewriterTestCase {
   /**
    * Tests that func.caller is unsettable.
    */
-  @FailureIsAnOption
   public final void testSetFuncCaller() throws Exception {
-    // TODO(erights): failure should no longer be an option on (S)ES5/3.
     rewriteAndExecute(
       "function f() {" +
       "  try { f.caller = 9; } catch (e) { return; }" +
@@ -171,9 +165,7 @@ public abstract class CommonJsRewriterTestCase extends RewriterTestCase {
   /**
    * Tests that arguments.callee is unsettable.
    */
-  @FailureIsAnOption
   public final void testSetArgsCallee() throws Exception {
-    // TODO(erights): failure should no longer be an option on (S)ES5/3.
     rewriteAndExecute(
       "function f() {" +
       "  try { arguments.callee = 7; } catch (e) { return; }" +
@@ -200,9 +192,7 @@ public abstract class CommonJsRewriterTestCase extends RewriterTestCase {
   /**
    * Tests that func.arguments is unsettable.
    */
-  @FailureIsAnOption
   public final void testSetFuncArguments() throws Exception {
-    // TODO(erights): failure should no longer be an option on (S)ES5/3.
     rewriteAndExecute(
       "function f(a) {" +
       "  g();" +
