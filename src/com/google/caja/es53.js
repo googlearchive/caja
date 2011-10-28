@@ -2050,6 +2050,45 @@ var ___, cajaVM, safeJSON, WeakMap;
       });
   }
 
+  WeakMap = WeakMap ?
+      (function (WeakMap) {
+        return markFunc(function () {
+          var result = WeakMap();
+          // DefineOwnProperty___ may not be defined yet.
+          markFunc(result.get);
+          result.get_v___ = result;
+          result.get_c___ = false;
+          result.get_w___ = false;
+          result.get_gw___ = result;
+          result.get_e___ = result;
+          result.get_m___ = false;
+          result.get_g___ = false;
+          result.get_s___ = false;
+
+          markFunc(result.set);
+          result.set_v___ = result;
+          result.set_c___ = false;
+          result.set_w___ = false;
+          result.set_gw___ = result;
+          result.set_e___ = result;
+          result.set_m___ = false;
+          result.set_g___ = false;
+          result.set_s___ = false;
+
+          markFunc(result.has);
+          result.has_v___ = result;
+          result.has_c___ = false;
+          result.has_w___ = false;
+          result.has_gw___ = result;
+          result.has_e___ = result;
+          result.has_m___ = false;
+          result.has_g___ = false;
+          result.has_s___ = false;
+          return result;
+        })
+      })(WeakMap) :
+      markFunc(function () { return newTable(true); });
+
   var registeredImports = [];
 
   /**
@@ -5671,8 +5710,6 @@ var ___, cajaVM, safeJSON, WeakMap;
       manifest: manifest,
       allKeys: allKeys
     });
-
-  WeakMap = newTable;
 
   function readImport(imports, name) {
     name = '' + name;

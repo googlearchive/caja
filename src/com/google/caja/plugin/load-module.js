@@ -41,7 +41,7 @@ var loadModuleMaker = function(rootUrl, cajolingServiceClient) {
 
   // A cache where each key is a fully qualified module URL and each value is
   // a promise for a prepared module object.
-  var moduleCache = new WeakMap();
+  var moduleCache = {};
 
   var evalModuleObjFromJson = function(moduleJson) {
     var moduleObj = undefined;
@@ -79,13 +79,13 @@ var loadModuleMaker = function(rootUrl, cajolingServiceClient) {
 
   var makeLoad = function(baseUrl) {
     var load = function(url) {
-      var fullUrl = resolveModuleUrl(baseUrl, url);
-      if (moduleCache.get(fullUrl)
-          || Q.near(moduleCache.get(fullUrl)).isPromise___) {
+      var fullUrl = '' + resolveModuleUrl(baseUrl, url);
+      if (moduleCache['$' + fullUrl]
+          || Q.near(moduleCache['$' + fullUrl]).isPromise___) {
         throw new Error(
             'The static module ' + fullUrl + ' cannot be resolved.');
       }
-      return Q.near(moduleCache.get(fullUrl));
+      return Q.near(moduleCache['$' + fullUrl]);
     };
 
     var evalAndResolveFromJson = function(url, moduleJson) {
@@ -109,7 +109,7 @@ var loadModuleMaker = function(rootUrl, cajolingServiceClient) {
     };
 
     var loadCajoledJson___ = function(url, moduleJson) {
-      if (moduleCache.get(url)) {
+      if (moduleCache['$' + url]) {
         throw new Error('Module already loaded: ' + url);
       }
       var moduleDeferred = Q.defer();
@@ -121,15 +121,15 @@ var loadModuleMaker = function(rootUrl, cajolingServiceClient) {
           function(ex) {
             moduleDeferred.resolve(Q.reject(ex));
           });
-      moduleCache.set(url, moduleDeferred.promise);
+      moduleCache['$' + url] = moduleDeferred.promise;
       return moduleDeferred.promise;
     };
 
     var async = function(url, contentType) {
       var fullUrl = resolveModuleUrl(baseUrl, url);
-      if (moduleCache.get(fullUrl)) {
+      if (moduleCache['$' + fullUrl]) {
         // Return the promise in the cache (may be as of yet unfulfilled)
-        return moduleCache.get(fullUrl);
+        return moduleCache['$' + fullUrl];
       }
       var moduleDeferred = Q.defer();
       var mimeType = contentType || getInputMimeType(url);
@@ -148,7 +148,7 @@ var loadModuleMaker = function(rootUrl, cajolingServiceClient) {
           function(ex) {
             moduleDeferred.resolve(Q.reject(ex));
           });
-      moduleCache.set(fullUrl, moduleDeferred.promise);
+      moduleCache['$' + fullUrl] = moduleDeferred.promise;
       return moduleDeferred.promise;
     };
 

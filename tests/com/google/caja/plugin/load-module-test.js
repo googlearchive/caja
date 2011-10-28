@@ -39,7 +39,19 @@ var createTest = function(rootUrl) {
 
   var modules = {};
 
-  var requests = new WeakMap();
+  var requests = (function () {
+      var map = {};
+      var testKey = function (key) {
+          if (typeof key !== 'string') {
+            throw new TypeError('Expected key to be a string.')
+          }
+        };
+      return {
+          get: function (key) { testKey(key); return map['$' + key]; },
+          set: function (key, val) { testKey(key); map['$' + key] = val; },
+          has: function (key) { testKey(key); return ('$' + key) in map; }
+        }
+    })();
 
   var mockCajolingServiceClient = {
     cajoleUrl: function (url, mimeType) {

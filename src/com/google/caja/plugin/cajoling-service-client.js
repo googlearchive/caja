@@ -35,7 +35,7 @@ var cajolingServiceClientMaker = function(serviceUrl,
                                           debug,
                                           console) {
   // Map from full module URLs to module JSON records.
-  var cache = new WeakMap();
+  var cache = {};
 
   var makeServiceReference = function(uncajoledSourceUrl, mimeType) {
     return serviceUrl +
@@ -87,14 +87,14 @@ var cajolingServiceClientMaker = function(serviceUrl,
    * @return a promise for the module JSON returned from the cajoler.
    */
   var cajoleUrl = function (url, mimeType) {
-    if (!cache.get(url)) {
-      cache.set(url, Q.defer());
+    if (!cache['$' + url]) {
+      cache['$' + url] = Q.defer();
       handleRequest(
           url,
           jsonRequestChannel.request(makeServiceReference(url, mimeType)),
-          cache.get(url));
+          cache['$' + url]);
     }
-    return cache.get(url).promise;
+    return cache['$' + url].promise;
   };
 
   /**
