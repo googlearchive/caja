@@ -23,7 +23,10 @@
   var lastLine;
   var debug = false;
 
-  $(document).ready(caja.configure({debug : true}, function (frameGroup) {
+  $(document).ready(caja.configure({
+      server: "..",
+      debug : true
+    }, function (frameGroup) {
     frameGroup.makeES5Frame(document.getElementById("cajaDisplay"),
         {
           rewrite: function (uri, uriEffect, loaderType, hints) {
