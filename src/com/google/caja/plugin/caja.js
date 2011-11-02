@@ -983,14 +983,8 @@ var caja = (function () {
                   if (opt_staticHtml) {
                     c.innerContainer.innerHTML = opt_staticHtml;
                   }
-                  var preparedModule;
-                  try {
-                    preparedModule =
+                  var preparedModule =
                         guestWindow.prepareModuleFromText___(cajoledJs);
-                  } catch (ex) {
-                    if (console) { console.log(ex); }
-                    throw ex;
-                  }
                   var result = instModule(preparedModule);
                   // If a callback is provided, we call it 
                   // with the completion value.
