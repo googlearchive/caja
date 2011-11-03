@@ -22,25 +22,6 @@
  * @requires caja, jsunitRun, readyToTest
  */
 
-// Alias the console to capture messages for future matching.
-
-var consoleMessages = "";
-
-// Callback for error checking
-
-var checkErrorsInterval = undefined;
-
-var testConsole = {
-  log: function(msg) { consoleMessages += msg; }
-};
-
-// Register the test case.
-
-// Flag indicating that the client-side subsystem loaded correctly (so we are
-// sure that errors are due to the cajoling server, not something else)
-
-var clientSideLoaded = false;
-
 registerTest('testVersionSkew', function testVersionSkew() {
   fetch('es53-test-guest.out.html', function(resp) {
     var htmlAndScript = splitHtmlAndScript(resp);
@@ -51,19 +32,24 @@ registerTest('testVersionSkew', function testVersionSkew() {
     var div = createDiv();
     caja.initialize({
       cajaServer: 'http://localhost:8000/caja',
-      console: testConsole,
       debug: true
     });
     caja.load(div, undefined, function (frame) {
       caja.iframe.contentWindow.console = console;
       frame.iframe.contentWindow.console = console;
       clientSideLoaded = true;
-      frame.cajoled('http://localhost:8080/', script, html)
-           .run(function(result) {
-             // If we succeed in running, we fail the test!
-             fail('testVersionSkew');
-             clearInterval(checkErrorsInterval);
-           });
+      try {
+        frame.cajoled('http://localhost:8080/', script, html)
+             .run(function(result) {
+               // If we succeed in running, we fail the test!
+               fail('testVersionSkew');
+               clearInterval(checkErrorsInterval);
+             });
+      } catch (e) {
+        if (/Version error/.test(e)) {
+          jsunitPass('testVersionSkew');
+        }
+      }
     });
   });
 });
@@ -72,18 +58,3 @@ registerTest('testVersionSkew', function testVersionSkew() {
 
 readyToTest();
 jsunitRun();
-
-// Check for error strings in the console and pass if the expected error
-// is seen.
-
-function checkErrors() {
-  // TODO(ihab.awad): If we can pass the expected error message on the URL
-  // to the test, we can look for custom errors for each individual case. We
-  // would have to URL-encode/decode the expected message.
-  if (clientSideLoaded && /Version error/.test(consoleMessages)) {
-    jsunitPass('testVersionSkew');
-    clearInterval(checkErrorsInterval);
-  }
-}
-
-checkErrorsInterval = setInterval(checkErrors, 125);
