@@ -55,7 +55,62 @@ public abstract class AbstractTaming<BeanType> implements Taming<BeanType> {
     }
     return castToBeanType(bean);
   }
+
+  public static native JavaScriptObject getMethodDispatcher() /*-{
+    function error(message, dispatchRecords) {
+      var msg = message + '; possible choices are:';
+      for (var i = 0; i < dispatchRecords.length; i++) {
+        msg += ' ' + dispatchRecords[i].signature;
+      }
+      throw new TypeError(msg);
+    }
   
+    return function(frame, dispatchTable, args) {
+      if (dispatchTable.length === 1) {
+        // For the common, non-overridden case, we emit more specific errors
+        // about the taming.
+        var only = dispatchTable[0];
+        var unwrappedArgs;
+        try {
+          unwrappedArgs = only.unwrap(frame, args);
+        } catch (e) {
+          error(
+              'Supplied arguments do not match (' + e.toString() + ')',
+              [ only ]);
+        }
+        return only.wrap(
+            frame,
+            only.invoke.apply(undefined, unwrappedArgs));
+      }
+      var matchingArgs = [];
+      var matchingDispatchRecords = []
+      for (var i = 0; i < dispatchTable.length; i++) {
+        try {
+          matchingArgs.push(dispatchTable[i].unwrap(frame, args));
+          matchingDispatchRecords.push(dispatchTable[i]);
+        } catch (e) {
+          // Args do not match
+        }
+      }
+      switch (matchingDispatchRecords.length) {
+        case 0:
+          error(
+              'Supplied arguments do not match',
+              dispatchTable);
+        case 1:
+          return matchingDispatchRecords[0].wrap(
+              frame,
+              matchingDispatchRecords[0].invoke.apply(
+                  undefined,
+                  matchingArgs[0]));
+        default:
+          error(
+              'Supplied arguments insufficient to determine method',
+              matchingDispatchRecords);
+      }
+    };
+  }-*/;
+
   @SuppressWarnings("unchecked")
   private BeanType castToBeanType(Object bean) {
     return (BeanType) bean;    

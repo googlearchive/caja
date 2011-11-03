@@ -16,23 +16,23 @@ package com.google.caja.gwtbeans.compile;
 
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import com.google.caja.gwtbeans.shared.AbstractTaming;
 import com.google.caja.gwtbeans.shared.Frame;
+import com.google.caja.gwtbeans.shared.Taming;
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.ParseTreeNodeContainer;
 import com.google.caja.parser.js.Expression;
-import com.google.caja.parser.js.ExpressionStmt;
 import com.google.caja.parser.js.FormalParam;
 import com.google.caja.parser.js.Identifier;
 import com.google.caja.parser.js.IntegerLiteral;
-import com.google.caja.parser.js.Noop;
 import com.google.caja.parser.js.Reference;
-import com.google.caja.parser.js.Statement;
 import com.google.caja.parser.js.StringLiteral;
 import com.google.caja.parser.quasiliteral.QuasiBuilder;
 import com.google.caja.reporting.JsIdentifierSyntax;
@@ -46,13 +46,15 @@ import com.google.gwt.core.ext.TreeLogger.Type;
 import com.google.gwt.core.ext.UnableToCompleteException;
 import com.google.gwt.core.ext.typeinfo.JClassType;
 import com.google.gwt.core.ext.typeinfo.JMethod;
-import com.google.gwt.core.ext.typeinfo.JParameter;
-import com.google.gwt.core.ext.typeinfo.JType;
-import com.google.gwt.core.ext.typeinfo.TypeOracle;
 import com.google.gwt.core.ext.typeinfo.JPrimitiveType;
+import com.google.gwt.core.ext.typeinfo.JType;
 import com.google.gwt.dev.util.collect.HashSet;
 
 public class TamingGenerator {
+  private static final String OBJECT_CLASS =
+      Object.class.getCanonicalName();
+  private static final String TAMING_INTERFACE =
+      Taming.class.getCanonicalName();
   private static final String TAMING_COMMON_BASE_CLASS =
       AbstractTaming.class.getCanonicalName();
   private static final String FRAME_CLASS =
@@ -71,9 +73,11 @@ public class TamingGenerator {
   private final String tamingInterfaceName;
   private final GwtBeanIntrospector introspector;
   private String tamingImplClassName;
-  private final Set<JClassType> toWrap = new HashSet<JClassType>();
-  private final Set<JClassType> toUnwrap = new HashSet<JClassType>();
+  private final Set<JClassType> toGenerateTamingAccessors =
+      new HashSet<JClassType>();
   private final Set<JType> toArrayCreateAndAssign = new HashSet<JType>();
+  private final Map<JType, Expression> primitiveTamingObjects =
+      new HashMap<JType, Expression>();
 
   public TamingGenerator(
       TreeLogger logger,
@@ -84,6 +88,7 @@ public class TamingGenerator {
     this.context = context;
     this.tamingInterfaceName = tamingInterfaceName;
     this.introspector = new GwtBeanIntrospector(logger, context);
+    initializePrimitiveTamingObjects();
   }  
   
   public String generate() throws UnableToCompleteException {
@@ -132,7 +137,7 @@ public class TamingGenerator {
     String tamingImplClassShortName =
         tamingInterfaceShortName + userAgent + "Impl";
 
-    ParseTreeNode jsBody = makeJsBody(introspector, beanInfo);
+    ParseTreeNode jsBody = makeJsBody(beanInfo);
     
     StringBuilder sb = new StringBuilder();
     sb.append(strV(""
@@ -146,7 +151,8 @@ public class TamingGenerator {
         + "    return \"class ${bean}\";\n"
         + "  }\n"
         + "  @Override\n"
-        + "  public native ${jso} getNative(${frame} m, ${bean} bean) /*-{\n"
+        + "  public native ${jso}\n"
+        + "  getNative(${frame} frame, ${bean} bean) /*-{\n"
         + "    ${jsBody}\n"
         + "  }-*/;\n"
         + "  ${helperMethods}\n"
@@ -159,7 +165,7 @@ public class TamingGenerator {
         "frame", FRAME_CLASS,
         "jso", JSO_CLASS,
         "jsBody", render(jsBody),
-        "helperMethods", getJavaHelperMethods(introspector)));
+        "helperMethods", getJavaHelperMethods()));
 
     logger.log(Type.INFO, "Creating class " + tamingImplClassName);
     logger.log(Type.INFO, sb.toString());
@@ -172,15 +178,11 @@ public class TamingGenerator {
     return tamingImplClassName;
   }
   
-  private String getJavaHelperMethods(
-      GwtBeanIntrospector introspector)
+  private String getJavaHelperMethods()
       throws UnableToCompleteException {
     StringBuilder sb = new StringBuilder();
-    for (JClassType beanType : toWrap) {
-      sb.append(getTypeWrapperMethod(introspector, beanType)).append("\n");
-    }
-    for (JClassType beanType : toUnwrap) {
-      sb.append(getTypeUnwrapperMethod(introspector, beanType)).append("\n");
+    for (JClassType beanType : toGenerateTamingAccessors) {
+      sb.append(getTamingGetterMethod(beanType)).append("\n");
     }
     for (JType type : toArrayCreateAndAssign) {
       sb.append(getArrayCreationMethod(type)).append("\n");
@@ -191,41 +193,16 @@ public class TamingGenerator {
     return sb.toString();
   }
 
-  private String getTypeWrapperMethod(
-      GwtBeanIntrospector introspector,
+  private String getTamingGetterMethod(
       JClassType beanType)
       throws UnableToCompleteException {
-    JClassType ti = getTamingInterfaceOrFail(introspector, beanType);    
+    JClassType ti = getTamingInterfaceOrFail(beanType);
     return strV(""
-        + "public static ${jso} ${meth}(${frame} m, ${bean} bean) {\n"
-        + "  return\n"
-        + "      ((${taming}) ${gwt}.create(${taming}.class))\n"
-        + "      .getJso(m, bean);\n"
+        + "public static ${taming} ${meth}() {\n"
+        + "  return ((${taming}) ${gwt}.create(${taming}.class));\n"
         + "}\n",
-        "jso", JSO_CLASS,
-        "frame", FRAME_CLASS,
         "gwt", GWT_CLASS,
-        "meth", getTypeWrapperMethodName(beanType),
-        "bean",  beanType.getQualifiedSourceName(),
-        "taming", ti.getParameterizedQualifiedSourceName());
-  }
-  
-  private String getTypeUnwrapperMethod(
-      GwtBeanIntrospector introspector,
-      JClassType beanType)
-      throws UnableToCompleteException {
-    JClassType ti = getTamingInterfaceOrFail(introspector, beanType);
-    return strV(""
-        + "public static ${bean} ${meth}(${frame} m, ${jso} jso) {\n"
-        + "  return\n"
-        + "      ((${taming}) ${gwt}.create(${taming}.class))\n"
-        + "      .getBean(m, jso);\n"
-        + "}\n",
-        "jso", JSO_CLASS,
-        "frame", FRAME_CLASS,
-        "gwt", GWT_CLASS,
-        "meth", getTypeUnwrapperMethodName(beanType),
-        "bean",  beanType.getQualifiedSourceName(),
+        "meth", getTamingGetterMethodName(beanType),
         "taming", ti.getParameterizedQualifiedSourceName());
   }
 
@@ -274,7 +251,6 @@ public class TamingGenerator {
   }
 
   private JClassType getTamingInterfaceOrFail(
-      GwtBeanIntrospector introspector,
       JClassType beanClass)
       throws UnableToCompleteException {
     JClassType ti = introspector.getBeanInfoByBeanType(beanClass)
@@ -289,18 +265,19 @@ public class TamingGenerator {
   }
   
   private ParseTreeNode makeJsBody(
-      GwtBeanIntrospector introspector,
       GwtBeanInfo beanInfo)
       throws UnableToCompleteException {
     List<StringLiteral> keys = new ArrayList<StringLiteral>();
     List<Expression> vals = new ArrayList<Expression>();
-    for (JMethod m : beanInfo.getMethods()) {
-      keys.add(new StringLiteral(FilePosition.UNKNOWN, m.getName()));
-      vals.add(getPropertyDescriptorForMethod(introspector, m));
+    Map<String, Set<JMethod>> methodGroups =
+        getMethodGroups(beanInfo.getMethods());
+    for (String name : methodGroups.keySet()) {
+      keys.add(new StringLiteral(FilePosition.UNKNOWN, name));
+      vals.add(getPropertyDescriptorForMethodGroup(methodGroups.get(name)));
     }
     for (GwtBeanPropertyDescriptor pd : beanInfo.getProperties()) {
       keys.add(new StringLiteral(FilePosition.UNKNOWN, pd.name));
-      vals.add(getPropertyDescriptorForProperty(introspector, pd));
+      vals.add(getPropertyDescriptorForProperty(pd));
     }
     return QuasiBuilder.substV(
         "var w = $wnd.caja.iframe.contentWindow;" +
@@ -309,270 +286,235 @@ public class TamingGenerator {
         "vals", new ParseTreeNodeContainer(vals));
   }
   
-  private Expression getPropertyDescriptorForMethod(
-      GwtBeanIntrospector introspector,
-      JMethod m)
+  private Expression getPropertyDescriptorForMethodGroup(
+      Set<JMethod> methods)
       throws UnableToCompleteException {
-    List<Reference> args = new ArrayList<Reference>();
-    for (int i = 0; i < m.getParameters().length; i++) {
-      args.add(new Reference(
-          new Identifier(FilePosition.UNKNOWN, makeArgName(i))));
-    }
-    Expression method;
-    if (JPrimitiveType.VOID == m.getReturnType()) {
-      method = (Expression) QuasiBuilder.substV(""
-          + "function (_) {"
-          + "  @argDestructuringStatements*;"
-          + "  @parameterUnwrapStatements*;"
-          + "  bean.@methodRef(@args*);"
-          + "}",
-          "parameterUnwrapStatements",
-              getParameterUnwrapStatements(introspector, m.getParameters()),
-          "argDestructuringStatements",
-              getArgDestructuringStatements(m),
-          "methodRef", getMethodAccessor(m),
-          "args", new ParseTreeNodeContainer(args));
-    } else {
-      method = (Expression) QuasiBuilder.substV(""
-          + "function (_) {"
-          + "  @argDestructuringStatements*;"
-          + "  @parameterUnwrapStatements*;"
-          + "  var returnValue = bean.@methodRef(@args*);"
-          + "  @returnValueWrapStatement;"
-          + "  return returnValue;"
-          + "}",
-          "parameterUnwrapStatements",
-              getParameterUnwrapStatements(introspector, m.getParameters()),
-          "argDestructuringStatements",
-              getArgDestructuringStatements(m),
-          "returnValueWrapStatement",
-              getReturnValueWrapStatement(introspector, m.getReturnType()),
-          "methodRef", getMethodAccessor(m),
-          "args", new ParseTreeNodeContainer(args));
-    }
-    return (Expression) QuasiBuilder.substV(
-        "({" +
-        "  value: w.___.makeDefensibleFunction(@method)," +
-        "  enumerable: true," +
-        "  writable: false," +
-        "  configurable: false" +        
-        "})",          
-        "method", method);
+    return (Expression) QuasiBuilder.substV(""
+        + "({"
+        + "  value: w.___.makeDefensibleFunction(function(_) {"
+        + "    var dispatchTable = @dispatchTable;"
+        + "    return @dispatch()(frame, dispatchTable, arguments);"
+        + "  }),"
+        + "  enumerable: true,"
+        + "  writable: false,"
+        + "  configurable: false"
+        + "})",
+        "dispatchTable", getDispatchTable(methods),
+        "dispatch", getMethodDispatcherAccessor());
   }
 
-  private Statement getArrayParameterUnwrapStatement(
-      GwtBeanIntrospector introspector,
-      JType componentType,
-      ParseTreeNode argRef)
+  private Expression getDispatchTable(Set<JMethod> methods)
       throws UnableToCompleteException {
-    GwtBeanInfo bi = introspector.getBeanInfoByBeanType(
-        componentType);
-    if (!bi.isTamingPrimitiveType()) {
-      ParseTreeNode unwrapAccessor = getTypeUnwrapperAccessor(
-          context.getTypeOracle(),
-          componentType.isClassOrInterface());
-      return new ExpressionStmt(
-          (Expression) QuasiBuilder.substV(""
-              + "(function() {"
-              + "  if (@argRef !== null) {"
-              + "    var arr = @newArray(@argRef.length);"
-              + "    for (var i = 0; i < @argRef.length; i++) {"
-              + "      @assignToArray(arr, i, @unwrapAccessor(m, @argRef[i]));"
-              + "    }"
-              + "    @argRef = arr;"
-              + "  }"
-              + "})()",
-              "newArray", getNewArrayAccessor(componentType),
-              "assignToArray", getArrayAssignmentAccessor(componentType),
-              "unwrapAccessor", unwrapAccessor,
-              "argRef", argRef));
-    } else {
-      return new ExpressionStmt(
-          (Expression) QuasiBuilder.substV(""
-              + "(function() {"
-              + "  if (@argRef != null) {"
-              + "    var arr = @newArray(@argRef.length);"
-              + "    for (var i = 0; i < @argRef.length; i++) {"
-              + "      @assignToArray(arr, i, @argRef[i]);"
-              + "    }"
-              + "    @argRef = arr;"
-              + "  }"
-              + "})()",
-              "newArray", getNewArrayAccessor(componentType),
-              "assignToArray", getArrayAssignmentAccessor(componentType),
-              "argRef", argRef));
+    List<ParseTreeNode> records = new ArrayList<ParseTreeNode>();
+    for (JMethod m : methods) {
+      records.add(getDispatchRecord(m));
     }
+    return (Expression) QuasiBuilder.substV(""
+        + "[ @records* ]",
+        "records", new ParseTreeNodeContainer(records));
   }
 
-  private Statement getNonArrayParameterUnwrapStatement(
-      GwtBeanIntrospector introspector,
-      JType type,
-      ParseTreeNode argRef)
+  private Expression getDispatchRecord(JMethod m)
       throws UnableToCompleteException {
-    GwtBeanInfo bi = introspector.getBeanInfoByBeanType(type);
-    if (!bi.isTamingPrimitiveType()) {
-      ParseTreeNode unwrapAccessor = getTypeUnwrapperAccessor(
-          context.getTypeOracle(),
-          type.isClassOrInterface());
-      return new ExpressionStmt(
-          (Expression) QuasiBuilder.substV(
-              "@argRef = @unwrapAccessor(m, @argRef)",
-              "unwrapAccessor", unwrapAccessor,
-              "argRef", argRef));
-    } else {
-      return new Noop(FilePosition.UNKNOWN);
-    }
+    return (Expression) QuasiBuilder.substV(""
+        + "({"
+        + "  signature: @signature,"
+        + "  invoke: @invoke,"
+        + "  unwrap: @unwrap,"
+        + "  wrap: @wrap"
+        + "})",
+        "signature", new StringLiteral(
+            FilePosition.UNKNOWN, m.getJsniSignature()),
+        "invoke", getInvoke(m),
+        "unwrap", getUnwrap(m),
+        "wrap", getWrap(m));
   }
 
-  private ParseTreeNode getArgDestructuringStatements(
-      JMethod m) {
-    List<ParseTreeNode> destructurings = new ArrayList<ParseTreeNode>();
-    int nDestructurings = m.isVarArgs()
-        ? m.getParameters().length - 1
-        : m.getParameters().length;
-    for (int i = 0; i < nDestructurings; i++) {
-      destructurings.add(QuasiBuilder.substV(
-          "var @name = arguments[@idx];",
-          "name", new Identifier(FilePosition.UNKNOWN, makeArgName(i)),
+  private ParseTreeNode getVarArgsDestructuring(JMethod m)
+      throws UnableToCompleteException {
+    if (!m.isVarArgs()) {
+      return QuasiBuilder.substV(""
+          + "function(args) { return args; }");
+    }
+    List<ParseTreeNode> vals = new ArrayList<ParseTreeNode>();
+    for (int i = 0; i < m.getParameters().length - 1; i++) {
+      vals.add(QuasiBuilder.substV(""
+          + "args[@idx];",
           "idx", new IntegerLiteral(FilePosition.UNKNOWN, i)));
     }
-    if (m.isVarArgs()) {
-      destructurings.add(QuasiBuilder.substV(""
-          + "var @name = Array.prototype.slice.call("
-          + "    arguments,"
-          + "    @start,"
-          + "    arguments.length);",
-          "name", new Identifier(
-              FilePosition.UNKNOWN, makeArgName(nDestructurings)),
-          "start", new IntegerLiteral(
-              FilePosition.UNKNOWN, nDestructurings)));
-    }
-    return new ParseTreeNodeContainer(destructurings);
+    vals.add(QuasiBuilder.substV(""
+        + "Array.prototype.slice.call(args, @idx, args.length);",
+        "idx", new IntegerLiteral(
+            FilePosition.UNKNOWN, m.getParameters().length - 1)));
+    return QuasiBuilder.substV(""
+        + "function(args) { return [ @vals* ]; }",
+        "vals", new ParseTreeNodeContainer(vals));
   }
 
-  private ParseTreeNodeContainer getParameterUnwrapStatements(
-      GwtBeanIntrospector introspector,
-      JParameter[] params)
+  private ParseTreeNode getInvoke(JMethod m)
       throws UnableToCompleteException {
-    List<Statement> stmts = new ArrayList<Statement>();
-    for (int i = 0; i < params.length; i++) {
-      JParameter p = params[i];
-      JType t = p.getType();
-      ParseTreeNode argRef =
-          new Reference(new Identifier(
-              FilePosition.UNKNOWN, makeArgName(i)));
-      if (t.isArray() != null) {
-        JType ct = t.isArray().getComponentType();
-        stmts.add(getArrayParameterUnwrapStatement(introspector, ct, argRef));
-      } else {
-        stmts.add(getNonArrayParameterUnwrapStatement(introspector, t, argRef));
-      }
+    List<ParseTreeNode> formals = new ArrayList<ParseTreeNode>();
+    List<ParseTreeNode> actuals = new ArrayList<ParseTreeNode>();
+    for (int i = 0; i < m.getParameters().length; i++) {
+      formals.add(new FormalParam(
+          new Identifier(FilePosition.UNKNOWN, makeArgName(i))));
+      actuals.add(new Reference(
+          new Identifier(FilePosition.UNKNOWN, makeArgName(i))));
     }
-    return new ParseTreeNodeContainer(stmts);
+    return QuasiBuilder.substV(""
+        + "function (@formals*) { return bean.@methodRef(@actuals*); }",
+        "methodRef", getMethodAccessor(m),
+        "formals", new ParseTreeNodeContainer(formals),
+        "actuals", new ParseTreeNodeContainer(actuals));
   }
 
-  private Statement getArrayReturnValueWrapStatement(
-      GwtBeanIntrospector introspector,
-      JType componentType)
+  private ParseTreeNode getUnwrap(JMethod m)
       throws UnableToCompleteException {
-    GwtBeanInfo bi = introspector.getBeanInfoByBeanType(componentType);
-    if (!bi.isTamingPrimitiveType()) {
-      ParseTreeNode wrapAccessor = getTypeWrapperAccessor(
-          context.getTypeOracle(),
-          componentType.isClass());
-      return new ExpressionStmt(
-          (Expression) QuasiBuilder.substV(""
-              + "(function() {"
-              + "  if (returnValue !== null) {"
-              + "    var arr = [];"
-              + "    for (var i = 0; i < @queryArrayLength(returnValue); i++) {"
-              + "      arr[i] = @wrapAccessor("
-              + "          m, @queryArrayItem(returnValue, i));"
-              + "    }"
-              + "    returnValue = arr;"
-              + "  }"
-              + "})()",
-              "queryArrayLength", getArrayLengthQueryAccessor(componentType),
-              "queryArrayItem", getArrayItemQueryAccessor(componentType),
-              "wrapAccessor", wrapAccessor));
-    } else {
-      return new ExpressionStmt(
-          (Expression) QuasiBuilder.substV(""
-              + "(function() {"
-              + "  if (returnValue !== null) {"
-              + "    var arr = [];"
-              + "    for (var i = 0; i < @queryArrayLength(returnValue); i++) {"
-              + "      arr[i] = @queryArrayItem(returnValue, i);"
-              + "    }"
-              + "    returnValue = arr;"
-              + "  }"
-              + "})()",
-              "queryArrayLength", getArrayLengthQueryAccessor(componentType),
-              "queryArrayItem", getArrayItemQueryAccessor(componentType)));
+    List<ParseTreeNode> unwraps = new ArrayList<ParseTreeNode>();
+    for (int i = 0; i < m.getParameters().length; i++) {
+      unwraps.add(QuasiBuilder.substV(""
+          + "@taming.getBean(frame, args[@idx]);",
+          "taming", getTamingObject(m.getParameters()[i].getType()),
+          "idx", new IntegerLiteral(FilePosition.UNKNOWN, i)));
     }
+    return QuasiBuilder.substV(""
+        + "function (frame, args) {"
+        + "  @arityCheck;"
+        + "  args = @varArgsDestructuring(args);"
+        + "  return [ @unwraps* ];"
+        + "}",
+        "arityCheck", getArityCheck(m),
+        "varArgsDestructuring", getVarArgsDestructuring(m),
+        "unwraps", new ParseTreeNodeContainer(unwraps));
   }
 
-  private Statement getNonArrayReturnValueWrapStatement(
-      GwtBeanIntrospector introspector,
-      JType type)
+  private ParseTreeNode getArityCheck(JMethod m) {
+    return m.isVarArgs()
+        ? QuasiBuilder.substV(""
+            + "if (args.length < @num) {"
+            + "  throw new TypeError(''"
+            + "      + 'Method called with incorrect arity:'"
+            + "      + ' expected at least ' + @num + ' arguments'"
+            + "      + ' but was ' + args.length);"
+            + "}",
+            "num", new IntegerLiteral(
+                FilePosition.UNKNOWN, m.getParameters().length - 1))
+        : QuasiBuilder.substV(""
+            + "if (args.length !== @num) {"
+            + "  throw new TypeError(''"
+            + "      + 'Method called with incorrect arity:'"
+            + "      + ' expected ' + @num + ' arguments'"
+            + "      + ' but was ' + args.length);"
+            + "}",
+            "num", new IntegerLiteral(
+                FilePosition.UNKNOWN, m.getParameters().length));
+  }
+
+  private ParseTreeNode getWrap(JMethod m)
       throws UnableToCompleteException {
-    GwtBeanInfo bi = introspector.getBeanInfoByBeanType(type);
-    if (!bi.isTamingPrimitiveType()) {
-      ParseTreeNode wrapAccessor = getTypeWrapperAccessor(
-          context.getTypeOracle(),
-          type.isClassOrInterface());
-      return new ExpressionStmt(
-          (Expression) QuasiBuilder.substV(
-              "returnValue = @wrapAccessor(m, returnValue)",
-              "wrapAccessor", wrapAccessor));
-    } else {
-      return new Noop(FilePosition.UNKNOWN);
-    }
+    return QuasiBuilder.substV(""
+        + "function (frame, retval) {"
+        + "  return @taming.getJso(frame, retval);"
+        + "}",
+        "taming", getTamingObject(m.getReturnType()));
   }
 
-  private Statement getReturnValueWrapStatement(
-      GwtBeanIntrospector introspector,
-      JType type)
+  private Expression getTamingObject(JType type)
       throws UnableToCompleteException {
     if (type.isArray() != null) {
-      JType ct = type.isArray().getComponentType();
-      return getArrayReturnValueWrapStatement(introspector, ct);
+      return getArrayTamingObject(type.isArray().getComponentType());
     } else {
-      return getNonArrayReturnValueWrapStatement(introspector, type);
+      return getNonArrayTamingObject(type);
     }
+  }
+
+  private Expression getNonArrayTamingObject(JType type)
+      throws UnableToCompleteException {
+    if (primitiveTamingObjects.containsKey(type)) {
+      return primitiveTamingObjects.get(type);
+    }
+    if (!(type instanceof JClassType)) {
+      logger.log(Type.ERROR,
+          "Cannot tame non-class type " + type.getQualifiedSourceName());
+      throw new UnableToCompleteException();
+    }
+    return getClassTamingObject((JClassType) type);
+  }
+
+  private Expression getClassTamingObject(JClassType type) {
+    return (Expression) QuasiBuilder.substV(""
+        + "({"
+        + "  getJso: function(frame, bean) {"
+        + "    return @t().@getJso(frame, bean);"
+        + "  },"
+        + "  getBean: function(frame, jso) {"
+        + "    return @t().@getBean(frame, jso);"
+        + "  }"
+        + "})",
+        "t", getTamingGetterAccessor(type),
+        "getJso", getGetJsoAccessor(),
+        "getBean", getGetBeanAccessor());
+  }
+
+  private Expression getArrayTamingObject(JType componentType)
+      throws UnableToCompleteException {
+    ParseTreeNode getJso = QuasiBuilder.substV(""
+        + "(function(frame, bean) {"
+        + "  if (bean === null) { return null; }"
+        + "  var arr = [];"
+        + "  var taming = @taming;"
+        + "  for (var i = 0; i < @queryArrayLength(bean); i++) {"
+        + "    arr[i] = taming.getJso(frame, @queryArrayItem(bean, i));"
+        + "  }"
+        + "  return arr;"
+        + "})",
+        "queryArrayLength", getArrayLengthQueryAccessor(componentType),
+        "queryArrayItem", getArrayItemQueryAccessor(componentType),
+        "taming", getTamingObject(componentType));
+    ParseTreeNode getBean = QuasiBuilder.substV(""
+        + "(function(frame, jso) {"
+        + "  if (jso === null || jso === undefined) { return null; }"
+        + "  var arr = @newArray(jso.length);"
+        + "  var taming = @taming;"
+        + "  for (var i = 0; i < jso.length; i++) {"
+        + "    @assignToArray("
+        + "        arr,"
+        + "        i,"
+        + "        taming.getBean(frame, jso[i]));"
+        + "  }"
+        + "  return arr;"
+        + "})",
+        "newArray", getNewArrayAccessor(componentType),
+        "assignToArray", getArrayAssignmentAccessor(componentType),
+        "taming", getTamingObject(componentType));
+    return (Expression) QuasiBuilder.substV(""
+        + "({"
+        + "  getJso: @getJso,"
+        + "  getBean: @getBean"
+        + "})",
+        "getJso", getJso,
+        "getBean", getBean);
   }
 
   private Expression getPropertyDescriptorForProperty(
-      GwtBeanIntrospector introspector,
       GwtBeanPropertyDescriptor pd)
       throws UnableToCompleteException {
     Expression get = (pd.readMethod == null) ?
         new Reference(new Identifier(FilePosition.UNKNOWN, UNDEFINED)) :
         (Expression) QuasiBuilder.substV(""
             + "w.___.makeDefensibleFunction(function () {"
-            + "  var returnValue = bean.@methodRef();"
-            + "  @returnValueWrapStatement;"
-            + "  return returnValue;"
+            + "  return @taming.getJso(frame, bean.@methodRef());"
             + "})",
-            "returnValueWrapStatement",
-                getReturnValueWrapStatement(
-                    introspector, pd.readMethod.getReturnType()),
+            "taming", getTamingObject(pd.readMethod.getReturnType()),
             "methodRef", getMethodAccessor(pd.readMethod));
     Expression set = (pd.writeMethod == null) ?
         new Reference(new Identifier(FilePosition.UNKNOWN, UNDEFINED)) :
         (Expression) QuasiBuilder.substV(""
-            + "w.___.makeDefensibleFunction(function (@formal) {"
-            + "  @parameterUnwrapStatements*;"
-            + "  bean.@methodRef(@actual);"
+            + "w.___.makeDefensibleFunction(function (arg) {"
+            + "  bean.@methodRef(@taming.getBean(frame, arg));"
             + "})",
-            "formal", new FormalParam(
-                new Identifier(FilePosition.UNKNOWN, makeArgName(0))),
-            "actual",
-                new Reference(
-                    new Identifier(FilePosition.UNKNOWN, makeArgName(0))),
-            "parameterUnwrapStatements",
-                getParameterUnwrapStatements(
-                    introspector, pd.writeMethod.getParameters()),
+            "taming", getTamingObject(
+                pd.writeMethod.getParameters()[0].getType()),
             "methodRef", getMethodAccessor(pd.writeMethod));
     return (Expression) QuasiBuilder.substV(
         "({" +
@@ -589,31 +531,15 @@ public class TamingGenerator {
     return new Reference(new Identifier(
         FilePosition.UNKNOWN, m.getJsniSignature()));
   }
-  public Reference getTypeWrapperAccessor(
-      TypeOracle to,
-      JClassType beanType) {
-    toWrap.add(beanType);
+
+  public Reference getTamingGetterAccessor(JClassType beanType) {
+    toGenerateTamingAccessors.add(beanType);
     return new Reference(
         new Identifier(
             FilePosition.UNKNOWN,
             "@" + tamingImplClassName
-                + "::" + getTypeWrapperMethodName(beanType) + "("
-                + to.findType(FRAME_CLASS).getJNISignature()
-                + beanType.getJNISignature()
-                + ")"));
-  }
-
-  private Reference getTypeUnwrapperAccessor(
-      TypeOracle to,
-      JClassType beanType) {
-    toUnwrap.add(beanType);
-    return new Reference(
-        new Identifier(
-            FilePosition.UNKNOWN,
-            "@" + tamingImplClassName + "::"
-                + getTypeUnwrapperMethodName(beanType) + "("
-                + to.findType(FRAME_CLASS).getJNISignature()
-                + to.findType(JSO_CLASS).getJNISignature()
+                + "::" + getTamingGetterMethodName(beanType)
+                + "("
                 + ")"));
   }
 
@@ -623,7 +549,10 @@ public class TamingGenerator {
         new Identifier(
             FilePosition.UNKNOWN,
             "@" + tamingImplClassName + "::"
-                + getArrayCreationMethodName(type) + "(I)"));
+                + getArrayCreationMethodName(type)
+                + "(" 
+                + "I"
+                + ")"));
   }
 
   private Reference getArrayAssignmentAccessor(JType type) {
@@ -665,14 +594,49 @@ public class TamingGenerator {
                 + ")"));
   }
 
-  private static String getTypeWrapperMethodName(JType beanType) {
-    return getTypeSpecificMethodName(beanType) + "_getJso";
-  }
-  
-  private static String getTypeUnwrapperMethodName(JType beanType) {
-    return getTypeSpecificMethodName(beanType) + "_getBean";
+  private Reference getMethodDispatcherAccessor() {
+    return new Reference(
+        new Identifier(
+            FilePosition.UNKNOWN,
+            "@" + TAMING_COMMON_BASE_CLASS + "::"
+                + "getMethodDispatcher"
+                + "("
+                + ")"));
   }
 
+  private Reference getGetJsoAccessor() {
+    return new Reference(
+        new Identifier(
+            FilePosition.UNKNOWN,
+            "@" + TAMING_INTERFACE + "::"
+                + "getJso"
+                + "("
+                + context.getTypeOracle().findType(FRAME_CLASS)
+                    .getJNISignature()
+                + context.getTypeOracle().findType(OBJECT_CLASS)
+                    .getJNISignature()
+                + ")"));
+
+  }
+
+  private Reference getGetBeanAccessor() {
+    return new Reference(
+        new Identifier(
+            FilePosition.UNKNOWN,
+            "@" + TAMING_INTERFACE + "::"
+                + "getBean"
+                + "("
+                + context.getTypeOracle().findType(FRAME_CLASS)
+                    .getJNISignature()
+                + context.getTypeOracle().findType(JSO_CLASS)
+                    .getJNISignature()
+                + ")"));
+  }
+
+  private static String getTamingGetterMethodName(JType beanType) {
+    return getTypeSpecificMethodName(beanType) + "_getTaming";
+  }
+  
   private static String getArrayCreationMethodName(JType componentType) {
     return getTypeSpecificMethodName(componentType) + "_newArray";
   }
@@ -693,6 +657,18 @@ public class TamingGenerator {
     return
         beanType.getQualifiedSourceName()
         .replace(".", "_");
+  }
+
+  private Map<String, Set<JMethod>> getMethodGroups(JMethod[] methods) {
+    Map<String, Set<JMethod>> methodGroups =
+        new HashMap<String, Set<JMethod>>();
+    for (JMethod m : methods) {
+      if (!methodGroups.containsKey(m.getName())) {
+        methodGroups.put(m.getName(), new HashSet<JMethod>());
+      }
+      methodGroups.get(m.getName()).add(m);
+    }
+    return methodGroups;
   }
   
   private String render(ParseTreeNode node) {
@@ -735,5 +711,102 @@ public class TamingGenerator {
       throw new UnableToCompleteException();
     }
     return result;
+  }
+
+  private void initializePrimitiveTamingObjects() {
+    primitiveTamingObjects.put(
+        JPrimitiveType.BOOLEAN,
+        (Expression) QuasiBuilder.substV(""
+            + "({"
+            + "  getJso: function(frame, bean) { return bean; },"
+            + "  getBean: function(frame, jso) {"
+            + "    if ((typeof jso) === 'boolean') return jso;"
+            + "    throw new TypeError('Not a boolean: ' + jso);"
+            + "  }"
+            + "})"));
+    primitiveTamingObjects.put(
+        JPrimitiveType.BYTE,
+        (Expression) QuasiBuilder.substV(""
+            + "({"
+            + "  getJso: function(frame, bean) { return bean; },"
+            + "  getBean: function(frame, jso) {"
+            + "    if ((typeof jso) === 'number') return jso;"
+            + "    throw new TypeError("
+            + "        'Not a number (cannot pass as byte): ' + jso);"
+            + "  }"
+            + "})"));
+    primitiveTamingObjects.put(
+        JPrimitiveType.CHAR,
+        (Expression) QuasiBuilder.substV(""
+            + "({"
+            + "  getJso: function(frame, bean) { return bean; },"
+            + "  getBean: function(frame, jso) {"
+            + "    if ((typeof jso) === 'number') return jso;"
+            + "    throw new TypeError("
+            + "        'Not a number (cannot pass as char): ' + jso);"
+            + "  }"
+            + "})"));
+    primitiveTamingObjects.put(
+        JPrimitiveType.DOUBLE,
+        (Expression) QuasiBuilder.substV(""
+            + "({"
+            + "  getJso: function(frame, bean) { return bean; },"
+            + "  getBean: function(frame, jso) {"
+            + "    if ((typeof jso) === 'number') return jso;"
+            + "    throw new TypeError("
+            + "        'Not a number (cannot pass as double): ' + jso);"
+            + "  }"
+            + "})"));
+    primitiveTamingObjects.put(
+        JPrimitiveType.FLOAT,
+        (Expression) QuasiBuilder.substV(""
+            + "({"
+            + "  getJso: function(frame, bean) { return bean; },"
+            + "  getBean: function(frame, jso) {"
+            + "    if ((typeof jso) === 'number') return jso;"
+            + "    throw new TypeError("
+            + "        'Not a number (cannot pass as float): ' + jso);"
+            + "  }"
+            + "})"));
+    primitiveTamingObjects.put(
+        JPrimitiveType.INT,
+        (Expression) QuasiBuilder.substV(""
+            + "({"
+            + "  getJso: function(frame, bean) { return bean; },"
+            + "  getBean: function(frame, jso) {"
+            + "    if ((typeof jso) === 'number') return jso;"
+            + "    throw new TypeError("
+            + "        'Not a number (cannot pass as int): ' + jso);"
+            + "  }"
+            + "})"));
+    primitiveTamingObjects.put(
+        JPrimitiveType.SHORT,
+        (Expression) QuasiBuilder.substV(""
+            + "({"
+            + "  getJso: function(frame, bean) { return bean; },"
+            + "  getBean: function(frame, jso) {"
+            + "    if ((typeof jso) === 'number') return jso;"
+            + "    throw new TypeError("
+            + "        'Not a number (cannot pass as short): ' + jso);"
+            + "  }"
+            + "})"));
+    primitiveTamingObjects.put(
+        JPrimitiveType.VOID,
+        (Expression) QuasiBuilder.substV(""
+            + "({"
+            + "  getJso: function(frame, bean) { },"
+            + "  getBean: function(frame, jso) { }"
+            + "})"));
+    primitiveTamingObjects.put(
+        context.getTypeOracle().findType("java.lang.String"),
+        (Expression) QuasiBuilder.substV(""
+            + "({"
+            + "  getJso: function(frame, bean) { return bean; },"
+            + "  getBean: function(frame, jso) {"
+            + "    if (jso === null) { return null; }"
+            + "    if ((typeof jso) === 'string') return jso;"
+            + "    throw new TypeError('Not a string: ' + jso);"
+            + "  }"
+            + "})"));
   }
 }

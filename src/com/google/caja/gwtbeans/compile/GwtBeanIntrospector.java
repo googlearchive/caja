@@ -28,8 +28,8 @@ import com.google.gwt.core.ext.typeinfo.TypeOracle;
 import com.google.gwt.core.ext.typeinfo.JPrimitiveType;
 
 public final class GwtBeanIntrospector {
-  private final Map<JType, GwtBeanInfo> byBeanType =
-      new HashMap<JType, GwtBeanInfo>();
+  private final Map<JClassType, GwtBeanInfo> byBeanType =
+      new HashMap<JClassType, GwtBeanInfo>();
   private final Map<JClassType, GwtBeanInfo> byTamingInterface =
       new HashMap<JClassType, GwtBeanInfo>();
   private final TamingConfiguration configuration;
@@ -45,7 +45,7 @@ public final class GwtBeanIntrospector {
     this.configuration = new TamingConfiguration(logger, context);
   }
 
-  public GwtBeanInfo getBeanInfoByBeanType(JType beanType)
+  public GwtBeanInfo getBeanInfoByBeanType(JClassType beanType)
       throws UnableToCompleteException {
     if (!byBeanType.containsKey(beanType)) {
       GwtBeanInfo bi = newByBeanType(logger, context, beanType);
@@ -68,32 +68,23 @@ public final class GwtBeanIntrospector {
   private GwtBeanInfo newByBeanType(
       TreeLogger logger,
       GeneratorContext context,
-      JType type)
+      JClassType type)
       throws UnableToCompleteException {
-    if (isAllowablePrimitiveType(context.getTypeOracle(), type)) {
-      return makePrimitiveGwtBeanInfo(type);
-    } else if (type instanceof JClassType) {
-      JClassType tamingInterface =
-          configuration.getTamingInterfaceByBeanClass((JClassType) type);
-      if (tamingInterface == null) {
-        logger.log(Type.ERROR,
-            "Bean type " + type.getQualifiedSourceName()
-            + " has no known taming");
-        throw new UnableToCompleteException();
-      }
-      JClassType tamingImplementation = configuration
-          .getTamingImplementationByTamingInterface(tamingInterface);
-      return tamingImplementation == null
-          ? new DefaultGwtBeanInfo(
-              logger, context, (JClassType) type, tamingInterface)
-          : makeSimpleGwtBeanInfo(
-              type, false, tamingInterface, tamingImplementation);
-    } else {
+    JClassType tamingInterface =
+        configuration.getTamingInterfaceByBeanClass((JClassType) type);
+    if (tamingInterface == null) {
       logger.log(Type.ERROR,
-          "Cannot create taming for non-class type "
-          + type.getQualifiedSourceName());
+          "Bean type " + type.getQualifiedSourceName()
+          + " has no known taming");
       throw new UnableToCompleteException();
     }
+    JClassType tamingImplementation = configuration
+        .getTamingImplementationByTamingInterface(tamingInterface);
+    return tamingImplementation == null
+        ? new DefaultGwtBeanInfo(
+            logger, context, type, tamingInterface)
+        : makeSimpleGwtBeanInfo(
+            type, tamingInterface, tamingImplementation);
   }
 
   private GwtBeanInfo newByTamingInterface(
@@ -115,24 +106,16 @@ public final class GwtBeanIntrospector {
         ? new DefaultGwtBeanInfo(
             logger, context, beanClass, tamingInterface)
         : makeSimpleGwtBeanInfo(
-            beanClass, false, tamingInterface, tamingImplementation);
-  }
-
-  private GwtBeanInfo makePrimitiveGwtBeanInfo(final JType type) {
-    return makeSimpleGwtBeanInfo(type, true, null, null);
+            beanClass, tamingInterface, tamingImplementation);
   }
 
   private GwtBeanInfo makeSimpleGwtBeanInfo(
-      final JType type,
-      final boolean tamingPrimitiveType,
+      final JClassType type,
       final JClassType tamingInterface,
       final JClassType tamingImplementation) {
     return new GwtBeanInfo() {
-      @Override public JType getType() {
+      @Override public JClassType getType() {
         return type;
-      }
-      @Override public boolean isTamingPrimitiveType() {
-        return tamingPrimitiveType;
       }
       @Override public JClassType getTamingInterface() {
         return tamingInterface;
@@ -147,17 +130,5 @@ public final class GwtBeanIntrospector {
         return null;
       }
     };
-  }
-  
-  /**
-   * Whether the supplied type is a valid GWT primitive type.
-   */
-  private boolean isAllowablePrimitiveType(TypeOracle to, JType type) {
-    // Note that we do not include GWT class Element in this list, though it is
-    // treated by GWT JSNI as a primitive. Instead, we hard-code an actual
-    // Taming class for class Element that does the necessary DOM taming.
-    return
-        (type instanceof JPrimitiveType && type != JPrimitiveType.LONG)
-        || type == to.findType("java.lang.String");
   }
 }

@@ -27,17 +27,8 @@ public interface GwtBeanInfo {
   /**
    * @return the Bean type.
    */
-  JType getType();
+  JClassType getType();
   
-  /**
-   * @return whether this Bean class is to be considered a primitive
-   * type for the purposes of taming. A primitive is passed thorough the
-   * GWT call layer without taming or untaming. Candidates for this status
-   * include integers and strings, which are automatically handled properly
-   * by GWT JSNI and do not constitute a security risk.
-   */
-  boolean isTamingPrimitiveType();
-
   /**
    * @return the taming interface for this Bean class. The taming interface
    * must be an empty interface that extends interface Taming, parameterized

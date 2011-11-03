@@ -30,6 +30,7 @@ public class Bean {
   public final Float floatRetval = 0.12345f;
   public final Integer integerRetval = 42;
   public final Short shortRetval = (short) 42;
+  public final Character characterRetval = 'b';
   public final String stringRetval = "hello world";
   public final Date dateRetval = new Date((long) Math.pow(2, 52));
 
@@ -37,6 +38,7 @@ public class Bean {
   public boolean invoked;
   public Object arg0;
   public Object arg1;
+  public Object hint;  // General hint for some methods to use
 
   // Some fields for testing
   public String testPublicField;
@@ -159,7 +161,7 @@ public class Bean {
     return null;
   }
   public void invokeWithIntegerObj(Integer a0) {
-	invoked = true;
+    invoked = true;
     this.arg0 = a0;
   }
   public Integer fetchIntegerObj() {
@@ -182,6 +184,65 @@ public class Bean {
     invoked = true;
     return null;
   }
+
+  // Tests of GWT primitive types
+
+  public void invokeWithBooleanP(boolean a0) {
+    invoked = true;
+    this.arg0 = a0;
+  }
+  public boolean fetchBooleanP() {
+    invoked = true;
+    return booleanRetval;
+  }
+  public void invokeWithByteP(byte a0) {
+    invoked = true;
+    arg0 = a0;
+  }
+  public byte fetchByteP() {
+    this.invoked = true;
+    return byteRetval;
+  }
+  public void invokeWithCharacterP(char a0) {
+    invoked = true;
+    arg0 = a0;
+  }
+  public char fetchCharacterP() {
+    invoked = true;
+    return characterRetval;
+  }
+  public void invokeWithDoubleP(double a0) {
+    invoked = true;
+    arg0 = a0;
+  }
+  public double fetchDoubleP() {
+    invoked = true;
+    return doubleRetval;
+  }
+  public void invokeWithFloatP(float a0) {
+    invoked = true;
+    arg0 = a0;
+  }
+  public float fetchFloatP() {
+    invoked = true;
+    return floatRetval;
+  }
+  public void invokeWithIntegerP(int a0) {
+    invoked = true;
+    arg0 = a0;
+  }
+  public int fetchIntegerP() {
+    invoked = true;
+    return integerRetval;
+  }
+  public void invokeWithShortP(short a0) {
+    invoked = true;
+    arg0 = a0;
+  }
+  public short fetchShortP() {
+    invoked = true;
+    return shortRetval;
+  }
   public void invokeWithStringObj(String a0) {
     invoked = true;
     this.arg0 = a0;
@@ -194,6 +255,9 @@ public class Bean {
     invoked = true;
     return null;
   }
+  
+  // Test of Date taming
+
   public void invokeWithDateObj(Date a0) {
     invoked = true;
     this.arg0 = a0;
@@ -243,6 +307,75 @@ public class Bean {
     this.arg1 = a1;
   }
 
+  // Simple overloaded methods
+
+  public void invokeOverloaded(int a0, Friend a1) {
+    invoked = true;
+    this.arg0 = a0;
+    this.arg1 = a1;
+  }
+
+  public void invokeOverloaded(Friend a0, int a1) {
+    invoked = true;
+    this.arg0 = a0;
+    this.arg1 = a1;
+  }
+
+  public void invokeOverloaded(int a0, boolean a1) {
+    invoked = true;
+    this.arg0 = a0;
+    this.arg1 = a1;
+  }
+
+  public void invokeOverloaded(boolean a0, int a1) {
+    invoked = true;
+    this.arg0 = a0;
+    this.arg1 = a1;
+  }
+
+  // More overloaded methods to test arity-based selection
+
+  public void invokeArityOverloaded(Friend a0) {
+    invoked = true;
+    this.arg0 = a0;
+    this.hint = "1 arg form";
+  }
+
+  public void invokeArityOverloaded(Friend a0, Friend a1) {
+    invoked = true;
+    this.arg0 = a0;
+    this.arg1 = a1;
+    this.hint = "2 arg form";
+  }
+
+  // The following two functions cannot be distinguished if the caller supplies
+  // only an (int), but the second form is uniquely determined if the caller
+  // supplies an (int,Friend[]).
+
+  public void invokeAmbiguousOverloaded(int a0) {
+    invoked = true;
+    this.arg0 = a0;
+  }
+
+  public void invokeAmbiguousOverloaded(int a0, Friend... a1) {
+    invoked = true;
+    this.arg0 = a0;
+    this.arg1 = a1;
+  }
+
+  // The following two functions can be distinguished if the caller supplies
+  // concrete arguments, but not if the caller supplies (undefined).
+
+  public void invokeAmbiguousWithTamedObj(Friend a0) {
+    invoked = true;
+    this.arg0 = a0;
+  }
+
+  public void invokeAmbiguousWithTamedObj(Bean a0) {
+    invoked = true;
+    this.arg0 = a0;
+  }
+  
   // Methods that should not be visible
   protected void doProtected() {}
   @SuppressWarnings("unused")

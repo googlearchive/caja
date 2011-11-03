@@ -70,13 +70,8 @@ public final class DefaultGwtBeanInfo implements GwtBeanInfo {
   }
 
   @Override
-  public JType getType() {
+  public JClassType getType() {
     return type;
-  }
-
-  @Override
-  public boolean isTamingPrimitiveType() {
-    return false;
   }
 
   @Override
