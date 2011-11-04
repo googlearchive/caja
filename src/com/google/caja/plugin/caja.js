@@ -1116,7 +1116,10 @@ var caja = (function () {
     // Apply styles to current document
     var style = aWindow.document.createElement('style');
     style.setAttribute('type', 'text/css');
-    style.innerHTML =
+    // IE style nodes need to be added to the DOM before setting cssText
+    // http://msdn.microsoft.com/en-us/library/ms533698(v=vs.85).aspx
+    aWindow.document.getElementsByTagName('head')[0].appendChild(style);
+    var containerStyle = 
         '.caja_outerContainer___ {' +
         '  padding: 0px;' +
         '  margin: 0px;' +
@@ -1130,7 +1133,13 @@ var caja = (function () {
         '  height: 100%;' +
         '  position: relative;' +
         '}';
-    aWindow.document.getElementsByTagName('head')[0].appendChild(style);
+    if (style.styleSheet) {
+      // y u crazIE?
+      style.styleSheet.cssText = containerStyle;
+    } else {
+      // Everyone else
+      style.appendChild(aWindow.document.createTextNode(containerStyle));
+    }
     // Attach safety marker to 'window' object
     aWindow.___ = {};
     // Attach recognition marker to 'Object' constructor
