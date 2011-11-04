@@ -14,6 +14,7 @@
 
 package com.google.caja.util;
 
+import com.google.caja.AllTests;
 import com.google.caja.SomethingWidgyHappenedError;
 import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.CssTokenType;
@@ -56,8 +57,14 @@ import java.io.ObjectOutputStream;
 import java.io.StringReader;
 import java.lang.reflect.Method;
 import java.net.URI;
+import java.util.Enumeration;
+import java.util.List;
+import java.util.NoSuchElementException;
+import java.util.regex.Pattern;
 
+import junit.framework.Test;
 import junit.framework.TestCase;
+import junit.framework.TestSuite;
 
 import org.w3c.dom.DocumentFragment;
 import org.w3c.dom.Element;
@@ -471,6 +478,20 @@ public abstract class CajaTestCase extends TestCase {
 
   @Override
   protected void runTest() throws Throwable {
+  // Support filtering of test methods via the Java system property
+  // "test.method.filter".  This can be used in conjunction with
+  // "test.filter".
+    String filterGlob = System.getProperty("test.method.filter");
+    if (filterGlob != null) {
+      // TODO: Maybe move globToPattern into util.
+      Pattern methodFilter = Pattern.compile(
+          AllTests.globToPattern(filterGlob), Pattern.DOTALL);
+      if (!methodFilter.matcher(getName()).find()) {
+        System.err.println("Skipping " + getName());
+        return;
+      }
+    }
+
     // In Eclipse, to suppress known test failures,
     // (1) right click on the test in the package explorer and choose properties
     // (2) Choose the Run/Debug Settings tab

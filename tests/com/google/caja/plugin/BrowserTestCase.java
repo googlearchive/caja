@@ -35,11 +35,23 @@ import org.openqa.selenium.WebElement;
 import org.openqa.selenium.firefox.FirefoxDriver;
 import org.openqa.selenium.WebDriver;
 
+import java.io.FileDescriptor;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.util.List;
 
 /**
  * Test case class with tools for controlling a web browser running pages from a
  * local web server.
+ *
+ * <p>
+ * To debug, run <pre>
+ * ant -D{@link BrowserTestCase#START_AND_WAIT_FLAG caja.BrowserTestCase.startAndWait}=true -Dtest.filter=&lt;TestCaseName&gt; runtests
+ * </pre>.  Be sure to fill in {@code <TestCaseName>} with the name of the test
+ * you want to debug and look for a URL in the test log output.
+ * If you need more fine-grained filtering, use {@code -Dtest.method.filter} to
+ * filter by method name.
  *
  * @author maoziqing@gmail.com (Ziqing Mao)
  * @author kpreid@switchb.org (Kevin Reid)
@@ -206,7 +218,22 @@ public abstract class BrowserTestCase extends CajaTestCase {
   protected void runBrowserTest(String pageName) {
     if (checkHeadless()) return;  // TODO: print a warning here?
     startLocalServer();
+    String testUrl = ("http://localhost:" + portNumber()
+                      + "/ant-lib/com/google/caja/plugin/"
+                      + pageName);
     if (System.getProperty(START_AND_WAIT_FLAG) != null) {
+      // The test runner may catch output so go directly to file descriptor 2.
+      OutputStream out = new FileOutputStream(FileDescriptor.err);
+      try {
+        // Print out the URL so that someone can use ant -Dtest.filter to
+        // choose the specific test they want instead of having to compute the
+        // URL by inspection of the test code.
+        out.write(("Waiting for interactive test run. Try " + testUrl + "\n")
+                  .getBytes("UTF-8"));
+      } catch (IOException ex) {
+        ex.printStackTrace();
+      }
+      // No need to release a file descriptor that was open prior.
       try {
         Thread.sleep(START_AND_WAIT_MILLIS);
       } catch (InterruptedException e) {
@@ -215,9 +242,7 @@ public abstract class BrowserTestCase extends CajaTestCase {
     }
     try {
       WebDriver driver = mwwd.newWindow();
-      driver.get("http://localhost:" + portNumber()
-                 + "/ant-lib/com/google/caja/plugin/"
-                 + pageName);
+      driver.get(testUrl);
       driveBrowser(driver, pageName);
       driver.close();
       // Note that if the tests fail, this will not be reached and the window

@@ -94,7 +94,7 @@ public class AllTests {
     return 1;
   }
 
-  private static String globToPattern(String glob) {
+  public static String globToPattern(String glob) {
     StringBuilder sb = new StringBuilder();
     int pos = 0;
     for (int i = 0, n = glob.length(); i < n; ++i) {

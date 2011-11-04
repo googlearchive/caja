@@ -51,6 +51,7 @@
   <property name="tests"       location="tests"/>
   <property name="tests.caja"  location="${tests}/com/google/caja"/>
   <property name="test.filter" value="*Test"/>
+  <property name="test.method.filter" value="*"/>
   <property name="third_party" location="third_party"/>
   <property name="demos"       location="${src.caja}/demos"/>
   <!--== outputs ==-->
@@ -245,6 +246,7 @@
       <sysproperty key="user.language" value="tr"/>
       <sysproperty key="user.region" value="TR"/>
       <sysproperty key="test.filter" value="${test.filter}"/>
+      <sysproperty key="test.method.filter" value="${test.method.filter}"/>
       <test name="com.google.caja.AllTests" todir="${reports}/tests"
        if="emma.enabled"/>
     </junit>
@@ -252,6 +254,11 @@
 
   <target name="RuntestsRunGwtBeans">
     <junit printsummary="yes" fork="yes" maxmemory="512m">
+      <sysproperty key="user.language" value="tr"/>
+      <sysproperty key="user.region" value="TR"/>
+      <sysproperty key="test.method.filter" value="${test.method.filter}"/>
+      <sysproperty key="test.suppressKnownFailures"
+       value="${test.suppressKnownFailures}"/>
       <classpath>
         <pathelement location="${third_party}/java/gwt/gwt-user.jar"/>
         <pathelement location="${third_party}/java/gwt/gwt-dev.jar"/>
