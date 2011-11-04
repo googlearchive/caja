@@ -182,7 +182,7 @@
     // Leaves id for <em> but strips the prefix.
     // Escapes trailing title, href, and > after </em>.
     assertEquals(
-        '<a class="link" href="http://foo.com?a&#61;b&amp;c&#61;d"'
+        '<a class="link" href="http://foo.com?a=b&amp;c=d"'
         + ' title="&lt;click me!&gt;">'
         + 'Test <em id="em">Not</em>&gt; run yet.</a>',
         canonInnerHtml(container.innerHTML));

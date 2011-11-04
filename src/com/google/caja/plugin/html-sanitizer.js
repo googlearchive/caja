@@ -21,46 +21,47 @@
  * attributes schemas.
  *
  * @author mikesamuel@gmail.com
- * @requires html4
- * @overrides window
- * @provides html, html_sanitize
+ * \@requires html4
+ * \@overrides window
+ * \@provides html, html_sanitize
  */
 
 /**
- * @namespace
+ * \@namespace
  */
-var html = (function (html4) {
+var html = (function(html4) {
   var lcase;
   // The below may not be true on browsers in the Turkish locale.
   if ('script' === 'SCRIPT'.toLowerCase()) {
-    lcase = function (s) { return s.toLowerCase(); };
+    lcase = function(s) { return s.toLowerCase(); };
   } else {
     /**
-     * {@updoc
+     * {\@updoc
      * $ lcase('SCRIPT')
      * # 'script'
      * $ lcase('script')
      * # 'script'
      * }
      */
-    lcase = function (s) {
+    lcase = function(s) {
       return s.replace(
           /[A-Z]/g,
-          function (ch) {
+          function(ch) {
             return String.fromCharCode(ch.charCodeAt(0) | 32);
           });
     };
   }
 
+  // The keys of this object must be 'quoted' or JSCompiler will mangle them!
   var ENTITIES = {
-    lt   : '<',
-    gt   : '>',
-    amp  : '&',
-    nbsp : '\240',
-    quot : '"',
-    apos : '\''
+    'lt': '<',
+    'gt': '>',
+    'amp': '&',
+    'nbsp': '\240',
+    'quot': '"',
+    'apos': '\''
   };
-  
+
   // Schemes on which to defer to uripolicy. Urls with other schemes are denied
   var WHITELISTED_SCHEMES = /^(?:https?|mailto)$/i;
 
@@ -69,7 +70,7 @@ var html = (function (html4) {
   /**
    * Decodes an HTML entity.
    *
-   * {@updoc
+   * {\@updoc
    * $ lookupEntity('lt')
    * # '<'
    * $ lookupEntity('GT')
@@ -98,8 +99,8 @@ var html = (function (html4) {
    * # '\u03C0'
    * }
    *
-   * @param name the content between the '&' and the ';'.
-   * @return a single unicode code-point as a string.
+   * @param {string} name the content between the '&' and the ';'.
+   * @return {string} a single unicode code-point as a string.
    */
   function lookupEntity(name) {
     name = lcase(name);  // TODO: &pi; is different from &Pi;
@@ -126,7 +127,7 @@ var html = (function (html4) {
   /**
    * The plain text of a chunk of HTML CDATA which possibly containing.
    *
-   * {@updoc
+   * {\@updoc
    * $ unescapeEntities('')
    * # ''
    * $ unescapeEntities('hello World!')
@@ -141,8 +142,8 @@ var html = (function (html4) {
    * # 'pi=\u03C0\u03c0, Pi=\u03A0\u03A0'
    * }
    *
-   * @param s a chunk of HTML CDATA.  It must not start or end inside an HTML
-   *   entity.
+   * @param {string} s a chunk of HTML CDATA.  It must not start or end inside
+   *     an HTML entity.
    */
   function unescapeEntities(s) {
     return s.replace(entityRe, decodeOneEntity);
@@ -153,12 +154,11 @@ var html = (function (html4) {
   var ltRe = /</g;
   var gtRe = />/g;
   var quotRe = /\"/g;
-  var eqRe = /\=/g;  // Backslash required on JScript.net
 
   /**
-   * Escapes HTML special characters in attribute values as HTML entities.
+   * Escapes HTML special characters in attribute values.
    *
-   * {@updoc
+   * {\@updoc
    * $ escapeAttrib('')
    * # ''
    * $ escapeAttrib('"<<&==&>>"')  // Do not just escape the first occurrence.
@@ -168,14 +168,13 @@ var html = (function (html4) {
    * }
    */
   function escapeAttrib(s) {
-    // Escaping '=' defangs many UTF-7 and SGML short-tag attacks.
-    return s.replace(ampRe, '&amp;').replace(ltRe, '&lt;').replace(gtRe, '&gt;')
-        .replace(quotRe, '&#34;').replace(eqRe, '&#61;');
+    return ('' + s).replace(ampRe, '&amp;').replace(ltRe, '&lt;')
+        .replace(gtRe, '&gt;').replace(quotRe, '&#34;');
   }
 
   /**
    * Escape entities in RCDATA that can be escaped without changing the meaning.
-   * {@updoc
+   * {\@updoc
    * $ normalizeRCData('1 < 2 &&amp; 3 > 4 &amp;& 5 &lt; 7&8')
    * # '1 &lt; 2 &amp;&amp; 3 &gt; 4 &amp;&amp; 5 &lt; 7&amp;8'
    * }
@@ -197,51 +196,51 @@ var html = (function (html4) {
   /** token definitions. */
   var INSIDE_TAG_TOKEN = new RegExp(
       // Don't capture space.
-      '^\\s*(?:'
-      // Capture an attribute name in group 1, and value in group 3.
-      // We capture the fact that there was an attribute in group 2, since
-      // interpreters are inconsistent in whether a group that matches nothing
-      // is null, undefined, or the empty string.
-      + ('(?:'
-         + '([a-z][a-z-]*)'                    // attribute name
-         + ('('                                // optionally followed
-            + '\\s*=\\s*'
-            + ('('
-               // A double quoted string.
-               + '\"[^\"]*\"'
-               // A single quoted string.
-               + '|\'[^\']*\''
-               // The positive lookahead is used to make sure that in
-               // <foo bar= baz=boo>, the value for bar is blank, not "baz=boo".
-               + '|(?=[a-z][a-z-]*\\s*=)'
-               // An unquoted value that is not an attribute name.
-               // We know it is not an attribute name because the previous
-               // zero-width match would've eliminated that possibility.
-               + '|[^>\"\'\\s]*'
-               + ')'
-               )
-            + ')'
-            ) + '?'
-         + ')'
-         )
+      '^\\s*(?:' + (
+        // Capture an attribute name in group 1, and value in group 3.
+        // We capture the fact that there was an attribute in group 2, since
+        // interpreters are inconsistent in whether a group that matches nothing
+        // is null, undefined, or the empty string.
+        '(?:' +
+        '([a-z][a-z-]*)' + (                  // attribute name
+          '(' +                                // optionally followed
+          '\\s*=\\s*' + (
+            '(' +
+            // A double quoted string.
+            '\"[^\"]*\"' +
+            // A single quoted string.
+            '|\'[^\']*\'' +
+            // The positive lookahead is used to make sure that in
+            // <foo bar= baz=boo>, the value for bar is blank, not "baz=boo".
+            '|(?=[a-z][a-z-]*\\s*=)' +
+            // An unquoted value that is not an attribute name.
+            // We know it is not an attribute name because the previous
+            // zero-width match would've eliminated that possibility.
+            '|[^>\"\'\\s]*' +
+            ')'
+          ) +
+          ')'
+        ) + '?' +
+        ')'
+      ) +
       // End of tag captured in group 3.
-      + '|(\/?>)'
+      '|(/?>)' +
       // Don't capture cruft
-      + '|[\\s\\S][^a-z\\s>]*)',
+      '|[\\s\\S][^a-z\\s>]*)',
       'i');
 
   var OUTSIDE_TAG_TOKEN = new RegExp(
-      '^(?:'
+      '^(?:' +
       // Entity captured in group 1.
-      + '&(\\#[0-9]+|\\#[x][0-9a-f]+|\\w+);'
+      '&(\\#[0-9]+|\\#[x][0-9a-f]+|\\w+);' +
       // Comment, doctypes, and processing instructions not captured.
-      + '|<\!--[\\s\\S]*?--\>|<!\\w[^>]*>|<\\?[^>*]*>'
+      '|<\!--[\\s\\S]*?--\>|<!\\w[^>]*>|<\\?[^>*]*>' +
       // '/' captured in group 2 for close tags, and name captured in group 3.
-      + '|<(\/)?([a-z][a-z0-9]*)'
+      '|<(/)?([a-z][a-z0-9]*)' +
       // Text captured in group 4.
-      + '|([^<&>]+)'
+      '|([^<&>]+)' +
       // Cruft captured in group 5.
-      + '|([<&>]))',
+      '|([<&>]))',
       'i');
 
   /**
@@ -264,8 +263,8 @@ var html = (function (html4) {
    * }}
    *
    * @param {Object} handler a record containing event handlers.
-   * @return {Function} that takes a chunk of html and a parameter.
-   *   The parameter is passed on to the handler methods.
+   * @return {function(string, Object)} A function that takes a chunk of HTML
+   *     and a parameter.  The parameter is passed on to the handler methods.
    */
   function makeSaxParser(handler) {
     return function parse(htmlText, param) {
@@ -318,8 +317,8 @@ var html = (function (html4) {
               }
             }
 
-            if (openTag
-                && (eflags & (html4.eflags.CDATA | html4.eflags.RCDATA))) {
+            if (openTag &&
+                (eflags & (html4.eflags.CDATA | html4.eflags.RCDATA))) {
               if (htmlLower === null) {
                 htmlLower = lcase(htmlText);
               } else {
@@ -335,7 +334,7 @@ var html = (function (html4) {
                   }
                 } else if (handler.rcdata) {
                   handler.rcdata(
-                    normalizeRCData(htmlText.substring(0, dataEnd)), param);
+                      normalizeRCData(htmlText.substring(0, dataEnd)), param);
                 }
                 htmlText = htmlText.substring(dataEnd);
               }
@@ -352,16 +351,17 @@ var html = (function (html4) {
             openTag = !m[2];
             inTag = true;
             tagName = lcase(m[3]);
-            eflags = html4.ELEMENTS.hasOwnProperty(tagName)
-                ? html4.ELEMENTS[tagName] : void 0;
+            eflags = html4.ELEMENTS.hasOwnProperty(tagName) ?
+                html4.ELEMENTS[tagName] : void 0;
           } else if (m[4]) {  // Text
             if (handler.pcdata) { handler.pcdata(m[4], param); }
           } else if (m[5]) {  // Cruft
             if (handler.pcdata) {
-              var ch = m[5];
-              handler.pcdata(
-                  ch === '<' ? '&lt;' : ch === '>' ? '&gt;' : '&amp;',
-                  param);
+              switch (m[5]) {
+                case '<': handler.pcdata('&lt;', param); break;
+                case '>': handler.pcdata('&gt;', param); break;
+                case '&': handler.pcdata('&amp;', param); break;
+              }
             }
           }
         }
@@ -373,192 +373,245 @@ var html = (function (html4) {
 
   /**
    * Returns a function that strips unsafe tags and attributes from html.
-   * @param {Function} sanitizeAttributes
-   *     maps from (tagName, attribs[]) to null or a sanitized attribute array.
-   *     The attribs array can be arbitrarily modified, but the same array
-   *     instance is reused, so should not be held.
-   * @return {Function} from html to sanitized html
+   * @param {function(string, Array.<string>): ?Array.<string>} tagPolicy
+   *     A function that takes (tagName, attribs[]), where tagName is a key in
+   *     html4.ELEMENTS and attribs is an array of alternating attribute names
+   *     and values.  It should return a sanitized attribute array, or null to
+   *     delete the tag.  It's okay for tagPolicy to modify the attribs array,
+   *     but the same array is reused, so it should not be held between calls.
+   * @return {function(string, Array)} A function that sanitizes a string of
+   *     HTML and appends result strings to the second argument, an array.
    */
-  function makeHtmlSanitizer(sanitizeAttributes) {
+  function makeHtmlSanitizer(tagPolicy) {
     var stack;
     var ignoring;
     return makeSaxParser({
-        startDoc: function (_) {
-          stack = [];
-          ignoring = false;
-        },
-        startTag: function (tagName, attribs, out) {
-          if (ignoring) { return; }
-          if (!html4.ELEMENTS.hasOwnProperty(tagName)) { return; }
-          var eflags = html4.ELEMENTS[tagName];
-          if (eflags & html4.eflags.FOLDABLE) {
-            return;
-          } else if (eflags & html4.eflags.UNSAFE) {
-            ignoring = !(eflags & html4.eflags.EMPTY);
-            return;
-          }
-          attribs = sanitizeAttributes(tagName, attribs);
-          // TODO(mikesamuel): relying on sanitizeAttributes not to
-          // insert unsafe attribute names.
-          if (attribs) {
-            if (!(eflags & html4.eflags.EMPTY)) {
-              stack.push(tagName);
-            }
-
-            out.push('<', tagName);
-            for (var i = 0, n = attribs.length; i < n; i += 2) {
-              var attribName = attribs[i],
-                  value = attribs[i + 1];
-              if (value !== null && value !== void 0) {
-                out.push(' ', attribName, '="', escapeAttrib(value), '"');
-              }
-            }
-            out.push('>');
-          }
-        },
-        endTag: function (tagName, out) {
-          if (ignoring) {
-            ignoring = false;
-            return;
-          }
-          if (!html4.ELEMENTS.hasOwnProperty(tagName)) { return; }
-          var eflags = html4.ELEMENTS[tagName];
-          if (!(eflags & (html4.eflags.UNSAFE | html4.eflags.EMPTY
-                          | html4.eflags.FOLDABLE))) {
-            var index;
-            if (eflags & html4.eflags.OPTIONAL_ENDTAG) {
-              for (index = stack.length; --index >= 0;) {
-                var stackEl = stack[index];
-                if (stackEl === tagName) { break; }
-                if (!(html4.ELEMENTS[stackEl]
-                      & html4.eflags.OPTIONAL_ENDTAG)) {
-                  // Don't pop non optional end tags looking for a match.
-                  return;
-                }
-              }
-            } else {
-              for (index = stack.length; --index >= 0;) {
-                if (stack[index] === tagName) { break; }
-              }
-            }
-            if (index < 0) { return; }  // Not opened.
-            for (var i = stack.length; --i > index;) {
-              var stackEl = stack[i];
-              if (!(html4.ELEMENTS[stackEl]
-                    & html4.eflags.OPTIONAL_ENDTAG)) {
-                out.push('</', stackEl, '>');
-              }
-            }
-            stack.length = index;
-            out.push('</', tagName, '>');
-          }
-        },
-        pcdata: function (text, out) {
-          if (!ignoring) { out.push(text); }
-        },
-        rcdata: function (text, out) {
-          if (!ignoring) { out.push(text); }
-        },
-        cdata: function (text, out) {
-          if (!ignoring) { out.push(text); }
-        },
-        endDoc: function (out) {
-          for (var i = stack.length; --i >= 0;) {
-            out.push('</', stack[i], '>');
-          }
-          stack.length = 0;
+      startDoc: function(_) {
+        stack = [];
+        ignoring = false;
+      },
+      startTag: function(tagName, attribs, out) {
+        if (ignoring) { return; }
+        if (!html4.ELEMENTS.hasOwnProperty(tagName)) { return; }
+        var eflags = html4.ELEMENTS[tagName];
+        if (eflags & html4.eflags.FOLDABLE) {
+          return;
         }
-      });
+        attribs = tagPolicy(tagName, attribs);
+        if (!attribs) {
+          ignoring = !(eflags & html4.eflags.EMPTY);
+          return;
+        }
+        // TODO(mikesamuel): relying on tagPolicy not to insert unsafe
+        // attribute names.
+        if (!(eflags & html4.eflags.EMPTY)) {
+          stack.push(tagName);
+        }
+
+        out.push('<', tagName);
+        for (var i = 0, n = attribs.length; i < n; i += 2) {
+          var attribName = attribs[i],
+              value = attribs[i + 1];
+          if (value !== null && value !== void 0) {
+            out.push(' ', attribName, '="', escapeAttrib(value), '"');
+          }
+        }
+        out.push('>');
+      },
+      endTag: function(tagName, out) {
+        if (ignoring) {
+          ignoring = false;
+          return;
+        }
+        if (!html4.ELEMENTS.hasOwnProperty(tagName)) { return; }
+        var eflags = html4.ELEMENTS[tagName];
+        if (!(eflags & (html4.eflags.EMPTY | html4.eflags.FOLDABLE))) {
+          var index;
+          if (eflags & html4.eflags.OPTIONAL_ENDTAG) {
+            for (index = stack.length; --index >= 0;) {
+              var stackEl = stack[index];
+              if (stackEl === tagName) { break; }
+              if (!(html4.ELEMENTS[stackEl] &
+                    html4.eflags.OPTIONAL_ENDTAG)) {
+                // Don't pop non optional end tags looking for a match.
+                return;
+              }
+            }
+          } else {
+            for (index = stack.length; --index >= 0;) {
+              if (stack[index] === tagName) { break; }
+            }
+          }
+          if (index < 0) { return; }  // Not opened.
+          for (var i = stack.length; --i > index;) {
+            var stackEl = stack[i];
+            if (!(html4.ELEMENTS[stackEl] &
+                  html4.eflags.OPTIONAL_ENDTAG)) {
+              out.push('</', stackEl, '>');
+            }
+          }
+          stack.length = index;
+          out.push('</', tagName, '>');
+        }
+      },
+      pcdata: function(text, out) {
+        if (!ignoring) { out.push(text); }
+      },
+      rcdata: function(text, out) {
+        if (!ignoring) { out.push(text); }
+      },
+      cdata: function(text, out) {
+        if (!ignoring) { out.push(text); }
+      },
+      endDoc: function(out) {
+        for (var i = stack.length; --i >= 0;) {
+          out.push('</', stack[i], '>');
+        }
+        stack.length = 0;
+      }
+    });
   }
 
   // From RFC3986
   var URI_SCHEME_RE = new RegExp(
-        "^" +
-      "(?:" +
-        "([^:\/?#]+)" +         // scheme
-      ":)?"
-      );
+      '^' +
+      '(?:' +
+        '([^:\/?#]+)' +         // scheme
+      ':)?'
+  );
 
   /**
-   * Strips unsafe tags and attributes from html.
-   * @param {string} htmlText to sanitize
-   * @param {Function} opt_uriPolicy -- a transform to apply to uri/url
-   *     attribute values.  If no opt_uriPolicy is provided, no uris
-   *     are allowed ie. the default uriPolicy rewrites all uris to null
-   * @param {Function} opt_nmTokenPolicy : string -> string? -- a transform to
-   *     apply to names, ids, and classes. If no opt_nmTokenPolicy is provided,
-   *     all names, ids and classes are passed through ie. the default
-   *     nmTokenPolicy is an identity transform
-   * @return {string} html
+   * Sanitizes attributes on an HTML tag.
+   * @param {string} tagName An HTML tag name in lowercase.
+   * @param {Array.<?string>} attribs An array of alternating names and values.
+   * @param {?function(?string): ?string} opt_uriPolicy A transform to apply to
+   *     URI attributes; it can return a new string value, or null to delete
+   *     the attribute.  If unspecified, URI attributes are deleted.
+   * @param {function(?string): ?string} opt_nmTokenPolicy A transform to apply
+   *     to attributes containing HTML names, element IDs, and space-separated
+   *     lists of classes; it can return a new string value, or null to delete
+   *     the attribute.  If unspecified, these attributes are kept unchanged.
+   * @return {Array.<?string>} The sanitized attributes as a list of alternating
+   *     names and values, where a null value means to omit the attribute.
    */
-  function sanitize(htmlText, opt_uriPolicy, opt_nmTokenPolicy) {
-    var out = [];
-    makeHtmlSanitizer(
-      function sanitizeAttribs(tagName, attribs) {
-        for (var i = 0; i < attribs.length; i += 2) {
-          var attribName = attribs[i];
-          var value = attribs[i + 1];
-          var atype = null, attribKey;
-          if ((attribKey = tagName + '::' + attribName,
-               html4.ATTRIBS.hasOwnProperty(attribKey))
-              || (attribKey = '*::' + attribName,
-                  html4.ATTRIBS.hasOwnProperty(attribKey))) {
-            atype = html4.ATTRIBS[attribKey];
-          }
-          if (atype !== null) {
-            switch (atype) {
-              case html4.atype.NONE: break;
-              case html4.atype.SCRIPT:
-              case html4.atype.STYLE:
-                value = null;
-                break;
-              case html4.atype.ID:
-              case html4.atype.IDREF:
-              case html4.atype.IDREFS:
-              case html4.atype.GLOBAL_NAME:
-              case html4.atype.LOCAL_NAME:
-              case html4.atype.CLASSES:
-                value = opt_nmTokenPolicy ? opt_nmTokenPolicy(value) : value;
-                break;
-              case html4.atype.URI:
-                var parsedUri = ('' + value).match(URI_SCHEME_RE);
-                if (!parsedUri) {
-                  value = null;
-                } else if (!parsedUri[1] ||
-                    WHITELISTED_SCHEMES.test(parsedUri[1])) {
-                  value = opt_uriPolicy && opt_uriPolicy(value);
-                } else {
-                  value = null;
-                }
-                break;
-              case html4.atype.URI_FRAGMENT:
-                if (value && '#' === value.charAt(0)) {
-                  value = opt_nmTokenPolicy ? opt_nmTokenPolicy(value) : value;
-                  if (value) { value = '#' + value; }
-                } else {
-                  value = null;
-                }
-                break;
-              default:
-                value = null;
-                break;
-            }
-          } else {
+  function sanitizeAttribs(tagName, attribs, opt_uriPolicy, opt_nmTokenPolicy) {
+    for (var i = 0; i < attribs.length; i += 2) {
+      var attribName = attribs[i];
+      var value = attribs[i + 1];
+      var atype = null, attribKey;
+      if ((attribKey = tagName + '::' + attribName,
+           html4.ATTRIBS.hasOwnProperty(attribKey)) ||
+          (attribKey = '*::' + attribName,
+           html4.ATTRIBS.hasOwnProperty(attribKey))) {
+        atype = html4.ATTRIBS[attribKey];
+      }
+      if (atype !== null) {
+        switch (atype) {
+          case html4.atype.NONE: break;
+          case html4.atype.SCRIPT:
+          case html4.atype.STYLE:
             value = null;
-          }
-          attribs[i + 1] = value;
+            break;
+          case html4.atype.ID:
+          case html4.atype.IDREF:
+          case html4.atype.IDREFS:
+          case html4.atype.GLOBAL_NAME:
+          case html4.atype.LOCAL_NAME:
+          case html4.atype.CLASSES:
+            value = opt_nmTokenPolicy ? opt_nmTokenPolicy(value) : value;
+            break;
+          case html4.atype.URI:
+            var parsedUri = ('' + value).match(URI_SCHEME_RE);
+            if (!parsedUri) {
+              value = null;
+            } else if (!parsedUri[1] ||
+                WHITELISTED_SCHEMES.test(parsedUri[1])) {
+              value = opt_uriPolicy ? opt_uriPolicy(value) : null;
+            } else {
+              value = null;
+            }
+            break;
+          case html4.atype.URI_FRAGMENT:
+            if (value && '#' === value.charAt(0)) {
+              value = value.substring(1);  // remove the leading '#'
+              value = opt_nmTokenPolicy ? opt_nmTokenPolicy(value) : value;
+              if (value !== null && value !== void 0) {
+                value = '#' + value;  // restore the leading '#'
+              }
+            } else {
+              value = null;
+            }
+            break;
+          default:
+            value = null;
+            break;
         }
-        return attribs;
-      })(htmlText, out);
-    return out.join('');
+      } else {
+        value = null;
+      }
+      attribs[i + 1] = value;
+    }
+    return attribs;
+  }
+
+  /**
+   * Creates a tag policy that omits all tags marked UNSAFE in html4-defs.js
+   * and applies the default attribute sanitizer with the supplied policy for
+   * URI attributes and NMTOKEN attributes.
+   * @param {?function(?string): ?string} opt_uriPolicy A transform to apply to
+   *     URI attributes.  If not given, URI attributes are deleted.
+   * @param {function(?string): ?string} opt_nmTokenPolicy A transform to apply
+   *     to attributes containing HTML names, element IDs, and space-separated
+   *     lists of classes.  If not given, such attributes are left unchanged.
+   * @return {function(string, Array.<?string>)} A tagPolicy suitable for
+   *     passing to html.sanitize.
+   */
+  function makeTagPolicy(opt_uriPolicy, opt_nmTokenPolicy) {
+    return function(tagName, attribs) {
+      if (!(html4.ELEMENTS[tagName] & html4.eflags.UNSAFE)) {
+        return sanitizeAttribs(
+            tagName, attribs, opt_uriPolicy, opt_nmTokenPolicy);
+      }
+    };
+  }
+
+  /**
+   * Sanitizes HTML tags and attributes according to a given policy.
+   * @param {string} inputHtml The HTML to sanitize.
+   * @param {function(string, Array.<?string>)} tagPolicy A function that
+   *     decides which tags to accept and sanitizes their attributes (see
+   *     makeHtmlSanitizer above for details).
+   * @return {string} The sanitized HTML.
+   */
+  function sanitizeWithPolicy(inputHtml, tagPolicy) {
+    var outputArray = [];
+    makeHtmlSanitizer(tagPolicy)(inputHtml, outputArray);
+    return outputArray.join('');
+  }
+
+  /**
+   * Strips unsafe tags and attributes from HTML.
+   * @param {string} inputHtml The HTML to sanitize.
+   * @param {?function(?string): ?string} opt_uriPolicy A transform to apply to
+   *     URI attributes.  If not given, URI attributes are deleted.
+   * @param {function(?string): ?string} opt_nmTokenPolicy A transform to apply
+   *     to attributes containing HTML names, element IDs, and space-separated
+   *     lists of classes.  If not given, such attributes are left unchanged.
+   */
+  function sanitize(inputHtml, opt_uriPolicy, opt_nmTokenPolicy) {
+    var tagPolicy = makeTagPolicy(opt_uriPolicy, opt_nmTokenPolicy);
+    return sanitizeWithPolicy(inputHtml, tagPolicy);
   }
 
   return {
     escapeAttrib: escapeAttrib,
     makeHtmlSanitizer: makeHtmlSanitizer,
     makeSaxParser: makeSaxParser,
+    makeTagPolicy: makeTagPolicy,
     normalizeRCData: normalizeRCData,
     sanitize: sanitize,
+    sanitizeAttribs: sanitizeAttribs,
+    sanitizeWithPolicy: sanitizeWithPolicy,
     unescapeEntities: unescapeEntities
   };
 })(html4);

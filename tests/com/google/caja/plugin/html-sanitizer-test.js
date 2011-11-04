@@ -87,6 +87,32 @@ jsunitRegister('testInvalidIdsAndClassesRemoved',
           undefined, nmTokenPrefixer('p-')));
 });
 
+jsunitRegister('testUsemapPrefixed',
+               function testUsemapPrefixed() {
+  assertEquals(
+      '<img usemap="#p-foo" src="http://bar">',
+      html_sanitize('<img usemap="#foo" src="http://bar">',
+                    function(uri) { return uri; }, nmTokenPrefixer('p-')));
+});
+
+jsunitRegister('testInvalidUsemapRemoved',
+               function testInvalidUsemapRemoved() {
+  assertEquals(
+      '<img src="http://bar">',
+      html_sanitize('<img src="http://bar">',
+                    function(uri) { return uri; }, nmTokenPrefixer('p-')));
+  
+  assertEquals(
+      '<img src="http://bar">',
+      html_sanitize('<img usemap="" src="http://bar">',
+                    function(uri) { return uri; }, nmTokenPrefixer('p-')));
+  
+  assertEquals(
+      '<img src="http://bar">',
+      html_sanitize('<img usemap="foo" src="http://bar">',
+                    function(uri) { return uri; }, nmTokenPrefixer('p-')));
+});
+
 jsunitRegister('testNonStringInput',
                function testNonStringInput() {
   var badHtml = '<b whacky=foo><script src=badness.js></script>bar</b id=foo>';
@@ -217,7 +243,7 @@ jsunitRegister('testNul',
                function testNul() {
   // See bug 614 for details.
   assertEquals(
-      '<a title="harmless  SCRIPT&#61;javascript:alert(1) ignored&#61;ignored">'
+      '<a title="harmless  SCRIPT=javascript:alert(1) ignored=ignored">'
       + '</a>',
       html_sanitize(
           '<A TITLE="harmless\0  SCRIPT=javascript:alert(1) ignored=ignored">'

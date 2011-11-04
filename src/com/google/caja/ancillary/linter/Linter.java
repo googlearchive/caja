@@ -557,6 +557,7 @@ public class Linter implements BuildCommand {
       // middle of an identifier list.
       // And remove trailing content that is not whitespace or commas
       String body = comment.text
+          .replaceAll("\\\\@", "@")  // accept "\@" as an annotation prefix
           .replaceAll("\\*+/$", "")
           .replaceAll("[\r\n]+[ \t]*\\*+[ \t]?", " ");
       String annotPrefix = "@" + annotationName;
