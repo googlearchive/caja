@@ -44,7 +44,7 @@
  * @author mikesamuel@gmail.com (original Domita)
  * @author kpreid@switchb.org (port to ES5)
  * @requires console
- * @requires cssparser, bridalMaker, css, html, html4, unicode
+ * @requires parseCssDeclarations, bridalMaker, css, html, html4, unicode
  * @requires cajaVM, WeakMap, Proxy
  * @provides Domado
  * @overrides domitaModules
@@ -1109,13 +1109,16 @@ function Domado(opt_rulebreaker) {
    */
   function sanitizeStyleAttrValue(styleAttrValue) {
     var sanitizedDeclarations = [];
-    cssparser.parse(
+    parseCssDeclarations(
         String(styleAttrValue),
-        function (property, value) {
-          property = property.toLowerCase();
-          if (css.properties.hasOwnProperty(property)
-              && css.properties[property].test(value + '')) {
-            sanitizedDeclarations.push(property + ': ' + value);
+        {
+          declaration: function (property, value) {
+            property = property.toLowerCase();
+            value = value.join(' ');
+            if (css.properties.hasOwnProperty(property)
+                && css.properties[property].test(value + '')) {
+              sanitizedDeclarations.push(property + ': ' + value);
+            }
           }
         });
     return sanitizedDeclarations.join(' ; ');

@@ -945,9 +945,16 @@ jsunitRegister('testLex56', function testLex56() {
   jsunit.pass();
 });
 
-jsunitRegister('testLex57', function testLex56() {
+jsunitRegister('testLex57', function testLex57() {
   assertLexedCss(
     '// line comment 1\nline2\n//line comment 3\r\nline4//line comment 4\f',
     'line2', ' ', 'line4', ' ');
+  jsunit.pass();
+});
+
+jsunitRegister('testLex58', function testLex58() {
+  assertLexedCss(
+    '"\\\r\n"',
+    '""');
   jsunit.pass();
 });

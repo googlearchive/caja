@@ -14,143 +14,217 @@
 
 /** @fileoverview testcases for cssparser.js */
 
-function assertParsedCss(golden, cssText) {
-  var actual = [];
-  function handler(propName, tokens) {
-    actual.push(propName, '(' + tokens.join(' ') + ')');
-  }
-  cssparser.parse(cssText, handler);
-  assertEquals(golden.join('\n'), actual.join('\n'));
+function assertParsedCssStylesheet(golden, cssText) {
+  assertParsedCss(golden, cssText, parseCssStylesheet);
 }
+
+function assertParsedCssDecls(golden, cssText) {
+  assertParsedCss(golden, cssText, parseCssDeclarations);
+}
+
+function assertParsedCss(golden, cssText, parseCss) {
+  var logArr = [];
+  function log(ev, args) {
+    logArr.push(ev, Array.prototype.slice.call(args));
+  }
+
+  var handler = {
+    startStylesheet: function () {
+      log("startStylesheet", arguments);
+    },
+    endStylesheet: function () {
+      log("endStylesheet", arguments);
+    },
+    startAtrule: function (atIdent, headerArray) {
+      log("startAtrule", arguments);
+    },
+    endAtrule: function () {
+      log("endAtrule", arguments);
+    },
+    startBlock: function () {
+      log("startBlock", arguments);
+    },
+    endBlock: function () {
+      log("endBlock", arguments);
+    },
+    startRuleset: function (selectorArray) {
+      log("startRuleset", arguments);
+    },
+    endRuleset: function () {
+      log("endRuleset", arguments);
+    },
+    declaration: function (property, valueArray) {
+      log("declaration", arguments);
+    }
+  };
+  parseCss(cssText, handler);
+  var goldenArr = [];
+  for (var i = 0, n = golden.length; i < n; ++i) {
+    var e = golden[i];
+    goldenArr.push(e);
+    if (i+1 < n && typeof golden[i+1] !== 'string') {
+      goldenArr.push(golden[++i]);
+    } else {
+      goldenArr.push([]);
+    }
+  }
+
+  assertArrayEquals(goldenArr, logArr);
+}
+
+jsunitRegister("testCssParser",
+               function testCssParser() {
+  var cssText = [
+    '@import "foo.css";',
+    '@media print { th { font-weight: bolder } }',
+    'p.clazz q, s { color: blue; }',
+    'BODY { background: url(bg.png); font-family: Arial }',
+    '* html a[href~="^https?://"]:after { content: "[ext]" }'
+  ].join("\n");
+  assertParsedCssStylesheet(
+    [
+      'startStylesheet',
+      'startAtrule', ['@import',['"foo.css"']],
+      'endAtrule',
+      'startAtrule', ['@media',['print']],
+      'startBlock',
+      'startRuleset', [['th']],
+      'declaration', ['font-weight',['bolder']],
+      'endRuleset',
+      'endBlock',
+      'endAtrule',
+      'startRuleset', [['p','.','clazz',' ','q',',',' ','s']],
+      'declaration', ['color',['blue']],
+      'endRuleset',
+      'startRuleset', [['BODY']],
+      'declaration', ['background',['url("bg.png")']],
+      'declaration', ['font-family',['Arial']],  // TODO: quote arial
+      'endRuleset',
+      'startRuleset', [['*',' ','html',' ','a','[','href','~=','"^https?://"',']',':','after']],
+      'declaration', ['content',['"[ext]"']],
+      'endRuleset',
+      'endStylesheet'
+    ], cssText);
+});
 
 jsunitRegister("testCssParser_empty",
                function testCssParser_empty() {
-  assertParsedCss([], '');
-  assertParsedCss([], ' ');
-  assertParsedCss([], '\t');
-  assertParsedCss([], '\r');
-  assertParsedCss([], '\n');
-  assertParsedCss([], '\r\n');
-  assertParsedCss([], '\f');
-  assertParsedCss([], ' /* foo */ ');
+  assertParsedCssStylesheet(['startStylesheet', 'endStylesheet'], '');
+  assertParsedCssStylesheet(['startStylesheet', 'endStylesheet'], ' ');
+  assertParsedCssStylesheet(['startStylesheet', 'endStylesheet'], '\t');
+  assertParsedCssStylesheet(['startStylesheet', 'endStylesheet'], '\r');
+  assertParsedCssStylesheet(['startStylesheet', 'endStylesheet'], '\n');
+  assertParsedCssStylesheet(['startStylesheet', 'endStylesheet'], '\r\n');
+  assertParsedCssStylesheet(['startStylesheet', 'endStylesheet'], '\f');
+  assertParsedCssStylesheet(['startStylesheet', 'endStylesheet'], ' /* foo */ ');
   jsunit.pass();
 });
 
 jsunitRegister("testCssParser_color",
                function testCssParser_color() {
-  assertParsedCss(['color', '(red)'], 'color:red');
-  assertParsedCss(['color', '(red)'], ' color:red');
-  assertParsedCss(['color', '(red)'], 'color :red');
-  assertParsedCss(['color', '(red)'], ' color: red');
-  assertParsedCss(['color', '(red)'], 'color:red ');
-  assertParsedCss(['color', '(red)'], 'color:\nred');
-  assertParsedCss(['color', '(red)'], 'color:\r\nred');
-  assertParsedCss(['color', '(red)'], 'color:\tred');
-  assertParsedCss(['color', '(red)'], 'color:\fred');
-  assertParsedCss(['color', '(#f00)'], 'color:#f00');
-  assertParsedCss(['color', '(#00ff00)'], 'color:#00ff00');
+  var golden = ['declaration', ['color', ['red']]];
+  assertParsedCssDecls(golden, 'color:red');
+  assertParsedCssDecls(golden, ' color:red');
+  assertParsedCssDecls(golden, 'color :red');
+  assertParsedCssDecls(golden, ' color: red');
+  assertParsedCssDecls(golden, 'color:red ');
+  assertParsedCssDecls(golden, 'color:\nred');
+  assertParsedCssDecls(golden, 'color:\r\nred');
+  assertParsedCssDecls(golden, 'color:\tred');
+  assertParsedCssDecls(golden, 'color:\fred');
+  assertParsedCssDecls(['declaration', ['color', ['#f00']]], 'color:#f00');
+  assertParsedCssDecls(
+      ['declaration', ['color', ['#00ff00']]], 'color:#00ff00');
   jsunit.pass();
 });
 
 jsunitRegister("testCssParser_border",
                function testCssParser_border() {
-  assertParsedCss(['border', '(1px solid black)'], 'border : 1px solid  black');
+  assertParsedCssDecls(['declaration', ['border', ['1px', 'solid', 'black']]],
+                       'border : 1px solid  black');
   jsunit.pass();
 });
 
 jsunitRegister("testCssParser_multiple",
                function testCssParser_multiple() {
-  assertParsedCss(
-      ['font-family', '(Courier)', 'background', '(red)'],
+  assertParsedCssDecls(
+      ['declaration', ['font-family', ['Courier']],  // TODO: quote courier
+       'declaration', ['background', ['red']]],
       'font-family: Courier; color:; background: red;');
-  assertParsedCss(
-      ['font-family', '(Courier)', 'background', '(red)'],
+  assertParsedCssDecls(
+      ['declaration', ['font-family', ['Courier']],  // TODO: quote courier
+       'declaration', ['background', ['red']]],
       'font-family: Courier; color:; background: red');
   jsunit.pass();
 });
 
 jsunitRegister('testCssParser_dashed',
                function testCssParser_dashed() {
-  assertParsedCss(
-      ['-moz-border-radius', '(0)'],
+  assertParsedCssDecls(
+      ['declaration', ['-moz-border-radius', ['0']]],
       '-moz-border-radius: 0');
-  assertParsedCss(
-      ['-moz-border-radius', '(3px)'],
+  assertParsedCssDecls(
+      ['declaration', ['-moz-border-radius', ['3px']]],
       '-moz-border-radius: 3px');
-  assertParsedCss(
-      ['-moz-border-radius', '(3)'],
+  assertParsedCssDecls(
+      ['declaration', ['-moz-border-radius', ['3']]],
       '-moz-border-radius: 3');
-  assertParsedCss(
-      ['-moz-border-radius', '(0.5em)'],
+  assertParsedCssDecls(
+      ['declaration', ['-moz-border-radius', ['0.5em']]],
       '-moz-border-radius: 0.5em');
-  assertParsedCss(
-      ['-moz-border-radius', '(.5em)'],
+  assertParsedCssDecls(
+      ['declaration', ['-moz-border-radius', ['.5em']]],
       '-moz-border-radius: .5em');
-  assertParsedCss(
-      ['-moz-border-radius', '(0.5em)'],
+  assertParsedCssDecls(
+      ['declaration', ['-moz-border-radius', ['0.5', 'em']]], // TODO join em
       '-moz-border-radius: 0.5 em');
   jsunit.pass();
 });
 
 jsunitRegister("testCssParser_strings",
                function testCssParser_strings() {
-  assertParsedCss(['content', '(".")'], 'content: "."');
-  assertParsedCss(['content', '(".")'], "content: '.'");
-  assertParsedCss(['content', '("\'")'], 'content: "\'"');
-  assertParsedCss(['content', '("\\22 \\22 ")'], "content: '\"\"'");
-  assertParsedCss(['content', '("foo\\d \\a bar")'], "content: 'foo\\\r\nbar'");
+  assertParsedCssDecls(
+      ['declaration', ['content', ['"."']]], 'content: "."');
+  assertParsedCssDecls(
+      ['declaration', ['content', ['"."']]], "content: '.'");
+  assertParsedCssDecls(
+      ['declaration', ['content', ['"\'"']]], 'content: "\'"');
+  assertParsedCssDecls(
+      ['declaration', ['content', ['"\\22 \\22 "']]], "content: '\"\"'");
+  assertParsedCssDecls(
+      ['declaration', ['content', ['"foobar"']]],
+      "content: 'foo\\\r\nbar'");
   jsunit.pass();
 });
 
 jsunitRegister("testCssParser_urls",
                function testCssParser_urls() {
-  assertParsedCss(
-      ['background-image', '(url("foo:bar"))'],
+  assertParsedCssDecls(
+      ['declaration', ['background-image', ['url("foo:bar")']]],
       'background-image: url("foo:bar")');
-  assertParsedCss(
-      ['background-image', '(url("foo:bar"))'],
+  assertParsedCssDecls(
+      ['declaration', ['background-image', ['url("foo:bar")']]],
       'background-image: url(\'foo:bar\')');
-  assertParsedCss(
-      ['background-image', '(url("foo:\\22 bar\\22 "))'],
+  assertParsedCssDecls(
+      ['declaration', ['background-image', ['url("foo:%22bar%22")']]],
       'background-image: url(\'foo:\"bar\"\')');
-  assertParsedCss(
-      ['background-image', '(url("foo:\\22 bar\\5c \\22 "))'],
+  assertParsedCssDecls(
+      ['declaration', ['background-image', ['url("foo:%22bar%5c%22")']]],
       'Background-Image: URL(\'foo:\"bar\\5c\"\')');
-  assertParsedCss(
-      ['background-image', '(url("foo"))'],
+  assertParsedCssDecls(
+      ['declaration', ['background-image', ['url("foo")']]],
       'Background-Image: Url(foo)');
-  assertParsedCss(
-      ['background-image', '(url("bar\\5c -boo"))'],
+  assertParsedCssDecls(
+      ['declaration', ['background-image', ['url("bar%5c-boo")']]],
       'Background-Image: URL(bar\\5c-boo)');
   jsunit.pass();
 });
 
 jsunitRegister('testIssue1161',
                function testIssue1161() {
-  assertParsedCss(
-      ['padding', '(0)', 'margin', '(5px 10px)'],
-      ';padding:0;margin:5px 10px;');
-  jsunit.pass();
-});
-
-jsunitRegister('testCssParser_toUrl',
-               function testCssParser_toUrl() {
-  assertEquals(null, cssparser.toUrl(''));
-  assertEquals(null, cssparser.toUrl('foo'));
-  assertEquals('', cssparser.toUrl('url()'));
-  assertEquals('', cssparser.toUrl('URL()'));
-  assertEquals('', cssparser.toUrl('url("")'));
-  assertEquals('', cssparser.toUrl('url(\'\')'));
-  assertEquals('bAr-bAz', cssparser.toUrl('url(b\\41r-b\\41z)'));
-  jsunit.pass();
-});
-
-jsunitRegister('testCssParser_toCssStr',
-               function testCssParser_toCssStr() {
-  assertEquals('""', cssparser.toCssStr(''));
-  assertEquals('"a"', cssparser.toCssStr('a'));
-  assertEquals('"\\22 "', cssparser.toCssStr('"'));
-  assertEquals('"\\22 \\22 "', cssparser.toCssStr('""'));
-  assertEquals('"\\5c 22 \\5c 22 "', cssparser.toCssStr('\\22 \\22 '));
+  assertParsedCssDecls(
+      ['declaration', ['padding', ['0']],
+       'declaration', ['margin', ['5px', '10px']]],
+      'padding:0;margin:5px 10px;');
   jsunit.pass();
 });

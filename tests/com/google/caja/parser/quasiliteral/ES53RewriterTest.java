@@ -888,7 +888,7 @@ public class ES53RewriterTest extends CommonJsRewriterTestCase {
         "\u005F\u005F = 1;",
         "Variables cannot end in \"__\"");
   }
-  
+
   public final void testVarBadSuffix() throws Exception {
     checkFails(
         "function() { foo__; };",
@@ -1513,7 +1513,6 @@ public class ES53RewriterTest extends CommonJsRewriterTestCase {
   /**
    * Tests Object.getPrototypeOf().
    */
-
   public final void testGetPrototypeOf() throws Exception {
     rewriteAndExecute(
         "assertEquals(Object.getPrototypeOf({}), Object.prototype);");
@@ -1562,7 +1561,7 @@ public class ES53RewriterTest extends CommonJsRewriterTestCase {
         "G.prototype.constructor = G;" +
         "assertEquals(G.prototype.constructor, G);");
   }
-  
+
   /**
    * Regression test: Object.defineProperties was nonfunctional.
    */

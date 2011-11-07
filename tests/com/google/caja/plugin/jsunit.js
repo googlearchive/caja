@@ -155,23 +155,6 @@ function jsunitRun(opt_testNames) {
   }
   testNames.sort();
 
-  var queryParams = (function () {
-    var queryParams = {};
-    var parts = location.search.match(/[^&?]+/g) || [];
-    for (var i = 0, n = parts.length; i < n; ++i) {
-      var part = parts[i];
-      var eq = part.indexOf('=');
-      var key = decodeURIComponent(eq < 0 ? part : part.substring(0, eq));
-      var value = decodeURIComponent(eq >= 0 ? part.substring(eq + 1) : '');
-      var values = queryParams.hasOwnProperty(key)
-          ? queryParams[key]
-          : (queryParams[key] = []);
-      values.push(value);
-    }
-    return queryParams;
-  })();
-
-
   jsunit.testCount = 0;
   for (var i = 0; i < testNames.length; ++i) {
     jsunit.testCount++;

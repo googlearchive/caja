@@ -77,7 +77,13 @@ function _trueTypeOf(something) {
 }
 
 function _displayStringForValue(aVar) {
-    var result = '<' + aVar + '>';
+    var result;
+    try {
+        result = '<' + JSON.stringify(aVar) + '>';
+    } catch (ex) {
+        // When aVar is cyclic or otherwise not reducable to JSON.
+        result = '<' + aVar + '>';
+    }
     if (!(aVar === null || aVar === void 0)) {
         result += ' (' + _trueTypeOf(aVar) + ')';
     }
@@ -295,7 +301,10 @@ function assertObjectEquals() {
                     for (i in var1)
                         assertObjectEquals(msg + ' found nested ' + type + '@' + i + '\n', var1[i], var2[i]);
         }
-        _assert(msg, isEqual, 'Expected ' + _displayStringForValue(var1) + ' but was ' + _displayStringForValue(var2));
+        var ds1 = _displayStringForValue(var1);
+        var ds2 = _displayStringForValue(var2);
+        var sep = Math.max(ds1.length, ds2.length) < 40 ? ' ' : '\n';
+        _assert(msg, isEqual, 'Expected' + sep + ds1 + sep + 'but was' + sep + ds2);
     }
 }
 

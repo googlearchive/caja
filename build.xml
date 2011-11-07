@@ -423,6 +423,7 @@
       <input file="${src.caja}/plugin/html-emitter.js"/>
       <input file="${src.caja}/plugin/html-sanitizer.js"/>
       <input file="${src.caja}/plugin/bridal.js"/>
+      <input file="${src.caja}/plugin/csslexer.js"/>
       <input file="${src.caja}/plugin/cssparser.js"/>
       <input file="${src.caja}/plugin/domado.js"/>
       <input file="${src.caja}/flash/caja-flash.js"/>
@@ -777,6 +778,7 @@
       <input file="${lib.caja}/plugin/html4-defs.js"/>
       <input file="${src.caja}/plugin/html-sanitizer.js"/>
       <input file="${src.caja}/plugin/html-emitter.js"/>
+      <input file="${src.caja}/plugin/csslexer.js"/>
       <input file="${src.caja}/plugin/cssparser.js"/>
       <input file="${src.caja}/plugin/bridal.js"/>
       <input file="${src.caja}/plugin/domado.js"/>
@@ -878,6 +880,7 @@
       <input file="${lib.caja}/plugin/html4-defs.js"/>
       <input file="${src.caja}/plugin/html-sanitizer.js"/>
       <input file="${src.caja}/plugin/html-emitter.js"/>
+      <input file="${src.caja}/plugin/csslexer.js"/>
       <input file="${src.caja}/plugin/cssparser.js"/>
       <input file="${src.caja}/plugin/bridal.js"/>
       <input file="${src.caja}/plugin/domado.js"/>
@@ -939,7 +942,8 @@
       <input file="${src.caja}/plugin/bridal.js"/>
       <input file="${lib.caja}/plugin/caja.js"/>
       <input file="${lib.caja}/plugin/css-defs.js"/>
-      <input file="${lib.caja}/plugin/cssparser.js"/>
+      <input file="${src.caja}/plugin/csslexer.js"/>
+      <input file="${src.caja}/plugin/cssparser.js"/>
       <input file="${src.caja}/plugin/domado.js"/>
       <input file="${src.caja}/plugin/caja-iframe-build-version.js"/>
       <input file="${src.caja}/plugin/caja-iframe-done.js"/>
@@ -947,7 +951,7 @@
       <input file="${src.caja}/plugin/html-sanitizer.js"/>
       <input file="${lib.caja}/plugin/html4-defs.js"/>
       <input file="${src.caja}/plugin/unicode.js"/>
-      <input file="${lib.caja}/plugin/uri.js"/>
+      <input file="${src.caja}/plugin/uri.js"/>
       <input file="${src.caja}/flash/caja-flash.js"/>
       <output file="${lib}/AllTests.Linter1.tstamp"/>
     </genrule>
@@ -968,11 +972,12 @@
 
       <input file="${src.caja}/plugin/bridal.js"/>
       <input file="${lib.caja}/plugin/css-defs.js"/>
-      <input file="${lib.caja}/plugin/cssparser.js"/>
+      <input file="${src.caja}/plugin/csslexer.js"/>
+      <input file="${src.caja}/plugin/cssparser.js"/>
       <input file="${src.caja}/plugin/domado.js"/>
       <input file="${lib.caja}/plugin/html4-defs.js"/>
       <input file="${src.caja}/plugin/unicode.js"/>
-      <input file="${lib.caja}/plugin/uri.js"/>
+      <input file="${src.caja}/plugin/uri.js"/>
       <input file="${src.caja}/flash/caja-flash.js"/>
       <output file="${lib}/AllTests.Linter2.tstamp"/>
     </genrule>
@@ -1058,6 +1063,7 @@
         <include name="**/caja/log-to-console.js"/>
         <include name="**/caja/plugin/bridal.js"/>
         <include name="**/caja/plugin/caja-gadget.css"/>
+        <include name="**/caja/plugin/csslexer.js"/>
         <include name="**/caja/plugin/cssparser.js"/>
         <include name="**/caja/plugin/domado.js"/>
         <include name="**/caja/plugin/caja.js"/>
@@ -1152,6 +1158,7 @@
       <fileset dir="${src.caja}/plugin">
         <include name="bridal.js" />
         <include name="capture-domado.js" />
+        <include name="csslexer.js"/>
         <include name="cssparser.js"/>
         <include name="domado.js" />
         <include name="html-emitter.js" />

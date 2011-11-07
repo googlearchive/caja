@@ -17,245 +17,289 @@
  * Utilities for dealing with CSS source code.
  *
  * @author mikesamuel@gmail.com
- * @provides cssparser
+ * @requires lexCss
+ * @provides parseCssStylesheet, parseCssDeclarations
  */
 
-var cssparser = (function ()
-{
-  var ucaseLetter = /[A-Z]/g;
-  function lcaseOne(ch) { return String.fromCharCode(ch.charCodeAt(0) | 32); };
-  var LCASE = ('i' === 'I'.toLowerCase())
-      ? function (s) { return s.toLowerCase(); }
-      // Rhino's toLowerCase is broken.
-      : function (s) { return s.replace(ucaseLetter, lcaseOne); };
+/**
+ * parseCssStylesheet takes a chunk of CSS text and a handler object with
+ * methods that it calls as below:
+ * <pre>
+ * // At the beginning of a stylesheet.
+ * handler.startStylesheet();
+ *
+ * // For an @foo rule ended by a semicolon: @import "foo.css";
+ * handler.startAtrule('@import', ['"foo.css"']);
+ * handler.endAtrule();
+ *
+ * // For an @foo rule ended with a block. @media print { ... }
+ * handler.startAtrule('@media', ['print']);
+ * handler.startBlock();
+ * // Calls to contents elided.  Probably selectors and declarations as below.
+ * handler.endBlock();
+ * handler.endAtrule();
+ * 
+ * // For a ruleset: p.clazz q, s { color: blue; }
+ * handler.startRuleset(['p', '.', 'clazz', ' ', 'q', ',', ' ', 's']);
+ * handler.declaration('color', ['blue']);
+ * handler.endRuleset();
+ *
+ * // At the end of a stylesheet.
+ * handler.endStylesheet();
+ * </pre>
+ * When errors are encountered, the parser drops the useless tokens and
+ * attempts to resume parsing.
+ *
+ * @param {string} cssText CSS3 content to parse as a stylesheet.
+ * @param {Object} handler An object like <pre>{
+ *   startStylesheet: function () { ... },
+ *   endStylesheet: function () { ... },
+ *   startAtrule: function (atIdent, headerArray) { ... },
+ *   endAtrule: function () { ... },
+ *   startBlock: function () { ... },
+ *   endBlock: function () { ... },
+ *   startRuleset: function (selectorArray) { ... },
+ *   endRuleset: function () { ... },
+ *   declaration: function (property, valueArray) { ... },
+ * }</pre>
+ */
+var parseCssStylesheet;
 
-  // CSS Lexical Grammar rules.
-  // CSS lexical grammar from http://www.w3.org/TR/CSS21/grammar.html
-  // The comments below are mostly copied verbatim from the grammar.
+/**
+ * parseCssDeclarations parses a run of declaration productions as seen in the
+ * body of the HTML5 {@code style} attribute.
+ * 
+ * @param {string} cssText CSS3 content to parse as a run of declarations.
+ * @param {Object} handler An object like <pre>{
+ *   declaration: function (property, valueArray) { ... },
+ * }</pre>
+ */
+var parseCssDeclarations;
 
-  // "@import"               {return IMPORT_SYM;}
-  // "@page"                 {return PAGE_SYM;}
-  // "@media"                {return MEDIA_SYM;}
-  // "@charset"              {return CHARSET_SYM;}
-  var KEYWORD = '(?:\\@(?:import|page|media|charset))';
-
-  // nl                      \n|\r\n|\r|\f ; a newline
-  var NEWLINE = '\\n|\\r\\n|\\r|\\f';
-
-  // h                       [0-9a-f]      ; a hexadecimal digit
-  var HEX = '[0-9a-f]';
-
-  // nonascii                [\200-\377]
-  var NON_ASCII = '[^\\0-\\177]';
-
-  // unicode                 \\{h}{1,6}(\r\n|[ \t\r\n\f])?
-  var UNICODE = '(?:(?:\\\\' + HEX + '{1,6})(?:\\r\\n|[ \t\\r\\n\\f])?)';
-
-  // escape                  {unicode}|\\[^\r\n\f0-9a-f]
-  var ESCAPE = '(?:' + UNICODE + '|\\\\[^\\r\\n\\f0-9a-f])';
-
-  // nmstart                 [_a-z]|{nonascii}|{escape}
-  var NMSTART = '(?:[_a-z]|' + NON_ASCII + '|' + ESCAPE + ')';
-
-  // nmchar                  [_a-z0-9-]|{nonascii}|{escape}
-  var NMCHAR = '(?:[_a-z0-9-]|' + NON_ASCII + '|' + ESCAPE + ')';
-
-  // ident                   -?{nmstart}{nmchar}*
-  var IDENT = '-?' + NMSTART + NMCHAR + '*';
-
-  // name                    {nmchar}+
-  var NAME = NMCHAR + '+';
-
-  // hash
-  var HASH = '#' + NAME;
-
-  // string1                 \"([^\n\r\f\\"]|\\{nl}|{escape})*\"  ; "string"
-  var STRING1 = '"(?:[^\\"\\\\]|\\\\[\\s\\S])*"';
-
-  // string2                 \'([^\n\r\f\\']|\\{nl}|{escape})*\'  ; 'string'
-  var STRING2 = "'(?:[^\\'\\\\]|\\\\[\\s\\S])*'";
-
-  // string                  {string1}|{string2}
-  var STRING = '(?:' + STRING1 + '|' + STRING2 + ')';
-
-  // num                     [0-9]+|[0-9]*"."[0-9]+
-  var NUM = '(?:[0-9]*\\.[0-9]+|[0-9]+)';
-
-  // s                       [ \t\r\n\f]
-  var SPACE = '[ \\t\\r\\n\\f]';
-
-  // w                       {s}*
-  var WHITESPACE = SPACE + '*';
-
-  // url special chars
-  var URL_SPECIAL_CHARS = '[!#$%&*-~]';
-
-  // url chars               ({url_special_chars}|{nonascii}|{escape})*
-  var URL_CHARS
-      = '(?:' + URL_SPECIAL_CHARS + '|' + NON_ASCII + '|' + ESCAPE + ')*';
-
-  // url
-  var URL = (
-      'url\\(' + WHITESPACE + '(?:' + STRING + '|' + URL_CHARS + ')'
-      + WHITESPACE + '\\)');
-
-  // comments
-  // see http://www.w3.org/TR/CSS21/grammar.html
-  var COMMENT = '/\\*[^*]*\\*+(?:[^/*][^*]*\\*+)*/';
-
-  // {E}{M}             {return EMS;}
-  // {E}{X}             {return EXS;}
-  // {P}{X}             {return LENGTH;}
-  // {C}{M}             {return LENGTH;}
-  // {M}{M}             {return LENGTH;}
-  // {I}{N}             {return LENGTH;}
-  // {P}{T}             {return LENGTH;}
-  // {P}{C}             {return LENGTH;}
-  // {D}{E}{G}          {return ANGLE;}
-  // {R}{A}{D}          {return ANGLE;}
-  // {G}{R}{A}{D}       {return ANGLE;}
-  // {M}{S}             {return TIME;}
-  // {S}                {return TIME;}
-  // {H}{Z}             {return FREQ;}
-  // {K}{H}{Z}          {return FREQ;}
-  // %                  {return PERCENTAGE;}
-  var UNIT = '(?:em|ex|px|cm|mm|in|pt|pc|deg|rad|grad|ms|s|hz|khz|%)';
-
-  // {num}{UNIT|IDENT}                   {return NUMBER;}
-  var QUANTITY = NUM + '(?:' + WHITESPACE + UNIT + '|' + IDENT + ')?';
-
-  // "<!--"                  {return CDO;}
-  // "-->"                   {return CDC;}
-  // "~="                    {return INCLUDES;}
-  // "|="                    {return DASHMATCH;}
-  // {w}"{"                  {return LBRACE;}
-  // {w}"+"                  {return PLUS;}
-  // {w}">"                  {return GREATER;}
-  // {w}","                  {return COMMA;}
-  var PUNC =  '<!--|-->|~=|[|=\\{\\+>,:;()]';
-
-  var PROP_DECLS_TOKENS = new RegExp(
-      '(?:'
-      + [STRING, COMMENT, QUANTITY, URL, NAME, HASH, IDENT, SPACE + '+', PUNC]
-          .join('|')
-      + ')',
-      'gi');
-
-  var IDENT_RE = new RegExp('^(?:' + IDENT + ')$', 'i');
-  var URL_RE = new RegExp('^(?:' + URL + ')$', 'i');
-  var NON_HEX_ESC_RE = /\\(?:\r\n?|[^0-9A-Fa-f\r]|$)/g;
-  var SPACE_RE = new RegExp(SPACE + '+', 'g');
-  var BS = /\\/g;
-  var DQ = /"/g;
-
-  /** A replacer that deals with non hex backslashes. */
-  function normEscs(x) {
-    var out = '';
-    // x could be '\\' in which case we return '' or it could be '\\\r\n' in
-    // which case we escape both.
-    // In the normal case where the length is 2 we end up turning any special
-    // characters like \\, \", and \' into CSS escape sequences.
-    for (var i = 1, n = x.length; i < n; ++i) {
-      out += '\\' + x.charCodeAt(i).toString(16) + ' ';
+(function () {
+  // stylesheet  : [ CDO | CDC | S | statement ]*;
+  parseCssStylesheet = function(cssText, handler) {
+    var toks = lexCss(cssText);
+    if (handler.startStylesheet) { handler.startStylesheet(); }
+    for (var i = 0, n = toks.length; i < n;) {
+      // CDO and CDC ("<!--" and "-->") are converted to space by the lexer.
+      i = toks[i] === ' ' ? i+1 : statement(toks, i, n, handler);
     }
-    return out;
-  }
+    if (handler.endStylesheet) { handler.endStylesheet(); }
+  };
 
-  function toCssStr(s) {
-    return '"' + (s.replace(BS, '\\5c ').replace(DQ, '\\22 ')) + '"';
-  }
-
-  /**
-   * Parser for CSS declaration groups that extracts property name, value
-   * pairs.
-   *
-   * <p>
-   * This method does not validate the CSS property value.  To do that, match
-   * {@link css.properties} against the raw value in the handler.
-   *
-   * @param {string} cssText of CSS property declarations like
-   *     {@code color:red}.
-   * @param {function (string, Array.<string>) : void} handler
-   *     receives each CSS property name and the tokenized value
-   *     minus spaces and comments.
-   */
-  function parse(cssText, handler) {
-    var toks = ('' + cssText).match(PROP_DECLS_TOKENS);
-    if (!toks) { return; }
-    var propName = null;
-    var buf = [];
-    var k = 0;
-    for (var i = 0, n = toks.length; i < n; ++i) {
+  // statement   : ruleset | at-rule;
+  function statement(toks, i, n, handler) {
+    if (i < n) {
       var tok = toks[i];
-      switch (tok.charCodeAt(0)) {
-        // Skip spaces.  We can do this in properties even if they are
-        // significant in rules.
-        case 0x9: case 0xa: case 0xc: case 0xd: case 0x20: continue;
-        case 0x27:  // Convert to double quoted string.
-          tok = '"' + tok.substring(1, tok.length - 1).replace(DQ, '\\22 ')
-              + '"';
-          // $FALL-THROUGH$
-        case 0x22: tok = tok.replace(NON_HEX_ESC_RE, normEscs); break;
-        case 0x2f:  // slashes may start comments
-          if ('*' === tok.charAt(1)) { continue; }
-          break;
-        // dot or digit
-        case 0x2e:
-        case 0x30: case 0x31: case 0x32: case 0x33: case 0x34:
-        case 0x35: case 0x36: case 0x37: case 0x38: case 0x39:
-          // 0.5 em  =>  0.5em
-          tok = tok.replace(SPACE_RE, '');
-          break;
-        case 0x3a:  // colons separate property names from values
-          // Remember the property name.
-          if (k === 1 && IDENT_RE.test(buf[0])) {
-            propName = LCASE(buf[0]);
-          } else {
-            propName = null;
-          }
-          k = buf.length = 0;
-          continue;
-        case 0x3b:  // semicolons separate name/value pairs
-          if (propName) {
-            if (buf.length) { handler(propName, buf.slice(0)); }
-            propName = null;
-          }
-          k = buf.length = 0;
-          continue;
-        case 0x55: case 0x75:  // letter u
-          var url = toUrl(tok);
-          if (url !== null) { tok = 'url(' + toCssStr(url) + ')'; }
-          break;
+      if (tok.charAt(0) === '@') {
+        return atrule(toks, i, n, handler, true);  
+      } else {
+        return ruleset(toks, i, n, handler);
       }
-      buf[k++] = tok;
+    } else {
+      return i;
     }
-    if (propName && buf.length) { handler(propName, buf.slice(0)); }
   }
 
-  var unicodeEscape
-      = /\\(?:([0-9a-fA-F]{1,6})(?:\r\n?|[ \t\f\n])?|[^\r\n\f0-9a-f])/g;
-  function decodeOne(_, hex) {
-    return hex ? String.fromCharCode(parseInt(hex, 16)) : _.charAt(1);
+  // at-rule     : ATKEYWORD S* any* [ block | ';' S* ];
+  function atrule(toks, i, n, handler, blockok) {
+    var start = i++;
+    while (i < n && toks[i] !== '{' && toks[i] !== ';') {
+      ++i;
+    }
+    if (i < n && (blockok || toks[i] === ';')) {
+      var s = start+1, e = i;
+      if (s < n && toks[s] === ' ') { ++s; }
+      if (e > s && toks[e-1] === ' ') { --e; }
+      if (handler.startAtrule) {
+        handler.startAtrule(toks[start].toLowerCase(), toks.slice(s, e));
+      }
+      i = (toks[i] === '{')
+          ? block(toks, i, n, handler)
+          : i+1;  // Skip over ';'
+      if (handler.endAtrule) {
+        handler.endAtrule();
+      }
+    }
+    // Else we reached end of input or are missing a semicolon. 
+    // Drop the rule on the floor.
+    return i;
   }
-  /**
-   * Given a css token, returns the URL contained therein or null.
-   * @param {string} cssToken
-   * @return {string|null}
-   */
-  function toUrl(cssToken) {
-    if (!URL_RE.test(cssToken)) { return null; }
-    cssToken = cssToken.replace(/^url[\s\(]+|[\s\)]+$/gi, '');
-    switch (cssToken.charAt(0)) {
-      case '"': case '\'':
-        cssToken = cssToken.substring(1, cssToken.length - 1);
+
+  // block       : '{' S* [ any | block | ATKEYWORD S* | ';' S* ]* '}' S*;
+   // Assumes the leading '{' has been verified by callers.
+  function block(toks, i, n, handler) {
+    ++i; //  skip over '{'
+    if (handler.startBlock) { handler.startBlock(); }
+    while (i < n) {
+      var ch = toks[i].charAt(0);
+      if (ch == '}') {
+        ++i;
         break;
+      }
+      if (ch === ' ' || ch === ';') {
+        i = i+1;
+      } else if (ch === '@') {
+        i = atrule(toks, i, n, handler, false);
+      } else if (ch === '{') {
+        i = block(toks, i, n, handler);
+      } else {
+        // Instead of using (any* block) to subsume ruleset we allow either
+        // blocks or rulesets with a non-blank selector.
+        // This is more restrictive but does not require atrule specific
+        // parse tree fixup to realize that the contents of the block in
+        //    @media print { ... }
+        // is a ruleset.  We just don't care about any block carrying at-rules
+        // whose body content is not ruleset content.
+        i = ruleset(toks, i, n, handler);
+      }
     }
-    return cssToken.replace(unicodeEscape, decodeOne);
+    if (handler.endBlock) { handler.endBlock(); }
+    return i;
   }
 
-  return {
-    'parse': parse,
-    'toUrl': toUrl,
-    'toCssStr': toCssStr
+  // ruleset    : selector? '{' S* declaration? [ ';' S* declaration? ]* '}' S*;
+  function ruleset(toks, i, n, handler) {
+    // toks[s:e] are the selector tokens including internal whitespace.
+    var s = i, e = selector(toks, i, n, true);
+    if (e < 0) {
+      // Skip malformed content per selector calling convention.
+      e = ~e;
+      // Make sure we skip at least one token.
+      return i === e ? e+1 : e;
+    }
+    i = e;
+    // Don't include any trailing space in the selector slice.
+    if (e > s && toks[e-1] === ' ') { --e; }
+    var tok = toks[i];
+    if (tok != '{') {
+      // Skip one token on a malformed declaration group.
+      return i+1;
+    }
+    if (handler.startRuleset) {
+      handler.startRuleset(toks.slice(s, e));
+    }
+    while (i < n) {
+      tok = toks[i];
+      if (tok === '}') {
+        ++i;
+        break;
+      }
+      if (tok === ' ') {
+        i = i+1;
+      } else {
+        i = declaration(toks, i, n, handler);
+      }
+    }
+    if (handler.endRuleset) {
+      handler.endRuleset();
+    }
+    return i < n ? i+1 : i;
+  }
+
+  // selector    : any+;
+  // any         : [ IDENT | NUMBER | PERCENTAGE | DIMENSION | STRING
+  //               | DELIM | URI | HASH | UNICODE-RANGE | INCLUDES
+  //               | FUNCTION S* any* ')' | DASHMATCH | '(' S* any* ')'
+  //               | '[' S* any* ']' ] S*;
+  // A negative return value, rv, indicates the selector was malformed and
+  // the index at which we stopped is ~rv.
+  function selector(toks, i, n, allowSemi) {
+    var s = i;
+    // The definition of any above can be summed up as
+    //   "any run of token except ('[', ']', '(', ')', ':', ';', '{', '}')
+    //    or nested runs of parenthesized tokens or square bracketed tokens".
+    // Spaces are significant in the selector.
+    // Selector is used as (selector?) so the below looks for (any*) for
+    // simplicity.
+    var tok;
+    // Keeping a stack pointer actually causes this to minify better since
+    // ".length" and ".push" are a lo of chars.
+    var brackets = [], stackLast = -1;
+    for (;i < n; ++i) {
+      tok = toks[i].charAt(0);
+      if (tok === '[' || tok === '(') {
+        brackets[++stackLast] = tok;
+      } else if ((tok === ']' && brackets[stackLast] === '[') ||
+                 (tok === ')' && brackets[stackLast] === '(')) {
+        --stackLast;
+      } else if (tok === '{' || tok === '}' || tok === ';' || tok === '@'
+                 || (tok === ':' && !allowSemi)) {
+        break;
+      }
+    }
+    if (stackLast >= 0) {
+      // Returns the bitwise inverse of i+1 to indicate an error in the
+      // token stream so that clients can ignore it.
+      i = ~(i+1);
+    }
+    return i;
+  }
+
+  var ident = /^-?[a-z]/i;
+
+  // declaration : property ':' S* value;
+  // property    : IDENT S*;
+  // value       : [ any | block | ATKEYWORD S* ]+;
+  function declaration(toks, i, n, handler) {
+    var property = toks[i++];
+    if (!ident.test(property)) { 
+      return i+1;  // skip one token.
+    }
+    var tok;
+    if (i < n && toks[i] === ' ') { ++i; }
+    if (i == n || toks[i] !== ':') {
+      // skip tokens to next semi or close bracket.
+      while (i < n && (tok = toks[i]) !== ';' && tok !== '}') { ++i; }
+      return i;
+    }
+    ++i;
+    if (i < n && toks[i] === ' ') { ++i; }
+
+    // None of the rules we care about want atrules or blocks in value, so
+    // we look for any+ but that is the same as selector but not zero-length.
+    // This gets us the benefit of not emitting any value with mismatched
+    // brackets.
+    var s = i, e = selector(toks, i, n);
+    if (e < 0) {
+      // Skip malformed content per selector calling convention.
+      e = ~e;
+    } else {
+      var value = [], valuelen = 0;
+      for (var j = s; j < e; ++j) {
+        tok = toks[j];
+        if (tok !== ' ') { value[valuelen++] = tok; }
+      }
+      // One of the following is now true:
+      // (1) e is flush with the end of the tokens as in <... style="x:y">.
+      // (2) tok[e] points to a ';' in which case we need to consume the semi.
+      // (3) tok[e] points to a '}' in which case we don't consume it.
+      // (4) else there is bogus unparsed value content at toks[e:].
+      // Allow declaration flush with end for style attr body.
+      if (e < n) {  // 2, 3, or 4
+        do {
+          tok = toks[e];
+          if (tok === ';' || tok === '}') { break; }
+          // Don't emit the property if there is questionable trailing content.
+          valuelen = 0;
+        } while (e < n);
+        if (tok === ';') {
+          ++e;
+        }
+      }
+      if (valuelen && handler.declaration) {
+        // TODO: coerce non-keyword ident tokens to quoted strings.
+        handler.declaration(property.toLowerCase(), value);
+      }
+    }
+    return e;
+  }
+
+  parseCssDeclarations = function(cssText, handler) {
+    var toks = lexCss(cssText);
+    for (var i = 0, n = toks.length; i < n;) {
+      i = toks[i] !== ' ' ? declaration(toks, i, n, handler) : i+1;
+    }
   };
 })();
