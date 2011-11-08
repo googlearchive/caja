@@ -660,6 +660,185 @@ ses.startSES = function(global,
       return node;
     }
 
+  // makeArrayLike() produces a constructor for the purpose of taming
+  // things like nodeLists.  The result, ArrayLike, takes an instance of 
+  // ArrayLike and two functions, getItem and getLength, which put
+  // it in a position to do taming on demand.
+    var itemMap = WeakMap(), lengthMap = WeakMap();
+    var ArrayLike, makeArrayLike;
+    var origDefProp = Object.defineProperty;
+    var gopd = Object.getOwnPropertyDescriptor;
+    var freeze = Object.freeze;
+    var nativeProxies = global.Proxy && (function () {
+        var obj = {0: 'hi'};
+        var p = global.Proxy.create({
+            get: function () {
+              var P = arguments[0];
+              if (typeof P !== 'string') { P = arguments[1]; }
+              return obj[P];
+            }
+          });
+        return p[0] === 'hi';
+      })();
+    if (nativeProxies) {
+      ArrayLike = function(proto, getItem, getLength) {
+          if (typeof proto !== 'object') {
+            throw new TypeError('Expected proto to be an object.');
+          }
+          if (!(proto instanceof ArrayLike)) {
+            throw new TypeError('Expected proto to be instanceof ArrayLike.');
+          }
+          var obj = Object.create(proto);
+          itemMap.set(obj, getItem);
+          lengthMap.set(obj, getLength);
+          return obj;
+        };
+
+      var lengthGetter = freeze(function () {
+          var getter = lengthMap.get(this);
+          return getter ? getter() : void 0;
+        });
+      var ownPropDesc = function (P) {
+          P = '' + P;
+          if (P === 'length') {
+            return { get: lengthGetter };
+          } else if (typeof P === 'number' || P === '' + (+P)) {
+            var get = freeze(function () {
+                var getter = itemMap.get(this);
+                return getter ? getter(+P) : void 0;
+              });
+            freeze(get.prototype);
+            return {
+                get: get,
+                enumerable: true,
+                configurable: true
+              };
+          }
+          return void 0;
+        };
+      var propDesc = function (P) {
+          var opd = ownPropDesc(P);
+          if (opd) {
+            return opd;
+          } else {
+            return gopd(Object.prototype, P);
+          }
+        };
+      var has = function (P) {
+          P = '' + P;
+          return (P === 'length') ||
+              (typeof P === 'number') ||
+              (P === '' + +P) ||
+              (P in Object.prototype);
+        };
+      var hasOwn = function (P) {
+          P = '' + P;
+          return (P === 'length') ||
+              (typeof P === 'number') ||
+              (P === '' + +P);
+        };
+      var gpn = function () {
+          var result = gopn ();
+          var objPropNames = Object.getOwnPropertyNames(Object.prototype);
+          result.push.apply(result, objPropNames);
+          return result;
+        };
+      var gopn = function () {
+          var lenGetter = lengthMap.get(this);
+          if (!lenGetter) { return void 0; }
+          var len = lenGetter();
+          var result = ['length'];
+          for (var i = 0; i < len; ++i) {
+            result.push('' + i);
+          }
+          return result;
+        };
+      var del = function (P) {
+          P = '' + P;
+          if ((P === 'length') || ('' + +P === P)) { return false; }
+          return true;
+        };
+
+      ArrayLike.prototype = global.Proxy.create({
+          getPropertyDescriptor: propDesc,
+          getOwnPropertyDescriptor: ownPropDesc,
+          has: has,
+          hasOwn: hasOwn,
+          getPropertyNames: gpn,
+          getOwnPropertyNames: gopn,
+          'delete': del,
+          fix: function() { return void 0; }
+        },
+        Object.prototype);
+      freeze(ArrayLike);
+      makeArrayLike = function () { return ArrayLike; };
+    } else {(function () {
+      // Make ArrayLike.prototype be an object with a fixed set of numeric
+      // getters.  To tame larger lists, replace ArrayLike and its prototype
+      // using makeArrayLike(newLength).
+  
+      // See http://graphics.stanford.edu/~seander/bithacks.html#RoundUpPowerOf2
+      function nextUInt31PowerOf2(v) {
+        v &= 0x7fffffff;
+        v |= v >> 1;
+        v |= v >> 2;
+        v |= v >> 4;
+        v |= v >> 8;
+        v |= v >> 16;
+        return v + 1;
+      }
+  
+      // The current function whose prototype has the most numeric getters.
+      var BiggestArrayLike = void 0;
+      var maxLen = 0;
+      var lengthGetter = Object.freeze(function () {
+          var getter = lengthMap.get(this);
+          return getter ? getter() : void 0;
+        });
+      freeze(lengthGetter.prototype);
+      makeArrayLike = function(length) {
+          if (!BiggestArrayLike || length > maxLen) {
+            var len = nextUInt31PowerOf2(length);
+            // Create a new ArrayLike constructor to replace the old one.
+            var BAL = function(proto, getItem, getLength) {
+                if (typeof(proto) !== 'object') {
+                  throw new TypeError('Expected proto to be an object.');
+                }
+                if (!(proto instanceof BAL)) {
+                  throw new TypeError(
+                      'Expected proto to be instanceof ArrayLike.');
+                }
+                var obj = Object.create(proto);
+                itemMap.set(obj, getItem);
+                lengthMap.set(obj, getLength);
+                return obj;
+              };
+            // Install native numeric getters.
+            for (var i = 0; i < len; i++) {
+              (function(j) {
+                var get = freeze(function() {
+                    return itemMap.get(this)(j);
+                  });
+                freeze(get.prototype);
+                Object.defineProperty(BAL.prototype, j, {
+                    get: get,
+                    enumerable: true
+                  });
+              })(i);
+            }
+            // Install native length getter.
+            Object.defineProperty(BAL.prototype, 'length', 
+                { get: lengthGetter });
+            // Freeze and cache the result
+            freeze(BAL);
+            freeze(BAL.prototype);
+            BiggestArrayLike = BAL;
+            maxLen = len;
+          }
+          return BiggestArrayLike;
+        };
+    })(); }
+
     global.cajaVM = {
       log: function log(str) {
         if (typeof console !== 'undefined' && 'log' in console) {
@@ -680,7 +859,9 @@ ses.startSES = function(global,
 
       sharedImports: sharedImports,
       makeImports: makeImports,
-      copyToImports: copyToImports
+      copyToImports: copyToImports,
+      
+      makeArrayLike: makeArrayLike
     };
     var extensionsRecord = extensions();
     Object.getOwnPropertyNames(extensionsRecord).forEach(function (p) {

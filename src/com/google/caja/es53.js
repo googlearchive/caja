@@ -39,6 +39,8 @@ var ___, cajaVM, safeJSON, WeakMap;
 (function () {
   // For computing the [[Class]] internal property
   var classProp = Object.prototype.toString;
+  var gopd = Object.getOwnPropertyDescriptor;
+  
   // Given an object defined in an es53 frame, we can tell which
   // Object.prototype it inherits from.
   Object.prototype.baseProto___ = Object.prototype;
@@ -1514,7 +1516,8 @@ var ___, cajaVM, safeJSON, WeakMap;
    * property traversal.
    */
 
-  // Defined where Object's methods are.
+  // These will be set to the values originally exposed to guest code; since
+  // guest code may change Object.getPrototypeOf, etc., we cache some methods.
   var origGetPrototypeOf, origGetOwnPropertyDescriptor;
 
   var def = markFuncFreeze(function(root) {
@@ -1868,6 +1871,235 @@ var ___, cajaVM, safeJSON, WeakMap;
    * TODO(erights): Find out if this is still the plan.
    */
   function manifest(ignored) {}
+
+  ////////////////////////////////////////////////////////////////////////
+  // ArrayLike
+  ////////////////////////////////////////////////////////////////////////
+
+  // makeArrayLike() produces a constructor for the purpose of taming
+  // things like nodeLists.  The result, ArrayLike, takes an instance of 
+  // ArrayLike and two functions, getItem and getLength, which put
+  // it in a position to do taming on demand.
+  var makeArrayLike, Proxy, itemMap = WeakMap(), lengthMap = WeakMap();
+  var lengthGetter = markFuncFreeze(function () {
+      var getter = lengthMap.get(this);
+      return getter ? getter.i___() : void 0;
+    });
+  freeze(lengthGetter.prototype);
+  
+  var nativeProxies = Proxy && (function () {
+      var obj = {0: 'hi'};
+      var p = Proxy.create({
+          get: function () {
+            var P = arguments[0];
+            if (typeof P !== 'string') { P = arguments[1]; }
+            return obj[P];
+          }
+        });
+      return p[0] === 'hi';
+    })();
+  var numericGetters = (function () {
+      var obj = {};
+      try {
+        Object.defineProperty(obj, 0, {
+            get: function () { return obj; }
+          });
+        if (obj[0] !== obj) { return false; }
+      }
+      catch (_) { return false; }
+      return true;
+    })();
+
+  if (nativeProxies) { (function () {
+    // Make ArrayLike.prototype be a native proxy object that intercepts
+    // lookups of numeric properties and redirects them to getItem, and
+    // similarly for length.
+    ArrayLike = markFunc(function(proto, getItem, getLength) {
+        if (Type(proto) !== 'Object') {
+          throw new TypeError('Expected proto to be an object.');
+        }
+          if (!(proto instanceof ArrayLike)) {
+            throw new TypeError('Expected proto to be instanceof ArrayLike.');
+          }
+        var obj = beget(proto);
+        itemMap.set(obj, getItem);
+        lengthMap.set(obj, getLength);
+        return obj;
+      });
+
+    // These are the handler methods for the proxy.
+    var propDesc = function (P) {
+        var opd = ownPropDesc(P);
+        if (opd) {
+          return opd;
+        } else {
+          return gopd(Object.prototype, P);
+        }
+      };
+    var ownPropDesc = function (P) {
+        // If P is 'length' or a number, handle the lookup; otherwise
+        // pass it on to Object.prototype.
+        P = '' + P;
+        if (P === 'length') {
+          return { get: lengthGetter };
+        } else if (isNumericName(P)) {
+          var get = markFuncFreeze(function () {
+              var getter = itemMap.get(this);
+              return getter ? getter.i___(+P) : void 0;
+            });
+          freeze(get.prototype);
+          return {
+              get: get,
+              enumerable: true,
+              configurable: true
+            };
+        }
+        return void 0;
+      };
+    var has = function (P) {
+        // The proxy has a length, numeric indices, and behaves
+        // as though it inherits from Object.prototype.
+        P = '' + P;
+        return (P === 'length') || 
+            isNumericName(P) || 
+            P in Object.prototype;
+      };
+    var hasOwn = function (P) {
+        // The proxy has a length and numeric indices.
+        P = '' + P;
+        return (P === 'length') || 
+            isNumericName(P);
+      };
+    var gpn = function () {
+        var result = gopn ();
+        var objPropNames = Object.getOwnPropertyNames(Object.prototype);
+        result.push.apply(result, objPropNames);
+        return result;
+      };
+    var gopn = function () {
+        var lenGetter = lengthMap.get(this);
+        if (!lenGetter) { return void 0; }
+        var len = lenGetter.i___();
+        var result = ['length'];
+        for (var i = 0; i < len; ++i) {
+          result.push('' + i);
+        }
+        return result;
+      };
+    var del = function (P) {
+        P = '' + P;
+        if ((P === 'length') || ('' + +P === P)) { return false; }
+        return true;
+      };
+
+    ArrayLike.prototype = Proxy.create({
+        getPropertyDescriptor: propDesc,
+        getOwnPropertyDescriptor: ownPropDesc,
+        has: has,
+        hasOwn: hasOwn,
+        getPropertyNames: gpn,
+        getOwnPropertyNames: gopn,
+        'delete': del,
+        fix: function() { return void 0; }
+      },
+      Object.prototype);
+    ArrayLike.DefineOwnProperty___('prototype', {
+        value: ArrayLike.prototype
+      });
+    ArrayLike.prototype.DefineOwnProperty___('constructor', {
+        value: ArrayLike
+      });
+    freeze(ArrayLike);
+    makeArrayLike = markFunc(function () { return ArrayLike; });
+  })();} else if (numericGetters) { (function () {
+    // Make ArrayLike.prototype be an object with a fixed set of numeric
+    // getters.  To tame larger lists, replace ArrayLike and its prototype
+    // using makeArrayLike(newLength).
+
+    // See http://graphics.stanford.edu/~seander/bithacks.html#RoundUpPowerOf2
+    function nextUInt31PowerOf2(v) {
+      v &= 0x7fffffff;
+      v |= v >> 1;
+      v |= v >> 2;
+      v |= v >> 4;
+      v |= v >> 8;
+      v |= v >> 16;
+      return v + 1;
+    }
+
+    var origDefProp = Object.defineProperty;
+    // The current function whose prototype has the most numeric getters.
+    var BiggestArrayLike = void 0;
+    var maxLen = 0;
+    makeArrayLike = markFunc(function(length) {
+        if (!BiggestArrayLike || length > maxLen) {
+          var len = nextUInt31PowerOf2(length);
+          // Create a new ArrayLike constructor to replace the old one.
+          var BAL = markFunc(function(proto, getItem, getLength) {
+              if (Type(proto) !== 'Object') {
+                throw new TypeError('Expected proto to be an object.');
+              }
+              if (!(proto instanceof BAL)) {
+                throw new TypeError(
+                    'Expected proto to be instanceof ArrayLike.');
+              }
+              var obj = beget(proto);
+              itemMap.set(obj, getItem);
+              lengthMap.set(obj, getLength);
+              return obj;
+            });
+          // Install native numeric getters.
+          for (var i = 0; i < len; i++) {
+            (function(j) {
+              origDefProp(BAL.prototype, j, {
+                  get: markFuncFreeze(function() {
+                    var itemGetter = itemMap.get(this);
+                    return itemGetter ? itemGetter.i___(j) : void 0;
+                  }),
+                  enumerable: true
+                });
+            })(i);
+          }
+          // Install native length getter.
+          origDefProp(BAL.prototype, 'length', { get: lengthGetter });
+          // Whitelist prototype and prototype.constructor for ES5/3.
+          BAL.DefineOwnProperty___('prototype', { value: BAL.prototype });
+          BAL.prototype.DefineOwnProperty___('constructor', { value: BAL });
+          // Freeze and cache the result
+          freeze(BAL);
+          freeze(BAL.prototype);
+          BiggestArrayLike = BAL;
+          maxLen = len;
+        }
+        return BiggestArrayLike;
+      });
+  })(); } else {
+    // ArrayLike constructs a frozen array in the absence of better support.
+    ArrayLike = markFunc(function(proto, getItem, getLength) {
+        if (Type(proto) !== 'Object') {
+          throw new TypeError("Expected proto to be an object.");
+        }
+        var obj = beget(proto);
+        var len = +getLength.i___();
+        obj.DefineOwnProperty___('length', {
+            value: len
+          });
+        for (var i = 0; i < len; ++i) {
+          obj[i] = getItem.i___(i);
+        }
+        freeze(obj);
+        return obj;
+      });
+    ArrayLike.DefineOwnProperty___('prototype', {
+        value: ArrayLike.prototype
+      });
+    ArrayLike.prototype.DefineOwnProperty___('constructor', {
+        value: ArrayLike
+      });
+    freeze(ArrayLike);
+    freeze(ArrayLike.prototype);
+    makeArrayLike = markFunc(function () { return ArrayLike; });
+  }
 
   ///////////////////////////////////////////////////////////////////
   // Specification
@@ -2776,6 +3008,8 @@ var ___, cajaVM, safeJSON, WeakMap;
       // 4. Return the result of calling FromPropertyDescriptor(desc).
       return desc ? FromPropertyDescriptor(desc) : void 0;
     };
+  // This is the original implementation exposed to guest code,
+  // which may change it.
   origGetOwnPropertyDescriptor = Object.getOwnPropertyDescriptor;
 
   // 15.2.3.4
@@ -2979,23 +3213,23 @@ var ___, cajaVM, safeJSON, WeakMap;
   }
       
   function makeDefensibleFunction(f) {
-  	return markFuncFreeze(function(_) {
-  	  return f.apply(USELESS, slice.call(arguments, 0));
-  	});
+    return markFuncFreeze(function(_) {
+      return f.apply(USELESS, slice.call(arguments, 0));
+    });
   }
-
+  
   function makeDefensibleObject(descriptors) {
-	var td = {};
-	for (var k in descriptors) {
-	  if (!descriptors.hasOwnProperty(k)) { continue; }
+    var td = {};
+    for (var k in descriptors) {
+      if (!descriptors.hasOwnProperty(k)) { continue; }
       if (isNumericName(k)) { throw 'Cannot define numeric property: ' + k; }
-	  td.DefineOwnProperty___(k, {
-	    value: FromPropertyDescriptor(descriptors[k]),
-	    enumerable: true,
-	    writable: false
-	  }); 
-	}
-	return Object.seal(Object.create(Object.prototype, td));  
+      td.DefineOwnProperty___(k, {
+        value: FromPropertyDescriptor(descriptors[k]),
+        enumerable: true,
+        writable: false
+      }); 
+    }
+    return Object.seal(Object.create(Object.prototype, td));  
   }
 
   function freeze(obj) {
@@ -4200,7 +4434,8 @@ var ___, cajaVM, safeJSON, WeakMap;
         }
         P = '' + P;
         if ('' + +P === P) {
-          throw new TypeError('Cannot delete numeric properties.');
+          // Allow deleting numeric properties since we allow get & set.
+          delete proxy[P];
         }
         assertValidPropertyName(P);
         var deleter = handler.delete_v___ ? handler['delete'] :
@@ -4439,8 +4674,8 @@ var ___, cajaVM, safeJSON, WeakMap;
       };
   }
 
-  var Proxy = {};
-  Proxy.DefineOwnProperty___('create', {
+  var CajaProxy = {};
+  CajaProxy.DefineOwnProperty___('create', {
       value: markFuncFreeze(function (handler, proto) {
           if (Type(handler) !== 'Object') {
             throw new TypeError("Expected handler to be an object.");
@@ -4489,7 +4724,7 @@ var ___, cajaVM, safeJSON, WeakMap;
       enumerable: true
     });
 
-  Proxy.DefineOwnProperty___('createFunction', {
+  CajaProxy.DefineOwnProperty___('createFunction', {
       value: markFuncFreeze(function (handler, callTrap, constructTrap) {
           if (Type(handler) !== 'Object') {
             throw new TypeError('Expected handler to be an object.');
@@ -5040,6 +5275,7 @@ var ___, cajaVM, safeJSON, WeakMap;
       def: def,
 
       // Other
+      makeArrayLike: makeArrayLike,
       isFunction: isFunction,
       USELESS: USELESS,
       manifest: manifest,
@@ -5112,7 +5348,7 @@ var ___, cajaVM, safeJSON, WeakMap;
       Date: Date,
       RegExp: RegExp,
       Function: FakeFunction,
-      Proxy: Proxy,
+      Proxy: CajaProxy,
 
       Error: Error,
       EvalError: EvalError,

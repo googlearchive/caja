@@ -175,7 +175,7 @@ domitaModules.ProxyHandler.prototype = {
   },
 
   // delete proxy[name] -> boolean
-  delete: function(name) { return delete this.target[name]; },
+  'delete': function(name) { return delete this.target[name]; },
 
   // Object.{freeze|seal|preventExtensions}(proxy) -> proxy
   fix: function() {
@@ -447,12 +447,12 @@ domitaModules.ExpandoProxyHandler = (function () {
     }
     return false;
   };
-  ExpandoProxyHandler.prototype.delete = function (name) {
+  ExpandoProxyHandler.prototype['delete'] = function (name) {
     if (name === "ident___") {
       return false;
     } else if (name in this.target) {
       // Forwards everything already defined (not expando).
-      return ProxyHandler.prototype.delete.call(this, name);
+      return ProxyHandler.prototype['delete'].call(this, name);
     } else {
       if (!this.editable) { throw new Error("Not editable"); }
       return delete this.storage[name];
@@ -2025,7 +2025,7 @@ function Domado(opt_rulebreaker) {
       // TODO(kpreid): Under a true ES5 environment, node lists should be
       // proxies so that they preserve liveness of the original lists.
       // This should be controlled by an option.
-      
+
       var limit = getNodeListLength(nodeList);
       if (limit > 0 && !opt_tameNodeCtor) {
         throw 'Internal: Nonempty mixinNodeList() without a tameNodeCtor';
@@ -2047,18 +2047,78 @@ function Domado(opt_rulebreaker) {
       return tamed;
     }
 
-    function tameNodeList(nodeList, editable, opt_tameNodeCtor, opt_extras) {
-      makeDOMAccessible(nodeList);
-      return Object.freeze(mixinNodeList(
-          opt_extras || [], nodeList, editable, opt_tameNodeCtor));
+    function rebuildTameListConstructors(ArrayLike) {
+      TameNodeList = makeTameNodeList();
+      TameNodeList.prototype = Object.create(ArrayLike.prototype);
+      Object.defineProperty(TameNodeList.prototype, 'constructor',
+          { value: TameNodeList });
+      Object.freeze(TameNodeList.prototype);
+      Object.freeze(TameNodeList);
+      TameOptionsList = makeTameOptionsList();
+      TameOptionsList.prototype = Object.create(ArrayLike.prototype);
+      Object.defineProperty(TameOptionsList.prototype, 'constructor',
+          { value: TameOptionsList });
+      Object.freeze(TameOptionsList.prototype);
+      Object.freeze(TameOptionsList);
     }
 
-    function tameOptionsList(nodeList, editable, opt_tameNodeCtor) {
-      makeDOMAccessible(nodeList);
-      var nl = mixinNodeList([], nodeList, editable, opt_tameNodeCtor);
-      nl.selectedIndex = +nodeList.selectedIndex;
-      return Object.freeze(nl);
+    function makeTameNodeList() {
+      return function TNL(nodeList,
+            editable,
+            opt_tameNodeCtor,
+            opt_extras) {
+          makeDOMAccessible(nodeList);
+          function getItem(i) {
+            i = +i;
+            if (opt_extras) {
+              var len = +opt_extras.length;
+              if (i < len) { return opt_extras[i]; }
+              else { i -= len; }
+            }
+            if (i >= nodeList.length) { return void 0; }
+            return opt_tameNodeCtor(nodeList[i], editable);
+          }
+          function getLength() {
+            var len = opt_extras ? +opt_extras.length : 0;
+            len += nodeList.length;
+            return len;
+          }
+          var len = +getLength();
+          var ArrayLike = cajaVM.makeArrayLike(len);
+          if (!(TameNodeList.prototype instanceof ArrayLike)) {
+            rebuildTameListConstructors(ArrayLike);
+          }
+          var result = ArrayLike(TameNodeList.prototype, getItem, getLength);
+          Object.defineProperty(result, 'item', 
+              { value: Object.freeze(getItem) });
+          return result;
+        };
     }
+
+    var TameNodeList = Object.freeze(makeTameNodeList());
+
+    function makeTameOptionsList() {
+      return function TOL(nodeList, editable, opt_tameNodeCtor) {
+          makeDOMAccessible(nodeList);
+          function getItem(i) {
+            i = +i;
+            return opt_tameNodeCtor(nodeList[i], editable);
+          }
+          function getLength() { return nodeList.length; }
+          var len = +getLength();
+          var ArrayLike = cajaVM.makeArrayLike(len);
+          if (!(TameOptionsList.prototype instanceof ArrayLike)) {
+            rebuildTameListConstructors(ArrayLike);
+          }
+          var result = ArrayLike(TameOptionsList.prototype, getItem, getLength);
+          Object.defineProperty(result, 'selectedIndex', {
+              get: function () { return +nodeList.selectedIndex; }
+            });
+          return result;
+        };
+    }
+
+    var TameOptionsList = Object.freeze(makeTameOptionsList());
 
     /**
      * Return a fake node list containing tamed nodes.
@@ -2143,7 +2203,7 @@ function Domado(opt_rulebreaker) {
           return new fakeNodeList([]);
         }
       }
-      return tameNodeList(rootNode.getElementsByTagName(tagName), editable,
+      return new TameNodeList(rootNode.getElementsByTagName(tagName), editable,
                           defaultTameNode, extras);
     }
 
@@ -2182,7 +2242,7 @@ function Domado(opt_rulebreaker) {
 
       // "unordered set of unique space-separated tokens representing classes"
       if (typeof rootNode.getElementsByClassName === 'function') {
-        return tameNodeList(
+        return new TameNodeList(
             rootNode.getElementsByClassName(
                 classes.join(' ')), editable, defaultTameNode);
       } else {
@@ -2436,7 +2496,7 @@ function Domado(opt_rulebreaker) {
       childNodes: {
         enumerable: true,
         get: cajaVM.def(function () {
-          return tameNodeList(np(this).feral.childNodes,
+          return new TameNodeList(np(this).feral.childNodes,
                               np(this).childrenEditable, defaultTameNode);
         })
       },
@@ -2447,7 +2507,7 @@ function Domado(opt_rulebreaker) {
           var tameNodeCtor = function(node, editable) {
             return new TameBackedAttributeNode(node, editable, thisNode);
           };
-          return tameNodeList(
+          return new TameNodeList(
               thisNode.attributes, thisNode, tameNodeCtor);
         })
       }
@@ -2674,7 +2734,7 @@ function Domado(opt_rulebreaker) {
         ownerDocument: P_constant(tameDoc),
         childNodes: { enumerable: true, get: nodeMethod(childNodesGetter) },
         attributes: { enumerable: true, get: nodeMethod(function () {
-          return tameNodeList([], false, undefined);
+          return new TameNodeList([], false, undefined);
         })},
         parentNode: { enumerable: true, get: nodeMethod(parentNodeGetter) },
         innerHTML: { enumerable: true, get: nodeMethod(innerHTMLGetter) }
@@ -2740,7 +2800,7 @@ function Domado(opt_rulebreaker) {
         attributes: {
           enumerable: canHaveEnumerableAccessors,
           get: nodeMethod(function () {
-            return tameNodeList([], false, undefined);
+            return new TameNodeList([], false, undefined);
           })
         }
       });
@@ -4073,7 +4133,9 @@ function Domado(opt_rulebreaker) {
         options: {
           enumerable: true,
           get: nodeMethod(function () {
-            return tameOptionsList(np(this).feral.options, np(this).editable,
+            return new TameOptionsList(
+                np(this).feral.options, 
+                np(this).editable,
                 defaultTameNode, 'name');
           })
         },
@@ -4131,10 +4193,10 @@ function Domado(opt_rulebreaker) {
         cells: {
           // TODO(kpreid): It would be most pleasing to find a way to generalize
           // all the accessors which are of the form
-          //     return tameNodeList(np(this).feral...., ..., ...)
+          //     return new TameNodeList(np(this).feral...., ..., ...)
           enumerable: true,
           get: nodeMethod(function () {
-            return tameNodeList(
+            return new TameNodeList(
                 np(this).feral.cells, np(this).editable, defaultTameNode);
           })
         },
@@ -4143,7 +4205,7 @@ function Domado(opt_rulebreaker) {
         rows: {
           enumerable: true,
           get: nodeMethod(function () {
-            return tameNodeList(
+            return new TameNodeList(
                 np(this).feral.rows, np(this).editable, defaultTameNode);
           })
         },
@@ -4198,7 +4260,7 @@ function Domado(opt_rulebreaker) {
         tBodies: {
           enumerable: true,
           get: nodeMethod(function () {
-            return tameNodeList(
+            return new TameNodeList(
                 np(this).feral.tBodies, np(this).editable, defaultTameNode);
           })
         },
@@ -4512,7 +4574,7 @@ function Domado(opt_rulebreaker) {
           'BODY',
           this,
           function () {
-            return tameNodeList(body.childNodes, editable, defaultTameNode);
+            return new TameNodeList(body.childNodes, editable, defaultTameNode);
           },
           function () { return tameHtmlElement; },
           function () { return tameInnerHtml(body.innerHTML); },
@@ -5238,13 +5300,18 @@ function Domado(opt_rulebreaker) {
       rulebreaker.permitUntaming(this);
     }
     
+    // Under ES53, the set/clear pairs get invoked with 'this' bound
+    // to USELESS, which causes problems on Chrome unless they're wrpaped
+    // this way.
     tameSetAndClear(
         TameWindow.prototype,
-        window.setTimeout, window.clearTimeout,
+        function (code, millis) { return window.setTimeout(code, millis); },
+        function (id) { return window.clearTimeout(id); },
         'setTimeout', 'clearTimeout');
     tameSetAndClear(
         TameWindow.prototype,
-        window.setInterval, window.clearInterval,
+        function (code, millis) { return window.setInterval(code, millis); },
+        function (id) { return window.clearInterval(id); },
         'setInterval', 'clearInterval');
     TameWindow.prototype.addEventListener = cajaVM.def(
         function (name, listener, useCapture) {

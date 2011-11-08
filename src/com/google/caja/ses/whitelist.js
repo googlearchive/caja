@@ -135,8 +135,9 @@ var ses;
       guard: t,
       passesGuard: t,
       stamp: t,
-      makeSealerUnsealerPair: t
+      makeSealerUnsealerPair: t,
 
+      makeArrayLike: {}
     },
     WeakMap: {       // ES-Harmony proposal as currently implemented by FF6.0a1
       prototype: {

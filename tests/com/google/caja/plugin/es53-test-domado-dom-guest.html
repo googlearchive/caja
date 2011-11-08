@@ -965,6 +965,10 @@
     assertEquals('I', childNodes[2].nodeName);
     assertEquals('#text', childNodes[3].nodeName);
     assertEquals('U', childNodes[4].nodeName);
+    var TNLproto = Object.getPrototypeOf(childNodes);
+    var TNL = TNLproto.constructor;
+    assertTrue(Object.isFrozen(TNL));
+    assertTrue(Object.isFrozen(TNLproto));
     pass('test-child-nodes');
   });
 </script>
@@ -2168,8 +2172,13 @@ Test row cell
 <script type="text/javascript">
   jsunitRegister('testSelectedIndex',
                  function testSelectedIndex() {
-    assertEquals(2, document.getElementById('test-selected-index-1').
-        options.selectedIndex);
+    var optionsList = document.getElementById('test-selected-index-1').
+        options;
+    assertEquals(2, optionsList.selectedIndex);
+    var TOLproto = Object.getPrototypeOf(optionsList);
+    var TOL = TOLproto.constructor;
+    assertTrue(Object.isFrozen(TOL));
+    assertTrue(Object.isFrozen(TOLproto));
     pass('test-selected-index');
   });
 </script>
