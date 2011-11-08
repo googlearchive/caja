@@ -414,6 +414,7 @@ var swfobject = function() {
 			if (ua.ie && ua.win) { // Internet Explorer + the HTML object element + W3C DOM methods do not combine: fall back to outerHTML
 				var att = "";
 				for (var i in attObj) {
+					if (/__$/.test(i)) { continue; }
 					if (attObj[i] != Object.prototype[i]) { // filter out prototype additions from other potential libraries
 						if (i.toLowerCase() == "data") {
 							parObj.movie = attObj[i];
@@ -428,6 +429,7 @@ var swfobject = function() {
 				}
 				var par = "";
 				for (var j in parObj) {
+					if (/__$/.test(j)) { continue; }
 					if (parObj[j] != Object.prototype[j]) { // filter out prototype additions from other potential libraries
 						par += '<param name="' + j + '" value="' + parObj[j] + '" />';
 					}
@@ -440,6 +442,7 @@ var swfobject = function() {
 				var o = createElement(OBJECT);
 				o.setAttribute("type", FLASH_MIME_TYPE);
 				for (var m in attObj) {
+					if (/__$/.test(m)) { continue; }
 					if (attObj[m] != Object.prototype[m]) { // filter out prototype additions from other potential libraries
 						if (m.toLowerCase() == "styleclass") { // 'class' is an ECMA4 reserved keyword
 							o.setAttribute("class", attObj[m]);
@@ -450,6 +453,7 @@ var swfobject = function() {
 					}
 				}
 				for (var n in parObj) {
+					if (/__$/.test(n)) { continue; }
 					if (parObj[n] != Object.prototype[n] && n.toLowerCase() != "movie") { // filter out prototype additions from other potential libraries and IE specific param element
 						createObjParam(o, n, parObj[n]);
 					}
@@ -495,6 +499,7 @@ var swfobject = function() {
 		var obj = getElementById(id);
 		if (obj) {
 			for (var i in obj) {
+				if (/__$/.test(i)) { continue; }
 				if (typeof obj[i] == "function") {
 					obj[i] = null;
 				}
@@ -608,10 +613,12 @@ var swfobject = function() {
 				}
 				// cleanup library's main closures to avoid memory leaks
 				for (var k in ua) {
+					if (/__$/.test(k)) { continue; }
 					ua[k] = null;
 				}
 				ua = null;
 				for (var l in swfobject) {
+					if (/__$/.test(l)) { continue; }
 					swfobject[l] = null;
 				}
 				swfobject = null;
@@ -654,6 +661,7 @@ var swfobject = function() {
 					var att = {};
 					if (attObj && typeof attObj === OBJECT) {
 						for (var i in attObj) { // copy object to avoid the use of references, because web authors often reuse attObj for multiple SWFs
+							if (/__$/.test(i)) { continue; }
 							att[i] = attObj[i];
 						}
 					}
@@ -663,11 +671,13 @@ var swfobject = function() {
 					var par = {}; 
 					if (parObj && typeof parObj === OBJECT) {
 						for (var j in parObj) { // copy object to avoid the use of references, because web authors often reuse parObj for multiple SWFs
+							if (/__$/.test(j)) { continue; }
 							par[j] = parObj[j];
 						}
 					}
 					if (flashvarsObj && typeof flashvarsObj === OBJECT) {
 						for (var k in flashvarsObj) { // copy object to avoid the use of references, because web authors often reuse flashvarsObj for multiple SWFs
+							if (/__$/.test(k)) { continue; }
 							if (typeof par.flashvars != UNDEF) {
 								par.flashvars += "&" + k + "=" + flashvarsObj[k];
 							}

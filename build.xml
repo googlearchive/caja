@@ -813,8 +813,8 @@
       <input file="${src.caja}/plugin/json-rest-transport.js"/>
       <input file="${src.caja}/plugin/cajoling-service-client.js"/>
       <input file="${src.caja}/plugin/taming-frame.js"/>
-      <input file="${src.caja}/plugin/caja-iframe-done.js"/>
       <input file="${src.caja}/flash/caja-flash.js"/>
+      <input file="${src.caja}/plugin/caja-iframe-done.js"/>
     </transform>
     <transform>
       <output file="${lib.caja}/plugin/es53-guest-frame.opt.js"
@@ -1254,10 +1254,15 @@
         <include name="ses-guest-frame.opt.js"/>
       </fileset>
     </copy>
+
     <copy file="${third_party}/js/swfobject/src/swfobject.js"
           tofile="${war}/swfobject.js"/>
-    <copy file="${third_party}/js/swfobject/swfobject.js"
-          tofile="${war}/swfobject.opt.js"/>
+    <transform>
+      <input file="${third_party}/js/swfobject/src/swfobject.js"/>
+      <output file="${war}/swfobject.opt.js"
+              language="javascript" renderer="minify"/>
+    </transform>
+
     <copy todir="${war}/sunspider">
       <fileset dir="${third_party}/js/sunspider-benchmark">
         <include name="sunspider-record-result.js" />
