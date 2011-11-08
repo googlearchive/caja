@@ -21,8 +21,8 @@ import com.google.caja.lang.html.HtmlSchema;
 import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.ParseException;
 import com.google.caja.reporting.BuildInfo;
-import com.google.caja.reporting.MessageType;
 import com.google.caja.reporting.MessageQueue;
+import com.google.caja.reporting.MessageType;
 import com.google.caja.util.Join;
 import com.google.caja.util.Lists;
 import com.google.caja.util.Pair;
@@ -138,6 +138,9 @@ public final class Config {
       "pg", "goals",
       "Space separated properties as described in help text.", true);
 
+  private final Option NO_PRECAJOLED = defineBooleanOption(
+      "np", "no_precajoled", "Don't use the precajoled cache");
+
   public enum SourceRenderMode {
     MINIFY,
     PRETTY,
@@ -166,6 +169,7 @@ public final class Config {
   private Planner.PlanState posGoals = Planner.EMPTY;
   private Planner.PlanState negPreconds = Planner.EMPTY;
   private Planner.PlanState posPreconds = Planner.EMPTY;
+  private boolean noPrecajoled = false;
 
   public Config(Class<?> mainClass, PrintStream stderr, String usageText) {
     this(mainClass, new PrintWriter(stderr), usageText);
@@ -223,6 +227,8 @@ public final class Config {
   public Planner.PlanState preconditions(Planner.PlanState ps) {
     return ps.without(negPreconds).with(posPreconds);
   }
+
+  public boolean hasNoPrecajoled() { return noPrecajoled; }
 
   public boolean processArguments(String[] argv) {
     try {
@@ -377,6 +383,8 @@ public final class Config {
         negGoals = negGoals.with(deltas.a);
         posGoals = posGoals.with(deltas.b);
       }
+
+      noPrecajoled = cl.hasOption(NO_PRECAJOLED.getOpt());
 
       return true;
     } finally {

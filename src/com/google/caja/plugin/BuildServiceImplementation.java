@@ -174,6 +174,7 @@ public class BuildServiceImplementation implements BuildService {
     Node outputHtml;
     if ("caja".equals(language)) {
       PluginMeta meta = new PluginMeta(fetcher, policy);
+      meta.setPrecajoleMinify("minify".equals(rendererType));
       PluginCompiler compiler = new PluginCompiler(
           BuildInfo.getInstance(), meta, mq);
       compiler.setMessageContext(mc);

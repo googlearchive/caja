@@ -14,24 +14,6 @@
 
 package com.google.caja.plugin;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.io.Reader;
-import java.io.Writer;
-import java.net.URI;
-import java.net.URL;
-import java.util.Collection;
-import java.util.Map;
-import java.util.Set;
-
-import org.w3c.dom.Node;
-
 import com.google.caja.SomethingWidgyHappenedError;
 import com.google.caja.lexer.ExternalReference;
 import com.google.caja.lexer.FetchedData;
@@ -58,6 +40,27 @@ import com.google.caja.util.Callback;
 import com.google.caja.util.CapturingReader;
 import com.google.caja.util.Charsets;
 import com.google.caja.util.Maps;
+
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.io.Reader;
+import java.io.Writer;
+import java.net.URI;
+import java.net.URL;
+import java.text.DecimalFormat;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Map;
+import java.util.Set;
+
+import org.w3c.dom.Node;
 
 /**
  * An executable that invokes the {@link PluginCompiler}.
@@ -99,7 +102,7 @@ public final class PluginCompilerMain {
     mc = new MessageContext();
   }
 
-  private int run(String[] argv) {
+  private int run(String[] argv, boolean writeFiles) {
     if (!config.processArguments(argv)) {
       return -1;
     }
@@ -168,6 +171,11 @@ public final class PluginCompilerMain {
 
       PluginMeta meta = new PluginMeta(fetcher, policy);
       meta.setIdClass(config.getIdClass());
+      meta.setPrecajoleMinify(
+          config.renderer() == Config.SourceRenderMode.MINIFY);
+      if (config.hasNoPrecajoled()) {
+        meta.setPrecajoleMap(null);
+      }
 
       PluginCompiler compiler = new PluginCompiler(
           BuildInfo.getInstance(), meta, mq);
@@ -191,6 +199,10 @@ public final class PluginCompilerMain {
       if (mc == null) { mc = new MessageContext(); }
       MessageLevel maxMessageLevel = dumpMessages(mq, mc, System.err);
       success &= MessageLevel.ERROR.compareTo(maxMessageLevel) > 0;
+    }
+
+    if (!writeFiles) {
+      return success ? 0 : -1;
     }
 
     if (success) {
@@ -377,7 +389,7 @@ public final class PluginCompilerMain {
     int exitCode;
     try {
       PluginCompilerMain main = new PluginCompilerMain();
-      exitCode = main.run(args);
+      exitCode = main.run(args, true);
     } catch (Exception ex) {
       ex.printStackTrace();
       exitCode = -1;
@@ -387,6 +399,46 @@ public final class PluginCompilerMain {
     } catch (SecurityException ex) {
       // This method may be invoked under a SecurityManager, e.g. by Ant,
       // so just suppress the security exception and return normally.
+    }
+  }
+
+  /**
+   * PluginCompilerMain.Repeat $n $arg ...
+   * <p>
+   * Run PluginCompilerMain $n times with the given $arg list.
+   */
+
+  public static class Repeat {
+    public static void main(String[] args) throws Exception {
+      int trials = Integer.valueOf(args[0]);
+      args = Arrays.copyOfRange(args, 1, args.length);
+
+      BufferedReader b = new BufferedReader(new InputStreamReader(System.in));
+      System.out.println("press return...");
+      b.readLine();
+
+      // count first iteration separately
+      long t0 = System.nanoTime();
+      run(args);
+      long t1 = System.nanoTime();
+      for (int i = 0; i < trials; i++) {
+        run(args);
+      }
+      long t2 = System.nanoTime();
+
+      DecimalFormat fmt = new DecimalFormat("#.## msec");
+      System.out.println(
+          "first run  = " + fmt.format((t1 - t0) / 1e6));
+      System.out.println(
+          "other runs = " + fmt.format((t2 - t1) / (trials * 1e6)));
+
+      System.out.println("press return...");
+      b.readLine();
+    }
+
+    private static void run(String[] args) {
+      PluginCompilerMain pc = new PluginCompilerMain();
+      pc.run(args, false);
     }
   }
 }

@@ -19,7 +19,6 @@ import com.google.caja.lang.html.HtmlSchema;
 import com.google.caja.parser.quasiliteral.ModuleManager;
 import com.google.caja.plugin.stages.CheckForErrorsStage;
 import com.google.caja.plugin.stages.ConsolidateCodeStage;
-import com.google.caja.plugin.stages.RewriteFlashStage;
 import com.google.caja.plugin.stages.HtmlToBundleStage;
 import com.google.caja.plugin.stages.HtmlToJsStage;
 import com.google.caja.plugin.stages.InferFilePositionsStage;
@@ -30,8 +29,10 @@ import com.google.caja.plugin.stages.OpenTemplateStage;
 import com.google.caja.plugin.stages.OptimizeJavascriptStage;
 import com.google.caja.plugin.stages.PipelineFetchStage;
 import com.google.caja.plugin.stages.PipelineStoreStage;
+import com.google.caja.plugin.stages.PrecajoleRewriteStage;
 import com.google.caja.plugin.stages.ResolveUriStage;
 import com.google.caja.plugin.stages.RewriteCssStage;
+import com.google.caja.plugin.stages.RewriteFlashStage;
 import com.google.caja.plugin.stages.RewriteHtmlStage;
 import com.google.caja.plugin.stages.SanitizeHtmlStage;
 import com.google.caja.plugin.stages.ValidateCssStage;
@@ -147,6 +148,8 @@ public final class PipelineMaker {
       "html+xmlns", "instead of html if no un-namespaced DOMs on the input.");
   private static final Planner.PlanState HTML_ABSURI_XMLNS = makeInner(
       "html+absuri+xmlns");
+  private static final Planner.PlanState PRECAJOLED = makeGoal(
+      "precajoled", "marker indicating precajoled JS was substituted");
   private static final Planner.PlanState HTML_STATIC = makeInner(
       "html+static");
   private static final Planner.PlanState HTML_STATIC_STRIPPED = makeInner(
@@ -175,9 +178,11 @@ public final class PipelineMaker {
   /** The default preconditions for a {@code PluginCompiler} pipeline. */
   public static final Planner.PlanState DEFAULT_PRECONDS = CSS
       .with(HTML).with(JS);
+
   /** The default goals of a {@code PluginCompiler} pipeline. */
   public static final Planner.PlanState DEFAULT_GOALS = ONE_CAJOLED_MODULE
-      .with(HTML_SAFE_STATIC).with(SANITY_CHECK).with(REWROTE_FLASH);
+      .with(HTML_SAFE_STATIC).with(SANITY_CHECK).with(REWROTE_FLASH)
+      .with(PRECAJOLED);
 
   private static List<Tool> makeTools(Planner.PlanState goals) {
     return Arrays.asList(
@@ -192,6 +197,15 @@ public final class PipelineMaker {
             out.add(new ResolveUriStage(in.htmlSchema));
           }
         }.given(HTML_XMLNS).produces(HTML_ABSURI_XMLNS),
+
+        new Tool() {
+          public void operate(PlanInputs in, List<Pipeline.Stage<Jobs>> out) {
+            PluginMeta meta = in.moduleManager.getPluginMeta();
+            out.add(new PrecajoleRewriteStage(
+                meta.getPrecajoleMap(), meta.getPrecajoleMinify()));
+          }
+        }.given(HTML_ABSURI_XMLNS)
+         .produces(HTML_ABSURI_XMLNS).produces(PRECAJOLED),
 
         new Tool() {
           public void operate(PlanInputs in, List<Pipeline.Stage<Jobs>> out) {
@@ -265,7 +279,7 @@ public final class PipelineMaker {
           }
         }.given(goals).exceptNotGiven(SANITY_CHECK)
          .produces(goals).produces(SANITY_CHECK),
-         
+
         new Tool() {
           public void operate(PlanInputs in, List<Pipeline.Stage<Jobs>> out) {
             out.add(new RewriteFlashStage());

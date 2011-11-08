@@ -77,6 +77,7 @@ public class HtmlHandler extends AbstractCajolingHandler {
 
     boolean pretty = CajolingService.RENDER_PRETTY.equals(
         CajaArguments.RENDERER.get(args));
+    meta.setPrecajoleMinify(!pretty);
 
     Pair<ContentType, String> contentParams = getReturnedContentParams(args);
 

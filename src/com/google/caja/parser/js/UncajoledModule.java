@@ -24,6 +24,7 @@ import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.Callback;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -53,6 +54,24 @@ public final class UncajoledModule extends AbstractParseTreeNode {
 
   public UncajoledModule(Block body) {
     this(FilePosition.UNKNOWN, body);
+  }
+
+  public static UncajoledModule of(ParseTreeNode node) {
+    if (node instanceof Block) {
+      return new UncajoledModule((Block) node);
+
+    } else if (node instanceof Statement) {
+      return new UncajoledModule(new Block(
+          node.getFilePosition(),
+          Collections.singletonList((Statement) node)));
+
+    } else if (node instanceof Expression) {
+      return new UncajoledModule(new Block(
+          node.getFilePosition(),
+          Collections.singletonList(new ExpressionStmt((Expression) node))));
+    } else {
+      throw new ClassCastException("Unexpected node type " + node);
+    }
   }
 
   @Override

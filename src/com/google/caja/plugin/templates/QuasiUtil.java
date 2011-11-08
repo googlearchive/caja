@@ -21,8 +21,8 @@ import com.google.caja.parser.js.ExpressionStmt;
 import com.google.caja.parser.js.Statement;
 import com.google.caja.parser.quasiliteral.QuasiBuilder;
 
-final class QuasiUtil {
-  static Statement quasiStmt(String quasi, Object... args) {
+public final class QuasiUtil {
+  public static Statement quasiStmt(String quasi, Object... args) {
     ParseTreeNode n = QuasiBuilder.substV(quasi, args);
     if (n instanceof Expression) {
       return new ExpressionStmt(FilePosition.UNKNOWN, (Expression) n);

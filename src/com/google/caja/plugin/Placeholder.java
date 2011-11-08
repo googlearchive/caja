@@ -17,6 +17,10 @@ package com.google.caja.plugin;
 import com.google.caja.parser.html.AttribKey;
 import com.google.caja.parser.html.ElKey;
 import com.google.caja.parser.html.Namespaces;
+import com.google.caja.parser.html.Nodes;
+
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 
 /**
  * Utilities for linking scripts extracted from HTML with the points in the
@@ -42,6 +46,17 @@ public final class Placeholder {
    */
   public static final AttribKey ID_ATTR = AttribKey.forAttribute(
       Namespaces.HTML_DEFAULT, ElKey.HTML_WILDCARD, "__phid__");
+
+  /**
+   * Returns a new span element placeholder for the given node.
+   */
+  public static Element make(Node orig, String id) {
+    Element el = orig.getOwnerDocument()
+        .createElementNS(Namespaces.HTML_NAMESPACE_URI, "span");
+    el.setAttributeNS(ID_ATTR.ns.uri, ID_ATTR.localName, id);
+    Nodes.setFilePositionFor(el, Nodes.getFilePositionFor(orig));
+    return el;
+  }
 
   private Placeholder() {
     // Not instantiable.

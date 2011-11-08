@@ -201,14 +201,9 @@ final class HtmlExtractor {
   // JavaScript, so that when the DOM is rendered, we can properly interleave
   // the extract scripts with the scripts that generate markup.
   private Element placeholderFor(Node n, Block parsedScriptBody) {
-    Element placeholder = n.getOwnerDocument().createElementNS(
-        Namespaces.HTML_NAMESPACE_URI, "span");
-    Nodes.setFilePositionFor(placeholder, Nodes.getFilePositionFor(n));
-    URI baseUri = htmlEnv.job.getBaseUri();
     String id = "$" + jobs.getPluginMeta().generateGuid();
-    placeholder.setAttributeNS(
-        Placeholder.ID_ATTR.ns.uri, Placeholder.ID_ATTR.localName, id);
-
+    Element placeholder = Placeholder.make(n, id);
+    URI baseUri = htmlEnv.job.getBaseUri();
     jobs.getJobs().add(new JobEnvelope(
         id, jobCache.forJob(ContentType.JS, parsedScriptBody).asSingleton(),
         ContentType.JS, false,

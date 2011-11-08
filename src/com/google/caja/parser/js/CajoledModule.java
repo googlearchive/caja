@@ -414,4 +414,38 @@ public final class CajoledModule extends AbstractParseTreeNode
                 .withEmbeddable(rc.isEmbeddable()));
     tc.noMoreTokens();
   }
+
+  /**
+   * Returns a flattened copy of this CajoledModule.  The flattened copy
+   * is cheaper to clone and/or cache.
+   * <p>
+   * Moderately-large JS (such as jquery.js) becomes a large ParseTreeNode
+   * structure that takes a nontrivial amount of time to clone or
+   * deserialize.  However, once we've finished cajoling a module,
+   * the tree structure becomes irrelevant, so we can render the
+   * module body into a single string for efficiency.
+   * <p>
+   * This requires making an early decision on what renderer to use.
+   */
+  public CajoledModule flatten(boolean minify) {
+    ObjectConstructor oc = new ObjectConstructor(FilePosition.UNKNOWN);
+    for (ObjProperty p : getModuleBody().children()) {
+      oc.appendChild(flattenProperty(p, minify));
+    }
+    return new CajoledModule(oc);
+  }
+
+  private ObjProperty flattenProperty(ObjProperty op, boolean minify) {
+    if (op instanceof ValueProperty) {
+      ValueProperty vp = (ValueProperty) op;
+      String name = vp.getPropertyName();
+      if ("instantiate".equals(name)) {
+        return new ValueProperty(
+            vp.getPropertyNameNode(),
+            new RenderedExpression(vp.getValueExpr(), minify));
+      }
+    }
+    return op;
+  }
+
 }

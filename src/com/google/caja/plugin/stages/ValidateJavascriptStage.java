@@ -16,10 +16,8 @@ package com.google.caja.plugin.stages;
 
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.js.ArrayConstructor;
-import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.CajoledModule;
 import com.google.caja.parser.js.Expression;
-import com.google.caja.parser.js.ExpressionStmt;
 import com.google.caja.parser.js.Statement;
 import com.google.caja.parser.js.StringLiteral;
 import com.google.caja.parser.js.UncajoledModule;
@@ -33,7 +31,6 @@ import com.google.caja.util.Maps;
 import com.google.caja.util.Pipeline;
 
 import java.net.URI;
-import java.util.Collections;
 import java.util.ListIterator;
 import java.util.Map;
 
@@ -62,7 +59,7 @@ public final class ValidateJavascriptStage implements Pipeline.Stage<Jobs> {
       URI baseUri = job.getBaseUri();
       Statement s = (Statement) job.getRoot();
       ParseTreeNode result = new ExpressionSanitizerCaja(mgr, baseUri)
-          .sanitize(uncajoledModule(s));
+          .sanitize(UncajoledModule.of(s));
       if (!(result instanceof CajoledModule)) {
         // Rewriter failed to rewrite so returned its input.
         // There should be details on the message queue.
@@ -102,20 +99,5 @@ public final class ValidateJavascriptStage implements Pipeline.Stage<Jobs> {
     }
 
     return jobs.hasNoFatalErrors();
-  }
-
-  private static UncajoledModule uncajoledModule(ParseTreeNode node) {
-    Block body;
-    if (node instanceof Block) {
-      body = (Block) node;
-    } else {
-      if (node instanceof Expression) {
-        node = new ExpressionStmt((Expression) node);
-      }
-      body = new Block(
-          node.getFilePosition(), Collections.singletonList((Statement) node));
-    }
-
-    return new UncajoledModule(body);
   }
 }

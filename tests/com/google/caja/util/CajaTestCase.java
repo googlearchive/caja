@@ -364,6 +364,16 @@ public abstract class CajaTestCase extends TestCase {
     }
   }
 
+  protected void assertContains(String haystack, String needle) {
+    assertTrue("Expected result to contain <" + needle + ">",
+        haystack != null && haystack.contains(needle));
+  }
+
+  protected void assertNotContains(String haystack, String needle) {
+    assertTrue("Expected result to not contain <" + needle + ">",
+        haystack != null && !haystack.contains(needle));
+  }
+
   protected void assertMessagesLessSevereThan(MessageLevel level) {
     for (Message msg : mq.getMessages()) {
       if (level.compareTo(msg.getMessageLevel()) <= 0) {

@@ -833,11 +833,8 @@ public class TemplateCompilerTest extends CajaTestCase {
       throws ParseException {
     if (n instanceof Element && "script".equals(n.getLocalName())
         && HTML_NS.equals(n.getNamespaceURI())) {
-      Element placeholder = n.getOwnerDocument().createElementNS(
-          HTML_NS, "span");
       String id = "$" + extractedScripts.size();
-      placeholder.setAttributeNS(
-          Placeholder.ID_ATTR.ns.uri, Placeholder.ID_ATTR.localName, id);
+      Element placeholder = Placeholder.make(n, id);
       if (n.getParentNode() != null) {
         n.getParentNode().replaceChild(placeholder, n);
       }

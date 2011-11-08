@@ -18,7 +18,6 @@ import com.google.caja.lang.css.CssSchema;
 import com.google.caja.lang.html.HtmlSchema;
 import com.google.caja.lexer.ParseException;
 import com.google.caja.parser.html.DomParser;
-import com.google.caja.parser.html.Namespaces;
 import com.google.caja.parser.html.Nodes;
 import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.Noop;
@@ -155,12 +154,8 @@ public class HtmlEmitterTest extends CajaTestCase {
       throws ParseException {
     if (n.getNodeType() == 1
         && Strings.equalsIgnoreCase("script", n.getNodeName())) {
-      String HTML_NS = Namespaces.HTML_NAMESPACE_URI;
-      Element placeholder = n.getOwnerDocument().createElementNS(
-          HTML_NS, "span");
       String id = "$" + extractedScripts.size();
-      placeholder.setAttributeNS(
-          Placeholder.ID_ATTR.ns.uri, Placeholder.ID_ATTR.localName, id);
+      Element placeholder = Placeholder.make(n, id);
       extractedScripts.add(new ScriptPlaceholder(
           new JobEnvelope(id, JobCache.none(), ContentType.JS, false, null),
           js(fromString(n.getFirstChild().getNodeValue()))));

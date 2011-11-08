@@ -484,7 +484,7 @@
     </copy>
   </target>
 
-  <target name="pluginc" depends="PluginCompiler,tools"
+  <target name="pluginc" depends="PluginCompiler,precajole,tools"
    description="Build the plugin compiler and other main classes">
     <javac destdir="${lib}" debug="true" target="1.5" source="1.5">
       <src path="${src}"/>
@@ -1733,5 +1733,40 @@
               out="${src.flash}/tests/BridgeAware.swf"/>
     <buildSwf in="${src.flash}/tests/BridgeOblivious.mxml"
               out="${src.flash}/tests/BridgeOblivious.swf"/>
+  </target>
+
+  <property name="3pp.jquery" value="${third_party}/precajole/jquery"/>
+
+  <target name="Precajoler" depends="PluginCompiler">
+    <javac destdir="${lib}" debug="true" target="1.5" source="1.5">
+      <src path="${src}"/>
+      <classpath refid="classpath.compile"/>
+      <classpath refid="classpath.tools"/>
+      <include name="com/google/caja/precajole/*.java" />
+    </javac>
+    <taskdef name="precajole"
+             classname="com.google.caja.precajole.PrecajoleTask"
+             classpathref="classpath.run" />
+  </target>
+
+  <target name="precajole" depends="Precajoler">
+    <precajole to="${lib.caja}/precajole/data">
+      <source file="${3pp.jquery}/1.6.4/jquery-1.6.4.js">
+        http://ajax.googleapis.com/ajax/libs/jquery/1.6.4/jquery.js
+        http://ajax.googleapis.com/ajax/libs/jquery/1.6.4/jquery.min.js
+        http://ajax.googleapis.com/ajax/libs/jquery/1.6/jquery.js
+        http://ajax.googleapis.com/ajax/libs/jquery/1.6/jquery.min.js
+        http://ajax.googleapis.com/ajax/libs/jquery/1/jquery.js
+        http://ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js
+        http://code.jquery.com/jquery-1.6.4.js
+        http://code.jquery.com/jquery-1.6.4.min.js
+        https://ajax.googleapis.com/ajax/libs/jquery/1.6.4/jquery.js
+        https://ajax.googleapis.com/ajax/libs/jquery/1.6.4/jquery.min.js
+        https://ajax.googleapis.com/ajax/libs/jquery/1.6/jquery.js
+        https://ajax.googleapis.com/ajax/libs/jquery/1.6/jquery.min.js
+        https://ajax.googleapis.com/ajax/libs/jquery/1/jquery.js
+        https://ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js
+      </source>
+    </precajole>
   </target>
 </project>

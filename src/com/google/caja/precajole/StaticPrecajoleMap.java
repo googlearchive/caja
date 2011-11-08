@@ -1,0 +1,284 @@
+// Copyright (C) 2011 Google Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package com.google.caja.precajole;
+
+import com.google.caja.SomethingWidgyHappenedError;
+import com.google.caja.parser.js.CajoledModule;
+import com.google.caja.util.Maps;
+import com.google.caja.util.Strings;
+import com.google.common.io.ByteStreams;
+import com.google.common.io.Files;
+
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
+import java.io.UnsupportedEncodingException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.Map;
+
+import org.apache.commons.codec.binary.Hex;
+
+/**
+ * This is a PrecajoleMap that looks up precajoled modules from a
+ * directory in the caja jar (or in the filesystem).
+ * <p>
+ * The directory contains serialized baked CajoledModules, stored
+ * one per file.  Filenames are hex-encoded sha1 key of the uncajoled
+ * source text.
+ * <p>
+ * There's also a file index.dat that contains a serialized map
+ * of URI -> key.
+ */
+
+public class StaticPrecajoleMap implements PrecajoleMap {
+
+  public static String PATH = "com/google/caja/precajole/data/";
+  public static String INDEX_NAME = "index.dat";
+
+  public static StaticPrecajoleMap getInstance() {
+    return InstanceHolder.instance;
+  }
+
+  private static class InstanceHolder {
+    static StaticPrecajoleMap instance = new StaticPrecajoleMap(PATH);
+  }
+
+  private static class Entry implements Serializable {
+    private static final long serialVersionUID = 1L;
+    final String[] uris;
+    final String source;
+    final CajoledModule minified;
+    final CajoledModule pretty;
+    final String id;
+
+    Entry(String[] uris, String source, CajoledModule cajoled) {
+      this.uris = uris;
+      this.source = source;
+      this.minified = cajoled.flatten(true);
+      this.pretty = cajoled.flatten(false);
+      if (source != null) {
+        this.id = computeHash(source);
+      } else {
+        this.id = computeHash(uris[0]);
+      }
+    }
+
+    static Entry from(byte[] serial) {
+      return (Entry) deserialize(serial);
+    }
+  }
+
+  private static class Index implements Serializable {
+    private static final long serialVersionUID = 1L;
+    final public Map<String, String> map = Maps.newHashMap();
+    public long modTime = 0L;  // millisecond timestamp
+  }
+
+  //----
+
+  private final String dir;
+  private final Index index;
+
+  public StaticPrecajoleMap(File dir) {
+    this(dir.toString());
+  }
+
+  public StaticPrecajoleMap(String dir) {
+    if (!dir.equals("") && !dir.endsWith("/")) {
+      dir += "/";
+    }
+    this.dir = dir;
+    this.index = readIndex(dir);
+  }
+
+  private Index readIndex(String dir) {
+    Object o = deserialize(load(INDEX_NAME));
+    if (o != null && o instanceof Index) {
+      return (Index) o;
+    } else {
+      return new Index();
+    }
+  }
+
+  public void put(String[] uris, String source, CajoledModule cajoled) {
+    Entry entry = new Entry(uris, source, cajoled);
+    byte[] serial = serialize(entry);
+    for (int k = 0; k < uris.length; k++) {
+      index.map.put(normalizeUri(uris[k]), entry.id);
+    }
+    save(entry.id, serial);
+  }
+
+  public long getModTime() {
+    return index.modTime;
+  }
+
+  public void setModTime(long millitime) {
+    index.modTime = millitime;
+  }
+
+  public void finish() {
+    save(INDEX_NAME, serialize(index));
+  }
+
+  @Override
+  public CajoledModule lookupUri(String uri, boolean minify) {
+    Entry e = Entry.from(load(idForUri(uri)));
+    if (e != null && e.uris != null) {
+      for (int k = 0; k < e.uris.length; k++) {
+        if (uri.equals(e.uris[k])) {
+          return minify ? e.minified : e.pretty;
+        }
+      }
+    }
+    return null;
+  }
+
+  @Override
+  public CajoledModule lookupSource(String source, boolean minify) {
+    Entry e = Entry.from(load(idForSource(source)));
+    if (e != null && source.equals(e.source)) {
+      return minify ? e.minified : e.pretty;
+    }
+    return null;
+  }
+
+  private String normalizeUri(String uri) {
+    try {
+      URI u = new URI(uri).normalize();
+      if (u.getHost() != null) {
+        u = new URI(
+            lowercase(u.getScheme()),
+            u.getUserInfo(),
+            lowercase(u.getHost()),
+            u.getPort(),
+            u.getPath(),
+            u.getQuery(),
+            u.getFragment());
+      } else if (u.getScheme() != null) {
+        u = new URI(
+            lowercase(u.getScheme()),
+            u.getSchemeSpecificPart(),
+            u.getFragment());
+      }
+      return u.toString();
+    } catch (URISyntaxException e) {
+      return uri;
+    }
+  }
+
+  private String lowercase(String s) {
+    return s == null ? null : Strings.toLowerCase(s);
+  }
+
+  private void save(String id, byte[] data) {
+    try {
+      FileOutputStream o = new FileOutputStream(new File(dir, id));
+      o.write(data);
+      o.close();
+    } catch (IOException e) {
+      throw new SomethingWidgyHappenedError(e);
+    }
+  }
+
+  private String idForUri(String uri) {
+    return index.map.get(normalizeUri(uri));
+  }
+
+  private String idForSource(String source) {
+    return computeHash(source);
+  }
+
+  private byte[] load(String id) {
+    byte[] result = loadResource(id);
+    return result != null ? result : loadFile(id);
+  }
+
+  private byte[] loadFile(String id) {
+    if (id == null) {
+      return null;
+    }
+    try {
+      return Files.toByteArray(new File(dir, id));
+    } catch (IOException e) {
+      return null;
+    }
+  }
+
+  private byte[] loadResource(String id) {
+    if (id == null) {
+      return null;
+    }
+    ClassLoader cl = StaticPrecajoleMap.class.getClassLoader();
+    InputStream is = cl.getResourceAsStream(dir + id);
+    if (is == null) {
+      return null;
+    }
+    try {
+      return ByteStreams.toByteArray(is);
+    } catch (IOException e) {
+      return null;
+    }
+  }
+
+  private static String computeHash(String s) {
+    try {
+      MessageDigest sha1 = MessageDigest.getInstance("SHA1");
+      byte[] digest = sha1.digest(s.getBytes("UTF-8"));
+      return new String(Hex.encodeHex(digest));
+    } catch (NoSuchAlgorithmException e) {
+      throw new SomethingWidgyHappenedError(e);
+    } catch (UnsupportedEncodingException e) {
+      throw new SomethingWidgyHappenedError(e);
+    }
+  }
+
+  // TODO(felix8a): protobuf is much faster
+  private static byte[] serialize(Object obj) {
+    ByteArrayOutputStream buf = new ByteArrayOutputStream();
+    try {
+      ObjectOutputStream ostr = new ObjectOutputStream(buf);
+      ostr.writeObject(obj);
+      ostr.close();
+    } catch (IOException e) {
+      throw new SomethingWidgyHappenedError(e);
+    }
+    return buf.toByteArray();
+  }
+
+  private static Object deserialize(byte[] serial) {
+    if (serial == null) {
+      return null;
+    }
+    try {
+      ByteArrayInputStream b = new ByteArrayInputStream(serial);
+      ObjectInputStream i = new ObjectInputStream(b);
+      return i.readObject();
+    } catch (IOException e) {
+      return null;
+    } catch (ClassNotFoundException e) {
+      return null;
+    }
+  }
+}
