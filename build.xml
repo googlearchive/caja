@@ -121,13 +121,16 @@
     <path refid="classpath.compile"/>
   </path>
   <path id="classpath.tests.compile">
+    <!-- TODO(felix8a): this is early in the path because it uses
+         HttpClient 4.1 and something else has HttpClient 4.0.
+         need to untangle and remove the duplicate. -->
+    <pathelement path="${third_party}/java/webdriver/selenium-server-standalone-2.11.0.jar"/>
     <path refid="classpath.common"/>
     <path refid="classpath.gwt"/>
     <pathelement path="${third_party}/java/junit/junit.jar"/>
     <pathelement path="${third_party}/java/guava/guava-r09.jar"/>
     <pathelement path="${third_party}/java/json_simple/json_simple.jar"/>
     <pathelement path="${third_party}/java/rhino/js.jar"/>
-    <pathelement path="${third_party}/java/webdriver/selenium-server-standalone-2.5.0.jar"/>
   </path>
   <path id="classpath.tests.run">
     <pathelement path="${third_party}/java/emma/emma.jar"/>
