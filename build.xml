@@ -801,7 +801,8 @@
        language="javascript" renderer="concat"/>
       <input file="${src.caja}/plugin/caja-iframe-build-version.js"/>
       <input file="${third_party}/js/json_sans_eval/json_sans_eval.js"/>
-      <input file="${src.caja}/es53.js"/>      
+      <input file="${src.caja}/es53.js"/>
+      <input file="${src.caja}/taming.js"/>
       <input file="${src.caja}/plugin/capture-domado.js"/>
       <input file="${lib.caja}/plugin/domado.out.js"/>
       <input file="${src.caja}/plugin/uri.js"/>

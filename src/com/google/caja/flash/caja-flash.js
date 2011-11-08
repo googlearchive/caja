@@ -32,17 +32,17 @@ var cajaFlash = {};
   document.body.removeChild(cleanFrame);
 
   // Convert a tame object into a clean string->string map 
-  function cleanStringMap(o, taming___) {
+  function cleanStringMap(o, caja___, taming___) {
     var result = cleanObject();
     if (!o) { return result; }
-    taming___.forOwnKeys(o, function(key, value) {
+    caja___.forOwnKeys(o, function(key, value) {
       result[cleanString(key)] = cleanString(value);
     });
     return result;
   }
 
-  function cleanAttrs(o, taming___) {
-    var result = cleanStringMap(o, taming___);
+  function cleanAttrs(o, caja___, taming___) {
+    var result = cleanStringMap(o, caja___, taming___);
     // TODO(felix8a): attributes need more than just cleaning
     return cleanObject();
   }
@@ -85,7 +85,8 @@ var cajaFlash = {};
     }
     var docFlash = docWin.caja.policy.flash;
 
-    var taming___ = tamingWin.___;
+    var caja___ = tamingWin.___;
+    var taming___ = tamingWin.taming;
 
     // Map from context id (integer) to swf object.
     docFlash.objects = docWin.Array();
@@ -116,9 +117,9 @@ var cajaFlash = {};
         var result = obj[fnName].apply(obj, taming___.untame(args));
         return taming___.tame(result);
       };
-      taming___.markFuncFreeze(el[baseFnName], baseFnName);
-      if (!taming___.canRead(el, baseFnName)) {
-        taming___.grantRead(el, baseFnName);
+      caja___.markFuncFreeze(el[baseFnName], baseFnName);
+      if (!caja___.canRead(el, baseFnName)) {
+        caja___.grantRead(el, baseFnName);
       }
     };
 
@@ -126,7 +127,7 @@ var cajaFlash = {};
     docFlash.onCall = function onCall(context, fnName, args) {
       var fn = (guestImps.window && guestImps.window[fnName])
           || guestImps[fnName];
-      if (!taming___.isFunction(fn)) { return void 0; }
+      if (!caja___.isFunction(fn)) { return void 0; }
       var result = fn.f___(taming___.USELESS, taming___.tame(args));
       return taming___.untame(result);
     };
@@ -152,12 +153,13 @@ var cajaFlash = {};
   function initSwfobject(docWin, guestImps, tamingWin, domicile) {
     if (!docWin.swfobject) { return; }
 
-    var taming___ = tamingWin.___;
+    var caja___ = tamingWin.___;
+    var taming___ = tamingWin.taming;
 
     var swf = guestImps.swfobject;
     if (!swf) {
       swf = guestImps.swfobject = tamingWin.Object();
-      taming___.grantRead(guestImps, 'swfobject');
+      caja___.grantRead(guestImps, 'swfobject');
     }
 
     swf.ua = taming___.tame(docWin.swfobject.ua);
@@ -179,18 +181,18 @@ var cajaFlash = {};
       var outHeight = +height;
       var outVersion = versionMax(version, '10.0');
       var outExpressInstall = false;
-      var outFlashvars = cleanStringMap(flashvars, taming___);
-      var outParams = cleanStringMap(params, taming___);
+      var outFlashvars = cleanStringMap(flashvars, caja___, taming___);
+      var outParams = cleanStringMap(params, caja___, taming___);
       // allowNetworking=all so flashbridge can load the target swf
       outParams.allowNetworking = 'all';
       // allowScriptAccess=same-domain to allow flashbridge but not target swf
       outParams.allowScriptAccess = 'same-domain';
       // wmode=transparent makes flash honor the html visual stack
       outParams.wmode = 'transparent';
-      var outAttrs = cleanAttrs(attrs, taming___);
+      var outAttrs = cleanAttrs(attrs, caja___, taming___);
       var outCb = function (args) {
         docFlash.objects[context] = args.ref;
-        if (!taming___.isFunction(cb)) { return; }
+        if (!caja___.isFunction(cb)) { return; }
         var tameArgs = {
           success: args.success,
           id: args.id,
@@ -216,7 +218,7 @@ var cajaFlash = {};
     unimp(swf, 'getQueryParamValue');
     unimp(swf, 'switchOffAutoHideShow');
     unimp(swf, 'showExpressInstall');
-    taming___.whitelistAll(swf);
+    caja___.whitelistAll(swf);
   }
 
   function findElByClass(domicile, name) {
@@ -248,10 +250,11 @@ var cajaFlash = {};
         params.src, params.id, params.width, params.height);
     }
 
-    var taming___ = tamingWin.___;
+    var caja___ = tamingWin.___;
+    var taming___ = tamingWin.taming;
 
     guestWin.cajaHandleEmbed = cajaHandleEmbed;
-    taming___.markFuncFreeze(cajaHandleEmbed, 'cajaHandleEmbed');
-    taming___.grantRead(guestWin, 'cajaHandleEmbed');
+    caja___.markFuncFreeze(cajaHandleEmbed, 'cajaHandleEmbed');
+    caja___.grantRead(guestWin, 'cajaHandleEmbed');
   };
 })();
