@@ -55,7 +55,6 @@ import java.io.Writer;
 import java.net.URI;
 import java.net.URL;
 import java.text.DecimalFormat;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
@@ -102,11 +101,18 @@ public final class PluginCompilerMain {
     mc = new MessageContext();
   }
 
-  private int run(String[] argv, boolean writeFiles) {
+  private int run(String[] argv) {
     if (!config.processArguments(argv)) {
       return -1;
     }
+    if (config.getBenchmark() == 0) {
+      return runOnce(true);
+    } else {
+      return runBench(argv);
+    }
+  }
 
+  private int runOnce(boolean writeFiles) {
     boolean success = false;
     MessageContext mc = null;
     CajoledModule compiledJsOutput = null;
@@ -167,6 +173,12 @@ public final class PluginCompilerMain {
                 }
               }
             });
+      }
+
+      if (config.hasLinkableUriAll()) {
+        policy = UriPolicy.IDENTITY;
+      } else if (config.hasLinkableUriRuntime()) {
+        policy = null;
       }
 
       PluginMeta meta = new PluginMeta(fetcher, policy);
@@ -389,7 +401,7 @@ public final class PluginCompilerMain {
     int exitCode;
     try {
       PluginCompilerMain main = new PluginCompilerMain();
-      exitCode = main.run(args, true);
+      exitCode = main.run(args);
     } catch (Exception ex) {
       ex.printStackTrace();
       exitCode = -1;
@@ -402,27 +414,20 @@ public final class PluginCompilerMain {
     }
   }
 
-  /**
-   * PluginCompilerMain.Repeat $n $arg ...
-   * <p>
-   * Run PluginCompilerMain $n times with the given $arg list.
-   */
-
-  public static class Repeat {
-    public static void main(String[] args) throws Exception {
-      int trials = Integer.valueOf(args[0]);
-      args = Arrays.copyOfRange(args, 1, args.length);
-
+  private int runBench(String[] argv) {
+    try {
       BufferedReader b = new BufferedReader(new InputStreamReader(System.in));
       System.out.println("press return...");
       b.readLine();
 
+      int trials = config.getBenchmark();
+
       // count first iteration separately
       long t0 = System.nanoTime();
-      run(args);
+      runBenchOnce(argv);
       long t1 = System.nanoTime();
       for (int i = 0; i < trials; i++) {
-        run(args);
+        runBenchOnce(argv);
       }
       long t2 = System.nanoTime();
 
@@ -434,11 +439,16 @@ public final class PluginCompilerMain {
 
       System.out.println("press return...");
       b.readLine();
+    } catch (IOException e) {
+      throw new RuntimeException(e);
     }
+    return 0;
+  }
 
-    private static void run(String[] args) {
-      PluginCompilerMain pc = new PluginCompilerMain();
-      pc.run(args, false);
-    }
+  private void runBenchOnce(String[] argv) {
+    // We create a new PluginCompilerMain because it's not re-usable.
+    PluginCompilerMain pc = new PluginCompilerMain();
+    pc.config.processArguments(argv);
+    pc.runOnce(false);
   }
 }

@@ -105,9 +105,15 @@ public final class Config {
 
   private final Option F_URI = defineOption(
       "fu", "f_uri", "A URI which the URI fetcher is allowed to fetch.", true);
-  // TODO(mikesamuel): remove once JS uri policy is okay
+
   private final Option L_URI = defineOption(
       "lu", "l_uri", "A URI which the URI policy is allowed to link to.", true);
+
+  private final Option L_URI_ALL = defineBooleanOption(
+      "lua", "l_uri_all", "Allow all URIs to be linked to.");
+
+  private final Option L_URI_RUNTIME = defineBooleanOption(
+      "lur", "l_uri_runtime", "Use a runtime URI policy for linked-to URIs.");
 
   private final Option SERVICE_PORT = defineOption(
       "port",
@@ -141,6 +147,10 @@ public final class Config {
   private final Option NO_PRECAJOLED = defineBooleanOption(
       "np", "no_precajoled", "Don't use the precajoled cache");
 
+  private final Option BENCHMARK = defineOption(
+      "bm", "benchmark",
+      "Run n times and report stats.", true);
+
   public enum SourceRenderMode {
     MINIFY,
     PRETTY,
@@ -163,6 +173,8 @@ public final class Config {
   private SourceRenderMode renderer;
   private Set<String> fUris;
   private Set<String> lUris;
+  private boolean lUriAll = false;
+  private boolean lUriRuntime = false;
   private int servicePort;
   private String idClass;
   private Planner.PlanState negGoals = Planner.EMPTY;
@@ -170,6 +182,7 @@ public final class Config {
   private Planner.PlanState negPreconds = Planner.EMPTY;
   private Planner.PlanState posPreconds = Planner.EMPTY;
   private boolean noPrecajoled = false;
+  private int benchmark = 0;
 
   public Config(Class<?> mainClass, PrintStream stderr, String usageText) {
     this(mainClass, new PrintWriter(stderr), usageText);
@@ -218,6 +231,10 @@ public final class Config {
 
   public Set<String> getLinkableUris() { return lUris; }
 
+  public boolean hasLinkableUriAll() { return lUriAll; }
+
+  public boolean hasLinkableUriRuntime() { return lUriRuntime; }
+
   public SourceRenderMode renderer() { return renderer; }
 
   public Planner.PlanState goals(Planner.PlanState ps) {
@@ -229,6 +246,8 @@ public final class Config {
   }
 
   public boolean hasNoPrecajoled() { return noPrecajoled; }
+
+  public int getBenchmark() { return benchmark; }
 
   public boolean processArguments(String[] argv) {
     try {
@@ -347,6 +366,9 @@ public final class Config {
       fUris = Sets.immutableSet(getOptionValues(cl, F_URI));
       lUris = Sets.immutableSet(getOptionValues(cl, L_URI));
 
+      lUriAll = cl.hasOption(L_URI_ALL.getOpt());
+      lUriRuntime = cl.hasOption(L_URI_RUNTIME.getOpt());
+
       String renderString = cl.getOptionValue(RENDERER.getOpt());
       if (renderString != null) {
         renderer = SourceRenderMode.valueOf(renderString.toUpperCase());
@@ -385,6 +407,8 @@ public final class Config {
       }
 
       noPrecajoled = cl.hasOption(NO_PRECAJOLED.getOpt());
+
+      benchmark = Integer.valueOf(cl.getOptionValue(BENCHMARK.getOpt(), "0"));
 
       return true;
     } finally {
