@@ -16,7 +16,6 @@ package com.google.caja.gwtbeans.compile;
 
 import com.google.gwt.core.ext.typeinfo.JClassType;
 import com.google.gwt.core.ext.typeinfo.JMethod;
-import com.google.gwt.core.ext.typeinfo.JType;
 
 /**
  * The introspected information about a GWT Bean class which is used by
@@ -28,14 +27,14 @@ public interface GwtBeanInfo {
    * @return the Bean type.
    */
   JClassType getType();
-  
+
   /**
    * @return the taming interface for this Bean class. The taming interface
    * must be an empty interface that extends interface Taming, parameterized
    * by the Bean type.
    */
   JClassType getTamingInterface();
-  
+
   /**
    * @return the taming implementation class for this Bean class. If this
    * class is provided, it will be used and the taming generator will forego
@@ -43,11 +42,11 @@ public interface GwtBeanInfo {
    * generator will automatically generate a taming class.
    */
   JClassType getTamingImplementation();
-  
+
   /**
    * @return the properties of the Bean class which should be tamed by the
    * generated taming. Properties which should be hidden from the untrusted
-   * JavaScript should not be included here.  
+   * JavaScript should not be included here.
    */
   GwtBeanPropertyDescriptor[] getProperties();
 

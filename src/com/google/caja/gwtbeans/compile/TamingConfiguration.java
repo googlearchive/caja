@@ -68,7 +68,7 @@ public class TamingConfiguration {
       TreeLogger logger,
       GeneratorContext context)
       throws UnableToCompleteException {
-    for (String name : Properties.getTamingInterfaces(logger, context)) {
+    for (String name : Properties.getTamingInterfaces(context)) {
       harvestTamingInterface(logger, context, name);
     }
   }
@@ -163,7 +163,7 @@ public class TamingConfiguration {
       TreeLogger logger,
       GeneratorContext context)
       throws UnableToCompleteException {
-    for (String name : Properties.getTamingImplementations(logger, context)) {
+    for (String name : Properties.getTamingImplementations(context)) {
       harvestTamingImplementation(logger, context, name);
     }
   }

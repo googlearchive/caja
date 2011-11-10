@@ -14,4 +14,6 @@
 
 package com.google.caja.gwtbeans.shared;
 
-public interface BeanTaming extends Taming<Bean> {}
+public interface BeanTaming extends Taming<Bean> {
+  // Curries Bean with type parameter.  No new methods.
+}

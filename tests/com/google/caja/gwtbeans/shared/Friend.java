@@ -16,5 +16,7 @@ package com.google.caja.gwtbeans.shared;
 
 public class Friend {
   // Method returning void
-  public void invoke() {}
+  public void invoke() {
+    // No-op.
+  }
 }

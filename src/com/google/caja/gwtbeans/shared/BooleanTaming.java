@@ -14,4 +14,6 @@
 
 package com.google.caja.gwtbeans.shared;
 
-public interface BooleanTaming extends Taming<Boolean> { }
+public interface BooleanTaming extends Taming<Boolean> {
+  // Curries Bean with type parameter.  No new methods.
+}

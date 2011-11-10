@@ -36,20 +36,16 @@ public class Properties {
 
   private static final boolean DEFAULT_RECOGNIZE_BEAN_PROPERTIES =
       true;
-  
+
   public static List<String> getTamingInterfaces(
-      TreeLogger logger,
-      GeneratorContext context)
-      throws UnableToCompleteException {
+      GeneratorContext context) {
     ConfigurationProperty cp =
         getMultiValuedProperty(context, TAMING_INTERFACES_PROP);
     return (cp == null) ? Collections.<String>emptyList() : cp.getValues();
   }
 
   public static List<String> getTamingImplementations(
-      TreeLogger logger,
-      GeneratorContext context)
-      throws UnableToCompleteException {
+      GeneratorContext context) {
     ConfigurationProperty cp =
         getMultiValuedProperty(context, TAMING_IMPLEMENTATIONS_PROP);
     return (cp == null) ? Collections.<String>emptyList() : cp.getValues();
@@ -86,9 +82,7 @@ public class Properties {
   }
 
   private static ConfigurationProperty getMultiValuedProperty(
-      GeneratorContext context,
-      String name)
-      throws UnableToCompleteException {
+      GeneratorContext context, String name) {
     try {
       return context.getPropertyOracle().getConfigurationProperty(name);
     } catch (BadPropertyValueException e) {

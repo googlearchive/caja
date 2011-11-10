@@ -16,4 +16,6 @@ package com.google.caja.gwtbeans.shared;
 
 import com.google.gwt.dom.client.Element;
 
-public interface ElementTaming extends Taming<Element> { }
+public interface ElementTaming extends Taming<Element> {
+  // Curries Bean with type parameter.  No new methods.
+}

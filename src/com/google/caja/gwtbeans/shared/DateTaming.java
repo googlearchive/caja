@@ -16,4 +16,6 @@ package com.google.caja.gwtbeans.shared;
 
 import java.util.Date;
 
-public interface DateTaming extends Taming<Date> { }
+public interface DateTaming extends Taming<Date> {
+  // Curries Bean with type parameter.  No new methods.
+}

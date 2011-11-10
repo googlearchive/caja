@@ -89,8 +89,8 @@ public class TamingGenerator {
     this.tamingInterfaceName = tamingInterfaceName;
     this.introspector = new GwtBeanIntrospector(logger, context);
     initializePrimitiveTamingObjects();
-  }  
-  
+  }
+
   public String generate() throws UnableToCompleteException {
     JClassType tamingInterface =
         context.getTypeOracle().findType(tamingInterfaceName);
@@ -112,7 +112,7 @@ public class TamingGenerator {
           + "in the application GWT XML configuration?");
         throw new UnableToCompleteException();
     }
-    
+
     if (beanInfo.getTamingImplementation() != null) {
       return beanInfo.getTamingImplementation().getQualifiedSourceName();
     }
@@ -129,7 +129,7 @@ public class TamingGenerator {
 
     userAgent = userAgent.substring(0, 1).toUpperCase()
         + userAgent.substring(1);
-    
+
     String tamingInterfaceShortName = tamingInterface.getSimpleSourceName();
     String tamingInterfacePackageName = tamingInterface.getPackage().getName();
 
@@ -138,7 +138,7 @@ public class TamingGenerator {
         tamingInterfaceShortName + userAgent + "Impl";
 
     ParseTreeNode jsBody = makeJsBody(beanInfo);
-    
+
     StringBuilder sb = new StringBuilder();
     sb.append(strV(""
         + "package ${tamingPkg};\n"
@@ -177,7 +177,7 @@ public class TamingGenerator {
 
     return tamingImplClassName;
   }
-  
+
   private String getJavaHelperMethods()
       throws UnableToCompleteException {
     StringBuilder sb = new StringBuilder();
@@ -263,7 +263,7 @@ public class TamingGenerator {
     }
     return ti;
   }
-  
+
   private ParseTreeNode makeJsBody(
       GwtBeanInfo beanInfo)
       throws UnableToCompleteException {
@@ -285,7 +285,7 @@ public class TamingGenerator {
         "keys",  new ParseTreeNodeContainer(keys),
         "vals", new ParseTreeNodeContainer(vals));
   }
-  
+
   private Expression getPropertyDescriptorForMethodGroup(
       Set<JMethod> methods)
       throws UnableToCompleteException {
@@ -330,8 +330,7 @@ public class TamingGenerator {
         "wrap", getWrap(m));
   }
 
-  private ParseTreeNode getVarArgsDestructuring(JMethod m)
-      throws UnableToCompleteException {
+  private ParseTreeNode getVarArgsDestructuring(JMethod m) {
     if (!m.isVarArgs()) {
       return QuasiBuilder.substV(""
           + "function(args) { return args; }");
@@ -351,8 +350,7 @@ public class TamingGenerator {
         "vals", new ParseTreeNodeContainer(vals));
   }
 
-  private ParseTreeNode getInvoke(JMethod m)
-      throws UnableToCompleteException {
+  private ParseTreeNode getInvoke(JMethod m) {
     List<ParseTreeNode> formals = new ArrayList<ParseTreeNode>();
     List<ParseTreeNode> actuals = new ArrayList<ParseTreeNode>();
     for (int i = 0; i < m.getParameters().length; i++) {
@@ -522,11 +520,11 @@ public class TamingGenerator {
         "  set: @set," +
         "  enumerable: true," +
         "  configurable: false" +
-        "})",          
+        "})",
         "get", get,
         "set", set);
   }
-  
+
   private Reference getMethodAccessor(JMethod m) {
     return new Reference(new Identifier(
         FilePosition.UNKNOWN, m.getJsniSignature()));
@@ -550,7 +548,7 @@ public class TamingGenerator {
             FilePosition.UNKNOWN,
             "@" + tamingImplClassName + "::"
                 + getArrayCreationMethodName(type)
-                + "(" 
+                + "("
                 + "I"
                 + ")"));
   }
@@ -636,11 +634,11 @@ public class TamingGenerator {
   private static String getTamingGetterMethodName(JType beanType) {
     return getTypeSpecificMethodName(beanType) + "_getTaming";
   }
-  
+
   private static String getArrayCreationMethodName(JType componentType) {
     return getTypeSpecificMethodName(componentType) + "_newArray";
   }
-  
+
   private static String getArrayAssignmentMethodName(JType componentType) {
     return getTypeSpecificMethodName(componentType) + "_assignToArray";
   }
@@ -670,7 +668,7 @@ public class TamingGenerator {
     }
     return methodGroups;
   }
-  
+
   private String render(ParseTreeNode node) {
     StringBuilder sb = new StringBuilder();
     TokenConsumer tc = node.makeRenderer(sb, null);

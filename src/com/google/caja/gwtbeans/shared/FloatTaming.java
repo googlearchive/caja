@@ -14,4 +14,6 @@
 
 package com.google.caja.gwtbeans.shared;
 
-public interface FloatTaming extends Taming<Float> { }
+public interface FloatTaming extends Taming<Float> {
+  // Curries Bean with type parameter.  No new methods.
+}

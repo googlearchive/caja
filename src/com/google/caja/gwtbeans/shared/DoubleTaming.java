@@ -14,4 +14,6 @@
 
 package com.google.caja.gwtbeans.shared;
 
-public interface DoubleTaming extends Taming<Double> { }
+public interface DoubleTaming extends Taming<Double> {
+  // Curries Bean with type parameter.  No new methods.
+}

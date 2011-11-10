@@ -14,4 +14,6 @@
 
 package com.google.caja.gwtbeans.shared;
 
-public interface ShortTaming extends Taming<Short> { }
+public interface ShortTaming extends Taming<Short> {
+  // Curries Bean with type parameter.  No new methods.
+}

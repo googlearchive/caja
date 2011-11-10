@@ -255,7 +255,7 @@ public class Bean {
     invoked = true;
     return null;
   }
-  
+
   // Test of Date taming
 
   public void invokeWithDateObj(Date a0) {
@@ -270,9 +270,9 @@ public class Bean {
     invoked = true;
     return null;
   }
-  
+
   // Methods testing taming of arrays
-  
+
   public void invokeWithBeanArray(Friend[] a0) {
     invoked = true;
     this.arg0 = a0;
@@ -282,7 +282,7 @@ public class Bean {
     return new Friend[] { beanRetval0, beanRetval1 };
   }
   public Friend[] fetchBeanArrayNull() {
-    invoked = true;    
+    invoked = true;
     return null;
   }
 
@@ -295,7 +295,7 @@ public class Bean {
     return new int[] { primitiveRetval0, primitiveRetval1 };
   }
   public int[] fetchPrimitiveArrayNull() {
-    invoked = true;    
+    invoked = true;
     return null;
   }
 
@@ -375,20 +375,22 @@ public class Bean {
     invoked = true;
     this.arg0 = a0;
   }
-  
+
   // Methods that should not be visible
-  protected void doProtected() {}
+  protected void doProtected() { return; }
   @SuppressWarnings("unused")
-  private void doPrivate() {}
-  void doPackagePrivate() {}
+  private void doPrivate() { return; }
+  void doPackagePrivate() { return; }
 
   // Properties that should not be visible
   protected String getProtected() { return null; }
-  protected void setProtected(String s) {}
+  /** @param s Unused. */
+  protected void setProtected(String s) { return; }
   @SuppressWarnings("unused")
   private String getPrivate() { return null; }
   @SuppressWarnings("unused")
-  private void setPrivate(String s) {}
+  private void setPrivate(String s) { return; }
   String getPackagePrivate() { return null; }
-  void setPackagePrivate(String s) {}
+  /** @param s Unused. */
+  void setPackagePrivate(String s) { return; }
 }

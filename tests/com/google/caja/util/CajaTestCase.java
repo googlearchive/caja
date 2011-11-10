@@ -57,14 +57,9 @@ import java.io.ObjectOutputStream;
 import java.io.StringReader;
 import java.lang.reflect.Method;
 import java.net.URI;
-import java.util.Enumeration;
-import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.regex.Pattern;
 
-import junit.framework.Test;
 import junit.framework.TestCase;
-import junit.framework.TestSuite;
 
 import org.w3c.dom.DocumentFragment;
 import org.w3c.dom.Element;

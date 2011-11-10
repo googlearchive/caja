@@ -82,6 +82,7 @@ public abstract class GWTBeansTestCase extends GWTTestCase {
   protected JavaScriptObject friend2Jso;
   protected JavaScriptObject dateJso;
 
+  @Override
   public void gwtSetUp() throws Exception {
     setupCajaStub();
     // For our testing, there is no need to stub out any parts of the native
@@ -120,7 +121,7 @@ public abstract class GWTBeansTestCase extends GWTTestCase {
       String key) /*-{
     $wnd.getDef($wnd.getDef(jso, 'attrs')[key].value, 'f')();
   }-*/;
-  
+
   protected native int callMethodReturningInt(
       JavaScriptObject jso,
       String key) /*-{
@@ -132,7 +133,7 @@ public abstract class GWTBeansTestCase extends GWTTestCase {
       String key) /*-{
     return $wnd.getDef($wnd.getDef(jso, 'attrs')[key].value, 'f')();
   }-*/;
-  
+
   protected native JavaScriptObject callMethodReturningJso(
       JavaScriptObject jso,
       String key) /*-{
@@ -152,7 +153,7 @@ public abstract class GWTBeansTestCase extends GWTTestCase {
       String arg) /*-{
     $wnd.getDef($wnd.getDef(jso, 'attrs')[key].value, 'f')(arg);
   }-*/;
-  
+
   protected native void callMethodVoidWithArgJso(
       JavaScriptObject jso,
       String key,
@@ -171,7 +172,7 @@ public abstract class GWTBeansTestCase extends GWTTestCase {
       String key) /*-{
     return $wnd.getDef(jso, 'attrs')[key].set;
   }-*/;
-  
+
   protected native int getPropertyInt(
       JavaScriptObject jso,
       String key) /*-{

@@ -14,4 +14,6 @@
 
 package com.google.caja.gwtbeans.shared;
 
-public interface IntegerTaming extends Taming<Integer> { }
+public interface IntegerTaming extends Taming<Integer> {
+  // Curries Bean with type parameter.  No new methods.
+}

@@ -23,9 +23,6 @@ import com.google.gwt.core.ext.TreeLogger.Type;
 import com.google.gwt.core.ext.UnableToCompleteException;
 import com.google.gwt.core.ext.typeinfo.JClassType;
 import com.google.gwt.core.ext.typeinfo.JMethod;
-import com.google.gwt.core.ext.typeinfo.JType;
-import com.google.gwt.core.ext.typeinfo.TypeOracle;
-import com.google.gwt.core.ext.typeinfo.JPrimitiveType;
 
 public final class GwtBeanIntrospector {
   private final Map<JClassType, GwtBeanInfo> byBeanType =
@@ -71,7 +68,7 @@ public final class GwtBeanIntrospector {
       JClassType type)
       throws UnableToCompleteException {
     JClassType tamingInterface =
-        configuration.getTamingInterfaceByBeanClass((JClassType) type);
+        configuration.getTamingInterfaceByBeanClass(type);
     if (tamingInterface == null) {
       logger.log(Type.ERROR,
           "Bean type " + type.getQualifiedSourceName()
