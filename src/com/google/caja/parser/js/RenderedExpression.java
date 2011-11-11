@@ -29,7 +29,7 @@ import java.util.List;
  * A RenderedExpression is a Javascript expression tree rendered as a string,
  * which is cheaper to clone and/or cache than an actual ParseTreeNode tree.
  * <p>
- * Used by {@link CajoledModule#bake}.
+ * Used by {@link CajoledModule#flattenProperty}.
  */
 public final class RenderedExpression extends AbstractExpression {
   private static final long serialVersionUID = 1L;
@@ -38,7 +38,8 @@ public final class RenderedExpression extends AbstractExpression {
 
   @ReflectiveCtor
   public RenderedExpression(FilePosition pos, String value, List<?> children) {
-    this(value);
+    this(pos, value);
+    assert children.isEmpty();
   }
 
   public RenderedExpression(ParseTreeNode n, boolean minify) {
@@ -46,7 +47,11 @@ public final class RenderedExpression extends AbstractExpression {
   }
 
   public RenderedExpression(String value) {
-    super(FilePosition.UNKNOWN, RenderedExpression.class);
+    this(FilePosition.UNKNOWN, value);
+  }
+
+  public RenderedExpression(FilePosition pos, String value) {
+    super(pos, RenderedExpression.class);
     this.value = value;
   }
 

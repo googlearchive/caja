@@ -93,8 +93,6 @@ public class PrecajoleTask extends Task {
   }
 
   public class Source {
-    public Source() {}
-
     String fileName;
     String text;
 

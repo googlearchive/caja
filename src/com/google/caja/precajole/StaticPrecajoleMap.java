@@ -109,10 +109,10 @@ public class StaticPrecajoleMap implements PrecajoleMap {
       dir += "/";
     }
     this.dir = dir;
-    this.index = readIndex(dir);
+    this.index = readIndex();
   }
 
-  private Index readIndex(String dir) {
+  private Index readIndex() {
     Object o = deserialize(load(INDEX_NAME));
     if (o != null && o instanceof Index) {
       return (Index) o;
