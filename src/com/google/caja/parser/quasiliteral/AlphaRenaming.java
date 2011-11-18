@@ -170,7 +170,9 @@ public final class AlphaRenaming {
         "f", new ExpressionStmt(f));
     MessageQueue sanityCheckMq = DevNullMessageQueue.singleton();
     Set<String> freeIdents = Sets.newLinkedHashSet();
-    Scope programScope = Scope.fromProgram(program, sanityCheckMq);
+    Scope programScope = Scope.fromProgram(
+        program,
+        new Rewriter(sanityCheckMq, false, false));
     checkScope(program, programScope, freeIdents);
 
     if (!freeIdents.isEmpty()) {

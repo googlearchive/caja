@@ -16,7 +16,6 @@ package com.google.caja.parser.html;
 
 import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.parser.AbstractParseTreeNode;
-import com.google.caja.parser.html.Nodes;
 import com.google.caja.parser.js.NoChildren;
 import com.google.caja.render.Concatenator;
 import com.google.caja.reporting.MarkupRenderMode;
@@ -39,6 +38,13 @@ public final class Dom extends AbstractParseTreeNode {
     super(Nodes.getFilePositionFor(n), NoChildren.class);
     this.n = n;
   }
+
+  // Dom nodes can never be considered immutable since they point to an
+  // org.w3c.dom.Node object, which is unavoidably mutable.
+  @Override
+  public boolean makeImmutable() { return false; }
+  @Override
+  public boolean isImmutable() { return false; }
 
   @Override
   public Node getValue() { return n; }

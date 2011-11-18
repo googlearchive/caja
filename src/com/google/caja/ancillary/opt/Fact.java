@@ -78,11 +78,11 @@ public final class Fact {
   boolean isFalsey() { return !isTruthy(); }
   boolean isTrue() {
     return type == Type.IS && value instanceof BooleanLiteral
-        && ((BooleanLiteral) value).value;
+        && ((BooleanLiteral) value).getValue();
   }
   boolean isFalse() {
     return type == Type.IS && value instanceof BooleanLiteral
-        && !((BooleanLiteral) value).value;
+        && !((BooleanLiteral) value).getValue();
   }
   boolean isGlobal() { return this == GLOBAL; }
   boolean isUndefined() { return this == UNDEFINED; }

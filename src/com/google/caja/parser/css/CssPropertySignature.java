@@ -54,6 +54,14 @@ public abstract class CssPropertySignature implements ParseTreeNode {
   private final List<CssPropertySignature> children;
   private CssPropertySignature parent, nextSibling, prevSibling;
 
+  // We have not implemented immutability for CssPropertySignature yet
+  // due to the pervasive public access to the mutable 'children' member.
+
+  @Override
+  public boolean makeImmutable() { return false; }
+  @Override
+  public boolean isImmutable() { return false; }
+
   CssPropertySignature(List<? extends CssPropertySignature> children) {
     this.children = children.isEmpty()
                   ? Collections.<CssPropertySignature>emptyList()

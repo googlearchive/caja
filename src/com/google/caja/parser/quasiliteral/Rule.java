@@ -165,9 +165,17 @@ public abstract class Rule implements MessagePart {
       ParseTreeNode node,
       Class<? extends ParseTreeNode> parentNodeClass,
       Scope scope) {
+    boolean allChildrenSame = true;
     List<ParseTreeNode> rewrittenChildren = Lists.newArrayList();
     for (ParseTreeNode child : node.children()) {
-      rewrittenChildren.add(rewriter.expand(child, scope));
+      ParseTreeNode expanded = rewriter.expand(child, scope);
+      allChildrenSame = allChildrenSame && (child == expanded);
+      rewrittenChildren.add(expanded);
+    }
+
+    if (allChildrenSame) {
+      rewriter.clearTaint(node);
+      return node;
     }
 
     ParseTreeNode result = ParseTreeNodes.newNodeInstance(
@@ -176,8 +184,8 @@ public abstract class Rule implements MessagePart {
         node.getValue(),
         rewrittenChildren);
     result.getAttributes().putAll(node.getAttributes());
-    result.getAttributes().remove(ParseTreeNode.TAINTED);
 
+    result.makeImmutable();
     return result;
   }
 
@@ -420,11 +428,14 @@ public abstract class Rule implements MessagePart {
     if (bindings != null) {
       Map<String, ParseTreeNode> newBindings = makeBindings();
       for (Map.Entry<String, ParseTreeNode> entry : bindings.entrySet()) {
+        entry.getValue().makeImmutable();
         newBindings.put(entry.getKey(),
-            getRewriter().expand(entry.getValue(), scope));
+            rewriter.expand(entry.getValue(), scope));
       }
-      return QuasiBuilder.subst(getRuleDescription().substitutes(),
-                                newBindings);
+      ParseTreeNode result =
+          QuasiBuilder.subst(getRuleDescription().substitutes(), newBindings);
+      result.makeImmutable();
+      return result;
     }
     return NONE;
   }
@@ -435,7 +446,15 @@ public abstract class Rule implements MessagePart {
    * @param args quasi hole names and ParseTreeNodes per QuasiBuilder.substV.
    */
   protected ParseTreeNode substV(Object... args) {
-    return QuasiBuilder.substV(getRuleDescription().substitutes(), args);
+    for (int i = 1; i < args.length; i += 2) {
+      if (args[i] != null) {
+        ((ParseTreeNode) args[i]).makeImmutable();
+      }
+    }
+    ParseTreeNode result =
+        QuasiBuilder.substV(getRuleDescription().substitutes(), args);
+    result.makeImmutable();
+    return result;
   }
 
   /**
@@ -597,7 +616,7 @@ public abstract class Rule implements MessagePart {
    * This encapsulates any temporary variables created to prevent multiple
    * execution, and the cajoled LHS and RHS.
    */
-  protected static final class ReadAssignOperands {
+  protected final class ReadAssignOperands {
     private final List<Expression> temporaries;
     private final Expression uncajoled, cajoled;
 
@@ -631,7 +650,7 @@ public abstract class Rule implements MessagePart {
 
     public Operation makeAssignment(Expression rhs) {
       Operation e = Operation.createInfix(Operator.ASSIGN, this.uncajoled, rhs);
-      e.getAttributes().set(ParseTreeNode.TAINTED, true);
+      rewriter.setTaint(e);
       return e;
     }
   }

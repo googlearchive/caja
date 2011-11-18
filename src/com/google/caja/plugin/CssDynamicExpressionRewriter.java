@@ -260,6 +260,12 @@ class JsExpressionUriLiteral extends CssTree.CssLiteral {
   }
 
   @Override
+  public boolean makeImmutable() {
+    if (!expr.makeImmutable()) { return false; }
+    return super.makeImmutable();
+  }
+
+  @Override
   public void render(RenderContext r) {
     TokenConsumer tc = r.getOut();
     tc.mark(getFilePosition());

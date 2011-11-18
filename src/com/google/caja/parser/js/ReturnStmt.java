@@ -15,6 +15,7 @@
 package com.google.caja.parser.js;
 
 import com.google.caja.lexer.FilePosition;
+import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.reporting.RenderContext;
 import com.google.javascript.jscomp.jsonml.JsonML;
 import com.google.javascript.jscomp.jsonml.TagType;
@@ -27,6 +28,9 @@ import java.util.List;
  */
 public final class ReturnStmt extends AbstractStatement {
   private static final long serialVersionUID = 4757771638977210517L;
+
+  // Local member variables are only changed in childrenChanged(),
+  // so this class satisfies the immutability contract of the superclass.
   private Expression returnValue;
 
   /** @param value unused.  This ctor is provided for reflection. */

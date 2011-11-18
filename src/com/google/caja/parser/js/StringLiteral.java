@@ -95,7 +95,7 @@ public final class StringLiteral extends Literal {
    * it represents.  Otherwise returns value.
    */
   public String getUnquotedValue() {
-    return getUnquotedValueOf(this.value);
+    return getUnquotedValueOf(getValue());
   }
 
   /**

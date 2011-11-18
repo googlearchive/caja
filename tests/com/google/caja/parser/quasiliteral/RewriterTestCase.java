@@ -267,7 +267,7 @@ public abstract class RewriterTestCase extends CajaTestCase {
         if (node instanceof Block) {
           Scope s2;
           if (scope == null) {
-            s2 = Scope.fromProgram((Block) node, w.mq);
+            s2 = Scope.fromProgram((Block) node, w);
           } else {
             s2 = Scope.fromPlainBlock(scope);
           }

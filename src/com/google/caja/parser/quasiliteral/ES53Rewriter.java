@@ -109,11 +109,11 @@ public class ES53Rewriter extends Rewriter {
   });
 
   /** Index of the last node that wasn't translated from another language. */
-  private static int lastRealJavascriptChild(
+  private int lastRealJavascriptChild(
       List<? extends ParseTreeNode> nodes) {
     int lasti = nodes.size();
     while (--lasti >= 0) {
-      if (!nodes.get(lasti).getAttributes().is(Scope.FOR_SIDE_EFFECT)) {
+      if (!isForSideEffect(nodes.get(lasti))) {
         break;
       }
     }
@@ -158,11 +158,11 @@ public class ES53Rewriter extends Rewriter {
    * the result of module loading.
    */
   @SuppressWarnings("unchecked")
-  public static ParseTreeNode returnLast(ParseTreeNode node) {
+  public ParseTreeNode returnLast(ParseTreeNode node) {
     ParseTreeNode result = null;
     // Code translated from another language should not be used as the module
     // result.
-    if (node.getAttributes().is(Scope.FOR_SIDE_EFFECT)) { return node; }
+    if (isForSideEffect(node)) { return node; }
     if (node instanceof ExpressionStmt) {
       result = new ExpressionStmt(
           node.getFilePosition(),
@@ -236,7 +236,7 @@ public class ES53Rewriter extends Rewriter {
         if (node instanceof TranslatedCode) {
           Statement rewritten
               = ((TranslatedCode) expandAll(node, scope)).getTranslation();
-          Scope.markForSideEffect(rewritten);
+          markTreeForSideEffect(rewritten);
           return rewritten;
         }
         return NONE;
@@ -343,7 +343,7 @@ public class ES53Rewriter extends Rewriter {
         if (node instanceof UncajoledModule) {
           Statement returnStmt = (Statement) QuasiBuilder.substV(
               "return moduleResult___;");
-          Scope.markForSideEffect(returnStmt);
+          markTreeForSideEffect(returnStmt);
           Block inputModuleStmts = (Block) QuasiBuilder.substV(
               ""
               + "var moduleResult___ = ___./*@synthetic*/NO_RESULT;"
@@ -392,7 +392,7 @@ public class ES53Rewriter extends Rewriter {
           substitutes="var dis___ = IMPORTS___; @startStmts*; @expanded*;")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
         if (node instanceof Block && scope == null) {
-          Scope s2 = Scope.fromProgram((Block) node, mq);
+          Scope s2 = Scope.fromProgram((Block) node, ES53Rewriter.this);
           List<ParseTreeNode> expanded = Lists.newArrayList();
           for (ParseTreeNode c : node.children()) {
             ParseTreeNode expandedC = expand(c, s2);
@@ -523,7 +523,7 @@ public class ES53Rewriter extends Rewriter {
               return NONE;
             }
             k = new Reference(d.getIdentifier());
-            k.getAttributes().set(ParseTreeNode.TAINTED, true);
+            setTaint(k);
             // TODO(mikesamuel): once decls consolidated, no need to add to
             // start of scope.
             scope.addStartOfScopeStatement((Statement) expand(d, scope));
@@ -537,11 +537,11 @@ public class ES53Rewriter extends Rewriter {
 
           FilePosition unk = FilePosition.UNKNOWN;
           Expression assign1 = Operation.create(unk, Operator.ASSIGN, k, kt);
-          assign1.getAttributes().set(ParseTreeNode.TAINTED, true);
+          setTaint(assign1);
           Expression assign2 = Operation.create(unk, Operator.ASSIGN, k,
               Operation.create(unk, Operator.SQUARE_BRACKET, m,
               new IntegerLiteral(unk, 1)));
-          assign2.getAttributes().set(ParseTreeNode.TAINTED, true);
+          setTaint(assign2);
 
           ParseTreeNode result = substV(
               "m", m,
@@ -1017,7 +1017,7 @@ public class ES53Rewriter extends Rewriter {
             scope.isOuter(((Identifier) bindings.get("v")).getName())) {
           ExpressionStmt es = newExprStmt(
               (Expression) substV("v", bindings.get("v")));
-          Scope.markForSideEffect(es);
+          markTreeForSideEffect(es);
           return es;
         }
         return NONE;
@@ -1194,7 +1194,7 @@ public class ES53Rewriter extends Rewriter {
                     "r", expand(nymize(r, v.getName(), "var"), scope)));
             // The result of the initializer of a declaration is not relevant to
             // the module result.
-            Scope.markForSideEffect(init);
+            markTreeForSideEffect(init);
             return init;
           }
         }
@@ -1835,7 +1835,7 @@ public class ES53Rewriter extends Rewriter {
             ExpressionStmt es = new ExpressionStmt(
                 node.getFilePosition(), initializer);
             // The value of a declaration is not the value of the initializer.
-            Scope.markForSideEffect(es);
+            markTreeForSideEffect(es);
             return es;
           }
         }

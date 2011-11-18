@@ -30,7 +30,6 @@ import java.util.List;
  */
 public final class ExpressionStmt extends AbstractStatement {
   private static final long serialVersionUID = 4277971387206538109L;
-  private Expression expr;
 
   /** @param value unused.  This ctor is provided for reflection. */
   @ReflectiveCtor
@@ -51,12 +50,10 @@ public final class ExpressionStmt extends AbstractStatement {
 
   @Override
   protected void childrenChanged() {
-    super.childrenChanged();
-    this.expr = (Expression) children().get(0);
     if (1 != children().size()) { throw new IllegalStateException(); }
   }
 
-  public Expression getExpression() { return expr; }
+  public Expression getExpression() { return (Expression) children().get(0); }
 
   @Override
   public Object getValue() { return null; }
@@ -64,8 +61,8 @@ public final class ExpressionStmt extends AbstractStatement {
   public void render(RenderContext rc) {
     TokenConsumer out = rc.getOut();
     out.mark(getFilePosition());
-    if (expr instanceof FunctionConstructor
-        || expr instanceof ObjectConstructor) {
+    if (getExpression() instanceof FunctionConstructor
+        || getExpression() instanceof ObjectConstructor) {
       // We need to parenthesize Object constructors because otherwise an
       // object constructor with only one entry:
       //   { x : 4 }
@@ -80,14 +77,14 @@ public final class ExpressionStmt extends AbstractStatement {
       // which is interpreted as two statements -- a declaration and a noop for
       // the semicolon.
       out.consume("(");
-      expr.render(rc);
+      getExpression().render(rc);
       out.consume(")");
     } else {
-      expr.render(rc);
+      getExpression().render(rc);
     }
   }
 
   public boolean hasHangingConditional() { return false; }
 
-  public JsonML toJsonML() { return expr.toJsonML(); }
+  public JsonML toJsonML() { return getExpression().toJsonML(); }
 }

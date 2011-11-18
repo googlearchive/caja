@@ -43,9 +43,9 @@ public class RewriterTest extends RewriterTestCase {
             reason="")
         public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
           if (returnExactInput) { return node; }
-          node.getAttributes().remove(ParseTreeNode.TAINTED);
+          clearTaint(node);
           for (ParseTreeNode c : node.children()) {
-            getRewriter().expand(c, scope);
+            expand(c, scope);
           }
           return node;
       }});
@@ -100,7 +100,7 @@ public class RewriterTest extends RewriterTestCase {
             reason="")
         public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
           if (node instanceof NumberLiteral) {
-            node.getAttributes().remove(ParseTreeNode.TAINTED);
+            clearTaint(node);
             return node;
           }
           return NONE;

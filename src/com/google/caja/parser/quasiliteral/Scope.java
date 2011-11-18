@@ -43,7 +43,6 @@ import com.google.caja.util.Lists;
 import com.google.caja.util.Maps;
 import com.google.caja.util.Pair;
 import com.google.caja.util.Sets;
-import com.google.caja.util.SyntheticAttributeKey;
 
 import static com.google.caja.parser.js.SyntheticNodes.s;
 import static com.google.caja.parser.quasiliteral.QuasiBuilder.substV;
@@ -121,7 +120,7 @@ public class Scope {
   }
 
   private final Scope parent;
-  private final MessageQueue mq;
+  private final Rewriter rewriter;
   private final ScopeType type;
   private boolean hasFreeThis = false;
   private boolean containsArguments = false;
@@ -135,8 +134,8 @@ public class Scope {
   private final Set<String> importedVariables = Sets.<String>newTreeSet();
   private final Permit permitsUsed;
 
-  public static Scope fromProgram(Block root, MessageQueue mq) {
-    Scope s = new Scope(ScopeType.PROGRAM, mq);
+  public static Scope fromProgram(Block root, Rewriter rewriter) {
+    Scope s = new Scope(ScopeType.PROGRAM, rewriter);
     walkBlock(s, root);
     return s;
   }
@@ -180,17 +179,17 @@ public class Scope {
     return s;
   }
 
-  private Scope(ScopeType type, MessageQueue mq) {
+  private Scope(ScopeType type, Rewriter rewriter) {
     this.type = type;
     this.parent = null;
-    this.mq = mq;
+    this.rewriter = rewriter;
     this.permitsUsed = new Permit();
   }
 
   private Scope(ScopeType type, Scope parent) {
     this.type = type;
     this.parent = parent;
-    this.mq = parent.mq;
+    this.rewriter = parent.rewriter;
     this.permitsUsed = parent.permitsUsed;
   }
 
@@ -226,7 +225,9 @@ public class Scope {
    *     determined should be rendered at the start of this Scope.
    */
   public List<Statement> getStartStatements() {
-    for (Statement stmt : startStatements) { markForSideEffect(stmt); }
+    for (Statement stmt : startStatements) {
+      rewriter.markTreeForSideEffect(stmt);
+    }
     return Collections.unmodifiableList(startStatements);
   }
 
@@ -643,7 +644,7 @@ public class Scope {
     String name = ident.getName();
 
     if (UNMASKABLE_IDENTIFIERS.contains(name)) {
-      s.mq.addMessage(
+      s.rewriter.mq.addMessage(
           RewriterMessageType.CANNOT_MASK_IDENTIFIER,
           ident.getFilePosition(), MessagePart.Factory.valueOf(name));
     }
@@ -656,7 +657,7 @@ public class Scope {
           || type.implies(LocalType.FUNCTION)) {
         // This is an error because redeclaring a function declaration as a
         // var makes analysis hard.
-        s.mq.getMessages().add(new Message(
+        s.rewriter.mq.getMessages().add(new Message(
             MessageType.SYMBOL_REDEFINED,
             MessageLevel.ERROR,
             ident.getFilePosition(),
@@ -687,7 +688,7 @@ public class Scope {
             : MessageLevel.LINT);
         if (!ident.getAttributes().is(SyntheticNodes.SYNTHETIC) &&
             ident.getFilePosition() != null) {
-          s.mq.getMessages().add(new Message(
+          s.rewriter.mq.getMessages().add(new Message(
               MessageType.MASKING_SYMBOL,
               level,
               ident.getFilePosition(),
@@ -724,26 +725,5 @@ public class Scope {
       }
     }
     return null;
-  }
-
-  /**
-   * True if the node is evaluated for its side effect only, and so should
-   * not be considered as contributing to the value of the block in
-   * which it appears.
-   */
-  public static final SyntheticAttributeKey<Boolean> FOR_SIDE_EFFECT
-      = new SyntheticAttributeKey<Boolean>(Boolean.class, "forSideEffect");
-
-  /**
-   * Mark a tree as being evaluated for its side effect, so its value is
-   * not significant to the value of the block in which it appears.
-   */
-  static void markForSideEffect(ParseTreeNode node) {
-    if (node instanceof Statement) {
-      node.getAttributes().set(FOR_SIDE_EFFECT, true);
-      for (ParseTreeNode child : node.children()) {
-        markForSideEffect(child);
-      }
-    }
   }
 }

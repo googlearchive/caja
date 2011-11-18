@@ -30,6 +30,9 @@ import java.util.List;
  */
 public class Declaration extends AbstractStatement {
   private static final long serialVersionUID = 8412211687133669346L;
+
+  // Local member variables are only changed in childrenChanged(),
+  // so this class satisfies the immutability contract of the superclass.
   private Identifier identifier;
   private Expression initializer;
 

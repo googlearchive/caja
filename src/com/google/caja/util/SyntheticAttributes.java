@@ -37,6 +37,7 @@ public final class SyntheticAttributes
    */
   private boolean hasOwnCopy;
   private Map<SyntheticAttributeKey<?>, Object> attributes;
+  private boolean immutable = false;
 
   public SyntheticAttributes() {
     clear();
@@ -44,11 +45,25 @@ public final class SyntheticAttributes
 
   public SyntheticAttributes(SyntheticAttributes sa) {
     attributes = sa.attributes;
+    immutable = sa.immutable;
     sa.hasOwnCopy = false;
+  }
+
+  public void makeImmutable() {
+    if (immutable) { return; }
+    requireOwnCopy();
+    immutable = true;
+  }
+
+  public boolean isImmutable() {
+    return immutable;
   }
 
   @Override
   public void clear() {
+    if (immutable) {
+      throw new UnsupportedOperationException();
+    }
     attributes = Collections.emptyMap();
     hasOwnCopy = false;
   }
@@ -71,6 +86,9 @@ public final class SyntheticAttributes
    */
   @SuppressWarnings("unchecked")
   public <T> T set(SyntheticAttributeKey<T> k, T v) {
+    if (immutable) {
+      throw new UnsupportedOperationException();
+    }
     if (!(null == v || k.getType().isInstance(v))) {
       throw new ClassCastException(v + " to " + k.getType());
     }
@@ -81,6 +99,9 @@ public final class SyntheticAttributes
   @Deprecated
   @Override
   public Object put(SyntheticAttributeKey<?> k, Object v) {
+    if (immutable) {
+      throw new UnsupportedOperationException();
+    }
     if (!(null == v || k.getType().isInstance(v))) {
       throw new ClassCastException(v + " to " + k.getType());
     }
@@ -101,11 +122,17 @@ public final class SyntheticAttributes
    */
   @SuppressWarnings("unchecked")
   public <T> T remove(SyntheticAttributeKey<T> k) {
+    if (immutable) {
+      throw new UnsupportedOperationException();
+    }
     return (T) remove((Object) k);
   }
 
   @Override
   public Object remove(Object k) {
+    if (immutable) {
+      throw new UnsupportedOperationException();
+    }
     if (!hasOwnCopy) {
       if (attributes.isEmpty()) { return null; }
       requireOwnCopy();

@@ -26,6 +26,7 @@ public final class SourceBreaks implements Serializable {
   private static final long serialVersionUID = 7399048719164090106L;
   private final InputSource src;
   private int nLines;
+  private boolean immutable = false;
   /**
    * The first {@link #nLines} elements are a sorted array of code-unit indices
    * corresponding to the position at which a line ends.  A line ends after the
@@ -86,6 +87,9 @@ public final class SourceBreaks implements Serializable {
    *     this method for this instance.
    */
   public void lineStartsAt(int charInFile) {
+    if (immutable) {
+      throw new UnsupportedOperationException();
+    }
     assert nLines == 0 || charInFile > lineNums[nLines - 1];
     if (nLines == lineNums.length) {
       int[] newLineNums = new int[nLines * 2];
@@ -94,6 +98,14 @@ public final class SourceBreaks implements Serializable {
     }
     lineNums[nLines++] = charInFile;
     cachedCharInFile = -1;
+  }
+
+  public void makeImmutable() {
+    this.immutable = true;
+  }
+
+  public boolean isImmutable() {
+    return immutable;
   }
 
   /**

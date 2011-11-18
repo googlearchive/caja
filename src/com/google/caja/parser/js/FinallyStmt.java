@@ -26,7 +26,6 @@ import java.util.List;
  */
 public final class FinallyStmt extends AbstractStatement {
   private static final long serialVersionUID = -3205499024908646434L;
-  private Block body;
 
   /** @param value unused.  This ctor is provided for reflection. */
   @ReflectiveCtor
@@ -40,12 +39,11 @@ public final class FinallyStmt extends AbstractStatement {
     appendChild(body);
   }
 
-  public Block getBody() { return body; }
+  public Block getBody() { return (Block) children().get(0); }
 
   @Override
   protected void childrenChanged() {
     super.childrenChanged();
-    this.body = (Block) children().get(0);
     if (children().size() != 1) { throw new IndexOutOfBoundsException(); }
   }
 
@@ -55,10 +53,10 @@ public final class FinallyStmt extends AbstractStatement {
   public void render(RenderContext rc) {
     rc.getOut().mark(getFilePosition());
     rc.getOut().consume("finally");
-    body.renderBlock(rc, false);
+    getBody().renderBlock(rc, false);
   }
 
   public boolean hasHangingConditional() { return false; }
 
-  public JsonML toJsonML() { return body.toJsonML(); }
+  public JsonML toJsonML() { return getBody().toJsonML(); }
 }

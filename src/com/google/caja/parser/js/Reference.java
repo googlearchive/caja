@@ -33,7 +33,6 @@ import java.util.List;
  */
 public final class Reference extends AbstractExpression {
   private static final long serialVersionUID = -9159066877661689445L;
-  private Identifier identifier;
 
   /** @param value unused.  This ctor is provided for reflection. */
   @ReflectiveCtor
@@ -51,7 +50,7 @@ public final class Reference extends AbstractExpression {
   protected void childrenChanged() {
     super.childrenChanged();
     List<? extends ParseTreeNode> children = children();
-    this.identifier = (Identifier) children.get(0);
+    Identifier identifier = (Identifier) children.get(0);
     if (identifier.getName() == null) {
       throw new NullPointerException(
           "Cannot build Reference with null identifier");
@@ -63,9 +62,9 @@ public final class Reference extends AbstractExpression {
     }
   }
 
-  public Identifier getIdentifier() { return this.identifier; }
+  public Identifier getIdentifier() { return (Identifier) children().get(0); }
 
-  public String getIdentifierName() { return this.identifier.getName(); }
+  public String getIdentifierName() { return getIdentifier().getName(); }
 
   @Override
   public Object getValue() { return null; }

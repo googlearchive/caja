@@ -38,6 +38,11 @@ import java.util.ArrayList;
  * @author ihab.awad@gmail.com
  */
 public class ScopeTest extends CajaTestCase {
+  
+  private Scope fromProgram(Block n) {
+    return Scope.fromProgram(n, new Rewriter(mq, false, false));
+  }
+  
   public final void testSimpleDeclaredFunction() throws Exception {
     Block n = js(fromString(
         "var x = 3;" +
@@ -45,7 +50,7 @@ public class ScopeTest extends CajaTestCase {
         "  var y = 3;" +
         "  z = 4;" +
         "};"));
-    Scope s0 = Scope.fromProgram(n, mq);
+    Scope s0 = fromProgram(n);
     Scope s1 = Scope.fromFunctionConstructor(s0, findFunctionConstructor(n, "foo"));
 
     assertTrue(s0.isDefined("x"));
@@ -175,7 +180,7 @@ public class ScopeTest extends CajaTestCase {
                                    String notFreeVariables)
       throws Exception {
     Block n = js(fromString(code));
-    Scope s = Scope.fromProgram(n, mq);
+    Scope s = fromProgram(n);
     for (String v : freeVariables.split(",")) {
       assertTrue(
           "<" + v + "> should be a free variable in <" + code + ">",
@@ -190,7 +195,7 @@ public class ScopeTest extends CajaTestCase {
 
   public final void testAnonymousFunction() throws Exception {
     Block n = js(fromString("var x = function() {};"));
-    Scope s0 = Scope.fromProgram(n, mq);
+    Scope s0 = fromProgram(n);
     Scope s1 = Scope.fromFunctionConstructor(s0, findFunctionConstructor(n, null));
 
     assertTrue(s0.isDefined("x"));
@@ -202,7 +207,7 @@ public class ScopeTest extends CajaTestCase {
 
   public final void testNamedFunction() throws Exception {
     Block n = js(fromString("var x = function foo() {};"));
-    Scope s0 = Scope.fromProgram(n, mq);
+    Scope s0 = fromProgram(n);
     Scope s1 = Scope.fromFunctionConstructor(s0, findFunctionConstructor(n, "foo"));
 
     assertTrue(s0.isDefined("x"));
@@ -220,7 +225,7 @@ public class ScopeTest extends CajaTestCase {
 
   public final void testNamedFunctionSameName() throws Exception {
     Block n = js(fromString("var x = function x() {};"));
-    Scope s0 = Scope.fromProgram(n, mq);
+    Scope s0 = fromProgram(n);
     Scope s1 = Scope.fromFunctionConstructor(s0, findFunctionConstructor(n, "x"));
 
     assertTrue(s0.isDefined("x"));
@@ -232,7 +237,7 @@ public class ScopeTest extends CajaTestCase {
 
   public final void testFormalParams() throws Exception {
     Block n = js(fromString("function f(x) {};"));
-    Scope s0 = Scope.fromProgram(n, mq);
+    Scope s0 = fromProgram(n);
     Scope s1 = Scope.fromFunctionConstructor(s0, findFunctionConstructor(n, "f"));
 
     assertFalse(s0.isDefined("x"));
@@ -245,7 +250,7 @@ public class ScopeTest extends CajaTestCase {
     TryStmt t = (TryStmt) n.children().get(0);
     CatchStmt c = (CatchStmt) t.children().get(1);
 
-    Scope s0 = Scope.fromProgram(n, mq);
+    Scope s0 = fromProgram(n);
     Scope s1 = Scope.fromCatchStmt(s0, c);
 
     // e only defined in catch scope
@@ -260,7 +265,7 @@ public class ScopeTest extends CajaTestCase {
   public final void testBodyOfNamedFunction() throws Exception {
     Block n = js(fromString("function foo() { var x; }"));
 
-    Scope s0 = Scope.fromProgram(n, mq);
+    Scope s0 = fromProgram(n);
 
     assertEquals(0, mq.getMessages().size());
     assertTrue(s0.isDefined("foo"));
@@ -272,7 +277,7 @@ public class ScopeTest extends CajaTestCase {
     TryStmt t = (TryStmt) n.children().get(1);
     CatchStmt c = (CatchStmt) t.children().get(1);
 
-    Scope s0 = Scope.fromProgram(n, mq);
+    Scope s0 = fromProgram(n);
     Scope.fromCatchStmt(s0, c);
 
     assertMsgType(MessageType.MASKING_SYMBOL, mq.getMessages().get(0));
@@ -288,7 +293,7 @@ public class ScopeTest extends CajaTestCase {
     Declaration d = findNodeWithIdentifier(n, Declaration.class, "foo");
     FunctionConstructor fc = (FunctionConstructor)d.getInitializer();
 
-    Scope s0 = Scope.fromProgram(n, mq);
+    Scope s0 = fromProgram(n);
     Scope s1 = Scope.fromCatchStmt(s0, c);
     Scope.fromFunctionConstructor(s1, fc);
 
@@ -307,7 +312,7 @@ public class ScopeTest extends CajaTestCase {
     TryStmt t1 = (TryStmt) b0.children().get(0);
     CatchStmt c1 = t1.getCatchClause();
 
-    Scope sn = Scope.fromProgram(outerBlock, mq);
+    Scope sn = fromProgram(outerBlock);
     Scope sc0 = Scope.fromCatchStmt(sn, c0);
     Scope.fromCatchStmt(sc0, c1);
 
@@ -321,7 +326,7 @@ public class ScopeTest extends CajaTestCase {
       MessageLevel level)
       throws Exception {
     Block b = js(fromString(code));
-    Scope s0 = Scope.fromProgram(b, mq);
+    Scope s0 = fromProgram(b);
     if (recurseIntoFunction) {
       Scope.fromFunctionConstructor(
           s0, findFunctionConstructor(b, "foo"));
@@ -390,7 +395,7 @@ public class ScopeTest extends CajaTestCase {
   }
 
   public final void testStartStatementsForProgram() throws Exception {
-    Scope s0 = Scope.fromProgram(js(fromString("{}")), mq);
+    Scope s0 = fromProgram(js(fromString("{}")));
 
     assertEquals(0, s0.getStartStatements().size());
 
@@ -405,7 +410,7 @@ public class ScopeTest extends CajaTestCase {
   }
 
   public final void testStartStatementsForPlainBlock() throws Exception {
-    Scope s0 = Scope.fromProgram(js(fromString("{}")), mq);
+    Scope s0 = fromProgram(js(fromString("{}")));
     Scope s1 = Scope.fromPlainBlock(s0);
 
     assertEquals(0, s0.getStartStatements().size());
@@ -425,7 +430,7 @@ public class ScopeTest extends CajaTestCase {
   }
 
   public final void testStartStatementsForCatchStmt() throws Exception {
-    Scope s0 = Scope.fromProgram(js(fromString("{}")), mq);
+    Scope s0 = fromProgram(js(fromString("{}")));
     Block block = js(fromString("try {} catch (e) {}"));
     TryStmt t = (TryStmt)block.children().get(0);
     Scope s1 = Scope.fromCatchStmt(s0, t.getCatchClause());
@@ -448,7 +453,7 @@ public class ScopeTest extends CajaTestCase {
 
   public final void testStartStatementsForFunctionConstructor()
       throws Exception {
-    Scope s0 = Scope.fromProgram(js(fromString("{}")), mq);
+    Scope s0 = fromProgram(js(fromString("{}")));
     Block block = js(fromString("function() {};"));
     FunctionConstructor fc = (FunctionConstructor)
         block.children().get(0).children().get(0);
@@ -472,7 +477,7 @@ public class ScopeTest extends CajaTestCase {
 
   public final void testStartStatementsForParseTreeNodeContainer()
       throws Exception {
-    Scope s0 = Scope.fromProgram(js(fromString("{}")), mq);
+    Scope s0 = fromProgram(js(fromString("{}")));
     Scope s1 = Scope.fromParseTreeNodeContainer(
         s0,
         new ParseTreeNodeContainer(new ArrayList<ParseTreeNode>()));
@@ -496,7 +501,7 @@ public class ScopeTest extends CajaTestCase {
   public final void testUnmaskableIdentifiersInCatch() throws Exception {
     Block b = js(fromString("try {} catch (Object) {}"));
     TryStmt tryStmt = (TryStmt) b.children().get(0);
-    Scope top = Scope.fromProgram(b, mq);
+    Scope top = fromProgram(b);
     Scope.fromCatchStmt(top, tryStmt.getCatchClause());
     assertMessage(
         RewriterMessageType.CANNOT_MASK_IDENTIFIER, MessageLevel.FATAL_ERROR,
@@ -505,7 +510,7 @@ public class ScopeTest extends CajaTestCase {
 
   public final void testUnmaskableIdentifiersInDeclarations() throws Exception {
     Block b = js(fromString("var Array, undefined;"));
-    Scope.fromProgram(b, mq);
+    fromProgram(b);
     assertMessage(
         RewriterMessageType.CANNOT_MASK_IDENTIFIER, MessageLevel.FATAL_ERROR,
         MessagePart.Factory.valueOf("Array"));
@@ -513,7 +518,7 @@ public class ScopeTest extends CajaTestCase {
 
   public final void testUnmaskableFormals() throws Exception {
     Block b = js(fromString("function NaN(Infinity, arguments) {}"));
-    Scope top = Scope.fromProgram(b, mq);
+    Scope top = fromProgram(b);
     FunctionDeclaration fn = ((FunctionDeclaration) b.children().get(0));
     Scope.fromFunctionConstructor(top, fn.getInitializer());
     assertMessage(

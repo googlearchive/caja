@@ -29,6 +29,9 @@ import java.util.List;
  */
 public class WhileLoop extends Loop {
   private static final long serialVersionUID = 7249095800014132203L;
+
+  // Local member variables are only changed in childrenChanged(),
+  // so this class satisfies the immutability contract of the superclass.
   private Expression condition;
   private Statement body;
 

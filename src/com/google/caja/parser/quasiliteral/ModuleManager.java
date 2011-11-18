@@ -24,6 +24,8 @@ import com.google.caja.lexer.ParseException;
 import com.google.caja.lexer.escaping.UriUtil;
 import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.CajoledModule;
+import com.google.caja.parser.js.ObjProperty;
+import com.google.caja.parser.js.ObjectConstructor;
 import com.google.caja.parser.js.Parser;
 import com.google.caja.parser.js.StringLiteral;
 import com.google.caja.parser.js.UncajoledModule;
@@ -186,10 +188,13 @@ public class ModuleManager {
 
       // Attach the name to the cajoledModule so that we can thread cache keys
       // through with cajoled modules.
+      List<ObjProperty> allProps = Lists.newArrayList();
+      allProps.addAll(cajoledModule.getModuleBody().children());
       FilePosition unk = FilePosition.UNKNOWN;
-      cajoledModule.getModuleBody().appendChild(new ValueProperty(
+      allProps.add(new ValueProperty(
           StringLiteral.valueOf(unk, "src"),
           StringLiteral.valueOf(unk, "" + absoluteUri)));
+      cajoledModule = new CajoledModule(new ObjectConstructor(unk, allProps));
 
       return appendCajoledModule(absoluteUri, cajoledModule);
     } catch (ParseException e) {

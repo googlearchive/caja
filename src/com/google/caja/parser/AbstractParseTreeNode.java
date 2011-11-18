@@ -44,6 +44,20 @@ public abstract class AbstractParseTreeNode implements MutableParseTreeNode,
   private FilePosition pos;
   private List<Token<?>> comments = Collections.<Token<?>>emptyList();
   private SyntheticAttributes attributes;
+  private boolean immutable = false;
+
+  @Override
+  public boolean makeImmutable() {
+    if (immutable) { return true; }
+    if (!children.makeImmutable()) { return false; }
+    getAttributes().makeImmutable();
+    this.immutable = true;
+    return true;
+  }
+
+  @Override
+  public boolean isImmutable() { return immutable; }
+
   /**
    * The list of children.  This can be appended to for efficient initialization
    * but any operations that remove or insert except at the end require
@@ -70,9 +84,14 @@ public abstract class AbstractParseTreeNode implements MutableParseTreeNode,
 
   public FilePosition getFilePosition() { return pos; }
   public void setFilePosition(FilePosition pos) {
+    if (immutable) {
+      throw new UnsupportedOperationException();
+    }
     assert pos != null; this.pos = pos;
   }
-  public List<Token<?>> getComments() { return comments; }
+  public List<Token<?>> getComments() {
+    return Collections.unmodifiableList(comments);
+  }
   public List<? extends ParseTreeNode> children() {
     return children.getImmutableFacet();
   }
@@ -101,6 +120,9 @@ public abstract class AbstractParseTreeNode implements MutableParseTreeNode,
   }
   @SuppressWarnings("unchecked")
   public void setComments(List<? extends Token<?>> comments) {
+    if (immutable) {
+      throw new UnsupportedOperationException();
+    }
     List<Token<?>> tokens = (List<Token<?>>) comments;
     this.comments = !comments.isEmpty()
         ? Collections.unmodifiableList(new ArrayList<Token<?>>(tokens))
@@ -126,6 +148,9 @@ public abstract class AbstractParseTreeNode implements MutableParseTreeNode,
   public Mutation createMutation() { return new MutationImpl(); }
 
   private void setChild(int i, ParseTreeNode child) {
+    if (immutable) {
+      throw new UnsupportedOperationException();
+    }
     children.getMutableFacet().set(i, child);
   }
 
@@ -356,6 +381,7 @@ public abstract class AbstractParseTreeNode implements MutableParseTreeNode,
 
   @Override
   public ParseTreeNode clone() {
+    if (immutable) { return this; }
     List<ParseTreeNode> clonedChildren
         = new ArrayList<ParseTreeNode>(children.getImmutableFacet().size());
     for (ParseTreeNode child : children.getImmutableFacet()) {

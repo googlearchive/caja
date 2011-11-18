@@ -31,7 +31,7 @@ import java.util.Map;
  */
 public final class ContinueStmt extends AbstractStatement {
   private static final long serialVersionUID = 3147078856774155135L;
-  private String label;
+  private final String label;
 
   /** @param children unused.  This ctor is provided for reflection. */
   @ReflectiveCtor

@@ -35,6 +35,7 @@ import com.google.caja.parser.js.RealLiteral;
 import com.google.caja.parser.js.Reference;
 import com.google.caja.parser.js.Statement;
 import com.google.caja.parser.js.StringLiteral;
+import com.google.caja.parser.quasiliteral.Rewriter;
 import com.google.caja.parser.quasiliteral.Scope;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.util.Lists;
@@ -90,7 +91,7 @@ public class ParseTreeKB {
     finishInference();
     while (true) {
       Result out = new Result();
-      Scope s = Scope.fromProgram(js, mq);
+      Scope s = Scope.fromProgram(js, new Rewriter(mq, false, false));
       optimize(s, js, false, false, false, false, out);
       Block optimized = ConstLocalOptimization.optimize((Block) out.node);
       if (optimized == js) { return optimized; }

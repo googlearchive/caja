@@ -30,6 +30,9 @@ import java.util.List;
  */
 public final class ForEachLoop extends LabeledStatement implements NestedScope {
   private static final long serialVersionUID = 5611785542136135478L;
+
+  // Local member variables are only changed in childrenChanged(),
+  // so this class satisfies the immutability contract of the superclass.
   private Statement keyReceiver;
   private Expression container;
   private Statement body;

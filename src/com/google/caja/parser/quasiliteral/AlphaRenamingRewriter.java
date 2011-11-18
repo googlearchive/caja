@@ -67,7 +67,7 @@ final class AlphaRenamingRewriter extends Rewriter {
             Block bl = new Block(
                 e.getFilePosition(),
                 Collections.singletonList(new ExpressionStmt(e)));
-            scope = Scope.fromProgram(bl, mq);
+            scope = Scope.fromProgram(bl, AlphaRenamingRewriter.this);
             contexts.put(scope, rootContext);
             return expand(e, scope);
           }
@@ -246,7 +246,6 @@ final class AlphaRenamingRewriter extends Rewriter {
                 "headDecls", optionalDeclarations(headDecls),
                 "params", new ParseTreeNodeContainer(newFormals),
                 "body", expandAll(bindings.get("body"), newScope));
-            out.setFilePosition(fc.getFilePosition());
             return isDeclaration ? new FunctionDeclaration(out) : out;
           }
           return NONE;

@@ -28,6 +28,9 @@ import java.util.List;
  */
 public final class TryStmt extends AbstractStatement {
   private static final long serialVersionUID = 8846827862159681652L;
+
+  // Local member variables are only changed in childrenChanged(),
+  // so this class satisfies the immutability contract of the superclass.
   private Block body;
   private CatchStmt cat;
   private FinallyStmt fin;

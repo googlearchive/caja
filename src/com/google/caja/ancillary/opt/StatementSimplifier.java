@@ -502,11 +502,11 @@ public class StatementSimplifier {
       if (clause instanceof BooleanLiteral && e instanceof BooleanLiteral) {
         BooleanLiteral a = (BooleanLiteral) clause,
             b = (BooleanLiteral) e;
-        if (a.value == b.value) {
+        if (a.getValue() == b.getValue()) {
           e = commaOp(cond, a).fold(false);
         } else {
           // cond ? true : false -> !!cond
-          int nNotsNeeded = a.value ? 2 : 1;
+          int nNotsNeeded = a.getValue() ? 2 : 1;
           if (nNotsNeeded == 2 && "boolean".equals(cond.typeOf())) {
             nNotsNeeded = 0;
           }

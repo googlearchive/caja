@@ -27,7 +27,6 @@ import java.util.List;
  */
 public final class ThrowStmt extends AbstractStatement {
   private static final long serialVersionUID = 6894047499156075804L;
-  private Expression exception;
 
   /** @param value unused.  This ctor is provided for reflection. */
   @ReflectiveCtor
@@ -44,13 +43,13 @@ public final class ThrowStmt extends AbstractStatement {
   @Override
   protected void childrenChanged() {
     super.childrenChanged();
-    this.exception = children().get(0);
+    if (1 != children().size()) { throw new IllegalStateException(); }
   }
 
   @Override
   public Object getValue() { return null; }
 
-  public Expression getException() { return exception; }
+  public Expression getException() { return children().get(0); }
 
   @Override
   public List<? extends Expression> children() {
@@ -60,13 +59,13 @@ public final class ThrowStmt extends AbstractStatement {
   public void render(RenderContext rc) {
     rc.getOut().mark(getFilePosition());
     rc.getOut().consume("throw");
-    exception.render(rc);
+    getException().render(rc);
   }
 
   public boolean hasHangingConditional() { return false; }
 
   public JsonML toJsonML() {
     return JsonMLBuilder.builder(TagType.ThrowStmt, getFilePosition())
-        .addChildIfNotNull(exception).build();
+        .addChildIfNotNull(getException()).build();
   }
 }

@@ -29,6 +29,18 @@ import java.util.List;
 final class ChildNodes<T extends ParseTreeNode> implements Serializable {
   private static final long serialVersionUID = -3349416361229204091L;
 
+  private boolean immutable = false;
+
+  public boolean makeImmutable() {
+    boolean wasMadeImmutable = true;
+    if (backingList != null) {
+      for (ParseTreeNode n : backingList) {
+        wasMadeImmutable = wasMadeImmutable && n.makeImmutable();
+      }
+    }
+    return immutable = wasMadeImmutable;
+  }
+
   /**
    * The actual storage of collection elements. Constructed lazily in case it
    * is never used.
@@ -115,6 +127,9 @@ final class ChildNodes<T extends ParseTreeNode> implements Serializable {
    * of {@link #getElementClass()}.
    */
   public List<T> getMutableFacet() {
+    if (immutable) {
+      throw new UnsupportedOperationException();
+    }
     if (mutableFacet == null) {
       mutableFacet = new MutableFacet();
     }

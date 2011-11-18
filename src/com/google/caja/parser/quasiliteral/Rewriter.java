@@ -27,6 +27,7 @@ import com.google.caja.parser.js.Declaration;
 import com.google.caja.parser.js.Identifier;
 import com.google.caja.parser.js.Literal;
 import com.google.caja.parser.js.Reference;
+import com.google.caja.parser.js.Statement;
 import com.google.caja.parser.js.SyntheticNodes;
 import com.google.caja.render.JsPrettyPrinter;
 import com.google.caja.reporting.MessageLevel;
@@ -42,7 +43,7 @@ import java.util.Set;
  *
  * @author ihab.awad@gmail.com (Ihab Awad)
  */
-public abstract class Rewriter {
+public class Rewriter {
 
   /**
    * Annotations on {@code rules} in subclasses of {@code Rewriter} are
@@ -50,6 +51,8 @@ public abstract class Rewriter {
    */
   private final RuleChain rules = new RuleChain();
   private final Set<String> ruleNames = new HashSet<String>();
+  private final Set<ParseTreeNode> tainted = new HashSet<ParseTreeNode>();
+  private final Set<ParseTreeNode> forSideEffect = new HashSet<ParseTreeNode>();
   final MessageQueue mq;
   private final boolean taintChecking;
   private final boolean logging;
@@ -95,10 +98,9 @@ public abstract class Rewriter {
           FilePosition resultPos = result.getFilePosition();
           if (result instanceof AbstractParseTreeNode
               && InputSource.UNKNOWN.equals(resultPos.source())) {
-            ((AbstractParseTreeNode) result)
-                .setFilePosition(node.getFilePosition());
           }
           if (logging) { logResults(rule, node, result, null); }
+          result.makeImmutable();
           return result;
         }
       } catch (RuntimeException ex) {
@@ -191,34 +193,38 @@ public abstract class Rewriter {
    * @return the expanded parse tree node.
    */
   public final ParseTreeNode expand(ParseTreeNode node) {
+    tainted.clear();
+    forSideEffect.clear();
+    node.makeImmutable();
     if (taintChecking) {
       flagTainted(node, mq);
       ParseTreeNode result = expand(node, null);
       checkTainted(result, mq);
+      result.makeImmutable();
       return result;
     }
     return expand(node, null);
   }
 
-  private static void flagTainted(ParseTreeNode node, MessageQueue mq) {
-    if (node.getAttributes().is(ParseTreeNode.TAINTED)) {
+  private void flagTainted(ParseTreeNode node, MessageQueue mq) {
+    if (tainted.contains(node)) {
       mq.addMessage(
           RewriterMessageType.MULTIPLY_TAINTED, node, node.getFilePosition());
     }
-    node.getAttributes().set(ParseTreeNode.TAINTED, true);
+    tainted.add(node);
     for (ParseTreeNode n : node.children()) {
       flagTainted(n, mq);
     }
   }
 
-  private static void checkTainted(ParseTreeNode node, MessageQueue mq) {
+  private void checkTainted(ParseTreeNode node, MessageQueue mq) {
     // If we've already got errors, then issuing new ones on the same
     // nodes won't help.
     if (mq.hasMessageAtLevel(MessageLevel.ERROR)) {
       return;
     }
-    SyntheticAttributes attrs = node.getAttributes();
-    if (attrs.is(ParseTreeNode.TAINTED)) {
+    if (tainted.contains(node)) {
+      SyntheticAttributes attrs = node.getAttributes();
       if (!attrs.is(SyntheticNodes.SYNTHETIC)) {
         mq.addMessage(
             RewriterMessageType.UNSEEN_NODE_LEFT_OVER, node, node.getFilePosition());
@@ -229,17 +235,18 @@ public abstract class Rewriter {
     }
   }
 
-  /**
-   * Guard access to this to go through the noexpand() overloadings below.
-   */
   private <T extends ParseTreeNode> T removeTaint(T node) {
     if (taintChecking) {
       // TODO(erights): consider returning a defensive copy rather than
       // side effecting in place. If we do, we also need to revisit all
       // calls to removeTaint and noexpand().
-      node.getAttributes().remove(ParseTreeNode.TAINTED);
+      tainted.remove(node);
     }
     return node;
+  }
+
+  protected <T extends ParseTreeNode> T noexpand(T node) {
+    return removeTaint(node);
   }
 
   /**
@@ -266,22 +273,6 @@ public abstract class Rewriter {
     return removeTaint(node);
   }
 
-  protected Identifier noexpand(Identifier node) {
-    return removeTaint(node);
-  }
-
-  protected <T extends Literal> T noexpand(T node) {
-    return removeTaint(node);
-  }
-
-  protected BreakStmt noexpand(BreakStmt node) {
-    return removeTaint(node);
-  }
-
-  protected ContinueStmt noexpand(ContinueStmt node) {
-    return removeTaint(node);
-  }
-
   protected ParseTreeNodeContainer noexpandParams(ParseTreeNodeContainer node) {
     if (taintChecking) {
       for (ParseTreeNode child : node.children()) {
@@ -290,5 +281,31 @@ public abstract class Rewriter {
       return removeTaint(node);
     }
     return node;
+  }
+
+  protected void setTaint(ParseTreeNode node) {
+    tainted.add(node);
+  }
+
+  protected void clearTaint(ParseTreeNode node) {
+    tainted.remove(node);
+  }
+
+  public void markForSideEffect(ParseTreeNode node) {
+    forSideEffect.add(node);
+  }
+
+  public void markTreeForSideEffect(ParseTreeNode node) {
+    if (node instanceof Statement) {
+      node.makeImmutable();
+      markForSideEffect(node);
+      for (ParseTreeNode child : node.children()) {
+        markTreeForSideEffect(child);
+      }
+    }
+  }
+
+  public boolean isForSideEffect(ParseTreeNode node) {
+    return Rewriter.this.forSideEffect.contains(node);
   }
 }

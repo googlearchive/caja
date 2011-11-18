@@ -239,7 +239,7 @@ public abstract class CssTree extends AbstractParseTreeNode {
   public static final class Charset extends CssStatement {
     private static final long serialVersionUID = -1098593776699942573L;
 
-    String charset;
+    final String charset;
 
     /** @param none ignored but required for reflection. */
     @ReflectiveCtor
@@ -833,6 +833,9 @@ public abstract class CssTree extends AbstractParseTreeNode {
    */
   public static final class PropertyDeclaration extends Declaration {
     private static final long serialVersionUID = 6744488790926852402L;
+
+  // Local member variables are only changed in childrenChanged(),
+  // so this class satisfies the immutability contract of the superclass.
     private Property prop;
     private Expr expr;
     private Prio prio;
@@ -1039,6 +1042,9 @@ public abstract class CssTree extends AbstractParseTreeNode {
      *   converted to the corresponding character.
      */
     public void setValue(String newValue) {
+      if (isImmutable()) {
+        throw new UnsupportedOperationException();
+      }
       if (!checkValue(newValue)) {
         throw new IllegalArgumentException(newValue);
       }
@@ -1537,6 +1543,10 @@ public abstract class CssTree extends AbstractParseTreeNode {
    */
   public static final class UserAgentHack extends Declaration {
     private static final long serialVersionUID = -3920735297551152675L;
+
+    // Local member variable is only set in the constructor, and the getter
+    // returns a defensive copy, so this class satisfies the immutability
+    // contract of the superclass.
     private final EnumSet<UserAgent> enabledOn;
 
     @ReflectiveCtor
@@ -1548,7 +1558,9 @@ public abstract class CssTree extends AbstractParseTreeNode {
     }
 
     @Override
-    public EnumSet<UserAgent> getValue() { return EnumSet.copyOf(enabledOn); }
+    public Set<UserAgent> getValue() {
+      return Collections.unmodifiableSet(enabledOn);
+    }
 
     @Override
     protected void childrenChanged() {

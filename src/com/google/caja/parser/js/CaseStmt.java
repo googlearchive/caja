@@ -37,6 +37,9 @@ import java.util.List;
  */
 public final class CaseStmt extends SwitchCase {
   private static final long serialVersionUID = -7270883914072075826L;
+
+  // Local member variables are only changed in childrenChanged(),
+  // so this class satisfies the immutability contract of the superclass.
   private Expression caseValue;
   private Block body;
 

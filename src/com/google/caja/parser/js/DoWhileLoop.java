@@ -29,6 +29,9 @@ import java.util.List;
  */
 public class DoWhileLoop extends Loop {
   private static final long serialVersionUID = 2725383192455487592L;
+
+  // Local member variables are only changed in childrenChanged(),
+  // so this class satisfies the immutability contract of the superclass.
   private Statement body;
   private Expression condition;
 

@@ -15,16 +15,24 @@
 package com.google.caja.parser;
 
 import com.google.caja.lexer.FilePosition;
+import com.google.caja.lexer.JsTokenType;
+import com.google.caja.lexer.Token;
 import com.google.caja.lexer.TokenConsumer;
+import com.google.caja.parser.js.AbstractExpression;
 import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.ExpressionStmt;
 import com.google.caja.parser.js.IntegerLiteral;
 import com.google.caja.parser.js.LabeledStatement;
 import com.google.caja.parser.js.LabeledStmtWrapper;
+import com.google.caja.parser.js.Noop;
+import com.google.caja.parser.js.StringLiteral;
+import com.google.caja.parser.js.SyntheticNodes;
 import com.google.caja.render.JsPrettyPrinter;
 import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.CajaTestCase;
+import com.google.caja.util.SyntheticAttributes;
+import com.google.javascript.jscomp.jsonml.JsonML;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -683,6 +691,57 @@ public class ParseTreeNodeTest extends CajaTestCase {
   public final void testIssue1369() throws Exception {
     ParseTreeNode p = js(fromString("var x = /asdf/;"));
     assertSerializable(p);
+  }
+
+  public final void testImmutability() throws Exception {
+    Block n = new Block(
+        FilePosition.UNKNOWN,
+        Arrays.asList(
+            new ExpressionStmt(new IntegerLiteral(FilePosition.UNKNOWN, 42)),
+            new ExpressionStmt(new IntegerLiteral(FilePosition.UNKNOWN, 13))));
+    assertTrue(n.makeImmutable());
+    assertTrue(n.isImmutable());
+    assertTrue(n.children().get(0).isImmutable());
+    assertTrue(n.children().get(0).children().get(0).isImmutable());
+    assertTrue(n.children().get(1).isImmutable());
+    assertTrue(n.children().get(1).children().get(0).isImmutable());
+    try {
+      n.appendChild(new Noop(FilePosition.UNKNOWN));
+      fail();
+    } catch (UnsupportedOperationException e) {}
+    try {
+      n.setComments(Arrays.asList(
+          Token.instance("test", JsTokenType.COMMENT, FilePosition.UNKNOWN)));
+      fail();
+    } catch (UnsupportedOperationException e) {}
+    try {
+      n.getAttributes().set(SyntheticNodes.SYNTHETIC, true);
+      fail();
+    } catch (UnsupportedOperationException e) {}
+  }
+
+  class AlwaysMutable extends AbstractExpression {
+    public AlwaysMutable() { super(FilePosition.UNKNOWN, StringLiteral.class); }
+    @Override public Object getValue() { return null; }
+    @Override public String typeOf() { return null; }
+    @Override public JsonML toJsonML() { return null; }
+    @Override public void render(RenderContext r) { }
+    @Override public boolean makeImmutable() { return false; /* refuse! */ }
+  }
+
+  public final void testIncompleteImmutability() throws Exception {
+    // Immutability should be best-effort, stopping at a node that refuses
+    Block n = new Block(
+        FilePosition.UNKNOWN,
+        Arrays.asList(
+            new ExpressionStmt(new IntegerLiteral(FilePosition.UNKNOWN, 42)),
+            new ExpressionStmt(new AlwaysMutable())));
+    assertFalse(n.makeImmutable());
+    assertFalse(n.isImmutable());
+    assertTrue(n.children().get(0).isImmutable());
+    assertTrue(n.children().get(0).children().get(0).isImmutable());
+    assertFalse(n.children().get(1).isImmutable());
+    assertFalse(n.children().get(1).children().get(0).isImmutable());
   }
 
   static class IntEnqueuer implements Visitor {

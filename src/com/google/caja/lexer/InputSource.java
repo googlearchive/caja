@@ -34,8 +34,8 @@ import javax.annotation.Nullable;
  */
 public final class InputSource implements MessagePart, Serializable {
   private static final long serialVersionUID = 7244581658470949868L;
-  private URI uri;
-  private String uriStr;
+  private final URI uri;
+  private final String uriStr;
 
   /** a special source for predefineds like the <tt>String</tt> function. */
   public static final InputSource PREDEFINED =

@@ -27,7 +27,6 @@ import java.util.List;
  */
 public final class DefaultCaseStmt extends SwitchCase {
   private static final long serialVersionUID = -5369371880677191461L;
-  private Block body;
 
   /** @param value unused.  This ctor is provided for reflection. */
   @ReflectiveCtor
@@ -44,14 +43,13 @@ public final class DefaultCaseStmt extends SwitchCase {
   @Override
   protected void childrenChanged() {
     super.childrenChanged();
-    this.body = (Block) children().get(0);
   }
 
   @Override
   public Object getValue() { return null; }
 
   @Override
-  public Block getBody() { return body; }
+  public Block getBody() { return (Block) children().get(0); }
 
   @Override
   protected void renderHead(RenderContext rc) {
@@ -60,7 +58,7 @@ public final class DefaultCaseStmt extends SwitchCase {
 
   public JsonML toJsonML() {
     return JsonMLBuilder.builder(TagType.DefaultCase, getFilePosition())
-        .addChildren(body.children())
+        .addChildren(getBody().children())
         .build();
   }
 }

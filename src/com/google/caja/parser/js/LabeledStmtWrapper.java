@@ -36,7 +36,6 @@ public final class LabeledStmtWrapper extends LabeledStatement {
   // from Caja?
   // TODO(mikesamuel): Erase the distinction between LabeledStmtWrapper and
   // LabeledStatement.
-  private Statement body;
 
   @ReflectiveCtor
   public LabeledStmtWrapper(
@@ -49,16 +48,10 @@ public final class LabeledStmtWrapper extends LabeledStatement {
     appendChild(body);
   }
 
-  public Statement getBody() { return body; }
+  public Statement getBody() { return (Statement) children().get(0); }
 
   @Override
   public boolean isTargetForContinue() { return false; }
-
-  @Override
-  protected void childrenChanged() {
-    super.childrenChanged();
-    this.body = (Statement) children().get(0);
-  }
 
   public void render(RenderContext rc) {
     TokenConsumer out = rc.getOut();
@@ -68,19 +61,19 @@ public final class LabeledStmtWrapper extends LabeledStatement {
       out.consume(label);
       out.consume(":");
     }
-    body.render(rc);
+    getBody().render(rc);
   }
 
   @Override
   public boolean isTerminal() {
-    return body.isTerminal();
+    return getBody().isTerminal();
   }
 
   public boolean hasHangingConditional() {
-    return body.hasHangingConditional();
+    return getBody().hasHangingConditional();
   }
 
   public JsonML toJsonML() {
-    return wrapIfLabelled(body.toJsonML());
+    return wrapIfLabelled(getBody().toJsonML());
   }
 }

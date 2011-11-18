@@ -38,16 +38,17 @@ import java.lang.annotation.ElementType;
 public interface ParseTreeNode extends MessagePart, Renderable, Cloneable {
 
   /**
-   * Attribute key that marks a node as being "tainted" in some way.
+   * Freeze this node deeply, making it and all its children immutable.
    *
-   * This is used to ensure that all nodes have been "seen" by a security checking
-   * or other critical process. The input is first marked "tainted", and the code is
-   * written such that any concrete step that recognizes a node un-taints it (or
-   * produces an un-tainted result as the output). The process can then check to make
-   * sure that all its output is not tainted.
+   * @return true iff the node and all its children have been successfully
+   * made immutable.
    */
-  SyntheticAttributeKey<Boolean> TAINTED
-      = new SyntheticAttributeKey<Boolean>(Boolean.class, "tainted");
+  boolean makeImmutable();
+
+  /**
+   * @return whether this node and all its children are immutable.
+   */
+  boolean isImmutable();
 
   FilePosition getFilePosition();
   List<Token<?>> getComments();

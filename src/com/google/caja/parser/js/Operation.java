@@ -521,9 +521,9 @@ public abstract class Operation extends AbstractExpression {
           return new BooleanLiteral(getFilePosition(), !b);
         }
         if (operand instanceof Operation) {
-          Operation op = (Operation) operand;
+          Operation opr = (Operation) operand;
           Operator negation;
-          switch (op.getOperator()) {
+          switch (opr.getOperator()) {
             // Cannot do the same around comparison because of NaN.
             case NOT_EQUAL: negation = Operator.EQUAL; break;
             case EQUAL: negation = Operator.NOT_EQUAL; break;
@@ -534,7 +534,7 @@ public abstract class Operation extends AbstractExpression {
           if (negation != null) {
             return Operation.create(
                 getFilePosition(), negation,
-                op.children().toArray(NO_EXPRESSIONS));
+                opr.children().toArray(NO_EXPRESSIONS));
           }
         }
         return this;

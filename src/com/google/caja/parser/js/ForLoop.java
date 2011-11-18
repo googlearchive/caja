@@ -30,6 +30,9 @@ import java.util.List;
  */
 public final class ForLoop extends Loop implements NestedScope {
   private static final long serialVersionUID = 295928890053083020L;
+
+  // Local member variables are only changed in childrenChanged(),
+  // so this class satisfies the immutability contract of the superclass.
   private Statement initializer;
   private Expression condition;
   private Statement increment;
@@ -93,7 +96,7 @@ public final class ForLoop extends Loop implements NestedScope {
     if (!(initializer instanceof Noop)) { initializer.render(rc); }
     out.consume(JsMinimalPrinter.NOOP);
     if (!(condition instanceof BooleanLiteral
-          && ((BooleanLiteral) condition).value)) {
+          && ((BooleanLiteral) condition).getValue())) {
       condition.render(rc);
     }
     out.consume(JsMinimalPrinter.NOOP);

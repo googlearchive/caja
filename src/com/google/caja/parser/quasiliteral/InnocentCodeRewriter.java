@@ -22,7 +22,6 @@ import com.google.caja.parser.js.ExpressionStmt;
 import com.google.caja.parser.js.FunctionConstructor;
 import com.google.caja.parser.js.Identifier;
 import com.google.caja.parser.js.Reference;
-import com.google.caja.parser.quasiliteral.QuasiBuilder;
 import com.google.caja.reporting.MessageQueue;
 
 import java.util.ArrayList;
@@ -58,7 +57,7 @@ public class InnocentCodeRewriter extends Rewriter {
               "@expanded*;"))
       public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
         if (node instanceof Block && scope == null) {
-          Scope s2 = Scope.fromProgram((Block) node, mq);
+          Scope s2 = Scope.fromProgram((Block) node, InnocentCodeRewriter.this);
           List<ParseTreeNode> expanded = new ArrayList<ParseTreeNode>();
           for (ParseTreeNode c : node.children()) {
             expanded.add(expand(c, s2));
