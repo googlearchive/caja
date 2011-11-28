@@ -40,12 +40,12 @@ public final class ExpressionStmt extends AbstractStatement {
 
   public ExpressionStmt(FilePosition pos, Expression expr) {
     super(pos, Expression.class);
-    appendChild(expr);
+    ctorAppendChild(expr);
   }
 
   public ExpressionStmt(Expression expr) {
     super(expr.getFilePosition(), Expression.class);
-    appendChild(expr);
+    ctorAppendChild(expr);
   }
 
   @Override

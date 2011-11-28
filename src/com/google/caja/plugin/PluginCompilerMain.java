@@ -108,7 +108,10 @@ public final class PluginCompilerMain {
     if (config.getBenchmark() == 0) {
       return runOnce(true);
     } else {
-      return runBench(argv);
+      runBench(argv, false);
+      runBench(argv, true);
+      pause();
+      return 0;
     }
   }
 
@@ -414,35 +417,40 @@ public final class PluginCompilerMain {
     }
   }
 
-  private int runBench(String[] argv) {
+  private void pause() {
     try {
       BufferedReader b = new BufferedReader(new InputStreamReader(System.in));
-      System.out.println("press return...");
-      b.readLine();
-
-      int trials = config.getBenchmark();
-
-      // count first iteration separately
-      long t0 = System.nanoTime();
-      runBenchOnce(argv);
-      long t1 = System.nanoTime();
-      for (int i = 0; i < trials; i++) {
-        runBenchOnce(argv);
-      }
-      long t2 = System.nanoTime();
-
-      DecimalFormat fmt = new DecimalFormat("#.## msec");
-      System.out.println(
-          "first run  = " + fmt.format((t1 - t0) / 1e6));
-      System.out.println(
-          "other runs = " + fmt.format((t2 - t1) / (trials * 1e6)));
-
       System.out.println("press return...");
       b.readLine();
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
-    return 0;
+  }
+
+  private void runBench(String[] argv, boolean warm) {
+    pause();
+
+    int trials = Math.max(config.getBenchmark(), 1);
+    long first_time = 0;
+    long all_times = 0;
+
+    for (int i = 0; i < trials; i++) {
+      long t0 = System.nanoTime();
+      runBenchOnce(argv);
+      long dt = System.nanoTime() - t0;
+      all_times += dt;
+      if (i == 0) {
+        first_time = dt;
+      }
+    }
+
+    DecimalFormat fmt = new DecimalFormat("#.## msec");
+    if (!warm) {
+      System.out.println(
+          fmt.format(first_time / 1e6) + ": first run");
+    }
+    System.out.println(
+        fmt.format(all_times / (trials * 1e6)) + ": all runs");
   }
 
   private void runBenchOnce(String[] argv) {

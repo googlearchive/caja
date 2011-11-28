@@ -41,7 +41,7 @@ public final class Block extends AbstractStatement implements NestedScope {
 
   public Block(FilePosition pos, List<? extends Statement> elements) {
     super(pos, Statement.class);
-    createMutation().appendChildren(elements).execute();
+    ctorAppendChildren(elements);
   }
 
   public Block(FilePosition pos) { super(pos, Statement.class); }

@@ -20,7 +20,6 @@ import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.Callback;
 
 import java.io.IOException;
-
 import java.util.Collections;
 import java.util.List;
 
@@ -41,12 +40,12 @@ public class ParseTreeNodeContainer extends AbstractParseTreeNode {
   public ParseTreeNodeContainer(
       FilePosition pos, Void value, List<? extends ParseTreeNode> children) {
     super(pos);
-    createMutation().appendChildren(children).execute();
+    ctorAppendChildren(children);
   }
 
   public ParseTreeNodeContainer(List<? extends ParseTreeNode> children) {
     super(FilePosition.UNKNOWN);
-    createMutation().appendChildren(children).execute();
+    ctorAppendChildren(children);
   }
 
   public ParseTreeNodeContainer() {

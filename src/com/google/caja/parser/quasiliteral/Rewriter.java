@@ -21,11 +21,7 @@ import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.parser.AbstractParseTreeNode;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.ParseTreeNodeContainer;
-import com.google.caja.parser.js.BreakStmt;
-import com.google.caja.parser.js.ContinueStmt;
 import com.google.caja.parser.js.Declaration;
-import com.google.caja.parser.js.Identifier;
-import com.google.caja.parser.js.Literal;
 import com.google.caja.parser.js.Reference;
 import com.google.caja.parser.js.Statement;
 import com.google.caja.parser.js.SyntheticNodes;
@@ -199,7 +195,9 @@ public class Rewriter {
     if (taintChecking) {
       flagTainted(node, mq);
       ParseTreeNode result = expand(node, null);
-      checkTainted(result, mq);
+      if (!mq.hasMessageAtLevel(MessageLevel.ERROR)) {
+        checkTainted(result, mq);
+      }
       result.makeImmutable();
       return result;
     }
@@ -217,22 +215,23 @@ public class Rewriter {
     }
   }
 
-  private void checkTainted(ParseTreeNode node, MessageQueue mq) {
-    // If we've already got errors, then issuing new ones on the same
-    // nodes won't help.
-    if (mq.hasMessageAtLevel(MessageLevel.ERROR)) {
-      return;
-    }
+  // Returns true if check passed.
+  private boolean checkTainted(ParseTreeNode node, MessageQueue mq) {
     if (tainted.contains(node)) {
       SyntheticAttributes attrs = node.getAttributes();
       if (!attrs.is(SyntheticNodes.SYNTHETIC)) {
         mq.addMessage(
-            RewriterMessageType.UNSEEN_NODE_LEFT_OVER, node, node.getFilePosition());
+            RewriterMessageType.UNSEEN_NODE_LEFT_OVER, node,
+            node.getFilePosition());
+        return false;
       }
     }
     for (ParseTreeNode n : node.children()) {
-      checkTainted(n, mq);
+      if (!checkTainted(n, mq)) {
+        return false;
+      }
     }
+    return true;
   }
 
   private <T extends ParseTreeNode> T removeTaint(T node) {

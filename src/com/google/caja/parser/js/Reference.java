@@ -38,12 +38,12 @@ public final class Reference extends AbstractExpression {
   @ReflectiveCtor
   public Reference(FilePosition pos, Void value, List<ParseTreeNode> children) {
     super(pos, Identifier.class);
-    appendChild(children.get(0));
+    ctorAppendChild(children.get(0));
   }
 
   public Reference(Identifier identifier) {
     super(identifier.getFilePosition(), Identifier.class);
-    appendChild(identifier);
+    ctorAppendChild(identifier);
   }
 
   @Override

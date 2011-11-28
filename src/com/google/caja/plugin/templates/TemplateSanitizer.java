@@ -65,11 +65,6 @@ public final class TemplateSanitizer {
   public boolean sanitize(Node t) {
     boolean valid = true;
     switch (t.getNodeType()) {
-      case Node.DOCUMENT_FRAGMENT_NODE:
-        for (Node child : Nodes.childrenOf(t)) {
-          sanitize(child);
-        }
-        break;
       case Node.ELEMENT_NODE:
       {
         Element el = (Element) t;
@@ -117,6 +112,7 @@ public final class TemplateSanitizer {
         // first occurrence of an attribute could be spoofed.
         break;
       }
+      case Node.DOCUMENT_FRAGMENT_NODE:
       case Node.TEXT_NODE:
       case Node.CDATA_SECTION_NODE:
       case Node.COMMENT_NODE:

@@ -31,7 +31,6 @@ import com.google.caja.render.JsPrettyPrinter;
 import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.CajaTestCase;
-import com.google.caja.util.SyntheticAttributes;
 import com.google.javascript.jscomp.jsonml.JsonML;
 
 import java.util.ArrayList;
@@ -141,9 +140,15 @@ public class ParseTreeNodeTest extends CajaTestCase {
         sb.toString());
   }
 
-  public final void testVisitPreOrder() {
+  public final void testAcceptPreOrder() {
     IntEnqueuer ie = new IntEnqueuer();
     root.acceptPreOrder(ie, null);
+    assertEquals("[0, 1, 2, 3, 4, 5, 6, 7, 8]", ie.getNums().toString());
+  }
+
+  public final void testVisitPreOrder() {
+    IntEnqueuer ie = new IntEnqueuer();
+    root.visitPreOrder(ie, null);
     assertEquals("[0, 1, 2, 3, 4, 5, 6, 7, 8]", ie.getNums().toString());
   }
 

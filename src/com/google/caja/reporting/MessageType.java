@@ -119,9 +119,10 @@ public enum MessageType implements MessageTypeInt {
   NO_SIDE_EFFECT("%s: Operation has no effect", MessageLevel.WARNING),
 
   // logging
-  CHECKPOINT("Checkpoint: %s at T+%s seconds", MessageLevel.LOG),
   BUILD_INFO("Google Caja. Copyright (C) 2011, Google Inc. Rev %s built on %s.",
              MessageLevel.LOG),
+  START_STAGE("T+%s msec: start %s", MessageLevel.LOG),
+  COMPILER_DONE("T+%s msec: compiler done", MessageLevel.LOG),
   ;
 
   private final String formatString;

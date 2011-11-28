@@ -16,15 +16,16 @@ package com.google.caja.parser.quasiliteral;
 
 import com.google.caja.SomethingWidgyHappenedError;
 import com.google.caja.lexer.CharProducer;
+import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.JsLexer;
 import com.google.caja.lexer.JsTokenQueue;
 import com.google.caja.lexer.ParseException;
 import com.google.caja.lexer.Token;
-import com.google.caja.lexer.FilePosition;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.ParserBase;
 import com.google.caja.parser.js.Block;
+import com.google.caja.parser.js.DirectivePrologue;
 import com.google.caja.parser.js.Expression;
 import com.google.caja.parser.js.ExpressionStmt;
 import com.google.caja.parser.js.FormalParam;
@@ -37,7 +38,6 @@ import com.google.caja.parser.js.Reference;
 import com.google.caja.parser.js.Statement;
 import com.google.caja.parser.js.StringLiteral;
 import com.google.caja.parser.js.SyntheticNodes;
-import com.google.caja.parser.js.DirectivePrologue;
 import com.google.caja.parser.js.ValueProperty;
 import com.google.caja.reporting.DevNullMessageQueue;
 import com.google.caja.util.Lists;
@@ -132,10 +132,13 @@ public class QuasiBuilder {
       throw new SomethingWidgyHappenedError("Wrong # of args for subst()");
     }
     Map<String, ParseTreeNode> bindings = Rule.makeBindings();
-    for (int i = 0; i < args.length; ) {
-      bindings.put(
-          (String) args[i++],
-          (ParseTreeNode) args[i++]);
+    for (int i = 0; i < args.length; i += 2) {
+      ParseTreeNode value = (ParseTreeNode) args[i + 1];
+      if (value != null) {
+        // TODO(felix8a): can't do this because of ArrayIndexOptimization
+        //value.makeImmutable();
+      }
+      bindings.put((String) args[i], value);
     }
     ParseTreeNode result = subst(patternText, bindings);
     if (result == null) {

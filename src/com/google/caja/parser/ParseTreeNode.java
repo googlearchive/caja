@@ -20,15 +20,14 @@ import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.Renderable;
 import com.google.caja.util.SyntheticAttributes;
-import com.google.caja.util.SyntheticAttributeKey;
 
 import java.io.IOException;
-import java.util.List;
 import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-import java.lang.annotation.ElementType;
+import java.util.List;
 
 /**
  * A node in a parse tree.
@@ -89,6 +88,12 @@ public interface ParseTreeNode extends MessagePart, Renderable, Cloneable {
    * @return true iff visiting the root node yielded true.
    */
   boolean acceptPostOrder(Visitor v, AncestorChain<?> ancestors);
+
+  /**
+   * Like {@link #acceptPreOrder}, but assumes the Visitor does not
+   * modify the tree.
+   */
+  boolean visitPreOrder(Visitor v, AncestorChain<?> ancestors);
 
   /**
    * Create a deep clone of this {@code ParseTreeNode}.

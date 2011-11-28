@@ -34,7 +34,6 @@ import com.google.caja.util.SyntheticAttributeKey;
 import com.google.caja.util.SyntheticAttributes;
 
 import java.io.IOException;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -382,6 +381,10 @@ public abstract class CssPropertySignature implements ParseTreeNode {
       child.acceptPreOrder(v, ancestors);
     }
     return true;
+  }
+
+  public final boolean visitPreOrder(Visitor v, AncestorChain<?> ancestors) {
+    return acceptPreOrder(v, ancestors);
   }
 
   public final boolean acceptPostOrder(Visitor v, AncestorChain<?> ancestors) {

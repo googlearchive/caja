@@ -16,11 +16,11 @@ package com.google.caja.parser.js;
 
 import com.google.caja.SomethingWidgyHappenedError;
 import com.google.caja.lexer.FilePosition;
-import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.lexer.Keyword;
-import com.google.caja.reporting.RenderContext;
+import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.ParserBase;
+import com.google.caja.reporting.RenderContext;
 import com.google.javascript.jscomp.jsonml.JsonML;
 import com.google.javascript.jscomp.jsonml.TagAttr;
 import com.google.javascript.jscomp.jsonml.TagType;
@@ -44,7 +44,7 @@ public abstract class Operation extends AbstractExpression {
     super(pos, Expression.class);
     this.op = op;
     if (null == op) { throw new NullPointerException(); }
-    createMutation().appendChildren(params).execute();
+    ctorAppendChildren(params);
   }
 
   public static boolean is(ParseTreeNode n, Operator op) {

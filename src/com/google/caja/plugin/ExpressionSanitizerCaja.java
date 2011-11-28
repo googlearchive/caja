@@ -19,13 +19,13 @@ import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.DirectivePrologue;
 import com.google.caja.parser.js.TranslatedCode;
 import com.google.caja.parser.js.UncajoledModule;
+import com.google.caja.parser.quasiliteral.ES53Rewriter;
 import com.google.caja.parser.quasiliteral.IllegalReferenceCheckRewriter;
 import com.google.caja.parser.quasiliteral.ModuleManager;
 import com.google.caja.parser.quasiliteral.NonAsciiCheckVisitor;
 import com.google.caja.parser.quasiliteral.Rewriter;
-import com.google.caja.parser.quasiliteral.ES53Rewriter;
-import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.MessageLevel;
+import com.google.caja.reporting.MessageQueue;
 
 import java.net.URI;
 
@@ -58,7 +58,7 @@ public class ExpressionSanitizerCaja {
     if (!mq.hasMessageAtLevel(MessageLevel.ERROR)) {
       result = new IllegalReferenceCheckRewriter(mq, false).expand(result);
       if (!mq.hasMessageAtLevel(MessageLevel.ERROR)) {
-        result.acceptPreOrder(new NonAsciiCheckVisitor(mq), null);
+        result.visitPreOrder(new NonAsciiCheckVisitor(mq), null);
       }
     }
     return result;

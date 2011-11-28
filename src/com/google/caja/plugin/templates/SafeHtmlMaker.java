@@ -124,9 +124,9 @@ final class SafeHtmlMaker {
   private final List<EventHandler> unnamedHandlers = Lists.newArrayList();
   /** The set of handlers defined in the current module. */
   private final Set<String> handlersUsedInModule = Sets.newHashSet();
-  private Block currentBlock = null;
+  private List<Statement> currentBlock = null;
   /** True iff the current block is in a {@link TranslatedCode} section. */
-  private boolean currentBlockStyle;
+  private boolean currentBlockTranslated;
   /** The cache keys for the current block. */
   private JobEnvelope currentSource;
   /** True iff the HTML emitter has been invoked to split up the static HTML. */
@@ -135,6 +135,8 @@ final class SafeHtmlMaker {
   private boolean moduleDefs = false;
   /** True iff JS contains a HtmlEmitter.finish() call to release resources. */
   private boolean finished = false;
+
+  private boolean cajita = false;
   /**
    * @param doc the owner document for the safe HTML. Used only as a
    * factory for DOM nodes.
@@ -193,6 +195,7 @@ final class SafeHtmlMaker {
     }
 
     fleshOutSkeleton(domSkeleton);
+    finishBlock();
 
     return Pair.pair(safe, Lists.newArrayList(js));
   }
@@ -596,7 +599,7 @@ final class SafeHtmlMaker {
   }
 
   private void maybeBreakBlock(boolean translated, JobEnvelope source) {
-    if (translated != currentBlockStyle
+    if (translated != currentBlockTranslated
         || !source.areFromSameSource(currentSource)) {
       finishBlock();
     }
@@ -606,24 +609,14 @@ final class SafeHtmlMaker {
     maybeBreakBlock(translated, src);
     if (currentBlock == null) {
       handlersUsedInModule.clear();
-      Block block = new Block();
-      js.add(new SafeJsChunk(src, block));
-      if (translated) {
-        // May be downgraded based on emitHandler below.
-        block.appendChild(new DirectivePrologue(
-            FilePosition.UNKNOWN,
-            Lists.newArrayList(new Directive(
-                FilePosition.UNKNOWN, "use cajita"))));
-        TranslatedCode code = new TranslatedCode(currentBlock = new Block());
-        block.appendChild(code);
-      } else {
-        currentBlock = block;
-      }
+      // May be downgraded based on emitHandler below.
+      cajita = translated;
+      currentBlock = Lists.newArrayList();
       currentSource = src;
-      currentBlockStyle = translated;
+      currentBlockTranslated = translated;
       moduleDefs = false;
     }
-    currentBlock.appendChild(s);
+    currentBlock.add(s);
   }
 
   private void emitHandler(String handlerName) {
@@ -634,22 +627,34 @@ final class SafeHtmlMaker {
  private void emitHandler(Statement handler, JobEnvelope source) {
     emitStatement(handler, true, source);
     if (hasNonStrictFn(handler)) {
-      Block block = (Block) js.get(js.size() - 1).body;
-      Statement s = block.children().get(0);
       // Do not put a block in cajita mode when we're outputting a non-strict
       // handler.
-      if (s instanceof DirectivePrologue) {  // Added in emitStatement.
-        // TODO(mikesamuel): can we get rid of this noop by getting rid of the
-        // silly $v.initOuter('onerror') in DefaultValijaRewriter?
-        // Can that move into valija-cajita.js.
-        block.replaceChild(new Noop(s.getFilePosition()), s);
-      }
+      cajita = false;
     }
   }
 
   private void finishBlock() {
-    currentBlock = null;
     moduleDefs = false;
+    if (currentBlock == null) { return; }
+
+    Block block = new Block(FilePosition.UNKNOWN, currentBlock);
+    if (currentBlockTranslated) {
+      Block wrapper = new Block();
+      if (cajita) {
+        wrapper.appendChild(new DirectivePrologue(
+            FilePosition.UNKNOWN,
+            Lists.newArrayList(new Directive(
+                FilePosition.UNKNOWN, "use cajita"))));
+      } else {
+        // Tests expect the "use cajita" statement to be nulled out
+        wrapper.appendChild(new Noop(FilePosition.UNKNOWN));
+      }
+      wrapper.appendChild(new TranslatedCode(block));
+      js.add(new SafeJsChunk(currentSource, wrapper));
+    } else {
+      js.add(new SafeJsChunk(currentSource, block));
+    }
+    currentBlock = null;
   }
 
   private static boolean hasNonStrictFn(ParseTreeNode n) {

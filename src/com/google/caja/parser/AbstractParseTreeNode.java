@@ -145,6 +145,17 @@ public abstract class AbstractParseTreeNode implements MutableParseTreeNode,
     createMutation().removeChild(toRemove).execute();
   }
 
+  // Fast appendChild that's only safe to run in constructors.
+  protected void ctorAppendChild(ParseTreeNode child) {
+    children.getMutableFacet().add(child);
+    childrenChanged();
+  }
+
+  protected void ctorAppendChildren(List<? extends ParseTreeNode> children) {
+    this.children.getMutableFacet().addAll(children);
+    childrenChanged();
+  }
+
   public Mutation createMutation() { return new MutationImpl(); }
 
   private void setChild(int i, ParseTreeNode child) {
@@ -272,7 +283,7 @@ public abstract class AbstractParseTreeNode implements MutableParseTreeNode,
     return sb.toString();
   }
 
-  private enum TraversalType { PREORDER, POSTORDER; }
+  private enum TraversalType { PREORDER, POSTORDER, PREORDER_RO; }
 
   private boolean visitChildren(
        Visitor v, AncestorChain<?> ancestors, TraversalType traversalType) {
@@ -325,6 +336,9 @@ public abstract class AbstractParseTreeNode implements MutableParseTreeNode,
         case PREORDER:
           child.acceptPreOrder(v, ancestors);
           break;
+        case PREORDER_RO:
+          child.visitPreOrder(v, ancestors);
+          break;
         case POSTORDER:
           if (!child.acceptPostOrder(v, ancestors)) {
             result = false;
@@ -336,6 +350,10 @@ public abstract class AbstractParseTreeNode implements MutableParseTreeNode,
     return result;
   }
 
+  // TODO(felix8a): The contains() check makes traversal O(n**2) where
+  // n is the maximal number of children of any node in the tree.
+  // Using visitPreOrder instead of acceptPreorder ameliorates this in
+  // cases where we know the visitor does not modify the tree.
   private boolean stillInParent(AncestorChain<?> ancestors) {
     // If ancestors is empty, then it can't have been removed from its parent
     // by the Visitor unless the visitor has some handle to the parent through
@@ -371,6 +389,15 @@ public abstract class AbstractParseTreeNode implements MutableParseTreeNode,
     return true;
   }
 
+  public final boolean visitPreOrder(Visitor v, AncestorChain<?> ancestors) {
+    ancestors = AncestorChain.instance(ancestors, this);
+    if (!v.visit(ancestors)) { return false; }
+    visitChildren(v, ancestors, TraversalType.PREORDER_RO);
+    return true;
+  }
+
+
+
   /** Uses identity hash code since this is mutable. */
   @Override
   public final int hashCode() { return super.hashCode(); }
@@ -397,7 +424,7 @@ public abstract class AbstractParseTreeNode implements MutableParseTreeNode,
 
   private final class MutationImpl implements MutableParseTreeNode.Mutation {
 
-    private List<Change> changes = new ArrayList<Change>();
+    private final List<Change> changes = new ArrayList<Change>();
 
     public Mutation replaceChild(
         ParseTreeNode replacement, ParseTreeNode child) {

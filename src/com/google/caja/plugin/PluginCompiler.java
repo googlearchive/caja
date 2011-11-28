@@ -24,11 +24,11 @@ import com.google.caja.parser.js.CajoledModule;
 import com.google.caja.parser.quasiliteral.ModuleManager;
 import com.google.caja.plugin.stages.JobCache;
 import com.google.caja.plugin.stages.StubJobCache;
+import com.google.caja.reporting.BuildInfo;
 import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.MessageType;
-import com.google.caja.reporting.BuildInfo;
 import com.google.caja.util.ContentType;
 import com.google.caja.util.Criterion;
 import com.google.caja.util.Lists;
@@ -59,6 +59,7 @@ public final class PluginCompiler {
   private JobCache jobCache;
   private Planner.PlanState preconditions;
   private Planner.PlanState goals;
+  private final long t0 = System.nanoTime();
 
   public PluginCompiler(BuildInfo buildInfo, PluginMeta meta, MessageQueue mq) {
     this.buildInfo = buildInfo;
@@ -134,15 +135,14 @@ public final class PluginCompiler {
   private final void setupCompilationPipeline()
       throws Planner.UnsatisfiableGoalException {
     compilationPipeline = new Pipeline<Jobs>() {
-      final long t0 = System.nanoTime();
       @Override
       protected boolean applyStage(
           Pipeline.Stage<? super Jobs> stage, Jobs jobs) {
         long t1 = System.nanoTime();
         jobs.getMessageQueue().addMessage(
-            MessageType.CHECKPOINT,
-            MessagePart.Factory.valueOf(stage.getClass().getSimpleName()),
-            MessagePart.Factory.valueOf((t1 - t0) / 1e9 /* ns/s */));
+            MessageType.START_STAGE,
+            MessagePart.Factory.valueOf((int) ((t1 - t0) / 1e6)),
+            MessagePart.Factory.valueOf(stage.getClass().getSimpleName()));
         return super.applyStage(stage, jobs);
       }
     };
@@ -227,7 +227,12 @@ public final class PluginCompiler {
    */
   public boolean run() {
     try {
-      return getCompilationPipeline().apply(jobs);
+      boolean success = getCompilationPipeline().apply(jobs);
+      long t1 = System.nanoTime();
+      jobs.getMessageQueue().addMessage(
+          MessageType.COMPILER_DONE,
+          MessagePart.Factory.valueOf((int) ((t1 - t0) / 1e6)));
+      return success;
     } catch (Planner.UnsatisfiableGoalException ex) {
       jobs.getMessageQueue().addMessage(
           PluginMessageType.INVALID_PIPELINE,
