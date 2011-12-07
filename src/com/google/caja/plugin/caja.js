@@ -476,13 +476,13 @@ var caja = (function () {
               //  divWindow.___.tamingFrames = {};
               //}
               //divWindow.___.tamingFrames[imports.id___] = tamingWindow;
-              //guestWindow.plugin_dispatchEvent___ = 
-              //    domado.plugin_dispatchEvent;
-              //divWindow.plugin_dispatchToHandler___ = 
-              //    function (pluginId, handler, args) {
-              //      return divWindow.___.tamingFrames[pluginId].
-              //          plugin_dispatchToHandler___(pluginId, handler, args);
-              //    };
+              divWindow.plugin_dispatchEvent___ = 
+                  domado.plugin_dispatchEvent;
+              divWindow.plugin_dispatchToHandler___ = 
+                  function (pluginId, handler, args) {
+                    return divWindow.___.tamingFrames[pluginId].
+                        plugin_dispatchToHandler___(pluginId, handler, args);
+                  };
               //// TODO(felix8a): should be conditional on builderState.flash
               //var twc = tamingWindow.cajaFlash;
               //if (twc && twc.init) {

@@ -3998,7 +3998,7 @@ function Domado(opt_rulebreaker) {
                      this.target.elements, name)) {
         return false;
       } else {
-        return ExpandoProxyHandler.prototype.delete.call(this, name);
+        return ExpandoProxyHandler.prototype['delete'].call(this, name);
       }
     });
     cajaVM.def(FormElementAndExpandoProxyHandler);
@@ -5579,7 +5579,7 @@ function Domado(opt_rulebreaker) {
       case 'string':
         var fn = void 0;
         var tameWin = void 0;
-        fn = domicile.imports.window[handler];
+        fn = domicile.window[handler];
         handler = fn && typeof fn.call === 'function' ? fn : void 0;
         break;
       case 'function': case 'object': break;
