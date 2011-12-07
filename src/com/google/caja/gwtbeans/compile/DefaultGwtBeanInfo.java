@@ -28,7 +28,7 @@ import com.google.gwt.core.ext.TreeLogger.Type;
 import com.google.gwt.core.ext.typeinfo.JClassType;
 import com.google.gwt.core.ext.typeinfo.JMethod;
 import com.google.gwt.core.ext.typeinfo.JType;
-import com.google.gwt.dev.jjs.ast.JPrimitiveType;
+import com.google.gwt.core.ext.typeinfo.JPrimitiveType;
 import com.google.gwt.dom.client.Element;
 
 public final class DefaultGwtBeanInfo implements GwtBeanInfo {
