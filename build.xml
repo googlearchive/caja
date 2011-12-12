@@ -210,6 +210,10 @@
   </target>
 
   <target name="brtest" description="Run just browser tests.">
+    <!-- ModuleSystemTest first, because it fails more quickly -->
+    <antcall target="runtests">
+      <param name="test.filter">ModuleSystemTest</param>
+    </antcall>
     <antcall target="runtests">
       <param name="test.filter">ES53BrowserTest</param>
     </antcall>
@@ -814,6 +818,8 @@
       <input file="${src.caja}/plugin/cajoling-service-client.js"/>
       <input file="${src.caja}/plugin/taming-frame.js"/>
       <input file="${src.caja}/flash/caja-flash.js"/>
+      <input file="${src.caja}/plugin/guest-manager.js"/>
+      <input file="${src.caja}/plugin/es53-frame-group.js"/>
       <input file="${src.caja}/plugin/caja-iframe-done.js"/>
     </transform>
     <transform>
@@ -892,6 +898,8 @@
       <input file="${src.caja}/plugin/uri.js"/>
       <input file="${src.caja}/ses-promise.js"/>
       <input file="${src.caja}/plugin/cajoling-service-client.js"/>
+      <input file="${src.caja}/plugin/guest-manager.js"/>
+      <input file="${src.caja}/plugin/ses-frame-group.js"/>
       <input file="${src.caja}/plugin/caja-iframe-done.js"/>
     </transform>
     <transform>
@@ -939,6 +947,7 @@
     </javac>
 
     <!-- Lint the ES5/3 case -->
+    <!-- TODO(felix8a): duplicated list -->
     <genrule class="com.google.caja.ancillary.linter.Linter"
      unless="${tools.ancillary.disable}">
       <input file="${lib.caja}/cajita-module-orig.js"/>
@@ -951,6 +960,8 @@
       <input file="${src.caja}/plugin/domado.js"/>
       <input file="${src.caja}/plugin/caja-iframe-build-version.js"/>
       <input file="${src.caja}/plugin/caja-iframe-done.js"/>
+      <input file="${src.caja}/plugin/es53-frame-group.js"/>
+      <input file="${src.caja}/plugin/guest-manager.js"/>
       <input file="${src.caja}/plugin/html-emitter.js"/>
       <input file="${src.caja}/plugin/html-sanitizer.js"/>
       <input file="${lib.caja}/plugin/html4-defs.js"/>
@@ -979,7 +990,9 @@
       <input file="${src.caja}/plugin/csslexer.js"/>
       <input file="${src.caja}/plugin/cssparser.js"/>
       <input file="${src.caja}/plugin/domado.js"/>
+      <input file="${src.caja}/plugin/guest-manager.js"/>
       <input file="${lib.caja}/plugin/html4-defs.js"/>
+      <input file="${src.caja}/plugin/ses-frame-group.js"/>
       <input file="${src.caja}/plugin/unicode.js"/>
       <input file="${src.caja}/plugin/uri.js"/>
       <input file="${src.caja}/flash/caja-flash.js"/>

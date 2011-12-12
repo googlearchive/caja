@@ -241,7 +241,7 @@
     });
   });
 
-  caja.configure({
+  caja.makeFrameGroup({
     cajaServer: 'http://localhost:8000/caja',
     debug: true,
     forceES5Mode: inES5Mode

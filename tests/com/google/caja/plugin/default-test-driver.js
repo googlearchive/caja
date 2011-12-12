@@ -29,7 +29,7 @@ function getLoaderTypeName(loaderType) {
 var testCase = getUrlParam('test-case');
 
 if (testCase) {
-  caja.configure({
+  caja.makeFrameGroup({
     cajaServer: 'http://localhost:8000/caja',
     debug: true,
     forceES5Mode: inES5Mode

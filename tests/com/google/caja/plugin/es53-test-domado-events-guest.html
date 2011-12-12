@@ -18,7 +18,7 @@
 
 <p class="clickme testcontainer" id="test-function-calls-in-attributes">
   <span onclick="doIt();">
-    Function calls in attributes should work.
+    click me.  Function calls in attributes should work.
   </span>
 </p>
 <script type="text/javascript">
@@ -198,10 +198,6 @@
   });
 </script>
 
-<!--
-
-    TODO(ihab.awad): Pending http://codereview.appspot.com/4530099/
-
 <p class="clickme testcontainer" id="test-innerhtml-onclick">
   <b>do not click yet</b>
 </p>
@@ -217,27 +213,26 @@
   });
 </script>
 
--->
-
 <p class="clickme testcontainer" id="testOnclickHandler">
   <b id="testOnclickHandler-label"
-     onclick="pass('testOnclickHandler');">click me</b>
+     onclick="passTestOnclickHandler();">click me</b>
 </p>
 <script type="text/javascript">
-  // TODO(kpreid): Enable for ES5 and debug.
-  jsunitRegisterIf(!inES5Mode,
-                   'testOnclickHandler',
-                   function testOnclickHandler() {
+  window.passTestOnclickHandler = function passTestOnclickHandler() {
+    pass('testOnclickHandler');
+  }
+  jsunitRegister('testOnclickHandler',
+                 function testOnclickHandler() {
     // Nothing to do here.  pass call in testOnclickHandler HTML.
   });
 </script>
 
 <!--
-
-    TODO(ihab.awad): Pending http://codereview.appspot.com/4530099/
-
+TODO(felix8a): fix javascript url handling
+  es53 fails because IMPORTS___.handlers___ doesn't exist.
+  ses fails because the js urls don't get rewritten so execute in the feral context.
 <p class="clickme testcontainer" id="test-jsuri">
-  <a id="test-jsuri-label" href="javascript:pass('test-jsuri')">click JS URL</a>
+  <a id="test-jsuri-label" href="javascript:alert(1)+pass('test-jsuri')">click JS URL</a>
 </p>
 <script type="text/javascript">
   jsunitRegister('testJsUri',
@@ -245,7 +240,6 @@
     // Nothing to do here.  pass call in test-jsuri HTML.
   });
 </script>
-
 -->
 
 <p class="clickme testcontainer" id="test-current-target">
