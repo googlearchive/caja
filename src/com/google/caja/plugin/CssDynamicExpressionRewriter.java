@@ -50,8 +50,7 @@ public final class CssDynamicExpressionRewriter {
   private final @Nullable String gadgetNameSuffix;
 
   public CssDynamicExpressionRewriter(PluginMeta meta) {
-    String idSuffix = meta.getIdClass();
-    this.gadgetNameSuffix = idSuffix;
+    this.gadgetNameSuffix = meta.getIdClass();
   }
 
   /**

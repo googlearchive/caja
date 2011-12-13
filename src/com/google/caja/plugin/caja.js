@@ -146,13 +146,13 @@ var caja = (function () {
   /**
    * Creates a guest frame in the default frameGroup.
    */
-  function load(div, uriPolicy, loadDone) {
+  function load(div, uriPolicy, loadDone, opt_idClass) {
     uriPolicy = uriPolicy || caja.policy.net.NO_NETWORK;
     if (state === UNREADY) {
       initialize({});
     }
     whenReady(function () {
-      defaultFrameGroup.makeES5Frame(div, uriPolicy, loadDone);
+      defaultFrameGroup.makeES5Frame(div, uriPolicy, loadDone, opt_idClass);
     });
   }
 
@@ -322,11 +322,11 @@ var caja = (function () {
     }
   }
 
-  function prepareContainerDiv(div, feralWin) {
+  function prepareContainerDiv(div, feralWin, opt_idClass) {
     if (div && feralWin.document !== div.ownerDocument) {
       throw '<div> provided for ES5 frame must be in main document';
     }
-    var idSuffix = 'caja-guest-' + nextId++ + '___';
+    var idClass = opt_idClass || ('caja-guest-' + nextId++ + '___');
     var inner = null;
     var outer = null;
     if (div) {
@@ -344,7 +344,7 @@ var caja = (function () {
       div.appendChild(outer);
     }
     return {
-      idSuffix: idSuffix,
+      idClass: idClass,
       inner: inner,
       outer: outer
     };

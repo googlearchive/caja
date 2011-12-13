@@ -37,14 +37,17 @@ var cajolingServiceClientMaker = function(serviceUrl,
   // Map from full module URLs to module JSON records.
   var cache = {};
 
-  var makeServiceReference = function(uncajoledSourceUrl, mimeType) {
+  var makeServiceReference = function(
+      uncajoledSourceUrl, mimeType, opt_idClass)
+  {
     return serviceUrl +
         '?url=' + encodeURIComponent(uncajoledSourceUrl) +
         '&build-version=' + cajaBuildVersion +
         '&directive=ES53' +
         '&emit-html-in-js=' + emitHtmlInJs +
         '&renderer=' + (debug ? 'pretty' : 'minimal') +
-        '&input-mime-type=' + mimeType;
+        '&input-mime-type=' + mimeType +
+        (opt_idClass ? '&id-class=' + opt_idClass : '');
   };
 
   var messagesToLog = function(moduleURL, cajolerMessages) {
@@ -105,15 +108,16 @@ var cajolingServiceClientMaker = function(serviceUrl,
    * @param url the url of the content.
    * @param content the content to be cajoled.
    * @param mimeType the MIME type of the content.
+   * @param opt_idClass the id/class suffix to use in static html.
    *
    * @return a promise for the module JSON returned from the cajoler.
    */
-  var cajoleContent = function (url, content, mimeType) {
+  var cajoleContent = function (url, content, mimeType, opt_idClass) {
     var result = Q.defer();
     handleRequest(
         url,
         jsonRequestChannel.request(
-            makeServiceReference(url, mimeType),
+            makeServiceReference(url, mimeType, opt_idClass),
             content,
             mimeType),
         result);

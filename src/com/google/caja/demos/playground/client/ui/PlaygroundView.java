@@ -13,14 +13,10 @@
 
 package com.google.caja.demos.playground.client.ui;
 
-import java.util.EnumMap;
-import java.util.HashMap;
-import java.util.Map;
-
-import com.google.caja.gwtbeans.shared.Caja;
-import com.google.caja.gwtbeans.shared.Frame;
 import com.google.caja.demos.playground.client.Playground;
 import com.google.caja.demos.playground.client.PlaygroundResource;
+import com.google.caja.gwtbeans.shared.Caja;
+import com.google.caja.gwtbeans.shared.Frame;
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.core.client.JavaScriptObject;
 import com.google.gwt.dom.client.Style.Unit;
@@ -44,17 +40,27 @@ import com.google.gwt.user.client.ui.ScrollPanel;
 import com.google.gwt.user.client.ui.SuggestBox;
 import com.google.gwt.user.client.ui.TreeItem;
 
+import java.util.EnumMap;
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * GUI elements of the playground client
  *
  * @author Jasvir Nagra (jasvir@gmail.com)
  */
 public class PlaygroundView {
-  private Playground controller;
-  private MultiWordSuggestOracle sourceExamples;
+  private final Playground controller;
+  private final MultiWordSuggestOracle sourceExamples;
   private MultiWordSuggestOracle policyExamples;
 
-  private PlaygroundUI playgroundUI;
+  private final PlaygroundUI playgroundUI;
+
+  private int idSeq = 0;
+
+  private String genId() {
+    return "CajaGadget" + (idSeq++) + "___";
+  }
 
   public void setVersion(String v) {
     playgroundUI.version.setText(v);
@@ -100,7 +106,8 @@ public class PlaygroundView {
             playgroundUI.addressField.getText(),
             playgroundUI.sourceText.getText(),
             playgroundUI.policyText.getText(),
-            true /* es53 */
+            true /* debug */,
+            genId()
         );
       }
     });
@@ -252,7 +259,7 @@ public class PlaygroundView {
     setupNativeSelectLineBridge();
     selectTab(Tabs.SOURCE);
   }
-  
+
   private native void initPlusOne() /*-{
     try {
       $wnd.gapi.plusone.render("plusone",{size: "medium"});
@@ -303,7 +310,7 @@ public class PlaygroundView {
       }
     });
   }
-  
+
   private void initCaja() {
     Caja.initialize(".");
   }
@@ -359,7 +366,10 @@ public class PlaygroundView {
     return $wnd.prettyPrintOne($wnd.indentAndWrapCode(result), lang);
   }-*/;
 
-  public void setRenderedResult(final String policy, final String html, final String js) {
+  public void setRenderedResult(
+      final String policy, final String html, final String js,
+      final String idClass)
+  {
     if (html == null && js == null) {
       playgroundUI.renderResult.setText("There were cajoling errors");
       return;
@@ -378,7 +388,7 @@ public class PlaygroundView {
           }
           @Override public void onSuccess(Frame frame) {
             JavaScriptObject tmp = makeExtraImports(Caja.getNative(), policy);
-            augmentWith(tmp, "widgets", 
+            augmentWith(tmp, "widgets",
                 ((WidgetsTaming)GWT.create(WidgetsTaming.class))
                 .getJso(frame, new Widgets(playgroundUI.gwtShim)));
             augmentWith(tmp, "blivit",
@@ -396,9 +406,9 @@ public class PlaygroundView {
                   }
                 });
           }
-        });
+        }, idClass);
   }
-  
+
   private void setRenderedResult(String result) {
     playgroundUI.renderResult.setText(result);
   }
@@ -425,7 +435,7 @@ public class PlaygroundView {
       JavaScriptObject value) /*-{
     o[key] = value;
   }-*/;
-  
+
   private native JavaScriptObject makeExtraImports(
       JavaScriptObject caja,
       String policy) /*-{

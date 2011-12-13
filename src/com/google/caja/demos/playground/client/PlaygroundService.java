@@ -24,7 +24,7 @@ public interface PlaygroundService extends RemoteService {
    * @return cajoled html, js and cajoling messages
    */
   CajolingServiceResult cajole(String base, String uri, String input,
-      boolean debugMode);
+      boolean debugMode, String opt_idClass);
 
   /**
    * Returns build info as a string

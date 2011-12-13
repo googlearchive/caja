@@ -24,5 +24,5 @@ public interface PlaygroundServiceAsync {
   void getBuildInfo(AsyncCallback<String> callback);
   void fetch(String base, String url, AsyncCallback<String> callback);
   void cajole(String base, String uri, String input, boolean debugMode,
-              AsyncCallback<CajolingServiceResult> asyncCallback);
+      String opt_idClass, AsyncCallback<CajolingServiceResult> asyncCallback);
 }

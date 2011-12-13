@@ -30,7 +30,7 @@ import com.google.gwt.user.client.rpc.AsyncCallback;
 public class Playground implements EntryPoint, ValueChangeHandler<String> {
   private PlaygroundView gui;
 
-  private PlaygroundServiceAsync cajolingService =
+  private final PlaygroundServiceAsync cajolingService =
     GWT.create(PlaygroundService.class);
 
   public void loadSource(String url) {
@@ -83,10 +83,11 @@ public class Playground implements EntryPoint, ValueChangeHandler<String> {
   }
 
   public void cajole(String uri, String input, final String policy,
-      boolean debugMode) {
+      boolean debugMode, final String opt_idClass) {
     gui.setLoading(true);
-    cajolingService.cajole(Window.Location.getHref(), uri, input, debugMode,
-                           new AsyncCallback<CajolingServiceResult>() {
+    cajolingService.cajole(
+        Window.Location.getHref(), uri, input, debugMode, opt_idClass,
+        new AsyncCallback<CajolingServiceResult>() {
       public void onFailure(Throwable caught) {
         gui.setLoading(false);
         gui.addCompileMessage(caught.getMessage());
@@ -104,11 +105,12 @@ public class Playground implements EntryPoint, ValueChangeHandler<String> {
         }
         if (result.getHtml() != null) {
           gui.setCajoledSource(result.getHtml(), result.getJavascript());
-          gui.setRenderedResult(policy, result.getHtml(), result.getJavascript());
+          gui.setRenderedResult(
+              policy, result.getHtml(), result.getJavascript(), opt_idClass);
           gui.selectTab(PlaygroundView.Tabs.RENDER);
         } else {
           gui.setCajoledSource(null, null);
-          gui.setRenderedResult(null, null, null);
+          gui.setRenderedResult(null, null, null, null);
           gui.selectTab(PlaygroundView.Tabs.COMPILE_WARNINGS);
         }
       }

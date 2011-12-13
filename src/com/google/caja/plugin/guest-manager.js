@@ -64,7 +64,13 @@ function GuestManager(divs, domicile, guestWin, runImpl) {
   var self = {
     // Public state
     div: divs.outer && divs.outer.parentNode,
-    idSuffix: divs.idSuffix,
+    idClass: divs.idClass,
+
+    // deprecated; idSuffix in domado means '-' + idClass, but idSuffix
+    // exposed here is without the leading '-'.  Future code should use the
+    // idClass property instead.
+    idSuffix: divs.idClass,
+
     iframe: guestWin.frameElement,
     imports: (domicile
               ? domicile.window

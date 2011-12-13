@@ -86,12 +86,12 @@ public enum CajaArguments {
    * Directives which affect the chosen Caja transformation
    */
   DIRECTIVE("directive"),
-  
+
   /**
    * The URL of the input document that Caja is being asked to process.
    */
   URL("url"),
-  
+
   /**
    * Optional content that Caja is being asked to process.
    */
@@ -106,7 +106,12 @@ public enum CajaArguments {
    *   <li>{@code renderer=pretty} pretty print for debugging.</li>
    * </ul>
    */
-  RENDERER("renderer");
+  RENDERER("renderer"),
+
+  /**
+   * HTML ID suffix and CSS class, for early-binding.
+   */
+  ID_CLASS("id-class");
 
   private final String argKeyword;
 

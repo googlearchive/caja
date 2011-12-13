@@ -52,8 +52,8 @@ function SESFrameGroup(cajaInt, config, tamingWin, feralWin) {
 
   //----------------
 
-  function makeES5Frame(div, uriPolicy, es5ready) {
-    var divs = cajaInt.prepareContainerDiv(div, feralWin);
+  function makeES5Frame(div, uriPolicy, es5ready, opt_idClass) {
+    var divs = cajaInt.prepareContainerDiv(div, feralWin, opt_idClass);
     cajaInt.loadCajaFrame(config, 'ses-guest-frame', function (guestWin) {
       var domicile = makeDomicile(divs, uriPolicy, guestWin);
       var gman = GuestManager(divs, domicile, guestWin, sesRun);
@@ -75,7 +75,7 @@ function SESFrameGroup(cajaInt, config, tamingWin, feralWin) {
     if (!divs.inner) { return null; }
 
     var domicile = domado.attachDocument(
-      '-' + divs.idSuffix, uriPolicy, divs.inner);
+      '-' + divs.idClass, uriPolicy, divs.inner);
     var imports = domicile.window;
 
     // The following code copied from the ES5/3 mode is mostly

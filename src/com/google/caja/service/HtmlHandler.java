@@ -13,12 +13,6 @@
 
 package com.google.caja.service;
 
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.net.URI;
-import java.util.List;
-
 import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.FetchedData;
 import com.google.caja.lexer.InputSource;
@@ -35,6 +29,12 @@ import com.google.caja.reporting.MessageQueue;
 import com.google.caja.util.Charsets;
 import com.google.caja.util.ContentType;
 import com.google.caja.util.Pair;
+
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.net.URI;
+import java.util.List;
 
 /**
  * Retrieves html files and cajoles them
@@ -69,7 +69,7 @@ public class HtmlHandler extends AbstractCajolingHandler {
                                    MessageQueue mq)
       throws UnsupportedContentTypeException {
     PluginMeta meta = new PluginMeta(uriFetcher, null);
-    meta.setIdClass(args.get("idclass"));
+    meta.setIdClass(CajaArguments.ID_CLASS.get(args));
 
     boolean htmlInline =
         CajaArguments.EMIT_HTML_IN_JS.get(args) != null

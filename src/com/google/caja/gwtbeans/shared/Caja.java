@@ -34,13 +34,15 @@ public class Caja {
   public static void load(
       Element element,
       JavaScriptObject uriPolicy,
-      final AsyncCallback<Frame> callback) {
+      final AsyncCallback<Frame> callback,
+      final String opt_idClass) {
     loadNative(element, uriPolicy, new FrameCb() {
       @Override
       public void cb(JavaScriptObject frame) {
         callback.onSuccess(new FrameImpl(frame));
       }
-    });
+    }, opt_idClass);
+    // opt_idClass at the end is awkward, but consistent with caja.js
   }
 
   public static native JavaScriptObject getNative() /*-{
@@ -48,17 +50,18 @@ public class Caja {
   }-*/;
 
   /* -- end of public interface -- */
-  
+
   private static interface FrameCb {
     void cb(JavaScriptObject frame);
   }
-  
+
   private static native void loadNative(
       Element element,
       JavaScriptObject uriPolicy,
-      FrameCb cb) /*-{
+      FrameCb cb,
+      String opt_idClass) /*-{
     $wnd.caja.load(element, uriPolicy, function(frame) {
       cb.@com.google.caja.gwtbeans.shared.Caja.FrameCb::cb(Lcom/google/gwt/core/client/JavaScriptObject;)(frame);
-    });
+    }, opt_idClass);
   }-*/;
 }

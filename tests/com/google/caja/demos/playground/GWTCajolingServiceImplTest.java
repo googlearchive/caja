@@ -41,13 +41,15 @@ public class GWTCajolingServiceImplTest extends CajaTestCase {
   }
 
   private void assertCajoles(String uri, String content) {
-    CajolingServiceResult result = service.cajole(null, uri, content, false);
+    CajolingServiceResult result = service.cajole(
+        null, uri, content, false, null);
     assertTrue(result.getHtml() != null);
   }
 
   private void assertFailsWithError(String uri, String content,
       MessageLevel lvl) {
-    CajolingServiceResult result = service.cajole(null, uri, content, false);
+    CajolingServiceResult result = service.cajole(
+        null, uri, content, false, null);
     assertNull(result.getHtml());
     assertNull(result.getJavascript());
     for (String message : result.getMessages()) {

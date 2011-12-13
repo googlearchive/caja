@@ -58,8 +58,8 @@ function ES53FrameGroup(cajaInt, config, tamingWin, feralWin) {
 
   //----------------
 
-  function makeES5Frame(div, uriPolicy, es5ready) {
-    var divs = cajaInt.prepareContainerDiv(div, feralWin);
+  function makeES5Frame(div, uriPolicy, es5ready, opt_idClass) {
+    var divs = cajaInt.prepareContainerDiv(div, feralWin, opt_idClass);
     cajaInt.loadCajaFrame(config, 'es53-guest-frame', function (guestWin) {
       var domicile = makeDomicile(divs, uriPolicy, guestWin);
       var gman = GuestManager(divs, domicile, guestWin, es53run);
@@ -90,7 +90,7 @@ function ES53FrameGroup(cajaInt, config, tamingWin, feralWin) {
     // record imports with the tame constructed object 'window'.
 
     var domicile = domado.attachDocument(
-      '-' + divs.idSuffix, uriPolicyWrapper, divs.inner);
+      '-' + divs.idClass, uriPolicyWrapper, divs.inner);
     var imports = domicile.window;
 
     // Add JavaScript globals to the DOM window object.
@@ -173,7 +173,8 @@ function ES53FrameGroup(cajaInt, config, tamingWin, feralWin) {
       Q.when(
         // unspecified mimeType here means html
         cajoler.cajoleContent(
-          args.url, args.uncajoledContent, args.mimeType || 'text/html'),
+          args.url, args.uncajoledContent, args.mimeType || 'text/html',
+          gman.idClass),
         function (jsonModule) {
           guestWin.Q.when(
             gman._loader.loadCajoledJson___(args.url, jsonModule),
