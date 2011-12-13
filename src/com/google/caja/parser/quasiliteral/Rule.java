@@ -14,6 +14,8 @@
 
 package com.google.caja.parser.quasiliteral;
 
+import static com.google.caja.parser.js.SyntheticNodes.s;
+
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.Keyword;
 import com.google.caja.lexer.TokenConsumer;
@@ -31,12 +33,12 @@ import com.google.caja.parser.js.FunctionConstructor;
 import com.google.caja.parser.js.Identifier;
 import com.google.caja.parser.js.Literal;
 import com.google.caja.parser.js.Noop;
+import com.google.caja.parser.js.ObjectConstructor;
 import com.google.caja.parser.js.Operation;
 import com.google.caja.parser.js.Operator;
 import com.google.caja.parser.js.Reference;
 import com.google.caja.parser.js.StringLiteral;
 import com.google.caja.parser.js.SyntheticNodes;
-import static com.google.caja.parser.js.SyntheticNodes.s;
 import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.RenderContext;
@@ -140,6 +142,35 @@ public abstract class Rule implements MessagePart {
     return description;
   }
 
+  public boolean canMatch(Class<? extends ParseTreeNode> nodeType) {
+    RuleDescription desc = getRuleDescription();
+    Class<? extends ParseTreeNode> bound = desc.matchNode();
+    if (bound != ParseTreeNode.class) {
+      // If the rule has an explicit matchNode=, use it.
+      bound = QuasiBuilder.fuzzType(bound);
+
+    } else {
+      // Otherwise, try parsing the matches= pattern
+      String pattern = desc.matches();
+      bound = quasiLowerBound(QuasiCache.parse(pattern));
+    }
+    return bound.isAssignableFrom(nodeType);
+  }
+
+  private static Class<? extends ParseTreeNode> quasiLowerBound(QuasiNode p) {
+    if (p == null) {
+      return ParseTreeNode.class;
+    } else  if (p instanceof SimpleQuasiNode) {
+      return QuasiBuilder.fuzzType(((SimpleQuasiNode) p).getMatchedClass());
+    } else if (p instanceof ObjectCtorQuasiNode) {
+      return ObjectConstructor.class;
+    } else if (p instanceof StringLiteralQuasiNode) {
+      return StringLiteral.class;
+    } else {
+      return ParseTreeNode.class;
+    }
+  }
+
   /**
    * Process the given input, returning a rewritten node.
    *
@@ -184,6 +215,9 @@ public abstract class Rule implements MessagePart {
         node.getValue(),
         rewrittenChildren);
     result.getAttributes().putAll(node.getAttributes());
+    if (SyntheticNodes.is(node)) {
+      SyntheticNodes.s(result);
+    }
 
     result.makeImmutable();
     return result;
@@ -363,7 +397,7 @@ public abstract class Rule implements MessagePart {
   }
 
   protected static boolean isSynthetic(Identifier node) {
-    return node.getAttributes().is(SyntheticNodes.SYNTHETIC);
+    return node.isSynthetic();
   }
 
   protected static boolean isSynthetic(Reference node) {
@@ -371,7 +405,7 @@ public abstract class Rule implements MessagePart {
   }
 
   protected static boolean isSynthetic(FunctionConstructor node) {
-    return node.getAttributes().is(SyntheticNodes.SYNTHETIC);
+    return node.isSynthetic();
   }
 
   protected static String getReferenceName(ParseTreeNode ref) {

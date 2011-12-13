@@ -29,8 +29,11 @@ import com.google.caja.parser.js.DirectivePrologue;
 import com.google.caja.parser.js.Expression;
 import com.google.caja.parser.js.ExpressionStmt;
 import com.google.caja.parser.js.FormalParam;
+import com.google.caja.parser.js.FunctionConstructor;
 import com.google.caja.parser.js.FunctionDeclaration;
 import com.google.caja.parser.js.Identifier;
+import com.google.caja.parser.js.LabeledStatement;
+import com.google.caja.parser.js.LabeledStmtWrapper;
 import com.google.caja.parser.js.ObjProperty;
 import com.google.caja.parser.js.ObjectConstructor;
 import com.google.caja.parser.js.Parser;
@@ -193,6 +196,26 @@ public class QuasiBuilder {
    */
   public static QuasiNode parseQuasiNode(String pattern) throws ParseException {
     return parseQuasiNode(FilePosition.UNKNOWN.source(), pattern);
+  }
+
+  /** This parallels the fuzzing done in
+   * {@link QuasiBuilder#parseQuasiNode(InputSource, String)} */
+  // TODO(felix8a): why is this comment a lie?
+  public static Class<? extends ParseTreeNode> fuzzType(
+      Class<? extends ParseTreeNode> nodeClass) {
+    if (nodeClass == FunctionDeclaration.class) {
+      return FunctionConstructor.class;
+    }
+    if (nodeClass == Expression.class) {
+      return ExpressionStmt.class;
+    }
+    if (nodeClass == Reference.class) {
+      return Identifier.class;
+    }
+    if (nodeClass == LabeledStmtWrapper.class) {
+      return LabeledStatement.class;
+    }
+    return nodeClass;
   }
 
   private static QuasiNode getPatternNode(String patternText) {

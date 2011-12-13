@@ -1770,7 +1770,7 @@
              classpathref="classpath.run" />
   </target>
 
-  <target name="precajole" depends="Precajoler">
+  <target name="precajole" depends="Precajoler" unless="precajole.skip">
     <precajole to="${lib.caja}/precajole/data">
       <source file="${3pp.jquery}/1.6.4/jquery-1.6.4.js">
         http://ajax.googleapis.com/ajax/libs/jquery/1.6.4/jquery.js

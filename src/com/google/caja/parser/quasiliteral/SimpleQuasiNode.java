@@ -34,7 +34,7 @@ import java.util.Map;
 public class SimpleQuasiNode extends QuasiNode {
   private final Class<? extends ParseTreeNode> clazz;
   private final Object value;
-  private Equivalence valueComparator;
+  private final Equivalence valueComparator;
 
   protected SimpleQuasiNode(
       Class<? extends ParseTreeNode> clazz, Object value,
@@ -124,6 +124,8 @@ public class SimpleQuasiNode extends QuasiNode {
 
   /** The class of node matched by this quasi node. */
   public Class<? extends ParseTreeNode> getMatchedClass() { return clazz; }
+
+  public Object getValue() { return value; }
 
   @Override
   public String toString() {

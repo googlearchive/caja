@@ -38,8 +38,7 @@ public class IllegalReferenceCheckRewriter extends Rewriter {
           reason="Double underscore identifiers may not be mentioned by Caja "
               + "code")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
-        if (node instanceof Identifier
-            && !node.getAttributes().is(SyntheticNodes.SYNTHETIC)) {
+        if (node instanceof Identifier && !SyntheticNodes.is(node)) {
           String name = ((Identifier)node).getValue();
           if (name != null && name.endsWith("__")) {
             mq.addMessage(

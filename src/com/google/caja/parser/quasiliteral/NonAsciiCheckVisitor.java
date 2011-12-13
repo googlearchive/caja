@@ -40,7 +40,7 @@ public final class NonAsciiCheckVisitor implements Visitor {
     if (!(ac.node instanceof Identifier)) { return true; }
     Identifier ident = (Identifier) ac.node;
     String name = ident.getName();
-    if (!ident.getAttributes().is(SyntheticNodes.SYNTHETIC)
+    if (!SyntheticNodes.is(ident)
         && name != null && !name.matches("^[a-zA-Z_$][a-zA-Z0-9_$]*$")) {
       mq.addMessage(
           RewriterMessageType.NONASCII_IDENTIFIER,

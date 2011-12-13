@@ -27,7 +27,6 @@ import java.util.Map;
  * @author mikesamuel@gmail.com
  */
 public enum Operator {
-
   // from precedence tables at
   // http://www.codehouse.com/javascript/precedence/
   SQUARE_BRACKET(OperatorType.BRACKET, OperatorCategory.SPECIAL,

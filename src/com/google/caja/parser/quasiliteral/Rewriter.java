@@ -29,7 +29,6 @@ import com.google.caja.render.JsPrettyPrinter;
 import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.RenderContext;
-import com.google.caja.util.SyntheticAttributes;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -218,8 +217,7 @@ public class Rewriter {
   // Returns true if check passed.
   private boolean checkTainted(ParseTreeNode node, MessageQueue mq) {
     if (tainted.contains(node)) {
-      SyntheticAttributes attrs = node.getAttributes();
-      if (!attrs.is(SyntheticNodes.SYNTHETIC)) {
+      if (!SyntheticNodes.is(node)) {
         mq.addMessage(
             RewriterMessageType.UNSEEN_NODE_LEFT_OVER, node,
             node.getFilePosition());

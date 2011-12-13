@@ -698,6 +698,8 @@ public class ParseTreeNodeTest extends CajaTestCase {
     assertSerializable(p);
   }
 
+  @SuppressWarnings("unchecked")
+  // setComments causes a warning about generic array for varargs
   public final void testImmutability() throws Exception {
     Block n = new Block(
         FilePosition.UNKNOWN,
@@ -720,7 +722,7 @@ public class ParseTreeNodeTest extends CajaTestCase {
       fail();
     } catch (UnsupportedOperationException e) {}
     try {
-      n.getAttributes().set(SyntheticNodes.SYNTHETIC, true);
+      SyntheticNodes.s(n);
       fail();
     } catch (UnsupportedOperationException e) {}
   }

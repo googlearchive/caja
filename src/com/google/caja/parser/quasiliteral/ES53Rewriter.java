@@ -14,6 +14,8 @@
 
 package com.google.caja.parser.quasiliteral;
 
+import static com.google.caja.parser.js.SyntheticNodes.s;
+
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.ParseTreeNodeContainer;
@@ -69,8 +71,6 @@ import com.google.caja.reporting.MessageQueue;
 import com.google.caja.util.Lists;
 import com.google.caja.util.Pair;
 import com.google.caja.util.Sets;
-
-import static com.google.caja.parser.js.SyntheticNodes.s;
 
 import java.net.URI;
 import java.util.Arrays;
@@ -231,7 +231,8 @@ public class ES53Rewriter extends Rewriter {
           name="translatedCode",
           synopsis="Allow code received from a *->JS translator",
           reason="Translated code should not be treated as user supplied JS.",
-          matches="<TranslatedCode>")
+          matches="<TranslatedCode>",
+          matchNode=TranslatedCode.class)
       public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
         if (node instanceof TranslatedCode) {
           Statement rewritten
@@ -322,6 +323,7 @@ public class ES53Rewriter extends Rewriter {
               + "contents of the 'substitutes' of this rule.",
           reason="So that the module loader can be invoked to load a module.",
           matches="<an UncajoledModule>",
+          matchNode=UncajoledModule.class,
           substitutes=(
               ""
               + "(/*@synthetic*/{"
@@ -709,11 +711,39 @@ public class ES53Rewriter extends Rewriter {
           name="varBadSuffixDeclaration",
           synopsis="Statically reject if a variable with `__` suffix is found.",
           reason="Caja reserves the `__` suffix for internal use.",
-          matches="<approx>(var|function) @v__ ...",  // TODO(mikesamuel): limit
+          matches="<approx> var @v__ ...",
+          matchNode=Declaration.class,
           substitutes="<reject>")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
         if (node instanceof Declaration) {
           Identifier name = ((Declaration) node).getIdentifier();
+          if (name.getValue().endsWith("__")) {
+            mq.addMessage(
+                RewriterMessageType.VARIABLES_CANNOT_END_IN_DOUBLE_UNDERSCORE,
+                node.getFilePosition(), this, node);
+            return node;
+          }
+        }
+        return NONE;
+      }
+    },
+
+
+    // This rule is separate from varBadSuffixDeclaration, because
+    // although FunctionDeclaration is a subclass of Declaration,
+    // it fuzzes as a FunctionConstructor.
+    new Rule() {
+      @Override
+      @RuleDescription(
+          name="functionBadSuffixDeclaration",
+          synopsis="Statically reject if a variable with `__` suffix is found.",
+          reason="Caja reserves the `__` suffix for internal use.",
+          matches="<approx> function @v__ ...",
+          matchNode=FunctionDeclaration.class,
+          substitutes="<reject>")
+      public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
+        if (node instanceof FunctionDeclaration) {
+          Identifier name = ((FunctionDeclaration) node).getIdentifier();
           if (name.getValue().endsWith("__")) {
             mq.addMessage(
                 RewriterMessageType.VARIABLES_CANNOT_END_IN_DOUBLE_UNDERSCORE,
@@ -733,6 +763,7 @@ public class ES53Rewriter extends Rewriter {
           synopsis="Global vars are rewritten to be properties of IMPORTS___.",
           reason="",
           matches="@v",
+          matchNode=Reference.class,
           substitutes="IMPORTS___.@fp ?" +
               "IMPORTS___.@v :" +
               "___.ri(IMPORTS___, @vname)")
@@ -762,7 +793,8 @@ public class ES53Rewriter extends Rewriter {
           name="varDefault",
           synopsis="Any remaining uses of a variable name are preserved.",
           reason="",
-          matches="@v",  // TODO(mikesamuel): limit further
+          matches="@v",
+          matchNode=Reference.class,
           substitutes="@v")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
         Map<String, ParseTreeNode> bindings = match(node);
@@ -1300,8 +1332,8 @@ public class ES53Rewriter extends Rewriter {
           name="setReadModifyWriteLocalVar",
           synopsis="",
           reason="",
-          // TODO(mikesamuel): better lower limit
           matches="<approx> @x @op= @y",
+          matchNode=AssignOperation.class,
           substitutes="<approx> @x = @x @op @y")
       // Handle x += 3 and similar ops by rewriting them using the assignment
       // delegate, "x += y" => "x = x + y", with deconstructReadAssignOperand
@@ -1334,8 +1366,8 @@ public class ES53Rewriter extends Rewriter {
       @RuleDescription(
           name="setIncrDecr",
           synopsis="Handle pre and post ++ and --.",
-          // TODO(mikesamuel): better lower bound
           matches="<approx> ++@x but any {pre,post}{in,de}crement will do",
+          matchNode=AssignOperation.class,
           reason="")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
         if (!(node instanceof AssignOperation)) { return NONE; }
@@ -1853,7 +1885,8 @@ public class ES53Rewriter extends Rewriter {
           name="mapBadKeySuffix",
           synopsis="Statically reject a property whose name ends with `__`",
           reason="",
-          matches="\"@k__\": @v",
+          matches="<approx> \"@k__\": @v",
+          matchNode=ObjProperty.class,
           substitutes="<reject>")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
         if (node instanceof ObjProperty) {
@@ -1876,7 +1909,8 @@ public class ES53Rewriter extends Rewriter {
           name="objectProperty",
           synopsis="nymize object properties",
           reason="",
-          matches="\"@k\": @v",
+          matches="<approx> \"@k\": @v",
+          matchNode=ObjProperty.class,
           substitutes="<nymized>")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
         if (node instanceof ObjProperty) {
@@ -2064,6 +2098,7 @@ public class ES53Rewriter extends Rewriter {
           reason="So that every use of a regex literal creates a new instance"
               + " to prevent state from leaking via interned literals. This"
               + " is consistent with the way ES4 treates regex literals.",
+          matchNode=RegexpLiteral.class,
           substitutes="new RegExp.new___(@pattern, @modifiers?)")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
         if (node instanceof RegexpLiteral) {
@@ -2091,7 +2126,8 @@ public class ES53Rewriter extends Rewriter {
               + " could lead to a directive appearing in an illegal position"
               + " since directives must appear at the beginning of a program"
               + " or function body, not in an arbitrary block",
-          matches="'use';",
+          matches="<approx> 'use';",
+          matchNode=DirectivePrologue.class,
           substitutes=";")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
         if (node instanceof DirectivePrologue) {

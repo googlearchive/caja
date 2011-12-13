@@ -14,6 +14,10 @@
 
 package com.google.caja.lang.css;
 
+import com.google.caja.util.Bag;
+import com.google.caja.util.Lists;
+import com.google.caja.util.Maps;
+
 import java.lang.reflect.Array;
 import java.util.Arrays;
 import java.util.BitSet;
@@ -21,10 +25,6 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import com.google.caja.util.Bag;
-import com.google.caja.util.Lists;
-import com.google.caja.util.Maps;
 
 class Partitions {
   static class Partition<T> {
@@ -171,7 +171,6 @@ class Partitions {
     for (int i = 0; i < nonZeroCols.count; ++i) { nonZeroCols.els[i] = i; }
 
     ISlice[] matrix = new ISlice[nSets];
-    int matrixSum = 0;
     {
       int i = 0;
       BitSet rowBits = new BitSet(universe.length);
@@ -181,7 +180,6 @@ class Partitions {
           int index = elToIndex.get(el);
           if (!rowBits.get(index)) {
             rowBits.set(index);
-            ++matrixSum;
           }
         }
         ISlice row = new ISlice();

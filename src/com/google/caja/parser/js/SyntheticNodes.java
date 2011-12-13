@@ -14,8 +14,8 @@
 
 package com.google.caja.parser.js;
 
+import com.google.caja.parser.AbstractParseTreeNode;
 import com.google.caja.parser.ParseTreeNode;
-import com.google.caja.util.SyntheticAttributeKey;
 
 // TODO(erights,ihab): Remove the concept of "synthetic" entirely.
 /**
@@ -34,12 +34,6 @@ import com.google.caja.util.SyntheticAttributeKey;
  * @author mikesamuel@gmail.com
  */
 public final class SyntheticNodes {
-  /**
-   * Indicates that a node breaks the caja rules in some way, but that this
-   * is OK since it comes from a privileged source, not user code.
-   */
-  public static final SyntheticAttributeKey<Boolean> SYNTHETIC
-      = new SyntheticAttributeKey<Boolean>(Boolean.class, "synthetic");
 
   public static boolean isSynthesizable(ParseTreeNode node) {
     return (node instanceof Identifier && node.getValue() != null)
@@ -47,24 +41,29 @@ public final class SyntheticNodes {
         || node instanceof UncajoledModule;
   }
 
+  public static boolean is(ParseTreeNode t) {
+    return t instanceof AbstractParseTreeNode
+        && ((AbstractParseTreeNode) t).isSynthetic();
+  }
+
   /**
    * A convenience function used to mark {@link #isSynthesizable synthesizable}
    * nodes created during source->javascript translation as
-   * {@link #SYNTHETIC synthetic}.  Nodes corresponsing to javascript
+   * {@link #SYNTHETIC synthetic}.  Nodes corresponding to javascript
    * embedded in the original will not be synthetic.
    * <p>
    * This is meant to be imported statically.
    */
   public static <T extends ParseTreeNode> T s(T t) {
     if (isSynthesizable(t)) {
-      t.getAttributes().set(SYNTHETIC, Boolean.TRUE);
+      ((AbstractParseTreeNode) t).setSynthetic(true);
     }
     return t;
   }
 
   /** A synthetic identifier may occupy the <code>*__</code> namespace. */
   public static Identifier s(Identifier t) {
-    t.getAttributes().set(SYNTHETIC, Boolean.TRUE);
+    t.setSynthetic(true);
     return t;
   }
 
@@ -74,7 +73,12 @@ public final class SyntheticNodes {
    * function.
    */
   public static FunctionConstructor s(FunctionConstructor t) {
-    t.getAttributes().set(SYNTHETIC, Boolean.TRUE);
+    t.setSynthetic(true);
+    return t;
+  }
+
+  public static Block s(Block t) {
+    t.setSynthetic(true);
     return t;
   }
 

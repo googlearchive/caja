@@ -15,7 +15,6 @@
 package com.google.caja.parser.js;
 
 import com.google.caja.lexer.FilePosition;
-import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.reporting.RenderContext;
 import com.google.javascript.jscomp.jsonml.JsonML;
 import com.google.javascript.jscomp.jsonml.TagType;

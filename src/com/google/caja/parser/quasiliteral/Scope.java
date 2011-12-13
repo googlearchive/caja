@@ -14,38 +14,36 @@
 
 package com.google.caja.parser.quasiliteral;
 
+import static com.google.caja.parser.js.SyntheticNodes.s;
+import static com.google.caja.parser.quasiliteral.QuasiBuilder.substV;
+
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.Keyword;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.ParseTreeNodeContainer;
-import com.google.caja.parser.js.DirectivePrologue;
-import com.google.caja.parser.js.Expression;
-import com.google.caja.parser.js.MultiDeclaration;
-import com.google.caja.parser.js.SyntheticNodes;
+import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.CatchStmt;
 import com.google.caja.parser.js.Declaration;
+import com.google.caja.parser.js.DirectivePrologue;
+import com.google.caja.parser.js.Expression;
 import com.google.caja.parser.js.FunctionConstructor;
 import com.google.caja.parser.js.FunctionDeclaration;
 import com.google.caja.parser.js.Identifier;
-import com.google.caja.parser.js.Reference;
-import com.google.caja.parser.js.Block;
-import com.google.caja.parser.js.Statement;
+import com.google.caja.parser.js.MultiDeclaration;
 import com.google.caja.parser.js.Operation;
 import com.google.caja.parser.js.Operator;
+import com.google.caja.parser.js.Reference;
+import com.google.caja.parser.js.Statement;
 import com.google.caja.parser.js.UncajoledModule;
 import com.google.caja.parser.js.scope.ScopeType;
 import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessagePart;
-import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.MessageType;
 import com.google.caja.util.Lists;
 import com.google.caja.util.Maps;
 import com.google.caja.util.Pair;
 import com.google.caja.util.Sets;
-
-import static com.google.caja.parser.js.SyntheticNodes.s;
-import static com.google.caja.parser.quasiliteral.QuasiBuilder.substV;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -569,7 +567,7 @@ public class Scope {
     }
 
     private void visitFunctionConstructor(FunctionConstructor node) {
-      if (node.getAttributes().is(SyntheticNodes.SYNTHETIC)) {
+      if (node.isSynthetic()) {
         // Synthetic function definitions are treated as "transparent"; our
         // scope analysis should "see through" them as though they were just
         // part of the surrounding code.
@@ -609,7 +607,7 @@ public class Scope {
     }
 
     private void visitReference(Reference node) {
-      if (!node.getIdentifier().getAttributes().is(SyntheticNodes.SYNTHETIC) &&
+      if (!node.getIdentifier().isSynthetic() &&
           !exceptionVariables.contains(node.getIdentifierName())) {
         references.add(node);
       }
@@ -686,7 +684,7 @@ public class Scope {
              || maskedType == LocalType.CAUGHT_EXCEPTION)
             ? MessageLevel.ERROR
             : MessageLevel.LINT);
-        if (!ident.getAttributes().is(SyntheticNodes.SYNTHETIC) &&
+        if (!ident.isSynthetic() &&
             ident.getFilePosition() != null) {
           s.rewriter.mq.getMessages().add(new Message(
               MessageType.MASKING_SYMBOL,

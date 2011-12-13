@@ -53,6 +53,7 @@ class SyntheticRuleSet {
           synopsis="Pass through synthetic references.",
           reason="A variable may not be mentionable otherwise.",
           matches="/* synthetic */ @ref",
+          matchNode=Reference.class,
           substitutes="<expanded>")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
         if (node instanceof Reference) {
@@ -211,6 +212,7 @@ class SyntheticRuleSet {
           synopsis="Pass through synthetic formals which are unmentionable.",
           reason="Synthetic code might need local variables for safe-keeping.",
           matches="/* synthetic */ @x in a parameter list",
+          matchNode=FormalParam.class,
           substitutes="<expanded>")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
         if (node instanceof FormalParam
