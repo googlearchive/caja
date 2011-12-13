@@ -177,7 +177,7 @@
         + '<input type="submit" value="Submit"></form>';
 
     assertEquals('<form onsubmit="'
-                 + 'try { plugin_dispatchEvent___'
+                 + 'try { ___.plugin_dispatchEvent___'
                  + '(this, event, 0, &quot;foo&quot;);'
                  + ' } finally { return false; }">'
                  + '<input type="submit" value="Submit"></form>',

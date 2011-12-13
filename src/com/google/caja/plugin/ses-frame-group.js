@@ -25,13 +25,17 @@ function SESFrameGroup(cajaInt, config, tamingWin, feralWin) {
   if (tamingWin !== window) {
     throw new Error('wrong frame');
   }
+  if (!tamingWin.___) {
+    tamingWin.___ = {};
+  }
 
   var stubMembrane = true;
 
   var bridal = bridalMaker(identity, feralWin.document);
 
   var domado = Domado(null);
-  tamingWin.plugin_dispatchToHandler___ = domado.plugin_dispatchToHandler___;
+  tamingWin.___.plugin_dispatchToHandler___ =
+      domado.plugin_dispatchToHandler;
 
   var frameGroup = {
     iframe: window.frameElement,
@@ -120,11 +124,12 @@ function SESFrameGroup(cajaInt, config, tamingWin, feralWin) {
     }
     feralWin.___.tamingWindows[imports.id___] = tamingWin;
 
-    feralWin.plugin_dispatchEvent___ = domado.plugin_dispatchEvent;
-    feralWin.plugin_dispatchToHandler___ =
+    feralWin.___.plugin_dispatchEvent___ = domado.plugin_dispatchEvent;
+    feralWin.___.plugin_dispatchToHandler___ =
       function (pluginId, handler, args) {
         var tamingWin = feralWin.___.tamingWindows[pluginId];
-        return tamingWin.plugin_dispatchToHandler___(pluginId, handler, args);
+        return tamingWin.___.plugin_dispatchToHandler___(
+          pluginId, handler, args);
       };
 
     return domicile;

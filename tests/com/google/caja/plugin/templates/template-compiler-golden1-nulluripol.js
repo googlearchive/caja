@@ -17,7 +17,7 @@ function module() {
       wasClicked(thisNode___);
     });
     el___.onclick = function (event) {
-      return plugin_dispatchEvent___(this, event, ___.getId(IMPORTS___), c_1___);
+      return ___.plugin_dispatchEvent___(this, event, ___.getId(IMPORTS___), c_1___);
     };
     // Remove the manufactured ID
     el___.removeAttribute('id');
@@ -62,7 +62,7 @@ function module() {
       wasClicked(thisNode___);
     });
     el___.onclick = function (event) {
-      return plugin_dispatchEvent___(this, event, ___.getId(IMPORTS___), c_1___);
+      return ___.plugin_dispatchEvent___(this, event, ___.getId(IMPORTS___), c_1___);
     };
     el___.removeAttribute('id');
     el___ = emitter___.byId('id_6___');

@@ -213,6 +213,7 @@
     <!-- ModuleSystemTest first, because it fails more quickly -->
     <antcall target="runtests">
       <param name="test.filter">ModuleSystemTest</param>
+      <param name="runtests.shouldCache">false</param>
     </antcall>
     <antcall target="runtests">
       <param name="test.filter">ES53BrowserTest</param>

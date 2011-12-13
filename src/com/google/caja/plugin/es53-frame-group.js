@@ -125,14 +125,15 @@ function ES53FrameGroup(cajaInt, config, tamingWin, feralWin) {
     }
     feralWin.___.tamingWindows[imports.id___] = tamingWin;
 
-    // domado innerHTML sanitizer uses feralWin.plugin_dispatchEvent___
-    // html-emitter uses guestWin.plugin_dispatchEvent___
-    feralWin.plugin_dispatchEvent___ = domado.plugin_dispatchEvent;
-    guestWin.plugin_dispatchEvent___ = domado.plugin_dispatchEvent;
-    feralWin.plugin_dispatchToHandler___ =
+    // domado innerHTML sanitizer uses feralWin.___.plugin_dispatchEvent___
+    // html-emitter uses guestWin.___.plugin_dispatchEvent___
+    feralWin.___.plugin_dispatchEvent___ = domado.plugin_dispatchEvent;
+    guestWin.___.plugin_dispatchEvent___ = domado.plugin_dispatchEvent;
+    feralWin.___.plugin_dispatchToHandler___ =
       function (pluginId, handler, args) {
         var tamingWin = feralWin.___.tamingWindows[pluginId];
-        return tamingWin.plugin_dispatchToHandler___(pluginId, handler, args);
+        return tamingWin.___.plugin_dispatchToHandler___(
+            pluginId, handler, args);
       };
 
     return domicile;

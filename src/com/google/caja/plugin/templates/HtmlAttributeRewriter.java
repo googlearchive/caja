@@ -213,7 +213,7 @@ public final class HtmlAttributeRewriter {
             = (FunctionConstructor) QuasiBuilder.substV(
             ""
             + "(/*@synthetic*/ function (event) {"
-            + "  return /*@synthetic*/ (plugin_dispatchEvent___("
+            + "  return /*@synthetic*/ (___.plugin_dispatchEvent___("
             + "      /*@synthetic*/this, event, "
             + "      ___./*@synthetic*/getId(IMPORTS___), @tail));"
             + "})",
@@ -270,7 +270,7 @@ public final class HtmlAttributeRewriter {
           Operation urlAdapter = (Operation) QuasiBuilder.substV(
               ""
               + "'javascript:' + /*@synthetic*/encodeURIComponent("
-              + "   'try{void plugin_dispatchToHandler___('"
+              + "   'try{void ___.plugin_dispatchToHandler___('"
               + "    + ___./*@synthetic*/getId(IMPORTS___)"
               + "    + ',' + @handlerIndex + ',[{}])}catch(_){}')",
               "handlerIndex", new Reference(handlerIndex));
@@ -426,7 +426,7 @@ public final class HtmlAttributeRewriter {
    *   }</pre>
    * <p>
    * And the resulting function is called via a handler attribute like
-   * {@code onchange="plugin_dispatchEvent___(this, node, 1234, 'handlerName')"}
+   * {@code onchange="___.plugin_dispatchEvent___(this, node, 1234, 'handlerName')"}
    */
   private static void rewriteEventHandlerReferences(Block block) {
     block.acceptPreOrder(

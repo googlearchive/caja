@@ -1640,7 +1640,8 @@ function Domado(opt_rulebreaker) {
           if (!match) { return null; }
           var doesReturn = match[1];
           var fnName = match[2];
-          value = (doesReturn ? 'return ' : '') + 'plugin_dispatchEvent___('
+          value = (doesReturn ? 'return ' : '')
+              + '___.plugin_dispatchEvent___('
               + 'this, event, ' + pluginId + ', "'
               + fnName + '");';
           if (attribName === 'onsubmit') {

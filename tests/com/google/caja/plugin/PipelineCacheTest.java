@@ -259,7 +259,7 @@ public class PipelineCacheTest extends PipelineStageTestCase {
       "        .i___('Hello');",
       "      });",
       "    el___.onclick = function (event) {",
-      ("      return plugin_dispatchEvent___"
+      ("      return ___.plugin_dispatchEvent___"
        + "(this, event, ___.getId(IMPORTS___),"),
       "        c_2___);",
       "    };",
@@ -534,7 +534,7 @@ public class PipelineCacheTest extends PipelineStageTestCase {
                 "        .i___(1337);",
                 "      });",
                 "    el___.onclick = function (event) {",
-                "      return plugin_dispatchEvent___(this, event, ___.getId(IMPORTS___),",
+                "      return ___.plugin_dispatchEvent___(this, event, ___.getId(IMPORTS___),",
                 "        c_1___);",
                 "    };",
                 "    el___.removeAttribute('id');")
