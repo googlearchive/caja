@@ -257,18 +257,21 @@ var caja = (function () {
   //----------------
 
   function initES53(config, frameGroupReady) {
-    // TODO(felix8a): start loading a guest-frame here too
     // TODO(felix8a): with api change, can start cajoler early too
-    loadCajaFrame(config, 'es53-taming-frame', function (frameWin) {
-      var fg = frameWin.ES53FrameGroup(cajaInt, config, frameWin, window);
+    var guestMaker = makeFrameMaker(config, 'es53-guest-frame');
+    loadCajaFrame(config, 'es53-taming-frame', function (tamingWin) {
+      var fg = tamingWin.ES53FrameGroup(
+          cajaInt, config, tamingWin, window, guestMaker);
       frameGroupReady(fg);
     });
   }
 
   function trySES(config, frameGroupReady) {
-    loadCajaFrame(config, 'ses-taming-frame', function (frameWin) {
-      if (canSES(frameWin.ses, config.forceES5Mode)) {
-        var fg = frameWin.SESFrameGroup(cajaInt, config, frameWin, window);
+    var guestMaker = makeFrameMaker(config, 'ses-guest-frame');
+    loadCajaFrame(config, 'ses-taming-frame', function (tamingWin) {
+      if (canSES(tamingWin.ses, config.forceES5Mode)) {
+        var fg = tamingWin.SESFrameGroup(
+            cajaInt, config, tamingWin, window, guestMaker);
         frameGroupReady(fg);
       } else {
         config.log('Unable to use SES.  Switching to ES53.');
@@ -287,6 +290,51 @@ var caja = (function () {
   // we'll fall back to ES53 then.
   function unableToSES() {
     return !Object.getOwnPropertyNames;
+  }
+
+  //----------------
+
+  /**
+   * Returns an object that wraps loadCajaFrame() with preload support.
+   * Calling frameMaker.preload() will start creation of a new frame now,
+   * and make it available to a later call to frameMaker.make().
+   */
+  function makeFrameMaker(config, filename) {
+    var IDLE = 'IDLE', LOADING = 'LOADING', WAITING = 'WAITING';
+    var preState = IDLE, preWin, preReady;
+    var self = {
+      preload: function () {
+        if (preState === IDLE) {
+          preState = LOADING;
+          preWin = null;
+          loadCajaFrame(config, filename, function (win) {
+            preWin = win;
+            consumeIfReady();
+          });
+        }
+      },
+      make: function (onReady) {
+        if (preState === LOADING) {
+          preState = WAITING;
+          preReady = onReady;
+          consumeIfReady();
+        } else {
+          loadCajaFrame(config, filename, onReady);
+        }
+      }
+    };
+    self.preload();
+    return self;
+
+    function consumeIfReady() {
+      if (preState === WAITING && preWin) {
+        var win = preWin, ready = preReady;
+        preState = IDLE;
+        preWin = null;
+        preReady = null;
+        ready(win);
+      }
+    }
   }
 
   //----------------
@@ -391,8 +439,6 @@ var caja = (function () {
   }
 
   //----------------
-
-  // TODO(felix8a): move getId etc into taming frame?
 
   /**
    * Enforces {@code typeof specimen === typename}, in which case

@@ -21,7 +21,7 @@
  * @requires window
  */
 
-function SESFrameGroup(cajaInt, config, tamingWin, feralWin) {
+function SESFrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker) {
   if (tamingWin !== window) {
     throw new Error('wrong frame');
   }
@@ -58,7 +58,7 @@ function SESFrameGroup(cajaInt, config, tamingWin, feralWin) {
 
   function makeES5Frame(div, uriPolicy, es5ready, opt_idClass) {
     var divs = cajaInt.prepareContainerDiv(div, feralWin, opt_idClass);
-    cajaInt.loadCajaFrame(config, 'ses-guest-frame', function (guestWin) {
+    guestMaker.make(function (guestWin) {
       var domicile = makeDomicile(divs, uriPolicy, guestWin);
       var gman = GuestManager(divs, domicile, guestWin, sesRun);
       es5ready(gman);

@@ -25,7 +25,7 @@
  * @requires window
  */
 
-function ES53FrameGroup(cajaInt, config, tamingWin, feralWin) {
+function ES53FrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker) {
   if (tamingWin !== window) {
     throw new Error('wrong frame');
   }
@@ -60,7 +60,7 @@ function ES53FrameGroup(cajaInt, config, tamingWin, feralWin) {
 
   function makeES5Frame(div, uriPolicy, es5ready, opt_idClass) {
     var divs = cajaInt.prepareContainerDiv(div, feralWin, opt_idClass);
-    cajaInt.loadCajaFrame(config, 'es53-guest-frame', function (guestWin) {
+    guestMaker.make(function (guestWin) {
       var domicile = makeDomicile(divs, uriPolicy, guestWin);
       var gman = GuestManager(divs, domicile, guestWin, es53run);
       gman._loader = guestWin.loadModuleMaker(
