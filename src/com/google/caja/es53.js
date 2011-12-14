@@ -221,6 +221,17 @@ var ___, cajaVM, safeJSON, WeakMap;
     };
   }
 
+  var hasOwnProperty = Object.prototype.hasOwnProperty;
+  var fastOwnKeys = Object.keys || function fastOwnKeys(o) {
+    // In IE<9, this will miss some keys, like an own 'toString', but that
+    // doesn't matter, because we're only using this to find ___ properties.
+    var keys = [];
+    for (var k in o) {
+      if (hasOwnProperty.call(o, k)) { keys.push(k); }
+    }
+    return keys;
+  };
+
   Object.prototype.freeze___ = function() {
       // Frozen means all the properties are neither writable nor
       // configurable, and the object itself is not extensible.
@@ -233,17 +244,16 @@ var ___, cajaVM, safeJSON, WeakMap;
       if (this.v___ === deferredV) {
         this.v___('length');
       }
-      for (var i in this) {
-        if (!this.hasOwnProperty(i)) { continue; }
-        if (isNumericName(i)) { continue; }
-        var m = i.match(endsWith_v___);
-        if (!m) { continue; }
-        var P = m[1];
+      var keys = fastOwnKeys(this);
+      for (var k = 0, n = keys.length; k < n; k++) {
+        var i = keys[k];
+        if (i.substr(-5) !== '_v___' || i.length < 6) { continue; }
+        var P = i.substr(0, i.length - 5);
         this[P + '_c___'] = false;
         this[P + '_gw___'] = false;
         this[P + '_w___'] = false;
       }
-      if (!this.hasNumerics___()) {
+      if (!this.NUM____v___ === this) { // inline this.hasNumerics___()
         this.NUM____v___ = this;
         this.NUM____e___ = this;
         this.NUM____g___ = void 0;
