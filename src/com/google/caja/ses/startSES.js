@@ -378,7 +378,7 @@ ses.startSES = function(global,
      */
     function makeScopeObject(imports, freeNames) {
       var scopeObject = Object.create(null);
-      Object.keys(freeNames).forEach(function(name) {
+      freeNames.forEach(function(name) {
         var desc = Object.getOwnPropertyDescriptor(imports, name);
         if (!desc || desc.writable !== false || desc.configurable) {
           // If there is no own property, or it isn't a non-writable

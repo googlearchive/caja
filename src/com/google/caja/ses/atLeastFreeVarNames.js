@@ -21,6 +21,7 @@
  * anticipated ES6.
  *
  * @author Mark S. Miller
+ * @requires StringMap
  * @overrides ses, atLeastFreeVarNamesModule
  */
 var ses;
@@ -91,7 +92,8 @@ var ses;
     var regexp = SHOULD_MATCH_IDENTIFIER();
     // Once we decide this file can depends on ES5, the following line
     // should say "... = Object.create(null);" rather than "... = {};"
-    var result = {};
+    var result = [];
+    var found = StringMap();
     var a;
     while ((a = regexp.exec(programSrc))) {
       // Note that we could have avoided the while loop by doing
@@ -100,7 +102,11 @@ var ses;
       // apparent identifiers, rather than the total number of
       // apparently unique identifiers.
       var name = a[0];
-      result[name] = true;
+      
+      if (!found.has(name)) {
+        result.push(name);
+        found.set(name, true);
+      }
     }
     return result;
   };

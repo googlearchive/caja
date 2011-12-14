@@ -852,6 +852,7 @@
       <input file="${src.caja}/ses/logger.js"/>
       <input file="${src.caja}/ses/repairES5.js"/>
       <input file="${src.caja}/ses/WeakMap.js"/>
+      <input file="${src.caja}/ses/StringMap.js"/>
       <input file="${src.caja}/ses/whitelist.js"/>
       <input file="${src.caja}/ses/atLeastFreeVarNames.js"/>
       <input file="${src.caja}/ses/startSES.js"/>
@@ -865,6 +866,7 @@
       <input file="${src.caja}/ses/logger.js"/>
       <input file="${src.caja}/ses/repairES5.js"/>
       <input file="${src.caja}/ses/WeakMap.js"/>
+      <input file="${src.caja}/ses/StringMap.js"/>
       <input file="${src.caja}/ses/whitelist.js"/>
       <input file="${src.caja}/ses/atLeastFreeVarNames.js"/>
       <input file="${src.caja}/ses/startSES.js"/>
@@ -979,6 +981,7 @@
       <input file="${src.caja}/ses/logger.js"/>
       <input file="${src.caja}/ses/repairES5.js"/>
       <input file="${src.caja}/ses/WeakMap.js"/>
+      <input file="${src.caja}/ses/StringMap.js"/>
       <input file="${src.caja}/ses/whitelist.js"/>
       <input file="${src.caja}/ses/atLeastFreeVarNames.js"/>
       <input file="${src.caja}/ses/startSES.js"/>
