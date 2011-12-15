@@ -247,7 +247,7 @@ var ___, cajaVM, safeJSON, WeakMap;
       var keys = fastOwnKeys(this);
       for (var k = 0, n = keys.length; k < n; k++) {
         var i = keys[k];
-        if (i.substr(-5) !== '_v___' || i.length < 6) { continue; }
+        if (i.length <= 5 || i.substr(i.length - 5) !== '_v___') { continue; }
         var P = i.substr(0, i.length - 5);
         this[P + '_c___'] = false;
         this[P + '_gw___'] = false;
