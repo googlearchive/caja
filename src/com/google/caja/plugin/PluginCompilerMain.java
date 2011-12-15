@@ -157,15 +157,16 @@ public final class PluginCompilerMain {
           }
         };
       }
-      final Set<String> fUrls = config.getFetchableUris();
-      if (!fUrls.isEmpty()) {
+      final Set<String> fUris = config.getFetchableUris();
+      final boolean fUriAll = config.hasFetchableUriAll();
+      if (fUriAll || !fUris.isEmpty()) {
         fetcher = ChainingUriFetcher.make(
             fetcher,
             new UriFetcher() {
               public FetchedData fetch(ExternalReference ref, String mimeType)
                   throws UriFetchException {
                 String uri = ref.getUri().toString();
-                if (!fUrls.contains(uri)) {
+                if (!fUriAll && !fUris.contains(uri)) {
                   throw new UriFetchException(ref, mimeType);
                 }
                 try {

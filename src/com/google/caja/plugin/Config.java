@@ -106,6 +106,9 @@ public final class Config {
   private final Option F_URI = defineOption(
       "fu", "f_uri", "A URI which the URI fetcher is allowed to fetch.", true);
 
+  private final Option F_URI_ALL = defineBooleanOption(
+      "fua", "f_uri_all", "Allow all URIs to be fetched.");
+
   private final Option L_URI = defineOption(
       "lu", "l_uri", "A URI which the URI policy is allowed to link to.", true);
 
@@ -172,6 +175,7 @@ public final class Config {
   private File fetcherBase;
   private SourceRenderMode renderer;
   private Set<String> fUris;
+  private boolean fUriAll = false;
   private Set<String> lUris;
   private boolean lUriAll = false;
   private boolean lUriRuntime = false;
@@ -228,6 +232,8 @@ public final class Config {
   public String getIdClass() { return idClass; }
 
   public Set<String> getFetchableUris() { return fUris; }
+
+  public boolean hasFetchableUriAll() { return fUriAll; }
 
   public Set<String> getLinkableUris() { return lUris; }
 
@@ -364,8 +370,9 @@ public final class Config {
       }
 
       fUris = Sets.immutableSet(getOptionValues(cl, F_URI));
-      lUris = Sets.immutableSet(getOptionValues(cl, L_URI));
+      fUriAll = cl.hasOption(F_URI_ALL.getOpt());
 
+      lUris = Sets.immutableSet(getOptionValues(cl, L_URI));
       lUriAll = cl.hasOption(L_URI_ALL.getOpt());
       lUriRuntime = cl.hasOption(L_URI_RUNTIME.getOpt());
 
