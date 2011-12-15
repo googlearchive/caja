@@ -66,7 +66,7 @@ final class AppEngineJobCacheKey implements JobCache.Key, Serializable {
   @Override
   public String toString() {
     return "[AppEngineJobCacheKey 0x"
-        + Integer.valueOf(first32Bits).toString(16) + "]";
+        + Integer.toString(first32Bits, 16) + "]";
   }
 
   /** A helper that walks a tree to feed tree details to a hash fn. */
