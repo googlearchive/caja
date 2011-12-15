@@ -327,7 +327,7 @@ domitaModules.Confidence = (function () {
      * This plays the role ___.grantTypedMethod did in Domita.
      */
     this.protectMethod = function (method) {
-      cajaVM.def(method);  // unnecessary in theory
+      //cajaVM.def(method);  // unnecessary in theory.  TODO(felix8a): verify
       function protectedMethod(var_args) {
         return method.apply(guard.coerce(this), arguments);
       }

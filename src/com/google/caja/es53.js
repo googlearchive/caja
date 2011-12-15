@@ -222,9 +222,9 @@ var ___, cajaVM, safeJSON, WeakMap;
   }
 
   var hasOwnProperty = Object.prototype.hasOwnProperty;
+  // In IE<9, this is an approximation of Object.keys, because a few own
+  // properties like 'toString' are never enumerable.
   var fastOwnKeys = Object.keys || function fastOwnKeys(o) {
-    // In IE<9, this will miss some keys, like an own 'toString', but that
-    // doesn't matter, because we're only using this to find ___ properties.
     var keys = [];
     for (var k in o) {
       if (hasOwnProperty.call(o, k)) { keys.push(k); }
@@ -253,16 +253,17 @@ var ___, cajaVM, safeJSON, WeakMap;
         this[P + '_gw___'] = false;
         this[P + '_w___'] = false;
       }
-      if (!this.NUM____v___ === this) { // inline this.hasNumerics___()
+      // inline this.hasNumerics___()
+      if (!this.NUM____v___ === this) {
         this.NUM____v___ = this;
         this.NUM____e___ = this;
         this.NUM____g___ = void 0;
         this.NUM____s___ = void 0;
       }
-      this['NUM____c___'] = false;
-      this['NUM____w___'] = false;
-      this['NUM____m___'] = false;
-      this['NUM____gw___'] = false;
+      this.NUM____c___ = false;
+      this.NUM____w___ = false;
+      this.NUM____m___ = false;
+      this.NUM____gw___ = false;
       // Make this non-extensible.
       this.ne___ = this;
       // Cache frozen state.
@@ -957,14 +958,15 @@ var ___, cajaVM, safeJSON, WeakMap;
 
   Object.prototype.ownKeys___ = function () {
       var i, m, result = [];
-      for (i in this) {
-        if (!this.hasOwnProperty(i)) { continue; }
-        if (isNumericName(i)) {
+      var keys = fastOwnKeys(this);
+      for (var k = 0, n = keys.length; k < n; k++) {
+        var i = keys[k];
+        // inline isNumericName(i)
+        if (typeof i === 'number' || ('' + (+i)) === i) {
           result.push(i);
-        } else {
-          if (startsWithNUM___.test(i) && endsWith__.test(i)) { continue; }
-          m = i.match(endsWith_v___);
-          if (m) { result.push(m[1]); }
+        } else if (5 < i.length && i.substr(i.length - 5) === '_v___'
+                   && i.substr(0, 6) !== 'NUM___') {
+          result.push(i.substr(0, i.length - 5));
         }
       }
       return result;
@@ -1530,28 +1532,31 @@ var ___, cajaVM, safeJSON, WeakMap;
   // guest code may change Object.getPrototypeOf, etc., we cache some methods.
   var origGetPrototypeOf, origGetOwnPropertyDescriptor;
 
-  var def = markFuncFreeze(function(root) {
+  var def = markFuncFreeze(function def(root) {
+    var i, n;
     var defending = newTable();
     var defendingList = [];
-    function recur(val) {
+    var todo = [root];
+    while (todo.length) {
+      var val = todo.pop();
       if (val !== Object(val) || defended.get(val) || defending.get(val)) {
-        return;
+        continue;
       }
       defending.set(val, true);
       defendingList.push(val);
       freeze(val);
-      recur(origGetPrototypeOf(val));
-      val.ownKeys___().forEach(function(p) {
-        var desc = origGetOwnPropertyDescriptor(val, p);
-        recur(desc.value);
-        recur(desc.get);
-        recur(desc.set);
-      });
+      todo.push(origGetPrototypeOf(val));
+      var keys = val.ownKeys___();
+      for (i = 0, n = keys.length; i < n; i++) {
+        var desc = origGetOwnPropertyDescriptor(val, keys[i]);
+        todo.push(desc.value);
+        todo.push(desc.get);
+        todo.push(desc.set);
+      }
     }
-    recur(root);
-    defendingList.forEach(function(obj) {
-      defended.set(obj, true);
-    });
+    for (i = 0, n = defendingList.length; i < n; i++) {
+      defended.set(defendingList[i], true);
+    }
     return root;
   });
 
@@ -3197,13 +3202,12 @@ var ___, cajaVM, safeJSON, WeakMap;
    */
   function whitelistAll(obj, opt_deep) {
     var i;
-    for (i in obj) {
-      if (obj.hasOwnProperty(i) &&
-          !endsWith__.test(i) &&
-          !((i + '_v___') in obj)) {
-        var isObj = (typeof obj[i]) === 'object';
-        if (opt_deep && isObj) {
-          whitelistAll(obj[i], true);
+    var keys = fastOwnKeys(obj);
+    for (var k = 0, n = keys.length; k < n; k++) {
+      var i = keys[k], val = obj[i];
+      if (i.substr(i.length - 2) !== '__' && !((i + '_v___') in obj)) {
+        if (opt_deep && val && typeof val === 'object') {
+          whitelistAll(val, true);
         }
         obj[i + '_v___'] = obj;
         obj[i + '_w___'] = false;
@@ -3213,9 +3217,10 @@ var ___, cajaVM, safeJSON, WeakMap;
         obj[i + '_g___'] = void 0;
         obj[i + '_s___'] = void 0;
         obj[i + '_m___'] = false;
-        if (isFunction(obj[i])) {
-          if (obj[i].f___ === Function.prototype.f___) {
-            markFunc(obj[i]);
+        if (val && val.f___ === Function.prototype.f___) {
+          // inline isFunction(val)
+          if (classProp.call(val) === '[object Function]') {
+            markFunc(val);
           }
         }
       }
