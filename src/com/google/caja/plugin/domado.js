@@ -3263,6 +3263,7 @@ function Domado(opt_rulebreaker) {
       style: NP.filter(
           false,
           nodeMethod(function (styleNode) {
+            TameStyle || buildTameStyle();
             return new TameStyle(styleNode, np(this).editable, this);
           }),
           true, identity),
@@ -4916,175 +4917,186 @@ function Domado(opt_rulebreaker) {
         : void 0;
     });
     
-    var aStyleForCPC = document.documentElement.style;
-    makeDOMAccessible(aStyleForCPC);
-    var allCssProperties = domitaModules.CssPropertiesCollection(
-        css.properties, aStyleForCPC, css);
-    var historyInsensitiveCssProperties = domitaModules.CssPropertiesCollection(
-        css.HISTORY_INSENSITIVE_STYLE_WHITELIST, aStyleForCPC, css);
-
-    // Sealed internals for TameStyle objects, not to be exposed.
-    var TameStyleConf = new Confidence('Style');
-
     traceStartup("DT: preparing Style");
 
-    function allowProperty(cssPropertyName) {
-      return allCssProperties.isCssProp(cssPropertyName);
-    };
+    // defer construction
+    var TameStyle = null;
+    var TameComputedStyle = null;
 
-    /**
-     * http://www.w3.org/TR/DOM-Level-2-Style/css.html#CSS-CSSStyleDeclaration
-     */
-    function TameStyle(style, editable, tameEl) {
-      makeDOMAccessible(style);
-      
-      TameStyleConf.confide(this);
-      TameStyleConf.p(this).feral = style;
-      TameStyleConf.p(this).editable = editable;
-      TameStyleConf.p(this).tameElement = tameEl;
-      
-      TameStyleConf.p(this).readByCanonicalName = function(canonName) {
-        return String(style[canonName] || '');
+    function buildTameStyle() {
+
+      var aStyleForCPC = document.documentElement.style;
+      makeDOMAccessible(aStyleForCPC);
+      var allCssProperties = domitaModules.CssPropertiesCollection(
+          css.properties, aStyleForCPC, css);
+      var historyInsensitiveCssProperties =
+          domitaModules.CssPropertiesCollection(
+          css.HISTORY_INSENSITIVE_STYLE_WHITELIST, aStyleForCPC, css);
+
+      // Sealed internals for TameStyle objects, not to be exposed.
+      var TameStyleConf = new Confidence('Style');
+
+      function allowProperty(cssPropertyName) {
+        return allCssProperties.isCssProp(cssPropertyName);
       };
-      TameStyleConf.p(this).writeByCanonicalName = function(canonName, val) {
-        style[canonName] = val;
+
+      /**
+       * http://www.w3.org/TR/DOM-Level-2-Style/css.html#CSS-CSSStyleDeclaration
+       */
+      TameStyle = function (style, editable, tameEl) {
+        makeDOMAccessible(style);
+
+        TameStyleConf.confide(this);
+        TameStyleConf.p(this).feral = style;
+        TameStyleConf.p(this).editable = editable;
+        TameStyleConf.p(this).tameElement = tameEl;
+
+        TameStyleConf.p(this).readByCanonicalName = function(canonName) {
+          return String(style[canonName] || '');
+        };
+        TameStyleConf.p(this).writeByCanonicalName = function(canonName, val) {
+          style[canonName] = val;
+        };
       };
-    }
-    inertCtor(TameStyle, Object, 'Style');
-    TameStyle.prototype.getPropertyValue =
-        cajaVM.def(function (cssPropertyName) {
-      cssPropertyName = String(cssPropertyName || '').toLowerCase();
-      if (!allowProperty(cssPropertyName)) { return ''; }
-      var canonName = allCssProperties.getCanonicalPropFromCss(cssPropertyName);
-      return TameStyleConf.p(this).readByCanonicalName(canonName);
-    });
-    setOwn(TameStyle.prototype, "toString", cajaVM.def(function () {
-      return '[domado object Style]';
-    }));
-    definePropertiesAwesomely(TameStyle.prototype, {
-      cssText: {
-        enumerable: canHaveEnumerableAccessors,
-        set: cajaVM.def(function (value) {
-          var p = TameStyleConf.p(this);
-          if (typeof p.feral.cssText === 'string') {
-            p.feral.cssText = sanitizeStyleAttrValue(value);
-          } else {
-            // If the browser doesn't support setting cssText, then fall back
-            // to setting the style attribute of the containing element.  This
-            // won't work for style declarations that are part of stylesheets
-            // and not attached to elements.
-            p.tameElement.setAttribute('style', value);
-          }
-          return true;
-        })
-      }
-    });
-    allCssProperties.forEachCanonical(function (stylePropertyName) {
-      // TODO(kpreid): make each of these generated accessors more
-      // specialized for this name to reduce runtime cost.
-      Object.defineProperty(TameStyle.prototype, stylePropertyName, {
-        enumerable: canHaveEnumerableAccessors,
-        get: cajaVM.def(function () {
-          if (!TameStyleConf.p(this).feral
-              || !allCssProperties.isCanonicalProp(stylePropertyName)) {
-            return void 0;
-          }
-          var cssPropertyName =
-              allCssProperties.getCssPropFromCanonical(stylePropertyName);
-          if (!allowProperty(cssPropertyName)) { return void 0; }
-          var canonName =
-              allCssProperties.getCanonicalPropFromCss(cssPropertyName);
-          return TameStyleConf.p(this).readByCanonicalName(canonName);
-        }),
-        set: cajaVM.def(function (value) {
-          var p = TameStyleConf.p(this);
-          if (!p.editable) { throw new Error('style not editable'); }
-          stylePropertyName = String(stylePropertyName);
-          if (!allCssProperties.isCanonicalProp(stylePropertyName)) {
-            throw new Error('Unknown CSS property name ' + stylePropertyName);
-          }
-          var cssPropertyName =
-              allCssProperties.getCssPropFromCanonical(stylePropertyName);
-          if (!allowProperty(cssPropertyName)) { return void 0; }
-          var pattern = css.properties[cssPropertyName];
-          if (!pattern) { throw new Error('style not editable'); }
-          var val = '' + (value || '');
-          // CssPropertyPatterns.java only allows styles of the form
-          // url("...").  See the BUILTINS definition for the "uri" symbol.
-          val = val.replace(
-              /\burl\s*\(\s*\"([^\"]*)\"\s*\)/gi,
-              function (_, url) {
-                var decodedUrl = decodeCssString(url);
-                var rewrittenUrl = uriCallback
-                    ? uriCallback.rewrite(
-                        decodedUrl, html4.ueffects.SAME_DOCUMENT,
-                        html4.ltypes.SANDBOXED, { "CSS_PROP": cssPropertyName})
-                    : null;
-                if (!rewrittenUrl) {
-                  rewrittenUrl = 'about:blank';
-                }
-                return 'url("'
-                    + rewrittenUrl.replace(
-                        /[\"\'\{\}\(\):\\]/g,
-                        function (ch) {
-                          return '\\' + ch.charCodeAt(0).toString(16) + ' ';
-                        })
-                    + '")';
-              });
-          if (val && !pattern.test(val + ' ')) {
-            throw new Error('bad value `' + val + '` for CSS property '
-                            + stylePropertyName);
-          }
-          var canonName =
-              allCssProperties.getCanonicalPropFromCss(cssPropertyName);
-          p.writeByCanonicalName(canonName, val);
-          return true;
-        })
+      inertCtor(TameStyle, Object, 'Style');
+      TameStyle.prototype.getPropertyValue =
+          cajaVM.def(function (cssPropertyName) {
+        cssPropertyName = String(cssPropertyName || '').toLowerCase();
+        if (!allowProperty(cssPropertyName)) { return ''; }
+        var canonName = allCssProperties.getCanonicalPropFromCss(
+            cssPropertyName);
+        return TameStyleConf.p(this).readByCanonicalName(canonName);
       });
-    });
-    cajaVM.def(TameStyle);  // and its prototype
-
-    function isNestedInAnchor(rawElement) {
-      for ( ; rawElement && rawElement != pseudoBodyNode;
-           rawElement = rawElement.parentNode) {
-        if (rawElement.tagName.toLowerCase() === 'a') { return true; }
-      }
-      return false;
-    }
-
-    traceStartup("DT: about to TameComputedStyle");
-    
-    function TameComputedStyle(rawElement, pseudoElement) {
-      rawElement = rawElement || document.createElement('div');
-      TameStyle.call(
-          this,
-          bridal.getComputedStyle(rawElement, pseudoElement),
-          false);
-      TameStyleConf.p(this).rawElement = rawElement;
-      TameStyleConf.p(this).pseudoElement = pseudoElement;
-
-      var superReadByCanonicalName = TameStyleConf.p(this).readByCanonicalName;
-      TameStyleConf.p(this).readByCanonicalName = function(canonName) {
-        var canReturnDirectValue =
-            historyInsensitiveCssProperties.isCanonicalProp(canonName)
-            || !isNestedInAnchor(this.rawElement);
-        if (canReturnDirectValue) {
-          return superReadByCanonicalName.call(this, canonName);
-        } else {
-          return TameStyleConf.p(
-                  new TameComputedStyle(pseudoBodyNode, this.pseudoElement))
-              .readByCanonicalName(canonName);
+      setOwn(TameStyle.prototype, "toString", cajaVM.def(function () {
+        return '[domado object Style]';
+      }));
+      definePropertiesAwesomely(TameStyle.prototype, {
+        cssText: {
+          enumerable: canHaveEnumerableAccessors,
+          set: cajaVM.def(function (value) {
+            var p = TameStyleConf.p(this);
+            if (typeof p.feral.cssText === 'string') {
+              p.feral.cssText = sanitizeStyleAttrValue(value);
+            } else {
+              // If the browser doesn't support setting cssText, then fall
+              // back to setting the style attribute of the containing
+              // element.  This won't work for style declarations that are
+              // part of stylesheets and not attached to elements.
+              p.tameElement.setAttribute('style', value);
+            }
+            return true;
+          })
         }
+      });
+      allCssProperties.forEachCanonical(function (stylePropertyName) {
+        // TODO(kpreid): make each of these generated accessors more
+        // specialized for this name to reduce runtime cost.
+        Object.defineProperty(TameStyle.prototype, stylePropertyName, {
+          enumerable: canHaveEnumerableAccessors,
+          get: cajaVM.def(function () {
+            if (!TameStyleConf.p(this).feral
+                || !allCssProperties.isCanonicalProp(stylePropertyName)) {
+              return void 0;
+            }
+            var cssPropertyName =
+                allCssProperties.getCssPropFromCanonical(stylePropertyName);
+            if (!allowProperty(cssPropertyName)) { return void 0; }
+            var canonName =
+                allCssProperties.getCanonicalPropFromCss(cssPropertyName);
+            return TameStyleConf.p(this).readByCanonicalName(canonName);
+          }),
+          set: cajaVM.def(function (value) {
+            var p = TameStyleConf.p(this);
+            if (!p.editable) { throw new Error('style not editable'); }
+            stylePropertyName = String(stylePropertyName);
+            if (!allCssProperties.isCanonicalProp(stylePropertyName)) {
+              throw new Error('Unknown CSS property name ' + stylePropertyName);
+            }
+            var cssPropertyName =
+                allCssProperties.getCssPropFromCanonical(stylePropertyName);
+            if (!allowProperty(cssPropertyName)) { return void 0; }
+            var pattern = css.properties[cssPropertyName];
+            if (!pattern) { throw new Error('style not editable'); }
+            var val = '' + (value || '');
+            // CssPropertyPatterns.java only allows styles of the form
+            // url("...").  See the BUILTINS definition for the "uri" symbol.
+            val = val.replace(
+                /\burl\s*\(\s*\"([^\"]*)\"\s*\)/gi,
+                function (_, url) {
+                  var decodedUrl = decodeCssString(url);
+                  var rewrittenUrl = uriCallback
+                      ? uriCallback.rewrite(
+                          decodedUrl, html4.ueffects.SAME_DOCUMENT,
+                          html4.ltypes.SANDBOXED,
+                          { "CSS_PROP": cssPropertyName })
+                      : null;
+                  if (!rewrittenUrl) {
+                    rewrittenUrl = 'about:blank';
+                  }
+                  return 'url("'
+                      + rewrittenUrl.replace(
+                          /[\"\'\{\}\(\):\\]/g,
+                          function (ch) {
+                            return '\\' + ch.charCodeAt(0).toString(16) + ' ';
+                          })
+                      + '")';
+                });
+            if (val && !pattern.test(val + ' ')) {
+              throw new Error('bad value `' + val + '` for CSS property '
+                              + stylePropertyName);
+            }
+            var canonName =
+                allCssProperties.getCanonicalPropFromCss(cssPropertyName);
+            p.writeByCanonicalName(canonName, val);
+            return true;
+          })
+        });
+      });
+      cajaVM.def(TameStyle);  // and its prototype
+
+      function isNestedInAnchor(rawElement) {
+        for ( ; rawElement && rawElement != pseudoBodyNode;
+             rawElement = rawElement.parentNode) {
+          if (rawElement.tagName.toLowerCase() === 'a') { return true; }
+        }
+        return false;
+      }
+
+      traceStartup("DT: about to TameComputedStyle");
+
+      TameComputedStyle = function (rawElement, pseudoElement) {
+        rawElement = rawElement || document.createElement('div');
+        TameStyle.call(
+            this,
+            bridal.getComputedStyle(rawElement, pseudoElement),
+            false);
+        TameStyleConf.p(this).rawElement = rawElement;
+        TameStyleConf.p(this).pseudoElement = pseudoElement;
+
+        var superReadByCanonicalName =
+            TameStyleConf.p(this).readByCanonicalName;
+        TameStyleConf.p(this).readByCanonicalName = function(canonName) {
+          var canReturnDirectValue =
+              historyInsensitiveCssProperties.isCanonicalProp(canonName)
+              || !isNestedInAnchor(this.rawElement);
+          if (canReturnDirectValue) {
+            return superReadByCanonicalName.call(this, canonName);
+          } else {
+            return TameStyleConf.p(
+                    new TameComputedStyle(pseudoBodyNode, this.pseudoElement))
+                .readByCanonicalName(canonName);
+          }
+        };
+        TameStyleConf.p(this).writeByCanonicalName = function(canonName) {
+          throw 'Computed styles not editable: This code should be unreachable';
+        };
       };
-      TameStyleConf.p(this).writeByCanonicalName = function(canonName) {
-        throw 'Computed styles not editable: This code should be unreachable';
-      };
+      inertCtor(TameComputedStyle, TameStyle);
+      setOwn(TameComputedStyle.prototype, "toString", cajaVM.def(function () {
+        return '[Fake Computed Style]';
+      }));
+      cajaVM.def(TameComputedStyle);  // and its prototype
     }
-    inertCtor(TameComputedStyle, TameStyle);
-    setOwn(TameComputedStyle.prototype, "toString", cajaVM.def(function () {
-      return '[Fake Computed Style]';
-    }));
-    cajaVM.def(TameComputedStyle);  // and its prototype
 
     traceStartup("DT: about to make XMLHttpRequest");
     // Note: nodeClasses.XMLHttpRequest is a ctor that *can* be directly
@@ -5394,6 +5406,7 @@ function Domado(opt_rulebreaker) {
               throw new Error('Bad pseudo element ' + pseudoElement);
             }
             // No need to check editable since computed styles are readonly.
+            TameComputedStyle || buildTameStyle();
             return new TameComputedStyle(
                 np(tameElement).feral,
                 pseudoElement);
