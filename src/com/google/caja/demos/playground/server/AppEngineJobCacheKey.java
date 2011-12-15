@@ -18,14 +18,15 @@ import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.plugin.stages.JobCache;
 import com.google.caja.reporting.BuildInfo;
 import com.google.caja.util.ContentType;
-import org.w3c.dom.Node;
-import org.w3c.dom.NamedNodeMap;
 
 import java.io.Serializable;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.List;
+
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.Node;
 
 final class AppEngineJobCacheKey implements JobCache.Key, Serializable {
   private static final long serialVersionUID = 594623347086143778L;
@@ -62,6 +63,11 @@ final class AppEngineJobCacheKey implements JobCache.Key, Serializable {
     return first32Bits;
   }
 
+  @Override
+  public String toString() {
+    return "[AppEngineJobCacheKey 0x"
+        + Integer.valueOf(first32Bits).toString(16) + "]";
+  }
 
   /** A helper that walks a tree to feed tree details to a hash fn. */
   private static final class Hasher {

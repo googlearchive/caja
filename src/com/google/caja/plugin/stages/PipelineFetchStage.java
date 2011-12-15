@@ -55,6 +55,7 @@ public final class PipelineFetchStage implements Pipeline.Stage<Jobs> {
       JobCache.Key key = cache.forJob(job.getType(), job.getRoot());
       List<? extends Job> fromCache = cache.fetch(key);
       if (fromCache != null) {
+        System.out.println("jobcache hit " + key);
         it.remove();
         for (Job cacheJob : fromCache) {
           JobEnvelope replacement = new JobEnvelope(

@@ -1291,16 +1291,7 @@
   <!-- Copy the App Engine JARs to the WAR directory -->
   <target name="PlaygroundJars" depends="build.info">
     <mkdir dir="${war}/WEB-INF" />
-    <copy todir="${war}/WEB-INF">
-      <fileset dir="">
-        <include name="appengine-web.xml" />
-        <include name="web.xml" />
-      </fileset>
-    </copy>
-    <replace file="${war}/WEB-INF/appengine-web.xml"
-        propertyFile="${lib.caja}/reporting/buildInfo.properties" >
-      <replacefilter token="%VERSION%" property="svnVersion" />
-    </replace>
+    <copy todir="${war}/WEB-INF" file="web.xml" />
     <copy todir="${war}/WEB-INF/lib" flatten="true">
       <fileset dir="${third_party}/java/jsonml">
         <include name="jsonml.jar"/>
@@ -1359,8 +1350,25 @@
     </javac>
   </target>
 
+  <target name="appengine-web" depends="build.info">
+    <copy file="appengine-web.xml"
+          tofile="${war}/WEB-INF/appengine-web.xml"
+          overwrite="true">
+      <filterset filtersfile="${lib.caja}/reporting/buildInfo.properties" />
+    </copy>
+  </target>
+
+  <target name="alt-appengine-web" depends="build.info">
+    <copy file="../alt-appengine-web.xml"
+          tofile="${war}/WEB-INF/appengine-web.xml"
+          overwrite="true">
+      <filterset filtersfile="${lib.caja}/reporting/buildInfo.properties" />
+    </copy>
+  </target>
+
   <target name="playground"
-   depends="CajolingServlet, PlaygroundBE, PlaygroundFE">
+   depends="CajolingServlet, PlaygroundBE, PlaygroundFE, appengine-web"
+   description="Builds the playground">
     <!-- In some situations, browsers disagree on what location
       to assign to a constructed iframe, which makes it awkward
       to use relative pathnames that will work in all browsers.
@@ -1376,7 +1384,13 @@
     </copy>
   </target>
 
+  <target name="alt-playground" depends="playground, alt-appengine-web" />
+
   <target name="deploy" depends="playground">
+    <appcfg action="update" war="${war}" />
+  </target>
+
+  <target name="alt-deploy" depends="alt-playground">
     <appcfg action="update" war="${war}" />
   </target>
 
@@ -1725,7 +1739,7 @@
   </target>
 
   <target name="devground"
-      description="playground with only one GWT permutation">
+      description="Builds playground with only one GWT permutation">
     <property name="gwt.devground" value="true"/>
     <antcall target="playground"/>
   </target>

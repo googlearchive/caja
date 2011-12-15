@@ -14,17 +14,20 @@
 
 package com.google.caja.demos.playground.server;
 
-import java.util.List;
-import java.util.Collections;
-
-import net.sf.jsr107cache.Cache;
-import net.sf.jsr107cache.CacheManager;
-
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.plugin.Job;
 import com.google.caja.plugin.stages.JobCache;
 import com.google.caja.util.ContentType;
 import com.google.caja.util.Lists;
+
+import java.io.IOException;
+import java.io.ObjectOutputStream;
+import java.io.OutputStream;
+import java.util.Collections;
+import java.util.List;
+
+import net.sf.jsr107cache.Cache;
+import net.sf.jsr107cache.CacheManager;
 
 /**
  * JobCache that uses appengine's cache to hold intermediate cajoling results.
@@ -67,7 +70,15 @@ final class AppEngineJobCache extends JobCache {
       throw new IllegalArgumentException(k.getClass().getName());
     }
     if (null != l1cache) {
-      l1cache.put(k, cloneJobs(derivatives));
+      try {
+        l1cache.put(k, cloneJobs(derivatives));
+      } catch (Exception ex) {
+        System.err.println(
+            "AppEngineJobCache#store failed: "
+            + "key size " + serialSize(k)
+            + ", value size " + serialSize(derivatives)
+            + ", " + ex);
+      }
     }
   }
 
@@ -78,4 +89,29 @@ final class AppEngineJobCache extends JobCache {
     }
     return clones;
   }
+
+  private static int serialSize(Object o) {
+    CountingStream cs = new CountingStream();
+    ObjectOutputStream oos;
+    try {
+      oos = new ObjectOutputStream(cs);
+      oos.writeObject(o);
+      oos.close();
+      return cs.getCount();
+    } catch (IOException e) {
+      return -1;
+    }
+  }
+
+  private static class CountingStream extends OutputStream {
+    private int count = 0;
+    public int getCount() { return count; }
+    @Override
+    public void write(int b) { count++; }
+    @Override
+    public void write(byte[] b) { count += b.length; }
+    @Override
+    public void write(byte[] b, int offset, int len) { count += len; }
+  }
+
 }
