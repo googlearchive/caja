@@ -2595,7 +2595,7 @@ var ___, cajaVM, safeJSON, WeakMap;
       if (allHaveAppearedAndAreTheSame) { return true; }
       // 7. If the [[Configurable]] field of current is false then
       if (!current.configurable) {
-        // a. Reject, if the [Cofigurable]] field of Desc is true.
+        // a. Reject, if the [Configurable]] field of Desc is true.
         if (Desc.configurable) {
           throw new TypeError("The property '" + P +
               "' is not configurable.");
@@ -3004,8 +3004,20 @@ var ___, cajaVM, safeJSON, WeakMap;
   }
   origGetPrototypeOf = Object.getPrototypeOf;
 
+  // The Chrome/Safari/Webkit debugger injects a script that expects to
+  // call Object.getOwnPropertyNames and Object.getOwnPropertyDescriptor on
+  // arbitrary objects from any frame.
+
+  // The es53 implementations below only work on objects that inherit from
+  // es53's Object, so we virtualize instead of overriding.
+
+  // Note, the es5 spec says these should be configurable:true, but if we
+  // do that, DefineOwnProperty___ will set the real value to undefined.
+
   // 15.2.3.3
-  Object.getOwnPropertyDescriptor = function(obj, P) {
+  // This is the original implementation exposed to guest code,
+  // which may change it.
+  origGetOwnPropertyDescriptor = function (obj, P) {
       // 1. If Type(object) is not Object throw a TypeError exception.
       if (Type(obj) !== 'Object') {
         throw new TypeError('Expected an object.');
@@ -3018,16 +3030,11 @@ var ___, cajaVM, safeJSON, WeakMap;
       // 4. Return the result of calling FromPropertyDescriptor(desc).
       return desc ? FromPropertyDescriptor(desc) : void 0;
     };
-  // This is the original implementation exposed to guest code,
-  // which may change it.
-  origGetOwnPropertyDescriptor = Object.getOwnPropertyDescriptor;
+  virtualize(Object, 'getOwnPropertyDescriptor', origGetOwnPropertyDescriptor);
 
   // 15.2.3.4
-  // virtualized to avoid confusing the webkit/safari/chrome debugger
-  virtualize(Object, 'getOwnPropertyNames', markFunc(function (obj) {
-      return obj.ownKeys___();
-    }));
-  // TODO(felix8a): spec says this should be configurable: true
+  virtualize(Object, 'getOwnPropertyNames',
+      function (obj) { return obj.ownKeys___(); });
 
   // 15.2.3.5
   /**
@@ -3310,7 +3317,7 @@ var ___, cajaVM, safeJSON, WeakMap;
   (function () {
     var objectStaticMethods = [
         'getPrototypeOf',
-        'getOwnPropertyDescriptor',
+        // getOwnPropertyDescriptor is virtual
         // getOwnPropertyNames is virtual
         'create',
         'defineProperty',
