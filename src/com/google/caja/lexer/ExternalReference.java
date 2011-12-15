@@ -48,20 +48,35 @@ import javax.annotation.Nullable;
  */
 public final class ExternalReference {
   private final URI uri;
+  private final URI base;
+  private final URI relUri;
   private final FilePosition pos;
 
+  public ExternalReference(URI uri, FilePosition pos) {
+    this(uri, uri, uri, pos);
+  }
+  
   /**
    * @param uri the location of the external resource.
+   * @param base base uri of document in which the external reference appears
+   * @param relUri location of the resource as it appears in the source
    * @param pos the location, within an already parsed input, of the reference
    *     to uri.
    */
-  public ExternalReference(URI uri, FilePosition pos) {
+  public ExternalReference(URI uri, URI base, URI relUri, FilePosition pos) {
     this.uri = uri;
+    this.base = base;
+    this.relUri = relUri;
     this.pos = pos;
   }
 
   /** The external URI. */
   public URI getUri() { return uri; }
+
+  /** The base URI. */
+  public URI getBase() { return base; }
+
+  public URI getUnresolvedUri() { return relUri; }
 
   /** The location, within an already parsed input, of the reference. */
   public FilePosition getReferencePosition() { return pos; }

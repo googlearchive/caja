@@ -140,13 +140,16 @@ public class InlineCssImportsStage implements Pipeline.Stage<Jobs> {
     // Compute the URI to import
     ExternalReference importUrl = null;
     URI absUri = null;
+    URI relUri = null;
     try {
+      relUri = new URI(uriNode.getValue());
       absUri = UriUtil.resolve(baseUri, uriNode.getValue());
     } catch (URISyntaxException ex) {
       // handled below.
     }
     if (absUri != null) {
-      importUrl = new ExternalReference(absUri, uriNode.getFilePosition());
+      importUrl = new ExternalReference(
+          absUri, baseUri, relUri, uriNode.getFilePosition());
     }
     if (importUrl == null) {
       mq.addMessage(

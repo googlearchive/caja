@@ -154,7 +154,7 @@ public class ModuleManager {
     }
 
     ExternalReference er = new ExternalReference(
-        absoluteUri, src.getFilePosition());
+        absoluteUri, baseUri, relUri, src.getFilePosition());
 
     CharProducer cp;
     try {

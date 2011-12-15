@@ -216,14 +216,13 @@ public class GWTCajolingServiceImpl extends RemoteServiceServlet
 
   public String fetch(String base, String uri) {
     try {
-      URI address = new URI(uri);
-      if (!address.isAbsolute()) {
-        URI baseAddress = new URI(base);
-        address = baseAddress.resolve(address);
-      }
+      URI relUri = new URI(uri);
+      URI absUri = null;
+      URI baseAddress = new URI(base);
+      absUri = relUri.isAbsolute() ? relUri : baseAddress.resolve(relUri);
       return fetcher.fetch(
-          new ExternalReference(address, FilePosition.UNKNOWN), "*/*")
-          .getTextualContent().toString();
+          new ExternalReference(absUri, baseAddress, relUri, 
+              FilePosition.UNKNOWN), "*/*").getTextualContent().toString();
     } catch (URISyntaxException ex) {
       return null;
     } catch (UnsupportedEncodingException ex) {

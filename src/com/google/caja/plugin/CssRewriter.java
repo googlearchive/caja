@@ -637,9 +637,10 @@ public final class CssRewriter {
             String uriStr = content.getValue();
             try {
               URI baseUri = content.getFilePosition().source().getUri();
-              URI uri = baseUri.resolve(new URI(uriStr));
+              URI relUri = new URI(uriStr);
+              URI uri = baseUri.resolve(relUri);
               ExternalReference ref = new ExternalReference(
-                  uri, content.getFilePosition());
+                  uri, baseUri, relUri, content.getFilePosition());
               Name propertyPart = propertyPart(node);  // TODO
               if (uriPolicy != null &&
                   uriPolicy.rewriteUri(
@@ -736,12 +737,13 @@ public final class CssRewriter {
               String uriStr = content.getValue();
               try {
                 URI baseUri = content.getFilePosition().source().getUri();
-                URI uri = baseUri.resolve(new URI(uriStr));
+                URI relUri = new URI(uriStr);
+                URI uri = baseUri.resolve(relUri);
                 // Rewrite the URI.
                 // TODO(mikesamuel): for content: and other URI types, use
                 // mime-type of text/*.
                 ExternalReference ref = new ExternalReference(
-                    uri, content.getFilePosition());
+                    uri, baseUri, relUri, content.getFilePosition());
                 CssTree.UriLiteral replacement;
                 if (uriPolicy != null) {
                   String rewrittenUri = uriPolicy.rewriteUri(
