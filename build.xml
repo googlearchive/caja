@@ -742,15 +742,6 @@
   <target name="CajoledTests" depends="CajoledDomado">
     <property name="libplugin" location="${lib.caja}/plugin"/>
 
-    <!-- The root files of the Domita test cases are statically cajoled -->
-    <!-- TODO: Uncomment once domita tests are ported to es53
-    <transform>
-      <input file="${tests.caja}/plugin/domita_test_untrusted.html"/>
-      <output file="${libplugin}/domita_test_untrusted_es53.out.html"
-          language="caja" />
-    </transform>
-    -->
-
     <!-- Statically cajole some tests for caja.js testing -->
     <transform>
      <input file="${tests.caja}/plugin/es53-test-guest.js"/>
@@ -831,18 +822,10 @@
       <input file="${src.caja}/plugin/caja-iframe-build-version.js"/>
       <input file="${third_party}/js/json_sans_eval/json_sans_eval.js"/>
       <input file="${src.caja}/es53.js"/>
-      <input file="${src.caja}/plugin/uri.js"/>
       <input file="${src.caja}/cajita-promise.js"/>
       <input file="${src.caja}/plugin/prepare-modules.js"/>
       <input file="${src.caja}/plugin/load-module.js"/>
       <input file="${src.caja}/plugin/caja-iframe-done.js"/>
-    </transform>
-    <transform>
-      <output file="${lib.caja}/plugin/module-promise-minified.js"
-       language="javascript" renderer="minify"/>
-      <input file="${src.caja}/plugin/uri.js"/>
-      <input file="${src.caja}/cajita-module-orig.js"/>
-      <input file="${src.caja}/cajita-promise.js"/>
     </transform>
     <transform>
       <output file="${lib.caja}/ses/initSES.js"
@@ -1167,6 +1150,7 @@
   </target>
 
   <!-- Copies playground front end supporting files -->
+  <target name="PSF" depends="PlaygroundSupportingFiles" />
   <target name="PlaygroundSupportingFiles" depends="CajoledTests,MinifiedJs">
     <copy todir="${war}">
       <!-- Needed by Playground.html -->

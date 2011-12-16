@@ -705,5 +705,25 @@ URI.create = create;
 URI.resolve = resolve;
 URI.collapse_dots = collapse_dots;  // Visible for testing.
 
+// lightweight string-based api for loadModuleMaker
+URI.utils = {
+  mimeTypeOf: function (uri) {
+    var uriObj = parse(uri);
+    if (/\.html$/.test(uriObj.getPath())) {
+      return 'text/html';
+    } else {
+      return 'application/javascript';
+    }
+  },
+  resolve: function (base, uri) {
+    if (base) {
+      return resolve(parse(base), parse(uri)).toString();
+    } else {
+      return '' + uri;
+    }
+  }
+};
+
+
 return URI;
 })();

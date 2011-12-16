@@ -20,24 +20,10 @@
  * @param cajolingServiceClient a cajoling service client to use for contacting
  *     a cajoling service.
  *
- * @requires Q, ___, URI
+ * @requires Q, ___
  * @provides loadModuleMaker
  */
-var loadModuleMaker = function(rootUrl, cajolingServiceClient) {
-  var resolveModuleUrl = function (base, url) {
-    return base
-        ? URI.resolve(URI.parse(base), URI.parse(url)).toString()
-        : url;
-  };
-
-  var getInputMimeType = function(uncajoledSourceUrl) {
-    var url = URI.parse(uncajoledSourceUrl);
-    if (/\.html$/.test(url.getPath())) {
-      return 'text/html';
-    } else {
-      return 'application/javascript';
-    }
-  };
+var loadModuleMaker = function(rootUrl, cajolingServiceClient, uriUtils) {
 
   // A cache where each key is a fully qualified module URL and each value is
   // a promise for a prepared module object.
@@ -79,7 +65,7 @@ var loadModuleMaker = function(rootUrl, cajolingServiceClient) {
 
   var makeLoad = function(baseUrl) {
     var load = function(url) {
-      var fullUrl = '' + resolveModuleUrl(baseUrl, url);
+      var fullUrl = uriUtils.resolve(baseUrl, url);
       if (moduleCache['$' + fullUrl]
           || Q.near(moduleCache['$' + fullUrl]).isPromise___) {
         throw new Error(
@@ -126,13 +112,13 @@ var loadModuleMaker = function(rootUrl, cajolingServiceClient) {
     };
 
     var async = function(url, contentType) {
-      var fullUrl = resolveModuleUrl(baseUrl, url);
+      var fullUrl = uriUtils.resolve(baseUrl, url);
       if (moduleCache['$' + fullUrl]) {
         // Return the promise in the cache (may be as of yet unfulfilled)
         return moduleCache['$' + fullUrl];
       }
       var moduleDeferred = Q.defer();
-      var mimeType = contentType || getInputMimeType(url);
+      var mimeType = contentType || uriUtils.mimeTypeOf(url);
       Q.when(
           cajolingServiceClient.cajoleUrl(fullUrl, mimeType),
           function(moduleJson) {

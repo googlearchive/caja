@@ -74,7 +74,8 @@ var createTest = function(rootUrl) {
     }
   };
 
-  var loadModule = loadModuleMaker(rootUrl, mockCajolingServiceClient);
+  var loadModule = loadModuleMaker(
+      rootUrl, mockCajolingServiceClient, URI.utils);
 
   var addModule = function(url, mimeType, deps) {
     modules[url + '-' + mimeType] = makeModuleText(deps);

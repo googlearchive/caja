@@ -23,6 +23,7 @@
  * @requires jsonRestTransportMaker
  * @requires taming
  * @requires window
+ * @requires URI
  */
 
 function ES53FrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker) {
@@ -64,7 +65,7 @@ function ES53FrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker) {
       var domicile = makeDomicile(divs, uriPolicy, guestWin);
       var gman = GuestManager(divs, domicile, guestWin, es53run);
       gman._loader = guestWin.loadModuleMaker(
-        cajaInt.documentBaseUrl(), cajoler);
+        cajaInt.documentBaseUrl(), cajoler, URI.utils);
       es5ready(gman);
     });
   }
