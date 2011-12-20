@@ -225,6 +225,13 @@ ses.startSES = function(global,
   //var TAME_GLOBAL_EVAL = true;
   var TAME_GLOBAL_EVAL = false;
 
+  /**
+   * If this is true, then we redefine these to work around a
+   * stratification bug in the Chrome debugger. To allow this, we have
+   * also whitelisted these four properties in whitelist.js
+   */
+  //var EMULATE_LEGACY_GETTERS_SETTERS = false;
+  var EMULATE_LEGACY_GETTERS_SETTERS = true;
 
   //////////////// END KLUDGE SWITCHES ///////////
 
@@ -232,6 +239,14 @@ ses.startSES = function(global,
   var dirty = true;
 
   var hop = Object.prototype.hasOwnProperty;
+
+  var getProto = Object.getPrototypeOf;
+  var defProp = Object.defineProperty;
+  var gopd = Object.getOwnPropertyDescriptor;
+  var gopn = Object.getOwnPropertyNames;
+  var keys = Object.keys;
+  var freeze = Object.freeze;
+  var create = Object.create;
 
   function fail(str) {
     debugger;
@@ -241,6 +256,74 @@ ses.startSES = function(global,
   if (typeof WeakMap === 'undefined') {
     fail('No built-in WeakMaps, so WeakMap.js must be loaded first');
   }
+
+
+  if (EMULATE_LEGACY_GETTERS_SETTERS) {
+    defProp(Object.prototype, '__defineGetter__', {
+      value: function(sprop, getter) {
+        sprop = '' + sprop;
+        if (hop.call(this, sprop)) {
+          defProp(this, sprop, { get: getter });
+        } else {
+          defProp(this, sprop, {
+            get: getter,
+            set: undefined,
+            enumerable: true,
+            configurable: true
+          });
+        }
+      },
+      writable: false,
+      enumerable: false,
+      configurable: false
+    });
+    defProp(Object.prototype, '__defineSetter__', {
+      value: function(sprop, setter) {
+        sprop = '' + sprop;
+        if (hop.call(this, sprop)) {
+          defProp(this, sprop, { set: setter });
+        } else {
+          defProp(this, sprop, {
+            get: undefined,
+            set: setter,
+            enumerable: true,
+            configurable: true
+          });
+        }
+      },
+      writable: false,
+      enumerable: false,
+      configurable: false
+    });
+    defProp(Object.prototype, '__lookupGetter__', {
+      value: function(sprop) {
+        sprop = '' + sprop;
+        var base = this, desc = void 0;
+        while (base && !(desc = gopd(base, sprop))) { base = getProto(base); }
+        return desc && desc.get;
+      },
+      writable: false,
+      enumerable: false,
+      configurable: false
+    });
+    defProp(Object.prototype, '__lookupSetter__', {
+      value: function(sprop) {
+        sprop = '' + sprop;
+        var base = this, desc = void 0;
+        while (base && !(desc = gopd(base, sprop))) { base = getProto(base); }
+        return desc && desc.set;
+      },
+      writable: false,
+      enumerable: false,
+      configurable: false
+    });
+  } else {
+    delete Object.prototype.__defineGetter__;
+    delete Object.prototype.__defineSetter__;
+    delete Object.prototype.__lookupGetter__;
+    delete Object.prototype.__lookupSetter__;
+  }
+
 
   /**
    * By this time, WeakMap has already monkey patched Object.freeze if
@@ -264,7 +347,7 @@ ses.startSES = function(global,
    * this {@code imports} should first be initialized with a copy of the
    * properties of {@code sharedImports}, but nothing enforces this.
    */
-  var sharedImports = Object.create(null);
+  var sharedImports = create(null);
 
   (function startSESPrelude() {
 
@@ -332,7 +415,7 @@ ses.startSES = function(global,
      * property copying.
      */
     function makeImports() {
-      var imports = Object.create(null);
+      var imports = create(null);
       copyToImports(imports, sharedImports);
       return imports;
     }
@@ -361,11 +444,11 @@ ses.startSES = function(global,
      * browser's {@code window} object.
      */
     function copyToImports(imports, from) {
-      Object.getOwnPropertyNames(from).forEach(function(name) {
-        var desc = Object.getOwnPropertyDescriptor(from, name);
+      gopn(from).forEach(function(name) {
+        var desc = gopd(from, name);
         desc.enumerable = false;
         desc.configurable = true;
-        Object.defineProperty(imports, name, desc);
+        defProp(imports, name, desc);
       });
       return imports;
     }
@@ -377,9 +460,9 @@ ses.startSES = function(global,
      * {@code imports}.
      */
     function makeScopeObject(imports, freeNames) {
-      var scopeObject = Object.create(null);
+      var scopeObject = create(null);
       freeNames.forEach(function(name) {
-        var desc = Object.getOwnPropertyDescriptor(imports, name);
+        var desc = gopd(imports, name);
         if (!desc || desc.writable !== false || desc.configurable) {
           // If there is no own property, or it isn't a non-writable
           // value property, or it is configurable. Note that this
@@ -417,9 +500,9 @@ ses.startSES = function(global,
           };
         }
         desc.enumerable = false;
-        Object.defineProperty(scopeObject, name, desc);
+        defProp(scopeObject, name, desc);
       });
-      return Object.freeze(scopeObject);
+      return freeze(scopeObject);
     }
 
 
@@ -462,7 +545,7 @@ ses.startSES = function(global,
         var scopeObject = makeScopeObject(imports, freeNames);
         return wrapper.call(scopeObject).call(imports);
       };
-      Object.freeze(compiledCode.prototype);
+      freeze(compiledCode.prototype);
       return compiledCode;
     }
 
@@ -491,7 +574,7 @@ ses.startSES = function(global,
      */
     function compileExpr(exprSrc, opt_sourcePosition) {
       var result = internalCompileExpr(exprSrc, opt_sourcePosition);
-      return Object.freeze(result);
+      return freeze(result);
     }
 
 
@@ -525,7 +608,7 @@ ses.startSES = function(global,
           result.push(m[1]);
         }
       }
-      return Object.freeze(result);
+      return freeze(result);
     }
 
     /**
@@ -558,7 +641,7 @@ ses.startSES = function(global,
         '(function() {' + modSrc + '}).call(this)',
         opt_sourcePosition);
       moduleMaker.requirements = getRequirements(modSrc);
-      return Object.freeze(moduleMaker);
+      return freeze(moduleMaker);
     }
 
     /**
@@ -635,14 +718,14 @@ ses.startSES = function(global,
         }
         defending.set(val, true);
         defendingList.push(val);
-        Object.freeze(val);
-        recur(Object.getPrototypeOf(val));
-        Object.getOwnPropertyNames(val).forEach(function(p) {
+        freeze(val);
+        recur(getProto(val));
+        gopn(val).forEach(function(p) {
           if (typeof val === 'function' &&
               (p === 'caller' || p === 'arguments')) {
             return;
           }
-          var desc = Object.getOwnPropertyDescriptor(val, p);
+          var desc = gopd(val, p);
           recur(desc.value);
           recur(desc.get);
           recur(desc.set);
@@ -660,147 +743,153 @@ ses.startSES = function(global,
       return node;
     }
 
-  // makeArrayLike() produces a constructor for the purpose of taming
-  // things like nodeLists.  The result, ArrayLike, takes an instance of 
-  // ArrayLike and two functions, getItem and getLength, which put
-  // it in a position to do taming on demand.
-    var itemMap = WeakMap(), lengthMap = WeakMap();
-    var ArrayLike, makeArrayLike;
-    var origDefProp = Object.defineProperty;
-    var gopd = Object.getOwnPropertyDescriptor;
-    var freeze = Object.freeze;
-    var nativeProxies = global.Proxy && (function () {
+
+    /**
+     * makeArrayLike() produces a constructor for the purpose of
+     * taming things like nodeLists.  The result, ArrayLike, takes an
+     * instance of ArrayLike and two functions, getItem and getLength,
+     * which put it in a position to do taming on demand.
+     *
+     * <p>The constructor returns a new object that inherits from the
+     * {@code proto} passed in.
+     */
+    var makeArrayLike;
+    (function() {
+      var itemMap = WeakMap(), lengthMap = WeakMap();
+      function lengthGetter() {
+        var getter = lengthMap.get(this);
+        return getter ? getter() : void 0;
+      }
+      freeze(lengthGetter);
+      freeze(lengthGetter.prototype);
+
+      var nativeProxies = global.Proxy && (function () {
         var obj = {0: 'hi'};
         var p = global.Proxy.create({
-            get: function () {
-              var P = arguments[0];
-              if (typeof P !== 'string') { P = arguments[1]; }
-              return obj[P];
-            }
-          });
+          get: function () {
+            var P = arguments[0];
+            if (typeof P !== 'string') { P = arguments[1]; }
+            return obj[P];
+          }
+        });
         return p[0] === 'hi';
       })();
-    if (nativeProxies) {
-      ArrayLike = function(proto, getItem, getLength) {
-          if (typeof proto !== 'object') {
-            throw new TypeError('Expected proto to be an object.');
+      if (nativeProxies) {
+        (function () {
+          function ArrayLike(proto, getItem, getLength) {
+            if (typeof proto !== 'object') {
+              throw new TypeError('Expected proto to be an object.');
+            }
+            if (!(proto instanceof ArrayLike)) {
+              throw new TypeError('Expected proto to be instanceof ArrayLike.');
+            }
+            var obj = create(proto);
+            itemMap.set(obj, getItem);
+            lengthMap.set(obj, getLength);
+            return obj;
           }
-          if (!(proto instanceof ArrayLike)) {
-            throw new TypeError('Expected proto to be instanceof ArrayLike.');
-          }
-          var obj = Object.create(proto);
-          itemMap.set(obj, getItem);
-          lengthMap.set(obj, getLength);
-          return obj;
-        };
 
-      var lengthGetter = freeze(function () {
-          var getter = lengthMap.get(this);
-          return getter ? getter() : void 0;
-        });
-      var ownPropDesc = function (P) {
-          P = '' + P;
-          if (P === 'length') {
-            return { get: lengthGetter };
-          } else if (typeof P === 'number' || P === '' + (+P)) {
-            var get = freeze(function () {
+          function ownPropDesc(P) {
+            P = '' + P;
+            if (P === 'length') {
+              return { get: lengthGetter };
+            } else if (typeof P === 'number' || P === '' + (+P)) {
+              var get = freeze(function () {
                 var getter = itemMap.get(this);
                 return getter ? getter(+P) : void 0;
               });
-            freeze(get.prototype);
-            return {
+              freeze(get.prototype);
+              return {
                 get: get,
                 enumerable: true,
                 configurable: true
               };
+            }
+            return void 0;
           }
-          return void 0;
-        };
-      var propDesc = function (P) {
-          var opd = ownPropDesc(P);
-          if (opd) {
-            return opd;
-          } else {
-            return gopd(Object.prototype, P);
+          function propDesc(P) {
+            var opd = ownPropDesc(P);
+            if (opd) {
+              return opd;
+            } else {
+              return gopd(Object.prototype, P);
+            }
           }
-        };
-      var has = function (P) {
-          P = '' + P;
-          return (P === 'length') ||
-              (typeof P === 'number') ||
-              (P === '' + +P) ||
-              (P in Object.prototype);
-        };
-      var hasOwn = function (P) {
-          P = '' + P;
-          return (P === 'length') ||
-              (typeof P === 'number') ||
-              (P === '' + +P);
-        };
-      var gpn = function () {
-          var result = gopn ();
-          var objPropNames = Object.getOwnPropertyNames(Object.prototype);
-          result.push.apply(result, objPropNames);
-          return result;
-        };
-      var gopn = function () {
-          var lenGetter = lengthMap.get(this);
-          if (!lenGetter) { return void 0; }
-          var len = lenGetter();
-          var result = ['length'];
-          for (var i = 0; i < len; ++i) {
-            result.push('' + i);
+          function has(P) {
+            P = '' + P;
+            return (P === 'length') ||
+                (typeof P === 'number') ||
+                (P === '' + +P) ||
+                (P in Object.prototype);
           }
-          return result;
-        };
-      var del = function (P) {
-          P = '' + P;
-          if ((P === 'length') || ('' + +P === P)) { return false; }
-          return true;
-        };
+          function hasOwn(P) {
+            P = '' + P;
+            return (P === 'length') ||
+                (typeof P === 'number') ||
+                (P === '' + +P);
+          }
+          function getPN() {
+            var result = getOwnPN ();
+            var objPropNames = gopn(Object.prototype);
+            result.push.apply(result, objPropNames);
+            return result;
+          }
+          function getOwnPN() {
+            var lenGetter = lengthMap.get(this);
+            if (!lenGetter) { return void 0; }
+            var len = lenGetter();
+            var result = ['length'];
+            for (var i = 0; i < len; ++i) {
+              result.push('' + i);
+            }
+            return result;
+          };
+          function del(P) {
+            P = '' + P;
+            if ((P === 'length') || ('' + +P === P)) { return false; }
+            return true;
+          }
 
-      ArrayLike.prototype = global.Proxy.create({
-          getPropertyDescriptor: propDesc,
-          getOwnPropertyDescriptor: ownPropDesc,
-          has: has,
-          hasOwn: hasOwn,
-          getPropertyNames: gpn,
-          getOwnPropertyNames: gopn,
-          'delete': del,
-          fix: function() { return void 0; }
-        },
-        Object.prototype);
-      freeze(ArrayLike);
-      makeArrayLike = function () { return ArrayLike; };
-    } else {(function () {
-      // Make ArrayLike.prototype be an object with a fixed set of numeric
-      // getters.  To tame larger lists, replace ArrayLike and its prototype
-      // using makeArrayLike(newLength).
-  
-      // See http://graphics.stanford.edu/~seander/bithacks.html#RoundUpPowerOf2
-      function nextUInt31PowerOf2(v) {
-        v &= 0x7fffffff;
-        v |= v >> 1;
-        v |= v >> 2;
-        v |= v >> 4;
-        v |= v >> 8;
-        v |= v >> 16;
-        return v + 1;
-      }
-  
-      // The current function whose prototype has the most numeric getters.
-      var BiggestArrayLike = void 0;
-      var maxLen = 0;
-      var lengthGetter = Object.freeze(function () {
-          var getter = lengthMap.get(this);
-          return getter ? getter() : void 0;
-        });
-      freeze(lengthGetter.prototype);
-      makeArrayLike = function(length) {
-          if (!BiggestArrayLike || length > maxLen) {
-            var len = nextUInt31PowerOf2(length);
-            // Create a new ArrayLike constructor to replace the old one.
-            var BAL = function(proto, getItem, getLength) {
+          ArrayLike.prototype = global.Proxy.create({
+            getPropertyDescriptor: propDesc,
+            getOwnPropertyDescriptor: ownPropDesc,
+            has: has,
+            hasOwn: hasOwn,
+            getPropertyNames: getPN,
+            getOwnPropertyNames: getOwnPN,
+            'delete': del,
+            fix: function() { return void 0; }
+          }, Object.prototype);
+          freeze(ArrayLike);
+          makeArrayLike = function() { return ArrayLike; };
+        })();
+      } else {
+        (function() {
+          // Make BiggestArrayLike.prototype be an object with a fixed
+          // set of numeric getters.  To tame larger lists, replace
+          // BiggestArrayLike and its prototype using
+          // makeArrayLike(newLength).
+
+          // See
+          // http://graphics.stanford.edu/~seander/bithacks.html#RoundUpPowerOf2
+          function nextUInt31PowerOf2(v) {
+            v &= 0x7fffffff;
+            v |= v >> 1;
+            v |= v >> 2;
+            v |= v >> 4;
+            v |= v >> 8;
+            v |= v >> 16;
+            return v + 1;
+          }
+
+          // The current function whose prototype has the most numeric getters.
+          var BiggestArrayLike = void 0;
+          var maxLen = 0;
+          makeArrayLike = function(length) {
+            if (!BiggestArrayLike || length > maxLen) {
+              var len = nextUInt31PowerOf2(length);
+              // Create a new ArrayLike constructor to replace the old one.
+              var BAL = function(proto, getItem, getLength) {
                 if (typeof(proto) !== 'object') {
                   throw new TypeError('Expected proto to be an object.');
                 }
@@ -808,36 +897,37 @@ ses.startSES = function(global,
                   throw new TypeError(
                       'Expected proto to be instanceof ArrayLike.');
                 }
-                var obj = Object.create(proto);
+                var obj = create(proto);
                 itemMap.set(obj, getItem);
                 lengthMap.set(obj, getLength);
                 return obj;
               };
-            // Install native numeric getters.
-            for (var i = 0; i < len; i++) {
-              (function(j) {
-                var get = freeze(function() {
+              // Install native numeric getters.
+              for (var i = 0; i < len; i++) {
+                (function(j) {
+                  var get = freeze(function() {
                     return itemMap.get(this)(j);
                   });
-                freeze(get.prototype);
-                Object.defineProperty(BAL.prototype, j, {
+                  freeze(get.prototype);
+                  defProp(BAL.prototype, j, {
                     get: get,
                     enumerable: true
                   });
-              })(i);
+                })(i);
+              }
+              // Install native length getter.
+              defProp(BAL.prototype, 'length', { get: lengthGetter });
+              // Freeze and cache the result
+              freeze(BAL);
+              freeze(BAL.prototype);
+              BiggestArrayLike = BAL;
+              maxLen = len;
             }
-            // Install native length getter.
-            Object.defineProperty(BAL.prototype, 'length', 
-                { get: lengthGetter });
-            // Freeze and cache the result
-            freeze(BAL);
-            freeze(BAL.prototype);
-            BiggestArrayLike = BAL;
-            maxLen = len;
-          }
-          return BiggestArrayLike;
-        };
-    })(); }
+            return BiggestArrayLike;
+          };
+        })();
+      }
+    })();
 
     global.cajaVM = {
       log: function log(str) {
@@ -860,13 +950,13 @@ ses.startSES = function(global,
       sharedImports: sharedImports,
       makeImports: makeImports,
       copyToImports: copyToImports,
-      
+
       makeArrayLike: makeArrayLike
     };
     var extensionsRecord = extensions();
-    Object.getOwnPropertyNames(extensionsRecord).forEach(function (p) {
-      Object.defineProperty(cajaVM, p,
-          Object.getOwnPropertyDescriptor(extensionsRecord, p));
+    gopn(extensionsRecord).forEach(function (p) {
+      defProp(cajaVM, p,
+          gopd(extensionsRecord, p));
     });
     // Move this down here so it is not available during the call to
     // extensions.
@@ -903,7 +993,7 @@ ses.startSES = function(global,
    * original property.
    */
   function read(base, name) {
-    var desc = Object.getOwnPropertyDescriptor(base, name);
+    var desc = gopd(base, name);
     if (!desc) { return undefined; }
     if ('value' in desc && !desc.writable && !desc.configurable) {
       return desc.value;
@@ -911,7 +1001,7 @@ ses.startSES = function(global,
 
     var result = base[name];
     try {
-      Object.defineProperty(base, name, {
+      defProp(base, name, {
         value: result, writable: false, configurable: false
       });
     } catch (ex) {
@@ -932,13 +1022,13 @@ ses.startSES = function(global,
    * these non-enumerable since ES5.1 specifies that all these
    * properties are non-enumerable on the global object.
    */
-  Object.keys(whitelist).forEach(function(name) {
-    var desc = Object.getOwnPropertyDescriptor(global, name);
+  keys(whitelist).forEach(function(name) {
+    var desc = gopd(global, name);
     if (desc) {
       var permit = whitelist[name];
       if (permit) {
         var value = read(global, name);
-        Object.defineProperty(sharedImports, name, {
+        defProp(sharedImports, name, {
           value: value,
           writable: true,
           enumerable: false,
@@ -948,7 +1038,7 @@ ses.startSES = function(global,
     }
   });
   if (TAME_GLOBAL_EVAL) {
-    Object.defineProperty(sharedImports, 'eval', {
+    defProp(sharedImports, 'eval', {
       value: cajaVM.eval,
       writable: true,
       enumerable: false,
@@ -980,7 +1070,7 @@ ses.startSES = function(global,
       fail('primordial reachable through multiple paths');
     }
     whiteTable.set(value, permit);
-    Object.keys(permit).forEach(function(name) {
+    keys(permit).forEach(function(name) {
       if (permit[name] !== 'skip') {
         var sub = read(value, name);
         register(sub, permit[name]);
@@ -1003,7 +1093,7 @@ ses.startSES = function(global,
       if (hop.call(permit, name)) { return permit[name]; }
     }
     while (true) {
-      base = Object.getPrototypeOf(base);
+      base = getProto(base);
       if (base === null) { return false; }
       permit = whiteTable.get(base);
       if (permit && hop.call(permit, name)) {
@@ -1080,7 +1170,7 @@ ses.startSES = function(global,
     }
 
     try {
-      Object.defineProperty(base, name, {
+      defProp(base, name, {
         get: poison,
         set: poison,
         enumerable: false,
@@ -1090,8 +1180,8 @@ ses.startSES = function(global,
       try {
         // Perhaps it's writable non-configurable, it which case we
         // should still be able to freeze it in a harmless state.
-        var value = Object.getOwnPropertyDescriptor(base, name).value;
-        Object.defineProperty(base, name, {
+        var value = gopd(base, name).value;
+        defProp(base, name, {
           value: value === null ? null : void 0,
           writable: false,
           configurable: false
@@ -1102,7 +1192,7 @@ ses.startSES = function(global,
         return false;
       }
     }
-    var desc2 = Object.getOwnPropertyDescriptor(base, name);
+    var desc2 = gopd(base, name);
     if (desc2.get === poison &&
         desc2.set === poison &&
         !desc2.configurable) {
@@ -1135,7 +1225,7 @@ ses.startSES = function(global,
     if (value !== Object(value)) { return; }
     if (cleaning.get(value)) { return; }
     cleaning.set(value, true);
-    Object.getOwnPropertyNames(value).forEach(function(name) {
+    gopn(value).forEach(function(name) {
       var path = prefix + (prefix ? '.' : '') + name;
       var p = getPermit(value, name);
       if (p) {
@@ -1150,12 +1240,12 @@ ses.startSES = function(global,
         cleanProperty(value, name, path);
       }
     });
-    Object.freeze(value);
+    freeze(value);
   }
   clean(sharedImports, '');
 
 
-  Object.keys(propertyReports).sort().forEach(function(status) {
+  keys(propertyReports).sort().forEach(function(status) {
     var group = propertyReports[status];
     ses.logger.reportDiagnosis(group.severity, status, group.list);
   });

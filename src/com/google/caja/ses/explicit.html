@@ -34,6 +34,7 @@
 <div id="exprTest">exprTest...</div>
 <div id="moduleTest">moduleTest...</div>
 <div id="scriptTest">scriptTest...</div>
+<div id="amdLoaderTest">AMD loader test...</div>
 
 <script src="useHTMLLogger.js"></script>
 <script>
@@ -56,21 +57,29 @@ The <script src="useHTMLLogger.js"> and the inline script above advises
 <script src="logger.js"></script>
 <script src="repairES5.js"></script>
 <script src="WeakMap.js"></script>
+<script src="StringMap.js"></script>
 <script src="whitelist.js"></script>
 <script src="atLeastFreeVarNames.js"></script>
 <script src="startSES.js"></script>
 <script src="ejectorsGuardsTrademarks.js"></script>
 <script src="hookupSESPlus.js"></script>
+
 <script>
+  var amdLoaderTest = gebi('amdLoaderTest');
+  function appendText(node, text) {
+    "use strict";
+    node.appendChild(document.createTextNode(text));
+  }
   (function() {
     "use strict";
     var exprTest = gebi('exprTest');
     var moduleTest = gebi('moduleTest');
     var scriptTest = gebi('scriptTest');
     if (!ses.ok()) {
-      exprTest.appendChild(document.createTextNode('cancelled'));
-      moduleTest.appendChild(document.createTextNode('cancelled'));
-      scriptTest.appendChild(document.createTextNode('cancelled'));
+      appendText(exprTest, 'cancelled');
+      appendText(moduleTest, 'cancelled');
+      appendText(scriptTest, 'cancelled');
+      appendText(amdLoaderTest, 'cancelled');
       return;
     }
     
@@ -79,7 +88,7 @@ The <script src="useHTMLLogger.js"> and the inline script above advises
 
     var output = cajaVM.eval('3+4') * cajaVM.compileExpr('window')(imports);
     var text1 = output === 42 ? 'succeeded' : 'failed: ' + output;
-    exprTest.appendChild(document.createTextNode(text1));
+    appendText(exprTest, text1);
 
     // Test ability to bootstrap support for a limited form of
     // CommonJS modules. 
@@ -103,7 +112,7 @@ The <script src="useHTMLLogger.js"> and the inline script above advises
       "returned": 77 
     }, void 0, ' ');
     var text2 = did === should ? 'succeeded' : 'failed: ' + did;
-    moduleTest.appendChild(document.createTextNode(text2));
+    appendText(moduleTest, text2);
 
     // Tests the ability to do inter-module linkage as scripts
     // traditionally did, by modification of (virtual) shared
@@ -112,9 +121,66 @@ The <script src="useHTMLLogger.js"> and the inline script above advises
     cajaVM.compileModule('this.x = 88;')(imports);
     var text3 = cajaVM.compileExpr('x')(imports) === 88 ? 
       'succeeded' : 'failed';
-    scriptTest.appendChild(document.createTextNode(text3));
+    appendText(scriptTest, text3);
 
   })();
+</script>
+
+<script src="makeQ.js"></script>
+<script src="makeFarResourceMaker.js"></script>
+<script>
+  function mySetTimeout(func, millis) {
+    return setTimeout(function() {
+      try {
+        func();
+      } catch (reason) {
+        console.log('uncaught: ', reason);
+      }
+    }, millis);
+  }
+  var Q = makeQ(mySetTimeout);
+
+  var makeTextResource = makeFarResourceMaker();
+
+  var makeSimpleAMDLoaderFileP = makeTextResource('./makeSimpleAMDLoader.js');
+  var makeSimpleAMDLoaderSrcP = makeSimpleAMDLoaderFileP.get();
+  var imports = cajaVM.makeImports();
+  imports.Q = Q;
+  var makeSimpleAMDLoaderP = Q(makeSimpleAMDLoaderSrcP).when(function(src) {
+    cajaVM.compileModule(src)(imports);
+    return imports.makeSimpleAMDLoader;
+  });
+
+
+  /**
+   * What we should do is accept any legal module identifier according
+   * to the AMD definition and encode it into a legal URL. Instead,
+   * for now, we just conservatively accept an ascii subset of both
+   * that does not need any encoding.
+   * 
+   * See https://github.com/amdjs/amdjs-api/wiki/AMD#wiki-define-id-notes
+   */
+  var isModuleId = Object.freeze(/^[a-zA-Z0-9_/]*$/);
+
+  function fetch(id) {
+    if (!isModuleId.test(id)) {
+      throw new Error('illegal module id: ' + id);
+    }
+    return makeTextResource('./' + id + '.js').get();
+  }
+
+  var moduleMap = StringMap();
+  moduleMap.set('Q', Q);
+  var loaderP = Q(makeSimpleAMDLoaderP).send(void 0, fetch, moduleMap);
+  var amdTestP = Q(loaderP).send(void 0, 'amdTest');
+  Q(amdTestP).when(function(amdTest) {
+    var amdTestStatus = amdTest === 'this is a test' ?
+      'succeeded' : 'failed, unexpected: ' + amdTest;
+    appendText(amdLoaderTest, amdTestStatus);
+  }, function(reason) {
+    appendText(amdLoaderTest, 'failed: ' + reason);
+  }).end();
+
 </script>
 
 <p>
@@ -130,5 +196,7 @@ on <span id="browserOS">unknown</span>
   gebi('browserOS').textContent = BrowserDetect.OS;  
 })();
 </script>
+
+
 </body>
 </html>

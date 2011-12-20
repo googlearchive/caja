@@ -972,6 +972,11 @@
       <input file="${src.caja}/ses/hookupSES.js"/>
       <input file="${src.caja}/ses/hookupSESPlus.js"/>
 
+      <input file="${src.caja}/ses/makeQ.js"/>
+      <input file="${src.caja}/ses/makeFarResourceMaker.js"/>
+      <input file="${src.caja}/ses/makeSimpleAMDLoader.js"/>
+      <input file="${src.caja}/ses/amdTest.js"/>
+
       <input file="${src.caja}/plugin/bridal.js"/>
       <input file="${lib.caja}/plugin/css-defs.js"/>
       <input file="${src.caja}/plugin/csslexer.js"/>

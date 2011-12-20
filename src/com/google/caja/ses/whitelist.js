@@ -148,6 +148,11 @@ var ses;
         'delete': t
       }
     },
+    StringMap: {  // A specialized approximation of ES-Harmony's Map.
+      prototype: {} // Technically, the methods should be on the prototype,
+                    // but doing so while preserving encapsulation will be
+                    // needlessly expensive for current usage.
+    },
 // As of this writing, the WeakMap emulation in WeakMap.js relies on
 // the unguessability and undiscoverability of HIDDEN_NAME, a
 // secret property name. However, on a platform with built-in
@@ -162,15 +167,26 @@ var ses;
     escape: t,                       // ES5 Appendix B
     unescape: t,                     // ES5 Appendix B
     Object: {
-      // As any new methods are added here that may reveal the
+      // If any new methods are added here that may reveal the
       // HIDDEN_NAME within WeakMap.js, such as the proposed
-      // getOwnPropertyDescriptors or getPropertyDescriptors, extend
-      // WeakMap.js to monkey patch these to avoid revealing
+      // getOwnPropertyDescriptors or getPropertyDescriptors, then
+      // extend WeakMap.js to monkey patch these to avoid revealing
       // HIDDEN_NAME.
       getPropertyDescriptor: t,      // ES-Harmony proposal
       getPropertyNames: t,           // ES-Harmony proposal
       is: t,                         // ES-Harmony proposal
       prototype: {
+
+        // Whitelisted only to work around a Chrome debugger
+        // stratification bug (TODO(erights): report). These are
+        // redefined in startSES.js in terms of standard methods, so
+        // that we can be confident they introduce no non-standard
+        // possibilities.
+        __defineGetter__: t,
+        __defineSetter__: t,
+        __lookupGetter__: t,
+        __lookupSetter__: t,
+
         constructor: '*',
         toString: '*',
         toLocaleString: '*',

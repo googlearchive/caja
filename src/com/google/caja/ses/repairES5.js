@@ -322,6 +322,64 @@ var ses;
   };
 
   /**
+   *
+   */
+  ses.defendOne = function(obj) {
+    var gopd = Object.getOwnPropertyDescriptor;
+    var gopn = Object.getOwnPropertyNames;
+    var getProtoOf = Object.getPrototypeOf;
+    var isFrozen = Object.isFrozen;
+    var defProp = Object.defineProperty;
+
+    if (obj !== Object(obj)) { return obj; }
+    var func;
+    if (typeof obj === 'object' &&
+        !!gopd(obj, 'constructor') &&
+        typeof (func = obj.constructor) === 'function' &&
+        func.prototype === obj &&
+        !isFrozen(obj)) {
+      gopn(obj).forEach(function(name) {
+        var value;
+        function getter() {
+          if (obj === this) { return value; }
+          if (!this) { return void 0; }
+          if (!!gopd(this, name)) { return this[name]; }
+          return getter.call(getProtoOf(this));
+        }
+        function setter(newValue) {
+          if (obj === this) {
+            throw new TypeError('Cannot set virtually frozen property: ' +
+                                name);
+          }
+          if (!!gopd(this, name)) {
+            this[name] = newValue;
+          }
+          // TODO(erights): Do all the inherited property checks
+          defProp(this, name, {
+            value: newValue,
+            writable: true,
+            enumerable: true,
+            configurable: true
+          });
+        }
+        var desc = gopd(obj, name);
+        if (desc.configurable && 'value' in desc) {
+          value = desc.value;
+          defProp(obj, name, {
+            get: getter,
+            set: setter,
+            // We should be able to omit the enumerable line, since it
+            // should default to its existing setting.
+            enumerable: desc.enumerable,
+            configurable: false
+          });
+        }
+      });
+    }
+    return Object.freeze(obj);
+  };
+
+  /**
    * Various repairs may expose non-standard objects that are not
    * reachable from startSES's root, and therefore not freezable by
    * startSES's normal whitelist traversal. However, freezing these
@@ -335,8 +393,23 @@ var ses;
     needToFreeze.push(obj);
   }
   ses.freezeDelayed = function freezeDelayed() {
-    needToFreeze.forEach(Object.freeze);
+    needToFreeze.forEach(ses.defendOne);
   };
+
+  /**
+   * Where the "that" parameter represents a "this" that should have
+   * been bound to "undefined" but may be bound to a global or
+   * globaloid object.
+   *
+   * <p>The "desc" parameter is a string to describe the "that" if it
+   * is something unexpected.
+   */
+  function testGlobalLeak(desc, that) {
+    if (that === void 0) { return false; }
+    if (that === global) { return true; }
+    if ({}.toString.call(that) === '[object Window]') { return true; }
+    return desc + ' leaked as: ' + that;
+  }
 
   ////////////////////// Tests /////////////////////
   //
@@ -378,9 +451,7 @@ var ses;
     global.___global_test_function___ = function() { return this; };
     var that = ___global_test_function___();
     delete global.___global_test_function___;
-    if (that === void 0) { return false; }
-    if (that === global) { return true; }
-    return 'This leaked as: ' + that;
+    return testGlobalLeak('Global func "this"', that);
   }
 
   /**
@@ -388,9 +459,7 @@ var ses;
    */
   function test_GLOBAL_LEAKS_FROM_ANON_FUNCTION_CALLS() {
     var that = (function(){ return this; })();
-    if (that === void 0) { return false; }
-    if (that === global) { return true; }
-    return 'This leaked as: ' + that;
+    return testGlobalLeak('Anon func "this"', that);
   }
 
   var strictThis = this;
@@ -399,10 +468,7 @@ var ses;
    *
    */
   function test_GLOBAL_LEAKS_FROM_STRICT_THIS() {
-    if (strictThis === void 0) { return false; }
-    if (strictThis === global) { return true; }
-    if ({}.toString.call(strictThis) === '[object Window]') { return true; }
-    return 'Strict this leaked as: ' + strictThis;
+    return testGlobalLeak('Strict "this"', strictThis);
   }
 
   /**
@@ -423,12 +489,11 @@ var ses;
       if (err instanceof TypeError) { return false; }
       return 'valueOf() threw: ' + err;
     }
-    if (that === global) { return true; }
     if (that === void 0) {
       // Should report as a safe spec violation
       return false;
     }
-    return 'valueOf() leaked as: ' + that;
+    return testGlobalLeak('valueOf()', that);
   }
 
   /**
@@ -445,12 +510,11 @@ var ses;
     } finally {
       delete global.___global_valueOf_function___;
     }
-    if (that === global) { return true; }
     if (that === void 0) {
       // Should report as a safe spec violation
       return false;
     }
-    return 'valueOf() leaked as: ' + that;
+    return testGlobalLeak('Global valueOf()', that);
   }
 
   /**
@@ -977,48 +1041,6 @@ var ses;
     return !!result;
   }
 
-  /**
-   * Detects https://bugs.webkit.org/show_bug.cgi?id=63398
-   *
-   * <p>If this reports a problem in the absence of "New symptom (a)",
-   * it means the error thrown by the "in" in {@code has} is skipping
-   * past the first layer of "catch" surrounding that "in". This is in
-   * fact what we're currently seeing on Safari WebKit Nightly Version
-   * 5.0.5 (5533.21.1, r91108).
-   */
-  function test_CANT_IN_CALLER() {
-    var answer = void 0;
-    try {
-      answer = has(function(){}, 'caller', 'strict_function');
-    } catch (err) {
-      if (err instanceof TypeError) { return true; }
-      return '("caller" in strict_func) failed with: ' + err;
-    } finally {}
-    if (answer) { return false; }
-    return '("caller" in strict_func) was false.';
-  }
-
-  /**
-   * Detects https://bugs.webkit.org/show_bug.cgi?id=63398
-   *
-   * <p>If this reports a problem in the absence of "New symptom (a)",
-   * it means the error thrown by the "in" in {@code has} is skipping
-   * past the first layer of "catch" surrounding that "in". This is in
-   * fact what we're currently seeing on Safari WebKit Nightly Version
-   * 5.0.5 (5533.21.1, r91108).
-   */
-  function test_CANT_IN_ARGUMENTS() {
-    var answer = void 0;
-    try {
-      answer = has(function(){}, 'arguments', 'strict_function');
-    } catch (err) {
-      if (err instanceof TypeError) { return true; }
-      return '("arguments" in strict_func) failed with: ' + err;
-    } finally {}
-    if (answer) { return false; }
-    return '("arguments" in strict_func) was false.';
-  }
-
   function has2(base, name, baseDesc) {
     var result = void 0;
     var finallySkipped = true;
@@ -1046,6 +1068,48 @@ var ses;
                    '>) finally outer finally skipped');
     }
     return !!result;
+  }
+
+  /**
+   * Detects https://bugs.webkit.org/show_bug.cgi?id=63398
+   *
+   * <p>If this reports a problem in the absence of "New symptom (a)",
+   * it means the error thrown by the "in" in {@code has} is skipping
+   * past the first layer of "catch" surrounding that "in". This is in
+   * fact what we're currently seeing on Safari WebKit Nightly Version
+   * 5.0.5 (5533.21.1, r91108).
+   */
+  function test_CANT_IN_CALLER() {
+    var answer = void 0;
+    try {
+      answer = has2(function(){}, 'caller', 'strict_function');
+    } catch (err) {
+      if (err instanceof TypeError) { return true; }
+      return '("caller" in strict_func) failed with: ' + err;
+    } finally {}
+    if (answer) { return false; }
+    return '("caller" in strict_func) was false.';
+  }
+
+  /**
+   * Detects https://bugs.webkit.org/show_bug.cgi?id=63398
+   *
+   * <p>If this reports a problem in the absence of "New symptom (a)",
+   * it means the error thrown by the "in" in {@code has} is skipping
+   * past the first layer of "catch" surrounding that "in". This is in
+   * fact what we're currently seeing on Safari WebKit Nightly Version
+   * 5.0.5 (5533.21.1, r91108).
+   */
+  function test_CANT_IN_ARGUMENTS() {
+    var answer = void 0;
+    try {
+      answer = has2(function(){}, 'arguments', 'strict_function');
+    } catch (err) {
+      if (err instanceof TypeError) { return true; }
+      return '("arguments" in strict_func) failed with: ' + err;
+    } finally {}
+    if (answer) { return false; }
+    return '("arguments" in strict_func) was false.';
   }
 
   /**
@@ -1097,7 +1161,7 @@ var ses;
    * applied to "caller"
    */
   function test_BUILTIN_LEAKS_CALLER() {
-    if (!has(builtInMapMethod, 'caller', 'a builtin')) { return false; }
+    if (!has2(builtInMapMethod, 'caller', 'a builtin')) { return false; }
     function foo(m) { return m.caller; }
     // using Function so it'll be non-strict
     var testfn = Function('a', 'f', 'return a.map(f)[0];');
@@ -1120,7 +1184,7 @@ var ses;
    * applied to "arguments"
    */
   function test_BUILTIN_LEAKS_ARGUMENTS() {
-    if (!has(builtInMapMethod, 'arguments', 'a builtin')) { return false; }
+    if (!has2(builtInMapMethod, 'arguments', 'a builtin')) { return false; }
     function foo(m) { return m.arguments; }
     // using Function so it'll be non-strict
     var testfn = Function('a', 'f', 'return a.map(f)[0];');
@@ -1282,6 +1346,30 @@ var ses;
   }
 
   /**
+   * Like test_PROTO_NOT_FROZEN but using defineProperty rather than
+   * assignment.
+   */
+  function test_PROTO_REDEFINABLE() {
+    if (!('freeze' in Object)) {
+      // Object.freeze and its ilk (including preventExtensions) are
+      // still absent on released Android and would
+      // cause a bogus bug detection in the following try/catch code.
+      return false;
+    }
+    var x = Object.preventExtensions({});
+    if (x.__proto__ === void 0 && !('__proto__' in x)) { return false; }
+    var y = {};
+    try {
+      Object.defineProperty(x, '__proto__', { value: y });
+    } catch (err) {
+      if (err instanceof TypeError) { return false; }
+      return 'Defining __proto__ failed with: ' + err;
+    }
+    if (y.isPrototypeOf(x)) { return true; }
+    return 'Defining __proto__ neither failed nor succeeded';
+  }
+
+  /**
    * Detects http://code.google.com/p/v8/issues/detail?id=1624
    *
    * <p>Both a direct strict eval operator and an indirect strict eval
@@ -1331,6 +1419,23 @@ var ses;
     }
     if (x !== void 0) { return true; }
     return 'E4X literal expression had no value';
+  }
+
+  /**
+   *
+   */
+  function test_ASSIGN_CAN_OVERRIDE_FROZEN() {
+    var x = Object.freeze({foo: 88});
+    var y = Object.create(x);
+    try {
+      y.foo = 99;
+    } catch (err) {
+      if (err instanceof TypeError) { return false; }
+      return 'Override failed with: ' + err;
+    }
+    if (y.foo === 99) { return true; }
+    if (y.foo === 88) { return 'Override failed silently'; }
+    return 'Unexpected override outcome: ' + y.foo;
   }
 
 
@@ -1616,9 +1721,10 @@ var ses;
   function repair_NEEDS_DUMMY_SETTER() {
     var defProp = Object.defineProperty;
     var gopd = Object.getOwnPropertyDescriptor;
-    var freeze = Object.freeze;
 
-    function dummySetter(newValue) {}
+    function dummySetter(newValue) {
+      throw new TypeError('no setter for assigning: ' + newValue);
+    }
     delayedFreeze(dummySetter.prototype);
     delayedFreeze(dummySetter);
 
@@ -1981,6 +2087,10 @@ var ses;
       return badParseInt(n, radix);
     }
     parseInt = goodParseInt;
+  }
+
+  function repair_ASSIGN_CAN_OVERRIDE_FROZEN() {
+    ses.defendOne = Object.freeze;
   }
 
 
@@ -2435,7 +2545,16 @@ var ses;
       sections: ['8.6.2'],
       tests: ['S8.6.2_A8']
     },
-    /* ****** Crashes Opera 12 pre-alpha build 1085
+    {
+      description: 'Prototype still redefinable on non-extensible object',
+      test: test_PROTO_REDEFINABLE,
+      repair: void 0,
+      preSeverity: severities.NOT_OCAP_SAFE,
+      canRepair: false,
+      urls: ['https://bugs.webkit.org/show_bug.cgi?id=65832'],
+      sections: ['8.6.2'],
+      tests: ['S8.6.2_A8']
+    },
     {
       description: 'Strict eval function leaks variable definitions',
       test: test_STRICT_EVAL_LEAKS_GLOBALS,
@@ -2445,7 +2564,7 @@ var ses;
       urls: ['http://code.google.com/p/v8/issues/detail?id=1624'],
       sections: ['10.4.2.1'],
       tests: ['S10.4.2.1_A1']
-    }, ********* */
+    },
     {
       description: 'parseInt still parsing octal',
       test: test_PARSEINT_STILL_PARSING_OCTAL,
@@ -2466,6 +2585,18 @@ var ses;
              'https://bugzilla.mozilla.org/show_bug.cgi?id=695579'],
       sections: [],
       tests: []
+    },
+    {
+      description: 'Assignment can override frozen inherited property',
+      test: test_ASSIGN_CAN_OVERRIDE_FROZEN,
+      repair: repair_ASSIGN_CAN_OVERRIDE_FROZEN,
+      preSeverity: severities.SAFE_SPEC_VIOLATION,
+      canRepair: false,
+      urls: ['http://code.google.com/p/v8/issues/detail?id=1169',
+             'https://mail.mozilla.org/pipermail/es-discuss/' +
+               '2011-November/017997.html'],
+      sections: ['8.12.4'],
+      tests: ['15.2.3.6-4-405']
     }
   ];
 
