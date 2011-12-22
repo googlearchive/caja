@@ -312,7 +312,7 @@ public class PlaygroundView {
   }
 
   private void initCaja() {
-    Caja.initialize(".");
+    Caja.initialize(".", true);
   }
 
   public PlaygroundView(Playground controller) {
