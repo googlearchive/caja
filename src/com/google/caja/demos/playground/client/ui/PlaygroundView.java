@@ -17,6 +17,7 @@ import com.google.caja.demos.playground.client.Playground;
 import com.google.caja.demos.playground.client.PlaygroundResource;
 import com.google.caja.gwtbeans.shared.Caja;
 import com.google.caja.gwtbeans.shared.Frame;
+import com.google.caja.util.Maps;
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.core.client.JavaScriptObject;
 import com.google.gwt.dom.client.Style.Unit;
@@ -378,6 +379,9 @@ public class PlaygroundView {
     // Make the cajoled content visible so that the DOM will be laid out before
     // the script checks DOM geometry.
     selectTab(Tabs.RENDER);
+    Map<String, String> domOpts = new HashMap<String, String>();
+    domOpts.put("idClass", idClass);
+    domOpts.put("title", "Playground Untrusted Content");
 
     Caja.load(
         playgroundUI.renderPanel.getElement(),
@@ -406,7 +410,7 @@ public class PlaygroundView {
                   }
                 });
           }
-        }, idClass);
+        }, domOpts);
   }
 
   private void setRenderedResult(String result) {

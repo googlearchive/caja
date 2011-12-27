@@ -14,6 +14,8 @@
 
 package com.google.caja.gwtbeans.shared;
 
+import java.util.Map;
+
 import com.google.gwt.core.client.JavaScriptObject;
 import com.google.gwt.dom.client.Element;
 import com.google.gwt.user.client.rpc.AsyncCallback;
@@ -35,13 +37,15 @@ public class Caja {
       Element element,
       JavaScriptObject uriPolicy,
       final AsyncCallback<Frame> callback,
-      final String opt_idClass) {
+      final Map<String,String> domOpts) {
+    String opt_idClass = domOpts.get("idClass");
+    String opt_title = domOpts.get("title");
     loadNative(element, uriPolicy, new FrameCb() {
       @Override
       public void cb(JavaScriptObject frame) {
         callback.onSuccess(new FrameImpl(frame));
       }
-    }, opt_idClass);
+    }, opt_idClass, opt_title);
     // opt_idClass at the end is awkward, but consistent with caja.js
   }
 
@@ -59,9 +63,12 @@ public class Caja {
       Element element,
       JavaScriptObject uriPolicy,
       FrameCb cb,
-      String opt_idClass) /*-{
+      String opt_idClass,
+      String opt_title) /*-{
     $wnd.caja.load(element, uriPolicy, function(frame) {
       cb.@com.google.caja.gwtbeans.shared.Caja.FrameCb::cb(Lcom/google/gwt/core/client/JavaScriptObject;)(frame);
-    }, opt_idClass);
+    }, {
+      "idClass" : opt_idClass,
+      "title" : opt_title });
   }-*/;
 }

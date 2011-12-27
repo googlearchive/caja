@@ -59,8 +59,8 @@ function ES53FrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker) {
 
   //----------------
 
-  function makeES5Frame(div, uriPolicy, es5ready, opt_idClass) {
-    var divs = cajaInt.prepareContainerDiv(div, feralWin, opt_idClass);
+  function makeES5Frame(div, uriPolicy, es5ready, domOpts) {
+    var divs = cajaInt.prepareContainerDiv(div, feralWin, domOpts);
     guestMaker.make(function (guestWin) {
       var domicile = makeDomicile(divs, uriPolicy, guestWin);
       var gman = GuestManager(divs, domicile, guestWin, es53run);

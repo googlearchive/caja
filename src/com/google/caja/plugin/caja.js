@@ -146,13 +146,13 @@ var caja = (function () {
   /**
    * Creates a guest frame in the default frameGroup.
    */
-  function load(div, uriPolicy, loadDone, opt_idClass) {
+  function load(div, uriPolicy, loadDone, domOpts) {
     uriPolicy = uriPolicy || caja.policy.net.NO_NETWORK;
     if (state === UNREADY) {
       initialize({});
     }
     whenReady(function () {
-      defaultFrameGroup.makeES5Frame(div, uriPolicy, loadDone, opt_idClass);
+      defaultFrameGroup.makeES5Frame(div, uriPolicy, loadDone, domOpts);
     });
   }
 
@@ -370,17 +370,21 @@ var caja = (function () {
     }
   }
 
-  function prepareContainerDiv(div, feralWin, opt_idClass) {
+  function prepareContainerDiv(div, feralWin, domOpts) {
     if (div && feralWin.document !== div.ownerDocument) {
       throw '<div> provided for ES5 frame must be in main document';
     }
+    domOpts = domOpts || {};
+    var opt_idClass = domOpts ? domOpts.idClass : void 0;
+    var opt_title = domOpts && domOpts.title ?
+        domOpts.title : '<Untrusted Content Title>';
     var idClass = opt_idClass || ('caja-guest-' + nextId++ + '___');
     var inner = null;
     var outer = null;
     if (div) {
       inner = div.ownerDocument.createElement('div');
       inner.setAttribute('class', 'caja_innerContainer___');
-      inner.setAttribute('title', '<Untrusted Content Title>');
+      inner.setAttribute('title', opt_title);
       outer = div.ownerDocument.createElement('div');
       outer.setAttribute('class', 'caja_outerContainer___');
       // Move existing children (like static HTML produced by the cajoler)
