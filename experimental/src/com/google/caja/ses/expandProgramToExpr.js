@@ -59,27 +59,37 @@
  * intervening space, then it is taken as a quantifier on the binding
  * of the $ hole to consecutive AST elements.
  *
- * Besides the "js" quasi-parser, the following code depends on these
- * helper functions.
- * isStatementOrDecl
- * isExpr
- * isGlobal          - a global variable name?
- * isFree            - a free variable name?
- * isGlobalOrFree
- * mustNotShadow     - verify name doesn't shadow name in this function
- * getFirstTokenName - printed form of first token
- * getChildren       - of an ast node
- * makeAstLike       - like arg, with alternate children
+ * Besides the "js" quasi-parser, the following code depends on the
+ * following helper functions. Depending on the concrete AST
+ * representation chosen, perhaps some of these should instead be uses
+ * of AST methods. Refactor as needed.<ul>
+ * <li>predicate hole wrappers<ul>
+ *     <li>isStatementOrDecl
+ *     <li>isExpr
+ *     <li>isGlobal       - a global variable name?
+ *     <li>isFree         - a free variable name?
+ *     <li>isGlobalOrFree
+ *     <li>mustNotShadow  - verify name doesn't shadow name in this function
+ * </ul>
+ * <li>getFirstTokenName  - printed form of first token
+ * <li>getChildren        - of an ast node
+ * <li>makeAstLike        - like arg, with alternate children
+ * </ul>
  *
- * The expanded code assumes bindings for
- * declareGlobal___
- * defineGlobal___
- * cleanErr___
+ * The expanded code assumes bindings for<ul>
+ * <li>declareGlobal___
+ * <li>defineGlobal___
+ * <li>cleanErr___
+ * </ul>
  *
  * Additional names reserved for the output that should be prohibited
- * on input
- * global___
- * e___
+ * on input<ul>
+ * <li>global___
+ * <li>e___
+ * </ul>Though we should currently reserve all <i>variable</i> names
+ * ending in "___" (triple underbar). We should not reserve such names
+ * statically as property names, since we cannot reserve them
+ * dynamically without a much more expensive translation.
  *
  * <p>The input ast to all of the expand* functions below comes after
  * parsing and scope analysis of a complete Program production, so
@@ -102,6 +112,13 @@ var expandProgramToExpr;
    "use strict";
 
    /**
+    * Translate a Source-SES Program production AST, as might appear
+    * in Source-SES script or eval code, into a Target-SES Expression
+    * production AST suitable for giving to cajaVM.compileExpr.
+    *
+    * This expander fixes the "Completion Value" anomaly of
+    * Target-SES, using the "completion value reform" semantics
+    * proposed for ES6.
     */
    expandProgramToExpr = function expandProgramToExpr(ast) {
      if (!isProgram.test(ast)) { return null; }
@@ -124,13 +141,22 @@ var expandProgramToExpr;
      return null;
    }
 
+   /**
+    * For expanders that register themselves by their first token
+    * name.
+    */
    var byStartToken = StringMap();
+   /** For other expanders to register themselves. */
    var others = [];
 
    function expandAll(asts) {
      return asts.map(expand);
    }
 
+   /**
+    * Expand a Source-SES AST fragement to a corresponding Target-SES
+    * fragment. 
+    */
    function expand(ast) {
      var expander, result;
 
@@ -153,6 +179,10 @@ var expandProgramToExpr;
      return makeAstLike(ast, expandAll(children));
    }
 
+   /**
+    * This expander fixed the "Top Level Declarations" anomaly of
+    * Target-SES. 
+    */
    function expandTopDecl(ast) {
      var name, expr;
 
@@ -168,6 +198,9 @@ var expandProgramToExpr;
    }
    byStartToken.set('var', expandTopDecl);
 
+   /**
+    * This expander fixes the "typeof variable" anomaly of Target-SES.
+    */
    function expandTypeof(ast) {
      var name;
 
@@ -179,6 +212,10 @@ var expandProgramToExpr;
    }
    byStartToken.set('typeof', expandTypeof);
 
+   /**
+    * This expander fixes the "this-binding of Global Function Calls"
+    * anomaly of Target-SES.
+    */
    function expandGlobalFunctionCall(ast) {
      var name, args;
 
@@ -190,7 +227,16 @@ var expandProgramToExpr;
    }
    others.push(expandGlobalFunctionCall);
 
-
+   /**
+    * This expander fixes the "Safety of Thrown Values" anomaly of
+    * Target-SES.
+    * 
+    * <p>This expansion alone leaves us with a dilemma. Do we insist
+    * that all untrusted code be only Source-SES code requiring
+    * translation, or do we allow untrusted code in Target-SES. Our
+    * desire to enforce catch safety is the only current reason to
+    * disallow that choice.
+    */
    function expandTryCatch(ast) {
      var tryBlock, param, catchBlock, finallyBlock;
 
