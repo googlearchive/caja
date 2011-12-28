@@ -82,7 +82,21 @@
  * <li>cleanErr___
  * </ul>
  *
- * Additional names reserved for the output that should be prohibited
+ * <p>If "mustNotShadow" determines that its argument is a variable
+ * that shadows another variable in this function, it should throw
+ * rather than report a match failure, as this failure is not a
+ * license to translate by other means. This condition aborts the
+ * overall translation.
+ *
+ * When translating a Source-SES script program, as might appear
+ * between script tags, declareGlobal___ and defineGlobal___ should
+ * mutate the virtual global, enabling inter-module linkage. When
+ * translating a Source-SES eval program, as might be passed to an
+ * "eval" function, declareGlobal___ and defineGlobal___ should bring
+ * these names into scope <i>only</i> within this program, i.e., it
+ * should not mutate the virtual global.
+ *
+ * <p>Additional names reserved for the output that should be prohibited
  * on input<ul>
  * <li>global___
  * <li>e___
