@@ -309,7 +309,7 @@ var expandProgramToExpr;
          }
          if (js`while ($expr) $body`.test(ast)) {
 
-           return js`while (${expand($expr))} ${returnCompletion(body)}`;
+           return js`while (${expand($expr)}) ${returnCompletion(body)}`;
          }
 
          // TODO(erights): If any other statements can produce
