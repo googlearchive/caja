@@ -23,7 +23,7 @@
  * <p>Serves as pseudo-code until we can run it. This section explains
  * what more is needed to turn this into running code.
  *
- * We express our translations using JavaScript <a href=
+ * <p>We express our translations using JavaScript <a href=
  * "http://wiki.ecmascript.org/doku.php?id=harmony:quasis"
  * >quasiliterals</a> and a hypothetical JavaScript quasi-parser named
  * "js". We additionally assume that the expression syntax {a, b} is
@@ -40,26 +40,26 @@
  * "http://wiki.ecmascript.org/doku.php?id=strawman:object_initialiser_shorthand#discussion"
  * >object initializer discussion</a> section.
  *
- * Together, this means that (quasiParser`stuff${{varName}}stuff`) can
- * create an object that can be used as a pattern, placing the values
- * extracted from the specimen into varName, which must have already
- * been declared. As a further elaboration, we assume predicate
- * pattern functions that wrap such a literal
+ * <p>Together, this means that (quasiParser`stuff${{varName}}stuff`)
+ * can create an object that can be used as a pattern, placing the
+ * values extracted from the specimen into varName, which must have
+ * already been declared. As a further elaboration, we assume
+ * predicate pattern functions that wrap such a literal
  * (quasiParser`stuff${isThing({varName})}stuff`) and report whether
  * the proposed assignment meets it criteria. If not, that match
  * fails.
  *
- * Separately from the rules below, we also prohibit identifiers
+ * <p>Separately from the rules below, we also prohibit identifiers
  * ending in ___ (triple underbar) in the input, so that we may use
  * them in the output without fear of capture.
  *
- * The JavaScript quasiParser accepts one additional element besides
+ * <p>The JavaScript quasiParser accepts one additional element besides
  * JavaScript syntax and $ holes. In addition, when an "*", "+", or
  * "?" appears immediately to the right of a $ hole with no
  * intervening space, then it is taken as a quantifier on the binding
  * of the $ hole to consecutive AST elements.
  *
- * Besides the "js" quasi-parser, the following code depends on the
+ * <p>Besides the "js" quasi-parser, the following code depends on the
  * following helper functions. Depending on the concrete AST
  * representation chosen, perhaps some of these should instead be uses
  * of AST methods. Refactor as needed.<ul>
@@ -76,7 +76,7 @@
  * <li>makeAstLike        - like arg, with alternate children
  * </ul>
  *
- * The expanded code assumes bindings for<ul>
+ * <p>The expanded code assumes bindings for<ul>
  * <li>declareGlobal___
  * <li>defineGlobal___
  * <li>cleanErr___
@@ -88,7 +88,7 @@
  * license to translate by other means. This condition aborts the
  * overall translation.
  *
- * When translating a Source-SES script program, as might appear
+ * <p>When translating a Source-SES script program, as might appear
  * between script tags, declareGlobal___ and defineGlobal___ should
  * mutate the virtual global, enabling inter-module linkage. When
  * translating a Source-SES eval program, as might be passed to an
@@ -129,28 +129,12 @@ var expandProgramToExpr;
     * Translate a Source-SES Program production AST, as might appear
     * in Source-SES script or eval code, into a Target-SES Expression
     * production AST suitable for giving to cajaVM.compileExpr.
-    *
-    * This expander fixes the "Completion Value" anomaly of
-    * Target-SES, using the "completion value reform" semantics
-    * proposed for ES6.
     */
    expandProgramToExpr = function expandProgramToExpr(ast) {
-     if (!isProgram.test(ast)) { return null; }
-     var prog, expr;
-
-     if (js`${isStatementOrDecl({prog})}*
-            ${isExpr({expr})}`.test(ast)) {
-
+     if (isProgram.test(ast)) {
        return js`(function(global___) {
-                    ${expandAll(prog)}*
-                    return ${expand(expr)};
-                  }).call(this, this)`
-     }
-     if (js`${isStatementOrDecl({prog})}*`.test(ast)) {
-
-       return js`(function(global___) {
-                    ${expandAll(prog)}*
-                  }).call(this, this)`
+                   ${returnCompletion(ast)}
+                 }).call(this, this)`;
      }
      return null;
    }
@@ -179,8 +163,8 @@ var expandProgramToExpr;
      if (firstTokenName) {
        expander = byStartToken(firstTokenName);
        if (expander) {
-           result = expander(ast);
-           if (result) { return result; }
+         result = expander(ast);
+         if (result) { return result; }
        }
      }
      for (var i = 0, len = others.length; i++) {
@@ -194,7 +178,7 @@ var expandProgramToExpr;
    }
 
    /**
-    * This expander fixed the "Top Level Declarations" anomaly of
+    * This expander fixes the "Top Level Declarations" anomaly of
     * Target-SES. 
     */
    function expandTopDecl(ast) {
@@ -285,4 +269,54 @@ var expandProgramToExpr;
      return null;
    }
    byStartToken.set('try', expandTryCatch);
+
+   /**
+    * Expand a Source-SES AST fragement occuring is a top
+    * level-context that could return a <a href=
+    * "http://wiki.ecmascript.org/doku.php?id=harmony:completion_reform"
+    * >completion value</a> and return a corresponding Target-SES
+    * fragment to appear at a similar location in a function body,
+    * where the expression that would compute the completion value is
+    * preceded by "return", so that this value is instead returned as
+    * the value of the enclosing function.
+    *
+    * <p>This expander fixes the "Completion Value" anomaly of
+    * Target-SES, using the <a href=
+    * "http://wiki.ecmascript.org/doku.php?id=harmony:completion_reform"
+    * >completion value reform</a> semantics proposed for ES6.
+    */
+       function returnCompletion(ast) {
+         var allButLast, last, expr, then, els, body;
+
+         if (js``.test(ast)) { return js``; }
+
+         if (js`${isStatementOrDecl({allButLast})}*
+                ${isStatementOrDecl({last})}`.test(ast)) {
+
+           return js`${expandAll(allButLast)}*
+                     ${returnCompletion(last)}`
+         if (js``.test(ast)) { return js``; }
+         
+
+         if (js`${isExpr(expr);}.test(ast) {
+           return js`return ${expand(expr)};`;
+         }
+         if (js`if ($expr) $then $els`.test(ast)) {
+
+           return js`if (${expand(expr)}) 
+                         ${returnCompletion(then)}
+                         ${returnCompletion(els)}`;
+         }
+         if (js`while ($expr) $body`.test(ast)) {
+
+           return js`while (${expand($expr))} ${returnCompletion(body)}`;
+         }
+
+         // TODO(erights): If any other statements can produce
+         // completion values according to the completion value reform
+         // semantics, place them here.
+
+         return expand(ast);
+       }
+
  })();
