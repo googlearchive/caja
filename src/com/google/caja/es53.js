@@ -26,15 +26,15 @@
  * </ul>
  *
  * @author metaweta@gmail.com
- * @requires this, json_sans_eval, cajaBuildVersion
- * @provides ___, safeJSON, WeakMap
+ * @requires json_sans_eval, cajaBuildVersion, taming
+ * @provides ___, safeJSON, WeakMap, cajaVM
  * @overrides Array, Boolean, Date, Function, Number, Object, RegExp, String
  * @overrides Error, EvalError, RangeError, ReferenceError, SyntaxError,
- *   TypeError, URIError
+ *   TypeError, URIError, ArrayLike
  * @overrides escape, JSON
  */
 
-var ___, cajaVM, safeJSON, WeakMap;
+var ___, cajaVM, safeJSON, WeakMap, ArrayLike;
 
 (function () {
   // For computing the [[Class]] internal property
@@ -196,7 +196,7 @@ var ___, cajaVM, safeJSON, WeakMap;
   Array.slice = markFunc(function (dis, startIndex) { // , endIndex
       dis = ToObject(dis);
       if (arguments.length > 2) {
-        var edIndex = arguments[2];
+        var endIndex = arguments[2];
         return slice.call(dis, startIndex, endIndex);
       } else {
         return slice.call(dis, startIndex);
@@ -224,7 +224,7 @@ var ___, cajaVM, safeJSON, WeakMap;
   var hasOwnProperty = Object.prototype.hasOwnProperty;
   // In IE<9, this is an approximation of Object.keys, because a few own
   // properties like 'toString' are never enumerable.
-  var fastOwnKeys = Object.keys || function fastOwnKeys(o) {
+  var fastOwnKeys = Object.keys || function (o) {
     var keys = [];
     for (var k in o) {
       if (hasOwnProperty.call(o, k)) { keys.push(k); }
@@ -427,7 +427,7 @@ var ___, cajaVM, safeJSON, WeakMap;
    */
   function extend(feralCtor, someSuper, opt_name) {
     if (!('function' === typeof feralCtor)) {
-      fail('Internal: Feral constructor is not a function');
+      throw new TypeError('Internal: Feral constructor is not a function');
     }
     someSuper = someSuper.prototype.constructor;
     var noop = function () {};
@@ -444,7 +444,7 @@ var ___, cajaVM, safeJSON, WeakMap;
 
     inert.prototype = feralCtor.prototype;
     feralCtor.prototype.constructor = inert;
-    tamesTo(feralCtor, inert);
+    taming.tamesTo(feralCtor, inert);
     return markFuncFreeze(inert);
   }
 
@@ -960,7 +960,7 @@ var ___, cajaVM, safeJSON, WeakMap;
       var i, m, result = [];
       var keys = fastOwnKeys(this);
       for (var k = 0, n = keys.length; k < n; k++) {
-        var i = keys[k];
+        i = keys[k];
         // inline isNumericName(i)
         if (typeof i === 'number' || ('' + (+i)) === i) {
           result.push(i);
@@ -1441,7 +1441,7 @@ var ___, cajaVM, safeJSON, WeakMap;
           result.has_g___ = false;
           result.has_s___ = false;
           return result;
-        })
+        });
       })(WeakMap) :
       markFunc(function () { return newTable(true); });
 
@@ -1532,7 +1532,7 @@ var ___, cajaVM, safeJSON, WeakMap;
   // guest code may change Object.getPrototypeOf, etc., we cache some methods.
   var origGetPrototypeOf, origGetOwnPropertyDescriptor;
 
-  var def = markFuncFreeze(function def(root) {
+  var def = markFuncFreeze(function (root) {
     var i, n;
     var defending = newTable();
     var defendingList = [];
@@ -1895,12 +1895,14 @@ var ___, cajaVM, safeJSON, WeakMap;
   // things like nodeLists.  The result, ArrayLike, takes an instance of 
   // ArrayLike and two functions, getItem and getLength, which put
   // it in a position to do taming on demand.
-  var makeArrayLike, Proxy, itemMap = WeakMap(), lengthMap = WeakMap();
+  var makeArrayLike, itemMap = WeakMap(), lengthMap = WeakMap();
   var lengthGetter = markFuncFreeze(function () {
       var getter = lengthMap.get(this);
       return getter ? getter.i___() : void 0;
     });
   freeze(lengthGetter.prototype);
+
+  var Proxy = void 0; // TODO(felix8a): native proxy case doesn't work
   
   var nativeProxies = Proxy && (function () {
       var obj = {0: 'hi'};
@@ -2736,7 +2738,7 @@ var ___, cajaVM, safeJSON, WeakMap;
   // 9.9
   function ToObject(input) {
     if (input === void 0 || input === null) {
-        throw new TypeError('Cannot convert ' + t + ' to Object.');
+        throw new TypeError('Cannot convert ' + input + ' to Object.');
     }
     return Object(input);
   }
@@ -2780,7 +2782,8 @@ var ___, cajaVM, safeJSON, WeakMap;
   function initializeMap(list) {
     var result = {};
     var accessors = {};
-    for (var i = 0; i < list.length; i += 2) {
+    var i;
+    for (i = 0; i < list.length; i += 2) {
       if (typeof list[i] === 'string') {
         if (result.hasOwnProperty(list[i])) {
           throw new SyntaxError('Duplicate keys: ' + list[i]);
@@ -3116,14 +3119,15 @@ var ___, cajaVM, safeJSON, WeakMap;
     var descriptors = [];
     // 5. For each element P of names in list order,
     var len = names.length;
-    for (var i = 0; i < len; ++i) {
-      var P = names[i];
+    var i, P, desc;
+    for (i = 0; i < len; ++i) {
+      P = names[i];
       // a. Let descObj be the result of calling the [[Get]]
       //    internal method of props with P as the argument.
       var descObj = props.v___(P);
       // b. Let desc be the result of calling ToPropertyDescriptor
       //    with descObj as the argument.
-      var desc = ToPropertyDescriptor(descObj);
+      desc = ToPropertyDescriptor(descObj);
       // c. Append desc to the end of descriptors.
       descriptors.push(desc);
     }
@@ -3201,7 +3205,6 @@ var ___, cajaVM, safeJSON, WeakMap;
    * assumes the object has no cycles through accessible keys.
    */
   function whitelistAll(obj, opt_deep) {
-    var i;
     var keys = fastOwnKeys(obj);
     for (var k = 0, n = keys.length; k < n; k++) {
       var i = keys[k], val = obj[i];
@@ -3761,8 +3764,9 @@ var ___, cajaVM, safeJSON, WeakMap;
         throw new TypeError('Expected an initial value or a non-empty array.');
       }
       var i = 0;
+      var rv = void 0;
       if (arguments.length >= 2) {
-        var rv = arguments[1];
+        rv = arguments[1];
       } else {
         do {
           if (i in this) {
@@ -3795,8 +3799,9 @@ var ___, cajaVM, safeJSON, WeakMap;
         throw new TypeError('Expected an initial value or a non-empty array.');
       }
       var i = len - 1;
+      var rv = void 0;
       if (arguments.length >= 2) {
-        var rv = arguments[1];
+        rv = arguments[1];
       } else {
         do {
           if (i in this) {
@@ -4318,6 +4323,7 @@ var ___, cajaVM, safeJSON, WeakMap;
           var desc = dis.getOwnPropertyDescriptor_m___ ?
               dis.getOwnPropertyDescriptor(name) :
               dis.m___('getOwnPropertyDescriptor', [name]);
+          var set;
           if (desc) {
             if ('writable_v___' in desc) { // data
               if (desc.writable_v___ ?
@@ -4334,7 +4340,7 @@ var ___, cajaVM, safeJSON, WeakMap;
                 return false;
               }
             } else { // accessor
-              var set = desc.set_v___ ? desc.set : desc.v___('set');
+              set = desc.set_v___ ? desc.set : desc.v___('set');
               if (isFunction(set)) {
                 set.f___(safeDis(proxy), [val]);
                 return true;
@@ -4356,7 +4362,7 @@ var ___, cajaVM, safeJSON, WeakMap;
                 return false;
               }
             } else { // accessor
-              var set = desc.set_v___ ? desc.set : desc.v___('set');
+              set = desc.set_v___ ? desc.set : desc.v___('set');
               if (isFunction(set)) {
                 set.f___(safeDis(proxy), [val]);
                 return true;
@@ -4585,10 +4591,11 @@ var ___, cajaVM, safeJSON, WeakMap;
       if (proxy.fixing___) {
         throw new TypeError('Recursive fixing prohibited.');
       }
+      var descMap = void 0;
       try {
         proxy.fixing___ = true;
         var fixer = handler.fix_v___ ? handler.fix : handler.v___('fix');
-        var descMap = fixer.f___(handler, [proxy]);
+        descMap = fixer.f___(handler, [proxy]);
       } finally {
         delete proxy.fixing___;
       }
@@ -4597,7 +4604,8 @@ var ___, cajaVM, safeJSON, WeakMap;
       }
       var isSafeFunc = isFunction(proxy) && proxy.ok___;
       var constructTrap = proxy.new___;
-      for (var i in proxy) {
+      var i;
+      for (i in proxy) {
         if (proxy.hasOwnProperty(i)) { delete proxy[i]; }
       }
       if (isSafeFunc) {
@@ -4702,7 +4710,7 @@ var ___, cajaVM, safeJSON, WeakMap;
           if (Type(handler) !== 'Object') {
             throw new TypeError("Expected handler to be an object.");
           }
-          var proxy;
+          var proxy = void 0;
           if (proto === void 0 || proxy === null) {
             proxy = {};
           } else {
@@ -5182,10 +5190,10 @@ var ___, cajaVM, safeJSON, WeakMap;
         configurable: false,
         get: markFunc(function () {
             return function guardedApplier(var_args) {
-                var feralThis = safeDis(untame(this));
-                var feralArgs = untame(slice.call(arguments, 0));
+                var feralThis = safeDis(taming.untame(this));
+                var feralArgs = taming.untame(slice.call(arguments, 0));
                 var feralResult = original.apply(feralThis, feralArgs);
-                return tame(feralResult);
+                return taming.tame(feralResult);
               };
           }),
         set: void 0
