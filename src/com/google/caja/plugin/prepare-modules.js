@@ -13,7 +13,7 @@
 // limitations under the License.
 
 /**
- * @requires ___
+ * @requires ___, eval
  * @provides prepareModuleFromText___
  */
 var prepareModuleFromText___ = function(moduleText) {

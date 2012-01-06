@@ -28,6 +28,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.DirectoryScanner;
 import org.apache.tools.ant.Task;
@@ -99,6 +100,16 @@ public abstract class AbstractCajaAntTask extends Task {
       ex.printStackTrace();
       throw new BuildException(ex);
     }
+  }
+
+  protected List<File> jsLintInputs() {
+    List<File> inputFiles = Lists.newArrayList();
+    for (FileGroup input : inputs) {
+      if (input.hasJsLint()) {
+        inputFiles.addAll(input.files);
+      }
+    }
+    return inputFiles;
   }
 
   /**
@@ -212,7 +223,7 @@ public abstract class AbstractCajaAntTask extends Task {
             throw new BuildException("Failed to build " + output);
           }
         } catch (DOMException e) {
-          // Report a more understandble message for Ant bug
+          // Report a more understandable message for Ant bug
           if (DOMException.NAMESPACE_ERR == e.code) {
             throw new RuntimeException("\n\nCaja encountered a bug in Ant. " +
                 "Please rerun ant with xercesImpl.jar on the path eg.:\n" +
@@ -243,6 +254,7 @@ public abstract class AbstractCajaAntTask extends Task {
   public class FileGroup {
     private final List<File> files = Lists.newArrayList();
     private final String originTag;
+    private boolean jsLint = true;
 
     FileGroup(String originTag) { this.originTag = originTag; }
 
@@ -250,6 +262,14 @@ public abstract class AbstractCajaAntTask extends Task {
     public void setFile(File file) {
       this.files.add(file);
     }
+    public void setJsLint(boolean jsLint) {
+      this.jsLint = jsLint;
+    }
+
+    public boolean hasJsLint() {
+      return jsLint;
+    }
+
     // See http://ant.apache.org/manual/develop.html#nested-elements
     public void addConfiguredFileSet(FileSet fs) {
       DirectoryScanner scanner = fs.getDirectoryScanner(getProject());

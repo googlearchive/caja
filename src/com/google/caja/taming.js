@@ -12,6 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+/**
+ * @requires ___, cajaVM
+ * @provides taming
+ */
+
 var taming = (function() {
 
   ////////////////////////////////////////////////////////////////////////

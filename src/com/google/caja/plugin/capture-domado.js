@@ -53,7 +53,6 @@ var HtmlEmitter = undefined;
           value: ___.markFuncFreeze(logFunc),
           enumerable: true
         });
-        saneConsole.d;
       });
       ourHandler.getImports().DefineOwnProperty___("console", {
         value: ___.freeze(saneConsole),

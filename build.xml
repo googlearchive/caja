@@ -770,6 +770,8 @@
 
   <target name="CajoledDomado" depends="pluginc">
     <transform>
+      <output file="${lib}/domado.jslint.stamp"
+       language="jslint"/>
       <output file="${lib.caja}/plugin/domado.out.js"
        language="caja" renderer="minify"/>
       <input file="${src.caja}/plugin/unicode.js"/>
@@ -786,6 +788,8 @@
 
   <target name="MinifiedJs" depends="CajoledDomado">
     <transform>
+      <output file="${lib}/html-sanitizer-minified.jslint.stamp"
+       language="jslint"/>
       <output file="${lib.caja}/plugin/html-sanitizer-minified.js"
        language="javascript" renderer="minify"/>
       <output file="${lib.caja}/plugin/html-sanitizer-bundle.js"
@@ -794,16 +798,20 @@
       <input file="${src.caja}/plugin/html-sanitizer.js"/>
     </transform>
     <transform>
+      <output file="${lib}/es53-taming-frame.jslint.stamp"
+       language="jslint"/>
       <output file="${lib.caja}/plugin/es53-taming-frame.opt.js"
        language="javascript" renderer="minify"/>
       <output file="${lib.caja}/plugin/es53-taming-frame.js"
        language="javascript" renderer="concat"/>
       <input file="${src.caja}/plugin/caja-iframe-build-version.js"/>
       <input file="${third_party}/js/json_sans_eval/json_sans_eval.js"/>
-      <input file="${src.caja}/es53.js"/>
+      <input file="${src.caja}/es53.js"
+             jslint="false"/> <!-- TODO(felix8a): fix lint errors -->
       <input file="${src.caja}/taming.js"/>
       <input file="${src.caja}/plugin/capture-domado.js"/>
-      <input file="${lib.caja}/plugin/domado.out.js"/>
+      <input file="${lib.caja}/plugin/domado.out.js"
+             jslint="false"/>
       <input file="${src.caja}/plugin/uri.js"/>
       <input file="${src.caja}/cajita-promise.js"/>
       <input file="${src.caja}/plugin/json-rest-transport.js"/>
@@ -815,19 +823,24 @@
       <input file="${src.caja}/plugin/caja-iframe-done.js"/>
     </transform>
     <transform>
+      <output file="${lib}/es53-guest-frame.jslint.stamp"
+       language="jslint"/>
       <output file="${lib.caja}/plugin/es53-guest-frame.opt.js"
        language="javascript" renderer="minify"/>
       <output file="${lib.caja}/plugin/es53-guest-frame.js"
        language="javascript" renderer="concat"/>
       <input file="${src.caja}/plugin/caja-iframe-build-version.js"/>
       <input file="${third_party}/js/json_sans_eval/json_sans_eval.js"/>
-      <input file="${src.caja}/es53.js"/>
+      <input file="${src.caja}/es53.js"
+             jslint="false"/> <!-- TODO(felix8a): fix lint errors -->
       <input file="${src.caja}/cajita-promise.js"/>
       <input file="${src.caja}/plugin/prepare-modules.js"/>
       <input file="${src.caja}/plugin/load-module.js"/>
       <input file="${src.caja}/plugin/caja-iframe-done.js"/>
     </transform>
     <transform>
+      <output file="${lib}/initSES.jslint.stamp"
+       language="jslint"/>
       <output file="${lib.caja}/ses/initSES.js"
        language="javascript" renderer="concat"/>
       <output file="${lib.caja}/ses/initSES-minified.js"
@@ -842,6 +855,8 @@
       <input file="${src.caja}/ses/hookupSES.js"/>
     </transform>
     <transform>
+      <output file="${lib}/initSESPlus.jslint.stamp"
+       language="jslint"/>
       <output file="${lib.caja}/ses/initSESPlus.js"
        language="javascript" renderer="concat"/>
       <output file="${lib.caja}/ses/initSESPlus-minified.js"
@@ -859,6 +874,8 @@
     <transform>
       <!-- ses-taming-frame: Used by caja.js when the browser is SES-capable.
       -->
+      <output file="${lib}/ses-taming-frame.jslint.stamp"
+       language="jslint"/>
       <!-- TODO(kpreid): Minifier rejects top-level 'use strict' directives.
            Refactor Domado so it does not need one, or have the minifier
            do something clever. -->
@@ -869,7 +886,7 @@
       <input file="${src.caja}/plugin/caja-iframe-build-version.js"/>
       <input file="${third_party}/js/json_sans_eval/json_sans_eval.js"/>
       <input file="${src.caja}/plugin/ses-iframe-init.js"/>
-      <input file="${lib.caja}/ses/initSESPlus.js"/>
+      <input file="${lib.caja}/ses/initSESPlus.js" jslint="false"/>
 
       <input file="${src.caja}/plugin/unicode.js"/>
       <input file="${lib.caja}/plugin/css-defs.js"/>
@@ -894,13 +911,15 @@
       <!-- TODO(kpreid): Minifier rejects top-level 'use strict' directives.
            Refactor Domado so it does not need one, or have the minifier
            do something clever. -->
+      <output file="${lib}/ses-guest-frame.jslint.stamp"
+       language="jslint"/>
       <!--<output file="${lib.caja}/plugin/ses-guest-frame.opt.js"
        language="javascript" renderer="minify"/>-->
       <output file="${lib.caja}/plugin/ses-guest-frame.js"
        language="javascript" renderer="concat"/>
       <input file="${src.caja}/plugin/caja-iframe-build-version.js"/>
       <input file="${src.caja}/plugin/ses-iframe-init.js"/>
-      <input file="${lib.caja}/ses/initSESPlus.js"/>
+      <input file="${lib.caja}/ses/initSESPlus.js" jslint="false"/>
       <input file="${src.caja}/plugin/caja-iframe-done.js"/>
     </transform>
     <replace dir="${lib.caja}/plugin" propertyFile="${lib.caja}/reporting/buildInfo.properties" >
@@ -931,65 +950,6 @@
       <include name="**/caja/plugin/BrowserTestCaseStub.java"/>
       <compilerarg line="-Xlint:unchecked"/>
     </javac>
-
-    <!-- Lint the ES5/3 case -->
-    <!-- TODO(felix8a): duplicated list -->
-    <genrule class="com.google.caja.ancillary.linter.Linter"
-     unless="${tools.ancillary.disable}">
-      <input file="${lib.caja}/cajita-module-orig.js"/>
-      <input file="${lib.caja}/cajita-promise.js"/>
-      <input file="${src.caja}/plugin/bridal.js"/>
-      <input file="${lib.caja}/plugin/caja.js"/>
-      <input file="${lib.caja}/plugin/css-defs.js"/>
-      <input file="${src.caja}/plugin/csslexer.js"/>
-      <input file="${src.caja}/plugin/cssparser.js"/>
-      <input file="${src.caja}/plugin/domado.js"/>
-      <input file="${src.caja}/plugin/caja-iframe-build-version.js"/>
-      <input file="${src.caja}/plugin/caja-iframe-done.js"/>
-      <input file="${src.caja}/plugin/es53-frame-group.js"/>
-      <input file="${src.caja}/plugin/guest-manager.js"/>
-      <input file="${src.caja}/plugin/html-emitter.js"/>
-      <input file="${src.caja}/plugin/html-sanitizer.js"/>
-      <input file="${lib.caja}/plugin/html4-defs.js"/>
-      <input file="${src.caja}/plugin/unicode.js"/>
-      <input file="${src.caja}/plugin/uri.js"/>
-      <input file="${src.caja}/flash/caja-flash.js"/>
-      <output file="${lib}/AllTests.Linter1.tstamp"/>
-    </genrule>
-
-    <!-- Lint the native-ES5 case -->
-    <genrule class="com.google.caja.ancillary.linter.Linter"
-     unless="${tools.ancillary.disable}">
-      <input file="${src.caja}/ses/useHTMLLogger.js"/>
-      <input file="${src.caja}/ses/logger.js"/>
-      <input file="${src.caja}/ses/repairES5.js"/>
-      <input file="${src.caja}/ses/WeakMap.js"/>
-      <input file="${src.caja}/ses/StringMap.js"/>
-      <input file="${src.caja}/ses/whitelist.js"/>
-      <input file="${src.caja}/ses/atLeastFreeVarNames.js"/>
-      <input file="${src.caja}/ses/startSES.js"/>
-      <input file="${src.caja}/ses/ejectorsGuardsTrademarks.js"/>
-      <input file="${src.caja}/ses/hookupSES.js"/>
-      <input file="${src.caja}/ses/hookupSESPlus.js"/>
-
-      <input file="${src.caja}/ses/makeQ.js"/>
-      <input file="${src.caja}/ses/makeFarResourceMaker.js"/>
-      <input file="${src.caja}/ses/makeSimpleAMDLoader.js"/>
-      <input file="${src.caja}/ses/amdTest.js"/>
-
-      <input file="${src.caja}/plugin/bridal.js"/>
-      <input file="${lib.caja}/plugin/css-defs.js"/>
-      <input file="${src.caja}/plugin/csslexer.js"/>
-      <input file="${src.caja}/plugin/cssparser.js"/>
-      <input file="${src.caja}/plugin/domado.js"/>
-      <input file="${src.caja}/plugin/guest-manager.js"/>
-      <input file="${lib.caja}/plugin/html4-defs.js"/>
-      <input file="${src.caja}/plugin/ses-frame-group.js"/>
-      <input file="${src.caja}/plugin/unicode.js"/>
-      <input file="${src.caja}/plugin/uri.js"/>
-      <input file="${src.caja}/flash/caja-flash.js"/>
-      <output file="${lib}/AllTests.Linter2.tstamp"/>
-    </genrule>
 
     <copy todir="${lib}">
       <fileset dir="${tests}">

@@ -26,7 +26,7 @@
  *     readable).
  * @param console [optional] a console-like object to which errors are written.
  *
- * @requires ___, Q, encodeURIComponent, cajaBuildVersion
+ * @requires Q, encodeURIComponent, cajaBuildVersion
  * @provides cajolingServiceClientMaker
  */
 var cajolingServiceClientMaker = function(serviceUrl,

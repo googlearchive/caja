@@ -30,7 +30,8 @@
  *     'w3cxhr', 'msxdr', or 'jsonp'. Omit this parameter to allow this
  *     module to select the most suitable for the platform.
  *
- * @requires XDomainRequest, XMLHttpRequest, Q, JSON, document, URI, window
+ * @requires XDomainRequest, XMLHttpRequest, Q, JSON, document, URI
+ * @overrides window
  * @provides jsonRestTransportMaker
  */
 var jsonRestTransportMaker = function(opt_transportType) {

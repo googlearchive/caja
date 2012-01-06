@@ -12,6 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+/**
+ * @overrides Date, String, Number, Boolean, JSON
+ * @provides json_sans_eval
+ */
 
 /**
  * This file combines the JSON.parse method defined by the original
@@ -239,6 +243,11 @@
 
 if (typeof Date.prototype.toJSON !== 'function') {
   Date.prototype.toJSON = function (key) {
+    function f(n) {
+      // Format integers to have at least two digits.
+      return n < 10 ? '0' + n : n;
+    }
+
     return isFinite(this.valueOf()) ?
     this.getUTCFullYear()   + '-' +
     f(this.getUTCMonth() + 1) + '-' +
@@ -261,10 +270,6 @@ var json_sans_eval = (function() {
 
    ///////////////////// from json2.js //////////////////////////
 
-   function f(n) {
-     // Format integers to have at least two digits.
-     return n < 10 ? '0' + n : n;
-   }
 
    var cx = /[\u0000\u00ad\u0600-\u0604\u070f\u17b4\u17b5\u200c-\u200f\u2028-\u202f\u2060-\u206f\ufeff\ufff0-\uffff]/g,
    escapable = /[\\\"\x00-\x1f\x7f-\x9f\u00ad\u0600-\u0604\u070f\u17b4\u17b5\u200c-\u200f\u2028-\u202f\u2060-\u206f\ufeff\ufff0-\uffff]/g,
@@ -615,7 +620,7 @@ var json_sans_eval = (function() {
      // If undefined, the key in an object key/value record to use
      // for the next
      // value parsed.
-     var key;
+     var key = void 0;
      // Loop over remaining tokens maintaining a stack of
      // uncompleted objects and
      // arrays.

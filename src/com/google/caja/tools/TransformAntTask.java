@@ -14,14 +14,17 @@
 
 package com.google.caja.tools;
 
+import com.google.caja.ancillary.linter.Linter;
 import com.google.caja.util.Sets;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
 import org.apache.tools.ant.BuildException;
 
 /**
@@ -45,7 +48,7 @@ import org.apache.tools.ant.BuildException;
  * options over a bunch of jobs, such as a debugging/production mode switch.
  * <p>
  * The {@code language} attribute takes the values "caja" to cajole es53,
- * and "javascript" to skip cajoling.
+ * "javascript" to skip cajoling, and "jslint" to run the JS linter.
  * <p>
  * The optional {@code renderer} attribute specifies how to render the output.
  * "pretty" is the default and uses the
@@ -75,7 +78,16 @@ public class TransformAntTask extends AbstractCajaAntTask {
                         List<File> depends, List<File> inputs, File output,
                         Map<String, Object> options)
        throws BuildException {
-    return buildService.cajole(logger, depends, inputs, output, options);
+
+    if ("jslint".equals(options.get("language"))) {
+      try {
+        return new Linter().build(jsLintInputs(), depends, null, output);
+      } catch (IOException e) {
+        throw new BuildException(e);
+      }
+    } else {
+      return buildService.cajole(logger, depends, inputs, output, options);
+    }
   }
 
   @Override

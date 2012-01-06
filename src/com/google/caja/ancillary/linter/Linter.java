@@ -99,8 +99,8 @@ public class Linter implements BuildCommand {
     this.ignores = ignores;
   }
 
-  public boolean build(List<File> inputs, List<File> dependencies, Map<String, Object> options,
-      File output) throws IOException {
+  public boolean build(List<File> inputs, List<File> dependencies,
+      Map<String, Object> options, File output) throws IOException {
     MessageContext mc = new MessageContext();
     Map<InputSource, CharSequence> contentMap = Maps.newLinkedHashMap();
     MessageQueue mq = new SimpleMessageQueue();

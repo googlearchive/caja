@@ -20,7 +20,7 @@
  * @param cajolingServiceClient a cajoling service client to use for contacting
  *     a cajoling service.
  *
- * @requires Q, ___
+ * @requires Q, ___, eval, moduleNames
  * @provides loadModuleMaker
  */
 var loadModuleMaker = function(rootUrl, cajolingServiceClient, uriUtils) {
