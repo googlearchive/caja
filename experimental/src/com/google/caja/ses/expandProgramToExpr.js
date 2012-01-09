@@ -153,7 +153,7 @@ var expandProgramToExpr;
 
    /**
     * Expand a Source-SES AST fragement to a corresponding Target-SES
-    * fragment. 
+    * fragment.
     */
    function expand(ast) {
      var expander, result;
@@ -179,7 +179,7 @@ var expandProgramToExpr;
 
    /**
     * This expander fixes the "Top Level Declarations" anomaly of
-    * Target-SES. 
+    * Target-SES.
     */
    function expandTopDecl(ast) {
      var name, expr;
@@ -204,7 +204,7 @@ var expandProgramToExpr;
 
      if (js`typeof ${isFree({name})}`.test(ast)) {
 
-       return js`($name in global___) ? typeof $name : 'undefined'`;
+       return js`typeof global___.$name`;
      }
      return null;
    }
@@ -228,7 +228,7 @@ var expandProgramToExpr;
    /**
     * This expander fixes the "Safety of Thrown Values" anomaly of
     * Target-SES.
-    * 
+    *
     * <p>This expansion alone leaves us with a dilemma. Do we insist
     * that all untrusted code be only Source-SES code requiring
     * translation, or do we allow untrusted code in Target-SES. Our
@@ -296,14 +296,14 @@ var expandProgramToExpr;
            return js`${expandAll(allButLast)}*
                      ${returnCompletion(last)}`
          if (js``.test(ast)) { return js``; }
-         
+
 
          if (js`${isExpr(expr);}.test(ast) {
            return js`return ${expand(expr)};`;
          }
          if (js`if ($expr) $then $els`.test(ast)) {
 
-           return js`if (${expand(expr)}) 
+           return js`if (${expand(expr)})
                          ${returnCompletion(then)}
                          ${returnCompletion(els)}`;
          }
