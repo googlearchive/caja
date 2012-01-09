@@ -31,10 +31,10 @@
  * @overrides Array, Boolean, Date, Function, Number, Object, RegExp, String
  * @overrides Error, EvalError, RangeError, ReferenceError, SyntaxError,
  *   TypeError, URIError, ArrayLike
- * @overrides escape, JSON
+ * @overrides escape, JSON, Proxy
  */
 
-var ___, cajaVM, safeJSON, WeakMap, ArrayLike;
+var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
 
 (function () {
   // For computing the [[Class]] internal property
@@ -232,7 +232,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike;
     return keys;
   };
 
-  Object.prototype.freeze___ = function() {
+  Object.prototype.freeze___ = function freeze___() {
       // Frozen means all the properties are neither writable nor
       // configurable, and the object itself is not extensible.
       // Cajoled setters that change properties of the object will
@@ -1902,8 +1902,6 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike;
     });
   freeze(lengthGetter.prototype);
 
-  var Proxy = void 0; // TODO(felix8a): native proxy case doesn't work
-  
   var nativeProxies = Proxy && (function () {
       var obj = {0: 'hi'};
       var p = Proxy.create({
@@ -1931,6 +1929,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike;
     // Make ArrayLike.prototype be a native proxy object that intercepts
     // lookups of numeric properties and redirects them to getItem, and
     // similarly for length.
+    // TODO: provide ArrayLike.prototype.constructor
     ArrayLike = markFunc(function(proto, getItem, getLength) {
         if (Type(proto) !== 'Object') {
           throw new TypeError('Expected proto to be an object.');
@@ -2020,12 +2019,15 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike;
         fix: function() { return void 0; }
       },
       Object.prototype);
-    ArrayLike.DefineOwnProperty___('prototype', {
-        value: ArrayLike.prototype
-      });
-    ArrayLike.prototype.DefineOwnProperty___('constructor', {
-        value: ArrayLike
-      });
+    // DefineOwnProperty___ has not been defined yet.
+    ArrayLike.prototype_v___ = ArrayLike;
+    ArrayLike.prototype_w___ = false;
+    ArrayLike.prototype_gw___ = false;
+    ArrayLike.prototype_c___ = false;
+    ArrayLike.prototype_e___ = false;
+    ArrayLike.prototype_g___ = false;
+    ArrayLike.prototype_s___ = false;
+    ArrayLike.prototype_m___ = false;
     freeze(ArrayLike);
     makeArrayLike = markFunc(function () { return ArrayLike; });
   })();} else if (numericGetters) { (function () {
@@ -2343,7 +2345,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike;
    */
   // 8.12.1
   // Returns internal property descriptor or undefined.
-  Object.prototype.GetOwnProperty___ = function (P) {
+  Object.prototype.GetOwnProperty___ = function GetOwnProperty___(P) {
       var O = this;
       //inline if (isNumericName(P)) {
       if (typeof P === 'number' || ('' + (+P)) === P) {
@@ -2397,7 +2399,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike;
     };
 
   // 8.12.3
-  Object.prototype.v___ = function (P) {
+  Object.prototype.v___ = function v___(P) {
       P = '' + P;
       if (isNumericName(P)) { return this[P]; }
       assertValidPropertyName(P);
@@ -2410,7 +2412,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike;
     };
 
   // 8.12.5
-  Object.prototype.w___ = function (P, V) {
+  Object.prototype.w___ = function w___(P, V) {
       var thisExtensible = isExtensible(this);
       P = '' + P;
       assertValidPropertyName(P);
@@ -2518,7 +2520,8 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike;
   // Preconditions:
   //   Desc is an internal property descriptor.
   //   P is a valid property name.
-  Object.prototype.DefineOwnProperty___ = function (P, Desc) {
+  Object.prototype.DefineOwnProperty___ = 
+    function DefineOwnProperty___(P, Desc) {
       //inline if (isNumericName(P)) {
       if (typeof P === 'number' || ('' + (+P)) === P) {
         throw new TypeError('Cannot define numeric properties.');
@@ -4706,7 +4709,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike;
 
   var CajaProxy = {};
   CajaProxy.DefineOwnProperty___('create', {
-      value: markFuncFreeze(function (handler, proto) {
+      value: markFuncFreeze(function CajaProxy_create(handler, proto) {
           if (Type(handler) !== 'Object') {
             throw new TypeError("Expected handler to be an object.");
           }
