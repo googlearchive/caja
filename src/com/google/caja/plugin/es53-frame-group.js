@@ -20,8 +20,8 @@
  * @requires GuestManager
  * @requires HtmlEmitter
  * @requires Q
+ * @requires TamingMembrane
  * @requires jsonRestTransportMaker
- * @requires taming
  * @requires window
  * @requires URI
  */
@@ -38,24 +38,161 @@ function ES53FrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker) {
     config.debug,
     config.console);
 
-  var domado = Domado(makeDomadoRuleBreaker());
+  var tamingMembrane = TamingMembrane(recordWithMethods(
+      'applyFunction', markCallableWithoutMembrane(applyFunction),
+      'getProperty', markCallableWithoutMembrane(getProperty),
+      'setProperty', markCallableWithoutMembrane(setProperty),
+      'getOwnPropertyNames', markCallableWithoutMembrane(getOwnPropertyNames),
+      'directConstructor', tamingWin.___.directConstructor,
+      'getObjectCtorFor', markCallableWithoutMembrane(getObjectCtorFor),
+      'isDefinedInCajaFrame', tamingWin.___.isDefinedInCajaFrame,
+      'isES5Browser', false,
+      'eviscerate', markCallableWithoutMembrane(eviscerate),
+      'banNumerics', markCallableWithoutMembrane(banNumerics),
+      'USELESS', tamingWin.___.USELESS,
+      'BASE_OBJECT_CONSTRUCTOR', tamingWin.___.BASE_OBJECT_CONSTRUCTOR));
+
+  markCallableWithoutMembrane(permitUntaming);
+  markCallableWithoutMembrane(insiderTame);
+  markCallableWithoutMembrane(insiderUntame);
+  markCallableWithoutMembrane(insiderTamesTo);
+  markCallableWithoutMembrane(insiderHasTameTwin);
+
+  var domado = Domado(
+      recordWithMethods(
+        'permitUntaming', permitUntaming,
+        'tame', insiderTame,
+        'untame', insiderUntame,
+        'tamesTo', insiderTamesTo,
+        'hasTameTwin', insiderHasTameTwin),
+      makeDomadoRuleBreaker());
 
   var frameGroup = {
+    tame: tamingMembrane.tame,
+    untame: tamingMembrane.untame,
+    markReadOnlyRecord: tamingMembrane.markTameAsReadOnlyRecord,
+    markFunction: tamingMembrane.markTameAsFunction,
+    markCtor: tamingMembrane.markTameAsCtor,
+    markXo4a: tamingMembrane.markTameAsXo4a,
+    grantMethod: tamingMembrane.grantTameAsMethod,
+    grantRead: tamingMembrane.grantTameAsRead,
+    grantReadWrite: tamingMembrane.grantTameAsReadWrite,
+
+    USELESS: tamingWin.___.USELESS,
     iframe: window.frameElement,
 
-    makeES5Frame: makeES5Frame,
-    
-    grantMethod: taming.grantTameAsMethod,
-    grantRead: taming.grantTameAsRead,
-    grantReadWrite: taming.grantTameAsReadWrite,
-    markCtor: taming.markTameAsCtor,
-    markFunction: taming.markTameAsFunction,
-    markReadOnlyRecord: taming.markTameAsReadOnlyRecord,
-    markXo4a: taming.markTameAsXo4a,
-    tame: taming.tame
+    makeES5Frame: makeES5Frame
   };
 
   return frameGroup;
+
+  //----------------
+  
+  function applyFunction(f, dis, args) {
+    return f.apply(dis, args);
+  }
+
+  function getProperty(o, p) {
+    return o[p];
+  }
+
+  function setProperty(o, p, v) {
+    return o[p] = v;
+  }
+
+  function getOwnPropertyNames(o) {
+    // Create result in taming window so it has es53.js wunderbar properties
+    //   var result = new tamingWin.Array();
+    // Must create using 'eval' in taming window due to Firefox bug:
+    //   https://bugzilla.mozilla.org/show_bug.cgi?id=709529
+    // h/t metaweta@gmail.com for workaround
+    var result = tamingWin.eval('new Array();');
+    for (var p in o) {
+      if (o.hasOwnProperty(p)) {
+        if (!/.*__$/.test(p)) {
+          result.push(p);
+        }
+      }
+    }
+    return result;
+  }
+
+  function isNumericName(n) {
+    return typeof n === 'number' || ('' + (+n)) === n;
+  }
+
+  function eviscerate(t, f, untame) {
+    t.ownKeys___().forEach(function(p) {
+      var useProperty =
+          // Is 'p' a data (not accessor) property on 't'?
+          t[p + '_v___']
+          // Is 'p' numeric (which we always whitelisted as a data property)?
+          || isNumericName(p);
+      if (useProperty) {
+        f[p] = untame(t[p]);
+        if (!tamingWin.___.rawDelete(t, p)) {
+          throw new TypeError(
+              'Eviscerating: ' + t + ' failed to delete prop: ' + p);
+        }
+      }
+    });
+  }
+
+  function getObjectCtorFor(o) {
+    return o.FERAL_FRAME_OBJECT___;
+  }
+
+  function banNumerics(o) {
+    delete o.NUM____w___;
+  }
+
+  function recordWithMethods(_) {
+    // Create result in taming window so it has es53.js wunderbar properties
+    //   var o = new tamingWin.Object();
+    // Must create using 'eval' in taming window due to Firefox bug:
+    //   https://bugzilla.mozilla.org/show_bug.cgi?id=709529
+    // h/t metaweta@gmail.com for workaround
+    var o = tamingWin.eval('new Object();');
+    var i = 0;
+    while (i < arguments.length) {
+      var p = arguments[i++];
+      var v = arguments[i++];
+      o[p] = v;
+      o[p + '_v___'] = true;
+      if (typeof v === 'function') {
+        o[p + '_m___'] = true;
+      }
+    }
+    o.freeze___();
+    return o;
+  }
+
+  /**
+   * Allow a guest constructed object (such as Domado's DOM wrappers) to
+   * be passed through the taming membrane (largely uselessly) by giving
+   * it a stub feral twin. This exists primarily for the test suite.
+   */
+  function permitUntaming(o) {
+    if (typeof o === 'object' || typeof o === 'function') {
+      tamingMembrane.tamesTo(new FeralTwinStub(), o);
+    } // else let primitives go normally
+  }
+
+  function insiderTame(f) {
+    return tamingMembrane.tame(f);
+  }
+
+  function insiderUntame(f) {
+    return tamingMembrane.untame(f);
+  }
+
+  function insiderTamesTo(f, t) {
+    return tamingMembrane.tamesTo(f, t);
+  }
+
+  function insiderHasTameTwin(o) {
+    return tamingMembrane.hasTameTwin(o);
+  }
 
   //----------------
 
@@ -78,7 +215,7 @@ function ES53FrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker) {
     // and having side effects on our arguments is best avoided.
     var uriPolicyWrapper = ___.whitelistAll({
       rewrite: ___.markFunc(function (uri, uriEffect, loaderType, hints) {
-        return taming.tame(uriPolicy.rewrite(
+        return tamingMembrane.tame(uriPolicy.rewrite(
           uri, uriEffect, loaderType, hints));
       })
     });
@@ -220,19 +357,6 @@ function ES53FrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker) {
       makeFunctionAccessible: ___.markFunc(function (f) {
         return markCallableWithoutMembrane(f);
       }),
-      permitUntaming: ___.markFunc(function (o) {
-        // Allow guest constructed objects to be (uselessly) passed through
-        // the taming membrane.  This is primarily for the test suite.
-        if (typeof o === 'object' || typeof o === 'function') {
-          taming.tamesTo(new FeralTwinStub(), o);
-        } // else let primitives go normally
-      }),
-      tame: taming.tame,
-      untame: taming.untame,
-      tamesTo: taming.tamesTo,
-      hasTameTwin: ___.markFunc(function (f) {
-        return 'TAMED_TWIN___' in f;
-      }),
       writeToPixelArray: ___.markFunc(writeToPixelArray),
       getId: ___.markFunc(function () {
         return cajaInt.getId.apply(undefined, arguments);
@@ -255,6 +379,10 @@ function ES53FrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker) {
         // hide that this is being invoked as a method
         return Function.prototype.apply.call(func, undefined, arguments);
       };
+      func.f___ = function (dis, as) {
+        // hide that this is being invoked as a method
+        return Function.prototype.apply.call(func, dis, as);
+      };
       func.new___ = function () {
         if (arguments.length !== 0) {
           throw new TypeError("construction with args not implemented");
@@ -264,7 +392,7 @@ function ES53FrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker) {
       };
       func.call_m___ = func;
       func.apply_m___ = func;
-      taming.tamesTo(func, func);
+      tamingMembrane.tamesTo(func, func);
     }
     return func;
   }

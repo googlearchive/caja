@@ -127,23 +127,19 @@ public class ES53BrowserTest extends BrowserTestCase {
   }
 
   public final void testTamingTamed() {
-    // TODO(kpreid): Enable for ES5 once taming membrane implemented
-    runTestDriver("es53-test-taming-tamed.js", false);
+    runTestDriver("es53-test-taming-tamed.js");
   }
 
   public final void testTamingUntamed() {
-    // TODO(kpreid): Enable for ES5 once taming membrane implemented
-    runTestDriver("es53-test-taming-untamed.js", false);
+    runTestDriver("es53-test-taming-untamed.js");
   }
 
   public final void testTamingInout() {
-    // TODO(kpreid): Enable for ES5 once taming membrane implemented
-    runTestDriver("es53-test-taming-inout.js", false);
+    runTestDriver("es53-test-taming-inout.js");
   }
 
   public final void testTamingErrors() {
-    // TODO(kpreid): Enable for ES5 once taming membrane implemented
-    runTestDriver("es53-test-taming-errors.js", false);
+    runTestDriver("es53-test-taming-errors.js");
   }
 
   public final void testDomadoCanvas() {

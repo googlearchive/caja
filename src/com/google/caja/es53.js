@@ -3228,6 +3228,11 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
           if (classProp.call(val) === '[object Function]') {
             markFunc(val);
           }
+        } else {
+          // inline isFunction(val)
+          if (classProp.call(val) === '[object Function]') {
+            val.ok___ = true;
+          }
         }
       }
     }

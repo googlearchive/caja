@@ -15,7 +15,7 @@
 -->
 
 <script type="text/javascript">
-  function assertKeys(o, expectedKeys) {
+  window.assertKeys = function(o, expectedKeys) {
     expectedKeys = expectedKeys.slice(0).sort();
     var actualKeys = [];
     for (var k in o) {
@@ -26,13 +26,13 @@
     for (var i = 0; i < expectedKeys.length; i++) {
       assertEquals(expectedKeys[i], actualKeys[i]);
     }
-  }
+  };
 
-  function beget(o) {
+  window.beget = function(o) {
     var f = function() {};
     f.prototype = o;
     return new f();
-  }
+  };
 </script>
 
 <div id="testRecord" class="testcontainer waiting">
@@ -63,17 +63,23 @@
     var r = { };
     r[3] = 23;
     assertEquals(23, r[3]);
-    // Un-taming the record eviscerates, so the guest-side getter now
-    // sees nothing due to the numeric-index optimization.
     tameEval('1;', r);  // Cause 'r' to get un-tamed
-    assertEquals(undefined, r[3]);
-    // Even though host code can now see the value just fine
-    tameEval('assertEquals(23, a[3]);', r);
-    // And host code can write the value and see it change
-    tameEval('a[3] = 19;', r);
-    tameEval('assertEquals(19, a[3]);', r);
-    // But guest code still can't
-    assertEquals(undefined, r[3]);
+    if (inES5Mode) {
+      assertEquals(23, r[3]);
+      assertEquals(undefined, tameEval('a[3]', r));
+      expectFailure(tameEval('a[3] = 99', r));
+    } else {
+      // Un-taming the record eviscerates, so the guest-side getter now
+      // sees nothing due to the numeric-index optimization.
+      assertEquals(undefined, r[3]);
+      // Even though host code can now see the value just fine
+      tameEval('assertEquals(23, a[3]);', r);
+      // And host code can write the value and see it change
+      tameEval('a[3] = 19;', r);
+      tameEval('assertEquals(19, a[3]);', r);
+      // But guest code still can't
+      assertEquals(undefined, r[3]);
+    }
     pass('testRecordNumerics');
   });
 </script>
@@ -111,38 +117,99 @@
   });
 </script>
 
-<div id="testExophoricUsage" class="testcontainer waiting">
-  testExophoricUsage
+<div id="testExophoricThis" class="testcontainer waiting">
+  testExophoricThis
 </div>
 <script type="text/javascript">
-  jsunitRegister('testExophoricUsage',
-                 function testExophoricUsage() {
-    (function() {
-      var called = false;
-      function f() {
-        // 'this' is undefined because the host function call passes the global
-        // 'window' object which, due to compiled-in code from the ES53
-        // translator, gets neutered down to undefined.
-        assertEquals(undefined, this);
-        called = true;
+  jsunitRegister('testExophoricThis',
+                 function testExophoricThis() {
+    var called = false;
+    function f() {
+      if (inES5Mode) {
+        // 'this' is undefined because we are a strict function
+        assertTrue(undefined === this);
+      } else {
+        // es53.js safeDis() is evaluated in the guest frame, so we get the
+        // guest frame's USELESS value
+        assertTrue(guestFrameUSELESS === this);
       }
-      tameEval('a();', f);
-      assertTrue(called);
-    })();
-    function checkSeventeen(s) {
-      var called = false;
-      function f() {
-        assertEquals(17, this.foo);
-        called = true;
-      }
-      tameEval(s, f);
-      assertTrue(called);
+      called = true;
     }
-    checkSeventeen('({ foo: 17, bar: a }).bar();');
-    checkSeventeen('a.call({ foo: 17 });');
-    checkSeventeen('a.apply({ foo: 17 }, [ ]);');
-    checkSeventeen('a.bind({ foo: 17 })();');
-    pass('testExophoricUsage');
+    tameEval('a(13);', f);
+    assertTrue(called);
+    pass('testExophoricThis');
+  });
+</script>
+
+<div id="testExophoricMethod" class="testcontainer waiting">
+    testExophoricMethod
+</div>
+<script type="text/javascript">
+  jsunitRegister('testExophoricMethod',
+                 function testExophoricMethod() {
+    var called = false;
+    function f() {
+      assertEquals(17, this.foo);
+      called = true;
+    }
+    var o = { foo: 17, bar: f };
+    tameEval('a.bar();', o);
+    assertTrue(called);
+    pass('testExophoricMethod');
+  });
+</script>
+
+<div id="testExophoricCall" class="testcontainer waiting">
+    testExophoricCall
+</div>
+<script type="text/javascript">
+  jsunitRegister('testExophoricCall',
+                 function testExophoricCall() {
+    var called = false;
+    function f() {
+      assertEquals(17, this.foo);
+      called = true;
+    }
+    var o = { foo: 17 };
+    tameEval('a.call(b);', f, o);
+    assertTrue(called);
+    pass('testExophoricCall');
+  });
+</script>
+
+<div id="testExophoricApply" class="testcontainer waiting">
+    testExophoricApply
+</div>
+<script type="text/javascript">
+  jsunitRegister('testExophoricApply',
+                 function testExophoricApply() {
+    var called = false;
+    function f() {
+      assertEquals(17, this.foo);
+      called = true;
+    }
+    var o = { foo: 17 };
+    tameEval('a.apply(b, []);', f, o);
+    assertTrue(called);
+    pass('testExophoricApply');
+  });
+</script>
+
+<div id="testExophoricBind" class="testcontainer waiting">
+    testExophoricBind
+</div>
+<script type="text/javascript">
+  jsunitRegister('testExophoricBind',
+                 function testExophoricBind() {
+  var called = false;
+  function f() {
+    assertEquals(17, this.foo);
+    called = true;
+  }
+  var o = { foo : 17 };
+  tameEval('a.bind(b)();', f, o);
+  assertTrue(called);
+  pass('testExophoricBind');
   });
 </script>
 
@@ -155,7 +222,7 @@
     // Does an accessor property survive the object getting untamed?
     var stuff = null;
     var r = {
-      foo: 17,
+      foo: 17
     };
     
     Object.defineProperty(r, "bargh", {
@@ -173,11 +240,48 @@
     tameEval('assertEquals(17, a.foo);', r);  // cause object to be untamed
     
     assertEquals(42, r.bargh);
+
     assertThrows(function() {
       r.bargh = "sorry, no setter";
     });
-    tameEval('assertFalse("bargh" in a);', r);
-    assertEquals(42, r.bargh);
+  
+    if (inES5Mode) {
+
+      // Untamed by creating feral-side accessors
+
+      // 'bargh' should be read-only enumerable
+      assertTrue(tameEval('"bargh" in a', r));
+      expectFailure(function() {
+        tameEval('a.bargh = 99;');
+      });
+      assertEquals(42, r.bargh);
+      assertEquals(42, tameEval('a.bargh', r));
+
+      // 'bars' should be write-only non-enumerable
+      assertTrue(tameEval('"bars" in a', r));
+      expectFailure(function() {
+        tameEval('a.bars');
+      });
+      tameEval('a.bars = 99;', r);
+      assertEquals(99, stuff);
+
+      stuff = 9;
+
+      // 'barges' should be read-write enumerable
+      assertTrue(tameEval('"barges" in a', r));
+      assertEquals(10, tameEval('a.barges', r));
+      tameEval('a.barges = 99;', r);
+      assertEquals(100, r.barges);
+
+    } else {
+
+      // Untamed by eviscerating to feral side, but only value properties
+      // show up in the feral-side object
+
+      assertFalse(tameEval('"bargh" in a', r));
+      assertFalse(tameEval('"bars" in a', r));
+      assertFalse(tameEval('"barges" in a', r));
+    }
 
     assertEquals(undefined, r.bars);
     r.bars = 64;
@@ -187,7 +291,7 @@
     r.barges = 256;
     assertEquals(257, r.barges);
     
-    assertKeys(r, ["barges", "bargh", "foo"]);
+    window.assertKeys(r, ["barges", "bargh", "foo"]);
     
     pass('testAccessors');
   });
@@ -229,8 +333,15 @@
                  function testPropertiesOnFunctions() {
     // Setting properties on functions that are un-tamed is gotcha-ridden
     function f() {}
-    tameEval('a.foo = 17;', f);
-    tameEval('assertEquals(17, a.foo);', f);
+    if (inES5Mode) {
+      expectFailure(function() {
+        tameEval('"use strict"; a.foo = 17;', f);
+      });
+      tameEval('assertEquals(undefined, a.foo)', f);
+    } else {
+      tameEval('a.foo = 17;', f);
+      tameEval('assertEquals(17, a.foo)', f);
+    }
     // The property set on the host side is not seen by the guest
     assertEquals(undefined, f.foo);
     assertFalse('foo' in f);

@@ -24,6 +24,15 @@ var cajaFlash = {};
 
 (function() {
 
+  function getTaming() {
+    var caja = window.parent.caja;
+    return {
+      tame: caja.tame,
+      untame: caja.untame,
+      USELESS: caja.USELESS
+    };
+  }
+
   // Get an Object with no Caja.
   var cleanFrame = document.createElement('iframe');
   document.body.appendChild(cleanFrame);
@@ -86,7 +95,7 @@ var cajaFlash = {};
     var docFlash = docWin.caja.policy.flash;
 
     var caja___ = tamingWin.___;
-    var taming___ = tamingWin.taming;
+    var taming___ = getTaming();
 
     // Map from context id (integer) to swf object.
     docFlash.objects = docWin.Array();
@@ -154,7 +163,7 @@ var cajaFlash = {};
     if (!docWin.swfobject) { return; }
 
     var caja___ = tamingWin.___;
-    var taming___ = tamingWin.taming;
+    var taming___ = getTaming();
 
     var swf = guestImps.swfobject;
     if (!swf) {
@@ -251,7 +260,7 @@ var cajaFlash = {};
     }
 
     var caja___ = tamingWin.___;
-    var taming___ = tamingWin.taming;
+    var taming___ = getTaming();
 
     guestWin.cajaHandleEmbed = cajaHandleEmbed;
     caja___.markFuncFreeze(cajaHandleEmbed, 'cajaHandleEmbed');

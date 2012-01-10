@@ -55,9 +55,9 @@
     ////////////////////////////////////////////////////////////////////////
     // ACCESS TO OBJECTS IN TAMING FRAME
 
-    var getTamingFrameObject = function(key) {
-      key = '' + key;
-      return caja.iframe.contentWindow[key];
+    var getTamingFrameObject = function(expr) {
+      expr = '' + expr;
+      return caja.iframe.contentWindow.eval(expr);
     };
     getTamingFrameObject.i___ = getTamingFrameObject;
 
@@ -67,7 +67,8 @@
     api.readOnlyRecord = {
       x: 42,
       17: 'seventeen',
-      toxicFunctionProperty: function() {}
+      toxicFunctionProperty: function() {},
+      __proto__: 42
     };
     api.setReadOnlyRecordField = function(k, v) {
       api.readOnlyRecord[k] = v;
@@ -99,7 +100,8 @@
     api.readWriteRecord = {
       x: 42,
       17: 'seventeen',
-      toxicFunctionProperty: function() {}
+      toxicFunctionProperty: function() {},
+      __proto__: 42
     };
     api.setReadWriteRecordField = function(k, v) {
       api.readWriteRecord[k] = v;
@@ -165,16 +167,21 @@
 
     // Whitelist the 'Ctor' and 'SubCtor' as constructors, and whitelist the
     // methods except the 'toxic' ones.
-    caja.markCtor(api.Ctor, Object, 'Ctor');
-    caja.markCtor(api.SubCtor, api.Ctor, 'SubCtor');
-    caja.grantMethod(api.Ctor, 'getX');
-    caja.grantMethod(api.Ctor, 'setX');
-    caja.grantMethod(api.SubCtor, 'getY');
-    caja.grantMethod(api.SubCtor, 'setY');
-    caja.grantMethod(api.SubCtor, 'getMagSquared');
 
+    caja.grantRead(api.Ctor, 'prototype');
+
+    caja.grantMethod(api.Ctor.prototype, 'getX');
+    caja.grantMethod(api.Ctor.prototype, 'setX');
     caja.grantRead(api.Ctor.prototype, 'readOnlyProperty');
     caja.grantReadWrite(api.Ctor.prototype, 'readWriteProperty');
+
+    caja.markCtor(api.Ctor, Object, 'Ctor');
+
+    caja.grantMethod(api.SubCtor.prototype, 'getY');
+    caja.grantMethod(api.SubCtor.prototype, 'setY');
+    caja.grantMethod(api.SubCtor.prototype, 'getMagSquared');
+
+    caja.markCtor(api.SubCtor, api.Ctor, 'SubCtor');
 
     caja.markFunction(api.functionReturningConstructed,
         'functionReturningConstructed');
@@ -200,11 +207,11 @@
     };
 
     ////////////////////////////////////////////////////////////////////////
-    // VARIOUS KINDS OF FUNCTIONSectly
+    // VARIOUS KINDS OF FUNCTIONS
 
     api.functionReturningRecord = function (x) {
       return {
-        x: x,
+        x: x
       };
     };
     api.functionReturningFunction = function (x) {
@@ -263,7 +270,7 @@
     ////////////////////////////////////////////////////////////////////////
     // PROPERTIES ON FUNCTIONS
 
-    api.functionWithProperties = function (x) {
+    api.functionWithProperties = function functionWithProperties(x) {
       return x;
     };
 
@@ -277,10 +284,10 @@
       api.functionWithProperties.readOnlyProperty = x;
     };
 
-    caja.markFunction(api.functionWithProperties,
-        'functionWithProperties');
     caja.grantRead(api.functionWithProperties, 'readOnlyProperty');
     caja.grantReadWrite(api.functionWithProperties, 'readWriteProperty');
+    caja.markFunction(api.functionWithProperties,
+        'functionWithProperties');
     caja.markFunction(api.setReadOnlyPropertyOnFunction,
          'setReadOnlyPropertyOnFunction');
 
@@ -294,8 +301,9 @@
     
     extraImports.tamedApi = caja.tame(api);
 
-    extraImports.tamingFrameUSELESS =
-        caja.iframe.contentWindow.___.USELESS;
+    extraImports.tamingFrameUSELESS = caja.USELESS;
+    extraImports.tamingFrameObject = caja.iframe.contentWindow.Object;
+    extraImports.tamingFrameFunction = caja.iframe.contentWindow.Function;
 
     extraImports.tamingFrameObject =
         caja.iframe.contentWindow.Object;

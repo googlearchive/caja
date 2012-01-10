@@ -70,22 +70,12 @@
       function ToxicCtor() {}
       function SubCtor() {}
       SubCtor.prototype = new ToxicCtor();
+      frameGroup.markCtor(SubCtor, ToxicCtor, 'SubCtor');
 
       expectFailure(function() {
-        frameGroup.markCtor(SubCtor, ToxicCtor, 'SubCtor');
+        frameGroup.tame(SubCtor);
       });
       jsunit.pass('testToxicSuperCtorFails');
-    });
-
-    jsunitRegister('testMethodOfUntamedCtorFails',
-                   function testMethodOfUntamedCtorFails() {
-      function UntamedCtor() {}
-      UntamedCtor.prototype.meth = function() {};
-
-      expectFailure(function() {
-        frameGroup.grantMethod(UntamedCtor, 'meth');
-      });
-      jsunit.pass('testMethodOfUntamedCtorFails');
     });
 
     readyToTest();

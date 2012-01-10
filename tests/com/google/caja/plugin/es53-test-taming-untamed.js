@@ -33,13 +33,14 @@
 
   caja.load(div, uriCallback, function (frame) {
 
-  // Invoke cajoled tests
+    // Invoke cajoled tests
     var extraImports = createExtraImportsForTesting(caja, frame);
-    
-    var tamingFrameUSELESS = caja.iframe.contentWindow.___.USELESS;
 
-    extraImports.tamingFrameUSELESS =
-        caja.iframe.contentWindow.___.USELESS;
+    extraImports.tamingFrameUSELESS = caja.USELESS;
+
+    if (!inES5Mode) {
+      extraImports.guestFrameUSELESS = frame.iframe.contentWindow.___.USELESS;
+    }
 
     // An object that can be used by cajoled guest code to store some state
     // between invocations of the "eval" functions (defined below).

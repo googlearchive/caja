@@ -48,7 +48,7 @@
   caja.load(div, uriCallback, function (frame) {
 
     // Provide access to USELESS in scope for testing purposes.
-    var USELESS = caja.iframe.contentWindow.___.USELESS;
+    var USELESS = caja.USELESS;
 
     // An object that will contain our tamed API.
     var api = {};
@@ -66,15 +66,15 @@
       return testObject;
     };
     var getTamedTestObject = function() {
-      caja.tame(testObject);  // Ensure done if not already
-      return testObject.TAMED_TWIN___;
+      return caja.tame(testObject);
     };
-    getFeralTestObject.i___ = getFeralTestObject;
-    getTamedTestObject.i___ = getTamedTestObject;
-
     var evalInHost = function(s, a, b, c) {
       return eval(String(s));
     };
+
+    // For ES5/3
+    getFeralTestObject.i___ = getFeralTestObject;
+    getTamedTestObject.i___ = getTamedTestObject;
     evalInHost.i___ = evalInHost;
 
     ////////////////////////////////////////////////////////////////////////
@@ -96,9 +96,9 @@
     api.Ctor.prototype.meth = function(s, a, b, c) {
       return eval(String(s));
     };
-    caja.markCtor(api.Ctor, Object, 'Ctor');
     caja.grantReadWrite(api.Ctor.prototype, 'prop');
-    caja.grantMethod(api.Ctor, 'meth');
+    caja.grantMethod(api.Ctor.prototype, 'meth');
+    caja.markCtor(api.Ctor, Object, 'Ctor');
 
     ////////////////////////////////////////////////////////////////////////
 

@@ -73,15 +73,19 @@ var caja = (function () {
     // Reference to the taming frame in the default frameGroup
     iframe: null,
 
+    // Reference to the USELESS object for function invocation (for testing)
+    USELESS: undefined,
+
     // Taming functions for the default frameGroup
+    tame: premature,
+    untame: premature,
+    markReadOnlyRecord: premature,
+    markFunction: premature,
+    markCtor: premature,
+    markXo4a: premature,
     grantMethod: premature,
     grantRead: premature,
     grantReadWrite: premature,
-    markCtor: premature,
-    markFunction: premature,
-    markReadOnlyRecord: premature,
-    markXo4a: premature,
-    tame: premature,
 
     // Esoteric functions
     initFeralFrame: initFeralFrame,
@@ -133,6 +137,7 @@ var caja = (function () {
     makeFrameGroup(config, function (frameGroup) {
       defaultFrameGroup = frameGroup;
       caja.iframe = frameGroup.iframe;
+      caja.USELESS = frameGroup.USELESS;
       for (var i in caja) {
         if (caja[i] === premature) {
           caja[i] = frameGroup[i];

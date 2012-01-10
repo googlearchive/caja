@@ -1212,7 +1212,7 @@ ses.startSES = function(global,
                      'Frozen harmless', path);
       return false;
     }
-    reportProperty(ses.severities.NEW_SYMTOM,
+    reportProperty(ses.severities.NEW_SYMPTOM,
                    'Failed to be poisoned', path);
     return false;
   }

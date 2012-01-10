@@ -15,10 +15,14 @@
 -->
 
 <script type="text/javascript">
-  function assertKeys(o, expectedKeys) {
+  window.assertKeys = function(o, expectedKeys) {
     expectedKeys = expectedKeys.slice(0).sort();
     var actualKeys = [];
     for (var k in o) {
+      // Skip deliberate negative index poisoning on functions in ES5/3
+      if (!inES5Mode && (typeof o === 'function') && (Number(k) < 0)) {
+        continue;
+      }
       actualKeys.push(k);
     }
     actualKeys.sort();
@@ -28,18 +32,18 @@
     }
     // Check a nonexistent key (we never use this in any tests)
     assertFalse('nonexistentKeyForTesting' in o);
-  }
+  };
 
-  function beget(o) {
+  window.beget = function(o) {
     var f = function() {};
     f.prototype = o;
     return new f();
-  }
+  };
 
-  function assertNumericIndices(o) {
+  window.assertNumericIndices = function(o) {
     // Assume 'o' is the taming of some feral object where the feral
     // object has a defined property at index 17, in other words:
-    //     feral-twin(o) === (something other than undefined)
+    //     feral-twin(o)[17] === (something other than undefined)
     // This function checks that numeric indexing is uniformly disallowed,
     // which is what the taming layer should do.
     //
@@ -57,12 +61,14 @@
     expectFailure(function() {
       o[19] = 'newnineteen';
     });
+    assertEquals(undefined, o[17]);
+    assertEquals(undefined, o[19]);
     // Property enumeration
     assertFalse(17 in o);
     assertFalse(19 in o);
-  }
+  };
 
-  function assertToxicFunctionPropertyOnRecord(o) {
+  window.assertToxicFunctionPropertyOnRecord = function(o, isWritable) {
     // Given that the feral twin of 'o' has a property 'toxicFunctionProperty'
     // the value of which is a toxic function, we should be able to see that the
     // property exists and enumerate it.
@@ -78,12 +84,17 @@
     // However, the value should be undefined.
     assertEquals(undefined, o.toxicFunctionProperty);
     assertEquals(undefined, o['toxicFunctionProperty']);
-    // Setting it should have no effect
-    try { o.toxicFunctionProperty = 'three'; } catch (e) {}
-    try { o['toxicFunctionProperty'] = 'three'; } catch (e) {}
-    assertEquals(undefined, o.toxicFunctionProperty);
-    assertEquals(undefined, o['toxicFunctionProperty']);
-  }
+    if (isWritable) {
+      o.toxicFunctionProperty = 'three';
+      assertEquals('three', o.toxicFunctionProperty);
+    } else {
+      // Setting it should have no effect
+      try { o.toxicFunctionProperty = 'three'; } catch (e) {}
+      try { o['toxicFunctionProperty'] = 'three'; } catch (e) {}
+      assertEquals(undefined, o.toxicFunctionProperty);
+      assertEquals(undefined, o['toxicFunctionProperty']);
+    }
+  };
 </script>
 
 
@@ -125,49 +136,59 @@
                  function testTamingFramePrimordialsAreFrozen() {
     var tfObject = getTamingFrameObject('Object');
 
-    var roots = [
-      getTamingFrameObject('Object'),
-      getTamingFrameObject('Function'),
-      getTamingFrameObject('Array'),
-      getTamingFrameObject('Error')
-    ];
+    var roots = {
+      Object: getTamingFrameObject('Object'),
+      Function: inES5Mode
+          ? getTamingFrameObject('Function')
+          : getTamingFrameObject('___.sharedImports.Function'),
+      Array: getTamingFrameObject('Array'),
+      Error: getTamingFrameObject('Error')
+    };
 
     // Sanity checks to ensure our test has run
     var foundValue = false;
     var foundGet = false;
     var foundSet = false;
   
-    var checkFrozen = function(o) {
+    var checkFrozen = function(path, o) {
       // Sanity check on tests
-      assertTrue('Passed undefined to checkFrozen', o !== undefined);
-      expectFailure(function() { o.foo = 'bar'; });
+      assertTrue(
+          'Passed undefined to checkFrozen ' + path,
+          o !== undefined);
+      expectFailure(
+          'Is not frozen: ' + path,
+          function() { o.foo = 'bar'; });
     };
 
-    var check = function(o) {
+    var check = function(path, o) {
       // Sanity check on tests
-      assertTrue('Passed undefined to check', o !== undefined);
-      checkFrozen(o);
-      tfObject.getOwnPropertyNames(o).forEach(function(p) {
-        var d = tfObject.getOwnPropertyDescriptor(o, p);
-        assertTrue('Property descriptor is undefined', d !== undefined);
+      assertTrue('Passed undefined to check ' + path, o !== undefined);
+      checkFrozen(path, o);
+      Object.getOwnPropertyNames(o).forEach(function(p) {
+        var d = Object.getOwnPropertyDescriptor(o, p);
+        assertTrue(
+            'Property descriptor is undefined for ' + path + '.' + p,
+            d !== undefined);
         if (d.value) {
           if (typeof d.value === 'object' || typeof d.value === 'function') {
-            checkFrozen(d.value);
+            checkFrozen(path + '.' + p + ' (value)', d.value);
             foundValue = true;
           }
         }
         if (d.get) {
-          checkFrozen(d.get);
+          checkFrozen(path + '.' + p + ' (get)', d.get);
           foundGet = true;
         }
         if (d.set) {
-          checkFrozen(d.set);
+          checkFrozen(path + '.' + p + ' (set)', d.set);
           foundSet = true;
         }
       });
     };
 
-    for (var i = 0; i < roots.length; i++) { check(roots[i]); }
+    Object.getOwnPropertyNames(roots).forEach(function(p) {
+      check(p, roots[p]);
+    });
 
     assertTrue('Did not find and check a primordial value', foundValue);
     assertTrue('Did not find and check a primordial getter', foundGet);
@@ -188,25 +209,32 @@
                  function testReadOnlyRecord() {
     assertEquals(42, tamedApi.readOnlyRecord.x);
     assertEquals(undefined, tamedApi.readOnlyRecord.foo);
-    assertKeys(tamedApi.readOnlyRecord, [ 'x', 'toxicFunctionProperty' ]);
+    window.assertKeys(tamedApi.readOnlyRecord,
+        [ 'x', 'toxicFunctionProperty' ]);
+    // Throws because property 'x' is not writable
     expectFailure(function() {
       tamedApi.readOnlyRecord.x = 19;
     });
+    assertEquals(42, tamedApi.readOnlyRecord.x);
+    // Throws because readOnlyRecord is not extensible
     expectFailure(function() {
       tamedApi.readOnlyRecord.foo = 23;
     });
     assertEquals(42, tamedApi.readOnlyRecord.x);
     assertEquals(undefined, tamedApi.readOnlyRecord.foo);
+    // Succeeds because readOnlyRecord is a live view of the feral object
     tamedApi.setReadOnlyRecordField('x', 31);
+    assertEquals(31, tamedApi.readOnlyRecord.x);
+    // Setting a new value on the feral readOnlyRecords should be invisible from
+    // tame side since record "shape" fixed at tame time
     tamedApi.setReadOnlyRecordField('foo', 47);
     tamedApi.setReadOnlyRecordField('bar', 51);
-    assertEquals(31, tamedApi.readOnlyRecord.x);
-    assertEquals(47, tamedApi.readOnlyRecord.foo);
-    assertEquals(51, tamedApi.readOnlyRecord.bar);
-    assertKeys(tamedApi.readOnlyRecord,
-        [ 'x', 'foo', 'bar', 'toxicFunctionProperty' ]);
-    assertNumericIndices(tamedApi.readOnlyRecord);
-    assertToxicFunctionPropertyOnRecord(tamedApi.readOnlyRecord);
+    assertEquals(undefined, tamedApi.readOnlyRecord.foo);
+    assertEquals(undefined, tamedApi.readOnlyRecord.bar);
+    window.assertKeys(tamedApi.readOnlyRecord,
+        [ 'x', 'toxicFunctionProperty' ]);
+    window.assertNumericIndices(tamedApi.readOnlyRecord);
+    window.assertToxicFunctionPropertyOnRecord(tamedApi.readOnlyRecord, false);
     pass('testReadOnlyRecord');
   });
 </script>
@@ -260,23 +288,27 @@
                  function testReadWriteRecord() {
     assertEquals(42, tamedApi.readWriteRecord.x);
     assertEquals(undefined, tamedApi.readWriteRecord.foo);
-    assertKeys(tamedApi.readWriteRecord, [ 'x', 'toxicFunctionProperty' ]);
+    window.assertKeys(tamedApi.readWriteRecord,
+        [ 'x', 'toxicFunctionProperty' ]);
     tamedApi.readWriteRecord.x = 19;
-    tamedApi.readWriteRecord.foo = 23;
     assertEquals(19, tamedApi.readWriteRecord.x);
-    assertEquals(23, tamedApi.readWriteRecord.foo);
-    assertKeys(tamedApi.readWriteRecord,
-        [ 'x', 'foo', 'toxicFunctionProperty' ]);
+    // Throws because readWriteRecord is not extensible
+    expectFailure(function() {
+      tamedApi.readWriteRecord.foo = 23;
+    });
+    assertEquals(undefined, tamedApi.readWriteRecord.foo);
+    window.assertKeys(tamedApi.readWriteRecord,
+        [ 'x', 'toxicFunctionProperty' ]);
     tamedApi.setReadWriteRecordField('x', 31);
+    assertEquals(31, tamedApi.readWriteRecord.x);
     tamedApi.setReadWriteRecordField('foo', 47);
     tamedApi.setReadWriteRecordField('bar', 51);
-    assertEquals(31, tamedApi.readWriteRecord.x);
-    assertEquals(47, tamedApi.readWriteRecord.foo);
-    assertEquals(51, tamedApi.readWriteRecord.bar);
-    assertKeys(tamedApi.readWriteRecord,
-        [ 'x', 'foo', 'bar', 'toxicFunctionProperty' ]);
-    assertNumericIndices(tamedApi.readWriteRecord);
-    assertToxicFunctionPropertyOnRecord(tamedApi.readOnlyRecord);
+    assertEquals(undefined, tamedApi.readWriteRecord.foo);
+    assertEquals(undefined, tamedApi.readWriteRecord.bar);
+    window.assertKeys(tamedApi.readWriteRecord,
+        [ 'x', 'toxicFunctionProperty' ]);
+    window.assertNumericIndices(tamedApi.readWriteRecord);
+    window.assertToxicFunctionPropertyOnRecord(tamedApi.readWriteRecord, true);
     pass('testReadWriteRecord');
   });
 </script>
@@ -306,20 +338,39 @@
 
 <h2>CONSTRUCTORS</h2>
 
+<div id="testSimpleInstances" class="testcontainer waiting">
+  testSimpleInstances
+</div>
 <script type="text/javascript">
-  function testCtor(o) {
-    // Gotcha: tamedApi.Ctor not instanceof Function
-    assertTrue('typeof not function', (typeof tamedApi.Ctor) === 'function');
+  jsunitRegister('testSimpleInstances',
+                 function testSimpleInstances() {
+    var a = new tamedApi.Ctor(17);
+    var b = new tamedApi.Ctor(42);
+    assertEquals(17, a.getX());
+    assertEquals(42, b.getX());
+    a.setX(19);
+    b.setX(43);
+    assertEquals(19, a.getX());
+    assertEquals(43, b.getX());
+    pass('testSimpleInstances');
+  });
+</script>
+
+<script type="text/javascript">
+  window.testCtor = function(o) {
+    assertEquals('function', typeof tamedApi.Ctor);
     assertTrue(o instanceof tamedApi.Ctor);
     assertEquals(tamedApi.Ctor.prototype.constructor, tamedApi.Ctor);
     assertEquals(o.constructor, tamedApi.Ctor);
     expectFailure(function() {
       tamedApi.Ctor.prototype = 'foo';
     });
+    assertFalse('foo' === tamedApi.Ctor.prototype);
     expectFailure(function() {
       tamedApi.Ctor.prototype.constructor = 'foo';
     });
-  }
+    assertFalse('foo' === tamedApi.Ctor.prototype.constructor);
+  };
 </script>
 
 <div id="testDirectlyConstructed" class="testcontainer waiting">
@@ -328,7 +379,7 @@
 <script type="text/javascript">
   jsunitRegister('testDirectlyConstructed',
                  function testDirectlyConstructed() {
-    testCtor(new tamedApi.Ctor(17));
+    window.testCtor(new tamedApi.Ctor(17));
     pass('testDirectlyConstructed');
   });
 </script>
@@ -339,17 +390,17 @@
 <script type="text/javascript">
   jsunitRegister('testReturnedConstructed',
                  function testReturnedConstructed() {
-    testCtor(tamedApi.functionReturningConstructed(17));
+    window.testCtor(tamedApi.functionReturningConstructed(17));
     pass('testReturnedConstructed');
   });
 </script>    
 
-<div id="testCtorIsNotXo4aHole" class="testcontainer waiting">
-  testCtorIsNotXo4aHole
+<div id="testCtorOnlyInitializesInstances" class="testcontainer waiting">
+  testCtorOnlyInitializesInstances
 </div>
 <script type="text/javascript">
-  jsunitRegister('testCtorIsNotXo4aHole',
-                 function testCtorIsNotXo4aHole() {
+  jsunitRegister('testCtorOnlyInitializesInstances',
+                 function testCtorOnlyInitializesInstances() {
     var o1 = {};
     var x1 = tamedApi.Ctor.call(o1, 17);
     assertEquals(undefined, o1.x);
@@ -362,24 +413,25 @@
     var x3 = tamedApi.Ctor.bind(o3)(17);
     assertEquals(undefined, o3.x);
     assertEquals(undefined, x3);
-    pass('testCtorIsNotXo4aHole');
+    pass('testCtorOnlyInitializesInstances');
   });
 </script>    
 
 <script type="text/javascript">
-  function testCtorMethodsWorkOk(o) {
+  window.testCtorMethodsWorkOk = function(o) {
     var keys = [
+      'constructor',
       'readOnlyProperty',
       'readWriteProperty',
       'getX',
       'setX',
     ];
-    assertKeys(tamedApi.Ctor.prototype, keys);
-    // assertKeys(o, keys);
+    window.assertKeys(tamedApi.Ctor.prototype, keys);
+    // window.assertKeys(o, keys);
     assertEquals(17, o.getX());
     o.setX(42);
     assertEquals(42, o.getX());
-  }
+  };
 </script>
 
 <div id="testDirectlyConstructedMethodsWorkOk" class="testcontainer waiting">
@@ -388,7 +440,7 @@
 <script type="text/javascript">
   jsunitRegister('testDirectlyConstructedMethodsWorkOk',
                  function testDirectlyConstructedMethodsWorkOk() {
-    testCtorMethodsWorkOk(new tamedApi.Ctor(17));
+    window.testCtorMethodsWorkOk(new tamedApi.Ctor(17));
     pass('testDirectlyConstructedMethodsWorkOk');
   });
 </script>
@@ -399,29 +451,23 @@
 <script type="text/javascript">
   jsunitRegister('testReturnedConstructedMethodsWorkOk',
                  function testReturnedConstructedMethodsWorkOk() {
-    testCtorMethodsWorkOk(tamedApi.functionReturningConstructed(17));
+    window.testCtorMethodsWorkOk(tamedApi.functionReturningConstructed(17));
     pass('testReturnedConstructedMethodsWorkOk');
   });
 </script>
 
 <script type="text/javascript">
-  function testCtorMethodsAreSafe(o) {
+  window.testCtorMethodsAreSafe = function(o) {
     // Guest code must be able to extract a method property of a
     // constructor's prototype, and the result must be a function.
     var getXProto = tamedApi.Ctor.prototype.getX;
-    // Gotcha: getXProto not instanceof Function
     assertTrue('typeof not function', (typeof getXProto) === 'function');
     // It must not be possible for the guest to rebind the method to a
     // different 'this' value.
     assertTrue(getXProto.call({ x: 13 }) !== 13);
     assertTrue(getXProto.apply({ x: 13 }, []) !== 13);
     assertTrue(getXProto.bind({ x: 13 })() !== 13);
-    // It must not be possible to construct a fake instance for
-    // future use as a rogue 'this' for the methods via call/apply
-    var fakeInstance = beget(tamedApi.Ctor.prototype);
-    expectFailure(function() {
-      fakeInstance.x = 13;
-    });
+    var fakeInstance = window.beget(tamedApi.Ctor.prototype);
     // Guest code must be able to extract a method property of a tamed
     // constructed object, and the result must be a function.
     var getX = o.getX;
@@ -460,8 +506,8 @@
     expectFailure(function () {
       o.foo = 19;
     });
-    assertNumericIndices(o);
-  }
+    window.assertNumericIndices(o);
+  };
 </script>
 
 <div id="testDirectlyConstructedMethodsAreSafe" class="testcontainer waiting">
@@ -470,7 +516,7 @@
 <script type="text/javascript">
   jsunitRegister('testDirectlyConstructedMethodsAreSafe',
                  function testDirectlyConstructedMethodsAreSafe() {
-    testCtorMethodsAreSafe(new tamedApi.Ctor(17));
+    window.testCtorMethodsAreSafe(new tamedApi.Ctor(17));
     pass('testDirectlyConstructedMethodsAreSafe');
   });
 </script>
@@ -481,13 +527,13 @@
 <script type="text/javascript">
   jsunitRegister('testReturnedConstructedMethodsAreSafe',
                  function testReturnedConstructedMethodsAreSafe() {
-    testCtorMethodsAreSafe(tamedApi.functionReturningConstructed(17));
+    window.testCtorMethodsAreSafe(tamedApi.functionReturningConstructed(17));
     pass('testReturnedConstructedMethodsAreSafe');
   });
 </script>    
 
 <script type="text/javascript">
-  function testCtorProperties(o) {
+  window.testCtorProperties = function(o) {
     assertEquals(undefined, o.invisibleProperty);
     assertFalse('invisibleProperty' in o);
     expectFailure(function() {
@@ -498,12 +544,13 @@
     expectFailure(function() {
       o.readOnlyProperty = 91;
     });
+    assertEquals(19, o.readOnlyProperty);
     assertEquals(23, o.readWriteProperty);
     assertTrue('readWriteProperty is not in o', 'readWriteProperty' in o);
     o.readWriteProperty = 91;
-    assertNumericIndices(o);
+    window.assertNumericIndices(o);
     assertEquals(91, o.readWriteProperty);
-  }
+  };
 </script>    
 
 <div id="testDirectlyConstructedProperties" class="testcontainer waiting">
@@ -512,7 +559,7 @@
 <script type="text/javascript">
   jsunitRegister('testDirectlyConstructedProperties',
                  function testDirectlyConstructedProperties() {
-    testCtorProperties(new tamedApi.Ctor(17));
+    window.testCtorProperties(new tamedApi.Ctor(17));
     pass('testDirectlyConstructedProperties');
   });
 </script>
@@ -523,7 +570,7 @@
 <script type="text/javascript">
   jsunitRegister('testReturnedConstructedProperties',
                  function testReturnedConstructedProperties() {
-    testCtorProperties(tamedApi.functionReturningConstructed(17));
+    window.testCtorProperties(tamedApi.functionReturningConstructed(17));
     pass('testReturnedConstructedProperties');
   });
 </script>    
@@ -534,8 +581,7 @@
 <script type="text/javascript">
   jsunitRegister('testSubCtor',
                  function testSubCtor() {
-    // Gotcha: tamedApi.SubCtor not instanceof Function
-    assertTrue('typeof not function', (typeof tamedApi.SubCtor) === 'function');
+    assertEquals('function', typeof tamedApi.SubCtor);
     var o = new tamedApi.SubCtor(17, 19);
     assertTrue(o instanceof tamedApi.SubCtor);
     assertTrue(o instanceof tamedApi.Ctor);
@@ -545,9 +591,11 @@
     expectFailure(function() {
       tamedApi.SubCtor.prototype = 'foo';
     });
+    assertFalse('foo' === tamedApi.SubCtor.prototype);
     expectFailure(function() {
       tamedApi.SubCtor.prototype.constructor = 'foo';
     });
+    assertFalse('foo' === tamedApi.SubCtor.prototype.constructor);
     pass('testSubCtor');
   });
 </script>
@@ -568,9 +616,9 @@
       'readWriteProperty',
       'constructor'  // enumerable since explicitly set
     ];
-    assertKeys(tamedApi.SubCtor.prototype, keys);
+    window.assertKeys(tamedApi.SubCtor.prototype, keys);
     var o = new tamedApi.SubCtor(17, 19);
-    assertKeys(o, keys);
+    window.assertKeys(o, keys);
     assertEquals(19, o.getY());
     assertEquals(17, o.getX());
     o.setY(9);
@@ -605,12 +653,6 @@
     assertTrue(getYProto.apply({ y: 13 }, []) !== 13);
     assertTrue(getYProto.bind({ y: 13 })() !== 13);
     var fakeInstance = beget(tamedApi.SubCtor.prototype);
-    expectFailure(function() {
-      fakeInstance.x = 13;
-    });
-    expectFailure(function() {
-      fakeInstance.y = 13;
-    });
     assertTrue(getXProto.call(fakeInstance) !== 13);
     assertTrue(getXProto.apply(fakeInstance, []) !== 13);
     assertTrue(getXProto.bind(fakeInstance)() !== 13);
@@ -664,7 +706,7 @@
     expectFailure(function () {
       o.foo = 19;
     });
-    assertNumericIndices(o);
+    window.assertNumericIndices(o);
     pass('testSubCtorMethodsAreSafe');
   });
 </script>    
@@ -699,7 +741,7 @@
                  function testReturningRecord() {
     var o = tamedApi.functionReturningRecord(29);
     assertEquals(29, o.x);
-    assertKeys(o, [ 'x' ]);        
+    window.assertKeys(o, [ 'x' ]);        
     pass('testReturningRecord');
   });
 </script>
@@ -831,7 +873,7 @@
 <script type="text/javascript">
   jsunitRegister('testPropertiesOnFunctions',
                  function testPropertiesOnFunctions() {
-    assertKeys(tamedApi.functionWithProperties, [
+    window.assertKeys(tamedApi.functionWithProperties, [
         'readOnlyProperty',
         'readWriteProperty'
     ]);
@@ -848,11 +890,12 @@
     expectFailure(function() {
       tamedApi.functionWithProperties.readOnlyProperty = 99;
     });
+    assertEquals(71, tamedApi.functionWithProperties.readOnlyProperty);
     // Read-write property
     assertEquals(49, tamedApi.functionWithProperties.readWriteProperty);
     tamedApi.functionWithProperties.readWriteProperty = 83;
     assertEquals(83, tamedApi.functionWithProperties.readWriteProperty);
-    assertNumericIndices(tamedApi.functionWithProperties);
+    window.assertNumericIndices(tamedApi.functionWithProperties);
     pass('testPropertiesOnFunctions');
   });
 </script>

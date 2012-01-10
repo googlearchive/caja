@@ -578,6 +578,7 @@ domitaModules.XMLHttpRequestCtor = function (XMLHttpRequest, ActiveXObject) {
 };
 
 domitaModules.TameXMLHttpRequest = function(
+    taming,
     rulebreaker,
     xmlHttpRequestMaker,
     uriCallback) {
@@ -600,7 +601,7 @@ domitaModules.TameXMLHttpRequest = function(
     TameXHRConf.confide(this);
     var xhr = p(this).feral =
         rulebreaker.makeDOMAccessible(new xmlHttpRequestMaker());
-    rulebreaker.permitUntaming(this);
+    taming.tamesTo(xhr, this);
   }
   Object.defineProperties(TameXMLHttpRequest.prototype, {
     onreadystatechange: {
@@ -610,7 +611,7 @@ domitaModules.TameXMLHttpRequest = function(
         // 'target'? May need to implement full "tame event" wrapper similar to
         // DOM events.
         var self = this;
-        p(this).feral.onreadystatechange = rulebreaker.untame(function (event) {
+        p(this).feral.onreadystatechange = taming.untame(function (event) {
           var evt = { target: self };
           return handler.call(void 0, evt);
         });
@@ -807,13 +808,14 @@ cajaVM.def(domitaModules);
  * shared map allowing separate virtual documents to dispatch events across
  * them. (TODO(kpreid): Confirm this explanation is good.)
  *
+ * @param {Object} taming. An interface to a taming membrane.
  * @param {Object} opt_rulebreaker. If necessary, authorities to break the ES5/3
  *     taming membrane and work with the taming-frame system. If running under
  *     SES, pass null instead.
  * @return A record of functions attachDocument, dispatchEvent, and
  *     dispatchToHandler.
  */
-function Domado(opt_rulebreaker) {
+function Domado(taming, opt_rulebreaker) {
   // Everything in this scope but not in function attachDocument() below
   // does not contain lexical references to a particular DOM instance, but may
   // have some kind of privileged access to Domado internals.
@@ -830,26 +832,6 @@ function Domado(opt_rulebreaker) {
     // These are the stub versions used when in ES5+SES.
     makeDOMAccessible: function (o) {return o;},
     makeFunctionAccessible: function (o) {return o;},
-    permitUntaming: function (o) {},
-    tame: function (o) {
-      return o._domado_tamed;
-    },
-    untame: function (o) {
-      // Suitable for current uses (setting event handlers on host objs), but
-      // not general-purpose (because it is not symmetric with 'tame'). Checking
-      // that it is only used for said purpose:
-      if (typeof o !== 'function') {
-        throw new TypeError(
-            'default rulebreaker.untame is only a stub for functions');
-      }
-      return o; 
-    },
-    tamesTo: function (f,t) {
-      f._domado_tamed = t;
-    },
-    hasTameTwin: function (f) {
-      return "_domado_tamed" in f;
-    },
     writeToPixelArray: function (source, target, length) {
       // See the use below for why this exists.
       for (var i = length-1; i >= 0; i--) {
@@ -1455,7 +1437,7 @@ function Domado(opt_rulebreaker) {
         ExpandoProxyHandler.register(proxiedNode, node);
         TameNodeConf.confide(proxiedNode, node);
         tamingProxies.set(node, proxiedNode);
-        rulebreaker.permitUntaming(proxiedNode);
+        taming.permitUntaming(proxiedNode);
         
         return proxiedNode;
       } else {
@@ -2389,7 +2371,7 @@ function Domado(opt_rulebreaker) {
     function TameNode(editable) {
       TameNodeConf.confide(this);
       np(this).editable = editable;
-      rulebreaker.permitUntaming(this);  // needed for testing
+      taming.permitUntaming(this);  // needed for testing
       return this;
     }
     inertCtor(TameNode, Object, 'Node');
@@ -3475,6 +3457,7 @@ function Domado(opt_rulebreaker) {
           height: Number(imageData.height)
         };
         TameImageDataConf.confide(tameImageData);
+        taming.permitUntaming(tameImageData);
         
         // used to unwrap for passing to putImageData
         p(tameImageData).feral = imageData;
@@ -3546,7 +3529,7 @@ function Domado(opt_rulebreaker) {
         };
         TameGradientConf.confide(tameGradient);
         TameGradientConf.p(tameGradient).feral = gradient;
-        rulebreaker.tamesTo(gradient, tameGradient);
+        taming.tamesTo(gradient, tameGradient);
         return Object.freeze(tameGradient);
       }
       function enforceFinite(value, name) {
@@ -3635,8 +3618,8 @@ function Domado(opt_rulebreaker) {
             if (typeof(value) == "string") {
               return canonColor(value);
             } else if (cajaVM.passesGuard(TameGradientT,
-                                          rulebreaker.tame(value))) {
-              return rulebreaker.tame(value);
+                                          taming.tame(value))) {
+              return taming.tame(value);
             } else {
               throw new Error("Internal: Can't tame value " + value + " of " +
                    prop);
@@ -3925,6 +3908,7 @@ function Domado(opt_rulebreaker) {
         TameContext2DConf.p(tameContext2d).editable = np(this).editable;
         TameContext2DConf.p(tameContext2d).feral = context;
         cajaVM.def(tameContext2d);
+        taming.permitUntaming(tameContext2d);
       }  // end of TameCanvasElement
       inertCtor(TameCanvasElement, TameElement, 'HTMLCanvasElement');
       TameCanvasElement.prototype.getContext = function (contextId) {
@@ -4315,11 +4299,11 @@ function Domado(opt_rulebreaker) {
     
     function tameEvent(event) {
       makeDOMAccessible(event);
-      if (!rulebreaker.hasTameTwin(event)) {
+      if (!taming.hasTameTwin(event)) {
         var tamed = new TameEvent(event);
-        rulebreaker.tamesTo(event, tamed);
+        taming.tamesTo(event, tamed);
       }
-      return rulebreaker.tame(event);
+      return taming.tame(event);
     }
 
     var ep = TameEventConf.p.bind(TameEventConf);
@@ -4817,7 +4801,7 @@ function Domado(opt_rulebreaker) {
         rawEvent.eventType = 'ondataavailable';
       }
       var tamedEvent = new TameCustomHTMLEvent(rawEvent);
-      rulebreaker.tamesTo(rawEvent, tamedEvent);
+      taming.tamesTo(rawEvent, tamedEvent);
       return tamedEvent;
     });
     TameHTMLDocument.prototype.write = nodeMethod(function () {
@@ -5102,6 +5086,7 @@ function Domado(opt_rulebreaker) {
     // Note: nodeClasses.XMLHttpRequest is a ctor that *can* be directly
     // called by cajoled code, so we do not use inertCtor().
     nodeClasses.XMLHttpRequest = domitaModules.TameXMLHttpRequest(
+        taming,
         rulebreaker,
         domitaModules.XMLHttpRequestCtor(
             makeFunctionAccessible(window.XMLHttpRequest),
@@ -5269,7 +5254,7 @@ function Domado(opt_rulebreaker) {
         writable: false
       });
       definePropertiesAwesomely(this, viewProperties);
-      rulebreaker.permitUntaming(this);
+      taming.permitUntaming(this);
     }
     // Methods of TameWindow are established later.
     setOwn(TameWindow.prototype, "toString", cajaVM.def(function () {
@@ -5310,7 +5295,7 @@ function Domado(opt_rulebreaker) {
       // authority.
       assert(np(tameDocument).editable);
       definePropertiesAwesomely(this, viewProperties);
-      rulebreaker.permitUntaming(this);
+      taming.permitUntaming(this);
     }
     
     // Under ES53, the set/clear pairs get invoked with 'this' bound

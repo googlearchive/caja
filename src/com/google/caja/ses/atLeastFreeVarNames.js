@@ -102,7 +102,7 @@ var ses;
       // apparent identifiers, rather than the total number of
       // apparently unique identifiers.
       var name = a[0];
-      
+
       if (!found.has(name)) {
         result.push(name);
         found.set(name, true);
