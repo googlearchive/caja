@@ -833,19 +833,6 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
   }
 
   /**
-   * Tests whether a data property is writable in an assignment operation.
-   *
-   * Preconditions:
-   * {@code obj} must not be {@code null} or {@code undefined}.
-   * {@code name} must be a string that is not the string encoding
-   *              of a number; {@code name} may be {@code 'NUM___'}.
-   */
-  function isAssignable(obj, name) {
-    return (isWritable(obj, name) || obj[name + '_gw___']) &&
-        (obj.ne___ !== obj);
-  }
-
-  /**
    * Tests whether {@code grantEnumerate} has been called on the property
    * {@code name} of this object or one of its ancestors.
    *
@@ -2180,6 +2167,9 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
     };
 
   // 8.12.5
+  // This follows the philosophy that the ES5 spec was mistaken to prohibit
+  // overriding read-only properties.  Chrome also follows this pholosophy.
+  // http://wiki.ecmascript.org/doku.php?id=strawman:fixing_override_mistake
   Object.prototype.w___ = function w___(P, V) {
       var thisExtensible = isExtensible(this);
       P = '' + P;
@@ -2190,33 +2180,42 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
               P + "': " + this + " is not extensible.");
         }
       }
+
+      // At this point, obj is either (extensible) or
+      // (non-extensible but already has the property in question).
+
       V = asFirstClass(V);
-      // Numeric indices are never accessor properties
-      // and are all governed by a single property descriptor.
-      // At this point, obj is either extensible or
-      // non-extensible but already has the property in question.
+
+      // Numeric names can't be emulated accessors.
       if(isNumericName(P)) {
-        if (isAssignable(this, 'NUM___') || !this.hasNumerics___()) {
+        if (isWritable(this, 'NUM___')) {
           return this[P] = V;
         } else {
           throw new TypeError("The property '" + P + "' is not writable.");
         }
       }
-      // Is name an accessor property on obj?
+      // Is P an accessor property on obj?
       var s = setter(this, P);
       if (s) { s.f___(this, [V]); return V; }
 
-      // If P is inherited or an own property, write or throw.
-      if (P + '_v___' in this) {
-        if (isAssignable(this, P)) {
+      // If P is an own data property,
+      if (this[P + '_v___'] === this) {
+        // and it's writable, then write;
+        if (isWritable(this, P)) {
           fastpathWrite(this, P);
           return this[P] = V;
         }
+        // otherwise throw.
         throw new TypeError("The property '" + P + "' is not writable.");
       }
 
-      // If P doesn't exist, is the object extensible?
-      if (!this.hasOwnProperty(P) && isExtensible(this)) {
+      // At this point, the object is known to be extensible and not to have the
+      // property whitelisted.  We need to check if the property exists but
+      // is purposely not whitelisted.
+      
+      // If it doesn't exist,
+      if (!this.hasOwnProperty(P)) {
+        // then create it;
         this.DefineOwnProperty___(P, {
             value: V,
             writable: true,
@@ -2225,6 +2224,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
           });
         return V;
       }
+      // otherwise throw.
       throw new TypeError("The property '" + P + "' is not writable.");
     };
 
@@ -3378,7 +3378,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
   virtualize(Array.prototype, 'sort', function (comparefn) {
       // This taming assumes that sort only modifies {@code this},
       // even though it may read numeric properties on the prototype chain.
-      if (!isAssignable(this, 'NUM___')) {
+      if (!isWritable(this, 'NUM___')) {
         throw new TypeError(
             'Cannot sort an object whose ' +
             'numeric properties are not writable.');

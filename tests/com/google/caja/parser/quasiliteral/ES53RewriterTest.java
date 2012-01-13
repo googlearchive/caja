@@ -1543,23 +1543,15 @@ public class ES53RewriterTest extends CommonJsRewriterTestCase {
    * Tests assigning to an inherited read-only property
    */
   public final void testCanPut() throws Exception {
+    // ES5/3 is consistent with Chrome and Safari in asserting that the
+    // ES5 spec was mistaken to prohibit overriding read-only properties.
+    // http://wiki.ecmascript.org/doku.php?id=strawman:fixing_override_mistake
     rewriteAndExecute(
-        "function F(){}" +
-        "Object.defineProperty(F.prototype, 'constructor', {writable:false});" +
-        "var G = function (){};" +
-        "G.prototype = Object.create(F.prototype);" +
-        "assertThrows(function(){G.prototype.constructor = G;});");
-    // Should be able to mask inherited read-only properties with
-    // Object.defineProperty().
-    rewriteAndExecute(
-        "function F(){}" +
-        "Object.defineProperty(F.prototype, 'constructor', {writable:false});" +
-        "var G = function (){};" +
-        "G.prototype = Object.create(F.prototype);" +
-        "Object.defineProperty(G.prototype, 'constructor'," +
-        "    {value:undefined, writable:true, configurable:true});" +
-        "G.prototype.constructor = G;" +
-        "assertEquals(G.prototype.constructor, G);");
+        "var a = {};" +
+        "Object.defineProperty(a, 'x', {value: 1, writable: false});" +
+        "var b = Object.create(a);" +
+        "b.x = 2;" +
+        "assertEquals(b.x, 2);");
   }
 
   /**
@@ -1715,7 +1707,7 @@ public class ES53RewriterTest extends CommonJsRewriterTestCase {
           "  assertEquals('there', proxy[1]);" +
           "cajaVM.log('keys');" +
           "  proxy = Proxy.create(handlerMaker(obj));" +
-          "  assertEquals('z', ''+Object.keys(proxy).sort());" +
+          "  assertEquals('x,z', ''+Object.keys(proxy).sort());" +
           "cajaVM.log('defineProperty');" +
           "  Object.defineProperty(proxy, 'w', { value: 4 });" +
           "  assertEquals(4, obj.w);" +
@@ -1750,7 +1742,7 @@ public class ES53RewriterTest extends CommonJsRewriterTestCase {
           "  assertEquals(2, proxy.x);" +
           "cajaVM.log('getOwnPropertyNames');" +
           "  proxy = Proxy.create(handlerMaker(obj));" +
-          "  assertEquals('w,z'," +
+          "  assertEquals('w,x,z'," +
           "      '' + Object.getOwnPropertyNames(proxy).sort());" +
           "  var o4 = {d:4};" +
           "  Object.freeze(o4);" +
