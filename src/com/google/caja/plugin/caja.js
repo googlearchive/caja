@@ -34,21 +34,6 @@ var caja = (function () {
 
   var GUESS = 'GUESS';
 
-  var containerStyle =
-    '.caja_outerContainer___ {' +
-    '  display: inline;' +
-    '  margin: 0;' +
-    '  overflow: auto;' +
-    '  padding: 0;' +
-    '  position: relative;' +
-    '}' +
-    '.caja_innerContainer___, .caja_outerContainer___ > * {' +
-    '  height: 100%;' +
-    '  margin: 0;' +
-    '  padding: 0;' +
-    '  position: relative;' +
-    '}';
-
   var uriPolicies = {
     net: {
       NO_NETWORK: {
@@ -241,22 +226,8 @@ var caja = (function () {
     if (feralWin.Object.FERAL_FRAME_OBJECT___ === feralWin.Object) {
       return;
     }
-    addStyle(feralWin.document, containerStyle);
     feralWin.___ = {};
     feralWin.Object.FERAL_FRAME_OBJECT___ = feralWin.Object;
-  }
-
-  function addStyle(doc, styleText) {
-    var style = doc.createElement('style');
-    style.setAttribute('type', 'text/css');
-    // IE style nodes need to be added to the DOM before setting cssText
-    // http://msdn.microsoft.com/en-us/library/ms533698(v=vs.85).aspx
-    doc.getElementsByTagName('head')[0].appendChild(style);
-    if (style.styleSheet) {
-      style.styleSheet.cssText = containerStyle;  // IE
-    } else {
-      style.appendChild(doc.createTextNode(containerStyle));
-    }
   }
 
   //----------------
@@ -388,10 +359,15 @@ var caja = (function () {
     var outer = null;
     if (div) {
       inner = div.ownerDocument.createElement('div');
-      inner.setAttribute('class', 'caja_innerContainer___');
       inner.setAttribute('title', opt_title);
+      inner.style.display = 'block';
+      inner.style.position = 'relative';
       outer = div.ownerDocument.createElement('div');
-      outer.setAttribute('class', 'caja_outerContainer___');
+      outer.style.position = 'relative';
+      outer.style.overflow = 'hidden';
+      outer.style.display = 'block';
+      outer.style.margin = '0';
+      outer.style.padding = '0';
       // Move existing children (like static HTML produced by the cajoler)
       // into the inner container.
       while (div.firstChild) {

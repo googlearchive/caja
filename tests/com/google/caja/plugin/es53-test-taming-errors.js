@@ -37,17 +37,7 @@
       assertTrue(!!win.Object.FERAL_FRAME_OBJECT___);
       assertEquals(win.Object, win.Object.FERAL_FRAME_OBJECT___);
 
-      var outer = doc.createElement('div');
-      outer.setAttribute('class', 'caja_outerContainer___');
-      doc.body.appendChild(outer);
-
-      window.setTimeout(function() {
-        assertEquals(
-            'relative',
-            win.getComputedStyle(outer, null)
-                .getPropertyValue('position'));
-        jsunit.pass('testInitFeralFrameOther');
-      }, 0);
+      jsunit.pass('testInitFeralFrameOther');
     }, 0);
   });
 

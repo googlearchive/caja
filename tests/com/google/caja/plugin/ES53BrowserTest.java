@@ -187,4 +187,8 @@ public class ES53BrowserTest extends BrowserTestCase {
     // TODO(kpreid): Enable for ES5. Currently fails by showing script text.
     runTestCase("es53-test-inline-script.html", false);
   }
+
+  public final void testContainerOverflow() {
+    runTestDriver("es53-test-container-overflow.js");
+  }
 }
