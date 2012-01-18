@@ -26,7 +26,7 @@ import org.openqa.selenium.WebDriver;
  * @author kpreid@switchb.org (Kevin Reid)
  */
 public class BrowserTestCaseStub extends BrowserTestCase {
-  public static final void main(String[] args) {
+  public static final void main(String[] args) throws Exception {
     new BrowserTestCaseStub().runBrowserTest("");
   }
 

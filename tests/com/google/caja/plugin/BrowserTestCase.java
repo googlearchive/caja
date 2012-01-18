@@ -17,18 +17,11 @@ package com.google.caja.plugin;
 import com.google.caja.lexer.escaping.Escaping;
 import com.google.caja.reporting.BuildInfo;
 import com.google.caja.reporting.MessageQueue;
-import com.google.caja.service.CajolingService;
-import com.google.caja.service.CajolingServlet;
-import com.google.caja.util.CajaTestCase;
 
-import org.mortbay.jetty.Handler;
-import org.mortbay.jetty.Server;
-import org.mortbay.jetty.handler.ContextHandler;
-import org.mortbay.jetty.handler.DefaultHandler;
-import org.mortbay.jetty.handler.HandlerList;
-import org.mortbay.jetty.handler.ResourceHandler;
+import com.google.caja.util.CajaTestCase;
+import com.google.caja.util.LocalServer;
+import com.google.caja.util.RewritingResourceHandler;
 import org.mortbay.jetty.servlet.Context;
-import org.mortbay.jetty.servlet.ServletHolder;
 
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
@@ -57,8 +50,6 @@ import java.util.List;
  * @author kpreid@switchb.org (Kevin Reid)
  */
 public abstract class BrowserTestCase extends CajaTestCase {
-  protected Server server;
-
   // This being static is a horrible kludge to be able to reuse the Firefox
   // instance between individual tests. There is no narrower scope we can use,
   // unless we were to move to JUnit 4 style tests, which have per-class setup.
@@ -73,10 +64,6 @@ public abstract class BrowserTestCase extends CajaTestCase {
       }));
     }
   }
-
-  protected final RewritingResourceHandler cajaStatic =
-      new RewritingResourceHandler();
-  { cajaStatic.setResourceBase("./ant-war/"); }
 
   protected String testBuildVersion = null;
 
@@ -99,6 +86,16 @@ public abstract class BrowserTestCase extends CajaTestCase {
       return BuildInfo.getInstance().getCurrentTime();
     }
   };
+  
+  private final int portNumber = 8000;
+  
+  private final LocalServer localServer = new LocalServer(
+      portNumber,
+      new LocalServer.ConfigureContextCallback() {
+        @Override public void configureContext(Context ctx) {
+          addServlets(ctx);
+        }
+      });
 
   @Override
   public void setUp() throws Exception {
@@ -107,7 +104,7 @@ public abstract class BrowserTestCase extends CajaTestCase {
 
   @Override
   public void tearDown() throws Exception {
-    cajaStatic.clear();
+    localServer.getCajaStatic().clear();
     setTestBuildVersion(null);
     super.tearDown();
   }
@@ -116,69 +113,8 @@ public abstract class BrowserTestCase extends CajaTestCase {
     mwwd.stop();
   }
 
-  /**
-   * Start a local web server on the port specified by portNumber().
-   */
-  protected void startLocalServer() {
-    server = new Server(portNumber());
-
-    // static file serving for tests
-    final ResourceHandler resource_handler = new ResourceHandler();
-    resource_handler.setResourceBase(".");
-
-    // caja (=playground for now) server under /caja directory
-    final String subdir = "/caja";
-    final ContextHandler caja = new ContextHandler(subdir);
-    {
-      // TODO(kpreid): deploy the already-configured war instead of manually
-      // plumbing
-      final String service = "/cajole";
-
-      // cajoling service -- Servlet setup code gotten from
-      // <http://docs.codehaus.org/display/JETTY/Embedding+Jetty> @ 2010-06-30
-      Context servlets = new Context(server, "/", Context.NO_SESSIONS);
-      servlets.addServlet(
-        new ServletHolder(
-          new CajolingServlet(
-            new CajolingService(BuildInfo.getInstance(),
-                                "http://localhost:" + portNumber() +
-                                    subdir + service))),
-        service);
-
-      // Hook for subclass to add more servlets
-      addServlets(servlets);
-
-      final HandlerList handlers = new HandlerList();
-      handlers.setHandlers(new Handler[] {
-          cajaStatic,
-          servlets,
-          new DefaultHandler()});
-      caja.setHandler(handlers);
-    }
-
-    final HandlerList handlers = new HandlerList();
-    handlers.setHandlers(new Handler[] {
-        resource_handler,
-        caja,
-        new DefaultHandler()});
-    server.setHandler(handlers);
-
-    try {
-      server.start();
-    } catch (Exception e) {
-      fail("Starting the local web server failed!");
-    }
-  }
-
-  /**
-   * Stop the local web server
-   */
-  protected void stopLocalServer() {
-    try {
-      server.stop();
-    } catch (Exception e) {
-      // the server will be turned down when the test exits
-    }
+  protected RewritingResourceHandler getCajaStatic() {
+    return localServer.getCajaStatic();
   }
 
   /**
@@ -192,20 +128,6 @@ public abstract class BrowserTestCase extends CajaTestCase {
     testBuildVersion = version;
   }
 
-  /**
-   * The RewritingResourceHandler used for static files.
-   */
-  protected RewritingResourceHandler getCajaStatic() {
-    return cajaStatic;
-  }
-
-  /**
-   * The port the local web server will run on.
-   */
-  protected int portNumber() {
-    return 8000;
-  }
-
   private static final String START_AND_WAIT_FLAG =
       "caja.BrowserTestCase.startAndWait";
   private static final long START_AND_WAIT_MILLIS =
@@ -215,10 +137,10 @@ public abstract class BrowserTestCase extends CajaTestCase {
    * Start the web server and browser, go to pageName, call driveBrowser(driver,
    * pageName), and then clean up.
    */
-  protected void runBrowserTest(String pageName) {
+  protected void runBrowserTest(String pageName) throws Exception {
     if (checkHeadless()) return;  // TODO: print a warning here?
-    startLocalServer();
-    String testUrl = ("http://localhost:" + portNumber()
+    localServer.start();
+    String testUrl = ("http://localhost:" + portNumber
                       + "/ant-lib/com/google/caja/plugin/"
                       + pageName);
     if (System.getProperty(START_AND_WAIT_FLAG) != null) {
@@ -248,26 +170,27 @@ public abstract class BrowserTestCase extends CajaTestCase {
       // Note that if the tests fail, this will not be reached and the window
       // will not be closed. This is useful for debugging test failures.
     } finally {
-      stopLocalServer();
+      localServer.stop();
     }
   }
 
-  protected void runTestDriver(String testDriver) {
+  protected void runTestDriver(String testDriver) throws Exception {
     runTestDriver(testDriver, false);
     runTestDriver(testDriver, true);
   }
-
-  protected void runTestCase(String testCase) {
+  
+  protected void runTestCase(String testCase) throws Exception {
     runTestCase(testCase, false);
     runTestCase(testCase, true);
   }
 
-  protected void runTestDriver(String testDriver, boolean es5) {
+  protected void runTestDriver(String testDriver, boolean es5)
+      throws Exception {
     runBrowserTest("browser-test-case.html?es5=" + es5
         + "&test-driver=" + testDriver);
   }
 
-  protected void runTestCase(String testCase, boolean es5) {
+  protected void runTestCase(String testCase, boolean es5) throws Exception {
     runBrowserTest("browser-test-case.html?es5=" + es5
         + "&test-case=" + testCase);
   }

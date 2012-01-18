@@ -69,6 +69,10 @@ function SESFrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker) {
       domado.plugin_dispatchToHandler;
 
   var frameGroup = {
+
+    makeDefensibleObject___: makeDefensibleObject,
+    makeDefensibleFunction___: makeDefensibleFunction,
+
     tame: tamingMembrane.tame,
     untame: tamingMembrane.untame,
     markReadOnlyRecord: tamingMembrane.markTameAsReadOnlyRecord,
@@ -88,6 +92,16 @@ function SESFrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker) {
   return frameGroup;
 
   //----------------
+
+  function makeDefensibleObject(descriptors) {
+    return Object.seal(Object.create(Object.prototype, descriptors));
+  }
+
+  function makeDefensibleFunction(f) {
+    return Object.freeze(function() {
+      return f.apply(USELESS, Array.prototype.slice.call(arguments, 0));
+    });
+  }
 
   function applyFunction(f, dis, args) {
     return f.apply(dis, args);

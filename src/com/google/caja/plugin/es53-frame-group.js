@@ -68,6 +68,10 @@ function ES53FrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker) {
       makeDomadoRuleBreaker());
 
   var frameGroup = {
+  
+    makeDefensibleObject___: ___.makeDefensibleObject,
+    makeDefensibleFunction___: ___.makeDefensibleFunction,  
+  
     tame: tamingMembrane.tame,
     untame: tamingMembrane.untame,
     markReadOnlyRecord: tamingMembrane.markTameAsReadOnlyRecord,

@@ -33,23 +33,17 @@ public abstract class GWTBeansTestCase extends GWTTestCase {
     // allows inspection of the property descriptor, to test the internals of
     // the structure that the generated taming class creates.
     $wnd.caja = {
-      iframe: {
-        contentWindow: {
-          ___: {
-            makeDefensibleObject: function(attrs) {
-              return {
-                defensible: defensibleMarker,
-                attrs: attrs
-              };
-            },
-            makeDefensibleFunction: function(f) {
-              return {
-                defensible: defensibleMarker,
-                f: f
-              };
-            }
-          }
-        }
+      makeDefensibleObject___: function(attrs) {
+        return {
+          defensible: defensibleMarker,
+          attrs: attrs
+        };
+      },
+      makeDefensibleFunction___: function(f) {
+        return {
+          defensible: defensibleMarker,
+          f: f
+        };
       }
     };
 

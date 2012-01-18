@@ -12,10 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.caja.plugin;
+package com.google.caja.util;
 
 import com.google.caja.SomethingWidgyHappenedError;
-import com.google.caja.util.Maps;
 import org.mortbay.jetty.handler.ResourceHandler;
 import org.mortbay.resource.FileResource;
 import org.mortbay.resource.Resource;

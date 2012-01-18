@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.caja.plugin;
+package com.google.caja.util;
 
 import org.mortbay.resource.Resource;
 

@@ -280,8 +280,7 @@ public class TamingGenerator {
       vals.add(getPropertyDescriptorForProperty(pd));
     }
     return QuasiBuilder.substV(
-        "var w = $wnd.caja.iframe.contentWindow;" +
-        "return w.___.makeDefensibleObject({ @keys*: @vals* });",
+        "return $wnd.caja.makeDefensibleObject___({ @keys*: @vals* });",
         "keys",  new ParseTreeNodeContainer(keys),
         "vals", new ParseTreeNodeContainer(vals));
   }
@@ -291,7 +290,7 @@ public class TamingGenerator {
       throws UnableToCompleteException {
     return (Expression) QuasiBuilder.substV(""
         + "({"
-        + "  value: w.___.makeDefensibleFunction(function(_) {"
+        + "  value: $wnd.caja.makeDefensibleFunction___(function(_) {"
         + "    var dispatchTable = @dispatchTable;"
         + "    return @dispatch()(frame, dispatchTable, arguments);"
         + "  }),"
@@ -500,7 +499,7 @@ public class TamingGenerator {
     Expression get = (pd.readMethod == null) ?
         new Reference(new Identifier(FilePosition.UNKNOWN, UNDEFINED)) :
         (Expression) QuasiBuilder.substV(""
-            + "w.___.makeDefensibleFunction(function () {"
+            + "$wnd.caja.makeDefensibleFunction___(function () {"
             + "  return @taming.getJso(frame, bean.@methodRef());"
             + "})",
             "taming", getTamingObject(pd.readMethod.getReturnType()),
@@ -508,7 +507,7 @@ public class TamingGenerator {
     Expression set = (pd.writeMethod == null) ?
         new Reference(new Identifier(FilePosition.UNKNOWN, UNDEFINED)) :
         (Expression) QuasiBuilder.substV(""
-            + "w.___.makeDefensibleFunction(function (arg) {"
+            + "$wnd.caja.makeDefensibleFunction___(function (arg) {"
             + "  bean.@methodRef(@taming.getBean(frame, arg));"
             + "})",
             "taming", getTamingObject(
