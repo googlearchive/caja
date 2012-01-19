@@ -140,26 +140,27 @@ public final class PipelineMaker {
 
   public static final Planner.PlanState CSS = makePrecond(
       "css", "when CSS can appear on the input.");
+  public static final Planner.PlanState CSS_INLINED = makePrecond(
+      "css+inlined", "instead of css if no @import statements in the inputs.");
+
   public static final Planner.PlanState JS = makePrecond(
       "js", "when JavaScript can appear on the input.");
+
   public static final Planner.PlanState HTML = makePrecond(
       "html", "when HTML can appear on the input.");
   public static final Planner.PlanState HTML_XMLNS = makePrecond(
       "html+xmlns", "instead of html if no un-namespaced DOMs on the input.");
-  private static final Planner.PlanState HTML_ABSURI_XMLNS = makeInner(
-      "html+absuri+xmlns");
-  private static final Planner.PlanState PRECAJOLED = makeGoal(
-      "precajoled", "marker indicating precajoled JS was substituted");
+
+  public static final Planner.PlanState OPT_OPENTEMPLATE = makePrecond(
+      "opt+opentemplate", "to desugar open(Template(...)) calls.");
+
   private static final Planner.PlanState HTML_STATIC = makeInner(
       "html+static");
   private static final Planner.PlanState HTML_STATIC_STRIPPED = makeInner(
       "html+static+stripped");
   private static final Planner.PlanState CSS_NAMESPACED = makeInner(
       "css+namespaced");
-  public static final Planner.PlanState CSS_INLINED = makePrecond(
-      "css+inlined", "instead of css if no @import statements in the inputs.");
-  public static final Planner.PlanState OPT_OPENTEMPLATE = makePrecond(
-      "opt+opentemplate", "to desugar open(Template(...)) calls.");
+
   public static final Planner.PlanState HTML_SAFE_STATIC = makeGoal(
       "html+safe+static",
       "to output HTML.  Not exclusive with cajoled_module.");
@@ -172,17 +173,13 @@ public final class PipelineMaker {
       "instead of cajoled_module if you want debug symbols.");
   public static final Planner.PlanState SANITY_CHECK = makeGoal(
       "sanity_check", "reports errors due to ERRORs, not just FATAL_ERRORS.");
-  public static final Planner.PlanState REWROTE_FLASH = makeGoal(
-      "rewrote_flash", "marker indicating flash embeds were rewritten");
 
   /** The default preconditions for a {@code PluginCompiler} pipeline. */
-  public static final Planner.PlanState DEFAULT_PRECONDS = CSS
-      .with(HTML).with(JS);
+  public static final Planner.PlanState DEFAULT_PRECONDS = HTML;
 
   /** The default goals of a {@code PluginCompiler} pipeline. */
   public static final Planner.PlanState DEFAULT_GOALS = ONE_CAJOLED_MODULE
-      .with(HTML_SAFE_STATIC).with(SANITY_CHECK).with(REWROTE_FLASH)
-      .with(PRECAJOLED);
+      .with(HTML_SAFE_STATIC).with(SANITY_CHECK);
 
   private static List<Tool> makeTools(Planner.PlanState goals) {
     return Arrays.asList(
@@ -195,36 +192,26 @@ public final class PipelineMaker {
         new Tool() {
           public void operate(PlanInputs in, List<Pipeline.Stage<Jobs>> out) {
             out.add(new ResolveUriStage(in.htmlSchema));
-          }
-        }.given(HTML_XMLNS).produces(HTML_ABSURI_XMLNS),
-
-        new Tool() {
-          public void operate(PlanInputs in, List<Pipeline.Stage<Jobs>> out) {
             PluginMeta meta = in.moduleManager.getPluginMeta();
             out.add(new PrecajoleRewriteStage(
                 meta.getPrecajoleMap(), meta.getPrecajoleMinify()));
-          }
-        }.given(HTML_ABSURI_XMLNS)
-         .produces(HTML_ABSURI_XMLNS).produces(PRECAJOLED),
-
-        new Tool() {
-          public void operate(PlanInputs in, List<Pipeline.Stage<Jobs>> out) {
             out.add(new RewriteHtmlStage(in.htmlSchema, in.cache));
+            out.add(new RewriteFlashStage());
           }
-        }.given(HTML_ABSURI_XMLNS)
-         .produces(CSS).produces(JS).produces(HTML_STATIC),
-
-        new Tool() {
-          public void operate(PlanInputs in, List<Pipeline.Stage<Jobs>> out) {
-            out.add(new InlineCssImportsStage());
-          }
-        }.given(CSS).produces(CSS_INLINED),
+        }.given(HTML_XMLNS)
+         .produces(HTML_STATIC).produces(CSS).produces(JS),
 
         new Tool() {
           public void operate(PlanInputs in, List<Pipeline.Stage<Jobs>> out) {
             out.add(new SanitizeHtmlStage(in.htmlSchema));
           }
         }.given(HTML_STATIC).produces(HTML_STATIC_STRIPPED),
+
+        new Tool() {
+          public void operate(PlanInputs in, List<Pipeline.Stage<Jobs>> out) {
+            out.add(new InlineCssImportsStage());
+          }
+        }.given(CSS).produces(CSS_INLINED),
 
         new Tool() {
           public void operate(PlanInputs in, List<Pipeline.Stage<Jobs>> out) {
@@ -235,16 +222,17 @@ public final class PipelineMaker {
 
         new Tool() {
           public void operate(PlanInputs in, List<Pipeline.Stage<Jobs>> out) {
+            out.add(new HtmlToJsStage(in.cssSchema, in.htmlSchema));
+          }
+        }.given(HTML_STATIC_STRIPPED).given(CSS_NAMESPACED)
+         .produces(JS),
+
+        new Tool() {
+          public void operate(PlanInputs in, List<Pipeline.Stage<Jobs>> out) {
             out.add(new HtmlToBundleStage(in.cssSchema, in.htmlSchema));
           }
         }.given(HTML_STATIC_STRIPPED).given(CSS_NAMESPACED)
          .produces(JS).produces(HTML_SAFE_STATIC),
-
-        new Tool() {
-          public void operate(PlanInputs in, List<Pipeline.Stage<Jobs>> out) {
-            out.add(new HtmlToJsStage(in.cssSchema, in.htmlSchema));
-          }
-        }.given(HTML_STATIC_STRIPPED).given(CSS_NAMESPACED).produces(JS),
 
         new Tool() {
           public void operate(PlanInputs in, List<Pipeline.Stage<Jobs>> out) {
@@ -278,14 +266,7 @@ public final class PipelineMaker {
             out.add(new CheckForErrorsStage());
           }
         }.given(goals).exceptNotGiven(SANITY_CHECK)
-         .produces(goals).produces(SANITY_CHECK),
-
-        new Tool() {
-          public void operate(PlanInputs in, List<Pipeline.Stage<Jobs>> out) {
-            out.add(new RewriteFlashStage());
-          }
-        }.given(HTML_STATIC)
-         .produces(HTML_STATIC).produces(JS).produces(REWROTE_FLASH)
+         .produces(goals).produces(SANITY_CHECK)
     );
   }
 
