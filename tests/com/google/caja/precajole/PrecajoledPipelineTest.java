@@ -23,7 +23,6 @@ import com.google.caja.plugin.PluginCompiler;
 import com.google.caja.plugin.PluginMeta;
 import com.google.caja.plugin.UriFetcher;
 import com.google.caja.plugin.UriPolicy;
-import com.google.caja.precajole.PrecajoleMap;
 import com.google.caja.reporting.TestBuildInfo;
 import com.google.caja.util.CajaTestCase;
 import com.google.caja.util.Join;
@@ -32,19 +31,25 @@ public class PrecajoledPipelineTest extends CajaTestCase {
 
   public final void testPretty() throws Exception {
     PluginCompiler compiler = makeCompiler(false);
-    addHtml(compiler, "<script src='data:banana'></script>");
+    addHtml(compiler,
+        "<script src='data:banana'></script>"
+        + "<script src='data:capricorn'></script>");
     assertTrue(compiler.run());
     String js = render(compiler.getJavascript());
     assertContains(js, "'precajoled': 'data:banana false'");
+    assertContains(js, "'precajoled': 'data:capricorn false'");
     assertNoWarnings();
   }
 
   public final void testMinified() throws Exception {
     PluginCompiler compiler = makeCompiler(true);
-    addHtml(compiler, "<script src='data:banana'></script>");
+    addHtml(compiler,
+        "<script src='data:banana'></script>"
+        + "<script src='data:capricorn'></script>");
     assertTrue(compiler.run());
     String js = render(compiler.getJavascript());
     assertContains(js, "'precajoled': 'data:banana true'");
+    assertContains(js, "'precajoled': 'data:capricorn true'");
     assertNoWarnings();
   }
 

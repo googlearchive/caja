@@ -1,0 +1,13 @@
+<!-- see light.xml for description -->
+<precajole-spec>
+  <precajole file="jquery/1.6.4/jquery-1.6.4.js">
+    <uri>http://ajax.googleapis.com/ajax/libs/jquery/1.6.4/jquery.js</uri>
+    <uri>http://ajax.googleapis.com/ajax/libs/jquery/1.6.4/jquery.min.js</uri>
+    <uri>http://ajax.googleapis.com/ajax/libs/jquery/1.6/jquery.js</uri>
+    <uri>http://ajax.googleapis.com/ajax/libs/jquery/1.6/jquery.min.js</uri>
+    <uri>http://ajax.googleapis.com/ajax/libs/jquery/1/jquery.js</uri>
+    <uri>http://ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js</uri>
+    <uri>http://code.jquery.com/jquery-1.6.4.js</uri>
+    <uri>http://code.jquery.com/jquery-1.6.4.min.js</uri>
+  </precajole>
+</precajole-spec>

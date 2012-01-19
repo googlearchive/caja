@@ -25,6 +25,11 @@ import com.google.caja.reporting.BuildInfo;
 public class ES53BrowserTest extends BrowserTestCase {
   private final String bv = BuildInfo.getInstance().getBuildVersion();
 
+  public final void testPrecajole() throws Exception {
+    // Only relevant to es53.
+    runTestCase("es53-test-precajole-guest.html", false);
+  }
+
   public final void testCajaJsInvocations() throws Exception {
     runTestDriver("es53-test-cajajs-invocation.js");
   }

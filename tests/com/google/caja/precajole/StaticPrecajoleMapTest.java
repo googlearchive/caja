@@ -22,27 +22,28 @@ import com.google.caja.util.CajaTestCase;
 
 public class StaticPrecajoleMapTest extends CajaTestCase {
 
-  private static String JQUERY = "http://code.jquery.com/jquery-1.6.4.js";
+  private static String CANARY1 =
+      "http://caja.appspot.com/imaginary-1/canary1.js";
 
   // TODO(felix8a): fails when running in eclipse
   public final void testJunitPretty() throws Exception {
     PrecajoleMap pm = StaticPrecajoleMap.getInstance();
-    CajoledModule cm = pm.lookupUri(JQUERY, false);
+    CajoledModule cm = pm.lookupUri(CANARY1, false);
     assertNotNull(cm);
     String result = render(cm);
     assertContains(result, "cajolerVersion");
-    assertContains(result, "jQuery");
+    assertContains(result, "canary1");
     assertContains(result, "    ");
   }
 
   // TODO(felix8a): fails when running in eclipse
   public final void testJunitMinified() throws Exception {
     PrecajoleMap pm = StaticPrecajoleMap.getInstance();
-    CajoledModule cm = pm.lookupUri(JQUERY, true);
+    CajoledModule cm = pm.lookupUri(CANARY1, true);
     assertNotNull(cm);
     String result = render(cm);
-    assertContains(result, "jQuery");
-    assertNotContains(result, "    ");
+    assertContains(result, "canary1");
+    assertNotContains(result, "  ");
   }
 
   public final void testUnknownUri() throws Exception {

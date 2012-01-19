@@ -136,6 +136,7 @@
     <pathelement path="${third_party}/java/emma/emma.jar"/>
     <path refid="classpath.tests.compile"/>
     <pathelement path="${instr}/classes"/>
+    <pathelement path="${lib}/precajole"/>
     <!-- Must be last for coverage to work -->
     <path refid="classpath.run"/>
   </path>
@@ -210,13 +211,13 @@
   </target>
 
   <target name="brtest" description="Run just browser tests.">
-    <!-- ModuleSystemTest first, because it fails more quickly -->
     <antcall target="runtests">
       <param name="test.filter">ModuleSystemTest</param>
       <param name="runtests.shouldCache">false</param>
     </antcall>
     <antcall target="runtests">
       <param name="test.filter">ES53BrowserTest</param>
+      <param name="runtests.shouldCache">false</param>
     </antcall>
   </target>
 
@@ -493,7 +494,7 @@
     </copy>
   </target>
 
-  <target name="pluginc" depends="PluginCompiler,precajole,tools"
+  <target name="pluginc" depends="PluginCompiler,tools,precajole"
    description="Build the plugin compiler and other main classes">
     <javac destdir="${lib}" debug="true" target="1.5" source="1.5">
       <src path="${src}"/>
@@ -593,7 +594,7 @@
   </target>
 
   <target name="jars-no-src"
-      depends="pluginc,MinifiedJs,CajolingServlet"
+      depends="pluginc, MinifiedJs, CajolingServlet"
       description="Place all jars needed to run the cajoler under ${jars}">
     <copy todir="${jars}">
       <fileset dir="${third_party}/java/jakarta_commons">
@@ -944,8 +945,7 @@
     </replace>
   </target>
 
-  <target name="AllTests"
-   depends="playground,CajoledTests">
+  <target name="AllTests" depends="playground,CajoledTests">
     <!-- TODO(kpreid): that this copies to ${lib} means the contents of
          pluginc.jar depends on whether AllTests was built, which is bad. -->
     <javac destdir="${lib}" debug="true" target="1.5" source="1.5">
@@ -1318,6 +1318,7 @@
       </fileset>
       <fileset dir="${jars}">
         <include name="htmlparser.jar" />
+        <include name="precajole.jar" />
       </fileset>
       <fileset dir="${third_party}/java/xerces/">
         <include name="xercesImpl.jar" />
@@ -1788,8 +1789,6 @@
               out="${src.flash}/tests/BridgeOblivious.swf"/>
   </target>
 
-  <property name="3pp.jquery" value="${third_party}/precajole/jquery"/>
-
   <target name="Precajoler" depends="PluginCompiler">
     <javac destdir="${lib}" debug="true" target="1.5" source="1.5">
       <src path="${src}"/>
@@ -1802,24 +1801,15 @@
              classpathref="classpath.run" />
   </target>
 
-  <target name="precajole" depends="Precajoler" unless="precajole.skip">
-    <precajole to="${lib.caja}/precajole/data">
-      <source file="${3pp.jquery}/1.6.4/jquery-1.6.4.js">
-        http://ajax.googleapis.com/ajax/libs/jquery/1.6.4/jquery.js
-        http://ajax.googleapis.com/ajax/libs/jquery/1.6.4/jquery.min.js
-        http://ajax.googleapis.com/ajax/libs/jquery/1.6/jquery.js
-        http://ajax.googleapis.com/ajax/libs/jquery/1.6/jquery.min.js
-        http://ajax.googleapis.com/ajax/libs/jquery/1/jquery.js
-        http://ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js
-        http://code.jquery.com/jquery-1.6.4.js
-        http://code.jquery.com/jquery-1.6.4.min.js
-        https://ajax.googleapis.com/ajax/libs/jquery/1.6.4/jquery.js
-        https://ajax.googleapis.com/ajax/libs/jquery/1.6.4/jquery.min.js
-        https://ajax.googleapis.com/ajax/libs/jquery/1.6/jquery.js
-        https://ajax.googleapis.com/ajax/libs/jquery/1.6/jquery.min.js
-        https://ajax.googleapis.com/ajax/libs/jquery/1/jquery.js
-        https://ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js
-      </source>
-    </precajole>
+  <property name="precajole" value="${third_party}/precajole"/>
+
+  <target name="precajole" depends="precajole-light" unless="precajole.skip">
+    <precajole spec="${precajole}/heavy.xml" dest="${lib}/precajole" />
+    <jar destfile="${jars}/precajole.jar" basedir="${lib}/precajole" />
+  </target>
+
+  <target name="precajole-light" depends="Precajoler">
+    <precajole spec="${precajole}/light.xml" dest="${lib}/precajole" />
+    <jar destfile="${jars}/precajole.jar" basedir="${lib}/precajole" />
   </target>
 </project>

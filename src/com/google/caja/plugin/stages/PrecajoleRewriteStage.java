@@ -57,7 +57,9 @@ public class PrecajoleRewriteStage implements Stage<Jobs> {
 
   private void rewriteChildren(Jobs jobs, Node node) {
     Node c = node.getFirstChild();
-    for (; c != null; c = c.getNextSibling()) {
+    Node next = null;
+    for (; c != null; c = next) {
+      next = c.getNextSibling();
       if (!rewriteElement(jobs, c)) {
         rewriteChildren(jobs, c);
       }

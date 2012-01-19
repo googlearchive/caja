@@ -53,15 +53,15 @@ import org.apache.commons.codec.binary.Hex;
 
 public class StaticPrecajoleMap implements PrecajoleMap {
 
-  public static String PATH = "com/google/caja/precajole/data/";
-  public static String INDEX_NAME = "index.dat";
+  private static String SUBDIR_PATH = "com/google/caja/precajole/data/";
+  private static String INDEX_NAME = "index.dat";
 
   public static StaticPrecajoleMap getInstance() {
     return InstanceHolder.instance;
   }
 
   private static class InstanceHolder {
-    static StaticPrecajoleMap instance = new StaticPrecajoleMap(PATH);
+    static StaticPrecajoleMap instance = new StaticPrecajoleMap("");
   }
 
   private static class Entry implements Serializable {
@@ -100,15 +100,15 @@ public class StaticPrecajoleMap implements PrecajoleMap {
   private final String dir;
   private final Index index;
 
-  public StaticPrecajoleMap(File dir) {
-    this(dir.toString());
+  public StaticPrecajoleMap(File baseDir) {
+    this(baseDir.toString());
   }
 
-  public StaticPrecajoleMap(String dir) {
-    if (!dir.equals("") && !dir.endsWith("/")) {
-      dir += "/";
+  public StaticPrecajoleMap(String baseDir) {
+    if (!baseDir.equals("") && !baseDir.endsWith("/")) {
+      baseDir += "/";
     }
-    this.dir = dir;
+    this.dir = baseDir + SUBDIR_PATH;
     this.index = readIndex();
   }
 
@@ -194,6 +194,7 @@ public class StaticPrecajoleMap implements PrecajoleMap {
 
   private void save(String id, byte[] data) {
     try {
+      new File(dir).mkdirs();
       FileOutputStream o = new FileOutputStream(new File(dir, id));
       o.write(data);
       o.close();
