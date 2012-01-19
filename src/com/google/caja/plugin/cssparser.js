@@ -269,7 +269,9 @@ var parseCssDeclarations;
       var value = [], valuelen = 0;
       for (var j = s; j < e; ++j) {
         tok = toks[j];
-        if (tok !== ' ') { value[valuelen++] = tok; }
+        if (tok !== ' ') {
+          value[valuelen++] = tok;
+        }
       }
       // One of the following is now true:
       // (1) e is flush with the end of the tokens as in <... style="x:y">.

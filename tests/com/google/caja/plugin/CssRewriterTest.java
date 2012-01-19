@@ -25,12 +25,18 @@ import com.google.caja.parser.Visitor;
 import com.google.caja.parser.css.CssTree;
 import com.google.caja.parser.html.ElKey;
 import com.google.caja.parser.html.Namespaces;
+import com.google.caja.parser.js.ArrayConstructor;
+import com.google.caja.parser.js.StringLiteral;
+import com.google.caja.parser.quasiliteral.QuasiBuilder;
 import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.util.CajaTestCase;
+import com.google.caja.util.Executor;
+import com.google.caja.util.Join;
 import com.google.caja.util.Lists;
 import com.google.caja.util.MoreAsserts;
 import com.google.caja.util.Name;
+import com.google.caja.util.RhinoTestBed;
 import com.google.caja.util.Sets;
 
 import java.net.URI;
@@ -146,6 +152,7 @@ public class CssRewriterTest extends CajaTestCase {
     // Properties that are on DOMita's HISTORY_INSENSITIVE_STYLE_WHITELIST
     // should not be allowed in any rule that correlates with the :visited
     // pseudo selector.
+    // TODO: How is this a whitelist then?
     mq.getMessages().clear();
     runTest(
         "a:visited { color:blue; float:left; _float:left; *float:left }",
@@ -482,6 +489,86 @@ public class CssRewriterTest extends CajaTestCase {
     }
 
     assertEquals(msg, golden, render(t));
+
+    // Check that the server side rewriter is consistent with the client side
+    // rewriter.
+    // TODO: rewrite rules as well.
+    if (!allowSubstitutions) {
+      ArrayConstructor[] propArrays = new ArrayConstructor[2];
+      int i = 0;
+      for (CssTree tree : new CssTree[] { css(fromString(css)), t }) {
+        final List<StringLiteral> namesAndValues = Lists.newArrayList();
+        tree.acceptPreOrder(new Visitor() {
+          @Override
+          public boolean visit(AncestorChain<?> ac) {
+            String namePrefix;
+            CssTree.PropertyDeclaration d;
+            if (ac.node instanceof CssTree.UserAgentHack) {
+              namePrefix = "*";
+              d = ac.cast(CssTree.UserAgentHack.class).node.getDeclaration();
+            } else if (ac.node instanceof CssTree.PropertyDeclaration) {
+              namePrefix = "";
+              d = ac.cast(CssTree.PropertyDeclaration.class).node;
+            } else {
+              return true;
+            }
+            namesAndValues.add(StringLiteral.valueOf(
+                FilePosition.UNKNOWN,
+                namePrefix
+                + d.getProperty().getPropertyName().getCanonicalForm()));
+            namesAndValues.add(StringLiteral.valueOf(
+                FilePosition.UNKNOWN, render(d.getExpr())));
+            return false;
+          }
+        }, null);
+        propArrays[i++] = new ArrayConstructor(
+            FilePosition.UNKNOWN, namesAndValues);
+      }
+      ArrayConstructor input = propArrays[0];
+      ArrayConstructor want = propArrays[1];
+      String testJs = render(QuasiBuilder.substV(
+          Join.join("\n",
+              "(function () {",
+              "  var input = @input;",
+              "  var want = @want;",
+              "  var urlRewriter = function (url) { return null; };",
+              "  var actual = {}, golden = {};",
+              "  for (var i = 0; i < input.length; i += 2) {",
+              "    var tokens = lexCss(input[i+1]), name = input[i];",
+              "    sanitizeCssProperty(",
+              // Handle user agent hacks and undefined properties.
+              "        cssSchema[name.replace(/^[_*]/, '')] || {},",
+              "        tokens, urlRewriter);",
+              "    golden[name] = '';",
+              "    actual[name] = tokens.join(' ');",
+              "  }",
+              "  for (var i = 0; i < want.length; i += 2) {",
+              "    golden[want[i]] = want[i + 1];",
+              "  }",
+              "  golden = JSON.stringify(golden);",
+              "  actual = JSON.stringify(actual);",
+              "  if (golden !== actual) {",
+              "    throw new Error(golden + '\\n\\t!=\\n' + actual);",
+              "  }",
+              "})();"),
+          "input", input,
+          "want", want));
+      try {
+        RhinoTestBed.runJs(
+            new Executor.Input(getClass(), "css-defs.js"),
+            new Executor.Input(getClass(), "csslexer.js"),
+            new Executor.Input(getClass(), "sanitizecss.js"),
+            new Executor.Input(testJs, getName()));
+      } catch (RuntimeException ex) {
+        if (ex.getMessage().contains("}\n\t!=\n{")) {
+          // JavaScript inconsistencies are just advisory for now.
+          // TODO: start enforcing these.
+          System.err.println("WARNING:" + getName() + ":" + ex.getMessage());
+        } else {
+          throw ex;
+        }
+      }
+    }
   }
 
   private void assertCallsUriRewriterWithPropertyPart(

@@ -432,6 +432,7 @@
       <input file="${src.caja}/plugin/html-sanitizer.js"/>
       <input file="${src.caja}/plugin/bridal.js"/>
       <input file="${src.caja}/plugin/csslexer.js"/>
+      <input file="${src.caja}/plugin/sanitizecss.js"/>
       <input file="${src.caja}/plugin/cssparser.js"/>
       <input file="${src.caja}/plugin/domado.js"/>
       <input file="${src.caja}/flash/caja-flash.js"/>
@@ -780,6 +781,7 @@
       <input file="${src.caja}/plugin/html-sanitizer.js"/>
       <input file="${src.caja}/plugin/html-emitter.js"/>
       <input file="${src.caja}/plugin/csslexer.js"/>
+      <input file="${src.caja}/plugin/sanitizecss.js"/>
       <input file="${src.caja}/plugin/cssparser.js"/>
       <input file="${src.caja}/plugin/bridal.js"/>
       <input file="${src.caja}/plugin/domado.js"/>
@@ -899,6 +901,7 @@
       <input file="${src.caja}/plugin/html-sanitizer.js"/>
       <input file="${src.caja}/plugin/html-emitter.js"/>
       <input file="${src.caja}/plugin/csslexer.js"/>
+      <input file="${src.caja}/plugin/sanitizecss.js"/>
       <input file="${src.caja}/plugin/cssparser.js"/>
       <input file="${src.caja}/plugin/bridal.js"/>
       <input file="${src.caja}/plugin/domado.js"/>
@@ -956,6 +959,56 @@
       <include name="**/caja/plugin/BrowserTestCaseStub.java"/>
       <compilerarg line="-Xlint:unchecked"/>
     </javac>
+
+    <!-- Lint the ES5/3 case -->
+    <genrule class="com.google.caja.ancillary.linter.Linter"
+     unless="${tools.ancillary.disable}">
+      <input file="${lib.caja}/cajita-module-orig.js"/>
+      <input file="${lib.caja}/cajita-promise.js"/>
+      <input file="${src.caja}/plugin/bridal.js"/>
+      <input file="${lib.caja}/plugin/caja.js"/>
+      <input file="${lib.caja}/plugin/css-defs.js"/>
+      <input file="${src.caja}/plugin/csslexer.js"/>
+      <input file="${src.caja}/plugin/sanitizecss.js"/>
+      <input file="${src.caja}/plugin/cssparser.js"/>
+      <input file="${src.caja}/plugin/domado.js"/>
+      <input file="${src.caja}/plugin/caja-iframe-build-version.js"/>
+      <input file="${src.caja}/plugin/caja-iframe-done.js"/>
+      <input file="${src.caja}/plugin/html-emitter.js"/>
+      <input file="${src.caja}/plugin/html-sanitizer.js"/>
+      <input file="${lib.caja}/plugin/html4-defs.js"/>
+      <input file="${src.caja}/plugin/unicode.js"/>
+      <input file="${src.caja}/plugin/uri.js"/>
+      <input file="${src.caja}/flash/caja-flash.js"/>
+      <output file="${lib}/AllTests.Linter1.tstamp"/>
+    </genrule>
+
+    <!-- Lint the native-ES5 case -->
+    <genrule class="com.google.caja.ancillary.linter.Linter"
+     unless="${tools.ancillary.disable}">
+      <input file="${src.caja}/ses/useHTMLLogger.js"/>
+      <input file="${src.caja}/ses/logger.js"/>
+      <input file="${src.caja}/ses/repairES5.js"/>
+      <input file="${src.caja}/ses/WeakMap.js"/>
+      <input file="${src.caja}/ses/whitelist.js"/>
+      <input file="${src.caja}/ses/atLeastFreeVarNames.js"/>
+      <input file="${src.caja}/ses/startSES.js"/>
+      <input file="${src.caja}/ses/ejectorsGuardsTrademarks.js"/>
+      <input file="${src.caja}/ses/hookupSES.js"/>
+      <input file="${src.caja}/ses/hookupSESPlus.js"/>
+
+      <input file="${src.caja}/plugin/bridal.js"/>
+      <input file="${lib.caja}/plugin/css-defs.js"/>
+      <input file="${src.caja}/plugin/csslexer.js"/>
+      <input file="${src.caja}/plugin/sanitizecss.js"/>
+      <input file="${src.caja}/plugin/cssparser.js"/>
+      <input file="${src.caja}/plugin/domado.js"/>
+      <input file="${lib.caja}/plugin/html4-defs.js"/>
+      <input file="${src.caja}/plugin/unicode.js"/>
+      <input file="${src.caja}/plugin/uri.js"/>
+      <input file="${src.caja}/flash/caja-flash.js"/>
+      <output file="${lib}/AllTests.Linter2.tstamp"/>
+    </genrule>
 
     <copy todir="${lib}">
       <fileset dir="${tests}">
@@ -1039,6 +1092,7 @@
         <include name="**/caja/plugin/bridal.js"/>
         <include name="**/caja/plugin/caja-gadget.css"/>
         <include name="**/caja/plugin/csslexer.js"/>
+        <include name="**/caja/plugin/sanitizecss.js"/>
         <include name="**/caja/plugin/cssparser.js"/>
         <include name="**/caja/plugin/domado.js"/>
         <include name="**/caja/plugin/caja.js"/>
@@ -1139,6 +1193,7 @@
         <include name="taming-membrane.js" />
         <!-- TODO(ihab.awad): ??? -->
         <include name="csslexer.js"/>
+        <include name="sanitizecss.js"/>
         <include name="cssparser.js"/>
         <include name="domado.js" />
         <include name="html-emitter.js" />

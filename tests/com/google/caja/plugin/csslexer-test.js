@@ -958,3 +958,10 @@ jsunitRegister('testLex58', function testLex58() {
     '""');
   jsunit.pass();
 });
+
+jsunitRegister('testLex59', function testLex59() {
+  assertLexedCss(
+    'url()',
+    'url("")');
+  jsunit.pass();
+});

@@ -258,10 +258,11 @@
 
       var styleProps = [];
       (function () {
-        for (var styleProp in css.properties) {
-          if (!css.properties.hasOwnProperty(styleProp)) { continue; }
-          if (css.alternates.hasOwnProperty(styleProp)) {
-            var alternates = css.alternates[styleProp];
+        for (var styleProp in cssSchema) {
+         if (!cssSchema.hasOwnProperty(styleProp)) { continue; }
+         var schema = cssSchema[styleProp];
+         var alternates = schema.cssAlternates;
+          if (alternates) {
             for (var i = 0, n = alternates.length; i < n; ++i) {
               styleProps.push(alternates[i]);
             }

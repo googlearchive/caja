@@ -183,7 +183,7 @@ public class CssPropertyPatternsTest extends CajaTestCase {
   private String toPattern(String sig) {
     CssPropertyPatterns pp = new CssPropertyPatterns(
         CssSchema.getDefaultCss21Schema(mq));
-    return pp.cssPropertyToPattern(parseSignature(sig));
+    return pp.cssPropertyToPattern(parseSignature(sig), true).regex;
   }
 
   private ArrayConstructor toArrayList(String... values) {

@@ -26,13 +26,11 @@ import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.css.CssPropertySignature;
 import com.google.caja.parser.js.ArrayConstructor;
-import com.google.caja.parser.js.BooleanLiteral;
 import com.google.caja.parser.js.Declaration;
 import com.google.caja.parser.js.Expression;
 import com.google.caja.parser.js.Identifier;
 import com.google.caja.parser.js.IntegerLiteral;
 import com.google.caja.parser.js.MultiDeclaration;
-import com.google.caja.parser.js.ObjProperty;
 import com.google.caja.parser.js.ObjectConstructor;
 import com.google.caja.parser.js.Operation;
 import com.google.caja.parser.js.Operator;
@@ -55,6 +53,7 @@ import com.google.caja.util.Name;
 import com.google.caja.util.Pair;
 import com.google.caja.util.Sets;
 import com.google.caja.util.Strings;
+import com.google.common.collect.ImmutableMap;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -67,11 +66,14 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.EnumSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
+
+import javax.annotation.Nullable;
 
 /**
  * Operates on CSS property signatures to come up with a simple regular
@@ -79,10 +81,24 @@ import java.util.regex.Pattern;
  *
  * <p>
  * This class produces a javascript file like<pre>
- *   var css = {
- *       "background-image": /url("[^\"\\\(\)]+")\s+/i,
- *       clear: /(?:none|left|right|both|inherit)\s+/i,
- *       color: /(?:blue|red|green|fuschia)\s+/i
+ *   var CSS_PROP_BIT_x = ...;
+ *   // Sets of allowed literal tokens.
+ *   var CSS_LIT_GROUP = [["auto",...],...];
+ *   var CSS_REGEX = [/^...$/];
+ *   var cssSchema = {
+ *     "float": {
+ *       // Describe the kinds of tokens that can appear in the named
+ *       // property's value and any additional restrictions.
+ *       cssPropBits: CSS_PROP_BIT_x | CSS_PROP_BIT_y | ...,
+ *       // Aliases for the named property.
+ *       cssAlternates: ["cssFloat", "styleFloat"],
+ *       // Groups of literal values allowed.
+ *       cssLitGroup: [CSS_LIT_GROUP[1],CSS_LIT_GROUP[3],CSS_LIT_GROUP[16]],
+ *       // Matches any other tokens that can be part of the value including
+ *       // function calls like rgba(...).
+ *       cssExtra: CSS_REGEX[2]
+ *     },
+ *     ...
  *   };
  * </pre>
  *
@@ -90,40 +106,6 @@ import java.util.regex.Pattern;
  * The {@code css} map does not contain every property in the given
  * {@link CssSchema} since some cannot be matched efficiently by values.
  * See comments on {@code [ a || b ]*} constructs inline below.
- *
- * <h3>Differences from Server Side CSS</h3>
- * <p>
- * Nor does it contain every option matched by the server side CSS processor.
- * Specifically, it does not currently match<ul>
- *   <li>function calls, e.g. {@code rect(...)} and {@code rgb(...)}
- *   <li>the {@code unreserved-word} symbol used for font-families.
- *       Font families need to be quoted, e.g. {@code "Helvetica"}.
- *       The server side rewriter takes adjacent unreserved words and quotes
- *       them, but the goal of this pattern is to allow client-side validation,
- *       not rewriting.
- *   <li>quoted strings where URLs are allowed.  E.g. {@code background-image}
- *       does not match {@code "http://foo/myimage.com"}.
- *   <li>As noted above, string literals are not allowed as URLs, but the
- *       {@code url(...)} syntax is allowed, but only containing double-quoted
- *       strings.  E.g. {@code url(foo.gif)} is not allowed though
- *       {@code url("foo.gif")} is.
- * </ul>
- *
- * <h3>Whitespace Between Tokens</h3>
- * <p>
- * The patterns in the example above all end in {@code \s+}.  This simplifies
- * a lot of the patterns since a signature like {@code foo*} strictly translates
- * to the regular expression {@code /(foo(\s+foo)*)?/i}.  Even if we repeated
- * subexpressions, we would run into problems with the signature
- * {@code a [b | c? d]? e} which could translates to a regular expression but
- * only with non-local handling of whitespace around sub-expressions that can
- * be empty.
- *
- * <p>
- * Instead, we require every literal to be followed by one or more spaces.
- * We can then match against CSS padded with spaces, as in<pre>
- *   var isValid = css[cssPropertyName].test(cssText + ' ');
- * </pre>
  *
  * <h3>Program Flow</h3>
  * <p>
@@ -179,35 +161,43 @@ public class CssPropertyPatterns {
           Name.css("top"), Name.css("visibility"), Name.css("width"),
           Name.css("padding-left"), Name.css("padding-right"),
           Name.css("padding-top"), Name.css("padding-bottom"));
+  // TODO: Why is padding not included?  How was this derived?
 
   public CssPropertyPatterns(CssSchema schema) {
     this.schema = schema;
+  }
+
+  static class CssPropertyData {
+    final @Nullable String regex;
+    final EnumSet<CssPropBit> properties;
+    final Set<String> literals;
+
+    CssPropertyData(
+        @Nullable String regex, EnumSet<CssPropBit> properties,
+        Set<String> literals) {
+      this.regex = regex;
+      this.properties = properties;
+      this.literals = literals;
+    }
   }
 
   /**
    * Generates a regular expression for the given signature if a simple
    * regular expression exists.
    * @return null if no simple regular expression exists
-   *     or the text of a Javascript regular expression like "/foo\s+/i"
+   *     or the text of a JavaScript regular expression like "/foo\s+/i"
    *     that matches values of the given value with one or more trailing
    *     whitespace characters.
    *     If the color property only matched the literal "blue", the resulting
    *     pattern would match "blue ".
    */
-  public String cssPropertyToPattern(CssPropertySignature sig) {
-    JSRE p = cssPropertyToJSRE(sig);
-    if (p == null) { return null; }
-    StringBuilder out = new StringBuilder();
-    out.append('/');
-    p.optimize().render(out);
-    // Since all keywords are case insensitive and we never match text inside
-    // strings.
-    out.append("/i");
-    return out.toString();
+  public CssPropertyData cssPropertyToPattern(
+      CssPropertySignature sig, boolean complete) {
+    return new Inspector(complete).cssPropertyToPattern(sig);
   }
 
   public Pattern cssPropertyToJavaRegex(CssPropertySignature sig) {
-    JSRE p = cssPropertyToJSRE(sig);
+    JSRE p = new Inspector(true).inspect(sig);
     if (p == null) { return null; }
     StringBuilder out = new StringBuilder();
     p.render(out);
@@ -221,6 +211,7 @@ public class CssPropertyPatterns {
     final boolean identBefore;
 
     JSREBuilder(boolean identBefore, JSRE p) {
+      assert p != null;
       this.identBefore = identBefore;
       this.p = p;
     }
@@ -228,208 +219,349 @@ public class CssPropertyPatterns {
 
   private static final JSRE SPACES = JSRE.many(JSRE.raw("\\s"));
   private static final JSRE OPT_SPACES = JSRE.any(JSRE.raw("\\s"));
-
-  private JSRE cssPropertyToJSRE(CssPropertySignature sig) {
-    JSREBuilder b = sigToPattern(false, sig);
-    if (b == null) { return null; }
-    return JSRE.cat(JSRE.raw("^"), OPT_SPACES, b.p, OPT_SPACES, JSRE.raw("$"))
-        .optimize();
-  }
-
-  private JSREBuilder sigToPattern(
-      boolean identBefore, CssPropertySignature sig) {
-    // Dispatch to a set of handlers that either append balanced content to
-    // out, or append cruft and return null.
-    if (sig instanceof CssPropertySignature.LiteralSignature) {
-      return litToPattern(
-          identBefore, (CssPropertySignature.LiteralSignature) sig);
-    } else if (sig instanceof CssPropertySignature.RepeatedSignature) {
-      return repToPattern(
-          identBefore, (CssPropertySignature.RepeatedSignature) sig);
-    } else if (sig instanceof CssPropertySignature.PropertyRefSignature) {
-      return refToPattern(
-          identBefore, (CssPropertySignature.PropertyRefSignature) sig);
-    } else if (sig instanceof CssPropertySignature.SeriesSignature) {
-      return seriesToPattern(
-          identBefore, (CssPropertySignature.SeriesSignature) sig);
-    } else if (sig instanceof CssPropertySignature.SymbolSignature) {
-      return symbolToPattern(
-          identBefore, (CssPropertySignature.SymbolSignature) sig);
-    } else if (sig instanceof CssPropertySignature.SetSignature
-               || sig instanceof CssPropertySignature.ExclusiveSetSignature) {
-      return setToPattern(identBefore, sig);
-    } else if (sig instanceof CssPropertySignature.CallSignature) {
-      return callToPattern(
-          identBefore, (CssPropertySignature.CallSignature) sig);
-    }
-    return null;
-  }
-
-  private static JSREBuilder litToPattern(
-      boolean identBefore, CssPropertySignature.LiteralSignature lit) {
-    String litValue = lit.getValue();
-    // Match some trailing whitespace.
-    // Since some patterns can match nothing (e.g. foo*), we make sure that
-    // all positive matches are followed by token-breaking space.
-    // The pattern as a whole can then be matched against the value with one
-    // space added at the end.
-    boolean ident = isIdentChar(litValue.charAt(litValue.length() - 1));
-    JSRE p = JSRE.lit(litValue);
-    return new JSREBuilder(
-        ident, JSRE.cat(ident && identBefore ? SPACES : OPT_SPACES, p));
-  }
+  // When rendering to be used as part of the client side JS parser, we can
+  // rely on all CSS comments and space tokens to have been reduced to a single
+  // space character.
+  private static final JSRE SPACES_NORMALIZED = JSRE.many(JSRE.raw(" "));
+  private static final JSRE OPT_SPACES_NORMALIZED = JSRE.any(SPACES_NORMALIZED);
 
   private static boolean isIdentChar(char ch) {
     return CssLexer.isNmStart(ch) || ('0' <= ch && ch <= '9')
         || ch == '#' || ch == '.';
   }
 
-  private JSREBuilder repToPattern(
-      boolean identBefore, CssPropertySignature.RepeatedSignature sig) {
-    CssPropertySignature rep = sig.getRepeatedSignature();
-    if (rep instanceof CssPropertySignature.ExclusiveSetSignature) {
-      // The spec (http://www.w3.org/TR/REC-CSS1/#css1-properties) defines
-      // A double bar (A || B) means that either A or B or both must occur
-      // in any order.
-      // We convert [ a || b ] -> [a | b]+
-      return exclusiveToPattern(identBefore, rep);
-    }
-    JSREBuilder repeatedPattern = sigToPattern(identBefore, rep);
-    if (repeatedPattern == null) { return null; }
-    int min = sig.minCount;
-    int max = sig.maxCount;
-    if (repeatedPattern.identBefore == identBefore || max == 1) {
-      return new JSREBuilder(
-          repeatedPattern.identBefore, JSRE.rep(repeatedPattern.p, min, max));
-    } else {
-      JSREBuilder tail = sigToPattern(repeatedPattern.identBefore, rep);
-      if (min == 0) {
-        if (max != Integer.MAX_VALUE) { --max; }
-        return new JSREBuilder(
-            tail.identBefore,
-            JSRE.opt(
-                JSRE.cat(repeatedPattern.p, JSRE.rep(tail.p, 0, max))));
-      } else {
-        return new JSREBuilder(
-            tail.identBefore,
-            JSRE.cat(repeatedPattern.p, JSRE.rep(tail.p, min - 1, max)));
-      }
-    }
-  }
-
-  private final Bag<String> refsUsed = Bag.newHashBag();
-
-  private JSREBuilder refToPattern(
-      boolean identBefore, CssPropertySignature.PropertyRefSignature sig) {
-    refsUsed.incr(sig.getPropertyName().getCanonicalForm());
-    CssSchema.CssPropertyInfo p = schema.getCssProperty(sig.getPropertyName());
-    return p != null ? sigToPattern(identBefore, p.sig) : null;
-  }
-
-  private JSREBuilder seriesToPattern(
-      boolean identBefore, CssPropertySignature.SeriesSignature sig) {
-    List<JSRE> children = Lists.newArrayList();
-    for (CssPropertySignature child : sig.children()) {
-      JSREBuilder b = sigToPattern(identBefore, child);
-      if (b == null) { return null; }
-      children.add(b.p);
-      identBefore = b.identBefore;
-    }
-    return new JSREBuilder(identBefore, JSRE.cat(children));
-  }
-
   private static final Name COLOR = Name.css("color");
   private static final Name STANDARD_COLOR = Name.css("color-standard");
-  private JSREBuilder symbolToPattern(
-      boolean identBefore, CssPropertySignature.SymbolSignature sig) {
-    Name symbolName = sig.getValue();
-    refsUsed.incr(symbolName.getCanonicalForm());
-    JSRE builtinMatch = builtinToPattern(symbolName);
-    if (builtinMatch != null) {
-      String re = builtinMatch.toString();
-      boolean ident = isIdentChar(re.charAt(0));
-      boolean identAfter = isIdentChar(re.charAt(re.length() - 1));
+
+  private class Inspector {
+    final EnumSet<CssPropBit> props;
+    final Set<String> literals;
+    /**
+     * True to include literals and patterns inferrable from props in the regex
+     * so as to produce a complete regular expression instead of one focused
+     * on just matching the portions of a normalized tokens set not matched
+     * by property bits, or literal groups.
+     */
+    final boolean complete;
+    private final Bag<String> refsUsed;
+
+    final JSRE spaces, optSpaces;
+
+    Inspector(boolean complete) {
+      this(complete, Bag.<String>newHashBag());
+    }
+
+    private Inspector(boolean complete, Bag<String> refsUsed) {
+      this.props = EnumSet.noneOf(CssPropBit.class);
+      this.literals = Sets.newHashSet();
+      this.complete = complete;
+      this.refsUsed = refsUsed;
+      this.spaces = complete ? SPACES : SPACES_NORMALIZED;
+      this.optSpaces = complete ? OPT_SPACES : OPT_SPACES_NORMALIZED;
+    }
+
+    /**
+     * Generates a regular expression for the given signature if a simple
+     * regular expression exists.
+     * @return null if no simple regular expression exists
+     *     or the text of a JavaScript regular expression like "/^foo$/i"
+     *     that matches values of the given value.
+     *     If the color property only matched the literal "blue", the resulting
+     *     pattern would match "blue ".
+     */
+    CssPropertyData cssPropertyToPattern(CssPropertySignature sig) {
+      JSRE p = inspect(sig);
+      String regex = null;
+      if (p != null) {
+        StringBuilder out = new StringBuilder();
+        out.append('/');
+        p.render(out);
+        // Since all keywords are case insensitive and we never match text
+        // inside strings.
+        out.append("/i");
+        regex = out.toString();
+      }
+      return new CssPropertyData(
+          regex, EnumSet.copyOf(props), Sets.newHashSet(literals));
+    }
+
+    JSRE inspect(CssPropertySignature sig) {
+      this.literals.clear();
+      this.props.clear();
+      JSREBuilder b = sigToPattern(false, sig);
+      if (b == null) { return null; }
+      // TODO(mikesamuel): are the optSpaces really necessary?
+      return JSRE.cat(JSRE.raw("^"), optSpaces, b.p, optSpaces, JSRE.raw("$"))
+          .optimize();
+    }
+
+    private JSREBuilder sigToPattern(
+        boolean identBefore, CssPropertySignature sig) {
+      // Dispatch to a set of handlers that either append balanced content to
+      // out, or append cruft and return null.
+      if (sig instanceof CssPropertySignature.LiteralSignature) {
+        return litToPattern(
+            identBefore, (CssPropertySignature.LiteralSignature) sig);
+      } else if (sig instanceof CssPropertySignature.RepeatedSignature) {
+        return repToPattern(
+            identBefore, (CssPropertySignature.RepeatedSignature) sig);
+      } else if (sig instanceof CssPropertySignature.PropertyRefSignature) {
+        return refToPattern(
+            identBefore, (CssPropertySignature.PropertyRefSignature) sig);
+      } else if (sig instanceof CssPropertySignature.SeriesSignature) {
+        return seriesToPattern(
+            identBefore, (CssPropertySignature.SeriesSignature) sig);
+      } else if (sig instanceof CssPropertySignature.SymbolSignature) {
+        return symbolToPattern(
+            identBefore, (CssPropertySignature.SymbolSignature) sig);
+      } else if (sig instanceof CssPropertySignature.SetSignature
+                 || sig instanceof CssPropertySignature.ExclusiveSetSignature) {
+        return setToPattern(identBefore, sig);
+      } else if (sig instanceof CssPropertySignature.CallSignature) {
+        return callToPattern(
+            identBefore, (CssPropertySignature.CallSignature) sig);
+      }
+      return null;
+    }
+
+    private JSREBuilder litToPattern(
+        boolean identBefore, CssPropertySignature.LiteralSignature lit) {
+      String litValue = lit.getValue();
+      // Match some trailing whitespace.
+      // Since some patterns can match nothing (e.g. foo*), we make sure that
+      // all positive matches are followed by token-breaking space.
+      // The pattern as a whole can then be matched against the value with one
+      // space added at the end.
+      literals.add(litValue);
+      if (!complete) { return null; }
+      boolean ident = isIdentChar(litValue.charAt(litValue.length() - 1));
+      JSRE p = JSRE.lit(litValue);
+      if (p == null) { return null; }
       return new JSREBuilder(
-          identAfter,
-          JSRE.cat(identBefore && ident ? SPACES : OPT_SPACES, builtinMatch));
+          ident, JSRE.cat(ident && identBefore ? spaces : optSpaces, p));
     }
-    CssSchema.SymbolInfo s = schema.getSymbol(symbolName);
-    if (COLOR.equals(symbolName)) {
-      // Don't blow up the regexs by including the entire X11 color set over
-      // and over.
-      CssSchema.SymbolInfo standard = schema.getSymbol(STANDARD_COLOR);
-      if (standard != null) { s = standard; }
-    }
-    return s != null ? sigToPattern(identBefore, s.sig) : null;
-  }
 
-  private JSREBuilder setToPattern(
-      boolean identBefore, CssPropertySignature sig) {
-    if (sig.children().isEmpty()) { return null; }
-    List<JSRE> children = Lists.newArrayList();
-    boolean identAfter = false;
-    for (CssPropertySignature child : sig.children()) {
-      JSREBuilder b = sigToPattern(identBefore, child);
-      if (b != null) {
-        children.add(b.p);
-        identAfter |= b.identBefore;
+    private JSREBuilder repToPattern(
+        boolean identBefore, CssPropertySignature.RepeatedSignature sig) {
+      CssPropertySignature rep = sig.getRepeatedSignature();
+      if (rep instanceof CssPropertySignature.ExclusiveSetSignature) {
+        // The spec (http://www.w3.org/TR/REC-CSS1/#css1-properties) defines
+        // A double bar (A || B) means that either A or B or both must occur
+        // in any order.
+        // We convert [ a || b ] -> [a | b]+
+        // So according to the spec,
+        //    a
+        //    a b
+        //    b
+        //    b a
+        // are all ok, but
+        //    a a
+        // is not, though it is allowed by our regular expression to avoid
+        // exploding the size of the regular expression or requiring complicated
+        // backtracking.
+        return exclusiveToPattern(identBefore, rep);
       }
-    }
-    if (children.isEmpty()) { return null; }
-    return new JSREBuilder(identAfter, JSRE.alt(children));
-  }
-
-  private JSREBuilder callToPattern(
-      boolean identBefore, CssPropertySignature.CallSignature sig) {
-    Iterator<? extends CssPropertySignature> sigs = sig.children().iterator();
-    List<JSRE> children = Lists.newArrayList();
-    JSREBuilder fnPattern = sigToPattern(identBefore, sigs.next());
-    if (fnPattern == null) { return null; }
-    children.add(fnPattern.p);
-    children.add(JSRE.lit("("));
-    boolean first = true;
-    while (sigs.hasNext()) {
-      if (first) {
-        first = false;
+      JSREBuilder repeatedPattern = sigToPattern(identBefore, rep);
+      if (repeatedPattern == null) { return null; }
+      int min = sig.minCount;
+      int max = sig.maxCount;
+      if (repeatedPattern.identBefore == identBefore || max == 1) {
+        return new JSREBuilder(
+            repeatedPattern.identBefore, JSRE.rep(repeatedPattern.p, min, max));
       } else {
-        children.add(JSRE.lit(","));
+        JSREBuilder tail = sigToPattern(repeatedPattern.identBefore, rep);
+        if (max != Integer.MAX_VALUE) { --max; }
+        JSRE spaceSeparated = JSRE.cat(
+            repeatedPattern.p, JSRE.rep(tail.p, min != 0 ? min - 1 : 0, max));
+        if (min == 0) {
+          spaceSeparated = JSRE.opt(spaceSeparated);
+        }
+        return new JSREBuilder(tail.identBefore, spaceSeparated);
       }
-      JSREBuilder actual = sigToPattern(false, sigs.next());
-      if (actual == null) { return null; }
-      children.add(actual.p);
     }
-    children.add(JSRE.lit(")"));
-    return new JSREBuilder(false, JSRE.cat(children));
+
+    private JSREBuilder refToPattern(
+        boolean identBefore, CssPropertySignature.PropertyRefSignature sig) {
+      refsUsed.incr(sig.getPropertyName().getCanonicalForm());
+      CssSchema.CssPropertyInfo p = schema.getCssProperty(
+          sig.getPropertyName());
+      return p != null ? sigToPattern(identBefore, p.sig) : null;
+    }
+
+    private JSREBuilder seriesToPattern(
+        boolean identBefore, CssPropertySignature.SeriesSignature sig) {
+      List<JSRE> children = Lists.newArrayList();
+      for (CssPropertySignature child : sig.children()) {
+        JSREBuilder b = sigToPattern(identBefore, child);
+        if (children != null) {
+          if (b != null) {
+            children.add(b.p);
+            identBefore = b.identBefore;
+          } else if (complete) {
+            children = null;
+          }
+        }
+      }
+      if (children == null) { return null; }
+      return new JSREBuilder(identBefore, JSRE.cat(children));
+    }
+
+    private JSREBuilder symbolToPattern(
+        boolean identBefore, CssPropertySignature.SymbolSignature sig) {
+      Name symbolName = sig.getValue();
+      refsUsed.incr(symbolName.getCanonicalForm());
+      JSRE builtinMatch = builtinToPattern(symbolName);
+      if (builtinMatch != null) {
+        String re = builtinMatch.toString();
+        boolean ident = isIdentChar(re.charAt(0));
+        boolean identAfter = isIdentChar(re.charAt(re.length() - 1));
+        // TODO(mikesamuel):
+        // This whole way of computing identAfter for regular expressions is
+        // horribly broken, and the lookup table should just have a bit along
+        // with the regex.
+        //
+        // Felix points out:
+        // Aren't ident and identAfter going to be wrong for builtins like
+        // <integer>?
+        //
+        // example, the spec for text-shadow has
+        //   <length>{2,4}
+        // which gets translated to
+        //   <length> (?: \s* <length>){1,4}
+        //
+        // which means "00" with no spaces will count as two matches of
+        // <length>.
+        //
+        // This seems harmless, so I'm not sure it's worth fixing, but maybe
+        // add a note.
+        return new JSREBuilder(
+            identAfter,
+            JSRE.cat(identBefore && ident ? spaces : optSpaces, builtinMatch));
+      }
+      CssSchema.SymbolInfo s = schema.getSymbol(symbolName);
+      if (COLOR.equals(symbolName) && complete) {
+        // Don't blow up the regexs by including the entire X11 color set over
+        // and over.
+        CssSchema.SymbolInfo standard = schema.getSymbol(STANDARD_COLOR);
+        if (standard != null) { s = standard; }
+      }
+      return s != null ? sigToPattern(identBefore, s.sig) : null;
+    }
+
+    private JSREBuilder setToPattern(
+        boolean identBefore, CssPropertySignature sig) {
+      if (sig.children().isEmpty()) { return null; }
+      List<JSRE> children = Lists.newArrayList();
+      boolean identAfter = false;
+      for (CssPropertySignature child : sig.children()) {
+        JSREBuilder b = sigToPattern(identBefore, child);
+        if (b != null) {
+          children.add(b.p);
+          identAfter |= b.identBefore;
+        }
+      }
+      if (children.isEmpty()) { return null; }
+      return new JSREBuilder(identAfter, JSRE.alt(children));
+    }
+
+    private JSREBuilder callToPattern(
+        boolean identBefore, CssPropertySignature.CallSignature sig) {
+      Iterator<? extends CssPropertySignature> sigs = sig.children().iterator();
+      List<JSRE> children = Lists.newArrayList();
+      // Use a complete inspector so we get regular expressions for calls in
+      // the output because they cannot be matched by other means.  Do not
+      // record as literals literals appearing in the call body.
+      Inspector inspector = new Inspector(true, refsUsed);
+      JSREBuilder fnPattern = inspector.sigToPattern(identBefore, sigs.next());
+      if (fnPattern == null) { return null; }
+      children.add(fnPattern.p);
+      children.add(JSRE.lit("("));
+      boolean first = true;
+      while (sigs.hasNext()) {
+        if (first) {
+          first = false;
+        } else {
+          children.add(JSRE.lit(","));
+        }
+        JSREBuilder actual = inspector.sigToPattern(false, sigs.next());
+        if (actual == null) { return null; }
+        children.add(actual.p);
+      }
+      children.add(optSpaces);
+      children.add(JSRE.lit(")"));
+      return new JSREBuilder(false, JSRE.cat(children));
+    }
+
+    /**
+     * (a||b) means (a | b | a b | b a) but we implement it as (a | b){1,2}
+     * which admits (a a | b b) too.
+     */
+    private JSREBuilder exclusiveToPattern(
+        boolean identBefore, CssPropertySignature sig) {
+      if (sig.children().isEmpty()) { return null; }
+      List<JSRE> head = Lists.newArrayList();
+      boolean identAfterHead = false;
+      for (CssPropertySignature child : sig.children()) {
+        JSREBuilder b = sigToPattern(identBefore, child);
+        if (b != null) {
+          head.add(b.p);
+          identAfterHead = b.identBefore;
+        }
+      }
+      List<JSRE> tail = Lists.newArrayList();
+      boolean identAfterTail = false;
+      for (CssPropertySignature child : sig.children()) {
+        JSREBuilder b = sigToPattern(identAfterHead, child);
+        if (b != null) {
+          tail.add(b.p);
+          identAfterTail = b.identBefore;
+        }
+      }
+      if (tail.isEmpty()) { return null; }
+      return new JSREBuilder(
+          identAfterTail,
+          JSRE.cat(JSRE.alt(head),
+                   JSRE.rep(JSRE.alt(tail), 0, tail.size() - 1)));
+    }
+
+    private JSRE builtinToPattern(Name name) {
+      String key = name.getCanonicalForm();
+      int colon = key.lastIndexOf(':');
+      String baseKey = colon >= 0 ? key.substring(0, colon) : key;
+      CssPropBit b = BUILTIN_PROP_BITS.get(baseKey);
+      if (b != null) {
+        this.props.add(b);
+        // The negative bit allows for some schemas to reject positioning
+        // outside the parents bounding boxes, and negative offsets for clip
+        // regions.
+        if (b == CssPropBit.QUANTITY && colon < 0) {
+          // TODO: maybe tighten this condition
+          this.props.add(CssPropBit.NEGATIVE_QUANTITY);
+        }
+        if (!complete) { return null; }
+      }
+      JSRE p = BUILTINS.get(key);
+      if (p == null && key != baseKey) {
+        p = BUILTINS.get(baseKey);
+      }
+      return p;
+    }
   }
 
-  // TODO(jasvir): Clarify the meaning of (a||b)* and modify this function
-  // if necessary to reflect it.
-  private JSREBuilder exclusiveToPattern(
-      boolean identBefore, CssPropertySignature sig) {
-    if (sig.children().isEmpty()) { return null; }
-    List<JSRE> head = Lists.newArrayList();
-    boolean identAfterHead = false;
-    for (CssPropertySignature child : sig.children()) {
-      JSREBuilder b = sigToPattern(identBefore, child);
-      if (b != null) {
-        head.add(b.p);
-        identAfterHead = b.identBefore;
-      }
-    }
-    List<JSRE> tail = Lists.newArrayList();
-    boolean identAfterTail = false;
-    for (CssPropertySignature child : sig.children()) {
-      JSREBuilder b = sigToPattern(identAfterHead, child);
-      if (b != null) {
-        tail.add(b.p);
-        identAfterTail = b.identBefore;
-      }
-    }
-    if (tail.isEmpty()) { return null; }
-    return new JSREBuilder(
-        identAfterTail,
-        JSRE.cat(JSRE.alt(head), JSRE.rep(JSRE.alt(tail), 0, tail.size() - 1)));
-  }
+  private static final Map<String, CssPropBit> BUILTIN_PROP_BITS
+      = ImmutableMap.<String, CssPropBit>builder()
+        .put("number", CssPropBit.QUANTITY)
+        .put("percentage", CssPropBit.QUANTITY)
+        .put("angle", CssPropBit.QUANTITY)
+        .put("frequency", CssPropBit.QUANTITY)
+        .put("length", CssPropBit.QUANTITY)
+        .put("time", CssPropBit.QUANTITY)
+        .put("integer", CssPropBit.QUANTITY)
+        .put("hex-color", CssPropBit.HASH_VALUE)
+        .put("specific-voice", CssPropBit.QSTRING_CONTENT)
+        .put("family-name", CssPropBit.QSTRING_CONTENT)
+        .put("uri", CssPropBit.QSTRING_URL)
+        .build();
 
   private static final Map<String, JSRE> BUILTINS;
   static {
@@ -469,6 +601,8 @@ public class CssPropertyPatterns {
         .put("number", JSRE.alt(zero, signedNum).optimize())
         .put("percentage:0,", JSRE.alt(zero, JSRE.cat(unsignedNum, pct))
              .optimize())
+        .put("percentage:0,100", JSRE.alt(zero, JSRE.cat(unsignedNum, pct))
+             .optimize())
         .put("percentage", JSRE.alt(zero, JSRE.cat(signedNum, pct)).optimize())
         .put("angle:0", JSRE.alt(zero, JSRE.cat(unsignedNum, angleUnits)))
         .put("angle", JSRE.alt(zero, JSRE.cat(signedNum, angleUnits)))
@@ -479,6 +613,7 @@ public class CssPropertyPatterns {
         .put("time", JSRE.alt(zero, JSRE.cat(signedNum, timeUnits)))
         .put("integer", JSRE.cat(JSRE.opt(minus), digits))
         .put("integer:0,", digits)
+        .put("integer:0,255", digits)
         .put("hex-color", JSRE.cat(hash, JSRE.rep(JSRE.rep(hex, 3, 3), 1, 2)))
         .put("specific-voice", quotedIdentifiers)
         .put("family-name", quotedIdentifiers)
@@ -487,17 +622,6 @@ public class CssPropertyPatterns {
             JSRE.many(JSRE.raw("[^()\\\\\"\\r\\n]")),
             JSRE.lit("\")")))
         .create();
-  }
-  private JSRE builtinToPattern(Name name) {
-    String key = name.getCanonicalForm();
-    JSRE p = BUILTINS.get(key);
-    if (p == null) {
-      int comma = key.lastIndexOf(':');
-      if (comma >= 0) {
-        p = BUILTINS.get(key.substring(0, comma));
-      }
-    }
-    return p;
   }
 
   public static void generatePatterns(CssSchema schema, Appendable out)
@@ -516,43 +640,46 @@ public class CssPropertyPatterns {
     Set<String> commonSubstrings = Sets.newLinkedHashSet();
     commonSubstrings.add("|left|center|right");
     commonSubstrings.add("|top|center|bottom");
+    Inspector inspector = pp.new Inspector(false);
     // Seed with some known constant strings.
     for (Name commonSymbol : new Name[] {
         // Derived by counting symbol names into a bag in symbolToPattern above.
-        COLOR, Name.css("length"), Name.css("length:0,"),
+        COLOR, Name.css("standard-color"),
+        Name.css("length"), Name.css("length:0,"),
         Name.css("border-style"), Name.css("border-width"),
         Name.css("bg-position"), Name.css("bg-size"),
-        Name.css("percentage"), Name.css("percentage:0,"), Name.css("uri"),
-        Name.css("repeat-style") }) {
+        Name.css("percentage"), Name.css("percentage:0,"),
+        Name.css("uri"), Name.css("repeat-style") }) {
       CssPropertySignature.SymbolSignature sig
           = (CssPropertySignature.SymbolSignature)
             CssPropertySignature.Parser.parseSignature(
                 "<" + commonSymbol + ">");
-      JSREBuilder p = pp.symbolToPattern(false, sig);
+      JSREBuilder p = inspector.symbolToPattern(false, sig);
       if (p != null) {
-        commonSubstrings.add("" + withoutSpacesOrZero(p.p.optimize()));
+        String commonSubstring = withoutSpacesOrZero(p.p.optimize()).toString();
+        if (commonSubstring.length() != 0) {
+          commonSubstrings.add(commonSubstring);
+        }
       }
     }
     Map<String, int[]> regexPoolMap = Maps.newHashMap();
     Map<String, Integer> commonSubstringMap = Maps.newLinkedHashMap();
-    List<Pair<CssSchema.CssPropertyInfo, String>> patterns
+    List<Pair<CssSchema.CssPropertyInfo, CssPropertyData>> propData
         = Lists.newArrayList();
     List<Expression> stringPool = Lists.newArrayList();
     List<Expression> regexPool = Lists.newArrayList();
 
     for (CssSchema.CssPropertyInfo prop : props) {
-      String pattern = pp.cssPropertyToPattern(prop.sig);
       if (!schema.isPropertyAllowed(prop.name)) { continue; }
-      if (pattern != null && !"(?:inherit\\s)".equals(pattern)) {
-        patterns.add(Pair.pair(prop, pattern));
-      }
+      propData.add(Pair.pair(prop, inspector.cssPropertyToPattern(prop.sig)));
     }
 
     for (String s : commonSubstrings) {
       int n = 0;
-      for (Pair<CssSchema.CssPropertyInfo, String> p : patterns) {
-        String pattern = p.b;
-        for (int index = -1; (index = pattern.indexOf(s, index + 1)) >= 0;) {
+      for (Pair<CssSchema.CssPropertyInfo, CssPropertyData> p : propData) {
+        String pattern = p.b.regex;
+        if (pattern == null) { continue; }
+        for (int index = -1; (index = pattern.indexOf(s, index + s.length())) >= 0;) {
           ++n;
         }
       }
@@ -563,8 +690,9 @@ public class CssPropertyPatterns {
       }
     }
 
-    for (Pair<CssSchema.CssPropertyInfo, String> p : patterns) {
-      String pattern = p.b;
+    for (Pair<CssSchema.CssPropertyInfo, CssPropertyData> p : propData) {
+      String pattern = p.b.regex;
+      if (pattern == null) { continue; }
       // Keep track of which patterns appear more than once so we can use
       // a constant pool.
       int[] pool = regexPoolMap.get(pattern);
@@ -578,71 +706,123 @@ public class CssPropertyPatterns {
 
     Statement poolDecls = null;
     if (!stringPool.isEmpty()) {
-      poolDecls = new Declaration(
-          unk, new Identifier(unk, "s"), new ArrayConstructor(unk, stringPool));
+      poolDecls = joinDeclarations(
+          poolDecls,
+          new Declaration(unk, new Identifier(unk, "s"),
+              new ArrayConstructor(unk, stringPool)));
     }
     if (!regexPool.isEmpty()) {
-      Declaration d = new Declaration(
-          unk, new Identifier(unk, "c"), new ArrayConstructor(unk, regexPool));
-      poolDecls = (poolDecls == null
-          ? d
-          : new MultiDeclaration(
-              unk, Arrays.asList((Declaration) poolDecls, d)));
+      poolDecls = joinDeclarations(
+          poolDecls,
+          new Declaration(unk, new Identifier(unk, "c"),
+              new ArrayConstructor(unk, regexPool)));
     }
-    List<ObjProperty> members = Lists.newArrayList();
-    List<ObjProperty> alternates = Lists.newArrayList();
-    for (Pair<CssSchema.CssPropertyInfo, String> p : patterns) {
-      int poolIndex = regexPoolMap.get(p.b)[0];
-      Expression re = poolIndex < 0
-          ? makeRegexp(commonSubstringMap, p.b)
-          : (Expression) QuasiBuilder.substV(
-              "c[@i]", "i", new IntegerLiteral(unk, poolIndex));
-      StringLiteral name = StringLiteral.valueOf(
-          unk, p.a.name.getCanonicalForm());
-      members.add(new ValueProperty(name, re));
 
-      String dom2property = propertyNameToDom2Property(p.a.name);
+    // Given keyword sets like
+    // [['red','blue','green','transparent','inherit',;none'],
+    //  ['red','blue','green'],
+    //  ['inherit','none','bold','bolder']]
+    // recognize that ['red','blue','green'] probably occurs frequently and
+    // create a partition like
+    // [['red','blue','green'],['bold','bolder'],['inherit',none'],
+    //  ['transparent']]
+    // and then store indices into the array of partition elements with
+    // CSS property names so they can be unioned as needed.
+    List<Set<String>> literalSets = Lists.newArrayList();
+    for (Pair<CssSchema.CssPropertyInfo, CssPropertyData> p : propData) {
+      literalSets.add(p.b.literals);
+    }
+    Partitions.Partition<String> litPartition = Partitions.partition(
+        literalSets, String.class, null);
+    List<ArrayConstructor> literalSetArrs = Lists.newArrayList();
+    for (int[] literalIndices : litPartition.partition) {
+      List<StringLiteral> literalArr = Lists.newArrayList();
+      for (int litIndex : literalIndices) {
+        literalArr.add(StringLiteral.valueOf(
+            unk, litPartition.universe[litIndex]));
+      }
+      literalSetArrs.add(new ArrayConstructor(unk, literalArr));
+    }
+    if (!literalSetArrs.isEmpty()) {
+      poolDecls = joinDeclarations(
+          poolDecls,
+          new Declaration(unk, new Identifier(unk, "L"),
+              new ArrayConstructor(unk, literalSetArrs)));
+    }
+
+    List<ValueProperty> cssSchemaProps = Lists.newArrayList();
+    StringLiteral regexObjKey = new StringLiteral(unk, "cssExtra");
+    StringLiteral alternatesObjKey = new StringLiteral(unk, "cssAlternates");
+    StringLiteral propbitsObjKey = new StringLiteral(unk, "cssPropBits");
+    StringLiteral litgroupObjKey = new StringLiteral(unk, "cssLitGroup");
+
+    for (int propIndex = 0, n = propData.size(); propIndex < n; ++propIndex) {
+      Pair<CssSchema.CssPropertyInfo, CssPropertyData> d
+          = propData.get(propIndex);
+      CssSchema.CssPropertyInfo prop = d.a;
+      CssPropertyData data = d.b;
+
+      ObjectConstructor dataObj = new ObjectConstructor(unk);
+
+      String regex = data.regex;
+      if (regex != null) {
+        int poolIndex = regexPoolMap.get(regex)[0];
+        Expression re = poolIndex < 0
+            ? makeRegexp(commonSubstringMap, regex)
+            : (Expression) QuasiBuilder.substV(
+                "c[@i]", "i", new IntegerLiteral(unk, poolIndex));
+        dataObj.appendChild(new ValueProperty(regexObjKey, re));
+      }
+
+      String dom2property = propertyNameToDom2Property(prop.name);
       ArrayConstructor altNames = null;
-      for (String altDom2Property : p.a.dom2properties) {
+      for (String altDom2Property : prop.dom2properties) {
         if (altDom2Property.equals(dom2property)) { continue; }
         if (altNames == null) {
           altNames = new ArrayConstructor(
               unk, Collections.<Expression>emptyList());
-          alternates.add(new ValueProperty(
-              StringLiteral.valueOf(unk, dom2property), altNames));
         }
         altNames.appendChild(StringLiteral.valueOf(unk, altDom2Property));
       }
+      if (altNames != null) {
+        dataObj.appendChild(new ValueProperty(alternatesObjKey, altNames));
+      }
+
+      cssSchemaProps.add(new ValueProperty(
+          unk, StringLiteral.valueOf(unk, prop.name.getCanonicalForm()),
+          dataObj));
+
+      int propBits = 0;
+      for (CssPropBit b : data.properties) {
+        propBits |= b.jsValue;
+      }
+      if (HISTORY_INSENSITIVE_STYLE_WHITELIST.contains(prop.name)) {
+        propBits |= CssPropBit.HISTORY_INSENSITIVE.jsValue;
+      }
+      dataObj.appendChild(
+          new ValueProperty(propbitsObjKey, new IntegerLiteral(unk, propBits)));
+
+      List<Expression> litGroups = Lists.newArrayList();
+      for (int groupIndex : litPartition.unions[propIndex]) {
+        litGroups.add((Expression) QuasiBuilder.substV(
+            "L[@i]", "i", new IntegerLiteral(unk, groupIndex)));
+      }
+      if (!litGroups.isEmpty()) {
+        dataObj.appendChild(new ValueProperty(
+            litgroupObjKey, new ArrayConstructor(unk, litGroups)));
+      }
     }
 
-    List<ObjProperty> historyInsensitiveStyleWhitelistEls
-        = Lists.newArrayList();
-    for (Name propertyName : HISTORY_INSENSITIVE_STYLE_WHITELIST) {
-      historyInsensitiveStyleWhitelistEls.add(new ValueProperty(
-          StringLiteral.valueOf(unk, propertyName.getCanonicalForm()),
-          new BooleanLiteral(unk, true)));
-    }
-
-    ObjectConstructor cssPropConstructor = new ObjectConstructor(unk, members);
-    ObjectConstructor alternateNames = new ObjectConstructor(unk, alternates);
-    ObjectConstructor historyInsensitiveStyleWhitelist
-        = new ObjectConstructor(unk, historyInsensitiveStyleWhitelistEls);
+    ObjectConstructor cssSchema = new ObjectConstructor(unk, cssSchemaProps);
 
     ParseTreeNode js = QuasiBuilder.substV(
         ""
-        + "var css = {"
-        + "  properties: (function () {"
-        + "    @poolDecls?;"
-        + "    return @cssPropConstructor;"
-        + "  })(),"
-        + "  alternates: @alternates,"
-        + "  HISTORY_INSENSITIVE_STYLE_WHITELIST: "
-        + "      @historyInsensitiveStyleWhitelist"
-        + "};",
+        + "var cssSchema = (function () {"
+        + "  @poolDecls?;"
+        + "  return @cssSchema;"
+        + "})();",
         "poolDecls", poolDecls,
-        "cssPropConstructor", cssPropConstructor,
-        "alternates", alternateNames,
-        "historyInsensitiveStyleWhitelist", historyInsensitiveStyleWhitelist);
+        "cssSchema", cssSchema);
     TokenConsumer tc = js.makeRenderer(out, null);
     js.render(new RenderContext(tc));
     tc.noMoreTokens();
@@ -691,6 +871,17 @@ public class CssPropertyPatterns {
     parts.add(StringLiteral.valueOf(FilePosition.UNKNOWN, pattern));
   }
 
+  private static Statement joinDeclarations(
+      @Nullable Statement decl, Declaration d) {
+    if (decl == null) { return d; }
+    if (decl instanceof Declaration) {
+      decl = new MultiDeclaration(
+          FilePosition.UNKNOWN, Arrays.asList((Declaration) decl));
+    }
+    ((MultiDeclaration) decl).appendChild(d);
+    return decl;
+  }
+
   /**
    * Spaces and zero tend to get moved/merged frequently during
    * regex optimization so don't consider them when doing common substring
@@ -735,8 +926,9 @@ public class CssPropertyPatterns {
   }
 
   public static class Builder implements BuildCommand {
-    public boolean build(List<File> inputs, List<File> deps, Map<String, Object> options,
-        File output) throws IOException {
+    public boolean build(List<File> inputs, List<File> deps,
+                         Map<String, Object> options, File output)
+        throws IOException {
       File symbolsAndPropertiesFile = null;
       File functionsFile = null;
       for (File input : inputs) {
@@ -789,16 +981,28 @@ public class CssPropertyPatterns {
 
       Writer out = new OutputStreamWriter(
           new FileOutputStream(output), Charsets.UTF_8.name());
-      String currentDate = "" + new Date();
-      if (currentDate.indexOf("*/") >= 0) {
-        throw new SomethingWidgyHappenedError("Date should not contain '*/'");
-      }
-      out.write("/* Copyright Google Inc.\n");
-      out.write(" * Licensed under the Apache Licence Version 2.0\n");
-      out.write(" * Autogenerated at " + currentDate + "\n");
-      out.write(" * @provides css\n");
-      out.write(" */\n");
       try {
+        String currentDate = "" + new Date();
+        if (currentDate.indexOf("*/") >= 0) {
+          throw new SomethingWidgyHappenedError("Date should not contain '*/'");
+        }
+        out.write("/* Copyright Google Inc.\n");
+        out.write(" * Licensed under the Apache Licence Version 2.0\n");
+        out.write(" * Autogenerated at " + currentDate + "\n");
+        out.write(" * \\@provides cssSchema");
+        for (CssPropBit b : CssPropBit.values()) {
+          out.write(", CSS_PROP_BIT_");
+          out.write(Strings.toUpperCase(b.name()));
+        }
+        out.write(" */\n");
+        for (CssPropBit b : CssPropBit.values()) {
+          out.write("/**\n * @const\n * @type {number}\n */\n");
+          out.write("var CSS_PROP_BIT_");
+          out.write(Strings.toUpperCase(b.name()));
+          out.write(" = ");
+          out.write(String.valueOf(b.jsValue));
+          out.write(";\n");
+        }
         generatePatterns(schema, out);
       } finally {
         out.close();

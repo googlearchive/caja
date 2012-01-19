@@ -113,6 +113,7 @@ abstract class JSRE {
     final int min, max;
 
     private Repetition(JSRE body, int min, int max) {
+      assert body != null && min >= 0 && max >= min;
       this.body = body;
       this.min = min;
       this.max = max;

@@ -160,6 +160,7 @@ class Partitions {
         elToIndex.put(universe[i], i);
       }
     }
+//  System.err.println("universe=" + Arrays.toString(universe));
 
     // Compute a table from sets that includes a row per input set.
     // The row is a sorted array slice of indices into universe.
@@ -205,7 +206,7 @@ class Partitions {
     // An ordered list of disjoint sets.
     List<ISlice> partition = Lists.newArrayList();
     // For each input sets, the indices of elements in partition that must be
-    // unioned to produce the corresponding set T as described in the javadoc.
+    // unioned to produce the corresponding set S' as described in the javadoc.
     ISlice[] unionIndices = new ISlice[nSets];
     for (int i = 0; i < nSets; ++i) {
       unionIndices[i] = new ISlice();
@@ -213,6 +214,11 @@ class Partitions {
     }
 
     while (nonZeroRows.count != 0) {
+//    System.err.println("Start");
+//    System.err.println("\tnonZeroRows=" + nonZeroRows);
+//    System.err.println("\tnonZeroCols=" + nonZeroCols);
+//    System.err.println("\tmatrix=" + Arrays.toString(matrix));
+//    System.err.println("\tpartition=" + partition);
       ISlice bestPartitionElement = null;
       for (int i = 0; i < nonZeroCols.count; ++i) {
         int el = nonZeroCols.els[i];
@@ -224,7 +230,9 @@ class Partitions {
             if (candidate == null) {
               candidate = r.clone();
             } else {
+//            String before = "" + r;
               candidate.preserve(r);
+//            System.err.println("\tFor " + el + ", with " + r + ", candidate=" + before + " -> " + candidate);
             }
           }
         }
@@ -249,12 +257,16 @@ class Partitions {
       int partitionIndex = partition.size();
       partition.add(bestPartitionElement);
 
+//    System.err.println("\t====\n\tbest=" + bestPartitionElement);
       nonZeroCols.subtract(bestPartitionElement);
+//    System.err.println("\tnonZeroCols<-" + nonZeroCols);
       int k = 0;
       for (int j = 0; j < nonZeroRows.count; ++j) {
         int rowIndex = nonZeroRows.els[j];
         ISlice r = matrix[rowIndex];
+//      String before = "" + r;
         boolean changed = r.subtract(bestPartitionElement);
+//      System.err.println("\trow " + rowIndex + "=" + before + "->" + r + (changed ? ", changed" : ", no change"));
         if (changed) {
           unionIndices[rowIndex]
               .els[unionIndices[rowIndex].count++] = partitionIndex;
@@ -267,6 +279,10 @@ class Partitions {
         }
       }
       nonZeroRows.count = k;
+
+//    System.err.println("\t====\n\tnonZeroRows <- " + nonZeroRows);
+//    System.err.println("\tnonZeroCols <- " + nonZeroCols);
+//    System.err.println("\tmatrix <- " + Arrays.toString(matrix));
 
       if (bestPartitionElement.count == 1) {
         // All candidates are equally bad, handle as long tail below.
