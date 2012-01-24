@@ -22,6 +22,7 @@ import com.google.gwt.core.ext.TreeLogger;
 import com.google.gwt.core.ext.TreeLogger.Type;
 import com.google.gwt.core.ext.UnableToCompleteException;
 import com.google.gwt.core.ext.typeinfo.JClassType;
+import com.google.gwt.core.ext.typeinfo.JField;
 import com.google.gwt.core.ext.typeinfo.JMethod;
 
 public final class GwtBeanIntrospector {
@@ -124,6 +125,9 @@ public final class GwtBeanIntrospector {
         return null;
       }
       @Override public JMethod[] getMethods() {
+        return null;
+      }
+      @Override public JField[] getPublicInstanceFields() {
         return null;
       }
     };

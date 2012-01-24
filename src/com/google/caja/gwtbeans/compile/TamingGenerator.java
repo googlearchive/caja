@@ -45,6 +45,7 @@ import com.google.gwt.core.ext.TreeLogger;
 import com.google.gwt.core.ext.TreeLogger.Type;
 import com.google.gwt.core.ext.UnableToCompleteException;
 import com.google.gwt.core.ext.typeinfo.JClassType;
+import com.google.gwt.core.ext.typeinfo.JField;
 import com.google.gwt.core.ext.typeinfo.JMethod;
 import com.google.gwt.core.ext.typeinfo.JPrimitiveType;
 import com.google.gwt.core.ext.typeinfo.JType;
@@ -278,6 +279,10 @@ public class TamingGenerator {
     for (GwtBeanPropertyDescriptor pd : beanInfo.getProperties()) {
       keys.add(new StringLiteral(FilePosition.UNKNOWN, pd.name));
       vals.add(getPropertyDescriptorForProperty(pd));
+    }
+    for (JField field : beanInfo.getPublicInstanceFields()) {
+      keys.add(new StringLiteral(FilePosition.UNKNOWN, field.getName()));
+      vals.add(getPropertyDescriptorForField(field));
     }
     return QuasiBuilder.substV(
         "return $wnd.caja.makeDefensibleObject___({ @keys*: @vals* });",
@@ -524,11 +529,47 @@ public class TamingGenerator {
         "set", set);
   }
 
+  private Expression getPropertyDescriptorForField(
+      JField field)
+      throws UnableToCompleteException {
+    Expression get =
+        (Expression) QuasiBuilder.substV(""
+            + "$wnd.caja.makeDefensibleFunction___(function () {"
+            + "  return @taming.getJso(frame, bean.@fieldRef);"
+            + "})",
+            "taming", getTamingObject(field.getType()),
+            "fieldRef", getFieldAccessor(field));
+    Expression set = field.isFinal() ?
+        new Reference(new Identifier(FilePosition.UNKNOWN, UNDEFINED)) :
+        (Expression) QuasiBuilder.substV(""
+            + "$wnd.caja.makeDefensibleFunction___(function (arg) {"
+            + "  bean.@fieldRef = @taming.getBean(frame, arg);"
+            + "})",
+            "taming", getTamingObject(field.getType()),
+            "fieldRef", getFieldAccessor(field));
+    return (Expression) QuasiBuilder.substV(
+        "({" +
+            "  get: @get," +
+            "  set: @set," +
+            "  enumerable: true," +
+            "  configurable: false" +
+            "})",
+        "get", get,
+        "set", set);
+  }
+
   private Reference getMethodAccessor(JMethod m) {
     return new Reference(new Identifier(
         FilePosition.UNKNOWN, m.getJsniSignature()));
   }
 
+  private Reference getFieldAccessor(JField field) {
+    return new Reference(new Identifier(
+        FilePosition.UNKNOWN,
+        "@" + field.getEnclosingType().getQualifiedSourceName() + "::"
+            + field.getName()));
+  }
+  
   public Reference getTamingGetterAccessor(JClassType beanType) {
     toGenerateTamingAccessors.add(beanType);
     return new Reference(

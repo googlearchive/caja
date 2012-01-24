@@ -65,6 +65,7 @@ public abstract class GWTBeansTestCase extends GWTTestCase {
 
   protected Frame frame;
 
+  protected BeanResults beanResults;
   protected Bean bean;
   protected Friend friend0;
   protected Friend friend1;
@@ -83,18 +84,19 @@ public abstract class GWTBeansTestCase extends GWTTestCase {
     // Caja |frame| object, so we just set some arbitrary non-null value.
     frame = new FrameImpl(newJso());
 
-    bean = new Bean();
-    friend0 = bean.beanRetval0;
-    friend1 = bean.beanRetval1;
-    friend2 = bean.beanRetval2;
+    beanResults = new BeanResults();
+    bean = new Bean(beanResults);
+    friend0 = BeanReturnValues.beanRetval0;
+    friend1 = BeanReturnValues.beanRetval1;
+    friend2 = BeanReturnValues.beanRetval2;
     date = new Date((long) Math.pow(2, 52));
     beanJso = ((BeanTaming) GWT.create(BeanTaming.class)).getJso(frame, bean);
     friend0Jso = ((FriendTaming) GWT.create(FriendTaming.class))
-        .getJso(frame, bean.beanRetval0);
+        .getJso(frame, BeanReturnValues.beanRetval0);
     friend1Jso = ((FriendTaming) GWT.create(FriendTaming.class))
-        .getJso(frame, bean.beanRetval1);
+        .getJso(frame, BeanReturnValues.beanRetval1);
     friend2Jso = ((FriendTaming) GWT.create(FriendTaming.class))
-        .getJso(frame, bean.beanRetval2);
+        .getJso(frame, BeanReturnValues.beanRetval2);
     dateJso = makeJsoDate();
   }
 

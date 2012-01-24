@@ -17,335 +17,320 @@ package com.google.caja.gwtbeans.shared;
 import java.util.Date;
 
 public class Bean {
+  private BeanResults results;
 
-  // Canned return values
-  public final int primitiveRetval0 = 42;
-  public final int primitiveRetval1 = 13;
-  public final Friend beanRetval0 = new Friend();
-  public final Friend beanRetval1 = new Friend();
-  public final Friend beanRetval2 = new Friend();
-  public final Boolean booleanRetval = true;
-  public final Byte byteRetval = (byte) 0x08;
-  public final Double doubleRetval = 0.12345;
-  public final Float floatRetval = 0.12345f;
-  public final Integer integerRetval = 42;
-  public final Short shortRetval = (short) 42;
-  public final Character characterRetval = 'b';
-  public final String stringRetval = "hello world";
-  public final Date dateRetval = new Date((long) Math.pow(2, 52));
-
-  // Machinery to introspect on what was called
-  public boolean invoked;
-  public Object arg0;
-  public Object arg1;
-  public Object hint;  // General hint for some methods to use
-
+  public Bean(BeanResults results) {
+    this.results = results;
+  }
+  
   // Some fields for testing
-  public String testPublicField;
+  public String testPublicField = BeanReturnValues.stringRetval;
+  public final String testFinalPublicField = BeanReturnValues.stringRetval;
   protected String testProtectedField;
+  public static String testStaticField;
   @SuppressWarnings("unused")
   private String testPrivateField;
   String testPackagePrivateField;
 
   // Method name starting with underscore
   public void _getValue() {
-    invoked = true;
+    results.invoked = true;
   }
 
   // Method returning void
   public void invoke() {
-    invoked = true;
+    results.invoked = true;
   }
   // Method returning primitive
   public int fetchPrimitive() {
-    invoked = true;
-    return primitiveRetval0;
+    results.invoked = true;
+    return BeanReturnValues.primitiveRetval0;
   }
   // Method returning bean
   public Friend fetchBean() {
-    invoked = true;
-    return beanRetval0;
+    results.invoked = true;
+    return BeanReturnValues.beanRetval0;
   }
 
   // Method accepting primitive
   public void invokeWithPrimitive(int a0) {
-    invoked = true;
-    this.arg0 = a0;
+    results.invoked = true;
+    results.arg0 = a0;
   }
   // Method accepting bean
   public void invokeWithBean(Friend a0) {
-    invoked = true;
-    this.arg0 = a0;
+    results.invoked = true;
+    results.arg0 = a0;
   }
 
   // Read/write primitive property
   public int getPrimitive() {
-    invoked = true;
-    return primitiveRetval0;
+    results.invoked = true;
+    return BeanReturnValues.primitiveRetval0;
   }
   public void setPrimitive(int a0) {
-    invoked = true;
-    this.arg0 = a0;
+    results.invoked = true;
+    results.arg0 = a0;
   }
 
   // Read-only primitive property
   public int getPrimitiveRO() {
-    invoked = true;
-    return primitiveRetval0;
+    results.invoked = true;
+    return BeanReturnValues.primitiveRetval0;
   }
 
   // Write-only primitive property
   public void setPrimitiveWO(int a0) {
-    invoked = true;
-    this.arg0 = a0;
+    results.invoked = true;
+    results.arg0 = a0;
   }
 
   // Read/write bean property
   public Friend getBean() {
-    invoked = true;
-    return beanRetval0;
+    results.invoked = true;
+    return BeanReturnValues.beanRetval0;
   }
   public void setBean(Friend a0) {
-    invoked = true;
-    this.arg0 = a0;
+    results.invoked = true;
+    results.arg0 = a0;
   }
 
   // Methods with autoboxable types
 
   public void invokeWithBooleanObj(Boolean a0) {
-    invoked = true;
-    this.arg0 = a0;
+    results.invoked = true;
+    results.arg0 = a0;
   }
   public Boolean fetchBooleanObj() {
-    invoked = true;
-    return booleanRetval;
+    results.invoked = true;
+    return BeanReturnValues.booleanRetval;
   }
   public Boolean fetchBooleanObjNull() {
-    invoked = true;
+    results.invoked = true;
     return null;
   }
   public void invokeWithByteObj(Byte a0) {
-    invoked = true;
-    this.arg0 = a0;
+    results.invoked = true;
+    results.arg0 = a0;
   }
   public Byte fetchByteObj() {
-    invoked = true;
-    return byteRetval;
+    results.invoked = true;
+    return BeanReturnValues.byteRetval;
   }
   public Byte fetchByteObjNull() {
-    invoked = true;
+    results.invoked = true;
     return null;
   }
   public void invokeWithDoubleObj(Double a0) {
-    invoked = true;
-    this.arg0 = a0;
+    results.invoked = true;
+    results.arg0 = a0;
   }
   public Double fetchDoubleObj() {
-    invoked = true;
-    return doubleRetval;
+    results.invoked = true;
+    return BeanReturnValues.doubleRetval;
   }
   public Double fetchDoubleObjNull() {
-    invoked = true;
+    results.invoked = true;
     return null;
   }
   public void invokeWithFloatObj(Float a0) {
-    invoked = true;
-    this.arg0 = a0;
+    results.invoked = true;
+    results.arg0 = a0;
   }
   public Float fetchFloatObj() {
-    invoked = true;
-    return floatRetval;
+    results.invoked = true;
+    return BeanReturnValues.floatRetval;
   }
   public Float fetchFloatObjNull() {
-    invoked = true;
+    results.invoked = true;
     return null;
   }
   public void invokeWithIntegerObj(Integer a0) {
-    invoked = true;
-    this.arg0 = a0;
+    results.invoked = true;
+    results.arg0 = a0;
   }
   public Integer fetchIntegerObj() {
-    invoked = true;
-    return integerRetval;
+    results.invoked = true;
+    return BeanReturnValues.integerRetval;
   }
   public Integer fetchIntegerObjNull() {
-    invoked = true;
+    results.invoked = true;
     return null;
   }
   public void invokeWithShortObj(Short a0) {
-    invoked = true;
-    this.arg0 = a0;
+    results.invoked = true;
+    results.arg0 = a0;
   }
   public Short fetchShortObj() {
-    invoked = true;
-    return shortRetval;
+    results.invoked = true;
+    return BeanReturnValues.shortRetval;
   }
   public Short fetchShortObjNull() {
-    invoked = true;
+    results.invoked = true;
     return null;
   }
 
   // Tests of GWT primitive types
 
   public void invokeWithBooleanP(boolean a0) {
-    invoked = true;
-    this.arg0 = a0;
+    results.invoked = true;
+    results.arg0 = a0;
   }
   public boolean fetchBooleanP() {
-    invoked = true;
-    return booleanRetval;
+    results.invoked = true;
+    return BeanReturnValues.booleanRetval;
   }
   public void invokeWithByteP(byte a0) {
-    invoked = true;
-    arg0 = a0;
+    results.invoked = true;
+    results.arg0 = a0;
   }
   public byte fetchByteP() {
-    this.invoked = true;
-    return byteRetval;
+    this.results.invoked = true;
+    return BeanReturnValues.byteRetval;
   }
   public void invokeWithCharacterP(char a0) {
-    invoked = true;
-    arg0 = a0;
+    results.invoked = true;
+    results.arg0 = a0;
   }
   public char fetchCharacterP() {
-    invoked = true;
-    return characterRetval;
+    results.invoked = true;
+    return BeanReturnValues.characterRetval;
   }
   public void invokeWithDoubleP(double a0) {
-    invoked = true;
-    arg0 = a0;
+    results.invoked = true;
+    results.arg0 = a0;
   }
   public double fetchDoubleP() {
-    invoked = true;
-    return doubleRetval;
+    results.invoked = true;
+    return BeanReturnValues.doubleRetval;
   }
   public void invokeWithFloatP(float a0) {
-    invoked = true;
-    arg0 = a0;
+    results.invoked = true;
+    results.arg0 = a0;
   }
   public float fetchFloatP() {
-    invoked = true;
-    return floatRetval;
+    results.invoked = true;
+    return BeanReturnValues.floatRetval;
   }
   public void invokeWithIntegerP(int a0) {
-    invoked = true;
-    arg0 = a0;
+    results.invoked = true;
+    results.arg0 = a0;
   }
   public int fetchIntegerP() {
-    invoked = true;
-    return integerRetval;
+    results.invoked = true;
+    return BeanReturnValues.integerRetval;
   }
   public void invokeWithShortP(short a0) {
-    invoked = true;
-    arg0 = a0;
+    results.invoked = true;
+    results.arg0 = a0;
   }
   public short fetchShortP() {
-    invoked = true;
-    return shortRetval;
+    results.invoked = true;
+    return BeanReturnValues.shortRetval;
   }
   public void invokeWithStringObj(String a0) {
-    invoked = true;
-    this.arg0 = a0;
+    results.invoked = true;
+    results.arg0 = a0;
   }
   public String fetchStringObj() {
-    invoked = true;
-    return stringRetval;
+    results.invoked = true;
+    return BeanReturnValues.stringRetval;
   }
   public String fetchStringObjNull() {
-    invoked = true;
+    results.invoked = true;
     return null;
   }
 
   // Test of Date taming
 
   public void invokeWithDateObj(Date a0) {
-    invoked = true;
-    this.arg0 = a0;
+    results.invoked = true;
+    results.arg0 = a0;
   }
   public Date fetchDateObj() {
-    invoked = true;
-    return dateRetval;
+    results.invoked = true;
+    return BeanReturnValues.dateRetval;
   }
   public Date fetchDateObjNull() {
-    invoked = true;
+    results.invoked = true;
     return null;
   }
 
   // Methods testing taming of arrays
 
   public void invokeWithBeanArray(Friend[] a0) {
-    invoked = true;
-    this.arg0 = a0;
+    results.invoked = true;
+    results.arg0 = a0;
   }
   public Friend[] fetchBeanArray() {
-    invoked = true;
-    return new Friend[] { beanRetval0, beanRetval1 };
+    results.invoked = true;
+    return new Friend[] { BeanReturnValues.beanRetval0, BeanReturnValues.beanRetval1 };
   }
   public Friend[] fetchBeanArrayNull() {
-    invoked = true;
+    results.invoked = true;
     return null;
   }
 
   public void invokeWithPrimitiveArray(int[] a0) {
-    invoked = true;
-    this.arg0 = a0;
+    results.invoked = true;
+    results.arg0 = a0;
   }
   public int[] fetchPrimitiveArray() {
-    invoked = true;
-    return new int[] { primitiveRetval0, primitiveRetval1 };
+    results.invoked = true;
+    return new int[] { BeanReturnValues.primitiveRetval0, BeanReturnValues.primitiveRetval1 };
   }
   public int[] fetchPrimitiveArrayNull() {
-    invoked = true;
+    results.invoked = true;
     return null;
   }
 
   // Var args
 
   public void invokeWithVarArgs(Friend a0, Friend... a1) {
-    invoked = true;
-    this.arg0 = a0;
-    this.arg1 = a1;
+    results.invoked = true;
+    results.arg0 = a0;
+    results.arg1 = a1;
   }
 
   // Simple overloaded methods
 
   public void invokeOverloaded(int a0, Friend a1) {
-    invoked = true;
-    this.arg0 = a0;
-    this.arg1 = a1;
+    results.invoked = true;
+    results.arg0 = a0;
+    results.arg1 = a1;
   }
 
   public void invokeOverloaded(Friend a0, int a1) {
-    invoked = true;
-    this.arg0 = a0;
-    this.arg1 = a1;
+    results.invoked = true;
+    results.arg0 = a0;
+    results.arg1 = a1;
   }
 
   public void invokeOverloaded(int a0, boolean a1) {
-    invoked = true;
-    this.arg0 = a0;
-    this.arg1 = a1;
+    results.invoked = true;
+    results.arg0 = a0;
+    results.arg1 = a1;
   }
 
   public void invokeOverloaded(boolean a0, int a1) {
-    invoked = true;
-    this.arg0 = a0;
-    this.arg1 = a1;
+    results.invoked = true;
+    results.arg0 = a0;
+    results.arg1 = a1;
   }
 
   // More overloaded methods to test arity-based selection
 
   public void invokeArityOverloaded(Friend a0) {
-    invoked = true;
-    this.arg0 = a0;
-    this.hint = "1 arg form";
+    results.invoked = true;
+    results.arg0 = a0;
+    results.hint = "1 arg form";
   }
 
   public void invokeArityOverloaded(Friend a0, Friend a1) {
-    invoked = true;
-    this.arg0 = a0;
-    this.arg1 = a1;
-    this.hint = "2 arg form";
+    results.invoked = true;
+    results.arg0 = a0;
+    results.arg1 = a1;
+    results.hint = "2 arg form";
   }
 
   // The following two functions cannot be distinguished if the caller supplies
@@ -353,27 +338,27 @@ public class Bean {
   // supplies an (int,Friend[]).
 
   public void invokeAmbiguousOverloaded(int a0) {
-    invoked = true;
-    this.arg0 = a0;
+    results.invoked = true;
+    results.arg0 = a0;
   }
 
   public void invokeAmbiguousOverloaded(int a0, Friend... a1) {
-    invoked = true;
-    this.arg0 = a0;
-    this.arg1 = a1;
+    results.invoked = true;
+    results.arg0 = a0;
+    results.arg1 = a1;
   }
 
   // The following two functions can be distinguished if the caller supplies
   // concrete arguments, but not if the caller supplies (undefined).
 
   public void invokeAmbiguousWithTamedObj(Friend a0) {
-    invoked = true;
-    this.arg0 = a0;
+    results.invoked = true;
+    results.arg0 = a0;
   }
 
   public void invokeAmbiguousWithTamedObj(Bean a0) {
-    invoked = true;
-    this.arg0 = a0;
+    results.invoked = true;
+    results.arg0 = a0;
   }
 
   // Methods that should not be visible

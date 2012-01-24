@@ -26,6 +26,7 @@ import com.google.gwt.core.ext.TreeLogger;
 import com.google.gwt.core.ext.UnableToCompleteException;
 import com.google.gwt.core.ext.TreeLogger.Type;
 import com.google.gwt.core.ext.typeinfo.JClassType;
+import com.google.gwt.core.ext.typeinfo.JField;
 import com.google.gwt.core.ext.typeinfo.JMethod;
 import com.google.gwt.core.ext.typeinfo.JType;
 import com.google.gwt.core.ext.typeinfo.JPrimitiveType;
@@ -54,7 +55,9 @@ public final class DefaultGwtBeanInfo implements GwtBeanInfo {
   private final List<GwtBeanPropertyDescriptor> properties =
       new ArrayList<GwtBeanPropertyDescriptor>();
   private final List<JMethod> methods =
-      new ArrayList<JMethod>();  
+      new ArrayList<JMethod>();
+  private final List<JField> fields =
+      new ArrayList<JField>();
 
   public DefaultGwtBeanInfo(
       TreeLogger logger,
@@ -94,6 +97,11 @@ public final class DefaultGwtBeanInfo implements GwtBeanInfo {
     return methods.toArray(new JMethod[] {});
   }
 
+  @Override
+  public JField[] getPublicInstanceFields() {
+    return fields.toArray(new JField[] {});
+  }
+
   private void build() throws UnableToCompleteException {
     if (knownTamingImplementations.containsKey(
         tamingInterface.getQualifiedSourceName())) {
@@ -129,6 +137,15 @@ public final class DefaultGwtBeanInfo implements GwtBeanInfo {
         properties.add(makePropertyDescriptor(allMethods, propertyName));
       } else {
         methods.add(allMethods.remove(0));
+      }
+    }
+
+    JClassType object = type.getOracle().findType("java.lang.Object");
+    for (JClassType t = type; t != object; t = t.getSuperclass()) {
+      for (JField f : type.getFields()) {
+        if (f.isPublic() && !f.isStatic()) {
+          fields.add(f);
+        }
       }
     }
   }

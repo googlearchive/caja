@@ -15,6 +15,7 @@
 package com.google.caja.gwtbeans.compile;
 
 import com.google.gwt.core.ext.typeinfo.JClassType;
+import com.google.gwt.core.ext.typeinfo.JField;
 import com.google.gwt.core.ext.typeinfo.JMethod;
 
 /**
@@ -49,6 +50,13 @@ public interface GwtBeanInfo {
    * JavaScript should not be included here.
    */
   GwtBeanPropertyDescriptor[] getProperties();
+
+  /**
+   * @return the public instance fields of the Bean class which should be tamed
+   * by the generated taming. Fields which should be hidden from the untrusted
+   * JavaScript should not be included here.
+   */
+  JField[] getPublicInstanceFields();
 
   /**
    * @return the methods of the Bean class which should be tamed by the

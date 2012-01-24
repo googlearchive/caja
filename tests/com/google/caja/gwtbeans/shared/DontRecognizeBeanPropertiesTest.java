@@ -31,14 +31,14 @@ public class DontRecognizeBeanPropertiesTest extends GWTBeansTestCase {
   
   public void testGetter() throws Exception {
     int o = callMethodReturningInt(beanJso, "getPrimitive");
-    assertTrue(bean.invoked);
-    assertEquals(bean.primitiveRetval0, o);
+    assertTrue(beanResults.invoked);
+    assertEquals(BeanReturnValues.primitiveRetval0, o);
   }
 
   public void testSetter() throws Exception {
     callMethodVoidWithArgInt(beanJso, "setPrimitive", 42);
-    assertTrue(bean.invoked);
-    assertEquals(42, bean.arg0);  // autoboxed
+    assertTrue(beanResults.invoked);
+    assertEquals(42, beanResults.arg0);  // autoboxed
   }
 
   @Override

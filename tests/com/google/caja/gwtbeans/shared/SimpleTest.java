@@ -54,67 +54,69 @@ public class SimpleTest extends GWTBeansTestCase {
     assertNull(getAttrsKey(beanJso, "getPackagePrivate"));
     assertNull(getAttrsKey(beanJso, "setPackagePrivate"));
 
-    // No evidence of fields should be present
-    assertNull(getAttrsKey(beanJso, "testPublicField"));
+    // Only public non-static fields should be present
+    assertNotNull(getAttrsKey(beanJso, "testPublicField"));
+    assertNotNull(getAttrsKey(beanJso, "testFinalPublicField"));
     assertNull(getAttrsKey(beanJso, "testProtectedField"));
     assertNull(getAttrsKey(beanJso, "testPrivateField"));
     assertNull(getAttrsKey(beanJso, "testPackagePrivateField"));
+    assertNull(getAttrsKey(beanJso, "testStaticField"));
   }
 
   public void testFunctionReturningVoid() throws Exception {
     callMethodVoid(beanJso, "invoke");
-    assertTrue(bean.invoked);
+    assertTrue(beanResults.invoked);
   }
 
   public void testMethodNameWithUnderscore() throws Exception {
     callMethodVoid(beanJso, "_getValue");
-    assertTrue(bean.invoked);
+    assertTrue(beanResults.invoked);
   }
 
   public void testMethodReturningPrimitive() {
     int o = callMethodReturningInt(beanJso, "fetchPrimitive");
-    assertTrue(bean.invoked);
-    assertEquals(bean.primitiveRetval0, o);
+    assertTrue(beanResults.invoked);
+    assertEquals(BeanReturnValues.primitiveRetval0, o);
   }
 
   public void testMethodReturningBean() {
     JavaScriptObject o = callMethodReturningJso(beanJso, "fetchBean");
-    assertTrue(bean.invoked);
+    assertTrue(beanResults.invoked);
     assertSame(friend0Jso, o);
   }
 
   public void testMethodAcceptingPrimitive() {
     callMethodVoidWithArgInt(beanJso, "invokeWithPrimitive", 42);
-    assertTrue(bean.invoked);
-    assertEquals(42, bean.arg0);  // autoboxed
+    assertTrue(beanResults.invoked);
+    assertEquals(42, beanResults.arg0);  // autoboxed
   }
 
   public void testMethodAcceptingBean() {
     callMethodVoidWithArgJso(beanJso, "invokeWithBean", friend0Jso);
-    assertTrue(bean.invoked);
+    assertTrue(beanResults.invoked);
     // Argument should have been unwrapped
-    assertSame(friend0, bean.arg0);
+    assertSame(friend0, beanResults.arg0);
   }
 
   public void testPropertyPrimitiveGet() {
     assertNotNull(getPropertyGetter(beanJso, "primitive"));
     int o = getPropertyInt(beanJso, "primitive");
-    assertTrue(bean.invoked);
-    assertEquals(bean.primitiveRetval0, o);
+    assertTrue(beanResults.invoked);
+    assertEquals(BeanReturnValues.primitiveRetval0, o);
   }
 
   public void testPropertyPrimitiveSet() {
     assertNotNull(getPropertySetter(beanJso, "primitive"));
     setPropertyInt(beanJso, "primitive", 42);
-    assertTrue(bean.invoked);
-    assertEquals(42, bean.arg0);  // autoboxed
+    assertTrue(beanResults.invoked);
+    assertEquals(42, beanResults.arg0);  // autoboxed
   }
 
   public void testPropertyPrimitiveROGet() {
     assertNotNull(getPropertyGetter(beanJso, "primitiveRO"));
     int o = getPropertyInt(beanJso, "primitiveRO");
-    assertTrue(bean.invoked);
-    assertEquals(bean.primitiveRetval0, o);
+    assertTrue(beanResults.invoked);
+    assertEquals(BeanReturnValues.primitiveRetval0, o);
   }
 
   public void testPropertyPrimitiveROSet() {
@@ -128,21 +130,21 @@ public class SimpleTest extends GWTBeansTestCase {
   public void testPropertyPrimitiveWOSet() {
     assertNotNull(getPropertySetter(beanJso, "primitiveWO"));
     setPropertyInt(beanJso, "primitiveWO", 42);
-    assertTrue(bean.invoked);
-    assertEquals(42, bean.arg0);  // autoboxed
+    assertTrue(beanResults.invoked);
+    assertEquals(42, beanResults.arg0);  // autoboxed
   }
 
   public void testPropertyBeanGet() {
     JavaScriptObject o = getPropertyBean(beanJso, "bean");
-    assertTrue(bean.invoked);
+    assertTrue(beanResults.invoked);
     assertSame(friend0Jso, o);
   }
 
   public void testPropertyBeanSet() {
     setPropertyBean(beanJso, "bean", friend0Jso);
-    assertTrue(bean.invoked);
+    assertTrue(beanResults.invoked);
     // Argument should have been unwrapped
-    assertSame(friend0, bean.arg0);
+    assertSame(friend0, beanResults.arg0);
   }
 
   private static native JavaScriptObject makeJsBoolean(boolean n) /*-{
@@ -160,161 +162,161 @@ public class SimpleTest extends GWTBeansTestCase {
   public void testMethodAcceptingBooleanObj() {
     JavaScriptObject jso = makeJsBoolean(true);
     callMethodVoidWithArgJso(beanJso, "invokeWithBooleanObj", jso);
-    assertTrue(bean.invoked);
-    assertEquals(true, ((Boolean) bean.arg0).booleanValue());
+    assertTrue(beanResults.invoked);
+    assertEquals(true, ((Boolean) beanResults.arg0).booleanValue());
   }
 
   public void testMethodAcceptingBooleanObjNull() {
     callMethodVoidWithArgJso(beanJso, "invokeWithBooleanObj", null);
-    assertTrue(bean.invoked);
-    assertNull(bean.arg0);
+    assertTrue(beanResults.invoked);
+    assertNull(beanResults.arg0);
   }
 
   public void testMethodReturningBooleanObj() {
     JavaScriptObject jso = callMethodReturningJso(beanJso, "fetchBooleanObj");
     Boolean i = new BooleanTamingImpl().getBean(frame, jso);
-    assertTrue(bean.invoked);
-    assertEquals(bean.booleanRetval, i);
+    assertTrue(beanResults.invoked);
+    assertEquals(BeanReturnValues.booleanRetval, i);
   }
 
   public void testMethodReturningBooleanObjNull() {
     JavaScriptObject jso =
         callMethodReturningJso(beanJso, "fetchBooleanObjNull");
-    assertTrue(bean.invoked);
+    assertTrue(beanResults.invoked);
     assertNull(jso);
   }
 
   public void testMethodAcceptingByteObj() {
     JavaScriptObject jso = makeJsFixedPoint(42);
     callMethodVoidWithArgJso(beanJso, "invokeWithByteObj", jso);
-    assertTrue(bean.invoked);
-    assertEquals(42, ((Byte) bean.arg0).byteValue());
+    assertTrue(beanResults.invoked);
+    assertEquals(42, ((Byte) beanResults.arg0).byteValue());
   }
 
   public void testMethodAcceptingByteObjNull() {
     callMethodVoidWithArgJso(beanJso, "invokeWithByteObj", null);
-    assertTrue(bean.invoked);
-    assertNull(bean.arg0);
+    assertTrue(beanResults.invoked);
+    assertNull(beanResults.arg0);
   }
 
   public void testMethodReturningByteObj() {
     JavaScriptObject jso = callMethodReturningJso(beanJso, "fetchByteObj");
     Byte i = new ByteTamingImpl().getBean(frame, jso);
-    assertTrue(bean.invoked);
-    assertEquals(bean.byteRetval, i);
+    assertTrue(beanResults.invoked);
+    assertEquals(BeanReturnValues.byteRetval, i);
   }
 
   public void testMethodReturningByteObjNull() {
     JavaScriptObject jso = callMethodReturningJso(beanJso, "fetchByteObjNull");
-    assertTrue(bean.invoked);
+    assertTrue(beanResults.invoked);
     assertNull(jso);
   }
 
   public void testMethodAcceptingDoubleObj() {
     JavaScriptObject jso = makeJsFloatingPoint(42.0);
     callMethodVoidWithArgJso(beanJso, "invokeWithDoubleObj", jso);
-    assertTrue(bean.invoked);
-    assertEquals(42.0, ((Double) bean.arg0).doubleValue());
+    assertTrue(beanResults.invoked);
+    assertEquals(42.0, ((Double) beanResults.arg0).doubleValue());
   }
 
   public void testMethodAcceptingDoubleObjNull() {
     callMethodVoidWithArgJso(beanJso, "invokeWithDoubleObj", null);
-    assertTrue(bean.invoked);
-    assertNull(bean.arg0);
+    assertTrue(beanResults.invoked);
+    assertNull(beanResults.arg0);
   }
 
   public void testMethodReturningDoubleObj() {
     JavaScriptObject jso = callMethodReturningJso(beanJso, "fetchDoubleObj");
     Double i = new DoubleTamingImpl().getBean(frame, jso);
-    assertTrue(bean.invoked);
-    assertEquals(bean.doubleRetval, i);
+    assertTrue(beanResults.invoked);
+    assertEquals(BeanReturnValues.doubleRetval, i);
   }
 
   public void testMethodReturningDoubleObjNull() {
     JavaScriptObject jso =
         callMethodReturningJso(beanJso, "fetchDoubleObjNull");
-    assertTrue(bean.invoked);
+    assertTrue(beanResults.invoked);
     assertNull(jso);
   }
 
   public void testMethodAcceptingFloatObj() {
     JavaScriptObject jso = makeJsFloatingPoint(42.0);
     callMethodVoidWithArgJso(beanJso, "invokeWithFloatObj", jso);
-    assertTrue(bean.invoked);
-    assertEquals(42.0f, ((Float) bean.arg0).floatValue());
+    assertTrue(beanResults.invoked);
+    assertEquals(42.0f, ((Float) beanResults.arg0).floatValue());
   }
 
   public void testMethodAcceptingFloatObjNull() {
     @SuppressWarnings("unused")
     JavaScriptObject jso = makeJsFloatingPoint(42.0);
     callMethodVoidWithArgJso(beanJso, "invokeWithFloatObj", null);
-    assertTrue(bean.invoked);
-    assertNull(bean.arg0);
+    assertTrue(beanResults.invoked);
+    assertNull(beanResults.arg0);
   }
 
   public void testMethodReturningFloatObj() {
     JavaScriptObject jso = callMethodReturningJso(beanJso, "fetchFloatObj");
     Float i = new FloatTamingImpl().getBean(frame, jso);
-    assertTrue(bean.invoked);
-    assertEquals(bean.floatRetval, i);
+    assertTrue(beanResults.invoked);
+    assertEquals(BeanReturnValues.floatRetval, i);
   }
 
   public void testMethodReturningFloatObjNull() {
     JavaScriptObject jso = callMethodReturningJso(beanJso, "fetchFloatObjNull");
-    assertTrue(bean.invoked);
+    assertTrue(beanResults.invoked);
     assertNull(jso);
   }
 
   public void testMethodAcceptingIntegerObj() {
     JavaScriptObject jso = makeJsFixedPoint(42);
     callMethodVoidWithArgJso(beanJso, "invokeWithIntegerObj", jso);
-    assertTrue(bean.invoked);
-    assertEquals(42, ((Integer) bean.arg0).intValue());
+    assertTrue(beanResults.invoked);
+    assertEquals(42, ((Integer) beanResults.arg0).intValue());
   }
 
   public void testMethodAcceptingIntegerObjNull() {
     callMethodVoidWithArgJso(beanJso, "invokeWithIntegerObj", null);
-    assertTrue(bean.invoked);
-    assertNull(bean.arg0);
+    assertTrue(beanResults.invoked);
+    assertNull(beanResults.arg0);
   }
 
   public void testMethodReturningIntegerObj() {
     JavaScriptObject jso = callMethodReturningJso(beanJso, "fetchIntegerObj");
     Integer i = new IntegerTamingImpl().getBean(frame, jso);
-    assertTrue(bean.invoked);
-    assertEquals(bean.integerRetval, i);
+    assertTrue(beanResults.invoked);
+    assertEquals(BeanReturnValues.integerRetval, i);
   }
 
   public void testMethodReturningIntegerObjNull() {
     JavaScriptObject jso =
         callMethodReturningJso(beanJso, "fetchIntegerObjNull");
-    assertTrue(bean.invoked);
+    assertTrue(beanResults.invoked);
     assertNull(jso);
   }
 
   public void testMethodAcceptingShortObj() {
     JavaScriptObject jso = makeJsFixedPoint(42);
     callMethodVoidWithArgJso(beanJso, "invokeWithShortObj", jso);
-    assertTrue(bean.invoked);
-    assertEquals(42, ((Short) bean.arg0).shortValue());
+    assertTrue(beanResults.invoked);
+    assertEquals(42, ((Short) beanResults.arg0).shortValue());
   }
 
   public void testMethodAcceptingShortObjNull() {
     callMethodVoidWithArgJso(beanJso, "invokeWithShortObj", null);
-    assertTrue(bean.invoked);
-    assertNull(bean.arg0);
+    assertTrue(beanResults.invoked);
+    assertNull(beanResults.arg0);
   }
 
   public void testMethodReturningShortObj() {
     JavaScriptObject jso = callMethodReturningJso(beanJso, "fetchShortObj");
     Short i = new ShortTamingImpl().getBean(frame, jso);
-    assertTrue(bean.invoked);
-    assertEquals(bean.shortRetval, i);
+    assertTrue(beanResults.invoked);
+    assertEquals(BeanReturnValues.shortRetval, i);
   }
 
   public void testMethodReturningShortObjNull() {
     JavaScriptObject jso = callMethodReturningJso(beanJso, "fetchShortObjNull");
-    assertTrue(bean.invoked);
+    assertTrue(beanResults.invoked);
     assertNull(jso);
   }
 
@@ -366,10 +368,10 @@ public class SimpleTest extends GWTBeansTestCase {
 
   public void testMethodAcceptingBooleanP() {
     callWithBooleanP(getMethod(beanJso, "invokeWithBooleanP"));
-    assertTrue(bean.invoked);
+    assertTrue(beanResults.invoked);
     assertEquals(
         true,
-        ((Boolean) bean.arg0).booleanValue());
+        ((Boolean) beanResults.arg0).booleanValue());
   }
 
   public void testMethodAcceptingBooleanPNull() {
@@ -377,7 +379,7 @@ public class SimpleTest extends GWTBeansTestCase {
       callWithNull(getMethod(beanJso, "invokeWithBooleanP"));
       fail();
     } catch (Exception e) {
-      assertFalse(bean.invoked);
+      assertFalse(beanResults.invoked);
       assert(e.toString().contains("Not a boolean"));
       assert(e.toString().contains("invokeWithBooleanP(Z)"));
     }
@@ -388,7 +390,7 @@ public class SimpleTest extends GWTBeansTestCase {
       callWithFloatingPointP(getMethod(beanJso, "invokeWithBooleanP"));
       fail();
     } catch (Exception e) {
-      assertFalse(bean.invoked);
+      assertFalse(beanResults.invoked);
       assert(e.toString().contains("Not a boolean"));
       assert(e.toString().contains("invokeWithBooleanP(Z)"));
     }
@@ -396,18 +398,18 @@ public class SimpleTest extends GWTBeansTestCase {
 
   public void testMethodReturningBooleanP() {
     boolean i = callReturningBooleanP(getMethod(beanJso, "fetchBooleanP"));
-    assertTrue(bean.invoked);
-    assertEquals((boolean) bean.booleanRetval, i);
+    assertTrue(beanResults.invoked);
+    assertEquals((boolean) BeanReturnValues.booleanRetval, i);
   }
-  
+
   // Byte primitive
 
   public void testMethodAcceptingByteP() {
     callWithFixedPointP(getMethod(beanJso, "invokeWithByteP"));
-    assertTrue(bean.invoked);
+    assertTrue(beanResults.invoked);
     assertEquals(
         42,
-        ((Byte) bean.arg0).byteValue());
+        ((Byte) beanResults.arg0).byteValue());
   }
 
   public void testMethodAcceptingBytePNull() {
@@ -415,7 +417,7 @@ public class SimpleTest extends GWTBeansTestCase {
       callWithNull(getMethod(beanJso, "invokeWithByteP"));
       fail();
     } catch (Exception e) {
-      assertFalse(bean.invoked);
+      assertFalse(beanResults.invoked);
       assert(e.toString().contains("Not a number (cannot pass as byte)"));
       assert(e.toString().contains("invokeWithByteP(B)"));
     }
@@ -426,7 +428,7 @@ public class SimpleTest extends GWTBeansTestCase {
       callWithBooleanP(getMethod(beanJso, "invokeWithByteP"));
       fail();
     } catch (Exception e) {
-      assertFalse(bean.invoked);
+      assertFalse(beanResults.invoked);
       assert(e.toString().contains("Not a number (cannot pass as byte)"));
       assert(e.toString().contains("invokeWithByteP(B)"));
     }
@@ -434,18 +436,18 @@ public class SimpleTest extends GWTBeansTestCase {
 
   public void testMethodReturningByteP() {
     byte i = callReturningByteP(getMethod(beanJso, "fetchByteP"));
-    assertTrue(bean.invoked);
-    assertEquals((byte) bean.byteRetval, i);
+    assertTrue(beanResults.invoked);
+    assertEquals((byte) BeanReturnValues.byteRetval, i);
   }
-  
+
   // Character primitive
 
   public void testMethodAcceptingCharacterP() {
     callWithFixedPointP(getMethod(beanJso, "invokeWithCharacterP"));
-    assertTrue(bean.invoked);
+    assertTrue(beanResults.invoked);
     assertEquals(
         42,
-        ((Character) bean.arg0).charValue());
+        ((Character) beanResults.arg0).charValue());
   }
 
   public void testMethodAcceptingCharacterPNull() {
@@ -453,7 +455,7 @@ public class SimpleTest extends GWTBeansTestCase {
       callWithNull(getMethod(beanJso, "invokeWithCharacterP"));
       fail();
     } catch (Exception e) {
-      assertFalse(bean.invoked);
+      assertFalse(beanResults.invoked);
       assert(e.toString().contains("Not a number (cannot pass as char)"));
       assert(e.toString().contains("invokeWithCharacterP(C)"));
     }
@@ -464,7 +466,7 @@ public class SimpleTest extends GWTBeansTestCase {
       callWithBooleanP(getMethod(beanJso, "invokeWithCharacterP"));
       fail();
     } catch (Exception e) {
-      assertFalse(bean.invoked);
+      assertFalse(beanResults.invoked);
       assert(e.toString().contains("Not a number (cannot pass as char)"));
       assert(e.toString().contains("invokeWithCharacterP(C)"));
     }
@@ -472,18 +474,18 @@ public class SimpleTest extends GWTBeansTestCase {
 
   public void testMethodReturningCharacterP() {
     char i = callReturningCharacterP(getMethod(beanJso, "fetchCharacterP"));
-    assertTrue(bean.invoked);
-    assertEquals((char) bean.characterRetval, i);
+    assertTrue(beanResults.invoked);
+    assertEquals((char) BeanReturnValues.characterRetval, i);
   }
-  
+
   // Double primitive
 
   public void testMethodAcceptingDoubleP() {
     callWithFloatingPointP(getMethod(beanJso, "invokeWithDoubleP"));
-    assertTrue(bean.invoked);
+    assertTrue(beanResults.invoked);
     assertEquals(
         42.372,
-        ((Double) bean.arg0).doubleValue());
+        ((Double) beanResults.arg0).doubleValue());
   }
 
   public void testMethodAcceptingDoublePNull() {
@@ -491,7 +493,7 @@ public class SimpleTest extends GWTBeansTestCase {
       callWithNull(getMethod(beanJso, "invokeWithDoubleP"));
       fail();
     } catch (Exception e) {
-      assertFalse(bean.invoked);
+      assertFalse(beanResults.invoked);
       assert(e.toString().contains("Not a number (cannot pass as double)"));
       assert(e.toString().contains("invokeWithDoubleP(D)"));
     }
@@ -502,7 +504,7 @@ public class SimpleTest extends GWTBeansTestCase {
       callWithBooleanP(getMethod(beanJso, "invokeWithDoubleP"));
       fail();
     } catch (Exception e) {
-      assertFalse(bean.invoked);
+      assertFalse(beanResults.invoked);
       assert(e.toString().contains("Not a number (cannot pass as double)"));
       assert(e.toString().contains("invokeWithDoubleP(D)"));
     }
@@ -510,18 +512,18 @@ public class SimpleTest extends GWTBeansTestCase {
 
   public void testMethodReturningDoubleP() {
     double i = callReturningDoubleP(getMethod(beanJso, "fetchDoubleP"));
-    assertTrue(bean.invoked);
-    assertEquals((double) bean.doubleRetval, i);
+    assertTrue(beanResults.invoked);
+    assertEquals((double) BeanReturnValues.doubleRetval, i);
   }
-  
+
   // Float primitive
 
   public void testMethodAcceptingFloatP() {
     callWithFloatingPointP(getMethod(beanJso, "invokeWithFloatP"));
-    assertTrue(bean.invoked);
+    assertTrue(beanResults.invoked);
     assertEquals(
         42.372f,
-        ((Float) bean.arg0).floatValue());
+        ((Float) beanResults.arg0).floatValue());
   }
 
   public void testMethodAcceptingFloatPNull() {
@@ -529,7 +531,7 @@ public class SimpleTest extends GWTBeansTestCase {
       callWithNull(getMethod(beanJso, "invokeWithFloatP"));
       fail();
     } catch (Exception e) {
-      assertFalse(bean.invoked);
+      assertFalse(beanResults.invoked);
       assert(e.toString().contains("Not a number (cannot pass as float)"));
       assert(e.toString().contains("invokeWithFloatP(F)"));
     }
@@ -540,7 +542,7 @@ public class SimpleTest extends GWTBeansTestCase {
       callWithBooleanP(getMethod(beanJso, "invokeWithFloatP"));
       fail();
     } catch (Exception e) {
-      assertFalse(bean.invoked);
+      assertFalse(beanResults.invoked);
       assert(e.toString().contains("Not a number (cannot pass as float)"));
       assert(e.toString().contains("invokeWithFloatP(F)"));
     }
@@ -548,18 +550,18 @@ public class SimpleTest extends GWTBeansTestCase {
 
   public void testMethodReturningFloatP() {
     float i = callReturningFloatP(getMethod(beanJso, "fetchFloatP"));
-    assertTrue(bean.invoked);
-    assertEquals((float) bean.floatRetval, i);
+    assertTrue(beanResults.invoked);
+    assertEquals((float) BeanReturnValues.floatRetval, i);
   }
-  
+
   // Integer primitive
 
   public void testMethodAcceptingIntegerP() {
     callWithFixedPointP(getMethod(beanJso, "invokeWithIntegerP"));
-    assertTrue(bean.invoked);
+    assertTrue(beanResults.invoked);
     assertEquals(
         42,
-        ((Integer) bean.arg0).intValue());
+        ((Integer) beanResults.arg0).intValue());
   }
 
   public void testMethodAcceptingIntegerPNull() {
@@ -567,7 +569,7 @@ public class SimpleTest extends GWTBeansTestCase {
       callWithNull(getMethod(beanJso, "invokeWithIntegerP"));
       fail();
     } catch (Exception e) {
-      assertFalse(bean.invoked);
+      assertFalse(beanResults.invoked);
       assert(e.toString().contains("Not a number (cannot pass as int)"));
       assert(e.toString().contains("invokeWithIntegerP(I)"));
     }
@@ -578,7 +580,7 @@ public class SimpleTest extends GWTBeansTestCase {
       callWithBooleanP(getMethod(beanJso, "invokeWithIntegerP"));
       fail();
     } catch (Exception e) {
-      assertFalse(bean.invoked);
+      assertFalse(beanResults.invoked);
       assert(e.toString().contains("Not a number (cannot pass as int)"));
       assert(e.toString().contains("invokeWithIntegerP(I)"));
     }
@@ -586,18 +588,18 @@ public class SimpleTest extends GWTBeansTestCase {
 
   public void testMethodReturningIntegerP() {
     int i = callReturningIntegerP(getMethod(beanJso, "fetchIntegerP"));
-    assertTrue(bean.invoked);
-    assertEquals((int) bean.integerRetval, i);
+    assertTrue(beanResults.invoked);
+    assertEquals((int) BeanReturnValues.integerRetval, i);
   }
-  
+
   // Short primitive
 
   public void testMethodAcceptingShortP() {
     callWithFixedPointP(getMethod(beanJso, "invokeWithShortP"));
-    assertTrue(bean.invoked);
+    assertTrue(beanResults.invoked);
     assertEquals(
         42,
-        ((Short) bean.arg0).shortValue());
+        ((Short) beanResults.arg0).shortValue());
   }
 
   public void testMethodAcceptingShortPNull() {
@@ -605,7 +607,7 @@ public class SimpleTest extends GWTBeansTestCase {
       callWithNull(getMethod(beanJso, "invokeWithShortP"));
       fail();
     } catch (Exception e) {
-      assertFalse(bean.invoked);
+      assertFalse(beanResults.invoked);
       assert(e.toString().contains("Not a number (cannot pass as short)"));
       assert(e.toString().contains("invokeWithShortP(S)"));
     }
@@ -616,7 +618,7 @@ public class SimpleTest extends GWTBeansTestCase {
       callWithBooleanP(getMethod(beanJso, "invokeWithShortP"));
       fail();
     } catch (Exception e) {
-      assertFalse(bean.invoked);
+      assertFalse(beanResults.invoked);
       assert(e.toString().contains("Not a number (cannot pass as short)"));
       assert(e.toString().contains("invokeWithShortP(S)"));
     }
@@ -624,33 +626,33 @@ public class SimpleTest extends GWTBeansTestCase {
 
   public void testMethodReturningShortP() {
     short i = callReturningShortP(getMethod(beanJso, "fetchShortP"));
-    assertTrue(bean.invoked);
-    assertEquals((short) bean.shortRetval, i);
+    assertTrue(beanResults.invoked);
+    assertEquals((short) BeanReturnValues.shortRetval, i);
   }
 
   // String primitive
 
   public void testMethodAcceptingStringObj() {
     callMethodVoidWithArgString(beanJso, "invokeWithStringObj", "hello java");
-    assertTrue(bean.invoked);
-    assertEquals("hello java", (String) bean.arg0);
+    assertTrue(beanResults.invoked);
+    assertEquals("hello java", (String) beanResults.arg0);
   }
 
   public void testMethodAcceptingStringObjNull() {
     callMethodVoidWithArgString(beanJso, "invokeWithStringObj", null);
-    assertTrue(bean.invoked);
-    assertNull(bean.arg0);
+    assertTrue(beanResults.invoked);
+    assertNull(beanResults.arg0);
   }
 
   public void testMethodReturningStringObj() {
     String i = callMethodReturningString(beanJso, "fetchStringObj");
-    assertTrue(bean.invoked);
-    assertEquals(bean.stringRetval, i);
+    assertTrue(beanResults.invoked);
+    assertEquals(BeanReturnValues.stringRetval, i);
   }
 
   public void testMethodReturningStringObjNull() {
     String i = callMethodReturningString(beanJso, "fetchStringObjNull");
-    assertTrue(bean.invoked);
+    assertTrue(beanResults.invoked);
     assertNull(i);
   }
 
@@ -658,15 +660,15 @@ public class SimpleTest extends GWTBeansTestCase {
 
   public void testMethodAcceptingDate() {
     callMethodVoidWithArgJso(beanJso, "invokeWithDateObj", dateJso);
-    assertTrue(bean.invoked);
-    assertTrue(bean.arg0 instanceof Date);
-    assertEquals(date, bean.arg0);
+    assertTrue(beanResults.invoked);
+    assertTrue(beanResults.arg0 instanceof Date);
+    assertEquals(date, beanResults.arg0);
   }
 
   public void testMethodAcceptingDateNull() {
     callMethodVoidWithArgJso(beanJso, "invokeWithDateObj", null);
-    assertTrue(bean.invoked);
-    assertNull(bean.arg0);
+    assertTrue(beanResults.invoked);
+    assertNull(beanResults.arg0);
   }
 
   private static native String getDateValue(JavaScriptObject dateJso) /*-{
@@ -675,13 +677,13 @@ public class SimpleTest extends GWTBeansTestCase {
 
   public void testMethodReturningDate() {
     JavaScriptObject i = callMethodReturningJso(beanJso, "fetchDateObj");
-    assertTrue(bean.invoked);
+    assertTrue(beanResults.invoked);
     assertEquals(date.getTime(), Long.parseLong(getDateValue(i)));
   }
 
   public void testMethodReturningDateNull() {
     JavaScriptObject i = callMethodReturningJso(beanJso, "fetchDateObjNull");
-    assertTrue(bean.invoked);
+    assertTrue(beanResults.invoked);
     assertNull(i);
   }
 
@@ -701,27 +703,27 @@ public class SimpleTest extends GWTBeansTestCase {
     callMethodVoidWithArgJso(beanJso, "invokeWithBeanArray", makeJsoArray(
         friend0Jso,
         friend1Jso));
-    assertTrue(bean.invoked);
-    assertSame(friend0, ((Friend[]) bean.arg0)[0]);
-    assertSame(friend1, ((Friend[]) bean.arg0)[1]);
+    assertTrue(beanResults.invoked);
+    assertSame(friend0, ((Friend[]) beanResults.arg0)[0]);
+    assertSame(friend1, ((Friend[]) beanResults.arg0)[1]);
   }
 
   public void testMethodAcceptingBeanArrayNull() {
     callMethodVoidWithArgJso(beanJso, "invokeWithBeanArray", null);
-    assertTrue(bean.invoked);
-    assertNull(bean.arg0);
+    assertTrue(beanResults.invoked);
+    assertNull(beanResults.arg0);
   }
 
   public void testMethodReturningBeanArray() {
     JavaScriptObject i = callMethodReturningJso(beanJso, "fetchBeanArray");
-    assertTrue(bean.invoked);
+    assertTrue(beanResults.invoked);
     assertSame(friend0Jso, getFromJsoArray(i, 0));
     assertSame(friend1Jso, getFromJsoArray(i, 1));
   }
 
   public void testMethodReturningBeanArrayNull() {
     JavaScriptObject i = callMethodReturningJso(beanJso, "fetchBeanArrayNull");
-    assertTrue(bean.invoked);
+    assertTrue(beanResults.invoked);
     assertNull(i);
   }
 
@@ -745,28 +747,28 @@ public class SimpleTest extends GWTBeansTestCase {
     callMethodVoidWithArgJso(beanJso, "invokeWithPrimitiveArray", makeIntArray(
         42,
         13));
-    assertTrue(bean.invoked);
-    assertSame(42, ((int[]) bean.arg0)[0]);
-    assertSame(13, ((int[]) bean.arg0)[1]);
+    assertTrue(beanResults.invoked);
+    assertSame(42, ((int[]) beanResults.arg0)[0]);
+    assertSame(13, ((int[]) beanResults.arg0)[1]);
   }
 
   public void testMethodAcceptingPrimitiveArrayNull() {
     callMethodVoidWithArgJso(beanJso, "invokeWithPrimitiveArray", null);
-    assertTrue(bean.invoked);
-    assertNull(bean.arg0);
+    assertTrue(beanResults.invoked);
+    assertNull(beanResults.arg0);
   }
 
   public void testMethodReturningPrimitiveArray() {
     JavaScriptObject i = callMethodReturningJso(beanJso, "fetchPrimitiveArray");
-    assertTrue(bean.invoked);
-    assertEquals(bean.primitiveRetval0, getFromIntArray(i, 0));
-    assertEquals(bean.primitiveRetval1, getFromIntArray(i, 1));
+    assertTrue(beanResults.invoked);
+    assertEquals(BeanReturnValues.primitiveRetval0, getFromIntArray(i, 0));
+    assertEquals(BeanReturnValues.primitiveRetval1, getFromIntArray(i, 1));
   }
 
   public void testMethodReturningPrimitiveArrayNull() {
     JavaScriptObject i = callMethodReturningJso(beanJso,
         "fetchPrimitiveArrayNull");
-    assertTrue(bean.invoked);
+    assertTrue(beanResults.invoked);
     assertNull(i);
   }
 
@@ -782,20 +784,20 @@ public class SimpleTest extends GWTBeansTestCase {
     call3(
         getMethod(beanJso, "invokeWithVarArgs"),
         friend0Jso, friend1Jso, friend2Jso);
-    assertTrue(bean.invoked);
-    assertSame(friend0, bean.arg0);
-    assertTrue(bean.arg1 instanceof Friend[]);
-    assertEquals(2, ((Friend[]) bean.arg1).length);
-    assertSame(friend1, ((Friend[]) bean.arg1)[0]);
-    assertSame(friend2, ((Friend[]) bean.arg1)[1]);
+    assertTrue(beanResults.invoked);
+    assertSame(friend0, beanResults.arg0);
+    assertTrue(beanResults.arg1 instanceof Friend[]);
+    assertEquals(2, ((Friend[]) beanResults.arg1).length);
+    assertSame(friend1, ((Friend[]) beanResults.arg1)[0]);
+    assertSame(friend2, ((Friend[]) beanResults.arg1)[1]);
   }
 
   public void testVarArgsEmpty() {
     callMethodVoidWithArgJso(beanJso, "invokeWithVarArgs", friend0Jso);
-    assertTrue(bean.invoked);
-    assertSame(friend0, bean.arg0);
-    assertTrue(bean.arg1 instanceof Friend[]);
-    assertEquals(0, ((Friend[]) bean.arg1).length);
+    assertTrue(beanResults.invoked);
+    assertSame(friend0, beanResults.arg0);
+    assertTrue(beanResults.arg1 instanceof Friend[]);
+    assertEquals(0, ((Friend[]) beanResults.arg1).length);
   }
 
   private static native void callIntJso(
@@ -809,9 +811,9 @@ public class SimpleTest extends GWTBeansTestCase {
     callIntJso(
         getMethod(beanJso, "invokeOverloaded"),
         42, friend0Jso);
-    assertTrue(bean.invoked);
-    assertEquals(42, bean.arg0);
-    assertSame(friend0, bean.arg1);
+    assertTrue(beanResults.invoked);
+    assertEquals(42, beanResults.arg0);
+    assertSame(friend0, beanResults.arg1);
   }
 
   private static native void callJsoInt(
@@ -825,9 +827,9 @@ public class SimpleTest extends GWTBeansTestCase {
     callJsoInt(
         getMethod(beanJso, "invokeOverloaded"),
         friend0Jso, 42);
-    assertTrue(bean.invoked);
-    assertSame(friend0, bean.arg0);
-    assertEquals(42, bean.arg1);
+    assertTrue(beanResults.invoked);
+    assertSame(friend0, beanResults.arg0);
+    assertEquals(42, beanResults.arg1);
   }
 
   private static native void callIntBoolean(
@@ -841,11 +843,11 @@ public class SimpleTest extends GWTBeansTestCase {
     callIntBoolean(
         getMethod(beanJso, "invokeOverloaded"),
         42, true);
-    assertTrue(bean.invoked);
-    assertTrue(bean.arg0 instanceof Integer);
-    assertEquals(42, bean.arg0);
-    assertTrue(bean.arg1 instanceof Boolean);
-    assertEquals(true, bean.arg1);
+    assertTrue(beanResults.invoked);
+    assertTrue(beanResults.arg0 instanceof Integer);
+    assertEquals(42, beanResults.arg0);
+    assertTrue(beanResults.arg1 instanceof Boolean);
+    assertEquals(true, beanResults.arg1);
   }
 
   private static native void callBooleanInt(
@@ -859,11 +861,11 @@ public class SimpleTest extends GWTBeansTestCase {
     callBooleanInt(
         getMethod(beanJso, "invokeOverloaded"),
         true, 42);
-    assertTrue(bean.invoked);
-    assertTrue(bean.arg0 instanceof Boolean);
-    assertEquals(true, bean.arg0);
-    assertTrue(bean.arg1 instanceof Integer);
-    assertEquals(42, bean.arg1);
+    assertTrue(beanResults.invoked);
+    assertTrue(beanResults.arg0 instanceof Boolean);
+    assertEquals(true, beanResults.arg0);
+    assertTrue(beanResults.arg1 instanceof Integer);
+    assertEquals(42, beanResults.arg1);
   }
 
   private static native void callUndefinedUndefined(
@@ -910,9 +912,9 @@ public class SimpleTest extends GWTBeansTestCase {
     callJso(
         getMethod(beanJso, "invokeArityOverloaded"),
         friend0Jso);
-    assertTrue(bean.invoked);
-    assertEquals(friend0, bean.arg0);
-    assertEquals("1 arg form", bean.hint);
+    assertTrue(beanResults.invoked);
+    assertEquals(friend0, beanResults.arg0);
+    assertEquals("1 arg form", beanResults.hint);
   }
 
   public void testArityOverloaded2ArgForm() {
@@ -920,10 +922,10 @@ public class SimpleTest extends GWTBeansTestCase {
         getMethod(beanJso, "invokeArityOverloaded"),
         friend0Jso,
         friend1Jso);
-    assertTrue(bean.invoked);
-    assertEquals(friend0, bean.arg0);
-    assertEquals(friend1, bean.arg1);
-    assertEquals("2 arg form", bean.hint);
+    assertTrue(beanResults.invoked);
+    assertEquals(friend0, beanResults.arg0);
+    assertEquals(friend1, beanResults.arg1);
+    assertEquals("2 arg form", beanResults.hint);
   }
 
   private static native void callInt(
@@ -947,7 +949,7 @@ public class SimpleTest extends GWTBeansTestCase {
       assert(s.contains(
           "invokeAmbiguousOverloaded(I[Lcom/google/caja/gwtbeans/shared/Friend;)"));
     }
-    assertFalse(bean.invoked);
+    assertFalse(beanResults.invoked);
   }
 
   private static native void callIntJsoJso(
@@ -962,35 +964,35 @@ public class SimpleTest extends GWTBeansTestCase {
     callIntJsoJso(
         getMethod(beanJso, "invokeAmbiguousOverloaded"),
         42, friend0Jso, friend1Jso);
-    assertTrue(bean.invoked);
-    assertEquals(42, bean.arg0);
-    assertTrue(bean.arg1 instanceof Friend[]);
-    assertEquals(2, ((Friend[]) bean.arg1).length);
-    assertSame(friend0, ((Friend[]) bean.arg1)[0]);
-    assertSame(friend1, ((Friend[]) bean.arg1)[1]);
+    assertTrue(beanResults.invoked);
+    assertEquals(42, beanResults.arg0);
+    assertTrue(beanResults.arg1 instanceof Friend[]);
+    assertEquals(2, ((Friend[]) beanResults.arg1).length);
+    assertSame(friend0, ((Friend[]) beanResults.arg1)[0]);
+    assertSame(friend1, ((Friend[]) beanResults.arg1)[1]);
   }
 
   public void testAmbiguousWithBeanSucceeds() {
     callJso(
         getMethod(beanJso, "invokeAmbiguousWithTamedObj"),
         beanJso);
-    assertTrue(bean.invoked);
-    assertEquals(bean, bean.arg0);
+    assertTrue(beanResults.invoked);
+    assertEquals(bean, beanResults.arg0);
   }
 
   public void testAmbiguousWithFriendSucceeds() {
     callJso(
         getMethod(beanJso, "invokeAmbiguousWithTamedObj"),
         friend0Jso);
-    assertTrue(bean.invoked);
-    assertEquals(friend0, bean.arg0);
+    assertTrue(beanResults.invoked);
+    assertEquals(friend0, beanResults.arg0);
   }
 
   private static native void callUndefined(
       JavaScriptObject method) /*-{
     method(undefined);
   }-*/;
-  
+
   public void testAmbiguousWithUndefinedFails() {
     try {
       callUndefined(
@@ -1005,7 +1007,41 @@ public class SimpleTest extends GWTBeansTestCase {
       assert(s.contains(
           "invokeAmbiguousWithTamedObj(Lcom/google/caja/gwtbeans/shared/Bean;)"));
     }
-    assertFalse(bean.invoked);
+    assertFalse(beanResults.invoked);
+  }
+
+  private static native String getStringField(
+      JavaScriptObject bean,
+      String name) /*-{
+    return $wnd.getDef($wnd.getDef(bean, 'attrs')[name].get, 'f')();
+  }-*/;
+
+  private static native void setStringField(
+      JavaScriptObject bean,
+      String name,
+      String value) /*-{
+    return $wnd.getDef($wnd.getDef(bean, 'attrs')[name].set, 'f')(value);
+  }-*/;
+  
+  public void testPublicField() {
+    assertEquals(
+        BeanReturnValues.stringRetval,
+        getStringField(beanJso, "testPublicField"));
+    setStringField(beanJso, "testPublicField", "new value");
+    assertEquals("new value", bean.testPublicField);
+  }
+
+  public void testFinalPublicField() {
+    assertEquals(
+        BeanReturnValues.stringRetval,
+        getStringField(beanJso, "testFinalPublicField"));
+    try {
+      setStringField(beanJso, "testFinalPublicField", "new value");
+      fail("Setting value of final field did not fail as it should have");
+    } catch (Exception e) { }
+    assertEquals(
+        BeanReturnValues.stringRetval,
+        getStringField(beanJso, "testFinalPublicField"));
   }
 
   @Override
