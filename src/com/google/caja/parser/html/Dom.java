@@ -64,9 +64,6 @@ public final class Dom extends AbstractParseTreeNode {
     out.append(this.getClass().getSimpleName()).append(" : ");
     String html = Nodes.render(n, MarkupRenderMode.XML)
         .replace("\\", "\\\\").replace("\n", "\\n").replace("\r", "\\r");
-    if (html.length() > 40) {
-      html = html.substring(0, 37) + "...";
-    }
     out.append(html);
   }
 

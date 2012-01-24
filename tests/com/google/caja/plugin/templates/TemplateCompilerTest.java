@@ -153,7 +153,7 @@ public class TemplateCompilerTest extends CajaTestCase {
 
   public final void testTargetsRewritten() throws Exception {
     assertSafeHtml(
-        htmlFragment(fromString("<a href='foo' target='_self'>hello</a>")),
+        htmlFragment(fromString("<a href='foo' target='foo'>hello</a>")),
         htmlFragment(fromString("<a href='foo' target='_blank'>hello</a>")),
         new Block());
   }
@@ -170,7 +170,7 @@ public class TemplateCompilerTest extends CajaTestCase {
   public final void testNamesRewritten() throws Exception {
     assertSafeHtml(
         htmlFragment(fromString("<a name='hi'></a>")),
-        htmlFragment(fromString("<a id='id_1___' target='_blank'></a>")),
+        htmlFragment(fromString("<a id='id_1___' target='_self'></a>")),
         js(fromString(
             ""
             + "function module() {"
@@ -189,7 +189,7 @@ public class TemplateCompilerTest extends CajaTestCase {
     meta.setIdClass("xyz___");
     assertSafeHtml(
         htmlFragment(fromString("<a name='hi'></a>")),
-        htmlFragment(fromString("<a name='hi-xyz___' target='_blank'></a>")),
+        htmlFragment(fromString("<a name='hi-xyz___' target='_self'></a>")),
         new Block());
   }
 
@@ -250,7 +250,7 @@ public class TemplateCompilerTest extends CajaTestCase {
         htmlFragment(fromString(
             "<a href='javascript:alert(1+1)'>Two!!</a>")),
         htmlFragment(fromString(
-            "<a id=\"id_2___\" target=\"_blank\">Two!!</a>")),
+            "<a id=\"id_2___\" target=\"_self\">Two!!</a>")),
         js(fromString(
             ""
             + "function module() {"
@@ -280,7 +280,7 @@ public class TemplateCompilerTest extends CajaTestCase {
         htmlFragment(fromString(
             "<a href='javascript:%22use%20cajita%22;alert(1+1)'>Two!!</a>")),
         htmlFragment(fromString(
-            "<a id=\"id_2___\" target=\"_blank\">Two!!</a>")),
+            "<a id=\"id_2___\" target=\"_self\">Two!!</a>")),
         js(fromString(
             ""
             + "function module() {"
@@ -464,7 +464,7 @@ public class TemplateCompilerTest extends CajaTestCase {
     assertSafeHtml(
         htmlInput,
         htmlFragment(fromString(
-            "<a href=\"rewritten\" target=\"_blank\"></a>")),
+            "<a href=\"rewritten\" target=\"_self\"></a>")),
         new Block());
 
     // The ExternalReference reference position should contain the URI of the
@@ -718,7 +718,7 @@ public class TemplateCompilerTest extends CajaTestCase {
         htmlFragment(fromString(
             ""
             + "<map name='foo-suffix___'>"
-            + "<area target=_blank href=foo.html />"
+            + "<area target=_self href=foo.html />"
             + "</map>"
             + "<img usemap=#foo-suffix___ src=pic.gif>")),
          new Block());
@@ -735,7 +735,7 @@ public class TemplateCompilerTest extends CajaTestCase {
         htmlFragment(fromString(
             ""
             + "<map name='foo-suffix___'>"
-            + "<area target=_blank href=foo.html />"
+            + "<area target=_self href=foo.html />"
             + "</map>"
             + "<img src=foo.gif>"
             + "<img src=bar.gif>")),

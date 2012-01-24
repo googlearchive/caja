@@ -215,7 +215,13 @@ public class TemplateCompiler {
           if (a.getType() == HTML.Attribute.Type.URI) {
             safeValue = "" + Nodes.getFilePositionFor(el).source().getUri();
           } else {
-            safeValue = a.getSafeValue();
+            if (unsafe == null &&
+                a.getDefaultValue() != null &&
+                a.getValueCriterion().accept(a.getDefaultValue())) {
+              safeValue = a.getDefaultValue();
+            } else {
+              safeValue = a.getSafeValue();
+            }
           }
           if (safeValue == null) {
             mq.addMessage(IhtmlMessageType.MISSING_ATTRIB,

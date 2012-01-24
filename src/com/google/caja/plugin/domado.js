@@ -1323,11 +1323,6 @@ function Domado(taming, opt_rulebreaker) {
       }
       return attribs;
     };
-    elementPolicies.a = elementPolicies.area = function (attribs) {
-      // Anchor tags must always have the target '_blank'.
-      attribs.push('target', '_blank');
-      return attribs;
-    };
     // TODO(kpreid): should elementPolicies be exported in domicile?
 
     // On IE, turn an <canvas> tags into canvas elements that explorercanvas
@@ -1655,6 +1650,8 @@ function Domado(taming, opt_rulebreaker) {
           return css.join(' ; ');
         // Frames are ambient, so disallow reference.
         case html4.atype.FRAME_TARGET:
+          value = String(value);
+          return '_self' === value ? '_self' : '_blank';
         default:
           return null;
       }

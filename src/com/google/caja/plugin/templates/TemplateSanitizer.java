@@ -150,6 +150,11 @@ public final class TemplateSanitizer {
         }
         valid &= removeBadAttribute(el, attrKey);
       }
+    } else if ("target".equals(attrKey.localName)) {
+      if (!"_self".equals(attrib.getNodeValue())) {
+        attrib.setNodeValue("_blank");
+      }
+      return true;
     } else if (!schema.isAttributeAllowed(attrKey)) {
       if (!ignore) {
         mq.addMessage(

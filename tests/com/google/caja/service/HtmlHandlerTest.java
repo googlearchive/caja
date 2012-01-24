@@ -103,7 +103,7 @@ public class HtmlHandlerTest extends ServiceTestCase {
         + "')");
     assertContainsIgnoreSpace(
         (String) json.get("html"),
-        "<a id=\"id_1___\" target=\"_blank\">");
+        "<a id=\"id_1___\" target=\"_self\">");
     assertContainsIgnoreSpace(
         (String) json.get("js"),
         "IMPORTS___.rewriteUriInAttribute___("
@@ -111,6 +111,43 @@ public class HtmlHandlerTest extends ServiceTestCase {
         + ")");
   }
 
+  public final void testTargetAttribs() throws Exception {
+    registerUri(
+        "http://foo/index.html",
+        ""
+        + "<a href=\"shizzle.html\">Default</a>"
+        + "<a href=\"shizzle.html\" target=\"_self\">Self</a>"
+        + "<a href=\"shizzle.html\" target=\"_blank\">Blank</a>"
+        + "<a href=\"shizzle.html\" target=\"_top\">Top</a>"
+        + "<a href=\"shizzle.html\" target=\"_parent\">Parent</a>"
+        + "<a href=\"shizzle.html\" target=\"foo\">Foo</a>",
+        "text/html");
+    String result = (String) requestGet(
+        "?url=http://foo/index.html&input-mime-type=text/html"
+        + "&output-mime-type=text/html&sext=true&idclass=foo___"
+        + "&build-version=" + BuildInfo.getInstance().getBuildVersion());
+    JSONObject json = (JSONObject) json(result);
+
+    assertContainsIgnoreSpace(
+        (String) json.get("html"),
+        "<a id=\"id_1___\" target=\"_self\">Default</a>");
+    assertContainsIgnoreSpace(
+        (String) json.get("html"),
+        "<a id=\"id_2___\" target=\"_self\">Self</a>");
+    assertContainsIgnoreSpace(
+        (String) json.get("html"),
+        "<a id=\"id_3___\" target=\"_blank\">Blank</a>");
+    assertContainsIgnoreSpace(
+        (String) json.get("html"),
+        "<a id=\"id_4___\" target=\"_blank\">Top</a>");
+    assertContainsIgnoreSpace(
+        (String) json.get("html"),
+        "<a id=\"id_5___\" target=\"_blank\">Parent</a>");
+    assertContainsIgnoreSpace(
+        (String) json.get("html"),
+        "<a id=\"id_6___\" target=\"_blank\">Foo</a>");
+  }
+  
   private void assertHtml2Json(String inputMimeType)
       throws Exception {
     registerUri(

@@ -35,7 +35,6 @@
     forceES5Mode: inES5Mode
   });
   
-
   registerTest('testUriInAttr', function testUriInAttr() {
     var div = createDiv();
     caja.load(div, uriCallback, function (frame) {
@@ -46,7 +45,20 @@
               '<a href="URICALLBACK[['
               + 'http://localhost:8000/ant-lib/'
               + 'com/google/caja/plugin/bar.html'
-              + ']]" target="_blank">bar</a>'),
+              + ']]" target="_self">default</a>'
+              + '<a href="URICALLBACK[['
+              + 'http://localhost:8000/ant-lib/'
+              + 'com/google/caja/plugin/bar.html'
+              + ']]" target="_blank">top</a>'
+              + '<a href="URICALLBACK[['
+              + 'http://localhost:8000/ant-lib/'
+              + 'com/google/caja/plugin/bar.html'
+              + ']]" target="_self">self</a>'
+              + '<a href="URICALLBACK[['
+              + 'http://localhost:8000/ant-lib/'
+              + 'com/google/caja/plugin/bar.html'
+              + ']]" target="_blank">parent</a>'
+          ),
           canonInnerHtml(div.innerHTML));
         jsunitPass('testUriInAttr');
       });

@@ -112,7 +112,7 @@ public class HtmlCompiledPluginTest extends CajaTestCase {
 
         // Handler is attached separately.
         ""
-        + "assertEquals('<a target=\"_blank\">hi</a>',"
+        + "assertEquals('<a target=\"_self\">hi</a>',"
         + "             document.getElementById('test-test').innerHTML);");
   }
 
