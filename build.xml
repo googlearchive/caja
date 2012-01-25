@@ -884,11 +884,8 @@
       -->
       <output file="${lib}/ses-taming-frame.jslint.stamp"
        language="jslint"/>
-      <!-- TODO(kpreid): Minifier rejects top-level 'use strict' directives.
-           Refactor Domado so it does not need one, or have the minifier
-           do something clever. -->
-      <!--<output file="${lib.caja}/plugin/ses-taming-frame.opt.js"
-       language="javascript" renderer="minify"/>-->
+      <output file="${lib.caja}/plugin/ses-taming-frame.opt.js"
+       language="javascript" renderer="minify"/>
       <output file="${lib.caja}/plugin/ses-taming-frame.js"
        language="javascript" renderer="concat"/>
       <input file="${src.caja}/plugin/caja-iframe-build-version.js"/>
@@ -918,13 +915,10 @@
     <transform>
       <!-- ses-guest-frame: Used by caja.js when the browser is SES-capable.
       -->
-      <!-- TODO(kpreid): Minifier rejects top-level 'use strict' directives.
-           Refactor Domado so it does not need one, or have the minifier
-           do something clever. -->
       <output file="${lib}/ses-guest-frame.jslint.stamp"
        language="jslint"/>
-      <!--<output file="${lib.caja}/plugin/ses-guest-frame.opt.js"
-       language="javascript" renderer="minify"/>-->
+      <output file="${lib.caja}/plugin/ses-guest-frame.opt.js"
+       language="javascript" renderer="minify"/>
       <output file="${lib.caja}/plugin/ses-guest-frame.js"
        language="javascript" renderer="concat"/>
       <input file="${src.caja}/plugin/caja-iframe-build-version.js"/>
