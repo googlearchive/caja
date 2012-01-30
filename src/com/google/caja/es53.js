@@ -2762,7 +2762,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
         if (Type(obj) !== 'Object') {
           throw new TypeError('Not an object.');
         }
-        if (!Object.hasOwnProperty('Prototype___')) {
+        if (!obj.hasOwnProperty('Prototype___')) {
           // If there's no built-in version, fall back to __proto__.
           if ({}.__proto__ === Object.prototype) {
             obj.Prototype___ = obj.__proto__;

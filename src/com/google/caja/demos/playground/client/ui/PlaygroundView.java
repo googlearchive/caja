@@ -406,7 +406,7 @@ public class PlaygroundView {
                     PlaygroundView.this.addCompileMessage(t.toString());
                   }
                   @Override public void onSuccess(JavaScriptObject r) {
-                    PlaygroundView.this.setRenderedResult(r.toString());
+                    PlaygroundView.this.setRenderedResult(r + "");
                   }
                 });
           }

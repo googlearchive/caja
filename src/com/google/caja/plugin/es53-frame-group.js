@@ -27,7 +27,8 @@
  */
 
 function ES53FrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker) {
-  if (tamingWin !== window) {
+  // Note: in IE<9, window !== window.self
+  if (tamingWin !== window.self) {
     throw new Error('wrong frame');
   }
 
@@ -57,6 +58,16 @@ function ES53FrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker) {
   markCallableWithoutMembrane(insiderUntame);
   markCallableWithoutMembrane(insiderTamesTo);
   markCallableWithoutMembrane(insiderHasTameTwin);
+
+  // On IE<=8 you can't add properties to text nodes or attribute nodes.
+  // We detect that here and set a flag ie8nodes for makeDOMAccessible().
+  // Note, this flag has to be set before the call to Domado() 
+  var ie8nodes = false;
+  try {
+    feralWin.document.createTextNode('x').v___ = 1;
+  } catch (e) {
+    ie8nodes = true;
+  }
 
   var domado = Domado(
       recordWithMethods(
@@ -240,7 +251,7 @@ function ES53FrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker) {
 
     // These ___ variables are interfaces used by cajoled code.
     imports.htmlEmitter___ = new HtmlEmitter(
-      makeDOMAccessible, divs.inner, domicile, guestWin);
+      makeDOMAccessible, divs.inner, domicile, imports);
     imports.rewriteUriInCss___ = domicile.rewriteUriInCss.bind(domicile);
     imports.rewriteUriInAttribute___ =
       domicile.rewriteUriInAttribute.bind(domicile);
@@ -424,7 +435,9 @@ function ES53FrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker) {
    * is written to be adaptable to an environment where this action
    * requires wrappers. (Domado is not.)
    */
-  function makeDOMAccessible(o) {
+  function makeDOMAccessible(node) {
+    var o = node;
+
     // This accepts functions because some objects are incidentally
     // functions. makeDOMAccessible does not make functions callable.
 
@@ -437,24 +450,32 @@ function ES53FrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker) {
     if ((typeof o === 'object' || typeof o === 'function')
         && o !== null
         && !Object.prototype.hasOwnProperty.call(o, 'v___')) {
+      // IE<=8 needs wrappers
+      if (ie8nodes) { o = {}; }
       o.v___ = function (p) {
-        return this[p];
+        return node[p];
       };
       o.w___ = function (p, v) {
-        this[p] = v;
+        node[p] = v;
       };
       o.m___ = function (p, as) {
         // From es53 tameObjectWithMethods without the membrane features.
         p = '' + p;
         if (('' + (+p)) !== p && !(/__$/).test(p)) {
-          var method = o[p];
+          var method = node[p];
           if (typeof method === 'function') {
-            return method.apply(o, as);
+            return method.apply(node, as);
+          }
+          // IE<=8 DOM methods are objects not functions
+          if (typeof method === 'object' &&
+              (method+'').substr(0, 10) === '\nfunction ') {
+            // IE<=8 DOM methods lack .apply
+            return Function.prototype.apply.call(method, node, as);
           }
         }
         throw new TypeError('Not a function: ' + p);
       };
-      o.HasProperty___ = function (p) { return p in this; };
+      o.HasProperty___ = function (p) { return p in node; };
     }
     return o;
   }

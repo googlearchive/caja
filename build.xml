@@ -73,6 +73,7 @@
     WAR directory called, say, "ant-war". So far unsuccessful.
   -->
   <property name="gwt-war"     location="war"/>
+  <property name="gwt.style"   value="OBFUSCATED"/>
   <property name="maven"       location="ant-maven"/>
   <property name="maven-repository-url" value="https://oss.sonatype.org/service/local/staging/deploy/maven2/" />
   <property name="maven-repository-id" value="sonatype-nexus-staging" />
@@ -193,6 +194,7 @@
     <delete dir="${maven}"/>
     <delete dir="${war}"/>
     <delete dir="${gwt-war}"/>
+    <delete dir="gwt-unitCache"/>
     <delete dir="${third_party}/java/htmlparser/lib"/>
   </target>
 
@@ -775,7 +777,7 @@
       <output file="${lib}/domado.jslint.stamp"
        language="jslint"/>
       <output file="${lib.caja}/plugin/domado.out.js"
-       language="caja" renderer="minify"/>
+       language="caja" renderer="pretty"/>
       <input file="${src.caja}/plugin/unicode.js"/>
       <input file="${lib.caja}/plugin/css-defs.js"/>
       <input file="${lib.caja}/plugin/html4-defs.js"/>
@@ -792,7 +794,7 @@
   <target name="CajoledTamingMembrane" depends="pluginc">
     <transform>
       <output file="${lib.caja}/plugin/taming-membrane.out.js"
-              language="caja" renderer="minify"/>
+              language="caja" renderer="pretty"/>
         <input file="${src.caja}/plugin/taming-membrane.js"/>
     </transform>
   </target>
@@ -1162,6 +1164,8 @@
       <jvmarg value="-XX:CompileCommand=exclude,org/eclipse/core/internal/dtree/DataTreeNode,forwardDeltaWith" />
       <jvmarg value="-XX:CompileCommand=exclude,org/eclipse/jdt/internal/compiler/lookup/ParameterizedTypeBinding,&lt;init&gt;" />
       <jvmarg value="-XX:CompileCommand=exclude,org/eclipse/jdt/internal/compiler/lookup/ParameterizedMethodBinding,&lt;init&gt;" />
+      <arg value="-style"/>
+      <arg value="${gwt.style}"/>
       <arg value="-war"/>
       <arg value="${war}" />
       <arg value="${gwt.target.module}"/>
@@ -1393,7 +1397,12 @@
     </copy>
   </target>
 
-  <target name="alt-playground" depends="playground, alt-appengine-web" />
+  <target name="alt-playground">
+    <antcall target="playground">
+      <param name="gwt.style" value="PRETTY"/>
+    </antcall>
+    <antcall target="alt-appengine-web"/>
+  </target>
 
   <target name="deploy" depends="playground">
     <appcfg action="update" war="${war}" />

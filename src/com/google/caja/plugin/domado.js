@@ -254,9 +254,10 @@ var Domado = (function() {
    */
   domitaModules.setOwn = function (object, propName, value) {
     propName += '';
+    // IE<=8, DOM objects are missing 'valueOf' property'
+    var desc = domitaModules.getPropertyDescriptor(object, propName);
     Object.defineProperty(object, propName, {
-      enumerable: domitaModules.getPropertyDescriptor(object, propName)
-                      .enumerable,
+      enumerable: desc ? desc.enumerable : false,
       value: value
     });
   };
@@ -1309,14 +1310,14 @@ var Domado = (function() {
       };
       var pluginId;
   
-      makeDOMAccessible(pseudoBodyNode);
+      pseudoBodyNode = makeDOMAccessible(pseudoBodyNode);
       var document = pseudoBodyNode.ownerDocument;
-      makeDOMAccessible(document);
+      document = makeDOMAccessible(document);
       makeDOMAccessible(document.documentElement);
       var bridal = bridalMaker(makeDOMAccessible, document);
   
       var window = bridalMaker.getWindow(pseudoBodyNode);
-      makeDOMAccessible(window);
+      window = makeDOMAccessible(window);
   
       var elementPolicies = {};
       elementPolicies.form = function (attribs) {
@@ -1925,7 +1926,7 @@ var Domado = (function() {
        */
       function defaultTameNode(node, editable, foreign) {
         if (node === null || node === void 0) { return null; }
-        makeDOMAccessible(node);
+        node = makeDOMAccessible(node);
         // TODO(mikesamuel): make sure it really is a DOM node
   
         var cache = editable ? editableTameNodeCache : readOnlyTameNodeCache;
@@ -1954,7 +1955,7 @@ var Domado = (function() {
           return tameDocument.body;
         }
   
-        makeDOMAccessible(node);
+        node = makeDOMAccessible(node);
   
         // Catch errors because node might be from a different domain.
         try {
@@ -2049,7 +2050,7 @@ var Domado = (function() {
               editable,
               opt_tameNodeCtor,
               opt_extras) {
-            makeDOMAccessible(nodeList);
+            nodeList = makeDOMAccessible(nodeList);
             function getItem(i) {
               i = +i;
               if (opt_extras) {
@@ -2081,7 +2082,7 @@ var Domado = (function() {
   
       function makeTameOptionsList() {
         return function TOL(nodeList, editable, opt_tameNodeCtor) {
-            makeDOMAccessible(nodeList);
+            nodeList = makeDOMAccessible(nodeList);
             function getItem(i) {
               i = +i;
               return opt_tameNodeCtor(nodeList[i], editable);
@@ -2454,7 +2455,7 @@ var Domado = (function() {
        * @constructor
        */
       function TameBackedNode(node, editable, childrenEditable, opt_proxyType) {
-        makeDOMAccessible(node);
+        node = makeDOMAccessible(node);
   
         if (!node) {
           throw new Error('Creating tame node with undefined native delegate');
@@ -3197,7 +3198,7 @@ var Domado = (function() {
                 && !(html4.ELEMENTS[tagName] & html4.eflags.UNSAFE)) {
               // Not an opaque node.
               for (var c = rawNode.firstChild; c; c = c.nextSibling) {
-                makeDOMAccessible(c);
+                c = makeDOMAccessible(c);
                 innerTextOf(c, out);
               }
             }
@@ -3208,7 +3209,7 @@ var Domado = (function() {
             break;
           case 11:  // Document Fragment
             for (var c = rawNode.firstChild; c; c = c.nextSibling) {
-              makeDOMAccessible(c);
+              c = makeDOMAccessible(c);
               innerTextOf(c, out);
             }
             break;
@@ -3475,7 +3476,7 @@ var Domado = (function() {
           return colorNameTable[" " + colorString] || colorString;
         }
         function TameImageData(imageData) {
-          makeDOMAccessible(imageData);
+          imageData = makeDOMAccessible(imageData);
           var p = TameImageDataConf.p;
   
           // Since we can't interpose indexing, we can't wrap the
@@ -3548,7 +3549,7 @@ var Domado = (function() {
           return Object.freeze(tameImageData);
         }
         function TameGradient(gradient) {
-          makeDOMAccessible(gradient);
+          gradient = makeDOMAccessible(gradient);
           var tameGradient = {
             toString: cajaVM.def(function () {
                 return "[Domita CanvasGradient]"; }),
@@ -4346,7 +4347,7 @@ var Domado = (function() {
       function fromInt(x) { return '' + (x | 0); }  
   
       function tameEvent(event) {
-        makeDOMAccessible(event);
+        event = makeDOMAccessible(event);
         if (!taming.hasTameTwin(event)) {
           var tamed = new TameEvent(event);
           taming.tamesTo(event, tamed);
@@ -4627,7 +4628,7 @@ var Domado = (function() {
   
         traceStartup("DT: TameHTMLDocument tameTitle");
         var title = doc.createTextNode(body.getAttribute('title') || '');
-        makeDOMAccessible(title);
+        title = makeDOMAccessible(title);
         var tameTitleElement = finishNode(new TamePseudoElement(
             'TITLE',
             this,
@@ -4959,7 +4960,7 @@ var Domado = (function() {
       function buildTameStyle() {
   
         var aStyleForCPC = document.documentElement.style;
-        makeDOMAccessible(aStyleForCPC);
+        aStyleForCPC = makeDOMAccessible(aStyleForCPC);
         var allCssProperties = domitaModules.CssPropertiesCollection(
             aStyleForCPC);
   
@@ -4974,7 +4975,7 @@ var Domado = (function() {
          * http://www.w3.org/TR/DOM-Level-2-Style/css.html#CSS-CSSStyleDeclaration
          */
         TameStyle = function (style, editable, tameEl) {
-          makeDOMAccessible(style);
+          style = makeDOMAccessible(style);
   
           TameStyleConf.confide(this);
           TameStyleConf.p(this).feral = style;
@@ -5176,7 +5177,7 @@ var Domado = (function() {
       /** The node to which gadget stylesheets should be added. */
       domicile.getCssContainer = cajaVM.def(function () {
         var e = document.getElementsByTagName('head')[0];
-        makeDOMAccessible(e);
+        e = makeDOMAccessible(e);
         return e;
       });
   

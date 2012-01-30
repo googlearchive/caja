@@ -46,7 +46,7 @@ function HtmlEmitter(makeDOMAccessible, base, opt_domicile, opt_guestGlobal) {
     throw new Error(
         'Host page error: Virtual document element was not provided');
   }
-  makeDOMAccessible(base);
+  base = makeDOMAccessible(base);
   var insertionPoint = base;
   var bridal = bridalMaker(makeDOMAccessible, base.ownerDocument);
 
@@ -64,9 +64,9 @@ function HtmlEmitter(makeDOMAccessible, base, opt_domicile, opt_guestGlobal) {
     idMap = {};
     var descs = base.getElementsByTagName('*');
     for (var i = 0, desc; (desc = descs[i]); ++i) {
-      makeDOMAccessible(desc);
+      desc = makeDOMAccessible(desc);
       var id = desc.getAttributeNode('id');
-      makeDOMAccessible(id);
+      id = makeDOMAccessible(id);
       // The key is decorated to avoid name conflicts and restrictions.
       if (id && id.value) { idMap[id.value + " map entry"] = desc; }
     }
@@ -187,7 +187,7 @@ function HtmlEmitter(makeDOMAccessible, base, opt_domicile, opt_guestGlobal) {
 
     // First, store all the children.
     for (var child = limit.firstChild, next; child; child = next) {
-      makeDOMAccessible(child);
+      child = makeDOMAccessible(child);
       next = child.nextSibling;  // removeChild kills nextSibling.
       out.push(child, limit);
       limit.removeChild(child);
@@ -196,9 +196,9 @@ function HtmlEmitter(makeDOMAccessible, base, opt_domicile, opt_guestGlobal) {
     // Second, store your ancestor's next siblings and recurse.
     for (var anc = limit, greatAnc; anc && anc !== base; anc = greatAnc) {
       greatAnc = anc.parentNode;
-      makeDOMAccessible(greatAnc);
+      greatAnc = makeDOMAccessible(greatAnc);
       for (var sibling = anc.nextSibling, next; sibling; sibling = next) {
-        makeDOMAccessible(sibling);
+        sibling = makeDOMAccessible(sibling);
         next = sibling.nextSibling;
         out.push(sibling, greatAnc);
         greatAnc.removeChild(sibling);

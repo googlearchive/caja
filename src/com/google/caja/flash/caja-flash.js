@@ -262,8 +262,8 @@ var cajaFlash = {};
     var caja___ = tamingWin.___;
     var taming___ = getTaming();
 
-    guestWin.cajaHandleEmbed = cajaHandleEmbed;
-    caja___.markFuncFreeze(cajaHandleEmbed, 'cajaHandleEmbed');
-    caja___.grantRead(guestWin, 'cajaHandleEmbed');
+    // called by HtmlEmitter
+    guestImps.cajaHandleEmbed = cajaHandleEmbed;
+    caja___.grantFunc(guestImps, 'cajaHandleEmbed');
   };
 })();
