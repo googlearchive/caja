@@ -42,17 +42,6 @@
     API.</p></doc>
 
     <property>
-      <name>iframe</name>
-      <doc><p>A direct reference to the <code>&lt;iframe&gt;</code>
-      object used as a JavaScript context for taming objects (see
-      <code>tame</code> below). Provided for diagnostics and testing
-      only. <em>It is crucial for the security of your host page
-      that you never inject any code or other content into this frame,
-      since you may easily break invariants of the Caja
-      system.</em></p></doc>
-    </property>
-
-    <property>
       <name>policy</name>
       <doc><p>A pre-configured set of policies (see
       <code>policy</code>) for use by host code, as an alternative to
@@ -70,16 +59,30 @@
       <arg>
         <name>params</name>
         <doc><p>a map of configuration parameters. These include:</p><ul>
-          <li><code>cajaServer</code>: a string giving the URL of the Caja
+          <li><code>server</code>: a string giving the URL of the Caja
           server. This must match the location from which the
           <code>caja.js</code> script was sourced. For example, if the script
           was from <code>http://caja.appspot.com/caja.js</code>, then
           <code>cajaServer</code> must, correspondingly, be
           <code>http://caja.appspot.com/</code>.</li>
+          <li><code>resources</code>: a string giving the URL of the location
+          at which the Caja JavaScript runtime resources are found. If unspecified,
+          this location is deduced from the <code>server</code> parameter.</li>
           <li><code>debug</code>: a boolean indicating whether to configure Caja
-          for debugging. At this time, debugging support means that the Caja
-          infrastructure, and the cajoled code, will be pretty-printed for
-          readability, rather than minified for speed.</li>
+          for debugging. At this time, debugging support means that the code
+          loaded into the browser will be pretty-printed for readability, rather
+          than minified for speed.</li>
+          <li><code>console</code>: an object that the Caja runtime is to use in
+          place of the native browser's <code>console</code> global object. If
+          unspecified, Caja will fall back to the native <code>console</code>,
+          and silently suppress console logging if that is unavailable.</li>
+          <li><code>log</code>: a function that the Caja runtime is to use in
+          place of the native browser's <code>console.log</code> function. If
+          unspecified, Caja will fall back to the <code>log</code> function in
+          the supplied <code>console</code> object (see above). If unspecified,
+          Caja will fall back to the browser's native <code>console.log</code>
+          function. If that is unavailable, Caja will silently suppress console
+          logging.</li>
         </ul></doc>
       </arg>
     </method>
@@ -90,7 +93,7 @@
       ready to provide services.</p></doc>
       <arg>
         <name>callback</name>
-         <doc><p>a callback function.</p></doc>
+        <doc><p>a callback function.</p></doc>
       </arg>
     </method>
 
@@ -140,7 +143,7 @@ var f = {
 };
 
 /* then provide to guest code: */
-{ tamedF: aFrameGroup.tame(f) }
+aFrame.api({ tamedF: aFrameGroup.tame(f) })
 </pre>
           <p>guest code using the tamed form <code>tamedF</code> will
           be able to read the values of <code>x</code> and
@@ -223,13 +226,13 @@ function f(x) { this.i___ = x; }
 aFrameGroup.markXo4a(f);
 
 /* then provide to guest code: */
-{ tamedF: aFrameGroup.tame(f) }
+aFrame.api({ tamedF: aFrameGroup.tame(f) })
 </pre>
       <p>guest code using the function <code>t</code> would be able to
       set the property <code>i___</code> on <em>any</em> object of its
       choosing, regardless of any policies to the contrary, even
-      though <code>i___</code> is not an allowed property name in Caja
-      and would interfere with the Caja internals. For example:</p>
+      though the <code>i___</code> property name may interfere with the
+      Caja internals. For example:</p>
 <pre class="prettyprint lang-javascript">
 /* <strong>guest code</strong> */
 var aVictimObject = /* ... */;
@@ -279,8 +282,10 @@ aFrameGroup.markCtor(Ctor);
 aFrameGroup.markCtor(SubCtor, Ctor);
 
 /* then provide to guest code: */
-{ TamedCtor: tame(Ctor),
-  TamedSubCtor: tame(SubCtor) }
+aFrame.api({
+  TamedCtor: tame(Ctor),
+  TamedSubCtor: tame(SubCtor)
+})
 </pre>
       <p>When guest code creates instances of these constructors,
       e.g., by calling:</p>
@@ -295,33 +300,6 @@ var o = new TamedCtor(19);
         <doc><p>a constructor in the host page.</p></doc>
       </arg>
       <returndoc><p>the supplied <code>c</code>.</p></returndoc>
-    </method>
-
-    <method>
-      <name>markConstructed</name>
-      <doc><p>(See the description of the <code>markCtor</code> method
-      for background.)  In some cases, <em>host</em> code will need to
-      construct an instance of some constructor, then pass that back
-      to guest code. In that case, host code must mark the instance
-      using <code>markConstructed</code> so that Caja can tame it
-      properly. For example:</p>
-<pre class="prettyprint lang-javascript">
-/* <strong>host page code</strong> */
-function makeInstance(x) {
-  var o = new Ctor(x);
-  aFrameGroup.markConstructed(o);
-  return o;
-}
-
-/* then provide to guest code: */
-{ tamedMakeInstance: tame(makeInstance) }
-</pre>
-      </doc>
-      <arg>
-        <name>o</name>
-        <doc><p>a constructed object in the host page.</p></doc>
-      </arg>
-      <returndoc><p>the supplied <code>o</code>.</p></returndoc>
     </method>
 
     <example>
@@ -401,6 +379,7 @@ caja.whenReady(function() {
       <doc>
         <p>Assume the host page has some HTML like the following:</p>
 <pre class="prettyprint lang-html">
+&lt;!-- <strong>host page markup</strong> --&gt;
 &lt;div id="guestDiv"&gt;&lt;/div&gt;
 </pre>
         <p>Then the following code in the page:</p>
@@ -456,9 +435,10 @@ caja.load(
       <doc>
         <p>Imagine a host page wishes to give guest code the ability
         to call <code>alert</code>, but not to abuse it by calling it
-        too many times. Assume the guest page has HTML like the
+        too many times. Assume the host page has HTML like the
         following:</p>
 <pre class="prettyprint lang-html">
+&lt;!-- <strong>host page markup</strong> --&gt;
 &lt;div id="guestDiv"&gt;&lt;/div&gt;
 </pre>
         <p>Then the following code:</p>
@@ -509,59 +489,6 @@ caja.load(
     guest code. Contains a confined ECMAScript 5 JavaScript context,
     with an optional confined DOM <code>document</code>.</p></doc>
 
-    <property>
-      <name>iframe</name>
-      <doc><p>A direct reference to the <code>&lt;iframe&gt;</code>
-      object used to run the code for this ES5 frame. <em>Provided for
-      diagnostics and testing only. It is crucial for the
-      security of your host page that you never inject any code or
-      other content into this frame, since you may easily break
-      invariants of the Caja system.</em></p></doc>
-    </property>
-
-    <property>
-      <name>imports</name>
-      <doc><p>A direct reference to the set of global variables to be
-      provided to guest code in this frame. <em>Provided for diagnostics
-      and testing only.</em></p></doc>
-    </property>
-
-    <property>
-      <name>loader</name>
-      <doc><p>A direct reference to the module loader of this
-      frame. <em>Provided for diagnostics and testing
-      only.</em></p></doc>
-    </property>
-
-    <property>
-      <name>div</name>
-      <doc><p>A direct reference to the <code>&lt;div&gt;</code>
-      supplied when this frame was constructed. <em>Provided for
-      diagnostics and testing only.</em></p></doc>
-    </property>
-
-    <property>
-      <name>idSuffix</name>
-      <doc><p>The HTML and CSS identifier suffix assigned to the guest
-      contents of this frame as part of the mechanism whereby Caja
-      achieves DOM isolation. <em>Provided for diagnostics and testing
-      only.</em></p></doc>
-    </property>
-
-    <property>
-      <name>innerContainer</name>
-      <doc><p>The inner HTML <code>&lt;div&gt;</code> used by Caja to
-      achieve DOM isolation. <em>Provided for diagnostics and testing
-      only.</em></p></doc>
-    </property>
-
-    <property>
-      <name>outerContainer</name>
-      <doc><p>The outer HTML <code>&lt;div&gt;</code> used by Caja to
-      achieve DOM isolation. <em>Provided for diagnostics and testing
-      only.</em></p></doc>
-    </property>
-
     <method>
       <name>cajoled</name>
       <doc><p>Specifies that this <code>frame</code> is to run code
@@ -608,9 +535,8 @@ caja.load(
       <arg>
         <name>content</name>
         <doc><p><strong>Optional.</strong> The literal content to be
-        run. This argument is optional; if not supplied, the Caja
-        server will retrieve the content using the <code>uri</code>
-        parameter.</p></doc>
+        run. If not supplied, Caja will retrieve the content using the
+        <code>uri</code> parameter.</p></doc>
       </arg>
       <returndoc><p>this <code>frame</code> object.</p></returndoc>
     </method>

@@ -185,7 +185,13 @@ var caja = (function () {
    *         mode, rather than autodetecting browser capabilities. This
    *         should be used strictly for debugging purposes.
    *
-   * @param config an object literal containing configuration paramters.
+   *     console - Optional user-supplied alternative to the browser's native
+   *         'console' object.
+   *
+   *     log - Optional user-supplied alternative to the browser's native
+   *         'console.log' function.
+   *
+   * @param config an object literal containing configuration parameters.
    * @param frameGroupReady function to be called back with a reference to
    *     the newly created frame group.
    */
