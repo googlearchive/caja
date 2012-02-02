@@ -111,6 +111,8 @@
                   "inherit"]);
     context.fillStyle = "black";
     assertEquals("named fillStyle", "#000000", context.fillStyle);
+    context.fillStyle = "#FF0000";
+    assertEquals("uppercase fillStyle", "#ff0000", context.fillStyle);
 
     // context.strokeStyle
     // assume strokeStyle has the same taming structure as fillStyle,
@@ -186,7 +188,7 @@
     // ignored."
 
     // Can we draw something and get it back?
-    context.fillStyle = "#ff0000";
+    context.fillStyle = "#Ff0000";
     context.fillRect(10, 10, 20, 20);
     var idata = context.getImageData(19, 19, 1, 1);
     assertEquals("idata.data[0]", 255, idata.data[0]);

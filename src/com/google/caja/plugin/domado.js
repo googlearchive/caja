@@ -3421,7 +3421,8 @@ var Domado = (function() {
             if (tok !== ' ') { tokens[k++] = tok; }
           }
           tokens.length = k;
-          var unfiltered = tokens.join(' ');
+          // sanitizeCssProperty always lowercases
+          var unfiltered = tokens.join(' ').toLowerCase();
           sanitizeCssProperty(cssSchema[cssPropertyName], tokens);
           return unfiltered === tokens.join(' ') ? unfiltered : false;
         }
