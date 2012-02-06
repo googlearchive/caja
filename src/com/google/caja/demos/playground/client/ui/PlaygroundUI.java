@@ -12,6 +12,7 @@ import com.google.gwt.user.client.ui.Composite;
 import com.google.gwt.user.client.ui.HTML;
 import com.google.gwt.user.client.ui.HorizontalPanel;
 import com.google.gwt.user.client.ui.Label;
+import com.google.gwt.user.client.ui.ListBox;
 import com.google.gwt.user.client.ui.MultiWordSuggestOracle;
 import com.google.gwt.user.client.ui.SuggestBox;
 import com.google.gwt.user.client.ui.TabLayoutPanel;
@@ -45,6 +46,7 @@ public class PlaygroundUI extends Composite {
   @UiField protected Button defaultButton;
   @UiField protected Tree exampleTree;
   @UiField protected HorizontalPanel feedbackPanel;
+  @UiField protected ListBox mode;
 
   @UiField(provided=true)
   protected SuggestBox addressField;

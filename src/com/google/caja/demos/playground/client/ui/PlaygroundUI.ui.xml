@@ -16,7 +16,6 @@
   <g:DockLayoutPanel>
     <g:north size="80">
       <g:VerticalPanel width="100%">
-
         <!-- Feedback Panel -->
         <g:HorizontalPanel ui:field="feedbackPanel">
         </g:HorizontalPanel>
@@ -29,6 +28,17 @@
           <g:VerticalPanel styleName="{style.pginfo}">
             <g:Label>Caja Playground</g:Label>
             <g:Label ui:field="version">Unknown</g:Label>
+            <g:ListBox ui:field="mode" visibleItemCount="1">
+              <g:item value='0'>
+                Autodetect Mode
+              </g:item>
+              <g:item value='1'>
+                ES5 Mode (Experimental)
+              </g:item>
+              <g:item value='0'>
+                ES5/3 Mode
+              </g:item>
+            </g:ListBox>
           </g:VerticalPanel>
           <g:HorizontalPanel ui:field="loadingLabel"
             styleName="{style.loadingLabel}" >
@@ -37,9 +47,9 @@
           </g:HorizontalPanel>
           <g:cell
             horizontalAlignment="ALIGN_RIGHT" verticalAlignment="ALIGN_MIDDLE">
-           <g:HTML>
+            <g:HTML>
              <div id="plusone"></div>
-           </g:HTML>
+            </g:HTML>
           </g:cell>
         </g:HorizontalPanel>
       </g:VerticalPanel>

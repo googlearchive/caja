@@ -33,6 +33,15 @@ public class Caja {
     });
   }-*/;
 
+  public static native void initialize(String cajaServer, boolean debug,
+      boolean forceES5Mode) /*-{
+    $wnd.caja.initialize({
+      cajaServer: cajaServer,
+      debug: debug,
+      forceES5Mode: forceES5Mode
+    });
+  }-*/;
+
   public static void load(
       Element element,
       JavaScriptObject uriPolicy,

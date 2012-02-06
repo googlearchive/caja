@@ -83,6 +83,25 @@ public class Playground implements EntryPoint, ValueChangeHandler<String> {
   }
 
   public void cajole(String uri, String input, final String policy,
+      boolean debugMode, Boolean es5, final String opt_idClass) {
+    if (null == es5 || !es5) {
+      cajoleES53(uri, input, policy, debugMode, opt_idClass);
+    } else {
+      cajoleES5(uri, input, policy, debugMode, opt_idClass);
+    }
+  }
+
+  public void cajoleES5(String uri, String input, final String policy,
+      boolean debugMode, final String opt_idClass) {
+    gui.setLoading(true);
+    gui.setCajoledSource("", "");
+    gui.selectTab(PlaygroundView.Tabs.RENDER);
+    gui.setRenderedResult(true /* es5 */,
+        policy, input, null, opt_idClass);
+    gui.setLoading(false);
+  }
+  
+  public void cajoleES53(String uri, String input, final String policy,
       boolean debugMode, final String opt_idClass) {
     gui.setLoading(true);
     cajolingService.cajole(
@@ -105,12 +124,12 @@ public class Playground implements EntryPoint, ValueChangeHandler<String> {
         }
         if (result.getHtml() != null) {
           gui.setCajoledSource(result.getHtml(), result.getJavascript());
-          gui.setRenderedResult(
+          gui.setRenderedResult(false /* es5 */,
               policy, result.getHtml(), result.getJavascript(), opt_idClass);
           gui.selectTab(PlaygroundView.Tabs.RENDER);
         } else {
           gui.setCajoledSource(null, null);
-          gui.setRenderedResult(null, null, null, null);
+          gui.setRenderedResult(false, null, null, null, null);
           gui.selectTab(PlaygroundView.Tabs.COMPILE_WARNINGS);
         }
       }
@@ -125,7 +144,14 @@ public class Playground implements EntryPoint, ValueChangeHandler<String> {
   }
 
   public void onModuleLoad() {
-    gui = new PlaygroundView(this);
+    String query = Window.Location.getParameter("es5");
+    Boolean mode = null == query ? null :
+        query.equalsIgnoreCase("true") 
+          ? Boolean.TRUE 
+              : query.equalsIgnoreCase("false") 
+              ? Boolean.FALSE 
+                  : null;
+    gui = new PlaygroundView(this, mode);
     gui.setLoading(true);
     cajolingService.getBuildInfo(new AsyncCallback<String>() {
       public void onFailure(Throwable caught) {

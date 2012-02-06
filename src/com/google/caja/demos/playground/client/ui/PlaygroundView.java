@@ -13,20 +13,26 @@
 
 package com.google.caja.demos.playground.client.ui;
 
+import java.util.EnumMap;
+import java.util.HashMap;
+import java.util.Map;
+
 import com.google.caja.demos.playground.client.Playground;
 import com.google.caja.demos.playground.client.PlaygroundResource;
 import com.google.caja.gwtbeans.shared.Caja;
 import com.google.caja.gwtbeans.shared.Frame;
-import com.google.caja.util.Maps;
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.core.client.JavaScriptObject;
 import com.google.gwt.dom.client.Style.Unit;
+import com.google.gwt.event.dom.client.ChangeEvent;
+import com.google.gwt.event.dom.client.ChangeHandler;
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
 import com.google.gwt.event.dom.client.FocusEvent;
 import com.google.gwt.event.dom.client.FocusHandler;
 import com.google.gwt.event.logical.shared.SelectionEvent;
 import com.google.gwt.event.logical.shared.SelectionHandler;
+import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.google.gwt.user.client.ui.Anchor;
 import com.google.gwt.user.client.ui.Button;
@@ -41,10 +47,6 @@ import com.google.gwt.user.client.ui.ScrollPanel;
 import com.google.gwt.user.client.ui.SuggestBox;
 import com.google.gwt.user.client.ui.TreeItem;
 
-import java.util.EnumMap;
-import java.util.HashMap;
-import java.util.Map;
-
 /**
  * GUI elements of the playground client
  *
@@ -58,6 +60,7 @@ public class PlaygroundView {
   private final PlaygroundUI playgroundUI;
 
   private int idSeq = 0;
+  private Boolean mode;
 
   private String genId() {
     return "CajaGadget" + (idSeq++) + "___";
@@ -90,7 +93,7 @@ public class PlaygroundView {
         playgroundUI.addressField.showSuggestionList();
       }
     });
-    playgroundUI.addressField.setText("http://");
+    playgroundUI.addressField.setText("https://");
 
     playgroundUI.goButton.addClickHandler(new ClickHandler() {
       public void onClick(ClickEvent event) {
@@ -108,6 +111,7 @@ public class PlaygroundView {
             playgroundUI.sourceText.getText(),
             playgroundUI.policyText.getText(),
             true /* debug */,
+            mode /* es5 */,
             genId()
         );
       }
@@ -269,6 +273,33 @@ public class PlaygroundView {
     }
   }-*/;
 
+  private void initMode() {
+    if (null == mode) {
+      playgroundUI.mode.setSelectedIndex(0);
+    } else if (mode) {
+      playgroundUI.mode.setSelectedIndex(1);
+    } else {
+      playgroundUI.mode.setSelectedIndex(2);
+    }
+    playgroundUI.mode.addChangeHandler(new ChangeHandler() {
+      @Override
+      public void onChange(ChangeEvent event) {
+        int s = playgroundUI.mode.getSelectedIndex();
+        switch (s) {
+          case 1:
+            Window.Location.assign("?es5=true" + Window.Location.getHash());
+            break;
+          case 2:
+            Window.Location.assign("?es5=false" + Window.Location.getHash());
+            break;
+          default:
+            Window.Location.assign("?es5=auto" + Window.Location.getHash());
+            break;
+        }
+      }
+    });
+  }
+
   private static TreeItem addExampleItem(Map<Example.Type, TreeItem> menu,
       Example eg) {
     if (!menu.containsKey(eg.type)) {
@@ -313,13 +344,18 @@ public class PlaygroundView {
   }
 
   private void initCaja() {
-    Caja.initialize(".", true);
+    if (null == mode) {
+      Caja.initialize(".", true /*debug*/);
+    } else {
+      Caja.initialize(".", true /*debug*/, mode.booleanValue() /*forceES5*/);
+    }
   }
 
-  public PlaygroundView(Playground controller) {
+  public PlaygroundView(Playground controller, Boolean mode) {
     this.controller = controller;
     this.sourceExamples = new MultiWordSuggestOracle();
     this.policyExamples = new MultiWordSuggestOracle();
+    this.mode = mode;
 
     this.playgroundUI =
       new com.google.caja.demos.playground.client.ui.PlaygroundUI(
@@ -332,6 +368,7 @@ public class PlaygroundView {
     initEditor();
     initCaja();
     initPlusOne();
+    initMode();
   }
 
   public void setOriginalSource(String result) {
@@ -367,7 +404,7 @@ public class PlaygroundView {
     return $wnd.prettyPrintOne($wnd.indentAndWrapCode(result), lang);
   }-*/;
 
-  public void setRenderedResult(
+  public void setRenderedResult(final boolean es5,
       final String policy, final String html, final String js,
       final String idClass)
   {
@@ -398,9 +435,14 @@ public class PlaygroundView {
             augmentWith(tmp, "blivit",
                 ((BlivitTaming)GWT.create(BlivitTaming.class))
                 .getJso(frame, new Blivit("hello world")));
-            frame
-                .api(tmp)
-                .cajoled("http://fake.url/", js, html)
+            Frame runnableFrame = es5 ? 
+                frame
+                  .api(tmp)
+                  .code("http://fake.url", "text/html", html) :
+                frame
+                  .api(tmp)
+                  .cajoled("http://fake.url/", js, html);              
+            runnableFrame 
                 .run(new AsyncCallback<JavaScriptObject>() {
                   @Override public void onFailure(Throwable t) {
                     PlaygroundView.this.addCompileMessage(t.toString());
