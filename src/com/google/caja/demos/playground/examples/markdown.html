@@ -1298,7 +1298,7 @@ var escapeCharacters_callback = function(wholeMatch,m1) {
 
 } // end of Showdown.converter
 
-var converter = new Showdown.converter();
+this.converter = new Showdown.converter();
 </script>
 This is a cajoled version of Attack Lab's Showdown (http://attacklab.net/showdown/), a JavaScript Markdown (http://daringfireball.net/projects/markdown/syntax) renderer.  The only changes to their original source were removing the PHP tags in a comment and removing the dependence on a single use of <code>RegExp.$1</code>.<br>
 Note that the rendering of the Markdown has been sanitized by Caja, so links are merely highlighted and images are not loaded, even though the original code would have produced these.<br>&nbsp;<br>

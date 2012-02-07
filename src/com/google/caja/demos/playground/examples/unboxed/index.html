@@ -11,7 +11,8 @@
 <div align="center" id="messages"></div>
 <button id="restart" disabled="disabled">Restart?</button>   
  
-<script> 
+<script>
+  var proxyableUrlBase = "//caja.appspot.com/examples/unboxed/";
   var modelMaker = function () {
     var width = 8;
     var height = 8;
@@ -123,7 +124,7 @@
  
     function displayWrapped(i, j) {
       document.getElementById('cell-' + i + '-' + j).src =
-        'http:examples/unboxed/wrapped.png';
+        proxyableUrlBase + 'wrapped.png';
     }
  
     function displayLost() {
@@ -136,8 +137,9 @@
  
     function displayUnwrapped(i, j) {
       var img = document.getElementById('cell-' + i + '-' + j);
-      img.src = model.bombs[i][j] ? 'bomb.png' : 
-        "http:examples/unboxed/" + model.hints[i][j] + '-unwrapped.png';
+      img.src = model.bombs[i][j] ?
+          proxyableUrlBase + 'bomb.png' : 
+            proxyableUrlBase + model.hints[i][j] + '-unwrapped.png';
     }
 
     function configureDisplay(model, display) {
@@ -147,7 +149,7 @@
         for (var j=0; j < model.width; j++) {
           var td = document.createElement('td');
           var img = document.createElement('img');
-          img.src = 'http:examples/unboxed/wrapped.png';
+          img.src = proxyableUrlBase + 'wrapped.png';
           img.id = 'cell-' + i + '-' + j;
           img.onclick = (function(i, j) { 
             return function () { clicked(i, j); };

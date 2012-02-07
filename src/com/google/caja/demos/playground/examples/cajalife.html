@@ -10,14 +10,14 @@
 </style>
 
 <script>
-  var handle = null;
-  function stop() {
+  this.handle = null;
+  this.stop = function stop() {
     if (handle !== null) {
       window.clearInterval(handle);
       handle = null;
     }
   }
-  function go() {
+  this.go = function go() {
     if (handle === null) {
       handle = window.setInterval(update, 1000);
     }
@@ -93,7 +93,7 @@
   }
 
   // Update loop
-  function update() {
+  this.update = function update() {
     for (x = 0; x < size; ++x) {
       for (y = 0; y < size; ++y) {
         var c = count(ca, t, x, y);

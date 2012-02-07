@@ -519,12 +519,14 @@ public class PlaygroundView {
   private native JavaScriptObject makeUriPolicy() /*-{
         return {
           rewrite: function (uri, uriEffect, loaderType, hints) {
-            if (!/^https?:/i.test(uri)) { return void 0; }
             if (uriEffect === $wnd.html4.ueffects.NEW_DOCUMENT) {
               return uri;
             }
             if (uriEffect === $wnd.html4.ueffects.SAME_DOCUMENT &&
                  loaderType === $wnd.html4.ltypes.SANDBOXED) {
+              if (hints && hints.XHR) {
+                return uri;
+              }
               return "http://www.gmodules.com/gadgets/proxy"
                   + "?url=" + encodeURIComponent(uri)
                   + "&container=caja";

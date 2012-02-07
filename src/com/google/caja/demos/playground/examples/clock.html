@@ -2,7 +2,7 @@
  <head>
   <script type="application/javascript">
 var intervalId;
-function init(){
+this.init = function init(){
   clock();
   intervalId = setInterval(clock, 1000);
 }
@@ -108,9 +108,10 @@ function clock(){
 }
   </script>
  </head>
- <body onload="init();">
+ <body>
    <canvas id="canvas" width="150" height="150"></canvas>
    <p>See <a href="https://developer.mozilla.org/en/Canvas_tutorial/Basic_animations#An_animation_example_2">https://developer.mozilla.org/en/Canvas_tutorial/Basic_animations#An_animation_example_2</a>
    for canvas tutorial.</p>
  </body>
+ <script>this.init();</script>
 </html>
