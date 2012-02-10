@@ -462,6 +462,7 @@
     assertEquals(null, title.getAttribute('foo'));
     assertEquals('HTML', html.tagName);
     assertEquals(null, html.getAttribute('foo'));
+    assertEquals(html.parentNode, document);
     assertEquals(html, all[0]);
     assertEquals(head, all[1]);
     assertEquals(title, all[2]);

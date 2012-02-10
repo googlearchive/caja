@@ -223,6 +223,7 @@ var lexCss, decodeCss;
    *    delimiters and to not otherwise contain double quotes.
    */
   lexCss = function (cssText) {
+    cssText = '' + cssText;
     var tokens = cssText.replace(/\r\n?/g, '\n')  // Normalize CRLF & CR to LF.
         .match(CSS_TOKEN) || [];
     var j = 0;

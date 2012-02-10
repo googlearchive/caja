@@ -618,10 +618,10 @@ var Domado = (function() {
           // 'target'? May need to implement full "tame event" wrapper similar
           // to DOM events.
           var self = this;
-          p(this).feral.onreadystatechange = taming.untame(function (event) {
+          p(this).feral.onreadystatechange = function (event) {
             var evt = { target: self };
             return handler.call(void 0, evt);
-          });
+          };
           // Store for later direct invocation if need be
           p(this).handler = handler;
         })
@@ -647,7 +647,14 @@ var Domado = (function() {
           // TODO(ihab.awad): Implement a taming layer for XML. Requires
           // generalizing the HTML node hierarchy as well so we have a unified
           // implementation.
-          return {};
+
+          // This kludge is just enough to keep the jQuery tests from freezing.
+          var node = {nodeName: '#document'};
+          node.cloneNode = function () { return node; };
+          node.toString = function () {
+            return 'Caja does not support XML.';
+          };
+          return {documentElement: node};
         })
       },
       status: {
@@ -719,7 +726,7 @@ var Domado = (function() {
         // TODO(ihab.awad): Expect tamed XML document; unwrap and send
         p(this).feral.send('');
       }
-  
+
       // Firefox does not call the 'onreadystatechange' handler in
       // the case of a synchronous XHR. We simulate this behavior by
       // calling the handler explicitly.
@@ -1299,7 +1306,7 @@ var Domado = (function() {
         idSuffix, uriCallback, pseudoBodyNode, optPseudoWindowLocation) {
       if (arguments.length < 3) {
         throw new Error(
-            'attachDocumentStub arity mismatch: ' + arguments.length);
+            'attachDocument arity mismatch: ' + arguments.length);
       }
       if (!optPseudoWindowLocation) {
           optPseudoWindowLocation = {};
@@ -1960,7 +1967,9 @@ var Domado = (function() {
         // Catch errors because node might be from a different domain.
         try {
           var docElem = node.ownerDocument.documentElement;
-          for (var ancestor = node; ancestor; ancestor = ancestor.parentNode) {
+          for (var ancestor = node; 
+              ancestor; 
+              ancestor = makeDOMAccessible(ancestor.parentNode)) {
             if (idClassPattern.test(ancestor.className)) {
               return tameNodeCtor(node, editable);
             } else if (ancestor === docElem) {
@@ -4653,7 +4662,7 @@ var Domado = (function() {
             'HTML',
             this,
             function () { return [tameHeadElement, tameBodyElement]; },
-            function () { return tamingProxies.get(this); },
+            function () { return tameDocument; },
             function () {
               return ('<head>' + tameHeadElement.innerHTML
                       + '<\/head><body>'
@@ -5267,12 +5276,7 @@ var Domado = (function() {
       function TameWindow() {
         // These descriptors were chosen to resemble actual ES5-supporting browser
         // behavior.
-        Object.defineProperty(this, "document", {
-          value: tameDocument,
-          configurable: false,
-          enumerable: true,
-          writable: false
-        });
+        // The document property is defined below.
         Object.defineProperty(this, "location", {
           value: tameLocation,
           configurable: false,
@@ -5571,6 +5575,12 @@ var Domado = (function() {
   
       domicile.window = tameWindow;
       domicile.document = tameDocument;
+      Object.defineProperty(tameWindow, 'document', {
+        value: tameDocument,
+        configurable: false,
+        enumerable: true,
+        writable: false
+      });
   
       pluginId = rulebreaker.getId(tameWindow);
       windowToDomicile.set(tameWindow, domicile);
