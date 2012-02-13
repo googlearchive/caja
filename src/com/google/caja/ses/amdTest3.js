@@ -14,10 +14,20 @@
 
 /**
  * @fileoverview Trivial test of simple AMD loader.
- * Tests anon case. No dependencies.
- * @requires define
+ * Tests anon case. No dependencies. With Axel's CommonJS Adapter
+ * boilerplate. See http://www.2ality.com/2011/11/module-gap.html
+ *
+ * @requires define, require
+ * @overrides module
  */
 
+({ define: typeof define === "function" ?
+    define :
+    function(A,F) { module.exports = F.apply(null, A.map(require)); }}).
 define([], function() {
-  return 'test';
+  "use strict";
+         
+  return function() {
+    return 'test';
+  };
 });

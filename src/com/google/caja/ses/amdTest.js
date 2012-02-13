@@ -20,5 +20,9 @@
 
 define(['amdTest1', 'amdTestDir/amdTest2', 'amdTest3'],
 function(amdTest1,              amdTest2,   amdTest3) {
-  return amdTest1 + amdTest2 + amdTest3;
+  "use strict";
+
+  // debugger; // See if we can step into amdTest3.js
+  var text3 = amdTest3();
+  return amdTest1 + amdTest2 + text3;
 });

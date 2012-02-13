@@ -19,5 +19,7 @@
  */
 
 define('amdTestDir/amdTest2', [], function() {
+  "use strict";
+
   return ' is a ';
 });

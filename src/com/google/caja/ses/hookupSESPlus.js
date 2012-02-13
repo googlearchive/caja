@@ -38,6 +38,6 @@
                  ses.ejectorsGuardsTrademarks);
   } catch (err) {
     ses.updateMaxSeverity(ses.severities.NOT_SUPPORTED);
-    ses.logger.error('hookupSESPlus failed with: ' + err);
+    ses.logger.error('hookupSESPlus failed with: ', err);
   }
 })(this);

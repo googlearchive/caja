@@ -18,7 +18,9 @@
  * <p>Assumes ES5 plus a WeakMap that conforms to the anticipated ES6
  * WeakMap spec. Compatible with ES5-strict or anticipated ES6.
  *
+ * //provides ses.startSES
  * @author Mark S. Miller,
+ * @author Jasvir Nagra
  * @requires WeakMap
  * @overrides ses, console, eval, Function, cajaVM
  */
@@ -248,6 +250,17 @@ ses.startSES = function(global,
   var freeze = Object.freeze;
   var create = Object.create;
 
+  /**
+   * Use to tamper proof a function which is not intended to ever be
+   * used as a constructor, since it nulls out the function's
+   * prototype first.
+   */
+  function constFunc(func) {
+    func.prototype = null;
+    return freeze(func);
+  }
+
+
   function fail(str) {
     debugger;
     throw new EvalError(str);
@@ -259,8 +272,8 @@ ses.startSES = function(global,
 
 
   if (EMULATE_LEGACY_GETTERS_SETTERS) {
-    defProp(Object.prototype, '__defineGetter__', {
-      value: function(sprop, getter) {
+    (function(){
+      function legacyDefineGetter(sprop, getter) {
         sprop = '' + sprop;
         if (hop.call(this, sprop)) {
           defProp(this, sprop, { get: getter });
@@ -272,13 +285,16 @@ ses.startSES = function(global,
             configurable: true
           });
         }
-      },
-      writable: false,
-      enumerable: false,
-      configurable: false
-    });
-    defProp(Object.prototype, '__defineSetter__', {
-      value: function(sprop, setter) {
+      }
+      legacyDefineGetter.prototype = null;
+      defProp(Object.prototype, '__defineGetter__', {
+        value: legacyDefineGetter,
+        writable: false,
+        enumerable: false,
+        configurable: false
+      });
+
+      function legacyDefineSetter(sprop, setter) {
         sprop = '' + sprop;
         if (hop.call(this, sprop)) {
           defProp(this, sprop, { set: setter });
@@ -290,33 +306,43 @@ ses.startSES = function(global,
             configurable: true
           });
         }
-      },
-      writable: false,
-      enumerable: false,
-      configurable: false
-    });
-    defProp(Object.prototype, '__lookupGetter__', {
-      value: function(sprop) {
+      }
+      legacyDefineSetter.prototype = null;
+      defProp(Object.prototype, '__defineSetter__', {
+        value: legacyDefineSetter,
+        writable: false,
+        enumerable: false,
+        configurable: false
+      });
+
+      function legacyLookupGetter(sprop) {
         sprop = '' + sprop;
         var base = this, desc = void 0;
         while (base && !(desc = gopd(base, sprop))) { base = getProto(base); }
         return desc && desc.get;
-      },
-      writable: false,
-      enumerable: false,
-      configurable: false
-    });
-    defProp(Object.prototype, '__lookupSetter__', {
-      value: function(sprop) {
+      }
+      legacyLookupGetter.prototype = null;
+      defProp(Object.prototype, '__lookupGetter__', {
+        value: legacyLookupGetter,
+        writable: false,
+        enumerable: false,
+        configurable: false
+      });
+
+      function legacyLookupSetter(sprop) {
         sprop = '' + sprop;
         var base = this, desc = void 0;
         while (base && !(desc = gopd(base, sprop))) { base = getProto(base); }
         return desc && desc.set;
-      },
-      writable: false,
-      enumerable: false,
-      configurable: false
-    });
+      }
+      legacyLookupSetter.prototype = null;
+      defProp(Object.prototype, '__lookupSetter__', {
+        value: legacyLookupSetter,
+        writable: false,
+        enumerable: false,
+        configurable: false
+      });
+    })();
   } else {
     delete Object.prototype.__defineGetter__;
     delete Object.prototype.__defineSetter__;
@@ -327,9 +353,10 @@ ses.startSES = function(global,
 
   /**
    * By this time, WeakMap has already monkey patched Object.freeze if
-   * necessary, so we can do the freezes delayed from repairES5.js
+   * necessary, so we can do the tamperProofing delayed from
+   * repairES5.js
    */
-  ses.freezeDelayed();
+  var tamperProof = ses.makeDelayedTamperProof();
 
   /**
    * Code being eval'ed by {@code cajaVM.eval} sees {@code
@@ -376,7 +403,12 @@ ses.startSES = function(global,
      * trick executes over 100x faster on V8.
      */
     function verifyStrictProgram(programSrc) {
-      UnsafeFunction('"use strict";' + programSrc);
+      try {
+        UnsafeFunction('"use strict";' + programSrc);
+      } catch (err) {
+        // debugger; // Useful for debugging -- to look at programSrc
+        throw err;
+      }
     }
 
     /**
@@ -461,7 +493,14 @@ ses.startSES = function(global,
      */
     function makeScopeObject(imports, freeNames) {
       var scopeObject = create(null);
-      freeNames.forEach(function(name) {
+      // Note: Although this loop is a bottleneck on some platforms,
+      // it does not help to turn it into a for(;;) loop, since we
+      // still need an enclosing function per accessor property
+      // created, to capture its own unique binding of
+      // "name". (Embarrasing fact: despite having often written about
+      // this very danger, I engaged in this mistake in a misbegotten
+      // optimization attempt here.)
+      freeNames.forEach(function interceptName(name) {
         var desc = gopd(imports, name);
         if (!desc || desc.writable !== false || desc.configurable) {
           // If there is no own property, or it isn't a non-writable
@@ -507,27 +546,35 @@ ses.startSES = function(global,
 
 
     /**
-     * Like {@code compileExpr} but does not freeze the function it
-     * returns.
+     * Given SES source text that must not be run directly using any
+     * of the built-in unsafe evaluators on this platform, we instead
+     * surround it with a prelude and postlude.
+     *
+     * <p>Evaluating the resulting expression return a function that
+     * <i>can</i>be called to execute the original expression safely,
+     * in a controlled scope. See "makeCompiledExpr" for precisely the
+     * pattern that must be followed to call the resulting function
+     * safely.
+     *
+     * Notice that the source text placed around {@code exprSrc}
+     * <ul>
+     * <li>brings no variable names into scope, avoiding any
+     *     non-hygienic name capture issues, and
+     * <li>does not introduce any newlines preceding exprSrc, so
+     *     that all line number which a debugger might report are
+     *     accurate wrt the original source text. And except for the
+     *     first line, all the column numbers are accurate too.
+     * </ul>
+     *
+     * <p>TODO(erights): Find out if any platforms have any way to
+     * associate a file name and line number with eval'ed text, so
+     * that we can do something useful with the optional {@code
+     * opt_sourcePosition} to better support debugging.
      */
-    function internalCompileExpr(exprSrc, opt_sourcePosition) {
-      if (dirty) { fail('Initial cleaning failed'); }
+    function securableWrapperSrc(exprSrc, opt_sourcePosition) {
       verifyStrictExpression(exprSrc);
-      var freeNames = atLeastFreeVarNames(exprSrc);
 
-      /**
-       * Notice that the source text placed around {@code exprSrc}
-       * <ul>
-       * <li>brings no variable names into scope, avoiding any
-       *     non-hygienic name capture issues, and
-       * <li>does not introduce any newlines preceding exprSrc, so
-       *     that all line number which a debugger might report are
-       *     accurate wrt the original source text. And except for the
-       *     first line, all the column numbers are accurate too.
-       * </ul>
-       */
-      var wrapperSrc =
-        '(function() { ' +
+      return '(function() { ' +
         // non-strict code, where this === scopeObject
         '  with (this) { ' +
         '    return function() { ' +
@@ -539,15 +586,32 @@ ses.startSES = function(global,
         '    };\n' +
         '  }\n' +
         '})';
-      var wrapper = unsafeEval(wrapperSrc);
+    }
+    ses.securableWrapperSrc = securableWrapperSrc;
+
+
+    /**
+     * Given a wrapper function, such as the result of evaluating the
+     * source that securableWrapperSrc returns, and a list of all the
+     * names that we want to intercept to redirect to the imports,
+     * return a corresponding <i>compiled expr</i> function.
+     *
+     * <p>A compiled expr function, when called on an imports
+     * object, evaluates the original expression in a context where
+     * all its free variable references that appear in freeNames are
+     * redirected to the corresponding property of imports.
+     */
+    function makeCompiledExpr(wrapper, freeNames) {
+      if (dirty) { fail('Initial cleaning failed'); }
 
       function compiledCode(imports) {
         var scopeObject = makeScopeObject(imports, freeNames);
         return wrapper.call(scopeObject).call(imports);
       };
-      freeze(compiledCode.prototype);
+      compiledCode.prototype = null;
       return compiledCode;
     }
+    ses.makeCompiledExpr = makeCompiledExpr;
 
     /**
      * Compiles {@code exprSrc} as a strict expression into a function
@@ -566,14 +630,12 @@ ses.startSES = function(global,
      * <p>Thanks to Mike Samuel and Ankur Taly for this trick of using
      * {@code with} together with RegExp matching to intercept free
      * variable access without parsing.
-     *
-     * <p>TODO(erights): Find out if any platforms have any way to
-     * associate a file name and line number with eval'ed text, so
-     * that we can do something useful with the optional {@code
-     * opt_sourcePosition} to better support debugging.
      */
     function compileExpr(exprSrc, opt_sourcePosition) {
-      var result = internalCompileExpr(exprSrc, opt_sourcePosition);
+      var wrapperSrc = securableWrapperSrc(exprSrc, opt_sourcePosition);
+      var wrapper = unsafeEval(wrapperSrc);
+      var freeNames = atLeastFreeVarNames(exprSrc);
+      var result = makeCompiledExpr(wrapper, freeNames);
       return freeze(result);
     }
 
@@ -637,9 +699,14 @@ ses.startSES = function(global,
      * from the text to be compiled.
      */
     function compileModule(modSrc, opt_sourcePosition) {
-      var moduleMaker = internalCompileExpr(
-        '(function() {' + modSrc + '}).call(this)',
-        opt_sourcePosition);
+      var exprSrc = '(function() {' + modSrc + '}).call(this)';
+
+      // Follow the pattern in compileExpr
+      var wrapperSrc = securableWrapperSrc(exprSrc, opt_sourcePosition);
+      var wrapper = unsafeEval(wrapperSrc);
+      var freeNames = atLeastFreeVarNames(exprSrc);
+      var moduleMaker = makeCompiledExpr(wrapper, freeNames);
+
       moduleMaker.requirements = getRequirements(modSrc);
       return freeze(moduleMaker);
     }
@@ -706,20 +773,27 @@ ses.startSES = function(global,
     var defended = WeakMap();
     var defending = WeakMap();
     /**
-     * To define a defended object is to freeze it and all objects
+     * To define a defended object is to tamperProof it and all objects
      * transitively reachable from it via transitive reflective
      * property and prototype traversal.
      */
     function def(node) {
       var defendingList = [];
       function recur(val) {
-        if (val !== Object(val) || defended.get(val) || defending.get(val)) {
-          return;
-        }
+        if (!val) { return; }
+        var t = typeof val;
+        if (t === 'number' || t === 'string' || t === 'boolean') { return; }
+        if (defended.get(val) || defending.get(val)) { return; }
         defending.set(val, true);
         defendingList.push(val);
-        freeze(val);
+
+        tamperProof(val);
+
         recur(getProto(val));
+
+        // How to optimize? This is a performance sensitive loop, but
+        // forEach seems to be faster on Chrome 18 Canary but a
+        // for(;;) loop seems better on FF 12 Nightly.
         gopn(val).forEach(function(p) {
           if (typeof val === 'function' &&
               (p === 'caller' || p === 'arguments')) {
@@ -760,8 +834,7 @@ ses.startSES = function(global,
         var getter = lengthMap.get(this);
         return getter ? getter() : void 0;
       }
-      freeze(lengthGetter);
-      freeze(lengthGetter.prototype);
+      constFunc(lengthGetter);
 
       var nativeProxies = global.Proxy && (function () {
         var obj = {0: 'hi'};
@@ -794,13 +867,11 @@ ses.startSES = function(global,
             if (P === 'length') {
               return { get: lengthGetter };
             } else if (typeof P === 'number' || P === '' + (+P)) {
-              var get = freeze(function () {
-                var getter = itemMap.get(this);
-                return getter ? getter(+P) : void 0;
-              });
-              freeze(get.prototype);
               return {
-                get: get,
+                get: constFunc(function() {
+                  var getter = itemMap.get(this);
+                  return getter ? getter(+P) : void 0;
+                }),
                 enumerable: true,
                 configurable: true
               };
@@ -860,7 +931,7 @@ ses.startSES = function(global,
             'delete': del,
             fix: function() { return void 0; }
           }, Object.prototype);
-          freeze(ArrayLike);
+          tamperProof(ArrayLike);
           makeArrayLike = function() { return ArrayLike; };
         })();
       } else {
@@ -905,21 +976,20 @@ ses.startSES = function(global,
               // Install native numeric getters.
               for (var i = 0; i < len; i++) {
                 (function(j) {
-                  var get = freeze(function() {
+                  function get() {
                     return itemMap.get(this)(j);
-                  });
-                  freeze(get.prototype);
+                  }
                   defProp(BAL.prototype, j, {
-                    get: get,
+                    get: constFunc(get),
                     enumerable: true
                   });
                 })(i);
               }
               // Install native length getter.
               defProp(BAL.prototype, 'length', { get: lengthGetter });
-              // Freeze and cache the result
-              freeze(BAL);
-              freeze(BAL.prototype);
+              // TamperProof and cache the result
+              tamperProof(BAL);
+              tamperProof(BAL.prototype);
               BiggestArrayLike = BAL;
               maxLen = len;
             }
@@ -929,8 +999,15 @@ ses.startSES = function(global,
       }
     })();
 
-    global.cajaVM = {
-      log: function log(str) {
+    global.cajaVM = { // don't freeze here
+
+      /**
+       * This is about to be deprecated once we expose ses.logger.
+       *
+       * <p>In the meantime, privileged code should use ses.logger.log
+       * instead of cajaVM.log.
+       */
+      log: constFunc(function log(str) {
         if (typeof console !== 'undefined' && 'log' in console) {
           // We no longer test (typeof console.log === 'function') since,
           // on IE9 and IE10preview, in violation of the ES5 spec, it
@@ -939,28 +1016,33 @@ ses.startSES = function(global,
           //   console-log-and-others-are-callable-but-arent-typeof-function
           console.log(str);
         }
-      },
+      }),
+      tamperProof: constFunc(tamperProof),
+      constFunc: constFunc(constFunc),
+      // def: see below
+      is: constFunc(ses.is),
 
-      compileExpr: compileExpr,
-      compileModule: compileModule,
+      compileExpr: constFunc(compileExpr),
+      compileModule: constFunc(compileModule),
       // compileProgram: compileProgram, // Cannot be implemented in ES5.1.
-      eval: fakeEval,
-      Function: FakeFunction,
+      eval: fakeEval,               // don't freeze here
+      Function: FakeFunction,       // don't freeze here,
 
-      sharedImports: sharedImports,
-      makeImports: makeImports,
-      copyToImports: copyToImports,
+      sharedImports: sharedImports, // don't freeze here
+      makeImports: constFunc(makeImports),
+      copyToImports: constFunc(copyToImports),
 
-      makeArrayLike: makeArrayLike
+      makeArrayLike: constFunc(makeArrayLike)
     };
     var extensionsRecord = extensions();
     gopn(extensionsRecord).forEach(function (p) {
       defProp(cajaVM, p,
-          gopd(extensionsRecord, p));
+              gopd(extensionsRecord, p));
     });
+
     // Move this down here so it is not available during the call to
-    // extensions.
-    global.cajaVM.def = def;
+    // extensions().
+    global.cajaVM.def = constFunc(def);
 
   })();
 
@@ -979,68 +1061,39 @@ ses.startSES = function(global,
   }
 
   /**
-   * Read the current value of base[name], and freeze that property as
-   * a data property to ensure that all further reads of that same
-   * property from that base produce the same value.
-   *
-   * <p>The algorithms in {@code ses.startSES} traverse the graph of
-   * primordials multiple times. These algorithms rely on all these
-   * traversals seeing the same graph. By freezing these as data
-   * properties the first time they are read, we ensure that all
-   * traversals see the same graph.
-   *
-   * <p>The frozen property should preserve the enumerability of the
-   * original property.
-   */
-  function read(base, name) {
-    var desc = gopd(base, name);
-    if (!desc) { return undefined; }
-    if ('value' in desc && !desc.writable && !desc.configurable) {
-      return desc.value;
-    }
-
-    var result = base[name];
-    try {
-      defProp(base, name, {
-        value: result, writable: false, configurable: false
-      });
-    } catch (ex) {
-      reportProperty(ses.severities.NEW_SYMPTOM,
-                     'Cannot be neutered',
-                     '(a ' + typeof base + ').' + name);
-    }
-    return result;
-  }
-
-  /**
    * Initialize accessible global variables and {@code sharedImports}.
    *
-   * For each of the whitelisted globals, we {@code read} its value,
-   * freeze that global property as a data property, and mirror that
-   * property with a frozen data property of the same name and value
-   * on {@code sharedImports}, but always non-enumerable. We make
-   * these non-enumerable since ES5.1 specifies that all these
-   * properties are non-enumerable on the global object.
+   * For each of the whitelisted globals, we read its value, freeze
+   * that global property as a data property, and mirror that property
+   * with a frozen data property of the same name and value on {@code
+   * sharedImports}, but always non-enumerable. We make these
+   * non-enumerable since ES5.1 specifies that all these properties
+   * are non-enumerable on the global object.
    */
   keys(whitelist).forEach(function(name) {
     var desc = gopd(global, name);
     if (desc) {
       var permit = whitelist[name];
       if (permit) {
-        var value = read(global, name);
-        defProp(sharedImports, name, {
-          value: value,
-          writable: true,
-          enumerable: false,
+        var newDesc = {
+          value: global[name],
+          writable: false,
           configurable: false
-        });
+        };
+        try {
+          defProp(global, name, newDesc);
+        } catch (err) {
+          reportProperty(ses.severities.NEW_SYMPTOM,
+                         'Global ' + name + ' cannot be made readonly: ' + err);
+        }
+        defProp(sharedImports, name, newDesc);
       }
     }
   });
   if (TAME_GLOBAL_EVAL) {
     defProp(sharedImports, 'eval', {
       value: cajaVM.eval,
-      writable: true,
+      writable: false,
       enumerable: false,
       configurable: false
     });
@@ -1050,10 +1103,6 @@ ses.startSES = function(global,
    * The whiteTable should map from each path-accessible primordial
    * object to the permit object that describes how it should be
    * cleaned.
-   *
-   * <p>To ensure that each subsequent traversal obtains the same
-   * values, these paths become paths of frozen data properties. See
-   * the doc-comment on {@code read}.
    *
    * We initialize the whiteTable only so that {@code getPermit} can
    * process "*" and "skip" inheritance using the whitelist, by
@@ -1072,7 +1121,7 @@ ses.startSES = function(global,
     whiteTable.set(value, permit);
     keys(permit).forEach(function(name) {
       if (permit[name] !== 'skip') {
-        var sub = read(value, name);
+        var sub = value[name];
         register(sub, permit[name]);
       }
     });
@@ -1178,7 +1227,7 @@ ses.startSES = function(global,
       });
     } catch (cantPoisonErr) {
       try {
-        // Perhaps it's writable non-configurable, it which case we
+        // Perhaps it's writable non-configurable, in which case we
         // should still be able to freeze it in a harmless state.
         var value = gopd(base, name).value;
         defProp(base, name, {
@@ -1233,17 +1282,21 @@ ses.startSES = function(global,
           reportProperty(ses.severities.SAFE,
                          'Skipped', path);
         } else {
-          var sub = read(value, name);
+          var sub = value[name];
           clean(sub, path);
         }
       } else {
         cleanProperty(value, name, path);
       }
     });
-    freeze(value);
   }
   clean(sharedImports, '');
 
+  /**
+   * This protection is now gathered here, so that a future version
+   * can skip it for non-defensive frames that must only be confined.
+   */
+  cajaVM.def(sharedImports);
 
   keys(propertyReports).sort().forEach(function(status) {
     var group = propertyReports[status];

@@ -26,12 +26,19 @@
  * <p>The {@code ses.logger} API consists of
  * <dl>
  *   <dt>log, info, warn, and error methods</dt>
- *     <dd>each of which take a
- *         string, and which should display this string associated with
- *         that severity level. If no {@code ses.logger} already
- *         exists, the default provided here forwards to the pre-existing
- *         global {@code console} if one exists. Otherwise, all for of these
- *         do nothing.</dd>
+ *     <dd>each of which take a list of arguments which should be
+ *         stringified and appended together. The logger should
+ *         display this string associated with that severity level. If
+ *         any of the arguments has an associated stack trace
+ *         (presumably Error objects), then the logger <i>may</i> also
+ *         show this stack trace. If no {@code ses.logger} already
+ *         exists, the default provided here forwards to the
+ *         pre-existing global {@code console} if one
+ *         exists. Otherwise, all four of these do nothing. If we
+ *         default to forwarding to the pre-existing {@code console} ,
+ *         we prepend an empty string as first argument since we do
+ *         not want to obligate all loggers to implement the console's
+ *         "%" formatting. </dd>
  *   <dt>classify(postSeverity)</dt>
  *     <dd>where postSeverity is a severity
  *         record as defined by {@code ses.severities} in
@@ -110,6 +117,7 @@
  * <p>Assumes only ES3. Compatible with ES5, ES5-strict, or
  * anticipated ES6.
  *
+ * //provides ses.logger
  * @author Mark S. Miller
  * @requires console
  * @overrides ses, loggerModule
@@ -122,6 +130,11 @@ if (!ses) { ses = {}; }
 
   var logger;
   function logNowhere(str) {}
+
+  var slice = [].slice;
+  var apply = slice.apply;
+
+
 
   if (ses.logger) {
     logger = ses.logger;
@@ -141,11 +154,33 @@ if (!ses) { ses = {}; }
     //     we install an emulated bind.
     // </ul>
 
+    var forward = function(level, args) {
+      args = slice.call(args, 0);
+      // We don't do "console.apply" because "console" is not a function
+      // on IE 10 preview 2 and it has no apply method. But it is a
+      // callable that Function.prototype.apply can successfully apply.
+      // This code most work on ES3 where there's no bind. When we
+      // decide support defensiveness in contexts (frames) with mutable
+      // primordials, we will need to revisit the "call" below.
+      apply.call(console[level], console, [''].concat(args));
+
+      // See debug.js
+      var getStack = ses.getStack;
+      if (getStack) {
+        for (var i = 0, len = args.length; i < len; i++) {
+          var stack = getStack(args[i]);
+          if (stack) {
+            console[level]('', stack);
+          }
+        }
+      }
+    };
+
     logger = {
-      log:   function log(str)   { console.log(str); },
-      info:  function info(str)  { console.info(str); },
-      warn:  function warn(str)  { console.warn(str); },
-      error: function error(str) { console.error(str); }
+      log:   function log(var_args)   { forward('log', arguments); },
+      info:  function info(var_args)  { forward('info', arguments); },
+      warn:  function warn(var_args)  { forward('warn', arguments); },
+      error: function error(var_args) { forward('error', arguments); }
     };
   } else {
     logger = {
@@ -228,4 +263,5 @@ if (!ses) { ses = {}; }
   }
 
   ses.logger = logger;
+
 })();

@@ -38,6 +38,6 @@
                  function () { return {}; });
   } catch (err) {
     ses.updateMaxSeverity(ses.severities.NOT_SUPPORTED);
-    ses.logger.error('hookupSES failed with: ' + err);
+    ses.logger.error('hookupSES failed with: ', err);
   }
 })(this);

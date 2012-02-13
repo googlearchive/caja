@@ -27,6 +27,11 @@
  * create it, use it, and delete it all within this module. But we
  * need to lie to the linter since it can't tell.
  *
+ * //provides ses.statuses, ses.ok, ses.is, ses.makeDelayedTamperProof
+ * //provides ses.makeCallerHarmless, ses.makeArgumentsHarmless
+ * //provides ses.severities, ses.maxSeverity, ses.updateMaxSeverity
+ * //provides ses.maxAcceptableSeverityName, ses.maxAcceptableSeverity
+ *
  * @author Mark S. Miller
  * @requires ___global_test_function___, ___global_valueOf_function___
  * @requires JSON, navigator, this, eval, document
@@ -280,6 +285,24 @@ var ses;
   var builtInForEach = Array.prototype.forEach;
 
   /**
+   * http://wiki.ecmascript.org/doku.php?id=harmony:egal
+   */
+  var is = ses.is = Object.is || function(x, y) {
+    if (x === y) {
+      // 0 === -0, but they are not identical
+      return x !== 0 || 1 / x === 1 / y;
+    }
+
+    // NaN !== NaN, but they are identical.
+    // NaNs are the only non-reflexive value, i.e., if x !== x,
+    // then x is a NaN.
+    // isNaN is broken: it converts its argument to number, so
+    // isNaN("foo") => true
+    return x !== x && y !== y;
+  };
+
+
+  /**
    * By the time this module exits, either this is repaired to be a
    * function that is adequate to make the "caller" property of a
    * strict or built-in function harmess, or this module has reported
@@ -322,63 +345,117 @@ var ses;
   };
 
   /**
+   * "makeTamperProof()" returns a "tamperProof(obj)" function that
+   * acts like "Object.freeze(obj)", except that, if obj is a
+   * <i>prototypical</i> object (defined below), it ensures that the
+   * effect of freezing properties of obj does not suppress the
+   * ability to override these properties on derived objects by simple
+   * assignment.
    *
+   * <p>Because of lack of sufficient foresight at the time, ES5
+   * unfortunately specified that a simple assignment to a
+   * non-existent property must fail if it would override a
+   * non-writable data property of the same name. (In retrospect, this
+   * was a mistake, but it is now too late and we must live with the
+   * consequences.) As a result, simply freezing an object to make it
+   * tamper proof has the unfortunate side effect of breaking
+   * previously correct code that is considered to have followed JS
+   * best practices, if this previous code used assignment to
+   * override.
+   *
+   * <p>To work around this mistake, tamperProof(obj) detects if obj
+   * is <i>prototypical</i>, i.e., is an object whose own
+   * "constructor" is a function whose "prototype" is this obj. For example,
+   * Object.prototype and Function.prototype are prototypical.  If so,
+   * then when tamper proofing it, prior to freezing, replace all its
+   * configurable own data properties with accessor properties which
+   * simulate what we should have specified -- that assignments to
+   * derived objects succeed if otherwise possible.
+   *
+   * <p>Some platforms (Chrome and Safari as of this writing)
+   * implement the assignment semantics ES5 should have specified
+   * rather than what it did specify.
+   * "test_ASSIGN_CAN_OVERRIDE_FROZEN()" below tests whether we are on
+   * such a platform. If so, "repair_ASSIGN_CAN_OVERRIDE_FROZEN()"
+   * replaces "makeTamperProof" with a function that simply returns
+   * "Object.freeze", since the complex workaround here is not needed
+   * on those platforms.
+   *
+   * <p>"makeTamperProof" should only be called after the trusted
+   * initialization has done all the monkey patching that it is going
+   * to do on the Object.* methods, but before any untrusted code runs
+   * in this context.
    */
-  ses.defendOne = function(obj) {
+  var makeTamperProof = function defaultMakeTamperProof() {
+
+    // Sample these after all trusted monkey patching initialization
+    // but before any untrusted code runs in this frame.
     var gopd = Object.getOwnPropertyDescriptor;
     var gopn = Object.getOwnPropertyNames;
     var getProtoOf = Object.getPrototypeOf;
+    var freeze = Object.freeze;
     var isFrozen = Object.isFrozen;
     var defProp = Object.defineProperty;
 
-    if (obj !== Object(obj)) { return obj; }
-    var func;
-    if (typeof obj === 'object' &&
-        !!gopd(obj, 'constructor') &&
-        typeof (func = obj.constructor) === 'function' &&
-        func.prototype === obj &&
-        !isFrozen(obj)) {
-      gopn(obj).forEach(function(name) {
-        var value;
-        function getter() {
-          if (obj === this) { return value; }
-          if (!this) { return void 0; }
-          if (!!gopd(this, name)) { return this[name]; }
-          return getter.call(getProtoOf(this));
-        }
-        function setter(newValue) {
-          if (obj === this) {
-            throw new TypeError('Cannot set virtually frozen property: ' +
-                                name);
+    function tamperProof(obj) {
+      if (obj !== Object(obj)) { return obj; }
+      var func;
+      if (typeof obj === 'object' &&
+          !!gopd(obj, 'constructor') &&
+          typeof (func = obj.constructor) === 'function' &&
+          func.prototype === obj &&
+          !isFrozen(obj)) {
+        strictForEachFn(gopn(obj), function(name) {
+          var value;
+          function getter() {
+            if (obj === this) { return value; }
+            if (this === void 0 || this === null) { return void 0; }
+            var thisObj = Object(this);
+            if (!!gopd(thisObj, name)) { return this[name]; }
+            // TODO(erights): If we can reliably uncurryThis() in
+            // repairES5.js, the next line should be:
+            //   return callFn(getter, getProtoOf(thisObj));
+            return getter.call(getProtoOf(thisObj));
           }
-          if (!!gopd(this, name)) {
-            this[name] = newValue;
+          function setter(newValue) {
+            if (obj === this) {
+              throw new TypeError('Cannot set virtually frozen property: ' +
+                                  name);
+            }
+            if (!!gopd(this, name)) {
+              this[name] = newValue;
+            }
+            // TODO(erights): Do all the inherited property checks
+            defProp(this, name, {
+              value: newValue,
+              writable: true,
+              enumerable: true,
+              configurable: true
+            });
           }
-          // TODO(erights): Do all the inherited property checks
-          defProp(this, name, {
-            value: newValue,
-            writable: true,
-            enumerable: true,
-            configurable: true
-          });
-        }
-        var desc = gopd(obj, name);
-        if (desc.configurable && 'value' in desc) {
-          value = desc.value;
-          defProp(obj, name, {
-            get: getter,
-            set: setter,
-            // We should be able to omit the enumerable line, since it
-            // should default to its existing setting.
-            enumerable: desc.enumerable,
-            configurable: false
-          });
-        }
-      });
+          var desc = gopd(obj, name);
+          if (desc.configurable && 'value' in desc) {
+            value = desc.value;
+            getter.prototype = null;
+            setter.prototype = null;
+            defProp(obj, name, {
+              get: getter,
+              set: setter,
+              // We should be able to omit the enumerable line, since it
+              // should default to its existing setting.
+              enumerable: desc.enumerable,
+              configurable: false
+            });
+          }
+        });
+      }
+      return freeze(obj);
     }
-    return Object.freeze(obj);
+    return tamperProof;
   };
 
+
+  var needToTamperProof = [];
   /**
    * Various repairs may expose non-standard objects that are not
    * reachable from startSES's root, and therefore not freezable by
@@ -388,12 +465,26 @@ var ses;
    * order to install hidden properties for its own use before the
    * object becomes non-extensible.
    */
-  var needToFreeze = [];
-  function delayedFreeze(obj) {
-    needToFreeze.push(obj);
+  function rememberToTamperProof(obj) {
+    needToTamperProof.push(obj);
   }
-  ses.freezeDelayed = function freezeDelayed() {
-    needToFreeze.forEach(ses.defendOne);
+
+  /**
+   * Makes and returns a tamperProof(obj) function, and uses it to
+   * tamper proof all objects whose tamper proofing had been delayed.
+   *
+   * <p>"makeDelayedTamperProof()" must only be called once.
+   */
+  var makeDelayedTamperProofCalled = false;
+  ses.makeDelayedTamperProof = function makeDelayedTamperProof() {
+    if (makeDelayedTamperProofCalled) {
+      throw "makeDelayedTamperProof() must only be called once.";
+    }
+    var tamperProof = makeTamperProof();
+    strictForEachFn(needToTamperProof, tamperProof);
+    needToTamperProof = void 0;
+    makeDelayedTamperProofCalled = true;
+    return tamperProof;
   };
 
   /**
@@ -801,23 +892,28 @@ var ses;
   }
 
   /**
-   * TODO(erights): isolate and report the V8 bug mentioned below.
-   *
    * <p>Sometimes, when trying to freeze an object containing an
-   * accessor property with a getter but no setter, Chrome fails with
-   * <blockquote>Uncaught TypeError: Cannot set property ident___ of
-   * #<Object> which has only a getter</blockquote>. So if necessary,
-   * this kludge overrides {@code Object.defineProperty} to always
-   * install a dummy setter in lieu of the absent one.
+   * accessor property with a getter but no setter, Chrome <= 17 fails
+   * with <blockquote>Uncaught TypeError: Cannot set property ident___
+   * of #<Object> which has only a getter</blockquote>. So if
+   * necessary, this kludge overrides {@code Object.defineProperty} to
+   * always install a dummy setter in lieu of the absent one.
+   *
+   * <p>Since this problem seems to have gone away as of Chrome 18, it
+   * is no longer as important to isolate and report it.
    *
    * <p>TODO(erights): We should also override {@code
    * Object.getOwnPropertyDescriptor} to hide the presence of the
    * dummy setter, and instead report an absent setter.
    */
   function test_NEEDS_DUMMY_SETTER() {
-    return (typeof navigator !== 'undefined' &&
-            (/Chrome/).test(navigator.userAgent) &&
-            !NEEDS_DUMMY_SETTER_repaired);
+    if (NEEDS_DUMMY_SETTER_repaired) { return false; }
+    if (typeof navigator === 'undefined') { return false; }
+    var ChromeMajorVersionPattern = (/Chrome\/(\d*)\./);
+    var match = ChromeMajorVersionPattern.exec(navigator.userAgent);
+    if (!match) { return false; }
+    var ver = +match[1];
+    return ver <= 17;
   }
   /** we use this variable only because we haven't yet isolated a test
    * for the problem. */
@@ -1022,7 +1118,7 @@ var ses;
       result = name in base;
     } catch (err) {
       logger.error('New symptom (a): (\'' +
-                   name + '\' in <' + baseDesc + '>) threw: ' + err);
+                   name + '\' in <' + baseDesc + '>) threw: ', err);
       // treat this as a safe absence
       result = false;
       return false;
@@ -1036,7 +1132,7 @@ var ses;
     if (finallySkipped) {
       logger.error('New symptom (e): (\'' +
                    name + '\' in <' + baseDesc +
-                   '>) finally inner finally skipped');
+                   '>) inner finally skipped');
     }
     return !!result;
   }
@@ -1047,11 +1143,8 @@ var ses;
     try {
       result = has(base, name, baseDesc);
     } catch (err) {
-      // This case should be already be reported as a failure of
-      // test_CANT_IN_CALLER or test_CANT_IN_ARGUMENTS, and so is no
-      // longer a new symptom.
-      // logger.error('New symptom (c): (\'' +
-      //              name + '\' in <' + baseDesc + '>) threw: ' + err);
+      logger.error('New symptom (c): (\'' +
+                   name + '\' in <' + baseDesc + '>) threw: ', err);
       // treat this as a safe absence
       result = false;
       return false;
@@ -1065,7 +1158,7 @@ var ses;
     if (finallySkipped) {
       logger.error('New symptom (f): (\'' +
                    name + '\' in <' + baseDesc +
-                   '>) finally outer finally skipped');
+                   '>) outer finally skipped');
     }
     return !!result;
   }
@@ -1422,7 +1515,15 @@ var ses;
   }
 
   /**
+   * Detects whether assignment can override an inherited
+   * non-writable, non-configurable data property.
    *
+   * <p>According to ES5.1, assignment should not be able to do so,
+   * which is unfortunate for SES, as the tamperProof function must
+   * kludge expensively to ensure that legacy assignments that don't
+   * violate best practices continue to work. Ironically, on platforms
+   * in which this bug is present, tamperProof can just be cheaply
+   * equivalent to Object.freeze.
    */
   function test_ASSIGN_CAN_OVERRIDE_FROZEN() {
     var x = Object.freeze({foo: 88});
@@ -1436,6 +1537,175 @@ var ses;
     if (y.foo === 99) { return true; }
     if (y.foo === 88) { return 'Override failed silently'; }
     return 'Unexpected override outcome: ' + y.foo;
+  }
+
+  /**
+   *
+   */
+  function test_CANT_REDEFINE_NAN_TO_ITSELF() {
+    var descNaN = Object.getOwnPropertyDescriptor(global, 'NaN');
+    try {
+      Object.defineProperty(global, 'NaN', descNaN);
+    } catch (err) {
+      if (err instanceof TypeError) { return true; }
+      return 'defineProperty of NaN failed with: ' + err;
+    }
+    return false;
+  }
+
+  /**
+   * These are all the own properties that appear on Error instances
+   * on various ES5 platforms as of this writing.
+   *
+   * <p>Due to browser bugs, some of these are absent from
+   * getOwnPropertyNames (gopn). TODO(erights): File bugs with various
+   * browser makers for any own properties that we know to be present
+   * but not reported by gopn.
+   *
+   * <p>TODO(erights): do intelligence with the various browser
+   * implementors to find out what other properties are provided by
+   * their implementation but absent from gopn, whether on Errors or
+   * anything else. Every one of these are potentially fatal to our
+   * security until we can examine these.
+   *
+   * <p>The source form is a list rather than a map so that we can list a
+   * name like "message" for each browser section we think it goes in.
+   *
+   * <p>We thank the following people, projects, and websites for
+   * providing some useful intelligence of what property names we
+   * should suspect:<ul>
+   * <li><a href="http://stacktracejs.org">stacktracejs.org</a>
+   * <li>TODO(erights): find message on es-discuss list re
+   * "   stack". credit author.
+   * </ul>
+   */
+  var errorInstanceWhitelist = [
+    // at least Chrome 16
+    'arguments',
+    'message',
+    'stack',
+    'type',
+
+    // at least FF 9
+    'fileName',
+    'lineNumber',
+    'message',
+    'stack',
+
+    // at least Safari, WebKit 5.1
+    'line',
+    'message',
+    'sourceId',
+    'sourceURL',
+
+    // at least IE 10 preview 2
+    'description',
+    'message',
+    'number',
+
+    // at least Opera 11.60
+    'message',
+    'stack',
+    'stacktrace'
+  ];
+
+  var errorInstanceBlacklist = [
+    // seen in a Firebug on FF
+    'category',
+    'context',
+    'href',
+    'lineNo',
+    'msgId',
+    'source',
+    'trace',
+    'correctSourcePoint',
+    'correctWithStackTrace',
+    'getSourceLine',
+    'resetSource'
+  ];
+
+  /** Return a fresh one so client can mutate freely */
+  function freshErrorInstanceWhiteMap() {
+    var result = Object.create(null);
+    strictForEachFn(errorInstanceWhitelist, function(name) {
+      // We cannot yet use StringMap so do it manually
+      // We do this naively here assuming we don't need to worry about
+      // __proto__
+      result[name] = true;
+    });
+    return result;
+  }
+
+  function freshHiddenPropertyCandidates() {
+    var result = freshErrorInstanceWhiteMap();
+    strictForEachFn(errorInstanceBlacklist, function(name) {
+      result[name] = true;
+    });
+    return result;
+  }
+
+  /**
+   * Do Error instances on those platform carry own properties that we
+   * haven't yet examined and determined to be SES-safe?
+   *
+   * <p>A new property should only be added to the
+   * errorInstanceWhitelist after inspecting the consequences of that
+   * property to determine that it does not compromise SES safety. If
+   * some platform maker does add an Error own property that does
+   * compromise SES safety, that might be a severe problem, if we
+   * can't find a way to deny untrusted code access to that property.
+   */
+  function test_UNEXPECTED_ERROR_PROPERTIES() {
+    var errs = [new Error('e1')];
+    try { null.foo = 3; } catch (err) { errs.push(err); }
+    var result = false;
+
+    var approvedNames = freshErrorInstanceWhiteMap();
+
+    strictForEachFn(errs, function(err) {
+      strictForEachFn(Object.getOwnPropertyNames(err), function(name) {
+         if (!(name in approvedNames)) {
+           result = 'Unexpected error instance property: ' + name;
+           // would be good to terminate early
+         }
+      });
+    });
+    return result;
+  }
+
+  /**
+   *
+   */
+  function test_GET_OWN_PROPERTY_NAME_LIES() {
+    var gopn = Object.getOwnPropertyNames;
+    var gopd = Object.getOwnPropertyDescriptor;
+
+    var suspects = [new Error('e1')];
+    try { null.foo = 3; } catch (err) { suspects.push(err); }
+
+    var unreported = Object.create(null);
+
+    strictForEachFn(suspects, function(suspect) {
+      var candidates = freshHiddenPropertyCandidates();
+      strictForEachFn(gopn(suspect), function(name) {
+        // Delete the candidates that are reported
+        delete candidates[name];
+      });
+      strictForEachFn(gopn(candidates), function(name) {
+        if (!gopd(suspect, name)) {
+          // Delete the candidates that are not own properties
+          delete candidates[name];
+        }
+      });
+      strictForEachFn(gopn(candidates), function(name) {
+        unreported[name] = true;
+      });
+    });
+
+    var unreportedNames = gopn(unreported);
+    if (unreportedNames.length === 0) { return false; }
+    return 'Error own properties unreported by getOwnPropertyNames: ' +
+      unreportedNames.sort().join(',');
   }
 
 
@@ -1488,8 +1758,8 @@ var ses;
           'value' in desc) {
         try {
           base.prototype = desc.value;
-        } catch (x) {
-          logger.warn('prototype fixup failed');
+        } catch (err) {
+          logger.warn('prototype fixup failed', err);
         }
       }
       return unsafeDefProp(base, name, desc);
@@ -1590,9 +1860,9 @@ var ses;
     var BOGUS_BOUND_PROTOTYPE = {
       toString: function BBPToString() { return 'bogus bound prototype'; }
     };
-    delayedFreeze(BOGUS_BOUND_PROTOTYPE);
-    delayedFreeze(BOGUS_BOUND_PROTOTYPE.toString);
-    delayedFreeze(BOGUS_BOUND_PROTOTYPE.toString.prototype);
+    rememberToTamperProof(BOGUS_BOUND_PROTOTYPE);
+    BOGUS_BOUND_PROTOTYPE.toString.prototype = null;
+    rememberToTamperProof(BOGUS_BOUND_PROTOTYPE.toString);
 
     var defProp = Object.defineProperty;
     defProp(Function.prototype, 'bind', {
@@ -1725,54 +1995,53 @@ var ses;
     function dummySetter(newValue) {
       throw new TypeError('no setter for assigning: ' + newValue);
     }
-    delayedFreeze(dummySetter.prototype);
-    delayedFreeze(dummySetter);
+    dummySetter.prototype = null;
+    rememberToTamperProof(dummySetter);
 
     defProp(Object, 'defineProperty', {
       value: function setSetterDefProp(base, name, desc) {
-        if (typeof desc.get === 'function' &&
-            desc.set === undefined &&
-            objToString.call(base) === '[object HTMLFormElement]' &&
-            gopd(base, name) === void 0) {
-          // This repair was triggering bug
-          // http://code.google.com/p/chromium/issues/detail?id=94666
-          // on Chrome, causing
-          // http://code.google.com/p/google-caja/issues/detail?id=1401
-          // so if base is an HTMLFormElement we skip this
-          // fix. Since this repair and this situation are both
-          // Chrome only, it is ok that we're conditioning this on
-          // the unspecified [[Class]] value of base.
-          //
-          // To avoid the further bug identified at Comment 2
-          // http://code.google.com/p/chromium/issues/detail?id=94666#c2
-          // We also have to reconstruct the requested desc so that
-          // the setter is absent. This is why we additionally
-          // condition this special case on the absence of an own
-          // name property on base.
-          var desc2 = { get: desc.get };
-          if ('enumerable' in desc) {
-            desc2.enumerable = desc.enumerable;
-          }
-          if ('configurable' in desc) {
-            desc2.configurable = desc.configurable;
-          }
-          var result = defProp(base, name, desc2);
-          var newDesc = gopd(base, name);
-          if (newDesc.get === desc.get) {
-            return result;
+        if (typeof desc.get === 'function' && desc.set === void 0) {
+          var oldDesc = gopd(base, name);
+          if (oldDesc) {
+            var testBase = {};
+            defProp(testBase, name, oldDesc);
+            defProp(testBase, name, desc);
+            desc = gopd(testBase, name);
+            if (desc.set === void 0) { desc.set = dummySetter; }
+          } else {
+            if (objToString.call(base) === '[object HTMLFormElement]') {
+              // This repair was triggering bug
+              // http://code.google.com/p/chromium/issues/detail?id=94666
+              // on Chrome, causing
+              // http://code.google.com/p/google-caja/issues/detail?id=1401
+              // so if base is an HTMLFormElement we skip this
+              // fix. Since this repair and this situation are both
+              // Chrome only, it is ok that we're conditioning this on
+              // the unspecified [[Class]] value of base.
+              //
+              // To avoid the further bug identified at Comment 2
+              // http://code.google.com/p/chromium/issues/detail?id=94666#c2
+              // We also have to reconstruct the requested desc so that
+              // the setter is absent. This is why we additionally
+              // condition this special case on the absence of an own
+              // name property on base.
+              var desc2 = { get: desc.get };
+              if ('enumerable' in desc) {
+                desc2.enumerable = desc.enumerable;
+              }
+              if ('configurable' in desc) {
+                desc2.configurable = desc.configurable;
+              }
+              var result = defProp(base, name, desc2);
+              var newDesc = gopd(base, name);
+              if (newDesc.get === desc.get) {
+                return result;
+              }
+            }
+            desc.set = dummySetter;
           }
         }
-        var oldDesc = gopd(base, name);
-        var testBase = {};
-        if (oldDesc) {
-          defProp(testBase, name, oldDesc);
-        }
-        defProp(testBase, name, desc);
-        var fullDesc = gopd(testBase, name);
-         if ('get' in fullDesc && fullDesc.set === void 0) {
-          fullDesc.set = dummySetter;
-        }
-        return defProp(base, name, fullDesc);
+        return defProp(base, name, desc);
       }
     });
     NEEDS_DUMMY_SETTER_repaired = true;
@@ -1923,6 +2192,7 @@ var ses;
             (name === 'caller' || name === 'arguments')) {
           return (function(message) {
              function fakePoison() { throw new TypeError(message); }
+             fakePoison.prototype = null;
              return {
                get: fakePoison,
                set: fakePoison,
@@ -1951,6 +2221,7 @@ var ses;
     function poison() {
       throw new TypeError('Cannot access property ' + path);
     }
+    poison.prototype = null;
     var desc = Object.getOwnPropertyDescriptor(func, magicName);
     if ((!desc && Object.isExtensible(func)) || desc.configurable) {
       try {
@@ -2090,7 +2361,33 @@ var ses;
   }
 
   function repair_ASSIGN_CAN_OVERRIDE_FROZEN() {
-    ses.defendOne = Object.freeze;
+    makeTamperProof = function simpleMakeTamperProof() {
+      return Object.freeze;
+    };
+  }
+
+  function repair_CANT_REDEFINE_NAN_TO_ITSELF() {
+    var defProp = Object.defineProperty;
+    // 'value' handled separately
+    var attrs = ['writable', 'get', 'set', 'enumerable', 'configurable'];
+
+    defProp(Object, 'defineProperty', {
+      value: function(base, name, desc) {
+        try {
+          return defProp(base, name, desc);
+        } catch (err) {
+          var oldDesc = Object.getOwnPropertyDescriptor(base, name);
+          for (var i = 0, len = attrs.length; i < len; i++) {
+            var attr = attrs[i];
+            if (attr in desc && desc[attr] !== oldDesc[attr]) { throw err; }
+          }
+          if (!('value' in desc) || is(desc.value, oldDesc.value)) {
+            return base;
+          }
+          throw err;
+        }
+      }
+    });
   }
 
 
@@ -2171,14 +2468,14 @@ var ses;
       tests: ['S10.4.3_A1']
     },
     {
-	description: 'Global leaks through strict this',
-	test: test_GLOBAL_LEAKS_FROM_STRICT_THIS,
-	repair: void 0,
-	preSeverity: severities.NOT_ISOLATED,
-	canRepair: false,
-	urls: [],
-	sections: ['10.4.3'],
-	tests: ['10.4.3-1-8gs', '10.4.3-1-8-s']
+      description: 'Global leaks through strict this',
+      test: test_GLOBAL_LEAKS_FROM_STRICT_THIS,
+      repair: void 0,
+      preSeverity: severities.NOT_ISOLATED,
+      canRepair: false,
+      urls: [],
+      sections: ['10.4.3'],
+      tests: ['10.4.3-1-8gs', '10.4.3-1-8-s']
     },
     {
       description: 'Global object leaks from built-in methods',
@@ -2597,10 +2894,42 @@ var ses;
                '2011-November/017997.html'],
       sections: ['8.12.4'],
       tests: ['15.2.3.6-4-405']
+    },
+    {
+      description: 'Cannot redefine global NaN to itself',
+      test: test_CANT_REDEFINE_NAN_TO_ITSELF,
+      repair: repair_CANT_REDEFINE_NAN_TO_ITSELF,
+      preSeverity: severities.SAFE_SPEC_VIOLATION,
+      canRepair: true,
+      urls: [], // Seen on WebKit Nightly. TODO(erights): report
+      sections: ['8.12.9', '15.1.1.1'],
+      tests: [] // TODO(erights): Add to test262
+    },
+    {
+      description: 'Error instances have unexpected properties',
+      test: test_UNEXPECTED_ERROR_PROPERTIES,
+      repair: void 0,
+      preSeverity: severities.NEW_SYMPTOM,
+      canRepair: false,
+      urls: [],
+      sections: [],
+      tests: []
+    },
+    {
+      description: 'getOwnPropertyNames lies, hiding some own properties',
+      test: test_GET_OWN_PROPERTY_NAME_LIES,
+      repair: void 0,
+      preSeverity: severities.NOT_ISOLATED,
+      canRepair: false,
+      urls: [],
+      sections: [],
+      tests: []
     }
   ];
 
   ////////////////////// Testing, Repairing, Reporting ///////////
+
+  var aboutTo = void 0;
 
   /**
    * Run a set of tests & repairs, and report results.
@@ -2613,6 +2942,7 @@ var ses;
    */
   function testRepairReport(kludges) {
     var beforeFailures = strictMapFn(kludges, function(kludge) {
+      aboutTo = ['pre test: ', kludge.description];
       return kludge.test();
     });
     var repairs = [];
@@ -2620,12 +2950,14 @@ var ses;
       if (beforeFailures[i]) {
         var repair = kludge.repair;
         if (repair && repairs.lastIndexOf(repair) === -1) {
+          aboutTo = ['repair: ', kludge.description];
           repair();
           repairs.push(repair);
         }
       }
     });
     var afterFailures = strictMapFn(kludges, function(kludge) {
+      aboutTo = ['post test: ', kludge.description];
       return kludge.test();
     });
 
@@ -2706,7 +3038,8 @@ var ses;
     logger.reportRepairs(reports);
   } catch (err) {
     ses.updateMaxSeverity(ses.severities.NOT_SUPPORTED);
-    logger.error('ES5 Repair failed with: ' + err);
+    var during = aboutTo ? '(' + aboutTo.join('') + ') ' : '';
+    logger.error('ES5 Repair ' + during + 'failed with: ', err);
   }
 
   logger.reportMax();

@@ -13,21 +13,25 @@
 // limitations under the License.
 
 /**
- * @fileoverview Makes a makeFarResource function using a given
+ * @fileoverview Makes a "makeFarResource" function using a given
  * serializer/unserializer pair. A makeFarResource function makes a
  * farPromise for an (assumed remote) resource for a given URL.
  *
+ * //provides ses.makeFarResourceMaker
  * @author Mark S. Miller, but interim only until I examine how
  * ref_send/web_send (Tyler Close), qcomm (Kris Kowal), and BCap (Mark
  * Lentczner, Arjun Guha, Joe Politz) deal with similar issues.
- * //provides makeFarResourceMaker
- * @requires Q, cajaVM, this
+ * @overrides ses
+ * @requires Q, cajaVM
  * @requires UniformRequest, AnonXMLHttpRequest, XMLHttpRequest
  */
 
+var ses;
 
-(function(global) {
+(function() {
    "use strict";
+
+   if (ses && !ses.ok()) { return; }
 
    var bind = Function.prototype.bind;
    // See
@@ -37,14 +41,8 @@
    var applyFn = uncurryThis(bind.apply);
    var mapFn = uncurryThis([].map);
 
-   var def;
-   if (typeof cajaVM !== 'undefined') {
-     def = cajaVM.def;
-   } else {
-     // Don't bother being properly defensive when run outside of Caja
-     // or SES.
-     def = Object.freeze;
-   }
+   var freeze = Object.freeze;
+   var constFunc = cajaVM.constFunc;
 
    var XHR;
    if (typeof UniformRequest !== 'undefined') {
@@ -114,7 +112,7 @@
 
              } else if (this.status === 410) {
                var broken = Q.reject(new Error('Resource Gone'));
-               nextSlot.resolve(def({value: broken}));
+               nextSlot.resolve(freeze({value: broken}));
                result.resolve(broken);
 
              } else {
@@ -136,8 +134,8 @@
 
        return Q.makeFar(farDispatch, nextSlot.promise);
      }
-     return def(makeFarResource);
+     return constFunc(makeFarResource);
    }
-   global.makeFarResourceMaker = def(makeFarResourceMaker);
+   ses.makeFarResourceMaker = constFunc(makeFarResourceMaker);
 
- })(this);
+ })();

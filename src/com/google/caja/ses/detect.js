@@ -1,6 +1,14 @@
 // Derived from http://www.quirksmode.org/js/detect.html by Peter-Paul Koch.
 // License terms at http://www.quirksmode.org/about/copyright.html
 
+/**
+ * @fileoverview Tries to figure out what browser we're on.
+ *
+ * @author Peter-Paul Koch, with modifications by Mark S. Miller
+ * @provides BrowserDetect
+ * @requires navigator, window
+ */
+
 var BrowserDetect;
 
 (function() {

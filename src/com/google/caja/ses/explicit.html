@@ -46,8 +46,8 @@
   ses.maxAcceptableSeverityName = 'NEW_SYMPTOM';
 </script>
 <!--
-The <script src=... tags below, from "logger.js" to "hookupSES.js", is 
-  equivalent to <script src="initSES.js"></script>, but is more 
+The <script src=... tags below, from "logger.js" to "hookupSESPlus.js", is 
+  equivalent to <script src="initSESPlus.js"></script>, but is more 
   pleasant to debug.
 
 The <script src="useHTMLLogger.js"> and the inline script above advises 
@@ -57,12 +57,14 @@ The <script src="useHTMLLogger.js"> and the inline script above advises
 <script src="logger.js"></script>
 <script src="repairES5.js"></script>
 <script src="WeakMap.js"></script>
+<script src="debug.js"></script>
 <script src="StringMap.js"></script>
 <script src="whitelist.js"></script>
 <script src="atLeastFreeVarNames.js"></script>
 <script src="startSES.js"></script>
 <script src="ejectorsGuardsTrademarks.js"></script>
 <script src="hookupSESPlus.js"></script>
+<script src="../plugin/uri.js"></script>
 
 <script>
   var amdLoaderTest = gebi('amdLoaderTest');
@@ -82,7 +84,7 @@ The <script src="useHTMLLogger.js"> and the inline script above advises
       appendText(amdLoaderTest, 'cancelled');
       return;
     }
-    
+
     var imports = cajaVM.makeImports();
     cajaVM.copyToImports(imports, {window: 6});
 
@@ -128,59 +130,83 @@ The <script src="useHTMLLogger.js"> and the inline script above advises
 
 <script src="makeQ.js"></script>
 <script src="makeFarResourceMaker.js"></script>
+<script src="compileExprLater.js"></script>
 <script>
-  function mySetTimeout(func, millis) {
-    return setTimeout(function() {
-      try {
-        func();
-      } catch (reason) {
-        console.log('uncaught: ', reason);
-      }
-    }, millis);
-  }
-  var Q = makeQ(mySetTimeout);
+  var Q;
+  (function() {
+    "use strict";
 
-  var makeTextResource = makeFarResourceMaker();
+    if (!ses.ok()) { return; }
 
-  var makeSimpleAMDLoaderFileP = makeTextResource('./makeSimpleAMDLoader.js');
-  var makeSimpleAMDLoaderSrcP = makeSimpleAMDLoaderFileP.get();
-  var imports = cajaVM.makeImports();
-  imports.Q = Q;
-  var makeSimpleAMDLoaderP = Q(makeSimpleAMDLoaderSrcP).when(function(src) {
-    cajaVM.compileModule(src)(imports);
-    return imports.makeSimpleAMDLoader;
-  });
+    /* TODO(erights): Extract the reusable boilerplate below into a
+       reusable abstraction. */
 
-
-  /**
-   * What we should do is accept any legal module identifier according
-   * to the AMD definition and encode it into a legal URL. Instead,
-   * for now, we just conservatively accept an ascii subset of both
-   * that does not need any encoding.
-   * 
-   * See https://github.com/amdjs/amdjs-api/wiki/AMD#wiki-define-id-notes
-   */
-  var isModuleId = Object.freeze(/^[a-zA-Z0-9_/]*$/);
-
-  function fetch(id) {
-    if (!isModuleId.test(id)) {
-      throw new Error('illegal module id: ' + id);
+    function mySetTimeout(func, millis) {
+      return setTimeout(function() {
+        try {
+          func();
+        } catch (reason) {
+          ses.logger.log('uncaught: ', reason);
+        }
+      }, millis);
     }
-    return makeTextResource('./' + id + '.js').get();
-  }
+    Q = ses.makeQ(mySetTimeout);
 
-  var moduleMap = StringMap();
-  moduleMap.set('Q', Q);
-  var loaderP = Q(makeSimpleAMDLoaderP).send(void 0, fetch, moduleMap);
-  var amdTestP = Q(loaderP).send(void 0, 'amdTest');
-  Q(amdTestP).when(function(amdTest) {
-    var amdTestStatus = amdTest === 'this is a test' ?
-      'succeeded' : 'failed, unexpected: ' + amdTest;
-    appendText(amdLoaderTest, amdTestStatus);
-  }, function(reason) {
-    appendText(amdLoaderTest, 'failed: ' + reason);
-  }).end();
+    var makeTextResource = ses.makeFarResourceMaker();
 
+    var url = './makeSimpleAMDLoader.js';
+    var makeSimpleAMDLoaderFileP = makeTextResource(url);
+    var makeSimpleAMDLoaderSrcP = makeSimpleAMDLoaderFileP.get();
+
+    /* We really are evaluating makeSimpleAMDModuleLoader with least
+       authority. Even though there's a global compileExprLater, if
+       you don't provide it here, makeSimpleAMDModuleLoader will
+       fail. */
+    var imports = cajaVM.makeImports();
+    cajaVM.copyToImports(imports, {
+      Q: Q,
+      compileExprLater: ses.compileExprLater
+    });
+
+    var makeSimpleAMDLoaderP = Q(makeSimpleAMDLoaderSrcP).when(function(src) {
+      var exprSrc = '(function() {' + src + '}).call(this)';
+      var compiledExprP = ses.compileExprLater(exprSrc, url);
+      return Q(compiledExprP).when(function(compiledExpr) {
+        compiledExpr(imports);
+        return imports.makeSimpleAMDLoader;
+      });
+    });
+
+
+    /**
+     * What we should do is accept any legal module identifier according
+     * to the AMD definition and encode it into a legal URL. Instead,
+     * for now, we just conservatively accept an ascii subset of both
+     * that does not need any encoding.
+     * 
+     * See https://github.com/amdjs/amdjs-api/wiki/AMD#wiki-define-id-notes
+     */
+    var isModuleId = Object.freeze(/^[a-zA-Z0-9_/]*$/);
+
+    function fetch(id) {
+      if (!isModuleId.test(id)) {
+        throw new Error('illegal module id: ' + id);
+      }
+      return makeTextResource('./' + id + '.js').get();
+    }
+  
+    var moduleMap = StringMap();
+    moduleMap.set('Q', Q);
+    var loaderP = Q(makeSimpleAMDLoaderP).send(void 0, fetch, moduleMap);
+    var amdTestP = Q(loaderP).send(void 0, 'amdTest');
+    Q(amdTestP).when(function(amdTest) {
+      var amdTestStatus = amdTest === 'this is a test' ?
+        'succeeded' : 'failed, unexpected: ' + amdTest;
+      appendText(amdLoaderTest, amdTestStatus);
+    }, function(reason) {
+      appendText(amdLoaderTest, 'failed: ' + reason);
+    }).end();
+  })();
 </script>
 
 <p>
@@ -189,14 +215,12 @@ Using <span id="browserName">unknown</span>
 on <span id="browserOS">unknown</span>
 <script src="detect.js"></script>
 <script>
-(function(){
-  "use strict"
-  gebi('browserName').textContent = BrowserDetect.browser;
-  gebi('browserVersion').textContent = BrowserDetect.version;
-  gebi('browserOS').textContent = BrowserDetect.OS;  
-})();
+  (function(){
+    "use strict"
+    gebi('browserName').textContent = BrowserDetect.browser;
+    gebi('browserVersion').textContent = BrowserDetect.version;
+    gebi('browserOS').textContent = BrowserDetect.OS;  
+  })();
 </script>
-
-
 </body>
 </html>

@@ -19,5 +19,7 @@
  */
 
 define('amdTest1', [], function() {
+  "use strict";
+
   return 'this';
 });

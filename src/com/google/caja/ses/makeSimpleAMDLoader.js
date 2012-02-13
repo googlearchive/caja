@@ -18,13 +18,14 @@
  * https://github.com/amdjs/amdjs-api/wiki/AMD . Based on
  * http://wiki.ecmascript.org/doku.php?id=strawman:concurrency#amd_loader_lite
  *
- * @author Mark S. Miller
  * //provides makeSimpleAMDLoader
- * @requires Q, StringMap, cajaVM, this
+ * @author Mark S. Miller
+ * @requires StringMap, cajaVM
+ * @requires this, compileExprLater, Q
  */
 
 
-(function(global){
+(function(imports){
    "use strict";
 
    var bind = Function.prototype.bind;
@@ -35,14 +36,9 @@
    var applyFn = uncurryThis(bind.apply);
    var mapFn = uncurryThis([].map);
 
-   var def;
-   if (typeof cajaVM !== 'undefined') {
-     def = cajaVM.def;
-   } else {
-     // Don't bother being properly defensive when run outside of Caja
-     // or SES.
-     def = Object.freeze;
-   }
+   var freeze = Object.freeze;
+   var constFunc = cajaVM.constFunc;
+
 
    /**
     * A pumpkin is a unique value that must never escape, and so may
@@ -59,7 +55,7 @@
     * means that it either immediately returns an X or it immediately
     * returns a promise that it eventually fulfills with an X. Unless
     * stated otherwise, we implicitly elide the error conditions from
-    * such statements. The more explicit statement append: "or it
+    * such statements. For the more explicit statement, append: "or it
     * throws, or it does not terminate, or it breaks the returned
     * promise, or it never resolves the returned promise."
     *
@@ -102,6 +98,7 @@
 
      function rawLoad(id) {
        return Q(fetch(id)).when(function(src) {
+
          var result = defineNotCalledPumpkin;
          function define(opt_id, deps, factory) {
            if (typeof opt_id === 'string') {
@@ -121,19 +118,26 @@
          }
          // TODO(erights): Once we're jQuery compatible, change
          // jQuery: to true.
-         define.amd = { lite: true, caja: true, jQuery: false };
-         def(define);
+         define.amd = freeze({ lite: true, caja: true, jQuery: false });
 
-         Function('define', src)(define);
-         if (result === defineNotCalledPumpkin) {
-           result = Q.reject(new Error('"define" not called by: ' + id));
-         }
-         return result;
+         var imports = cajaVM.makeImports();
+         cajaVM.copyToImports(imports, {define: constFunc(define)});
+
+         var compiledExprP = compileExprLater(
+           '(function(){' + src + '})()', id);
+         return Q(compiledExprP).when(function(compiledExpr) {
+
+           compiledExpr(imports);
+           if (result === defineNotCalledPumpkin) {
+             result = Q.reject(new Error('"define" not called by: ' + id));
+           }
+           return result;
+         });
        });
      }
      return loader = Q.memoize(rawLoad, moduleMap);
    }
 
-   global.makeSimpleAMDLoader = def(makeSimpleAMDLoader);
+   imports.makeSimpleAMDLoader = constFunc(makeSimpleAMDLoader);
 
  })(this);

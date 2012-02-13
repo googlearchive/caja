@@ -20,6 +20,7 @@
  * <p>Assumes only ES3. Compatible with ES5, ES5-strict, or
  * anticipated ES6.
  *
+ * // provides ses.atLeastFreeVarNames
  * @author Mark S. Miller
  * @requires StringMap
  * @overrides ses, atLeastFreeVarNamesModule
@@ -79,6 +80,10 @@ var ses;
    * http://es-lab.googlecode.com/svn/trunk/src/parser/unicode.js
    *
    * <p>This is only a temporary development hack. TODO(erights): fix.
+   * 
+   * If this regexp is changed compileExprLater.js should be checked for
+   * correct escaping of freeNames.
+   * 
    */
   function SHOULD_MATCH_IDENTIFIER() { return (/(\w|\$)+/g); }
 

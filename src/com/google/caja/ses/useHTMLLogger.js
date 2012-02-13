@@ -46,6 +46,8 @@ if (!ses) { ses = {}; }
 function useHTMLLogger(reportsElement, consoleElement) {
   "use strict";
 
+  var slice = [].slice;
+
   var maxElement = void 0;
 
   /**
@@ -84,10 +86,13 @@ function useHTMLLogger(reportsElement, consoleElement) {
     };
   }
 
-  var INFLATE = '[+] ';
-  var DEFLATE = '[-] ';
-  function deflate(toggler, inflatables) {
-    var icon = appendText(prependNew(toggler, 'tt'), INFLATE);
+  var INFLATE = '[+]';
+  var DEFLATE = '[-]';
+  function deflate(toggler, inflatables, opt_sep) {
+    var sep = opt_sep !== void 0 ? opt_sep : ' ';
+    var toggle = prependNew(toggler, 'tt');
+    var icon = appendText(toggle, INFLATE);
+    appendText(toggle, sep);
     forEach(inflatables, function(inflatable) {
       inflatable.style.display = 'none';
     });
@@ -107,11 +112,38 @@ function useHTMLLogger(reportsElement, consoleElement) {
     toggler.style.cursor = 'pointer';
   }
 
+  /** modeled on textAdder */
+  function makeLogFunc(parent, style) {
+    return function logFunc(var_args) {
+      var p = appendNew(parent, 'p');
+      var args = slice.call(arguments, 0);
+
+      // See debug.js
+      var getStack = ses.getStack;
+
+      for (var i = 0, len = args.length; i < len; i++) {
+        var span = appendNew(p, 'span');
+        appendText(span, '' + args[i]);
+
+        if (getStack) {
+          var stack = getStack(args[i]);
+          if (stack) {
+            var stackNode = appendNew(p, 'pre');
+            appendText(stackNode, stack);
+            deflate(span, [stackNode], '');
+          }
+        }
+      }
+      p.className = style;
+      return p;
+    };
+  }
+
   var logger = {
-    log:   textAdder(consoleElement, 'log'),
-    info:  textAdder(consoleElement, 'info'),
-    warn:  textAdder(consoleElement, 'warn'),
-    error: textAdder(consoleElement, 'error')
+    log:   makeLogFunc(consoleElement, 'log'),
+    info:  makeLogFunc(consoleElement, 'info'),
+    warn:  makeLogFunc(consoleElement, 'warn'),
+    error: makeLogFunc(consoleElement, 'error')
   };
 
   var TestIDPattern = /^(Sbp|S)?([\d\.]*)/;

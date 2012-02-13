@@ -302,11 +302,18 @@ var WeakMap;
 
 
   function constFunc(func) {
-    Object.freeze(func.prototype);
+    func.prototype = null;
     return Object.freeze(func);
   }
 
+  // Right now (12/25/2012) the histogram supports the current
+  // representation. We should check this occasionally, as a true
+  // constant time representation is easy.
+  // var histogram = [];
+
   WeakMap = function() {
+    // We are currently (12/25/2012) never encountering any prematurely
+    // non-extensible keys.
     var keys = []; // brute force for prematurely non-extensible keys.
     var vals = []; // brute force for corresponding values.
 
@@ -342,6 +349,8 @@ var WeakMap;
         if (i >= 0) {
           hr.vals[i] = value;
         } else {
+//          i = hr.gets.length;
+//          histogram[i] = (histogram[i] || 0) + 1;
           hr.gets.push(get___);
           hr.vals.push(value);
         }

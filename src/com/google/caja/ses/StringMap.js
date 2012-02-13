@@ -17,39 +17,46 @@
  *
  * @author Mark S. Miller
  * @author Jasvir Nagra
- * @requires cajaVM
- * @provides StringMap
+ * @overrides StringMap
  */
 
-function StringMap() {
+var StringMap;
 
-  function assertString(x) {
-    if ('string' !== typeof(x)) {
-      throw new TypeError('Not a string: ' + String(x));
-    }
-    return x;
-  }
+(function() {
+   "use strict";
 
-  var def;
-  if ('undefined' !== typeof cajaVM) {
-    def = cajaVM.def;
-  } else {
-    def = Object.freeze;
-  }
+   var create = Object.create;
+   var freeze = Object.freeze;
+   function constFunc(func) {
+     func.prototype = null;
+     return freeze(func);
+   }
 
-  var objAsMap = Object.create(null);
-  return def({
-    get: function(key) {
-        return objAsMap[assertString(key) + '$']; 
-      },
-    set: function(key, value) {
-        objAsMap[assertString(key) + '$'] = value;
-      },
-    has: function(key) {
-        return (assertString(key) + '$') in objAsMap;
-      },
-    'delete': function(key) {
-        return delete objAsMap[assertString(key) + '$']; 
-      }
-  });
-}
+   function assertString(x) {
+     if ('string' !== typeof(x)) {
+       throw new TypeError('Not a string: ' + String(x));
+     }
+     return x;
+   }
+
+   StringMap = function StringMap() {
+
+     var objAsMap = create(null);
+
+     return freeze({
+       get: constFunc(function(key) {
+         return objAsMap[assertString(key) + '$'];
+       }),
+       set: constFunc(function(key, value) {
+         objAsMap[assertString(key) + '$'] = value;
+       }),
+       has: constFunc(function(key) {
+         return (assertString(key) + '$') in objAsMap;
+       }),
+       'delete': constFunc(function(key) {
+         return delete objAsMap[assertString(key) + '$'];
+       })
+     });
+   };
+
+ })();

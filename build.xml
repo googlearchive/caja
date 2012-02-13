@@ -874,6 +874,7 @@
       <input file="${src.caja}/ses/logger.js"/>
       <input file="${src.caja}/ses/repairES5.js"/>
       <input file="${src.caja}/ses/WeakMap.js"/>
+      <input file="${src.caja}/ses/debug.js"/>
       <input file="${src.caja}/ses/StringMap.js"/>
       <input file="${src.caja}/ses/whitelist.js"/>
       <input file="${src.caja}/ses/atLeastFreeVarNames.js"/>
@@ -986,12 +987,25 @@
       <input file="${src.caja}/ses/logger.js"/>
       <input file="${src.caja}/ses/repairES5.js"/>
       <input file="${src.caja}/ses/WeakMap.js"/>
+      <input file="${src.caja}/ses/debug.js"/>
+      <input file="${src.caja}/ses/StringMap.js"/>
       <input file="${src.caja}/ses/whitelist.js"/>
       <input file="${src.caja}/ses/atLeastFreeVarNames.js"/>
       <input file="${src.caja}/ses/startSES.js"/>
       <input file="${src.caja}/ses/ejectorsGuardsTrademarks.js"/>
       <input file="${src.caja}/ses/hookupSES.js"/>
       <input file="${src.caja}/ses/hookupSESPlus.js"/>
+
+      <input file="${src.caja}/ses/makeQ.js"/>
+      <input file="${src.caja}/ses/makeFarResourceMaker.js"/>
+      <input file="${src.caja}/ses/compileExprLater.js"/>
+      <input file="${src.caja}/ses/detect.js"/>
+
+      <input file="${src.caja}/ses/makeSimpleAMDLoader.js"/>
+      <input file="${src.caja}/ses/amdTest.js"/>
+      <input file="${src.caja}/ses/amdTest1.js"/>
+      <input file="${src.caja}/ses/amdTestDir/amdTest2.js"/>
+      <input file="${src.caja}/ses/amdTest3.js"/>
 
       <input file="${src.caja}/plugin/bridal.js"/>
       <input file="${lib.caja}/plugin/css-defs.js"/>
