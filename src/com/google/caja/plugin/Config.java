@@ -157,7 +157,6 @@ public final class Config {
   public enum SourceRenderMode {
     MINIFY,
     PRETTY,
-    DEBUGGER,
     ;
   }
 

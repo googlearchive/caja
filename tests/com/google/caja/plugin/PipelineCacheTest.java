@@ -563,8 +563,7 @@ public class PipelineCacheTest extends PipelineStageTestCase {
         CssSchema.getDefaultCss21Schema(mq),
         HtmlSchema.getDefault(mq),
         new ModuleManager(
-            meta, TestBuildInfo.getInstance(), UriFetcher.NULL_NETWORK, false,
-            mq),
+            meta, TestBuildInfo.getInstance(), UriFetcher.NULL_NETWORK, mq),
         cache,
         PipelineMaker.DEFAULT_PRECONDS,
         PipelineMaker.CAJOLED_MODULES.with(PipelineMaker.HTML_SAFE_STATIC)

@@ -83,6 +83,9 @@ import java.util.Set;
 /**
  * Rewrites a JavaScript parse tree to comply with default Caja rules.
  *
+ * <p>By design, a rewriter is a "one-shot" object to be used for rewriting
+ * one module then discarded.
+ *
  * @author ihab.awad@gmail.com (Ihab Awad)
  */
 @RulesetDescription(
@@ -93,8 +96,6 @@ public class ES53Rewriter extends Rewriter {
   private final BuildInfo buildInfo;
   private final URI baseUri;
   private final ModuleManager moduleManager;
-  // TODO: move this into scope if we use a single ES53Rewriter to rewrite
-  // multiple modules
   private final Set<StringLiteral> includedModules = Sets.newTreeSet(
       new Comparator<StringLiteral>() {
     public int compare(StringLiteral o1, StringLiteral o2) {
@@ -296,7 +297,7 @@ public class ES53Rewriter extends Rewriter {
               }
             } else {
               includedModules.add(name);
-              // TODO(mikesamuel): How does this work?  Why not return node?
+              // Return a copy to remove input "taint" attribute.
               return QuasiBuilder.substV("load(@name)", "name", name);
             }
           } else {
@@ -336,10 +337,6 @@ public class ES53Rewriter extends Rewriter {
               + "  cajolerName: @cajolerName,"
               + "  cajolerVersion: @cajolerVersion,"
               + "  cajoledDate: @cajoledDate"
-              // TODO(ihab.awad): originalSource
-              // TODO(ihab.awad): sourceLocationMap
-              // TODO(ihab.awad): imports
-              // TODO(ihab.awad): manifest
               + "})"))
       public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
         if (node instanceof UncajoledModule) {
@@ -930,7 +927,6 @@ public class ES53Rewriter extends Rewriter {
     // set - assignments
     ////////////////////////////////////////////////////////////////////////
 
-    // TODO: It's not masking, it's replacing; invent a different error.
     new Rule() {
       @Override
       @RuleDescription(
@@ -947,7 +943,7 @@ public class ES53Rewriter extends Rewriter {
               ((Reference) bindings.get("import")).getIdentifierName();
           if (Scope.UNMASKABLE_IDENTIFIERS.contains(name)) {
             mq.addMessage(
-                RewriterMessageType.CANNOT_MASK_IDENTIFIER,
+                RewriterMessageType.CANNOT_ASSIGN_TO_IDENTIFIER,
                 node.getFilePosition(), MessagePart.Factory.valueOf(name));
             return node;
           }

@@ -94,7 +94,7 @@ public class OptimizeJavascriptStageTest extends PipelineStageTestCase {
     return new OptimizeJavascriptStage().apply(jobs)
         && new ValidateJavascriptStage(new ModuleManager(
                 new PluginMeta(), TestBuildInfo.getInstance(),
-                UriFetcher.NULL_NETWORK, false, mq))
+                UriFetcher.NULL_NETWORK, mq))
             .apply(jobs)
         && discardBoilerPlate(jobs);
   }

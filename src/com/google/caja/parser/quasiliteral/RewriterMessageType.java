@@ -149,6 +149,9 @@ public enum RewriterMessageType implements MessageTypeInt {
   CANNOT_MASK_IDENTIFIER(
       "%s: Cannot mask identifier \"%s\"", MessageLevel.FATAL_ERROR),
 
+  CANNOT_ASSIGN_TO_IDENTIFIER(
+      "%s: Cannot assign to identifier \"%s\"", MessageLevel.FATAL_ERROR),
+
   FOR_IN_NOT_IN_CAJITA(
       "%s: for-in construct not allowed in Cajita: %s, %s",
       MessageLevel.FATAL_ERROR),

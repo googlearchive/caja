@@ -282,7 +282,6 @@ public class CajolingService {
 
   private void registerHandlers(BuildInfo buildInfo) {
     handlers.add(new JsHandler(buildInfo));
-    handlers.add(new InnocentHandler(buildInfo));
     handlers.add(new HtmlHandler(buildInfo, host, uriFetcher));
   }
 
@@ -306,7 +305,6 @@ public class CajolingService {
   }
 
   public static enum Transform {
-    INNOCENT,
     CAJOLE;
   }
 

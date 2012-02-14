@@ -45,16 +45,16 @@ import java.util.Map;
 
 
 /**
- * This test ensures that the module format, including debugging information,
- * is correct. Some of this material essentially tests the rendering in class
- * CajoledModule and its dependencies, but the tests are inextricably tied to
- * the cajoling process and therefore arguably belongs in this package.
+ * This test ensures that the module format is correct. Some of this material
+ * essentially tests the rendering in class CajoledModule and its dependencies,
+ * but the tests are inextricably tied to the cajoling process and therefore
+ * arguably belongs in this package.
  *
  * @author ihab.awad@gmail.com
  */
 public class ModuleFormatTest extends CajaTestCase {
   private final Rewriter makeRewriter() {
-    return new CajitaRewriter(TestBuildInfo.getInstance(), mq, false);
+    return new ES53Rewriter(TestBuildInfo.getInstance(), mq, false);
   }
 
   private final Callback<IOException> exHandler = new Callback<IOException>() {
@@ -98,26 +98,6 @@ public class ModuleFormatTest extends CajaTestCase {
         bindings.get("cajoledDate").getValue());
   }
 
-  public final void testCajoledModuleDebugRendering() throws Exception {
-    CajoledModule cajoledModule = (CajoledModule) makeRewriter().expand(
-        new UncajoledModule(js(fromResource("testModule.js"))));
-    assertNoErrors();
-
-    Map<InputSource, CharSequence> originalSource = Collections.singletonMap(
-        new InputSource(
-            new URI(getClass().getResource("testModule.js").toExternalForm())),
-        (CharSequence) TestUtil.readResource(getClass(), "testModule.js"));
-
-    StringBuilder sb = new StringBuilder();
-    RenderContext rc = new RenderContext(new Concatenator(sb));
-    cajoledModule.renderWithDebugSymbols(originalSource, rc);
-    rc.getOut().noMoreTokens();
-
-    assertEquals(
-        TestUtil.readResource(getClass(), "testModule.out.js"),
-        sb.toString());
-  }
-
   private CajoledModule makeTestCajoledModule() {
     ObjectConstructor oc = (ObjectConstructor) QuasiBuilder.substV(
         "  ({"
@@ -135,17 +115,6 @@ public class ModuleFormatTest extends CajaTestCase {
     StringBuilder out = new StringBuilder();
     TokenConsumer tc = new JsPrettyPrinter(new Concatenator(out, exHandler));
     module.render(callbackExpression, new RenderContext(tc));
-    tc.noMoreTokens();
-    return out.toString();
-  }
-
-  private String renderWithDebugSymbols(CajoledModule module,
-                                        Expression callbackExpression) {
-    StringBuilder out = new StringBuilder();
-    TokenConsumer tc = new Concatenator(out, exHandler);
-    module.renderWithDebugSymbols(
-        callbackExpression, Maps.<InputSource, CharSequence>newHashMap(),
-        new RenderContext(tc));
     tc.noMoreTokens();
     return out.toString();
   }
@@ -174,44 +143,5 @@ public class ModuleFormatTest extends CajaTestCase {
             + "  foo: 42"
             + "}))"))),
         render(reparsedModule));
-  }
-
-  public final void testCajoledModuleDebugRenderingWithCallback()
-      throws Exception {
-    // Ensure that the rendered form of a cajoled module with a callback
-    // expression and debugging information fits the expected format.
-
-    // Create a cajoled module and render it with a callback and
-    // debugging information.
-    String renderedModule = renderWithDebugSymbols(
-        makeTestCajoledModule(),
-        jsExpr(fromString("foo.bar.baz")));
-
-    // Re-parse the rendered output so we can apply quasi matches to it.
-    Expression reparsedModule = (Expression)
-        js(fromString(renderedModule))
-        // Extract the innermost Expression since the quasi will match that.
-        .children().get(0).children().get(0).children().get(0);
-
-    // Check that the reparsed structure matches what we expect.
-   Map<String, ParseTreeNode> bindings = Maps.newHashMap();
-    assertTrue(
-        render(reparsedModule),
-        QuasiBuilder.match(
-            ""
-            + "foo.bar.baz(___.prepareModule({"
-            + "  instantiate: function() {},"
-            + "  foo: 42,"
-            + "  sourceLocationMap: @sourceLocationMap,"
-            + "  originalSource: @originalSource"
-            + "}));",
-            reparsedModule,
-            bindings));
-    // Other tests verify the exact details of "sourceLocationMap" and
-    // "originalSource". In this test, we are checking for the correct callback
-    // expression "foo.bar.baz", so we apply only a very weak sanity check on
-    // the remainder.
-    assertTrue(bindings.get("sourceLocationMap") instanceof ObjectConstructor);
-    assertTrue(bindings.get("originalSource") instanceof ObjectConstructor);
   }
 }

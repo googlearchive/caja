@@ -295,11 +295,10 @@ public abstract class RewriterTestCase extends CajaTestCase {
           Scope s2 = Scope.fromFunctionConstructor(scope, ctor);
           FunctionConstructor rewritten
               = (FunctionConstructor) QuasiBuilder.substV(
-                  "function @ident(@formals*) { @fh*; @stmts*; @body*; }",
+                  "function @ident(@formals*) { @stmts*; @body*; }",
                   "ident", ctor.getIdentifier(),
                   "formals", expandAll(
                       new ParseTreeNodeContainer(ctor.getParams()), s2),
-                  "fh", CajitaRewriter.getFunctionHeadDeclarations(s2),
                   "stmts", new ParseTreeNodeContainer(s2.getStartStatements()),
                   "body", expandAll(
                       new ParseTreeNodeContainer(ctor.getBody().children()), s2)
@@ -329,11 +328,10 @@ public abstract class RewriterTestCase extends CajaTestCase {
           scope.addStartStatement(
               new Declaration(FilePosition.UNKNOWN, ident, identRef));
           return QuasiBuilder.substV(
-              "(@var = function @ident(@formals*) { @fh*; @stmts*; @body*; })",
+              "(@var = function @ident(@formals*) { @stmts*; @body*; })",
               "var", identRef,
               "ident", ident,
               "formals", new ParseTreeNodeContainer(ctor.getParams()),
-              "fh", CajitaRewriter.getFunctionHeadDeclarations(s2),
               "stmts", new ParseTreeNodeContainer(s2.getStartStatements()),
               "body", expandAll(
                   new ParseTreeNodeContainer(ctor.getBody().children()), s2)

@@ -23,9 +23,6 @@ import com.google.javascript.jscomp.jsonml.TagType;
 
 import java.util.List;
 
-// TODO: audit all places where (instanceof Expression) is used since we have
-// inserted a non-expression type in an expression sub-tree.
-
 /**
  * Sometimes called an object literal, a shorthand for constructing an object
  * with a declared set of properties.  I avoid the term object literal since
@@ -34,6 +31,11 @@ import java.util.List;
  *
  * <p>E.g.
  * <code>{ x: 0, y : 1 }</code>
+ *
+ * TODO(ihab.awad): Remove class ObjProperty and refactor this class so that
+ * its children are simply an even-numbered list of Expression objects,
+ * alternating between StringLiteral and Expression. This would restore the
+ * fact that any child of an Expression node is itself an Expression node.
  *
  * @author mikesamuel@gmail.com
  */

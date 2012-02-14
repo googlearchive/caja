@@ -56,9 +56,7 @@ public class ParseTreeNodeContainer extends AbstractParseTreeNode {
   public Object getValue() { return null; }
 
   public void render(RenderContext rc) {
-    // TODO(mikesamuel): this should never be rendered since rendering a group
-    // of statements with it will not output semicolons.
-    for (ParseTreeNode n : children()) { n.render(rc); }
+    throw new UnsupportedOperationException();
   }
 
   public TokenConsumer makeRenderer(

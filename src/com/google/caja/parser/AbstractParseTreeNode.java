@@ -194,8 +194,6 @@ public abstract class AbstractParseTreeNode implements MutableParseTreeNode,
    * performing their own checks.
    *
    * <p>This method may throw any RuntimeException on an invalid child.
-   * TODO(mikesamuel): maybe reliably throw an exception type, that includes
-   * information about the troublesome node.</p>
    */
   protected void childrenChanged() {
     if (children.getImmutableFacet().contains(null)) {

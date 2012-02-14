@@ -14,6 +14,7 @@
 
 package com.google.caja.lang.css;
 
+import com.google.caja.parser.css.CssPropertySignature;
 import com.google.caja.reporting.EchoingMessageQueue;
 import com.google.caja.reporting.MessageContext;
 import com.google.caja.util.MoreAsserts;
@@ -51,7 +52,18 @@ public class CssSchemaTest extends TestCase {
     assertNotNull(cssSchema.getCssProperty(Name.css("font-style")));
   }
 
-  // TODO(mikesamuel): test getSymbol
+  public final void testGetSymbol() {
+    CssSchema.SymbolInfo si = cssSchema.getSymbol(Name.css("color"));
+    assertNotNull(si);
+    assertNotNull(si.sig);
+    for (CssPropertySignature sig : si.sig.children()) {
+      Object value = sig.getValue();
+      if (value instanceof String && "aquamarine".equals(value)) {
+        return;
+      }
+    }
+    fail("Cannot find value \"aquamarine\" for symbol \"color\"");
+  }
 
   public final void testIsKeyword() {
     assertTrue(cssSchema.isKeyword(Name.css("inherit")));

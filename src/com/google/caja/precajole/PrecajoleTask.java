@@ -232,7 +232,7 @@ public class PrecajoleTask extends Task {
       pm.setPrecajoleMap(null);
       ModuleManager mgr = new ModuleManager(
           pm, BuildInfo.getInstance(),
-          UriFetcher.NULL_NETWORK, false, mq);
+          UriFetcher.NULL_NETWORK, mq);
       UncajoledModule input = uncajoled(text, name, mq);
 
       // TODO(felix8a): maybe should use compilation pipeline

@@ -62,7 +62,4 @@ public @interface RuleDescription {
    * if {@code matches} were more expressive.
    */
   Class<? extends ParseTreeNode> matchNode() default ParseTreeNode.class;
-
-  // TODO(ihab.awad): Add metadata for a rule indicating that it always fails,
-  // and perhaps in this case add a sanity check that "substitutes" is empty.
 }

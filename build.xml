@@ -960,7 +960,6 @@
     <!-- Lint the ES5/3 case -->
     <genrule class="com.google.caja.ancillary.linter.Linter"
      unless="${tools.ancillary.disable}">
-      <input file="${lib.caja}/cajita-module-orig.js"/>
       <input file="${lib.caja}/cajita-promise.js"/>
       <input file="${src.caja}/plugin/bridal.js"/>
       <input file="${lib.caja}/plugin/caja.js"/>
@@ -1093,7 +1092,6 @@
     </javac>
     <copy todir="${lib}">
       <fileset dir="${src}">
-        <include name="**/caja/cajita-module-orig.js"/>        
         <include name="**/caja/cajita-promise.js"/>
         <include name="**/caja/es53.js"/>
         <include name="**/caja/console.js"/>
@@ -1274,7 +1272,6 @@
         -  server so as to be standalone. -->
       <fileset dir="${src.caja}">
         <include name="log-to-console.js"/>
-        <include name="cajita-module-orig.js"/>
         <include name="cajita-promise.js"/>
       </fileset>
       <fileset dir="${lib.caja}/plugin">
@@ -1637,7 +1634,6 @@
       </fileset>
       <fileset dir="${src.caja}/plugin">
         <include name="caja-gadget.css"/>
-        <include name="caja-orig"/>
         <include name="caja.js"/>
       </fileset>
       <fileset dir="${lib.caja}/demos/container">

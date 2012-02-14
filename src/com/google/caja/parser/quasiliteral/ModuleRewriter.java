@@ -38,7 +38,7 @@ import java.util.List;
  *
  * @author maoziqing@gmail.com
  */
-public class CajitaModuleRewriter {
+public class ModuleRewriter {
   private final ModuleManager mgr;
 
   public ModuleManager getModuleManager() { return mgr; }
@@ -46,7 +46,7 @@ public class CajitaModuleRewriter {
   /**
    * Produces a module containing a {@code moduleMap___} definition that
    * introduces all the bindings needed by the {@code load(...)} rule
-   * expansion in {@link CajitaRewriter}.
+   * expansion.
    */
   public CajoledModule rewrite(List<CajoledModule> modules) {
     List<CajoledModule> byIndex = mgr.getModuleMap();
@@ -96,19 +96,19 @@ public class CajitaModuleRewriter {
     return new CajoledModule(oc);
   }
 
-  public CajitaModuleRewriter(ModuleManager mgr) {
+  public ModuleRewriter(ModuleManager mgr) {
     this.mgr = mgr;
   }
 
-  public CajitaModuleRewriter(
+  public ModuleRewriter(
       PluginMeta meta, BuildInfo buildInfo, UriFetcher uriFetcher,
-      boolean isFromValija, MessageQueue mq) {
-    this(new ModuleManager(meta, buildInfo, uriFetcher, isFromValija, mq));
+      MessageQueue mq) {
+    this(new ModuleManager(meta, buildInfo, uriFetcher, mq));
   }
 
-  public CajitaModuleRewriter(
+  public ModuleRewriter(
       PluginMeta meta, BuildInfo buildInfo,
       boolean isFromValija, MessageQueue mq) {
-    this(meta, buildInfo, UriFetcher.NULL_NETWORK, isFromValija, mq);
+    this(meta, buildInfo, UriFetcher.NULL_NETWORK, mq);
   }
 }

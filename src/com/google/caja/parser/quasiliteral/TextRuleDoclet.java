@@ -23,7 +23,7 @@ import java.io.Writer;
 import java.util.Date;
 
 /**
- * Extracts and formats the rules of Caja from DefaultCajaRewriter
+ * Extracts and formats the rules of Caja from ES53Rewriter
  * output to the console
  *
  * @author jasvir@google.com (Jasvir Nagra)
@@ -64,7 +64,7 @@ public class TextRuleDoclet extends RuleDoclet {
 
   public static void main(String[] args) throws IOException {
     TextRuleDoclet trd = new TextRuleDoclet();
-    trd.setRewriter(new CajitaRewriter(
+    trd.setRewriter(new ES53Rewriter(
         BuildInfo.getInstance(), DevNullMessageQueue.singleton(), false));
     trd.generateDocumentation(new OutputStreamWriter(System.out));
   }

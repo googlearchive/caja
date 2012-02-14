@@ -15,7 +15,7 @@
 package com.google.caja.plugin.stages;
 
 import com.google.caja.parser.js.CajoledModule;
-import com.google.caja.parser.quasiliteral.CajitaModuleRewriter;
+import com.google.caja.parser.quasiliteral.ModuleRewriter;
 import com.google.caja.parser.quasiliteral.ModuleManager;
 import com.google.caja.plugin.Job;
 import com.google.caja.plugin.JobEnvelope;
@@ -50,7 +50,7 @@ public final class ConsolidateCodeStage implements Pipeline.Stage<Jobs> {
     }
     jobs.getJobs().removeAll(jsJobs);
 
-    CajitaModuleRewriter rw = new CajitaModuleRewriter(mgr);
+    ModuleRewriter rw = new ModuleRewriter(mgr);
     jobs.getJobs().add(JobEnvelope.of(Job.cajoledJob(rw.rewrite(modules))));
     return jobs.hasNoFatalErrors();
   }

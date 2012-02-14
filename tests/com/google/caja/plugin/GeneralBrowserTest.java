@@ -16,13 +16,10 @@ package com.google.caja.plugin;
 
 import com.google.caja.reporting.BuildInfo;
 
-// TODO(kpreid): Rename this file, as it now tests the ES5 as well as ES53
-// environment.
-
 /**
  * @author ihab.awad@gmail.com
  */
-public class ES53BrowserTest extends BrowserTestCase {
+public class GeneralBrowserTest extends BrowserTestCase {
   private final String bv = BuildInfo.getInstance().getBuildVersion();
 
   public final void testPrecajole() throws Exception {

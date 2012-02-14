@@ -954,7 +954,7 @@ public class ES53RewriterTest extends CommonJsRewriterTestCase {
     // Array is in Scope.UNMASKABLE_IDENTIFIERS
     checkAddsMessage(
         js(fromString("Array = function () { return [] };")),
-        RewriterMessageType.CANNOT_MASK_IDENTIFIER);
+        RewriterMessageType.CANNOT_ASSIGN_TO_IDENTIFIER);
     // Throws a ReferenceError
     rewriteAndExecute("assertThrows(function () { x = 1; })");
   }

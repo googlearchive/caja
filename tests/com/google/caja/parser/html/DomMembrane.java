@@ -23,7 +23,7 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 abstract class DomMembrane {
-  // TODO: should be weakly keyed, but only used for short lived tests.
+  // No need to make this weakly keyed since only used for short lived tests.
   private final Map<Object, Object> wrappers = Maps.newIdentityHashMap();
 
   <T extends Node> T wrap(T node, Class<T> type) {

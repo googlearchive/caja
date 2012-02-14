@@ -17,7 +17,6 @@ package com.google.caja.parser.js;
 import com.google.caja.parser.AbstractParseTreeNode;
 import com.google.caja.parser.ParseTreeNode;
 
-// TODO(erights,ihab): Remove the concept of "synthetic" entirely.
 /**
  * Defines a Synthetic Attribute that marks a node as having been generated
  * as part of the compilation process.

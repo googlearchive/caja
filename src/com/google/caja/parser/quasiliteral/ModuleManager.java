@@ -59,7 +59,6 @@ public class ModuleManager {
   private final PluginMeta meta;
   private final BuildInfo buildInfo;
   private final UriFetcher uriFetcher;
-  private final boolean isValija;
   private final MessageQueue mq;
 
   /** Maps to indices into {@link #modules}. */
@@ -68,12 +67,11 @@ public class ModuleManager {
 
   public ModuleManager(
       PluginMeta meta, BuildInfo buildInfo, UriFetcher uriFetcher,
-      boolean isValija, MessageQueue mq) {
+      MessageQueue mq) {
     assert uriFetcher != null;
     this.meta = meta;
     this.buildInfo = buildInfo;
     this.uriFetcher = uriFetcher;
-    this.isValija = isValija;
     this.mq = mq;
   }
 
@@ -86,8 +84,6 @@ public class ModuleManager {
   public BuildInfo getBuildInfo() { return buildInfo; }
 
   public UriFetcher getUriFetcher() { return uriFetcher; }
-
-  public boolean isValija() { return isValija; }
 
   public MessageQueue getMessageQueue() { return mq; }
 

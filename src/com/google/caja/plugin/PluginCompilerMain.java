@@ -37,7 +37,6 @@ import com.google.caja.reporting.MessageType;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.reporting.SimpleMessageQueue;
 import com.google.caja.util.Callback;
-import com.google.caja.util.CapturingReader;
 import com.google.caja.util.Charsets;
 import com.google.caja.util.Maps;
 
@@ -70,8 +69,6 @@ public final class PluginCompilerMain {
   private final MessageQueue mq;
   private final MessageContext mc;
   private final Map<InputSource, CharSequence> originalSources
-      = Maps.newHashMap();
-  private final Map<InputSource, CapturingReader> originalInputs
       = Maps.newHashMap();
   private final Config config = new Config(
       getClass(), System.err, "Cajoles HTML, CSS, and JS files to JS.");
@@ -312,16 +309,6 @@ public final class PluginCompilerMain {
 
   private void writeFile(Appendable out, CajoledModule module)
       throws IOException {
-    if (config.renderer() == Config.SourceRenderMode.DEBUGGER) {
-      // Debugger rendering is weird enough to warrant its own method
-      writeFileWithDebug(out, module);
-    } else {
-      writeFileNonDebug(out, module);
-    }
-  }
-
-  private void writeFileNonDebug(Appendable out, CajoledModule module)
-      throws IOException {
     TokenConsumer tc;
     switch (config.renderer()) {
       case PRETTY:
@@ -338,12 +325,6 @@ public final class PluginCompilerMain {
     module.render(rc);
     tc.noMoreTokens();
     out.append('\n');
-  }
-
-  private void writeFileWithDebug(Appendable out, CajoledModule module) {
-    module.renderWithDebugSymbols(
-        originalSources,
-        makeRenderContext(new Concatenator(out, exHandler)));
   }
 
   private static RenderContext makeRenderContext(TokenConsumer tc) {
@@ -390,15 +371,7 @@ public final class PluginCompilerMain {
   }
 
   private Reader createReader(InputSource is, InputStream stream) {
-    InputStreamReader isr = new InputStreamReader(stream, Charsets.UTF_8);
-
-    if (config.renderer() == Config.SourceRenderMode.DEBUGGER) {
-      CapturingReader cr = new CapturingReader(isr);
-      originalInputs.put(is, cr);
-      return cr;
-    } else {
-      return isr;
-    }
+    return new InputStreamReader(stream, Charsets.UTF_8);
   }
 
   public static void main(String[] args) {
