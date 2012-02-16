@@ -1215,6 +1215,7 @@
         <include name="css-defs.js" />
         <include name="html4-defs.js" />
         <include name="domado.out.js" />
+        <include name="html-sanitizer-minified.js" />
         <include name="taming-membrane.out.js" />
       </fileset>
       <fileset dir="${third_party}/js/excanvas">

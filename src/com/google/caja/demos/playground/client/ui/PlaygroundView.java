@@ -459,24 +459,6 @@ public class PlaygroundView {
     playgroundUI.renderResult.setText(result);
   }
 
-  private void alert(String msg) {
-    final DialogBox alertBox = new DialogBox();
-    alertBox.setGlassEnabled(true);
-    alertBox.setText("Cajoled gadget says");
-    DockLayoutPanel dock = new DockLayoutPanel(Unit.PX);
-    dock.add(new ScrollPanel(new Label(msg)));
-    dock.addSouth(new Button("Ok", new ClickHandler() {
-      @Override
-      public void onClick(ClickEvent arg0) {
-        alertBox.hide();
-      }
-    }), 20);
-    dock.setSize("200px", "200px");
-    alertBox.add(dock);
-    alertBox.center();
-    alertBox.show();
-  }
-
   private native void augmentWith(JavaScriptObject o, String key,
       JavaScriptObject value) /*-{
     o[key] = value;
@@ -507,11 +489,9 @@ public class PlaygroundView {
         that.@com.google.caja.demos.playground.client.ui.PlaygroundView::addRuntimeMessage(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)
             (message, source, lineNum);
       }));
-    extraImports.alert = caja.tame(caja.markFunction(
-      function (message) {
-        that.@com.google.caja.demos.playground.client.ui.PlaygroundView::alert(Ljava/lang/String;)
-            ('' + message);
-      }));
+    extraImports.alert = caja.tame(
+      caja.markFunction(
+        function(msg) { alert('Untrusted code says: ' + String(msg)); }));
 
     return extraImports;
   }-*/;
