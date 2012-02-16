@@ -360,14 +360,11 @@ var caja = (function () {
     }
     domOpts = domOpts || {};
     var opt_idClass = domOpts ? domOpts.idClass : void 0;
-    var opt_title = domOpts && domOpts.title ?
-        domOpts.title : '<Untrusted Content Title>';
     var idClass = opt_idClass || ('caja-guest-' + nextId++ + '___');
     var inner = null;
     var outer = null;
     if (div) {
       inner = div.ownerDocument.createElement('div');
-      inner.setAttribute('title', opt_title);
       inner.style.display = 'block';
       inner.style.position = 'relative';
       outer = div.ownerDocument.createElement('div');

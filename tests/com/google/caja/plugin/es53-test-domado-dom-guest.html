@@ -1853,17 +1853,17 @@ After
                   tagName: 'HEAD',
                   nodeValue: null,
                   attributes: [],
-                  innerHTML: '<title>&lt;Untrusted Content Title&gt;</title>',
+                  innerHTML: '<title></title>',
                   children: [
                     {
                       nodeType: 1,
                       tagName: 'TITLE',
                       nodeValue: null,
                       attributes: [],
-                      innerHTML: '&lt;Untrusted Content Title&gt;',
+                      innerHTML: '',
                       children: [ {
                         nodeType: 3,
-                        nodeValue: '<Untrusted Content Title>'
+                        nodeValue: ''
                       } ]
                     }
                   ]
@@ -1882,7 +1882,7 @@ After
 
       var html = document.documentElement.innerHTML;
       assertTrue(!!html.match(
-        '<head><title>&lt;Untrusted Content Title&gt;</title></head><body>'));
+        '<head><title></title></head><body>'));
 
       pass('testDocumentElement');
     });
