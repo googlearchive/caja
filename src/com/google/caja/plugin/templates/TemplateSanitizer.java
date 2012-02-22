@@ -45,6 +45,7 @@ import org.w3c.dom.Node;
 public final class TemplateSanitizer {
   private final HtmlSchema schema;
   private final MessageQueue mq;
+  private static String cajaPrefix = "data-caja-";
 
   /**
    * @param schema specifies which tags and attributes are allowed, and which
@@ -143,12 +144,18 @@ public final class TemplateSanitizer {
     HTML.Attribute a = schema.lookupAttribute(attrKey);
     if (null == a) {
       if (!Placeholder.ID_ATTR.is(attrib)) {
-        if (!ignore) {
-          mq.getMessages().add(new Message(
-              PluginMessageType.UNKNOWN_ATTRIBUTE, MessageLevel.WARNING,
-              Nodes.getFilePositionFor(attrib), attrKey, elKey));
+        if (attrKey.localName.endsWith("__")) { valid = false; }
+        else if (!attrKey.localName.startsWith(cajaPrefix)) {
+          // Remove this attribute and create another that
+          // starts with "data-caja-".
+          String localName = attrKey.localName;
+          String value = attrib.getValue();
+          removeBadAttribute(el, attrKey);
+          el.setAttributeNS(
+              attrKey.ns.uri,
+              cajaPrefix + localName,
+              value == null ? localName : value);
         }
-        valid &= removeBadAttribute(el, attrKey);
       }
     } else if ("target".equals(attrKey.localName)) {
       if (!"_self".equals(attrib.getNodeValue())) {
@@ -214,9 +221,13 @@ public final class TemplateSanitizer {
     for (Node child : Nodes.childrenOf(el)) { valid &= sanitize(child); }
 
     for (Attr a : Nodes.attributesOf(el)) {
+      String attrName = a.getNodeName();
+      if (attrName.startsWith(cajaPrefix)) {
+        attrName = attrName.substring(10);
+      }
       mq.addMessage(
           PluginMessageType.CANNOT_FOLD_ATTRIBUTE, Nodes.getFilePositionFor(a),
-          MessagePart.Factory.valueOf(a.getNodeName()),
+          MessagePart.Factory.valueOf(attrName),
           MessagePart.Factory.valueOf(el.getLocalName()));
     }
 

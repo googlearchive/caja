@@ -41,8 +41,7 @@ public class TemplateSanitizerTest extends CajaTestCase {
   public final void testUnknownAttribute() throws Exception {
     assertValid(
         htmlFragment(fromString("<b unknown=\"bogus\">Hello</b>")),
-        "<b>Hello</b>",
-        "WARNING: removing unknown attribute unknown on b");
+        "<b data-caja-unknown=\"bogus\">Hello</b>");
   }
   public final void testKnownAttribute() throws Exception {
     assertValid(htmlFragment(fromString("<b id=\"bold\">Hello</b>")),
@@ -59,8 +58,8 @@ public class TemplateSanitizerTest extends CajaTestCase {
     assertValid(
         htmlFragment(fromString("<bogus unknown=\"bogus\">Hello</bogus>")),
         "Hello",
-        "WARNING: removing unknown tag bogus"
-        // No need to warn about unknown since we have warned about tag
+        "WARNING: removing unknown tag bogus",
+        "WARNING: removing attribute unknown when folding bogus into parent"
         );
   }
   public final void testDisallowedScriptElement() throws Exception {
@@ -251,12 +250,12 @@ public class TemplateSanitizerTest extends CajaTestCase {
             + "<x>Four</x>"
             + "</body>"
             + "</html>")),
-        "<p>Foo</p><p>One</p><p>Two</p>ThreeFour",
+        "<p>Foo</p><p>One</p><p data-caja-styleo=\"color: red\">Two" +
+            "</p>ThreeFour",
         "WARNING: folding element html into parent",
         "WARNING: folding element head into parent",
         "WARNING: removing disallowed tag title",
         "WARNING: folding element body into parent",
-        "WARNING: removing unknown attribute styleo on p",
         "WARNING: removing unknown tag x");
   }
   public final void testElementFolding4() throws Exception {

@@ -21,6 +21,7 @@ import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.html.AttribKey;
 import com.google.caja.parser.html.ElKey;
 import com.google.caja.parser.html.Nodes;
+import com.google.caja.parser.js.StringLiteral;
 import com.google.caja.parser.js.UncajoledModule;
 import com.google.caja.plugin.JobEnvelope;
 import com.google.caja.plugin.Placeholder;
@@ -41,6 +42,7 @@ import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
 import org.w3c.dom.DocumentFragment;
 import org.w3c.dom.Element;
+import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.Text;
 
@@ -234,6 +236,17 @@ public class TemplateCompiler {
         if (attr != null) {
           inspectHtmlAttribute(source, attr, a);
         }
+      }
+    }
+    // Iterate over all attributes on el and allow any starting with data-caja-
+    NamedNodeMap attrMap = el.getAttributes();
+    int attrLen = attrMap.getLength();
+    for (int i = 0; i < attrLen; ++i) {
+      Attr attr = (Attr) attrMap.item(i);
+      if (attr.getLocalName().startsWith("data-caja-")) {
+        scriptsPerNode.put(attr, new StringLiteral(
+            Nodes.getFilePositionForValue(attr),
+            attr.getValue()));
       }
     }
     scriptsPerNode.put(el, null);

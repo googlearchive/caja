@@ -229,7 +229,9 @@ public final class HtmlSchema {
 
   public boolean isAttributeAllowed(AttribKey k) {
     HTML.Attribute a = lookupAttribute(k);
-    return a != null && allowedAttributes.contains(a.getKey());
+    if (a != null && allowedAttributes.contains(a.getKey())) { return true; }
+    String keyName = k.localName;
+    return keyName.startsWith("data-caja-") && !keyName.endsWith("___");
   }
 
   public HTML.Attribute lookupAttribute(AttribKey k) {

@@ -33,7 +33,7 @@
  * TODO(ihab.awad): Our implementation of getAttribute (and friends)
  * is such that standard DOM attributes which we disallow for security
  * reasons (like 'form:enctype') are placed in the "virtual" attributes
- * map (node._d_attributes). They appear to be settable and gettable,
+ * map (the data-caja-* namespace). They appear to be settable and gettable,
  * but their values are ignored and do not have the expected semantics
  * per the DOM API. This is because we do not have a column in
  * html4-defs.js stating that an attribute is valid but explicitly
@@ -59,6 +59,9 @@
 var domitaModules;
 var Domado = (function() {
   'use strict';
+  var cajaPrefix = 'data-caja-';
+  var cajaPrefRe = new RegExp('^' + cajaPrefix);
+
   if (!domitaModules) { domitaModules = {}; }
   
   domitaModules.proxiesAvailable = typeof Proxy !== 'undefined';
@@ -1467,6 +1470,8 @@ var Domado = (function() {
                   html4.ATTRIBS.hasOwnProperty(attribKey))) {
             atype = html4.ATTRIBS[attribKey];
             value = rewriteAttribute(tagName, attribName, atype, value);
+          } else if (!/__$/.test(attribKey)) {
+            attribName = attribs[+i] = cajaPrefix + attribs[+i];
           } else {
             value = null;
           }
@@ -1547,7 +1552,7 @@ var Domado = (function() {
           startTag: function (tagName, attribs, out) {
             out.push('<', tagName);
             for (var i = 0; i < attribs.length; i += 2) {
-              var aname = attribs[+i];
+              var aname = '' + attribs[+i];
               var atype = getAttributeType(tagName, aname);
               var value = attribs[i + 1];
               if (aname !== 'target' && atype !== void 0) {
@@ -1555,6 +1560,9 @@ var Domado = (function() {
                 if (typeof value === 'string') {
                   out.push(' ', aname, '="', html.escapeAttrib(value), '"');
                 }
+              } else if (cajaPrefRe.test(aname)) {
+                out.push(' ', aname.substring(10), '="',
+                    html.escapeAttrib(value), '"');
               }
             }
             out.push('>');
@@ -3092,14 +3100,13 @@ var Domado = (function() {
       TameElement.prototype.getAttribute = nodeMethod(function (attribName) {
         var feral = np(this).feral;
         attribName = String(attribName).toLowerCase();
+        if (/__$/.test(attribName)) {
+          throw new TypeError('Attributes may not end with __');
+        }
         var tagName = feral.tagName.toLowerCase();
         var atype = getAttributeType(tagName, attribName);
         if (atype === void 0) {
-          // Unrecognized attribute; use virtual map
-          if (feral._d_attributes) {
-            return feral._d_attributes[attribName] || null;
-          }
-          return null;
+          return feral.getAttribute(cajaPrefix + attribName);
         }
         var value = bridal.getAttribute(feral, attribName);
         if ('string' !== typeof value) { return value; }
@@ -3118,11 +3125,7 @@ var Domado = (function() {
         var tagName = feral.tagName.toLowerCase();
         var atype = getAttributeType(tagName, attribName);
         if (atype === void 0) {
-          // Unrecognized attribute; use virtual map
-          return !!(
-              feral._d_attributes &&
-              Object.prototype.hasOwnProperty.call(
-                  feral._d_attributes, attribName));
+          return bridal.hasAttribute(feral, cajaPrefix + attribName);
         } else {
           return bridal.hasAttribute(feral, attribName);
         }
@@ -3133,12 +3136,13 @@ var Domado = (function() {
         var feral = np(this).feral;
         if (!np(this).editable) { throw new Error(NOT_EDITABLE); }
         attribName = String(attribName).toLowerCase();
+        if (/__$/.test(attribName)) {
+          throw new TypeError('Attributes may not end with __');
+        }
         var tagName = feral.tagName.toLowerCase();
         var atype = getAttributeType(tagName, attribName);
         if (atype === void 0) {
-          // Unrecognized attribute; use virtual map
-          if (!feral._d_attributes) { feral._d_attributes = {}; }
-          feral._d_attributes[attribName] = String(value);
+          bridal.setAttribute(feral, cajaPrefix + attribName, value);
         } else {
           var sanitizedValue = rewriteAttribute(
               tagName, attribName, atype, value);
@@ -3152,13 +3156,13 @@ var Domado = (function() {
         var feral = np(this).feral;
         if (!np(this).editable) { throw new Error(NOT_EDITABLE); }
         attribName = String(attribName).toLowerCase();
+        if (/__$/.test(attribName)) {
+          throw new TypeError('Attributes may not end with __');
+        }
         var tagName = feral.tagName.toLowerCase();
         var atype = getAttributeType(tagName, attribName);
         if (atype === void 0) {
-          // Unrecognized attribute; use virtual map
-          if (feral._d_attributes) {
-            delete feral._d_attributes[attribName];
-          }
+          feral.removeAttribute(cajaPrefix + attribName);
         } else {
           feral.removeAttribute(attribName);
         }

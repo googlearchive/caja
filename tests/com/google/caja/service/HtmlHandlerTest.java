@@ -151,7 +151,8 @@ public class HtmlHandlerTest extends ServiceTestCase {
   private void assertHtml2Json(String inputMimeType)
       throws Exception {
     registerUri(
-        "http://foo/bar.html", "<p>hi</p><script>42;</script><p>bye</p>",
+        "http://foo/bar.html",
+        "<p foo align=center>hi</p><script>42;</script><p>bye</p>",
         "text/html");
 
     Object result = json((String) requestGet(
@@ -162,8 +163,10 @@ public class HtmlHandlerTest extends ServiceTestCase {
     JSONObject json = (JSONObject) result;
 
     // Check html generation is correct
-    assertEquals("<p>hi<span id=\"id_2___\"></span></p><p>bye</p>",
-                 (String) json.get("html"));
+    assertEquals(
+        "<p align=\"center\" data-caja-foo=\"foo\">" +
+        "hi<span id=\"id_2___\"></span></p><p>bye</p>",
+        (String) json.get("html"));
     assertEquals("{"
         + "___.loadModule({"
         + "'instantiate':function(___,IMPORTS___){"
