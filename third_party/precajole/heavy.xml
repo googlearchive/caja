@@ -10,4 +10,13 @@
     <uri>http://code.jquery.com/jquery-1.6.4.js</uri>
     <uri>http://code.jquery.com/jquery-1.6.4.min.js</uri>
   </precajole>
+
+  <precajole file="canary/canary1.js">
+    <uri>http://caja.appspot.com/imaginary-1/canary1.js</uri>
+    <uri>http://caja.appspot.com/imaginary-1/canary1b.js</uri>
+  </precajole>
+
+  <precajole file="canary/canary2.js">
+    <uri>http://caja.appspot.com/imaginary-2/canary2.js</uri>
+  </precajole>
 </precajole-spec>

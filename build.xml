@@ -54,11 +54,13 @@
   <property name="test.method.filter" value="*"/>
   <property name="third_party" location="third_party"/>
   <property name="demos"       location="${src.caja}/demos"/>
+  <property name="precajolesrc" value="${third_party}/precajole"/>
   <!--== outputs ==-->
   <property name="reports"     location="ant-reports"/>  <!-- emma reports -->
   <property name="instr"       location="ant-instr"/>  <!-- instrumented src -->
   <property name="lib"         location="ant-lib"/>
-  <property name="gwtlib"      location="ant-gwtlib"/>	
+  <property name="gwtlib"      location="ant-gwtlib"/>
+  <property name="precajolelib" location="ant-precajolelib"/>
   <property name="lib.caja"    location="${lib}/com/google/caja"/>
   <property name="docs"        location="ant-docs"/>
   <property name="ruledocs"    location="${docs}/rules"/>
@@ -137,7 +139,7 @@
     <pathelement path="${third_party}/java/emma/emma.jar"/>
     <path refid="classpath.tests.compile"/>
     <pathelement path="${instr}/classes"/>
-    <pathelement path="${lib}/precajole"/>
+    <pathelement path="${precajolelib}/light"/>
     <!-- Must be last for coverage to work -->
     <path refid="classpath.run"/>
   </path>
@@ -189,7 +191,8 @@
     <delete dir="${instr}"/>
     <delete dir="${jars}"/>
     <delete dir="${lib}"/>
-    <delete dir="${gwtlib}"/>  	
+    <delete dir="${gwtlib}"/>
+    <delete dir="${precajolelib}"/>
     <delete dir="${www}"/>
     <delete dir="${maven}"/>
     <delete dir="${war}"/>
@@ -204,7 +207,8 @@
     <mkdir dir="${instr}"/>
     <mkdir dir="${jars}"/>
     <mkdir dir="${lib}"/>
-    <mkdir dir="${gwtlib}"/>  	  	
+    <mkdir dir="${gwtlib}"/>
+    <mkdir dir="${precajolelib}"/>
     <mkdir dir="${www}"/>
     <mkdir dir="${war}"/>
     <mkdir dir="${gwt-war}"/>
@@ -496,7 +500,7 @@
     </copy>
   </target>
 
-  <target name="pluginc" depends="PluginCompiler,tools,precajole"
+  <target name="pluginc" depends="PluginCompiler,tools,precajole-light"
    description="Build the plugin compiler and other main classes">
     <javac destdir="${lib}" debug="true" target="1.5" source="1.5">
       <src path="${src}"/>
@@ -942,7 +946,7 @@
     </replace>
   </target>
 
-  <target name="AllTests" depends="playground,CajoledTests">
+  <target name="AllTests" depends="CajoledTests,CajolingServlet,PlaygroundBE,PlaygroundSupportingFiles">
     <!-- TODO(kpreid): that this copies to ${lib} means the contents of
          pluginc.jar depends on whether AllTests was built, which is bad. -->
     <javac destdir="${lib}" debug="true" target="1.5" source="1.5">
@@ -1352,7 +1356,12 @@
   </target>
 
   <!-- Compile the GWT backend and copies to the WAR -->
-  <target name="PlaygroundBE" depends="pluginc,PlaygroundJars">
+  <target name="PlaygroundBE" depends="pluginc,PlaygroundJars,precajole">
+    <copy todir="${war}/WEB-INF/lib">
+      <fileset dir="${jars}">
+        <include name="precajole.jar"/>
+      </fileset>
+    </copy>
     <mkdir dir="${war}/WEB-INF/classes" />
     <copy todir="${war}/WEB-INF/classes">
       <fileset dir="${lib}">
@@ -1815,15 +1824,12 @@
              classpathref="classpath.run" />
   </target>
 
-  <property name="precajole" value="${third_party}/precajole"/>
-
-  <target name="precajole" depends="precajole-light" unless="precajole.skip">
-    <precajole spec="${precajole}/heavy.xml" dest="${lib}/precajole" />
-    <jar destfile="${jars}/precajole.jar" basedir="${lib}/precajole" />
+  <target name="precajole-light" depends="Precajoler">
+    <precajole spec="${precajolesrc}/light.xml" dest="${precajolelib}/light" />
   </target>
 
-  <target name="precajole-light" depends="Precajoler">
-    <precajole spec="${precajole}/light.xml" dest="${lib}/precajole" />
-    <jar destfile="${jars}/precajole.jar" basedir="${lib}/precajole" />
+  <target name="precajole" depends="Precajoler">
+    <precajole spec="${precajolesrc}/heavy.xml" dest="${precajolelib}/heavy" />
+    <jar destfile="${jars}/precajole.jar" basedir="${precajolelib}/heavy" />
   </target>
 </project>
