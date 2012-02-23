@@ -428,7 +428,8 @@ public class PlaygroundView {
             PlaygroundView.this.addCompileMessage(t.toString());
           }
           @Override public void onSuccess(Frame frame) {
-            JavaScriptObject tmp = makeExtraImports(Caja.getNative(), policy);
+            JavaScriptObject tmp = makeExtraImports(Caja.getNative(),
+                frame.getNative(), policy);
             augmentWith(tmp, "widgets",
                 ((WidgetsTaming)GWT.create(WidgetsTaming.class))
                 .getJso(frame, new Widgets(playgroundUI.gwtShim)));
@@ -466,33 +467,38 @@ public class PlaygroundView {
 
   private native JavaScriptObject makeExtraImports(
       JavaScriptObject caja,
+      JavaScriptObject guestFrame,
       String policy) /*-{
     var that = this;
     var extraImports = {};
     try {
       var tamings___ = eval(policy);
     } catch (e) {
-      that.@com.google.caja.demos.playground.client.ui.PlaygroundView::addRuntimeMessage(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)
+      that.@com.google.caja.demos.playground.client.ui.PlaygroundView::addRuntimeError(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)
           (e, "evaluating policy");
     }
     for (var i=0; i < tamings___.length; i++) {
       try {
         tamings___[i].call(undefined, caja, extraImports);
       } catch (e) {
-        that.@com.google.caja.demos.playground.client.ui.PlaygroundView::addRuntimeMessage(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)
+        that.@com.google.caja.demos.playground.client.ui.PlaygroundView::addRuntimeError(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)
             (e, "evaluating " + i + "th policy function");
       }
     }
 
     extraImports.onerror = caja.tame(caja.markFunction(
       function (message, source, lineNum) {
-        that.@com.google.caja.demos.playground.client.ui.PlaygroundView::addRuntimeMessage(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)
+        that.@com.google.caja.demos.playground.client.ui.PlaygroundView::addRuntimeError(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)
             (message, source, lineNum);
       }));
     extraImports.alert = caja.tame(
       caja.markFunction(
         function(msg) { alert('Untrusted code says: ' + String(msg)); }));
-
+    guestFrame.iframe.contentWindow.___.setLogFunc(caja.tame(
+      caja.markFunction(function(msg) {
+        that.@com.google.caja.demos.playground.client.ui.PlaygroundView::addRuntimeMessage(Ljava/lang/String;)
+            (msg);
+      })));
     return extraImports;
   }-*/;
 
@@ -522,12 +528,18 @@ public class PlaygroundView {
     playgroundUI.compileMessages.add(i);
   }
 
-  public void addRuntimeMessage(String message, String source, String lineNum) {
-    // Unsafe as HTML
+  public void addRuntimeError(String message, String source, String lineNum) {
+    // Labels are texty, so no escaping needed
     Label i = new Label(
         "Uncaught script error: '" + message +
         "' in source: '" + source +
         "' at line: " + lineNum + "\n");
+    playgroundUI.runtimeMessages.add(i);
+  }
+
+  public void addRuntimeMessage(String message) {
+    // Labels are texty, so no escaping needed
+    Label i = new Label(message);
     playgroundUI.runtimeMessages.add(i);
   }
 
