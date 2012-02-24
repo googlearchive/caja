@@ -703,7 +703,7 @@ var bridalMaker = function (makeDOMAccessible, document) {
    * such as ":first-child".
    */
   function getComputedStyle(element, pseudoElement) {
-    if (element.currentStyle && pseudoElement === void 0) {
+    if (makeDOMAccessible(element).currentStyle && pseudoElement === void 0) {
       return makeDOMAccessible(element.currentStyle);
     }
 

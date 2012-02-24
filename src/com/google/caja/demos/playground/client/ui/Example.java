@@ -37,6 +37,10 @@ public enum Example {
   LIFE("examples/cajalife.html", 
       Type.APPS, "Game of Life"),
 
+  // JQuery and JQueryUI
+  DATEPICKER("examples/datepicker.html",
+      Type.JQUERY, "Date Picker"),
+
   // Benchmarks
   COMBINED("sunspider/combined.html", Type.BENCHMARK, "combined"),
   THREED_CUBE("sunspider/3d-cube.html", Type.BENCHMARK, "3d-cube"),
@@ -97,6 +101,7 @@ public enum Example {
     WEB("Web pages"),
     APPS("Applications"),
     ATTACK("Attacks"),
+    JQUERY("jQuery"),
     BENCHMARK("Benchmarks"),
     TAMING("Taming");
     
