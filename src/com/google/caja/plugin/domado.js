@@ -1133,19 +1133,12 @@ var Domado = (function() {
       return target;
     }
   
-    function makeScrollable(element) {
-      var window = bridalMaker.getWindow(element);
-      var overflow = null;
-      if (element.currentStyle) {
-        overflow = element.currentStyle.overflow;
-      } else if (window.getComputedStyle) {
-        overflow = window.getComputedStyle(element, void 0).overflow;
-      } else {
-        overflow = null;
-      }
+    function makeScrollable(bridal, element) {
+      var overflow = bridal.getComputedStyle(element, void 0).overflow;
       switch (overflow && overflow.toLowerCase()) {
         case 'visible':
         case 'hidden':
+          makeDOMAccessible(element.style);
           element.style.overflow = 'auto';
           break;
       }
@@ -5066,7 +5059,7 @@ var Domado = (function() {
                 value = '';
               } else {
                 if (!sanitizeStyleProperty(cssPropertyName, tokens)) {
-                  throw new Error('bad value `' + value + '` for CSS property '
+                  console.log('bad value `' + value + '` for CSS property '
                                   + stylePropertyName);
                 }
                 value = tokens.join(' ');
@@ -5081,8 +5074,10 @@ var Domado = (function() {
         cajaVM.def(TameStyle);  // and its prototype
   
         function isNestedInAnchor(rawElement) {
+          rawElement = makeDOMAccessible(rawElement);
           for ( ; rawElement && rawElement != pseudoBodyNode;
                rawElement = rawElement.parentNode) {
+            rawElement = makeDOMAccessible(rawElement);
             if (rawElement.tagName.toLowerCase() === 'a') { return true; }
           }
           return false;
@@ -5391,7 +5386,7 @@ var Domado = (function() {
               // The window is always auto scrollable, so make the apparent window
               // body scrollable if the gadget tries to scroll it.
               if (dx || dy) {
-                makeScrollable(np(tameDocument).feralPseudoBodyNode);
+                makeScrollable(bridal, np(tameDocument).feralPseudoBodyNode);
               }
               tameScrollBy(np(tameDocument).feralPseudoBodyNode, dx, dy);
             }),
@@ -5399,7 +5394,7 @@ var Domado = (function() {
             function (x, y) {
               // The window is always auto scrollable, so make the apparent window
               // body scrollable if the gadget tries to scroll it.
-              makeScrollable(np(tameDocument).feralPseudoBodyNode);
+              makeScrollable(bridal, np(tameDocument).feralPseudoBodyNode);
               tameScrollTo(np(tameDocument).feralPseudoBodyNode, x, y);
             }),
         resizeTo: cajaVM.def(

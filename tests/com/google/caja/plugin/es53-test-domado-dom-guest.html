@@ -744,11 +744,8 @@
     function $(id) { return document.getElementById(id); }
     $('test-dynamic-styles1').style.fontWeight = 'bold';
     $('test-dynamic-styles2').style.fontWeight = '';  // Can unset a style.
-    expectFailure(
-        function () {
-          $('test-dynamic-styles3').style.fontWeight = 'super-bold';
-        },
-        'set to super-bold');
+    $('test-dynamic-styles3').style.fontWeight = 'super-bold';
+    assertFalse('super-bold' === $('test-dynamic-styles3').style.fontWeight);
     pass('test-dynamic-styles');
   });
 </script>

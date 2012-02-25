@@ -713,7 +713,8 @@ var bridalMaker = function (makeDOMAccessible, document) {
     // and at least document it here, if not find a better solution.
 
     else if (window.top.getComputedStyle) {
-      return window.top.getComputedStyle(element, pseudoElement);
+      return makeDOMAccessible(
+          window.top.getComputedStyle(element, pseudoElement));
     } else {
       throw new Error(
           'Computed style not available for pseudo element '

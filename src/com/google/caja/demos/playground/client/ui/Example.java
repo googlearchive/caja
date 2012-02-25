@@ -38,8 +38,10 @@ public enum Example {
       Type.APPS, "Game of Life"),
 
   // JQuery and JQueryUI
-  DATEPICKER("examples/datepicker.html",
+  JQUERY_DATEPICKER("examples/jquery-datepicker.html",
       Type.JQUERY, "Date Picker"),
+  JQUERY_DRAGGABLE("examples/jquery-draggable.html",
+      Type.JQUERY, "Draggable"),
 
   // Benchmarks
   COMBINED("sunspider/combined.html", Type.BENCHMARK, "combined"),
