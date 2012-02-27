@@ -14,7 +14,7 @@
 
 /**
  * @fileoverview
- * JavaScript support for client-side CSS schema.
+ * JavaScript support for client-side CSS sanitization.
  * The CSS property schema API is defined in CssPropertyPatterns.java which
  * is used to generate css-defs.js.
  *
@@ -25,7 +25,9 @@
  * @requires CSS_PROP_BIT_QSTRING_URL
  * @requires CSS_PROP_BIT_QUANTITY
  * @requires decodeCss
+ * @requires html4
  * @provides sanitizeCssProperty
+ * @provides sanitizeCssSelectors
  */
 
 /**
@@ -211,3 +213,135 @@ var sanitizeCssProperty = (function () {
     tokens.length = k;
   };
 })();
+
+/**
+ * Given a series of tokens, returns two lists of sanitized selectors.
+ * @param {Array.<string>}selectors In the form produces by csslexer.js.
+ * @return {Array.<Array.<string>>} an array of length 2 where the zeroeth
+ *    element contains history-insensitive selectors and the first element
+ *    contains history-sensitive selectors.
+ */
+function sanitizeCssSelectors(selectors) {
+  // Produce two distinct lists of selectors to sequester selectors that are
+  // history sensitive (:visited), so that we can disallow properties in the
+  // property groups for the history sensitive ones.
+  var historySensitiveSelectors = [];
+  var historyInsensitiveSelectors = [];
+
+  // Remove any spaces that are not operators.
+  var k = 0, i;
+  for (i = 0; i < selectors.length; ++i) {
+    if (!(selectors[i] == ' '
+          && (selectors[i-1] == '>' || selectors[i+1] == '>'))) {
+      selectors[k++] = selectors[i];
+    }
+  }
+  selectors.length = k;
+
+  // Split around commas.  If there is an error in one of the comma separated
+  // bits, we throw the whole away, but the failure of one selector does not
+  // affect others.
+  var n = selectors.length, start = 0;
+  for (i = 0; i < n; ++i) {
+    if (selectors[i] == ',') {
+      processSelector(start, i);
+      start = i+1;
+    }
+  }
+  processSelector(start, n);
+
+
+  function processSelector(start, end) {
+    var historySensitive = false;
+
+    // Space around commas is not an operator.
+    if (selectors[start] === ' ') { ++start; }
+    if (end-1 !== start && selectors[end] === ' ') { --end; }
+
+    // Split the selector into element selectors, content around
+    // space (ancestor operator) and '>' (descendant operator).
+    var out = [];
+    var lastOperator = start;
+    var elSelector = '';
+    for (var i = start; i < end; ++i) {
+      var tok = selectors[i];
+      var isChild = (tok === '>');
+      if (isChild || tok === ' ') {
+        // We've found the end of a single link in the selector chain.
+        // We disallow absolute positions relative to html.
+        elSelector = processElementSelector(lastOperator, i, false);
+        if (!elSelector || (isChild && /^html/i.test(elSelector))) {
+          return;
+        }
+        lastOperator = i+1;
+        out.push(elSelector, isChild ? ' > ' : ' ');
+      }
+    }
+    elSelector = processElementSelector(lastOperator, end, true);
+    if (!elSelector) { return; }
+    out.push(elSelector);
+
+    function processElementSelector(start, end, last) {
+      var debugStart = start, debugEnd = end;
+
+      // Split the element selector into three parts.
+      // DIV.foo#bar:hover
+      //    ^       ^
+      // el classes pseudo
+      var element, classId, pseudoSelector, tok, elType;
+      element = '';
+      if (start < end) {
+        tok = selectors[start].toLowerCase();
+        if (tok === '*' || (tok === 'html' && !last)
+            || (tok === 'body' && start+1 !== end && !last)
+            || ('number' === typeof (elType = html4.ELEMENTS[tok])
+                && !(elType & html4.eflags.UNSAFE))) {
+          ++start;
+          element = tok;
+        }
+      }
+      classId = '';
+      while (start < end) {
+        tok = selectors[start];
+        if (tok.charAt(0) === '#') {
+          if (/^#_|__$/.test(tok)) { return null; }
+          classId += tok;
+        } else if (tok === '.') {
+          if (++start < end
+              && /^[0-9A-Za-z:_\-]+$/.test(tok = selectors[start])
+              && !/^_|__$/.test(tok)) {
+            classId += '.' + tok;
+          } else {
+            return null;
+          }
+        } else {
+          break;
+        }
+        ++start;
+      }
+      pseudoSelector = '';
+      if (start < end && selectors[start] === ':') {
+        tok = selectors[++start];
+        if (tok === 'visited' || tok === 'link') {
+          if (!/^[a*]?$/.test(element)) {
+            return null;
+          }
+          historySensitive = true;
+          pseudoSelector = ':' + tok;
+          element = 'a';
+          ++start;
+        }
+      }
+      if (start === end) {
+        return element + classId + pseudoSelector;
+      }
+      return null;
+    }
+
+    (historySensitive
+     ? historySensitiveSelectors
+     : historyInsensitiveSelectors).push(out.join(''));
+  }
+
+  return [historyInsensitiveSelectors, historySensitiveSelectors];
+}

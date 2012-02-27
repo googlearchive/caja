@@ -442,7 +442,7 @@ function ES53FrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker) {
     // functions. makeDOMAccessible does not make functions callable.
 
     // Testing for own properties, not 'in', because some quirk of Firefox
-    // makes  event objects appear as if they have the taming frame's
+    // makes event objects appear as if they have the taming frame's
     // prototype after being passed into taming frame code (!), so we want
     // to be able to override Object.prototype.v___ etc. Except for that,
     // it would be safer to not allow applying this to apparently defined-

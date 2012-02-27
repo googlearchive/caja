@@ -24,7 +24,8 @@
  *
  * @author mikesamuel@gmail.com
  * @provides HtmlEmitter
- * @requires bridalMaker html html4 cajaVM
+ * @requires bridalMaker html html4 cajaVM parseCssStylesheet console
+ * @requires cssSchema sanitizeCssProperty sanitizeCssSelectors
  */
 
 /**
@@ -367,8 +368,165 @@ function HtmlEmitter(makeDOMAccessible, base, opt_domicile, opt_guestGlobal) {
       }
     }
 
+    var allowed = {};
+    var cssMediaTypeWhitelist = {
+      'braille': allowed,
+      'embossed': allowed,
+      'handheld': allowed,
+      'print': allowed,
+      'projection': allowed,
+      'screen': allowed,
+      'speech': allowed,
+      'tty': allowed,
+      'tv': allowed
+    };
+
+    function sanitizeHistorySensitive(blockOfProperties) {
+      return '{}';  // TODO: implement me.
+    }
+
     function defineUntrustedStylesheet(cssText) {
-      // TODO(mikesamuel): Implement client side CSS sanitizing.
+      var safeCss = void 0;
+      // A stack describing the { ... } regions.
+      // Null elements indicate blocks that should not be emitted.
+      var blockStack = [];
+      // True when the content of the current block should be left off safeCss.
+      // If we don't have a domicile then we don't have a way to sanitize CSS
+      // properties.
+      var elide = !domicile;
+      parseCssStylesheet(
+          cssText,
+          {
+            startStylesheet: function () {
+              safeCss = [];
+            },
+            endStylesheet: function () {
+            },
+            startAtrule: function (atIdent, headerArray) {
+              if (elide) {
+                atIdent = null;
+              } else if (atIdent === '@media') {
+                headerArray = headerArray.filter(
+                  function (mediaType) {
+                    return cssMediaTypeWhitelist[mediaType] == allowed;
+                  });
+                if (headerArray.length) {
+                  safeCss.push(atIdent, headerArray.join(','), '{');
+                } else {
+                  atIdent = null;
+                }
+              } else {
+                if (atIdent === '@import') {
+                  if ('undefined' !== typeof console) {
+                    console.log('@import ' + headerArray.join(' ') + ' elided');
+                  }
+                }
+                atIdent = null;  // Elide the block.
+              }
+              elide = !atIdent;
+              blockStack.push(atIdent);              
+            },
+            endAtrule: function () {
+              var atIdent = blockStack.pop();
+              if (!elide) {
+                safeCss.push(';');
+              }
+              checkElide();
+            },
+            startBlock: function () {
+              // There are no bare blocks in CSS, so we do not change the
+              // block stack here, but instead in the events that bracket
+              // blocks.
+              if (!elide) {
+                safeCss.push('{');
+              }
+            },
+            endBlock: function () {
+              if (!elide) {
+                safeCss.push('}');
+                elide = true;  // skip any semicolon from endAtRule.
+              }
+            },
+            startRuleset: function (selectorArray) {
+              var historySensitiveSelectors = void 0;
+              var removeHistoryInsensitiveSelectors = false;
+              if (!elide) {
+                var selectors = sanitizeCssSelectors(selectorArray);
+                var historyInsensitiveSelectors = selectors[0];
+                historySensitiveSelectors = selectors[1];
+                if (!historyInsensitiveSelectors.length
+                    && !historySensitiveSelectors.length) {
+                  elide = true;
+                } else {
+                  var selector = historyInsensitiveSelectors.join(', ');
+                  if (!selector) {
+                    // If we have only history sensitive selectors,
+                    // use an impossible rule so that we can capture the content
+                    // for later processing by 
+                    // history insenstive content for use below.
+                    selector = 'head > html';
+                    removeHistoryInsensitiveSelectors = true;
+                  }
+                  safeCss.push(selector);
+                }
+              }
+              blockStack.push(
+                  elide
+                  ? null
+                  // Sometimes a single list of selectors is split in two,
+                  //   div, a:visited
+                  // because we want to allow some properties for DIV that
+                  // we don't want to allow for A:VISITED to avoid leaking
+                  // user history.
+                  // Store the history sensitive selectors and the position
+                  // where the block starts so we can later create a copy
+                  // of the permissive tokens, and filter it to handle the
+                  // history sensitive case.
+                  : {
+                      historySensitiveSelectors: historySensitiveSelectors,
+                      endOfSelecctors: safeCss.length,
+                      removeHistoryInsensitiveSelectors:
+                         removeHistoryInsensitiveSelectors
+                    });
+            },
+            endRuleset: function () {
+              var rules = blockStack.pop();
+              var propertiesEnd = safeCss.length;
+              if (!elide && rules) {
+                var extraSelectors = rules.historySensitiveSelectors;
+                if (extraSelectors.length) {
+                  var propertyGroupTokens = safeCss.slice(rules.endOfSelectors);
+                  safeCss.push(extraSelectors.join(', '));
+                  safeCss.push.apply(
+                      safeCss, sanitizeHistorySensitive(propertyGroupTokens));
+                }
+              }
+              if (rules && rules.removeHistoryInsensitiveSelectors) {
+                safeCss.splice(rules.endOfSelectors - 1, propertiesEnd);
+              }
+              checkElide();
+            },
+            declaration: function (property, valueArray) {
+              if (!elide && domicile) {
+                var schema = cssSchema[property];
+                var sanitizeUri = void 0;  // TODO
+                if (schema) {
+                  sanitizeCssProperty(property, valueArray, sanitizeUri);
+                  if (valueArray.length) {
+                    safeCss.push(property, ':', valueArray.join(' '), ';');
+                  }
+                }
+              }
+            }
+          });
+      function checkElide() {
+        elide = blockStack.length === 0 
+            || blockStack[blockStack.length-1] !== null;
+      }
+      var document = insertionPoint.ownerDocument;
+      var safeCssText = safeCss.join('');
+      document.getElementsByTagName('head')[0].appendChild(
+          bridal.createStyleSheet(document, safeCssText));
     }
 
     // Zero or one of the html4.eflags constants that captures the content type
@@ -446,7 +604,7 @@ function HtmlEmitter(makeDOMAccessible, base, opt_domicile, opt_guestGlobal) {
         }
       }
     };
-     documentWriter.rcdata = documentWriter.pcdata;
+    documentWriter.rcdata = documentWriter.pcdata;
 
     var htmlParser = html.makeSaxParser(documentWriter);
 

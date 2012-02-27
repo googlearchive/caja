@@ -4872,8 +4872,8 @@ var Domado = (function() {
         if (typeof domicile.writeHook !== 'function') {
           throw new Error('document.writeln not provided for this document');
         }
-        // We don't write the \n separately rather than copying args, because the
-        // HTML parser would rather get fewer larger chunks.
+        // We don't write the \n separately rather than copying args, because
+        // the HTML parser would rather get fewer larger chunks.
         var args = Array.slice.call(arguments, 0);
         args.push("\n");
         domicile.writeHook.apply(undefined, args);
@@ -4899,7 +4899,7 @@ var Domado = (function() {
           window.setTimeout(listeners[+i], 0);
         }
       });
-  
+
       // For JavaScript handlers.  See function dispatchEvent below
       domicile.handlers = [];
       domicile.TameHTMLDocument = TameHTMLDocument;  // Exposed for testing
