@@ -3380,6 +3380,7 @@ var Domado = (function() {
         names: ['a'],
         domClass: 'HTMLAnchorElement',
         properties: {
+          hash: NP.filter(false, identity, true, identity),
           href: NP.filter(false, identity, true, identity)
         }
       });
