@@ -176,8 +176,8 @@ public final class CssDynamicExpressionRewriter {
   /**
    * Returns an array containing chunks of CSS text that can be joined on a
    * CSS identifier to yield sandboxed CSS.
-   * This can be used client side with the {@code emitCss___} method defined in
-   * "domita.js".
+   * This can be used client side with the {@code emitCss} method defined in
+   * "domado.js".
    * @param ss a rewritten stylesheet.
    */
   public static ArrayConstructor cssToJs(CssTree.StyleSheet ss) {

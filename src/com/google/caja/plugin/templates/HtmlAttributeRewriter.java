@@ -154,7 +154,7 @@ public final class HtmlAttributeRewriter {
     // 2. For other names, we mangle them by appending a container suffix.
     //    We could allow these names to end with '__', but I think the
     //    inconsistency is more confusing than helpful.
-    // Note that this logic matches the logic in domita.js.
+    // Note that this logic matches the logic in domado.js.
     switch (attr.attrInfo.getType()) {
       case CLASSES:
         // className is arbitrary CDATA, it's not restricted by spec,

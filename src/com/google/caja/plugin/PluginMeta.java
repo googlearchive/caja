@@ -77,7 +77,7 @@ public final class PluginMeta {
 
   /**
    * {@code null} if the module ID is not known statically.
-   * See {@code imports.getIdClass___()} defined in "domita.js".
+   * See {@code domicile.getIdClass()} defined in "domado.js".
    */
   public @Nullable String getIdClass() { return idClass; }
 

@@ -1833,7 +1833,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
    * so that only unseal can get x back from the object.
    * <p>
    * TODO(erights): The only remaining use as of this writing is
-   * in domita for css. Perhaps a refactoring is in order.
+   * in domado for css. Perhaps a refactoring is in order.
    *
    * @return {object} of the form
    *     { seal: function seal(x) { return Token('(box)'); },

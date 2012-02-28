@@ -14,7 +14,7 @@
 
 /**
  * @fileoverview
- * Loaded by domita_test.html and associated tests to verify that dynamic script
+ * Loaded by es53-test-domado-special to verify that dynamic script
  * loading works.
  */
 

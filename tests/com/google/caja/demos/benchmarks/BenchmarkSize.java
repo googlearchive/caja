@@ -56,29 +56,10 @@ public class BenchmarkSize extends CajaTestCase {
   };
 
   public final void testOverhead() throws IOException {
-    String plainCajita =
-      plain(fromResource("../../plugin/domita-minified.js"));
-
-    String plainValija = plainCajita
-        + plain(fromResource("../../plugin/valija.out.js"));
-    
     String plainES53 =
       plain(fromResource("../../plugin/es53-taming-frame.opt.js"));
-
-    byte[] plainCajitaBytes = charset(plainCajita);
-    byte[] plainValijaBytes = charset(plainValija);
     byte[] plainES53Bytes = charset(plainES53);
-    
-    byte[] gzipCajitaBytes = gzip(plainCajitaBytes);
-    byte[] gzipValijaBytes = gzip(plainValijaBytes);
     byte[] gzipES53Bytes = gzip(plainES53Bytes);
-        
-    varzOverhead("valija", "minify", "plain", size(plainValijaBytes));
-    varzOverhead("valija", "minify", "gzip", size(gzipValijaBytes));
-
-    varzOverhead("cajita", "minify", "plain", size(plainCajitaBytes));
-    varzOverhead("cajita", "minify", "gzip", size(gzipCajitaBytes));
-
     varzOverhead("es53", "minify", "plain", size(plainES53Bytes));
     varzOverhead("es53", "minify", "gzip", size(gzipES53Bytes));
   }
