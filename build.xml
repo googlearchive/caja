@@ -222,14 +222,14 @@
       <param name="runtests.shouldCache">false</param>
     </antcall>
     <antcall target="runtests">
-      <param name="test.filter">ES53BrowserTest</param>
+      <param name="test.filter">GeneralBrowserTest</param>
       <param name="runtests.shouldCache">false</param>
     </antcall>
   </target>
 
   <target name="brserve" description="Run just browser test server.">
     <antcall target="runtests">
-      <param name="test.filter">ES53BrowserTest</param>
+      <param name="test.filter">GeneralBrowserTest</param>
       <param name="caja.BrowserTestCase.startAndWait">true</param>
     </antcall>
   </target>

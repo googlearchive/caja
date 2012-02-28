@@ -156,13 +156,16 @@
     var NO_RESULT = {};
     var pseudoElementsSupported = false;
     try {
-      var unused = window.getComputedStyle(fakie, 'first-char').display;
-      pseudoElementsSupported = true;
+      // safari/chrome do not return meaningful info for pseudo elements
+      // unless there's an explicit css rule for the pseudo-element
+      if (window.getComputedStyle(fakie, ':first-letter').display) {
+        pseudoElementsSupported = true;
+      }
     } catch (ex) {
       // Not supported on all browsers
     }
     if (pseudoElementsSupported) {
-      assertComputedStyle(fakie, 'first-char', 'display', 'inline');
+      assertComputedStyle(fakie, ':first-letter', 'display', 'inline');
     }
     assertComputedStyle(invisible, null, 'display', 'none');
     assertComputedStyle(invisible, null, 'float', 'left');
