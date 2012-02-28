@@ -526,7 +526,7 @@ final class SafeHtmlMaker {
       safe.setAttributeNS(ID.ns.uri, ID.localName, dynId);
       if (id == null) {
         emitStatement(
-            quasiStmt("el___./*@synthetic*/removeAttribute('id');"),
+            quasiStmt("emitter___./*@synthetic*/rmAttr(el___, 'id');"),
             bone.source);
       }
     }

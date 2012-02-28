@@ -36,8 +36,10 @@
  * @param {HTMLDocument} document
  */
 var bridalMaker = function (makeDOMAccessible, document) {
+  document = makeDOMAccessible(document);
+  var docEl = makeDOMAccessible(document.documentElement);
   var window = makeDOMAccessible(
-      bridalMaker.getWindow(document.documentElement));
+      bridalMaker.getWindow(docEl, makeDOMAccessible));
   var navigator      = makeDOMAccessible(window.navigator);
   var XMLHttpRequest = makeDOMAccessible(window.XMLHttpRequest);
   var ActiveXObject  = makeDOMAccessible(window.ActiveXObject);
@@ -413,6 +415,7 @@ var bridalMaker = function (makeDOMAccessible, document) {
   }
 
   function initCanvasElement(el) {
+    // TODO(felix8a): need to whitelist G_vmlCanvasManager
     if (window.G_vmlCanvasManager) {
       window.G_vmlCanvasManager.initElement(el);
     }
@@ -769,8 +772,9 @@ var bridalMaker = function (makeDOMAccessible, document) {
 /**
  * Returns the window containing this element. 
  */
-bridalMaker.getWindow = function(element) {
-  var doc = element.ownerDocument;
+// mda = makeDOMAccessible
+bridalMaker.getWindow = function(element, mda) {
+  var doc = mda(mda(element).ownerDocument);
   // IE
   if (doc.parentWindow) { return doc.parentWindow; }
   // Everything else
@@ -780,8 +784,9 @@ bridalMaker.getWindow = function(element) {
   // Just in case
   var s = doc.createElement('script');
   s.innerHTML = "document.parentWindow = window;";
-  doc.body.appendChild(s);
-  doc.body.removeChild(s);
+  var body = mda(doc.body);
+  body.appendChild(s);
+  body.removeChild(s);
   return doc.parentWindow;
 };
 

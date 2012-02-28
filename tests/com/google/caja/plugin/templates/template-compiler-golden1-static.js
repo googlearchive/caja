@@ -15,7 +15,7 @@ function module() {
       return ___.plugin_dispatchEvent___(this, event, ___.getId(IMPORTS___), c_1___);
     };
     // Remove the manufactured ID
-    el___.removeAttribute('id');
+    emitter___.rmAttr(el___, 'id');
   }
 }
 function module() {
@@ -59,7 +59,7 @@ function module() {
     el___.onclick = function (event) {
         return ___.plugin_dispatchEvent___(this, event, ___.getId(IMPORTS___), c_1___);
     };
-    el___.removeAttribute('id');
+    emitter___.rmAttr(el___, 'id');
     el___ = emitter___.finish();
     emitter___.signalLoaded();
   }

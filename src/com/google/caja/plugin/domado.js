@@ -1232,7 +1232,8 @@ var Domado = (function() {
       var style = makeDOMAccessible(element.currentStyle);
       if (!style) {
         style = makeDOMAccessible(
-            bridalMaker.getWindow(element).getComputedStyle(element, void 0));
+            bridalMaker.getWindow(element, makeDOMAccessible)
+            .getComputedStyle(element, void 0));
       }
   
       makeDOMAccessible(element.style);
@@ -1307,19 +1308,19 @@ var Domado = (function() {
       if (!optPseudoWindowLocation) {
           optPseudoWindowLocation = {};
       }
-  
+
       var domicile = {
         isProcessingEvent: false
       };
       var pluginId;
-  
+
       pseudoBodyNode = makeDOMAccessible(pseudoBodyNode);
       var document = pseudoBodyNode.ownerDocument;
       document = makeDOMAccessible(document);
-      makeDOMAccessible(document.documentElement);
+      var docEl = makeDOMAccessible(document.documentElement);
       var bridal = bridalMaker(makeDOMAccessible, document);
   
-      var window = bridalMaker.getWindow(pseudoBodyNode);
+      var window = bridalMaker.getWindow(pseudoBodyNode, makeDOMAccessible);
       window = makeDOMAccessible(window);
   
       var elementPolicies = {};
@@ -2581,7 +2582,8 @@ var Domado = (function() {
         evt = TameEventT.coerce(evt);
         bridal.dispatchEvent(np(this).feral, TameEventConf.p(evt).feral);
       });
-      if (document.documentElement.contains) {  // typeof is 'object' on IE
+
+      if (docEl.contains) {  // typeof is 'object' on IE
         TameBackedNode.prototype.contains = nodeMethod(function (other) {
           other = TameNodeT.coerce(other);
           var otherNode = np(other).feral;
@@ -2589,7 +2591,7 @@ var Domado = (function() {
         });
       }
       if ('function' ===
-          typeof document.documentElement.compareDocumentPosition) {
+          typeof docEl.compareDocumentPosition) {
         /**
          * Speced in <a href="http://www.w3.org/TR/DOM-Level-3-Core/core.html#Node3-compareDocumentPosition">DOM-Level-3</a>.
          */
@@ -3077,7 +3079,7 @@ var Domado = (function() {
       });
       // IE-specific method.  Sets the element that will have focus when the
       // window has focus, without focusing the window.
-      if (document.documentElement.setActive) {
+      if (docEl.setActive) {
         TameElement.prototype.setActive = nodeMethod(function () {
           if (domicile.isProcessingEvent) {
             np(this).feral.setActive();
@@ -3085,7 +3087,7 @@ var Domado = (function() {
         });
       }
       // IE-specific method.
-      if (document.documentElement.hasFocus) {
+      if (docEl.hasFocus) {
         TameElement.prototype.hasFocus = nodeMethod(function () {
           return np(this).feral.hasFocus();
         });
@@ -3392,6 +3394,7 @@ var Domado = (function() {
         // support canvas, so we don't either; skip registering the canvas
         // element
         // class.
+        // TODO(felix8a): need to call bridal.initCanvasElement
         var e = makeDOMAccessible(document.createElement('canvas'));
         if (typeof e.getContext !== 'function')
           return;
@@ -4967,7 +4970,7 @@ var Domado = (function() {
   
       function buildTameStyle() {
   
-        var aStyleForCPC = document.documentElement.style;
+        var aStyleForCPC = docEl.style;
         aStyleForCPC = makeDOMAccessible(aStyleForCPC);
         var allCssProperties = domitaModules.CssPropertiesCollection(
             aStyleForCPC);
@@ -5594,7 +5597,8 @@ var Domado = (function() {
      * Function called from rewritten event handlers to dispatch an event safely.
      */
     function plugin_dispatchEvent(thisNode, event, pluginId, handler) {
-      event = makeDOMAccessible(event || bridalMaker.getWindow(thisNode).event);
+      event = makeDOMAccessible(
+          event || bridalMaker.getWindow(thisNode, makeDOMAccessible).event);
       // support currentTarget on IE[678]
       if (!event.currentTarget) {
         event.currentTarget = thisNode;
@@ -5648,3 +5652,4 @@ var Domado = (function() {
     });
   };
 })();
+

@@ -450,8 +450,12 @@ function ES53FrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker) {
     if ((typeof o === 'object' || typeof o === 'function')
         && o !== null
         && !Object.prototype.hasOwnProperty.call(o, 'v___')) {
-      // IE<=8 needs wrappers
-      if (ie8nodes) { o = {}; }
+      // IE<=8 needs wrappers for text nodes and attribute nodes.  Note, we
+      // make no effort to return the same wrapper for the same node.
+      // TODO(felix8a): verify the contract violation is unimportant.
+      if (ie8nodes && node.nodeType && node.nodeType !== 1) {
+        o = { node___: node };
+      }
       o.v___ = function (p) {
         return node[p];
       };
@@ -470,12 +474,25 @@ function ES53FrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker) {
           if (typeof method === 'object' &&
               (method+'').substr(0, 10) === '\nfunction ') {
             // IE<=8 DOM methods lack .apply
-            return Function.prototype.apply.call(method, node, as);
+            return Function.prototype.apply.call(method, node, unwrapNodes(as));
           }
         }
         throw new TypeError('Not a function: ' + p);
       };
       o.HasProperty___ = function (p) { return p in node; };
+    }
+    return o;
+  }
+
+  // This does shallow unwrapping of IE<=8 wrapped nodes, which is
+  // sufficient to handle guest code calling DOM functions like
+  // removeChild.  This may not be sufficient if a caja environment has
+  // tamed functions that expect to receive arrays of nodes or structures
+  // containing nodes.
+  function unwrapNodes(as) {
+    var o = [];
+    for (var i = 0; i < as.length; as++) {
+      o[i] = as[i].node___ || as[i];
     }
     return o;
   }

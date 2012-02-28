@@ -263,7 +263,7 @@ public class PipelineCacheTest extends PipelineStageTestCase {
        + "(this, event, ___.getId(IMPORTS___),"),
       "        c_2___);",
       "    };",
-      "    el___.removeAttribute('id');")
+      "    emitter___.rmAttr(el___, 'id');")
       + JS_MODULE_SUFFIX;
 
   private static final String REWRITTEN_HELLO_WORLD_HTML_HELPER_JS_NO_LOAD
@@ -537,7 +537,7 @@ public class PipelineCacheTest extends PipelineStageTestCase {
                 "      return ___.plugin_dispatchEvent___(this, event, ___.getId(IMPORTS___),",
                 "        c_1___);",
                 "    };",
-                "    el___.removeAttribute('id');")
+                "    emitter___.rmAttr(el___, 'id');")
                 + JS_MODULE_SUFFIX, ContentType.JS)
     };
 

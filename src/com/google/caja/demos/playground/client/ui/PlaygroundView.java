@@ -284,16 +284,22 @@ public class PlaygroundView {
     playgroundUI.mode.addChangeHandler(new ChangeHandler() {
       @Override
       public void onChange(ChangeEvent event) {
+        // Need an absolute URL for IE<=8
+        String base =
+            Window.Location.getProtocol() + "//" +
+            Window.Location.getHost() +
+            Window.Location.getPath();
+        String hash = Window.Location.getHash();
         int s = playgroundUI.mode.getSelectedIndex();
         switch (s) {
           case 1:
-            Window.Location.assign("?es5=true" + Window.Location.getHash());
+            Window.Location.assign(base + "?es5=true" + hash);
             break;
           case 2:
-            Window.Location.assign("?es5=false" + Window.Location.getHash());
+            Window.Location.assign(base + "?es5=false" + hash);
             break;
           default:
-            Window.Location.assign("?es5=auto" + Window.Location.getHash());
+            Window.Location.assign(base + "?es5=auto" + hash);
             break;
         }
       }

@@ -35,6 +35,8 @@
  *     objects cannot be touched. makeDOMAccessible should be idempotent. Note
  *     that the contract here is stronger than for bridalMaker, in that
  *     this makeDOMAccessible may not return a different object.
+ *     Except, this contract may be impossible to satisfy on IE<=8.
+ *     TODO(felix8a): check all the implications of violating the contract.
  * @param base a node that is the ancestor of all statically generated HTML.
  * @param opt_domicile the domado instance that will receive a load event when
  *     the html-emitter is closed, and which will have the {@code writeHook}
@@ -312,6 +314,7 @@ function HtmlEmitter(makeDOMAccessible, base, opt_domicile, opt_guestGlobal) {
   this.finish = finish;
   this.signalLoaded = signalLoaded;
   this.setAttr = bridal.setAttribute;
+  this.rmAttr = function(el, attr) { return el.removeAttribute(attr); };
   this.addBodyClasses = addBodyClasses;
   this.handleEmbed = handleEmbed;
 

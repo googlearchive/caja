@@ -35,6 +35,7 @@ public class Caja {
 
   public static native void initialize(String cajaServer, boolean debug,
       boolean forceES5Mode) /*-{
+    $wnd.caja.initFeralFrame(window);  // note 'window' not '$wnd'
     $wnd.caja.initialize({
       cajaServer: cajaServer,
       debug: debug,
