@@ -306,6 +306,14 @@
     child.nodeValue = 'Foo';
     assertEquals('Foo', child.nodeValue);
 
+    var dangerousObject;
+    try {
+      dangerousObject= document.all['dangerous-object'];
+    } catch (e) {
+      // ok
+    }
+    assertEquals('dangerousObject', void 0, dangerousObject);
+
     pass('test-opaque-nodes');
   });
 </script>
