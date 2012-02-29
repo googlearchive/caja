@@ -500,11 +500,14 @@ public class PlaygroundView {
     extraImports.alert = caja.tame(
       caja.markFunction(
         function(msg) { alert('Untrusted code says: ' + String(msg)); }));
-    guestFrame.iframe.contentWindow.___.setLogFunc(caja.tame(
-      caja.markFunction(function(msg) {
-        that.@com.google.caja.demos.playground.client.ui.PlaygroundView::addRuntimeMessage(Ljava/lang/String;)
-            (msg);
-      })));
+      if ("undefined" !== typeof guestFrame.iframe.contentWindow.___ &&
+        "function" === typeof guestFrame.iframe.contentWindow.___.setLogFunc) {
+        guestFrame.iframe.contentWindow.___.setLogFunc(caja.tame(
+          caja.markFunction(function(msg) {
+            that.@com.google.caja.demos.playground.client.ui.PlaygroundView::addRuntimeMessage(Ljava/lang/String;)
+                (msg);
+          })));
+      }
     return extraImports;
   }-*/;
 
