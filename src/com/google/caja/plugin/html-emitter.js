@@ -529,7 +529,7 @@ function HtmlEmitter(makeDOMAccessible, base, opt_domicile, opt_guestGlobal) {
       var document = insertionPoint.ownerDocument;
       var safeCssText = safeCss.join('');
       document.getElementsByTagName('head')[0].appendChild(
-          bridal.createStyleSheet(document, safeCssText));
+          bridal.createStylesheet(document, safeCssText));
     }
 
     // Zero or one of the html4.eflags constants that captures the content type
