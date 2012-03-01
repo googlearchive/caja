@@ -1051,15 +1051,38 @@
     </copy>
   </target>
 
-  <target name="build.info">
-    <tstamp>
-      <format property="build.timestamp" pattern="yyyy-MM-dd HH:mm:ss"/>
-    </tstamp>
+  <target name="Version.set">
+    <loadfile
+       property="Version.old"
+       srcFile="${lib.caja}/reporting/Version"
+       failonerror="false">
+      <filterchain><striplinebreaks/></filterchain>
+    </loadfile>
     <exec outputproperty="build.svnVersion"
      executable="tools/svnversion-nocolon"
      failonerror="false"
      failifexecutionfails="false"
      dir="."/>
+    <condition property="Version.changed">
+      <not><equals arg1="${build.svnVersion}" arg2="${Version.old}"/></not>
+    </condition>
+  </target>
+
+  <target name="Version.update" depends="Version.set" if="Version.changed">
+    <!-- When svnversion changes, we need to recajole js and
+         re-replace %VERSION%, so here we just nuke all target js -->
+    <delete>
+      <fileset dir="${lib}" includes="**/*.js"/>
+      <fileset dir="${precajolelib}" includes="**/*.js"/>
+    </delete>
+    <echo append="false" file="${lib.caja}/reporting/Version"
+          message="${build.svnVersion}"/>
+  </target>
+
+  <target name="build.info" depends="Version.update">
+    <tstamp>
+      <format property="build.timestamp" pattern="yyyy-MM-dd HH:mm:ss"/>
+    </tstamp>
     <echo append="false" file="${lib.caja}/reporting/buildInfo.properties"
      message="# Caja Build Information${line.separator}"/>
     <echo append="true" file="${lib.caja}/reporting/buildInfo.properties"
