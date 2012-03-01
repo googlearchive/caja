@@ -1,6 +1,7 @@
 {
   "allowed": [
     "CANVAS",
+    "NAV",
     "NOBR",
     "NOEMBED"
   ]

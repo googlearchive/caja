@@ -6,6 +6,12 @@
         "deprecated":  false,
         "description": "region which may be drawn in by scripts"
       },
+      { "key":         "NAV",
+        "empty":       false,
+        "optionalEnd": false,
+        "deprecated":  false,
+        "description": "HTML5 element, needed by jquery-1.7.1"
+      },
       { "key":         "NOBR",
         "empty":       false,
         "optionalEnd": false,
@@ -17,6 +23,6 @@
         "optionalEnd": false,
         "deprecated":  true,
         "description": "Not in HTML4. HTML5 mentions it as deprecated"
-      }                
+      }
   ]
 }

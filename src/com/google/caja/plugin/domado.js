@@ -5539,6 +5539,7 @@ var Domado = (function() {
         'HTMLMenuElement',
         'HTMLMetaElement',
         'HTMLModElement',
+        'HTMLNavElement',
         'HTMLObjectElement',
         'HTMLOListElement',
         'HTMLOptGroupElement',
