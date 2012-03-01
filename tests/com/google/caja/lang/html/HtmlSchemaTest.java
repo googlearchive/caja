@@ -120,9 +120,9 @@ public class HtmlSchemaTest extends TestCase {
                .getValueCriterion().accept("TEXT"));
     assertTrue(lookupAttribute("input", "type")
                .getValueCriterion().accept("button"));
-    assertFalse(lookupAttribute("input", "type")
+    assertTrue(lookupAttribute("input", "type")
                 .getValueCriterion().accept("file"));
-    assertFalse(lookupAttribute("input", "type")
+    assertTrue(lookupAttribute("input", "type")
                 .getValueCriterion().accept("FILE"));
     assertFalse(lookupAttribute("input", "type")
                 .getValueCriterion().accept("bogus"));
