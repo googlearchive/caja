@@ -48,7 +48,6 @@ import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.MessageTypeInt;
 import com.google.caja.reporting.RenderContext;
 
-import java.awt.GraphicsEnvironment;
 import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -461,24 +460,6 @@ public abstract class CajaTestCase extends TestCase {
 
   private InputSource sourceOf(CharProducer cp) {
     return cp.getSourceBreaks(0).source();
-  }
-
-  /**
-   * Returns true in headless testing environments.
-   * A headless testing environment has to set the "test.headless"
-   * property, and actually be headless.
-   */
-  protected boolean checkHeadless() {
-    if (Boolean.getBoolean("test.headless")) {
-      assertTrue("test.headless==true in non-headless environment",
-          GraphicsEnvironment.isHeadless());
-      System.err.println(getName() + " skipped in headless testing");
-      return true;
-    }
-
-    assertFalse("test.headless==false in headless environment",
-        GraphicsEnvironment.isHeadless());
-    return false;
   }
 
   @Override

@@ -17,22 +17,21 @@ package com.google.caja.plugin;
 import com.google.caja.lexer.escaping.Escaping;
 import com.google.caja.reporting.BuildInfo;
 import com.google.caja.reporting.MessageQueue;
-
 import com.google.caja.util.CajaTestCase;
 import com.google.caja.util.LocalServer;
 import com.google.caja.util.RewritingResourceHandler;
-import org.mortbay.jetty.servlet.Context;
-
-import org.openqa.selenium.By;
-import org.openqa.selenium.WebElement;
-import org.openqa.selenium.firefox.FirefoxDriver;
-import org.openqa.selenium.WebDriver;
 
 import java.io.FileDescriptor;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.List;
+
+import org.mortbay.jetty.servlet.Context;
+import org.openqa.selenium.By;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
+import org.openqa.selenium.firefox.FirefoxDriver;
 
 /**
  * Test case class with tools for controlling a web browser running pages from a
@@ -86,9 +85,9 @@ public abstract class BrowserTestCase extends CajaTestCase {
       return BuildInfo.getInstance().getCurrentTime();
     }
   };
-  
+
   private final int portNumber = 8000;
-  
+
   private final LocalServer localServer = new LocalServer(
       portNumber,
       new LocalServer.ConfigureContextCallback() {
@@ -138,10 +137,9 @@ public abstract class BrowserTestCase extends CajaTestCase {
    * pageName), and then clean up.
    */
   protected void runBrowserTest(String pageName) throws Exception {
-    if (checkHeadless()) return;  // TODO: print a warning here?
     localServer.start();
-    String testUrl = ("http://localhost:" + portNumber
-                      + "/ant-lib/com/google/caja/plugin/test-index.html");
+    String testBase = ("http://localhost:" + portNumber
+                      + "/ant-lib/com/google/caja/plugin/");
     if (System.getProperty(START_AND_WAIT_FLAG) != null) {
       // The test runner may catch output so go directly to file descriptor 2.
       OutputStream out = new FileOutputStream(FileDescriptor.err);
@@ -149,8 +147,8 @@ public abstract class BrowserTestCase extends CajaTestCase {
         // Print out the URL so that someone can use ant -Dtest.filter to
         // choose the specific test they want instead of having to compute the
         // URL by inspection of the test code.
-        out.write(("Waiting for interactive test run.\nTry " + testUrl + "\n")
-                  .getBytes("UTF-8"));
+        out.write(("Waiting for interactive test run.\nTry "
+            + testBase + "test-index.html\n").getBytes("UTF-8"));
       } catch (IOException ex) {
         ex.printStackTrace();
       }
@@ -163,7 +161,7 @@ public abstract class BrowserTestCase extends CajaTestCase {
     }
     try {
       WebDriver driver = mwwd.newWindow();
-      driver.get(testUrl);
+      driver.get(testBase + pageName);
       driveBrowser(driver, pageName);
       driver.close();
       // Note that if the tests fail, this will not be reached and the window
@@ -177,7 +175,7 @@ public abstract class BrowserTestCase extends CajaTestCase {
     runTestDriver(testDriver, false);
     runTestDriver(testDriver, true);
   }
-  
+
   protected void runTestCase(String testCase) throws Exception {
     runTestCase(testCase, false);
     runTestCase(testCase, true);
