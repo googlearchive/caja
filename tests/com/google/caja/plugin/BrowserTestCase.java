@@ -141,8 +141,7 @@ public abstract class BrowserTestCase extends CajaTestCase {
     if (checkHeadless()) return;  // TODO: print a warning here?
     localServer.start();
     String testUrl = ("http://localhost:" + portNumber
-                      + "/ant-lib/com/google/caja/plugin/"
-                      + pageName);
+                      + "/ant-lib/com/google/caja/plugin/test-index.html");
     if (System.getProperty(START_AND_WAIT_FLAG) != null) {
       // The test runner may catch output so go directly to file descriptor 2.
       OutputStream out = new FileOutputStream(FileDescriptor.err);
@@ -150,7 +149,7 @@ public abstract class BrowserTestCase extends CajaTestCase {
         // Print out the URL so that someone can use ant -Dtest.filter to
         // choose the specific test they want instead of having to compute the
         // URL by inspection of the test code.
-        out.write(("Waiting for interactive test run. Try " + testUrl + "\n")
+        out.write(("Waiting for interactive test run.\nTry " + testUrl + "\n")
                   .getBytes("UTF-8"));
       } catch (IOException ex) {
         ex.printStackTrace();
