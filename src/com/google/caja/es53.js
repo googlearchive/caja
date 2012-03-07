@@ -1816,7 +1816,9 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
     var g = whitelistAll({
       toString: markFuncFreeze(function() { return typename + 'T'; }),
       coerce: markFuncFreeze(function(specimen, opt_ejector) {
-        if (table.get(specimen)) { return specimen; }
+        if (Object(specimen) === specimen && table.get(specimen)) {
+          return specimen;
+        }
         eject(opt_ejector, errorMessage);
       })
     });

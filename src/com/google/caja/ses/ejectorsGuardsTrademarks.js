@@ -346,8 +346,10 @@ var ses;
       var g = {
         toString: constFunc(function() { return typename + 'T'; }),
         coerce: constFunc(function(specimen, opt_ejector) {
-          if (!table.get(specimen)) { eject(opt_ejector, errorMessage); }
-          return specimen;
+          if (Object(specimen) === specimen && table.get(specimen)) {
+            return specimen;
+          }
+          eject(opt_ejector, errorMessage);
         })
       };
       stamp([GuardStamp], g);

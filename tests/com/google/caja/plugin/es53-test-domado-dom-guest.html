@@ -610,6 +610,22 @@
   });
 </script>
 
+<p id="test-contains-null" class="testcontainer">
+  test-contains-null<br>
+</p>
+<script type="text/javascript">
+  jsunitRegister('testContainsNull',
+                 function testContainsNull() {
+    var docEl = document.documentElement;
+    var div = document.createElement('div');
+    assertEquals('div.contains(null)', false, div.contains(null));
+    assertEquals('div.contains(void 0)', false, div.contains(void 0));
+    assertEquals('docEl.contains(null)', false, docEl.contains(null));
+    assertEquals('docEl.contains(void 0)', false, docEl.contains(void 0));
+    pass('test-contains-null');
+  });
+</script>
+
 <p id="test-element-id" class="testcontainer"></p>
 <script type="text/javascript">
   jsunitRegister('testElementId',

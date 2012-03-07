@@ -2585,6 +2585,7 @@ var Domado = (function() {
 
       if (docEl.contains) {  // typeof is 'object' on IE
         TameBackedNode.prototype.contains = nodeMethod(function (other) {
+          if (other === null || other === void 0) { return false; }
           other = TameNodeT.coerce(other);
           var otherNode = np(other).feral;
           return np(this).feral.contains(otherNode);
@@ -2628,6 +2629,7 @@ var Domado = (function() {
             'contains')) {
           // http://www.quirksmode.org/blog/archives/2006/01/contains_for_mo.html
           TameBackedNode.prototype.contains = nodeMethod(function (other) {
+            if (other === null || other === void 0) { return false; }
             var docPos = this.compareDocumentPosition(other);
             return !(!(docPos & 0x10) && docPos);
           });
@@ -4677,6 +4679,7 @@ var Domado = (function() {
         // TODO(kpreid): Move this to a TamePseudoHTMLElement constructor?
         if (body.contains) {  // typeof is 'object' on IE
           tameHtmlElement.contains = nodeMethod(function (other) {
+            if (other === null || other === void 0) { return false; }
             other = TameNodeT.coerce(other);
             var otherNode = np(other).feral;
             return body.contains(otherNode);
