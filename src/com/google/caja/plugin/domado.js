@@ -5080,12 +5080,11 @@ var Domado = (function() {
         });
         cajaVM.def(TameStyle);  // and its prototype
   
-        function isNestedInAnchor(rawElement) {
-          rawElement = makeDOMAccessible(rawElement);
-          for ( ; rawElement && rawElement != pseudoBodyNode;
-               rawElement = rawElement.parentNode) {
-            rawElement = makeDOMAccessible(rawElement);
-            if (rawElement.tagName.toLowerCase() === 'a') { return true; }
+        function isNestedInAnchor(el) {
+          for (; el && el != pseudoBodyNode; el = el.parentNode) {
+            if (el.tagName && el.tagName.toLowerCase() === 'a') {
+              return true;
+            }
           }
           return false;
         }

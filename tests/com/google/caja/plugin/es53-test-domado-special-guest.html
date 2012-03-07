@@ -176,6 +176,22 @@
   });
 </script>
 
+<p id="test-document-fragment-computed-style" class="testcontainer">
+  test-document-fragment-computed-style
+</p>
+<script type="text/javascript">
+  jsunitRegister('testDocumentFragmentComputedStyle',
+                 function testDocumentFragmentComputedStyle() {
+    var div = document.createElement('div');
+    var frag = document.createDocumentFragment();
+    frag.appendChild(div);
+    var style = window.getComputedStyle(div, null);
+    // just try property access. value is not consistent across browsers.
+    style.marginRight;
+    pass('test-document-fragment-computed-style');
+  });
+</script>
+
 <script type="text/javascript">
   jsunitRegister('testInnerHtml',
                  function testInnerHtml() {
