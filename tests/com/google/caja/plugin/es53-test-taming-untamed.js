@@ -29,9 +29,11 @@
 
   // Set up basic stuff
   var div = createDiv();
-  function uriCallback(uri, mimeType) { return uri; }
+  var uriPolicy = {
+    rewrite: function (uri, uriEffect, loaderType, hints) { return uri; }
+  };
 
-  caja.load(div, uriCallback, function (frame) {
+  caja.load(div, uriPolicy, function (frame) {
 
     // Invoke cajoled tests
     var extraImports = createExtraImportsForTesting(caja, frame);

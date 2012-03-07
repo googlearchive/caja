@@ -353,3 +353,15 @@
     pass('testPropertiesOnFunctions');
   });
 </script>
+<div id="testForms" class="testcontainer waiting">testForms
+  <form id="form" action="#"></form>
+</div>
+<script type="text/javascript">
+  jsunitRegister('testForms',
+                 function testForms() {
+    // Forms untame to a wrapper
+    tameEval('assertEquals(caja.unwrapDom(a).tagName.toLowerCase(), "form");',
+      document.getElementById('form'));
+    pass('testForms');
+  });
+</script>

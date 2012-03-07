@@ -20,7 +20,7 @@
  */
 
 (function () {
-  var uriCallback = {
+  var uriPolicy = {
     rewrite: function (uri) {
       return uri;
     }
@@ -34,7 +34,7 @@
 
   registerTest('testProxies', function testProxies() {
     var div = createDiv();
-    caja.load(div, uriCallback, function (frame) {
+    caja.load(div, uriPolicy, function (frame) {
       frame.code('proxies/proxytests.html')
           .run(function (_) {
         assertStringContains(

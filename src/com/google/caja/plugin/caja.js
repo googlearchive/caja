@@ -64,6 +64,7 @@ var caja = (function () {
     // Taming functions for the default frameGroup
     tame: premature,
     untame: premature,
+    unwrapDom: premature,
     markReadOnlyRecord: premature,
     markFunction: premature,
     markCtor: premature,

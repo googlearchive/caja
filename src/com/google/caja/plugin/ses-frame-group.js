@@ -37,6 +37,7 @@ function SESFrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker) {
   FeralTwinStub.prototype.toString = function () {
     return "[feral twin stub:" + tamingWin.taming.tame(this) + "]";
   };
+  function FeralNodeWrapper(node) { this.node = node; }
 
   var tamingMembrane = TamingMembrane(Object.freeze({
       applyFunction: applyFunction,
@@ -56,6 +57,7 @@ function SESFrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker) {
   var domado = Domado(
       Object.freeze({
         permitUntaming: permitUntaming,
+        untamesToWrapper: untamesToWrapper,
         tame: tamingMembrane.tame,
         untame: tamingMembrane.untame,
         tamesTo: tamingMembrane.tamesTo,
@@ -75,6 +77,7 @@ function SESFrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker) {
 
     tame: tamingMembrane.tame,
     untame: tamingMembrane.untame,
+    unwrapDom: unwrapDom,
     markReadOnlyRecord: tamingMembrane.markTameAsReadOnlyRecord,
     markFunction: tamingMembrane.markTameAsFunction,
     markCtor: tamingMembrane.markTameAsCtor,
@@ -194,6 +197,16 @@ function SESFrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker) {
     if (typeof o === 'object' || typeof o === 'function') {
       tamingMembrane.tamesTo(new FeralTwinStub(), o);
     } // else let primitives go normally
+  }
+
+  function untamesToWrapper(feral, tame) {
+    tamingMembrane.tamesTo(new FeralNodeWrapper(feral), tame);
+  }
+  function unwrapDom(wrapper) {
+    if (wrapper instanceof FeralNodeWrapper) {
+      return wrapper.node;
+    }
+    return wrapper;
   }
 
   //----------------

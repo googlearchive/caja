@@ -54,6 +54,7 @@ function ES53FrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker) {
       'BASE_OBJECT_CONSTRUCTOR', tamingWin.___.BASE_OBJECT_CONSTRUCTOR));
 
   markCallableWithoutMembrane(permitUntaming);
+  markCallableWithoutMembrane(untamesToWrapper);
   markCallableWithoutMembrane(insiderTame);
   markCallableWithoutMembrane(insiderUntame);
   markCallableWithoutMembrane(insiderTamesTo);
@@ -72,6 +73,7 @@ function ES53FrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker) {
   var domado = Domado(
       recordWithMethods(
         'permitUntaming', permitUntaming,
+        'untamesToWrapper', untamesToWrapper,
         'tame', insiderTame,
         'untame', insiderUntame,
         'tamesTo', insiderTamesTo,
@@ -85,6 +87,7 @@ function ES53FrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker) {
   
     tame: tamingMembrane.tame,
     untame: tamingMembrane.untame,
+    unwrapDom: unwrapDom,
     markReadOnlyRecord: tamingMembrane.markTameAsReadOnlyRecord,
     markFunction: tamingMembrane.markTameAsFunction,
     markCtor: tamingMembrane.markTameAsCtor,
@@ -183,7 +186,7 @@ function ES53FrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker) {
   }
 
   /**
-   * Allow a guest constructed object (such as Domado's DOM wrappers) to
+   * Allow a guest constructed object (such as a canvas context) to
    * be passed through the taming membrane (largely uselessly) by giving
    * it a stub feral twin. This exists primarily for the test suite.
    */
@@ -191,6 +194,14 @@ function ES53FrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker) {
     if (typeof o === 'object' || typeof o === 'function') {
       tamingMembrane.tamesTo(new FeralTwinStub(), o);
     } // else let primitives go normally
+  }
+
+  /**
+   * Allow a guest-constructed DOM node to be
+   * tamed to a domicile-specific wrapper.
+   */
+  function untamesToWrapper(feral, tame) {
+    tamingMembrane.tamesTo(new FeralNodeWrapper(feral), tame);
   }
 
   function insiderTame(f) {
@@ -498,4 +509,11 @@ function ES53FrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker) {
   }
 
   function FeralTwinStub() {}
+  function FeralNodeWrapper(node) { this.node = node; }
+  function unwrapDom(wrapper) {
+    if (wrapper instanceof FeralNodeWrapper) {
+      return wrapper.node;
+    }
+    return wrapper;
+  }
 }

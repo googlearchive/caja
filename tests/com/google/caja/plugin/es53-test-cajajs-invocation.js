@@ -57,7 +57,7 @@
 
   // NOTE: Identity URI rewriter (as shown below) is for testing only; this
   // would be unsafe for production code!
-  var uriCallback = {
+  var uriPolicy = {
     rewrite: function (uri) { return uri; }
   };
 
@@ -82,7 +82,7 @@
 
   registerTest('testBuilderApiHtml', function testBuilderApiHtml() {
     var div = createDiv();
-    caja.load(div, uriCallback, function (frame) {
+    caja.load(div, uriPolicy, function (frame) {
       frame.code('es53-test-guest.html', 'text/html')
            .run(function(result) {
               assertGuestHtmlCorrect(frame, div);
@@ -93,7 +93,7 @@
 
   registerTest('testBuilderApiJs', function testBuilderApiJs() {
     var div = createDiv();
-    caja.load(div, uriCallback, function (frame) {
+    caja.load(div, uriPolicy, function (frame) {
       var extraImports = { x: 4, y: 3 };
       frame.code('es53-test-guest.js', 'text/javascript')
            .api(extraImports)
@@ -105,7 +105,7 @@
   });
 
   registerTest('testBuilderApiJsNoDom', function testBuilderApiJsNoDom() {
-    caja.load(undefined, uriCallback, function (frame) {
+    caja.load(undefined, uriPolicy, function (frame) {
       var extraImports = { x: 4, y: 3 };
       frame.code('es53-test-guest.js', 'text/javascript')
            .api(extraImports)
@@ -181,7 +181,7 @@
   registerTest('testBuilderApiContentHtml',
       function testBuilderApiContentHtml() {
     var div = createDiv();
-    caja.load(div, uriCallback, function (frame) {
+    caja.load(div, uriPolicy, function (frame) {
         fetch('es53-test-guest.html', function(resp) {
           frame.code('http://localhost:8080/', 'text/html', resp)
             .run(function (result) {
@@ -194,7 +194,7 @@
 
   registerTest('testBuilderApiContentJs', function testBuilderApiContentJs() {
     var div = createDiv();
-    caja.load(div, uriCallback, function (frame) {
+    caja.load(div, uriPolicy, function (frame) {
       var extraImports = { x: 4, y: 3 };
       fetch('es53-test-guest.js', function(resp) {
         frame.code('http://localhost:8080/', 'application/javascript', resp)
@@ -211,7 +211,7 @@
   registerTest('testBuilderApiContentCajoledHtml',
       function testBuilderApiContentCajoledHtml() {
     var div = createDiv();
-    caja.load(div, uriCallback, function (frame) {
+    caja.load(div, uriPolicy, function (frame) {
       fetch('es53-test-guest.out.html', function(resp) {
         var htmlAndJs = splitHtmlAndScript(resp);
 
@@ -228,7 +228,7 @@
   registerTest('testBuilderApiContentCajoledJs',
       function testBuilderApiContentCajoledJs() {
     var div = createDiv();
-    caja.load(div, uriCallback, function (frame) {
+    caja.load(div, uriPolicy, function (frame) {
       var extraImports = { x: 4, y: 3 };
       fetch('es53-test-guest.out.js', function(script) {
         frame.cajoled(undefined, script, undefined)
@@ -253,7 +253,7 @@
       fetch('es53-test-guest.out.html', function(resp) {
         var htmlAndScript = splitHtmlAndScript(resp);
         var div = createDiv();
-        frameGroup.makeES5Frame(div, uriCallback, function (frame) {
+        frameGroup.makeES5Frame(div, uriPolicy, function (frame) {
           frame.contentCajoled('http://localhost:8080/',
                                htmlAndScript[1], htmlAndScript[0])
                .run({}, function (result) {
@@ -267,7 +267,7 @@
     if (!inES5Mode)
     registerTest('testContentCajoledJs', function testContentCajoledJs() {
       fetch('es53-test-guest.out.js', function(script) {
-        frameGroup.makeES5Frame(undefined, uriCallback, function (frame) {
+        frameGroup.makeES5Frame(undefined, uriPolicy, function (frame) {
           var extraImports = { x: 4, y: 3 };
           frame.contentCajoled(undefined, script, undefined)
                .run(extraImports, function (result) {
@@ -283,7 +283,7 @@
       fetch('es53-test-guest.out.html', function(resp) {
         var htmlAndScript = splitHtmlAndScript(resp);
         var div = createDiv();
-        frameGroup.makeES5Frame(div, uriCallback, function (frame) {
+        frameGroup.makeES5Frame(div, uriPolicy, function (frame) {
           frame.contentCajoled('http://localhost:8080/',
                                htmlAndScript[1], htmlAndScript[0])
                .run(undefined, function (result) {
@@ -301,7 +301,7 @@
     registerTest('testContentHtml', function testContentHtml() {
       fetch('es53-test-guest.html', function(resp) {
         var div = createDiv();
-        frameGroup.makeES5Frame(div, uriCallback, function (frame) {
+        frameGroup.makeES5Frame(div, uriPolicy, function (frame) {
           frame.content('http://localhost:8080/', resp, 'text/html')
               .run({}, function (result) {
             assertGuestHtmlCorrect(frame, div);
@@ -313,7 +313,7 @@
 
     registerTest('testContentJs', function testContentJs() {
       fetch('es53-test-guest.js', function(resp) {
-        frameGroup.makeES5Frame(undefined, uriCallback, function (frame) {
+        frameGroup.makeES5Frame(undefined, uriPolicy, function (frame) {
           var extraImports = { x: 4, y: 3 };
           frame.content('http://localhost:8080/',
                         resp,
@@ -328,7 +328,7 @@
 
     registerTest('testUrlHtml', function testUrlHtml() {
       var div = createDiv();
-      frameGroup.makeES5Frame(div, uriCallback, function (frame) {
+      frameGroup.makeES5Frame(div, uriPolicy, function (frame) {
         frame.url('es53-test-guest.html').run({}, function (result) {
           assertGuestHtmlCorrect(frame, div);
           jsunitPass('testUrlHtml');
@@ -337,7 +337,7 @@
     });
     
     registerTest('testUrlJs', function testUrlJs() {
-      frameGroup.makeES5Frame(undefined, uriCallback, function (frame) {
+      frameGroup.makeES5Frame(undefined, uriPolicy, function (frame) {
         var extraImports = { x: 4, y: 3 };
         frame.url('es53-test-guest.js').run(extraImports, function (result) {
           assertGuestJsCorrect(frame, undefined, result);
@@ -348,7 +348,7 @@
 
     registerTest('testUrlHtmlWithMimeType', function testUrlHtml() {
       var div = createDiv();
-      frameGroup.makeES5Frame(div, uriCallback, function (frame) {
+      frameGroup.makeES5Frame(div, uriPolicy, function (frame) {
         frame.url('es53-test-guest.html', 'text/html').run({},
             function (result) {
           assertGuestHtmlCorrect(frame, div);

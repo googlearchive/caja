@@ -591,7 +591,7 @@ var Domado = (function() {
       taming,
       rulebreaker,
       xmlHttpRequestMaker,
-      uriCallback) {
+      uriPolicy) {
     var Confidence = domitaModules.Confidence;
     var setOwn = domitaModules.setOwn;
     var canHaveEnumerableAccessors = domitaModules.canHaveEnumerableAccessors;
@@ -682,10 +682,10 @@ var Domado = (function() {
       method = String(method);
       // The XHR interface does not tell us the MIME type in advance, so we
       // must assume the broadest possible.
-      var safeUri = uriCallback.rewrite(
+      var safeUri = uriPolicy.rewrite(
           String(URL), html4.ueffects.SAME_DOCUMENT, html4.ltypes.SANDBOXED,
           { "XHR": true});
-      // If the uriCallback rejects the URL, we throw an exception, but we do
+      // If the uriPolicy rejects the URL, we throw an exception, but we do
       // not put the URI in the exception so as not to put the caller at risk
       // of some code in its stack sniffing the URI.
       if ("string" !== typeof safeUri) { throw 'URI violates security policy'; }
@@ -1274,7 +1274,7 @@ var Domado = (function() {
      *
      * @param {string} idSuffix a string suffix appended to all node IDs.
      *     It should begin with "-" and end with "___".
-     * @param {Object} uriCallback an object like <pre>{
+     * @param {Object} uriPolicy an object like <pre>{
      *   rewrite: function (uri, uriEffect, loaderType, hints) {
      *      return safeUri
      *   }
@@ -1300,7 +1300,7 @@ var Domado = (function() {
      *     object is known as a "domicile".
      */
     function attachDocument(
-        idSuffix, uriCallback, pseudoBodyNode, optPseudoWindowLocation) {
+        idSuffix, uriPolicy, pseudoBodyNode, optPseudoWindowLocation) {
       if (arguments.length < 3) {
         throw new Error(
             'attachDocument arity mismatch: ' + arguments.length);
@@ -1390,7 +1390,7 @@ var Domado = (function() {
           ExpandoProxyHandler.register(proxiedNode, node);
           TameNodeConf.confide(proxiedNode, node);
           tamingProxies.set(node, proxiedNode);
-          taming.permitUntaming(proxiedNode);
+          taming.untamesToWrapper(np(proxiedNode).feral, proxiedNode);
   
           return proxiedNode;
         } else {
@@ -1414,9 +1414,9 @@ var Domado = (function() {
         }
         sanitizeCssProperty(
             schema, tokens,
-            uriCallback
+            uriPolicy
             ? function (url) {
-                return uriCallback.rewrite(
+                return uriPolicy.rewrite(
                     url, html4.ueffects.SAME_DOCUMENT,
                     html4.ltypes.SANDBOXED, { "CSS_PROP": cssPropertyName });
               }
@@ -1636,8 +1636,8 @@ var Domado = (function() {
             return value;
           case html4.atype.URI:
             value = String(value);
-            if (!uriCallback) { return null; }
-            return uriCallback.rewrite(
+            if (!uriPolicy) { return null; }
+            return uriPolicy.rewrite(
                 value,
                 getUriEffect(tagName, attribName),
                 getLoaderType(tagName, attribName),
@@ -2387,7 +2387,7 @@ var Domado = (function() {
       function TameNode(editable) {
         TameNodeConf.confide(this);
         np(this).editable = editable;
-        taming.permitUntaming(this);  // needed for testing
+        taming.untamesToWrapper(np(this).feral, this);  // needed for testing
         return this;
       }
       inertCtor(TameNode, Object, 'Node');
@@ -4950,14 +4950,14 @@ var Domado = (function() {
       });
       domicile.rewriteUriInCss = cajaVM.def(function (value) {
         return value
-          ? uriCallback.rewrite(value, html4.ueffects.SAME_DOCUMENT,
+          ? uriPolicy.rewrite(value, html4.ueffects.SAME_DOCUMENT,
                 html4.ltypes.SANDBOXED, {})
           : void 0;
       });
       domicile.rewriteUriInAttribute = cajaVM.def(
           function (value, tagName, attribName) {
         return value
-          ? uriCallback.rewrite(value, getUriEffect(tagName, attribName),
+          ? uriPolicy.rewrite(value, getUriEffect(tagName, attribName),
                 getLoaderType(tagName, attribName), {"XML_ATTR": attribName})
           : void 0;
       });
@@ -5136,7 +5136,7 @@ var Domado = (function() {
           domitaModules.XMLHttpRequestCtor(
               makeFunctionAccessible(window.XMLHttpRequest),
               makeFunctionAccessible(window.ActiveXObject)),
-          uriCallback);
+          uriPolicy);
       cajaVM.def(nodeClasses.XMLHttpRequest);
       traceStartup("DT: done for XMLHttpRequest");
   
