@@ -25,7 +25,7 @@ function fetch(url, callback) {
 
 function initFrame(div, frameCallback) {
   caja.initialize({
-    cajaServer: 'http://localhost:8000/caja',
+    cajaServer: '/caja',
     debug: true,
     forceES5Mode: inES5Mode
   });

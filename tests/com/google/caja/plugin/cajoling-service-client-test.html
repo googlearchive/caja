@@ -1,3 +1,4 @@
+<!doctype html>
 <!--
  - Copyright (C) 2011 Google Inc.
  -
@@ -45,7 +46,7 @@
       jsunitRegister('testBasicStuff',
                      function testBasicStuff() {
         var c = cajolingServiceClientMaker(
-            'http://localhost:8000/caja/cajole',
+            '/caja/cajole',
             jsonRestTransportMaker(),
             true,
             true);
@@ -62,13 +63,14 @@
       jsunitRegister('testCajoleUrl',
                      function testCajoleUrl() {
         var c = cajolingServiceClientMaker(
-            'http://localhost:8000/caja/cajole',
+            '/caja/cajole',
             jsonRestTransportMaker(),
             true,
             true);
         Q.when(
             c.cajoleUrl(
-                'http://localhost:8000/ant-lib/com/google/caja/a.js',
+                location.protocol + '//' + location.host
+                + '/ant-lib/com/google/caja/a.js',
                 'application/javascript'),
             jsunitCallback(function(m) {
               assertTrue(/___\.loadModule/.test(m.js));
@@ -88,7 +90,7 @@
       jsunitRegister('testCajoleContent',
                      function testCajoleContent() {
         var c = cajolingServiceClientMaker(
-            'http://localhost:8000/caja/cajole',
+            '/caja/cajole',
             jsonRestTransportMaker(),
             true,
             true);
@@ -114,7 +116,7 @@
       jsunitRegister('testCajolingError',
                      function testCajolingError() {
         var c = cajolingServiceClientMaker(
-            'http://localhost:8000/caja/cajole',
+            '/caja/cajole',
             jsonRestTransportMaker(),
             true,
             true);
@@ -147,7 +149,7 @@
           // Hard-code the wrong version to be sent in cajoling request
           window.cajaBuildVersion = '0000';
           var c = cajolingServiceClientMaker(
-              'http://localhost:8000/caja/cajole',
+              '/caja/cajole',
               jsonRestTransportMaker(),
               true,
               true,
@@ -178,7 +180,7 @@
       jsunitRegister('testEmitHtmlInJsTrue',
                      function testEmitHtmlInJsTrue() {
         var c = cajolingServiceClientMaker(
-            'http://localhost:8000/caja/cajole',
+            '/caja/cajole',
             jsonRestTransportMaker(),
             true,
             true);
@@ -205,7 +207,7 @@
       jsunitRegister('testEmitHtmlInJsFalse',
                      function testEmitHtmlInJsFalse() {
         var c = cajolingServiceClientMaker(
-            'http://localhost:8000/caja/cajole',
+            '/caja/cajole',
             jsonRestTransportMaker(),
             false,
             true);

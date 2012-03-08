@@ -218,12 +218,7 @@
 
   <target name="brtest" description="Run just browser tests.">
     <antcall target="runtests">
-      <param name="test.filter" value="ModuleSystemTest"/>
-      <param name="runtests.shouldCache" value="false"/>
-    </antcall>
-    <antcall target="runtests">
-      <param name="test.filter" value="GeneralBrowserTest"/>
-      <param name="runtests.shouldCache" value="false"/>
+      <param name="test.filter" value="*BrowserTest"/>
     </antcall>
   </target>
 

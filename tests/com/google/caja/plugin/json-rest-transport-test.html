@@ -1,3 +1,4 @@
+<!doctype html>
 <!--
  - Copyright (C) 2011 Google Inc.
  -
@@ -39,7 +40,7 @@
       jsunitRegister('testNoContent',
                      function testNoContent() {
         var c = jsonRestTransportMaker().request(
-            'http://localhost:8000/caja/jsonTest?testParam=abc123');
+            '/caja/jsonTest?testParam=abc123');
         Q.when(c, function(result) {
           assertTrue(result.sanityCheck === 'sane');
           assertTrue(result.testParam === 'abc123');
@@ -57,7 +58,7 @@
       jsunitRegister('testWithContent',
                      function testWithContent() {
         var c = jsonRestTransportMaker().request(
-            'http://localhost:8000/caja/jsonTest?testParam=abc123',
+            '/caja/jsonTest?testParam=abc123',
             'hello world from testWithContent',
             'text/plain');
         Q.when(c, function(result) {
@@ -77,7 +78,7 @@
       jsunitRegister('testFailure',
                      function testFailure() {
         var c = jsonRestTransportMaker().request(
-            'http://localhost:8000/non-existent-pathname-that-fails',
+            '/non-existent-pathname-that-fails',
             'hello world from testFailure',
             'text/plain');
         Q.when(c, function(result) {
@@ -95,7 +96,7 @@
       jsunitRegister('testJsonpTransport',
                      function testJsonpTransport() {
         var c = jsonRestTransportMaker('jsonp').request(
-            'http://localhost:8000/caja/jsonTest?testParam=abc123');
+            '/caja/jsonTest?testParam=abc123');
         Q.when(c, function(result) {
           assertTrue(result.sanityCheck === 'sane');
           assertTrue(result.testParam === 'abc123');
@@ -113,7 +114,7 @@
       jsunitRegister('testInputUrlWithNoParams',
                      function testInputUrlWithNoParams() {
         var c = jsonRestTransportMaker().request(
-            'http://localhost:8000/caja/jsonTest');
+            '/caja/jsonTest');
         Q.when(c, function(result) {
           assertTrue(result.sanityCheck === 'sane');
           jsunitPass('testInputUrlWithNoParams');

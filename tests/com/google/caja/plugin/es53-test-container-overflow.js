@@ -73,11 +73,11 @@
 
   jsunitRegister('testInnerNotVisible', function() {
     assertTrue(
-        'Cannot run test: Document body width inadequate',
-        document.body.clientWidth >= 25);
+        'Cannot run test: Document width inadequate',
+        document.documentElement.clientWidth >= 25);
     assertTrue(
-        'Cannot run test: Document body height inadequate',
-        document.body.clientHeight >= 25);
+        'Cannot run test: Document height inadequate',
+        document.documentElement.clientHeight >= 25);
 
     assertEquals(0, containerDiv.offsetLeft);
     assertEquals(0, containerDiv.offsetTop);

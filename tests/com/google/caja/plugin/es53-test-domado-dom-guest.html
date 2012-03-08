@@ -254,6 +254,26 @@
   });
 </script>
 
+<form id="test-onreset-form">
+  <div class="clickme testcontainer" id="testOnReset">
+    testOnReset <input type="reset" value="click me">
+  </div>
+</form>
+<script type="text/javascript">
+  // form:onreset uses the same logic path as input:onfocus
+
+  // TODO(kpreid): Enable for ES5 and debug on Firefox.
+  jsunitRegisterIf(!inES5Mode,
+                   'testOnReset',
+                   function testOnReset() {
+    var form = document.getElementById('test-onreset-form');
+    form.addEventListener('reset',
+        jsunitCallback(
+            function onreset() { pass('testOnReset'); }),
+        false);
+  });
+</script>
+
 <div id="testDocumentWrite" class="testcontainer">
   <div>
     <p>Before <code>document.write</code></p>
@@ -2288,26 +2308,6 @@ Test row cell
       assertEquals('[Fake Document]', document.toString());
     }
     pass('test-toString');
-  });
-</script>
-
-<form id="test-onreset-form">
-  <div class="clickme testcontainer" id="testOnReset">
-    testOnReset <input type="reset" value="click me">
-  </div>
-</form>
-<script type="text/javascript">
-  // form:onreset uses the same logic path as input:onfocus
-
-  // TODO(kpreid): Enable for ES5 and debug on Firefox.
-  jsunitRegisterIf(!inES5Mode,
-                   'testOnReset',
-                   function testOnReset() {
-    var form = document.getElementById('test-onreset-form');
-    form.addEventListener('reset',
-        jsunitCallback(
-            function onreset() { pass('testOnReset'); }),
-        false);
   });
 </script>
 

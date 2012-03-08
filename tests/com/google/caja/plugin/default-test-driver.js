@@ -30,7 +30,7 @@ var testCase = getUrlParam('test-case');
 
 if (testCase) {
   caja.makeFrameGroup({
-    cajaServer: 'http://localhost:8000/caja',
+    cajaServer: '/caja',
     debug: true,
     forceES5Mode: inES5Mode
   }, function(frameGroup) {

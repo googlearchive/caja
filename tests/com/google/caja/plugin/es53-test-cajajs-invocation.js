@@ -62,7 +62,7 @@
   };
 
   caja.initialize({
-    cajaServer: 'http://localhost:8000/caja',
+    cajaServer: '/caja',
     debug: true,
     forceES5Mode: inES5Mode
   });
@@ -70,7 +70,7 @@
   registerTest('testReinitialization', function testReinitialization() {
     try {
       caja.initialize({
-        cajaServer: 'http://localhost:8000/caja',
+        cajaServer: '/caja',
         debug: true
       });
     } catch (e) {
@@ -120,7 +120,9 @@
       function testBuilderApiNetUndefined() {
     var div = createDiv();
     caja.load(div, undefined, function (frame) {
-      frame.code('http://localhost:8080/', 'text/html',
+      frame.code(
+          location.protocol + '//' + location.host + '/',
+          'text/html',
           '<a href="http://fake1.url/foo">fake1</a>' + 
           '<a href="http://fake2.url/foo">fake2</a>'
           )
@@ -135,7 +137,9 @@
   registerTest('testBuilderApiNetNone', function testBuilderApiNetNone() {
     var div = createDiv();
     caja.load(div, caja.policy.net.NO_NETWORK, function (frame) {
-      frame.code('http://localhost:8080/', 'text/html',
+      frame.code(
+          location.protocol + '//' + location.host + '/',
+          'text/html',
           '<a href="http://fake1.url/foo">fake1</a>' + 
           '<a href="http://fake2.url/foo">fake2</a>'
           )
@@ -150,7 +154,9 @@
   registerTest('testBuilderApiNetAll', function testBuilderApiNetAll() {
     var div = createDiv();
     caja.load(div, caja.policy.net.ALL, function (frame) {
-      frame.code('http://localhost:8080/', 'text/html',
+      frame.code(
+          location.protocol + '//' + location.host + '/',
+          'text/html',
           '<a href="http://fake1.url/foo">fake1</a>' + 
           '<a href="http://fake2.url/foo">fake2</a>'
           )
@@ -166,7 +172,9 @@
     var div = createDiv();
     caja.load(div,
         caja.policy.net.only("http://fake1.url/foo"), function (frame) {
-      frame.code('http://localhost:8080/', 'text/html',
+      frame.code(
+          location.protocol + '//' + location.host + '/',
+          'text/html',
           '<a href="http://fake1.url/foo">fake1</a>' + 
           '<a href="http://fake2.url/foo">fake2</a>' 
           )
@@ -183,7 +191,9 @@
     var div = createDiv();
     caja.load(div, uriPolicy, function (frame) {
         fetch('es53-test-guest.html', function(resp) {
-          frame.code('http://localhost:8080/', 'text/html', resp)
+          frame.code(
+              location.protocol + '//' + location.host + '/',
+              'text/html', resp)
             .run(function (result) {
               assertGuestHtmlCorrect(frame, div);
               jsunitPass('testBuilderApiContentHtml');
@@ -197,7 +207,9 @@
     caja.load(div, uriPolicy, function (frame) {
       var extraImports = { x: 4, y: 3 };
       fetch('es53-test-guest.js', function(resp) {
-        frame.code('http://localhost:8080/', 'application/javascript', resp)
+        frame.code(
+              location.protocol + '//' + location.host + '/',
+              'application/javascript', resp)
              .api(extraImports)
              .run(function (result) {
                assertGuestJsCorrect(frame, div, result);
@@ -215,7 +227,7 @@
       fetch('es53-test-guest.out.html', function(resp) {
         var htmlAndJs = splitHtmlAndScript(resp);
 
-        frame.cajoled('http://localhost:8080/', htmlAndJs[1], htmlAndJs[0])
+        frame.cajoled('/', htmlAndJs[1], htmlAndJs[0])
           .run(function (result) {
             assertGuestHtmlCorrect(frame, div);
             jsunitPass('testBuilderApiContentCajoledHtml');
@@ -242,7 +254,7 @@
   });
 
   caja.makeFrameGroup({
-    cajaServer: 'http://localhost:8000/caja',
+    cajaServer: '/caja',
     debug: true,
     forceES5Mode: inES5Mode
   }, function (frameGroup) {
@@ -254,8 +266,7 @@
         var htmlAndScript = splitHtmlAndScript(resp);
         var div = createDiv();
         frameGroup.makeES5Frame(div, uriPolicy, function (frame) {
-          frame.contentCajoled('http://localhost:8080/',
-                               htmlAndScript[1], htmlAndScript[0])
+          frame.contentCajoled('/', htmlAndScript[1], htmlAndScript[0])
                .run({}, function (result) {
             assertGuestHtmlCorrect(frame, div);
             jsunitPass('testContentCajoledHtml');
@@ -284,8 +295,7 @@
         var htmlAndScript = splitHtmlAndScript(resp);
         var div = createDiv();
         frameGroup.makeES5Frame(div, uriPolicy, function (frame) {
-          frame.contentCajoled('http://localhost:8080/',
-                               htmlAndScript[1], htmlAndScript[0])
+          frame.contentCajoled('/', htmlAndScript[1], htmlAndScript[0])
                .run(undefined, function (result) {
             assertGuestHtmlCorrect(frame, div);
             jsunitPass('testNoImports');
@@ -302,7 +312,8 @@
       fetch('es53-test-guest.html', function(resp) {
         var div = createDiv();
         frameGroup.makeES5Frame(div, uriPolicy, function (frame) {
-          frame.content('http://localhost:8080/', resp, 'text/html')
+          frame.content(location.protocol + '//' + location.host + '/',
+                        resp, 'text/html')
               .run({}, function (result) {
             assertGuestHtmlCorrect(frame, div);
             jsunitPass('testContentHtml');
@@ -315,9 +326,8 @@
       fetch('es53-test-guest.js', function(resp) {
         frameGroup.makeES5Frame(undefined, uriPolicy, function (frame) {
           var extraImports = { x: 4, y: 3 };
-          frame.content('http://localhost:8080/',
-                        resp,
-                        'application/javascript')
+          frame.content(location.protocol + '//' + location.host + '/',
+                        resp, 'application/javascript')
               .run(extraImports, function (result) {
             assertGuestJsCorrect(frame, undefined, result);
             jsunitPass('testContentJs');

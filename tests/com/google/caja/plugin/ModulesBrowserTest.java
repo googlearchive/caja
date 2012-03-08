@@ -20,7 +20,7 @@ import org.mortbay.jetty.servlet.ServletHolder;
 /**
  * @author ihab.awad@gmail.com
  */
-public class ModuleSystemTest extends BrowserTestCase {
+public class ModulesBrowserTest extends BrowserTestCase {
   public final void testJsonRequest() throws Exception {
     runBrowserTest("json-rest-transport-test.html");
   }

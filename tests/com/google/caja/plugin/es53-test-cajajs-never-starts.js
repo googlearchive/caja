@@ -24,7 +24,7 @@ var testFailed = false;
 
 registerTest('testNeverStarts', function testNeverStarts() {
   caja.initialize({
-    cajaServer: 'http://localhost:8000/caja'
+    cajaServer: '/caja'
   });
   caja.whenReady(function() {
     testFailed = true;

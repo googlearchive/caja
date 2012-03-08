@@ -30,7 +30,7 @@
   };
 
   caja.initialize({
-    cajaServer: 'http://localhost:8000/caja',
+    cajaServer: '/caja',
     debug: true,
     forceES5Mode: inES5Mode
   });
@@ -100,7 +100,9 @@
     caja.load(div, xhrDynamicPolicy, function (frame) {
       var extraImports = createExtraImportsForTesting(caja, frame);
 
-      frame.code('http://localhost:8080/', 'text/html', ''
+      frame.code(
+          location.protocol + '//' + location.host + '/',
+          'text/html', ''
           + '<script>'
           + '  var request = new XMLHttpRequest();'
           + '  request.open("GET", "non-existent.html",'

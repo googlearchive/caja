@@ -39,7 +39,7 @@ var testConsole = {
 
 registerTest('testVersionSkew', function testVersionSkew() {
   caja.initialize({
-    cajaServer: 'http://localhost:8000/caja',
+    cajaServer: '/caja',
     console: testConsole
   });
   caja.load(undefined, undefined, function (frame) {

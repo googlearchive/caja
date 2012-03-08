@@ -27,7 +27,7 @@
   };
 
   caja.initialize({
-    cajaServer: 'http://localhost:8000/caja',
+    cajaServer: '/caja',
     debug: true
   });
   

@@ -31,7 +31,7 @@ registerTest('testVersionSkew', function testVersionSkew() {
         '0000');
     var div = createDiv();
     caja.initialize({
-      cajaServer: 'http://localhost:8000/caja',
+      cajaServer: '/caja',
       debug: true
     });
     caja.load(div, undefined, function (frame) {
@@ -39,7 +39,7 @@ registerTest('testVersionSkew', function testVersionSkew() {
       frame.iframe.contentWindow.console = console;
       clientSideLoaded = true;
       try {
-        frame.cajoled('http://localhost:8080/', script, html)
+        frame.cajoled('/', script, html)
              .run(function(result) {
                // If we succeed in running, we fail the test!
                fail('testVersionSkew');

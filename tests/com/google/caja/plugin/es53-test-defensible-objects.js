@@ -21,7 +21,7 @@
 (function () {
 
   caja.initialize({
-    cajaServer: 'http://localhost:8000/caja',
+    cajaServer: '/caja',
     debug: true,
     forceES5Mode: inES5Mode
   });
