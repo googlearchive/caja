@@ -390,16 +390,29 @@ public abstract class CajaTestCase extends TestCase {
   }
 
   protected void assertMessage(
-      boolean consume, MessageTypeInt type, MessageLevel level,
-      MessagePart... expectedParts) {
+      boolean consume, final MessageTypeInt type, final MessageLevel level,
+      final MessagePart... expectedParts) {
+    assertMessage(
+        consume,
+        new Function<Message, Integer>() {
+          public Integer apply(Message msg) {
+            int score = 0;
+            if (msg.getMessageType() == type) { ++score; }
+            if (msg.getMessageLevel() == level) { ++score; }
+            score -= partsMissing(msg, expectedParts);
+            return score == 2 ? Integer.MAX_VALUE : score;
+          }
+        },
+        "type " + type + " and level " + level);
+  }
+
+  protected void assertMessage(
+      boolean consume, Function<Message, Integer> scorer, String description) {
     Message closest = null;
     int closestScore = Integer.MIN_VALUE;
     for (Message msg : mq.getMessages()) {
-      int score = 0;
-      if (msg.getMessageType() == type) { ++score; }
-      if (msg.getMessageLevel() == level) { ++score; }
-      score -= partsMissing(msg, expectedParts);
-      if (score == 2) {
+      final int score = scorer.apply(msg);
+      if (score == Integer.MAX_VALUE) {
         if (consume) {
           mq.getMessages().remove(msg);
         }
@@ -411,7 +424,7 @@ public abstract class CajaTestCase extends TestCase {
       }
     }
     if (closest == null) {
-      fail("No message found of type " + type + " and level " + level);
+      fail("No message found like " + description);
     } else {
       fail("Failed to find message.  Closest match was " + closest.format(mc)
            + " with parts " + closest.getMessageParts());

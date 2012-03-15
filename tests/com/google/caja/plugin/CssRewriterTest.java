@@ -18,25 +18,28 @@ import com.google.caja.lang.css.CssSchema;
 import com.google.caja.lang.html.HtmlSchema;
 import com.google.caja.lexer.ExternalReference;
 import com.google.caja.lexer.FilePosition;
+import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.ParseException;
 import com.google.caja.parser.AncestorChain;
+import com.google.caja.parser.MutableParseTreeNode;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.Visitor;
 import com.google.caja.parser.css.CssTree;
-import com.google.caja.parser.html.ElKey;
-import com.google.caja.parser.html.Namespaces;
 import com.google.caja.parser.js.ArrayConstructor;
+import com.google.caja.parser.js.Expression;
+import com.google.caja.parser.js.ObjProperty;
+import com.google.caja.parser.js.ObjectConstructor;
+import com.google.caja.parser.js.Operation;
+import com.google.caja.parser.js.Operator;
 import com.google.caja.parser.js.StringLiteral;
-import com.google.caja.parser.quasiliteral.QuasiBuilder;
-import com.google.caja.reporting.MessageLevel;
+import com.google.caja.parser.js.ValueProperty;
+import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.util.CajaTestCase;
-import com.google.caja.util.Executor;
-import com.google.caja.util.Join;
+import com.google.caja.util.Function;
 import com.google.caja.util.Lists;
 import com.google.caja.util.MoreAsserts;
 import com.google.caja.util.Name;
-import com.google.caja.util.RhinoTestBed;
 import com.google.caja.util.Sets;
 
 import java.net.URI;
@@ -47,206 +50,128 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import junit.framework.AssertionFailedError;
+
 /**
  *
  * @author mikesamuel@gmail.com
  */
 public class CssRewriterTest extends CajaTestCase {
-  public final void testUnknownTagsRemoved() throws Exception {
-    runTest("bogus { display: none }", "");
-    runTest("a, bogus, i { display: none }",
-            "a, i {\n  display: none\n}");
-  }
 
-  public final void testBadTagsRemoved() throws Exception {
-    runTest("script { display: none }", "");
-    assertMessage(
-        true, PluginMessageType.UNSAFE_TAG, MessageLevel.ERROR,
-        ElKey.forElement(Namespaces.HTML_DEFAULT, "script"));
-    assertNoErrors();
-    runTest("strike, script, strong { display: none }",
-            "strike, strong {\n  display: none\n}");  // See error
-    assertMessage(
-        true, PluginMessageType.UNSAFE_TAG, MessageLevel.ERROR,
-        ElKey.forElement(Namespaces.HTML_DEFAULT, "script"));
-    assertNoErrors();
-  }
+  public final void testCssRewriterEquivalence() throws Exception {
+    Expression tests = jsExpr(fromResource("css-stylesheet-tests.js"));
+    // tests is a JSONP style JavaScript expression.
+    // Normalize "foo" + "bar" -> "foo bar"
+    tests.acceptPostOrder(new Visitor() {
+      @Override
+      public boolean visit(AncestorChain<?> chain) {
+        if (Operation.is(chain.node, Operator.ADDITION)) {
+          Operation op = chain.cast(Operation.class).node;
+          Expression left = op.children().get(0);
+          Expression right = op.children().get(1);
+          if (left instanceof StringLiteral && right instanceof StringLiteral) {
+            StringLiteral concatenation = StringLiteral.valueOf(
+                FilePosition.span(
+                    left.getFilePosition(), right.getFilePosition()),
+                ((StringLiteral) left).getUnquotedValue()
+                + ((StringLiteral) right).getUnquotedValue());
+            chain.parent.cast(MutableParseTreeNode.class).node.replaceChild(
+                concatenation, op);
+          }
+        }
+        return true;
+      }
+    }, null);
 
-  public final void testBadAttribsRemoved() throws Exception {
-    runTest("div[zwop] { color: blue }", "");
-  }
+    AssertionFailedError failure = null;
 
-  public final void testInvalidPropertiesRemoved() throws Exception {
-    // visibility takes "hidden", not "none"
-    runTest("a { visibility: none }", "");
-    runTest("a { visibility: hidden; }", "a {\n  visibility: hidden\n}");
-    // no such property
-    runTest("a { bogus: bogus }", "");
-    // make sure it doesn't interfere with others
-    runTest("a { visibility: none; font-weight: bold }",
-            "a {\n  font-weight: bold\n}");
-    runTest("a { font-weight: bold; visibility: none }",
-            "a {\n  font-weight: bold\n}");
-    runTest("a { bogus: bogus; font-weight: bold }",
-            "a {\n  font-weight: bold\n}");
-    runTest("a { font-weight: bold; bogus: bogus }",
-            "a {\n  font-weight: bold\n}");
-  }
+    // InputSource for file positions in error message goldens.
+    is = new InputSource(new URI("test://example.org/test"));
 
-  public final void testContentRemoved() throws Exception {
-    runTest("a { color: blue; content: 'booyah'; text-decoration: underline; }",
-            "a {\n  color: blue;\n  text-decoration: underline\n}");
-  }
+    // Extract the JSON style-object from the call.
+    assertTrue(render(tests), Operation.is(tests, Operator.FUNCTION_CALL));
+    Operation call = (Operation) tests;
+    assertEquals(2, call.children().size());
+    Expression testArray = call.children().get(1);
+    // testArray is an array like
+    // [{ test_name: ..., tests: [] }]
+    for (Expression test : ((ArrayConstructor) testArray).children()) {
+      ObjectConstructor obj = (ObjectConstructor) test;
+      String name = (String)
+           ((ValueProperty) obj.propertyWithName("test_name"))
+           .getValueExpr().getValue();
+      ValueProperty testcases = (ValueProperty) obj.propertyWithName("tests");
+      // testcases is an object like
+      // [{ cssText: ..., golden: ..., messages: ... }]
+      for (Expression testCase
+           : ((ArrayConstructor) testcases.getValueExpr()).children()) {
+        ObjectConstructor testCaseObj = (ObjectConstructor) testCase;
+        String cssText = null;
+        String golden = null;
+        ArrayConstructor messages = null;
+        for (ObjProperty oprop : testCaseObj.children()) {
+          ValueProperty prop = (ValueProperty) oprop;
+          String pname = prop.getPropertyName();
+          try {
+            if ("cssText".equals(pname)) {
+              cssText = ((StringLiteral) prop.getValueExpr())
+                  .getUnquotedValue();
+            } else if ("golden".equals(pname)) {
+              golden = ((StringLiteral) prop.getValueExpr())
+                  .getUnquotedValue();
+            } else if ("messages".equals(pname)) {
+              messages = (ArrayConstructor) prop.getValueExpr();
+            } else {
+              fail(
+                  "Unrecognized testcase property " + pname + " in "
+                  + render(testCase) + " at " + testCase.getFilePosition());
+            }
+          } catch (RuntimeException ex) {
+            System.err.println(
+                "Type mismatch in " + name
+                + " at " + testCase.getFilePosition());
+            throw ex;
+          }
+        }
 
-  public final void testAttrRemoved() throws Exception {
-    runTest("a:attr(href) { color: blue }", "");
-    runTest("a:attr(href) { color: blue } b { font-weight: bolder }",
-            "b {\n  font-weight: bolder\n}");
-  }
-
-  public final void testFontNamesQuoted() throws Exception {
-    runTest("a { font:12pt Times  New Roman, Times,\"Times Old Roman\",serif }",
-            "a {\n  font: 12pt 'Times New Roman', 'Times',"
-            + " 'Times Old Roman', serif\n}");
-    runTest("a { font:bold 12pt Arial Black }",
-            "a {\n  font: bold 12pt 'Arial Black'\n}");
-  }
-
-  public final void testNamespacing() throws Exception {
-    runTest("a.foo { color:blue }", "a.foo {\n  color: blue\n}");
-    runTest("#foo { color: blue }", "#foo {\n  color: blue\n}");
-    runTest("body.ie6 p { color: blue }",
-            "body.ie6 p {\n  color: blue\n}");
-    runTest("body { margin: 0; }", "");  // Not allowed
-    runTest("body.ie6 { margin: 0; }", "");  // Not allowed
-    runTest("* html p { margin: 0; }", "* html p {\n  margin: 0\n}");
-    runTest("* html { margin: 0; }", "");  // Not allowed
-    runTest("* html > * > p { margin: 0; }", "");  // Not allowed
-    runTest("#foo > #bar { color: blue }",
-            "#foo > #bar {\n  color: blue\n}");
-    runTest("#foo .bar { color: blue }",
-            "#foo .bar {\n  color: blue\n}");
-  }
-
-  public final void testUnsafeIdentifiers() throws Exception {
-    runTest("a.foo, b#c\\2c d, .e { color:blue }",  // "\\2c " -> ","
-            "a.foo, .e {\n  color: blue\n}");
-    runTest("a.foo, .b_c {color: blue}",
-            "a.foo, .b_c {\n  color: blue\n}");
-    runTest("a.foo, ._c {color: blue}",
-            "a.foo {\n  color: blue\n}");
-    runTest("a._c {_color: blue; margin:0;}", "");
-    runTest("a#_c {_color: blue; margin:0;}", "");
-    runTest(".c__ {_color: blue; margin:0;}", "");
-    runTest("#c__ {_color: blue; margin:0;}", "");
-  }
-
-  public final void testPseudosWhitelisted() throws Exception {
-    runTest("a:link, a:badness { color:blue }",
-            "a:link {\n  color: blue\n}");
-    mq.getMessages().clear();
-    runTest("a:visited { color:blue }",
-            "a:visited {\n  color: blue\n}");
-    assertNoErrors();
-
-    // Properties that are on DOMita's HISTORY_INSENSITIVE_STYLE_WHITELIST
-    // should not be allowed in any rule that correlates with the :visited
-    // pseudo selector.
-    // TODO: How is this a whitelist then?
-    mq.getMessages().clear();
-    runTest(
-        "a:visited { color:blue; float:left; _float:left; *float:left }",
-        "a:visited {\n  color: blue\n}");
-    assertMessage(
-        PluginMessageType.DISALLOWED_CSS_PROPERTY_IN_SELECTOR,
-        MessageLevel.ERROR,
-        FilePosition.instance(is, 1, 25, 25, 5), Name.css("float"),
-        FilePosition.instance(is, 1, 1, 1, 9));
-    assertMessage(
-        PluginMessageType.DISALLOWED_CSS_PROPERTY_IN_SELECTOR,
-        MessageLevel.ERROR,
-        FilePosition.instance(is, 1, 37, 37, 6), Name.css("_float"),
-        FilePosition.instance(is, 1, 1, 1, 9));
-    assertMessage(
-        PluginMessageType.DISALLOWED_CSS_PROPERTY_IN_SELECTOR,
-        MessageLevel.ERROR,
-        FilePosition.instance(is, 1, 51, 51, 5), Name.css("float"),
-        FilePosition.instance(is, 1, 1, 1, 9));
-
-    runTest(
-        "a:visited { COLOR:blue; FLOAT:left; _FLOAT:left; *FLOAT:left }",
-        "a:visited {\n  color: blue\n}");
-
-    runTest(
-        "*:visited { color: blue; }",
-        "a:visited {\n  color: blue\n}");
-    runTest(
-        "#foo:visited { color: blue; }",
-        "a#foo:visited {\n  color: blue\n}");
-    runTest(
-        ".foo:link { color: blue; }",
-        "a.foo:link {\n  color: blue\n}");
-
-    runTest(
-        ""
-        + "#foo:visited, div, .bar:link, p {\n"
-        + "  padding: 1px;\n"
-        + "  color: blue;\n"
-        + "}",
-        ""
-        + "a#foo:visited, a.bar:link {\n"
-        + "  color: blue\n"
-        + "}\n"
-        + "div, p {\n"
-        + "  padding: 1px;\n"
-        + "  color: blue\n"
-        + "}");
-
-    runTest(
-        ""
-        + "a#foo-bank {"
-        + "  background: 'http://whitelisted-host.com/?bank=X&u=Al';"
-        + "  color: purple"
-        + "}",
-        ""
-        + "a#foo-bank {\n"
-        + "  background: url('http://whitelisted-host.com/?bank=X&u=Al');\n"
-        + "  color: purple\n"
-        + "}");
-    // Differs from the previous only in that it has the :visited pseudo
-    // selector which means we can't allow it to cause a network fetch because
-    // that could leak user history state.
-    mq.getMessages().clear();
-    runTest(
-        ""
-        + "a#foo-bank:visited {"
-        + "  background-image: 'http://whitelisted-host.com/?bank=X&u=Al';"
-        + "  color: purple"
-        + "}",
-        ""
-        + "a#foo-bank:visited {\n"
-        + "  color: purple\n"
-        + "}");
-  }
-
-  public final void testNoBadUrls() throws Exception {
-    // ok
-    runTest("#foo { background: url(/bar.png) }",
-            "#foo {\n  background: url('/foo/bar.png')\n}");
-    runTest("#foo { background: url('/bar.png') }",
-            "#foo {\n  background: url('/foo/bar.png')\n}");
-    runTest("#foo { background: '/bar.png' }",
-            "#foo {\n  background: url('/foo/bar.png')\n}");
-    runTest(
-        "#foo { background: 'http://whitelisted-host.com/blinky.gif' }",
-        "#foo {\n  background: url('http://whitelisted-host.com/blinky.gif')\n}"
-        );
-
-    // disallowed
-    runTest("#foo { background: url('http://cnn.com/bar.png') }",
-            "");
-    runTest("#foo { background: 'http://cnn.com/bar.png' }",
-            "");
+        mq.getMessages().clear();
+        try {
+          runTest(cssText, golden);
+          if (messages != null) {
+            for (Expression message : messages.children()) {
+              ObjectConstructor messageObj = (ObjectConstructor) message;
+              String type = ((StringLiteral)
+                  ((ValueProperty) messageObj.propertyWithName("type"))
+                  .getValueExpr())
+                  .getUnquotedValue();
+              String level = ((StringLiteral)
+                  ((ValueProperty) messageObj.propertyWithName("level"))
+                  .getValueExpr())
+                  .getUnquotedValue();
+              List<String> args = Lists.newArrayList();
+              ArrayConstructor argsArray = (ArrayConstructor)
+                  ((ValueProperty) messageObj.propertyWithName("args"))
+                  .getValueExpr();
+              for (Expression argExpr : argsArray.children()) {
+                args.add(((StringLiteral) argExpr).getUnquotedValue());
+              }
+              consumeMessage(message.getFilePosition(), type, level, args);
+            }
+            assertNoErrors();
+          }
+        } catch (Exception ex) {
+          System.err.println("Test " + name + "\n" + render(testCase));
+          throw ex;
+        } catch (AssertionFailedError ex) {
+          System.err.println("Test " + name + "\n" + render(testCase));
+          ex.printStackTrace();
+          if (failure == null) {
+            failure = ex;
+          }
+        }
+      }
+    }
+    if (failure != null) { throw failure; }
   }
 
   public final void testSubstitutions() throws Exception {
@@ -262,60 +187,7 @@ public class CssRewriterTest extends CajaTestCase {
             true);
   }
 
-  /**
-   * "*" selectors should rewrite properly.
-   * <a href="http://code.google.com/p/google-caja/issues/detail?id=57">bug</a>
-   */
-  public final void testWildcardSelectors() throws Exception {
-    runTest("div * { margin: 0; }", "div * {\n  margin: 0\n}", false);
-  }
-
-  public final void testUnitlessLengths() throws Exception {
-    runTest("div { padding: 10 0 5.0 4 }",
-            "div {\n  padding: 10px 0 5.0px 4px\n}", false);
-    runTest("div { margin: -5 5; z-index: 2 }",
-            "div {\n  margin: -5px 5px;\n  z-index: 2\n}", false);
-  }
-
-  public final void testUserAgentHacks() throws Exception {
-    runTest(
-        ""
-        + "p {\n"
-        + "  color: blue;\n"
-        + "  *color: red;\n"
-        + "  background-color: green;\n"
-        + "  *background-color: yelow;\n"  // misspelled
-        + "  font-weight: bold\n"
-        + "}",
-        ""
-        + "p {\n"
-        + "  color: blue;\n"
-        + "  *color: red;\n"  // Good user agent hack
-        + "  background-color: green;\n"
-        // Bad user-agent hack removed.
-        + "  font-weight: bold\n"
-        + "}"
-        );
-    assertMessage(PluginMessageType.MALFORMED_CSS_PROPERTY_VALUE,
-                  MessageLevel.WARNING,
-                  Name.css("background-color"),
-                  MessagePart.Factory.valueOf("==>yelow<=="));
-    runTest("a.c {_color: blue; margin:0;}",
-            "a.c {\n  _color: blue;\n  margin: 0\n}");
-    assertNoErrors();
-  }
-
   public final void testNonStandardColors() throws Exception {
-    runTest("a.c { color: LightSlateGray; background: ivory; }",
-            "a.c {\n  color: #789;\n  background: #fffff0\n}");
-    assertMessage(PluginMessageType.NON_STANDARD_COLOR,
-                  MessageLevel.LINT, Name.css("lightslategray"),
-                  MessagePart.Factory.valueOf("#789"));
-    assertMessage(PluginMessageType.NON_STANDARD_COLOR,
-                  MessageLevel.LINT, Name.css("ivory"),
-                  MessagePart.Factory.valueOf("#fffff0"));
-    assertNoErrors();
-
     FilePosition u = FilePosition.UNKNOWN;
     assertNull(CssRewriter.colorHash(u, Name.css("invisible")));
     // Can get color hashes even for standard colors.
@@ -334,19 +206,6 @@ public class CssRewriterTest extends CajaTestCase {
         "#111333", CssRewriter.colorHash(u, 0x112233 ^ 0x003100).getValue());
     assertEquals(
         "#112220", CssRewriter.colorHash(u, 0x112233 ^ 0x000013).getValue());
-  }
-
-  public final void testFixedPositioning() throws Exception {
-    runTest("#foo { position: absolute; left: 0px; top: 0px }",
-            "#foo {\n  position: absolute;\n  left: 0px;\n  top: 0px\n}");
-    assertNoErrors();
-    runTest("#foo { position: fixed; left: 0px; top: 0px }",
-            "#foo {\n  left: 0px;\n  top: 0px\n}");
-    // TODO(mikesamuel): fix message.  "fixed" is well-formed but disallowed.
-    assertMessage(true, PluginMessageType.MALFORMED_CSS_PROPERTY_VALUE,
-                  MessageLevel.WARNING, Name.css("position"),
-                  MessagePart.Factory.valueOf("==>fixed<=="));
-    assertNoErrors();
   }
 
   public final void testUrisCalledWithProperPropertyPart() throws Exception {
@@ -489,86 +348,6 @@ public class CssRewriterTest extends CajaTestCase {
     }
 
     assertEquals(msg, golden, render(t));
-
-    // Check that the server side rewriter is consistent with the client side
-    // rewriter.
-    // TODO: rewrite rules as well.
-    if (!allowSubstitutions) {
-      ArrayConstructor[] propArrays = new ArrayConstructor[2];
-      int i = 0;
-      for (CssTree tree : new CssTree[] { css(fromString(css)), t }) {
-        final List<StringLiteral> namesAndValues = Lists.newArrayList();
-        tree.acceptPreOrder(new Visitor() {
-          @Override
-          public boolean visit(AncestorChain<?> ac) {
-            String namePrefix;
-            CssTree.PropertyDeclaration d;
-            if (ac.node instanceof CssTree.UserAgentHack) {
-              namePrefix = "*";
-              d = ac.cast(CssTree.UserAgentHack.class).node.getDeclaration();
-            } else if (ac.node instanceof CssTree.PropertyDeclaration) {
-              namePrefix = "";
-              d = ac.cast(CssTree.PropertyDeclaration.class).node;
-            } else {
-              return true;
-            }
-            namesAndValues.add(StringLiteral.valueOf(
-                FilePosition.UNKNOWN,
-                namePrefix
-                + d.getProperty().getPropertyName().getCanonicalForm()));
-            namesAndValues.add(StringLiteral.valueOf(
-                FilePosition.UNKNOWN, render(d.getExpr())));
-            return false;
-          }
-        }, null);
-        propArrays[i++] = new ArrayConstructor(
-            FilePosition.UNKNOWN, namesAndValues);
-      }
-      ArrayConstructor input = propArrays[0];
-      ArrayConstructor want = propArrays[1];
-      String testJs = render(QuasiBuilder.substV(
-          Join.join("\n",
-              "(function () {",
-              "  var input = @input;",
-              "  var want = @want;",
-              "  var urlRewriter = function (url) { return null; };",
-              "  var actual = {}, golden = {};",
-              "  for (var i = 0; i < input.length; i += 2) {",
-              "    var tokens = lexCss(input[i+1]), name = input[i];",
-              "    sanitizeCssProperty(",
-              // Handle user agent hacks and undefined properties.
-              "        cssSchema[name.replace(/^[_*]/, '')] || {},",
-              "        tokens, urlRewriter);",
-              "    golden[name] = '';",
-              "    actual[name] = tokens.join(' ');",
-              "  }",
-              "  for (var i = 0; i < want.length; i += 2) {",
-              "    golden[want[i]] = want[i + 1];",
-              "  }",
-              "  golden = JSON.stringify(golden);",
-              "  actual = JSON.stringify(actual);",
-              "  if (golden !== actual) {",
-              "    throw new Error(golden + '\\n\\t!=\\n' + actual);",
-              "  }",
-              "})();"),
-          "input", input,
-          "want", want));
-      try {
-        RhinoTestBed.runJs(
-            new Executor.Input(getClass(), "css-defs.js"),
-            new Executor.Input(getClass(), "csslexer.js"),
-            new Executor.Input(getClass(), "sanitizecss.js"),
-            new Executor.Input(testJs, getName()));
-      } catch (RuntimeException ex) {
-        if (ex.getMessage().contains("}\n\t!=\n{")) {
-          // JavaScript inconsistencies are just advisory for now.
-          // TODO: start enforcing these.
-          System.err.println("WARNING:" + getName() + ":" + ex.getMessage());
-        } else {
-          throw ex;
-        }
-      }
-    }
   }
 
   private void assertCallsUriRewriterWithPropertyPart(
@@ -599,5 +378,40 @@ public class CssRewriterTest extends CajaTestCase {
     MoreAsserts.assertListsEqual(
         Arrays.asList(expectedParts),
         Lists.newArrayList(propertyParts));
+  }
+
+  private void consumeMessage(
+      FilePosition pos, final String type, final String level,
+      final List<String> parts) {
+    try {
+      assertMessage(
+          true,
+          new Function<Message, Integer>() {
+            @Override
+            public Integer apply(Message msg) {
+              int score = 0;
+              if (msg.getMessageType().name().equals(type)) { ++score; }
+              if (msg.getMessageLevel().name().equals(level)) { ++score; }
+              score -= partsMissing(msg, parts);
+              return (score == 2) ? Integer.MAX_VALUE : score;
+            }
+          }, "type=" + type + ", level=" + level);
+    } catch (AssertionFailedError err) {
+      System.err.println("Message specified at " + pos + " was not found");
+      throw err;
+    }
+  }
+
+  private static int partsMissing(Message msg, List<? extends String> parts) {
+    int missing = 0;
+    outerLoop:
+    for (String expectedPart : parts) {
+      for (MessagePart candidate : msg.getMessageParts()) {
+        String candidatePart = candidate.toString();
+        if (candidatePart.equals(expectedPart)) { continue outerLoop; }
+      }
+      ++missing;
+    }
+    return missing;
   }
 }
