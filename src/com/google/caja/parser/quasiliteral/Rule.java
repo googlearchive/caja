@@ -300,10 +300,11 @@ public abstract class Rule implements MessagePart {
   protected Pair<Expression, Expression> reuse(
       ParseTreeNode value, Scope scope) {
     Expression rhs = (Expression) rewriter.expand(value, scope);
-    if (rhs instanceof Reference || rhs instanceof Literal) {
+    if (noSideEffects(rhs)) {
       return new Pair<Expression, Expression>(
           rhs, Operation.undefined(FilePosition.UNKNOWN));
     }
+
     Expression tempRef = new Reference(
         scope.declareStartOfScopeTempVariable());
     Expression tempInit = (Expression) QuasiBuilder.substV(
@@ -311,6 +312,17 @@ public abstract class Rule implements MessagePart {
         "ref", tempRef,
         "rhs", rhs);
     return new Pair<Expression, Expression>(tempRef, tempInit);
+  }
+
+  private boolean noSideEffects(Expression e) {
+    if (e instanceof Reference) {
+      return true;
+    } else if (e instanceof Literal) {
+      return true;
+    } else {
+      // conservative answer
+      return false;
+    }
   }
 
   /**
@@ -323,19 +335,40 @@ public abstract class Rule implements MessagePart {
    */
   protected Pair<ParseTreeNodeContainer, Expression> reuseAll(
       ParseTreeNode arguments, Scope scope) {
+    Expression[] exp = new Expression[arguments.children().size()];
     List<ParseTreeNode> refs = Lists.newArrayList();
-    Expression[] inits = new Expression[arguments.children().size()];
 
-    for (int i = 0; i < arguments.children().size(); i++) {
-      Pair<Expression, Expression> p = reuse(
-          arguments.children().get(i), scope);
-      refs.add(p.a);
-      inits[i] = p.b;
+    boolean pure = true;
+    for (int i = 0; i < exp.length; i++) {
+      ParseTreeNode arg = arguments.children().get(i);
+      exp[i] = (Expression) rewriter.expand(arg, scope);
+      pure = pure && noSideEffects(exp[i]);
+    }
+
+    if (pure) {
+      // No arg has side-effects, so we can use the expansions directly.
+      for (int i = 0; i < exp.length; i++) {
+        refs.add(exp[i]);
+      }
+      return new Pair<ParseTreeNodeContainer, Expression>(
+          new ParseTreeNodeContainer(refs),
+          Operation.undefined(FilePosition.UNKNOWN));
+    }
+
+    for (int i = 0; i < exp.length; i++) {
+      Expression tempRef = new Reference(
+          scope.declareStartOfScopeTempVariable());
+      Expression tempInit = (Expression) QuasiBuilder.substV(
+          "@ref = @rhs;",
+          "ref", tempRef,
+          "rhs", exp[i]);
+      refs.add(tempRef);
+      exp[i] = tempInit;
     }
 
     return new Pair<ParseTreeNodeContainer, Expression>(
         new ParseTreeNodeContainer(refs),
-        commas(inits));
+        commas(exp));
   }
 
   /**

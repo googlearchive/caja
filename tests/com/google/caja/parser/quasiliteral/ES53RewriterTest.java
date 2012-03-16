@@ -14,14 +14,6 @@
 
 package com.google.caja.parser.quasiliteral;
 
-import java.io.IOException;
-import java.net.URI;
-import java.util.Arrays;
-import java.util.EnumSet;
-import java.util.List;
-
-import junit.framework.AssertionFailedError;
-
 import com.google.caja.lexer.ExternalReference;
 import com.google.caja.lexer.FetchedData;
 import com.google.caja.lexer.FilePosition;
@@ -45,9 +37,16 @@ import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessageType;
 import com.google.caja.reporting.TestBuildInfo;
 import com.google.caja.util.Executor;
-import com.google.caja.util.FailureIsAnOption;
 import com.google.caja.util.Lists;
 import com.google.caja.util.RhinoTestBed;
+
+import java.io.IOException;
+import java.net.URI;
+import java.util.Arrays;
+import java.util.EnumSet;
+import java.util.List;
+
+import junit.framework.AssertionFailedError;
 
 public class ES53RewriterTest extends CommonJsRewriterTestCase {
   protected class TestUriFetcher implements UriFetcher {
@@ -201,25 +200,41 @@ public class ES53RewriterTest extends CommonJsRewriterTestCase {
     assertConsistent("({ x: 1, y: 2 });");
   }
 
-  //TODO(erights): Fix these tests to test for the output we now expect.
-  @FailureIsAnOption
+  public final void testFunctionArgsWithSideEffects() throws Exception {
+    assertConsistent(
+        "(function() {\n" +
+        "  function f(a, b) { return a + ',' + b; }\n" +
+        "  var i = 0;\n" +
+        "  return f(i, i++);\n" +
+        "})();");
+  }
+
+  public final void testMethodArgsWithSideEffects() throws Exception {
+    assertConsistent(
+        "(function () {\n" +
+        "  var o = { f: function(a, b) { return a + ',' + b; } };\n" +
+        "  var i = 0;\n" +
+        "  return o.f(i, i++);\n" +
+        "})();");
+  }
+
   public final void testFunctionToStringCall() throws Exception {
     rewriteAndExecute(
         "function foo() {}\n"
-        + "assertEquals('function foo() {\\n  [cajoled code]\\n}',\n"
+        + "assertEquals('\\nfunction foo() {\\n}\\n',\n"
         + "             foo.toString());");
     rewriteAndExecute(
-        "function foo (a, b) { xx; }\n"
-        + "assertEquals('function foo(a, b) {\\n  [cajoled code]\\n}',\n"
+        "function foo (a, b) { 1; }\n"
+        + "assertEquals('\\nfunction foo(a, b) {\\n    1;\\n}\\n',\n"
         + "             foo.toString());");
     rewriteAndExecute(
         "function foo() {}\n"
-        + "assertEquals('function foo() {\\n  [cajoled code]\\n}',\n"
+        + "assertEquals('\\nfunction foo() {\\n}\\n',\n"
         + "             Function.prototype.toString.call(foo));");
     rewriteAndExecute(
         "var foo = function (x$x, y_y) {};\n"
         + "assertEquals("
-        + "    'function foo$_var(x$x, y_y) {\\n  [cajoled code]\\n}',\n"
+        + "    '\\nfunction foo$_var(x$x, y_y) {\\n}\\n',\n"
         + "    Function.prototype.toString.call(foo));");
   }
 
