@@ -308,7 +308,7 @@ function sanitizeCssSelectors(selectors) {
       while (start < end) {
         tok = selectors[start];
         if (tok.charAt(0) === '#') {
-          if (/^#_|__$/.test(tok)) { return null; }
+          if (/^#_|__$|[^#0-9A-Za-z:_\-]/.test(tok)) { return null; }
           classId += tok;
         } else if (tok === '.') {
           if (++start < end
@@ -449,7 +449,7 @@ var sanitizeStylesheet = (function () {
                   selector = 'head > html';
                   removeHistoryInsensitiveSelectors = true;
                 }
-                safeCss.push(selector);
+                safeCss.push(selector, '{');
               }
             }
             blockStack.push(
@@ -466,7 +466,7 @@ var sanitizeStylesheet = (function () {
                 // history sensitive case.
                 : {
                     historySensitiveSelectors: historySensitiveSelectors,
-                    endOfSelecctors: safeCss.length,
+                    endOfSelectors: safeCss.length - 1,  // 1 is open curly
                     removeHistoryInsensitiveSelectors:
                        removeHistoryInsensitiveSelectors
                   });
@@ -474,17 +474,21 @@ var sanitizeStylesheet = (function () {
           endRuleset: function () {
             var rules = blockStack.pop();
             var propertiesEnd = safeCss.length;
-            if (!elide && rules) {
-              var extraSelectors = rules.historySensitiveSelectors;
-              if (extraSelectors.length) {
-                var propertyGroupTokens = safeCss.slice(rules.endOfSelectors);
-                safeCss.push(extraSelectors.join(', '));
-                safeCss.push.apply(
-                    safeCss, sanitizeHistorySensitive(propertyGroupTokens));
+            if (!elide) {
+              safeCss.push('}');
+              if (rules) {
+                var extraSelectors = rules.historySensitiveSelectors;
+                if (extraSelectors.length) {
+                  var propertyGroupTokens = safeCss.slice(rules.endOfSelectors);
+                  safeCss.push(extraSelectors.join(', '),
+                               sanitizeHistorySensitive(propertyGroupTokens));
+                }
               }
             }
             if (rules && rules.removeHistoryInsensitiveSelectors) {
-              safeCss.splice(rules.endOfSelectors - 1, propertiesEnd);
+              safeCss.splice(
+                // -1 and +1 account for curly braces.
+                rules.endOfSelectors - 1, propertiesEnd + 1);
             }
             checkElide();
           },
@@ -502,8 +506,8 @@ var sanitizeStylesheet = (function () {
           }
         });
     function checkElide() {
-      elide = blockStack.length === 0 
-          || blockStack[blockStack.length-1] !== null;
+      elide = blockStack.length !== 0 
+          && blockStack[blockStack.length-1] !== null;
     }
     return safeCss.join('');
   };

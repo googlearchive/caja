@@ -173,9 +173,10 @@ var parseCssDeclarations;
     // Don't include any trailing space in the selector slice.
     if (e > s && toks[e-1] === ' ') { --e; }
     var tok = toks[i];
-    if (tok != '{') {
-      // Skip one token on a malformed declaration group.
-      return i+1;
+    ++i;  // Skip over '{'
+    if (tok !== '{') {
+      // Skips past the '{' when there is a malformed input.
+      return i;
     }
     if (handler.startRuleset) {
       handler.startRuleset(toks.slice(s, e));

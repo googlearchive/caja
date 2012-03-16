@@ -20,7 +20,7 @@
  * runtest call, you can parse the rest as a JSON object.
  */
 
-runTests([
+runCssSelectorTests([
   {
     "test_name": "UnknownTagsRemoved",
     "tests": [
@@ -30,7 +30,7 @@ runTests([
       },
       {
         "cssText": "a, bogus, i { display: none }",
-        "golden": "a, i {\n  display: none\n}"
+        "golden": "a, i{display:none}"
       }
     ]
   },
@@ -50,7 +50,7 @@ runTests([
       },
       {
         "cssText": "strike, script, strong { display: none }",
-        "golden": "strike, strong {\n  display: none\n}",
+        "golden": "strike, strong{display:none}",
         "messages": [
           {
             "type": "UNSAFE_TAG",
@@ -76,33 +76,37 @@ runTests([
       // visibility takes "hidden", not "none"
       {
         "cssText": "a { visibility: none }",
-        "golden": ""
+        "golden": "",
+        // The JS side emits an empty property group while the Java version
+        // does not.
+        "altGolden": "a{}"
       },
       {
         "cssText": "a { visibility: hidden; }", 
-        "golden": "a {\n  visibility: hidden\n}"
+        "golden": "a{visibility:hidden}"
       },
       // no such property
       {
         "cssText": "a { bogus: bogus }",
-        "golden": ""
+        "golden": "",
+        "altGolden": "a{}"
       },
       // make sure it doesn't interfere with others
       {
         "cssText": "a { visibility: none; font-weight: bold }",
-        "golden": "a {\n  font-weight: bold\n}"
+        "golden": "a{font-weight:bold}"
       },
       {
         "cssText": "a { font-weight: bold; visibility: none }",
-        "golden": "a {\n  font-weight: bold\n}"
+        "golden": "a{font-weight:bold}"
       },
       {
         "cssText": "a { bogus: bogus; font-weight: bold }",
-        "golden": "a {\n  font-weight: bold\n}"
+        "golden": "a{font-weight:bold}"
       },
       {
         "cssText": "a { font-weight: bold; bogus: bogus }",
-        "golden": "a {\n  font-weight: bold\n}"
+        "golden": "a{font-weight:bold}"
       }
     ]
   },
@@ -112,7 +116,7 @@ runTests([
       {
         "cssText":
           "a { color: blue; content: 'booyah'; text-decoration: underline; }",
-        "golden": "a {\n  color: blue;\n  text-decoration: underline\n}"
+        "golden": "a{color:blue;text-decoration:underline}"
       }
     ]
   },
@@ -125,7 +129,7 @@ runTests([
       },
       {
         "cssText": "a:attr(href) { color: blue } b { font-weight: bolder }",
-        "golden": "b {\n  font-weight: bolder\n}"
+        "golden": "b{font-weight:bolder}"
       }
     ]
   },
@@ -135,12 +139,15 @@ runTests([
       {
         "cssText":
           "a { font:12pt Times  New Roman, Times,\"Times Old Roman\",serif }",
-        "golden": "a {\n  font: 12pt 'Times New Roman', 'Times',"
-            + " 'Times Old Roman', serif\n}"
+        "golden": "a{font:12pt 'Times New Roman', 'Times',"
+            + " 'Times Old Roman', serif}",
+        "altGolden": 'a{font:12pt "times new roman" , "times" ,'
+            + ' "times old roman" , serif}'
       },
       {
         "cssText": "a { font:bold 12pt Arial Black }",
-        "golden": "a {\n  font: bold 12pt 'Arial Black'\n}"
+        "golden": "a{font:bold 12pt 'Arial Black'}",
+        "altGolden": 'a{font:bold 12pt "arial black"}'
       }
     ]
   },
@@ -149,15 +156,15 @@ runTests([
     "tests": [
       {
         "cssText": "a.foo { color:blue }",
-        "golden": "a.foo {\n  color: blue\n}"
+        "golden": "a.foo{color:blue}"
       },
       {
         "cssText": "#foo { color: blue }",
-        "golden": "#foo {\n  color: blue\n}"
+        "golden": "#foo{color:blue}"
       },
       {
         "cssText": "body.ie6 p { color: blue }",
-        "golden": "body.ie6 p {\n  color: blue\n}"
+        "golden": "body.ie6 p{color:blue}"
       },
       {
         "cssText": "body { margin: 0; }",
@@ -169,7 +176,7 @@ runTests([
       },  // Not allowed
       {
         "cssText": "* html p { margin: 0; }",
-        "golden": "* html p {\n  margin: 0\n}"
+        "golden": "* html p{margin:0}"
       },
       {
         "cssText": "* html { margin: 0; }",
@@ -181,11 +188,11 @@ runTests([
       },  // Not allowed
       {
         "cssText": "#foo > #bar { color: blue }",
-        "golden": "#foo > #bar {\n  color: blue\n}"
+        "golden": "#foo > #bar{color:blue}"
       },
       {
         "cssText": "#foo .bar { color: blue }",
-        "golden": "#foo .bar {\n  color: blue\n}"
+        "golden": "#foo .bar{color:blue}"
       }
     ]
   },
@@ -194,15 +201,15 @@ runTests([
     "tests": [
       {
         "cssText": "a.foo, b#c\\2c d, .e { color:blue }",  // "\\2c " -> ","
-        "golden": "a.foo, .e {\n  color: blue\n}"
+        "golden": "a.foo, .e{color:blue}"
       },
       {
         "cssText": "a.foo, .b_c {color: blue}",
-        "golden": "a.foo, .b_c {\n  color: blue\n}"
+        "golden": "a.foo, .b_c{color:blue}"
       },
       {
         "cssText": "a.foo, ._c {color: blue}",
-        "golden": "a.foo {\n  color: blue\n}"
+        "golden": "a.foo{color:blue}"
       },
       {
         "cssText": "a._c {_color: blue; margin:0;}",
@@ -227,11 +234,13 @@ runTests([
     "tests": [
       {
         "cssText": "a:link, a:badness { color:blue }",
-        "golden": "a:link {\n  color: blue\n}"
+        "golden": "a:link{color:blue}",
+        "altGolden": "a:link{}"  // TODO: Allow history sensitive in JS.
       },
       {
         "cssText": "a:visited { color:blue }",
-        "golden": "a:visited {\n  color: blue\n}",
+        "golden": "a:visited{color:blue}",
+        "altGolden": "a:visited{}",  // TODO: Allow history sensitive in JS.
         "messages": []
       },
 
@@ -242,7 +251,8 @@ runTests([
       {
         "cssText": 
           "a:visited { color:blue; float:left; _float:left; *float:left }",
-        "golden": "a:visited {\n  color: blue\n}",
+        "golden": "a:visited{color:blue}",
+        "altGolden": "a:visited{}",
         "messages": [
           {
             "type": "DISALLOWED_CSS_PROPERTY_IN_SELECTOR",
@@ -276,20 +286,24 @@ runTests([
       {
         "cssText":
           "a:visited { COLOR:blue; FLOAT:left; _FLOAT:left; *FLOAT:left }",
-        "golden": "a:visited {\n  color: blue\n}"
+        "golden": "a:visited{color:blue}",
+        "altGolden": "a:visited{}"  // TODO
       },
 
       {
         "cssText": "*:visited { color: blue; }",
-        "golden": "a:visited {\n  color: blue\n}"
+        "golden": "a:visited{color:blue}",
+        "altGolden": "a:visited{}"  // TODO
       },
       {
         "cssText": "#foo:visited { color: blue; }",
-        "golden": "a#foo:visited {\n  color: blue\n}"
+        "golden": "a#foo:visited{color:blue}",
+        "altGolden": "a#foo:visited{}"  // TODO
       },
       {
         "cssText": ".foo:link { color: blue; }",
-        "golden": "a.foo:link {\n  color: blue\n}"
+        "golden": "a.foo:link{color:blue}",
+        "altGolden": "a.foo:link{}"  // TODO
       },
 
       {
@@ -299,12 +313,20 @@ runTests([
         + "  color: blue;\n"
         + "}",
         "golden": ""
-        + "a#foo:visited, a.bar:link {\n"
-        + "  color: blue\n"
-        + "}\n"
-        + "div, p {\n"
-        + "  padding: 1px;\n"
-        + "  color: blue\n"
+        + "a#foo:visited, a.bar:link{"
+        +   "color:blue\n"
+        + "}"
+        + "div, p{"
+        +   "padding:1px;"
+        +   "color:blue"
+        + "}",
+        "altGolden": ""  // TODO: Fix difference in order in Java.
+        + "div, p{"
+        +   "padding:1px;"
+        +   "color:blue"
+        + "}"
+        + "a#foo:visited, a.bar:link{"
+        //+   "color:blue\n"  // TODO
         + "}"
       },
 
@@ -315,10 +337,12 @@ runTests([
         + "  color: purple"
         + "}",
         "golden": ""
-        + "a#foo-bank {\n"
-        + "  background: url('http://whitelisted-host.com/?bank=X&u=Al');\n"
-        + "  color: purple\n"
+        + "a#foo-bank{"
+        +   "background:url('http://whitelisted-host.com/?bank=X&u=Al');"
+        +   "color:purple"
         + "}",
+        // TODO: integrate URL policy into CSS sanitizer.
+        "altGolden": "a#foo-bank{color:purple}",
         "messages": []
       },
       // Differs from the previous only in that it has the :visited pseudo
@@ -331,10 +355,8 @@ runTests([
         + "  background-image: 'http://whitelisted-host.com/?bank=X&u=Al';"
         + "  color: purple"
         + "}",
-        "golden": ""
-        + "a#foo-bank:visited {\n"
-        + "  color: purple\n"
-        + "}"
+        "golden": "a#foo-bank:visited{color:purple}",
+        "altGolden": "a#foo-bank:visited{}" // TODO
       }
     ]
   },
@@ -344,31 +366,42 @@ runTests([
       // ok
       {
         "cssText": "#foo { background: url(/bar.png) }",
-        "golden": "#foo {\n  background: url('/foo/bar.png')\n}"
+        "golden": "#foo{background:url('/foo/bar.png')}",
+        //"altGolden": '#foo{backgroud:url("/foo/bar.png")}'  TODO
+        "altGolden": '#foo{}'
       },
       {
         "cssText": "#foo { background: url('/bar.png') }",
-        "golden": "#foo {\n  background: url('/foo/bar.png')\n}"
+        "golden": "#foo{background:url('/foo/bar.png')}",
+        //"altGolden": '#foo{background:url("/foo/bar.png")}'  TODO
+        "altGolden": '#foo{}'
       },
       {
         "cssText": "#foo { background: '/bar.png' }",
-        "golden": "#foo {\n  background: url('/foo/bar.png')\n}"
+        "golden": "#foo{background:url('/foo/bar.png')}",
+        //"altGolden": '#foo{background:url("/foo/bar.png")}'  TODO
+        "altGolden": '#foo{}'
       },
       {
         "cssText":
           "#foo { background: 'http://whitelisted-host.com/blinky.gif' }",
         "golden":
-          "#foo {\n  background: url('http://whitelisted-host.com/blinky.gif')\n}"
+          "#foo{background:url('http://whitelisted-host.com/blinky.gif')}",
+        "altGolden":
+//        '#foo{background:url("http://whitelisted-host.com/blinky.gif")}'
+          '#foo{}'
       },
 
       // disallowed
       {
         "cssText": "#foo { background: url('http://cnn.com/bar.png') }",
-        "golden": ""
+        "golden": "",
+        "altGolden": "#foo{}"
       },
       {
         "cssText": "#foo { background: 'http://cnn.com/bar.png' }",
-        "golden": ""
+        "golden": "",
+        "altGolden": "#foo{}"
       }
     ]
   },
@@ -379,7 +412,7 @@ runTests([
     "tests": [
       {
         "cssText": "div * { margin: 0; }",
-        "golden": "div * {\n  margin: 0\n}"
+        "golden": "div *{margin:0}"
       }
     ]
   },
@@ -388,11 +421,13 @@ runTests([
     "tests": [
       {
         "cssText": "div { padding: 10 0 5.0 4 }",
-        "golden": "div {\n  padding: 10px 0 5.0px 4px\n}"
+        "golden": "div{padding:10px 0 5.0px 4px}",
+        "altGolden": "div{padding:10 0 5.0 4}"
       },
       {
         "cssText": "div { margin: -5 5; z-index: 2 }",
-        "golden": "div {\n  margin: -5px 5px;\n  z-index: 2\n}"
+        "golden": "div{margin:-5px 5px;z-index:2}",
+        "altGolden": "div{margin:-5 5;z-index:2}"
       }
     ]
   },
@@ -409,12 +444,21 @@ runTests([
         + "  font-weight: bold\n"
         + "}",
         "golden": ""
-        + "p {\n"
-        + "  color: blue;\n"
-        + "  *color: red;\n"  // Good user agent hack
-        + "  background-color: green;\n"
+        + "p{"
+        +   "color:blue;"
+        +   "*color:red;"  // Good user agent hack
+        +   "background-color:green;"
         // Bad user-agent hack removed.
-        + "  font-weight: bold\n"
+        +   "font-weight:bold"
+        + "}",
+        "altGolden": ""
+        + "p{"
+        +   "color:blue;"
+        // TODO: Implement support for user-agent hacks.
+        //+   "*color:red;"  // Good user agent hack
+        +   "background-color:green;"
+        // Bad user-agent hack removed.
+        +   "font-weight:bold"
         + "}",
         "messages": [
           {
@@ -429,7 +473,9 @@ runTests([
       },
       {
         "cssText": "a.c {_color: blue; margin:0;}",
-        "golden": "a.c {\n  _color: blue;\n  margin: 0\n}",
+        "golden": "a.c{_color:blue;margin:0}",
+        // TODO: implement user agent hacks
+        "altGolden": "a.c{margin:0}",
         "messages": []
       }
     ]
@@ -440,6 +486,8 @@ runTests([
       {
         "cssText": "a.c { color: LightSlateGray; background: ivory; }",
         "golden": "a.c {\n  color: #789;\n  background: #fffff0\n}",
+        // TODO: see if special color names work when quoted.
+        "altGolden": "a.c{color:lightslategray;background:ivory}",
         "messages": [
           {
             "type": "NON_STANDARD_COLOR",
@@ -466,12 +514,12 @@ runTests([
     "tests": [
       {
         "cssText": "#foo { position: absolute; left: 0px; top: 0px }",
-        "golden": "#foo {\n  position: absolute;\n  left: 0px;\n  top: 0px\n}",
+        "golden": "#foo{position:absolute;left:0px;top:0px}",
         "messages": []
       },
       {
         "cssText": "#foo { position: fixed; left: 0px; top: 0px }",
-        "golden": "#foo {\n  left: 0px;\n  top: 0px\n}",
+        "golden": "#foo{left:0px;top:0px}",
         "messages": [
           // TODO(mikesamuel): fix message.
           // "fixed" is well-formed but disallowed.

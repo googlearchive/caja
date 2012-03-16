@@ -121,6 +121,8 @@ public class CssRewriterTest extends CajaTestCase {
                   .getUnquotedValue();
             } else if ("messages".equals(pname)) {
               messages = (ArrayConstructor) prop.getValueExpr();
+            } else if ("altGolden".equals(pname)) {
+              // OK.
             } else {
               fail(
                   "Unrecognized testcase property " + pname + " in "
@@ -134,9 +136,12 @@ public class CssRewriterTest extends CajaTestCase {
           }
         }
 
+        String normalizedGolden = "".equals(golden)
+            ? "" : render(css(fromString(golden)));
+
         mq.getMessages().clear();
         try {
-          runTest(cssText, golden);
+          runTest(cssText, normalizedGolden);
           if (messages != null) {
             for (Expression message : messages.children()) {
               ObjectConstructor messageObj = (ObjectConstructor) message;
