@@ -27,4 +27,8 @@ public final class JsHtmlSanitizerTest extends CajaTestCase {
     RhinoTestBed.runJsUnittestFromHtml(
         html(fromResource("html-sanitizer-test.html")));
   }
+  public final void testHtmlCssSanitizer() throws Exception {
+    RhinoTestBed.runJsUnittestFromHtml(
+        html(fromResource("html-css-sanitizer-test.html")));
+  }
 }

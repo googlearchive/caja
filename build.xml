@@ -807,6 +807,18 @@
       <input file="${src.caja}/plugin/html-sanitizer.js"/>
     </transform>
     <transform>
+      <output file="${lib.caja}/plugin/html-css-sanitizer-minified.js"
+       language="javascript" renderer="minify"/>
+      <output file="${lib.caja}/plugin/html-css-sanitizer-bundle.js"
+       language="javascript" renderer="concat"/>
+      <input file="${lib.caja}/plugin/css-defs.js"/>
+      <input file="${src.caja}/plugin/csslexer.js"/>
+      <input file="${src.caja}/plugin/sanitizecss.js"/>
+      <input file="${src.caja}/plugin/cssparser.js"/>
+      <input file="${lib.caja}/plugin/html4-defs.js"/>
+      <input file="${src.caja}/plugin/html-sanitizer.js"/>
+    </transform>
+    <transform>
       <output file="${lib}/es53-taming-frame.jslint.stamp"
        language="jslint"/>
       <output file="${lib.caja}/plugin/es53-taming-frame.opt.js"

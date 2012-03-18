@@ -22,6 +22,7 @@
  *
  * @author mikesamuel@gmail.com
  * \@requires html4
+ * \@requires parseCssDeclarations, sanitizeCssProperty,  cssSchema
  * \@overrides window
  * \@provides html, html_sanitize
  */
@@ -509,8 +510,36 @@ var html = (function(html4) {
         switch (atype) {
           case html4.atype.NONE: break;
           case html4.atype.SCRIPT:
-          case html4.atype.STYLE:
             value = null;
+            break;
+          case html4.atype.STYLE:
+            if ('undefined' === typeof parseCssDeclarations) {
+              value = null;
+              break;
+            }
+            var sanitizedDeclarations = [];
+            parseCssDeclarations(
+                value,
+                {
+                  declaration: function (property, tokens) {
+                    var normProp = property.toLowerCase();
+                    var schema = cssSchema[normProp];
+                    if (!schema) {
+                      return;
+                    }
+                    sanitizeCssProperty(
+                        schema, tokens,
+                        opt_uriPolicy
+                        ? function (url) {
+                            return opt_uriPolicy(
+                                url, html4.ueffects.SAME_DOCUMENT,
+                                html4.ltypes.SANDBOXED, { "CSS_PROP": normProp });
+                          }
+                        : null);
+                    sanitizedDeclarations.push(property + ': ' + tokens.join(' '));
+                  }
+                });
+            value = sanitizedDeclarations.length > 0 ? sanitizedDeclarations.join(' ; ') : null;
             break;
           case html4.atype.ID:
           case html4.atype.IDREF:
