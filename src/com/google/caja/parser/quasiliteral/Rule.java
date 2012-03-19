@@ -45,10 +45,10 @@ import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.Callback;
 import com.google.caja.util.Lists;
 import com.google.caja.util.Maps;
-import com.google.caja.util.Pair;
 
 import java.io.IOException;
 import java.lang.reflect.Method;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -291,87 +291,6 @@ public abstract class Rule implements MessagePart {
   }
 
   /**
-   * Returns a pair of a reusable expression and an initializing expression that
-   * together represent the reusable expansion of the <tt>value</tt> expression.
-   * <p>
-   * In the expansion context, the initializing expression must be executed
-   * exactly once and prior to evaluating the reusable expression.
-   */
-  protected Pair<Expression, Expression> reuse(
-      ParseTreeNode value, Scope scope) {
-    Expression rhs = (Expression) rewriter.expand(value, scope);
-    if (noSideEffects(rhs)) {
-      return new Pair<Expression, Expression>(
-          rhs, Operation.undefined(FilePosition.UNKNOWN));
-    }
-
-    Expression tempRef = new Reference(
-        scope.declareStartOfScopeTempVariable());
-    Expression tempInit = (Expression) QuasiBuilder.substV(
-        "@ref = @rhs;",
-        "ref", tempRef,
-        "rhs", rhs);
-    return new Pair<Expression, Expression>(tempRef, tempInit);
-  }
-
-  private boolean noSideEffects(Expression e) {
-    if (e instanceof Reference) {
-      return true;
-    } else if (e instanceof Literal) {
-      return true;
-    } else {
-      // conservative answer
-      return false;
-    }
-  }
-
-  /**
-   * Returns a pair of a reusable expression list and an initializing
-   * expression that together represent the reusable expansion of the
-   * <tt>arguments</tt> expression list.
-   * <p>
-   * In the expansion context, the initializing expression must be executed
-   * exactly once and prior to evaluating the reusable expression.
-   */
-  protected Pair<ParseTreeNodeContainer, Expression> reuseAll(
-      ParseTreeNode arguments, Scope scope) {
-    Expression[] exp = new Expression[arguments.children().size()];
-    List<ParseTreeNode> refs = Lists.newArrayList();
-
-    boolean pure = true;
-    for (int i = 0; i < exp.length; i++) {
-      ParseTreeNode arg = arguments.children().get(i);
-      exp[i] = (Expression) rewriter.expand(arg, scope);
-      pure = pure && noSideEffects(exp[i]);
-    }
-
-    if (pure) {
-      // No arg has side-effects, so we can use the expansions directly.
-      for (int i = 0; i < exp.length; i++) {
-        refs.add(exp[i]);
-      }
-      return new Pair<ParseTreeNodeContainer, Expression>(
-          new ParseTreeNodeContainer(refs),
-          Operation.undefined(FilePosition.UNKNOWN));
-    }
-
-    for (int i = 0; i < exp.length; i++) {
-      Expression tempRef = new Reference(
-          scope.declareStartOfScopeTempVariable());
-      Expression tempInit = (Expression) QuasiBuilder.substV(
-          "@ref = @rhs;",
-          "ref", tempRef,
-          "rhs", exp[i]);
-      refs.add(tempRef);
-      exp[i] = tempInit;
-    }
-
-    return new Pair<ParseTreeNodeContainer, Expression>(
-        new ParseTreeNodeContainer(refs),
-        commas(exp));
-  }
-
-  /**
    * Return a name suitable for naming a function derived from <tt>node</tt>, where
    * the name is derived from baseName and optionally ext, is distinct from baseName,
    * and is probably not used within <tt>node</tt>.
@@ -604,12 +523,12 @@ public abstract class Rule implements MessagePart {
                         || isImportsReference(uncajoledObject))) {
       object = (Reference) uncajoledObject;
     } else {
-      Identifier tmpVar = scope.declareStartOfScopeTempVariable();
+      Reference tmpVar = scope.declareStartOfScopeTemp();
       temporaries.add((Expression) QuasiBuilder.substV(
           "@tmpVar = @left;",
-          "tmpVar", new Reference(tmpVar),
+          "tmpVar", tmpVar,
           "left", rewriter.expand(uncajoledObject, scope)));
-      object = new Reference(tmpVar);
+      object = tmpVar;
     }
 
     // Don't bother to generate a temporary for a simple value like 'foo'
@@ -617,8 +536,8 @@ public abstract class Rule implements MessagePart {
       key = uncajoledKey;
     } else {
       ParseTreeNode rightExpanded = rewriter.expand(uncajoledKey, scope);
-      Identifier tmpVar = scope.declareStartOfScopeTempVariable();
-      key = new Reference(tmpVar);
+      Reference tmpVar = scope.declareStartOfScopeTemp();
+      key = tmpVar;
       if (QuasiBuilder.match("@s&(-1>>>1)", rightExpanded)) {
         // TODO(metaweta): Figure out a way to leave key alone and
         // protect propertyAccess from rewriting instead.
@@ -626,7 +545,7 @@ public abstract class Rule implements MessagePart {
       }
       temporaries.add((Expression) QuasiBuilder.substV(
           "@tmpVar = @right;",
-          "tmpVar", new Reference(tmpVar),
+          "tmpVar", tmpVar,
           "right", rightExpanded));
     }
 
@@ -719,6 +638,99 @@ public abstract class Rule implements MessagePart {
       Operation e = Operation.createInfix(Operator.ASSIGN, this.uncajoled, rhs);
       rewriter.setTaint(e);
       return e;
+    }
+  }
+
+  /**
+   * Sometimes a rewrite rule needs to emit an expression twice,
+   * which might do the wrong thing if the expression has side effects.
+   * So we generate temp variables to hold the value of the expressions,
+   * and repeat the temp variables instead.
+   * <p>
+   * If all the expressions are idempotent and efficient (eg, literals),
+   * then we don't generate temps, and we use the expressions as-is.
+   */
+  protected final class Reusable {
+    private final Scope scope;
+    private ParseTreeNode[] expressions;
+    private Expression[] refs;
+    private Expression[] inits;
+
+    public Reusable(Scope scope, ParseTreeNode... expressions) {
+      this.scope = scope;
+      this.expressions = expressions;
+    }
+
+    public void addChildren(ParseTreeNode list) {
+      int n = list.children().size();
+      int oldSize = expressions.length;
+      expressions = Arrays.copyOf(expressions, oldSize + n);
+      for (int i = 0; i < n; i++) {
+        expressions[oldSize + i] = list.children().get(i);
+      }
+    }
+
+    // Generate the reusable value references, returning this.
+    public Reusable generate() {
+      refs = new Expression[expressions.length];
+      inits = new Expression[expressions.length];
+      boolean needTemps = false;
+      for (int i = 0; i < expressions.length; i++) {
+        Expression value = (Expression) rewriter.expand(expressions[i], scope);
+        if (canWeaklyReuse(value)) {
+          refs[i] = value;
+          inits[i] = null;
+        } else {
+          needTemps = true;
+          makeTemp(i, value);
+        }
+      }
+      for (int i = 0; i < expressions.length; i++) {
+        if (inits[i] == null) {
+          if (needTemps && !canAlwaysReuse(refs[i])) {
+            makeTemp(i, refs[i]);
+          } else {
+            inits[i] = Operation.undefined(FilePosition.UNKNOWN);
+          }
+        }
+      }
+      return this;
+    }
+
+    // Returns an expression that initializes all generated temp vars.
+    public Expression init() {
+      return commas(inits);
+    }
+
+    // Returns a value reference for the i'th value.
+    public Expression ref(int i) {
+      return refs[i];
+    }
+
+    // Returns a list of value references starting at the i'th value.
+    public ParseTreeNodeContainer refListFrom(int i) {
+      return new ParseTreeNodeContainer(
+          Arrays.asList(Arrays.copyOfRange(refs, i, refs.length)));
+    }
+
+    private void makeTemp(int i, Expression value) {
+      Reference temp = scope.declareStartOfScopeTemp();
+      refs[i] = temp;
+      inits[i] = (Expression) QuasiBuilder.substV(
+          "@temp = @value",
+          "temp", temp,
+          "value", value);
+    }
+
+    // true when e can be repeated without a temp var, as long as no
+    // side-effecting expressions get moved into an init clause.
+    private boolean canWeaklyReuse(Expression e) {
+      return e instanceof Literal || e instanceof Reference;
+    }
+
+    // true when e can always be repeated without a temp var.
+    private boolean canAlwaysReuse(Expression e) {
+      return e instanceof Literal;
     }
   }
 

@@ -69,7 +69,6 @@ import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.util.Lists;
-import com.google.caja.util.Pair;
 import com.google.caja.util.Sets;
 
 import java.net.URI;
@@ -527,12 +526,9 @@ public class ES53Rewriter extends Rewriter {
             // start of scope.
             scope.addStartOfScopeStatement((Statement) expand(d, scope));
           }
-          Reference m = new Reference(
-              scope.declareStartOfScopeTempVariable());
-          Reference kt = new Reference(
-              scope.declareStartOfScopeTempVariable());
-          Reference ot = new Reference(
-              scope.declareStartOfScopeTempVariable());
+          Reference m = scope.declareStartOfScopeTemp();
+          Reference kt = scope.declareStartOfScopeTemp();
+          Reference ot = scope.declareStartOfScopeTemp();
 
           FilePosition unk = FilePosition.UNKNOWN;
           Expression assign1 = Operation.create(unk, Operator.ASSIGN, k, kt);
@@ -853,11 +849,12 @@ public class ES53Rewriter extends Rewriter {
       public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
         Map<String, ParseTreeNode> bindings = match(node);
         if (bindings != null) {
-          Pair<Expression, Expression> oPair = reuse(bindings.get("o"), scope);
           Reference p = (Reference) bindings.get("p");
           String propertyName = p.getIdentifierName();
-          return commas(oPair.b, (Expression) substV(
-              "oRef", oPair.a,
+          Reusable ru = new Reusable(scope, bindings.get("o"));
+          ru.generate();
+          return commas(ru.init(), (Expression) substV(
+              "oRef", ru.ref(0),
               "p",    noexpand(p),
               "fp",   newReference(p.getFilePosition(),
                                    propertyName + "_v___"),
@@ -1083,17 +1080,16 @@ public class ES53Rewriter extends Rewriter {
       public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
         Map<String, ParseTreeNode> bindings = match(node);
         if (bindings != null) {
-          Pair<Expression, Expression> oPair = reuse(bindings.get("o"), scope);
           Reference p = (Reference) bindings.get("p");
           String propertyName = p.getIdentifierName();
-          ParseTreeNode r = bindings.get("r");
-          Pair<Expression, Expression> rPair =
-              reuse(nymize(r, propertyName, "meth"), scope);
-          return commas(oPair.b, rPair.b, (Expression) QuasiBuilder.substV(
+          ParseTreeNode r = nymize(bindings.get("r"), propertyName, "meth");
+          Reusable ru = new Reusable(scope, bindings.get("o"), r);
+          ru.generate();
+          return commas(ru.init(), (Expression) QuasiBuilder.substV(
               "@oRef.@pWritable === @oRef ? (@oRef.@p = @rRef) : " +
               "                           @oRef.w___(@pName, @rRef);",
-              "oRef", oPair.a,
-              "rRef", rPair.a,
+              "oRef", ru.ref(0),
+              "rRef", ru.ref(1),
               "pWritable", newReference(UNK, propertyName + "_w___"),
               "p", noexpand(p),
               "pName", toStringLiteral(p)));
@@ -1113,16 +1109,15 @@ public class ES53Rewriter extends Rewriter {
       public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
         Map<String, ParseTreeNode> bindings = match(node);
         if (bindings != null) {
-          Pair<Expression, Expression> oPair = reuse(bindings.get("o"), scope);
           Expression p = (Expression) bindings.get("p");
-          ParseTreeNode r = bindings.get("r");
-          Pair<Expression, Expression> rPair =
-              reuse(nymize(r, "", "meth"), scope);
-          return commas(oPair.b, rPair.b, (Expression) QuasiBuilder.substV(
+          ParseTreeNode r = nymize(bindings.get("r"), "", "meth");
+          Reusable ru = new Reusable(scope, bindings.get("o"), r);
+          ru.generate();
+          return commas(ru.init(), (Expression) QuasiBuilder.substV(
               "@oRef.NUM____w___ === @oRef ? (@oRef[+@p] = @rRef) : " +
               "                           @oRef.w___(+@p, @rRef);",
-              "oRef", oPair.a,
-              "rRef", rPair.a,
+              "oRef", ru.ref(0),
+              "rRef", ru.ref(1),
               "p", expand(p, scope)));
         }
         return NONE;
@@ -1142,17 +1137,16 @@ public class ES53Rewriter extends Rewriter {
         if (bindings != null) {
           ParseTreeNode index = bindings.get("numLiteral");
           if (index instanceof NumberLiteral) {
-            Pair<Expression, Expression> oPair =
-                reuse(bindings.get("o"), scope);
-            ParseTreeNode r = bindings.get("r");
-            Pair<Expression, Expression> rPair =
-                reuse(nymize(r, index.toString(), "meth"), scope);
-            return commas(oPair.b, rPair.b, (Expression) QuasiBuilder.substV(
+            ParseTreeNode r = nymize(
+                bindings.get("r"), index.toString(), "meth");
+            Reusable ru = new Reusable(scope, bindings.get("o"), r);
+            ru.generate();
+            return commas(ru.init(), (Expression) QuasiBuilder.substV(
                 "(@oRef.NUM____w___ === @oRef) ? " +
                 "    (@oRef[@numLiteral] = @rRef) : " +
                 "    @oRef.w___(@numLiteral, @rRef);",
-                "oRef", oPair.a,
-                "rRef", rPair.a,
+                "oRef", ru.ref(0),
+                "rRef", ru.ref(1),
                 "numLiteral", noexpand((NumberLiteral)index)));
           }
         }
@@ -1380,8 +1374,7 @@ public class ES53Rewriter extends Rewriter {
             if (ops.isSimpleLValue()) {
               return QuasiBuilder.substV("@v ++", "v", ops.getCajoledLValue());
             } else {
-              Reference tmpVal = new Reference(
-                  scope.declareStartOfScopeTempVariable());
+              Reference tmpVal = scope.declareStartOfScopeTemp();
               Expression assign = (Expression) expand(
                   ops.makeAssignment((Expression) QuasiBuilder.substV(
                       "@tmpVal + 1", "tmpVal", tmpVal)),
@@ -1612,15 +1605,15 @@ public class ES53Rewriter extends Rewriter {
       public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
         Map<String, ParseTreeNode> bindings = match(node);
         if (bindings != null) {
-          Pair<Expression, Expression> oPair = reuse(bindings.get("o"), scope);
           Reference m = (Reference) bindings.get("m");
-          Pair<ParseTreeNodeContainer, Expression> argsPair =
-              reuseAll(bindings.get("as"), scope);
           String methodName = m.getIdentifierName();
-          return commas(oPair.b, argsPair.b, (Expression) QuasiBuilder.substV(
+          Reusable ru = new Reusable(scope, bindings.get("o"));
+          ru.addChildren(bindings.get("as"));
+          ru.generate();
+          return commas(ru.init(), (Expression) QuasiBuilder.substV(
               "@oRef.@fm ? @oRef.@m(@argRefs*) : @oRef.m___(@rm, [@argRefs*]);",
-              "oRef",    oPair.a,
-              "argRefs", argsPair.a,
+              "oRef",    ru.ref(0),
+              "argRefs", ru.refListFrom(1),
               "m",       noexpand(m),
               "fm",      newReference(UNK, methodName + "_m___"),
               "rm",      toStringLiteral(m)));

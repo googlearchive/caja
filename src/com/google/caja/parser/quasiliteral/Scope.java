@@ -307,6 +307,10 @@ public class Scope {
     return id;
   }
 
+  public Reference declareStartOfScopeTemp() {
+    return new Reference(declareStartOfScopeTempVariable());
+  }
+
   /**
    * Add a variable declaration to the start of the closest enclosing true
    * scope.

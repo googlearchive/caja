@@ -200,21 +200,53 @@ public class ES53RewriterTest extends CommonJsRewriterTestCase {
     assertConsistent("({ x: 1, y: 2 });");
   }
 
-  public final void testFunctionArgsWithSideEffects() throws Exception {
+  public final void testFunctionCallWithSideEffects() throws Exception {
     assertConsistent(
         "(function() {\n" +
-        "  function f(a, b) { return a + ',' + b; }\n" +
+        "  function f(a, b, c) { return '' + [a, b, c]; }\n" +
         "  var i = 0;\n" +
-        "  return f(i, i++);\n" +
+        "  return f(f = 208, i, i++);\n" +
         "})();");
   }
 
-  public final void testMethodArgsWithSideEffects() throws Exception {
+  public final void testMethodCallWithSideEffects() throws Exception {
     assertConsistent(
         "(function () {\n" +
-        "  var o = { f: function(a, b) { return a + ',' + b; } };\n" +
+        "  var o = { f: function(a, b, c) { return '' + [a, b, c]; } };\n" +
         "  var i = 0;\n" +
-        "  return o.f(i, i++);\n" +
+        "  return o.f(o = 217, i, i++);\n" +
+        "})();");
+  }
+
+  public final void testPropertyAssignmentWithSideEffects() throws Exception {
+    assertConsistent(
+        "(function () {\n" +
+        "  var o = {};\n" +
+        "  return o.x = (o = 225);\n" +
+        "})();");
+  }
+
+  public final void testArrayAssignmentWithSideEffects1() throws Exception {
+    assertConsistent(
+        "(function () {\n" +
+        "  var a = [];\n" +
+        "  return a['3'] = (a = 233);\n" +
+        "})();");
+  }
+
+  public final void testArrayAssignmentWithSideEffects2() throws Exception {
+    assertConsistent(
+        "(function () {\n" +
+        "  var a = [];\n" +
+        "  return a[+'3'] = (a = 241);\n" +
+        "})();");
+  }
+
+  public final void testArrayAssignmentWithSideEffects3() throws Exception {
+    assertConsistent(
+        "(function () {\n" +
+        "  var a = [];\n" +
+        "  return a[3] = (a = 249);\n" +
         "})();");
   }
 

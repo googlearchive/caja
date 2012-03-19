@@ -164,17 +164,17 @@ public class InnocentCodeRewriter extends Rewriter {
           return NONE;
         }
 
-        Identifier kTemp = scope.declareStartOfScopeTempVariable();
+        Reference kTemp = scope.declareStartOfScopeTemp();
         ParseTreeNode kAssignment = QuasiBuilder.substV(
             "@k = @kTempRef;",
             "k", bindings.get("k"),
-            "kTempRef", new Reference(kTemp));
+            "kTempRef", kTemp);
         kAssignment = expandAll(kAssignment, scope);
         kAssignment = newExprStmt((Expression) kAssignment);
 
         return substV(
-            "kTempStmt", newExprStmt(new Reference(kTemp)),
-            "kTempRef", new Reference(kTemp),
+            "kTempStmt", newExprStmt(kTemp),
+            "kTempRef", kTemp,
             "o", bindings.get("o"),
             "kAssignment", kAssignment,
             "ss", expandAll(bindings.get("ss"), scope));
