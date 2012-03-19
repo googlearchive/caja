@@ -19,8 +19,13 @@
  * <p>
  * The HTML sanitizer is built around a SAX parser and HTML element and
  * attributes schemas.
+ * 
+ * If the cssparser is loaded, inline styles are sanitized using the
+ * css property and value schemas.  Else they are remove during
+ * sanitization.
  *
  * @author mikesamuel@gmail.com
+ * @author jasvir@gmail.com
  * \@requires html4
  * \@requires parseCssDeclarations, sanitizeCssProperty,  cssSchema
  * \@overrides window
