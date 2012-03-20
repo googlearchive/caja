@@ -71,7 +71,7 @@ jsunit.pass = function(opt_id) {
 
 jsunit.updateStatus = function() {
   var status = '';
-  if (!jsunit.failCount && jsunit.passCount == jsunit.testCount) {
+  if (!jsunit.failCount && jsunit.passCount === jsunit.testCount) {
     status += 'all tests passed:';
   }
   status += ' ' + jsunit.failCount + '/' + jsunit.testCount + ' fail';
@@ -155,9 +155,11 @@ function jsunitRun(opt_testNames) {
   }
   testNames.sort();
 
-  jsunit.testCount = 0;
-  for (var i = 0; i < testNames.length; ++i) {
-    jsunit.testCount++;
+  jsunit.testCount = testNames.length;
+
+  if (jsunit.testCount === 0) {
+    document.title = 'No tests?';
+    throw 'Error: no tests?';
   }
 
   var firstFailure = null;

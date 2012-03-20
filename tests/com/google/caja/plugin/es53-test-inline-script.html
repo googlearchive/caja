@@ -38,4 +38,7 @@
 
     pass('testDocumentWriteRecursive');
   });
+
+  // jsunit complains if there are zero tests
+  jsunitRegister('testNop', function testNop() { pass('testNop'); });
 </script>
