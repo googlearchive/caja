@@ -338,11 +338,9 @@ runCssSelectorTests([
         + "}",
         "golden": ""
         + "a#foo-bank{"
-        +   "background:url('http://whitelisted-host.com/?bank=X&u=Al');"
+        +   "background:url(\"http://whitelisted-host.com/?bank=X&u=Al\");"
         +   "color:purple"
         + "}",
-        // TODO: integrate URL policy into CSS sanitizer.
-        "altGolden": "a#foo-bank{color:purple}",
         "messages": []
       },
       // Differs from the previous only in that it has the :visited pseudo
@@ -366,30 +364,22 @@ runCssSelectorTests([
       // ok
       {
         "cssText": "#foo { background: url(/bar.png) }",
-        "golden": "#foo{background:url('/foo/bar.png')}",
-        //"altGolden": '#foo{backgroud:url("/foo/bar.png")}'  TODO
-        "altGolden": '#foo{}'
+        "golden": "#foo{background:url(\"/foo/bar.png\")}"
       },
       {
         "cssText": "#foo { background: url('/bar.png') }",
-        "golden": "#foo{background:url('/foo/bar.png')}",
-        //"altGolden": '#foo{background:url("/foo/bar.png")}'  TODO
+        "golden": "#foo{background:url(\"/foo/bar.png\")}",
         "altGolden": '#foo{}'
       },
       {
         "cssText": "#foo { background: '/bar.png' }",
-        "golden": "#foo{background:url('/foo/bar.png')}",
-        //"altGolden": '#foo{background:url("/foo/bar.png")}'  TODO
-        "altGolden": '#foo{}'
+        "golden": "#foo{background:url(\"/foo/bar.png\")}"
       },
       {
         "cssText":
           "#foo { background: 'http://whitelisted-host.com/blinky.gif' }",
         "golden":
-          "#foo{background:url('http://whitelisted-host.com/blinky.gif')}",
-        "altGolden":
-//        '#foo{background:url("http://whitelisted-host.com/blinky.gif")}'
-          '#foo{}'
+          "#foo{background:url(\"http://whitelisted-host.com/blinky.gif\")}"
       },
 
       // disallowed

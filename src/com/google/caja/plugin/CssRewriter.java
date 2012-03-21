@@ -154,7 +154,7 @@ public final class CssRewriter {
    * for properties which are not permitted to depend on the :link or :visisted
    * pseudoclasses. We do this, in turn, to prevent history mining attacks.
    *
-   * <p>Furthermore, scope any selectors containing linkey pseudo classes to
+   * <p>Furthermore, scope any selectors containing linky pseudo classes to
    * operate only on anchor (<A>) elements. Modify it if necessary, or record
    * an error if the selector is already scoped to some element that is not an
    * anchor. For example:
@@ -327,7 +327,7 @@ public final class CssRewriter {
       MutableParseTreeNode.Mutation mut = e.createMutation();
 
       // Compute end, the term index after the last of the run of loose terms
-      // for t's property part.
+      // for t's property part. 
       int start = i;
       int end = i + 1;
       while (end < n) {

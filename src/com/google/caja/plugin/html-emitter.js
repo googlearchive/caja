@@ -24,8 +24,7 @@
  *
  * @author mikesamuel@gmail.com
  * @provides HtmlEmitter
- * @requires bridalMaker html html4 cajaVM
- * @requires sanitizeStylesheet
+ * @requires bridalMaker html html4 cajaVM sanitizeStylesheet URI
  */
 
 /**
@@ -52,6 +51,8 @@ function HtmlEmitter(makeDOMAccessible, base, opt_domicile, opt_guestGlobal) {
   base = makeDOMAccessible(base);
   var insertionPoint = base;
   var bridal = bridalMaker(makeDOMAccessible, base.ownerDocument);
+  var baseUri = '' + base.ownerDocument.location;
+  // TODO: Take into account <base> elements.
 
   /**
    * Contiguous pairs of ex-descendants of base, and their ex-parent.
@@ -371,11 +372,17 @@ function HtmlEmitter(makeDOMAccessible, base, opt_domicile, opt_guestGlobal) {
       }
     }
 
+    function sanitizeCssUri(uri) {
+      return (domicile && domicile.cssUri)
+        ? domicile.cssUri(URI.utils.resolve(baseUri, uri), 'image/*')
+        : void 0;
+    }
+
     function defineUntrustedStylesheet(cssText) {
-      var safeCssText = sanitizeStylesheet(cssText);
-      var document = insertionPoint.ownerDocument;
-      document.getElementsByTagName('head')[0].appendChild(
-          bridal.createStylesheet(document, safeCssText));
+      var safeCssText = sanitizeStylesheet(cssText, sanitizeCssUri);
+      if (domicile && domicile.emitCss) {
+        domicile.emitCss(safeCssText);
+      }
     }
 
     // Zero or one of the html4.eflags constants that captures the content type
@@ -391,16 +398,28 @@ function HtmlEmitter(makeDOMAccessible, base, opt_domicile, opt_guestGlobal) {
         if (!html4.ELEMENTS.hasOwnProperty(tagName)
             || (eltype & html4.eflags.UNSAFE) !== 0) {
           if (tagName === 'script') {
-            var srcIndex = attribs.indexOf('src');
-            while (srcIndex >= 0 && (srcIndex & 1)) {
+            var srcIndex = 0;
+            do {
+              // Find the index of the value following the
+              // attribute name "src".  If not found, srcIndex
+              // will be 0.
+              srcIndex = attribs.indexOf('src', srcIndex) + 1;
+            } while (srcIndex && !(srcIndex & 1));
+            if (!srcIndex) {
               // Found an attribute value with value "src" not name "src".
-              srcIndex = attribs.indexOf('src', srcIndex + 1);
-            }
-            if (srcIndex < 0) {
               cdataContentType = html4.eflags.SCRIPT;
             }
           } else if (tagName === 'style') {
             cdataContentType = html4.eflags.STYLE;
+          } else if (tagName === 'base') {
+            // Take into account the href.
+            var hrefIndex = 0;
+            do {
+              hrefIndex = attribs.indexOf('href', hrefIndex);
+            } while (hrefIndex && !(hrefIndex & 1));
+            if (hrefIndex) {
+              baseUri = URI.resolve(baseUri, attribs[hrefIndex]);
+            }
           }
           return;
         }

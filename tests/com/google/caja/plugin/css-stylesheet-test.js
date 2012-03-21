@@ -29,7 +29,7 @@ function runCssSelectorTests(testGroups) {
         assertEquals(
             name + ' tests[' + i + '].golden', 'string', typeof golden);
 
-        var actual = sanitizeStylesheet(test.cssText);
+        var actual = sanitizeStylesheet(test.cssText, sanitizeUri);
         // The Java version produces property groups without a trailing
         // ';' since the semicolon is technically a separator in CSS.
         // This JavaScript version does not because it is simpler to
@@ -44,4 +44,22 @@ function runCssSelectorTests(testGroups) {
   }
   // Create a test method that will be called by jsUnit.
   jsunitRegister('testCssStylesheets', testCssStylesheets);
+}
+
+function sanitizeUri(uri) {
+  uri = URI.resolve(
+      URI.parse('test://example.org/test'),
+      URI.parse(uri));
+  if ('test' === uri.getScheme()
+      && 'example.org' == uri.getDomain()
+      && /^\//.test(uri.getPath() || '')) {
+    return new URI(
+      null, null, null, null,
+      '/foo' + uri.getRawPath(), uri.getRawQuery(), uri.getRawFragment())
+      .toString();
+  } else if ('whitelisted-host.com' === uri.getDomain()) {
+    return uri.toString();
+  } else {
+    return null;
+  }
 }

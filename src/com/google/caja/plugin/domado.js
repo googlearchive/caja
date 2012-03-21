@@ -5177,9 +5177,7 @@ var Domado = (function() {
             + hex.charAt(color & 0xf);
       });
       domicile.cssUri = cajaVM.def(function (uri, mimeType) {
-        var s = rewriteAttribute(null, null, html4.atype.URI, uri);
-        if (!s) { throw new Error(); }
-        return s;
+        return rewriteAttribute(null, null, html4.atype.URI, uri) || null;
       });
   
       /**

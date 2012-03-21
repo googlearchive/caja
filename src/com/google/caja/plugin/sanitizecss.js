@@ -44,6 +44,7 @@
  * @param sanitizeUrl a function that takes a URL and returns a safe URL.
  */
 var sanitizeCssProperty = (function () {
+  var NOEFFECT_URL = 'url("about:blank")';
   /**
    * The set of characters that need to be normalized inside url("...").
    * We normalize newlines because they are not allowed inside quoted strings,
@@ -70,7 +71,7 @@ var sanitizeCssProperty = (function () {
     if ('string' === typeof s) {
       return 'url("' + s.replace(NORM_URL_REGEXP, normalizeUrlChar) + '")';
     } else {
-      return 'url("about:blank")';
+      return NOEFFECT_URL;
     }
   }
   function normalizeUrlChar(ch) {
@@ -223,6 +224,9 @@ var sanitizeCssProperty = (function () {
         tokens[k++] = token;
       }
     }
+    // For single URL properties, if the URL failed to pass the sanitizer,
+    // then just drop it.
+    if (k === 1 && tokens[0] === NOEFFECT_URL) { k = 0; }
     tokens.length = k;
   };
 })();
@@ -377,7 +381,7 @@ var sanitizeStylesheet = (function () {
     return '{}';  // TODO: implement me.
   }
 
-  return function /*sanitizeStylesheet*/(cssText) {
+  return function /*sanitizeStylesheet*/(cssText, sanitizeUri) {
     var safeCss = void 0;
     // A stack describing the { ... } regions.
     // Null elements indicate blocks that should not be emitted.
@@ -504,7 +508,6 @@ var sanitizeStylesheet = (function () {
           declaration: function (property, valueArray) {
             if (!elide) {
               var schema = cssSchema[property];
-              var sanitizeUri = void 0;  // TODO
               if (schema) {
                 sanitizeCssProperty(schema, valueArray, sanitizeUri);
                 if (valueArray.length) {

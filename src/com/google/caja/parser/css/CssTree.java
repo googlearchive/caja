@@ -233,7 +233,7 @@ public abstract class CssTree extends AbstractParseTreeNode {
   /**
    * <pre>
    * charset
-   *   : CHARSET_SYM STRING ';'    
+   *   : CHARSET_SYM STRING ';'
    * </pre>
    */
   public static final class Charset extends CssStatement {
@@ -782,7 +782,7 @@ public abstract class CssTree extends AbstractParseTreeNode {
    */
   public static abstract class Declaration extends PageElement {
     /**
-     * 
+     *
      */
     private static final long serialVersionUID = -3579944514104809928L;
 
