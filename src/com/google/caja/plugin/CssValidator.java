@@ -1222,7 +1222,7 @@ final class SignatureResolver {
       }
       candidate.match(term, CssPropertyPartType.NUMBER, propertyName);
       ++candidate.exprIdx;
-    } else if ("integer".equals(symbolName)) {
+    } else if ("integer".equals(symbolName) || "z-index".equals(symbolName)) {
       if (!(atom instanceof CssTree.QuantityLiteral &&
             INTEGER_RE.matcher(atomSValue).matches()) &&
           !(atom instanceof CssTree.Substitution &&

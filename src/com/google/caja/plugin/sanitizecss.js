@@ -24,6 +24,7 @@
  * @requires CSS_PROP_BIT_QSTRING_CONTENT
  * @requires CSS_PROP_BIT_QSTRING_URL
  * @requires CSS_PROP_BIT_QUANTITY
+ * @requires CSS_PROP_BIT_Z_INDEX
  * @requires console
  * @requires cssSchema
  * @requires decodeCss
@@ -141,7 +142,11 @@ var sanitizeCssProperty = (function () {
         ? (propBits & CSS_PROP_BIT_HASH_VALUE ? token : '')
         : ('0'.charCodeAt(0) <= cc && cc <= '9'.charCodeAt(0))
         // A number starting with a digit.
-        ? ((propBits & CSS_PROP_BIT_QUANTITY) ? token : '')
+        ? ((propBits & CSS_PROP_BIT_QUANTITY)
+          ? ((propBits & CSS_PROP_BIT_Z_INDEX)
+            ? (token.match(/^\d{1,7}$/) ? token : '')
+            : token) 
+          : '')
         // Normalize quantities so they don't start with a '.' or '+' sign and
         // make sure they all have an integer component so can't be confused
         // with a dotted identifier.
@@ -154,13 +159,17 @@ var sanitizeCssProperty = (function () {
            (cc === '+'.charCodeAt(0)
             && (isnum1 || (cc1 === '.'.charCodeAt(0) && isnum2))))
           ? ((propBits & CSS_PROP_BIT_QUANTITY)
-             ? ((isnum1 ? '' : '0') + token.substring(1))
-             : '')
+            ? ((propBits & CSS_PROP_BIT_Z_INDEX)
+              ? (token.match(/^\+\d{1,7}$/) ? token : '')
+              : ((isnum1 ? '' : '0') + token.substring(1)))
+            : '')
         // -.5 -> -0.5 if allowed otherwise -> 0 if quantities allowed.
         : (cc === '-'.charCodeAt(0)
            && (isnum1 || (cc1 === '.'.charCodeAt(0) && isnum2)))
           ? ((propBits & CSS_PROP_BIT_NEGATIVE_QUANTITY)
-             ? ((isnum1 ? '-' : '-0') + token.substring(1))
+             ? ((propBits & CSS_PROP_BIT_Z_INDEX)
+               ? (token.match(/^\-\d{1,7}$/) ? token : '')
+               : ((isnum1 ? '-' : '-0') + token.substring(1)))
              : ((propBits & CSS_PROP_BIT_QUANTITY) ? '0' : ''))
         // .5 -> 0.5 if allowed.
         : (cc === '.'.charCodeAt(0) && isnum1)

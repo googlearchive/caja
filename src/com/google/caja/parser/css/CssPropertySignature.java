@@ -453,7 +453,7 @@ public abstract class CssPropertySignature implements ParseTreeNode {
       // whitespace
       Pattern.compile("^\\s+"),
       // a symbol, possibly with numeric bounds
-      Pattern.compile("^(<[a-zA-Z][\\w\\-]*(?:\\:\\d+,\\d*)?>)"),
+      Pattern.compile("^(<[a-zA-Z][\\w\\-]*(?:\\:-?\\d+,-?\\d*)?>)"),
       // a property reference
       Pattern.compile("^('[a-zA-Z][\\w\\-]*')"),
       // a literal keyword
@@ -461,7 +461,7 @@ public abstract class CssPropertySignature implements ParseTreeNode {
       // a quoted literal
       Pattern.compile("^(\"[^\"]*\")"),
       // a number
-      Pattern.compile("^([0-9]+)\\b"),
+      Pattern.compile("^(-?[0-9]+)\\b"),
       // multi-character punctuation
       Pattern.compile("^(\\|\\|)"),
       // other single character tokens

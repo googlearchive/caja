@@ -860,7 +860,7 @@
       "dom2property": "wordSpacing" },
 
     { "key": "z-index",
-      "signature": "auto | <integer> | inherit",
+      "signature": "auto | <z-index:-9999999,9999999> | inherit",
       "default": "auto",
       "appliesTo": { "include": ["positioned"] },
       "inherited": false,

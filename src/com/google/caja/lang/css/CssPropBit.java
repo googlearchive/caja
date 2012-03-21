@@ -26,6 +26,7 @@ public enum CssPropBit {
   QSTRING_CONTENT(8),
   QSTRING_URL(16),
   HISTORY_INSENSITIVE(32),
+  Z_INDEX(64),
   ;
 
   /** a single bit. */

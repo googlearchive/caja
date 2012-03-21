@@ -2367,6 +2367,32 @@ Test row cell
   });
 </script>
 
+<div id="test-z-index" class="testcontainer"></div>
+<script type="text/javascript">
+  jsunitRegister('testZIndex',
+                 function testZIndex() {
+    document.getElementById("test-z-index").innerHTML =
+      "<div id='test-z-index-div' style='z-index:-9999999;'></div>";
+    assertTrue(document.getElementById("test-z-index-div")
+        .getAttribute("style") !== "");
+    document.getElementById("test-z-index").innerHTML =
+        "<div id='test-z-index-div' style='z-index:9999999;'></div>";
+    assertTrue(document.getElementById("test-z-index-div")
+        .getAttribute("style") !== "");
+
+    // Out-of-range values should be stripped
+    document.getElementById("test-z-index").innerHTML =
+      "<div id='test-z-index-div' style='z-index:-10000000;'></div>";
+    assertTrue(document.getElementById("test-z-index-div")
+        .getAttribute("style") === "");
+    document.getElementById("test-z-index").innerHTML =
+      "<div id='test-z-index-div' style='z-index:10000000;'></div>";
+    assertTrue(document.getElementById("test-z-index-div")
+        .getAttribute("style") === "");
+    pass('test-z-index');
+  });
+</script>
+
 <p class="testcontainer" id="test-document-body-appendChild"
  >I should be the last element until something is appended to document.body</p>
 <script type="text/javascript">

@@ -527,16 +527,21 @@ public class CssPropertyPatterns {
     private JSRE builtinToPattern(Name name) {
       String key = name.getCanonicalForm();
       int colon = key.lastIndexOf(':');
+      boolean negative = key.lastIndexOf('-') > colon;
       String baseKey = colon >= 0 ? key.substring(0, colon) : key;
+      boolean zIndex = baseKey.equals("z-index");
       CssPropBit b = BUILTIN_PROP_BITS.get(baseKey);
       if (b != null) {
         this.props.add(b);
         // The negative bit allows for some schemas to reject positioning
-        // outside the parents bounding boxes, and negative offsets for clip
+        // outside the parents' bounding boxes, and negative offsets for clip
         // regions.
-        if (b == CssPropBit.QUANTITY && colon < 0) {
+        if (b == CssPropBit.QUANTITY && (colon < 0 || negative)) {
           // TODO: maybe tighten this condition
           this.props.add(CssPropBit.NEGATIVE_QUANTITY);
+        }
+        if (zIndex) {
+          this.props.add(CssPropBit.Z_INDEX);
         }
         if (!complete) { return null; }
       }
@@ -561,6 +566,7 @@ public class CssPropertyPatterns {
         .put("specific-voice", CssPropBit.QSTRING_CONTENT)
         .put("family-name", CssPropBit.QSTRING_CONTENT)
         .put("uri", CssPropBit.QSTRING_URL)
+        .put("z-index", CssPropBit.QUANTITY)
         .build();
 
   private static final Map<String, JSRE> BUILTINS;
@@ -621,6 +627,7 @@ public class CssPropertyPatterns {
             JSRE.lit("url(\""),
             JSRE.many(JSRE.raw("[^()\\\\\"\\r\\n]")),
             JSRE.lit("\")")))
+        .put("z-index:-9999999,9999999", JSRE.raw("-?\\d{1,7}"))
         .create();
   }
 

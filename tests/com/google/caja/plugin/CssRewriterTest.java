@@ -34,6 +34,7 @@ import com.google.caja.parser.js.Operator;
 import com.google.caja.parser.js.StringLiteral;
 import com.google.caja.parser.js.ValueProperty;
 import com.google.caja.reporting.Message;
+import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.util.CajaTestCase;
 import com.google.caja.util.Function;
@@ -190,6 +191,35 @@ public class CssRewriterTest extends CajaTestCase {
     runTest("#foo { left: ${x * 4}px; top: ${y * 4}px; }",
             "#foo {\n  left: ${x * 4}px;\n  top: ${y * 4}px\n}",
             true);
+  }
+
+  public final void testZIndexRange() throws Exception {
+    runTest("div { z-index: 0 }", "div {\n  z-index: 0\n}", false);
+    assertNoErrors();
+    runTest(
+        "div { z-index: -9999999 }",
+        "div {\n  z-index: -9999999\n}",
+        false);
+    assertNoErrors();
+    runTest(
+        "div { z-index: 9999999 }",
+        "div {\n  z-index: 9999999\n}",
+        false);
+    assertNoErrors();
+    runTest(
+        "div { z-index: -10000000 }",
+        "div {\n  z-index: -10000000\n}",
+        false);
+    assertMessage(PluginMessageType.CSS_VALUE_OUT_OF_RANGE,
+        MessageLevel.WARNING,
+        Name.css("z-index"));
+    runTest(
+        "div { z-index: 10000000 }",
+        "div {\n  z-index: 10000000\n}",
+        false);
+    assertMessage(PluginMessageType.CSS_VALUE_OUT_OF_RANGE,
+        MessageLevel.WARNING,
+        Name.css("z-index"));
   }
 
   public final void testNonStandardColors() throws Exception {
