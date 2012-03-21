@@ -4714,6 +4714,7 @@ var Domado = (function() {
           if (!tameHtmlElement.hasOwnProperty('contains')) {
             // http://www.quirksmode.org/blog/archives/2006/01/contains_for_mo.html
             tameHtmlElement.contains = nodeMethod(function (other) {
+              if (other === null || other === void 0) { return false; }
               var docPos = this.compareDocumentPosition(other);
               return !(!(docPos & 0x10) && docPos);
             }).bind(tameHtmlElement);
