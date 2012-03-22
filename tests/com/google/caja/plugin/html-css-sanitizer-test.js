@@ -37,3 +37,17 @@ jsunitRegister('testUriInlineStyle',
       html_sanitize('<div style="background: url(http://bar);"></div>',
                     function(uri) { return 'SAFE_URI'; }, nmTokenPrefixer('p-')));
 });
+
+jsunitRegister('testWeakUriRewriter',
+               function testWeakUriRewriter() {
+  assertEquals(
+      '<div style="background: "></div>',
+      html_sanitize(
+          '<div style="background: url(javascript:1)"></div>',
+          function (uri) { return uri; }));
+  assertEquals(
+      '<div style="background: "></div>',
+      html_sanitize(
+          '<div style="background: url(invalid:1)"></div>',
+          function (uri) { return uri; }));
+});

@@ -40,6 +40,7 @@
     caja.load(div, uriCallback, function (frame) {
       frame.code('es53-test-client-uri-rewriting-guest.html')
           .run(function (_) {
+        var result = canonInnerHtml(div.innerHTML);
         assertStringContains(
           canonInnerHtml(
               '<a href="URICALLBACK[['
@@ -59,7 +60,9 @@
               + 'com/google/caja/plugin/bar.html'
               + ']]" target="_blank">parent</a>'
           ),
-          canonInnerHtml(div.innerHTML));
+          result);
+        assertStringDoesNotContain('javascript:', result);
+        assertStringDoesNotContain('invalid:', result);
         jsunitPass('testUriInAttr');
       });
     });
@@ -83,30 +86,56 @@
           + 'http://localhost:8000/ant-lib/com/google/caja/plugin/foo.png'
           + ']])',
           emittedCss);
+        assertStringDoesNotContain('javascript:', emittedCss);
+        assertStringDoesNotContain('invalid:', emittedCss);
         jsunitPass('testUriInCss');
       });
     });
   });
 
-  registerTest('testDynamicUriPolicy', function testUriInCss() {
+  registerTest('testDynamicUriPolicy', function testDynamicUriPolicy() {
     var div = createDiv();
-    var xhrDynamicPolicy = {
+    var dynamicPolicy = {
         rewrite: function (uri, effects, ltype, hints) {
-          assert(typeof hints !== "undefined");
-          assert(hints["XHR"]);
-          return 'xhrTest.txt';
+          if (/^xhr/.test(uri)) {
+            assert(typeof hints !== "undefined");
+            assert(!!hints["XHR"]);
+            return 'xhrTest.txt';
+          } else {
+            return 'URI#' + uri;
+          }
         }
     };
-    caja.load(div, xhrDynamicPolicy, function (frame) {
+    caja.load(div, dynamicPolicy, function (frame) {
+      // TODO(felix8a): createExtraImportsForTesting doesn't like being
+      // called more than once on the same framegroup object
       var extraImports = createExtraImportsForTesting(caja, frame);
 
       frame.code(
           location.protocol + '//' + location.host + '/',
           'text/html', ''
+          + '<div id="a"></div>'
           + '<script>'
+
+          + '  var a = document.getElementById("a");'
+
+          + '  a.innerHTML = "<a href=javascript:1></a>";'
+          + '  assertStringDoesNotContain("javascript:", a.innerHTML);'
+
+          + '  a.innerHTML = "<a href=invalid://1></a>";'
+          + '  assertStringDoesNotContain("invalid:", a.innerHTML);'
+
+          + '  a.innerHTML = "<p style=\'background: url(http://1)\'>";'
+          + '  assertStringContains("URI#http:", a.innerHTML);'
+
+          + '  a.innerHTML = "<p style=\'background: url(javascript:1)\'>";'
+          + '  assertStringDoesNotContain("javascript:", a.innerHTML);'
+
+          + '  a.innerHTML = "<p style=\'background: url(invalid://1)\'>";'
+          + '  assertStringDoesNotContain("invalid:", a.innerHTML);'
+
           + '  var request = new XMLHttpRequest();'
-          + '  request.open("GET", "non-existent.html",'
-          + '    true);'
+          + '  request.open("GET", "xhr-nonexistent", true);'
           + '  request.onreadystatechange = function(event) {'
           + '      if (request.readyState == 4) {'
           + '        assertEquals("The quick brown fox", request.responseText);'
@@ -114,12 +143,12 @@
           + '      }'
           + '  };'
           + '  request.send();'
+
           + '<\/script>')
           .api(extraImports)
           .run()
     });
   });
-
   readyToTest();
   jsunitRun();
 })();

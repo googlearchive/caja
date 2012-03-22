@@ -5011,7 +5011,8 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
             // Cause exception to be rethrown if it is uncatchable.
             var message = exception;
             if ('object' === typeof exception && exception !== null) {
-              message = '' + (exception.message || exception.desc || message);
+              message = '' + (exception.message || exception.desc ||
+                exception.description || message);
             }
 
             // If we wanted to provide a hook for containers to get uncaught

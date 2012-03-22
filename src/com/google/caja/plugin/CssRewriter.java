@@ -642,6 +642,7 @@ public final class CssRewriter {
               ExternalReference ref = new ExternalReference(
                   uri, baseUri, relUri, content.getFilePosition());
               Name propertyPart = propertyPart(node);  // TODO
+              // TODO(felix8a): protect against naive uripolicy
               if (uriPolicy != null &&
                   uriPolicy.rewriteUri(
                       ref, UriEffect.SAME_DOCUMENT, LoaderType.SANDBOXED,
@@ -745,6 +746,7 @@ public final class CssRewriter {
                 ExternalReference ref = new ExternalReference(
                     uri, baseUri, relUri, content.getFilePosition());
                 CssTree.UriLiteral replacement;
+                // TODO(felix8a): protect against naive uripolicy
                 if (uriPolicy != null) {
                   String rewrittenUri = uriPolicy.rewriteUri(
                       ref, UriEffect.SAME_DOCUMENT, LoaderType.SANDBOXED,

@@ -289,6 +289,7 @@ public final class HtmlAttributeRewriter {
           }
           if (meta.getUriPolicy() != null) {
             ExternalReference ref = new ExternalReference(uri, pos);
+            // TODO(felix8a): protect against naive uripolicy
             String rewrittenUri = meta.getUriPolicy().rewriteUri(
                 ref, attr.attrInfo.getUriEffect(),
                 attr.attrInfo.getLoaderType(),

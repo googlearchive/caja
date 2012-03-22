@@ -67,6 +67,8 @@ var sanitizeCssProperty = (function () {
     '<':  '%3c',
     '>':  '%3e'
   };
+
+
   function normalizeUrl(s) {
     if ('string' === typeof s) {
       return 'url("' + s.replace(NORM_URL_REGEXP, normalizeUrlChar) + '")';
@@ -76,6 +78,26 @@ var sanitizeCssProperty = (function () {
   }
   function normalizeUrlChar(ch) {
     return NORM_URL_REPLACEMENTS[ch];
+  }
+
+  // From RFC3986
+  var URI_SCHEME_RE = new RegExp(
+      '^' +
+      '(?:' +
+        '([^:\/?# ]+)' +         // scheme
+      ':)?'
+  );
+
+  var ALLOWED_URI_SCHEMES = /^(?:https?|mailto)$/i;
+
+  function safeUri(uri, naiveUriRewriter) {
+    if (!naiveUriRewriter) { return null; }
+    var parsed = ('' + uri).match(URI_SCHEME_RE);
+    if (parsed && (!parsed[1] || ALLOWED_URI_SCHEMES.test(parsed[1]))) {
+      return naiveUriRewriter(uri);
+    } else {
+      return null;
+    }
   }
 
   function unionArrays(arrs) {
@@ -107,7 +129,7 @@ var sanitizeCssProperty = (function () {
   // Used as map value to avoid hasOwnProperty checks.
   var ALLOWED_LITERAL = {};
 
-  return function (propertySchema, tokens, sanitizeUrl) {
+  return function (propertySchema, tokens, opt_naiveUriRewriter) {
     var propBits = propertySchema.cssPropBits;
     // Used to determine whether to treat quoted strings as URLs or
     // plain text content, and whether unrecognized keywords can be quoted
@@ -131,11 +153,12 @@ var sanitizeCssProperty = (function () {
         // strip them out in case the content doesn't come via cssparser.js.
         (cc === ' '.charCodeAt(0)) ? ''
         : (cc === '"'.charCodeAt(0)) ? (  // Quoted string.
-          (qstringBits === CSS_PROP_BIT_QSTRING_URL && sanitizeUrl)
+          (qstringBits === CSS_PROP_BIT_QSTRING_URL && opt_naiveUriRewriter)
           // Sanitize and convert to url("...") syntax.
-          ? (normalizeUrl(sanitizeUrl(decodeCss(
-                 // Treat url content as case-sensitive.
-                 tokens[i].substring(1, token.length - 1)))))
+          // Treat url content as case-sensitive.
+          ? (normalizeUrl(safeUri(
+                decodeCss(tokens[i].substring(1, token.length - 1)),
+                opt_naiveUriRewriter)))
           // Drop if plain text content strings not allowed.
           : (qstringBits === CSS_PROP_BIT_QSTRING_CONTENT) ? token : '')
         // Preserve hash color literals if allowed.
@@ -177,9 +200,10 @@ var sanitizeCssProperty = (function () {
         ? ((propBits & CSS_PROP_BIT_QUANTITY) ? '0' + token : '')
         // Handle url("...") by rewriting the body.
         : ('url(' === token.substring(0, 4))
-        ? ((sanitizeUrl && (qstringBits & CSS_PROP_BIT_QSTRING_URL))
-           ? normalizeUrl(sanitizeUrl(
-                  tokens[i].substring(5, token.length - 2)))
+        ? ((opt_naiveUriRewriter && (qstringBits & CSS_PROP_BIT_QSTRING_URL))
+           ? normalizeUrl(safeUri(
+                tokens[i].substring(5, token.length - 2),
+                opt_naiveUriRewriter))
            : '')
         // Handle func(...) and literal tokens
         // such as keywords and punctuation.
@@ -381,7 +405,7 @@ var sanitizeStylesheet = (function () {
     return '{}';  // TODO: implement me.
   }
 
-  return function /*sanitizeStylesheet*/(cssText, sanitizeUri) {
+  return function /*sanitizeStylesheet*/(cssText, opt_naiveUriRewriter) {
     var safeCss = void 0;
     // A stack describing the { ... } regions.
     // Null elements indicate blocks that should not be emitted.
@@ -509,7 +533,7 @@ var sanitizeStylesheet = (function () {
             if (!elide) {
               var schema = cssSchema[property];
               if (schema) {
-                sanitizeCssProperty(schema, valueArray, sanitizeUri);
+                sanitizeCssProperty(schema, valueArray, opt_naiveUriRewriter);
                 if (valueArray.length) {
                   safeCss.push(property, ':', valueArray.join(' '), ';');
                 }

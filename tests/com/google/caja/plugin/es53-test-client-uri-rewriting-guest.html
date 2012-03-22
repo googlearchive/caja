@@ -1,5 +1,8 @@
 <style type="text/css">
   p { background: url(foo.png); }
+  /* TODO(felix8a): broken in html-emitter */
+  /* q { background: url(javascript:1); } */
+  s { background: url(invalid://1); }
 </style>
 <p>styled</p>
 <a href="bar.html">default</a>
@@ -7,3 +10,6 @@
 <a href="bar.html" target="_self">self</a>
 <a href="bar.html" target="_parent">parent</a>
 <a href="bar.html" target="foo">foo</a>
+<!-- TODO(felix8a): broken in html-emitter
+  <a href="javascript:1">js</a> -->
+<a href="invalid://1">inv</a>

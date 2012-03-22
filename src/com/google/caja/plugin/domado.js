@@ -62,6 +62,26 @@ var Domado = (function() {
   var cajaPrefix = 'data-caja-';
   var cajaPrefRe = new RegExp('^' + cajaPrefix);
 
+  // From RFC3986
+  var URI_SCHEME_RE = new RegExp(
+      '^' +
+      '(?:' +
+        '([^:\/?# ]+)' +         // scheme
+      ':)?'
+  );
+
+  var ALLOWED_URI_SCHEMES = /^(?:https?|mailto)$/i;
+
+  function uriRewrite(naiveUriPolicy, uri, effects, ltype, hints) {
+    if (!naiveUriPolicy) { return null; }
+    var parsed = ('' + uri).match(URI_SCHEME_RE);
+    if (parsed && (!parsed[1] || ALLOWED_URI_SCHEMES.test(parsed[1]))) {
+      return naiveUriPolicy.rewrite(uri, effects, ltype, hints);
+    } else {
+      return null;
+    }
+  }
+
   if (!domitaModules) { domitaModules = {}; }
   
   domitaModules.proxiesAvailable = typeof Proxy !== 'undefined';
@@ -591,7 +611,7 @@ var Domado = (function() {
       taming,
       rulebreaker,
       xmlHttpRequestMaker,
-      uriPolicy) {
+      naiveUriPolicy) {
     var Confidence = domitaModules.Confidence;
     var setOwn = domitaModules.setOwn;
     var canHaveEnumerableAccessors = domitaModules.canHaveEnumerableAccessors;
@@ -682,7 +702,8 @@ var Domado = (function() {
       method = String(method);
       // The XHR interface does not tell us the MIME type in advance, so we
       // must assume the broadest possible.
-      var safeUri = uriPolicy.rewrite(
+      var safeUri = uriRewrite(
+          naiveUriPolicy,
           String(URL), html4.ueffects.SAME_DOCUMENT, html4.ltypes.SANDBOXED,
           { "XHR": true});
       // If the uriPolicy rejects the URL, we throw an exception, but we do
@@ -1300,7 +1321,7 @@ var Domado = (function() {
      *     object is known as a "domicile".
      */
     function attachDocument(
-        idSuffix, uriPolicy, pseudoBodyNode, optPseudoWindowLocation) {
+        idSuffix, naiveUriPolicy, pseudoBodyNode, optPseudoWindowLocation) {
       if (arguments.length < 3) {
         throw new Error(
             'attachDocument arity mismatch: ' + arguments.length);
@@ -1414,9 +1435,10 @@ var Domado = (function() {
         }
         sanitizeCssProperty(
             schema, tokens,
-            uriPolicy
+            naiveUriPolicy
             ? function (url) {
-                return uriPolicy.rewrite(
+                return uriRewrite(
+                    naiveUriPolicy,
                     url, html4.ueffects.SAME_DOCUMENT,
                     html4.ltypes.SANDBOXED, { "CSS_PROP": cssPropertyName });
               }
@@ -1636,8 +1658,9 @@ var Domado = (function() {
             return value;
           case html4.atype.URI:
             value = String(value);
-            if (!uriPolicy) { return null; }
-            return uriPolicy.rewrite(
+            if (!naiveUriPolicy) { return null; }
+            return uriRewrite(
+                naiveUriPolicy,
                 value,
                 getUriEffect(tagName, attribName),
                 getLoaderType(tagName, attribName),
@@ -4954,14 +4977,14 @@ var Domado = (function() {
       });
       domicile.rewriteUriInCss = cajaVM.def(function (value) {
         return value
-          ? uriPolicy.rewrite(value, html4.ueffects.SAME_DOCUMENT,
+          ? uriRewrite(naiveUriPolicy, value, html4.ueffects.SAME_DOCUMENT,
                 html4.ltypes.SANDBOXED, {})
           : void 0;
       });
       domicile.rewriteUriInAttribute = cajaVM.def(
           function (value, tagName, attribName) {
         return value
-          ? uriPolicy.rewrite(value, getUriEffect(tagName, attribName),
+          ? uriRewrite(naiveUriPolicy, value, getUriEffect(tagName, attribName),
                 getLoaderType(tagName, attribName), {"XML_ATTR": attribName})
           : void 0;
       });
@@ -5139,7 +5162,7 @@ var Domado = (function() {
           domitaModules.XMLHttpRequestCtor(
               makeFunctionAccessible(window.XMLHttpRequest),
               makeFunctionAccessible(window.ActiveXObject)),
-          uriPolicy);
+          naiveUriPolicy);
       cajaVM.def(nodeClasses.XMLHttpRequest);
       traceStartup("DT: done for XMLHttpRequest");
   

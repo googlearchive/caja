@@ -68,9 +68,6 @@ var html = (function(html4) {
     'apos': '\''
   };
 
-  // Schemes on which to defer to uripolicy. Urls with other schemes are denied
-  var WHITELISTED_SCHEMES = /^(?:https?|mailto)$/i;
-
   var decimalEscapeRe = /^#(\d+)$/;
   var hexEscapeRe = /^#x([0-9A-Fa-f]+)$/;
   /**
@@ -482,16 +479,28 @@ var html = (function(html4) {
   var URI_SCHEME_RE = new RegExp(
       '^' +
       '(?:' +
-        '([^:\/?#]+)' +         // scheme
+        '([^:\/?# ]+)' +         // scheme
       ':)?'
   );
+
+  var ALLOWED_URI_SCHEMES = /^(?:https?|mailto)$/i;
+
+  function safeUri(uri, naiveUriRewriter) {
+    if (!naiveUriRewriter) { return null; }
+    var parsed = ('' + uri).match(URI_SCHEME_RE);
+    if (parsed && (!parsed[1] || ALLOWED_URI_SCHEMES.test(parsed[1]))) {
+      return naiveUriRewriter(uri);
+    } else {
+      return null;
+    }
+  }
 
   /**
    * Sanitizes attributes on an HTML tag.
    * @param {string} tagName An HTML tag name in lowercase.
    * @param {Array.<?string>} attribs An array of alternating names and values.
-   * @param {?function(?string): ?string} opt_uriPolicy A transform to apply to
-   *     URI attributes; it can return a new string value, or null to delete
+   * @param {?function(?string): ?string} opt_uriRewriter A transform to apply
+   *     to URI attributes; it can return a new string value, or null to delete
    *     the attribute.  If unspecified, URI attributes are deleted.
    * @param {function(?string): ?string} opt_nmTokenPolicy A transform to apply
    *     to attributes containing HTML names, element IDs, and space-separated
@@ -500,7 +509,8 @@ var html = (function(html4) {
    * @return {Array.<?string>} The sanitized attributes as a list of alternating
    *     names and values, where a null value means to omit the attribute.
    */
-  function sanitizeAttribs(tagName, attribs, opt_uriPolicy, opt_nmTokenPolicy) {
+  function sanitizeAttribs(
+      tagName, attribs, opt_naiveUriRewriter, opt_nmTokenPolicy) {
     for (var i = 0; i < attribs.length; i += 2) {
       var attribName = attribs[i];
       var value = attribs[i + 1];
@@ -534,13 +544,7 @@ var html = (function(html4) {
                     }
                     sanitizeCssProperty(
                         schema, tokens,
-                        opt_uriPolicy
-                        ? function (url) {
-                            return opt_uriPolicy(
-                                url, html4.ueffects.SAME_DOCUMENT,
-                                html4.ltypes.SANDBOXED, { "CSS_PROP": normProp });
-                          }
-                        : null);
+                        opt_naiveUriRewriter);
                     sanitizedDeclarations.push(property + ': ' + tokens.join(' '));
                   }
                 });
@@ -555,15 +559,7 @@ var html = (function(html4) {
             value = opt_nmTokenPolicy ? opt_nmTokenPolicy(value) : value;
             break;
           case html4.atype.URI:
-            var parsedUri = ('' + value).match(URI_SCHEME_RE);
-            if (!parsedUri) {
-              value = null;
-            } else if (!parsedUri[1] ||
-                WHITELISTED_SCHEMES.test(parsedUri[1])) {
-              value = opt_uriPolicy ? opt_uriPolicy(value) : null;
-            } else {
-              value = null;
-            }
+            value = safeUri(value, opt_naiveUriRewriter);
             break;
           case html4.atype.URI_FRAGMENT:
             if (value && '#' === value.charAt(0)) {
@@ -592,19 +588,19 @@ var html = (function(html4) {
    * Creates a tag policy that omits all tags marked UNSAFE in html4-defs.js
    * and applies the default attribute sanitizer with the supplied policy for
    * URI attributes and NMTOKEN attributes.
-   * @param {?function(?string): ?string} opt_uriPolicy A transform to apply to
-   *     URI attributes.  If not given, URI attributes are deleted.
+   * @param {?function(?string): ?string} opt_uriRewriter A transform to apply
+   *     to URI attributes.  If not given, URI attributes are deleted.
    * @param {function(?string): ?string} opt_nmTokenPolicy A transform to apply
    *     to attributes containing HTML names, element IDs, and space-separated
    *     lists of classes.  If not given, such attributes are left unchanged.
    * @return {function(string, Array.<?string>)} A tagPolicy suitable for
    *     passing to html.sanitize.
    */
-  function makeTagPolicy(opt_uriPolicy, opt_nmTokenPolicy) {
+  function makeTagPolicy(opt_naiveUriRewriter, opt_nmTokenPolicy) {
     return function(tagName, attribs) {
       if (!(html4.ELEMENTS[tagName] & html4.eflags.UNSAFE)) {
         return sanitizeAttribs(
-            tagName, attribs, opt_uriPolicy, opt_nmTokenPolicy);
+            tagName, attribs, opt_naiveUriRewriter, opt_nmTokenPolicy);
       }
     };
   }
@@ -626,14 +622,14 @@ var html = (function(html4) {
   /**
    * Strips unsafe tags and attributes from HTML.
    * @param {string} inputHtml The HTML to sanitize.
-   * @param {?function(?string): ?string} opt_uriPolicy A transform to apply to
-   *     URI attributes.  If not given, URI attributes are deleted.
+   * @param {?function(?string): ?string} opt_uriRewriter A transform to apply
+   *     to URI attributes.  If not given, URI attributes are deleted.
    * @param {function(?string): ?string} opt_nmTokenPolicy A transform to apply
    *     to attributes containing HTML names, element IDs, and space-separated
    *     lists of classes.  If not given, such attributes are left unchanged.
    */
-  function sanitize(inputHtml, opt_uriPolicy, opt_nmTokenPolicy) {
-    var tagPolicy = makeTagPolicy(opt_uriPolicy, opt_nmTokenPolicy);
+  function sanitize(inputHtml, opt_naiveUriRewriter, opt_nmTokenPolicy) {
+    var tagPolicy = makeTagPolicy(opt_naiveUriRewriter, opt_nmTokenPolicy);
     return sanitizeWithPolicy(inputHtml, tagPolicy);
   }
 
