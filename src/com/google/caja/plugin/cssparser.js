@@ -286,7 +286,7 @@ var parseCssDeclarations;
           if (tok === ';' || tok === '}') { break; }
           // Don't emit the property if there is questionable trailing content.
           valuelen = 0;
-        } while (e < n);
+        } while (++e < n);
         if (tok === ';') {
           ++e;
         }

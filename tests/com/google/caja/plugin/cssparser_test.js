@@ -232,3 +232,10 @@ jsunitRegister('testIssue1161',
       'padding:0;margin:5px 10px;');
   jsunit.pass();
 });
+
+jsunitRegister('testErrorRecovery', function testErrorRecovery() {
+  assertParsedCssDecls(
+      [['declaration', ['color', ['red']]]],
+      'font:1:2;color:red');
+  jsunit.pass();
+});
