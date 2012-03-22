@@ -1,0 +1,32 @@
+.winner {
+  font-weight: bold;
+  color: #300;
+}
+.number {
+  font-family: monospace;
+  white-space: pre;
+}
+table {
+  margin-top: 1em;
+}
+thead th {
+  padding: 0 8px;
+}
+.hide-t2 .if-t2 {
+  display: none;
+}
+
+.bar {
+    height: 2px;
+    line-height: 2px;
+    margin-bottom: 1px;
+}
+.bar0 {
+    background-color: #ff6f00;
+}
+.bar1 {
+    background-color: #0d56a6;
+}
+.bar2 {
+    background-color: #00bd39;
+}

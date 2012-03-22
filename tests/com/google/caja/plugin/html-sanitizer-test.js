@@ -1,218 +1,207 @@
-function nmTokenPrefixer(prefix) {
-  return function (nmTokens) {
-    var names = nmTokens.split(/\s+/);
-    var validNames;
-    for (var i = names.length; --i >= 0;) {
-      // See http://www.w3.org/TR/1998/REC-xml-19980210#NT-NameChar
-      // for the regex below.
-      if (names[i] && !/[^\-\.0-9:A-Z_a-z]/.test(names[i])) {
-        names[i] = prefix + names[i];
-        validNames = true;
-      } else {
-        names[i] = '';
-      }
-    }
-    return validNames ? names.join(' ') : null;
-  };
+function uriPolicy(value) {
+  return 'u:' + value;
+}
+
+function nmTokenPolicy(nmTokens) {
+  if (/[^a-z\t\n\r ]/i.test(nmTokens)) {
+    return null;
+  } else {
+    return nmTokens.replace(
+      /([^\t\n\r ]+)([\t\n\r ]+|$)/g,
+      function (_, id, spaces) {
+        return 'p-' + id + (spaces ? ' ' : '');
+      });
+  }
+}
+
+function check1(original, opt_result) {
+  if (opt_result === void 0) {
+    opt_result = original;
+  }
+  var sanitized = html.sanitize(original, uriPolicy, nmTokenPolicy);
+  assertEquals(opt_result, sanitized);
+}
+
+function check(original, opt_result) {
+  check1(original, opt_result);
+  jsunit.pass();
+}
+
+function interactiveTest(input) {
+  var result = html.sanitize(input);
+  var el = document.getElementById('results');
+  el.innerHTML = '';
+  el.appendChild(document.createTextNode(result));
 }
 
 jsunitRegister('testEmpty',
-               function testEmpty() { assertEquals('', html_sanitize('')); });
+               function testEmpty() {
+  check('');
+});
 
 jsunitRegister('testSimpleText',
                function testSimpleText() {
-  assertEquals('hello world', html_sanitize('hello world'));
+  check('hello world');
 });
 
 jsunitRegister('testEntities1',
-               function testEntities() {
-  assertEquals('&lt;hello world&gt;', html_sanitize('&lt;hello world&gt;'));
+               function testEntities1() {
+  check('&lt;hello world&gt;');
 });
 
 jsunitRegister('testEntities2',
-               function testEntities() {
-  assertEquals('<b>hello <i>world</i></b>',
-               html_sanitize('<b>hello <i>world</i></b>'));
+               function testEntities2() {
+  check('&amp&amp;&&amp',
+        '&amp;amp&amp;&amp;&amp;amp');
 });
 
 jsunitRegister('testUnknownTagsRemoved',
                function testUnknownTagsRemoved() {
-  assertEquals('<b>hello <i>world</i></b>',
-               html_sanitize('<b>hello <bogus><i>world</i></bogus></b>'));
+  check('<b>hello <bogus><i>world</i></bogus></b>',
+        '<b>hello <i>world</i></b>');
 });
 
 jsunitRegister('testUnsafeTagsRemoved',
                function testUnsafeTagsRemoved() {
-  assertEquals('<b>hello <i>world</i></b>',
-               html_sanitize('<b>hello <i>world</i>' +
-                             '<script src=foo.js></script></b>'));
+  check('<b>hello <i>world</i><script src=foo.js></script></b>',
+        '<b>hello <i>world</i></b>');
 });
 
 jsunitRegister('testUnsafeAttributesRemoved',
                function testUnsafeAttributesRemoved() {
-  assertEquals('<b>hello <i>world</i></b>',
-               html_sanitize(
-                   '<b>hello <i onclick="takeOverWorld(this)">world</i></b>'));
+  check('<b>hello <i onclick="takeOverWorld(this)">world</i></b>',
+        '<b>hello <i>world</i></b>');
 });
 
 jsunitRegister('testCruftEscaped',
                function testCruftEscaped() {
-  assertEquals('<b>hello <i>world&lt;</i></b> &amp; tomorrow the universe',
-               html_sanitize(
-                   '<b>hello <i>world<</i></b> & tomorrow the universe'));
+  check('<b>hello <i>world<</i></b> & tomorrow the universe',
+        '<b>hello <i>world&lt;</i></b> &amp; tomorrow the universe');
 });
 
 jsunitRegister('testTagCruftRemoved',
                function testTagCruftRemoved() {
-  assertEquals('<b id="foo">hello <i>world&lt;</i></b>',
-               html_sanitize('<b id="foo" / -->hello <i>world<</i></b>'));
+  check('<b id="foo" / -->hello <i>world<</i></b>',
+        '<b id="p-foo">hello <i>world&lt;</i></b>');
 });
 
 jsunitRegister('testIdsAndClassesPrefixed',
                function testIdsAndClassesPrefixed() {
-  assertEquals(
-      '<b id="p-foo" class="p-boo p-bar p-baz">hello <i>world&lt;</i></b>',
-      html_sanitize(
-          '<b id="foo" class="boo bar baz">hello <i>world<</i></b>',
-          undefined, nmTokenPrefixer('p-')));
+  check('<b id="foo" class="boo bar baz">hello <i>world<</i></b>',
+        '<b id="p-foo" class="p-boo p-bar p-baz">hello <i>world&lt;</i></b>');
 });
 
 jsunitRegister('testInvalidIdsAndClassesRemoved',
                function testInvalidIdsAndClassesRemoved() {
-  assertEquals(
-      '<b class="p-boo  p-baz">hello <i>world&lt;</i></b>',
-      html_sanitize(
-          ('<b id="fo,o" class="boo bar/bar baz">'
-           + 'hello <i class="i*j">world<</i></b>'),
-          undefined, nmTokenPrefixer('p-')));
+  check('<b id="a," class="b c/d e">hello <i class="i*j">world<</i></b>',
+        '<b>hello <i>world&lt;</i></b>');
 });
 
 jsunitRegister('testUsemapPrefixed',
                function testUsemapPrefixed() {
-  assertEquals(
-      '<img usemap="#p-foo" src="http://bar">',
-      html_sanitize('<img usemap="#foo" src="http://bar">',
-                    function(uri) { return uri; }, nmTokenPrefixer('p-')));
+  check('<img usemap="#foo" src="http://bar">',
+        '<img usemap="#p-foo" src="u:http://bar">');
 });
 
 jsunitRegister('testInvalidUsemapRemoved',
                function testInvalidUsemapRemoved() {
-  assertEquals(
-      '<img src="http://bar">',
-      html_sanitize('<img src="http://bar">',
-                    function(uri) { return uri; }, nmTokenPrefixer('p-')));
-  
-  assertEquals(
-      '<img src="http://bar">',
-      html_sanitize('<img usemap="" src="http://bar">',
-                    function(uri) { return uri; }, nmTokenPrefixer('p-')));
-  
-  assertEquals(
-      '<img src="http://bar">',
-      html_sanitize('<img usemap="foo" src="http://bar">',
-                    function(uri) { return uri; }, nmTokenPrefixer('p-')));
+  check1('<img src="http://bar">',
+         '<img src="u:http://bar">');
+  check1('<img usemap="" src="http://bar">',
+         '<img src="u:http://bar">');
+  check1('<img usemap="foo" src="http://bar">',
+         '<img src="u:http://bar">');
+  jsunit.pass();
 });
 
 jsunitRegister('testNonStringInput',
                function testNonStringInput() {
-  var badHtml = '<b whacky=foo><script src=badness.js></script>bar</b id=foo>';
-  assertEquals(
-      '<b>bar</b>',
-      html_sanitize({ toString: function () { return badHtml; } }));
+  var bad = '<b whacky=foo><script src=badness.js></script>bar</b id=foo>';
+  check({ toString: function () { return bad; } },
+        '<b>bar</b>');
 });
 
 jsunitRegister('testSpecialCharsInAttributes',
                function testSpecialCharsInAttributes() {
-  assertEquals(
-      '<b title="a&lt;b &amp;&amp; c&gt;b">bar</b>',
-      html_sanitize('<b title="a<b && c>b">bar</b>'));
+  check('<b title="a<b && c>b">bar</b>',
+        '<b title="a&lt;b &amp;&amp; c&gt;b">bar</b>');
 });
 
 jsunitRegister('testUnclosedTags',
                function testUnclosedTags() {
-  assertEquals('<div id="foo">Bar<br>Baz</div>',
-               html_sanitize('<div id="foo">Bar<br>Baz'));
+  check('<div id="foo">Bar<br>Baz',
+        '<div id="p-foo">Bar<br>Baz</div>');
 });
 
 jsunitRegister('testUnopenedTags',
                function testUnopenedTags() {
-  assertEquals('Foo<b>Bar</b>Baz',
-               html_sanitize('Foo<b></select>Bar</b></b>Baz</select>'));
+  check('Foo<b></select>Bar</b></b>Baz</select>',
+        'Foo<b>Bar</b>Baz');
 });
 
 jsunitRegister('testUnsafeEndTags',
                function testUnsafeEndTags() {
-  assertEquals(
-      '',
-      html_sanitize(
-          '</meta http-equiv="refesh" content="1;URL=http://evilgadget.com">'));
+  check('</meta http-equiv="refresh" content="1;URL=http://evilgadget.com">',
+        '');
 });
 
 jsunitRegister('testEmptyEndTags',
                function testEmptyEndTags() {
-  assertEquals('<input>', html_sanitize('<input></input>'));
+  check('<input></input>',
+        '<input>');
 });
 
 jsunitRegister('testOnLoadStripped',
                function testOnLoadStripped() {
-  assertEquals(
-      '<img>',
-      html_sanitize('<img src=http://foo.com/bar ONLOAD=alert(1)>'));
+  check('<img src=http://foo.com/bar ONLOAD=alert(1)>',
+        '<img src="u:http://foo.com/bar">');
 });
 
 jsunitRegister('testClosingTagParameters',
                function testClosingTagParameters() {
-  assertEquals(
-      '<p>Hello world</p>',
-      html_sanitize('<p>Hello world</b style="width:expression(alert(1))">'));
+  check('<p>1</b style="x"><p>2</p /bar><p>3</p title=">4">5',
+        '<p>1<p>2</p><p>3</p>5</p>');
 });
 
 jsunitRegister('testOptionalEndTags',
                function testOptionalEndTags() {
   // The difference is significant because in the first, the item contains no
   // space after 'A', but in the third, the item contains 'C' and a space.
-  assertEquals(
-      '<ol> <li>A</li> <li>B<li>C </ol>',
-      html_sanitize('<ol> <li>A</li> <li>B<li>C </ol>'));
+  check('<ol> <li>A</li> <li>B<li>C </ol>');
 });
 
 jsunitRegister('testFoldingOfHtmlAndBodyTags',
                function testFoldingOfHtmlAndBodyTags() {
-  assertEquals(
-      '<p>P 1</p>',
-      html_sanitize('<html><head><title>Foo</title></head>'
-                    + '<body><p>P 1</p></body></html>'));
-  assertEquals(
-      'Hello',
-      html_sanitize('<body bgcolor="blue">Hello</body>'));
-  assertEquals(
-      '<p>Foo</p><p>One</p><p>Two</p>Three<p>Four</p>',
-      html_sanitize(
-          '<html>'
-          + '<head>'
-          + '<title>Blah</title>'
-          + '<p>Foo</p>'
-          + '</head>'
-          + '<body>'
-          + '<p>One</p>'
-          + '<p>Two</p>'
-          + 'Three'
-          + '<p>Four</p>'
-          + '</body>'
-          + '</html>'));
+  check1('<html><head><title>Foo</title></head>'
+         + '<body><p>P 1</p></body></html>',
+         '<p>P 1</p>');
+  check1('<body bgcolor="blue">Hello</body>',
+         'Hello');
+  check1('<html>'
+         + '<head>'
+         + '<title>Blah</title>'
+         + '<p>Foo</p>'
+         + '</head>'
+         + '<body>'
+         + '<p>One</p>'
+         + '<p>Two</p>'
+         + 'Three'
+         + '<p>Four</p>'
+         + '</body>'
+         + '</html>',
+         '<p>Foo</p><p>One</p><p>Two</p>Three<p>Four</p>');
+  jsunit.pass();
 });
 
 jsunitRegister('testEmptyAndValuelessAttributes',
                function testEmptyAndValuelessAttributes() {
-  assertEquals(
-      '<input checked="checked" type="checkbox" id="" class="">',
-      html_sanitize('<input checked type=checkbox id="" class=>'));
-  assertEquals(
-      '<input checked="checked" type="checkbox" id="" class="">',
-      html_sanitize('<input checked type=checkbox id= class="">'));
-  assertEquals(
-      '<input checked="checked" type="checkbox" id="" class="">',
-      html_sanitize('<input checked type=checkbox id= class = "">'));
+  check1('<input checked type=checkbox id="" class=>',
+         '<input checked="checked" type="checkbox" id="" class="">');
+  check1('<input checked type=checkbox id= class="">',
+         '<input checked="checked" type="checkbox" id="" class="">');
+  check1('<input checked type=checkbox id= class = "">',
+         '<input checked="checked" type="checkbox" id="" class="">');
+  jsunit.pass();
 });
 
 jsunitRegister('testSgmlShortTags',
@@ -232,128 +221,130 @@ jsunitRegister('testSgmlShortTags',
   //
   //      All could be fine if this form typo-that-happens-to-be-legal was
   //      properly implemented in contemporary HTML user-agents. It is not.
-  assertEquals('', html_sanitize('<p/b/'));  // Short-tag discarded.
-  assertEquals('<p></p>', html_sanitize('<p<b>'));  // Discard <b attribute
-  assertEquals(
-      '<p>first part of the text&lt;/&gt; second part</p>',
-      html_sanitize('<p<a href="/">first part of the text</> second part'));
+  check1('<p/b/', '');  // Short-tag discarded.
+  check1('<p<b>', '<p></p>');  // Discard <b attribute
+  check1(
+      '<p<a href="/">first part of the text</> second part',
+      '<p>first part of the text&lt;/&gt; second part</p>');
+  jsunit.pass();
 });
 
 jsunitRegister('testNul',
                function testNul() {
   // See bug 614 for details.
-  assertEquals(
-      '<a title="harmless  SCRIPT=javascript:alert(1) ignored=ignored">'
-      + '</a>',
-      html_sanitize(
-          '<A TITLE="harmless\0  SCRIPT=javascript:alert(1) ignored=ignored">'
-          ));
+  check(
+      '<A TITLE="x\0  SCRIPT=javascript:alert(1) ignored=ignored">',
+      '<a title="x  SCRIPT=javascript:alert(1) ignored=ignored"></a>');
 });
 
 jsunitRegister('testDigitsInAttrNames',
                function testDigitsInAttrNames() {
   // See bug 614 for details.
-  assertEquals(
-      '<div>Hello</div>',
-      html_sanitize(
-          '<div style1="expression(\'alert(1)\')">Hello</div>'
-          ));
+  check(
+      '<div style1="expression(\'alert(1)\')">Hello</div>',
+      '<div>Hello</div>');
 });
 
 jsunitRegister('testIncompleteTagOpen',
                function testIncompleteTagOpen() {
-  assertEquals('x', html_sanitize('x<a'));
-  assertEquals('x', html_sanitize('x<a '));
-  assertEquals('x', html_sanitize('x<a\n'));
-  assertEquals('x', html_sanitize('x<a bc'));
-  assertEquals('x', html_sanitize('x<a\nbc'));
+  check1('x<a', 'x');
+  check1('x<a ', 'x');
+  check1('x<a\n', 'x');
+  check1('x<a bc', 'x');
+  check1('x<a\nbc', 'x');
+  jsunit.pass();
 });
 
 jsunitRegister('testUriPolicy',
                function testUriPolicy() {
   assertEquals('<a href="http://www.example.com/">hi</a>',
-      html_sanitize('<a href="http://www.example.com/">hi</a>',
+      html.sanitize('<a href="http://www.example.com/">hi</a>',
         function(uri) { return uri; }));
   assertEquals('<a>hi</a>',
-      html_sanitize('<a href="http://www.example.com/">hi</a>',
+      html.sanitize('<a href="http://www.example.com/">hi</a>',
         function(uri) { return null; }));
   assertEquals('<a>hi</a>',
-      html_sanitize('<a href="javascript:alert(1)">hi</a>',
+      html.sanitize('<a href="javascript:alert(1)">hi</a>',
         function(uri) { return uri; }));
   assertEquals('<a>hi</a>',
-      html_sanitize('<a href="javascript:alert(1)">hi</a>',
+      html.sanitize('<a href="javascript:alert(1)">hi</a>',
         function(uri) { return null; }));
   assertEquals('<a href="//www.example.com/">hi</a>',
-      html_sanitize('<a href="//www.example.com/">hi</a>',
+      html.sanitize('<a href="//www.example.com/">hi</a>',
         function(uri) { return uri; }));
   assertEquals('<a href="foo.html">hi</a>',
-      html_sanitize('<a href="foo.html">hi</a>',
+      html.sanitize('<a href="foo.html">hi</a>',
         function(uri) { return uri; }));
   assertEquals('<a href="bar/baz.html">hi</a>',
-      html_sanitize('<a href="foo.html">hi</a>',
+      html.sanitize('<a href="foo.html">hi</a>',
         function(uri) { return "bar/baz.html"; }));
   assertEquals('<a href="mailto:jas@example.com">mail me</a>',
-      html_sanitize('<a href="mailto:jas@example.com">mail me</a>',
+      html.sanitize('<a href="mailto:jas@example.com">mail me</a>',
         function(uri) { return uri; }));
   assertEquals('<a>mail me</a>',
-      html_sanitize('<a href="mailto:jas@example.com">mail me</a>',
+      html.sanitize('<a href="mailto:jas@example.com">mail me</a>',
         function(uri) { return null; }));
+  jsunit.pass();
 });
 
 function assertSAXEvents(htmlSource, param, varargs_golden) {
+  // events is a flat array of triples (type, data, param)
   var events = [];
+  // makeSaxParser doesn't guarantee how text segments are chunked, so here
+  // we canonicalize the event stream by combining adjacent text events.
+  var addTextEvent = function (type, text, param) {
+    var n = events.length;
+    if (events[n - 3] === type && events[n - 1] === param) {
+      events[n - 2] += text;
+    } else {
+      events.push(type, text, param);
+    }
+  };
   var saxParser = html.makeSaxParser({
     startTag: function (name, attribs, param) {
-      events.push("startTag(" + name + ", [" + attribs.join(", ") + "], "
-                  + param + ")");
+      events.push('startTag', name + '[' + attribs.join(';') + ']', param);
     },
     endTag:   function (name, param) {
-      events.push("endTag(" + name + ", " + param + ")");
+      events.push('endTag', name, param);
     },
     pcdata:   function (text, param) {
-      events.push("pcdata(" + text + ", " + param + ")");
+      addTextEvent('pcdata', text, param);
     },
     cdata:    function (text, param) {
-      events.push("cdata(" + text + ", " + param + ")");
+      addTextEvent('cdata', text, param);
     },
     rcdata:   function (text, param) {
-      events.push("rcdata(" + text + ", " + param + ")");
+      addTextEvent('rcdata', text, param);
     },
     startDoc: function (param) {
-      events.push("startDoc(" + param + ")");
+      events.push('startDoc', '', param);
     },
     endDoc:   function (param) {
-      events.push("endDoc(" + param + ")");
+      events.push('endDoc', '', param);
     }
   });
-
   saxParser(htmlSource, param);
-
   var golden = Array.prototype.slice.call(arguments, 2);
-
-  assertEquals(golden.join("\n"), events.join("\n"));
+  assertEquals(golden.join("|"), events.join("|"));
 }
 
-jsunitRegister('testSaxParser',
-               function testSaxParser() {
+jsunitRegister('testSaxParser', function () {
   assertSAXEvents(
       "<p id=foo>Foo&amp;Bar</p><script>alert('<b>&amp;</b>')</script>",
       "<param>",
 
-      "startDoc(<param>)",
-      "startTag(p, [id, foo], <param>)",
-      "pcdata(Foo, <param>)",
-      "pcdata(&amp;, <param>)",
-      "pcdata(Bar, <param>)",
-      "endTag(p, <param>)",
-      "startTag(script, [], <param>)",
-      "cdata(alert('<b>&amp;</b>'), <param>)",
-      "endTag(script, <param>)",
-      "endDoc(<param>)");
+      'startDoc', '', '<param>',
+      'startTag', 'p[id;foo]', '<param>',
+      'pcdata', 'Foo&amp;Bar', '<param>',
+      'endTag', 'p', '<param>',
+      'startTag', 'script[]', '<param>',
+      'cdata', "alert('<b>&amp;</b>')", '<param>',
+      'endTag', 'script', '<param>',
+      'endDoc', '', '<param>');
+  jsunit.pass();
 });
 
-jsunitRegister('testSaxParserConfusingScripts',
-               function testSaxParserConfusingScripts() {
+jsunitRegister('testSaxParserConfusingScripts', function () {
   assertSAXEvents(
       '<div class="testcontainer" id="test">' +
       '<script>document.write("<b><script>");</script>' +
@@ -364,21 +355,22 @@ jsunitRegister('testSaxParserConfusingScripts',
 
       'PARAM',
 
-      'startDoc(PARAM)',
-      'startTag(div, [class, testcontainer, id, test], PARAM)',
-      'startTag(script, [], PARAM)',
-      'cdata(document.write("<b><script>");, PARAM)',
-      'endTag(script, PARAM)',
-      'startTag(script, [], PARAM)',
-      'cdata(document.write("document.write(");, PARAM)',
-      'endTag(script, PARAM)',
-      'startTag(script, [], PARAM)',
-      'cdata(document.write("\'Hello,</b> \'");, PARAM)',
-      'endTag(script, PARAM)',
-      'startTag(script, [], PARAM)',
-      'cdata(document.write(",\'World!\');<\\/script>");, PARAM)',
-      'endTag(script, PARAM)',
-      'pcdata(!, PARAM)',
-      'endTag(div, PARAM)',
-      'endDoc(PARAM)');
+      'startDoc', '', 'PARAM',
+      'startTag', 'div[class;testcontainer;id;test]', 'PARAM',
+      'startTag', 'script[]', 'PARAM',
+      'cdata', 'document.write("<b><script>");', 'PARAM',
+      'endTag', 'script', 'PARAM',
+      'startTag', 'script[]', 'PARAM',
+      'cdata', 'document.write("document.write(");', 'PARAM',
+      'endTag', 'script', 'PARAM',
+      'startTag', 'script[]', 'PARAM',
+      'cdata', 'document.write("\'Hello,</b> \'");', 'PARAM',
+      'endTag', 'script', 'PARAM',
+      'startTag', 'script[]', 'PARAM',
+      'cdata', 'document.write(",\'World!\');<\\/script>");', 'PARAM',
+      'endTag', 'script', 'PARAM',
+      'pcdata', '!', 'PARAM',
+      'endTag', 'div', 'PARAM',
+      'endDoc', '', 'PARAM');
+  jsunit.pass();
 });

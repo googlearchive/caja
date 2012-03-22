@@ -13,21 +13,21 @@
 // limitations under the License.
 
 /**
+ * This is a copy of html-sanitizer.js @r4805.  The current
+ * html-sanitizer.js uses a faster but significantly different parsing
+ * algorithm, so we're keeping this to check for regressions.
+ */
+
+/**
  * @fileoverview
  * An HTML sanitizer that can satisfy a variety of security policies.
  *
  * <p>
  * The HTML sanitizer is built around a SAX parser and HTML element and
  * attributes schemas.
- * 
- * If the cssparser is loaded, inline styles are sanitized using the
- * css property and value schemas.  Else they are remove during
- * sanitization.
  *
  * @author mikesamuel@gmail.com
- * @author jasvir@gmail.com
  * \@requires html4
- * \@requires parseCssDeclarations, sanitizeCssProperty,  cssSchema
  * \@overrides window
  * \@provides html, html_sanitize
  */
@@ -67,6 +67,9 @@ var html = (function(html4) {
     'quot': '"',
     'apos': '\''
   };
+
+  // Schemes on which to defer to uripolicy. Urls with other schemes are denied
+  var WHITELISTED_SCHEMES = /^(?:https?|mailto)$/i;
 
   var decimalEscapeRe = /^#(\d+)$/;
   var hexEscapeRe = /^#x([0-9A-Fa-f]+)$/;
@@ -189,50 +192,62 @@ var html = (function(html4) {
         .replace(gtRe, '&gt;');
   }
 
+
   // TODO(mikesamuel): validate sanitizer regexs against the HTML5 grammar at
   // http://www.whatwg.org/specs/web-apps/current-work/multipage/syntax.html
   // http://www.whatwg.org/specs/web-apps/current-work/multipage/parsing.html
   // http://www.whatwg.org/specs/web-apps/current-work/multipage/tokenization.html
   // http://www.whatwg.org/specs/web-apps/current-work/multipage/tree-construction.html
 
-  // We initially split input so that potentially meaningful characters
-  // like '<' and '>' are separate tokens, using a fast dumb process that
-  // ignores quoting.  Then we walk that token stream, and when we see a
-  // '<' that's the start of a tag, we use ATTR_RE to extract tag
-  // attributes from the next token.  That token will never have a '>'
-  // character.  However, it might have an unbalanced quote character, and
-  // when we see that, we combine additional tokens to balance the quote.
+  /** token definitions. */
+  var INSIDE_TAG_TOKEN = new RegExp(
+      // Don't capture space.
+      '^\\s*(?:' + (
+        // Capture an attribute name in group 1, and value in group 3.
+        // We capture the fact that there was an attribute in group 2, since
+        // interpreters are inconsistent in whether a group that matches nothing
+        // is null, undefined, or the empty string.
+        '(?:' +
+        '([a-z][a-z-]*)' + (                  // attribute name
+          '(' +                                // optionally followed
+          '\\s*=\\s*' + (
+            '(' +
+            // A double quoted string.
+            '\"[^\"]*\"' +
+            // A single quoted string.
+            '|\'[^\']*\'' +
+            // The positive lookahead is used to make sure that in
+            // <foo bar= baz=boo>, the value for bar is blank, not "baz=boo".
+            '|(?=[a-z][a-z-]*\\s*=)' +
+            // An unquoted value that is not an attribute name.
+            // We know it is not an attribute name because the previous
+            // zero-width match would've eliminated that possibility.
+            '|[^>\"\'\\s]*' +
+            ')'
+          ) +
+          ')'
+        ) + '?' +
+        ')'
+      ) +
+      // End of tag captured in group 3.
+      '|(/?>)' +
+      // Don't capture cruft
+      '|[\\s\\S][^a-z\\s>]*)',
+      'i');
 
-  var ATTR_RE = new RegExp(
-    '^\\s*' +
-    '([a-z][a-z-]*)' +          // 1 = Attribute name
-    '(?:' + (
-      '\\s*(=)\\s*' +           // 2 = Is there a value?
-      '(' + (                   // 3 = Attribute value
-        // TODO(felix8a): maybe use backref to match quotes
-        '(\")[^\"]*(\"|$)' +    // 4, 5 = Double-quoted string
-        '|' +
-        '(\')[^\']*(\'|$)' +    // 6, 7 = Single-quoted string
-        '|' +
-        // Positive lookahead to prevent interpretation of
-        // <foo a= b=c> as <foo a='b=c'>
-        // TODO(felix8a): might be able to drop this case
-        '(?=[a-z][a-z-]*\\s*=)' +
-        '|' +
-        // Unquoted value that isn't an attribute name
-        // (since we didn't match the positive lookahead above)
-        '[^\"\'\\s]*' ) +
-      ')' ) +
-    ')?',
-    'i');
-
-  var ENTITY_RE = /^(#[0-9]+|#x[0-9a-f]+|\w+);/i;
-
-  // false on IE<=8, true on most other browsers
-  var splitWillCapture = ('a,b'.split(/(,)/).length === 3);
-
-  // bitmask for tags with special parsing, like <script> and <textarea>
-  var EFLAGS_TEXT = html4.eflags.CDATA | html4.eflags.RCDATA;
+  var OUTSIDE_TAG_TOKEN = new RegExp(
+      '^(?:' +
+      // Entity captured in group 1.
+      '&(\\#[0-9]+|\\#[x][0-9a-f]+|\\w+);' +
+      // Comment, doctypes, and processing instructions not captured.
+      '|<\!--[\\s\\S]*?--\>|<!\\w[^>]*>|<\\?[^>*]*>' +
+      // '/' captured in group 2 for close tags, and name captured in group 3.
+      '|<(/)?([a-z][a-z0-9]*)' +
+      // Text captured in group 4.
+      '|([^<&>]+)' +
+      // Cruft captured in group 5.
+      '|([<&>]))',
+      'i');
 
   /**
    * Given a SAX-like event handler, produce a function that feeds those
@@ -258,308 +273,108 @@ var html = (function(html4) {
    *     and a parameter.  The parameter is passed on to the handler methods.
    */
   function makeSaxParser(handler) {
-    return function(htmlText, param) {
-      return parse(htmlText, handler, param);
-    };
-  }
+    return function parse(htmlText, param) {
+      htmlText = String(htmlText);
+      var htmlLower = null;
 
-  // Parsing strategy is to split input into parts that might be lexically
-  // meaningful (every ">" becomes a separate part), and then recombine
-  // parts if we discover they're in a different context.
+      var inTag = false;  // True iff we're currently processing a tag.
+      var attribs = [];  // Accumulates attribute names and values.
+      var tagName = void 0;  // The name of the tag currently being processed.
+      var eflags = void 0;  // The element flags for the current tag.
+      var openTag = void 0;  // True if the current tag is an open tag.
 
-  // Note, html-sanitizer filters unknown tags here, even though they also
-  // get filtered out by the sanitizer's handler.  This is back-compat
-  // behavior; makeSaxParser is public.
+      if (handler.startDoc) { handler.startDoc(param); }
 
-  // TODO(felix8a): Significant performance regressions from -legacy,
-  // tested on
-  //    Chrome 18.0
-  //    Firefox 11.0
-  //    IE 6, 7, 8, 9
-  //    Opera 11.61
-  //    Safari 5.1.3
-  // Many of these are unusual patterns that are linearly slower and still
-  // pretty fast (eg 1ms to 5ms), so not necessarily worth fixing.
+      while (htmlText) {
+        var m = htmlText.match(inTag ? INSIDE_TAG_TOKEN : OUTSIDE_TAG_TOKEN);
+        htmlText = htmlText.substring(m[0].length);
 
-  // TODO(felix8a): "<script> && && && ... </script>" is slower on all
-  // browsers.  The hotspot is htmlSplit.
-
-  // TODO(felix8a): "<p title='>>>>...'></p>" is slower on all browsers.
-  // This is partly htmlSplit, but the hotspot is parseTagAndAttrs.
-
-  // TODO(felix8a): "<a></a><a></a>..." is slower on IE9.
-  // "<a>1</a><a>1</a>..." is faster, "<a></a>2<a></a>2..." is faster.
-
-  // TODO(felix8a): "<p<p<p..." is slower on IE[6-8]
-
-  function parse(htmlText, handler, param) {
-    var h = handler;
-    if (h.startDoc) { h.startDoc(param); }
-    var m, p, tagName;
-    var parts = htmlSplit(htmlText);
-    var noMoreGT = false;
-    var noMoreEndComments = false;
-    for (var pos = 0, end = parts.length; pos < end;) {
-      var current = parts[pos++];
-      var next = parts[pos];
-      switch (current) {
-      case '&':
-        if (ENTITY_RE.test(next)) {
-          if (h.pcdata) { h.pcdata('&' + next, param); }
-          pos++;
-        } else {
-          if (h.pcdata) { h.pcdata("&amp;", param); }
-        }
-        break;
-      case '</':
-        if (m = /^(\w+)[^\'\"]*/.exec(next)) {
-          if (m[0].length === next.length && parts[pos + 1] === '>') {
-            // fast case, no attribute parsing needed
-            pos += 2;
-            tagName = lcase(m[1]);
-            if (html4.ELEMENTS.hasOwnProperty(tagName)) {
-              if (h.endTag) { h.endTag(tagName, param); }
+        if (inTag) {
+          if (m[1]) { // attribute
+            // setAttribute with uppercase names doesn't work on IE6.
+            var attribName = lcase(m[1]);
+            var decodedValue;
+            if (m[2]) {
+              var encodedValue = m[3];
+              switch (encodedValue.charCodeAt(0)) {  // Strip quotes
+                case 34: case 39:
+                  encodedValue = encodedValue.substring(
+                      1, encodedValue.length - 1);
+                  break;
+              }
+              decodedValue = unescapeEntities(stripNULs(encodedValue));
+            } else {
+              // Use name as value for valueless attribs, so
+              //   <input type=checkbox checked>
+              // gets attributes ['type', 'checkbox', 'checked', 'checked']
+              decodedValue = attribName;
             }
-          } else {
-            // slow case, need to parse attributes
-            // TODO(felix8a): do we really care about misparsing this?
-            pos = parseEndTag(parts, pos, h, param);
-          }
-        } else {
-          if (h.pcdata) { h.pcdata('&lt;/', param); }
-        }
-        break;
-      case '<':
-        if (m = /^(\w+)\s*\/?/.exec(next)) {
-          if (m[0].length === next.length && parts[pos + 1] === '>') {
-            // fast case, no attribute parsing needed
-            pos += 2;
-            tagName = lcase(m[1]);
-            if (html4.ELEMENTS.hasOwnProperty(tagName)) {
-              if (h.startTag) { h.startTag(tagName, [], param); }
-              // tags like <script> and <textarea> have special parsing
-              var eflags = html4.ELEMENTS[tagName];
-              if (eflags & EFLAGS_TEXT) {
-                var tag = { name: tagName, next: pos, eflags: eflags };
-                pos = parseText(parts, tag, h, param);
+            attribs.push(attribName, decodedValue);
+          } else if (m[4]) {
+            if (eflags !== void 0) {  // False if not in whitelist.
+              if (openTag) {
+                if (handler.startTag) {
+                  handler.startTag(tagName, attribs, param);
+                }
+              } else {
+                if (handler.endTag) {
+                  handler.endTag(tagName, param);
+                }
               }
             }
-          } else {
-            // slow case, need to parse attributes
-            pos = parseStartTag(parts, pos, h, param);
+
+            if (openTag &&
+                (eflags & (html4.eflags.CDATA | html4.eflags.RCDATA))) {
+              if (htmlLower === null) {
+                htmlLower = lcase(htmlText);
+              } else {
+                htmlLower = htmlLower.substring(
+                    htmlLower.length - htmlText.length);
+              }
+              var dataEnd = htmlLower.indexOf('</' + tagName);
+              if (dataEnd < 0) { dataEnd = htmlText.length; }
+              if (dataEnd) {
+                if (eflags & html4.eflags.CDATA) {
+                  if (handler.cdata) {
+                    handler.cdata(htmlText.substring(0, dataEnd), param);
+                  }
+                } else if (handler.rcdata) {
+                  handler.rcdata(
+                      normalizeRCData(htmlText.substring(0, dataEnd)), param);
+                }
+                htmlText = htmlText.substring(dataEnd);
+              }
+            }
+
+            tagName = eflags = openTag = void 0;
+            attribs.length = 0;
+            inTag = false;
           }
         } else {
-          if (h.pcdata) { h.pcdata('&lt;', param); }
-        }
-        break;
-      case '<!--':
-        // The pathological case is n copies of '<!--' without '-->', and
-        // repeated failure to find '-->' is quadratic.  We avoid that by
-        // remembering when search for '-->' fails.
-        if (!noMoreEndComments) {
-          // A comment <!--x--> is split into three tokens:
-          //   '<!--', 'x--', '>'
-          // We want to find the next '>' token that has a preceding '--'.
-          // pos is at the 'x--'.
-          for (p = pos + 1; p < end; p++) {
-            if (parts[p] === '>' && /--$/.test(parts[p - 1])) { break; }
-          }
-          if (p < end) {
-            pos = p + 1;
-          } else {
-            noMoreEndComments = true;
-          }
-        }
-        if (noMoreEndComments) {
-          if (h.pcdata) { h.pcdata('&lt;!--', param); }
-        }
-        break;
-      case '<!':
-        if (!/^\w/.test(next)) {
-          if (h.pcdata) { h.pcdata('&lt;!', param); }
-        } else {
-          // similar to noMoreEndComment logic
-          if (!noMoreGT) {
-            for (p = pos + 1; p < end; p++) {
-              if (parts[p] === '>') { break; }
-            }
-            if (p < end) {
-              pos = p + 1;
-            } else {
-              noMoreGT = true;
+          if (m[1]) {  // Entity
+            if (handler.pcdata) { handler.pcdata(m[0], param); }
+          } else if (m[3]) {  // Tag
+            openTag = !m[2];
+            inTag = true;
+            tagName = lcase(m[3]);
+            eflags = html4.ELEMENTS.hasOwnProperty(tagName) ?
+                html4.ELEMENTS[tagName] : void 0;
+          } else if (m[4]) {  // Text
+            if (handler.pcdata) { handler.pcdata(m[4], param); }
+          } else if (m[5]) {  // Cruft
+            if (handler.pcdata) {
+              switch (m[5]) {
+                case '<': handler.pcdata('&lt;', param); break;
+                case '>': handler.pcdata('&gt;', param); break;
+                case '&': handler.pcdata('&amp;', param); break;
+              }
             }
           }
-          if (noMoreGT) {
-            if (h.pcdata) { h.pcdata('&lt;!', param); }
-          }
         }
-        break;
-      case '<?':
-        // similar to noMoreEndComment logic
-        if (!noMoreGT) {
-          for (p = pos + 1; p < end; p++) {
-            if (parts[p] === '>') { break; }
-          }
-          if (p < end) {
-            pos = p + 1;
-          } else {
-            noMoreGT = true;
-          }
-        }
-        if (noMoreGT) {
-          if (h.pcdata) { h.pcdata('&lt;?', param); }
-        }
-        break;
-      case '>':
-        if (h.pcdata) { h.pcdata("&gt;", param); }
-        break;
-      case '':
-        break;
-      default:
-        if (h.pcdata) { h.pcdata(current, param); }
-        break;
       }
-    }
-    if (h.endDoc) { h.endDoc(param); }
-  }
 
-  // Split str into parts for the html parser.
-  function htmlSplit(str) {
-    // can't hoist this out of the function because of the re.exec loop.
-    var re = /(<\/|<!--|<[!?]|[&<>])/g;
-    str += '';
-    if (splitWillCapture) {
-      return str.split(re);
-    } else {
-      var parts = [];
-      var lastPos = 0;
-      var m;
-      while ((m = re.exec(str)) !== null) {
-        parts.push(str.substring(lastPos, m.index));
-        parts.push(m[0]);
-        lastPos = m.index + m[0].length;
-      }
-      parts.push(str.substring(lastPos));
-      return parts;
-    }
-  }
-
-  function parseEndTag(parts, pos, h, param) {
-    var tag = parseTagAndAttrs(parts, pos);
-    // drop unclosed tags
-    if (!tag) { return parts.length; }
-    if (tag.eflags !== void 0) {
-      if (h.endTag) { h.endTag(tag.name, param); }
-    }
-    return tag.next;
-  }
-
-  function parseStartTag(parts, pos, h, param) {
-    var tag = parseTagAndAttrs(parts, pos);
-    // drop unclosed tags
-    if (!tag) { return parts.length; }
-    if (tag.eflags !== void 0) {
-      if (h.startTag) { h.startTag(tag.name, tag.attrs, param); }
-      // tags like <script> and <textarea> have special parsing
-      if (tag.eflags & EFLAGS_TEXT) {
-        return parseText(parts, tag, h, param);
-      }
-    }
-    return tag.next;
-  }
-
-  var endTagRe = {};
-
-  // Tags like <script> and <textarea> are flagged as CDATA or RCDATA,
-  // which means everything is text until we see the correct closing tag.
-  function parseText(parts, tag, h, param) {
-    var end = parts.length;
-    if (!endTagRe.hasOwnProperty(tag.name)) {
-      endTagRe[tag.name] = new RegExp('^' + tag.name + '(?:[\\s\\/]|$)', 'i');
-    }
-    var re = endTagRe[tag.name];
-    var first = tag.next;
-    var p = tag.next + 1;
-    for (; p < end; p++) {
-      if (parts[p - 1] === '</' && re.test(parts[p])) { break; }
-    }
-    if (p < end) { p -= 1; }
-    var buf = parts.slice(first, p).join('');
-    if (tag.eflags & html4.eflags.CDATA) {
-      if (h.cdata) { h.cdata(buf, param); }
-    } else if (tag.eflags & html4.eflags.RCDATA) {
-      if (h.rcdata) { h.rcdata(normalizeRCData(buf), param); }
-    } else {
-      throw new Error('bug');
-    }
-    return p;
-  }
-
-  // at this point, parts[pos-1] is either "<" or "</".
-  function parseTagAndAttrs(parts, pos) {
-    var m = /^(\w+)/.exec(parts[pos]);
-    var tag = { name: lcase(m[1]) };
-    if (html4.ELEMENTS.hasOwnProperty(tag.name)) {
-      tag.eflags = html4.ELEMENTS[tag.name];
-    } else {
-      tag.eflags = void 0;
-    }
-    var buf = parts[pos].substr(m[0].length);
-    // Find the next '>'.  We optimistically assume this '>' is not in a
-    // quoted context, and further down we fix things up if it turns out to
-    // be quoted.
-    var p = pos + 1;
-    var end = parts.length;
-    for (; p < end; p++) {
-      if (parts[p] === '>') { break; }
-      buf += parts[p];
-    }
-    if (end <= p) { return void 0; }
-    var attrs = [];
-    while (buf !== '') {
-      m = ATTR_RE.exec(buf);
-      if (!m) {
-        // No attribute found: skip garbage
-        buf = buf.replace(/^[\s\S][^a-z\s]*/, '');
-
-      } else if ((m[4] && !m[5]) || (m[6] && !m[7])) {
-        // Unterminated quote: slurp to the next unquoted '>'
-        var quote = m[4] || m[6];
-        var sawQuote = false;
-        var abuf = [buf, parts[p++]];
-        for (; p < end; p++) {
-          if (sawQuote) {
-            if (parts[p] === '>') { break; }
-          } else if (0 <= parts[p].indexOf(quote)) {
-            sawQuote = true;
-          }
-          abuf.push(parts[p]);
-        }
-        // Slurp failed: lose the garbage
-        if (end <= p) { break; }
-        // Otherwise retry attribute parsing
-        buf = abuf.join('');
-        continue;
-
-      } else {
-        // We have an attribute
-        var aName = lcase(m[1]);
-        var aValue = m[2] ? decodeValue(m[3]) : aName;
-        attrs.push(aName, aValue);
-        buf = buf.substr(m[0].length);
-      }
-    }
-    tag.attrs = attrs;
-    tag.next = p + 1;
-    return tag;
-  }
-
-  function decodeValue(v) {
-    var q = v.charCodeAt(0);
-    if (q === 0x22 || q === 0x27) { // " or '
-      v = v.substr(1, v.length - 2);
-    }
-    return unescapeEntities(stripNULs(v));
+      if (handler.endDoc) { handler.endDoc(param); }
+    };
   }
 
   /**
@@ -576,9 +391,6 @@ var html = (function(html4) {
   function makeHtmlSanitizer(tagPolicy) {
     var stack;
     var ignoring;
-    var emit = function (text, out) {
-      if (!ignoring) { out.push(text); }
-    };
     return makeSaxParser({
       startDoc: function(_) {
         stack = [];
@@ -648,13 +460,20 @@ var html = (function(html4) {
           out.push('</', tagName, '>');
         }
       },
-      pcdata: emit,
-      rcdata: emit,
-      cdata: emit,
+      pcdata: function(text, out) {
+        if (!ignoring) { out.push(text); }
+      },
+      rcdata: function(text, out) {
+        if (!ignoring) { out.push(text); }
+      },
+      cdata: function(text, out) {
+        if (!ignoring) { out.push(text); }
+      },
       endDoc: function(out) {
-        for (; stack.length; stack.length--) {
-          out.push('</', stack[stack.length - 1], '>');
+        for (var i = stack.length; --i >= 0;) {
+          out.push('</', stack[i], '>');
         }
+        stack.length = 0;
       }
     });
   }
@@ -663,28 +482,16 @@ var html = (function(html4) {
   var URI_SCHEME_RE = new RegExp(
       '^' +
       '(?:' +
-        '([^:\/?# ]+)' +         // scheme
+        '([^:\/?#]+)' +         // scheme
       ':)?'
   );
-
-  var ALLOWED_URI_SCHEMES = /^(?:https?|mailto)$/i;
-
-  function safeUri(uri, naiveUriRewriter) {
-    if (!naiveUriRewriter) { return null; }
-    var parsed = ('' + uri).match(URI_SCHEME_RE);
-    if (parsed && (!parsed[1] || ALLOWED_URI_SCHEMES.test(parsed[1]))) {
-      return naiveUriRewriter(uri);
-    } else {
-      return null;
-    }
-  }
 
   /**
    * Sanitizes attributes on an HTML tag.
    * @param {string} tagName An HTML tag name in lowercase.
    * @param {Array.<?string>} attribs An array of alternating names and values.
-   * @param {?function(?string): ?string} opt_uriRewriter A transform to apply
-   *     to URI attributes; it can return a new string value, or null to delete
+   * @param {?function(?string): ?string} opt_uriPolicy A transform to apply to
+   *     URI attributes; it can return a new string value, or null to delete
    *     the attribute.  If unspecified, URI attributes are deleted.
    * @param {function(?string): ?string} opt_nmTokenPolicy A transform to apply
    *     to attributes containing HTML names, element IDs, and space-separated
@@ -693,8 +500,7 @@ var html = (function(html4) {
    * @return {Array.<?string>} The sanitized attributes as a list of alternating
    *     names and values, where a null value means to omit the attribute.
    */
-  function sanitizeAttribs(
-      tagName, attribs, opt_naiveUriRewriter, opt_nmTokenPolicy) {
+  function sanitizeAttribs(tagName, attribs, opt_uriPolicy, opt_nmTokenPolicy) {
     for (var i = 0; i < attribs.length; i += 2) {
       var attribName = attribs[i];
       var value = attribs[i + 1];
@@ -709,30 +515,8 @@ var html = (function(html4) {
         switch (atype) {
           case html4.atype.NONE: break;
           case html4.atype.SCRIPT:
-            value = null;
-            break;
           case html4.atype.STYLE:
-            if ('undefined' === typeof parseCssDeclarations) {
-              value = null;
-              break;
-            }
-            var sanitizedDeclarations = [];
-            parseCssDeclarations(
-                value,
-                {
-                  declaration: function (property, tokens) {
-                    var normProp = property.toLowerCase();
-                    var schema = cssSchema[normProp];
-                    if (!schema) {
-                      return;
-                    }
-                    sanitizeCssProperty(
-                        schema, tokens,
-                        opt_naiveUriRewriter);
-                    sanitizedDeclarations.push(property + ': ' + tokens.join(' '));
-                  }
-                });
-            value = sanitizedDeclarations.length > 0 ? sanitizedDeclarations.join(' ; ') : null;
+            value = null;
             break;
           case html4.atype.ID:
           case html4.atype.IDREF:
@@ -743,7 +527,15 @@ var html = (function(html4) {
             value = opt_nmTokenPolicy ? opt_nmTokenPolicy(value) : value;
             break;
           case html4.atype.URI:
-            value = safeUri(value, opt_naiveUriRewriter);
+            var parsedUri = ('' + value).match(URI_SCHEME_RE);
+            if (!parsedUri) {
+              value = null;
+            } else if (!parsedUri[1] ||
+                WHITELISTED_SCHEMES.test(parsedUri[1])) {
+              value = opt_uriPolicy ? opt_uriPolicy(value) : null;
+            } else {
+              value = null;
+            }
             break;
           case html4.atype.URI_FRAGMENT:
             if (value && '#' === value.charAt(0)) {
@@ -772,19 +564,19 @@ var html = (function(html4) {
    * Creates a tag policy that omits all tags marked UNSAFE in html4-defs.js
    * and applies the default attribute sanitizer with the supplied policy for
    * URI attributes and NMTOKEN attributes.
-   * @param {?function(?string): ?string} opt_uriRewriter A transform to apply
-   *     to URI attributes.  If not given, URI attributes are deleted.
+   * @param {?function(?string): ?string} opt_uriPolicy A transform to apply to
+   *     URI attributes.  If not given, URI attributes are deleted.
    * @param {function(?string): ?string} opt_nmTokenPolicy A transform to apply
    *     to attributes containing HTML names, element IDs, and space-separated
    *     lists of classes.  If not given, such attributes are left unchanged.
    * @return {function(string, Array.<?string>)} A tagPolicy suitable for
    *     passing to html.sanitize.
    */
-  function makeTagPolicy(opt_naiveUriRewriter, opt_nmTokenPolicy) {
+  function makeTagPolicy(opt_uriPolicy, opt_nmTokenPolicy) {
     return function(tagName, attribs) {
       if (!(html4.ELEMENTS[tagName] & html4.eflags.UNSAFE)) {
         return sanitizeAttribs(
-            tagName, attribs, opt_naiveUriRewriter, opt_nmTokenPolicy);
+            tagName, attribs, opt_uriPolicy, opt_nmTokenPolicy);
       }
     };
   }
@@ -806,14 +598,14 @@ var html = (function(html4) {
   /**
    * Strips unsafe tags and attributes from HTML.
    * @param {string} inputHtml The HTML to sanitize.
-   * @param {?function(?string): ?string} opt_uriRewriter A transform to apply
-   *     to URI attributes.  If not given, URI attributes are deleted.
+   * @param {?function(?string): ?string} opt_uriPolicy A transform to apply to
+   *     URI attributes.  If not given, URI attributes are deleted.
    * @param {function(?string): ?string} opt_nmTokenPolicy A transform to apply
    *     to attributes containing HTML names, element IDs, and space-separated
    *     lists of classes.  If not given, such attributes are left unchanged.
    */
-  function sanitize(inputHtml, opt_naiveUriRewriter, opt_nmTokenPolicy) {
-    var tagPolicy = makeTagPolicy(opt_naiveUriRewriter, opt_nmTokenPolicy);
+  function sanitize(inputHtml, opt_uriPolicy, opt_nmTokenPolicy) {
+    var tagPolicy = makeTagPolicy(opt_uriPolicy, opt_nmTokenPolicy);
     return sanitizeWithPolicy(inputHtml, tagPolicy);
   }
 

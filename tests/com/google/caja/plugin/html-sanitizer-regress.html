@@ -1,6 +1,5 @@
-<!doctype html>
 <!--
- - Copyright (C) 2008 Google Inc.
+ - Copyright (C) 2011 Google Inc.
  -
  - Licensed under the Apache License, Version 2.0 (the "License");
  - you may not use this file except in compliance with the License.
@@ -16,28 +15,29 @@
 -->
 <html>
   <head>
-    <title>HTML Sanitizer Tests</title>
-<script type="text/javascript" src="jsUnitCore.js"></script>
+    <title>HTML Sanitizer Regression Test</title>
+<script type="text/javascript" src="jsUnitCore.js"
+ ></script>
 <script type="text/javascript" src="jsunit.js"></script>
-<script type="text/javascript" src="html-sanitizer-bundle.js"></script>
-<script type="text/javascript" src="html-sanitizer-test.js"></script>
-<style>
-  #results {
-    font-family: monospace;
-    background-color: #eee;
-  }
-</style>
+<script type="text/javascript" src="html4-defs.js"></script>
+
+<script type="text/javascript" src="html-sanitizer-legacy.js"></script>
+<script>var html0 = html; html = void 0;</script>
+
+<script type="text/javascript" src="html-sanitizer.js"></script>
+<script>var html1 = html; html = void 0;</script>
+
+<!-- optional -->
+<script type="text/javascript" src="html-sanitizer-exp.js"></script>
+<script>var html2 = html; html = void 0;</script>
+
+<script type="text/javascript" src="html-sanitizer-data.js"></script>
+<script type="text/javascript" src="html-sanitizer-regress.js"></script>
   </head>
 
   <body onload="jsunitRun()">
     <p>jsunit tests are run automatically, and the results are
       shown in the document title and the console.</p>
-    <p>The form below lets you manually experiment with the html
-      sanitizer.</p>
-    <form onsubmit="interactiveTest(this.elements.html.value); return false">
-      <input type="submit" value="Sanitize" /><br>
-      <textarea cols="80" rows="10" name="html"></textarea>
-    </form>
     <div id="results"></div>
   </body>
 </html>

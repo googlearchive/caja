@@ -1047,6 +1047,8 @@
         <include name="js/json_sans_eval/json_sans_eval.js"/>
       </fileset>
     </copy>
+    <copy todir="${lib.caja}/plugin"
+          file="${third_party}/js/jsunit/2.2/jsUnitCore.js"/>
     <copy todir="${lib.caja}/plugin/proxies">
       <fileset dir="${third_party}/js/proxies" />
     </copy>

@@ -1,0 +1,67 @@
+<!doctype html>
+<!--
+ - Copyright (C) 2011 Google Inc.
+ -
+ - Licensed under the Apache License, Version 2.0 (the "License");
+ - you may not use this file except in compliance with the License.
+ - You may obtain a copy of the License at
+ -
+ -      http://www.apache.org/licenses/LICENSE-2.0
+ -
+ - Unless required by applicable law or agreed to in writing, software
+ - distributed under the License is distributed on an "AS IS" BASIS,
+ - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ - See the License for the specific language governing permissions and
+ - limitations under the License.
+-->
+<html>
+  <head>
+    <title>HTML Sanitizer Benchmark</title>
+    <link rel="stylesheet" href="html-sanitizer-bench.css">
+
+    <script type="text/javascript" src="html4-defs.js"></script>
+
+    <script type="text/javascript" src="html-sanitizer-legacy.js"></script>
+    <script>var html0 = html; html = void 0;</script>
+
+    <script type="text/javascript" src="html-sanitizer.js"></script>
+    <script>var html1 = html; html = void 0;</script>
+
+    <!-- optional -->
+    <script type="text/javascript" src="html-sanitizer-exp.js"></script>
+    <script>var html2 = html; html = void 0;</script>
+
+    <script type="text/javascript" src="html-sanitizer-data.js"></script>
+    <script type="text/javascript" src="html-sanitizer-bench.js"></script>
+  </head>
+  <body onload="bench.init()">
+    <textarea id="sample" rows="5" cols="80">sample input</textarea>
+    <br />
+    <button onclick="bench.start()">start tests</button>
+    <button onclick="bench.stop()">stop tests</button>
+    <button onclick="bench.clear()">clear results</button>
+    <button onclick="bench.runSample()">run sample</button>
+
+    <div id="timestamp"></div>
+    <div id="progress"></div>
+    <div id="errors"></div>
+    <div id="about">
+      numbers are time in milliseconds (smaller is better).
+      <br>bars are 1/time (longer is better)
+    </div>
+    <table id="report">
+      <thead>
+        <tr>
+          <th>diff</th>
+          <th>legacy</th>
+          <th>current</th>
+          <th class="if-t2">exp</th>
+          <th align="left">input</th>
+        </tr>
+      </thead>
+    </table>
+    <!-- TODO(felix8a): need a way to save a set of results -->
+    <!-- TODO(felix8a): manual testcases would be nice -->
+    <!-- TODO(felix8a): sort on column -->
+  </body>
+</html>
