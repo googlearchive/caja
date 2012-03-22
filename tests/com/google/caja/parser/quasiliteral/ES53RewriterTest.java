@@ -81,7 +81,7 @@ public class ES53RewriterTest extends CommonJsRewriterTestCase {
             "  var a = {};" +
             "  var b = Object.freeze(Object.create(a));" +
             "  a.x = 8;" +
-            "  assertThrows(function(){b.x = 9;});" +
+            "  assertThrowsMsg(function(){b.x = 9;}, 'not extensible');" +
             "  assertEquals(b.x, 8);" +
             "})();");
   }
@@ -428,13 +428,13 @@ public class ES53RewriterTest extends CommonJsRewriterTestCase {
   public final void testObjectFreeze() throws Exception {
     rewriteAndExecute(
         "var r = Object.freeze({});" +
-        "assertThrows(function(){r.foo = 8;});");
+        "assertThrowsMsg(function(){r.foo = 8;}, 'not extensible');");
     rewriteAndExecute(
         "var f = function(){};" +
         "f.foo = 8;");
     rewriteAndExecute(
         "var f = Object.freeze(function(){});" +
-        "assertThrows(function(){f.foo = 8;});");
+        "assertThrowsMsg(function(){f.foo = 8;}, 'not extensible');");
     rewriteAndExecute(
         "function Point(x,y) {" +
         "  this.x = x;" +
@@ -443,13 +443,13 @@ public class ES53RewriterTest extends CommonJsRewriterTestCase {
         "var pt = new Point(3,5);" +
         "pt.x = 8;" +
         "Object.freeze(pt);" +
-        "assertThrows(function(){pt.y = 9;});");
+        "assertThrowsMsg(function(){pt.y = 9;}, 'not writable');");
     // Check that deferred creation of prototype property doesn't make it
     // writable.
     rewriteAndExecute(
         "function f(){}" +
         "Object.freeze(f);" +
-        "assertThrows(function() { f.prototype = {}; });");
+        "assertThrowsMsg(function() { f.prototype = {}; }, 'not writable');");
   }
 
   /**
@@ -602,8 +602,11 @@ public class ES53RewriterTest extends CommonJsRewriterTestCase {
     assertConsistent(
         "[].sort.apply([6, 5]);");
     assertConsistent(
-        "(function (first, second) { return 'a' + first + 'b' + second; })"
-        + ".bind([], 8)(9);");
+        "function f(first, second) {" +
+        "  return 'a' + first + 'b' + second;" +
+        "}\n" +
+        "var g = f.bind([], 8);\n" +
+        "g(9);");
   }
 
   /**
@@ -623,7 +626,8 @@ public class ES53RewriterTest extends CommonJsRewriterTestCase {
   public final void testToxicBind() throws Exception {
     rewriteAndExecute(
         "var confused = false;" +
-        "testImports.keystone = function keystone() { confused = true; };",
+        "testImports.keystone = function keystone() { confused = true; };" +
+        "___.grantRead(testImports, 'keystone');",
         "assertThrows(function() {keystone.bind()();});",
         "assertFalse(confused);");
   }
@@ -639,7 +643,8 @@ public class ES53RewriterTest extends CommonJsRewriterTestCase {
    */
   public final void testBadDelete() throws Exception {
     rewriteAndExecute(
-        "testImports.badContainer = {secret__: 3469};",
+        "testImports.badContainer = {secret__: 3469};" +
+        "___.grantRead(testImports, 'badContainer');",
         "assertThrows(function() {delete badContainer['secret__'];});",
         "assertEquals(testImports.badContainer.secret__, 3469);");
     rewriteAndExecute(
@@ -1235,9 +1240,10 @@ public class ES53RewriterTest extends CommonJsRewriterTestCase {
   public final void testMapNonEmpty() throws Exception {
     // Ensure that calling an untamed function throws
     rewriteAndExecute(
-        "testImports.f = function() {};",
+        "testImports.f = function() {};" +
+        "___.grantRead(testImports, 'f');",
         "assertThrows(function() { f(); });",
-        ";");
+        "");
     // Ensure that calling a tamed function in an object literal works
     rewriteAndExecute(
         "  var f = function() {};"
@@ -1246,7 +1252,8 @@ public class ES53RewriterTest extends CommonJsRewriterTestCase {
     // Ensure that putting an untamed function into an object literal
     // causes an exception.
     rewriteAndExecute(
-        "testImports.f = function() {};",
+        "testImports.f = function() {};" +
+        "___.grantRead(testImports, 'f');",
         "assertThrows(function(){({ isPrototypeOf : f });});",
         ";");
   }
@@ -1816,6 +1823,19 @@ public class ES53RewriterTest extends CommonJsRewriterTestCase {
     rewriteAndExecute("{foo: (function (){}).bind(Number)}");
   }
 
+  public final void testNoSetter() throws Exception {
+    // Checks that configurable properties with no setter
+    // and no backing property.
+    rewriteAndExecute(
+        "testImports.x = {};" +
+        "testImports.x.DefineOwnProperty___('g'," +
+        "    {configurable: true, get:___.markFunc(function(){}) });" +
+        "delete testImports.x.g;" +
+        "___.grantRead(testImports,'x');",
+        "assertThrowsMsg(function(){x.g = 1;}, 'no setter');",
+        "");
+  }
+
   @Override
   public void setUp() throws Exception {
     super.setUp();
@@ -1823,15 +1843,22 @@ public class ES53RewriterTest extends CommonJsRewriterTestCase {
     setRewriter(es53Rewriter);
   }
 
+  private static String assertThrowsMsg =
+      "function assertThrowsMsg(f, msg) {\n" +
+      "  try { f(); } catch (e) {\n" +
+      "    assertTrue(e.message.indexOf(msg) > -1);\n" +
+      "    return true;\n" +
+      "  }\n" +
+      "  return false;\n" +
+      "}\n";
+
   @Override
   protected Object executePlain(String caja) throws IOException {
     mq.getMessages().clear();
     return RhinoTestBed.runJs(
         new Executor.Input(
-            getClass(), "../../../../../js/json_sans_eval/json_sans_eval.js"),
-        new Executor.Input(getClass(), "/com/google/caja/es53.js"),
-        new Executor.Input(
             getClass(), "../../../../../js/jsunit/2.2/jsUnitCore.js"),
+        new Executor.Input(assertThrowsMsg, "assertThrowsMsg"),
         new Executor.Input(caja, getName() + "-uncajoled"));
   }
 
@@ -1855,6 +1882,7 @@ public class ES53RewriterTest extends CommonJsRewriterTestCase {
         "assertLessThan",
         "assertNull",
         "assertThrows",
+        "assertThrowsMsg",
     };
 
     StringBuilder importsSetup = new StringBuilder();
@@ -1876,6 +1904,7 @@ public class ES53RewriterTest extends CommonJsRewriterTestCase {
         new Executor.Input(getClass(), "/com/google/caja/es53.js"),
         new Executor.Input(
             getClass(), "../../../../../js/jsunit/2.2/jsUnitCore.js"),
+        new Executor.Input(assertThrowsMsg, "assertThrowsMsg"),
         new Executor.Input(
             getClass(), "/com/google/caja/log-to-console.js"),
         new Executor.Input(

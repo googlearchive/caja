@@ -529,7 +529,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
     if ('___' in dis) {
       throw new Error('Internal: toxic global!');
     }
-    return dis;
+    return asFirstClass(dis);
   }
 
   var endsWith__ = /__$/;
@@ -712,6 +712,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
    * whitelisted properties of {@code this}).
    */
   function markFunc(fn, name) {
+    if (fn.ok___) { return fn; }
     if (!isFunction(fn)) {
       throw new TypeError('Expected a function instead of ' + fn);
     }
@@ -2197,8 +2198,12 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
         }
       }
       // Is P an accessor property on obj?
-      var s = setter(this, P);
-      if (s) { s.f___(this, [V]); return V; }
+      if (this[P + '_v___'] === false) {
+        var s = setter(this, P);
+        if (s) { s.f___(this, [V]); return V; }
+        throw new TypeError("The property '" + P
+            + "' has no setter.");
+      }
 
       // If P is an own data property,
       if (this[P + '_v___'] === this) {
@@ -2542,7 +2547,10 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
    */
   function asFirstClass(value) {
     if (isFunction(value) && !value.ok___) {
-      throw new Error('Internal: toxic function encountered!');
+      if (value === Function.prototype) {
+        throw new Error('Cannot invoke Function.prototype.');
+      }
+      throw new Error('Internal: toxic function encountered!\n' + value);
     }
     return value;
   }
@@ -3264,22 +3272,23 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
    * partial set of arguments in <tt>var_args</tt>. Return the curried
    * result as a new function object.
    */
-  Function.prototype.bind = markFunc(function(self, var_args) {
+  Function.prototype.bind = function(self, var_args) {
       var thisFunc = safeDis(this);
       var leftArgs = slice.call(arguments, 1);
       function funcBound(var_args) {
         var args = leftArgs.concat(slice.call(arguments, 0));
         return thisFunc.apply(safeDis(self), args);
       }
-      // 15.3.5.2
-      delete funcBound.prototype;
+      markFunc(funcBound);
       funcBound.f___ = funcBound.apply;
+      funcBound.ok___ = true;
+      // 15.3.5.2
+      rawDelete(funcBound, 'prototype');
       funcBound.new___ = function () {
           throw "Constructing the result of a bind() not yet implemented.";
         };
-      funcBound.ok___ = thisFunc.ok___;
       return funcBound;
-    });
+    };
   virtualize(Function.prototype, 'bind');
 
   // 15.4 Array
