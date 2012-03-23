@@ -528,9 +528,9 @@ public class ES53RewriterTest extends CommonJsRewriterTestCase {
     rewriteAndExecute(
         "",
         "function objMaker(f) {return {toString:f};}",
-        ""
-        + "assertThrows("
-        + "    function() {testImports.objMaker(function(){return '1';});});"
+        "assertThrowsMsg(" +
+        "    function() {testImports.objMaker(function(){return '1';});}," +
+        "    'toxic');"
         );
   }
 
@@ -628,7 +628,7 @@ public class ES53RewriterTest extends CommonJsRewriterTestCase {
         "var confused = false;" +
         "testImports.keystone = function keystone() { confused = true; };" +
         "___.grantRead(testImports, 'keystone');",
-        "assertThrows(function() {keystone.bind()();});",
+        "assertThrowsMsg(function() {keystone.bind()();}, 'toxic');",
         "assertFalse(confused);");
   }
 
@@ -645,10 +645,12 @@ public class ES53RewriterTest extends CommonJsRewriterTestCase {
     rewriteAndExecute(
         "testImports.badContainer = {secret__: 3469};" +
         "___.grantRead(testImports, 'badContainer');",
-        "assertThrows(function() {delete badContainer['secret__'];});",
+        "assertThrowsMsg(function() {delete badContainer['secret__'];}," +
+        "    'double underscore');",
         "assertEquals(testImports.badContainer.secret__, 3469);");
     rewriteAndExecute(
-        "assertThrows(function() {delete ({})['proto___'];});");
+        "assertThrowsMsg(function() {delete ({})['proto___'];}," +
+        "    'double underscore');");
   }
 
   /**
@@ -1008,7 +1010,7 @@ public class ES53RewriterTest extends CommonJsRewriterTestCase {
         js(fromString("Array = function () { return [] };")),
         RewriterMessageType.CANNOT_ASSIGN_TO_IDENTIFIER);
     // Throws a ReferenceError
-    rewriteAndExecute("assertThrows(function () { x = 1; })");
+    rewriteAndExecute("assertThrowsMsg(function () { x = 1; }, 'not defined')");
   }
 
   public final void testSetBadSuffix() throws Exception {
@@ -1152,7 +1154,8 @@ public class ES53RewriterTest extends CommonJsRewriterTestCase {
 
   public final void testDeleteFails() throws Exception {
     rewriteAndExecute(
-        "assertThrows(function (){delete (function f(){}).name;});");
+        "assertThrowsMsg(function (){delete (function f(){}).name;}," +
+        "    'Cannot delete');");
   }
 
   public final void testDeleteNonLvalue() throws Exception {
@@ -1207,7 +1210,8 @@ public class ES53RewriterTest extends CommonJsRewriterTestCase {
   }
 
   public final void testTypeof() throws Exception {
-    rewriteAndExecute("assertThrows(function () { return typeof ___; })");
+    rewriteAndExecute("assertThrowsMsg(function () { return typeof ___; }," +
+        "'double underscore')");
     assertConsistent("typeof true;");
     assertConsistent("typeof 0;");
     assertConsistent("typeof undefined;");
@@ -1242,7 +1246,7 @@ public class ES53RewriterTest extends CommonJsRewriterTestCase {
     rewriteAndExecute(
         "testImports.f = function() {};" +
         "___.grantRead(testImports, 'f');",
-        "assertThrows(function() { f(); });",
+        "assertThrowsMsg(function() { f(); }, 'toxic');",
         "");
     // Ensure that calling a tamed function in an object literal works
     rewriteAndExecute(
@@ -1254,7 +1258,7 @@ public class ES53RewriterTest extends CommonJsRewriterTestCase {
     rewriteAndExecute(
         "testImports.f = function() {};" +
         "___.grantRead(testImports, 'f');",
-        "assertThrows(function(){({ isPrototypeOf : f });});",
+        "assertThrowsMsg(function(){({ isPrototypeOf : f });}, 'toxic');",
         ";");
   }
 
@@ -1466,7 +1470,8 @@ public class ES53RewriterTest extends CommonJsRewriterTestCase {
         "assertTrue(t.get(k3) === void 0);");
     rewriteAndExecute(
         "var t = new WeakMap(true);" +
-        "assertThrows(function(){t.set('foo', 'v1');});");
+        "assertThrowsMsg(function(){t.set('foo', 'v1');}," +
+        "    'primitive keys');");
     rewriteAndExecute(
         "var t = new WeakMap(true);" +
         "var k1 = {};" +
@@ -1651,19 +1656,20 @@ public class ES53RewriterTest extends CommonJsRewriterTestCase {
         "o.x = 1;" +
         "var o2 = Object.create(o);" +
         "Object.preventExtensions(o2);" +
-        "assertThrows(function () { o2.x = 2; });");
+        "assertThrowsMsg(function () { o2.x = 2; }, 'extensible');");
     rewriteAndExecute(
         "var o = {};" +
         "var o2 = Object.create(o);" +
         "Object.preventExtensions(o2);" +
-        "assertThrows(function () { Array.prototype.sort.call(o2); });");
+        "assertThrowsMsg(function () { Array.prototype.sort.call(o2); }," +
+        "    'extensible');");
     rewriteAndExecute(
         "var o = {};" +
         "o.x = 1;" +
         "var o2 = Object.create(o);" +
         "o2.y = 1;" +
         "Object.seal(o2);" +
-        "assertThrows(function () { o2.x = 2; });" +
+        "assertThrowsMsg(function () { o2.x = 2; }, 'extensible');" +
         "var desc = Object.getOwnPropertyDescriptor(o2, 'y');" +
         "assertEquals(desc.configurable, false);");
   }
@@ -1768,9 +1774,11 @@ public class ES53RewriterTest extends CommonJsRewriterTestCase {
           "cajaVM.log('extensibility');" +
           "  var o2 = {};" +
           "  var o3 = Object.create(o2);" +
-          "  assertThrows(function(){Proxy.create(handlerMaker({}), o3);});" +
+          "  assertThrowsMsg(function(){Proxy.create(handlerMaker({}), o3);}," +
+          "      'extensible');" +
           "  Object.preventExtensions(o3);" +
-          "  assertThrows(function(){Proxy.create(handlerMaker({}), o3);});" +
+          "  assertThrowsMsg(function(){Proxy.create(handlerMaker({}), o3);}," +
+          "      'extensible');" +
           "  Object.preventExtensions(o2);" +
           "  Proxy.create(handlerMaker({}), o3);" +
           "cajaVM.log('function as object');" +
