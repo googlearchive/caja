@@ -21,12 +21,14 @@ import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.js.CajoledModule;
 import com.google.caja.parser.js.Statement;
 import com.google.caja.parser.quasiliteral.ModuleManager;
+import com.google.caja.parser.quasiliteral.RewriterMessageType;
 import com.google.caja.plugin.stages.JobCache;
-import com.google.caja.plugin.stages.PipelineStageTestCase;
-import com.google.caja.plugin.stages.PipelineStoreStage;
 import com.google.caja.plugin.stages.JobCache.Key;
 import com.google.caja.plugin.stages.JobCache.Keys;
+import com.google.caja.plugin.stages.PipelineStageTestCase;
+import com.google.caja.plugin.stages.PipelineStoreStage;
 import com.google.caja.reporting.EchoingMessageQueue;
+import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.TestBuildInfo;
 import com.google.caja.util.ContentType;
 import com.google.caja.util.Join;
@@ -555,6 +557,23 @@ public class PipelineCacheTest extends PipelineStageTestCase {
     // The JS block was served from the cache.
     assertEquals(1, cache.nServedFromCache);
   }
+
+  public final void testCachedRewriterError() throws Exception {
+    assertPipelineFails(
+        job("with(e){}", ContentType.JS));
+    assertMessage(
+        true, RewriterMessageType.WITH_BLOCKS_NOT_ALLOWED,
+        MessageLevel.ERROR);
+    assertNoWarnings();
+
+    assertPipelineFails(
+        job("with(e){}", ContentType.JS));
+    assertMessage(
+        true, RewriterMessageType.WITH_BLOCKS_NOT_ALLOWED,
+        MessageLevel.ERROR);
+    assertNoWarnings();
+  }
+
 
   @Override
   protected boolean runPipeline(Jobs jobs) throws Exception {

@@ -55,12 +55,20 @@ public class ExpressionSanitizerCaja {
       }
     }
     result = newES53Rewriter(mgr).expand(input);
-    if (!mq.hasMessageAtLevel(MessageLevel.ERROR)) {
-      result = new IllegalReferenceCheckRewriter(mq, false).expand(result);
-      if (!mq.hasMessageAtLevel(MessageLevel.ERROR)) {
-        result.visitPreOrder(new NonAsciiCheckVisitor(mq), null);
-      }
+    if (mq.hasMessageAtLevel(MessageLevel.ERROR)) {
+      return null;
     }
+
+    result = new IllegalReferenceCheckRewriter(mq, false).expand(result);
+    if (mq.hasMessageAtLevel(MessageLevel.ERROR)) {
+      return null;
+    }
+
+    result.visitPreOrder(new NonAsciiCheckVisitor(mq), null);
+    if (mq.hasMessageAtLevel(MessageLevel.ERROR)) {
+      return null;
+    }
+
     return result;
   }
 
