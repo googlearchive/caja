@@ -737,7 +737,32 @@ public class ES53Rewriter extends Rewriter {
       public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
         if (node instanceof FunctionDeclaration) {
           Identifier name = ((FunctionDeclaration) node).getIdentifier();
-          if (name.getValue().endsWith("__")) {
+          String strName = name.getValue();
+          if (strName != null && strName.endsWith("__")) {
+            mq.addMessage(
+                RewriterMessageType.VARIABLES_CANNOT_END_IN_DOUBLE_UNDERSCORE,
+                node.getFilePosition(), this, node);
+            return node;
+          }
+        }
+        return NONE;
+      }
+    },
+
+    new Rule() {
+      @Override
+      @RuleDescription(
+          name="functionBadSuffixConstructor",
+          synopsis="Statically reject if a variable with `__` suffix is found.",
+          reason="Caja reserves the `__` suffix for internal use.",
+          matches="<approx> function @v__ ...",
+          matchNode=FunctionConstructor.class,
+          substitutes="<reject>")
+      public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
+        if (node instanceof FunctionConstructor) {
+          Identifier name = ((FunctionConstructor) node).getIdentifier();
+          String strName = name.getValue();
+          if (strName != null && strName.endsWith("__")) {
             mq.addMessage(
                 RewriterMessageType.VARIABLES_CANNOT_END_IN_DOUBLE_UNDERSCORE,
                 node.getFilePosition(), this, node);

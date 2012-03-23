@@ -943,7 +943,7 @@ public class ES53RewriterTest extends CommonJsRewriterTestCase {
         "Variables cannot end in \"__\"");
   }
 
-  public final void testVarBadSuffix() throws Exception {
+  public final void testBadSuffix() throws Exception {
     checkFails(
         "function() { foo__; };",
         "Variables cannot end in \"__\"");
@@ -955,9 +955,12 @@ public class ES53RewriterTest extends CommonJsRewriterTestCase {
         "    var foo_;" +
         "    foo_ = 3;" +
         "  });");
-  }
-
-  public final void testVarBadSuffixDeclaration() throws Exception {
+    checkFails(
+        "var x = function __() { };",
+        "Variables cannot end in \"__\"");
+    checkFails(
+        "function () { var x = function __() { }; }",
+        "Variables cannot end in \"__\"");
     checkFails(
         "function foo__() { }",
         "Variables cannot end in \"__\"");
