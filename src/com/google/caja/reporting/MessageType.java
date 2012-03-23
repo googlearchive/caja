@@ -96,7 +96,7 @@ public enum MessageType implements MessageTypeInt {
   NOT_IE("%s: Will not work in IE", MessageLevel.WARNING),
 
   // symbol errors
-  SYMBOL_REDEFINED("%s: %s originally defined at %s", MessageLevel.ERROR),
+  SYMBOL_REDEFINED("%s: %s originally defined at %s", MessageLevel.LINT),
   UNDOCUMENTED_GLOBAL("%s: Undocumented global %s", MessageLevel.LINT),
   INVALID_ASSIGNMENT(
       "%s: Invalid assignment to %s", MessageLevel.ERROR),

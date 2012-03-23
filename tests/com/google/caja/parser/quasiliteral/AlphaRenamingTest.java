@@ -205,7 +205,7 @@ public class AlphaRenamingTest extends CajaTestCase {
         + "})",
         "global");
     assertMessage(
-        true, MessageType.SYMBOL_REDEFINED, MessageLevel.ERROR,
+        true, MessageType.SYMBOL_REDEFINED, MessageLevel.LINT,
         FilePosition.instance(is, 1, 44, 44, 1),
         FilePosition.instance(is, 1, 26, 26, 1),
         MessagePart.Factory.valueOf("f"));
@@ -272,7 +272,7 @@ public class AlphaRenamingTest extends CajaTestCase {
     assertRenamed(
         "(function b() { var b = b; return b; })",
         "(function f() { var f = f; return f; })", "f");
-    assertMessage(true, MessageType.SYMBOL_REDEFINED, MessageLevel.ERROR,
+    assertMessage(true, MessageType.SYMBOL_REDEFINED, MessageLevel.LINT,
                   MessagePart.Factory.valueOf("f"));
     assertNoErrors();
   }

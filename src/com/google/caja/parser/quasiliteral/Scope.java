@@ -640,7 +640,7 @@ public class Scope {
   /**
    * Add a symbol to the symbol table for this scope with the given type.
    * If this symbol redefines another symbol with a different type, or masks
-   * an exception, then an error will be added to this Scope's MessageQueue.
+   * an exception, then a warning will be added to this Scope's MessageQueue.
    */
   private static void declare(Scope s, Identifier ident, LocalType type) {
     String name = ident.getName();
@@ -657,11 +657,9 @@ public class Scope {
       if (oldType != type
           || oldType.implies(LocalType.FUNCTION)
           || type.implies(LocalType.FUNCTION)) {
-        // This is an error because redeclaring a function declaration as a
-        // var makes analysis hard.
         s.rewriter.mq.getMessages().add(new Message(
             MessageType.SYMBOL_REDEFINED,
-            MessageLevel.ERROR,
+            MessageLevel.LINT,
             ident.getFilePosition(),
             MessagePart.Factory.valueOf(name),
             oldDefinition.b));

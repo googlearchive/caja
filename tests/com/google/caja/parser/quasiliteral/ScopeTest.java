@@ -342,23 +342,23 @@ public class ScopeTest extends CajaTestCase {
         "function foo() {} var foo;",
         false,
         MessageType.SYMBOL_REDEFINED,
-        MessageLevel.ERROR);
+        MessageLevel.LINT);
     assertFunctionRedefined(
         "function foo() {} var foo = 3;",
         false,
         MessageType.SYMBOL_REDEFINED,
-        MessageLevel.ERROR);
+        MessageLevel.LINT);
 
     assertFunctionRedefined(
         "function foo() { var foo; }",
         true,
         MessageType.SYMBOL_REDEFINED,
-        MessageLevel.ERROR);
+        MessageLevel.LINT);
     assertFunctionRedefined(
         "function foo() { var foo = 3; }",
         true,
         MessageType.SYMBOL_REDEFINED,
-        MessageLevel.ERROR);
+        MessageLevel.LINT);
 
     assertFunctionRedefined(
         "var f = function foo() {}; var foo;",
@@ -375,23 +375,23 @@ public class ScopeTest extends CajaTestCase {
         "var f = function foo() { var foo; };",
         true,
         MessageType.SYMBOL_REDEFINED,
-        MessageLevel.ERROR);
+        MessageLevel.LINT);
     assertFunctionRedefined(
         "var f = function foo() { var foo = 3; };",
         true,
         MessageType.SYMBOL_REDEFINED,
-        MessageLevel.ERROR);
+        MessageLevel.LINT);
 
     assertFunctionRedefined(
         "function foo(){ (function() { var foo; })(); }",
         true,
         MessageType.SYMBOL_REDEFINED,
-        MessageLevel.ERROR);
+        MessageLevel.LINT);
     assertFunctionRedefined(
         "function foo(){ (function() { var foo = 3; })(); }",
         true,
         MessageType.SYMBOL_REDEFINED,
-        MessageLevel.ERROR);
+        MessageLevel.LINT);
   }
 
   public final void testStartStatementsForProgram() throws Exception {

@@ -1228,7 +1228,7 @@ public class ES53RewriterTest extends CommonJsRewriterTestCase {
     assertAddsMessage(
         "function Goo() { function Goo() {} }",
         MessageType.SYMBOL_REDEFINED,
-        MessageLevel.ERROR );
+        MessageLevel.LINT );
     assertAddsMessage(
         "function Goo() { var Goo = 1; }",
         MessageType.MASKING_SYMBOL,
