@@ -26,9 +26,8 @@
  * </ul>
  *
  * @author metaweta@gmail.com
- * @requires json_sans_eval, cajaBuildVersion, taming
+ * @requires json_sans_eval, cajaBuildVersion, taming, this
  * @provides ___, safeJSON, WeakMap, cajaVM
- * @overrides Array, Boolean, Date, Function, Number, Object, RegExp, String
  * @overrides Error, EvalError, RangeError, ReferenceError, SyntaxError,
  *   TypeError, URIError, ArrayLike
  * @overrides escape, JSON, Proxy
@@ -36,7 +35,16 @@
 
 var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
 
-(function () {
+(function (global) {
+  var Array = global.Array,
+      Boolean = global.Boolean,
+      Date = global.Date,
+      Function = global.Function,
+      Number = global.Number,
+      Object = global.Object,
+      RegExp = global.RegExp,
+      String = global.String;
+
   // For computing the [[Class]] internal property
   var classProp = Object.prototype.toString;
   var gopd = Object.getOwnPropertyDescriptor;
@@ -48,6 +56,9 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
 
   var slice = Array.prototype.slice; 
   var push = Array.prototype.push;
+  var sort = Array.prototype.sort;
+  var min = Math.min;
+  var replace = String.prototype.replace;
 
 
   // Workarounds for FF2 and FF3.0 for
@@ -1787,7 +1798,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
     if (isFrozen(record)) {
       throw new TypeError("Can't stamp frozen objects: " + record);
     }
-    stamps = Array.slice(stamps, 0);
+    stamps = slice.call(stamps, 0);
     var numStamps = stamps.length;
     // First ensure that we will succeed before applying any stamps to
     // the record.
@@ -3399,13 +3410,13 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
             'Cannot sort an object that is not extensible.');
       }
       var result = (comparefn ?
-          Array.prototype.sort.call(
+          sort.call(
               this,
               markFunc(function(var_args){
                 return comparefn.f___(this, arguments);
               })
             ) :
-          Array.prototype.sort.call(this));
+          sort.call(this));
       whitelistLengthIfItExists(this);
       return result;
     });
@@ -3436,7 +3447,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
       if (!len) { return -1; }
       var i = arguments[1] || len;
       if (i < 0) { i += len; }
-      i = Math.min___(i, len - 1);
+      i = min(i, len - 1);
       for (; i >= 0; i--) {
         if (!this.hasOwnProperty(i)) {
           continue;
@@ -3713,7 +3724,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
       } else {
         replacement = '' + replacement;
       }
-      return String.prototype.replace.call(
+      return replace.call(
           this,
           cast ? ('' + searcher) : searcher,
           replacement
@@ -5505,4 +5516,4 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
     ___[cajaVMKeys[i]] = cajaVM[cajaVMKeys[i]];
   }
   setNewModuleHandler(makeNormalNewModuleHandler());
-})();
+})(this);

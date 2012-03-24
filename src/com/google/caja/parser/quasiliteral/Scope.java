@@ -632,6 +632,9 @@ public class Scope {
       "Infinity",
       "NaN",
       "Object",     // Masking Object can change the behavior of { k: v }
+      "String",     // Masking these can change behavior of casts
+      "Boolean",
+      "Number",
       "arguments",  // Can muck with arguments to synthetic values.
       "eval",       // Can't assign to eval in strict mode.
       "cajita"      // Used for caja extensions.
