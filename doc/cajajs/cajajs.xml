@@ -27,7 +27,7 @@
 </pre>
   <p>This places a singleton object, <code>caja</code>, in the host
   page's global namespace. The API of the <code>caja</code> object and
-  the object reachable from it is described here.</p></doc>
+  the objects reachable from it is described here.</p></doc>
 
   <!-- 
     ************************************************************
@@ -41,12 +41,16 @@
     <doc><p>The entry point for access to the Caja host page
     API.</p></doc>
 
+    <!-- policy -->
+
     <property>
       <name>policy</name>
       <doc><p>A pre-configured set of policies (see
       <code>policy</code>) for use by host code, as an alternative to
       constructing a <code>uriPolicy</code> from scratch.</p></doc>
     </property>
+
+    <!-- initialize -->
 
     <method>
       <name>initialize</name>
@@ -87,6 +91,8 @@
       </arg>
     </method>
 
+    <!-- whenReady -->
+
     <method>
       <name>whenReady</name>
       <doc><p>Registers a function to be called back when Caja is
@@ -96,6 +102,8 @@
         <doc><p>a callback function.</p></doc>
       </arg>
     </method>
+
+    <!-- load -->
 
     <method>
       <name>load</name>
@@ -123,6 +131,8 @@
         with a <code>frame</code> object when ready.</p></doc>
       </arg>
     </method>
+
+    <!-- tame -->
 
     <method>
       <name>tame</name>
@@ -191,21 +201,41 @@ var t = aFrameGroup.tame(f);
       object.</p></returndoc>
     </method>
 
+    <!-- untame -->
+
     <method>
-      <name>markReadWrite</name>
-      <doc><p>This annotation on a record tells Caja to allow guest
-      code to both read <em>and</em> write the properties of that
-      record. Only that record is affected -- not any other object
+      <name>untame</name>
+      <doc><p>Obtain the original defensive object corresponding to a
+      tamed object.</p></doc>
+      <arg>
+        <name>aTamedObject</name>
+        <doc><p>a tamed object obtained via calling <code>tame</code>.</p></doc>
+      </arg>
+      <returndoc><p>the original defensive object underlying
+      <code>aTamedObject</code>.</p></returndoc>
+    </method>
+
+    <!-- markReadOnlyRecord -->
+
+    <method>
+      <name>markReadOnlyRecord</name>
+      <doc><p>Marks a record such that guest code cannot make 
+      modifications to the properties of the tamed form
+      of the record. Only the supplied record is affected -- not any other object
       that may be connected to it. For example, in the following:</p>
 <pre class="prettyprint lang-javascript">
 /* <strong>host page code</strong> */
-var f = { x: 3 };
-aFrameGroup.markReadWrite(f);
-var t = aFrameGroup.tame(f);
+var rw = { x: 3 };
+var ro = { x : 4 }
+caja.markReadOnlyRecord(ro);
+var rot = aFrameGroup.tame(ro);
+var rwt = aFrameGroup.tame(rw);
 </pre>
-        <p>guest code using the tamed value <code>t</code> would be
+        <p>guest code using the tamed value <code>rwt</code> would be
         allowed to modify the value of <code>x</code> or delete the
-        property, or add a new property <code>y</code>.</p></doc>
+        property, or add a new property <code>y</code>. However, guest
+        code using the tamed value <code>rot</code> would encounter an
+        exception.</p></doc>
       <arg>
         <name>f</name>
         <doc><p>a record in the host page.</p></doc>
@@ -213,45 +243,99 @@ var t = aFrameGroup.tame(f);
       <returndoc><p>the supplied <code>f</code>.</p></returndoc>
     </method>
 
+   <!-- markFunction -->
+
     <method>
-      <name>markXo4a</name>
-      <doc><p>This annotation on a function tells Caja to tame a
-      function as an <a
-      href="http://en.wikipedia.org/wiki/Exophora">exophora</a>,
-      meaning, a function that receives any <code>this</code> value it
-      is called on. For example, in the following:</p>
+      <name>markFunction</name>
+      <doc><p>Marks a host function to be made callable from guest code when
+      tamed. For example, in the following:</p>
 <pre class="prettyprint lang-javascript">
 /* <strong>host page code</strong> */
-function f(x) { this.i___ = x; }
+function ping(x) { alert('pinged ' + x); }
+caja.markFunction(ping);
+
+/* then provide to guest code: */
+aFrame.api({ ping: caja.tame(ping) })
+</pre>
+      <p>guest code would be able to use the value <code>ping</code> as a
+      function, for example:</p>
+<pre class="prettyprint lang-javascript">
+/* <strong>guest code</strong> */
+ping('hello world');
+</pre>
+      <p>By default, functions from the host page are tamed as inert
+      objects that have no useful behavior. This is a safety feature,
+      because functions in the host page generally represent authority to
+      affect the world. By calling <code>markFunction</code>, a host page
+      author affirms that they have audited the behavior of the target
+      function and have determined (a) that the authority it has is indeed
+      okay to provide to the guest code; and (b) that the invariants upon which
+      the correctness of the function depends cannot be violated by passing
+      the function corrupted arguments. That last point requires, for example,
+      that numeric indices are checked for bounds, and that strings passed
+      from guest code are not used in a manner that could grant access to internal
+      data structures.</p></doc>
+      <arg>
+        <name>f</name>
+        <doc><p>a function in the host page.</p></doc>
+      </arg>
+      <returndoc><p>the supplied <code>f</code>.</p></returndoc>
+    </method>
+
+    <!-- markXo4a -->
+
+    <method>
+      <name>markXo4a</name>
+      <doc><p>Mark a host function as suitable for taming as an
+      <a
+      href="http://en.wikipedia.org/wiki/Exophora">exophora</a>,
+      meaning, a function that receives any <code>this</code> value it
+      is called on. Use only with care.</p>
+      <p>Consider the following host code:</p>
+<pre class="prettyprint lang-javascript">
+/* <strong>host page code</strong> */
+function f(x) { this.dangerous = x; }
 aFrameGroup.markXo4a(f);
 
 /* then provide to guest code: */
 aFrame.api({ tamedF: aFrameGroup.tame(f) })
 </pre>
-      <p>guest code using the function <code>t</code> would be able to
-      set the property <code>i___</code> on <em>any</em> object of its
-      choosing, regardless of any policies to the contrary, even
-      though the <code>i___</code> property name may interfere with the
-      Caja internals. For example:</p>
+      <p>Guest code using the function <code>tamedF</code> would be able to
+      set the property <code>dangerous</code> on <em>any</em> object of its
+      choosing, regardless of any policies to the contrary. So, if <code>victim</code>
+      were an object that relied on its <code>dangerous</code> property and did
+      not make that available to external clients, the following guest code:</p>
 <pre class="prettyprint lang-javascript">
 /* <strong>guest code</strong> */
-var aVictimObject = /* ... */;
-aVictimObject.method = tamedF;
-aVictimObject.method( /* ... */ );
+victim.method = tamedF;
+victim.method(42);
 </pre>
+      <p>or even:</p>
+<pre class="prettyprint lang-javascript">
+/* <strong>guest code</strong> */
+tamedF.apply(victim, [42]);
+</pre>
+      <p>would set the <code>dangerous</code> property of <code>victim</code>
+      to the value <code>42</code>, regardless of policies to the contrary.</p>
       <p>The rule for when an exophora is safe is that it
       <em>only</em> gets or sets whitelisted properties of the
       <code>this</code> value on which it is called, in other words,
-      properties that do not interfere with the Caja internals.</p>
+      properties that do not interfere with any object's internals. It
+      may do so because the property (such as <code>dangerous</code> above)
+      is known to always be safe, or because the function itself (like
+      <code>f</code> above) contains enough internal checks to make sure it
+      never does the wrong thing.</p>
       <p>In general, true reasons for using exophora are rare. We
       advise the use of other, safer mechanisms, with exophora as a
       last resort.</p></doc>
       <arg>
         <name>f</name>
-        <doc><p>an object in the host page.</p></doc>
+        <doc><p>a function in the host page.</p></doc>
       </arg>
       <returndoc><p>the supplied <code>f</code>.</p></returndoc>
     </method>
+
+    <!-- markCtor -->
 
     <method>
       <name>markCtor</name>
@@ -302,6 +386,202 @@ var o = new TamedCtor(19);
       <returndoc><p>the supplied <code>c</code>.</p></returndoc>
     </method>
 
+    <!-- grantMethod -->
+
+    <method>
+      <name>grantMethod</name>
+      <doc><p>Marks a function property on an object and its prototype chain
+      descendants such that tamed code can
+      call it as a method on its parent object. A method (as opposed to a pure
+      function) is called with a properly bound <code>this</code> value.</p>
+      <p>By default, to prevent confusion and enhance defensibility, if guest
+      code has access to a tamed object <code>o</code>, and there exists a property
+      <code>p</code> on <code>o</code> such that the value of <code>o.p</code> is
+      a function, then if guest code invokes the function by writing <code>o.p()</code>,
+      the implementation of the function pointed to by <code>o.p</code> does <em>not</em>
+      receive <code>o</code> as its value of <code>this</code> (it receives some useless
+      value instead).</p>
+      <p>Host code can use <code>grantMethod</code> to override this default. A common
+      use case is when taming idiomatic JavaScript classes. Consider the host code:</p>
+<pre class="prettyprint lang-javascript">
+/* <strong>host page code</strong> */
+function Ctor(x) { this.x = x; }
+Ctor.prototype.getX = function() { return this.x; };
+Ctor.prototype.setX = function(x) { this.x = x; };
+</pre>
+      <p>Assume the host page wishes to allow guest code to call
+      <code>getX</code> and <code>setX</code> on
+      instances of <code>Ctor</code> and for <code>this</code> in these functions to
+      be bound correctly. The host page should do:</p>
+<pre class="prettyprint lang-javascript">
+/* <strong>host page code</strong> */
+caja.markCtor(Ctor);
+caja.grantMethod(Ctor.prototype, "getX");
+caja.grantMethod(Ctor.prototype, "setX");
+
+/* then provide to guest code: */
+aFrame.api({
+  TamedCtor: tame(Ctor),
+})
+</pre>
+      <p>Guest code can then make the following calls to <code>getX</code> and
+      <code>setX</code> and expect them to work:</p>
+<pre class="prettyprint lang-javascript">
+/* <strong>guest code</strong> */
+var o = new TamedCtor(19);
+o.getX();
+o.setX(22);
+</pre>
+      </doc>
+      <arg>
+        <name>o</name>
+        <doc><p>an object (often but not always the prototype of a constructor).</p></doc>
+      </arg>
+      <arg>
+        <name>name</name>
+        <doc><p>the name of a property on object <code>o</code> (or anticipated objects
+	having <code>o</code> as their prototype).</p></doc>
+      </arg>
+      <returndoc><p>the supplied <code>o</code>.</p></returndoc>
+    </method>
+
+    <!-- grantRead -->
+
+    <method>
+      <name>grantRead</name>
+      <doc><p>Marks a property on an object and its prototype chain decendants such that
+      tamed code can read the property on its parent object. A common
+      use case is when taming idiomatic JavaScript classes. Consider the host code:</p>
+<pre class="prettyprint lang-javascript">
+/* <strong>host page code</strong> */
+function Ctor(x) { this.x = x; }
+</pre>
+      <p>Assume the host page wishes to allow guest code to read the <code>x</code>
+      property on instances of <code>Ctor</code>. The host page should do:</p>
+<pre class="prettyprint lang-javascript">
+/* <strong>host page code</strong> */
+caja.markCtor(Ctor);
+caja.grantRead(Ctor.prototype, "x");
+
+/* then provide to guest code: */
+aFrame.api({
+  TamedCtor: tame(Ctor),
+})
+</pre>
+      <p>Guest code can then read <code>x</code> as follows and expect the
+      read operation to work:</p>
+<pre class="prettyprint lang-javascript">
+/* <strong>guest code</strong> */
+var o = new TamedCtor(19);
+o.x;
+</pre>
+      </doc>
+      <arg>
+        <name>o</name>
+        <doc><p>an object (often but not always the prototype of a constructor).</p></doc>
+      </arg>
+      <arg>
+        <name>name</name>
+        <doc><p>the name of a property on object <code>o</code> (or anticipated objects
+	having <code>o</code> as their prototype).</p></doc>
+      </arg>
+      <returndoc><p>the supplied <code>o</code>.</p></returndoc>
+    </method>
+
+    <!-- grantReadWrite -->
+
+    <method>
+      <name>grantReadWrite</name>
+      <doc><p>Marks a property on an object and its prototype chain decendants such that
+      tamed code can read and write the property on its parent object. A common
+      use case is when taming idiomatic JavaScript classes. Consider the host code:</p>
+<pre class="prettyprint lang-javascript">
+/* <strong>host page code</strong> */
+function Ctor(x) { this.x = x; }
+</pre>
+      <p>Assume the host page wishes to allow guest code to read and write the <code>x</code>
+      property on instances of <code>Ctor</code>. The host page should do:</p>
+<pre class="prettyprint lang-javascript">
+/* <strong>host page code</strong> */
+caja.markCtor(Ctor);
+caja.grantReadWrite(Ctor.prototype, "x");
+
+/* then provide to guest code: */
+aFrame.api({
+  TamedCtor: tame(Ctor),
+})
+</pre>
+      <p>Guest code can then read and write <code>x</code> as follows and expect the
+      read and write operations to work:</p>
+<pre class="prettyprint lang-javascript">
+/* <strong>guest code</strong> */
+var o = new TamedCtor(19);
+o.x = 23;
+o.x;
+</pre>
+      </doc>
+      <arg>
+        <name>o</name>
+        <doc><p>an object (often but not always the prototype of a constructor).</p></doc>
+      </arg>
+      <arg>
+        <name>name</name>
+        <doc><p>the name of a property on object <code>o</code> (or anticipated objects
+	having <code>o</code> as their prototype).</p></doc>
+      </arg>
+      <returndoc><p>the supplied <code>o</code>.</p></returndoc>
+    </method>
+
+    <!-- unwrapDom -->
+
+    <method>
+      <name>unwrapDom</name>
+      <doc><p>Unwrap the value a DOM node provided to host code from guest code.</p>
+      <p>When guest code attempts to pass to host code a DOM node across the taming
+      boundary, what is actually passed is a wrapper object holding the DOM node.
+      This container object must be opened using <code>unwrapDom</code> to get at the
+      underlying DOM node.</p>
+      <p>Consider the host code:</p>
+<pre class="prettyprint lang-javascript">
+/* <strong>host page code</strong> */
+function operateOnNode(n) { }
+caja.markFunction(operateOnNode);
+
+/* then provide to guest code: */
+aFrame.api({
+  operateOnNode: tame(operateOnNode)
+})
+</pre>
+      <p>Assume that guest code running within a Caja tamed HTML DOM hands a DOM
+      node back to the host code using the <code>operateOnNode</code> function, as follows:</p>
+<pre class="prettyprint lang-html">
+&lt;!-- <strong>guest markup</strong> --&gt;
+&lt;div id="aNode"&gt;&lt;/div&gt;
+&lt;script type="text/javascript"&gt;
+  operateOnNode(document.getElementById('aNode'));
+&lt;/script&gt;
+</pre>
+        <p>To gain access to the actual underlying DOM node, the host function
+	<code>operateOnNode</code> would need to be implemented as follows:</p>
+<pre class="prettyprint lang-javascript">
+/* <strong>host page code</strong> */
+function operateOnNode(n) {
+  /* 'n' is an opaque wrapper object */
+  var r = caja.unwrapDom(n);
+  /* 'r' is now the actual underlying DOM node */
+}
+</pre>
+      </doc>
+      <arg>
+        <name>n</name>
+        <doc><p>an opaque wrapper for a DOM node, created by Caja when guest code
+	passes a DOM node to host code.</p></doc>
+      </arg>
+      <returndoc><p>the actual underlying DOM node.</p></returndoc>
+    </method>
+
+    <!-- examples -->
+
     <example>
       <title>Setting defaults</title>
       <doc>
@@ -349,8 +629,8 @@ caja.initialize({ /* ... */ });
 <pre class="prettyprint lang-javascript">
 /* <strong>host page code</strong> */
 /* in a top-level script */
+caja.markFunction( /* ... */ );
 caja.tame( /* ... */ );
-caja.markTameAsFunction( /* ... */ );
 </pre>
         <p>Both calls to the <code>caja</code> object throw since,
         when the main scripts in the page are being evaluated, the
@@ -365,12 +645,12 @@ caja.markTameAsFunction( /* ... */ );
 /* <strong>host page code</strong> */
 /* in a top-level script */
 caja.whenReady(function() {
+  caja.markFunction( /* ... */ );
   caja.tame( /* ... */ );
-  caja.markTameAsFunction( /* ... */ );
 });
 </pre>
-        <p>The calls to <code>tame</code> and
-        <code>markTameAsFunction</code> succeed.</p>
+        <p>The calls to <code>markFunction</code>
+	and <code>tame</code> succeed.</p>
       </doc>
     </example>
 
@@ -453,7 +733,7 @@ var restrictedAlert = function(s) {
 
 caja.initialize({ cajaServer: 'http://caja.appspot.com' });
 caja.whenReady(function() {
-  caja.markTameAsFunction(restrictedAlert);
+  caja.markFunction(restrictedAlert);
 });
 
 caja.load(
