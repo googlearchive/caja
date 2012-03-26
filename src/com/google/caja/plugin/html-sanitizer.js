@@ -24,10 +24,11 @@
  * css property and value schemas.  Else they are remove during
  * sanitization.
  *
+ * If it exists, uses parseCssDeclarations, sanitizeCssProperty,  cssSchema
+ *
  * @author mikesamuel@gmail.com
  * @author jasvir@gmail.com
  * \@requires html4
- * \@requires parseCssDeclarations, sanitizeCssProperty,  cssSchema
  * \@overrides window
  * \@provides html, html_sanitize
  */
@@ -36,6 +37,15 @@
  * \@namespace
  */
 var html = (function(html4) {
+
+  // For closure compiler
+  var parseCssDeclarations, sanitizeCssProperty, cssSchema;
+  if ('undefined' !== typeof window) {
+    parseCssDeclarations = window['parseCssDeclarations'];
+    sanitizeCssProperty = window['sanitizeCssProperty'];
+    cssSchema = window['cssSchema'];
+  }
+
   var lcase;
   // The below may not be true on browsers in the Turkish locale.
   if ('script' === 'SCRIPT'.toLowerCase()) {
