@@ -1295,6 +1295,7 @@
       <fileset dir="${src.caja}/demos/playground">
         <include name="examples/*.gif" />
         <include name="examples/*.html" />
+        <include name="examples/*.js" />
         <include name="examples/unboxed/*.html" />
         <include name="examples/unboxed/*.png" />
       </fileset>

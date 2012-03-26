@@ -7,8 +7,12 @@
     <script src="http://ajax.googleapis.com/ajax/libs/jquery/1/jquery.js"></script>
 	<script src="http://jqueryui.com/ui/jquery.ui.core.js"></script>
 	<script src="http://jqueryui.com/ui/jquery.ui.widget.js"></script>
-	<!-- TODO(jasvir): Switch back to real date picker when datepicker fix is in upstream -->
-	<script src="http://www.thinkfu.com/jquery.ui.datepicker.js"></script>
+	<!--
+	TODO: Local version to avoid the following compiler error:
+	ERROR jquery.ui.datepicker.js:623+11 - 16: Declaration of event masks declaration at jquery.ui.datepicker.js:610+21 - 26:
+	http://code.google.com/p/google-caja/issues/detail?id=1456
+	-->
+	<script src="./jquery.ui.datepicker.js"></script>
 	<link rel="stylesheet" href="http://jqueryui.com/demos/demos.css">
 	<script>
 	$(function() {

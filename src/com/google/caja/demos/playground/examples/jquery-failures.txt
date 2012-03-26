@@ -1,0 +1,18 @@
+effect
+  * Explode does not look like it "should" but sort of works.
+  * The following kill gadget; no r/t errs but effects no longer work:
+    * Puff
+    * Pulsate
+    * Scale
+    * Size
+
+datepicker, tabs
+  * Compiler error requires locally hacked file:
+      http://code.google.com/p/google-caja/issues/detail?id=1456
+
+datepicker
+  * Form field is not populated when datepicker is dismissed.
+ 
+selectable, sortable
+  * Selection box drawing is offset to bottom and right from mouse;
+    this is likely a domado error of some sort.
