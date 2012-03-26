@@ -635,6 +635,7 @@ public class Scope {
       "String",     // Masking these can change behavior of casts
       "Boolean",
       "Number",
+      "RegExp",     // /foo/ becomes new RegExp.new___('foo')
       "arguments",  // Can muck with arguments to synthetic values.
       "eval",       // Can't assign to eval in strict mode.
       "cajita"      // Used for caja extensions.
