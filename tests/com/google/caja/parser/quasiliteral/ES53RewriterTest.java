@@ -776,7 +776,7 @@ public class ES53RewriterTest extends CommonJsRewriterTestCase {
         "  var e;" +
         "}")),
         MessageType.MASKING_SYMBOL,
-        MessageLevel.ERROR);
+        MessageLevel.LINT);
     checkAddsMessage(js(fromString(
         "var e;" +
         "try {" +
@@ -784,7 +784,7 @@ public class ES53RewriterTest extends CommonJsRewriterTestCase {
         "} catch (e) {" +
         "}")),
         MessageType.MASKING_SYMBOL,
-        MessageLevel.ERROR);
+        MessageLevel.LINT);
     checkAddsMessage(js(fromString(
         "try {} catch (x__) { }")),
         RewriterMessageType.VARIABLES_CANNOT_END_IN_DOUBLE_UNDERSCORE);
@@ -800,7 +800,7 @@ public class ES53RewriterTest extends CommonJsRewriterTestCase {
         "}" +
         "var e;")),
         MessageType.MASKING_SYMBOL,
-        MessageLevel.ERROR);
+        MessageLevel.LINT);
     rewriteAndExecute(
         "var handled = false;" +
         "try {" +
@@ -877,7 +877,7 @@ public class ES53RewriterTest extends CommonJsRewriterTestCase {
         "} finally {" +
         "}")),
         MessageType.MASKING_SYMBOL,
-        MessageLevel.ERROR);
+        MessageLevel.LINT);
     checkAddsMessage(js(fromString(
         "var e;" +
         "try {" +
@@ -885,7 +885,7 @@ public class ES53RewriterTest extends CommonJsRewriterTestCase {
         "} finally {" +
         "}")),
         MessageType.MASKING_SYMBOL,
-        MessageLevel.ERROR);
+        MessageLevel.LINT);
     checkAddsMessage(js(fromString(
         "try {} catch (x__) { } finally { }")),
         RewriterMessageType.VARIABLES_CANNOT_END_IN_DOUBLE_UNDERSCORE);

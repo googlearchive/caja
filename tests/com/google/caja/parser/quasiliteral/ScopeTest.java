@@ -20,15 +20,15 @@ import com.google.caja.parser.ParseTreeNodeContainer;
 import com.google.caja.parser.Visitor;
 import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.CatchStmt;
+import com.google.caja.parser.js.Declaration;
 import com.google.caja.parser.js.FunctionConstructor;
 import com.google.caja.parser.js.FunctionDeclaration;
 import com.google.caja.parser.js.Identifier;
 import com.google.caja.parser.js.TryStmt;
-import com.google.caja.parser.js.Declaration;
+import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageType;
-import com.google.caja.reporting.Message;
 import com.google.caja.util.CajaTestCase;
 
 import java.util.ArrayList;
@@ -38,11 +38,11 @@ import java.util.ArrayList;
  * @author ihab.awad@gmail.com
  */
 public class ScopeTest extends CajaTestCase {
-  
+
   private Scope fromProgram(Block n) {
     return Scope.fromProgram(n, new Rewriter(mq, false, false));
   }
-  
+
   public final void testSimpleDeclaredFunction() throws Exception {
     Block n = js(fromString(
         "var x = 3;" +
@@ -281,7 +281,7 @@ public class ScopeTest extends CajaTestCase {
     Scope.fromCatchStmt(s0, c);
 
     assertMsgType(MessageType.MASKING_SYMBOL, mq.getMessages().get(0));
-    assertMsgLevel(MessageLevel.ERROR, mq.getMessages().get(0));
+    assertMsgLevel(MessageLevel.LINT, mq.getMessages().get(0));
   }
 
   public final void testMaskedExceptionVariablesErrorB() throws Exception {
@@ -299,7 +299,7 @@ public class ScopeTest extends CajaTestCase {
 
     assertEquals(1, mq.getMessages().size());
     assertMsgType(MessageType.MASKING_SYMBOL, mq.getMessages().get(0));
-    assertMsgLevel(MessageLevel.ERROR, mq.getMessages().get(0));
+    assertMsgLevel(MessageLevel.LINT, mq.getMessages().get(0));
   }
 
   public final void testMaskedExceptionVariablesSame() throws Exception {

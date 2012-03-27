@@ -682,19 +682,15 @@ public class Scope {
       if (maskedType != type
           && !(maskedType == LocalType.DECLARED_FUNCTION
                && type == LocalType.FUNCTION)) {
-        // Since different interpreters disagree about how exception
-        // declarations affect local variable declarations, we need to
-        // prevent exceptions masking locals and vice-versa.
-        MessageLevel level = (
-            (type == LocalType.CAUGHT_EXCEPTION
-             || maskedType == LocalType.CAUGHT_EXCEPTION)
-            ? MessageLevel.ERROR
-            : MessageLevel.LINT);
+        // This used to treat masking catch variables as errors, because
+        // of IE<=8 behavior, but masking is unfortunately common, and
+        // the IE<=8 bug doesn't appears to be a security issue.
+        // http://code.google.com/p/google-caja/issues/detail?id=1456
         if (!ident.isSynthetic() &&
             ident.getFilePosition() != null) {
           s.rewriter.mq.getMessages().add(new Message(
               MessageType.MASKING_SYMBOL,
-              level,
+              MessageLevel.LINT,
               ident.getFilePosition(),
               MessagePart.Factory.valueOf(name),
               maskedDefinition.b));

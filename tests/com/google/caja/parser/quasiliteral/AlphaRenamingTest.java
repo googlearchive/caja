@@ -173,7 +173,7 @@ public class AlphaRenamingTest extends CajaTestCase {
         "(function (a) { try {} catch (b) { throw b; } return a; })",
         "(function (e) { try {} catch (e) { throw e; } return e; })");
     assertMessage(
-        true, MessageType.MASKING_SYMBOL, MessageLevel.ERROR,
+        true, MessageType.MASKING_SYMBOL, MessageLevel.LINT,
         MessagePart.Factory.valueOf("e"));
     assertNoErrors();
   }
