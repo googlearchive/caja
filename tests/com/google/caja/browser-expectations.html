@@ -390,12 +390,17 @@
 
     jsunitRegister('testInstanceofWoutCtorThrows',
                    function testInstanceofWoutCtorThrows() {
-      assertThrows(function () { return ({}) instanceof 0; });
-      assertThrows(function () { return ({}) instanceof false; });
-      assertThrows(function () { return ({}) instanceof 'Object'; });
-      assertThrows(function () { return ({}) instanceof {}; });
-      assertThrows(function () { return ({}) instanceof null; });
-      assertThrows(function () { return ({}) instanceof undefined; });
+      assertThrowsMsg(function () { return ({}) instanceof 0; }, 'instanceof');
+      assertThrowsMsg(function () { return ({}) instanceof false; },
+          'instanceof');
+      assertThrowsMsg(function () { return ({}) instanceof 'Object'; },
+          'instanceof');
+      assertThrowsMsg(function () { return ({}) instanceof {}; },
+          'instanceof');
+      assertThrowsMsg(function () { return ({}) instanceof null; },
+          'instanceof');
+      assertThrowsMsg(function () { return ({}) instanceof undefined; },
+          'instanceof');
       jsunit.pass();
     });
     </script>

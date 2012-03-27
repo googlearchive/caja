@@ -527,7 +527,7 @@ function createExtraImportsForTesting(frameGroup, frame) {
       'assertHashEquals', 'assertNotEquals', 'assertNotNull',
       'assertNotUndefined', 'assertNull', 'assertRoughlyEquals',
       'assertThrows', 'assertTrue', 'assertObjectEquals', 'assertUndefined',
-      'error', 'fail', 'setUp', 'tearDown'];
+      'assertThrowsMsg', 'error', 'fail', 'setUp', 'tearDown'];
   for (var i = jsunitFns.length; --i >= 0;) {
     var name = jsunitFns[i];
     if (standardImports.hasOwnProperty(name)) {

@@ -264,3 +264,11 @@ function assertFailsSafe(canFail, assertionsIfPasses) {
   }
   assertionsIfPasses();
 }
+
+function assertThrowsMsg(shouldThrow, msg) {
+  try {
+    shouldThrow();
+  } catch (e) {
+    assertTrue(e.message.indexOf(msg) > -1);
+  }
+}

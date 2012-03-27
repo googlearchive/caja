@@ -241,9 +241,9 @@
     
     assertEquals(42, r.bargh);
 
-    assertThrows(function() {
-      r.bargh = "sorry, no setter";
-    });
+    assertThrowsMsg(function() {
+      r.bargh = "sorry";
+    }, 'set');
   
     if (inES5Mode) {
 
