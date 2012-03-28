@@ -693,9 +693,9 @@ var html = (function(html4) {
    * Sanitizes attributes on an HTML tag.
    * @param {string} tagName An HTML tag name in lowercase.
    * @param {Array.<?string>} attribs An array of alternating names and values.
-   * @param {?function(?string): ?string} opt_uriRewriter A transform to apply
-   *     to URI attributes; it can return a new string value, or null to delete
-   *     the attribute.  If unspecified, URI attributes are deleted.
+   * @param {?function(?string): ?string} opt_naiveUriRewriter A transform to
+   *     apply to URI attributes; it can return a new string value, or null to
+   *     delete the attribute.  If unspecified, URI attributes are deleted.
    * @param {function(?string): ?string} opt_nmTokenPolicy A transform to apply
    *     to attributes containing HTML names, element IDs, and space-separated
    *     lists of classes; it can return a new string value, or null to delete
@@ -782,8 +782,8 @@ var html = (function(html4) {
    * Creates a tag policy that omits all tags marked UNSAFE in html4-defs.js
    * and applies the default attribute sanitizer with the supplied policy for
    * URI attributes and NMTOKEN attributes.
-   * @param {?function(?string): ?string} opt_uriRewriter A transform to apply
-   *     to URI attributes.  If not given, URI attributes are deleted.
+   * @param {?function(?string): ?string} opt_naiveUriRewriter A transform to
+   *     apply to URI attributes.  If not given, URI attributes are deleted.
    * @param {function(?string): ?string} opt_nmTokenPolicy A transform to apply
    *     to attributes containing HTML names, element IDs, and space-separated
    *     lists of classes.  If not given, such attributes are left unchanged.
@@ -816,8 +816,8 @@ var html = (function(html4) {
   /**
    * Strips unsafe tags and attributes from HTML.
    * @param {string} inputHtml The HTML to sanitize.
-   * @param {?function(?string): ?string} opt_uriRewriter A transform to apply
-   *     to URI attributes.  If not given, URI attributes are deleted.
+   * @param {?function(?string): ?string} opt_naiveUriRewriter A transform to
+   *     apply to URI attributes.  If not given, URI attributes are deleted.
    * @param {function(?string): ?string} opt_nmTokenPolicy A transform to apply
    *     to attributes containing HTML names, element IDs, and space-separated
    *     lists of classes.  If not given, such attributes are left unchanged.
