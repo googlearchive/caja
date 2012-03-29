@@ -43,14 +43,14 @@ public abstract class RuleFilter<KeyT> {
     }
     List<Rule> someRules = cache.get(key);
     if (someRules == null) {
-      someRules = computeRulesFor(node, key);
+      someRules = computeRulesFor(key);
       cache.put(key, someRules);
       if (debug) { debugShowRules(someRules, node); }
     }
     return someRules;
   }
 
-  private List<Rule> computeRulesFor(ParseTreeNode node, KeyT key) {
+  private List<Rule> computeRulesFor(KeyT key) {
     List<Rule> someRules = new ArrayList<Rule>();
     for (Rule rule : ruleChain.getAllRules()) {
       if (canMatch(rule, key)) {

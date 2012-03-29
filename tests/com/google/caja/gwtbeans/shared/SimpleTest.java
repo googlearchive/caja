@@ -1022,7 +1022,7 @@ public class SimpleTest extends GWTBeansTestCase {
       String value) /*-{
     return $wnd.getDef($wnd.getDef(bean, 'attrs')[name].set, 'f')(value);
   }-*/;
-  
+
   public void testPublicField() {
     assertEquals(
         BeanReturnValues.stringRetval,
@@ -1038,7 +1038,7 @@ public class SimpleTest extends GWTBeansTestCase {
     try {
       setStringField(beanJso, "testFinalPublicField", "new value");
       fail("Setting value of final field did not fail as it should have");
-    } catch (Exception e) { }
+    } catch (Exception e) { /* OK */ }
     assertEquals(
         BeanReturnValues.stringRetval,
         getStringField(beanJso, "testFinalPublicField"));

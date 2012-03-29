@@ -48,8 +48,9 @@ public final class SyntheticNodes {
   /**
    * A convenience function used to mark {@link #isSynthesizable synthesizable}
    * nodes created during source->javascript translation as
-   * {@link #SYNTHETIC synthetic}.  Nodes corresponding to javascript
-   * embedded in the original will not be synthetic.
+   * {@link AbstractParseTreeNode#isSynthetic synthetic}.
+   * Nodes corresponding to javascript embedded in the original will not be
+   * synthetic.
    * <p>
    * This is meant to be imported statically.
    */

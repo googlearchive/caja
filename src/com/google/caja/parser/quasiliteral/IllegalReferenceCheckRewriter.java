@@ -20,8 +20,8 @@ import com.google.caja.parser.js.SyntheticNodes;
 import com.google.caja.reporting.MessageQueue;
 
 /**
- * Checks for non-{@link SyntheticNodes#SYNTHETIC synthetic} identifiers in the
- * reserved namespace.
+ * Rejects any identifiers in the reserved namespace that are not
+ * {@link com.google.caja.parser.AbstractParseTreeNode#isSynthetic synthetic}.
  *
  * @author ihab.awad@gmail.com (Ihab Awad)
  */

@@ -148,7 +148,7 @@ public class PrecajoleTask extends Task {
       } else if ("precajole".equals(name)) {
         startPrecajole(attrs);
       } else if ("uri".equals(name)) {
-        startUri(attrs);
+        startUri();
       } else {
         throw new SAXParseException("Unknown tag " + name, here);
       }
@@ -190,7 +190,7 @@ public class PrecajoleTask extends Task {
       throw new SAXParseException("missing file= attribute", here);
     }
 
-    private void startUri(Attributes attrs) {
+    private void startUri() {
       cdata = "";
     }
 

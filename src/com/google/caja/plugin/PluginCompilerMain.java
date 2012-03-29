@@ -84,7 +84,7 @@ public final class PluginCompilerMain {
 
     @Override
     protected Reader newReader(File f) throws FileNotFoundException {
-      return createReader(new InputSource(f), new FileInputStream(f));
+      return createReader(new FileInputStream(f));
     }
 
     @Override
@@ -370,7 +370,7 @@ public final class PluginCompilerMain {
     return maxLevel;
   }
 
-  private Reader createReader(InputSource is, InputStream stream) {
+  private Reader createReader(InputStream stream) {
     return new InputStreamReader(stream, Charsets.UTF_8);
   }
 

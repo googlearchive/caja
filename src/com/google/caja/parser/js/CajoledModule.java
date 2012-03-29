@@ -15,25 +15,19 @@
 package com.google.caja.parser.js;
 
 import com.google.caja.lexer.FilePosition;
-import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.parser.AbstractParseTreeNode;
-import com.google.caja.parser.ParseTreeNode;
-import com.google.caja.parser.ParseTreeNodeContainer;
 import com.google.caja.parser.quasiliteral.QuasiBuilder;
 import com.google.caja.render.Concatenator;
 import com.google.caja.render.JsPrettyPrinter;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.Callback;
-import com.google.caja.util.Lists;
 import com.google.javascript.jscomp.jsonml.JsonML;
 
 import java.io.IOException;
-import java.net.URI;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
 /**
  * The result of running the cajoler over some content.
@@ -43,10 +37,6 @@ import java.util.Map;
 public final class CajoledModule extends AbstractParseTreeNode
     implements JsonMLCompatible {
   private static final long serialVersionUID = -2499144011243193616L;
-
-  // A stub file name by which to call the (otherwise anonymous) cajoled output.
-  private static final InputSource CAJOLED_OUTPUT_FILE_NAME =
-      new InputSource(URI.create("file:///CAJOLED-OUTPUT"));
 
   /** @param value unused.  This ctor is provided for reflection. */
   @ReflectiveCtor

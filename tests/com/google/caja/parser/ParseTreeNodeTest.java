@@ -715,24 +715,24 @@ public class ParseTreeNodeTest extends CajaTestCase {
     try {
       n.appendChild(new Noop(FilePosition.UNKNOWN));
       fail();
-    } catch (UnsupportedOperationException e) {}
+    } catch (UnsupportedOperationException e) { /* OK */ }
     try {
       n.setComments(Arrays.asList(
           Token.instance("test", JsTokenType.COMMENT, FilePosition.UNKNOWN)));
       fail();
-    } catch (UnsupportedOperationException e) {}
+    } catch (UnsupportedOperationException e) { /* OK */ }
     try {
       SyntheticNodes.s(n);
       fail();
-    } catch (UnsupportedOperationException e) {}
+    } catch (UnsupportedOperationException e) { /* OK */ }
   }
 
-  class AlwaysMutable extends AbstractExpression {
+  private final class AlwaysMutable extends AbstractExpression {
     public AlwaysMutable() { super(FilePosition.UNKNOWN, StringLiteral.class); }
     @Override public Object getValue() { return null; }
     @Override public String typeOf() { return null; }
     @Override public JsonML toJsonML() { return null; }
-    @Override public void render(RenderContext r) { }
+    @Override public void render(RenderContext r) { /* no output */ }
     @Override public boolean makeImmutable() { return false; /* refuse! */ }
   }
 

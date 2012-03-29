@@ -21,7 +21,7 @@ import java.util.Map;
 
 /**
  * A {@link SimpleQuasiNode} that marks its output
- * {@link SyntheticNodes#SYNTHETIC synthetic}.
+ * {@link com.google.caja.parser.AbstractParseTreeNode#isSynthetic synthetic}.
  *
  * @author mikesamuel@gmail.com
  */

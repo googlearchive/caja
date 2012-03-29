@@ -91,6 +91,10 @@ public class Playground implements EntryPoint, ValueChangeHandler<String> {
     }
   }
 
+  /**
+   * @param uri not used.
+   * @param debugMode not used.
+   */
   public void cajoleES5(String uri, String input, final String policy,
       boolean debugMode, final String opt_idClass) {
     gui.setLoading(true);
@@ -100,7 +104,7 @@ public class Playground implements EntryPoint, ValueChangeHandler<String> {
         policy, input, null, opt_idClass);
     gui.setLoading(false);
   }
-  
+
   public void cajoleES53(String uri, String input, final String policy,
       boolean debugMode, final String opt_idClass) {
     gui.setLoading(true);
@@ -146,10 +150,10 @@ public class Playground implements EntryPoint, ValueChangeHandler<String> {
   public void onModuleLoad() {
     String query = Window.Location.getParameter("es5");
     Boolean mode = null == query ? null :
-        query.equalsIgnoreCase("true") 
-          ? Boolean.TRUE 
-              : query.equalsIgnoreCase("false") 
-              ? Boolean.FALSE 
+        query.equalsIgnoreCase("true")
+          ? Boolean.TRUE
+              : query.equalsIgnoreCase("false")
+              ? Boolean.FALSE
                   : null;
     gui = new PlaygroundView(this, mode);
     gui.setLoading(true);

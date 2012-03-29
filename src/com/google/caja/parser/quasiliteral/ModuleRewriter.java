@@ -106,6 +106,10 @@ public class ModuleRewriter {
     this(new ModuleManager(meta, buildInfo, uriFetcher, mq));
   }
 
+  /**
+   * @param isFromValija not used since obsolete but this is part of a public
+   *     API that may be used by external clients.
+   */
   public ModuleRewriter(
       PluginMeta meta, BuildInfo buildInfo,
       boolean isFromValija, MessageQueue mq) {

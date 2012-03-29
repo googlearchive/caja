@@ -16,7 +16,6 @@ package com.google.caja.parser.quasiliteral;
 
 import com.google.caja.SomethingWidgyHappenedError;
 import com.google.caja.lexer.FilePosition;
-import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.js.Block;
@@ -34,13 +33,10 @@ import com.google.caja.reporting.TestBuildInfo;
 import com.google.caja.util.CajaTestCase;
 import com.google.caja.util.Callback;
 import com.google.caja.util.Maps;
-import com.google.caja.util.TestUtil;
 
 import java.io.IOException;
-import java.net.URI;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Map;
 
 
