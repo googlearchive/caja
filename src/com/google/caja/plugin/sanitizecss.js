@@ -19,6 +19,7 @@
  * is used to generate css-defs.js.
  *
  * @author mikesamuel@gmail.com
+ * @requires CSS_PROP_BIT_ALLOWED_IN_LINK
  * @requires CSS_PROP_BIT_HASH_VALUE
  * @requires CSS_PROP_BIT_NEGATIVE_QUANTITY
  * @requires CSS_PROP_BIT_QSTRING_CONTENT
@@ -401,10 +402,32 @@ var sanitizeStylesheet = (function () {
     'tv': allowed
   };
 
+  /**
+   * Given a series of sanitized tokens, removes any properties that would
+   * leak user history if allowed to style links differently depending on
+   * whether the linked URL is in the user's browser history.
+   * @param {Array.<string>} blockOfProperties
+   */
   function sanitizeHistorySensitive(blockOfProperties) {
-    return '{}';  // TODO: implement me.
+    var elide = false;
+    for (var i = 0, n = blockOfProperties.length; i < n-1; ++i) {
+      var token = blockOfProperties[i];
+      if (':' === blockOfProperties[i+1]) {
+        elide = !(cssSchema[token].cssPropBits & CSS_PROP_BIT_ALLOWED_IN_LINK);
+      }
+      if (elide) { blockOfProperties[i] = ''; }
+      if (';' === token) { elide = false; }
+    }
+    return blockOfProperties.join('');
   }
 
+  /**
+   * @param {string} cssText a string containing a CSS stylesheet.
+   * @param {function(string, string)} sanitizeUri maps URLs of media
+   *    (images, sounds) that appear as CSS property values to sanitized
+   *    URLs or null if the URL should not be allowed as an external media
+   *    file in sanitized CSS.
+   */
   return function /*sanitizeStylesheet*/(cssText, opt_naiveUriRewriter) {
     var safeCss = void 0;
     // A stack describing the { ... } regions.

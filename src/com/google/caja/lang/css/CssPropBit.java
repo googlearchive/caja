@@ -25,8 +25,16 @@ public enum CssPropBit {
   NEGATIVE_QUANTITY(4),
   QSTRING_CONTENT(8),
   QSTRING_URL(16),
+  /**
+   * Allowed to be read via computed style directly without computing the style
+   * as if the link were not visited.
+   */
   HISTORY_INSENSITIVE(32),
   Z_INDEX(64),
+  /**
+   * Allowed to be specified in a history-sensitive manner in a CSS stylesheet.
+   */
+  ALLOWED_IN_LINK(128),
   ;
 
   /** a single bit. */

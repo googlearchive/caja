@@ -91,8 +91,8 @@
         '123px',
         window.getComputedStyle(p0, null).paddingLeft);
     assertEquals(
-         '123px',
-         window.getComputedStyle(p0, null).getPropertyValue('padding-left'));
+        '123px',
+        window.getComputedStyle(p0, null).getPropertyValue('padding-left'));
 
     // The 'p1' element, since it is contained within an A element, should have
     // computed COLOR value inherited from the top-level container element of
@@ -105,7 +105,7 @@
         window.getComputedStyle(p1, null).color);
     assertColor(
         {rgb: 0x030609},
-         window.getComputedStyle(p1, null).getPropertyValue('color'));
+        window.getComputedStyle(p1, null).getPropertyValue('color'));
     assertEquals(
         '123px',
         window.getComputedStyle(p1, null).paddingLeft);

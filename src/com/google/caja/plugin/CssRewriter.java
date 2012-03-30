@@ -327,7 +327,7 @@ public final class CssRewriter {
       MutableParseTreeNode.Mutation mut = e.createMutation();
 
       // Compute end, the term index after the last of the run of loose terms
-      // for t's property part. 
+      // for t's property part.
       int start = i;
       int end = i + 1;
       while (end < n) {
@@ -798,26 +798,11 @@ public final class CssRewriter {
     return null;
   }
 
-  private static final Set<Name> PROPERTIES_ALLOWED_IN_LINK_CLASSES;
-  static {
-    Set<Name> propNames = Sets.newHashSet(
-        Name.css("background-color"), Name.css("color"), Name.css("cursor"));
-    // Rules limited to link and visited styles cannot allow properties that
-    // can be tested by DOMita's getComputedStyle since it would allow history
-    // mining.
-    // Do not inline the below.  The removeAll relies on the input being a set
-    // of names, but since removeAll takes a Collection<?> it would fail
-    // silently if the whitelist were changed to a Collection<String>.
-    // Assigning to a local does type-check though.
-    Set<Name> computedStyleNames
-        = CssPropertyPatterns.HISTORY_INSENSITIVE_STYLE_WHITELIST;
-    propNames.removeAll(computedStyleNames);
-    PROPERTIES_ALLOWED_IN_LINK_CLASSES = Sets.immutableSet(propNames);
-  }
   private boolean strippedPropertiesBannedInLinkClasses(
       AncestorChain<CssTree.Selector> sel) {
     if (!(sel.parent.node instanceof CssTree.RuleSet)) { return false; }
-    Set<Name> propertyNames = PROPERTIES_ALLOWED_IN_LINK_CLASSES;
+    Set<Name> propertyNames
+        = LinkStyleWhitelist.PROPERTIES_ALLOWED_IN_LINK_CLASSES;
     CssTree.RuleSet rs = sel.parent.cast(CssTree.RuleSet.class).node;
     MutableParseTreeNode.Mutation mut = rs.createMutation();
     for (CssTree child : rs.children()) {

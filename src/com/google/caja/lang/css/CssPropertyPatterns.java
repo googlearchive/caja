@@ -39,6 +39,7 @@ import com.google.caja.parser.js.Statement;
 import com.google.caja.parser.js.StringLiteral;
 import com.google.caja.parser.js.ValueProperty;
 import com.google.caja.parser.quasiliteral.QuasiBuilder;
+import com.google.caja.plugin.LinkStyleWhitelist;
 import com.google.caja.reporting.EchoingMessageQueue;
 import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessageQueue;
@@ -141,27 +142,6 @@ import javax.annotation.Nullable;
  */
 public class CssPropertyPatterns {
   private final CssSchema schema;
-
-  /**
-   * Set of properties accessible on computed style of an anchor
-   * (&lt;A&gt;) element or some element nested within an anchor. This
-   * list is a conservative one based on the ability to do visibility,
-   * containment, and layout calculations. It REQUIRES that user CSS
-   * is prevented from specifying ANY of these properties in a history
-   * sensitive manner (i.e., in a rule with a ":link" or ":visited"
-   * predicate). Otherwise, it would allow an attacker to probe the
-   * user's history as described at
-   * https://bugzilla.mozilla.org/show_bug.cgi?id=147777 .
-   */
-  public static Set<Name> HISTORY_INSENSITIVE_STYLE_WHITELIST
-      = Sets.immutableSet(
-          Name.css("display"), Name.css("filter"), Name.css("float"),
-          Name.css("height"), Name.css("left"), Name.css("opacity"),
-          Name.css("overflow"), Name.css("position"), Name.css("right"),
-          Name.css("top"), Name.css("visibility"), Name.css("width"),
-          Name.css("padding-left"), Name.css("padding-right"),
-          Name.css("padding-top"), Name.css("padding-bottom"));
-  // TODO: Why is padding not included?  How was this derived?
 
   public CssPropertyPatterns(CssSchema schema) {
     this.schema = schema;
@@ -803,8 +783,12 @@ public class CssPropertyPatterns {
       for (CssPropBit b : data.properties) {
         propBits |= b.jsValue;
       }
-      if (HISTORY_INSENSITIVE_STYLE_WHITELIST.contains(prop.name)) {
+      if (LinkStyleWhitelist.HISTORY_INSENSITIVE_STYLE_WHITELIST
+          .contains(prop.name)) {
         propBits |= CssPropBit.HISTORY_INSENSITIVE.jsValue;
+      } else if (LinkStyleWhitelist.PROPERTIES_ALLOWED_IN_LINK_CLASSES
+                 .contains(prop.name)) {
+        propBits |= CssPropBit.ALLOWED_IN_LINK.jsValue;
       }
       dataObj.appendChild(
           new ValueProperty(propbitsObjKey, new IntegerLiteral(unk, propBits)));

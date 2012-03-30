@@ -234,13 +234,11 @@ runCssSelectorTests([
     "tests": [
       {
         "cssText": "a:link, a:badness { color:blue }",
-        "golden": "a:link{color:blue}",
-        "altGolden": "a:link{}"  // TODO: Allow history sensitive in JS.
+        "golden": "a:link{color:blue}"
       },
       {
         "cssText": "a:visited { color:blue }",
         "golden": "a:visited{color:blue}",
-        "altGolden": "a:visited{}",  // TODO: Allow history sensitive in JS.
         "messages": []
       },
 
@@ -252,7 +250,6 @@ runCssSelectorTests([
         "cssText": 
           "a:visited { color:blue; float:left; _float:left; *float:left }",
         "golden": "a:visited{color:blue}",
-        "altGolden": "a:visited{}",
         "messages": [
           {
             "type": "DISALLOWED_CSS_PROPERTY_IN_SELECTOR",
@@ -286,24 +283,20 @@ runCssSelectorTests([
       {
         "cssText":
           "a:visited { COLOR:blue; FLOAT:left; _FLOAT:left; *FLOAT:left }",
-        "golden": "a:visited{color:blue}",
-        "altGolden": "a:visited{}"  // TODO
+        "golden": "a:visited{color:blue}"
       },
 
       {
         "cssText": "*:visited { color: blue; }",
-        "golden": "a:visited{color:blue}",
-        "altGolden": "a:visited{}"  // TODO
+        "golden": "a:visited{color:blue}"
       },
       {
         "cssText": "#foo:visited { color: blue; }",
-        "golden": "a#foo:visited{color:blue}",
-        "altGolden": "a#foo:visited{}"  // TODO
+        "golden": "a#foo:visited{color:blue}"
       },
       {
         "cssText": ".foo:link { color: blue; }",
-        "golden": "a.foo:link{color:blue}",
-        "altGolden": "a.foo:link{}"  // TODO
+        "golden": "a.foo:link{color:blue}"
       },
 
       {
@@ -326,7 +319,7 @@ runCssSelectorTests([
         +   "color:blue"
         + "}"
         + "a#foo:visited, a.bar:link{"
-        //+   "color:blue\n"  // TODO
+        +   "color:blue"
         + "}"
       },
 
@@ -353,8 +346,7 @@ runCssSelectorTests([
         + "  background-image: 'http://whitelisted-host.com/?bank=X&u=Al';"
         + "  color: purple"
         + "}",
-        "golden": "a#foo-bank:visited{color:purple}",
-        "altGolden": "a#foo-bank:visited{}" // TODO
+        "golden": "a#foo-bank:visited{color:purple}"
       }
     ]
   },
