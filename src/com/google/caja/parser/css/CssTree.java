@@ -586,6 +586,10 @@ public abstract class CssTree extends AbstractParseTreeNode {
    * simple_selector
    *   : element_name? [ HASH | class | attrib | pseudo ]* S*
    * </pre>
+   *
+   * HASHes and classes may be wrapped in a special {@link SuffixedSelectorPart}
+   * which indicates that they are in a name-space defined by a suffix
+   * associated with the style-sheet.
    */
   public static final class SimpleSelector extends CssTree {
     private static final long serialVersionUID = -7674557532295492300L;
@@ -1072,14 +1076,108 @@ public abstract class CssTree extends AbstractParseTreeNode {
     public void render(RenderContext r) {
       r.getOut().mark(getFilePosition());
       r.getOut().consume("#");
-      renderCssIdent(getValue().substring(1), r);
+      renderCssIdent(getIdentifier(), r);
+    }
+    public String getIdentifier() { return getValue().substring(1); }
+  }
+
+  public static final class SuffixedSelectorPart extends CssTree {
+    private static final long serialVersionUID = -6616233114613786373L;
+
+    /**
+     * @param value not used but required for reflective tree copying.
+     */
+    @ReflectiveCtor
+    public SuffixedSelectorPart(
+        FilePosition pos, Void value, List<? extends CssLiteral> children) {
+      super(pos, children);
+      if (children.size() >= 2) { throw new IllegalArgumentException(); }
+    }
+
+    public SuffixedSelectorPart(FilePosition pos, IdLiteral prefix) {
+      super(pos, Collections.singletonList(prefix));
+      if (prefix == null) { throw new NullPointerException(); }
+    }
+
+    public SuffixedSelectorPart(
+        FilePosition pos, @Nullable ClassLiteral prefix) {
+      super(
+          pos, prefix != null
+          ? Collections.singletonList(prefix)
+          : Collections.<CssLiteral>emptyList());
+    }
+
+    /** Equivalent to a class with a null suffix. */
+    public SuffixedSelectorPart(FilePosition pos) {
+      this(pos, (ClassLiteral) null);
+    }
+
+    @Override
+    protected void childrenChanged() {
+      List<? extends CssTree> children = children();
+      if (children.size() >= 2) {
+        throw new IllegalStateException();
+      }
+      if (!children.isEmpty()) {
+        CssLiteral prefix = (CssLiteral) children.get(0);
+        if (!(prefix instanceof IdLiteral || prefix instanceof ClassLiteral)) {
+          throw new IllegalStateException();
+        }
+      }
+    }
+
+    @Override
+    public void render(RenderContext r) {
+      List<? extends CssTree> children = children();
+      TokenConsumer tc = r.getOut();
+      tc.mark(getFilePosition());
+      if (!children.isEmpty()) {
+        tc.mark(children.get(0).getFilePosition());
+      }
+      tc.consume(typePrefix());
+      // Make sure the token consumer sees a single identifier.
+      tc.consume(suffixedIdentifier(suffix()));
+    }
+
+    public String typePrefix() {
+      List<? extends CssTree> children = children();
+      // No child implies a class name that is the suffix.
+      if (!children.isEmpty()) {
+        CssLiteral prefixLit = ((CssLiteral) children.get(0));
+        if (prefixLit instanceof IdLiteral) { return "#"; }
+        assert prefixLit instanceof ClassLiteral;
+      }
+      return ".";
+    }
+
+    public @Nullable String prefix() {
+      List<? extends CssTree> children = children();
+      if (!children.isEmpty()) {
+        CssLiteral prefixLit = ((CssLiteral) children.get(0));
+        if (prefixLit instanceof IdLiteral) {
+          return ((IdLiteral) prefixLit).getIdentifier();
+        } else {
+          return ((ClassLiteral) prefixLit).getIdentifier();
+        }
+      }
+      // No child implies a class name that is the suffix.
+      return null;
+    }
+
+    public String suffix() {
+      return "namespace__";
+    }
+
+    public String suffixedIdentifier(String suffix) {
+      String prefix = prefix();
+      return prefix != null ? prefix + "-" + suffix : suffix;
     }
   }
 
   /**
    * A class name in a selector like {@code .foo}.
    */
-  public static final class ClassLiteral extends CssLiteral {
+  public static class ClassLiteral extends CssLiteral {
     private static final long serialVersionUID = 4976309939926023380L;
     /** @param none ignored but required for reflection. */
     @ReflectiveCtor
@@ -1097,6 +1195,7 @@ public abstract class CssTree extends AbstractParseTreeNode {
       r.getOut().consume(".");
       renderCssIdent(getValue().substring(1), r);
     }
+    public String getIdentifier() { return getValue().substring(1); }
   }
 
   /**

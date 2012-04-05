@@ -17,6 +17,7 @@ package com.google.caja.plugin;
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.parser.AncestorChain;
+import com.google.caja.parser.MutableParseTreeNode;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.Visitor;
 import com.google.caja.parser.css.CssTree;
@@ -30,9 +31,6 @@ import com.google.caja.parser.quasiliteral.QuasiBuilder;
 import com.google.caja.render.CssPrettyPrinter;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.Lists;
-import com.google.caja.util.Strings;
-
-import java.util.Collections;
 import java.util.List;
 
 import javax.annotation.Nullable;
@@ -57,16 +55,16 @@ public final class CssDynamicExpressionRewriter {
    * @param ss modified destructively.
    */
   public void rewriteCss(CssTree.StyleSheet ss) {
+    // Replace suffixed class and ID literals with expressions that include
+    // the actual id class suffix.
     //     '#foo {}'                                        ; The original rule
     // =>  '#foo-' + IMPORTS___.getIdClass___() + ' {}'     ; Cajoled rule
     // =>  '#foo-gadget123___ {}'                           ; In the browser
-    rewriteIds(ss);
-    // Make sure that each selector only applies to nodes under a node
-    // controlled by the gadget.
     //     'p { }'                                          ; The original rule
     // =>  '.' + IMPORTS___.getIdClass___() + '___ p { }'   ; Cajoled rule
     // =>  '.gadget123___ p { }'                            ; In the browser
-    restrictRulesToSubtreeWithGadgetClass(ss);
+    rewriteSuffixedIdsAndClasses(ss);
+
     // Rewrite any UnsafeUriLiterals to JavaScript expressions that are
     // presented to the client-side URI policy when the content is rendered.
     //     'p { background: url(unsafe.png) }'              ; The original rule
@@ -77,79 +75,40 @@ public final class CssDynamicExpressionRewriter {
     rewriteUnsafeUriLiteralsToExpressions(ss);
   }
 
-  private void rewriteIds(CssTree.StyleSheet ss) {
-    // Rewrite IDs with the gadget suffix.
+  private void rewriteSuffixedIdsAndClasses(CssTree.StyleSheet ss) {
     ss.acceptPreOrder(new Visitor() {
-          public boolean visit(AncestorChain<?> ancestors) {
-            ParseTreeNode node = ancestors.node;
-            if (!(node instanceof CssTree.SimpleSelector)) { return true; }
-            CssTree.SimpleSelector ss = (CssTree.SimpleSelector) node;
-            for (CssTree child : ss.children()) {
-              if (child instanceof CssTree.IdLiteral) {
-                CssTree.IdLiteral idLit = (CssTree.IdLiteral) child;
-                if (gadgetNameSuffix != null) {
-                  idLit.setValue(
-                      "#" + idLit.getValue().substring(1)
-                      + "-" + gadgetNameSuffix);
-                } else {
-                  ss.replaceChild(
-                      new SuffixedClassOrIdLiteral(
-                          idLit.getFilePosition(),
-                          "#" + idLit.getValue().substring(1) + "-"),
-                      idLit);
-                }
-              }
-            }
-            return true;
+      public boolean visit(AncestorChain<?> ancestors) {
+        ParseTreeNode node = ancestors.node;
+        if (node instanceof CssTree.SuffixedSelectorPart) {
+          CssTree.SuffixedSelectorPart ssp
+              = (CssTree.SuffixedSelectorPart) node;
+          MutableParseTreeNode parent = ancestors.parent.cast(
+              MutableParseTreeNode.class)
+              .node;
+          CssTree replacement;
+          if (gadgetNameSuffix == null) {
+            replacement = new SuffixedClassOrIdLiteral(
+                ssp.getFilePosition(),
+                ssp.typePrefix() + ssp.suffixedIdentifier(""));
+          } else {
+            String ident = ssp.suffixedIdentifier(gadgetNameSuffix);
+            System.err.println("ident=" + ident);
+            replacement = ".".equals(ssp.typePrefix())
+                ? new CssTree.ClassLiteral(ssp.getFilePosition(), "." + ident)
+                : new CssTree.IdLiteral(ssp.getFilePosition(), "#" + ident);
           }
-        }, null);
+          parent.replaceChild(replacement, ssp);
+          return false;
+        } else if (node instanceof CssTree.IdLiteral) {
+          // An un-suffixed ID literal has snuck in since CssRewriter.
+          throw new AssertionError();
+        } else {
+          return true;
+        }
+      }
+    }, null);
   }
-  private void restrictRulesToSubtreeWithGadgetClass(CssTree.StyleSheet ss) {
-    ss.acceptPreOrder(new Visitor() {
-          public boolean visit(AncestorChain<?> ancestors) {
-            ParseTreeNode node = ancestors.node;
-            if (!(node instanceof CssTree.Selector)) { return true; }
-            CssTree.Selector sel = (CssTree.Selector) node;
 
-            // A selector that describes an ancestor of all nodes matched
-            // by this rule.
-            CssTree.SimpleSelector baseSelector = (CssTree.SimpleSelector)
-                sel.children().get(0);
-            boolean baseIsDescendant = true;
-            if (selectorMatchesElement(baseSelector, "body")) {
-              CssTree.IdentLiteral elName = (CssTree.IdentLiteral)
-                  baseSelector.children().get(0);
-              baseSelector.replaceChild(new CssTree.ClassLiteral(
-                  elName.getFilePosition(), ".vdoc-body___"), elName);
-              baseIsDescendant = false;
-            }
-
-            // Use the start position of the base selector as the position of
-            // the synthetic parts.
-            FilePosition pos = FilePosition.endOf(
-                baseSelector.getFilePosition());
-
-            CssTree.CssLiteral restrictClass = gadgetNameSuffix != null
-                ? new CssTree.ClassLiteral(pos, "." + gadgetNameSuffix)
-                : new SuffixedClassOrIdLiteral(pos, ".");
-
-            if (baseIsDescendant) {
-              CssTree.Combination op = new CssTree.Combination(
-                  pos, CssTree.Combinator.DESCENDANT);
-              CssTree.SimpleSelector restrictSel = new CssTree.SimpleSelector(
-                  pos, Collections.singletonList(restrictClass));
-
-              sel.createMutation()
-                 .insertBefore(op, baseSelector)
-                 .insertBefore(restrictSel, op)
-                 .execute();
-            } else {
-              baseSelector.appendChild(restrictClass);
-            }
-            return false;
-          }
-        }, null);
-  }
   private void rewriteUnsafeUriLiteralsToExpressions(CssTree.StyleSheet ss) {
     ss.acceptPreOrder(new Visitor() {
           public boolean visit(AncestorChain<?> ancestors) {
@@ -202,12 +161,6 @@ public final class CssDynamicExpressionRewriter {
 
     return new ArrayConstructor(
         ss.getFilePosition(), cssToJsArrayElements.getArrayMembers());
-  }
-
-
-  private static boolean selectorMatchesElement(
-      CssTree.SimpleSelector t, String elementName) {
-    return Strings.equalsIgnoreCase(elementName, t.getElementName());
   }
 }
 

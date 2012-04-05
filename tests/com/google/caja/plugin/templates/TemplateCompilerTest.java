@@ -35,6 +35,7 @@ import com.google.caja.parser.js.FunctionDeclaration;
 import com.google.caja.parser.js.Identifier;
 import com.google.caja.parser.js.TranslatedCode;
 import com.google.caja.plugin.CssDynamicExpressionRewriter;
+import com.google.caja.plugin.CssRewriter;
 import com.google.caja.plugin.JobEnvelope;
 import com.google.caja.plugin.LoaderType;
 import com.google.caja.plugin.Placeholder;
@@ -861,6 +862,9 @@ public class TemplateCompilerTest extends CajaTestCase {
       if (n.getFirstChild() != null) {
         String text = n.getFirstChild().getNodeValue();
         CssTree.StyleSheet css = css(fromString(text, pos));
+        CssRewriter rw = new CssRewriter(
+            null, CssSchema.getDefaultCss21Schema(mq), mq);
+        rw.rewrite(AncestorChain.instance(css));
         CssDynamicExpressionRewriter rrw =
             new CssDynamicExpressionRewriter(meta);
         rrw.rewriteCss(css);

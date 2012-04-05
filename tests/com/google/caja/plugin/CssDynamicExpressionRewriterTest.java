@@ -14,6 +14,7 @@
 
 package com.google.caja.plugin;
 
+import com.google.caja.lang.css.CssSchema;
 import com.google.caja.lexer.ParseException;
 import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.ParseTreeNode;
@@ -90,7 +91,7 @@ public class CssDynamicExpressionRewriterTest extends CajaTestCase {
   public final void testWildcardSelectors() {
     assertCompiledCss(
         "div * { margin: 0; }",
-        "[ '.', ' div * {\\n  margin: 0;\\n}' ]");
+        "[ '.', ' div * {\\n  margin: 0\\n}' ]");
   }
 
   public final void testStaticIdClass() {
@@ -157,6 +158,8 @@ public class CssDynamicExpressionRewriterTest extends CajaTestCase {
       boolean dynamic) {
     PluginMeta pm = new PluginMeta();
     if (!dynamic) { pm.setIdClass("xyz___"); }
+    new CssRewriter(null, CssSchema.getDefaultCss21Schema(mq), mq)
+        .rewrite(AncestorChain.instance(css));
     new CssDynamicExpressionRewriter(pm).rewriteCss(css);
     ArrayConstructor ac = CssDynamicExpressionRewriter.cssToJs(css);
     assertEquals(golden, render(ac, 160));

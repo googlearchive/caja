@@ -30,7 +30,7 @@ runCssSelectorTests([
       },
       {
         "cssText": "a, bogus, i { display: none }",
-        "golden": "a, i{display:none}"
+        "golden": ".namespace__ a, .namespace__ i{display:none}"
       }
     ]
   },
@@ -50,7 +50,7 @@ runCssSelectorTests([
       },
       {
         "cssText": "strike, script, strong { display: none }",
-        "golden": "strike, strong{display:none}",
+        "golden": ".namespace__ strike, .namespace__ strong{display:none}",
         "messages": [
           {
             "type": "UNSAFE_TAG",
@@ -79,34 +79,34 @@ runCssSelectorTests([
         "golden": "",
         // The JS side emits an empty property group while the Java version
         // does not.
-        "altGolden": "a{}"
+        "altGolden": ".namespace__ a{}"
       },
       {
         "cssText": "a { visibility: hidden; }", 
-        "golden": "a{visibility:hidden}"
+        "golden": ".namespace__ a{visibility:hidden}"
       },
       // no such property
       {
         "cssText": "a { bogus: bogus }",
         "golden": "",
-        "altGolden": "a{}"
+        "altGolden": ".namespace__ a{}"
       },
       // make sure it doesn't interfere with others
       {
         "cssText": "a { visibility: none; font-weight: bold }",
-        "golden": "a{font-weight:bold}"
+        "golden": ".namespace__ a{font-weight:bold}"
       },
       {
         "cssText": "a { font-weight: bold; visibility: none }",
-        "golden": "a{font-weight:bold}"
+        "golden": ".namespace__ a{font-weight:bold}"
       },
       {
         "cssText": "a { bogus: bogus; font-weight: bold }",
-        "golden": "a{font-weight:bold}"
+        "golden": ".namespace__ a{font-weight:bold}"
       },
       {
         "cssText": "a { font-weight: bold; bogus: bogus }",
-        "golden": "a{font-weight:bold}"
+        "golden": ".namespace__ a{font-weight:bold}"
       }
     ]
   },
@@ -116,7 +116,7 @@ runCssSelectorTests([
       {
         "cssText":
           "a { color: blue; content: 'booyah'; text-decoration: underline; }",
-        "golden": "a{color:blue;text-decoration:underline}"
+        "golden": ".namespace__ a{color:blue;text-decoration:underline}"
       }
     ]
   },
@@ -129,7 +129,7 @@ runCssSelectorTests([
       },
       {
         "cssText": "a:attr(href) { color: blue } b { font-weight: bolder }",
-        "golden": "b{font-weight:bolder}"
+        "golden": ".namespace__ b{font-weight:bolder}"
       }
     ]
   },
@@ -139,15 +139,15 @@ runCssSelectorTests([
       {
         "cssText":
           "a { font:12pt Times  New Roman, Times,\"Times Old Roman\",serif }",
-        "golden": "a{font:12pt 'Times New Roman', 'Times',"
+        "golden": ".namespace__ a{font:12pt 'Times New Roman', 'Times',"
             + " 'Times Old Roman', serif}",
-        "altGolden": 'a{font:12pt "times new roman" , "times" ,'
+        "altGolden": '.namespace__ a{font:12pt "times new roman" , "times" ,'
             + ' "times old roman" , serif}'
       },
       {
         "cssText": "a { font:bold 12pt Arial Black }",
-        "golden": "a{font:bold 12pt 'Arial Black'}",
-        "altGolden": 'a{font:bold 12pt "arial black"}'
+        "golden": ".namespace__ a{font:bold 12pt 'Arial Black'}",
+        "altGolden": '.namespace__ a{font:bold 12pt "arial black"}'
       }
     ]
   },
@@ -156,27 +156,27 @@ runCssSelectorTests([
     "tests": [
       {
         "cssText": "a.foo { color:blue }",
-        "golden": "a.foo{color:blue}"
+        "golden": ".namespace__ a.foo{color:blue}"
       },
       {
         "cssText": "#foo { color: blue }",
-        "golden": "#foo{color:blue}"
+        "golden": ".namespace__ #foo-namespace__{color:blue}"
       },
       {
         "cssText": "body.ie6 p { color: blue }",
-        "golden": "body.ie6 p{color:blue}"
+        "golden": ".vdoc-body___.ie6.namespace__ p { color: blue }"
       },
       {
         "cssText": "body { margin: 0; }",
         "golden": ""
-      },  // Not allowed
+      },  // Not allowed.
       {
         "cssText": "body.ie6 { margin: 0; }",
         "golden": ""
-      },  // Not allowed
+      },  // Not allowed.
       {
         "cssText": "* html p { margin: 0; }",
-        "golden": "* html p{margin:0}"
+        "golden": ".namespace__ * html p{margin:0}"
       },
       {
         "cssText": "* html { margin: 0; }",
@@ -188,11 +188,11 @@ runCssSelectorTests([
       },  // Not allowed
       {
         "cssText": "#foo > #bar { color: blue }",
-        "golden": "#foo > #bar{color:blue}"
+        "golden": ".namespace__ #foo-namespace__ > #bar-namespace__{color:blue}"
       },
       {
         "cssText": "#foo .bar { color: blue }",
-        "golden": "#foo .bar{color:blue}"
+        "golden": ".namespace__ #foo-namespace__ .bar{color:blue}"
       }
     ]
   },
@@ -201,15 +201,15 @@ runCssSelectorTests([
     "tests": [
       {
         "cssText": "a.foo, b#c\\2c d, .e { color:blue }",  // "\\2c " -> ","
-        "golden": "a.foo, .e{color:blue}"
+        "golden": ".namespace__ a.foo, .namespace__ .e{color:blue}"
       },
       {
         "cssText": "a.foo, .b_c {color: blue}",
-        "golden": "a.foo, .b_c{color:blue}"
+        "golden": ".namespace__ a.foo, .namespace__ .b_c{color:blue}"
       },
       {
         "cssText": "a.foo, ._c {color: blue}",
-        "golden": "a.foo{color:blue}"
+        "golden": ".namespace__ a.foo{color:blue}"
       },
       {
         "cssText": "a._c {_color: blue; margin:0;}",
@@ -234,11 +234,11 @@ runCssSelectorTests([
     "tests": [
       {
         "cssText": "a:link, a:badness { color:blue }",
-        "golden": "a:link{color:blue}"
+        "golden": ".namespace__ a:link{color:blue}"
       },
       {
         "cssText": "a:visited { color:blue }",
-        "golden": "a:visited{color:blue}",
+        "golden": ".namespace__ a:visited{color:blue}",
         "messages": []
       },
 
@@ -249,7 +249,7 @@ runCssSelectorTests([
       {
         "cssText": 
           "a:visited { color:blue; float:left; _float:left; *float:left }",
-        "golden": "a:visited{color:blue}",
+        "golden": ".namespace__ a:visited{color:blue}",
         "messages": [
           {
             "type": "DISALLOWED_CSS_PROPERTY_IN_SELECTOR",
@@ -283,20 +283,20 @@ runCssSelectorTests([
       {
         "cssText":
           "a:visited { COLOR:blue; FLOAT:left; _FLOAT:left; *FLOAT:left }",
-        "golden": "a:visited{color:blue}"
+        "golden": ".namespace__ a:visited{color:blue}"
       },
 
       {
         "cssText": "*:visited { color: blue; }",
-        "golden": "a:visited{color:blue}"
+        "golden": ".namespace__ a:visited{color:blue}"
       },
       {
         "cssText": "#foo:visited { color: blue; }",
-        "golden": "a#foo:visited{color:blue}"
+        "golden": ".namespace__ a#foo-namespace__:visited{color:blue}"
       },
       {
         "cssText": ".foo:link { color: blue; }",
-        "golden": "a.foo:link{color:blue}"
+        "golden": ".namespace__ a.foo:link{color:blue}"
       },
 
       {
@@ -306,19 +306,19 @@ runCssSelectorTests([
         + "  color: blue;\n"
         + "}",
         "golden": ""
-        + "a#foo:visited, a.bar:link{"
+        + ".namespace__ a#foo-namespace__:visited, .namespace__ a.bar:link{"
         +   "color:blue\n"
         + "}"
-        + "div, p{"
+        + ".namespace__ div, .namespace__ p{"
         +   "padding:1px;"
         +   "color:blue"
         + "}",
         "altGolden": ""  // TODO: Fix difference in order in Java.
-        + "div, p{"
+        + ".namespace__ div, .namespace__ p{"
         +   "padding:1px;"
         +   "color:blue"
         + "}"
-        + "a#foo:visited, a.bar:link{"
+        + ".namespace__ a#foo-namespace__:visited, .namespace__ a.bar:link{"
         +   "color:blue"
         + "}"
       },
@@ -330,7 +330,7 @@ runCssSelectorTests([
         + "  color: purple"
         + "}",
         "golden": ""
-        + "a#foo-bank{"
+        + ".namespace__ a#foo-bank-namespace__{"
         +   "background:url(\"http://whitelisted-host.com/?bank=X&u=Al\");"
         +   "color:purple"
         + "}",
@@ -346,7 +346,7 @@ runCssSelectorTests([
         + "  background-image: 'http://whitelisted-host.com/?bank=X&u=Al';"
         + "  color: purple"
         + "}",
-        "golden": "a#foo-bank:visited{color:purple}"
+        "golden": ".namespace__ a#foo-bank-namespace__:visited{color:purple}"
       }
     ]
   },
@@ -356,34 +356,37 @@ runCssSelectorTests([
       // ok
       {
         "cssText": "#foo { background: url(/bar.png) }",
-        "golden": "#foo{background:url(\"/foo/bar.png\")}"
+        "golden": ".namespace__ #foo-namespace__"
+          + "{background:url(\"/foo/bar.png\")}"
       },
       {
         "cssText": "#foo { background: url('/bar.png') }",
-        "golden": "#foo{background:url(\"/foo/bar.png\")}",
-        "altGolden": '#foo{}'
+        "golden": ".namespace__ #foo-namespace__"
+          + "{background:url(\"/foo/bar.png\")}"
       },
       {
         "cssText": "#foo { background: '/bar.png' }",
-        "golden": "#foo{background:url(\"/foo/bar.png\")}"
+        "golden": ".namespace__ #foo-namespace__"
+          + "{background:url(\"/foo/bar.png\")}"
       },
       {
         "cssText":
           "#foo { background: 'http://whitelisted-host.com/blinky.gif' }",
         "golden":
-          "#foo{background:url(\"http://whitelisted-host.com/blinky.gif\")}"
+          ".namespace__ #foo-namespace__"
+          + "{background:url(\"http://whitelisted-host.com/blinky.gif\")}"
       },
 
       // disallowed
       {
         "cssText": "#foo { background: url('http://cnn.com/bar.png') }",
         "golden": "",
-        "altGolden": "#foo{}"
+        "altGolden": ".namespace__ #foo-namespace__{}"
       },
       {
         "cssText": "#foo { background: 'http://cnn.com/bar.png' }",
         "golden": "",
-        "altGolden": "#foo{}"
+        "altGolden": ".namespace__ #foo-namespace__{}"
       }
     ]
   },
@@ -394,7 +397,7 @@ runCssSelectorTests([
     "tests": [
       {
         "cssText": "div * { margin: 0; }",
-        "golden": "div *{margin:0}"
+        "golden": ".namespace__ div *{margin:0}"
       }
     ]
   },
@@ -403,13 +406,13 @@ runCssSelectorTests([
     "tests": [
       {
         "cssText": "div { padding: 10 0 5.0 4 }",
-        "golden": "div{padding:10px 0 5.0px 4px}",
-        "altGolden": "div{padding:10 0 5.0 4}"
+        "golden": ".namespace__ div{padding:10px 0 5.0px 4px}",
+        "altGolden": ".namespace__ div{padding:10 0 5.0 4}"
       },
       {
         "cssText": "div { margin: -5 5; z-index: 2 }",
-        "golden": "div{margin:-5px 5px;z-index:2}",
-        "altGolden": "div{margin:-5 5;z-index:2}"
+        "golden": ".namespace__ div{margin:-5px 5px;z-index:2}",
+        "altGolden": ".namespace__ div{margin:-5 5;z-index:2}"
       }
     ]
   },
@@ -426,7 +429,7 @@ runCssSelectorTests([
         + "  font-weight: bold\n"
         + "}",
         "golden": ""
-        + "p{"
+        + ".namespace__ p{"
         +   "color:blue;"
         +   "*color:red;"  // Good user agent hack
         +   "background-color:green;"
@@ -434,7 +437,7 @@ runCssSelectorTests([
         +   "font-weight:bold"
         + "}",
         "altGolden": ""
-        + "p{"
+        + ".namespace__ p{"
         +   "color:blue;"
         // TODO: Implement support for user-agent hacks.
         //+   "*color:red;"  // Good user agent hack
@@ -455,9 +458,9 @@ runCssSelectorTests([
       },
       {
         "cssText": "a.c {_color: blue; margin:0;}",
-        "golden": "a.c{_color:blue;margin:0}",
+        "golden": ".namespace__ a.c{_color:blue;margin:0}",
         // TODO: implement user agent hacks
-        "altGolden": "a.c{margin:0}",
+        "altGolden": ".namespace__ a.c{margin:0}",
         "messages": []
       }
     ]
@@ -467,9 +470,9 @@ runCssSelectorTests([
     "tests": [
       {
         "cssText": "a.c { color: LightSlateGray; background: ivory; }",
-        "golden": "a.c {\n  color: #789;\n  background: #fffff0\n}",
+        "golden": ".namespace__ a.c {\n  color: #789;\n  background: #fffff0\n}",
         // TODO: see if special color names work when quoted.
-        "altGolden": "a.c{color:lightslategray;background:ivory}",
+        "altGolden": ".namespace__ a.c{color:lightslategray;background:ivory}",
         "messages": [
           {
             "type": "NON_STANDARD_COLOR",
@@ -496,12 +499,12 @@ runCssSelectorTests([
     "tests": [
       {
         "cssText": "#foo { position: absolute; left: 0px; top: 0px }",
-        "golden": "#foo{position:absolute;left:0px;top:0px}",
+        "golden": ".namespace__ #foo-namespace__{position:absolute;left:0px;top:0px}",
         "messages": []
       },
       {
         "cssText": "#foo { position: fixed; left: 0px; top: 0px }",
-        "golden": "#foo{left:0px;top:0px}",
+        "golden": ".namespace__ #foo-namespace__{left:0px;top:0px}",
         "messages": [
           // TODO(mikesamuel): fix message.
           // "fixed" is well-formed but disallowed.

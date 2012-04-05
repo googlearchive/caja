@@ -39,6 +39,7 @@ import com.google.caja.util.Maps;
 import com.google.caja.util.Name;
 import com.google.caja.util.Pair;
 import com.google.caja.util.Sets;
+import com.google.caja.util.Strings;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -104,7 +105,18 @@ public final class CssRewriter {
     removeEmptyRuleSets(t);
     // Disallow classes and IDs that end in double underscore.
     removeForbiddenIdents(t);
-    // Do this again to make sure no earlier changes introduce unsafe constructs
+    //     '#foo {}'                                        ; The original rule
+    // =>  '#foo-namespace__ {}'                            ; In the browser
+    // where the namespace__ can be replaced by later passes with a per-gadget
+    // suffix.
+    suffixIds(t);
+    // Make sure that each selector only applies to nodes under a node
+    // controlled by the gadget.
+    //     'p { }'                                          ; The original rule
+    // =>  '.namespace__ p { }'                             ; In the browser
+    restrictRulesToSubtreesWithGadgetClass(t);
+    // Do this again to make sure earlier changes didn't introduce unsafe
+    // constructs.
     removeUnsafeConstructs(t);
 
     // Translate embedded URLs to either "safe" or "unsafe" variant depending
@@ -513,7 +525,11 @@ public final class CssRewriter {
             if (child instanceof CssTree.ClassLiteral
                 || child instanceof CssTree.IdLiteral) {
               String literal = (String) child.getValue();
-              if (literal.endsWith("__")) {
+              if (literal.endsWith("__")
+                  // Allow this since this pass replaces body with .vdoc-body___
+                  // and the pipeline is much simplified if this pass is
+                  // idempotent.
+                  && !(child instanceof VdocClassLiteral)) {
                 mq.addMessage(PluginMessageType.UNSAFE_CSS_IDENTIFIER,
                     child.getFilePosition(),
                     MessagePart.Factory.valueOf(literal));
@@ -526,12 +542,82 @@ public final class CssRewriter {
         }
       }, t.parent);
   }
+  private void suffixIds(AncestorChain<? extends CssTree> t) {
+    // Rewrite IDs with the gadget suffix.
+    t.node.acceptPreOrder(new Visitor() {
+          public boolean visit(AncestorChain<?> ancestors) {
+            ParseTreeNode node = ancestors.node;
+            if (node instanceof CssTree.SuffixedSelectorPart) { return false; }
+            if (!(node instanceof CssTree.SimpleSelector)) { return true; }
+            CssTree.SimpleSelector ss = (CssTree.SimpleSelector) node;
+            for (CssTree child : ss.children()) {
+              if (child instanceof CssTree.IdLiteral) {
+                CssTree.IdLiteral idLit = (CssTree.IdLiteral) child;
+                CssTree.SuffixedSelectorPart suffixed
+                    = new CssTree.SuffixedSelectorPart(
+                        idLit.getFilePosition(), (CssTree.ClassLiteral) null);
+                ss.replaceChild(suffixed, idLit);
+                suffixed.appendChild(idLit);
+              }
+            }
+            return true;
+          }
+        }, t.parent);
+  }
+  private void restrictRulesToSubtreesWithGadgetClass(
+      AncestorChain<? extends CssTree> t) {
+    t.node.acceptPreOrder(new Visitor() {
+      public boolean visit(AncestorChain<?> ancestors) {
+        ParseTreeNode node = ancestors.node;
+        if (!(node instanceof CssTree.Selector)) { return true; }
+        CssTree.Selector sel = (CssTree.Selector) node;
+
+        // A selector that describes an ancestor of all nodes matched
+        // by this rule.
+        CssTree.SimpleSelector baseSelector = (CssTree.SimpleSelector)
+            sel.children().get(0);
+        boolean baseIsDescendant = true;
+        if (selectorMatchesElement(baseSelector, "body")) {
+          CssTree.IdentLiteral elName = (CssTree.IdentLiteral)
+              baseSelector.children().get(0);
+          baseSelector.replaceChild(new VdocClassLiteral(
+              elName.getFilePosition(), ".vdoc-body___"), elName);
+          baseIsDescendant = false;
+        } else if (selectorMatchesClass(baseSelector, "vdoc-body___")) {
+          baseIsDescendant = false;
+        }
+
+        // Use the start position of the base selector as the position of
+        // the synthetic parts.
+        FilePosition pos = FilePosition.endOf(
+            baseSelector.getFilePosition());
+
+        CssTree restrictClass = new CssTree.SuffixedSelectorPart(pos);
+
+        if (baseIsDescendant) {
+          CssTree.Combination op = new CssTree.Combination(
+              pos, CssTree.Combinator.DESCENDANT);
+          CssTree.SimpleSelector restrictSel = new CssTree.SimpleSelector(
+              pos, Collections.singletonList(restrictClass));
+          if (!structurallyIdentical(restrictSel, baseSelector)) { // idempotent
+            sel.createMutation()
+               .insertBefore(op, baseSelector)
+               .insertBefore(restrictSel, op)
+               .execute();
+          }
+        } else {
+          baseSelector.appendChild(restrictClass);
+        }
+        return false;
+      }
+    }, t.parent);
+  }
 
   private static final Set<Name> ALLOWED_PSEUDO_CLASSES = Sets.immutableSet(
       Name.css("active"), Name.css("after"), Name.css("before"),
       Name.css("first-child"), Name.css("first-letter"), Name.css("focus"),
       Name.css("link"), Name.css("hover"));
-  void removeUnsafeConstructs(AncestorChain<? extends CssTree> t) {
+  private void removeUnsafeConstructs(AncestorChain<? extends CssTree> t) {
 
     // 1) Check that all classes, ids, property names, etc. are valid
     //    css identifiers.
@@ -858,12 +944,44 @@ public final class CssRewriter {
     return SAFE_SELECTOR_PART.matcher(s).matches();
   }
 
+  private static boolean selectorMatchesElement(
+      CssTree.SimpleSelector t, String elementName) {
+    return Strings.equalsIgnoreCase(elementName, t.getElementName());
+  }
+
+  private static boolean selectorMatchesClass(
+      CssTree.SimpleSelector t, String className) {
+    CssTree first = t.children().get(0);
+    return first instanceof CssTree.ClassLiteral
+        && className.equals(((CssTree.ClassLiteral) first).getIdentifier());
+  }
+
   private static Name propertyPart(ParseTreeNode node) {
     return node.getAttributes().get(CssValidator.CSS_PROPERTY_PART);
   }
 
   private static CssPropertyPartType propertyPartType(ParseTreeNode node) {
     return node.getAttributes().get(CssValidator.CSS_PROPERTY_PART_TYPE);
+  }
+
+  public static boolean structurallyIdentical(
+      ParseTreeNode a, ParseTreeNode b) {
+    if (a.getClass() != b.getClass()) { return false; }
+    List<? extends ParseTreeNode> aChildren = a.children();
+    List<? extends ParseTreeNode> bChildren = b.children();
+    int childCount = aChildren.size();
+    if (childCount != bChildren.size()) { return false; }
+    Object aValue = a.getValue();
+    Object bValue = b.getValue();
+    if (aValue == null ? bValue != null : !aValue.equals(bValue)) {
+      return false;
+    }
+    for (int i = 0; i < childCount; ++i) {
+      if (!structurallyIdentical(aChildren.get(i), bChildren.get(i))) {
+        return false;
+      }
+    }
+    return true;
   }
 
   public static CssTree.HashLiteral colorHash(FilePosition pos, Name color) {
@@ -1024,4 +1142,13 @@ public final class CssRewriter {
         .put("yellow", 0xFFFF00)
         .put("yellowgreen", 0x9ACD32)
         .create();
+
+  /**
+   * A class literal that is allowed in certain positions.
+   */
+  public static class VdocClassLiteral extends CssTree.ClassLiteral {
+    public VdocClassLiteral(FilePosition pos, String value) {
+      super(pos, value);
+    }
+  }
 }

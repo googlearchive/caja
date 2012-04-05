@@ -188,34 +188,36 @@ public class CssRewriterTest extends CajaTestCase {
     } catch (ParseException ex) {
       // pass
     }
-    runTest("#foo { left: ${x * 4}px; top: ${y * 4}px; }",
-            "#foo {\n  left: ${x * 4}px;\n  top: ${y * 4}px\n}",
-            true);
+    runTest(
+        "#foo { left: ${x * 4}px; top: ${y * 4}px; }",
+        ".namespace__ #foo-namespace__"
+        + " {\n  left: ${x * 4}px;\n  top: ${y * 4}px\n}",
+        true);
   }
 
   public final void testZIndexRange() throws Exception {
-    runTest("div { z-index: 0 }", "div {\n  z-index: 0\n}", false);
+    runTest("div { z-index: 0 }", ".namespace__ div {\n  z-index: 0\n}", false);
     assertNoErrors();
     runTest(
         "div { z-index: -9999999 }",
-        "div {\n  z-index: -9999999\n}",
+        ".namespace__ div {\n  z-index: -9999999\n}",
         false);
     assertNoErrors();
     runTest(
         "div { z-index: 9999999 }",
-        "div {\n  z-index: 9999999\n}",
+        ".namespace__ div {\n  z-index: 9999999\n}",
         false);
     assertNoErrors();
     runTest(
         "div { z-index: -10000000 }",
-        "div {\n  z-index: -10000000\n}",
+        ".namespace__ div {\n  z-index: -10000000\n}",
         false);
     assertMessage(PluginMessageType.CSS_VALUE_OUT_OF_RANGE,
         MessageLevel.WARNING,
         Name.css("z-index"));
     runTest(
         "div { z-index: 10000000 }",
-        "div {\n  z-index: 10000000\n}",
+        ".namespace__ div {\n  z-index: 10000000\n}",
         false);
     assertMessage(PluginMessageType.CSS_VALUE_OUT_OF_RANGE,
         MessageLevel.WARNING,

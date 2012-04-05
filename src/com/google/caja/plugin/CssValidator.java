@@ -431,7 +431,7 @@ public final class CssValidator {
       // Make an exception for BODY which is handled specially by the
       // rewriter and which can be used as the basis for browser specific
       // rules, e.g.  body.ie6 p { ... }
-      i = skipDescendantOfBodyWithClass(children);
+      i = skipDescendantOfBody(children);
     }
     if (i == 0) {
       // Make an exception for HTML which is handled specially by the
@@ -453,21 +453,20 @@ public final class CssValidator {
     return valid;
   }
   /**
-   * If the first parts of the selector looks like "body.foo " then return
-   * the index of the child after the combinator.  Otherwise return the index 0.
+   * If the first parts of the selector is a child of the "body" element then
+   * return the index of the child after the combinator.
+   * Otherwise return the index 0.
    */
-  private int skipDescendantOfBodyWithClass(List<? extends CssTree> children) {
+  private int skipDescendantOfBody(List<? extends CssTree> children) {
     if (children.size() <= 2) { return 0; }
     CssTree.Combination c = (CssTree.Combination) children.get(1);
-    if (c.getCombinator() != Combinator.DESCENDANT) { return 0; }
-
+    if (c.getCombinator() == Combinator.SIBLING) { return 0; }
     CssTree.SimpleSelector ss = (CssTree.SimpleSelector) children.get(0);
     List<? extends CssTree> ssParts = ss.children();
-    if (ssParts.size() != 2) { return 0; }
+    if (ssParts.isEmpty()) { return 0; }
     CssTree ssPart0 = ssParts.get(0);
     if (!(ssPart0 instanceof CssTree.IdentLiteral
-          && "body".equals(ssPart0.getValue())
-          && ssParts.get(1) instanceof CssTree.ClassLiteral)) {
+          && "body".equals(ssPart0.getValue()))) {
       return 0;
     }
     return 2;
