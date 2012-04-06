@@ -164,7 +164,7 @@ var html = (function(html4) {
 
   var ampRe = /&/g;
   var looseAmpRe = /&([^a-z#]|#(?:[^0-9x]|x(?:[^0-9a-f]|$)|$)|$)/gi;
-  var ltRe = /</g;
+  var ltRe = /[<]/g;
   var gtRe = />/g;
   var quotRe = /\"/g;
 
@@ -291,14 +291,14 @@ var html = (function(html4) {
   // Many of these are unusual patterns that are linearly slower and still
   // pretty fast (eg 1ms to 5ms), so not necessarily worth fixing.
 
-  // TODO(felix8a): "<script> && && && ... </script>" is slower on all
+  // TODO(felix8a): "<script> && && && ... <\/script>" is slower on all
   // browsers.  The hotspot is htmlSplit.
 
-  // TODO(felix8a): "<p title='>>>>...'></p>" is slower on all browsers.
+  // TODO(felix8a): "<p title='>>>>...'><\/p>" is slower on all browsers.
   // This is partly htmlSplit, but the hotspot is parseTagAndAttrs.
 
-  // TODO(felix8a): "<a></a><a></a>..." is slower on IE9.
-  // "<a>1</a><a>1</a>..." is faster, "<a></a>2<a></a>2..." is faster.
+  // TODO(felix8a): "<a><\/a><a><\/a>..." is slower on IE9.
+  // "<a>1<\/a><a>1<\/a>..." is faster, "<a><\/a>2<a><\/a>2..." is faster.
 
   // TODO(felix8a): "<p<p<p..." is slower on IE[6-8]
 
@@ -321,7 +321,7 @@ var html = (function(html4) {
           if (h.pcdata) { h.pcdata("&amp;", param); }
         }
         break;
-      case '</':
+      case '<\/':
         if (m = /^(\w+)[^\'\"]*/.exec(next)) {
           if (m[0].length === next.length && parts[pos + 1] === '>') {
             // fast case, no attribute parsing needed
@@ -362,13 +362,13 @@ var html = (function(html4) {
           if (h.pcdata) { h.pcdata('&lt;', param); }
         }
         break;
-      case '<!--':
-        // The pathological case is n copies of '<!--' without '-->', and
+      case '<\!--':
+        // The pathological case is n copies of '<\!--' without '-->', and
         // repeated failure to find '-->' is quadratic.  We avoid that by
         // remembering when search for '-->' fails.
         if (!noMoreEndComments) {
-          // A comment <!--x--> is split into three tokens:
-          //   '<!--', 'x--', '>'
+          // A comment <\!--x--> is split into three tokens:
+          //   '<\!--', 'x--', '>'
           // We want to find the next '>' token that has a preceding '--'.
           // pos is at the 'x--'.
           for (p = pos + 1; p < end; p++) {
@@ -384,7 +384,7 @@ var html = (function(html4) {
           if (h.pcdata) { h.pcdata('&lt;!--', param); }
         }
         break;
-      case '<!':
+      case '<\!':
         if (!/^\w/.test(next)) {
           if (h.pcdata) { h.pcdata('&lt;!', param); }
         } else {
@@ -436,7 +436,7 @@ var html = (function(html4) {
   // Split str into parts for the html parser.
   function htmlSplit(str) {
     // can't hoist this out of the function because of the re.exec loop.
-    var re = /(<\/|<!--|<[!?]|[&<>])/g;
+    var re = /(<\/|<\!--|<[!?]|[&<>])/g;
     str += '';
     if (splitWillCapture) {
       return str.split(re);
@@ -491,7 +491,7 @@ var html = (function(html4) {
     var first = tag.next;
     var p = tag.next + 1;
     for (; p < end; p++) {
-      if (parts[p - 1] === '</' && re.test(parts[p])) { break; }
+      if (parts[p - 1] === '<\/' && re.test(parts[p])) { break; }
     }
     if (p < end) { p -= 1; }
     var buf = parts.slice(first, p).join('');
@@ -505,7 +505,7 @@ var html = (function(html4) {
     return p;
   }
 
-  // at this point, parts[pos-1] is either "<" or "</".
+  // at this point, parts[pos-1] is either "<" or "<\/".
   function parseTagAndAttrs(parts, pos) {
     var m = /^(\w+)/.exec(parts[pos]);
     var tag = { name: lcase(m[1]) };
@@ -651,11 +651,11 @@ var html = (function(html4) {
             var stackEl = stack[i];
             if (!(html4.ELEMENTS[stackEl] &
                   html4.eflags.OPTIONAL_ENDTAG)) {
-              out.push('</', stackEl, '>');
+              out.push('<\/', stackEl, '>');
             }
           }
           stack.length = index;
-          out.push('</', tagName, '>');
+          out.push('<\/', tagName, '>');
         }
       },
       pcdata: emit,
@@ -663,7 +663,7 @@ var html = (function(html4) {
       cdata: emit,
       endDoc: function(out) {
         for (; stack.length; stack.length--) {
-          out.push('</', stack[stack.length - 1], '>');
+          out.push('<\/', stack[stack.length - 1], '>');
         }
       }
     });
