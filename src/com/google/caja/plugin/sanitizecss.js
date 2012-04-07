@@ -258,12 +258,18 @@ var sanitizeCssProperty = (function () {
 
 /**
  * Given a series of tokens, returns two lists of sanitized selectors.
- * @param {Array.<string>}selectors In the form produces by csslexer.js.
+ * @param {Array.<string>} selectors In the form produces by csslexer.js.
+ * @param {string} suffix a suffix that is added to all IDs and which is
+ *    used as a CLASS names so that the returned selectors will only match
+ *    nodes under one with suffix as a class name.
+ *    If suffix is {@code "sfx"}, the selector
+ *    {@code ["a", "#foo", " ", "b", ".bar"]} will be namespaced to
+ *    {@code [".sfx", " ", "a", "#foo-sfx", " ", "b", ".bar"]}.
  * @return {Array.<Array.<string>>} an array of length 2 where the zeroeth
  *    element contains history-insensitive selectors and the first element
  *    contains history-sensitive selectors.
  */
-function sanitizeCssSelectors(selectors) {
+function sanitizeCssSelectors(selectors, suffix) {
   // Produce two distinct lists of selectors to sequester selectors that are
   // history sensitive (:visited), so that we can disallow properties in the
   // property groups for the history sensitive ones.
@@ -347,7 +353,8 @@ function sanitizeCssSelectors(selectors) {
         tok = selectors[start];
         if (tok.charAt(0) === '#') {
           if (/^#_|__$|[^#0-9A-Za-z:_\-]/.test(tok)) { return null; }
-          classId += tok;
+          // Rewrite ID elements to include the suffix.
+          classId += tok + '-' + suffix;
         } else if (tok === '.') {
           if (++start < end
               && /^[0-9A-Za-z:_\-]+$/.test(tok = selectors[start])
@@ -380,9 +387,21 @@ function sanitizeCssSelectors(selectors) {
       return null;
     }
 
+
+    var safeSelector = out.join('');
+    if (/^body\b/.test(safeSelector)) {
+      // Substitute the class that is attached to pseudo body elements for
+      // the body element.
+      safeSelector = '.vdoc-body___.' + suffix + safeSelector.substring(4);
+    } else {
+      // Namespace the selector so that it only matches under
+      // a node with suffix in its CLASS attribute.
+      safeSelector = '.' + suffix + ' ' + safeSelector;
+    }
+
     (historySensitive
      ? historySensitiveSelectors
-     : historyInsensitiveSelectors).push(out.join(''));
+     : historyInsensitiveSelectors).push(safeSelector);
   }
 
   return [historyInsensitiveSelectors, historySensitiveSelectors];
@@ -423,12 +442,19 @@ var sanitizeStylesheet = (function () {
 
   /**
    * @param {string} cssText a string containing a CSS stylesheet.
-   * @param {function(string, string)} sanitizeUri maps URLs of media
+   * @param {string} suffix a suffix that is added to all IDs and which is
+   *    used as a CLASS names so that the returned selectors will only match
+   *    nodes under one with suffix as a class name.
+   *    If suffix is {@code "sfx"}, the selector
+   *    {@code ["a", "#foo", " ", "b", ".bar"]} will be namespaced to
+   *    {@code [".sfx", " ", "a", "#foo-sfx", " ", "b", ".bar"]}.
+   * @param {function(string, string)} opt_naiveUriRewriter maps URLs of media
    *    (images, sounds) that appear as CSS property values to sanitized
    *    URLs or null if the URL should not be allowed as an external media
    *    file in sanitized CSS.
    */
-  return function /*sanitizeStylesheet*/(cssText, opt_naiveUriRewriter) {
+  return function /*sanitizeStylesheet*/(
+       cssText, suffix, opt_naiveUriRewriter) {
     var safeCss = void 0;
     // A stack describing the { ... } regions.
     // Null elements indicate blocks that should not be emitted.
@@ -493,7 +519,7 @@ var sanitizeStylesheet = (function () {
             var historySensitiveSelectors = void 0;
             var removeHistoryInsensitiveSelectors = false;
             if (!elide) {
-              var selectors = sanitizeCssSelectors(selectorArray);
+              var selectors = sanitizeCssSelectors(selectorArray, suffix);
               var historyInsensitiveSelectors = selectors[0];
               historySensitiveSelectors = selectors[1];
               if (!historyInsensitiveSelectors.length

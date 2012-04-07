@@ -23,6 +23,13 @@
   body.bar #testBodyClasses-no { font-style: italic }
 </style>
 
+<script>
+document.write(
+    '<style>body.foo #testBodyClassesDyn-yes,' +
+    ' body.bar #testBodyClassesDyn-no' +
+    ' { font-style: italic }</style>');
+</script>
+
 <body class="foo">
 
 <script type="text/javascript">
@@ -2231,7 +2238,16 @@ Test row cell
 <p id="testBodyClasses" class="testcontainer">
   <span id="testBodyClasses-yes">italic since body has class foo</span> /
   <span id="testBodyClasses-no">normal since body has no class bar</span><br>
-</p>
+  <script>
+    document.write(
+       '<span id="testBodyClassesDyn-yes">'
+       + 'italic since body has class foo</span> /\n'
+       + '<span id="testBodyClassesDyn-no">'
+       + 'normal since body has no class bar</span><br>');
+  </script>
+<p>
+
+
 <script type="text/javascript">
   // TODO(kpreid): Enable for ES5 once CSS is implemented.
   jsunitRegisterIf(!inES5Mode,
@@ -2242,8 +2258,10 @@ Test row cell
     }
     assertEquals('italic', s('testBodyClasses-yes').fontStyle);
     assertEquals('normal', s('testBodyClasses-no').fontStyle);
+    assertEquals('italic', s('testBodyClassesDyn-yes').fontStyle);
+    assertEquals('normal', s('testBodyClassesDyn-no').fontStyle);
     pass('testBodyClasses');
-  });
+ });
 </script>
 
 <p id="testUsemap" class="testcontainer"

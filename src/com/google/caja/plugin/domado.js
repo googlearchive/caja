@@ -4965,6 +4965,7 @@ var Domado = (function() {
         }
         return out.join(' ');
       });
+      domicile.suffixStr = idSuffix;
       domicile.ident = cajaVM.def(function (nmtokens) {
         var p = String(nmtokens).replace(/^\s+|\s+$/g, '').split(/\s+/g);
         var out = [];

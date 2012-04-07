@@ -24,8 +24,6 @@ import com.google.caja.util.RhinoTestBed;
  * @author mikesamuel@gmail.com
  */
 public final class CssStylesheetTest extends CajaTestCase {
-  // TODO: Implement class and ID namespacing in sanitizecss.js.
-  @FailureIsAnOption
   public final void testHtmlSanitizer() throws Exception {
     RhinoTestBed.runJsUnittestFromHtml(
         html(fromResource("css-stylesheet-test.html")));

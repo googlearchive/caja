@@ -374,14 +374,14 @@ function HtmlEmitter(makeDOMAccessible, base, opt_domicile, opt_guestGlobal) {
 
     function sanitizeCssUri(uri) {
       return (domicile && domicile.cssUri)
-        ? domicile.cssUri(URI.utils.resolve(baseUri, uri), 'image/*')
-        : void 0;
+          ? domicile.cssUri(URI.utils.resolve(baseUri, uri), 'image/*')
+          : void 0;
     }
 
     function defineUntrustedStylesheet(cssText) {
-      var safeCssText = sanitizeStylesheet(cssText, sanitizeCssUri);
       if (domicile && domicile.emitCss) {
-        domicile.emitCss(safeCssText);
+        domicile.emitCss(sanitizeStylesheet(
+            cssText, domicile.suffixStr.replace(/^-/, ''), sanitizeCssUri));
       }
     }
 

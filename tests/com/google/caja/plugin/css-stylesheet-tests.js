@@ -164,7 +164,8 @@ runCssSelectorTests([
       },
       {
         "cssText": "body.ie6 p { color: blue }",
-        "golden": ".vdoc-body___.ie6.namespace__ p { color: blue }"
+        "golden": ".vdoc-body___.ie6.namespace__ p{color:blue}",
+        "altGolden": ".vdoc-body___.namespace__.ie6 p{color:blue}"
       },
       {
         "cssText": "body { margin: 0; }",
