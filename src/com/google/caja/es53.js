@@ -1076,10 +1076,13 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
               });
           } else {
             replacer = markFunc(function (key, value) {
-                return (this.HasProperty___(key) || key === '') ?
-                    value :
-                    void 0;
-              });
+              if (this[key + '_g___']) {
+                return this[key + '_g___'].i___();
+              }
+              return (this.HasProperty___(key) || key === '') ?
+                  value :
+                  void 0;
+            });
           }
           return goodJSON.stringify(obj, replacer, opt_space);
         })
@@ -2355,7 +2358,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
           //    Desc. If the value of an attribute field of Desc is
           //    absent, the attribute of the newly created property is
           //    set to its default value.
-          if (Desc.configurable) { O[P] = void 0; }
+          O[P] = Desc.configurable ? void 0 : O[P];
           O[P + '_v___'] = false;
           O[P + '_w___'] =  O[P + '_gw___'] = false;
           O[P + '_e___'] = Desc.enumerable ? O : false;
@@ -2502,6 +2505,9 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
         O[P + '_gw___'] = Desc.writable ? O : false;
         O[P + '_g___'] = O[P + '_s___'] = void 0;
       } else {
+        // Create the property if it's not there so that JSON.stringify
+        // can see the property.
+        O[P] = O[P];
         O[P + '_v___'] = false;
         O[P + '_gw___'] = false;
         O[P + '_g___'] = Desc.get;

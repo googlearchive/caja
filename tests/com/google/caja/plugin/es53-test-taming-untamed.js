@@ -62,6 +62,8 @@
           return eval(String(s));
         }));
 
+    extraImports.tamedJson = caja.tame({a: 1});
+
     frame.code('es53-test-taming-untamed-guest.html')
          .api(extraImports)
          .run(function (_) {

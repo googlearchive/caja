@@ -53,6 +53,17 @@
   });
 </script>
 
+<div id="testStringify" class="testcontainer waiting">
+  tsetStringify
+</div>
+<script type="text/javascript">
+  jsunitRegister('testStringify',
+                 function testStringify() {
+    assertEquals(JSON.stringify(tamedJson), '{"a":1}');
+    pass('testStringify');
+  });
+</script>
+
 <div id="testRecordNumerics" class="testcontainer waiting">
   testRecordNumerics
 </div>
