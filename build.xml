@@ -404,7 +404,14 @@
     </copy>
   </target>
 
-  <target name="javadocs">
+  <target name="JavadocsCheck">
+    <uptodate property="javadocs.uptodate" targetfile="${jars}/pluginc-javadocs.jar">
+      <srcfiles dir="${src}/com/google/caja" includes="*" />
+      <srcfiles dir="${tests}/com/google/caja" includes="*" />
+    </uptodate>
+  </target>
+
+  <target name="javadocs" depends="JavadocsCheck" unless="javadocs.uptodate">
     <mkdir dir="${javadocs}"/>
     <javadoc sourcepath="${src}:${tests}" destdir="${javadocs}" access="private"
      author="true"
