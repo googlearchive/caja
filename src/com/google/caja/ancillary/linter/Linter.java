@@ -15,7 +15,6 @@
 package com.google.caja.ancillary.linter;
 
 import com.google.caja.lexer.CharProducer;
-import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.JsLexer;
 import com.google.caja.lexer.JsTokenQueue;
@@ -47,7 +46,6 @@ import com.google.caja.parser.js.Parser;
 import com.google.caja.parser.js.Reference;
 import com.google.caja.parser.js.ReturnStmt;
 import com.google.caja.parser.js.Statement;
-import com.google.caja.parser.js.StringLiteral;
 import com.google.caja.parser.js.ThrowStmt;
 import com.google.caja.parser.js.WithStmt;
 import com.google.caja.reporting.Message;
@@ -256,7 +254,6 @@ public class Linter implements BuildCommand {
     NodeBuckets buckets = NodeBuckets.maker()
         .with(ExpressionStmt.class)
         .with(LabeledStatement.class)
-        .with(StringLiteral.class)
         .under(globalScope.root);
 
     checkDeclarations(scopes, overrides, mq);
@@ -264,7 +261,6 @@ public class Linter implements BuildCommand {
     checkUses(scopes, lc.vars, sa, provides, requires, overrides, mq);
     checkSideEffects(buckets, mq);
     checkDeadCode(buckets, mq);
-    checkStringsEmbeddable((Block) ac.node, buckets, mq);
   }
 
   private static void checkDeclarations(
@@ -503,34 +499,6 @@ public class Linter implements BuildCommand {
               LinterMessageType.CODE_NOT_REACHABLE, es.node.getFilePosition());
         }
       }
-    }
-  }
-
-  private static void checkStringsEmbeddable(
-      Block program, NodeBuckets buckets, MessageQueue mq) {
-    for (AncestorChain<StringLiteral> lit : buckets.get(StringLiteral.class)) {
-      String qval = lit.node.getValue();
-      checkEmbeddable(mq, qval, lit.node.getFilePosition());
-    }
-    for (Token<?> comment : program.getComments()) {
-      checkEmbeddable(mq, comment.text, comment.pos);
-    }
-  }
-
-  private static void checkEmbeddable(
-      MessageQueue mq, String str, FilePosition pos) {
-    checkOneEmbeddable(mq, str, pos, "<!");
-    checkOneEmbeddable(mq, str, pos, "</script");
-  }
-
-  private static void checkOneEmbeddable(
-      MessageQueue mq, String str, FilePosition pos, String avoid) {
-    str = str.toLowerCase();
-    int p = str.indexOf(avoid);
-    for (; 0 <= p; p = str.indexOf(avoid, p + 1)) {
-      mq.addMessage(LinterMessageType.EMBED_HAZARD,
-          pos.narrowTo(p, avoid.length()),
-          MessagePart.Factory.valueOf(avoid));
     }
   }
 

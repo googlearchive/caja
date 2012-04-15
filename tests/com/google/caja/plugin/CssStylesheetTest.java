@@ -15,6 +15,7 @@
 package com.google.caja.plugin;
 
 import com.google.caja.util.CajaTestCase;
+import com.google.caja.util.FailureIsAnOption;
 import com.google.caja.util.RhinoTestBed;
 
 /**

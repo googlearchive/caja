@@ -169,8 +169,8 @@ var lexCss, decodeCss;
   var URI = 'url[(]' + W + '(?:' + STRING + '|' + URLCHAR + '*)' + W + '[)]';
   // UNICODE-RANGE  ::=  "U+" [0-9A-F?]{1,6} ('-' [0-9A-F]{1,6})?
   var UNICODE_RANGE = 'U[+][0-9A-F?]{1,6}(?:-[0-9A-F]{1,6})?';
-  // CDO  ::=  "<\!--"
-  var CDO = '<\!--';
+  // CDO  ::=  "<!--"
+  var CDO = '<!--';
   // CDC  ::=  "-->"
   var CDC = '-->';
   // S  ::=  wc+
