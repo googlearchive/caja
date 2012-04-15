@@ -42,6 +42,9 @@ public enum LinterMessageType implements MessageTypeInt {
       "%s: Usage of %s declared at %s is out of block scope.",
       MessageLevel.ERROR),
   CODE_NOT_REACHABLE("%s: Code is not reachable", MessageLevel.WARNING),
+  EMBED_HAZARD(
+      "%s: '%s' may cause problems when embedding script.",
+      MessageLevel.ERROR),
   ;
 
   private final String formatString;

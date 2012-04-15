@@ -82,6 +82,11 @@ public final class FilePosition implements MessagePart, Serializable {
   public int endCharInLine() { return breaks.charInLineAt(endCharInFile()); }
   public int length() { return length; }
 
+  public FilePosition narrowTo(int offset, int length) {
+    return breaks.toFilePosition(
+        startCharInFile + offset, startCharInFile + offset + length);
+  }
+
   public static FilePosition between(FilePosition a, FilePosition b) {
     if (a.getBreaks() != b.getBreaks()) { return FilePosition.UNKNOWN; }
     int start = a.startCharInFile() + a.length();
@@ -142,7 +147,7 @@ public final class FilePosition implements MessagePart, Serializable {
     if (!start.source().equalsAndNotUnknown(end.source())) {
       return FilePosition.UNKNOWN;
     }
-    
+
     return start.getBreaks().toFilePosition(
         start.startCharInFile(), end.endCharInFile());
   }
