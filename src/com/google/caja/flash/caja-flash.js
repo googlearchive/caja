@@ -35,10 +35,10 @@ var cajaFlash = {};
 
   // Get an Object with no Caja.
   var cleanFrame = document.createElement('iframe');
-  document.body.appendChild(cleanFrame);
+  document.documentElement.appendChild(cleanFrame);
   var cleanObject = cleanFrame.contentWindow.Object;
   var cleanString = cleanFrame.contentWindow.String;
-  document.body.removeChild(cleanFrame);
+  document.documentElement.removeChild(cleanFrame);
 
   // Convert a tame object into a clean string->string map 
   function cleanStringMap(o, caja___, taming___) {
