@@ -674,11 +674,29 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
         : markFuncFreeze(function() {return name;}));
     f.name_s___ = void 0;
     f.name_m___ = false;
+    f.caller_v___ = false;
+    f.caller_w___ = false;
+    f.caller_gw___ = false;
+    f.caller_c___ = false;
+    f.caller_e___ = false;
+    f.caller_g___ = poisonFuncCaller;
+    f.caller_s___ = void 0;
+    f.caller_m___ = false;
+    f.arguments_v___ = false;
+    f.arguments_w___ = false;
+    f.arguments_gw___ = false;
+    f.arguments_c___ = false;
+    f.arguments_e___ = false;
+    f.arguments_g___ = poisonFuncArgs;
+    f.arguments_s___ = void 0;
+    f.arguments_m___ = false;
 
     // Add to the list of defended (transitively frozen) objects so that
     // the def(...) function does not encounter these (newly created) functions
     // and go into an infinite loop freezing them.
     addToDefended(f.name_g___);
+    addToDefended(f.caller_g___);
+    addToDefended(f.arguments_g___);
   }
 
   function deferredV(name) {

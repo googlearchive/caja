@@ -148,6 +148,13 @@ public abstract class CommonJsRewriterTestCase extends RewriterTestCase {
       "  fail('assigning to <function>.caller did not throw');" +
       "}" +
       "f();");
+    rewriteAndExecute(
+      "function f() {" +
+      "  try { Object.defineProperty(f, 'caller', {value: 9}); }" +
+      "  catch (e) { return; }" +
+      "  fail('altering <function>.caller via defineProperty did not throw');" +
+      "}" +
+      "f();");
   }
 
   /**
@@ -200,6 +207,17 @@ public abstract class CommonJsRewriterTestCase extends RewriterTestCase {
       "function g() {" +
       "  try { f.arguments = 6; } catch (e) { return; }" +
       "  fail('assigning to <function>.arguments did not throw');" +
+      "}" +
+      "f(false);");
+    rewriteAndExecute(
+      "function f(a) {" +
+      "  g();" +
+      "}\n" +
+      "function g() {" +
+      "  try { Object.defineProperty(f, 'arguments', {value: 6}); }" +
+      "  catch (e) { return; }" +
+      "  fail('altering <function>.arguments via Object.defineProperty ' + " +
+      "      'did not throw');" +
       "}" +
       "f(false);");
   }
