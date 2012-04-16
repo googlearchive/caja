@@ -27,7 +27,8 @@ if ('undefined' === typeof console) {
       if (!resultsNode) {
         resultsNode = document.createElement('DIV');
         resultsNode.id = 'console-results';
-        document.body.appendChild(resultsNode);
+        var where = document.body || document.documentElement;
+        where.appendChild(resultsNode);
       }
       return resultsNode;
     }

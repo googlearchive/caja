@@ -102,4 +102,8 @@
     addModed('browser-test-case.html?test-driver=' + item[0], item[0], item[1]);
   }
 
+  addSeparator()
+
+  addModed('cajajs-bare-test.html?', 'cajajs-bare-test.html', null);
+
 })();

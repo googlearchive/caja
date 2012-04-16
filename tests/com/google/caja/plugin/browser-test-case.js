@@ -121,7 +121,8 @@ function pageLoaded___() {
   scriptTag.setAttribute('src',
       getUrlParam('test-driver')
       || 'default-test-driver.js');
-  document.body.appendChild(scriptTag);
+  var where = document.getElementsByTagName('script')[0];
+  where.parentNode.insertBefore(scriptTag, where);
 }
 
 function readyToTest() {

@@ -31,6 +31,11 @@ public class GeneralBrowserTest extends BrowserTestCase {
     runTestDriver("es53-test-cajajs-invocation.js");
   }
 
+  public final void testCajaJsBare() throws Exception {
+    runBrowserTest("cajajs-bare-test.html?es5=false");
+    runBrowserTest("cajajs-bare-test.html?es5=true");
+  }
+
   public final void testBasicFunctions() throws Exception {
     // TODO(kpreid): Enable for ES5: tests for load(), reassigning-window test
     runTestCase("es53-test-basic-functions-guest.html");
@@ -70,7 +75,7 @@ public class GeneralBrowserTest extends BrowserTestCase {
     // cause it to never make progress in load() or whenReady() calls.
     getCajaStatic().link(
         "/" + bv + "/es53-guest-frame.opt.js",
-        "/" + bv + "/alternative/es53-guest-frame.opt.js");        
+        "/" + bv + "/alternative/es53-guest-frame.opt.js");
     getCajaStatic().link(
         "/" + bv + "/es53-taming-frame.opt.js",
         "/" + bv + "/alternative/es53-taming-frame.opt.js");

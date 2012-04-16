@@ -396,7 +396,8 @@ var caja = (function () {
     frame.width = 0;
     frame.height = 0;
     frame.className = opt_className || '';
-    document.body.appendChild(frame);
+    var where = document.getElementsByTagName('script')[0];
+    where.parentNode.insertBefore(frame, where);
     return frame.contentWindow;
   }
 

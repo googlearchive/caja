@@ -224,7 +224,7 @@ public class HtmlCompiledPluginTest extends CajaTestCase {
                 "dom"),
             // Make the assertTrue, etc. functions available to javascript
             new Executor.Input(
-                getClass(), "../../../../js/jsunit/2.2/jsUnitCore.js"),
+                getClass(), "jsUnitCore.js"),
             // Plugin Framework
             new Executor.Input(
                 getClass(), "../../../../js/json_sans_eval/json_sans_eval.js"),
