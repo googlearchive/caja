@@ -52,47 +52,78 @@ var ses;
 
   /////////////// KLUDGE SWITCHES ///////////////
 
+  // Section 7.2 ES5 recognizes the following whitespace characters
+  // FEFF           ; BOM
+  // 0009 000B 000C ; White_Space # Cc
+  // 0020           ; White_Space # Zs       SPACE
+  // 00A0           ; White_Space # Zs       NO-BREAK SPACE
+  // 1680           ; White_Space # Zs       OGHAM SPACE MARK
+  // 180E           ; White_Space # Zs       MONGOLIAN VOWEL SEPARATOR
+  // 2000..200A     ; White_Space # Zs  [11] EN QUAD..HAIR SPACE
+  // 2028           ; White_Space # Zl       LINE SEPARATOR
+  // 2029           ; White_Space # Zp       PARAGRAPH SEPARATOR
+  // 202F           ; White_Space # Zs       NARROW NO-BREAK SPACE
+  // 205F           ; White_Space # Zs       MEDIUM MATHEMATICAL SPACE
+  // 3000           ; White_Space # Zs       IDEOGRAPHIC SPACE
+
+  // Unicode characters which have the Zs property are an open set and can
+  // grow.  Not all versions of a browser treat Zs characters the same.
+  // The trade off is as follows:
+  //   * if SES treats a character as non-whitespace which the browser
+  //      treats as whitespace, a sandboxed program would be able to
+  //      break out of the sandbox.  SES avoids this by encoding any
+  //      characters outside the range of well understood characters
+  //      and disallowing unusual whitespace characters which are
+  //      rarely used and may be treated non-uniformly by browsers.
+  //   * if SES treats a character as whitespace which the browser
+  //      treats as non-whitespace, a sandboxed program will be able
+  //      to break out of the SES sandbox.  However, at worst it might
+  //      be able to read, write and execute globals which have the
+  //      corresponding whitespace character.  This is a limited
+  //      breach because it is exceedingly rare for browser functions
+  //      or powerful host functions to have names which contain
+  //      potential whitespace characters.  At worst, sandboxed
+  //      programs would be able to communicate with each other.
+  //
+  // We are conservative with the whitespace characters we accept.  We
+  // deny whitespace > u00A0 to make unexpected functional differences
+  // in sandboxed programs on browsers even if it was safe to allow them.
+  var OTHER_WHITESPACE = new RegExp(
+    '[\\uFEFF\\u1680\\u180E\\u2000-\\u2009\\u200a'
+    + '\\u2028\\u2029\\u200f\\u205F\\u3000]');
+
   /**
-   * Currently we use this to limit the input text to ascii only
-   * without backslash-u escapes, in order to simply our identifier
-   * gathering.
-   *
-   * <p>This is only a temporary development hack. TODO(erights): fix.
+   * We use this to limit the input text to ascii only text.  All other
+   * characters are encoded using backslash-u escapes.
    */
   function LIMIT_SRC(programSrc) {
-    if ((/[^\u0000-\u007f]/).test(programSrc)) {
-      throw new EvalError('Non-ascii text not yet supported');
+    if (OTHER_WHITESPACE.test(programSrc)) {
+      throw new EvalError(
+        'Disallowing unusual unicode whitespace characters');
     }
-    if ((/\\u/).test(programSrc)) {
-      throw new EvalError('Backslash-u escape encoded text not yet supported');
-    }
+    programSrc = programSrc.replace(/([\u0080-\u009f\u00a1-\uffff])/g,
+      function(_, u) {
+        return '\\u' + ('0000' + u.charCodeAt(0).toString(16)).slice(-4);
+      });
+    return programSrc;
   }
 
   /**
    * Return a regexp that can be used repeatedly to scan for the next
-   * identifier.
-   *
-   * <p>The current implementation is safe only because of the above
-   * LIMIT_SRC. To do this right takes quite a lot of unicode
-   * machinery. See the "Identifier" production at
-   * http://es-lab.googlecode.com/svn/trunk/src/parser/es5parser.ojs
-   * which depends on
-   * http://es-lab.googlecode.com/svn/trunk/src/parser/unicode.js
-   *
-   * <p>This is only a temporary development hack. TODO(erights): fix.
+   * identifier. It works correctly in concert with LIMIT_SRC above. 
    * 
    * If this regexp is changed compileExprLater.js should be checked for
    * correct escaping of freeNames.
-   * 
    */
-  function SHOULD_MATCH_IDENTIFIER() { return (/(\w|\$)+/g); }
-
+  function SHOULD_MATCH_IDENTIFIER() { 
+    return /(\w|\\u\d{4}|\$)+/g;
+  }
 
   //////////////// END KLUDGE SWITCHES ///////////
 
   ses.atLeastFreeVarNames = function atLeastFreeVarNames(programSrc) {
     programSrc = String(programSrc);
-    LIMIT_SRC(programSrc);
+    programSrc = LIMIT_SRC(programSrc);
     // Now that we've temporarily limited our attention to ascii...
     var regexp = SHOULD_MATCH_IDENTIFIER();
     // Once we decide this file can depends on ES5, the following line

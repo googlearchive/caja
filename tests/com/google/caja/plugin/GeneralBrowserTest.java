@@ -31,6 +31,10 @@ public class GeneralBrowserTest extends BrowserTestCase {
     runTestDriver("es53-test-cajajs-invocation.js");
   }
 
+  public final void testUnicode() throws Exception {
+    runTestDriver("es53-test-unicode.js");
+  }
+
   public final void testCajaJsBare() throws Exception {
     runBrowserTest("cajajs-bare-test.html?es5=false");
     runBrowserTest("cajajs-bare-test.html?es5=true");
