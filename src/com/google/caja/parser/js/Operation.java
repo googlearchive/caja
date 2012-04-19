@@ -19,7 +19,6 @@ import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.Keyword;
 import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.parser.ParseTreeNode;
-import com.google.caja.parser.ParserBase;
 import com.google.caja.reporting.RenderContext;
 import com.google.javascript.jscomp.jsonml.JsonML;
 import com.google.javascript.jscomp.jsonml.TagAttr;
@@ -610,20 +609,6 @@ public abstract class Operation extends AbstractExpression {
             && "boolean".equals(right.typeOf())
             && right.simplifyForSideEffect() == null) {
           return left;
-        }
-      }
-    } else if (op == Operator.SQUARE_BRACKET) {
-      if (right instanceof StringLiteral) {
-        String propertyName = ((StringLiteral) right).getUnquotedValue();
-        if (ParserBase.isJavascriptIdentifier(propertyName)
-            && !Keyword.isKeyword(propertyName)) {
-          return Operation.create(
-              getFilePosition(), Operator.MEMBER_ACCESS,
-              left,
-              new Reference(
-                  new Identifier(right.getFilePosition(), propertyName)))
-              // Possibly handle the .length or other properties below
-              .foldBinaryOp();
         }
       }
     } else if (op == Operator.MEMBER_ACCESS) {

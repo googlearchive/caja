@@ -256,11 +256,10 @@ public class ExpressionTest extends CajaTestCase {
     assertFolded("3", "'foo'.length");
     assertFolded("1", "'foo'.indexOf('o')");
     assertFolded("-1", "'foo'.indexOf('bar')");
-    assertFolded("foo.bar", "foo['bar']");
+    assertFolded("foo[ 'bar' ]", "foo['bar']");
     assertFolded("foo[ 0 ]", "foo[0]");
     assertFolded("foo[ '0' ]", "foo['0']");
     assertFolded("foo[ 'null' ]", "foo['null']");
-    assertFolded("3", "'foo'['length']");
     assertFolded("new Date", "new Date()");
     assertFolded("new Date(0)", "new Date(0)");
     assertFolded(
