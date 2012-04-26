@@ -49,7 +49,7 @@
  * @requires WeakMap, Proxy
  * @requires CSS_PROP_BIT_HISTORY_INSENSITIVE
  * @provides Domado
- * @overrides domitaModules
+ * @overrides domitaModules, window
  */
 // TODO(kpreid): Review whether multiple uses of np() should be coalesced for
 // efficiency.
@@ -5679,3 +5679,7 @@ var Domado = (function() {
   };
 })();
 
+// Exports for closure compiler.
+if (typeof window !== 'undefined') {
+  window['Domado'] = Domado;
+}

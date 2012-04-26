@@ -19,21 +19,21 @@
  * is used to generate css-defs.js.
  *
  * @author mikesamuel@gmail.com
- * @requires CSS_PROP_BIT_ALLOWED_IN_LINK
- * @requires CSS_PROP_BIT_HASH_VALUE
- * @requires CSS_PROP_BIT_NEGATIVE_QUANTITY
- * @requires CSS_PROP_BIT_QSTRING_CONTENT
- * @requires CSS_PROP_BIT_QSTRING_URL
- * @requires CSS_PROP_BIT_QUANTITY
- * @requires CSS_PROP_BIT_Z_INDEX
- * @requires console
- * @requires cssSchema
- * @requires decodeCss
- * @requires html4
- * @requires parseCssStylesheet
- * @provides sanitizeCssProperty
- * @provides sanitizeCssSelectors
- * @provides sanitizeStylesheet
+ * \@requires CSS_PROP_BIT_ALLOWED_IN_LINK
+ * \@requires CSS_PROP_BIT_HASH_VALUE
+ * \@requires CSS_PROP_BIT_NEGATIVE_QUANTITY
+ * \@requires CSS_PROP_BIT_QSTRING_CONTENT
+ * \@requires CSS_PROP_BIT_QSTRING_URL
+ * \@requires CSS_PROP_BIT_QUANTITY
+ * \@requires CSS_PROP_BIT_Z_INDEX
+ * \@requires cssSchema
+ * \@requires decodeCss
+ * \@requires html4
+ * \@overrides window
+ * \@requires parseCssStylesheet
+ * \@provides sanitizeCssProperty
+ * \@provides sanitizeCssSelectors
+ * \@provides sanitizeStylesheet
  */
 
 /**
@@ -484,9 +484,10 @@ var sanitizeStylesheet = (function () {
               }
             } else {
               if (atIdent === '@import') {
-                if ('undefined' !== typeof console) {
-                  // TODO: Use a logger instead.
-                  console.log('@import ' + headerArray.join(' ') + ' elided');
+                // TODO: Use a logger instead.
+                if (window.console) {
+                  window.console.log(
+                      '@import ' + headerArray.join(' ') + ' elided');
                 }
               }
               atIdent = null;  // Elide the block.
@@ -597,3 +598,10 @@ var sanitizeStylesheet = (function () {
     return safeCss.join('');
   };
 })();
+
+// Exports for closure compiler.
+if (typeof window !== 'undefined') {
+  window['sanitizeCssProperty'] = sanitizeCssProperty;
+  window['sanitizeCssSelectors'] = sanitizeCssSelectors;
+  window['sanitizeStylesheet'] = sanitizeStylesheet;
+}

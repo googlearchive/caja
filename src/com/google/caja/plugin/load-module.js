@@ -21,6 +21,7 @@
  *     a cajoling service.
  *
  * @requires Q, ___, eval, moduleNames
+ * @overrides window
  * @provides loadModuleMaker
  */
 var loadModuleMaker = function(rootUrl, cajolingServiceClient, uriUtils) {
@@ -187,3 +188,8 @@ var loadModuleMaker = function(rootUrl, cajolingServiceClient, uriUtils) {
 
   return makeLoad(rootUrl);
 };
+
+// Exports for closure compiler.
+if (typeof window !== 'undefined') {
+  window['loadModuleMaker'] = loadModuleMaker;
+}

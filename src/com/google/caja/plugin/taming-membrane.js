@@ -16,6 +16,7 @@
  * Generic taming membrane implementation.
  *
  * @requires WeakMap
+ * @overrides window
  * @provides TamingMembrane
  */
 function TamingMembrane(privilegedAccess) {
@@ -586,4 +587,9 @@ function TamingMembrane(privilegedAccess) {
     tamesTo: tamesTo,
     hasTameTwin: hasTameTwin
   });
+}
+
+// Exports for closure compiler.
+if (typeof window !== 'undefined') {
+  window['TamingMembrane'] = TamingMembrane;
 }

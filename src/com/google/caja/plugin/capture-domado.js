@@ -5,6 +5,7 @@
  *
  * @author ihab.awad@gmail.com
  * @requires CaptureCajoledModule
+ * @overrides window
  * @provides Domado, HtmlEmitter
  */
 
@@ -15,3 +16,9 @@ CaptureCajoledModule(function(imports) {
   Domado = imports.Domado;
   HtmlEmitter = imports.HtmlEmitter;
 });
+
+// Exports for closure compiler.
+if (typeof window !== 'undefined') {
+  window['Domado'] = Domado;
+  window['HtmlEmitter'] = HtmlEmitter;
+}

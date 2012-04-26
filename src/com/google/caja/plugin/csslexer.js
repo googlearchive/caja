@@ -16,10 +16,12 @@
  * A lexical scannar for CSS3 as defined at http://www.w3.org/TR/css3-syntax .
  * 
  * @author Mike Samuel <mikesamuel@gmail.com>
- * @provides lexCss, decodeCss
+ * \@provides lexCss, decodeCss
+ * \@overrides window
  */
 
-var lexCss, decodeCss;
+var lexCss;
+var decodeCss;
 
 (function () {
 
@@ -55,7 +57,7 @@ var lexCss, decodeCss;
    * @private
    */
   function escapeCssString(s, replacer) {
-    return '"' + s.replace(/[\u0000-\u001f\\"<>]/g, replacer) + '"';
+    return '"' + s.replace(/[\u0000-\u001f\\\"<>]/g, replacer) + '"';
   }
 
   /**
@@ -268,3 +270,9 @@ var lexCss, decodeCss;
     return tokens;
   };
 })();
+
+// Exports for closure compiler.
+if (typeof window !== 'undefined') {
+  window['lexCss'] = lexCss;
+  window['decodeCss'] = decodeCss;
+}

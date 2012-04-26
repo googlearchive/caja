@@ -27,6 +27,7 @@
  * @param console [optional] a console-like object to which errors are written.
  *
  * @requires Q, encodeURIComponent, cajaBuildVersion
+ * @overrides window
  * @provides cajolingServiceClientMaker
  */
 var cajolingServiceClientMaker = function(serviceUrl,
@@ -136,3 +137,8 @@ var cajolingServiceClientMaker = function(serviceUrl,
     cajoleContent: cajoleContent
   };
 };
+
+// Exports for closure compiler.
+if (typeof window !== 'undefined') {
+  window['cajolingServiceClientMaker'] = cajolingServiceClientMaker;
+}

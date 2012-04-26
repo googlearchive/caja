@@ -17,8 +17,9 @@
  * Utilities for dealing with CSS source code.
  *
  * @author mikesamuel@gmail.com
- * @requires lexCss
- * @provides parseCssStylesheet, parseCssDeclarations
+ * \@requires lexCss
+ * \@overrides window
+ * \@provides parseCssStylesheet, parseCssDeclarations
  */
 
 /**
@@ -262,7 +263,7 @@ var parseCssDeclarations;
     // we look for any+ but that is the same as selector but not zero-length.
     // This gets us the benefit of not emitting any value with mismatched
     // brackets.
-    var s = i, e = selector(toks, i, n);
+    var s = i, e = selector(toks, i, n, false);
     if (e < 0) {
       // Skip malformed content per selector calling convention.
       e = ~e;
@@ -306,3 +307,9 @@ var parseCssDeclarations;
     }
   };
 })();
+
+// Exports for closure compiler.
+if (typeof window !== 'undefined') {
+  window['parseCssStylesheet'] = parseCssStylesheet;
+  window['parseCssDeclarations'] = parseCssDeclarations;
+}

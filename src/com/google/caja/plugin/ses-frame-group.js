@@ -19,7 +19,7 @@
  * @requires Q
  * @requires TamingMembrane
  * @requires bridalMaker
- * @requires window
+ * @overrides window
  */
 
 function SESFrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker) {
@@ -410,4 +410,9 @@ function SESFrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker) {
     return pair.promise;
   }
 
+}
+
+// Exports for closure compiler.
+if (typeof window !== 'undefined') {
+  window['SESFrameGroup'] = SESFrameGroup;
 }

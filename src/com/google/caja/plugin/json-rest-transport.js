@@ -169,3 +169,8 @@ var jsonRestTransportMaker = function(opt_transportType) {
     request: request
   };
 };
+
+// Exports for closure compiler.
+if (typeof window !== 'undefined') {
+  window['jsonRestTransportMaker'] = jsonRestTransportMaker;
+}

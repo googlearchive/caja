@@ -22,8 +22,8 @@
  * @requires Q
  * @requires TamingMembrane
  * @requires jsonRestTransportMaker
- * @requires window
  * @requires URI
+ * @overrides window
  */
 
 function ES53FrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker) {
@@ -516,4 +516,9 @@ function ES53FrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker) {
     }
     return wrapper;
   }
+}
+
+// Exports for closure compiler.
+if (typeof window !== 'undefined') {
+  window['ES53FrameGroup'] = ES53FrameGroup;
 }

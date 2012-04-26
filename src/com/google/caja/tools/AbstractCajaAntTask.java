@@ -20,8 +20,6 @@ import com.google.caja.util.Sets;
 import com.google.caja.util.Strings;
 
 import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Writer;
 import java.util.Arrays;
@@ -211,15 +209,7 @@ public abstract class AbstractCajaAntTask extends Task {
         try {
           success = run(
               buildService, logger, dependees, inputs, output, options);
-          if (success) {
-            if (!outputTimeFile.exists()) {
-              try {
-                (new FileOutputStream(outputTimeFile)).close();
-              } catch (IOException ex) {
-                throw new BuildException("Failed to build " + output, ex);
-              }
-            }
-          } else {
+          if (!success) {
             throw new BuildException("Failed to build " + output);
           }
         } catch (DOMException e) {

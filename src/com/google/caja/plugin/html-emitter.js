@@ -25,6 +25,7 @@
  * @author mikesamuel@gmail.com
  * @provides HtmlEmitter
  * @requires bridalMaker html html4 cajaVM sanitizeStylesheet URI
+ * @overrides window
  */
 
 /**
@@ -514,4 +515,9 @@ function HtmlEmitter(makeDOMAccessible, base, opt_domicile, opt_guestGlobal) {
     };
     domicile.writeHook = cajaVM.def(tameDocWrite);
   })(opt_domicile);
+}
+
+// Exports for closure compiler.
+if (typeof window !== 'undefined') {
+  window['HtmlEmitter'] = HtmlEmitter;
 }

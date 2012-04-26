@@ -20,6 +20,7 @@
  * @see http://www.w3.org/TR/2000/REC-xml-20001006#CharClasses
  * @author mikesamuel@gmail.com
  * @provides unicode
+ * @overrides window
  */
 
 
@@ -91,3 +92,8 @@ unicode.DIGIT = (
 unicode.EXTENDER = (
     '\u00B7\u02D0\u02D1\u0387\u0640\u0E46\u0EC6\u3005\u3031-\u3035'
     + '\u309D-\u309E\u30FC-\u30FE');
+
+// Exports for closure compiler.
+if (typeof window !== 'undefined') {
+  window['unicode'] = unicode;
+}

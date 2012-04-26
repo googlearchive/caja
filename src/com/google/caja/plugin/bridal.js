@@ -22,6 +22,7 @@
  * @author jasvir@gmail.com
  * @provides bridalMaker
  * @requires WeakMap, html, html4
+ * @overrides window
  */
 
 /**
@@ -790,3 +791,8 @@ bridalMaker.getWindow = function(element, mda) {
   return doc.parentWindow;
 };
 
+// Exports for closure compiler.
+// TODO(felix8a): reduce internal linkage exposed as globals
+if (typeof window !== 'undefined') {
+  window['bridalMaker'] = bridalMaker;
+}

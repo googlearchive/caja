@@ -13,6 +13,7 @@
  * 
  * @contributor maoziqing@gmail.com, kpreid@switchb.org
  * @requires setTimeout, WeakMap, cajaVM
+ * @overrides window
  * @provides Q
  */
 
@@ -300,3 +301,8 @@ var Q;
     }
   });
 })();
+
+// Exports for closure compiler.
+if (typeof window !== 'undefined') {
+  window['Q'] = Q;
+}

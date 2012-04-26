@@ -18,6 +18,7 @@
  *
  * @author mikesamuel@gmail.com
  * @provides URI
+ * @overrides window
  */
 
 var URI = (function () {
@@ -727,3 +728,8 @@ URI.utils = {
 
 return URI;
 })();
+
+// Exports for closure compiler.
+if (typeof window !== 'undefined') {
+  window['URI'] = URI;
+}

@@ -37,7 +37,7 @@
  *
  * @author Mark S. Miller
  * @requires document
- * @overrides ses
+ * @overrides ses, window
  * @provides useHTMLLogger
  */
 var ses;
@@ -284,4 +284,9 @@ function useHTMLLogger(reportsElement, consoleElement) {
   };
 
   ses.logger = logger;
+}
+
+// Exports for closure compiler.
+if (typeof window !== 'undefined') {
+  window['useHTMLLogger'] = useHTMLLogger;
 }

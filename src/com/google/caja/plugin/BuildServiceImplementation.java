@@ -50,6 +50,7 @@ import com.google.caja.reporting.SimpleMessageQueue;
 import com.google.caja.reporting.SnippetProducer;
 import com.google.caja.tools.BuildService;
 import com.google.caja.util.Charsets;
+import com.google.caja.util.FileIO;
 import com.google.caja.util.Lists;
 import com.google.caja.util.Maps;
 import com.google.caja.util.Pair;
@@ -315,24 +316,9 @@ public class BuildServiceImplementation implements BuildService {
         translatedCode = jsOut.toString();
       }
 
-      passed = write(translatedCode, output, logger);
+      passed = FileIO.write(translatedCode, output, logger);
     }
     return passed;
-  }
-
-  private boolean write(String string, File output, PrintWriter logger) {
-    try {
-      Writer w = new OutputStreamWriter(new FileOutputStream(output));
-      try {
-        w.write(string);
-      } finally {
-        w.close();
-      }
-    } catch (IOException ex) {
-      logger.println("Failed to write " + output);
-      return false;
-    }
-    return true;
   }
 
   private boolean concat(List<File> inputs, File output, PrintWriter logger) {
@@ -365,7 +351,7 @@ public class BuildServiceImplementation implements BuildService {
       ok = false;
     }
     if (ok) {
-      ok = write(result.toString(), output, logger);
+      ok = FileIO.write(result.toString(), output, logger);
     }
     return ok;
   }

@@ -29,7 +29,7 @@
  * @requires json_sans_eval, cajaBuildVersion, taming, this
  * @provides ___, safeJSON, WeakMap, cajaVM
  * @overrides Error, EvalError, RangeError, ReferenceError, SyntaxError,
- *   TypeError, URIError, ArrayLike
+ *   TypeError, URIError, ArrayLike, window
  * @overrides escape, JSON, Proxy
  */
 
@@ -5541,3 +5541,11 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
   }
   setNewModuleHandler(makeNormalNewModuleHandler());
 })(this);
+
+// Exports for closure compiler.
+if (typeof window !== 'undefined') {
+  window['___'] = ___;
+  window['safeJSON'] = safeJSON;
+  window['WeakMap'] = WeakMap;
+  window['cajaVM' ] = cajaVM;
+}

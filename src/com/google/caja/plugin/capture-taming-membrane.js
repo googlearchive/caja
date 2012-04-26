@@ -5,6 +5,7 @@
  *
  * @author ihab.awad@gmail.com
  * @requires CaptureCajoledModule
+ * @overrides window
  * @provides TamingMembrane
  */
 
@@ -13,3 +14,8 @@ var TamingMembrane = undefined;
 CaptureCajoledModule(function(imports) {
   TamingMembrane = imports.TamingMembrane;
 });
+
+// Exports for closure compiler.
+if (typeof window !== 'undefined') {
+  window['CaptureCajoledModule'] = CaptureCajoledModule;
+}

@@ -19,6 +19,12 @@
  * into this file via build.xml rules.
  *
  * @provides cajaBuildVersion
+ * @overrides window
  */
 
 var cajaBuildVersion = '%VERSION%';
+
+// Exports for closure compiler.
+if (typeof window !== 'undefined') {
+  window['cajaBuildVersion'] = cajaBuildVersion;
+}

@@ -12,6 +12,7 @@
  * 
  * @contributor: maoziqing@gmail.com
  * @requires setTimeout, ___
+ * @overrides window
  * @provides Q
  */
 
@@ -296,3 +297,8 @@ var Q;
 
   ___.primFreeze(Q);
 })();
+
+// Exports for closure compiler.
+if (typeof window !== 'undefined') {
+  window['Q'] = Q;
+}

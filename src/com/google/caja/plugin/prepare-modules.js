@@ -14,6 +14,7 @@
 
 /**
  * @requires ___, eval
+ * @overrides window
  * @provides prepareModuleFromText___
  */
 var prepareModuleFromText___ = function(moduleText) {
@@ -24,3 +25,8 @@ var prepareModuleFromText___ = function(moduleText) {
   })();
   return ___.prepareModule(rawModule, undefined /* load */);
 };
+
+// Exports for closure compiler.
+if (typeof window !== 'undefined') {
+  window['prepareModuleFromText___'] = prepareModuleFromText___;
+}

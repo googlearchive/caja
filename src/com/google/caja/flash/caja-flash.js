@@ -16,7 +16,8 @@
  * @fileoverview Allows containers to mimic swfobject for cajoled gadgets
  *
  * @author felixz@gmail.com
- * @requires document, window
+ * @requires document
+ * @overrides window
  * @provides cajaFlash
  */
 
@@ -268,3 +269,8 @@ var cajaFlash = {};
     caja___.grantFunc(guestImps, 'cajaHandleEmbed');
   };
 })();
+
+// Exports for closure compiler.
+if (typeof window !== 'undefined') {
+  window['cajaFlash'] = cajaFlash;
+}

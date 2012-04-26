@@ -85,6 +85,9 @@ public class TransformAntTask extends AbstractCajaAntTask {
       } catch (IOException e) {
         throw new BuildException(e);
       }
+
+    } else if ("closure".equals(options.get("language"))) {
+      return new ClosureCompiler().build(this, inputs, output, logger);
     } else {
       return buildService.cajole(logger, depends, inputs, output, options);
     }

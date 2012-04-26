@@ -6,6 +6,7 @@
  * @author jasvir@gmail.com
  * @author kpreid@switchb.org
  * @requires ___, console
+ * @overrides window
  * @provides CaptureCajoledModule
  */
 
@@ -67,4 +68,8 @@ function CaptureCajoledModule(importsCallback) {
   });
 
   ___.setNewModuleHandler(ourHandler);
+}
+
+if (typeof window !== 'undefined') {
+  window['CaptureCajoledModule'] = CaptureCajoledModule;
 }

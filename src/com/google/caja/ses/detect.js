@@ -6,7 +6,8 @@
  *
  * @author Peter-Paul Koch, with modifications by Mark S. Miller
  * @provides BrowserDetect
- * @requires navigator, window
+ * @requires navigator
+ * @overrides window
  */
 
 var BrowserDetect;
@@ -137,3 +138,8 @@ var BrowserDetect;
   };
   BrowserDetect.init();
 })();
+
+// Exports for closure compiler.
+if (typeof window !== 'undefined') {
+  window['BrowserDetect'] = BrowserDetect;
+}

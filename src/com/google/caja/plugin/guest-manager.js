@@ -14,6 +14,7 @@
 
 /**
  * @provides GuestManager
+ * @overrides window
  */
 
 /**
@@ -143,4 +144,9 @@ function GuestManager(divs, domicile, guestWin, runImpl) {
     }
     return runImpl(self, args, moreImports, opt_runDone);
   }
+}
+
+// Exports for closure compiler.
+if (typeof window !== 'undefined') {
+  window['GuestManager'] = GuestManager;
 }
