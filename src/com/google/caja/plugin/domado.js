@@ -346,7 +346,7 @@ var Domado = (function() {
       });
   
       var guard = this.guard = cajaVM.makeTableGuard(table, typename,
-          'Specimen does not have the "' + typename + '" confidence mark');
+          'This operation requires a ' + typename);
   
       /**
        * Wrap a method to enforce that 'this' is a confidant, and also
@@ -2541,6 +2541,7 @@ var Domado = (function() {
         return defaultTameNode(clone, true);
       });
       TameBackedNode.prototype.appendChild = nodeMethod(function (child) {
+        child = child || {};
         // Child must be editable since appendChild can remove it from its
         // parent.
         child = TameNodeT.coerce(child);

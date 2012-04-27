@@ -1529,6 +1529,7 @@
       <options>
         <arg value="--jvm_flag=-Xmx2048m"/>
         <arg value="--jvm_flag=-Xrunjdwp:transport=dt_socket,address=9999,server=y,suspend=n"/>
+        <arg value="--jvm_flag=-Dappengine.user.timezone=UTC"/>
       </options>
     </dev_appserver>
   </target>

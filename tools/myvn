@@ -112,7 +112,8 @@ function myvn() {
       "$tools_dir/appspot.py" edit "$@"
       ;;
     submit )
-      runAntTests && "$svn" commit -F <("$tools_dir/appspot.py" show "$@") && tidyup
+#      runAntTests && 
+      "$svn" commit -F <("$tools_dir/appspot.py" show "$@") && tidyup
       ;;
     tidyup )
       tidyup
