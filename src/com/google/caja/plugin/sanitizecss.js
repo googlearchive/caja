@@ -340,7 +340,7 @@ function sanitizeCssSelectors(selectors, suffix) {
       element = '';
       if (start < end) {
         tok = selectors[start].toLowerCase();
-        if (tok === '*' || (tok === 'html' && !last)
+        if (tok === '*'
             || (tok === 'body' && start+1 !== end && !last)
             || ('number' === typeof (elType = html4.ELEMENTS[tok])
                 && !(elType & html4.eflags.UNSAFE))) {

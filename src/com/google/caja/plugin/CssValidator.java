@@ -433,14 +433,6 @@ public final class CssValidator {
       // rules, e.g.  body.ie6 p { ... }
       i = skipDescendantOfBody(children);
     }
-    if (i == 0) {
-      // Make an exception for HTML which is handled specially by the
-      // rewriter to allow user agent hacks like: * html p {...}
-      // See http://en.wikipedia.org/wiki/CSS_filter#Star_HTML_hack for details
-      // of where and why this hack is used.
-      i = skipDescendantOfWildcardHtml(children);
-    }
-
     boolean valid = true;
     for (CssTree t : children.subList(i, children.size())) {
       valid &= validateCss(t);
@@ -470,36 +462,6 @@ public final class CssValidator {
       return 0;
     }
     return 2;
-  }
-
-  /**
-   * If the first parts of the selector looks like "* html " then return
-   * the index of the child after the combinator.  Otherwise return the index 0.
-   */
-  private int skipDescendantOfWildcardHtml(List<? extends CssTree> children) {
-    if (children.size() <= 4) { return 0; }
-    CssTree.Combination c;
-    c = (CssTree.Combination) children.get(1);
-    if (c.getCombinator() != Combinator.DESCENDANT) { return 0; }
-    c = (CssTree.Combination) children.get(3);
-    if (c.getCombinator() != Combinator.DESCENDANT) { return 0; }
-
-    CssTree.SimpleSelector ss0 = (CssTree.SimpleSelector) children.get(0);
-    List<? extends CssTree> ss0Parts = ss0.children();
-    if (!(ss0Parts.size() == 1
-          && ss0Parts.get(0) instanceof CssTree.WildcardElement)) {
-      return 0;
-    }
-
-    CssTree.SimpleSelector ss2 = (CssTree.SimpleSelector) children.get(2);
-    List<? extends CssTree> ss2Parts = ss2.children();
-    if (ss2Parts.size() != 1) { return 0; }
-    CssTree ss2Part0 = ss2Parts.get(0);
-    if (!(ss2Part0 instanceof CssTree.IdentLiteral
-          && "html".equals(ss2Part0.getValue()))) {
-      return 0;
-    }
-    return 4;
   }
 
   /**

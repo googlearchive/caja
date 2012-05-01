@@ -177,8 +177,8 @@ runCssSelectorTests([
       },  // Not allowed.
       {
         "cssText": "* html p { margin: 0; }",
-        "golden": ".namespace__ * html p{margin:0}"
-      },
+        "golden": ""
+      }, // Not allowed
       {
         "cssText": "* html { margin: 0; }",
         "golden": ""

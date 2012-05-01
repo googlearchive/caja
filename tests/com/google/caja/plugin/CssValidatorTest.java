@@ -1531,25 +1531,7 @@ public final class CssValidatorTest extends CajaTestCase {
   }
 
   public final void testHtmlStarHack() throws Exception {
-    runTest("* html p { color: blue }",
-            "StyleSheet\n"
-            + "  RuleSet\n"
-            + "    Selector\n"
-            + "      SimpleSelector\n"
-            + "        WildcardElement\n"
-            + "      Combination : DESCENDANT\n"
-            + "      SimpleSelector\n"
-            + "        IdentLiteral : html\n"
-            + "      Combination : DESCENDANT\n"
-            + "      SimpleSelector\n"
-            + "        IdentLiteral : p\n"
-            + "    PropertyDeclaration\n"
-            + "      Property : color\n"
-            + "      Expr\n"
-            + "        Term ; cssPropertyPartType=IDENT"
-                        + " ; cssPropertyPart=color::color\n"
-            + "          IdentLiteral : blue\n"
-            );
+    fails("* html p { color: blue }");
     fails("* html { color: blue }");
     fails("* html > p { color: blue }");
     fails("* html object { color: blue }");
