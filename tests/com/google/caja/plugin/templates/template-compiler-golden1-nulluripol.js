@@ -66,6 +66,10 @@ function module() {
     };
     emitter___.rmAttr(el___, 'id');
     el___ = emitter___.byId('id_6___');
+    emitter___.setAttr(el___, 'style', 'color: red; background-image: url(' +
+      IMPORTS___.rewriteUriInCss___('test://example.org/foo') + ')');
+    emitter___.rmAttr(el___, 'id');
+    el___ = emitter___.byId('id_7___');
     emitter___.setAttr(el___, 'id', 'zag-' + IMPORTS___.getIdClass___());
     el___ = emitter___.finish();
     emitter___.signalLoaded();

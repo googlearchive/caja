@@ -14,15 +14,20 @@
 
 package com.google.caja.plugin;
 
+import com.google.caja.SomethingWidgyHappenedError;
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.parser.css.CssTree;
 
 import java.net.URI;
 
 /**
- * A URI literal that has been sanitized by a rewriting step such that it is
- * safe to directly render in the output.
+ * A URI literal that has NOT been sanitized by a rewriting step such that it is
+ * NOT safe to directly render in the output.
  */
 class UnsafeUriLiteral extends CssTree.UriLiteral {
   UnsafeUriLiteral(FilePosition pos, URI value) { super(pos, value); }
+  public void render(com.google.caja.reporting.RenderContext rc) {
+    throw new SomethingWidgyHappenedError(
+        "UnsafeUriLiteral must never be rendered");
+  }
 }

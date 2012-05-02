@@ -30,6 +30,7 @@ import com.google.caja.parser.Visitor;
 import com.google.caja.parser.css.CssTree;
 import com.google.caja.parser.html.Nodes;
 import com.google.caja.parser.js.AbstractExpression;
+import com.google.caja.parser.js.ArrayConstructor;
 import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.Declaration;
 import com.google.caja.parser.js.Expression;
@@ -42,6 +43,7 @@ import com.google.caja.parser.js.StringLiteral;
 import com.google.caja.parser.js.SyntheticNodes;
 import com.google.caja.parser.quasiliteral.QuasiBuilder;
 import com.google.caja.parser.quasiliteral.ReservedNames;
+import com.google.caja.plugin.CssDynamicExpressionRewriter;
 import com.google.caja.plugin.CssRewriter;
 import com.google.caja.plugin.CssValidator;
 import com.google.caja.plugin.JobEnvelope;
@@ -52,7 +54,6 @@ import com.google.caja.plugin.stages.EmbeddedContent;
 import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
-import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.Lists;
 import com.google.caja.util.Maps;
 import com.google.caja.util.SyntheticAttributeKey;
@@ -239,13 +240,20 @@ public final class HtmlAttributeRewriter {
         new CssRewriter(meta.getUriPolicy(), cssSchema, mq)
             .withInvalidNodeMessageLevel(MessageLevel.WARNING)
             .rewrite(AncestorChain.instance(decls));
+        new CssDynamicExpressionRewriter(meta).rewriteCss(decls);
+        ArrayConstructor jsValue = CssDynamicExpressionRewriter.cssToJs(decls);
 
-        StringBuilder css = new StringBuilder();
-        RenderContext rc = new RenderContext(decls.makeRenderer(css, null));
-        decls.render(rc);
-        rc.getOut().noMoreTokens();
-
-        dynamicValue = StringLiteral.valueOf(pos, css);
+        if (jsValue.children().size() == 0) {
+          // No declarations remain after sanitizing
+          return noResult(attr);
+        } else if (jsValue.children().size() == 1) {
+          // Declarations have been reduced to a single, statically known
+          // StringLiteral or dynamically computed Expression
+          dynamicValue = jsValue.children().get(0);
+        } else {
+          throw new SomethingWidgyHappenedError(
+              "Rewriter thinks STYLE attribute should contain plugin ID");
+        }
         break;
       case URI:
         if (attributeContent.containsKey(attr.src)) {  // A javascript: URI

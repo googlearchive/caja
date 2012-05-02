@@ -763,6 +763,64 @@ public class TemplateCompilerTest extends CajaTestCase {
         new Block(), true);
   }
 
+  public final void testStyleAttrsWithUriPolicy() throws Exception {
+    UriPolicy policy = new UriPolicy() {
+      @Override
+      public String rewriteUri(
+          ExternalReference u,
+          UriEffect effect,
+          LoaderType loader,
+          Map<String, ?> hints) {
+        return "" + u.getUri() + "/URIPOLICY";
+      }
+    };
+    meta = new PluginMeta(
+        meta.getUriFetcher(),
+        policy,
+        meta.getPrecajoleMap(),
+        meta.getPrecajoleMinify());
+    assertSafeHtml(
+        htmlFragment(fromString(
+            "<div style=\"background-image: url(a.jpg)\"></div>")),
+        htmlFragment(fromString(
+            "<div"
+            + " style=\"background-image:"
+            + " url(&#39;test://example.org/a.jpg/URIPOLICY&#39;)\">"
+            + "</div>")),
+        new Block(), true);
+  }
+
+  public final void testStyleAttrsWithoutUriPolicy() throws Exception {
+    meta = new PluginMeta(
+        meta.getUriFetcher(),
+        null,
+        meta.getPrecajoleMap(),
+        meta.getPrecajoleMinify());
+    assertSafeHtml(
+        htmlFragment(fromString(
+            "<div style=\"background-image: url(a.jpg)\"></div>")),
+        htmlFragment(fromString(
+            "<div id=\"id_1___\"></div>")),
+        js(fromString(""
+            + "function module() {"
+            + "  'use cajita';"
+            + "  {"
+            + "    var el___;"
+            + "    var emitter___ = IMPORTS___.htmlEmitter___;"
+            + "    el___ = emitter___.byId('id_1___');"
+            + "    emitter___.setAttr(el___, 'style', "
+            + "        'background-image: url('"
+            + "        + IMPORTS___.rewriteUriInCss___("
+            + "              'test://example.org/a.jpg')"
+            + "        + ')');"
+            + "    emitter___.rmAttr(el___, 'id');"
+            + "    el___ = emitter___.finish();"
+            + "    emitter___.signalLoaded();"
+            + "  }"
+            + "}")),
+            true);
+  }
+
   private void assertSafeHtml(
       DocumentFragment input, DocumentFragment htmlGolden, Block jsGolden)
       throws ParseException {

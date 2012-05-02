@@ -54,7 +54,7 @@ public final class CssDynamicExpressionRewriter {
   /**
    * @param ss modified destructively.
    */
-  public void rewriteCss(CssTree.StyleSheet ss) {
+  public void rewriteCss(CssTree ss) {
     // Replace suffixed class and ID literals with expressions that include
     // the actual id class suffix.
     //     '#foo {}'                                        ; The original rule
@@ -75,7 +75,7 @@ public final class CssDynamicExpressionRewriter {
     rewriteUnsafeUriLiteralsToExpressions(ss);
   }
 
-  private void rewriteSuffixedIdsAndClasses(CssTree.StyleSheet ss) {
+  private void rewriteSuffixedIdsAndClasses(CssTree ss) {
     ss.acceptPreOrder(new Visitor() {
       public boolean visit(AncestorChain<?> ancestors) {
         ParseTreeNode node = ancestors.node;
@@ -109,7 +109,7 @@ public final class CssDynamicExpressionRewriter {
     }, null);
   }
 
-  private void rewriteUnsafeUriLiteralsToExpressions(CssTree.StyleSheet ss) {
+  private void rewriteUnsafeUriLiteralsToExpressions(CssTree ss) {
     ss.acceptPreOrder(new Visitor() {
           public boolean visit(AncestorChain<?> ancestors) {
             ParseTreeNode node = ancestors.node;
@@ -139,7 +139,7 @@ public final class CssDynamicExpressionRewriter {
    * "domado.js".
    * @param ss a rewritten stylesheet.
    */
-  public static ArrayConstructor cssToJs(CssTree.StyleSheet ss) {
+  public static ArrayConstructor cssToJs(CssTree ss) {
     // Render the CSS to a string, split it (effectively) on the
     // GADGET_ID_PLACEHOLDER to get an array of strings, and produce JavaScript
     // which joins it on the actual gadget id which is chosen at runtime.
