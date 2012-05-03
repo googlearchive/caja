@@ -1225,8 +1225,7 @@
     <uptodate property="uptodate.playground"
         targetfile="${war}/playground/playground.nocache.js">
       <srcfiles dir="${src.caja}/demos/playground/client" includes="**/*.java"/>
-      <srcfiles dir="${src.caja}/demos/playground"
-          includes="Playground*.gwt.xml"/>
+      <srcfiles dir="${src.caja}/demos/playground" includes="**/*.xml"/>
     </uptodate>
   </target>
 

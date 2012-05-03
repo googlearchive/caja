@@ -66,20 +66,20 @@
             </g:center>
             <g:north size="30">
               <g:DockLayoutPanel styleName="{style.playgroundUI}" unit='PX'>
+                <g:west size="50">
+                  <g:Button ui:field="cajoleButton">
+                    Cajole
+                  </g:Button>
+                </g:west>
+                <g:west size="50">
+                  <g:Button ui:field="goButton">
+                    Load
+                  </g:Button>
+                </g:west>
                 <g:center>
                   <g:SuggestBox ui:field="addressField" width="100%">
                   </g:SuggestBox>
                 </g:center>
-                <g:east size="200">
-                  <g:HorizontalPanel>
-                    <g:Button width="100" ui:field="goButton">
-                      Load
-                    </g:Button>
-                    <g:Button width="100" ui:field="cajoleButton">
-                      Cajole
-                    </g:Button>
-                  </g:HorizontalPanel>
-                </g:east>
               </g:DockLayoutPanel>
             </g:north>
           </g:DockLayoutPanel>
@@ -93,23 +93,25 @@
               </g:center>
               <g:north size="30">
                 <g:DockLayoutPanel styleName="{style.playgroundUI}" unit='PX'>
+                  <g:west size="50">
+                    <g:Button ui:field="clearButton">
+                      Clear
+                    </g:Button>
+                  </g:west>
+                  <g:west size="70">
+                    <g:Button ui:field="defaultButton">
+                      Default
+                    </g:Button>
+                  </g:west>
+                  <g:west size="50">
+                    <g:Button ui:field="loadButton">
+                      Load
+                    </g:Button>
+                  </g:west>
                   <g:center>
                     <g:SuggestBox ui:field="policyAddressField" width="100%">
                     </g:SuggestBox>
                   </g:center>
-                  <g:east size="250">
-                    <g:HorizontalPanel>
-                      <g:Button ui:field="loadButton">
-                        Load
-                      </g:Button>
-                      <g:Button ui:field="clearButton">
-                        Clear
-                      </g:Button>
-                      <g:Button ui:field="defaultButton">
-                        Default
-                      </g:Button>
-                    </g:HorizontalPanel>
-                  </g:east>
                 </g:DockLayoutPanel>
               </g:north>
             </g:DockLayoutPanel>
