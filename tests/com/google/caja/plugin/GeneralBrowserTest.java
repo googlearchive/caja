@@ -45,13 +45,24 @@ public class GeneralBrowserTest extends BrowserTestCase {
     runTestCase("es53-test-basic-functions-guest.html");
   }
 
+  // Several tests below will start a test server with modified versions
+  // of js files.  This has potential to interact badly with the browser
+  // cache since we're re-using the same browser.  But we're ok because:
+  //   1. The test server always says Pragma: no-cache, which either
+  //      prevents the resource from entering the cache, or forces the
+  //      browser to revalidate with If-Modified-Since.
+  //   2. When the test server serves a modified resource, we declare it
+  //      has modification time = 0, which makes jetty's ResourceHandler
+  //      ignore If-Modified-Since from the browser.  Subsequent browser
+  //      requests for the same resource will have If-Modified-Since: 0,
+  //      which is always superseded by the current state of the resource.
+
   private final void addVersionRewrite(String path, String newVersion)
       throws Exception {
     getCajaStatic().rewrite(path, bv, newVersion);
   }
 
   public final void testVersionSkewCajaJs() throws Exception {
-    closeWebDriver();  // Need a browser with an empty cache
     // Changing the version baked into caja.js will cause it to load the
     // wrongly-named files for the host and guest frames, which should cause
     // it to never make progress in load() or whenReady() calls.
@@ -60,7 +71,6 @@ public class GeneralBrowserTest extends BrowserTestCase {
   }
 
   public final void testWrongSupportingResources() throws Exception {
-    closeWebDriver();  // Need a browser with an empty cache
     // Placing the wrong resources files where caja.js is expecting them should
     // cause it to never make progress in load() or whenReady() calls.
     getCajaStatic().link(
@@ -74,7 +84,6 @@ public class GeneralBrowserTest extends BrowserTestCase {
 
   public final void testAlternateLocationSupportingResources()
       throws Exception {
-    closeWebDriver();  // Need a browser with an empty cache
     // Placing the wrong resources files where caja.js is expecting them should
     // cause it to never make progress in load() or whenReady() calls.
     getCajaStatic().link(
@@ -93,7 +102,6 @@ public class GeneralBrowserTest extends BrowserTestCase {
   }
 
   public final void testVersionSkewTamingFrame() throws Exception {
-    closeWebDriver();  // Need a browser with an empty cache
     // Changing the version baked into the taming frame JS will cause a
     // version mismatch error in caja.js.
     addVersionRewrite("/" + bv + "/es53-taming-frame.opt.js", "0000");
@@ -101,7 +109,6 @@ public class GeneralBrowserTest extends BrowserTestCase {
   }
 
   public final void testVersionSkewGuestFrame() throws Exception {
-    closeWebDriver();  // Need a browser with an empty cache
     // Changing the version baked into the guest frame JS will cause a
     // version mismatch error in caja.js.
     addVersionRewrite("/" + bv + "/es53-guest-frame.opt.js", "0000");
@@ -112,7 +119,6 @@ public class GeneralBrowserTest extends BrowserTestCase {
   }
 
   public final void testVersionSkewCajolerResponse() throws Exception {
-    closeWebDriver();  // Need a browser with an empty cache
     // Changing the version baked into *all* the JS will cause an incorrect
     // version number to be sent to the cajoler, which should then refuse
     // to compile the given content and return an error instead.
@@ -129,7 +135,6 @@ public class GeneralBrowserTest extends BrowserTestCase {
   }
 
   public final void testVersionSkewCajoledModule() throws Exception {
-    closeWebDriver();  // Need a browser with an empty cache
     runTestDriver("es53-test-cajajs-version-skew-cajoled-module.js");
   }
 

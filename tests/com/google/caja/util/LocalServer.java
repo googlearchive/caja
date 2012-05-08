@@ -40,7 +40,7 @@ public class LocalServer {
   public interface ConfigureContextCallback {
     void configureContext(Context ctx);
   }
-  
+
   protected final RewritingResourceHandler cajaStatic =
       new RewritingResourceHandler();
   { cajaStatic.setResourceBase("./ant-war/"); }
@@ -102,7 +102,7 @@ public class LocalServer {
     server.start();
   }
 
-  public com.google.caja.util.RewritingResourceHandler getCajaStatic() {
+  public RewritingResourceHandler getCajaStatic() {
     return cajaStatic;
   }
 

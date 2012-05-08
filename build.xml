@@ -1128,7 +1128,8 @@
          re-replace %VERSION%, so here we just nuke all target js -->
     <delete>
       <fileset dir="${lib}" includes="**/*.js"/>
-      <fileset dir="${precajolelib}" includes="**/*.js"/>
+      <fileset dir="${lib}" includes="**/*.html"/>
+      <fileset dir="${precajolelib}" includes="**/data/*"/>
     </delete>
     <echo append="false" file="${lib.caja}/reporting/Version"
           message="${build.svnVersion}"/>

@@ -5118,8 +5118,8 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
   function prepareModule(module, load) {
     if (cajaBuildVersion !== module.cajolerVersion) {
       throw new TypeError(
-          "Version error: Expected " + cajaBuildVersion +
-          " but was " + module.cajolerVersion);
+          "Version error: es53 expects " + cajaBuildVersion +
+          " but module is " + module.cajolerVersion);
     }
     registerClosureInspector(module);
     function theModule(extraImports) {

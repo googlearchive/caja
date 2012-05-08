@@ -140,9 +140,9 @@ public abstract class BrowserTestCase extends CajaTestCase {
     localServer.start();
     String testBase = ("http://localhost:" + portNumber
                       + "/ant-lib/com/google/caja/plugin/");
+    // The test runner may catch output so go directly to file descriptor 2.
+    OutputStream out = new FileOutputStream(FileDescriptor.err);
     if (System.getProperty(START_AND_WAIT_FLAG) != null) {
-      // The test runner may catch output so go directly to file descriptor 2.
-      OutputStream out = new FileOutputStream(FileDescriptor.err);
       try {
         // Print out the URL so that someone can use ant -Dtest.filter to
         // choose the specific test they want instead of having to compute the
@@ -159,6 +159,7 @@ public abstract class BrowserTestCase extends CajaTestCase {
         throw new RuntimeException(e);
       }
     }
+    out.write(("- Running " + pageName + "\n").getBytes("UTF-8"));
     try {
       WebDriver driver = mwwd.newWindow();
       driver.get(testBase + pageName);
@@ -172,13 +173,13 @@ public abstract class BrowserTestCase extends CajaTestCase {
   }
 
   protected void runTestDriver(String testDriver) throws Exception {
-    runTestDriver(testDriver, false);
     runTestDriver(testDriver, true);
+    runTestDriver(testDriver, false);
   }
 
   protected void runTestCase(String testCase) throws Exception {
-    runTestCase(testCase, false);
     runTestCase(testCase, true);
+    runTestCase(testCase, false);
   }
 
   protected void runTestDriver(String testDriver, boolean es5)

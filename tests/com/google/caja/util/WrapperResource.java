@@ -49,7 +49,7 @@ public class WrapperResource extends Resource {
   public boolean isDirectory() { return false; }
 
   @Override
-  public long lastModified() { return -1L; }
+  public long lastModified() { return 0L; }
 
   @Override
   public long length() {

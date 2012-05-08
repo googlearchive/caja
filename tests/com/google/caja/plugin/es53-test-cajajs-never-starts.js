@@ -20,12 +20,13 @@
  * @requires caja, jsunitRun, readyToTest
  */
 
-var testFailed = false;
+var testFailed = true;
 
 registerTest('testNeverStarts', function testNeverStarts() {
   caja.initialize({
     cajaServer: '/caja'
   });
+  testFailed = false;
   caja.whenReady(function() {
     testFailed = true;
     jsunitFail('testNeverStarts');
@@ -45,6 +46,6 @@ var checkFailure = function() {
   }
 }
 
-// In a test server, two seconds is enough for startup to occur
+// In a test server, one second is enough for startup to occur
 // if it's ever going to happen.
-setTimeout(checkFailure, 2000);
+setTimeout(checkFailure, 1000);

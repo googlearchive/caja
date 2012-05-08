@@ -60,7 +60,7 @@ public class RewriteResource extends Resource {
   }
 
   @Override
-  public long lastModified() { return delegate.lastModified(); }
+  public long lastModified() { return 0L; }
 
   @Override
   public long length() {
