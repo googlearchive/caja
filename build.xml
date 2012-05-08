@@ -807,7 +807,7 @@
     <transform>
       <output file="${lib}/caja.jslint.stamp"
         language="jslint"/>
-      <output file="${lib.caja}/plugin/caja-closure.js"
+      <output file="${lib.caja}/plugin/caja-closured.js"
         language="closure"/>
       <output file="${lib.caja}/plugin/caja-minified.js"
         language="javascript" renderer="minify"/>
@@ -816,7 +816,7 @@
     <transform>
       <output file="${lib}/html-sanitizer.jslint.stamp"
         language="jslint"/>
-      <output file="${lib.caja}/plugin/html-sanitizer-closure.js"
+      <output file="${lib.caja}/plugin/html-sanitizer-closured.js"
         language="closure"/>
       <output file="${lib.caja}/plugin/html-sanitizer-minified.js"
         language="javascript" renderer="minify"/>
@@ -828,7 +828,7 @@
     <transform>
       <output file="${lib}/html-css-sanitizer.jslint.js"
        language="jslint"/>
-      <output file="${lib.caja}/plugin/html-css-sanitizer-closure.js"
+      <output file="${lib.caja}/plugin/html-css-sanitizer-closured.js"
        language="closure"/>
       <output file="${lib.caja}/plugin/html-css-sanitizer-minified.js"
        language="javascript" renderer="minify"/>
@@ -893,7 +893,7 @@
       <output file="${lib}/initSES.jslint.stamp"
        language="jslint"/>
       <!-- TODO(felix8a): closure cleanup
-      <output file="${lib.caja}/ses/initSES-closure.js"
+      <output file="${lib.caja}/ses/initSES-closured.js"
        language="closure"/>
       -->
       <output file="${lib.caja}/ses/initSES-minified.js"
@@ -913,7 +913,7 @@
       <output file="${lib}/initSESPlus.jslint.stamp"
        language="jslint"/>
       <!-- TODO(felix8a): closure cleanup
-      <output file="${lib.caja}/ses/initSESPlus-closure.js"
+      <output file="${lib.caja}/ses/initSESPlus-closured.js"
        language="closure"/>
       -->
       <output file="${lib.caja}/ses/initSESPlus-minified.js"
@@ -1297,6 +1297,7 @@
         <include name="css-defs.js" />
         <include name="html4-defs.js" />
         <include name="domado.out.js" />
+        <include name="html-sanitizer-closured.js" />
         <include name="html-sanitizer-minified.js" />
         <include name="html-css-sanitizer-minified.js" />
         <include name="taming-membrane.out.js" />
@@ -1361,6 +1362,8 @@
       </fileset>
       <fileset dir="${lib.caja}/plugin">
         <include name="caja.js"/>
+        <include name="caja-closured.js"/>
+        <include name="caja-minified.js"/>
       </fileset>
     </copy>
 

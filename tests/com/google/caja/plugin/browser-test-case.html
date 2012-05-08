@@ -27,9 +27,26 @@
     <script type="text/javascript" src="../console.js"></script>
     <script type="text/javascript" src="jsUnitCore.js"></script>
     <script type="text/javascript" src="jsunit.js"></script>
-    <script type="text/javascript" src="/caja/caja.js"></script>
-    <script type="text/javascript" src="html4-defs.js"></script>
-    <script type="text/javascript" src="html-sanitizer.js"></script>
+
+    <script>
+      (function () {
+        function load(path) {
+          document.write(
+              '<script type="text/javascript" src="'
+              + path + '"><\/script>');
+        }
+
+        if (/closured=true/i.test(location.search)) {
+          load('/caja/caja-closured.js');
+          load('html-sanitizer-closured.js');
+        } else {
+          load('/caja/caja.js');
+          load('html4-defs.js');
+          load('html-sanitizer.js');
+        }
+      })();
+    </script>
+
     <script type="text/javascript" src="uri.js"></script>
     <script type="text/javascript" src="bridal.js"></script>
     <script type="text/javascript" src="browser-test-case.js"></script>

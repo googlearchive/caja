@@ -30,6 +30,7 @@
 
   var test_drivers = [
     ['es53-test-cajajs-invocation.js'],
+    ['es53-test-cajajs-invocation.js&closured=true'],
     ['es53-test-client-uri-rewriting.js'],
     ['es53-test-container-overflow.js'],
     ['es53-test-defensible-objects.js'],
@@ -85,8 +86,7 @@
   var i, item;
 
   for (i = 0; i < bare_tests.length; i++) {
-    item = bare_tests[i];
-    addBare(item);
+    addBare(bare_tests[i]);
   }
 
   addSeparator();

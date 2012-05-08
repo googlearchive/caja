@@ -28,7 +28,17 @@ public class GeneralBrowserTest extends BrowserTestCase {
   }
 
   public final void testCajaJsInvocations() throws Exception {
-    runTestDriver("es53-test-cajajs-invocation.js");
+    String result =
+        runTestDriver("es53-test-cajajs-invocation.js");
+    assertContains(result, "{closured=false}");
+    assertNotContains(result, "{closured=true}");
+  }
+
+  public final void testCajaJsClosureInvocations() throws Exception {
+    String result =
+        runTestDriver("es53-test-cajajs-invocation.js&closured=true");
+    assertContains(result, "{closured=true}");
+    assertNotContains(result, "{closured=false}");
   }
 
   public final void testUnicode() throws Exception {

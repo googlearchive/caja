@@ -32,7 +32,8 @@ public class BrowserTestCaseStub extends BrowserTestCase {
 
   @Override
   @SuppressWarnings("deprecation")
-  protected void driveBrowser(WebDriver driver, String pageName) {
+  protected String driveBrowser(WebDriver driver, String pageName) {
     Thread.currentThread().suspend();
+    return "";
   }
 }

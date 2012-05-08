@@ -90,12 +90,13 @@ public class ClosureCompiler {
     AntErrorManager errorManager = new AntErrorManager(formatter, task);
     compiler.setErrorManager(errorManager);
 
-    Result r = new Compiler().compile(externs, jsInputs, options);
+    Result r = compiler.compile(externs, jsInputs, options);
     if (!r.success) {
       return false;
     }
 
-    FileIO.write(r.toString(), output, logger);
+    String wrapped = "(function(){" + compiler.toSource() + "})();\n";
+    FileIO.write(wrapped, output, logger);
     return true;
   }
 

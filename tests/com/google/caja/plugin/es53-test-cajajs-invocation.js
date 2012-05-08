@@ -21,6 +21,8 @@
  */
 
 (function () {
+  document.title += ' {closured=' + !caja.closureCanary + '}';
+
   /**
    * Assert that a cajoled and loaded es53-test-guest.js has the right 
    * results.

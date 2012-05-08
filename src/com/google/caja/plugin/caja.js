@@ -77,7 +77,10 @@ var caja = (function () {
     // Esoteric functions
     'initFeralFrame': initFeralFrame,
     'makeFrameGroup': makeFrameGroup,
-    'configure': makeFrameGroup
+    'configure': makeFrameGroup,
+
+    // unused, removed by Closure
+    closureCanary: 1
   };
 
   // Internal functions made available to FrameGroup maker

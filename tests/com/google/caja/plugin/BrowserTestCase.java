@@ -136,7 +136,7 @@ public abstract class BrowserTestCase extends CajaTestCase {
    * Start the web server and browser, go to pageName, call driveBrowser(driver,
    * pageName), and then clean up.
    */
-  protected void runBrowserTest(String pageName) throws Exception {
+  protected String runBrowserTest(String pageName) throws Exception {
     localServer.start();
     String testBase = ("http://localhost:" + portNumber
                       + "/ant-lib/com/google/caja/plugin/");
@@ -159,37 +159,39 @@ public abstract class BrowserTestCase extends CajaTestCase {
         throw new RuntimeException(e);
       }
     }
+    String result = "";
     out.write(("- Running " + pageName + "\n").getBytes("UTF-8"));
     try {
       WebDriver driver = mwwd.newWindow();
       driver.get(testBase + pageName);
-      driveBrowser(driver, pageName);
+      result = driveBrowser(driver, pageName);
       driver.close();
       // Note that if the tests fail, this will not be reached and the window
       // will not be closed. This is useful for debugging test failures.
     } finally {
       localServer.stop();
     }
+    return result;
   }
 
-  protected void runTestDriver(String testDriver) throws Exception {
-    runTestDriver(testDriver, true);
-    runTestDriver(testDriver, false);
+  protected String runTestDriver(String testDriver) throws Exception {
+    return runTestDriver(testDriver, true) + "\n"
+        + runTestDriver(testDriver, false);
   }
 
-  protected void runTestCase(String testCase) throws Exception {
-    runTestCase(testCase, true);
-    runTestCase(testCase, false);
+  protected String runTestCase(String testCase) throws Exception {
+    return runTestCase(testCase, true) + "\n"
+        + runTestCase(testCase, false);
   }
 
-  protected void runTestDriver(String testDriver, boolean es5)
+  protected String runTestDriver(String testDriver, boolean es5)
       throws Exception {
-    runBrowserTest("browser-test-case.html?es5=" + es5
+    return runBrowserTest("browser-test-case.html?es5=" + es5
         + "&test-driver=" + testDriver);
   }
 
-  protected void runTestCase(String testCase, boolean es5) throws Exception {
-    runBrowserTest("browser-test-case.html?es5=" + es5
+  protected String runTestCase(String testCase, boolean es5) throws Exception {
+    return runBrowserTest("browser-test-case.html?es5=" + es5
         + "&test-case=" + testCase);
   }
 
@@ -197,7 +199,7 @@ public abstract class BrowserTestCase extends CajaTestCase {
    * Do what should be done with the browser.
    * @param pageName The tail of a URL.  Unused in this implementation
    */
-  protected void driveBrowser(final WebDriver driver, final String pageName) {
+  protected String driveBrowser(final WebDriver driver, final String pageName) {
     poll(20000, 200, new Check() {
       @Override public String toString() { return "startup"; }
       public boolean run() {
@@ -239,6 +241,7 @@ public abstract class BrowserTestCase extends CajaTestCase {
     // check the title of the document
     String title = driver.getTitle();
     assertTrue("The title shows " + title, title.contains("all tests passed"));
+    return title;
   }
 
   /**
