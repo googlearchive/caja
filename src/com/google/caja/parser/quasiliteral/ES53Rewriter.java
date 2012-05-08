@@ -17,6 +17,7 @@ package com.google.caja.parser.quasiliteral;
 import static com.google.caja.parser.js.SyntheticNodes.s;
 
 import com.google.caja.lexer.FilePosition;
+import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.ParseTreeNodeContainer;
 import com.google.caja.parser.js.ArrayConstructor;
@@ -64,10 +65,14 @@ import com.google.caja.parser.js.TranslatedCode;
 import com.google.caja.parser.js.TryStmt;
 import com.google.caja.parser.js.UncajoledModule;
 import com.google.caja.parser.js.ValueProperty;
+import com.google.caja.render.Concatenator;
+import com.google.caja.render.JsMinimalPrinter;
+import com.google.caja.render.JsPrettyPrinter;
 import com.google.caja.reporting.BuildInfo;
 import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
+import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.Lists;
 import com.google.caja.util.Sets;
 
@@ -97,12 +102,14 @@ public class ES53Rewriter extends Rewriter {
   private final ModuleManager moduleManager;
   private final Set<StringLiteral> includedModules = Sets.newTreeSet(
       new Comparator<StringLiteral>() {
+    @Override
     public int compare(StringLiteral o1, StringLiteral o2) {
       return o1.getUnquotedValue().compareTo(o2.getUnquotedValue());
     }
   });
   private final Set<StringLiteral> inlinedModules = Sets.newTreeSet(
       new Comparator<StringLiteral>() {
+    @Override
     public int compare(StringLiteral o1, StringLiteral o2) {
       return o1.getUnquotedValue().compareTo(o2.getUnquotedValue());
     }
@@ -990,6 +997,13 @@ public class ES53Rewriter extends Rewriter {
           String vname = v.getName();
           if (scope.isOuter(vname)) {
             ParseTreeNode r = bindings.get("r");
+            mq.addMessage(
+                RewriterMessageType.TOP_LEVEL_VAR_INCOMPATIBLE_WITH_CAJA,
+                node.getFilePosition(),
+                MessagePart.Factory.valueOf(
+                    render(QuasiBuilder.substV("window['@v'] = @r",
+                        "v", v,
+                        "r", r))));
             return newExprStmt((Expression) substV(
                 "v", v,
                 "r", expand(nymize(r, vname, "var"), scope)));
@@ -1065,6 +1079,12 @@ public class ES53Rewriter extends Rewriter {
         if (bindings != null &&
             bindings.get("v") instanceof Identifier &&
             scope.isOuter(((Identifier) bindings.get("v")).getName())) {
+          mq.addMessage(
+              RewriterMessageType.TOP_LEVEL_VAR_INCOMPATIBLE_WITH_CAJA,
+              node.getFilePosition(),
+              MessagePart.Factory.valueOf(
+                  render(QuasiBuilder.substV("window['@v'] = undefined",
+                      "v", bindings.get("v")))));
           ExpressionStmt es = newExprStmt(
               (Expression) substV("v", bindings.get("v")));
           markTreeForSideEffect(es);
@@ -1792,6 +1812,14 @@ public class ES53Rewriter extends Rewriter {
                 (ParseTreeNodeContainer) bindings.get("ps");
             checkFormals(ps);
             Identifier fname = noexpand((Identifier) bindings.get("fname"));
+            mq.addMessage(
+                RewriterMessageType.TOP_LEVEL_FUNC_INCOMPATIBLE_WITH_CAJA,
+                node.getFilePosition(),
+                MessagePart.Factory.valueOf(
+                    render(QuasiBuilder.substV(
+                        "window['@fname'] = function (@ps*) { /* ... */ }",
+                        "fname", fname,
+                        "ps", bindings.get("ps")))));
             Statement stmt = (Statement) substV(
                 "fname", fname,
                 "fRef", new Reference(fname),

@@ -213,7 +213,17 @@ public enum RewriterMessageType implements MessageTypeInt {
 
   CANNOT_LOAD_A_DYNAMIC_SERVERJS_MODULE(
       "%s: Dynamically computed names should use require.async()",
-      MessageLevel.FATAL_ERROR);
+      MessageLevel.FATAL_ERROR),
+
+  TOP_LEVEL_VAR_INCOMPATIBLE_WITH_CAJA(
+      "%s: Top level variable declarations incompatiable with Caja.  "
+      + "Please rewrite as %s",
+      MessageLevel.LINT),
+
+  TOP_LEVEL_FUNC_INCOMPATIBLE_WITH_CAJA(
+      "%s: Top level function declarations incompatiable with Caja.  "
+      + "Please move the function to the top of the scope and rewrite as: %s",
+      MessageLevel.LINT);
 
   private final String formatString;
   private final MessageLevel level;

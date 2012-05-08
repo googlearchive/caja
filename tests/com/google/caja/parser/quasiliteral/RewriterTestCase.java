@@ -78,7 +78,13 @@ public abstract class RewriterTestCase extends CajaTestCase {
         mq.getMessages().isEmpty());
 
     StringBuilder messageText = new StringBuilder();
-    mq.getMessages().get(0).format(mc, messageText);
+    Message firstError = null;
+    for (Message m: mq.getMessages()) {
+      if (m.getMessageLevel().compareTo(MessageLevel.WARNING) >= 0) {
+        firstError = m;
+      }
+    }
+    firstError.format(mc, messageText);
     assertTrue(
         "First error is not \"" + error + "\": " + messageText.toString(),
         messageText.toString().contains(error));
@@ -125,7 +131,7 @@ public abstract class RewriterTestCase extends CajaTestCase {
     checkDoesNotAddMessage(js(fromString(src)), type);
   }
 
-  private void checkDoesNotAddMessage(
+  protected void checkDoesNotAddMessage(
       ParseTreeNode inputNode, MessageTypeInt type)  {
     mq.getMessages().clear();
     getRewriter().expand(inputNode);
@@ -142,12 +148,6 @@ public abstract class RewriterTestCase extends CajaTestCase {
       fail("Unexpected add message of type " + type + " and level " + level);
     }
   }
-
-  // TODO(ihab.awad): Change dependents to use checkAddsMessage and
-  // just call js(fromString("..."))
-
-  // TODO(ihab.awad): Change checkAddsMessage and similar functions to check
-  // only the first message added to the message queue
 
   protected void assertAddsMessage(String src, MessageTypeInt type, MessageLevel level)
       throws Exception {
