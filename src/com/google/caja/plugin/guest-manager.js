@@ -38,11 +38,9 @@
  */
 
 function GuestManager(divs, domicile, guestWin, runImpl) {
+  // TODO(felix8a): this api needs to be simplified; it's difficult to
+  // explain what all the parameters mean in different situations.
   var args = {
-    // When !isCajoled, use [url, mimeType, uncajoledContent].
-    // When isCajoled, use [url, cajoledJs, cajoledHtml].
-    isCajoled: false,
-
     // url to fetch, or imputed origin of cajoled or uncajoled content
     url: undefined,
 
@@ -95,7 +93,6 @@ function GuestManager(divs, domicile, guestWin, runImpl) {
     },
 
     code: function (url, opt_mimeType, opt_content) {
-      args.isCajoled = false;
       args.url = url;
       args.mimeType = opt_mimeType;
       args.uncajoledContent = opt_content;
@@ -103,7 +100,6 @@ function GuestManager(divs, domicile, guestWin, runImpl) {
     },
 
     cajoled: function (url, js, opt_html) {
-      args.isCajoled = true;
       args.url = url;
       args.cajoledJs = js;
       args.cajoledHtml = opt_html;

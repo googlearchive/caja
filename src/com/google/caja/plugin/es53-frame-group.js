@@ -328,7 +328,7 @@ function ES53FrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker) {
       }
     }
 
-    if (args.isCajoled) {
+    if (args.cajoledJs !== undefined) {
       if (gman.domicile && args.cajoledHtml !== undefined) {
         gman.innerContainer.innerHTML = args.cajoledHtml;
       }

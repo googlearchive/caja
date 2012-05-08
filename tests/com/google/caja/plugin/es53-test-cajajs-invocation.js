@@ -255,6 +255,27 @@
     });
   });
 
+  // When given both cajoled and uncajoled code, use the right one.
+  registerTest('testCajoledAndUncajoled', function testCajoledAndUncajoled() {
+    var div = createDiv();
+    caja.load(div, uriPolicy, function (frame) {
+      fetch('es53-test-cajoled.out.js', function (cajoled) {
+        fetch('es53-test-uncajoled.js', function (uncajoled) {
+          frame.cajoled(undefined, cajoled, undefined)
+            .code(undefined, 'application/javascript', uncajoled)
+            .run(function (result) {
+              if (inES5Mode) {
+                assertStringContains('not cajoled', div.innerHTML);
+              } else {
+                assertStringContains('is cajoled', div.innerHTML);
+              }
+              jsunitPass('testCajoledAndUncajoled');
+            });
+        });
+      });
+    });
+  });
+
   caja.makeFrameGroup({
     cajaServer: '/caja',
     debug: true,

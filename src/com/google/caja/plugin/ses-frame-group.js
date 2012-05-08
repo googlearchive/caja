@@ -287,12 +287,6 @@ function SESFrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker) {
   //----------------
 
   function sesRun(gman, args, moreImports, opt_runDone) {
-    if (args.isCajoled) {
-      throw new Error(
-        'Operating in SES mode; pre-cajoled content is ' +
-        'not needed and cannot be loaded.');
-    }
-
     if (!moreImports.onerror) {
       moreImports.onerror = onerror;
     }
@@ -314,6 +308,10 @@ function SESFrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker) {
         contentType: args.mimeType || 'text/html',
         responseText: args.uncajoledContent
       }));
+
+    } else if (args.cajoledJs !== undefined) {
+      throw new Error(
+        'Operating in SES mode; pre-cajoled content cannot be loaded');
 
     } else {
       promise = loadContent(gman, fetch(args.url), args.mimeType);

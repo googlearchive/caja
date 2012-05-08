@@ -761,6 +761,11 @@
      <output file="${lib.caja}/plugin/es53-test-guest.out.html"
              language="caja"/>
     </transform>
+    <transform>
+     <input file="${tests.caja}/plugin/es53-test-cajoled.js"/>
+     <output file="${lib.caja}/plugin/es53-test-cajoled.out.js"
+             language="caja"/>
+    </transform>
 
     <!-- These and other HTML and JS files are copied verbatim -->
     <copy todir="${lib}">
