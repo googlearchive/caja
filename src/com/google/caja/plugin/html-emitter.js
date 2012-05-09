@@ -373,9 +373,9 @@ function HtmlEmitter(makeDOMAccessible, base, opt_domicile, opt_guestGlobal) {
       }
     }
 
-    function sanitizeCssUri(uri) {
+    function sanitizeCssUri(uri, prop) {
       return (domicile && domicile.cssUri)
-          ? domicile.cssUri(URI.utils.resolve(baseUri, uri), 'image/*')
+          ? domicile.cssUri(URI.utils.resolve(baseUri, uri), 'image/*', prop)
           : void 0;
     }
 

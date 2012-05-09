@@ -168,6 +168,8 @@ public final class HtmlAttributeRewriter {
         if (!checkForbiddenIdList(value, pos)) { return noResult(attr); }
         break;
       case FRAME_TARGET:
+        dynamicValue = sanitizeFrameTargetValue(attr);
+        break;
       case LOCAL_NAME:
         if (!checkValidId(value, pos)) { return noResult(attr); }
         break;
@@ -345,6 +347,32 @@ public final class HtmlAttributeRewriter {
         throw new SomethingWidgyHappenedError(attr.attrInfo.getType().name());
     }
     return new SanitizedAttr(true, dynamicValue);
+  }
+
+  Expression sanitizeFrameTargetValue(AttrValue attr) {
+    // Add a known-safe static value to the parent element
+    HTML.Attribute info = attr.attrInfo;
+    String provisionalSafeValue =
+        (info.getDefaultValue() != null
+        && info.getValueCriterion().accept(info.getDefaultValue()))
+      ? info.getDefaultValue()
+      : info.getSafeValue();
+
+    // The candidate value to pass to the dynamic client-side policy is
+    // either the user-supplied value (if it was provided) or the "safe" value
+    // we have provisionally added.
+    String candidateValue = (attr.src == null)
+        ? provisionalSafeValue : attr.getPlainValue();
+
+    // Return a script that computes a whitelisted dynamic value
+    FilePosition pos = attr.valuePos;
+    return (Expression) QuasiBuilder.substV(""
+        + "IMPORTS___./*@synthetic*/rewriteTargetAttribute___("
+        + "    @value, @tagName, @attribName)",
+        "value", new StringLiteral(pos, candidateValue),
+        "tagName", new StringLiteral(
+        pos, attr.src.getOwnerElement().getTagName()),
+        "attribName", new StringLiteral(pos, attr.attrInfo.getKey().localName));
   }
 
   private static final Pattern FORBIDDEN_ID = Pattern.compile("__\\s*$");

@@ -223,4 +223,8 @@ public class GeneralBrowserTest extends BrowserTestCase {
   public final void testContainerOverflow() throws Exception {
     runTestDriver("es53-test-container-overflow.js");
   }
+
+  public final void testTargetAttributePresets() throws Exception {
+    runTestDriver("es53-test-target-attribute-presets.js");
+  }
 }

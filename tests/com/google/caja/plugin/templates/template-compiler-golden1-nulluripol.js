@@ -64,10 +64,17 @@ function module() {
     el___.onclick = function (event) {
       return ___.plugin_dispatchEvent___(this, event, ___.getId(IMPORTS___), c_1___);
     };
+    // Pass the 'target' attribute of the <a> through the client side policy
+    emitter___.setAttr(
+        el___,
+        'target',
+        IMPORTS___.rewriteTargetAttribute___('_blank', 'a', 'target'));
     emitter___.rmAttr(el___, 'id');
     el___ = emitter___.byId('id_6___');
     emitter___.setAttr(el___, 'style', 'color: red; background-image: url(' +
-      IMPORTS___.rewriteUriInCss___('test://example.org/foo') + ')');
+      IMPORTS___.rewriteUriInCss___(
+          'test://example.org/foo', 'background-image')
+      + ')');
     emitter___.rmAttr(el___, 'id');
     el___ = emitter___.byId('id_7___');
     emitter___.setAttr(el___, 'id', 'zag-' + IMPORTS___.getIdClass___());

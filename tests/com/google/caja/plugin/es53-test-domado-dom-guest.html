@@ -988,7 +988,7 @@ document.write(
     var node = testDiv.firstChild;
     assertEquals("_blank", directAccess.getAttribute(node, 'target'));
     node = node.nextSibling;
-    assertEquals(null, directAccess.getAttribute(node, 'target'));
+    assertEquals("_blank", directAccess.getAttribute(node, 'target'));
     pass('test-target-attr');
   });
 </script>
@@ -2279,7 +2279,7 @@ Test row cell
          + '<map name="foo-' + directAccess.getIdSuffix() + '">'
          + '<area href="http://example.com/'
          + '?effect=NEW_DOCUMENT&amp;loader=UNSANDBOXED'
-         + '&amp;uri=(base)/areatarget.html" target="_self">'
+         + '&amp;uri=(base)/areatarget.html" target="_blank">'
          + '</map>'
          + '<img'
          + ' src="http://example.com/'

@@ -226,7 +226,8 @@ function SESFrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker) {
     if (!divs.inner) { return null; }
 
     var domicile = domado.attachDocument(
-      '-' + divs.idClass, uriPolicy, divs.inner);
+      '-' + divs.idClass, uriPolicy, divs.inner,
+      undefined, config.targetAttributePresets);
     var imports = domicile.window;
 
     // The following code copied from the ES5/3 mode is mostly

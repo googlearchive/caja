@@ -44,7 +44,11 @@ var caja = (function () {
         'rewrite': function (uri) { return String(uri); }
       },
       'only': policyOnly
-    }
+    },
+
+    'ATTRIBUTETYPES': undefined,
+    'LOADERTYPES': undefined,
+    'URIEFFECTS': undefined
   };
 
   var caja = {
@@ -194,6 +198,9 @@ var caja = (function () {
    *     console - Optional user-supplied alternative to the browser's native
    *         'console' object.
    *
+   *     targetAttributePresets - Optional structure giving default and
+   *         whitelist for the 'target' parameter of anchors and forms.
+   *
    *     log - Optional user-supplied alternative to the browser's native
    *         'console.log' function.
    *
@@ -236,6 +243,18 @@ var caja = (function () {
       full['console'] && full['console']['log']
           .apply(full['console'], arguments);
     };
+    if (partial['targetAttributePresets']) {
+      if (!partial['targetAttributePresets']['default']) {
+        throw 'targetAttributePresets must contain a default';
+      }
+      if (!partial['targetAttributePresets']['whitelist']) {
+        throw 'targetAttributePresets must contain a whitelist';
+      }
+      if (partial['targetAttributePresets']['whitelist']['length'] === 0) {
+        throw 'targetAttributePresets.whitelist array must be nonempty';
+      }
+      full['targetAttributePresets'] = partial['targetAttributePresets'];
+    }
     return full;
   }
 

@@ -207,7 +207,22 @@ public class TemplateCompiler {
         String aUri = attrKey.ns.uri;
         String aName = attrKey.localName;
         Attr unsafe = el.getAttributeNodeNS(aUri, aName);
-        if (unsafe != null && a.getValueCriterion().accept(unsafe.getValue())) {
+        if (a.getType() == HTML.Attribute.Type.FRAME_TARGET) {
+          if (unsafe == null) {
+            String safeValue =
+                (a.getDefaultValue() != null
+                 && a.getValueCriterion().accept(a.getDefaultValue()))
+                ? a.getDefaultValue() : a.getSafeValue();
+            attr = el.getOwnerDocument().createAttributeNS(
+                attrKey.ns.uri, attrKey.localName);
+            attr.setNodeValue(safeValue);
+            el.setAttributeNode(attr);
+          } else {
+            // Leave it for later stages to deal with
+            attr = unsafe;
+          }
+        } else if (unsafe != null
+                   && a.getValueCriterion().accept(unsafe.getValue())) {
           attr = unsafe;
         } else if ((a.getDefaultValue() != null
                     && !a.getValueCriterion().accept(a.getDefaultValue()))
@@ -324,7 +339,7 @@ public class TemplateCompiler {
 
     // Emit safe HTML with JS which attaches dynamic attributes.
     SafeHtmlMaker htmlMaker = new SafeHtmlMaker(
-        meta, mc, doc, scriptsPerNode, scriptsPerPlaceholder,
+        meta, htmlSchema, mc, doc, scriptsPerNode, scriptsPerPlaceholder,
         ihtmlRoots, aRewriter.getHandlers());
     return htmlMaker.make(css);
   }

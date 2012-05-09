@@ -157,11 +157,6 @@ public final class TemplateSanitizer {
               value == null ? localName : value);
         }
       }
-    } else if ("target".equals(attrKey.localName)) {
-      if (!"_self".equals(attrib.getNodeValue())) {
-        attrib.setNodeValue("_blank");
-      }
-      return true;
     } else if (!schema.isAttributeAllowed(attrKey)) {
       if (!ignore) {
         mq.addMessage(
@@ -170,15 +165,18 @@ public final class TemplateSanitizer {
       }
       valid &= removeBadAttribute(el, attrKey);
     } else {
-      Criterion<? super String> criteria = a.getValueCriterion();
-      if (!criteria.accept(attrib.getNodeValue())) {
-        if (!ignore) {
-          mq.addMessage(
-              PluginMessageType.DISALLOWED_ATTRIBUTE_VALUE,
-              Nodes.getFilePositionForValue(attrib),
-              attrKey, MessagePart.Factory.valueOf(attrib.getNodeValue()));
+      // We do not subject "target" attributes to the value criteria
+      if (a.getType() != HTML.Attribute.Type.FRAME_TARGET) {
+        Criterion<? super String> criteria = a.getValueCriterion();
+        if (!criteria.accept(attrib.getNodeValue())) {
+          if (!ignore) {
+            mq.addMessage(
+                PluginMessageType.DISALLOWED_ATTRIBUTE_VALUE,
+                Nodes.getFilePositionForValue(attrib),
+                attrKey, MessagePart.Factory.valueOf(attrib.getNodeValue()));
+          }
+          valid &= removeBadAttribute(el, attrKey);
         }
-        valid &= removeBadAttribute(el, attrKey);
       }
     }
     return valid;

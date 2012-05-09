@@ -317,6 +317,13 @@ public class TemplateSanitizerTest extends CajaTestCase {
         html);
   }
 
+  public final void testStrangeTargets() throws Exception {
+    String html = "<a target=\"foo\">a</a>";
+    assertValid(
+        htmlFragment(fromString(html)),
+        html);
+  }
+
   private void assertValid(Node input, String golden, String... warnings) {
     sanitize(input, golden, true, warnings);
   }

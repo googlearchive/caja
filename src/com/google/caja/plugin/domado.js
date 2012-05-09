@@ -704,8 +704,12 @@ var Domado = (function() {
       // must assume the broadest possible.
       var safeUri = uriRewrite(
           naiveUriPolicy,
-          String(URL), html4.ueffects.SAME_DOCUMENT, html4.ltypes.SANDBOXED,
-          { "XHR": true});
+          String(URL), html4.ueffects.SAME_DOCUMENT, html4.ltypes.DATA,
+          {
+            "TYPE": "XHR",
+            "XHR_METHOD": method,
+            "XHR": true  // Note: this hint is deprecated
+          });
       // If the uriPolicy rejects the URL, we throw an exception, but we do
       // not put the URI in the exception so as not to put the caller at risk
       // of some code in its stack sniffing the URI.
@@ -1316,18 +1320,27 @@ var Domado = (function() {
      * @param {Object} optPseudoWindowLocation a record containing the
      *     properties of the browser "window.location" object, which will
      *     be provided to the Cajoled code.
+     * @param {Object} optTargetAttributePresets a record containing the presets
+     *     (default and whitelist) for the HTML "target" attribute.
      * @return {Object} A collection of privileged access tools, plus the tamed
      *     {@code document} and {@code window} objects under those names. This
      *     object is known as a "domicile".
      */
     function attachDocument(
-        idSuffix, naiveUriPolicy, pseudoBodyNode, optPseudoWindowLocation) {
+        idSuffix, naiveUriPolicy, pseudoBodyNode, optPseudoWindowLocation,
+        optTargetAttributePresets) {
       if (arguments.length < 3) {
         throw new Error(
             'attachDocument arity mismatch: ' + arguments.length);
       }
       if (!optPseudoWindowLocation) {
-          optPseudoWindowLocation = {};
+        optPseudoWindowLocation = {};
+      }
+      if (!optTargetAttributePresets) {
+        optTargetAttributePresets = {
+          default: '_blank',
+          whitelist: [ '_blank', '_self' ]
+        };
       }
 
       var domicile = {
@@ -1434,13 +1447,18 @@ var Domado = (function() {
           return false;
         }
         sanitizeCssProperty(
+            cssPropertyName,
             schema, tokens,
             naiveUriPolicy
             ? function (url) {
                 return uriRewrite(
                     naiveUriPolicy,
                     url, html4.ueffects.SAME_DOCUMENT,
-                    html4.ltypes.SANDBOXED, { "CSS_PROP": cssPropertyName });
+                    html4.ltypes.SANDBOXED,
+                    {
+                      "TYPE": "CSS",
+                      "CSS_PROP": cssPropertyName
+                    });
               }
             : null);
         return tokens.length !== 0;
@@ -1476,8 +1494,11 @@ var Domado = (function() {
       }
       function sanitizeAttrs(tagName, attribs) {
         var n = attribs.length;
+        var needsTargetAttrib =
+            html4.ATTRIBS.hasOwnProperty(tagName + '::target');
         for (var i = 0; i < n; i += 2) {
           var attribName = attribs[+i];
+          if ('target' === attribName) { needsTargetAttrib = false; }
           var value = attribs[i + 1];
           var atype = null, attribKey;
           if ((attribKey = tagName + '::' + attribName,
@@ -1502,6 +1523,9 @@ var Domado = (function() {
           }
         }
         attribs.length = n;
+        if (needsTargetAttrib) {
+          attribs.push('target', optTargetAttributePresets.default);
+        }
         var policy = elementPolicies[tagName];
         if (policy && elementPolicies.hasOwnProperty(tagName)) {
           return policy(attribs);
@@ -1664,7 +1688,11 @@ var Domado = (function() {
                 value,
                 getUriEffect(tagName, attribName),
                 getLoaderType(tagName, attribName),
-                { "XML_ATTR": attribName}) || null;
+                {
+                  "TYPE": "MARKUP",
+                  "XML_ATTR": attribName,
+                  "XML_TAG": tagName
+                }) || null;
           case html4.atype.URI_FRAGMENT:
             value = String(value);
             if (value.charAt(0) === '#' && isValidId(value.substring(1))) {
@@ -1694,7 +1722,13 @@ var Domado = (function() {
           // Frames are ambient, so disallow reference.
           case html4.atype.FRAME_TARGET:
             value = String(value);
-            return '_self' === value ? '_self' : '_blank';
+            for (var i = 0; i < optTargetAttributePresets.whitelist.length;
+                 ++i) {
+              if (optTargetAttributePresets.whitelist[i] === value) {
+                return value;
+              }
+            }
+            return optTargetAttributePresets.default;
           default:
             return null;
         }
@@ -3459,7 +3493,8 @@ var Domado = (function() {
           tokens.length = k;
           // sanitizeCssProperty always lowercases
           var unfiltered = tokens.join(' ').toLowerCase();
-          sanitizeCssProperty(cssSchema[cssPropertyName], tokens);
+          sanitizeCssProperty(cssPropertyName,
+                              cssSchema[cssPropertyName], tokens);
           return unfiltered === tokens.join(' ') ? unfiltered : false;
         }
   
@@ -4977,20 +5012,41 @@ var Domado = (function() {
         }
         return out.join(' ');
       });
-      domicile.rewriteUriInCss = cajaVM.def(function (value) {
+      domicile.rewriteUriInCss = cajaVM.def(function (value, propName) {
         return value
           ? uriRewrite(naiveUriPolicy, value, html4.ueffects.SAME_DOCUMENT,
-                html4.ltypes.SANDBOXED, {})
+                html4.ltypes.SANDBOXED,
+                {
+                  "TYPE": "CSS",
+                  "CSS_PROP": propName
+                })
           : void 0;
       });
       domicile.rewriteUriInAttribute = cajaVM.def(
           function (value, tagName, attribName) {
         return value
           ? uriRewrite(naiveUriPolicy, value, getUriEffect(tagName, attribName),
-                getLoaderType(tagName, attribName), {"XML_ATTR": attribName})
+                getLoaderType(tagName, attribName), {
+                  "TYPE": "MARKUP",
+                  "XML_ATTR": attribName,
+                  "XML_TAG": tagName
+                })
           : void 0;
       });
-  
+      domicile.rewriteTargetAttribute = cajaVM.def(
+          function (value, tagName, attribName) {
+        // TODO(ihab.awad): Parrots much of the code in sanitizeAttrs; refactor
+        var atype = null, attribKey;
+        if ((attribKey = tagName + '::' + attribName,
+             html4.ATTRIBS.hasOwnProperty(attribKey))
+            || (attribKey = '*::' + attribName,
+                html4.ATTRIBS.hasOwnProperty(attribKey))) {
+          atype = html4.ATTRIBS[attribKey];
+          return rewriteAttribute(tagName, attribName, atype, value);
+        }
+        return null;
+      });
+
       traceStartup("DT: preparing Style");
   
       // defer construction
@@ -5201,8 +5257,18 @@ var Domado = (function() {
             + hex.charAt((color >> 4) & 0xf)
             + hex.charAt(color & 0xf);
       });
-      domicile.cssUri = cajaVM.def(function (uri, mimeType) {
-        return rewriteAttribute(null, null, html4.atype.URI, uri) || null;
+      domicile.cssUri = cajaVM.def(function (uri, mimeType, prop) {
+        uri = String(uri);
+        if (!naiveUriPolicy) { return null; }
+        return uriRewrite(
+            naiveUriPolicy,
+            uri,
+            html4.ueffects.SAME_DOCUMENT,
+            html4.ltypes.SANDBOXED,
+            {
+              "TYPE": "CSS",
+              "CSS_PROP": prop
+            });
       });
   
       /**

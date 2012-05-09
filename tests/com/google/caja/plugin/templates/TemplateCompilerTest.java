@@ -155,8 +155,24 @@ public class TemplateCompilerTest extends CajaTestCase {
   public final void testTargetsRewritten() throws Exception {
     assertSafeHtml(
         htmlFragment(fromString("<a href='foo' target='foo'>hello</a>")),
-        htmlFragment(fromString("<a href='foo' target='_blank'>hello</a>")),
-        new Block());
+        htmlFragment(fromString("<a href='foo' id=\"id_1___\" target='_blank'>hello</a>")),
+        js(fromString(""
+            + "function module() {"
+            + "  'use cajita';"
+            + "  {"
+            + "    var el___;"
+            + "    var emitter___ = IMPORTS___.htmlEmitter___;"
+            + "    el___ = emitter___.byId('id_1___');"
+            + "    emitter___.setAttr("
+            + "        el___,"
+            + "        'target',"
+            + "        IMPORTS___.rewriteTargetAttribute___("
+            + "            'foo', 'a', 'target'));"
+            + "    emitter___.rmAttr(el___, 'id');"
+            + "    el___ = emitter___.finish();"
+            + "    emitter___.signalLoaded();"
+            + "  }"
+            + "}")));
   }
 
   public final void testFormRewritten() throws Exception {
@@ -164,16 +180,31 @@ public class TemplateCompilerTest extends CajaTestCase {
         htmlFragment(fromString("<form></form>")),
         htmlFragment(fromString(
             "<form action='test://example.org/testFormRewritten'"
-            + " autocomplete='off' target='_blank'></form>")),
-        new Block());
+            + " autocomplete='off' id=\"id_1___\" target='_blank'></form>")),
+        js(fromString(""
+            + "function module() {"
+            + "  'use cajita';"
+            + "  {"
+            + "    var el___;"
+            + "    var emitter___ = IMPORTS___.htmlEmitter___;"
+            + "    el___ = emitter___.byId('id_1___');"
+            + "    emitter___.setAttr("
+            + "        el___,"
+            + "        'target',"
+            + "        IMPORTS___.rewriteTargetAttribute___("
+            + "            '_blank', 'form', 'target'));"
+            + "    emitter___.rmAttr(el___, 'id');"
+            + "    el___ = emitter___.finish();"
+            + "    emitter___.signalLoaded();"
+            + "  }"
+            + "}")));
   }
 
   public final void testNamesRewritten() throws Exception {
     assertSafeHtml(
         htmlFragment(fromString("<a name='hi'></a>")),
-        htmlFragment(fromString("<a id='id_1___' target='_self'></a>")),
-        js(fromString(
-            ""
+        htmlFragment(fromString("<a id='id_1___' target='_blank'></a>")),
+        js(fromString(""
             + "function module() {"
             + "  'use cajita';"
             + "  {"
@@ -181,6 +212,11 @@ public class TemplateCompilerTest extends CajaTestCase {
             + "    el___ = emitter___.byId('id_1___');"
             + "    emitter___.setAttr("
             + "        el___, 'name', 'hi-' + IMPORTS___.getIdClass___());"
+            + "    emitter___.setAttr("
+            + "        el___,"
+            + "        'target',"
+            + "        IMPORTS___.rewriteTargetAttribute___("
+            + "            '_blank', 'a', 'target'));"
             + "    emitter___.rmAttr(el___, 'id');"
             + "    el___ = emitter___.finish();"
             + "    emitter___.signalLoaded();"
@@ -190,8 +226,25 @@ public class TemplateCompilerTest extends CajaTestCase {
     meta.setIdClass("xyz___");
     assertSafeHtml(
         htmlFragment(fromString("<a name='hi'></a>")),
-        htmlFragment(fromString("<a name='hi-xyz___' target='_self'></a>")),
-        new Block());
+        htmlFragment(fromString(
+            "<a name='hi-xyz___' id=\"id_2___\" target='_blank'></a>")),
+        js(fromString(""
+            + "function module() {"
+            + "  'use cajita';"
+            + "  {"
+            + "    var el___;"
+            + "    var emitter___ = IMPORTS___.htmlEmitter___;"
+            + "    el___ = emitter___.byId('id_2___');"
+            + "    emitter___.setAttr("
+            + "        el___,"
+            + "        'target',"
+            + "        IMPORTS___.rewriteTargetAttribute___("
+            + "            '_blank', 'a', 'target'));"
+            + "    emitter___.rmAttr(el___, 'id');"
+            + "    el___ = emitter___.finish();"
+            + "    emitter___.signalLoaded();"
+            + "  }"
+            + "}")));
   }
 
   public final void testSanityCheck() throws Exception {
@@ -210,8 +263,24 @@ public class TemplateCompilerTest extends CajaTestCase {
         htmlFragment(fromString("<form name='hi'></form>")),
         htmlFragment(fromString(
             "<form action='test://example.org/testFormName' autocomplete='off'"
-            + " name='hi-suffix___' target=_blank></form>")),
-        new Block());
+            + " name='hi-suffix___' id=\"id_1___\" target=_blank></form>")),
+        js(fromString(""
+            + "function module() {"
+            + "  'use cajita';"
+            + "  {"
+            + "    var el___;"
+            + "    var emitter___ = IMPORTS___.htmlEmitter___;"
+            + "    el___ = emitter___.byId('id_1___');"
+            + "    emitter___.setAttr("
+            + "        el___,"
+            + "        'target',"
+            + "        IMPORTS___.rewriteTargetAttribute___("
+            + "            '_blank', 'form', 'target'));"
+            + "    emitter___.rmAttr(el___, 'id');"
+            + "    el___ = emitter___.finish();"
+            + "    emitter___.signalLoaded();"
+            + "  }"
+            + "}")));
   }
 
   // See bug 722
@@ -239,6 +308,11 @@ public class TemplateCompilerTest extends CajaTestCase {
             + "      return ___.plugin_dispatchEvent___("
             + "          this, event, ___.getId(IMPORTS___), c_1___);"
             + "    };"
+            + "    emitter___.setAttr("
+            + "        el___,"
+            + "        'target',"
+            + "        IMPORTS___.rewriteTargetAttribute___("
+            + "            '_blank', 'form', 'target'));"
             + "    emitter___.rmAttr(el___, 'id');"
             + "    el___ = emitter___.finish();"
             + "    emitter___.signalLoaded();"
@@ -251,7 +325,7 @@ public class TemplateCompilerTest extends CajaTestCase {
         htmlFragment(fromString(
             "<a href='javascript:alert(1+1)'>Two!!</a>")),
         htmlFragment(fromString(
-            "<a id=\"id_2___\" target=\"_self\">Two!!</a>")),
+            "<a id=\"id_2___\" target=\"_blank\">Two!!</a>")),
         js(fromString(
             ""
             + "function module() {"
@@ -269,6 +343,11 @@ public class TemplateCompilerTest extends CajaTestCase {
             + "          'try{void ___.plugin_dispatchToHandler___('"
             + "          + ___.getId(IMPORTS___) + ',' + c_1___"
             + "          + ',[{}])}catch(_){}'));"
+            + "    emitter___.setAttr("
+            + "        el___,"
+            + "        'target',"
+            + "        IMPORTS___.rewriteTargetAttribute___("
+            + "            '_blank', 'a', 'target'));"
             + "    emitter___.rmAttr(el___, 'id');"
             + "    el___ = emitter___.finish();"
             + "    emitter___.signalLoaded();"
@@ -281,7 +360,7 @@ public class TemplateCompilerTest extends CajaTestCase {
         htmlFragment(fromString(
             "<a href='javascript:%22use%20cajita%22;alert(1+1)'>Two!!</a>")),
         htmlFragment(fromString(
-            "<a id=\"id_2___\" target=\"_self\">Two!!</a>")),
+            "<a id=\"id_2___\" target=\"_blank\">Two!!</a>")),
         js(fromString(
             ""
             + "function module() {"
@@ -300,6 +379,11 @@ public class TemplateCompilerTest extends CajaTestCase {
             + "          'try{void ___.plugin_dispatchToHandler___('"
             + "          + ___.getId(IMPORTS___) + ',' + c_1___"
             + "          + ',[{}])}catch(_){}'));"
+            + "    emitter___.setAttr("
+            + "        el___,"
+            + "        'target',"
+            + "        IMPORTS___.rewriteTargetAttribute___("
+            + "            '_blank', 'a', 'target'));"
             + "    emitter___.rmAttr(el___, 'id');"
             + "    el___ = emitter___.finish();"
             + "    emitter___.signalLoaded();"
@@ -313,8 +397,24 @@ public class TemplateCompilerTest extends CajaTestCase {
         htmlFragment(fromString("<form onsubmit=''></form>")),
         htmlFragment(fromString(
             "<form action='test://example.org/testFormOnSubmitEmpty'"
-            + " autocomplete='off' target='_blank'></form>")),
-        new Block());
+            + " autocomplete='off' id=\"id_1___\" target='_blank'></form>")),
+        js(fromString(""
+            + "function module() {"
+            + "  'use cajita';"
+            + "  {"
+            + "    var el___;"
+            + "    var emitter___ = IMPORTS___.htmlEmitter___;"
+            + "    el___ = emitter___.byId('id_1___');"
+            + "    emitter___.setAttr("
+            + "        el___,"
+            + "        'target',"
+            + "        IMPORTS___.rewriteTargetAttribute___("
+            + "            '_blank', 'form', 'target'));"
+            + "    emitter___.rmAttr(el___, 'id');"
+            + "    el___ = emitter___.finish();"
+            + "    emitter___.signalLoaded();"
+            + "  }"
+            + "}")));
   }
 
   public final void testImageSrc() throws Exception {
@@ -385,8 +485,24 @@ public class TemplateCompilerTest extends CajaTestCase {
         htmlFragment(fromString(
             "<a href='mailto:x@y' target='_blank'>z</a>")),
         htmlFragment(fromString(
-            "<a href='mailto:x%40y' target='_blank'>z</a>")),
-        new Block());
+            "<a href='mailto:x%40y' id='id_1___' target='_blank'>z</a>")),
+        js(fromString(""
+            + "function module() {"
+            + "  'use cajita';"
+            + "  {"
+            + "    var el___;"
+            + "    var emitter___ = IMPORTS___.htmlEmitter___;"
+            + "    el___ = emitter___.byId('id_1___');"
+            + "    emitter___.setAttr("
+            + "        el___,"
+            + "        'target',"
+            + "        IMPORTS___.rewriteTargetAttribute___("
+            + "            '_blank', 'a', 'target'));"
+            + "    emitter___.rmAttr(el___, 'id');"
+            + "    el___ = emitter___.finish();"
+            + "    emitter___.signalLoaded();"
+            + "  }"
+            + "}")));
   }
 
   public final void testComplexUrl() throws Exception {
@@ -394,8 +510,25 @@ public class TemplateCompilerTest extends CajaTestCase {
         htmlFragment(fromString(
             "<a href='http://b/c;_d=e?f=g&i=%26' target='_blank'>z</a>")),
         htmlFragment(fromString(
-            "<a href='http://b/c%3b%5fd%3de?f=g&i=%26' target='_blank'>z</a>")),
-        new Block());
+            "<a href='http://b/c%3b%5fd%3de?f=g&i=%26'"
+            + " id='id_1___' target='_blank'>z</a>")),
+        js(fromString(""
+            + "function module() {"
+            + "  'use cajita';"
+            + "  {"
+            + "    var el___;"
+            + "    var emitter___ = IMPORTS___.htmlEmitter___;"
+            + "    el___ = emitter___.byId('id_1___');"
+            + "    emitter___.setAttr("
+            + "        el___,"
+            + "        'target',"
+            + "        IMPORTS___.rewriteTargetAttribute___("
+            + "            '_blank', 'a', 'target'));"
+            + "    emitter___.rmAttr(el___, 'id');"
+            + "    el___ = emitter___.finish();"
+            + "    emitter___.signalLoaded();"
+            + "  }"
+            + "}")));
   }
 
   public final void testTextAreas() throws Exception {
@@ -465,8 +598,24 @@ public class TemplateCompilerTest extends CajaTestCase {
     assertSafeHtml(
         htmlInput,
         htmlFragment(fromString(
-            "<a href=\"rewritten\" target=\"_self\"></a>")),
-        new Block());
+            "<a href=\"rewritten\" id=\"id_1___\" target=\"_blank\"></a>")),
+        js(fromString(""
+            + "function module() {"
+            + "  'use cajita';"
+            + "  {"
+            + "    var el___;"
+            + "    var emitter___ = IMPORTS___.htmlEmitter___;"
+            + "    el___ = emitter___.byId('id_1___');"
+            + "    emitter___.setAttr("
+            + "        el___,"
+            + "        'target',"
+            + "        IMPORTS___.rewriteTargetAttribute___("
+            + "            '_blank', 'a', 'target'));"
+            + "    emitter___.rmAttr(el___, 'id');"
+            + "    el___ = emitter___.finish();"
+            + "    emitter___.signalLoaded();"
+            + "  }"
+            + "}")));
 
     // The ExternalReference reference position should contain the URI of the
     // source in which the HREF was seen.
@@ -719,10 +868,26 @@ public class TemplateCompilerTest extends CajaTestCase {
         htmlFragment(fromString(
             ""
             + "<map name='foo-suffix___'>"
-            + "<area target=_self href=foo.html />"
+            + "<area id=\"id_1___\" target=\"_blank\" href=\"foo.html\" />"
             + "</map>"
             + "<img usemap=#foo-suffix___ src=pic.gif>")),
-         new Block());
+        js(fromString(""
+            + "function module() {"
+            + "  'use cajita';"
+            + "  {"
+            + "    var el___;"
+            + "    var emitter___ = IMPORTS___.htmlEmitter___;"
+            + "    el___ = emitter___.byId('id_1___');"
+            + "    emitter___.setAttr("
+            + "        el___,"
+            + "        'target',"
+            + "        IMPORTS___.rewriteTargetAttribute___("
+            + "            '_blank', 'area', 'target'));"
+            + "    emitter___.rmAttr(el___, 'id');"
+            + "    el___ = emitter___.finish();"
+            + "    emitter___.signalLoaded();"
+            + "  }"
+            + "}")));
   }
 
   public final void testBadUriFragments() throws Exception {
@@ -736,11 +901,27 @@ public class TemplateCompilerTest extends CajaTestCase {
         htmlFragment(fromString(
             ""
             + "<map name='foo-suffix___'>"
-            + "<area target=_self href=foo.html />"
+            + "<area id=\"id_1___\" target=\"_blank\" href=\"foo.html\" />"
             + "</map>"
             + "<img src=foo.gif>"
             + "<img src=bar.gif>")),
-         new Block(), false);
+        js(fromString(""
+            + "function module() {"
+            + "  'use cajita';"
+            + "  {"
+            + "    var el___;"
+            + "    var emitter___ = IMPORTS___.htmlEmitter___;"
+            + "    el___ = emitter___.byId('id_1___');"
+            + "    emitter___.setAttr("
+            + "        el___,"
+            + "        'target',"
+            + "        IMPORTS___.rewriteTargetAttribute___("
+            + "            '_blank', 'area', 'target'));"
+            + "    emitter___.rmAttr(el___, 'id');"
+            + "    el___ = emitter___.finish();"
+            + "    emitter___.signalLoaded();"
+            + "  }"
+            + "}")), false);
   }
 
   public final void testSingleValueAttrs() throws Exception {
@@ -811,7 +992,7 @@ public class TemplateCompilerTest extends CajaTestCase {
             + "    emitter___.setAttr(el___, 'style', "
             + "        'background-image: url('"
             + "        + IMPORTS___.rewriteUriInCss___("
-            + "              'test://example.org/a.jpg')"
+            + "              'test://example.org/a.jpg', 'background-image')"
             + "        + ')');"
             + "    emitter___.rmAttr(el___, 'id');"
             + "    el___ = emitter___.finish();"
@@ -819,6 +1000,89 @@ public class TemplateCompilerTest extends CajaTestCase {
             + "  }"
             + "}")),
             true);
+  }
+
+  public final void testFormTargetSpecified() throws Exception {
+    assertSafeHtml(
+        htmlFragment(fromString(
+            "<form target=\"foo\"></form>")),
+        htmlFragment(fromString(""
+            + "<form "
+            + "  target=\"_blank\""
+            + "  action=\"test://example.org/testFormTargetSpecified\""
+            + "  autocomplete=\"off\""
+            + "  id=\"id_1___\"><"
+            + "/form>")),
+        js(fromString(""
+            + "function module() {"
+            + "  'use cajita';"
+            + "  {"
+            + "    var el___;"
+            + "    var emitter___ = IMPORTS___.htmlEmitter___;"
+            + "    el___ = emitter___.byId('id_1___');"
+            + "    emitter___.setAttr("
+            + "        el___,"
+            + "        'target',"
+            + "        IMPORTS___.rewriteTargetAttribute___("
+            + "            'foo', 'form', 'target'));"
+            + "    emitter___.rmAttr(el___, 'id');"
+            + "    el___ = emitter___.finish();"
+            + "    emitter___.signalLoaded();"
+            + "  }"
+            + "}")),
+        true);
+  }
+
+  public final void testAnchorTargetEmpty() throws Exception {
+    assertSafeHtml(
+        htmlFragment(fromString(
+            "<a>a</a>")),
+        htmlFragment(fromString(
+            "<a target=\"_blank\" id=\"id_1___\">a</a>")),
+        js(fromString(""
+            + "function module() {"
+            + "  'use cajita';"
+            + "  {"
+            + "    var el___;"
+            + "    var emitter___ = IMPORTS___.htmlEmitter___;"
+            + "    el___ = emitter___.byId('id_1___');"
+            + "    emitter___.setAttr("
+            + "        el___,"
+            + "        'target',"
+            + "        IMPORTS___.rewriteTargetAttribute___("
+            + "            '_blank', 'a', 'target'));"
+            + "    emitter___.rmAttr(el___, 'id');"
+            + "    el___ = emitter___.finish();"
+            + "    emitter___.signalLoaded();"
+            + "  }"
+            + "}")),
+        true);
+  }
+
+  public final void testAnchorTargetSpecified() throws Exception {
+    assertSafeHtml(
+        htmlFragment(fromString(
+            "<a target=\"foo\">a</a>")),
+        htmlFragment(fromString(
+            "<a target=\"_blank\" id=\"id_1___\">a</a>")),
+        js(fromString(""
+            + "function module() {"
+            + "  'use cajita';"
+            + "  {"
+            + "    var el___;"
+            + "    var emitter___ = IMPORTS___.htmlEmitter___;"
+            + "    el___ = emitter___.byId('id_1___');"
+            + "    emitter___.setAttr("
+            + "        el___,"
+            + "        'target',"
+            + "        IMPORTS___.rewriteTargetAttribute___("
+            + "            'foo', 'a', 'target'));"
+            + "    emitter___.rmAttr(el___, 'id');"
+            + "    el___ = emitter___.finish();"
+            + "    emitter___.signalLoaded();"
+            + "  }"
+            + "}")),
+        true);
   }
 
   private void assertSafeHtml(

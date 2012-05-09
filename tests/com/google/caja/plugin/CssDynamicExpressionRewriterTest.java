@@ -107,7 +107,8 @@ public class CssDynamicExpressionRewriterTest extends CajaTestCase {
         + "a { background: url(bar.png) }",
         "[ '.', ' p {\\n  background: url(\\'foo.png\\')\\n}\\n.', "
         + "' a {\\n  background: "
-        + "url(' + IMPORTS___.rewriteUriInCss___('bar.png') + ')\\n}' ]",
+        + "url(' + IMPORTS___.rewriteUriInCss___("
+        + "'bar.png', 'background') + ')\\n}' ]",
         Arrays.asList("foo.png"),
         Arrays.asList("bar.png"));
   }
@@ -118,7 +119,8 @@ public class CssDynamicExpressionRewriterTest extends CajaTestCase {
         + "a { background: url(\"bar'.png\") }",
         "[ '.', ' p {\\n  background: url(\\'foo%27.png\\')\\n}\\n.', "
         + "' a {\\n  background: "
-        + "url(' + IMPORTS___.rewriteUriInCss___('bar\\'.png') + ')\\n}' ]",
+        + "url(' + IMPORTS___.rewriteUriInCss___("
+        + "'bar\\'.png', 'background') + ')\\n}' ]",
         Arrays.asList("foo'.png"),
         Arrays.asList("bar'.png"));
   }

@@ -117,14 +117,25 @@ public final class CssDynamicExpressionRewriter {
               UnsafeUriLiteral uul = (UnsafeUriLiteral) node;
               CssTree parent = (CssTree) ancestors.parent.node;
               assert(null != parent);
+              AncestorChain prop = ancestors;
+              while (null != prop &&
+                     !(prop.node instanceof CssTree.PropertyDeclaration)) {
+                prop = prop.parent;
+              }
+              assert(null != prop);
               parent.replaceChild(
                   new JsExpressionUriLiteral(
                       uul.getFilePosition(),
                       (Expression) QuasiBuilder.substV(
-                          "IMPORTS___./*@synthetic*/rewriteUriInCss___(@uri)",
-                          "uri", StringLiteral.valueOf(
-                                     uul.getFilePosition(),
-                                     uul.getValue()))),
+                          "IMPORTS___./*@synthetic*/rewriteUriInCss___(@u, @p)",
+                          "u", StringLiteral.valueOf(
+                                   uul.getFilePosition(),
+                                   uul.getValue()),
+                          "p", StringLiteral.valueOf(
+                                   uul.getFilePosition(),
+                                   ((CssTree.PropertyDeclaration) prop.node)
+                                       .getProperty().getPropertyName()
+                                       .getCanonicalForm()))),
                   uul);
             }
             return true;

@@ -737,7 +737,7 @@ var html = (function(html4) {
                       return;
                     }
                     sanitizeCssProperty(
-                        schema, tokens,
+                        normProp, schema, tokens,
                         opt_naiveUriRewriter);
                     sanitizedDeclarations.push(property + ': ' + tokens.join(' '));
                   }

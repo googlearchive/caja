@@ -14,6 +14,8 @@
 
 package com.google.caja.plugin.templates;
 
+import com.google.caja.lang.html.HTML;
+import com.google.caja.lang.html.HtmlSchema;
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.HtmlTextEscapingMode;
 import com.google.caja.parser.ParseTreeNode;
@@ -113,6 +115,7 @@ final class SafeHtmlMaker {
       = new JobEnvelope(null, JobCache.none(), null, false, null);
 
   private final PluginMeta meta;
+  private final HtmlSchema htmlSchema;
   private final MessageContext mc;
   private final Document doc;
   private final List<SafeJsChunk> js = Lists.newArrayList();
@@ -141,12 +144,13 @@ final class SafeHtmlMaker {
    * @param doc the owner document for the safe HTML. Used only as a
    * factory for DOM nodes.
    */
-  SafeHtmlMaker(PluginMeta meta, MessageContext mc, Document doc,
-                Map<Node, ParseTreeNode> scriptsPerNode,
+  SafeHtmlMaker(PluginMeta meta, HtmlSchema htmlSchema, MessageContext mc,
+                Document doc, Map<Node, ParseTreeNode> scriptsPerNode,
                 Map<String, ScriptPlaceholder> scriptsPerPlaceholder,
                 List<IhtmlRoot> roots,
                 List<EventHandler> handlers) {
     this.meta = meta;
+    this.htmlSchema = htmlSchema;
     this.mc = mc;
     this.doc = doc;
     this.scriptsPerNode = scriptsPerNode;
@@ -462,6 +466,30 @@ final class SafeHtmlMaker {
     Element el = (Element) bone.node;
     Element safe = (Element) bone.safeNode;
     FilePosition pos = Nodes.getFilePositionFor(el);
+    ElKey elKey = ElKey.forElement(el);
+
+    // If the element is supposed to have a FRAME_TARGET attribute, set that
+    // to a safe value (the actual final value of all FRAME_TARGET attributes
+    // will be assigned dynamically).
+    HTML.Element elInfo = htmlSchema.lookupElement(elKey);
+    List<HTML.Attribute> attrs = elInfo.getAttributes();
+    if (attrs != null) {
+      for (HTML.Attribute a : attrs) {
+        if (a.getType() == HTML.Attribute.Type.FRAME_TARGET) {
+          String safeValue =
+              (a.getDefaultValue() != null
+               && a.getValueCriterion().accept(a.getDefaultValue()))
+              ? a.getDefaultValue() : a.getSafeValue();
+          emitStaticAttr(
+              a,
+              new StringLiteral(FilePosition.UNKNOWN, safeValue),
+              safe);
+          Attr attr = el.getOwnerDocument().createAttributeNS(
+              elInfo.getKey().ns.uri, elInfo.getKey().localName);
+          el.setAttributeNode(attr);
+        }
+      }
+    }
 
     // An ID we attach to a node so that we can retrieve it to add dynamic
     // attributes later.
@@ -476,7 +504,6 @@ final class SafeHtmlMaker {
     }
     Nodes.setFilePositionFor(safe, pos);
 
-    ElKey elKey = ElKey.forElement(el);
     Attr id = null;
     for (Attr a : Nodes.attributesOf(el)) {
       if (!scriptsPerNode.containsKey(a)) { continue; }
@@ -530,6 +557,15 @@ final class SafeHtmlMaker {
             bone.source);
       }
     }
+  }
+
+  private void emitStaticAttr(
+      HTML.Attribute a, StringLiteral dynamicValue, Element safe) {
+    // Emit an attribute with a known value in the safe HTML.
+    Attr safeAttr = doc.createAttributeNS(
+        a.getKey().ns.uri, a.getKey().localName);
+    safeAttr.setValue(dynamicValue.getUnquotedValue());
+    safe.setAttributeNodeNS(safeAttr);
   }
 
   private void emitStaticAttr(

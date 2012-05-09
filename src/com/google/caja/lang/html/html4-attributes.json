@@ -27,19 +27,13 @@
              "  _parent renders the link in the immediate FRAMESET parent",
              "  _top renders the link in the full, unframed window",
              "",
-             "We allow _blank, _self but not _parent, _top or arbitary named ",
-             "targets. Arbitrary named targets are disallowed since those ",
-             "may allow guest code to interfere with caja's iframes."
+             "We allow only _blank."
              ],
-        "values": "_self,_blank",
-        "safeValue": "_blank",
+        "values": "_blank",
         "default": "_self"
       },
       { "key": "AREA::TARGET", "optional": "true", "type": "FRAME_TARGET",
-        "values": "_self,_blank",
-        "safeValue": "_blank",
-        "default": "_self"
-      },
+        "values": "_blank", "default": "_self" },
       { "key": "BASE::TARGET", "optional": "true", "type": "FRAME_TARGET",
         "values": "_blank", "default": "_self" },
       { "key": "FORM::TARGET", "optional": "true", "type": "FRAME_TARGET",

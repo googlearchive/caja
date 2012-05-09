@@ -94,7 +94,7 @@ public class HtmlSchemaTest extends TestCase {
                .getValueCriterion().accept("_parent"));
     assertFalse(lookupAttribute("a", "target")
                .getValueCriterion().accept("foo"));
-    assertTrue(lookupAttribute("a", "target")
+    assertFalse(lookupAttribute("a", "target")
                .getValueCriterion().accept("_self"));
     assertTrue(lookupAttribute("a", "target")
                .getValueCriterion().accept("_blank"));

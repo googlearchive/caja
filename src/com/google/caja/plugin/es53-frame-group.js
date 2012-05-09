@@ -253,8 +253,18 @@ function ES53FrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker) {
     // TODO(kpreid): This is probably wrong: we're replacing the feral
     // record imports with the tame constructed object 'window'.
 
+    var targetAttributePresets = undefined;
+    if (config.targetAttributePresets) {
+      targetAttributePresets = {};
+      targetAttributePresets.default = config.targetAttributePresets.default;
+      targetAttributePresets.whitelist =
+          Array.prototype.slice.call(config.targetAttributePresets.whitelist);
+      ___.whitelistAll(targetAttributePresets, true);
+    }
+
     var domicile = domado.attachDocument(
-      '-' + divs.idClass, uriPolicyWrapper, divs.inner);
+      '-' + divs.idClass, uriPolicyWrapper, divs.inner,
+      undefined, targetAttributePresets);
     var imports = domicile.window;
 
     // Add JavaScript globals to the DOM window object.
@@ -266,6 +276,8 @@ function ES53FrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker) {
     imports.rewriteUriInCss___ = domicile.rewriteUriInCss.bind(domicile);
     imports.rewriteUriInAttribute___ =
       domicile.rewriteUriInAttribute.bind(domicile);
+    imports.rewriteTargetAttribute___ =
+      domicile.rewriteTargetAttribute.bind(domicile);
     imports.getIdClass___ = domicile.getIdClass.bind(domicile);
     imports.emitCss___ = domicile.emitCss.bind(domicile);
     imports.tameNodeAsForeign___ = domicile.tameNodeAsForeign.bind(domicile);

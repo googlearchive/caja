@@ -50,6 +50,10 @@ imports.DefineOwnProperty___('assertThrows', {
   enumerable: true,
   writable: false,
   configurable: false});
+imports.rewriteTargetAttribute___ =
+    ___.markFuncFreeze(function(value, tagName, attribName) {
+      return "rewritten-" + value;
+    });
 imports.document = document;
 imports.console = console;
 ___.markFuncFreeze(console.log);

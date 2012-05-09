@@ -46,7 +46,7 @@
               '<a href="URICALLBACK[['
               + 'http://localhost:8000/ant-lib/'
               + 'com/google/caja/plugin/bar.html'
-              + ']]" target="_self">default</a>'
+              + ']]" target="_blank">default</a>'
               + '<a href="URICALLBACK[['
               + 'http://localhost:8000/ant-lib/'
               + 'com/google/caja/plugin/bar.html'
@@ -59,6 +59,10 @@
               + 'http://localhost:8000/ant-lib/'
               + 'com/google/caja/plugin/bar.html'
               + ']]" target="_blank">parent</a>'
+              + '<a href="URICALLBACK[['
+              + 'http://localhost:8000/ant-lib/'
+              + 'com/google/caja/plugin/bar.html'
+              + ']]" target="_blank">foo</a>'
           ),
           result);
         assertStringDoesNotContain('javascript:', result);
@@ -195,6 +199,8 @@
       '<div style="background-image: url(http://foo.com/a.jpg);"></div>',
       function(testName, uri, effects, ltype, hints) {
         assertEquals('http://foo.com/a.jpg', uri);
+        assertEquals('CSS', hints.TYPE);
+        assertEquals('background-image', hints.CSS_PROP);
       });
 
   registerUriCbTestCompiledAndDynamic(
@@ -202,6 +208,9 @@
       '<a href="http://foo.com/a.html">foo</a>',
       function(testName, uri, effects, ltype, hints) {
         assertEquals('http://foo.com/a.html', uri);
+        assertEquals('MARKUP', hints.TYPE);
+        assertEquals('a', hints.XML_TAG);
+        assertEquals('href', hints.XML_ATTR);
       });
 
   // Since emitCss___ emits CSS to the containing document's HEAD, we cannot
@@ -218,6 +227,8 @@
             {
               rewrite: function(uri, effects, ltype, hints) {
                 assertEquals('http://x.com/a.jpg', uri);
+                assertEquals('CSS', hints.TYPE);
+                assertEquals('background-image', hints.CSS_PROP);
                 calledPolicy = true;
                 return 'URI[[' + uri + ']]';
               }
@@ -257,6 +268,8 @@
       '</script>',
       function(testName, uri, effects, ltype, hints) {
         assertEquals('http://foo.com/a.jpg', uri);
+        assertEquals('CSS', hints.TYPE);
+        assertEquals('background-image', hints.CSS_PROP);
       });
   */
 
@@ -269,6 +282,8 @@
       '</script>',
       function(testName, uri, effects, ltype, hints) {
         assertEquals('http://foo.com/a.json', uri);
+        assertEquals('XHR', hints.TYPE);
+        assertEquals('GET', hints.XHR_METHOD);
         jsunitPass(testName);
         return true;
       });

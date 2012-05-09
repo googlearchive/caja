@@ -99,16 +99,19 @@ public class HtmlHandlerTest extends ServiceTestCase {
     assertContainsIgnoreSpace(
         (String) json.get("js"),
         "background-image: url('+"
-        + "IMPORTS___.rewriteUriInCss___('http://foo/baz.png')+"
+        + "IMPORTS___.rewriteUriInCss___('http://foo/baz.png', 'background-image')+"
         + "')");
     assertContainsIgnoreSpace(
         (String) json.get("html"),
-        "<a id=\"id_1___\" target=\"_self\">");
+        "<a id=\"id_1___\" target=\"_blank\">");
     assertContainsIgnoreSpace(
         (String) json.get("js"),
         "IMPORTS___.rewriteUriInAttribute___("
         + "'http://foo/shizzle.html','a','href'"
         + ")");
+    assertContainsIgnoreSpace(
+        (String) json.get("js"),
+        "IMPORTS___.rewriteTargetAttribute___('_blank','a','target')");
   }
 
   public final void testTargetAttribs() throws Exception {
@@ -130,22 +133,40 @@ public class HtmlHandlerTest extends ServiceTestCase {
 
     assertContainsIgnoreSpace(
         (String) json.get("html"),
-        "<a id=\"id_1___\" target=\"_self\">Default</a>");
+        "<a id=\"id_1___\" target=\"_blank\">Default</a>");
+    assertContainsIgnoreSpace(
+        (String) json.get("js"),
+        "IMPORTS___.rewriteTargetAttribute___('_blank','a','target')");
     assertContainsIgnoreSpace(
         (String) json.get("html"),
-        "<a id=\"id_2___\" target=\"_self\">Self</a>");
+        "<a id=\"id_2___\" target=\"_blank\">Self</a>");
+    assertContainsIgnoreSpace(
+        (String) json.get("js"),
+        "IMPORTS___.rewriteTargetAttribute___('_self','a','target')");
     assertContainsIgnoreSpace(
         (String) json.get("html"),
         "<a id=\"id_3___\" target=\"_blank\">Blank</a>");
     assertContainsIgnoreSpace(
+        (String) json.get("js"),
+        "IMPORTS___.rewriteTargetAttribute___('_blank','a','target')");
+    assertContainsIgnoreSpace(
         (String) json.get("html"),
         "<a id=\"id_4___\" target=\"_blank\">Top</a>");
+    assertContainsIgnoreSpace(
+        (String) json.get("js"),
+        "IMPORTS___.rewriteTargetAttribute___('_top','a','target')");
     assertContainsIgnoreSpace(
         (String) json.get("html"),
         "<a id=\"id_5___\" target=\"_blank\">Parent</a>");
     assertContainsIgnoreSpace(
+        (String) json.get("js"),
+        "IMPORTS___.rewriteTargetAttribute___('_parent','a','target')");
+    assertContainsIgnoreSpace(
         (String) json.get("html"),
         "<a id=\"id_6___\" target=\"_blank\">Foo</a>");
+    assertContainsIgnoreSpace(
+        (String) json.get("js"),
+        "IMPORTS___.rewriteTargetAttribute___('foo','a','target')");
   }
   
   private void assertHtml2Json(String inputMimeType)
