@@ -278,6 +278,9 @@ public class ES53RewriterTest extends CommonJsRewriterTestCase {
         + "var time = (new Date - 1);"
         + "assertFalse(isNaN(time));"
         + "assertEquals('number', typeof time);");
+    rewriteAndExecute(
+        "assertThrowsMsg(function(){Date.prototype.setFullYear(1066)}," +
+        "    'Cannot change the internal state');");
   }
 
   public final void testMultiDeclaration2() throws Exception {

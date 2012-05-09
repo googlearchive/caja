@@ -3958,6 +3958,17 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
         'getUTCFullYear',
         'getMilliseconds',
         'getTimezoneOffset',
+        'toUTCString',
+        'toISOString',
+        'toJSON'
+      ];
+    for (var i = 0; i < methods.length; ++i) {
+      virtualize(Date.prototype, methods[i]);
+    }
+  })();
+
+  (function () {
+    var methods = [
         'setTime',
         'setMilliseconds',
         'setUTCMilliseconds',
@@ -3972,13 +3983,24 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
         'setMonth',
         'setUTCMonth',
         'setFullYear',
-        'setUTCFullYear',
-        'toUTCString',
-        'toISOString',
-        'toJSON'
+        'setUTCFullYear'
       ];
+    var proto = Date.prototype;
     for (var i = 0; i < methods.length; ++i) {
-      virtualize(Date.prototype, methods[i]);
+      virtualize(proto, methods[i], (function (method) {
+        return function (varArgs) {
+            if (this === proto) {
+              throw new TypeError(
+                  'Cannot change the internal state of Date.prototype');
+            }
+            if (!(this instanceof Date)) {
+              throw new TypeError(
+                  'Cannot call this method on a non-Date or ' +
+                  'a cross-frame Date object.');
+            }
+            return method.apply(this, arguments);
+        };
+      })(proto[methods[i]]));
     }
   })();
 
