@@ -2678,7 +2678,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
    */
   Function.prototype.f___ = callFault;
   Function.prototype.i___ = function(var_args) {
-      return this.f___(USELESS, slice.call(arguments, 0));
+      return this.f___(USELESS, arguments);
     };
   Function.prototype.new___ = callFault;
   Function.prototype.DefineOwnProperty___('arguments', {
@@ -3060,7 +3060,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
       
   function makeDefensibleFunction(f) {
     return markFuncFreeze(function(_) {
-      return f.apply(USELESS, slice.call(arguments, 0));
+      return f.apply(USELESS, arguments);
     });
   }
   
@@ -3299,6 +3299,9 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
       return this.apply(safeDis(dis), slice.call(arguments, 1));
     });
   virtualize(Function.prototype, 'apply', function (dis, as) {
+      // The arguments object exposed to guest code is neither a real
+      // arguments object nor an array, so if they call apply on that,
+      // we have to turn it into an array. 
       return this.apply(safeDis(dis), as ? slice.call(as, 0) : void 0);
     });
   /**
@@ -3502,6 +3505,8 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
       // Wrap
       obj[vname] = (function (orig) {
           return function (block) { //, thisp
+              // We have to create a copy of arguments because
+              // modifying arguments[0] breaks lexical scoping.
               var a = slice.call(arguments, 0);
               // Replace block with the taming of block
               a[0] = markFunc(function(var_args) {
@@ -4572,7 +4577,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
             method = get.f___(handler, [P, proxy]);
           }
         }
-        return method.f___(proxy, slice.call(args, 0));
+        return method.f___(proxy, args);
       };
     proxy.e___ = function () {
         if (this !== proxy) {
@@ -4858,7 +4863,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
                   'function proxies.');
           }
           var proxy = markFunc(function (var_args) {
-              return callTrap.f___(safeDis(this), slice.call(arguments, 0));
+              return callTrap.f___(safeDis(this), arguments);
             });
           // Install deferred handlers
           proxy.v___('length');
@@ -4878,7 +4883,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
           }
           prepareProxy(proxy, handler);
           proxy.new___ = function (var_args) {
-              return constructTrap.apply(this, slice.call(arguments, 0));
+              return constructTrap.apply(this, arguments);
             };
           if (constructTrap) { proxy.prototype = constructTrap.prototype; }
           return proxy;
@@ -5242,7 +5247,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
               throw new TypeError(
                   'Tamed method applied to the wrong class of object.');
             }
-            return original.apply(this, slice.call(arguments, 0));
+            return original.apply(this, arguments);
           }),
         enumerable: false,
         configurable: true,
@@ -5273,6 +5278,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
         get: markFunc(function () {
             return function guardedApplier(var_args) {
                 var feralThis = safeDis(taming.untame(this));
+                // The function untame expects an actual array.
                 var feralArgs = taming.untame(slice.call(arguments, 0));
                 var feralResult = original.apply(feralThis, feralArgs);
                 return taming.tame(feralResult);
