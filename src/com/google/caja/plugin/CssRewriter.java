@@ -728,18 +728,19 @@ public final class CssRewriter {
               ExternalReference ref = new ExternalReference(
                   uri, baseUri, relUri, content.getFilePosition());
               Name propertyPart = propertyPart(node);  // TODO
-              // TODO(felix8a): protect against naive uripolicy
-              if (uriPolicy != null &&
-                  uriPolicy.rewriteUri(
-                      ref, UriEffect.SAME_DOCUMENT, LoaderType.SANDBOXED,
-                      Collections.singletonMap(
-                          UriPolicyHintKey.CSS_PROP.key, propertyPart))
-                      == null) {
-                removeMsg = new Message(
-                    PluginMessageType.DISALLOWED_URI,
-                    node.getFilePosition(),
-                    MessagePart.Factory.valueOf(uriStr));
-                remove = true;
+              if (uriPolicy != null) {
+                String rewritten = UriPolicyNanny.apply(
+                    uriPolicy,
+                    ref, UriEffect.SAME_DOCUMENT, LoaderType.SANDBOXED,
+                    Collections.singletonMap(
+                        UriPolicyHintKey.CSS_PROP.key, propertyPart));
+                if (rewritten == null) {
+                  removeMsg = new Message(
+                      PluginMessageType.DISALLOWED_URI,
+                      node.getFilePosition(),
+                      MessagePart.Factory.valueOf(uriStr));
+                  remove = true;
+                }
               }
             } catch (URISyntaxException ex) {
               removeMsg = new Message(
@@ -832,9 +833,9 @@ public final class CssRewriter {
                 ExternalReference ref = new ExternalReference(
                     uri, baseUri, relUri, content.getFilePosition());
                 CssTree.UriLiteral replacement;
-                // TODO(felix8a): protect against naive uripolicy
                 if (uriPolicy != null) {
-                  String rewrittenUri = uriPolicy.rewriteUri(
+                  String rewrittenUri = UriPolicyNanny.apply(
+                      uriPolicy,
                       ref, UriEffect.SAME_DOCUMENT, LoaderType.SANDBOXED,
                       Collections.singletonMap(
                           UriPolicyHintKey.CSS_PROP.key, propertyPart));

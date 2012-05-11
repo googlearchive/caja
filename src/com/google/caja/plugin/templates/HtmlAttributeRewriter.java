@@ -50,6 +50,7 @@ import com.google.caja.plugin.JobEnvelope;
 import com.google.caja.plugin.PluginMessageType;
 import com.google.caja.plugin.PluginMeta;
 import com.google.caja.plugin.UriPolicyHintKey;
+import com.google.caja.plugin.UriPolicyNanny;
 import com.google.caja.plugin.stages.EmbeddedContent;
 import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessagePart;
@@ -299,8 +300,8 @@ public final class HtmlAttributeRewriter {
           }
           if (meta.getUriPolicy() != null) {
             ExternalReference ref = new ExternalReference(uri, pos);
-            // TODO(felix8a): protect against naive uripolicy
-            String rewrittenUri = meta.getUriPolicy().rewriteUri(
+            String rewrittenUri = UriPolicyNanny.apply(
+                meta.getUriPolicy(),
                 ref, attr.attrInfo.getUriEffect(),
                 attr.attrInfo.getLoaderType(),
                 Collections.singletonMap(

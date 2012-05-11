@@ -425,14 +425,16 @@ public class TemplateCompilerTest extends CajaTestCase {
   }
 
   public final void testStyleRewriting() throws Exception {
-    InputSource is = new InputSource(URI.create("file:///" + getName()));
+    InputSource is = new InputSource(URI.create("http://example.org/"));
     assertSafeHtml(
         htmlFragment(fromString(
-            "<div style=\"position: absolute; background: url('bg-image')\">\n"
+            "<div style=\"position: absolute; background: "
+            + "url('bg-image')\">\n"
             + "Hello\n"
             + "</div>\n", is)),
         htmlFragment(fromString(
-            "<div style=\"position: absolute; background: url('file:/bg-image')"
+            "<div style=\"position: absolute; background: "
+            + "url('http://example.org/bg-image')"
             + "\">\nHello\n</div>")),
         new Block());
   }

@@ -72,6 +72,7 @@ var Domado = (function() {
 
   var ALLOWED_URI_SCHEMES = /^(?:https?|mailto)$/i;
 
+  // This matches the logic in UriPolicyNanny#apply
   function uriRewrite(naiveUriPolicy, uri, effects, ltype, hints) {
     if (!naiveUriPolicy) { return null; }
     var parsed = ('' + uri).match(URI_SCHEME_RE);
