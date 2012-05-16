@@ -234,7 +234,8 @@ var caja = (function () {
       'forceES5Mode' in partial ? !!partial['forceES5Mode'] : GUESS;
     if (partial['console']) {
       full['console'] = partial['console'];
-    } else if (window['console'] && typeof(window['console']) === 'function') {
+    } else if (window['console']
+        && typeof(window['console']['log']) === 'function') {
       full['console'] = window['console'];
     } else {
       full['console'] = undefined;
@@ -353,10 +354,11 @@ var caja = (function () {
 
   function loadCajaFrame(config, filename, frameReady) {
     var frameWin = createFrame(filename);
+    // debuggable or minified.  ?debug=1 is for shindig
+    var suffix = config['debug'] ? '.js?debug=1' : '.opt.js';
     var url = joinUrl(
       config['resources'],
-      cajaBuildVersion + '/' + filename
-      + (config['debug'] ? '.js' : '.opt.js'));
+      cajaBuildVersion + '/' + filename + suffix);
     // The particular interleaving of async events shown below has been found
     // necessary to get the right behavior on Firefox 3.6. Otherwise, the
     // iframe silently fails to invoke the cajaIframeDone___ callback.
