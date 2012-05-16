@@ -16,6 +16,7 @@ package com.google.caja.precajole;
 
 import com.google.caja.SomethingWidgyHappenedError;
 import com.google.caja.parser.js.CajoledModule;
+import com.google.caja.util.Lists;
 import com.google.caja.util.Maps;
 import com.google.caja.util.Strings;
 import com.google.common.io.ByteStreams;
@@ -35,8 +36,8 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.List;
 import java.util.Map;
-
 import org.apache.commons.codec.binary.Hex;
 
 /**
@@ -162,6 +163,24 @@ public class StaticPrecajoleMap implements PrecajoleMap {
       return minify ? e.minified : e.pretty;
     }
     return null;
+  }
+
+  public List<List<String>> getUrlGroups() {
+    Map<String, List<String>> idMap = Maps.newHashMap();
+    for (String url : index.map.keySet()) {
+      String id = index.map.get(url);
+      List<String> urls = idMap.get(id);
+      if (urls == null) {
+        urls = Lists.newArrayList();
+        idMap.put(id, urls);
+      }
+      urls.add(url);
+    }
+    List<List<String>> urlGroups = Lists.newArrayList();
+    for (List<String> urls : idMap.values()) {
+      urlGroups.add(urls);
+    }
+    return urlGroups;
   }
 
   private String normalizeUri(String uri) {

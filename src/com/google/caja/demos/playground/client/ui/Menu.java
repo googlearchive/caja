@@ -23,16 +23,18 @@ public enum Menu {
       "<font color='red'>Tells us what you think</font>"),
   ISSUE("http://code.google.com/p/google-caja/issues/entry",
       "File a bug"),
+  PRECAJOLE("precajole/info?format=html",
+      "Precajoled resources"),
   HELP("http://code.google.com/p/google-caja/wiki/PlaygroundHelp",
       "Help!");
-  
+
   public final String url;
   public final String description;
-  
+
   Menu(String url, String description) {
     this.url = url;
     this.description = description;
-  }    
+  }
 }
 
 

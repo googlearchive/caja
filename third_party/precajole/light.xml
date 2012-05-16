@@ -1,24 +1,13 @@
 <!--
 
-  <precajole-spec> is a list of <precajole> directives.
+  Since cajoling is kind of slow, this file only lists a few
+  small entries used for testing the precajoler.  The file
+  'heavy.xml' contains the full list of scripts precajoled for a
+  full installation.
 
-  <precajole> means: read the given file, cajole it, and
-  associate the result with the uris listed.
-
-  So when a gadget has <script src='...'>, and precajoling is
-  enabled, and the uri is allowed by the uri policy, and the uri
-  is in the precajoled list, then the cajoler will substitute the
-  precajoled result without even fetching the uri.
-
-  Any http: uri also implies an https: uri (but not vice versa).
-
-  Since cajoling is kind of slow, this file 'light.xml' only
-  lists a few small entries used for testing the precajoler.  The
-  file 'heavy.xml' contains the full list of scripts precajoled
-  for a full installation.
+  See heavy.xml for more explanation.
 
 -->
-
 <precajole-spec>
   <precajole file="canary/canary1.js">
     <uri>http://caja.appspot.com/imaginary-1/canary1.js</uri>

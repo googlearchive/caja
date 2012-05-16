@@ -22,6 +22,10 @@
     <servlet-name>ToolsServlet</servlet-name>
     <servlet-class>com.google.caja.ancillary.servlet.MainServlet</servlet-class>
   </servlet>
+  <servlet>
+    <servlet-name>PrecajoleInfoServlet</servlet-name>
+    <servlet-class>com.google.caja.service.PrecajoleInfoServlet</servlet-class>
+  </servlet>
   
   <servlet-mapping>
     <servlet-name>GWTCajolingServlet</servlet-name>
@@ -34,5 +38,9 @@
   <servlet-mapping>
     <servlet-name>ToolsServlet</servlet-name>
     <url-pattern>/tools/*</url-pattern>
+  </servlet-mapping>
+  <servlet-mapping>
+    <servlet-name>PrecajoleInfoServlet</servlet-name>
+    <url-pattern>/precajole/info</url-pattern>
   </servlet-mapping>
 </web-app>

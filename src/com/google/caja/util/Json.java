@@ -18,7 +18,7 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 /**
  * Utility class for manipulating JSON objects
- * 
+ *
  * @author jasvir@google.com (Jasvir Nagra)
  *
  */
@@ -30,7 +30,7 @@ public class Json {
   }
 
   @SuppressWarnings("unchecked")
-  public static void putJson(JSONObject o, Object... members) {
+  public static void put(JSONObject o, Object... members) {
     for (int i = 0, n = members.length; i < n; i += 2) {
       String name = (String) members[i];
       Object value = toJsonValue(members[i + 1]);
@@ -38,11 +38,21 @@ public class Json {
     }
   }
 
+  @Deprecated
+  public static void putJson(JSONObject o, Object... members) {
+    put(o, members);
+  }
+
   @SuppressWarnings("unchecked")
-  public static void pushJson(JSONArray a, Object... members) {
+  public static void push(JSONArray a, Object... members) {
     for (Object member : members) {
       a.add(toJsonValue(member));
     }
+  }
+
+  @Deprecated
+  public static void pushJson(JSONArray a, Object... members) {
+    push(a, members);
   }
 
   public static Object toJsonValue(Object value) {
