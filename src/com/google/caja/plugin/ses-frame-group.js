@@ -365,15 +365,14 @@ function SESFrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker) {
           '(function () {' + theContent + '})()'));
                   
       } else if (contentType === 'text/html') {
-          return Q.ref(function (importsAgain) {
-            // importsAgain always === imports, so ignored
-                    
+        // importsAgain always === imports, so ignored
+        var writeComplete = gman.imports.document.write(theContent);
+        return Q.when(writeComplete, function (importsAgain) {
             // TODO(kpreid): Make fetch() support streaming download,
             // then use it here via repeated document.write().
-            gman.imports.document.write(theContent);
             gman.domicile.signalLoaded();
-          });
-
+            return function() {};
+        });
       } else {
         throw new TypeError("Unimplemented content-type " + contentType);
       }

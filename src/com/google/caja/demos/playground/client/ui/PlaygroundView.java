@@ -508,6 +508,7 @@ public class PlaygroundView {
 
   private native JavaScriptObject makeUriPolicy() /*-{
         return {
+          fetch: $wnd.caja.policy.net.ALL.fetch,
           rewrite: function (uri, uriEffect, loaderType, hints) {
             if (uriEffect === $wnd.html4.ueffects.NEW_DOCUMENT) {
               return uri;

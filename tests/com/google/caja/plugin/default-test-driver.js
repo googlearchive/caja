@@ -37,6 +37,7 @@ if (testCase) {
     frameGroup.makeES5Frame(
         createDiv(),
         {
+          fetch: caja.policy.net.ALL.fetch,
           rewrite: function (uri, uriEffect, loaderType, hints) {
             return URI.create(
                 'http',

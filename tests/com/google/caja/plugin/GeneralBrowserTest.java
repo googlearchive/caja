@@ -215,6 +215,10 @@ public class GeneralBrowserTest extends BrowserTestCase {
     // TODO(kpreid): Enable for ES5. Currently fails by showing script text.
     runTestCase("es53-test-inline-script.html", false);
   }
+    
+  public final void testExternalScript() throws Exception {
+    runTestCase("es53-test-external-script-guest.html");
+  }
 
   public final void testDefensibleObjects() throws Exception {
     runTestDriver("es53-test-defensible-objects.js");

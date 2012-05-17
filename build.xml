@@ -154,6 +154,7 @@
     <pathelement path="${ant.home}/lib/ant.jar"/>
   </path>
   <path id="classpath.tools">
+    <path refid="classpath.web"/>
     <path refid="classpath.ant"/>
     <path refid="classpath.compile"/>
     <pathelement
@@ -787,6 +788,7 @@
        language="jslint"/>
       <output file="${lib.caja}/plugin/domado.out.js"
        language="caja" renderer="pretty"/>
+      <input file="${src.caja}/ses-promise.js"/>
       <input file="${src.caja}/plugin/unicode.js"/>
       <input file="${lib.caja}/plugin/css-defs.js"/>
       <input file="${lib.caja}/plugin/html4-defs.js"/>

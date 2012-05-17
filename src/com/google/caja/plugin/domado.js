@@ -72,15 +72,34 @@ var Domado = (function() {
 
   var ALLOWED_URI_SCHEMES = /^(?:https?|mailto)$/i;
 
-  // This matches the logic in UriPolicyNanny#apply
+  /**
+   * Tests if the given uri has an allowed scheme.
+   * This matches the logic in UriPolicyNanny#apply
+   */
+  function allowedUriScheme(uri) {
+    var parsed = ('' + uri).match(URI_SCHEME_RE);
+    return (parsed && (!parsed[1] || ALLOWED_URI_SCHEMES.test(parsed[1])));
+  }
+
+  function uriFetch(naiveUriPolicy, uri, mime, callback) {
+    if (!naiveUriPolicy || !callback
+      || 'function' !== typeof naiveUriPolicy.fetch) { 
+      return; 
+    }
+    if (allowedUriScheme(uri)) {
+      naiveUriPolicy.fetch(uri, mime, callback);
+    } else {
+      naiveUriPolicy.fetch(undefined, mime, callback);
+    }
+  }
+
   function uriRewrite(naiveUriPolicy, uri, effects, ltype, hints) {
     if (!naiveUriPolicy) { return null; }
-    var parsed = ('' + uri).match(URI_SCHEME_RE);
-    if (parsed && (!parsed[1] || ALLOWED_URI_SCHEMES.test(parsed[1]))) {
-      return naiveUriPolicy.rewrite(uri, effects, ltype, hints);
-    } else {
-      return null;
-    }
+    return allowedUriScheme(uri) ?
+        'function' === typeof naiveUriPolicy.rewrite ?
+          naiveUriPolicy.rewrite(uri, effects, ltype, hints) 
+        : null
+      : null;
   }
 
   if (!domitaModules) { domitaModules = {}; }
@@ -4933,7 +4952,7 @@ var Domado = (function() {
         if (typeof domicile.writeHook !== 'function') {
           throw new Error('document.write not provided for this document');
         }
-        domicile.writeHook.apply(undefined, arguments);
+        return domicile.writeHook.apply(undefined, arguments);
       });
       TameHTMLDocument.prototype.writeln = nodeMethod(function () {
         if (typeof domicile.writeHook !== 'function') {
@@ -4987,6 +5006,9 @@ var Domado = (function() {
         return html.escapeAttrib(String(s || ''));
       });
       domicile.html = cajaVM.def(safeHtml);
+      domicile.fetchUri = cajaVM.def(function (uri, mime, callback) {
+        uriFetch(naiveUriPolicy, uri, mime, callback);
+      });
       domicile.rewriteUri = cajaVM.def(function (uri, mimeType) {
         var s = rewriteAttribute(null, null, html4.atype.URI, uri);
         if (!s) { throw new Error(); }

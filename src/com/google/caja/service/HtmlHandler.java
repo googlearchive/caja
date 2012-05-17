@@ -141,8 +141,8 @@ public class HtmlHandler extends AbstractCajolingHandler {
             jsonpCallback, mq, output, pretty);
       } else {
         renderAsJSON(
-            null,
-            null,
+            (String)null,
+            (String)null,
             jsonpCallback, mq, output, pretty);
       }
     } catch (IOException e) {

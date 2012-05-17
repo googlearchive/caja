@@ -156,13 +156,27 @@ public abstract class AbstractCajolingHandler implements ContentHandler {
       Appendable output,
       boolean pretty)
       throws IOException {
+    String html = staticHtml == null ? null : Nodes.render(staticHtml);
+    String js = 
+      javascript == null ? null : renderJavascript(javascript, pretty);
+    renderAsJSON(html, js, jsonpCallback, mq, output, pretty);
+  }
+  
+  protected static void renderAsJSON(
+    String staticHtml,
+    String javascript,
+    String jsonpCallback,
+    MessageQueue mq,
+    Appendable output,
+    boolean pretty) throws IOException {
+      
     List<ValueProperty> props = Lists.newArrayList();
 
     if (staticHtml != null) {
-      props.add(prop("html", lit(Nodes.render(staticHtml))));
+      props.add(prop("html", lit(staticHtml)));
     }
     if (javascript != null) {
-      props.add(prop("js", lit(renderJavascript(javascript, pretty))));
+      props.add(prop("js", lit(javascript)));
     }
     List<Expression> messages = Lists.newArrayList();
     for (Message m : mq.getMessages()) {

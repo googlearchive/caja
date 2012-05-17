@@ -35,13 +35,42 @@ var caja = (function () {
 
   var GUESS = 'GUESS';
 
+  var ajaxCounter = 1;
+
+  var loaderDocument;
+  function defaultFetcher(url, mime, callback) {
+    if (!url) {
+      callback(undefined);
+      return;
+    }
+    var rndName = 'caja_ajax_' + ajaxCounter++; 
+    window[rndName] = function (result) {
+      try {
+        callback(result);
+      } finally {
+        // GC yourself
+        window[rndName] = undefined;
+      }
+    };
+    // TODO(jasvir): Make it so this does not pollute the host page
+    // namespace but rather just the loaderFrame
+    installSyncScript(rndName, 
+      caja['server'] + '/cajole?url=' + encodeURIComponent(url)
+      + '&input-mime-type=' + encodeURIComponent(mime)
+      + '&transform=PROXY'
+      + '&callback=' + encodeURIComponent(rndName)
+      + '&alt=json-in-script');
+  }
+
   var uriPolicies = {
     'net': {
       'NO_NETWORK': {
-        'rewrite': function () { return null; }
+        'rewrite': function () { return null; },
+        'fetch': function() { }
       },
       'ALL': {
-        'rewrite': function (uri) { return String(uri); }
+        'rewrite': function (uri) { return String(uri); },
+        'fetch': defaultFetcher
       },
       'only': policyOnly
     },
@@ -97,8 +126,6 @@ var caja = (function () {
     'prepareContainerDiv': prepareContainerDiv,
     'unregister': unregister
   };
-
-  return caja;
 
   //----------------
 
@@ -211,6 +238,7 @@ var caja = (function () {
   function makeFrameGroup(config, frameGroupReady) {
     initFeralFrame(window);
     config = resolveConfig(config);
+    caja['server'] = resolveConfig(config).server;
     // TODO(felix8a): this should be === false, but SES isn't ready,
     // and fails on non-ES5 browsers (frameGroupReady doesn't run)
     if (config['forceES5Mode'] !== true || unableToSES()) {
@@ -367,8 +395,10 @@ var caja = (function () {
         versionCheck(config, frameWin, filename);
         frameReady(frameWin);
       };
+      // TODO(jasvir): Test what the latency doing this on all browsers is
+      // and why its necessary
       setTimeout(function () {
-        installScript(frameWin, url);
+        installAsyncScript(frameWin, url);
       }, 0);
     }, 0);
   }
@@ -431,13 +461,39 @@ var caja = (function () {
     return frame.contentWindow;
   }
 
-  function installScript(frameWin, scriptUrl) {
+  function installAsyncScript(frameWin, scriptUrl) {
     var frameDoc = frameWin['document'];
     var script = frameDoc.createElement('script');
     script.setAttribute('type', 'text/javascript');
     script.src = scriptUrl;
     frameDoc.body.appendChild(script);
   }
+
+  // TODO(jasvir): This should pulled into a utility js file
+  function escapeAttr(s) {
+    var ampRe = /&/g;
+    var ltRe = /[<]/g;
+    var gtRe = />/g;
+    var quotRe = /\"/g;
+    return ('' + s).replace(ampRe, '&amp;')
+      .replace(ltRe, '&lt;')
+      .replace(gtRe, '&gt;')
+      .replace(quotRe, '&#34;');
+  }
+
+  function installSyncScript(name, url) {
+     if (!loaderDocument) { 
+       loaderDocument = createFrame('loader-frame').document;
+     }
+     // TODO(jasvir): This assignment pins the parent's handler
+     // function and, iiuc, this reference is never cleared out.
+     var result = ''
+       + ('<script>var $name = parent.window["$name"];<\/script>'
+           .replace(/[$]name/g, name))
+       + ('<script type="text/javascript" src="$url"><\/script>'
+           .replace(/[$]url/g, escapeAttr(url)));
+     loaderDocument.write(result);
+   }
 
   function joinUrl(base, path) {
     base = base.replace(/\/+$/, '');
@@ -548,6 +604,8 @@ var caja = (function () {
       registeredImports[id] = void 0;
     }
   }
+
+  return caja;
 })();
 
 // Exports for closure compiler.

@@ -115,7 +115,7 @@ public class CajolingService {
           intermediateResponse, Charsets.UTF_8);
       try {
         AbstractCajolingHandler.renderAsJSON(
-            null, null, contentParams.b, mq, writer, false);
+            (String)null, (String)null, contentParams.b, mq, writer, false);
       } catch (IOException e) {
         // Unlikely IOException to byte array; rethrow
         throw new SomethingWidgyHappenedError(e);
@@ -283,6 +283,7 @@ public class CajolingService {
   private void registerHandlers(BuildInfo buildInfo) {
     handlers.add(new JsHandler(buildInfo));
     handlers.add(new HtmlHandler(buildInfo, host, uriFetcher));
+    handlers.add(new ProxyHandler(buildInfo, uriFetcher));
   }
 
   private Pair<String, String> applyHandler(
@@ -305,6 +306,7 @@ public class CajolingService {
   }
 
   public static enum Transform {
+    PROXY,
     CAJOLE;
   }
 

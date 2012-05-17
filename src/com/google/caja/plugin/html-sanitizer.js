@@ -302,135 +302,191 @@ var html = (function(html4) {
 
   // TODO(felix8a): "<p<p<p..." is slower on IE[6-8]
 
+  var continuationMarker = {};
   function parse(htmlText, handler, param) {
     var h = handler;
-    if (h.startDoc) { h.startDoc(param); }
     var m, p, tagName;
     var parts = htmlSplit(htmlText);
-    var noMoreGT = false;
-    var noMoreEndComments = false;
-    for (var pos = 0, end = parts.length; pos < end;) {
-      var current = parts[pos++];
-      var next = parts[pos];
-      switch (current) {
-      case '&':
-        if (ENTITY_RE.test(next)) {
-          if (h.pcdata) { h.pcdata('&' + next, param); }
-          pos++;
-        } else {
-          if (h.pcdata) { h.pcdata("&amp;", param); }
-        }
-        break;
-      case '<\/':
-        if (m = /^(\w+)[^\'\"]*/.exec(next)) {
-          if (m[0].length === next.length && parts[pos + 1] === '>') {
-            // fast case, no attribute parsing needed
-            pos += 2;
-            tagName = lcase(m[1]);
-            if (html4.ELEMENTS.hasOwnProperty(tagName)) {
-              if (h.endTag) { h.endTag(tagName, param); }
+    var state = {
+      noMoreGT: false,
+      noMoreEndComments: false
+    };
+    parseCPS(handler, parts, 0, state, param);
+  }
+
+  function continuationMaker(h, parts, initial, state, param) {
+    return function () {
+      parseCPS(h, parts, initial, state, param);
+    };
+  }
+
+  function parseCPS(h, parts, initial, state, param) {
+    try {
+      if (h.startDoc && initial == 0) { h.startDoc(param); }
+      var m, p, tagName;
+      for (var pos = initial, end = parts.length; pos < end;) {
+        var current = parts[pos++];
+        var next = parts[pos];
+        switch (current) {
+        case '&':
+          if (ENTITY_RE.test(next)) {
+            if (h.pcdata) { 
+              h.pcdata('&' + next, param, continuationMarker,
+                continuationMaker(h, parts, pos, state, param));
+            }
+            pos++;
+          } else {
+            if (h.pcdata) { h.pcdata("&amp;", param, continuationMarker,
+                continuationMaker(h, parts, pos, state, param));
+            }
+          }
+          break;
+        case '<\/':
+          if (m = /^(\w+)[^\'\"]*/.exec(next)) {
+            if (m[0].length === next.length && parts[pos + 1] === '>') {
+              // fast case, no attribute parsing needed
+              pos += 2;
+              tagName = lcase(m[1]);
+              if (html4.ELEMENTS.hasOwnProperty(tagName)) {
+                if (h.endTag) {
+                  h.endTag(tagName, param, continuationMarker,
+                    continuationMaker(h, parts, pos, state, param));
+                }
+              }
+            } else {
+              // slow case, need to parse attributes
+              // TODO(felix8a): do we really care about misparsing this?
+              pos = parseEndTag(
+                parts, pos, h, param, continuationMarker, state);
             }
           } else {
-            // slow case, need to parse attributes
-            // TODO(felix8a): do we really care about misparsing this?
-            pos = parseEndTag(parts, pos, h, param);
+            if (h.pcdata) {
+              h.pcdata('&lt;/', param, continuationMarker,
+                continuationMaker(h, parts, pos, state, param));
+            }
           }
-        } else {
-          if (h.pcdata) { h.pcdata('&lt;/', param); }
-        }
-        break;
-      case '<':
-        if (m = /^(\w+)\s*\/?/.exec(next)) {
-          if (m[0].length === next.length && parts[pos + 1] === '>') {
-            // fast case, no attribute parsing needed
-            pos += 2;
-            tagName = lcase(m[1]);
-            if (html4.ELEMENTS.hasOwnProperty(tagName)) {
-              if (h.startTag) { h.startTag(tagName, [], param); }
-              // tags like <script> and <textarea> have special parsing
-              var eflags = html4.ELEMENTS[tagName];
-              if (eflags & EFLAGS_TEXT) {
-                var tag = { name: tagName, next: pos, eflags: eflags };
-                pos = parseText(parts, tag, h, param);
+          break;
+        case '<':
+          if (m = /^(\w+)\s*\/?/.exec(next)) {
+            if (m[0].length === next.length && parts[pos + 1] === '>') {
+              // fast case, no attribute parsing needed
+              pos += 2;
+              tagName = lcase(m[1]);
+              if (html4.ELEMENTS.hasOwnProperty(tagName)) {
+                if (h.startTag) {
+                  h.startTag(tagName, [], param, continuationMarker,
+                    continuationMaker(h, parts, pos, state, param));
+                }
+                // tags like <script> and <textarea> have special parsing
+                var eflags = html4.ELEMENTS[tagName];
+                if (eflags & EFLAGS_TEXT) {
+                  var tag = { name: tagName, next: pos, eflags: eflags };
+                  pos = parseText(
+                    parts, tag, h, param, continuationMarker, state);
+                }
+              }
+            } else {
+              // slow case, need to parse attributes
+              pos = parseStartTag(
+                parts, pos, h, param, continuationMarker, state);
+            }
+          } else {
+            if (h.pcdata) {
+              h.pcdata('&lt;', param, continuationMarker,
+                continuationMaker(h, parts, pos, state, param));
+            }
+          }
+          break;
+        case '<\!--':
+          // The pathological case is n copies of '<\!--' without '-->', and
+          // repeated failure to find '-->' is quadratic.  We avoid that by
+          // remembering when search for '-->' fails.
+          if (!state.noMoreEndComments) {
+            // A comment <\!--x--> is split into three tokens:
+            //   '<\!--', 'x--', '>'
+            // We want to find the next '>' token that has a preceding '--'.
+            // pos is at the 'x--'.
+            for (p = pos + 1; p < end; p++) {
+              if (parts[p] === '>' && /--$/.test(parts[p - 1])) { break; }
+            }
+            if (p < end) {
+              pos = p + 1;
+            } else {
+              state.noMoreEndComments = true;
+            }
+          }
+          if (state.noMoreEndComments) {
+            if (h.pcdata) {
+              h.pcdata('&lt;!--', param, continuationMarker,
+                continuationMaker(h, parts, pos, state, param));
+            }
+          }
+          break;
+        case '<\!':
+          if (!/^\w/.test(next)) {
+            if (h.pcdata) {
+              h.pcdata('&lt;!', param, continuationMarker,
+                continuationMaker(h, parts, pos, state, param));
+            }
+          } else {
+            // similar to noMoreEndComment logic
+            if (!state.noMoreGT) {
+              for (p = pos + 1; p < end; p++) {
+                if (parts[p] === '>') { break; }
+              }
+              if (p < end) {
+                pos = p + 1;
+              } else {
+                state.noMoreGT = true;
               }
             }
-          } else {
-            // slow case, need to parse attributes
-            pos = parseStartTag(parts, pos, h, param);
+            if (state.noMoreGT) {
+              if (h.pcdata) {
+                h.pcdata('&lt;!', param, continuationMarker,
+                  continuationMaker(h, parts, pos, state, param));
+              }
+            }
           }
-        } else {
-          if (h.pcdata) { h.pcdata('&lt;', param); }
-        }
-        break;
-      case '<\!--':
-        // The pathological case is n copies of '<\!--' without '-->', and
-        // repeated failure to find '-->' is quadratic.  We avoid that by
-        // remembering when search for '-->' fails.
-        if (!noMoreEndComments) {
-          // A comment <\!--x--> is split into three tokens:
-          //   '<\!--', 'x--', '>'
-          // We want to find the next '>' token that has a preceding '--'.
-          // pos is at the 'x--'.
-          for (p = pos + 1; p < end; p++) {
-            if (parts[p] === '>' && /--$/.test(parts[p - 1])) { break; }
-          }
-          if (p < end) {
-            pos = p + 1;
-          } else {
-            noMoreEndComments = true;
-          }
-        }
-        if (noMoreEndComments) {
-          if (h.pcdata) { h.pcdata('&lt;!--', param); }
-        }
-        break;
-      case '<\!':
-        if (!/^\w/.test(next)) {
-          if (h.pcdata) { h.pcdata('&lt;!', param); }
-        } else {
+          break;
+        case '<?':
           // similar to noMoreEndComment logic
-          if (!noMoreGT) {
+          if (!state.noMoreGT) {
             for (p = pos + 1; p < end; p++) {
               if (parts[p] === '>') { break; }
             }
             if (p < end) {
               pos = p + 1;
             } else {
-              noMoreGT = true;
+              state.noMoreGT = true;
             }
           }
-          if (noMoreGT) {
-            if (h.pcdata) { h.pcdata('&lt;!', param); }
+          if (state.noMoreGT) {
+            if (h.pcdata) {
+              h.pcdata('&lt;?', param, continuationMarker,
+                continuationMaker(h, parts, pos, state, param)); 
+            }
           }
-        }
-        break;
-      case '<?':
-        // similar to noMoreEndComment logic
-        if (!noMoreGT) {
-          for (p = pos + 1; p < end; p++) {
-            if (parts[p] === '>') { break; }
+          break;
+        case '>':
+          if (h.pcdata) {
+            h.pcdata("&gt;", param, continuationMarker,
+              continuationMaker(h, parts, pos, state, param)); 
           }
-          if (p < end) {
-            pos = p + 1;
-          } else {
-            noMoreGT = true;
+          break;
+        case '':
+          break;
+        default:
+          if (h.pcdata) {
+            h.pcdata(current, param, continuationMarker, 
+              continuationMaker(h, parts, pos, state, param)); 
           }
+          break;
         }
-        if (noMoreGT) {
-          if (h.pcdata) { h.pcdata('&lt;?', param); }
-        }
-        break;
-      case '>':
-        if (h.pcdata) { h.pcdata("&gt;", param); }
-        break;
-      case '':
-        break;
-      default:
-        if (h.pcdata) { h.pcdata(current, param); }
-        break;
       }
+      if (h.endDoc) { h.endDoc(param); }
+    } catch (e) {
+      if (e !== continuationMarker) { throw e; }
     }
-    if (h.endDoc) { h.endDoc(param); }
   }
 
   // Split str into parts for the html parser.
@@ -454,25 +510,31 @@ var html = (function(html4) {
     }
   }
 
-  function parseEndTag(parts, pos, h, param) {
+  function parseEndTag(parts, pos, h, param, continuationMarker, state) {
     var tag = parseTagAndAttrs(parts, pos);
     // drop unclosed tags
     if (!tag) { return parts.length; }
     if (tag.eflags !== void 0) {
-      if (h.endTag) { h.endTag(tag.name, param); }
+      if (h.endTag) {
+        h.endTag(tag.name, param, continuationMarker,
+          continuationMaker(h, parts, pos, state, param)); 
+      }
     }
     return tag.next;
   }
 
-  function parseStartTag(parts, pos, h, param) {
+  function parseStartTag(parts, pos, h, param, continuationMarker, state) {
     var tag = parseTagAndAttrs(parts, pos);
     // drop unclosed tags
     if (!tag) { return parts.length; }
     if (tag.eflags !== void 0) {
-      if (h.startTag) { h.startTag(tag.name, tag.attrs, param); }
+      if (h.startTag) { 
+        h.startTag(tag.name, tag.attrs, param, continuationMarker,
+          continuationMaker(h, parts, tag.next, state, param)); 
+      }
       // tags like <script> and <textarea> have special parsing
       if (tag.eflags & EFLAGS_TEXT) {
-        return parseText(parts, tag, h, param);
+        return parseText(parts, tag, h, param, continuationMarker, state);
       }
     }
     return tag.next;
@@ -482,7 +544,7 @@ var html = (function(html4) {
 
   // Tags like <script> and <textarea> are flagged as CDATA or RCDATA,
   // which means everything is text until we see the correct closing tag.
-  function parseText(parts, tag, h, param) {
+  function parseText(parts, tag, h, param, continuationMarker, state) {
     var end = parts.length;
     if (!endTagRe.hasOwnProperty(tag.name)) {
       endTagRe[tag.name] = new RegExp('^' + tag.name + '(?:[\\s\\/]|$)', 'i');
@@ -496,9 +558,15 @@ var html = (function(html4) {
     if (p < end) { p -= 1; }
     var buf = parts.slice(first, p).join('');
     if (tag.eflags & html4.eflags.CDATA) {
-      if (h.cdata) { h.cdata(buf, param); }
+      if (h.cdata) { 
+        h.cdata(buf, param, continuationMarker,
+          continuationMaker(h, parts, p, state, param)); 
+      }
     } else if (tag.eflags & html4.eflags.RCDATA) {
-      if (h.rcdata) { h.rcdata(normalizeRCData(buf), param); }
+      if (h.rcdata) {
+        h.rcdata(normalizeRCData(buf), param, continuationMarker, 
+          continuationMaker(h, parts, p, state, param)); 
+      }
     } else {
       throw new Error('bug');
     }

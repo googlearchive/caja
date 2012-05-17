@@ -23,8 +23,10 @@
  * in the face of DOM modifications by untrusted scripts.
  *
  * @author mikesamuel@gmail.com
+ * @author jasvir@gmail.com
  * @provides HtmlEmitter
- * @requires bridalMaker html html4 cajaVM sanitizeStylesheet URI
+ * @overrides window
+ * @requires bridalMaker html html4 cajaVM sanitizeStylesheet URI Q
  * @overrides window
  */
 
@@ -386,40 +388,91 @@ function HtmlEmitter(makeDOMAccessible, base, opt_domicile, opt_guestGlobal) {
       }
     }
 
+    function resolveUntrustedExternal(func, url, mime, marker, continuation) {
+      if (domicile && domicile.fetchUri) {
+        domicile.fetchUri(URI.utils.resolve(baseUri, url), mime, 
+          function (result) {
+            if (result && result.html) {
+              func(result.html);
+            } else {
+              // TODO(jasvir): Thread logger and log the failure to fetch
+            }
+            continuation();
+          });
+        throw marker;
+      }
+    }
+
+    function defineUntrustedExternalStylesheet(url, marker, continuation) {
+      resolveUntrustedExternal(
+        defineUntrustedStylesheet, url, 'text/css', marker, continuation);
+    }
+
+    function evaluateUntrustedExternalScript(url, marker, continuation) {
+      resolveUntrustedExternal(
+        evaluateUntrustedScript, url, 'text/javascript', marker, continuation);
+    }
+
+    function lookupAttr(attribs, attr) {
+      var srcIndex = 0;
+      do {
+        srcIndex = attribs.indexOf(attr, srcIndex) + 1;
+      } while (srcIndex && !(srcIndex & 1));
+      return srcIndex ? attribs[srcIndex] : undefined;
+    }
+
     // Zero or one of the html4.eflags constants that captures the content type
     // of cdataContent.
     var cdataContentType = 0;
     // Chunks of CDATA content of the type above which need to be specially
     // processed and interpreted.
     var cdataContent = [];
+    var pendingExternal = undefined;
+    var documentLoaded = undefined;
+    var depth = 0;
 
     var documentWriter = {
-      startTag: function (tagName, attribs) {
+      startDoc: function() {
+        // TODO(jasvir): Fix recursive document.write
+        if (depth == 0) {
+          documentLoaded = Q.defer();
+        }
+        depth++;
+      },
+      endDoc: function () {
+        depth--;
+        if (depth == 0) { 
+          documentLoaded.resolve(true); 
+        }
+      },
+      startTag: function (tagName, attribs, params, marker, continuation) {
         var eltype = html4.ELEMENTS[tagName];
         if (!html4.ELEMENTS.hasOwnProperty(tagName)
             || (eltype & html4.eflags.UNSAFE) !== 0) {
           if (tagName === 'script') {
-            var srcIndex = 0;
-            do {
-              // Find the index of the value following the
-              // attribute name "src".  If not found, srcIndex
-              // will be 0.
-              srcIndex = attribs.indexOf('src', srcIndex) + 1;
-            } while (srcIndex && !(srcIndex & 1));
-            if (!srcIndex) {
-              // Found an attribute value with value "src" not name "src".
+            var scriptSrc = lookupAttr(attribs, 'src');
+            if (!scriptSrc) {
+              // A script tag without a script src - use child node for source
               cdataContentType = html4.eflags.SCRIPT;
+              pendingExternal = undefined;
+            } else {
+              cdataContentType = html4.eflags.SCRIPT;
+              pendingExternal = scriptSrc;
             }
           } else if (tagName === 'style') {
             cdataContentType = html4.eflags.STYLE;
+            pendingExternal = undefined;
+          } else if ('link' === tagName) {
+            var rel = lookupAttr(attribs, 'rel');
+            var href = lookupAttr(attribs, 'href');
+            var rels = String(rel).split(' ');
+            if (href && rels.indexOf('stylesheet') >= 0) {
+              defineUntrustedExternalStylesheet(href, marker, continuation);
+            }
           } else if (tagName === 'base') {
-            // Take into account the href.
-            var hrefIndex = 0;
-            do {
-              hrefIndex = attribs.indexOf('href', hrefIndex);
-            } while (hrefIndex && !(hrefIndex & 1));
-            if (hrefIndex) {
-              baseUri = URI.resolve(baseUri, attribs[hrefIndex]);
+            var baseHref = lookupAttr(attribs, 'href');
+            if (baseHref) {
+              baseUri = URI.utils.resolve(baseUri, baseHref);
             }
           }
           return;
@@ -433,21 +486,29 @@ function HtmlEmitter(makeDOMAccessible, base, opt_domicile, opt_guestGlobal) {
         insertionPoint.appendChild(el);
         if (!(eltype & html4.eflags.EMPTY)) { insertionPoint = el; }
       },
-      endTag: function (tagName, optional) {
+      endTag: function (tagName, optional, marker, continuation) {
         // Close any open script or style element element.
         if (cdataContentType) {
           var isScript = cdataContentType === html4.eflags.SCRIPT;
           cdataContentType = 0;
-          var content = cdataContent.join("");
-          cdataContent.length = 0;
-          if (isScript) {
-            // TODO: create a script node that does not execute the untrusted
-            // script, but that has any ID attribute properly rewritten.
-            // It is not horribly uncommon for scripts to look for the last
-            // script element as a proxy for the insertion cursor.
-            evaluateUntrustedScript(content);
+          if (pendingExternal) {
+            if (isScript) {
+              evaluateUntrustedExternalScript(
+                pendingExternal, marker, continuation);
+            }
+            pendingExternal = undefined;
           } else {
-            defineUntrustedStylesheet(content);
+            var content = cdataContent.join("");
+            cdataContent.length = 0;
+            if (isScript) {
+              // TODO: create a script node that does not execute the untrusted
+              // script, but that has any ID attribute properly rewritten.
+              // It is not horribly uncommon for scripts to look for the last
+              // script element as a proxy for the insertion cursor.
+              evaluateUntrustedScript(content);
+            } else {
+              defineUntrustedStylesheet(content);
+            }
           }
         }
         var anc = insertionPoint;
@@ -512,6 +573,7 @@ function HtmlEmitter(makeDOMAccessible, base, opt_domicile, opt_guestGlobal) {
                     ? '<script>' : '<style>') + htmlText;
       }
       htmlParser(htmlText);
+      return documentLoaded.promise;
     };
     domicile.writeHook = cajaVM.def(tameDocWrite);
   })(opt_domicile);

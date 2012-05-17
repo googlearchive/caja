@@ -13,6 +13,7 @@
 // limitations under the License.
 
 /**
+ * @requires setTimeout
  * @provides GuestManager
  * @overrides window
  */
@@ -138,7 +139,9 @@ function GuestManager(divs, domicile, guestWin, runImpl) {
       moreImports = args.moreImports || {};
       opt_runDone = opt_arg1;
     }
-    return runImpl(self, args, moreImports, opt_runDone);
+    return runImpl(self, args, moreImports, function(result) {
+	setTimeout(function() { opt_runDone(result); }, 0);
+    });
   }
 }
 
