@@ -463,9 +463,10 @@ function HtmlEmitter(makeDOMAccessible, base, opt_domicile, opt_guestGlobal) {
             cdataContentType = html4.eflags.STYLE;
             pendingExternal = undefined;
           } else if ('link' === tagName) {
+            // Link types are case insensitive
             var rel = lookupAttr(attribs, 'rel');
             var href = lookupAttr(attribs, 'href');
-            var rels = String(rel).split(' ');
+            var rels = rel ? String(rel).toLowerCase().split(' ') : [];
             if (href && rels.indexOf('stylesheet') >= 0) {
               defineUntrustedExternalStylesheet(href, marker, continuation);
             }

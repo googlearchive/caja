@@ -743,7 +743,13 @@
     <JQueryTestCase testcase="offset" />
     <JQueryTestCase testcase="dimensions" />
     <copy todir="${war}/jquery">
+      <fileset file="${lib}/js/jqueryjs/index.html" />
+    </copy>
+    <copy todir="${war}/jquery/test">
       <fileset dir="${lib}/js/jqueryjs/test/" />
+    </copy>
+    <copy todir="${war}/jquery/src">
+      <fileset dir="${lib}/js/jqueryjs/src/" />
     </copy>
   </target>
 

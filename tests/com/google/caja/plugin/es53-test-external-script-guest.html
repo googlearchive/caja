@@ -1,0 +1,63 @@
+<!--
+ - Copyright (C) 2011 Google Inc.
+ -
+ - Licensed under the Apache License, Version 2.0 (the "License");
+ - you may not use this file except in compliance with the License.
+ - You may obtain a copy of the License at
+ -
+ -      http://www.apache.org/licenses/LICENSE-2.0
+ -
+ - Unless required by applicable law or agreed to in writing, software
+ - distributed under the License is distributed on an "AS IS" BASIS,
+ - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ - See the License for the specific language governing permissions and
+ - limitations under the License.
+-->
+
+<div class="testcontainer" id="testExternalScripts"
+  ><base href="http://localhost:8000/ant-lib/com/google/caja/plugin/"
+  ><style
+  >#hello { display: block; }</style
+  ><div id="hello" class="hello"
+  ></div
+  ><script
+  >window.executionOrder = "1";
+    window.onload = function () { window.executionOrder += "7" }</script
+  ><script src="es53-test-external-doc-update.js"
+  ></script
+  ><script src="es53-test-external-communicate-1.js"
+  ></script
+  ><script
+  >this.styleOrder = 
+      window.getComputedStyle(
+        document.getElementById("hello"), null).display;</script
+  ><link href="es53-test-external-css.css" rel="stylesheet"
+  ><script
+  >this.styleOrder += ' then ' +
+      window.getComputedStyle(
+        document.getElementById("hello"), null).display;</script
+  ><script     // inline scripts
+  >this.executionOrder = this.executionOrder + '4';</script
+  ><script src="es53-test-external-communicate-2.js"
+  ></script
+  ><script src="es53-test-external-doc-write.js"
+  ></script
+  >3</div>
+
+<br>
+<script type="text/javascript">
+  jsunitRegisterIf(inES5Mode,
+                   'testExternalScripts',
+                   function testExternalScripts () {
+    var testContainer = 
+      document.getElementById("testExternalScripts");
+    assertEquals("Render result", "123", testContainer.innerText);
+    assertEquals("Execution order", "1234567", executionOrder);
+    assertEquals("Style loading", "block then inline", styleOrder);
+
+    pass('testExternalScripts');
+  });
+
+  // jsunit complains if there are zero tests
+  jsunitRegister('testNop', function testNop() { pass('testNop'); });
+</script>

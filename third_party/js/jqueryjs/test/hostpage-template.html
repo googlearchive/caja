@@ -1,10 +1,14 @@
 <html>
   <head>
-    <script src="../caja.js"></script>
+    <script src="../../caja.js"></script>
   </head>
   <body>
     <div id='cajoledResult'></div>
     <script>
+      function forceES5Mode() {
+        return window.location.search.match("es5=true");
+      }
+    
       function makeXhr() {
         if (typeof XMLHttpRequest === 'undefined') {
           var activeXClassIds = [
@@ -44,18 +48,31 @@
 
       function identity(x) { return x; }
       caja.initialize({
-        cajaServer: "../"
+        cajaServer: "../..",
+        forceES5Mode: forceES5Mode()
       });
       caja.whenReady(function() {
         var Q = caja.iframe.contentWindow.Q;
-        Q.when(fetch(Q, "/jquery/@jquery-testcase@-cajoled.js"),
+        var url = forceES5Mode() ?
+          "/jquery/test/@jquery-testcase@-uncajoled.html" : "/jquery/test/@jquery-testcase@-cajoled.js";
+        Q.when(fetch(Q, url),
             function (resp) {
               caja.load(
                   document.getElementById('cajoledResult'),
-                  { rewrite: identity },
+                  caja.policy.net.ALL,
                   function (frame) {
-                    frame.cajoled("test.url", resp.responseText)
-                         .run();
+                    if (forceES5Mode()) {
+                      frame.code("test.url", "text/html", resp.responseText)
+                           .api(caja.tame({
+                             console: {
+                               log: caja.markFunction(console.log)
+                             }
+                           }))
+                          .run(function(){});
+                    } else {
+                      frame.cajoled("test.url", resp.responseText)
+                          .run();
+                    }
                   });
               });
       });
