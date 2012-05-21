@@ -97,6 +97,7 @@ var caja = (function () {
 
     // Taming functions for the default frameGroup
     'tame': premature,
+    'tamesTo': premature,
     'untame': premature,
     'unwrapDom': premature,
     'markReadOnlyRecord': premature,
@@ -106,6 +107,8 @@ var caja = (function () {
     'grantMethod': premature,
     'grantRead': premature,
     'grantReadWrite': premature,
+    'makeDefensibleObject___': premature,
+    'makeDefensibleFunction___': premature,
 
     // Esoteric functions
     'initFeralFrame': initFeralFrame,
@@ -159,9 +162,6 @@ var caja = (function () {
       defaultFrameGroup = frameGroup;
       caja['iframe'] = frameGroup['iframe'];
       caja['USELESS'] = frameGroup['USELESS'];
-      caja['makeDefensibleObject___'] = frameGroup['makeDefensibleObject___'];
-      caja['makeDefensibleFunction___'] =
-          frameGroup['makeDefensibleFunction___'];
       for (var i in caja) {
         if (caja[i] === premature) {
           caja[i] = frameGroup[i];

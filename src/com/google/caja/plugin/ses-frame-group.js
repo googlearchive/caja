@@ -76,6 +76,7 @@ function SESFrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker) {
     makeDefensibleFunction___: makeDefensibleFunction,
 
     tame: tamingMembrane.tame,
+    tamesTo: tamingMembrane.tamesTo,
     untame: tamingMembrane.untame,
     unwrapDom: unwrapDom,
     markReadOnlyRecord: tamingMembrane.markTameAsReadOnlyRecord,

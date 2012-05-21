@@ -86,6 +86,7 @@ function ES53FrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker) {
     makeDefensibleFunction___: ___.makeDefensibleFunction,  
   
     tame: tamingMembrane.tame,
+    tamesTo: tamingMembrane.tamesTo,
     untame: tamingMembrane.untame,
     unwrapDom: unwrapDom,
     markReadOnlyRecord: tamingMembrane.markTameAsReadOnlyRecord,
