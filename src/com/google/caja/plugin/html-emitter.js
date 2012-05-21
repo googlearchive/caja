@@ -351,10 +351,16 @@ function HtmlEmitter(makeDOMAccessible, base, opt_domicile, opt_guestGlobal) {
         var compileModule = cajaVM.compileModule;
         if (compileModule) {
           try {
-            compileModule(scriptInnerText)(opt_domicile.window);
-            return;  // Do not trigger onerror below.
-          } catch (ex) {
-            errorMessage = (ex && (ex.message || ex.description))
+            var compiledModule = compileModule(scriptInnerText);
+            try {
+              compiledModule(opt_domicile.window);
+              return;  // Do not trigger onerror below.
+            } catch (runningEx) {
+              errorMessage = String(runningEx);
+            }
+          } catch (compileEx) {
+            errorMessage =
+              String(compileEx && (compileEx.message || compileEx.description))
                 || errorMessage;
           }
         }
@@ -363,7 +369,7 @@ function HtmlEmitter(makeDOMAccessible, base, opt_domicile, opt_guestGlobal) {
       // Dispatch to the onerror handler.
       try {
         // TODO: Should this happen inline or be dispatched out of band?
-        opt_guestGlobal.onerror(
+        opt_domicile.window.onerror(
             errorMessage,
             // URL where error was raised.
             // TODO: Is this leaking?  Do we need to maintain an illusion here?
