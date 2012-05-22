@@ -188,7 +188,20 @@
     caja.markFunction(api.functionReturningConstructed,
         'functionReturningConstructed');
 
-    ////////////////////////////////////////////////////////////////////////
+    // Create a "wrong" constructor that we do not whitelist
+
+    WrongCtor = function WrongCtor(x) { };
+
+    api.functionReturningWrongConstructed = function (x) {
+      return new WrongCtor(x);
+    };
+
+    // Whitelist the function returning the "wrong" constructed object
+
+    caja.markFunction(api.functionReturningWrongConstructed,
+        'functionReturningWrongConstructed');
+
+   ////////////////////////////////////////////////////////////////////////
     // TOXIC CONSTRUCTORS
 
     // Create a "class and subclass" pair of constructors that we will ensure

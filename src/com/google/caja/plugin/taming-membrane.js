@@ -97,6 +97,10 @@ function TamingMembrane(privilegedAccess) {
     return typeof n === 'number' || ('' + (+n)) === n;
   }
 
+  function preventExtensions(o) {
+      return ((void 0) === o) ? (void 0) : Object.preventExtensions(o);
+  }
+
   /**
    * Records that f is t's feral twin and t is f's tame twin.
    * <p>
@@ -181,9 +185,9 @@ function TamingMembrane(privilegedAccess) {
       if (ctor === void 0) {
         throw new TypeError('Cannot determine ctor of: ' + f);
       } else if (ctor === privilegedAccess.BASE_OBJECT_CONSTRUCTOR) {
-        t = Object.preventExtensions(tameRecord(f));
+        t = preventExtensions(tameRecord(f));
       } else {
-        t = Object.preventExtensions(tamePreviouslyConstructedObject(f, ctor));
+        t = preventExtensions(tamePreviouslyConstructedObject(f, ctor));
       }
     } else if (ftype === 'function') {
       switch (tameAs.get(f)) {
@@ -241,11 +245,11 @@ function TamingMembrane(privilegedAccess) {
   }
 
   function tamePreviouslyConstructedObject(f, fc) {
-    if (!tameAs.get(f) === tameTypes.CONSTRUCTOR) { return void 0; }
+    if (tameAs.get(fc) !== tameTypes.CONSTRUCTOR) { return void 0; }
     var tc = tame(fc);
     var t = Object.create(tc.prototype);
     tameObjectWithMethods(f, t);
-    Object.preventExtensions(t);
+    preventExtensions(t);
     return t;
   }
 
@@ -283,7 +287,7 @@ function TamingMembrane(privilegedAccess) {
               untameArray(arguments)));
     };
     addFunctionPropertyHandlers(f, t);
-    Object.preventExtensions(t);
+    preventExtensions(t);
     return t;
   }
 
@@ -297,7 +301,7 @@ function TamingMembrane(privilegedAccess) {
       privilegedAccess.applyFunction(f, o, untameArray(arguments));
       tameObjectWithMethods(o, this);
       tamesTo(o, this);
-      Object.preventExtensions(this);
+      preventExtensions(this);
       privilegedAccess.banNumerics(this);
     };
 
@@ -349,7 +353,7 @@ function TamingMembrane(privilegedAccess) {
               untameArray(arguments)));
     };
     addFunctionPropertyHandlers(f, t);
-    Object.preventExtensions(t);
+    preventExtensions(t);
     return t;
   }
 
@@ -498,7 +502,7 @@ function TamingMembrane(privilegedAccess) {
         });
       }
     });
-    return Object.preventExtensions(f);
+    return preventExtensions(f);
   }
 
   function checkNonNumeric(prop) {

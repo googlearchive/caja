@@ -395,6 +395,17 @@
   });
 </script>    
 
+<div id="testWrongConstructed" class="testcontainer waiting">
+  testWrongConstructed
+</div>
+<script type="text/javascript">
+  jsunitRegister('testWrongConstructed',
+                 function testWrongConstructed() {
+    assertEquals(void 0, tamedApi.functionReturningWrongConstructed(17));
+    pass('testWrongConstructed');
+  });
+</script>    
+
 <div id="testCtorOnlyInitializesInstances" class="testcontainer waiting">
   testCtorOnlyInitializesInstances
 </div>
