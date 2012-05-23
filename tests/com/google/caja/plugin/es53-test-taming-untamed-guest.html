@@ -328,10 +328,17 @@
     expectFailure(function() {
       tameEval('1', new SubCtor());
     });
-    // Constructed instances of builtins are not exempt
-    expectFailure(function() {
-      tameEval('1', new Date());
-    });
+    // Constructed instances of builtins are exempt
+    tameEval('assertEquals(false, a.valueOf());', new Boolean(false));
+    tameEval('assertEquals(false, a);', false);
+    // TODO(metaweta): figure out why jsunit falls over on dates in FF
+    // var d = new Date();
+    // tameEval('assertEquals(' + (+d) + ', +a);', d);
+    tameEval('assertEquals(31337, a.valueOf());', new Number(31337));
+    tameEval('assertEquals(31337, a);', 31337);
+    tameEval('assertEquals("/31337/g", a.toString());', /31337/g);
+    tameEval('assertEquals("31337", a.valueOf());', new String("31337"));
+    tameEval('assertEquals("31337", a);', "31337");
     pass('testConstructedObjects');
   });
 </script>

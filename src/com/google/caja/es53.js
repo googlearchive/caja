@@ -3791,6 +3791,12 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
       configurable: false
     });
 
+    // 15.6.4.2
+    markFunc(Boolean.prototype.toString);
+    
+    // 15.6.4.3
+    markFunc(Boolean.prototype.valueOf);
+    
   // 15.7 Number
 
   // 15.7.1--2

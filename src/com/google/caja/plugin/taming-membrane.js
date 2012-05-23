@@ -446,8 +446,19 @@ function TamingMembrane(privilegedAccess) {
       if (ctor === privilegedAccess.BASE_OBJECT_CONSTRUCTOR) {
         f = untameCajaRecord(t);
       } else {
-        throw new TypeError(
-            'Untaming of guest constructed objects unsupported: ' + t);
+        // Check for built-ins
+        var tclass = ({}).toString.call(t);
+        switch (tclass) {
+          case '[object Boolean]':
+          case '[object Date]':
+          case '[object Number]':
+          case '[object RegExp]':
+          case '[object String]':
+            f = new ctor(t.valueOf()); break;
+          default:
+            throw new TypeError(
+                'Untaming of guest constructed objects unsupported: ' + t);
+        }
       }
     } else if (ttype === 'function') {
       f = Object.freeze(untameCajaFunction(t));
