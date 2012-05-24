@@ -1741,11 +1741,13 @@ var Domado = (function() {
             return css.join(' ; ');
           // Frames are ambient, so disallow reference.
           case html4.atype.FRAME_TARGET:
-            value = String(value);
-            for (var i = 0; i < optTargetAttributePresets.whitelist.length;
-                 ++i) {
-              if (optTargetAttributePresets.whitelist[i] === value) {
-                return value;
+            if (value !== null) {
+              value = String(value);
+              for (var i = 0; i < optTargetAttributePresets.whitelist.length;
+                   ++i) {
+                if (optTargetAttributePresets.whitelist[i] === value) {
+                  return value;
+                }
               }
             }
             return optTargetAttributePresets.default;

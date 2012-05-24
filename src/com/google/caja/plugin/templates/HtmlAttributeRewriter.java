@@ -36,6 +36,7 @@ import com.google.caja.parser.js.Declaration;
 import com.google.caja.parser.js.Expression;
 import com.google.caja.parser.js.FunctionConstructor;
 import com.google.caja.parser.js.Identifier;
+import com.google.caja.parser.js.NullLiteral;
 import com.google.caja.parser.js.Operation;
 import com.google.caja.parser.js.Reference;
 import com.google.caja.parser.js.Statement;
@@ -58,6 +59,7 @@ import com.google.caja.reporting.MessageQueue;
 import com.google.caja.util.Lists;
 import com.google.caja.util.Maps;
 import com.google.caja.util.SyntheticAttributeKey;
+import org.w3c.dom.Attr;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -66,8 +68,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
-
-import org.w3c.dom.Attr;
 
 /**
  * Converts attribute values to expressions that produce safe values.
@@ -124,6 +124,8 @@ public final class HtmlAttributeRewriter {
 
   public static AttrValue fromAttr(
       final Attr a, HTML.Attribute attr, JobEnvelope source) {
+    FilePosition pos = a.getValue() != null ?
+        Nodes.getFilePositionForValue(a) : FilePosition.UNKNOWN;
     return new AttrValue(source, a, Nodes.getFilePositionForValue(a), attr) {
       @Override
       Expression getValueExpr() {
@@ -351,28 +353,21 @@ public final class HtmlAttributeRewriter {
   }
 
   Expression sanitizeFrameTargetValue(AttrValue attr) {
-    // Add a known-safe static value to the parent element
-    HTML.Attribute info = attr.attrInfo;
-    String provisionalSafeValue =
-        (info.getDefaultValue() != null
-        && info.getValueCriterion().accept(info.getDefaultValue()))
-      ? info.getDefaultValue()
-      : info.getSafeValue();
-
-    // The candidate value to pass to the dynamic client-side policy is
-    // either the user-supplied value (if it was provided) or the "safe" value
-    // we have provisionally added.
-    String candidateValue = (attr.src == null)
-        ? provisionalSafeValue : attr.getPlainValue();
-
-    // Return a script that computes a whitelisted dynamic value
+    // If the guest code supplied an attribute value for 'target', we get it
+    // in 'attr.src'. Otherwise, TemplateCompiler gives us an 'attr.src' with
+    // a value equal to the empty string, which Domado's rewriteTargetAttribute
+    // interprets to mean that the guest code did not supply a value.
     FilePosition pos = attr.valuePos;
+    boolean unspecified = null !=
+        attr.src.getUserData(TemplateCompiler.ATTRIBUTE_VALUE_WAS_UNSPECIFIED);
+    Expression value = unspecified
+        ? new NullLiteral(pos)
+        : new StringLiteral(pos, attr.src.getValue());
     return (Expression) QuasiBuilder.substV(""
         + "IMPORTS___./*@synthetic*/rewriteTargetAttribute___("
         + "    @value, @tagName, @attribName)",
-        "value", new StringLiteral(pos, candidateValue),
-        "tagName", new StringLiteral(
-        pos, attr.src.getOwnerElement().getTagName()),
+        "value", value,
+        "tagName", new StringLiteral(pos, attr.src.getOwnerElement().getTagName()),
         "attribName", new StringLiteral(pos, attr.attrInfo.getKey().localName));
   }
 

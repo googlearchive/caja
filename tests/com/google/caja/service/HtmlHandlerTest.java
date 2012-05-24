@@ -111,7 +111,7 @@ public class HtmlHandlerTest extends ServiceTestCase {
         + ")");
     assertContainsIgnoreSpace(
         (String) json.get("js"),
-        "IMPORTS___.rewriteTargetAttribute___('_blank','a','target')");
+        "IMPORTS___.rewriteTargetAttribute___(null,'a','target')");
   }
 
   public final void testTargetAttribs() throws Exception {
@@ -136,7 +136,7 @@ public class HtmlHandlerTest extends ServiceTestCase {
         "<a id=\"id_1___\" target=\"_blank\">Default</a>");
     assertContainsIgnoreSpace(
         (String) json.get("js"),
-        "IMPORTS___.rewriteTargetAttribute___('_blank','a','target')");
+        "IMPORTS___.rewriteTargetAttribute___(null,'a','target')");
     assertContainsIgnoreSpace(
         (String) json.get("html"),
         "<a id=\"id_2___\" target=\"_blank\">Self</a>");

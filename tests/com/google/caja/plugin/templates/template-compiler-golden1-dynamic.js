@@ -66,7 +66,7 @@ function module() {
     emitter___.setAttr(
         el___,
         'target',
-        IMPORTS___.rewriteTargetAttribute___('_blank', 'a', 'target'));
+        IMPORTS___.rewriteTargetAttribute___(null, 'a', 'target'));
     emitter___.rmAttr(el___, 'id');
     el___ = emitter___.byId('id_6___');
     emitter___.setAttr(el___, 'id', 'zag-' + IMPORTS___.getIdClass___());

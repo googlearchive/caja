@@ -67,6 +67,9 @@ public class TemplateCompiler {
   private final MessageQueue mq;
   private final HtmlAttributeRewriter aRewriter;
 
+  public static final String ATTRIBUTE_VALUE_WAS_UNSPECIFIED =
+      "ATTRIBUTE_VALUE_WAS_UNSPECIFIED";
+
   /**
    * Maps {@link Node}s to JS parse trees.
    *
@@ -209,13 +212,10 @@ public class TemplateCompiler {
         Attr unsafe = el.getAttributeNodeNS(aUri, aName);
         if (a.getType() == HTML.Attribute.Type.FRAME_TARGET) {
           if (unsafe == null) {
-            String safeValue =
-                (a.getDefaultValue() != null
-                 && a.getValueCriterion().accept(a.getDefaultValue()))
-                ? a.getDefaultValue() : a.getSafeValue();
             attr = el.getOwnerDocument().createAttributeNS(
                 attrKey.ns.uri, attrKey.localName);
-            attr.setNodeValue(safeValue);
+            attr.setNodeValue("");
+            attr.setUserData(ATTRIBUTE_VALUE_WAS_UNSPECIFIED, true, null);
             el.setAttributeNode(attr);
           } else {
             // Leave it for later stages to deal with
@@ -298,7 +298,8 @@ public class TemplateCompiler {
    */
   private void inspectHtmlAttribute(
       JobEnvelope source, Attr attr, HTML.Attribute info) {
-    if (Placeholder.ID_ATTR.is(attr)
+    if (attr != null
+        && Placeholder.ID_ATTR.is(attr)
         && scriptsPerPlaceholder.containsKey(attr.getValue())) {
       scriptsPerNode.put(attr, null);
     } else {

@@ -35,7 +35,7 @@
     forceES5Mode: inES5Mode,
     targetAttributePresets: {
       default: 'foo',
-      whitelist: [ 'foo', 'bar' ]
+      whitelist: [ 'foo', 'bar', '_blank' ]
     }
   });
 
@@ -70,6 +70,16 @@
   registerTargetTest(
       'testFormTargetNone',
       '<form action="http://example.com/"></form>',
+      'target="foo"');
+
+  registerTargetTest(
+      'testFormTargetNoValue',
+      '<form target action="http://example.com/"></form>',
+      'target="foo"');
+
+  registerTargetTest(
+      'testFormTargetEmptyValue',
+      '<form action="http://example.com/" target=></form>',
       'target="foo"');
 
   registerTargetTest(
