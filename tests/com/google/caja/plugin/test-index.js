@@ -29,8 +29,8 @@
   ];
 
   var test_drivers = [
-    ['es53-test-cajajs-invocation.js'],
-    ['es53-test-cajajs-invocation.js&closured=true'],
+    ['es53-test-cajajs-invocation.js&minified=false'],
+    ['es53-test-cajajs-invocation.js&minified=true'],
     ['es53-test-client-uri-rewriting.js'],
     ['es53-test-container-overflow.js'],
     ['es53-test-defensible-objects.js'],

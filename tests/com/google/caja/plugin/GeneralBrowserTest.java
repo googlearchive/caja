@@ -29,14 +29,14 @@ public class GeneralBrowserTest extends BrowserTestCase {
 
   public final void testCajaJsInvocations() throws Exception {
     String result =
-        runTestDriver("es53-test-cajajs-invocation.js");
+        runTestDriver("es53-test-cajajs-invocation.js?minified=false");
     assertContains(result, "{closured=false}");
     assertNotContains(result, "{closured=true}");
   }
 
-  public final void testCajaJsClosureInvocations() throws Exception {
+  public final void testCajaJsMinifiedInvocations() throws Exception {
     String result =
-        runTestDriver("es53-test-cajajs-invocation.js&closured=true");
+        runTestDriver("es53-test-cajajs-invocation.js&minified=true");
     assertContains(result, "{closured=true}");
     assertNotContains(result, "{closured=false}");
   }
@@ -77,6 +77,7 @@ public class GeneralBrowserTest extends BrowserTestCase {
     // wrongly-named files for the host and guest frames, which should cause
     // it to never make progress in load() or whenReady() calls.
     addVersionRewrite("/caja.js", "0000");
+    addVersionRewrite("/caja-minified.js", "0000");
     runTestDriver("es53-test-cajajs-never-starts.js");
   }
 
@@ -133,6 +134,7 @@ public class GeneralBrowserTest extends BrowserTestCase {
     // version number to be sent to the cajoler, which should then refuse
     // to compile the given content and return an error instead.
     addVersionRewrite("/caja.js", "0000");
+    addVersionRewrite("/caja-minified.js", "0000");
     getCajaStatic().link(
         "/" + bv + "/es53-guest-frame.opt.js",
         "/0000/es53-guest-frame.opt.js");
@@ -215,7 +217,7 @@ public class GeneralBrowserTest extends BrowserTestCase {
     // TODO(kpreid): Enable for ES5. Currently fails by showing script text.
     runTestCase("es53-test-inline-script.html", false);
   }
-    
+
   public final void testExternalScript() throws Exception {
     runTestCase("es53-test-external-script-guest.html");
   }

@@ -106,9 +106,10 @@ public final class HtmlDefinitions {
     List<StringLiteral> keys = Lists.newArrayList();
     List<IntegerLiteral> values = Lists.newArrayList();
     for (U e : entries) {
-      // Use an unquoted key for consistency with . usage in JS.
-      // This makes Closure compiler advanced mode happier.
-      keys.add(new StringLiteral(unk, keyMaker.apply(e)));
+      // Since enum values are public, we don't want Closure compiler
+      // to rewrite them, so we need quoted keys.
+      String quoted = StringLiteral.toQuotedValue(keyMaker.apply(e));
+      keys.add(new StringLiteral(unk, quoted));
       values.add(new IntegerLiteral(unk, valueMaker.apply(e)));
     }
     return new ExpressionStmt(unk,
@@ -492,6 +493,16 @@ public final class HtmlDefinitions {
           if (!s.isTerminal()) { rc.getOut().consume(";"); }
         }
         rc.getOut().noMoreTokens();
+        out.write("\n");
+        out.write("// exports for Closure Compiler\n");
+        out.write("html4['ATTRIBS'] = html4.ATTRIBS;\n");
+        out.write("html4['ELEMENTS'] = html4.ELEMENTS;\n");
+        out.write("html4['URIEFFECTS'] = html4.URIEFFECTS;\n");
+        out.write("html4['LOADERTYPES'] = html4.LOADERTYPES;\n");
+        out.write("html4['atype'] = html4.atype;\n");
+        out.write("html4['eflags'] = html4.eflags;\n");
+        out.write("html4['ltypes'] = html4.ltypes;\n");
+        out.write("html4['ueffects'] = html4.ueffects;\n");
         out.write("if (typeof window !== 'undefined') {\n");
         out.write("  window['html4'] = html4;\n");
         out.write("}\n");

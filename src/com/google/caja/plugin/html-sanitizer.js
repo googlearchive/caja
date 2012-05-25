@@ -19,7 +19,7 @@
  * <p>
  * The HTML sanitizer is built around a SAX parser and HTML element and
  * attributes schemas.
- * 
+ *
  * If the cssparser is loaded, inline styles are sanitized using the
  * css property and value schemas.  Else they are remove during
  * sanitization.
@@ -242,7 +242,7 @@ var html = (function(html4) {
   var splitWillCapture = ('a,b'.split(/(,)/).length === 3);
 
   // bitmask for tags with special parsing, like <script> and <textarea>
-  var EFLAGS_TEXT = html4.eflags.CDATA | html4.eflags.RCDATA;
+  var EFLAGS_TEXT = html4.eflags['CDATA'] | html4.eflags['RCDATA'];
 
   /**
    * Given a SAX-like event handler, produce a function that feeds those
@@ -322,7 +322,7 @@ var html = (function(html4) {
 
   function parseCPS(h, parts, initial, state, param) {
     try {
-      if (h.startDoc && initial == 0) { h.startDoc(param); }
+      if (h['startDoc'] && initial == 0) { h['startDoc'](param); }
       var m, p, tagName;
       for (var pos = initial, end = parts.length; pos < end;) {
         var current = parts[pos++];
@@ -330,13 +330,13 @@ var html = (function(html4) {
         switch (current) {
         case '&':
           if (ENTITY_RE.test(next)) {
-            if (h.pcdata) { 
-              h.pcdata('&' + next, param, continuationMarker,
+            if (h['pcdata']) {
+              h['pcdata']('&' + next, param, continuationMarker,
                 continuationMaker(h, parts, pos, state, param));
             }
             pos++;
           } else {
-            if (h.pcdata) { h.pcdata("&amp;", param, continuationMarker,
+            if (h['pcdata']) { h['pcdata']("&amp;", param, continuationMarker,
                 continuationMaker(h, parts, pos, state, param));
             }
           }
@@ -348,8 +348,8 @@ var html = (function(html4) {
               pos += 2;
               tagName = lcase(m[1]);
               if (html4.ELEMENTS.hasOwnProperty(tagName)) {
-                if (h.endTag) {
-                  h.endTag(tagName, param, continuationMarker,
+                if (h['endTag']) {
+                  h['endTag'](tagName, param, continuationMarker,
                     continuationMaker(h, parts, pos, state, param));
                 }
               }
@@ -360,8 +360,8 @@ var html = (function(html4) {
                 parts, pos, h, param, continuationMarker, state);
             }
           } else {
-            if (h.pcdata) {
-              h.pcdata('&lt;/', param, continuationMarker,
+            if (h['pcdata']) {
+              h['pcdata']('&lt;/', param, continuationMarker,
                 continuationMaker(h, parts, pos, state, param));
             }
           }
@@ -373,8 +373,8 @@ var html = (function(html4) {
               pos += 2;
               tagName = lcase(m[1]);
               if (html4.ELEMENTS.hasOwnProperty(tagName)) {
-                if (h.startTag) {
-                  h.startTag(tagName, [], param, continuationMarker,
+                if (h['startTag']) {
+                  h['startTag'](tagName, [], param, continuationMarker,
                     continuationMaker(h, parts, pos, state, param));
                 }
                 // tags like <script> and <textarea> have special parsing
@@ -391,8 +391,8 @@ var html = (function(html4) {
                 parts, pos, h, param, continuationMarker, state);
             }
           } else {
-            if (h.pcdata) {
-              h.pcdata('&lt;', param, continuationMarker,
+            if (h['pcdata']) {
+              h['pcdata']('&lt;', param, continuationMarker,
                 continuationMaker(h, parts, pos, state, param));
             }
           }
@@ -416,16 +416,16 @@ var html = (function(html4) {
             }
           }
           if (state.noMoreEndComments) {
-            if (h.pcdata) {
-              h.pcdata('&lt;!--', param, continuationMarker,
+            if (h['pcdata']) {
+              h['pcdata']('&lt;!--', param, continuationMarker,
                 continuationMaker(h, parts, pos, state, param));
             }
           }
           break;
         case '<\!':
           if (!/^\w/.test(next)) {
-            if (h.pcdata) {
-              h.pcdata('&lt;!', param, continuationMarker,
+            if (h['pcdata']) {
+              h['pcdata']('&lt;!', param, continuationMarker,
                 continuationMaker(h, parts, pos, state, param));
             }
           } else {
@@ -441,8 +441,8 @@ var html = (function(html4) {
               }
             }
             if (state.noMoreGT) {
-              if (h.pcdata) {
-                h.pcdata('&lt;!', param, continuationMarker,
+              if (h['pcdata']) {
+                h['pcdata']('&lt;!', param, continuationMarker,
                   continuationMaker(h, parts, pos, state, param));
               }
             }
@@ -461,29 +461,29 @@ var html = (function(html4) {
             }
           }
           if (state.noMoreGT) {
-            if (h.pcdata) {
-              h.pcdata('&lt;?', param, continuationMarker,
-                continuationMaker(h, parts, pos, state, param)); 
+            if (h['pcdata']) {
+              h['pcdata']('&lt;?', param, continuationMarker,
+                continuationMaker(h, parts, pos, state, param));
             }
           }
           break;
         case '>':
-          if (h.pcdata) {
-            h.pcdata("&gt;", param, continuationMarker,
-              continuationMaker(h, parts, pos, state, param)); 
+          if (h['pcdata']) {
+            h['pcdata']("&gt;", param, continuationMarker,
+              continuationMaker(h, parts, pos, state, param));
           }
           break;
         case '':
           break;
         default:
-          if (h.pcdata) {
-            h.pcdata(current, param, continuationMarker, 
-              continuationMaker(h, parts, pos, state, param)); 
+          if (h['pcdata']) {
+            h['pcdata'](current, param, continuationMarker,
+              continuationMaker(h, parts, pos, state, param));
           }
           break;
         }
       }
-      if (h.endDoc) { h.endDoc(param); }
+      if (h['endDoc']) { h['endDoc'](param); }
     } catch (e) {
       if (e !== continuationMarker) { throw e; }
     }
@@ -515,9 +515,9 @@ var html = (function(html4) {
     // drop unclosed tags
     if (!tag) { return parts.length; }
     if (tag.eflags !== void 0) {
-      if (h.endTag) {
-        h.endTag(tag.name, param, continuationMarker,
-          continuationMaker(h, parts, pos, state, param)); 
+      if (h['endTag']) {
+        h['endTag'](tag.name, param, continuationMarker,
+          continuationMaker(h, parts, pos, state, param));
       }
     }
     return tag.next;
@@ -528,9 +528,9 @@ var html = (function(html4) {
     // drop unclosed tags
     if (!tag) { return parts.length; }
     if (tag.eflags !== void 0) {
-      if (h.startTag) { 
-        h.startTag(tag.name, tag.attrs, param, continuationMarker,
-          continuationMaker(h, parts, tag.next, state, param)); 
+      if (h['startTag']) {
+        h['startTag'](tag.name, tag.attrs, param, continuationMarker,
+          continuationMaker(h, parts, tag.next, state, param));
       }
       // tags like <script> and <textarea> have special parsing
       if (tag.eflags & EFLAGS_TEXT) {
@@ -557,15 +557,15 @@ var html = (function(html4) {
     }
     if (p < end) { p -= 1; }
     var buf = parts.slice(first, p).join('');
-    if (tag.eflags & html4.eflags.CDATA) {
-      if (h.cdata) { 
-        h.cdata(buf, param, continuationMarker,
-          continuationMaker(h, parts, p, state, param)); 
+    if (tag.eflags & html4.eflags['CDATA']) {
+      if (h['cdata']) {
+        h['cdata'](buf, param, continuationMarker,
+          continuationMaker(h, parts, p, state, param));
       }
-    } else if (tag.eflags & html4.eflags.RCDATA) {
-      if (h.rcdata) {
-        h.rcdata(normalizeRCData(buf), param, continuationMarker, 
-          continuationMaker(h, parts, p, state, param)); 
+    } else if (tag.eflags & html4.eflags['RCDATA']) {
+      if (h['rcdata']) {
+        h['rcdata'](normalizeRCData(buf), param, continuationMarker,
+          continuationMaker(h, parts, p, state, param));
       }
     } else {
       throw new Error('bug');
@@ -658,25 +658,25 @@ var html = (function(html4) {
       if (!ignoring) { out.push(text); }
     };
     return makeSaxParser({
-      startDoc: function(_) {
+      'startDoc': function(_) {
         stack = [];
         ignoring = false;
       },
-      startTag: function(tagName, attribs, out) {
+      'startTag': function(tagName, attribs, out) {
         if (ignoring) { return; }
         if (!html4.ELEMENTS.hasOwnProperty(tagName)) { return; }
         var eflags = html4.ELEMENTS[tagName];
-        if (eflags & html4.eflags.FOLDABLE) {
+        if (eflags & html4.eflags['FOLDABLE']) {
           return;
         }
         attribs = tagPolicy(tagName, attribs);
         if (!attribs) {
-          ignoring = !(eflags & html4.eflags.EMPTY);
+          ignoring = !(eflags & html4.eflags['EMPTY']);
           return;
         }
         // TODO(mikesamuel): relying on tagPolicy not to insert unsafe
         // attribute names.
-        if (!(eflags & html4.eflags.EMPTY)) {
+        if (!(eflags & html4.eflags['EMPTY'])) {
           stack.push(tagName);
         }
 
@@ -690,21 +690,21 @@ var html = (function(html4) {
         }
         out.push('>');
       },
-      endTag: function(tagName, out) {
+      'endTag': function(tagName, out) {
         if (ignoring) {
           ignoring = false;
           return;
         }
         if (!html4.ELEMENTS.hasOwnProperty(tagName)) { return; }
         var eflags = html4.ELEMENTS[tagName];
-        if (!(eflags & (html4.eflags.EMPTY | html4.eflags.FOLDABLE))) {
+        if (!(eflags & (html4.eflags['EMPTY'] | html4.eflags['FOLDABLE']))) {
           var index;
-          if (eflags & html4.eflags.OPTIONAL_ENDTAG) {
+          if (eflags & html4.eflags['OPTIONAL_ENDTAG']) {
             for (index = stack.length; --index >= 0;) {
               var stackEl = stack[index];
               if (stackEl === tagName) { break; }
               if (!(html4.ELEMENTS[stackEl] &
-                    html4.eflags.OPTIONAL_ENDTAG)) {
+                    html4.eflags['OPTIONAL_ENDTAG'])) {
                 // Don't pop non optional end tags looking for a match.
                 return;
               }
@@ -718,7 +718,7 @@ var html = (function(html4) {
           for (var i = stack.length; --i > index;) {
             var stackEl = stack[i];
             if (!(html4.ELEMENTS[stackEl] &
-                  html4.eflags.OPTIONAL_ENDTAG)) {
+                  html4.eflags['OPTIONAL_ENDTAG'])) {
               out.push('<\/', stackEl, '>');
             }
           }
@@ -726,10 +726,10 @@ var html = (function(html4) {
           out.push('<\/', tagName, '>');
         }
       },
-      pcdata: emit,
-      rcdata: emit,
-      cdata: emit,
-      endDoc: function(out) {
+      'pcdata': emit,
+      'rcdata': emit,
+      'cdata': emit,
+      'endDoc': function(out) {
         for (; stack.length; stack.length--) {
           out.push('<\/', stack[stack.length - 1], '>');
         }
@@ -785,11 +785,11 @@ var html = (function(html4) {
       }
       if (atype !== null) {
         switch (atype) {
-          case html4.atype.NONE: break;
-          case html4.atype.SCRIPT:
+          case html4.atype['NONE']: break;
+          case html4.atype['SCRIPT']:
             value = null;
             break;
-          case html4.atype.STYLE:
+          case html4.atype['STYLE']:
             if ('undefined' === typeof parseCssDeclarations) {
               value = null;
               break;
@@ -812,18 +812,18 @@ var html = (function(html4) {
                 });
             value = sanitizedDeclarations.length > 0 ? sanitizedDeclarations.join(' ; ') : null;
             break;
-          case html4.atype.ID:
-          case html4.atype.IDREF:
-          case html4.atype.IDREFS:
-          case html4.atype.GLOBAL_NAME:
-          case html4.atype.LOCAL_NAME:
-          case html4.atype.CLASSES:
+          case html4.atype['ID']:
+          case html4.atype['IDREF']:
+          case html4.atype['IDREFS']:
+          case html4.atype['GLOBAL_NAME']:
+          case html4.atype['LOCAL_NAME']:
+          case html4.atype['CLASSES']:
             value = opt_nmTokenPolicy ? opt_nmTokenPolicy(value) : value;
             break;
-          case html4.atype.URI:
+          case html4.atype['URI']:
             value = safeUri(value, opt_naiveUriRewriter);
             break;
-          case html4.atype.URI_FRAGMENT:
+          case html4.atype['URI_FRAGMENT']:
             if (value && '#' === value.charAt(0)) {
               value = value.substring(1);  // remove the leading '#'
               value = opt_nmTokenPolicy ? opt_nmTokenPolicy(value) : value;
@@ -860,7 +860,7 @@ var html = (function(html4) {
    */
   function makeTagPolicy(opt_naiveUriRewriter, opt_nmTokenPolicy) {
     return function(tagName, attribs) {
-      if (!(html4.ELEMENTS[tagName] & html4.eflags.UNSAFE)) {
+      if (!(html4.ELEMENTS[tagName] & html4.eflags['UNSAFE'])) {
         return sanitizeAttribs(
             tagName, attribs, opt_naiveUriRewriter, opt_nmTokenPolicy);
       }
@@ -896,19 +896,19 @@ var html = (function(html4) {
   }
 
   return {
-    escapeAttrib: escapeAttrib,
-    makeHtmlSanitizer: makeHtmlSanitizer,
-    makeSaxParser: makeSaxParser,
-    makeTagPolicy: makeTagPolicy,
-    normalizeRCData: normalizeRCData,
-    sanitize: sanitize,
-    sanitizeAttribs: sanitizeAttribs,
-    sanitizeWithPolicy: sanitizeWithPolicy,
-    unescapeEntities: unescapeEntities
+    'escapeAttrib': escapeAttrib,
+    'makeHtmlSanitizer': makeHtmlSanitizer,
+    'makeSaxParser': makeSaxParser,
+    'makeTagPolicy': makeTagPolicy,
+    'normalizeRCData': normalizeRCData,
+    'sanitize': sanitize,
+    'sanitizeAttribs': sanitizeAttribs,
+    'sanitizeWithPolicy': sanitizeWithPolicy,
+    'unescapeEntities': unescapeEntities
   };
 })(html4);
 
-var html_sanitize = html.sanitize;
+var html_sanitize = html['sanitize'];
 
 // Exports for closure compiler.  Note this file is also cajoled
 // for domado and run in an environment without 'window'

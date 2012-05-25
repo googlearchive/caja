@@ -347,7 +347,7 @@ function sanitizeCssSelectors(selectors, suffix) {
         if (tok === '*'
             || (tok === 'body' && start+1 !== end && !last)
             || ('number' === typeof (elType = html4.ELEMENTS[tok])
-                && !(elType & html4.eflags.UNSAFE))) {
+                && !(elType & html4.eflags['UNSAFE']))) {
           ++start;
           element = tok;
         }

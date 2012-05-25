@@ -820,19 +820,15 @@
     <transform>
       <output file="${lib}/caja.jslint.stamp"
         language="jslint"/>
-      <output file="${lib.caja}/plugin/caja-closured.js"
-        language="closure"/>
       <output file="${lib.caja}/plugin/caja-minified.js"
-        language="javascript" renderer="minify"/>
+        language="closure"/>
       <input file="${lib.caja}/plugin/caja.js"/>
     </transform>
     <transform>
       <output file="${lib}/html-sanitizer.jslint.stamp"
         language="jslint"/>
-      <output file="${lib.caja}/plugin/html-sanitizer-closured.js"
-        language="closure"/>
       <output file="${lib.caja}/plugin/html-sanitizer-minified.js"
-        language="javascript" renderer="minify"/>
+        language="closure"/>
       <output file="${lib.caja}/plugin/html-sanitizer-bundle.js"
         language="javascript" renderer="concat"/>
       <input file="${lib.caja}/plugin/html4-defs.js"/>
@@ -841,6 +837,7 @@
     <transform>
       <output file="${lib}/html-css-sanitizer.jslint.js"
        language="jslint"/>
+      <!-- TODO(felix8a): -closured doesn't work -->
       <output file="${lib.caja}/plugin/html-css-sanitizer-closured.js"
        language="closure"/>
       <output file="${lib.caja}/plugin/html-css-sanitizer-minified.js"
@@ -1310,8 +1307,10 @@
         <include name="css-defs.js" />
         <include name="html4-defs.js" />
         <include name="domado.out.js" />
-        <include name="html-sanitizer-closured.js" />
+        <include name="html-sanitizer-bundle.js" />
         <include name="html-sanitizer-minified.js" />
+        <include name="html-css-sanitizer-bundle.js" />
+        <include name="html-css-sanitizer-closured.js" />
         <include name="html-css-sanitizer-minified.js" />
         <include name="taming-membrane.out.js" />
       </fileset>
@@ -1375,7 +1374,6 @@
       </fileset>
       <fileset dir="${lib.caja}/plugin">
         <include name="caja.js"/>
-        <include name="caja-closured.js"/>
         <include name="caja-minified.js"/>
       </fileset>
     </copy>

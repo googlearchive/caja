@@ -28,6 +28,11 @@ public final class JsHtmlSanitizerTest extends CajaTestCase {
         html(fromResource("html-sanitizer-test.html")));
   }
 
+  public final void testHtmlSanitizerMinified() throws Exception {
+    RhinoTestBed.runJsUnittestFromHtml(
+        html(fromResource("html-sanitizer-minified-test.html")));
+  }
+
   public final void testHtmlSanitizerLegacy() throws Exception {
     RhinoTestBed.runJsUnittestFromHtml(
         html(fromResource("html-sanitizer-legacy-test.html")));
@@ -41,5 +46,10 @@ public final class JsHtmlSanitizerTest extends CajaTestCase {
   public final void testHtmlCssSanitizer() throws Exception {
     RhinoTestBed.runJsUnittestFromHtml(
         html(fromResource("html-css-sanitizer-test.html")));
+  }
+
+  public final void testHtmlCssSanitizerMinified() throws Exception {
+    RhinoTestBed.runJsUnittestFromHtml(
+        html(fromResource("html-css-sanitizer-minified-test.html")));
   }
 }

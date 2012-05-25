@@ -238,7 +238,7 @@ var caja = (function () {
   function makeFrameGroup(config, frameGroupReady) {
     initFeralFrame(window);
     config = resolveConfig(config);
-    caja['server'] = resolveConfig(config).server;
+    caja['server'] = config['server'];
     // TODO(felix8a): this should be === false, but SES isn't ready,
     // and fails on non-ES5 browsers (frameGroupReady doesn't run)
     if (config['forceES5Mode'] !== true || unableToSES()) {

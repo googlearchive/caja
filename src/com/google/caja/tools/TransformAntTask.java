@@ -15,6 +15,7 @@
 package com.google.caja.tools;
 
 import com.google.caja.ancillary.linter.Linter;
+import com.google.caja.util.FileIO;
 import com.google.caja.util.Sets;
 
 import java.io.File;
@@ -87,10 +88,29 @@ public class TransformAntTask extends AbstractCajaAntTask {
       }
 
     } else if ("closure".equals(options.get("language"))) {
-      return new ClosureCompiler().build(this, inputs, output, logger);
+      return buildClosure(inputs, output, logger);
     } else {
       return buildService.cajole(logger, depends, inputs, output, options);
     }
+  }
+
+  // Closure compiler is kind of slow, so we cache the result in case
+  // we have multiple closure output targets.
+
+  private List<File> closureInputs = null;
+  private String closureOutput = null;
+
+  private boolean buildClosure(
+      List<File> inputs, File output, PrintWriter logger) {
+    if (closureOutput == null || closureInputs != inputs) {
+      closureInputs = inputs;
+      closureOutput = new ClosureCompiler().build(this, inputs, logger);
+    }
+    if (closureOutput == null) {
+      return false;
+    }
+    FileIO.write(closureOutput, output, logger);
+    return true;
   }
 
   @Override

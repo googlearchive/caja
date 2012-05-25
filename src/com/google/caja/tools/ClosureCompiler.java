@@ -1,6 +1,5 @@
 package com.google.caja.tools;
 
-import com.google.caja.util.FileIO;
 import com.google.javascript.jscomp.CheckLevel;
 import com.google.javascript.jscomp.CommandLineRunner;
 import com.google.javascript.jscomp.CompilationLevel;
@@ -62,9 +61,7 @@ public class ClosureCompiler {
     DiagnosticGroups.VISIBILITY,
   };
 
-  public boolean build(
-      Task task, List<File> inputs, File output, PrintWriter logger)
-  throws BuildException {
+  public String build(Task task, List<File> inputs, PrintWriter logger) {
     List<SourceFile> externs;
     try {
       externs = CommandLineRunner.getDefaultExterns();
@@ -78,7 +75,8 @@ public class ClosureCompiler {
     }
 
     CompilerOptions options = new CompilerOptions();
-    CompilationLevel.ADVANCED_OPTIMIZATIONS.setOptionsForCompilationLevel(options);
+    CompilationLevel.ADVANCED_OPTIMIZATIONS
+        .setOptionsForCompilationLevel(options);
     WarningLevel.VERBOSE.setOptionsForWarningLevel(options);
     for (DiagnosticGroup dg : diagnosticGroups) {
       options.setWarningLevel(dg, CheckLevel.ERROR);
@@ -92,12 +90,11 @@ public class ClosureCompiler {
 
     Result r = compiler.compile(externs, jsInputs, options);
     if (!r.success) {
-      return false;
+      return null;
     }
 
     String wrapped = "(function(){" + compiler.toSource() + "})();\n";
-    FileIO.write(wrapped, output, logger);
-    return true;
+    return wrapped;
   }
 
 }
