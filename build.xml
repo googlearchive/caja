@@ -233,41 +233,95 @@
       description="$ ant runtests [-Dtest.filter=My\*Test]">
   </target>
 
-  <target name="RuntestsRunDefault">
+  <property name="emma.coverage.out.file"
+      value="${reports}/coverage/coverage.ec"/>
+  <property name="emma.coverage.out.merge" value="false"/>
+
+  <property name="testonly.user.language" value="tr"/>
+  <property name="testonly.user.region" value="TR"/>
+
+  <propertyset id="test.propertyset">
+    <propertyref name="caja.BrowserTestCase.startAndWait"/>
+    <propertyref name="webdriver.firefox.bin"/>
+    <propertyref prefix="emma."/>
+    <propertyref prefix="test."/>
+    <propertyref prefix="testonly."/>
+    <mapper type="glob" from="testonly.*" to="*"/>
+  </propertyset>
+
+  <target name="RuntestsRunAtoM" unless="emma.enabled">
     <junit printsummary="yes" fork="yes" forkmode="once" maxmemory="512m">
       <assertions><enable/></assertions>  <!-- ignored unless fork="yes" -->
-      <jvmarg line="${jvmarg}"/>
       <classpath refid="classpath.tests.run"/>
-      <formatter type="xml" usefile="true" unless="emma.enabled"/>
-      <batchtest todir="${reports}/tests" unless="emma.enabled">
+      <formatter type="xml"/>
+      <jvmarg line="${jvmarg}"/>
+      <syspropertyset refid="test.propertyset"/>
+      <batchtest todir="${reports}/tests">
         <fileset dir="${tests}">
-          <include name="**/${test.filter}.java"/>
-          <exclude name="**/gwtbeans/**"/>
+          <and>
+            <not><filename name="**/gwtbeans/**"/></not>
+            <not><filename name="**/*BrowserTest.java"/></not>
+            <filename name="**/${test.filter}.java"/>
+            <filename regex="/[A-M]"/>
+          </and>
         </fileset>
       </batchtest>
-      <syspropertyset>
-        <propertyref name="webdriver.firefox.bin"/>
-        <propertyref name="caja.BrowserTestCase.startAndWait"/>
-      </syspropertyset>
-      <sysproperty key="emma.coverage.out.file"
-       value="${reports}/coverage/coverage.ec"/>
-      <sysproperty key="emma.coverage.out.merge" value="false"/>
-      <sysproperty key="user.language" value="tr"/>
-      <sysproperty key="user.region" value="TR"/>
-      <sysproperty key="test.filter" value="${test.filter}"/>
-      <sysproperty key="test.method.filter" value="${test.method.filter}"/>
-      <test name="com.google.caja.AllTests" todir="${reports}/tests"
-       if="emma.enabled"/>
     </junit>
   </target>
 
-  <target name="RuntestsRunGwtBeans">
+  <target name="RuntestsRunNtoZ" unless="emma.enabled">
     <junit printsummary="yes" fork="yes" forkmode="once" maxmemory="512m">
-      <sysproperty key="user.language" value="tr"/>
-      <sysproperty key="user.region" value="TR"/>
-      <sysproperty key="test.method.filter" value="${test.method.filter}"/>
-      <sysproperty key="test.suppressKnownFailures"
-       value="${test.suppressKnownFailures}"/>
+      <assertions><enable/></assertions>  <!-- ignored unless fork="yes" -->
+      <classpath refid="classpath.tests.run"/>
+      <formatter type="xml"/>
+      <jvmarg line="${jvmarg}"/>
+      <syspropertyset refid="test.propertyset"/>
+      <batchtest todir="${reports}/tests">
+        <fileset dir="${tests}">
+          <and>
+            <not><filename name="**/gwtbeans/**"/></not>
+            <not><filename name="**/*BrowserTest.java"/></not>
+            <filename name="**/${test.filter}.java"/>
+            <filename regex="/[N-Z]"/>
+          </and>
+        </fileset>
+      </batchtest>
+    </junit>
+  </target>
+
+  <target name="RuntestsRunBrowser" unless="emma.enabled">
+    <junit printsummary="yes" fork="yes" forkmode="once" maxmemory="512m">
+      <assertions><enable/></assertions>  <!-- ignored unless fork="yes" -->
+      <classpath refid="classpath.tests.run"/>
+      <formatter type="xml"/>
+      <jvmarg line="${jvmarg}"/>
+      <syspropertyset refid="test.propertyset"/>
+      <batchtest todir="${reports}/tests">
+        <fileset dir="${tests}">
+          <and>
+            <not><filename name="**/gwtbeans/**"/></not>
+            <filename name="**/*BrowserTest.java"/>
+            <filename name="**/${test.filter}.java"/>
+          </and>
+        </fileset>
+      </batchtest>
+    </junit>
+  </target>
+
+  <target name="RuntestsRunEmma" if="emma.enabled">
+    <junit printsummary="yes" fork="yes" forkmode="once" maxmemory="512m">
+      <assertions><enable/></assertions>  <!-- ignored unless fork="yes" -->
+      <classpath refid="classpath.tests.run"/>
+      <jvmarg line="${jvmarg}"/>
+      <syspropertyset refid="test.propertyset"/>
+      <test todir="${reports}/tests" name="com.google.caja.AllTests"/>
+    </junit>
+  </target>
+
+  <!-- GwtBeans tests need a different classpath -->
+  <target name="RuntestsRunGwtBeans" unless="emma.enabled">
+    <junit printsummary="yes" fork="yes" forkmode="once" maxmemory="512m">
+      <assertions><enable/></assertions>  <!-- ignored unless fork="yes" -->
       <classpath>
         <pathelement location="${third_party}/java/gwt/gwt-user.jar"/>
         <pathelement location="${third_party}/java/gwt/gwt-dev.jar"/>
@@ -276,12 +330,12 @@
         <pathelement location="${src}"/>
         <pathelement location="${tests}"/>
       </classpath>
-      <assertions><enable/></assertions>  <!-- ignored unless fork="yes" -->
+      <formatter type="xml" usefile="true"/>
       <jvmarg line="${jvmarg}"/>
-      <formatter type="xml" usefile="true" unless="emma.enabled"/>
+      <syspropertyset refid="test.propertyset"/>
       <batchtest todir="${reports}/tests">
         <fileset dir="${tests}">
-          <include name="**/com/google/caja/gwtbeans/shared/${test.filter}.java"/>
+          <include name="com/google/caja/gwtbeans/shared/${test.filter}.java"/>
         </fileset>
       </batchtest>
     </junit>
@@ -302,10 +356,14 @@
       </instr>
     </emma>
     <mkdir dir="${reports}/tests"/>
-    <!-- Run the main tests -->
-    <antcall target="RuntestsRunDefault"/>
-    <!-- Independently run GwtBeans tests (need a different classpath) -->
-    <antcall target="RuntestsRunGwtBeans"/>
+    <property name="junit.threads" value="99"/>
+    <parallel threadsPerProcessor="1" threadCount="${junit.threads}">
+      <antcall target="RuntestsRunBrowser"/>
+      <antcall target="RuntestsRunAtoM"/>
+      <antcall target="RuntestsRunNtoZ"/>
+      <antcall target="RuntestsRunEmma"/>
+      <antcall target="RuntestsRunGwtBeans"/>
+    </parallel>
     <summarize errorProperty="runtests.error"
      failureProperty="runtests.failure">
       <fileset dir="${reports}/tests">

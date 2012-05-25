@@ -99,6 +99,10 @@ public final class TestSummary extends Task {
       }
 
       NodeList testCases = result.getElementsByTagName("testcase");
+      if (testCases.getLength() == 0) {
+        // No testcases, check for testsuite errors.
+        errors += result.getElementsByTagName("error").getLength();
+      }
       for (int i = 0, n = testCases.getLength(); i < n; ++i) {
         Element testCase = (Element) testCases.item(i);
         String className = testCase.getAttribute("classname");
