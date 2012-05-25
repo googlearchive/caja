@@ -17,7 +17,6 @@ package com.google.caja.parser.quasiliteral;
 import static com.google.caja.parser.js.SyntheticNodes.s;
 
 import com.google.caja.lexer.FilePosition;
-import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.ParseTreeNodeContainer;
 import com.google.caja.parser.js.ArrayConstructor;
@@ -65,14 +64,10 @@ import com.google.caja.parser.js.TranslatedCode;
 import com.google.caja.parser.js.TryStmt;
 import com.google.caja.parser.js.UncajoledModule;
 import com.google.caja.parser.js.ValueProperty;
-import com.google.caja.render.Concatenator;
-import com.google.caja.render.JsMinimalPrinter;
-import com.google.caja.render.JsPrettyPrinter;
 import com.google.caja.reporting.BuildInfo;
 import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
-import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.Lists;
 import com.google.caja.util.Sets;
 
@@ -1001,9 +996,8 @@ public class ES53Rewriter extends Rewriter {
                 RewriterMessageType.TOP_LEVEL_VAR_INCOMPATIBLE_WITH_CAJA,
                 node.getFilePosition(),
                 MessagePart.Factory.valueOf(
-                    render(QuasiBuilder.substV("window['@v'] = @r",
-                        "v", v,
-                        "r", r))));
+                    render(QuasiBuilder.substV("window['@v']", "v", v))
+                    + " = ..."));
             return newExprStmt((Expression) substV(
                 "v", v,
                 "r", expand(nymize(r, vname, "var"), scope)));
