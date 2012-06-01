@@ -126,7 +126,7 @@ public final class HtmlAttributeRewriter {
       final Attr a, HTML.Attribute attr, JobEnvelope source) {
     FilePosition pos = a.getValue() != null ?
         Nodes.getFilePositionForValue(a) : FilePosition.UNKNOWN;
-    return new AttrValue(source, a, Nodes.getFilePositionForValue(a), attr) {
+    return new AttrValue(source, a, pos, attr) {
       @Override
       Expression getValueExpr() {
         return StringLiteral.valueOf(valuePos, getPlainValue());

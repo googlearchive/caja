@@ -117,7 +117,7 @@ public final class CssDynamicExpressionRewriter {
               UnsafeUriLiteral uul = (UnsafeUriLiteral) node;
               CssTree parent = (CssTree) ancestors.parent.node;
               assert(null != parent);
-              AncestorChain prop = ancestors;
+              AncestorChain<?> prop = ancestors;
               while (null != prop &&
                      !(prop.node instanceof CssTree.PropertyDeclaration)) {
                 prop = prop.parent;

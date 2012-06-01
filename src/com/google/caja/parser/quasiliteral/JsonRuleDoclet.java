@@ -47,7 +47,7 @@ public class JsonRuleDoclet extends RuleDoclet {
   public void generateHeader(Writer output, RulesetDescription ruleSet) {
     JSONObject head = Json.formatAsJson("name", ruleSet.name(),
         "synopsis", ruleSet.synopsis());
-    Json.putJson(jsonDocument, "header", head);
+    Json.put(jsonDocument, "header", head);
   }
 
   @Override
@@ -64,9 +64,9 @@ public class JsonRuleDoclet extends RuleDoclet {
   public void generateRuleDocumentation(Writer output, RuleDescription anno) {
     if (0 == countRules) {
       table = new JSONArray();
-      Json.putJson(jsonDocument, "rules", table);
+      Json.put(jsonDocument, "rules", table);
     }
-    Json.pushJson(table, Json.formatAsJson("number", countRules++,
+    Json.push(table, Json.formatAsJson("number", countRules++,
         "name", anno.name(), "synopsis", anno.synopsis(),
         "reason", anno.reason(), "matches", anno.matches(),
         "substitutes", anno.substitutes()));

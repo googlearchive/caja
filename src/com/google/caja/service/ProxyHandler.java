@@ -13,20 +13,12 @@
 
 package com.google.caja.service;
 
-import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.ExternalReference;
 import com.google.caja.lexer.FetchedData;
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.InputSource;
-import com.google.caja.lexer.ParseException;
-import com.google.caja.parser.ParserContext;
-import com.google.caja.parser.html.Dom;
-import com.google.caja.plugin.PipelineMaker;
-import com.google.caja.plugin.PluginCompiler;
-import com.google.caja.plugin.PluginMeta;
 import com.google.caja.plugin.UriFetcher;
 import com.google.caja.reporting.BuildInfo;
-import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.util.Charsets;
 import com.google.caja.util.ContentType;
@@ -37,12 +29,11 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.List;
 
 /**
  * Proxies js/css files as json
- * 
+ *
  * @author jasvir@google.com (Jasvir Nagra)
  */
 public class ProxyHandler extends AbstractCajolingHandler {
@@ -57,11 +48,11 @@ public class ProxyHandler extends AbstractCajolingHandler {
       List<CajolingService.Directive> directives,
       String inputContentType,
       ContentTypeCheck checker) {
-    return (checker.check("text/css", inputContentType) 
+    return (checker.check("text/css", inputContentType)
         || checker.check("text/javascript", inputContentType))
         && (transform == CajolingService.Transform.PROXY);
   }
-  
+
   @Override
   public Pair<String,String> apply(URI uri,
                                    CajolingService.Transform transform,
@@ -79,7 +70,7 @@ public class ProxyHandler extends AbstractCajolingHandler {
     try {
       writer = new OutputStreamWriter(response, Charsets.UTF_8);
       FetchedData result = uriFetcher.fetch(
-        new ExternalReference(uri, uri, uri, 
+        new ExternalReference(uri, uri, uri,
           FilePosition.startOfFile(new InputSource(uri))), "*/*");
       if (checker.check("text/css", result.getContentType()) ||
           checker.check("text/javascript", result.getContentType())) {
