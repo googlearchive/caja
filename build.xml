@@ -26,7 +26,7 @@
   -   benchmarks :  runs the benchmarks
   -   clean      :  wipes generated files
   -   demos      :  demo files
-  -   docs       :  javadocs, jsdocs, and rule docs
+  -   docs       :  javadocs and rule docs
   -   jars       :  build the binary distribution
   -   pluginc    :  the plugin compiler
   -   runtests   :  runs the tests
@@ -438,7 +438,7 @@
   </target>
 
   <target name="docs" description="Builds all Caja documentation."
-   depends="javadocs,ruledocs,jsdocs,cajajsdocs"/>
+   depends="javadocs,ruledocs,cajajsdocs"/>
 
   <target name="cajajsdocs">
     <mkdir dir="${docs}/cajajs"/>
@@ -479,35 +479,6 @@
     <jar destfile="${jars}/pluginc-javadocs.jar" basedir="${javadocs}"/>
   </target>
 
-  <!-- Javascript documentation -->
-  <target name="jsdocs" depends="tools">
-    <mkdir dir="${docs}/js"/>
-    <copy todir="${lib.caja}">
-      <fileset dir="${src.caja}">
-        <include name="ancillary/jsdoc/*.js"/>
-        <include name="ancillary/jsdoc/jsdoc.css"/>
-        <include name="ancillary/jsdoc/jsdoc_index.html"/>
-      </fileset>
-    </copy>
-    <genrule class="com.google.caja.ancillary.jsdoc.JsdocMain$Builder">
-      <output file="${docs}/js/"/>
-      <input file="${third_party}/js/json_sans_eval/json_sans_eval.js"/>
-      <input file="${src.caja}/es53.js"/>
-      <input file="${src.caja}/plugin/unicode.js"/>
-      <input file="${src.caja}/plugin/html-emitter.js"/>
-      <input file="${src.caja}/plugin/html-sanitizer.js"/>
-      <input file="${src.caja}/plugin/bridal.js"/>
-      <input file="${src.caja}/plugin/csslexer.js"/>
-      <input file="${src.caja}/plugin/sanitizecss.js"/>
-      <input file="${src.caja}/plugin/cssparser.js"/>
-      <input file="${src.caja}/plugin/domado.js"/>
-      <input file="${src.caja}/flash/caja-flash.js"/>
-      <depend file="${src.caja}/ancillary/jsdoc/jsdoc.js"/>
-      <depend file="${src.caja}/ancillary/jsdoc/jsdoc_html_formatter.js"/>
-      <depend file="${src.caja}/ancillary/jsdoc/jsdoc_renderer.js"/>
-    </genrule>
-  </target>
-
   <target name="ruledocs" description="Caja rule documentation."
    depends="RuleDoclet">
     <mkdir dir="${ruledocs}"/>
@@ -531,9 +502,6 @@
     <copy todir="${lib}">
       <fileset dir="${third_party}">
         <include name="js/jqueryjs/runtest/env.js"/>
-      </fileset>
-      <fileset dir="${src}">
-        <include name="**/caja/ancillary/jsdoc/jsdoc.js"/>
       </fileset>
       <fileset dir="${tests}">
         <include name="**/caja/plugin/console-stubs.js"/>
@@ -1263,12 +1231,6 @@
         <include name="**/caja/plugin/unicode.js"/>
         <include name="**/caja/plugin/uri.js"/>
         <include name="com/google/caja/gwtbeans/**"/>
-      </fileset>
-
-      <!-- These came from AllTests; They are moved here to reduce the "results
-           in jars depend on whether tests were built" problem -->
-      <fileset dir="${src}">
-        <include name="**/caja/ancillary/jsdoc/*.js"/>
       </fileset>
     </copy>
 

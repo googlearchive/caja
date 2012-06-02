@@ -15,9 +15,6 @@
 package com.google.caja.ancillary.servlet;
 
 import com.google.caja.SomethingWidgyHappenedError;
-import com.google.caja.ancillary.jsdoc.HtmlRenderer;
-import com.google.caja.ancillary.jsdoc.Jsdoc;
-import com.google.caja.ancillary.jsdoc.JsdocException;
 import com.google.caja.ancillary.linter.Linter;
 import com.google.caja.ancillary.opt.JsOptimizer;
 import com.google.caja.lang.css.CssSchema;
@@ -80,7 +77,6 @@ import com.google.caja.util.Name;
 import com.google.caja.util.Sets;
 import com.google.caja.util.Strings;
 
-import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.util.Collections;
@@ -131,13 +127,6 @@ class Processor {
 
     List<Job> output = Lists.newArrayList();
     switch (req.verb) {
-      case DOC:
-        try {
-          output.add(doc(jobs, req, mq));
-        } catch (JsdocException ex) {
-          ex.toMessageQueue(mq);
-        }
-        break;
       case LINT:
         output.add(Job.html(LintPage.render(reduce(jobs), req, mq), null));
         break;
@@ -755,42 +744,6 @@ class Processor {
     }
     for (Node c = n.getFirstChild(); c != null; c = c.getNextSibling()) {
       optimizeHtml(c);
-    }
-  }
-
-  /** Instrument and run code to generate a documentation zip file. */
-  private Job doc(List<Job> jobs, Request req, MessageQueue mq)
-      throws IOException, JsdocException {
-    Jsdoc jsdoc = new Jsdoc(req.mc, mq);
-    for (Job job : jobs) {
-      // Do not doc handlers.
-      if (job.t != ContentType.JS || job.origin instanceof Attr) { continue; }
-      Block program = (Block) job.root;
-      jsdoc.addSource(program);
-    }
-    try {
-      jsdoc.addInitFile(
-          "/js/jqueryjs/runtest/env.js",
-          "" + Resources.read(
-              CajaWebToolsServlet.class, "/js/jqueryjs/runtest/env.js")
-          );
-    } catch (IOException ex) {
-      ex.printStackTrace();
-    }
-    ObjectConstructor json = jsdoc.extract();
-    if (req.otype == ContentType.JSON) {
-      return Job.json(json, null);
-    } else {
-      ZipFileSystem fs = new ZipFileSystem("/jsdoc");
-      StringBuilder jsonSb = new StringBuilder();
-      RenderContext rc = new RenderContext(
-          new JsMinimalPrinter(jsonSb)).withJson(true);
-      json.render(rc);
-      rc.getOut().noMoreTokens();
-      HtmlRenderer.buildHtml(
-          "" + jsonSb, fs, new File("/jsdoc"), req.srcMap.values(),
-          req.mc);
-      return fs.toZip();
     }
   }
 
