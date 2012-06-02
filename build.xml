@@ -1773,24 +1773,12 @@
     </copy>
   </target>
 
-  <target name="yuitest" depends="CajoledDomado">
-    <transform>
-      <input file="yuitest/yahoo-dom.js"/>
-      <output file="yuitest/yahoo-dom.out.js" language="caja"/>
-    </transform>
-    <transform>
-      <input file="yuitest/dom_test.html"/>
-      <output file="yuitest/dom_test.out.html" language="caja"/>
-    </transform>
-  </target>
-
   <target name="init.maven.tasks">
     <path id="maven.ant.tasks.classpath" path="${maven.ant.tasks.jar}" />
     <typedef resource="org/apache/maven/artifact/ant/antlib.xml" 
              uri="urn:maven-artifact-ant" 
              classpathref="maven.ant.tasks.classpath" /> 
   </target>
-
 
   <!-- Generate pom.xml with the proper svn build number -->
   <target name="pom" depends="init.maven.tasks,build.info">
