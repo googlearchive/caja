@@ -120,9 +120,8 @@ public final class TestSummary extends Task {
         }
         boolean isFailureExpected = method.isAnnotationPresent(
             FailureIsAnOption.class);
-        boolean isFailureAllowed = isFailureAnOptionOverride && (
-            isFailureExpected
-            || className.startsWith("com.google.caja.ancillary."));
+        boolean isFailureAllowed = isFailureAnOptionOverride &&
+            isFailureExpected;
 
         if (isFailureAllowed) {
           log("Failure is an option for " + className + "." + methodName,

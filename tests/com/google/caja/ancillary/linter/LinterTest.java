@@ -143,7 +143,7 @@ public class LinterTest extends CajaTestCase {
     runLinterTest(
         jobs(new LintJobMaker(js(fromString(
             "(function () { var a = 1; var a = 2; })();"))).make()),
-        ("ERROR: testRedefinition:1+27 - 36: "
+        ("LINT: testRedefinition:1+27 - 36: "
          + "a originally defined at testRedefinition:1+16 - 25"));
   }
 
@@ -227,10 +227,10 @@ public class LinterTest extends CajaTestCase {
             + "}")))
             .withProvides("g")
             .make()),
-        ("WARNING: testCatchBlocks:4+12 - 13:"
-         + " Declaration of e masks declaration at testCatchBlocks:1+12 - 13"),
-        ("ERROR: testCatchBlocks:5+5 - 21: e originally defined at"
-         + " testCatchBlocks:1+12 - 13"));
+        ("LINT: testCatchBlocks:5+5 - 21: e originally defined at"
+         + " testCatchBlocks:1+12 - 13"),
+        ("WARNING: testCatchBlocks:4+12 - 13: Declaration of e"
+         + " masks declaration at testCatchBlocks:1+12 - 13"));
   }
 
   public final void testLoops() throws Exception {
@@ -458,7 +458,7 @@ public class LinterTest extends CajaTestCase {
             )))
             .withProvides("myObject")
             .make()),
-        ("ERROR: testIEQuirksScoping:3+12 - 29: foo originally defined"
+        ("LINT: testIEQuirksScoping:3+12 - 29: foo originally defined"
          + " at testIEQuirksScoping:2+3 - 4+4"));
     // And we report a slightly different message when there's a block scope in
     // between.
@@ -477,7 +477,7 @@ public class LinterTest extends CajaTestCase {
             )))
             .withProvides("myObject")
             .make()),
-        ("ERROR: testIEQuirksScoping:5+14 - 31: foo originally defined"
+        ("LINT: testIEQuirksScoping:5+14 - 31: foo originally defined"
          + " at testIEQuirksScoping:2+3 - 10"));
   }
 
@@ -486,8 +486,8 @@ public class LinterTest extends CajaTestCase {
   // E.g. function f(x, y) { if (x) { return y; } } is missing an else.
 
   final static class LintJobMaker {
-    private Block node;
-    private Set<String> provides = Sets.newLinkedHashSet(),
+    private final Block node;
+    private final Set<String> provides = Sets.newLinkedHashSet(),
         requires = Sets.newLinkedHashSet(),
         overrides = Sets.newLinkedHashSet();
     LintJobMaker(Block node) {

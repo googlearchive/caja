@@ -412,39 +412,6 @@ public class CajaWebToolsServletTest extends CajaTestCase {
     assertNoErrors();
   }
 
-  public final void testDoc() {
-    new ServletTest()
-        .get("/doc")
-        .param("ip", "frobbit.js")
-        .param("i", "/** Frobbits nobbits */function frobbit(nobbit) {}")
-        .param("ot", "JSON")
-        .expectStatus(200)
-        .expectContentType("application/json; charset=UTF-8")
-        .expectContentMatches(
-            " \"frobbit\": \\{\\s*\"@description\": \"Frobbits nobbits \",")
-        .send();
-  }
-
-  public final void testDocJar() {
-    new ServletTest()
-        .get("/doc")
-        .param("ip", "foo.js")
-        .param("i", "/**@fileoverview foo*/ /**Foo*/var foo = {};")
-        .param("ip", "bar.js")
-        .param("i", "/**@fileoverview bar*/ /**Bar*/var bar = {};")
-        .expectStatus(200)
-        .expectContentType("application/zip")
-        .expectZip()
-        .zipFileExists("/jsdoc/")
-        .zipFileExists("/jsdoc/jsdoc.json")
-        .zipFileExists("/jsdoc/index.html")
-        .zipFileExists("/jsdoc/src-bar.js.html")
-        .zipFileExists("/jsdoc/src-foo.js.html")
-        .zipFileExists("/jsdoc/file-bar.js.html")
-        .zipFileExists("/jsdoc/file-foo.js.html")
-        .send();
-  }
-
   public final void testHelp() {
     new ServletTest()
         .get("/help")
@@ -561,11 +528,11 @@ public class CajaWebToolsServletTest extends CajaTestCase {
     assertTrue(nLinks != 0);
   }
 
-  private Set<ServletTest> tests = Sets.newIdentityHashSet();
+  private final Set<ServletTest> tests = Sets.newIdentityHashSet();
   private class ServletTest {
     private final List<Assertion> reqs = Lists.newArrayList();
     private String path;
-    private List<Pair<String, String>> params = Lists.newArrayList();
+    private final List<Pair<String, String>> params = Lists.newArrayList();
     private Result result;
 
     ServletTest() { tests.add(this); }

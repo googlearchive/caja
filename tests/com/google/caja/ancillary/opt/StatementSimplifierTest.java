@@ -707,7 +707,7 @@ public class StatementSimplifierTest extends CajaTestCase {
     assertSimplified(
         Arrays.asList(
             "function f(x) {",
-            "  return i++, f;",
+            "  return ++i, f;",
             // Preserve hoisted decls.
             "  function f() { return x * x; }",
             // But do not hoist initializers.

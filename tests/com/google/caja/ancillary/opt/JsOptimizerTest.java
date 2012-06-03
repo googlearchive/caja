@@ -100,7 +100,7 @@ public class JsOptimizerTest extends CajaTestCase {
     assertOptimized(
         js(fromString(
           "XMLHttpRequest && 'withCredentials' in new XMLHttpRequest"
-          + "? (request = requestFunctions.w3cxhr)"
+          + "? (request = requestFunctions['w3cxhr'])"
           + ": (request = requestFunctions[XDomainRequest ? 'msxdr' : 'jsonp'])"
           )),
         js(fromString(input)));
