@@ -1234,7 +1234,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
 
   /**
    * Create a unique identification of a given table identity that can
-   * be used to invisibly (to Cajita code) annotate a key object to
+   * be used to invisibly (to cajoled code) annotate a key object to
    * index into a table.
    * <p>
    * magicCount and MAGIC_TOKEN together represent a
@@ -1244,8 +1244,8 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
    * value, with which can generate strings in which collision is
    * unlikely but possible.
    * <p>
-   * The MAGIC_TOKEN is a unique unforgeable per-Cajita runtime
-   * value. magicCount is a per-Cajita counter, which increments each
+   * The MAGIC_TOKEN is a unique unforgeable per-ES53 runtime
+   * value. magicCount is a per-ES53 counter, which increments each
    * time a new one is needed.
    */
   var magicCount = 0;
@@ -1286,8 +1286,8 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
       // To distinguish key from objects that derive from it,
       //    list[0] should be === key
       // For odd positive i,
-      //    list[i] is the MAGIC_TOKEN for a Cajita runtime (i.e., a
-      //            browser frame in which the Cajita runtime has been
+      //    list[i] is the MAGIC_TOKEN for an ES53 runtime (i.e., a
+      //            browser frame in which the ES53 runtime has been
       //            loaded). The myMagicName and the MAGIC_TOKEN
       //            together uniquely identify a table.
       //    list[i+1] is the value stored in that table under this key.
@@ -1737,7 +1737,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
    * they will pass the {@code GuardT} guard.
    * <p>
    * {@code GuardT} is generally accessible as
-   * {@code cajita.GuardT}. However, {@code GuardStamp} must not be
+   * {@code cajaVM.GuardT}. However, {@code GuardStamp} must not be
    * made generally accessible, but rather only given to code trusted
    * to use it to deem as guards things that act in a guard-like
    * manner: A guard MUST be immutable and SHOULD be idempotent. By
@@ -1765,7 +1765,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
    * {@code of} methods for making guards like themselves but
    * parameterized by further constraints, which are usually other
    * guards. For example, {@code T.ListT} is the guard representing
-   * frozen array, whereas {@code T.ListT.of(cajita.GuardT)}
+   * frozen array, whereas {@code T.ListT.of(cajaVM.GuardT)}
    * represents frozen arrays of guards.
    */
   function Trademark(typename) {
@@ -1902,7 +1902,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
   }
 
   /**
-   * A call to cajita.manifest(data) is dynamically ignored, but if the
+   * A call to cajaVM.manifest(data) is dynamically ignored, but if the
    * data expression is valid static JSON text, its value is made
    * statically available to the module loader.
    * <p>
@@ -2700,7 +2700,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
 
   /**
    * Given either an array or an actual arguments object, return
-   * Cajita's emulation of an ES5/strict arguments object.
+   * ES53's emulation of an ES5/strict arguments object.
    */
   function args(original) {
     var result = initializeMap(['length', 0]);
@@ -4914,7 +4914,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
    * Registers a new-module-handler, to be called back when a new
    * module is loaded.
    * <p>
-   * This callback mechanism is provided so that translated Cajita
+   * This callback mechanism is provided so that cajoled
    * modules can be loaded from a trusted site with the
    * &lt;script&gt; tag, which runs its script as a statement, not
    * an expression. The callback is of the form

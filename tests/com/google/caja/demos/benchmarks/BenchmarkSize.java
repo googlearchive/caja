@@ -72,7 +72,7 @@ public class BenchmarkSize extends CajaTestCase {
    *               .<pretty|minified>.<plain|gzip>
    */
   public final void testJavascript() throws ParseException, IOException {
-    
+
     for (String[] pair : pureJs) {
       String js = pair[0];
       String name = pair[1];
@@ -84,22 +84,6 @@ public class BenchmarkSize extends CajaTestCase {
       String originalMinifyPlain = minify(js(fromResource(js)));
       byte[] originalMinifyPlainBytes = charset(originalMinifyPlain);
       byte[] originalMinifyGzipBytes = gzip(originalMinifyPlainBytes);
-      
-      String cajitaPrettyPlain = render(cajita(js(fromResource(js))));
-      byte[] cajitaPrettyPlainBytes = charset(cajitaPrettyPlain);
-      byte[] cajitaPrettyGzipBytes = gzip(cajitaPrettyPlainBytes);
-
-      String cajitaMinifyPlain = minify(cajita(js(fromResource(js))));
-      byte[] cajitaMinifyPlainBytes = charset(cajitaMinifyPlain);
-      byte[] cajitaMinifyGzipBytes = gzip(cajitaMinifyPlainBytes);
-
-      String valijaPrettyPlain = render(valija(js(fromResource(js))));
-      byte[] valijaPrettyPlainBytes = charset(valijaPrettyPlain);
-      byte[] valijaPrettyGzipBytes = gzip(valijaPrettyPlainBytes);
-
-      String valijaMinifyPlain = minify(valija(js(fromResource(js))));
-      byte[] valijaMinifyPlainBytes = charset(valijaMinifyPlain);
-      byte[] valijaMinifyGzipBytes = gzip(valijaMinifyPlainBytes);
 
       String es53PrettyPlain = render(es53(js(fromResource(js))));
       byte[] es53PrettyPlainBytes = charset(es53PrettyPlain);
@@ -119,21 +103,9 @@ public class BenchmarkSize extends CajaTestCase {
       varzJS(name, "original", "minify", "gzip",
           size(originalMinifyGzipBytes));
 
-      varzJS(name, "cajita", "pretty", "plain", size(cajitaPrettyPlainBytes));
-      varzJS(name, "cajita", "pretty", "gzip", size(cajitaPrettyGzipBytes));
-      
-      varzJS(name, "cajita", "minify", "plain", size(cajitaMinifyPlainBytes));
-      varzJS(name, "cajita", "minify", "gzip", size(cajitaMinifyGzipBytes));
-
-      varzJS(name, "valija", "pretty", "plain", size(valijaPrettyPlainBytes));
-      varzJS(name, "valija", "pretty", "gzip", size(valijaPrettyGzipBytes));
-      
-      varzJS(name, "valija", "minify", "plain", size(valijaMinifyPlainBytes));
-      varzJS(name, "valija", "minify", "gzip", size(valijaMinifyGzipBytes));
-      
       varzJS(name, "es53", "pretty", "plain", size(es53PrettyPlainBytes));
       varzJS(name, "es53", "pretty", "gzip", size(es53PrettyGzipBytes));
-      
+
       varzJS(name, "es53", "minify", "plain", size(es53MinifyPlainBytes));
       varzJS(name, "es53", "minify", "gzip", size(es53MinifyGzipBytes));
     }
@@ -170,14 +142,6 @@ public class BenchmarkSize extends CajaTestCase {
     return stream.toByteArray();
   }
 
-  public CajoledModule valija(Block plain) {
-    return cajole(plain, true);
-  }
-
-  public CajoledModule cajita(Block plain) {
-    return cajole(plain, false);
-  }
-  
   public CajoledModule es53(Block plain) {
     CajoledModule result = null;
     PluginMeta meta = new PluginMeta();
@@ -185,22 +149,6 @@ public class BenchmarkSize extends CajaTestCase {
     PluginCompiler pc = new PluginCompiler(
         TestBuildInfo.getInstance(), meta, mq);
     pc.addInput(plain, null);
-    if (pc.run()) {
-      result = pc.getJavascript();
-      return result;
-    } else {
-      return null;
-    }
-  }
-
-  public CajoledModule cajole(Block js, boolean valija) {
-    CajoledModule result = null;
-    PluginMeta meta = new PluginMeta();
-    MessageQueue mq = TestUtil.createTestMessageQueue(this.mc);
-    if (!valija) { js = BenchmarkUtils.addUseCajitaDirective(js); }
-    PluginCompiler pc = new PluginCompiler(
-        TestBuildInfo.getInstance(), meta, mq);
-    pc.addInput(js, null);
     if (pc.run()) {
       result = pc.getJavascript();
       return result;

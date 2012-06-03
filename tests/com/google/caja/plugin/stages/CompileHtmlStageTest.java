@@ -28,8 +28,7 @@ public final class CompileHtmlStageTest extends PipelineStageTestCase {
         job("<p>Hello world</p>", ContentType.HTML),
         job(""
             + "{\n"
-            + "  'use strict';\n"
-            + "  'use cajita'; /* Start translated code */\n"
+            + "  'use strict'; /* Start translated code */\n"
             + "  throw 'Translated code must never be executed';\n"
             + "  {\n"
             + "    IMPORTS___.htmlEmitter___.emitStatic('<p>Hello world</p>');"
@@ -44,8 +43,7 @@ public final class CompileHtmlStageTest extends PipelineStageTestCase {
         job("<p id=\"foo\">Hello world</p>", ContentType.HTML),
         job(""
             + "{\n"
-            + "  'use strict';\n"
-            + "  'use cajita'; /* Start translated code */\n"
+            + "  'use strict'; /* Start translated code */\n"
             + "  throw 'Translated code must never be executed';\n"
             + "  {\n"
             + "    IMPORTS___.htmlEmitter___.emitStatic('<p id=\\\"id_1___\\\">"
@@ -54,8 +52,7 @@ public final class CompileHtmlStageTest extends PipelineStageTestCase {
             + "}",
             ContentType.JS),
         job(""
-            + "{\n"
-            + "  'use cajita'; /* Start translated code */\n"
+            + "{ /* Start translated code */\n"
             + "  throw 'Translated code must never be executed';\n"
             + "  {\n"
             + "    var el___;\n"

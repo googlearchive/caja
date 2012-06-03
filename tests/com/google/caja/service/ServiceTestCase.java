@@ -124,81 +124,12 @@ public abstract class ServiceTestCase extends CajaTestCase {
     return resp.getOutputObject();
   }
 
-  protected static String valijaModule(String... lines) {
-    return moduleInternal(true /* valija */,
-        "___.loadModule(", ")",
-        lines);
-  }
-
-  protected static String cajitaModule(String... lines) {
-    return moduleInternal(false /* valija */,
-        "___.loadModule(", ")",
-        lines);
-  }
-
-  protected static String valijaModuleWithCallback(String callback,
-                                                   String... lines) {
-    return moduleInternal(true /* valija */,
-        callback + "(___.prepareModule(", "))",
-        lines);
-  }
-
   // TODO(ihab.awad): Change tests to use structural equality (via quasi
   // matches) rather than golden text to avoid this.
   protected void assertEqualsIgnoreSpace(String expected, String actual) {
     assertEquals(
         expected.replaceAll("\\s", ""),
         actual.replaceAll("\\s", ""));
-  }
-
-  private static String moduleInternal(boolean valija,
-                                       String modulePrefix,
-                                       String moduleSuffix,
-                                       String... lines) {
-    String prefix = (
-        ""
-        + "{\n"
-        + "  " + modulePrefix + "{\n"
-        + "      'instantiate': function (___, IMPORTS___) {\n");
-    String valijaPrefix = (
-        ""
-        +         "var $v = ___.readImport(IMPORTS___, '$v', {"
-        +             "'getOuters': { '()': {} },"
-        +             "'initOuter': { '()': {} },"
-        +             "'cf': { '()': {} },"
-        +             "'ro': { '()': {} }"
-        +           "});"
-        +         "var moduleResult___,$dis;moduleResult___=___.NO_RESULT;"
-        +         "$dis = $v.getOuters();"
-        +         "$v.initOuter('onerror');"
-        );
-    String cajitaPrefix = (
-        ""
-        + "        var moduleResult___;\n"
-        + "        moduleResult___ = ___.NO_RESULT;\n"
-        );
-    String suffix = (
-        ""
-        +         "return moduleResult___"
-        +       "},"
-        +       "'cajolerName': 'com.google.caja',"
-        +       "'cajolerVersion': 'testBuildVersion',"
-        +       "'cajoledDate': 0"
-        +     "}" + moduleSuffix
-        + "}"
-        );
-    StringBuilder sb = new StringBuilder();
-    sb.append(prefix);
-    int i, n = lines.length;
-    for (i = 0; i < n && lines[i].contains("___.readImport"); ++i) {
-      sb.append("        ").append(lines[i]).append('\n');
-    }
-    sb.append(valija ? valijaPrefix : cajitaPrefix);
-    for (; i < n; ++i) {
-      sb.append("        ").append(lines[i]).append('\n');
-    }
-    sb.append(suffix);
-    return sb.toString();
   }
 
   private static String normStringSpaces(String s) {

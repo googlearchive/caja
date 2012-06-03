@@ -1,4 +1,4 @@
-"use strict"; "use cajita";
+"use strict"; "use strict";
 
 function strictFn1() {
   "use strict";
@@ -6,31 +6,31 @@ function strictFn1() {
 }
 
 function strictFn2() {
-  'use strict'; 'use cajita';
+  'use strict'; 'use strict';
   return;
 }
 
 function strictFn3() {
   "use strict"
-  "use cajita"
+  "use strict"
   return;
 }
 
 function strictFn4() {
   "use strict"  // comment
-  "use cajita"
+  "use strict"
   return;
 }
 
 function strictFn5() {
   "use strict"  /* comment */
-  "use cajita"
+  "use strict"
   return;
 }
 
 function strictFn6() {
   "use strict"
-  "use cajita"
+  "use strict"
 }
 
 function notStrictFn1() {
@@ -45,7 +45,7 @@ function notStrictFn2() {
 }
 
 function arbitraryBlocksCannotBeStrict() {
-  { "use strict"; "use cajita"; }
+  { "use strict"; "use strict"; }
 }
 
 function malformedOkayWithWarning() {

@@ -114,20 +114,17 @@ public class JsOptimizer {
    * registered via {@link #addInput}.
    */
   public Statement optimize() {
-    // TODO(mikesamuel): use the message queue passed to the ctor once Scope no
-    // longer complains about cajita.js defining cajita.
-    SimpleMessageQueue optMq = new SimpleMessageQueue();
     Block block = new Block(FilePosition.UNKNOWN, compUnits);
     // Do first since this improves the performance of the ConstVarInliner.
     VarCollector.optimize(block);
     if (optimizer != null) {
-      block = optimizer.optimize(block, optMq);
+      block = optimizer.optimize(block, mq);
     }
     if (rename) {
       // We pool after the ConstLocalOptimizer invoked by optimizer has run.
       block = ConstantPooler.optimize(block);
       // Now we shorten any long names introduced by the constant pooler.
-      block = new LocalVarRenamer(optMq).optimize(block);
+      block = new LocalVarRenamer(mq).optimize(block);
     }
     // Finally we rearrange statements and convert conditionals to expressions
     // where it will make things shorter.

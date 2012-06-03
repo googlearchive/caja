@@ -81,19 +81,11 @@ public class BenchmarkRunner extends CajaTestCase {
    */
   private void runBenchmark(String filename) throws Exception {
     double uncajoledTime = runUncajoled(filename);
-    double cajitaTime = runCajoledLegacy(filename, false);
-    double valijaTime = runCajoledLegacy(filename, true);
     double es53Time = runCajoledES53(filename);
 
     varz(getName(), "uncajoled", "time", uncajoledTime);
-    varz(getName(), "valija", "time", valijaTime);
-    varz(getName(), "cajita", "time", cajitaTime);
     varz(getName(), "es53", "time", es53Time);
     
-    varz(getName(), "valija", "timeratio",
-        valijaTime < 0 ? -1 : valijaTime / uncajoledTime);
-    varz(getName(), "cajita", "timeratio",
-        cajitaTime < 0 ? -1 : cajitaTime / uncajoledTime);
     varz(getName(), "es53", "timeratio",
         es53Time < 0 ? -1 : es53Time / uncajoledTime);
   }
@@ -113,51 +105,6 @@ public class BenchmarkRunner extends CajaTestCase {
     return elapsed.doubleValue();
   }
 
-  private double runCajoledLegacy(String filename, boolean valija) throws Exception {
-    PluginMeta meta = new PluginMeta();
-    MessageQueue mq = new SimpleMessageQueue();
-    PluginCompiler pc = new PluginCompiler(new TestBuildInfo(), meta, mq);
-    CharProducer src = fromString(plain(fromResource(filename)));
-    pc.addInput(
-        valija ? BenchmarkUtils.addUseCajitaDirective(js(src)) : js(src),
-        is.getUri());
-    if (!pc.run()) {
-      return -1;
-    }
-    String cajoledJs = render(pc.getJavascript());
-    System.err.println("-- Cajoled:" + filename +
-          "(valija:" + valija + ") --\n" + cajoledJs + "\n---\n");
-    Number elapsed = (Number) RhinoTestBed.runJs(
-        new Executor.Input(getClass(),
-            "../../../../../js/json_sans_eval/json_sans_eval.js"),
-        new Executor.Input(getClass(), "../../cajita.js"),
-        new Executor.Input(
-            ""
-            + "var testImports = ___.copy(___.sharedImports);\n"
-            + "testImports.loader = ___.freeze({\n"
-            + "        provide: ___.markFuncFreeze(\n"
-            + "            function(v){ valijaMaker = v; })\n"
-            + "    });\n"
-            + "testImports.outers = ___.copy(___.sharedImports);\n"
-            + "___.getNewModuleHandler().setImports(testImports);",
-            getName() + "valija-setup"),
-        new Executor.Input(getClass(), "../../plugin/valija.out.js"),
-        new Executor.Input(
-            // Set up the imports environment.
-            ""
-            + "testImports = ___.copy(___.sharedImports);\n"
-            + "testImports.benchmark = {};\n"
-            + "testImports.benchmark.startTime = new Date();"
-            + "testImports.$v = valijaMaker.CALL___(testImports);\n"
-            + "___.getNewModuleHandler().setImports(testImports);",
-            "benchmark-container"),
-        new Executor.Input(cajoledJs, getName()),
-        new Executor.Input(
-            "(new Date() - testImports.benchmark.startTime)",
-            "elapsed"));
-    return elapsed.doubleValue();
-  }
-  
   private double runCajoledES53(String filename) throws Exception {
     PluginMeta meta = new PluginMeta();
     MessageQueue mq = new SimpleMessageQueue();

@@ -380,15 +380,10 @@ public class MatchTest extends CajaTestCase {
     assertNotNull(m);
     assertEquals(ReturnStmt.class, m.get("stmts").children().get(0).getClass());
 
-    match(
-        "function f() { 'use strict'; 'use cajita'; @stmts* }",
-        "(function f() { 'use strict'; return 4; });");
-    assertNull(m);
-
     // Partial matches work too
     match(
         "function f() { 'use strict'; @stmts* }",
-        "(function f() { 'use strict'; 'use cajita'; return 4; });");
+        "(function f() { 'use strict'; 'use strict'; return 4; });");
     assertNotNull(m);
     assertEquals(ReturnStmt.class, m.get("stmts").children().get(0).getClass());
   }

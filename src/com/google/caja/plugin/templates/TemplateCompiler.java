@@ -54,7 +54,7 @@ import org.w3c.dom.Text;
  * <p>
  * Requires that CSS be rewritten, that inline scripts have been replaced with
  * {@link Placeholder placeholders}, and that the output JS be run through
- * the CajitaRewriter.
+ * the cajoler.
  *
  * @author mikesamuel@gmail.com
  */

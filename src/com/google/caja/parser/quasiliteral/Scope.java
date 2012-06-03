@@ -25,7 +25,6 @@ import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.CatchStmt;
 import com.google.caja.parser.js.Declaration;
 import com.google.caja.parser.js.DirectivePrologue;
-import com.google.caja.parser.js.Expression;
 import com.google.caja.parser.js.FunctionConstructor;
 import com.google.caja.parser.js.FunctionDeclaration;
 import com.google.caja.parser.js.Identifier;
@@ -130,7 +129,6 @@ public class Scope {
   // is empty everywhere else. Define subclasses of Scope so that this confusing
   // overlapping of instance variables does not occur.
   private final Set<String> importedVariables = Sets.<String>newTreeSet();
-  private final Permit permitsUsed;
 
   public static Scope fromProgram(Block root, Rewriter rewriter) {
     Scope s = new Scope(ScopeType.PROGRAM, rewriter);
@@ -181,14 +179,12 @@ public class Scope {
     this.type = type;
     this.parent = null;
     this.rewriter = rewriter;
-    this.permitsUsed = new Permit();
   }
 
   private Scope(ScopeType type, Scope parent) {
     this.type = type;
     this.parent = parent;
     this.rewriter = parent.rewriter;
-    this.permitsUsed = parent.permitsUsed;
   }
 
   /**
@@ -455,7 +451,7 @@ public class Scope {
   }
 
   /**
-   * Is a given symbol imported by this Cajita module?
+   * Is a given symbol imported by this module?
    *
    * @param name an identifier.
    * @return whether 'name' is a free variable of the enclosing module.
@@ -637,8 +633,7 @@ public class Scope {
       "Number",
       "RegExp",     // /foo/ becomes new RegExp.new___('foo')
       "arguments",  // Can muck with arguments to synthetic values.
-      "eval",       // Can't assign to eval in strict mode.
-      "cajita"      // Used for caja extensions.
+      "eval"        // Can't assign to eval in strict mode.
       );
 
   /**
@@ -700,30 +695,5 @@ public class Scope {
     }
 
     s.locals.put(name, Pair.pair(type, ident.getFilePosition()));
-  }
-
-  /**
-   * If varName is not a statically permitted base name, return null;
-   * otherwise return a JSON description of all the statically
-   * permitted paths rooted in varName which this module's compilation
-   * assumed were safe.
-   */
-  public Expression getPermitsUsed(Identifier varName) {
-    // TODO(erights): Permit should generate a JSON AST directly,
-    // rather than generating a string which we then parse.
-    Permit subPermit = permitsUsed.canRead(varName);
-    if (null == subPermit) { return null; }
-    return (Expression)substV(
-        "(" + subPermit.getPermitsUsedAsJSONString() + ")");
-  }
-
-  public Permit permitRead(ParseTreeNode o) {
-    if (o instanceof Reference) {
-      Reference r = (Reference) o;
-      if (isImported(r.getIdentifierName())) {
-        return permitsUsed.canRead(o);
-      }
-    }
-    return null;
   }
 }

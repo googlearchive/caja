@@ -120,10 +120,10 @@ know.&quot;</p>
 
 <h2 id="Validating">Validating</h2>
 <p>We can check that the assumptions inherent in a user-agent JSON
-file hold in a container, and in the presence of the cajita supporting
+file hold in a container, and in the presence of the caja support
 code by doing the following:</p>
 <ol>
-  <li>Load the container and/or cajita supporting code</li>
+  <li>Load the container and/or caja support code</li>
   <li>Run &quot;environment-checks.js&quot; to generate a new JSON object</li>
   <li>Compare the JSON from (2) with that from the environment file.</li>
 </ol>

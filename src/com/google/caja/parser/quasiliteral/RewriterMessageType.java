@@ -152,19 +152,6 @@ public enum RewriterMessageType implements MessageTypeInt {
   CANNOT_ASSIGN_TO_IDENTIFIER(
       "%s: Cannot assign to identifier \"%s\"", MessageLevel.FATAL_ERROR),
 
-  FOR_IN_NOT_IN_CAJITA(
-      "%s: for-in construct not allowed in Cajita: %s, %s",
-      MessageLevel.FATAL_ERROR),
-
-  THIS_NOT_IN_CAJITA(
-      "%s: 'this' variable not allowed in Cajita: %s, %s",
-      MessageLevel.FATAL_ERROR),
-
-  REGEX_LITERALS_NOT_IN_CAJITA(
-      "%s: regex literals not allowed in Cajita. "
-      + "Call new RegeExp() instead: %s, %s",
-      MessageLevel.FATAL_ERROR),
-
   CANNOT_ASSIGN_TO_FUNCTION_NAME(
       "%s: Cannot assign to a function name: %s, %s",
       MessageLevel.FATAL_ERROR),
@@ -176,12 +163,6 @@ public enum RewriterMessageType implements MessageTypeInt {
   CANNOT_REDECLARE_VAR(
       "%s: Cannot redeclare %s originally declared at %s",
       MessageLevel.ERROR),
-
-  PROTOTYPICAL_INHERITANCE_NOT_IN_CAJITA(
-      "%s: Prototypical inheritance is not supported in Cajita. "
-      + "The \"prototype\" property of a function is always "
-      + "\"undefined\": %s, %s",
-      MessageLevel.LINT),
 
   LOADING_MODULE_FAILED(
           "%s: Loading module %s failed: %s",
@@ -199,16 +180,8 @@ public enum RewriterMessageType implements MessageTypeInt {
       "%s: Parsing module failed: %s",
       MessageLevel.FATAL_ERROR),
 
-  CANNOT_LOAD_A_DYNAMIC_CAJITA_MODULE(
-      "%s: Dynamically computed names should use load.async()",
-      MessageLevel.FATAL_ERROR),
-
   CANNOT_LOAD_A_DYNAMIC_ES53_MODULE(
       "%s: Dynamically computed names should use load.async()",
-      MessageLevel.FATAL_ERROR),
-
-  CANNOT_LOAD_A_DYNAMIC_VALIJA_MODULE(
-      "%s: Dynamically computed names should use includeScript.async()",
       MessageLevel.FATAL_ERROR),
 
   CANNOT_LOAD_A_DYNAMIC_SERVERJS_MODULE(

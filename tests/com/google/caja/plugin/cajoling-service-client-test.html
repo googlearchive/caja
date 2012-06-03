@@ -70,7 +70,7 @@
         Q.when(
             c.cajoleUrl(
                 location.protocol + '//' + location.host
-                + '/ant-lib/com/google/caja/a.js',
+                + '/ant-lib/com/google/caja/plugin/true.js',
                 'application/javascript'),
             jsunitCallback(function(m) {
               assertTrue(/___\.loadModule/.test(m.js));

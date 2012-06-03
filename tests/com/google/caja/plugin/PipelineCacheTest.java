@@ -274,9 +274,9 @@ public class PipelineCacheTest extends PipelineStageTestCase {
 
 
   private static final String CACHEABLE_HELLO_WORLD_JS
-      = "<script>'use cajita'; alert('Hello');</script>";
+      = "<script>alert('Hello');</script>";
   private static final String CACHEABLE_HELLO_WORLD_JS_DEFERRED
-      = "<script defer>'use cajita'; alert('Hello');</script>";
+      = "<script defer>alert('Hello');</script>";
   private static final String REWRITTEN_HELLO_WORLD_JS
       = jsModulePrefix(
           new String[] {},
@@ -297,9 +297,9 @@ public class PipelineCacheTest extends PipelineStageTestCase {
       "}");
 
   private static final String CACHEABLE_HELLO_WORLD_JS_VARIANT
-      = "<script>'use cajita'; alert('Howdy');</script>";
+      = "<script>alert('Howdy');</script>";
   private static final String CACHEABLE_HELLO_WORLD_JS_VARIANT_DEFERRED
-     = "<script defer>'use cajita'; alert('Howdy');</script>";
+      = "<script defer>alert('Howdy');</script>";
   private static final String REWRITTEN_HELLO_WORLD_JS_VARIANT
       = jsModulePrefix(
           new String[] {},

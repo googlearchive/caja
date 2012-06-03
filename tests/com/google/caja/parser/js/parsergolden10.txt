@@ -1,7 +1,7 @@
 Block
   DirectivePrologue
     Directive : use strict
-    Directive : use cajita
+    Directive : use strict
   FunctionDeclaration
     Identifier : strictFn1
     FunctionConstructor
@@ -17,7 +17,7 @@ Block
       Block
         DirectivePrologue
           Directive : use strict
-          Directive : use cajita
+          Directive : use strict
         ReturnStmt
   FunctionDeclaration
     Identifier : strictFn3
@@ -26,7 +26,7 @@ Block
       Block
         DirectivePrologue
           Directive : use strict
-          Directive : use cajita
+          Directive : use strict
         ReturnStmt
   FunctionDeclaration
     Identifier : strictFn4
@@ -35,7 +35,7 @@ Block
       Block
         DirectivePrologue
           Directive : use strict
-          Directive : use cajita
+          Directive : use strict
         ReturnStmt
   FunctionDeclaration
     Identifier : strictFn5
@@ -44,7 +44,7 @@ Block
       Block
         DirectivePrologue
           Directive : use strict
-          Directive : use cajita
+          Directive : use strict
         ReturnStmt
   FunctionDeclaration
     Identifier : strictFn6
@@ -53,7 +53,7 @@ Block
       Block
         DirectivePrologue
           Directive : use strict
-          Directive : use cajita
+          Directive : use strict
   FunctionDeclaration
     Identifier : notStrictFn1
     FunctionConstructor
@@ -81,7 +81,7 @@ Block
           ExpressionStmt
             StringLiteral : "use strict"
           ExpressionStmt
-            StringLiteral : "use cajita"
+            StringLiteral : "use strict"
   FunctionDeclaration
     Identifier : malformedOkayWithWarning
     FunctionConstructor

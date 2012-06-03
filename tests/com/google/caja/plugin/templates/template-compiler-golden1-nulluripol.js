@@ -1,5 +1,4 @@
 function module() {
-  ;
   {
     // Output CSS before any HTML that might be styled.
     IMPORTS___.emitCss___(['.', ' p {\n  color: purple\n}\n.',
@@ -32,7 +31,6 @@ function module() { // The first script.
   }
 }
 function module() {
-  "use cajita";
   {
     var el___;
     var emitter___ = IMPORTS___.htmlEmitter___;
@@ -51,7 +49,6 @@ function module() {
   }
 }
 function module() {
-  ;  // Not strict because of c_1___ below.
   {
     var el___;
     var emitter___ = IMPORTS___.htmlEmitter___;

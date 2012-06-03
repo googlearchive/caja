@@ -1,5 +1,4 @@
 function module() {
-  ;
   {
     // Set up local variables required for HTML support.
     var el___;
@@ -28,7 +27,6 @@ function module() {
   }
 }
 function module() {
-  "use cajita";
   {
     var el___;
     var emitter___ = IMPORTS___.htmlEmitter___;
@@ -46,7 +44,6 @@ function module() {
   }
 }
 function module() {
-  ;
   {
     var el___;
     var emitter___ = IMPORTS___.htmlEmitter___;

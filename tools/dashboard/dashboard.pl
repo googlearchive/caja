@@ -175,7 +175,6 @@ sub collectCodeStats() {
 
   print STDERR "copying docs\n";
   outputTree($DOCS_DIR, 'docs', 'java/index.html', \@status_log);
-  linkOutput('ruledocs', 'docs/rules/CajitaRewriter.html', \@status_log);
 
   print STDERR "copying test reports\n";
   outputTree("$REPORTS_DIR/tests", 'tests', 'index.html', \@status_log);

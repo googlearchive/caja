@@ -55,7 +55,7 @@ public final class HtmlToJsStage extends CompileHtmlStage {
 
   private static Statement makeEmitStaticStmt(Node node) {
     return (Statement) QuasiBuilder.substV(
-        "'use strict'; 'use cajita'; @stmt;",
+        "'use strict'; @stmt;",
         "stmt", new TranslatedCode(new Block(
             FilePosition.UNKNOWN,
             Collections.singletonList(new ExpressionStmt(

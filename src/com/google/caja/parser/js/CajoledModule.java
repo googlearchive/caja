@@ -122,7 +122,7 @@ public final class CajoledModule extends AbstractParseTreeNode
   /**
    * Render the cajoled module in default form. The result is text representing
    * a block containing a statement that calls the new module handler as defined
-   * using {@code cajita.js}. The result looks like:
+   * using {@code es53.js}. The result looks like:
    *
    * <p><pre>
    * {

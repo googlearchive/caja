@@ -26,7 +26,7 @@ match("@clazz.prototype.@methodName = function (@params*) { @body*; }",
     descendents of node.
 
     <p>Quasiliterals can also be used to generate parse trees as in<pre>
-substV("cajita.def(@clazz, @baseClazz, @methods, @statics)",
+substV("cajaVM.def(@clazz, @baseClazz, @methods, @statics)",
        "clazz", ..., "baseClazz", ..., "methods", ..., "statics", ...);
 </pre>
   </dd>

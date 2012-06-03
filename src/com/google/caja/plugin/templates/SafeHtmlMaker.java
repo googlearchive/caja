@@ -26,12 +26,9 @@ import com.google.caja.parser.html.Nodes;
 import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.CajoledModule;
 import com.google.caja.parser.js.Declaration;
-import com.google.caja.parser.js.Directive;
-import com.google.caja.parser.js.DirectivePrologue;
 import com.google.caja.parser.js.Expression;
 import com.google.caja.parser.js.FunctionConstructor;
 import com.google.caja.parser.js.Identifier;
-import com.google.caja.parser.js.Noop;
 import com.google.caja.parser.js.Reference;
 import com.google.caja.parser.js.Statement;
 import com.google.caja.parser.js.StringLiteral;
@@ -139,7 +136,6 @@ final class SafeHtmlMaker {
   /** True iff JS contains a HtmlEmitter.finish() call to release resources. */
   private boolean finished = false;
 
-  private boolean cajita = false;
   /**
    * @param doc the owner document for the safe HTML. Used only as a
    * factory for DOM nodes.
@@ -645,8 +641,6 @@ final class SafeHtmlMaker {
     maybeBreakBlock(translated, src);
     if (currentBlock == null) {
       handlersUsedInModule.clear();
-      // May be downgraded based on emitHandler below.
-      cajita = translated;
       currentBlock = Lists.newArrayList();
       currentSource = src;
       currentBlockTranslated = translated;
@@ -662,11 +656,6 @@ final class SafeHtmlMaker {
 
  private void emitHandler(Statement handler, JobEnvelope source) {
     emitStatement(handler, true, source);
-    if (hasNonStrictFn(handler)) {
-      // Do not put a block in cajita mode when we're outputting a non-strict
-      // handler.
-      cajita = false;
-    }
   }
 
   private void finishBlock() {
@@ -676,42 +665,12 @@ final class SafeHtmlMaker {
     Block block = new Block(FilePosition.UNKNOWN, currentBlock);
     if (currentBlockTranslated) {
       Block wrapper = new Block();
-      if (cajita) {
-        wrapper.appendChild(new DirectivePrologue(
-            FilePosition.UNKNOWN,
-            Lists.newArrayList(new Directive(
-                FilePosition.UNKNOWN, "use cajita"))));
-      } else {
-        // Tests expect the "use cajita" statement to be nulled out
-        wrapper.appendChild(new Noop(FilePosition.UNKNOWN));
-      }
       wrapper.appendChild(new TranslatedCode(block));
       js.add(new SafeJsChunk(currentSource, wrapper));
     } else {
       js.add(new SafeJsChunk(currentSource, block));
     }
     currentBlock = null;
-  }
-
-  private static boolean hasNonStrictFn(ParseTreeNode n) {
-    if (n instanceof FunctionConstructor) {
-      Block body = ((FunctionConstructor) n).getBody();
-      if (!body.children().isEmpty()) {
-        Statement s0 = body.children().get(0);
-        if (s0 instanceof DirectivePrologue) {
-          DirectivePrologue dp = (DirectivePrologue) s0;
-          for (Directive d : dp.children()) {
-            if ("use cajita".equals(d.getDirectiveString())) { return false; }
-          }
-        }
-      }
-      return true;
-    } else {
-      for (ParseTreeNode child : n.children()) {
-        if (hasNonStrictFn(child)) { return true; }
-      }
-      return false;
-    }
   }
 
   private static String getPlaceholderId(Node n) {

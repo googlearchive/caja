@@ -126,7 +126,6 @@ public class TemplateCompilerTest extends CajaTestCase {
         js(fromString(
             ""
             + "function module() {"
-            + "  'use cajita';"
             + "  {"
             + "    var el___;"
             + "    var emitter___ = IMPORTS___.htmlEmitter___;"
@@ -145,7 +144,6 @@ public class TemplateCompilerTest extends CajaTestCase {
             + "  }"
             + "}"
             + "function module() {"
-            + "  'use cajita';"
             + "  {"
             + "    IMPORTS___.htmlEmitter___.signalLoaded();"
             + "  }"
@@ -158,7 +156,6 @@ public class TemplateCompilerTest extends CajaTestCase {
         htmlFragment(fromString("<a href='foo' id=\"id_1___\" target='_blank'>hello</a>")),
         js(fromString(""
             + "function module() {"
-            + "  'use cajita';"
             + "  {"
             + "    var el___;"
             + "    var emitter___ = IMPORTS___.htmlEmitter___;"
@@ -183,7 +180,6 @@ public class TemplateCompilerTest extends CajaTestCase {
             + " autocomplete='off' id=\"id_1___\" target='_blank'></form>")),
         js(fromString(""
             + "function module() {"
-            + "  'use cajita';"
             + "  {"
             + "    var el___;"
             + "    var emitter___ = IMPORTS___.htmlEmitter___;"
@@ -206,7 +202,6 @@ public class TemplateCompilerTest extends CajaTestCase {
         htmlFragment(fromString("<a id='id_1___' target='_blank'></a>")),
         js(fromString(""
             + "function module() {"
-            + "  'use cajita';"
             + "  {"
             + "    var el___; var emitter___ = IMPORTS___.htmlEmitter___;"
             + "    el___ = emitter___.byId('id_1___');"
@@ -230,7 +225,6 @@ public class TemplateCompilerTest extends CajaTestCase {
             "<a name='hi-xyz___' id=\"id_2___\" target='_blank'></a>")),
         js(fromString(""
             + "function module() {"
-            + "  'use cajita';"
             + "  {"
             + "    var el___;"
             + "    var emitter___ = IMPORTS___.htmlEmitter___;"
@@ -266,7 +260,6 @@ public class TemplateCompilerTest extends CajaTestCase {
             + " name='hi-suffix___' id=\"id_1___\" target=_blank></form>")),
         js(fromString(""
             + "function module() {"
-            + "  'use cajita';"
             + "  {"
             + "    var el___;"
             + "    var emitter___ = IMPORTS___.htmlEmitter___;"
@@ -294,7 +287,6 @@ public class TemplateCompilerTest extends CajaTestCase {
         js(fromString(
             ""
             + "function module() {"
-            + "  ;"
             + "  {"
             + "    var el___; var emitter___ = IMPORTS___.htmlEmitter___;"
             + "    el___ = emitter___.byId('id_2___');"
@@ -329,7 +321,6 @@ public class TemplateCompilerTest extends CajaTestCase {
         js(fromString(
             ""
             + "function module() {"
-            + "  ;"
             + "  {"
             + "    var el___;"
             + "    var emitter___ = IMPORTS___.htmlEmitter___;"
@@ -355,23 +346,22 @@ public class TemplateCompilerTest extends CajaTestCase {
             + "}")));
   }
 
-  public final void testJavascriptUrlWithUseCajita() throws Exception {
+  public final void testJavascriptUrlWithUseStrict() throws Exception {
     assertSafeHtml(
         htmlFragment(fromString(
-            "<a href='javascript:%22use%20cajita%22;alert(1+1)'>Two!!</a>")),
+            "<a href='javascript:%22use%20strict%22;alert(1+1)'>Two!!</a>")),
         htmlFragment(fromString(
             "<a id=\"id_2___\" target=\"_blank\">Two!!</a>")),
         js(fromString(
             ""
             + "function module() {"
-            + "  'use cajita';"
             + "  {"
             + "    var el___; var emitter___ = IMPORTS___.htmlEmitter___;"
             + "    el___ = emitter___.byId('id_2___');"
             // The extracted handler.
             + "    var c_1___ = IMPORTS___.handlers___.push(___.markFuncFreeze("
             + "        function () {"
-            + "          'use cajita';"
+            + "          'use strict';"
             + "          alert(1 + 1);"  // Cajoled later
             + "        })) - 1;"
             + "    emitter___.setAttr(el___, 'href', 'javascript:'"
@@ -400,7 +390,6 @@ public class TemplateCompilerTest extends CajaTestCase {
             + " autocomplete='off' id=\"id_1___\" target='_blank'></form>")),
         js(fromString(""
             + "function module() {"
-            + "  'use cajita';"
             + "  {"
             + "    var el___;"
             + "    var emitter___ = IMPORTS___.htmlEmitter___;"
@@ -474,7 +463,6 @@ public class TemplateCompilerTest extends CajaTestCase {
             + "  }"
             + "}"
             + "function module() {"
-            + "  'use cajita';"
             + "  {"
             + "    IMPORTS___.htmlEmitter___.signalLoaded();"
             + "  }"
@@ -490,7 +478,6 @@ public class TemplateCompilerTest extends CajaTestCase {
             "<a href='mailto:x%40y' id='id_1___' target='_blank'>z</a>")),
         js(fromString(""
             + "function module() {"
-            + "  'use cajita';"
             + "  {"
             + "    var el___;"
             + "    var emitter___ = IMPORTS___.htmlEmitter___;"
@@ -516,7 +503,6 @@ public class TemplateCompilerTest extends CajaTestCase {
             + " id='id_1___' target='_blank'>z</a>")),
         js(fromString(""
             + "function module() {"
-            + "  'use cajita';"
             + "  {"
             + "    var el___;"
             + "    var emitter___ = IMPORTS___.htmlEmitter___;"
@@ -551,7 +537,6 @@ public class TemplateCompilerTest extends CajaTestCase {
         js(fromString(
             ""
             + "function module() {"
-            + "  'use cajita';"
             + "  {"
             + "    var el___; var emitter___ = IMPORTS___.htmlEmitter___;"
             + "    emitter___.discard(emitter___.attach('id_1___'));"
@@ -566,7 +551,6 @@ public class TemplateCompilerTest extends CajaTestCase {
             + "  }"
             + "}"
             + "function module() {"
-            + "  'use cajita';"
             + "  {"
             + "    var el___; var emitter___ = IMPORTS___.htmlEmitter___;"
             + "    el___ = emitter___.finish();"
@@ -603,7 +587,6 @@ public class TemplateCompilerTest extends CajaTestCase {
             "<a href=\"rewritten\" id=\"id_1___\" target=\"_blank\"></a>")),
         js(fromString(""
             + "function module() {"
-            + "  'use cajita';"
             + "  {"
             + "    var el___;"
             + "    var emitter___ = IMPORTS___.htmlEmitter___;"
@@ -649,7 +632,6 @@ public class TemplateCompilerTest extends CajaTestCase {
         js(fromString(
             ""
             + "function module() {"
-            + "  'use cajita';"
             + "  {"
             + "    var el___;"
             + "    var emitter___ = IMPORTS___.htmlEmitter___;"
@@ -673,7 +655,6 @@ public class TemplateCompilerTest extends CajaTestCase {
             + "  }"
             + "}"
             + "function module() {"
-            + "  'use cajita';"
             + "  {"
             + "    IMPORTS___.htmlEmitter___.signalLoaded();"
             + "  }"
@@ -741,7 +722,6 @@ public class TemplateCompilerTest extends CajaTestCase {
         js(fromString(
             ""
             + "function module() {"
-            + "  'use cajita';"
             + "  {"
             + "    var el___;"
             + "    var emitter___ = IMPORTS___.htmlEmitter___;"
@@ -836,7 +816,6 @@ public class TemplateCompilerTest extends CajaTestCase {
         js(fromString(
             ""
             + "function module() {"
-            + "  'use cajita';"
             + "  {"
             + "    var el___;"
             + "    var emitter___ = IMPORTS___.htmlEmitter___;"
@@ -875,7 +854,6 @@ public class TemplateCompilerTest extends CajaTestCase {
             + "<img usemap=#foo-suffix___ src=pic.gif>")),
         js(fromString(""
             + "function module() {"
-            + "  'use cajita';"
             + "  {"
             + "    var el___;"
             + "    var emitter___ = IMPORTS___.htmlEmitter___;"
@@ -909,7 +887,6 @@ public class TemplateCompilerTest extends CajaTestCase {
             + "<img src=bar.gif>")),
         js(fromString(""
             + "function module() {"
-            + "  'use cajita';"
             + "  {"
             + "    var el___;"
             + "    var emitter___ = IMPORTS___.htmlEmitter___;"
@@ -986,7 +963,6 @@ public class TemplateCompilerTest extends CajaTestCase {
             "<div id=\"id_1___\"></div>")),
         js(fromString(""
             + "function module() {"
-            + "  'use cajita';"
             + "  {"
             + "    var el___;"
             + "    var emitter___ = IMPORTS___.htmlEmitter___;"
@@ -1017,7 +993,6 @@ public class TemplateCompilerTest extends CajaTestCase {
             + "/form>")),
         js(fromString(""
             + "function module() {"
-            + "  'use cajita';"
             + "  {"
             + "    var el___;"
             + "    var emitter___ = IMPORTS___.htmlEmitter___;"
@@ -1043,7 +1018,6 @@ public class TemplateCompilerTest extends CajaTestCase {
             "<a target=\"_blank\" id=\"id_1___\">a</a>")),
         js(fromString(""
             + "function module() {"
-            + "  'use cajita';"
             + "  {"
             + "    var el___;"
             + "    var emitter___ = IMPORTS___.htmlEmitter___;"
@@ -1069,7 +1043,6 @@ public class TemplateCompilerTest extends CajaTestCase {
             "<a target=\"_blank\" id=\"id_1___\">a</a>")),
         js(fromString(""
             + "function module() {"
-            + "  'use cajita';"
             + "  {"
             + "    var el___;"
             + "    var emitter___ = IMPORTS___.htmlEmitter___;"

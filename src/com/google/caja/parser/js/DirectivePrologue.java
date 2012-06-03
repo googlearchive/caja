@@ -34,7 +34,7 @@ import java.util.Set;
  * {@code StringLiteral}. For example:
  *
  * <pre>
- *   'use strict'; 'use cajita';
+ *   'use strict';
  *   <em>Remainder of the program...</em>
  * </pre>
  *
@@ -42,7 +42,7 @@ import java.util.Set;
  *
  * <pre>
  *   function foo() {
- *     'use strict'; 'use cajita';
+ *     'use strict';
  *     <em>Remainder of the function body...</em>
  *   }
  * </pre>

@@ -47,12 +47,7 @@ public final class Directive extends AbstractParseTreeNode
     /**
      * Directive invoking ES5 "strict" mode.
      */
-    USE_STRICT("use strict"),
-
-    /**
-     * String value of a directive invoking Cajita mode.
-     */
-    USE_CAJITA("use cajita");
+    USE_STRICT("use strict");
 
     private final String directiveString;
 

@@ -204,7 +204,7 @@ public final class RhinoAsserts {
     void visitArray(Scriptable s, Object[] values) { /* noop */ }
     /**
      * @param s the JSON object.
-     * @param props name to value map of cajita mentionable properties.
+     * @param props name to value map of mentionable properties.
      */
     void visitObject(Scriptable s, List<Pair<String, Object>> props) {
       /* noop */

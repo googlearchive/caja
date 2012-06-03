@@ -18,7 +18,7 @@ import junit.framework.AssertionFailedError;
 
 /**
  * Contains all the tests that should apply to any JS dialect defined
- * by the Caja project (i.e., Valija or Cajita).
+ * by the Caja project
  *
  * @author ihab.awad@gmail.com
  */
@@ -396,8 +396,8 @@ public abstract class CommonJsRewriterTestCase extends RewriterTestCase {
   }
 
   /**
-   * Tests that callbacks from the Cajita runtime and from the tamed ES3 API
-   * to either Cajita or Valija code works.
+   * Tests that callbacks from the Caja runtime and from the tamed ES3 API
+   * to cajoled code works.
    * <p>
    * The uncajoled branch of the tests below establish that the callbacks
    * work uncajoled when they are tamed as simple frozen functions.
@@ -423,9 +423,7 @@ public abstract class CommonJsRewriterTestCase extends RewriterTestCase {
   public final void testErrorTaming() throws Exception {
     rewriteAndExecute(
             "var t = new Error('foo');" +
-            "assertFalse(((typeof cajita !== 'undefined') ?" +
-            "    cajita :" +
-            "    Object).isFrozen(t));" +
+            "assertFalse(Object.isFrozen(t));" +
             "try {" +
             "  throw t;" +
             "} catch (ex) {" +

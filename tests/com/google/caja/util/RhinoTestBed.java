@@ -21,24 +21,14 @@ import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.JsLexer;
 import com.google.caja.lexer.JsTokenQueue;
 import com.google.caja.lexer.ParseException;
-import com.google.caja.lexer.TokenConsumer;
-import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.html.Namespaces;
 import com.google.caja.parser.html.Nodes;
 import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.Parser;
 import com.google.caja.parser.js.StringLiteral;
-import com.google.caja.parser.js.UncajoledModule;
-import com.google.caja.parser.js.Statement;
-import com.google.caja.parser.js.DirectivePrologue;
-import com.google.caja.parser.js.Directive;
-import com.google.caja.parser.quasiliteral.ES53Rewriter;
 import com.google.caja.reporting.EchoingMessageQueue;
-import com.google.caja.reporting.MarkupRenderMode;
 import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessageQueue;
-import com.google.caja.reporting.RenderContext;
-import com.google.caja.reporting.TestBuildInfo;
 import com.google.caja.util.Executor.AbnormalExitException;
 
 import java.io.File;
@@ -101,25 +91,8 @@ public class RhinoTestBed {
    * in a browser, and automatically via ANT.
    *
    * <p>NOTE: This method interprets the input HTML in an idiosyncratic way to
-   * facilitate conveniently bundling test code into one file. It handles each
-   * {@code <script>} block in the input as follows:
-   *
-   * <ul>
-   *
-   *   <li>If the directive prologue of the block contains the
-   *   {@code 'use cajita'} directive, its contents are cajoled as Cajita.</li>
-   *
-   *   <li>If the directive prologue of the block contains the
-   *   {@code 'use valija'} directive, its contents are cajoled as Valija. At
-   *   the time of writing, this method is the <em>only</em> component in Caja
-   *   that recognizes the {@code 'use valija'} directive. Consequently, and
-   *   because we do not wish to commit to supporting this directive for Caja
-   *   clients, it is notably absent from
-   *   {@link com.google.caja.parser.js.Directive.RecognizedValue}.</li>
-   *
-   *   <li>Otherwise, the block is run as plain JavaScript.</li>
-   *
-   * </ul>
+   * facilitate conveniently bundling test code into one file. It runs each
+   * {@code <script>} block as plain JavaScript.
    *
    * @param html an HTML DOM tree to run in Rhino.
    */
@@ -169,15 +142,11 @@ public class RhinoTestBed {
       }
       String scriptText;
       Block js = parseJavascript(scriptBody, mq);
-      if (shouldCajoleBlock(js)) {
-        scriptText = render(cajole(js, mq));
-      } else {
-        // Add blank lines at the front so that Rhino stack traces have correct
-        // line numbers.
-        scriptText = prefixWithBlankLines(
-          scriptBody.toString(0, scriptBody.getLimit()),
-          Nodes.getFilePositionFor(script).startLineNo() - 1);
-      }
+      // Add blank lines at the front so that Rhino stack traces have correct
+      // line numbers.
+      scriptText = prefixWithBlankLines(
+        scriptBody.toString(0, scriptBody.getLimit()),
+        Nodes.getFilePositionFor(script).startLineNo() - 1);
       scriptContent.add(Pair.pair(scriptText, js.getFilePosition().source()));
       mc.addInputSource(js.getFilePosition().source());
       script.getParentNode().removeChild(script);
@@ -205,31 +174,6 @@ public class RhinoTestBed {
 
     // Execute for side-effect
     runJs(inputs.toArray(new Executor.Input[inputs.size()]));
-  }
-
-  private static ParseTreeNode cajole(Block program, MessageQueue mq) {
-    ES53Rewriter esrw =
-      new ES53Rewriter(TestBuildInfo.getInstance(), mq, false);
-    return esrw.expand(new UncajoledModule(program));
-  }
-
-  private static String render(ParseTreeNode n) {
-    StringBuilder sb = new StringBuilder();
-    TokenConsumer tc = n.makeRenderer(sb, null);
-    n.render(new RenderContext(tc).withMarkupRenderMode(MarkupRenderMode.XML));
-    tc.noMoreTokens();
-    return sb.toString();
-  }
-
-  private static boolean shouldCajoleBlock(Block block) {
-    if (block.children().isEmpty()) { return false; }
-    Statement first = block.children().get(0);
-    if (!(first instanceof DirectivePrologue)) { return false; }
-    DirectivePrologue prologue = (DirectivePrologue) first;
-    return
-        prologue.getDirectives().contains(
-            Directive.RecognizedValue.USE_CAJITA.getDirectiveString())
-        || prologue.getDirectives().contains("use valija");
   }
 
   private static Block parseJavascript(CharProducer cp, MessageQueue mq)

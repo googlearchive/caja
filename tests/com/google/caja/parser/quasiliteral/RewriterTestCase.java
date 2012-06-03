@@ -206,7 +206,7 @@ public abstract class RewriterTestCase extends CajaTestCase {
    * uncajoled.
    *
    * @param caja executed in the context of jsUnitCore.js for its value.  The
-   *    value is computed from the last statement in cajita.
+   *    value is computed from the last statement
    */
   protected void assertConsistent(String caja)
       throws IOException, ParseException {

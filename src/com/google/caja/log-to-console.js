@@ -13,12 +13,12 @@
 // limitations under the License.
 // .............................................................................
 
-// If this module is loaded after cajita.js is loaded, and in an
+// If this module is loaded after es53.js is loaded, and in an
 // environment (such as produced by turning on Firebug) where
 // <tt>console.log</tt> is a function, then it will register 
 // a wrapper around <tt>console.log</tt> (or <tt>console.info</tt> 
 // and <tt>console.error</tt> if available) using 
-// <tt>___.setLogFunc()</tt>, so cajita.js will log its diagnostics
+// <tt>___.setLogFunc()</tt>, so es53.js will log its diagnostics
 // to the Firebug console.
 
 // If you load triv-logger.js and log-to-console.js into the same

@@ -32,7 +32,7 @@ import java.util.Set;
  *
  * <p>
  * So the quasiliteral {@code 'use strict';} will match {@code 'use strict';},
- * and {@code 'use strict'; 'use cajita';}, but not {@code 'use shiny';} or
+ * and {@code 'use strict'; 'use strict';}, but not {@code 'use shiny';} or
  * {@code 'alien directive from outer space';}.
  *
  * @author mikesamuel@gmail.com
