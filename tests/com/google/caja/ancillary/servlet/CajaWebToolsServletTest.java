@@ -27,8 +27,6 @@ import com.google.caja.util.Pair;
 import com.google.caja.util.Sets;
 import com.google.caja.util.Strings;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.URLDecoder;
 import java.util.List;
@@ -36,8 +34,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
 import junit.framework.AssertionFailedError;
 import org.w3c.dom.Element;
 
@@ -618,50 +614,6 @@ public class CajaWebToolsServletTest extends CajaTestCase {
           } catch (IOException ex) {
             fail(ex.toString());
           }
-        }
-      });
-      return this;
-    }
-
-    private Set<String> zipFileContent;
-    private void checkZipFile() throws IOException {
-      if (zipFileContent == null) {
-        Set<String> files = Sets.newLinkedHashSet();
-        ByteArrayOutputStream bout = new ByteArrayOutputStream(
-            (int) result.content.byteLength());
-        result.content.toOutputStream(bout);
-        byte[] zipB = bout.toByteArray();
-        ZipInputStream zin = new ZipInputStream(new ByteArrayInputStream(zipB));
-        for (ZipEntry ze; (ze = zin.getNextEntry()) != null;) {
-          files.add(ze.getName());
-        }
-        zipFileContent = files;
-      }
-    }
-
-    ServletTest expectZip() {
-      reqs.add(new Assertion() {
-        public void test() throws AssertionFailedError {
-          try {
-            checkZipFile();
-          } catch (IOException ex) {
-            fail(ex.toString());
-          }
-        }
-      });
-      return this;
-    }
-
-    ServletTest zipFileExists(final String path) {
-      reqs.add(new Assertion() {
-        public void test() throws AssertionFailedError {
-          try {
-            checkZipFile();
-          } catch (IOException ex) {
-            fail(ex.toString());
-          }
-          assertTrue(path + " not in " + zipFileContent.toString(),
-                     zipFileContent.contains(path));
         }
       });
       return this;
