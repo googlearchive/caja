@@ -23,6 +23,7 @@ import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.mozilla.javascript.ConsString;
 import org.mozilla.javascript.NativeArray;
 import org.mozilla.javascript.Scriptable;
 import org.mozilla.javascript.Undefined;
@@ -219,6 +220,8 @@ public final class RhinoAsserts {
       visitor.visitNull();
     } else if (o instanceof String) {
       visitor.visitString((String) o);
+    } else if (o instanceof ConsString) {
+      visitor.visitString(o.toString());
     } else if (o instanceof Number) {
       visitor.visitNumber((Number) o);
     } else if (o instanceof Boolean) {
