@@ -43,19 +43,6 @@
   });
 </script>
 
-<div id="testModuleLoading" class="testcontainer waiting">
-  testModuleLoading
-</div>
-<script type="text/javascript">
-  // TODO(kpreid): Enable for ES5 mode after implementing load().
-  jsunitRegisterIf(!inES5Mode,
-                   'testModuleLoading',
-                   function testModuleLoading() {
-    assertEquals(12, load('jsmodules/test')({ x: 3, y: 4 }));
-    pass('testModuleLoading');
-  });
-</script>
-
 <div id="testGlobalWindowProperties" class="testcontainer waiting">
   testGlobalWindowProperties
 </div>

@@ -93,8 +93,6 @@ import java.util.Set;
   )
 public class ES53Rewriter extends Rewriter {
   private final BuildInfo buildInfo;
-  private final URI baseUri;
-  private final ModuleManager moduleManager;
   private final Set<StringLiteral> includedModules = Sets.newTreeSet(
       new Comparator<StringLiteral>() {
     @Override
@@ -262,50 +260,6 @@ public class ES53Rewriter extends Rewriter {
                 RewriterMessageType.LABELS_CANNOT_END_IN_DOUBLE_UNDERSCORE,
                 node.getFilePosition(),
                 MessagePart.Factory.valueOf(label));
-          }
-        }
-        return NONE;
-      }
-    },
-
-    // Loading a static module
-
-    new Rule() {
-      @Override
-      @RuleDescription(
-          name="loadmodule",
-          synopsis="rewrites the load function.",
-          reason="",
-          matches="load(@arg)",
-          substitutes="depending on whether moduleManager bundles modules")
-      public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
-        Map<String, ParseTreeNode> bindings = match(node);
-        if (bindings != null && scope.isImported("load")) {
-          ParseTreeNode arg = bindings.get("arg");
-          if (arg instanceof StringLiteral) {
-            StringLiteral name = noexpand((StringLiteral) arg);
-            if (moduleManager != null) {
-              int moduleIndex = moduleManager.getModule(baseUri, name);
-              if (moduleIndex >= 0) {
-                inlinedModules.add(name);
-                return QuasiBuilder.substV(
-                    "moduleMap___[@moduleIndex]",
-                    "moduleIndex", new IntegerLiteral(UNK, moduleIndex));
-              } else {
-                requireErrors(mq, node);
-                // Error messages were logged in the function getModule.
-                return node;
-              }
-            } else {
-              includedModules.add(name);
-              // Return a copy to remove input "taint" attribute.
-              return QuasiBuilder.substV("load(@name)", "name", name);
-            }
-          } else {
-            mq.addMessage(
-                RewriterMessageType.CANNOT_LOAD_A_DYNAMIC_ES53_MODULE,
-                node.getFilePosition());
-            return node;
           }
         }
         return NONE;
@@ -2217,16 +2171,12 @@ public class ES53Rewriter extends Rewriter {
         true, logging);
     this.buildInfo =
       null == moduleManager ? null : moduleManager.getBuildInfo();
-    this.baseUri = baseUri;
-    this.moduleManager = moduleManager;
     initRules();
   }
 
   public ES53Rewriter(BuildInfo buildInfo, MessageQueue mq, boolean logging) {
     super(mq, true, logging);
     this.buildInfo = buildInfo;
-    this.baseUri = null;
-    this.moduleManager = null;
     initRules();
   }
 

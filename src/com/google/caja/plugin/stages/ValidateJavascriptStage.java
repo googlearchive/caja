@@ -86,18 +86,6 @@ public final class ValidateJavascriptStage implements Pipeline.Stage<Jobs> {
       }
     }
 
-    // Unpack any loaded modules onto the job queue so we can make sure they
-    // show up in the appropriate caches.
-    for (CajoledModule module : mgr.getModuleMap()) {
-      String src = module.getSrc();
-      JobCache.Keys keysForModule = keys.get(src);
-      if (keysForModule == null) {
-        keysForModule = JobCache.none();
-      }
-      jobs.getJobs().add(new JobEnvelope(
-          null, keysForModule, ContentType.JS, false, Job.cajoledJob(module)));
-    }
-
     return jobs.hasNoFatalErrors();
   }
 }
