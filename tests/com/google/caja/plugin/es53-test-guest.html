@@ -1,3 +1,5 @@
+<base href="http://localhost:8000/ant-lib/com/google/caja/plugin/">
+<link href="es53-test-external-css.css" rel="stylesheet">
 <style type="text/css">
   /* Test id-suffix association of CSS with HTML */
   #foo { font-variant: small-caps; }
@@ -5,7 +7,12 @@
 
 <p>static html</p>
 <p id="foo"></p>
-
+<p id="hello"></p>
+<script src="es53-test-external-script.js"></script>
+<script src="non-existent-script.js"></script>
+<script>
+  throw "error"; // should not cause the rest of the execution to fail
+</script>
 <script type="text/javascript">
   // Strings are broken so that if this script appears as text it doesn't
   // pass tests inappropriately.

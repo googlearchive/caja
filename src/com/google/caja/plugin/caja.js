@@ -17,7 +17,7 @@
  * @author kpreid@switchb.org
  * @author ihab.awad@gmail.com
  * @author jasvir@gmail.com
- * \@requires document, setTimeout
+ * \@requires document, setTimeout, XMLHttpRequest
  * \@overrides window
  * \@provides caja
  */
@@ -38,39 +38,62 @@ var caja = (function () {
   var ajaxCounter = 1;
 
   var loaderDocument;
-  function defaultFetcher(url, mime, callback) {
-    if (!url) {
-      callback(undefined);
-      return;
-    }
-    var rndName = 'caja_ajax_' + ajaxCounter++; 
-    window[rndName] = function (result) {
-      try {
-        callback(result);
-      } finally {
-        // GC yourself
-        window[rndName] = undefined;
+  function proxyFetchMaker(proxyServer) {
+    return function (url, mime, callback) {
+      if (!url) {
+        callback(undefined);
+        return;
       }
+      var rndName = 'caja_ajax_' + ajaxCounter++; 
+      window[rndName] = function (result) {
+        try {
+          callback(result);
+        } finally {
+          // GC yourself
+          window[rndName] = undefined;
+        }
+      };
+      // TODO(jasvir): Make it so this does not pollute the host page
+      // namespace but rather just the loaderFrame
+      installSyncScript(rndName, 
+        proxyServer ? String(proxyServer) : caja['server'] 
+        + '/cajole?url=' + encodeURIComponent(url)
+        + '&input-mime-type=' + encodeURIComponent(mime)
+        + '&transform=PROXY'
+        + '&callback=' + encodeURIComponent(rndName)
+        + '&alt=json-in-script');
     };
-    // TODO(jasvir): Make it so this does not pollute the host page
-    // namespace but rather just the loaderFrame
-    installSyncScript(rndName, 
-      caja['server'] + '/cajole?url=' + encodeURIComponent(url)
-      + '&input-mime-type=' + encodeURIComponent(mime)
-      + '&transform=PROXY'
-      + '&callback=' + encodeURIComponent(rndName)
-      + '&alt=json-in-script');
   }
 
+  function xhrFetcher(url, mime, callback) {
+    var request = new XMLHttpRequest();
+    request.open('GET', url, true);
+    request.overrideMimeType(mime);
+    request.onreadystatechange = function() {
+      if(request.readyState == 4) {
+        callback({ "html": request.responseText });
+      }
+    };
+    request.send();
+  }
+  
   var uriPolicies = {
     'net': {
+      'rewriter': {
+        'NO_NETWORK': function () { return null; },
+        'ALL': function (uri) { return String(uri); } 
+      },
+      'fetcher': {
+        'USE_XHR': xhrFetcher,
+        'USE_AS_PROXY': proxyFetchMaker
+      },
       'NO_NETWORK': {
         'rewrite': function () { return null; },
         'fetch': function() { }
       },
       'ALL': {
         'rewrite': function (uri) { return String(uri); },
-        'fetch': defaultFetcher
+        'fetch': proxyFetchMaker(undefined)
       },
       'only': policyOnly
     },

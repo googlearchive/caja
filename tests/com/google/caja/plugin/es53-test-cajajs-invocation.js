@@ -45,22 +45,28 @@
     assertStringContains('static html', div.innerHTML);
     assertStringContains('edited html', div.innerHTML);
     assertStringContains('dynamic html', div.innerHTML);
-    if (!inES5Mode) {
-      // TODO(kpreid): Reenable after CSS works in ES5 mode
-      assertEquals('small-caps',
-          document.defaultView.getComputedStyle(
-              document.getElementById('foo-' + frame.idSuffix),
-              null).fontVariant);
-    } else {
-      console.warn('CSS not yet supported by ES5; not testing.');
+    if (inES5Mode) {
+      assertStringContains('external script', div.innerHTML);
+    }
+    assertEquals('small-caps',
+        document.defaultView.getComputedStyle(
+            document.getElementById('foo-' + frame.idSuffix),
+            null).fontVariant);
+    if (inES5Mode) {
+      assertEquals('inline',
+        document.defaultView.getComputedStyle(
+            document.getElementById('hello-' + frame.idSuffix),
+            null).display);
     }
   }
 
 
   // NOTE: Identity URI rewriter (as shown below) is for testing only; this
-  // would be unsafe for production code!
-  var uriPolicy = {
-    rewrite: function (uri) { return uri; }
+  // would be unsafe for production code because of HTTP AUTH based phishing.
+  var uriPolicy = caja.policy.net.ALL;
+  var xhrUriPolicy = {
+    fetch: caja.policy.net.fetcher.USE_XHR,
+    rewrite: caja.policy.net.rewriter.ALL
   };
 
   caja.initialize({
@@ -89,6 +95,18 @@
            .run(function(result) {
               assertGuestHtmlCorrect(frame, div);
               jsunitPass('testBuilderApiHtml');
+           });
+    });
+  });
+
+  if (inES5Mode)
+  registerTest('testBuilderApiXhr', function testBuilderApiXhr() {
+    var div = createDiv();
+    caja.load(div, xhrUriPolicy, function (frame) {
+      frame.code('es53-test-guest.html', 'text/html')
+           .run(function(result) {
+              assertGuestHtmlCorrect(frame, div);
+              jsunitPass('testBuilderApiXhr');
            });
     });
   });

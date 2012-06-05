@@ -140,7 +140,11 @@ function GuestManager(divs, domicile, guestWin, runImpl) {
       opt_runDone = opt_arg1;
     }
     return runImpl(self, args, moreImports, function(result) {
-	setTimeout(function() { opt_runDone(result); }, 0);
+      setTimeout(function() { 
+          if (opt_runDone) {
+            opt_runDone(result);
+          }
+      }, 0);
     });
   }
 }
