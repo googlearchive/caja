@@ -19,14 +19,14 @@
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
-// FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE 
-// COPYRIGHT HOLDERS OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, 
-// INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, 
-// BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
-// LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER 
-// CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT 
-// LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN 
-// ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
+// FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+// COPYRIGHT HOLDERS OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+// INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+// BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+// LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+// CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+// LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+// ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
 // TESTED ON
@@ -155,7 +155,7 @@
             var welcome = true;
             inner.parent().fadeOut(function(){
                 inner.find('div').each(function(){
-                    if (!welcome) 
+                    if (!welcome)
                         $(this).remove();
                     welcome = false;
                 });
@@ -180,7 +180,7 @@
                         n.remove();
                     });
                 },4000);
-            else if (style=='prompt') { 
+            else if (style=='prompt') {
                 var a = $('<br/><div class="action"><a href="javascript:">OK</a><div class="clear"></div></div>');
                 n.append(a);
                 focused = false;
@@ -257,7 +257,7 @@
 		}
 	    }
         });
-        
+
         ////////////////////////////////////////////////////////////////////////
         // Handle key press
         typer.keypress(function(e){
@@ -471,7 +471,7 @@
             restoreText = promptText;
             updatePromptDisplay();
         };
-        
+
         ////////////////////////////////////////////////////////////////////////
         // Move to another column relative to this one
         // Negative means go back, positive means go forward.
@@ -572,7 +572,7 @@
                 var before = line.substring(0, column);
                 var current = line.substring(column,column+1);
                 if (current){
-                    current = 
+                    current =
                         '<span class="jquery-console-cursor">' +
                         htmlEncode(current) +
                         '</span>';
@@ -583,7 +583,7 @@
             prompt.html(html);
             scrollToBottom();
         };
-        
+
         // Simple HTML encoding
         // Simply replace '<', '>' and '&'
         // TODO: Use jQuery's .html() trick, or grab a proper, fast

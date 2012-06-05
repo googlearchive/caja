@@ -1,5 +1,5 @@
 // Copyright (C) 2007 Google Inc.
-//      
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -24,11 +24,11 @@
 // system, the last one loaded wins.
 
 // This module is written in Javascript, not Caja, and would be
-// rejected by the Caja translator. 
+// rejected by the Caja translator.
 
 
 var logger = (function(global) {
-  
+
   var recording = [];
   function getRecording() { return recording; }
   function log(str) { recording.push(String(str) + '\n'); }

@@ -13,14 +13,14 @@
 // limitations under the License.
 
 package com.google.caja.flash {
-  
+
   import com.google.caja.flash.events.ExternalInterfaceAddCallbackEvent;
   import com.google.caja.flash.events.ExternalInterfaceCallEvent;
   import com.google.caja.flash.events.FunctionResponseEvent;
   import com.google.caja.flash.events.navigateToURLEvent;
   import flash.display.StageAlign;
   import flash.display.StageScaleMode;
-  
+
   import flash.display.Loader;
   import flash.display.Sprite;
   import flash.events.Event;
@@ -30,7 +30,7 @@ package com.google.caja.flash {
   import flash.net.URLRequest;
   import flash.net.URLVariables;
   import flash.net.navigateToURL;
-  
+
   /**
    * Synchronous FlashBridge Loader for CAJA
    * @author evn@google.com (Eduardo Vela)
@@ -43,7 +43,7 @@ package com.google.caja.flash {
       if (stage) { init(); }
       else { addEventListener(Event.ADDED_TO_STAGE, init); }
     }
-    
+
     private function init(e:Event = null):void {
       removeEventListener(Event.ADDED_TO_STAGE, init);
       // Send exceptions to JS
@@ -52,28 +52,28 @@ package com.google.caja.flash {
       this.loader.contentLoaderInfo.addEventListener(
           Event.INIT,
           this.onLoaderInit);
-      
+
       this.loader.contentLoaderInfo.addEventListener(
           IOErrorEvent.IO_ERROR,
           this.onLoaderError);
-      
+
       this.loader.contentLoaderInfo.addEventListener(
           SecurityErrorEvent.SECURITY_ERROR,
           this.onLoaderError);
-      
+
       // FlashBridge Events
       this.loader.contentLoaderInfo.sharedEvents.addEventListener(
           ExternalInterfaceAddCallbackEvent.ADD_CALLBACK,
           this.onExternalInterfaceAddCallback);
-      
+
       this.loader.contentLoaderInfo.sharedEvents.addEventListener(
           ExternalInterfaceCallEvent.CALL,
           this.onExternalInterfaceCall);
-      
+
       this.loader.contentLoaderInfo.sharedEvents.addEventListener(
           navigateToURLEvent.NAVIGATE_TO_URL,
           this.onNavigateToURL);
-      
+
       var incFlashVars:Object = loaderInfo.parameters;
       var src:String = incFlashVars.__CAJA_src;
       if (!src) {
@@ -133,14 +133,14 @@ package com.google.caja.flash {
     private function onLoaderInit(... rest):void {
       ExternalInterface.call("caja.policy.flash.onLoaderInit", cajaContext);
     }
-    
+
     private function onLoaderError(... rest):void {
       ExternalInterface.call("caja.policy.flash.onLoaderError", cajaContext);
     }
-    
-    
+
+
     // FlashBridge Event Handlers
-    
+
     private function onExternalInterfaceAddCallback(data:Object):void {
       var ex:Error;
       try {
@@ -164,7 +164,7 @@ package com.google.caja.flash {
               ex,
               data));
     }
-    
+
     private function onExternalInterfaceCall(data:Object):void {
       var ex:Error;
       var res:Object;
@@ -204,5 +204,5 @@ package com.google.caja.flash {
               data));
     }
   }
-  
+
 }

@@ -12,7 +12,7 @@ datepicker, tabs
 
 datepicker
   * Form field is not populated when datepicker is dismissed.
- 
+
 selectable, sortable
   * Selection box drawing is offset to bottom and right from mouse;
     this is likely a domado error of some sort.

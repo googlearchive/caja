@@ -85,7 +85,7 @@ var jsDump;
 			this.parsers[name] = parser;
 		},
 		// The next 3 are exposed so you can use them
-		quote:quote, 
+		quote:quote,
 		literal:literal,
 		join:join,
 		_depth_: 1,

@@ -62,17 +62,17 @@ final class FlashRewriter {
   final Block embedder = new Block();
   final Jobs jobs;
   final MessageQueue mq;
-  
+
   FlashRewriter(Jobs jobs) {
     this.jobs = jobs;
     this.mq = jobs.getMessageQueue();
   }
-  
+
   void finish() {
     if (embedder.children().size() != 0) {
       URI baseUri = null; // TODO(felix8a)
       jobs.getJobs().add(JobEnvelope.of(Job.jsJob(embedder, baseUri)));
-    }    
+    }
     return;
   }
 
@@ -105,7 +105,7 @@ final class FlashRewriter {
     // leave it alone, it will get stripped by HtmlSanitizerStage.
     return el;
   }
-  
+
   private Element rewriteEmbed(Element el) {
     String src = getAttr(el, "src");
     if (empty(src)) {
@@ -136,7 +136,7 @@ final class FlashRewriter {
     embedder.appendChild(new ExpressionStmt(e));
     return r;
   }
-  
+
   private Element rewriteNoembed(Element el) {
     String id = generateId();
     String className = el.getAttributeNS(HTML_NS, "class");
@@ -156,7 +156,7 @@ final class FlashRewriter {
     embedder.appendChild(new ExpressionStmt(e));
     return el;
   }
-  
+
   private Element rewriteObject(Element el) {
     Element r = emplacehold(el);
     if (r == null) {
@@ -194,7 +194,7 @@ final class FlashRewriter {
     if (empty(height)) {
       height = params.get("height");
     }
-    
+
     String id = getPlaceholderId(r);
     FilePosition pos = Nodes.getFilePositionFor(el);
     Expression e = (Expression) QuasiBuilder.substV(
@@ -213,7 +213,7 @@ final class FlashRewriter {
     embedder.appendChild(new ExpressionStmt(e));
     return r;
   }
-  
+
   private Literal literal(String value, FilePosition pos) {
     if (empty(value)) {
       return new NullLiteral(pos);
@@ -221,7 +221,7 @@ final class FlashRewriter {
       return StringLiteral.valueOf(pos, value);
     }
   }
-  
+
   private Element emplacehold(Element el) {
     Node parent = el.getParentNode();
     if (parent == null) { return null; }
@@ -234,7 +234,7 @@ final class FlashRewriter {
     parent.removeChild(el);
     return div;
   }
-  
+
   private String getTagName(Node n) {
     if (n instanceof Element) {
       return Strings.toLowerCase(n.getLocalName());
@@ -254,12 +254,12 @@ final class FlashRewriter {
   private boolean empty(String s) {
     return s == null || s.length() == 0;
   }
-  
-  private String generateId() { 
+
+  private String generateId() {
     int guid = jobs.getPluginMeta().generateGuid();
     return "cajaEmbed" + guid;
   }
-  
+
   private String getPlaceholderId(Element el) {
     return el.getAttributeNS(HTML_NS, "class");
   }
@@ -268,7 +268,7 @@ final class FlashRewriter {
 
   private static final String APPLICATION_FLASH =
     "application/x-shockwave-flash";
-  
+
   private static final String CLASSID_FLASH =
     "clsid:D27CDB6E-AE6D-11cf-96B8-444553540000";
 }

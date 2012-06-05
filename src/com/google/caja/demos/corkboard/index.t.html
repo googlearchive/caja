@@ -2,7 +2,7 @@
 <!--
   See the file LICENSE.txt in this directory for license information for the
   Caja Corkboard demo.
-  
+
   @author kpreid@switchb.org
 -->
 <html>
@@ -10,13 +10,13 @@
   <title>Caja Corkboard Demo</title>
   <link rel="stylesheet" href="http://caja.appspot.com/caja-gadget.css">
   <link rel="stylesheet" href="r/style.css">
-  
+
   <!-- tell mobile browsers not to do that zoomed-out thing -->
   <meta name="viewport" content="width=device-width" />
 
   <!-- Caja runtime loader -->
   <script src="{{ cajaServer|escape }}caja.js" type="text/javascript"></script>
-  
+
   <!-- Tool to take many quoted cajoled scripts and attach them to elements in
        the page -->
   <script src="r/embedded-scripts.js" type="text/javascript"></script>
@@ -32,7 +32,7 @@
 
 {% for posting in postings %}
   <div class="posting{% if posting.cajole.error %} cajoling-error{%endif%}">
-    <!-- vdoc-body___ indicates the root of a Caja gadget and applies styles 
+    <!-- vdoc-body___ indicates the root of a Caja gadget and applies styles
          needed for full sandboxing. It is automatically applied by Domita, but
          including it here is needed for the client-is-not-running-JavaScript
          case and for before Caja has loaded. -->
@@ -41,7 +41,7 @@
       {{ posting.cajole.html }}
     </blockquote>
     <p class="signature">
-      &mdash; 
+      &mdash;
       <span class="author">
       {% if posting.author %}
         {{ posting.author.nickname|escape }}{% else %}
@@ -110,17 +110,17 @@
   support and yet not allow you to take over anyone else's postings or otherwise
   disrupt the application (other than by making the page load slower or hang).
   </p>
-  
+
   <p>This site is intended to demonstrate how to straightforwardly use Caja in a web application as a “better HTML sanitizer”; see <a href="http://code.google.com/p/google-caja/wiki/CorkboardDemo">CorkboardDemo on the Caja wiki</a> for a tutorial.</p>
-  
+
   <p><a href="http://www.flickr.com/photos/8078381@N03/2322844071/">Background
   image by Parée Erica</a> (used under Creative Commons Attribution license).
   </p>
-  
+
   {%if user_is_admin %}
   <a href="/admin/">Admin</a>
   {% endif %}
-  
+
 </div>
 
 </body></html>

@@ -21,17 +21,17 @@ import com.google.gwt.resources.client.TextResource;
 
 /**
  * Client bundle for the playground
- * 
+ *
  * @author Jasvir Nagra <jasvir@gmail.com>
  */
 
 public interface PlaygroundResource extends ClientBundle {
-  public static final PlaygroundResource INSTANCE = 
+  public static final PlaygroundResource INSTANCE =
     GWT.create(PlaygroundResource.class);
 
   @Source("caja_logo_small.png")
   public ImageResource logo();
-  
+
   @Source("policy.js")
   public TextResource defaultPolicy();
 

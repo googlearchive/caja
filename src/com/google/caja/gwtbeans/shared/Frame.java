@@ -20,15 +20,15 @@ import com.google.gwt.core.client.JavaScriptObject;
 import com.google.gwt.user.client.rpc.AsyncCallback;
 
 public interface Frame {
-  
+
   Frame cajoled(String uri, String js, String html);
 
   Frame code(String uri, String mimeType, String content);
-    
+
   Frame api(Map<String, JavaScriptObject> api);
-  
-  Frame api(JavaScriptObject api);  
-    
+
+  Frame api(JavaScriptObject api);
+
   void run(AsyncCallback<JavaScriptObject> callback);
 
   JavaScriptObject getNative();

@@ -19,7 +19,7 @@ class Posting(db.Model):
   dateCreated = db.DateTimeProperty(auto_now_add=True)
   dateModified = db.DateTimeProperty(auto_now_add=True)
   _cajoled = None
-  
+
   # Cajoled content is cached here as well as in memcache by cajole.py --
   # not entirely useless as we save the cost of hashing and API calls, but this
   # should be revisited.
@@ -27,7 +27,7 @@ class Posting(db.Model):
     if self._cajoled is None:
       self._cajoled = cajole.cajole(self.content)
     return self._cajoled
-  
+
   def editable(self):
     """Should this posting be editable by the current user?"""
     return self.author is None or self.author == users.get_current_user()
@@ -85,7 +85,7 @@ def getCaptchaKeys():
       raise Exception(
         "ReCaptchaKeys not filled in -- fix on admin page.")
   return _captchaKeys
-    
+
 def verifyCaptcha(request):
   challenge = request.get("recaptcha_challenge_field")
   response = request.get("recaptcha_response_field")

@@ -751,7 +751,7 @@ final class HtmlInputSplitter extends AbstractTokenStream<HtmlTokenType> {
                   break;
                 case IE_DR_COMMENT_END:
                   type = HtmlTokenType.IE_DR_COMMENT_END;
-                  break;         
+                  break;
                 case DIRECTIVE:
                 case APP_DIRECTIVE:
                 case APP_DIRECTIVE_QMARK:

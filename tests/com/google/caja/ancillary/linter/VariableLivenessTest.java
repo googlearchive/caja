@@ -1505,7 +1505,7 @@ public class VariableLivenessTest extends CajaTestCase {
         "  DirectivePrologue",
         "    Directive : use strict");
   }
-  
+
   public final void testDebugger() throws Exception {
     assertLiveness(
         js(fromString("debugger; var x = 3; debugger;")),

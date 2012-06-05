@@ -21,19 +21,19 @@ import com.google.caja.reporting.MessageContext;
  * Parent class of all caja runtime exceptions.
  * Only thrown when the cajoler encounters an irrecoverable situation.
  * This exception should not be caught by the cajoler.
- * 
+ *
  * @author jasvir@google.com (Jasvir Nagra)
  */
 public class SomethingWidgyHappenedError extends RuntimeException {
 
   private static final long serialVersionUID = 115104119101116104L;
-  
-  public SomethingWidgyHappenedError() { super(); }    
-  public SomethingWidgyHappenedError(Message msg) { this(msg, null); }  
+
+  public SomethingWidgyHappenedError() { super(); }
+  public SomethingWidgyHappenedError(Message msg) { this(msg, null); }
   public SomethingWidgyHappenedError(String msg) { super(msg); }
-  public SomethingWidgyHappenedError(Throwable t) { super(t); }    
+  public SomethingWidgyHappenedError(Throwable t) { super(t); }
   public SomethingWidgyHappenedError(String m, Throwable t) { super(m, t); }
-  
+
   public SomethingWidgyHappenedError(Message msg, Throwable cause) {
     super(msg.format(new MessageContext()), cause);
   }

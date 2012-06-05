@@ -22,7 +22,7 @@ public class Bean {
   public Bean(BeanResults results) {
     this.results = results;
   }
-  
+
   // Some fields for testing
   public String testPublicField = BeanReturnValues.stringRetval;
   public final String testFinalPublicField = BeanReturnValues.stringRetval;

@@ -44,7 +44,7 @@ var caja = (function () {
         callback(undefined);
         return;
       }
-      var rndName = 'caja_ajax_' + ajaxCounter++; 
+      var rndName = 'caja_ajax_' + ajaxCounter++;
       window[rndName] = function (result) {
         try {
           callback(result);
@@ -55,8 +55,8 @@ var caja = (function () {
       };
       // TODO(jasvir): Make it so this does not pollute the host page
       // namespace but rather just the loaderFrame
-      installSyncScript(rndName, 
-        proxyServer ? String(proxyServer) : caja['server'] 
+      installSyncScript(rndName,
+        proxyServer ? String(proxyServer) : caja['server']
         + '/cajole?url=' + encodeURIComponent(url)
         + '&input-mime-type=' + encodeURIComponent(mime)
         + '&transform=PROXY'
@@ -76,12 +76,12 @@ var caja = (function () {
     };
     request.send();
   }
-  
+
   var uriPolicies = {
     'net': {
       'rewriter': {
         'NO_NETWORK': function () { return null; },
-        'ALL': function (uri) { return String(uri); } 
+        'ALL': function (uri) { return String(uri); }
       },
       'fetcher': {
         'USE_XHR': xhrFetcher,
@@ -505,7 +505,7 @@ var caja = (function () {
   }
 
   function installSyncScript(name, url) {
-     if (!loaderDocument) { 
+     if (!loaderDocument) {
        loaderDocument = createFrame('loader-frame').document;
      }
      // TODO(jasvir): This assignment pins the parent's handler

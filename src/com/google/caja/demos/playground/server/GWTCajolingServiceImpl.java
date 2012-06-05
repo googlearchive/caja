@@ -221,7 +221,7 @@ public class GWTCajolingServiceImpl extends RemoteServiceServlet
       URI baseAddress = new URI(base);
       absUri = relUri.isAbsolute() ? relUri : baseAddress.resolve(relUri);
       return fetcher.fetch(
-          new ExternalReference(absUri, baseAddress, relUri, 
+          new ExternalReference(absUri, baseAddress, relUri,
               FilePosition.UNKNOWN), "*/*").getTextualContent().toString();
     } catch (URISyntaxException ex) {
       return null;

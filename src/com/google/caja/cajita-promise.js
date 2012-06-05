@@ -1,15 +1,15 @@
-// Copyright 2007-2009 Tyler Close 
-// under the terms of the MIT X license found at 
+// Copyright 2007-2009 Tyler Close
+// under the terms of the MIT X license found at
 // http://www.opensource.org/licenses/mit-license.html
 
 
-/** 
+/**
  * Implementation of promise for Cajita
  * Export Q to the global scope
- * 
+ *
  * Mostly taken from the ref_send implementation by Tyler Close
  * Add the isPromise___ flag to support function promise
- * 
+ *
  * @contributor: maoziqing@gmail.com
  * @requires setTimeout, ___
  * @overrides window
@@ -149,7 +149,7 @@ var Q;
    * Gets the corresponding promise for a given reference.
    */
   function promised(value) {
-    return ('function' === typeof value && value.isPromise___ === true) 
+    return ('function' === typeof value && value.isPromise___ === true)
         ? value : ref(value);
   }
 
@@ -187,19 +187,19 @@ var Q;
      * @param task  function to invoke later
      */
     run: ___.markFuncFreeze(enqueue),
-  
+
     /**
      * Constructs a rejected promise.
      * @param reason    value describing the failure
      */
     reject: ___.markFuncFreeze(reject),
-  
+
     /**
      * Constructs a promise for an immediate reference.
      * @param value immediate reference
      */
     ref: ___.markFuncFreeze(ref),
-  
+
     /**
      * Constructs a ( promise, resolver ) pair.
      *

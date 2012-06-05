@@ -55,7 +55,7 @@ public final class ExternalReference {
   public ExternalReference(URI uri, FilePosition pos) {
     this(uri, uri, uri, pos);
   }
-  
+
   /**
    * @param uri the location of the external resource.
    * @param base base uri of document in which the external reference appears

@@ -891,7 +891,7 @@ function toHex(n){
                           var result = resp;
                           caja___.enable(true, document.getElementById('result'), "", "", result.js, function(runtimeResult) {
                             if (pageTrigger > -1 && runtimeResult.success) {
-                                triggerTutorialPage(pageTrigger,runtimeResult.result); 
+                                triggerTutorialPage(pageTrigger,runtimeResult.result);
                             }
                             // Not used by caja
                             if (result.type) {

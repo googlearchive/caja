@@ -348,9 +348,9 @@ function SESFrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker) {
       // agree?
       var contentType = opt_expectedContentType
         || xhrRecord.contentType;
-                    
+
       var theContent = xhrRecord.responseText;
-                
+
       if (contentType === 'text/javascript'
           || contentType === 'application/javascript'
           || contentType === 'application/x-javascript'
@@ -359,12 +359,12 @@ function SESFrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker) {
           || contentType === 'text/jscript') {
         // TODO(kpreid): Make sure there's only one place (in JS)
         // where this big list of content-type synonyms is defined.
-                  
+
         // TODO(kpreid): needs to return completion value unless we
         // deprecate that feature.
         return Q.ref(guestWin.cajaVM.compileExpr(
           '(function () {' + theContent + '})()'));
-                  
+
       } else if (contentType === 'text/html') {
         // importsAgain always === imports, so ignored
         var writeComplete = gman.imports.document.write(theContent);

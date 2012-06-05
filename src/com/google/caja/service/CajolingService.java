@@ -88,7 +88,7 @@ public class CajolingService {
   private boolean emptyOrNull(String str) {
     return null == str || "".equals(str);
   }
-  
+
   /**
    * Main entry point for the cajoling service.
    *
@@ -149,7 +149,7 @@ public class CajolingService {
 
     String inputUrlString = CajaArguments.URL.get(args);
     URI inputUri;
-    if (inputUrlString == null && inputFetchedData == null && 
+    if (inputUrlString == null && inputFetchedData == null &&
         emptyOrNull(CajaArguments.CONTENT.get(args))) {
       mq.addMessage(
           ServiceMessageType.MISSING_ARGUMENT,

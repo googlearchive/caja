@@ -110,12 +110,12 @@ var ses;
 
   /**
    * Return a regexp that can be used repeatedly to scan for the next
-   * identifier. It works correctly in concert with LIMIT_SRC above. 
-   * 
+   * identifier. It works correctly in concert with LIMIT_SRC above.
+   *
    * If this regexp is changed compileExprLater.js should be checked for
    * correct escaping of freeNames.
    */
-  function SHOULD_MATCH_IDENTIFIER() { 
+  function SHOULD_MATCH_IDENTIFIER() {
     return /(\w|\\u\d{4}|\$)+/g;
   }
 

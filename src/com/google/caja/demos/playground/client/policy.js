@@ -15,6 +15,6 @@
     frameGroup.markFunction(recordResult);
     imports.parent = frameGroup.tame({ recordResult: recordResult });
   });
-  
+
   return tamings___;
 })();

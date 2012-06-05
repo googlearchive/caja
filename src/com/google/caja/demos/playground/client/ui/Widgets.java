@@ -20,7 +20,7 @@ import com.google.gwt.user.datepicker.client.DatePicker;
 public class Widgets {
 
   private AbsolutePanel gwtShim;
-  
+
   public Widgets(AbsolutePanel gwtShim) {
     this.gwtShim = gwtShim;
   }

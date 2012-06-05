@@ -123,7 +123,7 @@ public final class DefaultGwtBeanInfo implements GwtBeanInfo {
     if (tamingImplementation != null) {
       return;
     }
-    
+
     List<JMethod> allMethods = getAllPublicMethods(type);
 
     boolean recognizeBeanProperties =
@@ -151,7 +151,7 @@ public final class DefaultGwtBeanInfo implements GwtBeanInfo {
   }
 
   private GwtBeanPropertyDescriptor makePropertyDescriptor(
-      List<JMethod> allMethods, 
+      List<JMethod> allMethods,
       String propertyName)
       throws UnableToCompleteException {
     JMethod is = removeOne(allMethods, getIsName(propertyName));
@@ -181,7 +181,7 @@ public final class DefaultGwtBeanInfo implements GwtBeanInfo {
       propType = read.getReturnType();
       if (propType == JPrimitiveType.VOID) {
         logger.log(Type.ERROR,
-            "Bean-style read method returns void for property \"" + 
+            "Bean-style read method returns void for property \"" +
             propertyName + "\"" +
             " at " + read.getJsniSignature());
         throw new UnableToCompleteException();
@@ -190,7 +190,7 @@ public final class DefaultGwtBeanInfo implements GwtBeanInfo {
       if (write != null) {
         if (write.getParameters().length != 1) {
           logger.log(Type.ERROR,
-              "Bean-style write method for property \"" + 
+              "Bean-style write method for property \"" +
               propertyName + "\"" +
               " does not declare exactly 1 parameter" +
               " at " + write.getJsniSignature());
@@ -200,7 +200,7 @@ public final class DefaultGwtBeanInfo implements GwtBeanInfo {
           logger.log(Type.ERROR,
               "Parameter of Bean-style write method for property \"" +
               propertyName + "\"" +
-              " at " + write.getJsniSignature() +        
+              " at " + write.getJsniSignature() +
               " does not match return type of read method" +
               " at " + read.getJsniSignature());
           throw new UnableToCompleteException();
@@ -210,7 +210,7 @@ public final class DefaultGwtBeanInfo implements GwtBeanInfo {
       // Harvest property type from writer
       if (write.getParameters().length != 1) {
         logger.log(Type.ERROR,
-            "Bean-style write method for property \"" + 
+            "Bean-style write method for property \"" +
             propertyName + "\"" +
             " does not declare exactly 1 parameter" +
             " at " + write.getJsniSignature());
@@ -231,7 +231,7 @@ public final class DefaultGwtBeanInfo implements GwtBeanInfo {
 
   private JMethod removeOne(List<JMethod> allMethods, String methodName)
       throws UnableToCompleteException {
-    JMethod result = null;    
+    JMethod result = null;
     for (int i = 0; i < allMethods.size(); i++) {
       JMethod m = allMethods.get(i);
       if (methodName.equals(m.getName())) {
@@ -249,39 +249,39 @@ public final class DefaultGwtBeanInfo implements GwtBeanInfo {
     }
     return result;
   }
-  
+
   private String getIsName(String propertyName) {
     return "is" + upCaseFirst(propertyName);
   }
-  
+
   private String getGetName(String propertyName) {
     return "get" + upCaseFirst(propertyName);
   }
-  
+
   private String getSetName(String propertyName) {
     return "set" + upCaseFirst(propertyName);
   }
-  
+
   private String getPropertyName(String methodName) {
     String name = null;
     if (methodName.startsWith("get") || methodName.startsWith("set")) {
       name = methodName.substring(3);
     }
     if (methodName.startsWith("is")) {
-      name = methodName.substring(2);      
+      name = methodName.substring(2);
     }
     if (name == null || name.length() == 0) { return null; }
     return downCaseFirst(name);
   }
-  
+
   private String downCaseFirst(String s) {
-    return s.substring(0, 1).toLowerCase() + s.substring(1);    
+    return s.substring(0, 1).toLowerCase() + s.substring(1);
   }
-  
+
   private String upCaseFirst(String s) {
-    return s.substring(0, 1).toUpperCase() + s.substring(1);    
+    return s.substring(0, 1).toUpperCase() + s.substring(1);
   }
-  
+
   private List<JMethod> getAllPublicMethods(JClassType clazz) {
     Map<String, JMethod> methodsBySignature = new HashMap<String, JMethod>();
     JClassType object = clazz.getOracle().findType("java.lang.Object");

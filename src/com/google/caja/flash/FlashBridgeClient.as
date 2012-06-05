@@ -18,7 +18,7 @@ package com.google.caja.flash {
   import flash.display.DisplayObject;
   import flash.display.LoaderInfo;
   import flash.system.ApplicationDomain;
-  
+
   /**
    * Client for the Synchronous Flash Bridge
    * @author evn@google.com (Eduardo Vela)

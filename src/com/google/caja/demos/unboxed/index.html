@@ -1,17 +1,17 @@
-<style> 
+<style>
   table {
     border: none;
     border-spacing: 0px;
   }
   td {
-    padding: 0px; 
+    padding: 0px;
   }
-</style> 
-<div align="center" id="board"></div>   
+</style>
+<div align="center" id="board"></div>
 <div align="center" id="messages"></div>
-<button id="restart" disabled="disabled">Restart?</button>   
- 
-<script> 
+<button id="restart" disabled="disabled">Restart?</button>
+
+<script>
   var modelMaker = function () {
     var width = 8;
     var height = 8;
@@ -20,7 +20,7 @@
     var bombs;
     var hints;
     var wrapped;
-    
+
     function plantBombs(bombs) {
       for (var c=0; c < logicBombs; c++) {
         while (true) {
@@ -33,11 +33,11 @@
         }
       }
     };
- 
+
     function inBounds(i, j) {
       return !(i < 0 || i >= width || j < 0 || j >= height);
     }
- 
+
     function countAt(bombs, i, j) {
       if (inBounds(i, j) && bombs[i][j]) {
         return 1;
@@ -45,7 +45,7 @@
         return 0;
       }
     }
- 
+
     function unwrapCell(i, j) {
       if (wrapped[i][j]) {
         remaining--;
@@ -53,26 +53,26 @@
       }
       return remaining;
     }
- 
+
     function plantHints(hints, bombs) {
       for (var i=0; i < height; i++) {
         for (var j=0; j < width; j++) {
           if (bombs[i][j]) {
             hints[i][j] = Infinity;
           } else {
-            hints[i][j] = countAt(bombs, i-1, j-1) 
-                        + countAt(bombs, i, j-1) 
+            hints[i][j] = countAt(bombs, i-1, j-1)
+                        + countAt(bombs, i, j-1)
                         + countAt(bombs, i+1, j-1)
-                        + countAt(bombs, i-1, j) 
+                        + countAt(bombs, i-1, j)
                         + countAt(bombs, i+1, j)
-                        + countAt(bombs, i-1, j+1) 
-                        + countAt(bombs, i, j+1) 
+                        + countAt(bombs, i-1, j+1)
+                        + countAt(bombs, i, j+1)
                         + countAt(bombs, i+1, j+1);
           }
         }
       }
     }
- 
+
     function initialize(board, width, height, val) {
       for (var i=0; i < height; i++) {
         board[i] = [];
@@ -94,13 +94,13 @@
 
       logicBombs = 10;
       remaining = width*height - logicBombs;
-   
+
       plantBombs(bombs);
       plantHints(hints, bombs);
     }
 
     reset();
-   
+
     return {
       initialize: initialize,
       reset: reset,
@@ -113,34 +113,34 @@
       unwrapCell: unwrapCell
     };
   };
- 
+
   var viewMaker = function (model, display, restart) {
     var controller;
     function setController(myController) {
       controller = myController;
     }
- 
+
     function clicked(i, j) {
       if (controller) {
         controller.notifyCellClicked(i, j);
       }
     }
- 
+
     function displayWrapped(i, j) {
       document.getElementById('cell-' + i + '-' + j).src = 'wrapped.png';
     }
- 
+
     function displayLost() {
       alert('You lost');
     }
- 
+
     function displayWin() {
       alert('You won');
     }
- 
+
     function displayUnwrapped(i, j) {
       var img = document.getElementById('cell-' + i + '-' + j);
-      img.src = model.bombs[i][j] ? 'bomb.png' : 
+      img.src = model.bombs[i][j] ? 'bomb.png' :
         "http://www.thinkfu.com/unboxed/" + model.hints[i][j] + '-unwrapped.png';
     }
 
@@ -153,7 +153,7 @@
           var img = document.createElement('img');
           img.src = 'http://www.thinkfu.com/unboxed/wrapped.png';
           img.id = 'cell-' + i + '-' + j;
-          img.onclick = (function(i, j) { 
+          img.onclick = (function(i, j) {
             return function () { clicked(i, j); };
           })(i, j);
           td.appendChild(img);
@@ -172,7 +172,7 @@
       }
       restart.disabled = false;
     }
- 
+
     function init (model, display, restart) {
       configureRestart(model, restart);
       configureDisplay(model, display);
@@ -194,7 +194,7 @@
       displayWin: displayWin
     };
    };
- 
+
   var controllerMaker = function(model, view) {
     function clearCell(i, j) {
       if (!model.inBounds(i, j) || !model.wrapped[i][j])
@@ -228,11 +228,11 @@
       reset: reset
     };
   };
- 
+
   var model = modelMaker();
-  var view = viewMaker(model, 
+  var view = viewMaker(model,
       document.getElementById('board'),
       document.getElementById('restart'));
   var controller = controllerMaker(model, view);
   view.setController(controller);
-</script> 
+</script>

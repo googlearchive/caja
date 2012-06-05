@@ -4,11 +4,11 @@
   xmlns:caja="urn:import:com.google.caja.demos.playground.client.ui">
   <ui:with field='res'
       type='com.google.caja.demos.playground.client.PlaygroundResource' />
-  
+
   <ui:style>
     body { font-family: arial,sans-serif,helvetica }
     .playgroundUI { background: #92C1F0; }
-  
+
     .pginfo { font-weight: bold; font-size: 120% }
     .loadingLabel { display: hidden; }
     .menuItems { margin: 5px;  }
@@ -53,7 +53,7 @@
           </g:cell>
         </g:HorizontalPanel>
       </g:VerticalPanel>
-      
+
     </g:north>
     <g:center>
       <g:TabLayoutPanel ui:field="editorPanel" barUnit='PX' barHeight='30'>
@@ -120,7 +120,7 @@
           <g:header size='7'>Cajoled Source</g:header>
           <g:DockLayoutPanel>
           <g:north size="30">
-            <g:HTML styleName="{style.playgroundUI}"></g:HTML>          
+            <g:HTML styleName="{style.playgroundUI}"></g:HTML>
           </g:north>
           <g:center>
             <g:ScrollPanel>
@@ -177,5 +177,5 @@
       </g:TabLayoutPanel>
     </g:west>
   </g:DockLayoutPanel>
-  
-</ui:UiBinder> 
+
+</ui:UiBinder>

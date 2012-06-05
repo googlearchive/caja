@@ -33,7 +33,7 @@ public abstract class AbstractTaming<BeanType> implements Taming<BeanType> {
             "Internal: Bean -> JSO map encountered type unsafe condition");
       }
     } else {
-      jso = getNative(m, bean);    
+      jso = getNative(m, bean);
       m.getJsoByBean().put(bean, jso);
       m.getBeanByJso().put(jso, bean);
       m.getClassesByJso().put(jso, getClasses(bean));
@@ -43,7 +43,7 @@ public abstract class AbstractTaming<BeanType> implements Taming<BeanType> {
 
   @Override
   public BeanType getBean(Frame frame, JavaScriptObject jso) {
-    FrameImpl m = (FrameImpl) frame;    
+    FrameImpl m = (FrameImpl) frame;
     Object bean = m.getBeanByJso().get(jso);
     if (bean == null) {
       throw new RuntimeException("Cannot find bean for given JSO " + jso);
@@ -64,7 +64,7 @@ public abstract class AbstractTaming<BeanType> implements Taming<BeanType> {
       }
       throw new TypeError(msg);
     }
-  
+
     return function(frame, dispatchTable, args) {
       if (dispatchTable.length === 1) {
         // For the common, non-overridden case, we emit more specific errors
@@ -113,11 +113,11 @@ public abstract class AbstractTaming<BeanType> implements Taming<BeanType> {
 
   @SuppressWarnings("unchecked")
   private BeanType castToBeanType(Object bean) {
-    return (BeanType) bean;    
+    return (BeanType) bean;
   }
-  
+
   protected abstract JavaScriptObject getNative(Frame m, BeanType bean);
-  
+
   protected abstract String getBeanClassName();
 
   private List<String> getClasses(BeanType bean) {

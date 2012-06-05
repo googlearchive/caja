@@ -71,12 +71,12 @@ class PostHandler(webapp.RequestHandler):
     posting.dateModified = datetime.datetime.today()
     if newPost:
       posting.author = users.get_current_user()
-    
+
     posting.put()
-    
+
     # preload cache; writing is expected to take longer than viewing
     posting.cajole()
-    
+
     self.redirect('/')
 
 class DeleteHandler(webapp.RequestHandler):

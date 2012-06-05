@@ -226,7 +226,7 @@ public final class RhinoExecutor implements Executor {
       ScriptableObject.putProperty(globalScope, "eval___", eval);
       for (Map.Entry<String, ?> e : actuals.entrySet()) {
         globalScope.defineProperty(
-            e.getKey(), 
+            e.getKey(),
             Context.javaToJS(e.getValue(), globalScope),
             ScriptableObject.DONTENUM);
       }

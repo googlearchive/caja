@@ -168,7 +168,7 @@ public class HtmlHandlerTest extends ServiceTestCase {
         (String) json.get("js"),
         "IMPORTS___.rewriteTargetAttribute___('foo','a','target')");
   }
-  
+
   private void assertHtml2Json(String inputMimeType)
       throws Exception {
     registerUri(

@@ -46,7 +46,7 @@ public enum HtmlTokenType implements TokenType {
    * Html IE downlevel-revealed conditional comments are of the form:
    * <tt>&lt;[if !IE]> HTML Code <![endif]></tt>
    * (http://msdn.microsoft.com/en-us/library/ms537512(VS.85).aspx#syntax)
-   * 
+   *
    * Begin and end markers for IE conditional comments of downlevel-revealed
    * (DR) types are denoted by the following token types.
    */

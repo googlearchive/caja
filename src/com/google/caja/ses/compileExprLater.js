@@ -106,12 +106,12 @@ var ses;
        if (URI && URI.parse) {
          var parsed = URI.parse(String(opt_sourceUrl));
          parsed = null === parsed ? null : parsed.toString();
-         
+
          // Note we could try to encode these characters or search specifically
          // for */ as a pair of characters but since it is for debugging only
          // choose to avoid
          if (null !== parsed &&
-             parsed.indexOf("<") < 0 && 
+             parsed.indexOf("<") < 0 &&
              parsed.indexOf(">") < 0 &&
              parsed.indexOf("*") < 0) {
            scriptSrc = '/* from ' + parsed + ' */ ' + scriptSrc;

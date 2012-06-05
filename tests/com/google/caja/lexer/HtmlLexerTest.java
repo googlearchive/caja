@@ -117,7 +117,7 @@ public class HtmlLexerTest extends CajaTestCase {
         + "<script>alert(\"This could be an --> IE 6 browser.\");</script>"
         + "<![endif]-->";
     assertTokens(ieCondComment2, false, "COMMENT: " + ieCondComment2);
-        
+
     // Downlevel-revealed type of comments.
     String ieCondComment3 =
         "<![if !IE | gte IE 7]>"

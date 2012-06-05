@@ -16,9 +16,9 @@ package com.google.caja.service;
 /**
  * Thrown by cajoling service when it is requested to retrieve content
  * for which there is no associated checker.
- * 
+ *
  * Only the cajoling service should catch this exception.
- * 
+ *
  * @author jasvir@gmail.com (Jasvir Nagra)
  */
 public class UnsupportedContentTypeException extends Exception {
@@ -27,7 +27,7 @@ public class UnsupportedContentTypeException extends Exception {
     public UnsupportedContentTypeException() {
       this("Unknown content type requested");
     }
-  
+
     public UnsupportedContentTypeException(String msg) {
       super(msg);
     }

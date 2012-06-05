@@ -1,10 +1,10 @@
 (function($) {
-  var cajaDisplayed = false;  
+  var cajaDisplayed = false;
   var tutorialGuide;
 
   // Page variables
   var pages = mypages;
-  
+
   function showDomita(report) {
     if (!cajaDisplayed) {
       cajaDisplayed = true;
@@ -55,7 +55,7 @@
               makeGuidSamplesClickable();
             }
           });
-    
+
           //////////////////////////////////////////////////////////////////////
           // Guide globals
           // Get the guide element.
@@ -63,7 +63,7 @@
           var initalGuide = tutorialGuide.html();
           var NO_RESULT = {};
           var tellAboutRet;
-    
+
           function jsonp(url,func) {
             var script = $('<script type="text/javascript" src="' +
                 encodeURI(url) + '"></script>');
@@ -99,11 +99,11 @@
                   // Bust cache
                   + "random=" + Math.random(), callback);
           }
-    
+
           function updateConsole(report,
               runtimeResult, success, exception, line, js, messages) {
-            var result = { 
-                result: runtimeResult, 
+            var result = {
+                result: runtimeResult,
                 success: success,
                 exception: exception,
                 expr: line,
@@ -116,7 +116,7 @@
             if (!result.js) {
               report([{
                 msg:result.messages[0].message,
-                className: "jquery-console-message-error " + 
+                className: "jquery-console-message-error " +
                   "jquery-console-message-compile-error"
               }]);
               notice('compile-error',
@@ -150,7 +150,7 @@
                   report([{
                     msg: renderObj(result.result),
                     className:"jquery-console-message-value"
-                  }, { 
+                  }, {
                     msg: result.js,
                     className:"jquery-console-message-type"
                   }]);
@@ -171,7 +171,7 @@
                      'prompt');
             }
           }
-    
+
           //////////////////////////////////////////////////////////////////////
           // Create console
           var console = $('.console');
@@ -207,7 +207,7 @@
                   frame.content(top.location, line, 'text/javascript')
                           .run({}, function(runtimeResult) {
                       controller.finishCommand();
-                      updateConsole(report, 
+                      updateConsole(report,
                           hasReturnValue ? runtimeResult : NO_RESULT,
                           true, undefined, line, line, ["SES"])
                   });
@@ -252,7 +252,7 @@
             historyPreserveColumn:true,
             welcomeMessage:'Type Caja expressions in here.'
           });
-    
+
           controller.finishCommand = function() {
               controller.ajaxloader.remove();
               $('.jquery-console-prompt :last').each(function() {
@@ -265,15 +265,15 @@
                   }
               });
           };
-    
+
           makeGuidSamplesClickable();
-      
+
           var match = window.location.href.match(/#([0-9]+)$/);
           if (match) {
             pageTrigger = match[1]-1;
             setTutorialPage(undefined,match[1]-1);
           }
-      
+
           match = window.location.href.match(/\?input=([^&]+)/);
           if (match) {
             controller.promptText(urlDecode(match[1]));
@@ -475,7 +475,7 @@
       setTutorialPage(result,n);
     }
   };
-  
+
   ////////////////////////////////////////////////////////////////////////
   function notice(name,msg,style) {
     if (!notices[name]) {
@@ -483,7 +483,7 @@
       return controller.notice(msg,style);
     }
   }
-  
+
   function explainServerError(str) {
     if (str == "Terminated!") {
       notice('terminated',

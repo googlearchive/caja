@@ -42,7 +42,7 @@ var cajaFlash = {};
   var cleanString = cleanFrame.contentWindow.String;
   where.parentNode.removeChild(cleanFrame);
 
-  // Convert a tame object into a clean string->string map 
+  // Convert a tame object into a clean string->string map
   function cleanStringMap(o, caja___, taming___) {
     var result = cleanObject();
     if (!o) { return result; }

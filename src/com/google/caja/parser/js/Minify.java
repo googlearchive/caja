@@ -102,7 +102,7 @@ public class Minify {
 
     for (Pair<InputSource, File> input : inputs) {
       CharProducer cp = CharProducer.Factory.create(
-          new InputStreamReader(new FileInputStream(input.b), 
+          new InputStreamReader(new FileInputStream(input.b),
               Charsets.UTF_8.name()),
           input.a);
       JsLexer lexer = new JsLexer(cp);

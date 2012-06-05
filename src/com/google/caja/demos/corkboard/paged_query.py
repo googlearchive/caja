@@ -17,7 +17,7 @@ import logging
 def paged_query(model, orderProp, baseURL, pageSize, before, after):
   """Query the App Engine data store for a set of paged results ("next N"/
   "previous N" links) based on reverse date order.
-  
+
   model: The model class to query for.
   orderProp: The name of the datetime-valued property.
   baseURL: The URL to generate links using, which should take ?before and ?after
@@ -35,7 +35,7 @@ def paged_query(model, orderProp, baseURL, pageSize, before, after):
          + datetime.timedelta(seconds=float(subsec))
   else:
     date = None
-  
+
   # handle paging
   query = model.all()
   if date is None:
@@ -44,12 +44,12 @@ def paged_query(model, orderProp, baseURL, pageSize, before, after):
     query = query.filter(orderProp+" <=", date).order('-'+orderProp)
   elif after:
     query = query.filter(orderProp+" >=", date).order(orderProp)
-    
+
   postings = query.fetch(pageSize + 1)
 
   def dateurl(direction, dt):
     return "%s?%s=%s" % (baseURL, direction, quote_plus(dt.isoformat()))
-  
+
   if after:
     olderLink = dateurl("before", date - datetime.timedelta(microseconds=1))
   elif len(postings) > pageSize:
@@ -62,10 +62,10 @@ def paged_query(model, orderProp, baseURL, pageSize, before, after):
     newerLink = dateurl("after", postings[-1].dateModified)
   else:
     newerLink = None
-  
+
   postings = postings[:pageSize] # strip extra for link generation
   if after:
     # results are reversed
     postings = postings[::-1]
-  
+
   return (postings, olderLink, newerLink)

@@ -99,7 +99,7 @@ var bridalMaker = function (makeDOMAccessible, document) {
   if (isIE) {
     html5shim();
   }
-  
+
   // lazily initialized to allow working in cases where WeakMap is not available
   // and this code is never used.
   var hiddenEventTypes;
@@ -465,7 +465,7 @@ var bridalMaker = function (makeDOMAccessible, document) {
     }
     return styleSheet;
   }
-  
+
   var hiddenStoredTarget;
 
   /**
@@ -497,7 +497,7 @@ var bridalMaker = function (makeDOMAccessible, document) {
           shadowed by <input> elements.
 
         - In IE[67], you can never change the type of an <button> element.
-          setAttribute('type') silently fails, but setAttributeNode 
+          setAttribute('type') silently fails, but setAttributeNode
           throws an exception.  We want the silent failure.
 
         - In IE[67], you can never change the type of an <input> element.
@@ -656,7 +656,7 @@ var bridalMaker = function (makeDOMAccessible, document) {
 
   /**
    * Returns the value of the named attribute on element.
-   * 
+   *
    * <p> In IE[67], if you have
    * <pre>
    *    <form id="f" foo="x"><input name="foo"></form>
@@ -664,7 +664,7 @@ var bridalMaker = function (makeDOMAccessible, document) {
    * then f.foo is the input node,
    * and f.getAttribute('foo') is also the input node,
    * which is contrary to the DOM spec and the behavior of other browsers.
-   * 
+   *
    * <p> This function tries to get a reliable value.
    *
    * <p> In IE[67], getting 'style' may be unreliable for form elements.
@@ -771,7 +771,7 @@ var bridalMaker = function (makeDOMAccessible, document) {
 // bridal no longer exists since it used ambient authority. We should have a
 // proper object to stick this on.
 /**
- * Returns the window containing this element. 
+ * Returns the window containing this element.
  */
 // mda = makeDOMAccessible
 bridalMaker.getWindow = function(element, mda) {

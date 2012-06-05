@@ -89,24 +89,24 @@ function getCaret(el) {
   if (el.value === '') { return 0; }
   // This code courtesy CMS from
   // http://stackoverflow.com/questions/263743/how-to-get-cursor-position-in-textarea
-  if (el.selectionStart) { 
-    return el.selectionStart; 
-  } else if (document.selection) { 
-    el.focus(); 
+  if (el.selectionStart) {
+    return el.selectionStart;
+  } else if (document.selection) {
+    el.focus();
 
-    var r = document.selection.createRange(); 
-    if (r == null) { 
-      return 0; 
-    } 
+    var r = document.selection.createRange();
+    if (r == null) {
+      return 0;
+    }
 
-    var re = el.createTextRange(), 
-        rc = re.duplicate(); 
-    re.moveToBookmark(r.getBookmark()); 
-    rc.setEndPoint('EndToStart', re); 
+    var re = el.createTextRange(),
+        rc = re.duplicate();
+    re.moveToBookmark(r.getBookmark());
+    rc.setEndPoint('EndToStart', re);
 
-    return rc.text.length; 
-  }  
-  return 0; 
+    return rc.text.length;
+  }
+  return 0;
 }
 
 /** Attaches listeners to the given source code textarea. */
@@ -116,7 +116,7 @@ function installSourceHandler(ta) {
   function checkSource() {
     timeoutId = null;
     var typeSelect = ta.parentNode.parentNode.getElementsByTagName('select')[0];
-    if (typeSelect.name !== 'it') { 
+    if (typeSelect.name !== 'it') {
       console.error('TAG STRUCTURE VIOLATED');
       return;
     }

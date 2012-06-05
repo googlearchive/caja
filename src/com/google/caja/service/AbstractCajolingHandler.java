@@ -157,11 +157,11 @@ public abstract class AbstractCajolingHandler implements ContentHandler {
       boolean pretty)
       throws IOException {
     String html = staticHtml == null ? null : Nodes.render(staticHtml);
-    String js = 
+    String js =
       javascript == null ? null : renderJavascript(javascript, pretty);
     renderAsJSON(html, js, jsonpCallback, mq, output, pretty);
   }
-  
+
   protected static void renderAsJSON(
     String staticHtml,
     String javascript,
@@ -169,7 +169,7 @@ public abstract class AbstractCajolingHandler implements ContentHandler {
     MessageQueue mq,
     Appendable output,
     boolean pretty) throws IOException {
-      
+
     List<ValueProperty> props = Lists.newArrayList();
 
     if (staticHtml != null) {

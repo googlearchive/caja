@@ -29,11 +29,11 @@ import com.google.gwt.user.client.rpc.AsyncCallback;
       new HashMap<JavaScriptObject, Object>();
   private final Map<JavaScriptObject, List<String>> classesByJso =
       new HashMap<JavaScriptObject, List<String>>();
-  
+
   private static interface JsoCb {
     void cb(JavaScriptObject jso);
   }
-  
+
   public FrameImpl(JavaScriptObject frame) {
     this.frame = frame;
   }
@@ -49,7 +49,7 @@ import com.google.gwt.user.client.rpc.AsyncCallback;
     (this.@com.google.caja.gwtbeans.shared.FrameImpl::frame).code(uri, mimeType, content);
     return this;
   }-*/;
-    
+
   @Override
   public Frame api(Map<String, JavaScriptObject> api) {
     JavaScriptObject apiJso = JavaScriptObject.createObject();
@@ -58,7 +58,7 @@ import com.google.gwt.user.client.rpc.AsyncCallback;
     }
     return api(apiJso);
   }
-  
+
   @Override
   public native Frame api(JavaScriptObject api) /*-{
     (this.@com.google.caja.gwtbeans.shared.FrameImpl::frame).api(api);
@@ -74,7 +74,7 @@ import com.google.gwt.user.client.rpc.AsyncCallback;
       JavaScriptObject value) /*-{
     o[key] = value;
   }-*/;
-    
+
   @Override
   public void run(final AsyncCallback<JavaScriptObject> callback) {
     runNative(new JsoCb() {
@@ -91,19 +91,19 @@ import com.google.gwt.user.client.rpc.AsyncCallback;
           cb.@com.google.caja.gwtbeans.shared.FrameImpl.JsoCb::cb(Lcom/google/gwt/core/client/JavaScriptObject;)(result);
         });
   }-*/;
-  
+
   /* package private */ JavaScriptObject getFrame() {
     return frame;
   }
-  
+
   /* package private */ Map<Object, JavaScriptObject> getJsoByBean() {
-    return jsoByBean; 
+    return jsoByBean;
   }
 
   /* package private */ Map<JavaScriptObject, Object> getBeanByJso() {
     return beanByJso;
   }
-  
+
   /* package private */ Map<JavaScriptObject, List<String>> getClassesByJso() {
     return classesByJso;
   }

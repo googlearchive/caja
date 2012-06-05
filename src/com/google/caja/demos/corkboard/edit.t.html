@@ -2,7 +2,7 @@
 <!--
   See the file LICENSE.txt in this directory for license information for the
   Caja Corkboard demo.
-  
+
   @author kpreid@switchb.org
 -->
 <html>
@@ -19,7 +19,7 @@
       action="/post"
       method="POST">
   <input type="hidden" name="posting" value="{{ posting.key|escape }}">
-  <textarea name="content" rows="30" cols="60" 
+  <textarea name="content" rows="30" cols="60"
             {% if not posting.editable %}readonly{% endif %}
     >{{ posting.content|escape }}</textarea>
   <p class="signature">

@@ -5,7 +5,7 @@ button.submit { font-weight: bold }
 .verbs-help th { text-align: left; font-family: monospace; font-weight: normal }
 .verbs-help li { margin-bottom: .5em }
 
-/* Make sure that the textarea inputs and uploaded files align properly. */ 
+/* Make sure that the textarea inputs and uploaded files align properly. */
 #inputs { list-style: none; padding-left: 0 }
 #inputs li { display: block; vertical-align: top }
 input:focus, textarea:focus { background-color: #f8f8ff }
@@ -54,7 +54,7 @@ h1 {
   font-size: small;
   border-width: 1px;
   border-style: outset;
-  border-radius: 6px; -moz-border-radius: 6px; -webkit-border-radius: 6px;   
+  border-radius: 6px; -moz-border-radius: 6px; -webkit-border-radius: 6px;
   display: inline-block;
   padding: 1px;
   background: #fff;

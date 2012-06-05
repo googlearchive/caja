@@ -13,10 +13,10 @@
 function CaptureCajoledModule(importsCallback) {
   // Save and restore
   var originalNewModuleHandler = ___.getNewModuleHandler();
-  
+
   // Set up a fresh handler
   var ourHandler = ___.makeNormalNewModuleHandler();
-  
+
   // ... which grabs Domado and removes itself.
   var normalHandle = ourHandler.handle;
   ourHandler.handle = ___.markFuncFreeze(function (module) {

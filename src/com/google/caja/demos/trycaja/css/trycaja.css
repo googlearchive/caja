@@ -6,16 +6,16 @@ a {
     text-decoration:none;
     color: #382567
 }
-.sprites { 
+.sprites {
     background:url(../images/sprites.gif)
 }
-.bgs { 
+.bgs {
     background:url(../images/bgs.gif)
 }
-.bgs2 { 
+.bgs2 {
     background:url(../images/bgs2.png)
 }
-div.cajaContainer { 
+div.cajaContainer {
   vertical-align: top;
   width: 570px;
   height: 500px;
@@ -27,7 +27,7 @@ div.page-wrap {
 div.primary-content {
     width:600px;margin-left:100px; display:inline-block;
 }
-div.main-wrapper { 
+div.main-wrapper {
 
 }
 div.main-wrapper-top {
@@ -114,13 +114,13 @@ div.footer-wrapper-borders {
     background-repeat:repeat-y;
     font-size:12px
 }
-h1.main-header { 
+h1.main-header {
     text-indent:-9999px; background-position: -99px 3px;
     background-repeat: no-repeat;
     width:268px; height:50px; margin-bottom:20px;
     float:left
 }
-h1.main-logo { 
+h1.main-logo {
     text-indent:-9999px; background-position: 0px 0px;
     background-repeat: no-repeat;
     width:48px; height:51px; margin-bottom:15px;
@@ -139,7 +139,7 @@ div.footer {
     line-height: 1.3em;
 }
 div.console { background:#fff;font-size:14px; position:relative }
-div.console div.jquery-console-inner 
+div.console div.jquery-console-inner
 { height:150px; overflow:auto; background:white}
 div.console div.jquery-console-prompt-box
 { color:#437375; font-family:monospace; margin-top:0.5em; }
@@ -147,15 +147,15 @@ div.console div.jquery-console-prompt-box .prompt-done
 { cursor: pointer }
 div.console div.jquery-console-prompt-box .prompt-done:hover
 { background:#453D5B; color: white; }
-div.console div.jquery-console-focus span.jquery-console-cursor 
+div.console div.jquery-console-focus span.jquery-console-cursor
 { background:#666; color:#fff; }
 div.console div.jquery-console-message-error {
     color:#ef0505; font-family:sans-serif; font-weight:bold;
-    padding-left:1em;padding-top:0.25em 
+    padding-left:1em;padding-top:0.25em
 }
 div.console div.jquery-console-message-alert {
     color:#0505ef; font-family:sans-serif; font-weight:bold;
-    padding-left:1em;padding-top:0.25em 
+    padding-left:1em;padding-top:0.25em
 }
 div.console div.jquery-console-message-value
 { color:#000; font-family:monospace;padding-left:1em;padding-top:0.25em; font-weight: bold; }

@@ -66,12 +66,12 @@ public enum HttpStatus {
   SERVICE_UNAVAILABLE(503),
   GATEWAY_TIMEOUT(504),
   HTTP_VERSION_NOT_SUPPORTED(505);
-  
+
   private final int value;
   HttpStatus(int value) {
     this.value = value;
   }
-  
+
   public int value() {
     return value;
   }

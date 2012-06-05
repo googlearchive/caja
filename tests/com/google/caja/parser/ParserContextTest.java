@@ -35,7 +35,7 @@ import com.google.caja.util.TestUtil;
  * @author jasvir@gmail.com (Jasvir Nagra)
  */
 public class ParserContextTest extends CajaTestCase {
-  
+
   public final void testNotEnoughInput() {
     try {
       @SuppressWarnings("unused")
@@ -83,7 +83,7 @@ public class ParserContextTest extends CajaTestCase {
     assertEquals(node.getFilePosition().source(), InputSource.UNKNOWN);
     assertTrue(node instanceof CssTree.StyleSheet);
   }
-  
+
   public final void testGuessCharProducer() throws Exception {
     InputStream css = TestUtil.getResource(CssParserTest.class,
         "cssparserinput1.css").toURL().openStream();
@@ -91,7 +91,7 @@ public class ParserContextTest extends CajaTestCase {
         "amazon.com.html").toURL().openStream();
     InputStream js  = TestUtil.getResource(ParserTest.class,
         "parsertest1.js").toURL().openStream();
-    
+
     ParserContext ctx = new ParserContext(DevNullMessageQueue.singleton());
 
     ParseTreeNode cssNode = ctx.withInput(css).withInput(ContentType.CSS).build();

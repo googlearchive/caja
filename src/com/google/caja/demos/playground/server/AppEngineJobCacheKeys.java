@@ -25,7 +25,7 @@ import java.util.Set;
 final class AppEngineJobCacheKeys implements JobCache.Keys {
 
   final ArrayList<AppEngineJobCacheKey> keys;
-  
+
   AppEngineJobCacheKeys(AppEngineJobCacheKey key) {
     this.keys = (ArrayList<AppEngineJobCacheKey>) Lists.newArrayList(key);
   }

@@ -62,7 +62,7 @@ def cajolingErrorModule(e):
 
 def cajole(html):
   """ Given HTML, return a dict of its cajoled form with keys 'html' and 'js'.
-  
+
   If the cajoling fails, the dict will also have the key 'error' with a true
   value and the HTML will describe the error.
   """
@@ -127,7 +127,7 @@ def cajole(html):
       # for high-load handling
       cacheTime = timeToCacheErrors
       value = {
-        "html": "<strong>(Unexpected Caja error)</strong>", 
+        "html": "<strong>(Unexpected Caja error)</strong>",
         "js": dummyModule,
         "error": True
       }

@@ -8,10 +8,10 @@ Quasiliterals for matching and transforming Javascript parse trees.
   to a method, where {@code this} can only be an instance of the method's
   class.
   <p>In EcmaScript 3, <code>Array.prototype.push</code> is exophoric so it can
-  be <code>call</code>ed on any object by design &mdash; 
+  be <code>call</code>ed on any object by design &mdash;
   not just <code>Array</code>s.
   So <code>o = {}, [].push.call(o, 'a', 'b');</code> is equivalent to
-  <code>o = { 0: 'a', 1: 'b', length: 2 };</code>. 
+  <code>o = { 0: 'a', 1: 'b', length: 2 };</code>.
   </dd>
 <dt>Quasiliteral</dt>
   <dd>
@@ -63,7 +63,7 @@ a binding or consuming any input.
 <tr>
 <td><tt>@foo*</tt></td>
 <td>Like <tt>foo</tt> but will match as many nodes as possible on the input
-grouping them into a <tt>ParseTreeNodeContainer</tt> which is bound to 
+grouping them into a <tt>ParseTreeNodeContainer</tt> which is bound to
 <tt>foo</tt>.</td>
 <td>Emits all of the children of the binding of <tt>foo</tt> if it exists,
 succeeding either way.</td>
@@ -80,7 +80,7 @@ child list for the substitution to succeed.</td>
 <td>If it appears where a <tt>UseSubsetDirective</tt> is allowed, matches any
 <tt>UseSubsetDirective</tt> that contains a super-set of the subsets named.</td>
 <td>Emits a <tt>UseSubsetDirective</tt> with only the subsets named.</td>
-</tr> 
+</tr>
 <tr>
 <td><tt>'@foo'</tt></td>
 <td>Matches a string literal whose content is a valid JS identifier.  Binds

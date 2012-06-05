@@ -111,11 +111,11 @@ public final class SourceBreaks implements Serializable {
   /**
    * Like {@link java.util.Arrays#binarySearch} but doesn't assume the entire
    * array is full.
-   * 
+   *
    * @param arr array to be searched
    * @param target target the value to be searched for
    * @param limit index of the last element to be included in the search
-   * @return index of the target, if it is contained in the array; 
+   * @return index of the target, if it is contained in the array;
    *    otherwise, a negative value.
    */
   private static int boundedBinarySearch(int[] arr, int target, int limit) {

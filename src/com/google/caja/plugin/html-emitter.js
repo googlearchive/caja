@@ -112,7 +112,7 @@ function HtmlEmitter(makeDOMAccessible, base, opt_domicile, opt_guestGlobal) {
     }
     base.innerHTML += htmlString;
   }
-  
+
   // Below we define the attach, detach, and finish operations.
   // These obey the conventions that:
   //   (1) All detached nodes, along with their ex-parents are in detached,
@@ -396,7 +396,7 @@ function HtmlEmitter(makeDOMAccessible, base, opt_domicile, opt_guestGlobal) {
 
     function resolveUntrustedExternal(func, url, mime, marker, continuation) {
       if (domicile && domicile.fetchUri) {
-        domicile.fetchUri(URI.utils.resolve(baseUri, url), mime, 
+        domicile.fetchUri(URI.utils.resolve(baseUri, url), mime,
           function (result) {
             if (result && result.html) {
               func(result.html);
@@ -447,8 +447,8 @@ function HtmlEmitter(makeDOMAccessible, base, opt_domicile, opt_guestGlobal) {
       },
       endDoc: function () {
         depth--;
-        if (depth == 0) { 
-          documentLoaded.resolve(true); 
+        if (depth == 0) {
+          documentLoaded.resolve(true);
         }
       },
       startTag: function (tagName, attribs, params, marker, continuation) {

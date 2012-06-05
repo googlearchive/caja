@@ -127,5 +127,5 @@ header("typeof preincrement n='four'");
   n = 'four';
   result('value of (++n): ' + (++n));
 })();
- 
+
 }

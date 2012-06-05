@@ -85,7 +85,7 @@ public class BenchmarkRunner extends CajaTestCase {
 
     varz(getName(), "uncajoled", "time", uncajoledTime);
     varz(getName(), "es53", "time", es53Time);
-    
+
     varz(getName(), "es53", "timeratio",
         es53Time < 0 ? -1 : es53Time / uncajoledTime);
   }

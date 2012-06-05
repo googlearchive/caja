@@ -83,8 +83,8 @@ var Domado = (function() {
 
   function uriFetch(naiveUriPolicy, uri, mime, callback) {
     if (!naiveUriPolicy || !callback
-      || 'function' !== typeof naiveUriPolicy.fetch) { 
-      return; 
+      || 'function' !== typeof naiveUriPolicy.fetch) {
+      return;
     }
     if (allowedUriScheme(uri)) {
       naiveUriPolicy.fetch(uri, mime, callback);
@@ -97,21 +97,21 @@ var Domado = (function() {
     if (!naiveUriPolicy) { return null; }
     return allowedUriScheme(uri) ?
         'function' === typeof naiveUriPolicy.rewrite ?
-          naiveUriPolicy.rewrite(uri, effects, ltype, hints) 
+          naiveUriPolicy.rewrite(uri, effects, ltype, hints)
         : null
       : null;
   }
 
   if (!domitaModules) { domitaModules = {}; }
-  
+
   domitaModules.proxiesAvailable = typeof Proxy !== 'undefined';
-  
+
   // The proxy facilities provided by Firefox and ES5/3 differ in whether the
   // proxy itself (or rather 'receiver') is the first argument to the 'get'
   // traps. This autoswitches as needed, removing the first argument.
   domitaModules.permuteProxyGetSet = (function () {
     var needToSwap = false;
-  
+
     if (domitaModules.proxiesAvailable) {
       var testHandler = {
         set: function (a, b, c) {
@@ -132,7 +132,7 @@ var Domado = (function() {
       var proxy = Proxy.create(testHandler);
       proxy.foo = 1;
     }
-  
+
     if (needToSwap) {
       return {
         getter: function (getFunc) {
@@ -153,7 +153,7 @@ var Domado = (function() {
       };
     }
   })();
-  
+
   domitaModules.canHaveEnumerableAccessors = (function () {
     // Firefox bug causes enumerable accessor properties to appear as own
     // properties of children. SES patches this by prohibiting enumerable
@@ -170,7 +170,7 @@ var Domado = (function() {
       return false;
     }
   })();
-  
+
   domitaModules.getPropertyDescriptor = function (o, n) {
     if (o === null || o === undefined) {
       return undefined;
@@ -179,7 +179,7 @@ var Domado = (function() {
           || domitaModules.getPropertyDescriptor(Object.getPrototypeOf(o), n);
     }
   };
-  
+
   // This is a simple forwarding proxy handler. Code copied 2011-05-24 from
   // <http://wiki.ecmascript.org/doku.php?id=harmony:proxy_defaulthandler>
   // with modifications to make it work on ES5-not-Harmony-but-with-proxies as
@@ -189,39 +189,39 @@ var Domado = (function() {
   };
   domitaModules.ProxyHandler.prototype = {
     // == fundamental traps ==
-  
+
     // Object.getOwnPropertyDescriptor(proxy, name) -> pd | undefined
     getOwnPropertyDescriptor: function(name) {
       var desc = Object.getOwnPropertyDescriptor(this.target, name);
       if (desc !== undefined) { desc.configurable = true; }
       return desc;
     },
-  
+
     // Object.getPropertyDescriptor(proxy, name) -> pd | undefined
     getPropertyDescriptor: function(name) {
       var desc = Object.getPropertyDescriptor(this.target, name);
       if (desc !== undefined) { desc.configurable = true; }
       return desc;
     },
-  
+
     // Object.getOwnPropertyNames(proxy) -> [ string ]
     getOwnPropertyNames: function() {
       return Object.getOwnPropertyNames(this.target);
     },
-  
+
     // Object.getPropertyNames(proxy) -> [ string ]
     getPropertyNames: function() {
       return Object.getPropertyNames(this.target);
     },
-  
+
     // Object.defineProperty(proxy, name, pd) -> undefined
     defineProperty: function(name, desc) {
       return Object.defineProperty(this.target, name, desc);
     },
-  
+
     // delete proxy[name] -> boolean
     'delete': function(name) { return delete this.target[name]; },
-  
+
     // Object.{freeze|seal|preventExtensions}(proxy) -> proxy
     fix: function() {
       // As long as target is not frozen,
@@ -235,32 +235,32 @@ var Domado = (function() {
       }
       return props;
     },
-  
+
     // == derived traps ==
-  
+
     // name in proxy -> boolean
     has: function(name) { return name in this.target; },
-  
+
     // ({}).hasOwnProperty.call(proxy, name) -> boolean
     hasOwn: function(name) {
       return ({}).hasOwnProperty.call(this.target, name);
     },
-  
+
     // proxy[name] -> any
     get: domitaModules.permuteProxyGetSet.getter(
         function(name, proxy) { return this.target[name]; }),
-  
+
     // proxy[name] = value
     set: domitaModules.permuteProxyGetSet.setter(
         function(name, value, proxy) { this.target[name] = value; }),
-  
+
     // for (var name in proxy) { ... }
     enumerate: function() {
       var result = [];
       for (var name in this.target) { result.push(name); };
       return result;
     },
-  
+
     /*
     // if iterators would be supported:
     // for (var name in proxy) { ... }
@@ -274,13 +274,13 @@ var Domado = (function() {
         }
       };
     },*/
-  
+
     // Object.keys(proxy) -> [ string ]
     keys: function() { return Object.keys(this.target); }
   };
   cajaVM.def(domitaModules.ProxyHandler);
-  
-  
+
+
   /**
    * Like object[propName] = value, but DWIMs enumerability.
    *
@@ -304,7 +304,7 @@ var Domado = (function() {
       value: value
     });
   };
-  
+
   /**
    * Checks that a user-supplied callback is a function. Return silently if the
    * callback is valid; throw an exception if it is not valid.
@@ -315,12 +315,12 @@ var Domado = (function() {
    */
   domitaModules.ensureValidCallback =
       function (aCallback) {
-  
+
     if ('function' !== typeof aCallback) {
       throw new Error('Expected function not ' + typeof aCallback);
     }
   };
-  
+
   /**
    * This combines trademarks with amplification, and is really a thin wrapper
    * on WeakMap. It allows objects to have an arbitrary collection of private
@@ -340,10 +340,10 @@ var Domado = (function() {
    */
   domitaModules.Confidence = (function () {
     var setOwn = domitaModules.setOwn;
-  
+
     function Confidence(typename) {
       var table = new WeakMap();
-  
+
       this.confide = cajaVM.def(function (object, opt_sameAs) {
         //console.debug("Confiding:", object);
         if (table.get(object) !== undefined) {
@@ -353,7 +353,7 @@ var Domado = (function() {
           }
           throw new Error(typename + " has already confided in " + object);
         }
-  
+
         var privates;
         var proto = Object.getPrototypeOf(object);
         if (opt_sameAs !== undefined) {
@@ -361,13 +361,13 @@ var Domado = (function() {
         } else {
           privates = {_obj: object};
         }
-  
+
         table.set(object, privates);
       });
-  
+
       var guard = this.guard = cajaVM.makeTableGuard(table, typename,
           'This operation requires a ' + typename);
-  
+
       /**
        * Wrap a method to enforce that 'this' is a confidant, and also
        * freeze it.
@@ -385,8 +385,8 @@ var Domado = (function() {
         }));
         return cajaVM.def(protectedMethod);
       };
-  
-  
+
+
       /**
        * Get the private properties of the object, or throw.
        */
@@ -399,20 +399,20 @@ var Domado = (function() {
           return p;
         }
       });
-  
+
       this.typename = typename;
     }
     setOwn(Confidence.prototype, "toString", Object.freeze(function () {
       return this.typename + 'Confidence';
     }));
-  
+
     return cajaVM.def(Confidence);
   })();
-  
+
   domitaModules.ExpandoProxyHandler = (function () {
     var getPropertyDescriptor = domitaModules.getPropertyDescriptor;
     var ProxyHandler = domitaModules.ProxyHandler;
-  
+
     /**
      * A handler for a proxy which implements expando properties by forwarding
      * them to a separate object associated (by weak map) with the real node.
@@ -432,7 +432,7 @@ var Domado = (function() {
      * by the accessor get/set functions will be the latter proxy rather than
      * the former. Therefore, it should never be the case that two expando
      * proxies have the same storage and provide different authority, unless
-     * every proxy which is editable provides a superset of the authority 
+     * every proxy which is editable provides a superset of the authority
      * provided by all others (which is the case for the use with TameNodes in
      * Domado).
      *
@@ -449,11 +449,11 @@ var Domado = (function() {
     // Not doing this because it implements all the derived traps, requiring
     // us to do the same. Instead, we use its prototype selectively, whee.
     //inherit(ExpandoProxyHandler, ProxyHandler);
-  
+
     ExpandoProxyHandler.register = function (proxy, handler) {
       expandoProxyTargets.set(proxy, handler);
     };
-  
+
     /**
      * If obj is an expando proxy, return the underlying object. This is used
      * to apply non-expando properties to the object outside of its constructor.
@@ -464,7 +464,7 @@ var Domado = (function() {
     ExpandoProxyHandler.unwrap = function (obj) {
       return expandoProxyTargets.has(obj) ? expandoProxyTargets.get(obj) : obj;
     };
-  
+
     ExpandoProxyHandler.prototype.getOwnPropertyDescriptor = function (name) {
       if (name === "ident___") {
         // Caja WeakMap emulation internal property
@@ -514,7 +514,7 @@ var Domado = (function() {
       // host DOM node and so ours should support it too.
       return undefined;
     };
-  
+
     // Derived traps
     ExpandoProxyHandler.prototype.get = domitaModules.permuteProxyGetSet.getter(
         function (name) {
@@ -587,10 +587,10 @@ var Domado = (function() {
         configurable: true});
       return true;
     });
-  
+
     return cajaVM.def(ExpandoProxyHandler);
   })();
-  
+
   /** XMLHttpRequest or an equivalent on IE 6. */
   domitaModules.XMLHttpRequestCtor = function (XMLHttpRequest, ActiveXObject) {
     if (XMLHttpRequest) {
@@ -626,7 +626,7 @@ var Domado = (function() {
       throw new Error('ActiveXObject not available');
     }
   };
-  
+
   domitaModules.TameXMLHttpRequest = function(
       taming,
       rulebreaker,
@@ -636,14 +636,14 @@ var Domado = (function() {
     var setOwn = domitaModules.setOwn;
     var canHaveEnumerableAccessors = domitaModules.canHaveEnumerableAccessors;
     // See http://www.w3.org/TR/XMLHttpRequest/
-  
+
     // TODO(ihab.awad): Improve implementation (interleaving, memory leaks)
     // per http://www.ilinsky.com/articles/XMLHttpRequest/
-  
+
     var TameXHRConf = new Confidence('TameXMLHttpRequest');
     var p = TameXHRConf.p.bind(TameXHRConf);
     var method = TameXHRConf.protectMethod;
-  
+
     // Note: Since there is exactly one TameXMLHttpRequest per feral XHR, we do
     // not use an expando proxy and always let clients set expando properties
     // directly on this. This simplifies implementing onreadystatechange.
@@ -803,10 +803,10 @@ var Domado = (function() {
     /*SES*/setOwn(TameXMLHttpRequest.prototype, "toString", method(function () {
       return 'Not a real XMLHttpRequest';
     }));
-  
+
     return cajaVM.def(TameXMLHttpRequest);
   };
-  
+
   // TODO(kpreid): Review whether this has unnecessary features (as we're
   // statically generating Style accessors rather than proxy/handler-ing
   // Domita did).
@@ -814,7 +814,7 @@ var Domado = (function() {
     var canonicalStylePropertyNames = {};
     // Maps style property names, e.g. cssFloat, to property names, e.g. float.
     var cssPropertyNames = {};
-  
+
     for (var cssPropertyName in cssSchema) {
       var baseStylePropertyName = cssPropertyName.replace(
           /-([a-z])/g, function (_, letter) { return letter.toUpperCase(); });
@@ -835,7 +835,7 @@ var Domado = (function() {
       }
       canonicalStylePropertyNames[cssPropertyName] = canonStylePropertyName;
     }
-  
+
     return {
       isCanonicalProp: function (p) {
         return cssPropertyNames.hasOwnProperty(p);
@@ -858,9 +858,9 @@ var Domado = (function() {
       }
     };
   };
-  
+
   cajaVM.def(domitaModules);
-  
+
   /**
    * Authorize the Domado library.
    *
@@ -880,7 +880,7 @@ var Domado = (function() {
     // Everything in this scope but not in function attachDocument() below
     // does not contain lexical references to a particular DOM instance, but
     // may have some kind of privileged access to Domado internals.
-  
+
     // This is only used if opt_rulebreaker is absent (because the plugin ids
     // are normally managed by es53 when it is not). TODO(kpreid): Is there a
     // more sensible place to put this management, which would be used in both
@@ -888,7 +888,7 @@ var Domado = (function() {
     var importsToId = new WeakMap(true);
     var idToImports = [];
     var nextPluginId = 0;
-  
+
     // This parameter is supplied in the ES5/3 case and not in the ES5+SES case.
     var rulebreaker = opt_rulebreaker ? opt_rulebreaker : cajaVM.def({
       // These are the stub versions used when in ES5+SES.
@@ -900,7 +900,7 @@ var Domado = (function() {
           target[+i] = source[+i];
         }
       },
-  
+
       getId: function (imports) {
         if (importsToId.has(imports)) {
           return importsToId.get(imports);
@@ -919,16 +919,16 @@ var Domado = (function() {
         return imports;
       }
     });
-  
+
     var makeDOMAccessible = rulebreaker.makeDOMAccessible;
     var makeFunctionAccessible = rulebreaker.makeFunctionAccessible;
-  
+
     var Confidence = domitaModules.Confidence;
     var ProxyHandler = domitaModules.ProxyHandler;
     var ExpandoProxyHandler = domitaModules.ExpandoProxyHandler;
     var setOwn = domitaModules.setOwn;
     var canHaveEnumerableAccessors = domitaModules.canHaveEnumerableAccessors;
-  
+
     function traceStartup(var_args) {
       //// In some versions, Firebug console's methods have no .apply. In other
       //// versions, Function.prototype.apply cannot be used on them!
@@ -940,7 +940,7 @@ var Domado = (function() {
       //  }
       //}
     }
-  
+
     function inherit(sub, souper) {
       sub.prototype = Object.create(souper.prototype);
       Object.defineProperty(sub.prototype, "constructor", {
@@ -949,7 +949,7 @@ var Domado = (function() {
         configurable: true
       });
     }
-  
+
     /**
      * For each enumerable p: d in propDescs, do the equivalent of
      *
@@ -1003,37 +1003,37 @@ var Domado = (function() {
         Object.defineProperty(object, prop, desc);
       }
     }
-  
+
     function forOwnKeys(obj, fn) {
       for (var i in obj) {
         if (!Object.prototype.hasOwnProperty.call(obj, i)) { continue; }
         fn(i, obj[i]);
       }
     }
-  
+
     // value transforming functions
     function identity(x) { return x; }
     function defaultToEmptyStr(x) { return x || ''; }
-  
+
     // Array Remove - By John Resig (MIT Licensed)
     function arrayRemove(array, from, to) {
       var rest = array.slice((to || from) + 1 || array.length);
       array.length = from < 0 ? array.length + from : from;
       return array.push.apply(array, rest);
     }
-  
+
     // It is tempting to name this table "burglar".
     var windowToDomicile = new WeakMap();
-  
+
     var TameEventConf = new Confidence('TameEvent');
     var TameEventT = TameEventConf.guard;
     var TameImageDataConf = new Confidence('TameImageData');
     var TameImageDataT = TameImageDataConf.guard;
     var TameGradientConf = new Confidence('TameGradient');
     var TameGradientT = TameGradientConf.guard;
-  
+
     var eventMethod = TameEventConf.protectMethod;
-  
+
     // Define a wrapper type for known safe HTML, and a trademarker.
     // This does not actually use the trademarking functions since trademarks
     // cannot be applied to strings.
@@ -1061,9 +1061,9 @@ var Domado = (function() {
           : new Html(htmlFragment);
     }
     cajaVM.def([Html, safeHtml, blessHtml]);
-  
+
     var XML_SPACE = '\t\n\r ';
-  
+
     var JS_SPACE = '\t\n\r ';
     // An identifier that does not end with __.
     var JS_IDENT = '(?:[a-zA-Z_][a-zA-Z0-9$_]*[a-zA-Z0-9$]|[a-zA-Z])_?';
@@ -1077,39 +1077,39 @@ var Domado = (function() {
           + '[' + JS_SPACE + ']*)?\\)'
         // And it can end with a semicolon.
         + '[' + JS_SPACE + ']*(?:;?[' + JS_SPACE + ']*)$');
-  
+
     // These id patterns match the ones in HtmlAttributeRewriter.
-  
+
     var VALID_ID_CHAR =
         unicode.LETTER + unicode.DIGIT + '_'
         + '$\\-.:;=()\\[\\]'
         + unicode.COMBINING_CHAR + unicode.EXTENDER;
-  
+
     var VALID_ID_PATTERN = new RegExp(
         '^[' + VALID_ID_CHAR + ']+$');
-  
+
     var VALID_ID_LIST_PATTERN = new RegExp(
         '^[' + XML_SPACE + VALID_ID_CHAR + ']*$');
-  
+
     var FORBIDDEN_ID_PATTERN = new RegExp('__\\s*$');
-  
+
     var FORBIDDEN_ID_LIST_PATTERN = new RegExp('__(?:\\s|$)');
-  
+
     function isValidId(s) {
       return !FORBIDDEN_ID_PATTERN.test(s)
           && VALID_ID_PATTERN.test(s);
     }
-  
+
     function isValidIdList(s) {
       return !FORBIDDEN_ID_LIST_PATTERN.test(s)
           && VALID_ID_LIST_PATTERN.test(s);
     }
-  
+
     // Trim whitespace from the beginning and end of a CSS string.
     function trimCssSpaces(input) {
       return input.replace(/^[ \t\r\n\f]+|[ \t\r\n\f]+$/g, '');
     }
-  
+
     function mimeTypeForAttr(tagName, attribName) {
       if (attribName === 'src') {
         if (tagName === 'img') { return 'image/*'; }
@@ -1117,7 +1117,7 @@ var Domado = (function() {
       }
       return '*/*';
     }
-  
+
     // TODO(ihab.awad): Does this work on IE, where console output
     // goes to a DOM node?
     function assert(cond) {
@@ -1129,9 +1129,9 @@ var Domado = (function() {
         throw new Error("Domita assertion failed");
       }
     }
-  
+
     var cssSealerUnsealerPair = cajaVM.makeSealerUnsealerPair();
-  
+
     /*
      * Implementations of setTimeout, setInterval, clearTimeout, and
      * clearInterval that only allow simple functions as timeouts and
@@ -1166,10 +1166,10 @@ var Domado = (function() {
         //   Notes:
         //   Passing an invalid ID to clearTimeout does not have any effect
         //   (and doesn't throw an exception).
-  
+
         // WeakMap will throw on these, so early exit.
         if (typeof id !== 'object' || id == null) { return; }
-  
+
         var feral = ids.get(id);
         if (feral !== undefined) clear(feral);  // noop if not found
       }
@@ -1177,7 +1177,7 @@ var Domado = (function() {
       target[clearName] = cajaVM.def(tameClear);
       return target;
     }
-  
+
     function makeScrollable(bridal, element) {
       var overflow = bridal.getComputedStyle(element, void 0).overflow;
       switch (overflow && overflow.toLowerCase()) {
@@ -1188,7 +1188,7 @@ var Domado = (function() {
           break;
       }
     }
-  
+
     /**
      * Moves the given pixel within the element's frame of reference as close to
      * the top-left-most pixel of the element's viewport as possible without
@@ -1204,7 +1204,7 @@ var Domado = (function() {
       element.scrollLeft = x;
       element.scrollTop = y;
     }
-  
+
     /**
      * Moves the origin of the given element's view-port by the given offset.
      * @param {number} dx a delta in pixels.
@@ -1218,13 +1218,13 @@ var Domado = (function() {
       element.scrollLeft += dx;
       element.scrollTop += dy;
     }
-  
+
     function guessPixelsFromCss(cssStr) {
       if (!cssStr) { return 0; }
       var m = cssStr.match(/^([0-9]+)/);
       return m ? +m[1] : 0;
     }
-  
+
     function tameResizeTo(element, w, h) {
       if (w !== +w || h !== +h) {
         throw new Error('Cannot resize to ' + w + ':' + typeof w + ', '
@@ -1234,14 +1234,14 @@ var Domado = (function() {
       element.style.width = w + 'px';
       element.style.height = h + 'px';
     }
-  
+
     function tameResizeBy(element, dw, dh) {
       if (dw !== +dw || dh !== +dh) {
         throw new Error('Cannot resize by ' + dw + ':' + typeof dw + ', '
                         + dh + ':' + typeof dh);
       }
       if (!dw && !dh) { return; }
-  
+
       // scrollWidth is width + padding + border.
       // offsetWidth is width + padding + border, but excluding the non-visible
       // area.
@@ -1273,31 +1273,31 @@ var Domado = (function() {
       //     |        |
       //     +--------+
       //     clientWidth (but excludes content outside viewport)
-  
+
       var style = makeDOMAccessible(element.currentStyle);
       if (!style) {
         style = makeDOMAccessible(
             bridalMaker.getWindow(element, makeDOMAccessible)
             .getComputedStyle(element, void 0));
       }
-  
+
       makeDOMAccessible(element.style);
-  
+
       // We guess the padding since it's not always expressed in px on IE
       var extraHeight = guessPixelsFromCss(style.paddingBottom)
           + guessPixelsFromCss(style.paddingTop);
       var extraWidth = guessPixelsFromCss(style.paddingLeft)
           + guessPixelsFromCss(style.paddingRight);
-  
+
       var goalHeight = element.clientHeight + dh;
       var goalWidth = element.clientWidth + dw;
-  
+
       var h = goalHeight - extraHeight;
       var w = goalWidth - extraWidth;
-  
+
       if (dh) { element.style.height = Math.max(0, h) + 'px'; }
       if (dw) { element.style.width = Math.max(0, w) + 'px'; }
-  
+
       // Correct if our guesses re padding and borders were wrong.
       // We may still not be able to resize if e.g. the deltas would take
       // a dimension negative.
@@ -1310,7 +1310,7 @@ var Domado = (function() {
         element.style.width = Math.max(0, w - wError) + 'px';
       }
     }
-  
+
     /**
      * Add a tamed document implementation to a Gadget's global scope.
      *
@@ -1330,7 +1330,7 @@ var Domado = (function() {
      *       * loaderType: type of loader that would load the URI or the
      *         rewritten
      *         version.
-     *       * hints: record that describes the context in which the URI 
+     *       * hints: record that describes the context in which the URI
      *         appears.
      *         If a hint is not present it should not be relied upon.
      *     The rewrite function should be idempotent to allow rewritten HTML
@@ -1373,10 +1373,10 @@ var Domado = (function() {
       document = makeDOMAccessible(document);
       var docEl = makeDOMAccessible(document.documentElement);
       var bridal = bridalMaker(makeDOMAccessible, document);
-  
+
       var window = bridalMaker.getWindow(pseudoBodyNode, makeDOMAccessible);
       window = makeDOMAccessible(window);
-  
+
       var elementPolicies = {};
       elementPolicies.form = function (attribs) {
         // Forms must have a gated onsubmit handler or they must have an
@@ -1393,11 +1393,11 @@ var Domado = (function() {
         return attribs;
       };
       // TODO(kpreid): should elementPolicies be exported in domicile?
-  
+
       // On IE, turn an <canvas> tags into canvas elements that explorercanvas
       // will recognize
       bridal.initCanvasElements(pseudoBodyNode);
-  
+
       // The private properties used in TameNodeConf are:
       //    feral (feral node)
       //    editable (this node editable)
@@ -1415,11 +1415,11 @@ var Domado = (function() {
       var TameNodeConf = new Confidence('TameNode');
       var TameNodeT = TameNodeConf.guard;
       var np = TameNodeConf.p.bind(TameNodeConf);
-  
+
       // A map from tame nodes to their expando proxies, used when only the tame
       // node is available and the proxy is needed to return to the client.
       var tamingProxies = new WeakMap();
-  
+
       /**
        * Call this on every TameNode after it is constructed, and use its return
        * value instead of the node.
@@ -1434,26 +1434,26 @@ var Domado = (function() {
           // intercept writes). If running without proxies, then we need to be
           // unfrozen so that assignments to expando fields work.
           Object.freeze(node);
-  
+
           // The proxy construction is deferred until now because the ES5/3
           // implementation of proxies requires that the proxy's prototype is
           // frozen.
           var proxiedNode = Proxy.create(np(node).proxyHandler, node);
           delete np(node).proxyHandler;  // no longer needed
-  
+
           ExpandoProxyHandler.register(proxiedNode, node);
           TameNodeConf.confide(proxiedNode, node);
           tamingProxies.set(node, proxiedNode);
           taming.untamesToWrapper(np(proxiedNode).feral, proxiedNode);
-  
+
           return proxiedNode;
         } else {
           return node;
         }
       }
-  
+
       var nodeMethod = TameNodeConf.protectMethod;
-  
+
       /**
        * Sanitizes the value of a CSS property, the {@code red} in
        * {@code color:red}.
@@ -1483,7 +1483,7 @@ var Domado = (function() {
             : null);
         return tokens.length !== 0;
       }
-  
+
       /**
        * Sanitize the 'style' attribute value of an HTML element.
        *
@@ -1505,7 +1505,7 @@ var Domado = (function() {
             });
         return sanitizedDeclarations.join(' ; ');
       }
-  
+
       /** Sanitize HTML applying the appropriate transformations. */
       function sanitizeHtml(htmlText) {
         var out = [];
@@ -1553,7 +1553,7 @@ var Domado = (function() {
         return attribs;
       }
       var htmlSanitizer = html.makeHtmlSanitizer(sanitizeAttrs);
-  
+
       /**
        * If str ends with suffix,
        * and str is not identical to suffix,
@@ -1569,10 +1569,10 @@ var Domado = (function() {
           return fail;
         }
       }
-  
+
       var ID_LIST_PARTS_PATTERN = new RegExp(
         '([^' + XML_SPACE + ']+)([' + XML_SPACE + ']+|$)', 'g');
-  
+
       /** Convert a real attribute value to the value seen in a sandbox. */
       function virtualizeAttributeValue(attrType, realValue) {
         realValue = String(realValue);
@@ -1598,7 +1598,7 @@ var Domado = (function() {
             return realValue;
         }
       }
-  
+
       /**
        * Undoes some of the changes made by sanitizeHtml, e.g. stripping ID
        * prefixes.
@@ -1632,7 +1632,7 @@ var Domado = (function() {
           rcdata: function (text, out) { out.push(text); },
           cdata: function (text, out) { out.push(text); }
         });
-  
+
       /**
        * Returns a normalized attribute value, or null if the attribute should
        * be omitted.
@@ -1685,7 +1685,7 @@ var Domado = (function() {
             value = String(value);
             // Translate a handler that calls a simple function like
             //   return foo(this, event)
-  
+
             // TODO(mikesamuel): integrate cajita compiler to allow arbitrary
             // cajita in event handlers.
             var match = value.match(SIMPLE_HANDLER_PATTERN);
@@ -1725,7 +1725,7 @@ var Domado = (function() {
             }
             var cssPropertiesAndValues = cssSealerUnsealerPair.unseal(value);
             if (!cssPropertiesAndValues) { return null; }
-  
+
             var css = [];
             for (var i = 0; i < cssPropertiesAndValues.length; i += 2) {
               var propName = cssPropertiesAndValues[+i];
@@ -1755,7 +1755,7 @@ var Domado = (function() {
             return null;
         }
       }
-  
+
       // Property descriptors which are independent of any feral object.
       /**
        * Property descriptor which throws on access.
@@ -1773,7 +1773,7 @@ var Domado = (function() {
       function P_constant(value) {
         return { enumerable: true, value: value };
       }
-  
+
       /**
        * Construct property descriptors suitable for taming objects which use
        * the specified confidence, such that confidence.p(obj).feral is the
@@ -1786,7 +1786,7 @@ var Domado = (function() {
       function PropertyTaming(confidence) {
         var p = confidence.p;
         var method = confidence.protectMethod;
-  
+
         return cajaVM.def({
           /**
            * Property descriptor for properties which have the value the feral
@@ -1799,7 +1799,7 @@ var Domado = (function() {
               return p(this).feral[prop];
             })
           },
-  
+
           /**
            * Property descriptor for properties which have the value the feral
            * object does, and are assignable if the wrapper is editable.
@@ -1815,7 +1815,7 @@ var Domado = (function() {
               p(this).feral[prop] = value;
             })
           },
-  
+
           /**
            * Property descriptor for properties which have the value the feral
            * object does, and are assignable (with a predicate restricting the
@@ -1838,7 +1838,7 @@ var Domado = (function() {
               })
             };
           },
-  
+
           /**
            * Property descriptor for properties which have a different name
            * than what they map to (e.g. labelElement.htmlFor vs.
@@ -1858,7 +1858,7 @@ var Domado = (function() {
               })
             };
           },
-  
+
           /**
            * Property descriptor for forwarded properties which have node values
            * which may be nodes that might be outside of the virtual document.
@@ -1877,7 +1877,7 @@ var Domado = (function() {
                                      defaultTameNode);
             })
           },
-  
+
           /**
            * Property descriptor which maps to an attribute or property, is
            * assignable, and has the value transformed in some way.
@@ -1935,10 +1935,10 @@ var Domado = (function() {
         });
       }
       cajaVM.def(PropertyTaming);  // and its prototype
-  
+
       // TODO(kpreid): We have completely unrelated things called 'np' and 'NP'.
       var NP = new PropertyTaming(TameNodeConf);
-  
+
       // Node-specific property accessors:
       /**
        * Property descriptor for forwarded properties which have node values
@@ -1952,7 +1952,7 @@ var Domado = (function() {
                                  np(this).childrenEditable);
         })
       };
-  
+
       var nodeExpandos = new WeakMap(true);
       /**
        * Return the object which stores expando properties for a given
@@ -1965,10 +1965,10 @@ var Domado = (function() {
         }
         return s;
       }
-  
+
       var editableTameNodeCache = new WeakMap(true);
       var readOnlyTameNodeCache = new WeakMap(true);
-  
+
       function makeTameNodeByType(node, editable) {
         switch (node.nodeType) {
           case 1:  // Element
@@ -2004,7 +2004,7 @@ var Domado = (function() {
             return new TameOpaqueNode(node, editable);
         }
       }
-  
+
       /**
        * returns a tame DOM node.
        * @param {Node} node
@@ -2016,7 +2016,7 @@ var Domado = (function() {
         if (node === null || node === void 0) { return null; }
         node = makeDOMAccessible(node);
         // TODO(mikesamuel): make sure it really is a DOM node
-  
+
         var cache = editable ? editableTameNodeCache : readOnlyTameNodeCache;
         var tamed = cache.get(node);
         if (tamed !== void 0) {
@@ -2026,13 +2026,13 @@ var Domado = (function() {
             ? new TameForeignNode(node, editable)
             : makeTameNodeByType(node, editable);
         tamed = finishNode(tamed);
-  
+
         if (node.nodeType === 1) {
           cache.set(node, tamed);
         }
         return tamed;
       }
-  
+
       function tameRelatedNode(node, editable, tameNodeCtor) {
         if (node === null || node === void 0) { return null; }
         if (node === np(tameDocument).feralPseudoBodyNode) {
@@ -2042,14 +2042,14 @@ var Domado = (function() {
           }
           return tameDocument.body;
         }
-  
+
         node = makeDOMAccessible(node);
-  
+
         // Catch errors because node might be from a different domain.
         try {
           var docElem = node.ownerDocument.documentElement;
-          for (var ancestor = node; 
-              ancestor; 
+          for (var ancestor = node;
+              ancestor;
               ancestor = makeDOMAccessible(ancestor.parentNode)) {
             if (idClassPattern.test(ancestor.className)) {
               return tameNodeCtor(node, editable);
@@ -2061,11 +2061,11 @@ var Domado = (function() {
         } catch (e) {}
         return null;
       }
-  
+
       domicile.tameNodeAsForeign = function(node) {
         return defaultTameNode(node, true, true);
       };
-  
+
       /**
        * Returns the length of a raw DOM Nodelist object, working around
        * NamedNodeMap bugs in IE, Opera, and Safari as discussed at
@@ -2080,7 +2080,7 @@ var Domado = (function() {
         if (limit !== +limit) { limit = 1/0; }
         return limit;
       }
-  
+
       /**
        * Constructs a NodeList-like object.
        *
@@ -2098,28 +2098,28 @@ var Domado = (function() {
         // TODO(kpreid): Under a true ES5 environment, node lists should be
         // proxies so that they preserve liveness of the original lists.
         // This should be controlled by an option.
-  
+
         var limit = getNodeListLength(nodeList);
         if (limit > 0 && !opt_tameNodeCtor) {
           throw 'Internal: Nonempty mixinNodeList() without a tameNodeCtor';
         }
-  
+
         for (var i = tamed.length, j = 0; j < limit && nodeList[+j]; ++i, ++j) {
           tamed[+i] = opt_tameNodeCtor(nodeList[+j], editable);
         }
-  
+
         // Guard against accidental leakage of untamed nodes
         nodeList = null;
-  
+
         tamed.item = cajaVM.def(function (k) {
           k &= 0x7fffffff;
           if (k !== k) { throw new Error(); }
           return tamed[+k] || null;
         });
-  
+
         return tamed;
       }
-  
+
       function rebuildTameListConstructors(ArrayLike) {
         TameNodeList = makeTameNodeList();
         TameNodeList.prototype = Object.create(ArrayLike.prototype);
@@ -2134,7 +2134,7 @@ var Domado = (function() {
         Object.freeze(TameOptionsList.prototype);
         Object.freeze(TameOptionsList);
       }
-  
+
       function makeTameNodeList() {
         return function TNL(nodeList,
               editable,
@@ -2167,9 +2167,9 @@ var Domado = (function() {
             return result;
           };
       }
-  
+
       var TameNodeList = Object.freeze(makeTameNodeList());
-  
+
       function makeTameOptionsList() {
         return function TOL(nodeList, editable, opt_tameNodeCtor) {
             nodeList = makeDOMAccessible(nodeList);
@@ -2191,9 +2191,9 @@ var Domado = (function() {
             return result;
           };
       }
-  
+
       var TameOptionsList = Object.freeze(makeTameOptionsList());
-  
+
       /**
        * Return a fake node list containing tamed nodes.
        * @param {Array.<TameNode>} array of tamed nodes.
@@ -2203,7 +2203,7 @@ var Domado = (function() {
         array.item = cajaVM.def(function(i) { return array[+i]; });
         return Object.freeze(array);
       }
-  
+
       /**
        * Constructs an HTMLCollection-like object which indexes its elements
        * based on their NAME attribute.
@@ -2225,10 +2225,10 @@ var Domado = (function() {
       function mixinHTMLCollection(tamed, nodeList, editable,
           opt_tameNodeCtor) {
         mixinNodeList(tamed, nodeList, editable, opt_tameNodeCtor);
-  
+
         var tameNodesByName = {};
         var tameNode;
-  
+
         for (var i = 0; i < tamed.length && (tameNode = tamed[+i]); ++i) {
           var name = tameNode.getAttribute('name');
           if (name && !(name.charAt(name.length - 1) === '_' || (name in tamed)
@@ -2237,7 +2237,7 @@ var Domado = (function() {
             tameNodesByName[name].push(tameNode);
           }
         }
-  
+
         for (var name in tameNodesByName) {
           var tameNodes = tameNodesByName[name];
           if (tameNodes.length > 1) {
@@ -2246,7 +2246,7 @@ var Domado = (function() {
             tamed[name] = tameNodes[0];
           }
         }
-  
+
         tamed.namedItem = cajaVM.def(function(name) {
           name = String(name);
           if (name.charAt(name.length - 1) === '_') {
@@ -2258,15 +2258,15 @@ var Domado = (function() {
           }
           return null;
         });
-  
+
         return tamed;
       }
-  
+
       function tameHTMLCollection(nodeList, editable, opt_tameNodeCtor) {
         return Object.freeze(
             mixinHTMLCollection([], nodeList, editable, opt_tameNodeCtor));
       }
-  
+
       function tameGetElementsByTagName(rootNode, tagName, editable, extras) {
         tagName = String(tagName);
         if (tagName !== '*') {
@@ -2281,21 +2281,21 @@ var Domado = (function() {
         return new TameNodeList(rootNode.getElementsByTagName(tagName),
             editable, defaultTameNode, extras);
       }
-  
+
       /**
        * Implements http://www.whatwg.org/specs/web-apps/current-work/#dom-document-getelementsbyclassname
        * using an existing implementation on browsers that have one.
        */
       function tameGetElementsByClassName(rootNode, className, editable) {
         className = String(className);
-  
+
         // The quotes below are taken from the HTML5 draft referenced above.
-  
+
         // "having obtained the classes by splitting a string on spaces"
         // Instead of using split, we use match with the global modifier so that
         // we don't have to remove leading and trailing spaces.
         var classes = className.match(/[^\t\n\f\r ]+/g);
-  
+
         // Filter out classnames in the restricted namespace.
         for (var i = classes ? classes.length : 0; --i >= 0;) {
           var classi = classes[+i];
@@ -2304,7 +2304,7 @@ var Domado = (function() {
             --classes.length;
           }
         }
-  
+
         if (!classes || classes.length === 0) {
           // "If there are no tokens specified in the argument, then the method
           //  must return an empty NodeList" [instead of all elements]
@@ -2314,7 +2314,7 @@ var Domado = (function() {
           // htmlEl.className contains a non-space character.
           return fakeNodeList([]);
         }
-  
+
         // "unordered set of unique space-separated tokens representing classes"
         if (typeof rootNode.getElementsByClassName === 'function') {
           return new TameNodeList(
@@ -2330,7 +2330,7 @@ var Domado = (function() {
           // compliant implementations already have a getElementsByClassName
           // implementation, and legacy
           // implementations do normalize according to comments on issue 935.
-  
+
           // We assume standards mode, so the HTML5 requirement that
           //   "If the document is in quirks mode, then the comparisons for the
           //    classes must be done in an ASCII case-insensitive  manner,"
@@ -2339,7 +2339,7 @@ var Domado = (function() {
           for (var i = nClasses; --i >= 0;) {
             classes[+i] = ' ' + classes[+i] + ' ';
           }
-  
+
           // We comply with the requirement that the result is a list
           //   "containing all the elements in the document, in tree order,"
           // since the spec for getElementsByTagName has the same language.
@@ -2366,7 +2366,7 @@ var Domado = (function() {
           return fakeNodeList(matches);
         }
       }
-  
+
       function makeEventHandlerWrapper(thisNode, listener) {
         domitaModules.ensureValidCallback(listener);
         function wrapper(event) {
@@ -2375,12 +2375,12 @@ var Domado = (function() {
         }
         return wrapper;
       }
-  
+
       var NOT_EDITABLE = "Node not editable.";
       var UNSAFE_TAGNAME = "Unsafe tag name.";
       var UNKNOWN_TAGNAME = "Unknown tag name.";
       var INDEX_SIZE_ERROR = "Index size error.";
-  
+
       // Implementation of EventTarget::addEventListener
       function tameAddEventListener(name, listener, useCapture) {
         var feral = np(this).feral;
@@ -2393,7 +2393,7 @@ var Domado = (function() {
         wrappedListener._d_originalListener = listener;
         np(this).wrappedListeners.push(wrappedListener);
       }
-  
+
       // Implementation of EventTarget::removeEventListener
       function tameRemoveEventListener(name, listener, useCapture) {
         var self = TameNodeT.coerce(this);
@@ -2412,15 +2412,15 @@ var Domado = (function() {
         bridal.removeEventListener(
             np(this).feral, name, wrappedListener, useCapture);
       }
-  
+
       // A map of tamed node classes, keyed by DOM Level 2 standard name, which
       // will be exposed to the client.
       var nodeClasses = {};
-  
+
       // A map of tamed node constructors, keyed by HTML element name, which
       // will be used by defaultTameNode.
       var tamingClassesByElement = {};
-  
+
       /**
        * This does three things:
        *
@@ -2434,22 +2434,22 @@ var Domado = (function() {
        */
       function inertCtor(tamedCtor, someSuper, opt_name) {
         inherit(tamedCtor, someSuper);
-  
+
         var inert = function() {
           throw new TypeError('This constructor cannot be called directly.');
         };
         inert.prototype = tamedCtor.prototype;
         Object.freeze(inert);  // not def, because inert.prototype must remain
         setOwn(tamedCtor.prototype, "constructor", inert);
-  
+
         if (opt_name !== undefined)
           nodeClasses[opt_name] = inert;
-  
+
         return inert;
       }
-  
+
       traceStartup("DT: about to make TameNode");
-  
+
       /**
        * Base class for a Node wrapper.  Do not create directly -- use the
        * tameNode factory instead.
@@ -2489,7 +2489,7 @@ var Domado = (function() {
         if (this === Object.prototype || this == null || this == undefined) {
           return Object.prototype.toString.call(opt_self || this);
         }
-  
+
         var ctor = this.constructor;
         for (var name in nodeClasses) { // TODO(kpreid): less O(n)
           if (nodeClasses[name] === ctor) {
@@ -2500,7 +2500,7 @@ var Domado = (function() {
             }
           }
         }
-  
+
         // try again with our prototype, passing the real this in
         return TameNode.prototype.toString.call(
             Object.getPrototypeOf(this), this);
@@ -2530,9 +2530,9 @@ var Domado = (function() {
           ];
       traceStartup("DT: about to defend TameNode");
       cajaVM.def(TameNode);  // and its prototype
-  
+
       traceStartup("DT: about to make TameBackedNode");
-  
+
       /**
        * A tame node that is backed by a real node.
        *
@@ -2546,16 +2546,16 @@ var Domado = (function() {
        */
       function TameBackedNode(node, editable, childrenEditable, opt_proxyType) {
         node = makeDOMAccessible(node);
-  
+
         if (!node) {
           throw new Error('Creating tame node with undefined native delegate');
         }
-  
+
         TameNode.call(this, editable);
-  
+
         np(this).feral = node;
         np(this).childrenEditable = editable && childrenEditable;
-  
+
         if (domitaModules.proxiesAvailable) {
           np(this).proxyHandler = new (opt_proxyType || ExpandoProxyHandler)(
               this, editable, getNodeExpandoStorage(node));
@@ -2716,16 +2716,16 @@ var Domado = (function() {
         }
       }
       cajaVM.def(TameBackedNode);  // and its prototype
-  
+
       traceStartup("DT: about to make TamePseudoNode");
-  
+
       /**
        * A fake node that is not backed by a real DOM node.
        * @constructor
        */
       function TamePseudoNode(editable) {
         TameNode.call(this, editable);
-  
+
         if (domitaModules.proxiesAvailable) {
           // finishNode will wrap 'this' with an actual proxy later.
           np(this).proxyHandler = new ExpandoProxyHandler(this, editable, {});
@@ -2775,9 +2775,9 @@ var Domado = (function() {
         })}
       });
       cajaVM.def(TamePseudoNode);  // and its prototype
-  
+
       traceStartup("DT: done fundamental nodes");
-  
+
       var commonElementPropertyHandlers = (function() {
         var geometryDelegateProperty = {
           extendedAccessors: true,
@@ -2806,12 +2806,12 @@ var Domado = (function() {
           scrollHeight: geometryDelegateProperty
         };
       })();
-  
+
       function TamePseudoElement(
           tagName, tameDoc, childNodesGetter, parentNodeGetter, innerHTMLGetter,
           geometryDelegate, editable) {
         TamePseudoNode.call(this, editable);
-  
+
         definePropertiesAwesomely(this, {
           nodeName: P_constant(tagName),
           tagName: P_constant(tagName),
@@ -2823,7 +2823,7 @@ var Domado = (function() {
           parentNode: { enumerable: true, get: nodeMethod(parentNodeGetter) },
           innerHTML: { enumerable: true, get: nodeMethod(innerHTMLGetter) }
         });
-  
+
         np(this).geometryDelegate = geometryDelegate;
       }
       inertCtor(TamePseudoElement, TamePseudoNode);
@@ -2860,9 +2860,9 @@ var Domado = (function() {
         nodeValue: P_constant(null)
       });
       cajaVM.def(TamePseudoElement);  // and its prototype
-  
+
       traceStartup("DT: about to define makeRestrictedNodeType");
-  
+
       function makeRestrictedNodeType(whitelist) {
         var nodeType = function(node, editable) {
           TameBackedNode.call(this, node, editable, editable);
@@ -2908,9 +2908,9 @@ var Domado = (function() {
         }
         return cajaVM.def(nodeType);  // and its prototype
       }
-  
+
       traceStartup("DT: about to make TameOpaqueNode");
-  
+
       // An opaque node is traversible but not manipulable by guest code. This
       // is the default taming for unrecognized nodes or nodes not explicitly
       // whitelisted.
@@ -2929,9 +2929,9 @@ var Domado = (function() {
         getElementsByClassName: 0,
         hasChildNodes: 0
       });
-  
+
       traceStartup("DT: about to make TameForeignNode");
-  
+
       // A foreign node is one supplied by some external system to the guest
       // code, which the guest code may lay out within its own DOM tree but may
       // not traverse into in any way.
@@ -2957,12 +2957,12 @@ var Domado = (function() {
         getElementsByClassName: function() { return Object.freeze([]); },
         hasChildNodes: function() { return false; }
       });
-  
+
       traceStartup("DT: about to make TameTextNode");
-  
+
       function TameTextNode(node, editable) {
         assert(node.nodeType === 3);
-  
+
         // The below should not be strictly necessary since childrenEditable for
         // TameScriptElements is always false, but it protects against tameNode
         // being called naively on a text node from container code.
@@ -2976,7 +2976,7 @@ var Domado = (function() {
             editable = false;
           }
         }
-  
+
         TameBackedNode.call(this, node, editable, editable);
       }
       inertCtor(TameTextNode, TameBackedNode, 'Text');
@@ -3000,7 +3000,7 @@ var Domado = (function() {
         return '#text';
       }));
       cajaVM.def(TameTextNode);  // and its prototype
-  
+
       function TameCommentNode(node, editable) {
         assert(node.nodeType === 8);
         TameBackedNode.call(this, node, editable, editable);
@@ -3010,7 +3010,7 @@ var Domado = (function() {
         return '#comment';
       }));
       cajaVM.def(TameCommentNode);  // and its prototype
-  
+
       function lookupAttribute(map, tagName, attribName) {
         var attribKey;
         attribKey = tagName + '::' + attribName;
@@ -3032,7 +3032,7 @@ var Domado = (function() {
       function getUriEffect(tagName, attribName) {
         return lookupAttribute(html4.URIEFFECTS, tagName, attribName);
       }
-  
+
       traceStartup("DT: about to make TameBackedAttributeNode");
       /**
        * Plays the role of an Attr node for TameElement objects.
@@ -3099,7 +3099,7 @@ var Domado = (function() {
       });
       cajaVM.def(TameBackedAttributeNode);  // and its prototype
       traceStartup("DT: after TameBackedAttributeNode");
-  
+
       // Register set handlers for onclick, onmouseover, etc.
       function registerElementScriptAttributeHandlers(tameElementPrototype) {
         var seenAlready = {};
@@ -3114,7 +3114,7 @@ var Domado = (function() {
                 return;
               }
               seenAlready[attribName] = true;
-  
+
               Object.defineProperty(tameElementPrototype, attribName, {
                 enumerable: canHaveEnumerableAccessors,
                 configurable: false,
@@ -3135,7 +3135,7 @@ var Domado = (function() {
           }
         }
       }
-  
+
       traceStartup("DT: about to make TameElement");
       /**
        * See comments on TameBackedNode regarding return value.
@@ -3262,7 +3262,7 @@ var Domado = (function() {
         if (!np(this).editable) { throw new Error(NOT_EDITABLE); }
         var cssPropertiesAndValues = cssSealerUnsealerPair.unseal(style);
         if (!cssPropertiesAndValues) { throw new Error(); }
-  
+
         var styleNode = feral.style;
         for (var i = 0; i < cssPropertiesAndValues.length; i += 2) {
           var propName = cssPropertiesAndValues[+i];
@@ -3412,9 +3412,9 @@ var Domado = (function() {
         offsetParent: NP.related
       });
       cajaVM.def(TameElement);  // and its prototype
-  
+
       traceStartup("DT: starting defineElement");
-  
+
       /**
        * Define a taming class for a subclass of HTMLElement.
        *
@@ -3459,7 +3459,7 @@ var Domado = (function() {
         return TameSpecificElement;
       }
       cajaVM.def(defineElement);
-  
+
       defineElement({
         names: ['a'],
         domClass: 'HTMLAnchorElement',
@@ -3468,7 +3468,7 @@ var Domado = (function() {
           href: NP.filter(false, identity, true, identity)
         }
       });
-  
+
       // http://dev.w3.org/html5/spec/Overview.html#the-canvas-element
       (function() {
         // If the host browser does not have getContext, then it must not
@@ -3480,7 +3480,7 @@ var Domado = (function() {
         var e = makeDOMAccessible(document.createElement('canvas'));
         if (typeof e.getContext !== 'function')
           return;
-  
+
         // TODO(kpreid): snitched from Caja runtime; review whether we actually
         // need this (the Canvas spec says that invalid values should be ignored
         // and we don't do that in a bunch of places);
@@ -3500,10 +3500,10 @@ var Domado = (function() {
           }
           return specimen;
         }
-  
+
         var TameContext2DConf = new Confidence('TameContext2D');
         var ContextP = new PropertyTaming(TameContext2DConf);
-  
+
         function matchesStyleFully(cssPropertyName, value) {
           if (typeof value !== "string") { return false; }
           var tokens = lexCss(value);
@@ -3519,7 +3519,7 @@ var Domado = (function() {
                               cssSchema[cssPropertyName], tokens);
           return unfiltered === tokens.join(' ') ? unfiltered : false;
         }
-  
+
         function isFont(value) {
           return !!matchesStyleFully('font', value);
         }
@@ -3572,7 +3572,7 @@ var Domado = (function() {
         function TameImageData(imageData) {
           imageData = makeDOMAccessible(imageData);
           var p = TameImageDataConf.p;
-  
+
           // Since we can't interpose indexing, we can't wrap the
           // CanvasPixelArray
           // so we have to copy the pixel data. This is horrible, bad, and
@@ -3589,14 +3589,14 @@ var Domado = (function() {
           };
           TameImageDataConf.confide(tameImageData);
           taming.permitUntaming(tameImageData);
-  
+
           // used to unwrap for passing to putImageData
           p(tameImageData).feral = imageData;
-  
+
           // lazily constructed tame copy, backs .data accessor; also used to
           // test whether we need to write-back the copy before a putImageData
           p(tameImageData).tamePixelArray = undefined;
-  
+
           definePropertiesAwesomely(tameImageData, {
             data: {
               enumerable: true,
@@ -3605,7 +3605,7 @@ var Domado = (function() {
               // the pixels.
               get: cajaVM.def(function () {
                 if (!p(tameImageData).tamePixelArray) {
-  
+
                   var bareArray = imageData.data;
                   // Note: On Firefox 4.0.1, at least, pixel arrays cannot have
                   // added properties (such as our w___). Therefore, for
@@ -3614,7 +3614,7 @@ var Domado = (function() {
                   // makeDOMAccessible
                   // because it would have no effect. An alternative approach
                   // would be to muck with the "Uint8ClampedArray" prototype.
-  
+
                   var length = bareArray.length;
                   var tamePixelArray = { // not frozen, user-modifiable
                     // TODO: Investigate whether it would be an optimization to
@@ -3623,10 +3623,10 @@ var Domado = (function() {
                         return "[Domita CanvasPixelArray]"; }),
                     _d_canvas_writeback: function () {
                       // This is invoked just before each putImageData
-  
+
                       // TODO(kpreid): shouldn't be a public method (but is
                       // harmless).
-  
+
                       rulebreaker.writeToPixelArray(
                         tamePixelArray, bareArray, length);
                     }
@@ -3672,11 +3672,11 @@ var Domado = (function() {
             // TODO(kpreid): should be a DOMException per spec
           }
         }
-  
+
         function TameCanvasElement(node, editable) {
           // TODO(kpreid): review whether this can use defineElement
           TameElement.call(this, node, editable, editable);
-  
+
           // helpers for tame context
           var context = makeDOMAccessible(node.getContext('2d'));
           function tameFloatsOp(count, verb) {
@@ -3777,7 +3777,7 @@ var Domado = (function() {
               m.call(context);
             });
           }
-  
+
           // Design note: We generally reject the wrong number of arguments,
           // unlike default JS behavior. This is because we are just passing
           // data
@@ -3786,22 +3786,22 @@ var Domado = (function() {
           // is better to fail explicitly than to leave the client wondering
           // about
           // why their extension usage isn't working.
-  
+
           // http://dev.w3.org/html5/2dcontext/
           // TODO(kpreid): Review this for converting to prototypical objects
           var tameContext2d = np(this).tameContext2d = {
             toString: cajaVM.def(function () {
                 return "[Domita CanvasRenderingContext2D]"; }),
-  
+
             save: tameSimpleOp(context.save),
             restore: tameSimpleOp(context.restore),
-  
+
             scale: tameFloatsOp(2, 'scale'),
             rotate: tameFloatsOp(1, 'rotate'),
             translate: tameFloatsOp(2, 'translate'),
             transform: tameFloatsOp(6, 'transform'),
             setTransform: tameFloatsOp(6, 'setTransform'),
-  
+
             createLinearGradient: function (x0, y0, x1, y1) {
               if (arguments.length !== 4) {
                 throw new Error('createLinearGradient takes 4 args, not ' +
@@ -3828,18 +3828,18 @@ var Domado = (function() {
               return new TameGradient(context.createRadialGradient(
                 x0, y0, r0, x1, y1, r1));
             },
-  
+
             createPattern: function (imageElement, repetition) {
               // Consider what policy to have wrt reading the pixels from image
               // elements before implementing this.
               throw new Error(
                   'Domita: canvas createPattern not yet implemented');
             },
-  
+
             clearRect:  tameRectMethod(context.clearRect,  false),
             fillRect:   tameRectMethod(context.fillRect,   false),
             strokeRect: tameRectMethod(context.strokeRect, false),
-  
+
             beginPath: tameSimpleOp(context.beginPath),
             closePath: tameSimpleOp(context.closePath),
             moveTo: tameFloatsOp(2, 'moveTo'),
@@ -3867,13 +3867,13 @@ var Domado = (function() {
             fill: tameSimpleOp(context.fill),
             stroke: tameSimpleOp(context.stroke),
             clip: tameSimpleOp(context.clip),
-  
+
             isPointInPath: function (x, y) {
               enforceType(x, 'number', 'x');
               enforceType(y, 'number', 'y');
               return enforceType(context.isPointInPath(x, y), 'boolean');
             },
-  
+
             fillText: tameDrawText(context.fillText),
             strokeText: tameDrawText(context.strokeText),
             measureText: function (string) {
@@ -3884,13 +3884,13 @@ var Domado = (function() {
               enforceType(string, 'string', 'measureText argument');
               return context.measureText(string);
             },
-  
+
             drawImage: function (imageElement) {
               // Consider what policy to have wrt reading the pixels from image
               // elements before implementing this.
               throw new Error('Domita: canvas drawImage not yet implemented');
             },
-  
+
             createImageData: function (sw, sh) {
               if (arguments.length !== 2) {
                 throw new Error('createImageData takes 2 args, not ' +
@@ -3904,7 +3904,7 @@ var Domado = (function() {
               return TameImageData(context.getImageData(sx, sy, sw, sh));
             }, true),
             putImageData: function
-                (tameImageData, dx, dy, dirtyX, dirtyY, 
+                (tameImageData, dx, dy, dirtyX, dirtyY,
                     dirtyWidth, dirtyHeight) {
               tameImageData = TameImageDataT.coerce(tameImageData);
               enforceFinite(dx, 'dx');
@@ -3936,7 +3936,7 @@ var Domado = (function() {
                                    dirtyWidth, dirtyHeight);
             }
           };
-  
+
           if ("drawFocusRing" in context) {
             tameContext2d.drawFocusRing = function
                 (tameElement, x, y, canDrawCustom) {
@@ -3954,7 +3954,7 @@ var Domado = (function() {
               enforceType(x, 'number', 'x');
               enforceType(y, 'number', 'y');
               enforceType(canDrawCustom, 'boolean', 'canDrawCustom');
-  
+
               // On safety of using the untamed node here: The only information
               // drawFocusRing takes from the node is whether it is focused.
               return enforceType(
@@ -3963,7 +3963,7 @@ var Domado = (function() {
                   'boolean');
             };
           }
-  
+
           definePropertiesAwesomely(tameContext2d, {
             // We filter the values supplied to setters in case some browser
             // extension makes them more powerful, e.g. containing scripting or
@@ -4023,7 +4023,7 @@ var Domado = (function() {
               get: CP_STYLE.get,
               set: ContextP.RWCond(isColor).set
             },
-  
+
             font: ContextP.RWCond(isFont),
             textAlign: ContextP.RWCond(
                 StringTest([
@@ -4051,7 +4051,7 @@ var Domado = (function() {
         }  // end of TameCanvasElement
         inertCtor(TameCanvasElement, TameElement, 'HTMLCanvasElement');
         TameCanvasElement.prototype.getContext = function (contextId) {
-  
+
           // TODO(kpreid): We can refine this by inventing a
           // ReadOnlyCanvas object
           // to return in this situation, which allows getImageData and
@@ -4060,7 +4060,7 @@ var Domado = (function() {
           // you have a use
           // for it let us know.
           if (!np(this).editable) { throw new Error(NOT_EDITABLE); }
-  
+
           enforceType(contextId, 'string', 'contextId');
           switch (contextId) {
             case '2d':
@@ -4084,12 +4084,12 @@ var Domado = (function() {
           height: NP.filter(false, identity, false, Number),
           width: NP.filter(false, identity, false, Number)
         });
-  
+
         tamingClassesByElement['canvas'] = TameCanvasElement;
       })();
-  
+
       traceStartup("DT: done with canvas");
-  
+
       function FormElementAndExpandoProxyHandler(target, editable, storage) {
         ExpandoProxyHandler.call(this, target, editable, storage);
       }
@@ -4130,7 +4130,7 @@ var Domado = (function() {
         }
       });
       cajaVM.def(FormElementAndExpandoProxyHandler);
-  
+
       var TameFormElement = defineElement({
         names: ['form'],
         domClass: 'HTMLFormElement',
@@ -4164,7 +4164,7 @@ var Domado = (function() {
         if (!np(this).editable) { throw new Error(NOT_EDITABLE); }
         return np(this).feral.reset();
       });
-  
+
       var P_blacklist = {
         enumerable: true,
         extendedAccessors: true,
@@ -4241,7 +4241,7 @@ var Domado = (function() {
               '] attribute of an iframe.');
         return value;
       }));
-  
+
       function toInt(x) { return x | 0; }
       var TameInputElement = defineElement({
         names: ['select', 'button', 'option', 'textarea', 'input'],
@@ -4287,7 +4287,7 @@ var Domado = (function() {
       TameInputElement.prototype.select = nodeMethod(function () {
         np(this).feral.select();
       });
-  
+
       defineElement({
         names: ['img'],
         domClass: 'HTMLImageElement',
@@ -4296,7 +4296,7 @@ var Domado = (function() {
           alt: NP.filterProp(identity, String)
         }
       });
-  
+
       defineElement({
         names: ['label'],
         domClass: 'HTMLLabelElement',
@@ -4304,7 +4304,7 @@ var Domado = (function() {
           htmlFor: NP.Rename("for", NP.filterAttr(identity, identity))
         }
       });
-  
+
       defineElement({
         names: ['script'],
         domClass: 'HTMLScriptElement',
@@ -4313,7 +4313,7 @@ var Domado = (function() {
           src: NP.filter(false, identity, true, identity)
         }
       });
-  
+
       var TameTableCompElement = defineElement({
         names: ['td', 'thead', 'tfoot', 'tbody', 'th'],
         properties: {
@@ -4355,13 +4355,13 @@ var Domado = (function() {
         requireIntIn(index, -1, np(this).feral.rows.length);
         np(this).feral.deleteRow(index);
       });
-  
+
       function requireIntIn(idx, min, max) {
         if (idx !== (idx | 0) || idx < min || idx > max) {
           throw new Error(INDEX_SIZE_ERROR);
         }
       }
-  
+
       var TameTableRowElement = defineElement({
         superclass: TameTableCompElement,
         names: ['tr'],
@@ -4379,7 +4379,7 @@ var Domado = (function() {
         requireIntIn(index, -1, np(this).feral.cells.length);
         np(this).feral.deleteCell(index);
       });
-  
+
       var TameTableElement = defineElement({
         superclass: TameTableCompElement,
         names: ['table'],
@@ -4434,12 +4434,12 @@ var Domado = (function() {
         requireIntIn(index, -1, np(this).feral.rows.length);
         np(this).feral.deleteRow(index);
       });
-  
+
       traceStartup("DT: done with specific elements");
-  
+
       // coerce null and false to 0
-      function fromInt(x) { return '' + (x | 0); }  
-  
+      function fromInt(x) { return '' + (x | 0); }
+
       function tameEvent(event) {
         event = makeDOMAccessible(event);
         if (!taming.hasTameTwin(event)) {
@@ -4448,9 +4448,9 @@ var Domado = (function() {
         }
         return taming.tame(event);
       }
-  
+
       var ep = TameEventConf.p.bind(TameEventConf);
-  
+
       var EP_RELATED = {
         enumerable: true,
         extendedAccessors: true,
@@ -4460,7 +4460,7 @@ var Domado = (function() {
               defaultTameNode);
         })
       };
-  
+
       function P_e_view(transform) {
         return {
           enumerable: true,
@@ -4470,7 +4470,7 @@ var Domado = (function() {
           })
         };
       }
-  
+
       function TameEvent(event) {
         assert(!!event);
         TameEventConf.confide(this);
@@ -4569,7 +4569,7 @@ var Domado = (function() {
         return '[domado object Event]';
       }));
       cajaVM.def(TameEvent);  // and its prototype
-  
+
       function TameCustomHTMLEvent(event) {
         var self;
         if (domitaModules.proxiesAvailable) {
@@ -4582,7 +4582,7 @@ var Domado = (function() {
         } else {
           self = this;
         }
-  
+
         return self;
       }
       inherit(TameCustomHTMLEvent, TameEvent);
@@ -4594,7 +4594,7 @@ var Domado = (function() {
         return '[Fake CustomEvent]';
       }));
       cajaVM.def(TameCustomHTMLEvent);  // and its prototype
-  
+
       var viewProperties = {
         // We define all the window positional properties relative to
         // the fake body element to maintain the illusion that the fake
@@ -4684,18 +4684,18 @@ var Domado = (function() {
         if (desc.set) cajaVM.def(desc.set);
         desc.enumerable = true;
       });
-  
+
       function TameHTMLDocument(doc, body, domain, editable) {
         traceStartup("DT: TameHTMLDocument begin");
         TamePseudoNode.call(this, editable);
-  
+
         np(this).feralDoc = doc;
         np(this).feralPseudoBodyNode = body;
         np(this).onLoadListeners = [];
         np(this).onDCLListeners = [];
-  
+
         traceStartup("DT: TameHTMLDocument done private");
-  
+
         var tameBody = defaultTameNode(body, editable);
         np(this).tamePseudoBodyNode = tameBody;
         // TODO(mikesamuel): create a proper class for BODY, HEAD, and HTML along
@@ -4719,7 +4719,7 @@ var Domado = (function() {
             viewProperties);
         definePropertiesAwesomely(ExpandoProxyHandler.unwrap(tameBodyElement),
             viewProperties);
-  
+
         traceStartup("DT: TameHTMLDocument tameTitle");
         var title = doc.createTextNode(body.getAttribute('title') || '');
         title = makeDOMAccessible(title);
@@ -4756,7 +4756,7 @@ var Domado = (function() {
             editable);
         definePropertiesAwesomely(ExpandoProxyHandler.unwrap(tameHtmlElement),
             viewProperties);
-  
+
         // TODO(kpreid): Move this to a TamePseudoHTMLElement constructor?
         if (body.contains) {  // typeof is 'object' on IE
           tameHtmlElement.contains = nodeMethod(function (other) {
@@ -4801,9 +4801,9 @@ var Domado = (function() {
             }).bind(tameHtmlElement);
           }
         }
-  
+
         tameHtmlElement = finishNode(tameHtmlElement);
-  
+
         definePropertiesAwesomely(this, {
           documentElement: P_constant(tameHtmlElement),
           domain: P_constant(domain),
@@ -4967,7 +4967,7 @@ var Domado = (function() {
         domicile.writeHook.apply(undefined, args);
       });
       cajaVM.def(TameHTMLDocument);  // and its prototype
-  
+
       // Called by the html-emitter when the virtual document has been loaded.
       domicile.signalLoaded = cajaVM.def(function () {
         // TODO(kpreid): Review if this rewrite of the condition here is correct
@@ -5073,36 +5073,36 @@ var Domado = (function() {
       });
 
       traceStartup("DT: preparing Style");
-  
+
       // defer construction
       var TameStyle = null;
       var TameComputedStyle = null;
-  
+
       function buildTameStyle() {
-  
+
         var aStyleForCPC = docEl.style;
         aStyleForCPC = makeDOMAccessible(aStyleForCPC);
         var allCssProperties = domitaModules.CssPropertiesCollection(
             aStyleForCPC);
-  
+
         // Sealed internals for TameStyle objects, not to be exposed.
         var TameStyleConf = new Confidence('Style');
-  
+
         function allowProperty(cssPropertyName) {
           return allCssProperties.isCssProp(cssPropertyName);
         };
-  
+
         /**
          * http://www.w3.org/TR/DOM-Level-2-Style/css.html#CSS-CSSStyleDeclaration
          */
         TameStyle = function (style, editable, tameEl) {
           style = makeDOMAccessible(style);
-  
+
           TameStyleConf.confide(this);
           TameStyleConf.p(this).feral = style;
           TameStyleConf.p(this).editable = editable;
           TameStyleConf.p(this).tameElement = tameEl;
-  
+
           TameStyleConf.p(this).readByCanonicalName = function(canonName) {
             return String(style[canonName] || '');
           };
@@ -5186,7 +5186,7 @@ var Domado = (function() {
           });
         });
         cajaVM.def(TameStyle);  // and its prototype
-  
+
         function isNestedInAnchor(el) {
           for (; el && el != pseudoBodyNode; el = el.parentNode) {
             if (el.tagName && el.tagName.toLowerCase() === 'a') {
@@ -5195,9 +5195,9 @@ var Domado = (function() {
           }
           return false;
         }
-  
+
         traceStartup("DT: about to TameComputedStyle");
-  
+
         TameComputedStyle = function (rawElement, pseudoElement) {
           rawElement = rawElement || document.createElement('div');
           TameStyle.call(
@@ -5206,7 +5206,7 @@ var Domado = (function() {
               false);
           TameStyleConf.p(this).rawElement = rawElement;
           TameStyleConf.p(this).pseudoElement = pseudoElement;
-  
+
           var superReadByCanonicalName =
               TameStyleConf.p(this).readByCanonicalName;
           TameStyleConf.p(this).readByCanonicalName = function(canonName) {
@@ -5235,7 +5235,7 @@ var Domado = (function() {
         }));
         cajaVM.def(TameComputedStyle);  // and its prototype
       }
-  
+
       traceStartup("DT: about to make XMLHttpRequest");
       // Note: nodeClasses.XMLHttpRequest is a ctor that *can* be directly
       // called by cajoled code, so we do not use inertCtor().
@@ -5248,7 +5248,7 @@ var Domado = (function() {
           naiveUriPolicy);
       cajaVM.def(nodeClasses.XMLHttpRequest);
       traceStartup("DT: done for XMLHttpRequest");
-  
+
       /**
        * given a number, outputs the equivalent css text.
        * @param {number} num
@@ -5295,7 +5295,7 @@ var Domado = (function() {
               "CSS_PROP": prop
             });
       });
-  
+
       /**
        * Create a CSS stylesheet with the given text and append it to the DOM.
        * @param {string} cssText a well-formed stylesheet production.
@@ -5310,7 +5310,7 @@ var Domado = (function() {
         e = makeDOMAccessible(e);
         return e;
       });
-  
+
       if (!/^-/.test(idSuffix)) {
         throw new Error('id suffix "' + idSuffix + '" must start with "-"');
       }
@@ -5328,7 +5328,7 @@ var Domado = (function() {
       bridal.setAttribute(pseudoBodyNode, "class",
           bridal.getAttribute(pseudoBodyNode, "class")
           + " " + idClass + " vdoc-body___");
-  
+
       // bitmask of trace points
       //    0x0001 plugin_dispatchEvent
       domicile.domitaTrace = 0;
@@ -5338,7 +5338,7 @@ var Domado = (function() {
       domicile.setDomitaTrace = cajaVM.def(
           function (x) { domicile.domitaTrace = x; }
       );
-  
+
       traceStartup("DT: about to do TameHTMLDocument");
       var tameDocument = new TameHTMLDocument(
           document,
@@ -5362,7 +5362,7 @@ var Domado = (function() {
         protocol: String(optPseudoWindowLocation.protocol || 'http:'),
         search: String(optPseudoWindowLocation.search || '')
         });
-  
+
       // See spec at http://www.whatwg.org/specs/web-apps/current-work/multipage/browsers.html#navigator
       // We don't attempt to hide or abstract userAgent details since
       // they are discoverable via side-channels we don't control.
@@ -5376,9 +5376,9 @@ var Domado = (function() {
         // Custom attribute indicating Caja is active.
         cajaVersion: '1.0'
         });
-  
+
       traceStartup("DT: done tameNavigator");
-  
+
       /**
        * Set of allowed pseudo elements as described at
        * http://www.w3.org/TR/CSS2/selector.html#q20
@@ -5389,7 +5389,7 @@ var Domado = (function() {
         'first-letter': true,
         'first-line': true
       };
-  
+
       /**
        * See http://www.whatwg.org/specs/web-apps/current-work/multipage/browsers.html#window for the full API.
        */
@@ -5417,7 +5417,7 @@ var Domado = (function() {
       setOwn(TameWindow.prototype, "toString", cajaVM.def(function () {
         return "[domado object Window]";
       }));
-  
+
       /**
        * An <a href=
        * href=http://www.w3.org/TR/DOM-Level-2-Views/views.html#Views-AbstractView
@@ -5454,7 +5454,7 @@ var Domado = (function() {
         definePropertiesAwesomely(this, viewProperties);
         taming.permitUntaming(this);
       }
-  
+
       // Under ES53, the set/clear pairs get invoked with 'this' bound
       // to USELESS, which causes problems on Chrome unless they're wrpaped
       // this way.
@@ -5553,7 +5553,7 @@ var Domado = (function() {
                   np(tameElement).feral,
                   pseudoElement);
             })
-  
+
         // NOT PROVIDED
         // event: a global on IE.  We always define it in scopes that can handle
         //        events.
@@ -5563,10 +5563,10 @@ var Domado = (function() {
         TameDefaultView.prototype[propertyName] = value;
       }));
       cajaVM.def(TameWindow);  // and its prototype
-  
+
       var tameWindow = new TameWindow();
       var tameDefaultView = new TameDefaultView(np(tameDocument).editable);
-  
+
       forOwnKeys({
         innerHeight: function () {
             return np(tameDocument).feralPseudoBodyNode.clientHeight; },
@@ -5582,7 +5582,7 @@ var Domado = (function() {
         Object.defineProperty(tameWindow, propertyName, desc);
         Object.defineProperty(tameDefaultView, propertyName, desc);
       });
-  
+
       // Attach reflexive properties to 'window' object
       var windowProps = ['top', 'self', 'opener', 'parent', 'window'];
       var wpLen = windowProps.length;
@@ -5590,16 +5590,16 @@ var Domado = (function() {
         var prop = windowProps[+i];
         tameWindow[prop] = tameWindow;
       }
-  
+
       Object.freeze(tameDefaultView);
-  
+
       if (np(tameDocument).editable) {
         tameDocument.defaultView = tameDefaultView;
-  
+
         // Hook for document.write support.
         domicile.sanitizeAttrs = sanitizeAttrs;
       }
-  
+
       // Iterate over all node classes, assigning them to the Window object
       // under their DOM Level 2 standard name. Also freeze.
       for (var name in nodeClasses) {
@@ -5613,12 +5613,12 @@ var Domado = (function() {
           value: ctor
         });
       }
-  
+
       // TODO(ihab.awad): Build a more sophisticated virtual class hierarchy by
       // creating a table of actual subclasses and instantiating tame nodes by
       // table lookups. This will allow the client code to see a truly consistent
       // DOM class hierarchy.
-  
+
       // This is a list of all HTML-specific element node classes defined by
       // DOM Level 2 HTML, <http://www.w3.org/TR/DOM-Level-2-HTML/html.html>.
       // If a node class name in this list is not defined using defineElement or
@@ -5678,7 +5678,7 @@ var Domado = (function() {
         'HTMLTitleElement',
         'HTMLUListElement'
       ];
-  
+
       var defaultNodeClassCtor = nodeClasses.HTMLElement;
       for (var i = 0; i < allDomNodeClasses.length; i++) {
         var className = allDomNodeClasses[+i];
@@ -5691,9 +5691,9 @@ var Domado = (function() {
           });
         }
       }
-  
+
       tameDocument = finishNode(tameDocument);
-  
+
       domicile.window = tameWindow;
       domicile.document = tameDocument;
       Object.defineProperty(tameWindow, 'document', {
@@ -5702,15 +5702,15 @@ var Domado = (function() {
         enumerable: true,
         writable: false
       });
-  
+
       pluginId = rulebreaker.getId(tameWindow);
       windowToDomicile.set(tameWindow, domicile);
-  
+
       traceStartup("DT: all done");
-  
+
       return domicile;
     }
-  
+
     /**
      * Function called from rewritten event handlers to dispatch an event safely.
      */
@@ -5726,7 +5726,7 @@ var Domado = (function() {
       return plugin_dispatchToHandler(
           pluginId, handler, [ node, domicile.tameEvent(event), node ]);
     }
-  
+
     function plugin_dispatchToHandler(pluginId, handler, args) {
       var sig = ('' + handler).match(/^function\b[^\)]*\)/);
       var domicile = windowToDomicile.get(rulebreaker.getImports(pluginId));
@@ -5761,7 +5761,7 @@ var Domado = (function() {
         domicile.isProcessingEvent = false;
       }
     }
-  
+
     return cajaVM.def({
       attachDocument: attachDocument,
       plugin_dispatchEvent: plugin_dispatchEvent,

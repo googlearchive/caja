@@ -63,7 +63,7 @@ public abstract class FetchedData {
     public CharProducer getTextualContent()
         throws UnsupportedEncodingException {
       return CharProducer.Factory.fromString(
-          new String(content, "".equals(charSet) 
+          new String(content, "".equals(charSet)
               ? Charsets.UTF_8.name() : charSet), src);
     }
 

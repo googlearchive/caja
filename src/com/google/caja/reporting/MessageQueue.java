@@ -30,7 +30,7 @@ public interface MessageQueue {
 
   /** Adds a message to this group's message list. */
   void addMessage(Message msg);
-  
+
   /** Adds a message to this group's message list. */
   void addMessage(MessageTypeInt type, MessagePart... parts);
 

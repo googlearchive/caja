@@ -43,7 +43,7 @@ var cajolingServiceClientMaker = function(serviceUrl,
   {
     domOpts = domOpts || {};
     var opt_idClass = domOpts ? domOpts.idClass : void 0;
- 
+
     return serviceUrl +
         '?url=' + encodeURIComponent(uncajoledSourceUrl) +
         '&build-version=' + cajaBuildVersion +
@@ -120,7 +120,7 @@ var cajolingServiceClientMaker = function(serviceUrl,
   var cajoleContent = function (url, content, mimeType, domOpts) {
     domOpts = domOpts || {};
     var opt_idClass = domOpts ? domOpts.idClass : void 0;
- 
+
     var result = Q.defer();
     handleRequest(
         url,

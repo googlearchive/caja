@@ -188,7 +188,7 @@ public class NodesTest extends CajaTestCase {
        + "<![endif]-->");
 
   final String RENDER_NO_NESTED_COMMENTS = ("before ");
-   
+
 
   public final void testCommentsRemoved() throws Exception {
     Node el = parse(TEST_XML, false, false);
@@ -299,7 +299,7 @@ public class NodesTest extends CajaTestCase {
 
   private Node parse(String xml, boolean asXml, boolean wantsComments)
       throws Exception {
-    TokenQueue<HtmlTokenType> tq = DomParser.makeTokenQueue(        
+    TokenQueue<HtmlTokenType> tq = DomParser.makeTokenQueue(
         FilePosition.startOfFile(is), new StringReader(xml),
         asXml, wantsComments);
     return new DomParser(tq, asXml, mq).parseFragment();

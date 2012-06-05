@@ -6,9 +6,9 @@ mypages.push({
       if (!result) result = {
         result: "[13,23,30]"
       };
-      return '<h3>' 
-          + rmsg(["Internal machinations of Caja"]) + '</h3>' 
-          + "<p>How do the internals of Caja work?" 
+      return '<h3>'
+          + rmsg(["Internal machinations of Caja"]) + '</h3>'
+          + "<p>How do the internals of Caja work?"
           + " Caja rewrites functions to make them safe.  To see what the"
           + " rewritten code looks like, type <code>debug</code> to toggle"
           + " debugging.<br />"

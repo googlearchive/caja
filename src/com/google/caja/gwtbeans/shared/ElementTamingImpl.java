@@ -25,7 +25,7 @@ public class ElementTamingImpl
     return m.@com.google.caja.gwtbeans.shared.FrameImpl::getFrame()()
         .imports.tameNodeAsForeign___(bean);
   }-*/;
-  
+
   @Override
   protected String getBeanClassName() {
     return "class com.google.gwt.dom.client.Element";

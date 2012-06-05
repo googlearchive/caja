@@ -1,16 +1,16 @@
-// Copyright 2007-2009 Tyler Close 
-// under the terms of the MIT X license found at 
+// Copyright 2007-2009 Tyler Close
+// under the terms of the MIT X license found at
 // http://www.opensource.org/licenses/mit-license.html
 
 
-/** 
+/**
  * Implementation of promises for SES/ES5.
  * Exports Q to the global scope.
- * 
+ *
  * Mostly taken from the ref_send implementation by Tyler Close, with the
  * addition of a trademark table to support promises for functions. Originally
  * written for Cajita, then ported to SES by Kevin Reid.
- * 
+ *
  * @contributor maoziqing@gmail.com, kpreid@switchb.org
  * @requires setTimeout, WeakMap, cajaVM
  * @overrides window
@@ -21,10 +21,10 @@ var Q;
 
 (function() {
   "use strict";
-  
+
   // Table of functions-which-are-promises
   var promises = new WeakMap(true);
-  
+
   function reject(reason) {
     function rejected(op, arg1, arg2, arg3) {
       if (undefined === op) { return rejected; }
@@ -155,7 +155,7 @@ var Q;
    * Gets the corresponding promise for a given reference.
    */
   function promised(value) {
-    return ('function' === typeof value && promises.get(value)) 
+    return ('function' === typeof value && promises.get(value))
         ? value : ref(value);
   }
 
@@ -193,19 +193,19 @@ var Q;
      * @param task  function to invoke later
      */
     run: enqueue,
-  
+
     /**
      * Constructs a rejected promise.
      * @param reason    value describing the failure
      */
     reject: reject,
-  
+
     /**
      * Constructs a promise for an immediate reference.
      * @param value immediate reference
      */
     ref: ref,
-  
+
     /**
      * Constructs a ( promise, resolver ) pair.
      *

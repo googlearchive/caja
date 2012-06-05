@@ -38,19 +38,19 @@
 
 <script src="useHTMLLogger.js"></script>
 <script>
-  function gebi(id) { 
-    return document.getElementById(id); 
+  function gebi(id) {
+    return document.getElementById(id);
   };
   useHTMLLogger(gebi("reports"), gebi("console"));
   // This severity is too high for any use other than development.
   ses.maxAcceptableSeverityName = 'NEW_SYMPTOM';
 </script>
 <!--
-The <script src=... tags below, from "logger.js" to "hookupSESPlus.js", is 
-  equivalent to <script src="initSESPlus.js"></script>, but is more 
+The <script src=... tags below, from "logger.js" to "hookupSESPlus.js", is
+  equivalent to <script src="initSESPlus.js"></script>, but is more
   pleasant to debug.
 
-The <script src="useHTMLLogger.js"> and the inline script above advises 
+The <script src="useHTMLLogger.js"> and the inline script above advises
   the scripts below, overriding the default logger, and overriding the
   default maxAcceptableSeverityName.
 -->
@@ -93,25 +93,25 @@ The <script src="useHTMLLogger.js"> and the inline script above advises
     appendText(exprTest, text1);
 
     // Test ability to bootstrap support for a limited form of
-    // CommonJS modules. 
+    // CommonJS modules.
     var modSrc = '"use noise"; exports.x = \n' +
                  'require("foo.bar/baz"); return 77;';
     var modMaker = cajaVM.compileModule(modSrc);
     var required = modMaker.requirements;
     var exported = {};
     var returned = modMaker(cajaVM.copyToImports(imports, {
-      require: function(id) { return { foo: 88, id: id}; }, 
+      require: function(id) { return { foo: 88, id: id}; },
       exports: exported
     }));
     var did = JSON.stringify(cajaVM.def({
       required: required,
-      exported: exported, 
+      exported: exported,
       returned: returned
     }), void 0, ' ');
-    var should = JSON.stringify({ 
-      "required": [ "foo.bar/baz" ], 
-      "exported": { "x": { "foo": 88, "id": "foo.bar/baz" } }, 
-      "returned": 77 
+    var should = JSON.stringify({
+      "required": [ "foo.bar/baz" ],
+      "exported": { "x": { "foo": 88, "id": "foo.bar/baz" } },
+      "returned": 77
     }, void 0, ' ');
     var text2 = did === should ? 'succeeded' : 'failed: ' + did;
     appendText(moduleTest, text2);
@@ -121,7 +121,7 @@ The <script src="useHTMLLogger.js"> and the inline script above advises
     // globals. Unfortunately, rather than say "var x = 88;" below, we
     // must say "this.x = 88;" in order to export a global.
     cajaVM.compileModule('this.x = 88;')(imports);
-    var text3 = cajaVM.compileExpr('x')(imports) === 88 ? 
+    var text3 = cajaVM.compileExpr('x')(imports) === 88 ?
       'succeeded' : 'failed';
     appendText(scriptTest, text3);
 
@@ -183,7 +183,7 @@ The <script src="useHTMLLogger.js"> and the inline script above advises
      * to the AMD definition and encode it into a legal URL. Instead,
      * for now, we just conservatively accept an ascii subset of both
      * that does not need any encoding.
-     * 
+     *
      * See https://github.com/amdjs/amdjs-api/wiki/AMD#wiki-define-id-notes
      */
     var isModuleId = Object.freeze(/^[a-zA-Z0-9_/]*$/);
@@ -194,7 +194,7 @@ The <script src="useHTMLLogger.js"> and the inline script above advises
       }
       return makeTextResource('./' + id + '.js').get();
     }
-  
+
     var moduleMap = StringMap();
     moduleMap.set('Q', Q);
     var loaderP = Q(makeSimpleAMDLoaderP).send(void 0, fetch, moduleMap);
@@ -210,7 +210,7 @@ The <script src="useHTMLLogger.js"> and the inline script above advises
 </script>
 
 <p>
-Using <span id="browserName">unknown</span> 
+Using <span id="browserName">unknown</span>
  <span id="browserVersion">unknown</span>
 on <span id="browserOS">unknown</span>
 <script src="detect.js"></script>
@@ -219,7 +219,7 @@ on <span id="browserOS">unknown</span>
     "use strict"
     gebi('browserName').textContent = BrowserDetect.browser;
     gebi('browserVersion').textContent = BrowserDetect.version;
-    gebi('browserOS').textContent = BrowserDetect.OS;  
+    gebi('browserOS').textContent = BrowserDetect.OS;
   })();
 </script>
 </body>

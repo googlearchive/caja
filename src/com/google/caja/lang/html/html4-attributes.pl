@@ -77,7 +77,7 @@ while (<STDIN>) {
       = split / +\t/, $_;
   die qq'$.: name: $_'       unless $name =~ /^[a-z-]+$/;
   $name = qq'\U$name';
-  
+
   die qq'$.: elements: $_'
       unless $elements =~ /^(All elements but )?([A-Z0-9]+(?:, [A-Z0-9]+)*)$/;
 
@@ -86,7 +86,7 @@ while (<STDIN>) {
 
   # In the input, the value in the Type column for the "checked" attribute is
   # "(checked)" meaning it can only assume that value if present, and
-  # similarly for other valueless attributes like selected, multiple, etc. 
+  # similarly for other valueless attributes like selected, multiple, etc.
   my $valueless = ("\L$type" eq "\L($name)");
 
   if (exists($TYPE_OVERRIDES{qq'*::$name'})) {

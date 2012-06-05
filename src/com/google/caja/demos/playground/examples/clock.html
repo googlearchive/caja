@@ -49,7 +49,7 @@ function clock(){
     ctx.rotate(Math.PI/30);
   }
   ctx.restore();
-  
+
   var sec = now.getSeconds();
   var min = now.getMinutes();
   var hr  = now.getHours();
@@ -76,7 +76,7 @@ function clock(){
   ctx.lineTo(112,0);
   ctx.stroke();
   ctx.restore();
-  
+
   // Write seconds
   ctx.save();
   ctx.rotate(sec * Math.PI/30);

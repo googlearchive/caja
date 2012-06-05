@@ -61,7 +61,7 @@ public class QuasiBuilderTest extends CajaTestCase {
     assertEquals(
         render(jsExpr(fromString("{ a: 'b', '@c': 'd' }"))), render(n));
   }
-  
+
   public final void testIdsWithUnderscores() throws Exception {
     String[] underscoreIds = {"x__", "x\u005f\u005f", "__", "\u005f\u005f" };
     for (String id : underscoreIds) {

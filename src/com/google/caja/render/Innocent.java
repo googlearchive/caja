@@ -93,7 +93,7 @@ public class Innocent {
     final MessageQueue errs = new EchoingMessageQueue(
         err, mc, false);
     CharProducer cp = CharProducer.Factory.create(
-        new InputStreamReader(new FileInputStream(input.b), 
+        new InputStreamReader(new FileInputStream(input.b),
             Charsets.UTF_8.name()),
         input.a);
 

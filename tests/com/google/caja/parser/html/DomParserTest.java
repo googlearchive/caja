@@ -2854,7 +2854,7 @@ public class DomParserTest extends CajaTestCase {
         "<html><head></head><body><b>Hello, world</b></body></html>",
         Nodes.render(doc));
   }
-  
+
   public final void testRecoverExtraSlashInTag() throws Exception {
     Node fragment = xmlFragment(fromString(
         "<os:OwnerRequest fields=\"name\" key=\"owner\" / />"));

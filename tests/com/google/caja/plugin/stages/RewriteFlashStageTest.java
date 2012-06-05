@@ -129,7 +129,7 @@ public final class RewriteFlashStageTest extends PipelineStageTestCase {
             "}"));
     assertNoErrors();
   }
-  
+
   public final void testYoutube() throws Exception {
     // Note, the object tag doesn't have classid or type, so browsers always
     // fallback to the embed tag.  This is a bug in current YouTube.
@@ -161,11 +161,11 @@ public final class RewriteFlashStageTest extends PipelineStageTestCase {
             "}"));
     assertNoErrors();
   }
-  
+
   private JobStub html(String... content) {
     return new JobStub(Join.join("", content), ContentType.HTML);
   }
-  
+
   private JobStub js(String... content) {
     return new JobStub(Join.join("", content), ContentType.JS);
   }

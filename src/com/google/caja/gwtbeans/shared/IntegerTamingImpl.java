@@ -23,7 +23,7 @@ public class IntegerTamingImpl implements IntegerTaming {
         ? null
         : new Number(bean.@java.lang.Integer::intValue()());
   }-*/;
-  
+
   @Override
   public native Integer getBean(Frame m, JavaScriptObject jso) /*-{
     return jso === null

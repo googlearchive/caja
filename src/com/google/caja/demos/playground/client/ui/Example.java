@@ -18,23 +18,23 @@ package com.google.caja.demos.playground.client.ui;
  * @author jasvir@google.com (Jasvir Nagra)
  */
 public enum Example {
-  HISTORY("examples/history.html", 
+  HISTORY("examples/history.html",
       Type.ATTACK, "Sniffing history"),
-  REDIRECTION("examples/redirection.html", 
+  REDIRECTION("examples/redirection.html",
       Type.ATTACK, "Redirecting the window"),
-  COOKIES("examples/cookies.html", 
+  COOKIES("examples/cookies.html",
       Type.ATTACK, "Stealing cookies"),
-  CLOCK("examples/clock.html", 
+  CLOCK("examples/clock.html",
       Type.APPS, "Canvas Clock"),
-  UNBOXED("examples/unboxed/index.html", 
+  UNBOXED("examples/unboxed/index.html",
       Type.APPS, "Unboxed Game"),
-  MARKDOWN("examples/markdown.html", 
+  MARKDOWN("examples/markdown.html",
       Type.APPS, "Markdown Editor"),
-  FLASH("examples/flash.html", 
+  FLASH("examples/flash.html",
       Type.APPS, "Embed Flash"),
-  FLASH2("examples/flash2.html", 
+  FLASH2("examples/flash2.html",
       Type.APPS, "Embed Flash 2"),
-  LIFE("examples/cajalife.html", 
+  LIFE("examples/cajalife.html",
       Type.APPS, "Game of Life"),
 
   // JQuery and JQueryUI
@@ -132,11 +132,11 @@ public enum Example {
       Type.BENCHMARK, "string-unpack-code"),
   STRING_VALIDATE_INPUT("sunspider/string-validate-input.html",
       Type.BENCHMARK, "string-validate-input");
-  
+
   public final String url;
   public final Type type;
   public final String description;
-  
+
   Example(String url, Type type, String description) {
     this.url = url;
     this.type = type;
@@ -150,9 +150,9 @@ public enum Example {
     JQUERY("jQuery"),
     BENCHMARK("Benchmarks"),
     TAMING("Taming");
-    
+
     public final String description;
-    
+
     Type(String description) {
       this.description = description;
     }

@@ -90,7 +90,7 @@ var api = (function() {
     var boundedNumber = function(x, bound) {
       x = Number(x);
       if (x < 0) {
-        return 0; 
+        return 0;
       } else if (x >= bound) {
         return bound - 1;
       } else {

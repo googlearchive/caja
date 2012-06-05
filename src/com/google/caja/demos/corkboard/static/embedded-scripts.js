@@ -20,7 +20,7 @@
 var registerForScript, loadScripts;
 (function () {
   var scriptHooks = [];
-  
+
   var uriPolicy = {
     // TODO(kpreid): have a sensible default instead of this app needing it
     // In particular, in cajole.py we specify "sext=false" (which is itself a
@@ -28,7 +28,7 @@ var registerForScript, loadScripts;
     // similarly-exzpressed ones, which do that and also change the client-side
     // policy.
     rewrite: function (uri, mimeType) {
-      if ((/^https?:/i).test(uri)) { 
+      if ((/^https?:/i).test(uri)) {
         // TODO: unsafe, need to check mimeType but that's not sufficient
         return uri;
       } else {
@@ -36,11 +36,11 @@ var registerForScript, loadScripts;
       }
     }
   };
-  
+
   registerForScript = function (vdocId, moduleText) {
     scriptHooks.push([vdocId, moduleText]);
   }
-  
+
   loadScripts = function (server) {
     caja.initialize({
       cajaServer: server,

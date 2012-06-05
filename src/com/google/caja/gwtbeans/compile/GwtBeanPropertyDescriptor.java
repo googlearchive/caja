@@ -18,18 +18,18 @@ import com.google.gwt.core.ext.typeinfo.JMethod;
 import com.google.gwt.core.ext.typeinfo.JType;
 
 /**
- * The description of a Bean property, in terms of its component methods. 
+ * The description of a Bean property, in terms of its component methods.
  */
 public final class GwtBeanPropertyDescriptor {
   public final String name;
   public final JType type;
   public final JMethod readMethod;
   public final JMethod writeMethod;
-  
+
   public GwtBeanPropertyDescriptor(
-      String name, 
-      JType type, 
-      JMethod readMethod, 
+      String name,
+      JType type,
+      JMethod readMethod,
       JMethod writeMethod) {
     this.name = name;
     this.type = type;

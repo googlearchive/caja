@@ -1,7 +1,7 @@
 /**
  * @fileoverview
  * Support JS for LintPage.java.
- * 
+ *
  * @author mikesamuel@gmail.com
  */
 

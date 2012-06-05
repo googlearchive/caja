@@ -569,7 +569,7 @@ public class TamingGenerator {
         "@" + field.getEnclosingType().getQualifiedSourceName() + "::"
             + field.getName()));
   }
-  
+
   public Reference getTamingGetterAccessor(JClassType beanType) {
     toGenerateTamingAccessors.add(beanType);
     return new Reference(

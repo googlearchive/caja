@@ -173,7 +173,7 @@ var sanitizeCssProperty = (function () {
         ? ((propBits & CSS_PROP_BIT_QUANTITY)
           ? ((propBits & CSS_PROP_BIT_Z_INDEX)
             ? (token.match(/^\d{1,7}$/) ? token : '')
-            : token) 
+            : token)
           : '')
         // Normalize quantities so they don't start with a '.' or '+' sign and
         // make sure they all have an integer component so can't be confused
@@ -497,7 +497,7 @@ var sanitizeStylesheet = (function () {
               atIdent = null;  // Elide the block.
             }
             elide = !atIdent;
-            blockStack.push(atIdent);              
+            blockStack.push(atIdent);
           },
           endAtrule: function () {
             var atIdent = blockStack.pop();
@@ -535,7 +535,7 @@ var sanitizeStylesheet = (function () {
                 if (!selector) {
                   // If we have only history sensitive selectors,
                   // use an impossible rule so that we can capture the content
-                  // for later processing by 
+                  // for later processing by
                   // history insenstive content for use below.
                   selector = 'head > html';
                   removeHistoryInsensitiveSelectors = true;
@@ -596,7 +596,7 @@ var sanitizeStylesheet = (function () {
           }
         });
     function checkElide() {
-      elide = blockStack.length !== 0 
+      elide = blockStack.length !== 0
           && blockStack[blockStack.length-1] !== null;
     }
     return safeCss.join('');

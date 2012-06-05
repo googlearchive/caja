@@ -22,21 +22,21 @@
 <html>
   <head>
     <title>Caja interacting gadgets example</title>
-    
+
     <style type="text/css">
       table { border-collapse: collapse; }
       td { border: 1px solid black; padding: 1em; }
     </style>
-    
+
     <script src="http://caja.appspot.com/caja.js" type="text/javascript" >
     </script>
     <script src="gadget-library.js" type="text/javascript" ></script>
   </head>
   <body>
     <h1>Interacting Gadgets Example</h1>
-    
+
     <p>This host page loads two gadgets (which should appear in the table below) and provides the left gadget a function "set", and the right gadget "get", by which they can communicate.</p>
-    
+
     <table>
       <tr>
         <th>Writes</th>
@@ -50,7 +50,7 @@
     <script type="text/javascript">
         // Prepare the Caja library.
         // This is an asynchronous load because it constructs an iframe which
-        // all the sandbox stuff is hidden in, so you have to provide a 
+        // all the sandbox stuff is hidden in, so you have to provide a
         // callback.
         caja.configure({
           cajaServer: "http://caja.appspot.com/"
@@ -59,7 +59,7 @@
           // The functions must be explicitly marked as safe to the Caja runtime
           // because this is not cajoled code as in a module.
           var shared = (function (x) {
-            return { 
+            return {
                 get: frameGroup.markFunction(function () { return x; }),
                 set: frameGroup.markFunction(function (y) { x = String(y); })
               };
@@ -83,7 +83,7 @@
           loadGadget("gadget-get.html",
               document.getElementById("gadget2"),
               { get: frameGroup.tame(shared.get) });
-        });     
+        });
     </script>
     <p>See comments in the source of this page for more information.</p>
 

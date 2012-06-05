@@ -62,7 +62,7 @@ function ES53FrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker) {
 
   // On IE<=8 you can't add properties to text nodes or attribute nodes.
   // We detect that here and set a flag ie8nodes for makeDOMAccessible().
-  // Note, this flag has to be set before the call to Domado() 
+  // Note, this flag has to be set before the call to Domado()
   var ie8nodes = false;
   try {
     feralWin.document.createTextNode('x').v___ = 1;
@@ -81,10 +81,10 @@ function ES53FrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker) {
       makeDomadoRuleBreaker());
 
   var frameGroup = {
-  
+
     makeDefensibleObject___: ___.makeDefensibleObject,
-    makeDefensibleFunction___: ___.makeDefensibleFunction,  
-  
+    makeDefensibleFunction___: ___.makeDefensibleFunction,
+
     tame: tamingMembrane.tame,
     tamesTo: tamingMembrane.tamesTo,
     untame: tamingMembrane.untame,
@@ -106,7 +106,7 @@ function ES53FrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker) {
   return frameGroup;
 
   //----------------
-  
+
   function applyFunction(f, dis, args) {
     return f.apply(dis, args);
   }
@@ -388,7 +388,7 @@ function ES53FrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker) {
   }
 
   //----------------
-      
+
   function makeDomadoRuleBreaker() {
     // TODO(felix8a): should markFunc be markFuncFreeze?
     var ruleBreaker = {

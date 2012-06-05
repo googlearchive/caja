@@ -14,7 +14,7 @@
 
 /**
  * A lexical scannar for CSS3 as defined at http://www.w3.org/TR/css3-syntax .
- * 
+ *
  * @author Mike Samuel <mikesamuel@gmail.com>
  * \@provides lexCss, decodeCss
  * \@overrides window
@@ -51,7 +51,7 @@ var decodeCss;
       return s[1];
     }
   }
-   
+
   /**
    * Returns an equivalent CSS string literal given plain text: foo -> "foo".
    * @private

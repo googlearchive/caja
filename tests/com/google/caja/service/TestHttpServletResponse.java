@@ -172,7 +172,7 @@ public final class TestHttpServletResponse implements HttpServletResponse {
   public String getContentType() {
     throw new UnsupportedOperationException();
   }
-  public void setCharacterEncoding(String charset) { 
+  public void setCharacterEncoding(String charset) {
     throw new UnsupportedOperationException();
   }
 

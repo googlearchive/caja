@@ -49,12 +49,12 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
   var classProp = Object.prototype.toString;
   var gopd = Object.getOwnPropertyDescriptor;
   var defProp = Object.defineProperty;
-  
+
   // Given an object defined in an es53 frame, we can tell which
   // Object.prototype it inherits from.
   Object.prototype.baseProto___ = Object.prototype;
 
-  var slice = Array.prototype.slice; 
+  var slice = Array.prototype.slice;
   var push = Array.prototype.push;
   var sort = Array.prototype.sort;
   var min = Math.min;
@@ -2239,7 +2239,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
       // At this point, the object is known to be extensible and not to have the
       // property whitelisted.  We need to check if the property exists but
       // is purposely not whitelisted.
-      
+
       // If it doesn't exist,
       if (!this.hasOwnProperty(P)) {
         // then create it;
@@ -2315,7 +2315,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
   // Preconditions:
   //   Desc is an internal property descriptor.
   //   P is a valid property name.
-  Object.prototype.DefineOwnProperty___ = 
+  Object.prototype.DefineOwnProperty___ =
     function DefineOwnProperty___(P, Desc) {
       //inline if (isNumericName(P)) {
       if (typeof P === 'number' || ('' + (+P)) === P) {
@@ -3045,13 +3045,13 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
   function snowWhite(obj) {
     return freeze(whitelistAll(obj));
   }
-      
+
   function makeDefensibleFunction(f) {
     return markFuncFreeze(function(_) {
       return f.apply(USELESS, arguments);
     });
   }
-  
+
   function makeDefensibleObject(descriptors) {
     var td = {};
     for (var k in descriptors) {
@@ -3061,9 +3061,9 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
         value: FromPropertyDescriptor(descriptors[k]),
         enumerable: true,
         writable: false
-      }); 
+      });
     }
-    return Object.seal(Object.create(Object.prototype, td));  
+    return Object.seal(Object.create(Object.prototype, td));
   }
 
   function freeze(obj) {
@@ -3289,7 +3289,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
   virtualize(Function.prototype, 'apply', function (dis, as) {
       // The arguments object exposed to guest code is neither a real
       // arguments object nor an array, so if they call apply on that,
-      // we have to turn it into an array. 
+      // we have to turn it into an array.
       return this.apply(safeDis(dis), as ? slice.call(as, 0) : void 0);
     });
   /**
@@ -3778,10 +3778,10 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
 
     // 15.6.4.2
     markFunc(Boolean.prototype.toString);
-    
+
     // 15.6.4.3
     markFunc(Boolean.prototype.valueOf);
-    
+
   // 15.7 Number
 
   // 15.7.1--2
@@ -4136,7 +4136,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
   ////////////////////////////////////////////////////////////////////////
 
   // makeArrayLike() produces a constructor for the purpose of taming
-  // things like nodeLists.  The result, ArrayLike, takes an instance of 
+  // things like nodeLists.  The result, ArrayLike, takes an instance of
   // ArrayLike and two functions, getItem and getLength, which put
   // it in a position to do taming on demand.
   var makeArrayLike, itemMap = WeakMap(), lengthMap = WeakMap();
@@ -4220,14 +4220,14 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
         // The proxy has a length, numeric indices, and behaves
         // as though it inherits from Object.prototype.
         P = '' + P;
-        return (P === 'length') || 
-            isNumericName(P) || 
+        return (P === 'length') ||
+            isNumericName(P) ||
             P in Object.prototype;
       };
     var hasOwn = function (P) {
         // The proxy has a length and numeric indices.
         P = '' + P;
-        return (P === 'length') || 
+        return (P === 'length') ||
             isNumericName(P);
       };
     var gpn = function () {
@@ -4843,7 +4843,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
             constructTrap = callTrap;
           }
           if (!isFunction(constructTrap)) {
-            throw new 
+            throw new
               TypeError("Construct trap must be a function or undefined.");
           }
           var proto = Function.prototype;

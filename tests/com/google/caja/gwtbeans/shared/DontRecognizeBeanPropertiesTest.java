@@ -28,7 +28,7 @@ public class DontRecognizeBeanPropertiesTest extends GWTBeansTestCase {
     assertNotNull(getAttrsKey(beanJso, "setPrimitiveWO"));
     assertNotNull(getAttrsKey(beanJso, "getBean"));
   }
-  
+
   public void testGetter() throws Exception {
     int o = callMethodReturningInt(beanJso, "getPrimitive");
     assertTrue(beanResults.invoked);

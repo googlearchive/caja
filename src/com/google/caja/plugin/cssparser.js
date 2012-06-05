@@ -39,7 +39,7 @@
  * // Calls to contents elided.  Probably selectors and declarations as below.
  * handler.endBlock();
  * handler.endAtrule();
- * 
+ *
  * // For a ruleset: p.clazz q, s { color: blue; }
  * handler.startRuleset(['p', '.', 'clazz', ' ', 'q', ',', ' ', 's']);
  * handler.declaration('color', ['blue']);
@@ -69,7 +69,7 @@ var parseCssStylesheet;
 /**
  * parseCssDeclarations parses a run of declaration productions as seen in the
  * body of the HTML5 {@code style} attribute.
- * 
+ *
  * @param {string} cssText CSS3 content to parse as a run of declarations.
  * @param {Object} handler An object like <pre>{
  *   declaration: function (property, valueArray) { ... },
@@ -94,7 +94,7 @@ var parseCssDeclarations;
     if (i < n) {
       var tok = toks[i];
       if (tok.charAt(0) === '@') {
-        return atrule(toks, i, n, handler, true);  
+        return atrule(toks, i, n, handler, true);
       } else {
         return ruleset(toks, i, n, handler);
       }
@@ -123,7 +123,7 @@ var parseCssDeclarations;
         handler.endAtrule();
       }
     }
-    // Else we reached end of input or are missing a semicolon. 
+    // Else we reached end of input or are missing a semicolon.
     // Drop the rule on the floor.
     return i;
   }
@@ -246,7 +246,7 @@ var parseCssDeclarations;
   // value       : [ any | block | ATKEYWORD S* ]+;
   function declaration(toks, i, n, handler) {
     var property = toks[i++];
-    if (!ident.test(property)) { 
+    if (!ident.test(property)) {
       return i+1;  // skip one token.
     }
     var tok;
