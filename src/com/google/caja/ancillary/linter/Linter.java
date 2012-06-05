@@ -660,10 +660,9 @@ public class Linter implements BuildCommand {
       case VOID: // indicates value purposely ignored
         return false;
       case FUNCTION_CALL:
-        // new x() should be evaluated for its value, but not other calls.
-        Expression left = op.children().get(0);
-        return left instanceof Operation
-            && Operator.CONSTRUCTOR == ((Operation) left).getOperator();
+        return false;
+      case CONSTRUCTOR:
+        return true;
       case LOGICAL_AND: case LOGICAL_OR:
         return shouldBeEvaluatedForValue(op.children().get(1));
       case TERNARY:

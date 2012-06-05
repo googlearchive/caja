@@ -241,7 +241,7 @@ public class JsMinimalPrinterTest extends CajaTestCase {
         "{var x=abcd+"
         + "\n+ef;return 1-"
         + "\n-c;if(b)throw new"
-        + "\nError();break label;do"
+        + "\nError;break label;do"
         + "\nnothing;while(0);continue top;a-"
         + "\n-b;number=counter++;number=counter--;number=n-++counter}",
         out.toString());

@@ -808,8 +808,7 @@ public class JsonMLCompatibleTest extends CajaTestCase {
   }
 
   private static String normRender(ParseTreeNode n) {
-    return render(n).replaceAll("\\.0\\b", "")
-        .replaceAll("\\b(new [\\w.]+)\\(\\)", "$1");
+    return render(n).replaceAll("\\.0\\b", "");
   }
 
   private static void stripPositionInfo(JsonML jsonml) {

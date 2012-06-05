@@ -486,7 +486,7 @@ public final class Parser extends ParserBase {
         // http://code.google.com/p/google-caja/issues/detail?id=1316
         // ES[35] requires ; after do-while, but browsers are ok without it.
         // Here we either eat a ; or warn if it's missing.
-        if (!tq.checkToken(Punctuation.SEMI)) { 
+        if (!tq.checkToken(Punctuation.SEMI)) {
           FilePosition pos = FilePosition.endOf(tq.lastPosition());
           mq.addMessage(
               MessageType.SEMICOLON_INSERTED, MessageLevel.LINT, pos);
@@ -783,12 +783,24 @@ public final class Parser extends ParserBase {
               new Message(MessageType.UNEXPECTED_TOKEN, t.pos,
                           MessagePart.Factory.valueOf(t.text)));
         }
-        try {
-          left = Operation.create(posFrom(m), op, left);
-        } catch (IllegalArgumentException e) {
-          throw new ParseException(
-              new Message(MessageType.ASSIGN_TO_NON_LVALUE, t.pos,
-                          MessagePart.Factory.valueOf(t.text)));
+        if (op == Operator.CONSTRUCTOR && tq.checkToken(Punctuation.LPAREN)) {
+          List<Expression> operands = Lists.newArrayList();
+          operands.add(left);
+          if (!tq.checkToken(Punctuation.RPAREN)) {
+            do {
+              operands.add(parseExpressionPart(true));
+            } while (tq.checkToken(Punctuation.COMMA));
+            tq.expectToken(Punctuation.RPAREN);
+          }
+          left = new SpecialOperation(posFrom(m), op, operands);
+        } else {
+          try {
+            left = Operation.create(posFrom(m), op, left);
+          } catch (IllegalArgumentException e) {
+            throw new ParseException(
+                new Message(MessageType.ASSIGN_TO_NON_LVALUE, t.pos,
+                    MessagePart.Factory.valueOf(t.text)));
+          }
         }
         finish(left, m);
         // Not pulling multiple operators off the stack means that
@@ -996,7 +1008,7 @@ public final class Parser extends ParserBase {
 
   private static BigInteger MAX_REPRESENTABLE =
     BigInteger.valueOf((1L << 51) -1);
-  private static BigInteger MIN_REPRESENTABLE = 
+  private static BigInteger MIN_REPRESENTABLE =
     BigInteger.valueOf(-(1L << 51));
   private strictfp long toInteger(Token<JsTokenType> t) {
     try {

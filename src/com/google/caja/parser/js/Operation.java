@@ -167,7 +167,7 @@ public abstract class Operation extends AbstractExpression {
       case CONSTRUCTOR:
         return true;
       case FUNCTION_CALL:
-        return is(operands.get(0), Operator.CONSTRUCTOR) ? true : null;
+        return null;
       case LOGICAL_AND:
         opResult = operands.get(0).conditionResult();
         if (opResult != null) {
@@ -223,6 +223,19 @@ public abstract class Operation extends AbstractExpression {
       case PREFIX:
         out.consume(op.getSymbol());
         renderParam(0, rc);
+        if (op == Operator.CONSTRUCTOR) {
+          // We emit zero-arg constructors without (), because it's shorter,
+          // but that has implications in parenthesize() below.
+          int n = children().size();
+          if (1 < n) {
+            out.consume("(");
+            for (int k = 1; k < n; k++) {
+              if (1 < k) { out.consume(","); }
+              renderParam(k, rc);
+            }
+            out.consume(")");
+          }
+        }
         break;
       case POSTFIX:
         renderParam(0, rc);
@@ -408,6 +421,15 @@ public abstract class Operation extends AbstractExpression {
       }
     }
 
+    // Since we emit zero-arg constructors without parens, we might have
+    // to add parens to distinguish between (new A)() and (new A()).
+    if (op == Operator.FUNCTION_CALL
+        && firstOp
+        && childOp == Operator.CONSTRUCTOR
+        && child.children().size() == 1) {
+      return true;
+    }
+
     // Parenthesize based on associativity and precedence
     int delta = op.getPrecedence() - childOp.getPrecedence();
     if (delta < 0) {
@@ -448,11 +470,13 @@ public abstract class Operation extends AbstractExpression {
 
   private static int minArity(Operator op) {
     if (op == Operator.FUNCTION_CALL) { return 1; }
+    if (op == Operator.CONSTRUCTOR) { return 1; }
     return op.getType().getArity();
   }
 
   private static int maxArity(Operator op) {
     if (op == Operator.FUNCTION_CALL) { return Integer.MAX_VALUE; }
+    if (op == Operator.CONSTRUCTOR) { return Integer.MAX_VALUE; }
     return op.getType().getArity();
   }
 
@@ -718,8 +742,6 @@ public abstract class Operation extends AbstractExpression {
           }
         }
       }
-    } else if (is(fn, Operator.CONSTRUCTOR)) {
-      if (1 == operands.size()) { return fn; }
     } else if (is(fn, Operator.MEMBER_ACCESS)
         && fn.children().get(0) instanceof StringLiteral) {
       StringLiteral sl = (StringLiteral) fn.children().get(0);
@@ -869,15 +891,10 @@ public abstract class Operation extends AbstractExpression {
     switch (op) {
       case CONSTRUCTOR:
         return JsonMLBuilder.builder(TagType.NewExpr, pos)
-            .addChild(operands.get(0)).build();
+            .addChildren(operands).build();
       case FUNCTION_CALL:
         Expression fn = operands.get(0);
-        if (is(fn, Operator.CONSTRUCTOR)) {
-          return JsonMLBuilder.builder(TagType.NewExpr, pos)
-              .addChild(((Operation) operands.get(0)).children().get(0))
-              .addChildren(operands.subList(1, n))
-              .build();
-        } else if (is(fn, Operator.MEMBER_ACCESS)
+        if (is(fn, Operator.MEMBER_ACCESS)
                    || is(fn, Operator.SQUARE_BRACKET)) {
           Operation method = (Operation) fn;
           JsonML methodName = is(fn, Operator.MEMBER_ACCESS)

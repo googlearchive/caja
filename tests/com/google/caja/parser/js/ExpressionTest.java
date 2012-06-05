@@ -87,6 +87,7 @@ public class ExpressionTest extends CajaTestCase {
     assertTrue(jsExpr(fromString("new String('')")).conditionResult());
     assertNull(jsExpr(fromString("Date")).conditionResult());
     assertNull(jsExpr(fromString("Date()")).conditionResult());
+    assertNull(jsExpr(fromString("new Date()()")).conditionResult());
   }
 
   public final void testSimplifyForSideEffect() throws ParseException {

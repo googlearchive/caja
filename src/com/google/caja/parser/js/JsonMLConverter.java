@@ -157,14 +157,9 @@ public final class JsonMLConverter {
             pos, Operator.LOGICAL_OR,
             toNodes(children, Expression.class).toArray(NO_EXPRS));
       case NewExpr: {
-        int n = children.size();
-        Expression ctor = toNode(children.get(0), Expression.class);
-        List<Expression> operands = Lists.newArrayList(n);
-        operands.add(Operation.create(
-            ctor.getFilePosition(), Operator.CONSTRUCTOR, ctor));
-        operands.addAll(toNodes(children.subList(1, n), Expression.class));
         return Operation.create(
-            pos, Operator.FUNCTION_CALL, operands.toArray(NO_EXPRS));
+            pos, Operator.CONSTRUCTOR,
+            toNodes(children, Expression.class).toArray(NO_EXPRS));
       }
       case TypeofExpr:
         return Operation.create(

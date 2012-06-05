@@ -1,0 +1,37 @@
+Block
+  ExpressionStmt
+    SpecialOperation : CONSTRUCTOR
+      Reference
+        Identifier : C1
+  ExpressionStmt
+    SpecialOperation : CONSTRUCTOR
+      Reference
+        Identifier : C2
+      IntegerLiteral : 1
+  ExpressionStmt
+    SpecialOperation : FUNCTION_CALL
+      SpecialOperation : CONSTRUCTOR
+        Reference
+          Identifier : C3
+      IntegerLiteral : 1
+  ExpressionStmt
+    SpecialOperation : FUNCTION_CALL
+      SpecialOperation : CONSTRUCTOR
+        Reference
+          Identifier : D1
+        IntegerLiteral : 1
+      IntegerLiteral : 2
+  ExpressionStmt
+    SpecialOperation : FUNCTION_CALL
+      SpecialOperation : CONSTRUCTOR
+        Reference
+          Identifier : D2
+        IntegerLiteral : 1
+      IntegerLiteral : 2
+  ExpressionStmt
+    SpecialOperation : CONSTRUCTOR
+      SpecialOperation : FUNCTION_CALL
+        Reference
+          Identifier : D3
+        IntegerLiteral : 1
+      IntegerLiteral : 2

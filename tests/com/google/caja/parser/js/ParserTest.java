@@ -197,6 +197,14 @@ public class ParserTest extends CajaTestCase {
   public final void testParseTreeRendering11() throws Exception {
     runRenderTest("parsertest11.js", "rendergolden11.txt", false, false);
   }
+
+  public final void test12ctorParse() throws Exception {
+    runParseTest("test12ctor.js", "test12ctor-parse.txt");
+  }
+  public final void test12ctorRender() throws Exception {
+    runRenderTest("test12ctor.js", "test12ctor-render.txt", false, false);
+  }
+
   public final void testThrowAsRestrictedProduction() throws Exception {
     try {
       js(fromString("throw \n new Error()"));

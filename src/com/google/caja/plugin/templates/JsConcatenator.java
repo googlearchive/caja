@@ -289,8 +289,6 @@ final class Emitter {
           return isStringy(operands.get(operands.size() - 1), strict);
         case CONSTRUCTOR:
           return !strict;
-        case FUNCTION_CALL:
-          return !strict && is(operands.get(0), Operator.CONSTRUCTOR);
         default:
           return false;
       }

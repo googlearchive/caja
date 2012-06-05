@@ -188,14 +188,11 @@ public final class OpenTemplateStage implements Pipeline.Stage<Jobs> {
       FilePosition startPos = FilePosition.startOf(pos);
       ((MutableParseTreeNode) chain.parent.node).replaceChild(
           Operation.create(
-              pos,
-              Operator.FUNCTION_CALL,
-              Operation.create(
+              startPos,
+              Operator.CONSTRUCTOR,
+              new Reference(new Identifier(
                   startPos,
-                  Operator.CONSTRUCTOR,
-                  new Reference(new Identifier(
-                      startPos,
-                      "StringInterpolation"))),
+                  "StringInterpolation")),
               new ArrayConstructor(pos, templateParts)),
           chain.node);
       return false;

@@ -313,6 +313,7 @@ public class LinterTest extends CajaTestCase {
             + "++c;  \n"  // OK
             + "while (1) { 1; }\n"  // line 13.  First allowed, second not
             + "({ x: 32 });\n"
+            + "new Array()();\n"
             //          1         2         3         4
             // 1234567890123456789012345678901234567890
             )))

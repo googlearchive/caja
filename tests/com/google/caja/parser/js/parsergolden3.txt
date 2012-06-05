@@ -34,110 +34,103 @@ Block
     SpecialOperation : CONSTRUCTOR
       SpecialOperation : SQUARE_BRACKET
         Reference
-          Identifier : Foo
-        IntegerLiteral : 4
+          Identifier : A
+        IntegerLiteral : 2
   ExpressionStmt
     SpecialOperation : CONSTRUCTOR
       SpecialOperation : SQUARE_BRACKET
         Reference
-          Identifier : Foo
+          Identifier : B
         IntegerLiteral : 4
   ExpressionStmt
     SpecialOperation : SQUARE_BRACKET
       SpecialOperation : CONSTRUCTOR
         Reference
-          Identifier : Foo
-      IntegerLiteral : 4
+          Identifier : C
+      IntegerLiteral : 6
   ExpressionStmt
     AssignOperation : ASSIGN
       Reference
         Identifier : a
       SimpleOperation : NOT
-        SpecialOperation : FUNCTION_CALL
-          SpecialOperation : CONSTRUCTOR
-            SpecialOperation : MEMBER_ACCESS
-              Reference
-                Identifier : Foo
-              Reference
-                Identifier : Bar
-  ExpressionStmt
-    AssignOperation : ASSIGN
-      Reference
-        Identifier : a
-      SpecialOperation : FUNCTION_CALL
         SpecialOperation : CONSTRUCTOR
           SpecialOperation : MEMBER_ACCESS
             Reference
-              Identifier : Foo
+              Identifier : D
             Reference
-              Identifier : Bar
+              Identifier : E
   ExpressionStmt
     AssignOperation : ASSIGN
       Reference
-        Identifier : a
-      SpecialOperation : MEMBER_ACCESS
-        SpecialOperation : CONSTRUCTOR
-          SpecialOperation : MEMBER_ACCESS
-            Reference
-              Identifier : Foo
-            Reference
-              Identifier : Bar
-        Reference
-          Identifier : baz
-  ExpressionStmt
-    SpecialOperation : FUNCTION_CALL
-      SpecialOperation : MEMBER_ACCESS
-        SpecialOperation : FUNCTION_CALL
-          SpecialOperation : CONSTRUCTOR
-            Reference
-              Identifier : Foo
-        Reference
-          Identifier : Bar
-  ExpressionStmt
-    SpecialOperation : FUNCTION_CALL
-      SpecialOperation : MEMBER_ACCESS
-        SpecialOperation : FUNCTION_CALL
-          SpecialOperation : CONSTRUCTOR
-            Reference
-              Identifier : Foo
-        Reference
-          Identifier : Bar
-  ExpressionStmt
-    SpecialOperation : FUNCTION_CALL
+        Identifier : b
       SpecialOperation : CONSTRUCTOR
         SpecialOperation : MEMBER_ACCESS
-          SpecialOperation : FUNCTION_CALL
-            Reference
-              Identifier : Foo
           Reference
-            Identifier : Bar
+            Identifier : F
+          Reference
+            Identifier : G
+  ExpressionStmt
+    AssignOperation : ASSIGN
+      Reference
+        Identifier : c
+      SpecialOperation : MEMBER_ACCESS
+        SpecialOperation : CONSTRUCTOR
+          SpecialOperation : MEMBER_ACCESS
+            Reference
+              Identifier : H
+            Reference
+              Identifier : I
+        Reference
+          Identifier : d
+  ExpressionStmt
+    SpecialOperation : FUNCTION_CALL
+      SpecialOperation : MEMBER_ACCESS
+        SpecialOperation : CONSTRUCTOR
+          Reference
+            Identifier : J
+        Reference
+          Identifier : K
+  ExpressionStmt
+    SpecialOperation : FUNCTION_CALL
+      SpecialOperation : MEMBER_ACCESS
+        SpecialOperation : CONSTRUCTOR
+          Reference
+            Identifier : L
+        Reference
+          Identifier : M
+  ExpressionStmt
+    SpecialOperation : CONSTRUCTOR
+      SpecialOperation : MEMBER_ACCESS
+        SpecialOperation : FUNCTION_CALL
+          Reference
+            Identifier : N
+        Reference
+          Identifier : O
   ExpressionStmt
     SpecialOperation : CONSTRUCTOR
       SpecialOperation : FUNCTION_CALL
         SpecialOperation : MEMBER_ACCESS
           SpecialOperation : FUNCTION_CALL
             Reference
-              Identifier : Foo
+              Identifier : P
           Reference
-            Identifier : Bar
+            Identifier : Q
   ExpressionStmt
     SpecialOperation : FUNCTION_CALL
       SpecialOperation : MEMBER_ACCESS
-        SpecialOperation : FUNCTION_CALL
-          SpecialOperation : CONSTRUCTOR
-            Reference
-              Identifier : Foo
+        SpecialOperation : CONSTRUCTOR
+          Reference
+            Identifier : R
         Reference
-          Identifier : Bar
+          Identifier : S
   ExpressionStmt
     SpecialOperation : FUNCTION_CALL
       SpecialOperation : MEMBER_ACCESS
-        SpecialOperation : FUNCTION_CALL
-          SpecialOperation : CONSTRUCTOR
-            Reference
-              Identifier : Foo
+        SpecialOperation : CONSTRUCTOR
+          Reference
+            Identifier : T
         Reference
-          Identifier : Bar
+          Identifier : U
   ExpressionStmt
     SimpleOperation : NEGATION
       ControlOperation : TERNARY
@@ -151,8 +144,18 @@ Block
     SpecialOperation : CONSTRUCTOR
       ControlOperation : TERNARY
         Reference
-          Identifier : a
+          Identifier : d
         Reference
-          Identifier : b
+          Identifier : e
         Reference
-          Identifier : c
+          Identifier : f
+  ExpressionStmt
+    SpecialOperation : CONSTRUCTOR
+      ControlOperation : TERNARY
+        Reference
+          Identifier : g
+        Reference
+          Identifier : h
+        Reference
+          Identifier : i
+      IntegerLiteral : 1
