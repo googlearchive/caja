@@ -203,18 +203,6 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
    *                                      it's installed.
    */
 
-  // We have to define it even on Firefox, since the built-in slice doesn't
-  // throw when given null or undefined.
-  Array.slice = markFunc(function (dis, startIndex) { // , endIndex
-      dis = ToObject(dis);
-      if (arguments.length > 2) {
-        var endIndex = arguments[2];
-        return slice.call(dis, startIndex, endIndex);
-      } else {
-        return slice.call(dis, startIndex);
-      }
-    });
-
   // Missing on IE
   if (!Array.prototype.forEach) {
     Array.prototype.forEach = function(fun) { //, thisp
@@ -3350,9 +3338,6 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
       enumerable: false,
       configurable: true
     });
-
-  // Array.slice
-  virtualize(Array, 'slice');
 
   // 15.4.4.1
   Array.prototype.DefineOwnProperty___('constructor', {

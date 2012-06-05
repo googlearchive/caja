@@ -16,52 +16,6 @@
 
 <div>Derived from domita_test_untrusted.html as of r4471</div>
 
-<!--
-
-    TODO(ihab.awad): http://code.google.com/p/google-caja/issues/detail?id=1340
-    Need to figure out what this should do. Talk to metaweta@.
-
-<p id="test-array-slice" class="testcontainer">test-array-slice</p>
-<script type="text/javascript">
-  jsunitRegister('testArraySlice',
-                 function testArraySlice() {
-    function assertArray(expect, actual, note) {
-      assertEquals(note + ' typeof', 'object', typeof actual);
-      assertEquals(note + ' length', expect.length, actual.length);
-      for (var k = 0; k < actual.length; ++k) {
-        assertEquals(note + ' @' + k, expect[k], actual[k]);
-      }
-    }
-
-    // These cases are critical, because they affect the correctness of
-    // valija's fn.apply() implementation.  IE is the problem case, because
-    // it throws an error when you Array.prototype.slice.call(null).
-    assertArray([], Array.slice(null), 'null');
-    assertArray([], Array.slice(void 0), 'void 0');
-
-    // These are expected behavior that work fine on all browsers.
-    assertArray([9], Array.slice([9]), '([9])');
-    assertArray([9], Array.slice([9], null), '([9], null)');
-    assertArray([9], Array.slice([9], void 0), '([9], void 0)');
-    assertArray([],  Array.slice([9], null, 0), '([9], null, 0)');
-    assertArray([],  Array.slice([9], void 0, 0), '([9], void 0, 0)');
-    assertArray([],  Array.slice([9], null, null), '([9], null, null)');
-    assertArray([],  Array.slice([9], void 0, null), '([9], void 0, null)');
-
-    assertArray([2,3,4], Array.slice([0,1,2,3,4,5,6], 2, 5));
-    assertArray([2,3], Array.slice([0,1,2,3], 2, 5));
-
-    // es5 says end===undefined is the same as end===length, and most
-    // browsers agree.  Firefox 3.x disagrees and treats it as end===0.
-    // Nothing depends on this behavior, so we ignore the incompatibility.
-    //assertArray([9], Array.slice([9], null, void 0), '([9], null, void 0)');
-
-    pass('test-array-slice');
-  });
-</script>
-
--->
-
 <p id="testBrowserApply" class="testcontainer">test-browser-apply</p>
 <script type="text/javascript">
   // http://code.google.com/p/google-caja/issues/detail?id=1077
@@ -231,7 +185,7 @@
 <script>var c = 0;</script>
 <p id="testGlobalReference" class="clickme testcontainer">
   <span onclick="assertEquals(1, ++c); pass('testGlobalReference');">Test
-  global reference</span>
+    global reference (clickme)</span>
 </p>
 <script type="text/javascript">
 // TODO(kpreid): Enable for ES5 mode and debug; onclick handler not firing.

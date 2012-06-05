@@ -4962,7 +4962,7 @@ var Domado = (function() {
         }
         // We don't write the \n separately rather than copying args, because
         // the HTML parser would rather get fewer larger chunks.
-        var args = Array.slice.call(arguments, 0);
+        var args = Array.prototype.slice.call(arguments);
         args.push("\n");
         domicile.writeHook.apply(undefined, args);
       });

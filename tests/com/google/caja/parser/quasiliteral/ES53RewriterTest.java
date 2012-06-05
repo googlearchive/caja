@@ -351,7 +351,7 @@ public class ES53RewriterTest extends CommonJsRewriterTestCase {
   }
 
   public final void testStatic() throws Exception {
-    assertConsistent("Array.slice([3, 4, 5, 6], 1);");
+    assertConsistent("Array.prototype.slice([3, 4, 5, 6], 1);");
   }
 
   public final void testConcatArgs() throws Exception {
@@ -782,7 +782,7 @@ public class ES53RewriterTest extends CommonJsRewriterTestCase {
         "function yyy() {};")),
         RewriterMessageType.TOP_LEVEL_FUNC_INCOMPATIBLE_WITH_CAJA);
   }
-  
+
   public final void testTryCatch() throws Exception {
     checkAddsMessage(js(fromString(
         "try {" +
