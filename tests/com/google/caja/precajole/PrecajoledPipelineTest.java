@@ -33,11 +33,13 @@ public class PrecajoledPipelineTest extends CajaTestCase {
     PluginCompiler compiler = makeCompiler(false);
     addHtml(compiler,
         "<script src='data:banana'></script>"
-        + "<script src='data:capricorn'></script>");
+        + "<script src='data:capricorn'></script>"
+        + "<script>cached:dalmatian</script>");
     assertTrue(compiler.run());
     String js = render(compiler.getJavascript());
     assertContains(js, "'precajoled': 'data:banana false'");
     assertContains(js, "'precajoled': 'data:capricorn false'");
+    assertContains(js, "'precajoled': 'cached:dalmatian false'");
     assertNoWarnings();
   }
 
@@ -45,11 +47,13 @@ public class PrecajoledPipelineTest extends CajaTestCase {
     PluginCompiler compiler = makeCompiler(true);
     addHtml(compiler,
         "<script src='data:banana'></script>"
-        + "<script src='data:capricorn'></script>");
+        + "<script src='data:capricorn'></script>"
+        + "<script>cached:dalmatian</script>");
     assertTrue(compiler.run());
     String js = render(compiler.getJavascript());
     assertContains(js, "'precajoled': 'data:banana true'");
     assertContains(js, "'precajoled': 'data:capricorn true'");
+    assertContains(js, "'precajoled': 'cached:dalmatian true'");
     assertNoWarnings();
   }
 
@@ -76,19 +80,28 @@ public class PrecajoledPipelineTest extends CajaTestCase {
     public CajoledModule lookupUri(String uri, boolean minify) {
       if (!uri.startsWith("data:")) {
         return null;
-      }
-      try {
-        Expression js = jsExpr(fromString(
-            "{ precajoled: '" + uri + " " + minify + "' }"));
-        return new CajoledModule((ObjectConstructor) js);
-      } catch (Exception e) {
-        throw new RuntimeException(e);
+      } else {
+        return makeModule(uri, minify);
       }
     }
 
     @Override
     public CajoledModule lookupSource(String source, boolean minify) {
-      return null;
+      if (!source.startsWith("cached:")) {
+        return null;
+      } else {
+        return makeModule(source, minify);
+      }
+    }
+
+    private CajoledModule makeModule(String s, boolean minify) {
+      try {
+        Expression js = jsExpr(fromString(
+            "{ precajoled: '" + s + " " + minify + "' }"));
+        return new CajoledModule((ObjectConstructor) js);
+      } catch (Exception e) {
+        throw new RuntimeException(e);
+      }
     }
   }
 

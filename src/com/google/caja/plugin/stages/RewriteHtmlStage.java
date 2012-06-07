@@ -30,6 +30,7 @@ import com.google.caja.parser.html.ElKey;
 import com.google.caja.parser.html.Namespaces;
 import com.google.caja.parser.html.Nodes;
 import com.google.caja.parser.js.Block;
+import com.google.caja.parser.js.CajoledModule;
 import com.google.caja.parser.js.Expression;
 import com.google.caja.parser.js.ExpressionStmt;
 import com.google.caja.parser.js.Statement;
@@ -40,7 +41,10 @@ import com.google.caja.plugin.JobEnvelope;
 import com.google.caja.plugin.Jobs;
 import com.google.caja.plugin.Placeholder;
 import com.google.caja.plugin.PluginMessageType;
+import com.google.caja.plugin.PluginMeta;
+import com.google.caja.plugin.UriFetcher;
 import com.google.caja.plugin.templates.HtmlAttributeRewriter;
+import com.google.caja.precajole.PrecajoleMap;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.util.ContentType;
@@ -168,6 +172,27 @@ final class HtmlExtractor {
     Element scriptEl = (Element) c.getSource();
     Node parent = scriptEl.getParentNode();
 
+    PluginMeta pm = jobs.getPluginMeta();
+    UriFetcher fetcher = pm.getUriFetcher();
+
+    // Try looking for the script in the precajole map
+    PrecajoleMap precajoled = jobs.getPluginMeta().getPrecajoleMap();
+    if (precajoled != null) {
+      String sourceText = c.getContent(fetcher).toString();
+      boolean minify = pm.getPrecajoleMinify();
+      CajoledModule m = precajoled.lookupSource(sourceText, minify);
+      if (m != null) {
+        Element placeholder = placeholderFor(scriptEl, m);
+        if (c.isDeferred()) {
+          parent.removeChild(scriptEl);
+          root.appendChild(placeholder);
+        } else {
+          parent.replaceChild(placeholder, scriptEl);
+        }
+        return true;
+      }
+    }
+
     // Parse the body and create a block that will be placed inline in
     // loadModule.
     Block parsedScriptBody;
@@ -208,6 +233,14 @@ final class HtmlExtractor {
         id, jobCache.forJob(ContentType.JS, parsedScriptBody).asSingleton(),
         ContentType.JS, false,
         Job.jsJob(parsedScriptBody, baseUri)));
+    return placeholder;
+  }
+
+  private Element placeholderFor(Node n, CajoledModule m) {
+    String id = "$" + jobs.getPluginMeta().generateGuid();
+    Element placeholder = Placeholder.make(n, id);
+    jobs.getJobs().add(new JobEnvelope(id, JobCache.none(),
+        ContentType.JS, true, Job.cajoledJob(m)));
     return placeholder;
   }
 

@@ -25,6 +25,9 @@ public class StaticPrecajoleMapTest extends CajaTestCase {
   private static String CANARY1 =
       "http://caja.appspot.com/imaginary-1/canary1.js";
 
+  private static String CANARY1_TEXT =
+      "window.canary1 = (window.canary1 || 0) + 1;";
+
   // TODO(felix8a): fails when running in eclipse
   public final void testJunitPretty() throws Exception {
     PrecajoleMap pm = StaticPrecajoleMap.getInstance();
@@ -56,6 +59,24 @@ public class StaticPrecajoleMapTest extends CajaTestCase {
     PrecajoleMap pm = StaticPrecajoleMap.getInstance();
     CajoledModule cm = pm.lookupUri(":", false);
     assertNull(cm);
+  }
+
+  public final void testSource1() {
+    PrecajoleMap pm = StaticPrecajoleMap.getInstance();
+    CajoledModule cm = pm.lookupSource(CANARY1_TEXT, false);
+    assertNotNull(cm);
+    String result = render(cm);
+    assertContains(result, "precajole:");
+    assertContains(result, "canary1");
+  }
+
+  public final void testSource2() {
+    PrecajoleMap pm = StaticPrecajoleMap.getInstance();
+    CajoledModule cm = pm.lookupSource(" " + CANARY1_TEXT + "\n", false);
+    assertNotNull(cm);
+    String result = render(cm);
+    assertContains(result, "precajole:");
+    assertContains(result, "canary1");
   }
 
   private final String render(CajoledModule cm) {

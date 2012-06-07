@@ -75,14 +75,10 @@ public class StaticPrecajoleMap implements PrecajoleMap {
 
     Entry(String[] uris, String source, CajoledModule cajoled) {
       this.uris = uris;
-      this.source = source;
+      this.source = normalizeSource(source);
       this.minified = cajoled.flatten(true);
       this.pretty = cajoled.flatten(false);
-      if (source != null) {
-        this.id = computeHash(source);
-      } else {
-        this.id = computeHash(uris[0]);
-      }
+      this.id = idForSource(this.source);
     }
 
     static Entry from(byte[] serial) {
@@ -158,6 +154,7 @@ public class StaticPrecajoleMap implements PrecajoleMap {
 
   @Override
   public CajoledModule lookupSource(String source, boolean minify) {
+    source = normalizeSource(source);
     Entry e = Entry.from(load(idForSource(source)));
     if (e != null && source.equals(e.source)) {
       return minify ? e.minified : e.pretty;
@@ -226,8 +223,13 @@ public class StaticPrecajoleMap implements PrecajoleMap {
     return index.map.get(normalizeUri(uri));
   }
 
-  private String idForSource(String source) {
+  private static String idForSource(String source) {
     return computeHash(source);
+  }
+
+  private static String normalizeSource(String source) {
+    // TODO(felix8a): I'd like to minify js here, but minifier is too slow
+    return source.trim();
   }
 
   private byte[] load(String id) {
