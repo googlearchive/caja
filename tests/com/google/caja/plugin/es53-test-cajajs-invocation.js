@@ -111,19 +111,6 @@
     });
   });
 
-  registerTest('testBuilderApiJs', function testBuilderApiJs() {
-    var div = createDiv();
-    caja.load(div, uriPolicy, function (frame) {
-      var extraImports = { x: 4, y: 3 };
-      frame.code('es53-test-guest.js', 'text/javascript')
-           .api(extraImports)
-           .run(function(result) {
-             assertGuestJsCorrect(frame, div, result);
-             jsunitPass('testBuilderApiJs');
-           });
-    });
-  });
-
   registerTest('testBuilderApiJsNoDom', function testBuilderApiJsNoDom() {
     caja.load(undefined, uriPolicy, function (frame) {
       var extraImports = { x: 4, y: 3 };
@@ -223,8 +210,7 @@
   });
 
   registerTest('testBuilderApiContentJs', function testBuilderApiContentJs() {
-    var div = createDiv();
-    caja.load(div, uriPolicy, function (frame) {
+    caja.load(undefined, uriPolicy, function (frame) {
       var extraImports = { x: 4, y: 3 };
       fetch('es53-test-guest.js', function(resp) {
         frame.code(
@@ -232,7 +218,7 @@
               'application/javascript', resp)
              .api(extraImports)
              .run(function (result) {
-               assertGuestJsCorrect(frame, div, result);
+               assertGuestJsCorrect(frame, undefined, result);
                jsunitPass('testBuilderApiContentJs');
              });
       });
@@ -259,14 +245,13 @@
   if (!inES5Mode)
   registerTest('testBuilderApiContentCajoledJs',
       function testBuilderApiContentCajoledJs() {
-    var div = createDiv();
-    caja.load(div, uriPolicy, function (frame) {
+    caja.load(undefined, uriPolicy, function (frame) {
       var extraImports = { x: 4, y: 3 };
       fetch('es53-test-guest.out.js', function(script) {
         frame.cajoled(undefined, script, undefined)
              .api(extraImports)
              .run(function (result) {
-               assertGuestJsCorrect(frame, div, result);
+               assertGuestJsCorrect(frame, undefined, result);
                jsunitPass('testBuilderApiContentCajoledJs');
              });
       });
@@ -275,17 +260,21 @@
 
   // When given both cajoled and uncajoled code, use the right one.
   registerTest('testCajoledAndUncajoled', function testCajoledAndUncajoled() {
-    var div = createDiv();
-    caja.load(div, uriPolicy, function (frame) {
+    caja.load(undefined, uriPolicy, function (frame) {
+      var status = "unknown";
+      var imports = {
+        setStatus: caja.tame(caja.markFunction(function(s) { status = s; }))
+      };
       fetch('es53-test-cajoled.out.js', function (cajoled) {
         fetch('es53-test-uncajoled.js', function (uncajoled) {
           frame.cajoled(undefined, cajoled, undefined)
             .code(undefined, 'application/javascript', uncajoled)
+            .api(imports)
             .run(function (result) {
               if (inES5Mode) {
-                assertStringContains('not cajoled', div.innerHTML);
+                assertEquals('not cajoled', status);
               } else {
-                assertStringContains('is cajoled', div.innerHTML);
+                assertEquals('is cajoled', status);
               }
               jsunitPass('testCajoledAndUncajoled');
             });

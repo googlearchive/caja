@@ -51,7 +51,6 @@ public class GeneralBrowserTest extends BrowserTestCase {
   }
 
   public final void testBasicFunctions() throws Exception {
-    // TODO(kpreid): Enable for ES5: tests for load(), reassigning-window test
     runTestCase("es53-test-basic-functions-guest.html");
   }
 
@@ -147,7 +146,8 @@ public class GeneralBrowserTest extends BrowserTestCase {
   }
 
   public final void testVersionSkewCajoledModule() throws Exception {
-    runTestDriver("es53-test-cajajs-version-skew-cajoled-module.js");
+    // only relevant to es53
+    runTestDriver("es53-test-cajajs-version-skew-cajoled-module.js", false);
   }
 
   public final void testClientUriRewriting() throws Exception {
@@ -186,7 +186,6 @@ public class GeneralBrowserTest extends BrowserTestCase {
   }
 
   public final void testDomadoEvents() throws Exception {
-    // TODO(kpreid): Enable testOnclickHandler for ES5.
     runTestDriver("es53-test-domado-events.js");
   }
 
@@ -195,8 +194,6 @@ public class GeneralBrowserTest extends BrowserTestCase {
   }
 
   public final void testDomadoSpecial() throws Exception {
-    // TODO(kpreid): Enable for ES5. Currently fails because <script> elements
-    // are not getting inserted in the DOM properly
     runTestDriver("es53-test-domado-special.js");
   }
 

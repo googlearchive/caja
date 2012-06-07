@@ -27,12 +27,11 @@
   });
 
   // Set up basic stuff
-  var div = createDiv();
   var uriPolicy = {
     rewrite: function (uri, uriEffect, loaderType, hints) { return uri; }
   };
 
-  caja.load(div, uriPolicy, function (frame) {
+  caja.load(undefined, uriPolicy, function (frame) {
 
     var extraImports = createExtraImportsForTesting(caja, frame);
 
@@ -67,7 +66,7 @@
           },
         });
 
-    frame.code('es53-test-defensible-objects-guest.html')
+    frame.code('es53-test-defensible-objects-guest.js')
          .api(extraImports)
          .run(function (_) {
              readyToTest();

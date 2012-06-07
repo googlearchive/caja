@@ -223,8 +223,7 @@ function jsunitCallback(aFunction, opt_id, opt_frameGroup) {
 
 function jsunitPass(id) {
   jsunit.pass(id);
-  var node = document.getElementById(id);
-  if (!node) return;
+  var node = document.getElementById(id) || makeResultDiv(id);
   node.appendChild(document.createTextNode('Passed ' + id));
   var cl = node.className || '';
   cl = cl.replace(/\b(clickme|waiting)\b\s*/g, '');
@@ -233,14 +232,22 @@ function jsunitPass(id) {
 }
 
 function jsunitFail(id) {
-  var node = document.getElementById(id);
-  if (!node) return;
+  var node = document.getElementById(id) || makeResultDiv(id);
   node.appendChild(document.createTextNode('Failed ' + id));
   var cl = node.className || '';
   cl = cl.replace(/\b(clickme|waiting)\b\s*/g, '');
   cl += ' failed';
   node.className = cl;
   fail(id);
+}
+
+function makeResultDiv(id) {
+  var el = document.createElement('div');
+  el.id = id;
+  el.className = 'testcontainer';
+  var parent = document.body || document.documentElement;
+  parent.insertBefore(el, parent.firstChild);
+  return el;
 }
 
 /** Aim high and you might miss the moon! */

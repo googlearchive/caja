@@ -42,12 +42,11 @@
   });
   
   // Set up basic stuff
-  var div = createDiv();
   var uriPolicy = {
     rewrite: function (uri, uriEffect, loaderType, hints) { return uri; }
   };
   
-  caja.load(div, uriPolicy, function (frame) {
+  caja.load(undefined, uriPolicy, function (frame) {
 
     // Provide access to USELESS in scope for testing purposes.
     var USELESS = caja.USELESS;
@@ -116,7 +115,7 @@
     extraImports.getTamedTestObject = getTamedTestObject;
     extraImports.evalInHost = evalInHost;
 
-    frame.code('es53-test-taming-inout-guest.html')
+    frame.code('es53-test-taming-inout-guest.js')
          .api(extraImports)
          .run(function (_) {
              readyToTest();

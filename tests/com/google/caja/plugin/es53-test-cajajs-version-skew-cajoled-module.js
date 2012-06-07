@@ -23,23 +23,20 @@
  */
 
 registerTest('testVersionSkew', function testVersionSkew() {
-  fetch('es53-test-guest.out.html', function(resp) {
-    var htmlAndScript = splitHtmlAndScript(resp);
-    var html = htmlAndScript[0];
-    var script = htmlAndScript[1].replace(
+  fetch('es53-test-guest.out.js', function(script) {
+    script = script.replace(
         new RegExp(cajaBuildVersion, 'g'),
         '0000');
-    var div = createDiv();
     caja.initialize({
       cajaServer: '/caja',
       debug: true
     });
-    caja.load(div, undefined, function (frame) {
+    caja.load(undefined, undefined, function (frame) {
       caja.iframe.contentWindow.console = console;
       frame.iframe.contentWindow.console = console;
       clientSideLoaded = true;
       try {
-        frame.cajoled('/', script, html)
+        frame.cajoled('/', script, undefined)
              .run(function(result) {
                // If we succeed in running, we fail the test!
                fail('testVersionSkew');

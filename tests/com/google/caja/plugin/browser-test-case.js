@@ -353,14 +353,16 @@ function createExtraImportsForTesting(frameGroup, frame) {
   standardImports.assertStringDoesNotContain =
     frameGroup.tame(frameGroup.markFunction(assertStringDoesNotContain));
 
-  // Create a readonly mirror of document so that we can test that mutations
-  // fail when they should.
-  standardImports.documentRO =
-    new frame.domicile.TameHTMLDocument(
-        document,          // Document of host frame
-        frame.div,         // Containing div in host frame
-        'nosuchhost.fake', // Fake domain name
-        false);            // Not writeable
+  if (frame.div) {
+    // Create a readonly mirror of document so that we can test that mutations
+    // fail when they should.
+    standardImports.documentRO =
+      new frame.domicile.TameHTMLDocument(
+          document,          // Document of host frame
+          frame.div,         // Containing div in host frame
+          'nosuchhost.fake', // Fake domain name
+          false);            // Not writeable
+  }
 
   var fakeConsole = {
     // .prototype because Firebug console's methods have no apply method.
@@ -381,9 +383,11 @@ function createExtraImportsForTesting(frameGroup, frame) {
 
   standardImports.console = frameGroup.tame(fakeConsole);
 
-  standardImports.$ = frameGroup.tame(frameGroup.markFunction(function(id) {
-    return frame.imports.document.getElementById(id);
-  }));
+  if (frame.div) {
+    standardImports.$ = frameGroup.tame(frameGroup.markFunction(function(id) {
+      return frame.imports.document.getElementById(id);
+    }));
+  }
   
   standardImports.inES5Mode = inES5Mode;
   
@@ -459,6 +463,7 @@ function createExtraImportsForTesting(frameGroup, frame) {
   // Marks a container green to indicate that test passed
   standardImports.pass = frameGroup.tame(frameGroup.markFunction(function (id) {
     jsunit.pass(id);
+    if (!frame.imports.document) { return; }
     var node = frame.imports.document.getElementById(id);
     if (!node) return;
     node = frame.domicile.feralNode(node);
@@ -479,6 +484,7 @@ function createExtraImportsForTesting(frameGroup, frame) {
     if (okay) {
       jsunitRegister(testName, testFunc);
     } else {
+      if (!frame.imports.document) { return; }
       var node = frame.imports.document.getElementById(testName);
       if (!node) return;
       node = frame.domicile.feralNode(node);
