@@ -310,7 +310,7 @@ public class NodesTest extends CajaTestCase {
       MarkupRenderMode mode) throws Exception {
     try {
       assertEquals(expected, Nodes.renderUnsafe(el, mode));
-    } catch (IllegalStateException e) {
+    } catch (UncheckedUnrenderableException e) {
       fail(e.getMessage());
     }
   }
@@ -325,7 +325,7 @@ public class NodesTest extends CajaTestCase {
       DocumentFragment el = new DomParser(tq, asXml, mq).parseFragment();
       Nodes.renderUnsafe(el, mode);
       fail("No error rendering illegal fragment");
-    } catch (IllegalStateException e) {
+    } catch (UncheckedUnrenderableException e) {
       for (String m : messages) {
         assertTrue("Missing message:" + m, e.getMessage().contains(m));
       }
@@ -567,7 +567,7 @@ public class NodesTest extends CajaTestCase {
         ProcessingInstruction pi = doc.createProcessingInstruction(
             badPi[0], badPi[1]);
         Nodes.render(pi, MarkupRenderMode.XML);
-      } catch (IllegalStateException ex) {
+      } catch (UncheckedUnrenderableException ex) {
         continue;  // OK
       } catch (DOMException ex) {
         continue;  // OK
@@ -587,7 +587,7 @@ public class NodesTest extends CajaTestCase {
         Nodes.render(el, MarkupRenderMode.XML));
     try {
       Nodes.render(el, MarkupRenderMode.HTML);
-    } catch (IllegalStateException ex) {
+    } catch (UncheckedUnrenderableException ex) {
       // OK
       return;
     }
@@ -668,7 +668,7 @@ public class NodesTest extends CajaTestCase {
       if (pass != null) {
         assertTrue(pass);
       }
-    } catch (IllegalArgumentException ex) {
+    } catch (UncheckedUnrenderableException ex) {
       if (pass != null) {
         assertFalse(pass);
       }

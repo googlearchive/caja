@@ -525,7 +525,7 @@ final class Renderer {
         if (localName == null) {
           localName = el.getTagName();
           if (localName.indexOf(':') >= 0) {
-            throw new IllegalStateException(localName);
+            throw new UncheckedUnrenderableException(localName);
           }
         }
         boolean isHtml = elNs.uri == HTML_NS;
@@ -570,7 +570,7 @@ final class Renderer {
               if (added == null) { continue; }
               ns = added;
             } else if (attrLocalName.indexOf(':') >= 0) {
-              throw new IllegalStateException();
+              throw new UncheckedUnrenderableException(null);
             }
           }
           out.append(' ');
@@ -648,7 +648,7 @@ final class Renderer {
                   // If problemIndex is -1 then we have fixed the problem.
                 }
                 if (problemIndex != -1) {
-                  throw new IllegalArgumentException(
+                  throw new UncheckedUnrenderableException(
                       "XML document not renderable as HTML due to '"
                       + cdataContent.subSequence(
                           problemIndex,
@@ -712,20 +712,20 @@ final class Renderer {
       }
       case Node.PROCESSING_INSTRUCTION_NODE: {
         if (!asXml) {
-          throw new IllegalStateException(
+          throw new UncheckedUnrenderableException(
               "XML not renderable as HTML due to processing instruction");
         }
         ProcessingInstruction pi = (ProcessingInstruction) node;
         String target = pi.getTarget();
         String data = pi.getData();
         if (data.contains("?>")) {
-          throw new IllegalStateException(
+          throw new UncheckedUnrenderableException(
               "XML document not renderable due to \"?>\" inside "
               + "processing instruction");
         }
         if (Strings.equalsIgnoreCase(target.substring(0, 3), "xml")
             || !isName(target)) {  // isName check avoids targets with "?>".
-          throw new IllegalStateException(
+          throw new UncheckedUnrenderableException(
               "Bad processing instruction target " + target);
         }
         out.append("<?").append(target).append(' ').append(data).append("?>");
@@ -792,7 +792,7 @@ final class Renderer {
           // broken behaviour in browsers.
           // problem = text.contains("--") ? "contains '--'" : problem;
           if (null != problem) {
-            throw new IllegalStateException(
+            throw new UncheckedUnrenderableException(
                 "XML comment unrenderable because it " + problem);
           }
           out.append("<!--");

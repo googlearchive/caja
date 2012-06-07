@@ -2655,7 +2655,7 @@ public class DomParserTest extends CajaTestCase {
     try {
       String badness = Nodes.render(t, MarkupRenderMode.HTML);
       fail("Bad HTML rendered: " + badness);
-    } catch (IllegalArgumentException ex) {
+    } catch (UncheckedUnrenderableException ex) {
       // Cannot produce <xmp></xmp></xmp> safely in HTML.
     }
   }
@@ -2669,7 +2669,7 @@ public class DomParserTest extends CajaTestCase {
     try {
       String badness = Nodes.render(t, MarkupRenderMode.HTML);
       fail("Bad HTML rendered: " + badness);
-    } catch (IllegalArgumentException ex) {
+    } catch (UncheckedUnrenderableException ex) {
       // Cannot produce <xmp> </xMp </xmp> safely in HTML.
     }
   }
@@ -2682,7 +2682,7 @@ public class DomParserTest extends CajaTestCase {
     try {
       String badness = Nodes.render(t, MarkupRenderMode.HTML);
       fail("Bad HTML rendered: " + badness);
-    } catch (IllegalArgumentException ex) {
+    } catch (UncheckedUnrenderableException ex) {
       // Cannot produce <xmp> </XMP> </xmp> safely in HTML.
     }
   }

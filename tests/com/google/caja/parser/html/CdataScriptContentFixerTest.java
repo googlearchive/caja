@@ -91,7 +91,7 @@ public class CdataScriptContentFixerTest extends CajaTestCase {
             .withAsciiOnly(asciiOnly);
         Nodes.render(root, rc);
       }
-    } catch (IllegalArgumentException ex) {
+    } catch (UncheckedUnrenderableException ex) {
       if (goldenOrNullForFailure != null) {
         throw ex;
       }
