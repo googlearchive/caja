@@ -709,16 +709,9 @@ var bridalMaker = function (makeDOMAccessible, document) {
   function getComputedStyle(element, pseudoElement) {
     if (makeDOMAccessible(element).currentStyle && pseudoElement === void 0) {
       return makeDOMAccessible(element.currentStyle);
-    }
-
-    // TODO(ihab.awad): Hack using window.parent to get computed style b/c
-    // there seem to be cross-frame miseries somewhere causing computed
-    // style to be returned as undefined. Investigate the specific problem
-    // and at least document it here, if not find a better solution.
-
-    else if (window.parent.getComputedStyle) {
+    } else if (window.getComputedStyle) {
       return makeDOMAccessible(
-          window.parent.getComputedStyle(element, pseudoElement));
+          window.getComputedStyle(element, pseudoElement));
     } else {
       throw new Error(
           'Computed style not available for pseudo element '
