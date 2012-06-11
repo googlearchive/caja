@@ -1,0 +1,81 @@
+<html>
+  <head>
+    <script src="../../caja.js"></script>
+  </head>
+  <body>
+    <div id='cajoledResult'></div>
+    <script>
+      function forceES5Mode() {
+        return window.location.search.match("es5=true");
+      }
+    
+      function makeXhr() {
+        if (typeof XMLHttpRequest === 'undefined') {
+          var activeXClassIds = [
+              'MSXML2.XMLHTTP.5.0', 'MSXML2.XMLHTTP.4.0', 'MSXML2.XMLHTTP.3.0',
+              'MSXML2.XMLHTTP', 'MICROSOFT.XMLHTTP.1.0', 'MICROSOFT.XMLHTTP.1',
+              'MICROSOFT.XMLHTTP'];
+          for (var i = 0, n = activeXClassIds.length; i < n; i++) {
+            var candidate = activeXClassIds[i];
+            try {
+              return new ActiveXObject(candidate);
+            } catch (e) {}
+          }
+        }
+        return new XMLHttpRequest;
+      }
+
+      function fetch(Q, url) {
+        var pair = Q.defer();
+        var resolve = pair.resolve;
+        var xhr = makeXhr();
+        xhr.open('GET', url, true);
+        xhr.onreadystatechange = function() {
+          if (xhr.readyState === 4) {
+            if (xhr.status === 200) {
+              resolve({
+                contentType: xhr.getResponseHeader('Content-Type'),
+                responseText: xhr.responseText
+              });
+            } else {
+              resolve(Q.reject(xhr.status + ' ' + xhr.statusText));
+            }
+          }
+        };
+        xhr.send(null);
+        return pair.promise;
+      }
+
+      function identity(x) { return x; }
+      caja.initialize({
+        cajaServer: "../..",
+        forceES5Mode: forceES5Mode()
+      });
+      caja.whenReady(function() {
+        var Q = caja.iframe.contentWindow.Q;
+        var url = forceES5Mode() ?
+          "/jquery/test/@jquery-testcase@-uncajoled.html" : "/jquery/test/@jquery-testcase@-cajoled.js";
+        Q.when(fetch(Q, url),
+            function (resp) {
+              caja.load(
+                  document.getElementById('cajoledResult'),
+                  caja.policy.net.ALL,
+                  function (frame) {
+                    if (forceES5Mode()) {
+                      frame.code("test.url", "text/html", resp.responseText)
+                           .api(caja.tame({
+                             console: {
+                               log: caja.markFunction(console.log)
+                             }
+                           }))
+                          .run(function(){});
+                    } else {
+                      frame.cajoled("test.url", resp.responseText)
+                          .run();
+                    }
+                  });
+              });
+      });
+    </script>
+  </body>
+</html>

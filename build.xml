@@ -713,28 +713,18 @@
         <depend file="${lib}/js/jqueryjs/test/qunit/qunit/qunit.css"/>
         <depend file="${lib}/js/jqueryjs/test/data/testsuite.css"/>
         <depend file="${lib}/js/jqueryjs/test/data/testinit.js"/>
-        <depend file="${lib}/js/jqueryjs/test/../src/core.js"/>
-        <depend file="${lib}/js/jqueryjs/test/../src/support.js"/>
-        <depend file="${lib}/js/jqueryjs/test/../src/data.js"/>
-        <depend file="${lib}/js/jqueryjs/test/../src/queue.js"/>
-        <depend file="${lib}/js/jqueryjs/test/../src/attributes.js"/>
-        <depend file="${lib}/js/jqueryjs/test/../src/event.js"/>
-        <depend file="${lib}/js/jqueryjs/test/../src/sizzle/sizzle.js"/>
-        <depend file="${lib}/js/jqueryjs/test/../src/sizzle-jquery.js"/>
-        <depend file="${lib}/js/jqueryjs/test/../src/traversing.js"/>
-        <depend file="${lib}/js/jqueryjs/test/../src/manipulation.js"/>
-        <depend file="${lib}/js/jqueryjs/test/../src/css.js"/>
-        <depend file="${lib}/js/jqueryjs/test/../src/ajax.js"/>
-        <depend file="${lib}/js/jqueryjs/test/../src/effects.js"/>
-        <depend file="${lib}/js/jqueryjs/test/../src/offset.js"/>
-        <depend file="${lib}/js/jqueryjs/test/../src/dimensions.js"/>
         <depend file="${lib}/js/jqueryjs/test/qunit/qunit/qunit.js"/>
         <depend file="${lib}/js/jqueryjs/test/data/testrunner.js"/>
+        <depend file="${lib}/js/jqueryjs/dist/jquery.js"/>
         <depend file="${lib}/js/jqueryjs/test/unit/core.js"/>
+        <depend file="${lib}/js/jqueryjs/test/unit/callbacks.js"/>
+        <depend file="${lib}/js/jqueryjs/test/unit/deferred.js"/>
+        <depend file="${lib}/js/jqueryjs/test/unit/support.js"/>
         <depend file="${lib}/js/jqueryjs/test/unit/data.js"/>
         <depend file="${lib}/js/jqueryjs/test/unit/queue.js"/>
         <depend file="${lib}/js/jqueryjs/test/unit/attributes.js"/>
         <depend file="${lib}/js/jqueryjs/test/unit/event.js"/>
+        <depend file="${lib}/js/jqueryjs/src/sizzle/test/unit/selector.js"/>
         <depend file="${lib}/js/jqueryjs/test/unit/selector.js"/>
         <depend file="${lib}/js/jqueryjs/test/unit/traversing.js"/>
         <depend file="${lib}/js/jqueryjs/test/unit/manipulation.js"/>
@@ -743,6 +733,7 @@
         <depend file="${lib}/js/jqueryjs/test/unit/effects.js"/>
         <depend file="${lib}/js/jqueryjs/test/unit/offset.js"/>
         <depend file="${lib}/js/jqueryjs/test/unit/dimensions.js"/>
+        <depend file="${lib}/js/jqueryjs/test/unit/exports.js"/>
       </transform>
     </sequential>
   </macrodef>
@@ -756,10 +747,14 @@
       </fileset>
     </copy>
     <JQueryTestCase testcase="core" />
+    <JQueryTestCase testcase="callbacks" />
+    <JQueryTestCase testcase="deferred" />
+    <JQueryTestCase testcase="support" />
     <JQueryTestCase testcase="data" />
     <JQueryTestCase testcase="queue" />
     <JQueryTestCase testcase="attributes" />
     <JQueryTestCase testcase="event" />
+    <JQueryTestCase testcase="../../src/sizzle/test/unit/selector" />
     <JQueryTestCase testcase="selector" />
     <JQueryTestCase testcase="traversing" />
     <JQueryTestCase testcase="manipulation" />
@@ -768,6 +763,7 @@
     <JQueryTestCase testcase="effects" />
     <JQueryTestCase testcase="offset" />
     <JQueryTestCase testcase="dimensions" />
+    <JQueryTestCase testcase="exports" />
     <copy todir="${war}/jquery">
       <fileset file="${lib}/js/jqueryjs/index.html" />
     </copy>
@@ -776,6 +772,9 @@
     </copy>
     <copy todir="${war}/jquery/src">
       <fileset dir="${lib}/js/jqueryjs/src/" />
+    </copy>
+    <copy todir="${war}/jquery/dist">
+      <fileset dir="${lib}/js/jqueryjs/dist/" />
     </copy>
   </target>
 
