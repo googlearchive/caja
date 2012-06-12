@@ -616,16 +616,9 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
   // Creating defensible (transitively frozen) objects
   ////////////////////////////////////////////////////////////////////////
 
-  // We defer actual definition of the structure since we cannot create the
-  // necessary data structures (newTable()) yet
-  var deferredDefended = [];
-  var addToDefended = function(root) {
-    deferredDefended.push(root);
-  };
-
   var functionInstanceVoidNameGetter = markFunc(function() { return ''; });
   // Must freeze in a separate step to break circular dependency
-  addToDefended(freeze(functionInstanceVoidNameGetter));
+  freeze(functionInstanceVoidNameGetter);
 
   /**
    * We defer the creation of these properties until they're asked for.
@@ -678,13 +671,6 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
     f.arguments_g___ = poisonFuncArgs;
     f.arguments_s___ = void 0;
     f.arguments_m___ = false;
-
-    // Add to the list of defended (transitively frozen) objects so that
-    // the def(...) function does not encounter these (newly created) functions
-    // and go into an infinite loop freezing them.
-    addToDefended(f.name_g___);
-    addToDefended(f.caller_g___);
-    addToDefended(f.arguments_g___);
   }
 
   function deferredV(name) {
@@ -881,6 +867,10 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
 
   function isExtensible(obj) {
     return Type(obj) === 'Object' && obj.ne___ !== obj;
+    // TODO(felix8a): (o===Object(o)) is faster than (Type(o)==='Object')
+    // except Rhino has a bug where it goes into an infinite loop if you
+    // ever do Object(Object.prototype).
+    // https://bugzilla.mozilla.org/show_bug.cgi?id=760973
   }
 
   /**
@@ -1533,48 +1523,48 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
   var defended = newTable();
   /**
    * To define a defended object is to freeze it and all objects
-   * transitively reachable from it via transitive reflective
-   * property traversal.
+   * transitively reachable from it via transitive reflective property
+   * traversal.  Note, this is only subjective freezing; uncajoled code can
+   * still modify the object, and can make a previously-defended object
+   * into a subjectively-mutable object.
    */
 
-  // These will be set to the values originally exposed to guest code; since
-  // guest code may change Object.getPrototypeOf, etc., we cache some methods.
-  var origGetPrototypeOf, origGetOwnPropertyDescriptor;
-
   var def = markFuncFreeze(function (root) {
+
+    // 'defended' is a table of objects known to be deep-frozen.  In the
+    // loop below, we add objects to the table before they're completely
+    // deep-frozen, because that's much faster than making another table
+    // for pending-deep-frozen.  But def can throw an error before it
+    // completes a deep freeze, so to maintain the contract of 'defended',
+    // we set it to null here, and restore its value when we know that the
+    // deep-freeze succeeded.  If we do error out, we lose our existing
+    // knowledge of what's already deep-frozen, and will have to
+    // re-traverse the object tree on the next call to def(), but that
+    // should be rare in practice.
+    var defending = defended || newTable();
+    defended = null;
+
     var i, n;
-    var defending = newTable();
-    var defendingList = [];
     var todo = [root];
     while (todo.length) {
       var val = todo.pop();
-      if (val !== Object(val) || defended.get(val) || defending.get(val)) {
-        continue;
-      }
-      defending.set(val, true);
-      defendingList.push(val);
-      freeze(val);
-      todo.push(origGetPrototypeOf(val));
+      // TODO(felix8a): Rhino bug; see isExtensible.
+      if (val !== Object.prototype && val !== Object(val)) { continue; }
+      if (defending.get(val)) { continue; }
+      defending.set(freeze(val), true);
+      todo.push(stdGetPrototypeOf(val));
+      // Note, only subjectively-visible properties.
       var keys = val.ownKeys___();
       for (i = 0, n = keys.length; i < n; i++) {
-        var desc = origGetOwnPropertyDescriptor(val, keys[i]);
-        todo.push(desc.value);
-        todo.push(desc.get);
-        todo.push(desc.set);
+        var desc = val.GetOwnProperty___(keys[i]);
+        desc.value && todo.push(desc.value);
+        desc.get && todo.push(desc.get);
+        desc.set && todo.push(desc.set);
       }
     }
-    for (i = 0, n = defendingList.length; i < n; i++) {
-      defended.set(defendingList[i], true);
-    }
+    defended = defending;
     return root;
   });
-
-  addToDefended = markFuncFreeze(function(root) {
-    defended.set(root, true);
-  });
-
-  deferredDefended.forEach(function(o) { addToDefended(o); });
-  deferredDefended = void 0;
 
   ////////////////////////////////////////////////////////////////////////
   // Tokens
@@ -2586,6 +2576,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
   function initializeMap(list) {
     var result = {};
     var accessors = {};
+    var hasAccessors = false;
     var i;
     for (i = 0; i < list.length; i += 2) {
       if (typeof list[i] === 'string') {
@@ -2605,6 +2596,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
               });
         }
       } else {
+        hasAccessors = true;
         var name = list[i][0];
         if (isNumericName(name)) {
           throw new TypeError('Accessors not supported for numerics.');
@@ -2618,15 +2610,17 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
         accessors[name][type] = asFirstClass(list[i + 1]);
       }
     }
-    for (i in accessors) {
-      if (endsWith__.test(i)) { continue; }
-      if (!accessors.hasOwnProperty(i)) { continue; }
-      result.DefineOwnProperty___(i, {
-          get: accessors[i].get,
-          set: accessors[i].set,
-          enumerable: true,
-          configurable: true
-        });
+    if (hasAccessors) {
+      for (i in accessors) {
+        if (!accessors.hasOwnProperty(i)) { continue; }
+        if (endsWith__.test(i)) { continue; }
+        result.DefineOwnProperty___(i, {
+            get: accessors[i].get,
+            set: accessors[i].set,
+            enumerable: true,
+            configurable: true
+          });
+      }
     }
     return result;
   }
@@ -2814,7 +2808,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
         return obj.Prototype___;
       };
   }
-  origGetPrototypeOf = Object.getPrototypeOf;
+  var stdGetPrototypeOf = Object.getPrototypeOf;
 
   // The Chrome/Safari/Webkit debugger injects a script that expects to
   // call Object.getOwnPropertyNames and Object.getOwnPropertyDescriptor on
@@ -2829,7 +2823,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
   // 15.2.3.3
   // This is the original implementation exposed to guest code,
   // which may change it.
-  origGetOwnPropertyDescriptor = function (obj, P) {
+  var stdGetOwnPropertyDescriptor = function (obj, P) {
       // 1. If Type(object) is not Object throw a TypeError exception.
       if (Type(obj) !== 'Object') {
         throw new TypeError('Expected an object.');
@@ -2842,7 +2836,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
       // 4. Return the result of calling FromPropertyDescriptor(desc).
       return desc ? FromPropertyDescriptor(desc) : void 0;
     };
-  virtualize(Object, 'getOwnPropertyDescriptor', origGetOwnPropertyDescriptor);
+  virtualize(Object, 'getOwnPropertyDescriptor', stdGetOwnPropertyDescriptor);
 
   // 15.2.3.4
   virtualize(Object, 'getOwnPropertyNames',
@@ -4805,7 +4799,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
                 throw new TypeError(
                     'Proxies cannot inherit from extensible objects.');
               }
-              p = origGetPrototypeOf(p);
+              p = stdGetPrototypeOf(p);
             }
             proxy = beget(proto);
             // Override all the fastpath properties so a fastpath on proto
