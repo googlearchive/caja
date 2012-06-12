@@ -73,11 +73,15 @@ public interface ParseTreeNode extends MessagePart, Renderable, Cloneable {
    * Applies the given visitor to children in a pre-order traversal, skipping
    * traversal of a subtree if {@link Visitor#visit} of the root node returns
    * false.
+   * <p>
+   * This is deprecated because it needs O(n**2) time and O(n) space, though
+   * we don't have a replacement for all cases yet.
    *
    * @param v the visitor to apply.
    * @param ancestors an initial set of ancestor nodes not containing this.
    * @return true iff visiting the root node yielded true.
    */
+  @Deprecated
   boolean acceptPreOrder(Visitor v, AncestorChain<?> ancestors);
 
   /**
@@ -87,13 +91,18 @@ public interface ParseTreeNode extends MessagePart, Renderable, Cloneable {
    * @param ancestors an initial set of ancestor nodes not containing this.
    * @return true iff visiting the root node yielded true.
    */
+  @Deprecated
   boolean acceptPostOrder(Visitor v, AncestorChain<?> ancestors);
 
   /**
-   * Like {@link #acceptPreOrder}, but assumes the Visitor does not
-   * modify the tree.
+   * Call {@code visit(node)} on every node in the tree in pre-order.
+   * The visit function is allowed to modify node and its children,
+   * but it shouldn't modify node's parent or siblings.
+   * If visit returns false, traversal skips the node's children.
+   *
+   * @return false iff visit returns false for this node.
    */
-  boolean visitPreOrder(Visitor v, AncestorChain<?> ancestors);
+  boolean visitPreOrder(ParseTreeNodeVisitor v);
 
   /**
    * Create a deep clone of this {@code ParseTreeNode}.

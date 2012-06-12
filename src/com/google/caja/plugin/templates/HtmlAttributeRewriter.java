@@ -24,9 +24,9 @@ import com.google.caja.lexer.Keyword;
 import com.google.caja.lexer.ParseException;
 import com.google.caja.lexer.escaping.UriUtil;
 import com.google.caja.parser.AncestorChain;
+import com.google.caja.parser.ParseTreeNodeVisitor;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.ParseTreeNodeContainer;
-import com.google.caja.parser.Visitor;
 import com.google.caja.parser.css.CssTree;
 import com.google.caja.parser.html.Nodes;
 import com.google.caja.parser.js.AbstractExpression;
@@ -462,10 +462,9 @@ public final class HtmlAttributeRewriter {
    * {@code onchange="___.plugin_dispatchEvent___(this, node, 1234, 'handlerName')"}
    */
   private static void rewriteEventHandlerReferences(Block block) {
-    block.acceptPreOrder(
-        new Visitor() {
-          public boolean visit(AncestorChain<?> ancestors) {
-            ParseTreeNode node = ancestors.node;
+    block.visitPreOrder(
+        new ParseTreeNodeVisitor() {
+          public boolean visit(ParseTreeNode node) {
             // Do not recurse into closures.
             if (node instanceof FunctionConstructor) { return false; }
             if (node instanceof Reference) {
@@ -480,7 +479,7 @@ public final class HtmlAttributeRewriter {
             }
             return true;
           }
-        }, null);
+        });
   }
 
   static SanitizedAttr noResult(AttrValue a) {

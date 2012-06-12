@@ -20,8 +20,8 @@ import com.google.caja.lang.html.HTML;
 import com.google.caja.lang.html.HtmlSchema;
 import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.parser.AncestorChain;
+import com.google.caja.parser.ParseTreeNodeVisitor;
 import com.google.caja.parser.ParseTreeNode;
-import com.google.caja.parser.Visitor;
 import com.google.caja.parser.css.CssPropertySignature;
 import com.google.caja.parser.css.CssTree;
 import com.google.caja.parser.css.CssTree.Combinator;
@@ -1358,13 +1358,12 @@ final class SignatureResolver {
   private static void check(ParseTreeNode node) {
     if (DEBUG) {
       if (!node.getAttributes().containsKey(NUM)) {
-        node.acceptPreOrder(new Visitor() {
-            public boolean visit(AncestorChain<?> ancestors) {
-              ParseTreeNode n = ancestors.node;
-              n.getAttributes().set(NUM, Integer.valueOf(serialno++));
+        node.visitPreOrder(new ParseTreeNodeVisitor() {
+            public boolean visit(ParseTreeNode node) {
+              node.getAttributes().set(NUM, Integer.valueOf(serialno++));
               return true;
             }
-          }, null);
+          });
       }
     }
   }

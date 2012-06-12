@@ -291,7 +291,7 @@ public abstract class AbstractParseTreeNode implements MutableParseTreeNode,
     return sb.toString();
   }
 
-  private enum TraversalType { PREORDER, POSTORDER, PREORDER_RO; }
+  private enum TraversalType { PREORDER, POSTORDER; }
 
   private boolean visitChildren(
        Visitor v, AncestorChain<?> ancestors, TraversalType traversalType) {
@@ -344,9 +344,6 @@ public abstract class AbstractParseTreeNode implements MutableParseTreeNode,
         case PREORDER:
           child.acceptPreOrder(v, ancestors);
           break;
-        case PREORDER_RO:
-          child.visitPreOrder(v, ancestors);
-          break;
         case POSTORDER:
           if (!child.acceptPostOrder(v, ancestors)) {
             result = false;
@@ -358,10 +355,8 @@ public abstract class AbstractParseTreeNode implements MutableParseTreeNode,
     return result;
   }
 
-  // TODO(felix8a): The contains() check makes traversal O(n**2) where
-  // n is the maximal number of children of any node in the tree.
-  // Using visitPreOrder instead of acceptPreorder ameliorates this in
-  // cases where we know the visitor does not modify the tree.
+  // This contains() check makes traversal O(n**2) where n is the
+  // maximal number of children of any node in the tree.
   private boolean stillInParent(AncestorChain<?> ancestors) {
     // If ancestors is empty, then it can't have been removed from its parent
     // by the Visitor unless the visitor has some handle to the parent through
@@ -397,14 +392,13 @@ public abstract class AbstractParseTreeNode implements MutableParseTreeNode,
     return true;
   }
 
-  public final boolean visitPreOrder(Visitor v, AncestorChain<?> ancestors) {
-    ancestors = AncestorChain.instance(ancestors, this);
-    if (!v.visit(ancestors)) { return false; }
-    visitChildren(v, ancestors, TraversalType.PREORDER_RO);
+  public final boolean visitPreOrder(ParseTreeNodeVisitor v) {
+    if (!v.visit(this)) { return false; }
+    for (ParseTreeNode child : children.getImmutableFacet()) {
+      child.visitPreOrder(v);
+    }
     return true;
   }
-
-
 
   /** Uses identity hash code since this is mutable. */
   @Override

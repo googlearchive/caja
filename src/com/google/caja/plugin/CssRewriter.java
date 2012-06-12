@@ -23,6 +23,7 @@ import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.MutableParseTreeNode;
+import com.google.caja.parser.ParseTreeNodeVisitor;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.Visitor;
 import com.google.caja.parser.css.CssTree;
@@ -286,10 +287,10 @@ public final class CssRewriter {
 
   private boolean containsLinkPseudoClass(CssTree.SimpleSelector selector) {
     final boolean[] result = new boolean[1];
-    selector.acceptPreOrder(new Visitor() {
-      public boolean visit(AncestorChain<?> chain) {
-        if (chain.node instanceof CssTree.Pseudo) {
-          CssTree firstChild = (CssTree) chain.node.children().get(0);
+    selector.visitPreOrder(new ParseTreeNodeVisitor() {
+      public boolean visit(ParseTreeNode node) {
+        if (node instanceof CssTree.Pseudo) {
+          CssTree firstChild = (CssTree) node.children().get(0);
           if (firstChild instanceof CssTree.IdentLiteral) {
             CssTree.IdentLiteral ident = (CssTree.IdentLiteral) firstChild;
             if (LINK_PSEUDO_CLASSES.contains(Name.css(ident.getValue()))) {
@@ -300,7 +301,7 @@ public final class CssRewriter {
         }
         return true;
       }
-    }, null);
+    });
     return result[0];
   }
 
@@ -404,12 +405,12 @@ public final class CssRewriter {
     } else {
       stdColorMatcher = null;
     }
-    t.node.acceptPreOrder(new Visitor() {
-        public boolean visit(AncestorChain<?> ancestors) {
-          if (!(ancestors.node instanceof CssTree.Term)) {
+    t.node.visitPreOrder(new ParseTreeNodeVisitor() {
+        public boolean visit(ParseTreeNode node) {
+          if (!(node instanceof CssTree.Term)) {
             return true;
           }
-          CssTree.Term term = (CssTree.Term) ancestors.node;
+          CssTree.Term term = (CssTree.Term) node;
           CssPropertyPartType partType = propertyPartType(term);
           if (CssPropertyPartType.LENGTH == partType
               && term.getExprAtom() instanceof CssTree.QuantityLiteral) {
@@ -451,7 +452,7 @@ public final class CssRewriter {
           }
           return true;
         }
-      }, t.parent);
+      });
   }
   private static boolean isZeroOrHasUnits(String value) {
     int len = value.length();
@@ -544,9 +545,8 @@ public final class CssRewriter {
   }
   private void suffixIds(AncestorChain<? extends CssTree> t) {
     // Rewrite IDs with the gadget suffix.
-    t.node.acceptPreOrder(new Visitor() {
-          public boolean visit(AncestorChain<?> ancestors) {
-            ParseTreeNode node = ancestors.node;
+    t.node.visitPreOrder(new ParseTreeNodeVisitor() {
+          public boolean visit(ParseTreeNode node) {
             if (node instanceof CssTree.SuffixedSelectorPart) { return false; }
             if (!(node instanceof CssTree.SimpleSelector)) { return true; }
             CssTree.SimpleSelector ss = (CssTree.SimpleSelector) node;
@@ -562,13 +562,12 @@ public final class CssRewriter {
             }
             return true;
           }
-        }, t.parent);
+        });
   }
   private void restrictRulesToSubtreesWithGadgetClass(
       AncestorChain<? extends CssTree> t) {
-    t.node.acceptPreOrder(new Visitor() {
-      public boolean visit(AncestorChain<?> ancestors) {
-        ParseTreeNode node = ancestors.node;
+    t.node.visitPreOrder(new ParseTreeNodeVisitor() {
+      public boolean visit(ParseTreeNode node) {
         if (!(node instanceof CssTree.Selector)) { return true; }
         CssTree.Selector sel = (CssTree.Selector) node;
 
@@ -610,7 +609,7 @@ public final class CssRewriter {
         }
         return false;
       }
-    }, t.parent);
+    });
   }
 
   private static final Set<Name> ALLOWED_PSEUDO_CLASSES = Sets.immutableSet(
@@ -621,9 +620,8 @@ public final class CssRewriter {
 
     // 1) Check that all classes, ids, property names, etc. are valid
     //    css identifiers.
-    t.node.acceptPreOrder(new Visitor() {
-        public boolean visit(AncestorChain<?> ancestors) {
-          ParseTreeNode node = ancestors.node;
+    t.node.visitPreOrder(new ParseTreeNodeVisitor() {
+        public boolean visit(ParseTreeNode node) {
           if (node instanceof CssTree.SimpleSelector) {
             for (CssTree child : ((CssTree.SimpleSelector) node).children()) {
               if (child instanceof CssTree.Pseudo) {
@@ -645,7 +643,7 @@ public final class CssRewriter {
           // The CssValidator checks the safety of CSS property names.
           return true;
         }
-      }, t.parent);
+      });
 
     // 2) Ban content properties, and attr pseudo classes, and any other
     //    pseudo selectors that don't match the whitelist
@@ -808,9 +806,8 @@ public final class CssRewriter {
   }
 
   private void translateUrls(AncestorChain<? extends CssTree> t) {
-      t.node.acceptPreOrder(new Visitor() {
-          public boolean visit(AncestorChain<?> ancestors) {
-            ParseTreeNode node = ancestors.node;
+      t.node.visitPreOrder(new ParseTreeNodeVisitor() {
+          public boolean visit(ParseTreeNode node) {
             if (node instanceof CssTree.Term
                 && CssPropertyPartType.URI == propertyPartType(node)) {
               CssTree term = (CssTree.Term) node;
@@ -854,7 +851,7 @@ public final class CssRewriter {
             }
             return true;
           }
-        }, t.parent);
+        });
   }
 
   private static CssTree.Declaration declarationFor(AncestorChain<?> chain) {

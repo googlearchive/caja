@@ -19,6 +19,7 @@ import com.google.caja.lexer.Token;
 import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.lexer.escaping.Escaping;
 import com.google.caja.parser.AncestorChain;
+import com.google.caja.parser.ParseTreeNodeVisitor;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.ParseTreeNodes;
 import com.google.caja.parser.Visitor;
@@ -383,10 +384,6 @@ public abstract class CssPropertySignature implements ParseTreeNode {
     return true;
   }
 
-  public final boolean visitPreOrder(Visitor v, AncestorChain<?> ancestors) {
-    return acceptPreOrder(v, ancestors);
-  }
-
   public final boolean acceptPostOrder(Visitor v, AncestorChain<?> ancestors) {
     ancestors = AncestorChain.instance(ancestors, this);
     for (CssPropertySignature child : children) {
@@ -395,6 +392,14 @@ public abstract class CssPropertySignature implements ParseTreeNode {
       }
     }
     return v.visit(ancestors);
+  }
+
+  public final boolean visitPreOrder(ParseTreeNodeVisitor v) {
+    if (!v.visit(this)) { return false; }
+    for (CssPropertySignature child : children) {
+      child.visitPreOrder(v);
+    }
+    return true;
   }
 
   @Override

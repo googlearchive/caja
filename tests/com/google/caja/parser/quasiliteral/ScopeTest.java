@@ -14,10 +14,9 @@
 
 package com.google.caja.parser.quasiliteral;
 
-import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.ParseTreeNodeContainer;
-import com.google.caja.parser.Visitor;
+import com.google.caja.parser.ParseTreeNodeVisitor;
 import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.CatchStmt;
 import com.google.caja.parser.js.Declaration;
@@ -545,23 +544,22 @@ public class ScopeTest extends CajaTestCase {
       final String identifierValue) {
     final Holder<T> result = new Holder<T>();
 
-    root.acceptPreOrder(new Visitor() {
-      public boolean visit(AncestorChain<?> chain) {
-        if (clazz.isAssignableFrom(chain.node.getClass()) &&
-            chain.node.children().size() > 0 &&
-            chain.node.children().get(0) instanceof Identifier) {
-          Identifier id = (Identifier)chain.node.children().get(0);
+    root.visitPreOrder(new ParseTreeNodeVisitor() {
+      public boolean visit(ParseTreeNode node) {
+        if (clazz.isAssignableFrom(node.getClass()) &&
+            node.children().size() > 0 &&
+            node.children().get(0) instanceof Identifier) {
+          Identifier id = (Identifier)node.children().get(0);
           if ((identifierValue == null && id.getValue() == null) ||
               (identifierValue != null && identifierValue.equals(id.getValue()))) {
             assertNull(result.value);
-            result.value = (T)chain.node;
+            result.value = (T)node;
             return false;
           }
         }
         return true;
       }
-    },
-    null);
+    });
 
     assertNotNull(result.value);
     return result.value;

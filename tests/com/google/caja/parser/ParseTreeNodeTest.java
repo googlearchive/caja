@@ -31,6 +31,7 @@ import com.google.caja.render.JsPrettyPrinter;
 import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.CajaTestCase;
+import com.google.caja.util.Lists;
 import com.google.javascript.jscomp.jsonml.JsonML;
 
 import java.util.ArrayList;
@@ -146,13 +147,7 @@ public class ParseTreeNodeTest extends CajaTestCase {
     assertEquals("[0, 1, 2, 3, 4, 5, 6, 7, 8]", ie.getNums().toString());
   }
 
-  public final void testVisitPreOrder() {
-    IntEnqueuer ie = new IntEnqueuer();
-    root.visitPreOrder(ie, null);
-    assertEquals("[0, 1, 2, 3, 4, 5, 6, 7, 8]", ie.getNums().toString());
-  }
-
-  public final void testVisitPreOrderReturnHandling() {
+  public final void testAcceptPreOrderReturnHandling() {
     IntEnqueuerExcept ie = new IntEnqueuerExcept(6);
     root.acceptPreOrder(ie, null);
     assertEquals("[0, 1, 2, 3, 4, 5, 6, 7, 8]", ie.getNums().toString());
@@ -162,16 +157,47 @@ public class ParseTreeNodeTest extends CajaTestCase {
     assertEquals("[0, 1, 5, 6, 7, 8]", ie.getNums().toString());
   }
 
-  public final void testVisitPostOrder() {
+  public final void testAcceptPostOrder() {
     IntEnqueuer ie = new IntEnqueuer();
     root.acceptPostOrder(ie, null);
     assertEquals("[2, 3, 4, 1, 6, 7, 8, 5, 0]", ie.getNums().toString());
   }
 
-  public final void testVisitPostOrderReturnHandling() {
+  public final void testAcceptPostOrderReturnHandling() {
     IntEnqueuerExcept ie = new IntEnqueuerExcept(6);
     root.acceptPostOrder(ie, null);
     assertEquals("[2, 3, 4, 1, 6]", ie.getNums().toString());
+  }
+
+  public final void testVisitPreOrder() {
+    final List<Number> nums = Lists.newArrayList();
+    root.visitPreOrder(new ParseTreeNodeVisitor() {
+      public boolean visit(ParseTreeNode node) {
+        if (node instanceof IntegerLiteral) {
+          nums.add(((IntegerLiteral)node).getValue());
+        }
+        return true;
+      }
+    });
+    assertEquals("[2, 3, 4, 6, 7, 8]", nums.toString());
+  }
+
+  public final void testVisitPreOrderSkip() {
+    final List<Number> nums = Lists.newArrayList();
+    root.visitPreOrder(new ParseTreeNodeVisitor() {
+      public boolean visit(ParseTreeNode node) {
+        if (node instanceof IntegerLiteral) {
+          nums.add(((IntegerLiteral)node).getValue());
+        } else if (node instanceof LabeledStatement) {
+          String label = ((LabeledStatement)node).getLabel();
+          if (label.equals("$1")) {
+            return false;
+          }
+        }
+        return true;
+      }
+    });
+    assertEquals("[6, 7, 8]", nums.toString());
   }
 
   void doReplace() {
@@ -754,7 +780,7 @@ public class ParseTreeNodeTest extends CajaTestCase {
   static class IntEnqueuer implements Visitor {
     private final List<Number> nums = new ArrayList<Number>();
 
-    protected final Number processNode(ParseTreeNode n) {
+    public final Number processNode(ParseTreeNode n) {
       Number num;
       if (n instanceof IntegerLiteral) {
         num = ((IntegerLiteral) n).getValue();

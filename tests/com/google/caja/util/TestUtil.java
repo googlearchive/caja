@@ -18,11 +18,7 @@ import com.google.caja.SomethingWidgyHappenedError;
 import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.escaping.UriUtil;
-import com.google.caja.parser.AncestorChain;
-import com.google.caja.parser.MutableParseTreeNode;
 import com.google.caja.parser.ParseTreeNode;
-import com.google.caja.parser.Visitor;
-import com.google.caja.parser.js.TranslatedCode;
 import com.google.caja.reporting.EchoingMessageQueue;
 import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessageContext;
@@ -174,18 +170,5 @@ public final class TestUtil {
 
   public static String makeContentUrl(String content) {
     return "content:" + UriUtil.encode(content).replace("+", "%20");
-  }
-
-  public static void removePseudoNodes(ParseTreeNode node) {
-    assert !(node instanceof TranslatedCode);
-    node.acceptPostOrder(new Visitor() {
-        public boolean visit(AncestorChain<?> ac) {
-          if (ac.node instanceof TranslatedCode) {
-            ((MutableParseTreeNode) ac.parent.node).replaceChild(
-                ((TranslatedCode) ac.node).getTranslation(), ac.node);
-          }
-          return true;
-        }
-      }, null);
   }
 }

@@ -64,7 +64,7 @@ public class ExpressionSanitizerCaja {
       return null;
     }
 
-    result.visitPreOrder(new NonAsciiCheckVisitor(mq), null);
+    result.visitPreOrder(new NonAsciiCheckVisitor(mq));
     if (mq.hasMessageAtLevel(MessageLevel.ERROR)) {
       return null;
     }
