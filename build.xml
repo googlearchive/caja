@@ -1341,12 +1341,6 @@
         <include name="prettify.js" />
         <include name="prettify.css" />
       </fileset>
-      <fileset dir="${jars}">
-        <include name="htmlparser.jar" />
-        <include name="json_simple.jar" />
-        <include name="guava-r09.jar" />
-        <include name="xercesImpl.jar" />
-      </fileset>
       <fileset dir="${src.caja}/demos/playground">
         <include name="ajax-loader.gif" />
         <include name="Playground.html" />
