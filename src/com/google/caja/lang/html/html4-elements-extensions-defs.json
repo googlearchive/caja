@@ -23,6 +23,126 @@
         "optionalEnd": false,
         "deprecated":  true,
         "description": "Not in HTML4. HTML5 mentions it as deprecated"
+      },
+      { "key": "ARTICLE",
+        "empty": false,
+        "optionalEnd": false,
+        "deprecated": false,
+        "description": "HTML5 element, needed by jquery-1.8.0"
+      },
+      { "key": "ASIDE",
+        "empty": false,
+        "optionalEnd": false,
+        "deprecated": false,
+        "description": "HTML5 element, needed by jquery-1.8.0"
+      },
+      { "key": "AUDIO",
+        "empty": false,
+        "optionalEnd": false,
+        "deprecated": false,
+        "description": "HTML5 element, needed by jquery-1.8.0"
+      },
+      { "key": "BDI",
+        "empty": false,
+        "optionalEnd": false,
+        "deprecated": false,
+        "description": "HTML5 element, needed by jquery-1.8.0"
+      },
+      { "key": "DATA",
+        "empty": false,
+        "optionalEnd": false,
+        "deprecated": false,
+        "description": "HTML5 element, needed by jquery-1.8.0"
+      },
+      { "key": "DATALIST",
+        "empty": false,
+        "optionalEnd": false,
+        "deprecated": false,
+        "description": "HTML5 element, needed by jquery-1.8.0"
+      },
+      { "key": "DETAILS",
+        "empty": false,
+        "optionalEnd": false,
+        "deprecated": false,
+        "description": "HTML5 element, needed by jquery-1.8.0"
+      },
+      { "key": "FIGCAPTION",
+        "empty": false,
+        "optionalEnd": false,
+        "deprecated": false,
+        "description": "HTML5 element, needed by jquery-1.8.0"
+      },
+      { "key": "FIGURE",
+        "empty": false,
+        "optionalEnd": false,
+        "deprecated": false,
+        "description": "HTML5 element, needed by jquery-1.8.0"
+      },
+      { "key": "FOOTER",
+        "empty": false,
+        "optionalEnd": false,
+        "deprecated": false,
+        "description": "HTML5 element, needed by jquery-1.8.0"
+      },
+      { "key": "HEADER",
+        "empty": false,
+        "optionalEnd": false,
+        "deprecated": false,
+        "description": "HTML5 element, needed by jquery-1.8.0"
+      },
+      { "key": "HGROUP",
+        "empty": false,
+        "optionalEnd": false,
+        "deprecated": false,
+        "description": "HTML5 element, needed by jquery-1.8.0"
+      },
+      { "key": "MARK",
+        "empty": false,
+        "optionalEnd": false,
+        "deprecated": false,
+        "description": "HTML5 element, needed by jquery-1.8.0"
+      },
+      { "key": "METER",
+        "empty": false,
+        "optionalEnd": false,
+        "deprecated": false,
+        "description": "HTML5 element, needed by jquery-1.8.0"
+      },
+      { "key": "OUTPUT",
+        "empty": false,
+        "optionalEnd": false,
+        "deprecated": false,
+        "description": "HTML5 element, needed by jquery-1.8.0"
+      },
+      { "key": "PROGRESS",
+        "empty": false,
+        "optionalEnd": false,
+        "deprecated": false,
+        "description": "HTML5 element, needed by jquery-1.8.0"
+      },
+      { "key": "SECTION",
+        "empty": false,
+        "optionalEnd": false,
+        "deprecated": false,
+        "description": "HTML5 element, needed by jquery-1.8.0"
+      },
+      { "key": "SUMMARY",
+        "empty": false,
+        "optionalEnd": false,
+        "deprecated": false,
+        "description": "HTML5 element, needed by jquery-1.8.0"
+      },
+      { "key": "TIME",
+        "empty": false,
+        "optionalEnd": false,
+        "deprecated": false,
+        "description": "HTML5 element, needed by jquery-1.8.0"
+      },
+      { "key": "VIDEO",
+        "empty": false,
+        "optionalEnd": false,
+        "deprecated": false,
+        "description": "HTML5 element, needed by jquery-1.8.0"
       }
   ]
 }

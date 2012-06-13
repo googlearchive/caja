@@ -4314,6 +4314,13 @@ var Domado = (function() {
         }
       });
 
+      defineElement({
+        names: ['article', 'aside', 'audio', 'bdi', 'data', 'datalist',
+            'details', 'figcaption', 'figure', 'footer', 'header',
+            'hgroup', 'mark', 'meter', 'output', 'progress', 'section',
+            'summary', 'time', 'video']
+      });
+
       var TameTableCompElement = defineElement({
         names: ['td', 'thead', 'tfoot', 'tbody', 'th'],
         properties: {

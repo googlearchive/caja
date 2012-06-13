@@ -2411,6 +2411,21 @@ Test row cell
   });
 </script>
 
+<div id="test-unsafe-html5" class="testcontainer"></div>
+<script type="text/javascript">
+  jsunitRegister('testUnsafeHtml5',
+                 function testUnsafeHtml5() {
+    var tags = ['article', 'aside', 'audio', 'bdi', 'data', 'datalist',
+        'details', 'figcaption', 'figure', 'footer', 'header',
+        'hgroup', 'mark', 'meter', 'output', 'progress', 'section',
+        'summary', 'time', 'video'];
+    for (var i = 0; i < tags.length; ++i) {
+      assertEquals(document.createElement(tags[i]), null);
+    }
+    pass('test-unsafe-html5');
+  });
+</script>
+
 <p class="testcontainer" id="test-document-body-appendChild"
  >I should be the last element until something is appended to document.body</p>
 <script type="text/javascript">
