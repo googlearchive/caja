@@ -532,6 +532,7 @@ ses.startSES = function(global,
             set: function scopedSet(newValue) {
               if (name in imports) {
                 imports[name] = newValue;
+                return newValue;
               }
               throw new TypeError('Cannot set "' + name + '"');
             },

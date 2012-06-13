@@ -16,6 +16,17 @@
 
 <div>Derived from domita_test_untrusted.html as of r4471</div>
 
+<p id="testGlobalAssignmentReturnValue" class="testcontainer"
+>test-global-assignment-return-value</p>
+<script type="text/javascript">
+  jsunitRegister('testGlobalAssignmentReturnValue',
+                 function testGlobalAssignmentReturnValue() {
+    window['x'] = undefined;
+    assertEquals(x=2, 2);
+    pass('testGlobalAssignmentReturnValue');
+});
+</script>
+
 <p id="testBrowserApply" class="testcontainer">test-browser-apply</p>
 <script type="text/javascript">
   // http://code.google.com/p/google-caja/issues/detail?id=1077

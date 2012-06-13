@@ -551,7 +551,7 @@ config = {
 
 // Expose the API as global variables, unless an 'exports' object exists,
 // in that case we assume we're in CommonJS - export everything at the end
-if ( typeof exports === "undefined" ) {
+if ( typeof window['exports'] === "undefined" ) {
 	extend( window, QUnit );
 	window.QUnit = QUnit;
 }
@@ -1751,7 +1751,7 @@ QUnit.diff = (function() {
 }());
 
 // for CommonJS enviroments, export everything
-if ( typeof exports !== "undefined" ) {
+if ( typeof window['exports'] !== "undefined" ) {
 	extend(exports, QUnit);
 }
 
