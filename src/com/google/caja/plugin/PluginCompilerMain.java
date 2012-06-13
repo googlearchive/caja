@@ -321,14 +321,10 @@ public final class PluginCompilerMain {
         throw new SomethingWidgyHappenedError(
             "Unrecognized renderer: " + config.renderer());
     }
-    RenderContext rc = makeRenderContext(tc);
+    RenderContext rc = new RenderContext(tc);
     module.render(rc);
     tc.noMoreTokens();
     out.append('\n');
-  }
-
-  private static RenderContext makeRenderContext(TokenConsumer tc) {
-    return new RenderContext(tc).withAsciiOnly(true).withEmbeddable(true);
   }
 
   /**

@@ -121,7 +121,6 @@ final class IndexPage {
         "baseUri", req.baseUri.toString(),
         "minifyTrue", req.minify,
         "minifyFalse", !req.minify,
-        "asciiOnly", req.asciiOnly,
         "userAgent", userAgentSelector,
         "cacheId", req.staticFiles.cacheId));
     return f;

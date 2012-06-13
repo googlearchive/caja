@@ -84,7 +84,6 @@ public final class RenderedExpression extends AbstractExpression {
       tc = new JsPrettyPrinter(new Concatenator(buf));
     }
     RenderContext rc = new RenderContext(tc);
-    rc = rc.withAsciiOnly(true).withEmbeddable(true);
     n.render(rc);
     tc.noMoreTokens();
     return buf.toString();

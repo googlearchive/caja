@@ -170,9 +170,7 @@ public class GWTCajolingServiceImpl extends RemoteServiceServlet
 
     StringBuilder jsOut = new StringBuilder();
     TokenConsumer renderer = new JsPrettyPrinter(jsOut);
-    RenderContext rc = new RenderContext(renderer)
-        .withAsciiOnly(true)
-        .withEmbeddable(true);
+    RenderContext rc = new RenderContext(renderer);
     String htmlOut = outputHtml != null ? Nodes.render(outputHtml) : null;
 
     if (outputJs != null) {

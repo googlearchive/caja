@@ -68,7 +68,7 @@ public final class HtmlToJsStage extends CompileHtmlStage {
   private static StringLiteral renderDomAsJsStringLiteral(Node node) {
     StringBuilder stringBuilder = new StringBuilder();
     TokenConsumer tc = new Concatenator(stringBuilder);
-    Nodes.render(node, new RenderContext(tc).withEmbeddable(true));
+    Nodes.render(node, new RenderContext(tc));
     return StringLiteral.valueOf(Nodes.getFilePositionFor(node), stringBuilder);
   }
 

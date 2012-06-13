@@ -82,7 +82,7 @@ public final class RegexpLiteral extends Literal {
     } else {
       StringBuilder sb = new StringBuilder();
       sb.append('/');
-      Escaping.normalizeRegex(body, rc.isAsciiOnly(), rc.isEmbeddable(), sb);
+      Escaping.normalizeRegex(body, sb);
       sb.append('/');
       sb.append(mods);
       out.consume(sb.toString());
@@ -117,7 +117,7 @@ public final class RegexpLiteral extends Literal {
     public static RegexpWrapper valueOf(String pattern, String modifiers) {
       StringBuilder sb = new StringBuilder();
       sb.append('/');
-      Escaping.normalizeRegex(pattern, false, false, sb);
+      Escaping.normalizeRegex(pattern, sb);
       sb.append('/').append(modifiers);
       return new RegexpWrapper(sb.toString());
     }

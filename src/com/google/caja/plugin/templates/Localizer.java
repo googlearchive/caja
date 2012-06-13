@@ -185,7 +185,7 @@ public class Localizer {
       // <ph> elements.
       StringBuilder xhtml = new StringBuilder();
       RenderContext rc = new RenderContext(new Concatenator(xhtml))
-          .withMarkupRenderMode(MarkupRenderMode.XML).withAsciiOnly(true);
+          .withMarkupRenderMode(MarkupRenderMode.XML);
       for (Node c : Nodes.childrenOf(message)) {
         Nodes.render(c, rc);
       }

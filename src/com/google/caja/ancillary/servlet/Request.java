@@ -74,8 +74,6 @@ final class Request implements Cloneable {
    * pretty printer.
    */
   boolean minify;
-  /** True if the outputs should be rendered using only ASCII code-points. */
-  boolean asciiOnly;
   /**
    * Comma separated user agent descriptions that allows the optimizer to
    * incorporate knowledge about the user agent that will receive the output.
@@ -221,10 +219,10 @@ final class Request implements Cloneable {
     ALL_PARAM_HANDLERS.put("asciiOnly", new ParamHandler() {
       public void handle(String name, String val, Request c)
           throws BadInputException {
-        c.asciiOnly = enumFromCgiParam(Boolish.class, name, val).bool;
+        /* ignored */
       }
       public String manual() {
-        return "true to render output using only ascii characters";
+        return "obsolete. ignored";
       }
     });
     ALL_PARAM_HANDLERS.put("userAgent", new ParamHandler() {

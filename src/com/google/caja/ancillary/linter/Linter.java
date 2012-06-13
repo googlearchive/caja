@@ -538,7 +538,7 @@ public class Linter implements BuildCommand {
   private static String render(ParseTreeNode node) {
     StringBuilder sb = new StringBuilder();
     TokenConsumer tc = node.makeRenderer(sb, null);
-    node.render(new RenderContext(tc).withAsciiOnly(true).withEmbeddable(true));
+    node.render(new RenderContext(tc));
     tc.noMoreTokens();
     return sb.toString();
   }

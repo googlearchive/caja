@@ -502,9 +502,6 @@ public class NodesTest extends CajaTestCase {
         "<!DOCTYPE html>"
     };
 
-    boolean[] asAsciiModes = { true, false };
-    boolean[] asEmbeddableModes = { true, false };
-
     @SuppressWarnings("unchecked")
     List<Pair<MarkupRenderMode, String>> expectedPairs = Lists.newArrayList(
         Pair.pair(MarkupRenderMode.HTML,
@@ -513,26 +510,20 @@ public class NodesTest extends CajaTestCase {
             "<html><head /><body><b>my text</b></body></html>")
     );
     for (String docType : docTypes) {
-      for (boolean asAscii : asAsciiModes) {
-        for (boolean embeddable : asEmbeddableModes) {
-          for (Pair<MarkupRenderMode, String> expectedPair : expectedPairs) {
-            Document doc = DomParser.makeDocument(
-                DoctypeMaker.parse(docType), null);
-            Element el = html(fromString("<html><b>my text</b></html>"));
-            doc.appendChild(doc.adoptNode(el));
+      for (Pair<MarkupRenderMode, String> expectedPair : expectedPairs) {
+        Document doc = DomParser.makeDocument(
+            DoctypeMaker.parse(docType), null);
+        Element el = html(fromString("<html><b>my text</b></html>"));
+        doc.appendChild(doc.adoptNode(el));
 
-            StringBuilder sb = new StringBuilder();
-            RenderContext rc = new RenderContext(new Concatenator(sb))
-                .withAsciiOnly(asAscii)
-                .withEmbeddable(embeddable)
-                .withMarkupRenderMode(expectedPair.a);
-            Nodes.render(doc.getDoctype(), el, Namespaces.HTML_DEFAULT, rc);
-            rc.getOut().noMoreTokens();
-            String actual = sb.toString();
-            MoreAsserts.assertStartsWith(docType, actual);
-            assertTrue(actual, actual.contains(expectedPair.b));
-          }
-        }
+        StringBuilder sb = new StringBuilder();
+        RenderContext rc = new RenderContext(new Concatenator(sb))
+        .withMarkupRenderMode(expectedPair.a);
+        Nodes.render(doc.getDoctype(), el, Namespaces.HTML_DEFAULT, rc);
+        rc.getOut().noMoreTokens();
+        String actual = sb.toString();
+        MoreAsserts.assertStartsWith(docType, actual);
+        assertTrue(actual, actual.contains(expectedPair.b));
       }
     }
   }

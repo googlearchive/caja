@@ -38,7 +38,7 @@ public interface RegularCriterion extends Criterion<String> {
         public String toRegularExpression() {
           StringBuilder sb = new StringBuilder();
           sb.append('/');
-          Escaping.normalizeRegex(p.pattern(), true, false, sb);
+          Escaping.normalizeRegex(p.pattern(), sb);
           sb.append('/');
           if ((p.flags() & Pattern.CASE_INSENSITIVE) != 0) { sb.append('i'); }
           return sb.toString();

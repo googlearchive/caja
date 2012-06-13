@@ -289,8 +289,7 @@ public class BuildServiceImplementation implements BuildService {
       } else {
         throw new RuntimeException("Unrecognized renderer " + rendererType);
       }
-      RenderContext rc = new RenderContext(renderer)
-          .withAsciiOnly(true).withEmbeddable(true);
+      RenderContext rc = new RenderContext(renderer);
       outputJs.render(rc);
       rc.getOut().noMoreTokens();
 

@@ -28,33 +28,28 @@ import com.google.caja.util.TestUtil;
 public class CssTreeTest extends CajaTestCase {
 
   public final void testRender1() throws Exception {
-    runRenderTest("cssrendergolden1.txt", "cssparserinput1.css", false);
+    runRenderTest("cssrendergolden1.txt", "cssparserinput1.css");
   }
 
   public final void testRender2() throws Exception {
-    runRenderTest("cssrendergolden2.txt", "cssparserinput2.css", false);
+    runRenderTest("cssrendergolden2.txt", "cssparserinput2.css");
   }
 
   public final void testRender4() throws Exception {
-    // Make sure we don't have <!-- or --> in output in paranoid mode.
-    runRenderTest("cssrendergolden4.txt", "cssparserinput4.css", true);
+    runRenderTest("cssrendergolden4.txt", "cssparserinput4.css");
   }
 
   public final void testRender6() throws Exception {
-    runRenderTest("cssrendergolden6.txt", "cssparserinput6.css", true);
+    runRenderTest("cssrendergolden6.txt", "cssparserinput6.css");
   }
 
   public final void testRenderFilters() throws Exception {
-    runRenderTest("cssrendergolden-filters.css", "cssparserinput-filters.css",
-                  false);
+    runRenderTest("cssrendergolden-filters.css", "cssparserinput-filters.css");
   }
 
   public final void testRenderUserAgentHacks() throws Exception {
-    // User agent hacks do not show up in rendered output.
     runRenderTest(
-        "cssrendergolden-uahacks.css", "cssparserinput-uahacks.css", false);
-    runRenderTest(
-        "cssrendergolden-uahacks.css", "cssparserinput-uahacks.css", true);
+        "cssrendergolden-uahacks.css", "cssparserinput-uahacks.css");
   }
 
   public final void testClone1() throws Exception {
@@ -193,15 +188,13 @@ public class CssTreeTest extends CajaTestCase {
         "hello+world { color: blue }");
   }
 
-  private void runRenderTest(
-      String goldenFile, String inputFile, boolean paranoid)
+  private void runRenderTest(String goldenFile, String inputFile)
       throws Exception {
     String golden = TestUtil.readResource(getClass(), goldenFile);
     CssTree.StyleSheet stylesheet = css(fromResource(inputFile));
     StringBuilder sb = new StringBuilder();
     CssPrettyPrinter csspp = new CssPrettyPrinter(sb);
-    RenderContext rc = new RenderContext(csspp)
-        .withAsciiOnly(true).withEmbeddable(paranoid);
+    RenderContext rc = new RenderContext(csspp);
     stylesheet.render(rc);
     assertEquals(golden.trim(), sb.toString().trim());
   }
@@ -212,7 +205,7 @@ public class CssTreeTest extends CajaTestCase {
 
     StringBuilder sb = new StringBuilder();
     CssPrettyPrinter csspp = new CssPrettyPrinter(new Concatenator(sb));
-    RenderContext rc = new RenderContext(csspp).withAsciiOnly(true);
+    RenderContext rc = new RenderContext(csspp);
     stylesheet.render(rc);
     csspp.noMoreTokens();
     String actual = sb.toString();

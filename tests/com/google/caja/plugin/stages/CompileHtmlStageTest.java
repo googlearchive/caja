@@ -31,8 +31,9 @@ public final class CompileHtmlStageTest extends PipelineStageTestCase {
             + "  'use strict'; /* Start translated code */\n"
             + "  throw 'Translated code must never be executed';\n"
             + "  {\n"
-            + "    IMPORTS___.htmlEmitter___.emitStatic('<p>Hello world</p>');"
-            + "\n"
+            + "    IMPORTS___.htmlEmitter___.emitStatic("
+            // TODO(felix8a): more conservative than necessary
+                    + "'\\x3cp\\x3eHello world\\x3c/p\\x3e');\n"
             + "  } /* End translated code */\n"
             + "}",
             ContentType.JS));
@@ -46,8 +47,10 @@ public final class CompileHtmlStageTest extends PipelineStageTestCase {
             + "  'use strict'; /* Start translated code */\n"
             + "  throw 'Translated code must never be executed';\n"
             + "  {\n"
-            + "    IMPORTS___.htmlEmitter___.emitStatic('<p id=\\\"id_1___\\\">"
-                    + "Hello world</p>');\n"
+            + "    IMPORTS___.htmlEmitter___.emitStatic("
+                    + "'\\x3cp id=\\\"id_1___\\\"\\x3e"
+                    + "Hello world\\x3c/p\\x3e')\n"
+            + "      ;\n"
             + "  } /* End translated code */\n"
             + "}",
             ContentType.JS),

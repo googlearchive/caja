@@ -77,7 +77,7 @@ public abstract class LabeledStatement extends AbstractStatement {
   protected final String getRenderedLabel(RenderContext rc) {
     if (label == null || "".equals(label)) { return null; }
     StringBuilder escapedLabel = new StringBuilder();
-    Escaping.escapeJsIdentifier(label, rc.isAsciiOnly(), escapedLabel);
+    Escaping.escapeJsIdentifier(label, true, escapedLabel);
     return escapedLabel.toString();
   }
 

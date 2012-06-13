@@ -201,8 +201,7 @@ class Processor {
               break;
             case JS: {
               StringBuilder sb = new StringBuilder();
-              RenderContext rc = makeRenderContext(sb, ContentType.JS)
-                  .withEmbeddable(true);
+              RenderContext rc = makeRenderContext(sb, ContentType.JS);
               ((Block) job.root).renderBody(rc);
               rc.getOut().noMoreTokens();
               toAdd = b.substV("<script>@js</script>",
@@ -211,8 +210,7 @@ class Processor {
             }
             case CSS: {
               StringBuilder sb = new StringBuilder();
-              RenderContext rc = makeRenderContext(sb, ContentType.CSS)
-                  .withEmbeddable(true);
+              RenderContext rc = makeRenderContext(sb, ContentType.CSS);
               ((CssTree.StyleSheet) job.root).render(rc);
               rc.getOut().noMoreTokens();
               toAdd = b.substV("<style>",
@@ -376,7 +374,6 @@ class Processor {
         .withMarkupRenderMode(
             ot == ContentType.XML
             ? MarkupRenderMode.XML : MarkupRenderMode.HTML)
-        .withAsciiOnly(req.asciiOnly)
         .withJson(ot == ContentType.JSON);
     if (req.minify) {
       rc = rc.withPropertyNameQuotingMode(PropertyNameQuotingMode.NO_QUOTES);
@@ -754,7 +751,7 @@ class Processor {
       Job job = jobsIt.next();
       if (job.origin == null) { continue; }
       StringBuilder sb = new StringBuilder();
-      RenderContext rc = makeRenderContext(sb, job.t).withEmbeddable(true);
+      RenderContext rc = makeRenderContext(sb, job.t);
       if (job.root instanceof Block) {
         ((Block) job.root).renderBody(rc);
       } else {

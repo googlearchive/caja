@@ -202,7 +202,7 @@ public abstract class AbstractCajolingHandler implements ContentHandler {
             "o", obj(props));
 
     IOCallback callback = new IOCallback();
-    RenderContext rc = makeRenderContext(output, callback, pretty, false, true);
+    RenderContext rc = makeRenderContext(output, callback, pretty, true);
     result.render(rc);
     rc.getOut().noMoreTokens();
     if (callback.ex != null) { throw callback.ex; }
@@ -213,7 +213,7 @@ public abstract class AbstractCajolingHandler implements ContentHandler {
       throws IOException {
     StringBuilder jsOut = new StringBuilder();
     IOCallback callback = new IOCallback();
-    RenderContext rc = makeRenderContext(jsOut, callback, pretty, true, false);
+    RenderContext rc = makeRenderContext(jsOut, callback, pretty, false);
     javascript.render(rc);
     rc.getOut().noMoreTokens();
     if (callback.ex != null) { throw callback.ex; }
@@ -223,12 +223,11 @@ public abstract class AbstractCajolingHandler implements ContentHandler {
   private static RenderContext makeRenderContext(
       Appendable a, IOCallback cb,
       boolean pretty,
-      boolean embeddable,
       boolean json) {
     TokenConsumer tc = pretty
         ? new JsPrettyPrinter(new Concatenator(a, cb))
         : new JsMinimalPrinter(new Concatenator(a, cb));
-    return new RenderContext(tc).withEmbeddable(embeddable).withJson(json);
+    return new RenderContext(tc).withJson(json);
   }
 
   protected static Pair<ContentType, String> getReturnedContentParams(

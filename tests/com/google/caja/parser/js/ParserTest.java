@@ -94,9 +94,7 @@ public class ParserTest extends CajaTestCase {
     assertTrue(mq.getMessages().isEmpty());
   }
   public final void testParser5() throws Exception {
-    if (!TestUtil.isJava15()) {
-      runParseTest("parsertest5.js", "parsergolden5.txt");
-    }
+    runParseTest("parsertest5.js", "parsergolden5.txt");
   }
   public final void testParser7() throws Exception {
     runParseTest("parsertest7.js", "parsergolden7.txt");
@@ -157,24 +155,22 @@ public class ParserTest extends CajaTestCase {
   }
 
   public final void testParseTreeRendering1() throws Exception {
-    runRenderTest("parsertest1.js", "rendergolden1.txt", false, true);
+    runRenderTest("parsertest1.js", "rendergolden1.txt");
   }
   public final void testParseTreeRendering2() throws Exception {
-    runRenderTest("parsertest2.js", "rendergolden2.txt", false, false);
+    runRenderTest("parsertest2.js", "rendergolden2.txt");
   }
   public final void testParseTreeRendering3() throws Exception {
-    runRenderTest("parsertest3.js", "rendergolden3.txt", false, false);
+    runRenderTest("parsertest3.js", "rendergolden3.txt");
   }
   public final void testParseTreeRendering4() throws Exception {
-    runRenderTest("parsertest4.js", "rendergolden4.txt", false, false);
+    runRenderTest("parsertest4.js", "rendergolden4.txt");
   }
   public final void testParseTreeRendering5() throws Exception {
-    if (!TestUtil.isJava15()) {
-      runRenderTest("parsertest5.js", "rendergolden5.txt", false, true);
-    }
+    runRenderTest("parsertest5.js", "rendergolden5.txt");
   }
   public final void testSecureParseTreeRendering6() throws Exception {
-    runRenderTest("parsertest6.js", "rendergolden6.txt", true, false);
+    runRenderTest("parsertest6.js", "rendergolden6.txt");
 
     // Since we're doing these checks for security, double check that someone
     // hasn't adjusted the golden file.
@@ -186,23 +182,23 @@ public class ParserTest extends CajaTestCase {
     assertFalse(golden.contains("</script"));
   }
   public final void testParseTreeRendering7() throws Exception {
-    runRenderTest("parsertest7.js", "rendergolden7.txt", false, false);
+    runRenderTest("parsertest7.js", "rendergolden7.txt");
   }
   public final void testParseTreeRendering8() throws Exception {
-    runRenderTest("parsertest8.js", "rendergolden8.txt", true, false);
+    runRenderTest("parsertest8.js", "rendergolden8.txt");
   }
   public final void testParseTreeRendering9() throws Exception {
-    runRenderTest("parsertest9.js", "rendergolden9.txt", false, false);
+    runRenderTest("parsertest9.js", "rendergolden9.txt");
   }
   public final void testParseTreeRendering11() throws Exception {
-    runRenderTest("parsertest11.js", "rendergolden11.txt", false, false);
+    runRenderTest("parsertest11.js", "rendergolden11.txt");
   }
 
   public final void test12ctorParse() throws Exception {
     runParseTest("test12ctor.js", "test12ctor-parse.txt");
   }
   public final void test12ctorRender() throws Exception {
-    runRenderTest("test12ctor.js", "test12ctor-render.txt", false, false);
+    runRenderTest("test12ctor.js", "test12ctor-render.txt");
   }
 
   public final void testThrowAsRestrictedProduction() throws Exception {
@@ -657,8 +653,7 @@ public class ParserTest extends CajaTestCase {
       throws Exception {
     StringBuilder sb = new StringBuilder();
     TokenConsumer tc = new JsPrettyPrinter(sb);
-    RenderContext rc = new RenderContext(tc)
-        .withAsciiOnly(true).withEmbeddable(true);
+    RenderContext rc = new RenderContext(tc);
     js(fromString(code)).children().get(0).render(rc);
     tc.noMoreTokens();
     assertEquals(code, expectedRendering, sb.toString());
@@ -668,8 +663,7 @@ public class ParserTest extends CajaTestCase {
       throws Exception {
     StringBuilder sb = new StringBuilder();
     TokenConsumer tc = new JsMinimalPrinter(sb);
-    RenderContext rc = new RenderContext(tc)
-        .withAsciiOnly(true).withEmbeddable(true);
+    RenderContext rc = new RenderContext(tc);
     js(fromString(code)).children().get(0).render(rc);
     tc.noMoreTokens();
     assertEquals(code, expectedRendering, sb.toString());
@@ -680,16 +674,14 @@ public class ParserTest extends CajaTestCase {
     System.err.println("*** " + testName + ": " + code);
   }
 
-  private void runRenderTest(
-      String testFile, String goldenFile, boolean embeddable, boolean asciiOnly)
+  private void runRenderTest(String testFile, String goldenFile)
       throws Exception {
     Statement parseTree = js(fromResource(testFile));
     checkFilePositionInvariants(parseTree);
 
     StringBuilder sb = new StringBuilder();
     TokenConsumer tc = new JsPrettyPrinter(sb);
-    RenderContext rc = new RenderContext(tc)
-        .withAsciiOnly(asciiOnly).withEmbeddable(embeddable);
+    RenderContext rc = new RenderContext(tc);
     parseTree.render(rc);
     tc.noMoreTokens();
     sb.append('\n');

@@ -100,7 +100,7 @@ public final class Identifier extends AbstractParseTreeNode
       if ("".equals(name)) {
         escapedName.append("(blank identifier)"); // break parser
       } else {
-        Escaping.escapeJsIdentifier(name, r.isAsciiOnly(), escapedName);
+        Escaping.escapeJsIdentifier(name, true, escapedName);
         r.getOut().mark(getFilePosition());
         r.getOut().consume(escapedName.toString());
       }

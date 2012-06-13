@@ -136,7 +136,7 @@ final class UploadPage {
         "uploads", new ParseTreeNodeContainer(uploads));
     StringBuilder jsBuf = new StringBuilder();
     RenderContext rc = new RenderContext(
-        new JsMinimalPrinter(jsBuf)).withEmbeddable(true);
+        new JsMinimalPrinter(jsBuf));
     notifyParent.render(rc);
     rc.getOut().noMoreTokens();
 

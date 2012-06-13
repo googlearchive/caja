@@ -75,7 +75,7 @@ public class JsMinimalPrinterTest extends CajaTestCase {
     // Make sure -->, </script, and ]]> don't show up in rendered output.
     // Preventing these in strings is handled separately.
     assertRendered(
-        "{(i--)>j,k< /script>/,[[0]] >0/ / / *x}",
+        "{(i--)>j,k< /script\\x3e/,[[0]] >0/ / / *x}",
         "i-->j, k</script>/, [[0]]>0 / / / * x;");
   }
 
@@ -290,7 +290,7 @@ public class JsMinimalPrinterTest extends CajaTestCase {
           tokens.add("=");
           StringBuilder out = new StringBuilder();
           out.append('/');
-          Escaping.normalizeRegex(randomString(rnd), false, false, out);
+          Escaping.normalizeRegex(randomString(rnd), out);
           out.append('/');
           if (rnd.nextBoolean()) { out.append('g'); }
           if (rnd.nextBoolean()) { out.append('m'); }

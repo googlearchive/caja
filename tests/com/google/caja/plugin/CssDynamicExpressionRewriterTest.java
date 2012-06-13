@@ -81,7 +81,7 @@ public class CssDynamicExpressionRewriterTest extends CajaTestCase {
   public final void testDescendentRule() {
     assertCompiledCss(
         "#foo > #bar { color: blue }",
-        "[ '.', ' #foo-', ' > #bar-', ' {\\n  color: blue\\n}' ]");
+        "[ '.', ' #foo-', ' \\x3e #bar-', ' {\\n  color: blue\\n}' ]");
   }
 
   /**
@@ -97,7 +97,8 @@ public class CssDynamicExpressionRewriterTest extends CajaTestCase {
   public final void testStaticIdClass() {
     assertCompiledCss(
         "#a > #b, .c { color: blue }",
-        "[ '.xyz___ #a-xyz___ > #b-xyz___, .xyz___ .c {\\n  color: blue\\n}' ]",
+        "[ '.xyz___ #a-xyz___ \\x3e #b-xyz___, .xyz___ .c"
+        + " {\\n  color: blue\\n}' ]",
         false);
   }
 

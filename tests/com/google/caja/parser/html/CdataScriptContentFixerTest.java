@@ -16,14 +16,11 @@ package com.google.caja.parser.html;
 
 import javax.annotation.Nullable;
 
-import com.google.caja.reporting.JsIdentifierSyntax;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
 import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.render.Concatenator;
-import com.google.caja.reporting.MarkupRenderMode;
-import com.google.caja.reporting.PropertyNameQuotingMode;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.CajaTestCase;
 
@@ -84,13 +81,9 @@ public class CdataScriptContentFixerTest extends CajaTestCase {
       @Nullable String goldenOrNullForFailure, String html) throws Exception {
     Node root = htmlFragment(fromString(html));
     try {
-      // Check that it works with and without a render context flag set.
-      for (boolean asciiOnly : new boolean[] { true, false }) {
-        TokenConsumer tc = new Concatenator(new StringBuilder());
-        RenderContext rc = new CdataContentFixupRenderContext(tc)
-            .withAsciiOnly(asciiOnly);
-        Nodes.render(root, rc);
-      }
+      TokenConsumer tc = new Concatenator(new StringBuilder());
+      RenderContext rc = new CdataContentFixupRenderContext(tc);
+      Nodes.render(root, rc);
     } catch (UncheckedUnrenderableException ex) {
       if (goldenOrNullForFailure != null) {
         throw ex;
@@ -104,30 +97,11 @@ public class CdataScriptContentFixerTest extends CajaTestCase {
       super(out);
     }
 
-    CdataContentFixupRenderContext(
-        boolean asciiOnly, boolean embeddable, MarkupRenderMode markupMode,
-        PropertyNameQuotingMode propertyNameQuotingMode,
-        JsIdentifierSyntax jsIdentifierSyntax, TokenConsumer out) {
-      super(asciiOnly, embeddable, markupMode, propertyNameQuotingMode,
-          jsIdentifierSyntax, out);
-    }
-
-
     @Override
     public String fixUnclosableCdataElement(
         Element el, String cdataContent, int problemIndex) {
       return CdataScriptContentFixer.fixUnclosableCdataElement(
           el, cdataContent);
-    }
-
-    @Override
-    protected RenderContext derive(
-        boolean asciiOnly, boolean embeddable, MarkupRenderMode markupMode,
-        PropertyNameQuotingMode propertyNameQuotingMode,
-        JsIdentifierSyntax jsIdentifierSyntax) {
-      return new CdataContentFixupRenderContext(
-          asciiOnly, embeddable, markupMode, propertyNameQuotingMode,
-          jsIdentifierSyntax, getOut());
     }
   }
 }

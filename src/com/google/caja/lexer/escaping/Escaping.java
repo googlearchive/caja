@@ -165,35 +165,36 @@ public class Escaping {
    * imposed by the flags passed to this method.
    *
    * @param s the plain text string to escape.
-   * @param asciiOnly Makes sure that only ASCII characters are written to out.
-   *     This is a good idea if you don't have control over the charset that
-   *     the javascript will be served with.
-   * @param embeddable True to make sure that nothing is written to out that
-   *     could interfere with embedding inside a script tag or CDATA section, or
-   *     other tag that typically contains markup.
-   *     This does not make it safe to embed in an HTML attribute without
-   *     further escaping.
    * @param out written to.
    */
+  public static void normalizeRegex(CharSequence s, Appendable out)
+      throws IOException {
+    new Escaper(requireEndUnescaped(rebalance(s, '[', ']')),
+        REGEX_EMBEDDABLE_ESCAPES, NO_NON_ASCII, JS_ENCODER, out)
+    .normalize();
+  }
+
+  /** @see #normalizeRegex(CharSequence, Appendable) */
+  public static void normalizeRegex(CharSequence s, StringBuilder out) {
+    try {
+      normalizeRegex(s, (Appendable) out);
+    } catch (IOException ex) {
+      throw new SomethingWidgyHappenedError(ex);
+    }
+  }
+
+  @Deprecated
   public static void normalizeRegex(
       CharSequence s, boolean asciiOnly, boolean embeddable, Appendable out)
       throws IOException {
-    new Escaper(requireEndUnescaped(rebalance(s, '[', ']')),
-                embeddable ? REGEX_EMBEDDABLE_ESCAPES : REGEX_MINIMAL_ESCAPES,
-                asciiOnly ? NO_NON_ASCII : ALLOW_NON_ASCII, JS_ENCODER, out)
-        .normalize();
+    normalizeRegex(s, out);
   }
 
-  /** @see #normalizeRegex(CharSequence, boolean, boolean, Appendable) */
+  @Deprecated
   public static void normalizeRegex(
       CharSequence s, boolean asciiOnly, boolean embeddable,
       StringBuilder out) {
-    try {
-      normalizeRegex(s, asciiOnly, embeddable, (Appendable) out);
-    } catch (IOException ex) {
-      throw new SomethingWidgyHappenedError(
-      "StringBuilders don't throw IOException", ex);
-    }
+    normalizeRegex(s, out);
   }
 
   /**

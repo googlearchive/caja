@@ -48,16 +48,6 @@ public final class TestUtil {
     // uninstantiable
   }
 
-  /**
-   * Java 1.5 is missing some core libraries so we are more restrictive under
-   * 1.5 than we might otherwise be.  This means we need to disable certain
-   * tests.
-   */
-  public static boolean isJava15() {
-    String version = System.getProperty("java.version");
-    return version != null && version.startsWith("1.5.");
-  }
-
   public static String readResource(Class<?> requestingClass, String filename)
       throws IOException {
     InputStream ins = getResourceAsStream(requestingClass, filename);

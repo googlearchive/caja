@@ -291,7 +291,7 @@ public class EscapingTest extends TestCase {
   public final void testRegexNormalization() {
     StringBuilder sb = new StringBuilder();
     Escaping.normalizeRegex(
-        "<Foo+\\> \u2028 \\\\Ba*r \r Baz\\+\\+", false, true, sb);
+        "<Foo+\\> \u2028 \\\\Ba*r \r Baz\\+\\+", sb);
     assertStringsEqual(
         "\\x3cFoo+\\x3e \\u2028 \\\\Ba*r \\r Baz\\+\\+", sb.toString());
   }
@@ -301,31 +301,31 @@ public class EscapingTest extends TestCase {
     // since / in those are not considered as closing the token.
     {
       StringBuilder sb = new StringBuilder();
-      Escaping.normalizeRegex("[", false, true, sb);
+      Escaping.normalizeRegex("[", sb);
       assertStringsEqual("\\[", sb.toString());
     }
 
     {
       StringBuilder sb = new StringBuilder();
-      Escaping.normalizeRegex("[a-z][foo", false, true, sb);
+      Escaping.normalizeRegex("[a-z][foo", sb);
       assertStringsEqual("[a-z]\\[foo", sb.toString());
     }
 
     {
       StringBuilder sb = new StringBuilder();
-      Escaping.normalizeRegex("[a-z][[foo]", false, true, sb);
+      Escaping.normalizeRegex("[a-z][[foo]", sb);
       assertStringsEqual("[a-z][\\[foo]", sb.toString());
     }
 
     {
       StringBuilder sb = new StringBuilder();
-      Escaping.normalizeRegex("[a-z][[foo", false, true, sb);
+      Escaping.normalizeRegex("[a-z][[foo", sb);
       assertStringsEqual("[a-z]\\[\\[foo", sb.toString());
     }
 
     {
       StringBuilder sb = new StringBuilder();
-      Escaping.normalizeRegex("[a-z][[foo[", false, true, sb);
+      Escaping.normalizeRegex("[a-z][[foo[", sb);
       assertStringsEqual("[a-z]\\[\\[foo\\[", sb.toString());
     }
   }

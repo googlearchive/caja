@@ -22,10 +22,6 @@ import com.google.caja.lexer.TokenConsumer;
  */
 public class RenderContext {
 
-  /** Produce output that can be safely embedded. */
-  private final boolean embeddable;
-  /** Produce output that only contains lower 7-bit characters. */
-  private final boolean asciiOnly;
   /** True iff DOM tree nodes should be rendered as XML. */
   private final MarkupRenderMode markupMode;
   /**
@@ -39,33 +35,21 @@ public class RenderContext {
   private final TokenConsumer out;
 
   public RenderContext(TokenConsumer out) {
-    this(true, false, MarkupRenderMode.HTML, PropertyNameQuotingMode.DEFAULT,
-         JsIdentifierSyntax.DEFAULT, out);
+    this(out, MarkupRenderMode.HTML, PropertyNameQuotingMode.DEFAULT,
+         JsIdentifierSyntax.DEFAULT);
   }
 
-  protected RenderContext(
-      boolean asciiOnly, boolean embeddable, MarkupRenderMode markupMode,
+  private RenderContext(
+      TokenConsumer out, MarkupRenderMode markupMode,
       PropertyNameQuotingMode propertyNameQuotingMode,
-      JsIdentifierSyntax jsIdentifierSyntax, TokenConsumer out) {
+      JsIdentifierSyntax jsIdentifierSyntax) {
     if (null == out) { throw new NullPointerException(); }
-    this.embeddable = embeddable;
-    this.asciiOnly = asciiOnly;
     this.markupMode = markupMode;
     this.propertyNameQuotingMode = propertyNameQuotingMode;
     this.jsIdentifierSyntax = jsIdentifierSyntax;
     this.out = out;
   }
 
-  /**
-   * True if the renderer produces output that can be embedded inside a CDATA
-   * section, or {@code script} element without further escaping?
-   */
-  public final boolean isEmbeddable() { return embeddable; }
-  /**
-   * True if the renderer produces output that only contains characters in
-   * {@code [\1-\x7f]}.
-   */
-  public final boolean isAsciiOnly() { return asciiOnly; }
   public final boolean asJson() {
     return propertyNameQuotingMode == PropertyNameQuotingMode.DOUBLE_QUOTES;
   }
@@ -78,47 +62,17 @@ public class RenderContext {
   public final JsIdentifierSyntax jsIdentifierSyntax() {
     return jsIdentifierSyntax;
   }
-  /** Use {@link #propertyNameQuotingMode} instead. */
-  @Deprecated
-  public final boolean rawObjKeys() {
-    return propertyNameQuotingMode == PropertyNameQuotingMode.NO_QUOTES;
-  }
+
   public final TokenConsumer getOut() { return out; }
 
-  /** Must be overridden by subclasses to return an instance of the subclass. */
-  protected RenderContext derive(
-      boolean asciiOnly, boolean embeddable, MarkupRenderMode markupMode,
+  private RenderContext derive(
+      MarkupRenderMode markupMode,
       PropertyNameQuotingMode propertyNameQuotingMode,
       JsIdentifierSyntax jsIdentifierSyntax) {
     return new RenderContext(
-        asciiOnly, embeddable, markupMode, propertyNameQuotingMode,
-        jsIdentifierSyntax, out);
+        out, markupMode, propertyNameQuotingMode, jsIdentifierSyntax);
   }
 
-  private RenderContext deriveChecked(
-      boolean asciiOnly, boolean embeddable, MarkupRenderMode markupMode,
-      PropertyNameQuotingMode propertyNameQuotingMode,
-      JsIdentifierSyntax jsIdentifierSyntax) {
-    RenderContext derived = derive(
-        asciiOnly, embeddable, markupMode, propertyNameQuotingMode,
-        jsIdentifierSyntax);
-    // Enforce that derive has been overridden.
-    assert derived.getClass() == getClass();
-    return derived;
-  }
-
-  public RenderContext withAsciiOnly(boolean b) {
-    return b != asciiOnly
-        ? deriveChecked(b, embeddable, markupMode, propertyNameQuotingMode,
-              jsIdentifierSyntax)
-        : this;
-  }
-  public RenderContext withEmbeddable(boolean b) {
-    return b != embeddable
-        ? deriveChecked(asciiOnly, b, markupMode, propertyNameQuotingMode,
-              jsIdentifierSyntax)
-        : this;
-  }
   public RenderContext withJson(boolean b) {
     return withPropertyNameQuotingMode(
         b ? PropertyNameQuotingMode.DOUBLE_QUOTES
@@ -126,9 +80,40 @@ public class RenderContext {
   }
   public RenderContext withMarkupRenderMode(MarkupRenderMode markupMode) {
     return markupMode != this.markupMode
-        ? deriveChecked(asciiOnly, embeddable, markupMode,
-                        propertyNameQuotingMode, jsIdentifierSyntax)
+        ? derive(markupMode, propertyNameQuotingMode, jsIdentifierSyntax)
         : this;
+  }
+  public RenderContext withPropertyNameQuotingMode(PropertyNameQuotingMode m) {
+    return this.propertyNameQuotingMode != m
+        ? derive(markupMode, m, jsIdentifierSyntax)
+        : this;
+  }
+  public RenderContext withJsIdentiferSyntax(JsIdentifierSyntax s) {
+    return this.jsIdentifierSyntax != s
+        ? derive(markupMode, propertyNameQuotingMode, s)
+        : this;
+  }
+
+  /** Always true now. */
+  @Deprecated
+  public final boolean isEmbeddable() { return true; }
+  /** Always true now. */
+  @Deprecated
+  public final boolean isAsciiOnly() { return true; }
+  /** Use {@link #propertyNameQuotingMode} instead. */
+  @Deprecated
+  public final boolean rawObjKeys() {
+    return propertyNameQuotingMode == PropertyNameQuotingMode.NO_QUOTES;
+  }
+  /** Has no effect any more. */
+  @Deprecated
+  public RenderContext withAsciiOnly(boolean b) {
+    return this;
+  }
+  /** Has no effect any more. */
+  @Deprecated
+  public RenderContext withEmbeddable(boolean b) {
+    return this;
   }
   /** Use {@link #withMarkupRenderMode} instead. */
   @Deprecated
@@ -141,17 +126,5 @@ public class RenderContext {
   public RenderContext withRawObjKeys(boolean b) {
     return b ? withPropertyNameQuotingMode(PropertyNameQuotingMode.NO_QUOTES)
         : withPropertyNameQuotingMode(PropertyNameQuotingMode.DEFAULT);
-  }
-  public RenderContext withPropertyNameQuotingMode(PropertyNameQuotingMode m) {
-    return this.propertyNameQuotingMode != m
-        ? deriveChecked(asciiOnly, embeddable, markupMode, m,
-              jsIdentifierSyntax)
-        : this;
-  }
-  public RenderContext withJsIdentiferSyntax(JsIdentifierSyntax s) {
-    return this.jsIdentifierSyntax != s
-        ? deriveChecked(asciiOnly, embeddable, markupMode,
-              propertyNameQuotingMode, s)
-        : this;
   }
 }

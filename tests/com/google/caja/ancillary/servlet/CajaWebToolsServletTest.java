@@ -415,7 +415,7 @@ public class CajaWebToolsServletTest extends CajaTestCase {
         .expectContentType("text/html; charset=UTF-8")
         .expectContentMatches("<a href=\"index\">index</a>")
         .expectContentMatches(
-            "<tr><th>&amp;i=\u2026</th><td>an input source file</td></tr>")
+            "<tr><th>&amp;i=&#8230;</th><td>an input source file</td></tr>")
         .send();
   }
 
@@ -458,7 +458,7 @@ public class CajaWebToolsServletTest extends CajaTestCase {
         .expectContentMatches(
             "\\Q"  // Quote special characters until next \E
             + "<h2 class=\"summary\">1 Error, 1 Lint"
-            + " (124B \u2192 86B; output is 69.4% of the original)</h2>"
+            + " (124B &#8594; 86B; output is 69.4% of the original)</h2>"
             + "\\E"
             )
         .expectContentMatches(
@@ -485,7 +485,7 @@ public class CajaWebToolsServletTest extends CajaTestCase {
         .expectContentMatches(
             "\\Q"  // Quote special characters until next \E
             + "<h2 class=\"summary\">2 Errors"
-            + " (70B \u2192 48B; output is 68.6% of the original)</h2>"
+            + " (70B &#8594; 48B; output is 68.6% of the original)</h2>"
             + "\\E"
             )
         .expectContentMatches(

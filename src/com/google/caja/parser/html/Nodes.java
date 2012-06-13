@@ -303,7 +303,7 @@ public class Nodes {
         sb.append(rendering);
       }
     }
-    new Renderer(rc, sb, rc.markupRenderMode(), rc.isAsciiOnly(), ns)
+    new Renderer(rc, sb, rc.markupRenderMode(), ns)
         .render(node, ns, renderUnsafe);
     TokenConsumer out = rc.getOut();
     FilePosition pos = getFilePositionFor(node);
@@ -463,17 +463,15 @@ final class Renderer {
   final StringBuilder out;
   final MarkupRenderMode mode;
   final boolean asXml;
-  final boolean isAsciiOnly;
   final int namespaceDepthAtStart;
 
   Renderer(
       RenderContext rc, StringBuilder out, MarkupRenderMode mode,
-      boolean isAsciiOnly, Namespaces ns) {
+      Namespaces ns) {
     this.rc = rc;
     this.out = out;
     this.mode = mode;
     this.asXml = mode == MarkupRenderMode.XML;
-    this.isAsciiOnly = isAsciiOnly;
     this.namespaceDepthAtStart = depth(ns);
   }
 
@@ -541,7 +539,7 @@ final class Renderer {
           // possibly change the namespace resolution of contained elements or
           // attributes.
           out.append(" xmlns=\"");
-          Escaping.escapeXml(elNs.uri, isAsciiOnly, out);
+          Escaping.escapeXml(elNs.uri, true, out);
           out.append('"');
         }
         NamedNodeMap attrs = el.getAttributes();
@@ -591,7 +589,7 @@ final class Renderer {
           if (!(isHtml && mode == MarkupRenderMode.HTML4_BACKWARDS_COMPAT
                 && BooleanAttrs.isBooleanAttr(attrLocalName))) {
             out.append("=\"");
-            Escaping.escapeXml(a.getValue(), isAsciiOnly, out);
+            Escaping.escapeXml(a.getValue(), true, out);
             out.append('"');
           }
         }
@@ -686,7 +684,7 @@ final class Renderer {
         //   escaping text span end.
         // The script and style mentioned above have CDATA content, not RCDATA,
         // but title and textarea are the RCDATA to which this is relevant.
-        Escaping.escapeXml(node.getNodeValue(), isAsciiOnly, out);
+        Escaping.escapeXml(node.getNodeValue(), true, out);
         break;
       case Node.CDATA_SECTION_NODE:
         String value = node.getNodeValue();
@@ -695,7 +693,7 @@ final class Renderer {
           out.append(value);
           out.append("]]>");
         } else {
-          Escaping.escapeXml(value, isAsciiOnly, out);
+          Escaping.escapeXml(value, true, out);
         }
         break;
       case Node.ATTRIBUTE_NODE: {
@@ -706,7 +704,7 @@ final class Renderer {
         }
         emitLocalName(localName, HTML_NS.equals(a.getNamespaceURI()));
         out.append("=\"");
-        Escaping.escapeXml(a.getValue(), isAsciiOnly, out);
+        Escaping.escapeXml(a.getValue(), true, out);
         out.append('"');
         break;
       }
@@ -842,7 +840,7 @@ final class Renderer {
 
   private void renderNamespace(Namespaces ns) {
     out.append("xmlns:").append(ns.prefix).append("=\"");
-    Escaping.escapeXml(ns.uri, isAsciiOnly, out);
+    Escaping.escapeXml(ns.uri, true, out);
     out.append('"');
   }
 
@@ -879,7 +877,7 @@ final class Renderer {
       char ch = name.charAt(i);
       if (ch > 'z' || !simple[ch]) {
         if (isHtml) { name = Strings.toLowerCase(name); }
-        Escaping.escapeXml(name, isAsciiOnly, out);
+        Escaping.escapeXml(name, true, out);
         return name;
       }
     }
