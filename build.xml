@@ -225,6 +225,13 @@
   <target name="brserve" description="Run just browser test server.">
     <antcall target="runtests">
       <param name="test.filter" value="GeneralBrowserTest"/>
+      <param name="caja.BrowserTestCase.serverOnly" value="true"/>
+    </antcall>
+  </target>
+
+  <target name="brserve+" description="... and a test browser.">
+    <antcall target="runtests">
+      <param name="test.filter" value="GeneralBrowserTest"/>
       <param name="caja.BrowserTestCase.startAndWait" value="true"/>
     </antcall>
   </target>
@@ -241,8 +248,8 @@
   <property name="testonly.user.region" value="TR"/>
 
   <propertyset id="test.propertyset">
-    <propertyref name="caja.BrowserTestCase.startAndWait"/>
     <propertyref name="webdriver.firefox.bin"/>
+    <propertyref prefix="caja.BrowserTestCase."/>
     <propertyref prefix="emma."/>
     <propertyref prefix="test."/>
     <propertyref prefix="testonly."/>

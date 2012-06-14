@@ -23,7 +23,6 @@ import com.google.caja.util.RewritingResourceHandler;
 
 import java.io.FileDescriptor;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.io.OutputStream;
 import java.util.List;
 
@@ -127,43 +126,38 @@ public abstract class BrowserTestCase extends CajaTestCase {
     testBuildVersion = version;
   }
 
-  private static final String START_AND_WAIT_FLAG =
+  private static final String SERVER_ONLY =
+      "caja.BrowserTestCase.serverOnly";
+  private static final String START_AND_WAIT =
       "caja.BrowserTestCase.startAndWait";
-  private static final long START_AND_WAIT_MILLIS =
-      1000 * 60 * 60 * 24;  // 24 hours
 
   /**
    * Start the web server and browser, go to pageName, call driveBrowser(driver,
    * pageName), and then clean up.
    */
   protected String runBrowserTest(String pageName) throws Exception {
-    localServer.start();
-    String testBase = ("http://localhost:" + portNumber
-                      + "/ant-lib/com/google/caja/plugin/");
+    if (flag(SERVER_ONLY) || flag(START_AND_WAIT)) {
+      pageName = "test-index.html";
+    }
+    String page = "http://localhost:" + portNumber
+        + "/ant-lib/com/google/caja/plugin/" + pageName;
     // The test runner may catch output so go directly to file descriptor 2.
     OutputStream out = new FileOutputStream(FileDescriptor.err);
-    if (System.getProperty(START_AND_WAIT_FLAG) != null) {
-      try {
-        // Print out the URL so that someone can use ant -Dtest.filter to
-        // choose the specific test they want instead of having to compute the
-        // URL by inspection of the test code.
-        out.write(("Waiting for interactive test run.\nTry "
-            + testBase + "test-index.html\n").getBytes("UTF-8"));
-      } catch (IOException ex) {
-        ex.printStackTrace();
-      }
-      // No need to release a file descriptor that was open prior.
-      try {
-        Thread.sleep(START_AND_WAIT_MILLIS);
-      } catch (InterruptedException e) {
-        throw new RuntimeException(e);
-      }
-    }
+    out.write(("- Try " + page + "\n").getBytes("UTF-8"));
+    out.flush();
     String result = "";
-    out.write(("- Running " + pageName + "\n").getBytes("UTF-8"));
     try {
+      localServer.start();
+      if (flag(SERVER_ONLY)) {
+        Thread.currentThread().join();
+      }
+
       WebDriver driver = mwwd.newWindow();
-      driver.get(testBase + pageName);
+      driver.get(page);
+      if (flag(START_AND_WAIT)) {
+        Thread.currentThread().join();
+      }
+
       result = driveBrowser(driver, pageName);
       driver.close();
       // Note that if the tests fail, this will not be reached and the window
@@ -172,6 +166,10 @@ public abstract class BrowserTestCase extends CajaTestCase {
       localServer.stop();
     }
     return result;
+  }
+
+  protected boolean flag(String name) {
+    return System.getProperty(name) != null;
   }
 
   protected String runTestDriver(String testDriver) throws Exception {
@@ -323,11 +321,14 @@ public abstract class BrowserTestCase extends CajaTestCase {
      * Create a new window and return the WebDriver, which has been switched
      * to it.
      */
-    public WebDriver newWindow() {
+    public WebDriver newWindow() throws Exception {
       if (driver == null) {
         driver = new FirefoxDriver();
         driver.get("about:blank");
         firstWindowHandle = driver.getWindowHandle();
+        OutputStream out = new FileOutputStream(FileDescriptor.err);
+        out.write("- Started Firefox\n".getBytes("UTF-8"));
+        out.flush();
       }
 
       driver.switchTo().window(firstWindowHandle);
