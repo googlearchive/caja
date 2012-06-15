@@ -84,6 +84,7 @@
   <property name="maven.ant.tasks.jar" value="third_party/ant/maven-ant-tasks-2.1.1.jar"/>
 
   <!--== classpaths ==-->
+  <!-- TODO(felix8a): too many classpaths -->
   <path id="classpath.gwt">
     <pathelement path="${gwtlib}"/>
     <pathelement path="${third_party}/java/gwt/gwt-user.jar"/>
@@ -201,6 +202,7 @@
     <delete dir="${third_party}/java/htmlparser/lib"/>
   </target>
 
+  <!-- TODO(felix8a): this is action at a distance; eliminate it -->
   <target name="dirs">
     <mkdir dir="${reports}"/>
     <mkdir dir="${docs}"/>
@@ -486,8 +488,8 @@
     <jar destfile="${jars}/pluginc-javadocs.jar" basedir="${javadocs}"/>
   </target>
 
-  <target name="ruledocs" description="Caja rule documentation."
-   depends="RuleDoclet">
+  <target name="ruledocs" depends="RuleDoclet"
+      description="Caja rule documentation.">
     <mkdir dir="${ruledocs}"/>
     <ruledoclet output="html" outputdir="${ruledocs}"
      rewriter="com.google.caja.parser.quasiliteral.ES53Rewriter"/>
@@ -495,13 +497,12 @@
 
   <target name="tools" depends="PluginCompiler">
     <!-- Now that we have the compiler, build ant task wrappers -->
-    <javac destdir="${lib}" debug="true" target="1.5" source="1.5"
-     excludes="${tools.ancillary.excludes}">
+    <javac destdir="${lib}" debug="true" target="1.5" source="1.5">
       <src path="${src}"/>
       <classpath refid="classpath.tools"/>
-      <include name="**/caja/plugin/BuildServiceImplementation.java"/>
-      <include name="**/caja/tools/*.java"/>
-      <include name="**/caja/ancillary/**/*.java"/>
+      <include name="**/ancillary/linter/Linter.java"/>
+      <include name="**/precajole/PrecajoleTask.java" />
+      <include name="**/tools/*.java"/>
       <compilerarg line="-Xlint:deprecation"/>
       <compilerarg line="-Xlint:unchecked"/>
     </javac>
@@ -522,6 +523,10 @@
      classpathref="classpath.run"/>
     <taskdef name="summarize" classname="com.google.caja.tools.TestSummary"
      classpathref="classpath.tests.run" />
+    <taskdef name="precajole"
+     classname="com.google.caja.precajole.PrecajoleTask"
+     classpathref="classpath.run" />
+
     <copy todir="${lib}">
       <fileset dir="${src}">
         <include name="**/caja/ancillary/**/*.js"/>
@@ -534,7 +539,7 @@
     </copy>
   </target>
 
-  <target name="pluginc" depends="PluginCompiler,tools,precajole-light"
+  <target name="pluginc" depends="tools"
    description="Build the plugin compiler and other main classes">
     <javac destdir="${lib}" debug="true" target="1.5" source="1.5">
       <src path="${src}"/>
@@ -544,11 +549,16 @@
       <include name="**/caja/plugin/*Main.java"/>
     </javac>
     <!-- Generate a schema of CSS properties for client side CSS validation. -->
+    <copy todir="${lib}">
+      <fileset dir="${src}">
+        <include name="**/caja/lang/*/*.json"/>
+      </fileset>
+    </copy>
     <javac destdir="${lib}" debug="true" target="1.5" source="1.5">
       <src path="${src}"/>
       <classpath refid="classpath.compile"/>
       <include name="**/caja/lang/css/CssPropertyPatterns.java"/>
-      <include name="**/caja/lang/css/HtmlDefinitions.java"/>
+      <include name="**/caja/lang/html/HtmlDefinitions.java"/>
     </javac>
     <genrule class="com.google.caja.lang.css.CssPropertyPatterns$Builder">
       <output file="${lib.caja}/plugin/css-defs.js"/>
@@ -1041,12 +1051,15 @@
     </replace>
   </target>
 
-  <target name="AllTests" depends="CajoledTests,CajolingServlet,PlaygroundBE,PlaygroundSupportingFiles">
-    <!-- TODO(kpreid): that this copies to ${lib} means the contents of
+  <target name="AllTests" depends="CajoledTests,CajolingServlet,PlaygroundBE,PlaygroundSupportingFiles,precajole-light">
+    <!-- TODO(felix8a): that this copies to ${lib} means the contents of
          pluginc.jar depends on whether AllTests was built, which is bad. -->
     <javac destdir="${lib}" debug="true" target="1.5" source="1.5">
       <src path="${tests}"/>
+      <!-- TODO(felix8a): delete sourcepath when orphans cleaned up -->
+      <sourcepath path="${src}:${tests}"/>
       <classpath refid="classpath.tests.compile"/>
+      <classpath refid="classpath.tools"/>
       <include name="**/caja/AllTests.java"/>
       <include name="**/caja/util/*.java"/>
       <include name="**/caja/**/*TestCase.java"/>
@@ -1057,8 +1070,7 @@
     </javac>
 
     <!-- Lint the ES5/3 case -->
-    <genrule class="com.google.caja.ancillary.linter.Linter"
-     unless="${tools.ancillary.disable}">
+    <genrule class="com.google.caja.ancillary.linter.Linter">
       <input file="${lib.caja}/cajita-promise.js"/>
       <input file="${src.caja}/plugin/bridal.js"/>
       <input file="${lib.caja}/plugin/caja.js"/>
@@ -1079,8 +1091,7 @@
     </genrule>
 
     <!-- Lint the native-ES5 case -->
-    <genrule class="com.google.caja.ancillary.linter.Linter"
-     unless="${tools.ancillary.disable}">
+    <genrule class="com.google.caja.ancillary.linter.Linter">
       <input file="${src.caja}/ses/useHTMLLogger.js"/>
       <input file="${src.caja}/ses/logger.js"/>
       <input file="${src.caja}/ses/repairES5.js"/>
@@ -1177,7 +1188,7 @@
           message="${build.svnVersion}"/>
   </target>
 
-  <target name="build.info" depends="Version.update">
+  <target name="build.info" depends="dirs, Version.update">
     <tstamp>
       <format property="build.timestamp" pattern="yyyy-MM-dd HH:mm:ss"/>
     </tstamp>
@@ -1189,10 +1200,10 @@
      message="timestamp: ${build.timestamp}${line.separator}"/>
   </target>
 
-  <target name="RuleDoclet" depends="Quasiliterals">
+  <target name="RuleDoclet" depends="HtmlParser">
     <javac destdir="${lib}" debug="true" target="1.5" source="1.5">
       <src path="${src}"/>
-      <classpath refid="classpath.compile"/>
+      <classpath refid="classpath.tools"/>
       <include name="**/caja/quasiliteral/*Doclet.java"/>
       <include name="**/caja/tools/DocletAntTask.java"/>
       <compilerarg line="-Xlint:unchecked"/>
@@ -1201,11 +1212,10 @@
      classpathref="classpath.run" onerror="ignore"/>
   </target>
 
-  <target name="PluginCompiler"
-   depends="CssParser,HtmlParser,Quasiliterals,Rendering,Schemas,build.info">
+  <target name="PluginCompiler" depends="build.info, HtmlParser">
     <javac destdir="${lib}" debug="true" target="1.5" source="1.5">
       <src path="${src}"/>
-      <classpath refid="classpath.compile"/>
+      <classpath refid="classpath.tools"/>
       <classpath refid="classpath.gwt"/>
       <include name="**/caja/plugin/*.java"/>
       <include name="**/caja/plugin/stages/*.java"/>
@@ -1247,8 +1257,7 @@
   </target>
 
   <!-- Builds the cajoling service. -->
-  <target name="CajolingServlet"
-      depends="CssParser,HtmlParser,Quasiliterals,Rendering,Schemas">
+  <target name="CajolingServlet" depends="HtmlParser">
     <javac destdir="${lib}" debug="true" target="1.5" source="1.5">
       <src path="${src}"/>
       <classpath refid="classpath.compile"/>
@@ -1430,10 +1439,9 @@
     </copy>
   </target>
 
-  <!-- Copy the App Engine JARs to the WAR directory -->
-  <target name="PlaygroundJars" depends="build.info">
+  <!-- Copy third-party JARs to the WAR directory -->
+  <target name="PlaygroundJars" depends="dirs">
     <mkdir dir="${war}/WEB-INF" />
-    <copy todir="${war}/WEB-INF" file="web.xml" />
     <copy todir="${war}/WEB-INF/lib" flatten="true">
       <fileset dir="${third_party}/java/jsonml">
         <include name="jsonml.jar"/>
@@ -1443,10 +1451,6 @@
       </fileset>
       <fileset dir="${third_party}/java/gwt">
         <include name="gwt-servlet.jar" />
-      </fileset>
-      <fileset dir="${jars}">
-        <include name="htmlparser.jar" />
-        <include name="precajole.jar" />
       </fileset>
       <fileset dir="${third_party}/java/xerces/">
         <include name="xercesImpl.jar" />
@@ -1471,8 +1475,10 @@
 
   <!-- Compile the GWT backend and copies to the WAR -->
   <target name="PlaygroundBE" depends="pluginc,PlaygroundJars,precajole">
+    <copy todir="${war}/WEB-INF" file="web.xml" />
     <copy todir="${war}/WEB-INF/lib">
       <fileset dir="${jars}">
+        <include name="htmlparser.jar"/>
         <include name="precajole.jar"/>
       </fileset>
     </copy>
@@ -1568,39 +1574,7 @@
     </dev_appserver>
   </target>
 
-  <target name="Config" depends="Reporting">
-    <javac destdir="${lib}" debug="true" target="1.5" source="1.5">
-      <src path="${src}"/>
-      <classpath refid="classpath.compile"/>
-      <include name="**/caja/config/*.java"/>
-      <compilerarg line="-Xlint:unchecked"/>
-    </javac>
-  </target>
-
-  <target name="Schemas" depends="Config">
-    <javac destdir="${lib}" debug="true" target="1.5" source="1.5">
-      <src path="${src}"/>
-      <classpath refid="classpath.compile"/>
-      <include name="**/caja/lang/*/*.java"/>
-      <compilerarg line="-Xlint:unchecked"/>
-    </javac>
-    <copy todir="${lib}">
-      <fileset dir="${src}">
-        <include name="**/caja/lang/*/*.json"/>
-      </fileset>
-    </copy>
-  </target>
-
-  <target name="CssParser" depends="ParserCore">
-    <javac destdir="${lib}" debug="true" target="1.5" source="1.5">
-      <src path="${src}"/>
-      <classpath refid="classpath.compile"/>
-      <include name="**/caja/parser/css/*.java"/>
-      <compilerarg line="-Xlint:unchecked"/>
-    </javac>
-  </target>
-
-  <target name="HtmlParser" depends="ParserCore">
+  <target name="HtmlParser" depends="dirs">
     <javac destdir="${third_party}/java/htmlparser/lib" debug="true"
      target="1.5" source="1.5">
       <src path="${third_party}/java/htmlparser/src"/>
@@ -1624,93 +1598,6 @@
     </jar>
     <jar destfile="${jars}/htmlparser.jar"
      basedir="${third_party}/java/htmlparser/lib" />
-    <javac destdir="${lib}" debug="true" target="1.5" source="1.5">
-      <src path="${src}"/>
-      <classpath refid="classpath.compile"/>
-      <include name="**/caja/parser/html/*.java"/>
-      <compilerarg line="-Xlint:unchecked"/>
-    </javac>
-  </target>
-
-  <target name="JsParser" depends="ParserCore">
-    <javac destdir="${lib}" debug="true" target="1.5" source="1.5">
-      <src path="${src}"/>
-      <classpath refid="classpath.compile"/>
-      <include name="**/caja/parser/ParserBase.java"/>
-      <include name="**/caja/parser/js/**/*.java"/>
-      <compilerarg line="-Xlint:unchecked"/>
-    </javac>
-  </target>
-
-  <target name="Quasiliterals" depends="JsParser">
-    <javac destdir="${lib}" debug="true" target="1.5" source="1.5">
-      <src path="${src}"/>
-      <classpath refid="classpath.compile"/>
-      <include name="**/caja/parser/quasiliteral/*.java" />
-    </javac>
-  </target>
-
-  <target name="ParserCore" depends="Lexer">
-    <javac destdir="${lib}" debug="true" target="1.5" source="1.5">
-      <src path="${src}"/>
-      <classpath refid="classpath.compile"/>
-      <include name="**/caja/parser/*.java"/>
-      <exclude name="**/caja/parser/ParserBase.java"/>
-      <exclude name="**/caja/parser/ParserContext.java"/>
-      <compilerarg line="-Xlint:unchecked"/>
-    </javac>
-  </target>
-
-  <target name="Lexer" depends="Reporting">
-    <javac destdir="${lib}" debug="true" target="1.5" source="1.5">
-      <src path="${src}"/>
-      <classpath refid="classpath.compile"/>
-      <include name="**/caja/lexer/*.java"/>
-      <include name="**/caja/lexer/escaping/*.java"/>
-      <exclude name="**/caja/lexer/ExternalReference.java"/>
-      <exclude name="**/caja/lexer/FilePosition.java"/>
-      <exclude name="**/caja/lexer/InputSource.java"/>
-      <compilerarg line="-Xlint:unchecked"/>
-    </javac>
-  </target>
-
-  <target name="Reporting" depends="Primitives">
-    <javac destdir="${lib}" debug="true" target="1.5" source="1.5">
-      <src path="${src}"/>
-      <classpath refid="classpath.compile"/>
-      <include name="**/caja/CajaException.java"/>
-      <include name="**/caja/reporting/*.java"/>
-      <exclude name="**/caja/reporting/MessageContext.java"/>
-      <exclude name="**/caja/reporting/MessagePart.java"/>
-      <exclude name="**/caja/reporting/RenderContext.java"/>
-      <exclude name="**/caja/reporting/Renderable.java"/>
-      <compilerarg line="-Xlint:unchecked"/>
-    </javac>
-  </target>
-
-  <target name="Rendering" depends="Lexer">
-    <javac destdir="${lib}" debug="true" target="1.5" source="1.5">
-      <src path="${src}"/>
-      <classpath refid="classpath.compile"/>
-      <include name="**/caja/render/*.java"/>
-      <compilerarg line="-Xlint:unchecked"/>
-    </javac>
-  </target>
-
-  <target name="Primitives" depends="dirs">
-    <javac destdir="${lib}" debug="true" target="1.5" source="1.5">
-      <src path="${src}"/>
-      <classpath refid="classpath.compile"/>
-      <include name="**/caja/lexer/ExternalReference.java"/>
-      <include name="**/caja/lexer/FilePosition.java"/>
-      <include name="**/caja/lexer/InputSource.java"/>
-      <include name="**/caja/reporting/MessageContext.java"/>
-      <include name="**/caja/reporting/MessagePart.java"/>
-      <include name="**/caja/reporting/RenderContext.java"/>
-      <include name="**/caja/reporting/Renderable.java"/>
-      <include name="**/caja/util/*.java"/>
-      <compilerarg line="-Xlint:unchecked"/>
-    </javac>
   </target>
 
   <target name="photon" depends="jars"
@@ -1875,11 +1762,6 @@
     <property name="test.failureNotAnOption" value="true" />
   </target>
 
-  <target name="skipChecks" description="Turns off ancillary tools.">
-    <property name="tools.ancillary.disable" value="true" />
-    <property name="tools.ancillary.excludes" value="**/caja/tools/**/*.java" />
-  </target>
-
   <target name="devground"
       description="Builds playground with only one GWT permutation">
     <property name="gwt.devground" value="true"/>
@@ -1916,23 +1798,11 @@
               out="${src.flash}/tests/BridgeOblivious.swf"/>
   </target>
 
-  <target name="Precajoler" depends="PluginCompiler">
-    <javac destdir="${lib}" debug="true" target="1.5" source="1.5">
-      <src path="${src}"/>
-      <classpath refid="classpath.compile"/>
-      <classpath refid="classpath.tools"/>
-      <include name="com/google/caja/precajole/*.java" />
-    </javac>
-    <taskdef name="precajole"
-             classname="com.google.caja.precajole.PrecajoleTask"
-             classpathref="classpath.run" />
-  </target>
-
-  <target name="precajole-light" depends="Precajoler">
+  <target name="precajole-light" depends="tools">
     <precajole spec="${precajolesrc}/light.xml" dest="${precajolelib}/light" />
   </target>
 
-  <target name="precajole" depends="Precajoler">
+  <target name="precajole" depends="tools">
     <precajole spec="${precajolesrc}/heavy.xml" dest="${precajolelib}/heavy" />
     <jar destfile="${jars}/precajole.jar" basedir="${precajolelib}/heavy" />
   </target>
