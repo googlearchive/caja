@@ -94,17 +94,24 @@ public enum HtmlTextEscapingMode {
     ESCAPING_MODES.put("xmp", CDATA);
 
     // Nodes that can't contain content.
+    // http://dev.w3.org/html5/spec/syntax.html#elements-0
+    ESCAPING_MODES.put("area", VOID);
     ESCAPING_MODES.put("base", VOID);
+    ESCAPING_MODES.put("br", VOID);
+    ESCAPING_MODES.put("col", VOID);
+    ESCAPING_MODES.put("command", VOID);
+    ESCAPING_MODES.put("embed", VOID);
+    ESCAPING_MODES.put("hr", VOID);
+    ESCAPING_MODES.put("img", VOID);
+    ESCAPING_MODES.put("input", VOID);
+    ESCAPING_MODES.put("keygen", VOID);
     ESCAPING_MODES.put("link", VOID);
     ESCAPING_MODES.put("meta", VOID);
-    ESCAPING_MODES.put("hr", VOID);
-    ESCAPING_MODES.put("br", VOID);
-    ESCAPING_MODES.put("img", VOID);
-    ESCAPING_MODES.put("embed", VOID);
     ESCAPING_MODES.put("param", VOID);
-    ESCAPING_MODES.put("area", VOID);
-    ESCAPING_MODES.put("col", VOID);
-    ESCAPING_MODES.put("input", VOID);
+    ESCAPING_MODES.put("source", VOID);
+    ESCAPING_MODES.put("track", VOID);
+    ESCAPING_MODES.put("wbr", VOID);
+
   }
 
   /**

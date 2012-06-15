@@ -114,7 +114,7 @@ public class NodesTest extends CajaTestCase {
                 "<html:td width='10'><svg:Rect width='50'/></html:td>")),
             MarkupRenderMode.HTML));
     assertEquals(
-        "<td width=\"10\"><svg:Rect width=\"50\" /></td>",
+        "<td width=\"10\"><svg:Rect width=\"50\"></svg:Rect></td>",
         Nodes.render(
             xmlFragment(fromString(
                 "<html:td width='10'><svg:Rect width='50'/></html:td>")),
@@ -123,7 +123,7 @@ public class NodesTest extends CajaTestCase {
 
   public final void testRenderWithNonstandardNamespaces() throws Exception {
     assertEquals(
-        "<td width=\"10\"><svg:Rect width=\"50\" /></td>",
+        "<td width=\"10\"><svg:Rect width=\"50\"></svg:Rect></td>",
         Nodes.render(xmlFragment(fromString(
             ""
             + "<html:td width='10' xmlns:s='http://www.w3.org/2000/svg'>"
@@ -350,7 +350,7 @@ public class NodesTest extends CajaTestCase {
         ""
         + "<xml:foo>"
         + "<_ns1:baz xmlns:_ns1=\"http://bobs.house.of/XML&amp;BBQ\""
-        + " boo=\"howdy\" xml:lang=\"es\" />"
+        + " boo=\"howdy\" xml:lang=\"es\"></_ns1:baz>"
         + "</xml:foo>",
         Nodes.render(fragment, MarkupRenderMode.XML));
   }
@@ -383,7 +383,7 @@ public class NodesTest extends CajaTestCase {
     assertEquals(
         ""
         + "<_ns2:foo xmlns:_ns2=\"http://www.w3.org/2000/svg\">"
-        + "<svg:bar /></_ns2:foo>",
+        + "<svg:bar></svg:bar></_ns2:foo>",
         sb.toString());
   }
 
@@ -507,7 +507,7 @@ public class NodesTest extends CajaTestCase {
         Pair.pair(MarkupRenderMode.HTML,
             "<html><head></head><body><b>my text</b></body></html>"),
         Pair.pair(MarkupRenderMode.XML,
-            "<html><head /><body><b>my text</b></body></html>")
+            "<html><head></head><body><b>my text</b></body></html>")
     );
     for (String docType : docTypes) {
       for (Pair<MarkupRenderMode, String> expectedPair : expectedPairs) {
@@ -602,7 +602,7 @@ public class NodesTest extends CajaTestCase {
         "<input checked=\"checked\" name=\"foo\" type=\"checkbox\" />",
         Nodes.render(f, MarkupRenderMode.HTML));
     assertEquals(
-        "<input checked name=\"foo\" type=\"checkbox\">",
+        "<input checked name=\"foo\" type=\"checkbox\" />",
         Nodes.render(f, MarkupRenderMode.HTML4_BACKWARDS_COMPAT));
   }
 

@@ -35,7 +35,7 @@ public class IhtmlSanityCheckerTest extends CajaTestCase {
 
   public final void testEmptyTemplate() throws Exception {
     runTest(
-        "<ihtml:template formals=\"\" name=\"hi\" />",
+        "<ihtml:template formals=\"\" name=\"hi\"></ihtml:template>",
         "<ihtml:template formals='' name='hi'/>");
   }
   public final void testHtmlInTemplate() throws Exception {
@@ -66,11 +66,13 @@ public class IhtmlSanityCheckerTest extends CajaTestCase {
         + "</ihtml:template>");
   }
   public final void testMultipleVars() throws Exception {
-    runTest("<ihtml:do vars=\"a _b\" />", "<ihtml:do vars=\"a _b\" />");
+    runTest(
+        "<ihtml:do vars=\"a _b\"></ihtml:do>",
+        "<ihtml:do vars=\"a _b\" />");
   }
   public final void testUnnamedMessage() throws Exception {
     runTest(
-        "<ihtml:template formals=\"a b\" name=\"t\" />",
+        "<ihtml:template formals=\"a b\" name=\"t\"></ihtml:template>",
         ""
         + "<ihtml:template formals='a b' name='t'>"
         + "<ihtml:message>Hello</ihtml:message>"
@@ -82,7 +84,7 @@ public class IhtmlSanityCheckerTest extends CajaTestCase {
   }
   public final void testMisnamedMessage() throws Exception {
     runTest(
-        "<ihtml:template formals=\"a b\" name=\"t\" />",
+        "<ihtml:template formals=\"a b\" name=\"t\"></ihtml:template>",
         ""
         + "<ihtml:template formals=\"a b\" name=\"t\">"
         + "<ihtml:message name=\"x__\">"
@@ -101,9 +103,9 @@ public class IhtmlSanityCheckerTest extends CajaTestCase {
         + "<ihtml:template formals=\"x\" name=\"t\">"
         + "<ihtml:message name=\"hi\">"
         + "Hello "
-        + "<ihtml:ph name=\"planet\" />"
-        + "<ihtml:dynamic expr=\"planet\" />"
-        + "<ihtml:eph />!"
+        + "<ihtml:ph name=\"planet\"></ihtml:ph>"
+        + "<ihtml:dynamic expr=\"planet\"></ihtml:dynamic>"
+        + "<ihtml:eph></ihtml:eph>!"
         + "</ihtml:message>"
         + "</ihtml:template>",
         ""
@@ -122,7 +124,7 @@ public class IhtmlSanityCheckerTest extends CajaTestCase {
         + "<ihtml:template formals=\"\" name=\"t\">"
         + "<ihtml:message name=\"hi\">"
         + "Hello "
-        + "<ihtml:dynamic expr=\"planet\" />"
+        + "<ihtml:dynamic expr=\"planet\"></ihtml:dynamic>"
         + "!"
         + "</ihtml:message>"
         + "</ihtml:template>",
@@ -150,7 +152,7 @@ public class IhtmlSanityCheckerTest extends CajaTestCase {
         + "<ihtml:template formals=\"\" name=\"t\">"
         + "<ihtml:message name=\"hi\">"
         + "Hello "
-        + "<ihtml:dynamic expr=\"planet\" />"
+        + "<ihtml:dynamic expr=\"planet\"></ihtml:dynamic>"
         + "!"
         + "</ihtml:message>"
         + "</ihtml:template>",
@@ -177,9 +179,9 @@ public class IhtmlSanityCheckerTest extends CajaTestCase {
         + "<ihtml:template formals=\"\" name=\"t\">"
         + "<ihtml:message name=\"hi\">"
         + "Hello "
-        + "<ihtml:ph name=\"planet\" />"
-        + "<ihtml:dynamic expr=\"planet\" />"
-        + "<ihtml:eph />!"
+        + "<ihtml:ph name=\"planet\"></ihtml:ph>"
+        + "<ihtml:dynamic expr=\"planet\"></ihtml:dynamic>"
+        + "<ihtml:eph></ihtml:eph>!"
         + "</ihtml:message>"
         + "</ihtml:template>",
         ""
@@ -203,7 +205,7 @@ public class IhtmlSanityCheckerTest extends CajaTestCase {
         + "<ihtml:template formals=\"\" name=\"t\">"
         + "<ihtml:message name=\"hi\">"
         + "Hello "
-        + "<ihtml:dynamic expr=\"planet\" />!"
+        + "<ihtml:dynamic expr=\"planet\"></ihtml:dynamic>!"
         + "</ihtml:message>"
         + "</ihtml:template>",
         ""
@@ -224,10 +226,10 @@ public class IhtmlSanityCheckerTest extends CajaTestCase {
         + "<ihtml:template formals=\"\" name=\"t\">"
         + "<ihtml:message name=\"hi\">"
         + "Hello "
-        + "<ihtml:dynamic expr=\"planet\" />"
-        + "<ihtml:ph name=\"punc\" />"
+        + "<ihtml:dynamic expr=\"planet\"></ihtml:dynamic>"
+        + "<ihtml:ph name=\"punc\"></ihtml:ph>"
         + "!"
-        + "<ihtml:eph />"
+        + "<ihtml:eph></ihtml:eph>"
         + "</ihtml:message>"
         + "</ihtml:template>",
         ""
@@ -251,7 +253,7 @@ public class IhtmlSanityCheckerTest extends CajaTestCase {
         ""
         + "<ihtml:template formals=\"\" name=\"t\">"
         + "Hello "
-        + "<ihtml:dynamic expr=\"planet\" />!"
+        + "<ihtml:dynamic expr=\"planet\"></ihtml:dynamic>!"
         + "</ihtml:template>",
         ""
         + "<ihtml:template formals=\"\" name=\"t\">"
@@ -272,7 +274,7 @@ public class IhtmlSanityCheckerTest extends CajaTestCase {
         ""
         + "<ihtml:template formals=\"\" name=\"t\">"
         + "Hello "
-        + "<ihtml:dynamic expr=\"planet\" />!"
+        + "<ihtml:dynamic expr=\"planet\"></ihtml:dynamic>!"
         + "</ihtml:template>",
         ""
         + "<ihtml:template formals=\"\" name=\"t\">"
@@ -288,7 +290,7 @@ public class IhtmlSanityCheckerTest extends CajaTestCase {
       throws Exception {
     runTest(
         ""
-        + "<ihtml:template formals=\"\" name=\"t\" />",
+        + "<ihtml:template formals=\"\" name=\"t\"></ihtml:template>",
         ""
         + "<ihtml:template formals=\"\" name=\"t\">"
         + "<ihtml:message name='SayHowdy'>"
@@ -303,7 +305,7 @@ public class IhtmlSanityCheckerTest extends CajaTestCase {
   }
   public final void testTemplateNames() throws Exception {
     runTest(
-        "<ihtml:template formals=\"x\" name=\"hi\" />",
+        "<ihtml:template formals=\"x\" name=\"hi\"></ihtml:template>",
         ""
         + "<ihtml:template formals='x' name='hi'>"
         + "<ihtml:template name='3nested' formals='a,,x,if,3' zoinks='ahoy'/>"
@@ -330,7 +332,8 @@ public class IhtmlSanityCheckerTest extends CajaTestCase {
         + "<ihtml:template formals=\"\" name=\"hi\">\n"
         // TODO(mikesamuel): move parameters into a separate namespace so they
         // don't collide with the template param.
-        + "  <ihtml:call baz=\"boo\" foo=\"bar\" template=\"bye\" />\n"
+        + "  <ihtml:call baz=\"boo\" foo=\"bar\" template=\"bye\">"
+          + "</ihtml:call>\n"
         + "</ihtml:template>",
         ""
         + "<ihtml:template name='hi' formals=''>\n"
@@ -415,8 +418,9 @@ public class IhtmlSanityCheckerTest extends CajaTestCase {
         ""
         + "<ihtml:template formals=\"\" name=\"t\">\n"
         + "  <a>\n"
-        + "    <ihtml:attribute name=\"href\"><ihtml:dynamic expr=\"url\" />"
-        + "</ihtml:attribute>\n"
+        + "    <ihtml:attribute name=\"href\">"
+              + "<ihtml:dynamic expr=\"url\"></ihtml:dynamic>"
+            + "</ihtml:attribute>\n"
         + "    <ihtml:attribute name=\"title\">\n"
         + "      <ihtml:message name=\"linkHover\">Howdy</ihtml:message>\n"
         + "    </ihtml:attribute>\n"
@@ -445,17 +449,17 @@ public class IhtmlSanityCheckerTest extends CajaTestCase {
     runTest(
         ""
         + "<ihtml:template formals=\"\" name=\"t\">\n"
-        + "  <ihtml:element />\n"
+        + "  <ihtml:element></ihtml:element>\n"
         + "  <ihtml:message name=\"m\">\n"
         + "    \n"
-        + "    <ihtml:ph name=\"ph\" />\n"
+        + "    <ihtml:ph name=\"ph\"></ihtml:ph>\n"
         + "      \n"
-        + "    <ihtml:eph />\n"
+        + "    <ihtml:eph></ihtml:eph>\n"
         + "  </ihtml:message>\n"
         + "  <ihtml:do init=\"maybe\">\n"
-        + "    <ihtml:element />\n"
-        + "  <ihtml:else />\n"
-        + "    <ihtml:element />\n"
+        + "    <ihtml:element></ihtml:element>\n"
+        + "  <ihtml:else></ihtml:else>\n"
+        + "    <ihtml:element></ihtml:element>\n"
         + "  </ihtml:do>\n"
         + "</ihtml:template>",
         ""

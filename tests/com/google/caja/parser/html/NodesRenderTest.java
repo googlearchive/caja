@@ -53,11 +53,15 @@ import org.w3c.dom.NodeList;
  * the values of inert text content. This is basically a guarantee that it's
  * impossible for inert text to become misinterpreted as script.</li>
  *
- * <li>"unsafe" - Some DOM trees cannot be rendered precisely or robustly,
- * so the renderer should refuse to render them and throw an exception. This
- * excludes more than just "cannot be rendered". It also excludes DOM trees
- * that can be XML rendered but do not have an XML rendering that's safe
- * when interpreted as HTML (and vice-versa).</li>
+ * <li>"htmlOnly" - Some DOM trees can be rendered safely as HTML (and
+ * misinterpretation as XML is harmless), but can't be rendered safely
+ * as XML</li>
+ *
+ * <li>"xmlOnly" - Some DOM trees can be rendered safely as XML (and
+ * misinterpretation as HTML is harmless), but can't be rendered safely
+ * as HTML</li>
+ *
+ * <li>"unsafe" - Some DOM trees are unsafe to render as HTML or XML.</li>
  * </ul>
  *
  * @author felix8a@gmail.com
@@ -67,11 +71,14 @@ public class NodesRenderTest extends CajaTestCase {
 
   public final void testEmpty() {
     precise("");
+    assertRender("", "");
   }
 
-  /* TODO(felix8a) */@FailureIsAnOption
   public final void testDiv1() {
     precise("<div></div><div>&lt;/div></div>");
+    assertRender(
+        "<div></div><div>&lt;/div&gt;</div>",
+        "<div></div><div>&lt;/div></div>");
   }
 
   // <![CDATA[]]> has meaning in XML but not in HTML.  These next few tests
@@ -82,35 +89,102 @@ public class NodesRenderTest extends CajaTestCase {
   // - If a dom tree has a text node containing "<![CDATA[", it doesn't
   //   get rendered as "<![CDATA[", which would screw up XML interpretation.
 
-  /* TODO(felix8a) */@FailureIsAnOption
   public final void testCdata1() {
     precise("1&lt;<![CDATA[2&lt;]]><![CDATA[3<]]>4&gt;5");
+    assertRender(
+        "1&lt;2&amp;lt;3&lt;4&gt;5",
+        "1&lt;<![CDATA[2&lt;]]><![CDATA[3<]]>4&gt;5");
+    assertRender(
+        "1&lt;&lt;![CDATA[2&lt;]]&gt;&lt;![CDATA[3&lt;]]&gt;4&gt;5",
+        "1&lt;&lt;![CDATA[2&lt;]]>&lt;![CDATA[3&lt;]]>4&gt;5");
   }
 
-  /* TODO(felix8a) */@FailureIsAnOption
   public final void testCdata2() {
     precise("<div>1&lt;<![CDATA[2&lt;]><![CDATA[3<]]>4&gt;5</div>");
+    assertRender(
+        "<div>1&lt;2&amp;lt;3&lt;4&gt;5</div>",
+        "<div>1&lt;<![CDATA[2&lt;]]><![CDATA[3<]]>4&gt;5</div>");
+    assertRender(
+        "<div>1&lt;&lt;![CDATA[2&lt;]]&gt;&lt;![CDATA[3&lt;]]&gt;4&gt;5</div>",
+        "<div>1&lt;&lt;![CDATA[2&lt;]]>&lt;![CDATA[3&lt;]]>4&gt;5</div>");
   }
 
-  /* TODO(felix8a) */@FailureIsAnOption
   public final void testCdata3() {
     // <title> is RCDATA so this should be possible
     precise("<title>1&lt;<![CDATA[2&lt;]><![CDATA[3<]]>4&gt;5</title>");
+    assertRender(
+        "<title>1&lt;2&amp;lt;3&lt;4&gt;5</title>",
+        "<title>1&lt;<![CDATA[2&lt;]]><![CDATA[3<]]>4&gt;5</title>");
+    assertRender(
+        "<title>1&lt;&lt;![CDATA[2&lt;]]&gt;&lt;![CDATA[3&lt;]]&gt;4&gt;5</title>",
+        "<title>1&lt;&lt;![CDATA[2&lt;]]>&lt;![CDATA[3&lt;]]>4&gt;5</title>");
   }
 
-  /* TODO(felix8a) */@FailureIsAnOption
+  /*TODO(felix8a)*/ @FailureIsAnOption
   public final void testCdata4() {
     // <xmp> is RAWTEXT, no entity decoding, so precise is impossible
     robust("<xmp>1&lt;<![CDATA[2&lt;]><![CDATA[3<]]>4&gt;5</xmp>");
   }
 
-  /* TODO(felix8a) */@FailureIsAnOption
   public final void testXmp1() {
     // xmp can never contain "</xmp>", and there's no way to escape it.
-    unsafe(xml("<xmp>1&lt;/xmp>2</xmp>"));
+    xmlOnly(xml("<xmp>1&lt;/xmp>2</xmp>"));
+  }
+
+  public final void testXmp2() {
+    // non-ascii characters are not renderable safely in xmp
+    xmlOnly(xml("<xmp>\u0000\u0080\u0131</xmp>"));
+    assertRenderXml(
+        "<xmp>&#0;&#128;&#305;</xmp>",
+        "<xmp>\u0000\u0080\u0131</xmp>");
+  }
+
+  /*TODO(felix8a)*/ @FailureIsAnOption
+  public final void testXmp3() {
+    robust(html("<xmp> a<b </xmp>"));
+  }
+
+  public final void testScript1() {
+    precise("<script> a </script>");
+    assertRender(
+        "<script> a </script>",
+        "<script> a </script>");
+  }
+
+  /*TODO(felix8a)*/ @FailureIsAnOption
+  public final void testScript2() {
+    precise(html(
+        "<script>//!<[CDATA[\n"
+        + "a<b;\n"
+        + "//]]></script>"));
+  }
+
+  /*TODO(felix8a)*/ @FailureIsAnOption
+  public final void testScript3() {
+    htmlOnly(html(
+        "<script> a<b; </script>"));
+  }
+
+  /*TODO(felix8a)*/ @FailureIsAnOption
+  public final void testScript4() {
+    unsafe(xml("<script> '&lt;/script>' </script>"));
   }
 
   // --------
+
+  private void assertRenderHtml(String expected, String test) {
+    assertEquals(expected, renderHtml(xml(test)));
+  }
+
+  private void assertRenderXml(String expected, String test) {
+    assertEquals(expected, renderXml(xml(test)));
+  }
+
+  private void assertRender(String expected, String test) {
+    Node tree = xml(test);
+    assertEquals(expected, renderHtml(tree));
+    assertEquals(expected, renderXml(tree));
+  }
 
   /**
    * Check that an output string has the same meaning, whether it's parsed
@@ -155,8 +229,12 @@ public class NodesRenderTest extends CajaTestCase {
    * turn inactive text into active script.
    */
   private void robust(Node tree) {
-    assertIdenticalStructure(tree, html(renderHtml(tree)));
-    assertIdenticalStructure(tree, xml(renderXml(tree)));
+    String asHtml = renderHtml(tree);
+    assertIdenticalStructure(tree, html(asHtml));
+    assertIdenticalStructure(tree, xml(asHtml));
+    String asXml = renderXml(tree);
+    assertIdenticalStructure(tree, html(asXml));
+    assertIdenticalStructure(tree, xml(asXml));
   }
 
   private void robust(String source) {
@@ -167,17 +245,48 @@ public class NodesRenderTest extends CajaTestCase {
   // --------
 
   /**
-   * Check that we always refuse to render a DOM tree when it can't be
-   * rendered safely as both XML and HTML.
+   * Check that when we refuse to render a DOM tree as XML, we can
+   * render it as HTML, and the HTML rendering is safe when misinterpreted
+   * as XML.
+   */
+  private void htmlOnly(Node tree) {
+    try {
+      String result = renderXml(tree);
+      throw new AssertionFailedError(
+          "Unexpected renderXmlsuccess: " + result);
+    } catch (UncheckedUnrenderableException e) {}
+    String result = renderHtml(tree);
+    assertIdenticalStructure(html(result), xml(result));
+  }
+
+  /**
+   * Check that when we refuse to render a DOM tree as HTML, we can
+   * render it as XML, and the XML rendering is safe when misinterpreted
+   * as HTML.
+   */
+  private void xmlOnly(Node tree) {
+    try {
+      String result = renderHtml(tree);
+      throw new AssertionFailedError(
+          "Unexpected renderHtml success: " + result);
+    } catch (UncheckedUnrenderableException e) {}
+    String result = renderXml(tree);
+    assertIdenticalStructure(html(result), xml(result));
+  }
+
+  /**
+   * Check that when we refuse to render a DOM tree as HTML or as XML
    */
   private void unsafe(Node tree) {
     try {
-      renderHtml(tree);
-      throw new AssertionFailedError("renderHtml should have failed");
+      String result = renderHtml(tree);
+      throw new AssertionFailedError(
+          "Unexpected renderHtml success: " + result);
     } catch (UncheckedUnrenderableException e) {}
     try {
-      renderXml(tree);
-      throw new AssertionFailedError("renderXml should have failed");
+      String result = renderXml(tree);
+      throw new AssertionFailedError(
+          "Unexpected renderXmlsuccess: " + result);
     } catch (UncheckedUnrenderableException e) {}
   }
 
@@ -203,11 +312,9 @@ public class NodesRenderTest extends CajaTestCase {
     }
   }
 
-  // These are HTML tags that start a RAWTEXT or RCDATA context, which
-  // means the exact value of the inner text has security implications.
+  // These are HTML tags whose contents have security implications.
   private static final Set<String> RISKY_ELEMENTS = ImmutableSet.of(
-      "iframe", "noembed", "noframes", "noscript", "script", "style",
-      "textarea", "title", "xmp");
+      "noembed", "noframes", "noscript", "script", "style");
 
   private void assertIdenticalStructure(Element e1, Element e2) {
     assertEquals(e1.getTagName(), e2.getTagName());

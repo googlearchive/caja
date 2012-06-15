@@ -1805,7 +1805,7 @@ public class DomParserTest extends CajaTestCase {
             ),
         Arrays.asList(
             ("<html><head></head><body>"
-             + "<foo><bar>baz</bar>boo<command></command></foo></body></html>")
+             + "<foo><bar>baz</bar>boo<command /></foo></body></html>")
             )
         );
   }
@@ -2311,7 +2311,7 @@ public class DomParserTest extends CajaTestCase {
         Arrays.<String>asList(),
         Arrays.asList(
             "<svg:svg><svg:rect height=\"100\" style=\"color:red\""
-            + " width=\"100\" x=\"50\" y=\"50\" /></svg:svg>"
+            + " width=\"100\" x=\"50\" y=\"50\"></svg:rect></svg:svg>"
             ),
         null, false);
   }
@@ -2581,7 +2581,7 @@ public class DomParserTest extends CajaTestCase {
             "Element : foo 1+1-1+41",
             "  CDATA :  <!-- <bar/> -->  1+6-1+35"),
         Arrays.<String>asList(),
-        Arrays.asList("<foo><![CDATA[ <!-- <bar/> --> ]]></foo>"),
+        Arrays.asList("<foo> &lt;!-- &lt;bar/&gt; --&gt; </foo>"),
         true, false);
   }
 
@@ -2592,7 +2592,7 @@ public class DomParserTest extends CajaTestCase {
             "Element : foo 1+1-1+37",
             "  CDATA :  <!-- <bar/>  1+6-1+31"),
         Arrays.<String>asList(),
-        Arrays.asList("<foo><![CDATA[ <!-- <bar/> ]]></foo>"),
+        Arrays.asList("<foo> &lt;!-- &lt;bar/&gt; </foo>"),
         true, false);
   }
 
@@ -2629,9 +2629,9 @@ public class DomParserTest extends CajaTestCase {
     // Rendered as XML
     assertEquals(
         ""
-        + "<script><![CDATA[ foo() < bar() ]]></script>\n"
-        + "<p />\n"
-        + "<![CDATA[ 1 < 2 && 3 > 4 ]]>\n"
+        + "<script> foo() &lt; bar() </script>\n"
+        + "<p></p>\n"
+        + " 1 &lt; 2 &amp;&amp; 3 &gt; 4 \n"
         + "<xmp>1 &lt; 2</xmp>\n"
         + "<script> foo() &lt; bar() </script>",
         Nodes.render(t, MarkupRenderMode.XML));
@@ -2650,7 +2650,7 @@ public class DomParserTest extends CajaTestCase {
     DocumentFragment t = xmlFragment(
         fromString("<xmp><![CDATA[ </xmp> ]]></xmp>"));
     assertEquals(
-        "<xmp><![CDATA[ </xmp> ]]></xmp>",
+        "<xmp> &lt;/xmp&gt; </xmp>",
         Nodes.render(t, MarkupRenderMode.XML));
     try {
       String badness = Nodes.render(t, MarkupRenderMode.HTML);
@@ -2664,7 +2664,7 @@ public class DomParserTest extends CajaTestCase {
     DocumentFragment t = xmlFragment(
         fromString("<xmp><![CDATA[ </xM]]>p </xmp>"));
     assertEquals(
-        "<xmp><![CDATA[ </xM]]>p </xmp>",
+        "<xmp> &lt;/xMp </xmp>",
         Nodes.render(t, MarkupRenderMode.XML));
     try {
       String badness = Nodes.render(t, MarkupRenderMode.HTML);

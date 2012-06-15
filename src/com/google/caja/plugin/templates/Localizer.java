@@ -195,25 +195,43 @@ public class Localizer {
               xhtml.toString(),
               Nodes.getFilePositionFor(message.getFirstChild())));
       lexer.setTreatedAsXml(true);
-      // 1 - saw <html:ph, 2 - saw >, 3 - saw <ihtml:eph
+      // 1 - saw <ihtml:ph
+      // 2 - saw <ihtml:ph >
+      // 3 - saw <ihtml:ph > </ihtml:ph
+      // 4 - saw <ihtml:ph > </ihtml:ph > or <ihtml:ph />
+      // 5 - saw <ihtml:eph
+      // 6 - saw <ihtml:eph >
+      // 7 - saw <ihtml:eph > </ihtml:eph
       int state = 0;
       // Filter out everything from the end of the <ihtml:ph> exclusive to the
       // end of the <ihtml:eph> inclusive.
       try {
         while (lexer.hasNext()) {
           Token<HtmlTokenType> tt = lexer.next();
-          boolean emit = state < 2;
+          boolean emit = state < 4;
           switch (tt.type) {
             case TAGBEGIN:
               if (state == 0 && "<ihtml:ph".equals(tt.text)) {
                 state = 1;
-              } else if (state == 2 && "<ihtml:eph".equals(tt.text)) {
+              } else if (state == 2 && "</ihtml:ph".equals(tt.text)) {
                 state = 3;
+              } else if (state == 4 && "<ihtml:eph".equals(tt.text)) {
+                state = 5;
+              } else if (state == 6 && "</ihtml:eph".equals(tt.text)) {
+                state = 7;
               }
               break;
             case TAGEND:
-              if (state == 1) { state = 2; }
-              else if (state == 3) { state = 0; }
+              boolean selfclose = "/>".equals(tt.text);
+              if (state == 1 && !selfclose) {
+                state = 2;
+              } else if (state == 1 && selfclose || state == 3) {
+                state = 4;
+              } else if (state == 5 && !selfclose) {
+                state = 6;
+              } else if (state == 5 && selfclose || state == 7) {
+                state = 0;
+              }
               if (emit && "/>".equals(tt.text)) { filteredXhtml.append(' '); }
               break;
             case ATTRNAME:

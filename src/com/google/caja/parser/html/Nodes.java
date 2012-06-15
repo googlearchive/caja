@@ -489,13 +489,16 @@ final class Renderer {
     render(node, ns, false);
   }
 
+  void renderSibs(Node sib, Namespaces ns, boolean renderUnsafe) {
+    for (; sib != null; sib = sib.getNextSibling()) {
+      render(sib, ns, renderUnsafe);
+    }
+  }
+
   void render(Node node, Namespaces ns, boolean renderUnsafe) {
     switch (node.getNodeType()) {
       case Node.DOCUMENT_NODE: case Node.DOCUMENT_FRAGMENT_NODE:
-        for (Node c = node.getFirstChild();
-             c != null; c = c.getNextSibling()) {
-          render(c, ns, renderUnsafe);
-        }
+        renderSibs(node.getFirstChild(), ns, renderUnsafe);
         break;
       case Node.ELEMENT_NODE: {
         Element el = (Element) node;
@@ -594,84 +597,21 @@ final class Renderer {
           }
         }
 
-        HtmlTextEscapingMode m = asXml || !isHtml
-            ? HtmlTextEscapingMode.PCDATA
-            : HtmlTextEscapingMode.getModeForTag(localName);
+        HtmlTextEscapingMode m =
+            HtmlTextEscapingMode.getModeForTag(localName);
+
         Node first = el.getFirstChild();
-        if (first == null && (asXml || m == HtmlTextEscapingMode.VOID)) {
-          // This is safe regardless of whether the output is XML or HTML since
-          // we only skip the end tag for HTML elements that don't require one,
-          // and the slash will cause XML to treat it as a void tag.
-          out.append(
-              mode != MarkupRenderMode.HTML4_BACKWARDS_COMPAT ? " />" : ">");
+        if (first == null && m == HtmlTextEscapingMode.VOID) {
+          out.append(" />");
         } else {
-          out.append('>');
-          if (!asXml) {
-            if (m == HtmlTextEscapingMode.CDATA
-                || m == HtmlTextEscapingMode.PLAIN_TEXT) {
-              StringBuilder cdataContent = new StringBuilder();
-              for (Node c = first; c != null; c = c.getNextSibling()) {
-                switch (c.getNodeType()) {
-                  case Node.TEXT_NODE: case Node.CDATA_SECTION_NODE:
-                    cdataContent.append(c.getNodeValue());
-                    break;
-                }
-              }
-              // Make sure that the CDATA section does not contain a close
-              // tag or unbalanced <!-- ... -->.
-              // If it does, try a fallback strategy.
-              int problemIndex = checkHtmlCdataCloseable(
-                  localName, cdataContent);
-              if (problemIndex != -1) {
-                if (rc instanceof MarkupFixupRenderContext) {
-                  MarkupFixupRenderContext markupFixup
-                    = (MarkupFixupRenderContext) rc;
-                  String cdataContentString = cdataContent.toString();
-                  do {
-                    @Nullable String fixedCdataContentString
-                        = markupFixup.fixUnclosableCdataElement(
-                            el, cdataContentString, problemIndex);
-                    if (fixedCdataContentString == null
-                        // Avoid most common source of inf. looping.
-                        || fixedCdataContentString.equals(cdataContentString)) {
-                      break;
-                    }
-                    cdataContentString = fixedCdataContentString;
-                    // The fixed content needs to be put back in cdataContent.
-                    cdataContent.setLength(0);
-                    cdataContent.append(cdataContentString);
-                    problemIndex = checkHtmlCdataCloseable(
-                        localName, cdataContent);
-                  } while (problemIndex != -1);
-                  // If problemIndex is -1 then we have fixed the problem.
-                }
-                if (problemIndex != -1) {
-                  throw new UncheckedUnrenderableException(
-                      "XML document not renderable as HTML due to '"
-                      + cdataContent.subSequence(
-                          problemIndex,
-                          Math.min(cdataContent.length(), problemIndex + 10))
-                      + "' in CDATA element");
-                }
-              }
-              out.append(cdataContent);
-            } else {
-              for (Node c = first; c != null; c = c.getNextSibling()) {
-                render(c, ns, renderUnsafe);
-              }
-            }
+          out.append(">");
+          if (m == HtmlTextEscapingMode.CDATA
+              || m == HtmlTextEscapingMode.PLAIN_TEXT) {
+            renderCdata(localName, el, asXml);
           } else {
-            for (Node c = first; c != null; c = c.getNextSibling()) {
-              render(c, ns, renderUnsafe);
-            }
+            renderSibs(first, ns, renderUnsafe);
           }
-          // This is not correct for HTML <plaintext> nodes, but live with it,
-          // since handling plaintext correctly would require omitting end tags
-          // for parent nodes, and so significantly complicate rendering for a
-          // node we shouldn't ever render anyway.
-          out.append("</")
-              .append(out, tagNameStart, tagNameEnd)
-              .append('>');
+          out.append("</").append(out, tagNameStart, tagNameEnd).append(">");
         }
         break;
       }
@@ -688,13 +628,7 @@ final class Renderer {
         break;
       case Node.CDATA_SECTION_NODE:
         String value = node.getNodeValue();
-        if (asXml && !value.contains("]]>")) {
-          out.append("<![CDATA[");
-          out.append(value);
-          out.append("]]>");
-        } else {
-          Escaping.escapeXml(value, true, out);
-        }
+        Escaping.escapeXml(value, true, out);
         break;
       case Node.ATTRIBUTE_NODE: {
         Attr a = (Attr) node;
@@ -805,6 +739,41 @@ final class Renderer {
     }
   }
 
+  // This emits the contents of an HTML element that starts a RAWTEXT
+  // parsing context, which means no entities or tags are parsed.
+  private void renderCdata(String localName, Element el, boolean asXml) {
+    StringBuilder cdata = new StringBuilder();
+    for (Node c = el.getFirstChild(); c != null; c = c.getNextSibling()) {
+      switch (c.getNodeType()) {
+        case Node.TEXT_NODE: case Node.CDATA_SECTION_NODE:
+          String text = c.getNodeValue();
+          if (asXml) {
+            Escaping.escapeXml(text, true, cdata);
+          } else {
+            cdata.append(text);
+          }
+          break;
+        default:
+          cdata.append(Nodes.render(c));
+          break;
+      }
+    }
+
+    // Whether we're emitting xml or html, verify that the result will
+    // not break html parsing.
+    int problemIndex = checkHtmlCdataCloseable(localName, cdata);
+    if (problemIndex != -1) {
+      throw new UncheckedUnrenderableException(
+          "Document not renderable due to '"
+           + cdata.subSequence(
+               problemIndex,
+               Math.min(cdata.length(), problemIndex + 10))
+               + "' in RAWTEXT element");
+    }
+
+    out.append(cdata);
+  }
+
   private static final int COMMON_NS_DEPTH = depth(Namespaces.COMMON);
   private Namespaces addNamespace(
       Namespaces base, String uri, String suggestedPrefix) {
@@ -900,6 +869,10 @@ final class Renderer {
     return true;
   }
 
+  private static boolean cdataRenderable(char ch) {
+    return '\u0000' < ch && ch < '\u007f';
+  }
+
   /**
    * Check that the content of a CDATA element does not contain a close tag
    * for that element or unbalanced escaping text spans.
@@ -912,6 +885,9 @@ final class Renderer {
     int escapingTextSpanStart = -1;
     for (int i = 0, n = sb.length(); i < n; ++i) {
       char ch = sb.charAt(i);
+      if (!cdataRenderable(ch)) {
+        return i;
+      }
       switch (ch) {
         case '<':
           if (i + 3 < n

@@ -187,17 +187,17 @@ public class TemplateSanitizerTest extends CajaTestCase {
         "<input type=\"text\" />");
     assertValid(
         htmlFragment(fromString("<button type=submit>")),
-        "<button type=\"submit\" />");
+        "<button type=\"submit\"></button>");
     assertValid(
         htmlFragment(fromString("<BUTTON TYPE=SUBMIT>")),
-        "<button type=\"SUBMIT\" />");
+        "<button type=\"SUBMIT\"></button>");
     assertValid(
         htmlFragment(fromString("<button type=text>")),
-        "<button />",
+        "<button></button>",
         "WARNING: attribute type cannot have value text");
     assertValid(
         htmlFragment(fromString("<BUTTON TYPE=TEXT>")),
-        "<button />",
+        "<button></button>",
         "WARNING: attribute type cannot have value TEXT");
   }
   public final void testIllegalAttributeValue() throws Exception {

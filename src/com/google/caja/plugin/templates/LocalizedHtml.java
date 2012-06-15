@@ -139,7 +139,18 @@ public final class LocalizedHtml {
           }
           if (!mainIt.hasNext()) { return false; }
           Token<HtmlTokenType> t = mainIt.next();
-          if (t.type != HtmlTokenType.TAGBEGIN || !"<ihtml:ph".equals(t.text)) {
+          if (t.type != HtmlTokenType.TAGBEGIN) {
+            pending = t;
+            return true;
+          }
+          if ("</ihtml:ph".equals(t.text)) {
+            while (mainIt.hasNext()) {
+              t = mainIt.next();
+              if (t.type == HtmlTokenType.TAGEND) { break; }
+            }
+            continue;
+          }
+          if (!"<ihtml:ph".equals(t.text)) {
             pending = t;
             return true;
           }

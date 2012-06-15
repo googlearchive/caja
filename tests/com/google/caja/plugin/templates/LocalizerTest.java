@@ -111,7 +111,7 @@ public class LocalizerTest extends CajaTestCase {
         + "  Hello, World!\n"  // Not a message.
         // Untranslated.
         + "  We come in\n"
-        + "    <ihtml:dynamic expr=\"peaceOrWar()\" />.\n"
+        + "    <ihtml:dynamic expr=\"peaceOrWar()\"></ihtml:dynamic>.\n"
         + "  akeTay emay otay ouryay LEADER.\n"
         // Out of order substitution.
         + "  ore-May poofs and-ay ake-may em-thay cheesy, ease-play!\n"
@@ -133,19 +133,19 @@ public class LocalizerTest extends CajaTestCase {
     assertEquals(Locale.ENGLISH, context.getLocale());
     assertEquals(
         ""
-        + "\n  We come in\n  <ihtml:ph name=\"declaration\" />."
+        + "\n  We come in\n  <ihtml:ph name=\"declaration\"></ihtml:ph>."
         + "\n  ",
         context.getMessageByName("m1").getSerializedForm());
     assertEquals(
         ""
-        + "\n  Take me to your <ihtml:ph name=\"potentate\" />."
+        + "\n  Take me to your <ihtml:ph name=\"potentate\"></ihtml:ph>."
         + "\n  ",
         context.getMessageByName("m2").getSerializedForm());
     assertEquals(
         ""
         + "\n  Do you have any more of those Earth-style"
-        + "\n  <ihtml:ph name=\"flavor\" />"
-        + "\n  <ihtml:ph name=\"snackFood\" />?"
+        + "\n  <ihtml:ph name=\"flavor\"></ihtml:ph>"
+        + "\n  <ihtml:ph name=\"snackFood\"></ihtml:ph>?"
         + "\n  ",
         context.getMessageByName("m3").getSerializedForm());
     assertNoErrors();
@@ -195,7 +195,8 @@ public class LocalizerTest extends CajaTestCase {
     LocalizedHtml msg = context.getMessageByName("notSiblings");
     assertEquals(
         Nodes.render(xmlFragment(fromString(
-            "<ihtml:ph name=startLink />Click<ihtml:ph name=endLink />")),
+            "<ihtml:ph name=startLink></ihtml:ph>Click"
+            + "<ihtml:ph name=endLink></ihtml:ph>")),
             MarkupRenderMode.XML),
         msg.getSerializedForm());
     assertEquals(
