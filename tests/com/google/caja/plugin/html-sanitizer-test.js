@@ -344,6 +344,23 @@ jsunitRegister('testSaxParser', function () {
   jsunit.pass();
 });
 
+// legacy parser drops unknown tags
+if (!html.isLegacy) {
+  jsunitRegister('testSaxParserUnknownTags', function () {
+    assertSAXEvents(
+        '<div><unknown1><unknown2 bar></unknown1>',
+        '$P',
+        'startDoc', '', '$P',
+        'startTag', 'div[]', '$P',
+        'startTag', 'unknown1[]', '$P',
+        'startTag', 'unknown2[bar;bar]', '$P',
+        'endTag', 'unknown1', '$P',
+        'endDoc', '', '$P'
+    );
+    jsunit.pass();
+  });
+}
+
 jsunitRegister('testSaxParserConfusingScripts', function () {
   assertSAXEvents(
       '<div class="testcontainer" id="test">' +

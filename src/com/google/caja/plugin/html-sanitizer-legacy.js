@@ -618,7 +618,8 @@ var html = (function(html4) {
     sanitize: sanitize,
     sanitizeAttribs: sanitizeAttribs,
     sanitizeWithPolicy: sanitizeWithPolicy,
-    unescapeEntities: unescapeEntities
+    unescapeEntities: unescapeEntities,
+    isLegacy: true
   };
 })(html4);
 

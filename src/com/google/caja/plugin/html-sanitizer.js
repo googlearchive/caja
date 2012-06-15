@@ -347,11 +347,9 @@ var html = (function(html4) {
               // fast case, no attribute parsing needed
               pos += 2;
               tagName = lcase(m[1]);
-              if (html4.ELEMENTS.hasOwnProperty(tagName)) {
-                if (h['endTag']) {
-                  h['endTag'](tagName, param, continuationMarker,
-                    continuationMaker(h, parts, pos, state, param));
-                }
+              if (h['endTag']) {
+                h['endTag'](tagName, param, continuationMarker,
+                  continuationMaker(h, parts, pos, state, param));
               }
             } else {
               // slow case, need to parse attributes
@@ -372,18 +370,16 @@ var html = (function(html4) {
               // fast case, no attribute parsing needed
               pos += 2;
               tagName = lcase(m[1]);
-              if (html4.ELEMENTS.hasOwnProperty(tagName)) {
-                if (h['startTag']) {
-                  h['startTag'](tagName, [], param, continuationMarker,
-                    continuationMaker(h, parts, pos, state, param));
-                }
-                // tags like <script> and <textarea> have special parsing
-                var eflags = html4.ELEMENTS[tagName];
-                if (eflags & EFLAGS_TEXT) {
-                  var tag = { name: tagName, next: pos, eflags: eflags };
-                  pos = parseText(
-                    parts, tag, h, param, continuationMarker, state);
-                }
+              if (h['startTag']) {
+                h['startTag'](tagName, [], param, continuationMarker,
+                  continuationMaker(h, parts, pos, state, param));
+              }
+              // tags like <script> and <textarea> have special parsing
+              var eflags = html4.ELEMENTS[tagName];
+              if (eflags & EFLAGS_TEXT) {
+                var tag = { name: tagName, next: pos, eflags: eflags };
+                pos = parseText(
+                  parts, tag, h, param, continuationMarker, state);
               }
             } else {
               // slow case, need to parse attributes
@@ -514,11 +510,9 @@ var html = (function(html4) {
     var tag = parseTagAndAttrs(parts, pos);
     // drop unclosed tags
     if (!tag) { return parts.length; }
-    if (tag.eflags !== void 0) {
-      if (h['endTag']) {
-        h['endTag'](tag.name, param, continuationMarker,
-          continuationMaker(h, parts, pos, state, param));
-      }
+    if (h['endTag']) {
+      h['endTag'](tag.name, param, continuationMarker,
+        continuationMaker(h, parts, pos, state, param));
     }
     return tag.next;
   }
@@ -527,17 +521,16 @@ var html = (function(html4) {
     var tag = parseTagAndAttrs(parts, pos);
     // drop unclosed tags
     if (!tag) { return parts.length; }
-    if (tag.eflags !== void 0) {
-      if (h['startTag']) {
-        h['startTag'](tag.name, tag.attrs, param, continuationMarker,
-          continuationMaker(h, parts, tag.next, state, param));
-      }
-      // tags like <script> and <textarea> have special parsing
-      if (tag.eflags & EFLAGS_TEXT) {
-        return parseText(parts, tag, h, param, continuationMarker, state);
-      }
+    if (h['startTag']) {
+      h['startTag'](tag.name, tag.attrs, param, continuationMarker,
+        continuationMaker(h, parts, tag.next, state, param));
     }
-    return tag.next;
+    // tags like <script> and <textarea> have special parsing
+    if (tag.eflags & EFLAGS_TEXT) {
+      return parseText(parts, tag, h, param, continuationMarker, state);
+    } else {
+      return tag.next;
+    }
   }
 
   var endTagRe = {};
@@ -576,12 +569,9 @@ var html = (function(html4) {
   // at this point, parts[pos-1] is either "<" or "<\/".
   function parseTagAndAttrs(parts, pos) {
     var m = /^(\w+)/.exec(parts[pos]);
-    var tag = { name: lcase(m[1]) };
-    if (html4.ELEMENTS.hasOwnProperty(tag.name)) {
-      tag.eflags = html4.ELEMENTS[tag.name];
-    } else {
-      tag.eflags = void 0;
-    }
+    var tag = {};
+    tag.name = lcase(m[1]);
+    tag.eflags = html4.ELEMENTS[tag.name];
     var buf = parts[pos].substr(m[0].length);
     // Find the next '>'.  We optimistically assume this '>' is not in a
     // quoted context, and further down we fix things up if it turns out to

@@ -43,25 +43,40 @@ var parser0 = makeParser(html0);
 var parser1 = makeParser(html1);
 var parser2 = typeof html2 != 'undefined' && makeParser(html2);
 
-function regress(test) {
+function regressParser(test) {
   var p0 = parser0(test);
   var p1 = parser1(test);
   assertEquals(p0, p1);
+  if (parser2) {
+    var p2 = parser2(test);
+    assertEquals(p1, p2);
+  }
+}
+
+function regressSanitizer(test) {
   var s0 = html0.sanitize(test);
   var s1 = html1.sanitize(test);
   assertEquals(s0, s1);
   if (parser2) {
-    var p2 = parser2(test);
-    assertEquals(p1, p2);
     var s2 = html2.sanitize(test);
     assertEquals(s1, s2);
   }
 }
 
-jsunitRegister('testSanitizerRegress', function() {
+jsunitRegister('testRegressParser', function() {
   var tests = data.expand(data.tests.concat(data._more));
   for (var k = 0; k < tests.length; k++) {
-    regress(tests[k]);
+    regressParser(tests[k]);
   }
-  jsunitPass('testSanitizerRegress');
+  jsunitPass();
 });
+
+jsunitRegister('testRegressSanitizer', function() {
+  var tests = data.expand(data.tests.concat(data._more).concat(data.loose));
+  for (var k = 0; k < tests.length; k++) {
+    regressSanitizer(tests[k]);
+  }
+  jsunitPass();
+});
+
+

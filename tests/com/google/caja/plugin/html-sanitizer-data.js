@@ -27,10 +27,11 @@ var data = (function() {
     return expanded;
   }
 
-  // html-sanitizer-bench uses tests and ignores _more
-  // html-sanitizer-regress uses both tests and _more
+  // html-sanitizer-bench only uses tests
+  // html-sanitizer-regress uses tests, _more, and loose
   var tests = [];
   var _more = [];
+  var loose = [];
 
   tests.push('<div><</div>a>b</div>c');
   _more.push('<div>></div>a>b</div>c');
@@ -276,31 +277,53 @@ var data = (function() {
   tests.push('<a>1</a>2');
   _more.push('<a> 1 </a> 2');
 
-  tests.push('<a><b><c>');
-  tests.push('<a>1<b>2<c>3');
-  tests.push('<a>1<b>2<c>3</a>4');
-  _more.push('<a>1<b>2<c>3</b>4');
-  _more.push('<a>1<b>2<c>3</c>4');
+  tests.push('<a><b><s>');
+  tests.push('<a>1<b>2<s>3');
+  tests.push('<a>1<b>2<s>3</a>4');
+  _more.push('<a>1<b>2<s>3</b>4');
+  _more.push('<a>1<b>2<s>3</s>4');
 
-  tests.push('<a>1<b>2<c>3</a>4</a>5');
-  _more.push('<a>1<b>2<c>3</a>4</b>5');
-  _more.push('<a>1<b>2<c>3</a>4</c>5');
+  tests.push('<a>1<b>2<s>3</a>4</a>5');
+  _more.push('<a>1<b>2<s>3</a>4</b>5');
+  _more.push('<a>1<b>2<s>3</a>4</s>5');
 
-  _more.push('<a>1<b>2<c>3</b>4</a>5');
-  _more.push('<a>1<b>2<c>3</b>4</b>5');
-  _more.push('<a>1<b>2<c>3</b>4</c>5');
+  _more.push('<a>1<b>2<s>3</b>4</a>5');
+  _more.push('<a>1<b>2<s>3</b>4</b>5');
+  _more.push('<a>1<b>2<s>3</b>4</s>5');
 
-  _more.push('<a>1<b>2<c>3</c>4</a>5');
-  _more.push('<a>1<b>2<c>3</c>4</b>5');
-  _more.push('<a>1<b>2<c>3</c>4</c>5');
+  _more.push('<a>1<b>2<s>3</s>4</a>5');
+  _more.push('<a>1<b>2<s>3</s>4</b>5');
+  _more.push('<a>1<b>2<s>3</s>4</s>5');
 
   tests.push(repeat('<a><b>', 100) + repeat('</b></a>', 100));
-  tests.push(repeat('<a><b>', 100) + repeat('</c></b>', 100));
+  tests.push(repeat('<a><b>', 100) + repeat('</s></b>', 100));
+
+  // The legacy parser drops unknown tags; the current parser accepts them.
+  // So these cases will fail a parser regression, but should still pass a
+  // sanitizer regression.
+  loose.push('<a><b><c>');
+  loose.push('<a>1<b>2<c>3');
+  loose.push('<a>1<b>2<c>3</a>4');
+  loose.push('<a>1<b>2<c>3</b>4');
+  loose.push('<a>1<b>2<c>3</c>4');
+
+  loose.push('<a>1<b>2<s>3</a>4</a>5');
+  loose.push('<a>1<b>2<s>3</a>4</b>5');
+  loose.push('<a>1<b>2<s>3</a>4</s>5');
+
+  loose.push('<a>1<b>2<s>3</b>4</a>5');
+  loose.push('<a>1<b>2<s>3</b>4</b>5');
+  loose.push('<a>1<b>2<s>3</b>4</s>5');
+
+  loose.push('<a>1<b>2<s>3</s>4</a>5');
+  loose.push('<a>1<b>2<s>3</s>4</b>5');
+  loose.push('<a>1<b>2<s>3</s>4</c>5');
 
   return {
     expand: expand,
     repeat: repeat,
     tests: tests,
-    _more: _more
+    _more: _more,
+    loose: loose
   };
 })();
