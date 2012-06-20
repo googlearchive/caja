@@ -92,7 +92,6 @@ public final class CssDynamicExpressionRewriter {
                 ssp.typePrefix() + ssp.suffixedIdentifier(""));
           } else {
             String ident = ssp.suffixedIdentifier(gadgetNameSuffix);
-            System.err.println("ident=" + ident);
             replacement = ".".equals(ssp.typePrefix())
                 ? new CssTree.ClassLiteral(ssp.getFilePosition(), "." + ident)
                 : new CssTree.IdLiteral(ssp.getFilePosition(), "#" + ident);
