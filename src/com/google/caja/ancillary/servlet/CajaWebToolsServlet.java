@@ -79,6 +79,10 @@ public class CajaWebToolsServlet extends HttpServlet {
   @Override
   public void doGet(HttpServletRequest req, HttpServletResponse resp)
       throws IOException {
+    // URL path parameters can trick IE into misinterpreting responses as HTML
+    if (req.getRequestURI().contains(";")) {
+      throw new IOException("Invalid URL path parameter");
+    }
     String reqPath = req.getPathInfo();
     // Redirect to /index preserving any query string.
     if (null == reqPath || "/".equals(reqPath)) {
@@ -108,6 +112,9 @@ public class CajaWebToolsServlet extends HttpServlet {
   @Override
   public void doPost(HttpServletRequest req, HttpServletResponse resp)
       throws IOException {
+    if (req.getRequestURI().contains(";")) {
+      throw new IOException("Invalid URL path parameter");
+    }
     String reqPath = req.getPathInfo();
     // Special case uploads since they require very different processing.
     if ("/upload".equals(reqPath)) {
@@ -136,6 +143,7 @@ public class CajaWebToolsServlet extends HttpServlet {
     if (result.status != 0) { out.setStatus(result.status); }
     String contentType = result.getContentType();
     if (contentType != null) { out.setContentType(contentType); }
+    out.setHeader("X-Content-Type-Options", "nosniff");
     for (Pair<String, String> header : result.headers) {
       if (containsControlChar(header.b)) {
         throw new IOException("Split header <<" + header + ">>");

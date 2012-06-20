@@ -146,19 +146,24 @@ public class CajolingServlet extends HttpServlet {
       return;
     }
 
-    handle(resp, new HttpContentHandlerArgs(req), fetchedData);
+    handle(req, resp, new HttpContentHandlerArgs(req), fetchedData);
   }
 
   @Override
   public void doGet(HttpServletRequest req, HttpServletResponse resp)
       throws ServletException {
-    handle(resp, new HttpContentHandlerArgs(req), null);
+    handle(req, resp, new HttpContentHandlerArgs(req), null);
   }
 
-  private void handle(HttpServletResponse resp,
+  private void handle(HttpServletRequest req, HttpServletResponse resp,
                       ContentHandlerArgs args,
                       FetchedData inputFetchedData)
       throws ServletException {
+    // URL path parameters can trick IE into misinterpreting responses as HTML
+    if (req.getRequestURI().contains(";")) {
+      throw new ServletException("Invalid URL path parameter");
+    }
+
     MessageQueue mq = new SimpleMessageQueue();
     FetchedData result = service.handle(inputFetchedData, args, mq);
     if (result == null) {
@@ -181,6 +186,7 @@ public class CajolingServlet extends HttpServlet {
       resp.setContentType(responseContentType);
       resp.setContentLength(content.length);
       resp.setHeader(UMP.a, UMP.b);
+      resp.setHeader("X-Content-Type-Options", "nosniff");
 
       resp.getOutputStream().write(content);
       resp.getOutputStream().close();

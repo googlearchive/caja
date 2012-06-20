@@ -55,6 +55,10 @@ public class PrecajoleInfoServlet extends HttpServlet {
   public void doGet(HttpServletRequest req, HttpServletResponse resp)
       throws ServletException
   {
+    // URL path parameters can trick IE into misinterpreting responses as HTML
+    if (req.getRequestURI().contains(";")) {
+      throw new ServletException("Invalid URL path parameter");
+    }
     try {
       JSONObject info = jsonInfo();
       String rendered;
@@ -73,6 +77,7 @@ public class PrecajoleInfoServlet extends HttpServlet {
             "Please specify format=json, text, or html");
         return;
       }
+      resp.setHeader("X-Content-Type-Options", "nosniff");
       byte[] bytes = utf8(rendered);
       resp.setContentLength(bytes.length);
       resp.getOutputStream().write(bytes);

@@ -19,10 +19,6 @@
     <servlet-class>com.google.caja.service.CajolingServlet</servlet-class>
   </servlet>
   <servlet>
-    <servlet-name>ToolsServlet</servlet-name>
-    <servlet-class>com.google.caja.ancillary.servlet.MainServlet</servlet-class>
-  </servlet>
-  <servlet>
     <servlet-name>PrecajoleInfoServlet</servlet-name>
     <servlet-class>com.google.caja.service.PrecajoleInfoServlet</servlet-class>
   </servlet>
@@ -34,10 +30,6 @@
   <servlet-mapping>
     <servlet-name>CajolingServlet</servlet-name>
     <url-pattern>/cajole</url-pattern>
-  </servlet-mapping>
-  <servlet-mapping>
-    <servlet-name>ToolsServlet</servlet-name>
-    <url-pattern>/tools/*</url-pattern>
   </servlet-mapping>
   <servlet-mapping>
     <servlet-name>PrecajoleInfoServlet</servlet-name>
