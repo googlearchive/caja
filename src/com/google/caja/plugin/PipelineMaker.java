@@ -25,7 +25,6 @@ import com.google.caja.plugin.stages.InferFilePositionsStage;
 import com.google.caja.plugin.stages.InlineCssImportsStage;
 import com.google.caja.plugin.stages.JobCache;
 import com.google.caja.plugin.stages.LegacyNamespaceFixupStage;
-import com.google.caja.plugin.stages.OpenTemplateStage;
 import com.google.caja.plugin.stages.OptimizeJavascriptStage;
 import com.google.caja.plugin.stages.PipelineFetchStage;
 import com.google.caja.plugin.stages.PipelineStoreStage;
@@ -151,9 +150,6 @@ public final class PipelineMaker {
   public static final Planner.PlanState HTML_XMLNS = makePrecond(
       "html+xmlns", "instead of html if no un-namespaced DOMs on the input.");
 
-  public static final Planner.PlanState OPT_OPENTEMPLATE = makePrecond(
-      "opt+opentemplate", "to desugar open(Template(...)) calls.");
-
   private static final Planner.PlanState HTML_STATIC = makeInner(
       "html+static");
   private static final Planner.PlanState HTML_STATIC_STRIPPED = makeInner(
@@ -233,12 +229,6 @@ public final class PipelineMaker {
           }
         }.given(HTML_STATIC_STRIPPED).given(CSS_NAMESPACED)
          .produces(JS).produces(HTML_SAFE_STATIC),
-
-        new Tool() {
-          public void operate(PlanInputs in, List<Pipeline.Stage<Jobs>> out) {
-            out.add(new OpenTemplateStage());
-          }
-        }.given(JS).given(OPT_OPENTEMPLATE).produces(JS),
 
         new Tool() {
           public void operate(PlanInputs in, List<Pipeline.Stage<Jobs>> out) {
