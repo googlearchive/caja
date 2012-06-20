@@ -658,15 +658,17 @@ class Processor {
   }
 
   private static List<String> cssExprParts(CssTree t) {
-    final List<String> out = Lists.newArrayList();
-    t.acceptPostOrder(new Visitor() {
-      public boolean visit(AncestorChain<?> ac) {
-        Name part = ac.node.getAttributes().get(CssValidator.CSS_PROPERTY_PART);
-        if (part != null) { out.add(part.getCanonicalForm()); }
-        return true;
-      }
-    }, null);
+    List<String> out = Lists.newArrayList();
+    gatherCssExprParts(t, out);
     return Collections.unmodifiableList(out);
+  }
+
+  private static void gatherCssExprParts(CssTree t, List<String> out) {
+    for (CssTree child : t.children()) {
+      gatherCssExprParts(child, out);
+    }
+    Name part = t.getAttributes().get(CssValidator.CSS_PROPERTY_PART);
+    if (part != null) { out.add(part.getCanonicalForm()); }
   }
 
   private static boolean cssExprPartsConsistent(

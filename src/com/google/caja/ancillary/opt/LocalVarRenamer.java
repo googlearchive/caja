@@ -17,7 +17,6 @@ package com.google.caja.ancillary.opt;
 import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.MutableParseTreeNode;
 import com.google.caja.parser.ParseTreeNode;
-import com.google.caja.parser.Visitor;
 import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.CatchStmt;
 import com.google.caja.parser.js.Declaration;
@@ -66,7 +65,7 @@ public final class LocalVarRenamer {
     // Walk the tree assigning names efficiently.
     assignNames(program.getAttributes().get(SCOPE).parent);
     // Modify the tree to use the assigned names.
-    rename(program);
+    rename(null, program);
     return program;
   }
 
@@ -259,29 +258,33 @@ public final class LocalVarRenamer {
     }
   }
 
-  private static void rename(ParseTreeNode n) {
+  private static void rename(ParseTreeNode parent, ParseTreeNode n) {
     // Walk post order so that function constructors are renamed before any
     // function declaration that contains them.
 
     // All the mutation done by this optimizer is done here, and the only
     // mutation done is to replace Identifier nodes.
-    n.acceptPostOrder(new Visitor() {
-      public boolean visit(AncestorChain<?> ac) {
-        ParseTreeNode n = ac.node;
-        if (n instanceof Reference) {
-          if (!(Operation.is(ac.parent.node, Operator.MEMBER_ACCESS)
-                && n == ac.parent.node.children().get(1))) {
-            renameOne((Reference) n);
-          }
-        } else if (n instanceof FunctionConstructor) {
-          FunctionConstructor fc = (FunctionConstructor) n;
-          if (fc.getIdentifierName() != null) { renameOne(fc); }
-        } else if (n instanceof Declaration) {
-          renameOne((Declaration) n);
-        }
-        return true;
+    for (ParseTreeNode child : n.children()) {
+      rename(n, child);
+    }
+    if (n instanceof Reference) {
+      if (!isMemberAccess(parent, (Reference) n)) {
+        renameOne((Reference) n);
       }
-    }, null);
+    } else if (n instanceof FunctionConstructor) {
+      FunctionConstructor fc = (FunctionConstructor) n;
+      if (fc.getIdentifierName() != null) {
+        renameOne(fc);
+      }
+    } else if (n instanceof Declaration) {
+      renameOne((Declaration) n);
+    }
+  }
+
+  private static boolean isMemberAccess(ParseTreeNode parent, Reference ref) {
+    return parent != null
+        && Operation.is(parent, Operator.MEMBER_ACCESS)
+        && parent.children().get(1) == ref;
   }
 
   private static void renameOne(MutableParseTreeNode n) {

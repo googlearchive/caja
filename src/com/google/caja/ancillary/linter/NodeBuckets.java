@@ -19,7 +19,6 @@ import java.util.Set;
 
 import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.ParseTreeNode;
-import com.google.caja.parser.Visitor;
 import com.google.caja.util.Multimap;
 import com.google.caja.util.Multimaps;
 import com.google.caja.util.Sets;
@@ -38,21 +37,19 @@ final class NodeBuckets {
    * @param classes the set of nodes for which {@link #get} will return
    *     non-null.
    */
-  private NodeBuckets(
-      AncestorChain<?> ac,
+  private NodeBuckets load(
+      final AncestorChain<?> ac,
       final Iterable<Class<? extends ParseTreeNode>> classes) {
-    ac.node.acceptPreOrder(new Visitor() {
-      public boolean visit(AncestorChain<?> ac) {
-        for (Class<? extends ParseTreeNode> cl : classes) {
-          if (cl.isInstance(ac.node)) {
-            buckets.put(cl, ac);
-          }
-        }
-        return true;
+    for (Class<? extends ParseTreeNode> cl : classes) {
+      if (cl.isInstance(ac.node)) {
+        buckets.put(cl, ac);
       }
-    }, ac.parent);
+    }
+    for (ParseTreeNode child : ac.node.children()) {
+      load(AncestorChain.instance(ac, child), classes);
+    }
+    return this;
   }
-
 
   @SuppressWarnings("unchecked")
   public <T extends ParseTreeNode>
@@ -65,14 +62,14 @@ final class NodeBuckets {
   }
 
   static class Maker {
-    private Set<Class<? extends ParseTreeNode>> types = Sets.newLinkedHashSet();
+    private final Set<Class<? extends ParseTreeNode>> types = Sets.newLinkedHashSet();
     private Maker() { /* no public zero-argument ctor */ }
     Maker with(Class<? extends ParseTreeNode> cl) {
       types.add(cl);
       return this;
     }
     NodeBuckets under(AncestorChain<?> ac) {
-      return new NodeBuckets(ac, types);
+      return new NodeBuckets().load(ac, types);
     }
   }
 
