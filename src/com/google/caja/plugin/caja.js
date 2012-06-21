@@ -405,8 +405,8 @@ var caja = (function () {
 
   function loadCajaFrame(config, filename, frameReady) {
     var frameWin = createFrame(filename);
-    // debuggable or minified.  ?debug=1 is for shindig
-    var suffix = config['debug'] ? '.js?debug=1' : '.opt.js';
+    // debuggable or minified.  ?debug=1 inhibits compilation in shindig
+    var suffix = config['debug'] ? '.js?debug=1' : '.opt.js?debug=1';
     var url = joinUrl(
       config['resources'],
       cajaBuildVersion + '/' + filename + suffix);
