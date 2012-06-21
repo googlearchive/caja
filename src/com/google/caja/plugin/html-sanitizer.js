@@ -268,18 +268,24 @@ var html = (function(html4) {
    *     and a parameter.  The parameter is passed on to the handler methods.
    */
   function makeSaxParser(handler) {
+    // Accept quoted or unquoted keys (Closure compat)
+    var hcopy = {
+      cdata: handler.cdata || handler['cdata'],
+      endDoc: handler.endDoc || handler['endDoc'],
+      endTag: handler.endTag || handler['endTag'],
+      pcdata: handler.pcdata || handler['pcdata'],
+      rcdata: handler.rcdata || handler['rcdata'],
+      startDoc: handler.startDoc || handler['startDoc'],
+      startTag: handler.startTag || handler['startTag']
+    };
     return function(htmlText, param) {
-      return parse(htmlText, handler, param);
+      return parse(htmlText, hcopy, param);
     };
   }
 
   // Parsing strategy is to split input into parts that might be lexically
   // meaningful (every ">" becomes a separate part), and then recombine
   // parts if we discover they're in a different context.
-
-  // Note, html-sanitizer filters unknown tags here, even though they also
-  // get filtered out by the sanitizer's handler.  This is back-compat
-  // behavior; makeSaxParser is public.
 
   // TODO(felix8a): Significant performance regressions from -legacy,
   // tested on
@@ -304,7 +310,6 @@ var html = (function(html4) {
 
   var continuationMarker = {};
   function parse(htmlText, handler, param) {
-    var h = handler;
     var m, p, tagName;
     var parts = htmlSplit(htmlText);
     var state = {
@@ -322,7 +327,7 @@ var html = (function(html4) {
 
   function parseCPS(h, parts, initial, state, param) {
     try {
-      if (h['startDoc'] && initial == 0) { h['startDoc'](param); }
+      if (h.startDoc && initial == 0) { h.startDoc(param); }
       var m, p, tagName;
       for (var pos = initial, end = parts.length; pos < end;) {
         var current = parts[pos++];
@@ -330,13 +335,13 @@ var html = (function(html4) {
         switch (current) {
         case '&':
           if (ENTITY_RE.test(next)) {
-            if (h['pcdata']) {
-              h['pcdata']('&' + next, param, continuationMarker,
+            if (h.pcdata) {
+              h.pcdata('&' + next, param, continuationMarker,
                 continuationMaker(h, parts, pos, state, param));
             }
             pos++;
           } else {
-            if (h['pcdata']) { h['pcdata']("&amp;", param, continuationMarker,
+            if (h.pcdata) { h.pcdata("&amp;", param, continuationMarker,
                 continuationMaker(h, parts, pos, state, param));
             }
           }
@@ -347,8 +352,8 @@ var html = (function(html4) {
               // fast case, no attribute parsing needed
               pos += 2;
               tagName = lcase(m[1]);
-              if (h['endTag']) {
-                h['endTag'](tagName, param, continuationMarker,
+              if (h.endTag) {
+                h.endTag(tagName, param, continuationMarker,
                   continuationMaker(h, parts, pos, state, param));
               }
             } else {
@@ -358,8 +363,8 @@ var html = (function(html4) {
                 parts, pos, h, param, continuationMarker, state);
             }
           } else {
-            if (h['pcdata']) {
-              h['pcdata']('&lt;/', param, continuationMarker,
+            if (h.pcdata) {
+              h.pcdata('&lt;/', param, continuationMarker,
                 continuationMaker(h, parts, pos, state, param));
             }
           }
@@ -370,8 +375,8 @@ var html = (function(html4) {
               // fast case, no attribute parsing needed
               pos += 2;
               tagName = lcase(m[1]);
-              if (h['startTag']) {
-                h['startTag'](tagName, [], param, continuationMarker,
+              if (h.startTag) {
+                h.startTag(tagName, [], param, continuationMarker,
                   continuationMaker(h, parts, pos, state, param));
               }
               // tags like <script> and <textarea> have special parsing
@@ -387,8 +392,8 @@ var html = (function(html4) {
                 parts, pos, h, param, continuationMarker, state);
             }
           } else {
-            if (h['pcdata']) {
-              h['pcdata']('&lt;', param, continuationMarker,
+            if (h.pcdata) {
+              h.pcdata('&lt;', param, continuationMarker,
                 continuationMaker(h, parts, pos, state, param));
             }
           }
@@ -412,16 +417,16 @@ var html = (function(html4) {
             }
           }
           if (state.noMoreEndComments) {
-            if (h['pcdata']) {
-              h['pcdata']('&lt;!--', param, continuationMarker,
+            if (h.pcdata) {
+              h.pcdata('&lt;!--', param, continuationMarker,
                 continuationMaker(h, parts, pos, state, param));
             }
           }
           break;
         case '<\!':
           if (!/^\w/.test(next)) {
-            if (h['pcdata']) {
-              h['pcdata']('&lt;!', param, continuationMarker,
+            if (h.pcdata) {
+              h.pcdata('&lt;!', param, continuationMarker,
                 continuationMaker(h, parts, pos, state, param));
             }
           } else {
@@ -437,8 +442,8 @@ var html = (function(html4) {
               }
             }
             if (state.noMoreGT) {
-              if (h['pcdata']) {
-                h['pcdata']('&lt;!', param, continuationMarker,
+              if (h.pcdata) {
+                h.pcdata('&lt;!', param, continuationMarker,
                   continuationMaker(h, parts, pos, state, param));
               }
             }
@@ -457,29 +462,29 @@ var html = (function(html4) {
             }
           }
           if (state.noMoreGT) {
-            if (h['pcdata']) {
-              h['pcdata']('&lt;?', param, continuationMarker,
+            if (h.pcdata) {
+              h.pcdata('&lt;?', param, continuationMarker,
                 continuationMaker(h, parts, pos, state, param));
             }
           }
           break;
         case '>':
-          if (h['pcdata']) {
-            h['pcdata']("&gt;", param, continuationMarker,
+          if (h.pcdata) {
+            h.pcdata("&gt;", param, continuationMarker,
               continuationMaker(h, parts, pos, state, param));
           }
           break;
         case '':
           break;
         default:
-          if (h['pcdata']) {
-            h['pcdata'](current, param, continuationMarker,
+          if (h.pcdata) {
+            h.pcdata(current, param, continuationMarker,
               continuationMaker(h, parts, pos, state, param));
           }
           break;
         }
       }
-      if (h['endDoc']) { h['endDoc'](param); }
+      if (h.endDoc) { h.endDoc(param); }
     } catch (e) {
       if (e !== continuationMarker) { throw e; }
     }
@@ -510,8 +515,8 @@ var html = (function(html4) {
     var tag = parseTagAndAttrs(parts, pos);
     // drop unclosed tags
     if (!tag) { return parts.length; }
-    if (h['endTag']) {
-      h['endTag'](tag.name, param, continuationMarker,
+    if (h.endTag) {
+      h.endTag(tag.name, param, continuationMarker,
         continuationMaker(h, parts, pos, state, param));
     }
     return tag.next;
@@ -521,8 +526,8 @@ var html = (function(html4) {
     var tag = parseTagAndAttrs(parts, pos);
     // drop unclosed tags
     if (!tag) { return parts.length; }
-    if (h['startTag']) {
-      h['startTag'](tag.name, tag.attrs, param, continuationMarker,
+    if (h.startTag) {
+      h.startTag(tag.name, tag.attrs, param, continuationMarker,
         continuationMaker(h, parts, tag.next, state, param));
     }
     // tags like <script> and <textarea> have special parsing
@@ -551,13 +556,13 @@ var html = (function(html4) {
     if (p < end) { p -= 1; }
     var buf = parts.slice(first, p).join('');
     if (tag.eflags & html4.eflags['CDATA']) {
-      if (h['cdata']) {
-        h['cdata'](buf, param, continuationMarker,
+      if (h.cdata) {
+        h.cdata(buf, param, continuationMarker,
           continuationMaker(h, parts, p, state, param));
       }
     } else if (tag.eflags & html4.eflags['RCDATA']) {
-      if (h['rcdata']) {
-        h['rcdata'](normalizeRCData(buf), param, continuationMarker,
+      if (h.rcdata) {
+        h.rcdata(normalizeRCData(buf), param, continuationMarker,
           continuationMaker(h, parts, p, state, param));
       }
     } else {
@@ -885,22 +890,23 @@ var html = (function(html4) {
     return sanitizeWithPolicy(inputHtml, tagPolicy);
   }
 
-  return {
-    'escapeAttrib': escapeAttrib,
-    'makeHtmlSanitizer': makeHtmlSanitizer,
-    'makeSaxParser': makeSaxParser,
-    'makeTagPolicy': makeTagPolicy,
-    'normalizeRCData': normalizeRCData,
-    'sanitize': sanitize,
-    'sanitizeAttribs': sanitizeAttribs,
-    'sanitizeWithPolicy': sanitizeWithPolicy,
-    'unescapeEntities': unescapeEntities
-  };
+  // Export both quoted and unquoted names for Closure linkage.
+  var html = {};
+  html.escapeAttrib = html['escapeAttrib'] = escapeAttrib;
+  html.makeHtmlSanitizer = html['makeHtmlSanitizer'] = makeHtmlSanitizer;
+  html.makeSaxParser = html['makeSaxParser'] = makeSaxParser;
+  html.makeTagPolicy = html['makeTagPolicy'] = makeTagPolicy;
+  html.normalizeRCData = html['normalizeRCData'] = normalizeRCData;
+  html.sanitize = html['sanitize'] = sanitize;
+  html.sanitizeAttribs = html['sanitizeAttribs'] = sanitizeAttribs;
+  html.sanitizeWithPolicy = html['sanitizeWithPolicy'] = sanitizeWithPolicy;
+  html.unescapeEntities = html['unescapeEntities'] = unescapeEntities;
+  return html;
 })(html4);
 
 var html_sanitize = html['sanitize'];
 
-// Exports for closure compiler.  Note this file is also cajoled
+// Exports for Closure compiler.  Note this file is also cajoled
 // for domado and run in an environment without 'window'
 if (typeof window !== 'undefined') {
   window['html'] = html;
