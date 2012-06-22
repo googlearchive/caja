@@ -17,7 +17,11 @@
 root=${1:-'.'}
 
 # Check for safe case-folding in Java (Turkish i problem)
-find "$root/src" -name "*.java" ! -name "Strings.java" -print0 |
+find "$root/src" \
+    -name "*.java" \
+    ! -name "Strings.java" \
+    ! -name "Playground.java" \
+    -print0 |
 xargs -0 egrep 'toLowerCase|toUpperCase|equalsIgnoreCase' |
 perl -pe 'END {
   if ($. > 0) {

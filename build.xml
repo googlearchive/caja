@@ -238,7 +238,8 @@
     </antcall>
   </target>
 
-  <target name="runtests" depends="AllTests,RuntestsRun,CacheTestSuccess"
+  <target name="runtests"
+      depends="playground,AllTests,RuntestsRun,CacheTestSuccess"
       description="$ ant runtests [-Dtest.filter=My\*Test]">
   </target>
 
