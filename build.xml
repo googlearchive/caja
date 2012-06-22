@@ -1179,11 +1179,12 @@
   <target name="Version.update" depends="Version.set" if="Version.changed">
     <!-- When svnversion changes, we need to recajole js and
          re-replace %VERSION%, so here we just nuke all target js -->
-    <delete>
+    <delete failonerror="false">
       <fileset dir="${lib}" includes="**/*.js"/>
       <fileset dir="${lib}" includes="**/*.html"/>
       <fileset dir="${precajolelib}" includes="**/data/*"/>
     </delete>
+    <mkdir dir="${lib.caja}/reporting"/>
     <echo append="false" file="${lib.caja}/reporting/Version"
           message="${build.svnVersion}"/>
   </target>
