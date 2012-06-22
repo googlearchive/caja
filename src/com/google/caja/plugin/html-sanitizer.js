@@ -215,7 +215,7 @@ var html = (function(html4) {
 
   var ATTR_RE = new RegExp(
     '^\\s*' +
-    '([a-z][a-z-]*)' +          // 1 = Attribute name
+    '([a-z][-\\w]*)' +          // 1 = Attribute name
     '(?:' + (
       '\\s*(=)\\s*' +           // 2 = Is there a value?
       '(' + (                   // 3 = Attribute value
@@ -227,7 +227,7 @@ var html = (function(html4) {
         // Positive lookahead to prevent interpretation of
         // <foo a= b=c> as <foo a='b=c'>
         // TODO(felix8a): might be able to drop this case
-        '(?=[a-z][a-z-]*\\s*=)' +
+        '(?=[a-z][-\\w]*\\s*=)' +
         '|' +
         // Unquoted value that isn't an attribute name
         // (since we didn't match the positive lookahead above)
@@ -271,6 +271,7 @@ var html = (function(html4) {
     // Accept quoted or unquoted keys (Closure compat)
     var hcopy = {
       cdata: handler.cdata || handler['cdata'],
+      comment: handler.comment || handler['comment'],
       endDoc: handler.endDoc || handler['endDoc'],
       endTag: handler.endTag || handler['endTag'],
       pcdata: handler.pcdata || handler['pcdata'],
@@ -411,6 +412,13 @@ var html = (function(html4) {
               if (parts[p] === '>' && /--$/.test(parts[p - 1])) { break; }
             }
             if (p < end) {
+              if (h.comment) {
+                var comment = parts.slice(pos, p).join('');
+                h.comment(
+                  comment.substr(0, comment.length - 2), param,
+                  continuationMarker,
+                  continuationMaker(h, parts, p + 1, state, param));
+              }
               pos = p + 1;
             } else {
               state.noMoreEndComments = true;

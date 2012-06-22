@@ -316,6 +316,9 @@ function assertSAXEvents(htmlSource, param, varargs_golden) {
     rcdata:   function (text, param) {
       addTextEvent('rcdata', text, param);
     },
+    comment:  function (text, param) {
+      events.push('comment', text, param);
+    },
     startDoc: function (param) {
       events.push('startDoc', '', param);
     },
@@ -343,6 +346,23 @@ jsunitRegister('testSaxParser', function () {
       'endDoc', '', '<param>');
   jsunit.pass();
 });
+
+// legacy parser doesn't have comment events
+// legacy parser doesn't allow _ in attr names
+if (!html.isLegacy) {
+  jsunitRegister('testSaxParserComments', function () {
+    assertSAXEvents(
+        '<some_tag some_attr=x><!--  com>--ment --></some_tag>',
+        '$P',
+
+        'startDoc', '', '$P',
+        'startTag', 'some_tag[some_attr;x]', '$P',
+        'comment', '  com>--ment ', '$P',
+        'endTag', 'some_tag', '$P',
+        'endDoc', '', '$P');
+    jsunit.pass();
+  });
+}
 
 // legacy parser drops unknown tags
 if (!html.isLegacy) {
