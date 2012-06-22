@@ -37,6 +37,7 @@ import com.google.caja.parser.js.StringLiteral;
 import com.google.caja.parser.quasiliteral.QuasiBuilder;
 import com.google.caja.reporting.JsIdentifierSyntax;
 import com.google.caja.reporting.RenderContext;
+import com.google.caja.util.Strings;
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.core.client.JavaScriptObject;
 import com.google.gwt.core.ext.BadPropertyValueException;
@@ -128,7 +129,7 @@ public class TamingGenerator {
       throw new UnableToCompleteException();
     }
 
-    userAgent = userAgent.substring(0, 1).toUpperCase()
+    userAgent = Strings.upper(userAgent.substring(0, 1))
         + userAgent.substring(1);
 
     String tamingInterfaceShortName = tamingInterface.getSimpleSourceName();

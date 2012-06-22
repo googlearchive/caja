@@ -73,7 +73,7 @@ public final class ElKey implements MessagePart, Comparable<ElKey> {
   }
 
   public static ElKey forHtmlElement(String localName) {
-    return new ElKey(HTML_NS, Strings.toLowerCase(localName));
+    return new ElKey(HTML_NS, Strings.lower(localName));
   }
 
   public static ElKey forElement(Namespaces inScope, String qname) {
@@ -86,7 +86,7 @@ public final class ElKey implements MessagePart, Comparable<ElKey> {
     // ns is non-null because the namespace returned by forElementName cannot
     // possibly be masked on inScope.
     if (ns.uri == Namespaces.HTML_NAMESPACE_URI) {
-      localName = Strings.toLowerCase(localName);
+      localName = Strings.lower(localName);
     }
     return new ElKey(ns, localName);
   }
@@ -100,7 +100,7 @@ public final class ElKey implements MessagePart, Comparable<ElKey> {
     // namespace.
     if (ns == null) { ns = new Namespaces(Namespaces.XML_SPECIAL, "", uri); }
     if (ns.uri == Namespaces.HTML_NAMESPACE_URI) {
-      localName = Strings.toLowerCase(localName);
+      localName = Strings.lower(localName);
     }
     return new ElKey(ns, localName);
   }

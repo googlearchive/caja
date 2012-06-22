@@ -357,7 +357,7 @@ public class DomParser {
           elNs = ns.forElementName(qname);
           if (elNs == null) {
             // Try lower-casing the name to avoid HTML name fuzziness.
-            String lQname = Strings.toLowerCase(qname);
+            String lQname = Strings.lower(qname);
             if (lQname != qname && (elNs = ns.forElementName(lQname)) != null) {
               qname = lQname;
             } else {
@@ -425,7 +425,7 @@ public class DomParser {
             }
             Namespaces attrNs = ns.forAttrName(elNs, qname);
             if (attrNs == null) {
-              String lQname = Strings.toLowerCase(qname);
+              String lQname = Strings.lower(qname);
               if (lQname != qname
                   && (attrNs = ns.forAttrName(elNs, lQname)) != null) {
                 qname = lQname;
@@ -724,7 +724,7 @@ public class DomParser {
             FilePosition.startOfFile(first.pos.source()))) {
       String path = is.getUri().getPath();
       if (path != null) {
-        String ext = Strings.toLowerCase(
+        String ext = Strings.lower(
             path.substring(path.lastIndexOf('.') + 1));
         if ("html".equals(ext)) { return false; }
         if ("xml".equals(ext) || "xhtml".equals(ext)) { return true; }

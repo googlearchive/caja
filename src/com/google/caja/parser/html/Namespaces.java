@@ -93,7 +93,7 @@ public final class Namespaces {
 
   public static String localName(String uri, String qualifiedName) {
     String localName = qualifiedName.substring(qualifiedName.indexOf(':') + 1);
-    return isHtml(uri) ? Strings.toLowerCase(localName) : localName;
+    return isHtml(uri) ? Strings.lower(localName) : localName;
   }
 
   public Namespaces forElementName(String qname) {

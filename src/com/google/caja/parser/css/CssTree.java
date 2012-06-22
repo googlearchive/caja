@@ -26,6 +26,7 @@ import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.Callback;
 import com.google.caja.util.Name;
+import com.google.caja.util.Strings;
 
 import java.io.IOException;
 import java.net.URI;
@@ -35,7 +36,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Set;
 import java.util.regex.Pattern;
 
@@ -910,7 +910,7 @@ public abstract class CssTree extends AbstractParseTreeNode {
     public void render(RenderContext r) {
       r.getOut().mark(getFilePosition());
       r.getOut().consume("!");
-      renderCssIdent(getValue().substring(1).toLowerCase(Locale.ENGLISH), r);
+      renderCssIdent(Strings.lower(getValue().substring(1)), r);
     }
   }
 

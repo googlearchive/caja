@@ -62,7 +62,7 @@ public abstract class AbstractCajaAntTask extends Task {
   public void execute() throws BuildException {
     // TODO(jasvir): No-op that forces Strings to be loaded and initialized
     // before classloading classes that use it eg. in "ant jsdocs"
-    Strings.toLowerCase("");
+    Strings.lower("");
     try {
       for (FileGroup input : inputs) { input.requireExecutable(); }
       for (Output output : outputs) { output.requireExecutable(); }

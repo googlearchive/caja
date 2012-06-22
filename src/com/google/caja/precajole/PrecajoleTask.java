@@ -33,6 +33,7 @@ import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.util.ContentType;
+import com.google.caja.util.Strings;
 import com.google.common.base.Charsets;
 import com.google.common.io.Files;
 
@@ -200,7 +201,7 @@ public class PrecajoleTask extends Task {
         if (!cdata.isEmpty()) {
           if (!upToDate) {
             uris.add(cdata);
-            if (cdata.toLowerCase().startsWith("http:")) {
+            if (Strings.lower(cdata).startsWith("http:")) {
               uris.add("https:" + cdata.substring("http:".length()));
             }
           }

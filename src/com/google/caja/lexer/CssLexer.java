@@ -158,7 +158,7 @@ public final class CssLexer implements TokenStream<CssTokenType> {
         if (null != t2) {
           pending.add(t2);
           if (t2.type == CssTokenType.IDENT
-              && Strings.equalsIgnoreCase(
+              && Strings.eqIgnoreCase(
                   "important", decodeCssIdentifier(t2.text))) {
             reduce(CssTokenType.DIRECTIVE);
           }

@@ -69,6 +69,6 @@ public enum ContentType {
     } else {
       end = mimeType.length();
     }
-    return MIME_TYPES.get(Strings.toLowerCase(mimeType.substring(0, end)));
+    return MIME_TYPES.get(Strings.lower(mimeType.substring(0, end)));
   }
 }

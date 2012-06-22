@@ -136,7 +136,7 @@ public final class Config {
       "r",
       "renderer",
       "The output renderer "
-      + Strings.toLowerCase(Arrays.toString(SourceRenderMode.values())) + "",
+      + Strings.lower(Arrays.toString(SourceRenderMode.values())) + "",
       true);
 
   private final Option PIPELINE_PRECONDITIONS = defineOption(
@@ -351,7 +351,7 @@ public final class Config {
 
       if (cl.getOptionValue(FETCHER_BASE.getOpt()) != null) {
         fetcherBase = new File(cl.getOptionValue(FETCHER_BASE.getOpt()));
-      } else if (Strings.equalsIgnoreCase(baseUri.getScheme(), "file")) {
+      } else if (Strings.eqIgnoreCase(baseUri.getScheme(), "file")) {
         fetcherBase = new File(baseUri).getParentFile();
       }
 
@@ -377,7 +377,7 @@ public final class Config {
 
       String renderString = cl.getOptionValue(RENDERER.getOpt());
       if (renderString != null) {
-        renderer = SourceRenderMode.valueOf(renderString.toUpperCase());
+        renderer = SourceRenderMode.valueOf(Strings.upper(renderString));
         if (renderer == null) {
           stderr.println("Invalid renderer: " + renderString);
           return false;

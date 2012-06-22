@@ -78,7 +78,7 @@ public class ConfigUtil {
           throw new IllegalArgumentException("Missing base URI");
         }
         String scheme = base.getScheme();
-        if (!(Strings.equalsIgnoreCase("resource", scheme)
+        if (!(Strings.eqIgnoreCase("resource", scheme)
               && base.isAbsolute())) {
           throw new IllegalArgumentException("base URI: " + base);
         }
@@ -92,7 +92,7 @@ public class ConfigUtil {
 
       InputStream in;
 
-      String scheme = Strings.toLowerCase(uri.getScheme());
+      String scheme = Strings.lower(uri.getScheme());
       if ("content".equals(scheme)) {
         String content = uri.getSchemeSpecificPart();
         if (content == null) {

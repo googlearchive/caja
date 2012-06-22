@@ -205,7 +205,7 @@ public class StaticPrecajoleMap implements PrecajoleMap {
   }
 
   private String lowercase(String s) {
-    return s == null ? null : Strings.toLowerCase(s);
+    return s == null ? null : Strings.lower(s);
   }
 
   private void save(String id, byte[] data) {

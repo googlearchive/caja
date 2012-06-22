@@ -60,7 +60,7 @@ public class ResolveUriStage implements Pipeline.Stage<Jobs> {
   private static boolean isBaseUri(URI uri) {
     return uri != null && uri.isAbsolute() && !uri.isOpaque()
         // Don't interpret FilePosition.UNKNOWN as a base URI.
-        && !Strings.equalsIgnoreCase("unknown", uri.getScheme());
+        && !Strings.eqIgnoreCase("unknown", uri.getScheme());
   }
 
   private URI baseUri(Node root, URI uri, FilePosition pos) {

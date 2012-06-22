@@ -121,7 +121,7 @@ public final class HtmlSchema {
         }
       }
       if (criterion != null) {
-        String key = Strings.toLowerCase((String) def.get("key", null));
+        String key = Strings.lower((String) def.get("key", null));
         criteria.put(attribKey(key), criterion);
       }
     }
@@ -130,7 +130,7 @@ public final class HtmlSchema {
     Multimap<ElKey, HTML.Attribute> attributeDetailsByElement
         = Multimaps.newListHashMultimap();
     for (WhiteList.TypeDefinition def : attribList.typeDefinitions().values()) {
-      String key = Strings.toLowerCase((String) def.get("key", null));
+      String key = Strings.lower((String) def.get("key", null));
       AttribKey elAndAttrib = attribKey(key);
       if (elAndAttrib == null) { throw new NullPointerException(key); }
       ElKey element = elAndAttrib.el;

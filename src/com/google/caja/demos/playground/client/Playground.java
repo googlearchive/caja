@@ -14,6 +14,7 @@
 package com.google.caja.demos.playground.client;
 
 import com.google.caja.demos.playground.client.ui.PlaygroundView;
+import com.google.caja.util.Strings;
 import com.google.gwt.core.client.EntryPoint;
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.event.logical.shared.ValueChangeEvent;
@@ -150,9 +151,9 @@ public class Playground implements EntryPoint, ValueChangeHandler<String> {
   public void onModuleLoad() {
     String query = Window.Location.getParameter("es5");
     Boolean mode = null == query ? null :
-        query.equalsIgnoreCase("true")
+        Strings.eqIgnoreCase(query, "true")
           ? Boolean.TRUE
-              : query.equalsIgnoreCase("false")
+              : Strings.eqIgnoreCase(query, "false")
               ? Boolean.FALSE
                   : null;
     gui = new PlaygroundView(this, mode);

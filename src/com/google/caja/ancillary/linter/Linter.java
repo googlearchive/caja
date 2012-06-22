@@ -64,6 +64,7 @@ import com.google.caja.util.Lists;
 import com.google.caja.util.Maps;
 import com.google.caja.util.Pair;
 import com.google.caja.util.Sets;
+import com.google.caja.util.Strings;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -526,7 +527,7 @@ public class Linter implements BuildCommand {
 
   private static void checkOneEmbeddable(
       MessageQueue mq, String str, FilePosition pos, String avoid) {
-    str = str.toLowerCase();
+    str = Strings.lower(str);
     int p = str.indexOf(avoid);
     for (; 0 <= p; p = str.indexOf(avoid, p + 1)) {
       mq.addMessage(LinterMessageType.EMBED_HAZARD,

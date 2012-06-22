@@ -530,7 +530,7 @@ final class Renderer {
           }
         }
         boolean isHtml = elNs.uri == HTML_NS;
-        if (isHtml) { localName = Strings.toLowerCase(localName); }
+        if (isHtml) { localName = Strings.lower(localName); }
         out.append(localName);
         int tagNameEnd = out.length();
 
@@ -655,7 +655,7 @@ final class Renderer {
               "XML document not renderable due to \"?>\" inside "
               + "processing instruction");
         }
-        if (Strings.equalsIgnoreCase(target.substring(0, 3), "xml")
+        if (Strings.eqIgnoreCase(target.substring(0, 3), "xml")
             || !isName(target)) {  // isName check avoids targets with "?>".
           throw new UncheckedUnrenderableException(
               "Bad processing instruction target " + target);
@@ -845,7 +845,7 @@ final class Renderer {
     for (int i = 0, n = name.length(); i < n; ++i) {
       char ch = name.charAt(i);
       if (ch > 'z' || !simple[ch]) {
-        if (isHtml) { name = Strings.toLowerCase(name); }
+        if (isHtml) { name = Strings.lower(name); }
         Escaping.escapeXml(name, true, out);
         return name;
       }
@@ -901,8 +901,8 @@ final class Renderer {
             }
           } else if (i + 1 + localName.length() < n
                      && '/' == sb.charAt(i + 1)
-                     && Strings.regionMatchesIgnoreCase(
-                         sb, i + 2, localName, 0, localName.length())) {
+                     && Strings.eqIgnoreCase(localName,
+                         sb.substring(i + 2, i + 2 + localName.length()))) {
             // A close tag contained in the content.
             if (escapingTextSpanStart < 0) {
               // We could try some recovery strategies here.

@@ -350,11 +350,16 @@
     </junit>
   </target>
 
+  <target name="RuntestsCodeCheck">
+    <exec executable="tools/codecheck.sh" failonerror="true"/>
+  </target>
+
   <target name="RuntestsRun">
-   <condition property="jvmarg"
+    <antcall target="RuntestsCodeCheck"/>
+    <condition property="jvmarg"
      value="-Xdebug -Xmx2G -Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=9999" else="">
-     <isset property="test.debug"/>
-   </condition>
+      <isset property="test.debug"/>
+    </condition>
     <!-- Instrument the compiled class files to gather code coverage stats -->
     <emma enabled="${emma.enabled}">
       <instr instrpath="${lib}" destdir="${instr}" mode="fullcopy"

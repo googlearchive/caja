@@ -160,7 +160,7 @@ public class HtmlEntities {
       }
     }
 
-    if (isUcase) { name = Strings.toLowerCase(name); }
+    if (isUcase) { name = Strings.lower(name); }
 
     for (int i = 0; i < n; ++i) {
       t = t.lookup(name.charAt(i));

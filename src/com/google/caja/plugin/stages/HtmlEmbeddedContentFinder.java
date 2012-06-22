@@ -117,13 +117,13 @@ public class HtmlEmbeddedContentFinder {
       if (SCRIPT.equals(key)) {
         expected = ContentType.JS;
         extRef = externalReferenceFromAttr(el, SCRIPT_SRC);
-        deferred = Strings.equalsIgnoreCase(
+        deferred = Strings.eqIgnoreCase(
             "defer",
             el.getAttributeNS(SCRIPT_DEFER.ns.uri, SCRIPT_DEFER.localName));
       } else if (STYLE.equals(key)) {
         expected = ContentType.CSS;
       } else if (LINK.equals(key)
-                 && Strings.equalsIgnoreCase(
+                 && Strings.eqIgnoreCase(
                      "stylesheet",
                      el.getAttributeNS(LINK_REL.ns.uri, LINK_REL.localName))) {
         extRef = externalReferenceFromAttr(el, LINK_HREF);
@@ -165,7 +165,7 @@ public class HtmlEmbeddedContentFinder {
               try {
                 String uriText = UriUtil.normalizeUri(a.getValue());
                 URI uri = new URI(uriText);
-                if (Strings.equalsIgnoreCase("javascript", uri.getScheme())) {
+                if (Strings.eqIgnoreCase("javascript", uri.getScheme())) {
                   isCode = true;
                 }
               } catch (URISyntaxException ex) {

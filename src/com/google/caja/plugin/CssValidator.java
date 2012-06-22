@@ -919,7 +919,7 @@ final class SignatureResolver {
       if (null == term.getOperator()) {
         boolean match;
         if (atom instanceof CssTree.IdentLiteral) {
-          match = Strings.equalsIgnoreCase(
+          match = Strings.eqIgnoreCase(
               literal.value, ((CssTree.IdentLiteral) atom).getValue());
         } else if (atom instanceof CssTree.QuantityLiteral) {
           match = literal.value.equals(atom.getValue());

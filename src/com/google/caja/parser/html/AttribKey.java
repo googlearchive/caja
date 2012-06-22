@@ -47,7 +47,7 @@ public final class AttribKey implements MessagePart, Comparable<AttribKey> {
     this.el = el;
     this.ns = ns;
     this.localName = this.ns.uri == Namespaces.HTML_NAMESPACE_URI
-        ? Strings.toLowerCase(localName) : localName;
+        ? Strings.lower(localName) : localName;
   }
 
   public boolean is(Attr a) {

@@ -17,115 +17,101 @@ package com.google.caja.util;
 import junit.framework.TestCase;
 
 public class StringsTest extends TestCase {
-  public final void testEqualsIgnoreCase() {
-    assertTrue(Strings.equalsIgnoreCase(null, null));
-    assertTrue(Strings.equalsIgnoreCase("", ""));
-    assertTrue(Strings.equalsIgnoreCase("foo", "foo"));
-    assertTrue(Strings.equalsIgnoreCase("foo", "FOO"));
-    assertTrue(Strings.equalsIgnoreCase("FOO", "foo"));
-    assertTrue(Strings.equalsIgnoreCase("123", "123"));
-    assertTrue(Strings.equalsIgnoreCase("FOO-bar", "foo-BAR"));
-    assertTrue(Strings.equalsIgnoreCase("FOO^bar", "foo^BAR"));
-    assertTrue(Strings.equalsIgnoreCase("FOO bar", "foo BAR"));
-    assertTrue(Strings.equalsIgnoreCase("FOO~bar", "foo~BAR"));
-    assertTrue(Strings.equalsIgnoreCase("foo-BAR", "FOO-bar"));
-    assertTrue(Strings.equalsIgnoreCase("foo^BAR", "FOO^bar"));
-    assertTrue(Strings.equalsIgnoreCase("foo BAR", "FOO bar"));
-    assertTrue(Strings.equalsIgnoreCase("foo~BAR", "FOO~bar"));
+  public final void testEqIgnoreCase() {
+    assertTrue(Strings.eqIgnoreCase(null, null));
+    assertTrue(Strings.eqIgnoreCase("", ""));
+    assertTrue(Strings.eqIgnoreCase("foo", "foo"));
+    assertTrue(Strings.eqIgnoreCase("foo", "FOO"));
+    assertTrue(Strings.eqIgnoreCase("FOO", "foo"));
+    assertTrue(Strings.eqIgnoreCase("123", "123"));
+    assertTrue(Strings.eqIgnoreCase("FOO-bar", "foo-BAR"));
+    assertTrue(Strings.eqIgnoreCase("FOO^bar", "foo^BAR"));
+    assertTrue(Strings.eqIgnoreCase("FOO bar", "foo BAR"));
+    assertTrue(Strings.eqIgnoreCase("FOO~bar", "foo~BAR"));
+    assertTrue(Strings.eqIgnoreCase("foo-BAR", "FOO-bar"));
+    assertTrue(Strings.eqIgnoreCase("foo^BAR", "FOO^bar"));
+    assertTrue(Strings.eqIgnoreCase("foo BAR", "FOO bar"));
+    assertTrue(Strings.eqIgnoreCase("foo~BAR", "FOO~bar"));
     // Unequal due to characters on various sides of the letter blocks.
-    assertFalse(Strings.equalsIgnoreCase("foo-BAR", "FOO^bar"));
-    assertFalse(Strings.equalsIgnoreCase("foo^BAR", "FOO-bar"));
-    assertFalse(Strings.equalsIgnoreCase("foo BAR", "FOO~bar"));
-    assertFalse(Strings.equalsIgnoreCase("foo~BAR", "FOO bar"));
+    assertFalse(Strings.eqIgnoreCase("foo-BAR", "FOO^bar"));
+    assertFalse(Strings.eqIgnoreCase("foo^BAR", "FOO-bar"));
+    assertFalse(Strings.eqIgnoreCase("foo BAR", "FOO~bar"));
+    assertFalse(Strings.eqIgnoreCase("foo~BAR", "FOO bar"));
     // Check chars one below [aA] and one above [zZ]
-    assertFalse(Strings.equalsIgnoreCase("@", "`"));
-    assertFalse(Strings.equalsIgnoreCase("`", "@"));
-    assertFalse(Strings.equalsIgnoreCase("[", "{"));
-    assertFalse(Strings.equalsIgnoreCase("{", "["));
+    assertFalse(Strings.eqIgnoreCase("@", "`"));
+    assertFalse(Strings.eqIgnoreCase("`", "@"));
+    assertFalse(Strings.eqIgnoreCase("[", "{"));
+    assertFalse(Strings.eqIgnoreCase("{", "["));
     // More unequal strings
-    assertFalse(Strings.equalsIgnoreCase(null, ""));
-    assertFalse(Strings.equalsIgnoreCase("", null));
-    assertFalse(Strings.equalsIgnoreCase("", "foo"));
-    assertFalse(Strings.equalsIgnoreCase("food", "foo"));
-    assertFalse(Strings.equalsIgnoreCase("foo", "FOOd"));
-    assertFalse(Strings.equalsIgnoreCase("123", "456"));
-    assertFalse(Strings.equalsIgnoreCase("\u0391", "\u03B1"));
-    assertTrue(Strings.equalsIgnoreCase(
+    assertFalse(Strings.eqIgnoreCase(null, ""));
+    assertFalse(Strings.eqIgnoreCase("", null));
+    assertFalse(Strings.eqIgnoreCase("", "foo"));
+    assertFalse(Strings.eqIgnoreCase("food", "foo"));
+    assertFalse(Strings.eqIgnoreCase("foo", "FOOd"));
+    assertFalse(Strings.eqIgnoreCase("123", "456"));
+    assertTrue(Strings.eqIgnoreCase("\u0391", "\u03b1"));
+    assertTrue(Strings.eqIgnoreCase(
         " !\"#$%&\\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMN"
         + "OPQRSTUVWXYZ[\\]^_`ABCDEFGHIJKLMNOPQRSTUVWXYZ{|}~",
         " !\"#$%&\\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMN"
         + "OPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~"));
-    assertTrue(Strings.equalsIgnoreCase(
+    assertTrue(Strings.eqIgnoreCase(
         " !\"#$%&\\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMN"
         + "OPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~",
         " !\"#$%&\\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMN"
         + "OPQRSTUVWXYZ[\\]^_`ABCDEFGHIJKLMNOPQRSTUVWXYZ{|}~"));
-    assertTrue(Strings.equalsIgnoreCase(
+    assertTrue(Strings.eqIgnoreCase(
         " !\"#$%&\\'()*+,-./0123456789:;<=>?@abcdefghijklmn"
         + "opqrstuvwxyz[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~",
         " !\"#$%&\\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMN"
         + "OPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~"));
-    assertTrue(Strings.equalsIgnoreCase(
+    assertTrue(Strings.eqIgnoreCase(
         " !\"#$%&\\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMN"
         + "OPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~",
         " !\"#$%&\\'()*+,-./0123456789:;<=>?@abcdefghijklmn"
         + "opqrstuvwxyz[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~"));
   }
 
-  public final void testIsLowerCase() {
-    assertTrue(Strings.isLowerCase(""));
-    assertTrue(Strings.isLowerCase("foo"));
-    assertTrue(Strings.isLowerCase("123"));
-    assertTrue(Strings.isLowerCase("foo-bar"));
-    assertTrue(Strings.isLowerCase("\u0391"));
-    assertTrue(Strings.isLowerCase("\u03B1"));
-    assertTrue(Strings.isLowerCase("@`[{"));
-    assertFalse(Strings.isLowerCase("FOO"));
-    assertFalse(Strings.isLowerCase("Foo"));
-    assertFalse(Strings.isLowerCase("fooD"));
-    assertFalse(Strings.isLowerCase("fooD!"));
-  }
-
-  public final void testToLowerCase() {
-    assertEquals("", Strings.toLowerCase(""));
-    assertEquals("foo", Strings.toLowerCase("foo"));
-    assertEquals("foo", Strings.toLowerCase("FOO"));
-    assertEquals("foo", Strings.toLowerCase("Foo"));
-    assertEquals("123", Strings.toLowerCase("123"));
-    assertEquals("foo-bar", Strings.toLowerCase("foo-BAR"));
-    assertEquals("foo-bar", Strings.toLowerCase("FOO-bar"));
-    assertEquals("food", Strings.toLowerCase("food"));
-    assertEquals("food", Strings.toLowerCase("FOOd"));
-    assertEquals("456", Strings.toLowerCase("456"));
-    assertEquals("\u0391", Strings.toLowerCase("\u0391"));
-    assertEquals("\u03B1", Strings.toLowerCase("\u03B1"));
-    assertEquals("@`[{", Strings.toLowerCase("@`[{"));
+  public final void testLower() {
+    assertEquals("", Strings.lower(""));
+    assertEquals("foo", Strings.lower("foo"));
+    assertEquals("foo", Strings.lower("FOO"));
+    assertEquals("foo", Strings.lower("Foo"));
+    assertEquals("123", Strings.lower("123"));
+    assertEquals("foo-bar", Strings.lower("foo-BAR"));
+    assertEquals("foo-bar", Strings.lower("FOO-bar"));
+    assertEquals("food", Strings.lower("food"));
+    assertEquals("food", Strings.lower("FOOd"));
+    assertEquals("456", Strings.lower("456"));
+    assertEquals("\u03b1", Strings.lower("\u0391"));
+    assertEquals("\u03b1", Strings.lower("\u03B1"));
+    assertEquals("@`[{", Strings.lower("@`[{"));
     assertEquals(
         " !\"#$%&\\'()*+,-./0123456789:;<=>?@abcdefghijklmn"
         + "opqrstuvwxyz[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~",
-        Strings.toLowerCase(
+        Strings.lower(
             " !\"#$%&\\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMN"
             + "OPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~"));
   }
 
-  public final void testToUpperCase() {
-    assertEquals("", Strings.toUpperCase(""));
-    assertEquals("FOO", Strings.toUpperCase("foo"));
-    assertEquals("FOO", Strings.toUpperCase("FOO"));
-    assertEquals("FOO", Strings.toUpperCase("Foo"));
-    assertEquals("123", Strings.toUpperCase("123"));
-    assertEquals("FOO-BAR", Strings.toUpperCase("foo-BAR"));
-    assertEquals("FOO-BAR", Strings.toUpperCase("FOO-bar"));
-    assertEquals("FOOD", Strings.toUpperCase("food"));
-    assertEquals("FOOD", Strings.toUpperCase("FOOd"));
-    assertEquals("456", Strings.toUpperCase("456"));
-    assertEquals("\u0391", Strings.toUpperCase("\u0391"));
-    assertEquals("\u03B1", Strings.toUpperCase("\u03B1"));
-    assertEquals("@`[{", Strings.toUpperCase("@`[{"));
+  public final void testUpper() {
+    assertEquals("", Strings.upper(""));
+    assertEquals("FOO", Strings.upper("foo"));
+    assertEquals("FOO", Strings.upper("FOO"));
+    assertEquals("FOO", Strings.upper("Foo"));
+    assertEquals("123", Strings.upper("123"));
+    assertEquals("FOO-BAR", Strings.upper("foo-BAR"));
+    assertEquals("FOO-BAR", Strings.upper("FOO-bar"));
+    assertEquals("FOOD", Strings.upper("food"));
+    assertEquals("FOOD", Strings.upper("FOOd"));
+    assertEquals("456", Strings.upper("456"));
+    assertEquals("\u0391", Strings.upper("\u0391"));
+    assertEquals("\u0391", Strings.upper("\u03B1"));
+    assertEquals("@`[{", Strings.upper("@`[{"));
     assertEquals(
         " !\"#$%&\\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMN"
         + "OPQRSTUVWXYZ[\\]^_`ABCDEFGHIJKLMNOPQRSTUVWXYZ{|}~",
-        Strings.toUpperCase(
+        Strings.upper(
             " !\"#$%&\\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMN"
             + "OPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~"));
   }

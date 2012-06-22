@@ -174,7 +174,7 @@ public class ParserTest extends CajaTestCase {
 
     // Since we're doing these checks for security, double check that someone
     // hasn't adjusted the golden file.
-    String golden = Strings.toLowerCase(
+    String golden = Strings.lower(
          TestUtil.readResource(getClass(), "rendergolden6.txt"));
     assertFalse(golden.contains("]]>"));
     assertFalse(golden.contains("<!"));

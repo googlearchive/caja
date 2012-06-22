@@ -220,7 +220,7 @@ public final class TestHttpServletRequest implements HttpServletRequest {
   }
 
   public boolean isSecure() {
-    return Strings.toLowerCase(this.getRequestURI()).startsWith("https://");
+    return Strings.lower(this.getRequestURI()).startsWith("https://");
   }
 
   public void removeAttribute(String arg0) {

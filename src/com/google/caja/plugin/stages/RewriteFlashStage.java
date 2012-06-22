@@ -87,7 +87,7 @@ final class FlashRewriter {
   }
 
   private Element rewriteElement(Element el) {
-    String tagName = Strings.toLowerCase(el.getLocalName());
+    String tagName = Strings.lower(el.getLocalName());
     if ("embed".equals(tagName)) {
       if (APPLICATION_FLASH.equals(getAttr(el, "type"))) {
         return rewriteEmbed(el);
@@ -97,7 +97,8 @@ final class FlashRewriter {
     } else if ("object".equals(tagName)) {
       if (APPLICATION_FLASH.equals(getAttr(el, "type"))) {
         return rewriteObject(el);
-      } else if (CLASSID_FLASH.equalsIgnoreCase(getAttr(el, "classid"))) {
+      } else if (Strings.eqIgnoreCase(
+          CLASSID_FLASH, getAttr(el, "classid"))) {
         return rewriteObject(el);
       }
     }
@@ -237,7 +238,7 @@ final class FlashRewriter {
 
   private String getTagName(Node n) {
     if (n instanceof Element) {
-      return Strings.toLowerCase(n.getLocalName());
+      return Strings.lower(n.getLocalName());
     } else {
       return null;
     }

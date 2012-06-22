@@ -40,7 +40,7 @@ public final class Name implements Comparable<Name>, MessagePart {
    * The case-insensitive name of a CSS property, symbol, function or keyword.
    */
   public static Name css(String cssName) {
-    return new Name(Strings.toLowerCase(cssName));
+    return new Name(Strings.lower(cssName));
   }
 
   public String getCanonicalForm() { return canonicalForm; }

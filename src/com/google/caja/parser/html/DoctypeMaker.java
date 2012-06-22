@@ -41,7 +41,7 @@ class DoctypeMaker {
     final String system = system2 == null ? system4 : system2;
     boolean isHtml = isHtml(name, pubid, system);
     if (isHtml && name.indexOf(':') < 0) {
-      name = Strings.toLowerCase(name);
+      name = Strings.lower(name);
     }
     final String qname = name;
     final String publicId = pubid;
@@ -136,13 +136,13 @@ class DoctypeMaker {
     String nsUri = systemIdToNsUri(systemId);
     if (nsUri != null && Namespaces.isHtml(nsUri)) { return true; }
     if (pubid != null) {
-      pubid = Strings.toLowerCase(pubid).replaceAll("\\s+", " ").trim();
+      pubid = Strings.lower(pubid).replaceAll("\\s+", " ").trim();
       return pubid.startsWith("-//w3c//dtd html ")
           || pubid.startsWith("-//w3c//dtd xhtml ")
           || pubid.startsWith("-//ietf//dtd html");
     } else if (systemId == null) {
       // <!DOCTYPE html>
-      return Strings.equalsIgnoreCase("html", name);
+      return Strings.eqIgnoreCase("html", name);
     }
     return false;
   }

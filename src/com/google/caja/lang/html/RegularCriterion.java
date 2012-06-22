@@ -57,7 +57,7 @@ public interface RegularCriterion extends Criterion<String> {
     static RegularCriterion fromValueSet(Iterable<String> values) {
       final Set<String> valueSet = new LinkedHashSet<String>();
       for (String value : values) {
-        valueSet.add(Strings.toLowerCase(value));
+        valueSet.add(Strings.lower(value));
       }
       return new RegularCriterion() {
         public String toRegularExpression() {
@@ -77,7 +77,7 @@ public interface RegularCriterion extends Criterion<String> {
         }
 
         public boolean accept(String candidate) {
-          return valueSet.contains(Strings.toLowerCase(candidate));
+          return valueSet.contains(Strings.lower(candidate));
         }
       };
     }

@@ -278,7 +278,7 @@ public final class CssParser {
       String s = unescape(t);
       charset = s.substring(1, s.length() - 1);
       // TODO(pulkitgoyal2000): Handle non utf-8 charset
-      if (!"utf-8".equalsIgnoreCase(charset)) {
+      if (!Strings.eqIgnoreCase("utf-8", charset)) {
         Message msg = new Message(MessageType.EXPECTED_TOKEN,
             MessageLevel.WARNING, t.pos, MessagePart.Factory.valueOf("utf-8"),
             MessagePart.Factory.valueOf(charset));
@@ -691,7 +691,7 @@ public final class CssParser {
   private CssTree.Prio parsePrio() throws ParseException {
     Token<CssTokenType> t = tq.peek();
     if (CssTokenType.DIRECTIVE == t.type) {
-      String s = Strings.toLowerCase(unescape(t));
+      String s = Strings.lower(unescape(t));
       if ("!important".equals(s)) {
         tq.advance();
         return new CssTree.Prio(t.pos, s);
@@ -1041,7 +1041,7 @@ public final class CssParser {
     if (tq.isEmpty()) { return false; }
     Token<CssTokenType> t = tq.peek();
     return t.type == CssTokenType.SYMBOL
-        && Strings.equalsIgnoreCase(symbol, (unescape ? unescape(t) : t.text));
+        && Strings.eqIgnoreCase(symbol, (unescape ? unescape(t) : t.text));
   }
 
   private void expectSymbol(String symbol) throws ParseException {
@@ -1052,7 +1052,7 @@ public final class CssParser {
       String symbol, boolean unescape) throws ParseException {
     Token<CssTokenType> t = tq.pop();
     if (t.type == CssTokenType.SYMBOL
-        && Strings.equalsIgnoreCase(
+        && Strings.eqIgnoreCase(
         symbol, (unescape ? unescape(t) : t.text))) {
       return;
     }

@@ -15,6 +15,7 @@
 package com.google.caja.plugin;
 
 import com.google.caja.lexer.ExternalReference;
+import com.google.caja.util.Strings;
 
 import java.net.URI;
 import java.util.Map;
@@ -43,7 +44,7 @@ public class UriPolicyNanny {
   }
 
   private static boolean isAllowedScheme(String scheme) {
-    scheme = scheme.toLowerCase();
+    scheme = Strings.lower(scheme);
     return (
         "http".equals(scheme) ||
         "https".equals(scheme) ||

@@ -61,7 +61,7 @@ public class LocalizedHtmlTest extends TestCase {
         new LocalizedHtml.PlaceholderHandler() {
           public Iterator<Token<HtmlTokenType>> substitutePlaceholder(
               String placeholderName, FilePosition placeholderLoc) {
-            String uname = Strings.toUpperCase(placeholderName);
+            String uname = Strings.upper(placeholderName);
             FilePosition unk = FilePosition.UNKNOWN;
             List<Token<HtmlTokenType>> toks
                 = new ArrayList<Token<HtmlTokenType>>();
@@ -87,7 +87,7 @@ public class LocalizedHtmlTest extends TestCase {
         new LocalizedHtml.PlaceholderHandler() {
           public Iterator<Token<HtmlTokenType>> substitutePlaceholder(
               String placeholderName, FilePosition placeholderLoc) {
-            String uname = Strings.toUpperCase(placeholderName);
+            String uname = Strings.upper(placeholderName);
             FilePosition unk = FilePosition.UNKNOWN;
             List<Token<HtmlTokenType>> toks
                 = new ArrayList<Token<HtmlTokenType>>();

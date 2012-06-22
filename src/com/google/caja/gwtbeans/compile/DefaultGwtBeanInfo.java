@@ -21,6 +21,7 @@ import java.util.Map;
 
 import com.google.caja.gwtbeans.shared.ElementTaming;
 import com.google.caja.gwtbeans.shared.ElementTamingImpl;
+import com.google.caja.util.Strings;
 import com.google.gwt.core.ext.GeneratorContext;
 import com.google.gwt.core.ext.TreeLogger;
 import com.google.gwt.core.ext.UnableToCompleteException;
@@ -275,11 +276,11 @@ public final class DefaultGwtBeanInfo implements GwtBeanInfo {
   }
 
   private String downCaseFirst(String s) {
-    return s.substring(0, 1).toLowerCase() + s.substring(1);
+    return Strings.lower(s.substring(0, 1)) + s.substring(1);
   }
 
   private String upCaseFirst(String s) {
-    return s.substring(0, 1).toUpperCase() + s.substring(1);
+    return Strings.upper(s.substring(0, 1)) + s.substring(1);
   }
 
   private List<JMethod> getAllPublicMethods(JClassType clazz) {

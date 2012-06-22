@@ -944,7 +944,7 @@ public final class CssRewriter {
 
   private static boolean selectorMatchesElement(
       CssTree.SimpleSelector t, String elementName) {
-    return Strings.equalsIgnoreCase(elementName, t.getElementName());
+    return Strings.eqIgnoreCase(elementName, t.getElementName());
   }
 
   private static boolean selectorMatchesClass(

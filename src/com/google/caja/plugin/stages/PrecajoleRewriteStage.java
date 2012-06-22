@@ -72,7 +72,7 @@ public class PrecajoleRewriteStage implements Stage<Jobs> {
       return false;
     }
     Element el = (Element) node;
-    String tagName = Strings.toLowerCase(el.getLocalName());
+    String tagName = Strings.lower(el.getLocalName());
     if ("script".equals(tagName)) {
       String src = getAttr(el, "src");
       if (src != null && src.length() != 0) {
@@ -95,7 +95,7 @@ public class PrecajoleRewriteStage implements Stage<Jobs> {
     String id = "$" + jobs.getPluginMeta().generateGuid();
     Element placeholder = Placeholder.make(el, id);
 
-    if (Strings.equalsIgnoreCase(getAttr(el, "defer"), "defer")) {
+    if (Strings.eqIgnoreCase(getAttr(el, "defer"), "defer")) {
       parent.removeChild(el);
       parent.appendChild(placeholder);
     } else {

@@ -18,6 +18,7 @@ import com.google.caja.lexer.ParseException;
 import com.google.caja.reporting.MarkupRenderMode;
 import com.google.caja.util.CajaTestCase;
 import com.google.caja.util.FailureIsAnOption;
+import com.google.caja.util.Strings;
 import com.google.common.collect.ImmutableSet;
 
 import java.util.Set;
@@ -320,7 +321,7 @@ public class NodesRenderTest extends CajaTestCase {
     assertEquals(e1.getTagName(), e2.getTagName());
 
     // For RISKY_ELEMENTS, text equivalence is important.
-    String tagName = e1.getTagName().toLowerCase();
+    String tagName = Strings.lower(e1.getTagName());
     if (RISKY_ELEMENTS.contains(tagName)) {
       assertIdenticalRender(e1, e2);
       return;

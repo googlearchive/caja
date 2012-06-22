@@ -99,13 +99,13 @@ public class UriUtil {
       sb.append(':');
     }
     if (authority != null) {
-      if ("".equals(authority) && !Strings.equalsIgnoreCase("file", scheme)) {
+      if ("".equals(authority) && !Strings.eqIgnoreCase("file", scheme)) {
         throw new URISyntaxException(uri, "Blank authority");
       }
       sb.append("//");
       normalizeAuthority(authority, sb);
     } else if (scheme != null
-               && !(Strings.equalsIgnoreCase("file", scheme)
+               && !(Strings.eqIgnoreCase("file", scheme)
                     || isOpaque(scheme))) {
       throw new URISyntaxException(uri, "Missing authority");
     }
@@ -242,11 +242,11 @@ public class UriUtil {
   }
 
   private static boolean isOpaque(String scheme) {
-    return Strings.equalsIgnoreCase("mailto", scheme)
-        || Strings.equalsIgnoreCase("javascript", scheme)
-        || Strings.equalsIgnoreCase("content", scheme)
-        || Strings.equalsIgnoreCase("data", scheme)
-        || Strings.equalsIgnoreCase("clsid", scheme);
+    return Strings.eqIgnoreCase("mailto", scheme)
+        || Strings.eqIgnoreCase("javascript", scheme)
+        || Strings.eqIgnoreCase("content", scheme)
+        || Strings.eqIgnoreCase("data", scheme)
+        || Strings.eqIgnoreCase("clsid", scheme);
   }
 
   private static void normalizeAuthority(String authority, StringBuilder out)

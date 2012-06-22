@@ -234,7 +234,7 @@ public final class HtmlLexer extends AbstractTokenStream<HtmlTokenType> {
   /** Can the attribute appear in HTML without a value. */
   private static boolean isValuelessAttribute(String attribName) {
     boolean valueless = VALUELESS_ATTRIB_NAMES.contains(
-        Strings.toLowerCase(attribName));
+        Strings.lower(attribName));
     return valueless;
   }
 
@@ -788,7 +788,7 @@ final class HtmlInputSplitter extends AbstractTokenStream<HtmlTokenType> {
 
   protected String name(String tagName) {
     return asXml || tagName.indexOf(':') >= 0
-        ? tagName : Strings.toLowerCase(tagName);
+        ? tagName : Strings.lower(tagName);
   }
 
   private boolean lookahead(char [] buffer, int end, int limit, String textToMatch) {

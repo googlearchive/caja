@@ -984,13 +984,13 @@ public class CssPropertyPatterns {
         out.write(" * \\@provides cssSchema");
         for (CssPropBit b : CssPropBit.values()) {
           out.write(", CSS_PROP_BIT_");
-          out.write(Strings.toUpperCase(b.name()));
+          out.write(Strings.upper(b.name()));
         }
         out.write(" */\n");
         for (CssPropBit b : CssPropBit.values()) {
           out.write("/**\n * @const\n * @type {number}\n */\n");
           out.write("var CSS_PROP_BIT_");
-          out.write(Strings.toUpperCase(b.name()));
+          out.write(Strings.upper(b.name()));
           out.write(" = ");
           out.write(String.valueOf(b.jsValue));
           out.write(";\n");
@@ -1020,7 +1020,7 @@ public class CssPropertyPatterns {
       sb.append(lcaseDashed, written, dash);
       written = dash + 1;
       if (written < lcaseDashed.length()) {
-        sb.append(Strings.toUpperCase(
+        sb.append(Strings.upper(
             lcaseDashed.substring(written, written + 1)));
         ++written;
       }

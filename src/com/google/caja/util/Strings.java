@@ -14,6 +14,8 @@
 
 package com.google.caja.util;
 
+import java.util.Locale;
+
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 
@@ -22,119 +24,35 @@ import javax.annotation.ParametersAreNonnullByDefault;
  * <p>
  * The normal case insensitive operators {@link String#toLowerCase}
  * and {@link String#equalsIgnoreCase} depend upon the current locale.
- * They will fold the letters "i" and "I" differently if the locale is
- * Turkish than if it is English.
+ * In the Turkish locale, uppercasing "i" yields a dotted I "\u0130",
+ * and lowercasing "I" yields a dotless i "\u0131".
  * <p>
- * These operations ignore all case folding for non-Roman letters, and are
- * independent of the current Locale.
- * Lowercasing is exactly equivalent to {@code tr/A-Z/a-z/}, uppercasing to
- * {@code tr/a-z/A-Z/}, and case insensitive comparison is equivalent to
- * lowercasing both then comparing by code-unit.
+ * These are convenience methods for avoiding that problem.
  * <p>
- * Because of this simpler case folding, it is the case that for all Strings s
- * <code>
- * Strings.toUpperCase(s).equals(Strings.toUpperCase(Strings.toLowerCase(s)))
- * </code>.
- *
- * @author mikesamuel@gmail.com
+ * Note, regex matching does not have this problem, because
+ * Pattern.CASE_INSENSITIVE is ascii-only case folding unless you
+ * also ask for Pattern.UNICODE_CASE.
+ * <p>
+ * @author mikesamuel@gmail.com, felix8a@gmail.com
  */
 @ParametersAreNonnullByDefault
 public final class Strings {
-  public static boolean equalsIgnoreCase(@Nullable String a, @Nullable String b) {
+
+  /* Avoids Turkish 'i' problem. */
+  public static boolean eqIgnoreCase(@Nullable String a, @Nullable String b) {
     if (a == null) { return b == null; }
     if (b == null) { return false; }
-    int length = a.length();
-    if (b.length() != length) { return false; }
-    for (int i = length; --i >= 0;) {
-      char c = a.charAt(i), d = b.charAt(i);
-      if (c <= 'z' && c >= 'A') {
-        if (c <= 'Z') { c |= 0x20; }
-        if (d <= 'Z' && d >= 'A') { d |= 0x20; }
-      }
-      if (c != d) { return false; }
-    }
-    return true;
+    return lower(a).equals(lower(b));
   }
 
-  /**
-   * Locale-insensitive version of {@code String.regionMatches} that works for
-   * arbitrary char sequences.
-   *
-   * @param ai start index of region in a.
-   * @param bi start index of region in b.
-   * @param n length of regions to check.
-   * @throws IndexOutOfBoundsException if a or b do not contain a region of
-   *   length n starting at ai and bi respectively.
-   */
-  public static boolean regionMatchesIgnoreCase(
-      CharSequence a, int ai, CharSequence b, int bi, int n) {
-    while (--n >= 0) {
-      char c = a.charAt(ai++), d = b.charAt(bi++);
-      if (c != d) {
-        if (c <= 'z' && c >= 'A') {
-          if (c <= 'Z') { c |= 0x20; }
-          if (d <= 'Z' && d >= 'A') { d |= 0x20; }
-          if (c == d) { continue; }
-        }
-        return false;
-      }
-    }
-    return true;
+  /** Avoids Turkish 'i' problem. */
+  public static String lower(String s) {
+    return s.toLowerCase(Locale.ENGLISH);
   }
 
-  /** True iff {@code s.equals(String.toLowerCase(s))}. */
-  public static boolean isLowerCase(CharSequence s) {
-    for (int i = s.length(); --i >= 0;) {
-      char c = s.charAt(i);
-      if (c <= 'Z' && c >= 'A') {
-        return false;
-      }
-    }
-    return true;
-  }
-
-  private static final char[] LCASE_CHARS = new char['Z' + 1];
-  private static final char[] UCASE_CHARS = new char['z' + 1];
-  static {
-    for (int i = 0; i < 'A'; ++i) { LCASE_CHARS[i] = (char) i; }
-    for (int i = 'A'; i <= 'Z'; ++i) { LCASE_CHARS[i] = (char) (i | 0x20); }
-    for (int i = 0; i < 'a'; ++i) { UCASE_CHARS[i] = (char) i; }
-    for (int i = 'a'; i <= 'z'; ++i) { UCASE_CHARS[i] = (char) (i & ~0x20); }
-  }
-  public static String toLowerCase(String s) {
-    for (int i = s.length(); --i >= 0;) {
-      char c = s.charAt(i);
-      if (c <= 'Z' && c >= 'A') {
-        char[] chars = s.toCharArray();
-        chars[i] = LCASE_CHARS[c];
-        while (--i >= 0) {
-          c = chars[i];
-          if (c <= 'Z') {
-            chars[i] = LCASE_CHARS[c];
-          }
-        }
-        return String.valueOf(chars);
-      }
-    }
-    return s;
-  }
-
-  public static String toUpperCase(String s) {
-    for (int i = s.length(); --i >= 0;) {
-      char c = s.charAt(i);
-      if (c <= 'z' && c >= 'a') {
-        char[] chars = s.toCharArray();
-        chars[i] = UCASE_CHARS[c];
-        while (--i >= 0) {
-          c = chars[i];
-          if (c <= 'z') {
-            chars[i] = UCASE_CHARS[c];
-          }
-        }
-        return String.valueOf(chars);
-      }
-    }
-    return s;
+  /** Avoids Turkish 'i' problem. */
+  public static String upper(String s) {
+    return s.toUpperCase(Locale.ENGLISH);
   }
 
   private Strings() { /* uninstantiable */ }

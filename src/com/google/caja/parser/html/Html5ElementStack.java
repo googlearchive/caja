@@ -158,7 +158,7 @@ public class Html5ElementStack implements OpenElementStack {
       return name;
     } else {
       // Forces LANG=C like behavior.
-      return Strings.toLowerCase(name);
+      return Strings.lower(name);
     }
   }
 
@@ -319,7 +319,7 @@ public class Html5ElementStack implements OpenElementStack {
     boolean isEndTag = CajaTreeBuilder.isEndTag(start.text);
     String tagName = start.text.substring(isEndTag ? 2 : 1);
     boolean isHtml = checkName(tagName);
-    if (isHtml) { tagName = Strings.toLowerCase(tagName); }
+    if (isHtml) { tagName = Strings.lower(tagName); }
 
     HtmlAttributes htmlAttrs = new HtmlAttributes(AttributeName.HTML);
     boolean hasXmlns = false;
@@ -345,7 +345,7 @@ public class Html5ElementStack implements OpenElementStack {
           } else {
             isAttrHtml = isHtml && checkName(qname);
             if (isAttrHtml) {
-              name = Strings.toLowerCase(qname);
+              name = Strings.lower(qname);
               attrNode = maybeCreateAttributeNs(Namespaces.HTML_NAMESPACE_URI,
                                                 name, as);
               if (attrNode == null) {

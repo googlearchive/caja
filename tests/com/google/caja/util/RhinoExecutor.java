@@ -328,7 +328,7 @@ public final class RhinoExecutor implements Executor {
      */
     public Connection openConnection(
         URI uri, Object headers, Object responseHeaders) {
-      String scheme = Strings.toLowerCase(uri.getScheme());
+      String scheme = Strings.lower(uri.getScheme());
       int status;
       String statusText;
       String responseBody;
@@ -452,7 +452,7 @@ class SetupUrlHandlers {
         // /Tricks-of-the-Java-Programming-Gurus/ch17.htm
 
         public URLStreamHandler createURLStreamHandler(String protocol) {
-          protocol = Strings.toLowerCase(protocol);
+          protocol = Strings.lower(protocol);
 
           URLStreamHandler handler;
           synchronized (handlers) {
@@ -465,7 +465,7 @@ class SetupUrlHandlers {
         }
 
         private URLStreamHandler createHandler(String protocol) {
-          protocol = Strings.toLowerCase(protocol);
+          protocol = Strings.lower(protocol);
           if ("content".equals(protocol)) {
             return new ContentUrlHandler();
           } else if ("http".equals(protocol) || "https".equals(protocol)) {

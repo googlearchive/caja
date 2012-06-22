@@ -72,7 +72,7 @@ public final class TestHttpServletResponse implements HttpServletResponse {
   }
   public void setHeader(String k, String v) {
     if (output != null) { throw new IllegalStateException(); }
-    headers.put(Strings.toLowerCase(k), v);
+    headers.put(Strings.lower(k), v);
   }
   public void setIntHeader(String arg0, int arg1) {
     setHeader(arg0, "" + arg1);

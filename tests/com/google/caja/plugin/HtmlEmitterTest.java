@@ -150,7 +150,7 @@ public class HtmlEmitterTest extends CajaTestCase {
       Node n, List<ScriptPlaceholder> extractedScripts)
       throws ParseException {
     if (n.getNodeType() == 1
-        && Strings.equalsIgnoreCase("script", n.getNodeName())) {
+        && Strings.eqIgnoreCase("script", n.getNodeName())) {
       String id = "$" + extractedScripts.size();
       Element placeholder = Placeholder.make(n, id);
       extractedScripts.add(new ScriptPlaceholder(
