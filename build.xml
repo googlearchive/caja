@@ -129,7 +129,7 @@
     <!-- TODO(felix8a): this is early in the path because it uses
          HttpClient 4.1 and something else has HttpClient 4.0.
          need to untangle and remove the duplicate. -->
-    <pathelement path="${third_party}/java/webdriver/selenium-server-standalone-2.20.0.jar"/>
+    <pathelement path="${third_party}/java/webdriver/selenium-server-standalone-2.24.1.jar"/>
     <path refid="classpath.common"/>
     <path refid="classpath.gwt"/>
     <pathelement path="${third_party}/java/junit/junit.jar"/>
