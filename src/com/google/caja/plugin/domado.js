@@ -51,6 +51,10 @@
  * @provides Domado
  * @overrides domitaModules, window
  */
+
+// The Turkish i seems to be a non-issue, but abort in case it is.
+if ('I'.toLowerCase() !== 'i') { throw 'I/i problem'; }
+
 // TODO(kpreid): Review whether multiple uses of np() should be coalesced for
 // efficiency.
 

@@ -30,6 +30,9 @@
  * @overrides window
  */
 
+// The Turkish i seems to be a non-issue, but abort in case it is.
+if ('I'.toLowerCase() !== 'i') { throw 'I/i problem'; }
+
 /**
  * @param {function} makeDOMAccessible A function which will be called on base
  *     and every object retrieved from it, recursively. This hook is available
@@ -329,19 +332,6 @@ function HtmlEmitter(makeDOMAccessible, base, opt_domicile, opt_guestGlobal) {
       return Array.prototype.join.call(items, '');
     }
 
-    var ucase;
-    if ('script'.toUpperCase() === 'SCRIPT') {
-      ucase = function (s) { return s.toUpperCase(); };
-    } else {
-      ucase = function (s) {
-        return s.replace(
-            /[a-z]/g,
-            function (ch) {
-              return String.fromCharCode(ch.charCodeAt(0) & ~32);
-            });
-      };
-    }
-
     function evaluateUntrustedScript(scriptInnerText) {
       if (!opt_guestGlobal) { return; }
       var errorMessage = "SCRIPT element evaluation failed";
@@ -519,7 +509,7 @@ function HtmlEmitter(makeDOMAccessible, base, opt_domicile, opt_guestGlobal) {
           }
         }
         var anc = insertionPoint;
-        tagName = ucase(tagName);
+        tagName = tagName.toUpperCase();
         while (anc !== base && !/\bvdoc-body___\b/.test(anc.className)) {
           var p = anc.parentNode;
           if (anc.tagName === tagName) {

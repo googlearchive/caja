@@ -377,7 +377,7 @@ public class LinterTest extends CajaTestCase {
         ("WARNING: testLiveness:5+7 - 8: Symbol a may be used before"
          + " being initialized"),
         "ERROR: testLiveness: @provides a not provided",
-        ("WARNING: testLiveness:5+1 - 8:"
+        ("LINT: testLiveness:5+1 - 8:"
          + " Uncaught exception thrown during initialization")
         );
   }

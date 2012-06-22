@@ -33,6 +33,9 @@
  * \@provides html, html_sanitize
  */
 
+// The Turkish i seems to be a non-issue, but abort in case it is.
+if ('I'.toLowerCase() !== 'i') { throw 'I/i problem'; }
+
 /**
  * \@namespace
  */
@@ -44,28 +47,6 @@ var html = (function(html4) {
     parseCssDeclarations = window['parseCssDeclarations'];
     sanitizeCssProperty = window['sanitizeCssProperty'];
     cssSchema = window['cssSchema'];
-  }
-
-  var lcase;
-  // The below may not be true on browsers in the Turkish locale.
-  if ('script' === 'SCRIPT'.toLowerCase()) {
-    lcase = function(s) { return s.toLowerCase(); };
-  } else {
-    /**
-     * {\@updoc
-     * $ lcase('SCRIPT')
-     * # 'script'
-     * $ lcase('script')
-     * # 'script'
-     * }
-     */
-    lcase = function(s) {
-      return s.replace(
-          /[A-Z]/g,
-          function(ch) {
-            return String.fromCharCode(ch.charCodeAt(0) | 32);
-          });
-    };
   }
 
   // The keys of this object must be 'quoted' or JSCompiler will mangle them!
@@ -116,7 +97,7 @@ var html = (function(html4) {
    * @return {string} a single unicode code-point as a string.
    */
   function lookupEntity(name) {
-    name = lcase(name);  // TODO: &pi; is different from &Pi;
+    name = name.toLowerCase();  // TODO: &pi; is different from &Pi;
     if (ENTITIES.hasOwnProperty(name)) { return ENTITIES[name]; }
     var m = name.match(decimalEscapeRe);
     if (m) {
@@ -352,7 +333,7 @@ var html = (function(html4) {
             if (m[0].length === next.length && parts[pos + 1] === '>') {
               // fast case, no attribute parsing needed
               pos += 2;
-              tagName = lcase(m[1]);
+              tagName = m[1].toLowerCase();
               if (h.endTag) {
                 h.endTag(tagName, param, continuationMarker,
                   continuationMaker(h, parts, pos, state, param));
@@ -375,7 +356,7 @@ var html = (function(html4) {
             if (m[0].length === next.length && parts[pos + 1] === '>') {
               // fast case, no attribute parsing needed
               pos += 2;
-              tagName = lcase(m[1]);
+              tagName = m[1].toLowerCase();
               if (h.startTag) {
                 h.startTag(tagName, [], param, continuationMarker,
                   continuationMaker(h, parts, pos, state, param));
@@ -583,7 +564,7 @@ var html = (function(html4) {
   function parseTagAndAttrs(parts, pos) {
     var m = /^(\w+)/.exec(parts[pos]);
     var tag = {};
-    tag.name = lcase(m[1]);
+    tag.name = m[1].toLowerCase();
     tag.eflags = html4.ELEMENTS[tag.name];
     var buf = parts[pos].substr(m[0].length);
     // Find the next '>'.  We optimistically assume this '>' is not in a
@@ -624,7 +605,7 @@ var html = (function(html4) {
 
       } else {
         // We have an attribute
-        var aName = lcase(m[1]);
+        var aName = m[1].toLowerCase();
         var aValue = m[2] ? decodeValue(m[3]) : aName;
         attrs.push(aName, aValue);
         buf = buf.substr(m[0].length);

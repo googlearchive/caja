@@ -31,7 +31,7 @@ public enum LinterMessageType implements MessageTypeInt {
       "%s: Return does not appear inside a function", MessageLevel.ERROR),
   UNCAUGHT_THROW_DURING_INIT(
       "%s: Uncaught exception thrown during initialization",
-      MessageLevel.WARNING),
+      MessageLevel.LINT),
   SYMBOL_NOT_LIVE(
       "%s: Symbol %s may be used before being initialized",
       MessageLevel.WARNING),

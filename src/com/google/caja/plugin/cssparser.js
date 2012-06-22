@@ -22,6 +22,9 @@
  * \@provides parseCssStylesheet, parseCssDeclarations
  */
 
+// The Turkish i seems to be a non-issue, but abort in case it is.
+if ('I'.toLowerCase() !== 'i') { throw 'I/i problem'; }
+
 /**
  * parseCssStylesheet takes a chunk of CSS text and a handler object with
  * methods that it calls as below:

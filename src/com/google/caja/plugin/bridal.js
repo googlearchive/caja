@@ -25,6 +25,9 @@
  * @overrides window
  */
 
+// The Turkish i seems to be a non-issue, but abort in case it is.
+if ('I'.toLowerCase() !== 'i') { throw 'I/i problem'; }
+
 /**
  * Construct the bridal object for a specific document.
  *
