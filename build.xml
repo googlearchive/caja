@@ -269,7 +269,6 @@
       <batchtest todir="${reports}/tests">
         <fileset dir="${tests}">
           <and>
-            <not><filename name="**/gwtbeans/**"/></not>
             <not><filename name="**/*BrowserTest.java"/></not>
             <filename name="**/${test.filter}.java"/>
             <filename regex="/[A-M]"/>
@@ -289,7 +288,6 @@
       <batchtest todir="${reports}/tests">
         <fileset dir="${tests}">
           <and>
-            <not><filename name="**/gwtbeans/**"/></not>
             <not><filename name="**/*BrowserTest.java"/></not>
             <filename name="**/${test.filter}.java"/>
             <filename regex="/[N-Z]"/>
@@ -309,7 +307,6 @@
       <batchtest todir="${reports}/tests">
         <fileset dir="${tests}">
           <and>
-            <not><filename name="**/gwtbeans/**"/></not>
             <filename name="**/*BrowserTest.java"/>
             <filename name="**/${test.filter}.java"/>
           </and>
@@ -325,29 +322,6 @@
       <jvmarg line="${jvmarg}"/>
       <syspropertyset refid="test.propertyset"/>
       <test todir="${reports}/tests" name="com.google.caja.AllTests"/>
-    </junit>
-  </target>
-
-  <!-- GwtBeans tests need a different classpath -->
-  <target name="RuntestsRunGwtBeans" unless="emma.enabled">
-    <junit printsummary="yes" fork="yes" forkmode="once" maxmemory="512m">
-      <assertions><enable/></assertions>  <!-- ignored unless fork="yes" -->
-      <classpath>
-        <pathelement location="${third_party}/java/gwt/gwt-user.jar"/>
-        <pathelement location="${third_party}/java/gwt/gwt-dev.jar"/>
-        <pathelement location="${third_party}/java/junit/junit.jar"/>
-        <pathelement location="${lib}"/>
-        <pathelement location="${src}"/>
-        <pathelement location="${tests}"/>
-      </classpath>
-      <formatter type="xml" usefile="true"/>
-      <jvmarg line="${jvmarg}"/>
-      <syspropertyset refid="test.propertyset"/>
-      <batchtest todir="${reports}/tests">
-        <fileset dir="${tests}">
-          <include name="com/google/caja/gwtbeans/shared/${test.filter}.java"/>
-        </fileset>
-      </batchtest>
     </junit>
   </target>
 
@@ -377,7 +351,6 @@
       <antcall target="RuntestsRunAtoM"/>
       <antcall target="RuntestsRunNtoZ"/>
       <antcall target="RuntestsRunEmma"/>
-      <antcall target="RuntestsRunGwtBeans"/>
     </parallel>
     <summarize errorProperty="runtests.error"
      failureProperty="runtests.failure">
@@ -1070,7 +1043,6 @@
       <include name="**/caja/util/*.java"/>
       <include name="**/caja/**/*TestCase.java"/>
       <include name="**/caja/**/*Test.java"/>
-      <include name="**/caja/gwtbeans/compile/*.java"/>
       <include name="**/caja/plugin/BrowserTestCaseStub.java"/>
       <compilerarg line="-Xlint:unchecked"/>
     </javac>
@@ -1145,7 +1117,6 @@
         <include name="**/caja/**/*.js"/>
         <include name="**/caja/**/*.txt"/>
         <include name="**/caja/**/*.xml"/>
-        <include name="**/caja/gwtbeans/**"/>
       </fileset>
       <fileset dir="${third_party}">
         <include name="js/jqueryjs/runtest/env.js"/>
@@ -1227,7 +1198,6 @@
       <include name="**/caja/plugin/*.java"/>
       <include name="**/caja/plugin/stages/*.java"/>
       <include name="**/caja/plugin/templates/*.java"/>
-      <include name="**/caja/gwtbeans/**"/>
       <exclude name="**/caja/plugin/*Main.java"/>
       <exclude name="**/caja/plugin/BuildServiceImplementation.java"/>
       <compilerarg line="-Xlint:unchecked"/>
@@ -1253,7 +1223,6 @@
         <include name="**/caja/plugin/templates/*.json"/>
         <include name="**/caja/plugin/unicode.js"/>
         <include name="**/caja/plugin/uri.js"/>
-        <include name="com/google/caja/gwtbeans/**"/>
       </fileset>
     </copy>
 
@@ -1298,7 +1267,6 @@
       </classpath>
       <classpath refid="classpath.compile"/>
       <classpath refid="classpath.gwt"/>
-      <include name="**/caja/gwtbeans/compile/*.java"/>
     </javac>
     <java failonerror="true" fork="true"
      classname="com.google.gwt.dev.Compiler">

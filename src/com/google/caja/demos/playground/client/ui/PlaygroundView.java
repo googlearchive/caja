@@ -19,10 +19,8 @@ import java.util.Map;
 
 import com.google.caja.demos.playground.client.Playground;
 import com.google.caja.demos.playground.client.PlaygroundResource;
-import com.google.caja.gwtbeans.shared.Caja;
-import com.google.caja.gwtbeans.shared.Frame;
-import com.google.gwt.core.client.GWT;
 import com.google.gwt.core.client.JavaScriptObject;
+import com.google.gwt.dom.client.Element;
 import com.google.gwt.event.dom.client.ChangeEvent;
 import com.google.gwt.event.dom.client.ChangeHandler;
 import com.google.gwt.event.dom.client.ClickEvent;
@@ -32,7 +30,6 @@ import com.google.gwt.event.dom.client.FocusHandler;
 import com.google.gwt.event.logical.shared.SelectionEvent;
 import com.google.gwt.event.logical.shared.SelectionHandler;
 import com.google.gwt.user.client.Window;
-import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.google.gwt.user.client.ui.Anchor;
 import com.google.gwt.user.client.ui.HTML;
 import com.google.gwt.user.client.ui.HasHorizontalAlignment;
@@ -344,13 +341,15 @@ public class PlaygroundView {
     });
   }
 
-  private void initCaja() {
-    if (null == mode) {
-      Caja.initialize(".", true /*debug*/);
-    } else {
-      Caja.initialize(".", true /*debug*/, mode.booleanValue() /*forceES5*/);
-    }
-  }
+  private native void initCaja(
+      boolean debug,
+      int forceES5) /*-{
+    $wnd.caja.initialize({
+      server: '.',
+      debug: debug,
+      forceES5: (forceES5 < 0) ? undefined : (forceES5 > 0)
+    });
+  }-*/;
 
   public PlaygroundView(Playground controller, Boolean mode) {
     this.controller = controller;
@@ -367,7 +366,7 @@ public class PlaygroundView {
     initFeedbackPanel();
     initExamples();
     initEditor();
-    initCaja();
+    initCaja(true, (mode == null) ? -1 : (mode ? 1 : 0));
     initPlusOne();
     initMode();
   }
@@ -417,54 +416,48 @@ public class PlaygroundView {
     // Make the cajoled content visible so that the DOM will be laid out before
     // the script checks DOM geometry.
     selectTab(Tabs.RENDER);
-    Map<String, String> domOpts = new HashMap<String, String>();
-    domOpts.put("idClass", idClass);
-    domOpts.put("title", "Playground Untrusted Content");
 
-    Caja.load(
+    setRenderedResultNative(
         playgroundUI.renderPanel.getElement(),
         makeUriPolicy(),
-        new AsyncCallback<Frame>() {
-          @Override public void onFailure(Throwable t) {
-            PlaygroundView.this.addCompileMessage(t.toString());
-          }
-          @Override public void onSuccess(Frame frame) {
-            JavaScriptObject tmp = makeExtraImports(Caja.getNative(),
-                frame.getNative(), policy);
-            augmentWith(tmp, "widgets",
-                ((WidgetsTaming)GWT.create(WidgetsTaming.class))
-                .getJso(frame, new Widgets(playgroundUI.gwtShim)));
-            augmentWith(tmp, "blivit",
-                ((BlivitTaming)GWT.create(BlivitTaming.class))
-                .getJso(frame, new Blivit("hello world")));
-            Frame runnableFrame = es5 ?
-                frame
-                  .api(tmp)
-                  .code("http://fake.url", "text/html", html) :
-                frame
-                  .api(tmp)
-                  .cajoled("http://fake.url/", js, html);
-            runnableFrame
-                .run(new AsyncCallback<JavaScriptObject>() {
-                  @Override public void onFailure(Throwable t) {
-                    PlaygroundView.this.addCompileMessage(t.toString());
-                  }
-                  @Override public void onSuccess(JavaScriptObject r) {
-                    PlaygroundView.this.setRenderedResult(r + "");
-                  }
-                });
-          }
-        }, domOpts);
+        idClass,
+        policy,
+        es5,
+        html,
+        js);
   }
+
+  private native void setRenderedResultNative(
+      Element element,
+      JavaScriptObject uriPolicy,
+      String idClass,
+      String policy,
+      boolean es5,
+      String html,
+      String js) /*-{
+    var that = this;
+    $wnd.caja.load(
+        element,
+        uriPolicy,
+        function(frame) {
+          var api = that.@com.google.caja.demos.playground.client.ui.PlaygroundView::makeExtraImports(Lcom/google/gwt/core/client/JavaScriptObject;Lcom/google/gwt/core/client/JavaScriptObject;Ljava/lang/String;)($wnd.caja, frame, policy);
+          frame = frame.api(api);
+          frame = es5
+              ? frame.code("http://fake.url", "text/html", html)
+              : frame.cajoled("http://fake.url/", js, html);
+          frame.run(function(r) {
+            that.@com.google.caja.demos.playground.client.ui.PlaygroundView::setRenderedResult(Ljava/lang/String;)(r + '');
+          });
+        },
+        {
+          idClass: idClass,
+          title: 'Playground Untrusted Content'
+        });
+  }-*/;
 
   private void setRenderedResult(String result) {
     playgroundUI.renderResult.setText(result);
   }
-
-  private native void augmentWith(JavaScriptObject o, String key,
-      JavaScriptObject value) /*-{
-    o[key] = value;
-  }-*/;
 
   private native JavaScriptObject makeExtraImports(
       JavaScriptObject caja,

@@ -147,7 +147,7 @@ public class IdentifierTest extends CajaTestCase {
         + "@com.google.caja.demos.playground.client.ui.WidgetsProxyImpl"
         + "::com_google_gwt_user_client_Element_getJso"
         + "("
-        +   "Lcom/google/caja/demos/gwtbeans/shared/Frame;"
+        +   "Lcom/google/caja/demos/foo/bar/Baz;"
         +   "Lcom/google/gwt/user/client/Element;"
         + ")", JsIdentifierSyntax.GWT);
   }
