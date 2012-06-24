@@ -176,7 +176,7 @@ public class TemplateCompilerTest extends CajaTestCase {
     assertSafeHtml(
         htmlFragment(fromString("<form></form>")),
         htmlFragment(fromString(
-            "<form action='test://example.org/testFormRewritten'"
+            "<form action='http://example.org/testFormRewritten'"
             + " autocomplete='off' id=\"id_1___\" target='_blank'></form>")),
         js(fromString(""
             + "function module() {"
@@ -256,7 +256,7 @@ public class TemplateCompilerTest extends CajaTestCase {
     assertSafeHtml(
         htmlFragment(fromString("<form name='hi'></form>")),
         htmlFragment(fromString(
-            "<form action='test://example.org/testFormName' autocomplete='off'"
+            "<form action='http://example.org/testFormName' autocomplete='off'"
             + " name='hi-suffix___' id=\"id_1___\" target=_blank></form>")),
         js(fromString(""
             + "function module() {"
@@ -282,7 +282,7 @@ public class TemplateCompilerTest extends CajaTestCase {
         htmlFragment(fromString(
             "<form onsubmit='alert(&quot;hi&quot;); return true;'></form>")),
         htmlFragment(fromString(
-            "<form action='test://example.org/testFormOnSubmitTrue'"
+            "<form action='http://example.org/testFormOnSubmitTrue'"
             + " autocomplete='off' id=id_2___ target='_blank'></form>")),
         js(fromString(
             ""
@@ -386,7 +386,7 @@ public class TemplateCompilerTest extends CajaTestCase {
     assertSafeHtml(
         htmlFragment(fromString("<form onsubmit=''></form>")),
         htmlFragment(fromString(
-            "<form action='test://example.org/testFormOnSubmitEmpty'"
+            "<form action='http://example.org/testFormOnSubmitEmpty'"
             + " autocomplete='off' id=\"id_1___\" target='_blank'></form>")),
         js(fromString(""
             + "function module() {"
@@ -945,7 +945,7 @@ public class TemplateCompilerTest extends CajaTestCase {
         htmlFragment(fromString(
             "<div"
             + " style=\"background-image:"
-            + " url(&#39;test://example.org/a.jpg/URIPOLICY&#39;)\">"
+            + " url(&#39;http://example.org/a.jpg/URIPOLICY&#39;)\">"
             + "</div>")),
         new Block(), true);
   }
@@ -970,7 +970,7 @@ public class TemplateCompilerTest extends CajaTestCase {
             + "    emitter___.setAttr(el___, 'style', "
             + "        'background-image: url('"
             + "        + IMPORTS___.rewriteUriInCss___("
-            + "              'test://example.org/a.jpg', 'background-image')"
+            + "              'http://example.org/a.jpg', 'background-image')"
             + "        + ')');"
             + "    emitter___.rmAttr(el___, 'id');"
             + "    el___ = emitter___.finish();"
@@ -987,7 +987,7 @@ public class TemplateCompilerTest extends CajaTestCase {
         htmlFragment(fromString(""
             + "<form "
             + "  target=\"_blank\""
-            + "  action=\"test://example.org/testFormTargetSpecified\""
+            + "  action=\"http://example.org/testFormTargetSpecified\""
             + "  autocomplete=\"off\""
             + "  id=\"id_1___\"><"
             + "/form>")),

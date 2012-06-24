@@ -87,7 +87,7 @@ public class CssRewriterTest extends CajaTestCase {
     AssertionFailedError failure = null;
 
     // InputSource for file positions in error message goldens.
-    is = new InputSource(new URI("test://example.org/test"));
+    is = new InputSource(new URI("http://example.org/test"));
 
     // Extract the JSON style-object from the call.
     assertTrue(render(tests), Operation.is(tests, Operator.FUNCTION_CALL));
@@ -303,13 +303,13 @@ public class CssRewriterTest extends CajaTestCase {
         UriPolicy.IDENTITY,
         ""
             + "div { background: url(bar.png); }",
-        Arrays.asList("test://example.org/bar.png"),
+        Arrays.asList("http://example.org/bar.png"),
         Arrays.<String>asList());
     assertUriPolicy(
         UriPolicy.IDENTITY,
         ""
         + "div { background: 'bar.png' }",
-        Arrays.asList("test://example.org/bar.png"),
+        Arrays.asList("http://example.org/bar.png"),
         Arrays.<String>asList());
   }
 
@@ -319,13 +319,13 @@ public class CssRewriterTest extends CajaTestCase {
         ""
         + "div { background-image: url(bar.png); }",
         Arrays.<String>asList(),
-        Arrays.asList("test://example.org/bar.png"));
+        Arrays.asList("http://example.org/bar.png"));
     assertUriPolicy(
         null,
         ""
         + "div { background-image: url(bar.png); }",
         Arrays.<String>asList(),
-        Arrays.asList("test://example.org/bar.png"));
+        Arrays.asList("http://example.org/bar.png"));
   }
 
   private void runTest(String css, String golden) throws Exception {
@@ -356,7 +356,7 @@ public class CssRewriterTest extends CajaTestCase {
               Map<String, ?> hints) {
             URI uri = ref.getUri();
 
-            if ("test".equals(uri.getScheme())  // Used by CajaTestCase
+            if ("http".equals(uri.getScheme())  // Used by CajaTestCase
                 && "example.org".equals(uri.getHost())
                 && uri.getPath() != null
                 && uri.getPath().startsWith("/")) {

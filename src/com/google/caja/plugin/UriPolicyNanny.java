@@ -48,10 +48,6 @@ public class UriPolicyNanny {
     return (
         "http".equals(scheme) ||
         "https".equals(scheme) ||
-        "mailto".equals(scheme) ||
-        "test".equals(scheme));
-    // TODO(felix8a): remove "test".  Many testcases rely on test: urls,
-    // and it's probably harmless to allow that, but it's probably better
-    // to fix the testcases.
+        "mailto".equals(scheme));
   }
 }

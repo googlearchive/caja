@@ -246,7 +246,7 @@ public class DomParserTest extends CajaTestCase {
     Document doc = parser.parseDocument().getOwnerDocument();
     assertEquals(5, mq.getMessages().size());
 
-    final String TEST_NAME = "test://example.org/testIllegalAttributes";
+    final String TEST_NAME = "http://example.org/testIllegalAttributes";
     assertEquals(TEST_NAME+ ":4+72 - 75: ignoring token 'hi~'",
                  mq.getMessages().get(0).toString());
     assertEquals(TEST_NAME + ":4+82 - 90: ignoring token 'data:hi~'",
@@ -2337,7 +2337,7 @@ public class DomParserTest extends CajaTestCase {
       throws ParseException {
     // Override input sources, so that DomParser has a file extension available
     // when deciding whether to treat the input as HTML or XML.
-    this.is = new InputSource(URI.create("test:///" + getName() + ".html"));
+    this.is = new InputSource(URI.create("http:///" + getName() + ".html"));
     assertParsedMarkup(
         Arrays.asList(
             "<xmp><br/></xmp>"
@@ -2353,7 +2353,7 @@ public class DomParserTest extends CajaTestCase {
             ),
         null, true);
 
-    this.is = new InputSource(URI.create("test:///" + getName() + ".xml"));
+    this.is = new InputSource(URI.create("http:///" + getName() + ".xml"));
     assertParsedMarkup(
         Arrays.asList(
             "<xmp><br/></xmp>"
@@ -2369,7 +2369,7 @@ public class DomParserTest extends CajaTestCase {
             ),
         null, true);
 
-    this.is = new InputSource(URI.create("test:///" + getName() + ".xhtml"));
+    this.is = new InputSource(URI.create("http:///" + getName() + ".xhtml"));
     assertParsedMarkup(
         Arrays.asList(
             "<xmp><br/></xmp>"

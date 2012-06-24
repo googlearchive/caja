@@ -70,7 +70,7 @@ function module() {
     el___ = emitter___.byId('id_6___');
     emitter___.setAttr(el___, 'style', 'color: red; background-image: url(' +
       IMPORTS___.rewriteUriInCss___(
-          'test://example.org/foo', 'background-image')
+          'http://example.org/foo', 'background-image')
       + ')');
     emitter___.rmAttr(el___, 'id');
     el___ = emitter___.byId('id_7___');

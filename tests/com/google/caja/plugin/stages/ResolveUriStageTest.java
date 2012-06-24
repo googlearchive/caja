@@ -29,7 +29,7 @@ public class ResolveUriStageTest extends PipelineStageTestCase {
   public final void testLink() throws Exception {
     assertPipeline(
         job("<a href=foo.html>foo</a>", ContentType.HTML),
-        job("<a href=\"test://example.org/foo.html\">foo</a>",
+        job("<a href=\"http://example.org/foo.html\">foo</a>",
             ContentType.HTML));
   }
 
@@ -42,7 +42,7 @@ public class ResolveUriStageTest extends PipelineStageTestCase {
   public final void testLinkWithAnchor() throws Exception {
     assertPipeline(
         job("<a href=foo.html#bar>foo</a>", ContentType.HTML),
-        job("<a href=\"test://example.org/foo.html#bar\">foo</a>",
+        job("<a href=\"http://example.org/foo.html#bar\">foo</a>",
             ContentType.HTML));
   }
 
@@ -70,7 +70,7 @@ public class ResolveUriStageTest extends PipelineStageTestCase {
     assertPipeline(
         job("<a href='foo bar'>foo</a>",
             ContentType.HTML),
-        job("<a href=\"test://example.org/foo%20bar\">foo</a>",
+        job("<a href=\"http://example.org/foo%20bar\">foo</a>",
             ContentType.HTML));
   }
 
