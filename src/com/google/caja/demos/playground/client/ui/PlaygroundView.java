@@ -347,7 +347,7 @@ public class PlaygroundView {
     $wnd.caja.initialize({
       server: '.',
       debug: debug,
-      forceES5: (forceES5 < 0) ? undefined : (forceES5 > 0)
+      forceES5Mode: (forceES5 < 0) ? undefined : (forceES5 > 0)
     });
   }-*/;
 
