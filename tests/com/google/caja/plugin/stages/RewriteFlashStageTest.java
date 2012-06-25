@@ -56,7 +56,7 @@ public final class RewriteFlashStageTest extends PipelineStageTestCase {
             "a<embed type=\"application/x-shockwave-flash\"",
             " src=\"xx\">b"
         ),
-        html("a<div class=\"cajaEmbed1\"></div>b"),
+        html("a<span class=\"cajaEmbed1\"></span>b"),
         js(
             "{\n",
             "  IMPORTS___.htmlEmitter___.handleEmbed({\n",
@@ -73,7 +73,7 @@ public final class RewriteFlashStageTest extends PipelineStageTestCase {
             "a<embed type=\"application/x-shockwave-flash\"",
             " src=\"xx\" width=\"11\" height=\"22\">b"
         ),
-        html("a<div class=\"cajaEmbed2\"></div>b"),
+        html("a<span class=\"cajaEmbed2\"></span>b"),
         js(
             "{\n",
             "  IMPORTS___.htmlEmitter___.handleEmbed({\n",
@@ -97,7 +97,7 @@ public final class RewriteFlashStageTest extends PipelineStageTestCase {
             "a<object type=\"application/x-shockwave-flash\"",
             " data=\"xx\">b</object>c"
         ),
-        html("a<div class=\"cajaEmbed1\">b</div>c"),
+        html("a<span class=\"cajaEmbed1\">b</span>c"),
         js(
             "{\n",
             "  IMPORTS___.htmlEmitter___.handleEmbed({\n",
@@ -117,7 +117,7 @@ public final class RewriteFlashStageTest extends PipelineStageTestCase {
             " c",
             "</object>d"
         ),
-        html("a<div class=\"cajaEmbed2\"> b  c</div>d"),
+        html("a<span class=\"cajaEmbed2\"> b  c</span>d"),
         js(
             "{\n",
             "  IMPORTS___.htmlEmitter___.handleEmbed({\n",
@@ -148,7 +148,7 @@ public final class RewriteFlashStageTest extends PipelineStageTestCase {
             "<param name=\"movie\" value=\"$url1\" />",
             "<param name=\"allowFullScreen\" value=\"true\" />",
             "<param name=\"allowscriptaccess\" value=\"always\" />",
-            "<div class=\"cajaEmbed1\"></div>",
+            "<span class=\"cajaEmbed1\"></span>",
             "</object>"),
         js(
             "{\n",
