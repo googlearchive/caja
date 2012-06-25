@@ -59,11 +59,12 @@ Embed 2".</p>
       'youtube', '480', '390');
 
   function message(varargs) {
-    alert(Array.prototype.join.call(arguments, ' '));
+    alert(Array.prototype.join.call(arguments, ','));
   }
 
   function callFlash() {
     var o = document.getElementById('bridgeAware');
+    // TODO(felix8a): test multiple args
     o.message('call Flash from JS ' + (counter++));
   }
 </script>

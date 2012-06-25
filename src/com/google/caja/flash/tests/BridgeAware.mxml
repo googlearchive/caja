@@ -51,8 +51,8 @@
       return String(counter++);
     }
 
-    private function message(s:String):void {
-      output.text = s + '\n' + output.text;
+    private function message(... args):void {
+      output.text = args.join(',') + '\n' + output.text;
     }
 
     private function error(what:String, e:Error):void {
@@ -101,6 +101,11 @@
       com.google.caja.flash.net.navigateToURL(new URLRequest(url), '_top');
     }
 
+    // TODO(felix8a): use this in tests
+    private function upper(s:String):String {
+      return s.toUpperCase();
+    }
+
     private function on_addedToStage():void {
       import com.google.caja.flash.external.ExternalInterface;
       import com.google.caja.flash.FlashBridgeClient;
@@ -108,7 +113,9 @@
         FlashBridgeClient.init(this);
         com.google.caja.flash.external.ExternalInterface.addCallback(
             'message', message);
-        message('Added message() callback (might have failed silently)');
+        com.google.caja.flash.external.ExternalInterface.addCallback(
+            'upper', upper);
+        message('Added callbacks (might have failed silently)');
       } catch (e:Error) {
         message('Failed to add callbacks:' + e);
       }

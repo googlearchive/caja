@@ -14,6 +14,7 @@
 
 package com.google.caja.plugin.stages;
 
+import java.io.IOException;
 import java.net.URI;
 import java.util.Map;
 
@@ -34,7 +35,12 @@ import com.google.caja.parser.quasiliteral.QuasiBuilder;
 import com.google.caja.plugin.Job;
 import com.google.caja.plugin.JobEnvelope;
 import com.google.caja.plugin.Jobs;
+import com.google.caja.reporting.MessageContext;
+import com.google.caja.reporting.MessageLevel;
+import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
+import com.google.caja.reporting.MessageType;
+import com.google.caja.reporting.MessageTypeInt;
 import com.google.caja.util.ContentType;
 import com.google.caja.util.Maps;
 import com.google.caja.util.Pipeline;
@@ -110,14 +116,14 @@ final class FlashRewriter {
   private Element rewriteEmbed(Element el) {
     String src = getAttr(el, "src");
     if (empty(src)) {
-      // TODO(felix8a): error message
+      mq.addMessage(Messages.MISSING_SRC, Nodes.getFilePositionFor(el));
       return el;
     }
     String height = getAttr(el, "height");
     String width = getAttr(el, "width");
     Element r = emplacehold(el);
     if (r == null) {
-      // TODO(felix8a): error message
+      mq.addMessage(Messages.NO_PARENT, Nodes.getFilePositionFor(el));
       return el;
     }
     String id = getPlaceholderId(r);
@@ -161,7 +167,7 @@ final class FlashRewriter {
   private Element rewriteObject(Element el) {
     Element r = emplacehold(el);
     if (r == null) {
-      // TODO(felix8a): error message
+      mq.addMessage(Messages.NO_PARENT, Nodes.getFilePositionFor(el));
       return el;
     }
 
@@ -226,14 +232,14 @@ final class FlashRewriter {
   private Element emplacehold(Element el) {
     Node parent = el.getParentNode();
     if (parent == null) { return null; }
-    Element div = el.getOwnerDocument().createElementNS(HTML_NS, "div");
-    // We're labeling the placeholder div with class rather than id,
+    Element span = el.getOwnerDocument().createElementNS(HTML_NS, "span");
+    // We're labeling the placeholder span with class rather than id,
     // because there are several complications getting ids through
     // all the HTML rewriter stages.
-    div.setAttributeNS(HTML_NS, "class", generateId());
-    parent.insertBefore(div, el);
+    span.setAttributeNS(HTML_NS, "class", generateId());
+    parent.insertBefore(span, el);
     parent.removeChild(el);
-    return div;
+    return span;
   }
 
   private String getTagName(Node n) {
@@ -272,4 +278,36 @@ final class FlashRewriter {
 
   private static final String CLASSID_FLASH =
     "clsid:D27CDB6E-AE6D-11cf-96B8-444553540000";
+
+  private enum Messages implements MessageTypeInt {
+
+    MISSING_SRC(MessageLevel.WARNING,
+        "%s: Embed is missing src attribute"),
+
+    NO_PARENT(MessageLevel.WARNING,
+        "%s: Element doesn't have a parent??");
+
+    private final String formatString;
+    private final MessageLevel level;
+    private int paramCount = -1;
+
+    Messages(MessageLevel level, String formatString) {
+      this.level = level;
+      this.formatString = formatString;
+    }
+
+    public int getParamCount() {
+      if (paramCount < 0) {
+        paramCount = MessageType.formatStringArity(formatString);
+      }
+      return paramCount;
+    }
+
+    public void format(MessagePart[] parts, MessageContext context,
+                       Appendable out) throws IOException {
+      MessageType.formatMessage(formatString, parts, context, out);
+    }
+
+    public MessageLevel getLevel() { return level; }
+  }
 }

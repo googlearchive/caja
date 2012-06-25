@@ -1747,7 +1747,7 @@
     <attribute name="in"/>
     <attribute name="out"/>
     <sequential>
-      <exec executable="mxmlc">
+      <exec executable="mxmlc" failonerror="true">
         <arg value="--source-path=${src}"/>
         <arg value="--debug=true"/>
         <arg value="--static-link-runtime-shared-libraries"/>

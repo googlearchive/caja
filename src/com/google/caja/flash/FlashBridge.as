@@ -106,8 +106,7 @@ package com.google.caja.flash {
         throw new Error(errorIntro + ': bad scheme');
       }
 
-      var parent:String =
-          ExternalInterface.call('window.location.href.toString');
+      var parent:String = safeJsCall('window.location.href.toString');
       var v:Object = urlParse(parent, 'Invalid parent url');
       if (v.host === u.host) {
         throw new Error(errorIntro + ': Host must not be ' + u.host);
@@ -131,26 +130,49 @@ package com.google.caja.flash {
     }
 
     private function onLoaderInit(... rest):void {
-      ExternalInterface.call("caja.policy.flash.onLoaderInit", cajaContext);
+      safeJsCall("caja.policy.flash.onLoaderInit", cajaContext);
     }
 
     private function onLoaderError(... rest):void {
-      ExternalInterface.call("caja.policy.flash.onLoaderError", cajaContext);
+      safeJsCall("caja.policy.flash.onLoaderError", cajaContext);
     }
 
+    // ExternalInterface.call has wontfix string escaping bugs.  Workaround
+    // is to do the escaping ourselves.  This is a gross hack.
+    // Documentation for .call says it will throw a runtime error if the
+    // first arg is not an alphanumeric function name, but as of Flash
+    // 11.3, this isn't enforced.  So this might need to be revised for
+    // some future version of Flash.
+    private function safeJsCall(funcName:String, ... args):* {
+      if (!/^[\w.]+$/.test(funcName)) {
+        throw 'invalid function name ' + funcName;
+      }
+      var quoted:Array = [];
+      for each (var a:* in args) {
+        quoted.push(JSON.stringify(a));
+      }
+      trace(funcName, quoted.join(','));
+      return flash.external.ExternalInterface.call(
+        '(function() { return '
+        + funcName + '(' + quoted.join(',') + ');'
+        + ' })');
+    }
 
     // FlashBridge Event Handlers
 
     private function onExternalInterfaceAddCallback(data:Object):void {
       var ex:Error;
       try {
+        if (!/^\w+$/.test(data.functionName)) {
+          throw 'invalid function name ' + data.functionName;
+        }
         // Since addCallback adds a function to the dom node for the Flash
         // object, we prepend 'caja_' to ensure we can't be tricked into
         // invoking a dom method.
         flash.external.ExternalInterface.addCallback(
             'caja_' + data.functionName,
             data.functionCallback);
-        ExternalInterface.call(
+        safeJsCall(
             'caja.policy.flash.onAddCallback',
             cajaContext,
             'caja_' + data.functionName);
@@ -169,7 +191,7 @@ package com.google.caja.flash {
       var ex:Error;
       var res:Object;
       try {
-        res = flash.external.ExternalInterface.call(
+        res = safeJsCall(
             "caja.policy.flash.onCall",
             cajaContext,
             data.functionName,
@@ -189,7 +211,7 @@ package com.google.caja.flash {
       var ex:Error;
       var res:Object;
       try {
-        res = flash.external.ExternalInterface.call(
+        res = safeJsCall(
             "caja.policy.flash.onNavigateToURL",
             cajaContext,
             data.url);
