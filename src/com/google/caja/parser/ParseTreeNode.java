@@ -70,28 +70,28 @@ public interface ParseTreeNode extends MessagePart, Renderable, Cloneable {
   List<? extends ParseTreeNode> children();
 
   /**
+   * Try to avoid this; it uses O(n**2) time and O(n) space (worst case).
+   * <p>
    * Applies the given visitor to children in a pre-order traversal, skipping
    * traversal of a subtree if {@link Visitor#visit} of the root node returns
    * false.
    * <p>
-   * This is deprecated because it needs O(n**2) time and O(n) space, though
-   * we don't have a replacement for all cases yet.
+   * TODO(felix8a): eliminate uses of acceptPreOrder/acceptPostOrder
    *
    * @param v the visitor to apply.
    * @param ancestors an initial set of ancestor nodes not containing this.
    * @return true iff visiting the root node yielded true.
    */
-  @Deprecated
   boolean acceptPreOrder(Visitor v, AncestorChain<?> ancestors);
 
   /**
+   * Try to avoid this; it uses O(n**2) time and O(n) space (worst case).
    * Like {@link #acceptPreOrder}, but post-order.
    *
    * @param v the visitor to apply.
    * @param ancestors an initial set of ancestor nodes not containing this.
    * @return true iff visiting the root node yielded true.
    */
-  @Deprecated
   boolean acceptPostOrder(Visitor v, AncestorChain<?> ancestors);
 
   /**
