@@ -1781,4 +1781,17 @@
     <precajole spec="${precajolesrc}/heavy.xml" dest="${precajolelib}/heavy" />
     <jar destfile="${jars}/precajole.jar" basedir="${precajolelib}/heavy" />
   </target>
+
+  <target name="printlibs">
+    <path id="classpath.eclipse">
+      <path refid="classpath.compile"/>
+      <path refid="classpath.tests.compile"/>
+    </path>
+    <pathconvert
+       refid="classpath.eclipse"
+       pathsep="${line.separator}">
+     <map from="${basedir}/" to=""/>
+    </pathconvert>
+  </target>
+
 </project>

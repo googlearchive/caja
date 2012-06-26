@@ -226,15 +226,15 @@ function makeEclipseClasspath() {
   echo "	<classpathentry excluding=\"**/*~|**/.svn/**\" kind=\"src\" path=\"tests\"/>"
   echo "	<classpathentry kind=\"con\" path=\"com.google.gwt.eclipse.core.GWT_CONTAINER\"/>"
   # Needed so JUnit test works in Eclipse
-  echo "	<classpathentry excluding=\"**/*~|**/.svn/**|**/*.java|java/htmlparser/src\" kind=\"src\" path=\"third_party\"/>"
-  # TODO(mikesamuel): enable once we've replaced htmlparser.jar with the source
-  #echo "	<classpathentry excluding=\"**/*~|**/.svn/**|nu/validator/htmlparser/dom/|nu/validator/htmlparser/extra/|nu/validator/htmlparser/io/|nu/validator/htmlparser/sax/|nu/validator/htmlparser/xom/\" kind=\"src\" path=\"third_party/java/htmlparser/src\"/>"
+  echo "	<classpathentry excluding=\"**/*~|**/.svn/**|**/*.java|java/htmlparser/src/\" kind=\"src\" path=\"third_party\"/>"
+  echo "	<classpathentry excluding=\"**/*~|**/.svn/**|nu/validator/htmlparser/dom/|nu/validator/htmlparser/extra/|nu/validator/htmlparser/io/|nu/validator/htmlparser/sax/|nu/validator/htmlparser/xom/\" kind=\"src\" path=\"third_party/java/htmlparser/src\"/>"
   echo "	<classpathentry kind=\"lib\" path=\"ant-eclipse-genfiles\"/>"
-  # TODO(mikesamuel): limit to only those jars listed in build.xml.
-  # Perhaps create a build target for ant that writes the classpath to stdout.
-  for jar in $(find third_party/java -name \*.jar | sort) ant-jars/htmlparser.jar; do
-    echo "	<classpathentry kind=\"lib\" path=\"$jar\"/>"
-  done
+
+  ant printlibs | perl -ne '
+    if (/^\[pathconvert\] (.*)/ && $1 !~ /^ant-/) {
+      print qq(\t<classpathentry kind="lib" path="$1"/>\n);
+    }'
+
   echo "	<classpathentry kind=\"con\" path=\"org.eclipse.jdt.launching.JRE_CONTAINER\"/>"
   echo "	<classpathentry kind=\"lib\" path=\"$ANT_HOME/lib/ant.jar\"/>"
   echo "	<classpathentry kind=\"output\" path=\"ant-eclipse-lib\"/>"

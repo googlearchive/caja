@@ -1,35 +1,35 @@
 /*
  * Copyright (c) 2005-2007 Henri Sivonen
  * Copyright (c) 2007-2009 Mozilla Foundation
- * Portions of comments Copyright 2004-2008 Apple Computer, Inc., Mozilla 
+ * Portions of comments Copyright 2004-2008 Apple Computer, Inc., Mozilla
  * Foundation, and Opera Software ASA.
  *
- * Permission is hereby granted, free of charge, to any person obtaining a 
- * copy of this software and associated documentation files (the "Software"), 
- * to deal in the Software without restriction, including without limitation 
- * the rights to use, copy, modify, merge, publish, distribute, sublicense, 
- * and/or sell copies of the Software, and to permit persons to whom the 
+ * Permission is hereby granted, free of charge, to any person obtaining a
+ * copy of this software and associated documentation files (the "Software"),
+ * to deal in the Software without restriction, including without limitation
+ * the rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons to whom the
  * Software is furnished to do so, subject to the following conditions:
  *
- * The above copyright notice and this permission notice shall be included in 
+ * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
  *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL 
- * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
- * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+ * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+ * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
  * DEALINGS IN THE SOFTWARE.
  */
 
 /*
- * The comments following this one that use the same comment syntax as this 
- * comment are quotes from the WHATWG HTML 5 spec as of 2 June 2007 
+ * The comments following this one that use the same comment syntax as this
+ * comment are quotes from the WHATWG HTML 5 spec as of 2 June 2007
  * amended as of June 18 2008.
  * That document came with this statement:
- * "© Copyright 2004-2008 Apple Computer, Inc., Mozilla Foundation, and 
- * Opera Software ASA. You are granted a license to use, reproduce and 
+ * "© Copyright 2004-2008 Apple Computer, Inc., Mozilla Foundation, and
+ * Opera Software ASA. You are granted a license to use, reproduce and
  * create derivative works of this document."
  */
 
@@ -50,15 +50,15 @@ import org.xml.sax.SAXParseException;
 /**
  * An implementation of
  * http://www.whatwg.org/specs/web-apps/current-work/multipage/tokenization.html
- * 
+ *
  * This class implements the <code>Locator</code> interface. This is not an
  * incidental implementation detail: Users of this class are encouraged to make
  * use of the <code>Locator</code> nature.
- * 
+ *
  * By default, the tokenizer may report data that XML 1.0 bans. The tokenizer
  * can be configured to treat these conditions as fatal or to coerce the infoset
  * to something that XML 1.0 allows.
- * 
+ *
  * @version $Id: Tokenizer.java 524 2009-05-25 08:56:16Z hsivonen $
  * @author hsivonen
  */
@@ -460,7 +460,7 @@ public final class Tokenizer implements Locator {
     private boolean metaBoundaryPassed;
 
     // ]NOCPP]
-    
+
     /**
      * The name of the current doctype token.
      */
@@ -511,8 +511,6 @@ public final class Tokenizer implements Locator {
 
     // [NOCPP[
 
-    private PushedLocation pushedLocation;
-
     private LocatorImpl ampersandLocation;
 
     public Tokenizer(TokenHandler tokenHandler,
@@ -527,7 +525,7 @@ public final class Tokenizer implements Locator {
 
     /**
      * The constructor.
-     * 
+     *
      * @param tokenHandler
      *            the handler for receiving tokens
      */
@@ -567,7 +565,7 @@ public final class Tokenizer implements Locator {
 
     /**
      * Returns the mappingLangToXmlLang.
-     * 
+     *
      * @return the mappingLangToXmlLang
      */
     public boolean isMappingLangToXmlLang() {
@@ -576,7 +574,7 @@ public final class Tokenizer implements Locator {
 
     /**
      * Sets the mappingLangToXmlLang.
-     * 
+     *
      * @param mappingLangToXmlLang
      *            the mappingLangToXmlLang to set
      */
@@ -587,7 +585,7 @@ public final class Tokenizer implements Locator {
 
     /**
      * Sets the error handler.
-     * 
+     *
      * @see org.xml.sax.XMLReader#setErrorHandler(org.xml.sax.ErrorHandler)
      */
     public void setErrorHandler(ErrorHandler eh) {
@@ -600,7 +598,7 @@ public final class Tokenizer implements Locator {
 
     /**
      * Sets the commentPolicy.
-     * 
+     *
      * @param commentPolicy
      *            the commentPolicy to set
      */
@@ -610,7 +608,7 @@ public final class Tokenizer implements Locator {
 
     /**
      * Sets the contentNonXmlCharPolicy.
-     * 
+     *
      * @param contentNonXmlCharPolicy
      *            the contentNonXmlCharPolicy to set
      */
@@ -621,7 +619,7 @@ public final class Tokenizer implements Locator {
 
     /**
      * Sets the contentSpacePolicy.
-     * 
+     *
      * @param contentSpacePolicy
      *            the contentSpacePolicy to set
      */
@@ -631,7 +629,7 @@ public final class Tokenizer implements Locator {
 
     /**
      * Sets the xmlnsPolicy.
-     * 
+     *
      * @param xmlnsPolicy
      *            the xmlnsPolicy to set
      */
@@ -648,7 +646,7 @@ public final class Tokenizer implements Locator {
 
     /**
      * Sets the html4ModeCompatibleWithXhtml1Schemata.
-     * 
+     *
      * @param html4ModeCompatibleWithXhtml1Schemata
      *            the html4ModeCompatibleWithXhtml1Schemata to set
      */
@@ -662,7 +660,7 @@ public final class Tokenizer implements Locator {
     // For the token handler to call
     /**
      * Sets the content model flag and the associated element name.
-     * 
+     *
      * @param contentModelFlag
      *            the flag
      * @param contentModelElement
@@ -684,7 +682,7 @@ public final class Tokenizer implements Locator {
 
     /**
      * Sets the content model flag and the associated element name.
-     * 
+     *
      * @param contentModelFlag
      *            the flag
      * @param contentModelElement
@@ -852,7 +850,7 @@ public final class Tokenizer implements Locator {
 
     /**
      * Appends to the smaller buffer.
-     * 
+     *
      * @param c
      *            the UTF-16 code unit to append
      */
@@ -872,7 +870,7 @@ public final class Tokenizer implements Locator {
 
     /**
      * Appends to the smaller buffer.
-     * 
+     *
      * @param c
      *            the UTF-16 code unit to append
      */
@@ -893,10 +891,10 @@ public final class Tokenizer implements Locator {
 
     /**
      * The smaller buffer as a String. Currently only used for error reporting.
-     * 
+     *
      * <p>
      * C++ memory note: The return value must be released.
-     * 
+     *
      * @return the smaller buffer as a string
      */
     private String strBufToString() {
@@ -910,7 +908,7 @@ public final class Tokenizer implements Locator {
     /**
      * Returns the short buffer as a local name. The return value is released in
      * emitDoctypeToken().
-     * 
+     *
      * @return the smaller buffer as local name
      */
     private @Local String strBufToDoctypeName() {
@@ -924,7 +922,7 @@ public final class Tokenizer implements Locator {
 
     /**
      * Emits the smaller buffer as character tokens.
-     * 
+     *
      * @throws SAXException
      *             if the token handler threw
      */
@@ -962,7 +960,7 @@ public final class Tokenizer implements Locator {
 
     /**
      * Appends to the larger buffer.
-     * 
+     *
      * @param c
      *            the UTF-16 code unit to append
      */
@@ -1055,7 +1053,7 @@ public final class Tokenizer implements Locator {
 
     /**
      * Appends to the larger buffer.
-     * 
+     *
      * @param arr
      *            the UTF-16 code units to append
      */
@@ -1078,10 +1076,10 @@ public final class Tokenizer implements Locator {
 
     /**
      * The larger buffer as a string.
-     * 
+     *
      * <p>
      * C++ memory note: The return value must be released.
-     * 
+     *
      * @return the larger buffer as a string
      */
     private String longStrBufToString() {
@@ -1095,7 +1093,7 @@ public final class Tokenizer implements Locator {
 
     /**
      * Emits the current comment token.
-     * 
+     *
      * @throws SAXException
      */
     private void emitComment(int provisionalHyphens) throws SAXException {
@@ -1138,7 +1136,7 @@ public final class Tokenizer implements Locator {
     /**
      * Emits a warning about private use characters if the warning has not been
      * emitted yet.
-     * 
+     *
      * @throws SAXException
      */
     private void warnAboutPrivateUseChar() throws SAXException {
@@ -1150,7 +1148,7 @@ public final class Tokenizer implements Locator {
 
     /**
      * Tells if the argument is a BMP PUA character.
-     * 
+     *
      * @param c
      *            the UTF-16 code unit to check
      * @return <code>true</code> if PUA character
@@ -1161,7 +1159,7 @@ public final class Tokenizer implements Locator {
 
     /**
      * Tells if the argument is an astral PUA character.
-     * 
+     *
      * @param c
      *            the code point to check
      * @return <code>true</code> if astral private use
@@ -1173,7 +1171,7 @@ public final class Tokenizer implements Locator {
 
     /**
      * Tells if the argument is a non-character (works for BMP and astral).
-     * 
+     *
      * @param c
      *            the code point to check
      * @return <code>true</code> if non-character
@@ -1184,7 +1182,7 @@ public final class Tokenizer implements Locator {
 
     /**
      * Flushes coalesced character tokens.
-     * 
+     *
      * @throws SAXException
      */
     private void flushChars() throws SAXException {
@@ -1203,7 +1201,7 @@ public final class Tokenizer implements Locator {
     /**
      * Reports an condition that would make the infoset incompatible with XML
      * 1.0 as fatal.
-     * 
+     *
      * @param message
      *            the message
      * @throws SAXException
@@ -1219,7 +1217,7 @@ public final class Tokenizer implements Locator {
 
     /**
      * Reports a Parse Error.
-     * 
+     *
      * @param message
      *            the message
      * @throws SAXException
@@ -1250,7 +1248,7 @@ public final class Tokenizer implements Locator {
 
     /**
      * Reports a warning
-     * 
+     *
      * @param message
      *            the message
      * @throws SAXException
@@ -1264,7 +1262,7 @@ public final class Tokenizer implements Locator {
     }
 
     /**
-     * 
+     *
      */
     private void resetAttributes() {
         // [NOCPP[
@@ -1438,7 +1436,7 @@ public final class Tokenizer implements Locator {
         strBuf = new char[64];
         strBufLen = 0;
         longStrBuf = new char[1024];
-        longStrBufLen = 0;        
+        longStrBufLen = 0;
         stateSave = Tokenizer.DATA;
         line = linePrev = 0;
         col = colPrev = 1;
@@ -2408,7 +2406,7 @@ public final class Tokenizer implements Locator {
                         /*
                          * (This can only happen if the content model flag is
                          * set to the PCDATA state.)
-                         * 
+                         *
                          * Consume every character up to and including the first
                          * U+003E GREATER-THAN SIGN character (>) or the end of
                          * the file (EOF), whichever comes first. Emit a comment
@@ -2420,9 +2418,9 @@ public final class Tokenizer implements Locator {
                          * character (i.e. up to the character just before the
                          * U+003E or EOF character). (If the comment was started
                          * by the end of the file (EOF), the token is empty.)
-                         * 
+                         *
                          * Switch to the data state.
-                         * 
+                         *
                          * If the end of the file was reached, reconsume the EOF
                          * character.
                          */
@@ -2472,17 +2470,17 @@ public final class Tokenizer implements Locator {
                         /*
                          * (This can only happen if the content model flag is
                          * set to the PCDATA state.)
-                         * 
+                         *
                          * If the next two characters are both U+002D
                          * HYPHEN-MINUS (-) characters, consume those two
                          * characters, create a comment token whose data is the
                          * empty string, and switch to the comment start state.
-                         * 
+                         *
                          * Otherwise, if the next seven characters are an ASCII
                          * case-insensitive match for the word "DOCTYPE", then
                          * consume those characters and switch to the DOCTYPE
                          * state.
-                         * 
+                         *
                          * Otherwise, if the insertion mode is "in foreign
                          * content" and the current node is not an element in
                          * the HTML namespace and the next seven characters are
@@ -2492,7 +2490,7 @@ public final class Tokenizer implements Locator {
                          * after), then consume those characters and switch to
                          * the CDATA section state (which is unrelated to the
                          * content model flag's CDATA state).
-                         * 
+                         *
                          * Otherwise, is is a parse error. Switch to the bogus
                          * comment state. The next character that is consumed,
                          * if any, is the first character that will be in the
@@ -2554,8 +2552,8 @@ public final class Tokenizer implements Locator {
                         c = read();
                         /*
                          * Comment start state
-                         * 
-                         * 
+                         *
+                         *
                          * Consume the next input character:
                          */
                         switch (c) {
@@ -2717,7 +2715,7 @@ public final class Tokenizer implements Locator {
                     c = read();
                     /*
                      * Comment start dash state
-                     * 
+                     *
                      * Consume the next input character:
                      */
                     switch (c) {
@@ -3274,7 +3272,7 @@ public final class Tokenizer implements Locator {
                     }
                     // FALLTHRU DON'T REORDER
                 case DOCTYPE_SYSTEM_IDENTIFIER_DOUBLE_QUOTED:
-                    doctypesystemidentifierdoublequotedloop: for (;;) {
+                    /*doctypesystemidentifierdoublequotedloop:*/ for (;;) {
                         c = read();
                         /*
                          * Consume the next input character:
@@ -3779,7 +3777,7 @@ public final class Tokenizer implements Locator {
                      * This section defines how to consume a character
                      * reference. This definition is used when parsing character
                      * references in text and in attributes.
-                     * 
+                     *
                      * The behavior depends on the identity of the next
                      * character (the one immediately after the U+0026 AMPERSAND
                      * character):
@@ -4009,14 +4007,14 @@ public final class Tokenizer implements Locator {
                             /*
                              * U+0078 LATIN SMALL LETTER X U+0058 LATIN CAPITAL
                              * LETTER X Consume the X.
-                             * 
+                             *
                              * Follow the steps below, but using the range of
                              * characters U+0030 DIGIT ZERO through to U+0039
                              * DIGIT NINE, U+0061 LATIN SMALL LETTER A through
                              * to U+0066 LATIN SMALL LETTER F, and U+0041 LATIN
                              * CAPITAL LETTER A, through to U+0046 LATIN CAPITAL
                              * LETTER F (in other words, 0-9, A-F, a-f).
-                             * 
+                             *
                              * When it comes to interpreting the number,
                              * interpret it as a hexadecimal number.
                              */
@@ -4028,7 +4026,7 @@ public final class Tokenizer implements Locator {
                              * Anything else Follow the steps below, but using
                              * the range of characters U+0030 DIGIT ZERO through
                              * to U+0039 DIGIT NINE (i.e. just 0-9).
-                             * 
+                             *
                              * When it comes to interpreting the number,
                              * interpret it as a decimal number.
                              */
@@ -4089,7 +4087,7 @@ public final class Tokenizer implements Locator {
                              * NUMBER SIGN character and, if appropriate, the X
                              * character). This is a parse error; nothing is
                              * returned.
-                             * 
+                             *
                              * Otherwise, if the next character is a U+003B
                              * SEMICOLON, consume that too. If it isn't, there
                              * is a parse error.
@@ -4181,7 +4179,7 @@ public final class Tokenizer implements Locator {
                              * NUMBER SIGN character and, if appropriate, the X
                              * character). This is a parse error; nothing is
                              * returned.
-                             * 
+                             *
                              * Otherwise, if the next character is a U+003B
                              * SEMICOLON, consume that too. If it isn't, there
                              * is a parse error.
@@ -4209,7 +4207,7 @@ public final class Tokenizer implements Locator {
                     }
                     // XXX reorder point
                 case PLAINTEXT:
-                    plaintextloop: for (;;) {
+                    /*plaintextloop:*/ for (;;) {
                         if (reconsume) {
                             reconsume = false;
                         } else {
@@ -4384,7 +4382,7 @@ public final class Tokenizer implements Locator {
                     }
                     // WARNING FALLTHRU CASE TRANSITION: DON'T REORDER
                 case ESCAPE_HYPHEN:
-                    escapehyphenloop: for (;;) {
+                    /*escapehyphenloop:*/ for (;;) {
                         c = read();
                         switch (c) {
                             case '\u0000':
@@ -4420,7 +4418,7 @@ public final class Tokenizer implements Locator {
                          * CHARACTER TABULATION + U+000A LINE FEED (LF) + +
                          * U+000C FORM FEED (FF) + U+0020 SPACE + U+003E
                          * GREATER-THAN SIGN (>) + U+002F SOLIDUS (/) + EOF
-                         * 
+                         *
                          * ...then emit a U+003C LESS-THAN SIGN character token,
                          * a U+002F SOLIDUS character token, and switch to the
                          * data state to process the next input character.
@@ -4593,7 +4591,7 @@ public final class Tokenizer implements Locator {
                     }
                     // XXX reorder point
                 case RCDATA:
-                    rcdataloop: for (;;) {
+                    /*rcdataloop:*/ for (;;) {
                         if (reconsume) {
                             reconsume = false;
                         } else {
@@ -5149,7 +5147,7 @@ public final class Tokenizer implements Locator {
                      * This section defines how to consume an entity. This
                      * definition is used when parsing entities in text and in
                      * attributes.
-                     * 
+                     *
                      * The behavior depends on the identity of the next
                      * character (the one immediately after the U+0026 AMPERSAND
                      * character):
@@ -5299,7 +5297,7 @@ public final class Tokenizer implements Locator {
                      * characters (and unconsume the U+0023 NUMBER SIGN
                      * character and, if appropriate, the X character). This is
                      * a parse error; nothing is returned.
-                     * 
+                     *
                      * Otherwise, if the next character is a U+003B SEMICOLON,
                      * consume that too. If it isn't, there is a parse error.
                      */
@@ -5488,13 +5486,13 @@ public final class Tokenizer implements Locator {
 
     /**
      * Returns the alreadyComplainedAboutNonAscii.
-     * 
+     *
      * @return the alreadyComplainedAboutNonAscii
      */
     public boolean isAlreadyComplainedAboutNonAscii() {
         return alreadyComplainedAboutNonAscii;
     }
-    
+
     // ]NOCPP]
 
     public void internalEncodingDeclaration(String internalCharset)
@@ -5551,7 +5549,7 @@ public final class Tokenizer implements Locator {
 
     /**
      * Returns the nextCharOnNewLine.
-     * 
+     *
      * @return the nextCharOnNewLine
      */
     public boolean isNextCharOnNewLine() {
@@ -5564,7 +5562,7 @@ public final class Tokenizer implements Locator {
 
     /**
      * Returns the line.
-     * 
+     *
      * @return the line
      */
     public int getLine() {
@@ -5573,7 +5571,7 @@ public final class Tokenizer implements Locator {
 
     /**
      * Returns the col.
-     * 
+     *
      * @return the col
      */
     public int getCol() {

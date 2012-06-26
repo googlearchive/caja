@@ -1,35 +1,35 @@
 /*
  * Copyright (c) 2007 Henri Sivonen
  * Copyright (c) 2007-2009 Mozilla Foundation
- * Portions of comments Copyright 2004-2008 Apple Computer, Inc., Mozilla 
+ * Portions of comments Copyright 2004-2008 Apple Computer, Inc., Mozilla
  * Foundation, and Opera Software ASA.
  *
- * Permission is hereby granted, free of charge, to any person obtaining a 
- * copy of this software and associated documentation files (the "Software"), 
- * to deal in the Software without restriction, including without limitation 
- * the rights to use, copy, modify, merge, publish, distribute, sublicense, 
- * and/or sell copies of the Software, and to permit persons to whom the 
+ * Permission is hereby granted, free of charge, to any person obtaining a
+ * copy of this software and associated documentation files (the "Software"),
+ * to deal in the Software without restriction, including without limitation
+ * the rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons to whom the
  * Software is furnished to do so, subject to the following conditions:
  *
- * The above copyright notice and this permission notice shall be included in 
+ * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
  *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL 
- * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
- * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+ * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+ * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
  * DEALINGS IN THE SOFTWARE.
  */
 
 /*
- * The comments following this one that use the same comment syntax as this 
- * comment are quotes from the WHATWG HTML 5 spec as of 27 June 2007 
+ * The comments following this one that use the same comment syntax as this
+ * comment are quotes from the WHATWG HTML 5 spec as of 27 June 2007
  * amended as of June 28 2007.
  * That document came with this statement:
- * "© Copyright 2004-2007 Apple Computer, Inc., Mozilla Foundation, and 
- * Opera Software ASA. You are granted a license to use, reproduce and 
+ * "© Copyright 2004-2007 Apple Computer, Inc., Mozilla Foundation, and
+ * Opera Software ASA. You are granted a license to use, reproduce and
  * create derivative works of this document."
  */
 
@@ -188,7 +188,7 @@ public abstract class TreeBuilder<T> implements TokenHandler {
     final static int FONT = 64;
 
     final static int KEYGEN = 65;
-    
+
     // start insertion modes
 
     private static final int INITIAL = 0;
@@ -234,7 +234,7 @@ public abstract class TreeBuilder<T> implements TokenHandler {
     private static final int IN_CDATA_RCDATA = 20;
 
     private static final int FRAMESET_OK = 21;
-    
+
     // start charset states
 
     private static final int CHARSET_INITIAL = 0;
@@ -335,11 +335,11 @@ public abstract class TreeBuilder<T> implements TokenHandler {
     private static final int NOT_IN_FOREIGN = 1;
 
     // [NOCPP[
-    
+
     private static final @Local String HTML_LOCAL = "html";
-    
+
     // ]NOCPP]
-    
+
     private int mode = INITIAL;
 
     private int originalMode = INITIAL;
@@ -379,7 +379,7 @@ public abstract class TreeBuilder<T> implements TokenHandler {
     private @NsUri String contextNamespace;
 
     private T contextNode;
-    
+
     private StackNode<T>[] stack;
 
     private int currentPtr = -1;
@@ -391,11 +391,11 @@ public abstract class TreeBuilder<T> implements TokenHandler {
     private T formPointer;
 
     private T headPointer;
-    
+
     protected char[] charBuffer;
 
     protected int charBufferLen = 0;
-    
+
     private boolean quirks = false;
 
     // [NOCPP[
@@ -417,7 +417,7 @@ public abstract class TreeBuilder<T> implements TokenHandler {
     /**
      * Reports an condition that would make the infoset incompatible with XML
      * 1.0 as fatal.
-     * 
+     *
      * @throws SAXException
      * @throws SAXParseException
      */
@@ -447,7 +447,7 @@ public abstract class TreeBuilder<T> implements TokenHandler {
 
     /**
      * Reports a Parse Error.
-     * 
+     *
      * @param message
      *            the message
      * @throws SAXException
@@ -464,7 +464,7 @@ public abstract class TreeBuilder<T> implements TokenHandler {
 
     /**
      * Reports a warning
-     * 
+     *
      * @param message
      *            the message
      * @throws SAXException
@@ -479,6 +479,7 @@ public abstract class TreeBuilder<T> implements TokenHandler {
         // ]NOCPP]
     }
 
+    @SuppressWarnings("unchecked")
     public final void startTokenization(Tokenizer self) throws SAXException {
         tokenizer = self;
         stack = new StackNode[64];
@@ -718,7 +719,7 @@ public abstract class TreeBuilder<T> implements TokenHandler {
                             // ]NOCPP]
 
                             /*
-                             * 
+                             *
                              * Then, switch to the root element mode of the tree
                              * construction stage.
                              */
@@ -956,7 +957,7 @@ public abstract class TreeBuilder<T> implements TokenHandler {
                                     }
                                     // ]NOCPP]
                                     /*
-                                     * 
+                                     *
                                      * Set the document to quirks mode.
                                      */
                                     documentModeInternal(
@@ -1001,7 +1002,7 @@ public abstract class TreeBuilder<T> implements TokenHandler {
                                     mode = IN_HEAD;
                                     /*
                                      * then reprocess the current token.
-                                     * 
+                                     *
                                      * This will result in an empty head element
                                      * being generated, with the current token
                                      * being reprocessed in the "after head"
@@ -1220,7 +1221,7 @@ public abstract class TreeBuilder<T> implements TokenHandler {
                     }
                     // ]NOCPP]
                     /*
-                     * 
+                     *
                      * Set the document to quirks mode.
                      */
                     documentModeInternal(DocumentMode.QUIRKS_MODE, null, null,
@@ -1366,7 +1367,7 @@ public abstract class TreeBuilder<T> implements TokenHandler {
             }
             listPtr--;
         }
-        Portability.releaseArray(listOfActiveFormattingElements);        
+        Portability.releaseArray(listOfActiveFormattingElements);
         listOfActiveFormattingElements = null;
         // [NOCPP[
         idLocations.clear();
@@ -1448,7 +1449,7 @@ public abstract class TreeBuilder<T> implements TokenHandler {
                                         pop();
                                     }
                                     foreignFlag = TreeBuilder.NOT_IN_FOREIGN;
-                                    continue starttagloop;                                    
+                                    continue starttagloop;
                                 }
                                 // else fall thru
                             default:
@@ -1689,7 +1690,7 @@ public abstract class TreeBuilder<T> implements TokenHandler {
                                     if (mode == FRAMESET_OK) {
                                         if (currentPtr == 0 || stack[1].group != BODY) {
                                             assert fragment;
-                                            err("Stray \u201Cframeset\u201D start tag.");                                            
+                                            err("Stray \u201Cframeset\u201D start tag.");
                                             break starttagloop;
                                         } else {
                                             err("\u201Cframeset\u201D start tag after \u201Cbody\u201D already open.");
@@ -1701,10 +1702,10 @@ public abstract class TreeBuilder<T> implements TokenHandler {
                                                     "http://www.w3.org/1999/xhtml",
                                                     elementName, attributes);
                                             mode = IN_FRAMESET;
-                                            break starttagloop;                                            
+                                            break starttagloop;
                                         }
                                     } else {
-                                        err("Stray \u201Cframeset\u201D start tag.");                                            
+                                        err("Stray \u201Cframeset\u201D start tag.");
                                         break starttagloop;
                                     }
                                     // NOT falling through!
@@ -1728,9 +1729,9 @@ public abstract class TreeBuilder<T> implements TokenHandler {
                                     if (mode == FRAMESET_OK) {
                                         mode = IN_BODY;
                                     }
-                                    // fall through to IN_BODY 
+                                    // fall through to IN_BODY
                                 default:
-                                    // fall through to IN_BODY                                
+                                    // fall through to IN_BODY
                             }
                         case IN_BODY:
                             inbodyloop: for (;;) {
@@ -1917,7 +1918,7 @@ public abstract class TreeBuilder<T> implements TokenHandler {
                                     case TABLE:
                                         // The only quirk. Blame Hixie and Acid2.
                                         if (!quirks) {
-                                            implicitlyCloseP();                                            
+                                            implicitlyCloseP();
                                         }
                                         appendToCurrentNodeAndPushElementMayFoster(
                                                 "http://www.w3.org/1999/xhtml",
@@ -2145,7 +2146,7 @@ public abstract class TreeBuilder<T> implements TokenHandler {
                                          * immediately before the bottommost
                                          * ruby element on the stack of open
                                          * elements.
-                                         * 
+                                         *
                                          * Insert an HTML element for the token.
                                          */
                                         eltPos = findLastInScope("ruby");
@@ -2504,7 +2505,7 @@ public abstract class TreeBuilder<T> implements TokenHandler {
                             }
                             // ]NOCPP]
                             /*
-                             * 
+                             *
                              * Set the document to quirks mode.
                              */
                             documentModeInternal(DocumentMode.QUIRKS_MODE,
@@ -2559,19 +2560,19 @@ public abstract class TreeBuilder<T> implements TokenHandler {
                                 case HEAD:
                                     /*
                                      * A start tag whose tag name is "head"
-                                     * 
+                                     *
                                      * Create an element for the token.
-                                     * 
+                                     *
                                      * Set the head element pointer to this new
                                      * element node.
-                                     * 
+                                     *
                                      * Append the new element to the current
                                      * node and push it onto the stack of open
                                      * elements.
                                      */
                                     appendToCurrentNodeAndPushHeadElement(attributes);
                                     /*
-                                     * 
+                                     *
                                      * Change the insertion mode to "in head".
                                      */
                                     mode = IN_HEAD;
@@ -2591,7 +2592,7 @@ public abstract class TreeBuilder<T> implements TokenHandler {
                                     mode = IN_HEAD;
                                     /*
                                      * then reprocess the current token.
-                                     * 
+                                     *
                                      * This will result in an empty head element
                                      * being generated, with the current token
                                      * being reprocessed in the "after head"
@@ -2747,10 +2748,10 @@ public abstract class TreeBuilder<T> implements TokenHandler {
     }
 
     /**
-     * 
+     *
      * <p>
      * C++ memory note: The return value must be released.
-     * 
+     *
      * @return
      * @throws SAXException
      * @throws StopSniffingException
@@ -3530,7 +3531,7 @@ public abstract class TreeBuilder<T> implements TokenHandler {
                     }
                     // ]NOCPP]
                     /*
-                     * 
+                     *
                      * Set the document to quirks mode.
                      */
                     documentModeInternal(DocumentMode.QUIRKS_MODE, null, null,
@@ -3874,15 +3875,12 @@ public abstract class TreeBuilder<T> implements TokenHandler {
         foreignFlag = TreeBuilder.NOT_IN_FOREIGN;
         StackNode<T> node;
         @Local String name;
-        @NsUri String ns;
         for (int i = currentPtr; i >= 0; i--) {
             node = stack[i];
             name = node.name;
-            ns = node.ns;
             if (i == 0) {
                 if (!(contextNamespace == "http://www.w3.org/1999/xhtml" && (contextName == "td" || contextName == "th"))) {
                     name = contextName;
-                    ns = contextNamespace;
                 } else {
                     mode = IN_BODY; // XXX from Hixie's email
                     return;
@@ -3938,7 +3936,7 @@ public abstract class TreeBuilder<T> implements TokenHandler {
 
     /**
      * @throws SAXException
-     * 
+     *
      */
     private void implicitlyCloseP() throws SAXException {
         int eltPos = findLastInScope("p");
@@ -3967,6 +3965,7 @@ public abstract class TreeBuilder<T> implements TokenHandler {
     private void push(StackNode<T> node) throws SAXException {
         currentPtr++;
         if (currentPtr == stack.length) {
+            @SuppressWarnings("unchecked")
             StackNode<T>[] newStack = new StackNode[stack.length + 64];
             System.arraycopy(stack, 0, newStack, 0, stack.length);
             Portability.releaseArray(stack);
@@ -3979,6 +3978,7 @@ public abstract class TreeBuilder<T> implements TokenHandler {
     private void append(StackNode<T> node) {
         listPtr++;
         if (listPtr == listOfActiveFormattingElements.length) {
+            @SuppressWarnings("unchecked")
             StackNode<T>[] newList = new StackNode[listOfActiveFormattingElements.length + 64];
             System.arraycopy(listOfActiveFormattingElements, 0, newList, 0,
                     listOfActiveFormattingElements.length);
@@ -4040,7 +4040,7 @@ public abstract class TreeBuilder<T> implements TokenHandler {
 
     private void removeFromListOfActiveFormattingElements(int pos) {
         assert listOfActiveFormattingElements[pos] != null;
-        listOfActiveFormattingElements[pos].release();            
+        listOfActiveFormattingElements[pos].release();
         if (pos == listPtr) {
             assert clearLastListSlot();
             listPtr--;
@@ -4293,7 +4293,7 @@ public abstract class TreeBuilder<T> implements TokenHandler {
         // ]NOCPP]
         addAttributesToElement(stack[0].node, attributes);
     }
-    
+
     private void pushHeadPointerOntoStack() throws SAXException {
         flushCharacters();
         fatal();
@@ -4308,7 +4308,7 @@ public abstract class TreeBuilder<T> implements TokenHandler {
 
     /**
      * @throws SAXException
-     * 
+     *
      */
     private void reconstructTheActiveFormattingElements() throws SAXException {
         if (listPtr == -1) {
@@ -4430,9 +4430,9 @@ public abstract class TreeBuilder<T> implements TokenHandler {
                                 fatal("Attribute \u201Cxmlns:xlink\u201D with the value \u201Chttp://www.w3org/1999/xlink\u201D is not serializable as XML 1.0 without changing document semantics.");
                                 break;
                         }
-                    }                    
+                    }
                 } else {
-                    err("Attribute \u201C" + attributes.getLocalName(i) + "\u201D not allowed here.");                    
+                    err("Attribute \u201C" + attributes.getLocalName(i) + "\u201D not allowed here.");
                     switch (namePolicy) {
                         case ALTER_INFOSET:
                             // fall through
@@ -4671,7 +4671,7 @@ public abstract class TreeBuilder<T> implements TokenHandler {
         Portability.releaseElement(elt);
     }
 
-    @SuppressWarnings("unchecked") private void appendVoidElementToCurrentMayFoster(
+    private void appendVoidElementToCurrentMayFoster(
             @NsUri String ns, @Local String name, HtmlAttributes attributes,
             T form) throws SAXException {
         flushCharacters();
@@ -4692,7 +4692,7 @@ public abstract class TreeBuilder<T> implements TokenHandler {
         Portability.releaseElement(elt);
     }
 
-    @SuppressWarnings("unchecked") private void appendVoidElementToCurrentMayFoster(
+    private void appendVoidElementToCurrentMayFoster(
             @NsUri String ns, ElementName elementName, HtmlAttributes attributes)
             throws SAXException {
         flushCharacters();
@@ -4716,7 +4716,7 @@ public abstract class TreeBuilder<T> implements TokenHandler {
         Portability.releaseElement(elt);
     }
 
-    @SuppressWarnings("unchecked") private void appendVoidElementToCurrentMayFosterCamelCase(
+    private void appendVoidElementToCurrentMayFosterCamelCase(
             @NsUri String ns, ElementName elementName, HtmlAttributes attributes)
             throws SAXException {
         flushCharacters();
@@ -4740,7 +4740,7 @@ public abstract class TreeBuilder<T> implements TokenHandler {
         Portability.releaseElement(elt);
     }
 
-    @SuppressWarnings("unchecked") private void appendVoidElementToCurrent(
+    private void appendVoidElementToCurrent(
             @NsUri String ns, @Local String name, HtmlAttributes attributes,
             T form) throws SAXException {
         flushCharacters();
@@ -4760,7 +4760,7 @@ public abstract class TreeBuilder<T> implements TokenHandler {
             int length) throws SAXException {
         appendCharacters(stack[currentPtr].node, buf, start, length);
     }
-    
+
     protected final void accumulateCharacter(char c) throws SAXException {
             int newLen = charBufferLen + 1;
             if (newLen > charBuffer.length) {
@@ -4866,7 +4866,7 @@ public abstract class TreeBuilder<T> implements TokenHandler {
 
     /**
      * Sets the errorHandler.
-     * 
+     *
      * @param errorHandler
      *            the errorHandler to set
      */
@@ -4876,7 +4876,7 @@ public abstract class TreeBuilder<T> implements TokenHandler {
 
     /**
      * Returns the errorHandler.
-     * 
+     *
      * @return the errorHandler
      */
     public ErrorHandler getErrorHandler() {
@@ -4885,7 +4885,7 @@ public abstract class TreeBuilder<T> implements TokenHandler {
 
     /**
      * The argument MUST be an interned string or <code>null</code>.
-     * 
+     *
      * @param context
      */
     public final void setFragmentContext(@Local String context) {
@@ -4900,7 +4900,7 @@ public abstract class TreeBuilder<T> implements TokenHandler {
 
     /**
      * The argument MUST be an interned string or <code>null</code>.
-     * 
+     *
      * @param context
      */
     public final void setFragmentContext(@Local String context, @NsUri String ns, T node, boolean quirks) {
@@ -4919,7 +4919,7 @@ public abstract class TreeBuilder<T> implements TokenHandler {
 
     /**
      * Returns the scriptingEnabled.
-     * 
+     *
      * @return the scriptingEnabled
      */
     public boolean isScriptingEnabled() {
@@ -4928,7 +4928,7 @@ public abstract class TreeBuilder<T> implements TokenHandler {
 
     /**
      * Sets the scriptingEnabled.
-     * 
+     *
      * @param scriptingEnabled
      *            the scriptingEnabled to set
      */
@@ -4940,7 +4940,7 @@ public abstract class TreeBuilder<T> implements TokenHandler {
 
     /**
      * Sets the doctypeExpectation.
-     * 
+     *
      * @param doctypeExpectation
      *            the doctypeExpectation to set
      */
@@ -4956,7 +4956,7 @@ public abstract class TreeBuilder<T> implements TokenHandler {
 
     /**
      * Sets the documentModeHandler.
-     * 
+     *
      * @param documentModeHandler
      *            the documentModeHandler to set
      */
@@ -4965,17 +4965,17 @@ public abstract class TreeBuilder<T> implements TokenHandler {
     }
 
     // [NOCPP[
-    
+
     /**
      * Sets the reportingDoctype.
-     * 
+     *
      * @param reportingDoctype
      *            the reportingDoctype to set
      */
     public void setReportingDoctype(boolean reportingDoctype) {
         this.reportingDoctype = reportingDoctype;
     }
-    
+
     // ]NOCPP]
 
     /**
@@ -5025,10 +5025,10 @@ public abstract class TreeBuilder<T> implements TokenHandler {
 
     /**
      * Creates a comparable snapshot of the tree builder state. Snapshot creation
-     * is only supported immediately after a script end tag has been processed. In 
+     * is only supported immediately after a script end tag has been processed. In
      * C++ the caller is responsible for calling <code>delete</code> on the returned
      * object.
-     * 
+     *
      * @return a snapshot.
      */
     @SuppressWarnings("unchecked") public StateSnapshot<T> newSnapshot() {
@@ -5040,14 +5040,14 @@ public abstract class TreeBuilder<T> implements TokenHandler {
         for (int i = 0; i < listCopy.length; i++) {
             StackNode<T> node = listOfActiveFormattingElements[i];
             if (node != null) {
-                node.retain();            
+                node.retain();
             }
             listCopy[i] = node;
         }
         Portability.retainElement(formPointer);
         return new StateSnapshot<T>(stackCopy, listCopy, formPointer);
     }
-    
+
     public boolean snapshotMatches(StateSnapshot<T> snapshot) {
         StackNode<T>[] stackCopy = snapshot.stack;
         StackNode<T>[] listCopy = snapshot.listOfActiveFormattingElements;
@@ -5066,5 +5066,5 @@ public abstract class TreeBuilder<T> implements TokenHandler {
         }
         return true;
     }
-    
+
 }

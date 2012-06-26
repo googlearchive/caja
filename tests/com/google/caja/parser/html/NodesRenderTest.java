@@ -173,6 +173,7 @@ public class NodesRenderTest extends CajaTestCase {
 
   // --------
 
+  @SuppressWarnings("unused")
   private void assertRenderHtml(String expected, String test) {
     assertEquals(expected, renderHtml(xml(test)));
   }
