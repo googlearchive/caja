@@ -76,4 +76,11 @@
     <uri>http://code.jquery.com/ui/1.8.21/jquery-ui.min.js</uri>
   </precajole>
 
+  <!-- 2012-06-25: playground jquery examples refer to URIs like
+       http://jqueryui.com/ui/xx.js which are currently 1.8.21.
+       No <uri>s are specified for these files because there isn't
+       a canonical version-specific location for them.  These are
+       precajoled anyway, because we can still do content match. -->
+  <precajole dir="jqueryui/1.8.21/ui"></precajole>
+
 </precajole-spec>

@@ -33,7 +33,6 @@ import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.util.ContentType;
-import com.google.caja.util.Strings;
 import com.google.common.base.Charsets;
 import com.google.common.io.Files;
 
@@ -48,6 +47,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.tools.ant.BuildException;
+import org.apache.tools.ant.DirectoryScanner;
 import org.apache.tools.ant.Task;
 import org.xml.sax.Attributes;
 import org.xml.sax.InputSource;
@@ -116,10 +116,9 @@ public class PrecajoleTask extends Task {
     private final File specDir;
 
     private Locator here = null;
-    private String sourceName = null;
-    private String sourceText = null;
+    private String precajoleFile = null;
+    private String precajoleDir = null;
     private String cdata = "";
-    private boolean upToDate = false;
     private List<String> uris = null;
 
     public SpecHandler(String filename) {
@@ -157,7 +156,7 @@ public class PrecajoleTask extends Task {
 
     @Override
     public void endElement(String uri, String name, String qName)
-    throws SAXParseException {
+    throws SAXException {
       if ("precajole-spec".equals(name)) {
         // ignore
       } else if ("precajole".equals(name)) {
@@ -174,21 +173,19 @@ public class PrecajoleTask extends Task {
       cdata += new String(ch, start, len);
     }
 
-    private void startPrecajole(Attributes attrs) throws SAXException {
+    private void startPrecajole(Attributes attrs) throws SAXParseException {
       if (attrs != null) {
-        sourceName = attrs.getValue("file");
-        if (sourceName != null) {
-          File source = new File(specDir, sourceName);
-          upToDate = source.exists()
-              && source.lastModified() < map.getModTime();
-          if (!upToDate) {
-            sourceText = readFile(source);
-            uris = new ArrayList<String>();
-          }
+        precajoleDir = attrs.getValue("dir");
+        precajoleFile = attrs.getValue("file");
+        if (precajoleDir != null && precajoleFile != null) {
+          throw new SAXParseException("can't use both dir= and file=", here);
+        }
+        if (precajoleDir != null || precajoleFile != null) {
+          uris = new ArrayList<String>();
           return;
         }
       }
-      throw new SAXParseException("missing file= attribute", here);
+      throw new SAXParseException("missing file= or dir= attribute", here);
     }
 
     private void startUri() {
@@ -199,11 +196,10 @@ public class PrecajoleTask extends Task {
       if (cdata != null) {
         cdata = cdata.trim();
         if (!cdata.isEmpty()) {
-          if (!upToDate) {
-            uris.add(cdata);
-            if (Strings.lower(cdata).startsWith("http:")) {
-              uris.add("https:" + cdata.substring("http:".length()));
-            }
+          String uri = StaticPrecajoleMap.normalizeUri(cdata);
+          uris.add(uri);
+          if (uri.startsWith("http:")) {
+            uris.add("https:" + uri.substring("http:".length()));
           }
           return;
         }
@@ -211,10 +207,38 @@ public class PrecajoleTask extends Task {
       throw new SAXParseException("<uri> has no content", here);
     }
 
-    private void endPrecajole() {
-      if (!upToDate) {
-        CajoledModule cajoled = cajole(sourceText, sourceName);
-        map.put(uris.toArray(new String[0]), sourceText, cajoled);
+    private void endPrecajole() throws SAXException {
+      if (precajoleDir != null) {
+        cajoleDir(precajoleDir);
+      } else {
+        cajoleFile(uris, precajoleFile);
+      }
+    }
+
+    private void cajoleFile(List<String> uris, String name) throws SAXException {
+      File f = new File(specDir, name);
+      if (f.exists() && f.lastModified() < map.getModTime()) {
+        return;
+      }
+      String text = readFile(f);
+      CajoledModule cajoled = cajole(text, name);
+      map.put(uris, text, cajoled);
+    }
+
+    private void cajoleDir(String dirName) throws SAXException {
+      DirectoryScanner ds = new DirectoryScanner();
+      ds.setBasedir(specDir);
+      String includes[] = { dirName + "/**/*.js" };
+      ds.setIncludes(includes);
+      ds.scan();
+      for (String fileName : ds.getIncludedFiles()) {
+        List<String> suburis = new ArrayList<String>();
+        for (String uri : uris) {
+          String suburi = uri + "/" + fileName;
+          suburi = StaticPrecajoleMap.normalizeUri(suburi);
+          suburis.add(suburi);
+        }
+        cajoleFile(suburis, fileName);
       }
     }
 

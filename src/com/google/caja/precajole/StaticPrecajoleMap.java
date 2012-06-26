@@ -118,6 +118,10 @@ public class StaticPrecajoleMap implements PrecajoleMap {
     }
   }
 
+  public void put(List<String> uris, String source, CajoledModule cajoled) {
+    put(uris.toArray(new String[uris.size()]), source, cajoled);
+  }
+
   public void put(String[] uris, String source, CajoledModule cajoled) {
     Entry entry = new Entry(uris, source, cajoled);
     byte[] serial = serialize(entry);
@@ -180,7 +184,7 @@ public class StaticPrecajoleMap implements PrecajoleMap {
     return urlGroups;
   }
 
-  private String normalizeUri(String uri) {
+  public static String normalizeUri(String uri) {
     try {
       URI u = new URI(uri).normalize();
       if (u.getHost() != null) {
@@ -204,7 +208,7 @@ public class StaticPrecajoleMap implements PrecajoleMap {
     }
   }
 
-  private String lowercase(String s) {
+  private static String lowercase(String s) {
     return s == null ? null : Strings.lower(s);
   }
 
