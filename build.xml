@@ -523,9 +523,9 @@
     <javac destdir="${lib}" debug="true" target="1.5" source="1.5">
       <src path="${src}"/>
       <classpath refid="classpath.compile"/>
-      <include name="**/caja/opensocial/*.java"/>
-      <include name="**/caja/opensocial/applet/ExpressionLanguageStage.java"/>
-      <include name="**/caja/plugin/*Main.java"/>
+      <include name="com/google/caja/plugin/*Main.java"/>
+      <!-- used by Closure Compiler JsonMLConversionTest -->
+      <include name="com/google/caja/parser/js/JsonMLParser.java"/>
     </javac>
     <!-- Generate a schema of CSS properties for client side CSS validation. -->
     <copy todir="${lib}">
