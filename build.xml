@@ -1047,66 +1047,6 @@
       <compilerarg line="-Xlint:unchecked"/>
     </javac>
 
-    <!-- Lint the ES5/3 case -->
-    <genrule class="com.google.caja.ancillary.linter.Linter">
-      <input file="${lib.caja}/cajita-promise.js"/>
-      <input file="${src.caja}/plugin/bridal.js"/>
-      <input file="${lib.caja}/plugin/caja.js"/>
-      <input file="${lib.caja}/plugin/css-defs.js"/>
-      <input file="${src.caja}/plugin/csslexer.js"/>
-      <input file="${src.caja}/plugin/sanitizecss.js"/>
-      <input file="${src.caja}/plugin/cssparser.js"/>
-      <input file="${src.caja}/plugin/domado.js"/>
-      <input file="${src.caja}/plugin/caja-iframe-build-version.js"/>
-      <input file="${src.caja}/plugin/caja-iframe-done.js"/>
-      <input file="${src.caja}/plugin/html-emitter.js"/>
-      <input file="${src.caja}/plugin/html-sanitizer.js"/>
-      <input file="${lib.caja}/plugin/html4-defs.js"/>
-      <input file="${src.caja}/plugin/unicode.js"/>
-      <input file="${src.caja}/plugin/uri.js"/>
-      <input file="${src.caja}/flash/caja-flash.js"/>
-      <output file="${lib}/AllTests.Linter1.tstamp"/>
-    </genrule>
-
-    <!-- Lint the native-ES5 case -->
-    <genrule class="com.google.caja.ancillary.linter.Linter">
-      <input file="${src.caja}/ses/useHTMLLogger.js"/>
-      <input file="${src.caja}/ses/logger.js"/>
-      <input file="${src.caja}/ses/repairES5.js"/>
-      <input file="${src.caja}/ses/WeakMap.js"/>
-      <input file="${src.caja}/ses/debug.js"/>
-      <input file="${src.caja}/ses/StringMap.js"/>
-      <input file="${src.caja}/ses/whitelist.js"/>
-      <input file="${src.caja}/ses/atLeastFreeVarNames.js"/>
-      <input file="${src.caja}/ses/startSES.js"/>
-      <input file="${src.caja}/ses/ejectorsGuardsTrademarks.js"/>
-      <input file="${src.caja}/ses/hookupSES.js"/>
-      <input file="${src.caja}/ses/hookupSESPlus.js"/>
-
-      <input file="${src.caja}/ses/makeQ.js"/>
-      <input file="${src.caja}/ses/makeFarResourceMaker.js"/>
-      <input file="${src.caja}/ses/compileExprLater.js"/>
-      <input file="${src.caja}/ses/detect.js"/>
-
-      <input file="${src.caja}/ses/makeSimpleAMDLoader.js"/>
-      <input file="${src.caja}/ses/amdTest.js"/>
-      <input file="${src.caja}/ses/amdTest1.js"/>
-      <input file="${src.caja}/ses/amdTestDir/amdTest2.js"/>
-      <input file="${src.caja}/ses/amdTest3.js"/>
-
-      <input file="${src.caja}/plugin/bridal.js"/>
-      <input file="${lib.caja}/plugin/css-defs.js"/>
-      <input file="${src.caja}/plugin/csslexer.js"/>
-      <input file="${src.caja}/plugin/sanitizecss.js"/>
-      <input file="${src.caja}/plugin/cssparser.js"/>
-      <input file="${src.caja}/plugin/domado.js"/>
-      <input file="${lib.caja}/plugin/html4-defs.js"/>
-      <input file="${src.caja}/plugin/unicode.js"/>
-      <input file="${src.caja}/plugin/uri.js"/>
-      <input file="${src.caja}/flash/caja-flash.js"/>
-      <output file="${lib}/AllTests.Linter2.tstamp"/>
-    </genrule>
-
     <copy todir="${lib}">
       <fileset dir="${tests}">
         <include name="**/caja/**/*.css"/>
