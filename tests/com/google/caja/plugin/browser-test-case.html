@@ -24,7 +24,7 @@
 
     <link rel="stylesheet" href="browser-test.css" type="text/css">
 
-    <script type="text/javascript" src="../console.js"></script>
+    <script type="text/javascript" src="/ant-lib/com/google/caja/console.js"></script>
     <script type="text/javascript" src="jsUnitCore.js"></script>
     <script type="text/javascript" src="jsunit.js"></script>
 
@@ -38,16 +38,16 @@
 
         if (/minified=false/i.test(location.search)) {
           load('/caja/caja.js');
-          load('html-sanitizer-bundle.js');
+          load('/caja/html-sanitizer-bundle.js');
         } else {
           load('/caja/caja-minified.js');
-          load('html-sanitizer-minified.js');
+          load('/caja/html-sanitizer-minified.js');
         }
       })();
     </script>
 
-    <script type="text/javascript" src="uri.js"></script>
-    <script type="text/javascript" src="bridal.js"></script>
+    <script type="text/javascript" src="/ant-lib/com/google/caja/plugin/uri.js"></script>
+    <script type="text/javascript" src="/ant-lib/com/google/caja/plugin/bridal.js"></script>
     <script type="text/javascript" src="browser-test-case.js"></script>
   </head>
   <body onload="pageLoaded___()">

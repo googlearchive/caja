@@ -140,7 +140,7 @@ public abstract class BrowserTestCase extends CajaTestCase {
       pageName = "test-index.html";
     }
     String page = "http://localhost:" + portNumber
-        + "/ant-lib/com/google/caja/plugin/" + pageName;
+        + "/ant-testlib/com/google/caja/plugin/" + pageName;
     // The test runner may catch output so go directly to file descriptor 2.
     OutputStream out = new FileOutputStream(FileDescriptor.err);
     out.write(("- Try " + page + "\n").getBytes("UTF-8"));

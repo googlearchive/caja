@@ -59,6 +59,7 @@
   <property name="reports"     location="ant-reports"/>  <!-- emma reports -->
   <property name="instr"       location="ant-instr"/>  <!-- instrumented src -->
   <property name="lib"         location="ant-lib"/>
+  <property name="testlib"     location="ant-testlib"/>
   <property name="gwtlib"      location="ant-gwtlib"/>
   <property name="precajolelib" location="ant-precajolelib"/>
   <property name="lib.caja"    location="${lib}/com/google/caja"/>
@@ -142,6 +143,7 @@
     <path refid="classpath.tests.compile"/>
     <pathelement path="${instr}/classes"/>
     <pathelement path="${precajolelib}/light"/>
+    <pathelement path="${testlib}"/>
     <!-- Must be last for coverage to work -->
     <path refid="classpath.run"/>
   </path>
@@ -192,6 +194,7 @@
     <delete dir="${instr}"/>
     <delete dir="${jars}"/>
     <delete dir="${lib}"/>
+    <delete dir="${testlib}"/>
     <delete dir="${gwtlib}"/>
     <delete dir="${precajolelib}"/>
     <delete dir="${www}"/>
@@ -240,8 +243,7 @@
 
   <target name="runtests"
       depends="playground,AllTests,RuntestsRun,CacheTestSuccess"
-      description="$ ant runtests [-Dtest.filter=My\*Test]">
-  </target>
+      description="$ ant runtests [-Dtest.filter=My\*Test]"/>
 
   <property name="emma.coverage.out.file"
       value="${reports}/coverage/coverage.ec"/>
@@ -500,11 +502,16 @@
      classpathref="classpath.run"/>
     <taskdef name="genrule" classname="com.google.caja.tools.GenRuleAntTask"
      classpathref="classpath.run"/>
-    <taskdef name="summarize" classname="com.google.caja.tools.TestSummary"
-     classpathref="classpath.tests.run" />
     <taskdef name="precajole"
      classname="com.google.caja.precajole.PrecajoleTask"
      classpathref="classpath.run" />
+
+    <!-- If testlib doesn't exist when summarize is defined, it's
+         dropped from summarize's classpath, which means
+         summarize won't be able to find test class files -->
+    <mkdir dir="${testlib}"/>
+    <taskdef name="summarize" classname="com.google.caja.tools.TestSummary"
+     classpathref="classpath.tests.run" />
 
     <copy todir="${lib}">
       <fileset dir="${src}">
@@ -781,27 +788,27 @@
     <!-- Statically cajole some tests for caja.js testing -->
     <transform>
      <input file="${tests.caja}/plugin/es53-test-guest.js"/>
-     <output file="${lib.caja}/plugin/es53-test-guest.out.js"
+     <output file="${testlib}/com/google/caja/plugin/es53-test-guest.out.js"
              language="caja"/>
     </transform>
     <transform>
      <input file="${tests.caja}/plugin/es53-test-guest.html"/>
-     <output file="${lib.caja}/plugin/es53-test-guest.out.html"
+     <output file="${testlib}/com/google/caja/plugin/es53-test-guest.out.html"
              language="caja"/>
     </transform>
     <transform>
      <input file="${tests.caja}/plugin/es53-test-cajoled.js"/>
-     <output file="${lib.caja}/plugin/es53-test-cajoled.out.js"
+     <output file="${testlib}/com/google/caja/plugin/es53-test-cajoled.out.js"
              language="caja"/>
     </transform>
 
     <!-- These and other HTML and JS files are copied verbatim -->
-    <copy todir="${lib}">
-      <fileset dir="${src}" includes="**/*.html,**/*.js"/>
+    <copy todir="${testlib}">
       <fileset dir="${tests}" includes="**/*.html,**/*.js"/>
     </copy>
 
-    <replace dir="${lib.caja}/plugin" propertyFile="${lib.caja}/reporting/buildInfo.properties" >
+    <replace dir="${testlib}/com/google/caja/plugin"
+        propertyFile="${lib.caja}/reporting/buildInfo.properties" >
       <replacefilter token="%VERSION%" property="svnVersion" />
       <include name="cajoling-service-client-test.html" />
       <include name="load-module-test.html" />
@@ -1031,9 +1038,7 @@
   </target>
 
   <target name="AllTests" depends="CajoledTests,CajolingServlet,PlaygroundBE,PlaygroundSupportingFiles,precajole-light">
-    <!-- TODO(felix8a): that this copies to ${lib} means the contents of
-         pluginc.jar depends on whether AllTests was built, which is bad. -->
-    <javac destdir="${lib}" debug="true" target="1.5" source="1.5">
+    <javac destdir="${testlib}" debug="true" target="1.5" source="1.5">
       <src path="${tests}"/>
       <!-- TODO(felix8a): delete sourcepath when orphans cleaned up -->
       <sourcepath path="${src}:${tests}"/>
@@ -1047,7 +1052,7 @@
       <compilerarg line="-Xlint:unchecked"/>
     </javac>
 
-    <copy todir="${lib}">
+    <copy todir="${testlib}">
       <fileset dir="${tests}">
         <include name="**/caja/**/*.css"/>
         <include name="**/caja/**/*.golden"/>
@@ -1064,12 +1069,12 @@
         <include name="js/json_sans_eval/json_sans_eval.js"/>
       </fileset>
     </copy>
-    <copy todir="${lib.caja}/plugin"
+    <copy todir="${testlib}/com/google/caja/plugin"
           file="${third_party}/js/jsunit/2.2/jsUnitCore.js"/>
-    <copy todir="${lib.caja}/plugin/proxies">
+    <copy todir="${testlib}/com/google/caja/plugin/proxies">
       <fileset dir="${third_party}/js/proxies" />
     </copy>
-    <copy todir="${lib}">
+    <copy todir="${testlib}">
       <fileset dir="${third_party}">
         <include name="js/es5conform/**/*.js"/>
       </fileset>
@@ -1156,9 +1161,13 @@
         <include name="**/caja/plugin/cssparser.js"/>
         <include name="**/caja/plugin/domado.js"/>
         <include name="**/caja/plugin/caja.js"/>
+        <include name="**/caja/plugin/cajoling-service-client.js"/>
         <include name="**/caja/plugin/host-tools.js"/>
         <include name="**/caja/plugin/html-emitter.js"/>
         <include name="**/caja/plugin/html-sanitizer.js"/>
+        <include name="**/caja/plugin/html-sanitizer-legacy.js"/>
+        <include name="**/caja/plugin/json-rest-transport.js"/>
+        <include name="**/caja/plugin/load-module.js"/>
         <include name="**/caja/plugin/plugin-base.js"/>
         <include name="**/caja/plugin/templates/*.json"/>
         <include name="**/caja/plugin/unicode.js"/>

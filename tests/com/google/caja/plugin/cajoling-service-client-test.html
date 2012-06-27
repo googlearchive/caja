@@ -21,15 +21,15 @@
 
     <link rel="stylesheet" href="browser-test.css" type="text/css">
 
-    <script type="text/javascript" src="../console.js"></script>
+    <script type="text/javascript" src="/ant-lib/com/google/caja/console.js"></script>
     <script type="text/javascript" src="jsUnitCore.js"></script>
     <script type="text/javascript" src="jsunit.js"></script>
-    <script type="text/javascript" src="../es53.js"></script>
-    <script type="text/javascript" src="../cajita-promise.js"></script>
-    <script type="text/javascript" src="uri.js"></script>
-    <script type="text/javascript" src="json-rest-transport.js"></script>
+    <script type="text/javascript" src="/ant-lib/com/google/caja/es53.js"></script>
+    <script type="text/javascript" src="/ant-lib/com/google/caja/cajita-promise.js"></script>
+    <script type="text/javascript" src="/ant-lib/com/google/caja/plugin/uri.js"></script>
+    <script type="text/javascript" src="/ant-lib/com/google/caja/plugin/json-rest-transport.js"></script>
 
-    <script type="text/javascript" src="cajoling-service-client.js"></script>
+    <script type="text/javascript" src="/ant-lib/com/google/caja/plugin/cajoling-service-client.js"></script>
 
     <script type="text/javascript">
       // Current SVN version interpolated below by "build.xml"
@@ -70,7 +70,7 @@
         Q.when(
             c.cajoleUrl(
                 location.protocol + '//' + location.host
-                + '/ant-lib/com/google/caja/plugin/true.js',
+                + '/ant-testlib/com/google/caja/plugin/true.js',
                 'application/javascript'),
             jsunitCallback(function(m) {
               assertTrue(/___\.loadModule/.test(m.js));

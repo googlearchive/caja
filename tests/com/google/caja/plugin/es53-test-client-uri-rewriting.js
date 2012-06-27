@@ -44,23 +44,23 @@
         assertStringContains(
           canonInnerHtml(
               '<a href="URICALLBACK[['
-              + 'http://localhost:8000/ant-lib/'
+              + 'http://localhost:8000/ant-testlib/'
               + 'com/google/caja/plugin/bar.html'
               + ']]" target="_blank">default</a>'
               + '<a href="URICALLBACK[['
-              + 'http://localhost:8000/ant-lib/'
+              + 'http://localhost:8000/ant-testlib/'
               + 'com/google/caja/plugin/bar.html'
               + ']]" target="_blank">top</a>'
               + '<a href="URICALLBACK[['
-              + 'http://localhost:8000/ant-lib/'
+              + 'http://localhost:8000/ant-testlib/'
               + 'com/google/caja/plugin/bar.html'
               + ']]" target="_self">self</a>'
               + '<a href="URICALLBACK[['
-              + 'http://localhost:8000/ant-lib/'
+              + 'http://localhost:8000/ant-testlib/'
               + 'com/google/caja/plugin/bar.html'
               + ']]" target="_blank">parent</a>'
               + '<a href="URICALLBACK[['
-              + 'http://localhost:8000/ant-lib/'
+              + 'http://localhost:8000/ant-testlib/'
               + 'com/google/caja/plugin/bar.html'
               + ']]" target="_blank">foo</a>'
           ),
@@ -87,7 +87,7 @@
           .run(function (_) {
         assertStringContains(
           'url(URICALLBACK[['
-          + 'http://localhost:8000/ant-lib/com/google/caja/plugin/foo.png'
+          + 'http://localhost:8000/ant-testlib/com/google/caja/plugin/foo.png'
           + ']])',
           emittedCss);
         assertStringDoesNotContain('javascript:', emittedCss);
