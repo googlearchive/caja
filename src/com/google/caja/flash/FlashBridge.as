@@ -18,11 +18,12 @@ package com.google.caja.flash {
   import com.google.caja.flash.events.ExternalInterfaceCallEvent;
   import com.google.caja.flash.events.FunctionResponseEvent;
   import com.google.caja.flash.events.navigateToURLEvent;
-  import flash.display.StageAlign;
-  import flash.display.StageScaleMode;
 
+  import flash.display.DisplayObject;
   import flash.display.Loader;
   import flash.display.Sprite;
+  import flash.display.StageAlign;
+  import flash.display.StageScaleMode;
   import flash.events.Event;
   import flash.events.IOErrorEvent;
   import flash.events.SecurityErrorEvent;
@@ -96,7 +97,7 @@ package com.google.caja.flash {
       movieRequest.data = newFlashVars;
       this.loader.load(movieRequest);
       stage.align = StageAlign.TOP_LEFT;
-      stage.scaleMode = StageScaleMode.NO_SCALE;
+      stage.scaleMode = StageScaleMode.SHOW_ALL;
       addChild(this.loader);
     }
 

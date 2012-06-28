@@ -21,7 +21,7 @@
   <h4>plain embed</h4>
   <embed type="application/x-shockwave-flash"
          src="http://www.youtube.com/v/unhiT2D6WvE"
-         width="480" height="390"
+         width="240" height="195"
          allowFullScreen="true"
          pluginspage="http://www.adobe.com/go/getflashplayer" />
 </div>
@@ -30,7 +30,7 @@
   <h4>object type= (non-IE)</h4>
   <object type="application/x-shockwave-flash"
           data="http://www.youtube.com/v/unhiT2D6WvE"
-          width="480" height="390">
+          width="240" height="195">
     <param name="allowFullScreen" value="true" />
     <p>alternate content</p>
   </object>
@@ -39,7 +39,7 @@
 <div class="example">
   <h4>object classid= (IE)</h4>
   <object classid="clsid:D27CDB6E-AE6D-11cf-96B8-444553540000"
-          width="480" height="390">
+          width="240" height="195">
     <param name="movie" value="http://www.youtube.com/v/unhiT2D6WvE" />
     <param name="allowFullScreen" value="true" />
     <p>alternate content</p>
@@ -49,11 +49,11 @@
 <div class="example">
   <h4>object-embed (twice-cooked)</h4>
   <object classid="clsid:D27CDB6E-AE6D-11cf-96B8-444553540000"
-          width="480" height="390">
+          width="240" height="195">
     <param name="movie" value="http://www.youtube.com/v/unhiT2D6WvE" />
     <embed type="application/x-shockwave-flash"
            src="http://www.youtube.com/v/unhiT2D6WvE"
-           width="480" height="390"
+           width="240" height="195"
            allowFullScreen="true"
            pluginspage="http://www.adobe.com/go/getflashplayer" />
   </object>
@@ -63,13 +63,13 @@
   <h4>object-object (with conditional comments)</h4>
   <!-- Caja deletes IE-conditional blocks regardless of condition -->
   <object classid="clsid:D27CDB6E-AE6D-11cf-96B8-444553540000"
-          width="480" height="390">
+          width="240" height="195">
     <param name="movie" value="http://www.youtube.com/v/unhiT2D6WvE" />
     <param name="allowFullScreen" value="true" />
     <!--[if !IE]>-->
     <object type="application/x-shockwave-flash"
             data="http://www.youtube.com/v/unhiT2D6WvE"
-            width="480" height="390">
+            width="240" height="195">
       <!--<![endif]-->
       <param name="allowFullScreen" value="true" />
       <p>alternate content</p>
@@ -83,7 +83,7 @@
   <h4>YouTube embed code</h4>
   <!-- Note, the object tag doesn't have classid or type, so browsers always
        fallback to the embed tag.  This is a bug in current YouTube. -->
-  <object width="480" height="390"><param name="movie" value="http://www.youtube.com/v/unhiT2D6WvE?version=3&amp;hl=en_US"></param><param name="allowFullScreen" value="true"></param><param name="allowscriptaccess" value="always"></param><embed src="http://www.youtube.com/v/unhiT2D6WvE?version=3&amp;hl=en_US" type="application/x-shockwave-flash" width="480" height="390" allowscriptaccess="always" allowfullscreen="true"></embed></object>
+  <object width="240" height="195"><param name="movie" value="http://www.youtube.com/v/unhiT2D6WvE?version=3&amp;hl=en_US"></param><param name="allowFullScreen" value="true"></param><param name="allowscriptaccess" value="always"></param><embed src="http://www.youtube.com/v/unhiT2D6WvE?version=3&amp;hl=en_US" type="application/x-shockwave-flash" width="240" height="195" allowscriptaccess="always" allowfullscreen="true"></embed></object>
 </div>
 
 <style>
