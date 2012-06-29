@@ -85,99 +85,70 @@
   <property name="maven.ant.tasks.jar" value="third_party/ant/maven-ant-tasks-2.1.1.jar"/>
 
   <!--== classpaths ==-->
-  <!-- TODO(felix8a): too many classpaths -->
-  <path id="classpath.gwt">
-    <pathelement path="${gwtlib}"/>
-    <pathelement path="${third_party}/java/gwt/gwt-user.jar"/>
-    <pathelement path="${third_party}/java/gwt/gwt-dev.jar"/>
-    <pathelement path="${third_party}/java/gwt/gwt-api-checker.jar"/>
-    <pathelement path="${third_party}/java/gwt/gwt-servlet.jar"/>
-    <pathelement path="${third_party}/java/appengine/lib/user/jsr107cache-1.1.jar"/>
-    <pathelement path="${third_party}/java/appengine/lib/user/orm/geronimo-jpa_3.0_spec-1.1.1.jar"/>
-    <pathelement path="${third_party}/java/appengine/lib/user/orm/jdo2-api-2.3-eb.jar"/>
-    <pathelement path="${third_party}/java/jsonml/jsonml.jar"/>
+
+  <path id="classpath.main">
     <pathelement path="${lib}"/>
-  </path>
-  <path id="classpath.web">
-    <pathelement path="${third_party}/java/jsdk2.1/servlet.jar"/>
-    <pathelement path="${third_party}/java/jaf/activation.jar"/>
-    <pathelement path="${third_party}/java/javamail/mail.jar"/>
-    <pathelement path="${third_party}/java/jetty/lib/jetty.jar"/>
-    <pathelement path="${third_party}/java/jetty/lib/jetty-util.jar"/>
-  </path>
-  <path id="classpath.common">
-    <path refid="classpath.web"/>
+    <pathelement path="${jars}/htmlparser.jar"/>
+    <pathelement path="${ant.home}/lib/ant.jar"/>
+    <pathelement path="${third_party}/java/closure/compiler.jar"/>
     <pathelement path="${third_party}/java/guava/guava-r09.jar"/>
+    <pathelement path="${third_party}/java/jaf/activation.jar"/>
+    <pathelement path="${third_party}/java/jakarta_commons/commons-cli.jar"/>
+    <pathelement path="${third_party}/java/jakarta_commons/commons-codec-1.4.jar"/>
+    <pathelement path="${third_party}/java/jakarta_commons/commons-fileupload-1.2.1.jar"/>
+    <pathelement path="${third_party}/java/jakarta_commons/commons-io-1.4.jar"/>
+    <pathelement path="${third_party}/java/javamail/mail.jar"/>
+    <pathelement path="${third_party}/java/jchardet/chardet.jar"/>
+    <pathelement path="${third_party}/java/jetty/lib/jetty-util.jar"/>
+    <pathelement path="${third_party}/java/jetty/lib/jetty.jar"/>
+    <pathelement path="${third_party}/java/jsdk2.1/servlet.jar"/>
     <pathelement path="${third_party}/java/json_simple/json_simple.jar"/>
     <pathelement path="${third_party}/java/jsonml/jsonml.jar"/>
     <pathelement path="${third_party}/java/jsr305/jsr305.jar"/>
-  </path>
-  <path id="classpath.compile">
-    <path refid="classpath.common"/>
-    <pathelement path="${third_party}/java/jakarta_commons/commons-codec-1.4.jar"/>
-    <pathelement path="${third_party}/java/jakarta_commons/commons-cli.jar"/>
-    <pathelement path="${third_party}/java/jchardet/chardet.jar"/>
     <pathelement path="${third_party}/java/rhino/js.jar"/>
     <pathelement path="${third_party}/java/xerces/xercesImpl.jar"/>
-    <pathelement path="${jars}/htmlparser.jar"/>
-    <pathelement path="${third_party}/java/closure/compiler.jar"/>
   </path>
-  <path id="classpath.run">
-    <pathelement path="${lib}"/>
-    <path refid="classpath.compile"/>
+
+  <path id="classpath.gwt">
+    <pathelement path="${gwtlib}"/>
+    <pathelement path="${third_party}/java/appengine/lib/user/jsr107cache-1.1.jar"/>
+    <pathelement path="${third_party}/java/appengine/lib/user/orm/geronimo-jpa_3.0_spec-1.1.1.jar"/>
+    <pathelement path="${third_party}/java/appengine/lib/user/orm/jdo2-api-2.3-eb.jar"/>
+    <pathelement path="${third_party}/java/gwt/gwt-api-checker.jar"/>
+    <pathelement path="${third_party}/java/gwt/gwt-dev.jar"/>
+    <pathelement path="${third_party}/java/gwt/gwt-servlet.jar"/>
+    <pathelement path="${third_party}/java/gwt/gwt-user.jar"/>
   </path>
-  <path id="classpath.tests.compile">
-    <!-- TODO(felix8a): this is early in the path because it uses
-         HttpClient 4.1 and something else has HttpClient 4.0.
-         need to untangle and remove the duplicate. -->
-    <pathelement path="${third_party}/java/webdriver/selenium-server-standalone-2.24.1.jar"/>
-    <path refid="classpath.common"/>
-    <path refid="classpath.gwt"/>
-    <pathelement path="${third_party}/java/junit/junit.jar"/>
-    <pathelement path="${third_party}/java/guava/guava-r09.jar"/>
-    <pathelement path="${third_party}/java/json_simple/json_simple.jar"/>
-    <pathelement path="${third_party}/java/rhino/js.jar"/>
-  </path>
-  <path id="classpath.tests.run">
-    <pathelement path="${third_party}/java/emma/emma.jar"/>
-    <path refid="classpath.tests.compile"/>
+
+  <path id="classpath.tests">
+    <!-- Must be first for coverage to work -->
     <pathelement path="${instr}/classes"/>
     <pathelement path="${precajolelib}/light"/>
     <pathelement path="${testlib}"/>
-    <!-- Must be last for coverage to work -->
-    <path refid="classpath.run"/>
-  </path>
-  <path id="classpath.extensions">
-    <pathelement path="${third_party}/java/emma/emma_ant.jar"/>
     <pathelement path="${third_party}/java/emma/emma.jar"/>
     <pathelement path="${third_party}/java/junit/junit.jar"/>
-    <pathelement path="${third_party}/java/apache_ant/ant-junit.jar"/>
-  </path>
-  <path id="classpath.ant">
-    <pathelement path="${ant.home}/lib/ant.jar"/>
-  </path>
-  <path id="classpath.tools">
-    <path refid="classpath.web"/>
-    <path refid="classpath.ant"/>
-    <path refid="classpath.compile"/>
-    <pathelement
-     path="${third_party}/java/jakarta_commons/commons-fileupload-1.2.1.jar"/>
-    <pathelement path="${third_party}/java/jakarta_commons/commons-io-1.4.jar"/>
-  </path>
-  <path id="classpath.javadocs">
-    <path refid="classpath.tests.compile"/>
-    <path refid="classpath.tools"/>
+    <pathelement path="${third_party}/java/webdriver/selenium-server-standalone-2.24.1.jar"/>
+    <path refid="classpath.main"/>
+    <path refid="classpath.gwt"/>
   </path>
 
   <!--== Appengine tasks ==-->
   <import file="${third_party}/java/appengine/config/user/ant-macros.xml" />
 
-  <taskdef resource="emma_ant.properties"
-   classpathref="classpath.extensions" />
+  <taskdef resource="emma_ant.properties">
+    <classpath>
+      <pathelement path="${third_party}/java/emma/emma_ant.jar"/>
+      <pathelement path="${third_party}/java/emma/emma.jar"/>
+    </classpath>
+  </taskdef>
 
   <taskdef name="junit"
-   classname="org.apache.tools.ant.taskdefs.optional.junit.JUnitTask"
-   classpathref="classpath.extensions" />
+   classname="org.apache.tools.ant.taskdefs.optional.junit.JUnitTask">
+    <classpath>
+      <pathelement path="${third_party}/java/apache_ant/ant-junit.jar"/>
+      <pathelement path="${third_party}/java/junit/junit.jar"/>
+    </classpath>
+  </taskdef>
 
   <!--== rules.  Lowercase are public.  Uppercase are used internally. ==-->
 
@@ -264,7 +235,7 @@
   <target name="RuntestsRunAtoM" unless="emma.enabled">
     <junit printsummary="yes" fork="yes" forkmode="once" maxmemory="512m">
       <assertions><enable/></assertions>  <!-- ignored unless fork="yes" -->
-      <classpath refid="classpath.tests.run"/>
+      <classpath refid="classpath.tests"/>
       <formatter type="xml"/>
       <jvmarg line="${jvmarg}"/>
       <syspropertyset refid="test.propertyset"/>
@@ -283,7 +254,7 @@
   <target name="RuntestsRunNtoZ" unless="emma.enabled">
     <junit printsummary="yes" fork="yes" forkmode="once" maxmemory="512m">
       <assertions><enable/></assertions>  <!-- ignored unless fork="yes" -->
-      <classpath refid="classpath.tests.run"/>
+      <classpath refid="classpath.tests"/>
       <formatter type="xml"/>
       <jvmarg line="${jvmarg}"/>
       <syspropertyset refid="test.propertyset"/>
@@ -302,7 +273,7 @@
   <target name="RuntestsRunBrowser" unless="emma.enabled">
     <junit printsummary="yes" fork="yes" forkmode="once" maxmemory="512m">
       <assertions><enable/></assertions>  <!-- ignored unless fork="yes" -->
-      <classpath refid="classpath.tests.run"/>
+      <classpath refid="classpath.tests"/>
       <formatter type="xml"/>
       <jvmarg line="${jvmarg}"/>
       <syspropertyset refid="test.propertyset"/>
@@ -320,7 +291,7 @@
   <target name="RuntestsRunEmma" if="emma.enabled">
     <junit printsummary="yes" fork="yes" forkmode="once" maxmemory="512m">
       <assertions><enable/></assertions>  <!-- ignored unless fork="yes" -->
-      <classpath refid="classpath.tests.run"/>
+      <classpath refid="classpath.tests"/>
       <jvmarg line="${jvmarg}"/>
       <syspropertyset refid="test.propertyset"/>
       <test todir="${reports}/tests" name="com.google.caja.AllTests"/>
@@ -423,7 +394,7 @@
   <target name="runbrowserstub" depends="AllTests">
     <java failonerror="false" fork="true"
      classname="com.google.caja.plugin.BrowserTestCaseStub">
-      <classpath refid="classpath.tests.run"/>
+      <classpath refid="classpath.tests"/>
     </java>
   </target>
 
@@ -462,7 +433,7 @@
              Licensed under the Apache License, Version 2.0&lt;/a&gt;"
      docencoding="utf-8"
      packagenames="com/google/caja/*"
-     classpathref="classpath.javadocs"
+     classpathref="classpath.main"
      includenosourcepackages="true"
      linksource="yes"/>
     <!-- overview="${src}/overview.html" -->
@@ -480,7 +451,7 @@
     <!-- Now that we have the compiler, build ant task wrappers -->
     <javac destdir="${lib}" debug="true" target="1.5" source="1.5">
       <src path="${src}"/>
-      <classpath refid="classpath.tools"/>
+      <classpath refid="classpath.main"/>
       <include name="**/ancillary/linter/Linter.java"/>
       <include name="**/precajole/PrecajoleTask.java" />
       <include name="**/tools/*.java"/>
@@ -497,21 +468,21 @@
       </fileset>
     </copy>
     <taskdef name="transform" classname="com.google.caja.tools.TransformAntTask"
-     classpathref="classpath.run" />
+     classpathref="classpath.main" />
     <taskdef name="innocent" classname="com.google.caja.tools.InnocentAntTask"
-     classpathref="classpath.run"/>
+     classpathref="classpath.main"/>
     <taskdef name="genrule" classname="com.google.caja.tools.GenRuleAntTask"
-     classpathref="classpath.run"/>
+     classpathref="classpath.main"/>
     <taskdef name="precajole"
      classname="com.google.caja.precajole.PrecajoleTask"
-     classpathref="classpath.run" />
+     classpathref="classpath.main" />
 
     <!-- If testlib doesn't exist when summarize is defined, it's
          dropped from summarize's classpath, which means
          summarize won't be able to find test class files -->
     <mkdir dir="${testlib}"/>
     <taskdef name="summarize" classname="com.google.caja.tools.TestSummary"
-     classpathref="classpath.tests.run" />
+     classpathref="classpath.tests" />
 
     <copy todir="${lib}">
       <fileset dir="${src}">
@@ -529,7 +500,7 @@
    description="Build the plugin compiler and other main classes">
     <javac destdir="${lib}" debug="true" target="1.5" source="1.5">
       <src path="${src}"/>
-      <classpath refid="classpath.compile"/>
+      <classpath refid="classpath.main"/>
       <include name="com/google/caja/plugin/*Main.java"/>
       <!-- used by Closure Compiler JsonMLConversionTest -->
       <include name="com/google/caja/parser/js/JsonMLParser.java"/>
@@ -542,7 +513,7 @@
     </copy>
     <javac destdir="${lib}" debug="true" target="1.5" source="1.5">
       <src path="${src}"/>
-      <classpath refid="classpath.compile"/>
+      <classpath refid="classpath.main"/>
       <include name="**/caja/lang/css/CssPropertyPatterns.java"/>
       <include name="**/caja/lang/html/HtmlDefinitions.java"/>
     </javac>
@@ -609,13 +580,13 @@
     <mkdir dir="${reports}/benchmarks"/>
     <javac destdir="${lib}" debug="true" target="1.5" source="1.5">
       <src path="${tests}"/>
-      <classpath refid="classpath.tests.compile"/>
+      <classpath refid="classpath.tests"/>
       <include name="**/caja/demos/benchmarks/*.java"/>
     </javac>
     <junit printsummary="yes" fork="yes" maxmemory="512m"
      errorProperty="benchmarks.error" failureProperty="benchmarks.failure">
       <assertions><enable/></assertions>  <!-- ignored unless fork="yes" -->
-      <classpath refid="classpath.tests.run"/>
+      <classpath refid="classpath.tests"/>
       <formatter type="xml" usefile="true"/>
       <test name="com.google.caja.demos.benchmarks.BenchmarkSize"
        todir="${reports}/benchmarks"/>
@@ -1042,8 +1013,7 @@
       <src path="${tests}"/>
       <!-- TODO(felix8a): delete sourcepath when orphans cleaned up -->
       <sourcepath path="${src}:${tests}"/>
-      <classpath refid="classpath.tests.compile"/>
-      <classpath refid="classpath.tools"/>
+      <classpath refid="classpath.tests"/>
       <include name="**/caja/AllTests.java"/>
       <include name="**/caja/util/*.java"/>
       <include name="**/caja/**/*TestCase.java"/>
@@ -1126,19 +1096,19 @@
   <target name="RuleDoclet" depends="HtmlParser">
     <javac destdir="${lib}" debug="true" target="1.5" source="1.5">
       <src path="${src}"/>
-      <classpath refid="classpath.tools"/>
+      <classpath refid="classpath.main"/>
       <include name="**/caja/quasiliteral/*Doclet.java"/>
       <include name="**/caja/tools/DocletAntTask.java"/>
       <compilerarg line="-Xlint:unchecked"/>
     </javac>
     <taskdef name="ruledoclet" classname="com.google.caja.tools.DocletAntTask"
-     classpathref="classpath.run" onerror="ignore"/>
+     classpathref="classpath.main" onerror="ignore"/>
   </target>
 
   <target name="PluginCompiler" depends="build.info, HtmlParser">
     <javac destdir="${lib}" debug="true" target="1.5" source="1.5">
       <src path="${src}"/>
-      <classpath refid="classpath.tools"/>
+      <classpath refid="classpath.main"/>
       <classpath refid="classpath.gwt"/>
       <include name="**/caja/plugin/*.java"/>
       <include name="**/caja/plugin/stages/*.java"/>
@@ -1185,7 +1155,7 @@
   <target name="CajolingServlet" depends="HtmlParser">
     <javac destdir="${lib}" debug="true" target="1.5" source="1.5">
       <src path="${src}"/>
-      <classpath refid="classpath.compile"/>
+      <classpath refid="classpath.main"/>
       <include name="**/caja/service/*.java"/>
       <compilerarg line="-Xlint:unchecked"/>
     </javac>
@@ -1214,7 +1184,7 @@
       <classpath>
         <pathelement location="${lib}"/>
       </classpath>
-      <classpath refid="classpath.compile"/>
+      <classpath refid="classpath.main"/>
       <classpath refid="classpath.gwt"/>
     </javac>
     <java failonerror="true" fork="true"
@@ -1414,14 +1384,14 @@
     </copy>
     <javac destdir="${war}/WEB-INF/classes" debug="true">
       <src path="${src}"/>
-      <classpath refid="classpath.compile"/>
+      <classpath refid="classpath.main"/>
       <classpath refid="classpath.gwt"/>
       <include name="**/caja/demos/playground/server/*.java"/>
       <compilerarg line="-Xlint:unchecked"/>
     </javac>
     <javac destdir="${lib}" debug="true">
       <src path="${src}"/>
-      <classpath refid="classpath.compile"/>
+      <classpath refid="classpath.main"/>
       <classpath refid="classpath.gwt"/>
       <include name="**/caja/demos/playground/server/**/*.java"/>
       <compilerarg line="-Xlint:unchecked"/>
@@ -1502,7 +1472,7 @@
     <javac destdir="${third_party}/java/htmlparser/lib" debug="true"
      target="1.5" source="1.5">
       <src path="${third_party}/java/htmlparser/src"/>
-      <classpath refid="classpath.compile"/>
+      <classpath refid="classpath.main"/>
       <include name="**/*.java"/>
       <exclude name="nu/validator/htmlparser/dom/**/*.java"/>
       <exclude name="nu/validator/htmlparser/extra/**/*.java"/>
@@ -1732,12 +1702,8 @@
   </target>
 
   <target name="printlibs">
-    <path id="classpath.eclipse">
-      <path refid="classpath.compile"/>
-      <path refid="classpath.tests.compile"/>
-    </path>
     <pathconvert
-       refid="classpath.eclipse"
+       refid="classpath.tests"
        pathsep="${line.separator}">
      <map from="${basedir}/" to=""/>
     </pathconvert>
