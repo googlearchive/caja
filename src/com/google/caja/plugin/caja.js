@@ -130,6 +130,9 @@ var caja = (function () {
     'grantMethod': premature,
     'grantRead': premature,
     'grantReadWrite': premature,
+    'adviseFunctionBefore': premature,
+    'adviseFunctionAfter': premature,
+    'adviseFunctionAround': premature,
     'makeDefensibleObject___': premature,
     'makeDefensibleFunction___': premature,
 

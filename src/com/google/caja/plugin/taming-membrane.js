@@ -73,8 +73,68 @@ function TamingMembrane(privilegedAccess) {
   var tameFunctionName = new WeakMap();
   var tameCtorSuper = new WeakMap();
 
-  var feralByTame = WeakMap();
-  var tameByFeral = WeakMap();
+  var feralByTame = new WeakMap();
+  var tameByFeral = new WeakMap();
+
+  var functionAdviceBefore = new WeakMap();
+  var functionAdviceAfter = new WeakMap();
+  var functionAdviceAround = new WeakMap();
+
+  function composeAround(f) {
+    // TODO(ihab.awad): Optimize so we don't create then discard several
+    // new closures for each invocation
+    var func = function(self, args) {
+      return privilegedAccess.applyFunction(f, self, args);
+    };
+    if (functionAdviceAround.has(f)) {
+      functionAdviceAround.get(f).forEach(function(advice) {
+        var cur = func;  // capture value
+        func = function(self, args) {
+          return privilegedAccess.applyFunction(
+              advice,
+              privilegedAccess.USELESS,
+              [cur, self, args]);
+        };
+      });
+    }
+    return func;
+  }
+
+  function composeBefore(f, self, args) {
+    if (functionAdviceBefore.has(f)) {
+      functionAdviceBefore.get(f).forEach(function(advice) {
+        args = privilegedAccess.applyFunction(
+            advice,
+            privilegedAccess.USELESS,
+            [f, self, args]);
+      });
+    }
+    return args;
+  }
+
+  function composeAfter(f, self, result) {
+    if (functionAdviceAfter.has(f)) {
+      functionAdviceAfter.get(f).forEach(function(advice) {
+        result = privilegedAccess.applyFunction(
+            advice,
+            privilegedAccess.USELESS,
+            [f, self, result]);
+      });
+    }
+    return result;
+  }
+
+  function applyFeralFunction(f, self, args) {
+    return composeAfter(
+        f,
+        self,
+        composeAround(f)(
+            self,
+            composeBefore(
+                f,
+                self,
+                args)));
+  }
 
   function checkCanControlTaming(f) {
     var to = typeof f;
@@ -281,7 +341,7 @@ function TamingMembrane(privilegedAccess) {
       // Since it's by definition useless, there's no reason to bother
       // passing untame(USELESS); we just pass USELESS itself.
       return tame(
-          privilegedAccess.applyFunction(
+          applyFeralFunction(
               f,
               privilegedAccess.USELESS,
               untameArray(arguments)));
@@ -298,7 +358,7 @@ function TamingMembrane(privilegedAccess) {
       // Avoid being used as a general-purpose xo4a
       if (!(this instanceof t)) { return; }
       var o = Object.create(fPrototype);
-      privilegedAccess.applyFunction(f, o, untameArray(arguments));
+      applyFeralFunction(f, o, untameArray(arguments));
       tameObjectWithMethods(o, this);
       tamesTo(o, this);
       preventExtensions(this);
@@ -347,7 +407,7 @@ function TamingMembrane(privilegedAccess) {
   function tameXo4a(f) {
     var t = function(_) {
       return tame(
-          privilegedAccess.applyFunction(
+          applyFeralFunction(
               f,
               untame(this),
               untameArray(arguments)));
@@ -388,7 +448,7 @@ function TamingMembrane(privilegedAccess) {
           var self = this;
           return function(_) {
             return tame(
-              privilegedAccess.applyFunction(
+              applyFeralFunction(
                   privilegedAccess.getProperty(f, p),
                   untame(self),
                   untameArray(arguments)));
@@ -583,6 +643,27 @@ function TamingMembrane(privilegedAccess) {
     grantAs.set(f, prop, grantTypes.WRITE);
   }
 
+  // Met the ghost of Greg Kiczales at the Hotel Advice.
+  // This is what I told him as I gazed into his eyes:
+  // Objects were for contracts,
+  // Functions made for methods,
+  // Membranes made for interposing semantics around them!
+
+  function adviseFunctionBefore(f, advice) {
+    if (!functionAdviceBefore.get(f)) { functionAdviceBefore.set(f, []); }
+    functionAdviceBefore.get(f).push(advice);
+  }
+  
+  function adviseFunctionAfter(f, advice) {
+    if (!functionAdviceAfter.get(f)) { functionAdviceAfter.set(f, []); }
+    functionAdviceAfter.get(f).push(advice);
+  }
+
+  function adviseFunctionAround(f, advice) {
+    if (!functionAdviceAround.get(f)) { functionAdviceAround.set(f, []); }
+    functionAdviceAround.get(f).push(advice);
+  }
+
   function hasTameTwin(f) {
     return tameByFeral.has(f);
   }
@@ -598,6 +679,9 @@ function TamingMembrane(privilegedAccess) {
     grantTameAsMethod: grantTameAsMethod,
     grantTameAsRead: grantTameAsRead,
     grantTameAsReadWrite: grantTameAsReadWrite,
+    adviseFunctionBefore: adviseFunctionBefore,
+    adviseFunctionAfter: adviseFunctionAfter,
+    adviseFunctionAround: adviseFunctionAround,
     untame: untame,
     tamesTo: tamesTo,
     hasTameTwin: hasTameTwin

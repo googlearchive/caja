@@ -86,6 +86,9 @@ function SESFrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker) {
     grantMethod: tamingMembrane.grantTameAsMethod,
     grantRead: tamingMembrane.grantTameAsRead,
     grantReadWrite: tamingMembrane.grantTameAsReadWrite,
+    adviseFunctionBefore: tamingMembrane.adviseFunctionBefore,
+    adviseFunctionAfter: tamingMembrane.adviseFunctionAfter,
+    adviseFunctionAround: tamingMembrane.adviseFunctionAround,
 
     USELESS: USELESS,
     iframe: window.frameElement,

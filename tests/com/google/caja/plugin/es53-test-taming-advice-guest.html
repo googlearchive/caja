@@ -1,0 +1,92 @@
+<!--
+ - Copyright (C) 2012 Google Inc.
+ -
+ - Licensed under the Apache License, Version 2.0 (the "License");
+ - you may not use this file except in compliance with the License.
+ - You may obtain a copy of the License at
+ -
+ -      http://www.apache.org/licenses/LICENSE-2.0
+ -
+ - Unless required by applicable law or agreed to in writing, software
+ - distributed under the License is distributed on an "AS IS" BASIS,
+ - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ - See the License for the specific language governing permissions and
+ - limitations under the License.
+-->
+
+<div id="testAdvisedBefore" class="testcontainer waiting">
+  testAdvisedBefore
+</div>
+<script type="text/javascript">
+  jsunitRegister('testAdvisedBefore',
+                 function testAdvisedBefore() {
+    assertEquals('beffoo', advisedBefore('foo'));
+    pass('testAdvisedBefore');
+  });
+</script>
+
+<div id="testAdvisedBeforeM" class="testcontainer waiting">
+    testAdvisedBeforeM
+</div>
+<script type="text/javascript">
+  jsunitRegister('testAdvisedBeforeM',
+                 function testAdvisedBeforeM() {
+    assertEquals('bef2bef1bef0foo', advisedBeforeM('foo'));
+    pass('testAdvisedBeforeM');
+  });
+</script>
+
+<div id="testAdvisedAfter" class="testcontainer waiting">
+  testAdvisedAfter
+</div>
+<script type="text/javascript">
+  jsunitRegister('testAdvisedAfter',
+                 function testAdvisedAfter() {
+    assertEquals('fooaft', advisedAfter('foo'));
+    pass('testAdvisedAfter');
+  });
+</script>
+
+<div id="testAdvisedAfterM" class="testcontainer waiting">
+    testAdvisedAfterM
+</div>
+<script type="text/javascript">
+  jsunitRegister('testAdvisedAfterM',
+                 function testAdvisedAfterM() {
+    assertEquals('fooaft0aft1aft2', advisedAfterM('foo'));
+    pass('testAdvisedAfterM');
+  });
+</script>
+
+<div id="testAdvisedAround" class="testcontainer waiting">
+  testAdvisedAround
+</div>
+<script type="text/javascript">
+  jsunitRegister('testAdvisedAround',
+                 function testAdvisedAround() {
+    assertEquals('arnfooarn', advisedAround('foo'));
+    pass('testAdvisedAround');
+  });
+</script>
+
+<div id="testAdvisedAroundM" class="testcontainer waiting">
+    testAdvisedAroundM
+</div>
+<script type="text/javascript">
+  jsunitRegister('testAdvisedAroundM',
+                 function testAdvisedAroundM() {
+    assertEquals('arn0arn1arn2fooarn0arn1arn2', advisedAroundM('foo'));
+    pass('testAdvisedAroundM');
+  });
+</script>
+
+<div id="testAdvisedAll" class="testcontainer waiting">
+    testAdvisedAll
+</div>
+<script type="text/javascript">
+  jsunitRegister('testAdvisedAll',
+                 function testAdvisedAll() {
+    assertEquals('arnbeffooarnaft', advisedAll('foo'));
+    pass('testAdvisedAll');
+  });
+</script>        

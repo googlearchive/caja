@@ -172,6 +172,10 @@ public class GeneralBrowserTest extends BrowserTestCase {
     runTestDriver("es53-test-taming-errors.js");
   }
 
+  public final void testTamingAdvice() throws Exception {
+    runTestDriver("es53-test-taming-advice.js");
+  }
+
   public final void testDomadoCanvas() throws Exception {
     // TODO(kpreid): Enable for ES5. Fails on Firefox due to SES issues --
     // "access to strict mode caller function is censored"; fails on Chrome
