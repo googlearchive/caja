@@ -24,6 +24,7 @@
     ['es53-test-domado-dom-guest.html'],
     ['es53-test-domado-forms-guest.html'],
     ['es53-test-inline-script.html'],
+    ['es53-test-external-script-guest.html', 'es5'],
     ['es53-test-language-guest.html'],
     ['es53-test-precajole-guest.html', 'es53'],
   ];

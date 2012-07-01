@@ -1351,8 +1351,9 @@ var Domado = (function() {
      *     object is known as a "domicile".
      */
     function attachDocument(
-        idSuffix, naiveUriPolicy, pseudoBodyNode, optPseudoWindowLocation,
+      idSuffix, naiveUriPolicy, pseudoBodyNode, optPseudoWindowLocation,
         optTargetAttributePresets) {
+
       if (arguments.length < 3) {
         throw new Error(
             'attachDocument arity mismatch: ' + arguments.length);
@@ -4309,14 +4310,51 @@ var Domado = (function() {
         }
       });
 
-      defineElement({
+
+      function dynamicCodeDispatchMaker(that) {
+        window.cajaDynamicScriptCounter =
+          window.cajaDynamicScriptCounter ?
+            window.cajaDynamicScriptCounter + 1 : 0;
+        var name = "caja_dynamic_script" +
+          window.cajaDynamicScriptCounter + '___';
+        window[name] = function() {
+          try {
+            if (that.src &&
+              'function' === typeof domicile.evaluateUntrustedExternalScript) {
+              domicile.evaluateUntrustedExternalScript(that.src);
+            }
+          } finally {
+            window[name] = undefined;
+          }
+        };
+        return name + "();";
+      }
+
+      var TameScriptElement = defineElement({
         names: ['script'],
         domClass: 'HTMLScriptElement',
         forceChildrenNotEditable: true,
         properties: {
           src: NP.filter(false, identity, true, identity)
+        },
+        construct: function () {
+          var script = np(this);
+          script.feral.appendChild(
+            document.createTextNode(
+              dynamicCodeDispatchMaker(script)));
         }
       });
+
+      setOwn(TameScriptElement.prototype, 'setAttribute', nodeMethod(
+          function (attrib, value) {
+        var feral = np(this).feral;
+        if (!np(this).editable) { throw new Error(NOT_EDITABLE); }
+        TameElement.prototype.setAttribute.call(this, attrib, value);
+        var attribName = String(attrib).toLowerCase();
+        if ("src" === attribName) {
+          np(this).src = String(value);
+        }
+      }));
 
       defineElement({
         names: ['article', 'aside', 'audio', 'bdi', 'data', 'datalist',

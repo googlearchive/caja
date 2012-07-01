@@ -42,6 +42,28 @@
   ></script
   ><script src="es53-test-external-doc-write.js"
   ></script
+  ><script
+  >var asyncScriptsExpected = 2;
+   var asyncScriptsSeen = 0;
+   window.externalScriptCallback = function() {
+     asyncScriptsSeen++;
+     if (asyncScriptsSeen > asyncScriptsExpected) {
+       fail('Unexpected async script loaded');
+     }
+     if (asyncScriptsSeen === asyncScriptsExpected) {
+       var testContainer = 
+         document.getElementById("testExternalScripts");
+       assertContains("Render result", "123", testContainer.innerText);
+    }
+   }
+   var mybadscript = document.createElement('script');
+   mybadscript.src = "es53-test-external-dynamic-fail.js";
+   document.body.appendChild(mybadscript);
+
+   var myscript = document.createElement('script');
+   myscript.src = "es53-test-external-dynamic.js";
+   document.body.appendChild(myscript);</script
+  ></script
   >3</div>
 
 <br>
@@ -49,12 +71,8 @@
   jsunitRegisterIf(inES5Mode,
                    'testExternalScripts',
                    function testExternalScripts () {
-    var testContainer = 
-      document.getElementById("testExternalScripts");
-    assertEquals("Render result", "123", testContainer.innerText);
     assertEquals("Execution order", "1234567", executionOrder);
     assertEquals("Style loading", "block then inline", styleOrder);
-
     pass('testExternalScripts');
   });
 

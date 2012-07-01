@@ -393,9 +393,13 @@ function HtmlEmitter(makeDOMAccessible, base, opt_domicile, opt_guestGlobal) {
             } else {
               // TODO(jasvir): Thread logger and log the failure to fetch
             }
-            continuation();
+            if (continuation) {
+              continuation();
+            }
           });
-        throw marker;
+        if (marker) {
+          throw marker;
+        }
       }
     }
 
@@ -573,6 +577,8 @@ function HtmlEmitter(makeDOMAccessible, base, opt_domicile, opt_guestGlobal) {
       return documentLoaded.promise;
     };
     domicile.writeHook = cajaVM.def(tameDocWrite);
+    domicile.evaluateUntrustedExternalScript =
+      cajaVM.def(evaluateUntrustedExternalScript);
   })(opt_domicile);
 }
 

@@ -220,7 +220,7 @@ public class GeneralBrowserTest extends BrowserTestCase {
   }
 
   public final void testExternalScript() throws Exception {
-    runTestCase("es53-test-external-script-guest.html");
+    runTestCase("es53-test-external-script-guest.html", true);
   }
 
   public final void testDefensibleObjects() throws Exception {
