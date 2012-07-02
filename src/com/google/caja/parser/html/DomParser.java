@@ -42,6 +42,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.regex.Pattern;
 
+import org.apache.xerces.dom.CoreDocumentImpl;
 import org.w3c.dom.Attr;
 import org.w3c.dom.DOMException;
 import org.w3c.dom.DOMImplementation;
@@ -51,7 +52,6 @@ import org.w3c.dom.DocumentType;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
-import org.w3c.dom.bootstrap.DOMImplementationRegistry;
 
 /**
  * Parses a {@link Node} from a stream of XML or HTML tokens.
@@ -155,26 +155,9 @@ public class DomParser {
   public static Document makeDocument(
       Function<DOMImplementation, DocumentType> doctypeMaker, String features,
       DOMImplementation domImpl) {
-    if (features == null) { features = "XML 1.0 Traversal"; }
+    if (features != null) { throw new SomethingWidgyHappenedError(); }
     if (domImpl == null) {
-      try {
-        domImpl = DOMImplementationRegistry.newInstance()
-            .getDOMImplementation(features);
-      } catch (ClassNotFoundException ex) {
-        throw new SomethingWidgyHappenedError(
-            "Missing DOM implementation.  Is Xerces on the classpath?", ex);
-      } catch (IllegalAccessException ex) {
-        throw new SomethingWidgyHappenedError(
-            "Missing DOM implementation.  Is Xerces on the classpath?", ex);
-      } catch (InstantiationException ex) {
-        throw new SomethingWidgyHappenedError(
-            "Missing DOM implementation.  Is Xerces on the classpath?", ex);
-      }
-      if (domImpl == null) {
-        throw new SomethingWidgyHappenedError(
-            "Missing DOM implementation.  Is Xerces on the classpath? " +
-            "(DOMImplementationRegistry.getDOMImplementation returned null.)");
-      }
+      domImpl = new CoreDocumentImpl().getImplementation();
     }
 
     DocumentType doctype = doctypeMaker != null
@@ -193,7 +176,7 @@ public class DomParser {
   }
 
   /** Parse a document returning the document element. */
-  public Element parseDocument(String features) throws ParseException {
+  private Element parseDocument(String features) throws ParseException {
     Function<DOMImplementation, DocumentType> doctypeMaker = findDoctype();
     Document doc = makeDocument(doctypeMaker, features, domImpl);
     OpenElementStack elementStack = makeElementStack(doc, mq);
@@ -808,7 +791,7 @@ public class DomParser {
  */
 final class LookaheadLexer implements TokenStream<HtmlTokenType> {
   private final TokenStream<HtmlTokenType> lexer;
-  private List<Token<HtmlTokenType>> pending
+  private final List<Token<HtmlTokenType>> pending
       = new LinkedList<Token<HtmlTokenType>>();
 
   LookaheadLexer(TokenStream<HtmlTokenType> lexer) {
