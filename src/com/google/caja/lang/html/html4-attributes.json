@@ -59,8 +59,8 @@
       },
       {
         "key": "INPUT::TYPE",
-        "description": "what kind of widget is needed -- disallows PASSWORD",
-        "values": "text,checkbox,radio,submit,reset,hidden,image,button,file",
+        "description": "what kind of widget is needed",
+        "values": "text,checkbox,radio,submit,reset,hidden,image,button,file,password",
         "optional": true, "default": "TEXT"
       }
       ]

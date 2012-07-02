@@ -119,6 +119,10 @@ public class HtmlSchemaTest extends TestCase {
     assertTrue(lookupAttribute("input", "type")
                .getValueCriterion().accept("TEXT"));
     assertTrue(lookupAttribute("input", "type")
+               .getValueCriterion().accept("password"));
+    assertTrue(lookupAttribute("input", "type")
+               .getValueCriterion().accept("PASSWORD"));
+    assertTrue(lookupAttribute("input", "type")
                .getValueCriterion().accept("button"));
     assertTrue(lookupAttribute("input", "type")
                 .getValueCriterion().accept("file"));
