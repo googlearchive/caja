@@ -1,8 +1,14 @@
 function uriPolicy(value) {
+  if ("specialurl" === value) {
+    return value;
+  }
   return 'u:' + value;
 }
 
 function nmTokenPolicy(nmTokens) {
+  if ("specialtoken" === nmTokens) {
+    return nmTokens;
+  }
   if (/[^a-z\t\n\r ]/i.test(nmTokens)) {
     return null;
   } else {
@@ -12,6 +18,11 @@ function nmTokenPolicy(nmTokens) {
         return 'p-' + id + (spaces ? ' ' : '');
       });
   }
+}
+
+var logMessages = [];
+function logPolicy(msg, detail) {
+  logMessages.push(msg);
 }
 
 function check1(original, opt_result) {
@@ -284,6 +295,41 @@ jsunitRegister('testUriPolicy',
   assertEquals('<a>mail me</a>',
       html.sanitize('<a href="mailto:jas@example.com">mail me</a>',
         function(uri) { return null; }));
+  jsunit.pass();
+});
+
+function assertSanitizerMessages(input, expected, messages) {
+  logMessages = [];
+  var actual = html.sanitize(input, uriPolicy, nmTokenPolicy, logPolicy);
+  assertEquals(expected, actual);
+  // legacy sanitizer does not support logging
+  if (!html.isLegacy) {
+    assertEquals(messages.length, logMessages.length);
+    logMessages.forEach(function (val, i) {
+      assertEquals(messages[i], val);
+    });
+  }
+}
+
+jsunitRegister('testLogger',
+               function testLogger() {
+  assertSanitizerMessages('<a href="http://www.example.com/">hi</a>',
+    '<a href=\"u:http://www.example.com/\">hi</a>',
+    ["a.href changed"]);
+  assertSanitizerMessages('<a href="specialurl">hi</a>',
+    '<a href=\"specialurl\">hi</a>',
+    []);
+  assertSanitizerMessages('<div onclick="foo()"></div>',
+    '<div></div>',
+    ["div.onclick removed"]);
+  assertSanitizerMessages(
+    '<div onclick="foo()" class="specialtoken" id=baz></div>',
+    '<div class="specialtoken" id="p-baz"></div>',
+    ["div.onclick removed", "div.id changed"]);
+  assertSanitizerMessages(
+    '<script>alert(1);</script>',
+    '',
+    ["script removed"]);
   jsunit.pass();
 });
 
