@@ -23,7 +23,7 @@ import com.google.caja.util.RewritingResourceHandler;
 
 import java.io.FileDescriptor;
 import java.io.FileOutputStream;
-import java.io.OutputStream;
+import java.io.PrintStream;
 import java.util.List;
 
 import org.mortbay.jetty.servlet.Context;
@@ -142,12 +142,18 @@ public abstract class BrowserTestCase extends CajaTestCase {
     String page = "http://localhost:" + portNumber
         + "/ant-testlib/com/google/caja/plugin/" + pageName;
     // The test runner may catch output so go directly to file descriptor 2.
-    OutputStream out = new FileOutputStream(FileDescriptor.err);
-    out.write(("- Try " + page + "\n").getBytes("UTF-8"));
-    out.flush();
+    PrintStream err = new PrintStream(
+        new FileOutputStream(FileDescriptor.err), false, "UTF-8");
+    err.println("- Try " + page);
     String result = "";
     try {
-      localServer.start();
+      try {
+        localServer.start();
+      } catch (Exception e) {
+        err.println(e);
+        throw e;
+      }
+
       if (flag(SERVER_ONLY)) {
         Thread.currentThread().join();
       }
@@ -326,9 +332,6 @@ public abstract class BrowserTestCase extends CajaTestCase {
         driver = new FirefoxDriver();
         driver.get("about:blank");
         firstWindowHandle = driver.getWindowHandle();
-        OutputStream out = new FileOutputStream(FileDescriptor.err);
-        out.write("- Started Firefox\n".getBytes("UTF-8"));
-        out.flush();
       }
 
       driver.switchTo().window(firstWindowHandle);
