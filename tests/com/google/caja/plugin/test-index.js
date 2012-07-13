@@ -48,9 +48,7 @@
   ];
 
   var bare_tests = [
-    'cajoling-service-client-test.html',
-    'json-rest-transport-test.html',
-    'load-module-test.html',
+    'modules-test.html',
   ];
   
   var tests_ul = document.getElementById('tests');

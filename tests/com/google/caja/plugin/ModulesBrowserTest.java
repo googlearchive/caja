@@ -21,16 +21,8 @@ import org.mortbay.jetty.servlet.ServletHolder;
  * @author ihab.awad@gmail.com
  */
 public class ModulesBrowserTest extends BrowserTestCase {
-  public final void testJsonRequest() throws Exception {
-    runBrowserTest("json-rest-transport-test.html");
-  }
-
-  public final void testCajolingServiceClient() throws Exception {
-    runBrowserTest("cajoling-service-client-test.html");
-  }
-
-  public final void testLoadModule() throws Exception {
-    runBrowserTest("load-module-test.html");
+  public final void testModules() throws Exception {
+    runBrowserTest("modules-test.html");
   }
 
   @Override

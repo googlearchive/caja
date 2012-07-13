@@ -28,16 +28,108 @@
     <script type="text/javascript" src="/ant-lib/com/google/caja/cajita-promise.js"></script>
     <script type="text/javascript" src="/ant-lib/com/google/caja/plugin/uri.js"></script>
     <script type="text/javascript" src="/ant-lib/com/google/caja/plugin/json-rest-transport.js"></script>
-
     <script type="text/javascript" src="/ant-lib/com/google/caja/plugin/cajoling-service-client.js"></script>
+    <script type="text/javascript" src="/ant-lib/com/google/caja/plugin/load-module.js"></script>
 
     <script type="text/javascript">
       // Current SVN version interpolated below by "build.xml"
       var cajaBuildVersion = '%VERSION%';
     </script>
+
+    <script type="text/javascript" src="load-module-test.js"></script>
+
   </head>
   <body>
     <div id="automatedTestingReadyIndicator"></div>
+
+    <div id="testNoContent" class="testcontainer waiting">
+      testNoContent
+    </div>
+    <script type="text/javascript">
+      jsunitRegister('testNoContent',
+                     function testNoContent() {
+        var c = jsonRestTransportMaker().request(
+            '/caja/jsonTest?testParam=abc123');
+        Q.when(c, function(result) {
+          assertTrue(result.sanityCheck === 'sane');
+          assertTrue(result.testParam === 'abc123');
+          assertTrue(result.content === '');
+          assertTrue(result.contentType === '');
+          jsunitPass('testNoContent');
+        });
+      });
+    </script>
+
+    <div id="testWithContent" class="testcontainer waiting">
+      testWithContent
+    </div>
+    <script type="text/javascript">
+      jsunitRegister('testWithContent',
+                     function testWithContent() {
+        var c = jsonRestTransportMaker().request(
+            '/caja/jsonTest?testParam=abc123',
+            'hello world from testWithContent',
+            'text/plain');
+        Q.when(c, function(result) {
+          assertTrue(result.sanityCheck === 'sane');
+          assertTrue(result.testParam === 'abc123');
+          assertTrue(result.content === 'hello world from testWithContent');
+          assertTrue(/text\/plain.*/.test(result.contentType));
+          jsunitPass('testWithContent');
+        });
+      });
+    </script>
+
+    <div id="testFailure" class="testcontainer waiting">
+      testFailure
+    </div>
+    <script type="text/javascript">
+      jsunitRegister('testFailure',
+                     function testFailure() {
+        var c = jsonRestTransportMaker().request(
+            '/non-existent-pathname-that-fails',
+            'hello world from testFailure',
+            'text/plain');
+        Q.when(c, function(result) {
+          throw new Error('Test must fail');
+        }, function(err) {
+          jsunitPass('testFailure');
+        });
+      });
+    </script>
+
+    <div id="testJsonpTransport" class="testcontainer waiting">
+      testJsonpTransport
+    </div>
+    <script type="text/javascript">
+      jsunitRegister('testJsonpTransport',
+                     function testJsonpTransport() {
+        var c = jsonRestTransportMaker('jsonp').request(
+            '/caja/jsonTest?testParam=abc123');
+        Q.when(c, function(result) {
+          assertTrue(result.sanityCheck === 'sane');
+          assertTrue(result.testParam === 'abc123');
+          assertTrue(result.content === '');
+          assertTrue(result.contentType === '');
+          jsunitPass('testJsonpTransport');
+        });
+      });
+    </script>
+
+    <div id="testInputUrlWithNoParams" class="testcontainer waiting">
+      testInputUrlWithNoParams
+    </div>
+    <script type="text/javascript">
+      jsunitRegister('testInputUrlWithNoParams',
+                     function testInputUrlWithNoParams() {
+        var c = jsonRestTransportMaker().request(
+            '/caja/jsonTest');
+        Q.when(c, function(result) {
+          assertTrue(result.sanityCheck === 'sane');
+          jsunitPass('testInputUrlWithNoParams');
+        });
+      });
+    </script>
 
     <div id="testBasicStuff" class="testcontainer waiting">
       testBasicStuff
@@ -225,6 +317,135 @@
             jsunitCallback(function(e) {
               throw e;
             }));
+      });
+    </script>
+
+    <div id="testBasicModules" class="testcontainer waiting">
+      testBasicModules
+    </div>
+    <script type="text/javascript">
+      jsunitRegister('testBasicModules',
+                     function testBasicModules() {
+        var t = createTest('http://foo.com/index.html');
+        t.addModule(
+            'http://foo.com/a/b.js',
+            'application/javascript',
+            [ '../c/d.js', 'http://bar.com/test.html' ]);
+        t.addModule(
+            'http://foo.com/c/d.js',
+            'application/javascript',
+            [ ]);
+        t.addModule(
+            'http://bar.com/test.html',
+            'text/html',
+            [ ]);
+        Q.when(
+            t.loadModule.async('/a/b.js'),
+            function(_) {
+              assertEquals(1, t.requests.get('http://foo.com/a/b.js'));
+              assertEquals(1, t.requests.get('http://foo.com/c/d.js'));
+              assertEquals(1, t.requests.get('http://bar.com/test.html'));
+              jsunitPass('testBasicModules');
+            });
+      });
+    </script>
+
+    <div id="testPartial" class="testcontainer waiting">
+      testPartial
+    </div>
+    <script type="text/javascript">
+      jsunitRegister('testPartial',
+                     function testPartial() {
+        var t = createTest('http://foo.com/index.html');
+        t.addModule(
+            'http://foo.com/a.js',
+            'application/javascript',
+            [ 'b.js' ]);
+        t.addModule(
+            'http://foo.com/b.js',
+            'application/javascript',
+            [ ]);
+        Q.when(
+            t.loadModule.async('/b.js'),
+            function(_) {
+              assertEquals(undefined, t.requests.get('http://foo.com/a.js'));
+              assertEquals(1, t.requests.get('http://foo.com/b.js'));
+              Q.when(
+                  t.loadModule.async('/a.js'),
+                  function(_) {
+                    assertEquals(1, t.requests.get('http://foo.com/a.js'));
+                    assertEquals(1, t.requests.get('http://foo.com/b.js'));
+                    Q.when(
+                        t.loadModule.async('/a.js'),
+                        function(_) {
+                          assertEquals(1,
+                              t.requests.get('http://foo.com/a.js'));
+                          assertEquals(1,
+                              t.requests.get('http://foo.com/b.js'));
+                          jsunitPass('testPartial');
+                        });
+                  });
+            });
+      });
+    </script>
+
+    <div id="testMimeTypeHeuristic" class="testcontainer waiting">
+      testMimeTypeHeuristic
+    </div>
+    <script type="text/javascript">
+      jsunitRegister('testMimeTypeHeuristic',
+                     function testMimeTypeHeuristic() {
+        var t = createTest('http://foo.com/index.html');
+        t.addModule(
+            'http://foo.com/z.js?foo=1.html',
+            'application/javascript',
+            [ ]);
+        Q.when(
+            t.loadModule.async('/z.js?foo=1.html'),
+            function(_) {
+              assertEquals(1, t.requests.get('http://foo.com/z.js?foo=1.html'));
+              jsunitPass('testMimeTypeHeuristic');
+            });
+      });
+    </script>
+
+    <div id="testMimeTypeJavaScript" class="testcontainer waiting">
+      testMimeTypeJavaScript
+    </div>
+    <script type="text/javascript">
+      jsunitRegister('testMimeTypeJavaScript',
+                     function testMimeTypeJavaScript() {
+        var t = createTest('http://foo.com/index.html');
+        t.addModule(
+            'http://foo.com/xyz',
+            'application/javascript',
+            [ ]);
+        Q.when(
+            t.loadModule.async('xyz', 'application/javascript'),
+            function(_) {
+              assertEquals(1, t.requests.get('http://foo.com/xyz'));
+              jsunitPass('testMimeTypeJavaScript');
+            });
+      });
+    </script>
+
+    <div id="testMimeTypeHtml" class="testcontainer waiting">
+      testMimeTypeHtml
+    </div>
+    <script type="text/javascript">
+      jsunitRegister('testMimeTypeHtml',
+                     function testMimeTypeHtml() {
+        var t = createTest('http://foo.com/index.html');
+        t.addModule(
+            'http://foo.com/xyz',
+            'text/html',
+            [ ]);
+        Q.when(
+            t.loadModule.async('xyz', 'text/html'),
+            function(_) {
+              assertEquals(1, t.requests.get('http://foo.com/xyz'));
+              jsunitPass('testMimeTypeHtml');
+            });
       });
     </script>
 

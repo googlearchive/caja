@@ -781,9 +781,8 @@
     <replace dir="${testlib}/com/google/caja/plugin"
         propertyFile="${lib.caja}/reporting/buildInfo.properties" >
       <replacefilter token="%VERSION%" property="svnVersion" />
-      <include name="cajoling-service-client-test.html" />
-      <include name="load-module-test.html" />
       <include name="browser-test-case.js" />
+      <include name="modules-test.html" />
     </replace>
   </target>
 
