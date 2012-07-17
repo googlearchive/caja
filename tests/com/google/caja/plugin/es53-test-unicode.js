@@ -31,7 +31,7 @@
     var api = { result : undefined };
     caja.load(undefined, uriPolicy, function (frame) {
       frame.code('http://test.fake/fake.url', 'text/javascript', code)
-        .api({ api: caja.tame(api) })
+        .api({ api: frame.tame(api) })
         .run(function (_) {
           assertEquals(result, api.result);
           jsunitPass(name);
@@ -75,7 +75,7 @@
         try {
           frame.code('http://test.fake/fake.url', 'text/javascript',
             'var \u0100 = 46; api.result = \u0100;')
-            .api({ api: caja.tame(api) })
+            .api({ api: frame.tame(api) })
             .run(function (_) {
               fail('Illegal character in identifier passed the cajoler');
           });

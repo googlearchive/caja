@@ -101,15 +101,15 @@
       return f(self, [ 'arn' + args[0] ]) + 'arn';
     });
 
-    extraImports.advisedBefore = caja.tame(caja.markFunction(advisedBefore));
-    extraImports.advisedAfter = caja.tame(caja.markFunction(advisedAfter));
-    extraImports.advisedAround = caja.tame(caja.markFunction(advisedAround));
+    extraImports.advisedBefore = frame.tame(caja.markFunction(advisedBefore));
+    extraImports.advisedAfter = frame.tame(caja.markFunction(advisedAfter));
+    extraImports.advisedAround = frame.tame(caja.markFunction(advisedAround));
 
-    extraImports.advisedBeforeM = caja.tame(caja.markFunction(advisedBeforeM));
-    extraImports.advisedAfterM = caja.tame(caja.markFunction(advisedAfterM));
-    extraImports.advisedAroundM = caja.tame(caja.markFunction(advisedAroundM));
+    extraImports.advisedBeforeM = frame.tame(caja.markFunction(advisedBeforeM));
+    extraImports.advisedAfterM = frame.tame(caja.markFunction(advisedAfterM));
+    extraImports.advisedAroundM = frame.tame(caja.markFunction(advisedAroundM));
 
-    extraImports.advisedAll = caja.tame(caja.markFunction(advisedAll));
+    extraImports.advisedAll = frame.tame(caja.markFunction(advisedAll));
 
     frame.code('es53-test-taming-advice-guest.html')
          .api(extraImports)

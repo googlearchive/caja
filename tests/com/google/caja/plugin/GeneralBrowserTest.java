@@ -29,14 +29,18 @@ public class GeneralBrowserTest extends BrowserTestCase {
 
   public final void testCajaJsInvocations() throws Exception {
     String result =
-        runTestDriver("es53-test-cajajs-invocation.js?minified=false");
+        runTestDriver(
+            "es53-test-cajajs-invocation.js",
+            "minified=false");
     assertContains(result, "{closured=false}");
     assertNotContains(result, "{closured=true}");
   }
 
   public final void testCajaJsMinifiedInvocations() throws Exception {
     String result =
-        runTestDriver("es53-test-cajajs-invocation.js&minified=true");
+        runTestDriver(
+            "es53-test-cajajs-invocation.js",
+            "minified=true");
     assertContains(result, "{closured=true}");
     assertNotContains(result, "{closured=false}");
   }
@@ -46,8 +50,8 @@ public class GeneralBrowserTest extends BrowserTestCase {
   }
 
   public final void testCajaJsBare() throws Exception {
-    runBrowserTest("cajajs-bare-test.html?es5=false");
-    runBrowserTest("cajajs-bare-test.html?es5=true");
+    runBrowserTest("cajajs-bare-test.html", "es5=false");
+    runBrowserTest("cajajs-bare-test.html", "es5=true");
   }
 
   public final void testBasicFunctions() throws Exception {
@@ -156,8 +160,16 @@ public class GeneralBrowserTest extends BrowserTestCase {
     runTestDriver("es53-test-client-uri-rewriting.js", false);
   }
 
-  public final void testTamingTamed() throws Exception {
-    runTestDriver("es53-test-taming-tamed.js");
+  public final void testTamingTamedGlobal() throws Exception {
+    runTestDriver(
+        "es53-test-taming-tamed.js",
+        "tameUsingGlobalMembrane=true");
+  }
+
+  public final void testTamingTamedFrame() throws Exception {
+    runTestDriver(
+        "es53-test-taming-tamed.js",
+        "tameUsingGlobalMembrane=false");
   }
 
   public final void testTamingUntamed() throws Exception {

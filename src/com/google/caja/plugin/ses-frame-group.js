@@ -17,6 +17,7 @@
  * @requires Domado
  * @requires GuestManager
  * @requires Q
+ * @requires TamingSchema
  * @requires TamingMembrane
  * @requires bridalMaker
  * @overrides window
@@ -33,13 +34,7 @@ function SESFrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker) {
   var USELESS = Object.freeze({ USELESS: 'USELESS' });
   var BASE_OBJECT_CONSTRUCTOR = Object.freeze({});
 
-  function FeralTwinStub() {}
-  FeralTwinStub.prototype.toString = function () {
-    return "[feral twin stub:" + tamingWin.taming.tame(this) + "]";
-  };
-  function FeralNodeWrapper(node) { this.node = node; }
-
-  var tamingMembrane = TamingMembrane(Object.freeze({
+  var tamingHelper = Object.freeze({
       applyFunction: applyFunction,
       getProperty: getProperty,
       setProperty: setProperty,
@@ -52,18 +47,13 @@ function SESFrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker) {
       banNumerics: function() {},
       USELESS: USELESS,
       BASE_OBJECT_CONSTRUCTOR: BASE_OBJECT_CONSTRUCTOR
-  }));
+  });
 
-  var domado = Domado(
-      Object.freeze({
-        permitUntaming: permitUntaming,
-        untamesToWrapper: untamesToWrapper,
-        tame: tamingMembrane.tame,
-        untame: tamingMembrane.untame,
-        tamesTo: tamingMembrane.tamesTo,
-        hasTameTwin: tamingMembrane.hasTameTwin
-      }),
-      null);
+  var tamingSchema = TamingSchema(tamingHelper);
+  var frameGroupTamingMembrane =
+      TamingMembrane(tamingHelper, tamingSchema.control);
+
+  var domado = Domado(null);
 
   var bridal = bridalMaker(identity, feralWin.document);
 
@@ -75,20 +65,21 @@ function SESFrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker) {
     makeDefensibleObject___: makeDefensibleObject,
     makeDefensibleFunction___: makeDefensibleFunction,
 
-    tame: tamingMembrane.tame,
-    tamesTo: tamingMembrane.tamesTo,
-    untame: tamingMembrane.untame,
-    unwrapDom: unwrapDom,
-    markReadOnlyRecord: tamingMembrane.markTameAsReadOnlyRecord,
-    markFunction: tamingMembrane.markTameAsFunction,
-    markCtor: tamingMembrane.markTameAsCtor,
-    markXo4a: tamingMembrane.markTameAsXo4a,
-    grantMethod: tamingMembrane.grantTameAsMethod,
-    grantRead: tamingMembrane.grantTameAsRead,
-    grantReadWrite: tamingMembrane.grantTameAsReadWrite,
-    adviseFunctionBefore: tamingMembrane.adviseFunctionBefore,
-    adviseFunctionAfter: tamingMembrane.adviseFunctionAfter,
-    adviseFunctionAround: tamingMembrane.adviseFunctionAround,
+    tame: frameGroupTamingMembrane.tame,
+    tamesTo: frameGroupTamingMembrane.tamesTo,
+    reTamesTo: frameGroupTamingMembrane.reTamesTo,
+    untame: frameGroupTamingMembrane.untame,
+    unwrapDom: function(o) { return o; },
+    markReadOnlyRecord: tamingSchema.published.markTameAsReadOnlyRecord,
+    markFunction: tamingSchema.published.markTameAsFunction,
+    markCtor: tamingSchema.published.markTameAsCtor,
+    markXo4a: tamingSchema.published.markTameAsXo4a,
+    grantMethod: tamingSchema.published.grantTameAsMethod,
+    grantRead: tamingSchema.published.grantTameAsRead,
+    grantReadWrite: tamingSchema.published.grantTameAsReadWrite,
+    adviseFunctionBefore: tamingSchema.published.adviseFunctionBefore,
+    adviseFunctionAfter: tamingSchema.published.adviseFunctionAfter,
+    adviseFunctionAround: tamingSchema.published.adviseFunctionAround,
 
     USELESS: USELESS,
     iframe: window.frameElement,
@@ -197,41 +188,48 @@ function SESFrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker) {
     return result;
   }
 
-  function permitUntaming(o) {
-    if (typeof o === 'object' || typeof o === 'function') {
-      tamingMembrane.tamesTo(new FeralTwinStub(), o);
-    } // else let primitives go normally
-  }
-
-  function untamesToWrapper(feral, tame) {
-    tamingMembrane.tamesTo(new FeralNodeWrapper(feral), tame);
-  }
-  function unwrapDom(wrapper) {
-    if (wrapper instanceof FeralNodeWrapper) {
-      return wrapper.node;
-    }
-    return wrapper;
-  }
-
   //----------------
 
   function makeES5Frame(div, uriPolicy, es5ready, domOpts) {
     var divs = cajaInt.prepareContainerDiv(div, feralWin, domOpts);
     guestMaker.make(function (guestWin) {
-      var domicile = makeDomicile(divs, uriPolicy, guestWin);
-      var gman = GuestManager(divs, domicile, guestWin, sesRun);
+      var frameTamingMembrane = TamingMembrane(tamingHelper, tamingSchema.control);
+      var domicile = makeDomicile(
+          frameTamingMembrane, divs, uriPolicy, guestWin);
+      var gman = GuestManager(
+          frameTamingMembrane, divs, domicile, guestWin, sesRun);
       es5ready(gman);
     });
   }
 
   //----------------
 
-  function makeDomicile(divs, uriPolicy, guestWin) {
+  function makeDomicile(frameTamingMembrane, divs, uriPolicy, guestWin) {
     if (!divs.inner) { return null; }
+
+    function FeralTwinStub() {}
+    FeralTwinStub.prototype.toString = function () {
+      return "[feral twin stub:" + tamingWin.taming.tame(this) + "]";
+    };
+
+    function permitUntaming(o) {
+      if (typeof o === 'object' || typeof o === 'function') {
+        frameTamingMembrane.tamesTo(new FeralTwinStub(), o);
+      } // else let primitives go normally
+    }
 
     var domicile = domado.attachDocument(
       '-' + divs.idClass, uriPolicy, divs.inner,
-      undefined, config.targetAttributePresets);
+      undefined, config.targetAttributePresets,
+      Object.freeze({
+        permitUntaming: permitUntaming,
+        tame: frameTamingMembrane.tame,
+        untame: frameTamingMembrane.untame,
+        tamesTo: frameTamingMembrane.tamesTo,
+        reTamesTo: frameTamingMembrane.reTamesTo,
+        hasTameTwin: frameTamingMembrane.hasTameTwin,
+        hasFeralTwin: frameTamingMembrane.hasFeralTwin
+      }));
     var imports = domicile.window;
 
     // The following code copied from the ES5/3 mode is mostly

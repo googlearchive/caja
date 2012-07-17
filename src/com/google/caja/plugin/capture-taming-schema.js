@@ -14,19 +14,19 @@
 
 /**
  * @fileoverview
- * Given that the next script executed is the cajoled TamingMembrane module,
- * make the TamingMembrane entry points available in the global scope.
+ * Given that the next script executed is the cajoled TamingSchema module,
+ * make the TamingSchema entry points available in the global scope.
  *
  * @author ihab.awad@gmail.com
  * @requires CaptureCajoledModule
  * @overrides window
- * @provides TamingMembrane
+ * @provides TamingSchema
  */
 
-var TamingMembrane = undefined;
+var TamingSchema = undefined;
 
 CaptureCajoledModule(function(imports) {
-  TamingMembrane = imports.TamingMembrane;
+  TamingSchema = imports.TamingSchema;
 });
 
 // Exports for closure compiler.

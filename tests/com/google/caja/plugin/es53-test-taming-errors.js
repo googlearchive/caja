@@ -63,7 +63,7 @@
       frameGroup.markCtor(SubCtor, ToxicCtor, 'SubCtor');
 
       expectFailure(function() {
-        frameGroup.tame(SubCtor);
+        frame.tame(SubCtor);
       });
       jsunit.pass('testToxicSuperCtorFails');
     });

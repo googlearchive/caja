@@ -38,7 +38,7 @@
  * semantics that don't matter in practice.  GuestManager combines the two.
  */
 
-function GuestManager(divs, domicile, guestWin, runImpl) {
+function GuestManager(frameTamingMembrane, divs, domicile, guestWin, runImpl) {
   // TODO(felix8a): this api needs to be simplified; it's difficult to
   // explain what all the parameters mean in different situations.
   var args = {
@@ -82,6 +82,13 @@ function GuestManager(divs, domicile, guestWin, runImpl) {
 
     // Internal state
     domicile: domicile,      // Currently exposed only for the test suite
+
+    // Taming utilities
+    tame: frameTamingMembrane.tame,
+    untame: frameTamingMembrane.untame,
+    tamesTo: frameTamingMembrane.tamesTo,
+    reTamesTo: frameTamingMembrane.reTamesTo,
+    hasTameTwin: frameTamingMembrane.hasTameTwin,
 
     api: function (imports) {
       args.moreImports = imports;

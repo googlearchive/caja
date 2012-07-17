@@ -24,8 +24,10 @@ import com.google.caja.util.RewritingResourceHandler;
 import java.io.FileDescriptor;
 import java.io.FileOutputStream;
 import java.io.PrintStream;
+import java.net.URLEncoder;
 import java.util.List;
 
+import com.google.common.base.Joiner;
 import org.mortbay.jetty.servlet.Context;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
@@ -35,14 +37,6 @@ import org.openqa.selenium.firefox.FirefoxDriver;
 /**
  * Test case class with tools for controlling a web browser running pages from a
  * local web server.
- *
- * <p>
- * To debug, run <pre>
- * ant -D{@link BrowserTestCase#START_AND_WAIT_FLAG caja.BrowserTestCase.startAndWait}=true -Dtest.filter=&lt;TestCaseName&gt; runtests
- * </pre>.  Be sure to fill in {@code <TestCaseName>} with the name of the test
- * you want to debug and look for a URL in the test log output.
- * If you need more fine-grained filtering, use {@code -Dtest.method.filter} to
- * filter by method name.
  *
  * @author maoziqing@gmail.com (Ziqing Mao)
  * @author kpreid@switchb.org (Kevin Reid)
@@ -135,12 +129,16 @@ public abstract class BrowserTestCase extends CajaTestCase {
    * Start the web server and browser, go to pageName, call driveBrowser(driver,
    * pageName), and then clean up.
    */
-  protected String runBrowserTest(String pageName) throws Exception {
+  protected String runBrowserTest(String pageName, String... params)
+      throws Exception {
     if (flag(SERVER_ONLY) || flag(START_AND_WAIT)) {
       pageName = "test-index.html";
     }
     String page = "http://localhost:" + portNumber
         + "/ant-testlib/com/google/caja/plugin/" + pageName;
+    if (params.length > 0) {
+      page += "?" + Joiner.on("&").join(params);
+    }
     // The test runner may catch output so go directly to file descriptor 2.
     PrintStream err = new PrintStream(
         new FileOutputStream(FileDescriptor.err), false, "UTF-8");
@@ -178,25 +176,47 @@ public abstract class BrowserTestCase extends CajaTestCase {
     return System.getProperty(name) != null;
   }
 
-  protected String runTestDriver(String testDriver) throws Exception {
-    return runTestDriver(testDriver, true) + "\n"
-        + runTestDriver(testDriver, false);
-  }
-
-  protected String runTestCase(String testCase) throws Exception {
-    return runTestCase(testCase, true) + "\n"
-        + runTestCase(testCase, false);
-  }
-
-  protected String runTestDriver(String testDriver, boolean es5)
+  protected String runTestDriver(String testDriver, String... params)
       throws Exception {
-    return runBrowserTest("browser-test-case.html?es5=" + es5
-        + "&test-driver=" + testDriver);
+    return runTestDriver(testDriver, true, params) + "\n"
+        + runTestDriver(testDriver, false, params);
   }
 
-  protected String runTestCase(String testCase, boolean es5) throws Exception {
-    return runBrowserTest("browser-test-case.html?es5=" + es5
-        + "&test-case=" + testCase);
+  protected String runTestCase(String testCase, String... params)
+      throws Exception {
+    return runTestCase(testCase, true, params) + "\n"
+        + runTestCase(testCase, false, params);
+  }
+
+  protected String runTestDriver(
+      String testDriver, boolean es5, String... params)
+      throws Exception {
+    return runBrowserTest("browser-test-case.html",
+        add(params,
+            "es5=" + es5,
+            "test-driver=" + escapeUri(testDriver)));
+  }
+
+  protected String runTestCase(
+      String testCase, boolean es5, String... params)
+      throws Exception {
+    return runBrowserTest("browser-test-case.html",
+        add(params,
+            "es5=" + es5,
+            "test-case=" + escapeUri(testCase)));
+  }
+
+  protected static String escapeUri(String s) {
+    StringBuilder sb = new StringBuilder();
+    Escaping.escapeUri(s, sb);
+    return sb.toString();
+  }
+
+  private static String[] add(String[] arr, String... rest) {
+    String[] result = new String[arr.length + rest.length];
+    System.arraycopy(arr, 0, result, 0, arr.length);
+    System.arraycopy(rest, 0, result, arr.length, rest.length);
+    return result;
   }
 
   /**

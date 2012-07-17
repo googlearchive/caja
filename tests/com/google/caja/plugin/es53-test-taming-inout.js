@@ -67,7 +67,7 @@
       return testObject;
     };
     var getTamedTestObject = function() {
-      return caja.tame(testObject);
+      return frame.tame(testObject);
     };
     var evalInHost = function(s, a, b, c) {
       return eval(String(s));
@@ -109,7 +109,7 @@
 
     var extraImports = createExtraImportsForTesting(caja, frame);
     
-    extraImports.tamedApi = caja.tame(api);
+    extraImports.tamedApi = frame.tame(api);
 
     extraImports.getFeralTestObject = getFeralTestObject;
     extraImports.getTamedTestObject = getTamedTestObject;

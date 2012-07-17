@@ -814,7 +814,15 @@
     </transform>
   </target>
 
-  <target name="MinifiedJs" depends="CajoledDomado,CajoledTamingMembrane">
+  <target name="CajoledTamingSchema" depends="pluginc">
+    <transform>
+        <output file="${lib.caja}/plugin/taming-schema.out.js"
+                language="caja" renderer="pretty"/>
+        <input file="${src.caja}/plugin/taming-schema.js"/>
+    </transform>
+  </target>
+
+    <target name="MinifiedJs" depends="CajoledDomado,CajoledTamingMembrane,CajoledTamingSchema">
     <transform>
       <output file="${lib}/caja.jslint.stamp"
         language="jslint"/>
@@ -866,6 +874,8 @@
       <input file="${src.caja}/plugin/capture-cajoled-module.js"/>
       <input file="${src.caja}/plugin/capture-domado.js"/>
       <input file="${lib.caja}/plugin/domado.out.js" jslint="false"/>
+      <input file="${src.caja}/plugin/capture-taming-schema.js"/>
+      <input file="${lib.caja}/plugin/taming-schema.out.js" jslint="false"/>
       <input file="${src.caja}/plugin/capture-taming-membrane.js"/>
       <input file="${lib.caja}/plugin/taming-membrane.out.js" jslint="false"/>
       <input file="${src.caja}/plugin/uri.js"/>
@@ -967,6 +977,7 @@
       <input file="${src.caja}/plugin/cssparser.js"/>
       <input file="${src.caja}/plugin/bridal.js"/>
       <input file="${src.caja}/plugin/domado.js"/>
+      <input file="${src.caja}/plugin/taming-schema.js"/>
       <input file="${src.caja}/plugin/taming-membrane.js"/>
 
       <input file="${src.caja}/plugin/uri.js"/>
@@ -1219,6 +1230,8 @@
         <include name="bridal.js" />
         <include name="capture-cajoled-module.js" />
         <include name="capture-domado.js" />
+        <include name="capture-taming-schema.js" />
+        <include name="taming-schema.js" />
         <include name="capture-taming-membrane.js" />
         <include name="taming-membrane.js" />
         <!-- TODO(ihab.awad): ??? -->

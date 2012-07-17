@@ -55,14 +55,14 @@ jsunitRegister('testHostConstructedObjectProperties',
                function testHostConstructedObjectProperties() {
   // Property is tamed en route to guest
   var x = new tamedApi.Ctor();
-  evalInHost('assertEquals(42, caja.untame(a).prop);', x);
-  evalInHost('caja.untame(a).prop = getFeralTestObject();', x);
+  evalInHost('assertEquals(42, frame.untame(a).prop);', x);
+  evalInHost('frame.untame(a).prop = getFeralTestObject();', x);
   assertEquals(getTamedTestObject(), x.prop);
   // Property is un-tamed en route to host
   var y = new tamedApi.Ctor();
-  evalInHost('assertEquals(42, caja.untame(a).prop);', y);
+  evalInHost('assertEquals(42, frame.untame(a).prop);', y);
   y.prop = getTamedTestObject();
-  evalInHost('assertEquals(getFeralTestObject(), caja.untame(a).prop);', y);
+  evalInHost('assertEquals(getFeralTestObject(), frame.untame(a).prop);', y);
   pass('testHostConstructedObjectProperties');
 });
 
@@ -74,7 +74,7 @@ o.meth(
     'assertEquals(getFeralTestObject(), a);',
     getTamedTestObject());
 // 'this' is un-tamed en route to host
-o.meth('assertEquals(this, caja.untame(caja.tame(this)));');
+o.meth('assertEquals(this, frame.untame(frame.tame(this)));');
 o.meth('assertTrue(this instanceof api.Ctor);');
 // Return value is tamed en route to guest
 assertEquals(

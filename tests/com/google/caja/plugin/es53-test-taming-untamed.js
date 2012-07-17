@@ -58,11 +58,11 @@
     // A generic function to eval() code in the host.
     // This function untames/tames its args/return value
     extraImports.tameEval =
-        caja.tame(caja.markFunction(function(s, a, b, c) {
+        frame.tame(caja.markFunction(function(s, a, b, c) {
           return eval(String(s));
         }));
 
-    extraImports.tamedJson = caja.tame({a: 1});
+    extraImports.tamedJson = frame.tame({a: 1});
 
     frame.code('es53-test-taming-untamed-guest.html')
          .api(extraImports)

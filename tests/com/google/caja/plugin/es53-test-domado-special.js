@@ -101,10 +101,10 @@ fetch('es53-test-domado-special-initial-state.html', function(initialHtml) {
     var extraImports = createExtraImportsForTesting(frameGroup, frame);
 
     extraImports.checkGlobalSideEffect =
-      frameGroup.tame(frameGroup.markFunction(checkGlobalSideEffect));
+      frame.tame(frameGroup.markFunction(checkGlobalSideEffect));
       
     frameGroup.grantRead(externalScript, 'loaded');
-    extraImports.externalScript = frameGroup.tame(externalScript);
+    extraImports.externalScript = frame.tame(externalScript);
 
     frame.code('es53-test-domado-special-guest.html')
          .api(extraImports)

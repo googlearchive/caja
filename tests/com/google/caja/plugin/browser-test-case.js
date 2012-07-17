@@ -335,23 +335,23 @@ function createExtraImportsForTesting(frameGroup, frame) {
 
 
   standardImports.readyToTest =
-      frameGroup.tame(frameGroup.markFunction(readyToTest));
+      frame.tame(frameGroup.markFunction(readyToTest));
   standardImports.jsunitRun =
-      frameGroup.tame(frameGroup.markFunction(jsunitRun));
+      frame.tame(frameGroup.markFunction(jsunitRun));
   standardImports.jsunitRegister =
-      frameGroup.tame(frameGroup.markFunction(jsunitRegister));
+      frame.tame(frameGroup.markFunction(jsunitRegister));
   standardImports.jsunitPass =
-      frameGroup.tame(frameGroup.markFunction(jsunitPass));
+      frame.tame(frameGroup.markFunction(jsunitPass));
   standardImports.jsunitCallback =
-      frameGroup.tame(frameGroup.markFunction(function(cb, opt_id) {
+      frame.tame(frameGroup.markFunction(function(cb, opt_id) {
         return jsunitCallback(cb, opt_id, frameGroup);
       }));
   standardImports.canonInnerHtml =
-      frameGroup.tame(frameGroup.markFunction(canonInnerHtml));
+      frame.tame(frameGroup.markFunction(canonInnerHtml));
   standardImports.assertStringContains =
-      frameGroup.tame(frameGroup.markFunction(assertStringContains));
+      frame.tame(frameGroup.markFunction(assertStringContains));
   standardImports.assertStringDoesNotContain =
-    frameGroup.tame(frameGroup.markFunction(assertStringDoesNotContain));
+    frame.tame(frameGroup.markFunction(assertStringDoesNotContain));
 
   if (frame.div) {
     // Create a readonly mirror of document so that we can test that mutations
@@ -381,10 +381,10 @@ function createExtraImportsForTesting(frameGroup, frame) {
     })
   };
 
-  standardImports.console = frameGroup.tame(fakeConsole);
+  standardImports.console = frame.tame(fakeConsole);
 
   if (frame.div) {
-    standardImports.$ = frameGroup.tame(frameGroup.markFunction(function(id) {
+    standardImports.$ = frame.tame(frameGroup.markFunction(function(id) {
       return frame.imports.document.getElementById(id);
     }));
   }
@@ -461,7 +461,7 @@ function createExtraImportsForTesting(frameGroup, frame) {
 
 
   // Marks a container green to indicate that test passed
-  standardImports.pass = frameGroup.tame(frameGroup.markFunction(function (id) {
+  standardImports.pass = frame.tame(frameGroup.markFunction(function (id) {
     jsunit.pass(id);
     if (!frame.imports.document) { return; }
     var node = frame.imports.document.getElementById(id);
@@ -479,7 +479,7 @@ function createExtraImportsForTesting(frameGroup, frame) {
    * testcontainer as skipped so that BrowserTestCase.java accepts the suite
    * anyway.
    */
-  standardImports.jsunitRegisterIf = frameGroup.tame(frameGroup.markFunction(
+  standardImports.jsunitRegisterIf = frame.tame(frameGroup.markFunction(
       function (okay, testName, testFunc) {
     if (okay) {
       jsunitRegister(testName, testFunc);
@@ -498,11 +498,11 @@ function createExtraImportsForTesting(frameGroup, frame) {
 
 
   standardImports.expectFailure =
-      frameGroup.tame(frameGroup.markFunction(expectFailure));
+      frame.tame(frameGroup.markFunction(expectFailure));
   standardImports.assertFailsSafe =
-      frameGroup.tame(frameGroup.markFunction(assertFailsSafe));
+      frame.tame(frameGroup.markFunction(assertFailsSafe));
 
-  standardImports.assertColor = frameGroup.tame(frameGroup.markFunction(
+  standardImports.assertColor = frame.tame(frameGroup.markFunction(
       function(expected, cssColorString) {
         if (typeof cssColorString === 'string') {
           cssColorString = cssColorString.toLowerCase();
@@ -526,7 +526,7 @@ function createExtraImportsForTesting(frameGroup, frame) {
       }));
 
   standardImports.assertAsynchronousRequirement =
-      frameGroup.tame(frameGroup.markFunction(asyncRequirements.assert));
+      frame.tame(frameGroup.markFunction(asyncRequirements.assert));
 
   var jsunitFns = [
       'assert', 'assertContains', 'assertEquals', 'assertEvaluatesToFalse',
@@ -541,7 +541,7 @@ function createExtraImportsForTesting(frameGroup, frame) {
       throw new Error('already defined', name);
     }
     standardImports[name] =
-        frameGroup.tame(frameGroup.markFunction(window[name]));
+        frame.tame(frameGroup.markFunction(window[name]));
   }
 
   return standardImports;

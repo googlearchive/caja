@@ -19,135 +19,12 @@
  * @overrides window
  * @provides TamingMembrane
  */
-function TamingMembrane(privilegedAccess) {
+function TamingMembrane(privilegedAccess, schema) {
 
   'use strict';
 
-  function PropertyFlags() {
-    var map = WeakMap();
-    return Object.freeze({
-      has: function(obj, prop, flag) {
-        prop = '' + prop;
-        return map.has(obj) &&
-            map.get(obj).hasOwnProperty(prop) &&
-            map.get(obj)[prop].indexOf(flag) !== -1;
-      },
-      set: function(obj, prop, flag) {
-        prop = '' + prop;
-        if (!map.has(obj)) {
-          // Note: Object.create(null) not supported in ES5/3
-          map.set(obj, {});
-        }
-        var o = map.get(obj);
-        if (!o.hasOwnProperty(prop)) {
-          o[prop] = [];
-        }
-        if (o[prop].indexOf(flag) === -1) {
-          o[prop].push(flag);
-        }
-      },
-      getProps: function(obj) {
-        if (!map.has(obj)) { return []; }
-        return Object.getOwnPropertyNames(map.get(obj));
-      }
-    });
-  }
-
-  var grantTypes = Object.freeze({
-    METHOD: 'method',
-    READ: 'read',
-    WRITE: 'write'
-  });
-
-  var grantAs = PropertyFlags();
-
-  var tameTypes = Object.freeze({
-    CONSTRUCTOR: 'constructor',
-    FUNCTION: 'function',
-    XO4A: 'xo4a',
-    READ_ONLY_RECORD: 'read_only_record'
-  });
-
-  var tameAs = new WeakMap();
-
-  var tameFunctionName = new WeakMap();
-  var tameCtorSuper = new WeakMap();
-
   var feralByTame = new WeakMap();
   var tameByFeral = new WeakMap();
-
-  var functionAdviceBefore = new WeakMap();
-  var functionAdviceAfter = new WeakMap();
-  var functionAdviceAround = new WeakMap();
-
-  function composeAround(f) {
-    // TODO(ihab.awad): Optimize so we don't create then discard several
-    // new closures for each invocation
-    var func = function(self, args) {
-      return privilegedAccess.applyFunction(f, self, args);
-    };
-    if (functionAdviceAround.has(f)) {
-      functionAdviceAround.get(f).forEach(function(advice) {
-        var cur = func;  // capture value
-        func = function(self, args) {
-          return privilegedAccess.applyFunction(
-              advice,
-              privilegedAccess.USELESS,
-              [cur, self, args]);
-        };
-      });
-    }
-    return func;
-  }
-
-  function composeBefore(f, self, args) {
-    if (functionAdviceBefore.has(f)) {
-      functionAdviceBefore.get(f).forEach(function(advice) {
-        args = privilegedAccess.applyFunction(
-            advice,
-            privilegedAccess.USELESS,
-            [f, self, args]);
-      });
-    }
-    return args;
-  }
-
-  function composeAfter(f, self, result) {
-    if (functionAdviceAfter.has(f)) {
-      functionAdviceAfter.get(f).forEach(function(advice) {
-        result = privilegedAccess.applyFunction(
-            advice,
-            privilegedAccess.USELESS,
-            [f, self, result]);
-      });
-    }
-    return result;
-  }
-
-  function applyFeralFunction(f, self, args) {
-    return composeAfter(
-        f,
-        self,
-        composeAround(f)(
-            self,
-            composeBefore(
-                f,
-                self,
-                args)));
-  }
-
-  function checkCanControlTaming(f) {
-    var to = typeof f;
-    if (!f || (to !== 'function' && to !== 'object')) {
-      throw new TypeError('Taming controls not for non-objects: ' + f);
-    }
-    if (tameByFeral.has(f)) {
-      throw new TypeError('Taming controls not for already tamed: ' + f);
-    }
-    if (privilegedAccess.isDefinedInCajaFrame(f)) {
-      throw new TypeError('Taming controls not for Caja objects: ' + f);
-    }
-  }
 
   // Useless value provided as a safe 'this' value to functions.
   feralByTame.set(privilegedAccess.USELESS, privilegedAccess.USELESS);
@@ -158,7 +35,7 @@ function TamingMembrane(privilegedAccess) {
   }
 
   function preventExtensions(o) {
-      return ((void 0) === o) ? (void 0) : Object.preventExtensions(o);
+    return ((void 0) === o) ? (void 0) : Object.preventExtensions(o);
   }
 
   /**
@@ -172,6 +49,13 @@ function TamingMembrane(privilegedAccess) {
    * tame(f) === t and untame(t) === f.
    */
   function tamesTo(f, t) {
+    if ((f && tameByFeral.has(f)) || (t && feralByTame.has(t))) {
+      throw new TypeError('Attempt to multiply tame: ' + f + ', ' + t);
+    }
+    reTamesTo(f, t);
+  }
+
+  function reTamesTo(f, t) {
     var ftype = typeof f;
     if (!f || (ftype !== 'function' && ftype !== 'object')) {
       throw new TypeError('Unexpected feral primitive: ', f);
@@ -181,16 +65,9 @@ function TamingMembrane(privilegedAccess) {
       throw new TypeError('Unexpected tame primitive: ', t);
     }
 
-    if (tameByFeral.has(f)) {
-      throw new TypeError('Attempt to multiply tame: ' + f + ', ' + t);
-    }
-
-    if (feralByTame.has(t)) {
-      throw new TypeError('Attempt to multiply tame: ' + f + ', ' + t);
-    }
-
     tameByFeral.set(f, t);
     feralByTame.set(t, f);
+    schema.fix(f);
   }
 
   /**
@@ -250,15 +127,15 @@ function TamingMembrane(privilegedAccess) {
         t = preventExtensions(tamePreviouslyConstructedObject(f, ctor));
       }
     } else if (ftype === 'function') {
-      switch (tameAs.get(f)) {
-        case tameTypes.CONSTRUCTOR:
-          t = tameCtor(f, tameCtorSuper.get(f), tameFunctionName.get(f));
+      switch (schema.tameAs.get(f)) {
+        case schema.tameTypes.CONSTRUCTOR:
+          t = tameCtor(f, schema.tameCtorSuper.get(f), schema.tameFunctionName.get(f));
           break;
-        case tameTypes.FUNCTION:
-          t = tamePureFunction(f, tameFunctionName.get(f));
+        case schema.tameTypes.FUNCTION:
+          t = tamePureFunction(f, schema.tameFunctionName.get(f));
           break;
-        case tameTypes.XO4A:
-          t = tameXo4a(f, tameFunctionName.get(f));
+        case schema.tameTypes.XO4A:
+          t = tameXo4a(f, schema.tameFunctionName.get(f));
           break;
         default:
           t = void 0;
@@ -282,7 +159,7 @@ function TamingMembrane(privilegedAccess) {
   // frozen; that is up to the caller to do when appropriate.
   function tameRecord(f, t) {
     if (!t) { t = {}; }
-    var readOnly = tameAs.get(f) === tameTypes.READ_ONLY_RECORD;
+    var readOnly = schema.tameAs.get(f) === schema.tameTypes.READ_ONLY_RECORD;
     privilegedAccess.getOwnPropertyNames(f).forEach(function(p) {
       if (isNumericName(p)) { return; }
       if (!isValidPropertyName(p)) { return; }
@@ -305,7 +182,7 @@ function TamingMembrane(privilegedAccess) {
   }
 
   function tamePreviouslyConstructedObject(f, fc) {
-    if (tameAs.get(fc) !== tameTypes.CONSTRUCTOR) { return void 0; }
+    if (schema.tameAs.get(fc) !== schema.tameTypes.CONSTRUCTOR) { return void 0; }
     var tc = tame(fc);
     var t = Object.create(tc.prototype);
     tameObjectWithMethods(f, t);
@@ -314,13 +191,13 @@ function TamingMembrane(privilegedAccess) {
   }
 
   function addFunctionPropertyHandlers(f, t) {
-    grantAs.getProps(f).forEach(function(p) {
+    schema.grantAs.getProps(f).forEach(function(p) {
       if (!isValidPropertyName(p)) { return; }
-      var get = !grantAs.has(f, p, grantTypes.READ) ? undefined :
+      var get = !schema.grantAs.has(f, p, schema.grantTypes.READ) ? undefined :
           function() {
             return tame(privilegedAccess.getProperty(f, p));
           };
-      var set = !grantAs.has(f, p, grantTypes.WRITE) ? undefined :
+      var set = !schema.grantAs.has(f, p, schema.grantTypes.WRITE) ? undefined :
           function(v) {
             privilegedAccess.setProperty(f, p, untame(v));
             return v;
@@ -341,7 +218,7 @@ function TamingMembrane(privilegedAccess) {
       // Since it's by definition useless, there's no reason to bother
       // passing untame(USELESS); we just pass USELESS itself.
       return tame(
-          applyFeralFunction(
+          schema.applyFeralFunction(
               f,
               privilegedAccess.USELESS,
               untameArray(arguments)));
@@ -358,7 +235,7 @@ function TamingMembrane(privilegedAccess) {
       // Avoid being used as a general-purpose xo4a
       if (!(this instanceof t)) { return; }
       var o = Object.create(fPrototype);
-      applyFeralFunction(f, o, untameArray(arguments));
+      schema.applyFeralFunction(f, o, untameArray(arguments));
       tameObjectWithMethods(o, this);
       tamesTo(o, this);
       preventExtensions(this);
@@ -374,7 +251,7 @@ function TamingMembrane(privilegedAccess) {
       if (!fSuper || (fSuper === privilegedAccess.getObjectCtorFor(fSuper))) {
         return {};
       }
-      if (!tameAs.get(fSuper) === tameTypes.CONSTRUCTOR) {
+      if (!schema.tameAs.get(fSuper) === schema.tameTypes.CONSTRUCTOR) {
         throw new TypeError('Super ctor ' + fSuper + ' not granted as such');
       }
       var tSuper = tame(fSuper);
@@ -407,7 +284,7 @@ function TamingMembrane(privilegedAccess) {
   function tameXo4a(f) {
     var t = function(_) {
       return tame(
-          applyFeralFunction(
+          schema.applyFeralFunction(
               f,
               untame(this),
               untameArray(arguments)));
@@ -436,11 +313,11 @@ function TamingMembrane(privilegedAccess) {
 
   function tameObjectWithMethods(f, t) {
     if (!t) { t = {}; }
-    grantAs.getProps(f).forEach(function(p) {
+    schema.grantAs.getProps(f).forEach(function(p) {
       var get = undefined;
       var set = undefined;
       if (!isValidPropertyName(p)) { return; }
-      if (grantAs.has(f, p, grantTypes.METHOD)) {
+      if (schema.grantAs.has(f, p, schema.grantTypes.METHOD)) {
         get = function() {
           // Note we return a different method each time because we may be
           // called with a different 'this' (the method property may be
@@ -448,7 +325,7 @@ function TamingMembrane(privilegedAccess) {
           var self = this;
           return function(_) {
             return tame(
-              applyFeralFunction(
+              schema.applyFeralFunction(
                   privilegedAccess.getProperty(f, p),
                   untame(self),
                   untameArray(arguments)));
@@ -461,11 +338,11 @@ function TamingMembrane(privilegedAccess) {
           set: errSet(p)
         });
       } else {
-        get = !grantAs.has(f, p, grantTypes.READ) ? undefined :
+        get = !schema.grantAs.has(f, p, schema.grantTypes.READ) ? undefined :
           makePrototypeMethod(t, function() {
             return tame(privilegedAccess.getProperty(untame(this), p));
           });
-        set = !grantAs.has(f, p, grantTypes.WRITE) ? undefined :
+        set = !schema.grantAs.has(f, p, schema.grantTypes.WRITE) ? undefined :
           makePrototypeMethod(t, function(v) {
             privilegedAccess.setProperty(untame(this), p, untame(v));
             return v;
@@ -576,115 +453,21 @@ function TamingMembrane(privilegedAccess) {
     return preventExtensions(f);
   }
 
-  function checkNonNumeric(prop) {
-    if (isNumericName(prop)) {
-      throw new TypeError('Cannot control numeric property names: ' + prop);
-    }
-  }
-
-  ///////////////////////////////////////////////////////////////////////////
-
-  function markTameAsReadOnlyRecord(f) {
-    checkCanControlTaming(f);
-    tameAs.set(f, tameTypes.READ_ONLY_RECORD);
-    return f;
-  }
-
-  function markTameAsFunction(f, name) {
-    checkCanControlTaming(f);
-    tameAs.set(f, tameTypes.FUNCTION);
-    tameFunctionName.set(f, name);
-    return f;
-  }
-
-  function markTameAsCtor(ctor, opt_super, name) {
-    checkCanControlTaming(ctor);
-    var ctype = typeof ctor;
-    var stype = typeof opt_super;
-    if (ctype !== 'function') {
-      throw new TypeError('Cannot tame ' + ctype + ' as ctor');
-    }
-    if (opt_super && stype !== 'function') {
-      throw new TypeError('Cannot tame ' + stype + ' as superclass ctor');
-    }
-    tameAs.set(ctor, tameTypes.CONSTRUCTOR);
-    tameFunctionName.set(ctor, name);
-    tameCtorSuper.set(ctor, opt_super);
-    return ctor;
-  }
-
-  function markTameAsXo4a(f, name) {
-    checkCanControlTaming(f);
-    var ftype = typeof f;
-    if (ftype !== 'function') {
-      throw new TypeError('Cannot tame ' + ftype + ' as function');
-    }
-    tameAs.set(f, tameTypes.XO4A);
-    tameFunctionName.set(f, name);
-    return f;
-  }
-
-  function grantTameAsMethod(f, prop) {
-    checkCanControlTaming(f);
-    checkNonNumeric(prop);
-    grantAs.set(f, prop, grantTypes.METHOD);
-  }
-
-  function grantTameAsRead(f, prop) {
-    checkCanControlTaming(f);
-    checkNonNumeric(prop);
-    grantAs.set(f, prop, grantTypes.READ);
-  }
-
-  function grantTameAsReadWrite(f, prop) {
-    checkCanControlTaming(f);
-    checkNonNumeric(prop);
-    grantAs.set(f, prop, grantTypes.READ);
-    grantAs.set(f, prop, grantTypes.WRITE);
-  }
-
-  // Met the ghost of Greg Kiczales at the Hotel Advice.
-  // This is what I told him as I gazed into his eyes:
-  // Objects were for contracts,
-  // Functions made for methods,
-  // Membranes made for interposing semantics around them!
-
-  function adviseFunctionBefore(f, advice) {
-    if (!functionAdviceBefore.get(f)) { functionAdviceBefore.set(f, []); }
-    functionAdviceBefore.get(f).push(advice);
-  }
-  
-  function adviseFunctionAfter(f, advice) {
-    if (!functionAdviceAfter.get(f)) { functionAdviceAfter.set(f, []); }
-    functionAdviceAfter.get(f).push(advice);
-  }
-
-  function adviseFunctionAround(f, advice) {
-    if (!functionAdviceAround.get(f)) { functionAdviceAround.set(f, []); }
-    functionAdviceAround.get(f).push(advice);
-  }
-
   function hasTameTwin(f) {
     return tameByFeral.has(f);
   }
 
-  ///////////////////////////////////////////////////////////////////////////
+  function hasFeralTwin(t) {
+    return feralByTame.has(t);
+  }
 
   return Object.freeze({
     tame: tame,
-    markTameAsReadOnlyRecord: markTameAsReadOnlyRecord,
-    markTameAsFunction: markTameAsFunction,
-    markTameAsCtor: markTameAsCtor,
-    markTameAsXo4a: markTameAsXo4a,
-    grantTameAsMethod: grantTameAsMethod,
-    grantTameAsRead: grantTameAsRead,
-    grantTameAsReadWrite: grantTameAsReadWrite,
-    adviseFunctionBefore: adviseFunctionBefore,
-    adviseFunctionAfter: adviseFunctionAfter,
-    adviseFunctionAround: adviseFunctionAround,
     untame: untame,
     tamesTo: tamesTo,
-    hasTameTwin: hasTameTwin
+    reTamesTo: reTamesTo,
+    hasTameTwin: hasTameTwin,
+    hasFeralTwin: hasFeralTwin
   });
 }
 

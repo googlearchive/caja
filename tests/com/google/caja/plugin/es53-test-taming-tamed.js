@@ -48,7 +48,7 @@
       return testObject;
     };
     var getTamedTestObject = function() {
-      caja.tame(testObject);  // Ensure done if not already
+      frame.tame(testObject);  // Ensure done if not already
       return testObject.TAMED_TWIN___;
     };
     getFeralTestObject.i___ = getFeralTestObject;
@@ -313,8 +313,18 @@
     // Invoke cajoled tests, passing in the tamed API
 
     var extraImports = createExtraImportsForTesting(caja, frame);
-    
-    extraImports.tamedApi = caja.tame(api);
+
+    if (getUrlParam('tameUsingGlobalMembrane') === 'true') {
+      console.log('taming using GLOBAL membrane');
+      extraImports.tamedApi = caja.tame(api);
+    } else if (getUrlParam('tameUsingGlobalMembrane') === 'false') {
+      console.log('taming using FRAME membrane');
+      extraImports.tamedApi = frame.tame(api);
+    } else {
+      // A default means we might unknowingly skip a test condition;
+      // don't let's do that....
+      fail('Unrecognized or missing tameUsingGlobalMembrane parameter');
+    }
 
     extraImports.tamingFrameUSELESS = caja.USELESS;
     extraImports.tamingFrameObject = caja.iframe.contentWindow.Object;

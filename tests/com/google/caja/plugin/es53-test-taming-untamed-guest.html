@@ -371,15 +371,24 @@
     pass('testPropertiesOnFunctions');
   });
 </script>
+
 <div id="testForms" class="testcontainer waiting">testForms
-  <form id="form" action="#"></form>
+    <form id="testFormsForm" action="#"></form>
 </div>
 <script type="text/javascript">
   jsunitRegister('testForms',
                  function testForms() {
-    // Forms untame to a wrapper
-    tameEval('assertEquals(caja.unwrapDom(a).tagName.toLowerCase(), "form");',
-      document.getElementById('form'));
+    var tameNode = document.getElementById('testFormsForm');
+    // In legacy Caja API, forms untame to a wrapper accessible via the
+    // caja.unwrapDom() function. This must continue to work.
+    tameEval(
+        'assertEquals(caja.unwrapDom(a).tagName.toLowerCase(), "form");',
+        tameNode);
+    // In current Caja API, when using the frame-specific taming membrane,
+    // forms untame to a DOM node.
+    tameEval(
+        'assertEquals(a.tagName.toLowerCase(), "form");',
+        tameNode);
     pass('testForms');
   });
 </script>

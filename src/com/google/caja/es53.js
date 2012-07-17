@@ -186,13 +186,6 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
    *                                      used for constructing an object of
    *                                      class {@code g}.
    * {@code g.ok___ === true}             means g is non-toxic.
-   * {@code ___.tamesTo(feral, tamed)}    installs inverse properties
-   *                                      {@code feral.TAMED_TWIN___ = tamed},
-   *                                      {@code tamed.FERAL_TWIN___ = feral}.
-   * {@code ___.tame(obj)}                uses the {@code *_TWIN___} fastpath.
-   *                                      if possible; if that fails, it invokes
-   *                                      explicit taming functions.
-   * {@code ___.untame(obj)}              is similar, but goes the other way.
    *
    * Since creating function instances is a common pattern and reading
    * properties of a function instance is not, we defer whitelisting the

@@ -880,7 +880,7 @@ var Domado = (function() {
    * @return A record of functions attachDocument, dispatchEvent, and
    *     dispatchToHandler.
    */
-  return function Domado(taming, opt_rulebreaker) {
+  return function Domado(opt_rulebreaker) {
     // Everything in this scope but not in function attachDocument() below
     // does not contain lexical references to a particular DOM instance, but
     // may have some kind of privileged access to Domado internals.
@@ -1352,7 +1352,7 @@ var Domado = (function() {
      */
     function attachDocument(
       idSuffix, naiveUriPolicy, pseudoBodyNode, optPseudoWindowLocation,
-        optTargetAttributePresets) {
+        optTargetAttributePresets, taming) {
 
       if (arguments.length < 3) {
         throw new Error(
@@ -1433,6 +1433,8 @@ var Domado = (function() {
        * done after the outermost constructor?
        */
       function finishNode(node) {
+        var feral = np(node).feral;
+
         if (domitaModules.proxiesAvailable) {
           // If running with proxies, it is indicative of something going wrong
           // if our objects are mutated (the expando proxy handler should
@@ -1449,12 +1451,28 @@ var Domado = (function() {
           ExpandoProxyHandler.register(proxiedNode, node);
           TameNodeConf.confide(proxiedNode, node);
           tamingProxies.set(node, proxiedNode);
-          taming.untamesToWrapper(np(proxiedNode).feral, proxiedNode);
 
-          return proxiedNode;
-        } else {
-          return node;
+          node = proxiedNode;
         }
+
+        if (feral) {
+          if (node.nodeType === 1) {
+            // Elements must only be tamed once; to do otherwise would be
+            // a bug in Domado.
+            taming.tamesTo(feral, node);
+          } else {
+            // Other node types are tamed every time they are encountered;
+            // we simply remember the latest taming here.
+            taming.reTamesTo(feral, node);
+          }
+        } else {
+          // If guest code passes a node of its own with no feral counterpart to
+          // host code, we pass the empty object "{}". This is a safe behavior
+          // until experience determines we need something more complex.
+          taming.tamesTo({}, node);
+        }
+
+        return node;
       }
 
       var nodeMethod = TameNodeConf.protectMethod;
@@ -1971,9 +1989,6 @@ var Domado = (function() {
         return s;
       }
 
-      var editableTameNodeCache = new WeakMap(true);
-      var readOnlyTameNodeCache = new WeakMap(true);
-
       function makeTameNodeByType(node, editable) {
         switch (node.nodeType) {
           case 1:  // Element
@@ -2022,19 +2037,15 @@ var Domado = (function() {
         node = makeDOMAccessible(node);
         // TODO(mikesamuel): make sure it really is a DOM node
 
-        var cache = editable ? editableTameNodeCache : readOnlyTameNodeCache;
-        var tamed = cache.get(node);
-        if (tamed !== void 0) {
-          return tamed;
+        if (taming.hasTameTwin(node)) {
+          return taming.tame(node);
         }
-        tamed = foreign
+
+        var tamed = foreign
             ? new TameForeignNode(node, editable)
             : makeTameNodeByType(node, editable);
         tamed = finishNode(tamed);
 
-        if (node.nodeType === 1) {
-          cache.set(node, tamed);
-        }
         return tamed;
       }
 
@@ -2471,7 +2482,6 @@ var Domado = (function() {
       function TameNode(editable) {
         TameNodeConf.confide(this);
         np(this).editable = editable;
-        taming.untamesToWrapper(np(this).feral, this);  // needed for testing
         return this;
       }
       inertCtor(TameNode, Object, 'Node');
@@ -4768,6 +4778,8 @@ var Domado = (function() {
             viewProperties);
         definePropertiesAwesomely(ExpandoProxyHandler.unwrap(tameBodyElement),
             viewProperties);
+
+        tameBodyElement = finishNode(tameBodyElement);
 
         traceStartup("DT: TameHTMLDocument tameTitle");
         var title = doc.createTextNode(body.getAttribute('title') || '');

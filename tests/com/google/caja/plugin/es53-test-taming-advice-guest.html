@@ -31,7 +31,7 @@
 <script type="text/javascript">
   jsunitRegister('testAdvisedBeforeM',
                  function testAdvisedBeforeM() {
-    assertEquals('bef2bef1bef0foo', advisedBeforeM('foo'));
+    assertEquals('bef0bef1bef2foo', advisedBeforeM('foo'));
     pass('testAdvisedBeforeM');
   });
 </script>
@@ -86,7 +86,7 @@
 <script type="text/javascript">
   jsunitRegister('testAdvisedAll',
                  function testAdvisedAll() {
-    assertEquals('arnbeffooarnaft', advisedAll('foo'));
+    assertEquals('befarnfooaftarn', advisedAll('foo'));
     pass('testAdvisedAll');
   });
 </script>        
