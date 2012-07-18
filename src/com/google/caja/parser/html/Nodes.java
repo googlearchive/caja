@@ -869,10 +869,6 @@ final class Renderer {
     return true;
   }
 
-  private static boolean cdataRenderable(char ch) {
-    return '\u0000' < ch && ch < '\u007f';
-  }
-
   /**
    * Check that the content of a CDATA element does not contain a close tag
    * for that element or unbalanced escaping text spans.
@@ -885,7 +881,8 @@ final class Renderer {
     int escapingTextSpanStart = -1;
     for (int i = 0, n = sb.length(); i < n; ++i) {
       char ch = sb.charAt(i);
-      if (!cdataRenderable(ch)) {
+      // NUL chars tend to confuse parsers
+      if (ch == '\u0000') {
         return i;
       }
       switch (ch) {
