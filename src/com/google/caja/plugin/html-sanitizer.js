@@ -782,6 +782,8 @@ var html = (function(html4) {
    */
   function sanitizeAttribs(tagName, attribs,
     opt_naiveUriRewriter, opt_nmTokenPolicy, opt_logger) {
+    // TODO(felix8a): it's obnoxious that domado duplicates much of this
+    // TODO(felix8a): maybe consistently enforce constraints like target=
     for (var i = 0; i < attribs.length; i += 2) {
       var attribName = attribs[i];
       var value = attribs[i + 1];

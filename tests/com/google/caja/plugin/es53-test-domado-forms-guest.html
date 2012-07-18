@@ -176,11 +176,12 @@
     container.innerHTML = '<form onsubmit="foo()">'
         + '<input type="submit" value="Submit"></form>';
 
-    assertEquals('<form onsubmit="'
+    assertEquals('<form autocomplete="off" onsubmit="'
                  + 'try { ___.plugin_dispatchEvent___'
                  + '(this, event, 0, &quot;foo&quot;);'
                  + ' } finally { return false; }" target="_blank">'
-                 + '<input type="submit" value="Submit"></form>',
+                 + '<input autocomplete="off" type="submit" value="Submit">'
+                 + '</form>',
                  canonInnerHtml(directAccess.getInnerHTML(container)));
 
     pass('test-forms');

@@ -1541,6 +1541,7 @@ var Domado = (function() {
             html4.ATTRIBS.hasOwnProperty(tagName + '::target');
         for (var i = 0; i < n; i += 2) {
           var attribName = attribs[+i];
+          if ('autocomplete' === attribName) { continue; }
           if ('target' === attribName) { needsTargetAttrib = false; }
           var value = attribs[i + 1];
           var atype = null, attribKey;
@@ -1568,6 +1569,9 @@ var Domado = (function() {
         attribs.length = n;
         if (needsTargetAttrib) {
           attribs.push('target', optTargetAttributePresets.default);
+        }
+        if ('form' === tagName || 'input' === tagName) {
+          attribs.push('autocomplete', 'off');
         }
         var policy = elementPolicies[tagName];
         if (policy && elementPolicies.hasOwnProperty(tagName)) {
