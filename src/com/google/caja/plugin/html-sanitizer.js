@@ -731,11 +731,11 @@ var html = (function(html4) {
 
   var ALLOWED_URI_SCHEMES = /^(?:https?|mailto)$/i;
 
-  function safeUri(uri, naiveUriRewriter) {
+  function safeUri(uri, effect, ltype, hints, naiveUriRewriter) {
     if (!naiveUriRewriter) { return null; }
     var parsed = ('' + uri).match(URI_SCHEME_RE);
     if (parsed && (!parsed[1] || ALLOWED_URI_SCHEMES.test(parsed[1]))) {
-      return naiveUriRewriter(uri);
+      return naiveUriRewriter(uri, effect, ltype, hints);
     } else {
       return null;
     }
@@ -765,6 +765,27 @@ var html = (function(html4) {
     }
   }
 
+  function lookupAttribute(map, tagName, attribName) {
+    var attribKey;
+    attribKey = tagName + '::' + attribName;
+    if (map.hasOwnProperty(attribKey)) {
+      return map[attribKey];
+    }
+    attribKey = '*::' + attribName;
+    if (map.hasOwnProperty(attribKey)) {
+      return map[attribKey];
+    }
+    return void 0;
+  }
+  function getAttributeType(tagName, attribName) {
+    return lookupAttribute(html4.ATTRIBS, tagName, attribName);
+  }
+  function getLoaderType(tagName, attribName) {
+    return lookupAttribute(html4.LOADERTYPES, tagName, attribName);
+  }
+  function getUriEffect(tagName, attribName) {
+    return lookupAttribute(html4.URIEFFECTS, tagName, attribName);
+  }
 
   /**
    * Sanitizes attributes on an HTML tag.
@@ -824,7 +845,17 @@ var html = (function(html4) {
                     }
                     sanitizeCssProperty(
                         normProp, schema, tokens,
-                        opt_naiveUriRewriter);
+                        opt_naiveUriRewriter
+                        ? function (url) {
+                            return safeUri(
+                                url, html4.ueffects.SAME_DOCUMENT,
+                                html4.ltypes.SANDBOXED,
+                                {
+                                  "TYPE": "CSS",
+                                  "CSS_PROP": normProp
+                                }, opt_naiveUriRewriter);
+                          }    
+                        : null);
                     sanitizedDeclarations.push(property + ': ' + tokens.join(' '));
                   }
                 });
@@ -846,8 +877,15 @@ var html = (function(html4) {
             }
             break;
           case html4.atype['URI']:
-            value = safeUri(value, opt_naiveUriRewriter);
-            if (opt_logger) {
+            value = safeUri(value,
+              getUriEffect(tagName, attribName),
+              getLoaderType(tagName, attribName),
+              {
+                "TYPE": "MARKUP",
+                "XML_ATTR": attribName,
+                "XML_TAG": tagName
+              }, opt_naiveUriRewriter);
+              if (opt_logger) {
               log(opt_logger, tagName, attribName, oldValue, value);
             }
             break;

@@ -51,3 +51,14 @@ jsunitRegister('testWeakUriRewriter',
           '<div style="background: url(invalid:1)"></div>',
           function (uri) { return uri; }));
 });
+
+jsunitRegister('testUriHints',
+               function testUriHints() {
+  assertEquals('<div style="background: url(&#34;img.jpg&#34;)">test</div>',
+      html.sanitize('<div style="background: url(img.jpg)">test</div>',
+        function(uri, effect, ltype, hints) {
+      assertEquals("CSS", hints.TYPE);
+      assertEquals("background", hints.CSS_PROP);
+      return uri;
+  }));
+});

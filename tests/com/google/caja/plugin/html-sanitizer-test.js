@@ -1,4 +1,4 @@
-function uriPolicy(value) {
+function uriPolicy(value, effects, ltype, hints) {
   if ("specialurl" === value) {
     return value;
   }
@@ -295,6 +295,15 @@ jsunitRegister('testUriPolicy',
   assertEquals('<a>mail me</a>',
       html.sanitize('<a href="mailto:jas@example.com">mail me</a>',
         function(uri) { return null; }));
+
+  assertEquals('<a href="foo.html">test</a>',
+      html.sanitize('<a href="foo.html">test</a>',
+        function(uri, effect, ltype, hints) {
+      assertEquals("MARKUP", hints.TYPE);
+      assertEquals("href", hints.XML_ATTR);
+      assertEquals("a", hints.XML_TAG);
+      return uri;
+  }));
   jsunit.pass();
 });
 

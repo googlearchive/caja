@@ -33,11 +33,6 @@ public final class JsHtmlSanitizerTest extends CajaTestCase {
         html(fromResource("html-sanitizer-minified-test.html")));
   }
 
-  public final void testHtmlSanitizerLegacy() throws Exception {
-    RhinoTestBed.runJsUnittestFromHtml(
-        html(fromResource("html-sanitizer-legacy-test.html")));
-  }
-
   public final void testHtmlSanitizerRegress() throws Exception {
     RhinoTestBed.runJsUnittestFromHtml(
         html(fromResource("html-sanitizer-regress.html")));
