@@ -117,7 +117,8 @@ var html = (function(html4) {
     return s.replace(nulRe, '');
   }
 
-  var entityRe = /&(#\d+|#x[0-9A-Fa-f]+|\w+);/g;
+  var ENTITY_RE_1 = /&(#[0-9]+|#[xX][0-9A-Fa-f]+|\w+);/g;
+  var ENTITY_RE_2 = /^(#[0-9]+|#[xX][0-9A-Fa-f]+|\w+);/;
   /**
    * The plain text of a chunk of HTML CDATA which possibly containing.
    *
@@ -140,7 +141,7 @@ var html = (function(html4) {
    *     an HTML entity.
    */
   function unescapeEntities(s) {
-    return s.replace(entityRe, decodeOneEntity);
+    return s.replace(ENTITY_RE_1, decodeOneEntity);
   }
 
   var ampRe = /&/g;
@@ -180,7 +181,7 @@ var html = (function(html4) {
         .replace(gtRe, '&gt;');
   }
 
-  // TODO(mikesamuel): validate sanitizer regexs against the HTML5 grammar at
+  // TODO(felix8a): validate sanitizer regexs against the HTML5 grammar at
   // http://www.whatwg.org/specs/web-apps/current-work/multipage/syntax.html
   // http://www.whatwg.org/specs/web-apps/current-work/multipage/parsing.html
   // http://www.whatwg.org/specs/web-apps/current-work/multipage/tokenization.html
@@ -196,7 +197,7 @@ var html = (function(html4) {
 
   var ATTR_RE = new RegExp(
     '^\\s*' +
-    '([a-z][-\\w]*)' +          // 1 = Attribute name
+    '([-.:\\w]+)' +             // 1 = Attribute name
     '(?:' + (
       '\\s*(=)\\s*' +           // 2 = Is there a value?
       '(' + (                   // 3 = Attribute value
@@ -216,8 +217,6 @@ var html = (function(html4) {
       ')' ) +
     ')?',
     'i');
-
-  var ENTITY_RE = /^(#[0-9]+|#x[0-9a-f]+|\w+);/i;
 
   // false on IE<=8, true on most other browsers
   var splitWillCapture = ('a,b'.split(/(,)/).length === 3);
@@ -316,7 +315,7 @@ var html = (function(html4) {
         var next = parts[pos];
         switch (current) {
         case '&':
-          if (ENTITY_RE.test(next)) {
+          if (ENTITY_RE_2.test(next)) {
             if (h.pcdata) {
               h.pcdata('&' + next, param, continuationMarker,
                 continuationMaker(h, parts, pos, state, param));
@@ -329,7 +328,7 @@ var html = (function(html4) {
           }
           break;
         case '<\/':
-          if (m = /^(\w+)[^\'\"]*/.exec(next)) {
+          if (m = /^([\w:]+)[^\'\"]*/.exec(next)) {
             if (m[0].length === next.length && parts[pos + 1] === '>') {
               // fast case, no attribute parsing needed
               pos += 2;
@@ -352,7 +351,7 @@ var html = (function(html4) {
           }
           break;
         case '<':
-          if (m = /^(\w+)\s*\/?/.exec(next)) {
+          if (m = /^([\w:]+)\s*\/?/.exec(next)) {
             if (m[0].length === next.length && parts[pos + 1] === '>') {
               // fast case, no attribute parsing needed
               pos += 2;
@@ -562,7 +561,7 @@ var html = (function(html4) {
 
   // at this point, parts[pos-1] is either "<" or "<\/".
   function parseTagAndAttrs(parts, pos) {
-    var m = /^(\w+)/.exec(parts[pos]);
+    var m = /^([\w:]+)/.exec(parts[pos]);
     var tag = {};
     tag.name = m[1].toLowerCase();
     tag.eflags = html4.ELEMENTS[tag.name];

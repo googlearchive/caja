@@ -68,7 +68,7 @@ jsunitRegister('testEntities2',
 
 jsunitRegister('testUnknownTagsRemoved',
                function testUnknownTagsRemoved() {
-  check('<b>hello <bogus><i>world</i></bogus></b>',
+  check('<u:y><b>hello <bogus><i>world</i></bogus></b>',
         '<b>hello <i>world</i></b>');
 });
 
@@ -430,6 +430,21 @@ if (!html.isLegacy) {
         'startTag', 'unknown1[]', '$P',
         'startTag', 'unknown2[bar;bar]', '$P',
         'endTag', 'unknown1', '$P',
+        'endDoc', '', '$P'
+    );
+    jsunit.pass();
+  });
+}
+
+// legacy parser is more restrictive
+if (!html.isLegacy) {
+  jsunitRegister('testSaxParserExpansive', function () {
+    assertSAXEvents(
+        '<x:y 3:.=4></x:y>',
+        '$P',
+        'startDoc', '', '$P',
+        'startTag', 'x:y[3:.;4]', '$P',
+        'endTag', 'x:y', '$P',
         'endDoc', '', '$P'
     );
     jsunit.pass();
