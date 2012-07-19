@@ -319,7 +319,7 @@
     </emma>
     <mkdir dir="${reports}/tests"/>
     <property name="junit.threads" value="2"/>
-    <parallel threadCount="${junit.threads}">
+    <parallel threadCount="${junit.threads}" failonany="true">
       <antcall target="RuntestsRunBrowser"/>
       <antcall target="RuntestsRunAtoM"/>
       <antcall target="RuntestsRunNtoZ"/>

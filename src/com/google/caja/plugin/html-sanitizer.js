@@ -740,9 +740,9 @@ var html = (function(html4) {
     }
   }
 
-  function log(opt_logger, tagName, attribName, oldValue, newValue) {
+  function log(logger, tagName, attribName, oldValue, newValue) {
     if (!attribName) {
-      opt_logger(tagName + " removed", {
+      logger(tagName + " removed", {
         change: "removed",
         tagName: tagName
       });
@@ -754,7 +754,7 @@ var html = (function(html4) {
       } else if (!oldValue && newValue)  {
         changed = "added";
       }
-      opt_logger(tagName + "." + attribName + " " + changed, {
+      logger(tagName + "." + attribName + " " + changed, {
         change: changed,
         tagName: tagName,
         attribName: attribName,

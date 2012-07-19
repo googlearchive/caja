@@ -7,6 +7,7 @@ import com.google.javascript.jscomp.CompilerOptions;
 import com.google.javascript.jscomp.Compiler;
 import com.google.javascript.jscomp.DiagnosticGroup;
 import com.google.javascript.jscomp.DiagnosticGroups;
+import com.google.javascript.jscomp.GoogleCodingConvention;
 import com.google.javascript.jscomp.MessageFormatter;
 import com.google.javascript.jscomp.Result;
 import com.google.javascript.jscomp.SourceFile;
@@ -81,6 +82,8 @@ public class ClosureCompiler {
     for (DiagnosticGroup dg : diagnosticGroups) {
       options.setWarningLevel(dg, CheckLevel.ERROR);
     }
+
+    options.setCodingConvention(new GoogleCodingConvention());
 
     Compiler compiler = new Compiler();
     MessageFormatter formatter =
