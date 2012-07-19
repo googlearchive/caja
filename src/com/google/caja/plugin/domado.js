@@ -1395,8 +1395,23 @@ var Domado = (function() {
         if (!sawHandler) {
           attribs.push('onsubmit', 'return false');
         }
-        return attribs;
+        return forceAutocompleteOff(attribs);
       };
+      elementPolicies.input = function (attribs) {
+        return forceAutocompleteOff(attribs);
+      };
+
+      function forceAutocompleteOff(attribs) {
+        var a = [];
+        for (var i = 0, n = attribs.length; i < n; i += 2) {
+          if (attribs[+i] !== 'autocomplete') {
+            a.push(attribs[+i], attribs[+i+1]);
+          }
+        }
+        a.push('autocomplete', 'off');
+        return a;
+      }
+
       // TODO(kpreid): should elementPolicies be exported in domicile?
 
       // On IE, turn an <canvas> tags into canvas elements that explorercanvas
@@ -1541,7 +1556,6 @@ var Domado = (function() {
             html4.ATTRIBS.hasOwnProperty(tagName + '::target');
         for (var i = 0; i < n; i += 2) {
           var attribName = attribs[+i];
-          if ('autocomplete' === attribName) { continue; }
           if ('target' === attribName) { needsTargetAttrib = false; }
           var value = attribs[i + 1];
           var atype = null, attribKey;
@@ -1569,9 +1583,6 @@ var Domado = (function() {
         attribs.length = n;
         if (needsTargetAttrib) {
           attribs.push('target', optTargetAttributePresets.default);
-        }
-        if ('form' === tagName || 'input' === tagName) {
-          attribs.push('autocomplete', 'off');
         }
         var policy = elementPolicies[tagName];
         if (policy && elementPolicies.hasOwnProperty(tagName)) {
@@ -1677,6 +1688,11 @@ var Domado = (function() {
       function rewriteAttribute(tagName, attribName, type, value) {
         switch (type) {
           case html4.atype.NONE:
+            // TODO(felix8a): annoying that this has to be in two places
+            if (attribName === 'autocomplete'
+                && (tagName === 'input' || tagName === 'form')) {
+              return 'off';
+            }
             return String(value);
           case html4.atype.CLASSES:
             // note, className is arbitrary CDATA.

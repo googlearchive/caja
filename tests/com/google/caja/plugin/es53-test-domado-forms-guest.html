@@ -172,6 +172,16 @@
     var form = document.createElement('FORM');
     assertEquals('return false', directAccess.getAttribute(form, 'onsubmit'));
 
+    assertEquals('off', directAccess.getAttribute(form, 'autocomplete'));
+    // TODO(felix8a): no such function in es5 in firefox?
+    //form.setAttribute('autocomplete', 'on');
+    assertEquals('off', directAccess.getAttribute(form, 'autocomplete'));
+
+    var input = document.createElement('input');
+    assertEquals('off', directAccess.getAttribute(input, 'autocomplete'));
+    input.setAttribute('autocomplete', 'on');
+    assertEquals('off', directAccess.getAttribute(input, 'autocomplete'));
+
     var container = document.getElementById('test-forms');
     container.innerHTML = '<form onsubmit="foo()">'
         + '<input type="submit" value="Submit"></form>';
