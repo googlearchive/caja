@@ -33,6 +33,7 @@ import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageType;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.CajaTestCase;
+import com.google.caja.util.FailureIsAnOption;
 import com.google.caja.util.MoreAsserts;
 import com.google.caja.util.Strings;
 import com.google.caja.util.TestUtil;
@@ -509,6 +510,15 @@ public class ParserTest extends CajaTestCase {
         jsExpr(fromString("{ notquoted: 0, 'quoted': 1 }"));
     assertFalse(obj.propertyWithName("notquoted").isPropertyNameQuoted());
     assertTrue(obj.propertyWithName("quoted").isPropertyNameQuoted());
+  }
+
+  // TODO(felix8a): JsLexer tries to decide if / is division or regexp,
+  // but there's no way to do that reliably in the lexer.  The lexer
+  // has to be told which to expect by the parser, and doing that
+  // requires a nontrivial rewrite of the js lexer stack.
+  @FailureIsAnOption
+  public final void testRegexpContext() throws Exception {
+    assertParseSucceeds("{} /foo/;");
   }
 
   private void assertParseKeywordAsIdentifier(Keyword k) {
