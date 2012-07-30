@@ -1085,6 +1085,8 @@
       <fileset dir="${lib}" includes="**/*.js"/>
       <fileset dir="${lib}" includes="**/*.html"/>
       <fileset dir="${precajolelib}" includes="**/data/*"/>
+      <fileset dir="${testlib}" includes="**/*.js"/>
+      <fileset dir="${testlib}" includes="**/*.html"/>
     </delete>
     <mkdir dir="${lib.caja}/reporting"/>
     <echo append="false" file="${lib.caja}/reporting/Version"
