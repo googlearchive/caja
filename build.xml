@@ -469,8 +469,6 @@
     </copy>
     <taskdef name="transform" classname="com.google.caja.tools.TransformAntTask"
      classpathref="classpath.main" />
-    <taskdef name="innocent" classname="com.google.caja.tools.InnocentAntTask"
-     classpathref="classpath.main"/>
     <taskdef name="genrule" classname="com.google.caja.tools.GenRuleAntTask"
      classpathref="classpath.main"/>
     <taskdef name="precajole"

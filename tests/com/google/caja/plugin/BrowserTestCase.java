@@ -24,7 +24,6 @@ import com.google.caja.util.RewritingResourceHandler;
 import java.io.FileDescriptor;
 import java.io.FileOutputStream;
 import java.io.PrintStream;
-import java.net.URLEncoder;
 import java.util.List;
 
 import com.google.common.base.Joiner;
