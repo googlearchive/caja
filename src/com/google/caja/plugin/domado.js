@@ -1075,9 +1075,9 @@ var Domado = (function() {
         '^[' + JS_SPACE + ']*'
         + '(return[' + JS_SPACE + ']+)?'  // Group 1 is present if it returns.
         + '(' + JS_IDENT + ')[' + JS_SPACE + ']*'  // Group 2 is a func name.
-        // Which can be passed optionally this node, and optionally the event.
-        + '\\((?:this'
-          + '(?:[' + JS_SPACE + ']*,[' + JS_SPACE + ']*event)?'
+        // Which can be passed optionally the event, and optionally this node.
+        + '\\((?:event'
+          + '(?:[' + JS_SPACE + ']*,[' + JS_SPACE + ']*this)?'
           + '[' + JS_SPACE + ']*)?\\)'
         // And it can end with a semicolon.
         + '[' + JS_SPACE + ']*(?:;?[' + JS_SPACE + ']*)$');
@@ -5823,7 +5823,6 @@ var Domado = (function() {
           break;
         case 'string':
           var fn = void 0;
-          var tameWin = void 0;
           fn = domicile.window[handler];
           handler = fn && typeof fn.call === 'function' ? fn : void 0;
           break;

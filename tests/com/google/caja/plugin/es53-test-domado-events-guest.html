@@ -17,12 +17,16 @@
 <div>Derived from domita_test_untrusted.html as of r4471</div>
 
 <p class="clickme testcontainer" id="test-function-calls-in-attributes">
-  <span onclick="doIt();">
+  <span onclick="doIt(event, this);">
     click me.  Function calls in attributes should work.
   </span>
 </p>
 <script type="text/javascript">
-  window.doIt = function doIt() { pass('test-function-calls-in-attributes'); }
+  window.doIt = function doIt(event, node) {
+    if ((event instanceof Event) && (node instanceof HTMLElement)) {
+      pass('test-function-calls-in-attributes');
+    }
+  };
   jsunitRegister('testFunctionCallsInAttributes',
                  function testFunctionCallsInAttributes() { });
 </script>
