@@ -1589,7 +1589,7 @@
   </target>
 
 
-  <target name="mvn-install" depends="jars,javadocs,pom">
+  <target name="mvn-install" depends="jars,javadocs,precajole,pom">
     <artifact:install file="${maven-jarfile-nodeps}">
       <pom refid="project"/>
       <attach file="${maven-jarfile-javadoc}" classifier="javadoc"/>
@@ -1604,6 +1604,7 @@
        https://docs.sonatype.org/display/Repository/Sonatype+OSS+Maven+Repository+Usage+Guide
   -->
 
+  <!-- TODO(felix8a): fix this or delete this -->
   <target name="mvn-deploy"
     depends="mvn-install"
     description="Signs and Deploys caja artifacts to the central maven repo">

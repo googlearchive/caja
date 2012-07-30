@@ -1,0 +1,140 @@
+#!/usr/bin/env python
+# Copyright 2012 Google Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+#
+#   copy-for-maven [$dest [$src [$version]]]
+#
+#       After you 'ant mvn-install', this copies the build to
+#       your local svn checkout of Caja's maven repo.  This will
+#       svn add etc, but not svn commit.  Re-running is safe.
+
+import glob, re, os, shutil, subprocess, sys
+
+selfDir = os.path.dirname(__file__)
+
+def main(dest='', src='', ver=''):
+    if dest == '':
+        dest = os.path.normpath(selfDir + '/../../maven/caja/caja')
+    if src == '':
+        src = os.path.normpath(selfDir + '/..')
+    if ver == '':
+        ver = guessVersion(src)
+    old = oldVersion(dest)
+
+    if not os.path.exists(src + '/ant-maven/pom.xml'):
+        sys.exit('Missing ant-maven/pom.xml; Did you run "ant mvn-install"?')
+
+    editMetadata(dest, ver)
+    checksum(dest + '/maven-metadata.xml')
+    svn('add', '--force', dest + '/maven-metadata.xml.md5')
+    svn('add', '--force', dest + '/maven-metadata.xml.sha1')
+
+    dver = dest + '/' + ver
+    dvcaja = dest + '/' + ver + '/caja-' + ver
+
+    if not os.path.exists(dver):
+        os.makedirs(dver, 0o775)
+    svn('add', '-N', '--force', dver)
+
+    # For prettier svn diff, svn cp the old pom first
+    if not os.path.exists(dvcaja + '.pom'):
+        svn('cp', dest + '/' + old + '/caja-' + old + '.pom', dvcaja + '.pom')
+
+    cp(src + '/ant-maven/pom.xml',              dvcaja + '.pom')
+    cp(src + '/ant-jars/pluginc.jar',           dvcaja + '.jar')
+    cp(src + '/ant-jars/pluginc-javadocs.jar',  dvcaja + '-javadocs.jar')
+    cp(src + '/ant-jars/precajole.jar',         dvcaja + '-precajole.jar')
+    cp(src + '/ant-jars/pluginc-src.jar',       dvcaja + '-sources.jar')
+
+    for f in glob.glob(dver + '/*'):
+        if re.search(r'[.](pom|jar)$', f):
+            checksum(f)
+
+    svn('add', '--force', dver)
+
+    svnStatus(dest)
+
+# TODO(felix8a): maybe read version from pom instead
+def guessVersion(src):
+    ver = backquote('svnversion', src)
+    if not re.match(r'^\d+$', ver):
+        sys.exit('Bad version r%s (specify on command-line to force)' % ver)
+    return 'r' + ver
+
+def oldVersion(dest):
+    # Find highest-numbered pom file that's already committed
+    vers = []
+    for pom in glob.glob(dest + '/*/*.pom'):
+        ver = os.path.basename(os.path.dirname(pom))
+        if re.match(r'^r\d+$', ver):
+            if backquote('svn', 'status', pom) == '':
+                vers.append(ver)
+    vers.sort(key=lambda ver: int(ver[1:]))
+    return vers[-1]
+
+def editMetadata(dest, ver):
+    fname = dest + '/maven-metadata.xml'
+    with file(fname) as f:
+        edit = xml = f.read()
+    edit = re.sub(
+        r'[<]release[>].*?[<]/',
+        '<release>' + ver + '</',
+        edit)
+    if not re.search(r'[<]version[>]' + ver + '[<]', edit):
+        edit = re.sub(
+            r'[<]/versions[>]',
+            '  <version>' + ver + '</version>\n    </versions>',
+            edit)
+    if edit != xml:
+        tmp = fname + '~tmp~'
+        with file(tmp, 'w') as f:
+            f.write(edit)
+        os.rename(tmp, fname)
+
+def checksum(fname):
+    if not re.search(r'[.](md5|sha1)$', fname):
+        checksum1(fname, 'md5')
+        checksum1(fname, 'sha1')
+
+def checksum1(fname, flavor):
+    out = backquote('openssl', flavor, '-hex', fname)
+    with file(fname + '.' + flavor, 'w') as f:
+        f.write(out.split()[-1] + '\n')
+
+def cp(src, dest):
+    print '+ cp', src, dest
+    return shutil.copy(src, dest)
+
+def svn(*args):
+    print '+ svn', ' '.join(args)
+    rc = subprocess.call(['svn'] + list(args))
+    if rc != 0:
+        sys.exit('### Exit code %s' % (rc,))
+
+def svnStatus(dest):
+    print '+ svn status', dest
+    lines = backquote('svn', 'status', dest).split('\n')
+    lines.sort(key=lambda line: line[10:])
+    print '\n'.join(lines)
+
+def backquote(*command):
+    p = subprocess.Popen(command, stdout=subprocess.PIPE)
+    stdout = p.communicate()[0]
+    if p.returncode != 0:
+        sys.exit('### Exit code %s from %s' % (p.returncode, command))
+    return stdout.rstrip('\n')
+
+if __name__ == '__main__':
+    main(*sys.argv[1:])
