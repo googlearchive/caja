@@ -45,6 +45,9 @@ public enum LinterMessageType implements MessageTypeInt {
   EMBED_HAZARD(
       "%s: '%s' may cause problems when embedding script.",
       MessageLevel.ERROR),
+  BARE_KEYWORD(
+      "%s: IE<=8 does not allow bare literal use of keyword '%s'",
+      MessageLevel.ERROR),
   ;
 
   private final String formatString;

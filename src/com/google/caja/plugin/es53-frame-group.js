@@ -220,7 +220,8 @@ function ES53FrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker) {
     var targetAttributePresets = undefined;
     if (config.targetAttributePresets) {
       targetAttributePresets = {};
-      targetAttributePresets.default = config.targetAttributePresets.default;
+      targetAttributePresets['default'] =
+          config.targetAttributePresets['default'];
       targetAttributePresets.whitelist =
           Array.prototype.slice.call(config.targetAttributePresets.whitelist);
       ___.whitelistAll(targetAttributePresets, true);

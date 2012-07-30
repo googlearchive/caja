@@ -1363,7 +1363,7 @@ var Domado = (function() {
       }
       if (!optTargetAttributePresets) {
         optTargetAttributePresets = {
-          default: '_blank',
+          'default': '_blank',
           whitelist: [ '_blank', '_self' ]
         };
       }
@@ -1582,7 +1582,7 @@ var Domado = (function() {
         }
         attribs.length = n;
         if (needsTargetAttrib) {
-          attribs.push('target', optTargetAttributePresets.default);
+          attribs.push('target', optTargetAttributePresets['default']);
         }
         var policy = elementPolicies[tagName];
         if (policy && elementPolicies.hasOwnProperty(tagName)) {
@@ -1793,7 +1793,7 @@ var Domado = (function() {
                 }
               }
             }
-            return optTargetAttributePresets.default;
+            return optTargetAttributePresets['default'];
           default:
             return null;
         }

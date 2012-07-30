@@ -19,6 +19,7 @@ import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.JsLexer;
 import com.google.caja.lexer.JsTokenQueue;
+import com.google.caja.lexer.Keyword;
 import com.google.caja.lexer.ParseException;
 import com.google.caja.lexer.Token;
 import com.google.caja.lexer.TokenConsumer;
@@ -39,6 +40,7 @@ import com.google.caja.parser.js.FunctionDeclaration;
 import com.google.caja.parser.js.LabeledStatement;
 import com.google.caja.parser.js.Literal;
 import com.google.caja.parser.js.Loop;
+import com.google.caja.parser.js.ObjProperty;
 import com.google.caja.parser.js.ObjectConstructor;
 import com.google.caja.parser.js.Operation;
 import com.google.caja.parser.js.Operator;
@@ -266,6 +268,33 @@ public class Linter implements BuildCommand {
     checkSideEffects(buckets, mq);
     checkDeadCode(buckets, mq);
     checkStringsEmbeddable((Block) ac.node, buckets, mq);
+    checkBareWords(globalScope.root.node, mq);
+  }
+
+  private static void checkBareWords(ParseTreeNode node, MessageQueue mq) {
+    if (node instanceof ObjProperty) {
+      ObjProperty op = (ObjProperty) node;
+      String key = op.getPropertyNameNode().getValue();
+      if (Keyword.isKeyword(key)) {
+        mq.addMessage(LinterMessageType.BARE_KEYWORD,
+            op.getPropertyNameNode().getFilePosition(),
+            MessagePart.Factory.valueOf(key));
+      }
+    }
+    if (Operation.is(node, Operator.MEMBER_ACCESS)) {
+      ParseTreeNode right = node.children().get(1);
+      if (right instanceof Reference) {
+        String key = ((Reference) right).getIdentifierName();
+        if (Keyword.isKeyword(key)) {
+          mq.addMessage(LinterMessageType.BARE_KEYWORD,
+              right.getFilePosition(),
+              MessagePart.Factory.valueOf(key));
+        }
+      }
+    }
+    for (ParseTreeNode child : node.children()) {
+      checkBareWords(child, mq);
+    }
   }
 
   private static void checkDeclarations(

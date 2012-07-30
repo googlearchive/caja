@@ -362,6 +362,32 @@ public class LinterTest extends CajaTestCase {
         );
   }
 
+  public final void testBareKeywords() throws Exception {
+    runLinterTest(
+        jobs(new LintJobMaker(js(fromString(
+            ""
+            + "var p = { 'if': 1 };\n"
+            + "p['if']++\n"
+            + "var q = { if: 2 };\n"
+            + "q.if++\n"
+            + "function f() {\n"
+            + "  var r = { 'for': 3 };\n"
+            + "  r['for']++;\n"
+            + "  var s = { for: 4 };\n"
+            + "  s.for++;\n"
+            + "}\n")))
+            .withProvides("p", "q", "f")
+            .make()),
+        ("ERROR: testBareKeywords:3+11 - 13:"
+         + " IE<=8 does not allow bare literal use of keyword 'if'"),
+        ("ERROR: testBareKeywords:4+3 - 5:"
+         + " IE<=8 does not allow bare literal use of keyword 'if'"),
+        ("ERROR: testBareKeywords:8+13 - 16:"
+         + " IE<=8 does not allow bare literal use of keyword 'for'"),
+        ("ERROR: testBareKeywords:9+5 - 8:"
+         + " IE<=8 does not allow bare literal use of keyword 'for'"));
+  }
+
   public final void testLiveness() throws Exception {
     runLinterTest(
         jobs(new LintJobMaker(js(fromString(
