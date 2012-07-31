@@ -140,20 +140,30 @@ var Domado = (function() {
     if (needToSwap) {
       return {
         getter: function (getFunc) {
-          return function(proxy, name) {
+          function permutedGetter(proxy, name) {
             return getFunc.call(this, name, proxy);
           };
+          permutedGetter.unpermuted = getFunc;
+          return permutedGetter;
         },
         setter: function (setFunc) {
-          return function(proxy, name, value) {
+          function permutedSetter(proxy, name, value) {
             return setFunc.call(this, name, value, proxy);
           };
+          permutedSetter.unpermuted = setFunc;
+          return permutedSetter;
         }
       };
     } else {
       return {
-        getter: function (getFunc) { return getFunc; },
-        setter: function (setFunc) { return setFunc; }
+        getter: function (getFunc) {
+          getFunc.unpermuted = getFunc;
+          return getFunc;
+        },
+        setter: function (setFunc) {
+          setFunc.unpermuted = setFunc;
+          return setFunc;
+        }
       };
     }
   })();
@@ -4145,7 +4155,7 @@ var Domado = (function() {
             Object.prototype.hasOwnProperty.call(this.target.elements, name)) {
           return this.target.elements[name];
         } else {
-          return ExpandoProxyHandler.prototype.get.call(this, name);
+          return ExpandoProxyHandler.prototype.get.unpermuted.call(this, name);
         }
       }));
       setOwn(FormElementAndExpandoProxyHandler.prototype, 'getOwnPropertyNames',

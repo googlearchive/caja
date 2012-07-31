@@ -189,10 +189,7 @@ public class GeneralBrowserTest extends BrowserTestCase {
   }
 
   public final void testDomadoCanvas() throws Exception {
-    // TODO(kpreid): Enable for ES5. Fails on Firefox due to SES issues --
-    // "access to strict mode caller function is censored"; fails on Chrome
-    // due to a context property access problem.
-    runTestCase("es53-test-domado-canvas-guest.html", false);
+    runTestCase("es53-test-domado-canvas-guest.html");
   }
 
   public final void testDomadoDom() throws Exception {

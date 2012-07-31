@@ -211,11 +211,17 @@ function canonInnerHtml(s) {
 }
 
 function assertStringContains(chunk, text) {
+  if (typeof text !== 'string') {  // protect indexOf call
+    fail('Expected a string, got the ' + typeof text + ': ' + text);
+  }
   if (text.indexOf(chunk) !== -1) { return; }
   fail('Cannot find <<' + chunk + '>> in <<' + text + '>>');
 }
 
 function assertStringDoesNotContain(chunk, text) {
+  if (typeof text !== 'string') {  // protect indexOf call
+    fail('Expected a string, got the ' + typeof text + ': ' + text);
+  }
   if (text.indexOf(chunk) === -1) { return; }
   fail('Unexpectedly found <<' + chunk + '>> in <<' + text + '>>');
 }

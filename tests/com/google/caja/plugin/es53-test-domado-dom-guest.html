@@ -117,6 +117,7 @@ document.write(
           }
         });
   }
+  window.assertDomTree = assertDomTree; // SES scope workaround
 
   /**
    * Canonicalize innerHTML output:
@@ -268,11 +269,8 @@ document.write(
 </form>
 <script type="text/javascript">
   // form:onreset uses the same logic path as input:onfocus
-
-  // TODO(kpreid): Enable for ES5 and debug on Firefox.
-  jsunitRegisterIf(!inES5Mode,
-                   'testOnReset',
-                   function testOnReset() {
+  jsunitRegister('testOnReset',
+                 function testOnReset() {
     var form = document.getElementById('test-onreset-form');
     form.addEventListener('reset',
         jsunitCallback(
@@ -294,7 +292,7 @@ document.write(
 </div>
 <br>
 <script type="text/javascript">
-  // TODO(kpreid): Enable for ES5 and debug.
+  // TODO(kpreid): Enable for ES5 and debug why positioning is wrong.
   jsunitRegisterIf(!inES5Mode,
                    'testDocumentWrite',
                    function testDocumentWrite() {
@@ -321,11 +319,8 @@ document.write(
 <script type="text/javascript">window.myProp = 1234;</script>
 </p>
 <script type="text/javascript">
-  // TODO(kpreid): Enable for ES5 and debug; Firefox-specific problem.
-  // "d.hasAttribute is not a function"
-  jsunitRegisterIf(!inES5Mode,
-                   'testWindowMutable',
-                   function testWindowMutable() {
+  jsunitRegister('testWindowMutable',
+                 function testWindowMutable() {
     function contains(arr, el) {
       for (var i = arr.length; --i >= 0;) {
         if (el === arr[i]) { return true; }
@@ -351,11 +346,8 @@ document.write(
   <b>Test attributes in markup</b>
 </div>
 <script type="text/javascript">
-  // TODO(kpreid): Enable for ES5 and debug; Firefox-specific problem.
-  // "d.hasAttribute is not a function"
-  jsunitRegisterIf(!inES5Mode,
-                   'testAttrsDeclaredInMarkup',
-                   function testAttrsDeclaredInMarkup() {
+  jsunitRegister('testAttrsDeclaredInMarkup',
+                 function testAttrsDeclaredInMarkup() {
     var d = document.getElementById('testAttrsDeclaredInMarkup').firstChild;
 
     assertTrue(d.hasAttribute('title'));
@@ -380,11 +372,8 @@ document.write(
   <b>Test attributes not in markup</b>
 </div>
 <script type="text/javascript">
-  // TODO(kpreid): Enable for ES5 and debug; Firefox-specific problem.
-  // "d.hasAttribute is not a function"
-  jsunitRegisterIf(!inES5Mode,
-                   'testAttrsNotInMarkup',
-                   function testAttrsNotInMarkup() {
+  jsunitRegister('testAttrsNotInMarkup',
+                 function testAttrsNotInMarkup() {
     var d = document.getElementById('testAttrsNotInMarkup').firstChild;
 
     assertFalse(d.hasAttribute('title'));
@@ -410,11 +399,8 @@ document.write(
   <b>Test attributes nonstandard permitted</b>
 </div>
 <script type="text/javascript">
-  // TODO(kpreid): Enable for ES5 and debug; Firefox-specific problem.
-  // "d.hasAttribute is not a function"
-  jsunitRegisterIf(!inES5Mode,
-                   'testAttrsNonstandardPermitted',
-                   function testAttrsNonstandardPermitted() {
+  jsunitRegister('testAttrsNonstandardPermitted',
+                 function testAttrsNonstandardPermitted() {
     var d = document.getElementById('testAttrsNonstandardPermitted')
         .firstChild;
 
@@ -1067,10 +1053,8 @@ document.write(
   <input type="checkbox">
 </form>
 <script type="text/javascript">
-// TODO(kpreid): Enable for ES5 and debug form.elements.
-  jsunitRegisterIf(!inES5Mode,
-                   'testInputDefaultValues',
-                   function testInputDefaultValues() {
+  jsunitRegister('testInputDefaultValues',
+                 function testInputDefaultValues() {
     var form = document.getElementById('testInputDefaultValues');
     var text1 = form.elements[0];
     var text2 = form.elements[1];
@@ -1117,7 +1101,7 @@ document.write(
         },
         "testEventHandlerAttributes")
   };
-  // TODO(kpreid): Enable for ES5 once event handler attributes work.
+  // TODO(kpreid): Enable for ES5 and debug.
   jsunitRegisterIf(!inES5Mode,
                    'testEventHandlerAttributes',
                    function testEventHandlerAttributes() {
@@ -1219,6 +1203,7 @@ document.write(
       assertEquals(msg, golden, actual);
     }
   }
+  window.assertWithin = assertWithin;
 </script>
 
 <div id="testWhitespaceNodes1" class="testcontainer">
@@ -1232,10 +1217,8 @@ document.write(
   <p id="text-only" style="margin: 0; border-width: 0; padding: 0">hi</p>
 </div>
 <script type="text/javascript">
-  // TODO(kpreid): Enable for ES5 once cross-<script> scoping fixed.
-  jsunitRegisterIf(!inES5Mode,
-                   'testWhitespaceNodes1',
-                   function testWhitespaceNodes1() {
+  jsunitRegister('testWhitespaceNodes1',
+                 function testWhitespaceNodes1() {
     var outerDiv = document.getElementById('whitespace-outer');
     var textOnlyP = document.getElementById('text-only');
     assertWithin('outer DIV width', 156, outerDiv.offsetWidth, 2);
@@ -1278,10 +1261,8 @@ document.write(
   <p style="margin: 0; border-width: 0; padding: 0" id="twn2-1">hi</p>
 </div>
 <script type="text/javascript">
-  // TODO(kpreid): Enable for ES5 once cross-<script> scoping fixed.
-  jsunitRegisterIf(!inES5Mode,
-                   'testWhitespaceNodes2',
-                   function testWhitespaceNodes1() {
+  jsunitRegister('testWhitespaceNodes2',
+                 function testWhitespaceNodes1() {
     var cont = document.getElementById('testWhitespaceNodes2');
 
     var node1 = document.getElementById('twn2-0');
@@ -1301,10 +1282,8 @@ document.write(
   <input type="radio" value="2" id="test-radio-button-2" name="number">
 </form>
 <script type="text/javascript">
-  // TODO(kpreid): Enable for ES5 and debug form.elements.
-  jsunitRegisterIf(!inES5Mode,
-                   'testRadioButtons',
-                   function testRadioButtons() {
+  jsunitRegister('testRadioButtons',
+                 function testRadioButtons() {
     var form = document.getElementById('testRadioButtons');
     var radio0 = form.elements[0],
         radio1 = form.elements[1],
@@ -1402,10 +1381,8 @@ document.write(
 After
 </div>
 <script type="text/javascript">
-  // TODO(kpreid): Enable for ES5 once CSS is implemented.
-  jsunitRegisterIf(!inES5Mode,
-                   'testClassNames',
-                   function testClassNames() {
+  jsunitRegister('testClassNames',
+                 function testClassNames() {
 
     function assertClassIs(className, el, note) {
       note = note || className;
@@ -1526,11 +1503,8 @@ After
   <p class="cloneable">some <label for="x">content</label></p>
 </div>
 <script type="text/javascript">
-  // TODO(kpreid): Enable for ES5 once scope is fixed so assertDomTree is
-  // available.
-  jsunitRegisterIf(!inES5Mode,
-                   'testCloneNodeStructure',
-                   function testCloneNodeStructure() {
+  jsunitRegister('testCloneNodeStructure',
+                 function testCloneNodeStructure() {
     var p = document.getElementById('testCloneNodeStructure')
         .getElementsByTagName('P')[0];
     assertDomTree(
@@ -1627,10 +1601,8 @@ After
   </form>
 </div>
 <script type="text/javascript">
-  // TODO(kpreid): Enable for ES5 and debug form.elements.
-  jsunitRegisterIf(!inES5Mode,
-                   'testCloneNodeDefaults',
-                   function testCloneNodeDefaults() {
+  jsunitRegister('testCloneNodeDefaults',
+                 function testCloneNodeDefaults() {
     function queryStringForForm(form, useDefaults) {
       var parts = [];
       var els = form.elements;
@@ -1871,11 +1843,8 @@ After
 
 <p id="testDocumentElement" class="testcontainer">Test Document Element</p>
 <script type="text/javascript">
-    // TODO(kpreid): Enable for ES5 once scope is fixed so assertDomTree is
-    // available.
-    jsunitRegisterIf(!inES5Mode,
-                     'testDocumentElement',
-                     function testDocumentElement() {
+    jsunitRegister('testDocumentElement',
+                   function testDocumentElement() {
       assertDomTree({
           nodeType: 9,
           nodeName: '#document',
@@ -1932,7 +1901,8 @@ After
 <script type="text/javascript">
   var testWindowObjectVariable;
 
-  // TODO(kpreid): Enable for ES5 once global object scoping fixed.
+  // Disabled in ES5 mode because we currently cannot implement globals
+  // properly.
   jsunitRegisterIf(!inES5Mode,
                    'testWindowObject',
                    function testWindowObject() {
@@ -2116,11 +2086,8 @@ Test row cell
   </table>
 </div>
 <script type="text/javascript">
-  // TODO(kpreid): Enable for ES5 and debug; tableDeleteRow is being
-  // inappropriately unassignable.
-  jsunitRegisterIf(!inES5Mode,
-                   'testRowCell',
-                   function testRowCell() {
+  jsunitRegister('testRowCell',
+                 function testRowCell() {
     var table = document.getElementById('testRowCell-1');
     assertEquals(0, table.rows.length);
     table.insertRow(-1);
@@ -2249,7 +2216,7 @@ Test row cell
 
 
 <script type="text/javascript">
-  // TODO(kpreid): Enable for ES5 once CSS is implemented.
+  // TODO(kpreid): Enable for ES5 once we have backed <body>
   jsunitRegisterIf(!inES5Mode,
                    'testBodyClasses',
                    function testBodyClasses() {

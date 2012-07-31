@@ -85,9 +85,10 @@
       assertEquals("initial " + prop, initial, context[prop]);
       context.save();
       {
-        Object.getOwnPropertyNames(bads).forEach(function (k) {
-          context[prop] = bads[k];
-          assertEquals("unchanged " + prop + " " + k, initial, context[prop]);
+        bads.forEach(function (badValue, i) {
+          context[prop] = badValue;
+          assertEquals("unchanged " + prop + " (" + i + ") " + badValue,
+              initial, context[prop]);
         });
         context[prop] = good;
         assertEquals("changed " + prop, good, context[prop]);
