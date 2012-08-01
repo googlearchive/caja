@@ -362,12 +362,13 @@ URI.prototype.getRawDomain = function () {
   return this.domain_;
 };
 URI.prototype.setDomain = function (newDomain) {
-  this.domain_ = newDomain ? encodeURIComponent(newDomain) : null;
-  return this;
+  return this.setRawDomain(newDomain && encodeURIComponent(newDomain));
 };
 URI.prototype.setRawDomain = function (newDomain) {
   this.domain_ = newDomain ? newDomain : null;
-  return this;
+  // Maintain the invariant that paths must start with a slash when the URI
+  // is not path-relative.
+  return this.setRawPath(this.path_);
 };
 URI.prototype.hasDomain = function () {
   return null !== this.domain_;
@@ -401,11 +402,17 @@ URI.prototype.getRawPath = function () {
   return this.path_;
 };
 URI.prototype.setPath = function (newPath) {
-  this.path_ = encodeIfExists2(newPath, URI_DISALLOWED_IN_PATH_);
-  return this;
+  return this.setRawPath(encodeIfExists2(newPath, URI_DISALLOWED_IN_PATH_));
 };
 URI.prototype.setRawPath = function (newPath) {
-  this.path_ = newPath ? newPath : null;
+  if (newPath) {
+    newPath = String(newPath);
+    this.path_ = 
+      // Paths must start with '/' unless this is a path-relative URL.
+      (!this.domain_ || /^\//.test(newPath)) ? newPath : '/' + newPath;
+  } else {
+    this.path_ = null;
+  }
   return this;
 };
 URI.prototype.hasPath = function () {

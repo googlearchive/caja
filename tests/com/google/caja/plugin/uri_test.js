@@ -76,6 +76,30 @@ jsunitRegister("testAbsolutePathResolution",
                    URI.parse('/foo/bar')
                    ).toString()
                );
+  assertEquals('http://www.google.com/foo',
+               URI.resolve(
+                   URI.parse('http://www.google.com/'),
+                   URI.parse('foo')
+                   ).toString()
+               );
+  assertNotEquals('http://www.google.comfoo',
+               URI.resolve(
+                   URI.parse('http://www.google.com'),
+                   URI.parse('foo')
+                   ).toString()
+               );
+  assertEquals('http://www.google.com/foo',
+               URI.resolve(
+                   URI.parse('http://www.google.com'),
+                   URI.parse('foo')
+                   ).toString()
+               );
+  assertEquals('foo',
+               URI.resolve(
+                   URI.parse('www.google.com'),  // A path, not a domain.
+                   URI.parse('foo')
+                   ).toString()
+               );
   jsunit.pass();
 });
 
@@ -549,6 +573,30 @@ jsunitRegister("testCollapseDots",
   assertEquals('foo/boo/faz',
                URI.collapse_dots('foo//bar/baz/..//../boo//far/../faz'));
   jsunit.pass();
+});
+
+jsunitRegister("testSetPathWithAbsoluteUrl",
+              function testSetPathWithAbsoluteUrl() {
+  var uri0 = URI.create();
+  uri0.setRawPath("foo/bar");
+  uri0.setRawDomain("example.com");
+
+  var uri1 = URI.create();
+  uri1.setRawDomain("example.com");
+  uri1.setRawPath("foo/bar");
+
+  var uri2 = URI.create();
+  uri2.setPath("foo/bar");
+  uri2.setDomain("example.com");
+
+  var uri3 = URI.create();
+  uri3.setDomain("example.com");
+  uri3.setPath("foo/bar");
+
+  assertEquals("uri0", "//example.com/foo/bar", uri0.toString());
+  assertEquals("uri1", "//example.com/foo/bar", uri1.toString());
+  assertEquals("uri2", "//example.com/foo/bar", uri2.toString());
+  assertEquals("uri3", "//example.com/foo/bar", uri3.toString());
 });
 
 function assertResolvedEquals(expected, base, other) {
