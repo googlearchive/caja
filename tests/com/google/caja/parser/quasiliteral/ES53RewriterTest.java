@@ -1862,6 +1862,13 @@ public class ES53RewriterTest extends CommonJsRewriterTestCase {
         "");
   }
 
+  public final void testThisBindingInFunctionCall() throws Exception {
+    rewriteAndExecute(
+        "(function () {" +
+        "  assertFalse(typeof this === 'function');" +
+        "})();");
+  }
+
   @Override
   public void setUp() throws Exception {
     super.setUp();

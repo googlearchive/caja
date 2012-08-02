@@ -753,7 +753,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
    */
   function markSafeFunc(fn, name) {
     markFunc(fn, name);
-    fn.i___ = fn;
+    fn.i___ = function () { return fn.f___(USELESS, arguments); };
     return fn;
   }
 
