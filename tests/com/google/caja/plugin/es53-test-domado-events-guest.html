@@ -16,6 +16,26 @@
 
 <div>Derived from domita_test_untrusted.html as of r4471</div>
 
+<p class="clickme testcontainer" id="test-exception-in-event-handler">
+  <span onclick="die();">
+    click me.  Exceptions in event handlers should invoke onerror.
+  </span>
+</p>
+<script type="text/javascript">
+  window.onerror = (function (onerror) {
+    return function (message, url, line) {
+        assertEquals('died!', message);
+        pass('test-exception-in-event-handler');
+        window.onerror = onerror;
+      };
+  })(onerror);
+  window.die = function die() {
+    throw new Error('died!');
+  };
+  jsunitRegister('testExceptionInEventHandler',
+                 function testExceptionInEventHandler() { });
+</script>
+
 <p class="clickme testcontainer" id="test-function-calls-in-attributes">
   <span onclick="doIt(event, this);">
     click me.  Function calls in attributes should work.

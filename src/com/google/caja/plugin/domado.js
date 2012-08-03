@@ -5812,10 +5812,15 @@ var Domado = (function() {
       if (!event.currentTarget) {
         event.currentTarget = thisNode;
       }
-      var domicile = windowToDomicile.get(rulebreaker.getImports(pluginId));
+      var imports = rulebreaker.getImports(pluginId);
+      var domicile = windowToDomicile.get(imports);
       var node = domicile.tameNode(thisNode, true);
-      return plugin_dispatchToHandler(
+      try {
+        return plugin_dispatchToHandler(
           pluginId, handler, [ node, domicile.tameEvent(event), node ]);
+      } catch (ex) {
+        imports.onerror(ex.message, 'unknown', 0);
+      }
     }
 
     function plugin_dispatchToHandler(pluginId, handler, args) {
