@@ -4963,8 +4963,13 @@ var Domado = (function() {
       });
       TameHTMLDocument.prototype.addEventListener =
           nodeMethod(function (name, listener, useCapture) {
-            return np(this).tamePseudoBodyNode.addEventListener(
-                name, listener, useCapture);
+            if (name === 'DOMContentLoaded') {
+              domitaModules.ensureValidCallback(listener);
+              np(tameDocument).onDCLListeners.push(listener);
+            } else {
+              return np(this).tamePseudoBodyNode.addEventListener(
+                  name, listener, useCapture);
+            }
           });
       TameHTMLDocument.prototype.removeEventListener =
           nodeMethod(function (name, listener, useCapture) {

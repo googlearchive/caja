@@ -124,6 +124,21 @@
   });
 </script>
 
+<p class="testcontainer" id="test-document-dom-content-loaded">
+  Waiting for DOMContentLoaded.
+</p>
+<script type="text/javascript">
+  jsunitRegister('testDocumentDomContentLoaded',
+                 function testDocumentDomContentLoaded() {
+    document.addEventListener(
+        'DOMContentLoaded',
+        jsunitCallback(
+            function eventListener(event) {
+              pass('test-document-dom-content-loaded');
+            }));
+  });
+</script>
+
 <p class="clickme testcontainer" id="test-remove-event-listener">
   <b id="test-remove-event-listener-label">click me</b>
 </p>
