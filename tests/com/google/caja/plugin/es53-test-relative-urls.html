@@ -1,0 +1,58 @@
+<!doctype html>
+<!--
+ - Copyright (C) 2012 Google Inc.
+ -
+ - Licensed under the Apache License, Version 2.0 (the "License");
+ - you may not use this file except in compliance with the License.
+ - You may obtain a copy of the License at
+ -
+ -      http://www.apache.org/licenses/LICENSE-2.0
+ -
+ - Unless required by applicable law or agreed to in writing, software
+ - distributed under the License is distributed on an "AS IS" BASIS,
+ - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ - See the License for the specific language governing permissions and
+ - limitations under the License.
+-->
+<!-- see es53-test-relative-urls.js for setup -->
+
+<img id="staticHtml" src="staticHtml.jpg">
+
+<div id="dynamicHtmlContainer"></div>
+<div id="dynamicCssContainer"></div>
+
+<script>
+  var html = document.getElementById("dynamicHtmlContainer");
+  html.innerHTML =
+    "<img id='dynamicHtml' src='dynamicHtml.jpg'>";
+
+  var css = document.getElementById("dynamicCssContainer");
+  css.innerHTML =
+    "<div id='dynamicCss' style='background:url(dynamicCss.jpg)'><\/div>";
+</script>
+
+<script>
+  function computedBackgroundEquals(id, url) {
+    var div = document.getElementById(id);
+    assertContains("computed background style url",
+        url,
+        document.defaultView.getComputedStyle(div, null)
+          .getPropertyValue('background-image'));
+  }
+
+  function imgSrcEquals(id, url) {
+    var img = document.getElementById(id);
+    assertEquals("img src url",
+        url,
+        img.getAttribute("src"));
+  }
+  computedBackgroundEquals("dynamicCss",
+      "http://www.example.com/dynamicCss.jpg");
+
+  imgSrcEquals("staticHtml",
+      "http://www.example.com/staticHtml.jpg");
+  imgSrcEquals("dynamicHtml",
+      "http://www.example.com/dynamicHtml.jpg");
+
+  jsunitPass("testRelativeUrls");
+</script>

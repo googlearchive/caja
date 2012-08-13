@@ -100,12 +100,12 @@ public class Playground implements EntryPoint, ValueChangeHandler<String> {
     gui.setLoading(true);
     gui.setCajoledSource("", "");
     gui.selectTab(PlaygroundView.Tabs.RENDER);
-    gui.setRenderedResult(true /* es5 */,
+    gui.setRenderedResult(true /* es5 */, uri,
         policy, input, null, opt_idClass);
     gui.setLoading(false);
   }
 
-  public void cajoleES53(String uri, String input, final String policy,
+  public void cajoleES53(final String uri, String input, final String policy,
       boolean debugMode, final String opt_idClass) {
     gui.setLoading(true);
     cajolingService.cajole(
@@ -128,12 +128,12 @@ public class Playground implements EntryPoint, ValueChangeHandler<String> {
         }
         if (result.getHtml() != null) {
           gui.setCajoledSource(result.getHtml(), result.getJavascript());
-          gui.setRenderedResult(false /* es5 */,
+          gui.setRenderedResult(false /* es5 */, uri,
               policy, result.getHtml(), result.getJavascript(), opt_idClass);
           gui.selectTab(PlaygroundView.Tabs.RENDER);
         } else {
           gui.setCajoledSource(null, null);
-          gui.setRenderedResult(false, null, null, null, null);
+          gui.setRenderedResult(false, uri, null, null, null, null);
           gui.selectTab(PlaygroundView.Tabs.COMPILE_WARNINGS);
         }
       }

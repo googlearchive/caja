@@ -404,7 +404,7 @@ public class PlaygroundView {
     return $wnd.prettyPrintOne($wnd.indentAndWrapCode(result), lang);
   }-*/;
 
-  public void setRenderedResult(final boolean es5,
+  public void setRenderedResult(final boolean es5, String baseUrl,
       final String policy, final String html, final String js,
       final String idClass)
   {
@@ -419,6 +419,7 @@ public class PlaygroundView {
 
     setRenderedResultNative(
         playgroundUI.renderPanel.getElement(),
+        baseUrl,
         makeUriPolicy(),
         idClass,
         policy,
@@ -429,6 +430,7 @@ public class PlaygroundView {
 
   private native void setRenderedResultNative(
       Element element,
+      String baseUrl,
       JavaScriptObject uriPolicy,
       String idClass,
       String policy,
@@ -443,8 +445,8 @@ public class PlaygroundView {
           var api = that.@com.google.caja.demos.playground.client.ui.PlaygroundView::makeExtraImports(Lcom/google/gwt/core/client/JavaScriptObject;Lcom/google/gwt/core/client/JavaScriptObject;Ljava/lang/String;)($wnd.caja, frame, policy);
           frame = frame.api(api);
           frame = es5
-              ? frame.code("http://fake.url", "text/html", html)
-              : frame.cajoled("http://fake.url/", js, html);
+              ? frame.code(baseUrl, "text/html", html)
+              : frame.cajoled(baseUrl, js, html);
           frame.run(function(r) {
             that.@com.google.caja.demos.playground.client.ui.PlaygroundView::setRenderedResult(Ljava/lang/String;)(r + '');
           });

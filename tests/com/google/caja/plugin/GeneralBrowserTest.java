@@ -193,8 +193,6 @@ public class GeneralBrowserTest extends BrowserTestCase {
   }
 
   public final void testDomadoDom() throws Exception {
-    // TODO(kpreid): Enable for ES5: various tests for unimplemented
-    // functionality.
     runTestCase("es53-test-domado-dom-guest.html");
   }
 
@@ -230,6 +228,10 @@ public class GeneralBrowserTest extends BrowserTestCase {
 
   public final void testExternalScript() throws Exception {
     runTestCase("es53-test-external-script-guest.html", true);
+  }
+
+  public final void testRelativeUrls() throws Exception {
+    runTestDriver("es53-test-relative-urls.js");
   }
 
   public final void testDefensibleObjects() throws Exception {

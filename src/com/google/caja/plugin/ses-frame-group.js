@@ -196,8 +196,8 @@ function SESFrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker) {
       var frameTamingMembrane = TamingMembrane(tamingHelper, tamingSchema.control);
       var domicile = makeDomicile(
           frameTamingMembrane, divs, uriPolicy, guestWin);
-      var gman = GuestManager(
-          frameTamingMembrane, divs, domicile, guestWin, sesRun);
+      var gman = GuestManager(frameTamingMembrane, divs,
+          cajaInt.documentBaseUrl(), domicile, guestWin, sesRun);
       es5ready(gman);
     });
   }
@@ -220,7 +220,7 @@ function SESFrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker) {
 
     var domicile = domado.attachDocument(
       '-' + divs.idClass, uriPolicy, divs.inner,
-      undefined, config.targetAttributePresets,
+      config.targetAttributePresets,
       Object.freeze({
         permitUntaming: permitUntaming,
         tame: frameTamingMembrane.tame,

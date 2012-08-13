@@ -44,7 +44,7 @@
  * @author mikesamuel@gmail.com (original Domita)
  * @author kpreid@switchb.org (port to ES5)
  * @requires console
- * @requires bridalMaker, cajaVM, cssSchema, html, html4, lexCss,
+ * @requires bridalMaker, cajaVM, cssSchema, html, html4, lexCss, URI
  * @requires parseCssDeclarations, sanitizeCssProperty, unicode
  * @requires WeakMap, Proxy
  * @requires CSS_PROP_BIT_HISTORY_INSENSITIVE
@@ -1351,9 +1351,6 @@ var Domado = (function() {
      *     to be reinjected.
      * @param {Node} pseudoBodyNode an HTML node to act as the "body" of the
      *     virtual document provided to Cajoled code.
-     * @param {Object} optPseudoWindowLocation a record containing the
-     *     properties of the browser "window.location" object, which will
-     *     be provided to the Cajoled code.
      * @param {Object} optTargetAttributePresets a record containing the presets
      *     (default and whitelist) for the HTML "target" attribute.
      * @return {Object} A collection of privileged access tools, plus the tamed
@@ -1361,15 +1358,11 @@ var Domado = (function() {
      *     object is known as a "domicile".
      */
     function attachDocument(
-      idSuffix, naiveUriPolicy, pseudoBodyNode, optPseudoWindowLocation,
-        optTargetAttributePresets, taming) {
-
+      idSuffix, naiveUriPolicy, pseudoBodyNode, optTargetAttributePresets,
+        taming) {
       if (arguments.length < 3) {
         throw new Error(
             'attachDocument arity mismatch: ' + arguments.length);
-      }
-      if (!optPseudoWindowLocation) {
-        optPseudoWindowLocation = {};
       }
       if (!optTargetAttributePresets) {
         optTargetAttributePresets = {
@@ -1528,7 +1521,8 @@ var Domado = (function() {
                       "CSS_PROP": cssPropertyName
                     });
               }
-            : null);
+            : null,
+            domicile.pseudoLocation.href);
         return tokens.length !== 0;
       }
 
@@ -1755,6 +1749,7 @@ var Domado = (function() {
             return value;
           case html4.atype.URI:
             value = String(value);
+            value = URI.utils.resolve(domicile.pseudoLocation.href, value);
             if (!naiveUriPolicy) { return null; }
             return uriRewrite(
                 naiveUriPolicy,
@@ -5063,6 +5058,23 @@ var Domado = (function() {
         domicile.writeHook.apply(undefined, args);
       });
       cajaVM.def(TameHTMLDocument);  // and its prototype
+      domicile.setBaseUri = cajaVM.def(function(base) {
+        var parsed = URI.parse(base);
+        var host = null;
+        if (parsed.hasDomain()) {
+          host = parsed.hasPort() ? parsed.getDomain() + ':' + parsed.getPort() : null;
+        }
+        domicile.pseudoLocation = {
+          href: parsed.toString(),
+          hash: parsed.getFragment(),
+          host: host,
+          hostname: parsed.getDomain(),
+          port: parsed.getPort(),
+          protocol: parsed.hasScheme() ? parsed.getScheme() + ':' : null,
+          pathname: parsed.getPath(),
+          search: parsed.getQuery()
+        };
+      });
 
       // Called by the html-emitter when the virtual document has been loaded.
       domicile.signalLoaded = cajaVM.def(function () {
@@ -5439,25 +5451,12 @@ var Domado = (function() {
       var tameDocument = new TameHTMLDocument(
           document,
           pseudoBodyNode,
-          String(optPseudoWindowLocation.hostname || 'nosuchhost.invalid'),
+          // TODO(jasvir): Properly wire up document.domain
+          // by untangling the cyclic dependence between
+          // TameWindow and TameDocument
+          String(undefined || 'nosuchhost.invalid'),
           true);
       traceStartup("DT: finished TameHTMLDocument");
-      // TODO(mikesamuel): figure out a mechanism by which the container can
-      // specify the gadget's apparent URL.
-      // See http://www.whatwg.org/specs/web-apps/current-work/multipage/history.html#location0
-      var tameLocation = cajaVM.def({
-        toString: function () { return tameLocation.href; },
-        href: String(optPseudoWindowLocation.href ||
-            'http://nosuchhost.invalid:80/'),
-        hash: String(optPseudoWindowLocation.hash || ''),
-        host: String(optPseudoWindowLocation.host || 'nosuchhost.invalid:80'),
-        hostname: String(optPseudoWindowLocation.hostname ||
-            'nosuchhost.invalid'),
-        pathname: String(optPseudoWindowLocation.pathname || '/'),
-        port: String(optPseudoWindowLocation.port || '80'),
-        protocol: String(optPseudoWindowLocation.protocol || 'http:'),
-        search: String(optPseudoWindowLocation.search || '')
-        });
 
       // See spec at http://www.whatwg.org/specs/web-apps/current-work/multipage/browsers.html#navigator
       // We don't attempt to hide or abstract userAgent details since
@@ -5490,6 +5489,31 @@ var Domado = (function() {
        * See http://www.whatwg.org/specs/web-apps/current-work/multipage/browsers.html#window for the full API.
        */
       function TameWindow() {
+
+        // TODO(mikesamuel): figure out a mechanism by which the container can
+        // specify the gadget's apparent URL.
+        // See http://www.whatwg.org/specs/web-apps/current-work/multipage/history.html#location0
+        var tameLocation = {};
+        function defineLocationField(f, dflt) {
+          Object.defineProperty(tameLocation, f, {
+            configurable: false,
+            enumerable: true,
+            get: function() { 
+              return String(domicile.pseudoLocation[f] || dflt); 
+            }
+          });
+        }
+        defineLocationField('href', 'http://nosuchhost.invalid:80/');
+        defineLocationField('hash', '');
+        defineLocationField('host', 'nosuchhost.invalid:80');
+        defineLocationField('hostname', 'nosuchhost.invalid');
+        defineLocationField('pathname', '/');
+        defineLocationField('port', '80');
+        defineLocationField('protocol', 'http:');
+        defineLocationField('search', '');
+        setOwn(tameLocation, 'toString',
+          cajaVM.def(function() { return tameLocation.href; }));
+
         // These descriptors were chosen to resemble actual ES5-supporting browser
         // behavior.
         // The document property is defined below.

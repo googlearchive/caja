@@ -17,8 +17,8 @@
  * Implements RFC 3986 for parsing/formatting URIs.
  *
  * @author mikesamuel@gmail.com
- * @provides URI
- * @overrides window
+ * \@provides URI
+ * \@overrides window
  */
 
 var URI = (function () {
@@ -163,7 +163,7 @@ function collapse_dots(path) {
   // (1) we have at most 1 / between the adjacent place,
   // (2) always have a slash if there is a preceding path section, and
   // (3) we never turn a relative path into an absolute path.
-  for (var q; (q = p.replace(r, '$1')) != p; p = q);
+  for (var q; (q = p.replace(r, '$1')) != p; p = q) {};
   return p;
 }
 

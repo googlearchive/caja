@@ -28,6 +28,7 @@
  * \@requires CSS_PROP_BIT_Z_INDEX
  * \@requires cssSchema
  * \@requires decodeCss
+ * \@requires URI
  * \@requires html4
  * \@overrides window
  * \@requires parseCssStylesheet
@@ -45,6 +46,8 @@
  * @param tokens as parsed by lexCss.  Modified in place.
  * @param opt_naiveUriRewriter a URI rewriter; an object with a "rewrite"
  *     function that takes a URL and returns a safe URL.
+ * @param opt_baseURI baseUri; uri against which all relative urls in this
+ *     style will be resolved
  */
 var sanitizeCssProperty = (function () {
   var NOEFFECT_URL = 'url("about:blank")';
@@ -93,6 +96,13 @@ var sanitizeCssProperty = (function () {
 
   var ALLOWED_URI_SCHEMES = /^(?:https?|mailto)$/i;
 
+  function resolveUri(baseUri, uri) {
+    if (baseUri) {
+      return URI.utils.resolve(baseUri, uri);
+    }
+    return uri;
+  }
+
   function safeUri(uri, prop, naiveUriRewriter) {
     if (!naiveUriRewriter) { return null; }
     var parsed = ('' + uri).match(URI_SCHEME_RE);
@@ -132,7 +142,8 @@ var sanitizeCssProperty = (function () {
   // Used as map value to avoid hasOwnProperty checks.
   var ALLOWED_LITERAL = {};
 
-  return function (property, propertySchema, tokens, opt_naiveUriRewriter) {
+  return function (property, propertySchema, tokens,
+    opt_naiveUriRewriter, opt_baseUri) {
     var propBits = propertySchema.cssPropBits;
     // Used to determine whether to treat quoted strings as URLs or
     // plain text content, and whether unrecognized keywords can be quoted
@@ -159,8 +170,8 @@ var sanitizeCssProperty = (function () {
           (qstringBits === CSS_PROP_BIT_QSTRING_URL && opt_naiveUriRewriter)
           // Sanitize and convert to url("...") syntax.
           // Treat url content as case-sensitive.
-          ? (normalizeUrl(safeUri(
-                decodeCss(tokens[i].substring(1, token.length - 1)),
+          ? (normalizeUrl(safeUri(resolveUri(opt_baseUri,
+                decodeCss(tokens[i].substring(1, token.length - 1))),
                 property,
                 opt_naiveUriRewriter)))
           // Drop if plain text content strings not allowed.
@@ -205,8 +216,8 @@ var sanitizeCssProperty = (function () {
         // Handle url("...") by rewriting the body.
         : ('url(' === token.substring(0, 4))
         ? ((opt_naiveUriRewriter && (qstringBits & CSS_PROP_BIT_QSTRING_URL))
-           ? normalizeUrl(safeUri(
-                tokens[i].substring(5, token.length - 2),
+           ? normalizeUrl(safeUri(resolveUri(opt_baseUri,
+                tokens[i].substring(5, token.length - 2)),
                 property,
                 opt_naiveUriRewriter))
            : '')
@@ -445,6 +456,7 @@ var sanitizeStylesheet = (function () {
   }
 
   /**
+   * @param {string} baseUri a string against which relative urls are resolved.
    * @param {string} cssText a string containing a CSS stylesheet.
    * @param {string} suffix a suffix that is added to all IDs and which is
    *    used as a CLASS names so that the returned selectors will only match
@@ -458,7 +470,7 @@ var sanitizeStylesheet = (function () {
    *    file in sanitized CSS.
    */
   return function /*sanitizeStylesheet*/(
-       cssText, suffix, opt_naiveUriRewriter) {
+    baseUri, cssText, suffix, opt_naiveUriRewriter) {
     var safeCss = void 0;
     // A stack describing the { ... } regions.
     // Null elements indicate blocks that should not be emitted.
@@ -587,7 +599,8 @@ var sanitizeStylesheet = (function () {
             if (!elide) {
               var schema = cssSchema[property];
               if (schema) {
-                sanitizeCssProperty(property, schema, valueArray, opt_naiveUriRewriter);
+                sanitizeCssProperty(property, schema, valueArray,
+                  opt_naiveUriRewriter, baseUri);
                 if (valueArray.length) {
                   safeCss.push(property, ':', valueArray.join(' '), ';');
                 }

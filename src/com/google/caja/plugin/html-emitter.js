@@ -57,7 +57,7 @@ function HtmlEmitter(makeDOMAccessible, base, opt_domicile, opt_guestGlobal) {
   base = makeDOMAccessible(base);
   var insertionPoint = base;
   var bridal = bridalMaker(makeDOMAccessible, base.ownerDocument);
-  var baseUri = '' + base.ownerDocument.location;
+
   // TODO: Take into account <base> elements.
 
   /**
@@ -332,7 +332,7 @@ function HtmlEmitter(makeDOMAccessible, base, opt_domicile, opt_guestGlobal) {
       return Array.prototype.join.call(items, '');
     }
 
-    function evaluateUntrustedScript(scriptInnerText) {
+    function evaluateUntrustedScript(scriptBaseUri, scriptInnerText) {
       if (!opt_guestGlobal) { return; }
       var errorMessage = "SCRIPT element evaluation failed";
 
@@ -371,25 +371,28 @@ function HtmlEmitter(makeDOMAccessible, base, opt_domicile, opt_guestGlobal) {
       }
     }
 
-    function sanitizeCssUri(uri, prop) {
-      return (domicile && domicile.cssUri)
-          ? domicile.cssUri(URI.utils.resolve(baseUri, uri), 'image/*', prop)
-          : void 0;
+    function makeCssUriSanitizer(baseUri) {
+      return function(uri, prop) {
+          return (domicile && domicile.cssUri)
+              ? domicile.cssUri(URI.utils.resolve(baseUri, uri), 'image/*', prop)
+              : void 0;
+      };
     }
 
-    function defineUntrustedStylesheet(cssText) {
+    function defineUntrustedStylesheet(styleBaseUri, cssText) {
       if (domicile && domicile.emitCss) {
-        domicile.emitCss(sanitizeStylesheet(
-            cssText, domicile.suffixStr.replace(/^-/, ''), sanitizeCssUri));
+        domicile.emitCss(sanitizeStylesheet(styleBaseUri,
+            cssText, domicile.suffixStr.replace(/^-/, ''), 
+            makeCssUriSanitizer(styleBaseUri)));
       }
     }
 
     function resolveUntrustedExternal(func, url, mime, marker, continuation) {
       if (domicile && domicile.fetchUri) {
-        domicile.fetchUri(URI.utils.resolve(baseUri, url), mime,
+        domicile.fetchUri(url, mime,
           function (result) {
             if (result && result.html) {
-              func(result.html);
+              func(url, result.html);
             } else {
               // TODO(jasvir): Thread logger and log the failure to fetch
             }
@@ -419,6 +422,13 @@ function HtmlEmitter(makeDOMAccessible, base, opt_domicile, opt_guestGlobal) {
         srcIndex = attribs.indexOf(attr, srcIndex) + 1;
       } while (srcIndex && !(srcIndex & 1));
       return srcIndex ? attribs[srcIndex] : undefined;
+    }
+
+    function resolveUriRelativeToDocument(href) {
+      if (domicile && domicile.pseudoLocation && domicile.pseudoLocation.href) {
+        return URI.utils.resolve(domicile.pseudoLocation.href, href);
+      }
+      return href;
     }
 
     // Zero or one of the html4.eflags constants that captures the content type
@@ -468,12 +478,13 @@ function HtmlEmitter(makeDOMAccessible, base, opt_domicile, opt_guestGlobal) {
             var href = lookupAttr(attribs, 'href');
             var rels = rel ? String(rel).toLowerCase().split(' ') : [];
             if (href && rels.indexOf('stylesheet') >= 0) {
-              defineUntrustedExternalStylesheet(href, marker, continuation);
+              var res = resolveUriRelativeToDocument(href);
+              defineUntrustedExternalStylesheet(res, marker, continuation);
             }
           } else if (tagName === 'base') {
             var baseHref = lookupAttr(attribs, 'href');
-            if (baseHref) {
-              baseUri = URI.utils.resolve(baseUri, baseHref);
+            if (baseHref && domicile) {
+              domicile.setBaseUri(resolveUriRelativeToDocument(baseHref));
             }
           }
           return;
@@ -494,8 +505,9 @@ function HtmlEmitter(makeDOMAccessible, base, opt_domicile, opt_guestGlobal) {
           cdataContentType = 0;
           if (pendingExternal) {
             if (isScript) {
+              var res = resolveUriRelativeToDocument(pendingExternal);
               evaluateUntrustedExternalScript(
-                pendingExternal, marker, continuation);
+                res, marker, continuation);
             }
             pendingExternal = undefined;
           } else {
@@ -506,9 +518,9 @@ function HtmlEmitter(makeDOMAccessible, base, opt_domicile, opt_guestGlobal) {
               // script, but that has any ID attribute properly rewritten.
               // It is not horribly uncommon for scripts to look for the last
               // script element as a proxy for the insertion cursor.
-              evaluateUntrustedScript(content);
+              evaluateUntrustedScript(domicile.pseudoLocation.href, content);
             } else {
-              defineUntrustedStylesheet(content);
+              defineUntrustedStylesheet(domicile.pseudoLocation.href, content);
             }
           }
         }

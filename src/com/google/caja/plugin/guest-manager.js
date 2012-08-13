@@ -13,7 +13,7 @@
 // limitations under the License.
 
 /**
- * @requires setTimeout
+ * @requires setTimeout URI
  * @provides GuestManager
  * @overrides window
  */
@@ -38,7 +38,8 @@
  * semantics that don't matter in practice.  GuestManager combines the two.
  */
 
-function GuestManager(frameTamingMembrane, divs, domicile, guestWin, runImpl) {
+function GuestManager(frameTamingMembrane, divs, hostBaseUrl,
+  domicile, guestWin, runImpl) {
   // TODO(felix8a): this api needs to be simplified; it's difficult to
   // explain what all the parameters mean in different situations.
   var args = {
@@ -145,6 +146,9 @@ function GuestManager(frameTamingMembrane, divs, domicile, guestWin, runImpl) {
     } else {
       moreImports = args.moreImports || {};
       opt_runDone = opt_arg1;
+    }
+    if (domicile) {
+      domicile.setBaseUri(URI.utils.resolve(hostBaseUrl, args.url));
     }
     return runImpl(self, args, moreImports, function(result) {
       setTimeout(function() { 

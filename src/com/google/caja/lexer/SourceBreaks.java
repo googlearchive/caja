@@ -90,7 +90,8 @@ public final class SourceBreaks implements Serializable {
     if (immutable) {
       throw new UnsupportedOperationException();
     }
-    assert nLines == 0 || charInFile > lineNums[nLines - 1];
+    // TODO(jasvir): Issue 1502
+    //assert nLines == 0 || charInFile > lineNums[nLines - 1];
     if (nLines == lineNums.length) {
       int[] newLineNums = new int[nLines * 2];
       System.arraycopy(lineNums, 0, newLineNums, 0, nLines);

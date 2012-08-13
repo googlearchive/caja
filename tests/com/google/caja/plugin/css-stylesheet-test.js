@@ -29,7 +29,7 @@ function runCssSelectorTests(testGroups) {
         assertEquals(
             name + ' tests[' + i + '].golden', 'string', typeof golden);
 
-        var actual = sanitizeStylesheet(
+        var actual = sanitizeStylesheet('',
             test.cssText, 'namespace__', sanitizeUri);
         // The Java version produces property groups without a trailing
         // ';' since the semicolon is technically a separator in CSS.

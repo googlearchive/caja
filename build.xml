@@ -790,6 +790,7 @@
        language="jslint"/>
       <output file="${lib.caja}/plugin/domado.out.js"
        language="caja" renderer="pretty"/>
+      <input file="${src.caja}/plugin/uri.js"/>
       <input file="${src.caja}/ses-promise.js"/>
       <input file="${src.caja}/plugin/unicode.js"/>
       <input file="${lib.caja}/plugin/css-defs.js"/>
@@ -850,6 +851,7 @@
        language="javascript" renderer="concat"/>
       <input file="${lib.caja}/plugin/css-defs.js"/>
       <input file="${src.caja}/plugin/csslexer.js"/>
+      <input file="${src.caja}/plugin/uri.js"/>
       <input file="${src.caja}/plugin/sanitizecss.js"/>
       <input file="${src.caja}/plugin/cssparser.js"/>
       <input file="${lib.caja}/plugin/html4-defs.js"/>
@@ -971,6 +973,7 @@
       <input file="${src.caja}/plugin/html-sanitizer.js"/>
       <input file="${src.caja}/plugin/html-emitter.js"/>
       <input file="${src.caja}/plugin/csslexer.js"/>
+      <input file="${src.caja}/plugin/uri.js"/>
       <input file="${src.caja}/plugin/sanitizecss.js"/>
       <input file="${src.caja}/plugin/cssparser.js"/>
       <input file="${src.caja}/plugin/bridal.js"/>
@@ -978,7 +981,6 @@
       <input file="${src.caja}/plugin/taming-schema.js"/>
       <input file="${src.caja}/plugin/taming-membrane.js"/>
 
-      <input file="${src.caja}/plugin/uri.js"/>
       <input file="${src.caja}/ses-promise.js"/>
       <input file="${src.caja}/plugin/cajoling-service-client.js"/>
       <input file="${src.caja}/plugin/guest-manager.js"/>
@@ -1137,6 +1139,7 @@
         <include name="**/caja/plugin/bridal.js"/>
         <include name="**/caja/plugin/caja-gadget.css"/>
         <include name="**/caja/plugin/csslexer.js"/>
+        <include name="**/caja/plugin/uri.js"/>
         <include name="**/caja/plugin/sanitizecss.js"/>
         <include name="**/caja/plugin/cssparser.js"/>
         <include name="**/caja/plugin/domado.js"/>
@@ -1151,7 +1154,6 @@
         <include name="**/caja/plugin/plugin-base.js"/>
         <include name="**/caja/plugin/templates/*.json"/>
         <include name="**/caja/plugin/unicode.js"/>
-        <include name="**/caja/plugin/uri.js"/>
       </fileset>
     </copy>
 
@@ -1236,6 +1238,7 @@
         <include name="taming-membrane.js" />
         <!-- TODO(ihab.awad): ??? -->
         <include name="csslexer.js"/>
+        <include name="uri.js"/>
         <include name="sanitizecss.js"/>
         <include name="cssparser.js"/>
         <include name="domado.js" />

@@ -26,7 +26,7 @@
     ['es53-test-inline-script.html'],
     ['es53-test-external-script-guest.html', 'es5'],
     ['es53-test-language-guest.html'],
-    ['es53-test-precajole-guest.html', 'es53'],
+    ['es53-test-precajole-guest.html', 'es53']
   ];
 
   var test_drivers = [
@@ -40,6 +40,7 @@
     ['es53-test-domado-foreign.js'],
     ['es53-test-domado-special.js'],
     ['es53-test-proxies.js'],
+    ['es53-test-relative-urls.js'],
     ['es53-test-taming-errors.js'],
     ['es53-test-taming-inout.js'],
     ['es53-test-taming-tamed.js'],

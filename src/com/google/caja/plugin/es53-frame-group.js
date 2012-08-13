@@ -189,8 +189,8 @@ function ES53FrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker) {
           TamingMembrane(tamingHelper, tamingSchema.control);
       var domicile = makeDomicile(
           frameTamingMembrane, divs, uriPolicy, guestWin);
-      var gman = GuestManager(
-          frameTamingMembrane, divs, domicile, guestWin, es53run);
+      var gman = GuestManager(frameTamingMembrane, divs, 
+          cajaInt.documentBaseUrl(), domicile, guestWin, es53run);
       gman._loader = guestWin.loadModuleMaker(
         cajaInt.documentBaseUrl(), cajoler, URI.utils);
       es5ready(gman);
@@ -245,7 +245,7 @@ function ES53FrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker) {
 
     var domicile = domado.attachDocument(
       '-' + divs.idClass, uriPolicyWrapper, divs.inner,
-      undefined, targetAttributePresets,
+      targetAttributePresets,
       recordWithMethods(
         'permitUntaming', permitUntaming,
         'tame', frameTamingMembrane.tame,
