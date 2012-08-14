@@ -1561,12 +1561,12 @@ var Domado = (function() {
         for (var i = 0; i < n; i += 2) {
           var attribName = attribs[+i];
           if ('target' === attribName) { needsTargetAttrib = false; }
-          var value = attribs[i + 1];
+          var value = attribs[+i + 1];
           var atype = null, attribKey;
           if ((attribKey = tagName + '::' + attribName,
-               html4.ATTRIBS.hasOwnProperty(attribKey))
-              || (attribKey = '*::' + attribName,
-                  html4.ATTRIBS.hasOwnProperty(attribKey))) {
+               html4.ATTRIBS.hasOwnProperty(attribKey)) ||
+              (attribKey = '*::' + attribName,
+               html4.ATTRIBS.hasOwnProperty(attribKey))) {
             atype = html4.ATTRIBS[attribKey];
             value = rewriteAttribute(tagName, attribName, atype, value);
           } else if (!/__$/.test(attribKey)) {
@@ -1575,11 +1575,11 @@ var Domado = (function() {
             value = null;
           }
           if (value !== null && value !== void 0) {
-            attribs[i + 1] = value;
+            attribs[+i + 1] = value;
           } else {
             // Swap last attribute name/value pair in place, and reprocess here.
             // This could affect how user-agents deal with duplicate attributes.
-            attribs[i + 1] = attribs[--n];
+            attribs[+i + 1] = attribs[--n];
             attribs[+i] = attribs[--n];
             i -= 2;
           }
@@ -3465,8 +3465,7 @@ var Domado = (function() {
        *     using this class.
        * @param {String} record.domClass The DOM-specified class name.
        * @param {Object} record.properties The custom properties this class
-       *     should
-       *     have (in the format accepted by definePropertiesAwesomely).
+       *     should have (in the format accepted by definePropertiesAwesomely).
        * @param {function} record.construct Code to invoke at the end of
        *     construction; takes and returns self.
        * @param {boolean} record.forceChildrenNotEditable Whether to force the
