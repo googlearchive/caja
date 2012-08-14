@@ -14,6 +14,8 @@
  - limitations under the License.
 -->
 
+<title>this title is &amp; test   </title>
+
 <style type="text/css">
   .invisible { display: none; float: left }
   .inline { display: inline }
@@ -1865,10 +1867,12 @@ After
                       tagName: 'TITLE',
                       nodeValue: null,
                       attributes: [],
-                      innerHTML: '',
+                      // TODO(kpreid): Change this expectation when complete
+                      // <head> support is done.
+                      innerHTML: '',  // 'this title is &amp; test   ',
                       children: [ {
                         nodeType: 3,
-                        nodeValue: ''
+                        nodeValue: ''  // 'this title is & test   '
                       } ]
                     }
                   ]
@@ -1890,6 +1894,45 @@ After
         '<head><title></title></head><body>'));
 
       pass('testDocumentElement');
+    });
+</script>
+
+<p id="testTitleProperty" class="testcontainer">Test document.title</p>
+<script type="text/javascript">
+    jsunitRegister('testTitleProperty',
+                   function testTitleProperty() {
+      // Tests per HTML5
+      // <http://www.whatwg.org/specs/web-apps/current-work/multipage/dom.html#document.title>
+
+      var origTitle = document.getElementsByTagName('title')[0].textContent;
+
+      // Test getter
+      // note no trailing space
+      // TODO(kpreid): Enable this test after more complete <head> support
+      //assertEquals('this title is & test', document.title);
+      document.getElementsByTagName('title')[0].childNodes[0].data =
+          '&alt title data   ';
+      assertEquals('&alt title data', document.title);
+
+      // Test setter (and test this isn't a HTML-injection hole)
+      document.title = '&lt; alt title prop   ';
+      var titles = document.getElementsByTagName('title');
+      assertEquals(1, titles.length);
+      assertDomTree({
+        nodeType: 1,
+        tagName: 'TITLE',
+        attributes: [],
+        innerHTML: '&amp;lt; alt title prop   ',
+        children: [ {
+          nodeType: 3,
+          nodeValue: '&lt; alt title prop   '
+        } ]
+      }, titles[0]);
+      
+      // Restore
+      document.title = origTitle;
+
+      pass('testTitleProperty');
     });
 </script>
 

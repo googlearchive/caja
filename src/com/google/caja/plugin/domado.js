@@ -1119,8 +1119,10 @@ var Domado = (function() {
           && VALID_ID_LIST_PATTERN.test(s);
     }
 
-    // Trim whitespace from the beginning and end of a CSS string.
-    function trimCssSpaces(input) {
+    // Trim whitespace from the beginning and end of a string, using this
+    // definition of whitespace:
+    // per http://www.whatwg.org/specs/web-apps/current-work/multipage/common-microsyntaxes.html#space-character
+    function trimHTML5Spaces(input) {
       return input.replace(/^[ \t\r\n\f]+|[ \t\r\n\f]+$/g, '');
     }
 
@@ -4806,14 +4808,14 @@ var Domado = (function() {
         tameBodyElement = finishNode(tameBodyElement);
 
         traceStartup("DT: TameHTMLDocument tameTitle");
-        var title = doc.createTextNode(body.getAttribute('title') || '');
-        title = makeDOMAccessible(title);
+        var titleTextNode = doc.createTextNode(body.getAttribute('title') || '');
+        titleTextNode = makeDOMAccessible(titleTextNode);
         var tameTitleElement = finishNode(new TamePseudoElement(
             'TITLE',
             this,
-            function () { return [defaultTameNode(title, false)]; },
+            function () { return [defaultTameNode(titleTextNode, true)]; },
             function () { return tameHeadElement; },
-            function () { return html.escapeAttrib(title.nodeValue); },
+            function () { return html.escapeAttrib(titleTextNode.nodeValue); },
             null,
             editable));
         traceStartup("DT: TameHTMLDocument tameHead");
@@ -4892,7 +4894,19 @@ var Domado = (function() {
         definePropertiesAwesomely(this, {
           documentElement: P_constant(tameHtmlElement),
           domain: P_constant(domain),
-          title: P_constant(tameTitleElement)
+          title: {
+            // http://www.whatwg.org/specs/web-apps/current-work/multipage/dom.html#document.title
+            // as of 2012-08-14
+            enumerable: true,
+            get: nodeMethod(function() {
+              return trimHTML5Spaces(titleTextNode.data);
+            }),
+            set: nodeMethod(function(value) {
+              // TODO(kpreid): should be tameTitleElement.textContent = value;
+              // i.e. replace the node.
+              titleTextNode.data = value;
+            })
+          }
         });
       }
       inertCtor(TameHTMLDocument, TamePseudoNode, 'HTMLDocument');
@@ -4932,7 +4946,8 @@ var Domado = (function() {
         switch (tagName) {
           case 'body': return fakeNodeList([ this.body ]);
           case 'head': return fakeNodeList([ this.documentElement.firstChild ]);
-          case 'title': return fakeNodeList([ this.title ]);
+          case 'title': return fakeNodeList([
+              this.documentElement.firstChild.firstChild ]);
           case 'html': return fakeNodeList([ this.documentElement ]);
           default:
             var extras;
@@ -4940,7 +4955,7 @@ var Domado = (function() {
               extras = [
                 this.documentElement,
                 this.documentElement.firstChild,
-                this.title,
+                this.documentElement.firstChild.firstChild,  // title
                 this.body
               ];
             } else {
