@@ -82,7 +82,15 @@ class ChangeList(object):
       # Private issues should not go to the public list.
       cc_list = difference_of_address_lists(
           union_of_address_lists(
-              self.cc, 'caja-discuss-undisclosed@googlegroups.com'),
+              self.cc or '',
+              'jasvir@gmail.com',
+              'erights@gmail.com',
+              'ihab.awad@gmail.com',
+              'mikesamuel@gmail.com',
+              'kpreid.switchb.org@gmail.com',
+              'metaweta@gmail.com',
+              'felix8a@gmail.com',
+              'caja-discuss-undisclosed@googlegroups.com'),
           'google-caja-discuss@googlegroups.com')
     else:
       cc_list = union_of_address_lists(
