@@ -406,7 +406,12 @@ function createExtraImportsForTesting(frameGroup, frame) {
       frame.domicile.feralNode(tameNode).click();
     },
     emitCssHook: function (css) {
-      frame.imports.emitCss___(css.join(frame.idSuffix));
+      if (inES5Mode) {
+        frame.domicile.emitCss(css.join(frame.idSuffix));
+      } else {
+        // same as above but tests more of the wiring for cajoled input
+        frame.imports.emitCss___(css.join(frame.idSuffix));
+      }
     },
     getInnerHTML: function (tameNode) {
       return frame.domicile.feralNode(tameNode).innerHTML;

@@ -193,6 +193,8 @@ public class GeneralBrowserTest extends BrowserTestCase {
   }
 
   public final void testDomadoDom() throws Exception {
+    // TODO(kpreid): Reenable the disabled tests in that file for ES5 mode once
+    // the corresponding functionality has been implemented.
     runTestCase("es53-test-domado-dom-guest.html");
   }
 

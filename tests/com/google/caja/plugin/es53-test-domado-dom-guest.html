@@ -1006,10 +1006,8 @@ document.write(
   <a id="not-blue" href="#">I am not blue</a>
 </div>
 <script type="text/javascript">
-  // TODO(kpreid): Enable for ES5 once CSS is done.
-  jsunitRegisterIf(!inES5Mode,
-                   'testEmitCss',
-                   function testCss() {
+  jsunitRegister('testEmitCss',
+                 function testCss() {
     directAccess.emitCssHook(['.', ' a#not-blue-', ' { color: #00ff00 }']);
     var computedColor = directAccess.getComputedStyle(
         document.getElementById('not-blue'), 'color');
@@ -2235,9 +2233,8 @@ Test row cell
 ><img usemap="#foo" src="mappic.gif"></p>
 <script type="text/javascript">
   // TODO(kpreid): Enable for ES5 and debug; base URL is not being applied.
-  jsunitRegisterIf(!inES5Mode,
-                   'testUsemap',
-                   function testUsemap() {
+  jsunitRegister('testUsemap',
+                 function testUsemap() {
     var el = document.getElementById('testUsemap');
     assertEquals(
         (''
