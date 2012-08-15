@@ -362,6 +362,7 @@ var ses;
         toLocaleString: t,
         toLocaleDateString: t,
         toLocaleTimeString: t,
+        valueOf: t,
         getTime: t,
         getFullYear: t,
         getUTCFullYear: t,
