@@ -1540,6 +1540,26 @@ var ses;
   }
 
   /**
+   * Detects whether callng pop on a frozen array can modify the array.
+   * See https://bugs.webkit.org/show_bug.cgi?id=75788
+   */
+  function test_POP_IGNORES_FROZEN() {
+    var x = [1,2];
+    Object.freeze(x);
+    try {
+      x.pop();
+    } catch (e) {
+      if (x.length !== 2) { return 'Unexpected modification of frozen array' }
+      if (x[0] === 1 && x[1] === 2) { return false; }
+    }
+    if (x.length !== 2 || x[0] !== 1 || x[1] !== 2) {
+      return 'Unexpected silent modification of frozen array';
+    }
+    // Should report silent failure as a safe spec violation
+    return false;
+  }
+
+  /**
    *
    */
   function test_CANT_REDEFINE_NAN_TO_ITSELF() {
@@ -2894,6 +2914,16 @@ var ses;
                '2011-November/017997.html'],
       sections: ['8.12.4'],
       tests: ['15.2.3.6-4-405']
+    },
+    {
+      description: 'Array.prototype.pop ignores frozeness',
+      test: test_POP_IGNORES_FROZEN,
+      repair: void 0,
+      preSeverity: severities.UNSAFE_SPEC_VIOLATION,
+      canRepair: false,
+      urls: ['https://bugs.webkit.org/show_bug.cgi?id=75788'],
+      sections: ['15.4.4.6'],
+      tests: [] // TODO(erights): Add to test262
     },
     {
       description: 'Cannot redefine global NaN to itself',
