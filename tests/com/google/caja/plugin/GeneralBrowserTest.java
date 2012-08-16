@@ -211,8 +211,7 @@ public class GeneralBrowserTest extends BrowserTestCase {
   }
 
   public final void testDomadoOpaque() throws Exception {
-    // TODO(kpreid): Enable for ES5 once HTML scripting works
-    runTestDriver("es53-test-domado-foreign.js", false);
+    runTestDriver("es53-test-domado-foreign.js");
   }
 
   public final void testLanguage() throws Exception {

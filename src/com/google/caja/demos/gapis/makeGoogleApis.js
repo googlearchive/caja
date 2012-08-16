@@ -563,7 +563,7 @@ function defGoogle(frame) {
 
   function opaqueNode(guestNode) {
     var d = guestNode.ownerDocument.createElement('div');
-    frame.imports.tameNodeAsForeign___(d);
+    frame.domicile.tameNodeAsForeign(d);
     guestNode.appendChild(d);
     return d;
   }

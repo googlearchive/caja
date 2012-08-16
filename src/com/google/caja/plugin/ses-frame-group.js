@@ -248,7 +248,6 @@ function SESFrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker) {
 
     void new tamingWin.HtmlEmitter(
       identity, divs.inner, domicile, guestWin);
-    //imports.tameNodeAsForeign___ = domicile.tameNodeAsForeign.bind(domicile);
     //imports.rewriteUriInCss___ = domicile.rewriteUriInCss.bind(domicile);
     //imports.rewriteUriInAttribute___ =
     //  domicile.rewriteUriInAttribute.bind(domicile);

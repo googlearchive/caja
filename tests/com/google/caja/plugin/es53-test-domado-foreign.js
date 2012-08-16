@@ -42,14 +42,14 @@ caja.load(
       extraImports.getEmbeddedForeignNode = function() {
         var node = createTestDiv();
         guestDiv.firstChild.firstChild.appendChild(node);
-        return frame.imports.tameNodeAsForeign___(node);
+        return frame.domicile.tameNodeAsForeign(node);
       };
       extraImports.getEmbeddedForeignNode.i___ =
           extraImports.getEmbeddedForeignNode;
 
       extraImports.getExternalForeignNode = function() {
         var node = createTestDiv();
-        return frame.imports.tameNodeAsForeign___(node);
+        return frame.domicile.tameNodeAsForeign(node);
       };
       extraImports.getExternalForeignNode.i___ =
           extraImports.getExternalForeignNode;

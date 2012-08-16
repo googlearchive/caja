@@ -269,7 +269,6 @@ function ES53FrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker) {
       domicile.rewriteTargetAttribute.bind(domicile);
     imports.getIdClass___ = domicile.getIdClass.bind(domicile);
     imports.emitCss___ = domicile.emitCss.bind(domicile);
-    imports.tameNodeAsForeign___ = domicile.tameNodeAsForeign.bind(domicile);
 
     ___.getId = cajaInt.getId;
     ___.getImports = cajaInt.getImports;

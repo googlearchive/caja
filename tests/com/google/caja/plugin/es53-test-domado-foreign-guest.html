@@ -21,6 +21,7 @@
       fail("Expected bottom value: " + msg);
     }
   }
+  window.assertBottom = assertBottom; // SES scope workaround
 </script>
 
 <p class="testcontainer" id="test-not-null">
@@ -126,6 +127,7 @@
     assertBottom(name + 'getElementsByClassName[3]',
         node.getElementsByClassName('testclass')[3]);
   }
+  window.testForeign = testForeign; // SES scope workaround
 </script>
 
 <p class="testcontainer" id="test-external-foreign">
