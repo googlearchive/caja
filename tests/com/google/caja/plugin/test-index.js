@@ -39,7 +39,7 @@
     ['es53-test-domado-events.js'],
     ['es53-test-domado-foreign.js'],
     ['es53-test-domado-special.js'],
-    ['es53-test-proxies.js'],
+    ['es53-test-proxies.js', 'es53'],
     ['es53-test-relative-urls.js'],
     ['es53-test-taming-errors.js'],
     ['es53-test-taming-inout.js'],

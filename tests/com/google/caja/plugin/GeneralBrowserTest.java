@@ -219,7 +219,7 @@ public class GeneralBrowserTest extends BrowserTestCase {
   }
 
   public final void testProxies() throws Exception {
-    runTestDriver("es53-test-proxies.js");
+    runTestDriver("es53-test-proxies.js", false);
   }
 
   public final void testInlineScript() throws Exception {
