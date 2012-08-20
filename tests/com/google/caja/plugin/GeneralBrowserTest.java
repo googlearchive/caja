@@ -160,16 +160,8 @@ public class GeneralBrowserTest extends BrowserTestCase {
     runTestDriver("es53-test-client-uri-rewriting.js", false);
   }
 
-  public final void testTamingTamedGlobal() throws Exception {
-    runTestDriver(
-        "es53-test-taming-tamed.js",
-        "tameUsingGlobalMembrane=true");
-  }
-
-  public final void testTamingTamedFrame() throws Exception {
-    runTestDriver(
-        "es53-test-taming-tamed.js",
-        "tameUsingGlobalMembrane=false");
+  public final void testTamingTamed() throws Exception {
+    runTestDriver("es53-test-taming-tamed.js");
   }
 
   public final void testTamingUntamed() throws Exception {
@@ -245,5 +237,9 @@ public class GeneralBrowserTest extends BrowserTestCase {
 
   public final void testTargetAttributePresets() throws Exception {
     runTestDriver("es53-test-target-attribute-presets.js");
+  }
+
+  public final void testApiTaming() throws Exception {
+    runTestDriver("es53-test-apitaming.js");
   }
 }

@@ -124,7 +124,19 @@ function TamingMembrane(privilegedAccess, schema) {
       } else if (ctor === privilegedAccess.BASE_OBJECT_CONSTRUCTOR) {
         t = preventExtensions(tameRecord(f));
       } else {
-        t = preventExtensions(tamePreviouslyConstructedObject(f, ctor));
+        // Check for built-ins
+        var fclass = ({}).toString.call(f);
+        switch (fclass) {
+          case '[object Boolean]':
+          case '[object Date]':
+          case '[object Number]':
+          case '[object RegExp]':
+          case '[object String]':
+            t = new ctor(f.valueOf());
+            break;
+          default:
+            t = preventExtensions(tamePreviouslyConstructedObject(f, ctor));
+        }
       }
     } else if (ftype === 'function') {
       switch (schema.tameAs.get(f)) {
@@ -246,6 +258,8 @@ function TamingMembrane(privilegedAccess, schema) {
       throw new TypeError(
           'Prototype of constructor ' + f + ' has already been tamed');
     }
+
+    tameRecord(f, t);
 
     var tPrototype = (function() {
       if (!fSuper || (fSuper === privilegedAccess.getObjectCtorFor(fSuper))) {

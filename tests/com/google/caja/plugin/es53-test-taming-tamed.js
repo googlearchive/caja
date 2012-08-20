@@ -76,9 +76,9 @@
       api.readOnlyRecord[k] = v;
     };
 
-    caja.markFunction(api.setReadOnlyRecordField,
+    frame.markFunction(api.setReadOnlyRecordField,
         'setReadOnlyRecordField');
-    caja.markReadOnlyRecord(api.readOnlyRecord);
+    frame.markReadOnlyRecord(api.readOnlyRecord);
 
     ////////////////////////////////////////////////////////////////////////
     // ARRAYS
@@ -94,7 +94,7 @@
     // array, to be sure that this gets tamed properly by the array taming.
     api.array[1] = api.readOnlyRecord;
 
-    caja.markFunction(api.setArrayField, 'setArrayField');
+    frame.markFunction(api.setArrayField, 'setArrayField');
 
     ////////////////////////////////////////////////////////////////////////
     // READ WRITE RECORDS
@@ -109,7 +109,7 @@
       api.readWriteRecord[k] = v;
     };
 
-    caja.markFunction(api.setReadWriteRecordField,
+    frame.markFunction(api.setReadWriteRecordField,
         'setReadWriteRecordField');
 
     ////////////////////////////////////////////////////////////////////////
@@ -119,7 +119,7 @@
       return x + 42;
     };
 
-    caja.markFunction(api.functionReturningPrimitive,
+    frame.markFunction(api.functionReturningPrimitive,
         'functionReturningPrimitive');
 
     ////////////////////////////////////////////////////////////////////////
@@ -131,6 +131,9 @@
       this.invisibleProperty = 17;
       this.readOnlyProperty = 19;
       this.readWriteProperty = 23;
+    };
+    api.Ctor.staticFunction = function(x) {
+      return x + 17;
     };
     api.Ctor.prototype.getX = function () {
       return this.x;
@@ -170,22 +173,25 @@
     // Whitelist the 'Ctor' and 'SubCtor' as constructors, and whitelist the
     // methods except the 'toxic' ones.
 
-    caja.grantRead(api.Ctor, 'prototype');
+    frame.grantRead(api.Ctor, 'prototype');
 
-    caja.grantMethod(api.Ctor.prototype, 'getX');
-    caja.grantMethod(api.Ctor.prototype, 'setX');
-    caja.grantRead(api.Ctor.prototype, 'readOnlyProperty');
-    caja.grantReadWrite(api.Ctor.prototype, 'readWriteProperty');
+    frame.grantRead(api.Ctor, 'staticFunction');
+    frame.markFunction(api.Ctor.staticFunction);
 
-    caja.markCtor(api.Ctor, Object, 'Ctor');
+    frame.grantMethod(api.Ctor.prototype, 'getX');
+    frame.grantMethod(api.Ctor.prototype, 'setX');
+    frame.grantRead(api.Ctor.prototype, 'readOnlyProperty');
+    frame.grantReadWrite(api.Ctor.prototype, 'readWriteProperty');
 
-    caja.grantMethod(api.SubCtor.prototype, 'getY');
-    caja.grantMethod(api.SubCtor.prototype, 'setY');
-    caja.grantMethod(api.SubCtor.prototype, 'getMagSquared');
+    frame.markCtor(api.Ctor, Object, 'Ctor');
 
-    caja.markCtor(api.SubCtor, api.Ctor, 'SubCtor');
+    frame.grantMethod(api.SubCtor.prototype, 'getY');
+    frame.grantMethod(api.SubCtor.prototype, 'setY');
+    frame.grantMethod(api.SubCtor.prototype, 'getMagSquared');
 
-    caja.markFunction(api.functionReturningConstructed,
+    frame.markCtor(api.SubCtor, api.Ctor, 'SubCtor');
+
+    frame.markFunction(api.functionReturningConstructed,
         'functionReturningConstructed');
 
     // Create a "wrong" constructor that we do not whitelist
@@ -198,7 +204,7 @@
 
     // Whitelist the function returning the "wrong" constructed object
 
-    caja.markFunction(api.functionReturningWrongConstructed,
+    frame.markFunction(api.functionReturningWrongConstructed,
         'functionReturningWrongConstructed');
 
    ////////////////////////////////////////////////////////////////////////
@@ -230,7 +236,7 @@
       };
     };
     api.functionReturningFunction = function (x) {
-      return caja.markFunction(function (y) { return x + y; });
+      return frame.markFunction(function (y) { return x + y; });
     };
     api.functionCallingMyFunction = function (f, x) {
       return f(x);
@@ -242,15 +248,15 @@
       return this;
     };
 
-    caja.markFunction(api.functionReturningRecord,
+    frame.markFunction(api.functionReturningRecord,
         'functionReturningRecord');
-    caja.markFunction(api.functionReturningFunction,
+    frame.markFunction(api.functionReturningFunction,
         'functionReturningFunction');
-    caja.markFunction(api.functionCallingMyFunction,
+    frame.markFunction(api.functionCallingMyFunction,
         'functionCallingMyFunction');
-    caja.markFunction(api.functionReturningMyFunction,
+    frame.markFunction(api.functionReturningMyFunction,
         'functionReturningMyFunction');
-    caja.markFunction(api.pureFunctionReturningThis,
+    frame.markFunction(api.pureFunctionReturningThis,
         'pureFunctionReturningThis');
 
     ////////////////////////////////////////////////////////////////////////
@@ -260,7 +266,7 @@
       return x;
     };
 
-    caja.markFunction(api.identity, 'identity');
+    frame.markFunction(api.identity, 'identity');
 
     ////////////////////////////////////////////////////////////////////////
     // TOXIC FUNCTIONS
@@ -279,8 +285,8 @@
       return this;
     };
 
-    caja.markXo4a(api.xo4aUsingThis, 'xo4aUsingThis');
-    caja.markXo4a(api.xo4aReturningThis, 'xo4aReturningThis');
+    frame.markXo4a(api.xo4aUsingThis, 'xo4aUsingThis');
+    frame.markXo4a(api.xo4aReturningThis, 'xo4aReturningThis');
 
     ////////////////////////////////////////////////////////////////////////
     // PROPERTIES ON FUNCTIONS
@@ -299,37 +305,34 @@
       api.functionWithProperties.readOnlyProperty = x;
     };
 
-    caja.grantRead(api.functionWithProperties, 'readOnlyProperty');
-    caja.grantReadWrite(api.functionWithProperties, 'readWriteProperty');
-    caja.markFunction(api.functionWithProperties,
+    frame.grantRead(api.functionWithProperties, 'readOnlyProperty');
+    frame.grantReadWrite(api.functionWithProperties, 'readWriteProperty');
+    frame.markFunction(api.functionWithProperties,
         'functionWithProperties');
-    caja.markFunction(api.setReadOnlyPropertyOnFunction,
+    frame.markFunction(api.setReadOnlyPropertyOnFunction,
          'setReadOnlyPropertyOnFunction');
 
     ////////////////////////////////////////////////////////////////////////
+    // TAMED eval() RESULT
 
-    caja.markReadOnlyRecord(api);
+    api.evalInHostTamed = function(str) {
+      return eval(str);
+    }
+
+    frame.markFunction(api.evalInHostTamed, 'evalInHostTamed');
+
+    ////////////////////////////////////////////////////////////////////////
+
+    frame.markReadOnlyRecord(api);
 
     // Invoke cajoled tests, passing in the tamed API
 
     var extraImports = createExtraImportsForTesting(caja, frame);
 
-    if (getUrlParam('tameUsingGlobalMembrane') === 'true') {
-      console.log('taming using GLOBAL membrane');
-      extraImports.tamedApi = caja.tame(api);
-    } else if (getUrlParam('tameUsingGlobalMembrane') === 'false') {
-      console.log('taming using FRAME membrane');
-      extraImports.tamedApi = frame.tame(api);
-    } else {
-      // A default means we might unknowingly skip a test condition;
-      // don't let's do that....
-      fail('Unrecognized or missing tameUsingGlobalMembrane parameter');
-    }
+    extraImports.tamedApi = frame.tame(api);
 
-    extraImports.tamingFrameUSELESS = caja.USELESS;
-    extraImports.tamingFrameObject = caja.iframe.contentWindow.Object;
-    extraImports.tamingFrameFunction = caja.iframe.contentWindow.Function;
-
+    extraImports.tamingFrameUSELESS =
+        frame.USELESS;
     extraImports.tamingFrameObject =
         caja.iframe.contentWindow.Object;
     extraImports.tamingFrameFunction =
@@ -346,7 +349,7 @@
       return eval(String(s));
     };
     extraImports.evalInHost.i___ = extraImports.evalInHost;
-    
+
     frame.code('es53-test-taming-tamed-guest.html')
          .api(extraImports)
          .run(function (_) {

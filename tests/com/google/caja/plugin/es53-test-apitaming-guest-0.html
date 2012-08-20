@@ -1,0 +1,120 @@
+<!--
+ - Copyright (C) 2012 Google Inc.
+ -
+ - Licensed under the Apache License, Version 2.0 (the "License");
+ - you may not use this file except in compliance with the License.
+ - You may obtain a copy of the License at
+ -
+ -      http://www.apache.org/licenses/LICENSE-2.0
+ -
+ - Unless required by applicable law or agreed to in writing, software
+ - distributed under the License is distributed on an "AS IS" BASIS,
+ - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ - See the License for the specific language governing permissions and
+ - limitations under the License.
+-->
+
+<div id="testOnload" class="testcontainer waiting">
+  testOnload
+</div>
+<script type="text/javascript">
+  jsunitRegister('testOnload',
+                 function testOnload() {
+    // See below
+  });
+  google.setOnLoadCallback(function() {
+    pass('testOnload');
+  });
+</script>
+
+<div id="testSimpleLoad" class="testcontainer waiting">
+  testSimpleLoad
+</div>
+<script type="text/javascript">
+  jsunitRegister('testSimpleLoad',
+                 function testSimpleLoad() {
+    google.load('foo', '1.0', { callback: init });
+    function init() {
+      assertEquals('foox', google.foo.getValue('x'));
+      pass('testSimpleLoad');
+    }
+  });
+</script>
+
+<div id="testProhibitedIsInaccessible" class="testcontainer waiting">
+  testProhibitedIsInaccessible
+</div>
+<script type="text/javascript">
+  jsunitRegister('testProhibitedIsInaccessible',
+                 function testProhibitedIsInaccessible() {
+    google.load('foo', '1.0', { callback: init });
+    function init() {
+      try {
+        google.foo.getValueProhibited('x');
+        fail();
+      } catch (e) {
+        pass('testProhibitedIsInaccessible');
+      }
+    }
+  });
+</script>
+
+<div id="testAdvised" class="testcontainer waiting">
+  testAdvised
+</div>
+<script type="text/javascript">
+  jsunitRegister('testAdvised',
+                 function testAdvised() {
+    google.load('foo', '1.0', { callback: init });
+    function init() {
+      assertEquals('avbzbva', google.foo.advisedBA('z'));
+      assertEquals('axzxa', google.foo.advisedAround('z'));
+      pass('testAdvised');
+    }
+  });
+</script>
+
+<div id="testCtorHierarchy" class="testcontainer waiting">
+  testCtorHierarchy
+</div>
+<script type="text/javascript">
+  jsunitRegister('testCtorHierarchy',
+                 function testCtorHierarchy() {
+    google.load('foo', '1.0', { callback: init });
+    function init() {
+      assertEquals(26, google.foo.Sup.someStatic(7));
+
+      var aSup = new google.foo.Sup(3);
+      assertTrue(aSup instanceof google.foo.Sup);
+      assertEquals(3, aSup.getX());
+      aSup.setX(9);
+      assertEquals(9, aSup.getX());
+
+      var aSub = new google.foo.Sub(17, 23);
+      assertTrue(aSub instanceof google.foo.Sup);
+      assertTrue(aSub instanceof google.foo.Sub);
+      assertEquals(17, aSub.getX());
+      assertEquals(23, aSub.getY());
+      aSub.setX(7);
+      aSub.setY(11);
+      assertEquals(7, aSub.getX());
+      assertEquals(11, aSub.getY());
+
+      pass('testCtorHierarchy');
+    }
+  });
+</script>
+
+<div id="testBarApi" class="testcontainer waiting">
+  testBarApi
+</div>
+<script type="text/javascript">
+  jsunitRegister('testBarApi',
+                 function testBarApi() {
+    google.load('bar', '1.0', { callback: init });
+    function init() {
+      assertEquals('barz', google.bar.getValue('z'));
+      pass('testBarApi');
+    }
+  });
+</script>

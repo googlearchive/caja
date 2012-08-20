@@ -43,15 +43,15 @@
     var advisedAfter = makeIdentity();
     var advisedAround = makeIdentity();
 
-    caja.adviseFunctionBefore(advisedBefore, function(f, self, args) {
+    frame.adviseFunctionBefore(advisedBefore, function(f, self, args) {
       return [ 'bef' + args[0] ];
     });
 
-    caja.adviseFunctionAfter(advisedAfter, function(f, self, result) {
+    frame.adviseFunctionAfter(advisedAfter, function(f, self, result) {
       return result + 'aft';
     });
 
-    caja.adviseFunctionAround(advisedAround, function(f, self, args) {
+    frame.adviseFunctionAround(advisedAround, function(f, self, args) {
       return f(self, [ 'arn' + args[0] ]) + 'arn';
     });
 
@@ -59,57 +59,57 @@
     var advisedAfterM = makeIdentity();
     var advisedAroundM = makeIdentity();
 
-    caja.adviseFunctionBefore(advisedBeforeM, function(f, self, args) {
+    frame.adviseFunctionBefore(advisedBeforeM, function(f, self, args) {
       return [ 'bef0' + args[0] ];
     });
-    caja.adviseFunctionBefore(advisedBeforeM, function(f, self, args) {
+    frame.adviseFunctionBefore(advisedBeforeM, function(f, self, args) {
       return [ 'bef1' + args[0] ];
     });
-    caja.adviseFunctionBefore(advisedBeforeM, function(f, self, args) {
+    frame.adviseFunctionBefore(advisedBeforeM, function(f, self, args) {
       return [ 'bef2' + args[0] ];
     });
 
-    caja.adviseFunctionAfter(advisedAfterM, function(f, self, result) {
+    frame.adviseFunctionAfter(advisedAfterM, function(f, self, result) {
       return result + 'aft0';
     });
-    caja.adviseFunctionAfter(advisedAfterM, function(f, self, result) {
+    frame.adviseFunctionAfter(advisedAfterM, function(f, self, result) {
       return result + 'aft1';
     });
-    caja.adviseFunctionAfter(advisedAfterM, function(f, self, result) {
+    frame.adviseFunctionAfter(advisedAfterM, function(f, self, result) {
       return result + 'aft2';
     });
 
-    caja.adviseFunctionAround(advisedAroundM, function(f, self, args) {
+    frame.adviseFunctionAround(advisedAroundM, function(f, self, args) {
       return f(self, [ 'arn0' + args[0] ]) + 'arn0';
     });
-    caja.adviseFunctionAround(advisedAroundM, function(f, self, args) {
+    frame.adviseFunctionAround(advisedAroundM, function(f, self, args) {
       return f(self, [ 'arn1' + args[0] ]) + 'arn1';
     });
-    caja.adviseFunctionAround(advisedAroundM, function(f, self, args) {
+    frame.adviseFunctionAround(advisedAroundM, function(f, self, args) {
       return f(self, [ 'arn2' + args[0] ]) + 'arn2';
     });
 
     var advisedAll = makeIdentity();
 
-    caja.adviseFunctionBefore(advisedAll, function(f, self, args) {
+    frame.adviseFunctionBefore(advisedAll, function(f, self, args) {
       return [ 'bef' + args[0] ];
     });
-    caja.adviseFunctionAfter(advisedAll, function(f, self, result) {
+    frame.adviseFunctionAfter(advisedAll, function(f, self, result) {
       return result + 'aft';
     });
-    caja.adviseFunctionAround(advisedAll, function(f, self, args) {
+    frame.adviseFunctionAround(advisedAll, function(f, self, args) {
       return f(self, [ 'arn' + args[0] ]) + 'arn';
     });
 
-    extraImports.advisedBefore = frame.tame(caja.markFunction(advisedBefore));
-    extraImports.advisedAfter = frame.tame(caja.markFunction(advisedAfter));
-    extraImports.advisedAround = frame.tame(caja.markFunction(advisedAround));
+    extraImports.advisedBefore = frame.tame(frame.markFunction(advisedBefore));
+    extraImports.advisedAfter = frame.tame(frame.markFunction(advisedAfter));
+    extraImports.advisedAround = frame.tame(frame.markFunction(advisedAround));
 
-    extraImports.advisedBeforeM = frame.tame(caja.markFunction(advisedBeforeM));
-    extraImports.advisedAfterM = frame.tame(caja.markFunction(advisedAfterM));
-    extraImports.advisedAroundM = frame.tame(caja.markFunction(advisedAroundM));
+    extraImports.advisedBeforeM = frame.tame(frame.markFunction(advisedBeforeM));
+    extraImports.advisedAfterM = frame.tame(frame.markFunction(advisedAfterM));
+    extraImports.advisedAroundM = frame.tame(frame.markFunction(advisedAroundM));
 
-    extraImports.advisedAll = frame.tame(caja.markFunction(advisedAll));
+    extraImports.advisedAll = frame.tame(frame.markFunction(advisedAll));
 
     frame.code('es53-test-taming-advice-guest.html')
          .api(extraImports)

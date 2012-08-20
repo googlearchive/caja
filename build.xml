@@ -775,6 +775,9 @@
     <copy todir="${testlib}">
       <fileset dir="${tests}" includes="**/*.html,**/*.js"/>
     </copy>
+    <copy todir="${testlib}">
+      <fileset dir="${src}" includes="**/apitaming/*.*"/>
+    </copy>
 
     <replace dir="${testlib}/com/google/caja/plugin"
         propertyFile="${lib.caja}/reporting/buildInfo.properties" >
@@ -1220,6 +1223,14 @@
   <!-- Copies playground front end supporting files -->
   <target name="PSF" depends="PlaygroundSupportingFiles" />
   <target name="PlaygroundSupportingFiles" depends="CajoledTests,MinifiedJs">
+    <copy todir="${war}/apitaming">
+      <fileset dir="${src.caja}/apitaming">
+        <include name="*.*" />
+      </fileset>
+      <fileset dir="${tests.caja}/apitaming">
+        <include name="*.*" />
+      </fileset>
+    </copy>
     <copy todir="${war}">
       <!-- Needed by Playground.html -->
       <fileset dir="${third_party}/js/json_sans_eval">

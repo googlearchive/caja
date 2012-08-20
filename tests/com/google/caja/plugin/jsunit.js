@@ -193,7 +193,7 @@ function jsunitRun(opt_testNames) {
 }
 
 /** Register a callback within a running test. */
-function jsunitCallback(aFunction, opt_id, opt_frameGroup) {
+function jsunitCallback(aFunction, opt_id, opt_frame) {
   if (!aFunction || typeof aFunction !== 'function') {
     throw new Error('TEST ERROR: jsunitCallback without a valid function');
   }
@@ -215,8 +215,8 @@ function jsunitCallback(aFunction, opt_id, opt_frameGroup) {
     return result;
   }
   return typeof ___ !== 'undefined'
-           ? (opt_frameGroup
-               ? opt_frameGroup.markFunction(callback)
+           ? (opt_frame
+               ? opt_frame.markFunction(callback)
                : ___.markFuncFreeze(callback))
            : callback;
 }

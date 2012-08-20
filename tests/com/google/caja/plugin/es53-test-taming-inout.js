@@ -40,16 +40,16 @@
     debug: true,
     forceES5Mode: inES5Mode
   });
-  
+
   // Set up basic stuff
   var uriPolicy = {
     rewrite: function (uri, uriEffect, loaderType, hints) { return uri; }
   };
-  
+
   caja.load(undefined, uriPolicy, function (frame) {
 
     // Provide access to USELESS in scope for testing purposes.
-    var USELESS = caja.USELESS;
+    var USELESS = frame.USELESS;
 
     // An object that will contain our tamed API.
     var api = {};
@@ -84,12 +84,12 @@
     api.tamedHostPureFunction = function(s, a, b, c) {
       return eval(String(s));
     };
-    caja.markFunction(api.tamedHostPureFunction);
+    frame.markFunction(api.tamedHostPureFunction);
 
     api.tamedHostRecord = {
       prop: getFeralTestObject()
     };
-    caja.grantReadWrite(api.tamedHostRecord, 'prop');
+    frame.grantReadWrite(api.tamedHostRecord, 'prop');
 
     api.Ctor = function() {
       this.prop = 42;
@@ -97,18 +97,18 @@
     api.Ctor.prototype.meth = function(s, a, b, c) {
       return eval(String(s));
     };
-    caja.grantReadWrite(api.Ctor.prototype, 'prop');
-    caja.grantMethod(api.Ctor.prototype, 'meth');
-    caja.markCtor(api.Ctor, Object, 'Ctor');
+    frame.grantReadWrite(api.Ctor.prototype, 'prop');
+    frame.grantMethod(api.Ctor.prototype, 'meth');
+    frame.markCtor(api.Ctor, Object, 'Ctor');
 
     ////////////////////////////////////////////////////////////////////////
 
-    caja.markReadOnlyRecord(api);
+    frame.markReadOnlyRecord(api);
 
     // Invoke cajoled tests, passing in the tamed API
 
     var extraImports = createExtraImportsForTesting(caja, frame);
-    
+
     extraImports.tamedApi = frame.tame(api);
 
     extraImports.getFeralTestObject = getFeralTestObject;

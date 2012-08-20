@@ -263,7 +263,7 @@
     caja.load(undefined, uriPolicy, function (frame) {
       var status = "unknown";
       var imports = {
-        setStatus: frame.tame(caja.markFunction(function(s) { status = s; }))
+        setStatus: frame.tame(frame.markFunction(function(s) { status = s; }))
       };
       fetch('es53-test-cajoled.out.js', function (cajoled) {
         fetch('es53-test-uncajoled.js', function (uncajoled) {

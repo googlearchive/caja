@@ -53,6 +53,24 @@
   });
 </script>
 
+<div id="testBuiltinObjects" class="testcontainer waiting">
+  testBuiltinObjects
+</div>
+<script type="text/javascript">
+  jsunitRegister('testBuiltinObjects',
+                 function testBuiltinObjects() {
+    function t(o) { return tameEval('({}).toString.call(a)', o); }
+
+    assertEquals('[object Boolean]', t(new Boolean(true)));
+    assertEquals('[object Date]', t(new Date(1, 2, 2010)));
+    assertEquals('[object Number]', t(new Number(33)));
+    assertEquals('[object RegExp]', t(new RegExp(".")));
+    assertEquals('[object String]', t(new String("")));
+
+    pass('testBuiltinObjects');
+  });
+</script>
+
 <div id="testStringify" class="testcontainer waiting">
   tsetStringify
 </div>

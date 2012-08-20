@@ -54,9 +54,9 @@ function ES53FrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker) {
       'USELESS', tamingWin.___.USELESS,
       'BASE_OBJECT_CONSTRUCTOR', tamingWin.___.BASE_OBJECT_CONSTRUCTOR);
 
-  var tamingSchema = TamingSchema(tamingHelper);
+  var frameGroupTamingSchema = TamingSchema(tamingHelper);
   var frameGroupTamingMembrane =
-      TamingMembrane(tamingHelper, tamingSchema.control);
+      TamingMembrane(tamingHelper, frameGroupTamingSchema.control);
 
   // On IE<=8 you can't add properties to text nodes or attribute nodes.
   // We detect that here and set a flag ie8nodes for makeDOMAccessible().
@@ -80,16 +80,17 @@ function ES53FrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker) {
     reTamesTo: frameGroupTamingMembrane.reTamesTo,
     untame: frameGroupTamingMembrane.untame,
     unwrapDom: function(o) { return o; },
-    markReadOnlyRecord: tamingSchema.published.markTameAsReadOnlyRecord,
-    markFunction: tamingSchema.published.markTameAsFunction,
-    markCtor: tamingSchema.published.markTameAsCtor,
-    markXo4a: tamingSchema.published.markTameAsXo4a,
-    grantMethod: tamingSchema.published.grantTameAsMethod,
-    grantRead: tamingSchema.published.grantTameAsRead,
-    grantReadWrite: tamingSchema.published.grantTameAsReadWrite,
-    adviseFunctionBefore: tamingSchema.published.adviseFunctionBefore,
-    adviseFunctionAfter: tamingSchema.published.adviseFunctionAfter,
-    adviseFunctionAround: tamingSchema.published.adviseFunctionAround,
+    markReadOnlyRecord:
+        frameGroupTamingSchema.published.markTameAsReadOnlyRecord,
+    markFunction: frameGroupTamingSchema.published.markTameAsFunction,
+    markCtor: frameGroupTamingSchema.published.markTameAsCtor,
+    markXo4a: frameGroupTamingSchema.published.markTameAsXo4a,
+    grantMethod: frameGroupTamingSchema.published.grantTameAsMethod,
+    grantRead: frameGroupTamingSchema.published.grantTameAsRead,
+    grantReadWrite: frameGroupTamingSchema.published.grantTameAsReadWrite,
+    adviseFunctionBefore: frameGroupTamingSchema.published.adviseFunctionBefore,
+    adviseFunctionAfter: frameGroupTamingSchema.published.adviseFunctionAfter,
+    adviseFunctionAround: frameGroupTamingSchema.published.adviseFunctionAround,
 
     USELESS: tamingWin.___.USELESS,
     iframe: window.frameElement,
@@ -185,12 +186,15 @@ function ES53FrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker) {
   function makeES5Frame(div, uriPolicy, es5ready, domOpts) {
     var divs = cajaInt.prepareContainerDiv(div, feralWin, domOpts);
     guestMaker.make(function (guestWin) {
+      var frameTamingSchema =
+          TamingSchema(tamingHelper);
       var frameTamingMembrane =
-          TamingMembrane(tamingHelper, tamingSchema.control);
+          TamingMembrane(tamingHelper, frameTamingSchema.control);
       var domicile = makeDomicile(
           frameTamingMembrane, divs, uriPolicy, guestWin);
-      var gman = GuestManager(frameTamingMembrane, divs, 
-          cajaInt.documentBaseUrl(), domicile, guestWin, es53run);
+      var gman = GuestManager(frameTamingSchema, frameTamingMembrane, divs, 
+          cajaInt.documentBaseUrl(), domicile, guestWin, tamingWin.___.USELESS,
+          es53run);
       gman._loader = guestWin.loadModuleMaker(
         cajaInt.documentBaseUrl(), cajoler, URI.utils);
       es5ready(gman);

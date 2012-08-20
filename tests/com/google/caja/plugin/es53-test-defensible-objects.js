@@ -44,7 +44,7 @@
           return o;
         });
 
-    extraImports.isDefensibleFunctionCalled = frame.tame(caja.markFunction(
+    extraImports.isDefensibleFunctionCalled = frame.tame(frame.markFunction(
         function() {
           var result = called;
           called = false;

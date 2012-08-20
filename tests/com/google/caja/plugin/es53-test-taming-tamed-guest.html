@@ -278,6 +278,27 @@
 </script>
 
 
+<h2>BUILTIN OBJECTS</h2>
+
+<div id="testBuiltinObjects" class="testcontainer waiting">
+  testBuiltinObjects
+</div>
+<script type="text/javascript">
+  jsunitRegister('testBuiltinObjects',
+                 function testBuiltinObjects() {
+    function t(str) { return ({}).toString.call(evalInHost(str)); }
+
+    assertEquals('[object Boolean]', t('new Boolean(true)'));
+    assertEquals('[object Date]', t('new Date(1, 2, 2010)'));
+    assertEquals('[object Number]', t('new Number(33)'));
+    assertEquals('[object RegExp]', t('new RegExp(".")'));
+    assertEquals('[object String]', t('new String("")'));
+
+    pass('testBuiltinObjects');
+  });
+</script>
+
+
 <h2>READ WRITE RECORDS</h2>
 
 <div id="testReadWriteRecord" class="testcontainer waiting">
@@ -353,6 +374,17 @@
     assertEquals(19, a.getX());
     assertEquals(43, b.getX());
     pass('testSimpleInstances');
+  });
+</script>
+
+<div id="testStaticFunction" class="testcontainer waiting">
+  testStaticFunction
+</div>
+<script type="text/javascript">
+  jsunitRegister('testStaticFunction',
+                 function testStaticFunction() {
+    assertEquals(17 + 42, tamedApi.Ctor.staticFunction(42));
+    pass('testStaticFunction');
   });
 </script>
 

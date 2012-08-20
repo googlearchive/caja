@@ -38,7 +38,7 @@
     // Invoke cajoled tests
     var extraImports = createExtraImportsForTesting(caja, frame);
 
-    extraImports.tamingFrameUSELESS = caja.USELESS;
+    extraImports.tamingFrameUSELESS = frame.USELESS;
 
     if (!inES5Mode) {
       extraImports.guestFrameUSELESS = frame.iframe.contentWindow.___.USELESS;
@@ -58,7 +58,7 @@
     // A generic function to eval() code in the host.
     // This function untames/tames its args/return value
     extraImports.tameEval =
-        frame.tame(caja.markFunction(function(s, a, b, c) {
+        frame.tame(frame.markFunction(function(s, a, b, c) {
           return eval(String(s));
         }));
 

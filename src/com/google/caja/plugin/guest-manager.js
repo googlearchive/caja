@@ -38,8 +38,8 @@
  * semantics that don't matter in practice.  GuestManager combines the two.
  */
 
-function GuestManager(frameTamingMembrane, divs, hostBaseUrl,
-  domicile, guestWin, runImpl) {
+function GuestManager(frameTamingSchema, frameTamingMembrane, divs, hostBaseUrl,
+  domicile, guestWin, USELESS, runImpl) {
   // TODO(felix8a): this api needs to be simplified; it's difficult to
   // explain what all the parameters mean in different situations.
   var args = {
@@ -84,12 +84,27 @@ function GuestManager(frameTamingMembrane, divs, hostBaseUrl,
     // Internal state
     domicile: domicile,      // Currently exposed only for the test suite
 
+    rewriteUri: domicile ? domicile.rewriteUri : function() { return null; },
+
     // Taming utilities
     tame: frameTamingMembrane.tame,
     untame: frameTamingMembrane.untame,
     tamesTo: frameTamingMembrane.tamesTo,
     reTamesTo: frameTamingMembrane.reTamesTo,
     hasTameTwin: frameTamingMembrane.hasTameTwin,
+
+    markReadOnlyRecord: frameTamingSchema.published.markTameAsReadOnlyRecord,
+    markFunction: frameTamingSchema.published.markTameAsFunction,
+    markCtor: frameTamingSchema.published.markTameAsCtor,
+    markXo4a: frameTamingSchema.published.markTameAsXo4a,
+    grantMethod: frameTamingSchema.published.grantTameAsMethod,
+    grantRead: frameTamingSchema.published.grantTameAsRead,
+    grantReadWrite: frameTamingSchema.published.grantTameAsReadWrite,
+    adviseFunctionBefore: frameTamingSchema.published.adviseFunctionBefore,
+    adviseFunctionAfter: frameTamingSchema.published.adviseFunctionAfter,
+    adviseFunctionAround: frameTamingSchema.published.adviseFunctionAround,
+
+    USELESS: USELESS,
 
     api: function (imports) {
       args.moreImports = imports;

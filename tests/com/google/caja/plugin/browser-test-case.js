@@ -339,25 +339,24 @@ function splitHtmlAndScript(combinedHtml) {
 function createExtraImportsForTesting(frameGroup, frame) {
   var standardImports = {};
 
-
   standardImports.readyToTest =
-      frame.tame(frameGroup.markFunction(readyToTest));
+      frame.tame(frame.markFunction(readyToTest));
   standardImports.jsunitRun =
-      frame.tame(frameGroup.markFunction(jsunitRun));
+      frame.tame(frame.markFunction(jsunitRun));
   standardImports.jsunitRegister =
-      frame.tame(frameGroup.markFunction(jsunitRegister));
+      frame.tame(frame.markFunction(jsunitRegister));
   standardImports.jsunitPass =
-      frame.tame(frameGroup.markFunction(jsunitPass));
+      frame.tame(frame.markFunction(jsunitPass));
   standardImports.jsunitCallback =
-      frame.tame(frameGroup.markFunction(function(cb, opt_id) {
-        return jsunitCallback(cb, opt_id, frameGroup);
+      frame.tame(frame.markFunction(function(cb, opt_id) {
+        return jsunitCallback(cb, opt_id, frame);
       }));
   standardImports.canonInnerHtml =
-      frame.tame(frameGroup.markFunction(canonInnerHtml));
+      frame.tame(frame.markFunction(canonInnerHtml));
   standardImports.assertStringContains =
-      frame.tame(frameGroup.markFunction(assertStringContains));
+      frame.tame(frame.markFunction(assertStringContains));
   standardImports.assertStringDoesNotContain =
-    frame.tame(frameGroup.markFunction(assertStringDoesNotContain));
+    frame.tame(frame.markFunction(assertStringDoesNotContain));
 
   if (frame.div) {
     // Create a readonly mirror of document so that we can test that mutations
@@ -372,16 +371,16 @@ function createExtraImportsForTesting(frameGroup, frame) {
 
   var fakeConsole = {
     // .prototype because Firebug console's methods have no apply method.
-    log: frameGroup.markFunction(function () {
+    log: frame.markFunction(function () {
       Function.prototype.apply.call(console.log, console, arguments);
     }),
-    warn: frameGroup.markFunction(function () {
+    warn: frame.markFunction(function () {
       Function.prototype.apply.call(console.warn, console, arguments);
     }),
-    error: frameGroup.markFunction(function () {
+    error: frame.markFunction(function () {
       Function.prototype.apply.call(console.error, console, arguments);
     }),
-    trace: frameGroup.markFunction(function () {
+    trace: frame.markFunction(function () {
       console.trace ? console.trace()
           : Function.prototype.apply.call(console.error, console, arguments);
     })
@@ -390,14 +389,14 @@ function createExtraImportsForTesting(frameGroup, frame) {
   standardImports.console = frame.tame(fakeConsole);
 
   if (frame.div) {
-    standardImports.$ = frame.tame(frameGroup.markFunction(function(id) {
+    standardImports.$ = frame.tame(frame.markFunction(function(id) {
       return frame.imports.document.getElementById(id);
     }));
   }
   
   standardImports.inES5Mode = inES5Mode;
   
-  var ___ = frameGroup.iframe.contentWindow.___;
+  var ___ = frame.iframe.contentWindow.___;
 
   // Give unfiltered DOM access so we can check the results of actions.
   var directAccess = {
@@ -472,7 +471,7 @@ function createExtraImportsForTesting(frameGroup, frame) {
 
 
   // Marks a container green to indicate that test passed
-  standardImports.pass = frame.tame(frameGroup.markFunction(function (id) {
+  standardImports.pass = frame.tame(frame.markFunction(function (id) {
     jsunit.pass(id);
     if (!frame.imports.document) { return; }
     var node = frame.imports.document.getElementById(id);
@@ -490,7 +489,7 @@ function createExtraImportsForTesting(frameGroup, frame) {
    * testcontainer as skipped so that BrowserTestCase.java accepts the suite
    * anyway.
    */
-  standardImports.jsunitRegisterIf = frame.tame(frameGroup.markFunction(
+  standardImports.jsunitRegisterIf = frame.tame(frame.markFunction(
       function (okay, testName, testFunc) {
     if (okay) {
       jsunitRegister(testName, testFunc);
@@ -509,11 +508,11 @@ function createExtraImportsForTesting(frameGroup, frame) {
 
 
   standardImports.expectFailure =
-      frame.tame(frameGroup.markFunction(expectFailure));
+      frame.tame(frame.markFunction(expectFailure));
   standardImports.assertFailsSafe =
-      frame.tame(frameGroup.markFunction(assertFailsSafe));
+      frame.tame(frame.markFunction(assertFailsSafe));
 
-  standardImports.assertColor = frame.tame(frameGroup.markFunction(
+  standardImports.assertColor = frame.tame(frame.markFunction(
       function(expected, cssColorString) {
         if (typeof cssColorString === 'string') {
           cssColorString = cssColorString.toLowerCase();
@@ -537,7 +536,7 @@ function createExtraImportsForTesting(frameGroup, frame) {
       }));
 
   standardImports.assertAsynchronousRequirement =
-      frame.tame(frameGroup.markFunction(asyncRequirements.assert));
+      frame.tame(frame.markFunction(asyncRequirements.assert));
 
   var jsunitFns = [
       'assert', 'assertContains', 'assertEquals', 'assertEvaluatesToFalse',
@@ -552,7 +551,7 @@ function createExtraImportsForTesting(frameGroup, frame) {
       throw new Error('already defined', name);
     }
     standardImports[name] =
-        frame.tame(frameGroup.markFunction(window[name]));
+        frame.tame(frame.markFunction(window[name]));
   }
 
   return standardImports;
