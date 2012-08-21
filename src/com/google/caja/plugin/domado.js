@@ -2567,8 +2567,7 @@ var Domado = (function() {
       var tameNodePublicMembers = [
           'cloneNode',
           'appendChild', 'insertBefore', 'removeChild', 'replaceChild',
-          'getElementsByClassName', 'getElementsByTagName', 'dispatchEvent',
-          'hasChildNodes'
+          'dispatchEvent', 'hasChildNodes'
           ];
       traceStartup("DT: about to defend TameNode");
       cajaVM.def(TameNode);  // and its prototype
@@ -2684,16 +2683,6 @@ var Domado = (function() {
         }
         np(this).feral.replaceChild(np(newChild).feral, np(oldChild).feral);
         return oldChild;
-      });
-      TameBackedNode.prototype.getElementsByTagName = nodeMethod(
-          function(tagName) {
-        return tameGetElementsByTagName(
-            np(this).feral, tagName, np(this).childrenEditable, []);
-      });
-      TameBackedNode.prototype.getElementsByClassName = nodeMethod(
-          function(className) {
-        return tameGetElementsByClassName(
-            np(this).feral, className, np(this).childrenEditable);
       });
       TameBackedNode.prototype.hasChildNodes = nodeMethod(function() {
         return !!np(this).feral.hasChildNodes();
@@ -2967,8 +2956,6 @@ var Domado = (function() {
         parentNode: 0,
         childNodes: 0,
         ownerDocument: 0,
-        getElementsByTagName: 0,
-        getElementsByClassName: 0,
         hasChildNodes: 0
       });
 
@@ -3135,7 +3122,7 @@ var Domado = (function() {
         })
       };
       ['appendChild', 'insertBefore', 'removeChild', 'replaceChild',
-       'getElementsByTagName', 'getElementsByClassName'].forEach(function (m) {
+          ].forEach(function (m) {
         Object.defineProperty(
           TameBackedAttributeNode.prototype, m, notImplementedNodeMethod);
       });
@@ -3285,6 +3272,16 @@ var Domado = (function() {
         } else {
           feral.removeAttribute(attribName);
         }
+      });
+      TameElement.prototype.getElementsByTagName = nodeMethod(
+          function(tagName) {
+        return tameGetElementsByTagName(
+            np(this).feral, tagName, np(this).childrenEditable, []);
+      });
+      TameElement.prototype.getElementsByClassName = nodeMethod(
+          function(className) {
+        return tameGetElementsByClassName(
+            np(this).feral, className, np(this).childrenEditable);
       });
       TameElement.prototype.getBoundingClientRect = nodeMethod(function () {
         var feral = np(this).feral;

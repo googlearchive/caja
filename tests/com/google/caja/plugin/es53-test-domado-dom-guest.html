@@ -707,6 +707,12 @@ document.write(
     assertEquals('Three', canonInnerHtml(items[2].firstChild.data));
     assertEquals('Pi', canonInnerHtml(items[3].innerHTML));
     assertEquals('sqrt(10)', canonInnerHtml(items[4].innerHTML));
+
+    // Text nodes don't have getElementsByTagName; make sure we don't have a
+    // broken wrapper
+    assertUndefined('textnode.getElementsByTagName',
+        items[0].firstChild.getElementsByTagName);
+
     pass('test-get-elements-by-tag-name');
   });
 </script>
@@ -723,7 +729,7 @@ document.write(
 </div>
 <script type="text/javascript">
   jsunitRegister('testGetElementsByClassName',
-                 function testGetElementsByTagName() {
+                 function testGetElementsByClassName() {
     function assertNodeListTextContent(classes, textContent) {
       var nodeList = document.getElementsByClassName(classes);
       var len = nodeList.length;
