@@ -88,6 +88,54 @@
     }
   });
 
+  registerTest('testFullHeight', function testBuilderApiHtml() {
+    var hostPageDiv = createDiv();
+    hostPageDiv.style.height = "100px";
+
+    var div = document.createElement('div');
+    // Host page styles the container div
+    div.style.height = '100%';
+    hostPageDiv.appendChild(div);
+    caja.load(div, uriPolicy, function (frame) {
+      frame.code(
+          location.protocol + '//' + location.host + '/',
+          'text/html',
+          '<div id="foo" style="height:100%">My Text Here</div>')
+          .run(function(result) {
+              var computedHeight =
+                parseInt(document.defaultView.getComputedStyle(
+                  document.getElementById('foo-' + frame.idSuffix),
+		  null).height)
+              assertEquals(computedHeight, 100);
+              jsunitPass('testFullHeight');
+           });
+    });
+  });
+
+  registerTest('testTightHeight', function testBuilderApiHtml() {
+    var hostPageDiv = createDiv();
+    hostPageDiv.style.height = "100px";
+
+    var div = document.createElement('div');
+    // Host page default style tightly wraps div
+    // div.style.height
+    hostPageDiv.appendChild(div);
+    caja.load(div, uriPolicy, function (frame) {
+      frame.code(
+          location.protocol + '//' + location.host + '/',
+          'text/html',
+          '<div id="foo" style="height:100%">My Text Here</div>')
+          .run(function(result) {
+              var computedHeight =
+                parseInt(document.defaultView.getComputedStyle(
+                  document.getElementById('foo-' + frame.idSuffix),
+		  null).height)
+              assertTrue(computedHeight < 100);
+              jsunitPass('testTightHeight');
+           });
+    });
+  });
+
   registerTest('testBuilderApiHtml', function testBuilderApiHtml() {
     var div = createDiv();
     caja.load(div, uriPolicy, function (frame) {

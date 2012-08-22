@@ -455,8 +455,11 @@ var caja = (function () {
       inner = div.ownerDocument.createElement('div');
       inner.style.display = 'block';
       inner.style.position = 'relative';
+      inner.style.height = '100%';
+
       outer = div.ownerDocument.createElement('div');
       outer.style.position = 'relative';
+      outer.style.height = '100%';
       outer.style.overflow = 'hidden';
       outer.style.display = 'block';
       outer.style.margin = '0';
