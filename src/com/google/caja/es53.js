@@ -196,13 +196,27 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
    *                                      it's installed.
    */
 
+  function notFunction(fn, opt_name) {
+    throw new TypeError(
+      'Expected ' +
+      (opt_name ? opt_name + ' to be ' : '') +
+      'a function, not ' + (typeof fn) + ': ' + fn);
+  }
+
+  function notObject(obj, opt_name) {
+    throw new TypeError(
+      'Expected ' +
+      (opt_name ? opt_name + ' to be ' : '') +
+      'an object, not ' + (typeof obj) + ': ' + obj);
+  }
+
   // Missing on IE
   if (!Array.prototype.forEach) {
     Array.prototype.forEach = function(fun) { //, thisp
       var dis = ToObject(this);
       var len = dis.length >>> 0;
       if ('function' !== typeof fun) {
-        throw new TypeError("Expected function but got " + (typeof fun));
+        notFunction(fun);
       }
 
       var thisp = arguments[1];
@@ -419,8 +433,8 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
    * @return a tame inert class constructor as described above.
    */
   function extend(feralCtor, someSuper, opt_name) {
-    if (!('function' === typeof feralCtor)) {
-      throw new TypeError('Internal: Feral constructor is not a function');
+    if ('function' !== typeof feralCtor) {
+      notFunction(feralCtor, 'feral constructor');
     }
     someSuper = someSuper.prototype.constructor;
     var noop = function () {};
@@ -501,7 +515,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
         return this.length = val;
       }
       throw new TypeError(
-          'Shortening the array may delete non-configurable elements.');
+          'Shortening array may delete non-configurable elements.');
     });
 
   /**
@@ -710,7 +724,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
   function markFunc(fn, name) {
     if (fn.ok___) { return fn; }
     if (!isFunction(fn)) {
-      throw new TypeError('Expected a function instead of ' + fn);
+      notFunction(fn);
     }
     if (fn.f___ !== Function.prototype.f___ &&
         fn.f___ !== fn.apply) {
@@ -1055,7 +1069,9 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
       stringify: markFunc(function (obj, opt_replacer, opt_space) {
           switch (typeof opt_space) {
             case 'number': case 'string': case 'undefined': break;
-            default: throw new TypeError('space must be a number or string');
+            default:
+              throw new TypeError(
+                'Third arg to stringify must be a number or string');
           }
           var replacer;
           if (opt_replacer) {
@@ -1149,7 +1165,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
    */
   function enforceType(specimen, typename, opt_name) {
     if (typeof specimen !== typename) {
-      throw new TypeError('expected ' + typename + ' instead of ' +
+      throw new TypeError('Expected ' + typename + ', not ' +
           typeof specimen + ': ' + (opt_name || specimen));
     }
     return specimen;
@@ -1164,19 +1180,14 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
    */
   function enforceNat(specimen) {
     enforceType(specimen, 'number');
-    if (Math.floor(specimen) !== specimen) {
-      throw new TypeError('Must be integral: ' + specimen);
-    }
-    if (specimen < 0) {
-      throw new TypeError('Must not be negative: ' + specimen);
+    if (specimen < 0 || specimen === specimen + 1 ||
+        Math.floor(specimen) !== specimen) {
+      throw new TypeError('Must be a non-negative integer: ' + specimen);
     }
     // Could pre-compute precision limit, but probably not faster
     // enough to be worth it.
     if (Math.floor(specimen - 1) !== specimen - 1) {
-      throw new TypeError('Beyond precision limit: ' + specimen);
-    }
-    if (Math.floor(specimen - 1) >= specimen) {
-      throw new TypeError('Must not be infinite: ' + specimen);
+      throw new TypeError('Integer too large: ' + specimen);
     }
     return specimen;
   }
@@ -1251,7 +1262,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
     function setOnKey(key, value) {
       var ktype = typeof key;
       if (!key || (ktype !== 'function' && ktype !== 'object')) {
-        throw new TypeError("Can't use key lifetime on primitive keys: " + key);
+        notObject(key, 'WeakMap key');
       }
       var list = key[myMagicIndexName];
       // To distinguish key from objects that derive from it,
@@ -1277,7 +1288,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
     function getOnKey(key) {
       var ktype = typeof key;
       if (!key || (ktype !== 'function' && ktype !== 'object')) {
-        throw new TypeError("Can't use key lifetime on primitive keys: " + key);
+        notObject(key, 'WeakMap key');
       }
       var list = key[myMagicIndexName];
       if (!list || list[0] !== key) {
@@ -1293,7 +1304,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
     function hasOnKey(key) {
       var ktype = typeof key;
       if (!key || (ktype !== 'function' && ktype !== 'object')) {
-        throw new TypeError("Can't use key lifetime on primitive keys: " + key);
+        notObject(key, 'WeakMap key');
       }
       var list = key[myMagicIndexName];
       if (!list || list[0] !== key) {
@@ -2021,7 +2032,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
   function ToPropertyDescriptor(Obj) {
     // 1. If Type(Obj) is not Object throw a TypeError exception.
     if (Type(Obj) !== 'Object') {
-      throw new TypeError('Expected an object.');
+      notObject(Obj);
     }
     // 2. Let desc be the result of creating a new Property
     //    Descriptor that initially has no fields.
@@ -2067,7 +2078,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
       // b. If IsCallable(getter) is false and getter is not
       //    undefined, then throw a TypeError exception.
       if (!isFunction(getter) && getter !== void 0) {
-        throw new TypeError('Getter attributes must be functions or undef.');
+        notFunction(getter, 'getter');
       }
       // c. Set the [[Get]] field of desc to getter.
       desc.get = asFirstClass(getter);
@@ -2081,7 +2092,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
       // b. If IsCallable(setter) is false and setter is not
       //    undefined, then throw a TypeError exception.
       if (!isFunction(setter) && setter !== void 0) {
-        throw new TypeError('Setter attributes must be functions or undef.');
+        notFunction(setter, 'setter');
       }
       // c. Set the [[Set]] field of desc to setter.
       desc.set = asFirstClass(setter);
@@ -2091,10 +2102,10 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
       // a. If either desc.[[Value]] or desc.[[Writable]] are present,
       //    then throw a TypeError exception.
       if ('value' in desc) {
-        throw new TypeError('Accessor properties must not have a value.');
+        throw new TypeError('Property with get/set cannot have value.');
       }
       if ('writable' in desc) {
-        throw new TypeError('Accessor properties must not be writable.');
+        throw new TypeError('Property with get/set cannot have writable.');
       }
     }
     // 10. Return desc.
@@ -2124,7 +2135,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
       P = '' + P;
       // inline assertValidPropertyName(P);
       if (endsWith__.test(P)) {
-        throw new TypeError('Properties may not end in double underscore.');
+        throw new TypeError('Property name may not end in double underscore.');
       }
 
       // 1. If O doesn't have an own property with name P, return undefined.
@@ -2204,8 +2215,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
       if (this[P + '_v___'] === false) {
         var s = setter(this, P);
         if (s) { s.f___(this, [V]); return V; }
-        throw new TypeError("The property '" + P
-            + "' has no setter.");
+        throw new TypeError("The property '" + P + "' has no setter.");
       }
 
       // If P is an own data property,
@@ -2522,7 +2532,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
   // 9.9
   function ToObject(input) {
     if (input === void 0 || input === null) {
-        throw new TypeError('Cannot convert ' + input + ' to Object.');
+      throw new TypeError('Cannot convert ' + input + ' to Object.');
     }
     return Object(input);
   }
@@ -2707,9 +2717,8 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
    * Precondition: name is a string
    */
   function isIn(name, obj) {
-    var t = Type(obj);
-    if (t !== 'Object') {
-      throw new TypeError('Invalid "in" operand: ' + obj);
+    if (Type(obj) !== 'Object') {
+      notObject(obj);
     }
     return obj.HasProperty___(name);
   }
@@ -2731,7 +2740,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
           }),
         set: markFunc(function (val) {
             if (!isFunction(val)) {
-              throw new TypeError('Expected a function instead of ' + val);
+              notFunction(val);
             }
             if (isFrozen(this)) {
               throw new TypeError('This object is frozen.');
@@ -2780,7 +2789,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
   if (!Object.getPrototypeOf) {
     Object.getPrototypeOf = function (obj) {
         if (Type(obj) !== 'Object') {
-          throw new TypeError('Not an object.');
+          notObject(obj);
         }
         if (!obj.hasOwnProperty('Prototype___')) {
           // If there's no built-in version, fall back to __proto__.
@@ -2819,7 +2828,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
   var stdGetOwnPropertyDescriptor = function (obj, P) {
       // 1. If Type(object) is not Object throw a TypeError exception.
       if (Type(obj) !== 'Object') {
-        throw new TypeError('Expected an object.');
+        notObject(obj);
       }
       // 2. Let name be ToString(P).
       var name = '' + P;
@@ -2858,7 +2867,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
       // 1. If Type(O) is not Object or Null throw a TypeError exception.
       // (ES3 doesn't support null prototypes.)
       if (Type(O) !== 'Object') {
-        throw new TypeError('Expected an object.');
+        notObject(O);
       }
       // 2. Let obj be the result of creating a new object
       //    as if by the expression new Object() where Object
@@ -2880,7 +2889,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
   Object.defineProperty = function (O, P, Attributes) {
       // 1. If Type(O) is not Object throw a TypeError exception.
       if (Type(O) !== 'Object') {
-        throw new TypeError('Expected an object.');
+        notObject(O);
       }
       // 2. Let name be ToString(P).
       var name = '' + P;
@@ -2899,7 +2908,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
   function DefineProperties(O, Properties) {
     // 1. If Type(O) is not Object throw a TypeError exception.
     if (Type(O) !== 'Object') {
-      throw new TypeError('Expected an object.');
+      notObject(O);
     }
     // 2. Let props be ToObject(Properties).
     var props = ToObject(Properties);
@@ -2946,7 +2955,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
   Object.seal = function (O) {
       // 1. If Type(O) is not Object throw a TypeError exception.
       if (Type(O) !== 'Object') {
-        throw new TypeError('Only objects may be sealed.');
+        notObject(O);
       }
       return O.seal___();
     };
@@ -3055,7 +3064,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
 
   function freeze(obj) {
       if (Type(obj) !== 'Object') {
-        throw new TypeError('Only objects may be frozen.');
+        notObject(obj);
       }
       return obj.freeze___();
   }
@@ -3064,7 +3073,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
   // 15.2.3.10
   Object.preventExtensions = function (obj) {
       if (Type(obj) !== 'Object') {
-        throw new TypeError('Only objects may be made non-extensible.');
+        notObject(obj);
       }
       return obj.pe___();
     };
@@ -3088,7 +3097,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
   Object.isSealed = function (O) {
       // 1. If Type(O) is not Object throw a TypeError exception.
       if (Type(O) !== 'Object') {
-        throw new TypeError('Only objects may be frozen.');
+        notObject(O);
       }
       // 2. For each named own property name P of O,
       // a. Let desc be the result of calling the [[GetOwnProperty]]
@@ -3165,7 +3174,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
       }),
       set: markFunc(function (val) {
         if (!isFunction(val)) {
-          throw new TypeError('Expected a function instead of ' + val);
+          notFunction(val);
         }
         if (isFrozen(this)) {
           throw new TypeError("Won't set toString on a frozen object.");
@@ -3188,7 +3197,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
         }),
       set: markFunc(function (val) {
           if (!isFunction(val)) {
-            throw new TypeError('Expected a function instead of ' + val);
+            notFunction(val);
           }
           if (isFrozen(this)) {
             throw new TypeError("Won't set valueOf on a frozen object.");
@@ -3526,7 +3535,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
   createOrWrap(Array.prototype, 'map', function (fun, thisp) {
       var len = this.length >>> 0;
       if (!isFunction(fun)) {
-        throw new TypeError('Expected a function instead of ' + fun);
+        notFunction(fun);
       }
       var res = new Array(len);
       for (var i = 0; i < len; i++) {
@@ -3556,7 +3565,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
       // function(previousValue, currentValue, index, array) { ... }
       var len = this.length >>> 0;
       if (!isFunction(fun)) {
-        throw new TypeError('Expected a function instead of ' + fun);
+        notFunction(fun);
       }
       // no value to return if no initial value and an empty array
       if (len === 0 && arguments.length === 1) {
@@ -3591,7 +3600,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
   createOrWrap(Array.prototype, 'reduceRight', function(fun) { // , initial
       var len = this.length >>> 0;
       if (!isFunction(fun)) {
-        throw new TypeError('Expected a function instead of ' + fun);
+        notFunction(fun);
       }
       // no value to return if no initial value, empty array
       if (len === 0 && arguments.length === 1) {
@@ -4163,11 +4172,11 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
     // TODO: provide ArrayLike.prototype.constructor
     ArrayLike = markFunc(function(proto, getItem, getLength) {
         if (Type(proto) !== 'Object') {
-          throw new TypeError('Expected proto to be an object.');
+          notObject(proto, 'proto');
         }
-          if (!(proto instanceof ArrayLike)) {
-            throw new TypeError('Expected proto to be instanceof ArrayLike.');
-          }
+        if (!(proto instanceof ArrayLike)) {
+          throw new TypeError('Expected proto to be instanceof ArrayLike.');
+        }
         var obj = beget(proto);
         itemMap.set(obj, getItem);
         lengthMap.set(obj, getLength);
@@ -4280,7 +4289,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
           // Create a new ArrayLike constructor to replace the old one.
           var BAL = markFunc(function(proto, getItem, getLength) {
               if (Type(proto) !== 'Object') {
-                throw new TypeError('Expected proto to be an object.');
+                notObject(proto, 'proto');
               }
               if (!(proto instanceof BAL)) {
                 throw new TypeError(
@@ -4320,7 +4329,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
     // ArrayLike constructs a frozen array in the absence of better support.
     ArrayLike = markFunc(function(proto, getItem, getLength) {
         if (Type(proto) !== 'Object') {
-          throw new TypeError("Expected proto to be an object.");
+          notObject(proto, 'proto');
         }
         var obj = beget(proto);
         var len = +getLength.i___();
@@ -4772,16 +4781,14 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
   CajaProxy.DefineOwnProperty___('create', {
       value: markFuncFreeze(function CajaProxy_create(handler, proto) {
           if (Type(handler) !== 'Object') {
-            throw new TypeError("Expected handler to be an object.");
+            notObject(handler, 'handler');
           }
           var proxy = void 0;
           if (proto === void 0 || proxy === null) {
             proxy = {};
           } else {
-            var typeProto = Type(proto);
-            if (typeProto !== 'Object') {
-              throw new TypeError(
-                  'Proto must be an object, not ' + typeProto);
+            if (Type(proto) !== 'Object') {
+              notObject(proto, 'proto');
             }
             if (proto.proxy___) {
               throw new TypeError('Proxies cannot inherit from proxies.');
@@ -4821,17 +4828,16 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
   CajaProxy.DefineOwnProperty___('createFunction', {
       value: markFuncFreeze(function (handler, callTrap, constructTrap) {
           if (Type(handler) !== 'Object') {
-            throw new TypeError('Expected handler to be an object.');
+            notObject(handler, 'handler');
           }
           if (!isFunction(callTrap)) {
-            throw new TypeError('Expected callTrap to be a function.');
+            notFunction(callTrap, 'callTrap');
           }
           if (constructTrap === void 0) {
             constructTrap = callTrap;
           }
           if (!isFunction(constructTrap)) {
-            throw new
-              TypeError("Construct trap must be a function or undefined.");
+            notFunction(constructTrap, 'constructTrap');
           }
           var proto = Function.prototype;
           // Here we know the prototype chain, so we can optimize.
@@ -5069,8 +5075,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
 
             // See the HTML5 discussion for the reasons behind this rule.
             if (!isFunction(onerror)) {
-              throw new TypeError(
-                  'Expected onerror to be a function or undefined.');
+              notFunction(onerror, 'onerror');
             }
             var shouldReport = onerror.i___(
                 message,
@@ -5465,8 +5470,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
       }
       var m = this.v___(name);
       if (typeof m !== 'function') {
-        throw new TypeError(
-            "The property '" + name + "' is not a function.");
+        notFunction(m, 'property "' + name + '"');
       }
       // Fastpath the method on the object pointed to by name_v___
       // which is truthy iff it's a data property

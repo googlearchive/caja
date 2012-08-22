@@ -1489,7 +1489,7 @@ public class ES53RewriterTest extends CommonJsRewriterTestCase {
     rewriteAndExecute(
         "var t = new WeakMap(true);" +
         "assertThrowsMsg(function(){t.set('foo', 'v1');}," +
-        "    'primitive keys');");
+        "    'WeakMap key');");
     rewriteAndExecute(
         "var t = new WeakMap(true);" +
         "var k1 = {};" +
