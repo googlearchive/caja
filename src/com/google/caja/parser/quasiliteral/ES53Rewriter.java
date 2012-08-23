@@ -938,7 +938,7 @@ public class ES53Rewriter extends Rewriter {
           synopsis="",
           reason="",
           matches="/* in outer scope */ var @v = @r",
-          substitutes="IMPORTS___.w___('@v', @r)")
+          substitutes="___.di(IMPORTS___, '@v'), IMPORTS___.w___('@v', @r)")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
         Map<String, ParseTreeNode> bindings = this.match(node);
         if (bindings != null) {

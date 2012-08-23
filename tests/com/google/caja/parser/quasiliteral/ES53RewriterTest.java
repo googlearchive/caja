@@ -537,6 +537,10 @@ public class ES53RewriterTest extends CommonJsRewriterTestCase {
         );
   }
 
+  public final void testInitializeAfterHoist() throws Exception {
+    assertConsistent("var z = z || {a: 1}; z.a;");
+  }
+
   public final void testInitializeMap() throws Exception {
     assertConsistent("var zerubabel = {bobble:2, apple:1}; zerubabel.apple;");
   }
