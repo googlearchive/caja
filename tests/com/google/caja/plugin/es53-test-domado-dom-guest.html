@@ -292,25 +292,40 @@ document.write(
 </div>
 <br>
 <script type="text/javascript">
-  // TODO(kpreid): Enable for ES5 and debug why positioning is wrong.
-  jsunitRegisterIf(!inES5Mode,
-                   'testDocumentWrite',
-                   function testDocumentWrite() {
-    // TODO(mikesamuel): This is wrong because we don't allow the
-    // insertion point to move above its starting position
+  jsunitRegister('testDocumentWrite',
+                 function testDocumentWrite() {
     var el = document.getElementById('testDocumentWrite');
-    assertEquals(
-        ''
-        + '<div>'
-          + '<p>Before <code>document.write</code></p>'
-          + '<p id="testDocumentWrite-foo">Document written</p>'
-          + '<p>After <code>document.write</code></p>'
-        + '</div>'
-        + '<div>'
-          + '<p>Written afterwards</p>'
-          + '<p>More written afterwards</p>'
-        + '</div>',
-        canonInnerHtml(el.innerHTML));
+    if (inES5Mode) {
+      // ES5 (client-side) mode gets the correct outcome because everything is
+      // piped through the document.write path.
+      assertEquals(
+          ''
+          + '<div>'
+            + '<p>Before <code>document.write</code></p>'
+            + '<p id="testDocumentWrite-foo">Document written</p>'
+          + '</div>'
+          + '<div>'
+            + '<p>Written afterwards</p>'
+            + '<p>More written afterwards </p>'
+            + '<p>After <code>document.write</code></p>'
+          + '</div>',
+          canonInnerHtml(el.innerHTML));
+    } else {
+      // TODO(mikesamuel): This is wrong because we don't allow the
+      // insertion point to move above its starting position
+      assertEquals(
+          ''
+          + '<div>'
+            + '<p>Before <code>document.write</code></p>'
+            + '<p id="testDocumentWrite-foo">Document written</p>'
+            + '<p>After <code>document.write</code></p>'
+          + '</div>'
+          + '<div>'
+            + '<p>Written afterwards</p>'
+            + '<p>More written afterwards</p>'
+          + '</div>',
+          canonInnerHtml(el.innerHTML));
+    }
     pass('testDocumentWrite');
   });
 </script>
