@@ -1015,8 +1015,15 @@ document.write(
     assertEquals('U', childNodes[4].nodeName);
     var TNLproto = Object.getPrototypeOf(childNodes);
     var TNL = TNLproto.constructor;
-    assertTrue(Object.isFrozen(TNL));
-    assertTrue(Object.isFrozen(TNLproto));
+    try {
+      assertTrue(Object.isFrozen(TNL));
+      assertTrue(Object.isFrozen(TNLproto));
+    } catch (ex) {
+      if (!crossFrameFreezeBug()) {
+        throw ex;
+      }
+      // TODO(felix8a): known failure handling
+    }
     pass('test-child-nodes');
   });
 </script>
@@ -2245,8 +2252,15 @@ Test row cell
     assertEquals(2, optionsList.selectedIndex);
     var TOLproto = Object.getPrototypeOf(optionsList);
     var TOL = TOLproto.constructor;
-    assertTrue(Object.isFrozen(TOL));
-    assertTrue(Object.isFrozen(TOLproto));
+    try {
+      assertTrue(Object.isFrozen(TOL));
+      assertTrue(Object.isFrozen(TOLproto));
+    } catch (ex) {
+      if (!crossFrameFreezeBug()) {
+        throw ex;
+      }
+      // TODO(felix8a): known failure handling
+    }
     pass('test-selected-index');
   });
 </script>

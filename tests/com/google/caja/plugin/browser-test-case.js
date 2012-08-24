@@ -538,6 +538,19 @@ function createExtraImportsForTesting(frameGroup, frame) {
   standardImports.assertAsynchronousRequirement =
       frame.tame(frame.markFunction(asyncRequirements.assert));
 
+  standardImports.crossFrameFreezeBug = frame.tame(frame.markFunction(
+      function () {
+        if (!Object.freeze) { return false; }
+        var iframe = document.createElement('iframe');
+        var where = document.getElementsByTagName('script')[0];
+        where.parentNode.insertBefore(iframe, where);
+        var otherObject = iframe.contentWindow.Object;
+        where.parentNode.removeChild(iframe);
+        var obj = {};
+        otherObject.freeze(obj);
+        return !Object.isFrozen(obj);
+      }));
+
   var jsunitFns = [
       'assert', 'assertContains', 'assertEquals', 'assertEvaluatesToFalse',
       'assertEvaluatesToTrue', 'assertFalse', 'assertHTMLEquals',
