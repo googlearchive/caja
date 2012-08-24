@@ -1549,7 +1549,7 @@ var ses;
     try {
       x.pop();
     } catch (e) {
-      if (x.length !== 2) { return 'Unexpected modification of frozen array' }
+      if (x.length !== 2) { return 'Unexpected modification of frozen array'; }
       if (x[0] === 1 && x[1] === 2) { return false; }
     }
     if (x.length !== 2 || x[0] !== 1 || x[1] !== 2) {
@@ -1571,6 +1571,22 @@ var ses;
       return 'defineProperty of NaN failed with: ' + err;
     }
     return false;
+  }
+
+  /**
+   * In Firefox 15+, Object.freeze and Object.isFrozen only work for
+   * descendents of that same Object.
+   */
+  function test_FIREFOX_15_FREEZE_PROBLEM() {
+    if (!document || !document.createElement) { return false; }
+    var iframe = document.createElement('iframe');
+    var where = document.getElementsByTagName('script')[0];
+    where.parentNode.insertBefore(iframe, where);
+    var otherObject = iframe.contentWindow.Object;
+    where.parentNode.removeChild(iframe);
+    var obj = {};
+    otherObject.freeze(obj);
+    return !Object.isFrozen(obj);
   }
 
   /**
@@ -1704,7 +1720,6 @@ var ses;
     try { null.foo = 3; } catch (err) { suspects.push(err); }
 
     var unreported = Object.create(null);
-
     strictForEachFn(suspects, function(suspect) {
       var candidates = freshHiddenPropertyCandidates();
       strictForEachFn(gopn(suspect), function(name) {
@@ -1724,8 +1739,9 @@ var ses;
 
     var unreportedNames = gopn(unreported);
     if (unreportedNames.length === 0) { return false; }
+    // TODO(felix8a): firefox14+ is doing something weird here
     return 'Error own properties unreported by getOwnPropertyNames: ' +
-      unreportedNames.sort().join(',');
+        unreportedNames.sort().join(',');
   }
 
 
@@ -2936,6 +2952,17 @@ var ses;
       tests: [] // TODO(erights): Add to test262
     },
     {
+      description: 'Firefox 15 cross-frame freeze problem',
+      test: test_FIREFOX_15_FREEZE_PROBLEM,
+      repair: void 0,
+      preSeverity: severities.NOT_ISOLATED,
+      canRepair: false,
+      urls: ['https://bugzilla.mozilla.org/show_bug.cgi?id=784892',
+             'https://bugzilla.mozilla.org/show_bug.cgi?id=674195'],
+      sections: [],
+      tests: []
+    },
+    {
       description: 'Error instances have unexpected properties',
       test: test_UNEXPECTED_ERROR_PROPERTIES,
       repair: void 0,
@@ -2951,7 +2978,7 @@ var ses;
       repair: void 0,
       preSeverity: severities.NOT_ISOLATED,
       canRepair: false,
-      urls: [],
+      urls: [],  // TODO(erights): need bugs filed
       sections: [],
       tests: []
     }
@@ -3038,8 +3065,12 @@ var ses;
         }
       }
 
-      if (typeof beforeFailure === 'string' ||
-          typeof afterFailure === 'string') {
+      if (typeof beforeFailure === 'string') {
+        logger.error('New Symptom: ' + beforeFailure);
+        postSeverity = severities.NEW_SYMPTOM;
+      }
+      if (typeof afterFailure === 'string') {
+        logger.error('New Symptom: ' + afterFailure);
         postSeverity = severities.NEW_SYMPTOM;
       }
 

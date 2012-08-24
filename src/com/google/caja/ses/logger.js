@@ -229,9 +229,16 @@ if (!ses) { ses = {}; }
   }
 
   /**
-   * By default is silent
+   * By default is chatty
    */
-  function defaultReportRepairs(reports) {}
+  function defaultReportRepairs(reports) {
+    for (var i = 0; i < reports.length; i++) {
+      var report = reports[i];
+      if (report.status !== 'All fine') {
+        logger.warn(report.status + ': ' + report.description);
+      }
+    }
+  }
 
   if (!logger.reportRepairs) {
     logger.reportRepairs = defaultReportRepairs;
