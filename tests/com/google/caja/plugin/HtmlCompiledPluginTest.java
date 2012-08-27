@@ -29,6 +29,7 @@ import com.google.caja.util.TestUtil;
 import com.google.caja.util.CajaTestCase;
 
 import org.w3c.dom.Document;
+import org.w3c.dom.DocumentFragment;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
@@ -83,7 +84,7 @@ public class HtmlCompiledPluginTest extends CajaTestCase {
 
   public final void testNonNamespaceAwareDom() throws Exception {
     Document doc = DomParser.makeDocument(null, null);
-    Node root = doc.createDocumentFragment();
+    DocumentFragment root = doc.createDocumentFragment();
     Element script = doc.createElement("script");
     script.setAttribute("type", "text/javascript");
     script.appendChild(doc.createTextNode("var foo;"));

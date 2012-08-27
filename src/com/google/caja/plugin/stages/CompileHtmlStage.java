@@ -40,7 +40,7 @@ import java.net.URI;
 import java.util.Iterator;
 import java.util.List;
 
-import org.w3c.dom.Node;
+import org.w3c.dom.DocumentFragment;
 
 /**
  * Compile the HTML, CSS, and JS to HTML and JS.
@@ -137,5 +137,5 @@ abstract class CompileHtmlStage implements Pipeline.Stage<Jobs> {
     return jobs.hasNoFatalErrors();
   }
 
-  abstract Job makeJobFromHtml(Node html, URI baseUri);
+  abstract Job makeJobFromHtml(DocumentFragment html, URI baseUri);
 }

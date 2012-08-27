@@ -21,7 +21,7 @@ import com.google.caja.plugin.Job;
 
 import java.net.URI;
 
-import org.w3c.dom.Node;
+import org.w3c.dom.DocumentFragment;
 
 /**
  * Separates HTML into a fragment of safe, static HTML, and a block of dynamic
@@ -35,7 +35,7 @@ public final class HtmlToBundleStage extends CompileHtmlStage {
   }
 
   @Override
-  Job makeJobFromHtml(Node html, URI baseUri) {
+  Job makeJobFromHtml(DocumentFragment html, URI baseUri) {
     return Job.domJob(new Dom(html), baseUri);
   }
 }

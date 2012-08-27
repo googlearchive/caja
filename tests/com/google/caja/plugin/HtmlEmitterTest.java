@@ -44,7 +44,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import org.w3c.dom.Element;
+import org.w3c.dom.DocumentFragment;
 import org.w3c.dom.Node;
 
 public class HtmlEmitterTest extends CajaTestCase {
@@ -140,19 +140,24 @@ public class HtmlEmitterTest extends CajaTestCase {
         jsLines, Arrays.asList(renderConsolidated(htmlAndJs.b).split("\n")));
   }
 
-  private Node htmlWithScriptsExtracted(
+  private DocumentFragment htmlWithScriptsExtracted(
       String html, List<ScriptPlaceholder> extractedScripts)
       throws ParseException {
-    return extract(htmlFragment(fromString(html)), extractedScripts);
+    return (DocumentFragment) extract(htmlFragment(fromString(html)),
+        extractedScripts);
   }
 
-  private Node extract(
-      Node n, List<ScriptPlaceholder> extractedScripts)
+  private <N extends Node> N extract(
+      N n, List<ScriptPlaceholder> extractedScripts)
       throws ParseException {
     if (n.getNodeType() == 1
         && Strings.eqIgnoreCase("script", n.getNodeName())) {
       String id = "$" + extractedScripts.size();
-      Element placeholder = Placeholder.make(n, id);
+      // According to nodeType, n is an Element, and Placeholder.make returns
+      // an Element, so this will succeed provided that N is not a proper
+      // subtype of Element.
+      @SuppressWarnings("unchecked")
+      N placeholder = (N)Placeholder.make(n, id);
       extractedScripts.add(new ScriptPlaceholder(
           new JobEnvelope(id, JobCache.none(), ContentType.JS, false, null),
           js(fromString(n.getFirstChild().getNodeValue()))));

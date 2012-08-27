@@ -18,7 +18,7 @@ import com.google.caja.plugin.JobEnvelope;
 
 import java.net.URI;
 
-import org.w3c.dom.Node;
+import org.w3c.dom.DocumentFragment;
 
 /**
  * An input to the template compiler that contains references to extracted
@@ -28,10 +28,10 @@ import org.w3c.dom.Node;
  */
 public final class IhtmlRoot {
   public final JobEnvelope source;
-  public final Node root;
+  public final DocumentFragment root;
   public final URI baseUri;
 
-  public IhtmlRoot(JobEnvelope source, Node root, URI baseUri) {
+  public IhtmlRoot(JobEnvelope source, DocumentFragment root, URI baseUri) {
     this.source = source;
     this.root = root;
     this.baseUri = baseUri;

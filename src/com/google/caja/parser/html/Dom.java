@@ -25,18 +25,19 @@ import com.google.caja.util.Callback;
 
 import java.io.IOException;
 
-import org.w3c.dom.Node;
+import org.w3c.dom.DocumentFragment;
 
 /**
- * A parse tree wrapper for an org.w3c.DOM node.
+ * A parse tree wrapper for an org.w3c.DOM tree. The root must be a
+ * DocumentFragment.
  */
 public final class Dom extends AbstractParseTreeNode {
   private static final long serialVersionUID = -5111504015682453850L;
-  private final Node n;
+  private final DocumentFragment fragment;
 
-  public Dom(Node n) {
-    super(Nodes.getFilePositionFor(n), NoChildren.class);
-    this.n = n;
+  public Dom(DocumentFragment fragment) {
+    super(Nodes.getFilePositionFor(fragment), NoChildren.class);
+    this.fragment = fragment;
   }
 
   // Dom nodes can never be considered immutable since they point to an
@@ -47,7 +48,7 @@ public final class Dom extends AbstractParseTreeNode {
   public boolean isImmutable() { return false; }
 
   @Override
-  public Node getValue() { return n; }
+  public DocumentFragment getValue() { return fragment; }
 
   public TokenConsumer makeRenderer(
       Appendable out, Callback<IOException> handler) {
@@ -55,17 +56,20 @@ public final class Dom extends AbstractParseTreeNode {
   }
 
   public void render(RenderContext r) {
-    Nodes.render(n, r);
+    Nodes.render(fragment, r);
   }
 
   @Override
   public void formatSelf(MessageContext context, int depth, Appendable out)
       throws IOException {
     out.append(this.getClass().getSimpleName()).append(" : ");
-    String html = Nodes.render(n, MarkupRenderMode.XML)
+    String html = Nodes.render(fragment, MarkupRenderMode.XML)
         .replace("\\", "\\\\").replace("\n", "\\n").replace("\r", "\\r");
     out.append(html);
   }
 
-  @Override public Dom clone() { return new Dom(n.cloneNode(true)); }
+  @Override
+  public Dom clone() {
+    return new Dom((DocumentFragment) fragment.cloneNode(true));
+  }
 }

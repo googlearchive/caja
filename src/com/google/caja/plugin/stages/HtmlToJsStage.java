@@ -32,6 +32,7 @@ import com.google.caja.reporting.RenderContext;
 
 import java.net.URI;
 
+import org.w3c.dom.DocumentFragment;
 import org.w3c.dom.Node;
 
 import java.util.Collections;
@@ -48,7 +49,7 @@ public final class HtmlToJsStage extends CompileHtmlStage {
   }
 
   @Override
-  Job makeJobFromHtml(Node html, URI baseUri) {
+  Job makeJobFromHtml(DocumentFragment html, URI baseUri) {
     return hasContent(html)
         ? Job.jsJob(makeEmitStaticStmt(html), baseUri) : null;
   }

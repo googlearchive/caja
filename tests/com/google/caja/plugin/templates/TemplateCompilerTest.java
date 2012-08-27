@@ -1115,7 +1115,7 @@ public class TemplateCompilerTest extends CajaTestCase {
  }
 
   private void extractScriptsAndStyles(
-      Node n, URI baseUri, List<IhtmlRoot> htmlOut,
+      DocumentFragment n, URI baseUri, List<IhtmlRoot> htmlOut,
       List<ValidatedStylesheet> cssOut,
       List<ScriptPlaceholder> extractedScripts)
       throws ParseException {
@@ -1127,12 +1127,17 @@ public class TemplateCompilerTest extends CajaTestCase {
   }
 
   private static String HTML_NS = Namespaces.HTML_NAMESPACE_URI;
-  private Node extractScripts(Node n, List<ScriptPlaceholder> extractedScripts)
-      throws ParseException {
+
+  private <N extends Node> N extractScripts(N n,
+      List<ScriptPlaceholder> extractedScripts) throws ParseException {
     if (n instanceof Element && "script".equals(n.getLocalName())
         && HTML_NS.equals(n.getNamespaceURI())) {
       String id = "$" + extractedScripts.size();
-      Element placeholder = Placeholder.make(n, id);
+      // According to nodeType, n is an Element, and Placeholder.make returns
+      // an Element, so this will always succeed if N is not a _proper subtype_
+      // of Element.
+      @SuppressWarnings("unchecked")
+      N placeholder = (N)Placeholder.make(n, id);
       if (n.getParentNode() != null) {
         n.getParentNode().replaceChild(placeholder, n);
       }

@@ -16,7 +16,8 @@ package com.google.caja.plugin.templates;
 
 import com.google.caja.plugin.JobEnvelope;
 import java.net.URI;
-import org.w3c.dom.Node;
+
+import org.w3c.dom.DocumentFragment;
 
 /**
  * A chunk of sanitized HTML with routing info.
@@ -26,11 +27,11 @@ import org.w3c.dom.Node;
 public final class SafeHtmlChunk {
   /** The routing info for this HTML. */
   public final JobEnvelope source;
-  public final Node root;
+  public final DocumentFragment root;
   /** The URI against which relative URIs under root are resolved. */
   public final URI baseUri;
 
-  SafeHtmlChunk(JobEnvelope source, Node root, URI baseUri) {
+  SafeHtmlChunk(JobEnvelope source, DocumentFragment root, URI baseUri) {
     this.source = source;
     this.root = root;
     this.baseUri = baseUri;

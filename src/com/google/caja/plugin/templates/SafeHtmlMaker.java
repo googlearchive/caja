@@ -51,6 +51,7 @@ import java.util.regex.Pattern;
 
 import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
+import org.w3c.dom.DocumentFragment;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.Text;
@@ -172,7 +173,8 @@ final class SafeHtmlMaker {
       if (ss.jsVersion != null) {
         emitStatement(ss.jsVersion, true, ss.source);
       } else if (ss.htmlVersion != null) {
-        safe.add(new SafeHtmlChunk(ss.source, ss.htmlVersion, ss.baseUri));
+        safe.add(new SafeHtmlChunk(ss.source,
+            wrapInDocumentFragment(ss.htmlVersion), ss.baseUri));
       }
     }
 
@@ -188,7 +190,8 @@ final class SafeHtmlMaker {
     // depth-first order.
     List<DomBone> domSkeleton = Lists.newArrayList();
     for (IhtmlRoot root : roots) {
-      Node one = makeSkeleton(root.root, root.source, domSkeleton);
+      DocumentFragment one = (DocumentFragment)makeSkeleton(
+          root.root, root.source, domSkeleton);
       if (one != null) {
         safe.add(new SafeHtmlChunk(root.source, one, root.baseUri));
       }
@@ -683,5 +686,16 @@ final class SafeHtmlMaker {
     Attr a = ((Element) n).getAttributeNodeNS(
         Placeholder.ID_ATTR.ns.uri, Placeholder.ID_ATTR.localName);
     return a != null ? a.getValue() : null;
+  }
+
+
+  /**
+   * Put an orphaned node into a DocumentFragment.
+   */
+  private DocumentFragment wrapInDocumentFragment(Node node) {
+    DocumentFragment wrapper = node.getOwnerDocument().createDocumentFragment();
+    assert node.getParentNode() == null;
+    wrapper.appendChild(node);
+    return wrapper;
   }
 }
