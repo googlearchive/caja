@@ -1157,6 +1157,7 @@
         <include name="**/caja/plugin/plugin-base.js"/>
         <include name="**/caja/plugin/templates/*.json"/>
         <include name="**/caja/plugin/unicode.js"/>
+        <include name="**/caja/apitaming/*.js"/>
       </fileset>
     </copy>
 
