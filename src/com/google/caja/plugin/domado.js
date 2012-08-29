@@ -2820,9 +2820,9 @@ var Domado = (function() {
         var geometryDelegatePropertySettable =
             Object.create(geometryDelegateProperty);
         geometryDelegatePropertySettable.set =
-          nodeMethod(function (value, prop) {
+            nodeMethod(function (value, prop) {
           if (!np(this).editable) { throw new Error(NOT_EDITABLE); }
-          np(this).geometryDelegate.scrollTop = +value;
+          np(this).geometryDelegate[prop] = +value;
         });
         return {
           clientWidth: geometryDelegateProperty,

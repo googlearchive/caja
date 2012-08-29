@@ -460,6 +460,8 @@
         "type": "SCRIPT", "optional": true },
       { "key": "FORM::ONRESET", "description": "the form was reset",
         "type": "SCRIPT", "optional": true },
+      { "key": "*::ONSCROLL", "description": "element changed scroll position",
+        "type": "SCRIPT", "optional": true },
       { "key": "INPUT::ONSELECT", "description": "some text was selected",
         "type": "SCRIPT", "optional": true },
       { "key": "TEXTAREA::ONSELECT", "description": "some text was selected",

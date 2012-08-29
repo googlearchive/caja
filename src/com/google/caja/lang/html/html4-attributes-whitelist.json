@@ -166,6 +166,7 @@
       "*::ONMOUSEOVER",
       "*::ONMOUSEUP",
       "FORM::ONRESET",
+      "*::ONSCROLL",
       "INPUT::ONSELECT",
       "TEXTAREA::ONSELECT",
       "FORM::ONSUBMIT",

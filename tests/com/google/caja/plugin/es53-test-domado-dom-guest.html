@@ -279,6 +279,43 @@ document.write(
   });
 </script>
 
+<p class="testcontainer" id="testOnScroll"
+    style="overflow: scroll; width: 200px; height: 60px; white-space: nowrap;">
+  <span style="vertical-align: top;">testOnScroll &#8594;&#8594;&#8594;</span>
+  <span style="width: 1000px; height: 1000px; display: inline-block;"></span>
+  <span style="vertical-align: bottom;">&#8592;&#8592;&#8592;</span>
+</p>
+<script type="text/javascript">
+  // Testing that scroll events fire and that scrollLeft and scrollTop are
+  // read/write
+  jsunitRegister('testOnScroll',
+                 function testOnScroll() {
+    var el = document.getElementById('testOnScroll');
+    var input = [['scrollLeft', 100], ['scrollTop', 200], ['scrollTop', -300],
+        ['scrollLeft', 0]];
+    var expect = [100, 0, 100, 200, 100, 0, 0, 0];
+    el.addEventListener('scroll',
+        jsunitCallback( function onscroll() {
+          assertEquals('scrollLeft', expect.shift(), el.scrollLeft);
+          assertEquals('scrollTop', expect.shift(), el.scrollTop);
+          if (input.length === 0) {
+            if (expect.length === 0) {
+              pass('testOnScroll');
+            }
+          } else {
+            gen();
+          }
+        }),
+        false);
+    function gen() {
+      var record = input.shift();
+      console.log("rec", record);
+      el[record[0]] = record[1];
+    }
+    gen();
+  });
+</script>
+
 <div id="testDocumentWrite" class="testcontainer">
   <div>
     <p>Before <code>document.write</code></p>
