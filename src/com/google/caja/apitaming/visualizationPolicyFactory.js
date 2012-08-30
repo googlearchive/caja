@@ -489,24 +489,27 @@ caja.tamingGoogleLoader.addPolicyFactory('visualization', function(frame, utils)
   v.CandlestickChart.prototype.getSelection = function() {};
   v.CandlestickChart.prototype.setSelection = function(selection) {};
 
-  v.AnnotatedTimeLine = function(container) {};
-  v.AnnotatedTimeLine.__super__ = Object;
-  v.AnnotatedTimeLine.__before__ = [
-    function(f, self, args) {
-      var outer = args[0];
-      var inner = utils.opaqueNode(outer);
-      inner.style.width = outer.style.width;
-      inner.style.height = outer.style.height;
-      return [ inner ];
-    }
-  ];
-  v.AnnotatedTimeLine.prototype.draw = function(data, opt_options) {};
-  v.AnnotatedTimeLine.prototype.draw.__before__ = [ utils.mapArgs(utils.identity, utils.copyJson, utils.copyJson) ];
-  v.AnnotatedTimeLine.prototype.getSelection = function() {};
-  v.AnnotatedTimeLine.prototype.getVisibleChartRange = function() {};
-  v.AnnotatedTimeLine.prototype.setVisibleChartRange = function(firstDate, lastDate, opt_animate) {};
-  v.AnnotatedTimeLine.prototype.showDataColumns = function(columnIndexes) {};
-  v.AnnotatedTimeLine.prototype.hideDataColumns = function(columnIndexes) {};
+  // TODO(ihab.awad): AnnotatedTimeLine data is garbled in testing under ES5.
+  // This is disabled until we fix this.
+
+  // v.AnnotatedTimeLine = function(container) {};
+  // v.AnnotatedTimeLine.__super__ = Object;
+  // v.AnnotatedTimeLine.__before__ = [
+  //   function(f, self, args) {
+  //     var outer = args[0];
+  //     var inner = utils.opaqueNode(outer);
+  //     inner.style.width = outer.style.width;
+  //     inner.style.height = outer.style.height;
+  //     return [ inner ];
+  //   }
+  // ];
+  // v.AnnotatedTimeLine.prototype.draw = function(data, opt_options) {};
+  // v.AnnotatedTimeLine.prototype.draw.__before__ = [ utils.mapArgs(utils.identity, utils.copyJson, utils.copyJson) ];
+  // v.AnnotatedTimeLine.prototype.getSelection = function() {};
+  // v.AnnotatedTimeLine.prototype.getVisibleChartRange = function() {};
+  // v.AnnotatedTimeLine.prototype.setVisibleChartRange = function(firstDate, lastDate, opt_animate) {};
+  // v.AnnotatedTimeLine.prototype.showDataColumns = function(columnIndexes) {};
+  // v.AnnotatedTimeLine.prototype.hideDataColumns = function(columnIndexes) {};
 
   v.GeoMap = function(container) {};
   v.GeoMap.__super__ = Object;
