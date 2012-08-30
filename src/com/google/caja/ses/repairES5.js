@@ -1610,7 +1610,7 @@ var ses;
    * <p>We thank the following people, projects, and websites for
    * providing some useful intelligence of what property names we
    * should suspect:<ul>
-   * <li><a href="http://stacktracejs.org">stacktracejs.org</a>
+   * <li><a href="http://stacktracejs.com">stacktracejs.com</a>
    * <li>TODO(erights): find message on es-discuss list re
    * "   stack". credit author.
    * </ul>
@@ -1672,14 +1672,6 @@ var ses;
     return result;
   }
 
-  function freshHiddenPropertyCandidates() {
-    var result = freshErrorInstanceWhiteMap();
-    strictForEachFn(errorInstanceBlacklist, function(name) {
-      result[name] = true;
-    });
-    return result;
-  }
-
   /**
    * Do Error instances on those platform carry own properties that we
    * haven't yet examined and determined to be SES-safe?
@@ -1710,40 +1702,40 @@ var ses;
   }
 
   /**
-   *
+   * On Firefox 14+ (and probably earlier), error instances have magical
+   * properties that do not appear in getOwnPropertyNames until you refer
+   * to the property.  This makes test_UNEXPECTED_ERROR_PROPERTIES
+   * unreliable, so we can't assume that passing that test is safe.
    */
-  function test_GET_OWN_PROPERTY_NAME_LIES() {
+  function test_ERRORS_HAVE_INVISIBLE_PROPERTIES() {
     var gopn = Object.getOwnPropertyNames;
     var gopd = Object.getOwnPropertyDescriptor;
 
-    var suspects = [new Error('e1')];
-    try { null.foo = 3; } catch (err) { suspects.push(err); }
+    var errors = [new Error('e1')];
+    try { null.foo = 3; } catch (err) { errors.push(err); }
 
-    var unreported = Object.create(null);
-    strictForEachFn(suspects, function(suspect) {
-      var candidates = freshHiddenPropertyCandidates();
-      strictForEachFn(gopn(suspect), function(name) {
-        // Delete the candidates that are reported
-        delete candidates[name];
+    for (var i = 0; i < errors.length; i++) {
+      var err = errors[i];
+      var found = Object.create(null);
+      strictForEachFn(gopn(err), function (prop) {
+        found[prop] = true;
       });
-      strictForEachFn(gopn(candidates), function(name) {
-        if (!gopd(suspect, name)) {
-          // Delete the candidates that are not own properties
-          delete candidates[name];
+      var j, prop;
+      for (j = 0; j < errorInstanceWhitelist.length; j++) {
+        prop = errorInstanceWhitelist[j];
+        if (gopd(err, prop) && !found[prop]) {
+          return true;
         }
-      });
-      strictForEachFn(gopn(candidates), function(name) {
-        unreported[name] = true;
-      });
-    });
-
-    var unreportedNames = gopn(unreported);
-    if (unreportedNames.length === 0) { return false; }
-    // TODO(felix8a): firefox14+ is doing something weird here
-    return 'Error own properties unreported by getOwnPropertyNames: ' +
-        unreportedNames.sort().join(',');
+      }
+      for (j = 0; j < errorInstanceBlacklist.length; j++) {
+        prop = errorInstanceBlacklist[j];
+        if (gopd(err, prop) && !found[prop]) {
+          return true;
+        }
+      }
+    }
+    return false;
   }
-
 
   ////////////////////// Repairs /////////////////////
   //
@@ -2973,12 +2965,12 @@ var ses;
       tests: []
     },
     {
-      description: 'getOwnPropertyNames lies, hiding some own properties',
-      test: test_GET_OWN_PROPERTY_NAME_LIES,
+      description: 'Error instances may have invisible properties',
+      test: test_ERRORS_HAVE_INVISIBLE_PROPERTIES,
       repair: void 0,
       preSeverity: severities.NOT_ISOLATED,
       canRepair: false,
-      urls: [],  // TODO(erights): need bugs filed
+      urls: [],  // TODO(felix8a): need bugs filed
       sections: [],
       tests: []
     }
