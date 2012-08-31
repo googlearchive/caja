@@ -1079,7 +1079,8 @@ ses.startSES = function(global,
         var newDesc = {
           value: global[name],
           writable: false,
-          configurable: false
+          configurable: false,
+          enumerable: desc.enumerable // firefox bug 787262
         };
         try {
           defProp(global, name, newDesc);
