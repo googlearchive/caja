@@ -273,11 +273,8 @@
 </script>
 
 <script type="text/javascript">
-  // TODO(kpreid): Enable for ES5 mode. Fails due to HtmlEmitter not currently
-  // generating <script> nodes.
-  jsunitRegisterIf(!inES5Mode,
-                   'testOpaqueNodes',
-                   function testOpaqueNodes() {
+  jsunitRegister('testOpaqueNodes',
+                 function testOpaqueNodes() {
     var noText = document.createTextNode('');
     // See bug 589.  We need to keep unsafe nodes in the DOM so that DOM
     // navigation works, but we can't allow inspection or editing of such nodes.
