@@ -98,7 +98,14 @@ function runtests() {
 
   caja.load(createDiv(), uriPolicy, function (frame) {
 
-    var t = caja.tamingGoogleLoader.applyToFrame(frame);
+    var t = caja.tamingGoogleLoader.applyToFrame(frame, {
+      initialObj: frame.markReadOnlyRecord({
+        initialFcn: frame.markFunction(function(x) {
+          return x + 19;
+        })
+      })
+    });
+
     t.whitelistApi('foo');
     t.whitelistApi('bar');
 

@@ -423,7 +423,7 @@ caja.tamingGoogleLoader = (function() {
     google.load(name, version, opt_info);
   }
 
-  function applyToFrame(frame) {
+  function applyToFrame(frame, initialEntries) {
 
     // TODO(ihab.awad): redundant!!!
     var tamingUtils = TamingUtils(frame);
@@ -438,6 +438,12 @@ caja.tamingGoogleLoader = (function() {
 
       var safeGoogle = policyEvaluator.defTopLevelObj(
           'google', window['google'], framePolicyByName);
+
+      for (var key in initialEntries) {
+        if (initialEntries.hasOwnProperty(key) && !/__$/.test(key)) {
+          safeGoogle[key] = initialEntries[key];
+        }
+      }
 
       safeGoogle.load = frame.markFunction(function(name, opt_ver, opt_info) {
         if (!whitelistedApis.has(name)) {

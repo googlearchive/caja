@@ -14,6 +14,27 @@
  - limitations under the License.
 -->
 
+<div id="testInitialEntries" class="testcontainer waiting">
+    testInitialEntries
+</div>
+<script type="text/javascript">
+  jsunitRegister('testInitialEntries',
+                 function testInitialEntries() {
+    assertEquals('object', typeof google.initialObj);
+    assertEquals('function', typeof google.initialObj.initialFcn);
+    assertEquals(17 + 19, google.initialObj.initialFcn(17));
+    try {
+      google.foo = 1;
+      fail('google object is not read-only');
+    } catch (e) {}
+    try {
+      google.initialObj.foo = 1;
+      fail('google.initialObj object is not read-only');
+    } catch (e) {}
+    pass('testInitialEntries');
+  });
+</script>
+        
 <div id="testOnload" class="testcontainer waiting">
   testOnload
 </div>
