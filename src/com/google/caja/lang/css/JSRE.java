@@ -123,7 +123,8 @@ abstract class JSRE {
     JSRE optimize() {
       JSRE newBody = body.optimize();
       if (min == 1 && max == 1) { return newBody; }
-      if (newBody instanceof Noop || max == 0) { return newBody; }
+      if (newBody instanceof Noop) { return newBody; }
+      if (max == 0) { return new Noop(); }
       if (newBody instanceof Repetition) {
         Repetition r = (Repetition) newBody;
         if (r.max == 1) {

@@ -15,6 +15,7 @@
 package com.google.caja.lang.css;
 
 import com.google.caja.lang.css.CssPropertyPatterns;
+import com.google.caja.lang.css.CssPropertyPatterns.CssPropertyData;
 import com.google.caja.lang.css.CssSchema;
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.parser.css.CssPropertySignature;
@@ -50,6 +51,15 @@ public class CssPropertyPatternsTest extends CajaTestCase {
   public final void testExclusiveUnionPattern() {
     assertPattern("[ foo | [ a || b || c || d ] | bar ]",
                   "/^\\s*(?:foo|[a-d](?:\\s+[a-d]){0,3}|bar)\\s*$/i");
+  }
+
+  public final void testLiteralExtraction() {
+    CssPropertyPatterns pp = new CssPropertyPatterns(
+        CssSchema.getDefaultCss21Schema(mq));
+    String text = "[ foo || bar() ]";
+    CssPropertySignature sig = parseSignature(text);
+    CssPropertyData actual = pp.cssPropertyToPattern(sig, false);
+    assertEquals("/^ *\\s*bar\\( *\\) *$/i", actual.regex);
   }
 
   public final void testReferencePattern() {

@@ -209,3 +209,13 @@ jsunitRegister('testColor',
   }
   jsunit.pass();
 });
+
+jsunitRegister('testBorder',
+               function testBorder() {
+  var source = '1px solid rgb(0,0,0)';
+  var expect = '1px:solid:rgb( 0 , 0 , 0 )';
+  var tokens = lexCss(source);
+  sanitizeCssProperty('border', cssSchema['border'], tokens);
+  assertEquals(expect, tokens.join(':'));
+  jsunit.pass();
+});
