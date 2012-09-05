@@ -29,6 +29,8 @@ import com.google.gwt.event.dom.client.FocusEvent;
 import com.google.gwt.event.dom.client.FocusHandler;
 import com.google.gwt.event.logical.shared.SelectionEvent;
 import com.google.gwt.event.logical.shared.SelectionHandler;
+import com.google.gwt.event.logical.shared.ValueChangeEvent;
+import com.google.gwt.event.logical.shared.ValueChangeHandler;
 import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.ui.Anchor;
 import com.google.gwt.user.client.ui.HTML;
@@ -298,6 +300,15 @@ public class PlaygroundView {
     });
   }
 
+  private void initUnsafe() {
+    playgroundUI.unsafe.addValueChangeHandler(new ValueChangeHandler() {
+      @Override
+      public void onValueChange(ValueChangeEvent event) {
+        setUnsafe(playgroundUI.unsafe.getValue());
+      }
+    });
+  }
+
   private static TreeItem addExampleItem(Map<Example.Type, TreeItem> menu,
       Example eg) {
     if (!menu.containsKey(eg.type)) {
@@ -351,6 +362,10 @@ public class PlaygroundView {
     });
   }-*/;
 
+  private native void setUnsafe(boolean unsafe) /*-{
+    $wnd.caja.disableSecurityForDebugger(unsafe);
+  }-*/;
+
   public PlaygroundView(Playground controller, Boolean mode) {
     this.controller = controller;
     this.sourceExamples = new MultiWordSuggestOracle();
@@ -369,6 +384,7 @@ public class PlaygroundView {
     initCaja(true, (mode == null) ? -1 : (mode ? 1 : 0));
     initPlusOne();
     initMode();
+    initUnsafe();
   }
 
   public void setOriginalSource(String result) {

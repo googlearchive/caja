@@ -70,6 +70,8 @@ function ES53FrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker) {
 
   var domado = Domado(makeDomadoRuleBreaker());
 
+  var unsafe = false;
+
   var frameGroup = {
 
     makeDefensibleObject___: ___.makeDefensibleObject,
@@ -95,12 +97,20 @@ function ES53FrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker) {
     USELESS: tamingWin.___.USELESS,
     iframe: window.frameElement,
 
-    makeES5Frame: makeES5Frame
+    makeES5Frame: makeES5Frame,
+    disableSecurityForDebugger: disableSecurityForDebugger
   };
 
   return frameGroup;
 
   //----------------
+
+  function disableSecurityForDebugger(value) {
+    unsafe = !!value;
+    if (tamingWin) {
+      tamingWin.___.DISABLE_SECURITY_FOR_DEBUGGER = unsafe;
+    }
+  }
 
   function applyFunction(f, dis, args) {
     return f.apply(dis, args);
@@ -197,6 +207,7 @@ function ES53FrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker) {
           es53run);
       gman._loader = guestWin.loadModuleMaker(
         cajaInt.documentBaseUrl(), cajoler, URI.utils);
+      guestWin.___.DISABLE_SECURITY_FOR_DEBUGGER = unsafe;
       es5ready(gman);
     });
   }

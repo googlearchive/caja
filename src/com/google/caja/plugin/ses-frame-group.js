@@ -60,6 +60,8 @@ function SESFrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker) {
   tamingWin.___.plugin_dispatchToHandler___ =
       domado.plugin_dispatchToHandler;
 
+  var unsafe = false;
+
   var frameGroup = {
 
     makeDefensibleObject___: makeDefensibleObject,
@@ -85,12 +87,20 @@ function SESFrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker) {
     USELESS: USELESS,
     iframe: window.frameElement,
 
-    makeES5Frame: makeES5Frame
+    makeES5Frame: makeES5Frame,
+    disableSecurityForDebugger: disableSecurityForDebugger
   };
 
   return frameGroup;
 
   //----------------
+
+  function disableSecurityForDebugger(value) {
+    unsafe = !!value;
+    if (tamingWin) {
+      tamingWin.ses.DISABLE_SECURITY_FOR_DEBUGGER = unsafe;
+    }
+  }
 
   function makeDefensibleObject(descriptors) {
     return Object.seal(Object.create(Object.prototype, descriptors));
@@ -201,6 +211,7 @@ function SESFrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker) {
           frameTamingMembrane, divs, uriPolicy, guestWin);
       var gman = GuestManager(frameTamingSchema, frameTamingMembrane, divs,
           cajaInt.documentBaseUrl(), domicile, guestWin, USELESS, sesRun);
+      guestWin.ses.DISABLE_SECURITY_FOR_DEBUGGER = unsafe;
       es5ready(gman);
     });
   }

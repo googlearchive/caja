@@ -2566,7 +2566,12 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
       if (value === Function.prototype) {
         throw new Error('Cannot invoke Function.prototype.');
       }
-      throw new Error('Internal: toxic function encountered!\n' + value);
+      // webkit js debuggers rely on ambient Function.bind
+      // http://code.google.com/p/chromium/issues/detail?id=145871
+      if (!___.DISABLE_SECURITY_FOR_DEBUGGER) {
+        throw new Error('Internal: toxic function encountered!\n' + value);
+      }
+      log('Internal: toxic function encountered!\n' + value);
     }
     return value;
   }
@@ -5543,7 +5548,8 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
       getter: getter,
       setter: setter,
       directConstructor: directConstructor,
-      BASE_OBJECT_CONSTRUCTOR: BASE_OBJECT_CONSTRUCTOR
+      BASE_OBJECT_CONSTRUCTOR: BASE_OBJECT_CONSTRUCTOR,
+      DISABLE_SECURITY_FOR_DEBUGGER: false
     };
   var cajaVMKeys = ownEnumKeys(cajaVM);
   for (var i = 0; i < cajaVMKeys.length; ++i) {

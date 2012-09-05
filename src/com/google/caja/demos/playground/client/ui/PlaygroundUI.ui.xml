@@ -28,17 +28,21 @@
           <g:VerticalPanel styleName="{style.pginfo}">
             <g:Label>Caja Playground</g:Label>
             <g:Label ui:field="version">Unknown</g:Label>
-            <g:ListBox ui:field="mode" visibleItemCount="1">
-              <g:item value='0'>
-                Autodetect Mode
-              </g:item>
-              <g:item value='1'>
-                ES5 Mode (Experimental)
-              </g:item>
-              <g:item value='0'>
-                ES5/3 Mode
-              </g:item>
-            </g:ListBox>
+            <g:HorizontalPanel width="100%">
+              <g:ListBox ui:field="mode" visibleItemCount="1">
+                <g:item value='0'>
+                  Autodetect Mode
+                </g:item>
+                <g:item value='1'>
+                  ES5 Mode (Experimental)
+                </g:item>
+                <g:item value='0'>
+                  ES5/3 Mode
+                </g:item>
+              </g:ListBox>
+              <g:CheckBox
+                 ui:field="unsafe" text="Disable security"/>
+            </g:HorizontalPanel>
           </g:VerticalPanel>
           <g:HorizontalPanel ui:field="loadingLabel"
             styleName="{style.loadingLabel}" >

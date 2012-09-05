@@ -36,6 +36,7 @@ var caja = (function () {
   var GUESS = 'GUESS';
 
   var ajaxCounter = 1;
+  var unsafe = false;
 
   var loaderDocument;
   function proxyFetchMaker(proxyServer) {
@@ -141,6 +142,7 @@ var caja = (function () {
     'initFeralFrame': initFeralFrame,
     'makeFrameGroup': makeFrameGroup,
     'configure': makeFrameGroup,
+    'disableSecurityForDebugger': disableSecurityForDebugger,
 
     // unused, removed by Closure
     closureCanary: 1
@@ -161,6 +163,13 @@ var caja = (function () {
 
   function premature() {
     throw new Error('Calling taming function before Caja is ready');
+  }
+
+  function disableSecurityForDebugger(value) {
+    unsafe = !!value;
+    if (defaultFrameGroup) {
+      defaultFrameGroup['disableSecurityForDebugger'](value);
+    }
   }
 
   /**
@@ -194,6 +203,7 @@ var caja = (function () {
           caja[i] = frameGroup[i];
         }
       }
+      frameGroup['disableSecurityForDebugger'](unsafe);
       state = READY;
       whenReady(null);
     });

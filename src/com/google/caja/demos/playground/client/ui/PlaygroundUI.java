@@ -8,6 +8,7 @@ import com.google.gwt.uibinder.client.UiBinder;
 import com.google.gwt.uibinder.client.UiField;
 import com.google.gwt.user.client.ui.AbsolutePanel;
 import com.google.gwt.user.client.ui.Button;
+import com.google.gwt.user.client.ui.CheckBox;
 import com.google.gwt.user.client.ui.Composite;
 import com.google.gwt.user.client.ui.HTML;
 import com.google.gwt.user.client.ui.HorizontalPanel;
@@ -47,6 +48,7 @@ public class PlaygroundUI extends Composite {
   @UiField protected Tree exampleTree;
   @UiField protected HorizontalPanel feedbackPanel;
   @UiField protected ListBox mode;
+  @UiField protected CheckBox unsafe;
 
   @UiField(provided=true)
   protected SuggestBox addressField;

@@ -121,6 +121,8 @@ var ses;
 
   //////////////// END KLUDGE SWITCHES ///////////
 
+  ses.DISABLE_SECURITY_FOR_DEBUGGER = false;
+
   ses.atLeastFreeVarNames = function atLeastFreeVarNames(programSrc) {
     programSrc = String(programSrc);
     programSrc = LIMIT_SRC(programSrc);
@@ -130,6 +132,11 @@ var ses;
     // should say "... = Object.create(null);" rather than "... = {};"
     var result = [];
     var found = StringMap();
+    // webkit js debuggers rely on ambient global eval
+    // http://code.google.com/p/chromium/issues/detail?id=145871
+    if (ses.DISABLE_SECURITY_FOR_DEBUGGER) {
+      found.set('eval', true);
+    }
     var a;
     while ((a = regexp.exec(programSrc))) {
       // Note that we could have avoided the while loop by doing
