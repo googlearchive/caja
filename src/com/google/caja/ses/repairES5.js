@@ -1560,6 +1560,21 @@ var ses;
   }
 
   /**
+   * In some browsers, assigning to array length can delete
+   * non-configurable properties.
+   * https://bugzilla.mozilla.org/show_bug.cgi?id=590690
+   * TODO(felix8a): file bug for chrome
+   */
+  function test_ARRAYS_TOO_MUTABLE() {
+    var x = [];
+    Object.defineProperty(x, 0, { value: 3, configurable: false });
+    try {
+      x.length = 0;
+    } catch (e) {}
+    return x.length !== 1 || x[0] !== 3;
+  }
+
+  /**
    *
    */
   function test_CANT_REDEFINE_NAN_TO_ITSELF() {
@@ -2931,6 +2946,16 @@ var ses;
       canRepair: false,
       urls: ['https://bugs.webkit.org/show_bug.cgi?id=75788'],
       sections: ['15.4.4.6'],
+      tests: [] // TODO(erights): Add to test262
+    },
+    {
+      description: 'Setting [].length can delete non-configurable elements',
+      test: test_ARRAYS_TOO_MUTABLE,
+      repair: void 0,
+      preSeverity: severities.UNSAFE_SPEC_VIOLATION,
+      canRepair: false,
+      urls: ['https://bugzilla.mozilla.org/show_bug.cgi?id=590690'],
+      sections: ['15.4.5.2'],
       tests: [] // TODO(erights): Add to test262
     },
     {
