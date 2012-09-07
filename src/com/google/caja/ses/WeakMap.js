@@ -151,7 +151,8 @@ var WeakMap;
    * goals. In addition, because the name need not be a guarded
    * secret, we could efficiently handle cross-frame frozen keys.
    */
-  var HIDDEN_NAME = 'ident:' + Math.random() + '___';
+  var HIDDEN_NAME_PREFIX = 'weakmap:';
+  var HIDDEN_NAME = HIDDEN_NAME_PREFIX + 'ident:' + Math.random() + '___';
 
   if (typeof crypto !== 'undefined' &&
       typeof crypto.getRandomValues === 'function' &&
@@ -160,7 +161,7 @@ var WeakMap;
     var ab = new ArrayBuffer(25);
     var u8s = new Uint8Array(ab);
     crypto.getRandomValues(u8s);
-    HIDDEN_NAME = 'rand:' +
+    HIDDEN_NAME = HIDDEN_NAME_PREFIX + 'rand:' +
       Array.prototype.map.call(u8s, function(u8) {
         return (u8 % 36).toString(36);
       }).join('') + '___';
@@ -181,7 +182,9 @@ var WeakMap;
   defProp(Object, 'getOwnPropertyNames', {
     value: function fakeGetOwnPropertyNames(obj) {
       return gopn(obj).filter(function(name) {
-        return name !== HIDDEN_NAME;
+        return !(
+          name.substr(0, HIDDEN_NAME_PREFIX.length) == HIDDEN_NAME_PREFIX &&
+            name.substr(name.length - 3) === '___');
       });
     }
   });
