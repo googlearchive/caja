@@ -498,7 +498,7 @@ var ses;
   function testGlobalLeak(desc, that) {
     if (that === void 0) { return false; }
     if (that === global) { return true; }
-    if ({}.toString.call(that) === '[object Window]') { return true; }
+    if (objToString.call(that) === '[object Window]') { return true; }
     return desc + ' leaked as: ' + that;
   }
 
@@ -889,6 +889,20 @@ var ses;
       if (err instanceof TypeError) { return true; }
       return 'freezing forEach failed with ' + err;
     }
+  }
+
+  /**
+   * Detects http://code.google.com/p/v8/issues/detail?id=2273
+   *
+   * A strict mode function should receive a non-coerced 'this'
+   * value. That is, in strict mode, if 'this' is a primitive, it
+   * should not be boxed
+   */
+  function test_FOREACH_COERCES_THISOBJ() {
+    "use strict";
+    var needsWrapping = true;
+    [1].forEach(function(){ needsWrapping = ("string" != typeof this); }, "f");
+    return needsWrapping;
   }
 
   /**
@@ -1589,22 +1603,6 @@ var ses;
   }
 
   /**
-   * In Firefox 15+, Object.freeze and Object.isFrozen only work for
-   * descendents of that same Object.
-   */
-  function test_FIREFOX_15_FREEZE_PROBLEM() {
-    if (!document || !document.createElement) { return false; }
-    var iframe = document.createElement('iframe');
-    var where = document.getElementsByTagName('script')[0];
-    where.parentNode.insertBefore(iframe, where);
-    var otherObject = iframe.contentWindow.Object;
-    where.parentNode.removeChild(iframe);
-    var obj = {};
-    otherObject.freeze(obj);
-    return !Object.isFrozen(obj);
-  }
-
-  /**
    * These are all the own properties that appear on Error instances
    * on various ES5 platforms as of this writing.
    *
@@ -1625,7 +1623,7 @@ var ses;
    * <p>We thank the following people, projects, and websites for
    * providing some useful intelligence of what property names we
    * should suspect:<ul>
-   * <li><a href="http://stacktracejs.com">stacktracejs.com</a>
+   * <li><a href="http://stacktracejs.org">stacktracejs.org</a>
    * <li>TODO(erights): find message on es-discuss list re
    * "   stack". credit author.
    * </ul>
@@ -1687,6 +1685,14 @@ var ses;
     return result;
   }
 
+  function freshHiddenPropertyCandidates() {
+    var result = freshErrorInstanceWhiteMap();
+    strictForEachFn(errorInstanceBlacklist, function(name) {
+      result[name] = true;
+    });
+    return result;
+  }
+
   /**
    * Do Error instances on those platform carry own properties that we
    * haven't yet examined and determined to be SES-safe?
@@ -1717,40 +1723,40 @@ var ses;
   }
 
   /**
-   * On Firefox 14+ (and probably earlier), error instances have magical
-   * properties that do not appear in getOwnPropertyNames until you refer
-   * to the property.  This makes test_UNEXPECTED_ERROR_PROPERTIES
-   * unreliable, so we can't assume that passing that test is safe.
+   *
    */
-  function test_ERRORS_HAVE_INVISIBLE_PROPERTIES() {
+  function test_GET_OWN_PROPERTY_NAME_LIES() {
     var gopn = Object.getOwnPropertyNames;
     var gopd = Object.getOwnPropertyDescriptor;
 
-    var errors = [new Error('e1')];
-    try { null.foo = 3; } catch (err) { errors.push(err); }
+    var suspects = [new Error('e1')];
+    try { null.foo = 3; } catch (err) { suspects.push(err); }
 
-    for (var i = 0; i < errors.length; i++) {
-      var err = errors[i];
-      var found = Object.create(null);
-      strictForEachFn(gopn(err), function (prop) {
-        found[prop] = true;
+    var unreported = Object.create(null);
+
+    strictForEachFn(suspects, function(suspect) {
+      var candidates = freshHiddenPropertyCandidates();
+      strictForEachFn(gopn(suspect), function(name) {
+        // Delete the candidates that are reported
+        delete candidates[name];
       });
-      var j, prop;
-      for (j = 0; j < errorInstanceWhitelist.length; j++) {
-        prop = errorInstanceWhitelist[j];
-        if (gopd(err, prop) && !found[prop]) {
-          return true;
+      strictForEachFn(gopn(candidates), function(name) {
+        if (!gopd(suspect, name)) {
+          // Delete the candidates that are not own properties
+          delete candidates[name];
         }
-      }
-      for (j = 0; j < errorInstanceBlacklist.length; j++) {
-        prop = errorInstanceBlacklist[j];
-        if (gopd(err, prop) && !found[prop]) {
-          return true;
-        }
-      }
-    }
-    return false;
+      });
+      strictForEachFn(gopn(candidates), function(name) {
+        unreported[name] = true;
+      });
+    });
+
+    var unreportedNames = gopn(unreported);
+    if (unreportedNames.length === 0) { return false; }
+    return 'Error own properties unreported by getOwnPropertyNames: ' +
+      unreportedNames.sort().join(',');
   }
+
 
   ////////////////////// Repairs /////////////////////
   //
@@ -2022,10 +2028,28 @@ var ses;
   }
 
   function repair_NEED_TO_WRAP_FOREACH() {
-    var forEach = Array.prototype.forEach;
     Object.defineProperty(Array.prototype, 'forEach', {
-      value: function forEachWrapper(callbackfn, opt_thisArg) {
-        return forEach.apply(this, arguments);
+      // Taken from https://developer.mozilla.org/en-US/docs/JavaScript/Reference/Global_Objects/Array/forEach
+      value: function(callback, thisArg) { 
+        var T, k;
+        if (this === null || this === undefined) {
+          throw new TypeError("this is null or not defined");
+        }
+        var O = Object(this);
+        var len = O.length >>> 0;
+        if (objToString.call(callback) !== "[object Function]") {
+          throw new TypeError(callback + " is not a function");
+        }
+        T = thisArg;
+        k = 0;
+        while(k < len) {
+          var kValue;
+          if (k in O) {
+            kValue = O[k];
+            callback.call(T, kValue, k, O);
+          }
+          k++;
+        }
       }
     });
   }
@@ -2679,6 +2703,17 @@ var ses;
       tests: ['S15.4.4.18_A1', 'S15.4.4.18_A2']
     },
     {
+      description: 'Array forEach converts primitive thisObj arg to object',
+      test: test_FOREACH_COERCES_THISOBJ,
+      repair: repair_NEED_TO_WRAP_FOREACH,
+      preSeverity: severities.SAFE_SPEC_VIOLATION,
+      canRepair: true,
+      urls: ['http://code.google.com/p/v8/issues/detail?id=2273',
+          'https://developer.mozilla.org/en-US/docs/JavaScript/Reference/Global_Objects/Array/forEach'],
+      sections: ['15.4.4.18'],
+      tests: []
+    },
+    {
       description: 'Workaround undiagnosed need for dummy setter',
       test: test_NEEDS_DUMMY_SETTER,
       repair: repair_NEEDS_DUMMY_SETTER,
@@ -2969,17 +3004,6 @@ var ses;
       tests: [] // TODO(erights): Add to test262
     },
     {
-      description: 'Firefox 15 cross-frame freeze problem',
-      test: test_FIREFOX_15_FREEZE_PROBLEM,
-      repair: void 0,
-      preSeverity: severities.NOT_ISOLATED,
-      canRepair: false,
-      urls: ['https://bugzilla.mozilla.org/show_bug.cgi?id=784892',
-             'https://bugzilla.mozilla.org/show_bug.cgi?id=674195'],
-      sections: [],
-      tests: []
-    },
-    {
       description: 'Error instances have unexpected properties',
       test: test_UNEXPECTED_ERROR_PROPERTIES,
       repair: void 0,
@@ -2990,12 +3014,12 @@ var ses;
       tests: []
     },
     {
-      description: 'Error instances may have invisible properties',
-      test: test_ERRORS_HAVE_INVISIBLE_PROPERTIES,
+      description: 'getOwnPropertyNames lies, hiding some own properties',
+      test: test_GET_OWN_PROPERTY_NAME_LIES,
       repair: void 0,
       preSeverity: severities.NOT_ISOLATED,
       canRepair: false,
-      urls: [],  // TODO(felix8a): need bugs filed
+      urls: [],
       sections: [],
       tests: []
     }
@@ -3082,12 +3106,8 @@ var ses;
         }
       }
 
-      if (typeof beforeFailure === 'string') {
-        logger.error('New Symptom: ' + beforeFailure);
-        postSeverity = severities.NEW_SYMPTOM;
-      }
-      if (typeof afterFailure === 'string') {
-        logger.error('New Symptom: ' + afterFailure);
+      if (typeof beforeFailure === 'string' ||
+          typeof afterFailure === 'string') {
         postSeverity = severities.NEW_SYMPTOM;
       }
 
