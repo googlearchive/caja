@@ -525,6 +525,8 @@ public class ES53RewriterTest extends CommonJsRewriterTestCase {
         + "  };"
         + "}"
         + "'' + (new foo);");
+    assertConsistent(
+        "try { Function.toString(), 1; } catch (e) { 2; }");
   }
 
   public final void testToStringToxicity() throws Exception {

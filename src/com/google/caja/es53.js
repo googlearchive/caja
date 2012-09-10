@@ -3243,9 +3243,9 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
     };
 
   FakeFunction.toString = (function (str) {
-      return function () {
+      return markFunc(function () {
           return str;
-        };
+        });
     })(Function.toString());
 
   // 15.3.1
