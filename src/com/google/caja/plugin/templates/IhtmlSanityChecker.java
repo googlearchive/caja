@@ -44,6 +44,20 @@ public class IhtmlSanityChecker {
     this.mq = mq;
   }
 
+  public boolean check(Node node) {
+    // TODO(kpreid): Kludge due to IhtmlRoots having been turned into document
+    // fragments. Should review if we broke something.
+    if (node.getNodeType() == Node.ELEMENT_NODE) {
+      return check((Element)node);
+    } else {
+      boolean ok = true;
+      for (Node child : Nodes.childrenOf(node)) {
+        ok &= check(child);
+      }
+      return ok;
+    }
+  }
+  
   public boolean check(Element ihtmlRoot) {
     checkIhtmlElements(ihtmlRoot);
     checkDynamicDomParents(ihtmlRoot);

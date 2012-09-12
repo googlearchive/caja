@@ -36,6 +36,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.DocumentFragment;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 import org.w3c.dom.ProcessingInstruction;
 
 public class NodesTest extends CajaTestCase {
@@ -484,10 +485,10 @@ public class NodesTest extends CajaTestCase {
     };
     for (String docType : docTypes) {
       Document doc = DomParser.makeDocument(DoctypeMaker.parse(docType), null);
-      Element el = html(fromString("<html><b>my text</b></html>"));
-      doc.appendChild(doc.adoptNode(el));
+      DocumentFragment html = html(fromString("<html><b>my text</b></html>"));
+      doc.appendChild(doc.adoptNode(html));
       MoreAsserts.assertStartsWith(docType,
-          Nodes.render(doc.getDoctype(), el, null));
+          Nodes.render(doc.getDoctype(), html, null));
     }
   }
 
@@ -513,7 +514,8 @@ public class NodesTest extends CajaTestCase {
       for (Pair<MarkupRenderMode, String> expectedPair : expectedPairs) {
         Document doc = DomParser.makeDocument(
             DoctypeMaker.parse(docType), null);
-        Element el = html(fromString("<html><b>my text</b></html>"));
+        Element el = (Element)getOnlyChild(
+            html(fromString("<html><b>my text</b></html>")));
         doc.appendChild(doc.adoptNode(el));
 
         StringBuilder sb = new StringBuilder();
@@ -523,7 +525,8 @@ public class NodesTest extends CajaTestCase {
         rc.getOut().noMoreTokens();
         String actual = sb.toString();
         MoreAsserts.assertStartsWith(docType, actual);
-        assertTrue(actual, actual.contains(expectedPair.b));
+        assertTrue(actual + " expected " + expectedPair.b,
+            actual.contains(expectedPair.b));
       }
     }
   }
@@ -586,10 +589,11 @@ public class NodesTest extends CajaTestCase {
   }
 
   public final void testRenderWithBrokenNekoDom() throws Exception {
-    Element el = html(fromString("<a href='foo.html'>bar</a>"));
+    DocumentFragment html = html(fromString("<a href='foo.html'>bar</a>"));
     assertEquals(
         "<html><head></head><body><a href=\"foo.html\">bar</a></body></html>",
-        Nodes.render(new NullLocalNameMembrane().wrap(el, Element.class)));
+        Nodes.render(new NullLocalNameMembrane().wrap(
+            (Element)getOnlyChild(html), Element.class)));
   }
 
   public final void testRenderModes() throws Exception {
@@ -667,7 +671,7 @@ public class NodesTest extends CajaTestCase {
   }
 
   public final void testRenderSpeed() throws Exception {
-    Element doc = html(fromResource("amazon.com.html"));
+    DocumentFragment doc = html(fromResource("amazon.com.html"));
     benchmark(100, doc);  // prime the JIT
     Thread.sleep(250);  // Let the JIT kick-in.
     int microsPerRun = benchmark(250, doc);
@@ -678,27 +682,33 @@ public class NodesTest extends CajaTestCase {
         " VarZ:" + getClass().getName() + ".msPerRun=" + microsPerRun);
   }
 
-  private int benchmark(int nRuns, Element el) {
+  private int benchmark(int nRuns, DocumentFragment doc) {
     long t0 = System.nanoTime();
-    for (int i = nRuns; --i >= 0;) { Nodes.render(el); }
+    for (int i = nRuns; --i >= 0;) { Nodes.render(doc); }
     return (int) ((((double) (System.nanoTime() - t0)) / nRuns) / 1e3);
   }
 
   private void assertNoDocType(String docType)
       throws ParseException {
     Document doc = DomParser.makeDocument(DoctypeMaker.parse(docType), null);
-    Element el = html(fromString("TEST NODE"));
-    doc.appendChild(doc.adoptNode(el));
-    assertFalse(Nodes.render(doc.getDoctype(), el, null)
+    DocumentFragment html = html(fromString("TEST NODE"));
+    doc.appendChild(doc.adoptNode(html));
+    assertFalse(Nodes.render(doc.getDoctype(), html, null)
         .matches("[<][!]DOCTYPE"));
   }
 
   private void assertDocType(String expected, String docType)
       throws ParseException {
     Document doc = DomParser.makeDocument(DoctypeMaker.parse(docType), null);
-    Element el = html(fromString("TEST NODE"));
-    doc.appendChild(doc.adoptNode(el));
+    DocumentFragment html = html(fromString("TEST NODE"));
+    doc.appendChild(doc.adoptNode(html));
     MoreAsserts.assertStartsWith(expected,
-        Nodes.render(doc.getDoctype(), el, null));
+        Nodes.render(doc.getDoctype(), html, null));
+  }
+
+  private Node getOnlyChild(Node parent) {
+    NodeList nodes = parent.getChildNodes();
+    assertTrue("not only child", nodes.getLength() == 1);
+    return nodes.item(0);
   }
 }

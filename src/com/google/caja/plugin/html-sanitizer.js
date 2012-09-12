@@ -328,7 +328,7 @@ var html = (function(html4) {
           }
           break;
         case '<\/':
-          if (m = /^([\w:]+)[^\'\"]*/.exec(next)) {
+          if (m = /^([-\w:]+)[^\'\"]*/.exec(next)) {
             if (m[0].length === next.length && parts[pos + 1] === '>') {
               // fast case, no attribute parsing needed
               pos += 2;
@@ -351,7 +351,7 @@ var html = (function(html4) {
           }
           break;
         case '<':
-          if (m = /^([\w:]+)\s*\/?/.exec(next)) {
+          if (m = /^([-\w:]+)\s*\/?/.exec(next)) {
             if (m[0].length === next.length && parts[pos + 1] === '>') {
               // fast case, no attribute parsing needed
               pos += 2;
@@ -561,7 +561,7 @@ var html = (function(html4) {
 
   // at this point, parts[pos-1] is either "<" or "<\/".
   function parseTagAndAttrs(parts, pos) {
-    var m = /^([\w:]+)/.exec(parts[pos]);
+    var m = /^([-\w:]+)/.exec(parts[pos]);
     var tag = {};
     tag.name = m[1].toLowerCase();
     tag.eflags = html4.ELEMENTS[tag.name];
@@ -621,6 +621,26 @@ var html = (function(html4) {
       v = v.substr(1, v.length - 2);
     }
     return unescapeEntities(stripNULs(v));
+  }
+
+  var VIRTUALIZED_ELEMENT_NAME_RE = /^caja-v-(.*)$/i;
+  var VIRTUALIZED_ELEMENT_PREFIX = 'caja-v-';
+  function isVirtualizedElementName(elementName) {
+    return VIRTUALIZED_ELEMENT_NAME_RE.test(elementName);
+  }
+  function realToVirtualElementName(elementName) {
+    var match = VIRTUALIZED_ELEMENT_NAME_RE.exec(elementName);
+    return match ? match[1] : elementName;
+  }
+  function virtualToRealElementName(elementName) {
+    if (Object.prototype.hasOwnProperty.call(html4.ELEMENTS, elementName) &&
+        (html4.ELEMENTS[elementName] & html4.eflags['VIRTUALIZED'])) {
+      // TODO(kpreid): In the future, all unrecognized elements should be
+      // virtualized, in which case this should be !hop || eflag.
+      return VIRTUALIZED_ELEMENT_PREFIX + elementName;
+    } else {
+      return elementName;
+    }
   }
 
   /**
@@ -987,6 +1007,9 @@ var html = (function(html4) {
   html.sanitizeAttribs = html['sanitizeAttribs'] = sanitizeAttribs;
   html.sanitizeWithPolicy = html['sanitizeWithPolicy'] = sanitizeWithPolicy;
   html.unescapeEntities = html['unescapeEntities'] = unescapeEntities;
+  html.isVirtualizedElementName = html['isVirtualizedElementName'] = isVirtualizedElementName;
+  html.realToVirtualElementName = html['realToVirtualElementName'] = realToVirtualElementName;
+  html.virtualToRealElementName = html['virtualToRealElementName'] = virtualToRealElementName;
   return html;
 })(html4);
 

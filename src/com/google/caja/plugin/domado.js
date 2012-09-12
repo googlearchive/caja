@@ -63,6 +63,11 @@ if ('I'.toLowerCase() !== 'i') { throw 'I/i problem'; }
 var domitaModules;
 var Domado = (function() {
   'use strict';
+
+  var isVirtualizedElementName = html.isVirtualizedElementName;
+  var realToVirtualElementName = html.realToVirtualElementName;
+  var virtualToRealElementName = html.virtualToRealElementName;
+
   var cajaPrefix = 'data-caja-';
   var cajaPrefRe = new RegExp('^' + cajaPrefix);
 
@@ -1331,7 +1336,7 @@ var Domado = (function() {
      * Add a tamed document implementation to a Gadget's global scope.
      *
      * Has the side effect of adding the classes "vdoc-body___" and
-     * idSuffix.substring(1) to the pseudoBodyNode.
+     * idSuffix.substring(1) to the containerNode.
      *
      * @param {string} idSuffix a string suffix appended to all node IDs.
      *     It should begin with "-" and end with "___".
@@ -1351,7 +1356,7 @@ var Domado = (function() {
      *         If a hint is not present it should not be relied upon.
      *     The rewrite function should be idempotent to allow rewritten HTML
      *     to be reinjected.
-     * @param {Node} pseudoBodyNode an HTML node to act as the "body" of the
+     * @param {Node} containerNode an HTML node to act as the "body" of the
      *     virtual document provided to Cajoled code.
      * @param {Object} optTargetAttributePresets a record containing the presets
      *     (default and whitelist) for the HTML "target" attribute.
@@ -1360,8 +1365,9 @@ var Domado = (function() {
      *     object is known as a "domicile".
      */
     function attachDocument(
-      idSuffix, naiveUriPolicy, pseudoBodyNode, optTargetAttributePresets,
+      idSuffix, naiveUriPolicy, containerNode, optTargetAttributePresets,
         taming) {
+
       if (arguments.length < 3) {
         throw new Error(
             'attachDocument arity mismatch: ' + arguments.length);
@@ -1378,13 +1384,13 @@ var Domado = (function() {
       };
       var pluginId;
 
-      pseudoBodyNode = makeDOMAccessible(pseudoBodyNode);
-      var document = pseudoBodyNode.ownerDocument;
+      containerNode = makeDOMAccessible(containerNode);
+      var document = containerNode.ownerDocument;
       document = makeDOMAccessible(document);
       var docEl = makeDOMAccessible(document.documentElement);
       var bridal = bridalMaker(makeDOMAccessible, document);
 
-      var window = bridalMaker.getWindow(pseudoBodyNode, makeDOMAccessible);
+      var window = bridalMaker.getWindow(containerNode, makeDOMAccessible);
       window = makeDOMAccessible(window);
 
       var elementPolicies = {};
@@ -1419,9 +1425,9 @@ var Domado = (function() {
 
       // TODO(kpreid): should elementPolicies be exported in domicile?
 
-      // On IE, turn an <canvas> tags into canvas elements that explorercanvas
+      // On IE, turn <canvas> tags into canvas elements that explorercanvas
       // will recognize
-      bridal.initCanvasElements(pseudoBodyNode);
+      bridal.initCanvasElements(containerNode);
 
       // The private properties used in TameNodeConf are:
       //    feral (feral node)
@@ -1654,6 +1660,7 @@ var Domado = (function() {
       }
       var innerHtmlTamer = html.makeSaxParser({
           startTag: function (tagName, attribs, out) {
+            tagName = realToVirtualElementName(tagName);
             out.push('<', tagName);
             for (var i = 0; i < attribs.length; i += 2) {
               var aname = '' + attribs[+i];
@@ -1671,7 +1678,10 @@ var Domado = (function() {
             }
             out.push('>');
           },
-          endTag: function (name, out) { out.push('</', name, '>'); },
+          endTag: function (tagName, out) {
+            tagName = realToVirtualElementName(tagName);
+            out.push('</', tagName, '>');
+          },
           pcdata: function (text, out) { out.push(text); },
           rcdata: function (text, out) { out.push(text); },
           cdata: function (text, out) { out.push(text); }
@@ -2020,12 +2030,13 @@ var Domado = (function() {
         switch (node.nodeType) {
           case 1:  // Element
             var tagName = node.tagName.toLowerCase();
-            if (tamingClassesByElement.hasOwnProperty(tagName)) {
+            if (tamingClassesByElement.hasOwnProperty(tagName + '$')) {
               // Known element with specialized taming class (e.g. <a> has an
               // href property). This is deliberately before the unsafe test;
               // for example, <script> has its own class even though it is
               // unsafe.
-              return new (tamingClassesByElement[tagName])(node, editable);
+              return new (tamingClassesByElement[tagName + '$'])(
+                  node, editable);
             } else if (!html4.ELEMENTS.hasOwnProperty(tagName)
                 || (html4.ELEMENTS[tagName] & html4.eflags.UNSAFE)) {
               // If an unrecognized or unsafe node, return a
@@ -2078,12 +2089,12 @@ var Domado = (function() {
 
       function tameRelatedNode(node, editable, tameNodeCtor) {
         if (node === null || node === void 0) { return null; }
-        if (node === np(tameDocument).feralPseudoBodyNode) {
+        if (node === np(tameDocument).feralContainerNode) {
           if (np(tameDocument).editable && !editable) {
-            // FIXME: return a non-editable version of body.
+            // FIXME: return a non-editable version instead
             throw new Error(NOT_EDITABLE);
           }
-          return tameDocument.body;
+          return tameDocument;
         }
 
         node = makeDOMAccessible(node);
@@ -2179,25 +2190,15 @@ var Domado = (function() {
       }
 
       function makeTameNodeList() {
-        return function TNL(nodeList,
-              editable,
-              opt_tameNodeCtor,
-              opt_extras) {
+        return function TNL(nodeList, editable, tameNodeCtor) {
             nodeList = makeDOMAccessible(nodeList);
             function getItem(i) {
               i = +i;
-              if (opt_extras) {
-                var len = +opt_extras.length;
-                if (i < len) { return opt_extras[i]; }
-                else { i -= len; }
-              }
               if (i >= nodeList.length) { return void 0; }
-              return opt_tameNodeCtor(nodeList[i], editable);
+              return tameNodeCtor(nodeList[i], editable);
             }
             function getLength() {
-              var len = opt_extras ? +opt_extras.length : 0;
-              len += nodeList.length;
-              return len;
+              return nodeList.length;
             }
             var len = +getLength();
             var ArrayLike = cajaVM.makeArrayLike(len);
@@ -2310,19 +2311,21 @@ var Domado = (function() {
             mixinHTMLCollection([], nodeList, editable, opt_tameNodeCtor));
       }
 
-      function tameGetElementsByTagName(rootNode, tagName, editable, extras) {
+      function tameGetElementsByTagName(rootNode, tagName, editable) {
         tagName = String(tagName);
+        var eflags = 0;
         if (tagName !== '*') {
           tagName = tagName.toLowerCase();
           if (!Object.prototype.hasOwnProperty.call(html4.ELEMENTS, tagName)
-              || html4.ELEMENTS[tagName] & html4.ELEMENTS.UNSAFE) {
+              || (eflags = html4.ELEMENTS[tagName]) & html4.ELEMENTS.UNSAFE) { // TODO(kpreid): should be html4.eflags?
             // Allowing getElementsByTagName to work for opaque element types
             // would leak information about those elements.
             return new fakeNodeList([]);
           }
+          tagName = virtualToRealElementName(tagName);
         }
         return new TameNodeList(rootNode.getElementsByTagName(tagName),
-            editable, defaultTameNode, extras);
+            editable, defaultTameNode);
       }
 
       /**
@@ -2838,60 +2841,6 @@ var Domado = (function() {
         };
       })();
 
-      function TamePseudoElement(
-          tagName, tameDoc, childNodesGetter, parentNodeGetter, innerHTMLGetter,
-          geometryDelegate, editable) {
-        TamePseudoNode.call(this, editable);
-
-        definePropertiesAwesomely(this, {
-          nodeName: P_constant(tagName),
-          tagName: P_constant(tagName),
-          ownerDocument: P_constant(tameDoc),
-          childNodes: { enumerable: true, get: nodeMethod(childNodesGetter) },
-          attributes: { enumerable: true, get: nodeMethod(function () {
-            return new TameNodeList([], false, undefined);
-          })},
-          parentNode: { enumerable: true, get: nodeMethod(parentNodeGetter) },
-          innerHTML: { enumerable: true, get: nodeMethod(innerHTMLGetter) }
-        });
-
-        np(this).geometryDelegate = geometryDelegate;
-      }
-      inertCtor(TamePseudoElement, TamePseudoNode);
-      // TODO(mikesamuel): make nodeClasses work.
-      TamePseudoElement.prototype.getAttribute
-          = nodeMethod(function (attribName) { return null; });
-      TamePseudoElement.prototype.setAttribute
-          = nodeMethod(function (attribName, value) { });
-      TamePseudoElement.prototype.hasAttribute
-          = nodeMethod(function (attribName) { return false; });
-      TamePseudoElement.prototype.removeAttribute
-          = nodeMethod(function (attribName) { });
-      TamePseudoElement.prototype.getElementsByTagName = nodeMethod(
-          function (tagName) {
-        tagName = String(tagName).toLowerCase();
-        if (tagName === this.tagName) {
-          // Works since html, head, body, and title can't contain themselves.
-          return fakeNodeList([]);
-        }
-        return this.ownerDocument.getElementsByTagName(tagName);
-      });
-      TamePseudoElement.prototype.getElementsByClassName = nodeMethod(
-          function (className) {
-        return this.ownerDocument.getElementsByClassName(className);
-      });
-      TamePseudoElement.prototype.getBoundingClientRect =
-        nodeMethod(function () {
-          return np(this).geometryDelegate.getBoundingClientRect();
-      });
-      definePropertiesAwesomely(TamePseudoElement.prototype,
-          commonElementPropertyHandlers);
-      definePropertiesAwesomely(TamePseudoElement.prototype, {
-        nodeType: P_constant(1),
-        nodeValue: P_constant(null)
-      });
-      cajaVM.def(TamePseudoElement);  // and its prototype
-
       traceStartup("DT: about to define makeRestrictedNodeType");
 
       function makeRestrictedNodeType(whitelist) {
@@ -3276,7 +3225,7 @@ var Domado = (function() {
       TameElement.prototype.getElementsByTagName = nodeMethod(
           function(tagName) {
         return tameGetElementsByTagName(
-            np(this).feral, tagName, np(this).childrenEditable, []);
+            np(this).feral, tagName, np(this).childrenEditable);
       });
       TameElement.prototype.getElementsByClassName = nodeMethod(
           function(className) {
@@ -3287,7 +3236,7 @@ var Domado = (function() {
         var feral = np(this).feral;
         var elRect = bridal.getBoundingClientRect(feral);
         var vbody = bridal.getBoundingClientRect(
-            np(this.ownerDocument).feralPseudoBodyNode);
+            np(this.ownerDocument).feralContainerNode);
         var vbodyLeft = vbody.left, vbodyTop = vbody.top;
         return ({
                   top: elRect.top - vbodyTop,
@@ -3324,7 +3273,8 @@ var Domado = (function() {
           case 1:  // Element
             var tagName = rawNode.tagName.toLowerCase();
             if (html4.ELEMENTS.hasOwnProperty(tagName)
-                && !(html4.ELEMENTS[tagName] & html4.eflags.UNSAFE)) {
+                && !(html4.ELEMENTS[tagName] & html4.eflags.UNSAFE)
+                || isVirtualizedElementName(tagName)) {
               // Not an opaque node.
               for (var c = rawNode.firstChild; c; c = c.nextSibling) {
                 c = makeDOMAccessible(c);
@@ -3368,6 +3318,12 @@ var Domado = (function() {
           }
         })
       };
+      var tagNameAttr = {
+        enumerable: true,
+        get: nodeMethod(function () {
+          return realToVirtualElementName(String(np(this).feral.tagName));
+        })
+      };
       definePropertiesAwesomely(TameElement.prototype, {
         id: NP.filterAttr(defaultToEmptyStr, identity),
         className: {
@@ -3383,7 +3339,8 @@ var Domado = (function() {
         dir: NP.filterAttr(defaultToEmptyStr, String),
         innerText: innerTextProp,
         textContent: innerTextProp,
-        tagName: NP.ro,
+        nodeName: tagNameAttr,
+        tagName: tagNameAttr,
         style: NP.filter(
             false,
             nodeMethod(function (styleNode) {
@@ -3448,7 +3405,29 @@ var Domado = (function() {
             return htmlFragment;
           })
         },
-        offsetParent: NP.related
+        offsetParent: {
+          enumerable: true,
+          get: cajaVM.def(function () {
+            var feralOffsetParent = np(this).feral.offsetParent;
+            if (!feralOffsetParent) {
+              return feralOffsetParent;
+            } else if (feralOffsetParent === containerNode) {
+              // Return the body if the node is contained in the body
+              var feralBody = np(tameDocument.body).feral;
+              for (var ancestor = makeDOMAccessible(np(this).feral.parentNode);
+                   ancestor !== containerNode;
+                   ancestor = makeDOMAccessible(ancestor.parentNode)) {
+                if (ancestor === feralBody) {
+                  return defaultTameNode(feralBody, np(this).editable);
+                }
+              }
+              return null;
+            } else {
+              return tameRelatedNode(feralOffsetParent, np(this).editable,
+                  defaultTameNode);
+            }
+          })
+        }
       });
       cajaVM.def(TameElement);  // and its prototype
 
@@ -3476,6 +3455,7 @@ var Domado = (function() {
         var superclass = record.superclass || TameElement;
         var proxyType = record.proxyType;
         var construct = record.construct || identity;
+        var virtualized = record.virtualized || false;
         var forceChildrenNotEditable = record.forceChildrenNotEditable;
         function TameSpecificElement(node, editable) {
           superclass.call(this,
@@ -3487,8 +3467,14 @@ var Domado = (function() {
         }
         inertCtor(TameSpecificElement, superclass, record.domClass);
         for (var i = 0; i < record.names.length; i++) {
-          //console.debug("defineElement", record.names[i]);
-          tamingClassesByElement[record.names[+i]] = TameSpecificElement;
+          var name = record.names[+i];
+          if (!!virtualized !== !!(html4.ELEMENTS[name] &
+                                   html4.eflags.VIRTUALIZED)) {
+            throw new Error("Domado internal inconsistency: " + name + 
+                "has inconsistent virtualization flags");
+          }
+          tamingClassesByElement[virtualToRealElementName(name) + '$'] =
+              TameSpecificElement;
         }
         definePropertiesAwesomely(TameSpecificElement.prototype,
             record.properties || {});
@@ -3506,6 +3492,13 @@ var Domado = (function() {
           href: NP.filter(false, identity, true, identity)
         }
       });
+
+      var TameBodyElement = defineElement({
+        names: ['body'],
+        virtualized: true,
+        domClass: 'HTMLBodyElement'
+      });
+      // TODO(kpreid): need the viewProperties
 
       // http://dev.w3.org/html5/spec/Overview.html#the-canvas-element
       (function() {
@@ -4123,7 +4116,7 @@ var Domado = (function() {
           width: NP.filter(false, identity, false, Number)
         });
 
-        tamingClassesByElement['canvas'] = TameCanvasElement;
+        tamingClassesByElement['canvas$'] = TameCanvasElement;
       })();
 
       traceStartup("DT: done with canvas");
@@ -4202,6 +4195,19 @@ var Domado = (function() {
         if (!np(this).editable) { throw new Error(NOT_EDITABLE); }
         return np(this).feral.reset();
       });
+
+      defineElement({
+        names: ['head'],
+        virtualized: true,
+        domClass: 'HTMLHeadElement'
+      });
+
+      defineElement({
+        names: ['html'],
+        virtualized: true,
+        domClass: 'HTMLHtmlElement'
+      });
+      // TODO(kpreid): need the viewProperties
 
       var P_blacklist = {
         enumerable: true,
@@ -4517,6 +4523,12 @@ var Domado = (function() {
         np(this).feral.deleteRow(index);
       });
 
+      defineElement({
+        names: ['title'],
+        virtualized: true,
+        domClass: 'HTMLTitleElement'
+      });
+
       traceStartup("DT: done with specific elements");
 
       // coerce null and false to 0
@@ -4683,42 +4695,42 @@ var Domado = (function() {
         // document is completely defined by the nodes under the fake body.
         clientLeft: {
           get: function () {
-            return np(tameDocument).feralPseudoBodyNode.clientLeft;
+            return np(tameDocument).feralContainerNode.clientLeft;
           }
         },
         clientTop: {
           get: function () {
-            return np(tameDocument).feralPseudoBodyNode.clientTop;
+            return np(tameDocument).feralContainerNode.clientTop;
           }
         },
         clientHeight: {
           get: function () {
-            return np(tameDocument).feralPseudoBodyNode.clientHeight;
+            return np(tameDocument).feralContainerNode.clientHeight;
           }
         },
         clientWidth: {
           get: function () {
-            return np(tameDocument).feralPseudoBodyNode.clientWidth;
+            return np(tameDocument).feralContainerNode.clientWidth;
           }
         },
         offsetLeft: {
           get: function () {
-            return np(tameDocument).feralPseudoBodyNode.offsetLeft;
+            return np(tameDocument).feralContainerNode.offsetLeft;
           }
         },
         offsetTop: {
           get: function () {
-            return np(tameDocument).feralPseudoBodyNode.offsetTop;
+            return np(tameDocument).feralContainerNode.offsetTop;
           }
         },
         offsetHeight: {
           get: function () {
-            return np(tameDocument).feralPseudoBodyNode.offsetHeight;
+            return np(tameDocument).feralContainerNode.offsetHeight;
           }
         },
         offsetWidth: {
           get: function () {
-            return np(tameDocument).feralPseudoBodyNode.offsetWidth;
+            return np(tameDocument).feralContainerNode.offsetWidth;
           }
         },
         // page{X,Y}Offset appear only as members of window, not on all elements
@@ -4727,37 +4739,37 @@ var Domado = (function() {
         // old versions of Safari.
         pageXOffset: {
           get: function () {
-            return np(tameDocument).feralPseudoBodyNode.scrollLeft;
+            return np(tameDocument).feralContainerNode.scrollLeft;
           }
         },
         pageYOffset: {
           get: function () {
-            return np(tameDocument).feralPseudoBodyNode.scrollTop;
+            return np(tameDocument).feralContainerNode.scrollTop;
           }
         },
         scrollLeft: {
           get: function () {
-            return np(tameDocument).feralPseudoBodyNode.scrollLeft;
+            return np(tameDocument).feralContainerNode.scrollLeft;
           },
           set: function (x) {
-              np(tameDocument).feralPseudoBodyNode.scrollLeft = +x; }
+              np(tameDocument).feralContainerNode.scrollLeft = +x; }
         },
         scrollTop: {
           get: function () {
-            return np(tameDocument).feralPseudoBodyNode.scrollTop;
+            return np(tameDocument).feralContainerNode.scrollTop;
           },
           set: function (y) {
-            np(tameDocument).feralPseudoBodyNode.scrollTop = +y;
+            np(tameDocument).feralContainerNode.scrollTop = +y;
           }
         },
         scrollHeight: {
           get: function () {
-            return np(tameDocument).feralPseudoBodyNode.scrollHeight;
+            return np(tameDocument).feralContainerNode.scrollHeight;
           }
         },
         scrollWidth: {
           get: function () {
-            return np(tameDocument).feralPseudoBodyNode.scrollWidth;
+            return np(tameDocument).feralContainerNode.scrollWidth;
           }
         }
       };
@@ -4767,143 +4779,22 @@ var Domado = (function() {
         desc.enumerable = true;
       });
 
-      function TameHTMLDocument(doc, body, domain, editable) {
+      function TameHTMLDocument(doc, container, domain, editable) {
         traceStartup("DT: TameHTMLDocument begin");
         TamePseudoNode.call(this, editable);
 
         np(this).feralDoc = doc;
-        np(this).feralPseudoBodyNode = body;
+        np(this).feralContainerNode = container;
         np(this).onLoadListeners = [];
         np(this).onDCLListeners = [];
 
         traceStartup("DT: TameHTMLDocument done private");
 
-        var tameBody = defaultTameNode(body, editable);
-        np(this).tamePseudoBodyNode = tameBody;
-        // TODO(mikesamuel): create a proper class for BODY, HEAD, and HTML along
-        // with all the other specialized node types.
-        var tameBodyElement = new TamePseudoElement(
-            'BODY',
-            this,
-            function () {
-              return new TameNodeList(body.childNodes, editable, defaultTameNode);
-            },
-            function () { return tameHtmlElement; },
-            function () { return tameInnerHtml(body.innerHTML); },
-            tameBody,
-            editable);
-        for (var k in {
-          appendChild: 0, removeChild: 0, insertBefore: 0, replaceChild: 0
-        }) {
-          setOwn(tameBodyElement, k, tameBody[k].bind(tameBody));
-        }
-        traceStartup("DT: TameHTMLDocument applying view properties",
-            viewProperties);
-        definePropertiesAwesomely(ExpandoProxyHandler.unwrap(tameBodyElement),
-            viewProperties);
-
-        tameBodyElement = finishNode(tameBodyElement);
-
-        traceStartup("DT: TameHTMLDocument tameTitle");
-        var titleTextNode = doc.createTextNode(body.getAttribute('title') || '');
-        titleTextNode = makeDOMAccessible(titleTextNode);
-        var tameTitleElement = finishNode(new TamePseudoElement(
-            'TITLE',
-            this,
-            function () { return [defaultTameNode(titleTextNode, true)]; },
-            function () { return tameHeadElement; },
-            function () { return html.escapeAttrib(titleTextNode.nodeValue); },
-            null,
-            editable));
-        traceStartup("DT: TameHTMLDocument tameHead");
-        var tameHeadElement = finishNode(new TamePseudoElement(
-            'HEAD',
-            this,
-            function () { return [tameTitleElement]; },
-            function () { return tameHtmlElement; },
-            function () {
-              return '<title>' + tameTitleElement.innerHTML + '</title>';
-            },
-            null,
-            editable));
-        var tameHtmlElement = new TamePseudoElement(  // finished later
-            'HTML',
-            this,
-            function () { return [tameHeadElement, tameBodyElement]; },
-            function () { return tameDocument; },
-            function () {
-              return ('<head>' + tameHeadElement.innerHTML
-                      + '<\/head><body>'
-                      + tameBodyElement.innerHTML + '<\/body>');
-            },
-            tameBody,
-            editable);
-        definePropertiesAwesomely(ExpandoProxyHandler.unwrap(tameHtmlElement),
-            viewProperties);
-
-        // TODO(kpreid): Move this to a TamePseudoHTMLElement constructor?
-        if (body.contains) {  // typeof is 'object' on IE
-          tameHtmlElement.contains = nodeMethod(function (other) {
-            if (other === null || other === void 0) { return false; }
-            other = TameNodeT.coerce(other);
-            var otherNode = np(other).feral;
-            return body.contains(otherNode);
-          });
-        }
-        if ('function' === typeof body.compareDocumentPosition) {
-          /**
-           * Speced in <a href="http://www.w3.org/TR/DOM-Level-3-Core/core.html#Node3-compareDocumentPosition">DOM-Level-3</a>.
-           */
-          tameHtmlElement.compareDocumentPosition = nodeMethod(function (other) {
-            other = TameNodeT.coerce(other);
-            var otherNode = np(other).feral;
-            if (!otherNode) { return 0; }
-            var bitmask = +body.compareDocumentPosition(otherNode);
-            // To avoid leaking information about the relative positioning of
-            // different roots, if neither contains the other, then we mask out
-            // the preceding/following bits.
-            // 0x18 is (CONTAINS | CONTAINED).
-            // 0x1f is all the bits documented at
-            // http://www.w3.org/TR/DOM-Level-3-Core/core.html#DocumentPosition
-            // except IMPLEMENTATION_SPECIFIC.
-            // 0x01 is DISCONNECTED.
-            /*
-            if (!(bitmask & 0x18)) {
-              // TODO: If they are not under the same virtual doc root, return
-              // DOCUMENT_POSITION_DISCONNECTED instead of leaking information
-              // about PRECEEDED | FOLLOWING.
-            }
-            */
-            return bitmask & 0x1f;
-          });
-          if (!tameHtmlElement.hasOwnProperty('contains')) {
-            // http://www.quirksmode.org/blog/archives/2006/01/contains_for_mo.html
-            tameHtmlElement.contains = nodeMethod(function (other) {
-              if (other === null || other === void 0) { return false; }
-              var docPos = this.compareDocumentPosition(other);
-              return !(!(docPos & 0x10) && docPos);
-            }).bind(tameHtmlElement);
-          }
-        }
-
-        tameHtmlElement = finishNode(tameHtmlElement);
+        var tameContainer = defaultTameNode(container, editable);
+        np(this).tameContainerNode = tameContainer;
 
         definePropertiesAwesomely(this, {
-          documentElement: P_constant(tameHtmlElement),
-          domain: P_constant(domain),
-          title: {
-            // http://www.whatwg.org/specs/web-apps/current-work/multipage/dom.html#document.title
-            // as of 2012-08-14
-            enumerable: true,
-            get: nodeMethod(function() {
-              return trimHTML5Spaces(titleTextNode.data);
-            }),
-            set: nodeMethod(function(value) {
-              // TODO(kpreid): should be tameTitleElement.textContent = value;
-              // i.e. replace the node.
-              titleTextNode.data = value;
-            })
-          }
+          domain: P_constant(domain)
         });
       }
       inertCtor(TameHTMLDocument, TamePseudoNode, 'HTMLDocument');
@@ -4912,15 +4803,25 @@ var Domado = (function() {
         nodeName: P_constant('#document'),
         nodeValue: P_constant(null),
         childNodes: { enumerable: true, get: nodeMethod(function () {
-          return fakeNodeList([this.documentElement]);
+          return np(this).tameContainerNode.childNodes;
         })},
         attributes: { enumerable: true, get: nodeMethod(function () {
           return fakeNodeList([]);
         })},
         parentNode: P_constant(null),
-        body: { enumerable: true, get: cajaVM.def(function () {
-          // Not nodeMethod function; is used before trademark applied.
-          return this.documentElement.lastChild;
+        body: { enumerable: true, get: nodeMethod(function () {
+          for (var n = this.documentElement.firstChild; n; n = n.nextSibling) {
+            // Note: Standard def. also includes FRAMESET elements but we don't
+            // currently support them.
+            if (n.nodeName === "BODY") return n;
+          }
+          return null;
+        })},
+        documentElement: { enumerable: true, get: cajaVM.def(function () {
+          for (var n = this.firstChild; n; n = n.nextSibling) {
+            if (n.nodeType === 1) return n;
+          }
+          return null;
         })},
         forms: { enumerable: true, get: nodeMethod(function () {
           var tameForms = [];
@@ -4934,38 +4835,34 @@ var Domado = (function() {
           }
           return fakeNodeList(tameForms);
         })},
+        title: {
+          // TODO(kpreid): get the title element pointer in conformant way
+
+          // http://www.whatwg.org/specs/web-apps/current-work/multipage/dom.html#document.title
+          // as of 2012-08-14
+          enumerable: true,
+          get: nodeMethod(function() {
+            var titleEl = this.getElementsByTagName('title')[0];
+            return trimHTML5Spaces(titleEl.textContent);
+          }),
+          set: nodeMethod(function(value) {
+            var titleEl = this.getElementsByTagName('title')[0];
+            titleEl.textContent = value;
+          })
+        },
         compatMode: P_constant('CSS1Compat'),
         ownerDocument: P_constant(null)
       });
       TameHTMLDocument.prototype.getElementsByTagName = nodeMethod(
           function (tagName) {
         tagName = String(tagName).toLowerCase();
-        switch (tagName) {
-          case 'body': return fakeNodeList([ this.body ]);
-          case 'head': return fakeNodeList([ this.documentElement.firstChild ]);
-          case 'title': return fakeNodeList([
-              this.documentElement.firstChild.firstChild ]);
-          case 'html': return fakeNodeList([ this.documentElement ]);
-          default:
-            var extras;
-            if (tagName === '*') {
-              extras = [
-                this.documentElement,
-                this.documentElement.firstChild,
-                this.documentElement.firstChild.firstChild,  // title
-                this.body
-              ];
-            } else {
-              extras = [];
-            }
-            return tameGetElementsByTagName(
-                np(this).feralPseudoBodyNode, tagName, np(this).editable, extras);
-        }
+        return tameGetElementsByTagName(
+            np(this).feralContainerNode, tagName, np(this).editable);
       });
       TameHTMLDocument.prototype.getElementsByClassName = nodeMethod(
           function (className) {
         return tameGetElementsByClassName(
-            np(this).feralPseudoBodyNode, className, np(this).editable);
+            np(this).feralContainerNode, className, np(this).editable);
       });
       TameHTMLDocument.prototype.addEventListener =
           nodeMethod(function (name, listener, useCapture) {
@@ -4973,13 +4870,13 @@ var Domado = (function() {
               domitaModules.ensureValidCallback(listener);
               np(tameDocument).onDCLListeners.push(listener);
             } else {
-              return np(this).tamePseudoBodyNode.addEventListener(
+              return np(this).tameContainerNode.addEventListener(
                   name, listener, useCapture);
             }
           });
       TameHTMLDocument.prototype.removeEventListener =
           nodeMethod(function (name, listener, useCapture) {
-            return np(this).tamePseudoBodyNode.removeEventListener(
+            return np(this).tameContainerNode.removeEventListener(
                 name, listener, useCapture);
           });
       TameHTMLDocument.prototype.createComment = nodeMethod(function (text) {
@@ -5307,7 +5204,7 @@ var Domado = (function() {
         cajaVM.def(TameStyle);  // and its prototype
 
         function isNestedInAnchor(el) {
-          for (; el && el != pseudoBodyNode; el = el.parentNode) {
+          for (; el && el != containerNode; el = el.parentNode) {
             if (el.tagName && el.tagName.toLowerCase() === 'a') {
               return true;
             }
@@ -5340,7 +5237,7 @@ var Domado = (function() {
               return superReadByCanonicalName.call(this, canonName);
             } else {
               return TameStyleConf.p(
-                      new TameComputedStyle(pseudoBodyNode, this.pseudoElement))
+                      new TameComputedStyle(containerNode, this.pseudoElement))
                   .readByCanonicalName(canonName);
             }
           };
@@ -5444,8 +5341,8 @@ var Domado = (function() {
         return idClass;
       });
       // enforce id class on element
-      bridal.setAttribute(pseudoBodyNode, "class",
-          bridal.getAttribute(pseudoBodyNode, "class")
+      bridal.setAttribute(containerNode, "class",
+          bridal.getAttribute(containerNode, "class")
           + " " + idClass + " vdoc-body___");
 
       // bitmask of trace points
@@ -5461,13 +5358,14 @@ var Domado = (function() {
       traceStartup("DT: about to do TameHTMLDocument");
       var tameDocument = new TameHTMLDocument(
           document,
-          pseudoBodyNode,
+          containerNode,
           // TODO(jasvir): Properly wire up document.domain
           // by untangling the cyclic dependence between
           // TameWindow and TameDocument
           String(undefined || 'nosuchhost.invalid'),
           true);
       traceStartup("DT: finished TameHTMLDocument");
+      domicile.htmlEmitterTarget = containerNode;
 
       // See spec at http://www.whatwg.org/specs/web-apps/current-work/multipage/browsers.html#navigator
       // We don't attempt to hide or abstract userAgent details since
@@ -5638,24 +5536,24 @@ var Domado = (function() {
               // The window is always auto scrollable, so make the apparent window
               // body scrollable if the gadget tries to scroll it.
               if (dx || dy) {
-                makeScrollable(bridal, np(tameDocument).feralPseudoBodyNode);
+                makeScrollable(bridal, np(tameDocument).feralContainerNode);
               }
-              tameScrollBy(np(tameDocument).feralPseudoBodyNode, dx, dy);
+              tameScrollBy(np(tameDocument).feralContainerNode, dx, dy);
             }),
         scrollTo: cajaVM.def(
             function (x, y) {
               // The window is always auto scrollable, so make the apparent window
               // body scrollable if the gadget tries to scroll it.
-              makeScrollable(bridal, np(tameDocument).feralPseudoBodyNode);
-              tameScrollTo(np(tameDocument).feralPseudoBodyNode, x, y);
+              makeScrollable(bridal, np(tameDocument).feralContainerNode);
+              tameScrollTo(np(tameDocument).feralContainerNode, x, y);
             }),
         resizeTo: cajaVM.def(
             function (w, h) {
-              tameResizeTo(np(tameDocument).feralPseudoBodyNode, w, h);
+              tameResizeTo(np(tameDocument).feralContainerNode, w, h);
             }),
         resizeBy: cajaVM.def(
             function (dw, dh) {
-              tameResizeBy(np(tameDocument).feralPseudoBodyNode, dw, dh);
+              tameResizeBy(np(tameDocument).feralContainerNode, dw, dh);
             }),
         /** A partial implementation of getComputedStyle. */
         getComputedStyle: cajaVM.def(
@@ -5700,13 +5598,13 @@ var Domado = (function() {
 
       forOwnKeys({
         innerHeight: function () {
-            return np(tameDocument).feralPseudoBodyNode.clientHeight; },
+            return np(tameDocument).feralContainerNode.clientHeight; },
         innerWidth:  function () {
-            return np(tameDocument).feralPseudoBodyNode.clientWidth; },
+            return np(tameDocument).feralContainerNode.clientWidth; },
         outerHeight: function () {
-            return np(tameDocument).feralPseudoBodyNode.clientHeight; },
+            return np(tameDocument).feralContainerNode.clientHeight; },
         outerWidth:  function () {
-            return np(tameDocument).feralPseudoBodyNode.clientWidth; }
+            return np(tameDocument).feralContainerNode.clientWidth; }
       }, function (propertyName, handler) {
         // TODO(mikesamuel): define on prototype.
         var desc = {enumerable: canHaveEnumerableAccessors, get: handler};

@@ -395,7 +395,7 @@ public class DomParserTest extends CajaTestCase {
 
   public final void testParseDom() throws Exception {
     TokenQueue<HtmlTokenType> tq = tokenizeTestInput(DOM1_XML, true, false);
-    Element el = new DomParser(tq, true, mq).parseDocument();
+    Node el = new DomParser(tq, true, mq).parseDocument();
     assertEquals(DOM1_GOLDEN, formatToString(el, true));
   }
 
@@ -423,24 +423,24 @@ public class DomParserTest extends CajaTestCase {
     String DOM_WITH_COMMENT = "<!-- This is a comment -->\n" + DOM2_HTML;
     TokenQueue<HtmlTokenType> tq = tokenizeTestInput(
         DOM_WITH_COMMENT, false, true);
-    Element el = new DomParser(tq, false, mq).parseDocument();
-    assertEquals(DOM2_HTML_RENDERED_GOLDEN, Nodes.render(el));
+    Node doc = new DomParser(tq, false, mq).parseDocument();
+    assertEquals(DOM2_HTML_RENDERED_GOLDEN, Nodes.render(doc));
   }
 
   public final void testParseLastLineComment() throws Exception {
     String DOM_WITH_COMMENT = DOM2_HTML + "<!-- This is a comment -->";
     TokenQueue<HtmlTokenType> tq = tokenizeTestInput(
         DOM_WITH_COMMENT, false, true);
-    Element el = new DomParser(tq, false, mq).parseDocument();
-    assertEquals(DOM2_HTML_RENDERED_GOLDEN, Nodes.render(el));
+    Node doc = new DomParser(tq, false, mq).parseDocument();
+    assertEquals(DOM2_HTML_RENDERED_GOLDEN, Nodes.render(doc));
   }
 
   public final void testParseIllegalComment() throws Exception {
     String DOM_WITH_BAD_COMMENT = DOM2_HTML + "<!-- A --bad-- comment -->";
     TokenQueue<HtmlTokenType> tq = tokenizeTestInput(
         DOM_WITH_BAD_COMMENT, false, true);
-    Element el = new DomParser(tq, false, mq).parseDocument();
-    assertEquals(DOM2_HTML_RENDERED_GOLDEN, Nodes.render(el));
+    Node doc = new DomParser(tq, false, mq).parseDocument();
+    assertEquals(DOM2_HTML_RENDERED_GOLDEN, Nodes.render(doc));
 
     assertEquals(1, mq.getMessages().size());
     assertMessage(MessageType.INVALID_HTML_COMMENT, MessageLevel.WARNING);

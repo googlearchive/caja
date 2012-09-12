@@ -18,6 +18,7 @@ import com.google.caja.SomethingWidgyHappenedError;
 import com.google.caja.lang.css.CssPropertyPatterns;
 import com.google.caja.lang.css.CssSchema;
 import com.google.caja.lang.css.CssSchema.SymbolInfo;
+import com.google.caja.lang.html.HtmlSchema;
 import com.google.caja.lexer.ExternalReference;
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.TokenConsumer;
@@ -106,6 +107,10 @@ public final class CssRewriter {
     removeEmptyRuleSets(t);
     // Disallow classes and IDs that end in double underscore.
     removeForbiddenIdents(t);
+    // Rename mentions of virtualized elements to match HTML rewriting.
+    //     'body {}'                                        ; The original rule
+    // =>  'caja-v-body {}'                                 ; In the browser
+    renameVirtualizedElements(t);
     //     '#foo {}'                                        ; The original rule
     // =>  '#foo-namespace__ {}'                            ; In the browser
     // where the namespace__ can be replaced by later passes with a per-gadget
@@ -543,6 +548,27 @@ public final class CssRewriter {
         }
       }, t.parent);
   }
+  private void renameVirtualizedElements(AncestorChain<? extends CssTree> t) {
+    t.node.visitPreOrder(new ParseTreeNodeVisitor() {
+        public boolean visit(ParseTreeNode node) {
+          if (node instanceof CssTree.SuffixedSelectorPart) { return false; }
+          if (!(node instanceof CssTree.SimpleSelector)) { return true; }
+          CssTree.SimpleSelector ss = (CssTree.SimpleSelector) node;
+          CssTree name = (CssTree) ss.children().get(0);
+          if (name instanceof CssTree.IdentLiteral) {
+            CssTree.IdentLiteral lit = (CssTree.IdentLiteral) name;
+
+            ElKey key = ElKey.forHtmlElement(lit.getValue());
+                // TODO(kpreid): handle namespaces
+            key = HtmlSchema.virtualToRealElementName(key);
+                // TODO(kpreid): should use a HtmlSchema instance instead of
+                // being static (but we don't have one here).
+            lit.setValue(key.localName);
+          }
+          return true;
+        }
+      });
+  }
   private void suffixIds(AncestorChain<? extends CssTree> t) {
     // Rewrite IDs with the gadget suffix.
     t.node.visitPreOrder(new ParseTreeNodeVisitor() {
@@ -575,16 +601,6 @@ public final class CssRewriter {
         // by this rule.
         CssTree.SimpleSelector baseSelector = (CssTree.SimpleSelector)
             sel.children().get(0);
-        boolean baseIsDescendant = true;
-        if (selectorMatchesElement(baseSelector, "body")) {
-          CssTree.IdentLiteral elName = (CssTree.IdentLiteral)
-              baseSelector.children().get(0);
-          baseSelector.replaceChild(new VdocClassLiteral(
-              elName.getFilePosition(), ".vdoc-body___"), elName);
-          baseIsDescendant = false;
-        } else if (selectorMatchesClass(baseSelector, "vdoc-body___")) {
-          baseIsDescendant = false;
-        }
 
         // Use the start position of the base selector as the position of
         // the synthetic parts.
@@ -593,7 +609,7 @@ public final class CssRewriter {
 
         CssTree restrictClass = new CssTree.SuffixedSelectorPart(pos);
 
-        if (baseIsDescendant) {
+        if (!selectorMatchesClass(baseSelector, "vdoc-body___")) {
           CssTree.Combination op = new CssTree.Combination(
               pos, CssTree.Combinator.DESCENDANT);
           CssTree.SimpleSelector restrictSel = new CssTree.SimpleSelector(

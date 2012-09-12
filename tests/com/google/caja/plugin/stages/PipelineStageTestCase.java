@@ -18,12 +18,18 @@ import com.google.caja.SomethingWidgyHappenedError;
 import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.ExternalReference;
 import com.google.caja.lexer.FetchedData;
+import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.ParseException;
 import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.lexer.escaping.UriUtil;
 import com.google.caja.parser.ParseTreeNode;
+import com.google.caja.parser.ParserBase;
 import com.google.caja.parser.html.Dom;
+import com.google.caja.parser.html.Nodes;
+import com.google.caja.parser.js.NullLiteral;
+import com.google.caja.parser.js.StringLiteral;
+import com.google.caja.parser.quasiliteral.QuasiBuilder;
 import com.google.caja.plugin.DataUriFetcher;
 import com.google.caja.plugin.Job;
 import com.google.caja.plugin.JobEnvelope;
@@ -38,16 +44,24 @@ import com.google.caja.util.CajaTestCase;
 import com.google.caja.util.ContentType;
 import com.google.caja.util.Join;
 import com.google.caja.util.Lists;
-import com.google.caja.util.MoreAsserts;
 import com.google.caja.util.Pair;
+import com.google.caja.util.Strings;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URLDecoder;
 import java.util.Arrays;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+
+import org.w3c.dom.Attr;
+import org.w3c.dom.DocumentFragment;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+
+import junit.framework.ComparisonFailure;
 
 /**
  * An abstract test framework for pipeline stages.
@@ -103,24 +117,64 @@ public abstract class PipelineStageTestCase extends CajaTestCase {
     assertOutputJobs(outputJobs, jobs);
   }
 
-  private void assertOutputJobs(JobStub[] outputJobs, Jobs jobs) {
+  private void assertOutputJobs(JobStub[] outputJobs, Jobs jobs)
+      throws ParseException {
+    Map<String, ParseTreeNode> quasiBindings =
+      new LinkedHashMap<String, ParseTreeNode>();
+    List<JobEnvelope> jobList = jobs.getJobs();
     List<JobStub> actualJobs = Lists.newArrayList();
-    for (JobEnvelope env : jobs.getJobs()) {
+
+    // First we attempt to match outputJobs with jobs so that we can reduce
+    // brittleness due to auto-generated ID mismatches by using quasi
+    // substitution to rewrite "@foo_id__" style quasi nodes in outputJobs with
+    // IDs that appear in jobs.
+    outputJobs = outputJobs.clone();
+    for (int i = 0, n = Math.min(jobList.size(), outputJobs.length);
+         i < n; ++i) {
+      JobStub golden = outputJobs[i];
+      JobEnvelope actual = jobList.get(i);
+
+      if (golden.type == actual.job.getType()) {
+        switch (golden.type) {
+          case JS:
+            if (QuasiBuilder.match(
+                golden.content, actual.job.getRoot(), quasiBindings)) {
+              ParseTreeNode bodyWithIdsReplaced = QuasiBuilder.subst(
+                  golden.content, quasiBindings);
+              golden = new JobStub(
+                  render(bodyWithIdsReplaced), golden.type);
+            }
+            break;
+          case HTML:
+            DocumentFragment html = ((Dom) actual.job.getRoot()).getValue();
+            if (matchHtmlQuasi(golden.content, html, quasiBindings)) {
+              html = substHtmlQuasi(golden.content, quasiBindings);
+              if (html != null) {
+                golden = new JobStub(Nodes.render(html), golden.type);
+              }
+            }
+            break;
+          default: break;
+        }
+      }
+      outputJobs[i] = golden;
+
+      // Second, we convert jobs to JobStubs so we can compare apples to oranges.
       StringBuilder sb = new StringBuilder();
-      ParseTreeNode node = env.job.getRoot();
+      ParseTreeNode node = actual.job.getRoot();
       TokenConsumer tc = node.makeRenderer(sb, null);
       node.render(new RenderContext(tc));
       tc.noMoreTokens();
-      actualJobs.add(new JobStub(sb.toString(), env.job.getType()));
+      actualJobs.add(new JobStub(sb.toString(), actual.job.getType()));
     }
-    // HACK DEBUG
+
+    // Finally we do the actual comparison.
     if (!Arrays.asList(outputJobs).equals(actualJobs)) {
-      assertEquals(
+      throw new ComparisonFailure(
+          null,
           prettyPrintedJobStubs(Arrays.asList(outputJobs)),
           prettyPrintedJobStubs(actualJobs));
     }
-    // END HACK
-    MoreAsserts.assertListsEqual(Arrays.asList(outputJobs), actualJobs);
   }
 
   private void parseJob(JobStub inputJob, Jobs outputJobs)
@@ -128,7 +182,7 @@ public abstract class PipelineStageTestCase extends CajaTestCase {
     switch (inputJob.type) {
       case HTML:
         outputJobs.getJobs().add(JobEnvelope.of(Job.domJob(
-            new Dom(htmlFragment(fromString(inputJob.content, is))),
+            Dom.transplant(html(fromString(inputJob.content, is))),
             is.getUri())));
         break;
       case CSS:
@@ -160,6 +214,13 @@ public abstract class PipelineStageTestCase extends CajaTestCase {
   /** Create a stub job object. */
   protected static JobStub job(String content, ContentType type) {
     return new JobStub(content, type);
+  }
+
+  /** Create a stub job object for a document-ified html fragment. */
+  protected static JobStub htmlJobBody(String content) {
+    return new JobStub(
+        "<html><head></head><body>" + content + "</body></html>",
+        ContentType.HTML);
   }
 
   protected static JobStub job(ContentType type, String... contentLines) {
@@ -239,6 +300,126 @@ public abstract class PipelineStageTestCase extends CajaTestCase {
       return "http://proxy/?uri=" + UriUtil.encode(u.getUri().toString())
           + "&effect=" + effect + "&loader=" + loader;
     }
+  }
+
+  /**
+   * Compares the HTML content in {@code htmlTemplate} structurally to node, and
+   * looks for quasi identifiers in attribute values, treating an attribute value
+   * as equivalent to a JS string literal so that literal IDs in JavaScript can be
+   * correlated with IDs in HTML elements.
+   */
+  private boolean matchHtmlQuasi(
+      String htmlTemplate, DocumentFragment node,
+      Map<String, ParseTreeNode> bindings) throws ParseException {
+    DocumentFragment quasi = htmlFragment(
+        fromString(htmlTemplate, FilePosition.UNKNOWN));
+    return matchHtmlQuasi(quasi, node, bindings);
+  }
+
+  private boolean matchHtmlQuasi(
+      Node tmpl, Node inp, Map<String, ParseTreeNode> bindings) {
+    if (tmpl.getNodeType() != inp.getNodeType()) {
+      return false;
+    }
+    if (!Strings.eqIgnoreCase(tmpl.getNodeName(), inp.getNodeName())) {
+      return false;
+    }
+    String tmplValue = tmpl.getNodeValue();
+    String inpValue = inp.getNodeValue();
+    if (tmplValue == null ? inpValue != null : !tmplValue.equals(inpValue)) {
+      return false;
+    }
+    Node tmplChild = tmpl.getFirstChild();
+    Node inpChild = inp.getFirstChild();
+    for (; tmplChild != null && inpChild != null;
+         tmplChild = tmplChild.getNextSibling(),
+         inpChild = inpChild.getNextSibling()) {
+      if (!matchHtmlQuasi(tmplChild, inpChild, bindings)) { return false; }
+    }
+    if (inpChild != null || tmplChild != null) { return false; }
+    if (tmpl.getNodeType() == Node.ELEMENT_NODE) {
+      Element inpEl = (Element) inp;
+      Element tmplEl = (Element) tmpl;
+      for (Attr inpAttr : Nodes.attributesOf(inpEl)) {
+        if (!tmplEl.hasAttributeNS(
+              inpAttr.getNamespaceURI(), inpAttr.getLocalName())) {
+          return false;
+        }
+      }
+      for (Attr tmplAttr : Nodes.attributesOf(tmplEl)) {
+        Attr inpAttr = inpEl.getAttributeNodeNS(
+           tmplAttr.getNamespaceURI(), tmplAttr.getLocalName());
+        String tmplAttrValue = tmplAttr.getValue();
+        if (ParserBase.isQuasiIdentifier(tmplAttrValue)) {
+          String key = tmplAttrValue.substring(1);
+          if (bindings.containsKey(key)) {
+            ParseTreeNode n = bindings.get(key);
+            if (n instanceof StringLiteral && inpAttr != null
+                && ((StringLiteral) n).getUnquotedValue().equals(
+                    inpAttr.getValue())) {
+              // OK.  Two uses of quasi bind to same value.
+            } else {
+              return false;
+            }
+          } else {
+            bindings.put(
+                key,
+                (inpAttr != null)
+                ? StringLiteral.valueOf(
+                    FilePosition.UNKNOWN, inpAttr.getValue())
+                : new NullLiteral(FilePosition.UNKNOWN));
+          }
+        } else if (inpAttr == null
+                   || !tmplAttrValue.equals(inpAttr.getValue())){
+          return false;
+        }
+      }
+    }
+    return true;
+  }
+
+  /**
+   * Looks for quasi identifiers in attribute values, substituting attribute values
+   * stored as string literals in bindings.  Removes attributes where the
+   * corresponding binding is a {@code NullLiteral}.
+   */
+  private DocumentFragment substHtmlQuasi(
+      String htmlTemplate, Map<String, ParseTreeNode> bindings)
+      throws ParseException {
+    DocumentFragment quasi = htmlFragment(
+        fromString(htmlTemplate, FilePosition.UNKNOWN));
+    if (substHtmlQuasi(quasi, bindings)) {
+      return quasi;
+    } else {
+      return null;
+    }
+  }
+
+  private boolean substHtmlQuasi(Node node, Map<String, ParseTreeNode> bindings) {
+    if (node instanceof Element) {
+      Element el = (Element) node;
+      for (Attr attr : Lists.newArrayList(Nodes.attributesOf(el))) {
+        String value = attr.getValue();
+        if (ParserBase.isQuasiIdentifier(value)) {
+          String key = value.substring(1);
+          ParseTreeNode newValue = bindings.get(key);
+          if (newValue instanceof StringLiteral) {
+            String content = ((StringLiteral) newValue).getUnquotedValue();
+            attr.setValue(content);
+          } else if (newValue instanceof NullLiteral) {
+            // There was no corresponding attribute in the matched DOM when
+            // we did matchHtmlQuasi, or some JS quasi matched with (null).
+            el.removeAttributeNode(attr);
+          } else {
+            return false;
+          }
+        }
+      }
+    }
+    for (Node child : Nodes.childrenOf(node)) {
+      if (!substHtmlQuasi(child, bindings)) { return false; }
+    }
+    return true;
   }
 
   private static String prettyPrintedJobStubs(

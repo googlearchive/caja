@@ -1530,7 +1530,9 @@ public final class CssValidatorTest extends CajaTestCase {
             "WARNING: css property color has bad value: ==>yelow<==");
   }
 
-  public final void testHtmlStarHack() throws Exception {
+  // TODO(kpreid): Special case this was testing for is gone. What more-relevant
+  // tests can we add?
+  public final void DISABLEDtestHtmlStarHack() throws Exception {
     fails("* html p { color: blue }");
     fails("* html { color: blue }");
     fails("* html > p { color: blue }");

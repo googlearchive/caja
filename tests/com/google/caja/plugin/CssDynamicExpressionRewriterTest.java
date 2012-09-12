@@ -54,22 +54,23 @@ public class CssDynamicExpressionRewriterTest extends CajaTestCase {
         "[ '.', ' p#foo-', ' #baz-', ' {\\n  color: blue\\n}' ]");
   }
 
+  // TODO(kpreid): These tests were written to exercise the
+  //     body -> .vdoc-body___
+  // special case in pre-element-virtualization Caja. Replace these test cases
+  // with something providing more useful coverage.
   public final void testBodyMarker() {
     assertCompiledCss(
         "body.ie6 p {color:blue}",
-        // For a id suffix X we get
-        // .vdoc-body___.ie6.X p which applies to all p that are
-        // descendants of virtual bodies with the ie6 class and the X class.
-        "[ '.vdoc-body___.ie6.', ' p {\\n  color: blue\\n}' ]");
+        "[ '.', ' caja-v-body.ie6 p {\\n  color: blue\\n}' ]");
     assertCompiledCss(
         "body.ie6#zoicks p {color:blue}",
-        "[ '.vdoc-body___.ie6#zoicks-', '.', ' p {\\n  color: blue\\n}' ]");
+        "[ '.', ' caja-v-body.ie6#zoicks-', ' p {\\n  color: blue\\n}' ]");
     assertCompiledCss(
         "body.ie6 {color:blue}",
-        "[ '.vdoc-body___.ie6.', ' {\\n  color: blue\\n}' ]");
+        "[ '.', ' caja-v-body.ie6 {\\n  color: blue\\n}' ]");
     assertCompiledCss(
         "body { font-size: 12pt }",
-        "[ '.vdoc-body___.', ' {\\n  font-size: 12pt\\n}' ]");
+        "[ '.', ' caja-v-body {\\n  font-size: 12pt\\n}' ]");
   }
 
   public final void testCompoundRule() {

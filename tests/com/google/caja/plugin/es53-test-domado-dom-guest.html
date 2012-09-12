@@ -14,6 +14,8 @@
  - limitations under the License.
 -->
 
+<html>
+<head>
 <title>this title is &amp; test   </title>
 
 <style type="text/css">
@@ -30,9 +32,14 @@ document.write(
     ' { font-style: italic }</style>');
 </script>
 
+</head>
 <body class="foo">
 
 <script type="text/javascript">
+  function nodeIsntWhitespace(node) {
+    return node.nodeType !== 3 || !/^\s*$/.test(node.data);
+  }
+  
   /**
    * Checks the structure of a DOM structure against a skeleton describing
    * details of the node.
@@ -62,7 +69,7 @@ document.write(
               assertEquals(msg, v, node.nodeName);
               break;
             case 'innerHTML':
-              assertEquals(msg, v, node.innerHTML);
+              assertEquals(msg, v, canonInnerHtml(node.innerHTML));
               break;
             case 'sameAs':
               assertEquals(msg, v, node);
@@ -87,14 +94,33 @@ document.write(
               }
               break;
             case 'children':
+            case 'childrenExceptWhitespace':
               var children = node.childNodes;
-              assertEquals(msg + ' #children', v.length, children.length);
+              
+              // Filter whitespace
+              var matchChildren;
+              if (key === 'childrenExceptWhitespace') {
+                matchChildren = [];
+                for (var i = 0, n = children.length; i < n; ++i) {
+                  var c = children[i];
+                  if (nodeIsntWhitespace(c)) {
+                    matchChildren.push(c);
+                  }
+                }
+              } else {
+                matchChildren = children;
+              }
+              
+              // Check expected nodes
+              assertEquals(msg + ' #children', v.length, matchChildren.length);
               for (var i = 0, n = v.length; i < n; ++i) {
                 assertDomTree(
-                    v[i], children[i],
-                    stack + '/(#' + i + ':' + children[i].nodeName + ')');
+                    v[i], matchChildren[i],
+                    stack + '/(#' + i + ':' + matchChildren[i].nodeName + ')');
               }
-              for (var i = 0, n = v.length, c = node.firstChild; i < n;
+              
+              // Check consistency of childNodes and sibling links
+              for (var i = 0, n = children.length, c = node.firstChild; i < n;
                    ++i, c = c.nextSibling) {
                 // TODO(mikesamuel): enable for all node-types
                 // once EQ fixed on IE
@@ -102,7 +128,7 @@ document.write(
                   assertEquals(msg + ' firstChild check ' + i, c, children[i]);
                 }
               }
-              for (var i = n = v.length, c = node.lastChild; --i >= 0;
+              for (var i = n = children.length, c = node.lastChild; --i >= 0;
                    c = c.previousSibling) {
                 // TODO(mikesamuel): enable for all node-types
                 // once EQ fixed on IE
@@ -1255,7 +1281,7 @@ document.write(
     assertEquals("wrong outer.offsetParent: " + outer.offsetParent,
                  document.body, outer.offsetParent);
     assertEquals("wrong body.offsetParent: " + document.body.offsetParent,
-                 undefined, document.body.offsetParent);
+                 null, document.body.offsetParent);
     pass('test-offset-parent');
   });
 </script>
@@ -1906,6 +1932,9 @@ After
 
 <p id="testDocumentElement" class="testcontainer">Test Document Element</p>
 <script type="text/javascript">
+    // Note: When this test was written, Domado provided a "pseudo" DOM
+    // structure which was not backed by real DOM nodes; thus this test was
+    // used to confirm that the emulation was correct.
     jsunitRegister('testDocumentElement',
                    function testDocumentElement() {
       assertDomTree({
@@ -1913,31 +1942,30 @@ After
           nodeName: '#document',
           attributes: [],
           nodeValue: null,
-          children: [
+          childrenExceptWhitespace: [
             {
               nodeType: 1,
               tagName: 'HTML',
               nodeValue: null,
               attributes: [],
-              children: [
+              childrenExceptWhitespace: [
                 {
                   nodeType: 1,
                   tagName: 'HEAD',
                   nodeValue: null,
                   attributes: [],
-                  innerHTML: '<title></title>',
-                  children: [
+                  // TODO(kpreid): single space is a bug?
+                  innerHTML: '<title>this title is &amp; test </title>',
+                  childrenExceptWhitespace: [
                     {
                       nodeType: 1,
                       tagName: 'TITLE',
                       nodeValue: null,
                       attributes: [],
-                      // TODO(kpreid): Change this expectation when complete
-                      // <head> support is done.
-                      innerHTML: '',  // 'this title is &amp; test   ',
+                      innerHTML: 'this title is &amp; test',
                       children: [ {
                         nodeType: 3,
-                        nodeValue: ''  // 'this title is & test   '
+                        nodeValue: 'this title is & test   '
                       } ]
                     }
                   ]
@@ -1946,7 +1974,12 @@ After
                   nodeType: 1,
                   tagName: 'BODY',
                   nodeValue: null,
-                  attributes: [],
+                  attributes: [
+                    {
+                      nodeName: "class",
+                      nodeValue: "foo"
+                    }
+                  ],
                   sameAs: document.body
                 }
               ]
@@ -1954,9 +1987,9 @@ After
           ]
         }, document);
 
-      var html = document.documentElement.innerHTML;
-      assertTrue(!!html.match(
-        '<head><title></title></head><body>'));
+      var html = canonInnerHtml(document.documentElement.innerHTML);
+      assertTrue('Wrong prefix of ' + html.substring(0, 100), !!html.match(
+          '<head><title>this title is &amp; test </title></head><body'));
 
       pass('testDocumentElement');
     });
@@ -1973,11 +2006,10 @@ After
 
       // Test getter
       // note no trailing space
-      // TODO(kpreid): Enable this test after more complete <head> support
-      //assertEquals('this title is & test', document.title);
-      document.getElementsByTagName('title')[0].childNodes[0].data =
-          '&alt title data   ';
-      assertEquals('&alt title data', document.title);
+      assertEquals('this title is & test', document.title);
+      document.getElementsByTagName('title')[0].textContent =
+          '&alt title tc   ';
+      assertEquals('&alt title tc', document.title);
 
       // Test setter (and test this isn't a HTML-injection hole)
       document.title = '&lt; alt title prop   ';
@@ -1987,7 +2019,7 @@ After
         nodeType: 1,
         tagName: 'TITLE',
         attributes: [],
-        innerHTML: '&amp;lt; alt title prop   ',
+        innerHTML: '&amp;lt; alt title prop',
         children: [ {
           nodeType: 3,
           nodeValue: '&lt; alt title prop   '
@@ -2327,10 +2359,8 @@ Test row cell
 
 
 <script type="text/javascript">
-  // TODO(kpreid): Enable for ES5 once we have backed <body>
-  jsunitRegisterIf(!inES5Mode,
-                   'testBodyClasses',
-                   function testBodyClasses() {
+  jsunitRegister('testBodyClasses',
+                 function testBodyClasses() {
     function s(id) {
       return window.getComputedStyle(document.getElementById(id), null);
     }

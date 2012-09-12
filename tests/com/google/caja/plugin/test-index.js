@@ -36,6 +36,7 @@
     ['es53-test-client-uri-rewriting.js'],
     ['es53-test-container-overflow.js'],
     ['es53-test-defensible-objects.js'],
+    ['es53-test-domado-dom-global.js'],
     ['es53-test-domado-events.js'],
     ['es53-test-domado-foreign.js'],
     ['es53-test-domado-special.js'],

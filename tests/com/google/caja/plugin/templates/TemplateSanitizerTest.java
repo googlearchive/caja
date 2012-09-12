@@ -169,12 +169,11 @@ public class TemplateSanitizerTest extends CajaTestCase {
         "p { color: expression(disallowed()) }",
         "WARNING: removing disallowed tag style");
   }
-  public final void testDisallowedTitleElement() throws Exception {
+  public final void testVirtualizedTitleElement() throws Exception {
     assertValid(
         htmlFragment(fromString(
-            "<title>disallowed</title>")),
-        "",
-        "WARNING: removing disallowed tag title");
+            "<title>virtualized</title>")),
+        "<caja-v-title>virtualized</caja-v-title>");
   }
   public final void testAttributeValidity() throws Exception {
     assertValid(
@@ -218,24 +217,17 @@ public class TemplateSanitizerTest extends CajaTestCase {
         "",
         "WARNING: removing disallowed tag meta");
   }
-  public final void testDisallowedElement4() throws Exception {
+  public final void testElementVirtualization1() throws Exception {
     assertValid(
-        xmlFragment(fromString("<title>A title</title>")), "",
-        "WARNING: removing disallowed tag title");
+        xmlFragment(fromString("<title>A title</title>")),
+        "<caja-v-title>A title</caja-v-title>");
   }
-  public final void testElementFolding1() throws Exception {
+  public final void testElementVirtualization2() throws Exception {
     assertValid(
         xmlFragment(fromString("<body bgcolor=\"red\">Zoicks</body>")),
-        "Zoicks",
-        "WARNING: folding element body into parent",
-        "WARNING: removing attribute bgcolor when folding body into parent");
+        "<caja-v-body bgcolor=\"red\">Zoicks</caja-v-body>");
   }
-  public final void testElementFolding2() throws Exception {
-    assertValid(
-        xmlFragment(fromString("<body>Zoicks</body>")),
-        "Zoicks", "WARNING: folding element body into parent");
-  }
-  public final void testElementFolding3() throws Exception {
+  public final void testElementVirtualizationAndFolding1() throws Exception {
     assertValid(
         xmlFragment(fromString(
             "<html>"
@@ -250,15 +242,14 @@ public class TemplateSanitizerTest extends CajaTestCase {
             + "<x>Four</x>"
             + "</body>"
             + "</html>")),
-        "<p>Foo</p><p>One</p><p data-caja-styleo=\"color: red\">Two" +
-            "</p>ThreeFour",
-        "WARNING: folding element html into parent",
-        "WARNING: folding element head into parent",
-        "WARNING: removing disallowed tag title",
-        "WARNING: folding element body into parent",
+        "<caja-v-html><caja-v-head><caja-v-title>Blah</caja-v-title>" +
+            "<p>Foo</p></caja-v-head><caja-v-body><p>One</p>" +
+            "<p data-caja-styleo=\"color: red\">Two" +
+            "</p>ThreeFour" +
+            "</caja-v-body></caja-v-html>",
         "WARNING: removing unknown tag x");
   }
-  public final void testElementFolding4() throws Exception {
+  public final void testElementVirtualizationAndFolding2() throws Exception {
     assertValid(
         xmlFragment(fromString(
             "<html>"
@@ -273,11 +264,22 @@ public class TemplateSanitizerTest extends CajaTestCase {
             + "<p>Four</p>"
             + "</body>"
             + "</html>")),
-        "<p>Foo</p><p>One</p><p>Two</p>Three<p>Four</p>",
-        "WARNING: folding element html into parent",
-        "WARNING: folding element head into parent",
-        "WARNING: removing disallowed tag title",
-        "WARNING: folding element body into parent");
+        "<caja-v-html><caja-v-head><caja-v-title>Blah</caja-v-title>" +
+            "<p>Foo</p></caja-v-head><caja-v-body>" +
+            "<p>One</p><p>Two</p>Three<p>Four</p>" +
+            "</caja-v-body></caja-v-html>");
+  }
+  public final void testAttrsOnVirtualizedElement() throws Exception {
+    // confirming that (multiple) attributes on virtualized elements are
+    // preserved, and that attrs are sanitized
+    assertValid(
+        htmlFragment(fromString(
+            "<html alpha='a' beta='b'>"
+            + "<body alpha='a' background='#bbb'></body></html>")),
+        "<caja-v-html data-caja-alpha=\"a\" data-caja-beta=\"b\">" +
+            "<caja-v-head></caja-v-head>" + 
+            "<caja-v-body background=\"#bbb\" data-caja-alpha=\"a\">" +
+            "</caja-v-body></caja-v-html>");
   }
   public final void testIgnoredElement() throws Exception {
     assertValid(

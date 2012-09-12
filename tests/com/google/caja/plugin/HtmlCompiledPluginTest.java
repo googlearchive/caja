@@ -112,8 +112,12 @@ public class HtmlCompiledPluginTest extends CajaTestCase {
         "<a onclick=\"foo(this)\">hi</a>",
 
         // Handler is attached separately.
+        // TODO(kpreid): The fact that the actual output has an XML style <.../> 
+        // tag means the DOM implementation is wrong here, though this doesn't
+        // matter for what we're testing.
         ""
-        + "assertEquals('<a target=\"rewritten-null\">hi</a>',"
+        + "assertEquals('<caja-v-html><caja-v-head/><caja-v-body>'"
+        + "+ '<a target=\"rewritten-null\">hi</a></caja-v-body></caja-v-html>',"
         + "             document.getElementById('test-test').innerHTML);");
   }
 
@@ -173,7 +177,7 @@ public class HtmlCompiledPluginTest extends CajaTestCase {
     PluginCompiler compiler = new PluginCompiler(
         TestBuildInfo.getInstance(), meta, mq);
     compiler.setMessageContext(mc);
-    Dom html = new Dom(htmlFragment(fromString("<script>{</script>")));
+    Dom html = Dom.transplant(html(fromString("<script>{</script>")));
     compiler.addInput(html, is.getUri());
 
     boolean passed = compiler.run();
@@ -185,7 +189,7 @@ public class HtmlCompiledPluginTest extends CajaTestCase {
   }
 
   private void execGadget(String gadgetSpec, String tests) throws Exception {
-    execGadget(new Dom(htmlFragment(fromString(gadgetSpec))), tests);
+    execGadget(Dom.transplant(html(fromString(gadgetSpec))), tests);
   }
 
   private void execGadget(Dom html, String tests) throws Exception {

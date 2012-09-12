@@ -25,7 +25,9 @@ import com.google.caja.util.Callback;
 
 import java.io.IOException;
 
+import org.w3c.dom.Document;
 import org.w3c.dom.DocumentFragment;
+import org.w3c.dom.Node;
 
 /**
  * A parse tree wrapper for an org.w3c.DOM tree. The root must be a
@@ -38,6 +40,26 @@ public final class Dom extends AbstractParseTreeNode {
   public Dom(DocumentFragment fragment) {
     super(Nodes.getFilePositionFor(fragment), NoChildren.class);
     this.fragment = fragment;
+  }
+
+  /**
+   * Create a Dom object containing a DocumentFragment containing the provided
+   * node.
+   *
+   * If the provided node is a Document, transplant its root node. If the
+   * provided node is a DocumentFragment, use it rather than creating a new
+   * fragment.
+   */
+  public static Dom transplant(Node node) {
+    if (node.getNodeType() == Node.DOCUMENT_NODE) {
+      node = ((Document) node).getDocumentElement();
+    } else if (node.getNodeType() == Node.DOCUMENT_FRAGMENT_NODE) {
+      return new Dom((DocumentFragment) node);
+    }
+    DocumentFragment f = node.getOwnerDocument().createDocumentFragment();
+    f.appendChild(node);
+    Nodes.setFilePositionFor(f, Nodes.getFilePositionFor(node));
+    return new Dom(f);
   }
 
   // Dom nodes can never be considered immutable since they point to an

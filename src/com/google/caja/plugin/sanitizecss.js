@@ -29,6 +29,7 @@
  * \@requires cssSchema
  * \@requires decodeCss
  * \@requires URI
+ * \@requires html
  * \@requires html4
  * \@overrides window
  * \@requires parseCssStylesheet
@@ -346,18 +347,17 @@ function sanitizeCssSelectors(selectors, suffix) {
 
     function processElementSelector(start, end, last) {
       var debugStart = start, debugEnd = end;
-
       // Split the element selector into three parts.
       // DIV.foo#bar:hover
       //    ^       ^
       // el classes pseudo
-      var element, classId, pseudoSelector, tok, elType;
+      var element, classId, pseudoSelector, tok;
       element = '';
       if (start < end) {
-        tok = selectors[start].toLowerCase();
+        tok = html.virtualToRealElementName(selectors[start].toLowerCase());
+        var elType = html4.ELEMENTS[tok];
         if (tok === '*'
-            || (tok === 'body' && start+1 !== end && !last)
-            || ('number' === typeof (elType = html4.ELEMENTS[tok])
+            || ('number' === typeof elType
                 && !(elType & html4.eflags['UNSAFE']))) {
           ++start;
           element = tok;
@@ -404,15 +404,9 @@ function sanitizeCssSelectors(selectors, suffix) {
 
 
     var safeSelector = out.join('');
-    if (/^body\b/.test(safeSelector)) {
-      // Substitute the class that is attached to pseudo body elements for
-      // the body element.
-      safeSelector = '.vdoc-body___.' + suffix + safeSelector.substring(4);
-    } else {
-      // Namespace the selector so that it only matches under
-      // a node with suffix in its CLASS attribute.
-      safeSelector = '.' + suffix + ' ' + safeSelector;
-    }
+    // Namespace the selector so that it only matches under
+    // a node with suffix in its CLASS attribute.
+    safeSelector = '.' + suffix + ' ' + safeSelector;
 
     (historySensitive
      ? historySensitiveSelectors

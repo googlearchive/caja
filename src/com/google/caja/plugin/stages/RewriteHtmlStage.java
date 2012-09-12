@@ -126,7 +126,6 @@ final class HtmlExtractor {
   boolean extract() {
     boolean hasPlaceholders = false;
     Node root = ((Dom) htmlEnv.job.getRoot()).getValue();
-    extractBodyInfo(root, htmlEnv);
     HtmlEmbeddedContentFinder finder = new HtmlEmbeddedContentFinder(
         htmlSchema, htmlEnv.job.getBaseUri(),
         jobs.getMessageQueue(), jobs.getMessageContext());
@@ -158,15 +157,12 @@ final class HtmlExtractor {
     return hasPlaceholders;
   }
 
-  private static final ElKey HTML = ElKey.forHtmlElement("html");
   private static final ElKey BODY = ElKey.forHtmlElement("body");
   private static final ElKey LINK = ElKey.forHtmlElement("link");
   private static final ElKey SCRIPT = ElKey.forHtmlElement("script");
   private static final ElKey STYLE = ElKey.forHtmlElement("style");
   private static final AttribKey BODY_ONLOAD
       = AttribKey.forHtmlAttrib(BODY, "onload");
-  private static final AttribKey BODY_CLASS
-      = AttribKey.forHtmlAttrib(BODY, "class");
 
   private boolean rewriteScriptEl(Node root, EmbeddedContent c) {
     Element scriptEl = (Element) c.getSource();
@@ -358,62 +354,6 @@ final class HtmlExtractor {
     if (handler != null && !handler.children().isEmpty()) {
       Element placeholder = placeholderFor(onload, handler);
       body.appendChild(placeholder);
-    }
-  }
-
-  /**
-   * Find any class attributes on the {@code <body>} element and use the HTML
-   * emitter to attach the classes to the virtual document body.
-   */
-  private void extractBodyInfo(Node node, JobEnvelope source) {
-    switch (node.getNodeType()) {
-      case Node.DOCUMENT_FRAGMENT_NODE:
-        for (Node child : Nodes.childrenOf(node)) {
-          extractBodyInfo(child, source);
-        }
-        break;
-      case Node.ELEMENT_NODE:
-        Element el = (Element) node;
-        ElKey elKey = ElKey.forElement(el);
-        if (HTML.equals(elKey)) {
-          for (Node child : Nodes.childrenOf(node)) {
-            extractBodyInfo(child, source);
-          }
-        } else if (BODY.equals(elKey)) {
-          Attr classAttr = el.getAttributeNodeNS(
-              Namespaces.HTML_NAMESPACE_URI, BODY_CLASS.localName);
-          if (classAttr != null) {
-            el.removeAttributeNode(classAttr);
-            String identifiers = classAttr.getValue().trim();
-            if (!"".equals(identifiers)) {
-              WhiteList wl = WhiteList.Factory.empty();
-              HtmlAttributeRewriter rw = new HtmlAttributeRewriter(
-                  jobs.getPluginMeta(), new CssSchema(wl, wl),
-                  htmlSchema, Maps.<Attr, EmbeddedContent>newHashMap(),
-                  jobs.getMessageQueue());
-              HtmlAttributeRewriter.SanitizedAttr sanitized
-                  = rw.sanitizeStringValue(HtmlAttributeRewriter.fromAttr(
-                      classAttr, htmlSchema.lookupAttribute(BODY_CLASS),
-                      source));
-              if (sanitized.isSafe) {
-                FilePosition pos = Nodes.getFilePositionForValue(classAttr);
-                Expression e = sanitized.result;
-                if (e == null) { e = StringLiteral.valueOf(pos, identifiers); }
-                Statement s = new ExpressionStmt(
-                    (Expression) QuasiBuilder.substV(
-                         ""
-                        + "IMPORTS___.htmlEmitter___"
-                        + "    ./*@synthetic*/addBodyClasses(@idents);",
-                        "idents", e));
-                Block b = new Block(FilePosition.UNKNOWN, Collections.singletonList(s));
-                jobs.getJobs().add(new JobEnvelope(
-                    null, htmlEnv.cacheKeys, ContentType.JS, false,
-                    Job.jsJob(b, htmlEnv.job.getBaseUri())));
-              }
-            }
-          }
-        }
-        break;
     }
   }
 }

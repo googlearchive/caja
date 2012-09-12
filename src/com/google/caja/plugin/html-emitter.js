@@ -67,8 +67,13 @@ function HtmlEmitter(makeDOMAccessible, base, opt_domicile, opt_guestGlobal) {
   var detached = null;
   /** Makes sure IDs are accessible within removed detached nodes. */
   var idMap = null;
+  
+  /** Hook from attach/detach to document.write logic. */
+  var updateInsertionMode;
 
   var arraySplice = Array.prototype.splice;
+  
+  var HTML5_WHITESPACE_RE = /^[\u0009\u000a\u000c\u000d\u0020]*$/;
 
   function buildIdMap() {
     idMap = {};
@@ -262,6 +267,7 @@ function HtmlEmitter(makeDOMAccessible, base, opt_domicile, opt_guestGlobal) {
     // element could have been the only child.
     var isLimitClosed = detached[1] !== limit;
     insertionPoint = isLimitClosed ? limit.parentNode : limit;
+    updateInsertionMode();
     return limit;
   }
   /**
@@ -291,14 +297,6 @@ function HtmlEmitter(makeDOMAccessible, base, opt_domicile, opt_guestGlobal) {
     idMap = detached = base = null;
     return this;
   }
-  /**
-   * Attach to the virtual document body classes that were extracted from the
-   * body element.
-   * @param {string} classes rewritten HTML classes.
-   */
-  function addBodyClasses(classes) {
-    base.className += ' ' + classes;
-  }
 
   function signalLoaded() {
     // Signals the close of the document and fires any window.onload event
@@ -322,11 +320,13 @@ function HtmlEmitter(makeDOMAccessible, base, opt_domicile, opt_guestGlobal) {
   this.signalLoaded = signalLoaded;
   this.setAttr = bridal.setAttribute;
   this.rmAttr = function(el, attr) { return el.removeAttribute(attr); };
-  this.addBodyClasses = addBodyClasses;
   this.handleEmbed = handleEmbed;
 
   (function (domicile) {
-    if (!domicile || domicile.writeHook) { return; }
+    if (!domicile || domicile.writeHook) {
+      updateInsertionMode = function () {};
+      return;
+    }
 
     function concat(items) {
       return Array.prototype.join.call(items, '');
@@ -441,6 +441,348 @@ function HtmlEmitter(makeDOMAccessible, base, opt_domicile, opt_guestGlobal) {
     var documentLoaded = undefined;
     var depth = 0;
 
+    function normalInsert(tagName, attribs) {
+      tagName = html.virtualToRealElementName(tagName);
+
+      var eltype = html4.ELEMENTS[tagName]; // TODO(kpreid): dupe execution
+      domicile.sanitizeAttrs(tagName, attribs);
+
+      if ((eltype & html4.eflags.UNSAFE) !== 0) {
+        // TODO(kpreid): Shouldn't happen (for now)
+        return;
+      }
+
+      var el = bridal.createElement(tagName, attribs);
+      if ((eltype & html4.eflags.OPTIONAL_ENDTAG)
+          && el.tagName === insertionPoint.tagName) {
+        documentWriter.endTag(el.tagName, true);
+        // TODO(kpreid): Replace this with HTML5 parsing model
+      }
+      insertionPoint.appendChild(el);
+      if (!(eltype & html4.eflags.EMPTY)) { insertionPoint = el; }
+    }
+
+    function normalEndTag(tagName) {
+      tagName = html.virtualToRealElementName(tagName).toUpperCase();
+
+      var anc = insertionPoint;
+      while (anc !== base && !/\bvdoc-body___\b/.test(anc.className)) {
+        var p = anc.parentNode;
+        if (anc.tagName === tagName) {
+          insertionPoint = p;
+          return;
+        }
+        anc = p;
+      }
+    }
+
+    function normalText(text) {
+      insertionPoint.appendChild(insertionPoint.ownerDocument.createTextNode(
+          html.unescapeEntities(text)));
+    }
+
+    // Per HTML5 spec
+    function isHtml5NonWhitespace(text) {
+      return !HTML5_WHITESPACE_RE.test(text);
+    }
+    var insertionModes = {
+      initial: {
+        toString: function () { return "initial"; },
+        startTag: function (tagName, attribs) {
+          insertionMode = insertionModes.beforeHtml;
+          insertionMode.startTag.apply(undefined, arguments);
+        },
+        endTag: function (tagName) {
+          insertionMode = insertionModes.beforeHtml;
+          insertionMode.endTag.apply(undefined, arguments);
+        },
+        text: function (text) {
+          if (isHtml5NonWhitespace(text)) {
+            insertionMode = insertionModes.beforeHtml;
+            insertionMode.text.apply(undefined, arguments);
+          }
+        }
+      },
+      beforeHtml: {
+        toString: function () { return "before html"; },
+        startTag: function (tagName, attribs) {
+          if (tagName === 'html') {
+            normalInsert(tagName, attribs);
+            insertionMode = insertionModes.beforeHead;
+          } else {
+            normalInsert('html', []);
+            insertionMode = insertionModes.beforeHead;
+            insertionMode.startTag.apply(undefined, arguments);
+          }
+        },
+        endTag: function (tagName) {
+          if (tagName === 'head' || tagName === 'body' || tagName === 'html' ||
+              tagName === 'br') {
+            normalInsert('html', []);
+            insertionMode = insertionModes.beforeHead;
+            insertionMode.endTag.apply(undefined, arguments);
+          } else {
+            // "Parse error. Ignore the token."
+          }
+        },
+        text: function (text) {
+          if (isHtml5NonWhitespace(text)) {
+            normalInsert('html', []);
+            insertionMode = insertionModes.beforeHead;
+            insertionMode.text.apply(undefined, arguments);
+          }
+        }
+      },
+      beforeHead: {
+        toString: function () { return "before head"; },
+        startTag: function (tagName, attribs) {
+          if (tagName === 'html') {
+            insertionModes.inBody.startTag.apply(undefined, arguments);
+          } else if (tagName === 'head') {
+            normalInsert(tagName, attribs);
+            insertionMode = insertionModes.inHead;
+          } else {
+            insertionMode.startTag('head', []);
+            insertionMode.startTag.apply(undefined, arguments);
+          }
+        },
+        endTag: function (tagName) {
+          if (tagName === 'head' || tagName === 'body' || tagName === 'html' ||
+              tagName === 'br') {
+            insertionMode.startTag('head', []);
+            insertionMode.endTag.apply(undefined, arguments);
+          } else {
+            // "Parse error. Ignore the token."
+          }
+        },
+        text: function (text) {
+          if (isHtml5NonWhitespace(text)) {
+            insertionMode.startTag('head', []);
+            insertionMode.text.apply(undefined, arguments);
+          }
+        }
+      },
+      inHead: {
+        toString: function () { return "in head"; },
+        startTag: function (tagName, attribs) {
+          if (tagName === 'html') {
+            insertionModes.inBody.startTag.apply(undefined, arguments);
+          } else if (tagName === 'base' || tagName === 'basefont' ||
+              tagName === 'bgsound'  || tagName === 'command' ||
+              tagName === 'link'     || tagName === 'meta' ||
+              tagName === 'noscript' || tagName === 'noframes' ||
+              tagName === 'style'    || tagName === 'script') {
+            normalInsert(tagName, attribs);
+          } else if (tagName === 'title') {
+            normalInsert(tagName, attribs);
+            originalInsertionMode = insertionMode;
+            insertionMode = insertionModes.text;
+          } else if (tagName === 'head') {
+            // "Parse error. Ignore the token."
+          } else {
+            insertionMode.endTag('head');
+            insertionMode.startTag.apply(undefined, arguments);
+          }
+        },
+        endTag: function (tagName) {
+          if (tagName === 'head') {
+            insertionPoint = insertionPoint.parentElement;
+            insertionMode = insertionModes.afterHead;
+          } else if (tagName === 'body' || tagName === 'html' ||
+              tagName === 'br') {
+            insertionMode.endTag('head');
+            insertionMode.endTag.apply(undefined, arguments);
+          } else {
+            // "Parse error. Ignore the token."
+          }
+        },
+        text: function (text) {
+          if (isHtml5NonWhitespace(text)) {
+            insertionMode.endTag('head');
+            insertionMode.text.apply(undefined, arguments);
+          }
+        }
+      },
+      afterHead: {
+        toString: function () { return "after head"; },
+        startTag: function (tagName, attribs) {
+          if (tagName === 'html') {
+            insertionModes.inBody.startTag.apply(undefined, arguments);
+          } else if (tagName === 'body') {
+            normalInsert(tagName, attribs);
+            insertionMode = insertionModes.inBody;
+          // TODO(kpreid): Implement the "stuff that should be in head" case.
+          } else if (tagName === 'head') {
+            // "Parse error. Ignore the token."
+          } else {
+            insertionMode.startTag('body', []);
+            insertionMode.startTag.apply(undefined, arguments);
+          }
+        },
+        endTag: function (tagName) {
+          if (tagName === 'body' || tagName === 'html' || tagName === 'br') {
+            insertionMode.startTag('body', []);
+            insertionMode.endTag.apply(undefined, arguments);
+          } else {
+            // "Parse error. Ignore the token."
+          }
+        },
+        text: function (text) {
+          if (isHtml5NonWhitespace(text)) {
+            insertionMode.startTag('body', []);
+            insertionMode.text.apply(undefined, arguments);
+          } else {
+            normalText(text);
+          }
+        }
+      },
+      inBody: {
+        toString: function () { return "in body"; },
+        startTag: function (tagName, attribs) {
+          if (tagName === 'html') {
+            // TODO(kpreid): Implement
+            // "Parse error. For each attribute on the token, check to see if
+            //  the attribute is already present on the top element of the stack
+            //  of open elements. If it is not, add the attribute and its
+            //  corresponding value to that element."
+          } else if (tagName === 'base' || tagName === 'basefont' ||
+              tagName === 'bgsound'     || tagName === 'command' ||
+              tagName === 'link'        || tagName === 'meta' || 
+              tagName === 'noframes'    || tagName === 'script' ||
+              tagName === 'style'       || tagName === 'title') {
+            insertionModes.inHead.startTag.apply(undefined, arguments);
+          } else if (tagName === 'body') {
+            // "Parse error."
+            // TODO(kpreid): Implement attribute merging etc.
+          } else {
+            normalInsert(tagName, attribs);
+          }
+        },
+        endTag: function (tagName) {
+          if (tagName === 'body') {
+            // Yes, we really aren't moving the insertion point.
+            insertionMode = insertionModes.afterBody;
+          } else if (tagName === 'html') {
+            insertionMode.endTag('body');
+            insertionMode.endTag.apply(undefined, arguments);
+          } else {
+            // TODO(kpreid): Confirm vs spec'd "Any other end tag" handling
+            normalEndTag(tagName);
+          }
+        },
+        text: function (text) {
+          normalText(text);
+        }
+      },
+      text: {
+        toString: function () { return "text"; },
+        startTag: function (tagName, attribs) {
+          throw new Error("shouldn't happen: start tag <" + tagName +
+              "...> while in text insertion mode for " +
+              insertionPoint.tagName);
+        },
+        endTag: function (tagName) {
+          normalEndTag(tagName);
+          insertionMode = originalInsertionMode;
+        },
+        text: function (text) {
+          normalText(text);
+        }
+      },
+      afterBody: {
+        toString: function () { return "after body"; },
+        startTag: function (tagName, attribs) {
+          if (tagName === 'html') {
+            insertionModes.inBody.startTag.apply(undefined, arguments);
+          } else {
+            // "Parse error."
+            insertionMode = insertionModes.inBody;
+            insertionMode.startTag.apply(undefined, arguments);
+          }
+        },
+        endTag: function (tagName) {
+          if (tagName === 'html') {
+            insertionMode = insertionModes.afterAfterBody;
+          } else {
+            insertionMode = insertionModes.inBody;
+            insertionMode.endTag.apply(undefined, arguments);
+          }
+        },
+        text: function (text) {
+          if (isHtml5NonWhitespace(text)) {
+            // "Parse error."
+            insertionMode = insertionModes.inBody;
+          }
+          insertionModes.inBody.text.apply(undefined, arguments);
+        }
+      },
+      afterAfterBody: {
+        toString: function () { return "after after body"; },
+        startTag: function (tagName, attribs) {
+          if (tagName === 'html') {
+            insertionModes.inBody.startTag.apply(undefined, arguments);
+          } else {
+            // "Parse error."
+            insertionMode = insertionModes.inBody;
+            insertionMode.startTag.apply(undefined, arguments);
+          }
+        },
+        endTag: function (tagName) {
+          // "Parse error."
+          insertionMode = insertionModes.inBody;
+          insertionMode.endTag.apply(undefined, arguments);
+        },
+        text: function (text) {
+          if (isHtml5NonWhitespace(text)) {
+            // "Parse error."
+            insertionMode = insertionModes.inBody;
+            insertionMode.text.apply(undefined, arguments);
+          } else {
+            insertionModes.inBody.text.apply(undefined, arguments);
+          }
+        }
+      }
+    };
+    var insertionMode = insertionModes.initial;
+    var originalInsertionMode = null;
+
+    /**
+     * Given that attach() has updated the insertionPoint, change the
+     * insertionMode to a suitable value.
+     */
+    updateInsertionMode = function updateInsertionMode() {
+      // Note: This algorithm was made from scratch and does NOT reflect the
+      // HTML5 specification.
+      if (insertionPoint === base) {
+        if (insertionPoint.lastChild) {
+          insertionMode = insertionModes.afterAfterBody;
+        } else {
+          insertionMode = insertionModes.beforeHtml;
+        }
+      } else {
+        for (var anc = insertionPoint; anc !== base; anc = anc.parentNode) {
+          var tn = html.realToVirtualElementName(anc.tagName).toLowerCase();
+          switch (tn) {
+            case 'head': insertionMode = insertionModes.inHead; break;
+            case 'body': insertionMode = insertionModes.inBody; break;
+            case 'html':
+              var prevtn = html.realToVirtualElementName(
+                  (anc.lastChild || {}).tagName).toLowerCase();
+              if (prevtn === undefined) {
+                insertionMode = insertionModes.beforeHead;
+              } else {
+                switch (prevtn) {
+                  case 'head': insertionMode = insertionModes.afterHead; break;
+                  case 'body': insertionMode = insertionModes.afterBody; break;
+                }
+              }
+              break;
+            default: break;
+          }
+        }
+      }
+    };
+
     var documentWriter = {
       startDoc: function() {
         // TODO(jasvir): Fix recursive document.write
@@ -458,7 +800,8 @@ function HtmlEmitter(makeDOMAccessible, base, opt_domicile, opt_guestGlobal) {
       startTag: function (tagName, attribs, params, marker, continuation) {
         var eltype = html4.ELEMENTS[tagName];
         if (!html4.ELEMENTS.hasOwnProperty(tagName)
-            || (eltype & html4.eflags.UNSAFE) !== 0) {
+            || (eltype & html4.eflags.UNSAFE) !== 0 &&
+                !(eltype & html4.eflags.VIRTUALIZED)) {
           if (tagName === 'script') {
             var scriptSrc = lookupAttr(attribs, 'src');
             if (!scriptSrc) {
@@ -489,17 +832,12 @@ function HtmlEmitter(makeDOMAccessible, base, opt_domicile, opt_guestGlobal) {
           }
           return;
         }
-        domicile.sanitizeAttrs(tagName, attribs);
-        var el = bridal.createElement(tagName, attribs);
-        if ((eltype & html4.eflags.OPTIONAL_ENDTAG)
-            && el.tagName === insertionPoint.tagName) {
-          documentWriter.endTag(el.tagName, true);
-        }
-        insertionPoint.appendChild(el);
-        if (!(eltype & html4.eflags.EMPTY)) { insertionPoint = el; }
+        insertionMode.startTag(tagName, attribs);
       },
       endTag: function (tagName, optional, marker, continuation) {
+        var eltype = html4.ELEMENTS[tagName];
         // Close any open script or style element element.
+        // TODO(kpreid): Move this stuff into the insertion mode logic
         if (cdataContentType) {
           var isScript = cdataContentType === html4.eflags.SCRIPT;
           cdataContentType = 0;
@@ -524,20 +862,10 @@ function HtmlEmitter(makeDOMAccessible, base, opt_domicile, opt_guestGlobal) {
             }
           }
         }
-        var anc = insertionPoint;
-        tagName = tagName.toUpperCase();
-        while (anc !== base && !/\bvdoc-body___\b/.test(anc.className)) {
-          var p = anc.parentNode;
-          if (anc.tagName === tagName) {
-            insertionPoint = p;
-            return;
-          }
-          anc = p;
-        }
+        insertionMode.endTag(tagName);
       },
       pcdata: function (text) {
-        insertionPoint.appendChild(insertionPoint.ownerDocument.createTextNode(
-            html.unescapeEntities(text)));
+        insertionMode.text(text);
       },
       cdata: function (text) {
         if (cdataContentType) {

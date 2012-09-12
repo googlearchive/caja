@@ -23,27 +23,25 @@ public class ResolveUriStageTest extends PipelineStageTestCase {
   public final void testEmptyDoc() throws Exception {
     assertPipeline(
         job("", ContentType.HTML),
-        job("", ContentType.HTML));
+        htmlJobBody(""));
   }
 
   public final void testLink() throws Exception {
     assertPipeline(
         job("<a href=foo.html>foo</a>", ContentType.HTML),
-        job("<a href=\"http://example.org/foo.html\">foo</a>",
-            ContentType.HTML));
+        htmlJobBody("<a href=\"http://example.org/foo.html\">foo</a>"));
   }
 
   public final void testAnchorOnly() throws Exception {
     assertPipeline(
         job("<a href=#bar>foo</a>", ContentType.HTML),
-        job("<a href=\"#bar\">foo</a>", ContentType.HTML));
+        htmlJobBody("<a href=\"#bar\">foo</a>"));
   }
 
   public final void testLinkWithAnchor() throws Exception {
     assertPipeline(
         job("<a href=foo.html#bar>foo</a>", ContentType.HTML),
-        job("<a href=\"http://example.org/foo.html#bar\">foo</a>",
-            ContentType.HTML));
+        htmlJobBody("<a href=\"http://example.org/foo.html#bar\">foo</a>"));
   }
 
   public final void testLinkWithBase() throws Exception {
@@ -51,8 +49,11 @@ public class ResolveUriStageTest extends PipelineStageTestCase {
         job("<base href=http://example.org/bar/baz/foo.html>"
             + "<a href=../boo.html>foo</a>",
             ContentType.HTML),
-        job("<base href=\"http://example.org/bar/baz/foo.html\" />"
-            + "<a href=\"http://example.org/bar/boo.html\">foo</a>",
+        job("<html><head>"
+            + "<base href=\"http://example.org/bar/baz/foo.html\" />"
+            + "</head><body>"
+            + "<a href=\"http://example.org/bar/boo.html\">foo</a>"
+            + "</body></html>",
             ContentType.HTML));
   }
 
@@ -61,8 +62,11 @@ public class ResolveUriStageTest extends PipelineStageTestCase {
         job("<base href=http://example.org/bar/baz/foo.html>"
             + "<a href=../../../../boo.html>foo</a>",
             ContentType.HTML),
-        job("<base href=\"http://example.org/bar/baz/foo.html\" />"
-            + "<a href=\"../../../../boo.html\">foo</a>",
+        job("<html><head>"
+        	+ "<base href=\"http://example.org/bar/baz/foo.html\" />"
+            + "</head><body>"
+            + "<a href=\"../../../../boo.html\">foo</a>"
+            + "</body></html>",
             ContentType.HTML));
   }
 
@@ -70,25 +74,22 @@ public class ResolveUriStageTest extends PipelineStageTestCase {
     assertPipeline(
         job("<a href='foo bar'>foo</a>",
             ContentType.HTML),
-        job("<a href=\"http://example.org/foo%20bar\">foo</a>",
-            ContentType.HTML));
+        htmlJobBody("<a href=\"http://example.org/foo%20bar\">foo</a>"));
   }
 
   public final void testOpaqueUrl() throws Exception {
     assertPipeline(
         job("<a href=mailto:bob@example.com>foo</a>",
             ContentType.HTML),
-        job("<a href=\"mailto:bob%40example.com\">foo</a>",
-            ContentType.HTML));
+        htmlJobBody("<a href=\"mailto:bob%40example.com\">foo</a>"));
   }
 
   public final void testJavascriptUrl() throws Exception {
     assertPipeline(
         job("<a href='javascript:foo() + bar([1, 2, 3]) * 4'>foo</a>",
             ContentType.HTML),
-        job("<a href=\"javascript:"
-            + "foo%28%29%20+%20bar%28%5b1,%202,%203%5d%29%20%2a%204\">foo</a>",
-            ContentType.HTML));
+        htmlJobBody("<a href=\"javascript:"
+            + "foo%28%29%20+%20bar%28%5b1,%202,%203%5d%29%20%2a%204\">foo</a>"));
   }
 
   @Override

@@ -71,7 +71,7 @@ public class PrecajoledPipelineTest extends CajaTestCase {
   private void addHtml(PluginCompiler compiler, String... lines)
   throws ParseException {
     String html = Join.join("\n", lines);
-    Dom dom = new Dom(htmlFragment(fromString(html)));
+    Dom dom = Dom.transplant(html(fromString(html)));
     compiler.addInput(dom, dom.getFilePosition().source().getUri());
   }
 

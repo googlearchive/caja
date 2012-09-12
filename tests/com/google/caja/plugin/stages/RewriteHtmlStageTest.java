@@ -33,7 +33,7 @@ public final class RewriteHtmlStageTest extends PipelineStageTestCase {
     assertPipeline(
         job("foo<script>extracted();</script>baz", ContentType.HTML),
         // The "id" attribute was added by the RewriteHtmlStage.
-        job("foo<span __phid__=\"$1\"></span>baz", ContentType.HTML),
+        htmlJobBody("foo<span __phid__=\"$1\"></span>baz"),
         job("{ extracted(); }", ContentType.JS)
         );
     assertNoErrors();
@@ -41,7 +41,7 @@ public final class RewriteHtmlStageTest extends PipelineStageTestCase {
     assertPipeline(
         job("foo<script type=text/vbscript>deleted()</script>baz",
             ContentType.HTML),
-        job("foobaz", ContentType.HTML)
+        htmlJobBody("foobaz")
         );
     assertMessage(
         PluginMessageType.UNRECOGNIZED_CONTENT_TYPE, MessageLevel.WARNING);
@@ -50,7 +50,7 @@ public final class RewriteHtmlStageTest extends PipelineStageTestCase {
     assertPipeline(
         job("foo<script type=\"text/javascript\">var x = 1;</script>baz",
             ContentType.HTML),
-        job("foo<span __phid__=\"$1\"></span>baz", ContentType.HTML),
+        htmlJobBody("foo<span __phid__=\"$1\"></span>baz"),
         job("{\n  var x = 1;\n}", ContentType.JS)
         );
     assertNoErrors();
@@ -59,7 +59,7 @@ public final class RewriteHtmlStageTest extends PipelineStageTestCase {
         job("foo<script type=\"text/javascript\""
             + ">useXml(<xml>foo</xml>);</script>baz",
             ContentType.HTML),
-        job("foobaz", ContentType.HTML)
+        htmlJobBody("foobaz")
         );
     assertMessage(
         MessageType.UNEXPECTED_TOKEN,
@@ -71,14 +71,14 @@ public final class RewriteHtmlStageTest extends PipelineStageTestCase {
     assertPipeline(
         job("foo<script type=text/javascript>extracted();</script>baz",
             ContentType.HTML),
-        job("foo<span __phid__=\"$1\"></span>baz", ContentType.HTML),
+        htmlJobBody("foo<span __phid__=\"$1\"></span>baz"),
         job("{ extracted(); }", ContentType.JS)
         );
     assertNoErrors();
 
     assertPipeline(
         job("foo<script></script>baz", ContentType.HTML),
-        job("foobaz", ContentType.HTML)
+        htmlJobBody("foobaz")
         );
     assertNoErrors();
   }
@@ -88,7 +88,7 @@ public final class RewriteHtmlStageTest extends PipelineStageTestCase {
         job("foo<script src='data:text/javascript,extracted();'>"
             + "bar</script>baz",
             ContentType.HTML),
-        job("foo<span __phid__=\"$1\"></span>baz", ContentType.HTML),
+        htmlJobBody("foo<span __phid__=\"$1\"></span>baz"),
         job("{ extracted(); }", ContentType.JS)
         );
     assertNoErrors();
@@ -97,7 +97,7 @@ public final class RewriteHtmlStageTest extends PipelineStageTestCase {
     assertPipeline(
         job("foo<script src='data:,extracted();'>bar</script>baz",
             ContentType.HTML),
-        job("foo<span __phid__=\"$1\"></span>baz", ContentType.HTML),
+        htmlJobBody("foo<span __phid__=\"$1\"></span>baz"),
         job("{ extracted(); }", ContentType.JS)
         );
     assertNoErrors();
@@ -106,7 +106,7 @@ public final class RewriteHtmlStageTest extends PipelineStageTestCase {
     assertPipeline(
         job("foo<script src='data:iso-8859-7;charset=utf-8,extracted%28%29%3B'>"
             + "bar</script>baz", ContentType.HTML),
-        job("foo<span __phid__=\"$1\"></span>baz", ContentType.HTML),
+        htmlJobBody("foo<span __phid__=\"$1\"></span>baz"),
         job("{ extracted(); }", ContentType.JS)
         );
     assertNoErrors();
@@ -116,7 +116,7 @@ public final class RewriteHtmlStageTest extends PipelineStageTestCase {
         job("foo<script src="
             + "'data:text/javascript;charset=utf-8;base64,ZXh0cmFjdGVkKCk7'>"
             + "bar</script>baz", ContentType.HTML),
-        job("foo<span __phid__=\"$1\"></span>baz", ContentType.HTML),
+        htmlJobBody("foo<span __phid__=\"$1\"></span>baz"),
         job("{ extracted(); }", ContentType.JS)
         );
     assertNoErrors();
@@ -126,28 +126,26 @@ public final class RewriteHtmlStageTest extends PipelineStageTestCase {
     assertPipeline(
         job("Foo<style>p { color: blue }</style><p>Bar", ContentType.HTML),
         job("p {\n  color: blue\n}", ContentType.CSS),
-        job("Foo<p>Bar</p>", ContentType.HTML));
+        htmlJobBody("Foo<p>Bar</p>"));
     assertNoErrors();
 
     assertPipeline(
         job("Foo<link rel=stylesheet href=content:p+%7Bcolor%3A+blue%7D><p>Bar",
             ContentType.HTML),
         job("p {\n  color: blue\n}", ContentType.CSS),
-        job("Foo<p>Bar</p>", ContentType.HTML));
+        htmlJobBody("Foo<p>Bar</p>"));
     assertNoErrors();
 
     assertPipeline(
         job("Foo<style></style><p>Bar", ContentType.HTML),
-        job("Foo<p>Bar</p>", ContentType.HTML));
+        htmlJobBody("Foo<p>Bar</p>"));
     assertNoErrors();
   }
 
   public final void testOnLoadHandlers() throws Exception {
     assertPipeline(
         job("<body onload=init();>Foo</body>", ContentType.HTML),
-        job("<html><head></head>"
-            + "<body>Foo<span __phid__=\"$1\"></span></body></html>",
-            ContentType.HTML),
+        htmlJobBody("Foo<span __phid__=\"$1\"></span>"),
         job("{ init(); }", ContentType.JS));
     assertNoErrors();
   }
@@ -156,7 +154,7 @@ public final class RewriteHtmlStageTest extends PipelineStageTestCase {
     assertPipeline(
         job("<style>@import 'styles.css';</style>", ContentType.HTML),
         job("@import url('styles.css');", ContentType.CSS),
-        job("", ContentType.HTML)
+        htmlJobBody("")
         );
     assertNoErrors();
   }
@@ -166,21 +164,21 @@ public final class RewriteHtmlStageTest extends PipelineStageTestCase {
         job("<link rel=stylesheet media=screen href=content:p+%7B%7D>",
             ContentType.HTML),
         job("@media screen {\n  p {\n  }\n}", ContentType.CSS),
-        job("", ContentType.HTML));
+        htmlJobBody(""));
     assertNoErrors();
 
     assertPipeline(
         job("<link rel=stylesheet type=text/css href=content:p+%7B%7D>",
             ContentType.HTML),
         job("p {\n}", ContentType.CSS),
-        job("", ContentType.HTML));
+        htmlJobBody(""));
     assertNoErrors();
 
     assertPipeline(
         job("<link rel=stylesheet media=all href=content:p+%7B%7D>",
             ContentType.HTML),
         job("p {\n}", ContentType.CSS),
-        job("", ContentType.HTML));
+        htmlJobBody(""));
     assertNoErrors();
 
     assertPipeline(
@@ -188,20 +186,24 @@ public final class RewriteHtmlStageTest extends PipelineStageTestCase {
             + " href=content:p+%7B%7D>",
             ContentType.HTML),
         job("@media braille, tty {\n  p {\n  }\n}", ContentType.CSS),
-        job("", ContentType.HTML));
+        htmlJobBody(""));
     assertNoErrors();
   }
 
   public final void testDeferredScripts() throws Exception {
     assertPipeline(
-        job("<script src=content:a();></script>"
+        job("<body><script src=content:a();></script>"
             + "<script defer>b();</script>"
             + "<script src=content:c(); defer=defer></script>"
             + "<script src=content:d(); defer=no></script>"
             + "<br>",
             ContentType.HTML),
-        job("<span __phid__=\"$1\"></span>"   // a()
+        // This bogus HTML structure is OK because it will only be seen by our
+        // runtime, and be cleaned up by the time guest code sees it.
+        job("<html><head></head><body>"
+            + "<span __phid__=\"$1\"></span>"   // a()
             + "<span __phid__=\"$4\"></span><br />"  // d()
+            + "</body></html>"
             + "<span __phid__=\"$2\"></span>"  // b()
             + "<span __phid__=\"$3\"></span>",  // c()
             ContentType.HTML),
@@ -214,28 +216,18 @@ public final class RewriteHtmlStageTest extends PipelineStageTestCase {
 
   public final void testUnloadableScripts() throws Exception {
     assertPipeline(
-        job("<script src=content:onerror=panic;></script>"
+        job("<body><script src=content:onerror=panic;></script>"
             + "<script src=\"http://bogus.com/bogus.js#'!\"></script>"
             + "<script src=content:foo()></script>",
             ContentType.HTML),
-        job("<span __phid__=\"$1\"></span>"
+        htmlJobBody("<span __phid__=\"$1\"></span>"
             + "<span __phid__=\"$2\"></span>"
-            + "<span __phid__=\"$3\"></span>",
-            ContentType.HTML),
+            + "<span __phid__=\"$3\"></span>"),
         job("{ onerror = panic; }", ContentType.JS),
         job("{\n  throw new Error('Failed to load bogus.js#%27%21');\n}",
             ContentType.JS),
         job("{ foo(); }", ContentType.JS));
     assertNoErrors();
-  }
-
-  public final void testBodyClasses() throws Exception {
-    assertPipeline(
-        job("<body class=foo><b>Hello, World!</b></body>", ContentType.HTML),
-        job("<html><head></head><body><b>Hello, World!</b></body></html>",
-            ContentType.HTML),
-        job("{\n  IMPORTS___.htmlEmitter___.addBodyClasses('foo');\n}",
-            ContentType.JS));
   }
 
   public final void testOSMLScriptElements() throws Exception {
@@ -252,8 +244,7 @@ public final class RewriteHtmlStageTest extends PipelineStageTestCase {
                 "After OS Template"),
             ContentType.HTML),
         // Script element removed, but not parsed as JS.
-        job("Before OS Template\n\nAfter OS Template",
-            ContentType.HTML));
+        htmlJobBody("Before OS Template\n\nAfter OS Template"));
     assertMessage(
         true, PluginMessageType.UNRECOGNIZED_CONTENT_TYPE, MessageLevel.WARNING,
         MessagePart.Factory.valueOf("text/opensocial"));

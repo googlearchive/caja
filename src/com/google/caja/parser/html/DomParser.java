@@ -190,12 +190,7 @@ public class DomParser {
       skipTopLevelDocIgnorables(false);
     } while (!tokens.isEmpty());
 
-    FilePosition endPos = FilePosition.endOf(tokens.lastPosition());
-    try {
-      elementStack.finish(endPos);
-    } catch (IllegalDocumentStateException ex) {
-      throw new ParseException(ex.getCajaMessage(), ex);
-    }
+    FilePosition endPos = checkEnd(elementStack);
 
     DocumentFragment root = elementStack.getRootElement();
     Node firstChild = root.getFirstChild();
@@ -221,6 +216,7 @@ public class DomParser {
           Nodes.getFilePositionFor(child)));
     }
 
+    Nodes.setFilePositionFor(doc, Nodes.getFilePositionFor(root));
     doc.appendChild(firstChild);
 
     if (elementStack.needsNamespaceFixup()) {
@@ -260,6 +256,17 @@ public class DomParser {
       skipFragmentIgnorables();
     }
 
+    checkEnd(elementStack);
+
+    DocumentFragment fragment = elementStack.getRootElement();
+    if (elementStack.needsNamespaceFixup()) {
+      fragment = (DocumentFragment) fixup(fragment, ns);
+    }
+    return fragment;
+  }
+
+  private FilePosition checkEnd(OpenElementStack elementStack)
+      throws ParseException {
     FilePosition endPos = tokens.lastPosition();
     if (endPos != null) {
       endPos = FilePosition.endOf(endPos);
@@ -271,12 +278,7 @@ public class DomParser {
     } catch (IllegalDocumentStateException ex) {
       throw new ParseException(ex.getCajaMessage(), ex);
     }
-
-    DocumentFragment fragment = elementStack.getRootElement();
-    if (elementStack.needsNamespaceFixup()) {
-      fragment = (DocumentFragment) fixup(fragment, ns);
-    }
-    return fragment;
+    return endPos;
   }
 
   /**

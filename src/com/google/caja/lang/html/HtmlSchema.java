@@ -50,6 +50,8 @@ import java.util.Set;
  * @author mikesamuel@gmail.com
  */
 public final class HtmlSchema {
+  private static final String VIRTUALIZATION_PREFIX = "caja-v-";
+  
   private final Set<ElKey> allowedElements;
   private final Map<ElKey, HTML.Element> elementDetails;
   private final Set<AttribKey> allowedAttributes;
@@ -91,6 +93,8 @@ public final class HtmlSchema {
     return defaultSchema.a;
   }
 
+  // TODO(kpreid): Make the following three methods non-static. Requires
+  // CssRewriter to be able to get the appropriate HtmlSchema instance.
   /**
    * Elements that can be removed from the DOM without changing behavior as long
    * as their children are folded into the element's parent.
@@ -101,10 +105,38 @@ public final class HtmlSchema {
     return "head".equals(cname) || "body".equals(cname) || "html".equals(cname);
   }
 
+  /**
+   * Elements that are to be rewritten with different tag names to avoid the
+   * browser semantics of them.
+   */
+  public static boolean isElementVirtualized(ElKey el) {
+    if (!el.isHtml()) { return false; }
+    String cname = el.localName;
+    return "html".equals(cname) || "head".equals(cname) || "title".equals(cname)
+        || "body".equals(cname);
+  }
+
+  public static ElKey virtualToRealElementName(ElKey virtual) {
+    if (isElementVirtualized(virtual)) {
+      // TODO(kpreid): Better to modify the NS instead of the local name if the
+      // input is not in HTML NS (i.e. we are in XML rather than HTML).
+      // Currently can't happen as only HTML elements are virtualized.
+      return ElKey.forElement(virtual.ns,
+                              VIRTUALIZATION_PREFIX + virtual.localName);
+    } else {
+      return virtual;
+    }
+  }
+
   public HtmlSchema(WhiteList tagList, WhiteList attribList) {
     this.allowedAttributes = Sets.newHashSet();
     for (String key : attribList.allowedItems()) {
-      allowedAttributes.add(attribKey(key));
+      AttribKey attribKey = attribKey(key);
+      allowedAttributes.add(attribKey);
+      if (isElementVirtualized(attribKey.el)) {
+        allowedAttributes.add(attribKey.onElement(
+            virtualToRealElementName(attribKey.el)));
+      }
     }
     Map<AttribKey, RegularCriterion> criteria = Maps.newHashMap();
     for (WhiteList.TypeDefinition def : attribList.typeDefinitions().values()) {
@@ -172,12 +204,24 @@ public final class HtmlSchema {
             criterion,
             RegularCriterion.Factory.fromValueSet(Collections.singleton("")));
       }
+
       HTML.Attribute a = new HTML.Attribute(
           elAndAttrib, type, defaultValue, safeValue, valueless, optional,
           loaderType, uriEffect, criterion);
       attributeDetails.put(elAndAttrib, a);
-
       attributeDetailsByElement.put(element, a);
+
+      if (isElementVirtualized(element)) {
+        // TODO(kpreid): Are there cases where we should have a different
+        // attribute whitelist for the virtual and real forms?
+        ElKey realEl = virtualToRealElementName(element);
+        AttribKey realAK = elAndAttrib.onElement(realEl);
+        HTML.Attribute aOnReal = new HTML.Attribute(
+            realAK, type, defaultValue, safeValue, valueless, optional,
+            loaderType, uriEffect, criterion);
+        attributeDetails.put(realAK, aOnReal);
+        attributeDetailsByElement.put(realEl, aOnReal);
+      }
     }
 
     this.allowedElements = Sets.newHashSet();
@@ -208,6 +252,12 @@ public final class HtmlSchema {
           && !empty;
       elementDetails.put(
           key, new HTML.Element(key, attrs, empty, optionalEnd, containsText));
+      if (isElementVirtualized(key)) {
+        ElKey realKey = virtualToRealElementName(key);
+        elementDetails.put(realKey, 
+            new HTML.Element(realKey, attrs, empty, optionalEnd, containsText));
+        allowedElements.add(realKey);
+      }
     }
   }
 
@@ -220,7 +270,8 @@ public final class HtmlSchema {
   }
 
   public boolean isElementAllowed(ElKey elementName) {
-    return allowedElements.contains(elementName);
+    return allowedElements.contains(elementName) ||
+        elementName.localName.startsWith(VIRTUALIZATION_PREFIX);
   }
 
   public HTML.Element lookupElement(ElKey elementName) {

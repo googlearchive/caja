@@ -276,7 +276,7 @@ function ES53FrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker) {
 
     // These ___ variables are interfaces used by cajoled code.
     imports.htmlEmitter___ = new HtmlEmitter(
-      makeDOMAccessible, divs.inner, domicile, imports);
+      makeDOMAccessible, domicile.htmlEmitterTarget, domicile, imports);
     imports.rewriteUriInCss___ = domicile.rewriteUriInCss.bind(domicile);
     imports.rewriteUriInAttribute___ =
       domicile.rewriteUriInAttribute.bind(domicile);

@@ -30,6 +30,7 @@ import com.google.caja.util.CajaTestCase;
 import java.io.StringReader;
 
 import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 
 public class IhtmlSanityCheckerTest extends CajaTestCase {
 
@@ -513,7 +514,7 @@ public class IhtmlSanityCheckerTest extends CajaTestCase {
   private void runTest(
       String goldenIhtml, String inputIhtml, Message... expectedMessages)
       throws Exception {
-    Element ihtmlRoot = new DomParser(
+    Node ihtmlRoot = new DomParser(
         DomParser.makeTokenQueue(
             FilePosition.startOfFile(is), new StringReader(inputIhtml), true,
             false),

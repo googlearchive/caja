@@ -71,13 +71,19 @@ public final class TemplateSanitizer {
         Element el = (Element) t;
         ElKey elKey = ElKey.forElement(el);
         {
-          if (!schema.isElementAllowed(elKey)) {
+          if (schema.isElementVirtualized(elKey)) {
+            valid &= virtualizeElement(elKey, el);
+          } else if (!schema.isElementAllowed(elKey)) {
             IhtmlMessageType msgType = schema.lookupElement(elKey) != null
                 ? IhtmlMessageType.UNSAFE_TAG
                 : IhtmlMessageType.UNKNOWN_TAG;
 
             // Figure out what to do with the disallowed tag.  We can remove it
             // from the node, replace it with its children (fold), or error out.
+            //
+            // TODO(kpreid): Eventually, all folding should be replaced with
+            // virtualization. Folding happens to nodes which are unknown or
+            // which are foldable but not virtualizable.
             boolean ignore = false, fold = false;
             Node p = el.getParentNode();
             if (p != null) {
@@ -193,8 +199,8 @@ public final class TemplateSanitizer {
   }
 
   /**
-   * Fold the children of a {@link HtmlSchema#isElementFoldable foldable}
-   * element into that element's parent.
+   * Fold the children of a foldable element into that element's parent.
+   * Currently, only unknown elements are foldable.
    *
    * <p>
    * This should have the property that:<ul>
@@ -248,6 +254,56 @@ public final class TemplateSanitizer {
     Node parent = el.getParentNode();
     parent.removeChild(el);
     for (Node n : foldedChildren) { parent.insertBefore(n, next); }
+
+    return valid;
+  }
+
+  /**
+   * Transfer the children of a
+   * {@link HtmlSchema#isElementVirtualized virtualized} element into a new
+   * renamed element.
+   *
+   * @param el a tag with a mutable parent which will be modified in place.
+   * @return true iff the el's children are transitively valid.
+   */
+  private boolean virtualizeElement(ElKey elKey, Element el) {
+    boolean valid = true;
+
+    elKey = HtmlSchema.virtualToRealElementName(elKey);
+
+    // Note ordering: the attributes will be sanitized according to the
+    // virtualized element's attribute info (which is *currently* always the
+    // same).
+    valid &= sanitizeAttrs(elKey, el, true);
+
+    Element replacement = el.getOwnerDocument()
+        .createElementNS(elKey.ns.uri, elKey.localName);
+
+    // Substitute in tree
+    final Node parent = el.getParentNode();
+    final Node position = el.getNextSibling();
+    parent.removeChild(el);
+    parent.insertBefore(replacement, position);
+
+    // Move and sanitize children
+    Node child;
+    while ((child = el.getFirstChild()) != null) {
+      replacement.appendChild(child);
+      // Sanitizing is necessary because the calling sanitize() is operating on
+      // the (now nonexistent) children of the old node.
+      valid &= sanitize(child);
+      // Note that we must sanitize as the last step in child processing, since
+      // sanitize may replace child with another node as another virtualization
+      // step.
+    }
+    
+    // Move attributes
+    NamedNodeMap attrs = el.getAttributes();
+    for (int i = attrs.getLength(); --i >= 0;) {
+      Attr attr = (Attr) attrs.item(i);
+      el.removeAttributeNode(attr);
+      replacement.setAttributeNodeNS(attr);
+    }
 
     return valid;
   }

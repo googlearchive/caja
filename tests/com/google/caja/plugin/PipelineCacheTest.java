@@ -245,17 +245,18 @@ public class PipelineCacheTest extends PipelineStageTestCase {
   private static final String CACHEABLE_HELLO_WORLD_HTML
       = "<b onclick=alert('Hello')>Hello, World!</b>";
   private static final String REWRITTEN_HELLO_WORLD_HTML
-      = "<b id=\"id_3___\">Hello, World!</b>";
+      = "<caja-v-html><caja-v-head id=@head_brk></caja-v-head><caja-v-body>" +
+      "<b id=\"@b_brk\">Hello, World!</b>";
   private static final String REWRITTEN_HELLO_WORLD_HTML_HELPER_JS
       = jsModulePrefix(
           new String[] {},
-          new String[] { "el___", "emitter___", "c_2___" })
+          new String[] { "el___", "emitter___", "@handler___" })
       + Join.join(
       "\n",
       "  {",
       "    emitter___ = IMPORTS___.htmlEmitter___;",
-      "    el___ = emitter___.byId('id_3___');",
-      "    c_2___ = ___.markFuncFreeze(function (event, thisNode___) {",
+      "    el___ = emitter___.byId(@b_brk);",
+      "    @handler___ = ___.markFuncFreeze(function (event, thisNode___) {",
       "        (IMPORTS___.alert_v___? IMPORTS___.alert:"
         + " ___.ri(IMPORTS___, 'alert'))",
       "        .i___('Hello');",
@@ -263,10 +264,25 @@ public class PipelineCacheTest extends PipelineStageTestCase {
       "    el___.onclick = function (event) {",
       ("      return ___.plugin_dispatchEvent___"
        + "(this, event, ___.getId(IMPORTS___),"),
-      "        c_2___);",
+      "        @handler___);",
       "    };",
       "    emitter___.rmAttr(el___, 'id');")
       + JS_MODULE_SUFFIX;
+
+  private static final String BREAK_AT_HEAD = Join.join(
+      "\n",
+      "{",
+      "  var dis___ = IMPORTS___;",
+      "  var moduleResult___, el___, emitter___;",
+      "  moduleResult___ = ___.NO_RESULT;",
+      "  {",
+      "    emitter___ = IMPORTS___.htmlEmitter___;",
+      "    el___ = emitter___.byId(@head_brk);",
+      "    emitter___.attach(@head_brk);",
+      "    emitter___.rmAttr(el___, 'id');",
+      "  }",
+      "  return moduleResult___;",
+      "}");
 
   private static final String REWRITTEN_HELLO_WORLD_HTML_HELPER_JS_NO_LOAD
       = REWRITTEN_HELLO_WORLD_HTML_HELPER_JS
@@ -336,6 +352,7 @@ public class PipelineCacheTest extends PipelineStageTestCase {
     JobStub[] golden = new JobStub[] {
         job(REWRITTEN_HELLO_WORLD_CSS, ContentType.HTML),
         job(REWRITTEN_HELLO_WORLD_HTML, ContentType.HTML),
+        job(BREAK_AT_HEAD, ContentType.JS),
         job(REWRITTEN_HELLO_WORLD_JS, ContentType.JS),
         job(REWRITTEN_HELLO_WORLD_HTML_HELPER_JS, ContentType.JS),
         //job(SIGNAL_LOADED_JS, ContentType.JS),
@@ -355,9 +372,9 @@ public class PipelineCacheTest extends PipelineStageTestCase {
             + CACHEABLE_HELLO_WORLD_HTML,
             ContentType.HTML),
         golden);
-    // The CSS and JS are served from the cache, but not the HTML since the JS
-    // has to be integrated back into the HTML.
-    assertEquals(2, cache.nServedFromCache);
+    // The CSS and two JS files are served from the cache,
+    // but not the HTML since the JS has to be integrated back into the HTML.
+    assertEquals(3, cache.nServedFromCache);
   }
 
   public final void testMixAndMatchJs() throws Exception {
@@ -452,11 +469,6 @@ public class PipelineCacheTest extends PipelineStageTestCase {
     assertEquals(3, cache.nServedFromCache);
   }
 
-  private static String rewriteGeneratedIds(String src) {
-    return src.replaceAll("\\bc_2___\\b", "c_3___")
-        .replaceAll("\\bid_3___\\b", "id_4___");
-  }
-
   public final void testDeferredJsCacheOrdering() throws Exception {
     // Prime the cache.
     assertPipeline(
@@ -464,9 +476,10 @@ public class PipelineCacheTest extends PipelineStageTestCase {
             CACHEABLE_HELLO_WORLD_JS + CACHEABLE_HELLO_WORLD_JS_VARIANT_DEFERRED
             + CACHEABLE_HELLO_WORLD_HTML,
             ContentType.HTML),
-        job(rewriteGeneratedIds(REWRITTEN_HELLO_WORLD_HTML), ContentType.HTML),
+        job(REWRITTEN_HELLO_WORLD_HTML, ContentType.HTML),
+        job(BREAK_AT_HEAD, ContentType.JS),
         job(REWRITTEN_HELLO_WORLD_JS, ContentType.JS),
-        job(rewriteGeneratedIds(REWRITTEN_HELLO_WORLD_HTML_HELPER_JS_NO_LOAD),
+        job(REWRITTEN_HELLO_WORLD_HTML_HELPER_JS_NO_LOAD,
             ContentType.JS),
         job(REWRITTEN_HELLO_WORLD_JS_VARIANT, ContentType.JS),
         job(SIGNAL_LOADED_JS, ContentType.JS));
@@ -479,14 +492,14 @@ public class PipelineCacheTest extends PipelineStageTestCase {
             CACHEABLE_HELLO_WORLD_JS_DEFERRED + CACHEABLE_HELLO_WORLD_JS_VARIANT
             + CACHEABLE_HELLO_WORLD_HTML,
             ContentType.HTML),
-        job(rewriteGeneratedIds(REWRITTEN_HELLO_WORLD_HTML), ContentType.HTML),
+        job(REWRITTEN_HELLO_WORLD_HTML, ContentType.HTML),
+        job(BREAK_AT_HEAD, ContentType.JS),
         job(REWRITTEN_HELLO_WORLD_JS_VARIANT, ContentType.JS),
-        job(rewriteGeneratedIds(REWRITTEN_HELLO_WORLD_HTML_HELPER_JS_NO_LOAD),
-            ContentType.JS),
+        job(REWRITTEN_HELLO_WORLD_HTML_HELPER_JS_NO_LOAD, ContentType.JS),
         job(REWRITTEN_HELLO_WORLD_JS, ContentType.JS),
         job(SIGNAL_LOADED_JS, ContentType.JS));
     // Little JS blocks were served from the cache.
-    assertEquals(4, cache.nServedFromCache);
+    assertEquals(5, cache.nServedFromCache);
   }
 
   public final void testJsCacheOrdering() throws Exception {
@@ -496,11 +509,11 @@ public class PipelineCacheTest extends PipelineStageTestCase {
             CACHEABLE_HELLO_WORLD_JS + CACHEABLE_HELLO_WORLD_JS_VARIANT
             + CACHEABLE_HELLO_WORLD_HTML,
             ContentType.HTML),
-        job(rewriteGeneratedIds(REWRITTEN_HELLO_WORLD_HTML), ContentType.HTML),
+        job(REWRITTEN_HELLO_WORLD_HTML, ContentType.HTML),
+        job(BREAK_AT_HEAD, ContentType.JS),
         job(REWRITTEN_HELLO_WORLD_JS, ContentType.JS),
         job(REWRITTEN_HELLO_WORLD_JS_VARIANT, ContentType.JS),
-        job(rewriteGeneratedIds(REWRITTEN_HELLO_WORLD_HTML_HELPER_JS),
-            ContentType.JS));
+        job(REWRITTEN_HELLO_WORLD_HTML_HELPER_JS, ContentType.JS));
     assertEquals(0, cache.nServedFromCache);
 
     // Make sure reordering scripts doesn't cause them to execute out of order.
@@ -510,18 +523,21 @@ public class PipelineCacheTest extends PipelineStageTestCase {
             CACHEABLE_HELLO_WORLD_JS_VARIANT + CACHEABLE_HELLO_WORLD_JS
             + CACHEABLE_HELLO_WORLD_HTML,
             ContentType.HTML),
-        job(rewriteGeneratedIds(REWRITTEN_HELLO_WORLD_HTML), ContentType.HTML),
+        job(REWRITTEN_HELLO_WORLD_HTML, ContentType.HTML),
+        job(BREAK_AT_HEAD, ContentType.JS),
         job(REWRITTEN_HELLO_WORLD_JS_VARIANT, ContentType.JS),
         job(REWRITTEN_HELLO_WORLD_JS, ContentType.JS),
-        job(rewriteGeneratedIds(REWRITTEN_HELLO_WORLD_HTML_HELPER_JS),
-            ContentType.JS));
+        job(REWRITTEN_HELLO_WORLD_HTML_HELPER_JS, ContentType.JS));
     // Some JS blocks were served from the cache.
-    assertEquals(3, cache.nServedFromCache);
+    assertEquals(4, cache.nServedFromCache);
   }
 
   public final void testIhabsHeadache() throws Exception {
     JobStub[] goldens = {
-        job("<p id=\"id_2___\">1337</p>", ContentType.HTML),
+        job("<caja-v-html><caja-v-head></caja-v-head><caja-v-body>" +
+            "<p id=\"id_2___\">1337</p>" +
+            "</caja-v-body></caja-v-html>",
+            ContentType.HTML),
         job(jsModulePrefix(
             new String[] {},
             new String[] { "el___", "emitter___", "c_1___" })

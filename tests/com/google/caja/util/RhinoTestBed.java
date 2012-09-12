@@ -46,6 +46,7 @@ import junit.framework.Assert;
 import junit.framework.AssertionFailedError;
 
 import org.w3c.dom.Attr;
+import org.w3c.dom.DocumentFragment;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.Text;
@@ -96,7 +97,7 @@ public class RhinoTestBed {
    *
    * @param html an HTML DOM tree to run in Rhino.
    */
-  public static void runJsUnittestFromHtml(Element html)
+  public static void runJsUnittestFromHtml(DocumentFragment html)
       throws IOException, ParseException {
     TestUtil.enableContentUrls();  // Used to get HTML to env.js
     List<Executor.Input> inputs = Lists.newArrayList();
@@ -114,9 +115,14 @@ public class RhinoTestBed {
     MessageQueue mq = new EchoingMessageQueue(new PrintWriter(System.err), mc);
 
     List<Element> scripts = new ArrayList<Element>();
-    for (Element script : Nodes.nodeListIterable(
-             html.getElementsByTagNameNS(HTML_NS, "script"), Element.class)) {
-      scripts.add(script);
+    for (Node root : Nodes.childrenOf(html)) {
+      if (root.getNodeType() == 1) {
+        for (Element script : Nodes.nodeListIterable(
+            ((Element) root).getElementsByTagNameNS(HTML_NS, "script"),
+            Element.class)) {
+          scripts.add(script);
+        }
+      }
     }
     for (Element script : scripts) {
       Attr src = script.getAttributeNodeNS(HTML_NS, "src");

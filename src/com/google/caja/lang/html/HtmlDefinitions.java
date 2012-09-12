@@ -82,13 +82,17 @@ public final class HtmlDefinitions {
     UNSAFE(0x10),
     /**
      * Elements that can be removed from the DOM without changing behavior as
-     * long as their children are folded into the element's parent.
-     * The set of FOLDABLE elements should be kept in sync with
-     * HtmlSanitizer.java#isElementFoldable.
+     * long as their children are folded into the element's parent. Should
+     * always be paired with UNSAFE.
      */
     FOLDABLE(0x20),
     SCRIPT(0x40),
     STYLE(0x80),
+    /**
+     * Elements that are unsafe to pass through, but which may be kept in the
+     * DOM by renaming. Should always be paired with UNSAFE.
+     */
+    VIRTUALIZED(0x100),
     ;
 
     public final int bitMask;
@@ -413,6 +417,9 @@ public final class HtmlDefinitions {
       }
       if (HtmlSchema.isElementFoldable(elementName)) {
         flags.add(EFlag.FOLDABLE);
+      }
+      if (HtmlSchema.isElementVirtualized(elementName)) {
+        flags.add(EFlag.VIRTUALIZED);
       }
       elementFlags.put(elementName, flags);
     }

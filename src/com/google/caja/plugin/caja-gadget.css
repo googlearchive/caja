@@ -32,3 +32,11 @@
   overflow: auto;
   clip: rect(auto, auto, auto, auto); /* paranoia */
 }
+
+/* Styles for global structure that we virtualize, and so does not get the
+   normal UA rules applied */
+
+/* intersection of HTML5 spec's list and our current virtualization list */
+caja-v-head, caja-v-title {
+  display: none;
+}

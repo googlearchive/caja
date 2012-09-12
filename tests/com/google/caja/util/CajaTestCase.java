@@ -35,6 +35,7 @@ import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.css.CssParser;
 import com.google.caja.parser.css.CssTree;
 import com.google.caja.parser.html.DomParser;
+import com.google.caja.parser.html.Nodes;
 import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.Expression;
 import com.google.caja.parser.js.Parser;
@@ -179,15 +180,22 @@ public abstract class CajaTestCase extends TestCase {
     return (Element) parseMarkup(cp, true, true);
   }
 
-  protected DocumentFragment xmlFragment(CharProducer cp) throws ParseException {
+  protected DocumentFragment xmlFragment(CharProducer cp)
+      throws ParseException {
     return (DocumentFragment) parseMarkup(cp, true, false);
   }
 
-  protected Element html(CharProducer cp) throws ParseException {
-    return (Element) parseMarkup(cp, false, true);
+  protected DocumentFragment html(CharProducer cp) throws ParseException {
+    Node root = parseMarkup(cp, false, true);
+    DocumentFragment fragment = root.getOwnerDocument()
+        .createDocumentFragment();
+    fragment.appendChild(root);
+    Nodes.setFilePositionFor(fragment, Nodes.getFilePositionFor(root));
+    return fragment;
   }
 
-  protected DocumentFragment htmlFragment(CharProducer cp) throws ParseException {
+  protected DocumentFragment htmlFragment(CharProducer cp)
+      throws ParseException {
     return (DocumentFragment) parseMarkup(cp, false, false);
   }
 

@@ -166,7 +166,8 @@ public class CajolingServiceTest extends ServiceTestCase {
         byteData, "text/html", null);
     assertTrue("Output missing 'html' key", result.containsKey("html"));
     assertTrue("Output missing 'javascript' key", result.containsKey("js"));
-    assertEquals("", (String)result.get("html"));
+    assertEquals("<caja-v-html><caja-v-head></caja-v-head><caja-v-body>" +
+        "</caja-v-body></caja-v-html>", (String)result.get("html"));
     assertNoError(result);
   }
 }

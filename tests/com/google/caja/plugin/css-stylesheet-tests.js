@@ -164,29 +164,28 @@ runCssSelectorTests([
       },
       {
         "cssText": "body.ie6 p { color: blue }",
-        "golden": ".vdoc-body___.ie6.namespace__ p{color:blue}",
-        "altGolden": ".vdoc-body___.namespace__.ie6 p{color:blue}"
+        "golden": ".namespace__ caja-v-body.ie6 p{color:blue}"
       },
       {
         "cssText": "body { margin: 0; }",
-        "golden": ""
-      },  // Not allowed.
+        "golden": ".namespace__ caja-v-body{margin:0}"
+      },
       {
         "cssText": "body.ie6 { margin: 0; }",
-        "golden": ""
-      },  // Not allowed.
+        "golden": ".namespace__ caja-v-body.ie6{margin:0}"
+      },
       {
         "cssText": "* html p { margin: 0; }",
-        "golden": ""
-      }, // Not allowed
+        "golden": ".namespace__ * caja-v-html p{margin:0}"
+      },
       {
         "cssText": "* html { margin: 0; }",
-        "golden": ""
-      },  // Not allowed
+        "golden": ".namespace__ * caja-v-html{margin:0}"
+      },
       {
         "cssText": "* html > * > p { margin: 0; }",
-        "golden": ""
-      },  // Not allowed
+        "golden": ".namespace__ * caja-v-html > * > p{margin:0}"
+      },
       {
         "cssText": "#foo > #bar { color: blue }",
         "golden": ".namespace__ #foo-namespace__ > #bar-namespace__{color:blue}"

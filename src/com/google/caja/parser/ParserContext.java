@@ -287,7 +287,7 @@ public final class ParserContext {
     } else if (ContentType.HTML == type) {
       DomParser p = new DomParser(new HtmlLexer(cp), false, is, mq);
       //if (p.getTokenQueue().isEmpty()) { return null; }
-      input = new Dom(p.parseFragment());
+      input = Dom.transplant(p.parseDocument());
       p.getTokenQueue().expectEmpty();
     } else {
       throw new SomethingWidgyHappenedError("Can't classify input " + is);

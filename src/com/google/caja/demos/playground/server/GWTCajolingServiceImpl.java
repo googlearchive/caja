@@ -151,7 +151,7 @@ public class GWTCajolingServiceImpl extends RemoteServiceServlet
     Dom inputNode = null;
     try {
       DomParser p = new DomParser(new HtmlLexer(cp), false, is, mq);
-      inputNode = new Dom(p.parseFragment());
+      inputNode = Dom.transplant(p.parseDocument());
       p.getTokenQueue().expectEmpty();
     } catch (ParseException e) {
       mq.addMessage(e.getCajaMessage());

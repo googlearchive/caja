@@ -26,7 +26,7 @@ public final class RewriteFlashStageTest extends PipelineStageTestCase {
   public final void testNoembed() throws Exception {
     assertPipeline(
         html("a<noembed>b</noembed>c"),
-        html("a<noembed class=\"cajaEmbed1\">b</noembed>c"),
+        htmlb("a<noembed class=\"cajaEmbed1\">b</noembed>c"),
         js(
             "{\n",
             "  IMPORTS___.htmlEmitter___.handleEmbed({",
@@ -36,7 +36,7 @@ public final class RewriteFlashStageTest extends PipelineStageTestCase {
 
     assertPipeline(
         html("a<noembed class=\"x\">b</noembed>c"),
-        html("a<noembed class=\"cajaEmbed2 x\">b</noembed>c"),
+        htmlb("a<noembed class=\"cajaEmbed2 x\">b</noembed>c"),
         js(
             "{\n",
             "  IMPORTS___.htmlEmitter___.handleEmbed({",
@@ -48,7 +48,7 @@ public final class RewriteFlashStageTest extends PipelineStageTestCase {
   public final void testEmbed() throws Exception {
     assertPipeline(
         html("a<embed type=\"foo\">b"),
-        html("a<embed type=\"foo\" />b"));
+        htmlb("a<embed type=\"foo\" />b"));
     assertNoErrors();
 
     assertPipeline(
@@ -56,7 +56,7 @@ public final class RewriteFlashStageTest extends PipelineStageTestCase {
             "a<embed type=\"application/x-shockwave-flash\"",
             " src=\"xx\">b"
         ),
-        html("a<span class=\"cajaEmbed1\"></span>b"),
+        htmlb("a<span class=\"cajaEmbed1\"></span>b"),
         js(
             "{\n",
             "  IMPORTS___.htmlEmitter___.handleEmbed({\n",
@@ -73,7 +73,7 @@ public final class RewriteFlashStageTest extends PipelineStageTestCase {
             "a<embed type=\"application/x-shockwave-flash\"",
             " src=\"xx\" width=\"11\" height=\"22\">b"
         ),
-        html("a<span class=\"cajaEmbed2\"></span>b"),
+        htmlb("a<span class=\"cajaEmbed2\"></span>b"),
         js(
             "{\n",
             "  IMPORTS___.htmlEmitter___.handleEmbed({\n",
@@ -89,7 +89,7 @@ public final class RewriteFlashStageTest extends PipelineStageTestCase {
   public final void testObject() throws Exception {
     assertPipeline(
         html("a<object>b</object>c"),
-        html("a<object>b</object>c"));
+        htmlb("a<object>b</object>c"));
     assertNoErrors();
 
     assertPipeline(
@@ -97,7 +97,7 @@ public final class RewriteFlashStageTest extends PipelineStageTestCase {
             "a<object type=\"application/x-shockwave-flash\"",
             " data=\"xx\">b</object>c"
         ),
-        html("a<span class=\"cajaEmbed1\">b</span>c"),
+        htmlb("a<span class=\"cajaEmbed1\">b</span>c"),
         js(
             "{\n",
             "  IMPORTS___.htmlEmitter___.handleEmbed({\n",
@@ -117,7 +117,7 @@ public final class RewriteFlashStageTest extends PipelineStageTestCase {
             " c",
             "</object>d"
         ),
-        html("a<span class=\"cajaEmbed2\"> b  c</span>d"),
+        htmlb("a<span class=\"cajaEmbed2\"> b  c</span>d"),
         js(
             "{\n",
             "  IMPORTS___.htmlEmitter___.handleEmbed({\n",
@@ -143,7 +143,7 @@ public final class RewriteFlashStageTest extends PipelineStageTestCase {
             " width=\"$w2\" height=\"$h2\" allowscriptaccess=\"always\"",
             " allowfullscreen=\"true\"></embed>",
             "</object>"),
-        html(
+        htmlb(
             "<object height=\"$h1\" width=\"$w1\">",
             "<param name=\"movie\" value=\"$url1\" />",
             "<param name=\"allowFullScreen\" value=\"true\" />",
@@ -164,6 +164,11 @@ public final class RewriteFlashStageTest extends PipelineStageTestCase {
 
   private JobStub html(String... content) {
     return new JobStub(Join.join("", content), ContentType.HTML);
+  }
+
+  private JobStub htmlb(String... content) {
+    return new JobStub("<html><head></head><body>" + Join.join("", content) +
+        "</body></html>", ContentType.HTML);
   }
 
   private JobStub js(String... content) {
