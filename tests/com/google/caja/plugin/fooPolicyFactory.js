@@ -47,5 +47,8 @@ caja.tamingGoogleLoader.addPolicyFactory('foo', function(frame, utils) {
   f.Sub.prototype.getY = function() {};
   f.Sub.prototype.setY = function(y) {};
 
-  return f;
+  return {
+    version: '1.0',
+    value: f
+  };
 });

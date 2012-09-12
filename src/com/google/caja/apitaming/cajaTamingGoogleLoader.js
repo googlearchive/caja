@@ -368,7 +368,7 @@ caja.tamingGoogleLoader = (function() {
     function defTopLevelObj(path, obj, policyByName) {
       var policy = {};
       policyByName.keys(function(k) {
-        policy[k] = policyByName.get(k);
+        policy[k] = policyByName.get(k).value;
       });
       return defObj(path, obj, policy);
     }

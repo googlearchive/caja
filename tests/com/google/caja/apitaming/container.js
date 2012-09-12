@@ -14,6 +14,13 @@
 
 (function() {
 
+  function loadScript(src, cb) {
+    var script = document.createElement('script');
+    script.setAttribute('src', src);
+    script.onload = cb;
+    document.head.appendChild(script);
+  }
+
   // URL parameter parsing code from blog at:
   // http://www.netlobo.com/url_query_string_javascript.html
   function getUrlParam(name) {
@@ -27,19 +34,18 @@
   var cajaServer = getUrlParam('cajaServer');
   var forceES5Mode = (getUrlParam('forceES5Mode') === 'true');
 
-  var cajaScript = document.createElement('script');
-  cajaScript.setAttribute('src', cajaServer + '/caja.js');
-  cajaScript.onload = cajaReady;
-  document.head.appendChild(cajaScript);
-
-  caja.tamingGoogleLoader.addPolicyFactoryUrl(
-      'picker',
-      './pickerPolicyFactory.js');
-  caja.tamingGoogleLoader.addPolicyFactoryUrl(
-      'visualization',
-      './visualizationPolicyFactory.js');
+  loadScript(cajaServer + '/caja.js', function() {
+    loadScript('./cajaTamingGoogleLoader.js', cajaReady);
+  });
 
   function cajaReady() {
+
+    caja.tamingGoogleLoader.addPolicyFactoryUrl(
+        'picker',
+        './pickerPolicyFactory.js');
+    caja.tamingGoogleLoader.addPolicyFactoryUrl(
+        'visualization',
+        './visualizationPolicyFactory.js');
 
     caja.initialize({
       cajaServer: cajaServer,

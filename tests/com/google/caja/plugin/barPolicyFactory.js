@@ -21,5 +21,8 @@ caja.tamingGoogleLoader.addPolicyFactory('bar', function(frame, utils) {
 
   f.getValue = function() {};
 
-  return f;
+  return {
+    version: '1.0',
+    value: f
+  };
 });
