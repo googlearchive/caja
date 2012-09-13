@@ -55,7 +55,7 @@ public class CssDynamicExpressionRewriterTest extends CajaTestCase {
   }
 
   // TODO(kpreid): These tests were written to exercise the
-  //     body -> .vdoc-body___
+  //     body -> .vdoc-container___
   // special case in pre-element-virtualization Caja. Replace these test cases
   // with something providing more useful coverage.
   public final void testBodyMarker() {

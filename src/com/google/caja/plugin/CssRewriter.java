@@ -532,9 +532,11 @@ public final class CssRewriter {
                 || child instanceof CssTree.IdLiteral) {
               String literal = (String) child.getValue();
               if (literal.endsWith("__")
-                  // Allow this since this pass replaces body with .vdoc-body___
-                  // and the pipeline is much simplified if this pass is
-                  // idempotent.
+                  // Allow this since this pass replaces body with
+                  // .vdoc-container___ and the pipeline is much simplified if
+                  // this pass is idempotent.
+                  // TODO(kpreid): Body replacement is gone, is this code
+                  // obsolete?
                   && !(child instanceof VdocClassLiteral)) {
                 mq.addMessage(PluginMessageType.UNSAFE_CSS_IDENTIFIER,
                     child.getFilePosition(),
@@ -609,7 +611,7 @@ public final class CssRewriter {
 
         CssTree restrictClass = new CssTree.SuffixedSelectorPart(pos);
 
-        if (!selectorMatchesClass(baseSelector, "vdoc-body___")) {
+        if (!selectorMatchesClass(baseSelector, "vdoc-container___")) {
           CssTree.Combination op = new CssTree.Combination(
               pos, CssTree.Combinator.DESCENDANT);
           CssTree.SimpleSelector restrictSel = new CssTree.SimpleSelector(

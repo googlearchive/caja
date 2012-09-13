@@ -432,6 +432,8 @@ public final class CssValidator {
       // Make an exception for BODY which is handled specially by the
       // rewriter and which can be used as the basis for browser specific
       // rules, e.g.  body.ie6 p { ... }
+      // TODO(kpreid): BODY is no longer special. Is this obsolete? What is the
+      // browser specific rule thing, exactly?
       i = skipDescendantOfBody(children);
     }
     boolean valid = true;

@@ -466,7 +466,7 @@ function HtmlEmitter(makeDOMAccessible, base, opt_domicile, opt_guestGlobal) {
       tagName = html.virtualToRealElementName(tagName).toUpperCase();
 
       var anc = insertionPoint;
-      while (anc !== base && !/\bvdoc-body___\b/.test(anc.className)) {
+      while (anc !== base && !/\bvdoc-container___\b/.test(anc.className)) {
         var p = anc.parentNode;
         if (anc.tagName === tagName) {
           insertionPoint = p;

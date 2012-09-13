@@ -1335,7 +1335,7 @@ var Domado = (function() {
     /**
      * Add a tamed document implementation to a Gadget's global scope.
      *
-     * Has the side effect of adding the classes "vdoc-body___" and
+     * Has the side effect of adding the classes "vdoc-container___" and
      * idSuffix.substring(1) to the containerNode.
      *
      * @param {string} idSuffix a string suffix appended to all node IDs.
@@ -1356,8 +1356,8 @@ var Domado = (function() {
      *         If a hint is not present it should not be relied upon.
      *     The rewrite function should be idempotent to allow rewritten HTML
      *     to be reinjected.
-     * @param {Node} containerNode an HTML node to act as the "body" of the
-     *     virtual document provided to Cajoled code.
+     * @param {Node} containerNode an HTML node to contain the children of the
+     *     virtual Document node provided to Cajoled code.
      * @param {Object} optTargetAttributePresets a record containing the presets
      *     (default and whitelist) for the HTML "target" attribute.
      * @return {Object} A collection of privileged access tools, plus the tamed
@@ -3235,14 +3235,14 @@ var Domado = (function() {
       TameElement.prototype.getBoundingClientRect = nodeMethod(function () {
         var feral = np(this).feral;
         var elRect = bridal.getBoundingClientRect(feral);
-        var vbody = bridal.getBoundingClientRect(
+        var vdoc = bridal.getBoundingClientRect(
             np(this.ownerDocument).feralContainerNode);
-        var vbodyLeft = vbody.left, vbodyTop = vbody.top;
+        var vdocLeft = vdoc.left, vdocTop = vdoc.top;
         return ({
-                  top: elRect.top - vbodyTop,
-                  left: elRect.left - vbodyLeft,
-                  right: elRect.right - vbodyLeft,
-                  bottom: elRect.bottom - vbodyTop
+                  top: elRect.top - vdocTop,
+                  left: elRect.left - vdocLeft,
+                  right: elRect.right - vdocLeft,
+                  bottom: elRect.bottom - vdocTop
                 });
       });
       TameElement.prototype.updateStyle = nodeMethod(function (style) {
@@ -3412,7 +3412,8 @@ var Domado = (function() {
             if (!feralOffsetParent) {
               return feralOffsetParent;
             } else if (feralOffsetParent === containerNode) {
-              // Return the body if the node is contained in the body
+              // Return the body if the node is contained in the body. This is
+              // emulating how browsers treat offsetParent and the real <BODY>.
               var feralBody = np(tameDocument.body).feral;
               for (var ancestor = makeDOMAccessible(np(this).feral.parentNode);
                    ancestor !== containerNode;
@@ -5343,7 +5344,7 @@ var Domado = (function() {
       // enforce id class on element
       bridal.setAttribute(containerNode, "class",
           bridal.getAttribute(containerNode, "class")
-          + " " + idClass + " vdoc-body___");
+          + " " + idClass + " vdoc-container___");
 
       // bitmask of trace points
       //    0x0001 plugin_dispatchEvent

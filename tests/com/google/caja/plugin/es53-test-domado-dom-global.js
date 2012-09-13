@@ -22,7 +22,7 @@
 
 (function () {
   function assertGuestHtmlCorrect(frame, div) {
-    var vdocContainer = div.getElementsByClassName("vdoc-body___")[0];
+    var vdocContainer = div.getElementsByClassName("vdoc-container___")[0];
     debugger;
     assertEquals('<html><head><title>t</title></head><body>b</body>',
         vdocContainer.innerHTML);
