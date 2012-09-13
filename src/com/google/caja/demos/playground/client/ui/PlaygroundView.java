@@ -525,7 +525,8 @@ public class PlaygroundView {
               return uri;
             }
             if (uriEffect === $wnd.html4.ueffects.SAME_DOCUMENT &&
-                 loaderType === $wnd.html4.ltypes.SANDBOXED) {
+                 (loaderType === $wnd.html4.ltypes.SANDBOXED ||
+                   loaderType === $wnd.html4.ltypes.DATA)) {
               if (hints && hints.XHR) {
                 return uri;
               }
