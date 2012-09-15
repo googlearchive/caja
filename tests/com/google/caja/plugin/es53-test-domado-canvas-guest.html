@@ -14,15 +14,15 @@
  - limitations under the License.
 -->
 
-<p id="test-canvas-element" class="testcontainer">
+<p id="testCanvasElement" class="testcontainer">
   Canvas element
-  <canvas id="test-canvas-element-canvas"
+  <canvas id="testCanvasElement-canvas"
           width="113" height="131">fallback</canvas>
 </p>
 <script type="text/javascript">
   jsunitRegister('testCanvasElement',
                  function testCanvasElement() {
-    var canvas = document.getElementById('test-canvas-element-canvas');
+    var canvas = document.getElementById('testCanvasElement-canvas');
 
     // Does it survive cajoling?
     assertEquals("canvas.tagName", "CANVAS", canvas.tagName);
@@ -54,23 +54,23 @@
     assertNotNull("context", context);
     assertNotUndefined("context", context);
     assertEquals("context equals itself", context,
-       document.getElementById('test-canvas-element-canvas').getContext("2d"));
+       document.getElementById('testCanvasElement-canvas').getContext("2d"));
 
     // TODO: toDataURL
 
-    pass('test-canvas-element');
+    pass('testCanvasElement');
   });
 </script>
 
-<p id="test-canvas-context-props" class="testcontainer">
+<p id="testCanvasContextProps" class="testcontainer">
   Canvas context props
-  <canvas id="test-canvas-context-props-canvas"
+  <canvas id="testCanvasContextProps-canvas"
           height="20" width="120">fallback</canvas>
 </p>
 <script type="text/javascript">
   jsunitRegister('testCanvasContextProps',
                  function testCanvasContextProps() {
-    var context = document.getElementById('test-canvas-context-props-canvas')
+    var context = document.getElementById('testCanvasContextProps-canvas')
                           .getContext('2d');
     var VARIES = Object.freeze({});
 
@@ -166,19 +166,19 @@
     testProperty("textBaseline", "alphabetic", "middle",
                  [123, "center", {toString:function(){return "bottom";}}]);
 
-    pass('test-canvas-context-props');
+    pass('testCanvasContextProps');
   });
 </script>
 
-<p id="test-canvas-context-methods" class="testcontainer">
+<p id="testCanvasContextMethods" class="testcontainer">
   Canvas context methods
-  <canvas id="test-canvas-context-methods-canvas"
+  <canvas id="testCanvasContextMethods-canvas"
           height="120" width="120">fallback</canvas>
 </p>
 <script type="text/javascript">
   jsunitRegister('testCanvasContextMethods',
                  function testCanvasContextMethods() {
-    var context = document.getElementById('test-canvas-context-methods-canvas')
+    var context = document.getElementById('testCanvasContextMethods-canvas')
                           .getContext('2d');
 
     // TODO(kpreid): Check for conformance with "Except where otherwise
@@ -410,21 +410,21 @@
     // possibly from another source, which they can't otherwise) so they've
     // been deferred for now.
 
-    pass('test-canvas-context-methods');
+    pass('testCanvasContextMethods');
   });
 </script>
 
-<p id="test-canvas-pointInPath" class="testcontainer">
+<p id="testCanvasPointInPath" class="testcontainer">
   Canvas pointInPath
   <!-- Zoomed in for visual inspection -->
-  <canvas id="test-canvas-pointInPath-canvas"
+  <canvas id="testCanvasPointInPath-canvas"
           width="8" height="8"
           style="width: 80px; height: 80px;">fallback</canvas>
 </p>
 <script type="text/javascript">
   jsunitRegister('testCanvasPointInPath',
              function testCanvasPointInPath() {
-    var context = document.getElementById('test-canvas-pointInPath-canvas')
+    var context = document.getElementById('testCanvasPointInPath-canvas')
                           .getContext('2d');
 
     // This is in a separate test because some of the arbitrary mucking about
@@ -444,14 +444,14 @@
     assertFalse("isPointInPath 5", context.isPointInPath(-5, 1));
 
 
-    pass('test-canvas-pointInPath');
+    pass('testCanvasPointInPath');
   });
 </script>
 
-<p id="test-canvas-context-imagedata" class="testcontainer">
+<p id="testCanvasContextImageData" class="testcontainer">
   Canvas imagedata
   <!-- Zoomed in for visual inspection -->
-  <canvas id="test-canvas-context-imagedata-canvas"
+  <canvas id="testCanvasContextImageData-canvas"
           width="9" height="3"
           style="width: 90px; height: 30px;">fallback</canvas>
 </p>
@@ -459,7 +459,7 @@
   jsunitRegister('testCanvasContextImageData',
              function testCanvasContextImageData() {
     var context =
-        document.getElementById('test-canvas-context-imagedata-canvas')
+        document.getElementById('testCanvasContextImageData-canvas')
                 .getContext('2d');
 
     // Note: Image data resolution can differ from the canvas coordinate space.
@@ -507,30 +507,30 @@
     assertEquals("result of altered putImageData R", 255, read3.data[0]);
     assertEquals("result of altered putImageData B", 222, read3.data[2]);
 
-    pass('test-canvas-context-imagedata');
+    pass('testCanvasContextImageData');
   });
 </script>
 
-<div id="test-canvas-context-focus" class="testcontainer">
+<div id="testCanvasContextFocus" class="testcontainer">
   Canvas drawFocusRing
-  <canvas id="test-canvas-context-focus-canvas" height="20" width="50">
+  <canvas id="testCanvasContextFocus-canvas" height="20" width="50">
     <form>
-      <input type="text" id="test-canvas-context-focus-field-1">
-      <input type="text" id="test-canvas-context-focus-field-2">
+      <input type="text" id="testCanvasContextFocus-field-1">
+      <input type="text" id="testCanvasContextFocus-field-2">
     </form>
   </canvas>
 </div>
 <script type="text/javascript">
   jsunitRegister('testCanvasContextFocus',
                  function testCanvasContextFocus() {
-    var context = document.getElementById('test-canvas-context-focus-canvas')
+    var context = document.getElementById('testCanvasContextFocus-canvas')
                           .getContext('2d');
 
     if ("drawFocusRing" in context) {
       var focusElem1 =
-          document.getElementById('test-canvas-context-focus-field-1');
+          document.getElementById('testCanvasContextFocus-field-1');
       var focusElem2 =
-          document.getElementById('test-canvas-context-focus-field-2');
+          document.getElementById('testCanvasContextFocus-field-2');
 
       // Establish a path
       context.beginPath();
@@ -557,22 +557,22 @@
       console.log("no drawFocusRing, skipping test.");
     }
 
-    pass('test-canvas-context-focus');
+    pass('testCanvasContextFocus');
   });
 </script>
 
-<p id="test-canvas-not-editable" class="testcontainer">
+<p id="testCanvasNotEditable" class="testcontainer">
   Canvas context without editability
-  <canvas id="test-canvas-not-editable-canvas"
+  <canvas id="testCanvasNotEditable-canvas"
           height="1" width="1">fallback</canvas>
 </p>
 <script type="text/javascript">
   jsunitRegister('testCanvasNotEditable',
                  function testCanvasNotEditable() {
-    var canvas = documentRO.getElementById('test-canvas-not-editable-canvas');
+    var canvas = documentRO.getElementById('testCanvasNotEditable-canvas');
     expectFailure(function () {
       canvas.getContext('2d');
     }, "can't get context for a RO canvas ref");
-    pass('test-canvas-not-editable');
+    pass('testCanvasNotEditable');
   });
 </script>

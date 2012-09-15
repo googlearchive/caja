@@ -54,10 +54,13 @@ jsunit.popTestId = function() {
 // TODO: create jsunitRegisterAsync(), then make passes implicit.
 jsunit.pass = function(opt_id) {
   if (!jsunit.getCurrentTestId() && !opt_id) {
-    console.error('TEST ERROR: pass without a test ID');
-    return;
+    throw new Error('TEST ERROR: pass without a test ID');
   }
   var id = opt_id || jsunit.getCurrentTestId();
+  if (!(id in jsunit.tests)) {
+    throw new Error(
+        'TEST ERROR: pass(' + id + ') with no such registered test');
+  }
   if (id in jsunit.passTests) {
     throw new Error('dupe pass ' + id);
   }

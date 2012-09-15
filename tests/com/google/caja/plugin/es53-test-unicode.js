@@ -41,7 +41,7 @@
 
   registerTest('testUnicode1', function () { basicPassingTest('testUnicode1', 
     // Only ascii
-    'debugger; api.result = 42;', 42); 
+    'api.result = 42;', 42); 
   });
   registerTest('testUnicode2', function () { basicPassingTest('testUnicode2', 
     // Identifier with encoded character

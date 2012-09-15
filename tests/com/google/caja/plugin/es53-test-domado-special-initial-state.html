@@ -53,13 +53,13 @@
   <!-- The unescaped title attribute and the > after the </em> are
     - intentionally non-standard to test the behavior of innerHTML on
     - various browsers. -->
-  <div id="test-inner-html-IDSUFFIX" class="testcontainer"
+  <div id="testInnerHtml-IDSUFFIX" class="testcontainer"
    ><a id="bar" href="http://foo.com?a=b&c=d" class="link"
      title="<click me!>" target="_parent"
      >Test <em id="em-IDSUFFIX">Not</em>> run yet.</a>
   </div>
 
-  <div class="testcontainer" id="test-opaque-nodes-IDSUFFIX"
+  <div class="testcontainer" id="testOpaqueNodes-IDSUFFIX"
    ><!-- Comment -->a<script id="howdy-script-IDSUFFIX">/* Howdy */</script
    >b<object id="dangerous-object">obj</object>c</div>
 

@@ -209,7 +209,7 @@ document.write(
   }
 </script>
 
-<p id="test-dom-class-hierarchy" class="clickme testcontainer">
+<p id="testDomClassHierarchy" class="clickme testcontainer">
   <b>Click me</b>
 </p>
 <script type="text/javascript">
@@ -257,17 +257,17 @@ document.write(
     //            document.createElement('img')
     //                instanceof window.HTMLDivElement);
 
-    document.getElementById('test-dom-class-hierarchy').addEventListener(
+    document.getElementById('testDomClassHierarchy').addEventListener(
         'click',
         jsunitCallback(
             function onclick(event) {
               assertTrue(event instanceof window.Event);
-              pass('test-dom-class-hierarchy');
+              pass('testDomClassHierarchy');
             }));
   });
 </script>
 
-<div id="test-case-insensitive-attrs" class="clickme testcontainer">
+<div id="testCaseInsensitiveAttrs" class="clickme testcontainer">
   <table id="is-red">
     <tr>
       <td><strong>Click me if this is red</strong></td>
@@ -283,7 +283,7 @@ document.write(
         'click',
         jsunitCallback(
             function onclick(event) {
-              pass('test-case-insensitive-attrs');
+              pass('testCaseInsensitiveAttrs');
             }));
   });
 </script>
@@ -504,8 +504,8 @@ document.write(
   });
 </script>
 
-<p id="test-property-attribute-interaction" class="testcontainer">
-  <span id="test-property-attribute-interaction-label">
+<p id="testPropertyAttributeInteraction" class="testcontainer">
+  <span id="testPropertyAttributeInteraction-label">
     Test property attribute interaction
   </span><br>
 </p>
@@ -513,7 +513,7 @@ document.write(
   jsunitRegister('testPropertyAttributeInteraction',
                  function testPropertyAttributeInteraction() {
     var d = document.getElementById(
-        'test-property-attribute-interaction-label');
+        'testPropertyAttributeInteraction-label');
     d.setAttribute('foo', 'hi');
     d.setAttribute('title', 'there');
     assertEquals(void 0, d.FOO);
@@ -529,11 +529,11 @@ document.write(
     d.title = 'bob';
     assertEquals('bob', d.getAttribute('title'));
     assertEquals('bob', d.getAttribute('TITLE'));
-    pass('test-property-attribute-interaction');
+    pass('testPropertyAttributeInteraction');
   });
 </script>
 
-<p id="test-pseudo-elements" class="testcontainer">
+<p id="testPseudoElements" class="testcontainer">
   Test pseudo-elements
 </p>
 <script type="text/javascript">
@@ -559,11 +559,11 @@ document.write(
     assertEquals(title, all[2]);
     assertEquals(body, all[3]);
 
-    pass('test-pseudo-elements');
+    pass('testPseudoElements');
   });
 </script>
 
-<p id="test-editability-in-node-lists" class="testcontainer">
+<p id="testEditabilityInNodeLists" class="testcontainer">
   editability in node lists<br>
 </p>
 <script type="text/javascript">
@@ -583,12 +583,12 @@ document.write(
     delete paragraph.foo;
     assertEquals(undefined, paragraph.foo);
 
-    pass('test-editability-in-node-lists');
+    pass('testEditabilityInNodeLists');
   });
 </script>
 
-<p id="test-nonexistent-style-property" class="testcontainer">
-  <span id="test-nonexistent-style-property-label"
+<p id="testNonexistentStyleProperty" class="testcontainer">
+  <span id="testNonexistentStyleProperty-label"
    >I ain&apos;t got no style</span>
   <br>
 </p>
@@ -596,38 +596,38 @@ document.write(
   jsunitRegister('testNonexistentStyleProperty',
                  function testNonexistentStyleProperty() {
     var container = document.getElementById(
-        'test-nonexistent-style-property-label');
+        'testNonexistentStyleProperty-label');
     assertEquals(undefined, container.style.noSuchProperty);
-    pass('test-nonexistent-style-property');
+    pass('testNonexistentStyleProperty');
   });
 </script>
 
-<div id="test-get-element-by-id" class="testcontainer"></div>
+<div id="testGetElementById" class="testcontainer"></div>
 <script type="text/javascript">
   jsunitRegister('testGetElementById',
                  function testGetElementById() {
     assertEquals(null, document.getElementById('foo'));
     assertEquals(null, document.getElementById('bar'));
     assertEquals(null, document.getElementById('no_such_node'));
-    assertTrue(document.getElementById('test-get-element-by-id') != null);
+    assertTrue(document.getElementById('testGetElementById') != null);
 
-    pass('test-get-element-by-id');
+    pass('testGetElementById');
   });
 </script>
 
-<div id="test-get-element-by-id-2" class="testcontainer"></div>
+<div id="testGetElementById2" class="testcontainer"></div>
 <script type="text/javascript">
   jsunitRegister('testGetElementById2',
                  function testGetElementById2() {
     assertEquals(null, document.getElementById('xyz-test-get-element-by-id'));
-    assertTrue(document.getElementById('test-get-element-by-id-2') != null);
+    assertTrue(document.getElementById('testGetElementById2') != null);
 
-    pass('test-get-element-by-id-2');
+    pass('testGetElementById2');
   });
 </script>
 
-<p id="test-contains" class="testcontainer"></p>
-<p id="test-contains-after"></p>
+<p id="testContains" class="testcontainer"></p>
+<p id="testContains-after"></p>
 <script type="text/javascript">
   jsunitRegister('testContains',
                  function testContains() {
@@ -637,13 +637,13 @@ document.write(
     var result = disconnectedEl.appendChild(disconnectedChild);
     assertEquals(result, disconnectedChild);
 
-    var testContainer = document.getElementById('test-contains');
+    var testContainer = document.getElementById('testContains');
     var testContainerChild = document.createElement('SPAN');
     result = testContainer.appendChild(testContainerChild);
     assertEquals(result, testContainerChild);
-    // This test assume that test-contains-after follows
-    // test-contains in the HTML above.
-    var follower = document.getElementById('test-contains-after');
+    // This test assume that testContains-after follows
+    // testContains in the HTML above.
+    var follower = document.getElementById('testContains-after');
 
     var hasContains = 'contains' in testContainer;
     var hasCompare = 'compareDocumentPosition' in testContainer;
@@ -697,12 +697,12 @@ document.write(
           testContainer.compareDocumentPosition(testContainer));
     }
 
-    pass('test-contains');
+    pass('testContains');
   });
 </script>
 
-<p id="test-contains-null" class="testcontainer">
-  test-contains-null<br>
+<p id="testContainsNull" class="testcontainer">
+  testContainsNull<br>
 </p>
 <script type="text/javascript">
   jsunitRegister('testContainsNull',
@@ -713,23 +713,23 @@ document.write(
     assertEquals('div.contains(void 0)', false, div.contains(void 0));
     assertEquals('docEl.contains(null)', false, docEl.contains(null));
     assertEquals('docEl.contains(void 0)', false, docEl.contains(void 0));
-    pass('test-contains-null');
+    pass('testContainsNull');
   });
 </script>
 
-<p id="test-element-id" class="testcontainer"></p>
+<p id="testElementId" class="testcontainer"></p>
 <script type="text/javascript">
   jsunitRegister('testElementId',
                  function testElementId() {
-    var el = document.getElementById('test-element-id');
-    assertEquals('test-element-id', el.id);
-    assertEquals('test-element-id', el.getAttribute('id'));
+    var el = document.getElementById('testElementId');
+    assertEquals('testElementId', el.id);
+    assertEquals('testElementId', el.getAttribute('id'));
 
-    pass('test-element-id');
+    pass('testElementId');
   });
 </script>
 
-<p id="test-create-element" class="testcontainer"></p>
+<p id="testCreateElement" class="testcontainer"></p>
 <script type="text/javascript">
   jsunitRegister('testCreateElement',
                  function testCreateElement() {
@@ -745,7 +745,7 @@ document.write(
     assertEquals('not:bogus', newNode.id);
     assertEquals(1, newNode.nodeType);
 
-    var el = document.getElementById('test-create-element');
+    var el = document.getElementById('testCreateElement');
     el.appendChild(newNode);
 
     assertEquals(document.getElementById('not:bogus').tagName,
@@ -761,11 +761,11 @@ document.write(
     assertEquals(3, newNode.firstChild.nodeType);
     assertEquals('howdy &lt;there&gt;', canonInnerHtml(newNode.innerHTML));
 
-    pass('test-create-element');
+    pass('testCreateElement');
   });
 </script>
 
-<ol id="test-get-elements-by-tag-name" class="testcontainer">
+<ol id="testGetElementsByTagName" class="testcontainer">
   <li>One
   <li>Two
   <li>Three
@@ -774,7 +774,7 @@ document.write(
 <script type="text/javascript">
   jsunitRegister('testGetElementsByTagName',
                  function testGetElementsByTagName() {
-    var container = document.getElementById('test-get-elements-by-tag-name');
+    var container = document.getElementById('testGetElementsByTagName');
     var items = container.getElementsByTagName('li');
     assertEquals(5, items.length);
     for (var i = 0; i < items.length; ++i) {
@@ -791,7 +791,7 @@ document.write(
     assertUndefined('textnode.getElementsByTagName',
         items[0].firstChild.getElementsByTagName);
 
-    pass('test-get-elements-by-tag-name');
+    pass('testGetElementsByTagName');
   });
 </script>
 
@@ -800,7 +800,7 @@ document.write(
   - http://code.google.com/p/doctype/wiki/DocumentGetElementsByClassNameMethod
   - which are themselves derived from the HTML5 spec.
  -->
-<div id="test-get-elements-by-class-name" class="testcontainer">
+<div id="testGetElementsByClassName" class="testcontainer">
   <p class="aaa bbb">AAA BBB</p>
   <div class="aaa">AAA</div>
   <p class="bbb ccc">BBB CCC</p>
@@ -823,47 +823,47 @@ document.write(
     assertNodeListTextContent(' bbb \tccc ', ['BBB CCC']);
     assertNodeListTextContent('aaa,bbb', []);
 
-    pass('test-get-elements-by-class-name');
+    pass('testGetElementsByClassName');
   });
 </script>
 
-<p id="test-class-set-by-emitter" class="testcontainer"></p>
+<p id="testClassSetByEmitter" class="testcontainer"></p>
 <script type="text/javascript">
   jsunitRegister('testClassSetByEmitter',
                  function testClassSetByEmitter() {
     // Make sure that the HTML emitter correctly sets the class.
     // A testcontainer node should be yellow until it has been marked as having
     // passed.
-    var cont = document.getElementById('test-class-set-by-emitter');
+    var cont = document.getElementById('testClassSetByEmitter');
     var computedColor = directAccess.getComputedStyle(cont, 'background-color');
 
     cont.innerHTML = '(background-color=' + computedColor + ')';
 
     assertColor({ name: 'yellow', rgb: 0xffff00 }, computedColor);
-    pass('test-class-set-by-emitter');
+    pass('testClassSetByEmitter');
   });
 </script>
 
-<div id="test-dynamic-styles" class="testcontainer">
-  <span id="test-dynamic-styles1">I should be bold</span><br>
-  <span id="test-dynamic-styles2" style="font-weight: bold"
+<div id="testDynamicStyles" class="testcontainer">
+  <span id="testDynamicStyles1">I should be bold</span><br>
+  <span id="testDynamicStyles2" style="font-weight: bold"
    >I should not be bold</span><br>
-  <span id="test-dynamic-styles3"
+  <span id="testDynamicStyles3"
    >There&apos;s no such thing as super-bold</span><br>
 </div>
 <script type="text/javascript">
   jsunitRegister('testDynamicStyles',
                  function testDynamicStyles() {
     function $(id) { return document.getElementById(id); }
-    $('test-dynamic-styles1').style.fontWeight = 'bold';
-    $('test-dynamic-styles2').style.fontWeight = '';  // Can unset a style.
-    $('test-dynamic-styles3').style.fontWeight = 'super-bold';
-    assertFalse('super-bold' === $('test-dynamic-styles3').style.fontWeight);
-    pass('test-dynamic-styles');
+    $('testDynamicStyles1').style.fontWeight = 'bold';
+    $('testDynamicStyles2').style.fontWeight = '';  // Can unset a style.
+    $('testDynamicStyles3').style.fontWeight = 'super-bold';
+    assertFalse('super-bold' === $('testDynamicStyles3').style.fontWeight);
+    pass('testDynamicStyles');
   });
 </script>
 
-<p id="test-special-style-names" class="testcontainer">
+<p id="testSpecialStyleNames" class="testcontainer">
   (<span>(fluffy (little) cloud)</span>)
 </p>
 <script type="text/javascript">
@@ -877,7 +877,7 @@ document.write(
 
     // Some style names conflict with reserved keywords in many languages,
     // e.g. float.
-    var floatySpan = document.getElementById('test-special-style-names')
+    var floatySpan = document.getElementById('testSpecialStyleNames')
         .getElementsByTagName('SPAN')[0];
     assertEquals('none', getFloatySpanFloat());
     assertEquals('left', (floatySpan.style.cssFloat = 'left'));
@@ -894,11 +894,11 @@ document.write(
     assertEquals('right', floatySpan.style.cssFloat);
     assertEquals('right', floatySpan.style.getPropertyValue('float'));
 
-    pass('test-special-style-names');
+    pass('testSpecialStyleNames');
   });
 </script>
 
-<p id="test-read-only" class="testcontainer">
+<p id="testReadOnly" class="testcontainer">
   <span id="indelible">I am indelible</span>
 </p>
 <script type="text/javascript">
@@ -915,68 +915,68 @@ document.write(
     expectFailure(
         function () {
           var el = document.createElement('SPAN');
-          el.id = 'test-read-only-1';
-          $('test-read-only').appendChild(el);
-          assertEquals(null, $('test-read-only-1'));
+          el.id = 'testReadOnly-1';
+          $('testReadOnly').appendChild(el);
+          assertEquals(null, $('testReadOnly-1'));
         },
         'successfully appended element');
     expectFailure(
         function () {
           assertTrue($('indelible') !== null);
-          $('test-read-only').removeChild($('indelible'));
-          assertEquals(null, $('test-read-only-1'));
+          $('testReadOnly').removeChild($('indelible'));
+          assertEquals(null, $('testReadOnly-1'));
         },
         'successfully removed element');
     expectFailure(
         function () {
           var el = document.createElement('SPAN');
-          el.id = 'test-read-only-2';
-          $('test-read-only').replaceChild($('indelible'), el);
-          assertEquals(null, $('test-read-only-2'));
+          el.id = 'testReadOnly-2';
+          $('testReadOnly').replaceChild($('indelible'), el);
+          assertEquals(null, $('testReadOnly-2'));
           assertTrue($('indelible') !== null);
         },
         'successfully replaced element');
-    pass('test-read-only');
+    pass('testReadOnly');
   });
 </script>
 
-<p id="test-remove-child" class="testcontainer"
-  >hello<span id="test-remove-child-1">world</span></p>
+<p id="testRemoveChild" class="testcontainer"
+  >hello<span id="testRemoveChild-1">world</span></p>
 <script type="text/javascript">
   jsunitRegister('testRemoveChild',
                  function testRemoveChild() {
-    var parent = document.getElementById('test-remove-child');
-    var child = document.getElementById('test-remove-child-1');
+    var parent = document.getElementById('testRemoveChild');
+    var child = document.getElementById('testRemoveChild-1');
     var result = parent.removeChild(child);
     assertEquals(child, result);
     assertEquals('hello', canonInnerHtml(parent.innerHTML));
-    pass('test-remove-child');
+    pass('testRemoveChild');
   });
 </script>
 
-<p id="test-replace-child" class="testcontainer"
-  ><span id="test-replace-child-1">alpha</span
-  >bravo<span id="test-replace-child-2">charlie</span></p>
+<p id="testReplaceChild" class="testcontainer"
+  ><span id="testReplaceChild-1">alpha</span
+  >bravo<span id="testReplaceChild-2">charlie</span></p>
 <script type="text/javascript">
   jsunitRegister('testReplaceChild',
                  function testReplaceChild() {
-    var parent = document.getElementById('test-replace-child');
-    var newChild = document.getElementById('test-replace-child-1');
-    var oldChild = document.getElementById('test-replace-child-2');
+    var parent = document.getElementById('testReplaceChild');
+    var newChild = document.getElementById('testReplaceChild-1');
+    var oldChild = document.getElementById('testReplaceChild-2');
     var result = parent.replaceChild(newChild, oldChild);
     assertEquals(oldChild, result);
     assertEquals(
-        'bravo<span id="test-replace-child-1">alpha</span>',
+        'bravo<span id="testReplaceChild-1">alpha</span>',
         canonInnerHtml(parent.innerHTML));
-    pass('test-replace-child');
+    pass('testReplaceChild');
   });
 </script>
 
-<p id="test-insert-before" class="testcontainer">zero</p>
+<p id="testInsertBefore" class="testcontainer">zero</p>
 <script type="text/javascript">
   jsunitRegister('testInsertBefore',
                  function testInsertBefore() {
-    var el = document.getElementById('test-insert-before');
+    var el = document.getElementById('testInsertBefore');
     function assertChildren(var_args) {
       var children = [];
       for (var child = el.firstChild; child; child = child.nextSibling) {
@@ -1003,17 +1003,17 @@ document.write(
     assertChildren('zero', 'one', 'two', 'three', 'four');
     el.insertBefore(four, void 0);
     assertChildren('zero', 'one', 'two', 'three', 'four');
-    pass('test-insert-before');
+    pass('testInsertBefore');
   });
 </script>
 
-<ul id="test-node-lists" class="testcontainer"
+<ul id="testNodeLists" class="testcontainer"
  ><li>One<li><b>Two</b><li>Three</ul>
 <script type="text/javascript">
   jsunitRegister('testNodeLists',
                  function testNodeLists() {
     function $(id) { return document.getElementById(id); }
-    var descendants = $('test-node-lists').getElementsByTagName('*');
+    var descendants = $('testNodeLists').getElementsByTagName('*');
     assertEquals(4, descendants.length);
 
     assertEquals('LI', descendants[0].tagName);
@@ -1033,41 +1033,41 @@ document.write(
     // TODO(mikesamuel): test that getElementsByTagName and
     // getElementsByClassName do not return the body.
 
-    pass('test-node-lists');
+    pass('testNodeLists');
   });
 </script>
 
-<div id="test-name-attr" class="testcontainer"></div>
+<div id="testNameAttr" class="testcontainer"></div>
 <script type="text/javascript">
   jsunitRegister('testNameAttr',
                  function testNameAttr() {
-    var testDiv = document.getElementById('test-name-attr');
+    var testDiv = document.getElementById('testNameAttr');
     testDiv.innerHTML = '<span name="test-span">text</span>';
     var nameAttr = directAccess.getAttribute(testDiv.firstChild, 'name');
     assertFalse('test-span' === nameAttr); // Should have been renamed
-    pass('test-name-attr');
+    pass('testNameAttr');
   });
 </script>
 
-<div id="test-target-attr" class="testcontainer"></div>
+<div id="testTargetAttr" class="testcontainer"></div>
 <script type="text/javascript">
   jsunitRegister('testTargetAttr',
                  function testTargetAttr() {
-    var testDiv = document.getElementById('test-target-attr');
+    var testDiv = document.getElementById('testTargetAttr');
     testDiv.innerHTML = '<a target="foo">text1</a><a>text2</a>';
     var node = testDiv.firstChild;
     assertEquals("_blank", directAccess.getAttribute(node, 'target'));
     node = node.nextSibling;
     assertEquals("_blank", directAccess.getAttribute(node, 'target'));
-    pass('test-target-attr');
+    pass('testTargetAttr');
   });
 </script>
 
-<p id="test-child-nodes" class="testcontainer"></p>
+<p id="testChildNodes" class="testcontainer"></p>
 <script type="text/javascript">
   jsunitRegister('testChildNodes',
                  function testChildNodes() {
-    var container = document.getElementById('test-child-nodes');
+    var container = document.getElementById('testChildNodes');
     container.innerHTML = '<b>foo</b> <i>bar</i> <u>baz</u>';
     var childNodes = container.childNodes;
     assertEquals(5, childNodes.length);
@@ -1087,7 +1087,7 @@ document.write(
       }
       // TODO(felix8a): known failure handling
     }
-    pass('test-child-nodes');
+    pass('testChildNodes');
   });
 </script>
 
@@ -1109,7 +1109,7 @@ document.write(
   });
 </script>
 
-<div id="test-bug-731" class="testcontainer"
+<div id="testBug731" class="testcontainer"
  >The input should be a radio button:
 <form><input id="bug-731" type="radio" /></form></div>
 <script type="text/javascript">
@@ -1121,17 +1121,17 @@ document.write(
 
     var bug_731_input = document.getElementById('bug-731');
     assertEquals('radio', bug_731_input.type);
-    pass('test-bug-731');
+    pass('testBug731');
   });
 </script>
 
-<p id="test-bug-920" class="testcontainer"><input id="bug-920" /></p>
+<p id="testBug920" class="testcontainer"><input id="bug-920" /></p>
 <script type="text/javascript">
   jsunitRegister('testBug920',
                  function testBug920() {
     var bug_920_input = document.getElementById('bug-920');
     assertEquals('text', bug_920_input.type);
-    pass('test-bug-920');
+    pass('testBug920');
   });
 </script>
 
@@ -1212,7 +1212,7 @@ document.write(
   });
 </script>
 
-<p id="test-event-listeners-on-document" class="testcontainer">
+<p id="testEventListenersOnDocument" class="testcontainer">
   <input type="checkbox">
 </p>
 <script type="text/javascript">
@@ -1224,7 +1224,7 @@ document.write(
           ++clickCounter;
         });
 
-    var inp = document.getElementById('test-event-listeners-on-document')
+    var inp = document.getElementById('testEventListenersOnDocument')
         .getElementsByTagName('INPUT')[0];
 
     assertEquals('initially unclicked', 0, clickCounter);
@@ -1236,11 +1236,11 @@ document.write(
     document.removeEventListener('click', clickHandler);
     assertEquals('clicked after handler removed', 1, clickCounter);
 
-    pass('test-event-listeners-on-document');
+    pass('testEventListenersOnDocument');
   });
 </script>
 
-<p id="test-inner-HTML-style-sanitizer" class="testcontainer"></p>
+<p id="testInnerHTMLStyleSanitizer" class="testcontainer"></p>
 <script type="text/javascript">
   jsunitRegister('testInnerHTMLStyleSanitizer',
                  function testInnerHTMLStyleSanitizer() {
@@ -1253,7 +1253,7 @@ document.write(
           document.getElementById(id), 'background-color');
     }
 
-    var cont = document.getElementById('test-inner-HTML-style-sanitizer');
+    var cont = document.getElementById('testInnerHTMLStyleSanitizer');
 
     cont.innerHTML = '<span style="color: #00f" id="style-html">Blue</span>';
     assertColor({ name: 'blue', rgb: 0x0000ff }, colorOf('style-html'));
@@ -1264,25 +1264,25 @@ document.write(
     assertColor({ name: 'red', rgb: 0xff0000 }, colorOf('style-html'));
     assertColor({ name: 'purple', rgb: 0x800080 }, backgroundOf('style-html'));
 
-    pass('test-inner-HTML-style-sanitizer');
+    pass('testInnerHTMLStyleSanitizer');
   });
 </script>
 
-<p id="test-offset-parent" class="testcontainer" style="position:relative">
-<span id="test-offset-parent-inner">inner</span>
+<p id="testOffsetParent" class="testcontainer" style="position:relative">
+<span id="testOffsetParent-inner">inner</span>
 </p>
 <script type="text/javascript">
   jsunitRegister('testOffsetParent',
                  function testOffsetParent() {
-    var outer = document.getElementById('test-offset-parent');
-    var inner = document.getElementById('test-offset-parent-inner');
+    var outer = document.getElementById('testOffsetParent');
+    var inner = document.getElementById('testOffsetParent-inner');
     assertEquals("wrong inner.offsetParent: " + inner.offsetParent,
                  outer, inner.offsetParent);
     assertEquals("wrong outer.offsetParent: " + outer.offsetParent,
                  document.body, outer.offsetParent);
     assertEquals("wrong body.offsetParent: " + document.body.offsetParent,
                  null, document.body.offsetParent);
-    pass('test-offset-parent');
+    pass('testOffsetParent');
   });
 </script>
 
@@ -1404,11 +1404,11 @@ document.write(
   });
 </script>
 
-<p id="test-props-on-nodes" class="testcontainer">Original Text</p>
+<p id="testPropsOnNodes" class="testcontainer">Original Text</p>
 <script type="text/javascript">
   jsunitRegister('testPropsOnNodes',
                  function testPropsOnNodes() {
-    var div = document.getElementById("test-props-on-nodes");
+    var div = document.getElementById("testPropsOnNodes");
     var str = "";
     var i;
 
@@ -1421,20 +1421,20 @@ document.write(
     div.innerHTML = str;
     assertNotEquals("innerHTML should not be treated as an attribute",
                     str, div.getAttribute("innerHTML"));
-    pass('test-props-on-nodes');
+    pass('testPropsOnNodes');
   });
 </script>
 
 
-<div id="test-set-style" class="testcontainer"
-     style="cursor:move">test-set-style</div>
+<div id="testSetStyle" class="testcontainer"
+     style="cursor:move">testSetStyle</div>
 <script type="text/javascript">
   jsunitRegister('testSetStyle', function testSetStyle() {
     function cursor(el) {
       return directAccess.getComputedStyle(el, 'cursor');
     }
 
-    var el = document.getElementById('test-set-style');
+    var el = document.getElementById('testSetStyle');
     assertEquals('move', cursor(el));
 
     el.style = 'cursor:wait';
@@ -1461,7 +1461,7 @@ document.write(
     el.setStyle = 42;
     assertEquals(42, el.setStyle);
 
-    pass('test-set-style');
+    pass('testSetStyle');
   });
 </script>
 
@@ -1527,10 +1527,10 @@ After
   });
 </script>
 
-<div id="test-illegal-suffixes" class="testcontainer"></div>
+<div id="testIllegalSuffixes" class="testcontainer"></div>
 <script type="text/javascript">
   jsunitRegister('testIllegalSuffixes', function testIllegalSuffixes() {
-    var el = document.getElementById('test-illegal-suffixes');
+    var el = document.getElementById('testIllegalSuffixes');
 
     el.innerHTML = '<input id="bad1__" name="bad2__">';
     assertFalse('id="bad1__"', !!el.firstChild.getAttribute('id'));
@@ -1544,14 +1544,14 @@ After
     assertFalse('id="b__ c"', !!el.firstChild.getAttribute('id'));
     assertFalse('name="d__ e"', !!el.firstChild.getAttribute('name'));
 
-    pass('test-illegal-suffixes');
+    pass('testIllegalSuffixes');
   });
 </script>
 
-<div id="test-id-refs-rewriting" class="testcontainer"></div>
+<div id="testIdRefsRewriting" class="testcontainer"></div>
 <script type="text/javascript">
   jsunitRegister('testIdRefsRewriting', function testIdRefsRewriting() {
-    var el = document.getElementById('test-id-refs-rewriting');
+    var el = document.getElementById('testIdRefsRewriting');
     el.innerHTML =
         '<table><tr><td id="tirr1" headers="aa bb"></td></tr></table>';
     var tirr1 = document.getElementById('tirr1');
@@ -1564,27 +1564,27 @@ After
     assertEquals('rewritten ids', 'aa bb', tirr1.getAttribute('headers'));
     var html = el.innerHTML;
     assertTrue('innerHTML', new RegExp('"aa bb"').test(html));
-    pass('test-id-refs-rewriting');
+    pass('testIdRefsRewriting');
   });
 </script>
 
-<div id="test-strange-ids" class="testcontainer"></div>
+<div id="testStrangeIds" class="testcontainer"></div>
 <script type="text/javascript">
   jsunitRegister('testStrangeIds', function testStrangeIds() {
     function $(id) { return document.getElementById(id); }
-    var el = $('test-strange-ids');
+    var el = $('testStrangeIds');
     el.innerHTML = (
-        "<input id='test-strange-ids-1' name='tag[]'>\n"
-        + "<input id='test-strange-ids-2' name='form$location'>\n"
+        "<input id='testStrangeIds-1' name='tag[]'>\n"
+        + "<input id='testStrangeIds-2' name='form$location'>\n"
         + "<span id='23skiddoo'></span>\n"
         + "<span id='8675309'></span>\n"
         + "<span id='$-.:;()[]='></span>\n");
-    assertEquals('tag[]', $('test-strange-ids-1').name);
-    assertEquals('form$location', $('test-strange-ids-2').name);
+    assertEquals('tag[]', $('testStrangeIds-1').name);
+    assertEquals('form$location', $('testStrangeIds-2').name);
     assertEquals('23skiddoo', $('23skiddoo').id);
     assertEquals('8675309', $('8675309').id);
     assertEquals('$-.:;()[]=', $('$-.:;()[]=').id);
-    pass('test-strange-ids');
+    pass('testStrangeIds');
   });
 </script>
 
@@ -1640,7 +1640,7 @@ After
   });
 </script>
 
-<div id="test-clone-node-listeners" class="testcontainer">
+<div id="testCloneNodeListeners" class="testcontainer">
   <input id="test-clone-node-clickable" type="checkbox">
 </div>
 <script type="text/javascript">
@@ -1671,7 +1671,7 @@ After
     assertTrue('original still clickable', clicked);
     clicked = false;
 
-    pass('test-clone-node-listeners');
+    pass('testCloneNodeListeners');
   });
 </script>
 
@@ -1798,12 +1798,12 @@ After
   });
 </script>
 
-<p id="test-clone-node-custom-attrs" class="testcontainer">
+<p id="testCloneNodeCustomAttrs" class="testcontainer">
   I will have a custom attribute
 </p>
 <script type="text/javascript">
   jsunitRegister('testCloneNodeCustomAttrs', function testCloneNodeCustomAttrs() {
-    var node = document.getElementById('test-clone-node-custom-attrs');
+    var node = document.getElementById('testCloneNodeCustomAttrs');
     node.setAttribute('bogus', 'foo');
 
     var clone = node.cloneNode(true);
@@ -1828,20 +1828,20 @@ After
     assertEquals('original changed', 'boo', node.getAttribute('bogus'));
     assertTrue('original attr still exists', node.hasAttribute('bogus'));
 
-    pass('test-clone-node-custom-attrs');
+    pass('testCloneNodeCustomAttrs');
   });
 </script>
 
-<p id="test-compat-mode" class="testcontainer">Compat Mode:</p>
+<p id="testCompatMode" class="testcontainer">Compat Mode:</p>
 <script type="text/javascript">
   jsunitRegister('testCompatMode',
                  function testCompatMode() {
     assertEquals('CSS1Compat', document.compatMode);
-    pass('test-compat-mode');
+    pass('testCompatMode');
   });
 </script>
 
-<p id="test-domado-globals-accessible" class="testcontainer">
+<p id="testDomitaGlobalsAccessible" class="testcontainer">
   Test Domita globals accessible
 </p>
 <script type="text/javascript">
@@ -1865,11 +1865,11 @@ After
     assertEquals('function', typeof window.Event);
     assertEquals('function', typeof window.Text);
 
-    pass('test-domado-globals-accessible');
+    pass('testDomitaGlobalsAccessible');
   });
 </script>
 
-<p id="test-factories-not-bypassable" class="testcontainer">
+<p id="testFactoriesNotBypassable" class="testcontainer">
   Test factories not bypassable
 </p>
 <script type="text/javascript">
@@ -1889,11 +1889,11 @@ After
     expectFailure(
         function () { new window.Text({ nodeType: 3 }, false); },
         'Text');
-    pass('test-factories-not-bypassable');
+    pass('testFactoriesNotBypassable');
   });
 </script>
 
-<div id="test-size-properties" class="testcontainer"
+<div id="testSizeProperties" class="testcontainer"
  style="
     width: 100px;
     height: 50px;
@@ -1909,7 +1909,7 @@ After
     assertTrue('sign of pageXOffset', window.pageXOffset >= 0);
     assertTrue('sign of pageYOffset', window.pageYOffset >= 0);
 
-    var el = document.getElementById('test-size-properties');
+    var el = document.getElementById('testSizeProperties');
     // includes 2*padding
     assertEquals(106, el.clientWidth);
     assertEquals(56, el.clientHeight);
@@ -1917,16 +1917,16 @@ After
     assertEquals(110, el.offsetWidth);
     assertEquals(60, el.offsetHeight);
 
-    pass('test-size-properties');
+    pass('testSizeProperties');
   });
 </script>
 
-<p id="test-default-view" class="testcontainer">Test document.defaultView</p>
+<p id="testDefaultView" class="testcontainer">Test document.defaultView</p>
 <script type="text/javascript">
   jsunitRegister('testDefaultView',
                  function testDefaultView() {
     assertNotEquals(window, document.defaultView);
-    pass('test-default-view');
+    pass('testDefaultView');
   });
 </script>
 
@@ -2050,17 +2050,17 @@ After
   });
 </script>
 
-<p id="test-attribute-nodes" class="testcontainer">
-  <input id="test-attribute-nodes-onclick" type="checkbox" onclick="return 0;">
+<p id="testAttributeNodes" class="testcontainer">
+  <input id="testAttributeNodes-onclick" type="checkbox" onclick="return 0;">
   Test Attribute Nodes
 </p>
 <script type="text/javascript">
   jsunitRegister('testAttributeNodes',
                  function testAttributeNodes() {
-    var cb = document.getElementById('test-attribute-nodes-onclick');
+    var cb = document.getElementById('testAttributeNodes-onclick');
 
     var attrNode = cb.getAttributeNode('id');
-    assertEquals('test-attribute-nodes-onclick', attrNode.value);
+    assertEquals('testAttributeNodes-onclick', attrNode.value);
     assertEquals(true, attrNode.specified);
     assertEquals(cb, attrNode.ownerElement);
     assertEquals('id', attrNode.name);
@@ -2103,17 +2103,17 @@ After
     }
     checkScriptAttrNode(onclickAttrNode);
 
-    pass('test-attribute-nodes');
+    pass('testAttributeNodes');
   });
 </script>
 
-<p id="test-shorthand-css" class="testcontainer"
+<p id="testShorthandCss" class="testcontainer"
  >Test shorthand css</p>
 <script type="text/javascript">
   jsunitRegister('testShorthandCss',
                  function testShorthandCss() {
     var body = document.body;
-    var container = document.getElementById('test-shorthand-css');
+    var container = document.getElementById('testShorthandCss');
     var el = document.createElement('DIV');
     el.id = 'foo';
     el.innerHTML = 'style me shortly';
@@ -2123,12 +2123,12 @@ After
     assertColor({ name: 'blue', rgb: 0x0000ff }, el.style.borderTopColor);
     assertEquals('shorthand style set', el.style.borderTopStyle, 'dashed');
 
-    pass('test-shorthand-css');
+    pass('testShorthandCss');
   });
 </script>
 
-<div id="test-table-elements" class="testcontainer" >
-  <table id='test-table-elements-table'>
+<div id="testTableElements" class="testcontainer" >
+  <table id='testTableElements-table'>
     <thead>
       <tr>
         <td>h00</td>
@@ -2139,7 +2139,7 @@ After
         <td>b00</td>
         <td>b01</td>
       </tr>
-      <tr id="test-table-elements-tr-b1">
+      <tr id="testTableElements-tr-b1">
        <td>b10</td>
        <td>b11</td>
       </tr>
@@ -2149,23 +2149,23 @@ After
 <script type="text/javascript">
   jsunitRegister('testTableElements',
                  function testTableElements() {
-    var tr_b1 = document.getElementById('test-table-elements-tr-b1');
+    var tr_b1 = document.getElementById('testTableElements-tr-b1');
     assertEquals(1, tr_b1.sectionRowIndex);
     assertEquals(2, tr_b1.rowIndex);
-    var table = document.getElementById('test-table-elements-table');
+    var table = document.getElementById('testTableElements-table');
     assertEquals(0, table.cellPadding);
     assertEquals(0, table.cellSpacing);
-    pass('test-table-elements');
+    pass('testTableElements');
   });
 </script>
 
-<p id="test-focus-blur" class="testcontainer"
- ><input id="test-focus-blur-1">
+<p id="testFocusBlur" class="testcontainer"
+ ><input id="testFocusBlur-1">
 </p>
 <script type="text/javascript">
   jsunitRegister('testFocusBlur',
                  function testFocusBlur() {
-    var input = document.getElementById('test-focus-blur-1');
+    var input = document.getElementById('testFocusBlur-1');
     input.focus();
     input.blur();
     // IE specific methods
@@ -2177,11 +2177,11 @@ After
     }
     // TODO: can't verify focus changes in webdriver, because webdriver runs
     // without focusing the browser window, so onfocus never gets fired.
-    pass('test-focus-blur');
+    pass('testFocusBlur');
   });
 </script>
 
-<p id="test-for-attribute" class="testcontainer">for attribute</p>
+<p id="testForAttribute" class="testcontainer">for attribute</p>
 <script type="text/javascript">
   // http://code.google.com/p/google-caja/issues/detail?id=1066
   jsunitRegister('testForAttribute', function testForAttribute() {
@@ -2195,23 +2195,23 @@ After
     assertEquals('Y', label.getAttribute('for'));
     assertEquals('Y', label.htmlFor);
     assertTrue(label.hasAttribute('for'));
-    pass('test-for-attribute');
+    pass('testForAttribute');
   });
 </script>
 
-<p id="test-button-mutation" class="testcontainer">
-<button id="test-button-mutation-1">test-button-mutation</button>
+<p id="testButtonMutation" class="testcontainer">
+<button id="testButtonMutation-1">testButtonMutation</button>
 </p>
 <script type="text/javascript">
   jsunitRegister('testButtonMutation', function testButtonMutation() {
-    var el = document.getElementById('test-button-mutation-1');
+    var el = document.getElementById('testButtonMutation-1');
     // this never works on IE[67], but it shouldn't throw an error.
     try {
       el.setAttribute('type', 'reset');
     } catch (e) {
       fail('testButtonMutation got error: ' + e.message);
     }
-    pass('test-button-mutation');
+    pass('testButtonMutation');
   });
 </script>
 
@@ -2256,7 +2256,7 @@ Test row cell
 </script>
 
 
-<div id="test-iframe-shim" class="testcontainer">Test Iframe Shim</div>
+<div id="testIframeShim" class="testcontainer">Test Iframe Shim</div>
 <script type="text/javascript">
   jsunitRegister('testIframeShim',
                  function testIframeShim() {
@@ -2267,7 +2267,7 @@ Test row cell
     ifr.name = 'test';
     ifr.src = 'http://www.google.com';
     ifr.setAttribute('application', 'yes');
-    document.getElementById('test-iframe-shim').appendChild(ifr);
+    document.getElementById('testIframeShim').appendChild(ifr);
     assertEquals('5', ifr.getAttribute('height'));
     assertEquals('6', ifr.getAttribute('width'));
     assertEquals('1', ifr.getAttribute('frameBorder'));
@@ -2275,15 +2275,15 @@ Test row cell
     assertEquals(null, ifr.getAttribute('src'));
     assertEquals(void 0, ifr.name);
     assertEquals(void 0, ifr.src);
-    pass('test-iframe-shim');
+    pass('testIframeShim');
   });
 </script>
 
 <!-- this sequence of interleaved html/text/script triggers bug 1060 -->
-<div id="test-emitter-ie" class="testcontainer">
-  <div id="test-emitter-ie-0">duck-0</div>duck-2
+<div id="testEmitterIe" class="testcontainer">
+  <div id="testEmitterIe-0">duck-0</div>duck-2
   <script type="text/javascript">1</script>
-  <div id="test-emitter-ie-1">duck-1</div>duck-3
+  <div id="testEmitterIe-1">duck-1</div>duck-3
   <script type="text/javascript">2</script>
   duck-4
 </div>
@@ -2291,7 +2291,7 @@ Test row cell
   jsunitRegister('testEmitterIe',
                  function testEmitterIe() {
     // did emitter finish removing marker spans?
-    var el = document.getElementById('test-emitter-ie');
+    var el = document.getElementById('testEmitterIe');
     var kids = el.getElementsByTagName('span');
     assertEquals(0, kids.length);
 
@@ -2302,12 +2302,12 @@ Test row cell
       assertNotEquals(duck, -1, html.indexOf(duck));
     }
 
-    pass('test-emitter-ie');
+    pass('testEmitterIe');
   });
 </script>
 
-<div id="test-selected-index" class="testcontainer">Test selectedIndex
-  <select id="test-selected-index-1">
+<div id="testSelectedIndex" class="testcontainer">Test selectedIndex
+  <select id="testSelectedIndex-1">
     <option value="0">Zeroth</option>
     <option value="1">First</option>
     <option selected value="2">Second</option>
@@ -2316,7 +2316,7 @@ Test row cell
 <script type="text/javascript">
   jsunitRegister('testSelectedIndex',
                  function testSelectedIndex() {
-    var optionsList = document.getElementById('test-selected-index-1').
+    var optionsList = document.getElementById('testSelectedIndex-1').
         options;
     assertEquals(2, optionsList.selectedIndex);
     var TOLproto = Object.getPrototypeOf(optionsList);
@@ -2330,18 +2330,18 @@ Test row cell
       }
       // TODO(felix8a): known failure handling
     }
-    pass('test-selected-index');
+    pass('testSelectedIndex');
   });
 </script>
 
-<div id="test-text-node" class="testcontainer">text</div>
+<div id="testTextNode" class="testcontainer">text</div>
 <script type="text/javascript">
   // bug 1330, text nodes on IE
   jsunitRegister('testTextNode',
                  function testTextNode() {
-    var el = document.getElementById('test-text-node');
+    var el = document.getElementById('testTextNode');
     assertEquals('text', el.firstChild.nodeValue);
-    pass('test-text-node');
+    pass('testTextNode');
   });
 </script>
 
@@ -2403,20 +2403,20 @@ Test row cell
   });
 </script>
 
-<p id="test-usemap-fragment" class="testcontainer">
+<p id="testUsemapFragment" class="testcontainer">
   <img src="mappic.gif">
 </p>
 <script type="text/javascript">
   jsunitRegister('testUsemapFragment',
                  function testUsemapFragment() {
-    var el = document.getElementById('test-usemap-fragment');
+    var el = document.getElementById('testUsemapFragment');
     el.setAttribute('usemap', '#foo');
     assertEquals('#foo', el.getAttribute('usemap'));
-    pass('test-usemap-fragment');
+    pass('testUsemapFragment');
   });
 </script>
 
-<p class="testToString" id="test-toString">Non-toxic toString</p>
+<p class="testcontainer" id="testToString">Non-toxic toString</p>
 <script type="text/javascript">
   jsunitRegister('testToString',
                 function testToString() {
@@ -2432,12 +2432,12 @@ Test row cell
       assertEquals('<DIV>', document.createElement('div').toString());
       assertEquals('[Fake Document]', document.toString());
     }
-    pass('test-toString');
+    pass('testToString');
   });
 </script>
 
-<div id="test-location" class="testcontainer">
-  test-location
+<div id="testLocation" class="testcontainer">
+  testLocation
 </div>
 <script type="text/javascript">
   jsunitRegister('testLocation',
@@ -2483,48 +2483,48 @@ Test row cell
     //    assertEquals(
     //        window.location.hostname,
     //        document.domain);
-    pass('test-location');
+    pass('testLocation');
   });
 </script>
 
-<div id="test-navigator" class="testcontainer"></div>
+<div id="testNavigator" class="testcontainer"></div>
 <script type="text/javascript">
   jsunitRegister('testNavigator',
                  function testNavigator() {
     assertNotNull(window.navigator.userAgent);
     assert("navigator is not a string",
         "string" === typeof window.navigator.userAgent);
-    pass('test-navigator');
+    pass('testNavigator');
   });
 </script>
 
-<div id="test-z-index" class="testcontainer"></div>
+<div id="testZIndex" class="testcontainer"></div>
 <script type="text/javascript">
   jsunitRegister('testZIndex',
                  function testZIndex() {
-    document.getElementById("test-z-index").innerHTML =
-      "<div id='test-z-index-div' style='z-index:-9999999;'></div>";
-    assertTrue(document.getElementById("test-z-index-div")
+    document.getElementById("testZIndex").innerHTML =
+      "<div id='testZIndex-div' style='z-index:-9999999;'></div>";
+    assertTrue(document.getElementById("testZIndex-div")
         .getAttribute("style") !== "");
-    document.getElementById("test-z-index").innerHTML =
-        "<div id='test-z-index-div' style='z-index:9999999;'></div>";
-    assertTrue(document.getElementById("test-z-index-div")
+    document.getElementById("testZIndex").innerHTML =
+        "<div id='testZIndex-div' style='z-index:9999999;'></div>";
+    assertTrue(document.getElementById("testZIndex-div")
         .getAttribute("style") !== "");
 
     // Out-of-range values should be stripped
-    document.getElementById("test-z-index").innerHTML =
-      "<div id='test-z-index-div' style='z-index:-10000000;'></div>";
-    assertTrue(document.getElementById("test-z-index-div")
+    document.getElementById("testZIndex").innerHTML =
+      "<div id='testZIndex-div' style='z-index:-10000000;'></div>";
+    assertTrue(document.getElementById("testZIndex-div")
         .getAttribute("style") === "");
-    document.getElementById("test-z-index").innerHTML =
-      "<div id='test-z-index-div' style='z-index:10000000;'></div>";
-    assertTrue(document.getElementById("test-z-index-div")
+    document.getElementById("testZIndex").innerHTML =
+      "<div id='testZIndex-div' style='z-index:10000000;'></div>";
+    assertTrue(document.getElementById("testZIndex-div")
         .getAttribute("style") === "");
-    pass('test-z-index');
+    pass('testZIndex');
   });
 </script>
 
-<div id="test-unsafe-html5" class="testcontainer"></div>
+<div id="testUnsafeHtml5" class="testcontainer"></div>
 <script type="text/javascript">
   jsunitRegister('testUnsafeHtml5',
                  function testUnsafeHtml5() {
@@ -2535,11 +2535,11 @@ Test row cell
     for (var i = 0; i < tags.length; ++i) {
       assertEquals(document.createElement(tags[i]), null);
     }
-    pass('test-unsafe-html5');
+    pass('testUnsafeHtml5');
   });
 </script>
 
-<p class="testcontainer" id="test-document-body-appendChild"
+<p class="testcontainer" id="testDocumentBodyAppendChild"
  >I should be the last element until something is appended to document.body</p>
 <script type="text/javascript">
   jsunitRegister('testDocumentBodyAppendChild',
@@ -2560,7 +2560,7 @@ Test row cell
     }
 
     var body = document.body;
-    var container = document.getElementById('test-document-body-appendChild');
+    var container = document.getElementById('testDocumentBodyAppendChild');
     var last = getPrevNonWhitespace(document.body.lastChild);
     assertEquals('container is not last', container, last);
 
@@ -2573,7 +2573,7 @@ Test row cell
                  lastest, getPrevNonWhitespace(body.lastChild));
     assertEquals('body changed', body, document.body);
     assertEquals('parent is not body', lastest.parentNode, body);
-    pass('test-document-body-appendChild');
+    pass('testDocumentBodyAppendChild');
   });
 </script>
 

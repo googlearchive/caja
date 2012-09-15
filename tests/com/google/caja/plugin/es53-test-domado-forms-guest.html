@@ -18,10 +18,10 @@
 <!-- NOTE, this form must be first, otherwise ff3.5.x will produce
      false passes due to an optimizer bug.
      https://bugzilla.mozilla.org/show_bug.cgi?id=508744 -->
-<div class="testcontainer" id="test-emitter-id">
+<div class="testcontainer" id="testEmitterId">
   <script>921</script>
-  <form id="test-emitter-id-0">
-    <input id="test-emitter-id-1" name="id" value="pigeon">
+  <form id="testEmitterId-0">
+    <input id="testEmitterId-1" name="id" value="pigeon">
   </form>
 </div>
 <script type="text/javascript">
@@ -30,14 +30,14 @@
                  function testEmitterId() {
 
     // did emitter find form.id correctly?
-    var el = document.getElementById('test-emitter-id-0');
+    var el = document.getElementById('testEmitterId-0');
     assertTrue('el is truthy', !!el);
 
     // make sure we're still the first form
     var forms = document.getElementsByTagName('form');
     assertEquals(el.id, forms[0].id);
 
-    pass('test-emitter-id');
+    pass('testEmitterId');
   });
 </script>
 
@@ -138,8 +138,8 @@
   });
 </script>
 
-<div class="testcontainer" id="test-form-length"
-  ><form id="test-form-length-form">
+<div class="testcontainer" id="testFormLength"
+  ><form id="testFormLength-form">
     <input type="text">
     <button></button>
   </form>
@@ -147,18 +147,18 @@
 <script type="text/javascript">
   jsunitRegister('testFormLength',
                  function testFormLength() {
-    var form = document.getElementById('test-form-length-form');
+    var form = document.getElementById('testFormLength-form');
     assertEquals(2, form.length);
 
-    pass('test-form-length');
+    pass('testFormLength');
   });
 </script>
 
-<div class="testcontainer" id="test-forms"></div>
+<div class="testcontainer" id="testForms"></div>
 <script type="text/javascript">
   var foo = jsunitCallback(
       function foocb() {
-        var container = document.getElementById('test-forms');
+        var container = document.getElementById('testForms');
         var div = document.createElement('blockquote');
         div.innerHTML = 'event dispatched to <code>foo()</code>';
         container.appendChild(div);
@@ -180,7 +180,7 @@
     input.setAttribute('autocomplete', 'on');
     assertEquals('off', directAccess.getAttribute(input, 'autocomplete'));
 
-    var container = document.getElementById('test-forms');
+    var container = document.getElementById('testForms');
     container.innerHTML = '<form onsubmit="foo()">'
         + '<input type="submit" value="Submit"></form>';
 
@@ -192,6 +192,6 @@
                  + '</form>',
                  canonInnerHtml(directAccess.getInnerHTML(container)));
 
-    pass('test-forms');
+    pass('testForms');
   });
 </script>

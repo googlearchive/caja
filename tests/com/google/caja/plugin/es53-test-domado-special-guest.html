@@ -14,7 +14,7 @@
  - limitations under the License.
 -->
 
-<p id="test-anchor-computed-styles-dont-leak-history" class="testcontainer">
+<p id="testAnchorComputedStylesDontLeakHistory" class="testcontainer">
   Test anchor computed styles don't leak history
   <br/>
   <!-- Ensure http://www.google.com/favicon.ico is :visited -->
@@ -66,7 +66,7 @@
     var p1 = document.createElement('p');
 
     var container = document.getElementById(
-        'test-anchor-computed-styles-dont-leak-history');
+        'testAnchorComputedStylesDontLeakHistory');
 
     container.appendChild(p0);
     container.appendChild(a);
@@ -111,15 +111,15 @@
         '123px',
         window.getComputedStyle(p1, null).getPropertyValue('padding-left'));
 
-    pass('test-anchor-computed-styles-dont-leak-history');
+    pass('testAnchorComputedStylesDontLeakHistory');
   });
 </script>
 
-<div id="test-computed-style" class="testcontainer">
-  <div id="test-computed-style-block">Block</div>
-  <span id="test-computed-style-inline">Inline</span>
-  <div id="test-computed-style-fakie" style="display: inline">???</div>
-  <div id="test-computed-style-invisible" class="invisible">Not here</div>
+<div id="testComputedStyle" class="testcontainer">
+  <div id="testComputedStyle-block">Block</div>
+  <span id="testComputedStyle-inline">Inline</span>
+  <div id="testComputedStyle-fakie" style="display: inline">???</div>
+  <div id="testComputedStyle-invisible" class="invisible">Not here</div>
 </div>
 <script type="text/javascript">
   jsunitRegister('testComputedStyle',
@@ -144,10 +144,10 @@
                    strip(viewStyle.getPropertyValue(propertyName)));
     }
 
-    var block = document.getElementById('test-computed-style-block');
-    var inline = document.getElementById('test-computed-style-inline');
-    var fakie = document.getElementById('test-computed-style-fakie');
-    var invisible = document.getElementById('test-computed-style-invisible');
+    var block = document.getElementById('testComputedStyle-block');
+    var inline = document.getElementById('testComputedStyle-inline');
+    var fakie = document.getElementById('testComputedStyle-fakie');
+    var invisible = document.getElementById('testComputedStyle-invisible');
     assertComputedStyle(block, null, 'display', 'block');
     assertComputedStyle(inline, null, 'display', 'inline');
     assertComputedStyle(fakie, null, 'display', 'inline');
@@ -170,12 +170,12 @@
     assertComputedStyle(block, null, 'cursor', 'crosshair');
     assertComputedStyle(block, null, 'float', 'none');
 
-    pass('test-computed-style');
+    pass('testComputedStyle');
   });
 </script>
 
-<p id="test-document-fragment-computed-style" class="testcontainer">
-  test-document-fragment-computed-style
+<p id="testDocumentFragmentComputedStyle" class="testcontainer">
+  testDocumentFragmentComputedStyle
 </p>
 <script type="text/javascript">
   jsunitRegister('testDocumentFragmentComputedStyle',
@@ -186,14 +186,14 @@
     var style = window.getComputedStyle(div, null);
     // just try property access. value is not consistent across browsers.
     style.marginRight;
-    pass('test-document-fragment-computed-style');
+    pass('testDocumentFragmentComputedStyle');
   });
 </script>
 
 <script type="text/javascript">
   jsunitRegister('testInnerHtml',
                  function testInnerHtml() {
-    var container = document.getElementById('test-inner-html');
+    var container = document.getElementById('testInnerHtml');
 
     // Strips out non-prefixed id from link, and target=_parent.
     // Leaves id for <em> but strips the prefix.
@@ -231,15 +231,15 @@
       assertEquals(pair[1], span.innerHTML);
     }
 
-    pass('test-inner-html');
+    pass('testInnerHtml');
   });
 </script>
 
-<p id="test-inner-text" class="testcontainer">Hello, <b>World!</b></p>
+<p id="testInnerText" class="testcontainer">Hello, <b>World!</b></p>
 <script type="text/javascript">
   jsunitRegister('testInnerText',
                  function testInnerText() {
-    var testInnerTextNode = document.getElementById('test-inner-text');
+    var testInnerTextNode = document.getElementById('testInnerText');
     assertEquals('IT1', 'Hello, World!', testInnerTextNode.innerText);
     assertEquals('TC1', 'Hello, World!', testInnerTextNode.textContent);
     assertEquals('IT1T', 'Hello, ', testInnerTextNode.firstChild.innerText);
@@ -266,9 +266,9 @@
     // Opaque nodes appear to be empty.
     assertEquals(
         'ITON', 'abc',
-        document.getElementById('test-opaque-nodes').innerText);
+        document.getElementById('testOpaqueNodes').innerText);
 
-    pass('test-inner-text');
+    pass('testInnerText');
   });
 </script>
 
@@ -278,7 +278,7 @@
     var noText = document.createTextNode('');
     // See bug 589.  We need to keep unsafe nodes in the DOM so that DOM
     // navigation works, but we can't allow inspection or editing of such nodes.
-    var container = document.getElementById('test-opaque-nodes');
+    var container = document.getElementById('testOpaqueNodes');
 
     var child = container.firstChild;
     assertEquals(8, child.nodeType);
@@ -328,11 +328,11 @@
     }
     assertEquals('dangerousObject', void 0, dangerousObject);
 
-    pass('test-opaque-nodes');
+    pass('testOpaqueNodes');
   });
 </script>
 
-<p id="test-bounding-client-rect" class="testcontainer"
+<p id="testBoundingClientRect" class="testcontainer"
 >Test Bounding Client Rect</p>
 <script type="text/javascript">
   jsunitRegister('testBoundingClientRect',
@@ -357,7 +357,7 @@
     assertEquals('relRect', 'top: 0, left: 9, right: 109, bottom: 40',
                  rectToString(relRect));
 
-    pass('test-bounding-client-rect');
+    pass('testBoundingClientRect');
   });
 </script>
 
@@ -366,7 +366,7 @@
   TODO(ihab.awad): Test fails because the new caja.js "double nested div"
    structure makes it not work as originally intended.
 
-<p id="test-resizing" class="testcontainer">Resizing</p>
+<p id="testResizing" class="testcontainer">Resizing</p>
 <script type="text/javascript">
   jsunitRegister('testResizing',
                  function testResizing() {
@@ -407,11 +407,11 @@
     assertEquals('scrollable dimensions 3', '600,400', windowDims());
     assertEquals('width 3', '600px', windowStyleWidth());
 
-    pass('test-resizing');
+    pass('testResizing');
   });
 </script>
 
-<p id="test-scrolling" class="testcontainer"><nobr
+<p id="testScrolling" class="testcontainer"><nobr
 >A really loooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooong
 line that will force the viewport to have a horizontal scroll bar so that we
 can test window.scrollBy with a positive x value with a visible effect.
@@ -458,14 +458,14 @@ can test window.scrollBy with a positive x value with a visible effect.
         window.scrollLeft, window.scrollTop,
         document.defaultView.scrollLeft, document.defaultView.scrollTop]));
 
-    pass('test-scrolling');
+    pass('testScrolling');
   });
 </script>
 
 -->
 <div id="test-dynamic-style" class="testcontainer" style="color: blue;">
 </div>
-<p id="test-script-loading" class="testcontainer">Test script loading</p>
+<p id="testScriptLoading" class="testcontainer">Test script loading</p>
 <script type="text/javascript">
   jsunitRegister('testScriptLoading',
                  function testScriptLoading() {
@@ -545,7 +545,7 @@ can test window.scrollBy with a positive x value with a visible effect.
           return externalScript.loaded !== true;
         }));
     s.src = 'unproxied_nonwhitelisted_script.js';
-    document.getElementById('test-script-loading').appendChild(s);
+    document.getElementById('testScriptLoading').appendChild(s);
 
     /* TODO(kpreid): Reenable this test if it is supposed to work.
        It fails at runtime because script src= is considered an unknown
@@ -559,9 +559,9 @@ can test window.scrollBy with a positive x value with a visible effect.
         jsunitCallback(function () { return externalScript.loaded === true; }));
     debugger;
     s.src = 'unproxied_whitelisted_script.js';
-    document.getElementById('test-script-loading').appendChild(s);
+    document.getElementById('testScriptLoading').appendChild(s);
     */
 
-    pass('test-script-loading');
+    pass('testScriptLoading');
   });
 </script>

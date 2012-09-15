@@ -14,7 +14,7 @@
  - limitations under the License.
 -->
 
-<p class="clickme testcontainer" id="test-exception-in-event-handler">
+<p class="clickme testcontainer" id="testExceptionInEventHandler">
   <span onclick="die();">
     click me.  Exceptions in event handlers should invoke onerror.
   </span>
@@ -23,7 +23,7 @@
   window.onerror = (function (onerror) {
     return function (message, url, line) {
         assertEquals('died!', message);
-        pass('test-exception-in-event-handler');
+        pass('testExceptionInEventHandler');
         window.onerror = onerror;
       };
   })(onerror);
@@ -34,7 +34,7 @@
                  function testExceptionInEventHandler() { });
 </script>
 
-<p class="clickme testcontainer" id="test-function-calls-in-attributes">
+<p class="clickme testcontainer" id="testFunctionCallsInAttributes">
   <span onclick="doIt(event, this);">
     click me.  Function calls in attributes should work.
   </span>
@@ -42,23 +42,23 @@
 <script type="text/javascript">
   window.doIt = function doIt(event, node) {
     if ((event instanceof Event) && (node instanceof HTMLElement)) {
-      pass('test-function-calls-in-attributes');
+      pass('testFunctionCallsInAttributes');
     }
   };
   jsunitRegister('testFunctionCallsInAttributes',
                  function testFunctionCallsInAttributes() { });
 </script>
 
-<p class="manual testcontainer" id="test-related-target-mouse-container">
-  <span id="test-related-target-mouse">
+<p class="manual testcontainer" id="testRelatedTarget-mouse-container">
+  <span id="testRelatedTarget-mouse">
     Move mouse here to see event.relatedTarget.
     Rapid motion from outside sandbox should show a null relatedTarget.
   </span>
   <br />
-  <span id="test-related-target-mouse-info">&nbsp;</span>
+  <span id="testRelatedTarget-mouse-info">&nbsp;</span>
 </p>
-<p class="clickme testcontainer" id="test-related-target">
-  <b id="test-related-target-child">click me (test-related-target)
+<p class="clickme testcontainer" id="testRelatedTarget">
+  <b id="testRelatedTarget-child">click me (testRelatedTarget)
   </b>
 </p>
 <script type="text/javascript">
@@ -70,10 +70,10 @@
       assertEquals(event.relatedTarget, event.relatedTarget);
       // set doesn't have to work, but shouldn't throw an error
       event.relatedTarget = [];
-      pass('test-related-target');
+      pass('testRelatedTarget');
     });
 
-    var child = document.getElementById('test-related-target-child');
+    var child = document.getElementById('testRelatedTarget-child');
     child.addEventListener('click', childClick, false);
 
     // TODO: webdriver doesn't have a good way of testing relatedTarget.
@@ -86,20 +86,20 @@
       info.innerHTML = event.type + ' ' + String(r);
     });
 
-    var mouse = document.getElementById('test-related-target-mouse');
-    var info = document.getElementById('test-related-target-mouse-info');
+    var mouse = document.getElementById('testRelatedTarget-mouse');
+    var info = document.getElementById('testRelatedTarget-mouse-info');
     mouse.addEventListener('mouseover', mouseReport, false);
     mouse.addEventListener('mouseout', mouseReport, false);
   });
 </script>
 
-<p class="clickme testcontainer" id="test-add-event-listener">
-  <b id="test-add-event-listener-label">click me</b>
+<p class="clickme testcontainer" id="testAddEventListener">
+  <b id="testAddEventListener-label">click me</b>
 </p>
 <script type="text/javascript">
   jsunitRegister('testAddEventListener',
                  function testAddEventListener() {
-    var container = document.getElementById('test-add-event-listener-label');
+    var container = document.getElementById('testAddEventListener-label');
     container.addEventListener(
         'click',
         jsunitCallback(
@@ -107,7 +107,7 @@
               console.log('received event');
               assertEquals('B', event.target.tagName);
               assertEquals('click', event.type);
-              pass('test-add-event-listener');
+              pass('testAddEventListener');
             }));
     expectFailure(
         function() {
@@ -122,7 +122,7 @@
   });
 </script>
 
-<p class="testcontainer" id="test-document-dom-content-loaded">
+<p class="testcontainer" id="testDocumentDomContentLoaded">
   Waiting for DOMContentLoaded.
 </p>
 <script type="text/javascript">
@@ -132,18 +132,18 @@
         'DOMContentLoaded',
         jsunitCallback(
             function eventListener(event) {
-              pass('test-document-dom-content-loaded');
+              pass('testDocumentDomContentLoaded');
             }));
   });
 </script>
 
-<p class="clickme testcontainer" id="test-remove-event-listener">
-  <b id="test-remove-event-listener-label">click me</b>
+<p class="clickme testcontainer" id="testRemoveEventListener">
+  <b id="testRemoveEventListener-label">click me</b>
 </p>
 <script type="text/javascript">
   jsunitRegister('testRemoveEventListener',
                  function testRemoveEventListener() {
-    var container = document.getElementById('test-remove-event-listener-label');
+    var container = document.getElementById('testRemoveEventListener-label');
     var firstFired = false;
     var failed = false;
     var second = jsunitCallback(
@@ -153,7 +153,7 @@
           assertEquals('B', event.target.tagName);
           assertEquals('click', event.type);
           event.target.innerHTML = 'All done!';
-          pass('test-remove-event-listener');
+          pass('testRemoveEventListener');
         });
     var first = jsunitCallback(
         function firstcb(event) {
@@ -175,7 +175,7 @@
   });
 </script>
 
-<p class="waiting testcontainer" id="test-timeout-and-interval">
+<p class="waiting testcontainer" id="testTimeoutAndInterval">
   Timeouts and Intervals<br>
 </p>
 <script type="text/javascript">
@@ -226,7 +226,7 @@
                 if (!timeout1Ran && timeout2Ran
                     && interval1RunCount > interval2RunCount) {
                   clearInterval(interval1Id);
-                  pass('test-timeout-and-interval');
+                  pass('testTimeoutAndInterval');
                 }
               }),
               500);
@@ -235,17 +235,17 @@
   });
 </script>
 
-<p class="clickme testcontainer" id="test-innerhtml-onclick">
+<p class="clickme testcontainer" id="testInnerhtmlOnclick">
   <b>do not click yet</b>
 </p>
 <script type="text/javascript">
   window.innerhtmlClicked = function() {
-    pass('test-innerhtml-onclick');
+    pass('testInnerhtmlOnclick');
   };
 
   jsunitRegister('testInnerhtmlOnclick',
                  function testInnerhtmlOnclick() {
-    var el = document.getElementById('test-innerhtml-onclick');
+    var el = document.getElementById('testInnerhtmlOnclick');
     el.innerHTML = '<b onclick="innerhtmlClicked();">Click me to call innerhtmlClicked()</b>';
   });
 </script>
@@ -279,25 +279,25 @@ TODO(felix8a): fix javascript url handling
 </script>
 -->
 
-<p class="clickme testcontainer" id="test-current-target">
-  <b id="test-current-target-child">click me</b>
+<p class="clickme testcontainer" id="testCurrentTarget">
+  <b id="testCurrentTarget-child">click me</b>
 </p>
 <script type="text/javascript">
   jsunitRegister('testCurrentTarget',
                  function testCurrentTarget() {
-    var parent = document.getElementById('test-current-target');
-    var child = document.getElementById('test-current-target-child');
+    var parent = document.getElementById('testCurrentTarget');
+    var child = document.getElementById('testCurrentTarget-child');
     var gotChildClick = false;
 
     var childClick = jsunitCallback(function (event) {
-      assertEquals('test-current-target-child', event.currentTarget.id);
+      assertEquals('testCurrentTarget-child', event.currentTarget.id);
       gotChildClick = true;
     });
 
     var parentClick = jsunitCallback(function (event) {
-      assertEquals('test-current-target', event.currentTarget.id);
+      assertEquals('testCurrentTarget', event.currentTarget.id);
       assertTrue(gotChildClick);
-      pass('test-current-target');
+      pass('testCurrentTarget');
     });
 
     parent.addEventListener('click', parentClick, false);
@@ -305,7 +305,7 @@ TODO(felix8a): fix javascript url handling
   });
 </script>
 
-<p class="testcontainer" id="test-onload-listener">Onload</p>
+<p class="testcontainer" id="testOnLoadListener">Onload</p>
 <script type="text/javascript">
   jsunitRegister('testOnLoadListener',
                  function testOnLoadListener() {
@@ -338,7 +338,7 @@ TODO(felix8a): fix javascript url handling
         jsunitCallback(
             function checkb1b2b3cb() {
               if (!b1 && b2 && b3) {
-                pass('test-onload-listener');
+                pass('testOnLoadListener');
                 return true;
               }
               return false;
@@ -350,7 +350,7 @@ TODO(felix8a): fix javascript url handling
   });
 </script>
 
-<p class="testcontainer" id="test-dcl-listener">DOMContentLoaded</p>
+<p class="testcontainer" id="testDOMContentLoadedListener">DOMContentLoaded</p>
 <script>
   jsunitRegister('testDOMContentLoadedListener',
                  function testDOMContentLoadedListener() {
@@ -383,7 +383,7 @@ TODO(felix8a): fix javascript url handling
         jsunitCallback(
             function checkb1b2b3cb() {
               if (!b1 && b2 && b3) {
-                pass('test-dcl-listener');
+                pass('testDOMContentLoadedListener');
                 return true;
               }
               return false;
@@ -395,18 +395,18 @@ TODO(felix8a): fix javascript url handling
   });
 </script>
 
-<div id="test-xhr-instance-props" class="testcontainer">XHR instance props</div>
+<div id="testXhrInstanceProps" class="testcontainer">XHR instance props</div>
 <script type="text/javascript">
   jsunitRegister('testXhrInstanceProps',
                  function testXhrInstanceProps() {
     var xhr = new window.XMLHttpRequest();
     xhr.x = 1;
     assertEquals(1, xhr.x);
-    pass('test-xhr-instance-props');
+    pass('testXhrInstanceProps');
   });
 </script>
 
-<div id="test-xhr-to-disallowed-url" class="testcontainer">
+<div id="testXhrToDisallowedUrl" class="testcontainer">
   XHR to disallowed URL
 </div>
 <script type="text/javascript">
@@ -419,11 +419,11 @@ TODO(felix8a): fix javascript url handling
         xhr.open('GET', 'badscheme://xhrTest.txt', false);
         xhr.send();
       }, 'xhr to disallowed url');
-    pass('test-xhr-to-disallowed-url');
+    pass('testXhrToDisallowedUrl');
   });
 </script>
 
-<div id="test-xhr-sync" class="testcontainer">XHR sync</div>
+<div id="testXhrSync" class="testcontainer">XHR sync</div>
 <script type="text/javascript">
   jsunitRegister('testXhrSync',
                  function testXhrSync() {
@@ -450,15 +450,15 @@ TODO(felix8a): fix javascript url handling
     xhr.send();
     assertEquals('The quick brown fox', responseText);
 
-    pass('test-xhr-sync');
+    pass('testXhrSync');
   });
 </script>
 
-<div id="test-xhr-async" class="waiting testcontainer">XHR async</div>
+<div id="testXhrAsync" class="waiting testcontainer">XHR async</div>
 <script type="text/javascript">
   jsunitRegister('testXhrAsync',
                  function testXhrAsync() {
-    var cont = document.getElementById('test-xhr-async');
+    var cont = document.getElementById('testXhrAsync');
     var xhr = new window.XMLHttpRequest();
     xhr.open('GET', './xhrTest.txt', true);
     var asyncFlag = 'PRE';
@@ -468,7 +468,7 @@ TODO(felix8a): fix javascript url handling
         assertNotEquals(4, asyncFlag);
         asyncFlag = 'DONE';
         assertEquals('The quick brown fox', event.target.responseText);
-        pass('test-xhr-async');
+        pass('testXhrAsync');
       }
       asyncFlag = event.target.readyState;
     });
@@ -480,7 +480,7 @@ TODO(felix8a): fix javascript url handling
 
     TODO(ihab.awad): Pending debugging of custom event logic.
 
-<p id="test-custom-events" class="testcontainer">Custom Events<br></p>
+<p id="testCustomEvents" class="testcontainer">Custom Events<br></p>
 <script type="text/javascript">
   jsunitRegister('testCustomEvents',
                  function testCustomEvents() {
@@ -495,7 +495,7 @@ TODO(felix8a): fix javascript url handling
       fired = true;
     });
 
-    var eventTarget = document.getElementById('test-custom-events');
+    var eventTarget = document.getElementById('testCustomEvents');
     eventTarget.addEventListener('howdy', myHandler, true);
 
     eventToSend = document.createEvent('HTMLEvents');
@@ -506,7 +506,7 @@ TODO(felix8a): fix javascript url handling
     eventTarget.dispatchEvent(eventToSend);
     assertTrue("event did fire", fired);
 
-    pass('test-custom-events');
+    pass('testCustomEvents');
   });
 </script>
 
@@ -517,13 +517,13 @@ TODO(felix8a): fix javascript url handling
     TODO(ihab.awad): This is invalid for ES53; look at it and
     see if there's anything useful left.
 
-<p class="testcontainer" id="test-this-in-event-handlers"
- ><input type="checkbox" id="test-this-in-event-handlers-1" />
+<p class="testcontainer" id="testThisInEventHandlers"
+ ><input type="checkbox" id="testThisInEventHandlers-1" />
 </p>
 <script type="text/javascript">
   jsunitRegister('testThisInEventHandlers',
                  function testThisInEventHandlers() {
-    var inp = document.getElementById('test-this-in-event-handlers-1');
+    var inp = document.getElementById('testThisInEventHandlers-1');
 
     // By declaring f() to be cajita, but supplying it as the 'call'
     // property of the object passed to the event listener, we get
@@ -535,7 +535,7 @@ TODO(felix8a): fix javascript url handling
           'use cajita';
           // In an event handler, "this" should be bound to the node.
           assertEquals($dis, thisNode);
-          pass('test-this-in-event-handlers');
+          pass('testThisInEventHandlers');
         });
     inp.addEventListener('click', {call: f}, false);
     directAccess.click(inp);

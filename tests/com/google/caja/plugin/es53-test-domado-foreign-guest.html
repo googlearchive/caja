@@ -24,18 +24,18 @@
   window.assertBottom = assertBottom; // SES scope workaround
 </script>
 
-<p class="testcontainer" id="test-not-null">
+<p class="testcontainer" id="testNotNull">
   test-not-null
 </p>
 <script type="text/javascript">
   jsunitRegister('testNotNull',
                  function testNotNull() {
     // Simple sanity check to make sure test harness worked okay
-    document.getElementById('test-not-null').innerHTML +=
+    document.getElementById('testNotNull').innerHTML +=
         ' ' + getExternalForeignNode().toString() + ' ';
-    document.getElementById('test-not-null').innerHTML +=
+    document.getElementById('testNotNull').innerHTML +=
         ' ' + getEmbeddedForeignNode().toString() + ' ';
-    pass('test-not-null');
+    pass('testNotNull');
   });
 </script>
 
@@ -130,24 +130,24 @@
   window.testForeign = testForeign; // SES scope workaround
 </script>
 
-<p class="testcontainer" id="test-external-foreign">
-  test-external-foreign
+<p class="testcontainer" id="testExternalForeign">
+  testExternalForeign
 </p>
 <script type="text/javascript">
   jsunitRegister('testExternalForeign',
                  function testExternalForeign() {
-    testForeign('external-foreign', getExternalForeignNode());
-    pass('test-external-foreign');
+    testForeign('testExternalForeign', getExternalForeignNode());
+    pass('testExternalForeign');
   });
 </script>
 
-<p class="testcontainer" id="test-embedded-foreign">
-  test-embedded-foreign
+<p class="testcontainer" id="testEmbeddedForeign">
+  testEmbeddedForeign
 </p>
 <script type="text/javascript">
   jsunitRegister('testEmbeddedForeign',
                  function testEmbeddedForeign() {
     testForeign('embedded-foreign', getEmbeddedForeignNode());
-    pass('test-embedded-foreign');
+    pass('testEmbeddedForeign');
   });
 </script>
