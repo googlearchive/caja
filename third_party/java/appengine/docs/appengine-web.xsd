@@ -22,17 +22,39 @@
       </xs:extension>
     </xs:simpleContent>
   </xs:complexType>
+  <xs:complexType name="asyncSessionPersistenceType">
+    <xs:simpleContent>
+      <xs:extension base="xs:string">
+        <xs:attribute type="xs:boolean" name="enabled" use="required"/>
+        <xs:attribute type="xs:string" name="queue-name" use="optional"/>
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
   <xs:complexType name="appengine-web-appType">
-    <xs:sequence>
+    <xs:all>
       <xs:element type="xs:string" name="application"/>
-      <xs:element type="xs:string" name="version"/>
+      <xs:element type="xs:string" name="version" minOccurs="0"/>
+      <xs:element type="xs:string" name="source-language" minOccurs="0"/>
+      <xs:element type="xs:string" name="server" minOccurs="0"/>
+      <xs:element type="ns:server-settings-type" name="server-settings" minOccurs="0" xmlns:ns="http://appengine.google.com/ns/1.0"/>
       <xs:element type="ns:static-filesType" name="static-files" minOccurs="0" xmlns:ns="http://appengine.google.com/ns/1.0"/>
       <xs:element type="ns:resource-filesType" name="resource-files" minOccurs="0" xmlns:ns="http://appengine.google.com/ns/1.0"/>
       <xs:element type="ns:system-propertiesType" name="system-properties" minOccurs="0" xmlns:ns="http://appengine.google.com/ns/1.0"/>
       <xs:element type="ns:env-variablesType" name="env-variables" minOccurs="0" xmlns:ns="http://appengine.google.com/ns/1.0"/>
       <xs:element type="xs:boolean" name="ssl-enabled" minOccurs="0" xmlns:ns="http://appengine.google.com/ns/1.0"/>
       <xs:element type="xs:boolean" name="sessions-enabled" minOccurs="0" xmlns:ns="http://appengine.google.com/ns/1.0"/>
-    </xs:sequence>
+      <xs:element type="ns:asyncSessionPersistenceType" name="async-session-persistence" minOccurs="0" xmlns:ns="http://appengine.google.com/ns/1.0"/>
+      <xs:element type="ns:userPermissionsType" name="user-permissions" minOccurs="0" xmlns:ns="http://appengine.google.com/ns/1.0"/>
+      <xs:element type="xs:string" name="public-root" minOccurs="0"/>
+      <xs:element type="ns:inboundServicesType" name="inbound-services" minOccurs="0" xmlns:ns="http://appengine.google.com/ns/1.0"/>
+      <xs:element type="xs:boolean" name="precompilation-enabled" minOccurs="0" xmlns:ns="http://appengine.google.com/ns/1.0"/>
+      <xs:element type="ns:admin-console" name="admin-console" minOccurs="0" xmlns:ns="http://appengine.google.com/ns/1.0"/>
+      <xs:element type="ns:static-error-handlers" name="static-error-handlers" minOccurs="0" xmlns:ns="http://appengine.google.com/ns/1.0"/>
+      <xs:element type="xs:boolean" name="warmup-requests-enabled" minOccurs="0" xmlns:ns="http://appengine.google.com/ns/1.0"/>
+      <xs:element type="xs:boolean" name="threadsafe" minOccurs="0" xmlns:ns="http://appengine.google.com/ns/1.0"/>
+      <xs:element type="xs:boolean" name="code-lock" minOccurs="0" xmlns:ns="http://appengine.google.com/ns/1.0"/>
+      <xs:element type="ns:pagespeedType" name="pagespeed" minOccurs="0" xmlns:ns="http://appengine.google.com/ns/1.0"/>
+    </xs:all>
   </xs:complexType>
   <xs:complexType name="env-variablesType">
     <xs:sequence>
@@ -40,11 +62,23 @@
     </xs:sequence>
   </xs:complexType>
   <xs:complexType name="includeType">
-    <xs:simpleContent>
-      <xs:extension base="xs:string">
-        <xs:attribute type="xs:string" name="path" use="required"/>
+    <xs:attribute type="xs:string" name="path" use="required"/>
+  </xs:complexType>
+  <!-- Adds two things to includeType: expiration attribute, and http-header children -->
+  <xs:complexType name="staticIncludeType">
+    <xs:complexContent>
+      <xs:extension base="ns:includeType" xmlns:ns="http://appengine.google.com/ns/1.0">
+        <xs:sequence>
+          <xs:element type="ns:http-headerType" name="http-header" minOccurs="0" maxOccurs="unbounded" xmlns:ns="http://appengine.google.com/ns/1.0"/>
+        </xs:sequence>
+        <xs:attribute type="ns:expirationType" name="expiration" use="optional" xmlns:ns="http://appengine.google.com/ns/1.0"/>
       </xs:extension>
-    </xs:simpleContent>
+    </xs:complexContent>
+  </xs:complexType>
+  <!-- See RFC 2616 for what constitutes valid HTTP header names and values. -->
+  <xs:complexType name="http-headerType">
+    <xs:attribute type="xs:string" name="name" use="required"/>
+    <xs:attribute type="xs:string" name="value" use="required"/>
   </xs:complexType>
   <xs:complexType name="resource-filesType">
     <xs:sequence>
@@ -52,18 +86,82 @@
       <xs:element type="ns:excludeType" name="exclude" maxOccurs="unbounded" minOccurs="0" xmlns:ns="http://appengine.google.com/ns/1.0"/>
     </xs:sequence>
   </xs:complexType>
+  <xs:complexType name="server-settings-type">
+    <xs:all>
+      <xs:element type="xs:string" name="instances" minOccurs="0"/>
+      <xs:element type="xs:string" name="class" minOccurs="0"/>
+      <xs:element type="xs:string" name="min-pending-latency" minOccurs="0"/>
+      <xs:element type="xs:string" name="max-pending-latency" minOccurs="0"/>
+      <xs:element type="xs:string" name="min-idle-instances" minOccurs="0"/>
+      <xs:element type="xs:string" name="max-idle-instances" minOccurs="0"/>
+    </xs:all>
+  </xs:complexType>
+  
   <xs:complexType name="static-filesType">
     <xs:sequence>
-      <xs:element type="ns:includeType" name="include" maxOccurs="unbounded" minOccurs="0" xmlns:ns="http://appengine.google.com/ns/1.0"/>
+      <xs:element type="ns:staticIncludeType" name="include" maxOccurs="unbounded" minOccurs="0" xmlns:ns="http://appengine.google.com/ns/1.0"/>
       <xs:element type="ns:excludeType" name="exclude" maxOccurs="unbounded" minOccurs="0" xmlns:ns="http://appengine.google.com/ns/1.0"/>
     </xs:sequence>
   </xs:complexType>
   <xs:complexType name="excludeType">
+    <xs:attribute type="xs:string" name="path" use="required"/>
+  </xs:complexType>
+  <xs:complexType name="userPermissionsType">
+    <xs:sequence>
+      <xs:element type="ns:permissionType" name="permission" maxOccurs="unbounded" minOccurs="0" xmlns:ns="http://appengine.google.com/ns/1.0"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="permissionType">
     <xs:simpleContent>
       <xs:extension base="xs:string">
-        <xs:attribute type="xs:string" name="path" use="required"/>
+        <xs:attribute type="xs:string" name="class" use="required"/>
+        <xs:attribute type="xs:string" name="name" use="required"/>
+        <xs:attribute type="xs:string" name="actions" use="optional"/>
       </xs:extension>
     </xs:simpleContent>
   </xs:complexType>
+  <xs:complexType name="inboundServicesType">
+    <xs:sequence>
+      <xs:element type="xs:string" name="service" maxOccurs="unbounded" minOccurs="0" xmlns:ns="http://appengine.google.com/ns/1.0"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:simpleType name="expirationType">
+    <xs:restriction base="xs:string">
+      <xs:pattern value="\s*(([0-9]+)([DdHhMm]|[sS]?))(\s+([0-9]+)([DdHhMm]|[sS]?))*\s*"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:complexType name="admin-console">
+    <xs:sequence>
+      <xs:element type="ns:admin-console-pageType" name="page" maxOccurs="unbounded" minOccurs="0" xmlns:ns="http://appengine.google.com/ns/1.0"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="admin-console-pageType">
+    <xs:simpleContent>
+      <xs:extension base="xs:string">
+        <xs:attribute type="xs:string" name="name" use="required"/>
+        <xs:attribute type="xs:string" name="url" use="required"/>
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
+  <xs:complexType name="static-error-handlers">
+    <xs:sequence>
+      <xs:element type="ns:static-error-handlers-handler" name="handler" maxOccurs="unbounded" minOccurs="0" xmlns:ns="http://appengine.google.com/ns/1.0"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="static-error-handlers-handler">
+    <xs:simpleContent>
+      <xs:extension base="xs:string">
+        <xs:attribute type="xs:string" name="file" use="required"/>
+        <xs:attribute type="xs:string" name="error-code" use="optional"/>
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
+  <xs:complexType name="pagespeedType">
+    <xs:choice maxOccurs="unbounded" minOccurs="0">
+      <xs:element type="xs:string" name="url-blacklist"/>
+      <xs:element type="xs:string" name="domain-to-rewrite"/>
+      <xs:element type="xs:string" name="enabled-rewriter"/>
+      <xs:element type="xs:string" name="disabled-rewriter"/>
+    </xs:choice>
+  </xs:complexType>
 </xs:schema>
-

@@ -119,3 +119,23 @@ licenses and/or has source available from other locations.
     License: MIT
     Source code availability: http://code.google.com/p/yamlbeans/
     Bundled in lib/appengine-api-tools.jar under com/google/appengine/repackaged/net/sourceforge/yamlbeans
+
+* MediaUtil
+    License: BSD
+    Copyright (C) 1999-2005 Dmitriy Rogatkin, Suresh Mahalingam.  All rights reserved.
+    Source code availability: http://mediachest.sourceforge.net/mediautil/
+    Bundled in lib/impl/appengine-api-stubs.jar under mediautil
+
+* JLine
+    License: BSD
+    Copyright (c) 2002-2006, Marc Prud'hommeaux <mwp1@cornell.edu> All rights reserved.
+    Source code availability: http://jline.sourceforge.net
+    Bundled in lib/impl/google_sql.sh under jline
+
+* Jackson
+    License: Apache License v. 2.0
+    Source code availability: http://jackson.codehaus.org/Download
+    Bundled in lib/impl/google_sql.sh under org/codehaus/jackson
+
+
+

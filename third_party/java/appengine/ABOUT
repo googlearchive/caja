@@ -28,4 +28,7 @@ This product includes software developed by:
  - DataNucleus (http://www.datanucleus.org/)
    - DataNucleus Access Platform
    
+ - MediaUtil (http://mediachest.sourceforge.net/mediautil/)
+   - LLJTran
+
 For source availability and license information see COPYING.
