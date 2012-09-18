@@ -1169,12 +1169,21 @@ var Domado = (function() {
         // noop.
         var id;
         if (action) {
-          if (typeof action === 'string') {
+          if (typeof action !== 'function') {
+            // Early error for usability -- we also defend below.
+            // This check is not *necessary* for security.
             throw new Error(
-                setName + ' called with a string.'
-                + '  Please pass a function instead of a string of javascript');
+                setName + ' called with a ' + typeof action + '.'
+                + '  Please pass a function instead of a string of JavaScript');
           }
-          id = set(action, delayMillis | 0);
+          // actionWrapper defends against:
+          //   * Passing a string-like object which gets taken as code.
+          //   * Non-standard arguments to the callback.
+          //   * Non-standard effects of callback's return value.
+          var actionWrapper = function() {
+            action();
+          };
+          id = set(actionWrapper, delayMillis | 0);
         } else {
           id = undefined;
         }

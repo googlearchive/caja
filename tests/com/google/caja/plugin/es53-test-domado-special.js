@@ -64,7 +64,7 @@ function rewriteIdSuffixes(node, idSuffix) {
 // checkGlobalSideEffect().
 (function () {
   var sideEffectHappened = false;
-  function globalSideEffect() { sideEffectHappened = true; }
+  function globalSideEffect(detail) { sideEffectHappened = detail || true; }
   function checkGlobalSideEffect() {
     var result = sideEffectHappened;
     sideEffectHappened = false;

@@ -565,3 +565,30 @@ can test window.scrollBy with a positive x value with a visible effect.
     pass('testScriptLoading');
   });
 </script>
+
+<p id="testSetTimeoutSecurity" class="waiting testcontainer">Test setTimeout security</p>
+<script type="text/javascript">
+  jsunitRegister('testSetTimeoutSecurity',
+                 function testSetTimeoutSecurity() {
+    // Test that we block ways setTimeout can be used to execute code.
+    // setInterval uses the same taming.
+    expectFailure(
+        function () {
+          setTimeout('globalSideEffect("setTimeout string")', 0);
+          throw new Error("didn't fail, but maybe no GSE?");
+        }, 'code via setTimeout string');
+    assertFalse('gse-string', checkGlobalSideEffect());
+
+    expectFailure(
+        function () {
+          setTimeout(['globalSideEffect("setTimeout stringify")'], 0);
+          throw new Error("didn't fail, but maybe no GSE?");
+        }, 'code via setTimeout stringify');
+
+    // Would be nice to make this more robust against slow execution...
+    setTimeout(jsunitCallback(function () {
+      assertEquals('side effect check', false, checkGlobalSideEffect());
+      pass('testSetTimeoutSecurity');
+    }), 1000);
+  });
+</script>
