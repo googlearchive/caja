@@ -1190,10 +1190,10 @@ document.write(
         },
         "testEventHandlerAttributes")
   };
-  // TODO(kpreid): Enable for ES5 and debug.
-  jsunitRegisterIf(!inES5Mode,
-                   'testEventHandlerAttributes',
-                   function testEventHandlerAttributes() {
+  window.autoclicky = autoclicky;  // SES scope workaround
+
+  jsunitRegister('testEventHandlerAttributes',
+                 function testEventHandlerAttributes() {
     assertFalse('initially unclicked', autoclicky.clicked[0]);
     directAccess.click(document.getElementById('autoclicker'));
     assertTrue('zero clicked', autoclicky.clicked[0]);

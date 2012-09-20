@@ -1751,23 +1751,37 @@ var Domado = (function() {
             return null;
           case html4.atype.SCRIPT:
             value = String(value);
-            // Translate a handler that calls a simple function like
-            //   return foo(this, event)
-
-            // TODO(mikesamuel): integrate cajita compiler to allow arbitrary
-            // cajita in event handlers.
+            var fnNameExpr, doesReturn;
             var match = value.match(SIMPLE_HANDLER_PATTERN);
-            if (!match) { return null; }
-            var doesReturn = match[1];
-            var fnName = match[2];
-            value = (doesReturn ? 'return ' : '')
-                + '___.plugin_dispatchEvent___('
-                + 'this, event, ' + pluginId + ', "'
-                + fnName + '");';
-            if (attribName === 'onsubmit') {
-              value = 'try { ' + value + ' } finally { return false; }';
+            if (match) {
+              // Translate a handler that calls a simple function like
+              //   return foo(this, event)
+              doesReturn = !!match[1];
+              fnNameExpr = '"' + match[2] + '"';
+                  // safe because match[2] must be an identifier
+            } else if (cajaVM.compileExpr) {
+              // Compile arbitrary handler code (only in SES mode)
+              doesReturn = true;
+              var handlerFn = cajaVM.compileExpr(
+                '(function(event) { ' + value + ' })'
+              )(tameWindow);
+              fnNameExpr = domicile.handlers.push(handlerFn) - 1;
+            } else {
+              if (typeof console !== 'undefined') {
+                console.log('Rejecting complex event handler ' + tagName + ' ' +
+                    attribName + '="' + value + '"');
+              }
+              return null;
             }
-            return value;
+            var trustedHandler = (doesReturn ? 'return ' : '')
+                + '___.plugin_dispatchEvent___('
+                + 'this, event, ' + pluginId + ', '
+                + fnNameExpr + ');';
+            if (attribName === 'onsubmit') {
+              trustedHandler =
+                'try { ' + trustedHandler + ' } finally { return false; }';
+            }
+            return trustedHandler;
           case html4.atype.URI:
             value = String(value);
             value = URI.utils.resolve(domicile.pseudoLocation.href, value);

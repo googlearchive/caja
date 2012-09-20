@@ -49,6 +49,16 @@
                  function testFunctionCallsInAttributes() { });
 </script>
 
+<p class="clickme testcontainer" id="testCodeInAttributes">
+  <span onclick="if (true) pass('testCodeInAttributes');">
+    click me.  Nontrivial code in attributes should work.
+  </span>
+</p>
+<script type="text/javascript">
+  jsunitRegister('testCodeInAttributes',
+                 function testCodeInAttributes() { });
+</script>
+
 <p class="manual testcontainer" id="testRelatedTarget-mouse-container">
   <span id="testRelatedTarget-mouse">
     Move mouse here to see event.relatedTarget.

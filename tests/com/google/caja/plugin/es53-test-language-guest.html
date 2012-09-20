@@ -191,14 +191,15 @@
   });
 </script>
 
-<script>var c = 0;</script>
+<script>
+  var c = 0;
+  window.c = c;  // SES scope workaround. TODO(kpreid): Defeating the test?
+</script>
 <p id="testGlobalReference" class="clickme testcontainer">
   <span onclick="assertEquals(1, ++c); pass('testGlobalReference');">Test
     global reference (clickme)</span>
 </p>
 <script type="text/javascript">
-// TODO(kpreid): Enable for ES5 mode and debug; onclick handler not firing.
-  jsunitRegisterIf(!inES5Mode,
-                   'testGlobalReference',
-                   function testGlobalReference() { });
+  jsunitRegister('testGlobalReference',
+                 function testGlobalReference() { });
 </script>
