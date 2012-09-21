@@ -14,6 +14,24 @@
  - limitations under the License.
 -->
 
+<div class="clickme testcontainer" id="testEventBubble">
+  testEventBubble
+  <input type="checkbox">
+</div>
+<script type="text/javascript">
+  jsunitRegister('testEventBubble', function testEventBubble() {
+    function listener(e) {
+      if (e.currentTarget.id === 'testEventBubble') {
+        pass('testEventBubble');
+      } else {
+        fail('testEventBubble');
+      }
+    }
+    var parent = document.getElementById('testEventBubble');
+    parent.addEventListener('change', listener, false);
+  });
+</script>
+
 <p class="clickme testcontainer" id="testExceptionInEventHandler">
   <span onclick="die();">
     click me.  Exceptions in event handlers should invoke onerror.

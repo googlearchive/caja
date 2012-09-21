@@ -132,10 +132,11 @@ public abstract class BrowserTestCase extends CajaTestCase {
       throws Exception {
     if (flag(SERVER_ONLY) || flag(START_AND_WAIT)) {
       pageName = "test-index.html";
+      params = null;
     }
     String page = "http://localhost:" + portNumber
         + "/ant-testlib/com/google/caja/plugin/" + pageName;
-    if (params.length > 0) {
+    if (params != null && params.length > 0) {
       page += "?" + Joiner.on("&").join(params);
     }
     // The test runner may catch output so go directly to file descriptor 2.

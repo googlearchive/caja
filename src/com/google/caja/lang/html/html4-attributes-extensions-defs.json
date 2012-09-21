@@ -7,11 +7,18 @@
       { "key": "*::NAME", "description": "other name",
         "type": "GLOBAL_NAME", "optional": true },
 
-      { "key": "*::ONLOAD", "description": "fires when content is loaded",
-        "type": "SCRIPT", "optional": true,
+      { "key": "*::ONBLUR", "type": "SCRIPT", "optional": true,
         "comment": [
-          "HTML5 defines onload for every element.  In particular,",
-          "<img onload=> is useful and supported by most browsers." ] },
+          "html4 defines this attribute only for specific elements.",
+          "But events bubble, so any element can get this event.",
+          "html5 explicitly allows this on any element." ] },
+      { "key": "*::ONCHANGE", "type": "SCRIPT", "optional": true },
+      { "key": "*::ONFOCUS", "type": "SCRIPT", "optional": true },
+      { "key": "*::ONLOAD", "type": "SCRIPT", "optional": true },
+      { "key": "*::ONRESET", "type": "SCRIPT", "optional": true },
+      { "key": "*::ONSELECT", "type": "SCRIPT", "optional": true },
+      { "key": "*::ONSUBMIT", "type": "SCRIPT", "optional": true },
+      { "key": "*::ONUNLOAD", "type": "SCRIPT", "optional": true },
 
       { "key": "CANVAS::HEIGHT", "description": "canvas height",
         "pattern": "[0-9]+", "optional": true },
@@ -34,7 +41,15 @@
       ],
 
   "allowed": [
+      "*::ONBLUR",
+      "*::ONCHANGE",
+      "*::ONFOCUS",
+      "*::ONBLUR",
       "*::ONLOAD",
+      "*::ONRESET",
+      "*::ONSELECT",
+      "*::ONSUBMIT",
+      "*::ONUNLOAD",
       "CANVAS::HEIGHT",
       "CANVAS::WIDTH",
       "FORM::AUTOCOMPLETE",
