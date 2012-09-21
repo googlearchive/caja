@@ -247,7 +247,7 @@ public final class CssValidator {
       String elName = sel.getElementName();
       ElKey elKey = ElKey.forElement(Namespaces.HTML_DEFAULT, elName);
       if (null != htmlSchema.lookupElement(elKey)) {
-        if (!htmlSchema.isElementVirtualized(elKey) &&
+        if (!HtmlSchema.isElementVirtualized(elKey) &&
             !htmlSchema.isElementAllowed(elKey)) {
           mq.addMessage(
               PluginMessageType.UNSAFE_TAG, invalidNodeMessageLevel,
@@ -851,17 +851,6 @@ final class SignatureResolver {
       CssPropertySignature.RepeatedSignature rsig,
       Candidate candidate, Name propertyName, List<Candidate> passed) {
 
-    /**
-     * The maximum branching factor for a repetition.  This is the
-     * greatest number of contiguous ambiguous elements we might encounter
-     * as in <code>{ font: inherit inherit inherit inherit }</code>.
-     * <p>
-     * TODO(mikesamuel): this is currently 6 instead of 4 because it also limits
-     * the number of font names that can appear in a comma separated list.
-     * Rework our backtracking so we can handle long font lists.
-     */
-    final int MAX_BRANCHING_FACTOR = 6;
-
     List<Candidate> toApply = Collections.singletonList(candidate);
     int k = 0;
     for (; k < rsig.minCount; ++k) {
@@ -878,14 +867,10 @@ final class SignatureResolver {
 
       toApply = new ArrayList<Candidate>(toApply);
       for (; k < rsig.maxCount; ++k) {
-        if (k < MAX_BRANCHING_FACTOR) {
-          // Try not following the extra repetitions
-          passed.addAll(toApply);
-          for (int i = toApply.size(); --i >= 0;) {
-            toApply.set(i, toApply.get(i).clone());
-          }
-        } else {
-          // greedy
+        // Try not following the extra repetitions
+        passed.addAll(toApply);
+        for (int i = toApply.size(); --i >= 0;) {
+          toApply.set(i, toApply.get(i).clone());
         }
         if (null == used) {
           toApply = applySignature(toApply, propertyName, repeated);
