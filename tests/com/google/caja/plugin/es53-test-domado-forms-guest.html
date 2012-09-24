@@ -45,10 +45,8 @@
      so the tests get predictable results. -->
 <form class="testcontainer" id="testDocumentForms">Form 0</form>
 <script type="text/javascript">
-  // TODO(kpreid): Enable for ES5 mode and debug (df[1].id is undefined).
-  jsunitRegisterIf(!inES5Mode,
-                   'testDocumentForms',
-                   function testDocumentForms() {
+  jsunitRegister('testDocumentForms',
+                 function testDocumentForms() {
     var df = document.forms;
     assertEquals('testDocumentForms', df[1].id);
     assertTrue(df.length >= 2);
@@ -66,8 +64,8 @@
   <input type="checkbox" name="c">
 </form>
 <script type="text/javascript">
-  // TODO(kpreid): Enable for ES5 mode and debug form.elements.
-  jsunitRegisterIf(!inES5Mode,
+  // <form> element's namespaceness is implemented via Proxy
+  jsunitRegisterIf(typeof Proxy !== 'undefined',
                    'testFormElements',
                    function testFormElements() {
     var f = document.getElementById('testFormElements');
