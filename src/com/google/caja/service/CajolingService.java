@@ -25,6 +25,7 @@ import com.google.caja.plugin.UriFetcher.ChainingUriFetcher;
 import com.google.caja.reporting.BuildInfo;
 import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessageContext;
+import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.util.Charsets;
@@ -136,14 +137,29 @@ public class CajolingService {
     if (buildVersion != null) {
       boolean versionMatch =
           BuildInfo.getInstance().getBuildVersion().equals(buildVersion);
+      String majorCajaVersion =
+          BuildInfo.getInstance().getBuildVersion().split("[mM]")[0];
+      String majorReqVersion = 
+          buildVersion.split("[mM]")[0];
+      boolean majorVersionMatch = majorCajaVersion.equals(majorReqVersion);
       if (!versionMatch) {
-        mq.addMessage(
-            ServiceMessageType.WRONG_BUILD_VERSION,
-            MessagePart.Factory.valueOf(
-                BuildInfo.getInstance().getBuildVersion()),
-            MessagePart.Factory.valueOf(
-                CajaArguments.BUILD_VERSION.get(args)));
-        return null;
+        if (majorVersionMatch) {
+          mq.addMessage(
+              ServiceMessageType.WRONG_BUILD_VERSION,
+              MessageLevel.LINT,
+              MessagePart.Factory.valueOf(
+                  BuildInfo.getInstance().getBuildVersion()),
+              MessagePart.Factory.valueOf(
+                  CajaArguments.BUILD_VERSION.get(args)));
+        } else {
+          mq.addMessage(
+              ServiceMessageType.WRONG_BUILD_VERSION,
+              MessagePart.Factory.valueOf(
+                  BuildInfo.getInstance().getBuildVersion()),
+              MessagePart.Factory.valueOf(
+                  CajaArguments.BUILD_VERSION.get(args)));
+          return null;
+        }
       }
     }
 

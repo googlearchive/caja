@@ -443,12 +443,20 @@ var caja = (function () {
   // Throws an error if frameWin has the wrong Caja version
   function versionCheck(config, frameWin, filename) {
     if (cajaBuildVersion !== frameWin['cajaBuildVersion']) {
-      var message =
-        'Version error: caja.js version ' + cajaBuildVersion +
+      var message = 'Version error: caja.js version ' + cajaBuildVersion +
         ' does not match ' + filename + ' version ' +
-        frameWin['cajaBuildVersion'];
-      config['log'](message);
-      throw new Error(message);
+        frameWin['cajaBuildVersion'] + '.';
+
+      var majorCajaVersion = String(cajaBuildVersion).split(/[mM]/)[0];
+      var majorWinVersion =
+        String(frameWin['cajaBuildVersion']).split(/[mM]/)[0];
+      if (majorCajaVersion === majorWinVersion) {
+        message += '  Continuing because major versions match.';
+        config['log'](message);
+      } else {
+        config['log'](message);
+        throw new Error(message);
+      }
     }
   }
 

@@ -5132,9 +5132,17 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
    */
   function prepareModule(module, load) {
     if (cajaBuildVersion !== module.cajolerVersion) {
-      throw new TypeError(
-          "Version error: es53 expects " + cajaBuildVersion +
-          " but module is " + module.cajolerVersion);
+      var message = "Version error: es53 expects " + cajaBuildVersion +
+          " but module is " + module.cajolerVersion;
+      var majorCajaVersion = String(cajaBuildVersion).split(/[mM]/)[0];
+      var majorWinVersion =
+        String(module.cajolerVersion).split(/[mM]/)[0];
+      if (majorCajaVersion === majorWinVersion) {
+        message += '  Continuing because major versions match.';
+        log(message);
+      } else {
+        throw new TypeError(message);
+      }
     }
     registerClosureInspector(module);
     function theModule(extraImports) {

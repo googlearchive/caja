@@ -149,9 +149,35 @@ public class GeneralBrowserTest extends BrowserTestCase {
     runTestDriver("es53-test-cajajs-version-skew-cajoler-response.js");
   }
 
+  public final void testVersionMinorSkewCajolerResponse() throws Exception {
+    // Changing the version baked into *all* the JS will cause a different
+    // minor version number to be sent to the cajoler, which should emit a
+    // LINT warning when compiling the given content
+    String minorVariant = bv + "M3";
+    addVersionRewrite("/caja.js", minorVariant);
+    addVersionRewrite("/caja-minified.js", minorVariant);
+    getCajaStatic().link(
+        "/" + bv + "/es53-guest-frame.opt.js",
+        "/" + minorVariant + "/es53-guest-frame.opt.js");
+    getCajaStatic().link(
+        "/" + bv + "/es53-taming-frame.opt.js",
+        "/" + minorVariant + "/es53-taming-frame.opt.js");
+    addVersionRewrite(
+        "/" + minorVariant + "/es53-guest-frame.opt.js", minorVariant);
+    addVersionRewrite(
+        "/" + minorVariant + "/es53-taming-frame.opt.js", minorVariant);
+    runTestDriver("es53-test-cajajs-minor-version-skew-cajoler-response.js");
+  }
+
   public final void testVersionSkewCajoledModule() throws Exception {
     // only relevant to es53
     runTestDriver("es53-test-cajajs-version-skew-cajoled-module.js", false);
+  }
+
+  public final void testMinorVersionSkewCajoledModule() throws Exception {
+    // only relevant to es53
+    runTestDriver(
+      "es53-test-cajajs-minor-version-skew-cajoled-module.js", false);
   }
 
   public final void testClientUriRewriting() throws Exception {
