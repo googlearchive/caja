@@ -484,7 +484,7 @@ public class PlaygroundView {
     var that = this;
     var extraImports = {};
     try {
-      var tamings___ = eval(policy);
+      var tamings___ = $wnd.eval(policy);
     } catch (e) {
       that.@com.google.caja.demos.playground.client.ui.PlaygroundView::addRuntimeError(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)
           (e, "evaluating policy");
