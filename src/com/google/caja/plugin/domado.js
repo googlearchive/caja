@@ -3523,6 +3523,36 @@ var Domado = (function() {
         domClass: 'HTMLBodyElement'
       });
       // TODO(kpreid): need the viewProperties
+      setOwn(TameBodyElement.prototype, 'setAttribute', nodeMethod(
+          function (attrib, value) {
+        TameElement.prototype.setAttribute.call(this, attrib, value);
+        var attribName = String(attrib).toLowerCase();
+        // Window event handlers are exposed as content attributes on <body>
+        // and <frameset>
+        // <http://www.whatwg.org/specs/web-apps/current-work/multipage/webappapis.html#handler-window-onload>
+        // as of 2012-09-14
+        // Note: We only currently implement onload.
+        if (attribName === 'onload') {
+          // We do not use the main event-handler-attribute rewriter here
+          // because it generates event-handler strings, not functions -- and 
+          // for the TameWindow there is no real element to hang those handler
+          // strings on. TODO(kpreid): refactor to fix that.
+          if (cajaVM.compileExpr) { // ES5 case: eval available
+            // Per http://www.whatwg.org/specs/web-apps/current-work/multipage/webappapis.html#event-handler-attributes
+            tameWindow[attribName] = cajaVM.compileExpr(
+                'function cajaEventHandlerAttribFn_' + attribName +
+                '(event) {\n' + value + '\n}')(tameWindow);
+          } else {
+            var match = value.match(SIMPLE_HANDLER_PATTERN);
+            if (!match) { return; }
+            //var doesReturn = match[1];  // not currently used
+            var fnName = match[2];
+            // TODO(kpreid): Synthesize a load event object.
+            tameWindow[attribName] =
+                function () { tameWindow[fnName].call(this, {}, this); };
+          }
+        }
+      }));
 
       // http://dev.w3.org/html5/spec/Overview.html#the-canvas-element
       (function() {

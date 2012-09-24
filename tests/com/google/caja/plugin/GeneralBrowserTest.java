@@ -190,8 +190,8 @@ public class GeneralBrowserTest extends BrowserTestCase {
     runTestCase("es53-test-domado-dom-guest.html");
   }
 
-  public final void testDomadoDomGlobal() throws Exception {
-    runTestDriver("es53-test-domado-dom-global.js");
+  public final void testDomadoGlobal() throws Exception {
+    runTestDriver("es53-test-domado-global.js");
   }
 
   public final void testDomadoEvents() throws Exception {

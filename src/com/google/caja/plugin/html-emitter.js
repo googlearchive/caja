@@ -441,18 +441,29 @@ function HtmlEmitter(makeDOMAccessible, base, opt_domicile, opt_guestGlobal) {
     var documentLoaded = undefined;
     var depth = 0;
 
-    function normalInsert(tagName, attribs) {
-      tagName = html.virtualToRealElementName(tagName);
+    function normalInsert(virtualTagName, attribs) {
+      var realTagName = html.virtualToRealElementName(virtualTagName);
 
-      var eltype = html4.ELEMENTS[tagName]; // TODO(kpreid): dupe execution
-      domicile.sanitizeAttrs(tagName, attribs);
+      // Extract attributes which we need to invoke side-effects on rather
+      // than just sanitization; currently <body> event handlers.
+      var slowPathAttribs = [];
+      if (opt_domicile && virtualTagName === 'body') {
+        for (var i = attribs.length - 2; i >= 0; i -= 2) {
+          if (/^on/i.test(attribs[i])) {
+            slowPathAttribs.push.apply(slowPathAttribs, attribs.splice(i, 2));
+          }
+        }
+      }
+
+      var eltype = html4.ELEMENTS[realTagName];
+      domicile.sanitizeAttrs(realTagName, attribs);
 
       if ((eltype & html4.eflags.UNSAFE) !== 0) {
         // TODO(kpreid): Shouldn't happen (for now)
         return;
       }
 
-      var el = bridal.createElement(tagName, attribs);
+      var el = bridal.createElement(realTagName, attribs);
       if ((eltype & html4.eflags.OPTIONAL_ENDTAG)
           && el.tagName === insertionPoint.tagName) {
         documentWriter.endTag(el.tagName, true);
@@ -460,6 +471,11 @@ function HtmlEmitter(makeDOMAccessible, base, opt_domicile, opt_guestGlobal) {
       }
       insertionPoint.appendChild(el);
       if (!(eltype & html4.eflags.EMPTY)) { insertionPoint = el; }
+      
+      for (var i = slowPathAttribs.length - 2; i >= 0; i -= 2) {
+        opt_domicile.tameNode(el, true).setAttribute(
+          slowPathAttribs[i], slowPathAttribs[i+1]);
+      }
     }
 
     function normalEndTag(tagName) {
