@@ -4340,9 +4340,34 @@ var Domado = (function() {
         return value;
       }));
 
+      var TameImageElement = defineElement({
+        names: ['img'],
+        domClass: 'HTMLImageElement',
+        properties: {
+          alt: NP.filterProp(String, String),
+          height: NP.filterProp(Number, Number),
+          src: NP.filter(false, String, true, identity),
+          width: NP.filterProp(Number, Number)
+        }
+      });
+      var featureTestImage = makeDOMAccessible(document.createElement('img'));
+      if ("naturalWidth" in featureTestImage) {
+        definePropertiesAwesomely(TameImageElement, {
+          naturalHeight: NP.filterProp(Number, Number),
+          naturalWidth: NP.filterProp(Number, Number)
+        });
+      }
+      if ("complete" in featureTestImage) {
+        definePropertiesAwesomely(TameImageElement, {
+          complete: NP.filterProp(Boolean, Boolean)
+        });
+      }
+
       function toInt(x) { return x | 0; }
+      // TODO(kpreid): The conflation of these elements is partly nonsense.
+      // Split it into the appropriate narrow interfaces for each element.
       var TameInputElement = defineElement({
-        names: ['select', 'button', 'option', 'textarea', 'input'],
+        names: ['select', 'button', 'textarea', 'input'],
         domClass: 'HTMLInputElement',
         properties: {
           checked: NP.filterProp(identity, Boolean),
@@ -4365,18 +4390,13 @@ var Domado = (function() {
                   defaultTameNode, 'name');
             })
           },
-          selected: NP.rw,
-          defaultSelected: NP.filterProp(identity, Boolean),
           selectedIndex: NP.filterProp(identity, toInt),
           name: NP.rw,
           accessKey: NP.rw,
           tabIndex: NP.rw,
-          text: NP.filter(false, String),
           maxLength: NP.rw,
           size: NP.rw,
           type: NP.rw,
-          index: NP.rw,
-          label: NP.rw,
           multiple: NP.rw,
           cols: NP.rw,
           rows: NP.rw
@@ -4387,15 +4407,6 @@ var Domado = (function() {
       });
 
       defineElement({
-        names: ['img'],
-        domClass: 'HTMLImageElement',
-        properties: {
-          src: NP.filter(false, identity, true, identity),
-          alt: NP.filterProp(identity, String)
-        }
-      });
-
-      defineElement({
         names: ['label'],
         domClass: 'HTMLLabelElement',
         properties: {
@@ -4403,6 +4414,23 @@ var Domado = (function() {
         }
       });
 
+      defineElement({
+        names: ['option'],
+        domClass: 'HTMLOptionElement',
+        properties: {
+          defaultSelected: NP.filterProp(Boolean, Boolean),
+          disabled: NP.filterProp(Boolean, Boolean),
+          form: NP.related,
+          index: NP.filterProp(Number),
+          label: NP.filterProp(String, String),
+          selected: NP.filterProp(Boolean, Boolean),
+          text: NP.filterProp(String, String),
+          // TODO(kpreid): Justify these specialized filters.
+          value: NP.filterProp(
+            function (x) { return x == null ? null : String(x); },
+            function (x) { return x == null ? '' : '' + x; })
+        }
+      });
 
       function dynamicCodeDispatchMaker(that) {
         window.cajaDynamicScriptCounter =
@@ -4576,7 +4604,36 @@ var Domado = (function() {
         domClass: 'HTMLTitleElement'
       });
 
-      traceStartup("DT: done with specific elements");
+      traceStartup('DT: done with specific elements');
+
+      // Oddball constructors. There are only two of these and we implement
+      // both. (Caveat: In actual browsers, new Image().constructor == Image
+      // != HTMLImageElement. We don't implement that.)
+      
+      // Per https://developer.mozilla.org/en-US/docs/DOM/Image as of 2012-09-24
+      function TameImageFun(width, height) {
+        var element = tameDocument.createElement('img');
+        if (width !== undefined) { element.width  = width; }
+        if (height !== undefined) { element.height = height; }
+        return element;
+      }
+      cajaVM.def(TameImageFun);
+      
+      // Per https://developer.mozilla.org/en-US/docs/DOM/Option
+      // as of 2012-09-24
+      function TameOptionFun(text, value, defaultSelected, selected) {
+        var element = tameDocument.createElement('option');
+        if (text !== undefined) { element.text = text; }
+        if (value !== undefined) { element.value = value; }
+        if (defaultSelected !== undefined) {
+          element.defaultSelected = defaultSelected;
+        }
+        if (selected !== undefined) { element.selected = selected; }
+        return element;
+      }
+      cajaVM.def(TameOptionFun);
+
+      traceStartup('DT: starting event taming');
 
       // coerce null and false to 0
       function fromInt(x) { return '' + (x | 0); }
@@ -5767,6 +5824,9 @@ var Domado = (function() {
           });
         }
       }
+
+      tameWindow.Image = TameImageFun;
+      tameWindow.Option = TameOptionFun;
 
       tameDocument = finishNode(tameDocument);
 

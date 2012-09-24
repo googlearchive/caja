@@ -1043,6 +1043,7 @@
         <include name="**/caja/**/*.html"/>
         <include name="**/caja/**/*.input"/>
         <include name="**/caja/**/*.js"/>
+        <include name="**/caja/**/*.png"/>
         <include name="**/caja/**/*.txt"/>
         <include name="**/caja/**/*.xml"/>
       </fileset>

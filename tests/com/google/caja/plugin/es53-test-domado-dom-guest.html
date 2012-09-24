@@ -2127,6 +2127,74 @@ After
   });
 </script>
 
+<div id="testOddballConstructors" class="testcontainer">
+</div>
+<script type="text/javascript">
+  jsunitRegister('testOddballConstructors',
+                 function testOddballConstructors() {
+    // Note: This test also tests the properties of the img and option elements.
+
+    // new Image() is approximately document.createElement('img')
+    var image1 = new Image();
+    assertEquals('image default nodeType', 1, image1.nodeType);
+    assertEquals('image default tagName', 'IMG', image1.tagName);
+    assertEquals('image default width', 0, image1.width);
+    assertEquals('image default height', 0, image1.height);
+    assertEquals('image default src', '', image1.src);
+    var image2 = new Image(10, 20);
+    assertEquals('image supplied width', 10, image2.width);
+    assertEquals('image supplied height', 20, image2.height);
+    document.getElementById('testOddballConstructors').appendChild(image2);
+        // should not fail - i.e. is a valid element
+
+    // new Option() is approximately document.createElement('option')
+    var option1 = new Option();
+    assertEquals('option default nodeType', 1, option1.nodeType);
+    assertEquals('option default tagName', 'OPTION', option1.tagName);
+    assertEquals('option default text', '', option1.text);
+    assertEquals('option default value', '', option1.value);
+    assertEquals('option default defaultSelected', false, option1.defaultSelected);
+    assertEquals('option default selected', false, option1.selected);
+    var option2 = new Option('foo', 'bar', false, true);
+    assertEquals('option supplied text', 'foo', option2.text);
+    assertEquals('option supplied value', 'bar', option2.value);
+    assertEquals('option supplied defaultSelected', false, option2.defaultSelected);
+    assertEquals('option supplied selected', true, option2.selected);
+    
+    pass('testOddballConstructors');
+  });
+</script>
+
+<div id="testImageElement" class="testcontainer" >
+  <img id="testImageElement-image" src="test-image-41x13.png">
+</div>
+<script type="text/javascript">
+  jsunitRegister('testImageElement',
+                 function testImageElement() {
+    var img = document.getElementById('testImageElement-image');
+    assertEquals(41, img.width);
+    assertEquals(13, img.height);
+    img.width = 10;
+    img.height = 20;
+    assertEquals(10, img.width);
+    assertEquals(20, img.height);
+    assertEquals('10px', window.getComputedStyle(img, null).width);
+    if ('naturalWidth' in img) {
+      assertEquals(41, img.naturalWidth);
+      assertEquals(13, img.naturalHeight);
+    } else {
+      assertFalse('naturalWidth' in img);
+      assertFalse('naturalHeight' in img);
+    }
+    if ('complete' in img) {
+      assertEquals(true, img.complete);
+    } else {
+      assertFalse('complete' in img);
+    }
+    pass('testImageElement');
+  });
+</script>
+
 <div id="testTableElements" class="testcontainer" >
   <table id='testTableElements-table'>
     <thead>
