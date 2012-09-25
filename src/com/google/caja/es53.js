@@ -960,16 +960,21 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
     };
 
   Object.prototype.ownKeys___ = function () {
-      var i, m, result = [];
+      var i, m, result = [], seen = {};
       var keys = fastOwnKeys(this);
       for (var k = 0, n = keys.length; k < n; k++) {
         i = keys[k];
         // inline isNumericName(i)
         if (typeof i === 'number' || ('' + (+i)) === i) {
           result.push(i);
-        } else if (5 < i.length && i.substr(i.length - 5) === '_v___'
-                   && i.substr(0, 6) !== 'NUM___') {
-          result.push(i.substr(0, i.length - 5));
+        } else if (5 < i.length) {
+          var suffix = i.substr(i.length - 5);
+          var key = i.substr(0, i.length - 5);
+          if (!seen['$' + key] && (suffix === '_v___' || suffix === '_g___' ||
+              suffix === '_s___') && i.substr(0, 6) !== 'NUM___') {
+            result.push(key);
+            seen['$' + key] = 1;
+          }
         }
       }
       return result;

@@ -1875,6 +1875,23 @@ public class ES53RewriterTest extends CommonJsRewriterTestCase {
         "})();");
   }
 
+  public final void testGetOwnPropertyNames() throws Exception {
+    assertConsistent(
+        "var p = {a: 1};" +
+        "var o = Object.create(p);" +
+        "Object.defineProperty(o, 'b', { value: 2 });" +
+        "Object.defineProperty(o, 'c', { get: function () { return 3; }, " +
+        "    enumerable: true});" +
+        "var names = Object.getOwnPropertyNames(o), nameMap = {}, unique = [];" +
+        "for (var i = 0; i < names.length; ++i) {" +
+        "  if (!nameMap[names[i]]) {" +
+        "    unique.push(names[i]);" +
+        "    nameMap[names[i]] = 1;" +
+        "  }" +
+        "}" +
+        "'' + unique;");
+  }
+
   @Override
   public void setUp() throws Exception {
     super.setUp();
