@@ -5296,27 +5296,6 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
     }
   }
 
-  /**
-   * Inside a <tt>___.forOwnKeys()</tt> or <tt>___.forAllKeys()</tt>, the
-   * body function can terminate early, as if with a conventional
-   * <tt>break;</tt>, by doing a <pre>return ___.BREAK;</pre>
-   */
-  var BREAK = Token('BREAK');
-
-  /**
-   * Used in domita with the name "forOwnKeys" for iterating over
-   * JSON containers.
-   */
-  function forOwnNonCajaKeys(obj, fn) {
-    for (var i in obj) {
-      if (!obj.hasOwnProperty(i)) { continue; }
-      if (endsWith__.test(i)) { continue; }
-      if (fn(i, obj[i]) === BREAK) {
-        return;
-      }
-    }
-  }
-
   // TODO(metaweta): Deprecate this API, since it requires that we leave
   // configurable set to true in order to use both a getter and a setter.
   function useGetHandler(obj, name, getHandler) {
@@ -5497,7 +5476,6 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
   ___ = {
       sharedImports: sharedImports,
       USELESS: USELESS,
-      BREAK: BREAK,
       args: args,
       deodorize: deodorize,
       copy: copy,
@@ -5527,7 +5505,6 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
       grantInnocentMethod: grantInnocentMethod,
       all2: all2,
       hasOwnProp: hasOwnProp,
-      forOwnKeys: forOwnNonCajaKeys,
       markCtor: markFuncFreeze,
       useGetHandler: useGetHandler,
       useSetHandler: useSetHandler,
