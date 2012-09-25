@@ -268,6 +268,9 @@ var caja = (function () {
    *     log - Optional user-supplied alternative to the browser's native
    *         'console.log' function.
    *
+   *     flashbridge - Optional, location of flashbridge.swf.  This needs
+   *         to be on the same domain as the host page.
+   *
    * @param config an object literal containing configuration parameters.
    * @param frameGroupReady function to be called back with a reference to
    *     the newly created frame group.

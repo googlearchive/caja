@@ -1,8 +1,8 @@
 <p>This example demonstrates Caja's tamed version of
 <code>swfobject.embedSWF()</code>.</p>
 
-<p>Examples using &lt;embed&gt; and &lt;object&gt; are in "Flash
-Embed 2".</p>
+<p>Demonstrations of &lt;embed&gt; and &lt;object&gt; are in the
+"Embed Flash 2" example.</p>
 
 <p>Caja does not allow Flash apps to have direct script access.
 <code>ExternalInterface.call()</code> is denied by Flash's security sandbox.</p>
@@ -34,7 +34,7 @@ Embed 2".</p>
   // because Flash sandboxing requires the SWF to be on
   // a site different from the container.
 
-  var rev = '4598';
+  var rev = '5060';
   var demoDir = '/trunk/src/com/google/caja/flash/tests/';
   var rawLocation =
       'http://google-caja.googlecode.com/svn-history/r' + rev + demoDir;
@@ -65,7 +65,7 @@ Embed 2".</p>
   function callFlash() {
     var o = document.getElementById('bridgeAware');
     // TODO(felix8a): test multiple args
-    o.message('call Flash from JS ' + (counter++));
+    o.message(o.upper('call Flash from JS ' + (counter++)));
   }
 </script>
 

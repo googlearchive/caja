@@ -335,12 +335,9 @@ function ES53FrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker) {
     ___.copyToImports(gman.imports, moreImports);
 
     // TODO(felix8a): not right for multiple guests
-    if (args.flash) {
-      var tamingFlash = tamingWin.cajaFlash;
-      if (gman.domicile && tamingFlash && tamingFlash.init) {
-        tamingFlash.init(
-          feralWin, gman.imports, tamingWin, gman.domicile, guestWin);
-      }
+    if (args.flash && gman.domicile && tamingWin.cajaFlash) {
+      tamingWin.cajaFlash.init(
+        feralWin, tamingWin, gman.domicile, config.flashbridge);
     }
 
     if (args.cajoledJs !== undefined) {

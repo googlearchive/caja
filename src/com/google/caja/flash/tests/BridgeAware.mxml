@@ -101,9 +101,12 @@
       com.google.caja.flash.net.navigateToURL(new URLRequest(url), '_top');
     }
 
-    // TODO(felix8a): use this in tests
     private function upper(s:String):String {
       return s.toUpperCase();
+    }
+
+    private function concat(s:String, t:String):String {
+      return s + t;
     }
 
     private function on_addedToStage():void {
@@ -111,6 +114,8 @@
       import com.google.caja.flash.FlashBridgeClient;
       try {
         FlashBridgeClient.init(this);
+        com.google.caja.flash.external.ExternalInterface.addCallback(
+            'concat', concat);
         com.google.caja.flash.external.ExternalInterface.addCallback(
             'message', message);
         com.google.caja.flash.external.ExternalInterface.addCallback(

@@ -15,26 +15,19 @@
 /**
  * @fileoverview Allows containers to mimic swfobject for cajoled gadgets
  *
- * @author felixz@gmail.com
+ * @author felix8a@gmail.com
  * @requires document
  * @overrides window
  * @provides cajaFlash
  */
 
+// TODO(felix8a): Flash objects instantiated this way are never gc'ed
+
 var cajaFlash = {};
 
 (function() {
 
-  function getTaming() {
-    var caja = window.parent.caja;
-    return {
-      tame: caja.tame,
-      untame: caja.untame,
-      USELESS: caja.USELESS
-    };
-  }
-
-  // Get an Object with no Caja.
+  // Get an Object without Caja.
   var cleanFrame = document.createElement('iframe');
   var where = document.getElementsByTagName('script')[0];
   where.parentNode.insertBefore(cleanFrame, where);
@@ -43,19 +36,24 @@ var cajaFlash = {};
   where.parentNode.removeChild(cleanFrame);
 
   // Convert a tame object into a clean string->string map
-  function cleanStringMap(o, caja___, taming___) {
+  function cleanStringMap(o) {
     var result = cleanObject();
     if (!o) { return result; }
-    caja___.forOwnKeys(o, function(key, value) {
-      result[cleanString(key)] = cleanString(value);
-    });
+    if (o.allKeys___) {
+      // es53 object
+      var keys = o.allKeys___();
+      for (var i = 0; i < keys.length; i++) {
+        result[cleanString(keys[i])] = cleanString(o.v___(keys[i]));
+      }
+    } else {
+      // non-es53 object
+      for (var k in o) {
+        if (!/__$/.test(k)) {
+          result[cleanString(k)] = cleanString(o[k]);
+        }
+      }
+    }
     return result;
-  }
-
-  function cleanAttrs(o, caja___, taming___) {
-    var result = cleanStringMap(o, caja___, taming___);
-    // TODO(felix8a): attributes need more than just cleaning
-    return cleanObject();
   }
 
   // Return a function that throws "not implemented yet".
@@ -84,38 +82,32 @@ var cajaFlash = {};
     return (av.length < bv.length) ? b : a;
   }
 
-  function initCallbacks(docWin, guestImps, tamingWin, domicile) {
-    if (!docWin.caja) {
-      docWin.caja = docWin.Object();
+  function initCallbacks(feralWin, tamingWin, domicile) {
+    if (!feralWin.caja.policy) {
+      feralWin.caja.policy = feralWin.Object();
     }
-    if (!docWin.caja.policy) {
-      docWin.caja.policy = docWin.Object();
+    if (!feralWin.caja.policy.flash) {
+      feralWin.caja.policy.flash = feralWin.Object();
     }
-    if (!docWin.caja.policy.flash) {
-      docWin.caja.policy.flash = docWin.Object();
-    }
-    var docFlash = docWin.caja.policy.flash;
+    var flash = feralWin.caja.policy.flash;
 
-    var caja___ = tamingWin.___;
-    var taming___ = getTaming();
-
-    // Map from context id (integer) to swf object.
-    docFlash.objects = docWin.Array();
+    // A map from context id (integer) to swf object.
+    flash.objects = feralWin.Array();
 
     // Called when bridge finishes loading target swf.
-    docFlash.onLoaderInit = function onLoaderInit(context) {};
+    flash.onLoaderInit = function onLoaderInit(context) {};
 
     // Called when bridge fails to load target swf.
-    docFlash.onLoaderError = function onLoaderError(context) {};
+    flash.onLoaderError = function onLoaderError(context) {};
 
     // Called to service ExternalInterface.addCallback()
-    docFlash.onAddCallback = function onAddCallback(context, fnName) {
+    flash.onAddCallback = function onAddCallback(context, fnName) {
       var m = /^caja_(\w+)/.exec(fnName);
       if (!m) {
         throw Error('bad function name ' + fnName);
       }
       var baseFnName = m[1];
-      var obj = docFlash.objects[context];
+      var obj = flash.objects[context];
       if (!obj || !obj[fnName]) {
         throw Error('bad context ' + context);
       }
@@ -123,33 +115,29 @@ var cajaFlash = {};
       if (!el) {
         throw Error("Can't tame " + obj);
       }
-      el[baseFnName] = function (varargs) {
+      el[baseFnName] = function (/*varargs*/) {
         var args = Array.prototype.slice.call(arguments);
-        var result = obj[fnName].apply(obj, taming___.untame(args));
-        return taming___.tame(result);
+        var result = obj[fnName].apply(obj, feralWin.caja.untame(args));
+        return feralWin.caja.tame(result);
       };
-      caja___.markFuncFreeze(el[baseFnName], baseFnName);
-      if (!caja___.canRead(el, baseFnName)) {
-        caja___.grantRead(el, baseFnName);
+      tamingWin.___.markFuncFreeze(el[baseFnName], baseFnName);
+      if (!tamingWin.___.canRead(el, baseFnName)) {
+        tamingWin.___.grantRead(el, baseFnName);
       }
     };
 
     // Called to service ExternalInterface.call()
-    docFlash.onCall = function onCall(context, fnName, args) {
-      var fn = (guestImps.window && guestImps.window[fnName])
-          || guestImps[fnName];
-      if (!caja___.isFunction(fn)) { return void 0; }
-      var result = fn.f___(taming___.USELESS, taming___.tame(args));
-      return taming___.untame(result);
+    flash.onCall = function onCall(context, fnName, args) {
+      var fn = domicile.window[fnName];
+      if (!tamingWin.___.isFunction(fn)) { return void 0; }
+      var result = fn.f___(feralWin.caja.USELESS, feralWin.caja.tame(args));
+      return feralWin.caja.untame(result);
     };
 
     // Called to service flash.net.navigateToURL()
-    docFlash.onNavigateToURL = function onNavigateToURL(context, req) {
-      if (!guestImps.rewriteUriInAttribute___) {
-        throw Error('No URI rewriter');
-      }
-      // TODO(felix8a): maybe use domicile.rewriteUri (which doesn't work)
-      var rewritten = guestImps.rewriteUriInAttribute___(req.url, 'a', 'href');
+    flash.onNavigateToURL = function onNavigateToURL(context, req) {
+      // TODO(felix8a): use domicile.rewriteUri (which doesn't work)
+      var rewritten = domicile.rewriteUriInAttribute(req.url, 'a', 'href');
       if (!rewritten) {
         throw Error('URI policy denied ' + req.url);
       }
@@ -161,62 +149,74 @@ var cajaFlash = {};
 
   // http://code.google.com/p/swfobject/wiki/api
   // http://code.google.com/p/swfobject/source/browse/wiki/api.wiki?r=383
-  function initSwfobject(docWin, guestImps, tamingWin, domicile) {
-    if (!docWin.swfobject) { return; }
 
-    var caja___ = tamingWin.___;
-    var taming___ = getTaming();
+  function initSwfobject(feralWin, tamingWin, domicile, opt_flashbridge) {
+    if (!feralWin.swfobject) { return; }
 
-    var swf = guestImps.swfobject;
+    var swf = domicile.window.swfobject;
     if (!swf) {
-      swf = guestImps.swfobject = tamingWin.Object();
-      caja___.grantRead(guestImps, 'swfobject');
+      swf = domicile.window.swfobject = tamingWin.Object();
+      tamingWin.___.grantRead(domicile.window, 'swfobject');
     }
 
-    swf.ua = taming___.tame(docWin.swfobject.ua);
-
-    var docFlash = docWin.caja.policy.flash;
+    swf.ua = feralWin.caja.tame(feralWin.swfobject.ua);
 
     swf.embedSWF = function embedSWF(
       swfUrl, id, width, height, version,
       expressInstall, flashvars, params, attrs, cb)
     {
-      var context = docFlash.objects.length;
-      docFlash.objects[context] = docWin.Object();
+      var context = feralWin.caja.policy.flash.objects.length;
+      feralWin.caja.policy.flash.objects[context] = feralWin.Object();
+
+      // TODO(felix8a): use domicile.rewriteUri (which doesn't work)
+      var rewritten = domicile.rewriteUriInAttribute(swfUrl, 'img', 'src');
+      if (!rewritten) {
+        throw Error('URI policy denied ' + swfUrl);
+      }
       var outSwfUrl = (
-        'flashbridge.swf' +
+        (opt_flashbridge || 'flashbridge.swf') +
         '?__CAJA_cajaContext=' + context +
-        '&__CAJA_src=' + swfUrl);
+        '&__CAJA_src=' + encodeURIComponent(swfUrl));
+      // TODO(felix8a): maybe should be rewritten url, but proxied swfs
+      // have odd implications
+
       var outId = domicile.suffix(id);
       var outWidth = +width;
       var outHeight = +height;
-      var outVersion = versionMax(version, '11.3');
+      // 11.2 is the last supported version on linux and solaris
+      var outVersion = versionMax(version, '11.2');
       var outExpressInstall = false;
-      var outFlashvars = cleanStringMap(flashvars, caja___, taming___);
-      var outParams = cleanStringMap(params, caja___, taming___);
-      // allowNetworking=all so flashbridge can load the target swf
+      var outFlashvars = cleanStringMap(flashvars, tamingWin);
+
+      var outParams = cleanStringMap(params, tamingWin);
+      // needed for flashbridge to load the target swf
       outParams.allowNetworking = 'all';
-      // allowScriptAccess=same-domain to allow flashbridge but not target swf
+      // allow script for flashbridge but not for target swf
       outParams.allowScriptAccess = 'same-domain';
-      // wmode=transparent makes flash honor the html visual stack
+      // make flash honor the html visual stack
       outParams.wmode = 'transparent';
-      var outAttrs = cleanAttrs(attrs, caja___, taming___);
+
+      // TODO(felix8a): support attrs
+      var outAttrs = cleanObject();
+
       var outCb = function (args) {
-        docFlash.objects[context] = args.ref;
-        if (!caja___.isFunction(cb)) { return; }
+        feralWin.caja.policy.flash.objects[context] = args.ref;
+        if (!tamingWin.___.isFunction(cb)) { return; }
         var tameArgs = {
           success: args.success,
           id: args.id,
           ref: domicile.tameNode(args.ref, true)
         };
-        tameArgs = taming___.tame(tameArgs);
-        cb.f___(taming___.USELESS, [tameArgs]);
+        tameArgs = feralWin.caja.tame(tameArgs);
+        cb.f___(feralWin.caja.USELESS, [tameArgs]);
       };
-      docWin.swfobject.embedSWF(
+
+      feralWin.swfobject.embedSWF(
         outSwfUrl, outId, outWidth, outHeight, outVersion,
         outExpressInstall, outFlashvars, outParams, outAttrs, outCb);
     };
 
+    // TODO(felix8a): implement some more of these swfobject functions
     unimp(swf, 'registerObject');
     unimp(swf, 'getObjectById');
     unimp(swf, 'getFlashPlayerVersion');
@@ -229,20 +229,18 @@ var cajaFlash = {};
     unimp(swf, 'getQueryParamValue');
     unimp(swf, 'switchOffAutoHideShow');
     unimp(swf, 'showExpressInstall');
-    caja___.whitelistAll(swf);
+    tamingWin.___.whitelistAll(swf);
   }
 
   function findElByClass(domicile, name) {
-    var nodelist = domicile.document.getElementsByClassName(name);
-    return nodelist && nodelist[0] && domicile.feralNode(nodelist[0]);
+    var els = domicile.document.getElementsByClassName(name);
+    return els && els[0] && domicile.feralNode(els[0]);
   }
 
   // Setup functions and callbacks for tamed Flash.
-  cajaFlash.init = function init(
-      docWin, guestImps, tamingWin, domicile, guestWin)
-  {
-    initCallbacks(docWin, guestImps, tamingWin, domicile);
-    initSwfobject(docWin, guestImps, tamingWin, domicile);
+  cajaFlash.init = function init(feralWin, tamingWin, domicile) {
+    initCallbacks(feralWin, tamingWin, domicile);
+    initSwfobject(feralWin, tamingWin, domicile);
 
     // Called from html-emitter
     function cajaHandleEmbed(params) {
@@ -256,17 +254,13 @@ var cajaFlash = {};
       }
 
       el.id = domicile.suffix(params.id);
-      // TODO(felix8a): more args
-      guestImps.swfobject.embedSWF(
+      domicile.window.swfobject.embedSWF(
         params.src, params.id, params.width, params.height);
     }
 
-    var caja___ = tamingWin.___;
-    var taming___ = getTaming();
-
     // called by HtmlEmitter
-    guestImps.cajaHandleEmbed = cajaHandleEmbed;
-    caja___.grantFunc(guestImps, 'cajaHandleEmbed');
+    domicile.window.cajaHandleEmbed = cajaHandleEmbed;
+    tamingWin.___.grantFunc(domicile.window, 'cajaHandleEmbed');
   };
 })();
 
