@@ -188,15 +188,19 @@ function SESFrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker) {
 
   function isDefinedInCajaFrame(o) {
     var result = false;
-    Array.prototype.slice.call(feralWin.frames).forEach(function(w) {
-      var isCajaFrame =
-          (!!w.___ && !!w.cajaVM) ||   // ES53 frame
-          (!!w.ses && !!w.cajaVM);     // SES frame
+    for (var i = 0; i < feralWin.frames.length; i++) {
+      var w = feralWin.frames[i];
+      var isCajaFrame = false;
+      try {
+        isCajaFrame =
+            (!!w.___ && !!w.cajaVM) ||   // ES53 frame
+            (!!w.ses && !!w.cajaVM);     // SES frame
+      } catch (e) {}
       if (isCajaFrame && inheritsFromPrototype(o, w.Object.prototype)) {
-        result = true;
+        return true;
       }
-    });
-    return result;
+    }
+    return false;
   }
 
   //----------------
