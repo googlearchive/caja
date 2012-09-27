@@ -121,8 +121,7 @@ public enum MessageType implements MessageTypeInt {
   // logging
   BUILD_INFO("Google Caja. Copyright (C) 2011, Google Inc. Rev %s built on %s.",
              MessageLevel.LOG),
-  START_STAGE("T+%s msec: start %s", MessageLevel.LOG),
-  COMPILER_DONE("T+%s msec: compiler done", MessageLevel.LOG),
+  COMPILER_DONE("compiler done in %s msec (%s msec in %s)", MessageLevel.LOG),
   ;
 
   private final String formatString;
@@ -146,6 +145,7 @@ public enum MessageType implements MessageTypeInt {
     return paramCount;
   }
 
+  @SuppressWarnings("resource")
   public static void formatMessage(
       String formatString, MessagePart[] parts, MessageContext context,
       Appendable out)

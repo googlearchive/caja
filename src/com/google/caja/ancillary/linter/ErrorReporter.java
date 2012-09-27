@@ -56,7 +56,7 @@ final class ErrorReporter {
       String snippet = sp.getSnippet(msg);
       out.append(
           level.name() + " : " + msg.format(mc)
-          + (snippet != null ? "\n" + snippet : "") + "\n");
+          + ("".equals(snippet) ? "" : "\n" + snippet) + "\n");
     }
 
     List<Map.Entry<MessageTypeInt, Integer>> countsInOrder

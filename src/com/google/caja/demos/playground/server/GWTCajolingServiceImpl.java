@@ -195,7 +195,9 @@ public class GWTCajolingServiceImpl extends RemoteServiceServlet
       messageText.append(msg.getMessageLevel().name())
                  .append(" ")
                  .append(msg.format(mc));
-      messageText.append(":").append(snippet);
+      if (!"".equals(snippet)) {
+        messageText.append(":").append(snippet);
+      }
       result.add(messageText.toString());
     }
     return result.toArray(new String[0]);

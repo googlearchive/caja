@@ -271,7 +271,10 @@ public class CssParserTest extends CajaTestCase {
     List<String> snippets = new ArrayList<String>();
     for (Message msg : messages) {
       snippets.add(msg.getMessageLevel() + " : " + msg.format(mc));
-      snippets.add(sr.getSnippet(msg));
+      String snippet = sr.getSnippet(msg);
+      if (!"".equals(snippet)) {
+        snippets.add(sr.getSnippet(msg));
+      }
     }
     return Join.join("\n", snippets);
   }

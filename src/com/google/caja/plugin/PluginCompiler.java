@@ -60,6 +60,8 @@ public final class PluginCompiler {
   private Planner.PlanState preconditions;
   private Planner.PlanState goals;
   private final long t0 = System.nanoTime();
+  private long slowestTime = 0;
+  private String slowestStage = "nothing";
 
   public PluginCompiler(BuildInfo buildInfo, PluginMeta meta, MessageQueue mq) {
     this.buildInfo = buildInfo;
@@ -135,15 +137,24 @@ public final class PluginCompiler {
   private final void setupCompilationPipeline()
       throws Planner.UnsatisfiableGoalException {
     compilationPipeline = new Pipeline<Jobs>() {
+      private boolean started = false;
+
       @Override
       protected boolean applyStage(
           Pipeline.Stage<? super Jobs> stage, Jobs jobs) {
         long t1 = System.nanoTime();
-        jobs.getMessageQueue().addMessage(
-            MessageType.START_STAGE,
-            MessagePart.Factory.valueOf((int) ((t1 - t0) / 1e6)),
-            MessagePart.Factory.valueOf(stage.getClass().getSimpleName()));
-        return super.applyStage(stage, jobs);
+        if (!started) {
+          slowestTime = t1 - t0;
+          slowestStage = "pre-pipeline";
+          started = true;
+        }
+        boolean result = super.applyStage(stage, jobs);
+        long t2 = System.nanoTime();
+        if (t2 - t1 > slowestTime) {
+          slowestTime = t2 - t1;
+          slowestStage = stage.getClass().getSimpleName();
+        }
+        return result;
       }
     };
 
@@ -229,9 +240,12 @@ public final class PluginCompiler {
     try {
       boolean success = getCompilationPipeline().apply(jobs);
       long t1 = System.nanoTime();
-      jobs.getMessageQueue().addMessage(
+      MessageQueue mq = jobs.getMessageQueue();
+      mq.addMessage(
           MessageType.COMPILER_DONE,
-          MessagePart.Factory.valueOf((int) ((t1 - t0) / 1e6)));
+          MessagePart.Factory.valueOf((int) ((t1 - t0) / 1e6)),
+          MessagePart.Factory.valueOf((int) (slowestTime / 1e6)),
+          MessagePart.Factory.valueOf(slowestStage));
       return success;
     } catch (Planner.UnsatisfiableGoalException ex) {
       jobs.getMessageQueue().addMessage(
