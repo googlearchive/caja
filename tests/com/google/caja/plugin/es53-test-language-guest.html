@@ -142,6 +142,27 @@
   });
 </script>
 
+<p id="testRegExec" class="testcontainer">
+  Test regexp.exec return value
+</p>
+<script type="text/javascript">
+  jsunitRegister('testRegExec', function testRegExec() {
+    var re = /-(.)(.)-/;
+    var m = re.exec('abcdef');
+    assertEquals(null, m);
+    m = re.exec('ab-cd-ef');
+    assertEquals(2, m.index);
+    assertEquals('ab-cd-ef', m.input);
+    assertEquals(3, m.length);
+    assertEquals('-cd-', m[0]);
+    assertEquals('c', m[1]);
+    assertEquals('d', m[2]);
+    m = re.e
+    pass('testRegExec');
+  });
+</script>
+                 
+
 <p id="testParseInt" class="testcontainer">
   Test parseInt
 </p>

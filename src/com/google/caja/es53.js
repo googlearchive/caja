@@ -4080,7 +4080,12 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
 
   // 15.10.6.2
   virtualize(RegExp.prototype, 'exec', function (specimen) {
-      return RegExp.prototype.exec.call(safeDis(this), specimen);
+      var m = RegExp.prototype.exec.call(safeDis(this), specimen);
+      if (m) {
+        grantRead(m, 'index');
+        grantRead(m, 'input');
+      }
+      return m;
     });
 
   // 15.10.6.3
