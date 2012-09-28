@@ -37,7 +37,7 @@ var getUrlParam = function(name) {
   var regexS = "[\\?&]"+name+"=([^&#]*)";
   var regex = new RegExp(regexS);
   var results = regex.exec(window.location.href);
-  return (results == null) ? "" : results[1];
+  return decodeURIComponent((results == null) ? "" : results[1]);
 };
 
 var getUrlParamErr = function(name, err) {
