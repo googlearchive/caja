@@ -52,6 +52,14 @@
     <uri>http://code.jquery.com/jquery-1.7.2.min.js</uri>
   </precajole>
 
+  <!-- 2012-09-13: latest version -->
+  <precajole file="jquery/1.8.1/jquery-1.8.1.js">
+    <uri>http://ajax.googleapis.com/ajax/libs/jquery/1.8.1/jquery.js</uri>
+    <uri>http://ajax.googleapis.com/ajax/libs/jquery/1.8.1/jquery.min.js</uri>
+    <uri>http://code.jquery.com/jquery-1.8.1.js</uri>
+    <uri>http://code.jquery.com/jquery-1.8.1.min.js</uri>
+  </precajole>
+
   <!-- 2012-09-26: latest version -->
   <precajole file="jquery/1.8.2/jquery-1.8.2.js">
     <uri>http://ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.js</uri>
