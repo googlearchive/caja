@@ -503,6 +503,11 @@
       <!-- used by Closure Compiler JsonMLConversionTest -->
       <include name="com/google/caja/parser/js/JsonMLParser.java"/>
     </javac>
+    <copy todir="${lib}">
+      <fileset dir="${src}">
+        <include name="**/caja/flash/flashbridge.swf"/>
+      </fileset>
+    </copy>
     <!-- Generate a schema of CSS properties for client side CSS validation. -->
     <copy todir="${lib}">
       <fileset dir="${src}">
@@ -824,7 +829,7 @@
     </transform>
   </target>
 
-    <target name="MinifiedJs" depends="CajoledDomado,CajoledTamingMembrane,CajoledTamingSchema">
+  <target name="MinifiedJs" depends="CajoledDomado,CajoledTamingMembrane,CajoledTamingSchema">
     <transform>
       <output file="${lib}/caja.jslint.stamp"
         language="jslint"/>
