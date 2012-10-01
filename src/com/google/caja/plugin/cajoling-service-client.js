@@ -41,9 +41,7 @@ var cajolingServiceClientMaker = function(serviceUrl,
   var makeServiceReference = function(
       uncajoledSourceUrl, mimeType, domOpts)
   {
-    domOpts = domOpts || {};
-    var opt_idClass = domOpts ? domOpts.idClass : void 0;
-
+    var opt_idClass = domOpts && domOpts.idClass;
     return serviceUrl +
         '?url=' + encodeURIComponent(uncajoledSourceUrl) +
         '&build-version=' + cajaBuildVersion +
@@ -118,14 +116,11 @@ var cajolingServiceClientMaker = function(serviceUrl,
    * @return a promise for the module JSON returned from the cajoler.
    */
   var cajoleContent = function (url, content, mimeType, domOpts) {
-    domOpts = domOpts || {};
-    var opt_idClass = domOpts ? domOpts.idClass : void 0;
-
     var result = Q.defer();
     handleRequest(
         url,
         jsonRequestChannel.request(
-            makeServiceReference(url, mimeType, opt_idClass),
+            makeServiceReference(url, mimeType, domOpts),
             content,
             mimeType),
         result);

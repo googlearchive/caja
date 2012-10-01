@@ -4917,16 +4917,29 @@ var Domado = (function() {
           for (var n = this.documentElement.firstChild; n; n = n.nextSibling) {
             // Note: Standard def. also includes FRAMESET elements but we don't
             // currently support them.
-            if (n.nodeName === "BODY") return n;
+            if (n.nodeName === "BODY") { return n; }
           }
           return null;
         })},
-        documentElement: { enumerable: true, get: cajaVM.def(function () {
-          for (var n = this.firstChild; n; n = n.nextSibling) {
-            if (n.nodeType === 1) return n;
-          }
-          return null;
-        })},
+        documentElement: {
+          enumerable: true,
+          get: cajaVM.def(function () {
+            var n;
+            // In principle, documentElement should be our sole child, but
+            // sometimes that gets screwed up, and we end up with more than
+            // one child.  Returning something other than the pseudo <html>
+            // element will mess up many things, so we first try finding
+            // the <html> element
+            for (n = this.firstChild; n; n = n.nextSibling) {
+              if (n.nodeName === "HTML") { return n; }
+            }
+            // No <html>, so return the first child that's an element
+            for (n = this.firstChild; n; n = n.nextSibling) {
+              if (n.nodeType === 1) { return n; }
+            }
+            // None of our children are elements, fail
+            return null;
+          })},
         forms: { enumerable: true, get: nodeMethod(function () {
           var tameForms = [];
           for (var i = 0; i < document.forms.length; i++) {

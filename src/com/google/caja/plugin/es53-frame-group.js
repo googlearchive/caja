@@ -20,8 +20,8 @@
  * @requires GuestManager
  * @requires HtmlEmitter
  * @requires Q
-* @requires TamingSchema
-* @requires TamingMembrane
+ * @requires TamingSchema
+ * @requires TamingMembrane
  * @requires jsonRestTransportMaker
  * @requires URI
  * @overrides window
@@ -351,7 +351,7 @@ function ES53FrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker) {
         // unspecified mimeType here means html
         cajoler.cajoleContent(
           args.url, args.uncajoledContent, args.mimeType || 'text/html',
-          gman.idClass),
+          { idClass: gman.idClass }),
         function (jsonModule) {
           guestWin.Q.when(
             gman._loader.loadCajoledJson___(args.url, jsonModule),
