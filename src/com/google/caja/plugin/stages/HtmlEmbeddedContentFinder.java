@@ -99,6 +99,8 @@ public class HtmlEmbeddedContentFinder {
       LINK, "href");
   private static final AttribKey LINK_REL = AttribKey.forHtmlAttrib(
       LINK, "rel");
+  private static final AttribKey SCRIPT_ASYNC = AttribKey.forHtmlAttrib(
+      ElKey.HTML_WILDCARD, "async");
   private static final AttribKey SCRIPT_DEFER = AttribKey.forHtmlAttrib(
       ElKey.HTML_WILDCARD, "defer");
   private static final AttribKey SCRIPT_SRC = AttribKey.forHtmlAttrib(
@@ -113,13 +115,19 @@ public class HtmlEmbeddedContentFinder {
       ContentType expected = null;
       ExternalReference extRef = null;
       String defaultMimeType = null;
-      boolean deferred = false;
+      EmbeddedContent.Scheduling scheduling = EmbeddedContent.Scheduling.NORMAL;
       if (SCRIPT.equals(key)) {
         expected = ContentType.JS;
         extRef = externalReferenceFromAttr(el, SCRIPT_SRC);
-        deferred = Strings.eqIgnoreCase(
+        if (Strings.eqIgnoreCase(
             "defer",
-            el.getAttributeNS(SCRIPT_DEFER.ns.uri, SCRIPT_DEFER.localName));
+            el.getAttributeNS(SCRIPT_DEFER.ns.uri, SCRIPT_DEFER.localName))) {
+          scheduling = EmbeddedContent.Scheduling.DEFERRED;
+        } else if (Strings.eqIgnoreCase(
+            "async",
+            el.getAttributeNS(SCRIPT_ASYNC.ns.uri, SCRIPT_ASYNC.localName))) {
+          scheduling = EmbeddedContent.Scheduling.ASYNC;
+        }
       } else if (STYLE.equals(key)) {
         expected = ContentType.CSS;
       } else if (LINK.equals(key)
@@ -139,9 +147,9 @@ public class HtmlEmbeddedContentFinder {
             ? ContentType.fromMimeType(mimeType) : null;
         if (actualType == expected) {
           if (extRef == null) {
-            out.add(fromElementBody(el, expected, deferred));
+            out.add(fromElementBody(el, expected, scheduling));
           } else {
-            out.add(fromExternalReference(el, expected, extRef, deferred));
+            out.add(fromExternalReference(el, expected, extRef, scheduling));
           }
         } else {
           FilePosition typePos = Nodes.getFilePositionFor(el);
@@ -195,7 +203,7 @@ public class HtmlEmbeddedContentFinder {
 
   private EmbeddedContent fromExternalReference(
       Element el, final ContentType t, final ExternalReference extRef,
-      boolean deferred) {
+      EmbeddedContent.Scheduling scheduling) {
     return new EmbeddedContent(
         this, extRef.getReferencePosition(),
         new Function<UriFetcher, CharProducer>() {
@@ -252,18 +260,18 @@ public class HtmlEmbeddedContentFinder {
             return cp.clone();
           }
         },
-        extRef, deferred, el, t);
+        extRef, scheduling, el, t);
   }
 
   private EmbeddedContent fromElementBody(
-      Element el, ContentType t, boolean deferred) {
+      Element el, ContentType t, EmbeddedContent.Scheduling scheduling) {
     final CharProducer cp = textNodesToCharProducer(el, t == ContentType.JS);
     return new EmbeddedContent(
         this, cp.filePositionForOffsets(0, cp.getLimit()),
         new Function<UriFetcher, CharProducer>() {
           public CharProducer apply(UriFetcher fetcher) { return cp.clone(); }
         },
-        null, deferred, el, t);
+        null, scheduling, el, t);
   }
 
   private EmbeddedContent fromAttrib(final Attr a, final boolean uriDecode,
@@ -311,7 +319,7 @@ public class HtmlEmbeddedContentFinder {
             return this.cp.clone();
           }
         },
-        null, false, a, t);
+        null, EmbeddedContent.Scheduling.NORMAL, a, t);
   }
 
   private EmbeddedContent fromBadContent(Element el) {
@@ -323,7 +331,7 @@ public class HtmlEmbeddedContentFinder {
             return CharProducer.Factory.fromString("", pos);
           }
         },
-        null, false, el, null);
+        null, EmbeddedContent.Scheduling.NORMAL, el, null);
   }
 
   private ExternalReference externalReferenceFromAttr(Element el, AttribKey a) {

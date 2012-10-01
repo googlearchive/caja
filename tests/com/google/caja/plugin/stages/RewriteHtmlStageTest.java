@@ -204,6 +204,7 @@ public final class RewriteHtmlStageTest extends PipelineStageTestCase {
             + "<span __phid__=\"$1\"></span>"   // a()
             + "<span __phid__=\"$4\"></span><br />"  // d()
             + "</body></html>"
+            + "<span __phid__=\"finish\"></span>"  // document.close() here.
             + "<span __phid__=\"$2\"></span>"  // b()
             + "<span __phid__=\"$3\"></span>",  // c()
             ContentType.HTML),

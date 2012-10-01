@@ -302,9 +302,60 @@ function HtmlEmitter(makeDOMAccessible, base, opt_domicile, opt_guestGlobal) {
     // Signals the close of the document and fires any window.onload event
     // handlers.
     var domicile = opt_domicile;
-    if (domicile) { domicile.signalLoaded(); }
+    // Fire any deferred or async scripts and after they're all loaded,
+    // fire any onload handlers.
+    if (domicile) {
+      delayScript(function () { domicile.signalLoaded(); });
+    }
+    execDelayedScripts();
     return this;
   }
+
+
+  /**
+   * Delayed scripts that should be evaluated before signalling that the
+   * document is loaded.
+   * Elements in this are one of<ul>
+   * <li>null - script which has been executed.</li>
+   * <li>UNSATISFIED - script which cannot yet be executed.</li>
+   * <li>a function of zero arguments which encapsulates the script body.</li>
+   * </ul>
+   */
+  var delayedScripts = [];
+
+  var UNSATISFIED = {};
+
+  function delayScript(fn) {
+    if (delayedScripts) {
+      delayedScripts.push(fn);
+    } else {
+      fn();
+    }
+  }
+
+  // Execute any delayed scripts.
+  function execDelayedScripts() {
+    if (delayedScripts) {
+      // Sample length each time in case one delayed scripts execution
+      // causes another to fire.
+      for (var i = 0; i < delayedScripts.length; ++i) {
+        var delayedScript = delayedScripts[i];
+        if (!delayedScript) { continue; }
+        if (delayedScript === UNSATISFIED) { return; }
+        delayedScripts[i] = null;
+        try {
+          delayedScript();
+        } catch (_) {
+          // Any dispatching to onerror should have been handled by
+          // delayedScript so log.
+          // TODO(mikesamuel): How do we log from this file.
+          // Should domicile provide a log hook?
+        }
+      }
+      delayedScripts = null;
+    }
+  }
+
 
   function handleEmbed(params) {
     if (!opt_guestGlobal) { return; }
@@ -332,8 +383,17 @@ function HtmlEmitter(makeDOMAccessible, base, opt_domicile, opt_guestGlobal) {
       return Array.prototype.join.call(items, '');
     }
 
-    function evaluateUntrustedScript(scriptBaseUri, scriptInnerText) {
+    function evaluateUntrustedScript(
+        scriptBaseUri, scriptInnerText, opt_delayed) {
       if (!opt_guestGlobal) { return; }
+
+      if (opt_delayed) {
+        delayScript(function () {
+          evaluateUntrustedScript(scriptBaseUri, scriptInnerText, false);
+        });
+        return;
+      }
+
       var errorMessage = "SCRIPT element evaluation failed";
 
       var cajaVM = opt_guestGlobal.cajaVM;
@@ -362,9 +422,12 @@ function HtmlEmitter(makeDOMAccessible, base, opt_domicile, opt_guestGlobal) {
         opt_domicile.window.onerror(
             errorMessage,
             // URL where error was raised.
-            // TODO: Is this leaking?  Do we need to maintain an illusion here?
-            opt_guestGlobal ? opt_guestGlobal.location.href : '',
+            // If this is an external load, then we need to use that URL,
+            // but for inline scripts we maintain the illusion by using the
+            // domicile.pseudoLocation.href which was passed here.
+            scriptBaseUri,
             1  // Line number where error was raised.
+            // TODO: remap by inspection of the error if possible.
             );
       } catch (_) {
         // Ignore problems dispatching error.
@@ -387,12 +450,15 @@ function HtmlEmitter(makeDOMAccessible, base, opt_domicile, opt_guestGlobal) {
       }
     }
 
-    function resolveUntrustedExternal(func, url, mime, marker, continuation) {
+    function resolveUntrustedExternal(
+        func, url, mime, marker, continuation, opt_errorResult) {
       if (domicile && domicile.fetchUri) {
         domicile.fetchUri(url, mime,
           function (result) {
             if (result && result.html) {
               func(url, result.html);
+            } else if (opt_errorResult) {
+              func(url, opt_errorResult);
             } else {
               // TODO(jasvir): Thread logger and log the failure to fetch
             }
@@ -411,9 +477,29 @@ function HtmlEmitter(makeDOMAccessible, base, opt_domicile, opt_guestGlobal) {
         defineUntrustedStylesheet, url, 'text/css', marker, continuation);
     }
 
-    function evaluateUntrustedExternalScript(url, marker, continuation) {
+    function evaluateUntrustedExternalScript(
+        url, marker, continuation, delayed) {
+      var handler;
+      if (delayed && delayedScripts) {
+        var idx = delayedScripts.length;
+        delayedScripts[idx] = UNSATISFIED;
+        handler = function (url, src) {
+          delayedScripts[idx] = function () {
+            evaluateUntrustedScript(url, src, true);
+          };
+          // TODO(mikesamuel): should this be done via timeout?
+          execDelayedScripts();
+        };
+      } else {
+        handler = evaluateUntrustedScript;
+      }
       resolveUntrustedExternal(
-        evaluateUntrustedScript, url, 'text/javascript', marker, continuation);
+        handler, url, 'text/javascript', marker, continuation,
+        // TODO(mikesamuel): What is the appropriate voodoo here that triggers
+        // dispatch to the module global onerror handler?
+        // Can we prepackage a 'throw new Error("not loaded")' module, and load
+        // that when loading otherwise fails?
+        'throw new Error("not loaded")');
     }
 
     function lookupAttr(attribs, attr) {
@@ -437,7 +523,11 @@ function HtmlEmitter(makeDOMAccessible, base, opt_domicile, opt_guestGlobal) {
     // Chunks of CDATA content of the type above which need to be specially
     // processed and interpreted.
     var cdataContent = [];
+    // The URL of any pending CDATA element, for example the value of the
+    // <script src> attribute.
     var pendingExternal = undefined;
+    // True iff the pending CDATA tag is defer or async.
+    var pendingDelayed = false;
     var documentLoaded = undefined;
     var depth = 0;
 
@@ -828,9 +918,12 @@ function HtmlEmitter(makeDOMAccessible, base, opt_domicile, opt_guestGlobal) {
               cdataContentType = html4.eflags.SCRIPT;
               pendingExternal = scriptSrc;
             }
+            pendingDelayed = !!(lookupAttr(attribs, 'defer')
+                                || lookupAttr(attribs, 'async'));
           } else if (tagName === 'style') {
             cdataContentType = html4.eflags.STYLE;
             pendingExternal = undefined;
+            pendingDelayed = false;
           } else if ('link' === tagName) {
             // Link types are case insensitive
             var rel = lookupAttr(attribs, 'rel');
@@ -861,7 +954,7 @@ function HtmlEmitter(makeDOMAccessible, base, opt_domicile, opt_guestGlobal) {
             if (isScript) {
               var res = resolveUriRelativeToDocument(pendingExternal);
               evaluateUntrustedExternalScript(
-                res, marker, continuation);
+                res, marker, continuation, pendingDelayed);
             }
             pendingExternal = undefined;
           } else {
@@ -872,11 +965,13 @@ function HtmlEmitter(makeDOMAccessible, base, opt_domicile, opt_guestGlobal) {
               // script, but that has any ID attribute properly rewritten.
               // It is not horribly uncommon for scripts to look for the last
               // script element as a proxy for the insertion cursor.
-              evaluateUntrustedScript(domicile.pseudoLocation.href, content);
+              evaluateUntrustedScript(
+                domicile.pseudoLocation.href, content, pendingDelayed);
             } else {
               defineUntrustedStylesheet(domicile.pseudoLocation.href, content);
             }
           }
+          pendingDelayed = false;
         }
         insertionMode.endTag(tagName);
       },
@@ -915,6 +1010,7 @@ function HtmlEmitter(makeDOMAccessible, base, opt_domicile, opt_guestGlobal) {
      *     varargs, and the HTML is the concatenation of all the arguments.
      */
     var tameDocWrite = function write(html_varargs) {
+      // TODO: Do we need to fail early if documentLoaded is undefined.
       var htmlText = concat(arguments);
       if (!insertionPoint) {
         // Handles case 3 where the document has been closed.

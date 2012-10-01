@@ -39,7 +39,7 @@
  */
 
 function GuestManager(frameTamingSchema, frameTamingMembrane, divs, hostBaseUrl,
-  domicile, guestWin, USELESS, runImpl) {
+  domicile, htmlEmitter, guestWin, USELESS, runImpl) {
   // TODO(felix8a): this api needs to be simplified; it's difficult to
   // explain what all the parameters mean in different situations.
   var args = {
@@ -83,6 +83,7 @@ function GuestManager(frameTamingSchema, frameTamingMembrane, divs, hostBaseUrl,
 
     // Internal state
     domicile: domicile,      // Currently exposed only for the test suite
+    htmlEmitter: htmlEmitter,
 
     rewriteUri: domicile ? domicile.rewriteUri : function() { return null; },
 

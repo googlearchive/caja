@@ -22,6 +22,7 @@ import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.ParseException;
 import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.MutableParseTreeNode;
+import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.Visitor;
 import com.google.caja.parser.css.CssTree;
 import com.google.caja.parser.html.AttribKey;
@@ -113,6 +114,8 @@ final class HtmlExtractor {
   final JobCache jobCache;
   final Jobs jobs;
   final JobEnvelope htmlEnv;
+  private boolean hasPlaceholders;
+  private boolean hasDeferredOrAsyncScripts;
 
   HtmlExtractor(
       HtmlSchema htmlSchema, JobCache jobCache, Jobs jobs,
@@ -124,11 +127,11 @@ final class HtmlExtractor {
   }
 
   boolean extract() {
-    boolean hasPlaceholders = false;
     Node root = ((Dom) htmlEnv.job.getRoot()).getValue();
     HtmlEmbeddedContentFinder finder = new HtmlEmbeddedContentFinder(
         htmlSchema, htmlEnv.job.getBaseUri(),
         jobs.getMessageQueue(), jobs.getMessageContext());
+
     for (EmbeddedContent content : finder.findEmbeddedContent(root)) {
       Node src = content.getSource();
       if (content.getSource() instanceof Element) {
@@ -141,7 +144,7 @@ final class HtmlExtractor {
         //     ->  <style>(cajoled, inlined styles)</style>
         Element el = (Element) content.getSource();
         if (SCRIPT.is(el)) {
-          hasPlaceholders |= rewriteScriptEl(root, content);
+          rewriteScriptEl(root, content);
         } else if (STYLE.is(el)) {
           rewriteStyleEl(content);
         } else if (LINK.is(el)) {
@@ -164,7 +167,7 @@ final class HtmlExtractor {
   private static final AttribKey BODY_ONLOAD
       = AttribKey.forHtmlAttrib(BODY, "onload");
 
-  private boolean rewriteScriptEl(Node root, EmbeddedContent c) {
+  private void rewriteScriptEl(Node root, EmbeddedContent c) {
     Element scriptEl = (Element) c.getSource();
     Node parent = scriptEl.getParentNode();
 
@@ -178,14 +181,8 @@ final class HtmlExtractor {
       boolean minify = pm.getPrecajoleMinify();
       CajoledModule m = precajoled.lookupSource(sourceText, minify);
       if (m != null) {
-        Element placeholder = placeholderFor(scriptEl, m);
-        if (c.isDeferred()) {
-          parent.removeChild(scriptEl);
-          root.appendChild(placeholder);
-        } else {
-          parent.replaceChild(placeholder, scriptEl);
-        }
-        return true;
+        substitutePlaceholder(c, m, root);
+        return;
       }
     }
 
@@ -198,23 +195,57 @@ final class HtmlExtractor {
     } catch (ParseException ex) {
       ex.toMessageQueue(jobs.getMessageQueue());
       parent.removeChild(scriptEl);
-      return false;
+      return;
     }
 
-    if (parsedScriptBody == null || parsedScriptBody.children().isEmpty()) {
+    substitutePlaceholder(c, parsedScriptBody, root);
+  }
+
+  // Replace the script tag with a placeholder that points to the inlined
+  // script.
+  private void substitutePlaceholder(
+      EmbeddedContent c, ParseTreeNode scriptBody, Node root) {
+    Element scriptEl = (Element) c.getSource();
+    Node parent = scriptEl.getParentNode();
+
+    if (scriptBody == null || scriptBody.children().isEmpty()) {
       parent.removeChild(scriptEl);
-      return false;
-    } else {
-      Element placeholder = placeholderFor(scriptEl, parsedScriptBody);
-      // Replace the script tag with a placeholder that points to the inlined
-      // script.
-      if (c.isDeferred()) {
-        parent.removeChild(scriptEl);
-        root.appendChild(placeholder);
-      } else {
-        parent.replaceChild(placeholder, scriptEl);
+      return;
+    }
+
+    Element placeholder = placeholderFor(scriptEl, scriptBody);
+
+    if (c.isDeferredOrAsync()) {
+      if (!hasDeferredOrAsyncScripts) {
+        hasDeferredOrAsyncScripts = true;
+        // We move deferred and async scripts to the end of the root.
+        // Make sure there is some content between the last DOM node and the
+        // first deferred script, so that the document is closed between any
+        // in-band scripts at the end of file and the first deferred or
+        // async script.
+        Element docClose = root.getOwnerDocument().createElementNS(
+            Namespaces.HTML_NAMESPACE_URI, "span");
+        docClose.setAttributeNS(
+            Placeholder.ID_ATTR.ns.uri, Placeholder.ID_ATTR.localName,
+            "finish");
+        Nodes.setFilePositionFor(
+            docClose,
+            FilePosition.startOf(Nodes.getFilePositionFor(scriptEl)));
+        root.appendChild(docClose);
       }
-      return true;
+      parent.removeChild(scriptEl);
+      root.appendChild(placeholder);
+    } else {
+      parent.replaceChild(placeholder, scriptEl);
+    }
+    hasPlaceholders = true;
+  }
+
+  private Element placeholderFor(Node n, ParseTreeNode scriptBody) {
+    if (scriptBody instanceof Block) {
+      return placeholderFor(n, (Block) scriptBody);
+    } else {  // scriptBody instanceof CajoledModule
+      return placeholderFor(n, (CajoledModule) scriptBody);
     }
   }
 

@@ -3,15 +3,15 @@ function module() {
     // Set up local variables required for HTML support.
     var el___;
     var emitter___ = IMPORTS___.htmlEmitter___;
-    el___ = emitter___.byId('id_2___');
+    el___ = emitter___.byId('id_4___');
     // Remove the bits the first script shouldn't see.
-    emitter___.attach('id_2___');
+    emitter___.attach('id_4___');
     // Attach the onclick handler.
-    var c_1___ = ___.markFuncFreeze(function (event, thisNode___) {
+    var c_3___ = ___.markFuncFreeze(function (event, thisNode___) {
       wasClicked(thisNode___);
     });
     el___.onclick = function (event) {
-      return ___.plugin_dispatchEvent___(this, event, ___.getId(IMPORTS___), c_1___);
+      return ___.plugin_dispatchEvent___(this, event, ___.getId(IMPORTS___), c_3___);
     };
     // Remove the manufactured ID
     emitter___.rmAttr(el___, 'id');
@@ -31,7 +31,7 @@ function module() {
     var el___;
     var emitter___ = IMPORTS___.htmlEmitter___;
     // Attach the tail, taking the text out of the manufactured SPAN.
-    emitter___.discard(emitter___.attach('id_3___'));
+    emitter___.discard(emitter___.attach('id_5___'));
   }
 }
 function module() {
@@ -49,12 +49,12 @@ function module() {
     var emitter___ = IMPORTS___.htmlEmitter___;
     // Since the two handlers have the same text, they should share the
     // same handler function.
-    el___ = emitter___.byId('id_4___');
-    var c_1___ = ___.markFuncFreeze(function (event, thisNode___) {
+    el___ = emitter___.byId('id_6___');
+    var c_3___ = ___.markFuncFreeze(function (event, thisNode___) {
         wasClicked(thisNode___);
     });
     el___.onclick = function (event) {
-        return ___.plugin_dispatchEvent___(this, event, ___.getId(IMPORTS___), c_1___);
+        return ___.plugin_dispatchEvent___(this, event, ___.getId(IMPORTS___), c_3___);
     };
     // Pass the 'target' attribute of the <a> through the client side policy
     emitter___.setAttr(

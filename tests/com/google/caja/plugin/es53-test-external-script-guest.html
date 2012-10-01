@@ -22,7 +22,8 @@
   ></div
   ><script
   >window.executionOrder = "1";
-    window.onload = function () { window.executionOrder += "7" }</script
+   window.onload = function () { window.executionOrder += "8"; };</script
+  ><script defer="defer">window.executionOrder += "7";</script
   ><script src="es53-test-external-doc-update.js"
   ></script
   ><script src="es53-test-external-communicate-1.js"
@@ -36,8 +37,8 @@
   >this.styleOrder += ' then ' +
       window.getComputedStyle(
         document.getElementById("hello"), null).display;</script
-  ><script     // inline scripts
-  >this.executionOrder = this.executionOrder + '4';</script
+  ><script
+  >/* inline scripts */this.executionOrder = this.executionOrder + '4';</script
   ><script src="es53-test-external-communicate-2.js"
   ></script
   ><script src="es53-test-external-doc-write.js"
@@ -63,7 +64,6 @@
    var myscript = document.createElement('script');
    myscript.src = "es53-test-external-dynamic.js";
    document.body.appendChild(myscript);</script
-  ></script
   >3</div>
 
 <br>
@@ -71,7 +71,7 @@
   jsunitRegisterIf(inES5Mode,
                    'testExternalScripts',
                    function testExternalScripts () {
-    assertEquals("Execution order", "1234567", executionOrder);
+    assertEquals("Execution order", "12345678", executionOrder);
     assertEquals("Style loading", "block then inline", styleOrder);
     pass('testExternalScripts');
   });

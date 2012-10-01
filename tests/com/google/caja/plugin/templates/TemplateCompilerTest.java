@@ -19,14 +19,13 @@ import com.google.caja.lang.html.HtmlSchema;
 import com.google.caja.lexer.ExternalReference;
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.InputSource;
-import com.google.caja.lexer.ParseException;
 import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.MutableParseTreeNode;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.Visitor;
 import com.google.caja.parser.css.CssTree;
+import com.google.caja.parser.html.Dom;
 import com.google.caja.parser.html.DomParser;
-import com.google.caja.parser.html.Namespaces;
 import com.google.caja.parser.html.Nodes;
 import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.FormalParam;
@@ -36,20 +35,21 @@ import com.google.caja.parser.js.Identifier;
 import com.google.caja.parser.js.TranslatedCode;
 import com.google.caja.plugin.CssDynamicExpressionRewriter;
 import com.google.caja.plugin.CssRewriter;
+import com.google.caja.plugin.Job;
 import com.google.caja.plugin.JobEnvelope;
+import com.google.caja.plugin.Jobs;
 import com.google.caja.plugin.LoaderType;
-import com.google.caja.plugin.Placeholder;
 import com.google.caja.plugin.PluginMeta;
 import com.google.caja.plugin.UriEffect;
 import com.google.caja.plugin.UriFetcher;
 import com.google.caja.plugin.UriPolicy;
 import com.google.caja.plugin.UriPolicyHintKey;
-import com.google.caja.plugin.stages.JobCache;
+import com.google.caja.plugin.stages.RewriteHtmlStage;
+import com.google.caja.plugin.stages.StubJobCache;
 import com.google.caja.reporting.MarkupRenderMode;
 import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.util.CajaTestCase;
-import com.google.caja.util.ContentType;
 import com.google.caja.util.Lists;
 import com.google.caja.util.Pair;
 
@@ -61,7 +61,6 @@ import java.util.Map;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.DocumentFragment;
-import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
 public class TemplateCompilerTest extends CajaTestCase {
@@ -120,16 +119,16 @@ public class TemplateCompilerTest extends CajaTestCase {
         htmlFragment(fromString(
             ""
             + "<p id=\"a\">a</p>"
-            + "<script type=\"text/javascript\">1;</script>")),
+            + "<script type=\"text/javascript\" defer=defer>1;</script>")),
         htmlFragment(fromString(
-            "<p id=\"id_1___\">a</p>")),
+            "<p id=\"id_2___\">a</p>")),
         js(fromString(
             ""
             + "function module() {"
             + "  {"
             + "    var el___;"
             + "    var emitter___ = IMPORTS___.htmlEmitter___;"
-            + "    el___ = emitter___.byId('id_1___');"
+            + "    el___ = emitter___.byId('id_2___');"
             + "    emitter___.setAttr("
             + "        el___, 'id', 'a-' + IMPORTS___.getIdClass___());"
             + "    el___ = emitter___.finish();"
@@ -446,11 +445,11 @@ public class TemplateCompilerTest extends CajaTestCase {
         new Block());
   }
 
-  public final void testDeferredScripts() throws Exception {
+  public final void testAsyncScripts() throws Exception {
     // If all the scripts are deferred, there is never any need to detach any
     // of the DOM tree.
     assertSafeHtml(
-        htmlFragment(fromString("Hi<script>alert('howdy');</script>\n")),
+        htmlFragment(fromString("Hi<script async>alert('howdy');</script>\n")),
         htmlFragment(fromString("Hi")),
         js(fromString(
             ""
@@ -459,7 +458,7 @@ public class TemplateCompilerTest extends CajaTestCase {
             + "    { alert('howdy'); }"
             + "  } catch (ex___) {"
             + "    ___.getNewModuleHandler().handleUncaughtException("
-            + "        ex___, onerror, 'testDeferredScripts', '1');"
+            + "        ex___, onerror, 'testAsyncScripts', '1');"
             + "  }"
             + "}"
             + "function module() {"
@@ -532,14 +531,14 @@ public class TemplateCompilerTest extends CajaTestCase {
             // which leaves it in the same position according to the
             // depth-first-ordering ignoring end tags used by the HTML emitter.
             + "<textarea>Howdy!</textarea>"
-            + "<span id=\"id_1___\"></span>"
+            + "<span id=\"id_2___\"></span>"
             + "<textarea>Bye!</textarea>")),
         js(fromString(
             ""
             + "function module() {"
             + "  {"
             + "    var el___; var emitter___ = IMPORTS___.htmlEmitter___;"
-            + "    emitter___.discard(emitter___.attach('id_1___'));"
+            + "    emitter___.discard(emitter___.attach('id_2___'));"
             + "  }"
             + "}"
             + "function module() {"
@@ -624,21 +623,21 @@ public class TemplateCompilerTest extends CajaTestCase {
             ""
             + "<div id=\"a\"></div>"
             + "<div id=\"b\"></div>"
-            + "<script>1</script>")),
+            + "<script defer>1</script>")),
         htmlFragment(fromString(
             ""
-            + "<div id=\"id_1___\"></div>"
-            + "<div id=\"id_2___\"></div>")),
+            + "<div id=\"id_2___\"></div>"
+            + "<div id=\"id_3___\"></div>")),
         js(fromString(
             ""
             + "function module() {"
             + "  {"
             + "    var el___;"
             + "    var emitter___ = IMPORTS___.htmlEmitter___;"
-            + "    el___ = emitter___.byId('id_1___');"
+            + "    el___ = emitter___.byId('id_2___');"
             + "    emitter___.setAttr(el___, 'id',"
             + "      'a-' + IMPORTS___.getIdClass___());"
-            + "    el___ = emitter___.byId('id_2___');"
+            + "    el___ = emitter___.byId('id_3___');"
             + "    emitter___.setAttr(el___, 'id',"
             + "      'b-' + IMPORTS___.getIdClass___());"
             + "    el___ = emitter___.finish();"
@@ -1060,28 +1059,129 @@ public class TemplateCompilerTest extends CajaTestCase {
         true);
   }
 
+  public final void testDeferredScript1() throws Exception {
+    assertSafeHtml(
+        htmlFragment(fromString(
+            "<div id=x>Foo</div><script defer>alert()</script>")),
+        htmlFragment(fromString(
+            "<div id=\"id_2___\">Foo</div>")),
+        js(fromString(""
+            + "function module() {"
+            + "  {"
+            + "    var el___;"
+            + "    var emitter___ = IMPORTS___.htmlEmitter___;"
+            + "    el___ = emitter___.byId('id_2___');"
+            + "    emitter___.setAttr("
+            + "        el___, 'id', 'x-' + IMPORTS___.getIdClass___());"
+            + "    el___ = emitter___.finish();"
+            + "  }"
+            + "}"
+            + "function module() {"
+            + "  try {\n"
+            + "    { alert(); }"
+            + "  } catch (ex___) {"
+            + "    ___.getNewModuleHandler().handleUncaughtException("
+            + "      ex___, onerror, 'testDeferredScript1', '1');"
+            + "  }"
+            + "}"
+            + "function module() {"
+            + "  {"
+            + "    IMPORTS___.htmlEmitter___.signalLoaded();"
+            + "  }"
+            + "}")),
+        true);
+  }
+
+  public final void testDeferredScript2() throws Exception {
+    assertSafeHtml(
+        htmlFragment(fromString(
+            "<script defer>alert()</script><div id=x>Foo</div>")),
+        htmlFragment(fromString(
+            "<div id=\"id_2___\">Foo</div>")),
+        js(fromString(""
+            + "function module() {"
+            + "  {"
+            + "    var el___;"
+            + "    var emitter___ = IMPORTS___.htmlEmitter___;"
+            + "    el___ = emitter___.byId('id_2___');"
+            + "    emitter___.setAttr("
+            + "        el___, 'id', 'x-' + IMPORTS___.getIdClass___());"
+            + "    el___ = emitter___.finish();"
+            + "  }"
+            + "}"
+            + "function module() {"
+            + "  try {\n"
+            + "    { alert(); }"
+            + "  } catch (ex___) {"
+            + "    ___.getNewModuleHandler().handleUncaughtException("
+            + "      ex___, onerror, 'testDeferredScript2', '1');"
+            + "  }"
+            + "}"
+            + "function module() {"
+            + "  {"
+            + "    IMPORTS___.htmlEmitter___.signalLoaded();"
+            + "  }"
+            + "}")),
+        true);
+  }
+
+  public final void testScriptAtEnd() throws Exception {
+    assertSafeHtml(
+        htmlFragment(fromString(
+            "<div id=x>Foo</div><script>alert()</script>")),
+        htmlFragment(fromString(
+            "<div id=\"id_2___\">Foo<span id=\"id_3___\"></span></div>")),
+        js(fromString(""
+            + "function module() {"
+            + "  {"
+            + "    var el___;"
+            + "    var emitter___ = IMPORTS___.htmlEmitter___;"
+            + "    el___ = emitter___.byId('id_2___');"
+            + "    emitter___.setAttr("
+            + "        el___, 'id', 'x-' + IMPORTS___.getIdClass___());"
+            + "    emitter___.discard(emitter___.attach('id_3___'));"
+            + "  }"
+            + "}"
+            + "function module() {"
+            + "  try {\n"
+            + "    { alert(); }"
+            + "  } catch (ex___) {"
+            + "    ___.getNewModuleHandler().handleUncaughtException("
+            + "      ex___, onerror, 'testScriptAtEnd', '1');"
+            + "  }"
+            + "}"
+            + "function module() {"
+            + "  {"
+            + "    var el___;"
+            + "    var emitter___ = IMPORTS___.htmlEmitter___;"
+            + "    el___ = emitter___.finish();"
+            + "    emitter___.signalLoaded();"
+            + "  }"
+            + "}")),
+        true);
+  }
+
   private void assertSafeHtml(
-      DocumentFragment input, DocumentFragment htmlGolden, Block jsGolden)
-      throws ParseException {
+      DocumentFragment input, DocumentFragment htmlGolden, Block jsGolden) {
     assertSafeHtml(input, htmlGolden, jsGolden, true);
   }
 
   private void assertSafeHtml(
       DocumentFragment input, DocumentFragment htmlGolden, Block jsGolden,
-      boolean checkErrors) throws ParseException {
+      boolean checkErrors) {
     assertSafeHtml(
         Collections.singletonList(input), htmlGolden, jsGolden, checkErrors);
   }
 
   private void assertSafeHtml(
       List<DocumentFragment> inputs, DocumentFragment htmlGolden,
-      Block jsGolden) throws ParseException {
+      Block jsGolden) {
     assertSafeHtml(inputs, htmlGolden, jsGolden, true);
   }
 
   private void assertSafeHtml(
       List<DocumentFragment> inputs, DocumentFragment htmlGolden,
-      Block jsGolden, boolean checkErrors) throws ParseException {
+      Block jsGolden, boolean checkErrors) {
     List<IhtmlRoot> html = Lists.newArrayList();
     List<ValidatedStylesheet> css = Lists.newArrayList();
     List<ScriptPlaceholder> extractedScripts = Lists.newArrayList();
@@ -1117,69 +1217,38 @@ public class TemplateCompilerTest extends CajaTestCase {
   private void extractScriptsAndStyles(
       DocumentFragment n, URI baseUri, List<IhtmlRoot> htmlOut,
       List<ValidatedStylesheet> cssOut,
-      List<ScriptPlaceholder> extractedScripts)
-      throws ParseException {
-    n = extractScripts(n, extractedScripts);
-    htmlOut.add(new IhtmlRoot(
-        new JobEnvelope(null, JobCache.none(), ContentType.HTML, false, null),
-        n, baseUri));
-    extractStyles(n, cssOut);
-  }
+      List<ScriptPlaceholder> extractedScripts) {
+    RewriteHtmlStage rhs = new RewriteHtmlStage(
+        HtmlSchema.getDefault(mq), new StubJobCache());
+    Jobs jobs = new Jobs(mc, mq, meta);
+    jobs.getJobs().add(JobEnvelope.of(Job.domJob(new Dom(n), baseUri)));
+    rhs.apply(jobs);
 
-  private static String HTML_NS = Namespaces.HTML_NAMESPACE_URI;
-
-  private <N extends Node> N extractScripts(N n,
-      List<ScriptPlaceholder> extractedScripts) throws ParseException {
-    if (n instanceof Element && "script".equals(n.getLocalName())
-        && HTML_NS.equals(n.getNamespaceURI())) {
-      String id = "$" + extractedScripts.size();
-      // According to nodeType, n is an Element, and Placeholder.make returns
-      // an Element, so this will always succeed if N is not a _proper subtype_
-      // of Element.
-      @SuppressWarnings("unchecked")
-      N placeholder = (N)Placeholder.make(n, id);
-      if (n.getParentNode() != null) {
-        n.getParentNode().replaceChild(placeholder, n);
+    for (JobEnvelope j : jobs.getJobs()) {
+      switch (j.job.getType()) {
+        case HTML:
+          DocumentFragment f = (DocumentFragment)
+            ((Dom) j.job.getRoot()).getValue();
+          htmlOut.add(new IhtmlRoot(j, f, baseUri));
+          break;
+        case JS:
+          extractedScripts.add(new ScriptPlaceholder(j, j.job.getRoot()));
+          break;
+        case CSS:
+          CssTree.StyleSheet css = (CssTree.StyleSheet) j.job.getRoot();
+          CssRewriter rw = new CssRewriter(
+              null, CssSchema.getDefaultCss21Schema(mq), mq);
+          rw.rewrite(AncestorChain.instance(css));
+          CssDynamicExpressionRewriter rrw =
+              new CssDynamicExpressionRewriter(meta);
+          rrw.rewriteCss(css);
+          cssOut.add(new ValidatedStylesheet(j, css, is.getUri()));
+          break;
+        default:
+          throw new AssertionError(j.job.getType().toString());
       }
-      FilePosition pos = Nodes.getFilePositionFor(n);
-      String text = n.getFirstChild().getNodeValue();
-      Block js = js(fromString(text, pos));
-      extractedScripts.add(new ScriptPlaceholder(
-          new JobEnvelope(id, JobCache.none(), ContentType.JS, false, null),
-          js));
-      Nodes.setFilePositionFor(placeholder, Nodes.getFilePositionFor(n));
-      return placeholder;
     }
-    for (Node child : Nodes.childrenOf(n)) {
-      extractScripts(child, extractedScripts);
-    }
-    return n;
-  }
-
-  private void extractStyles(Node n, List<ValidatedStylesheet> styles)
-      throws ParseException {
-    if (n instanceof Element && "style".equals(n.getNodeName())
-        && HTML_NS.equals(n.getNamespaceURI())) {
-      FilePosition pos = Nodes.getFilePositionFor(n);
-      if (n.getFirstChild() != null) {
-        String text = n.getFirstChild().getNodeValue();
-        CssTree.StyleSheet css = css(fromString(text, pos));
-        CssRewriter rw = new CssRewriter(
-            null, CssSchema.getDefaultCss21Schema(mq), mq);
-        rw.rewrite(AncestorChain.instance(css));
-        CssDynamicExpressionRewriter rrw =
-            new CssDynamicExpressionRewriter(meta);
-        rrw.rewriteCss(css);
-        assertMessagesLessSevereThan(MessageLevel.ERROR);
-        styles.add(new ValidatedStylesheet(
-            new JobEnvelope(
-                null, JobCache.none(), ContentType.CSS, false, null),
-            css, is.getUri()));
-      }
-      n.getParentNode().removeChild(n);
-      return;
-    }
-    for (Node child : Nodes.childrenOf(n)) { extractStyles(child, styles); }
+    assertMessagesLessSevereThan(MessageLevel.ERROR);
   }
 
   private Block consolidate(List<SafeJsChunk> chunks) {

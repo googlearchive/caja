@@ -44,19 +44,19 @@ public final class EmbeddedContent {
   private final FilePosition pos;
   private final Function<UriFetcher, CharProducer> getter;
   private final ExternalReference contentLocation;
-  private final boolean deferred;
+  private final Scheduling scheduling;
   private final Node source;
   private final ContentType type;
 
   EmbeddedContent(
       HtmlEmbeddedContentFinder finder, FilePosition pos,
       Function<UriFetcher, CharProducer> getter,
-      ExternalReference contentLocation, boolean deferred, Node source,
-      ContentType type) {
+      ExternalReference contentLocation, Scheduling scheduling,
+      Node source, ContentType type) {
     this.finder = finder;
     this.pos = pos;
     this.getter = getter;
-    this.deferred = deferred;
+    this.scheduling = scheduling;
     this.contentLocation = contentLocation;
     this.source = source;
     this.type = type;
@@ -80,7 +80,13 @@ public final class EmbeddedContent {
   }
   /** Non null for remote content. */
   public ExternalReference getContentLocation() { return contentLocation; }
-  public boolean isDeferred() { return deferred; }
+  public boolean isDeferredOrAsync() {
+    switch (scheduling) {
+      case DEFERRED: case ASYNC: return true;
+      case NORMAL: return false;
+    }
+    throw new AssertionError("Missing case " + scheduling);
+  }
   public Node getSource() { return source; }
   /**
    * Returns a parse tree node containing the content.  For content from
@@ -122,4 +128,28 @@ public final class EmbeddedContent {
   }
   /** Null for bad content. */
   public ContentType getType() { return type; }
+
+  /**
+   * Describes how loading of embedded content affects the interpretation of
+   * page content.
+   */
+  public enum Scheduling {
+    /**
+     * Any side-effects that might affect the interpretation of subsequent page
+     * content must occur before parsing precedes past the point at which the
+     * content was embedded.
+     */
+    NORMAL,
+    /**
+     * Loaded out of band but must execute in-order with other deferred
+     * scripts.
+     */
+    DEFERRED,
+    /**
+     * Loaded out of band and side-effects can be executed whenever the
+     * loading document's event loop is free.
+     */
+    ASYNC,
+    ;
+  }
 }

@@ -211,10 +211,13 @@ function SESFrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker) {
       var frameTamingSchema = TamingSchema(tamingHelper);
       var frameTamingMembrane =
           TamingMembrane(tamingHelper, frameTamingSchema.control);
-      var domicile = makeDomicile(
+      var domicileAndEmitter = makeDomicileAndEmitter(
           frameTamingMembrane, divs, uriPolicy, guestWin);
+      var domicile = domicileAndEmitter && domicileAndEmitter[0];
+      var htmlEmitter = domicileAndEmitter && domicileAndEmitter[1];
       var gman = GuestManager(frameTamingSchema, frameTamingMembrane, divs,
-          cajaInt.documentBaseUrl(), domicile, guestWin, USELESS, sesRun);
+          cajaInt.documentBaseUrl(), domicile, htmlEmitter, guestWin, USELESS,
+          sesRun);
       guestWin.ses.DISABLE_SECURITY_FOR_DEBUGGER = unsafe;
       es5ready(gman);
     });
@@ -222,7 +225,8 @@ function SESFrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker) {
 
   //----------------
 
-  function makeDomicile(frameTamingMembrane, divs, uriPolicy, guestWin) {
+  function makeDomicileAndEmitter(
+      frameTamingMembrane, divs, uriPolicy, guestWin) {
     if (!divs.inner) { return null; }
 
     function FeralTwinStub() {}
@@ -264,7 +268,7 @@ function SESFrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker) {
 
     guestWin.cajaVM.copyToImports(imports, guestWin.cajaVM.sharedImports);
 
-    void new tamingWin.HtmlEmitter(
+    var htmlEmitter = new tamingWin.HtmlEmitter(
       identity, domicile.htmlEmitterTarget, domicile, guestWin);
     //imports.rewriteUriInCss___ = domicile.rewriteUriInCss.bind(domicile);
     //imports.rewriteUriInAttribute___ =
@@ -299,7 +303,7 @@ function SESFrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker) {
           pluginId, handler, args);
       };
 
-    return domicile;
+    return [domicile, htmlEmitter];
   }
 
   function identity(x) { return x; }
@@ -389,7 +393,8 @@ function SESFrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker) {
         return Q.when(writeComplete, function (importsAgain) {
             // TODO(kpreid): Make fetch() support streaming download,
             // then use it here via repeated document.write().
-            gman.domicile.signalLoaded();
+            gman.htmlEmitter.finish();
+            gman.htmlEmitter.signalLoaded();
             return function() {};
         });
       } else {

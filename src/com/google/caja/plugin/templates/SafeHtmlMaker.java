@@ -236,6 +236,19 @@ final class SafeHtmlMaker {
       super(source);
       this.body = body;
     }
+
+    @Override
+    public String toString() {
+      return "(" + getClass().getSimpleName() + ")";
+    }
+  }
+
+  /** Marks the end of the document. */
+  private static final class TailBone extends DomBone {
+    TailBone(JobEnvelope source) {
+      super(source);
+    }
+
     @Override
     public String toString() {
       return "(" + getClass().getSimpleName() + ")";
@@ -254,8 +267,12 @@ final class SafeHtmlMaker {
   private Node makeSkeleton(Node n, JobEnvelope src, List<DomBone> bones) {
     String placeholderId = getPlaceholderId(n);
     if (placeholderId != null) {
-      ScriptPlaceholder ph = scriptsPerPlaceholder.get(placeholderId);
-      bones.add(new ScriptBone(ph.source, ph.body));
+      if ("finish".equals(placeholderId)) {
+        bones.add(new TailBone(src));
+      } else {
+        ScriptPlaceholder ph = scriptsPerPlaceholder.get(placeholderId);
+        bones.add(new ScriptBone(ph.source, ph.body));
+      }
       return null;
     }
 
@@ -266,16 +283,18 @@ final class SafeHtmlMaker {
         Element el = (Element) n;
         FilePosition pos = Nodes.getFilePositionFor(el);
         safe = doc.createElementNS(el.getNamespaceURI(), el.getTagName());
-        Nodes.setFilePositionFor(safe, pos);
         bones.add(new NodeBone(src, n, safe));
 
         for (Node child : Nodes.childrenOf(el)) {
           Node safeChild = makeSkeleton(child, src, bones);
           if (safeChild != null) { safe.appendChild(safeChild); }
         }
+        Nodes.setFilePositionFor(safe, pos);
         break;
       case Node.TEXT_NODE:
-        safe = doc.createTextNode(n.getNodeValue());
+        String text = n.getNodeValue();
+        if ("".equals(text)) { return null; }
+        safe = doc.createTextNode(text);
         Nodes.setFilePositionFor(safe, Nodes.getFilePositionFor(n));
         bones.add(new NodeBone(src, n, safe));
         break;
@@ -297,25 +316,16 @@ final class SafeHtmlMaker {
    * dynamic attributes to the static HTML and that executes inline scripts.
    */
   private void fleshOutSkeleton(List<DomBone> bones) {
-    int n = bones.size();
-    // The index of the first script bone not followed by any non-script bones.
-    int firstDeferredScriptIndex = n;
-    while (firstDeferredScriptIndex > 0
-           && bones.get(firstDeferredScriptIndex - 1) instanceof ScriptBone) {
-      --firstDeferredScriptIndex;
-    }
-
-    for (int i = 0; i < n; ++i) {
-      if (i == firstDeferredScriptIndex) {
-        finish();
-      }
+    for (int i = 0, n = bones.size(); i < n; ++i) {
       DomBone bone = bones.get(i);
       if (bone instanceof ScriptBone) {
         fleshOutScriptBlock((ScriptBone) bone);
+      } else if (bone instanceof TailBone) {
+        finish();
+        continue;
       } else {
         NodeBone nb = (NodeBone) bone;
-        boolean splitDom = i + 1 < n && bones.get(i + 1) instanceof ScriptBone
-            && i + 1 != firstDeferredScriptIndex;
+        boolean splitDom = i + 1 < n && bones.get(i + 1) instanceof ScriptBone;
         if (splitDom) { requireModuleDefs(bone.source); }
         if (nb.node instanceof Text) {
           if (splitDom) { insertPlaceholderAfter(nb); }

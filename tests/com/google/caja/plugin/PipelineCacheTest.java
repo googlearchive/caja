@@ -382,7 +382,7 @@ public class PipelineCacheTest extends PipelineStageTestCase {
     assertPipeline(
         job(
             CACHEABLE_HELLO_WORLD_CSS + CACHEABLE_HELLO_WORLD_HTML
-            + CACHEABLE_HELLO_WORLD_JS,
+            + CACHEABLE_HELLO_WORLD_JS_DEFERRED,
             ContentType.HTML),
         job(REWRITTEN_HELLO_WORLD_CSS, ContentType.HTML),
         job(REWRITTEN_HELLO_WORLD_HTML, ContentType.HTML),
@@ -395,7 +395,7 @@ public class PipelineCacheTest extends PipelineStageTestCase {
     assertPipeline(
         job(
             CACHEABLE_HELLO_WORLD_CSS + CACHEABLE_HELLO_WORLD_HTML
-            + CACHEABLE_HELLO_WORLD_JS_VARIANT,
+            + CACHEABLE_HELLO_WORLD_JS_VARIANT_DEFERRED,
             ContentType.HTML),
         job(REWRITTEN_HELLO_WORLD_CSS, ContentType.HTML),
         job(REWRITTEN_HELLO_WORLD_HTML, ContentType.HTML),
@@ -411,7 +411,7 @@ public class PipelineCacheTest extends PipelineStageTestCase {
     assertPipeline(
         job(
             CACHEABLE_HELLO_WORLD_CSS + CACHEABLE_HELLO_WORLD_HTML
-            + CACHEABLE_HELLO_WORLD_JS,
+            + CACHEABLE_HELLO_WORLD_JS_DEFERRED,
             ContentType.HTML),
         job(REWRITTEN_HELLO_WORLD_CSS, ContentType.HTML),
         job(REWRITTEN_HELLO_WORLD_HTML, ContentType.HTML),
@@ -425,7 +425,7 @@ public class PipelineCacheTest extends PipelineStageTestCase {
     assertPipeline(
         job(
             CACHEABLE_HELLO_WORLD_CSS_VARIANT + CACHEABLE_HELLO_WORLD_HTML
-            + CACHEABLE_HELLO_WORLD_JS,
+            + CACHEABLE_HELLO_WORLD_JS_DEFERRED,
             ContentType.HTML),
         job(REWRITTEN_HELLO_WORLD_CSS_VARIANT, ContentType.HTML),
         job(REWRITTEN_HELLO_WORLD_HTML, ContentType.HTML),
@@ -441,7 +441,7 @@ public class PipelineCacheTest extends PipelineStageTestCase {
     assertPipeline(
         job(
             CACHEABLE_HELLO_WORLD_CSS + CACHEABLE_HELLO_WORLD_CSS_VARIANT
-            + CACHEABLE_HELLO_WORLD_HTML + CACHEABLE_HELLO_WORLD_JS,
+            + CACHEABLE_HELLO_WORLD_HTML + CACHEABLE_HELLO_WORLD_JS_DEFERRED,
             ContentType.HTML),
         job(REWRITTEN_HELLO_WORLD_CSS_AND_VARIANT, ContentType.HTML),
         job(REWRITTEN_HELLO_WORLD_HTML, ContentType.HTML),
@@ -458,7 +458,7 @@ public class PipelineCacheTest extends PipelineStageTestCase {
     assertPipeline(
         job(
             CACHEABLE_HELLO_WORLD_CSS_VARIANT + CACHEABLE_HELLO_WORLD_CSS
-            + CACHEABLE_HELLO_WORLD_HTML + CACHEABLE_HELLO_WORLD_JS,
+            + CACHEABLE_HELLO_WORLD_HTML + CACHEABLE_HELLO_WORLD_JS_DEFERRED,
             ContentType.HTML),
         job(REWRITTEN_HELLO_WORLD_VARIANT_AND_CSS, ContentType.HTML),
         job(REWRITTEN_HELLO_WORLD_HTML, ContentType.HTML),

@@ -200,11 +200,13 @@ function ES53FrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker) {
           TamingSchema(tamingHelper);
       var frameTamingMembrane =
           TamingMembrane(tamingHelper, frameTamingSchema.control);
-      var domicile = makeDomicile(
+      var domicileAndEmitter = makeDomicileAndEmitter(
           frameTamingMembrane, divs, uriPolicy, guestWin);
+      var domicile = domicileAndEmitter && domicileAndEmitter[0];
+      var htmlEmitter = domicileAndEmitter && domicileAndEmitter[1];
       var gman = GuestManager(frameTamingSchema, frameTamingMembrane, divs, 
-          cajaInt.documentBaseUrl(), domicile, guestWin, tamingWin.___.USELESS,
-          es53run);
+          cajaInt.documentBaseUrl(), domicile, htmlEmitter, guestWin,
+          tamingWin.___.USELESS, es53run);
       gman._loader = guestWin.loadModuleMaker(
         cajaInt.documentBaseUrl(), cajoler, URI.utils);
       guestWin.___.DISABLE_SECURITY_FOR_DEBUGGER = unsafe;
@@ -212,7 +214,8 @@ function ES53FrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker) {
     });
   }
 
-  function makeDomicile(frameTamingMembrane, divs, uriPolicy, guestWin) {
+  function makeDomicileAndEmitter(
+      frameTamingMembrane, divs, uriPolicy, guestWin) {
     if (!divs.inner) { return null; }
 
     // Needs to be accessible by Domado. But markFunction must be done at
@@ -274,9 +277,11 @@ function ES53FrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker) {
     // Add JavaScript globals to the DOM window object.
     ___.copyToImports(imports, guestWin.___.sharedImports);
 
+    var htmlEmitter = new HtmlEmitter(
+      makeDOMAccessible, domicile.htmlEmitterTarget, domicile, imports)
+
     // These ___ variables are interfaces used by cajoled code.
-    imports.htmlEmitter___ = new HtmlEmitter(
-      makeDOMAccessible, domicile.htmlEmitterTarget, domicile, imports);
+    imports.htmlEmitter___ = htmlEmitter;
     imports.rewriteUriInCss___ = domicile.rewriteUriInCss.bind(domicile);
     imports.rewriteUriInAttribute___ =
       domicile.rewriteUriInAttribute.bind(domicile);
@@ -315,7 +320,7 @@ function ES53FrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker) {
             pluginId, handler, args);
       };
 
-    return domicile;
+    return [domicile, htmlEmitter];
   }
 
   //----------------

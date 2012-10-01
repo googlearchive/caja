@@ -8,15 +8,15 @@ function module() {
     // Attach the onclick handler.
     var el___;
     var emitter___ = IMPORTS___.htmlEmitter___;
-    el___ = emitter___.byId('id_2___');
+    el___ = emitter___.byId('id_4___');
     // Remove the bits the first script shouldn't see.
-    emitter___.attach('id_2___');
+    emitter___.attach('id_4___');
     // Define handlers as needed.
-    var c_1___ = ___.markFuncFreeze(function (event, thisNode___) {
+    var c_3___ = ___.markFuncFreeze(function (event, thisNode___) {
       wasClicked(thisNode___);
     });
     el___.onclick = function (event) {
-      return ___.plugin_dispatchEvent___(this, event, ___.getId(IMPORTS___), c_1___);
+      return ___.plugin_dispatchEvent___(this, event, ___.getId(IMPORTS___), c_3___);
     };
     // Remove the manufactured ID
     emitter___.rmAttr(el___, 'id');
@@ -34,10 +34,10 @@ function module() {
   {
     var el___;
     var emitter___ = IMPORTS___.htmlEmitter___;
-    el___ = emitter___.byId('id_3___');
+    el___ = emitter___.byId('id_5___');
     emitter___.setAttr(el___, 'id', 'yo-' + IMPORTS___.getIdClass___());
     // Reattach the bits the second script should see.
-    emitter___.discard(emitter___.attach('id_4___'));
+    emitter___.discard(emitter___.attach('id_6___'));
   }
 }
 function module() {
@@ -52,14 +52,14 @@ function module() {
   {
     var el___;
     var emitter___ = IMPORTS___.htmlEmitter___;
-    el___ = emitter___.byId('id_5___');
+    el___ = emitter___.byId('id_7___');
     emitter___.setAttr(el___, 'href',
       IMPORTS___.rewriteUriInAttribute___('foo%3dbar?baz%28%29', 'a', 'href'));
-    var c_1___ = ___.markFuncFreeze(function (event, thisNode___) {
+    var c_3___ = ___.markFuncFreeze(function (event, thisNode___) {
       wasClicked(thisNode___);
     });
     el___.onclick = function (event) {
-      return ___.plugin_dispatchEvent___(this, event, ___.getId(IMPORTS___), c_1___);
+      return ___.plugin_dispatchEvent___(this, event, ___.getId(IMPORTS___), c_3___);
     };
     // Pass the 'target' attribute of the <a> through the client side policy
     emitter___.setAttr(
@@ -67,13 +67,13 @@ function module() {
         'target',
         IMPORTS___.rewriteTargetAttribute___(null, 'a', 'target'));
     emitter___.rmAttr(el___, 'id');
-    el___ = emitter___.byId('id_6___');
+    el___ = emitter___.byId('id_8___');
     emitter___.setAttr(el___, 'style', 'color: red; background-image: url(' +
       IMPORTS___.rewriteUriInCss___(
           'http://example.org/foo', 'background-image')
       + ')');
     emitter___.rmAttr(el___, 'id');
-    el___ = emitter___.byId('id_7___');
+    el___ = emitter___.byId('id_9___');
     emitter___.setAttr(el___, 'id', 'zag-' + IMPORTS___.getIdClass___());
     el___ = emitter___.finish();
     emitter___.signalLoaded();
