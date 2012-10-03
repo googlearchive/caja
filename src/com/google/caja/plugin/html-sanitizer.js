@@ -633,10 +633,8 @@ var html = (function(html4) {
     return match ? match[1] : elementName;
   }
   function virtualToRealElementName(elementName) {
-    if (Object.prototype.hasOwnProperty.call(html4.ELEMENTS, elementName) &&
+    if (!Object.prototype.hasOwnProperty.call(html4.ELEMENTS, elementName) ||
         (html4.ELEMENTS[elementName] & html4.eflags['VIRTUALIZED'])) {
-      // TODO(kpreid): In the future, all unrecognized elements should be
-      // virtualized, in which case this should be !hop || eflag.
       return VIRTUALIZED_ELEMENT_PREFIX + elementName;
     } else {
       return elementName;

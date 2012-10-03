@@ -354,13 +354,17 @@ function sanitizeCssSelectors(selectors, suffix) {
       var element, classId, pseudoSelector, tok;
       element = '';
       if (start < end) {
-        tok = html.virtualToRealElementName(selectors[start].toLowerCase());
-        var elType = html4.ELEMENTS[tok];
-        if (tok === '*'
-            || ('number' === typeof elType
-                && !(elType & html4.eflags['UNSAFE']))) {
-          ++start;
-          element = tok;
+        tok = selectors[start];
+        if (tok === '*' || /^[a-zA-Z]/.test(tok)) {  // is an element selector
+          if (tok !== '*') {
+            tok = html.virtualToRealElementName(tok.toLowerCase());
+          }
+          if (tok === '*'
+              || html.isVirtualizedElementName(tok)
+              || !(html4.ELEMENTS[tok] & html4.eflags['UNSAFE'])) {
+            ++start;
+            element = tok;
+          }
         }
       }
       classId = '';

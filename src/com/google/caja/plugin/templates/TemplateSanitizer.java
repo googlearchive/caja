@@ -70,49 +70,22 @@ public final class TemplateSanitizer {
       {
         Element el = (Element) t;
         ElKey elKey = ElKey.forElement(el);
-        {
-          if (schema.isElementVirtualized(elKey)) {
-            valid &= virtualizeElement(elKey, el);
-          } else if (!schema.isElementAllowed(elKey)) {
-            IhtmlMessageType msgType = schema.lookupElement(elKey) != null
-                ? IhtmlMessageType.UNSAFE_TAG
-                : IhtmlMessageType.UNKNOWN_TAG;
 
-            // Figure out what to do with the disallowed tag.  We can remove it
-            // from the node, replace it with its children (fold), or error out.
-            //
-            // TODO(kpreid): Eventually, all folding should be replaced with
-            // virtualization. Folding happens to nodes which are unknown or
-            // which are foldable but not virtualizable.
-            boolean ignore = false, fold = false;
-            Node p = el.getParentNode();
-            if (p != null) {
-              if (isElementIgnorable(elKey)) {
-                ignore = true;
-              } else if (HtmlSchema.isElementFoldable(elKey)) {
-                fold = true;
-                msgType = IhtmlMessageType.FOLDING_ELEMENT;
-              }
-            }
+        if (isElementIgnorable(elKey)) {
+          return removeElement(el);
 
-            MessageLevel msgLevel
-                = ignore || fold ? MessageLevel.WARNING : msgType.getLevel();
-            mq.getMessages().add(new Message(
-                msgType, msgLevel, Nodes.getFilePositionFor(el), elKey));
+        } else if (schema.isElementVirtualized(elKey)) {
+          valid &= virtualizeElement(elKey, el);
 
-            if (ignore) {
-              assert p != null;  // ignore = true  ->  p != null above
-              p.removeChild(el);
-              return valid;  // Don't recurse to children if removed.
-            } else {
-              // According to http://www.w3.org/TR/html401/appendix/notes.html
-              // the recommended behavior is to try to render an unrecognized
-              // element's contents
-              return valid & foldElement(elKey, el);
-            }
-          }
-          valid &= sanitizeAttrs(elKey, el, false);
+        } else if (!schema.isElementAllowed(elKey)) {
+          // An explicitly disallowed but not virtualized element is an error.
+          mq.getMessages().add(new Message(IhtmlMessageType.UNSAFE_UNVIRT_TAG,
+              Nodes.getFilePositionFor(el), elKey));
+
+          return false;
         }
+        valid &= sanitizeAttrs(elKey, el, false);
+
         // We know by construction of org.w3c.Element that there can only be
         // one attribute with a given name.
         // If that were not the case, passes that only inspect the
@@ -195,67 +168,22 @@ public final class TemplateSanitizer {
     if (!elKey.isHtml()) { return false; }
     String lcName = elKey.localName;
     return "noscript".equals(lcName) || "noembed".equals(lcName)
-        || "noframes".equals(lcName) || "title".equals(lcName);
+        || "noframes".equals(lcName);
   }
 
-  /**
-   * Fold the children of a foldable element into that element's parent.
-   * Currently, only unknown elements are foldable.
-   *
-   * <p>
-   * This should have the property that:<ul>
-   * <li>Every element is processed
-   * <li>Elements can recursively fold
-   * <li>Folded elements that are implied (such as head when a title
-   *     is present) don't break cajoling.
-   * <li>We don't fold elements that are explicitly allowed by the whitelist.
-   * <li>Nothing is removed from the parse tree without a notification
-   *     to the user.
-   * </ul>
-   *
-   * @param el a tag with a mutable parent which will be modified in place.
-   * @return true iff the el's children are transitively valid, and if they
-   *     could all be folded into the parent.
-   */
-  private boolean foldElement(ElKey elKey, Element el) {
-    boolean valid = true;
-
-    // Recurse to children to ensure that all nodes are processed.
-    valid &= sanitizeAttrs(elKey, el, true);
-    for (Node child : Nodes.childrenOf(el)) { valid &= sanitize(child); }
-
-    for (Attr a : Nodes.attributesOf(el)) {
-      String attrName = a.getNodeName();
-      if (attrName.startsWith(cajaPrefix)) {
-        attrName = attrName.substring(10);
-      }
-      mq.addMessage(
-          PluginMessageType.CANNOT_FOLD_ATTRIBUTE, Nodes.getFilePositionFor(a),
-          MessagePart.Factory.valueOf(attrName),
-          MessagePart.Factory.valueOf(el.getLocalName()));
+  private boolean removeElement(Element el) {
+    ElKey elKey = ElKey.forElement(el);
+    Node p = el.getParentNode();
+    if (p != null) {
+      mq.getMessages().add(new Message(IhtmlMessageType.IGNORED_TAG,
+          Nodes.getFilePositionFor(el), elKey));
+      p.removeChild(el);
+      return true;
+    } else {
+      mq.getMessages().add(new Message(IhtmlMessageType.UNSAFE_ROOT_TAG,
+          Nodes.getFilePositionFor(el), elKey));
+      return false;
     }
-
-    // Pick the subset of children to fold in.
-    List<Node> foldedChildren = new ArrayList<Node>();
-    for (Node child : Nodes.childrenOf(el)) {
-      switch (child.getNodeType()) {
-        case Node.ELEMENT_NODE: case Node.TEXT_NODE:
-        case Node.CDATA_SECTION_NODE:
-          foldedChildren.add(child);
-          break;
-        default:
-          // Ignore.
-      }
-    }
-
-    // Rebuild the sibling list, substituting foldedChildren for any occurrences
-    // of el.node.
-    Node next = el.getNextSibling();
-    Node parent = el.getParentNode();
-    parent.removeChild(el);
-    for (Node n : foldedChildren) { parent.insertBefore(n, next); }
-
-    return valid;
   }
 
   /**
@@ -269,7 +197,7 @@ public final class TemplateSanitizer {
   private boolean virtualizeElement(ElKey elKey, Element el) {
     boolean valid = true;
 
-    elKey = HtmlSchema.virtualToRealElementName(elKey);
+    elKey = schema.virtualToRealElementName(elKey);
 
     // Note ordering: the attributes will be sanitized according to the
     // virtualized element's attribute info (which is *currently* always the

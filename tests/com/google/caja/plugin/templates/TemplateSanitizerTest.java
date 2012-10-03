@@ -50,74 +50,82 @@ public class TemplateSanitizerTest extends CajaTestCase {
   public final void testUnknownElement() throws Exception {
     assertValid(
         htmlFragment(fromString("<bogus id=\"bold\">Hello</bogus>")),
-        "Hello",
-        "WARNING: removing unknown tag bogus",
-        "WARNING: removing attribute id when folding bogus into parent");
+        "<caja-v-bogus id=\"bold\">Hello</caja-v-bogus>");
   }
   public final void testUnknownEverything() throws Exception {
     assertValid(
         htmlFragment(fromString("<bogus unknown=\"bogus\">Hello</bogus>")),
-        "Hello",
-        "WARNING: removing unknown tag bogus",
-        "WARNING: removing attribute unknown when folding bogus into parent"
-        );
+        "<caja-v-bogus data-caja-unknown=\"bogus\">Hello</caja-v-bogus>");
   }
+  // Disallowed elements are virtualized so that guest code sees the DOM it
+  // expects. Disallowed attributes on allowed elements are removed.
+  // TODO(kpreid): Why don't we virtualize disallowed attributes?
   public final void testDisallowedScriptElement() throws Exception {
-    assertValid(
-        htmlFragment(fromString("<script>disallowed</script>")),
-        "disallowed",
-        "WARNING: removing disallowed tag script");
-    assertValid(
+    assertInvalid(
+        htmlFragment(fromString("a<script>disallowed</script>b")),
+        "a<script>disallowed</script>b",
+        "ERROR: Disallowed element: script");
+    assertInvalid(
         htmlFragment(fromString(
-            "<script src=http://can-link-to.com/ >disallowed</script>")),
-        "disallowed",
-        "WARNING: removing disallowed tag script");
+            "a<script src=http://can-link-to.com/ >disallowed</script>b")),
+        "a<script src=\"http://can-link-to.com/\">disallowed</script>b",
+        "ERROR: Disallowed element: script");
   }
-  public final void testDisallowedAppletElement() throws Exception {
+  public final void testDisallowedStyleElement() throws Exception {
+    assertInvalid(
+        htmlFragment(fromString(
+            "a<style>p { color: expression(disallowed()) }</style>b")),
+        "a<style>p { color: expression(disallowed()) }</style>b",
+        "ERROR: Disallowed element: style");
+  }
+  public final void testUnsafeAppletElement() throws Exception {
     assertValid(
         htmlFragment(fromString(
             ""
             + "<applet><param name=zoicks value=ack>"
             + "<a href=http://can-link-to.com/ >disallowed</a></applet>")),
-        "<a href=\"http://can-link-to.com/\">disallowed</a>",
-        "WARNING: removing disallowed tag applet",
-        "WARNING: removing disallowed tag param");
+        "<caja-v-applet><caja-v-param data-caja-value=\"ack\" name=\"zoicks\">"
+        + "</caja-v-param>"
+        + "<a href=\"http://can-link-to.com/\">disallowed</a>"
+        + "</caja-v-applet>");
   }
-  public final void testDisallowedBaseElement() throws Exception {
+  public final void testUnsafeBaseElement() throws Exception {
     assertValid(
         htmlFragment(fromString(
             "<base href='http://can-link-to.com/'>disallowed")),
-        "disallowed",
-        "WARNING: removing disallowed tag base");
+        "<caja-v-base data-caja-href=\"http://can-link-to.com/\">"
+        + "</caja-v-base>disallowed");
   }
-  public final void testDisallowedBasefontElement() throws Exception {
+  public final void testUnsafeBasefontElement() throws Exception {
     assertValid(
         htmlFragment(fromString("<basefont size=4>disallowed")),
-        "disallowed",
-        "WARNING: removing disallowed tag basefont");
+        "<caja-v-basefont data-caja-size=\"4\"></caja-v-basefont>disallowed");
   }
-  public final void testDisallowedFrameElement() throws Exception {
+  public final void testUnsafeFrameElement() throws Exception {
+    // TODO(kpreid): Figure out where the text content is disappearing to.
+    // We don't actually care about framesets, but there might be a bug.
     assertValid(
         htmlFragment(fromString(
             ""
-            + "<frameset><frame src='http://can-link-to.com/'>"
+            + "<frameset><frame data-caja-src='http://can-link-to.com/'>"
             + "disallowed</frame></frameset>")),
-        "",
-        "WARNING: removing disallowed tag frameset",
-        "WARNING: removing disallowed tag frame");
+        "<caja-v-frameset><caja-v-frame "
+            + "data-caja-src=\"http://can-link-to.com/\"></caja-v-frame>"
+            + "</caja-v-frameset>");
     // Frames outside framesets are thrown out by the parser.
     assertValid(
         htmlFragment(fromString(
             "<frame src='http://can-link-to.com/'>disallowed</frame>")),
         "disallowed");
   }
-  public final void testDisallowedFramesetElement() throws Exception {
+  public final void testUnsafeFramesetElement() throws Exception {
+    // TODO(kpreid): Figure out where the text content is disappearing to.
+    // We don't actually care about framesets, but there might be a bug.
     assertValid(
         htmlFragment(fromString("<frameset>disallowed</frameset>")),
-        "",
-        "WARNING: removing disallowed tag frameset");
+        "<caja-v-frameset></caja-v-frameset>");
   }
-  public final void testDisallowedIframeElement() throws Exception {
+  public final void testUnsafeIframeElement() throws Exception {
     assertValid(
         htmlFragment(fromString(
             ""
@@ -137,43 +145,43 @@ public class TemplateSanitizerTest extends CajaTestCase {
         + " Insert your search keywords here:"
         + " <input name=\"isindex\" /></label></p><hr /></form>rewritten");
   }
-  public final void testDisallowedLinkElement() throws Exception {
+  public final void testUnsafeLinkElement() throws Exception {
     assertValid(
         htmlFragment(fromString(
             "<link rev=Contents href='http://can-link-to.com/'>disallowed")),
-        "disallowed",
-        "WARNING: removing disallowed tag link");
+        "<caja-v-link data-caja-rev=\"Contents\" "
+        + "href=\"http://can-link-to.com/\">"
+        + "</caja-v-link>disallowed");
   }
-  public final void testDisallowedMetaElement() throws Exception {
+  public final void testUnsafeMetaElement() throws Exception {
     assertValid(
         htmlFragment(fromString(
             ""
             + "<meta http-equiv='refresh'"
             + " content='5;url=http://can-link-to.com/'>"
             + "disallowed")),
-        "disallowed",
-        "WARNING: removing disallowed tag meta");
+        "<caja-v-meta data-caja-content=\"5;url=http://can-link-to.com/\""
+            + " data-caja-http-equiv=\"refresh\">"
+            + "</caja-v-meta>disallowed");
   }
-  public final void testDisallowedObjectElement() throws Exception {
+  public final void testUnsafeObjectElement() throws Exception {
+    // TODO(kpreid): param ends up w/ unvirtualized name= because...?
     assertValid(
         htmlFragment(fromString(
             "<object><param name=zoicks value=ack>disallowed</object>")),
-        "disallowed",
-        "WARNING: removing disallowed tag object",
-        "WARNING: removing disallowed tag param");
+        "<caja-v-object><caja-v-param data-caja-value=\"ack\" name=\"zoicks\">"
+        + "</caja-v-param>disallowed</caja-v-object>");
   }
-  public final void testDisallowedStyleElement() throws Exception {
+  public final void testUnsafeTitleElement() throws Exception {
     assertValid(
         htmlFragment(fromString(
-            "<style>p { color: expression(disallowed()) }</style>")),
-        "p { color: expression(disallowed()) }",
-        "WARNING: removing disallowed tag style");
+            "<title>disallowed</title>")),
+        "<caja-v-title>disallowed</caja-v-title>");
   }
-  public final void testVirtualizedTitleElement() throws Exception {
+  public final void testUnsafeXmpElement() throws Exception {
     assertValid(
-        htmlFragment(fromString(
-            "<title>virtualized</title>")),
-        "<caja-v-title>virtualized</caja-v-title>");
+        htmlFragment(fromString("<xmp>disallowed</xmp>")),
+        "<caja-v-xmp>disallowed</caja-v-xmp>");
   }
   public final void testAttributeValidity() throws Exception {
     assertValid(
@@ -205,18 +213,6 @@ public class TemplateSanitizerTest extends CajaTestCase {
         "<form><input /></form>",
         "WARNING: attribute type cannot have value x");
   }
-  public final void testDisallowedElement2() throws Exception {
-    assertValid(
-        htmlFragment(fromString("<xmp>disallowed</xmp>")),
-        "disallowed",
-        "WARNING: removing unknown tag xmp");
-  }
-  public final void testDisallowedElement3() throws Exception {
-    assertValid(
-        htmlFragment(fromString("<meta http-equiv='refresh' content='1'/>")),
-        "",
-        "WARNING: removing disallowed tag meta");
-  }
   public final void testElementVirtualization1() throws Exception {
     assertValid(
         xmlFragment(fromString("<title>A title</title>")),
@@ -225,9 +221,9 @@ public class TemplateSanitizerTest extends CajaTestCase {
   public final void testElementVirtualization2() throws Exception {
     assertValid(
         xmlFragment(fromString("<body bgcolor=\"red\">Zoicks</body>")),
-        "<caja-v-body bgcolor=\"red\">Zoicks</caja-v-body>");
+        "<caja-v-body data-caja-bgcolor=\"red\">Zoicks</caja-v-body>");
   }
-  public final void testElementVirtualizationAndFolding1() throws Exception {
+  public final void testElementVirtualization3() throws Exception {
     assertValid(
         xmlFragment(fromString(
             "<html>"
@@ -245,11 +241,10 @@ public class TemplateSanitizerTest extends CajaTestCase {
         "<caja-v-html><caja-v-head><caja-v-title>Blah</caja-v-title>" +
             "<p>Foo</p></caja-v-head><caja-v-body><p>One</p>" +
             "<p data-caja-styleo=\"color: red\">Two" +
-            "</p>ThreeFour" +
-            "</caja-v-body></caja-v-html>",
-        "WARNING: removing unknown tag x");
+            "</p>Three<caja-v-x>Four</caja-v-x>" +
+            "</caja-v-body></caja-v-html>");
   }
-  public final void testElementVirtualizationAndFolding2() throws Exception {
+  public final void testElementVirtualization4() throws Exception {
     assertValid(
         xmlFragment(fromString(
             "<html>"
@@ -278,7 +273,7 @@ public class TemplateSanitizerTest extends CajaTestCase {
             + "<body alpha='a' background='#bbb'></body></html>")),
         "<caja-v-html data-caja-alpha=\"a\" data-caja-beta=\"b\">" +
             "<caja-v-head></caja-v-head>" + 
-            "<caja-v-body background=\"#bbb\" data-caja-alpha=\"a\">" +
+            "<caja-v-body data-caja-alpha=\"a\" data-caja-background=\"#bbb\">" +
             "</caja-v-body></caja-v-html>");
   }
   public final void testIgnoredElement() throws Exception {
@@ -288,7 +283,8 @@ public class TemplateSanitizerTest extends CajaTestCase {
              + "<noscript>ignorable</noscript>"
              + "<p>Bar")),
         "<p>Foo</p><p>Bar</p>",
-        "WARNING: removing disallowed tag noscript");
+        "WARNING: removing ignorable element noscript"
+        );
   }
   public final void testDupeAttrs() throws Exception {
     assertValid(
@@ -300,7 +296,7 @@ public class TemplateSanitizerTest extends CajaTestCase {
         "<font color=\"red\">Purple</font>",
         "WARNING: attribute color duplicates one at testDupeAttrs:1+7 - 12");
   }
-  public final void testDisallowedAttrs() throws Exception {
+  public final void testUnsafeAttrs() throws Exception {
     assertValid(
         htmlFragment(fromString(
             "<a href=\"foo.html\" charset=\"utf-7\">foo</a>")),
@@ -328,6 +324,10 @@ public class TemplateSanitizerTest extends CajaTestCase {
 
   private void assertValid(Node input, String golden, String... warnings) {
     sanitize(input, golden, true, warnings);
+  }
+
+  private void assertInvalid(Node input, String golden, String... warnings) {
+    sanitize(input, golden, false, warnings);
   }
 
   private void sanitize(

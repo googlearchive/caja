@@ -89,7 +89,7 @@
       { "key": "BASEFONT",
         "reason": "affects global state" },
       { "key": "BODY",
-        "reason": "attributes would be folded into body" },
+        "reason": "a global level tag" },
       { "key": "FRAME",
         "reason": "can be used to cause javascript execution" },
       { "key": "FRAMESET",

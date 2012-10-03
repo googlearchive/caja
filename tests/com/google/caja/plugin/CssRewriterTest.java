@@ -272,7 +272,8 @@ public class CssRewriterTest extends CajaTestCase {
     new CssValidator(CssSchema.getDefaultCss21Schema(mq),
         HtmlSchema.getDefault(mq), mq)
         .validateCss(AncestorChain.instance(t));
-    new CssRewriter(uriPolicy, CssSchema.getDefaultCss21Schema(mq), mq)
+    new CssRewriter(uriPolicy, CssSchema.getDefaultCss21Schema(mq),
+                    HtmlSchema.getDefault(mq), mq)
         .rewrite(AncestorChain.instance(t));
     t.acceptPreOrder(new Visitor() {
       public boolean visit(AncestorChain<?> ancestors) {
@@ -347,7 +348,8 @@ public class CssRewriterTest extends CajaTestCase {
     }
 
     CssSchema cssSchema = CssSchema.getDefaultCss21Schema(mq);
-    new CssValidator(cssSchema, HtmlSchema.getDefault(mq), mq)
+    HtmlSchema htmlSchema = HtmlSchema.getDefault(mq);
+    new CssValidator(cssSchema, htmlSchema, mq)
         .validateCss(AncestorChain.instance(t));
     new CssRewriter(
         new UriPolicy() {
@@ -375,7 +377,7 @@ public class CssRewriterTest extends CajaTestCase {
             }
           }
         },
-        cssSchema, mq)
+        cssSchema, htmlSchema, mq)
         .rewrite(AncestorChain.instance(t));
 
     {
@@ -396,7 +398,8 @@ public class CssRewriterTest extends CajaTestCase {
         ? css(fromString(cssCode)) : cssDecls(fromString(cssCode));
 
     CssSchema cssSchema = CssSchema.getDefaultCss21Schema(mq);
-    new CssValidator(cssSchema, HtmlSchema.getDefault(mq), mq)
+    HtmlSchema htmlSchema = HtmlSchema.getDefault(mq);
+    new CssValidator(cssSchema, htmlSchema, mq)
         .validateCss(AncestorChain.instance(t));
     new CssRewriter(
         new UriPolicy() {
@@ -409,7 +412,7 @@ public class CssRewriterTest extends CajaTestCase {
             return ref.getUri().toString();
           }
         },
-        cssSchema, mq)
+        cssSchema, htmlSchema, mq)
         .rewrite(AncestorChain.instance(t));
 
     MoreAsserts.assertListsEqual(

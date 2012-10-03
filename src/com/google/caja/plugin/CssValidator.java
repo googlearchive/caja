@@ -247,7 +247,7 @@ public final class CssValidator {
       String elName = sel.getElementName();
       ElKey elKey = ElKey.forElement(Namespaces.HTML_DEFAULT, elName);
       if (null != htmlSchema.lookupElement(elKey)) {
-        if (!HtmlSchema.isElementVirtualized(elKey) &&
+        if (!htmlSchema.isElementVirtualized(elKey) &&
             !htmlSchema.isElementAllowed(elKey)) {
           mq.addMessage(
               PluginMessageType.UNSAFE_TAG, invalidNodeMessageLevel,

@@ -163,11 +163,11 @@ function canonInnerHtml(s) {
       '\\s*(\\w+)(?:\\s*=\\s*("[^\\"]*"|\'[^\\\']*\'|[^\\\'\\"\\s>]+))?');
   var quot = new RegExp('"', 'g');
   var tagBody = '(?:"[^"]*"|\'[^\']*\'|[^>"\']+)*';
-  var htmlStartTag = new RegExp('(<\\w+)(' + tagBody + ')>', 'g');
-  var htmlTag = new RegExp('(<\/?)(\\w+)(' + tagBody + ')>', 'g');
+  var htmlStartTag = new RegExp('(<[\\w-]+)(' + tagBody + ')>', 'g');
+  var htmlTag = new RegExp('(<\/?)([\\w-]+)(' + tagBody + ')>', 'g');
   var ignorableWhitespace = new RegExp('^[ \\t]*(\\r\\n?|\\n)|\\s+$', 'g');
   var tagEntityOrText = new RegExp(
-      '(?:(</?\\w[^>]*>|&[a-zA-Z#]|[^<&>]+)|([<&>]))', 'g');
+      '(?:(</?[\\w-][^>]*>|&[a-zA-Z#]|[^<&>]+)|([<&>]))', 'g');
   s = s.replace(
       htmlStartTag,
       function (_, tagStart, tagBody) {

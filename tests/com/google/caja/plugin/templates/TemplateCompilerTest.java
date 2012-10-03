@@ -1237,7 +1237,8 @@ public class TemplateCompilerTest extends CajaTestCase {
         case CSS:
           CssTree.StyleSheet css = (CssTree.StyleSheet) j.job.getRoot();
           CssRewriter rw = new CssRewriter(
-              null, CssSchema.getDefaultCss21Schema(mq), mq);
+              null, CssSchema.getDefaultCss21Schema(mq),
+              HtmlSchema.getDefault(mq), mq);
           rw.rewrite(AncestorChain.instance(css));
           CssDynamicExpressionRewriter rrw =
               new CssDynamicExpressionRewriter(meta);

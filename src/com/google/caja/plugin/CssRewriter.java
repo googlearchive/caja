@@ -62,14 +62,16 @@ import java.util.regex.Pattern;
  */
 public final class CssRewriter {
   private final UriPolicy uriPolicy;
-  private final CssSchema schema;
+  private final CssSchema cssSchema;
+  private HtmlSchema htmlSchema;
   private final MessageQueue mq;
   private MessageLevel invalidNodeMessageLevel = MessageLevel.ERROR;
 
-  public CssRewriter(UriPolicy uriPolicy, CssSchema schema, MessageQueue mq) {
+  public CssRewriter(UriPolicy uriPolicy, CssSchema cssSchema, HtmlSchema htmlSchema, MessageQueue mq) {
     assert null != mq;
     this.uriPolicy = uriPolicy;
-    this.schema = schema;
+    this.cssSchema = cssSchema;
+    this.htmlSchema = htmlSchema;
     this.mq = mq;
   }
 
@@ -402,10 +404,10 @@ public final class CssRewriter {
    * suffix is missing.
    */
   private void fixTerms(AncestorChain<? extends CssTree> t) {
-    SymbolInfo stdColors = schema.getSymbol(Name.css("color-standard"));
+    SymbolInfo stdColors = cssSchema.getSymbol(Name.css("color-standard"));
     final Pattern stdColorMatcher;
     if (stdColors != null) {
-      stdColorMatcher = new CssPropertyPatterns(schema)
+      stdColorMatcher = new CssPropertyPatterns(cssSchema)
           .cssPropertyToJavaRegex(stdColors.sig);
     } else {
       stdColorMatcher = null;
@@ -562,7 +564,7 @@ public final class CssRewriter {
 
             ElKey key = ElKey.forHtmlElement(lit.getValue());
                 // TODO(kpreid): handle namespaces
-            key = HtmlSchema.virtualToRealElementName(key);
+            key = htmlSchema.virtualToRealElementName(key);
                 // TODO(kpreid): should use a HtmlSchema instance instead of
                 // being static (but we don't have one here).
             lit.setValue(key.localName);

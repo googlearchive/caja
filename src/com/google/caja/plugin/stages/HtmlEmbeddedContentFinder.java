@@ -159,7 +159,9 @@ public class HtmlEmbeddedContentFinder {
           }
           mq.addMessage(
               PluginMessageType.UNRECOGNIZED_CONTENT_TYPE,
-              typePos, MessagePart.Factory.valueOf(mimeType), key);
+              typePos, MessagePart.Factory.valueOf(
+                  mimeType != null ? mimeType : "(missing mimeType)"),
+              key);
           out.add(fromBadContent(el));
         }
       }

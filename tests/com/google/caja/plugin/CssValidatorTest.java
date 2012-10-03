@@ -207,8 +207,7 @@ public final class CssValidatorTest extends CajaTestCase {
                         + " ; cssPropertyPart=font\n"
             + "          IdentLiteral : caption\n"
             + "    EmptyDeclaration");
-    fails("bogus, dl { font: caption; }");
-    fails("p, bogus { font: caption; }");
+    // TODO(kpreid): Shouldn't this be rewritten to p[data-caja-bogus]?
     fails("p[bogus] { font: caption; }");
     runTest("p { font: waption; }",
             "StyleSheet\n"

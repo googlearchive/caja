@@ -32,7 +32,7 @@ public enum IhtmlMessageType implements MessageTypeInt {
   DUPLICATE_MESSAGE("%s: Message %s masks one at %s", MessageLevel.ERROR),
   DUPLICATE_PLACEHOLDER(
       "%s: Placeholder %s masks one at %s", MessageLevel.ERROR),
-  FOLDING_ELEMENT("%s: folding element %s into parent", MessageLevel.WARNING),
+  IGNORED_TAG("%s: removing ignorable element %s", MessageLevel.WARNING),
   IHTML_IN_MESSAGE_OUTSIDE_PLACEHOLDER(
       "%s: %s in message outside placeholder", MessageLevel.ERROR),
   ILLEGAL_NAME("%s: illegal name %s", MessageLevel.ERROR),
@@ -50,8 +50,8 @@ public enum IhtmlMessageType implements MessageTypeInt {
   ORPHANED_PLACEHOLDER_END(
       "%s: Placeholder end does not match an open", MessageLevel.ERROR),
   UNCLOSED_PLACEHOLDER("%s: Placeholder not closed", MessageLevel.ERROR),
-  UNKNOWN_TAG("%s: removing unknown tag %s", MessageLevel.WARNING),
-  UNSAFE_TAG("%s: removing disallowed tag %s", MessageLevel.WARNING),
+  UNSAFE_ROOT_TAG("%s: Cannot remove element at root: %s", MessageLevel.ERROR),
+  UNSAFE_UNVIRT_TAG("%s: Disallowed element: %s", MessageLevel.ERROR),
   UNTRANSLATED_MESSAGE(
       "%s: No such message with name %s in locale %s", MessageLevel.WARNING),
   ;

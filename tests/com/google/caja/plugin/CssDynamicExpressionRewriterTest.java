@@ -15,6 +15,7 @@
 package com.google.caja.plugin;
 
 import com.google.caja.lang.css.CssSchema;
+import com.google.caja.lang.html.HtmlSchema;
 import com.google.caja.lexer.ParseException;
 import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.ParseTreeNode;
@@ -162,7 +163,8 @@ public class CssDynamicExpressionRewriterTest extends CajaTestCase {
       boolean dynamic) {
     PluginMeta pm = new PluginMeta();
     if (!dynamic) { pm.setIdClass("xyz___"); }
-    new CssRewriter(null, CssSchema.getDefaultCss21Schema(mq), mq)
+    new CssRewriter(null, CssSchema.getDefaultCss21Schema(mq),
+                    HtmlSchema.getDefault(mq), mq)
         .rewrite(AncestorChain.instance(css));
     new CssDynamicExpressionRewriter(pm).rewriteCss(css);
     ArrayConstructor ac = CssDynamicExpressionRewriter.cssToJs(css);

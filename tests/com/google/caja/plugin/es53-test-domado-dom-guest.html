@@ -144,69 +144,6 @@ document.write(
         });
   }
   window.assertDomTree = assertDomTree; // SES scope workaround
-
-  /**
-   * Canonicalize innerHTML output:
-   *   - collapse all whitespace to a single space
-   *   - remove whitespace between adjacent tags
-   *   - lowercase tagnames and attribute names
-   *   - sort attributes by name
-   *   - quote attribute values
-   *
-   * Without this step, it's impossible to compare innerHTML cross-browser.
-   */
-  function canonInnerHtml(s) {
-    // Sort attributes.
-    var htmlAttribute = new RegExp(
-        '\\s*(\\w+)(?:\\s*=\\s*("[^\\"]*"|\'[^\\\']*\'|[^\\\'\\"\\s>]+))?');
-    var quot = new RegExp('"', 'g');
-    var tagBody = '(?:"[^"]*"|\'[^\']*\'|[^>"\']+)*';
-    var htmlStartTag = new RegExp('(<\\w+)(' + tagBody + ')>', 'g');
-    var htmlTag = new RegExp('(<\/?)(\\w+)(' + tagBody + ')>', 'g');
-    var ignorableWhitespace = new RegExp('^[ \\t]*(\\r\\n?|\\n)|\\s+$', 'g');
-    var tagEntityOrText = new RegExp(
-        '(?:(</?\\w[^>]*>|&[a-zA-Z#]|[^<&>]+)|([<&>]))', 'g');
-    s = s.replace(
-        htmlStartTag,
-        function (_, tagStart, tagBody) {
-          var attrs = [];
-          for (var m; tagBody && (m = tagBody.match(htmlAttribute));) {
-            var name = m[1].toLowerCase();
-            var value = m[2];
-            var hasValue = value != null;
-            if (hasValue && (new RegExp('^["\']')).test(value)) {
-              value = value.substring(1, value.length - 1);
-            }
-            attrs.push(
-                hasValue
-                ? name + '="' + value.replace(quot, '&quot;') + '"'
-                : name);
-            tagBody = tagBody.substring(m[0].length);
-          }
-          attrs.sort();
-          attrs.unshift(tagStart);
-          return attrs.join(' ') + '>';
-        });
-    s = s.replace(
-        htmlTag,
-        function (_, open, name, body) {
-          return open + name.toLowerCase() + (body || '') + '>';
-        });
-    // Collapse whitespace.
-    s = s.replace(new RegExp('\\s+', 'g'), ' ');
-    s = s.replace(new RegExp('^ | $', 'g'), '');
-    s = s.replace(new RegExp('[>]\\s+[<]', 'g'), '><');
-    // Normalize escaping of text nodes since Safari doesn't escape loose >.
-    s = s.replace(
-        tagEntityOrText,
-        function (_, good, bad) {
-          return good
-              ? good
-              : (bad.replace(new RegExp('&', 'g'), '&amp;')
-                 .replace(new RegExp('>', 'g'), '&gt;'));
-        });
-    return s;
-  }
 </script>
 
 <p id="testDomClassHierarchy" class="clickme testcontainer">
@@ -2566,6 +2503,30 @@ Test row cell
   });
 </script>
 
+<p id="testUnknownElements" class="testcontainer">
+  <!-- Issue 1239: A Twitter widget script expects to be able to create
+       an element with a novel name. Modern browsers don't mind; we shouldn't.
+       -->
+  <twitter id="testUnknownElements-a">I am a static unknown element.</twitter>
+</p>
+<script type="text/javascript">
+  jsunitRegister('testUnknownElements',
+                 function testUnknownElements() {
+    assertEquals('static', 'TWITTER',
+        document.getElementById('testUnknownElements-a').tagName);
+    var dyn = document.createElement('twitter');
+    document.getElementById('testUnknownElements').appendChild(dyn);
+    assertEquals('dynamic', 'TWITTER', dyn.tagName);
+    assertEquals(
+        '<caja-v-twitter id="testUnknownElements-a-caja-guest-0___">' +
+            'I am a static unknown element.' +
+            '</caja-v-twitter><caja-v-twitter></caja-v-twitter>',
+        canonInnerHtml(directAccess.getInnerHTML(
+            document.getElementById('testUnknownElements'))));
+    pass('testUnknownElements');
+  });
+</script>
+
 <div id="testZIndex" class="testcontainer"></div>
 <script type="text/javascript">
   jsunitRegister('testZIndex',
@@ -2589,21 +2550,6 @@ Test row cell
     assertTrue(document.getElementById("testZIndex-div")
         .getAttribute("style") === "");
     pass('testZIndex');
-  });
-</script>
-
-<div id="testUnsafeHtml5" class="testcontainer"></div>
-<script type="text/javascript">
-  jsunitRegister('testUnsafeHtml5',
-                 function testUnsafeHtml5() {
-    var tags = ['article', 'aside', 'audio', 'bdi', 'data', 'datalist',
-        'details', 'figcaption', 'figure', 'footer', 'header',
-        'hgroup', 'mark', 'meter', 'output', 'progress', 'section',
-        'summary', 'time', 'video'];
-    for (var i = 0; i < tags.length; ++i) {
-      assertEquals(document.createElement(tags[i]), null);
-    }
-    pass('testUnsafeHtml5');
   });
 </script>
 

@@ -22,15 +22,15 @@
 
 runCssSelectorTests([
   {
-    "test_name": "UnknownTagsRemoved",
+    "test_name": "UnknownTagsVirtualized",
     "tests": [
       {
         "cssText": "bogus { display: none }",
-        "golden": ""
+        "golden": ".namespace__ caja-v-bogus{display:none}"
       },
       {
         "cssText": "a, bogus, i { display: none }",
-        "golden": ".namespace__ a, .namespace__ i{display:none}"
+        "golden": ".namespace__ a, .namespace__ caja-v-bogus, .namespace__ i{display:none}"
       }
     ]
   },

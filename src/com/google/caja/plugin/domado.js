@@ -2060,6 +2060,9 @@ var Domado = (function() {
               // unsafe.
               return new (tamingClassesByElement[tagName + '$'])(
                   node, editable);
+            } else if (html.isVirtualizedElementName(tagName)) {
+              // Virtualized unrecognized elements are generic
+              return new TameElement(node, editable, editable);
             } else if (!html4.ELEMENTS.hasOwnProperty(tagName)
                 || (html4.ELEMENTS[tagName] & html4.eflags.UNSAFE)) {
               // If an unrecognized or unsafe node, return a
@@ -2339,12 +2342,6 @@ var Domado = (function() {
         var eflags = 0;
         if (tagName !== '*') {
           tagName = tagName.toLowerCase();
-          if (!Object.prototype.hasOwnProperty.call(html4.ELEMENTS, tagName)
-              || (eflags = html4.ELEMENTS[tagName]) & html4.ELEMENTS.UNSAFE) { // TODO(kpreid): should be html4.eflags?
-            // Allowing getElementsByTagName to work for opaque element types
-            // would leak information about those elements.
-            return new fakeNodeList([]);
-          }
           tagName = virtualToRealElementName(tagName);
         }
         return new TameNodeList(rootNode.getElementsByTagName(tagName),
@@ -2446,8 +2443,6 @@ var Domado = (function() {
       }
 
       var NOT_EDITABLE = "Node not editable.";
-      var UNSAFE_TAGNAME = "Unsafe tag name.";
-      var UNKNOWN_TAGNAME = "Unknown tag name.";
       var INDEX_SIZE_ERROR = "Index size error.";
 
       // Implementation of EventTarget::addEventListener
@@ -3376,7 +3371,8 @@ var Domado = (function() {
           get: nodeMethod(function () {
             var node = np(this).feral;
             var tagName = node.tagName.toLowerCase();
-            if (!html4.ELEMENTS.hasOwnProperty(tagName)) {
+            if (!html4.ELEMENTS.hasOwnProperty(tagName) &&
+                !isVirtualizedElementName(tagName)) {
               return '';  // unknown node
             }
             var flags = html4.ELEMENTS[tagName];
@@ -5006,18 +5002,7 @@ var Domado = (function() {
       TameHTMLDocument.prototype.createElement = nodeMethod(function (tagName) {
         if (!np(this).editable) { throw new Error(NOT_EDITABLE); }
         tagName = String(tagName).toLowerCase();
-        if (!html4.ELEMENTS.hasOwnProperty(tagName)) {
-          throw new Error(UNKNOWN_TAGNAME + "[" + tagName + "]");
-        }
-        var flags = html4.ELEMENTS[tagName];
-        // Script exemption allows dynamic loading of proxied scripts.
-        if ((flags & html4.eflags.UNSAFE) && !(flags & html4.eflags.SCRIPT)) {
-          if (typeof console !== 'undefined') {
-            console.log(
-                UNSAFE_TAGNAME + "[" + tagName + "]: no action performed");
-          }
-          return null;
-        }
+        tagName = html.virtualToRealElementName(tagName);
         var newEl = np(this).feralDoc.createElement(tagName);
         if ("canvas" == tagName) {
           bridal.initCanvasElement(newEl);

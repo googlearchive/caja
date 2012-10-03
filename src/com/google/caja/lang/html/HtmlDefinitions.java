@@ -81,9 +81,13 @@ public final class HtmlDefinitions {
     RCDATA(8),
     UNSAFE(0x10),
     /**
-     * Elements that can be removed from the DOM without changing behavior as
-     * long as their children are folded into the element's parent. Should
-     * always be paired with UNSAFE.
+     * Elements that can be removed from the DOM without changing non-scripting
+     * semantics as long as their children are folded into the element's parent.
+     * Should always be paired with UNSAFE.
+     *
+     * This flag is used by html-sanitizer.js which does sanitization without
+     * script sandboxing, as opposed to VIRTUALIZED which is used in full
+     * client-side Caja.
      */
     FOLDABLE(0x20),
     SCRIPT(0x40),
@@ -418,7 +422,7 @@ public final class HtmlDefinitions {
       if (HtmlSchema.isElementFoldable(elementName)) {
         flags.add(EFlag.FOLDABLE);
       }
-      if (HtmlSchema.isElementVirtualized(elementName)) {
+      if (schema.isElementVirtualized(elementName)) {
         flags.add(EFlag.VIRTUALIZED);
       }
       elementFlags.put(elementName, flags);

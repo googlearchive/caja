@@ -549,14 +549,14 @@ function HtmlEmitter(makeDOMAccessible, base, opt_domicile, opt_guestGlobal) {
       domicile.sanitizeAttrs(realTagName, attribs);
 
       if ((eltype & html4.eflags.UNSAFE) !== 0) {
-        // TODO(kpreid): Shouldn't happen (for now)
-        return;
+        throw new Error('HtmlEmitter internal: unsafe element ' + realTagName +
+            ' slipped through virtualization!');
       }
 
       var el = bridal.createElement(realTagName, attribs);
       if ((eltype & html4.eflags.OPTIONAL_ENDTAG)
           && el.tagName === insertionPoint.tagName) {
-        documentWriter.endTag(el.tagName, true);
+        documentWriter.endTag(el.tagName.toLowerCase(), true);
         // TODO(kpreid): Replace this with HTML5 parsing model
       }
       insertionPoint.appendChild(el);
@@ -905,9 +905,10 @@ function HtmlEmitter(makeDOMAccessible, base, opt_domicile, opt_guestGlobal) {
       },
       startTag: function (tagName, attribs, params, marker, continuation) {
         var eltype = html4.ELEMENTS[tagName];
-        if (!html4.ELEMENTS.hasOwnProperty(tagName)
-            || (eltype & html4.eflags.UNSAFE) !== 0 &&
-                !(eltype & html4.eflags.VIRTUALIZED)) {
+        if ((eltype & html4.eflags.UNSAFE) !== 0) {
+          // Note: condition is false for unknown tags, will be virtualized by
+          // normalInsert.
+          // TODO(kpreid): Define the policy in a client-side HTML schema object
           if (tagName === 'script') {
             var scriptSrc = lookupAttr(attribs, 'src');
             if (!scriptSrc) {
@@ -920,10 +921,12 @@ function HtmlEmitter(makeDOMAccessible, base, opt_domicile, opt_guestGlobal) {
             }
             pendingDelayed = !!(lookupAttr(attribs, 'defer')
                                 || lookupAttr(attribs, 'async'));
+            return; // TODO(kpreid): Remove, allow virtualized element
           } else if (tagName === 'style') {
             cdataContentType = html4.eflags.STYLE;
             pendingExternal = undefined;
             pendingDelayed = false;
+            return; // TODO(kpreid): Remove, allow virtualized element
           } else if ('link' === tagName) {
             // Link types are case insensitive
             var rel = lookupAttr(attribs, 'rel');
@@ -933,13 +936,18 @@ function HtmlEmitter(makeDOMAccessible, base, opt_domicile, opt_guestGlobal) {
               var res = resolveUriRelativeToDocument(href);
               defineUntrustedExternalStylesheet(res, marker, continuation);
             }
+            return; // TODO(kpreid): Remove, allow virtualized element
           } else if (tagName === 'base') {
             var baseHref = lookupAttr(attribs, 'href');
             if (baseHref && domicile) {
               domicile.setBaseUri(resolveUriRelativeToDocument(baseHref));
             }
+            return; // TODO(kpreid): Remove, allow virtualized element
+          } else if (!(eltype & html4.eflags.VIRTUALIZED)) {
+            // Ignore tags which are unsafe, not to be virtualized, and not
+            // handled by one of the above special cases.
+            return;
           }
-          return;
         }
         insertionMode.startTag(tagName, attribs);
       },
