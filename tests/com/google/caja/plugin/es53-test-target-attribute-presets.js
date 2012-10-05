@@ -22,12 +22,18 @@
 
 (function () {
 
-  function assertInnerHtmlContains(node, str) {
-    var html = canonInnerHtml(node.innerHTML);
-    if (html.indexOf(str) === -1) {
-      fail('Inner HTML [[' + html + ']] does not contain [[' + str + ']]');
+  function aMaker(test) {
+    return function(node, str) {
+      var html = canonInnerHtml(node.innerHTML);
+      if (!test(html, str)) {
+        fail('Inner HTML [[' + html + ']] does not contain [[' + str + ']]');
+      }
     }
   }
+  var assertInnerHtmlContains = aMaker(
+    function(html, str) { return html.indexOf(str) !== -1; });
+  var assertInnerHtmlDoesNotContain = aMaker(
+    function(html, str) { return html.indexOf(str) === -1; });
 
   caja.initialize({
     cajaServer: '/caja',
@@ -39,16 +45,19 @@
     }
   });
 
-  function registerTargetTest(name, html, expected) {
+  function registerTargetTest(name, html /*, expected... */) {
+    var expected = [].slice.call(arguments, 2);
+    assertTrue(expected.length > 0);
     registerTest(name + 'Compiled', function() {
       var div = createDiv();
       caja.load(div, null, function(frame) {
         frame.code('http://a.com/', 'text/html', html)
             .run(function() {
-              assertInnerHtmlContains(div, expected);
+              for (var i = 0; i < expected.length; i++) {
+                assertInnerHtmlContains(div, expected[i]);
+              }
               jsunitPass(name + 'Compiled');
             });
-
       });
     });
     registerTest(name + 'Dynamic', function() {
@@ -60,7 +69,9 @@
             '  document.getElementById(\'a\').innerHTML = \'' + html + '\';' +
             '</script>')
             .run(function() {
-              assertInnerHtmlContains(div, expected);
+              for (var i = 0; i < expected.length; i++) {
+                assertInnerHtmlContains(div, expected[i]);
+              }
               jsunitPass(name + 'Dynamic');
             });
       });
@@ -114,6 +125,58 @@
           .run(function() {
             assertInnerHtmlContains(div, 'target="foo"');
             jsunitPass('testAnchorTargetSetAttribute');
+          });
+    });
+  });
+
+  registerTargetTest(
+      'testUriFragTargetDefault',
+      '<a href="#foo" target="foo">a</a>',
+      'target="foo"', 'href="#foo-caja-guest-');
+
+  registerTargetTest(
+      'testUriFragTargetWhitelist',
+      '<a href="#foo" target="bar">a</a>',
+      'target="bar"', 'href="#foo-caja-guest-');
+
+  registerTargetTest(
+      'testUriFragTargetIllegal',
+      '<a href="#foo" target="baz">a</a>',
+      'target="foo"', 'href="#foo-caja-guest-');
+
+  registerTargetTest(
+      'testUriFragTargetNone',
+      '<a href="#foo">a</a>',
+      'href="#foo-caja-guest-');
+
+  registerTest('testUriFragTargetSetAttribute', function() {
+    var div = createDiv();
+    caja.load(div, null, function(frame) {
+      frame.code('http://a.com/', 'text/html',
+          '<a id="a">a</a>' +
+          '<script type="text/javascript">' +
+          '  document.getElementById(\'a\')' +
+          '      .setAttribute(\'href\', \'#foo\');' +
+          '</script>')
+          .run(function() {
+            assertInnerHtmlDoesNotContain(div, 'target=');
+            jsunitPass('testUriFragTargetSetAttribute');
+          });
+    });
+  });
+
+  registerTest('testUriFragTargetReSetAttribute', function() {
+    var div = createDiv();
+    caja.load(div, caja.policy.net.ALL, function(frame) {
+      frame.code('http://b.com/', 'text/html',
+          '<a id="b" href="#bar">a</a>' +
+          '<script type="text/javascript">' +
+          '  document.getElementById(\'b\')' +
+          '      .setAttribute(\'href\', \'http://example.com/\');' +
+          '</script>')
+          .run(function() {
+            assertInnerHtmlContains(div, 'target="foo"');
+            jsunitPass('testUriFragTargetReSetAttribute');
           });
     });
   });

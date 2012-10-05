@@ -1586,6 +1586,10 @@ var Domado = (function() {
                html4.ATTRIBS.hasOwnProperty(attribKey))) {
             atype = html4.ATTRIBS[attribKey];
             value = rewriteAttribute(tagName, attribName, atype, value);
+            if (atype === html4.atype.URI &&
+              !!value && value.charAt(0) === '#') {
+              needsTargetAttrib = false;
+            }
           } else if (!/__$/.test(attribKey)) {
             attribName = attribs[+i] = cajaPrefix + attribs[+i];
           } else {
@@ -1696,6 +1700,18 @@ var Domado = (function() {
           cdata: function (text, out) { out.push(text); }
         });
 
+      function getSafeTargetAttribute(tagName, attribName, value) {
+        if (value !== null) {
+          value = String(value);
+          for (var i = 0; i < optTargetAttributePresets.whitelist.length; ++i) {
+            if (optTargetAttributePresets.whitelist[i] === value) {
+              return value;
+            }
+          }
+        }
+        return optTargetAttributePresets['default'];
+      }
+
       /**
        * Returns a normalized attribute value, or null if the attribute should
        * be omitted.
@@ -1784,6 +1800,11 @@ var Domado = (function() {
             return trustedHandler;
           case html4.atype.URI:
             value = String(value);
+            // URI fragments reference contents within the document and arent subject
+            // to the URI policy
+            if (value.charAt(0) === '#' && isValidId(value.substring(1))) {
+              return value + idSuffix;
+            }
             value = URI.utils.resolve(domicile.pseudoLocation.href, value);
             if (!naiveUriPolicy) { return null; }
             return uriRewrite(
@@ -1824,16 +1845,7 @@ var Domado = (function() {
             return css.join(' ; ');
           // Frames are ambient, so disallow reference.
           case html4.atype.FRAME_TARGET:
-            if (value !== null) {
-              value = String(value);
-              for (var i = 0; i < optTargetAttributePresets.whitelist.length;
-                   ++i) {
-                if (optTargetAttributePresets.whitelist[i] === value) {
-                  return value;
-                }
-              }
-            }
-            return optTargetAttributePresets['default'];
+            return getSafeTargetAttribute(tagName, attribName, value);
           default:
             return null;
         }
@@ -3221,6 +3233,16 @@ var Domado = (function() {
               tagName, attribName, atype, value);
           if (sanitizedValue !== null) {
             bridal.setAttribute(feral, attribName, sanitizedValue);
+            if (html4.ATTRIBS.hasOwnProperty(tagName + '::target') &&
+              atype === html4.atype.URI) {
+              if (sanitizedValue.charAt(0) === '#') {
+                feral.removeAttribute('target');
+              } else {
+                bridal.setAttribute(feral, 'target',
+                  getSafeTargetAttribute(tagName, 'target',
+                    bridal.getAttribute(feral, 'target')));
+              }
+            }
           }
         }
         return value;
@@ -5167,6 +5189,9 @@ var Domado = (function() {
       });
       domicile.rewriteUriInAttribute = cajaVM.def(
           function (value, tagName, attribName) {
+        if (value.charAt(0) === '#' && isValidId(value.substring(1))) {
+          return value + idSuffix;
+        }
         return value
           ? uriRewrite(naiveUriPolicy, value, getUriEffect(tagName, attribName),
                 getLoaderType(tagName, attribName), {
