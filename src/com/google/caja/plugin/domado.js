@@ -2312,7 +2312,8 @@ var Domado = (function() {
         var tameNode;
 
         for (var i = 0; i < tamed.length && (tameNode = tamed[+i]); ++i) {
-          var name = tameNode.getAttribute('name');
+          var name = void 0;
+          if (tameNode.getAttribute) { name = tameNode.getAttribute('name'); }
           if (name && !(name.charAt(name.length - 1) === '_' || (name in tamed)
                        || name === String(name & 0x7fffffff))) {
             if (!tameNodesByName[name]) { tameNodesByName[name] = []; }

@@ -24,12 +24,15 @@
   - Valid values for <rulename> are:
   -   default    :  builds the plugin compiler (pluginc), tests, and docs
   -   benchmarks :  runs the benchmarks
+  -   brserve    :  starts the server for debugging browser tests
   -   clean      :  wipes generated files
   -   demos      :  demo files
   -   docs       :  javadocs and rule docs
   -   jars       :  build the binary distribution
+  -   jquerytest :  runs the jQuery tests in ES5 mode
   -   pluginc    :  the plugin compiler
   -   runtests   :  runs the tests
+  
   -
   - To run with assertions enabled, set the environment variable ANT_FLAGS="-ea"
  -->
@@ -212,6 +215,27 @@
     </antcall>
   </target>
 
+  <target name="jquerytest" depends="AllTests,jquery">
+    <condition property="jvmarg"
+     value="-Xdebug -Xmx2G -Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=9999" else="">
+      <isset property="test.debug"/>
+    </condition>
+    <junit printsummary="yes" fork="yes" forkmode="once" maxmemory="512m">
+      <assertions><enable/></assertions>  <!-- ignored unless fork="yes" -->
+      <classpath refid="classpath.tests"/>
+      <formatter type="xml"/>
+      <jvmarg line="${jvmarg}"/>
+      <syspropertyset refid="test.propertyset"/>
+      <batchtest todir="${reports}/tests">
+        <fileset dir="${tests}">
+          <and>
+            <filename name="**/JQueryTest.java"/>
+          </and>
+        </fileset>
+      </batchtest>
+    </junit>
+  </target>
+
   <target name="runtests"
       depends="playground,AllTests,RuntestsRun,CacheTestSuccess"
       description="$ ant runtests [-Dtest.filter=My\*Test]"/>
@@ -243,6 +267,7 @@
         <fileset dir="${tests}">
           <and>
             <not><filename name="**/*BrowserTest.java"/></not>
+            <not><filename name="**/JQueryTest.java"/></not>
             <filename name="**/${test.filter}.java"/>
             <filename regex="/[A-M]"/>
           </and>
@@ -1057,6 +1082,9 @@
         <include name="js/jsunit/2.2/jsUnitCore.js"/>
         <include name="js/json_sans_eval/json_sans_eval.js"/>
       </fileset>
+    </copy>
+    <copy todir="${testlib}/js/jqueryjs/">
+      <fileset dir="${lib}/js/jqueryjs" includes="**" />
     </copy>
     <copy todir="${testlib}/com/google/caja/plugin"
           file="${third_party}/js/jsunit/2.2/jsUnitCore.js"/>

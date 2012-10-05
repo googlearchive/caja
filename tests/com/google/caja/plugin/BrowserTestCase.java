@@ -130,6 +130,11 @@ public abstract class BrowserTestCase extends CajaTestCase {
    */
   protected String runBrowserTest(String pageName, String... params)
       throws Exception {
+    return runBrowserTest(pageName, 0, params);
+  }
+
+  protected String runBrowserTest(String pageName, int data, String... params)
+      throws Exception {
     if (flag(SERVER_ONLY) || flag(START_AND_WAIT)) {
       pageName = "test-index.html";
       params = null;
@@ -162,7 +167,7 @@ public abstract class BrowserTestCase extends CajaTestCase {
         Thread.currentThread().join();
       }
 
-      result = driveBrowser(driver, pageName);
+      result = driveBrowser(driver, data, pageName);
       driver.close();
       // Note that if the tests fail, this will not be reached and the window
       // will not be closed. This is useful for debugging test failures.
@@ -212,7 +217,7 @@ public abstract class BrowserTestCase extends CajaTestCase {
     return sb.toString();
   }
 
-  private static String[] add(String[] arr, String... rest) {
+  protected static String[] add(String[] arr, String... rest) {
     String[] result = new String[arr.length + rest.length];
     System.arraycopy(arr, 0, result, 0, arr.length);
     System.arraycopy(rest, 0, result, arr.length, rest.length);
@@ -223,7 +228,8 @@ public abstract class BrowserTestCase extends CajaTestCase {
    * Do what should be done with the browser.
    * @param pageName The tail of a URL.  Unused in this implementation
    */
-  protected String driveBrowser(final WebDriver driver, final String pageName) {
+  protected String driveBrowser(
+      final WebDriver driver, int data, final String pageName) {
     poll(20000, 200, new Check() {
       @Override public String toString() { return "startup"; }
       public boolean run() {

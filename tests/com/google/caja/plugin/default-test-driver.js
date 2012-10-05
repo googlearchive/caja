@@ -27,6 +27,7 @@ function getLoaderTypeName(loaderType) {
 }
 
 var testCase = getUrlParam('test-case');
+var jQuery = (getUrlParam('jQuery') === 'true');
 
 if (testCase) {
   caja.makeFrameGroup({
@@ -61,8 +62,10 @@ if (testCase) {
           frame.url(testCase)
                .run(createExtraImportsForTesting(frameGroup, frame),
                    function(result) {
-                     readyToTest();
-                     jsunitRun();
+                     if (!jQuery) {
+                       readyToTest();
+                       jsunitRun();
+                     }
                      asyncRequirements.evaluate();
                    });
         });

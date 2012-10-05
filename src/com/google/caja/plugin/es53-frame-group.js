@@ -278,7 +278,7 @@ function ES53FrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker) {
     ___.copyToImports(imports, guestWin.___.sharedImports);
 
     var htmlEmitter = new HtmlEmitter(
-      makeDOMAccessible, domicile.htmlEmitterTarget, domicile, imports)
+      makeDOMAccessible, domicile.htmlEmitterTarget, domicile, imports);
 
     // These ___ variables are interfaces used by cajoled code.
     imports.htmlEmitter___ = htmlEmitter;

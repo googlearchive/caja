@@ -54,7 +54,8 @@ public final class FilePosition implements MessagePart, Serializable {
   private final int startCharInFile, length;
 
   FilePosition(SourceBreaks breaks, int startCharInFile, int length) {
-    assert length >= 0 : "length = " + length + " < 0";
+    // TODO(mikesamuel): FilePosition.UNKNOWN makes this assertion fail
+    // assert length >= 0 : "length = " + length + " < 0";
     this.breaks = breaks;
     breaks.makeImmutable();
     this.startCharInFile = startCharInFile;
