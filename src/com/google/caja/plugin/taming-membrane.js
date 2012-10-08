@@ -135,7 +135,7 @@ function TamingMembrane(privilegedAccess, schema) {
             t = new ctor(f.valueOf());
             break;
           default:
-            t = preventExtensions(tamePreviouslyConstructedObject(f, ctor));
+            t = tamePreviouslyConstructedObject(f, ctor);
         }
       }
     } else if (ftype === 'function') {
@@ -198,7 +198,6 @@ function TamingMembrane(privilegedAccess, schema) {
     var tc = tame(fc);
     var t = Object.create(tc.prototype);
     tameObjectWithMethods(f, t);
-    preventExtensions(t);
     return t;
   }
 
@@ -250,7 +249,6 @@ function TamingMembrane(privilegedAccess, schema) {
       schema.applyFeralFunction(f, o, untameArray(arguments));
       tameObjectWithMethods(o, this);
       tamesTo(o, this);
-      preventExtensions(this);
       privilegedAccess.banNumerics(this);
     };
 
@@ -317,6 +315,15 @@ function TamingMembrane(privilegedAccess, schema) {
     };
   }
 
+  function makeStrictPrototypeMethod(proto, func) {
+    return function(_) {
+      if ((this === proto) || !inheritsFrom(this, proto)) {
+        throw new TypeError('Target object not permitted: ' + this);
+      }
+      return func.apply(this, arguments);
+    };
+  }
+
   function inheritsFrom(o, proto) {
     while (o) {
       if (o === proto) { return true; }
@@ -325,50 +332,69 @@ function TamingMembrane(privilegedAccess, schema) {
     return false;
   }
 
+  function makePropertyGetter(f, t, p) {
+    if (schema.grantAs.has(f, p, schema.grantTypes.METHOD)) {
+      // METHOD access implies READ, and requires careful wrapping of the
+      // feral method being exposed
+      return makePrototypeMethod(t, function() {
+        var self = this;
+        return function(_) {
+          return tame(
+            schema.applyFeralFunction(
+                privilegedAccess.getProperty(untame(self), p),
+                untame(self),
+                untameArray(arguments)));
+        };
+      });
+    } else if (schema.grantAs.has(f, p, schema.grantTypes.READ)) {
+      // Default READ access implies normal taming of the property value
+      return makePrototypeMethod(t, function() {
+        return tame(privilegedAccess.getProperty(untame(this), p));
+      });
+    } else {
+      return undefined;
+    }
+  }
+
+  function makePropertySetter(f, t, p) {
+    var override =
+      schema.grantAs.has(f, p, schema.grantTypes.OVERRIDE) ||
+      (schema.grantAs.has(f, p, schema.grantTypes.METHOD) &&
+       schema.grantAs.has(f, p, schema.grantTypes.WRITE));
+
+    if (override) {
+      return makeStrictPrototypeMethod(t, function(v) {
+        privilegedAccess.setProperty(untame(this), p, untame(v));
+        return v;
+      });
+    } else if (schema.grantAs.has(f, p, schema.grantTypes.WRITE)) {
+      return makePrototypeMethod(t, function(v) {
+        privilegedAccess.setProperty(untame(this), p, untame(v));
+        return v;
+      });
+    } else {
+      return undefined;
+    }
+  }
+
+  function defineObjectProperty(f, t, p) {
+    var get = makePropertyGetter(f, t, p);
+    var set = makePropertySetter(f, t, p);
+    if (get || set) {
+      Object.defineProperty(t, p, {
+        enumerable: true,
+        configurable: false,
+        get: get ? get : errGet(p),
+        set: set ? set : errSet(p)
+      });
+    }
+  }
+
   function tameObjectWithMethods(f, t) {
     if (!t) { t = {}; }
     schema.grantAs.getProps(f).forEach(function(p) {
-      var get = undefined;
-      var set = undefined;
-      if (!isValidPropertyName(p)) { return; }
-      if (schema.grantAs.has(f, p, schema.grantTypes.METHOD)) {
-        get = function() {
-          // Note we return a different method each time because we may be
-          // called with a different 'this' (the method property may be
-          // inherited by begotten objects)
-          var self = this;
-          return function(_) {
-            return tame(
-              schema.applyFeralFunction(
-                  privilegedAccess.getProperty(f, p),
-                  untame(self),
-                  untameArray(arguments)));
-          };
-        };
-        Object.defineProperty(t, p, {
-          enumerable: true,
-          configurable: false,
-          get: get,
-          set: errSet(p)
-        });
-      } else {
-        get = !schema.grantAs.has(f, p, schema.grantTypes.READ) ? undefined :
-          makePrototypeMethod(t, function() {
-            return tame(privilegedAccess.getProperty(untame(this), p));
-          });
-        set = !schema.grantAs.has(f, p, schema.grantTypes.WRITE) ? undefined :
-          makePrototypeMethod(t, function(v) {
-            privilegedAccess.setProperty(untame(this), p, untame(v));
-            return v;
-          });
-        if (get || set) {
-          Object.defineProperty(t, p, {
-            enumerable: true,
-            configurable: false,
-            get: get ? get : errGet(p),
-            set: set ? set : errSet(p)
-          });
-        }
+      if (isValidPropertyName(p)) {
+        defineObjectProperty(f, t, p);
       }
     });
     return t;

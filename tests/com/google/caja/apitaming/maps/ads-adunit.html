@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Google Maps JavaScript API v3 Example: Map Ads Unit</title>
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
+    <meta charset="utf-8">
+    <link href="default.css" rel="stylesheet">
+    <script type="text/javascript" src="https://www.google.com/jsapi"></script>
+    <script>
+      function initialize() {
+        var mapOptions = {
+          center: new google.maps.LatLng(36.5987, -121.8950),
+          zoom: 12,
+          mapTypeId: google.maps.MapTypeId.ROADMAP
+        };
+        var map = new google.maps.Map(document.getElementById('map_canvas'),
+            mapOptions);
+
+        var adUnitDiv = document.createElement('div');
+
+        // Note: replace the publisher ID noted here with your own
+        // publisher ID.
+        var adUnitOptions = {
+          format: google.maps.adsense.AdFormat.HALF_BANNER,
+          position: google.maps.ControlPosition.TOP_CENTER,
+          publisherId: 'ca-google-maps_apidocs',
+          map: map,
+          visible: true
+        };
+        var adUnit = new google.maps.adsense.AdUnit(adUnitDiv, adUnitOptions);
+      }
+
+      google.load('maps', '3.0', {
+        callback: initialize,
+        other_params: 'sensor=false&libraries=adsense'
+      });
+    </script>
+  </head>
+  <body>
+    <div id="map_canvas"></div>
+  </body>
+</html>

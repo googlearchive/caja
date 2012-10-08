@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Google Maps JavaScript API v3 Example: Marker Animations Loop</title>
+    <link href="default.css" rel="stylesheet">
+    <script src="https://www.google.com/jsapi"></script>
+    <script>
+      var berlin;
+      var neighborhoods;
+
+      var markers = [];
+      var iterator = 0;
+
+      var map;
+
+      function initialize() {
+        berlin = new google.maps.LatLng(52.520816, 13.410186);
+
+        neighborhoods = [
+          new google.maps.LatLng(52.511467, 13.447179),
+          new google.maps.LatLng(52.549061, 13.422975),
+          new google.maps.LatLng(52.497622, 13.396110),
+          new google.maps.LatLng(52.517683, 13.394393)
+        ];
+
+        var mapOptions = {
+          zoom: 12,
+          mapTypeId: google.maps.MapTypeId.ROADMAP,
+          center: berlin
+        };
+
+        map = new google.maps.Map(document.getElementById('map_canvas'),
+                mapOptions);
+      }
+
+      function drop() {
+        for (var i = 0; i < neighborhoods.length; i++) {
+          setTimeout(function() {
+            addMarker();
+          }, i * 200);
+        }
+      }
+
+      function addMarker() {
+        markers.push(new google.maps.Marker({
+          position: neighborhoods[iterator],
+          map: map,
+          draggable: false,
+          animation: google.maps.Animation.DROP
+        }));
+        iterator++;
+      }
+
+      google.load('maps', '3.0', {
+        callback: initialize,
+        other_params: 'sensor=false',
+      });
+    </script>
+  </head>
+  <body>
+    <div id="map_canvas" style="width: 500px; height: 400px;">map div</div>
+    <button id="drop" onclick="drop()">Drop Markers</button>
+  </body>
+</html>

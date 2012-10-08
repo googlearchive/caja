@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Google Maps JavaScript API v3 Example: Max Zoom Service</title>
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
+    <meta charset="utf-8">
+    <link href="default.css" rel="stylesheet">
+    <script src="https://www.google.com/jsapi"></script>
+    <script>
+      var map;
+      var maxZoomService;
+
+      function initialize() {
+        var mapOptions = {
+          zoom: 11,
+          center: new google.maps.LatLng(35.6894875, 139.6917064),
+          mapTypeId: google.maps.MapTypeId.HYBRID
+        };
+
+        map = new google.maps.Map(document.getElementById('map_canvas'),
+          mapOptions);
+
+        maxZoomService = new google.maps.MaxZoomService();
+
+        google.maps.event.addListener(map, 'click', showMaxZoom);
+      }
+
+      function showMaxZoom(e) {
+        maxZoomService.getMaxZoomAtLatLng(e.latLng, function(response) {
+          if (response.status != google.maps.MaxZoomStatus.OK) {
+            alert('Error in MaxZoomService');
+            return;
+          } else {
+            alert('The maximum zoom at this location is: ' + response.zoom);
+          }
+          map.panTo(e.latLng);
+        });
+      }
+
+      google.load('maps', '3.0', {
+        callback: initialize,
+        other_params: 'sensor=false',
+      });
+    </script>
+  </head>
+  <body>
+    <div id="map_canvas"></div>
+  </body>
+</html>

@@ -12,6 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+/**
+ * @fileoverview
+ * Policy factory for "google.visualization" API.
+ *
+ * @author ihab.awad@gmail.com
+ * @requires caja, JSON
+ */
 caja.tamingGoogleLoader.addPolicyFactory('visualization', function(frame, utils) {
 
   var v = {};
@@ -27,7 +34,7 @@ caja.tamingGoogleLoader.addPolicyFactory('visualization', function(frame, utils)
   // visualization inside *that*.
 
   function containerIdBeforeCtor(f, self, args) {
-    var tameContainerId;
+    var tameContainerId = undefined;
     if (args.length < 1) { return []; }
     var spec = args[0];
     if (typeof spec === 'string') { spec = JSON.parse(spec); }

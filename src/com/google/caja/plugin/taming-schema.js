@@ -27,13 +27,13 @@ function TamingSchema(privilegedAccess) {
     var map = WeakMap();
     return Object.freeze({
       has: function(obj, prop, flag) {
-        prop = '' + prop;
+        prop = '$' + prop;
         return map.has(obj) &&
             map.get(obj).hasOwnProperty(prop) &&
             map.get(obj)[prop].indexOf(flag) !== -1;
       },
       set: function(obj, prop, flag) {
-        prop = '' + prop;
+        prop = '$' + prop;
         if (!map.has(obj)) {
           // Note: Object.create(null) not supported in ES5/3
           map.set(obj, {});
@@ -48,7 +48,8 @@ function TamingSchema(privilegedAccess) {
       },
       getProps: function(obj) {
         if (!map.has(obj)) { return []; }
-        return Object.getOwnPropertyNames(map.get(obj));
+        return Object.getOwnPropertyNames(map.get(obj))
+            .map(function(s) { return s.substring(1); });
       }
     });
   }
@@ -56,7 +57,8 @@ function TamingSchema(privilegedAccess) {
   var grantTypes = Object.freeze({
     METHOD: 'method',
     READ: 'read',
-    WRITE: 'write'
+    WRITE: 'write',
+    OVERRIDE: 'override'
   });
 
   var grantAs = PropertyFlags();
@@ -72,9 +74,6 @@ function TamingSchema(privilegedAccess) {
 
   var tameFunctionName = new WeakMap();
   var tameCtorSuper = new WeakMap();
-
-  var feralByTame = new WeakMap();
-  var tameByFeral = new WeakMap();
 
   var functionAdvice = new WeakMap();
 
@@ -155,6 +154,7 @@ function TamingSchema(privilegedAccess) {
     checkCanControlTaming(f);
     checkNonNumeric(prop);
     grantAs.set(f, prop, grantTypes.METHOD);
+    grantAs.set(f, prop, grantTypes.READ);
   }
 
   function grantTameAsRead(f, prop) {
@@ -168,6 +168,13 @@ function TamingSchema(privilegedAccess) {
     checkNonNumeric(prop);
     grantAs.set(f, prop, grantTypes.READ);
     grantAs.set(f, prop, grantTypes.WRITE);
+  }
+
+  function grantTameAsReadOverride(f, prop) {
+    checkCanControlTaming(f);
+    checkNonNumeric(prop);
+    grantAs.set(f, prop, grantTypes.READ);
+    grantAs.set(f, prop, grantTypes.OVERRIDE);
   }
 
   // Met the ghost of Greg Kiczales at the Hotel Advice.
@@ -229,6 +236,7 @@ function TamingSchema(privilegedAccess) {
       grantTameAsMethod: grantTameAsMethod,
       grantTameAsRead: grantTameAsRead,
       grantTameAsReadWrite: grantTameAsReadWrite,
+      grantTameAsReadOverride: grantTameAsReadOverride,
       adviseFunctionBefore: adviseFunctionBefore,
       adviseFunctionAfter: adviseFunctionAfter,
       adviseFunctionAround: adviseFunctionAround

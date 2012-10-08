@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
+    <meta charset="utf-8">
+    <title>Google Maps JavaScript API v3 Example: Symbols on a Polyline</title>
+    <link href="standard.css" rel="stylesheet">
+    <script src="https://www.google.com/jsapi"></script>
+    <script>
+      function initialize() {
+        var myLatLng = new google.maps.LatLng(20.291, 153.027);
+        var mapOptions = {
+          zoom: 6,
+          center: myLatLng,
+          mapTypeId: google.maps.MapTypeId.TERRAIN
+        };
+
+        var map = new google.maps.Map(document.getElementById('map_canvas'), mapOptions);
+
+      var lineCoordinates = [
+        new google.maps.LatLng(22.291, 153.027),
+        new google.maps.LatLng(18.291, 153.027)
+      ];
+
+      var lineSymbol = {
+        path: 'M 0,-1 0,1',
+        strokeOpacity: 1,
+        scale: 4
+      };
+
+      var line = new google.maps.Polyline({
+        path: lineCoordinates,
+        strokeOpacity: 0,
+        icons: [{
+          icon: lineSymbol,
+          offset: '0',
+          repeat: '20px'
+        }],
+        map: map
+      });
+
+    }
+
+      google.load('maps', '3.0', {
+        callback: initialize,
+        other_params: 'sensor=false',
+      });
+    </script>
+  </head>
+  <body>
+    <div id="map_canvas" style="height:300px; width: 300px"></div>
+  </body>
+</html>

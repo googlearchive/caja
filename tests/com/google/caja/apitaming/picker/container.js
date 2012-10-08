@@ -35,17 +35,14 @@
   var forceES5Mode = (getUrlParam('forceES5Mode') === 'true');
 
   loadScript(cajaServer + '/caja.js', function() {
-    loadScript('./cajaTamingGoogleLoader.js', cajaReady);
+    loadScript('../cajaTamingGoogleLoader.js', cajaReady);
   });
 
   function cajaReady() {
 
     caja.tamingGoogleLoader.addPolicyFactoryUrl(
         'picker',
-        './pickerPolicyFactory.js');
-    caja.tamingGoogleLoader.addPolicyFactoryUrl(
-        'visualization',
-        './visualizationPolicyFactory.js');
+        '../pickerPolicyFactory.js');
 
     caja.initialize({
       cajaServer: cajaServer,
@@ -68,7 +65,6 @@
 
       var t = caja.tamingGoogleLoader.applyToFrame(frame);
       t.whitelistApi('picker');
-      t.whitelistApi('visualization');
 
       var tameConsole = frame.tame(caja.markReadOnlyRecord({
         log: caja.markFunction(function(s) {

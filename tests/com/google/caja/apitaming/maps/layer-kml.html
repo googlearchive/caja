@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
+    <meta charset="utf-8">
+    <title>Google Maps JavaScript API v3 Example: KmlLayer KML</title>
+    <link href="default.css" rel="stylesheet">
+    <script src="https://www.google.com/jsapi"></script>
+    <script>
+      function initialize() {
+        var chicago = new google.maps.LatLng(41.875696,-87.624207);
+        var mapOptions = {
+          zoom: 11,
+          center: chicago,
+          mapTypeId: google.maps.MapTypeId.ROADMAP
+        }
+
+        var map = new google.maps.Map(document.getElementById('map_canvas'), mapOptions);
+
+        var ctaLayer = new google.maps.KmlLayer('http://gmaps-samples.googlecode.com/svn/trunk/ggeoxml/cta.kml');
+        ctaLayer.setMap(map);
+      }
+
+      google.load('maps', '3.0', {
+        callback: initialize,
+        other_params: 'sensor=false',
+      });
+    </script>
+  </head>
+  <body>
+    <div id="map_canvas"></div>
+  </body>
+</html>

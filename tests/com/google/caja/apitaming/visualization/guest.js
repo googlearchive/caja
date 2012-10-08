@@ -16,6 +16,9 @@ var currentTestName = undefined;
 var divId = 0;
 
 function newChartDiv(opt_height) {
+
+  debugger;
+
   var container = document.createElement('div');
   var label = document.createElement('div');
   var content = document.createElement('div');
@@ -1129,44 +1132,4 @@ tests.push(function testDataSourceUrl() {
       }));
     assertTrue(false, 'Evil URL rejected by policy');
   } catch (e) { /* pass */ }
-});
-
-tests.push(function testPicker() {
-  // Create and render a Picker object for searching images.
-  function createPicker() {
-    var picker = new google.picker.PickerBuilder()
-          .addView(google.picker.ViewId.DOCS)
-          .addView(google.picker.ViewId.DOCS_IMAGES)
-          .addView(google.picker.ViewId.DOCS_IMAGES_AND_VIDEOS)
-          .addView(google.picker.ViewId.DOCS_VIDEOS)
-          .addView(google.picker.ViewId.DOCUMENTS)
-          .addView(google.picker.ViewId.FOLDERS)
-          .addView(google.picker.ViewId.FORMS)
-          .addView(google.picker.ViewId.IMAGE_SEARCH)
-          .addView(google.picker.ViewId.PDFS)
-          .addView(google.picker.ViewId.PHOTO_ALBUMS)
-          .addView(google.picker.ViewId.PHOTO_UPLOAD)
-          .addView(google.picker.ViewId.PHOTOS)
-          .addView(google.picker.ViewId.PRESENTATIONS)
-          .addView(google.picker.ViewId.RECENTLY_PICKED)
-          .addView(google.picker.ViewId.SPREADSHEETS)
-          .addView(google.picker.ViewId.VIDEO_SEARCH)
-          .addView(google.picker.ViewId.WEBCAM)
-          .addView(google.picker.ViewId.YOUTUBE)
-          .setCallback(pickerCallback)
-          .build();
-    picker.setVisible(true);
-  }
-
-  // A simple callback implementation.
-  function pickerCallback(data) {
-    var url = 'nothing';
-    if (data[google.picker.Response.ACTION] == google.picker.Action.PICKED) {
-      var doc = data[google.picker.Response.DOCUMENTS][0];
-      url = doc[google.picker.Document.URL];
-    }
-    log('You picked: ' + url);
-  }
-
-  google.load('picker', '1', {callback: createPicker});
 });

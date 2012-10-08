@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
+    <meta charset="utf-8">
+    <title>Google Maps JavaScript API v3 Example: Polyline Simple</title>
+    <link href="default.css" rel="stylesheet">
+    <script src="https://www.google.com/jsapi"></script>
+    <script>
+
+      function initialize() {
+        var myLatLng = new google.maps.LatLng(0, -180);
+        var mapOptions = {
+          zoom: 3,
+          center: myLatLng,
+          mapTypeId: google.maps.MapTypeId.TERRAIN
+        };
+
+        var map = new google.maps.Map(document.getElementById('map_canvas'), mapOptions);
+
+        var flightPlanCoordinates = [
+            new google.maps.LatLng(37.772323, -122.214897),
+            new google.maps.LatLng(21.291982, -157.821856),
+            new google.maps.LatLng(-18.142599, 178.431),
+            new google.maps.LatLng(-27.46758, 153.027892)
+        ];
+        var flightPath = new google.maps.Polyline({
+          path: flightPlanCoordinates,
+          strokeColor: '#FF0000',
+          strokeOpacity: 1.0,
+          strokeWeight: 2
+        });
+
+        flightPath.setMap(map);
+      }
+
+      google.load('maps', '3.0', {
+        callback: initialize,
+        other_params: 'sensor=false',
+      });
+    </script>
+  </head>
+  <body>
+    <div id="map_canvas"></div>
+  </body>
+</html>

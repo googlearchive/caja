@@ -12,6 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+/**
+ * @fileoverview
+ * Policy factory for "google.picker" API.
+ *
+ * @author ihab.awad@gmail.com
+ * @requires caja
+ * @overrides window
+ */
 caja.tamingGoogleLoader.addPolicyFactory('picker', function(frame, utils) {
 
   var p = {};
@@ -91,27 +99,18 @@ caja.tamingGoogleLoader.addPolicyFactory('picker', function(frame, utils) {
   p.PhotosView.Type.FEATURED = 1;
   p.PhotosView.Type.UPLOADED = 1;
 
-  var SECRET = {};
+  if (window && window.google && window.google.picker && window.google.picker.Picker) {
+     window.google.picker.Picker.prototype.constructor =
+        window.google.picker.Picker;
+  }
 
   /*@constructor*/
-  p.Picker = function() {
-    if (arguments[0] !== SECRET) { throw new TypeError(); }
-    this.v = arguments[1];
-  };
+  p.Picker = function() {};
   p.Picker.__super__ = Object;
-  p.Picker.__subst__ = true;
-  p.Picker.prototype.isVisible = function() {
-    return this.v.isVisible();
-  };
-  p.Picker.prototype.setCallback = function(c) {
-    this.v.setCallback(c);
-  };
-  p.Picker.prototype.setRelayUrl = function(u) {
-    this.v.setRelayUrl(u);
-  };
-  p.Picker.prototype.setVisible = function(b) {
-    this.v.setVisible(b);
-  };
+  p.Picker.prototype.isVisible = function() {};
+  p.Picker.prototype.setCallback = function(c) {};
+  p.Picker.prototype.setRelayUrl = function(u) {};
+  p.Picker.prototype.setVisible = function(b) {};
 
 /*
   p.PickerBuilder = function() {};
@@ -138,90 +137,40 @@ caja.tamingGoogleLoader.addPolicyFactory('picker', function(frame, utils) {
   p.PickerBuilder.prototype.toUri = function() {};
 */
 
-  p.PickerBuilder = function() {
-    this.v = new google.picker.PickerBuilder();
-  };
-  p.PickerBuilder.__subst__ = true;
+  if (window && window.google && window.google.picker && window.google.picker.PickerBuilder) {
+     window.google.picker.PickerBuilder.prototype.constructor =
+        window.google.picker.PickerBuilder;
+  }
+
+  p.PickerBuilder = function() {};
   p.PickerBuilder.__super__ = Object;
-  p.PickerBuilder.prototype.addView = function() {
-    this.v.addView.apply(this.v, arguments);
-    return this;
-  };
-  p.PickerBuilder.prototype.addViewGroup = function() {
-    this.v.addViewGroup.apply(this.v, arguments);
-    return this;
-  };
-  p.PickerBuilder.prototype.disableFeature = function() {
-    this.v.disableFeature.apply(this.v, arguments);
-    return this;
-  };
-  p.PickerBuilder.prototype.enableFeature = function() {
-    this.v.enableFeature.apply(this.v, arguments);
-    return this;
-  };
-  p.PickerBuilder.prototype.getRelayUrl = function() {
-    this.v.getRelayUrl.apply(this.v, arguments);
-    return this;
-  };
-  p.PickerBuilder.prototype.getTitle = function() {
-    this.v.getTitle.apply(this.v, arguments);
-    return this;
-  };
-  p.PickerBuilder.prototype.hideTitleBar = function() {
-    this.v.hideTitleBar.apply(this.v, arguments);
-    return this;
-  };
-  p.PickerBuilder.prototype.isFeatureEnabled = function() {
-    this.v.isFeatureEnabled.apply(this.v, arguments);
-    return this;
-  };
-  p.PickerBuilder.prototype.setAppId = function() {
-    this.v.setAppId.apply(this.v, arguments);
-    return this;
-  };
-  p.PickerBuilder.prototype.setAuthUser = function() {
-    this.v.setAuthUser.apply(this.v, arguments);
-    return this;
-  };
-  p.PickerBuilder.prototype.setCallback = function() {
-    this.v.setCallback.apply(this.v, arguments);
-    return this;
-  };
-  p.PickerBuilder.prototype.setDocument = function() {
-    this.v.setDocument.apply(this.v, arguments);
-    return this;
-  };
-  p.PickerBuilder.prototype.setLocale = function() {
-    this.v.setLocale.apply(this.v, arguments);
-    return this;
-  };
-  p.PickerBuilder.prototype.setRelayUrl = function() {
-    this.v.setRelayUrl.apply(this.v, arguments);
-    return this;
-  };
-  p.PickerBuilder.prototype.setSelectableMimeTypes = function() {
-    this.v.setSelectableMimeTypes.apply(this.v, arguments);
-    return this;
-  };
-  p.PickerBuilder.prototype.setSize = function() {
-    this.v.setSize.apply(this.v, arguments);
-    return this;
-  };
-  p.PickerBuilder.prototype.setTitle = function() {
-    this.v.setTitle.apply(this.v, arguments);
-    return this;
-  };
-  p.PickerBuilder.prototype.setUploadToAlbumId = function() {
-    this.v.setUploadToAlbumId.apply(this.v, arguments);
-    return this;
-  };
-  p.PickerBuilder.prototype.toUri = function() {
-    this.v.toUri.apply(this.v, arguments);
-    return this;
-  };
-  p.PickerBuilder.prototype.build = function() {
-    return new p.Picker(SECRET, this.v.build.apply(this.v, arguments));
-  };
+  p.PickerBuilder.prototype.addView = function() {};
+  p.PickerBuilder.prototype.addViewGroup = function() {};
+  p.PickerBuilder.prototype.disableFeature = function() {};
+  p.PickerBuilder.prototype.enableFeature = function() {};
+  p.PickerBuilder.prototype.getRelayUrl = function() {};
+  p.PickerBuilder.prototype.getTitle = function() {};
+  p.PickerBuilder.prototype.hideTitleBar = function() {};
+  p.PickerBuilder.prototype.isFeatureEnabled = function() {};
+  p.PickerBuilder.prototype.setAppId = function() {};
+  p.PickerBuilder.prototype.setAuthUser = function() {};
+  p.PickerBuilder.prototype.setCallback = function() {};
+  p.PickerBuilder.prototype.setDocument = function() {};
+  p.PickerBuilder.prototype.setLocale = function() {};
+  p.PickerBuilder.prototype.setRelayUrl = function() {};
+  p.PickerBuilder.prototype.setSelectableMimeTypes = function() {};
+  p.PickerBuilder.prototype.setSize = function() {};
+  p.PickerBuilder.prototype.setTitle = function() {};
+  p.PickerBuilder.prototype.setUploadToAlbumId = function() {};
+  p.PickerBuilder.prototype.toUri = function() {};
+  p.PickerBuilder.prototype.build = function() {};
+  p.PickerBuilder.prototype.build.__around__ = [
+    function(f, self, args) {
+      debugger;
+      var result = f(self, args);
+      return result;
+    }
+  ];
 
   p.ResourceId = {};
   p.ResourceId.generate = function() {};
@@ -326,7 +275,7 @@ caja.tamingGoogleLoader.addPolicyFactory('picker', function(frame, utils) {
   p.Type.VIDEO = 1;
 
   return {
-    version: '1.0',
+    version: '1',
     value: p
   };
 });

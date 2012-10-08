@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Google Maps JavaScript API v3 Example: Event Properties</title>
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
+    <meta charset="utf-8">
+    <link href="default.css" rel="stylesheet">
+    <script src="https://www.google.com/jsapi"></script>
+
+    <script>
+      function initialize() {
+        var myLatLng = new google.maps.LatLng(-25.363882, 131.044922);
+        var mapOptions = {
+          zoom: 4,
+          center: myLatLng,
+          mapTypeId: google.maps.MapTypeId.ROADMAP
+        };
+
+        var map = new google.maps.Map(document.getElementById('map_canvas'),
+            mapOptions);
+
+        var infowindow = new google.maps.InfoWindow({
+          content: 'Change the zoom level',
+          position: myLatLng
+        });
+        infowindow.open(map);
+
+        google.maps.event.addListener(map, 'zoom_changed', function() {
+          var zoomLevel = map.getZoom();
+          map.setCenter(myLatLng);
+          infowindow.setContent('Zoom: ' + zoomLevel);
+        });
+      }
+
+      google.load('maps', '3.0', {
+        callback: initialize,
+        other_params: 'sensor=false',
+      });
+    </script>
+  </head>
+  <body>
+    <div id="map_canvas"></div>
+  </body>
+</html>

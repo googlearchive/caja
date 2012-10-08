@@ -70,6 +70,7 @@
       x: 42,
       17: 'seventeen',
       toxicFunctionProperty: function() {},
+      xo4aTestValue: 19,
       __proto__: 42
     };
     api.setReadOnlyRecordField = function(k, v) {
@@ -144,8 +145,18 @@
     api.Ctor.prototype.toxicFunctionProperty = function(x) {
       return "poison";
     };
+    api.Ctor.prototype.xo4aTestMethod = function(v) {
+      this.xo4aTestValue = v;
+    };
+    api.Ctor.prototype.readWriteMethod = function(x) {
+      this.x = '' + x + 'readWriteMethod';
+    };
+    api.Ctor.prototype.readOverrideMethod = function(x) {
+      this.x = '' + x + 'readOverrideMethod';
+    };
     api.Ctor.prototype.readOnlyProperty = 3;
     api.Ctor.prototype.readWriteProperty = 7;
+    api.Ctor.prototype.readOverrideProperty = 11;
 
     api.SubCtor = function SubCtor(x, y) {
       api.Ctor.call(this, x);
@@ -180,8 +191,14 @@
 
     frame.grantMethod(api.Ctor.prototype, 'getX');
     frame.grantMethod(api.Ctor.prototype, 'setX');
+    frame.grantMethod(api.Ctor.prototype, 'xo4aTestMethod');
+    frame.grantMethod(api.Ctor.prototype, 'readWriteMethod');
+    frame.grantMethod(api.Ctor.prototype, 'readOverrideMethod');
     frame.grantRead(api.Ctor.prototype, 'readOnlyProperty');
     frame.grantReadWrite(api.Ctor.prototype, 'readWriteProperty');
+    frame.grantReadWrite(api.Ctor.prototype, 'readWriteMethod');
+    frame.grantReadOverride(api.Ctor.prototype, 'readOverrideProperty');
+    frame.grantReadOverride(api.Ctor.prototype, 'readOverrideMethod');
 
     frame.markCtor(api.Ctor, Object, 'Ctor');
 
@@ -315,7 +332,7 @@
     ////////////////////////////////////////////////////////////////////////
     // TAMED eval() RESULT
 
-    api.evalInHostTamed = function(str) {
+    api.evalInHostTamed = function(str, a, b) {
       return eval(str);
     }
 

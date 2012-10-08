@@ -40,7 +40,7 @@
     return new f();
   };
 
-  window.assertNumericIndices = function(o) {
+  window.assertNumericIndices = function(o, opt_writeable) {
     // Assume 'o' is the taming of some feral object where the feral
     // object has a defined property at index 17, in other words:
     //     feral-twin(o)[17] === (something other than undefined)
@@ -53,14 +53,16 @@
     // Same thing bypassing the numeric indexing optimization.
     assertEquals(undefined, o[new Number('17')]);
     assertEquals(undefined, o[new Number('19')]);
-    // Writing to numeric indexes should fail for both existing and nonexistent
-    // numeric properties
-    expectFailure(function() {
-      o[17] = 'newseventeen';
-    });
-    expectFailure(function() {
-      o[19] = 'newnineteen';
-    });
+    if (!opt_writeable) {
+      // Writing to numeric indexes should fail for both existing
+      // and nonexistent numeric properties
+      expectFailure(function() {
+        o[17] = 'newseventeen';
+      });
+      expectFailure(function() {
+        o[19] = 'newnineteen';
+      });
+    }
     assertEquals(undefined, o[17]);
     assertEquals(undefined, o[19]);
     // Property enumeration
@@ -210,7 +212,7 @@
     assertEquals(42, tamedApi.readOnlyRecord.x);
     assertEquals(undefined, tamedApi.readOnlyRecord.foo);
     window.assertKeys(tamedApi.readOnlyRecord,
-        [ 'x', 'toxicFunctionProperty' ]);
+        [ 'x', 'toxicFunctionProperty', 'xo4aTestValue' ]);
     // Throws because property 'x' is not writable
     expectFailure(function() {
       tamedApi.readOnlyRecord.x = 19;
@@ -232,7 +234,7 @@
     assertEquals(undefined, tamedApi.readOnlyRecord.foo);
     assertEquals(undefined, tamedApi.readOnlyRecord.bar);
     window.assertKeys(tamedApi.readOnlyRecord,
-        [ 'x', 'toxicFunctionProperty' ]);
+        [ 'x', 'toxicFunctionProperty', 'xo4aTestValue' ]);
     window.assertNumericIndices(tamedApi.readOnlyRecord);
     window.assertToxicFunctionPropertyOnRecord(tamedApi.readOnlyRecord, false);
     pass('testReadOnlyRecord');
@@ -466,14 +468,39 @@
       'constructor',
       'readOnlyProperty',
       'readWriteProperty',
+      'readOverrideProperty',
       'getX',
       'setX',
+      'xo4aTestMethod',
+      'readWriteMethod',
+      'readOverrideMethod'
     ];
     window.assertKeys(tamedApi.Ctor.prototype, keys);
     // window.assertKeys(o, keys);
+
     assertEquals(17, o.getX());
     o.setX(42);
     assertEquals(42, o.getX());
+
+    o.readWriteMethod(19);
+    assertEquals('19readWriteMethod', o.getX());
+
+    o.readOverrideMethod(23);
+    assertEquals('23readOverrideMethod', o.getX());
+
+    o.readWriteMethod = function(x) {
+      console.log('readWriteMethodModified -- ' + x);
+      this.setX('' + x + 'readWriteMethodModified');
+    };
+    o.readWriteMethod(51);
+    assertEquals('51readWriteMethodModified', o.getX());
+
+    o.readOverrideMethod = function(x) {
+      console.log('readOverrideMethodModified -- ' + x);
+      this.setX('' + x + 'readOverrideMethodModified');
+    };
+    o.readOverrideMethod(33);
+    assertEquals('33readOverrideMethodModified', o.getX());
   };
 </script>
 
@@ -540,16 +567,29 @@
     // Guest code must not be able to directly read a non-whitelisted property
     // of a tamed constructed object.
     assertEquals(undefined, o.x);
-    // Tamed constructed objects must be read-only by default. This means:
-    // (1) Existing non-whitelisted properties must not be modifiable; and
+    // Tamed constructed objects allow limited extensibility. This means:
+    // (1) Existing non-whitelisted properties that are not exposed are locally
+    // modifiable but do not reflect in the feral side
+    o.x = 'something weird';
+    assertEquals('something weird', o.x);
+    assertEquals(42, tamedApi.evalInHostTamed('a.x', o));
+    // (2) It is okay to create new properties.
+    o.foo = 19;
+    assertEquals(19, o.foo);
+    // (3) It must not be possible to overwrite own methods.
     expectFailure(function () {
-      o.x = 23;
+      o.getX = 19;
     });
-    // (2) It must not be possible to create new properties.
-    expectFailure(function () {
-      o.foo = 19;
+    window.assertNumericIndices(o, true);
+    // Read-write methods must not be writeable on the prototype (despite the
+    // name, it is a mistake to grant read/write on a method; we disallow)
+    expectFailure(function() {
+      tamedApi.Ctor.prototype.readWriteMethod = function() {};
     });
-    window.assertNumericIndices(o);
+    // Read-override methods must not be writeable on the prototype
+    expectFailure(function() {
+      tamedApi.Ctor.prototype.readOverrideMethod = function() {};
+    });
   };
 </script>
 
@@ -579,9 +619,6 @@
   window.testCtorProperties = function(o) {
     assertEquals(undefined, o.invisibleProperty);
     assertFalse('invisibleProperty' in o);
-    expectFailure(function() {
-      o.invisibleProperty = 91;
-    });
     assertEquals(19, o.readOnlyProperty);
     assertTrue('readOnlyProperty is not in o', 'readOnlyProperty' in o);
     expectFailure(function() {
@@ -591,8 +628,21 @@
     assertEquals(23, o.readWriteProperty);
     assertTrue('readWriteProperty is not in o', 'readWriteProperty' in o);
     o.readWriteProperty = 91;
-    window.assertNumericIndices(o);
+    window.assertNumericIndices(o, true);
     assertEquals(91, o.readWriteProperty);
+    assertEquals(7, tamedApi.Ctor.prototype.readWriteProperty);
+    tamedApi.Ctor.prototype.readWriteProperty = 87;
+    assertEquals(87, tamedApi.Ctor.prototype.readWriteProperty);
+    assertEquals(91, o.readWriteProperty);
+    tamedApi.Ctor.prototype.readWriteProperty = 7;
+    expectFailure(function() {
+      tamedApi.Ctor.readOverrideProperty = 13;
+    });
+    assertEquals(11, tamedApi.Ctor.prototype.readOverrideProperty);
+    assertEquals(11, o.readOverrideProperty);
+    o.readOverrideProperty = 13;
+    assertEquals(13, o.readOverrideProperty);
+    assertEquals(11, tamedApi.Ctor.prototype.readOverrideProperty);
   };
 </script>    
 
@@ -638,6 +688,14 @@
     expectFailure(function() {
       tamedApi.SubCtor.prototype.constructor = 'foo';
     });
+    // It must not be possible to overwrite own methods.
+    expectFailure(function () {
+      o.getY = 19;
+    });
+    // It must not be possible to overwrite inherited methods.
+    expectFailure(function () {
+      o.getX = 19;
+    });
     assertFalse('foo' === tamedApi.SubCtor.prototype.constructor);
     pass('testSubCtor');
   });
@@ -652,11 +710,15 @@
     var keys = [
       'getX',
       'setX',
+      'xo4aTestMethod',
       'getY',
       'setY',
       'getMagSquared',
       'readOnlyProperty',
       'readWriteProperty',
+      'readOverrideProperty',
+      'readWriteMethod',
+      'readOverrideMethod',
       'constructor'  // enumerable since explicitly set
     ];
     window.assertKeys(tamedApi.SubCtor.prototype, keys);
@@ -737,19 +799,20 @@
     // constructed object.
     assertEquals(undefined, o.x);
     assertEquals(undefined, o.y);
-    // Tamed constructed objects must be read-only. This means:
-    // (1) Existing properties must not be modifiable; and
+    // Tamed constructed objects allow limited extensibility. This means:
+    // (1) Existing non-whitelisted properties that are not exposed are locally
+    // modifiable but do not reflect in the feral side
+    o.y = 'something weird';
+    assertEquals('something weird', o.y);
+    assertEquals(49, tamedApi.evalInHostTamed('a.y', o));
+    // (2) It is okay to create new properties.
+    o.foo = 19;
+    assertEquals(19, o.foo);
+    // (3) It must not be possible to overwrite own methods.
     expectFailure(function () {
-      o.x = 23;
+      o.getY = 19;
     });
-    expectFailure(function () {
-      o.y = 23;
-    });
-    // (2) It must not be possible to create new properties.
-    expectFailure(function () {
-      o.foo = 19;
-    });
-    window.assertNumericIndices(o);
+    window.assertNumericIndices(o, true);
     pass('testSubCtorMethodsAreSafe');
   });
 </script>    
@@ -968,5 +1031,24 @@
       tamingFrameArray.prototype.sort = function evil() { };
     });
     pass('testPrimordialsOfTamedObjectsAreFrozen');
+  });
+</script>
+
+<div id="testMethodGetterXo4a" class="testcontainer waiting">
+  testMethodGetterXo4a
+</div>
+<script type="text/javascript">
+  jsunitRegister('testMethodGetterXo4a',
+                 function testMethodGetterXo4a() {
+    assertEquals(19, tamedApi.readOnlyRecord.xo4aTestValue);
+    var pd = Object.getOwnPropertyDescriptor(
+        tamedApi.Ctor.prototype, 'xo4aTestMethod');
+    var getter = pd.get;
+    try {
+      var method = getter.call(tamedApi.readOnlyRecord);
+      method(17);
+    } catch (e) { }
+    assertEquals(19, tamedApi.readOnlyRecord.xo4aTestValue);
+    pass('testMethodGetterXo4a');
   });
 </script>

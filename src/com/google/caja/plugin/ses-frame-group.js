@@ -80,6 +80,7 @@ function SESFrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker) {
     grantMethod: frameGroupTamingSchema.published.grantTameAsMethod,
     grantRead: frameGroupTamingSchema.published.grantTameAsRead,
     grantReadWrite: frameGroupTamingSchema.published.grantTameAsReadWrite,
+    grantReadOverride: frameGroupTamingSchema.published.grantTameAsReadOverride,
     adviseFunctionBefore: frameGroupTamingSchema.published.adviseFunctionBefore,
     adviseFunctionAfter: frameGroupTamingSchema.published.adviseFunctionAfter,
     adviseFunctionAround: frameGroupTamingSchema.published.adviseFunctionAround,
@@ -217,7 +218,7 @@ function SESFrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker) {
       var htmlEmitter = domicileAndEmitter && domicileAndEmitter[1];
       var gman = GuestManager(frameTamingSchema, frameTamingMembrane, divs,
           cajaInt.documentBaseUrl(), domicile, htmlEmitter, guestWin, USELESS,
-          sesRun);
+          uriPolicy, sesRun);
       guestWin.ses.DISABLE_SECURITY_FOR_DEBUGGER = unsafe;
       es5ready(gman);
     });

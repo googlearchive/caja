@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Google Maps API v3 Example: Distance Matrix</title>
+    <script type="text/javascript" src="https://www.google.com/jsapi"></script>
+
+    <style>
+      body {
+        margin: 20px;
+        font-family: courier, sans-serif;
+        font-size: 12px;
+      }
+      #map {
+        height: 480px;
+        width: 640px;
+        border: solid thin #333;
+        margin-top: 20px;
+      }
+    </style>
+
+    <script>
+
+      var map;
+      var geocoder;
+      var bounds;
+      var markersArray = [];
+
+      var origin1;
+      var origin2 = 'Greenwich, England';
+      var destinationA = 'Stockholm, Sweden';
+      var destinationB;
+
+      var destinationIcon = 'https://chart.googleapis.com/chart?chst=d_map_pin_letter&chld=D|FF0000|000000';
+      var originIcon = 'https://chart.googleapis.com/chart?chst=d_map_pin_letter&chld=O|FFFF00|000000';
+
+      function initialize() {
+        bounds = new google.maps.LatLngBounds();
+        origin1 = new google.maps.LatLng(55.930385, -3.118425);
+        destinationB = new google.maps.LatLng(50.087692, 14.421150);
+
+        var opts = {
+          center: new google.maps.LatLng(55.53, 9.4),
+          zoom: 10,
+          mapTypeId: google.maps.MapTypeId.ROADMAP
+        };
+        map = new google.maps.Map(document.getElementById('map'), opts);
+        geocoder = new google.maps.Geocoder();
+      }
+
+      window.calculateDistances = function() {
+        var service = new google.maps.DistanceMatrixService();
+        service.getDistanceMatrix(
+          {
+            origins: [origin1, origin2],
+            destinations: [destinationA, destinationB],
+            travelMode: google.maps.TravelMode.DRIVING,
+            unitSystem: google.maps.UnitSystem.METRIC,
+            avoidHighways: false,
+            avoidTolls: false
+          }, callback);
+      }
+
+      function callback(response, status) {
+        if (status != google.maps.DistanceMatrixStatus.OK) {
+          alert('Error was: ' + status);
+        } else {
+          var origins = response.originAddresses;
+          var destinations = response.destinationAddresses;
+          var outputDiv = document.getElementById('outputDiv');
+          outputDiv.innerHTML = '';
+          deleteOverlays();
+
+          for (var i = 0; i < origins.length; i++) {
+            var results = response.rows[i].elements;
+            addMarker(origins[i], false);
+            for (var j = 0; j < results.length; j++) {
+              addMarker(destinations[j], true);
+              outputDiv.innerHTML += origins[i] + ' to ' + destinations[j]
+                  + ': ' + results[j].distance.text + ' in '
+                  + results[j].duration.text + '<br>';
+            }
+          }
+        }
+      }
+
+      function addMarker(location, isDestination) {
+        var icon;
+        if (isDestination) {
+          icon = destinationIcon;
+        } else {
+          icon = originIcon;
+        }
+        geocoder.geocode({'address': location}, function(results, status) {
+          if (status == google.maps.GeocoderStatus.OK) {
+            bounds.extend(results[0].geometry.location);
+            map.fitBounds(bounds);
+            var marker = new google.maps.Marker({
+              map: map,
+              position: results[0].geometry.location,
+              icon: icon
+            });
+            markersArray.push(marker);
+          } else {
+            alert('Geocode was not successful for the following reason: '
+              + status);
+          }
+        });
+      }
+
+      function deleteOverlays() {
+        if (markersArray) {
+          for (i in markersArray) {
+            markersArray[i].setMap(null);
+          }
+          markersArray.length = 0;
+        }
+      }
+
+      google.load('maps', '3.0', {
+        callback: initialize,
+        other_params: 'sensor=false'
+      });
+    </script>
+  </head>
+  <body>
+    <div id="inputs">
+      <pre class="prettyprint">
+var origin1 = new google.maps.LatLng(55.930385, -3.118425);
+var origin2 = 'Greenwich, England';
+var destinationA = 'Stockholm, Sweden';
+var destinationB = new google.maps.LatLng(50.087692, 14.421150);
+      </pre>
+      <p><button type="button" onclick="calculateDistances();">Calculate
+        distances</button></p>
+    </div>
+    <div id="outputDiv"></div>
+    <div id="map"></div>
+  </body>
+</html>

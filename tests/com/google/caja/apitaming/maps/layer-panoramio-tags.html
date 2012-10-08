@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Google Maps JavaScript API v3 Example: Panoramio Layer Tags</title>
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
+    <meta charset="utf-8">
+    <link href="default.css" rel="stylesheet">
+    <style>
+      #filter {
+        padding: 5px 10px;
+        background: #fff;
+        border: 1px solid #ccc;
+        border-top: 0;
+      }
+    </style>
+    <script src="https://www.google.com/jsapi"></script>
+    <script>
+      function initialize() {
+        var mapOptions = {
+          zoom: 15,
+          center: new google.maps.LatLng(40.693134, -74.031028),
+          mapTypeId: google.maps.MapTypeId.ROADMAP
+        };
+
+        var map = new google.maps.Map(document.getElementById('map_canvas'),
+          mapOptions);
+
+        var panoramioLayer = new google.maps.panoramio.PanoramioLayer();
+        panoramioLayer.setMap(map);
+
+        var tag = document.getElementById('tag');
+        var button = document.getElementById('filter-button');
+
+        google.maps.event.addDomListener(button, 'click', function() {
+          panoramioLayer.setTag(tag.value);
+        });
+
+        map.controls[google.maps.ControlPosition.TOP].push(
+            document.getElementById('filter'));
+      }
+
+      google.load('maps', '3.0', {
+        callback: initialize,
+        other_params: 'sensor=false&libraries=panoramio',
+      });
+    </script>
+  </head>
+  <body>
+    <div id="filter">
+      <input id="tag" value="Statue of Liberty">
+      <button id="filter-button">Filter on Tag</button>
+    </div>
+    <div id="map_canvas"></div>
+  </body>
+</html>

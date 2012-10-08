@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
+    <meta charset="utf-8">
+    <title>Google Maps JavaScript API v3 Example: Directions Draggable</title>
+    <link href="default.css" rel="stylesheet">
+    <script type="text/javascript" src="https://www.google.com/jsapi"></script>
+    <script>
+
+      var rendererOptions = {
+        draggable: true
+      };
+      var directionsDisplay;
+      var directionsService;
+      var map;
+
+      var australia;
+
+      function initialize() {
+
+        directionsDisplay = new google.maps.DirectionsRenderer(rendererOptions);;
+        directionsService = new google.maps.DirectionsService();
+        australia = new google.maps.LatLng(-25.274398, 133.775136);  
+  
+        var mapOptions = {
+          zoom: 7,
+          mapTypeId: google.maps.MapTypeId.ROADMAP,
+          center: australia
+        };
+        map = new google.maps.Map(document.getElementById('map_canvas'), mapOptions);
+        directionsDisplay.setMap(map);
+        directionsDisplay.setPanel(document.getElementById('directionsPanel'));
+
+        google.maps.event.addListener(directionsDisplay, 'directions_changed', function() {
+          computeTotalDistance(directionsDisplay.getDirections());
+        });
+
+        calcRoute();
+      }
+
+      function calcRoute() {
+
+        var request = {
+          origin: 'Sydney, NSW',
+          destination: 'Sydney, NSW',
+          waypoints:[{location: 'Bourke, NSW'}, {location: 'Broken Hill, NSW'}],
+          travelMode: google.maps.DirectionsTravelMode.DRIVING
+        };
+        directionsService.route(request, function(response, status) {
+          if (status == google.maps.DirectionsStatus.OK) {
+            directionsDisplay.setDirections(response);
+          }
+        });
+      }
+
+      function computeTotalDistance(result) {
+        var total = 0;
+        var myroute = result.routes[0];
+        for (var i = 0; i < myroute.legs.length; i++) {
+          total += myroute.legs[i].distance.value;
+        }
+        total = total / 1000.
+        document.getElementById('total').innerHTML = total + ' km';
+      }
+
+      google.load('maps', '3.0', {
+        callback: initialize,
+        other_params: 'sensor=false'
+      });
+    </script>
+  </head>
+  <body>
+    <div id="map_canvas" style="float:left;width:70%; height:100%"></div>
+    <div id="directionsPanel" style="float:right;width:30%;height 100%">
+    <p>Total Distance: <span id="total"></span></p>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Google Maps JavaScript API v3 Example: Overlay Removal</title>
+    <style>
+      #map-canvas {
+        width: 600px;
+        height: 500px
+      }
+    </style>
+    <script src="https://www.google.com/jsapi"></script>
+    <script>
+      var map;
+      var markers = [];
+
+      function initialize() {
+        var haightAshbury = new google.maps.LatLng(37.7699298, -122.4469157);
+        var mapOptions = {
+          zoom: 12,
+          center: haightAshbury,
+          mapTypeId: google.maps.MapTypeId.TERRAIN
+        };
+        map = new google.maps.Map(document.getElementById('map-canvas'),
+            mapOptions);
+
+        google.maps.event.addListener(map, 'click', function(event) {
+          addMarker(event.latLng);
+        });
+      }
+
+      // Add a marker to the map and push to the array.
+      function addMarker(location) {
+        var marker = new google.maps.Marker({
+          position: location,
+          map: map
+        });
+        markers.push(marker);
+      }
+
+      // Sets the map on all markers in the array.
+      function setAllMap(map) {
+        for (var i = 0; i < markers.length; i++) {
+          markers[i].setMap(map);
+        }
+      }
+
+      // Removes the overlays from the map, but keeps them in the array.
+      window.clearOverlays = function() {
+        setAllMap(null);
+      }
+
+      // Shows any overlays currently in the array.
+      window.showOverlays = function() {
+        setAllMap(map);
+      }
+
+      // Deletes all markers in the array by removing references to them.
+      window.deleteOverlays = function() {
+        clearOverlays();
+        markers = [];
+      }
+
+      google.load('maps', '3.0', {
+        callback: initialize,
+        other_params: 'sensor=false',
+      });
+    </script>
+  </head>
+  <body>
+    <div>
+      <input onclick="clearOverlays();" type=button value="Clear Overlays">
+      <input onclick="showOverlays();" type=button value="Show All Overlays">
+      <input onclick="deleteOverlays();" type=button value="Delete Overlays">
+    </div>
+    <div id="map-canvas"></div>
+  </body>
+</html>

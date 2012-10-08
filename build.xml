@@ -689,56 +689,56 @@
   <macrodef name="JQueryTestCase">
     <attribute name="testcase" />
     <sequential>
-      <copy file="${lib}/js/jqueryjs/test/index-template.html" tofile="${lib}/js/jqueryjs/test/@{testcase}-uncajoled.html" />
-      <replace file="${lib}/js/jqueryjs/test/@{testcase}-uncajoled.html" value="@{testcase}">
-        <replacetoken><![CDATA[@jquery-testcase@]]></replacetoken>
-      </replace>
-      <copy file="${lib}/js/jqueryjs/test/hostpage-template.html" tofile="${lib}/js/jqueryjs/test/@{testcase}.html" />
-      <replace file="${lib}/js/jqueryjs/test/@{testcase}.html" value="@{testcase}">
-        <replacetoken><![CDATA[@jquery-testcase@]]></replacetoken>
-      </replace>
-      <transform>
-        <input file="${lib}/js/jqueryjs/test/@{testcase}-uncajoled.html" />
-        <output file="${lib}/js/jqueryjs/test/@{testcase}-cajoled.js"
-            onlyJsEmitted="true"
-            language="caja"
-            canLink="http://simon.incutio.com/archive/2003/03/25#getElementsBySelector \
+        <copy file="${lib}/js/jqueryjs/test/index-template.html" tofile="${lib}/js/jqueryjs/test/@{testcase}-uncajoled.html" />
+        <replace file="${lib}/js/jqueryjs/test/@{testcase}-uncajoled.html" value="@{testcase}">
+            <replacetoken><![CDATA[@jquery-testcase@]]></replacetoken>
+        </replace>
+        <copy file="${lib}/js/jqueryjs/test/hostpage-template.html" tofile="${lib}/js/jqueryjs/test/@{testcase}.html" />
+        <replace file="${lib}/js/jqueryjs/test/@{testcase}.html" value="@{testcase}">
+            <replacetoken><![CDATA[@jquery-testcase@]]></replacetoken>
+        </replace>
+        <transform>
+            <input file="${lib}/js/jqueryjs/test/@{testcase}-uncajoled.html" />
+            <output file="${lib}/js/jqueryjs/test/@{testcase}-cajoled.js"
+                    onlyJsEmitted="true"
+                    language="caja"
+                    canLink="http://simon.incutio.com/archive/2003/03/25#getElementsBySelector \
                            http://www.google.com/ \
                            http://groups.google.com/ \
                            http://smin/ \
                            http://diveintomark.org/ \
                            http://www.yahoo.com/ \
                            http://simon.incutio.com/"
-        />
-  
-        <depend file="${lib}/js/jqueryjs/test/data/ua.txt"/>
-        <depend file="${lib}/js/jqueryjs/test/qunit/qunit/qunit.css"/>
-        <depend file="${lib}/js/jqueryjs/test/data/testsuite.css"/>
-        <depend file="${lib}/js/jqueryjs/test/data/testinit.js"/>
-        <depend file="${lib}/js/jqueryjs/test/qunit/qunit/qunit.js"/>
-        <depend file="${lib}/js/jqueryjs/test/data/testrunner.js"/>
-        <depend file="${lib}/js/jqueryjs/dist/jquery.js"/>
-        <depend file="${lib}/js/jqueryjs/test/unit/core.js"/>
-        <depend file="${lib}/js/jqueryjs/test/unit/callbacks.js"/>
-        <depend file="${lib}/js/jqueryjs/test/unit/deferred.js"/>
-        <depend file="${lib}/js/jqueryjs/test/unit/support.js"/>
-        <depend file="${lib}/js/jqueryjs/test/unit/data.js"/>
-        <depend file="${lib}/js/jqueryjs/test/unit/queue.js"/>
-        <depend file="${lib}/js/jqueryjs/test/unit/attributes.js"/>
-        <depend file="${lib}/js/jqueryjs/test/unit/event.js"/>
-        <depend file="${lib}/js/jqueryjs/src/sizzle/test/unit/selector.js"/>
-        <depend file="${lib}/js/jqueryjs/test/unit/selector.js"/>
-        <depend file="${lib}/js/jqueryjs/test/unit/traversing.js"/>
-        <depend file="${lib}/js/jqueryjs/test/unit/manipulation.js"/>
-        <depend file="${lib}/js/jqueryjs/test/unit/css.js"/>
-        <depend file="${lib}/js/jqueryjs/test/unit/ajax.js"/>
-        <depend file="${lib}/js/jqueryjs/test/unit/effects.js"/>
-        <depend file="${lib}/js/jqueryjs/test/unit/offset.js"/>
-        <depend file="${lib}/js/jqueryjs/test/unit/dimensions.js"/>
-        <depend file="${lib}/js/jqueryjs/test/unit/exports.js"/>
-      </transform>
+                    />
+
+            <depend file="${lib}/js/jqueryjs/test/data/ua.txt"/>
+            <depend file="${lib}/js/jqueryjs/test/qunit/qunit/qunit.css"/>
+            <depend file="${lib}/js/jqueryjs/test/data/testsuite.css"/>
+            <depend file="${lib}/js/jqueryjs/test/data/testinit.js"/>
+            <depend file="${lib}/js/jqueryjs/test/qunit/qunit/qunit.js"/>
+            <depend file="${lib}/js/jqueryjs/test/data/testrunner.js"/>
+            <depend file="${lib}/js/jqueryjs/dist/jquery.js"/>
+            <depend file="${lib}/js/jqueryjs/test/unit/core.js"/>
+            <depend file="${lib}/js/jqueryjs/test/unit/callbacks.js"/>
+            <depend file="${lib}/js/jqueryjs/test/unit/deferred.js"/>
+            <depend file="${lib}/js/jqueryjs/test/unit/support.js"/>
+            <depend file="${lib}/js/jqueryjs/test/unit/data.js"/>
+            <depend file="${lib}/js/jqueryjs/test/unit/queue.js"/>
+            <depend file="${lib}/js/jqueryjs/test/unit/attributes.js"/>
+            <depend file="${lib}/js/jqueryjs/test/unit/event.js"/>
+            <depend file="${lib}/js/jqueryjs/src/sizzle/test/unit/selector.js"/>
+            <depend file="${lib}/js/jqueryjs/test/unit/selector.js"/>
+            <depend file="${lib}/js/jqueryjs/test/unit/traversing.js"/>
+            <depend file="${lib}/js/jqueryjs/test/unit/manipulation.js"/>
+            <depend file="${lib}/js/jqueryjs/test/unit/css.js"/>
+            <depend file="${lib}/js/jqueryjs/test/unit/ajax.js"/>
+            <depend file="${lib}/js/jqueryjs/test/unit/effects.js"/>
+            <depend file="${lib}/js/jqueryjs/test/unit/offset.js"/>
+            <depend file="${lib}/js/jqueryjs/test/unit/dimensions.js"/>
+            <depend file="${lib}/js/jqueryjs/test/unit/exports.js"/>
+        </transform>
     </sequential>
-  </macrodef>
+</macrodef>
 
   <target name="jquery" depends="CajoledDomado">
     <!-- The root files of the Domita test cases are statically cajoled -->
@@ -803,10 +803,9 @@
 
     <!-- These and other HTML and JS files are copied verbatim -->
     <copy todir="${testlib}">
-      <fileset dir="${tests}" includes="**/*.html,**/*.js"/>
-    </copy>
-    <copy todir="${testlib}">
-      <fileset dir="${src}" includes="**/apitaming/*.*"/>
+      <fileset dir="${tests}" includes="**/*.html,**/*.js,**/*.css,**/*.jpg,**/*.png"/>
+      <fileset dir="${src}" includes="**/apitaming/*"/>
+      <fileset dir="${tests}" includes="**/apitaming/*"/>
     </copy>
 
     <replace dir="${testlib}/com/google/caja/plugin"
@@ -1037,6 +1036,26 @@
       <input file="${src.caja}/plugin/ses-iframe-init.js"/>
       <input file="${lib.caja}/ses/initSESPlus.js" jslint="false"/>
       <input file="${src.caja}/plugin/caja-iframe-done.js"/>
+    </transform>
+    <transform>
+      <output file="${lib}/com/google/caja/apitaming/cajaTamingGoogleLoader.jslint.tstamp" language="jslint"/>
+      <output file="${lib}/com/google/caja/apitaming/cajaTamingGoogleLoader.opt.js" language="javascript" renderer="minify"/>
+      <input file="${src}/com/google/caja/apitaming/cajaTamingGoogleLoader.js"/>
+    </transform>
+    <transform>
+      <output file="${lib}/com/google/caja/apitaming/mapsPolicyFactory.jslint.tstamp" language="jslint"/>
+      <output file="${lib}/com/google/caja/apitaming/mapsPolicyFactory.opt.js" language="javascript" renderer="minify"/>
+      <input file="${src}/com/google/caja/apitaming/mapsPolicyFactory.js"/>
+    </transform>
+    <transform>
+      <output file="${lib}/com/google/caja/apitaming/pickerPolicyFactory.jslint.tstamp" language="jslint"/>
+      <output file="${lib}/com/google/caja/apitaming/pickerPolicyFactory.opt.js" language="javascript" renderer="minify"/>
+      <input file="${src}/com/google/caja/apitaming/pickerPolicyFactory.js"/>
+    </transform>
+    <transform>
+      <output file="${lib}/com/google/caja/apitaming/visualizationPolicyFactory.jslint.tstamp" language="jslint"/>
+      <output file="${lib}/com/google/caja/apitaming/visualizationPolicyFactory.opt.js" language="javascript" renderer="minify"/>
+      <input file="${src}/com/google/caja/apitaming/visualizationPolicyFactory.js"/>
     </transform>
     <replace dir="${lib.caja}/plugin" propertyFile="${lib.caja}/reporting/buildInfo.properties" >
       <replacefilter token="%VERSION%" property="svnVersion" />

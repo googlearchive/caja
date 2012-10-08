@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Google Maps JavaScript API v3 Example: Street View Overlays</title>
+    <link href="default.css" rel="stylesheet">
+    <script src="https://www.google.com/jsapi"></script>
+    <script>
+
+      var map;
+      var panorama;
+      var astorPlace;
+      var busStop;
+      var cafe;
+      var bank;
+
+      function initialize() {
+
+        astorPlace = new google.maps.LatLng(40.729884, -73.990988);
+        busStop = new google.maps.LatLng(40.729559678851025, -73.99074196815491);
+        cafe = new google.maps.LatLng(40.730031233910694, -73.99142861366272);
+        bank = new google.maps.LatLng(40.72968163306612, -73.9911389350891);
+
+        // Set up the map
+        var mapOptions = {
+          center: astorPlace,
+          zoom: 18,
+          mapTypeId: google.maps.MapTypeId.ROADMAP,
+          streetViewControl: false
+        };
+        map = new google.maps.Map(document.getElementById('map_canvas'),
+            mapOptions);
+
+        // Setup the markers on the map
+        var cafeMarkerImage =
+            new google.maps.MarkerImage(
+                'http://chart.apis.google.com/chart?chst=d_map_pin_icon&chld=cafe|FFFF00');
+        var cafeMarker = new google.maps.Marker({
+            position: cafe,
+            map: map,
+            icon: cafeMarkerImage,
+            title: 'Cafe'
+        });
+
+        var bankMarkerImage =
+            new google.maps.MarkerImage(
+                'http://chart.apis.google.com/chart?chst=d_map_pin_icon&chld=dollar|FFFF00');
+        var bankMarker = new google.maps.Marker({
+            position: bank,
+            map: map,
+            icon: bankMarkerImage,
+            title: 'Bank'
+        });
+
+        var busMarkerImage =
+            new google.maps.MarkerImage(
+                'http://chart.apis.google.com/chart?chst=d_map_pin_icon&chld=bus|FFFF00');
+        var busMarker = new google.maps.Marker({
+            position: busStop,
+            map: map,
+            icon: busMarkerImage,
+            title: 'Bus Stop'
+        });
+
+        // We get the map's default panorama and set up some defaults.
+        // Note that we don't yet set it visible.
+        panorama = map.getStreetView();
+
+        panorama.setPosition(astorPlace);
+        panorama.setPov({
+          heading: 265,
+          zoom:1,
+          pitch:0}
+        );
+      }
+
+      function toggleStreetView() {
+        var toggle = panorama.getVisible();
+        if (toggle == false) {
+          panorama.setVisible(true);
+        } else {
+          panorama.setVisible(false);
+        }
+      }
+
+      google.load('maps', '3.0', {
+        callback: initialize,
+        other_params: 'sensor=false',
+      });
+    </script>
+  </head>
+  <body>
+    <div id="toggle">
+    <input type="button" value="Toggle Street View" onclick="toggleStreetView();"></input>
+    </div>
+    <div id="map_canvas" style="position:relative;width: 425px; height: 240px"></div>
+  </body>
+</html>

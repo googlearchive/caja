@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
+    <meta charset="utf-8">
+    <title>Google Maps JavaScript API v3 Example: Directions Travel Modes</title>
+    <link href="default.css" rel="stylesheet">
+    <script type="text/javascript" src="https://www.google.com/jsapi"></script>
+    <script>
+      var directionsDisplay;
+      var directionsService;
+      var map;
+      var haight;
+      var oceanBeach;
+
+      function initialize() {
+        directionsDisplay = new google.maps.DirectionsRenderer();
+        directionsService = new google.maps.DirectionsService();
+        haight = new google.maps.LatLng(37.7699298, -122.4469157);
+        oceanBeach = new google.maps.LatLng(37.7683909618184, -122.51089453697205);
+
+        var mapOptions = {
+          zoom: 14,
+          mapTypeId: google.maps.MapTypeId.ROADMAP,
+          center: haight
+        }
+        map = new google.maps.Map(document.getElementById('map_canvas'), mapOptions);
+        directionsDisplay.setMap(map);
+      }
+
+      window.calcRoute = function() {
+        var selectedMode = document.getElementById('mode').value;
+        var request = {
+            origin: haight,
+            destination: oceanBeach,
+            // Note that Javascript allows us to access the constant
+            // using square brackets and a string value as its
+            // "property."
+            travelMode: google.maps.TravelMode[selectedMode]
+        };
+        directionsService.route(request, function(response, status) {
+          if (status == google.maps.DirectionsStatus.OK) {
+            directionsDisplay.setDirections(response);
+          }
+        });
+      }
+
+      google.load('maps', '3.0', {
+        callback: initialize,
+        other_params: 'sensor=false'
+      });
+    </script>
+  </head>
+  <body>
+    <div>
+    <b>Mode of Travel: </b>
+    <select id="mode" onchange="calcRoute();">
+      <option value="DRIVING">Driving</option>
+      <option value="WALKING">Walking</option>
+      <option value="BICYCLING">Bicycling</option>
+      <!-- <option value="TRANSIT">Transit</option> -->
+    </select>
+    </div>
+    <div id="map_canvas" style="top:30px;"></div>
+  </body>
+</html>

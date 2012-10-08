@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Google Maps JavaScript API v3 Example: Street View Controls</title>
+    <link href="default.css" rel="stylesheet">
+    <script src="https://www.google.com/jsapi"></script>
+    <script>
+      function initialize() {
+        var fenway = new google.maps.LatLng(42.345573,-71.098326);
+
+        // Note: constructed panorama objects have visible: true
+        // set by default.
+        var panoOptions = {
+          position: fenway,
+          addressControlOptions: {
+            position: google.maps.ControlPosition.BOTTOM
+          },
+          linksControl: false,
+          panControl: false,
+          zoomControlOptions: {
+            style: google.maps.ZoomControlStyle.SMALL
+          },
+          enableCloseButton: false
+        };
+
+        var panorama = new google.maps.StreetViewPanorama(
+            document.getElementById('pano'), panoOptions);
+      }
+
+      google.load('maps', '3.0', {
+        callback: initialize,
+        other_params: 'sensor=false',
+      });
+    </script>
+  </head>
+  <body>
+    <div id="pano" style="width: 400px; height: 300px"></div>
+  </body>
+</html>

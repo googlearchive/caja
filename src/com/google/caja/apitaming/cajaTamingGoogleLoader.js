@@ -13,13 +13,20 @@
 // limitations under the License.
 
 /**
+ * @fileoverview
  * Defines an object which can be used to tame Google's public APIs (which
  * are in the namespace "google.*") for use by guest code.
+ *
+ * @author ihab.awad@gmail.com
+ * @requires console, document, window, JSON
+ * @overrides caja, google
  */
 caja.tamingGoogleLoader = (function() {
 
   function log() {
-    // console.log.apply({}, arguments);
+    var s = '';
+    for (var i = 0; i < arguments.length; i++) { s += arguments[i] + ' '; }
+    console.log(s);
   }
 
   function StringMap() {
@@ -34,7 +41,7 @@ caja.tamingGoogleLoader = (function() {
       set: function(k, v) {
         o[safe(k)] = v;
       },
-      delete: function(k) {
+      'delete': function(k) {
         delete o[safe(k)];
       },
       has: function(k) {
@@ -133,24 +140,47 @@ caja.tamingGoogleLoader = (function() {
       }
     }
 
+    function copyOneLevel(o) {
+      log('copyOneLevel(' + o + ')');
+      var result = {};
+      for (var key in o) {
+        if (o.hasOwnProperty(key) && !/__$/.test(key)) {
+          log('   .' + key);
+          result[key] = o[key];
+        }
+      }
+      return result;
+    }
+
+    function directCopy(r, o, props) {
+      for (var i = 0; i < props.length; i++) {
+        if (o.hasOwnProperty(props[i]) && !/__$/.test(props[i])) {
+          r[props[i]] = o[props[i]];
+        }
+      }
+    }
+
     function opaqueNode(guestNode) {
       var d = guestNode.ownerDocument.createElement('div');
+      // TODO(ihab.awad): This solution is brittle since the cajoled code
+      // styles leak in and affect this div.
+      d.setAttribute('style', 'width: 100%; height: 100%;');
       frame.domicile.tameNodeAsForeign(d);
       guestNode.appendChild(d);
       return d;
     }
 
-    function opaqueNodeById(id) {
+    function opaqueNodeById(origId) {
       if (!frame.hasOwnProperty('opaqueNodeByIdCounter___')) {
         frame.opaqueNodeByIdCounter___ = 0;
       }
-      var node = frame.untame(frame.imports.document.getElementById(id));
+      var node = frame.untame(frame.imports.document.getElementById(origId));
       var d = node.ownerDocument.createElement('div');
-      var id = 'opaqueNodeById__' + frame.opaqueNodeByIdCounter___++ + '__' + frame.idSuffix;
-      d.setAttribute('id', id);
+      var opaqueId = 'opaqueNodeById__' + frame.opaqueNodeByIdCounter___++ + '__' + frame.idSuffix;
+      d.setAttribute('id', opaqueId);
       frame.domicile.tameNodeAsForeign(d);
       node.appendChild(d);
-      return id;
+      return opaqueId;
     }
 
     function copyJson(o) {
@@ -197,6 +227,8 @@ caja.tamingGoogleLoader = (function() {
       identity: identity,
       copyJson: copyJson,
       copyMixed: copyMixed,
+      copyOneLevel: copyOneLevel,
+      directCopy: directCopy,
       opaqueNode: opaqueNode,
       opaqueNodeById: opaqueNodeById,
       mapArgs: mapArgs,
@@ -204,7 +236,7 @@ caja.tamingGoogleLoader = (function() {
       forallkeys: forallkeys,
       StringMap: StringMap
     };
-  }
+  };
 
   function makePolicyEvaluator(frame) {
 
@@ -217,6 +249,7 @@ caja.tamingGoogleLoader = (function() {
     }
 
     var fGrantRead = PropertyTamingFlags();
+    var fGrantReadOverride = PropertyTamingFlags();
     var fGrantMethod = PropertyTamingFlags();
     var fMarkFunction = WeakMap();
     var fMarkCtor = WeakMap();
@@ -227,6 +260,13 @@ caja.tamingGoogleLoader = (function() {
       log('  + grantRead');
       frame.grantRead(o, k);
       fGrantRead.set(o, k);
+    }
+
+    function grantReadOverride(o, k) {
+      if (fGrantReadOverride.has(o, k)) { return; }
+      log('  + grantReadOverride');
+      frame.grantReadOverride(o, k);
+      fGrantReadOverride.set(o, k);
     }
 
     function grantMethod(o, k) {
@@ -301,16 +341,23 @@ caja.tamingGoogleLoader = (function() {
         }
       });
       tamingUtils.forallkeys(policy.prototype, function(name) {
-        if (!obj.prototype[name]) {
-          log(path + '.prototype.' + name + ' skip');
-          return;
-        }
-        log(path + '.prototype.' + name + ' grant instance');
         if (typeof policy.prototype[name] === 'function') {
-          adviseFunction(obj.prototype[name], policy.prototype[name]);
-          grantMethod(obj.prototype, name);
+          if (obj.prototype[name]) {
+            log(path + '.prototype.' + name + ' grant instance method');
+            adviseFunction(obj.prototype[name], policy.prototype[name]);
+            grantMethod(obj.prototype, name);
+            if (policy.prototype['__' + name + '_OVERRIDE__']) {
+              grantReadOverride(obj.prototype, name);
+            }
+          } else {
+            log(path + '.prototype.' + name + ' skip');
+          }
         } else {
+          log(path + '.prototype.' + name + ' grant instance field');
           grantRead(obj.prototype, name);
+          if (policy.prototype['__' + name + '_OVERRIDE__']) {
+            grantReadOverride(obj.prototype, name);
+          }
         }
       });
       var sup;
@@ -390,7 +437,7 @@ caja.tamingGoogleLoader = (function() {
     policyFactoryByName.set(name, factory);
     if (pendingPolicyFactoryLoadByName.has(name)) {
       pendingPolicyFactoryLoadByName.get(name).fire();
-      pendingPolicyFactoryLoadByName.delete(name);
+      pendingPolicyFactoryLoadByName['delete'](name);
     }
   }
 
@@ -413,11 +460,29 @@ caja.tamingGoogleLoader = (function() {
     else { loadPolicyFactory(name, cb); }
   }
 
+  function loadMapsApi(version, cb) {
+    google.load('maps', version, {
+      callback: function() {
+        // TODO(ihab.awad): Refactor so that API-specific fixups in the loader
+        // like this one are not necessary
+        google.maps.MVCArray.prototype.constructor = google.maps.MVCArray;
+        google.maps.OverlayView.prototype.onAdd = function() {};
+        google.maps.OverlayView.prototype.onRemove = function() {};
+        google.maps.OverlayView.prototype.draw = function() {};
+        cb();
+      },
+      other_params: 'sensor=false&libraries=adsense,drawing,geometry,panoramio,places,visualization,weather'
+    });
+  }
+
   function loadGoogleApi(name, version, opt_info, cb) {
-    // We *always* call google.load() in response to the guest calling our
-    // tamed google.load(), because each call, even with the same API name,
-    // can pull in different functionality. We rely on the native google.load()
-    // to be idempotent (which it is) and do the right thing.
+    // For the Maps API, we always load *everything* at once since loading the
+    // API is not an idempotent operation.
+    if (name === 'maps') { loadMapsApi(version, cb); return; }
+    // Otherwise, we *always* call google.load() in response to the guest
+    // calling tamed google.load(), because each call, even with the same API
+    // name, can pull in different functionality. We rely on the native
+    // google.load() to be idempotent (which it is) and do the right thing.
     if (!opt_info) { opt_info = {}; }
     opt_info.callback = cb;
     google.load(name, version, opt_info);

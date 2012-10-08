@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Google Maps JavaScript API v3 Example: Place Search</title>
+    <script src="https://www.google.com/jsapi"></script>
+
+    <style>
+      #map {
+        height: 400px;
+        width: 600px;
+        border: 1px solid #333;
+        margin-top: 0.6em;
+      }
+    </style>
+
+    <script>
+      var map;
+      var infowindow;
+
+      function initialize() {
+        var pyrmont = new google.maps.LatLng(-33.8665433, 151.1956316);
+
+        map = new google.maps.Map(document.getElementById('map'), {
+          mapTypeId: google.maps.MapTypeId.ROADMAP,
+          center: pyrmont,
+          zoom: 15
+        });
+
+        var request = {
+          location: pyrmont,
+          radius: 500,
+          types: ['store']
+        };
+        infowindow = new google.maps.InfoWindow();
+        var service = new google.maps.places.PlacesService(map);
+        service.search(request, callback);
+      }
+
+      function callback(results, status) {
+        if (status == google.maps.places.PlacesServiceStatus.OK) {
+          for (var i = 0; i < results.length; i++) {
+            createMarker(results[i]);
+          }
+        }
+      }
+
+      function createMarker(place) {
+        var placeLoc = place.geometry.location;
+        var marker = new google.maps.Marker({
+          map: map,
+          position: place.geometry.location
+        });
+
+        google.maps.event.addListener(marker, 'click', function() {
+          infowindow.setContent(place.name);
+          infowindow.open(map, this);
+        });
+      }
+
+      google.load('maps', '3.0', {
+        callback: initialize,
+        other_params: 'sensor=false&libraries=places',
+      });
+    </script>
+  </head>
+  <body>
+    <div id="map"></div>
+    <div id="text">
+      <pre>
+var request = {
+  location: new google.maps.LatLng(-33.8665433, 151.1956316),
+  radius: 500,
+  types: ['store']
+};
+      </pre>
+  </body>
+</html>

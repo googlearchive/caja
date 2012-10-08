@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Google Maps JavaScript API v3 Example: Encoded Polylines</title>
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
+    <meta charset="utf-8">
+    <link href="default.css" rel="stylesheet">
+    <script src="https://www.google.com/jsapi"></script>
+    <script>
+      var poly;
+
+      function initialize() {
+        var mapOptions = {
+          zoom: 14,
+          center: new google.maps.LatLng(34.3664951, -89.5192484),
+          mapTypeId: google.maps.MapTypeId.ROADMAP
+        };
+
+        var map = new google.maps.Map(document.getElementById('map_canvas'),
+          mapOptions);
+
+        var polyOptions = {
+          strokeColor: '#000000',
+          strokeOpacity: 1.0,
+          strokeWeight: 3,
+          map: map
+        };
+        poly = new google.maps.Polyline(polyOptions);
+
+        // Add a listener for the click event
+        google.maps.event.addListener(map, 'click', addLatLng);
+      }
+
+      /**
+       * Handles click events on a map, and adds a new point to the Polyline.
+       * Updates the encoding text area with the path's encoded values.
+       */
+      function addLatLng(event) {
+        var path = poly.getPath();
+        // Because path is an MVCArray, we can simply append a new coordinate
+        // and it will automatically appear
+        path.push(event.latLng);
+
+        // Update the text field to display the polyline encodings
+        var encodeString = google.maps.geometry.encoding.encodePath(path);
+        if (encodeString) {
+          document.getElementById('encoded-polyline').value = encodeString;
+        }
+      }
+
+      google.load('maps', '3.0', {
+        callback: initialize,
+        other_params: 'sensor=false&libraries=geometry',
+      });
+    </script>
+  </head>
+  <body>
+    <div id="map_canvas" style="height:640px;"></div>
+    <div><em>Click to draw a polyline</em></div>
+    <div style="padding: 5px">
+      <div>Encoding:</div>
+      <textarea id="encoded-polyline"
+        style="width: 400px; height: 100px"></textarea>
+    </div>
+  </body>
+</html>

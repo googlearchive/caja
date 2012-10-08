@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Google Maps JavaScript API v3 Example: User-editable Shapes</title>
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
+    <meta charset="utf-8">
+    <link href="default.css" rel="stylesheet">
+    <script src="https://www.google.com/jsapi"></script>
+    <script>
+      function initialize() {
+        var mapOptions = {
+          center: new google.maps.LatLng(44.5452, -78.5389),
+          zoom: 9,
+          mapTypeId: google.maps.MapTypeId.ROADMAP
+        };
+        var map = new google.maps.Map(document.getElementById('map_canvas'),
+          mapOptions);
+
+        var bounds = new google.maps.LatLngBounds(
+          new google.maps.LatLng(44.490, -78.649),
+          new google.maps.LatLng(44.599, -78.443)
+        );
+
+        var rectangle = new google.maps.Rectangle({
+          bounds: bounds,
+          editable: true
+        });
+
+        rectangle.setMap(map);
+      }
+
+      google.load('maps', '3.0', {
+        callback: initialize,
+        other_params: 'sensor=false',
+      });
+    </script>
+  </head>
+  <body>
+    <div id="map_canvas"></div>
+  </body>
+</html>

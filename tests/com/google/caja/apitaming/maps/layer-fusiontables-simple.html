@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
+    <meta charset="utf-8">
+    <title>Google Maps JavaScript API v3 Example: Fusion Tables Layer</title>
+    <link href="default.css" rel="stylesheet">
+    <script src="https://www.google.com/jsapi"></script>
+    <script>
+      function initialize() {
+
+        var chicago = new google.maps.LatLng(41.850033, -87.6500523);
+
+        var map = new google.maps.Map(document.getElementById('map_canvas'), {
+          center: chicago,
+          zoom: 11,
+          mapTypeId: google.maps.MapTypeId.ROADMAP
+        });
+
+        var layer = new google.maps.FusionTablesLayer({
+          query: {
+            select: '\'Geocodable address\'',
+            from: '1mZ53Z70NsChnBMm-qEYmSDOvLXgrreLTkQUvvg'
+          }
+        });
+        layer.setMap(map);
+      }
+
+      google.load('maps', '3.0', {
+        callback: initialize,
+        other_params: 'sensor=false',
+      });
+    </script>
+  </head>
+  <body>
+    <div id="map_canvas"></div>
+  </body>
+</html>

@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Google Maps JavaScript API v3 Example: Simple Custom StreetView</title>
+    <meta charset="utf-8">
+    <link href="default.css" rel="stylesheet">
+    <script src="https://www.google.com/jsapi"></script>
+    <script>
+      function initialize() {
+        // Set up Street View and initially set it visible. Register the
+        // custom panorama provider function. Set the StreetView to display
+        // the custom panorama 'reception' which we check for below.
+        var panoOptions = {
+          pano: 'reception',
+          visible: true,
+          panoProvider: getCustomPanorama
+        };
+
+        var panorama = new google.maps.StreetViewPanorama(
+          document.getElementById('pano_canvas'), panoOptions);
+      }
+
+      // Return a pano image given the panoID.
+      function getCustomPanoramaTileUrl(pano, zoom, tileX, tileY) {
+        // Note: robust custom panorama methods would require tiled pano data.
+        // Here we're just using a single tile, set to the tile size and equal
+        // to the pano "world" size.
+        return 'images/panoReception1024-0.jpg';
+      }
+
+      // Construct the appropriate StreetViewPanoramaData given
+      // the passed pano IDs.
+      function getCustomPanorama(pano, zoom, tileX, tileY) {
+        if (pano == 'reception') {
+          return {
+            location: {
+              pano: 'reception',
+              description: 'Google Sydney - Reception'
+            },
+            links: [],
+            // The text for the copyright control.
+            copyright: 'Imagery (c) 2010 Google',
+            // The definition of the tiles for this panorama.
+            tiles: {
+              tileSize: new google.maps.Size(1024, 512),
+              worldSize: new google.maps.Size(1024, 512),
+              // The heading in degrees at the origin of the panorama
+              // tile set.
+              centerHeading: 105,
+              getTileUrl: getCustomPanoramaTileUrl
+            }
+          };
+        }
+      }
+
+
+      google.load('maps', '3.0', {
+        callback: initialize,
+        other_params: 'sensor=false',
+      });
+    </script>
+  </head>
+  <body>
+    <div id="pano_canvas" style="width: 500px; height: 380px"></div>
+  </body>
+</html>

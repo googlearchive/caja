@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
+    <meta charset="utf-8">
+    <title>Google Maps JavaScript API v3 Example: Reverse Geocoding</title>
+    <link href="default.css" rel="stylesheet">
+    <script src="https://www.google.com/jsapi"></script>
+    <script>
+      var geocoder;
+      var map;
+      var infowindow;
+      var marker;
+      function initialize() {
+        geocoder = new google.maps.Geocoder();
+        infowindow = new google.maps.InfoWindow();
+        var latlng = new google.maps.LatLng(40.730885,-73.997383);
+        var mapOptions = {
+          zoom: 8,
+          center: latlng,
+          mapTypeId: 'roadmap'
+        }
+        map = new google.maps.Map(document.getElementById('map_canvas'), mapOptions);
+      }
+
+      window.codeLatLng = function() {
+        var input = document.getElementById('latlng').value;
+        var latlngStr = input.split(',', 2);
+        var lat = parseFloat(latlngStr[0]);
+        var lng = parseFloat(latlngStr[1]);
+        var latlng = new google.maps.LatLng(lat, lng);
+        geocoder.geocode({'latLng': latlng}, function(results, status) {
+          if (status == google.maps.GeocoderStatus.OK) {
+            if (results[1]) {
+              map.setZoom(11);
+              marker = new google.maps.Marker({
+                  position: latlng,
+                  map: map
+              });
+              infowindow.setContent(results[1].formatted_address);
+              infowindow.open(map, marker);
+            } else {
+              alert('No results found');
+            }
+          } else {
+            alert('Geocoder failed due to: ' + status);
+          }
+        });
+      }
+
+      google.load('maps', '3.0', {
+        callback: initialize,
+        other_params: 'sensor=false',
+      });
+    </script>
+  </head>
+  <body>
+    <div>
+      <input id="latlng" type="textbox" value="40.714224,-73.961452">
+    </div>
+    <div>
+      <input type="button" value="Reverse Geocode" onclick="codeLatLng()">
+    </div>
+    <div id="map_canvas" style="height: 90%; top:60px; border: 1px solid black;"></div>
+  </body>
+</html>

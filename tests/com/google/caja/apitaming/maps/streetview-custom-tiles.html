@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Google Maps JavaScript API v3 Example: Custom StreetView</title>
+    <meta charset="utf-8">
+    <link href="default.css" rel="stylesheet">
+    <script src="https://www.google.com/jsapi"></script>
+
+    <script>
+      var panorama;
+
+      // The panorama that will be used as the entry point to the custom
+      // panorama set.
+      var entryPanoId = null;
+
+      function initialize() {
+
+        debugger;
+
+        // The latlng of the entry point to the Google office on the road.
+        var sydneyOffice = new google.maps.LatLng(-33.867386, 151.195767);
+
+        // Set up the map and enable the Street View control.
+        var mapOptions = {
+          center: sydneyOffice,
+          zoom: 16,
+          mapTypeId: google.maps.MapTypeId.ROADMAP
+        };
+        var map = new google.maps.Map(document.getElementById('map_canvas'),
+            mapOptions);
+
+        panorama = map.getStreetView();
+        // Set up Street View and initially set it visible. Register the
+        // custom panorama provider function.
+        var panoOptions = {
+          position: sydneyOffice,
+          visible: true,
+          panoProvider:  getCustomPanorama
+        };
+        panorama.setOptions(panoOptions);
+
+        // Create a StreetViewService object.
+        var streetviewService = new google.maps.StreetViewService();
+
+        // Compute the nearest panorama to the Google Sydney office
+        // using the service and store that pano ID.
+        var radius = 50;
+        streetviewService.getPanoramaByLocation(sydneyOffice, radius,
+            function(result, status) {
+          if (status == google.maps.StreetViewStatus.OK) {
+            // We'll monitor the links_changed event to check if the current
+            // pano is either a custom pano or our entry pano.
+            google.maps.event.addListener(panorama, 'links_changed',
+              function() {
+                createCustomLinks(result.location.pano);
+              });
+          }
+        });
+      }
+
+      function getCustomPanoramaTileUrl(pano, zoom, tileX, tileY) {
+        // Return a pano image given the panoID.
+        return 'images/panoReception1024-' + zoom + '-' + tileX + '-' +tileY +
+            '.jpg';
+      }
+
+      function getCustomPanorama(pano) {
+        switch(pano) {
+          case 'reception':
+            return {
+              location: {
+                pano: 'reception',
+                description: 'Google Sydney - Reception',
+                latLng: new google.maps.LatLng(-33.86684, 151.19583)
+              },
+              links: [],
+              // The text for the copyright control.
+              copyright: 'Imagery (c) 2010 Google',
+              // The definition of the tiles for this panorama.
+              tiles: {
+                tileSize: new google.maps.Size(1024, 512),
+                worldSize: new google.maps.Size(2048, 1024),
+                // The heading at the origin of the panorama tile set.
+                centerHeading: 105,
+                getTileUrl: getCustomPanoramaTileUrl
+              }
+            };
+            break;
+          default:
+            return null;
+        }
+      }
+
+      function createCustomLinks(entryPanoId) {
+        var links = panorama.getLinks();
+        var panoId = panorama.getPano();
+
+        switch(panoId) {
+          case entryPanoId:
+            // Adding a link in the view from the entrance of the building to
+            // reception.
+            links.push({
+              heading: 25,
+              description : 'Google Sydney',
+              pano : 'reception'
+            });
+            break;
+          case 'reception':
+            // Adding a link in the view from the entrance of the office
+            // with an arrow pointing at 100 degrees, with a text of 'Exit'
+            // and loading the street entrance of the building pano on click.
+            links.push({
+              heading: 195,
+              description : 'Exit',
+              pano : entryPanoId
+            });
+            break;
+          default:
+            return;
+        }
+      }
+
+      google.load('maps', '3.0', {
+        callback: initialize,
+        other_params: 'sensor=false',
+      });
+    </script>
+  </head>
+  <body>
+    <div id="map_canvas" style="width: 500px; height: 400px"></div>
+  </body>
+</html>

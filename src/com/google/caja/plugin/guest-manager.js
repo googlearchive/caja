@@ -39,7 +39,7 @@
  */
 
 function GuestManager(frameTamingSchema, frameTamingMembrane, divs, hostBaseUrl,
-  domicile, htmlEmitter, guestWin, USELESS, runImpl) {
+  domicile, htmlEmitter, guestWin, USELESS, uriPolicy, runImpl) {
   // TODO(felix8a): this api needs to be simplified; it's difficult to
   // explain what all the parameters mean in different situations.
   var args = {
@@ -66,6 +66,8 @@ function GuestManager(frameTamingSchema, frameTamingMembrane, divs, hostBaseUrl,
     // Public state
     div: divs.outer && divs.outer.parentNode,
     idClass: divs.idClass,
+    getUrl: function() { return args.url; },
+    getUriPolicy: function() { return uriPolicy; },
 
     // deprecated; idSuffix in domado means '-' + idClass, but idSuffix
     // exposed here is without the leading '-'.  Future code should use the
@@ -101,6 +103,7 @@ function GuestManager(frameTamingSchema, frameTamingMembrane, divs, hostBaseUrl,
     grantMethod: frameTamingSchema.published.grantTameAsMethod,
     grantRead: frameTamingSchema.published.grantTameAsRead,
     grantReadWrite: frameTamingSchema.published.grantTameAsReadWrite,
+    grantReadOverride: frameTamingSchema.published.grantTameAsReadOverride,
     adviseFunctionBefore: frameTamingSchema.published.adviseFunctionBefore,
     adviseFunctionAfter: frameTamingSchema.published.adviseFunctionAfter,
     adviseFunctionAround: frameTamingSchema.published.adviseFunctionAround,

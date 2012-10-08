@@ -1,0 +1,27 @@
+body {
+  margin: 20px;
+  font-family: arial, sans-serif;
+  font-size: 10px;
+}
+table {
+  border-spacing: 0;
+  border-collapse: collapse;
+  border: 1px solid #BBB;
+}
+td,th {
+  border: 1px solid #BBB;
+  padding: 6px 12px;
+  font-size: 12px;
+}
+th {
+  background: #E9F1EA;
+}
+#map {
+  border: 1px solid #BBB;
+  width: 640px;
+  height: 480px;
+}
+#outputDiv {
+  width: 640px;
+  margin-top: 20px;
+}

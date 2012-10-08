@@ -1,0 +1,71 @@
+
+=== general notes ===
+
+- The google.events APIs only work cajoled when 'src' is a tamed host object,
+  not an object created by the guest in the guest frame. This is adequate for
+  the idiomatic use case of the API, but we should investigate and fix.
+
+
+=== visualization taming issues ===
+
+- DataTable.prototype.toJSON fails with stack overflow when in ES5/3 mode. It
+  seems impossible to avoid this by "scrubbing" the objects passed into the
+  various methods. Also DataTable.clone().
+
+- AnnotatedTimeLine data is garbled (order of data points incorrect) in
+  ES5(SES). Other displays (e.g. Table) of the same data show it to be just
+  fine, indicating there might be a problem with sorting inside the gViz code
+  itself that's affected by something we're doing.
+
+- Intermittently: GeoMap and IntensityMap don't work in ES5/3, and
+  testGeoChart* does not seem to work in ES5/3 and ES5. Works fine when these
+  are the only tests on the page, and in all cases when used uncajoled.
+
+- Geometry is somewhat different cajoled vs. uncajoled, when the supplied
+  container <div>s are given a fixed height. Uncajoled, the graphs size to
+  fit the height of the container <div>. Cajoled, the graphs maintain their
+  preferred size.
+
+
+=== maps taming issues ===
+
+MIDPOINT MARK = layer-panoramio
+
+Fusion tables -- we treat the ID of the Fusion Table as a bearer token cap that
+  is granted by some means to the guest code; as such, we don't pass it thru the
+  URI policy.
+
+Panoramio layer -- ambiently grants ability to contact the outside world via
+  the Panoramio Website (I guess...); need to think about this some more.
+
+* delete-vertex-menu Uncaught TypeError: Untaming of guest constructed objects unsupported: [object Object]
+* distance-matrix in ES5/3, Uncaught Error: Unknown property <_index;0.9214966699946672;29___>
+*	drawing-tools	new DrawingManager -> [object Object] has no method 'setValues'
+*	geocoding-region-es	Cannot specify region at library load time
+*	icon-complex	icon mouseover -> Uncaught TypeError: Cannot read property 'length' of undefined
+*	layer-heatmap	Using google.load() does not load g.m.v.HeatmapLayer constructor for some reason.
+*	layer-panoramio-tags	new google.maps.panoramio.PanoramioLayer() -> Uncaught TypeError: Object [object Object] has no method 'setValues'
+*	layer-panoramio-widget	Can't tame. requires separate JS API that we don't support
+*	layer-panoramio	see layer-panoramio-tags
+* layer-transit google.maps.TransitLayer not available via AJAX API
+*	map-geolocation	depends on HTML5 geolocation; not a Maps taming issue -- but should write a better test that fakes this
+*	map-language	What if 2 gadgets load stuff, one in JA and one in (say) EN? relies on ambiently specifying language at module load time
+*	map-projection-simple	?? -> Uncaught TypeError: Cannot call method 'apply' of undefined
+*	map-rtl	relies on ambiently specifying language at module load time
+*	map-simple-async	Cannot really do async in the general (ES5/3) case; maybe in ES5 case? explicit script injection, can never work
+*	maptype-base	Untaming of guest constructed objects unsupported
+*	maptype-image	?? -> Uncaught TypeError: Cannot call method 'apply' of undefined
+*	maptype-image-overlay	?? -> Uncaught TypeError: Cannot call method 'apply' of undefined
+*	maptype-overlay	Untaming of guest constructed objects unsupported
+* marker-animations-iteration Uncaught script error: Cannot read property 'call' of undefined in source: "unknown" at line: 0
+*	overlay-hideshow	Untaming of guest constructed objects unsupported
+*	overlay-simple	Untaming of guest constructed objects unsupported
+*	overlay-symbol-animate	Cannot get google.maps.SymbolPath.CIRCLE. google.maps.SymbolPath is apparently not getting loaded with the AJAX loader API
+*	overlay-symbol-arrow	Cannot get google.maps.SymbolPath.FORWARD_CLOSED_ARROW. google.maps.SymbolPath is apparently not getting loaded with the AJAX loader API
+*	overlay-symbol-custom	The 3 symbols cannot be (are not...) rendered. does not work even uncajoled (AJAX loader?)
+*	overlay-symbol-dashed	No dashed line showed. does not work even uncajoled (AJAX loader?)
+*	place-search Uncaught TypeError: Expected property "search" to be a function, not undefined: undefined
+*	places-autocomplete	Uncaught TypeError: Object [object Object] has no method 'bindTo' and autocompletions are not localized
+*	polygon-arrays	polygon drawn but clicking gives Uncaught TypeError: Object [object Object] has no method 'getPath'
+*	streetview-custom-tiles	Ctor of Map::getStreetView() seems not to be instanceof StreetViewPanorama (fix?)
+*	streetview-overlays Ctor of Map::getStreetView() seems not to be instanceof StreetViewPanorama (fix?)

@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Google Maps JavaScript API v3 Example: Styled MapTypes</title>
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
+    <meta charset="utf-8">
+    <link href="default.css" rel="stylesheet">
+    <script src="https://www.google.com/jsapi"></script>
+
+    <script>
+      function initialize() {
+
+        var styleArray = [
+          {
+            featureType: 'all',
+            stylers: [
+              { saturation: -80 }
+            ]
+          },{
+            featureType: 'road.arterial',
+            elementType: 'geometry',
+            stylers: [
+              { hue: '#00ffee' },
+              { saturation: 50 }
+            ]
+          },{
+            featureType: 'poi.business',
+            elementType: 'labels',
+            stylers: [
+              { visibility: 'off' }
+            ]
+          }
+        ];
+
+        var mapOptions = {
+          zoom: 12,
+          center: new google.maps.LatLng(40.6743890, -73.9455),
+          mapTypeId: google.maps.MapTypeId.ROADMAP,
+          styles: styleArray
+        };
+
+        var map = new google.maps.Map(document.getElementById('map_canvas'),
+          mapOptions);
+      }
+
+      google.load('maps', '3.0', {
+        callback: initialize,
+        other_params: 'sensor=false',
+      });
+    </script>
+  </head>
+  <body>
+    <div id="map_canvas"></div>
+  </body>
+</html>

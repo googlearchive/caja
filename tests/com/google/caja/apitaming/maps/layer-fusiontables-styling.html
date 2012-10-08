@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
+    <meta charset="utf-8">
+    <title>Google Maps JavaScript API v3 Example: Fusion Tables Layer Styling</title>
+    <link href="default.css" rel="stylesheet">
+    <script src="https://www.google.com/jsapi"></script>
+    <script>
+      function initialize() {
+
+        var australia = new google.maps.LatLng(-25, 133);
+
+        var map = new google.maps.Map(document.getElementById('map_canvas'), {
+          center: australia,
+          zoom: 4,
+          mapTypeId: google.maps.MapTypeId.ROADMAP
+        });
+
+        var layer = new google.maps.FusionTablesLayer({
+          query: {
+            select: 'geometry',
+            from: '1ertEwm-1bMBhpEwHhtNYT47HQ9k2ki_6sRa-UQ'
+          },
+          styles: [{
+            polygonOptions: {
+              fillColor: '#00FF00',
+              fillOpacity: 0.3
+            }
+          }, {
+            where: 'birds > 300',
+            polygonOptions: {
+              fillColor: '#0000FF'
+            }
+          }, {
+            where: 'population > 5',
+            polygonOptions: {
+              fillOpacity: 1.0
+            }
+          }]
+        });
+        layer.setMap(map);
+      }
+
+      google.load('maps', '3.0', {
+        callback: initialize,
+        other_params: 'sensor=false',
+      });
+    </script>
+  </head>
+  <body>
+    <div id="map_canvas" style="height: 700px; width: 1100px; margin: 15px"></div>
+  </body>
+</html>

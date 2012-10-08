@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Google Maps JavaScript API v3 Example: Map Ads Unit</title>
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
+    <meta charset="utf-8">
+    <link href="default.css" rel="stylesheet">
+    <script type="text/javascript" src="https://www.google.com/jsapi"></script>
+    <script>
+      var adUnit;
+
+      function initialize() {
+        var mapOptions = {
+          center: new google.maps.LatLng(36.5987, -121.8950),
+          zoom: 12,
+          mapTypeId: google.maps.MapTypeId.ROADMAP
+        };
+        var map = new google.maps.Map(document.getElementById('map_canvas'),
+            mapOptions);
+
+        var adUnitDiv = document.createElement('div');
+        var adUnitOptions = {
+          format: google.maps.adsense.AdFormat.HALF_BANNER,
+          position: google.maps.ControlPosition.TOP_CENTER,
+          publisherId: 'ca-google-maps_apidocs',
+          map: map,
+          visible: true
+        };
+        var adUnit = new google.maps.adsense.AdUnit(adUnitDiv, adUnitOptions);
+
+        var format = document.getElementById('format');
+
+        google.maps.event.addDomListener(format, 'change', function() {
+          adUnit.setFormat(google.maps.adsense.AdFormat[this.value]);
+        });
+
+        var position = document.getElementById('position');
+        google.maps.event.addDomListener(position, 'change', function() {
+          adUnit.setPosition(google.maps.ControlPosition[this.value]);
+        });
+      }
+      google.load('maps', '3.0', {
+        callback: initialize,
+        other_params: 'sensor=false&libraries=adsense'
+      });
+    </script>
+  </head>
+  <body>
+    <div style="width: 728px; text-align: center; overflow: auto">
+      <div style="padding:20px; float:left">
+        <label for="format">Format:</label>
+        <select id="format">
+          <option value="LEADERBOARD">Leaderboard</option>
+          <option value="BANNER">Banner</option>
+          <option value="HALF_BANNER" selected="selected">Half Banner</option>
+          <option value="SKYSCRAPER">Skyscraper</option>
+          <option value="WIDE_SKYSCRAPER">Wide Skyscraper</option>
+          <option value="VERTICAL_BANNER">Vertical Banner</option>
+          <option value="BUTTON">Button</option>
+          <option value="SMALL_SQUARE">Small Square</option>
+          <option value="SQUARE">Square</option>
+          <option value="SMALL_RECTANGLE">Small Rectangle</option>
+          <option value="MEDIUM_RECTANGLE">Medium Rectangle</option>
+          <option value="LARGE_RECTANGLE">Large Rectangle</option>
+        </select>
+      </div>
+      <div style="padding:20px; float:right">
+        <label for="position">Position:</label>
+        <select id="position">
+          <option value="TOP_CENTER" selected="selected">Top Center</option>
+          <option value="TOP_LEFT">Top Left</option>
+          <option value="TOP_RIGHT">Top Right</option>
+          <option value="RIGHT_TOP">Right Top</option>
+          <option value="LEFT_TOP">Left Top</option>
+          <option value="RIGHT_CENTER">Right Center</option>
+          <option value="LEFT_CENTER">Left Center</option>
+          <option value="BOTTOM_CENTER">Bottom</option>
+          <option value="BOTTOM_LEFT">Bottom Left</option>
+          <option value="BOTTOM_RIGHT">Bottom Right</option>
+          <option value="LEFT_BOTTOM">Left Bottom</option>
+          <option value="RIGHT_BOTTOM">Right Bottom</option>
+        </select>
+      </div>
+    </div>
+    <div id="map_canvas" style="width: 728px; height: 480px;"></div>
+  </body>
+</html>

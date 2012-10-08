@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
+    <meta charset="utf-8">
+    <title>Google Maps JavaScript API v3 Example: Rectangle Simple</title>
+    <link href="default.css" rel="stylesheet">
+    <script src="https://www.google.com/jsapi"></script>
+    <script>
+
+      function initialize() {
+
+        var rectangle;
+        var coachella = new google.maps.LatLng(33.6803003, -116.173894);
+
+        var mapOptions = {
+          zoom: 11,
+          center: coachella,
+          mapTypeId: google.maps.MapTypeId.TERRAIN
+        };
+
+        var map = new google.maps.Map(document.getElementById('map_canvas'),
+            mapOptions);
+
+        rectangle = new google.maps.Rectangle();
+
+        google.maps.event.addListener(map, 'zoom_changed', function() {
+
+          // Get the current bounds, which reflect the bounds before the zoom.
+          var rectOptions = {
+            strokeColor: '#FF0000',
+            strokeOpacity: 0.8,
+            strokeWeight: 2,
+            fillColor: '#FF0000',
+            fillOpacity: 0.35,
+            map: map,
+            bounds: map.getBounds()
+          };
+          rectangle.setOptions(rectOptions);
+        });
+      }
+
+      google.load('maps', '3.0', {
+        callback: initialize,
+        other_params: 'sensor=false',
+      });
+    </script>
+  </head>
+  <body>
+    <div id="map_canvas"></div>
+  </body>
+</html>

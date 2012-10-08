@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Google Maps JavaScript API v3 Example: Geometry Headings</title>
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
+    <meta charset="utf-8">
+    <link href="default.css" rel="stylesheet">
+    <style>
+      #info {
+        background: #fff;
+        padding: 5px;
+        font-size: 14px;
+        font-family: arial;
+      }
+    </style>
+    <script src="https://www.google.com/jsapi"></script>
+    <script>
+      var poly;
+      var geodesicPoly;
+      var marker1;
+      var marker2;
+
+      function initialize() {
+        var mapOptions = {
+          zoom: 4,
+          center: new google.maps.LatLng(34, -40.605),
+          mapTypeId: google.maps.MapTypeId.ROADMAP
+        };
+
+        var map = new google.maps.Map(document.getElementById('map_canvas'),
+            mapOptions);
+
+        map.controls[google.maps.ControlPosition.TOP_CENTER].push(
+            document.getElementById('info'));
+
+
+        marker1 = new google.maps.Marker({
+          map: map,
+          draggable: true,
+          position: new google.maps.LatLng(40.71435280, -74.0059731)
+        });
+
+        marker2 = new google.maps.Marker({
+          map: map,
+          draggable: true,
+          position: new google.maps.LatLng(48.8566140, 2.35222190)
+        });
+
+        var bounds = new google.maps.LatLngBounds(marker1.getPosition(),
+            marker2.getPosition());
+        map.fitBounds(bounds);
+
+        google.maps.event.addListener(marker1, 'position_changed', update);
+        google.maps.event.addListener(marker2, 'position_changed', update);
+
+        var polyOptions = {
+          strokeColor: '#FF0000',
+          strokeOpacity: 1.0,
+          strokeWeight: 3,
+          map: map,
+        };
+        poly = new google.maps.Polyline(polyOptions);
+
+        var geodesicOptions = {
+          strokeColor: '#CC0099',
+          strokeOpacity: 1.0,
+          strokeWeight: 3,
+          geodesic: true,
+          map: map
+        };
+        geodesicPoly = new google.maps.Polyline(geodesicOptions);
+
+        update();
+      }
+
+      function update() {
+        var path = [marker1.getPosition(), marker2.getPosition()];
+        poly.setPath(path);
+        geodesicPoly.setPath(path);
+        var heading = google.maps.geometry.spherical.computeHeading(path[0],
+            path[1]);
+        document.getElementById('heading').value = heading;
+        document.getElementById('origin').value = path[0].toString();
+        document.getElementById('destination').value = path[1].toString();
+      }
+
+      google.load('maps', '3.0', {
+        callback: initialize,
+        other_params: 'sensor=false&libraries=geometry',
+      });
+    </script>
+  </head>
+  <body>
+    <div id="map_canvas"></div>
+    <div id="info">
+      Origin: <input type="text" readonly id="origin">
+      Destination: <input type="text" readonly id="destination">
+      Heading: <input type="text" readonly id="heading"> degrees
+    </div>
+  </body>
+</html>

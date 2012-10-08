@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
+    <meta charset="utf-8">
+    <title>Google Maps JavaScript API v3 Example: Simple Aerials</title>
+    <link href="default.css" rel="stylesheet">
+    <script type="text/javascript" src="https://www.google.com/jsapi"></script>
+    <script>
+      var map;
+      function initialize() {
+        var mapOptions = {
+          center: new google.maps.LatLng(45.518970, -122.672899),
+          zoom: 18,
+          mapTypeId: google.maps.MapTypeId.SATELLITE,
+          heading: 90,
+          tilt: 45
+        };
+        map = new google.maps.Map(document.getElementById('map_canvas'), mapOptions);
+      }
+
+      function rotate90() {
+        var heading = map.getHeading() || 0;
+        map.setHeading(heading + 90);
+      }
+
+      window.autoRotate = function() {
+        // Determine if we're showing aerial imagery
+        if (map.getTilt() != 0) {
+          window.setInterval(rotate90, 3000);
+        }
+      }
+
+      google.load('maps', '3.0', {
+        callback: initialize,
+        other_params: 'sensor=false'
+      });
+    </script>
+  </head>
+  <body>
+    <input type="button" value="Auto Rotate" onclick="autoRotate();">
+    <div id="map_canvas"></div>
+  </body>
+</html>

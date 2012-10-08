@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Google Maps JavaScript API v3 Example: Map Simple</title>
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
+    <meta charset="utf-8">
+    <link href="default.css" rel="stylesheet">
+    <script src="https://www.google.com/jsapi"></script>
+    <script>
+      function initialize() {
+        var mapOptions = {
+          zoom: 8,
+          center: new google.maps.LatLng(-34.397, 150.644),
+          mapTypeId: google.maps.MapTypeId.ROADMAP
+        };
+        var mapDiv = document.getElementById('map_canvas');
+        var map = new google.maps.Map(mapDiv, mapOptions);
+
+        // We add a DOM event here to show an alert if the DIV containing the
+        // map is clicked. Note that we do this within the intialize function
+        // since the document object isn't loaded until after the window.load
+        // event.
+        google.maps.event.addDomListener(mapDiv, 'click', showAlert);
+      }
+
+      function showAlert() {
+        window.alert('DIV clicked');
+      }
+
+      google.load('maps', '3.0', {
+        callback: initialize,
+        other_params: 'sensor=false',
+      });
+    </script>
+  </head>
+  <body>
+    <div id="map_canvas"></div>
+  </body>
+</html>

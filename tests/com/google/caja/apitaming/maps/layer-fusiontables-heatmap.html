@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
+    <meta charset="utf-8">
+    <title>Google Maps JavaScript API v3 Example: Fusion Tables Layer</title>
+    <link href="default.css" rel="stylesheet">
+    <script src="https://www.google.com/jsapi"></script>
+    <script>
+
+      function initialize() {
+
+        var map = new google.maps.Map(document.getElementById('map_canvas'), {
+          center: new google.maps.LatLng(10, -140),
+          zoom: 3,
+          mapTypeId: google.maps.MapTypeId.ROADMAP
+        });
+
+        var layer = new google.maps.FusionTablesLayer({
+          query: {
+            select: 'location',
+            from: '1xWyeuAhIFK_aED1ikkQEGmR8mINSCJO9Vq-BPQ'
+          },
+          heatmap: {
+            enabled: true
+          }
+        });
+
+        layer.setMap(map);
+      }
+
+      google.load('maps', '3.0', {
+        callback: initialize,
+        other_params: 'sensor=false',
+      });
+    </script>
+  </head>
+  <body>
+    <div id="map_canvas"></div>
+  </body>
+</html>

@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
+    <meta charset="utf-8">
+    <title>Google Maps JavaScript API v3 Example: Elevation Simple</title>
+    <link href="default.css" rel="stylesheet">
+    <script src="https://www.google.com/jsapi"></script>
+    <script>
+      var elevator;
+      var map;
+      var infowindow;
+      var denali;
+
+      function initialize() {
+        infowindow = new google.maps.InfoWindow();
+        denali = new google.maps.LatLng(63.3333333, -150.5);
+
+        var mapOptions = {
+          zoom: 8,
+          center: denali,
+          mapTypeId: 'terrain'
+        }
+        map = new google.maps.Map(document.getElementById('map_canvas'), mapOptions);
+
+        // Create an ElevationService
+        elevator = new google.maps.ElevationService();
+
+        // Add a listener for the click event and call getElevation on that location
+        google.maps.event.addListener(map, 'click', getElevation);
+      }
+
+      function getElevation(event) {
+
+        var locations = [];
+
+        // Retrieve the clicked location and push it on the array
+        var clickedLocation = event.latLng;
+        locations.push(clickedLocation);
+
+        // Create a LocationElevationRequest object using the array's one value
+        var positionalRequest = {
+          'locations': locations
+        }
+
+        // Initiate the location request
+        elevator.getElevationForLocations(positionalRequest, function(results, status) {
+          if (status == google.maps.ElevationStatus.OK) {
+
+            // Retrieve the first result
+            if (results[0]) {
+
+              // Open an info window indicating the elevation at the clicked position
+              infowindow.setContent('The elevation at this point <br>is ' + results[0].elevation + ' meters.');
+              infowindow.setPosition(clickedLocation);
+              infowindow.open(map);
+            } else {
+              alert('No results found');
+            }
+          } else {
+            alert('Elevation service failed due to: ' + status);
+          }
+        });
+      }
+
+      google.load('maps', '3.0', {
+        callback: initialize,
+        other_params: 'sensor=false',
+      });
+    </script>
+  </head>
+  <body>
+    <div id="map_canvas" style="width: 100%; height: 100%; float:left; border: 1px solid black;"></div>
+  </body>
+</html>

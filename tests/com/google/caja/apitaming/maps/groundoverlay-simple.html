@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
+    <meta charset="utf-8">
+    <title>Google Maps JavaScript API v3 Example: Ground Overlays</title>
+    <link href="default.css" rel="stylesheet">
+    <script src="https://www.google.com/jsapi"></script>
+    <script>
+      function initialize() {
+
+        var newark = new google.maps.LatLng(40.740, -74.18);
+        var imageBounds = new google.maps.LatLngBounds(
+            new google.maps.LatLng(40.712216,-74.22655),
+            new google.maps.LatLng(40.773941,-74.12544));
+
+        var mapOptions = {
+          zoom: 13,
+          center: newark,
+          mapTypeId: google.maps.MapTypeId.ROADMAP
+        }
+
+        var map = new google.maps.Map(document.getElementById('map_canvas'), mapOptions);
+
+        var oldmap = new google.maps.GroundOverlay(
+            'https://www.lib.utexas.edu/maps/historical/newark_nj_1922.jpg',
+            imageBounds);
+        oldmap.setMap(map);
+      }
+
+      google.load('maps', '3.0', {
+        callback: initialize,
+        other_params: 'sensor=false',
+      });
+    </script>
+  </head>
+  <body>
+    <div id="map_canvas"></div>
+  </body>
+</html>

@@ -90,6 +90,7 @@ function ES53FrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker) {
     grantMethod: frameGroupTamingSchema.published.grantTameAsMethod,
     grantRead: frameGroupTamingSchema.published.grantTameAsRead,
     grantReadWrite: frameGroupTamingSchema.published.grantTameAsReadWrite,
+    grantReadOverride: frameGroupTamingSchema.published.grantTameAsReadOverride,
     adviseFunctionBefore: frameGroupTamingSchema.published.adviseFunctionBefore,
     adviseFunctionAfter: frameGroupTamingSchema.published.adviseFunctionAfter,
     adviseFunctionAround: frameGroupTamingSchema.published.adviseFunctionAround,
@@ -206,7 +207,7 @@ function ES53FrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker) {
       var htmlEmitter = domicileAndEmitter && domicileAndEmitter[1];
       var gman = GuestManager(frameTamingSchema, frameTamingMembrane, divs, 
           cajaInt.documentBaseUrl(), domicile, htmlEmitter, guestWin,
-          tamingWin.___.USELESS, es53run);
+          tamingWin.___.USELESS, uriPolicy, es53run);
       gman._loader = guestWin.loadModuleMaker(
         cajaInt.documentBaseUrl(), cajoler, URI.utils);
       guestWin.___.DISABLE_SECURITY_FOR_DEBUGGER = unsafe;
