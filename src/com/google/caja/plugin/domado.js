@@ -611,12 +611,35 @@ var Domado = (function() {
   })();
 
   /** XMLHttpRequest or an equivalent on IE 6. */
-  domitaModules.XMLHttpRequestCtor = function (XMLHttpRequest, ActiveXObject) {
-    if (XMLHttpRequest) {
+  domitaModules.XMLHttpRequestCtor = function (makeDOMAccessible,
+      XMLHttpRequest, ActiveXObject, XDomainRequest) {
+    if (XMLHttpRequest &&
+      makeDOMAccessible(new XMLHttpRequest()).withCredentials !== undefined) {
       return XMLHttpRequest;
+    } else if (XDomainRequest) { 
+      return function XDomainRequestObjectForIE() {
+        var xdr = makeDOMAccessible(new XDomainRequest());
+        xdr.onload = function () {
+          if ('function' === typeof xdr.onreadystatechange) {
+            xdr.status = 200;
+            xdr.readyState = 4;
+            xdr.onreadystatechange.call(xdr, null, false);
+          }
+        };
+        var errorHandler = function () {
+          if ('function' === typeof xdr.onreadystatechange) {
+            xdr.status = 500;
+            xdr.readyState = 4;
+            xdr.onreadystatechange.call(xdr, null, false);
+          }
+        };
+        xdr.onerror = errorHandler;
+        xdr.ontimeout = errorHandler;
+        return xdr;
+      };
     } else if (ActiveXObject) {
-      // The first time the ctor is called, find an ActiveX class supported by
-      // this version of IE.
+     // The first time the ctor is called, find an ActiveX class supported by
+     // this version of IE.
       var activeXClassId;
       return function ActiveXObjectForIE() {
         if (activeXClassId === void 0) {
@@ -5387,8 +5410,10 @@ var Domado = (function() {
           taming,
           rulebreaker,
           domitaModules.XMLHttpRequestCtor(
+              makeDOMAccessible,
               makeFunctionAccessible(window.XMLHttpRequest),
-              makeFunctionAccessible(window.ActiveXObject)),
+              makeFunctionAccessible(window.ActiveXObject),
+              makeFunctionAccessible(window.XDomainRequest)),
           naiveUriPolicy);
       cajaVM.def(nodeClasses.XMLHttpRequest);
       traceStartup("DT: done for XMLHttpRequest");
