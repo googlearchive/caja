@@ -27,6 +27,7 @@ import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.util.Criterion;
+import com.google.caja.util.Lists;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -108,10 +109,10 @@ public final class TemplateSanitizer {
 
   private boolean sanitizeAttrs(ElKey elKey, Element el, boolean ignore) {
     boolean valid = true;
-    // Iterate in reverse so that removed attributes don't break iteration.
-    NamedNodeMap attrs = el.getAttributes();
-    for (int i = attrs.getLength(); --i >= 0;) {
-      valid &= sanitizeAttr(elKey, el, (Attr) attrs.item(i), ignore);
+    // Snapshot and then iterate so that removals/additions don't miss things.
+    List<Attr> attrs = Lists.newArrayList(Nodes.attributesOf(el));
+    for (Attr attr : attrs) {
+      valid &= sanitizeAttr(elKey, el, attr, ignore);
     }
     return valid;
   }

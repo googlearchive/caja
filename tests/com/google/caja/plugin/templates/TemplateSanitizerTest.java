@@ -84,7 +84,7 @@ public class TemplateSanitizerTest extends CajaTestCase {
             ""
             + "<applet><param name=zoicks value=ack>"
             + "<a href=http://can-link-to.com/ >disallowed</a></applet>")),
-        "<caja-v-applet><caja-v-param data-caja-value=\"ack\" name=\"zoicks\">"
+        "<caja-v-applet><caja-v-param data-caja-value=\"ack\">"
         + "</caja-v-param>"
         + "<a href=\"http://can-link-to.com/\">disallowed</a>"
         + "</caja-v-applet>");
@@ -132,10 +132,11 @@ public class TemplateSanitizerTest extends CajaTestCase {
             + "<iframe src='http://can-link-to.com/'"
             + " name='foo' id='bar' width=3>"
             + "disallowed</iframe>")),
-        "<iframe width=\"3\">disallowed</iframe>",
-        "WARNING: removing disallowed attribute src on tag iframe",
+        "<iframe width=\"3\""
+        + ">disallowed</iframe>",
+        "WARNING: removing disallowed attribute id on tag iframe",
         "WARNING: removing disallowed attribute name on tag iframe",
-        "WARNING: removing disallowed attribute id on tag iframe");
+        "WARNING: removing disallowed attribute src on tag iframe");
   }
   public final void testIsindexElementRewrittenSafely() throws Exception {
     assertValid(
@@ -149,8 +150,8 @@ public class TemplateSanitizerTest extends CajaTestCase {
     assertValid(
         htmlFragment(fromString(
             "<link rev=Contents href='http://can-link-to.com/'>disallowed")),
-        "<caja-v-link data-caja-rev=\"Contents\" "
-        + "href=\"http://can-link-to.com/\">"
+        "<caja-v-link data-caja-href=\"http://can-link-to.com/\""
+        + " data-caja-rev=\"Contents\">"
         + "</caja-v-link>disallowed");
   }
   public final void testUnsafeMetaElement() throws Exception {
@@ -169,7 +170,8 @@ public class TemplateSanitizerTest extends CajaTestCase {
     assertValid(
         htmlFragment(fromString(
             "<object><param name=zoicks value=ack>disallowed</object>")),
-        "<caja-v-object><caja-v-param data-caja-value=\"ack\" name=\"zoicks\">"
+        "<caja-v-object>"
+        + "<caja-v-param data-caja-value=\"ack\">"
         + "</caja-v-param>disallowed</caja-v-object>");
   }
   public final void testUnsafeTitleElement() throws Exception {
