@@ -215,11 +215,12 @@
     </antcall>
   </target>
 
-  <target name="jquerytest" depends="AllTests,jquery">
+  <target name="jquerytest" depends="jquery,AllTests">
     <condition property="jvmarg"
      value="-Xdebug -Xmx2G -Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=9999" else="">
       <isset property="test.debug"/>
     </condition>
+    <mkdir dir="${reports}/tests"/>
     <junit printsummary="yes" fork="yes" forkmode="once" maxmemory="512m">
       <assertions><enable/></assertions>  <!-- ignored unless fork="yes" -->
       <classpath refid="classpath.tests"/>
