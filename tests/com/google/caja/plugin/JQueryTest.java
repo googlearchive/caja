@@ -120,11 +120,11 @@ public class JQueryTest extends BrowserTestCase {
   }
 
   public final void testAttributes() throws Exception {
-    runJQueryTestCase("attributes", 391);
+    runJQueryTestCase("attributes", 414);
   }
 
   public final void testEvent() throws Exception {
-    runJQueryTestCase("event", 368);
+    runJQueryTestCase("event", 377);
   }
 
   public final void testSelector() throws Exception {
@@ -132,7 +132,7 @@ public class JQueryTest extends BrowserTestCase {
   }
 
   public final void testTraversing() throws Exception {
-    runJQueryTestCase("traversing", 281);
+    runJQueryTestCase("traversing", 284);
   }
 
   public final void testManipulation() throws Exception {
@@ -140,7 +140,7 @@ public class JQueryTest extends BrowserTestCase {
   }
 
   public final void testCSS() throws Exception {
-    runJQueryTestCase("css", 139);
+    runJQueryTestCase("css", 196);
   }
 
   // Currently doesn't work because jQuery needs a PHP sever for ajax tests.
@@ -151,11 +151,11 @@ public class JQueryTest extends BrowserTestCase {
   */
 
   public final void testEffects() throws Exception {
-    runJQueryTestCase("effects", 480);
+    runJQueryTestCase("effects", 527);
   }
 
   public final void testOffset() throws Exception {
-    runJQueryTestCase("offset", 5);
+    runJQueryTestCase("offset", 18);
   }
 
   public final void testDimensions() throws Exception {

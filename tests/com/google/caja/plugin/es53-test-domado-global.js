@@ -52,6 +52,11 @@
      * Tests of how Caja handles omitted structure in HTML document inputs.
      */
     (function() {
+      
+      function ti(text) {
+        return '<title>' + text + '</title>';
+      }
+      
       function assertGuestHtmlCorrect(frame, div) {
         var vdocContainer = div.getElementsByClassName("vdoc-container___")[0];
         debugger;
@@ -59,35 +64,44 @@
             vdocContainer.innerHTML);
       }
 
-      function registerStructureTest(testName, html, expectTitle, expectBody) {
+      function registerStructureTest(testName, html, expectHead, expectBody) {
         registerGuestTest(testName,
             html.replace('$', '<script>' + htmlGuestJs + '</script>'),
-            expectTitle, expectBody);
+            '<head>' + expectHead + '</head><body>' + expectBody + '</body>');
       }
 
       registerStructureTest('testFullyExplicit',
           '<html><head><title>t</title></head>' + 
           '<body>b$</body></html>',
-          't', 'b');
+          ti('t'), 'b');
 
       registerStructureTest('testStartBody',
           '<title>t</title><body>' + 
           'b$',
-          't', 'b');
+          ti('t'), 'b');
 
       registerStructureTest('testStopHead',
           '<title>t</title></head>' + 
           'b$',
-          't', 'b');
+          ti('t'), 'b');
 
       registerStructureTest('testFullyImplicit',
           '<title>t</title>' + 
           'b$',
-          't', 'b');
+          ti('t'), 'b');
 
       registerStructureTest('testJustText',
           'b$',
-          null, 'b');
+          '', 'b');
+
+      registerStructureTest('testEmptyVirtualizedElementInHead',
+          // Regression test for <body> getting embedded in <head> due to
+          // virtualized empty elements being misparsed as non-empty elements
+          '<html><head><title>t</title><meta></head>' + 
+          '<body>b$</body></html>',
+          ti('t') + '<meta>',
+          'b');
+
     }());
 
     /**

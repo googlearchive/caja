@@ -1715,7 +1715,14 @@ var Domado = (function() {
             out.push('>');
           },
           endTag: function (tagName, out) {
+            var rempty = html4.ELEMENTS[tagName] & html4.eflags.EMPTY;
             tagName = realToVirtualElementName(tagName);
+            var vempty = html4.ELEMENTS[tagName] & html4.eflags.EMPTY;
+            if (vempty && !rempty) {
+              // omit end tag because the browser doesn't see the virtualized
+              // element as empty
+              return;
+            }
             out.push('</', tagName, '>');
           },
           pcdata: function (text, out) { out.push(text); },

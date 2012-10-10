@@ -545,22 +545,24 @@ function HtmlEmitter(makeDOMAccessible, base, opt_domicile, opt_guestGlobal) {
         }
       }
 
-      var eltype = html4.ELEMENTS[realTagName];
+      var veltype = html4.ELEMENTS[virtualTagName];
+      var reltype = html4.ELEMENTS[realTagName];
+
       domicile.sanitizeAttrs(realTagName, attribs);
 
-      if ((eltype & html4.eflags.UNSAFE) !== 0) {
+      if ((reltype & html4.eflags.UNSAFE) !== 0) {
         throw new Error('HtmlEmitter internal: unsafe element ' + realTagName +
             ' slipped through virtualization!');
       }
 
       var el = bridal.createElement(realTagName, attribs);
-      if ((eltype & html4.eflags.OPTIONAL_ENDTAG)
+      if ((veltype & html4.eflags.OPTIONAL_ENDTAG)
           && el.tagName === insertionPoint.tagName) {
         documentWriter.endTag(el.tagName.toLowerCase(), true);
         // TODO(kpreid): Replace this with HTML5 parsing model
       }
       insertionPoint.appendChild(el);
-      if (!(eltype & html4.eflags.EMPTY)) { insertionPoint = el; }
+      if (!(veltype & html4.eflags.EMPTY)) { insertionPoint = el; }
       
       for (var i = slowPathAttribs.length - 2; i >= 0; i -= 2) {
         opt_domicile.tameNode(el, true).setAttribute(
