@@ -494,7 +494,6 @@ test( "isNumeric", function() {
 	ok( t(0), "Zero integer number");
 	ok( t(32), "Positive integer number");
 	ok( t("040"), "Octal integer literal string");
-	ok( t(0144), "Octal integer literal");
 	ok( t("0xFF"), "Hexadecimal integer literal string");
 	ok( t(0xFFF), "Hexadecimal integer literal");
 	ok( t("-1.6"), "Negative floating point string");

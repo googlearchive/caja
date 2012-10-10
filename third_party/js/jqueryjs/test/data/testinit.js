@@ -4,7 +4,7 @@ window['jQuery'] = this.jQuery || "jQuery"; // For testing .noConflict()
 window['$'] = this.$ || "$";
 window['originaljQuery'] = jQuery;
 window['original$'] = $;
-window['hasPHP'] = true;
+window['hasPHP'] = false;
 window['amdDefined'] = undefined;
 
 /**
