@@ -96,7 +96,7 @@ public class JQueryTest extends BrowserTestCase {
   }
 
   public final void testCore() throws Exception {
-    runJQueryTestCase("core", 716);
+    runJQueryTestCase("core", 1271);
   }
 
   public final void testCallbacks() throws Exception {

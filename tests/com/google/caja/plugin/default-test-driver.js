@@ -44,6 +44,9 @@ if (testCase) {
               // used by es53-test-domado-dom-guest.html
               return 'test-image-41x13.png';
             }
+            if (jQuery && /^data\//.test(uri)) {
+              return '/ant-testlib/js/jqueryjs/test/' + uri;
+            }
             return URI.create(
                 'http',
                 null,

@@ -729,17 +729,23 @@ var Domado = (function() {
       responseXML: {
         enumerable: canHaveEnumerableAccessors,
         get: method(function () {
-          // TODO(ihab.awad): Implement a taming layer for XML. Requires
-          // generalizing the HTML node hierarchy as well so we have a unified
-          // implementation.
+          var feralXml = p(this).feral.responseXML;
+          if (feralXml === null || feralXml === undefined) {
+            // null = 'The response did not parse as XML.'
+            return null;
+          } else {
+            // TODO(ihab.awad): Implement a taming layer for XML. Requires
+            // generalizing the HTML node hierarchy as well so we have a unified
+            // implementation.
 
-          // This kludge is just enough to keep the jQuery tests from freezing.
-          var node = {nodeName: '#document'};
-          node.cloneNode = function () { return node; };
-          node.toString = function () {
-            return 'Caja does not support XML.';
-          };
-          return {documentElement: node};
+            // This kludge is just enough to keep the jQuery tests from freezing.
+            var node = {nodeName: '#document'};
+            node.cloneNode = function () { return node; };
+            node.toString = function () {
+              return 'Caja does not support XML.';
+            };
+            return {documentElement: node};
+          }
         })
       },
       status: {
