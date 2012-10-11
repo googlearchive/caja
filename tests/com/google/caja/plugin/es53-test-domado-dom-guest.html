@@ -1205,6 +1205,35 @@ document.write(
   });
 </script>
 
+<p id="testInnerHTMLVirtualization" class="testcontainer"></p>
+<script type="text/javascript">
+  // TODO(kpreid): Virtualized elements in innerHTML don't work.
+  jsunitRegisterIf(false,
+                   'testInnerHTMLVirtualization',
+                   function testInnerHTMLVirtualization() {
+    var cont = document.getElementById('testInnerHTMLVirtualization');
+
+    cont.innerHTML = '<object data="test-image-41x13.png">hi</object>';
+    assertEquals(
+        '<caja-v-object caja-v-data="test-image-41x13.png">hi</caja-v-object>',
+        canonInnerHtml(directAccess.getInnerHTML(cont)));
+    pass('testInnerHTMLVirtualization');
+  });
+</script>
+
+<p id="testInnerHTMLUnsafe" class="testcontainer"></p>
+<script type="text/javascript">
+  jsunitRegister('testInnerHTMLUnsafe',
+                 function testInnerHTMLUnsafe() {
+    var cont = document.getElementById('testInnerHTMLUnsafe');
+
+    cont.innerHTML = '<script>alert("Oh dear (testInnerHTMLUnsafe).")</scr'
+        + 'ipt>';
+    assertEquals('', canonInnerHtml(directAccess.getInnerHTML(cont)));
+    pass('testInnerHTMLUnsafe');
+  });
+</script>
+
 <p id="testOffsetParent" class="testcontainer" style="position:relative">
 <span id="testOffsetParent-inner">inner</span>
 </p>

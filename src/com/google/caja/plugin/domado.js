@@ -1644,7 +1644,14 @@ var Domado = (function() {
         }
         return attribs;
       }
-      var htmlSanitizer = html.makeHtmlSanitizer(sanitizeAttrs);
+      function tagPolicy(tagName, attrs) {
+        if (html4.ELEMENTS[tagName] & html4.eflags.UNSAFE) {
+          return null;
+        } else {
+          return sanitizeAttrs(tagName, attrs);
+        }
+      }
+      var htmlSanitizer = html.makeHtmlSanitizer(tagPolicy);
 
       /**
        * If str ends with suffix,
