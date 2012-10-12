@@ -101,7 +101,8 @@ jQuery.each( tests, function( strFlags, resultString ) {
 					output = "";
 					cblist = jQuery.Callbacks( flags );
 					cblist.add(function() {
-						equal( this, window, "fireWith with no arguments (context is window)" );
+						var defaultThis = function() {return this;}();  // strict mode variance
+						equal( this, defaultThis, "fireWith with no arguments (context is default)" );
 						strictEqual( arguments.length, 0, "fireWith with no arguments (no arguments)" );
 					});
 					cblist.fireWith();

@@ -30,10 +30,10 @@ public class JQueryTest extends BrowserTestCase {
   /**
    * Do what should be done with the browser.
    * @param pageName The tail of a URL.  Unused in this implementation
-   * @param data The number of jQuery tests we expect to pass.
+   * @param passCount The number of tests we expect to pass, or null for all.
    */
   protected String driveBrowser(
-      final WebDriver driver, int data, final String pageName) {
+      final WebDriver driver, Object passCount, final String pageName) {
     final String testResultId = "qunit-testresult-caja-guest-0___";
     // Find the reporting div
     poll(20000, 200, new Check() {
@@ -49,7 +49,7 @@ public class JQueryTest extends BrowserTestCase {
     WebElement statusElement = driver.findElement(By.id(testResultId));
     String currentStatus = statusElement.getText();
     String lastStatus = null;
-    
+
     // Check every second.
     // If the text starts with "Tests completed" then
     //    exit the loop and check that the right number passed
@@ -70,7 +70,9 @@ public class JQueryTest extends BrowserTestCase {
       }
     }
 
-    String result = "\n" + data + " tests";
+    String result = passCount != null
+        ? "\n" + passCount + " tests"
+        : "passed, 0 failed";
     Assert.assertThat(currentStatus, Matchers.containsString(result));
     return currentStatus;
   }
@@ -78,14 +80,14 @@ public class JQueryTest extends BrowserTestCase {
   /**
    * Run a page of jQuery tests.
    * @param testCase The page name.
-   * @param data The number of tests we expect to pass.  We should update this
-   *             monotonically as we improve Caja.
+   * @param passCount The number of tests we expect to pass, or null for all.
+   *             We should update this monotonically as we improve Caja.
    */
   protected String runJQueryTestCase(
-      String testCase, int data, String... params)
+      String testCase, Integer passCount, String... params)
       throws Exception {
     return runBrowserTest("browser-test-case.html",
-        data,
+        passCount,
         add(params,
             "es5=true",
             "test-case=" + escapeUri(
@@ -96,51 +98,110 @@ public class JQueryTest extends BrowserTestCase {
   }
 
   public final void testCore() throws Exception {
-    runJQueryTestCase("core", 1271);
+    runJQueryTestCase("core", 1284);
+    // Current modifications made to test suite:
+    //   * Removed unnecessary octal literal.
+    // Current failure categories:
+    //   * Complaint about lack of PHP server
+    //   * TODO(jasvir): window.eval is absent (this includes the jQuery('html')
+    //     failure)
+    //   * We don't implement XML yet.
+    //   * We don't implement iframes yet.
+    //   * We don't implement document.styleSheets.
+    //   * We don't implement document.getElementsByName.
   }
 
   public final void testCallbacks() throws Exception {
-    runJQueryTestCase("callbacks", 839);
+    runJQueryTestCase("callbacks", null);
+    // Current modifications made to test suite:
+    //   * Adjusted "context is window" test assuming callee is non-strict
   }
 
   public final void testDeferred() throws Exception {
     runJQueryTestCase("deferred", 219);
+    // Current failure categories: 
+    //   * Assumption of non-strict mode.
   }
 
   public final void testSupport() throws Exception {
     runJQueryTestCase("support", 1);
+    // Current failure categories:
+    //   * We don't implement iframes yet.
   }
 
   public final void testData() throws Exception {
-    runJQueryTestCase("data", 276);
+    runJQueryTestCase("data", 290);
+    // Current failure categories:
+    //   * We don't implement iframes yet (used incidentally).
   }
 
   public final void testQueue() throws Exception {
-    runJQueryTestCase("queue", 42);
+    runJQueryTestCase("queue", null);
   }
 
   public final void testAttributes() throws Exception {
-    runJQueryTestCase("attributes", 414);
+    runJQueryTestCase("attributes", 415);
+    // Current failure categories:
+    //   * URI rewriting is visible to the guest.
+    //   * Simple event handler rewriting is visible to the guest.
+    //   * We don't implement XML yet.
+    //   * Unknown - "Second radio was checked when clicked" - .click() problem?
+    //   * We don't implement HTML5 form attributes yet (eg autofocus), even to
+    //     reject/lock them.
+    //   * Removing style= attributes is misbehaving according to jQuery.
+    //   * We don't support tabindex on non-form-elements yet (HTML5).
+    //   * We don't support document.createAttribute yet.
+    //   * Something to do with multiple-select.
+    //   * Expects a form name/id (?) to be reflected on document.
   }
 
   public final void testEvent() throws Exception {
     runJQueryTestCase("event", 377);
+    // Current failure categories:
+    //   * Various lost-signal failures:
+    //        in 'bind(),live(),delegate() with non-null,defined data'
+    //        live() and delegate() tests
+    //        trigger() tests
+    //   * We don't implement document.createEvent of other than 'HTMLEvents'
+    //   * We don't implement iframes yet.
+    //   * jQuery reports leak in 'bind(name, false), unbind(name, false)'
+    //   * submit listeners not firing in 'trigger(type, [data], [fn])'
+    //   * "Object [domado object HTMLInputElement] has no method 'click'"
+    //   * Something about "quickIs".
   }
 
   public final void testSelector() throws Exception {
-    runJQueryTestCase("selector", 24);
+    runJQueryTestCase("selector", 25);
+    // Current failure categories:
+    //   * We don't implement iframes yet.
   }
 
   public final void testTraversing() throws Exception {
-    runJQueryTestCase("traversing", 284);
+    runJQueryTestCase("traversing", 286);
+    // Current failure categories:
+    //   * We don't implement iframes yet.
   }
 
   public final void testManipulation() throws Exception {
-    runJQueryTestCase("manipulation", 0);
+    runJQueryTestCase("manipulation", 467);
+    // Current modifications made to test suite:
+    //   * Removed SES-incompatible Array.prototype modification; was only for
+    //     testing jQuery robustness.
+    // Current failure categories:
+    //   * We don't implement HTML5 yet.
+    //   * We don't implement XML yet.
+    //   * We don't provide window.eval.
+    //   * Something wrong with checked radio buttons.
+    //   * We don't make non-JS script blocks readable/preserved.
   }
 
   public final void testCSS() throws Exception {
     runJQueryTestCase("css", 196);
+    // Current failure categories:
+    //   * We don't implement SVG (fill-opacity CSS property).
+    //   * Something doesn't work such that defaultDisplay() in jquery falls
+    //     back to a strategy creating an iframe, which we don't implement.
+    //     This means that .show() and presumably .hide() doesn't work.
   }
 
   // Currently doesn't work because jQuery needs a PHP sever for ajax tests.
@@ -151,18 +212,28 @@ public class JQueryTest extends BrowserTestCase {
   */
 
   public final void testEffects() throws Exception {
-    runJQueryTestCase("effects", 527);
+    runJQueryTestCase("effects", 528);
+    // Current modifications made to test suite:
+    //   * Fixed maybe-accidental undeclared global 'calls'.
+    // Current failure categories:
+    //   * We don't implement SVG (fill-opacity CSS property).
   }
 
   public final void testOffset() throws Exception {
     runJQueryTestCase("offset", 18);
+    // Current failure categories:
+    //   * We don't implement iframes yet.
   }
 
   public final void testDimensions() throws Exception {
-    runJQueryTestCase("dimensions", 0);
+    runJQueryTestCase("dimensions", 133);
+    // Current modifications made to test suite:
+    //   * Fixed nested function in strict mode.
+    // Current failure categories:
+    //   * We don't implement iframes yet.
   }
 
   public final void testExports() throws Exception {
-    runJQueryTestCase("exports", 1);
+    runJQueryTestCase("exports", null);
   }
 }

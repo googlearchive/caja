@@ -1384,7 +1384,7 @@ asyncTest( "Animate Option: step: function( percent, tween )", 1, function() {
 	}, {
 		duration: 1,
 		step: function( value, tween ) {
-			calls = counter[ tween.prop ] = counter[ tween.prop ] || [];
+			var calls = counter[ tween.prop ] = counter[ tween.prop ] || [];
 			calls.push( value );
 		}
 	}).queue( function( next ) {

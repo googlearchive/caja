@@ -1721,7 +1721,7 @@ var Domado = (function() {
                   out.push(' ', aname, '="', html.escapeAttrib(value), '"');
                 }
               } else if (cajaPrefRe.test(aname)) {
-                out.push(' ', aname.substring(10), '="',
+                out.push(' ', aname.substring(cajaPrefix.length), '="',
                     html.escapeAttrib(value), '"');
               }
             }
@@ -2918,9 +2918,10 @@ var Domado = (function() {
       traceStartup("DT: about to define makeRestrictedNodeType");
 
       function makeRestrictedNodeType(whitelist) {
-        var nodeType = function(node, editable) {
+        function ForeignOrOpaqueNode(node, editable) {
           TameBackedNode.call(this, node, editable, editable);
-        };
+        }
+        var nodeType = ForeignOrOpaqueNode;  // other name is for debug hint
         inherit(nodeType, TameBackedNode);
         for (var safe in whitelist) {
           // Any non-own property is overridden to be opaque below.
@@ -3103,6 +3104,16 @@ var Domado = (function() {
         //   "Note that cloning an immutable subtree results in a mutable copy"
         return new TameBackedAttributeNode(clone, true, np(this).ownerElement);
       }));
+      var nameAccessor = {
+        enumerable: true,
+        get: nodeMethod(function () {
+          var name = np(this).feral.name;
+          if (cajaPrefRe.test(name)) {
+            name = name.substring(cajaPrefix.length);
+          }
+          return name;
+        })
+      };
       var valueAccessor = {
         enumerable: true,
         get: nodeMethod(function () {
@@ -3113,8 +3124,8 @@ var Domado = (function() {
         })
       };
       definePropertiesAwesomely(TameBackedAttributeNode.prototype, {
-        nodeName: NP.Rename("name", NP.ro),
-        name: NP.ro,
+        nodeName: nameAccessor,
+        name: nameAccessor,
         specified: {
           enumerable: true,
           get: nodeMethod(function () {

@@ -133,7 +133,7 @@ public abstract class BrowserTestCase extends CajaTestCase {
     return runBrowserTest(pageName, 0, params);
   }
 
-  protected String runBrowserTest(String pageName, int data, String... params)
+  protected String runBrowserTest(String pageName, Object data, String... params)
       throws Exception {
     if (flag(SERVER_ONLY) || flag(START_AND_WAIT)) {
       pageName = "test-index.html";
@@ -229,7 +229,7 @@ public abstract class BrowserTestCase extends CajaTestCase {
    * @param pageName The tail of a URL.  Unused in this implementation
    */
   protected String driveBrowser(
-      final WebDriver driver, int data, final String pageName) {
+      final WebDriver driver, Object data, final String pageName) {
     poll(20000, 200, new Check() {
       @Override public String toString() { return "startup"; }
       public boolean run() {

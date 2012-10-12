@@ -436,6 +436,24 @@ document.write(
     // Should be case insensitive
     d.setAttribute('flavor', 'peach');
     assertEquals('peach', d.getAttribute('FLAvor'));
+    
+    // Should be visible as an attribute node with the proper name
+    var attr;
+    for (var i = 0; i < d.attributes.length; i++) {
+      if (d.attributes[i].name === 'flavor') {
+        attr = d.attributes[i];
+        break;
+      }
+    }
+    assertTrue('attribute node', attr !== null);
+    assertEquals('attribute nodeName', 'flavor', attr.nodeName);
+    assertEquals('attribute name', 'flavor', attr.name);
+    assertEquals('attribute nodeValue', 'peach', attr.nodeValue);
+    assertEquals('attribute value', 'peach', attr.value);
+    
+    // Virtualization should not be visible
+    assertFalse('hasAttribute prefixed', d.hasAttribute('data-caja-flavor'));
+    assertEquals('getAttributeprefixed', null, d.getAttribute('data-caja-flavor'));
 
     pass('testAttrsNonstandardPermitted');
   });

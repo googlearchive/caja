@@ -1,7 +1,9 @@
 module("manipulation", { teardown: moduleTeardown });
 
-// Ensure that an extended Array prototype doesn't break jQuery
-Array.prototype.arrayProtoFn = function(arg) { throw("arrayProtoFn should not be called"); };
+if (Object.isExtensible(Array.prototype)) {
+  // Ensure that an extended Array prototype doesn't break jQuery
+  Array.prototype.arrayProtoFn = function(arg) { throw("arrayProtoFn should not be called"); };
+}
 
 var bareObj = function(value) { return value; };
 var functionReturningObj = function(value) { return (function() { return value; }); };

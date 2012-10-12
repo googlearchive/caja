@@ -1,4 +1,4 @@
-if ( jQuery.fn.width ) {
+if ( jQuery.fn.width ) (function() {
 
 module("dimensions", { teardown: moduleTeardown });
 
@@ -444,4 +444,4 @@ testIframe( "dimensions/documentLarge", "window vs. large document", function( j
 	ok( jQuery( document ).width() > jQuery( window ).width(), "document width is larger than window width" );
 });
 
-}
+}());
