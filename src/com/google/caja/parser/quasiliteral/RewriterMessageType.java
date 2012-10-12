@@ -189,13 +189,13 @@ public enum RewriterMessageType implements MessageTypeInt {
       MessageLevel.FATAL_ERROR),
 
   TOP_LEVEL_VAR_INCOMPATIBLE_WITH_CAJA(
-      "%s: Top level variable declarations incompatiable with Caja.  "
-      + "Please rewrite as %s",
+      "%s: Caja makes top-level vars local to a script tag."
+      + " If you need a global, use: %s",
       MessageLevel.LINT),
 
   TOP_LEVEL_FUNC_INCOMPATIBLE_WITH_CAJA(
-      "%s: Top level function declarations incompatiable with Caja.  "
-      + "Please move the function to the top of the scope and rewrite as: %s",
+      "%s: Caja makes top-level functions local to a script tag."
+      + " If you need a global function, use: %s",
       MessageLevel.LINT);
 
   private final String formatString;
