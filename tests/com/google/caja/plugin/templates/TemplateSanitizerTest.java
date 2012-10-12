@@ -84,7 +84,8 @@ public class TemplateSanitizerTest extends CajaTestCase {
             ""
             + "<applet><param name=zoicks value=ack>"
             + "<a href=http://can-link-to.com/ >disallowed</a></applet>")),
-        "<caja-v-applet><caja-v-param data-caja-value=\"ack\">"
+        "<caja-v-applet><caja-v-param data-caja-name=\"zoicks\""
+        + " data-caja-value=\"ack\">"
         + "</caja-v-param>"
         + "<a href=\"http://can-link-to.com/\">disallowed</a>"
         + "</caja-v-applet>");
@@ -132,7 +133,8 @@ public class TemplateSanitizerTest extends CajaTestCase {
             + "<iframe src='http://can-link-to.com/'"
             + " name='foo' id='bar' width=3>"
             + "disallowed</iframe>")),
-        "<iframe width=\"3\""
+        "<iframe data-caja-id=\"bar\" data-caja-name=\"foo\""
+        + " data-caja-src=\"http://can-link-to.com/\" width=\"3\""
         + ">disallowed</iframe>",
         "WARNING: removing disallowed attribute id on tag iframe",
         "WARNING: removing disallowed attribute name on tag iframe",
@@ -171,7 +173,7 @@ public class TemplateSanitizerTest extends CajaTestCase {
         htmlFragment(fromString(
             "<object><param name=zoicks value=ack>disallowed</object>")),
         "<caja-v-object>"
-        + "<caja-v-param data-caja-value=\"ack\">"
+        + "<caja-v-param data-caja-name=\"zoicks\" data-caja-value=\"ack\">"
         + "</caja-v-param>disallowed</caja-v-object>");
   }
   public final void testUnsafeTitleElement() throws Exception {
@@ -302,7 +304,7 @@ public class TemplateSanitizerTest extends CajaTestCase {
     assertValid(
         htmlFragment(fromString(
             "<a href=\"foo.html\" charset=\"utf-7\">foo</a>")),
-        "<a href=\"foo.html\">foo</a>",
+        "<a data-caja-charset=\"utf-7\" href=\"foo.html\">foo</a>",
         "WARNING: removing disallowed attribute charset on tag a");
   }
 

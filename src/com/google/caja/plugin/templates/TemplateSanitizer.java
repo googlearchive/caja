@@ -126,15 +126,7 @@ public final class TemplateSanitizer {
       if (!Placeholder.ID_ATTR.is(attrib)) {
         if (attrKey.localName.endsWith("__")) { valid = false; }
         else if (!attrKey.localName.startsWith(cajaPrefix)) {
-          // Remove this attribute and create another that
-          // starts with "data-caja-".
-          String localName = attrKey.localName;
-          String value = attrib.getValue();
-          removeBadAttribute(el, attrKey);
-          el.setAttributeNS(
-              attrKey.ns.uri,
-              cajaPrefix + localName,
-              value == null ? localName : value);
+          valid &= virtualizeAttribute(attrib, el, attrKey);
         }
       }
     } else if (!schema.isAttributeAllowed(attrKey)) {
@@ -143,7 +135,7 @@ public final class TemplateSanitizer {
             PluginMessageType.UNSAFE_ATTRIBUTE,
             Nodes.getFilePositionFor(attrib), attrKey, elKey);
       }
-      valid &= removeBadAttribute(el, attrKey);
+      valid &= virtualizeAttribute(attrib, el, attrKey);
     } else {
       // We do not subject "target" attributes to the value criteria
       if (a.getType() != HTML.Attribute.Type.FRAME_TARGET) {
@@ -160,6 +152,28 @@ public final class TemplateSanitizer {
       }
     }
     return valid;
+  }
+
+  private boolean virtualizeAttribute(
+      Attr attrib, Element el, AttribKey attrKey) {
+    boolean valid = true;
+    // Remove this attribute and create another that
+    // starts with "data-caja-".
+    String localName = attrKey.localName;
+    String value = attrib.getValue();
+    valid &= removeBadAttribute(el, attrKey);
+    if (valid) {
+      el.setAttributeNS(
+          attrKey.ns.uri,
+          cajaPrefix + localName,
+          value == null ? localName : value);
+    }
+    return valid;
+  }
+
+  private boolean removeBadAttribute(Element el, AttribKey attrKey) {
+    el.removeAttributeNS(attrKey.ns.uri, attrKey.localName);
+    return true;
   }
 
   /**
@@ -235,10 +249,5 @@ public final class TemplateSanitizer {
     }
 
     return valid;
-  }
-
-  private boolean removeBadAttribute(Element el, AttribKey attrKey) {
-    el.removeAttributeNS(attrKey.ns.uri, attrKey.localName);
-    return true;
   }
 }
