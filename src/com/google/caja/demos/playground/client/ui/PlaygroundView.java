@@ -355,11 +355,22 @@ public class PlaygroundView {
   private native void initCaja(
       boolean debug,
       int forceES5) /*-{
+    var that = this;
+    function success(detail) {
+      var mode = detail.es5Mode ? 1 : 2;
+      that.@com.google.caja.demos.playground.client.ui.PlaygroundView::setMode(I)
+          (mode);
+    }
+    function failed(e) {
+        that.@com.google.caja.demos.playground.client.ui.PlaygroundView::addRuntimeMessage(Ljava/lang/String;)
+          (e);
+    }
     $wnd.caja.initialize({
       server: '.',
       debug: debug,
-      forceES5Mode: (forceES5 < 0) ? undefined : (forceES5 > 0)
-    });
+      es5Mode: (forceES5 < 0) ? undefined : (forceES5 > 0),
+      maxAcceptableSeverity: 'NEW_SYMPTOM'
+    }, success, failed);
   }-*/;
 
   private native void setUnsafe(boolean unsafe) /*-{
@@ -460,9 +471,7 @@ public class PlaygroundView {
         function(frame) {
           var api = that.@com.google.caja.demos.playground.client.ui.PlaygroundView::makeExtraImports(Lcom/google/gwt/core/client/JavaScriptObject;Lcom/google/gwt/core/client/JavaScriptObject;Ljava/lang/String;)($wnd.caja, frame, policy);
           frame = frame.api(api);
-          frame = es5
-              ? frame.code(baseUrl, "text/html", html)
-              : frame.cajoled(baseUrl, js, html);
+          frame = frame.code(baseUrl, "text/html", html).cajoled(baseUrl, js, html)
           frame.run(function(r) {
             that.@com.google.caja.demos.playground.client.ui.PlaygroundView::setRenderedResult(Ljava/lang/String;)(r + '');
           });
@@ -538,6 +547,15 @@ public class PlaygroundView {
           }
         };
   }-*/;
+
+  public void setMode(int mode) {
+    switch(mode) {
+      case 0: this.mode = null; break;
+      case 1: this.mode = true; break;
+      case 2: this.mode = false; break;
+    }
+    playgroundUI.mode.setSelectedIndex(mode);
+  }
 
   public void addCompileMessage(String item) {
     // Rendered using HTMLSnippetProducer serverside

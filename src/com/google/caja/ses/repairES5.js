@@ -91,6 +91,7 @@ var ses;
    * The severity levels.
    *
    * <dl>
+   *   <dt>MAGICAL_UNICORN</dt><dd>Unachievable magical mode used for testing.
    *   <dt>SAFE</dt><dd>no problem.
    *   <dt>SAFE_SPEC_VIOLATION</dt>
    *     <dd>safe (in an integrity sense) even if unrepaired. May
@@ -113,6 +114,7 @@ var ses;
    * </dl>
    */
   ses.severities = {
+    MAGICAL_UNICORN:       { level: -1, description: 'Testing only' },
     SAFE:                  { level: 0, description: 'Safe' },
     SAFE_SPEC_VIOLATION:   { level: 1, description: 'Safe spec violation' },
     UNSAFE_SPEC_VIOLATION: { level: 2, description: 'Unsafe spec violation' },
@@ -201,28 +203,43 @@ var ses;
    * be adequately repairable, or otherwise falling back to Caja's
    * ES5/3 translator.
    */
-  if (ses.maxAcceptableSeverityName) {
-    var maxSev = ses.severities[ses.maxAcceptableSeverityName];
-    if (maxSev && typeof maxSev.level === 'number' &&
-        maxSev.level >= ses.severities.SAFE.level &&
-        maxSev.level < ses.severities.NOT_SUPPORTED.level) {
-      // do nothing
-    } else {
-      logger.error('Ignoring bad maxAcceptableSeverityName: ' +
-                   ses.maxAcceptableSeverityName + '.') ;
-      ses.maxAcceptableSeverityName = 'SAFE_SPEC_VIOLATION';
-    }
-  } else {
-    ses.maxAcceptableSeverityName = 'SAFE_SPEC_VIOLATION';
-  }
+  ses.maxAcceptableSeverityName = 
+    validateSeverityName(ses.maxAcceptableSeverityName);
   ses.maxAcceptableSeverity = ses.severities[ses.maxAcceptableSeverityName];
+
+  function validateSeverityName(severityName) {
+    if (severityName) {
+      var sev = ses.severities[severityName];
+      if (sev && typeof sev.level === 'number' &&
+        sev.level >= ses.severities.SAFE.level &&
+        sev.level < ses.severities.NOT_SUPPORTED.level) {
+        // do nothing
+      } else {
+        logger.error('Ignoring bad severityName: ' +
+                   severityName + '.');
+        severityName = 'SAFE_SPEC_VIOLATION';
+      }
+    } else {
+      severityName = 'SAFE_SPEC_VIOLATION';
+    }
+    return severityName;
+  }
+  function severityNameToLevel(severityName) {
+    return ses.severities[validateSeverityName(severityName)];
+  }
 
   /**
    * Once this returns false, we can give up on the SES
    * verification-only strategy and fall back to ES5/3 translation.
    */
-  ses.ok = function ok() {
-    return ses.maxSeverity.level <= ses.maxAcceptableSeverity.level;
+  ses.ok = function ok(maxSeverity) {
+    if ("string" === typeof maxSeverity) {
+      maxSeverity = ses.severities[maxSeverity];
+    }
+    if (!maxSeverity) {
+      maxSeverity = ses.maxAcceptableSeverity;
+    }
+    return ses.maxSeverity.level <= maxSeverity.level;
   };
 
   /**

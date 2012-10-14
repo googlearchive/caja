@@ -189,12 +189,14 @@ var caja = (function () {
    * Creates the default frameGroup with the given config.
    * See {@code makeFrameGroup} for config parameters.
    */
-  function initialize(config) {
+  function initialize(config /*, opt_onSuccess, opt_onFailure */) {
     if (state !== UNREADY) {
       throw new Error('Caja cannot be initialized more than once');
     }
+    var onSuccess = arguments[1];
+    var onFailure = arguments[2];
     state = PENDING;
-    makeFrameGroup(config, function (frameGroup) {
+    makeFrameGroup(config, function (frameGroup, es5Mode) {
       defaultFrameGroup = frameGroup;
       caja['iframe'] = frameGroup['iframe'];
       caja['USELESS'] = frameGroup['USELESS'];
@@ -205,7 +207,15 @@ var caja = (function () {
       }
       frameGroup['disableSecurityForDebugger'](unsafe);
       state = READY;
+      var detail = {};
+      detail['es5Mode'] = es5Mode;
+      if ("function" === typeof onSuccess) {
+        onSuccess(detail);
+      }
       whenReady(null);
+    }, function(err) {
+      state = UNREADY;
+      onFailure(err);
     });
   }
 
@@ -255,9 +265,19 @@ var caja = (function () {
    *         means that the files loaded by Caja are un-minified to help with
    *         tracking down problems.
    *
+   *     es5Mode - If set to true or false, forces or prohibits ES5
+   *         mode, rather than autodetecting browser capabilities
+   *         capable of supporting at least maxAcceptableSeverity.
+   *
+   *     maxAcceptableSeverity - Severity of browser bugs greater than
+   *         this level cause failover from ES5 to ES5/3 if es5Mode
+   *         is undefined
+   *
    *     forceES5Mode - If set to true or false, forces or prohibits ES5
-   *         mode, rather than autodetecting browser capabilities. This
-   *         should be used strictly for debugging purposes.
+   *         mode, rather than autodetecting browser capabilities.
+   *         Equivalent to setting es5Mode and maxAcceptableSeverity
+   *         to the most insecure value. This should be used strictly
+   *         for testing/debugging purposes.
    *
    *     console - Optional user-supplied alternative to the browser's native
    *         'console' object.
@@ -275,16 +295,15 @@ var caja = (function () {
    * @param frameGroupReady function to be called back with a reference to
    *     the newly created frame group.
    */
-  function makeFrameGroup(config, frameGroupReady) {
+  function makeFrameGroup(config, frameGroupReady, onFailure) {
     initFeralFrame(window);
     config = resolveConfig(config);
     caja['server'] = config['server'];
-    // TODO(felix8a): this should be === false, but SES isn't ready,
-    // and fails on non-ES5 browsers (frameGroupReady doesn't run)
-    if (config['forceES5Mode'] !== true || unableToSES()) {
-      initES53(config, frameGroupReady);
+    if (config['es5Mode'] === false || 
+        (config['es5Mode'] !== true && unableToSES())) {
+      initES53(config, frameGroupReady, onFailure);
     } else {
-      trySES(config, frameGroupReady);
+      trySES(config, frameGroupReady, onFailure);
     }
   }
 
@@ -298,8 +317,22 @@ var caja = (function () {
       partial['server'] || partial['cajaServer'] || defaultServer);
     full['resources'] = String(partial['resources'] || full['server']);
     full['debug'] = !!partial['debug'];
-    full['forceES5Mode'] =
-      'forceES5Mode' in partial ? !!partial['forceES5Mode'] : GUESS;
+    // Full config no longer has forceES5Mode
+    // forceES5Mode passes it's value on to es5Mode and maxAcceptableSeverity
+    if ('forceES5Mode' in partial && 'es5Mode' in partial) {
+      throw new Error(
+        'Cannot use both forceES5Mode and es5Mode in the same config');
+    }
+    if (partial['forceES5Mode'] !== undefined) {
+      full['es5Mode'] = !!partial['forceES5Mode'];
+      full['maxAcceptableSeverity'] = 'NOT_ISOLATED';
+    } else {
+      full['es5Mode'] =
+        partial['es5Mode'] === undefined ? GUESS : !!partial['es5Mode'];
+      full['maxAcceptableSeverity'] = 
+        String(partial['maxAcceptableSeverity'] || 'UNSAFE_SPEC_VIOLATION');
+    }
+     
     if (partial['console']) {
       full['console'] = partial['console'];
     } else if (window['console']
@@ -337,34 +370,41 @@ var caja = (function () {
 
   //----------------
 
-  function initES53(config, frameGroupReady) {
+  function initES53(config, frameGroupReady, onFailure) {
     // TODO(felix8a): with api change, can start cajoler early too
     var guestMaker = makeFrameMaker(config, 'es53-guest-frame');
     loadCajaFrame(config, 'es53-taming-frame', function (tamingWin) {
       var fg = tamingWin['ES53FrameGroup'](
           cajaInt, config, tamingWin, window, guestMaker);
-      frameGroupReady(fg);
+      frameGroupReady(fg, false /* es5Mode */);
     });
   }
 
-  function trySES(config, frameGroupReady) {
+  function trySES(config, frameGroupReady, onFailure) {
     var guestMaker = makeFrameMaker(config, 'ses-guest-frame');
     loadCajaFrame(config, 'ses-taming-frame', function (tamingWin) {
-      if (canSES(tamingWin['ses'], config['forceES5Mode'])) {
+      var mustSES = config['es5Mode'] === true;
+      if (canSES(tamingWin['ses'], config['maxAcceptableSeverity'])) {
         var fg = tamingWin['SESFrameGroup'](
             cajaInt, config, tamingWin, window, guestMaker);
-        frameGroupReady(fg);
-      } else {
+        frameGroupReady(fg, true /* es5Mode */);
+      } else if (!mustSES) {
         config['log']('Unable to use SES.  Switching to ES53.');
         // TODO(felix8a): set a cookie to remember this?
-        initES53(config, frameGroupReady);
+        initES53(config, frameGroupReady, onFailure);
+      } else {
+        var err = new Error('ES5 mode requested but browser is unsupported');
+        if ("function" === typeof onFailure) {
+          onFailure(err);
+        } else {
+          throw err;
+        }
       }
     });
   }
 
-  function canSES(ses, force) {
-    return (ses['ok']() ||
-            (force && ses['maxSeverity'] < ses['severities']['NOT_ISOLATED']));
+  function canSES(ses, severity) {
+    return ses['ok'](ses['severities'][severity]);
   }
 
   // Fast rejection of SES.  If this works, repairES5 might still fail, and

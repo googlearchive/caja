@@ -1033,7 +1033,8 @@ ses.startSES = function(global,
       makeImports: constFunc(makeImports),
       copyToImports: constFunc(copyToImports),
 
-      makeArrayLike: constFunc(makeArrayLike)
+      makeArrayLike: constFunc(makeArrayLike),
+      inES5Mode: true
     };
     var extensionsRecord = extensions();
     gopn(extensionsRecord).forEach(function (p) {
@@ -1307,7 +1308,7 @@ ses.startSES = function(global,
 
   ses.logger.reportMax();
 
-  if (ses.ok()) {
+  if (ses.ok(ses['severities'][ses.maxAcceptableSeverityName])) {
     // We succeeded. Enable safe Function, eval, and compile* to work.
     dirty = false;
     ses.logger.log('initSES succeeded.');

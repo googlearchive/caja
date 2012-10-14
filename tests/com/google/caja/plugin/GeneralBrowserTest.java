@@ -272,4 +272,20 @@ public class GeneralBrowserTest extends BrowserTestCase {
   public final void testApiTaming() throws Exception {
     runTestDriver("es53-test-apitaming.js");
   }
+
+  public final void testAutoMode1() throws Exception {
+    runTestDriver("es53-test-automode1.js", false);
+  }
+
+  public final void testAutoMode2() throws Exception {
+    runTestDriver("es53-test-automode2.js", false);
+  }
+
+  public final void testAutoMode3() throws Exception {
+    runTestDriver("es53-test-automode3.js", false);
+  }
+
+  public final void testAutoMode4() throws Exception {
+    runTestDriver("es53-test-automode4.js", false);
+  }
 }
