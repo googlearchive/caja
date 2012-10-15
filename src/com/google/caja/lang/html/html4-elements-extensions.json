@@ -1,8 +1,0 @@
-{
-  "description": "HTML4 plus some other stuff",
-  "inherits": [
-      "html4-elements.json",
-      "html4-elements-extensions-defs.json",
-      "html4-elements-extensions-whitelist.json"
-      ]
-}
