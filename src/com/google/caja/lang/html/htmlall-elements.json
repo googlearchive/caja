@@ -1,0 +1,9 @@
+{
+  "description": "HTML5 plus some other stuff.",
+  "inherits": [
+      "html4-elements.json",
+      "html5-elements.json",
+      "htmlext-elements-defs.json",
+      "htmlext-elements-whitelist.json"
+      ]
+}

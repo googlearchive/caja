@@ -173,8 +173,6 @@
       "BODY::ONUNLOAD",
       "TEXTAREA::READONLY",
       "INPUT::READONLY",
-      "A::REL",
-      "A::REV",
       "TEXTAREA::ROWS",
       "TD::ROWSPAN",
       "TH::ROWSPAN",
@@ -255,6 +253,16 @@
             "embedding page might cause that file to be interpreted as UTF-7.",
             "According to http://www.w3schools.com/TAGS/att_a_charset.asp: ",
             "The charset attribute is not supported in any of the major browsers."
+          ] },
+      { "key": "A::REL",
+        "reason": [
+            "Can make an assertion about the entire page.",
+            "TODO(kpreid): Allow filtering rels to include e.g. 'nofollow'"
+          ] },
+      { "key": "A::REV",
+        "reason": [
+            "Can make an assertion about the entire page.",
+            "TODO(kpreid): Allow filtering rels to include e.g. 'nofollow'"
           ] },
       "LINK::CHARSET",
       "SCRIPT::CHARSET",

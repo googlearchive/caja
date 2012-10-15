@@ -288,6 +288,8 @@ public final class HtmlDefinitions {
     A_TYPE_MAP.put(HTML.Attribute.Type.CLASSES, 9);
     A_TYPE_MAP.put(HTML.Attribute.Type.FRAME_TARGET, 10);
     A_TYPE_MAP.put(HTML.Attribute.Type.URI_FRAGMENT, 11);
+    A_TYPE_MAP.put(HTML.Attribute.Type.HTML, 12);
+    A_TYPE_MAP.put(HTML.Attribute.Type.MEDIA_QUERY, 13);
     for (HTML.Attribute.Type t : HTML.Attribute.Type.values()) {
       if (!A_TYPE_MAP.containsKey(t)) {
         throw new IllegalStateException("Not all Attribute Types mapped");

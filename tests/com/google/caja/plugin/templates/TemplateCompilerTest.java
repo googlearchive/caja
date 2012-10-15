@@ -530,9 +530,9 @@ public class TemplateCompilerTest extends CajaTestCase {
             // textareas can't contain nodes, so the span had better follow it
             // which leaves it in the same position according to the
             // depth-first-ordering ignoring end tags used by the HTML emitter.
-            + "<textarea>Howdy!</textarea>"
+            + "<textarea autocomplete=\"off\">Howdy!</textarea>"
             + "<span id=\"id_2___\"></span>"
-            + "<textarea>Bye!</textarea>")),
+            + "<textarea autocomplete=\"off\">Bye!</textarea>")),
         js(fromString(
             ""
             + "function module() {"
@@ -670,7 +670,7 @@ public class TemplateCompilerTest extends CajaTestCase {
   public final void testBareTextarea() throws Exception {
     assertSafeHtml(
         htmlFragment(fromString("<textarea></textarea>")),
-        htmlFragment(fromString("<textarea></textarea>")),
+        htmlFragment(fromString("<textarea autocomplete=\"off\"></textarea>")),
         new Block());
   }
 

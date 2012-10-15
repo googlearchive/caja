@@ -1,0 +1,7 @@
+{
+  "description": "Schema for (HTML5 - HTML4) attributes.",
+  "inherits": [
+    "html5-attributes-defs.json",
+    "html5-attributes-whitelist.json"
+  ]
+}

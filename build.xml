@@ -561,20 +561,26 @@
       <depend file="${src.caja}/lang/css/CssPropertyPatterns.java"/>
     </genrule>
     <genrule class="com.google.caja.lang.html.HtmlDefinitions$Builder">
+      <!-- TODO(kpreid): Rename this output file to not mention html4 since it
+           includes HTML5 -->
       <output file="${lib.caja}/plugin/html4-defs.js"/>
-      <input file="${src.caja}/lang/html/html4-elements-extensions.json"/>
+      <input file="${src.caja}/lang/html/htmlall-elements.json"/>
       <depend file="${src.caja}/lang/html/html4-elements.json"/>
       <depend file="${src.caja}/lang/html/html4-elements-defs.json"/>
-      <depend file="${src.caja}/lang/html/html4-elements-extensions-defs.json"/>
-      <depend
-       file="${src.caja}/lang/html/html4-elements-extensions-whitelist.json"/>
       <depend file="${src.caja}/lang/html/html4-elements-whitelist.json"/>
-      <input file="${src.caja}/lang/html/html4-attributes-extensions.json"/>
+      <depend file="${src.caja}/lang/html/html5-elements.json"/>
+      <depend file="${src.caja}/lang/html/html5-elements-defs.json"/>
+      <depend file="${src.caja}/lang/html/html5-elements-whitelist.json"/>
+      <depend file="${src.caja}/lang/html/htmlext-elements-defs.json"/>
+      <depend file="${src.caja}/lang/html/htmlext-elements-whitelist.json"/>
+      <input file="${src.caja}/lang/html/htmlall-attributes.json"/>
       <depend file="${src.caja}/lang/html/html4-attributes.json"/>
       <depend file="${src.caja}/lang/html/html4-attributes-defs.json"/>
-      <depend
-       file="${src.caja}/lang/html/html4-attributes-extensions-defs.json"/>
       <depend file="${src.caja}/lang/html/html4-attributes-whitelist.json"/>
+      <depend file="${src.caja}/lang/html/html5-attributes.json"/>
+      <depend file="${src.caja}/lang/html/html5-attributes-defs.json"/>
+      <depend file="${src.caja}/lang/html/html5-attributes-whitelist.json"/>
+      <depend file="${src.caja}/lang/html/htmlext-attributes.json"/>
       <depend file="${src.caja}/lang/html/HtmlDefinitions.java"/>
     </genrule>
   </target>

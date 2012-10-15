@@ -1,0 +1,39 @@
+{
+  "allowed": [
+    "ARTICLE",
+    "ASIDE",
+    "AUDIO",
+    "BDI",
+    "CANVAS",
+    "COMMAND",
+    "DATA",
+    "DATALIST",
+    "DETAILS",
+    "FIGCAPTION",
+    "FIGURE",
+    "FOOTER",
+    "HEADER",
+    "HGROUP",
+    "MARK",
+    "METER",
+    "NAV",
+    "NOBR",
+    "NOEMBED",
+    "OUTPUT",
+    "PROGRESS",
+    "SECTION",
+    "SOURCE",
+    "SUMMARY",
+    "TIME",
+    "TRACK",
+    "VIDEO",
+    "WBR"
+  ],
+  
+  "denied": [
+    { "key": "DIALOG",
+      "reason": "can be displayed as a full-page modal dialog; needs further review" },
+    { "key": "KEYGEN",
+      "reason": "needs further review" }
+  ]
+}

@@ -1,0 +1,189 @@
+{
+  "description": [
+      "Elements defined by HTML5 but not by HTML4. Derived from",
+      "http://www.whatwg.org/specs/web-apps/current-work/multipage/section-index.html#attributes-1",
+      "as of October 2012."
+      ],
+  "types": [
+      { "key":         "ARTICLE",
+        "empty":       false,
+        "optionalEnd": false,
+        "deprecated":  false,
+        "description": "(HTML5) Self-contained syndicatable or reusable composition"
+      },
+      { "key":         "ASIDE",
+        "empty":       false,
+        "optionalEnd": false,
+        "deprecated":  false,
+        "description": "(HTML5) Sidebar for tangentially related content"
+      },
+      { "key":         "AUDIO",
+        "empty":       false,
+        "optionalEnd": false,
+        "deprecated":  false,
+        "description": "(HTML5) Audio player"
+      },
+      { "key":         "BDI",
+        "empty":       false,
+        "optionalEnd": false,
+        "deprecated":  false,
+        "description": "(HTML5) Text directionality isolation"
+      },
+      { "key":         "CANVAS",
+        "empty":       false,
+        "optionalEnd": false,
+        "deprecated":  false,
+        "description": "(HTML5) Scriptable bitmap canvas"
+      },
+      { "key":         "COMMAND",
+        "empty":       true,
+        "optionalEnd": false,
+        "deprecated":  false,
+        "description": "(HTML5) Menu command"
+      },
+      { "key":         "DATA",
+        "empty":       false,
+        "optionalEnd": false,
+        "deprecated":  false,
+        "description": "(HTML5) Machine-readable equivalent"
+      },
+      { "key":         "DATALIST",
+        "empty":       false,
+        "optionalEnd": false,
+        "deprecated":  false,
+        "description": "(HTML5) Container for options for combo box control"
+      },
+      { "key":         "DETAILS",
+        "empty":       false,
+        "optionalEnd": false,
+        "deprecated":  false,
+        "description": "(HTML5) Disclosure control for hiding details"
+      },
+      { "key":         "DIALOG",
+        "empty":       false,
+        "optionalEnd": false,
+        "deprecated":  false,
+        "description": "(HTML5) Dialog box or window"
+      },
+      { "key":         "FIGCAPTION",
+        "empty":       false,
+        "optionalEnd": false,
+        "deprecated":  false,
+        "description": "(HTML5) Caption for figure"
+      },
+      { "key":         "FIGURE",
+        "empty":       false,
+        "optionalEnd": false,
+        "deprecated":  false,
+        "description": "(HTML5) Figure with optional caption"
+      },
+      { "key":         "FOOTER",
+        "empty":       false,
+        "optionalEnd": false,
+        "deprecated":  false,
+        "description": "(HTML5) Footer for a page or section"
+      },
+      { "key":         "HEADER",
+        "empty":       false,
+        "optionalEnd": false,
+        "deprecated":  false,
+        "description": "(HTML5) Introductory or navigational aids for a page or section"
+      },
+      { "key":         "HGROUP",
+        "empty":       false,
+        "optionalEnd": false,
+        "deprecated":  false,
+        "description": "(HTML5) heading group"
+      },
+      { "key":         "KEYGEN",
+        "empty":       true,
+        "optionalEnd": false,
+        "deprecated":  false,
+        "description": "(HTML5) Cryptographic key-pair generator form control"
+      },
+      { "key":         "MARK",
+        "empty":       false,
+        "optionalEnd": false,
+        "deprecated":  false,
+        "description": "(HTML5) Highlight"
+      },
+      { "key":         "METER",
+        "empty":       false,
+        "optionalEnd": false,
+        "deprecated":  false,
+        "description": "(HTML5) Gauge"
+      },
+      { "key":         "NAV",
+        "empty":       false,
+        "optionalEnd": false,
+        "deprecated":  false,
+        "description": "(HTML5) Section with navigational links"
+      },
+      { "key":         "NOBR",
+        "empty":       false,
+        "optionalEnd": false,
+        "deprecated":  false,
+        "description": "Not in HTML4. Non-conforming feature per HTML5"
+      },
+      { "key":         "NOEMBED",
+        "empty":       false,
+        "optionalEnd": false,
+        "deprecated":  true,
+        "description": "Not in HTML4. Non-conforming feature per HTML5"
+      },
+      { "key":         "OUTPUT",
+        "empty":       false,
+        "optionalEnd": false,
+        "deprecated":  false,
+        "description": "(HTML5) Calculated output value"
+      },
+      { "key":         "PROGRESS",
+        "empty":       false,
+        "optionalEnd": false,
+        "deprecated":  false,
+        "description": "(HTML5) Progress bar"
+      },
+      { "key":         "SECTION",
+        "empty":       false,
+        "optionalEnd": false,
+        "deprecated":  false,
+        "description": "(HTML5) Generic document or application section"
+      },
+      { "key":         "SOURCE",
+        "empty":       true,
+        "optionalEnd": false,
+        "deprecated":  false,
+        "description": "(HTML5) Media source for <video> or <audio>"
+      },
+      { "key":         "SUMMARY",
+        "empty":       false,
+        "optionalEnd": false,
+        "deprecated":  false,
+        "description": "(HTML5) Caption for <details>"
+      },
+      { "key":         "TIME",
+        "empty":       false,
+        "optionalEnd": false,
+        "deprecated":  false,
+        "description": "(HTML5) Machine-readable equivalent of date- or time-related data"
+      },
+      { "key":         "TRACK",
+        "empty":       true,
+        "optionalEnd": false,
+        "deprecated":  false,
+        "description": "(HTML5) Timed text track"
+      },
+      { "key":         "VIDEO",
+        "empty":       false,
+        "optionalEnd": false,
+        "deprecated":  false,
+        "description": "(HTML5) Video player"
+      },
+      { "key":         "WBR",
+        "empty":       true,
+        "optionalEnd": false,
+        "deprecated":  false,
+        "description": "(HTML5) Line breaking opportunity"
+      }
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "description": [
+      "Extensions of HTML attribute parsing for common browser features."
+      ],
+
+  "types": [
+      { "key": "*::NAME", "description": "other name",
+        "type": "GLOBAL_NAME", "optional": true,
+        "comment": [
+            "Non-standard attribute, but apparently used sometimes. There is",
+            "a DOM method getElementsByName (not yet implemented by us) which",
+            "searches all name= attributes, and which is used by jQuery, which",
+            "suggests we need this. Original rationale lost."
+          ] }
+      ],
+
+  "allowed": [
+      ]
+}

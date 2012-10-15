@@ -132,6 +132,13 @@ public final class HTML {
        */
       STYLE,
       /**
+       * HTML content.
+       * @see <a href=
+       *       "http://www.whatwg.org/specs/web-apps/current-work/multipage/the-iframe-element.html#an-iframe-srcdoc-document">
+       *      "iframe srcdoc document" in HTML5</a>
+       */
+      HTML,
+      /**
        * An ID token
        * @see <a href=
        *       "http://www.w3.org/TR/html401/types.html#type-id">
@@ -139,7 +146,7 @@ public final class HTML {
        */
       ID,
       /**
-       * A referencs to an ID token defined by another attribute.
+       * A reference to an ID token defined by another attribute.
        * @see <a href=
        *       "http://www.w3.org/TR/html401/types.html#type-idref">
        *      The HTML 4.01 spec</a>
@@ -168,6 +175,13 @@ public final class HTML {
        *      The HTML 4.01 spec</a>
        */
       FRAME_TARGET,
+      /**
+       * A media query.
+       * @see <a href=
+       *       "http://www.w3.org/TR/css3-mediaqueries/">
+       *      Media Queries</a>
+       */
+      MEDIA_QUERY,
       ;
     }
 

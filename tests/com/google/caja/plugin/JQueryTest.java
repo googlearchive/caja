@@ -140,14 +140,13 @@ public class JQueryTest extends BrowserTestCase {
   }
 
   public final void testAttributes() throws Exception {
-    runJQueryTestCase("attributes", 415);
+    runJQueryTestCase("attributes", 417);
     // Current failure categories:
     //   * URI rewriting is visible to the guest.
     //   * Simple event handler rewriting is visible to the guest.
     //   * We don't implement XML yet.
     //   * Unknown - "Second radio was checked when clicked" - .click() problem?
-    //   * We don't implement HTML5 form attributes yet (eg autofocus), even to
-    //     reject/lock them.
+    //   * Rejection of HTML5 autofocus attribute assignment is visible.
     //   * Removing style= attributes is misbehaving according to jQuery.
     //   * We don't support tabindex on non-form-elements yet (HTML5).
     //   * We don't support document.createAttribute yet.
@@ -183,12 +182,12 @@ public class JQueryTest extends BrowserTestCase {
   }
 
   public final void testManipulation() throws Exception {
-    runJQueryTestCase("manipulation", 467);
+    runJQueryTestCase("manipulation", 473);
     // Current modifications made to test suite:
     //   * Removed SES-incompatible Array.prototype modification; was only for
     //     testing jQuery robustness.
     // Current failure categories:
-    //   * We don't implement HTML5 yet.
+    //   * We don't implement some new-in-HTML5 DOM features yet.
     //   * We don't implement XML yet.
     //   * We don't provide window.eval.
     //   * Something wrong with checked radio buttons.

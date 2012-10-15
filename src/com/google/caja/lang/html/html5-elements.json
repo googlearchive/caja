@@ -1,6 +1,6 @@
 {
   "description": "See http://code.google.com/p/google-caja/wiki/CajaWhitelists",
   "inherits": [
-      "html4-elements-defs.json",
-      "html4-elements-whitelist.json" ]
+      "html5-elements-defs.json",
+      "html5-elements-whitelist.json" ]
 }

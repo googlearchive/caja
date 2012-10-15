@@ -70,10 +70,10 @@ public final class HtmlSchema {
       SimpleMessageQueue cacheMq = new SimpleMessageQueue();
       URI elSrc = URI.create(
               "resource:///com/google/caja/lang/html/"
-              + "html4-elements-extensions.json");
+              + "htmlall-elements.json");
       URI attrSrc = URI.create(
               "resource:///com/google/caja/lang/html/"
-              + "html4-attributes-extensions.json");
+              + "htmlall-attributes.json");
       try {
         defaultSchema = Pair.pair(
             new HtmlSchema(
@@ -291,6 +291,9 @@ public final class HtmlSchema {
 
   private static AttribKey attribKey(String key) {
     int separator = key.indexOf("::");
+    if (separator == -1) {
+      throw new IllegalArgumentException("no :: in: " + key);
+    }
     String elQName = key.substring(0, separator);
     String attrQName = key.substring(separator + 2);
     ElKey el = ElKey.forElement(Namespaces.HTML_DEFAULT, elQName);
