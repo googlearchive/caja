@@ -369,7 +369,8 @@ public class PlaygroundView {
       server: '.',
       debug: debug,
       es5Mode: (forceES5 < 0) ? undefined : (forceES5 > 0),
-      maxAcceptableSeverity: 'NEW_SYMPTOM'
+      // If autoswitching, choose es5 only when it's safe.
+      maxAcceptableSeverity: (forceES5 < 0) ? 'SAFE_SPEC_VIOLATION' : 'NEW_SYMPTOM'
     }, success, failed);
   }-*/;
 

@@ -330,7 +330,7 @@ var caja = (function () {
       full['es5Mode'] =
         partial['es5Mode'] === undefined ? GUESS : !!partial['es5Mode'];
       full['maxAcceptableSeverity'] = 
-        String(partial['maxAcceptableSeverity'] || 'UNSAFE_SPEC_VIOLATION');
+        String(partial['maxAcceptableSeverity'] || 'SAFE_SPEC_VIOLATION');
     }
      
     if (partial['console']) {
