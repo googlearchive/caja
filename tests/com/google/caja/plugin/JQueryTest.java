@@ -98,7 +98,7 @@ public class JQueryTest extends BrowserTestCase {
   }
 
   public final void testCore() throws Exception {
-    runJQueryTestCase("core", 1284);
+    runJQueryTestCase("core", 1285);
     // Current modifications made to test suite:
     //   * Removed unnecessary octal literal.
     // Current failure categories:
@@ -182,7 +182,7 @@ public class JQueryTest extends BrowserTestCase {
   }
 
   public final void testManipulation() throws Exception {
-    runJQueryTestCase("manipulation", 473);
+    runJQueryTestCase("manipulation", 474);
     // Current modifications made to test suite:
     //   * Removed SES-incompatible Array.prototype modification; was only for
     //     testing jQuery robustness.

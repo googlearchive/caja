@@ -1225,16 +1225,23 @@ document.write(
 
 <p id="testInnerHTMLVirtualization" class="testcontainer"></p>
 <script type="text/javascript">
-  // TODO(kpreid): Virtualized elements in innerHTML don't work.
-  jsunitRegisterIf(false,
-                   'testInnerHTMLVirtualization',
-                   function testInnerHTMLVirtualization() {
+  jsunitRegister('testInnerHTMLVirtualization',
+                 function testInnerHTMLVirtualization() {
     var cont = document.getElementById('testInnerHTMLVirtualization');
 
+    // Test an ordinary virtualized element
     cont.innerHTML = '<object data="test-image-41x13.png">hi</object>';
     assertEquals(
-        '<caja-v-object caja-v-data="test-image-41x13.png">hi</caja-v-object>',
+        '<caja-v-object data-caja-data="test-image-41x13.png">hi'
+        + '</caja-v-object>',
         canonInnerHtml(directAccess.getInnerHTML(cont)));
+
+    // Test an empty virtualized element (must be rewritten to have end tag)
+    cont.innerHTML = '<base href="http://example.net/">hi';
+    assertEquals(
+        '<caja-v-base data-caja-href="http://example.net/"></caja-v-base>hi',
+        canonInnerHtml(directAccess.getInnerHTML(cont)));
+
     pass('testInnerHTMLVirtualization');
   });
 </script>

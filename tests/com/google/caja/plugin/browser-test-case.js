@@ -160,7 +160,7 @@ if (getUrlParam('es5') === 'true') {
 function canonInnerHtml(s) {
   // Sort attributes.
   var htmlAttribute = new RegExp(
-      '\\s*(\\w+)(?:\\s*=\\s*("[^\\"]*"|\'[^\\\']*\'|[^\\\'\\"\\s>]+))?');
+      '\\s*([\\w-]+)(?:\\s*=\\s*("[^\\"]*"|\'[^\\\']*\'|[^\\\'\\"\\s>]+))?');
   var quot = new RegExp('"', 'g');
   var tagBody = '(?:"[^"]*"|\'[^\']*\'|[^>"\']+)*';
   var htmlStartTag = new RegExp('(<[\\w-]+)(' + tagBody + ')>', 'g');

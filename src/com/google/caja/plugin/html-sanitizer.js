@@ -646,9 +646,12 @@ var html = (function(html4) {
    * @param {function(string, Array.<string>): ?Array.<string>} tagPolicy
    *     A function that takes (tagName, attribs[]), where tagName is a key in
    *     html4.ELEMENTS and attribs is an array of alternating attribute names
-   *     and values.  It should return a sanitized attribute array, or null to
-   *     delete the tag.  It's okay for tagPolicy to modify the attribs array,
+   *     and values.  It should return a record (as follows), or null to delete
+   *     the element.  It's okay for tagPolicy to modify the attribs array,
    *     but the same array is reused, so it should not be held between calls.
+   *     Record keys:
+   *        attribs: (required) Sanitized attributes array.
+   *        tagName: Replacement tag name.
    * @return {function(string, Array)} A function that sanitizes a string of
    *     HTML and appends result strings to the second argument, an array.
    */
@@ -666,18 +669,34 @@ var html = (function(html4) {
       'startTag': function(tagName, attribs, out) {
         if (ignoring) { return; }
         if (!html4.ELEMENTS.hasOwnProperty(tagName)) { return; }
-        var eflags = html4.ELEMENTS[tagName];
-        if (eflags & html4.eflags['FOLDABLE']) {
+        var eflagsOrig = html4.ELEMENTS[tagName];
+        if (eflagsOrig & html4.eflags['FOLDABLE']) {
           return;
         }
-        attribs = tagPolicy(tagName, attribs);
-        if (!attribs) {
-          ignoring = !(eflags & html4.eflags['EMPTY']);
+
+        var decision = tagPolicy(tagName, attribs);
+        if (!decision) {
+          ignoring = !(eflagsOrig & html4.eflags['EMPTY']);
           return;
+        } else if (typeof decision !== 'object') {
+          throw new Error('tagPolicy did not return object (old API?)');
+        }
+        if ('attribs' in decision) {
+          attribs = decision['attribs'];
+        } else {
+          throw new Error('tagPolicy gave no attribs');
+        }
+        var eflagsRep;
+        if ('tagName' in decision) {
+          tagName = decision['tagName'];
+          eflagsRep = html4.ELEMENTS[tagName];
+        } else {
+          eflagsRep = eflagsOrig;
         }
         // TODO(mikesamuel): relying on tagPolicy not to insert unsafe
         // attribute names.
-        if (!(eflags & html4.eflags['EMPTY'])) {
+
+        if (!(eflagsOrig & html4.eflags['EMPTY'])) {
           stack.push(tagName);
         }
 
@@ -690,6 +709,12 @@ var html = (function(html4) {
           }
         }
         out.push('>');
+
+        if ((eflagsOrig & html4.eflags['EMPTY'])
+            && !(eflagsRep & html4.eflags['EMPTY'])) {
+          // replacement is non-empty, synthesize end tag
+          out.push('<\/', tagName, '>');
+        }
       },
       'endTag': function(tagName, out) {
         if (ignoring) {
@@ -871,7 +896,7 @@ var html = (function(html4) {
                                   "TYPE": "CSS",
                                   "CSS_PROP": normProp
                                 }, opt_naiveUriRewriter);
-                          }    
+                          }
                         : null);
                     sanitizedDeclarations.push(property + ': ' + tokens.join(' '));
                   }
@@ -954,8 +979,10 @@ var html = (function(html4) {
     opt_naiveUriRewriter, opt_nmTokenPolicy, opt_logger) {
     return function(tagName, attribs) {
       if (!(html4.ELEMENTS[tagName] & html4.eflags['UNSAFE'])) {
-        return sanitizeAttribs(tagName, attribs,
-          opt_naiveUriRewriter, opt_nmTokenPolicy, opt_logger);
+        return {
+          'attribs': sanitizeAttribs(tagName, attribs,
+            opt_naiveUriRewriter, opt_nmTokenPolicy, opt_logger)
+        };
       } else {
         if (opt_logger) {
           log(opt_logger, tagName, undefined, undefined, undefined);

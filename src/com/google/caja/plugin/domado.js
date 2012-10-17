@@ -1645,10 +1645,20 @@ var Domado = (function() {
         return attribs;
       }
       function tagPolicy(tagName, attrs) {
-        if (html4.ELEMENTS[tagName] & html4.eflags.UNSAFE) {
-          return null;
+        var eflags = html4.ELEMENTS[tagName];
+        if (eflags & html4.eflags.UNSAFE) {
+          if (eflags & html4.eflags.VIRTUALIZED) {
+            return {
+              tagName: html.virtualToRealElementName(tagName),
+              attribs: sanitizeAttrs(tagName, attrs)
+            };
+          } else {
+            return null;
+          }
         } else {
-          return sanitizeAttrs(tagName, attrs);
+          return {
+            attribs: sanitizeAttrs(tagName, attrs)
+          };
         }
       }
       var htmlSanitizer = html.makeHtmlSanitizer(tagPolicy);
