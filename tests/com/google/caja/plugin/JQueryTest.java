@@ -118,9 +118,9 @@ public class JQueryTest extends BrowserTestCase {
   }
 
   public final void testDeferred() throws Exception {
-    runJQueryTestCase("deferred", 219);
-    // Current failure categories: 
-    //   * Assumption of non-strict mode.
+    runJQueryTestCase("deferred", null);
+    // Current modifications made to test suite:
+    //   * Adjusted tests assuming callee is non-strict
   }
 
   public final void testSupport() throws Exception {

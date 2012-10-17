@@ -291,6 +291,8 @@ test( "jQuery.when" , function() {
 
 	expect( 34 );
 
+	var defaultThis = function() {return this;}();  // strict mode variance
+
 	// Some other objects
 	jQuery.each( {
 
@@ -307,14 +309,14 @@ test( "jQuery.when" , function() {
 	} , function( message , value ) {
 
 		ok( jQuery.isFunction( jQuery.when( value ).done(function( resolveValue ) {
-			strictEqual( this, window, "Context is the global object with " + message );
+			strictEqual( this, defaultThis, "Context is default with " + message );
 			strictEqual( resolveValue , value , "Test the promise was resolved with " + message );
 		}).promise ) , "Test " + message + " triggers the creation of a new Promise" );
 
 	} );
 
 	ok( jQuery.isFunction( jQuery.when().done(function( resolveValue ) {
-		strictEqual( this, window, "Test the promise was resolved with window as its context" );
+		strictEqual( this, defaultThis, "Test the promise was resolved with default as its context" );
 		strictEqual( resolveValue, undefined, "Test the promise was resolved with no parameter" );
 	}).promise ) , "Test calling when with no parameter triggers the creation of a new Promise" );
 
