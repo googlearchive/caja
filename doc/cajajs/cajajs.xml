@@ -153,7 +153,7 @@ var f = {
 };
 
 /* then provide to guest code: */
-aFrame.api({ tamedF: aFrameGroup.tame(f) })
+aFrame.api({ tamedF: caja.tame(f) })
 </pre>
           <p>guest code using the tamed form <code>tamedF</code> will
           be able to read the values of <code>x</code> and
@@ -171,7 +171,7 @@ tamedF.foo = 19; // Error
 <pre class="prettyprint lang-javascript">
 /* <strong>host page code</strong> */
 function f(x) { alert(this); alert(x); }
-var t = aFrameGroup.tame(f);
+var t = caja.tame(f);
 </pre>
           <p>guest code using the tamed form <code>t</code> will be
           able to call your function, pass it arguments, and receive
@@ -228,8 +228,8 @@ var t = aFrameGroup.tame(f);
 var rw = { x: 3 };
 var ro = { x : 4 }
 caja.markReadOnlyRecord(ro);
-var rot = aFrameGroup.tame(ro);
-var rwt = aFrameGroup.tame(rw);
+var rot = caja.tame(ro);
+var rwt = caja.tame(rw);
 </pre>
         <p>guest code using the tamed value <code>rwt</code> would be
         allowed to modify the value of <code>x</code> or delete the
@@ -295,10 +295,10 @@ ping('hello world');
 <pre class="prettyprint lang-javascript">
 /* <strong>host page code</strong> */
 function f(x) { this.dangerous = x; }
-aFrameGroup.markXo4a(f);
+caja.markXo4a(f);
 
 /* then provide to guest code: */
-aFrame.api({ tamedF: aFrameGroup.tame(f) })
+aFrame.api({ tamedF: caja.tame(f) })
 </pre>
       <p>Guest code using the function <code>tamedF</code> would be able to
       set the property <code>dangerous</code> on <em>any</em> object of its
@@ -362,13 +362,13 @@ SubCtor.prototype.setY = function(y) { this.y = y; };
       second argument to <code>markCtor</code>. For example:</p>
 <pre class="prettyprint lang-javascript">
 /* <strong>host page code</strong> */
-aFrameGroup.markCtor(Ctor);
-aFrameGroup.markCtor(SubCtor, Ctor);
+caja.markCtor(Ctor);
+caja.markCtor(SubCtor, Ctor);
 
 /* then provide to guest code: */
 aFrame.api({
-  TamedCtor: tame(Ctor),
-  TamedSubCtor: tame(SubCtor)
+  TamedCtor: caja.tame(Ctor),
+  TamedSubCtor: caja.tame(SubCtor)
 })
 </pre>
       <p>When guest code creates instances of these constructors,
