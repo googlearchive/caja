@@ -30,16 +30,12 @@
   ];
 
   var test_drivers = [
-    ['es53-test-cajajs-invocation.js&minified=false'],
-    ['es53-test-cajajs-invocation.js&minified=true'],
-    ['es53-test-automode-1.js&minified=true'],
-    ['es53-test-automode-2.js&minified=true'],
-    ['es53-test-automode-3.js&minified=true'],
-    ['es53-test-automode-4.js&minified=true'],
-    ['es53-test-automode-1.js&minified=false'],
-    ['es53-test-automode-2.js&minified=false'],
-    ['es53-test-automode-3.js&minified=false'],
-    ['es53-test-automode-4.js&minified=false'],
+    ['es53-test-cajajs-invocation.js'],
+    ['es53-test-cajajs-invocation.js'],
+    ['es53-test-automode-1.js'],
+    ['es53-test-automode-2.js'],
+    ['es53-test-automode-3.js'],
+    ['es53-test-automode-4.js'],
     ['es53-test-cajajs-version-skew-cajoled-module.js', 'es53'],
     ['es53-test-client-uri-rewriting.js'],
     ['es53-test-container-overflow.js'],
@@ -77,17 +73,19 @@
     addItem('<a href="' + url + '">' + (text || url) + '</a>');
   }
 
-  function addModed(url, text, mode) {
+  function addModed(url, text, mode, minify) {
     var html = '';
     if (!mode || mode === 'es53') {
-      html += '[<a href="' + url + '&es5=false">es53</a>] ';
+      html += '[<a href="' + url + '&es5=false&minified=false">es53</a> ';
+      html += '<a href="' + url + '&es5=false&minified=true">min</a>] ';
     } else {
-      html += '[<s>es53</s>] ';
+      html += '[<s>es53</s> <s>min</s>] ';
     }
     if (!mode || mode === 'es5') {
-      html += '[<a href="' + url + '&es5=true">es5</a>] ';
+      html += '[<a href="' + url + '&es5=true&minified=false">es5</a> ';
+      html += '<a href="' + url + '&es5=true&minified=true">min</a>] ';
     } else {
-      html += '[<s>es5</s>] ';
+      html += '[<s>es5</s> <s>min</s>] ';
     }
     html += text || url;
     addItem(html);
