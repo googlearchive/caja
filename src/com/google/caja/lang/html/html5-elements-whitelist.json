@@ -18,7 +18,6 @@
     "METER",
     "NAV",
     "NOBR",
-    "NOEMBED",
     "OUTPUT",
     "PROGRESS",
     "SECTION",
@@ -34,6 +33,8 @@
     { "key": "DIALOG",
       "reason": "can be displayed as a full-page modal dialog; needs further review" },
     { "key": "KEYGEN",
-      "reason": "needs further review" }
+      "reason": "needs further review" },
+    { "key": "NOEMBED",
+      "reason": "rawtext elements are hazardous and should be avoided" }
   ]
 }

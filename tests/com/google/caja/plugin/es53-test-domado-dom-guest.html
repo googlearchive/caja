@@ -2607,6 +2607,29 @@ Test row cell
   });
 </script>
 
+<div class="testcontainer" id="testNoembed">
+ <noembed><script>window['testNoembedFail'] = true;</script></noembed>
+</div>
+<script type="text/javascript">
+  jsunitRegister('testNoembed', function testNoembed() {
+    // contents of noembed should not be interpreted
+    assertFalse(!!window['testNoembedFail']);
+
+    // static html sanitizer should elide noembed
+    var el = document.getElementById('testNoembed');
+    var inner = directAccess.getInnerHTML(el).replace(/[ \n]+/g, '');
+    // TODO(felix8a): fails in es5 because noembed gets virtualized
+    //assertEquals('', inner);
+
+    // dynamic html sanitizer should elide noembed
+    el.innerHTML = '<noembed><p>hello</p></noembed>';
+    // TODO(felix8a): fails because noembed gets virtualized
+    //assertEquals('', directAccess.getInnerHTML(el));
+
+    pass('testNoembed');
+  });
+</script>
+
 <p class="testcontainer" id="testDocumentBodyAppendChild"
  >I should be the last element until something is appended to document.body</p>
 <script type="text/javascript">

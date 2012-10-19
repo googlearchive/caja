@@ -246,19 +246,10 @@ var cajaFlash = {};
     function cajaHandleEmbed(params) {
       var el = findElByClass(domicile, params.id);
       if (!el) { return; }
-
-      // No src is a <noembed>
-      if (!params.src) {
-        el.parentNode.removeChild(el);
-        return;
-      }
-
       el.id = domicile.suffix(params.id);
       domicile.window.swfobject.embedSWF(
         params.src, params.id, params.width, params.height);
     }
-
-    // called by HtmlEmitter
     domicile.window.cajaHandleEmbed = cajaHandleEmbed;
     tamingWin.___.grantFunc(domicile.window, 'cajaHandleEmbed');
   };

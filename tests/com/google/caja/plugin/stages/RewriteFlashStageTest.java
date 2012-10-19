@@ -23,28 +23,6 @@ import com.google.caja.util.Join;
  * @author felix8a@gmail.com
  */
 public final class RewriteFlashStageTest extends PipelineStageTestCase {
-  public final void testNoembed() throws Exception {
-    assertPipeline(
-        html("a<noembed>b</noembed>c"),
-        htmlb("a<noembed class=\"cajaEmbed1\">b</noembed>c"),
-        js(
-            "{\n",
-            "  IMPORTS___.htmlEmitter___.handleEmbed({",
-            " 'id': 'cajaEmbed1' });\n",
-            "}"));
-    assertNoErrors();
-
-    assertPipeline(
-        html("a<noembed class=\"x\">b</noembed>c"),
-        htmlb("a<noembed class=\"cajaEmbed2 x\">b</noembed>c"),
-        js(
-            "{\n",
-            "  IMPORTS___.htmlEmitter___.handleEmbed({",
-            " 'id': 'cajaEmbed2' });\n",
-            "}"));
-    assertNoErrors();
-  }
-
   public final void testEmbed() throws Exception {
     assertPipeline(
         html("a<embed type=\"foo\">b"),

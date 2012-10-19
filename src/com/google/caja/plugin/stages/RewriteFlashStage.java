@@ -98,8 +98,6 @@ final class FlashRewriter {
       if (APPLICATION_FLASH.equals(getAttr(el, "type"))) {
         return rewriteEmbed(el);
       }
-    } else if ("noembed".equals(tagName)) {
-      return rewriteNoembed(el);
     } else if ("object".equals(tagName)) {
       if (APPLICATION_FLASH.equals(getAttr(el, "type"))) {
         return rewriteObject(el);
@@ -142,26 +140,6 @@ final class FlashRewriter {
         "width", literal(width, pos));
     embedder.appendChild(new ExpressionStmt(e));
     return r;
-  }
-
-  private Element rewriteNoembed(Element el) {
-    String id = generateId();
-    String className = el.getAttributeNS(HTML_NS, "class");
-    if (empty(className)) {
-      className = id;
-    } else {
-      className = id + " " + className;
-    }
-    el.setAttributeNS(HTML_NS, "class", className);
-    FilePosition pos = Nodes.getFilePositionFor(el);
-    Expression e = (Expression) QuasiBuilder.substV(
-        ""
-        + "IMPORTS___.htmlEmitter___."
-        + "/*@synthetic*/ handleEmbed({"
-        + " id: @id })",
-        "id", literal(id, pos));
-    embedder.appendChild(new ExpressionStmt(e));
-    return el;
   }
 
   private Element rewriteObject(Element el) {
