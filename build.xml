@@ -221,7 +221,8 @@
       <isset property="test.debug"/>
     </condition>
     <mkdir dir="${reports}/tests"/>
-    <junit printsummary="yes" fork="yes" forkmode="once" maxmemory="512m">
+    <junit printsummary="yes" fork="yes" forkmode="once" maxmemory="512m"
+        haltonfailure="yes">
       <assertions><enable/></assertions>  <!-- ignored unless fork="yes" -->
       <classpath refid="classpath.tests"/>
       <formatter type="xml"/>
@@ -355,6 +356,7 @@
      failureProperty="runtests.failure">
       <fileset dir="${reports}/tests">
         <include name="TEST-*.xml"/>
+        <exclude name="TEST-*.JQueryTest.xml"/>
       </fileset>
     </summarize>
     <!-- Generate the code coverage report. -->
