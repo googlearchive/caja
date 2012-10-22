@@ -88,11 +88,39 @@
     }
   });
 
-  registerTest('testFullHeight', function testBuilderApiHtml() {
+  registerTest('testDefaultHeight', function testDefaultHeight() {
+    var hostPageDiv = createDiv();
+
+    var div = document.createElement('div');
+    hostPageDiv.appendChild(div);
+    caja.load(div, uriPolicy, function (frame) {
+      frame.code(
+          location.protocol + '//' + location.host + '/',
+          'text/html',
+          '<div id="foo">testDefaultHeight</div>')
+          .run(function(result) {
+              var computedHeight =
+                parseInt(document.defaultView.getComputedStyle(
+                  div,
+                  null).height)
+              assertTrue(computedHeight < 30);
+              jsunitPass('testDefaultHeight');
+           });
+    });
+  });
+
+  registerTest('testFullHeight', function testFullHeight() {
     var hostPageDiv = createDiv();
     hostPageDiv.style.height = "100px";
 
+    var stylesheet = document.createElement('style');
+    stylesheet.type = 'text/css';
+    stylesheet.textContent =
+        '.enableFullHeight .caja-vdoc-wrapper { height: 100%; }';
+    document.getElementsByTagName('head')[0].appendChild(stylesheet);
+
     var div = document.createElement('div');
+    div.className = 'enableFullHeight';
     // Host page styles the container div
     div.style.height = '100%';
     hostPageDiv.appendChild(div);
@@ -100,19 +128,19 @@
       frame.code(
           location.protocol + '//' + location.host + '/',
           'text/html',
-          '<div id="foo" style="height:100%">My Text Here</div>')
+          '<div id="foo" style="height:100%">testFullHeight</div>')
           .run(function(result) {
               var computedHeight =
                 parseInt(document.defaultView.getComputedStyle(
                   document.getElementById('foo-' + frame.idSuffix),
-		  null).height)
-              assertEquals(computedHeight, 100);
+                  null).height)
+              assertEquals(100, computedHeight);
               jsunitPass('testFullHeight');
            });
     });
   });
 
-  registerTest('testTightHeight', function testBuilderApiHtml() {
+  registerTest('testTightHeight', function testTightHeight() {
     var hostPageDiv = createDiv();
     hostPageDiv.style.height = "100px";
 
@@ -124,12 +152,12 @@
       frame.code(
           location.protocol + '//' + location.host + '/',
           'text/html',
-          '<div id="foo" style="height:100%">My Text Here</div>')
+          '<div id="foo" style="height:100%">testTightHeight</div>')
           .run(function(result) {
               var computedHeight =
                 parseInt(document.defaultView.getComputedStyle(
                   document.getElementById('foo-' + frame.idSuffix),
-		  null).height)
+                  null).height)
               assertTrue(computedHeight < 100);
               jsunitPass('testTightHeight');
            });

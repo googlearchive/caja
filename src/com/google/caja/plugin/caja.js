@@ -513,14 +513,22 @@ var caja = (function () {
     var inner = null;
     var outer = null;
     if (div) {
+      // Class-name hooks: The host page can
+      // * match all elements between its content and the guest content as
+      //   .caja-vdoc-wrapper
+      // * match the outermost such element using .caja-vdoc-outer
+      // * match the innermost such element using .caja-vdoc-inner
+      // This scheme has been chosen to be potentially forward-compatible in the
+      // event that we switch to more or less than 2 wrappers.
+      
       inner = div.ownerDocument.createElement('div');
+      inner.className = 'caja-vdoc-outer caja-vdoc-wrapper';
       inner.style.display = 'block';
       inner.style.position = 'relative';
-      inner.style.height = '100%';
 
       outer = div.ownerDocument.createElement('div');
+      outer.className = 'caja-vdoc-inner caja-vdoc-wrapper';
       outer.style.position = 'relative';
-      outer.style.height = '100%';
       outer.style.overflow = 'hidden';
       outer.style.display = 'block';
       outer.style.margin = '0';
