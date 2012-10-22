@@ -247,8 +247,10 @@ var cajaFlash = {};
       var el = findElByClass(domicile, params.id);
       if (!el) { return; }
       el.id = domicile.suffix(params.id);
-      domicile.window.swfobject.embedSWF(
-        params.src, params.id, params.width, params.height);
+      if (domicile.window.swfobject) {
+        domicile.window.swfobject.embedSWF(
+          params.src, params.id, params.width, params.height);
+      }
     }
     domicile.window.cajaHandleEmbed = cajaHandleEmbed;
     tamingWin.___.grantFunc(domicile.window, 'cajaHandleEmbed');
