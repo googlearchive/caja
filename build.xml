@@ -130,7 +130,7 @@
     <pathelement path="${testlib}"/>
     <pathelement path="${third_party}/java/emma/emma.jar"/>
     <pathelement path="${third_party}/java/junit/junit.jar"/>
-    <pathelement path="${third_party}/java/webdriver/selenium-server-standalone-2.24.1.jar"/>
+    <pathelement path="${third_party}/java/webdriver/selenium-server-standalone-2.25.0.jar"/>
     <path refid="classpath.main"/>
     <path refid="classpath.gwt"/>
   </path>
