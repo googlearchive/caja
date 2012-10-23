@@ -536,8 +536,8 @@ can test window.scrollBy with a positive x value with a visible effect.
           assertColor("blue", directAccess.getComputedStyle(s, 'color'));
         }, 'style injection via innerHTML');
 
-    // Test that an external script cannot be loaded by setting the "src"
-    // attribute of a newly created script element.
+    // Test that an arbitrary external script cannot be loaded by setting the
+    // "src" attribute of a newly created script element.
     var s = document.createElement('script');
     assertAsynchronousRequirement(
         'non-whitelisted script ran',
@@ -547,20 +547,14 @@ can test window.scrollBy with a positive x value with a visible effect.
     s.src = 'unproxied_nonwhitelisted_script.js';
     document.getElementById('testScriptLoading').appendChild(s);
 
-    /* TODO(kpreid): Reenable this test if it is supposed to work.
-       It fails at runtime because script src= is considered an unknown
-       attribute; are we currently expecting this to be possible?
-    
-    // Test that an external script cannot be loaded by setting the "src"
-    // attribute of a newly created script element.
+    // Test that an external script *can* be loaded by setting the "src"
+    // attribute of a newly created script element if the URI policy permits it.
     var s = document.createElement('script');
     assertAsynchronousRequirement(
         'whitelisted script never ran',
         jsunitCallback(function () { return externalScript.loaded === true; }));
-    debugger;
     s.src = 'unproxied_whitelisted_script.js';
     document.getElementById('testScriptLoading').appendChild(s);
-    */
 
     pass('testScriptLoading');
   });
