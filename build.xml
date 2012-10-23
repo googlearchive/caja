@@ -239,7 +239,7 @@
   </target>
 
   <target name="runtests"
-      depends="playground,AllTests,RuntestsRun,CacheTestSuccess"
+      depends="AllTests,RuntestsRun,CacheTestSuccess"
       description="$ ant runtests [-Dtest.filter=My\*Test]"/>
 
   <property name="emma.coverage.out.file"
@@ -1461,7 +1461,7 @@
   </target>
 
   <!-- Compile the GWT backend and copies to the WAR -->
-  <target name="PlaygroundBE" depends="pluginc,PlaygroundJars,precajole">
+  <target name="PlaygroundBE" depends="pluginc,PlaygroundJars">
     <copy todir="${war}/WEB-INF" file="web.xml" />
     <copy todir="${war}/WEB-INF/lib">
       <fileset dir="${jars}">
@@ -1508,7 +1508,7 @@
   </target>
 
   <target name="playground"
-   depends="CajolingServlet, PlaygroundBE, PlaygroundFE, appengine-web"
+   depends="CajolingServlet, PlaygroundBE, PlaygroundFE, appengine-web, precajole"
    description="Builds the playground">
     <!-- In some situations, browsers disagree on what location
       to assign to a constructed iframe, which makes it awkward
