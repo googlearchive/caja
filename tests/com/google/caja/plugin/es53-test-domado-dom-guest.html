@@ -2286,7 +2286,7 @@ Test row cell
     var table = document.getElementById('testRowCell-1');
     assertEquals(0, table.rows.length);
     table.insertRow(-1);
-    assertEquals(table.rows.length, 1);
+    assertEquals(1, table.rows.length);
     assertEquals(0, table.rows.item(0).cells.length);
     table.rows.item(0).insertCell(-1);
     var cell = table.rows.item(0).insertCell(-1);
@@ -2299,13 +2299,13 @@ Test row cell
     try {
       table.deleteRow(2);
     } catch (e) {
-      assertTrue(new RegExp('Index size error').test(e.message));
+      assertContains('Index size error', e.message);
       tableDeleteRow = true;
     }
     try {
       document.getElementById('testRowCell-2').deleteRow(2);
     } catch (e) {
-      assertTrue(new RegExp('Index size error').test(e.message));
+      assertContains('Index size error', e.message);
       tbodyDeleteRow = true;
     }
     if (tableDeleteRow === true && tbodyDeleteRow === true) {
@@ -2587,22 +2587,22 @@ Test row cell
                  function testZIndex() {
     document.getElementById("testZIndex").innerHTML =
       "<div id='testZIndex-div' style='z-index:-9999999;'></div>";
-    assertTrue(document.getElementById("testZIndex-div")
-        .getAttribute("style") !== "");
+    assertNotEquals("keep-", "", document.getElementById("testZIndex-div")
+        .getAttribute("style"));
     document.getElementById("testZIndex").innerHTML =
         "<div id='testZIndex-div' style='z-index:9999999;'></div>";
-    assertTrue(document.getElementById("testZIndex-div")
-        .getAttribute("style") !== "");
+    assertNotEquals("keep+", "", document.getElementById("testZIndex-div")
+        .getAttribute("style"));
 
     // Out-of-range values should be stripped
     document.getElementById("testZIndex").innerHTML =
       "<div id='testZIndex-div' style='z-index:-10000000;'></div>";
-    assertTrue(document.getElementById("testZIndex-div")
-        .getAttribute("style") === "");
+    assertEquals("strip-", "", document.getElementById("testZIndex-div")
+        .getAttribute("style"));
     document.getElementById("testZIndex").innerHTML =
       "<div id='testZIndex-div' style='z-index:10000000;'></div>";
-    assertTrue(document.getElementById("testZIndex-div")
-        .getAttribute("style") === "");
+    assertEquals("strip+", "", document.getElementById("testZIndex-div")
+        .getAttribute("style"));
     pass('testZIndex');
   });
 </script>
