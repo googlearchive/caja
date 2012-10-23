@@ -351,6 +351,9 @@ function createExtraImportsForTesting(frameGroup, frame) {
       frame.tame(frame.markFunction(function(cb, opt_id) {
         return jsunitCallback(cb, opt_id, frame);
       }));
+  frame.markCtor(JsUnitException);
+  standardImports.JsUnitException = frame.tame(JsUnitException);
+
   standardImports.canonInnerHtml =
       frame.tame(frame.markFunction(canonInnerHtml));
   standardImports.assertStringContains =

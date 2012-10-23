@@ -46,7 +46,8 @@ function SESFrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker) {
       eviscerate: undefined,
       banNumerics: function() {},
       USELESS: USELESS,
-      BASE_OBJECT_CONSTRUCTOR: BASE_OBJECT_CONSTRUCTOR
+      BASE_OBJECT_CONSTRUCTOR: BASE_OBJECT_CONSTRUCTOR,
+      getValueOf: function(o) { return o.valueOf(); }
   });
 
   var frameGroupTamingSchema = TamingSchema(tamingHelper);

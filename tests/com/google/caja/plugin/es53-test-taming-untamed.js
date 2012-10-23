@@ -62,6 +62,70 @@
           return eval(String(s));
         }));
 
+    function assertException(e, name, msg) {
+      assertEquals("[object Error]", Object.prototype.toString.call(e));
+      assertEquals(msg, e.message);
+      assertEquals(name, e.name);
+      assertEquals(name + ': ' + msg, e.toString());
+      assertTrue(e instanceof caja.iframe.contentWindow[name]);
+    }
+
+    function assertExceptionThrown(throwerFromGuest, name, msg) {
+      try {
+        throwerFromGuest();
+        fail();  // if it fails to throw
+      } catch (e) {
+        assertException(e, name, msg);
+      }
+    }
+
+    function assertExceptionReturned(returnerFromGuest, name, msg) {
+      assertException(returnerFromGuest(), name, msg);
+    }
+
+    extraImports.assertExceptionThrown =
+        frame.tame(frame.markFunction(assertExceptionThrown));
+    extraImports.assertExceptionReturned =
+        frame.tame(frame.markFunction(assertExceptionReturned));
+
+    function assertBuiltin(o, name) {
+      assertEquals('[object ' + name + ']', Object.prototype.toString.call(o));
+      assertTrue(o instanceof caja.iframe.contentWindow[name]);
+    }
+
+    extraImports.assertBuiltin =
+        frame.tame(frame.markFunction(assertBuiltin));
+
+    function assertRegexp(re, source, global, ignoreCase, multiline) {
+      assertEquals(source, re.source);
+      assertEquals(global, re.global);
+      assertEquals(ignoreCase, re.ignoreCase);
+      assertEquals(multiline, re.multiline);
+    }
+
+    extraImports.assertRegexp =
+        frame.tame(frame.markFunction(assertRegexp));
+
+    function assertUntamedPropertyAccessorExceptions(o) {
+      if (inES5Mode) {
+        try {
+          var x = o.throwingProp;
+          fail();
+        } catch (e) {
+          assertEquals('Error: CustomException: getter threw', e.toString());
+        }
+        try {
+          o.throwingProp = 7;
+          fail();
+        } catch (e) {
+          assertEquals('Error: CustomException: setter threw', e.toString());
+        }
+      }
+    }
+
+    extraImports.assertUntamedPropertyAccessorExceptions =
+        frame.tame(frame.markFunction(assertUntamedPropertyAccessorExceptions));
+
     extraImports.tamedJson = frame.tame({a: 1});
 
     frame.code('es53-test-taming-untamed-guest.html')

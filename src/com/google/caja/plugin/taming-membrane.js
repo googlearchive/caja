@@ -38,6 +38,143 @@ function TamingMembrane(privilegedAccess, schema) {
     return ((void 0) === o) ? (void 0) : Object.preventExtensions(o);
   }
 
+  // Applies a function 'feralFunction' ensuring that either the return
+  // value is tamed or the thrown exception is tamed and rethrown.
+  function applyFeralFunction(feralFunction, feralThis, feralArguments) {
+    try {
+      return tame(
+          schema.applyFeralFunction(
+              feralFunction,
+              feralThis,
+              feralArguments));
+    } catch (e) {
+      throw tameException(e);
+    }
+  }
+
+  // Applies a guest-side function 'tameFunction' ensuring that either the
+  // return value is untamed or the thrown exception is untamed and rethrown.
+  function applyTameFunction(tameFunction, tameThis, tameArguments) {
+    try {
+      return untame(tameFunction.apply(tameThis, tameArguments));
+    } catch (e) {
+      throw untameException(e);
+    }
+  }
+
+  function getFeralProperty(feralObject, feralProp) {
+    try {
+      return tame(
+          privilegedAccess.getProperty(feralObject, feralProp));
+    } catch (e) {
+      throw tameException(e);
+    }
+  }
+
+  function setFeralProperty(feralObject, feralProp, feralValue) {
+    try {
+      privilegedAccess.setProperty(feralObject, feralProp, feralValue);
+    } catch (e) {
+      throw tameException(e);
+    }
+  }
+
+  function getTameProperty(tameObject, tameProp) {
+    try {
+      return untame(tameObject[tameProp]);
+    } catch (e) {
+      throw untameException(e);
+    }
+  }
+
+  function setTameProperty(tameObject, tameProp, tameValue) {
+    try {
+      tameObject[tameProp] = tameValue;
+    } catch (e) {
+      throw untameException(e);
+    }
+  }
+
+  // Given a builtin object "o" provided by either a guest or host frame,
+  // return a copy constructed in the taming frame. Return undefined if
+  // "o" is not a builtin object. Note that we only call this function if we
+  // know that "o" is *not* a primitive.
+  function copyBuiltin(o) {
+    var t = void 0;
+    switch (Object.prototype.toString.call(o)) {
+      case '[object Boolean]':
+        t = new Boolean(privilegedAccess.getValueOf(o));
+        break;
+      case '[object Date]':
+        t = new Date(privilegedAccess.getValueOf(o));
+        break;
+      case '[object Number]':
+        t = new Number(privilegedAccess.getValueOf(o));
+        break;
+      case '[object RegExp]':
+        t = new RegExp(
+            privilegedAccess.getProperty(o, 'source'),
+            (privilegedAccess.getProperty(o, 'global') ? 'g' : '') +
+            (privilegedAccess.getProperty(o, 'ignoreCase') ? 'i' : '') +
+            (privilegedAccess.getProperty(o, 'multiline') ? 'm' : ''));
+        break;
+      case '[object String]':
+        t = new String(privilegedAccess.getValueOf(o));
+        break;
+      case '[object Error]':
+        var msg = privilegedAccess.getProperty(o, 'message');
+        switch (privilegedAccess.getProperty(o, 'name')) {
+          case 'Error':
+            t = new Error(msg);
+            break;
+          case 'EvalError':
+            t = new EvalError(msg);
+            break;
+          case 'RangeError':
+            t = new RangeError(msg);
+            break;
+          case 'ReferenceError':
+            t = new ReferenceError(msg);
+            break;
+          case 'SyntaxError':
+            t = new SyntaxError(msg);
+            break;
+          case 'TypeError':
+            t = new TypeError(msg);
+            break;
+          case 'URIError':
+            t = new URIError(msg);
+            break;
+        }
+    }
+    return t;
+  }
+
+  // This is a last resort for passing a safe "demilitarized zone" exception
+  // across the taming membrane in cases where passing the actual thrown
+  // exception is either problematic or not known to be safe.
+  function makeNeutralException(e) {
+    var str = 'Error';
+    try {
+      str = e.toString();
+    } catch (ex) {}
+    return new Error(str);
+  }
+
+  function tameException(f) {
+    var t = void 0;
+    try { t = tame(f); } catch (e) {}
+    if (t !== void 0) { return t; }
+    return makeNeutralException(f);
+  }
+
+  function untameException(t) {
+    var f = void 0;
+    try { f = untame(t); } catch (e) {}
+    if (f !== void 0) { return f; }
+    return makeNeutralException(t);
+  }
+
   /**
    * Records that f is t's feral twin and t is f's tame twin.
    * <p>
@@ -124,18 +261,9 @@ function TamingMembrane(privilegedAccess, schema) {
       } else if (ctor === privilegedAccess.BASE_OBJECT_CONSTRUCTOR) {
         t = preventExtensions(tameRecord(f));
       } else {
-        // Check for built-ins
-        var fclass = ({}).toString.call(f);
-        switch (fclass) {
-          case '[object Boolean]':
-          case '[object Date]':
-          case '[object Number]':
-          case '[object RegExp]':
-          case '[object String]':
-            t = new ctor(f.valueOf());
-            break;
-          default:
-            t = tamePreviouslyConstructedObject(f, ctor);
+        t = copyBuiltin(f);
+        if (t === void 0) {
+          t = tamePreviouslyConstructedObject(f, ctor);
         }
       }
     } else if (ftype === 'function') {
@@ -176,11 +304,11 @@ function TamingMembrane(privilegedAccess, schema) {
       if (isNumericName(p)) { return; }
       if (!isValidPropertyName(p)) { return; }
       var get = function() {
-        return tame(privilegedAccess.getProperty(f, p));
+        return getFeralProperty(f, p);
       };
       var set = readOnly ? undefined :
           function(v) {
-            privilegedAccess.setProperty(f, p, untame(v));
+            setFeralProperty(f, p, untame(v));
             return v;
           };
       Object.defineProperty(t, p, {
@@ -206,11 +334,11 @@ function TamingMembrane(privilegedAccess, schema) {
       if (!isValidPropertyName(p)) { return; }
       var get = !schema.grantAs.has(f, p, schema.grantTypes.READ) ? undefined :
           function() {
-            return tame(privilegedAccess.getProperty(f, p));
+            return getFeralProperty(f, p);
           };
       var set = !schema.grantAs.has(f, p, schema.grantTypes.WRITE) ? undefined :
           function(v) {
-            privilegedAccess.setProperty(f, p, untame(v));
+            setFeralProperty(f, p, untame(v));
             return v;
           };
       if (get || set) {
@@ -228,11 +356,10 @@ function TamingMembrane(privilegedAccess, schema) {
     var t = function(_) {
       // Since it's by definition useless, there's no reason to bother
       // passing untame(USELESS); we just pass USELESS itself.
-      return tame(
-          schema.applyFeralFunction(
-              f,
-              privilegedAccess.USELESS,
-              untameArray(arguments)));
+      return applyFeralFunction(
+          f,
+          privilegedAccess.USELESS,
+          untameArray(arguments));
     };
     addFunctionPropertyHandlers(f, t);
     preventExtensions(t);
@@ -243,13 +370,20 @@ function TamingMembrane(privilegedAccess, schema) {
     var fPrototype = privilegedAccess.getProperty(f, 'prototype');
 
     var t = function (_) {
-      // Avoid being used as a general-purpose xo4a
-      if (!(this instanceof t)) { return; }
-      var o = Object.create(fPrototype);
-      schema.applyFeralFunction(f, o, untameArray(arguments));
-      tameObjectWithMethods(o, this);
-      tamesTo(o, this);
-      privilegedAccess.banNumerics(this);
+      if (!(this instanceof t)) {
+        // Call as a function
+        return applyFeralFunction(
+            f,
+            privilegedAccess.USELESS,
+            untameArray(arguments));
+      } else {
+        // Call as a constructor
+        var o = Object.create(fPrototype);
+        applyFeralFunction(f, o, untameArray(arguments));
+        tameObjectWithMethods(o, this);
+        tamesTo(o, this);
+        privilegedAccess.banNumerics(this);
+      }
     };
 
     if (tameByFeral.get(fPrototype)) {
@@ -295,11 +429,10 @@ function TamingMembrane(privilegedAccess, schema) {
 
   function tameXo4a(f) {
     var t = function(_) {
-      return tame(
-          schema.applyFeralFunction(
-              f,
-              untame(this),
-              untameArray(arguments)));
+      return applyFeralFunction(
+          f,
+          untame(this),
+          untameArray(arguments));
     };
     addFunctionPropertyHandlers(f, t);
     preventExtensions(t);
@@ -339,17 +472,16 @@ function TamingMembrane(privilegedAccess, schema) {
       return makePrototypeMethod(t, function() {
         var self = this;
         return function(_) {
-          return tame(
-            schema.applyFeralFunction(
-                privilegedAccess.getProperty(untame(self), p),
-                untame(self),
-                untameArray(arguments)));
+          return applyFeralFunction(
+              privilegedAccess.getProperty(untame(self), p),
+              untame(self),
+              untameArray(arguments));
         };
       });
     } else if (schema.grantAs.has(f, p, schema.grantTypes.READ)) {
       // Default READ access implies normal taming of the property value
       return makePrototypeMethod(t, function() {
-        return tame(privilegedAccess.getProperty(untame(this), p));
+        return getFeralProperty(untame(this), p);
       });
     } else {
       return undefined;
@@ -364,12 +496,12 @@ function TamingMembrane(privilegedAccess, schema) {
 
     if (override) {
       return makeStrictPrototypeMethod(t, function(v) {
-        privilegedAccess.setProperty(untame(this), p, untame(v));
+        setFeralProperty(untame(this), p, untame(v));
         return v;
       });
     } else if (schema.grantAs.has(f, p, schema.grantTypes.WRITE)) {
       return makePrototypeMethod(t, function(v) {
-        privilegedAccess.setProperty(untame(this), p, untame(v));
+        setFeralProperty(untame(this), p, untame(v));
         return v;
       });
     } else {
@@ -423,18 +555,10 @@ function TamingMembrane(privilegedAccess, schema) {
       if (ctor === privilegedAccess.BASE_OBJECT_CONSTRUCTOR) {
         f = untameCajaRecord(t);
       } else {
-        // Check for built-ins
-        var tclass = ({}).toString.call(t);
-        switch (tclass) {
-          case '[object Boolean]':
-          case '[object Date]':
-          case '[object Number]':
-          case '[object RegExp]':
-          case '[object String]':
-            f = new ctor(t.valueOf()); break;
-          default:
-            throw new TypeError(
-                'Untaming of guest constructed objects unsupported: ' + t);
+        f = copyBuiltin(t);
+        if (f === void 0) {
+          throw new TypeError(
+              'Untaming of guest constructed objects unsupported: ' + t);
         }
       }
     } else if (ttype === 'function') {
@@ -448,7 +572,7 @@ function TamingMembrane(privilegedAccess, schema) {
     // Untaming of *constructors* which are defined in Caja is unsupported.
     // We untame all functions defined in Caja as xo4a.
     return function(_) {
-      return untame(t.apply(tame(this), tameArray(arguments)));
+      return applyTameFunction(t, tame(this), tameArray(arguments));
     };
   }
 
@@ -474,11 +598,11 @@ function TamingMembrane(privilegedAccess, schema) {
       var write = d.set || (d.hasOwnProperty('value') && d.writable);
       var get = !read ? undefined :
           function() {
-             return untame(t[p]);
+             return getTameProperty(t, p);
           };
       var set = !write ? undefined :
           function(v) {
-            t[p] = tame(v);
+            setTameProperty(t, p, tame(v));
             return v;
           };
       if (get || set) {

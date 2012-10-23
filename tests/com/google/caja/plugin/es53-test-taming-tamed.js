@@ -128,6 +128,7 @@
 
     // Create a "class and subclass" pair of constructors
     api.Ctor = function Ctor(x) {
+      if (!(this instanceof Ctor)) { return "Called as function"; }
       this.x = x;
       this.invisibleProperty = 17;
       this.readOnlyProperty = 19;
@@ -339,6 +340,30 @@
     frame.markFunction(api.evalInHostTamed, 'evalInHostTamed');
 
     ////////////////////////////////////////////////////////////////////////
+    // Object with getters and setters that throw
+
+    api.objWithThrowingAccessors = {};
+
+    if (inES5Mode) {
+      // Define a custom exception type that does not have a taming
+      function CustomException(msg) { this.msg = msg; }
+      CustomException.prototype.constructor = CustomException;
+      CustomException.prototype.toString = function() {
+        return 'CustomException: ' + this.msg;
+      };
+
+      Object.defineProperty(api.objWithThrowingAccessors, 'throwingProp', {
+        get: function() {
+          throw new CustomException('getter threw');
+        },
+        set: function(v) {
+          throw new CustomException('setter threw');
+        },
+        enumerable: true
+      });
+    }
+
+    ////////////////////////////////////////////////////////////////////////
 
     frame.markReadOnlyRecord(api);
 
@@ -350,12 +375,6 @@
 
     extraImports.tamingFrameUSELESS =
         frame.USELESS;
-    extraImports.tamingFrameObject =
-        caja.iframe.contentWindow.Object;
-    extraImports.tamingFrameFunction =
-        caja.iframe.contentWindow.Function;
-    extraImports.tamingFrameArray =
-        caja.iframe.contentWindow.Array;
 
     extraImports.getFeralTestObject = getFeralTestObject;
     extraImports.getTamedTestObject = getTamedTestObject;

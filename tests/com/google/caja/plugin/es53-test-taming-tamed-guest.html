@@ -280,27 +280,6 @@
 </script>
 
 
-<h2>BUILTIN OBJECTS</h2>
-
-<div id="testBuiltinObjects" class="testcontainer waiting">
-  testBuiltinObjects
-</div>
-<script type="text/javascript">
-  jsunitRegister('testBuiltinObjects',
-                 function testBuiltinObjects() {
-    function t(str) { return ({}).toString.call(evalInHost(str)); }
-
-    assertEquals('[object Boolean]', t('new Boolean(true)'));
-    assertEquals('[object Date]', t('new Date(1, 2, 2010)'));
-    assertEquals('[object Number]', t('new Number(33)'));
-    assertEquals('[object RegExp]', t('new RegExp(".")'));
-    assertEquals('[object String]', t('new String("")'));
-
-    pass('testBuiltinObjects');
-  });
-</script>
-
-
 <h2>READ WRITE RECORDS</h2>
 
 <div id="testReadWriteRecord" class="testcontainer waiting">
@@ -449,18 +428,29 @@
     var o1 = {};
     var x1 = tamedApi.Ctor.call(o1, 17);
     assertEquals(undefined, o1.x);
-    assertEquals(undefined, x1);
+    assertEquals("Called as function", x1);
     var o2 = {};
     var x2 = tamedApi.Ctor.apply(o2, [ 17 ]);
     assertEquals(undefined, o2.x);
-    assertEquals(undefined, x2);
+    assertEquals("Called as function", x2);
     var o3 = {};
     var x3 = tamedApi.Ctor.bind(o3)(17);
     assertEquals(undefined, o3.x);
-    assertEquals(undefined, x3);
+    assertEquals("Called as function", x3);
     pass('testCtorOnlyInitializesInstances');
   });
-</script>    
+</script>
+
+<div id="testCtorCalledAsFunction" class="testcontainer waiting">
+  testCtorCalledAsFunction
+</div>
+<script type="text/javascript">
+  jsunitRegister('testCtorCalledAsFunction',
+                 function testCtorCalledAsFunction() {
+    assertEquals("Called as function", tamedApi.Ctor(37));
+    pass('testCtorCalledAsFunction');
+  });
+</script>
 
 <script type="text/javascript">
   window.testCtorMethodsWorkOk = function(o) {
@@ -1016,19 +1006,19 @@
   jsunitRegister('testPrimordialsOfTamedObjectsAreFrozen',
                  function testPrimordialsOfTamedObjectsAreFrozen() {
     expectFailure(function() {
-      tamingFrameObject.foo = 'bar';
+      getTamingFrameObject('Object').foo = 'bar';
     });
     expectFailure(function() {
-      tamingFrameArray.foo = 'bar';
+      getTamingFrameObject('Array').foo = 'bar';
     });
     expectFailure(function() {
-      tamingFrameObject.prototype.toString = function evil() { };
+      getTamingFrameObject('Object').prototype.toString = function evil() { };
     });
     expectFailure(function() {
-      tamingFrameFunction.prototype.call = function evil() { };
+      getTamingFrameObject('Function').prototype.call = function evil() { };
     });
     expectFailure(function() {
-      tamingFrameArray.prototype.sort = function evil() { };
+      getTamingFrameObject('Array').prototype.sort = function evil() { };
     });
     pass('testPrimordialsOfTamedObjectsAreFrozen');
   });
@@ -1052,3 +1042,138 @@
     pass('testMethodGetterXo4a');
   });
 </script>
+
+<div id="testTamedExceptions" class="testcontainer waiting">
+  testTamedExceptions
+</div>
+<script type="text/javascript">
+  jsunitRegister('testTamedExceptions',
+                 function testTamedExceptions() {
+    var msg = 'gefurfifier!';
+
+    function testExceptionType(e, name) {
+      assertEquals(
+          '[object Error]',
+          Object.prototype.toString.call(e));
+      assertEquals(
+          name + ': ' + msg,
+          e.toString());
+      assertEquals(
+          name,
+          e.name);
+      assertEquals(
+          msg,
+          e.message);
+      assertTrue(
+          e instanceof getTamingFrameObject(name));
+    }
+
+    function getReturned(name) {
+      return tamedApi.evalInHostTamed('new ' + name + '("' + msg + '");');
+    }
+
+    function getThrown(name) {
+      try {
+        tamedApi.evalInHostTamed('throw new ' + name + '("' + msg + '");');
+      } catch (e) {
+        return e;
+      }
+    }
+
+    function testException(name) {
+      testExceptionType(getReturned(name), name);
+      testExceptionType(getThrown(name), name);
+    }
+
+    ([
+      'Error',
+      'EvalError',
+      'RangeError',
+      'ReferenceError',
+      'SyntaxError',
+      'TypeError',
+      'URIError'
+    ]).forEach(testException);
+
+    pass('testTamedExceptions');
+  });
+</script>
+    
+<div id="testTamedBuiltins" class="testcontainer waiting">
+  testTamedBuiltins
+</div>
+<script type="text/javascript">
+  jsunitRegister('testTamedBuiltins',
+                 function testTamedBuiltins() {
+    function testBuiltin(name) {
+      var p = tamedApi.evalInHostTamed('new ' + name + '();');
+      assertEquals(
+          '[object ' + name + ']',
+          Object.prototype.toString.call(p));
+      assertTrue(
+          p instanceof getTamingFrameObject(name));
+    }
+
+    ([
+      'Boolean',
+      'Date',
+      'Number',
+      'RegExp',
+      'String'
+    ]).forEach(testBuiltin);
+
+    pass('testTamedBuiltins');
+  });
+</script>
+
+<div id="testTamedRegexps" class="testcontainer waiting">
+  testTamedRegexps
+</div>
+<script type="text/javascript">
+  jsunitRegister('testTamedRegexps',
+                 function testTamedRegexps() {
+    // Builds a RegExp on the feral side, and returns it
+    // through the taming membrane.
+    function makeRegexp(ptn, flags) {
+      return tamedApi.evalInHostTamed(
+          'new RegExp("' + ptn + '", "' + flags + '");');
+    }
+
+    assertEquals('xyzzy.*$', makeRegexp('xyzzy.*$', '').source);
+    assertFalse(makeRegexp('x', '').multiline);
+    assertFalse(makeRegexp('x', '').global);
+    assertFalse(makeRegexp('x', '').ignoreCase);
+    assertTrue(makeRegexp('x', 'm').multiline);
+    assertTrue(makeRegexp('x', 'g').global);
+    assertTrue(makeRegexp('x', 'i').ignoreCase);
+
+    pass('testTamedRegexps');
+  });
+</script>
+    
+<div id="testTamedPropertyAccessorExceptions" class="testcontainer waiting">
+  testTamedPropertyAccessorExceptions
+</div>
+<script type="text/javascript">
+  jsunitRegister('testTamedPropertyAccessorExceptions',
+                 function testTamedPropertyAccessorExceptions() {
+    if (inES5Mode) {
+      var o = tamedApi.objWithThrowingAccessors;
+      try {
+        var x = o.throwingProp;
+        fail();
+      } catch (e) {
+        assertEquals('Error: CustomException: getter threw', e.toString());
+        assertTrue(e instanceof getTamingFrameObject('Error'));
+      }
+      try {
+        o.throwingProp = 7;
+        fail();
+      } catch (e) {
+        assertEquals('Error: CustomException: setter threw', e.toString());
+        assertTrue(e instanceof getTamingFrameObject('Error'));
+      }
+    }
+    pass('testTamedPropertyAccessorExceptions');
+  });
+</script>    

@@ -53,24 +53,6 @@
   });
 </script>
 
-<div id="testBuiltinObjects" class="testcontainer waiting">
-  testBuiltinObjects
-</div>
-<script type="text/javascript">
-  jsunitRegister('testBuiltinObjects',
-                 function testBuiltinObjects() {
-    function t(o) { return tameEval('({}).toString.call(a)', o); }
-
-    assertEquals('[object Boolean]', t(new Boolean(true)));
-    assertEquals('[object Date]', t(new Date(1, 2, 2010)));
-    assertEquals('[object Number]', t(new Number(33)));
-    assertEquals('[object RegExp]', t(new RegExp(".")));
-    assertEquals('[object String]', t(new String("")));
-
-    pass('testBuiltinObjects');
-  });
-</script>
-
 <div id="testStringify" class="testcontainer waiting">
   tsetStringify
 </div>
@@ -410,3 +392,94 @@
     pass('testForms');
   });
 </script>
+
+<div id="testUntamedExceptions" class="testcontainer waiting">
+  testUntamedExceptions
+</div>
+<script type="text/javascript">
+  jsunitRegister('testUntamedExceptions',
+                 function testUntamedExceptions() {
+    var msg = 'gefurfifier!';
+    ([
+      'Error',
+      'EvalError',
+      'RangeError',
+      'ReferenceError',
+      'SyntaxError',
+      'TypeError',
+      'URIError'
+    ]).forEach(function(name) {
+      assertExceptionThrown(
+          function() { throw new window[name](msg); },
+          name,
+          msg);
+      assertExceptionReturned(
+          function() { return new window[name](msg); },
+          name,
+          msg);
+    });
+    pass('testUntamedExceptions');
+  });
+</script>
+
+<div id="testUntamedBuiltins" class="testcontainer waiting">
+  testUntamedBuiltins
+</div>
+<script type="text/javascript">
+  jsunitRegister('testUntamedBuiltins',
+                 function testUntamedBuiltins() {
+    ([
+      'Boolean',
+      'Date',
+      'Number',
+      'RegExp',
+      'String'
+    ]).forEach(function(name) {
+      assertBuiltin(new window[name], name);
+    });
+    pass('testUntamedBuiltins');
+  });
+</script>
+    
+<div id="testUntamedRegexps" class="testcontainer waiting">
+  testUntamedRegexps
+</div>
+<script type="text/javascript">
+  jsunitRegister('testUntamedRegexps',
+                 function testUntamedRegexps() {
+    assertRegexp(new RegExp('xyzzy.*$'), 'xyzzy.*$', false, false, false);
+    assertRegexp(new RegExp('x', ''), 'x', false, false, false);
+    assertRegexp(new RegExp('x', 'g'), 'x', true, false, false);
+    assertRegexp(new RegExp('x', 'i'), 'x', false, true, false);
+    assertRegexp(new RegExp('x', 'm'), 'x', false, false, true);
+    pass('testUntamedRegexps');
+  });
+</script>
+
+<div id="testUntamedPropertyAccessorExceptions" class="testcontainer waiting">
+  testUntamedPropertyAccessorExceptions
+</div>
+<script type="text/javascript">
+  jsunitRegister('testUntamedPropertyAccessorExceptions',
+                 function testUntamedPropertyAccessorExceptions() {
+    // Define a custom exception type that does not have an untaming (guest
+    // constructed objects are not untamed by the membrane, at time of writing)
+    function CustomException(msg) { this.msg = msg; }
+    CustomException.prototype.constructor = CustomException;
+    CustomException.prototype.toString = function() {
+      return 'CustomException: ' + this.msg;
+    };
+
+    var o = {};
+
+    Object.defineProperty(o, 'throwingProp', {
+      get: function() { throw new CustomException('getter threw'); },
+      set: function(v) { throw new CustomException('setter threw'); },
+      enumerable: true
+    });
+
+    assertUntamedPropertyAccessorExceptions(o);
+
+    pass('testUntamedPropertyAccessorExceptions');
+  });
+</script>      

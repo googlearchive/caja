@@ -138,7 +138,6 @@ jsunitRegister('testGuestArrayElements',
 
 jsunitRegister('testGuestRecordProperties',
                function testGuestRecordProperties() {
-  pass('testGuestRecordProperties');
   var rec = {
     prop: getTamedTestObject()
   };
@@ -151,6 +150,7 @@ jsunitRegister('testGuestRecordProperties',
   // Record property is tamed en route to guest
   tamedApi.tamedHostPureFunction('a.prop = getFeralTestObject();', rec);
   assertEquals(getTamedTestObject(), rec.prop);
+  pass('testGuestRecordProperties');
 });
 
 jsunitRegister('testGuestConstructedObjectProperties',

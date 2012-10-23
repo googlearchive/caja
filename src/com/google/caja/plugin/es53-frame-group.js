@@ -52,7 +52,8 @@ function ES53FrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker) {
       'eviscerate', markCallableWithoutMembrane(eviscerate),
       'banNumerics', markCallableWithoutMembrane(banNumerics),
       'USELESS', tamingWin.___.USELESS,
-      'BASE_OBJECT_CONSTRUCTOR', tamingWin.___.BASE_OBJECT_CONSTRUCTOR);
+      'BASE_OBJECT_CONSTRUCTOR', tamingWin.___.BASE_OBJECT_CONSTRUCTOR,
+      'getValueOf', markCallableWithoutMembrane(getValueOf));
 
   var frameGroupTamingSchema = TamingSchema(tamingHelper);
   var frameGroupTamingMembrane =
@@ -169,6 +170,10 @@ function ES53FrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker) {
 
   function banNumerics(o) {
     delete o.NUM____w___;
+  }
+
+  function getValueOf(o) {
+    return o.valueOf();
   }
 
   function recordWithMethods(_) {
