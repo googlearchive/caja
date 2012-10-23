@@ -623,24 +623,6 @@ var html = (function(html4) {
     return unescapeEntities(stripNULs(v));
   }
 
-  var VIRTUALIZED_ELEMENT_NAME_RE = /^caja-v-(.*)$/i;
-  var VIRTUALIZED_ELEMENT_PREFIX = 'caja-v-';
-  function isVirtualizedElementName(elementName) {
-    return VIRTUALIZED_ELEMENT_NAME_RE.test(elementName);
-  }
-  function realToVirtualElementName(elementName) {
-    var match = VIRTUALIZED_ELEMENT_NAME_RE.exec(elementName);
-    return match ? match[1] : elementName;
-  }
-  function virtualToRealElementName(elementName) {
-    if (!Object.prototype.hasOwnProperty.call(html4.ELEMENTS, elementName) ||
-        (html4.ELEMENTS[elementName] & html4.eflags['VIRTUALIZED'])) {
-      return VIRTUALIZED_ELEMENT_PREFIX + elementName;
-    } else {
-      return elementName;
-    }
-  }
-
   /**
    * Returns a function that strips unsafe tags and attributes from html.
    * @param {function(string, Array.<string>): ?Array.<string>} tagPolicy
@@ -1032,9 +1014,6 @@ var html = (function(html4) {
   html.sanitizeAttribs = html['sanitizeAttribs'] = sanitizeAttribs;
   html.sanitizeWithPolicy = html['sanitizeWithPolicy'] = sanitizeWithPolicy;
   html.unescapeEntities = html['unescapeEntities'] = unescapeEntities;
-  html.isVirtualizedElementName = html['isVirtualizedElementName'] = isVirtualizedElementName;
-  html.realToVirtualElementName = html['realToVirtualElementName'] = realToVirtualElementName;
-  html.virtualToRealElementName = html['virtualToRealElementName'] = virtualToRealElementName;
   return html;
 })(html4);
 

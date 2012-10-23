@@ -29,8 +29,6 @@
  * \@requires cssSchema
  * \@requires decodeCss
  * \@requires URI
- * \@requires html
- * \@requires html4
  * \@overrides window
  * \@requires parseCssStylesheet
  * \@provides sanitizeCssProperty
@@ -281,11 +279,13 @@ var sanitizeCssProperty = (function () {
  *    If suffix is {@code "sfx"}, the selector
  *    {@code ["a", "#foo", " ", "b", ".bar"]} will be namespaced to
  *    {@code [".sfx", " ", "a", "#foo-sfx", " ", "b", ".bar"]}.
+ * @param {function(string, Array.<string>): ?Array.<string>} tagPolicy
+ *     As in html-sanitizer, used for rewriting element names.
  * @return {Array.<Array.<string>>} an array of length 2 where the zeroeth
  *    element contains history-insensitive selectors and the first element
  *    contains history-sensitive selectors.
  */
-function sanitizeCssSelectors(selectors, suffix) {
+function sanitizeCssSelectors(selectors, suffix, tagPolicy) {
   // Produce two distinct lists of selectors to sequester selectors that are
   // history sensitive (:visited), so that we can disallow properties in the
   // property groups for the history sensitive ones.
@@ -355,13 +355,15 @@ function sanitizeCssSelectors(selectors, suffix) {
       element = '';
       if (start < end) {
         tok = selectors[start];
-        if (tok === '*' || /^[a-zA-Z]/.test(tok)) {  // is an element selector
-          if (tok !== '*') {
-            tok = html.virtualToRealElementName(tok.toLowerCase());
-          }
-          if (tok === '*'
-              || html.isVirtualizedElementName(tok)
-              || !(html4.ELEMENTS[tok] & html4.eflags['UNSAFE'])) {
+        if (tok === '*') {
+          ++start;
+          element = tok;
+        } else if (/^[a-zA-Z]/.test(tok)) {  // is an element selector
+          var decision = tagPolicy(tok.toLowerCase(), []);
+          if (decision) {
+            if ('tagName' in decision) {
+              tok = decision['tagName'];
+            }
             ++start;
             element = tok;
           }
@@ -462,13 +464,15 @@ var sanitizeStylesheet = (function () {
    *    If suffix is {@code "sfx"}, the selector
    *    {@code ["a", "#foo", " ", "b", ".bar"]} will be namespaced to
    *    {@code [".sfx", " ", "a", "#foo-sfx", " ", "b", ".bar"]}.
+   * @param {function(string, Array.<string>): ?Array.<string>} tagPolicy
+   *     As in html-sanitizer, used for rewriting element names.
    * @param {function(string, string)} opt_naiveUriRewriter maps URLs of media
    *    (images, sounds) that appear as CSS property values to sanitized
    *    URLs or null if the URL should not be allowed as an external media
    *    file in sanitized CSS.
    */
   return function /*sanitizeStylesheet*/(
-    baseUri, cssText, suffix, opt_naiveUriRewriter) {
+    baseUri, cssText, suffix, opt_naiveUriRewriter, tagPolicy) {
     var safeCss = void 0;
     // A stack describing the { ... } regions.
     // Null elements indicate blocks that should not be emitted.
@@ -534,7 +538,8 @@ var sanitizeStylesheet = (function () {
             var historySensitiveSelectors = void 0;
             var removeHistoryInsensitiveSelectors = false;
             if (!elide) {
-              var selectors = sanitizeCssSelectors(selectorArray, suffix);
+              var selectors = sanitizeCssSelectors(selectorArray, suffix,
+                  tagPolicy);
               var historyInsensitiveSelectors = selectors[0];
               historySensitiveSelectors = selectors[1];
               if (!historyInsensitiveSelectors.length

@@ -44,8 +44,9 @@
  * @author mikesamuel@gmail.com (original Domita)
  * @author kpreid@switchb.org (port to ES5)
  * @requires console
- * @requires bridalMaker, cajaVM, cssSchema, html, html4, lexCss, URI
+ * @requires bridalMaker, cajaVM, cssSchema, lexCss, URI
  * @requires parseCssDeclarations, sanitizeCssProperty, unicode
+ * @requires html, html4, htmlSchema
  * @requires WeakMap, Proxy
  * @requires CSS_PROP_BIT_HISTORY_INSENSITIVE
  * @provides Domado
@@ -64,9 +65,9 @@ var domitaModules;
 var Domado = (function() {
   'use strict';
 
-  var isVirtualizedElementName = html.isVirtualizedElementName;
-  var realToVirtualElementName = html.realToVirtualElementName;
-  var virtualToRealElementName = html.virtualToRealElementName;
+  var isVirtualizedElementName = htmlSchema.isVirtualizedElementName;
+  var realToVirtualElementName = htmlSchema.realToVirtualElementName;
+  var virtualToRealElementName = htmlSchema.virtualToRealElementName;
 
   var cajaPrefix = 'data-caja-';
   var cajaPrefRe = new RegExp('^' + cajaPrefix);
@@ -1645,11 +1646,11 @@ var Domado = (function() {
         return attribs;
       }
       function tagPolicy(tagName, attrs) {
-        var eflags = html4.ELEMENTS[tagName];
-        if (eflags & html4.eflags.UNSAFE) {
-          if (eflags & html4.eflags.VIRTUALIZED) {
+        var schemaElem = htmlSchema.element(tagName);
+        if (!schemaElem.allowed) {
+          if (schemaElem.shouldVirtualize) {
             return {
-              tagName: html.virtualToRealElementName(tagName),
+              tagName: htmlSchema.virtualToRealElementName(tagName),
               attribs: sanitizeAttrs(tagName, attrs)
             };
           } else {
@@ -1723,7 +1724,7 @@ var Domado = (function() {
             out.push('<', tagName);
             for (var i = 0; i < attribs.length; i += 2) {
               var aname = '' + attribs[+i];
-              var atype = getAttributeType(tagName, aname);
+              var atype = htmlSchema.attribute(tagName, aname).type;
               var value = attribs[i + 1];
               if (aname !== 'target' && atype !== void 0) {
                 value = virtualizeAttributeValue(atype, value);
@@ -1738,9 +1739,9 @@ var Domado = (function() {
             out.push('>');
           },
           endTag: function (tagName, out) {
-            var rempty = html4.ELEMENTS[tagName] & html4.eflags.EMPTY;
+            var rempty = htmlSchema.element(tagName).empty;
             tagName = realToVirtualElementName(tagName);
-            var vempty = html4.ELEMENTS[tagName] & html4.eflags.EMPTY;
+            var vempty = htmlSchema.element(tagName).empty;
             if (vempty && !rempty) {
               // omit end tag because the browser doesn't see the virtualized
               // element as empty
@@ -1860,11 +1861,12 @@ var Domado = (function() {
             }
             value = URI.utils.resolve(domicile.pseudoLocation.href, value);
             if (!naiveUriPolicy) { return null; }
+            var schemaAttr = htmlSchema.attribute(tagName, attribName);
             return uriRewrite(
                 naiveUriPolicy,
                 value,
-                getUriEffect(tagName, attribName),
-                getLoaderType(tagName, attribName),
+                schemaAttr.uriEffect,
+                schemaAttr.loaderType,
                 {
                   "TYPE": "MARKUP",
                   "XML_ATTR": attribName,
@@ -2125,18 +2127,19 @@ var Domado = (function() {
               // unsafe.
               return new (tamingClassesByElement[tagName + '$'])(
                   node, editable);
-            } else if (html.isVirtualizedElementName(tagName)) {
+            } 
+            var schemaElem = htmlSchema.element(tagName);
+            if (schemaElem.isVirtualizedElementName) {
               // Virtualized unrecognized elements are generic
               return new TameElement(node, editable, editable);
-            } else if (!html4.ELEMENTS.hasOwnProperty(tagName)
-                || (html4.ELEMENTS[tagName] & html4.eflags.UNSAFE)) {
+            } else if (schemaElem.allowed) {
+              return new TameElement(node, editable, editable);
+            } else {
               // If an unrecognized or unsafe node, return a
               // placeholder that doesn't prevent tree navigation,
               // but that doesn't allow mutation or leak attribute
               // information.
               return new TameOpaqueNode(node, editable);
-            } else {
-              return new TameElement(node, editable, editable);
             }
           case 2:  // Attr
             // Cannot generically wrap since we must have access to the
@@ -3032,8 +3035,7 @@ var Domado = (function() {
         var pn = node.parentNode;
         if (editable && pn) {
           if (1 === pn.nodeType
-              && (html4.ELEMENTS[pn.tagName.toLowerCase()]
-                  & html4.eflags.UNSAFE)) {
+              && !htmlSchema.element(pn.tagName).allowed) {
             // Do not allow mutation of text inside script elements.
             // See the testScriptLoading testcase for examples of exploits.
             editable = false;
@@ -3073,28 +3075,6 @@ var Domado = (function() {
         return '#comment';
       }));
       cajaVM.def(TameCommentNode);  // and its prototype
-
-      function lookupAttribute(map, tagName, attribName) {
-        var attribKey;
-        attribKey = tagName + '::' + attribName;
-        if (map.hasOwnProperty(attribKey)) {
-          return map[attribKey];
-        }
-        attribKey = '*::' + attribName;
-        if (map.hasOwnProperty(attribKey)) {
-          return map[attribKey];
-        }
-        return void 0;
-      }
-      function getAttributeType(tagName, attribName) {
-        return lookupAttribute(html4.ATTRIBS, tagName, attribName);
-      }
-      function getLoaderType(tagName, attribName) {
-        return lookupAttribute(html4.LOADERTYPES, tagName, attribName);
-      }
-      function getUriEffect(tagName, attribName) {
-        return lookupAttribute(html4.URIEFFECTS, tagName, attribName);
-      }
 
       traceStartup("DT: about to make TameBackedAttributeNode");
       /**
@@ -3254,7 +3234,7 @@ var Domado = (function() {
           throw new TypeError('Attributes may not end with __');
         }
         var tagName = feral.tagName.toLowerCase();
-        var atype = getAttributeType(tagName, attribName);
+        var atype = htmlSchema.attribute(tagName, attribName).type;
         if (atype === void 0) {
           return feral.getAttribute(cajaPrefix + attribName);
         }
@@ -3273,7 +3253,7 @@ var Domado = (function() {
         var feral = np(this).feral;
         attribName = String(attribName).toLowerCase();
         var tagName = feral.tagName.toLowerCase();
-        var atype = getAttributeType(tagName, attribName);
+        var atype = htmlSchema.attribute(tagName, attribName).type;
         if (atype === void 0) {
           return bridal.hasAttribute(feral, cajaPrefix + attribName);
         } else {
@@ -3290,7 +3270,7 @@ var Domado = (function() {
           throw new TypeError('Attributes may not end with __');
         }
         var tagName = feral.tagName.toLowerCase();
-        var atype = getAttributeType(tagName, attribName);
+        var atype = htmlSchema.attribute(tagName, attribName).type;
         if (atype === void 0) {
           bridal.setAttribute(feral, cajaPrefix + attribName, value);
         } else {
@@ -3320,7 +3300,7 @@ var Domado = (function() {
           throw new TypeError('Attributes may not end with __');
         }
         var tagName = feral.tagName.toLowerCase();
-        var atype = getAttributeType(tagName, attribName);
+        var atype = htmlSchema.attribute(tagName, attribName).type;
         if (atype === void 0) {
           feral.removeAttribute(cajaPrefix + attribName);
         } else {
@@ -3376,10 +3356,7 @@ var Domado = (function() {
       function innerTextOf(rawNode, out) {
         switch (rawNode.nodeType) {
           case 1:  // Element
-            var tagName = rawNode.tagName.toLowerCase();
-            if (html4.ELEMENTS.hasOwnProperty(tagName)
-                && !(html4.ELEMENTS[tagName] & html4.eflags.UNSAFE)
-                || isVirtualizedElementName(tagName)) {
+            if (htmlSchema.element(rawNode.tagName).allowed) {
               // Not an opaque node.
               for (var c = rawNode.firstChild; c; c = c.nextSibling) {
                 c = makeDOMAccessible(c);
@@ -3458,15 +3435,14 @@ var Domado = (function() {
           get: nodeMethod(function () {
             var node = np(this).feral;
             var tagName = node.tagName.toLowerCase();
-            if (!html4.ELEMENTS.hasOwnProperty(tagName) &&
-                !isVirtualizedElementName(tagName)) {
+            var schemaElem = htmlSchema.element(tagName);
+            if (!schemaElem.allowed) {
               return '';  // unknown node
             }
-            var flags = html4.ELEMENTS[tagName];
             var innerHtml = node.innerHTML;
-            if (flags & html4.eflags.CDATA) {
+            if (schemaElem.contentIsCDATA) {
               innerHtml = html.escapeAttrib(innerHtml);
-            } else if (flags & html4.eflags.RCDATA) {
+            } else if (schemaElem.contentIsRCDATA) {
               // Make sure we return PCDATA.
               // For RCDATA we only need to escape & if they're not part of an
               // entity.
@@ -3488,13 +3464,11 @@ var Domado = (function() {
             // innerHTML of a <script> element to execute scripts.
             if (!np(this).childrenEditable) { throw new Error(NOT_EDITABLE); }
             var node = np(this).feral;
-            var tagName = node.tagName.toLowerCase();
-            if (!html4.ELEMENTS.hasOwnProperty(tagName)) { throw new Error(); }
-            var flags = html4.ELEMENTS[tagName];
-            if (flags & html4.eflags.UNSAFE) { throw new Error(); }
-            var isRcData = flags & html4.eflags.RCDATA;
+            var schemaElem = htmlSchema.element(node.tagName);
+            if (!schemaElem.allowed) { throw new Error(); }
+            var isRCDATA = schemaElem.contentIsRCDATA;
             var htmlFragmentString;
-            if (!isRcData && htmlFragment instanceof Html) {
+            if (!isRCDATA && htmlFragment instanceof Html) {
               htmlFragmentString = '' + safeHtml(htmlFragment);
             } else if (htmlFragment === null) {
               htmlFragmentString = '';
@@ -3502,7 +3476,7 @@ var Domado = (function() {
               htmlFragmentString = '' + htmlFragment;
             }
             var sanitizedHtml;
-            if (isRcData) {
+            if (isRCDATA) {
               sanitizedHtml = html.normalizeRCData(htmlFragmentString);
             } else {
               sanitizedHtml = sanitizeHtml(htmlFragmentString);
@@ -3575,8 +3549,7 @@ var Domado = (function() {
         inertCtor(TameSpecificElement, superclass, record.domClass);
         for (var i = 0; i < record.names.length; i++) {
           var name = record.names[+i];
-          if (!!virtualized !== !!(html4.ELEMENTS[name] &
-                                   html4.eflags.VIRTUALIZED)) {
+          if (!!virtualized !== !!htmlSchema.element(name).shouldVirtualize) {
             throw new Error("Domado internal inconsistency: " + name + 
                 "has inconsistent virtualization flags");
           }
@@ -5089,7 +5062,7 @@ var Domado = (function() {
       TameHTMLDocument.prototype.createElement = nodeMethod(function (tagName) {
         if (!np(this).editable) { throw new Error(NOT_EDITABLE); }
         tagName = String(tagName).toLowerCase();
-        tagName = html.virtualToRealElementName(tagName);
+        tagName = htmlSchema.virtualToRealElementName(tagName);
         var newEl = np(this).feralDoc.createElement(tagName);
         if ("canvas" == tagName) {
           bridal.initCanvasElement(newEl);
@@ -5257,9 +5230,10 @@ var Domado = (function() {
         if (value.charAt(0) === '#' && isValidId(value.substring(1))) {
           return value + idSuffix;
         }
+        var schemaAttr = htmlSchema.attribute(tagName, attribName);
         return value
-          ? uriRewrite(naiveUriPolicy, value, getUriEffect(tagName, attribName),
-                getLoaderType(tagName, attribName), {
+          ? uriRewrite(naiveUriPolicy, value, schemaAttr.uriEffect,
+                schemaAttr.loaderType, {
                   "TYPE": "MARKUP",
                   "XML_ATTR": attribName,
                   "XML_TAG": tagName
@@ -5520,6 +5494,7 @@ var Domado = (function() {
         e = makeDOMAccessible(e);
         return e;
       });
+      domicile.tagPolicy = tagPolicy;  // used by CSS rewriter
 
       if (!/^-/.test(idSuffix)) {
         throw new Error('id suffix "' + idSuffix + '" must start with "-"');

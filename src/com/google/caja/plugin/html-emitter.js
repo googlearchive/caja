@@ -26,7 +26,7 @@
  * @author jasvir@gmail.com
  * @provides HtmlEmitter
  * @overrides window
- * @requires bridalMaker html html4 cajaVM sanitizeStylesheet URI Q
+ * @requires bridalMaker html htmlSchema cajaVM sanitizeStylesheet URI Q
  * @overrides window
  */
 
@@ -446,7 +446,8 @@ function HtmlEmitter(makeDOMAccessible, base, opt_domicile, opt_guestGlobal) {
       if (domicile && domicile.emitCss) {
         domicile.emitCss(sanitizeStylesheet(styleBaseUri,
             cssText, domicile.suffixStr.replace(/^-/, ''), 
-            makeCssUriSanitizer(styleBaseUri)));
+            makeCssUriSanitizer(styleBaseUri),
+            domicile.tagPolicy));
       }
     }
 
@@ -517,9 +518,10 @@ function HtmlEmitter(makeDOMAccessible, base, opt_domicile, opt_guestGlobal) {
       return href;
     }
 
-    // Zero or one of the html4.eflags constants that captures the content type
-    // of cdataContent.
+    // The content type of cdataContent; either 0 (inactive) or these constants.
     var cdataContentType = 0;
+    var CDATA_SCRIPT = 1;
+    var CDATA_STYLE = 2;
     // Chunks of CDATA content of the type above which need to be specially
     // processed and interpreted.
     var cdataContent = [];
@@ -532,7 +534,7 @@ function HtmlEmitter(makeDOMAccessible, base, opt_domicile, opt_guestGlobal) {
     var depth = 0;
 
     function normalInsert(virtualTagName, attribs) {
-      var realTagName = html.virtualToRealElementName(virtualTagName);
+      var realTagName = htmlSchema.virtualToRealElementName(virtualTagName);
 
       // Extract attributes which we need to invoke side-effects on rather
       // than just sanitization; currently <body> event handlers.
@@ -545,24 +547,23 @@ function HtmlEmitter(makeDOMAccessible, base, opt_domicile, opt_guestGlobal) {
         }
       }
 
-      var veltype = html4.ELEMENTS[virtualTagName];
-      var reltype = html4.ELEMENTS[realTagName];
+      var vSchemaEl = htmlSchema.element(virtualTagName);
+      var rSchemaEl = htmlSchema.element(realTagName);
 
       domicile.sanitizeAttrs(realTagName, attribs);
 
-      if ((reltype & html4.eflags.UNSAFE) !== 0) {
+      if (!rSchemaEl.allowed) {
         throw new Error('HtmlEmitter internal: unsafe element ' + realTagName +
             ' slipped through virtualization!');
       }
 
       var el = bridal.createElement(realTagName, attribs);
-      if ((veltype & html4.eflags.OPTIONAL_ENDTAG)
-          && el.tagName === insertionPoint.tagName) {
+      if (vSchemaEl.optionalEndTag && el.tagName === insertionPoint.tagName) {
         documentWriter.endTag(el.tagName.toLowerCase(), true);
         // TODO(kpreid): Replace this with HTML5 parsing model
       }
       insertionPoint.appendChild(el);
-      if (!(veltype & html4.eflags.EMPTY)) { insertionPoint = el; }
+      if (!vSchemaEl.empty) { insertionPoint = el; }
       
       for (var i = slowPathAttribs.length - 2; i >= 0; i -= 2) {
         opt_domicile.tameNode(el, true).setAttribute(
@@ -571,7 +572,7 @@ function HtmlEmitter(makeDOMAccessible, base, opt_domicile, opt_guestGlobal) {
     }
 
     function normalEndTag(tagName) {
-      tagName = html.virtualToRealElementName(tagName).toUpperCase();
+      tagName = htmlSchema.virtualToRealElementName(tagName).toUpperCase();
 
       var anc = insertionPoint;
       while (anc !== base && !/\bvdoc-container___\b/.test(anc.className)) {
@@ -869,12 +870,13 @@ function HtmlEmitter(makeDOMAccessible, base, opt_domicile, opt_guestGlobal) {
         }
       } else {
         for (var anc = insertionPoint; anc !== base; anc = anc.parentNode) {
-          var tn = html.realToVirtualElementName(anc.tagName).toLowerCase();
+          var tn =
+              htmlSchema.realToVirtualElementName(anc.tagName).toLowerCase();
           switch (tn) {
             case 'head': insertionMode = insertionModes.inHead; break;
             case 'body': insertionMode = insertionModes.inBody; break;
             case 'html':
-              var prevtn = html.realToVirtualElementName(
+              var prevtn = htmlSchema.realToVirtualElementName(
                   (anc.lastChild || {}).tagName).toLowerCase();
               if (prevtn === undefined) {
                 insertionMode = insertionModes.beforeHead;
@@ -906,30 +908,28 @@ function HtmlEmitter(makeDOMAccessible, base, opt_domicile, opt_guestGlobal) {
         }
       },
       startTag: function (tagName, attribs, params, marker, continuation) {
-        var eltype = html4.ELEMENTS[tagName];
-        if ((eltype & html4.eflags.UNSAFE) !== 0) {
-          // Note: condition is false for unknown tags, will be virtualized by
-          // normalInsert.
+        var schemaElem = htmlSchema.element(tagName);
+        if (!schemaElem.allowed) {
           // TODO(kpreid): Define the policy in a client-side HTML schema object
           if (tagName === 'script') {
             var scriptSrc = lookupAttr(attribs, 'src');
             if (!scriptSrc) {
               // A script tag without a script src - use child node for source
-              cdataContentType = html4.eflags.SCRIPT;
+              cdataContentType = CDATA_SCRIPT;
               pendingExternal = undefined;
             } else {
-              cdataContentType = html4.eflags.SCRIPT;
+              cdataContentType = CDATA_SCRIPT;
               pendingExternal = scriptSrc;
             }
             pendingDelayed = !!(lookupAttr(attribs, 'defer')
                                 || lookupAttr(attribs, 'async'));
             return; // TODO(kpreid): Remove, allow virtualized element
           } else if (tagName === 'style') {
-            cdataContentType = html4.eflags.STYLE;
+            cdataContentType = CDATA_STYLE;
             pendingExternal = undefined;
             pendingDelayed = false;
             return; // TODO(kpreid): Remove, allow virtualized element
-          } else if ('link' === tagName) {
+          } else if (tagName === 'link') {
             // Link types are case insensitive
             var rel = lookupAttr(attribs, 'rel');
             var href = lookupAttr(attribs, 'href');
@@ -945,7 +945,9 @@ function HtmlEmitter(makeDOMAccessible, base, opt_domicile, opt_guestGlobal) {
               domicile.setBaseUri(resolveUriRelativeToDocument(baseHref));
             }
             return; // TODO(kpreid): Remove, allow virtualized element
-          } else if (!(eltype & html4.eflags.VIRTUALIZED)) {
+          } else if (schemaElem.shouldVirtualize) {
+            // virtualization will be handled by normalInsert
+          } else {
             // Ignore tags which are unsafe, not to be virtualized, and not
             // handled by one of the above special cases.
             return;
@@ -954,11 +956,10 @@ function HtmlEmitter(makeDOMAccessible, base, opt_domicile, opt_guestGlobal) {
         insertionMode.startTag(tagName, attribs);
       },
       endTag: function (tagName, optional, marker, continuation) {
-        var eltype = html4.ELEMENTS[tagName];
         // Close any open script or style element element.
         // TODO(kpreid): Move this stuff into the insertion mode logic
         if (cdataContentType) {
-          var isScript = cdataContentType === html4.eflags.SCRIPT;
+          var isScript = cdataContentType === CDATA_SCRIPT;
           cdataContentType = 0;
           if (pendingExternal) {
             if (isScript) {
@@ -1032,7 +1033,7 @@ function HtmlEmitter(makeDOMAccessible, base, opt_domicile, opt_guestGlobal) {
         //   document.write('<script>foo');
         //   document.write('(bar)</script>');
         // so we need to trick the SAX parser into a CDATA context.
-        htmlText = (cdataContentType === html4.eflags.SCRIPT
+        htmlText = (cdataContentType === CDATA_SCRIPT
                     ? '<script>' : '<style>') + htmlText;
       }
       htmlParser(htmlText);
