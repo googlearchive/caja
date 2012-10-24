@@ -182,16 +182,20 @@ public class JQueryTest extends BrowserTestCase {
   }
 
   public final void testManipulation() throws Exception {
-    runJQueryTestCase("manipulation", 474);
+    runJQueryTestCase("manipulation", 484);
     // Current modifications made to test suite:
     //   * Removed SES-incompatible Array.prototype modification; was only for
     //     testing jQuery robustness.
     // Current failure categories:
-    //   * We don't implement some new-in-HTML5 DOM features yet.
-    //   * We don't implement XML yet.
-    //   * We don't provide window.eval.
     //   * Something wrong with checked radio buttons.
-    //   * We don't make non-JS script blocks readable/preserved.
+    //   * Something wrong with jQuery's <script>-based ajax transport.
+    //   * We don't make non-JS <script> elements readable/preserved.
+    //   * We don't implement XML yet.
+    //   * We don't support runtime-created <style> elements, even virtualized?
+    //   * Something wrong with "jQuery.cleanData" test.
+    //   * We don't implement some case of dynamic <script> creation that
+    //     "html() - execute scripts..." and "html() - script exceptions..."
+    //     are using.
   }
 
   public final void testCSS() throws Exception {
