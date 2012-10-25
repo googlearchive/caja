@@ -1145,7 +1145,8 @@
     </condition>
   </target>
 
-  <target name="Version.update" depends="Version.set" if="Version.changed">
+  <target name="Version.update" depends="Version.set"
+      if="Version.changed" unless="Version.updateRan">
     <!-- When svnversion changes, we need to recajole js and
          re-replace %VERSION%, so here we just nuke all target js -->
     <delete failonerror="false">
@@ -1158,6 +1159,9 @@
     <mkdir dir="${lib.caja}/reporting"/>
     <echo append="false" file="${lib.caja}/reporting/Version"
           message="${build.svnVersion}"/>
+    <!-- Make sure we only run Version.update once if there are
+         multiple targets on the ant command-line -->
+    <property name="Version.updateRan" value="true"/>
   </target>
 
   <target name="build.info" depends="dirs, Version.update">
