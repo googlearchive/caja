@@ -352,11 +352,13 @@ function assertHashEquals() {
 
 function assertRoughlyEquals() {
     _validateArguments(3, arguments);
+    var comment = commentArg(3, arguments);
     var expected = nonCommentArg(1, 3, arguments);
     var actual = nonCommentArg(2, 3, arguments);
     var tolerance = nonCommentArg(3, 3, arguments);
     assertTrue(
-            "Expected " + expected + ", but got " + actual + " which was more than " + tolerance + " away",
+            (comment ? comment + ' : ' : '')
+            + "Expected " + expected + ", but got " + actual + " which was more than " + tolerance + " away",
             Math.abs(expected - actual) < tolerance
             );
 }

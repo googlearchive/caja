@@ -2898,36 +2898,6 @@ var Domado = (function() {
       cajaVM.def(TamePseudoNode);  // and its prototype
 
       traceStartup("DT: done fundamental nodes");
-
-      var commonElementPropertyHandlers = (function() {
-        var geometryDelegateProperty = {
-          extendedAccessors: true,
-          enumerable: true,
-          get: nodeMethod(function (prop) {
-            return np(this).geometryDelegate[prop];
-          })
-        };
-        var geometryDelegatePropertySettable =
-            Object.create(geometryDelegateProperty);
-        geometryDelegatePropertySettable.set =
-            nodeMethod(function (value, prop) {
-          if (!np(this).editable) { throw new Error(NOT_EDITABLE); }
-          np(this).geometryDelegate[prop] = +value;
-        });
-        return {
-          clientWidth: geometryDelegateProperty,
-          clientHeight: geometryDelegateProperty,
-          offsetLeft: geometryDelegateProperty,
-          offsetTop: geometryDelegateProperty,
-          offsetWidth: geometryDelegateProperty,
-          offsetHeight: geometryDelegateProperty,
-          scrollLeft: geometryDelegatePropertySettable,
-          scrollTop: geometryDelegatePropertySettable,
-          scrollWidth: geometryDelegateProperty,
-          scrollHeight: geometryDelegateProperty
-        };
-      })();
-
       traceStartup("DT: about to define makeRestrictedNodeType");
 
       function makeRestrictedNodeType(whitelist) {
@@ -3376,8 +3346,36 @@ var Domado = (function() {
             break;
         }
       }
-      definePropertiesAwesomely(TameElement.prototype,
-          commonElementPropertyHandlers);
+      (function() {
+        var geometryDelegateProperty = {
+          extendedAccessors: true,
+          enumerable: true,
+          get: nodeMethod(function (prop) {
+            return np(this).geometryDelegate[prop];
+          })
+        };
+        var geometryDelegatePropertySettable =
+            Object.create(geometryDelegateProperty);
+        geometryDelegatePropertySettable.set =
+            nodeMethod(function (value, prop) {
+          if (!np(this).editable) { throw new Error(NOT_EDITABLE); }
+          np(this).geometryDelegate[prop] = +value;
+        });
+        definePropertiesAwesomely(TameElement.prototype, {
+          clientLeft: geometryDelegateProperty,
+          clientTop: geometryDelegateProperty,
+          clientWidth: geometryDelegateProperty,
+          clientHeight: geometryDelegateProperty,
+          offsetLeft: geometryDelegateProperty,
+          offsetTop: geometryDelegateProperty,
+          offsetWidth: geometryDelegateProperty,
+          offsetHeight: geometryDelegateProperty,
+          scrollLeft: geometryDelegatePropertySettable,
+          scrollTop: geometryDelegatePropertySettable,
+          scrollWidth: geometryDelegateProperty,
+          scrollHeight: geometryDelegateProperty
+        });
+      })();
       var innerTextProp = {
         enumerable: true,
         get: nodeMethod(function () {

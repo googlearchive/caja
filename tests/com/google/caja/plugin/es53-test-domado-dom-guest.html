@@ -1277,6 +1277,90 @@ document.write(
   });
 </script>
 
+<p id="testDimensionProperties" class="testcontainer"
+    style="position: relative; height: 120px /* for viewing, not tests */;">
+  <div id="testDimensionProperties-a" style="
+      border: solid brown;
+      border-width: 1px 2px;
+      padding: 10px 20px;
+      height: 100px; width: 200px;
+      
+      position: absolute;
+      top: 30px;
+      left: 60px;
+      ">
+    testDimensionProperties
+  </div>
+  <div id="testDimensionProperties-scroll" style="
+      border: solid brown;
+      border-width: 1px 2px;
+      padding: 10px 20px;
+      height: 100px; width: 200px;
+      overflow: scroll;
+      
+      position: absolute;
+      top: 30px;
+      left: 400px;
+      ">
+    <div style="height: 1000px; width: 2000px;">
+      (scrolling)
+    </div>
+  </div>
+</p>
+<script type="text/javascript">
+  function assertPropEq(value, object, name, opt_tolerance) {
+    if (opt_tolerance) {
+      assertRoughlyEquals(object.id + '.' + name, value, object[name],
+          opt_tolerance);
+    } else {
+      assertEquals(object.id + '.' + name, value, object[name]);
+    }
+  }
+
+  jsunitRegister('testDimensionProperties',
+                 function testDimensionProperties() {
+    var outer = document.getElementById('testDimensionProperties');
+
+    var a = document.getElementById('testDimensionProperties-a');    
+    assertPropEq(120, a, 'clientHeight');
+    assertPropEq(240, a, 'clientWidth');
+    assertPropEq(120, a, 'scrollHeight', 3);
+    assertPropEq(240, a, 'scrollWidth', 6);
+    assertPropEq(122, a, 'offsetHeight');
+    assertPropEq(244, a, 'offsetWidth');
+    assertPropEq(1, a, 'clientTop');
+    assertPropEq(2, a, 'clientLeft');
+    assertPropEq(30, a, 'offsetTop');
+    assertPropEq(60, a, 'offsetLeft');
+    assertPropEq(0, a, 'scrollTop');
+    assertPropEq(0, a, 'scrollLeft');
+    a.scrollLeft = 200;
+    a.scrolTop = 100;
+    assertPropEq(0, a, 'scrollTop');  // cannot scroll
+    assertPropEq(0, a, 'scrollLeft');
+
+    var scroll = document.getElementById('testDimensionProperties-scroll');
+    assertPropEq(120, scroll, 'clientHeight', 30);  // depends on sys scroll bar
+    assertPropEq(240, scroll, 'clientWidth', 30);
+    assertPropEq(1010, scroll, 'scrollHeight', 30);
+    assertPropEq(2020, scroll, 'scrollWidth', 60);  // why not 2040?
+    assertPropEq(122, scroll, 'offsetHeight', 30);  // depends on sys scroll bar
+    assertPropEq(244, scroll, 'offsetWidth', 30);
+    assertPropEq(1, scroll, 'clientTop');
+    assertPropEq(2, scroll, 'clientLeft');
+    assertPropEq(30, scroll, 'offsetTop');
+    assertPropEq(400, scroll, 'offsetLeft');
+    assertPropEq(0, scroll, 'scrollTop');
+    assertPropEq(0, scroll, 'scrollLeft');
+    scroll.scrollTop = 200;
+    scroll.scrollLeft = 100;
+    assertPropEq(200, scroll, 'scrollTop');  // can scroll
+    assertPropEq(100, scroll, 'scrollLeft');
+
+    pass('testDimensionProperties');
+  });
+</script>
+
 <script type="text/javascript">
   function assertWithin(msg, golden, actual, tolerance) {
     if (!(Math.abs(golden - actual) <= tolerance)) {
