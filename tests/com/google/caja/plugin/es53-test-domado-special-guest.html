@@ -14,6 +14,35 @@
  - limitations under the License.
 -->
 
+<p id="testSelf" class="testcontainer">
+  Test this file is properly set up
+</p>
+<script type="text/javascript">
+  jsunitRegister('testSelf',
+                 function testSelf() {
+    // checking for misplaced initial-state html
+    function toEl(el, prop) {
+      el = el[prop];
+      while (el && el.nodeType !== 1) {
+        el = el[prop];
+      }
+      return el;
+    }
+    var html = document.documentElement;
+    var body = document.body;
+    assertEvaluatesToTrue('documentElement', html);
+    assertEvaluatesToTrue('body', body);
+    assertNull('previousSibling', toEl(html, 'previousSibling'));
+    assertNull('nextSibling', toEl(html, 'nextSibling'));
+    assertEquals('document.documentElement.tagName', 'HTML', html.tagName);
+    assertEquals('document.body.tagName', 'BODY', body.tagName);
+    assertEquals('1 html', 1, document.getElementsByTagName('html').length);
+    assertEquals('1 head', 1, document.getElementsByTagName('head').length);
+    assertEquals('1 body', 1, document.getElementsByTagName('body').length);
+    pass('testSelf');
+  });
+</script>
+
 <p id="testAnchorComputedStylesDontLeakHistory" class="testcontainer">
   Test anchor computed styles don't leak history
   <br/>

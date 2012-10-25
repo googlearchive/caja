@@ -47,10 +47,11 @@ function initFrame(div, frameCallback) {
 var idPattern = /^.*\-IDSUFFIX$/;
 
 function rewriteIdSuffixes(node, idSuffix) {
-  if (!node.getAttribute) { return; }
-  var id = node.getAttribute('id');
-  if (id && idPattern.test(id)) {
-    node.setAttribute('id', id.replace('IDSUFFIX', idSuffix));
+  if (node.getAttribute) {
+    var id = node.getAttribute('id');
+    if (id && idPattern.test(id)) {
+      node.setAttribute('id', id.replace('IDSUFFIX', idSuffix));
+    }
   }
   for (var n = node.firstChild; n; n = n.nextSibling) {
     rewriteIdSuffixes(n, idSuffix);
@@ -96,8 +97,17 @@ var externalScript = { loaded: false };
 fetch('es53-test-domado-special-initial-state.html', function(initialHtml) {
   testDiv.innerHTML = initialHtml;
   var virtualDoc = document.getElementById('untrusted_content');
+
+  // Extra little dance because we want to have initial content *and* guest
+  // content, which is not a supported case. Extract initial-state content,
+  // then reinsert later.
+  var content = document.createDocumentFragment();
+  while (virtualDoc.firstChild) {
+    content.appendChild(virtualDoc.firstChild);
+  }
+
   initFrame(virtualDoc, function(frameGroup, frame) {
-    rewriteIdSuffixes(virtualDoc, frame.idSuffix);
+    rewriteIdSuffixes(content, frame.idSuffix);
     var extraImports = createExtraImportsForTesting(frameGroup, frame);
 
     extraImports.checkGlobalSideEffect =
@@ -109,6 +119,10 @@ fetch('es53-test-domado-special-initial-state.html', function(initialHtml) {
     frame.code('es53-test-domado-special-guest.html')
          .api(extraImports)
          .run(function(result) {
+               // reinsert special content
+               var body = document.getElementsByTagName('caja-v-body')[0];
+               body.insertBefore(content, body.firstChild);
+
                readyToTest();
                jsunitRun();
                asyncRequirements.evaluate();

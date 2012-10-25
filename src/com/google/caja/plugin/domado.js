@@ -5370,7 +5370,9 @@ var Domado = (function() {
         cajaVM.def(TameStyle);  // and its prototype
 
         function isNestedInAnchor(el) {
-          for (; el && el != containerNode; el = el.parentNode) {
+          for (;
+              el && el != containerNode;
+              el = makeDOMAccessible(el.parentNode)) {
             if (el.tagName && el.tagName.toLowerCase() === 'a') {
               return true;
             }
