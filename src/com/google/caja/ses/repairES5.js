@@ -96,6 +96,9 @@ var ses;
    *   <dt>SAFE_SPEC_VIOLATION</dt>
    *     <dd>safe (in an integrity sense) even if unrepaired. May
    *         still lead to inappropriate failures.</dd>
+   *   <dt>NO_KNOWN_EXPLOIT_SPEC_VIOLATION</dt>
+   *     <dd>known to introduce an indirect safety issue which,
+   *     however, is not known to be exploitable.</dd>
    *   <dt>UNSAFE_SPEC_VIOLATION</dt>
    *     <dd>a safety issue only indirectly, in that this spec
    *         violation may lead to the corruption of assumptions made
@@ -117,11 +120,13 @@ var ses;
     MAGICAL_UNICORN:       { level: -1, description: 'Testing only' },
     SAFE:                  { level: 0, description: 'Safe' },
     SAFE_SPEC_VIOLATION:   { level: 1, description: 'Safe spec violation' },
-    UNSAFE_SPEC_VIOLATION: { level: 2, description: 'Unsafe spec violation' },
-    NOT_OCAP_SAFE:         { level: 3, description: 'Not ocap safe' },
-    NOT_ISOLATED:          { level: 4, description: 'Not isolated' },
-    NEW_SYMPTOM:           { level: 5, description: 'New symptom' },
-    NOT_SUPPORTED:         { level: 6, description: 'Not supported' }
+    NO_KNOWN_EXPLOIT_SPEC_VIOLATION: {
+        level: 2, description: 'Unsafe spec violation but no known exploits' },
+    UNSAFE_SPEC_VIOLATION: { level: 3, description: 'Unsafe spec violation' },
+    NOT_OCAP_SAFE:         { level: 4, description: 'Not ocap safe' },
+    NOT_ISOLATED:          { level: 5, description: 'Not isolated' },
+    NEW_SYMPTOM:           { level: 6, description: 'New symptom' },
+    NOT_SUPPORTED:         { level: 7, description: 'Not supported' }
   };
 
   /**
@@ -3011,7 +3016,7 @@ var ses;
       description: 'Setting [].length can delete non-configurable elements',
       test: test_ARRAYS_TOO_MUTABLE,
       repair: void 0,
-      preSeverity: severities.UNSAFE_SPEC_VIOLATION,
+      preSeverity: severities.NO_KNOWN_EXPLOIT_SPEC_VIOLATION,
       canRepair: false,
       urls: ['https://bugzilla.mozilla.org/show_bug.cgi?id=590690'],
       sections: ['15.4.5.2'],
