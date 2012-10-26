@@ -128,7 +128,8 @@
       frame.code(
           location.protocol + '//' + location.host + '/',
           'text/html',
-          '<div id="foo" style="height:100%">testFullHeight</div>')
+          '<style>html, body { height: 100%; }</style>' +
+              '<div id="foo" style="height:100%">testFullHeight</div>')
           .run(function(result) {
               var computedHeight =
                 parseInt(document.defaultView.getComputedStyle(

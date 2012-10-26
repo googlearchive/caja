@@ -5907,6 +5907,39 @@ var Domado = (function() {
       pluginId = rulebreaker.getId(tameWindow);
       windowToDomicile.set(tameWindow, domicile);
 
+      // Install virtual UA stylesheet.
+      if (!document.caja_gadgetStylesheetInstalled) (function () {
+        document.caja_gadgetStylesheetInstalled = true;
+        
+        var element = makeDOMAccessible(document.createElement("style"));
+        element.setAttribute("type", "text/css");
+        element.textContent = (
+          // Visually contains the virtual document
+          ".vdoc-container___ {" +
+            "position:relative!important;" +
+            "overflow:auto!important;" +
+            "clip:rect(auto,auto,auto,auto)!important;" + // paranoia
+          "}" +
+
+          // Styles for HTML elements that we virtualize, and so do not get the
+          // normal UA stylesheet rules applied:
+
+          // Should be the intersection of HTML5 spec's list and our virtualized
+          // (i.e. non-whitelisted) elements. Source:
+          // <http://www.whatwg.org/specs/web-apps/current-work/multipage/rendering.html#the-css-user-agent-style-sheet-and-presentational-hints>
+          "caja-v-base,caja-v-basefont,caja-v-head,caja-v-link,caja-v-meta," +
+          "caja-v-noembed,caja-v-noframes,caja-v-param,caja-v-source," +
+          "caja-v-track,caja-v-title{" +
+            "display:none;" + 
+          "}" +
+
+          "caja-v-html, caja-v-body {" +
+            "display:block;" +
+          "}"
+        );
+        domicile.getCssContainer().appendChild(element);
+      })();
+
       traceStartup("DT: all done");
 
       return domicile;

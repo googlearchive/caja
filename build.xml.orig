@@ -1208,6 +1208,7 @@
         <include name="**/caja/flash/caja-flash.js"/>
         <include name="**/caja/log-to-console.js"/>
         <include name="**/caja/plugin/bridal.js"/>
+        <include name="**/caja/plugin/caja-gadget.css"/>
         <include name="**/caja/plugin/csslexer.js"/>
         <include name="**/caja/plugin/uri.js"/>
         <include name="**/caja/plugin/sanitizecss.js"/>
@@ -1326,6 +1327,7 @@
         <include name="html-sanitizer.js" />
         <include name="html-schema.js" />
         <include name="unicode.js" />
+        <include name="caja-gadget.css" />
       </fileset>
       <fileset dir="${lib.caja}/plugin">
         <include name="css-defs.js" />
@@ -1635,6 +1637,7 @@
         <include name="caja-flash.js"/>
       </fileset>
       <fileset dir="${src.caja}/plugin">
+        <include name="caja-gadget.css"/>
         <include name="caja.js"/>
       </fileset>
       <fileset dir="${lib.caja}/demos/container">

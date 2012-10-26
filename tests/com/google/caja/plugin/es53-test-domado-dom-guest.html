@@ -2070,6 +2070,33 @@ After
     });
 </script>
 
+
+<p id="testVirtualizedUAStyles" class="testcontainer">testVirtualizedUAStyles</p>
+<script type="text/javascript">
+  jsunitRegister('testVirtualizedUAStyles',
+                 function testVirtualizedUAStyles() {
+    // Do virtualized elements have the styles they should; that is, is our
+    // reimplementation of the UA stylesheet getting applied?
+    function cs(element) {
+      return window.getComputedStyle(element, null);
+    }
+    function tag(name) {
+      return document.getElementsByTagName(name)[0];
+    }
+
+    assertEquals('html display', 'block', cs(tag('html')).display);
+    assertEquals('head display', 'none', cs(tag('head')).display);
+    assertEquals('title display', 'none', cs(tag('title')).display);
+    assertEquals('body display', 'block', cs(tag('body')).display);
+
+    // Should not be visible to the guest. We currently implement as a CSS
+    // stylesheet, so this is just to make sure that we don't change our mind
+    // and lose this property.
+    assertFalse(tag('head').hasAttribute('style'));
+
+    pass('testVirtualizedUAStyles');
+  });
+</script>
 <p id="testTitleProperty" class="testcontainer">Test document.title</p>
 <script type="text/javascript">
     jsunitRegister('testTitleProperty',

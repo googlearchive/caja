@@ -20,8 +20,6 @@
  * TODO(jasvir): Consider inlining into Playground.html to eliminate roundtrip
  */
 
-@import url("caja-gadget.css");
-
 .menuItems {
   margin: 5px;	
 }
