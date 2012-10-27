@@ -12,6 +12,9 @@
     .pginfo { font-weight: bold; font-size: 120% }
     .loadingLabel { display: hidden; }
     .menuItems { margin: 5px;  }
+
+    <!-- ScrollPanel puts its contents in an anonymous div -->
+    .renderScrollPanel > div { height: 100%; }
   </ui:style>
   <g:DockLayoutPanel>
     <g:north size="80">
@@ -138,8 +141,8 @@
           <g:header size='7'>Rendered Result</g:header>
           <g:DockLayoutPanel unit='PX'>
             <g:center>
-              <g:ScrollPanel>
-                <g:HTML ui:field="renderPanel"></g:HTML>
+              <g:ScrollPanel styleName="{style.renderScrollPanel}">
+                <g:HTML ui:field="renderPanel" height="100%"></g:HTML>
               </g:ScrollPanel>
             </g:center>
             <g:north size="50">
