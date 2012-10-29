@@ -3576,7 +3576,6 @@ var Domado = (function() {
         virtualized: true,
         domClass: 'HTMLBodyElement'
       });
-      // TODO(kpreid): need the viewProperties
       setOwn(TameBodyElement.prototype, 'setAttribute', nodeMethod(
           function (attrib, value) {
         TameElement.prototype.setAttribute.call(this, attrib, value);
@@ -4315,7 +4314,6 @@ var Domado = (function() {
         virtualized: true,
         domClass: 'HTMLHtmlElement'
       });
-      // TODO(kpreid): need the viewProperties
 
       var P_blacklist = {
         enumerable: true,
@@ -4846,96 +4844,6 @@ var Domado = (function() {
         return '[Fake CustomEvent]';
       }));
       cajaVM.def(TameCustomHTMLEvent);  // and its prototype
-
-      var viewProperties = {
-        // We define all the window positional properties relative to
-        // the fake body element to maintain the illusion that the fake
-        // document is completely defined by the nodes under the fake body.
-        clientLeft: {
-          get: function () {
-            return np(tameDocument).feralContainerNode.clientLeft;
-          }
-        },
-        clientTop: {
-          get: function () {
-            return np(tameDocument).feralContainerNode.clientTop;
-          }
-        },
-        clientHeight: {
-          get: function () {
-            return np(tameDocument).feralContainerNode.clientHeight;
-          }
-        },
-        clientWidth: {
-          get: function () {
-            return np(tameDocument).feralContainerNode.clientWidth;
-          }
-        },
-        offsetLeft: {
-          get: function () {
-            return np(tameDocument).feralContainerNode.offsetLeft;
-          }
-        },
-        offsetTop: {
-          get: function () {
-            return np(tameDocument).feralContainerNode.offsetTop;
-          }
-        },
-        offsetHeight: {
-          get: function () {
-            return np(tameDocument).feralContainerNode.offsetHeight;
-          }
-        },
-        offsetWidth: {
-          get: function () {
-            return np(tameDocument).feralContainerNode.offsetWidth;
-          }
-        },
-        // page{X,Y}Offset appear only as members of window, not on all elements
-        // but http://www.howtocreate.co.uk/tutorials/javascript/browserwindow
-        // says that they are identical to the scrollTop/Left on all browsers but
-        // old versions of Safari.
-        pageXOffset: {
-          get: function () {
-            return np(tameDocument).feralContainerNode.scrollLeft;
-          }
-        },
-        pageYOffset: {
-          get: function () {
-            return np(tameDocument).feralContainerNode.scrollTop;
-          }
-        },
-        scrollLeft: {
-          get: function () {
-            return np(tameDocument).feralContainerNode.scrollLeft;
-          },
-          set: function (x) {
-              np(tameDocument).feralContainerNode.scrollLeft = +x; }
-        },
-        scrollTop: {
-          get: function () {
-            return np(tameDocument).feralContainerNode.scrollTop;
-          },
-          set: function (y) {
-            np(tameDocument).feralContainerNode.scrollTop = +y;
-          }
-        },
-        scrollHeight: {
-          get: function () {
-            return np(tameDocument).feralContainerNode.scrollHeight;
-          }
-        },
-        scrollWidth: {
-          get: function () {
-            return np(tameDocument).feralContainerNode.scrollWidth;
-          }
-        }
-      };
-      forOwnKeys(viewProperties, function (prop, desc) {
-        cajaVM.def(desc.get);
-        if (desc.set) cajaVM.def(desc.set);
-        desc.enumerable = true;
-      });
 
       function TameHTMLDocument(doc, container, domain, editable) {
         traceStartup("DT: TameHTMLDocument begin");
@@ -5608,7 +5516,6 @@ var Domado = (function() {
           enumerable: true,
           writable: false
         });
-        definePropertiesAwesomely(this, viewProperties);
         taming.permitUntaming(this);
       }
       // Methods of TameWindow are established later.
@@ -5649,7 +5556,6 @@ var Domado = (function() {
         // tameDocument via document.defaultView would allow escalation of
         // authority.
         assert(np(tameDocument).editable);
-        definePropertiesAwesomely(this, viewProperties);
         taming.permitUntaming(this);
       }
 
@@ -5699,6 +5605,9 @@ var Domado = (function() {
       TameWindow.prototype.dispatchEvent = cajaVM.def(function (evt) {
         // TODO(ihab.awad): Implement
       });
+
+      // Methods which are installed on window AND defaultView.
+      // See doc comment of TameDefaultView regarding authority to expose here.
       forOwnKeys({
         scrollBy: cajaVM.def(
             function (dx, dy) {
@@ -5760,20 +5669,30 @@ var Domado = (function() {
         TameWindow.prototype[propertyName] = value;
         TameDefaultView.prototype[propertyName] = value;
       }));
+      
       cajaVM.def(TameWindow);  // and its prototype
 
       var tameWindow = new TameWindow();
       var tameDefaultView = new TameDefaultView(np(tameDocument).editable);
 
+      // Getters for properties which are installed on window AND defaultView.
+      // See doc comment of TameDefaultView regarding authority to expose here.
       forOwnKeys({
+        pageXOffset: function () { return this.scrollX; },
+        pageYOffset: function () { return this.scrollY; },
+        scrollX: function () {
+            return np(tameDocument).feralContainerNode.scrollLeft; },
+        scrollY: function () {
+            return np(tameDocument).feralContainerNode.scrollTop; },
+        
         innerHeight: function () {
-            return np(tameDocument).feralContainerNode.clientHeight; },
+            return np(tameDocument).feralContainerNode.offsetHeight; },
         innerWidth:  function () {
-            return np(tameDocument).feralContainerNode.clientWidth; },
+            return np(tameDocument).feralContainerNode.offsetWidth; },
         outerHeight: function () {
-            return np(tameDocument).feralContainerNode.clientHeight; },
+            return np(tameDocument).feralContainerNode.offsetHeight; },
         outerWidth:  function () {
-            return np(tameDocument).feralContainerNode.clientWidth; }
+            return np(tameDocument).feralContainerNode.offsetWidth; }
       }, function (propertyName, handler) {
         // TODO(mikesamuel): define on prototype.
         var desc = {enumerable: canHaveEnumerableAccessors, get: handler};

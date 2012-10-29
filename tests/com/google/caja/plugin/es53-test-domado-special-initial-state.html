@@ -20,6 +20,11 @@
   .invisible { display: none; float: left }
   body.foo #test-body-classes-yes,
   body.bar #test-body-classes-no { font-style: italic }
+
+  /* Establish fit-to-viewport for resize/scroll tests.
+     This is also the official way for a host page to request that the vdoc
+     be sized to fit the window rather than the content's natural height. */
+  .caja-vdoc-wrapper { height: 100%; }
 </style>
 
 </style>
