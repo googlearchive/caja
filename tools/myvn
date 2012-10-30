@@ -137,12 +137,6 @@ function myvn() {
       done
       ;;
     eclipse )
-      if [ -z "$ANT_HOME" ]; then
-        echo Please set up the following environment variables:
-        if [ -z "$ANT_HOME"]; then
-          echo 'ANT_HOME (eg. export ANT_HOME=/usr/share/ant)'
-        fi
-      fi
       makeEclipseProject > .project
       makeEclipseClasspath > .classpath
       makeEclipseGenfiles
@@ -236,7 +230,6 @@ function makeEclipseClasspath() {
     }'
 
   echo "	<classpathentry kind=\"con\" path=\"org.eclipse.jdt.launching.JRE_CONTAINER\"/>"
-  echo "	<classpathentry kind=\"lib\" path=\"$ANT_HOME/lib/ant.jar\"/>"
   echo "	<classpathentry kind=\"output\" path=\"ant-eclipse-lib\"/>"
   echo "</classpath>"
 }
