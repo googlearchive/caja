@@ -1696,14 +1696,18 @@ var Domado = (function() {
                 function(_, id, spaces) {
                   return unsuffix(id, idSuffix, '') + (spaces ? ' ' : '');
                 });
+          case html4.atype.URI:
+            if (realValue && '#' === realValue.charAt(0)) {
+              return unsuffix(realValue, idSuffix, realValue);
+            } else {
+              return realValue;
+            }
           case html4.atype.URI_FRAGMENT:
             if (realValue && '#' === realValue.charAt(0)) {
-              realValue = unsuffix(realValue.substring(1), idSuffix, null);
-              return realValue ? '#' + realValue : null;
+              return unsuffix(realValue, idSuffix, null);
             } else {
               return null;
             }
-            break;
           default:
             return realValue;
         }
@@ -1854,8 +1858,8 @@ var Domado = (function() {
             return trustedHandler;
           case html4.atype.URI:
             value = String(value);
-            // URI fragments reference contents within the document and arent subject
-            // to the URI policy
+            // URI fragments reference contents within the document and
+            // aren't subject to the URI policy
             if (value.charAt(0) === '#' && isValidId(value.substring(1))) {
               return value + idSuffix;
             }
@@ -3566,7 +3570,13 @@ var Domado = (function() {
         names: ['a'],
         domClass: 'HTMLAnchorElement',
         properties: {
-          hash: NP.filter(false, identity, true, identity),
+          hash: NP.filter(
+            false,
+            function (value) { return unsuffix(value, idSuffix, value); },
+            false,
+            // TODO(felix8a): add suffix if href is self
+            identity),
+          // TODO(felix8a): fragment rewriting?
           href: NP.filter(false, identity, true, identity)
         }
       });

@@ -2741,6 +2741,26 @@ Test row cell
   });
 </script>
 
+<div class="testcontainer" id="testHash">
+  <a id='test-hash' href="#foo">test a.hash</a>
+</div>
+<script type="text/javascript">
+  jsunitRegister('testHash', function testHash() {
+    var a = document.getElementById('test-hash');
+    assertEquals('#foo', a.hash);
+    // a.href is an absolute url; a.getAttribute('href') is just the hash
+    assertEquals('#foo', a.getAttribute('href'));
+    // TODO(felix8a): maybe this should succeed?
+    //assertEquals('#foo', a.href.substr(-4));
+    a.hash = '#bar';
+    assertEquals('#bar', a.hash);
+    // setting a.hash forces a.getAttribute('href') to be a resolved url
+    // TODO(felix8a): maybe this should succeed?
+    //assertEquals('#bar', a.href.substr(-4));
+    pass('testHash');
+  });
+</script>
+
 <p class="testcontainer" id="testDocumentBodyAppendChild"
  >I should be the last element until something is appended to document.body</p>
 <script type="text/javascript">
