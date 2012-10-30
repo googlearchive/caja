@@ -41,7 +41,6 @@ import com.google.caja.util.Maps;
 import com.google.caja.util.Name;
 import com.google.caja.util.Pair;
 import com.google.caja.util.Sets;
-import com.google.caja.util.Strings;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -960,11 +959,6 @@ public final class CssRewriter {
    */
   private static boolean isSafeSelectorPart(String s) {
     return SAFE_SELECTOR_PART.matcher(s).matches();
-  }
-
-  private static boolean selectorMatchesElement(
-      CssTree.SimpleSelector t, String elementName) {
-    return Strings.eqIgnoreCase(elementName, t.getElementName());
   }
 
   private static boolean selectorMatchesClass(

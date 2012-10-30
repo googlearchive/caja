@@ -23,13 +23,11 @@ import com.google.caja.parser.html.Nodes;
 import com.google.caja.plugin.Placeholder;
 import com.google.caja.plugin.PluginMessageType;
 import com.google.caja.reporting.Message;
-import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.util.Criterion;
 import com.google.caja.util.Lists;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import org.w3c.dom.Attr;

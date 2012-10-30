@@ -301,9 +301,10 @@ public class PlaygroundView {
   }
 
   private void initUnsafe() {
-    playgroundUI.unsafe.addValueChangeHandler(new ValueChangeHandler() {
+    playgroundUI.unsafe.addValueChangeHandler(
+        new ValueChangeHandler<Boolean>() {
       @Override
-      public void onValueChange(ValueChangeEvent event) {
+      public void onValueChange(ValueChangeEvent<Boolean> event) {
         setUnsafe(playgroundUI.unsafe.getValue());
       }
     });

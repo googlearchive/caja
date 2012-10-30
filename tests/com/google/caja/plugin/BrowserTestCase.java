@@ -173,6 +173,7 @@ public abstract class BrowserTestCase extends CajaTestCase {
       // will not be closed. This is useful for debugging test failures.
     } finally {
       localServer.stop();
+      err.close();
     }
     return result;
   }

@@ -113,6 +113,7 @@ public final class MoreAsserts {
       sb.append("\t...");
     }
 
+    @SuppressWarnings("resource")
     Formatter f = new Formatter(sb);
     int index = start;
     for (Object item : a.subList(start, end)) {

@@ -29,7 +29,6 @@ import com.google.caja.util.CajaTestCase;
 
 import java.io.StringReader;
 
-import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
 public class IhtmlSanityCheckerTest extends CajaTestCase {

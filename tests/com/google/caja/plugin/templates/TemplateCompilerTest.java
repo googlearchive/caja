@@ -61,7 +61,6 @@ import java.util.Map;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.DocumentFragment;
-import org.w3c.dom.Node;
 
 public class TemplateCompilerTest extends CajaTestCase {
   private PluginMeta meta;
