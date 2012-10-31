@@ -28,6 +28,24 @@
       return 'URICALLBACK[[' + uri + ']]';
     }
   };
+  
+  // Since emitCss___ emits CSS to the containing document's HEAD, we cannot
+  // simply check innerHTML of the client DIV to see whether the effect was
+  // correct. Instead, we have to go to greater extremes by monkey patching the
+  // emitCss___ function itself and checking the args it is called with.
+  function patchEmitCss(frame) {
+    var o = { emittedCss: null };
+    function capture(f) {
+      return function (cssText) {
+        if (o.emittedCss) { throw 'cannot handle multiple emitCss'; }
+        o.emittedCss = cssText;
+        f.call(this, cssText);
+      }
+    }
+    frame.imports.emitCss___ = capture(frame.imports.emitCss___);  // ES5/3
+    frame.domicile.emitCss = capture(frame.domicile.emitCss);  // SES
+    return o;
+  }
 
   caja.initialize({
     cajaServer: '/caja',
@@ -74,27 +92,25 @@
 
   registerTest('testUriInCss', function testUriInCss() {
     var div = createDiv();
-    caja.load(div, uriCallback, function (frame) {
-      var emittedCss;
-      var originalEmitCss = frame.imports.emitCss___;
-      frame.imports.emitCss___ = function(cssText) {
-        if (emittedCss) { throw 'cannot handle multiple emitCss___'; }
-         emittedCss = cssText;
-         originalEmitCss.call(this, cssText);
-      };
-
+    caja.load(div, uriCallback, jsunitCallback(function frameCb(frame) {
+      var capture = patchEmitCss(frame);
       frame.code('es53-test-client-uri-rewriting-guest.html')
-          .run(function (_) {
+          .run(jsunitCallback(function runCb(_) {
+        // TODO(kpreid): kludge, should accept both or we should change our
+        // rewriters to consistently use one quote form. I don't understand how
+        // the no-quotes path occurs; CssTree.java seems to use single quotes.
+        var q = inES5Mode ? '"' : '';  
+        
         assertStringContains(
-          'url(URICALLBACK[['
+          'url(' + q + 'URICALLBACK[['
           + 'http://localhost:8000/ant-testlib/com/google/caja/plugin/foo.png'
-          + ']])',
-          emittedCss);
-        assertStringDoesNotContain('javascript:', emittedCss);
-        assertStringDoesNotContain('invalid:', emittedCss);
+          + ']]' + q + ')',
+          capture.emittedCss);
+        assertStringDoesNotContain('javascript:', capture.emittedCss);
+        assertStringDoesNotContain('invalid:', capture.emittedCss);
         jsunitPass('testUriInCss');
-      });
-    });
+      }));
+    }));
   });
 
   registerTest('testDynamicUriPolicy', function testDynamicUriPolicy() {
@@ -110,7 +126,7 @@
           }
         }
     };
-    caja.load(div, dynamicPolicy, function (frame) {
+    caja.load(div, dynamicPolicy, jsunitCallback(function frameCb(frame) {
       // TODO(felix8a): createExtraImportsForTesting doesn't like being
       // called more than once on the same framegroup object
       var extraImports = createExtraImportsForTesting(caja, frame);
@@ -151,11 +167,12 @@
           + '<\/script>')
           .api(extraImports)
           .run()
-    });
+    }));
   });
 
   function registerUriCbTest(name, html, cb) {
     registerTest(name, function() {
+        cb = jsunitCallback(cb);
         var div = createDiv();
         var alreadyPassed;
         var translatedUri;
@@ -167,16 +184,17 @@
                 return translatedUri = 'URICALLBACK[[' + uri + ']]';
               }
             },
-            function(frame) {
-              frame.code('http://a.com/', 'text/html', html).run(function() {
+            jsunitCallback(function frameCb(frame) {
+              frame.code('http://a.com/', 'text/html', html).run(
+                  jsunitCallback(function runCb() {
                 if (alreadyPassed) { return; }
                 assertTrue(
                     'innerHTML ' + div.innerHTML + ' does not contain '
                         + translatedUri,
                     div.innerHTML.indexOf(translatedUri) !== -1);
                 jsunitPass(name);
-              });
-            });
+              }));
+            }));
         });
   }
 
@@ -213,27 +231,24 @@
         assertEquals('href', hints.XML_ATTR);
       });
 
-  // Since emitCss___ emits CSS to the containing document's HEAD, we cannot
-  // simply check innerHTML of the client DIV to see whether the effect was
-  // correct. Instead, we have to go to greater extremes by monkey patching the
-  // emitCss___ function itself and checking the args it is called with.
   registerTest(
       'testStylesheetCompiled',
       function() {
-        var calledPolicy;
-        var calledEmitCss;
+        var calledPolicy = false;
         caja.load(
             createDiv(),
             {
-              rewrite: function(uri, effects, ltype, hints) {
+              rewrite: jsunitCallback(function rewrite(
+                  uri, effects, ltype, hints) {
                 assertEquals('http://x.com/a.jpg', uri);
                 assertEquals('CSS', hints.TYPE);
                 assertEquals('background-image', hints.CSS_PROP);
                 calledPolicy = true;
                 return 'URI[[' + uri + ']]';
-              }
+              })
             },
-            function(frame) {
+            jsunitCallback(function frameCb(frame) {
+              var capture = patchEmitCss(frame);
               frame
                   .code(
                       'http://a.com/',
@@ -241,19 +256,13 @@
                       '<style type="text/css">' +
                       '  p { background-image: url(http://x.com/a.jpg); }' +
                       '</style>')
-                  .api({
-                    emitCss___: function(css) {
-                      var i = css.indexOf('URI[[http://x.com/a.jpg]]');
-                      assertTrue(-1 !== i);
-                      calledEmitCss = true;
-                    }
-                  })
-                  .run(function() {
-                    assertTrue(calledPolicy);
-                    assertTrue(calledEmitCss);
+                  .run(jsunitCallback(function runCb() {
+                    assertTrue('calledPolicy', calledPolicy);
+                    assertStringContains('URI[[http://x.com/a.jpg]]',
+                        capture.emittedCss);
                     jsunitPass('testStylesheetCompiled');
-                  });
-            });
+                  }));
+            }));
       });
 
   /*

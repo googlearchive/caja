@@ -181,9 +181,7 @@ public class GeneralBrowserTest extends BrowserTestCase {
   }
 
   public final void testClientUriRewriting() throws Exception {
-    // TODO(kpreid): Enable for ES5. Fails due to relative/absolute confusion
-    // and no CSS implementation.
-    runTestDriver("es53-test-client-uri-rewriting.js", false);
+    runTestDriver("es53-test-client-uri-rewriting.js");
   }
 
   public final void testTamingTamed() throws Exception {
