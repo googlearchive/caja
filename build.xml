@@ -29,9 +29,10 @@
   -   demos      :  demo files
   -   docs       :  javadocs and rule docs
   -   jars       :  build the binary distribution
-  -   jquerytest :  runs the jQuery tests in ES5 mode
   -   pluginc    :  the plugin compiler
   -   runtests   :  runs the tests
+  -   runjquery  :  runs the jQuery tests in ES5 mode
+  -   runjqueryui:  runs the jQuery UI tests in ES5 mode
   
   -
   - To run with assertions enabled, set the environment variable ANT_FLAGS="-ea"
@@ -215,27 +216,46 @@
     </antcall>
   </target>
 
-  <target name="jquerytest" depends="jquery,AllTests">
-    <condition property="jvmarg"
-     value="-Xdebug -Xmx2G -Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=9999" else="">
-      <isset property="test.debug"/>
-    </condition>
-    <mkdir dir="${reports}/tests"/>
-    <junit printsummary="yes" fork="yes" forkmode="once" maxmemory="512m"
-        haltonfailure="yes">
-      <assertions><enable/></assertions>  <!-- ignored unless fork="yes" -->
-      <classpath refid="classpath.tests"/>
-      <formatter type="xml"/>
-      <jvmarg line="${jvmarg}"/>
-      <syspropertyset refid="test.propertyset"/>
-      <batchtest todir="${reports}/tests">
-        <fileset dir="${tests}">
-          <and>
-            <filename name="**/JQueryTest.java"/>
-          </and>
-        </fileset>
-      </batchtest>
-    </junit>
+  <macrodef name="RunSeparateTest">
+    <element name="files"/>
+    <sequential>
+      <condition property="jvmarg"
+       value="-Xdebug -Xmx2G -Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=9999" else="">
+        <isset property="test.debug"/>
+      </condition>
+      <mkdir dir="${reports}/tests"/>
+      <junit printsummary="yes" fork="yes" forkmode="once" maxmemory="512m"
+          haltonfailure="yes">
+        <assertions><enable/></assertions>  <!-- ignored unless fork="yes" -->
+        <classpath refid="classpath.tests"/>
+        <formatter type="xml"/>
+        <jvmarg line="${jvmarg}"/>
+        <syspropertyset refid="test.propertyset"/>
+        <batchtest todir="${reports}/tests">
+          <fileset dir="${tests}">
+            <and>
+              <files/>
+            </and>
+          </fileset>
+        </batchtest>
+      </junit>
+    </sequential>
+  </macrodef>
+
+  <target name="runjquery" depends="jquery,AllTests">
+    <RunSeparateTest>
+      <files>
+        <filename name="**/JQueryTest.java"/>
+      </files>
+    </RunSeparateTest>
+  </target>
+
+  <target name="runjqueryui" depends="AllTests">
+    <RunSeparateTest>
+      <files>
+        <filename name="**/JQueryUITest.java"/>
+      </files>
+    </RunSeparateTest>
   </target>
 
   <target name="runtests"
@@ -270,6 +290,7 @@
           <and>
             <not><filename name="**/*BrowserTest.java"/></not>
             <not><filename name="**/JQueryTest.java"/></not>
+            <not><filename name="**/JQueryUITest.java"/></not>
             <filename name="**/${test.filter}.java"/>
             <filename regex="/[A-M]"/>
           </and>
@@ -357,6 +378,7 @@
       <fileset dir="${reports}/tests">
         <include name="TEST-*.xml"/>
         <exclude name="TEST-*.JQueryTest.xml"/>
+        <exclude name="TEST-*.JQueryUITest.xml"/>
       </fileset>
     </summarize>
     <!-- Generate the code coverage report. -->

@@ -14,91 +14,15 @@
 
 package com.google.caja.plugin;
 
-import java.util.List;
 
-import org.hamcrest.Matchers;
-import org.junit.Assert;
-import org.openqa.selenium.By;
-import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.WebElement;
 
 /**
  * @author metaweta@gmail.com
  */
-public class JQueryTest extends BrowserTestCase {
-
-  /**
-   * Do what should be done with the browser.
-   * @param pageName The tail of a URL.  Unused in this implementation
-   * @param passCount The number of tests we expect to pass, or null for all.
-   */
-  protected String driveBrowser(
-      final WebDriver driver, Object passCount, final String pageName) {
-    final String testResultId = "qunit-testresult-caja-guest-0___";
-    // Find the reporting div
-    poll(20000, 200, new Check() {
-      @Override public String toString() { return "startup"; }
-      public boolean run() {
-        List<WebElement> readyElements = driver.findElements(
-            By.id(testResultId));
-        return readyElements.size() != 0;
-      }
-    });
-
-    // Let it run as long as the report div's text is changing
-    WebElement statusElement = driver.findElement(By.id(testResultId));
-    String currentStatus = statusElement.getText();
-    String lastStatus = null;
-
-    // Check every second.
-    // If the text starts with "Tests completed" then
-    //    exit the loop and check that the right number passed
-    // If the text has changed, reset the time limit.
-    int limit = 30; // tries
-    for (int chances = limit; chances > 0; --chances) {
-      if (currentStatus.startsWith("Tests completed")) { break; }
-      try {
-        Thread.sleep(1000);
-      } catch (InterruptedException e) {
-        // Keep trying
-      }
-      statusElement = driver.findElement(By.id(testResultId));
-      lastStatus = currentStatus;
-      currentStatus = statusElement.getText();
-      if (!lastStatus.equals(currentStatus)) {
-        chances = limit;
-      }
-    }
-
-    String result = passCount != null
-        ? "\n" + passCount + " tests"
-        : "passed, 0 failed";
-    Assert.assertThat(currentStatus, Matchers.containsString(result));
-    return currentStatus;
-  }
-
-  /**
-   * Run a page of jQuery tests.
-   * @param testCase The page name.
-   * @param passCount The number of tests we expect to pass, or null for all.
-   *             We should update this monotonically as we improve Caja.
-   */
-  protected String runJQueryTestCase(
-      String testCase, Integer passCount, String... params)
-      throws Exception {
-    return runBrowserTest("browser-test-case.html",
-        passCount,
-        add(params,
-            "es5=true",
-            "test-case=" + escapeUri(
-                "/ant-testlib/js/jqueryjs/test/" +
-                testCase +
-                "-uncajoled.html"),
-            "jQuery=true"));
-  }
+public class JQueryTest extends QUnitTestCase {
 
   public final void testCore() throws Exception {
-    runJQueryTestCase("core", 1285);
+    runQUnitTestCase("core", 1285);
     // Current modifications made to test suite:
     //   * Removed unnecessary octal literal.
     // Current failure categories:
@@ -112,35 +36,35 @@ public class JQueryTest extends BrowserTestCase {
   }
 
   public final void testCallbacks() throws Exception {
-    runJQueryTestCase("callbacks", null);
+    runQUnitTestCase("callbacks", null);
     // Current modifications made to test suite:
     //   * Adjusted "context is window" test assuming callee is non-strict
   }
 
   public final void testDeferred() throws Exception {
-    runJQueryTestCase("deferred", null);
+    runQUnitTestCase("deferred", null);
     // Current modifications made to test suite:
     //   * Adjusted tests assuming callee is non-strict
   }
 
   public final void testSupport() throws Exception {
-    runJQueryTestCase("support", 1);
+    runQUnitTestCase("support", 1);
     // Current failure categories:
     //   * We don't implement iframes yet.
   }
 
   public final void testData() throws Exception {
-    runJQueryTestCase("data", 290);
+    runQUnitTestCase("data", 290);
     // Current failure categories:
     //   * We don't implement iframes yet (used incidentally).
   }
 
   public final void testQueue() throws Exception {
-    runJQueryTestCase("queue", null);
+    runQUnitTestCase("queue", null);
   }
 
   public final void testAttributes() throws Exception {
-    runJQueryTestCase("attributes", 417);
+    runQUnitTestCase("attributes", 417);
     // Current failure categories:
     //   * URI rewriting is visible to the guest.
     //   * Simple event handler rewriting is visible to the guest.
@@ -155,7 +79,7 @@ public class JQueryTest extends BrowserTestCase {
   }
 
   public final void testEvent() throws Exception {
-    runJQueryTestCase("event", 377);
+    runQUnitTestCase("event", 377);
     // Current failure categories:
     //   * Various lost-signal failures:
     //        in 'bind(),live(),delegate() with non-null,defined data'
@@ -170,19 +94,19 @@ public class JQueryTest extends BrowserTestCase {
   }
 
   public final void testSelector() throws Exception {
-    runJQueryTestCase("selector", 25);
+    runQUnitTestCase("selector", 25);
     // Current failure categories:
     //   * We don't implement iframes yet.
   }
 
   public final void testTraversing() throws Exception {
-    runJQueryTestCase("traversing", 286);
+    runQUnitTestCase("traversing", 286);
     // Current failure categories:
     //   * We don't implement iframes yet.
   }
 
   public final void testManipulation() throws Exception {
-    runJQueryTestCase("manipulation", 484);
+    runQUnitTestCase("manipulation", 484);
     // Current modifications made to test suite:
     //   * Removed SES-incompatible Array.prototype modification; was only for
     //     testing jQuery robustness.
@@ -199,7 +123,7 @@ public class JQueryTest extends BrowserTestCase {
   }
 
   public final void testCSS() throws Exception {
-    runJQueryTestCase("css", 196);
+    runQUnitTestCase("css", 196);
     // Current failure categories:
     //   * We don't implement SVG (fill-opacity CSS property).
     //   * Something doesn't work such that defaultDisplay() in jquery falls
@@ -215,7 +139,7 @@ public class JQueryTest extends BrowserTestCase {
   */
 
   public final void testEffects() throws Exception {
-    runJQueryTestCase("effects", 528);
+    runQUnitTestCase("effects", 528);
     // Current modifications made to test suite:
     //   * Fixed maybe-accidental undeclared global 'calls'.
     // Current failure categories:
@@ -223,13 +147,13 @@ public class JQueryTest extends BrowserTestCase {
   }
 
   public final void testOffset() throws Exception {
-    runJQueryTestCase("offset", 18);
+    runQUnitTestCase("offset", 18);
     // Current failure categories:
     //   * We don't implement iframes yet.
   }
 
   public final void testDimensions() throws Exception {
-    runJQueryTestCase("dimensions", 133);
+    runQUnitTestCase("dimensions", 133);
     // Current modifications made to test suite:
     //   * Fixed nested function in strict mode.
     // Current failure categories:
@@ -237,6 +161,13 @@ public class JQueryTest extends BrowserTestCase {
   }
 
   public final void testExports() throws Exception {
-    runJQueryTestCase("exports", null);
+    runQUnitTestCase("exports", null);
+  }
+
+  @Override
+  protected String getTestURL(String testCase) {
+    return "/ant-testlib/js/jqueryjs/test/" +
+    testCase +
+    "-uncajoled.html";
   }
 }

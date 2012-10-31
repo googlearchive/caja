@@ -2653,6 +2653,10 @@ Test row cell
     //    assertEquals(
     //        window.location.hostname,
     //        document.domain);
+    
+    // document.location is an identical property to window.location
+    assertTrue('document.location', window.location === document.location);
+    
     pass('testLocation');
   });
 </script>

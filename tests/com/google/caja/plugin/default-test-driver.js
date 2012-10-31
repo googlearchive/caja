@@ -63,7 +63,9 @@ if (testCase) {
         },
         function(frame) {
           frame.url(testCase)
-               .run(createExtraImportsForTesting(frameGroup, frame),
+               .run(jQuery
+                        ? null /* don't define, e.g., $ */
+                        : createExtraImportsForTesting(frameGroup, frame),
                    function(result) {
                      if (!jQuery) {
                        readyToTest();

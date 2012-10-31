@@ -4872,6 +4872,8 @@ var Domado = (function() {
         definePropertiesAwesomely(this, {
           domain: P_constant(domain)
         });
+
+        installLocation(this);
       }
       inertCtor(TameHTMLDocument, TamePseudoNode, 'HTMLDocument');
       definePropertiesAwesomely(TameHTMLDocument.prototype, {
@@ -5442,6 +5444,45 @@ var Domado = (function() {
           function (x) { domicile.domitaTrace = x; }
       );
 
+      // Location object -- used by Document and Window and so must be created
+      // before each.
+      function TameLocation() {
+        // TODO(mikesamuel): figure out a mechanism by which the container can
+        // specify the gadget's apparent URL.
+        // See http://www.whatwg.org/specs/web-apps/current-work/multipage/history.html#location0
+        var tameLocation = this;
+        function defineLocationField(f, dflt) {
+          Object.defineProperty(tameLocation, f, {
+            configurable: false,
+            enumerable: true,
+            get: function() { 
+              return String(domicile.pseudoLocation[f] || dflt); 
+            }
+          });
+        }
+        defineLocationField('href', 'http://nosuchhost.invalid:80/');
+        defineLocationField('hash', '');
+        defineLocationField('host', 'nosuchhost.invalid:80');
+        defineLocationField('hostname', 'nosuchhost.invalid');
+        defineLocationField('pathname', '/');
+        defineLocationField('port', '80');
+        defineLocationField('protocol', 'http:');
+        defineLocationField('search', '');
+        setOwn(tameLocation, 'toString',
+          cajaVM.def(function() { return tameLocation.href; }));
+      }
+      inertCtor(TameLocation, Object);
+      var tameLocation = new TameLocation();
+      function installLocation(obj) {
+        Object.defineProperty(obj, "location", {
+          value: tameLocation,
+          configurable: false,
+          enumerable: true,
+          writable: false  // Writable in browsers, but has a side-effect
+                           // which we don't implement.
+        });
+      }
+
       traceStartup("DT: about to do TameHTMLDocument");
       var tameDocument = new TameHTMLDocument(
           document,
@@ -5486,40 +5527,10 @@ var Domado = (function() {
        */
       function TameWindow() {
 
-        // TODO(mikesamuel): figure out a mechanism by which the container can
-        // specify the gadget's apparent URL.
-        // See http://www.whatwg.org/specs/web-apps/current-work/multipage/history.html#location0
-        var tameLocation = {};
-        function defineLocationField(f, dflt) {
-          Object.defineProperty(tameLocation, f, {
-            configurable: false,
-            enumerable: true,
-            get: function() { 
-              return String(domicile.pseudoLocation[f] || dflt); 
-            }
-          });
-        }
-        defineLocationField('href', 'http://nosuchhost.invalid:80/');
-        defineLocationField('hash', '');
-        defineLocationField('host', 'nosuchhost.invalid:80');
-        defineLocationField('hostname', 'nosuchhost.invalid');
-        defineLocationField('pathname', '/');
-        defineLocationField('port', '80');
-        defineLocationField('protocol', 'http:');
-        defineLocationField('search', '');
-        setOwn(tameLocation, 'toString',
-          cajaVM.def(function() { return tameLocation.href; }));
-
         // These descriptors were chosen to resemble actual ES5-supporting browser
         // behavior.
         // The document property is defined below.
-        Object.defineProperty(this, "location", {
-          value: tameLocation,
-          configurable: false,
-          enumerable: true,
-          writable: false  // Writable in browsers, but has a side-effect
-                           // which we don't implement.
-        });
+        installLocation(this);
         Object.defineProperty(this, "navigator", {
           value: tameNavigator,
           configurable: false,
