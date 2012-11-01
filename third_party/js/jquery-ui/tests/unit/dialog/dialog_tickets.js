@@ -1,3 +1,5 @@
+var d1, d2, container, modal; // Patched for Caja
+
 /*
  * dialog_tickets.js
  */

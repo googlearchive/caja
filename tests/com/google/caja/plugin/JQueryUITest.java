@@ -52,19 +52,19 @@ public class JQueryUITest extends QUnitTestCase {
   }
 
   public final void testDatepicker() throws Exception {
-    runQUnitTestCase("datepicker", 129);
+    runQUnitTestCase("datepicker", 369);
     // Current failure categories:
     //   * "Unrecognized event type Events"
     //   * "Unrecognized event type MouseEvents"
-    //   * ""init" blocked by Caja"
   }
 
   public final void testDialog() throws Exception {
-    runQUnitTestCase("dialog", 76);
+    runQUnitTestCase("dialog", 199 /* 206 on Chrome */);
     // Current failure categories:
     //   * JSHint glue "error loading source"
-    //   * "Cannot set "el"" and "Cannot set "container""
-    //   * Some numeric discrepancies
+    //   * "Unrecognized event type Events"
+    //   * "Unrecognized event type MouseEvents"
+    //   * Some numeric discrepancies (more on Firefox than Chrome)
   }
 
   public final void testEffects() throws Exception {

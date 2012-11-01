@@ -2,15 +2,18 @@
  * dialog_core.js
  */
 
-var el,
+var
 	offsetBefore, offsetAfter,
 	heightBefore, heightAfter,
 	widthBefore, widthAfter,
 	dragged;
 
+window.el = undefined;  // Patched for Caja - used by tests
+
 function dlg() {
-	return el.dialog('widget');
+	return window.el.dialog('widget');
 }
+window.dlg = dlg;  // Patched for Caja - used by other test modules
 
 TestHelpers.isOpen = function(why) {
 	ok(dlg().is(":visible"), why);
@@ -37,6 +40,7 @@ function drag(handle, dx, dy) {
 	heightAfter = d.height();
 	widthAfter = d.width();
 }
+window.drag = drag;  // Patched for Caja - used by other test modules
 
 TestHelpers.dialogMoved = function(dx, dy, msg) {
 	msg = msg ? msg + "." : "";
