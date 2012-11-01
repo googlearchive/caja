@@ -395,17 +395,18 @@
   jsunitRegister('testResizing',
                  function testResizing() {
     var scrollbarSize = 15;
+    var scrollbarSlop = 4;
     function windowDims() {
       assertEquals('document.defaultView.innerWidth',
                    window.innerWidth, document.defaultView.innerWidth);
       assertEquals('document.defaultView.innerHeight',
                    window.innerHeight, document.defaultView.innerHeight);
-      assertEquals('document.body.clientWidth',
+      assertRoughlyEquals('document.body.clientWidth',
                    window.innerWidth - scrollbarSize,
-                   document.body.clientWidth);
-      assertEquals('document.documentElement.clientWidth',
+                   document.body.clientWidth, scrollbarSlop);
+      assertRoughlyEquals('document.documentElement.clientWidth',
                    window.innerWidth - scrollbarSize,
-                   document.documentElement.clientWidth);
+                   document.documentElement.clientWidth, scrollbarSlop);
       return String([window.innerWidth, window.innerHeight]);
     }
 
