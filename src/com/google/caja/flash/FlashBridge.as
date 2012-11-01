@@ -138,12 +138,34 @@ package com.google.caja.flash {
       safeJsCall("caja.policy.flash.onLoaderError", cajaContext);
     }
 
-    // ExternalInterface.call has wontfix string escaping bugs.  Workaround
-    // is to do the escaping ourselves.  This is a gross hack.
-    // Documentation for .call says it will throw a runtime error if the
-    // first arg is not an alphanumeric function name, but as of Flash
-    // 11.3, this isn't enforced.  So this might need to be revised for
-    // some future version of Flash.
+    /*
+     * ExternalInterface.call has a wontfix string escaping bug.
+     *   http://lcamtuf.blogspot.com/2011/03/other-reason-to-beware-of.html
+     *
+     * Summary:
+     *   EI.call("fname", "arg1", "arg2")
+     * constructs a string to eval that looks like
+     *   __flash__toXML(fname, "arg1", "arg2");
+     * and it correctly escapes '"' chars in the args,
+     * but it doesn't escape '\\' chars in the args,
+     * so it allows arbitrary script execution.
+     *
+     * The workaround here is to cheat the fname argument.
+     * Instead of passing fname, we pass an anonymous function that
+     * calls fname with the args correctly quoted.
+     * So the string eval'ed looks like
+     *   __flash__toXML((function(){return fname("arg1", "arg2");}));
+     *
+     * The arg list is constructed with JSON.stringify, so it's always
+     * syntactically correct JSON, and arg types are preserved.
+     *
+     * Documentation for EI.call says it will throw a runtime error if
+     * the first arg is not an alphanumeric function name, but as of
+     * Flash 11.4, that isn't enforced.
+     *
+     * (An alternate workaround would be to escape '\\' in args before
+     * calling EI.call, making sure to recurse into non-string args.)
+     */
     private function safeJsCall(funcName:String, ... args):* {
       if (!/^[\w.]+$/.test(funcName)) {
         throw 'invalid function name ' + funcName;
