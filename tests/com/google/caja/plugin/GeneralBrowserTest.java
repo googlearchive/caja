@@ -243,8 +243,7 @@ public class GeneralBrowserTest extends BrowserTestCase {
   }
 
   public final void testInlineScript() throws Exception {
-    // TODO(kpreid): Enable for ES5. Currently fails by showing script text.
-    runTestCase("es53-test-inline-script.html", false);
+    runTestCase("es53-test-inline-script.html");
   }
 
   public final void testExternalScript() throws Exception {

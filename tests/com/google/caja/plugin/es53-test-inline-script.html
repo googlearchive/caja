@@ -15,11 +15,9 @@
 -->
 
 <div class="testcontainer" id="testDocumentWriteRecursive"
-  ><script>document.write("<b><script>");</script
-  ><script>document.write("document.write(");</script
-  ><script>document.write("\"Hello,</b> \"");</script
-  ><script>document.write(",\"World\");<\/script>");</script
-  >!</div>
+  ><script>document.write(
+    "<b><script>document.write(\"Hello,</b> \",\"World\");<\/script>");
+  </script>!</div>
 <br>
 
 <script type="text/javascript">
