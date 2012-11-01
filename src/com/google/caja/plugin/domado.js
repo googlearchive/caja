@@ -925,7 +925,7 @@ var Domado = (function() {
    * @return A record of functions attachDocument, dispatchEvent, and
    *     dispatchToHandler.
    */
-  return function Domado(opt_rulebreaker) {
+  return cajaVM.def(function Domado(opt_rulebreaker) {
     // Everything in this scope but not in function attachDocument() below
     // does not contain lexical references to a particular DOM instance, but
     // may have some kind of privileged access to Domado internals.
@@ -5946,7 +5946,7 @@ var Domado = (function() {
       plugin_dispatchToHandler: plugin_dispatchToHandler,
       getDomicileForWindow: windowToDomicile.get.bind(windowToDomicile)
     });
-  };
+  });
 })();
 
 // Exports for closure compiler.
