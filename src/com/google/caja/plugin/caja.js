@@ -522,12 +522,12 @@ var caja = (function () {
       // event that we switch to more or less than 2 wrappers.
       
       inner = div.ownerDocument.createElement('div');
-      inner.className = 'caja-vdoc-outer caja-vdoc-wrapper';
+      inner.className = 'caja-vdoc-inner caja-vdoc-wrapper';
       inner.style.display = 'block';
       inner.style.position = 'relative';
 
       outer = div.ownerDocument.createElement('div');
-      outer.className = 'caja-vdoc-inner caja-vdoc-wrapper';
+      outer.className = 'caja-vdoc-outer caja-vdoc-wrapper';
       outer.style.position = 'relative';
       outer.style.overflow = 'hidden';
       outer.style.display = 'block';

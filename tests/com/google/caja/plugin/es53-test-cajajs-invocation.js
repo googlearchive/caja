@@ -165,6 +165,39 @@
     });
   });
 
+  function readPub(obj, name) {
+    if (obj.v___) {  // ES5/3
+      return obj.v___(name);
+    } else {
+      return obj[name];
+    }
+  }
+  registerTest('testVdocWrapperInterface', function testVdocWrapperInterface() {
+    var div = createDiv();
+    caja.load(div, uriPolicy, function (frame) {
+      frame.code(
+          location.protocol + '//' + location.host + '/',
+          'text/html',
+          '<div>testVdocWrapperInterface</div>')
+          .run(function(result) {
+              var innermost = frame.domicile.feralNode(
+                  readPub(frame.domicile.document, 'documentElement')
+                  ).parentNode;
+              assertTrue('i', innermost.classList.contains('caja-vdoc-inner'));
+              var last;
+              for (var el = innermost;
+                  el !== div;
+                  last = el, el = el.parentNode) {
+                assertTrue('w', el.classList.contains('caja-vdoc-wrapper'));
+                last = el;
+              }
+              assertTrue('o',
+                  last.classList.contains('caja-vdoc-outer'));
+              jsunitPass('testVdocWrapperInterface');
+           });
+    });
+  });
+
   registerTest('testBuilderApiHtml', function testBuilderApiHtml() {
     var div = createDiv();
     caja.load(div, uriPolicy, function (frame) {
