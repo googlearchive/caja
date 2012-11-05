@@ -37,15 +37,12 @@ if (testCase) {
   }, function(frameGroup) {
     frameGroup.makeES5Frame(
         createDiv(),
-        {
+        jQuery ? caja.policy.net.ALL : {
           fetch: caja.policy.net.ALL.fetch,
           rewrite: function (uri, uriEffect, loaderType, hints) {
             if (uri.indexOf('test-image-41x13.png') !== -1) {
               // used by es53-test-domado-dom-guest.html
               return 'test-image-41x13.png';
-            }
-            if (jQuery && /^data\//.test(uri)) {
-              return '/ant-testlib/js/jqueryjs/test/' + uri;
             }
             return URI.create(
                 'http',

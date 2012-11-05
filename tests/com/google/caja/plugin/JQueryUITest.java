@@ -28,27 +28,25 @@ public class JQueryUITest extends QUnitTestCase {
   }
 
   public final void testAccordion() throws Exception {
-    runQUnitTestCase("accordion", 282);
+    runQUnitTestCase("accordion", 283);
     // Current failure categories:
-    //   * JSHint glue "error loading source"
     //   * various
   }
 
   public final void testAutocomplete() throws Exception {
-    runQUnitTestCase("autocomplete", 33);
+    runQUnitTestCase("autocomplete", 34);
     // Current failure categories:
-    //   * JSHint glue "error loading source"
     //   * "null is not extensible"
   }
 
   public final void testButton() throws Exception {
-    runQUnitTestCase("button", 82);
-    // Current failure categories:
-    //   * JSHint glue "error loading source"
+    runQUnitTestCase("button", null);
   }
 
   public final void testCore() throws Exception {
-    runQUnitTestCase("core", 142);
+    runQUnitTestCase("core", 143);
+    // Current failure categories
+    //   * Something about focusability
   }
 
   public final void testDatepicker() throws Exception {
@@ -59,69 +57,56 @@ public class JQueryUITest extends QUnitTestCase {
   }
 
   public final void testDialog() throws Exception {
-    runQUnitTestCase("dialog", 199 /* 206 on Chrome */);
+    runQUnitTestCase("dialog", 200 /* 207 on Chrome */);
     // Current failure categories:
-    //   * JSHint glue "error loading source"
     //   * "Unrecognized event type Events"
     //   * "Unrecognized event type MouseEvents"
     //   * Some numeric discrepancies (more on Firefox than Chrome)
   }
 
   public final void testEffects() throws Exception {
-    runQUnitTestCase("effects", 195);
+    runQUnitTestCase("effects", 208);
     // Current failure categories:
-    //   * JSHint glue "error loading source"
     //   * cssText values in "animateClass clears style properties when stopped"
   }
 
   public final void testMenu() throws Exception {
-    runQUnitTestCase("menu", 145);
+    runQUnitTestCase("menu", 146);
     // Current failure categories:
-    //   * JSHint glue "error loading source"
     //   * "Unrecognized event type Events"
   }
 
   public final void testPosition() throws Exception {
-    runQUnitTestCase("position", 83);
-    // Current failure categories:
-    //   * JSHint glue "error loading source"
+    runQUnitTestCase("position", null);
   }
 
   public final void testProgressbar() throws Exception {
-    runQUnitTestCase("progressbar", 40);
-    // Current failure categories:
-    //   * JSHint glue "error loading source"
+    runQUnitTestCase("progressbar", null);
   }
 
   public final void testSlider() throws Exception {
-    runQUnitTestCase("slider", 88);
+    runQUnitTestCase("slider", 89);
     // Current failure categories:
-    //   * JSHint glue "error loading source"
     //   * "Unrecognized event type Events"
   }
 
   public final void testSpinner() throws Exception {
-    runQUnitTestCase("spinner", 29);
+    runQUnitTestCase("spinner", 30);
     // Current failure categories:
-    //   * JSHint glue "error loading source"
     //   * Lots of "null is not extensible"
   }
 
-  // Test suite hangs on a broken ajax call, so will always fail.
+  // Test suite hangs on a failed event simulation, so will always fail.
   //public final void testTabs() throws Exception {
   //  runQUnitTestCase("tabs", null);
   //}
 
   public final void testTooltip() throws Exception {
-    runQUnitTestCase("tooltip", 82);
-    // Current failure categories:
-    //   * JSHint glue "error loading source"
+    runQUnitTestCase("tooltip", null);
   }
 
   public final void testWidget() throws Exception {
-    runQUnitTestCase("widget", 281);
-    // Current failure categories:
-    //   * JSHint glue "error loading source"
+    runQUnitTestCase("widget", null);
   }
 
 }

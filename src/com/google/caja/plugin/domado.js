@@ -674,7 +674,8 @@ var Domado = (function() {
       taming,
       rulebreaker,
       xmlHttpRequestMaker,
-      naiveUriPolicy) {
+      naiveUriPolicy,
+      getBaseURL) {
     var Confidence = domitaModules.Confidence;
     var setOwn = domitaModules.setOwn;
     var canHaveEnumerableAccessors = domitaModules.canHaveEnumerableAccessors;
@@ -769,11 +770,12 @@ var Domado = (function() {
     TameXMLHttpRequest.prototype.open = method(function (
         method, URL, opt_async, opt_userName, opt_password) {
       method = String(method);
+      URL = URI.utils.resolve(getBaseURL(), String(URL));
       // The XHR interface does not tell us the MIME type in advance, so we
       // must assume the broadest possible.
       var safeUri = uriRewrite(
           naiveUriPolicy,
-          String(URL), html4.ueffects.SAME_DOCUMENT, html4.ltypes.DATA,
+          URL, html4.ueffects.SAME_DOCUMENT, html4.ltypes.DATA,
           {
             "TYPE": "XHR",
             "XHR_METHOD": method,
@@ -5349,7 +5351,8 @@ var Domado = (function() {
               makeFunctionAccessible(window.XMLHttpRequest),
               makeFunctionAccessible(window.ActiveXObject),
               makeFunctionAccessible(window.XDomainRequest)),
-          naiveUriPolicy);
+          naiveUriPolicy,
+          function () { return domicile.pseudoLocation.href; });
       cajaVM.def(nodeClasses.XMLHttpRequest);
       traceStartup("DT: done for XMLHttpRequest");
 

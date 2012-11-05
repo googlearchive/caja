@@ -117,7 +117,7 @@
     var div = createDiv();
     var dynamicPolicy = {
         rewrite: function (uri, effects, ltype, hints) {
-          if (/^xhr/.test(uri)) {
+          if (/\/xhr/.test(uri)) {
             assert(typeof hints !== "undefined");
             assert(!!hints["XHR"]);
             return 'xhrTest.txt';
@@ -293,6 +293,19 @@
         assertEquals('http://foo.com/a.json', uri);
         assertEquals('XHR', hints.TYPE);
         assertEquals('GET', hints.XHR_METHOD);
+        jsunitPass(testName);
+        return true;
+      });
+
+  registerUriCbTest(
+      'testXhrRelativeUrl',
+      '<script type="text/javascript">' +
+      '  var xhr = new XMLHttpRequest();' +
+      '  xhr.open(\'GET\', \'a.json\');' +
+      '  xhr.send(undefined);' +
+      '</script>',
+      function(testName, uri, effects, ltype, hints) {
+        assertEquals('http://a.com/a.json', uri);
         jsunitPass(testName);
         return true;
       });

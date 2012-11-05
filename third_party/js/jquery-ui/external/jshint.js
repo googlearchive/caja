@@ -4834,3 +4834,5 @@ loop:
 //if (typeof exports === "object" && exports) {
 //    exports.JSHINT = JSHINT;
 //}
+// Patched for Caja - need explicit export
+window.JSHINT = JSHINT;
