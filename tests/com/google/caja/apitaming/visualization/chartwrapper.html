@@ -1,0 +1,48 @@
+<html>
+  <head>
+    <script type="text/javascript" src="https://www.google.com/jsapi"></script>
+    <script type="text/javascript">
+      google.load("visualization", "1", {packages:["corechart"]});
+      google.setOnLoadCallback(drawVisualization);
+
+      var wrapper;
+      function drawVisualization() {
+
+        // Draw a column chart
+        wrapper = new google.visualization.ChartWrapper({
+          chartType: 'ColumnChart',
+          dataTable: [['Germany', 'USA', 'Brazil', 'Canada', 'France', 'RU'],
+                      [700, 300, 400, 500, 600, 800]],
+          options: {'title': 'Countries'},
+          containerId: 'visualization'
+        });
+
+        // Never called.
+        google.visualization.events.addListener(wrapper, 'onmouseover', uselessHandler);
+
+        // Must wait for the ready event in order to
+        // request the chart and subscribe to 'onmouseover'.
+        google.visualization.events.addListener(wrapper, 'ready', onReady);
+
+        wrapper.draw();
+
+        // Never called
+        function uselessHandler() {
+          alert("I am never called!");
+        }
+
+        function onReady() {
+          google.visualization.events.addListener(wrapper.getChart(), 'onmouseover', usefulHandler);
+        }
+
+        // Called
+        function usefulHandler() {
+          alert("Mouseover event!");
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <div id="visualization"></div>
+  </body>
+</html>

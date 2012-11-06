@@ -8,6 +8,9 @@
 
 === visualization taming issues ===
 
+- datatable.html - tooltip on the legend does not show up in ES5 mode;
+  shows up ok in ES5/3 mode.
+
 - DataTable.prototype.toJSON fails with stack overflow when in ES5/3 mode. It
   seems impossible to avoid this by "scrubbing" the objects passed into the
   various methods. Also DataTable.clone().
@@ -28,8 +31,6 @@
 
 
 === maps taming issues ===
-
-MIDPOINT MARK = layer-panoramio
 
 Fusion tables -- we treat the ID of the Fusion Table as a bearer token cap that
   is granted by some means to the guest code; as such, we don't pass it thru the

@@ -1,0 +1,36 @@
+<html>
+  <head>
+    <script type="text/javascript" src="https://www.google.com/jsapi"></script>
+    <script type="text/javascript">
+      google.load("visualization", "1", {packages:["corechart"]});
+      google.setOnLoadCallback(testQuery);
+
+      function testQuery() {
+        // To see the data that this visualization uses, browse to
+        // http://spreadsheets.google.com/ccc?key=pCQbetd-CptGXxxQIG7VFIQ
+        var query = new google.visualization.Query(
+            'http://spreadsheets.google.com/tq?key=pCQbetd-CptGXxxQIG7VFIQ&pub=1');
+
+        // Apply query language.
+        query.setQuery('SELECT A,D WHERE D > 100 ORDER BY D');
+
+        // Send the query with a callback function.
+        query.send(handleQueryResponse);
+
+        function handleQueryResponse(response) {
+          if (response.isError()) {
+            log('Error in query: ' + response.getMessage() + ' ' + response.getDetailedMessage());
+            return;
+          }
+
+          var data = response.getDataTable();
+          var visualization = new google.visualization.LineChart(document.getElementById('chart_div'));
+          visualization.draw(data, {legend: 'bottom'});
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <div id="chart_div"></div>
+  </body>
+</html>

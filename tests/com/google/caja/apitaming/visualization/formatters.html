@@ -1,0 +1,75 @@
+<html>
+  <head>
+    <script type="text/javascript" src="https://www.google.com/jsapi"></script>
+    <script type="text/javascript">
+      google.load("visualization", "1", {packages:["corechart","table"]});
+      google.setOnLoadCallback(testFormatters);
+
+      function testFormatters() {
+        var data = new google.visualization.DataTable();
+
+        data.addColumn('number', 'Arrow');
+        data.addColumn('number', 'Bar');
+        data.addColumn('number', 'Color range');
+        data.addColumn('number', 'Color gradient');
+        data.addColumn('date', 'Date');
+        data.addColumn('number', 'Number');
+        data.addColumn('string', 'Pattern');
+
+        data.addRows([
+          [ +4, +250,  50,  50, new Date(1977, 1, 1), -1234.87654321, '' ],
+          [  1,  -50, 150, 150, new Date(1978, 2, 2),  1234.87654321, '' ],
+          [ +3, +200, 250, 250, new Date(1979, 3, 3), -8765.12345678, '' ],
+          [  0,    0, 350, 350, new Date(1980, 4, 4),  8765.12345678, '' ],
+        ]);
+
+        new google.visualization.ArrowFormat({
+              base: 2
+            })
+            .format(data, 0);
+        new google.visualization.BarFormat({
+              base: 100,
+              colorNegative: 'blue',
+              colorPositive: 'red',
+              drawZeroLine: true,
+              min: -100,
+              max: +300,
+              showValue: false,
+              width: 50
+            })
+            .format(data, 1);
+        var cf1 = new google.visualization.ColorFormat();
+        cf1.addRange(100, 300, '#9C2542', '#A1CAF1');
+        cf1.format(data, 2);
+        var cf2 = new google.visualization.ColorFormat();
+        cf2.addGradientRange(0, 400, '#9C2542', '#ff0000', '#ffffff');
+        cf2.format(data, 3);
+        new google.visualization.DateFormat({
+              formatType: 'medium',
+              timeZone: -5
+            })
+            .format(data, 4);
+        new google.visualization.NumberFormat({
+              decimalSymbol: ',',
+              fractionDigits: 3,
+              groupingSymbol: '.',
+              negativeColor: 'red',
+              negativeParens: false,
+              prefix: '\'Bout ',
+              suffix: ' big \'uns.'
+            })
+            .format(data, 5);
+        new google.visualization.PatternFormat(
+              '\u003cstrong\u003e{0}\u003c/strong\u003e for \u003cem\u003e{2}\u003c/em\u003e!\u003cscript\u003ealert(42);\u003c/script\u003e' +
+              '\u003cbr\u003eGefurfifier!')
+            .format(data, [0, 1, 2, 3, 4, 5], 6);
+
+        var table = new google.visualization.Table(document.getElementById('chart_div'));
+        table.draw(data, {showRowNumber: true, allowHtml: true });
+      }
+    </script>
+  </head>
+  <body>
+    <div id="chart_div"></div>
+  </body>
+</html>

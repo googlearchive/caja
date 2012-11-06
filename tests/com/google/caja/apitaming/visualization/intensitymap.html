@@ -1,0 +1,26 @@
+<html>
+  <head>
+    <script type='text/javascript' src='https://www.google.com/jsapi'></script>
+    <script type='text/javascript'>
+      google.load('visualization', '1', {packages:['intensitymap']});
+      google.setOnLoadCallback(drawChart);
+      function drawChart() {
+        var data = google.visualization.arrayToDataTable([
+          ['Country', 'Population (mil)', 'Area (km2)'],
+          ['CN',            1324,           9640821],
+          ['IN',            1133,           3287263],
+          ['US',            304,            9629091],
+          ['ID',            232,            1904569],
+          ['BR',            187,            8514877]
+        ]);
+
+        var chart = new google.visualization.IntensityMap(document.getElementById('chart_div'));
+        chart.draw(data, {});
+      }
+    </script>
+  </head>
+
+  <body>
+    <div id="chart_div"></div>
+  </body>
+</html>

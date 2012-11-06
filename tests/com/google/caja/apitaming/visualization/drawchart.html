@@ -1,0 +1,26 @@
+<html>
+  <head>
+    <script type='text/javascript' src='http://www.google.com/jsapi'></script>
+    <script type='text/javascript'>
+      google.load('visualization', '1', {'packages':['annotatedtimeline']});
+      google.setOnLoadCallback(drawChart);
+
+      function drawChart() {
+        google.visualization.drawChart({
+            'containerId': 'chart_div',
+            'dataSourceUrl': 'https://spreadsheets.google.com/a/google.com/tq?key=pCQbetd-CptGXxxQIG7VFIQ&pub=1',
+            'query':'SELECT A,D WHERE D > 100 ORDER BY D',
+            'refreshInterval': 5,
+            'chartType': 'Table',
+            'options': {
+               'alternatingRowStyle': true,
+               'showRowNumber' : true
+            }
+          });
+      }
+    </script>
+  </head>
+  <body>
+    <div id='chart_div'></div>
+  </body>
+</html>

@@ -1,0 +1,156 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+  <head>
+    <script type='text/javascript' src='https://www.google.com/jsapi'></script>
+    <script src="../minimal-jsunit.js"></script>
+    <script>
+      google.load("visualization", "1", {packages:["corechart"]});
+      google.setOnLoadCallback(testDataTable);
+
+      function testDataTable() {
+        var data = new google.visualization.DataTable({
+          cols: [
+            {id: 'A', label: 'A-label', type: 'string'},
+            {id: 'B', label: 'B-label', type: 'number'},
+            {id: 'C', label: 'C-label', type: 'date'}
+          ],
+          rows: [
+            {c:[{v: 'a'}, {v: 1.0, f: 'One'}, {v: new Date(2008, 1, 28, 0, 31, 26), f: '2/28/08 12:31 AM'}]},
+            {c:[{v: 'b'}, {v: 2.0, f: 'Two'}, {v: new Date(2008, 2, 30, 0, 31, 26), f: '3/30/08 12:31 AM'}]},
+            {c:[{v: 'c'}, {v: 3.0, f: 'Three'}, {v: new Date(2008, 3, 30, 0, 31, 26), f: '4/30/08 12:31 AM'}]}
+          ],
+          p: {foo: 'hello', bar: 'world!'}
+        });
+
+        data.addColumn('boolean', 'D-label', 'D');
+        data.addColumn({id: 'E', label: 'E-label', type: 'number', pattern: 'E{0}E'});
+
+        data.addRow(['anE', 42, {v: new Date(), f: 'Right Now'}, false, 33]);
+        data.addRows([
+          ['anE', 42, {v: new Date(), f: 'Right Now'}, false, 33],
+          ['anE', 42, {v: new Date(), f: 'Right Now'}, false, 33]
+        ]);
+
+        data.addRows(2);
+
+        assertEquals('a', data.getValue(0, 0), 'value 0, 0');
+        assertEquals(null, data.getValue(7, 0), 'value 7, 0')
+
+        assertEquals('A', data.getColumnId(0));
+        assertEquals('D', data.getColumnId(3));
+
+        assertEquals('A-label', data.getColumnLabel(0), 'column label 0');
+        assertEquals('D-label', data.getColumnLabel(3), 'column label 3');
+
+        assertEquals(undefined, data.getColumnPattern(0), 'column pattern 0');
+        assertEquals('E{0}E', data.getColumnPattern(4), 'column pattern 4');
+
+        // Does not work because taming layer can't virtualize property creation
+        // data.getColumnProperties(3).foo = 'foovalue';
+        data.setColumnProperty(3, 'foo', 'foovalue');
+        assertEquals('foovalue', data.getColumnProperty(3, 'foo'), 'column property 3, foo');
+        assertEquals('foovalue', data.getColumnProperties(3).foo, 'column properties 3 . foo');
+        data.setColumnProperties(3, { foo: 'barvalue' });
+        assertEquals('barvalue', data.getColumnProperty(3, 'foo'), 'column property 3, foo');
+        assertEquals('barvalue', data.getColumnProperties(3).foo, 'column properties 3 . foo');
+
+        // Does not work because taming layer can't virtualize property creation
+        // data.getRowProperties(3).bar = 'barvalue';
+        data.setRowProperty(3, 'bar', 'barvalue');
+        assertEquals('barvalue', data.getRowProperty(3, 'bar'), 'row property 3, bar');
+        assertEquals('barvalue', data.getRowProperties(3).bar, 'row properties 3 . bar');
+        data.setRowProperties(3, { bar: 'foovalue' });
+        assertEquals('foovalue', data.getRowProperty(3, 'bar'), 'row property 3, bar');
+        assertEquals('foovalue', data.getRowProperties(3).bar, 'row properties 3 . bar');
+
+        // Does not work because taming layer can't virtualize property creation
+        // data.getProperties(3, 3).baz = 'bazvalue';
+        data.setProperty(3, 3, 'baz', 'bazvalue');
+        assertEquals('bazvalue', data.getProperty(3, 3, 'baz'), 'property 3, 3, baz');
+        assertEquals('bazvalue', data.getProperties(3, 3).baz, 'properties 3, 3 . baz');
+        data.setProperties(3, 3, { baz: 'boovalue' });
+        assertEquals('boovalue', data.getProperty(3, 3, 'baz'), 'property 3, 3, baz');
+        assertEquals('boovalue', data.getProperties(3, 3).baz, 'properties 3, 3 . baz');
+
+        assertEquals(33, data.getColumnRange(4).min, 'column range 4 . min');
+        assertEquals(33, data.getColumnRange(4).max, 'column range 4 . max');
+
+        assertEquals('string', data.getColumnType(0), 'column 0 type');
+        assertEquals('number', data.getColumnType(1), 'column 1 type');
+
+        assertEquals(1, data.getFilteredRows([{column: 0, value: 'c'}]).length, 'filtered rows length');
+        assertEquals(2, data.getFilteredRows([{column: 0, value: 'c'}])[0], 'the 0th filtered row index');
+
+        assertEquals(5, data.getNumberOfColumns(), 'number of columns');
+        assertEquals(8, data.getNumberOfRows(), 'number of rows');
+
+        assertEquals('string', data.getColumnType(0), 'column 0 type');
+
+        assertEquals(5, data.getDistinctValues(0).length, 'column 0 # of distinct values');
+        assertEquals(null, data.getDistinctValues(0)[0], 'column 0 distinct value 0');
+        assertEquals('a', data.getDistinctValues(0)[1], 'column 0 distinct value 1');
+
+        var fr = data.getFilteredRows([
+          { column: 0, minValue: 'a', maxValue: 'b' },
+          { column: 1, minValue: 2.0, maxValue: 3.0 }
+        ]);
+        assertEquals(1, fr.length, 'number of filtered rows');
+        assertEquals(1, fr[0], '0th filtered row number');
+
+        var sr = data.getSortedRows([
+          { column: 0, desc: false }
+        ]);
+        assertEquals(8, sr.length, 'number of sorted rows');
+        assertEquals(6, sr[0], '0th sorted row number');
+        assertEquals(7, sr[1], '1th sorted row number');
+        assertEquals(0, sr[2], '2th sorted row number');
+
+        assertEquals('2/28/08 12:31 AM', data.getFormattedValue(0, 2), 'formatted value 0,2');
+
+        data.setTableProperty('foo', 33);
+        assertEquals(33, data.getTableProperty('foo'), 'table property foo');
+        data.setTableProperties({ bar: 99  });
+        assertEquals(99, data.getTableProperties().bar, 'table property bar');
+
+        data.setCell(0, 0, 'xanh', 'xanhfmt', { xx: 42, yy: 13 });
+        assertEquals('xanh', data.getValue(0, 0), 'value 0, 0')
+        assertEquals('xanhfmt', data.getFormattedValue(0, 0), 'formatted value 0, 0');
+        assertEquals(42, data.getProperties(0, 0).xx, 'property 0, 0, xx');
+
+        data.setColumnLabel(0, 'col0lbl');
+        assertEquals('col0lbl', data.getColumnLabel(0), 'col 0 label');
+
+        data.setValue(0, 0, 'abba');
+        assertEquals('abba', data.getValue(0, 0), 'value 0, 0');
+
+        // ** Assumed to work based on the above **
+        // data.insertColumn(columnIndex, type, [, label [, id]])
+        // data.insertRows(rowIndex, numberOrArray)
+        // data.removeColumn(columnIndex)
+        // data.removeColumns(columnIndex, numberOfColumns)
+        // data.removeRow(rowIndex)
+        // data.removeRows(rowIndex, numberOfRows)
+        // data.setFormattedValue(rowIndex, columnIndex, formattedValue)
+        // data.sort(sortColumns)
+
+        // TODO(ihab.awad): This fails in ES5/3 with a stack overflow.
+        //
+        // var data2 = data.clone();
+        // assertEquals(5, data2.getNumberOfColumns(), 'data2 number of columns');
+        // assertEquals(8, data2.getNumberOfRows(), 'data2 number of rows');
+        //
+        // var j = data.toJSON();
+        // assertTrue(new RegExp('\{\"cols\":.*').test(j), 'data json');
+        // var data3 = new google.visualization.DataTable(j);
+        // assertEquals(5, data3.getNumberOfColumns(), 'data 3 number of cols');
+        // assertEquals(8, data3.getNumberOfRows(), 'data 3 number of rows');
+      }
+    </script>
+  </head>
+  <body>
+    <div style="overflow: scroll;">
+      <pre id="log"></pre>
+    </div>
+  </body>
+</html>

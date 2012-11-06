@@ -1,0 +1,37 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+  <head>
+    <script type='text/javascript' src='https://www.google.com/jsapi'></script>
+    <script src="../minimal-jsunit.js"></script>
+    <script>
+      google.load("visualization", "1", {packages:["corechart"]});
+      google.setOnLoadCallback(testDataView);
+
+      function testDataView() {
+        var data = new google.visualization.arrayToDataTable([
+          ['A', 'B'],
+          [  0,   3],
+          [  1,   2],
+          [  3,   0]
+        ]);
+        var view = new google.visualization.DataView(data);
+        view.setRows([0, 2]);
+
+        assertEquals(2, view.getNumberOfRows(), 'view num of rows');
+        assertEquals(0, view.getValue(0, 0), 'view value 0, 0');
+        assertEquals(3, view.getValue(1, 0), 'view value 1, 0');
+
+
+        view = google.visualization.DataView.fromJSON(data, view.toJSON());
+
+        assertEquals(2, view.getNumberOfRows(), 'view num of rows');
+        assertEquals(0, view.getValue(0, 0), 'view value 0, 0');
+        assertEquals(3, view.getValue(1, 0), 'view value 1, 0');
+      }
+    </script>
+  </head>
+  <body>
+    <pre id="log"></pre>
+  </body>
+</html>

@@ -20,9 +20,13 @@ caja.tamingGoogleLoader.addPolicyFactory('bar', function(frame, utils) {
   var f = {};
 
   f.getValue = function() {};
+  f.isCustomGoogleLoadCalled = function() {};
 
   return {
-    version: '1.0',
-    value: f
+    value: f,
+    customGoogleLoad: function(name, info) {
+      window.google.bar.customGoogleLoadCalled = true;
+      window.setTimeout(function() { info.callback(); }, 0);
+    }
   };
 });

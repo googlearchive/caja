@@ -18,8 +18,8 @@
  * are in the namespace "google.*") for use by guest code.
  *
  * @author ihab.awad@gmail.com
- * @requires console, document, window, JSON
- * @overrides caja, google
+ * @requires console, document, JSON
+ * @overrides caja, google, window
  */
 caja.tamingGoogleLoader = (function() {
 
@@ -91,13 +91,17 @@ caja.tamingGoogleLoader = (function() {
   var TamingUtils = function(frame) {
 
     function type(o) {
+      if (Object(o) !== o) {
+        return 'primitive';
+      }
       switch (Object.prototype.toString.call(o)) {
-        case '[object Undefined]':
-        case '[object Null]':
-        case '[object Function]':
-        case '[object String]':
-        case '[object Number]':
+        case '[object Boolean]':
         case '[object Date]':
+        case '[object Function]':
+        case '[object Number]':
+        case '[object RegExp]':
+        case '[object String]':
+        case '[object Error]':
           return 'primitive';
         case '[object Array]':
           return 'array';
@@ -244,7 +248,6 @@ caja.tamingGoogleLoader = (function() {
     var tamingUtils = TamingUtils(frame);
 
     function targ(obj, policy) {
-      if (!policy) { debugger; }
       return policy.__subst__ ? policy : obj;
     }
 
@@ -460,34 +463,6 @@ caja.tamingGoogleLoader = (function() {
     else { loadPolicyFactory(name, cb); }
   }
 
-  function loadMapsApi(version, cb) {
-    google.load('maps', version, {
-      callback: function() {
-        // TODO(ihab.awad): Refactor so that API-specific fixups in the loader
-        // like this one are not necessary
-        google.maps.MVCArray.prototype.constructor = google.maps.MVCArray;
-        google.maps.OverlayView.prototype.onAdd = function() {};
-        google.maps.OverlayView.prototype.onRemove = function() {};
-        google.maps.OverlayView.prototype.draw = function() {};
-        cb();
-      },
-      other_params: 'sensor=false&libraries=adsense,drawing,geometry,panoramio,places,visualization,weather'
-    });
-  }
-
-  function loadGoogleApi(name, version, opt_info, cb) {
-    // For the Maps API, we always load *everything* at once since loading the
-    // API is not an idempotent operation.
-    if (name === 'maps') { loadMapsApi(version, cb); return; }
-    // Otherwise, we *always* call google.load() in response to the guest
-    // calling tamed google.load(), because each call, even with the same API
-    // name, can pull in different functionality. We rely on the native
-    // google.load() to be idempotent (which it is) and do the right thing.
-    if (!opt_info) { opt_info = {}; }
-    opt_info.callback = cb;
-    google.load(name, version, opt_info);
-  }
-
   function applyToFrame(frame, initialEntries) {
 
     // TODO(ihab.awad): redundant!!!
@@ -524,6 +499,8 @@ caja.tamingGoogleLoader = (function() {
           guestCallback = opt_info.callback;
           opt_info.callback = undefined;
           opt_info = tamingUtils.copyJson(opt_info);
+        } else {
+          opt_info = {};
         }
 
         maybeLoadPolicyFactory(name, function() {
@@ -531,12 +508,19 @@ caja.tamingGoogleLoader = (function() {
               .get(name)
               .call({}, frame, tamingUtils);
           framePolicyByName.set(name, policy);
-          loadGoogleApi(name, policy.version, opt_info, function() {
+
+          opt_info.callback = function() {
             apply();
             if (onloads) { onloads.fire(); }
             onloads = undefined;
             guestCallback && guestCallback.call({});
-          });
+          };
+
+          if (policy.customGoogleLoad) {
+            policy.customGoogleLoad(name, opt_info);
+          } else {
+            google.load(name, policy.version, opt_info);
+          }
         });
       });
 

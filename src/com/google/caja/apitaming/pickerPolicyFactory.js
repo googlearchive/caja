@@ -99,11 +99,6 @@ caja.tamingGoogleLoader.addPolicyFactory('picker', function(frame, utils) {
   p.PhotosView.Type.FEATURED = 1;
   p.PhotosView.Type.UPLOADED = 1;
 
-  if (window && window.google && window.google.picker && window.google.picker.Picker) {
-     window.google.picker.Picker.prototype.constructor =
-        window.google.picker.Picker;
-  }
-
   /*@constructor*/
   p.Picker = function() {};
   p.Picker.__super__ = Object;
@@ -137,11 +132,6 @@ caja.tamingGoogleLoader.addPolicyFactory('picker', function(frame, utils) {
   p.PickerBuilder.prototype.toUri = function() {};
 */
 
-  if (window && window.google && window.google.picker && window.google.picker.PickerBuilder) {
-     window.google.picker.PickerBuilder.prototype.constructor =
-        window.google.picker.PickerBuilder;
-  }
-
   p.PickerBuilder = function() {};
   p.PickerBuilder.__super__ = Object;
   p.PickerBuilder.prototype.addView = function() {};
@@ -166,7 +156,6 @@ caja.tamingGoogleLoader.addPolicyFactory('picker', function(frame, utils) {
   p.PickerBuilder.prototype.build = function() {};
   p.PickerBuilder.prototype.build.__around__ = [
     function(f, self, args) {
-      debugger;
       var result = f(self, args);
       return result;
     }
@@ -275,7 +264,17 @@ caja.tamingGoogleLoader.addPolicyFactory('picker', function(frame, utils) {
   p.Type.VIDEO = 1;
 
   return {
-    version: '1',
-    value: p
+    value: p,
+    customGoogleLoad: function(name, info) {
+      var cb = info.callback;
+      info.callback = function() {
+        window.google.picker.PickerBuilder.prototype.constructor =
+          window.google.picker.PickerBuilder;
+        window.google.picker.Picker.prototype.constructor =
+          window.google.picker.Picker;
+        cb();
+      };
+      window.google.load('picker', '1', info);
+    }
   };
 });

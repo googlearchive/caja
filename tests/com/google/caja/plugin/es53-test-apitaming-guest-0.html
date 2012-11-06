@@ -134,6 +134,7 @@
                  function testBarApi() {
     google.load('bar', '1.0', { callback: init });
     function init() {
+      assertTrue(google.bar.isCustomGoogleLoadCalled());
       assertEquals('barz', google.bar.getValue('z'));
       pass('testBarApi');
     }

@@ -1,0 +1,35 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+  <head>
+    <script type='text/javascript' src='https://www.google.com/jsapi'></script>
+    <script src="../minimal-jsunit.js"></script>
+    <script>
+      google.load("visualization", "1", {packages:["corechart"]});
+      google.setOnLoadCallback(testEvents);
+
+      function testEvents() {
+        var str = '';
+        var src = new google.visualization.DataTable();
+
+        var la = google.visualization.events.addListener(src, 'ping', function(e) {
+          str += 'a' + e.data;
+        });
+        var lb = google.visualization.events.addListener(src, 'ping', function(e) {
+          str += 'b' + e.data;
+        });
+
+        google.visualization.events.trigger(src, 'ping', { data: 'x' });
+        google.visualization.events.removeListener(la);
+        google.visualization.events.trigger(src, 'ping', { data: 'y' });
+        google.visualization.events.removeAllListeners(src);
+        google.visualization.events.trigger(src, 'ping', { data: 'z' });
+
+        assertEquals('axbxby', str, 'event results');
+      }
+    </script>
+  </head>
+  <body>
+    <pre id="log"></pre>
+  </body>
+</html>

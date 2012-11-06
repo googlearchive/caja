@@ -1,0 +1,39 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+  <head>
+    <script type='text/javascript' src='https://www.google.com/jsapi'></script>
+    <script src="../minimal-jsunit.js"></script>
+    <script>
+      google.load("visualization", "1", {packages:["corechart"]});
+      google.setOnLoadCallback(testErrors);
+
+      function testErrors() {
+        var c = document.getElementById('chart_div');
+
+        function add() {
+          return [
+            google.visualization.errors.addError(c, 'e0 text', 'e0 tooltip', {
+                showInTooltip: false,
+                type: 'error',
+                style: 'background-color: #0000ff; color: #000000;',
+                removable: true
+              }),
+            google.visualization.errors.addError(c, 'e1 text', 'e1 tooltip')
+          ];
+        }
+
+        add();
+        google.visualization.errors.removeAll(c);
+        var e = add();
+        google.visualization.errors.removeError(e[0]);
+        assertEquals(c, google.visualization.errors.getContainer(e[1]), 'e1 error container');
+        add();
+      }
+    </script>
+  </head>
+  <body>
+    <div id="chart_div"></div>
+    <pre id="log"></pre>
+  </body>
+</html>

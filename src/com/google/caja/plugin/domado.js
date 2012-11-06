@@ -5110,9 +5110,18 @@ var Domado = (function() {
         uriFetch(naiveUriPolicy, uri, mime, callback);
       });
       domicile.rewriteUri = cajaVM.def(function (uri, mimeType) {
-        var s = rewriteAttribute(null, null, html4.atype.URI, uri);
-        if (!s) { throw new Error(); }
-        return s;
+        // (SAME_DOCUMENT, SANDBOXED) is chosen as the "reasonable" set of
+        // defaults for this function, which is only used by TCB components
+        // to rewrite URIs for sources of data. We assume these sources of
+        // data provide no exit from the sandbox, and their effects are shown
+        // in the same HTML document view as the Caja guest.
+        // TODO(ihab.awad): Rename this function to something more specific
+        return uriRewrite(
+            naiveUriPolicy,
+            String(uri),
+            html4.ueffects.SAME_DOCUMENT,
+            html4.ltypes.SANDBOXED,
+            {});
       });
       domicile.suffix = cajaVM.def(function (nmtokens) {
         var p = String(nmtokens).replace(/^\s+|\s+$/g, '').split(/\s+/g);

@@ -51,7 +51,11 @@
       Sub: Sub
     },
     bar: {
-      getValue: function(a) { return 'bar' + a; }
+      customGoogleLoadCalled: false,
+      getValue: function(a) { return 'bar' + a; },
+      isCustomGoogleLoadCalled: function() {
+        return window.google.bar.customGoogleLoadCalled;
+      }
     },
     load: function(name, opt_version, opt_info) {
       value = 'load' + name;
