@@ -1,0 +1,33 @@
+#!/usr/bin/python
+
+"""
+Simple HTTP server for debugging and testing.
+
+Serves up the current directory as the root of the HTTP URL tree on
+port 8000 or the port specified as the first argument.
+
+Examples:
+
+  httpdhere.py      -- Serve "." on port 8000
+  httpdhere.py 9090 -- Serve "." on port 9090
+"""
+
+import sys
+import BaseHTTPServer
+import SimpleHTTPServer
+import urlparse
+
+class MyHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
+  def do_GET(self):
+    parsed = urlparse.urlparse(self.path)
+    if parsed.query:
+      self.send_response(200)  # Kludge since we don't really know if it's ok
+      querydict = urlparse.parse_qs(parsed.query)
+      for k in querydict:
+        self.send_header(k, querydict[k][0])
+    self.path = parsed.path
+    SimpleHTTPServer.SimpleHTTPRequestHandler.do_GET(self)
+
+port = int(sys.argv[1]) if len(sys.argv) > 1 else 8000
+httpd = BaseHTTPServer.HTTPServer(('', port), MyHandler)
+httpd.serve_forever()

@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>test</title>
+  </head>
+  <body>
+
+    <h2><code>iframe</code></h2>
+    <iframe src="iframe-tests.html"></iframe>
+
+    <h2><code>iframe sandbox</code></h2>
+    <iframe sandbox src="iframe-tests.html"></iframe>
+
+    <h2><code>iframe sandbox="allow-scripts"</code></h2>
+    <iframe sandbox="allow-scripts" src="iframe-tests.html"></iframe><br>
+
+    <h2><code>iframe default-src</code></h2>
+    <iframe src="iframe-tests.html?X-Content-Security-Policy=default-src"></iframe><br>
+
+    <h2><code>iframe default-src 'self'</code></h2>
+    <iframe src="iframe-tests.html?X-Content-Security-Policy=default-src%20'self'"></iframe><br>
+
+    <h2><code>iframe default-src 'self' schmivits.org</code></h2>
+    <iframe src="iframe-tests.html?X-Content-Security-Policy=default-src%20'self'%20schmivits.org"></iframe><br>
+
+    <h2><code>iframe default-src 'self' schmivits.org data:</code></h2>
+    <iframe src="iframe-tests.html?X-Content-Security-Policy=default-src%20'self'%20schmivits.org%20data%3A"></iframe><br>
+  </body>
+</html>
