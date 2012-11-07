@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2011 Google Inc.
+// Copyright (C) 2008-2012 Google Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,12 +21,10 @@
  * >ECMAScript Language Bindings</a>.
  *
  * Caveats:<ul>
- * <li>This is not a full implementation.
  * <li>Security Review is pending.
  * <li><code>===</code> and <code>!==</code> on node lists will not
  *   behave the same as with untamed node lists.  Specifically, it is
  *   not always true that {@code nodeA.childNodes === nodeA.childNodes}.
- * <li>Node lists are not "live" -- do not reflect changes in the DOM.
  * </ul>
  *
  * <p>
@@ -50,7 +48,7 @@
  * @requires WeakMap, Proxy
  * @requires CSS_PROP_BIT_HISTORY_INSENSITIVE
  * @provides Domado
- * @overrides domitaModules, window
+ * @overrides window
  */
 
 // The Turkish i seems to be a non-issue, but abort in case it is.
@@ -59,9 +57,6 @@ if ('I'.toLowerCase() !== 'i') { throw 'I/i problem'; }
 // TODO(kpreid): Review whether multiple uses of np() should be coalesced for
 // efficiency.
 
-// TODO(kpreid): Move this from the global scope into the function(){}();
-// eliminate the domitaModules object (or possibly move more stuff into it).
-var domitaModules;
 var Domado = (function() {
   'use strict';
 
@@ -112,7 +107,9 @@ var Domado = (function() {
       : null;
   }
 
-  if (!domitaModules) { domitaModules = {}; }
+  // TODO(kpreid): If not used for the upcoming modularity-of-element-tamings
+  // refactoring, eliminate the domitaModules object.
+  var domitaModules = {};
 
   domitaModules.proxiesAvailable = typeof Proxy !== 'undefined';
 
