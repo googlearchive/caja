@@ -57,6 +57,20 @@
     'modules-test.html',
   ];
   
+  var headless_rhino_tests = [
+    'csslexer-test.html',
+    'cssparser_test.html',
+    'css-stylesheet-test.html',
+    'html-emitter-test.html',
+    'html-sanitizer-test.html',
+    'html-sanitizer-minified-test.html',
+    'html-sanitizer-regress.html',
+    'html-css-sanitizer-test.html',
+    'html-css-sanitizer-minified-test.html',
+    'sanitizecss_test.html',
+    'uri_test.html',
+  ];
+  
   var tests_ul = document.getElementById('tests');
 
   function addSeparator() {
@@ -92,6 +106,12 @@
   }
 
   var i, item;
+
+  for (i = 0; i < headless_rhino_tests.length; i++) {
+    addBare(headless_rhino_tests[i]);
+  }
+
+  addSeparator();
 
   for (i = 0; i < bare_tests.length; i++) {
     addBare(bare_tests[i]);

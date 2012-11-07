@@ -1144,6 +1144,26 @@
       <fileset dir="${third_party}/js/proxies" />
     </copy>
     <copy todir="${testlib}">
+      <!-- For RhinoTestBed tests; arrange files so that they can use the same
+           relative URLs in browser. TODO(kpreid): Clean up the whole mess. -->
+      <fileset dir="${lib}">
+        <include name="**/caja/plugin/csslexer.js"/>
+        <include name="**/caja/plugin/cssparser.js"/>
+        <include name="**/caja/plugin/css-defs.js"/>
+        <include name="**/caja/plugin/html4-defs.js"/>
+        <include name="**/caja/plugin/uri.js"/>
+        <include name="**/caja/plugin/sanitizecss.js"/>
+        <include name="**/caja/plugin/html-sanitizer.js"/>
+        <include name="**/caja/plugin/bridal.js"/>
+        <include name="**/caja/plugin/html-emitter.js"/>
+        <include name="**/caja/plugin/html-sanitizer-minified.js"/>
+        <include name="**/caja/plugin/html-sanitizer-legacy.js"/>
+        <include name="**/caja/plugin/html-css-sanitizer-bundle.js"/>
+        <include name="**/caja/plugin/html-css-sanitizer-minified.js"/>
+        <include name="**/caja/plugin/html-sanitizer-bundle.js"/>
+      </fileset>
+    </copy>
+    <copy todir="${testlib}">
       <fileset dir="${third_party}">
         <include name="js/es5conform/**/*.js"/>
       </fileset>
