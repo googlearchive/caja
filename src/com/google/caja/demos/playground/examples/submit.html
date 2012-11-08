@@ -1,0 +1,21 @@
+<p>Scripts can sometimes submit forms without user interaction.</p>
+
+<form id="f" action="http://www.google.com/" target="_blank">
+  <input id="q" name="q" type="hidden" value="caja submit test">
+</form>
+
+<button id="b">submit</button>
+
+<script>
+  function sub(value) {
+    var f = document.getElementById('f');
+    var q = document.getElementById('q');
+    q.value = 'caja submit test ' + value;
+    f.submit();
+  }
+
+  var b = document.getElementById('b');
+  b.addEventListener('click', function() { sub('click'); }, false);
+  b.addEventListener('mouseover', function() { sub('mouseover'); }, false);
+  sub('auto');
+</script>

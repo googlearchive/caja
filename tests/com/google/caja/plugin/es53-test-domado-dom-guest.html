@@ -2392,8 +2392,9 @@ After
     if (input.setActive) {
       input.setActive();
     }
-    // TODO: can't verify focus changes in webdriver, because webdriver runs
-    // without focusing the browser window, so onfocus never gets fired.
+    // TODO(felix8a): can't verify focus changes in webdriver, because
+    // webdriver runs without focusing the browser window, so onfocus never
+    // gets fired.
     pass('testFocusBlur');
   });
 </script>

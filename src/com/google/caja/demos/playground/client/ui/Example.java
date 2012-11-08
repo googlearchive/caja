@@ -24,6 +24,9 @@ public enum Example {
       Type.ATTACK, "Redirecting the window"),
   COOKIES("examples/cookies.html",
       Type.ATTACK, "Stealing cookies"),
+  SUBMIT("examples/submit.html",
+      Type.ATTACK, "Automatic form submit"),
+
   CLOCK("examples/clock.html",
       Type.APPS, "Canvas Clock"),
   UNBOXED("examples/unboxed/index.html",

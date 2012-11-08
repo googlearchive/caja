@@ -1539,7 +1539,8 @@ var Domado = (function() {
       }
 
       var domicile = {
-        isProcessingEvent: false
+        // True when we're executing a handler for events like click
+        handlingUserAction: false
       };
       var pluginId;
 
@@ -3481,17 +3482,13 @@ var Domado = (function() {
         np(this).feral.blur();
       });
       TameElement.prototype.focus = nodeMethod(function () {
-        if (domicile.isProcessingEvent) {
-          np(this).feral.focus();
-        }
+        return domicile.handlingUserAction && np(this).feral.focus();
       });
       // IE-specific method.  Sets the element that will have focus when the
       // window has focus, without focusing the window.
       if (docEl.setActive) {
         TameElement.prototype.setActive = nodeMethod(function () {
-          if (domicile.isProcessingEvent) {
-            np(this).feral.setActive();
-          }
+          return domicile.handlingUserAction && np(this).feral.setActive();
         });
       }
       // IE-specific method.
@@ -4575,9 +4572,10 @@ var Domado = (function() {
           });
         }
       });
+      // TODO(felix8a): need to test handlingUserAction.
       TameFormElement.prototype.submit = nodeMethod(function () {
         np(this).policy.requireEditable();
-        return np(this).feral.submit();
+        return domicile.handlingUserAction && np(this).feral.submit();
       });
       TameFormElement.prototype.reset = nodeMethod(function () {
         np(this).policy.requireEditable();
@@ -6159,8 +6157,8 @@ var Domado = (function() {
      * Function called from rewritten event handlers to dispatch an event safely.
      */
     function plugin_dispatchEvent(thisNode, event, pluginId, handler) {
-      event = makeDOMAccessible(
-          event || bridalMaker.getWindow(thisNode, makeDOMAccessible).event);
+      var window = bridalMaker.getWindow(thisNode, makeDOMAccessible);
+      event = makeDOMAccessible(event || window.event);
       // support currentTarget on IE[678]
       if (!event.currentTarget) {
         event.currentTarget = thisNode;
@@ -6168,18 +6166,48 @@ var Domado = (function() {
       var imports = rulebreaker.getImports(pluginId);
       var domicile = windowToDomicile.get(imports);
       var node = domicile.tameNode(thisNode);
+      var isUserAction = eventIsUserAction(event, window);
       try {
-        return plugin_dispatchToHandler(
-          pluginId, handler, [ node, domicile.tameEvent(event), node ]);
+        return dispatch(
+          isUserAction, pluginId, handler,
+          [ node, domicile.tameEvent(event), node ]);
       } catch (ex) {
         imports.onerror(ex.message, 'unknown', 0);
       }
     }
 
+    /**
+     * Return true if event is a user action that can be expected to do
+     * click(), focus(), etc.
+     */
+    function eventIsUserAction(event, window) {
+      if (!(event instanceof window.UIEvent)) { return false; }
+      switch (event.type) {
+        case 'click':
+        case 'dblclick':
+        case 'keypress':
+        case 'keydown':
+        case 'keyup':
+        case 'mousedown':
+        case 'mouseup':
+        case 'touchstart':
+        case 'touchend':
+          return true;
+      }
+      return false;
+    }
+
+    /**
+     * Called when user clicks on a javascript: link.
+     */
     function plugin_dispatchToHandler(pluginId, handler, args) {
-      var sig = ('' + handler).match(/^function\b[^\)]*\)/);
+      return dispatch(true, pluginId, handler, args);
+    }
+
+    function dispatch(isUserAction, pluginId, handler, args) {
       var domicile = windowToDomicile.get(rulebreaker.getImports(pluginId));
       if (domicile.domitaTrace & 0x1 && typeof console != 'undefined') {
+        var sig = ('' + handler).match(/^function\b[^\)]*\)/);
         console.log(
             'Dispatch pluginId=' + pluginId +
             ', handler=' + (sig ? sig[0] : handler) +
@@ -6199,14 +6227,15 @@ var Domado = (function() {
           throw new Error(
               'Expected function as event handler, not ' + typeof handler);
       }
-      domicile.isProcessingEvent = true;
+      domicile.handlingUserAction = isUserAction;
       try {
         return handler.call.apply(handler, args);
       } catch (ex) {
         // guard against IE discarding finally blocks
+        domicile.handlingUserAction = false;
         throw ex;
       } finally {
-        domicile.isProcessingEvent = false;
+        domicile.handlingUserAction = false;
       }
     }
 
