@@ -22,11 +22,13 @@ var guestDiv = createDiv();
 
 function createTestDiv() {
   var d = createDiv();
-  d.setAttribute('testattr', 'testattrvalue');
+  d.setAttribute('testattr', 'testattrvaluereal');
+  d.setAttribute('data-caja-testattr', 'testattrvaluevirt');
+  d.setAttribute('title', 'testknownattrvalue');
   for (var i = 0; i < 2; i++) {
     var x = createDiv();
     x.setAttribute('class', 'testclass');
-    x.innerHTML = "Div number " + i;
+    x.innerHTML = "Div number " + i + " <span class='innertest'></span>";
     d.appendChild(x);
   }
   document.body.appendChild(d);

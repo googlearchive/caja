@@ -61,6 +61,9 @@
   window.doIt = function doIt(event, node) {
     if ((event instanceof Event) && (node instanceof HTMLElement)) {
       pass('testFunctionCallsInAttributes');
+    } else {
+      console.error('testFunctionCallsInAttributes: wrong args event=', event,
+          'node=', node);
     }
   };
   jsunitRegister('testFunctionCallsInAttributes',

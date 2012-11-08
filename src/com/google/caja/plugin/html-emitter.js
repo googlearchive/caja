@@ -67,12 +67,12 @@ function HtmlEmitter(makeDOMAccessible, base, opt_domicile, opt_guestGlobal) {
   var detached = null;
   /** Makes sure IDs are accessible within removed detached nodes. */
   var idMap = null;
-  
+
   /** Hook from attach/detach to document.write logic. */
   var updateInsertionMode;
 
   var arraySplice = Array.prototype.splice;
-  
+
   var HTML5_WHITESPACE_RE = /^[\u0009\u000a\u000c\u000d\u0020]*$/;
 
   function buildIdMap() {
@@ -445,7 +445,7 @@ function HtmlEmitter(makeDOMAccessible, base, opt_domicile, opt_guestGlobal) {
     function defineUntrustedStylesheet(styleBaseUri, cssText) {
       if (domicile && domicile.emitCss) {
         domicile.emitCss(sanitizeStylesheet(styleBaseUri,
-            cssText, domicile.suffixStr.replace(/^-/, ''), 
+            cssText, domicile.suffixStr.replace(/^-/, ''),
             makeCssUriSanitizer(styleBaseUri),
             domicile.tagPolicy));
       }
@@ -564,9 +564,9 @@ function HtmlEmitter(makeDOMAccessible, base, opt_domicile, opt_guestGlobal) {
       }
       insertionPoint.appendChild(el);
       if (!vSchemaEl.empty) { insertionPoint = el; }
-      
+
       for (var i = slowPathAttribs.length - 2; i >= 0; i -= 2) {
-        opt_domicile.tameNode(el, true).setAttribute(
+        opt_domicile.tameNode(el).setAttribute(
           slowPathAttribs[i], slowPathAttribs[i+1]);
       }
     }
@@ -756,7 +756,7 @@ function HtmlEmitter(makeDOMAccessible, base, opt_domicile, opt_guestGlobal) {
             //  corresponding value to that element."
           } else if (tagName === 'base' || tagName === 'basefont' ||
               tagName === 'bgsound'     || tagName === 'command' ||
-              tagName === 'link'        || tagName === 'meta' || 
+              tagName === 'link'        || tagName === 'meta' ||
               tagName === 'noframes'    || tagName === 'script' ||
               tagName === 'style'       || tagName === 'title') {
             insertionModes.inHead.startTag.apply(undefined, arguments);

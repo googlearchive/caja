@@ -508,7 +508,7 @@ var Domado = (function() {
         return ProxyHandler.prototype.defineProperty.call(this, name,
             descriptor);
       } else {
-        if (!this.editable) { throw new Error("Not editable"); }
+        if (!this.editable) { throw new Error(NOT_EDITABLE); }
         Object.defineProperty(this.storage, name, descriptor);
         return true;
       }
@@ -521,7 +521,7 @@ var Domado = (function() {
         // Forwards everything already defined (not expando).
         return ProxyHandler.prototype['delete'].call(this, name);
       } else {
-        if (!this.editable) { throw new Error("Not editable"); }
+        if (!this.editable) { throw new Error(NOT_EDITABLE); }
         return delete this.storage[name];
       }
       return false;
@@ -908,6 +908,11 @@ var Domado = (function() {
   };
 
   cajaVM.def(domitaModules);
+
+  var NOT_EDITABLE = "Node not editable.";
+  var UNSAFE_TAGNAME = "Unsafe tag name.";
+  var UNKNOWN_TAGNAME = "Unknown tag name.";
+  var INDEX_SIZE_ERROR = "Index size error.";
 
   /**
    * Authorize the Domado library.
@@ -1371,6 +1376,122 @@ var Domado = (function() {
     }
 
     /**
+     * Access policies
+     *
+     * Each of these objects is a policy for what type of access (read/write,
+     * read-only, or none) is permitted to a Node or NodeList. Each policy
+     * object determines the access for the associated node and its children.
+     * The childPolicy may be overridden if the node is an opaque or foreign
+     * node.
+     *
+     * Definitions:
+     *    childrenVisible:
+     *      This node appears to have the children it actually does; otherwise,
+     *      appears to have no children.
+     *    attributesVisible:
+     *      This node appears to have the attributes it actually does;
+     *      otherwise, appears to have no attributes.
+     *    editable:
+     *      This node's attributes and properties (other than children) may be
+     *      modified.
+     *    childrenEditable:
+     *      This node's childNodes list may be modified, and its children are
+     *      both editable and childrenEditable.
+     *
+     * These flags can express several meaningless cases; in particular, the
+     * 'editable but not visible' cases do not occur.
+     */
+    var protoNodePolicy = {
+      requireEditable: function () {
+        if (!this.editable) {
+          throw new Error(NOT_EDITABLE);
+        }
+      },
+      requireChildrenEditable: function () {
+        if (!this.childrenEditable) {
+          throw new Error(NOT_EDITABLE);
+        }
+      },
+      requireUnrestricted: function () {
+        if (!this.unrestricted) {
+          throw new Error("Node is restricted");
+        }
+      },
+      assertRestrictedBy: function (policy) {
+        if (!this.childrenVisible   && policy.childrenVisible ||
+            !this.attributesVisible && policy.attributesVisible ||
+            !this.editable          && policy.editable ||
+            !this.childrenEditable  && policy.childrenEditable ||
+            !this.upwardNavigation  && policy.upwardNavigation ||
+            !this.unrestricted      && policy.unrestricted) {
+          throw new Error("Domado internal error: non-monotonic node policy");
+        }
+      }
+    };
+    // We eagerly await ES6 offering some kind of literal-with-prototype...
+    var nodePolicyEditable = Object.create(protoNodePolicy);
+    nodePolicyEditable.toString = function () { return "nodePolicyEditable"; };
+    nodePolicyEditable.childrenVisible = true;
+    nodePolicyEditable.attributesVisible = true;
+    nodePolicyEditable.editable = true;
+    nodePolicyEditable.childrenEditable = true;
+    nodePolicyEditable.upwardNavigation = true;
+    nodePolicyEditable.unrestricted = true;
+    nodePolicyEditable.childPolicy = nodePolicyEditable;
+
+    var nodePolicyReadOnly = Object.create(protoNodePolicy);
+    nodePolicyReadOnly.toString = function () { return "nodePolicyReadOnly"; };
+    nodePolicyReadOnly.childrenVisible = true;
+    nodePolicyReadOnly.attributesVisible = true;
+    nodePolicyReadOnly.editable = false;
+    nodePolicyReadOnly.childrenEditable = false;
+    nodePolicyReadOnly.upwardNavigation = true;
+    nodePolicyReadOnly.unrestricted = true;
+    nodePolicyReadOnly.childPolicy = nodePolicyReadOnly;
+
+    var nodePolicyReadOnlyChildren = Object.create(protoNodePolicy);
+    nodePolicyReadOnlyChildren.toString =
+        function () { return "nodePolicyReadOnlyChildren"; };
+    nodePolicyReadOnlyChildren.childrenVisible = true;
+    nodePolicyReadOnlyChildren.attributesVisible = true;
+    nodePolicyReadOnlyChildren.editable = true;
+    nodePolicyReadOnlyChildren.childrenEditable = false;
+    nodePolicyReadOnlyChildren.upwardNavigation = true;
+    nodePolicyReadOnlyChildren.unrestricted = true;
+    nodePolicyReadOnlyChildren.childPolicy = nodePolicyReadOnly;
+
+    var nodePolicyOpaque = Object.create(protoNodePolicy);
+    nodePolicyOpaque.toString = function () { return "nodePolicyOpaque"; };
+    nodePolicyOpaque.childrenVisible = true;
+    nodePolicyOpaque.attributesVisible = false;
+    nodePolicyOpaque.editable = false;
+    nodePolicyOpaque.childrenEditable = false;
+    nodePolicyOpaque.upwardNavigation = true;
+    nodePolicyOpaque.unrestricted = false;
+    nodePolicyOpaque.childPolicy = nodePolicyReadOnly;
+
+    var nodePolicyForeign = Object.create(protoNodePolicy);
+    nodePolicyForeign.toString = function () { return "nodePolicyForeign"; };
+    nodePolicyForeign.childrenVisible = false;
+    nodePolicyForeign.attributesVisible = false;
+    nodePolicyForeign.editable = false;
+    nodePolicyForeign.childrenEditable = false;
+    nodePolicyForeign.upwardNavigation = false;
+    nodePolicyForeign.unrestricted = false;
+    Object.defineProperty(nodePolicyForeign, "childPolicy", {
+      get: function () {
+        throw new Error("Foreign node childPolicy should never be consulted");
+      }
+    });
+    cajaVM.def([
+      nodePolicyEditable,
+      nodePolicyReadOnly,
+      nodePolicyReadOnlyChildren,
+      nodePolicyOpaque,
+      nodePolicyForeign
+    ]);
+
+    /**
      * Add a tamed document implementation to a Gadget's global scope.
      *
      * Has the side effect of adding the classes "vdoc-container___" and
@@ -1422,6 +1543,8 @@ var Domado = (function() {
       };
       var pluginId;
 
+      var vdocContainsForeignNodes = false;
+
       containerNode = makeDOMAccessible(containerNode);
       var document = containerNode.ownerDocument;
       document = makeDOMAccessible(document);
@@ -1469,8 +1592,7 @@ var Domado = (function() {
 
       // The private properties used in TameNodeConf are:
       //    feral (feral node)
-      //    editable (this node editable)
-      //    childrenEditable (this node editable)
+      //    policy (access policy)
       //    Several specifically for TameHTMLDocument.
       // Furthermore, by virtual of being scoped inside attachDocument,
       // TameNodeT also indicates that the object is a node from the *same*
@@ -1520,7 +1642,7 @@ var Domado = (function() {
         }
 
         if (feral) {
-          if (node.nodeType === 1) {
+          if (feral.nodeType === 1) {
             // Elements must only be tamed once; to do otherwise would be
             // a bug in Domado.
             taming.tamesTo(feral, node);
@@ -1930,8 +2052,8 @@ var Domado = (function() {
       /**
        * Construct property descriptors suitable for taming objects which use
        * the specified confidence, such that confidence.p(obj).feral is the
-       * feral object to forward to and confidence.p(obj).editable is an
-       * editable/readonly flag.
+       * feral object to forward to and confidence.p(obj).policy is a node
+       * policy object for writability decisions.
        *
        * Lowercase properties are property descriptors; uppercase ones are
        * constructors for parameterized property descriptors.
@@ -1964,8 +2086,9 @@ var Domado = (function() {
               return p(this).feral[prop];
             }),
             set: method(function (value, prop) {
-              if (!p(this).editable) { throw new Error(NOT_EDITABLE); }
-              p(this).feral[prop] = value;
+              var privates = p(this);
+              privates.policy.requireEditable();
+              privates.feral[prop] = value;
             })
           },
 
@@ -1984,7 +2107,7 @@ var Domado = (function() {
               }),
               set: method(function (value, prop) {
                 var privates = p(this);
-                if (!privates.editable) { throw new Error(NOT_EDITABLE); }
+                privates.policy.requireEditable();
                 if (predicate(value)) {
                   privates.feral[prop] = value;
                 }
@@ -2020,14 +2143,13 @@ var Domado = (function() {
             enumerable: true,
             extendedAccessors: true,
             get: method(function (prop) {
-              if (!('editable' in p(this))) {
-                throw new Error(
-                    "Internal error: related property tamer can only"
-                    + " be applied to objects with an editable flag");
+              var privates = p(this);
+              if (privates.policy.upwardNavigation) {
+                // TODO(kpreid): Can we move this check *into* tameRelatedNode?
+                return tameRelatedNode(privates.feral[prop], defaultTameNode);
+              } else {
+                return null;
               }
-              return tameRelatedNode(p(this).feral[prop],
-                                     p(this).editable,
-                                     defaultTameNode);
             })
           },
 
@@ -2073,8 +2195,9 @@ var Domado = (function() {
                       this.setAttribute(name, fromValue.call(this, value));
                     })
                   : method(function (value, name) {
-                      if (!p(this).editable) { throw new Error(NOT_EDITABLE); }
-                      p(this).feral[name] = fromValue.call(this, value);
+                      var privates = p(this);
+                      privates.policy.requireEditable();
+                      privates.feral[name] = fromValue.call(this, value);
                     });
             }
             return desc;
@@ -2101,8 +2224,12 @@ var Domado = (function() {
         enumerable: true,
         extendedAccessors: true,
         get: nodeMethod(function (prop) {
-          return defaultTameNode(np(this).feral[prop],
-                                 np(this).childrenEditable);
+          var privates = np(this);
+          if (privates.policy.childrenVisible) {
+            return defaultTameNode(np(this).feral[prop]);
+          } else {
+            return null;
+          }
         })
       };
 
@@ -2119,7 +2246,7 @@ var Domado = (function() {
         return s;
       }
 
-      function makeTameNodeByType(node, editable) {
+      function makeTameNodeByType(node) {
         switch (node.nodeType) {
           case 1:  // Element
             var tagName = node.tagName.toLowerCase();
@@ -2128,21 +2255,20 @@ var Domado = (function() {
               // href property). This is deliberately before the unsafe test;
               // for example, <script> has its own class even though it is
               // unsafe.
-              return new (tamingClassesByElement[tagName + '$'])(
-                  node, editable);
-            } 
+              return new (tamingClassesByElement[tagName + '$'])(node);
+            }
             var schemaElem = htmlSchema.element(tagName);
             if (schemaElem.isVirtualizedElementName) {
               // Virtualized unrecognized elements are generic
-              return new TameElement(node, editable, editable);
+              return new TameElement(node);
             } else if (schemaElem.allowed) {
-              return new TameElement(node, editable, editable);
+              return new TameElement(node);
             } else {
               // If an unrecognized or unsafe node, return a
               // placeholder that doesn't prevent tree navigation,
               // but that doesn't allow mutation or leak attribute
               // information.
-              return new TameOpaqueNode(node, editable);
+              return new TameOpaqueNode(node);
             }
           case 2:  // Attr
             // Cannot generically wrap since we must have access to the
@@ -2150,24 +2276,24 @@ var Domado = (function() {
             throw 'Internal: Attr nodes cannot be generically wrapped';
           case 3:  // Text
           case 4:  // CDATA Section Node
-            return new TameTextNode(node, editable);
+            return new TameTextNode(node);
           case 8:  // Comment
-            return new TameCommentNode(node, editable);
+            return new TameCommentNode(node);
           case 11: // Document Fragment
-            return new TameBackedNode(node, editable, editable);
+            return new TameBackedNode(node);
           default:
-            return new TameOpaqueNode(node, editable);
+            return new TameOpaqueNode(node);
         }
       }
 
       /**
        * returns a tame DOM node.
        * @param {Node} node
-       * @param {boolean} editable
+       * @param {boolean} foreign
        * @see <a href="http://www.w3.org/TR/DOM-Level-2-HTML/html.html"
        *       >DOM Level 2</a>
        */
-      function defaultTameNode(node, editable, foreign) {
+      function defaultTameNode(node, foreign) {
         if (node === null || node === void 0) { return null; }
         node = makeDOMAccessible(node);
         // TODO(mikesamuel): make sure it really is a DOM node
@@ -2176,21 +2302,21 @@ var Domado = (function() {
           return taming.tame(node);
         }
 
+        if (foreign) {
+          vdocContainsForeignNodes = true;
+        }
+
         var tamed = foreign
-            ? new TameForeignNode(node, editable)
-            : makeTameNodeByType(node, editable);
+            ? new TameForeignNode(node)
+            : makeTameNodeByType(node);
         tamed = finishNode(tamed);
 
         return tamed;
       }
 
-      function tameRelatedNode(node, editable, tameNodeCtor) {
+      function tameRelatedNode(node, tameNodeCtor) {
         if (node === null || node === void 0) { return null; }
         if (node === np(tameDocument).feralContainerNode) {
-          if (np(tameDocument).editable && !editable) {
-            // FIXME: return a non-editable version instead
-            throw new Error(NOT_EDITABLE);
-          }
           return tameDocument;
         }
 
@@ -2203,18 +2329,18 @@ var Domado = (function() {
               ancestor;
               ancestor = makeDOMAccessible(ancestor.parentNode)) {
             if (idClassPattern.test(ancestor.className)) {
-              return tameNodeCtor(node, editable);
+              return tameNodeCtor(node);
             } else if (ancestor === docElem) {
               return null;
             }
           }
-          return tameNodeCtor(node, editable);
+          return tameNodeCtor(node);
         } catch (e) {}
         return null;
       }
 
       domicile.tameNodeAsForeign = function(node) {
-        return defaultTameNode(node, true, true);
+        return defaultTameNode(node, true);
       };
 
       /**
@@ -2232,6 +2358,120 @@ var Domado = (function() {
         return limit;
       }
 
+      function nodeListEqualsArray(nodeList, array) {
+        var nll = getNodeListLength(nodeList);
+        if (nll !== array.length) {
+          return false;
+        } else {
+          for (var i = 0; i < nll; i++) {
+            if (nodeList[i] !== array[i]) {
+              return false;
+            }
+          }
+          return true;
+        }
+      }
+
+      // Commentary on foreign node children in NodeLists:
+      //
+      // The children of a foreign node are an implementation detail which
+      // guest code should not be permitted to see. Therefore, we must hide them
+      // from appearing in NodeLists. This would be a straightforward matter of
+      // filtering, except that NodeLists are "live", reflecting DOM changes
+      // immediately; and DOM changes change the membership and numeric indexes
+      // of the NodeList.
+      //
+      // One could imagine caching the outcomes: given an index, scan the host
+      // list until the required number of visible-to-guest nodes have been
+      // found, cache the indexes and node, and then validate the cache entry
+      // later by comparing indexes, but that is not sufficient; consider if a
+      // foreign child is deleted, and at the same time a guest-visible node
+      // is added in a similar document position; then the index of a guest node
+      // which is after that position *should* increase, but this cache cannot
+      // tell.
+      //
+      // Therefore, we do cache the list, but we must re-validate the cache
+      // from 0 up to the desired index on every access.
+      /**
+       * This is NOT a node list taming. This is a component for performing
+       * foreign node filtering only.
+       */
+      function NodeListFilter(feralNodeList) {
+        feralNodeList = makeDOMAccessible(feralNodeList);
+        var expectation = [];
+        var filteredCache = [];
+
+        function calcUpTo(index) {
+          var feralLength = getNodeListLength(feralNodeList);
+          var feralIndex = 0;
+
+          // Validate cache
+          if (feralLength < expectation.length) {
+            expectation = [];
+            filteredCache = [];
+            feralIndex = 0;
+          } else {
+            for (
+                ;
+                feralIndex < expectation.length && feralIndex < feralLength;
+                feralIndex++) {
+              if (feralNodeList[feralIndex] !== expectation[feralIndex]) {
+                expectation = [];
+                filteredCache = [];
+                feralIndex = 0;
+                break;
+              }
+            }
+          }
+
+          // Extend cache
+          nodeListScan: for (
+              ;
+              feralIndex < feralLength && filteredCache.length <= index;
+              feralIndex++) {
+            var node = feralNodeList[feralIndex];
+            expectation.push(node);
+            makeDOMAccessible(node);
+            // Filter out foreign nodes' descendants
+            walkUp: for (
+                var ancestor = makeDOMAccessible(node.parentNode);
+                ancestor !== null;
+                ancestor = makeDOMAccessible(ancestor.parentNode)) {
+              if (taming.hasTameTwin(ancestor)) {
+                if (taming.tame(ancestor) instanceof TameForeignNode) {
+                  // Every foreign node is already tamed as foreign, by
+                  // definition.
+                  continue nodeListScan;
+                } else {
+                  // Reached a node known to be non-foreign.
+                  break walkUp;
+                }
+              }
+            }
+            // Not a foreign node descendant, so include it in the list.
+            filteredCache.push(node);
+          }
+        }
+        return cajaVM.def({
+          getLength: function() {
+            if (vdocContainsForeignNodes) {
+              calcUpTo(Infinity);
+              return filteredCache.length;
+            } else {
+              return getNodeListLength(feralNodeList);
+            }
+          },
+          item: function(i) {
+            if (vdocContainsForeignNodes) {
+              calcUpTo(i);
+              return filteredCache[i];
+            } else {
+              return feralNodeList[i];
+            }
+          }
+        });
+      }
+
       /**
        * Constructs a NodeList-like object.
        *
@@ -2240,27 +2480,31 @@ var Domado = (function() {
        *     precede the actual NodeList elements.
        * @param nodeList an array-like object supporting a "length" property
        *     and "[]" numeric indexing, or a raw DOM NodeList;
-       * @param editable whether the tame nodes wrapped by this object
-       *     should permit editing.
        * @param opt_tameNodeCtor a function for constructing tame nodes
        *     out of raw DOM nodes.
        */
-      function mixinNodeList(tamed, nodeList, editable, opt_tameNodeCtor) {
+      function mixinNodeList(tamed, nodeList, opt_tameNodeCtor) {
         // TODO(kpreid): Under a true ES5 environment, node lists should be
         // proxies so that they preserve liveness of the original lists.
         // This should be controlled by an option.
+        // UPDATE: We have live NodeLists as TameNodeList and TameOptionsList.
+        // This is not live, but is used in less-mainstream cases.
 
-        var limit = getNodeListLength(nodeList);
+        var visibleList = new NodeListFilter(nodeList);
+
+        var limit = visibleList.getLength();
         if (limit > 0 && !opt_tameNodeCtor) {
           throw 'Internal: Nonempty mixinNodeList() without a tameNodeCtor';
         }
 
-        for (var i = tamed.length, j = 0; j < limit && nodeList[+j]; ++i, ++j) {
-          tamed[+i] = opt_tameNodeCtor(nodeList[+j], editable);
+        for (var i = tamed.length, j = 0;
+             j < limit && visibleList.item(j);
+             ++i, ++j) {
+          tamed[+i] = opt_tameNodeCtor(visibleList.item(+j));
         }
 
         // Guard against accidental leakage of untamed nodes
-        nodeList = null;
+        nodeList = visibleList = null;
 
         tamed.item = cajaVM.def(function (k) {
           k &= 0x7fffffff;
@@ -2287,16 +2531,14 @@ var Domado = (function() {
       }
 
       function makeTameNodeList() {
-        return function TNL(nodeList, editable, tameNodeCtor) {
-            nodeList = makeDOMAccessible(nodeList);
+        return function TNL(nodeList, tameNodeCtor) {
+            var visibleList = new NodeListFilter(nodeList);
             function getItem(i) {
               i = +i;
-              if (i >= nodeList.length) { return void 0; }
-              return tameNodeCtor(nodeList[i], editable);
+              if (i >= visibleList.getLength()) { return void 0; }
+              return tameNodeCtor(visibleList.item(i));
             }
-            function getLength() {
-              return nodeList.length;
-            }
+            var getLength = visibleList.getLength.bind(visibleList);
             var len = +getLength();
             var ArrayLike = cajaVM.makeArrayLike(len);
             if (!(TameNodeList.prototype instanceof ArrayLike)) {
@@ -2312,13 +2554,13 @@ var Domado = (function() {
       var TameNodeList = Object.freeze(makeTameNodeList());
 
       function makeTameOptionsList() {
-        return function TOL(nodeList, editable, opt_tameNodeCtor) {
-            nodeList = makeDOMAccessible(nodeList);
+        return function TOL(nodeList, opt_tameNodeCtor) {
+            var visibleList = new NodeListFilter(nodeList);
             function getItem(i) {
               i = +i;
-              return opt_tameNodeCtor(nodeList[i], editable);
+              return opt_tameNodeCtor(visibleList.item(i));
             }
-            function getLength() { return nodeList.length; }
+            var getLength = visibleList.getLength.bind(visibleList);
             var len = +getLength();
             var ArrayLike = cajaVM.makeArrayLike(len);
             if (!(TameOptionsList.prototype instanceof ArrayLike)) {
@@ -2353,8 +2595,6 @@ var Domado = (function() {
        *     with the DOM HTMLCollection API.
        * @param nodeList an array-like object supporting a "length" property
        *     and "[]" numeric indexing.
-       * @param editable whether the tame nodes wrapped by this object
-       *     should permit editing.
        * @param opt_tameNodeCtor a function for constructing tame nodes
        *     out of raw DOM nodes.
        *
@@ -2363,9 +2603,8 @@ var Domado = (function() {
        * this should be looking up ids as well as names. (And not returning
        * nodelists, but is that for compatibility?)
        */
-      function mixinHTMLCollection(tamed, nodeList, editable,
-          opt_tameNodeCtor) {
-        mixinNodeList(tamed, nodeList, editable, opt_tameNodeCtor);
+      function mixinHTMLCollection(tamed, nodeList, opt_tameNodeCtor) {
+        mixinNodeList(tamed, nodeList, opt_tameNodeCtor);
 
         var tameNodesByName = {};
         var tameNode;
@@ -2404,12 +2643,12 @@ var Domado = (function() {
         return tamed;
       }
 
-      function tameHTMLCollection(nodeList, editable, opt_tameNodeCtor) {
+      function tameHTMLCollection(nodeList, opt_tameNodeCtor) {
         return Object.freeze(
-            mixinHTMLCollection([], nodeList, editable, opt_tameNodeCtor));
+            mixinHTMLCollection([], nodeList, opt_tameNodeCtor));
       }
 
-      function tameGetElementsByTagName(rootNode, tagName, editable) {
+      function tameGetElementsByTagName(rootNode, tagName) {
         tagName = String(tagName);
         var eflags = 0;
         if (tagName !== '*') {
@@ -2417,14 +2656,14 @@ var Domado = (function() {
           tagName = virtualToRealElementName(tagName);
         }
         return new TameNodeList(rootNode.getElementsByTagName(tagName),
-            editable, defaultTameNode);
+            defaultTameNode);
       }
 
       /**
        * Implements http://www.whatwg.org/specs/web-apps/current-work/#dom-document-getelementsbyclassname
        * using an existing implementation on browsers that have one.
        */
-      function tameGetElementsByClassName(rootNode, className, editable) {
+      function tameGetElementsByClassName(rootNode, className) {
         className = String(className);
 
         // The quotes below are taken from the HTML5 draft referenced above.
@@ -2457,7 +2696,7 @@ var Domado = (function() {
         if (typeof rootNode.getElementsByClassName === 'function') {
           return new TameNodeList(
               rootNode.getElementsByClassName(
-                  classes.join(' ')), editable, defaultTameNode);
+                  classes.join(' ')), defaultTameNode);
         } else {
           // Add spaces around each class so that we can use indexOf later to
           // find a match.
@@ -2495,7 +2734,7 @@ var Domado = (function() {
                 continue candidate_loop;
               }
             }
-            var tamed = defaultTameNode(candidate, editable);
+            var tamed = defaultTameNode(candidate);
             if (tamed) {
               matches[++k] = tamed;
             }
@@ -2514,13 +2753,10 @@ var Domado = (function() {
         return wrapper;
       }
 
-      var NOT_EDITABLE = "Node not editable.";
-      var INDEX_SIZE_ERROR = "Index size error.";
-
       // Implementation of EventTarget::addEventListener
       function tameAddEventListener(name, listener, useCapture) {
         var feral = np(this).feral;
-        if (!np(this).editable) { throw new Error(NOT_EDITABLE); }
+        np(this).policy.requireEditable();
         if (!np(this).wrappedListeners) { np(this).wrappedListeners = []; }
         useCapture = Boolean(useCapture);
         var wrappedListener = makeEventHandlerWrapper(np(this).feral, listener);
@@ -2534,7 +2770,7 @@ var Domado = (function() {
       function tameRemoveEventListener(name, listener, useCapture) {
         var self = TameNodeT.coerce(this);
         var feral = np(self).feral;
-        if (!np(self).editable) { throw new Error(NOT_EDITABLE); }
+        np(this).policy.requireEditable();
         if (!np(this).wrappedListeners) { return; }
         var wrappedListener = null;
         for (var i = np(this).wrappedListeners.length; --i >= 0;) {
@@ -2594,14 +2830,15 @@ var Domado = (function() {
        * not applied here since that freezes the object, and also because of the
        * forwarding proxies used for catching expando properties.
        *
-       * @param {boolean} editable true if the node's value, attributes,
-       *     children,
-       *     or custom properties are mutable.
+       * @param {policy} Mutability policy to apply.
        * @constructor
        */
-      function TameNode(editable) {
+      function TameNode(policy) {
         TameNodeConf.confide(this);
-        np(this).editable = editable;
+        if (!policy || !policy.requireEditable) {
+          throw new Error("Domado internal error: Policy missing or invalid");
+        }
+        np(this).policy = policy;
         return this;
       }
       inertCtor(TameNode, Object, 'Node');
@@ -2657,11 +2894,6 @@ var Domado = (function() {
       // abstract TameNode.prototype.getElementsByClassName
       // abstract TameNode.prototype.childNodes
       // abstract TameNode.prototype.attributes
-      var tameNodePublicMembers = [
-          'cloneNode',
-          'appendChild', 'insertBefore', 'removeChild', 'replaceChild',
-          'dispatchEvent', 'hasChildNodes'
-          ];
       traceStartup("DT: about to defend TameNode");
       cajaVM.def(TameNode);  // and its prototype
 
@@ -2673,26 +2905,60 @@ var Domado = (function() {
        * Note that the constructor returns a proxy which delegates to 'this';
        * subclasses should apply properties to 'this' but return the proxy.
        *
-       * @param {boolean} childrenEditable true iff the child list is mutable.
        * @param {Function} opt_proxyType The constructor of the proxy handler
        *     to use, defaulting to ExpandoProxyHandler.
        * @constructor
        */
-      function TameBackedNode(node, editable, childrenEditable, opt_proxyType) {
+      function TameBackedNode(node, opt_policy, opt_proxyType) {
         node = makeDOMAccessible(node);
 
         if (!node) {
           throw new Error('Creating tame node with undefined native delegate');
         }
 
-        TameNode.call(this, editable);
+        // Determine access policy
+        var parent = makeDOMAccessible(node.parentNode);
+        var parentPolicy;
+        if (!parent ||
+            idClassPattern.test(parent.className) ||
+            idClassPattern.test(node.className)) {
+          parentPolicy = null;
+        } else {
+          // Parent is inside the vdoc.
+          parentPolicy = np(defaultTameNode(parent)).policy;
+        }
+        var policy;
+        if (opt_policy) {
+          if (parentPolicy) {
+            parentPolicy.childPolicy.assertRestrictedBy(opt_policy);
+          }
+          policy = opt_policy;
+          //console.log("", parent, "->", node, "policy explicit",
+          //    policy.toString());
+        } else if (idClassPattern.test(node.className)) {
+          // Virtual document root -- stop implicit recursion and define the
+          // root policy. If we wanted to be able to define a "entire DOM
+          // read-only" policy, this is where to hook it in.
+          policy = nodePolicyEditable;
+          //console.log("", parent, "->", node, "root policy",
+          //    policy.toString());
+        } else if (parentPolicy) {
+          policy = parentPolicy.childPolicy;
+          //console.log("", parent, "->", node, "policy via parent",
+          //    parentPolicy.toString(), policy.toString());
+        } else {
+          policy = nodePolicyEditable;
+          //console.log("", parent, "->", node, "policy isolated",
+          //    policy.toString());
+        }
+
+        TameNode.call(this, policy);
 
         np(this).feral = node;
-        np(this).childrenEditable = editable && childrenEditable;
 
         if (domitaModules.proxiesAvailable) {
           np(this).proxyHandler = new (opt_proxyType || ExpandoProxyHandler)(
-              this, editable, getNodeExpandoStorage(node));
+              this, policy.editable, getNodeExpandoStorage(node));
         }
       }
       inertCtor(TameBackedNode, TameNode);
@@ -2700,7 +2966,7 @@ var Domado = (function() {
         nodeType: NP.ro,
         nodeName: NP.ro,
         nodeValue: NP.ro,
-        firstChild: NP_tameDescendant,
+        firstChild: NP_tameDescendant, // TODO(kpreid): Must be disableable
         lastChild: NP_tameDescendant,
         nextSibling: NP.related,
         previousSibling: NP.related,
@@ -2708,36 +2974,56 @@ var Domado = (function() {
         childNodes: {
           enumerable: true,
           get: cajaVM.def(function () {
-            return new TameNodeList(np(this).feral.childNodes,
-                                np(this).childrenEditable, defaultTameNode);
+            var privates = np(this);
+            if (privates.policy.childrenVisible) {
+              return new TameNodeList(np(this).feral.childNodes,
+                  defaultTameNode);
+            } else {
+              return fakeNodeList([]);
+            }
           })
         },
         attributes: {
           enumerable: true,
           get: cajaVM.def(function () {
-            var thisNode = np(this).feral;
-            var tameNodeCtor = function(node, editable) {
-              return new TameBackedAttributeNode(node, editable, thisNode);
-            };
-            return new TameNodeList(
-                thisNode.attributes, thisNode, tameNodeCtor);
+            var privates = np(this);
+            if (privates.policy.attributesVisible) {
+              var thisNode = privates.feral;
+              var tameNodeCtor = function(node) {
+                return new TameBackedAttributeNode(node, thisNode);
+              };
+              // TODO(kpreid): There is no test which caught a previous
+              // editability policy failure here
+              return new TameNodeList(thisNode.attributes, tameNodeCtor);
+            } else {
+              return fakeNodeList([]);
+            }
           })
         }
       });
       TameBackedNode.prototype.cloneNode = nodeMethod(function (deep) {
+        np(this).policy.requireUnrestricted();
         var clone = bridal.cloneNode(np(this).feral, Boolean(deep));
         // From http://www.w3.org/TR/DOM-Level-2-Core/core.html#ID-3A0ED0A4
         //   "Note that cloning an immutable subtree results in a mutable copy"
-        return defaultTameNode(clone, true);
+        return defaultTameNode(clone);
       });
-      TameBackedNode.prototype.appendChild = nodeMethod(function (child) {
-        child = child || {};
+      /** Is it OK to make 'child' a child of 'parent'? */
+      function checkAdoption(parent, child) {
         // Child must be editable since appendChild can remove it from its
         // parent.
+        np(parent).policy.requireChildrenEditable();
+        np(child).policy.requireEditable();
+        // Sanity check: this cannot currently happen but if it does then we
+        // need to rethink the calculation of policies.
+        np(parent).policy.childPolicy.assertRestrictedBy(np(child).policy);
+      }
+      TameBackedNode.prototype.appendChild = nodeMethod(function (child) {
+        child = child || {};
         child = TameNodeT.coerce(child);
-        if (!np(this).childrenEditable || !np(child).editable) {
-          throw new Error(NOT_EDITABLE);
-        }
+
+        checkAdoption(this, child);
+
         np(this).feral.appendChild(np(child).feral);
         return child;
       });
@@ -2745,24 +3031,23 @@ var Domado = (function() {
           function(toInsert, child) {
         toInsert = TameNodeT.coerce(toInsert);
         if (child === void 0) { child = null; }
+
         if (child !== null) {
           child = TameNodeT.coerce(child);
-          if (!np(child).editable) {
-            throw new Error(NOT_EDITABLE);
-          }
+          // TODO(kpreid): This child is not being mutated except for its
+          // previousSibling, so why are we rejecting here?
+          np(child).policy.requireEditable();
         }
-        if (!np(this).childrenEditable || !np(toInsert).editable) {
-          throw new Error(NOT_EDITABLE);
-        }
+        checkAdoption(this, toInsert);
+
         np(this).feral.insertBefore(
             np(toInsert).feral, child !== null ? np(child).feral : null);
         return toInsert;
       });
       TameBackedNode.prototype.removeChild = nodeMethod(function(child) {
         child = TameNodeT.coerce(child);
-        if (!np(this).childrenEditable || !np(child).editable) {
-          throw new Error(NOT_EDITABLE);
-        }
+        np(this).policy.requireChildrenEditable();
+        np(child).policy.requireEditable();
         np(this).feral.removeChild(np(child).feral);
         return child;
       });
@@ -2770,15 +3055,19 @@ var Domado = (function() {
           function(newChild, oldChild) {
         newChild = TameNodeT.coerce(newChild);
         oldChild = TameNodeT.coerce(oldChild);
-        if (!np(this).childrenEditable || !np(newChild).editable
-            || !np(oldChild).editable) {
-          throw new Error(NOT_EDITABLE);
-        }
+
+        checkAdoption(this, newChild);
+        np(oldChild).policy.requireEditable();
+
         np(this).feral.replaceChild(np(newChild).feral, np(oldChild).feral);
         return oldChild;
       });
       TameBackedNode.prototype.hasChildNodes = nodeMethod(function() {
-        return !!np(this).feral.hasChildNodes();
+        if (np(this).policy.childrenVisible) {
+          return !!np(this).feral.hasChildNodes();
+        } else {
+          return false;
+        }
       });
       // http://www.w3.org/TR/DOM-Level-2-Events/events.html#Events-EventTarget
       // "The EventTarget interface is implemented by all Nodes"
@@ -2847,12 +3136,14 @@ var Domado = (function() {
        * A fake node that is not backed by a real DOM node.
        * @constructor
        */
-      function TamePseudoNode(editable) {
-        TameNode.call(this, editable);
+      function TamePseudoNode() {
+        // Note inconsistency: we have an editable policy, for the sake of our
+        // children, but don't actually allow direct mutation.
+        TameNode.call(this, nodePolicyEditable);
 
         if (domitaModules.proxiesAvailable) {
           // finishNode will wrap 'this' with an actual proxy later.
-          np(this).proxyHandler = new ExpandoProxyHandler(this, editable, {});
+          np(this).proxyHandler = new ExpandoProxyHandler(this, true, {});
         }
       }
       inertCtor(TamePseudoNode, TameNode);
@@ -2901,121 +3192,40 @@ var Domado = (function() {
       cajaVM.def(TamePseudoNode);  // and its prototype
 
       traceStartup("DT: done fundamental nodes");
-      traceStartup("DT: about to define makeRestrictedNodeType");
-
-      function makeRestrictedNodeType(whitelist) {
-        function ForeignOrOpaqueNode(node, editable) {
-          TameBackedNode.call(this, node, editable, editable);
-        }
-        var nodeType = ForeignOrOpaqueNode;  // other name is for debug hint
-        inherit(nodeType, TameBackedNode);
-        for (var safe in whitelist) {
-          // Any non-own property is overridden to be opaque below.
-          var descriptor = (whitelist[safe] === 0)
-              ? domitaModules.getPropertyDescriptor(
-                    TameBackedNode.prototype, safe)
-              : {
-                  value: whitelist[safe],
-                  writable: false,
-                  configurable: false,
-                  enumerable: true
-              };
-          Object.defineProperty(nodeType.prototype, safe, descriptor);
-        }
-        definePropertiesAwesomely(nodeType.prototype, {
-          attributes: {
-            enumerable: canHaveEnumerableAccessors,
-            get: nodeMethod(function () {
-              return new TameNodeList([], false, undefined);
-            })
-          }
-        });
-        function throwRestricted() {
-          throw new Error('Node is restricted');
-        }
-        cajaVM.def(throwRestricted);
-        for (var i = tameNodePublicMembers.length; --i >= 0;) {
-          var k = tameNodePublicMembers[+i];
-          if (!nodeType.prototype.hasOwnProperty(k)) {
-            if (typeof TameBackedNode.prototype[k] === 'Function') {
-              nodeType.prototype[k] = throwRestricted;
-            } else {
-              Object.defineProperty(nodeType.prototype, k, {
-                enumerable: canHaveEnumerableAccessors,
-                get: throwRestricted
-              });
-            }
-          }
-        }
-        return cajaVM.def(nodeType);  // and its prototype
-      }
 
       traceStartup("DT: about to make TameOpaqueNode");
 
       // An opaque node is traversible but not manipulable by guest code. This
       // is the default taming for unrecognized nodes or nodes not explicitly
       // whitelisted.
-      var TameOpaqueNode = makeRestrictedNodeType({
-        nodeValue: 0,
-        nodeType: 0,
-        nodeName: 0,
-        nextSibling: 0,
-        previousSibling: 0,
-        firstChild: 0,
-        lastChild: 0,
-        parentNode: 0,
-        childNodes: 0,
-        ownerDocument: 0,
-        hasChildNodes: 0
-      });
-
-      traceStartup("DT: about to make TameForeignNode");
+      function TameOpaqueNode(node) {
+        TameBackedNode.call(this, node, nodePolicyOpaque);
+      }
+      inertCtor(TameOpaqueNode, TameBackedNode);
+      cajaVM.def(TameOpaqueNode);
 
       // A foreign node is one supplied by some external system to the guest
       // code, which the guest code may lay out within its own DOM tree but may
       // not traverse into in any way.
-      //
-      // TODO(ihab.awad): The taming chosen for foreign nodes is very
-      // restrictive and could be relaxed, but only after careful consideration.
-      // The below choices are for simple safety, e.g., exposing a foreign
-      // node's
-      // siblings when the foreign node has been added to some DOM tree outside
-      // this domicile might be dangerous.
-      var TameForeignNode = makeRestrictedNodeType({
-        nodeValue: 0,
-        nodeType: 0,
-        nodeName: 0,
-        nextSibling: undefined,
-        previousSibling: undefined,
-        firstChild: undefined,
-        lastChild: undefined,
-        parentNode: undefined,
-        childNodes: Object.freeze([]),
-        ownerDocument: undefined,
-        getElementsByTagName: function() { return Object.freeze([]); },
-        getElementsByClassName: function() { return Object.freeze([]); },
-        hasChildNodes: function() { return false; }
-      });
+      function TameForeignNode(node) {
+        TameBackedNode.call(this, node, nodePolicyForeign);
+      }
+      inertCtor(TameForeignNode, TameBackedNode);
+      TameForeignNode.prototype.getElementsByTagName = function (tagName) {
+        // needed because TameForeignNode doesn't inherit TameElement
+        return fakeNodeList([]);
+      };
+      TameForeignNode.prototype.getElementsByClassName = function (className) {
+        // needed because TameForeignNode doesn't inherit TameElement
+        return fakeNodeList([]);
+      };
+      cajaVM.def(TameForeignNode);
 
       traceStartup("DT: about to make TameTextNode");
 
-      function TameTextNode(node, editable) {
+      function TameTextNode(node) {
         assert(node.nodeType === 3);
-
-        // The below should not be strictly necessary since childrenEditable for
-        // TameScriptElements is always false, but it protects against tameNode
-        // being called naively on a text node from container code.
-        var pn = node.parentNode;
-        if (editable && pn) {
-          if (1 === pn.nodeType
-              && !htmlSchema.element(pn.tagName).allowed) {
-            // Do not allow mutation of text inside script elements.
-            // See the testScriptLoading testcase for examples of exploits.
-            editable = false;
-          }
-        }
-
-        TameBackedNode.call(this, node, editable, editable);
+        TameBackedNode.call(this, node);
       }
       inertCtor(TameTextNode, TameBackedNode, 'Text');
       var textAccessor = {
@@ -3024,7 +3234,7 @@ var Domado = (function() {
           return np(this).feral.nodeValue;
         }),
         set: nodeMethod(function (value) {
-          if (!np(this).editable) { throw new Error(NOT_EDITABLE); }
+          np(this).policy.requireEditable();
           np(this).feral.nodeValue = String(value || '');
         })
       };
@@ -3039,9 +3249,9 @@ var Domado = (function() {
       }));
       cajaVM.def(TameTextNode);  // and its prototype
 
-      function TameCommentNode(node, editable) {
+      function TameCommentNode(node) {
         assert(node.nodeType === 8);
-        TameBackedNode.call(this, node, editable, editable);
+        TameBackedNode.call(this, node);
       }
       inertCtor(TameCommentNode, TameBackedNode, 'CommentNode');
       setOwn(TameCommentNode.prototype, "toString", nodeMethod(function () {
@@ -3053,10 +3263,11 @@ var Domado = (function() {
       /**
        * Plays the role of an Attr node for TameElement objects.
        */
-      function TameBackedAttributeNode(node, editable, ownerElement) {
+      function TameBackedAttributeNode(node, ownerElement) {
         if (ownerElement === undefined) throw new Error(
             "ownerElement undefined");
-        TameBackedNode.call(this, node, editable);
+        TameBackedNode.call(this, node,
+            np(defaultTameNode(ownerElement)).policy);
         np(this).ownerElement = ownerElement;
       }
       inertCtor(TameBackedAttributeNode, TameBackedNode, 'Attr');
@@ -3065,7 +3276,7 @@ var Domado = (function() {
         var clone = bridal.cloneNode(np(this).feral, Boolean(deep));
         // From http://www.w3.org/TR/DOM-Level-2-Core/core.html#ID-3A0ED0A4
         //   "Note that cloning an immutable subtree results in a mutable copy"
-        return new TameBackedAttributeNode(clone, true, np(this).ownerElement);
+        return new TameBackedAttributeNode(clone, np(this).ownerElement);
       }));
       var nameAccessor = {
         enumerable: true,
@@ -3100,7 +3311,7 @@ var Domado = (function() {
         ownerElement: {
           enumerable: true,
           get: nodeMethod(function () {
-            return defaultTameNode(np(this).ownerElement, np(this).editable);
+            return defaultTameNode(np(this).ownerElement);
           })
         },
         nodeType: P_constant(2),
@@ -3145,7 +3356,7 @@ var Domado = (function() {
                 enumerable: canHaveEnumerableAccessors,
                 configurable: false,
                 set: nodeMethod(function eventHandlerSetter(listener) {
-                  if (!np(this).editable) { throw new Error(NOT_EDITABLE); }
+                  np(this).policy.requireEditable();
                   if (!listener) {  // Clear the current handler
                     np(this).feral[attribName] = null;
                   } else {
@@ -3167,10 +3378,9 @@ var Domado = (function() {
        * See comments on TameBackedNode regarding return value.
        * @constructor
        */
-      function TameElement(node, editable, childrenEditable, opt_proxyType) {
+      function TameElement(node, opt_policy, opt_proxyType) {
         assert(node.nodeType === 1);
-        var obj = TameBackedNode.call(this, node, editable, childrenEditable,
-           opt_proxyType);
+        var obj = TameBackedNode.call(this, node, opt_policy, opt_proxyType);
         np(this).geometryDelegate = node;
         return obj;
       }
@@ -3201,6 +3411,7 @@ var Domado = (function() {
         });
       }
       TameElement.prototype.getAttribute = nodeMethod(function (attribName) {
+        if (!np(this).policy.attributesVisible) { return null; }
         var feral = np(this).feral;
         attribName = String(attribName).toLowerCase();
         if (/__$/.test(attribName)) {
@@ -3216,11 +3427,11 @@ var Domado = (function() {
         return virtualizeAttributeValue(atype, value);
       });
       TameElement.prototype.getAttributeNode = nodeMethod(function (name) {
+        if (!np(this).policy.attributesVisible) { return null; }
         var feral = np(this).feral;
         var hostDomNode = feral.getAttributeNode(name);
         if (hostDomNode === null) { return null; }
-        return new TameBackedAttributeNode(
-            hostDomNode, np(this).editable, feral);
+        return new TameBackedAttributeNode(hostDomNode, feral);
       });
       TameElement.prototype.hasAttribute = nodeMethod(function (attribName) {
         var feral = np(this).feral;
@@ -3237,11 +3448,12 @@ var Domado = (function() {
           function (attribName, value) {
         //console.debug("setAttribute", this, attribName, value);
         var feral = np(this).feral;
-        if (!np(this).editable) { throw new Error(NOT_EDITABLE); }
+        np(this).policy.requireEditable();
         attribName = String(attribName).toLowerCase();
         if (/__$/.test(attribName)) {
           throw new TypeError('Attributes may not end with __');
         }
+        if (!np(this).policy.attributesVisible) { return null; }
         var tagName = feral.tagName.toLowerCase();
         var atype = htmlSchema.attribute(tagName, attribName).type;
         if (atype === void 0) {
@@ -3267,7 +3479,7 @@ var Domado = (function() {
       });
       TameElement.prototype.removeAttribute = nodeMethod(function (attribName) {
         var feral = np(this).feral;
-        if (!np(this).editable) { throw new Error(NOT_EDITABLE); }
+        np(this).policy.requireEditable();
         attribName = String(attribName).toLowerCase();
         if (/__$/.test(attribName)) {
           throw new TypeError('Attributes may not end with __');
@@ -3282,13 +3494,11 @@ var Domado = (function() {
       });
       TameElement.prototype.getElementsByTagName = nodeMethod(
           function(tagName) {
-        return tameGetElementsByTagName(
-            np(this).feral, tagName, np(this).childrenEditable);
+        return tameGetElementsByTagName(np(this).feral, tagName);
       });
       TameElement.prototype.getElementsByClassName = nodeMethod(
           function(className) {
-        return tameGetElementsByClassName(
-            np(this).feral, className, np(this).childrenEditable);
+        return tameGetElementsByClassName(np(this).feral, className);
       });
       TameElement.prototype.getBoundingClientRect = nodeMethod(function () {
         var feral = np(this).feral;
@@ -3305,7 +3515,7 @@ var Domado = (function() {
       });
       TameElement.prototype.updateStyle = nodeMethod(function (style) {
         var feral = np(this).feral;
-        if (!np(this).editable) { throw new Error(NOT_EDITABLE); }
+        np(this).policy.requireEditable();
         var cssPropertiesAndValues = cssSealerUnsealerPair.unseal(style);
         if (!cssPropertiesAndValues) { throw new Error(); }
 
@@ -3361,7 +3571,7 @@ var Domado = (function() {
             Object.create(geometryDelegateProperty);
         geometryDelegatePropertySettable.set =
             nodeMethod(function (value, prop) {
-          if (!np(this).editable) { throw new Error(NOT_EDITABLE); }
+          np(this).policy.requireEditable();
           np(this).geometryDelegate[prop] = +value;
         });
         definePropertiesAwesomely(TameElement.prototype, {
@@ -3379,7 +3589,7 @@ var Domado = (function() {
           scrollHeight: geometryDelegateProperty
         });
       })();
-      var innerTextProp = {
+      var textContentProp = {
         enumerable: true,
         get: nodeMethod(function () {
           var text = [];
@@ -3388,11 +3598,10 @@ var Domado = (function() {
         }),
         set: nodeMethod(function (newText) {
           // This operation changes the child node list (but not other
-          // properties
-          // of the element) so it checks childrenEditable. Note that this check
-          // is critical to security, as else a client can set the innerHTML of
-          // a <script> element to execute scripts.
-          if (!np(this).childrenEditable) { throw new Error(NOT_EDITABLE); }
+          // properties of the element) so it checks childrenEditable. Note that
+          // this check is critical to security, as else a client can set the
+          // textContent of a <script> element to execute scripts.
+          np(this).policy.requireChildrenEditable();
           var newTextStr = newText != null ? String(newText) : '';
           var el = np(this).feral;
           for (var c; (c = el.firstChild);) { el.removeChild(c); }
@@ -3420,15 +3629,18 @@ var Domado = (function() {
         },
         title: NP.filterAttr(defaultToEmptyStr, String),
         dir: NP.filterAttr(defaultToEmptyStr, String),
-        innerText: innerTextProp,
-        textContent: innerTextProp,
+        textContent: textContentProp,
+        innerText: textContentProp,
+        // Note: Per MDN, innerText is actually subtly different than
+        // textContent, in that innerText does not include text hidden via
+        // styles, per MDN. We do not implement this difference.
         nodeName: tagNameAttr,
         tagName: tagNameAttr,
         style: NP.filter(
             false,
             nodeMethod(function (styleNode) {
               TameStyle || buildTameStyle();
-              return new TameStyle(styleNode, np(this).editable, this);
+              return new TameStyle(styleNode, np(this).policy.editable, this);
             }),
             true, identity),
         innerHTML: {
@@ -3460,10 +3672,9 @@ var Domado = (function() {
           set: nodeMethod(function (htmlFragment) {
             // This operation changes the child node list (but not other
             // properties of the element) so it checks childrenEditable. Note
-            // that
-            // this check is critical to security, as else a client can set the
-            // innerHTML of a <script> element to execute scripts.
-            if (!np(this).childrenEditable) { throw new Error(NOT_EDITABLE); }
+            // that this check is critical to security, as else a client can set
+            // the innerHTML of a <script> element to execute scripts.
+            np(this).policy.requireChildrenEditable();
             var node = np(this).feral;
             var schemaElem = htmlSchema.element(node.tagName);
             if (!schemaElem.allowed) { throw new Error(); }
@@ -3500,13 +3711,12 @@ var Domado = (function() {
                    ancestor !== containerNode;
                    ancestor = makeDOMAccessible(ancestor.parentNode)) {
                 if (ancestor === feralBody) {
-                  return defaultTameNode(feralBody, np(this).editable);
+                  return defaultTameNode(feralBody);
                 }
               }
               return null;
             } else {
-              return tameRelatedNode(feralOffsetParent, np(this).editable,
-                  defaultTameNode);
+              return tameRelatedNode(feralOffsetParent, defaultTameNode);
             }
           })
         }
@@ -3519,8 +3729,8 @@ var Domado = (function() {
        * Define a taming class for a subclass of HTMLElement.
        *
        * @param {Array} record.superclass The tame superclass constructor
-       *     (defaults to TameElement) with parameters (this, node, editable,
-       *     childrenEditable, opt_proxyType).
+       *     (defaults to TameElement) with parameters (this, node, policy,
+       *     opt_proxyType).
        * @param {Array} record.names The element names which should be tamed
        *     using this class.
        * @param {String} record.domClass The DOM-specified class name.
@@ -3529,8 +3739,7 @@ var Domado = (function() {
        * @param {function} record.construct Code to invoke at the end of
        *     construction; takes and returns self.
        * @param {boolean} record.forceChildrenNotEditable Whether to force the
-       *     childrenEditable flag to be false regardless of the value of
-       *     editable.
+       *     child node list and child nodes to not be mutable.
        * @return {function} The constructor.
        */
       function defineElement(record) {
@@ -3538,13 +3747,10 @@ var Domado = (function() {
         var proxyType = record.proxyType;
         var construct = record.construct || identity;
         var virtualized = record.virtualized || false;
-        var forceChildrenNotEditable = record.forceChildrenNotEditable;
-        function TameSpecificElement(node, editable) {
-          superclass.call(this,
-                          node,
-                          editable,
-                          editable && !forceChildrenNotEditable,
-                          proxyType);
+        var opt_policy = record.forceChildrenNotEditable
+            ? nodePolicyReadOnlyChildren : null;
+        function TameSpecificElement(node) {
+          superclass.call(this, node, opt_policy, proxyType);
           construct.call(this);
         }
         inertCtor(TameSpecificElement, superclass, record.domClass);
@@ -3820,9 +4026,9 @@ var Domado = (function() {
           }
         }
 
-        function TameCanvasElement(node, editable) {
+        function TameCanvasElement(node) {
           // TODO(kpreid): review whether this can use defineElement
-          TameElement.call(this, node, editable, editable);
+          TameElement.call(this, node);
 
           // helpers for tame context
           var context = makeDOMAccessible(node.getContext('2d'));
@@ -4191,7 +4397,7 @@ var Domado = (function() {
                 ]))
           });
           TameContext2DConf.confide(tameContext2d);
-          TameContext2DConf.p(tameContext2d).editable = np(this).editable;
+          TameContext2DConf.p(tameContext2d).policy = np(this).policy;
           TameContext2DConf.p(tameContext2d).feral = context;
           cajaVM.def(tameContext2d);
           taming.permitUntaming(tameContext2d);
@@ -4199,14 +4405,11 @@ var Domado = (function() {
         inertCtor(TameCanvasElement, TameElement, 'HTMLCanvasElement');
         TameCanvasElement.prototype.getContext = function (contextId) {
 
-          // TODO(kpreid): We can refine this by inventing a
-          // ReadOnlyCanvas object
-          // to return in this situation, which allows getImageData and
-          // so on but
-          // not any drawing. Not bothering to do that for now; if
-          // you have a use
-          // for it let us know.
-          if (!np(this).editable) { throw new Error(NOT_EDITABLE); }
+          // TODO(kpreid): We can refine this by inventing a ReadOnlyCanvas
+          // object to return in this situation, which allows getImageData and
+          // so on but not any drawing. Not bothering to do that for now; if
+          // you have a use for it let us know.
+          np(this).policy.requireEditable();
 
           enforceType(contextId, 'string', 'contextId');
           switch (contextId) {
@@ -4288,7 +4491,7 @@ var Domado = (function() {
             enumerable: true,
             get: nodeMethod(function () {
               return tameHTMLCollection(
-                  np(this).feral.elements, np(this).editable, defaultTameNode);
+                  np(this).feral.elements, defaultTameNode);
             })
           },
           enctype: NP.filterAttr(defaultToEmptyStr, String),
@@ -4304,11 +4507,11 @@ var Domado = (function() {
         }
       });
       TameFormElement.prototype.submit = nodeMethod(function () {
-        if (!np(this).editable) { throw new Error(NOT_EDITABLE); }
+        np(this).policy.requireEditable();
         return np(this).feral.submit();
       });
       TameFormElement.prototype.reset = nodeMethod(function () {
-        if (!np(this).editable) { throw new Error(NOT_EDITABLE); }
+        np(this).policy.requireEditable();
         return np(this).feral.reset();
       });
 
@@ -4346,7 +4549,7 @@ var Domado = (function() {
               return np(this).feral.align;
             }),
             set: nodeMethod(function (alignment) {
-              if (!np(this).editable) { throw new Error(NOT_EDITABLE); }
+              np(this).policy.requireEditable();
               alignment = String(alignment);
               if (alignment === 'left' ||
                   alignment === 'right' ||
@@ -4361,7 +4564,7 @@ var Domado = (function() {
               return np(this).feral.frameBorder;
             }),
             set: nodeMethod(function (border) {
-              if (!np(this).editable) { throw new Error(NOT_EDITABLE); }
+              np(this).policy.requireEditable();
               border = String(border).toLowerCase();
               if (border === '0' || border === '1' ||
                   border === 'no' || border === 'yes') {
@@ -4392,6 +4595,7 @@ var Domado = (function() {
         // html4-attributes-whitelist.json, since they're needed on tags
         // like <img>.  Because there's currently no way to filter attributes
         // based on the tag, we have to blacklist these two here.
+        // TODO(kpreid): Don't we have per-attribute filtering now?
         if (attrLc !== 'name' && attrLc !== 'src') {
           return TameElement.prototype.setAttribute.call(this, attr, value);
         }
@@ -4446,9 +4650,7 @@ var Domado = (function() {
             enumerable: true,
             get: nodeMethod(function () {
               return new TameOptionsList(
-                  np(this).feral.options,
-                  np(this).editable,
-                  defaultTameNode, 'name');
+                  np(this).feral.options, defaultTameNode, 'name');
             })
           },
           selectedIndex: NP.filterProp(identity, toInt),
@@ -4493,7 +4695,7 @@ var Domado = (function() {
         }
       });
 
-      function dynamicCodeDispatchMaker(that) {
+      function dynamicCodeDispatchMaker(privates) {
         window.cajaDynamicScriptCounter =
           window.cajaDynamicScriptCounter ?
             window.cajaDynamicScriptCounter + 1 : 0;
@@ -4501,9 +4703,9 @@ var Domado = (function() {
           window.cajaDynamicScriptCounter + '___';
         window[name] = function() {
           try {
-            if (that.src &&
+            if (privates.src &&
               'function' === typeof domicile.evaluateUntrustedExternalScript) {
-              domicile.evaluateUntrustedExternalScript(that.src);
+              domicile.evaluateUntrustedExternalScript(privates.src);
             }
           } finally {
             window[name] = undefined;
@@ -4520,17 +4722,17 @@ var Domado = (function() {
           src: NP.filter(false, identity, true, identity)
         },
         construct: function () {
-          var script = np(this);
-          script.feral.appendChild(
+          var privates = np(this);
+          privates.feral.appendChild(
             document.createTextNode(
-              dynamicCodeDispatchMaker(script)));
+              dynamicCodeDispatchMaker(privates)));
         }
       });
 
       setOwn(TameScriptElement.prototype, 'setAttribute', nodeMethod(
           function (attrib, value) {
         var feral = np(this).feral;
-        if (!np(this).editable) { throw new Error(NOT_EDITABLE); }
+        np(this).policy.requireEditable();
         TameElement.prototype.setAttribute.call(this, attrib, value);
         var attribName = String(attrib).toLowerCase();
         if ("src" === attribName) {
@@ -4548,8 +4750,7 @@ var Domado = (function() {
             //     return new TameNodeList(np(this).feral...., ..., ...)
             enumerable: true,
             get: nodeMethod(function () {
-              return new TameNodeList(
-                  np(this).feral.cells, np(this).editable, defaultTameNode);
+              return new TameNodeList(np(this).feral.cells, defaultTameNode);
             })
           },
           cellIndex: NP.ro,
@@ -4557,8 +4758,7 @@ var Domado = (function() {
           rows: {
             enumerable: true,
             get: nodeMethod(function () {
-              return new TameNodeList(
-                  np(this).feral.rows, np(this).editable, defaultTameNode);
+              return new TameNodeList(np(this).feral.rows, defaultTameNode);
             })
           },
           rowIndex: NP.ro,
@@ -4569,13 +4769,12 @@ var Domado = (function() {
         }
       });
       TameTableCompElement.prototype.insertRow = nodeMethod(function (index) {
-        if (!np(this).editable) { throw new Error(NOT_EDITABLE); }
+        np(this).policy.requireEditable();
         requireIntIn(index, -1, np(this).feral.rows.length);
-        return defaultTameNode(np(this).feral.insertRow(index),
-            np(this).editable);
+        return defaultTameNode(np(this).feral.insertRow(index));
       });
       TameTableCompElement.prototype.deleteRow = nodeMethod(function (index) {
-        if (!np(this).editable) { throw new Error(NOT_EDITABLE); }
+        np(this).policy.requireEditable();
         requireIntIn(index, -1, np(this).feral.rows.length);
         np(this).feral.deleteRow(index);
       });
@@ -4592,14 +4791,13 @@ var Domado = (function() {
         domClass: 'HTMLTableRowElement'
       });
       TameTableRowElement.prototype.insertCell = nodeMethod(function (index) {
-        if (!np(this).editable) { throw new Error(NOT_EDITABLE); }
+        // TODO(kpreid): Should this not be a childrenEditable test?
+        np(this).policy.requireEditable();
         requireIntIn(index, -1, np(this).feral.cells.length);
-        return defaultTameNode(
-            np(this).feral.insertCell(index),
-            np(this).editable);
+        return defaultTameNode(np(this).feral.insertCell(index));
       });
       TameTableRowElement.prototype.deleteCell = nodeMethod(function (index) {
-        if (!np(this).editable) { throw new Error(NOT_EDITABLE); }
+        np(this).policy.requireEditable();
         requireIntIn(index, -1, np(this).feral.cells.length);
         np(this).feral.deleteCell(index);
       });
@@ -4612,8 +4810,12 @@ var Domado = (function() {
           tBodies: {
             enumerable: true,
             get: nodeMethod(function () {
-              return new TameNodeList(
-                  np(this).feral.tBodies, np(this).editable, defaultTameNode);
+              if (np(this).policy.childrenVisible) {
+                return new TameNodeList(np(this).feral.tBodies,
+                    defaultTameNode);
+              } else {
+                return fakeNodeList([]);
+              }
             })
           },
           tHead: NP_tameDescendant,
@@ -4624,37 +4826,36 @@ var Domado = (function() {
         }
       });
       TameTableElement.prototype.createTHead = nodeMethod(function () {
-        if (!np(this).editable) { throw new Error(NOT_EDITABLE); }
-        return defaultTameNode(np(this).feral.createTHead(), np(this).editable);
+        np(this).policy.requireEditable();
+        return defaultTameNode(np(this).feral.createTHead());
       });
       TameTableElement.prototype.deleteTHead = nodeMethod(function () {
-        if (!np(this).editable) { throw new Error(NOT_EDITABLE); }
+        np(this).policy.requireEditable();
         np(this).feral.deleteTHead();
       });
       TameTableElement.prototype.createTFoot = nodeMethod(function () {
-        if (!np(this).editable) { throw new Error(NOT_EDITABLE); }
-        return defaultTameNode(np(this).feral.createTFoot(), np(this).editable);
+        np(this).policy.requireEditable();
+        return defaultTameNode(np(this).feral.createTFoot());
       });
       TameTableElement.prototype.deleteTFoot = nodeMethod(function () {
-        if (!np(this).editable) { throw new Error(NOT_EDITABLE); }
+        np(this).policy.requireEditable();
         np(this).feral.deleteTFoot();
       });
       TameTableElement.prototype.createCaption = nodeMethod(function () {
-        if (!np(this).editable) { throw new Error(NOT_EDITABLE); }
-        return defaultTameNode(np(this).feral.createCaption(), np(this).editable);
+        np(this).policy.requireEditable();
+        return defaultTameNode(np(this).feral.createCaption());
       });
       TameTableElement.prototype.deleteCaption = nodeMethod(function () {
-        if (!np(this).editable) { throw new Error(NOT_EDITABLE); }
+        np(this).policy.requireEditable();
         np(this).feral.deleteCaption();
       });
       TameTableElement.prototype.insertRow = nodeMethod(function (index) {
-        if (!np(this).editable) { throw new Error(NOT_EDITABLE); }
+        np(this).policy.requireEditable();
         requireIntIn(index, -1, np(this).feral.rows.length);
-        return defaultTameNode(np(this).feral.insertRow(index),
-            np(this).editable);
+        return defaultTameNode(np(this).feral.insertRow(index));
       });
       TameTableElement.prototype.deleteRow = nodeMethod(function (index) {
-        if (!np(this).editable) { throw new Error(NOT_EDITABLE); }
+        np(this).policy.requireEditable();
         requireIntIn(index, -1, np(this).feral.rows.length);
         np(this).feral.deleteRow(index);
       });
@@ -4714,9 +4915,7 @@ var Domado = (function() {
         enumerable: true,
         extendedAccessors: true,
         get: eventMethod(function (prop) {
-          // TODO(kpreid): Isn't it unsafe to be always editable=true here?
-          return tameRelatedNode(ep(this).feral[prop], true,
-              defaultTameNode);
+          return tameRelatedNode(ep(this).feral[prop], defaultTameNode);
         })
       };
 
@@ -4749,21 +4948,20 @@ var Domado = (function() {
           get: eventMethod(function () {
             var event = ep(this).feral;
             return tameRelatedNode(
-                event.target || event.srcElement, true, defaultTameNode);
+                event.target || event.srcElement, defaultTameNode);
           })
         },
         srcElement: {
           enumerable: true,
           get: eventMethod(function () {
-            return tameRelatedNode(ep(this).feral.srcElement, true,
-                defaultTameNode);
+            return tameRelatedNode(ep(this).feral.srcElement, defaultTameNode);
           })
         },
         currentTarget: {
           enumerable: true,
           get: eventMethod(function () {
             var e = ep(this).feral;
-            return tameRelatedNode(e.currentTarget, true, defaultTameNode);
+            return tameRelatedNode(e.currentTarget, defaultTameNode);
           })
         },
         relatedTarget: {
@@ -4778,7 +4976,7 @@ var Domado = (function() {
                 t = e.fromElement;
               }
             }
-            return tameRelatedNode(t, true, defaultTameNode);
+            return tameRelatedNode(t, defaultTameNode);
           }),
           // relatedTarget is read-only.  this dummy setter is because some code
           // tries to workaround IE by setting a relatedTarget when it's not
@@ -4854,9 +5052,9 @@ var Domado = (function() {
       }));
       cajaVM.def(TameCustomHTMLEvent);  // and its prototype
 
-      function TameHTMLDocument(doc, container, domain, editable) {
+      function TameHTMLDocument(doc, container, domain) {
         traceStartup("DT: TameHTMLDocument begin");
-        TamePseudoNode.call(this, editable);
+        TamePseudoNode.call(this);
 
         np(this).feralDoc = doc;
         np(this).feralContainerNode = container;
@@ -4865,7 +5063,7 @@ var Domado = (function() {
 
         traceStartup("DT: TameHTMLDocument done private");
 
-        var tameContainer = defaultTameNode(container, editable);
+        var tameContainer = defaultTameNode(container);
         np(this).tameContainerNode = tameContainer;
 
         definePropertiesAwesomely(this, {
@@ -4917,8 +5115,7 @@ var Domado = (function() {
           var tameForms = [];
           for (var i = 0; i < document.forms.length; i++) {
             var tameForm = tameRelatedNode(
-              makeDOMAccessible(document.forms).item(i),
-              np(this).editable, defaultTameNode);
+              makeDOMAccessible(document.forms).item(i), defaultTameNode);
             // tameRelatedNode returns null if the node is not part of
             // this node's virtual document.
             if (tameForm !== null) { tameForms.push(tameForm); }
@@ -4946,13 +5143,12 @@ var Domado = (function() {
       TameHTMLDocument.prototype.getElementsByTagName = nodeMethod(
           function (tagName) {
         tagName = String(tagName).toLowerCase();
-        return tameGetElementsByTagName(
-            np(this).feralContainerNode, tagName, np(this).editable);
+        return tameGetElementsByTagName(np(this).feralContainerNode, tagName);
       });
       TameHTMLDocument.prototype.getElementsByClassName = nodeMethod(
           function (className) {
         return tameGetElementsByClassName(
-            np(this).feralContainerNode, className, np(this).editable);
+            np(this).feralContainerNode, className);
       });
       TameHTMLDocument.prototype.addEventListener =
           nodeMethod(function (name, listener, useCapture) {
@@ -4970,14 +5166,14 @@ var Domado = (function() {
                 name, listener, useCapture);
           });
       TameHTMLDocument.prototype.createComment = nodeMethod(function (text) {
-        return defaultTameNode(np(this).feralDoc.createComment(" "), true);
+        return defaultTameNode(np(this).feralDoc.createComment(" "));
       });
       TameHTMLDocument.prototype.createDocumentFragment = nodeMethod(function () {
-        if (!np(this).editable) { throw new Error(NOT_EDITABLE); }
-        return defaultTameNode(np(this).feralDoc.createDocumentFragment(), true);
+        np(this).policy.requireEditable();
+        return defaultTameNode(np(this).feralDoc.createDocumentFragment());
       });
       TameHTMLDocument.prototype.createElement = nodeMethod(function (tagName) {
-        if (!np(this).editable) { throw new Error(NOT_EDITABLE); }
+        np(this).policy.requireEditable();
         tagName = String(tagName).toLowerCase();
         tagName = htmlSchema.virtualToRealElementName(tagName);
         var newEl = np(this).feralDoc.createElement(tagName);
@@ -4992,17 +5188,17 @@ var Domado = (function() {
             }
           }
         }
-        return defaultTameNode(newEl, true);
+        return defaultTameNode(newEl);
       });
       TameHTMLDocument.prototype.createTextNode = nodeMethod(function (text) {
-        if (!np(this).editable) { throw new Error(NOT_EDITABLE); }
+        np(this).policy.requireEditable();
         return defaultTameNode(np(this).feralDoc.createTextNode(
-            text !== null && text !== void 0 ? '' + text : ''), true);
+            text !== null && text !== void 0 ? '' + text : ''));
       });
       TameHTMLDocument.prototype.getElementById = nodeMethod(function (id) {
         id += idSuffix;
         var node = np(this).feralDoc.getElementById(id);
-        return defaultTameNode(node, np(this).editable);
+        return defaultTameNode(node);
       });
       // http://www.w3.org/TR/DOM-Level-2-Events/events.html
       // #Events-DocumentEvent-createEvent
@@ -5085,7 +5281,6 @@ var Domado = (function() {
 
       // For JavaScript handlers.  See function dispatchEvent below
       domicile.handlers = [];
-      domicile.TameHTMLDocument = TameHTMLDocument;  // Exposed for testing
       domicile.tameNode = cajaVM.def(defaultTameNode);
       domicile.feralNode = cajaVM.def(function (tame) {
         return np(tame).feral;  // NOTE: will be undefined for pseudo nodes
@@ -5499,8 +5694,7 @@ var Domado = (function() {
           // TODO(jasvir): Properly wire up document.domain
           // by untangling the cyclic dependence between
           // TameWindow and TameDocument
-          String(undefined || 'nosuchhost.invalid'),
-          true);
+          String(undefined || 'nosuchhost.invalid'));
       traceStartup("DT: finished TameHTMLDocument");
       domicile.htmlEmitterTarget = containerNode;
 
@@ -5576,8 +5770,6 @@ var Domado = (function() {
        * document.
        */
       function TameDefaultView() {
-        // TODO(kpreid): The caller passes document's editable flag; this does not
-        // take such a parameter. Which is right?
         // TODO(mikesamuel): Implement in terms of
         //     http://www.w3.org/TR/cssom-view/#the-windowview-interface
         // TODO: expose a read-only version of the document
@@ -5585,7 +5777,7 @@ var Domado = (function() {
         // Exposing an editable default view that pointed to a read-only
         // tameDocument via document.defaultView would allow escalation of
         // authority.
-        assert(np(tameDocument).editable);
+        assert(np(tameDocument).policy.editable);
         taming.permitUntaming(this);
       }
 
@@ -5703,7 +5895,7 @@ var Domado = (function() {
       cajaVM.def(TameWindow);  // and its prototype
 
       var tameWindow = new TameWindow();
-      var tameDefaultView = new TameDefaultView(np(tameDocument).editable);
+      var tameDefaultView = new TameDefaultView();
 
       // Getters for properties which are installed on window AND defaultView.
       // See doc comment of TameDefaultView regarding authority to expose here.
@@ -5740,7 +5932,7 @@ var Domado = (function() {
 
       Object.freeze(tameDefaultView);
 
-      if (np(tameDocument).editable) {
+      if (np(tameDocument).policy.editable) {
         tameDocument.defaultView = tameDefaultView;
 
         // Hook for document.write support.
@@ -5906,7 +6098,7 @@ var Domado = (function() {
       }
       var imports = rulebreaker.getImports(pluginId);
       var domicile = windowToDomicile.get(imports);
-      var node = domicile.tameNode(thisNode, true);
+      var node = domicile.tameNode(thisNode);
       try {
         return plugin_dispatchToHandler(
           pluginId, handler, [ node, domicile.tameEvent(event), node ]);

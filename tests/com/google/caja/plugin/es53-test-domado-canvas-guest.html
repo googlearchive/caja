@@ -569,7 +569,10 @@
 <script type="text/javascript">
   jsunitRegister('testCanvasNotEditable',
                  function testCanvasNotEditable() {
-    var canvas = documentRO.getElementById('testCanvasNotEditable-canvas');
+    var canvas = makeReadOnly(
+        document.getElementById('testCanvasNotEditable-canvas'));
+    assertEquals('CANVAS', canvas.tagName);
+        // verify the node is otherwise functional, not just a broken object
     expectFailure(function () {
       canvas.getContext('2d');
     }, "can't get context for a RO canvas ref");

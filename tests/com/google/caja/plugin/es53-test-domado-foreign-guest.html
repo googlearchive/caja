@@ -17,12 +17,20 @@
 <script type="text/javascript">
   function assertBottom(msg, o) {
     if (!(o === null || o === undefined)) {
-      console.log("Expected bottom value: " + msg);
+      console.log("Expected bottom value: " + msg + "; but was", o);
       fail("Expected bottom value: " + msg);
     }
   }
   window.assertBottom = assertBottom; // SES scope workaround
 </script>
+
+<div>
+  <span class="innertest" id="innersafe">
+     For testEmbeddedForeign; must be early in document.
+     There should be exactly two spans visible in the
+     document, this and the added one, not foreign ones.
+  </span>
+</div>
 
 <p class="testcontainer" id="testNotNull">
   test-not-null
@@ -46,7 +54,7 @@
       fail(name + ' assertThrowsRestricted');
     } catch (e) {
       e = '' + e;
-      if (!/Node is restricted/.test(e)) {
+      if (!(/Node is restricted/.test(e) || /Node not editable\./.test(e))) {
         fail(name + ' assertThrowsRestricted failed with ' + e);
       }
     }
@@ -69,6 +77,15 @@
     // assertFalse(name + 'hasAttributes()', node.hasAttributes());
     assertEquals(name + 'attributes', 0, node.attributes.length);
     assertBottom(name + 'attributes[0]', node.attributes[0]);
+    // There is no getAttribute method but a client could try this:
+    assertBottom(name + 'getAttribute unknown',
+      Element.prototype.getAttribute.call(node, 'testattr'));
+    assertBottom(name + 'getAttribute known',
+      Element.prototype.getAttribute.call(node, 'title'));
+    assertBottom(name + 'getAttributeNode unknown',
+      Element.prototype.getAttributeNode.call(node, 'testattr'));
+    assertBottom(name + 'getAttributeNode known',
+      Element.prototype.getAttributeNode.call(node, 'title'));
 
     // assertFalse(name + 'isSupported()', node.isSupported('', ''));
 
@@ -85,11 +102,13 @@
     // });
 
     assertThrowsRestricted(name + 'replaceChild(Node,Node)', function() {
-      node.replaceChild(undefined /* ?? */, document.createElement('div'));
+      node.replaceChild(document.createElement('div'),
+        document.createElement('div'));
     });
 
     assertThrowsRestricted(name + 'insertBefore(Node,Node)', function() {
-      node.insertBefore(undefined /* ?? */, document.createElement('div'));
+      node.insertBefore(document.createElement('div'),
+        document.createElement('div'));
     });
 
     assertThrowsRestricted(name + 'removeChild(Node)', function() {
@@ -100,7 +119,7 @@
       node.appendChild(document.createElement('div') /* ?? */);
     });
 
-    assertBottom(name + 'ownerDocument', node.ownerDocument);
+    assertEquals(name + 'ownerDocument', node.ownerDocument, document);
     assertBottom(name + 'parentNode', node.parentNode);
 
     assertFalse(name + 'hasChildNodes()', node.hasChildNodes());
@@ -145,9 +164,53 @@
   testEmbeddedForeign
 </p>
 <script type="text/javascript">
+  // TODO(kpreid): Does this already exist? jsUnit.js assertArrayEquals is
+  // a deep-compare which is not good for this case.
+  function assertIdenticalElements(note, array1, array2) {
+    if (array1.length === array2.length) {
+      var ok = true;
+      for (var i = array1.length - 1; i >= 0; i--) {
+        if (array1[i] !== array2[i]) {
+          ok = false;
+          break;
+        }
+      }
+      if (ok) { return; }
+    }
+    // found a mismatch, generate default error
+    assertEquals(note, array1, array2);
+  }
+
   jsunitRegister('testEmbeddedForeign',
                  function testEmbeddedForeign() {
     testForeign('embedded-foreign', getEmbeddedForeignNode());
+
+    // Test that getElementsBy* skip foreign children.
+    // goodNode1 is at the beginning of the list in document order and
+    // goodNode2 is at the end; they test that foreign children are omitted.
+    var goodNode1 = document.getElementById('innersafe');
+    var goodNode2 = document.createElement('span');
+    goodNode2.className = 'innertest';
+    document.body.appendChild(goodNode2);
+
+    var classNameList = document.getElementsByClassName('innertest');
+    var tagNameList = document.getElementsByTagName('span');
+
+    assertIdenticalElements('getElementsByClassName',
+        [goodNode1, goodNode2], classNameList);
+    assertIdenticalElements('getElementsByTagName',
+        [goodNode1, goodNode2], tagNameList);
+
+    // Test that node lists remain live-updating in the case where foreign
+    // nodes exist.
+    var goodNode1b = document.createElement('span');
+    goodNode1.parentNode.appendChild(goodNode1b);
+    assertIdenticalElements('getElementsByClassName after',
+        [goodNode1, goodNode1b, goodNode2], tagNameList);
+    goodNode1b.className = 'innertest';
+    assertIdenticalElements('getElementsByTagName after',
+        [goodNode1, goodNode1b, goodNode2], classNameList);
+
     pass('testEmbeddedForeign');
   });
 </script>

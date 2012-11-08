@@ -859,14 +859,18 @@ document.write(
 <script type="text/javascript">
   jsunitRegister('testReadOnly',
                  function testReadOnly() {
-    function $(id) { return documentRO.getElementById(id); }
+    makeReadOnly(document.getElementById('testReadOnly'));
+    function $(id) { return document.getElementById(id); }
     assertEquals("I am indelible", $('indelible').innerHTML);
         // test we can access it and aren't just failing unconditionally
-    expectFailure(
-        function () {
-          documentRO.createElement('SPAN');
-        },
-        'successfully created element');
+    // TODO(kpreid): It is no longer possible to create an independent RO
+    // Document in the same Domado vdoc. Test this in a context where we can
+    // create a whole document.
+    //expectFailure(
+    //    function () {
+    //      documentRO.createElement('SPAN');
+    //    },
+    //    'successfully created element');
     expectFailure(
         function () {
           var el = document.createElement('SPAN');

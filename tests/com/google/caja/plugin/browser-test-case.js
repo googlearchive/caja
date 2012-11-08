@@ -362,14 +362,18 @@ function createExtraImportsForTesting(frameGroup, frame) {
     frame.tame(frame.markFunction(assertStringDoesNotContain));
 
   if (frame.div) {
-    // Create a readonly mirror of document so that we can test that mutations
-    // fail when they should.
-    standardImports.documentRO =
-      new frame.domicile.TameHTMLDocument(
-          document,          // Document of host frame
-          frame.div,         // Containing div in host frame
-          'nosuchhost.fake', // Fake domain name
-          false);            // Not writeable
+    // Create a node which is in a context such that it must be read-only.
+    // (Note taming membrane is in use here, so we get/return feral nodes.)
+    standardImports.makeReadOnly = frame.tame(frame.markFunction(
+        function (node) {
+      // Must clone to throw out the cached policy decision
+      var clone = node.cloneNode(true);
+      var container = document.createElement("anUnknownElement");
+      container.appendChild(clone);
+      node.parentNode.replaceChild(container, node);
+      frame.domicile.tameNode(clone); // cause registration as Domado node
+      return clone;
+    }));
   }
 
   var fakeConsole = {
