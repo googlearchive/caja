@@ -3718,7 +3718,12 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
   function tameStringRegExp(orig) {
     return markFunc(function (regexp) {
         var cast = enforceMatchable(regexp);
-        return orig.call(this, cast ? ('' + regexp) : regexp);
+        var result = orig.call(this, cast ? ('' + regexp) : regexp);
+        if (result !== null) {
+          grantRead(result, 'index');
+          grantRead(result, 'input');
+        }
+        return result;
       });
   }
 

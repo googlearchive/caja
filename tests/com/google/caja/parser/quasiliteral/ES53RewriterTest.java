@@ -170,6 +170,13 @@ public class ES53RewriterTest extends CommonJsRewriterTestCase {
         "assertEquals('' + (/(.*)/).exec(), 'undefined,undefined');");
   }
 
+  public final void testRegExpProps() throws Exception {
+    assertConsistent("'abcd'.match(/c/).index");
+    assertConsistent("'abcd'.match(/c/).input");
+    assertConsistent("'cdbBdbsbz'.match(/d(b+)(d)/i).join('|')");
+    assertConsistent("'should not match'.match(/z/);");
+  }
+
   public final void testClosure() throws Exception {
     assertConsistent(
         "function f() {" +
