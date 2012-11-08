@@ -1834,51 +1834,6 @@ var Domado = (function() {
         }
       }
 
-      /**
-       * Undoes some of the changes made by sanitizeHtml, e.g. stripping ID
-       * prefixes.
-       */
-      function tameInnerHtml(htmlText) {
-        var out = [];
-        innerHtmlTamer(htmlText, out);
-        return out.join('');
-      }
-      var innerHtmlTamer = html.makeSaxParser({
-          startTag: function (tagName, attribs, out) {
-            tagName = realToVirtualElementName(tagName);
-            out.push('<', tagName);
-            for (var i = 0; i < attribs.length; i += 2) {
-              var aname = '' + attribs[+i];
-              var atype = htmlSchema.attribute(tagName, aname).type;
-              var value = attribs[i + 1];
-              if (aname !== 'target' && atype !== void 0) {
-                value = virtualizeAttributeValue(atype, value);
-                if (typeof value === 'string') {
-                  out.push(' ', aname, '="', html.escapeAttrib(value), '"');
-                }
-              } else if (cajaPrefRe.test(aname)) {
-                out.push(' ', aname.substring(cajaPrefix.length), '="',
-                    html.escapeAttrib(value), '"');
-              }
-            }
-            out.push('>');
-          },
-          endTag: function (tagName, out) {
-            var rempty = htmlSchema.element(tagName).empty;
-            tagName = realToVirtualElementName(tagName);
-            var vempty = htmlSchema.element(tagName).empty;
-            if (vempty && !rempty) {
-              // omit end tag because the browser doesn't see the virtualized
-              // element as empty
-              return;
-            }
-            out.push('</', tagName, '>');
-          },
-          pcdata: function (text, out) { out.push(text); },
-          rcdata: function (text, out) { out.push(text); },
-          cdata: function (text, out) { out.push(text); }
-        });
-
       function getSafeTargetAttribute(tagName, attribName, value) {
         if (value !== null) {
           value = String(value);
@@ -2029,6 +1984,141 @@ var Domado = (function() {
           default:
             return null;
         }
+      }
+      
+      // Implementation of HTML5 "HTML fragment serialization algorithm"
+      // per http://www.whatwg.org/specs/web-apps/current-work/multipage/the-end.html#html-fragment-serialization-algorithm
+      // as of 2012-09-11.
+      //
+      // Per HTML5: "Warning! It is possible that the output of this algorithm,
+      // if parsed with an HTML parser, will not return the original tree
+      // structure." Therefore, an innerHTML round-trip on a safe (from Caja's
+      // perspective) but malicious DOM may be able to attack guest code.
+      // TODO(kpreid): Evaluate desirability of prohibiting the worst cases of
+      // this in our DOM mutators.
+      function htmlFragmentSerialization(tameRoot) {
+        tameRoot = TameNodeT.coerce(tameRoot);
+        var sl = [];
+
+        // Note: This algorithm is implemented in terms of tame nodes, not
+        // feral nodes; therefore, it requires no access checks as it yields
+        // only information which clients can obtain by object access.
+        function recur(tameParent) {
+          var nodes = tameParent.childNodes;
+          var nNodes = nodes.length;
+          for (var i = 0; i < nNodes; i++) {
+            var tameCurrent = nodes.item(i);
+            switch (tameCurrent.nodeType) {
+              case 1:  // Element
+                // TODO(kpreid): namespace issues
+                var tagName = tameCurrent.tagName;
+                if (tagName === undefined) {
+                  // foreign node case
+                  continue;
+                }
+                tagName = tagName.toLowerCase();
+                    // TODO(kpreid): not conformant
+                sl.push('<', tagName);
+                var attrs = tameCurrent.attributes;
+                var nAttrs = attrs.length;
+                for (var j = 0; j < nAttrs; j++) {
+                  var attr = attrs.item(j);
+                  var aName = attr.name;
+                  if (aName === 'target') {
+                    // hide Caja-added link target attributes
+                    // TODO(kpreid): Shouldn't these be hidden in the attributes
+                    // list? This special case (and the one below) is emulating
+                    // tested-for behavior in a previous .innerHTML
+                    // implementation, not written from first principles.
+                    continue;
+                  }
+                  var aValue = attr.value;
+                  if (aValue === null) {
+                    // rejected by virtualizeAttributeValue
+                    // TODO(kpreid): Shouldn't these be hidden in the attributes
+                    // list?
+                    continue;
+                  }
+                  // TODO(kpreid): check escapeAttrib conformance
+                  sl.push(' ', attr.name, '="', html.escapeAttrib(aValue), '"');
+                }
+                sl.push('>');
+                switch (tagName) {
+                  case 'area':
+                  case 'base':
+                  case 'basefont':
+                  case 'bgsound':
+                  case 'br':
+                  case 'col':
+                  case 'command':
+                  case 'embed':
+                  case 'frame':
+                  case 'hr':
+                  case 'img':
+                  case 'input':
+                  case 'keygen':
+                  case 'link':
+                  case 'meta':
+                  case 'param':
+                  case 'source':
+                  case 'track':
+                  case 'wbr':
+                    // do nothing
+                    break;
+                  case 'pre':
+                  case 'textarea':
+                  case 'listing':
+                    if (tameCurrent.firstChild &&
+                        tameCurrent.firstChild.nodeType === 3 &&
+                        tameCurrent.firstChild.data[0] === '\n') {
+                      sl.push('\n');
+                    }
+                    // fallthrough
+                  default:
+                    recur(tameCurrent);
+                    sl.push('</', tagName, '>');
+                }
+                break;
+              case 3:  // Text
+                switch (tameCurrent.parentNode.tagName.toLowerCase()) {
+                    // TODO(kpreid): namespace
+                  case 'style':
+                  case 'script':
+                  case 'xmp':
+                  case 'iframe':
+                  case 'noembed':
+                  case 'noframes':
+                  case 'plaintext':
+                  case 'noscript':
+                    sl.push(tameCurrent.data);
+                    break;
+                  default:
+                    sl.push(html.escapeAttrib(tameCurrent.data));
+                    break;
+                }
+                break;
+              case 8:  // Comment
+                sl.push('<', '!--', tameCurrent.data, '-->');
+                break;
+              case 7:  // ProcessingInstruction
+                sl.push('<?', tameCurrent.target, ' ', tameCurrent.data, '>');
+                break;
+              case 10:  // DocumentType
+                sl.push('<', '!DOCTYPE ', tameCurrent.name, '>');
+                break;
+              default:
+                if (typeof console !== 'undefined') {
+                  console.error('Domado internal: HTML fragment serialization '
+                      + 'algorithm met unexpected node type '
+                      + tameCurrent.nodeType);
+                }
+                break;
+            }
+          }
+        }
+        recur(tameRoot);
+
+        return sl.join('');
       }
 
       // Property descriptors which are independent of any feral object.
@@ -3646,28 +3736,7 @@ var Domado = (function() {
         innerHTML: {
           enumerable: true,
           get: nodeMethod(function () {
-            var node = np(this).feral;
-            var tagName = node.tagName.toLowerCase();
-            var schemaElem = htmlSchema.element(tagName);
-            if (!schemaElem.allowed) {
-              return '';  // unknown node
-            }
-            var innerHtml = node.innerHTML;
-            if (schemaElem.contentIsCDATA) {
-              innerHtml = html.escapeAttrib(innerHtml);
-            } else if (schemaElem.contentIsRCDATA) {
-              // Make sure we return PCDATA.
-              // For RCDATA we only need to escape & if they're not part of an
-              // entity.
-              innerHtml = html.normalizeRCData(innerHtml);
-            } else {
-              // If we blessed the resulting HTML, then this would round trip
-              // better but it would still not survive appending, and it would
-              // propagate event handlers where the setter of innerHTML does not
-              // expect it to.
-              innerHtml = tameInnerHtml(innerHtml);
-            }
-            return innerHtml;
+            return htmlFragmentSerialization(this);
           }),
           set: nodeMethod(function (htmlFragment) {
             // This operation changes the child node list (but not other

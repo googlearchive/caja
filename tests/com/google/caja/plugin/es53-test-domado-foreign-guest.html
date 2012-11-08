@@ -60,7 +60,7 @@
     }
   }
 
-  function testForeign(name, node) {
+  function testForeign(name, node, expectParent) {
     name = name + ': ';
 
     // Walk all of DOM interface Node to check for proper encapsulation
@@ -132,6 +132,16 @@
     assertBottom(name + 'previousSibling', node.previousSibling);
     assertBottom(name + 'nextSibling', node.nextSibling);
 
+    assertBottom(name + 'innerHTML', node.innerHTML);
+    assertBottom(name + 'textContent', node.textContent);
+    if (expectParent) {
+      var parent = directAccess.getParentNode(node);
+      assertTrue(name + 'innerHTML sanity check',
+          directAccess.getInnerHTML(node).indexOf('Div number') > 0);
+      assertFalse(name + 'containing innerHTML',
+          parent.innerHTML.indexOf('Div number') > 0);
+    }
+
     assertTrue(name + 'getElementsByTagName empty',
         node.getElementsByTagName('div').length === 0);
     assertBottom(name + 'getElementsByTagName[0]',
@@ -155,7 +165,7 @@
 <script type="text/javascript">
   jsunitRegister('testExternalForeign',
                  function testExternalForeign() {
-    testForeign('testExternalForeign', getExternalForeignNode());
+    testForeign('testExternalForeign', getExternalForeignNode(), false);
     pass('testExternalForeign');
   });
 </script>
@@ -183,7 +193,7 @@
 
   jsunitRegister('testEmbeddedForeign',
                  function testEmbeddedForeign() {
-    testForeign('embedded-foreign', getEmbeddedForeignNode());
+    testForeign('testEmbeddedForeign', getEmbeddedForeignNode(), true);
 
     // Test that getElementsBy* skip foreign children.
     // goodNode1 is at the beginning of the list in document order and

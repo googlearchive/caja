@@ -425,6 +425,11 @@ function createExtraImportsForTesting(frameGroup, frame) {
     getAttribute: function (tameNode, name) {
       return frame.domicile.feralNode(tameNode).getAttribute(name);
     },
+    getParentNode: function(tameNode) {
+      // escapes foreign node/outside-of-vdoc protection
+      return frame.domicile.tameNode(
+          frame.domicile.feralNode(tameNode).parentNode);
+    },
     getBodyNode: function () {
       return frame.domicile.tameNode(frame.innerContainer);
     },
@@ -461,6 +466,7 @@ function createExtraImportsForTesting(frameGroup, frame) {
   makeCallable(directAccess.emitCssHook);
   makeCallable(directAccess.getInnerHTML);
   makeCallable(directAccess.getAttribute);
+  makeCallable(directAccess.getParentNode);
   makeCallable(directAccess.getBodyNode);
   makeCallable(directAccess.getComputedStyle);
   makeCallable(directAccess.makeUnattachedScriptNode);

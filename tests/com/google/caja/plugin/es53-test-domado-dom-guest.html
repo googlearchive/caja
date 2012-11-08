@@ -1199,6 +1199,49 @@ document.write(
   });
 </script>
 
+<form>
+  <p id="testGetInnerHTML" class="testcontainer">
+    <a href="foo">bar</a>
+    <span>Hello world</span>
+  </p>
+</form>
+<!-- Test the operation of our implementation of the innerHTML getter 
+      (aka HTML fragment serializer) -->
+<script type="text/javascript">
+  jsunitRegister('testGetInnerHTML',
+                 function testGetInnerHTML() {
+    // Note: The rewritten URI appearing here is not a desirable thing, but we
+    // simply don't support preserving original URIs in general.
+    // What is being tested for here is:
+    //    * general correctness of innerHTML output
+    //    * that target='_blank' does not appear
+    // TODO(kpreid): said funny whitespace probably ought to be canceled out
+    // by some other whitespace processing we're not implementing.
+    assertEquals(
+        '\n' +
+        '    <a href="http://example.com/?effect=NEW_DOCUMENT&amp;loader=' +
+        'UNSANDBOXED&amp;uri=http%3A%2F%2Flocalhost%3A8000%2Fant-testlib%2F' +
+        'com%2Fgoogle%2Fcaja%2Fplugin%2Ffoo">bar</a>\n' +
+        '    <span>Hello world</span>\n' +
+        '  ',
+        document.getElementById('testGetInnerHTML').innerHTML);
+    
+    // textarea with specific children, per HTML5
+    var container = document.createElement('form');
+    container.appendChild(document.createElement('textarea'));
+    // none
+    assertEquals("<textarea></textarea>", container.innerHTML);
+    // arbitrary text
+    container.firstChild.textContent = 'x';
+    assertEquals('<textarea>x</textarea>', container.innerHTML);
+    // arbitrary text starting w/ newline
+    container.firstChild.textContent = '\nx';
+    assertEquals('<textarea>\n\nx</textarea>', container.innerHTML);
+    
+    pass('testGetInnerHTML');
+  });
+</script>
+
 <p id="testInnerHTMLStyleSanitizer" class="testcontainer"></p>
 <script type="text/javascript">
   jsunitRegister('testInnerHTMLStyleSanitizer',

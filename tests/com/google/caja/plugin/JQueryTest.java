@@ -106,7 +106,7 @@ public class JQueryTest extends QUnitTestCase {
   }
 
   public final void testManipulation() throws Exception {
-    runQUnitTestCase("manipulation", 484);
+    runQUnitTestCase("manipulation", 474);
     // Current modifications made to test suite:
     //   * Removed SES-incompatible Array.prototype modification; was only for
     //     testing jQuery robustness.
@@ -120,6 +120,7 @@ public class JQueryTest extends QUnitTestCase {
     //   * We don't implement some case of dynamic <script> creation that
     //     "html() - execute scripts..." and "html() - script exceptions..."
     //     are using.
+    //   * "window.eval is undefined" in appendTo test -- REGRESSION
   }
 
   public final void testCSS() throws Exception {
