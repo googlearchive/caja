@@ -242,7 +242,10 @@ function TamingMembrane(privilegedAccess, schema) {
    * Returns a tame object representing f, or undefined on failure.
    */
   function tame(f) {
-    if (!f) { return f; }
+    if (f !== Object(f)) {
+      // Language primitive
+      return f;
+    }
     var ftype = typeof f;
     if (ftype !== 'function' && ftype !== 'object') {
       // Primitive value; tames to self
@@ -536,7 +539,10 @@ function TamingMembrane(privilegedAccess, schema) {
    * Returns a feral object representing t, or undefined on failure.
    */
   function untame(t) {
-    if (!t) { return t; }
+    if (t !== Object(t)) {
+      // language primitive
+      return t;
+    }
     var ttype = typeof t;
     if (ttype !== 'function' && ttype !== 'object') {
       // Primitive value; untames to self

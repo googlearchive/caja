@@ -184,6 +184,10 @@ public class GeneralBrowserTest extends BrowserTestCase {
     runTestDriver("es53-test-client-uri-rewriting.js");
   }
 
+  public final void testTamingPrimitives() throws Exception {
+    runTestDriver("es53-test-taming-primitives.js", false);
+  }
+
   public final void testTamingTamed() throws Exception {
     runTestDriver("es53-test-taming-tamed.js");
   }
