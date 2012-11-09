@@ -82,8 +82,6 @@
   <property name="gwt-war"     location="war"/>
   <property name="gwt.style"   value="OBFUSCATED"/>
   <property name="maven"       location="ant-maven"/>
-  <property name="maven-repository-url" value="https://oss.sonatype.org/service/local/staging/deploy/maven2/" />
-  <property name="maven-repository-id" value="sonatype-nexus-staging" />
 
   <!-- maven -->
   <property name="maven.ant.tasks.jar" value="third_party/ant/maven-ant-tasks-2.1.1.jar"/>
@@ -1712,60 +1710,14 @@
     <artifact:pom id="project" file="${maven}/pom.xml" />
   </target>
 
-
-  <target name="mvn-install" depends="jars,javadocs,precajole,pom">
+  <target name="mvn-install" depends="jars,javadocs,precajole,pom"
+      description="Generate maven artifacts and install them in ~/.m2">
     <artifact:install file="${maven-jarfile-nodeps}">
       <pom refid="project"/>
       <attach file="${maven-jarfile-javadoc}" classifier="javadoc"/>
       <attach file="${maven-jarfile-sources}" classifier="sources"/>
     </artifact:install>
   </target>
-
-  <!-- The mvn-deploy target takes the generated maven artifacts and pushes
-       them to the Sonatype repository.  You will need to have a
-       gpg key defined and account set up. More docs on how to do this here:
-
-       https://docs.sonatype.org/display/Repository/Sonatype+OSS+Maven+Repository+Usage+Guide
-  -->
-
-  <!-- TODO(felix8a): fix this or delete this -->
-  <target name="mvn-deploy"
-    depends="mvn-install"
-    description="Signs and Deploys caja artifacts to the central maven repo">
-
-    <!-- sign and deploy the main artifact -->
-    <artifact:mvn>
-      <arg value="org.apache.maven.plugins:maven-gpg-plugin:1.1:sign-and-deploy-file" />
-      <arg value="-Durl=${maven-repository-url}" />
-      <arg value="-DrepositoryId=${maven-repository-id}" />
-      <arg value="-DpomFile=${maven}/pom.xml" />
-      <arg value="-Dfile=${maven-jarfile-nodeps}" />
-      <arg value="-Pgpg" />
-    </artifact:mvn>
-
-    <!-- sign and deploy the sources artifact -->
-    <artifact:mvn>
-      <arg value="org.apache.maven.plugins:maven-gpg-plugin:1.1:sign-and-deploy-file" />
-      <arg value="-Durl=${maven-repository-url}" />
-      <arg value="-DrepositoryId=${maven-repository-id}" />
-      <arg value="-DpomFile=${maven}/pom.xml" />
-      <arg value="-Dfile=${maven-jarfile-sources}" />
-      <arg value="-Dclassifier=sources" />
-      <arg value="-Pgpg" />
-    </artifact:mvn>
-
-    <!-- sign and deploy the javadoc artifact -->
-    <artifact:mvn>
-      <arg value="org.apache.maven.plugins:maven-gpg-plugin:1.1:sign-and-deploy-file" />
-      <arg value="-Durl=${maven-repository-url}" />
-      <arg value="-DrepositoryId=${maven-repository-id}" />
-      <arg value="-DpomFile=${maven}/pom.xml" />
-      <arg value="-Dfile=${maven-jarfile-javadoc}" />
-      <arg value="-Dclassifier=javadoc" />
-      <arg value="-Pgpg" />
-    </artifact:mvn>
-  </target>
-
 
   <!--
     - Enable Emma

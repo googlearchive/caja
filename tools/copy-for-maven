@@ -54,9 +54,12 @@ def main(dest='', src='', ver=''):
 
     cp(src + '/ant-maven/pom.xml',              dvcaja + '.pom')
     cp(src + '/ant-jars/pluginc.jar',           dvcaja + '.jar')
-    cp(src + '/ant-jars/pluginc-javadocs.jar',  dvcaja + '-javadocs.jar')
-    cp(src + '/ant-jars/precajole.jar',         dvcaja + '-precajole.jar')
+    cp(src + '/ant-jars/pluginc-javadocs.jar',  dvcaja + '-javadoc.jar')
     cp(src + '/ant-jars/pluginc-src.jar',       dvcaja + '-sources.jar')
+
+    # TODO(felix8a): precajole should be a separate maven artifact.
+    # This is a temporary hack to capture the jar for a release.
+    cp(src + '/ant-jars/precajole.jar',         dvcaja + '-precajole.jar')
 
     for f in glob.glob(dver + '/*'):
         if re.search(r'[.](pom|jar)$', f):
