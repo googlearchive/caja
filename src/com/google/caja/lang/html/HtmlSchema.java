@@ -53,6 +53,8 @@ public final class HtmlSchema {
   private static final String VIRTUALIZATION_PREFIX = "caja-v-";
   private static final ElKey SCRIPT = ElKey.forHtmlElement("script");
   private static final ElKey STYLE = ElKey.forHtmlElement("style");
+  private static final String DEFAULT_SCHEMA_INTERFACE = "HTMLElement";
+  private static final String UNKNOWN_INTERFACE = "HTMLUnknownElement";
   
   private final Set<ElKey> allowedElements;
   private final Map<ElKey, HTML.Element> elementDetails;
@@ -216,8 +218,11 @@ public final class HtmlSchema {
       boolean optionalEnd = (Boolean) def.get("optionalEnd", Boolean.FALSE);
       boolean containsText = (Boolean) def.get("textContent", Boolean.TRUE)
           && !empty;
+      String domInterface = (String) def.get("interface",
+          DEFAULT_SCHEMA_INTERFACE);
       elementDetails.put(
-          key, new HTML.Element(key, attrs, empty, optionalEnd, containsText));
+          key, new HTML.Element(key, attrs, empty, optionalEnd, containsText,
+              domInterface));
     }
   }
 
@@ -244,7 +249,7 @@ public final class HtmlSchema {
       // May be a virtualized form of an unknown element, but we don't care --
       // just virtualize all non-global attributes on it.
       return new HTML.Element(elementName, attributesForUnknownHTMLElement,
-        false, false, false);
+        false, false, false, UNKNOWN_INTERFACE);
     }
   }
 

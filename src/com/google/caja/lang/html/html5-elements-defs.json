@@ -9,181 +9,211 @@
         "empty":       false,
         "optionalEnd": false,
         "deprecated":  false,
-        "description": "(HTML5) Self-contained syndicatable or reusable composition"
+        "description": "(HTML5) Self-contained syndicatable or reusable composition",
+        "interface":   "HTMLElement"
       },
       { "key":         "ASIDE",
         "empty":       false,
         "optionalEnd": false,
         "deprecated":  false,
-        "description": "(HTML5) Sidebar for tangentially related content"
+        "description": "(HTML5) Sidebar for tangentially related content",
+        "interface":   "HTMLElement"
       },
       { "key":         "AUDIO",
         "empty":       false,
         "optionalEnd": false,
         "deprecated":  false,
-        "description": "(HTML5) Audio player"
+        "description": "(HTML5) Audio player",
+        "interface":   "HTMLAudioElement"
       },
       { "key":         "BDI",
         "empty":       false,
         "optionalEnd": false,
         "deprecated":  false,
-        "description": "(HTML5) Text directionality isolation"
+        "description": "(HTML5) Text directionality isolation",
+        "interface":   "HTMLElement"
       },
       { "key":         "CANVAS",
         "empty":       false,
         "optionalEnd": false,
         "deprecated":  false,
-        "description": "(HTML5) Scriptable bitmap canvas"
+        "description": "(HTML5) Scriptable bitmap canvas",
+        "interface":   "HTMLCanvasElement"
       },
       { "key":         "COMMAND",
         "empty":       true,
         "optionalEnd": false,
         "deprecated":  false,
-        "description": "(HTML5) Menu command"
+        "description": "(HTML5) Menu command",
+        "interface":   "HTMLCommandElement"
       },
       { "key":         "DATA",
         "empty":       false,
         "optionalEnd": false,
         "deprecated":  false,
-        "description": "(HTML5) Machine-readable equivalent"
+        "description": "(HTML5) Machine-readable equivalent",
+        "interface":   "HTMLElement"
       },
       { "key":         "DATALIST",
         "empty":       false,
         "optionalEnd": false,
         "deprecated":  false,
-        "description": "(HTML5) Container for options for combo box control"
+        "description": "(HTML5) Container for options for combo box control",
+        "interface":   "HTMLDataListElement"
       },
       { "key":         "DETAILS",
         "empty":       false,
         "optionalEnd": false,
         "deprecated":  false,
-        "description": "(HTML5) Disclosure control for hiding details"
+        "description": "(HTML5) Disclosure control for hiding details",
+        "interface":   "HTMLDetailsElement"
       },
       { "key":         "DIALOG",
         "empty":       false,
         "optionalEnd": false,
         "deprecated":  false,
-        "description": "(HTML5) Dialog box or window"
+        "description": "(HTML5) Dialog box or window",
+        "interface":   "HTMLDialogElement"
       },
       { "key":         "FIGCAPTION",
         "empty":       false,
         "optionalEnd": false,
         "deprecated":  false,
-        "description": "(HTML5) Caption for figure"
+        "description": "(HTML5) Caption for figure",
+        "interface":   "HTMLElement"
       },
       { "key":         "FIGURE",
         "empty":       false,
         "optionalEnd": false,
         "deprecated":  false,
-        "description": "(HTML5) Figure with optional caption"
+        "description": "(HTML5) Figure with optional caption",
+        "interface":   "HTMLElement"
       },
       { "key":         "FOOTER",
         "empty":       false,
         "optionalEnd": false,
         "deprecated":  false,
-        "description": "(HTML5) Footer for a page or section"
+        "description": "(HTML5) Footer for a page or section",
+        "interface":   "HTMLElement"
       },
       { "key":         "HEADER",
         "empty":       false,
         "optionalEnd": false,
         "deprecated":  false,
-        "description": "(HTML5) Introductory or navigational aids for a page or section"
+        "description": "(HTML5) Introductory or navigational aids for a page or section",
+        "interface":   "HTMLElement"
       },
       { "key":         "HGROUP",
         "empty":       false,
         "optionalEnd": false,
         "deprecated":  false,
-        "description": "(HTML5) heading group"
+        "description": "(HTML5) heading group",
+        "interface":   "HTMLElement"
       },
       { "key":         "KEYGEN",
         "empty":       true,
         "optionalEnd": false,
         "deprecated":  false,
-        "description": "(HTML5) Cryptographic key-pair generator form control"
+        "description": "(HTML5) Cryptographic key-pair generator form control",
+        "interface":   "HTMLKeygenElement"
       },
       { "key":         "MARK",
         "empty":       false,
         "optionalEnd": false,
         "deprecated":  false,
-        "description": "(HTML5) Highlight"
+        "description": "(HTML5) Highlight",
+        "interface":   "HTMLElement"
       },
       { "key":         "METER",
         "empty":       false,
         "optionalEnd": false,
         "deprecated":  false,
-        "description": "(HTML5) Gauge"
+        "description": "(HTML5) Gauge",
+        "interface":   "HTMLMeterElement"
       },
       { "key":         "NAV",
         "empty":       false,
         "optionalEnd": false,
         "deprecated":  false,
-        "description": "(HTML5) Section with navigational links"
+        "description": "(HTML5) Section with navigational links",
+        "interface":   "HTMLElement"
       },
       { "key":         "NOBR",
         "empty":       false,
         "optionalEnd": false,
         "deprecated":  false,
-        "description": "Not in HTML4. Non-conforming feature per HTML5"
+        "description": "Not in HTML4. Non-conforming feature per HTML5",
+        "interface":   "HTMLElement"
       },
       { "key":         "NOEMBED",
         "empty":       false,
         "optionalEnd": false,
         "deprecated":  true,
-        "description": "Not in HTML4. Non-conforming feature per HTML5"
+        "description": "Not in HTML4. Non-conforming feature per HTML5",
+        "interface":   "HTMLElement"
       },
       { "key":         "OUTPUT",
         "empty":       false,
         "optionalEnd": false,
         "deprecated":  false,
-        "description": "(HTML5) Calculated output value"
+        "description": "(HTML5) Calculated output value",
+        "interface":   "HTMLOutputElement"
       },
       { "key":         "PROGRESS",
         "empty":       false,
         "optionalEnd": false,
         "deprecated":  false,
-        "description": "(HTML5) Progress bar"
+        "description": "(HTML5) Progress bar",
+        "interface":   "HTMLProgressElement"
       },
       { "key":         "SECTION",
         "empty":       false,
         "optionalEnd": false,
         "deprecated":  false,
-        "description": "(HTML5) Generic document or application section"
+        "description": "(HTML5) Generic document or application section",
+        "interface":   "HTMLElement"
       },
       { "key":         "SOURCE",
         "empty":       true,
         "optionalEnd": false,
         "deprecated":  false,
-        "description": "(HTML5) Media source for <video> or <audio>"
+        "description": "(HTML5) Media source for <video> or <audio>",
+        "interface":   "HTMLSourceElement"
       },
       { "key":         "SUMMARY",
         "empty":       false,
         "optionalEnd": false,
         "deprecated":  false,
-        "description": "(HTML5) Caption for <details>"
+        "description": "(HTML5) Caption for <details>",
+        "interface":   "HTMLElement"
       },
       { "key":         "TIME",
         "empty":       false,
         "optionalEnd": false,
         "deprecated":  false,
-        "description": "(HTML5) Machine-readable equivalent of date- or time-related data"
+        "description": "(HTML5) Machine-readable equivalent of date- or time-related data",
+        "interface":   "HTMLTimeElement"
       },
       { "key":         "TRACK",
         "empty":       true,
         "optionalEnd": false,
         "deprecated":  false,
-        "description": "(HTML5) Timed text track"
+        "description": "(HTML5) Timed text track",
+        "interface":   "HTMLTrackElement"
       },
       { "key":         "VIDEO",
         "empty":       false,
         "optionalEnd": false,
         "deprecated":  false,
-        "description": "(HTML5) Video player"
+        "description": "(HTML5) Video player",
+        "interface":   "HTMLVideoElement"
       },
       { "key":         "WBR",
         "empty":       true,
         "optionalEnd": false,
         "deprecated":  false,
-        "description": "(HTML5) Line breaking opportunity"
+        "description": "(HTML5) Line breaking opportunity",
+        "interface":   "HTMLElement"
       }
   ]
 }

@@ -2338,24 +2338,32 @@ var Domado = (function() {
         }
         return s;
       }
+      
+      var nodeClassNoImplWarnings = {};
 
       function makeTameNodeByType(node) {
         switch (node.nodeType) {
           case 1:  // Element
             var tagName = node.tagName.toLowerCase();
-            if (tamingClassesByElement.hasOwnProperty(tagName + '$')) {
-              // Known element with specialized taming class (e.g. <a> has an
-              // href property). This is deliberately before the unsafe test;
-              // for example, <script> has its own class even though it is
-              // unsafe.
-              return new (tamingClassesByElement[tagName + '$'])(node);
-            }
             var schemaElem = htmlSchema.element(tagName);
-            if (schemaElem.isVirtualizedElementName) {
-              // Virtualized unrecognized elements are generic
-              return new TameElement(node);
-            } else if (schemaElem.allowed) {
-              return new TameElement(node);
+            if (schemaElem.allowed || tagName === 'script') {
+              // <script> is specifically allowed because we make provisions
+              // for controlling its content and src.
+              var domInterfaceName = schemaElem.domInterface;
+              if (nodeTamers.hasOwnProperty(domInterfaceName)) {
+                return new nodeTamers[domInterfaceName](node);
+              } else {
+                if (!nodeClassNoImplWarnings[domInterfaceName]) {
+                  nodeClassNoImplWarnings[domInterfaceName] = true;
+                  if (typeof console !== 'undefined') {
+                    console.warn("Domado: " + domInterfaceName + " is not " +
+                        "tamed; its specific properties/methods will not be " +
+                        "available on <" +
+                        htmlSchema.realToVirtualElementName(tagName) + ">.");
+                  }
+                }
+                return new TameElement(node);
+              }
             } else {
               // If an unrecognized or unsafe node, return a
               // placeholder that doesn't prevent tree navigation,
@@ -2884,12 +2892,10 @@ var Domado = (function() {
       }
 
       // A map of tamed node classes, keyed by DOM Level 2 standard name, which
-      // will be exposed to the client.
+      // will be exposed to the client (and are not usable as constructors).
       var nodeClasses = {};
-
-      // A map of tamed node constructors, keyed by HTML element name, which
-      // will be used by defaultTameNode.
-      var tamingClassesByElement = {};
+      // Ditto, but the taming constructors instead of the useless ones.
+      var nodeTamers = {};
 
       /**
        * This does three things:
@@ -2912,8 +2918,10 @@ var Domado = (function() {
         Object.freeze(inert);  // not def, because inert.prototype must remain
         setOwn(tamedCtor.prototype, "constructor", inert);
 
-        if (opt_name !== undefined)
+        if (opt_name !== undefined) {
           nodeClasses[opt_name] = inert;
+          nodeTamers[opt_name] = tamedCtor;
+        }
 
         return inert;
       }
@@ -3795,7 +3803,9 @@ var Domado = (function() {
               return tameRelatedNode(feralOffsetParent, defaultTameNode);
             }
           })
-        }
+        },
+        accessKey: NP.rw,
+        tabIndex: NP.rw
       });
       cajaVM.def(TameElement);  // and its prototype
 
@@ -3822,23 +3832,22 @@ var Domado = (function() {
         var superclass = record.superclass || TameElement;
         var proxyType = record.proxyType;
         var construct = record.construct || identity;
-        var virtualized = record.virtualized || false;
+        var shouldBeVirtualized = "virtualized" in record
+            ? record.virtualized : false;
         var opt_policy = record.forceChildrenNotEditable
             ? nodePolicyReadOnlyChildren : null;
         function TameSpecificElement(node) {
+          var isVirtualized = htmlSchema.isVirtualizedElementName(node.tagName);
+          if (shouldBeVirtualized !== null &&
+              !isVirtualized !== !shouldBeVirtualized) {
+            throw new Error("Domado internal inconsistency: " + node.tagName +
+                " has inconsistent virtualization state with class " +
+                record.domClass);
+          }
           superclass.call(this, node, opt_policy, proxyType);
           construct.call(this);
         }
         inertCtor(TameSpecificElement, superclass, record.domClass);
-        for (var i = 0; i < record.names.length; i++) {
-          var name = record.names[+i];
-          if (!!virtualized !== !!htmlSchema.element(name).shouldVirtualize) {
-            throw new Error("Domado internal inconsistency: " + name + 
-                "has inconsistent virtualization flags");
-          }
-          tamingClassesByElement[virtualToRealElementName(name) + '$'] =
-              TameSpecificElement;
-        }
         definePropertiesAwesomely(TameSpecificElement.prototype,
             record.properties || {});
         // Note: cajaVM.def will be applied to all registered node classes
@@ -3846,9 +3855,17 @@ var Domado = (function() {
         return TameSpecificElement;
       }
       cajaVM.def(defineElement);
+      
+      /**
+       * For elements which have no properties at all, but we want to define in
+       * in order to be explicitly complete (suppress the no-implementation
+       * warning).
+       */
+      function defineTrivialElement(domClass) {
+        return defineElement({domClass: domClass});
+      }
 
       defineElement({
-        names: ['a'],
         domClass: 'HTMLAnchorElement',
         properties: {
           hash: NP.filter(
@@ -3862,8 +3879,9 @@ var Domado = (function() {
         }
       });
 
+      defineTrivialElement('HTMLBRElement');
+
       var TameBodyElement = defineElement({
-        names: ['body'],
         virtualized: true,
         domClass: 'HTMLBodyElement'
       });
@@ -4510,11 +4528,12 @@ var Domado = (function() {
           height: NP.filter(false, identity, false, Number),
           width: NP.filter(false, identity, false, Number)
         });
-
-        tamingClassesByElement['canvas$'] = TameCanvasElement;
       })();
 
       traceStartup("DT: done with canvas");
+
+      defineTrivialElement('HTMLDListElement');
+      defineTrivialElement('HTMLDivElement');
 
       function FormElementAndExpandoProxyHandler(target, editable, storage) {
         ExpandoProxyHandler.call(this, target, editable, storage);
@@ -4558,7 +4577,6 @@ var Domado = (function() {
       cajaVM.def(FormElementAndExpandoProxyHandler);
 
       var TameFormElement = defineElement({
-        names: ['form'],
         domClass: 'HTMLFormElement',
         proxyType: FormElementAndExpandoProxyHandler,
         properties: {
@@ -4592,14 +4610,15 @@ var Domado = (function() {
         return np(this).feral.reset();
       });
 
+      defineTrivialElement('HTMLHeadingElement');
+      defineTrivialElement('HTMLHRElement');
+
       defineElement({
-        names: ['head'],
         virtualized: true,
         domClass: 'HTMLHeadElement'
       });
 
       defineElement({
-        names: ['html'],
         virtualized: true,
         domClass: 'HTMLHtmlElement'
       });
@@ -4614,7 +4633,6 @@ var Domado = (function() {
         })
       };
       var TameIFrameElement = defineElement({
-        names: ['iframe'],
         domClass: 'HTMLIFrameElement',
         construct: function () {
           np(this).childrenEditable = false;
@@ -4729,7 +4747,6 @@ var Domado = (function() {
       }
 
       var TameImageElement = defineElement({
-        names: ['img'],
         domClass: 'HTMLImageElement',
         properties: {
           alt: NP.filterProp(String, String),
@@ -4752,23 +4769,50 @@ var Domado = (function() {
       }
 
       function toInt(x) { return x | 0; }
-      // TODO(kpreid): The conflation of these elements is partly nonsense.
-      // Split it into the appropriate narrow interfaces for each element.
+      var TameFormField = defineElement({
+        properties: {
+          disabled: NP.rw,
+          form: NP.related,
+          maxLength: NP.rw,
+          name: NP.rw,
+          value: NP.filter(
+            false, function (x) { return x == null ? null : String(x); },
+            false, function (x) { return x == null ? '' : '' + x; })
+        }
+      });
+      
       var TameInputElement = defineElement({
-        names: ['select', 'button', 'textarea', 'input'],
+        superclass: TameFormField,
         domClass: 'HTMLInputElement',
         properties: {
           checked: NP.filterProp(identity, Boolean),
           defaultChecked: NP.rw,
-          value: NP.filter(
-            false, function (x) { return x == null ? null : String(x); },
-            false, function (x) { return x == null ? '' : '' + x; }),
           defaultValue: NP.filter(
             false, function (x) { return x == null ? null : String(x); },
             false, function (x) { return x == null ? '' : '' + x; }),
-          form: NP.related,
-          disabled: NP.rw,
           readOnly: NP.rw,
+          selectedIndex: NP.filterProp(identity, toInt),
+          size: NP.rw,
+          type: NP.rw
+        }
+      });
+      TameInputElement.prototype.select = nodeMethod(function () {
+        np(this).feral.select();
+      });
+
+      defineElement({
+        superclass: TameFormField,
+        domClass: 'HTMLButtonElement',
+        properties: {
+          type: NP.rw
+        }
+      });
+
+      defineElement({
+        superclass: TameFormField,
+        domClass: 'HTMLSelectElement',
+        properties: {
+          multiple: NP.rw,
           options: {
             enumerable: true,
             get: nodeMethod(function () {
@@ -4777,23 +4821,19 @@ var Domado = (function() {
             })
           },
           selectedIndex: NP.filterProp(identity, toInt),
-          name: NP.rw,
-          accessKey: NP.rw,
-          tabIndex: NP.rw,
-          maxLength: NP.rw,
-          size: NP.rw,
-          type: NP.rw,
-          multiple: NP.rw,
-          cols: NP.rw,
-          rows: NP.rw
+          type: NP.ro
         }
-      });
-      TameInputElement.prototype.select = nodeMethod(function () {
-        np(this).feral.select();
       });
 
       defineElement({
-        names: ['label'],
+        superclass: TameFormField,
+        domClass: 'HTMLTextAreaElement',
+        properties: {
+          type: NP.rw
+        }
+      });
+
+      defineElement({
         domClass: 'HTMLLabelElement',
         properties: {
           htmlFor: NP.Rename("for", NP.filterAttr(identity, identity))
@@ -4801,7 +4841,6 @@ var Domado = (function() {
       });
 
       defineElement({
-        names: ['option'],
         domClass: 'HTMLOptionElement',
         properties: {
           defaultSelected: NP.filterProp(Boolean, Boolean),
@@ -4817,6 +4856,9 @@ var Domado = (function() {
             function (x) { return x == null ? '' : '' + x; })
         }
       });
+      
+      defineTrivialElement('HTMLParagraphElement');
+      defineTrivialElement('HTMLPreElement');
 
       function dynamicCodeDispatchMaker(privates) {
         window.cajaDynamicScriptCounter =
@@ -4838,7 +4880,6 @@ var Domado = (function() {
       }
 
       var TameScriptElement = defineElement({
-        names: ['script'],
         domClass: 'HTMLScriptElement',
         forceChildrenNotEditable: true,
         properties: {
@@ -4863,43 +4904,34 @@ var Domado = (function() {
         }
       }));
 
-      var TameTableCompElement = defineElement({
-        names: ['td', 'thead', 'tfoot', 'tbody', 'th'],
+      defineTrivialElement('HTMLSpanElement');
+
+      defineElement({
+        domClass: 'HTMLTableColElement',
         properties: {
-          colSpan: NP.filterProp(identity, identity),
-          cells: {
-            // TODO(kpreid): It would be most pleasing to find a way to generalize
-            // all the accessors which are of the form
-            //     return new TameNodeList(np(this).feral...., ..., ...)
-            enumerable: true,
-            get: nodeMethod(function () {
-              return new TameNodeList(np(this).feral.cells, defaultTameNode);
-            })
-          },
-          cellIndex: NP.ro,
-          rowSpan: NP.filterProp(identity, identity),
-          rows: {
-            enumerable: true,
-            get: nodeMethod(function () {
-              return new TameNodeList(np(this).feral.rows, defaultTameNode);
-            })
-          },
-          rowIndex: NP.ro,
-          sectionRowIndex: NP.ro,
           align: NP.filterProp(identity, identity),
-          vAlign: NP.filterProp(identity, identity),
-          nowrap: NP.filterProp(identity, identity)
+          vAlign: NP.filterProp(identity, identity)
         }
       });
-      TameTableCompElement.prototype.insertRow = nodeMethod(function (index) {
-        np(this).policy.requireEditable();
-        requireIntIn(index, -1, np(this).feral.rows.length);
-        return defaultTameNode(np(this).feral.insertRow(index));
+      
+      defineTrivialElement('HTMLTableCaptionElement');
+      
+      var TameTableCellElement = defineElement({
+        domClass: 'HTMLTableCellElement',
+        properties: {
+          colSpan: NP.filterProp(identity, identity),
+          rowSpan: NP.filterProp(identity, identity),
+          cellIndex: NP.ro,
+          noWrap: NP.filterProp(identity, identity) // HTML5 Obsolete
+        }
       });
-      TameTableCompElement.prototype.deleteRow = nodeMethod(function (index) {
-        np(this).policy.requireEditable();
-        requireIntIn(index, -1, np(this).feral.rows.length);
-        np(this).feral.deleteRow(index);
+      defineElement({
+        superclass: TameTableCellElement,
+        domClass: 'HTMLTableDataCellElement'
+      });
+      defineElement({
+        superclass: TameTableCellElement,
+        domClass: 'HTMLTableHeaderCellElement'
       });
 
       function requireIntIn(idx, min, max) {
@@ -4909,15 +4941,27 @@ var Domado = (function() {
       }
 
       var TameTableRowElement = defineElement({
-        superclass: TameTableCompElement,
-        names: ['tr'],
-        domClass: 'HTMLTableRowElement'
+        domClass: 'HTMLTableRowElement',
+        properties: {
+          cells: {
+            // TODO(kpreid): It would be most pleasing to find a way to generalize
+            // all the accessors which are of the form
+            //     return new TameNodeList(np(this).feral...., ..., ...)
+            enumerable: true,
+            get: nodeMethod(function () {
+              return new TameNodeList(np(this).feral.cells, defaultTameNode);
+            })
+          },
+          rowIndex: NP.ro,
+          sectionRowIndex: NP.ro
+        }
       });
       TameTableRowElement.prototype.insertCell = nodeMethod(function (index) {
-        // TODO(kpreid): Should this not be a childrenEditable test?
         np(this).policy.requireEditable();
         requireIntIn(index, -1, np(this).feral.cells.length);
-        return defaultTameNode(np(this).feral.insertCell(index));
+        return defaultTameNode(
+            np(this).feral.insertCell(index),
+            np(this).editable);
       });
       TameTableRowElement.prototype.deleteCell = nodeMethod(function (index) {
         np(this).policy.requireEditable();
@@ -4925,9 +4969,30 @@ var Domado = (function() {
         np(this).feral.deleteCell(index);
       });
 
+      var TameTableSectionElement = defineElement({
+        domClass: 'HTMLTableSectionElement',
+        properties: {
+          rows: {
+            enumerable: true,
+            get: nodeMethod(function () {
+              return new TameNodeList(np(this).feral.rows, defaultTameNode);
+            })
+          }
+        }
+      });
+      TameTableSectionElement.prototype.insertRow = nodeMethod(function(index) {
+        np(this).policy.requireEditable();
+        requireIntIn(index, -1, np(this).feral.rows.length);
+        return defaultTameNode(np(this).feral.insertRow(index));
+      });
+      TameTableSectionElement.prototype.deleteRow = nodeMethod(function(index) {
+        np(this).policy.requireEditable();
+        requireIntIn(index, -1, np(this).feral.rows.length);
+        np(this).feral.deleteRow(index);
+      });
+
       var TameTableElement = defineElement({
-        superclass: TameTableCompElement,
-        names: ['table'],
+        superclass: TameTableSectionElement,  // nonstandard but sound
         domClass: 'HTMLTableElement',
         properties: {
           tBodies: {
@@ -4984,11 +5049,17 @@ var Domado = (function() {
       });
 
       defineElement({
-        names: ['title'],
         virtualized: true,
         domClass: 'HTMLTitleElement'
       });
+      
+      defineTrivialElement('HTMLUListElement');
 
+      defineElement({
+        virtualized: null,
+        domClass: 'HTMLUnknownElement'
+      });
+      
       traceStartup('DT: done with specific elements');
 
       // Oddball constructors. There are only two of these and we implement
@@ -5536,7 +5607,8 @@ var Domado = (function() {
             style[canonName] = val;
           };
         };
-        inertCtor(TameStyle, Object, 'Style');
+        inertCtor(TameStyle, Object /*, 'Style'*/);
+            // cannot export lazily
         TameStyle.prototype.getPropertyValue =
             cajaVM.def(function (cssPropertyName) {
           cssPropertyName = String(cssPropertyName || '').toLowerCase();
@@ -5772,6 +5844,15 @@ var Domado = (function() {
       domicile.setDomitaTrace = cajaVM.def(
           function (x) { domicile.domitaTrace = x; }
       );
+
+      // Freeze exported classes. Must occur before TameHTMLDocument is
+      // instantiated.
+      for (var name in nodeClasses) {
+        var ctor = nodeClasses[name];
+        cajaVM.def(ctor);  // and its prototype
+      }
+      Object.freeze(nodeClasses);
+          // fail hard if late-added item wouldn't be frozen
 
       // Location object -- used by Document and Window and so must be created
       // before each.
@@ -6065,11 +6146,9 @@ var Domado = (function() {
       }
 
       // Iterate over all node classes, assigning them to the Window object
-      // under their DOM Level 2 standard name. Also freeze.
+      // under their DOM Level 2 standard name. They have been frozen above.
       for (var name in nodeClasses) {
         var ctor = nodeClasses[name];
-        cajaVM.def(ctor);  // and its prototype
-        cajaVM.def(ctor.prototype);
         Object.defineProperty(tameWindow, name, {
           enumerable: true,
           configurable: true,
@@ -6079,70 +6158,11 @@ var Domado = (function() {
       }
 
       // TODO(ihab.awad): Build a more sophisticated virtual class hierarchy by
-      // creating a table of actual subclasses and instantiating tame nodes by
-      // table lookups. This will allow the client code to see a truly consistent
-      // DOM class hierarchy.
+      // having a table of subclass relationships and implementing them.
 
-      // This is a list of all HTML-specific element node classes defined by
-      // DOM Level 2 HTML, <http://www.w3.org/TR/DOM-Level-2-HTML/html.html>.
       // If a node class name in this list is not defined using defineElement or
       // inertCtor above, then it will now be bound to the HTMLElement class.
-      var allDomNodeClasses = [
-        'HTMLAnchorElement',
-        'HTMLAppletElement',
-        'HTMLAreaElement',
-        'HTMLBaseElement',
-        'HTMLBaseFontElement',
-        'HTMLBodyElement',
-        'HTMLBRElement',
-        'HTMLButtonElement',
-        'HTMLDirectoryElement',
-        'HTMLDivElement',
-        'HTMLDListElement',
-        'HTMLFieldSetElement',
-        'HTMLFontElement',
-        'HTMLFormElement',
-        'HTMLFrameElement',
-        'HTMLFrameSetElement',
-        'HTMLHeadElement',
-        'HTMLHeadingElement',
-        'HTMLHRElement',
-        'HTMLHtmlElement',
-        'HTMLIFrameElement',
-        'HTMLImageElement',
-        'HTMLInputElement',
-        'HTMLIsIndexElement',
-        'HTMLLabelElement',
-        'HTMLLegendElement',
-        'HTMLLIElement',
-        'HTMLLinkElement',
-        'HTMLMapElement',
-        'HTMLMenuElement',
-        'HTMLMetaElement',
-        'HTMLModElement',
-        'HTMLNavElement',
-        'HTMLObjectElement',
-        'HTMLOListElement',
-        'HTMLOptGroupElement',
-        'HTMLOptionElement',
-        'HTMLParagraphElement',
-        'HTMLParamElement',
-        'HTMLPreElement',
-        'HTMLQuoteElement',
-        'HTMLScriptElement',
-        'HTMLSelectElement',
-        'HTMLStyleElement',
-        'HTMLTableCaptionElement',
-        'HTMLTableCellElement',
-        'HTMLTableColElement',
-        'HTMLTableElement',
-        'HTMLTableRowElement',
-        'HTMLTableSectionElement',
-        'HTMLTextAreaElement',
-        'HTMLTitleElement',
-        'HTMLUListElement'
-      ];
-
+      var allDomNodeClasses = htmlSchema.getAllKnownScriptInterfaces();
       var defaultNodeClassCtor = nodeClasses.HTMLElement;
       for (var i = 0; i < allDomNodeClasses.length; i++) {
         var className = allDomNodeClasses[+i];

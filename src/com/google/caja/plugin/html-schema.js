@@ -27,6 +27,7 @@ var HtmlSchema = (function() {
 
   function HtmlSchema(html4) {
     var ELEMENTS = html4.ELEMENTS;
+    var ELEMENT_DOM_INTERFACES = html4.ELEMENT_DOM_INTERFACES;
     var ATTRIBS = html4.ATTRIBS;
     var URIEFFECTS = html4.URIEFFECTS;
     var LOADERTYPES = html4.LOADERTYPES;
@@ -36,19 +37,14 @@ var HtmlSchema = (function() {
     var RCDATA = html4.eflags.RCDATA;
     var UNSAFE = html4.eflags.UNSAFE;
     var VIRTUALIZED = html4.eflags.VIRTUALIZED;
+    var unknownElementInterface = "HTMLUnknownElement";
+
+    var hop = Object.prototype.hasOwnProperty;
 
     var elemCache = {};
     var attrCache = {};
+    var scriptInterfacesCache;
 
-    var virtualizedElementEntry = cajaVM.def({
-      allowed: true,
-      isVirtualizedElementName: true,
-      shouldVirtualize: false,
-      empty: false,
-      optionalEndTag: false,
-      contentIsCDATA: false,
-      contentIsRCDATA: false
-    });
     var unknownElementEntry = cajaVM.def({
       allowed: false,
       isVirtualizedElementName: false,
@@ -56,7 +52,8 @@ var HtmlSchema = (function() {
       empty: false,
       optionalEndTag: false,
       contentIsCDATA: false,
-      contentIsRCDATA: false
+      contentIsRCDATA: false,
+      domInterface: unknownElementInterface
     });
 
     var unknownAttributeEntry = cajaVM.def({
@@ -98,10 +95,6 @@ var HtmlSchema = (function() {
         }
         elementName = elementName.toLowerCase();
 
-        if (isVirtualizedElementName(elementName)) {
-          return virtualizedElementEntry;
-        }
-
         var cacheKey = elementName + '$';
         if (cacheKey in elemCache) {
           return elemCache[cacheKey];
@@ -116,7 +109,21 @@ var HtmlSchema = (function() {
               empty: !!(eflags & EMPTY),
               optionalEndTag: !!(eflags & OPTIONAL_ENDTAG),
               contentIsCDATA: !!(eflags & CDATA),
-              contentIsRCDATA: !!(eflags & RCDATA)
+              contentIsRCDATA: !!(eflags & RCDATA),
+              domInterface: ELEMENT_DOM_INTERFACES[elementName]
+            });
+          } else if (isVirtualizedElementName(elementName)) {
+            var unvirtEntry =
+                htmlSchema.element(realToVirtualElementName(elementName));
+            entry = cajaVM.def({
+              allowed: true,
+              isVirtualizedElementName: true,
+              shouldVirtualize: false,
+              empty: false,
+              optionalEndTag: false,
+              contentIsCDATA: false,
+              contentIsRCDATA: false,
+              domInterface: unvirtEntry.domInterface
             });
           } else {
             entry = unknownElementEntry;
@@ -159,9 +166,22 @@ var HtmlSchema = (function() {
 
       isVirtualizedElementName: isVirtualizedElementName,
       realToVirtualElementName: realToVirtualElementName,
-      virtualToRealElementName: virtualToRealElementName
+      virtualToRealElementName: virtualToRealElementName,
+
+      getAllKnownScriptInterfaces: function() {
+        if (!scriptInterfacesCache) {
+          var table = {};
+          for (var el in ELEMENT_DOM_INTERFACES) {
+            if (hop.call(ELEMENT_DOM_INTERFACES, el)) {
+              table[ELEMENT_DOM_INTERFACES[el]] = true;
+            }
+          }
+          scriptInterfacesCache = cajaVM.def(Object.getOwnPropertyNames(table));
+        }
+        return scriptInterfacesCache;
+      }
     });
-    
+
     return htmlSchema;
   }
 

@@ -128,10 +128,34 @@ public final class HtmlDefinitions {
             "v", new ParseTreeNodeContainer(values)));
   }
 
+  /**
+   * Generate a JS object-building statement from the given Map, whose keys
+   * should stringify to the JS keys and whose values are mapped by the function
+   * {@code codegen}.
+   */
+  private static <T> ExpressionStmt mapFromMap(
+      Map<?, T> entries, String key, Function<T, Expression> codegen) {
+    final FilePosition unk = FilePosition.UNKNOWN;
+    List<StringLiteral> keys = new ArrayList<StringLiteral>();
+    List<Expression> values = new ArrayList<Expression>();
+    for (Map.Entry<?, T> e : entries.entrySet()) {
+      keys.add(StringLiteral.valueOf(unk, e.getKey().toString()));
+      values.add(codegen.apply(e.getValue()));
+    }
+    ExpressionStmt def = new ExpressionStmt(unk, (Expression)
+        QuasiBuilder.substV(
+            "html4.@i = { @k*: @v* };",
+            "i", new Reference(new Identifier(unk, key)),
+            "k", new ParseTreeNodeContainer(keys),
+            "v", new ParseTreeNodeContainer(values)));
+    return def;
+  }
+
   public static Block generateJavascriptDefinitions(HtmlSchema schema) {
     final FilePosition unk = FilePosition.UNKNOWN;
     Map<AttribKey, HTML.Attribute.Type> atypes = attributeTypes(schema);
     Map<ElKey, EnumSet<EFlag>> eflags = elementFlags(schema);
+    Map<ElKey, String> einterfaces = elementDOMInterfaces(schema);
     Map<AttribKey, UriEffect> uriEffects = uriEffects(schema);
     Map<AttribKey, LoaderType> ltypes = loaderTypes(schema);
 
@@ -188,22 +212,27 @@ public final class HtmlDefinitions {
         })
     );
 
-    {
-      List<StringLiteral> keys = new ArrayList<StringLiteral>();
-      List<IntegerLiteral> values = new ArrayList<IntegerLiteral>();
-      for (Map.Entry<ElKey, EnumSet<EFlag>> e : eflags.entrySet()) {
-        ElKey key = e.getKey();
-        int value = 0;
-        for (EFlag f : e.getValue()) { value |= f.bitMask; }
-        keys.add(StringLiteral.valueOf(unk, key.toString()));
-        values.add(new IntegerLiteral(unk, value));
-      }
-      definitions.appendChild(new ExpressionStmt(unk, (Expression)
-          QuasiBuilder.substV(
-              "html4.ELEMENTS = { @k*: @v* };",
-              "k", new ParseTreeNodeContainer(keys),
-              "v", new ParseTreeNodeContainer(values))));
-    }
+    definitions.appendChild(mapFromMap(
+        eflags,
+        "ELEMENTS",
+        new Function<EnumSet<EFlag>, Expression>() {
+          public Expression apply(EnumSet<EFlag> flags) {
+            int value = 0;
+            for (EFlag f : flags) { value |= f.bitMask; }
+            return new IntegerLiteral(unk, value);
+          }
+        })
+    );
+
+    definitions.appendChild(mapFromMap(
+        einterfaces,
+        "ELEMENT_DOM_INTERFACES",
+        new Function<String, Expression>() {
+          public Expression apply(String domInterface) {
+            return new StringLiteral(unk, domInterface);
+          }
+        })
+    );
 
     definitions.appendChild(mapFromEnum(
         EnumSet.allOf(UriEffect.class),
@@ -432,6 +461,15 @@ public final class HtmlDefinitions {
     return elementFlags;
   }
 
+  private static Map<ElKey, String> elementDOMInterfaces(HtmlSchema schema) {
+    Map<ElKey, String> data = Maps.newTreeMap();
+    for (ElKey elementName : schema.getElementNames()) {
+      HTML.Element el = schema.lookupElement(elementName);
+      data.put(elementName, el.getDOMInterface());
+    }
+    return data;
+  }
+
   public static class Builder implements BuildCommand {
     public boolean build(List<File> inputs, List<File> deps, Map<String, Object> options,
         File output) throws IOException {
@@ -510,6 +548,8 @@ public final class HtmlDefinitions {
         out.write("// exports for Closure Compiler\n");
         out.write("html4['ATTRIBS'] = html4.ATTRIBS;\n");
         out.write("html4['ELEMENTS'] = html4.ELEMENTS;\n");
+        out.write("html4['ELEMENT_DOM_INTERFACES'] = " +
+            "html4.ELEMENT_DOM_INTERFACES;\n");
         out.write("html4['URIEFFECTS'] = html4.URIEFFECTS;\n");
         out.write("html4['LOADERTYPES'] = html4.LOADERTYPES;\n");
         out.write("html4['atype'] = html4.atype;\n");

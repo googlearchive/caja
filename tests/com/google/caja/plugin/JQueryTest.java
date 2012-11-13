@@ -63,7 +63,7 @@ public class JQueryTest extends QUnitTestCase {
   }
 
   public final void testAttributes() throws Exception {
-    runQUnitTestCase("attributes", 418);
+    runQUnitTestCase("attributes", 419);
     // Current failure categories:
     //   * URI rewriting is visible to the guest.
     //   * Simple event handler rewriting is visible to the guest.
