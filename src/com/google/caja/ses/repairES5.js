@@ -1513,6 +1513,23 @@ var ses;
     }
     return false;
   }
+  /**
+   * Detects http://code.google.com/p/v8/issues/detail?id=2396
+   * 
+   * <p>Commenting out the eval does the right thing.  Only fails in
+   * non-strict mode.
+   */
+  function test_EVAL_BREAKS_MASKING() {
+    var x;
+    x = (function a() {
+      function a() {}
+      eval("");
+      return a;
+    });
+    // x() should be the internal function a(), not itself
+    return x() === x;
+  }
+
 
   /**
    * Detects http://code.google.com/p/v8/issues/detail?id=1645
@@ -1576,7 +1593,7 @@ var ses;
   }
 
   /**
-   * Detects whether callng pop on a frozen array can modify the array.
+   * Detects whether calling pop on a frozen array can modify the array.
    * See https://bugs.webkit.org/show_bug.cgi?id=75788
    */
   function test_POP_IGNORES_FROZEN() {
@@ -1601,13 +1618,27 @@ var ses;
    * https://bugzilla.mozilla.org/show_bug.cgi?id=590690
    * TODO(felix8a): file bug for chrome
    */
-  function test_ARRAYS_TOO_MUTABLE() {
+  function test_ARRAYS_DELETE_NONCONFIGURABLE() {
     var x = [];
     Object.defineProperty(x, 0, { value: 3, configurable: false });
     try {
       x.length = 0;
     } catch (e) {}
     return x.length !== 1 || x[0] !== 3;
+  }
+
+  /**
+   * In some versions of Chrome, extending an array can
+   * modify a read-only length property.
+   * http://code.google.com/p/v8/issues/detail?id=2379
+   */
+  function test_ARRAYS_MODIFY_READONLY() {
+    var x = [];
+    try {
+      Object.defineProperty(x, 'length', {value: 0, writable: false});
+      x[0] = 1;
+    } catch(e) {}
+    return x.length !== 0 || x[0] !== void 0;
   }
 
   /**
@@ -2970,6 +3001,16 @@ var ses;
       tests: ['S10.4.2.1_A1']
     },
     {
+      description: 'Eval breaks masking of named functions in non-strict code',
+      test: test_EVAL_BREAKS_MASKING,
+      repair: void 0,
+      preSeverity: severities.SAFE_SPEC_VIOLATION,
+      canRepair: false,
+      urls: ['http://code.google.com/p/v8/issues/detail?id=2396'],
+      sections: ['10.2'],
+      tests: [] // TODO(erights): Add to test262
+    },
+    {
       description: 'parseInt still parsing octal',
       test: test_PARSEINT_STILL_PARSING_OCTAL,
       repair: repair_PARSEINT_STILL_PARSING_OCTAL,
@@ -3014,12 +3055,22 @@ var ses;
     },
     {
       description: 'Setting [].length can delete non-configurable elements',
-      test: test_ARRAYS_TOO_MUTABLE,
+      test: test_ARRAYS_DELETE_NONCONFIGURABLE,
       repair: void 0,
       preSeverity: severities.NO_KNOWN_EXPLOIT_SPEC_VIOLATION,
       canRepair: false,
       urls: ['https://bugzilla.mozilla.org/show_bug.cgi?id=590690'],
       sections: ['15.4.5.2'],
+      tests: [] // TODO(erights): Add to test262
+    },
+    {
+      description: 'Extending an array can modify read-only array length',
+      test: test_ARRAYS_MODIFY_READONLY,
+      repair: void 0,
+      preSeverity: severities.NO_KNOWN_EXPLOIT_SPEC_VIOLATION,
+      canRepair: false,
+      urls: ['http://code.google.com/p/v8/issues/detail?id=2379'],
+      sections: ['15.4.5.1.3.f'],
       tests: [] // TODO(erights): Add to test262
     },
     {
