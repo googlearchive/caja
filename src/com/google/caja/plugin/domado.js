@@ -1547,7 +1547,9 @@ var Domado = (function() {
       var vdocContainsForeignNodes = false;
 
       containerNode = makeDOMAccessible(containerNode);
-      var document = containerNode.ownerDocument;
+      var document = containerNode.nodeType === 9  // Document node
+          ? containerNode
+          : containerNode.ownerDocument;
       document = makeDOMAccessible(document);
       var docEl = makeDOMAccessible(document.documentElement);
       var bridal = bridalMaker(makeDOMAccessible, document);
@@ -2415,16 +2417,21 @@ var Domado = (function() {
 
         // Catch errors because node might be from a different domain.
         try {
-          var docElem = node.ownerDocument.documentElement;
+          var doc = node.ownerDocument;
           for (var ancestor = node;
               ancestor;
               ancestor = makeDOMAccessible(ancestor.parentNode)) {
-            if (idClassPattern.test(ancestor.className)) {
+            if (ancestor === containerNode ||
+                (ancestor.nodeType === 1 &&
+                 idClassPattern.test(ancestor.className))) {
+              // is within the virtual document
               return tameNodeCtor(node);
-            } else if (ancestor === docElem) {
+            } else if (ancestor === doc) {
+              // didn't find evidence of being within the virtual document
               return null;
             }
           }
+          // permit orphaned nodes
           return tameNodeCtor(node);
         } catch (e) {}
         return null;
@@ -3743,7 +3750,10 @@ var Domado = (function() {
             np(this).policy.requireChildrenEditable();
             var node = np(this).feral;
             var schemaElem = htmlSchema.element(node.tagName);
-            if (!schemaElem.allowed) { throw new Error(); }
+            if (!schemaElem.allowed) {
+              throw new Error("Can't set .innerHTML of non-whitelisted <" +
+                  node.tagName + ">");
+            }
             var isRCDATA = schemaElem.contentIsRCDATA;
             var htmlFragmentString;
             if (!isRCDATA && htmlFragment instanceof Html) {
@@ -4642,7 +4652,19 @@ var Domado = (function() {
           height: NP.filterProp(identity, Number),
           width:  NP.filterProp(identity, Number),
           src: P_blacklist,
-          name: P_blacklist
+          name: P_blacklist,
+          contentDocument: {
+            enumerable: true,
+            get: cajaVM.def(function () {
+              return contentDomicile(this).document;
+            })
+          },
+          contentWindow: {
+            enumerable: true,
+            get: cajaVM.def(function () {
+              return contentDomicile(this).window;
+            })
+          }
         }
       });
       // TODO(kpreid): Check these two (straight from Domita) for correctness
@@ -4671,6 +4693,40 @@ var Domado = (function() {
               '] attribute of an iframe.');
         return value;
       }));
+      function contentDomicile(tameIFrame) {
+        // TODO(kpreid): Once we support loading content via src=, we will need
+        // to consider whether this should always allow access to said content,
+        // and probably other issues.
+        var privates = np(tameIFrame);
+        var frameFeralDoc = makeDOMAccessible(privates.feral.contentDocument);
+        if (!privates.contentDomicile ||
+            frameFeralDoc !== privates.seenContentDocument) {
+          if (!frameFeralDoc) {
+            return {document: null, window: null};
+          }
+
+          var domicile = privates.contentDomicile = attachDocument(
+              '-caja-iframe___', naiveUriPolicy, frameFeralDoc,
+              optTargetAttributePresets, taming);
+          privates.seenContentDocument = frameFeralDoc;
+
+          // Replace document structure with virtualized forms
+          // TODO(kpreid): Use an alternate HTML schema (requires refactoring)
+          // which makes <html> <head> <body> permitted (in particular,
+          // non-opaque) so that this is unnecessary.
+          var child;
+          while ((child = makeDOMAccessible(frameFeralDoc.lastChild))) {
+            frameFeralDoc.removeChild(child);
+          }
+          var tdoc = domicile.document;
+          var thtml = tdoc.createElement('html');
+          thtml.appendChild(tdoc.createElement('head'));
+          thtml.appendChild(tdoc.createElement('body'));
+          frameFeralDoc.appendChild(domicile.feralNode(thtml));
+              // cannot do this via pseudo-node
+        }
+        return privates.contentDomicile;
+      }
 
       var TameImageElement = defineElement({
         names: ['img'],
@@ -5700,10 +5756,12 @@ var Domado = (function() {
       domicile.getIdClass = cajaVM.def(function () {
         return idClass;
       });
-      // enforce id class on element
-      bridal.setAttribute(containerNode, "class",
-          bridal.getAttribute(containerNode, "class")
-          + " " + idClass + " vdoc-container___");
+      // enforce id class on container
+      if (containerNode.nodeType !== 9) {  // not a document (top level)
+        bridal.setAttribute(containerNode, 'class',
+            bridal.getAttribute(containerNode, 'class')
+            + ' ' + idClass + ' vdoc-container___');
+      }
 
       // bitmask of trace points
       //    0x0001 plugin_dispatchEvent

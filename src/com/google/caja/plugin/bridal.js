@@ -770,8 +770,10 @@ var bridalMaker = function (makeDOMAccessible, document) {
  * Returns the window containing this element.
  */
 // mda = makeDOMAccessible
-bridalMaker.getWindow = function(element, mda) {
-  var doc = mda(mda(element).ownerDocument);
+bridalMaker.getWindow = function(node, mda) {
+  var doc = mda(node).nodeType === 9  // Document node
+      ? node
+      : mda(node.ownerDocument);
   // IE
   if (doc.parentWindow) { return doc.parentWindow; }
   // Everything else

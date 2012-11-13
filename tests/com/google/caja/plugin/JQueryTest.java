@@ -22,7 +22,7 @@ package com.google.caja.plugin;
 public class JQueryTest extends QUnitTestCase {
 
   public final void testCore() throws Exception {
-    runQUnitTestCase("core", 1285);
+    runQUnitTestCase("core", 1286);
     // Current modifications made to test suite:
     //   * Removed unnecessary octal literal.
     // Current failure categories:
@@ -30,7 +30,6 @@ public class JQueryTest extends QUnitTestCase {
     //   * TODO(jasvir): window.eval is absent (this includes the jQuery('html')
     //     failure)
     //   * We don't implement XML yet.
-    //   * We don't implement iframes yet.
     //   * We don't implement document.styleSheets.
     //   * We don't implement document.getElementsByName.
   }
@@ -50,13 +49,13 @@ public class JQueryTest extends QUnitTestCase {
   public final void testSupport() throws Exception {
     runQUnitTestCase("support", 1);
     // Current failure categories:
-    //   * We don't implement iframes yet.
+    //   * We don't implement src= iframes yet.
   }
 
   public final void testData() throws Exception {
     runQUnitTestCase("data", 290);
     // Current failure categories:
-    //   * We don't implement iframes yet (used incidentally).
+    //   * We don't implement src= iframes yet.
   }
 
   public final void testQueue() throws Exception {
@@ -86,7 +85,7 @@ public class JQueryTest extends QUnitTestCase {
     //        live() and delegate() tests
     //        trigger() tests
     //   * We don't implement document.createEvent of other than 'HTMLEvents'
-    //   * We don't implement iframes yet.
+    //   * We don't implement src= iframes yet.
     //   * jQuery reports leak in 'bind(name, false), unbind(name, false)'
     //   * submit listeners not firing in 'trigger(type, [data], [fn])'
     //   * "Object [domado object HTMLInputElement] has no method 'click'"
@@ -96,27 +95,27 @@ public class JQueryTest extends QUnitTestCase {
   public final void testSelector() throws Exception {
     runQUnitTestCase("selector", 25);
     // Current failure categories:
-    //   * We don't implement iframes yet.
+    //   * We don't implement src= iframes yet.
   }
 
   public final void testTraversing() throws Exception {
-    runQUnitTestCase("traversing", 286);
+    runQUnitTestCase("traversing", 292);
     // Current failure categories:
-    //   * We don't implement iframes yet.
+    //   * We don't implement src= iframes yet.
   }
 
   public final void testManipulation() throws Exception {
-    runQUnitTestCase("manipulation", 474);
+    runQUnitTestCase("manipulation", 474 /* Firefox; 488 Chrome */);
     // Current modifications made to test suite:
     //   * Removed SES-incompatible Array.prototype modification; was only for
     //     testing jQuery robustness.
     // Current failure categories:
-    //   * Something wrong with checked radio buttons.
+    //   * Something wrong with checked radio buttons. (Worse on Firefox)
     //   * Something wrong with jQuery's <script>-based ajax transport.
     //   * We don't make non-JS <script> elements readable/preserved.
     //   * We don't implement XML yet.
     //   * We don't support runtime-created <style> elements, even virtualized?
-    //   * Something wrong with "jQuery.cleanData" test.
+    //   * Something wrong with "jQuery.cleanData" test. (Firefox only)
     //   * We don't implement some case of dynamic <script> creation that
     //     "html() - execute scripts..." and "html() - script exceptions..."
     //     are using.
@@ -150,7 +149,7 @@ public class JQueryTest extends QUnitTestCase {
   public final void testOffset() throws Exception {
     runQUnitTestCase("offset", 18);
     // Current failure categories:
-    //   * We don't implement iframes yet.
+    //   * We don't implement src= iframes yet.
   }
 
   public final void testDimensions() throws Exception {
@@ -158,7 +157,7 @@ public class JQueryTest extends QUnitTestCase {
     // Current modifications made to test suite:
     //   * Fixed nested function in strict mode.
     // Current failure categories:
-    //   * We don't implement iframes yet.
+    //   * We don't implement src= iframes yet.
   }
 
   public final void testExports() throws Exception {
