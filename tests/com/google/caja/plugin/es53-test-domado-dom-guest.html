@@ -2656,23 +2656,62 @@ Test row cell
   });
 </script>
 
-<p class="testcontainer" id="testToString">Non-toxic toString</p>
+<p class="testcontainer" id="testToString"><!--Test comment-->
+    Non-toxic toString</p>
 <script type="text/javascript">
   jsunitRegister('testToString',
                 function testToString() {
-    // Remove once we get ot ES53 or fix 1290
-    if (false) {
-      // These all used to throw a "toxic function" exception in ES5/3.
-      assertEquals('<BODY>', document.body.toString());
-      assertEquals('#text', document.createTextNode('').toString());
-      // comment node
-      assertEquals(
-          '#comment',
-          document.getElementById('test-opaque-nodes').firstChild.toString());
-      assertEquals('<DIV>', document.createElement('div').toString());
-      assertEquals('[Fake Document]', document.toString());
-    }
+    // These all used to throw a "toxic function" exception in ES5/3.
+    assertEquals('[domado object HTMLBodyElement BODY]',
+        document.body.toString());
+    assertEquals('[domado object Text #text]',
+        document.createTextNode('').toString());
+    assertEquals('[domado object Comment #comment]',
+        document.createComment('').toString());
+    assertEquals('[domado object HTMLDivElement DIV]',
+        document.createElement('div').toString());
+    assertEquals('[domado object HTMLDocument #document]',
+        document.toString());
     pass('testToString');
+  });
+</script>
+
+<p class="testcontainer" id="testObjectInterfaces">
+    testObjectInterfaces (/classes/constructors/whatever) &mdash;
+    Do objects have their expected "types"?</p>
+<script type="text/javascript">
+  jsunitRegister('testObjectClasses',
+                function testObjectClasses() {
+    function assertInstanceof(className, object) {
+      assertTrue('Class ' + className + ' exists',
+          className in window);
+      assertTrue('Object ' + object + ' (for ' + className + ') is an object',
+          typeof object === 'object');
+      assertTrue(object + ' instanceof ' + className,
+          object instanceof window[className]);
+    }
+
+    assertInstanceof('Attr', document.getElementById('testObjectInterfaces')
+        .getAttributeNode('class'));
+    assertInstanceof('Comment', document.createComment('foo'));
+    //assertInstanceof('CanvasRenderingContext2D', // TODO(kpreid): should work
+    //    document.createElement('canvas').getContext('2d'));
+    assertInstanceof('Document', document);
+    //assertInstanceof('DocumentFragment', document.createDocumentFragment());
+    //assertInstanceof('DocumentType', document.doctype);
+    assertInstanceof('HTMLElement', document.body);
+    assertInstanceof('HTMLElement', document.getElementsByTagName('p')[0]);
+    assertInstanceof('HTMLDocument', document);
+    assertInstanceof('Element', document.body);
+    assertInstanceof('Element', document.getElementsByTagName('p')[0]);
+    assertInstanceof('Event', document.createEvent('HTMLEvents'));
+    assertInstanceof('Node', document.body);
+    assertInstanceof('Node', document.getElementsByTagName('p')[0]);
+    assertInstanceof('Text', document.createTextNode('foo'));
+    assertInstanceof('Window', window);
+    assertInstanceof('XMLHttpRequest', new XMLHttpRequest());
+
+    pass('testObjectClasses');
   });
 </script>
 

@@ -39,6 +39,7 @@
   jsunitRegister('testNotNull',
                  function testNotNull() {
     // Simple sanity check to make sure test harness worked okay
+    // Also happens to test toString on foreign nodes
     document.getElementById('testNotNull').innerHTML +=
         ' ' + getExternalForeignNode().toString() + ' ';
     document.getElementById('testNotNull').innerHTML +=

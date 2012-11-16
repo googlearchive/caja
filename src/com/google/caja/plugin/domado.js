@@ -2962,27 +2962,29 @@ var Domado = (function() {
        * Print this object according to its tamed class name; also note for
        * debugging purposes if it is actually the prototype instance.
        */
-      setOwn(TameNode.prototype, "toString", cajaVM.def(function (opt_self) {
-        // recursion exit case
-        if (this === Object.prototype || this == null || this == undefined) {
-          return Object.prototype.toString.call(opt_self || this);
+      setOwn(TameNode.prototype, "toString", cajaVM.def(function() {
+        return nodeToStringSearch(this, this);
+      }));
+      function nodeToStringSearch(self, prototype) {
+        // recursion base case
+        if (typeof prototype !== 'object' || prototype === Object.prototype) {
+          return Object.prototype.toString.call(self);
         }
 
-        var ctor = this.constructor;
+        var ctor = prototype.constructor;
         for (var name in nodeClasses) { // TODO(kpreid): less O(n)
           if (nodeClasses[name] === ctor) {
-            if (ctor.prototype === (opt_self || this)) {
+            if (ctor.prototype === self) {
               return "[domado PROTOTYPE OF " + name + "]";
             } else {
-              return "[domado object " + name + "]";
+              return "[domado object " + name + ' ' + self.nodeName + "]";
             }
           }
         }
 
-        // try again with our prototype, passing the real this in
-        return TameNode.prototype.toString.call(
-            Object.getPrototypeOf(this), this);
-      }));
+        // try next ancestor
+        return nodeToStringSearch(self, Object.getPrototypeOf(prototype));
+      }
       // abstract TameNode.prototype.nodeType
       // abstract TameNode.prototype.nodeName
       // abstract TameNode.prototype.nodeValue
@@ -3350,19 +3352,13 @@ var Domado = (function() {
         innerText: textAccessor,
         data: textAccessor
       });
-      setOwn(TameTextNode.prototype, "toString", nodeMethod(function () {
-        return '#text';
-      }));
       cajaVM.def(TameTextNode);  // and its prototype
 
       function TameCommentNode(node) {
         assert(node.nodeType === 8);
         TameBackedNode.call(this, node);
       }
-      inertCtor(TameCommentNode, TameBackedNode, 'CommentNode');
-      setOwn(TameCommentNode.prototype, "toString", nodeMethod(function () {
-        return '#comment';
-      }));
+      inertCtor(TameCommentNode, TameBackedNode, 'Comment');
       cajaVM.def(TameCommentNode);  // and its prototype
 
       traceStartup("DT: about to make TameBackedAttributeNode");
@@ -4508,20 +4504,14 @@ var Domado = (function() {
           enforceType(contextId, 'string', 'contextId');
           switch (contextId) {
             case '2d':
+              // TODO(kpreid): Need to be lazy once we support other context
+              // types.
               return np(this).tameContext2d;
             default:
               // http://dev.w3.org/html5/spec/the-canvas-element.html#the-canvas-element
-              // says: The getContext(contextId, args...) method of the canvas
-              // element, when invoked, must run the following steps:
-              // [...]
-              //     If contextId is not the name of a context supported by the
-              //     user agent, return null and abort these steps.
-              //
-              // However, Mozilla throws and WebKit returns undefined instead.
-              // Returning undefined rather than null is closer to the spec
-              // than throwing.
-              return undefined;
-              throw new Error('Unapproved canvas contextId');
+              // "If contextId is not the name of a context supported by the
+              // user agent, return null and abort these steps."
+              return null;
           }
         };
         definePropertiesAwesomely(TameCanvasElement.prototype, {
@@ -5222,18 +5212,15 @@ var Domado = (function() {
       cajaVM.def(TameEvent);  // and its prototype
 
       function TameCustomHTMLEvent(event) {
-        var self;
+        var self = TameEvent.call(this, event);
         if (domitaModules.proxiesAvailable) {
           Object.preventExtensions(this);  // required by ES5/3 proxy emulation
-          self = Proxy.create(
-              new ExpandoProxyHandler(this, true, {}),
-              TameEvent.call(this, event));
-          ExpandoProxyHandler.register(self, this);
-          TameEventConf.confide(self, this);
-        } else {
-          self = this;
+          var proxy = Proxy.create(
+              new ExpandoProxyHandler(self, true, {}), self);
+          ExpandoProxyHandler.register(proxy, self);
+          TameEventConf.confide(proxy, self);
+          self = proxy;
         }
-
         return self;
       }
       inherit(TameCustomHTMLEvent, TameEvent);
@@ -5266,7 +5253,8 @@ var Domado = (function() {
 
         installLocation(this);
       }
-      inertCtor(TameHTMLDocument, TamePseudoNode, 'HTMLDocument');
+      nodeClasses.Document =
+          inertCtor(TameHTMLDocument, TamePseudoNode, 'HTMLDocument');
       definePropertiesAwesomely(TameHTMLDocument.prototype, {
         nodeType: P_constant(9),
         nodeName: P_constant('#document'),
@@ -5845,14 +5833,28 @@ var Domado = (function() {
           function (x) { domicile.domitaTrace = x; }
       );
 
-      // Freeze exported classes. Must occur before TameHTMLDocument is
-      // instantiated.
-      for (var name in nodeClasses) {
-        var ctor = nodeClasses[name];
-        cajaVM.def(ctor);  // and its prototype
+      /**
+       * See http://www.whatwg.org/specs/web-apps/current-work/multipage/browsers.html#window for the full API.
+       */
+      function TameWindow() {
+
+        // These descriptors were chosen to resemble actual ES5-supporting browser
+        // behavior.
+        // The document property is defined below.
+        installLocation(this);
+        Object.defineProperty(this, "navigator", {
+          value: tameNavigator,
+          configurable: false,
+          enumerable: true,
+          writable: false
+        });
+        taming.permitUntaming(this);
       }
-      Object.freeze(nodeClasses);
-          // fail hard if late-added item wouldn't be frozen
+      inertCtor(TameWindow, Object, 'Window');
+      // Methods of TameWindow are established later.
+      setOwn(TameWindow.prototype, "toString", cajaVM.def(function() {
+        return "[domado object Window]";
+      }));
 
       // Location object -- used by Document and Window and so must be created
       // before each.
@@ -5893,17 +5895,6 @@ var Domado = (function() {
         });
       }
 
-      traceStartup("DT: about to do TameHTMLDocument");
-      var tameDocument = new TameHTMLDocument(
-          document,
-          containerNode,
-          // TODO(jasvir): Properly wire up document.domain
-          // by untangling the cyclic dependence between
-          // TameWindow and TameDocument
-          String(undefined || 'nosuchhost.invalid'));
-      traceStartup("DT: finished TameHTMLDocument");
-      domicile.htmlEmitterTarget = containerNode;
-
       // See spec at http://www.whatwg.org/specs/web-apps/current-work/multipage/browsers.html#navigator
       // We don't attempt to hide or abstract userAgent details since
       // they are discoverable via side-channels we don't control.
@@ -5930,28 +5921,6 @@ var Domado = (function() {
         'first-letter': true,
         'first-line': true
       };
-
-      /**
-       * See http://www.whatwg.org/specs/web-apps/current-work/multipage/browsers.html#window for the full API.
-       */
-      function TameWindow() {
-
-        // These descriptors were chosen to resemble actual ES5-supporting browser
-        // behavior.
-        // The document property is defined below.
-        installLocation(this);
-        Object.defineProperty(this, "navigator", {
-          value: tameNavigator,
-          configurable: false,
-          enumerable: true,
-          writable: false
-        });
-        taming.permitUntaming(this);
-      }
-      // Methods of TameWindow are established later.
-      setOwn(TameWindow.prototype, "toString", cajaVM.def(function () {
-        return "[domado object Window]";
-      }));
 
       /**
        * An <a href=
@@ -6099,6 +6068,26 @@ var Domado = (function() {
       }));
       
       cajaVM.def(TameWindow);  // and its prototype
+
+      // Freeze exported classes. Must occur before TameHTMLDocument is
+      // instantiated.
+      for (var name in nodeClasses) {
+        var ctor = nodeClasses[name];
+        cajaVM.def(ctor);  // and its prototype
+      }
+      Object.freeze(nodeClasses);
+          // fail hard if late-added item wouldn't be frozen
+
+      traceStartup("DT: about to do TameHTMLDocument");
+      var tameDocument = new TameHTMLDocument(
+          document,
+          containerNode,
+          // TODO(jasvir): Properly wire up document.domain
+          // by untangling the cyclic dependence between
+          // TameWindow and TameDocument
+          String(undefined || 'nosuchhost.invalid'));
+      traceStartup("DT: finished TameHTMLDocument");
+      domicile.htmlEmitterTarget = containerNode;
 
       var tameWindow = new TameWindow();
       var tameDefaultView = new TameDefaultView();

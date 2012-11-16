@@ -48,7 +48,7 @@
           canvas.getContext(1);
         },
         'getContext with non-string');
-    assertUndefined('getContext with unapproved contextId',
+    assertNull('getContext with unapproved contextId',
         canvas.getContext("foo"));
     var context = canvas.getContext("2d");
     assertNotNull("context", context);
