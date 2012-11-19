@@ -439,13 +439,6 @@
     <delete file="${lib}/runtests.success.patch"></delete>
   </target>
 
-  <target name="runbrowserstub" depends="AllTests">
-    <java failonerror="false" fork="true"
-     classname="com.google.caja.plugin.BrowserTestCaseStub">
-      <classpath refid="classpath.tests"/>
-    </java>
-  </target>
-
   <target name="docs" description="Builds all Caja documentation."
    depends="javadocs,ruledocs,cajajsdocs"/>
 
