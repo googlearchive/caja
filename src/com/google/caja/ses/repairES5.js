@@ -1612,6 +1612,27 @@ var ses;
     return false;
   }
 
+
+  /**
+   * Detects whether calling sort on a frozen array can modify the array.
+   * See http://code.google.com/p/v8/issues/detail?id=2419
+   */
+  function test_SORT_IGNORES_FROZEN() {
+    var x = [2,1];
+    Object.freeze(x);
+    try {
+      x.sort();
+    } catch (e) {
+      if (x.length !== 2) { return 'Unexpected modification of frozen array'; }
+      if (x[0] === 2 && x[1] === 1) { return false; }
+    }
+    if (x.length !== 2 || x[0] !== 2 || x[1] !== 1) {
+      return 'Unexpected silent modification of frozen array';
+    }
+    // Should report silent failure as a safe spec violation
+    return false;
+  }
+
   /**
    * In some browsers, assigning to array length can delete
    * non-configurable properties.
@@ -2517,6 +2538,39 @@ var ses;
     });
   }
 
+  function repair_POP_IGNORES_FROZEN() {
+    var pop = Array.prototype.pop;
+    var frozen = Object.isFrozen;
+    Object.defineProperty(Array.prototype, 'pop', {
+      value: function () {
+        if (frozen(this)) {
+          throw new TypeError('Cannot pop a frozen object.');
+        }
+        return pop.call(this);
+      },
+      configurable : true,
+      writable: true
+    });
+  }
+
+  function repair_SORT_IGNORES_FROZEN() {
+    var sort = Array.prototype.sort;
+    var frozen = Object.isFrozen;
+    Object.defineProperty(Array.prototype, 'sort', {
+      value: function (compareFn) {
+        if (frozen(this)) {
+          throw new TypeError('Cannot sort a frozen object.');
+        }
+        if (arguments.length === 0) {
+          return sort.call(this);
+        } else {
+          return sort.call(this, compareFn);
+        }
+      },
+      configurable: true,
+      writable: true
+    });
+  }
 
   ////////////////////// Kludge Records /////////////////////
   //
@@ -3046,11 +3100,21 @@ var ses;
     {
       description: 'Array.prototype.pop ignores frozeness',
       test: test_POP_IGNORES_FROZEN,
-      repair: void 0,
+      repair: repair_POP_IGNORES_FROZEN,
       preSeverity: severities.UNSAFE_SPEC_VIOLATION,
-      canRepair: false,
+      canRepair: true,
       urls: ['https://bugs.webkit.org/show_bug.cgi?id=75788'],
       sections: ['15.4.4.6'],
+      tests: [] // TODO(erights): Add to test262
+    },
+    {
+      description: 'Array.prototype.sort ignores frozeness',
+      test: test_SORT_IGNORES_FROZEN,
+      repair: repair_SORT_IGNORES_FROZEN,
+      preSeverity: severities.UNSAFE_SPEC_VIOLATION,
+      canRepair: true,
+      urls: ['http://code.google.com/p/v8/issues/detail?id=2419'],
+      sections: ['15.4.4.11'],
       tests: [] // TODO(erights): Add to test262
     },
     {
