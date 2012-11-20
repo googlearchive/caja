@@ -1324,7 +1324,7 @@ document.write(
   });
 </script>
 
-<p id="testDimensionProperties" class="testcontainer"
+<div id="testDimensionProperties" class="testcontainer"
     style="position: relative; height: 120px /* for viewing, not tests */;">
   <div id="testDimensionProperties-a" style="
       border: solid brown;
@@ -1353,7 +1353,7 @@ document.write(
       (scrolling)
     </div>
   </div>
-</p>
+</div>
 <script type="text/javascript">
   function assertPropEq(value, object, name, opt_tolerance) {
     if (opt_tolerance) {
@@ -2676,12 +2676,12 @@ Test row cell
   });
 </script>
 
-<p class="testcontainer" id="testObjectInterfaces">
-    testObjectInterfaces (/classes/constructors/whatever) &mdash;
+<p class="testcontainer" id="testInterfaceGlobals">
+    testInterfaceGlobals (/classes/constructors/whatever) &mdash;
     Do objects have their expected "types"?</p>
 <script type="text/javascript">
-  jsunitRegister('testObjectClasses',
-                function testObjectClasses() {
+  jsunitRegister('testInterfaceGlobals',
+                function testInterfaceGlobals() {
     function assertInstanceof(className, object) {
       assertTrue('Class ' + className + ' exists',
           className in window);
@@ -2691,7 +2691,7 @@ Test row cell
           object instanceof window[className]);
     }
 
-    assertInstanceof('Attr', document.getElementById('testObjectInterfaces')
+    assertInstanceof('Attr', document.getElementById('testInterfaceGlobals')
         .getAttributeNode('class'));
     assertInstanceof('Comment', document.createComment('foo'));
     //assertInstanceof('CanvasRenderingContext2D', // TODO(kpreid): should work
@@ -2711,7 +2711,7 @@ Test row cell
     assertInstanceof('Window', window);
     assertInstanceof('XMLHttpRequest', new XMLHttpRequest());
 
-    pass('testObjectClasses');
+    pass('testInterfaceGlobals');
   });
 </script>
 
