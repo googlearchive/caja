@@ -1605,11 +1605,10 @@ var ses;
       if (x.length !== 2) { return 'Unexpected modification of frozen array'; }
       if (x[0] === 1 && x[1] === 2) { return false; }
     }
-    if (x.length !== 2 || x[0] !== 1 || x[1] !== 2) {
+    if (x.length !== 2) {
       return 'Unexpected silent modification of frozen array';
     }
-    // Should report silent failure as a safe spec violation
-    return false;
+    return (x[0] !== 1 || x[1] !== 2);
   }
 
 
@@ -1626,11 +1625,10 @@ var ses;
       if (x.length !== 2) { return 'Unexpected modification of frozen array'; }
       if (x[0] === 2 && x[1] === 1) { return false; }
     }
-    if (x.length !== 2 || x[0] !== 2 || x[1] !== 1) {
+    if (x.length !== 2) {
       return 'Unexpected silent modification of frozen array';
     }
-    // Should report silent failure as a safe spec violation
-    return false;
+    return (x[0] !== 2 || x[1] !== 1);
   }
 
   /**
