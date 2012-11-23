@@ -153,9 +153,7 @@
                  ["aardvarks", 999, {toString:function(){return "#ff0000";}}]);
 
     // context.font
-    testProperty("font", "10px sans-serif", "bold 2em monospace",
-                 // "bold" a workaround for issue 1257 (cssSchema['font']
-                 // incorrectly translated)
+    testProperty("font", "10px sans-serif", "italic 20px monospace",
                  ["'sans-serif", 123,
                   {toString:function(){return "sans-serif";}},
                   "url(http://www.example.com/font.ttf)"]);

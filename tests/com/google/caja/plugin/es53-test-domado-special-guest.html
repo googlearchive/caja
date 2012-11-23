@@ -394,6 +394,7 @@
 <script type="text/javascript">
   jsunitRegister('testResizing',
                  function testResizing() {
+    // TODO(kpreid): Maybe measure scrollbar size instead of guessing.
     var scrollbarSize = 15;
     var scrollbarSlop = 4;
     function windowDims() {
@@ -402,11 +403,13 @@
       assertEquals('document.defaultView.innerHeight',
                    window.innerHeight, document.defaultView.innerHeight);
       assertRoughlyEquals('document.body.clientWidth',
-                   window.innerWidth - scrollbarSize,
-                   document.body.clientWidth, scrollbarSlop);
+                   window.innerWidth,
+                   document.body.clientWidth,
+                   scrollbarSize + scrollbarSlop);
       assertRoughlyEquals('document.documentElement.clientWidth',
-                   window.innerWidth - scrollbarSize,
-                   document.documentElement.clientWidth, scrollbarSlop);
+                   window.innerWidth,
+                   document.documentElement.clientWidth,
+                   scrollbarSize + scrollbarSlop);
       return String([window.innerWidth, window.innerHeight]);
     }
 

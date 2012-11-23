@@ -48,6 +48,10 @@ import org.openqa.selenium.remote.RemoteWebDriver;
  *   <dt>caja.test.browser</dt>
  *   <dd>Which browser driver to use. Default is "firefox".</dd>
  *
+ *   <dt>caja.test.browserPath</dt>
+ *   <dd>Override location of browser executable.  Currently only
+ *   for Chrome (sets chrome.binary for webdriver).</dd>
+ *
  *   <dt>caja.test.headless</dt>
  *   <dd>When true, skip browser tests</dd>
  *
@@ -71,6 +75,7 @@ import org.openqa.selenium.remote.RemoteWebDriver;
  */
 public abstract class BrowserTestCase extends CajaTestCase {
   private static final String BROWSER = "caja.test.browser";
+  private static final String BROWSER_PATH = "caja.test.browserPath";
   private static final String HEADLESS = "caja.test.headless";
   private static final String REMOTE = "caja.test.remote";
   private static final String SERVER_ONLY = "caja.test.serverOnly";
@@ -384,15 +389,19 @@ public abstract class BrowserTestCase extends CajaTestCase {
       return null;
     }
     String browser = System.getProperty(BROWSER, "firefox");
+    String browserPath = System.getProperty(BROWSER_PATH);
     String remote = System.getProperty(REMOTE, "");
+    DesiredCapabilities dc = new DesiredCapabilities();
     if (!"".equals(remote)) {
-      DesiredCapabilities dc = new DesiredCapabilities();
       dc.setBrowserName(browser);
       dc.setJavascriptEnabled(true);
       return new RemoteWebDriver(new URL(remote), dc);
     }
     if ("chrome".equals(browser)) {
-      return new ChromeDriver();
+      if (browserPath != null) {
+        dc.setCapability("chrome.binary", browserPath);
+      }
+      return new ChromeDriver(dc);
     } else if ("firefox".equals(browser)) {
       return new FirefoxDriver();
     } else {

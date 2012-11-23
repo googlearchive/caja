@@ -24,12 +24,6 @@
     <script type="text/javascript" src="/ant-lib/com/google/caja/console.js"></script>
     <script type="text/javascript" src="jsUnitCore.js"></script>
     <script type="text/javascript" src="jsunit.js"></script>
-    <script type="text/javascript" src="/ant-lib/com/google/caja/es53.js"></script>
-    <script type="text/javascript" src="/ant-lib/com/google/caja/cajita-promise.js"></script>
-    <script type="text/javascript" src="/ant-lib/com/google/caja/plugin/uri.js"></script>
-    <script type="text/javascript" src="/ant-lib/com/google/caja/plugin/json-rest-transport.js"></script>
-    <script type="text/javascript" src="/ant-lib/com/google/caja/plugin/cajoling-service-client.js"></script>
-    <script type="text/javascript" src="/ant-lib/com/google/caja/plugin/load-module.js"></script>
 
     <script type="text/javascript">
       // Current SVN version interpolated below by "build.xml"
@@ -233,13 +227,13 @@
     <script type="text/javascript">
       jsunitRegister('testBuildVersionError',
                      function testBuildVersionError() {
-        var cajaBuildVersionOrig = window.cajaBuildVersion;
+        var isolate = document.getElementById('isolate').contentWindow;
         try {
           // Capture console for further inspection
           var consoleMessages = '';
           var testConsole = { log: function(s) { consoleMessages += s; } };
           // Hard-code the wrong version to be sent in cajoling request
-          window.cajaBuildVersion = '0000';
+          isolate.cajaBuildVersion = '0000';
           var c = cajolingServiceClientMaker(
               '/caja/cajole',
               jsonRestTransportMaker(),
@@ -260,7 +254,7 @@
                 jsunitPass('testBuildVersionError');
               }));
         } finally {
-          cajaBuildVersion = cajaBuildVersionOrig;
+          isolate.cajaBuildVersion = cajaBuildVersion;
         }
       });
     </script>
@@ -450,9 +444,20 @@
     </script>
 
     <script type="text/javascript">
-      document.getElementById('automatedTestingReadyIndicator')
-          .className = 'readytotest';
-      jsunitRun();
+      function ready() {
+        document.getElementById('automatedTestingReadyIndicator')
+            .className = 'readytotest';
+        jsunitRun();
+      }
     </script>
+
+    <!--
+      es53.js makes all objects recursive, which messes up webdriver
+      when it tries to serialize results back to the test driver.
+      The workaround here is to put es53.js and its dependents in a
+      separate iframe.
+    -->
+    <iframe id="isolate" src="modules-test-isolate.html" style="display:none">
+    </iframe>
   </body>
 </html>
