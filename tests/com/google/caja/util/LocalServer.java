@@ -50,6 +50,10 @@ public class LocalServer {
     this.contextCallback = contextCallback;
   }
 
+  public String hostname() {
+    return ThisHostName.value();
+  }
+
   /**
    * Start a local web server on the port specified by portNumber().
    */
@@ -74,9 +78,7 @@ public class LocalServer {
       servlets.addServlet(
           new ServletHolder(
               new CajolingServlet(
-                  new CajolingService(BuildInfo.getInstance(),
-                      "http://localhost:" + portNumber +
-                          subdir + service))),
+                  new CajolingService(BuildInfo.getInstance()))),
           service);
 
       // Hook for subclass to add more servlets

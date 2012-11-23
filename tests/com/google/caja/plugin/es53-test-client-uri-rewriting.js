@@ -28,7 +28,9 @@
       return 'URICALLBACK[[' + uri + ']]';
     }
   };
-  
+
+  var origin = location.protocol + '//' + location.host;
+
   // Since emitCss___ emits CSS to the containing document's HEAD, we cannot
   // simply check innerHTML of the client DIV to see whether the effect was
   // correct. Instead, we have to go to greater extremes by monkey patching the
@@ -62,24 +64,19 @@
         assertStringContains(
           canonInnerHtml(
               '<a href="URICALLBACK[['
-              + 'http://localhost:8000/ant-testlib/'
-              + 'com/google/caja/plugin/bar.html'
+              + origin + '/ant-testlib/com/google/caja/plugin/bar.html'
               + ']]" target="_blank">default</a>'
               + '<a href="URICALLBACK[['
-              + 'http://localhost:8000/ant-testlib/'
-              + 'com/google/caja/plugin/bar.html'
+              + origin + '/ant-testlib/com/google/caja/plugin/bar.html'
               + ']]" target="_blank">top</a>'
               + '<a href="URICALLBACK[['
-              + 'http://localhost:8000/ant-testlib/'
-              + 'com/google/caja/plugin/bar.html'
+              + origin + '/ant-testlib/com/google/caja/plugin/bar.html'
               + ']]" target="_self">self</a>'
               + '<a href="URICALLBACK[['
-              + 'http://localhost:8000/ant-testlib/'
-              + 'com/google/caja/plugin/bar.html'
+              + origin + '/ant-testlib/com/google/caja/plugin/bar.html'
               + ']]" target="_blank">parent</a>'
               + '<a href="URICALLBACK[['
-              + 'http://localhost:8000/ant-testlib/'
-              + 'com/google/caja/plugin/bar.html'
+              + origin + '/ant-testlib/com/google/caja/plugin/bar.html'
               + ']]" target="_blank">foo</a>'
           ),
           result);
@@ -103,7 +100,7 @@
         
         assertStringContains(
           'url(' + q + 'URICALLBACK[['
-          + 'http://localhost:8000/ant-testlib/com/google/caja/plugin/foo.png'
+          + origin + '/ant-testlib/com/google/caja/plugin/foo.png'
           + ']]' + q + ')',
           capture.emittedCss);
         assertStringDoesNotContain('javascript:', capture.emittedCss);

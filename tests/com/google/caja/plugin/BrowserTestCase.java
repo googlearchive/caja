@@ -24,36 +24,72 @@ import com.google.caja.util.RewritingResourceHandler;
 import java.io.FileDescriptor;
 import java.io.FileOutputStream;
 import java.io.PrintStream;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.List;
 
 import com.google.common.base.Joiner;
 import org.mortbay.jetty.servlet.Context;
 import org.openqa.selenium.By;
+import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
+import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.firefox.FirefoxDriver;
+import org.openqa.selenium.remote.DesiredCapabilities;
+import org.openqa.selenium.remote.RemoteWebDriver;
 
 /**
- * Test case class with tools for controlling a web browser running pages from a
- * local web server.
+ * Test case class with tools for controlling a web browser running pages from
+ * a local web server.
+ * <p>
+ * Useful system properties:
+ * <dl>
+ *   <dt>caja.test.browser</dt>
+ *   <dd>Which browser driver to use. Default is "firefox".</dd>
+ *
+ *   <dt>caja.test.headless</dt>
+ *   <dd>When true, skip browser tests</dd>
+ *
+ *   <dt>caja.test.remote</dt>
+ *   <dd>URL of a remote webdriver, which should usually be something like
+ *   "http://hostname:4444/wd/hub".  If unset, use a local webdriver.</dd>
+ *
+ *   <dt>caja.test.serverOnly</dt>
+ *   <dd>When true, start server and wait</dd>
+ *
+ *   <dt>caja.test.startAndWait</dt>
+ *   <dd>When true, start server and browser and wait</dd>
+ *
+ *   <dt>caja.test.thishostname</dt>
+ *   <dd>Hostname that a remote browser should use to contact the
+ *   localhost server. If unset, guesses a non-loopback hostname.</dd>
+ * </dl>
  *
  * @author maoziqing@gmail.com (Ziqing Mao)
  * @author kpreid@switchb.org (Kevin Reid)
  */
 public abstract class BrowserTestCase extends CajaTestCase {
-  // This being static is a horrible kludge to be able to reuse the Firefox
+  private static final String BROWSER = "caja.test.browser";
+  private static final String HEADLESS = "caja.test.headless";
+  private static final String REMOTE = "caja.test.remote";
+  private static final String SERVER_ONLY = "caja.test.serverOnly";
+  private static final String START_AND_WAIT = "caja.test.startAndWait";
+
+  // This being static is a horrible kludge to be able to reuse the WebDriver
   // instance between individual tests. There is no narrower scope we can use,
   // unless we were to move to JUnit 4 style tests, which have per-class setup.
-  static final MultiWindowWebDriver mwwd = Boolean.getBoolean("test.headless")
-      ? null : new MultiWindowWebDriver();
+  static WebDriver driver = null;
   static {
-    if (mwwd != null) {
-      Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
-        public void run() {
-          mwwd.stop();
+    Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
+      public void run() {
+        if (driver != null) {
+          // Close current window, which will quit if it's the only window.
+          driver.close();
+          driver = null;
         }
-      }));
-    }
+      }
+    }));
   }
 
   protected String testBuildVersion = null;
@@ -100,10 +136,6 @@ public abstract class BrowserTestCase extends CajaTestCase {
     super.tearDown();
   }
 
-  protected void closeWebDriver() {
-    mwwd.stop();
-  }
-
   protected RewritingResourceHandler getCajaStatic() {
     return localServer.getCajaStatic();
   }
@@ -118,11 +150,6 @@ public abstract class BrowserTestCase extends CajaTestCase {
   protected void setTestBuildVersion(String version) {
     testBuildVersion = version;
   }
-
-  private static final String SERVER_ONLY =
-      "caja.BrowserTestCase.serverOnly";
-  private static final String START_AND_WAIT =
-      "caja.BrowserTestCase.startAndWait";
 
   /**
    * Start the web server and browser, go to pageName, call driveBrowser(driver,
@@ -139,16 +166,18 @@ public abstract class BrowserTestCase extends CajaTestCase {
       pageName = "test-index.html";
       params = null;
     }
-    String page = "http://localhost:" + portNumber
+    String page = "http://" + localServer.hostname() + ":" + portNumber
         + "/ant-testlib/com/google/caja/plugin/" + pageName;
     if (params != null && params.length > 0) {
       page += "?" + Joiner.on("&").join(params);
     }
     // The test runner may catch output so go directly to file descriptor 2.
+    @SuppressWarnings("resource")
     PrintStream err = new PrintStream(
         new FileOutputStream(FileDescriptor.err), false, "UTF-8");
     err.println("- Try " + page);
     String result = "";
+    boolean passed = false;
     try {
       try {
         localServer.start();
@@ -161,25 +190,39 @@ public abstract class BrowserTestCase extends CajaTestCase {
         Thread.currentThread().join();
       }
 
-      WebDriver driver = mwwd.newWindow();
+      if (driver == null) {
+        driver = makeDriver();
+      }
       driver.get(page);
       if (flag(START_AND_WAIT)) {
         Thread.currentThread().join();
       }
 
       result = driveBrowser(driver, data, pageName);
-      driver.close();
-      // Note that if the tests fail, this will not be reached and the window
-      // will not be closed. This is useful for debugging test failures.
+      passed = true;
     } finally {
+      if (!passed) {
+        // It's helpful for debugging to keep failed windows open.
+        switchToNewWindow(driver);
+      }
       localServer.stop();
-      err.close();
     }
     return result;
   }
 
-  protected boolean flag(String name) {
-    return System.getProperty(name) != null;
+  static int windowSeq = 1;
+
+  protected void switchToNewWindow(WebDriver driver) {
+    JavascriptExecutor jsexec = (JavascriptExecutor) driver;
+    String name = "btcwin" + (windowSeq++);
+    jsexec.executeScript("window.open('', '" + name + "')");
+    driver.switchTo().window(name);
+  }
+
+  static protected boolean flag(String name) {
+    String value = System.getProperty(name);
+    return value != null && !"".equals(value) && !"0".equals(value)
+        && !"false".equalsIgnoreCase(value);
   }
 
   protected String runTestDriver(String testDriver, String... params)
@@ -336,58 +379,24 @@ public abstract class BrowserTestCase extends CajaTestCase {
     boolean run();
   }
 
-  /**
-   * A wrapper for WebDriver providing the ability to open new windows on
-   * demand.
-   *
-   * It lazily creates the actual WebDriver upon newWindow(). There is still
-   * only one actual WebDriver.
-   *
-   * @author kpreid@switchb.org (Kevin Reid)
-   */
-  private static class MultiWindowWebDriver {
-    private WebDriver driver;
-    private String firstWindowHandle;
-    private int nextName = 0;
-
-    /**
-     * Create a new window and return the WebDriver, which has been switched
-     * to it.
-     */
-    public WebDriver newWindow() throws Exception {
-      if (driver == null) {
-        driver = new FirefoxDriver();
-        driver.get("about:blank");
-        firstWindowHandle = driver.getWindowHandle();
-      }
-
-      driver.switchTo().window(firstWindowHandle);
-      String name = "btcwin" + (nextName++);
-      driver.get("javascript:window.open('','" + name + "');'This%20is%20the%20"
-          + "BrowserTestCase%20bootstrap%20window.'");
-      driver.switchTo().window(name);
-      return driver;
+  private WebDriver makeDriver() throws MalformedURLException {
+    if (flag(HEADLESS)) {
+      return null;
     }
-
-    /**
-     * Close the browser if and only if all opened windows have been closed;
-     * else clean up but leave those windows open.
-     */
-    public void stop() {
-      if (driver == null) {
-        return;
-      }
-
-      if (driver.getWindowHandles().size() <= 1) {
-        // quit if no failures (extra windows)
-        driver.quit();
-      } else {
-        // but our window-opener window is not interesting
-        driver.switchTo().window(firstWindowHandle);
-        driver.close();
-      }
-
-      driver = null;
+    String browser = System.getProperty(BROWSER, "firefox");
+    String remote = System.getProperty(REMOTE, "");
+    if (!"".equals(remote)) {
+      DesiredCapabilities dc = new DesiredCapabilities();
+      dc.setBrowserName(browser);
+      dc.setJavascriptEnabled(true);
+      return new RemoteWebDriver(new URL(remote), dc);
+    }
+    if ("chrome".equals(browser)) {
+      return new ChromeDriver();
+    } else if ("firefox".equals(browser)) {
+      return new FirefoxDriver();
+    } else {
+      throw new RuntimeException("Unsupported local browser " + browser);
     }
   }
 }

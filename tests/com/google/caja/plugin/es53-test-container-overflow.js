@@ -19,8 +19,10 @@
 
 (function () {
 
+  var origin = location.protocol + '//' + location.host;
+
   caja.initialize({
-    cajaServer: 'http://localhost:8000/caja',
+    cajaServer: origin + '/caja',
     debug: true,
     forceES5Mode: inES5Mode
   });

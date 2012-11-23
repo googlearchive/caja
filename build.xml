@@ -129,7 +129,7 @@
     <pathelement path="${testlib}"/>
     <pathelement path="${third_party}/java/emma/emma.jar"/>
     <pathelement path="${third_party}/java/junit/junit.jar"/>
-    <pathelement path="${third_party}/java/webdriver/selenium-server-standalone-2.25.0.jar"/>
+    <pathelement path="${third_party}/java/webdriver/selenium-server-standalone-2.26.0.jar"/>
     <path refid="classpath.main"/>
     <path refid="classpath.gwt"/>
   </path>
@@ -203,14 +203,14 @@
   <target name="brserve" description="Run just browser test server.">
     <antcall target="runtests">
       <param name="test.filter" value="GeneralBrowserTest"/>
-      <param name="caja.BrowserTestCase.serverOnly" value="true"/>
+      <param name="caja.test.serverOnly" value="true"/>
     </antcall>
   </target>
 
   <target name="brserve+" description="... and a test browser.">
     <antcall target="runtests">
       <param name="test.filter" value="GeneralBrowserTest"/>
-      <param name="caja.BrowserTestCase.startAndWait" value="true"/>
+      <param name="caja.test.startAndWait" value="true"/>
     </antcall>
   </target>
 
@@ -268,11 +268,11 @@
   <property name="testonly.user.region" value="TR"/>
 
   <propertyset id="test.propertyset">
-    <propertyref name="webdriver.firefox.bin"/>
-    <propertyref prefix="caja.BrowserTestCase."/>
+    <propertyref prefix="caja.test."/>
     <propertyref prefix="emma."/>
     <propertyref prefix="test."/>
     <propertyref prefix="testonly."/>
+    <propertyref prefix="webdriver."/>
     <mapper type="glob" from="testonly.*" to="*"/>
   </propertyset>
 
@@ -410,7 +410,7 @@
       <and>
         <istrue value="${runtests.success}"/>
         <equals arg1="${test.filter}" arg2="*Test"/>
-        <isfalse value="${caja.BrowserTestCase.startAndWait}"/>
+        <isfalse value="${caja.test.startAndWait}"/>
       </and>
     </condition>
     <fail message=
