@@ -30,6 +30,7 @@
   ];
 
   var test_drivers = [
+    ['es53-test-apitaming.js'],
     ['es53-test-cajajs-invocation.js'],
     ['es53-test-cajajs-invocation.js'],
     ['es53-test-automode-1.js'],

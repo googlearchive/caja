@@ -19,7 +19,7 @@
  * @author ihab.awad@gmail.com
  * @requires caja, JSON
  */
-caja.tamingGoogleLoader.addPolicyFactory('visualization', function(frame, utils) {
+caja.tamingGoogleLoader.addPolicyFactory('google.visualization', function(frame, utils) {
 
   var v = {};
 
@@ -658,6 +658,10 @@ caja.tamingGoogleLoader.addPolicyFactory('visualization', function(frame, utils)
 
   return {
     version: '1.0',
-    value: v
+    value: {
+      google: {
+        visualization: v
+      }
+    }
   };
 });

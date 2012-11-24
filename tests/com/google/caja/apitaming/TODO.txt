@@ -11,6 +11,9 @@
 - datatable.html - tooltip on the legend does not show up in ES5 mode;
   shows up ok in ES5/3 mode.
 
+- charteditor.html - editor pane is shown outside parent DIV (and thus clipped
+  away) in both ES5/3 and ES5 modes.
+
 - DataTable.prototype.toJSON fails with stack overflow when in ES5/3 mode. It
   seems impossible to avoid this by "scrubbing" the objects passed into the
   various methods. Also DataTable.clone().

@@ -141,6 +141,8 @@ caja.tamingGoogleLoader = (function() {
           return copyArray(o);
         case 'object':
           return copyObject(o);
+        default:
+          throw new TypeError();  // Unreachable
       }
     }
 
@@ -242,7 +244,7 @@ caja.tamingGoogleLoader = (function() {
     };
   };
 
-  function makePolicyEvaluator(frame) {
+  function PolicyEvaluator(frame) {
 
     var WeakMap = caja.iframe.contentWindow.WeakMap;
     var tamingUtils = TamingUtils(frame);
@@ -415,22 +417,15 @@ caja.tamingGoogleLoader = (function() {
       return frame.markReadOnlyRecord(r);
     }
 
-    function defTopLevelObj(path, obj, policyByName) {
-      var policy = {};
-      policyByName.keys(function(k) {
-        policy[k] = policyByName.get(k).value;
-      });
-      return defObj(path, obj, policy);
-    }
-
     return {
-      defTopLevelObj: defTopLevelObj
+      defObj: defObj
     };
   }
 
   var policyFactoryUrlByName = StringMap();
   var policyFactoryByName = StringMap();
   var pendingPolicyFactoryLoadByName = StringMap();
+  var loaderFactories = [];
 
   function addPolicyFactoryUrl(name, url) {
     policyFactoryUrlByName.set(name, url);
@@ -463,85 +458,89 @@ caja.tamingGoogleLoader = (function() {
     else { loadPolicyFactory(name, cb); }
   }
 
+  function addLoaderFactory(aLoaderFactory) {
+    loaderFactories.push(aLoaderFactory);
+  }
+
+  function isObject(o) {
+    return Object.prototype.toString.call(o) === '[object Object]';
+  }
+
+  function mergeInto(target, source) {
+    for (var key in source) {
+      if (source.hasOwnProperty(key) && !/__$/.test(key)) {
+        if (isObject(source[key])) {
+          if (!target[key]) { target[key] = {}; }
+          mergeInto(target[key], source[key]);
+        } else {
+          target[key] = source[key];
+        }
+      }
+    }
+  }
+
   function applyToFrame(frame, initialEntries) {
 
     // TODO(ihab.awad): redundant!!!
     var tamingUtils = TamingUtils(frame);
 
-    var onloads = EventListenerGroup();
-    var loadWasCalled = false;
-    var framePolicyByName = tamingUtils.StringMap();
+    var framePolicies = {};
     var whitelistedApis = tamingUtils.StringMap();
-    var policyEvaluator = makePolicyEvaluator(frame);
+    var policyEvaluator = PolicyEvaluator(frame);
+    var loaders = [];
+    var policyByName = tamingUtils.StringMap();
 
-    function apply() {
-
-      var safeGoogle = policyEvaluator.defTopLevelObj(
-          'google', window['google'], framePolicyByName);
-
-      for (var key in initialEntries) {
-        if (initialEntries.hasOwnProperty(key) && !/__$/.test(key)) {
-          safeGoogle[key] = initialEntries[key];
-        }
-      }
-
-      safeGoogle.load = frame.markFunction(function(name, opt_ver, opt_info) {
-        if (!whitelistedApis.has(name)) {
-          // This is our front line of defense against a malicious guest
-          // trying to break us by supplying a dumb API name like '__proto__'.
-          throw 'API ' + name + ' is not whitelisted for your application';
-        }
-
-        loadWasCalled = true;
-        var guestCallback = undefined;
-
-        if (opt_info) {
-          guestCallback = opt_info.callback;
-          opt_info.callback = undefined;
-          opt_info = tamingUtils.copyJson(opt_info);
-        } else {
-          opt_info = {};
-        }
-
+    function loadPolicy(name, cb) {
+      if (policyByName.has(name)) {
+        window.setTimeout(
+            function() { cb(policyByName.get(name)); },
+            0);
+      } else {
         maybeLoadPolicyFactory(name, function() {
           var policy = policyFactoryByName
               .get(name)
               .call({}, frame, tamingUtils);
-          framePolicyByName.set(name, policy);
-
-          opt_info.callback = function() {
-            apply();
-            if (onloads) { onloads.fire(); }
-            onloads = undefined;
-            guestCallback && guestCallback.call({});
-          };
-
-          if (policy.customGoogleLoad) {
-            policy.customGoogleLoad(name, opt_info);
-          } else {
-            google.load(name, policy.version, opt_info);
-          }
+          mergeInto(framePolicies, policy.value);
+          policyByName.set(name, policy);
+          cb(policy);
         });
-      });
+      }
+    }
 
-      safeGoogle.setOnLoadCallback = frame.markFunction(function(cb) {
-        if (onloads) { onloads.add(cb); }
-      });
+    function reapplyPolicies() {
 
-      var g = frame.tame(safeGoogle);
+      var safeWindow = policyEvaluator.defObj(
+          'window', window, framePolicies);
+
+      if (initialEntries) {
+        mergeInto(safeWindow, initialEntries);
+      }
+
+      for (var i = 0; i < loaders.length; i++) {
+        loaders[i].addToSafeWindow(safeWindow);
+      }
+
       var w = caja.iframe.contentWindow;
-      w.___ && w.___.copyToImports
-          ? w.___.copyToImports(frame.imports, { google: g })
-          : frame.imports.google = g;
+
+      for (var key in safeWindow) {
+        if (safeWindow.hasOwnProperty(key) && !/__$/.test(key)) {
+          var obj = safeWindow[key];
+          var tameObj = frame.tame(obj);
+          if (w.___ && w.___.copyToImports) {
+            var a = {};
+            a[key] = tameObj;
+            w.___.copyToImports(frame.imports, a);
+          } else {
+            frame.imports[key] = tameObj;
+          }
+        }
+      }
     }
 
     function signalOnload() {
-      // After the guest code loads, we call its 'onload' right away if it has
-      // not made any 'google.load()' calls. Otherwise, we need to wait until
-      // the load() requests return.
-      if (!loadWasCalled) {
-        onloads.fire();
-        onloads = undefined;
+      reapplyPolicies();
+      for (var i = 0; i < loaders.length; i++) {
+        loaders[i].signalOnload();
       }
     }
 
@@ -552,7 +551,18 @@ caja.tamingGoogleLoader = (function() {
       whitelistedApis.set(name, true);
     }
 
-    apply();
+    for (var i = 0; i < loaderFactories.length; i++) {
+      loaders.push(loaderFactories[i]({
+        EventListenerGroup: EventListenerGroup,
+        loadPolicy: loadPolicy,
+        tamingUtils: tamingUtils,
+        reapplyPolicies: reapplyPolicies,
+        frame: frame,
+        whitelistedApis: whitelistedApis
+      }));
+    }
+
+    reapplyPolicies();
 
     return {
       signalOnload: signalOnload,
@@ -563,6 +573,7 @@ caja.tamingGoogleLoader = (function() {
   return {
     addPolicyFactoryUrl: addPolicyFactoryUrl,
     addPolicyFactory: addPolicyFactory,
+    addLoaderFactory: addLoaderFactory,
     applyToFrame: applyToFrame
   };
 })();

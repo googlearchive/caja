@@ -15,7 +15,7 @@
 /**
  * Policy factory for test api named "google.foo"; see es53-test-apitaming.js.
  */
-caja.tamingGoogleLoader.addPolicyFactory('foo', function(frame, utils) {
+caja.tamingGoogleLoader.addPolicyFactory('google.foo', function(frame, utils) {
 
   var f = {};
 
@@ -49,6 +49,10 @@ caja.tamingGoogleLoader.addPolicyFactory('foo', function(frame, utils) {
 
   return {
     version: '1.0',
-    value: f
+    value: {
+      google: {
+        foo: f
+      }
+    }
   };
 });

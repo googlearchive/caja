@@ -20,7 +20,7 @@
  * @requires caja
  * @overrides window
  */
-caja.tamingGoogleLoader.addPolicyFactory('maps', function(frame, utils) {
+caja.tamingGoogleLoader.addPolicyFactory('google.maps', function(frame, utils) {
 
   function copyLocation(o) {
     if (typeof o === 'string') { return o; }
@@ -5736,7 +5736,7 @@ google.maps.weather.WindSpeedUnit = {
 };
 
   return {
-    value: google.maps,
+    value: { google: google },
     customGoogleLoad: function(name, info) {
       var cb = info.callback;
       window.google.load('maps', '3.0', {

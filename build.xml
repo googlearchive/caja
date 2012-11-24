@@ -1067,19 +1067,19 @@
       <input file="${src}/com/google/caja/apitaming/cajaTamingGoogleLoader.js"/>
     </transform>
     <transform>
-      <output file="${lib}/com/google/caja/apitaming/mapsPolicyFactory.jslint.tstamp" language="jslint"/>
-      <output file="${lib}/com/google/caja/apitaming/mapsPolicyFactory.opt.js" language="javascript" renderer="minify"/>
-      <input file="${src}/com/google/caja/apitaming/mapsPolicyFactory.js"/>
+      <output file="${lib}/com/google/caja/apitaming/google.maps.policyFactory.jslint.tstamp" language="jslint"/>
+      <output file="${lib}/com/google/caja/apitaming/google.maps.policyFactory.opt.js" language="javascript" renderer="minify"/>
+      <input file="${src}/com/google/caja/apitaming/google.maps.policyFactory.js"/>
     </transform>
     <transform>
-      <output file="${lib}/com/google/caja/apitaming/pickerPolicyFactory.jslint.tstamp" language="jslint"/>
-      <output file="${lib}/com/google/caja/apitaming/pickerPolicyFactory.opt.js" language="javascript" renderer="minify"/>
-      <input file="${src}/com/google/caja/apitaming/pickerPolicyFactory.js"/>
+      <output file="${lib}/com/google/caja/apitaming/google.picker.policyFactory.jslint.tstamp" language="jslint"/>
+      <output file="${lib}/com/google/caja/apitaming/google.picker.policyFactory.opt.js" language="javascript" renderer="minify"/>
+      <input file="${src}/com/google/caja/apitaming/google.picker.policyFactory.js"/>
     </transform>
     <transform>
-      <output file="${lib}/com/google/caja/apitaming/visualizationPolicyFactory.jslint.tstamp" language="jslint"/>
-      <output file="${lib}/com/google/caja/apitaming/visualizationPolicyFactory.opt.js" language="javascript" renderer="minify"/>
-      <input file="${src}/com/google/caja/apitaming/visualizationPolicyFactory.js"/>
+      <output file="${lib}/com/google/caja/apitaming/google.visualization.policyFactory.jslint.tstamp" language="jslint"/>
+      <output file="${lib}/com/google/caja/apitaming/google.visualization.policyFactory.opt.js" language="javascript" renderer="minify"/>
+      <input file="${src}/com/google/caja/apitaming/google.visualization.policyFactory.js"/>
     </transform>
     <replace dir="${lib.caja}/plugin" propertyFile="${lib.caja}/reporting/buildInfo.properties" >
       <replacefilter token="%VERSION%" property="svnVersion" />

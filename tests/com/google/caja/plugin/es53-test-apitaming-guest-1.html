@@ -34,12 +34,17 @@
 <script type="text/javascript">
   jsunitRegister('testBarIsProhibited',
                  function testBarIsProhibited() {
+    var init = jsunitCallback(function() { fail(); });
+    var threw = false;
     try {
       google.load('bar', '1.0', { callback: init });
-      fail();
     } catch (e) {
-      pass('testBarIsProhibited');
+      threw = true;
     }
-    function init() { fail(); }
+    if (threw)  {
+      pass('testBarIsProhibited');
+    } else {
+      fail('testBarIsProhibited');
+    }
   });
 </script>

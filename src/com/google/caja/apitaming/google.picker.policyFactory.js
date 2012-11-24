@@ -20,7 +20,7 @@
  * @requires caja
  * @overrides window
  */
-caja.tamingGoogleLoader.addPolicyFactory('picker', function(frame, utils) {
+caja.tamingGoogleLoader.addPolicyFactory('google.picker', function(frame, utils) {
 
   var p = {};
 
@@ -264,7 +264,11 @@ caja.tamingGoogleLoader.addPolicyFactory('picker', function(frame, utils) {
   p.Type.VIDEO = 1;
 
   return {
-    value: p,
+    value: {
+      google: {
+        picker: p
+      }
+    },
     customGoogleLoad: function(name, info) {
       var cb = info.callback;
       info.callback = function() {

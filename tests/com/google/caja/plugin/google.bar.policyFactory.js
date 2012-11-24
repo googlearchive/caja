@@ -15,7 +15,7 @@
 /**
  * Policy factory for test api named "google.bar"; see es53-test-apitaming.js.
  */
-caja.tamingGoogleLoader.addPolicyFactory('bar', function(frame, utils) {
+caja.tamingGoogleLoader.addPolicyFactory('google.bar', function(frame, utils) {
 
   var f = {};
 
@@ -23,7 +23,11 @@ caja.tamingGoogleLoader.addPolicyFactory('bar', function(frame, utils) {
   f.isCustomGoogleLoadCalled = function() {};
 
   return {
-    value: f,
+    value: {
+      google: {
+        bar: f
+      }
+    },
     customGoogleLoad: function(name, info) {
       window.google.bar.customGoogleLoadCalled = true;
       window.setTimeout(function() { info.callback(); }, 0);

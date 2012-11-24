@@ -66,13 +66,21 @@
 
 
 ////////////////////////////////////////////////////////////////////////
-// Insert taming framework script
+// Insert taming framework scripts
 
 (function() {
-  var s = document.createElement('script');
-  s.setAttribute('src', '../apitaming/cajaTamingGoogleLoader.js');
-  s.onload = runtests;  // TODO(ihab.awad): Will not work on IE
-  document.head.appendChild(s);
+  function loadScript(url, cb) {
+    var s = document.createElement('script');
+    s.setAttribute('src', url);
+    s.onload = cb;  // TODO(ihab.awad): Will not work on IE
+    document.head.appendChild(s);
+  }
+
+  loadScript('../apitaming/cajaTamingGoogleLoader.js', function() {
+    loadScript('../apitaming/google.load.loaderFactory.js', function() {
+      runtests();
+    });
+  });
 })();
 
 
@@ -91,8 +99,12 @@ function runtests() {
     rewrite: function (uri, uriEffect, loaderType, hints) { return uri; }
   };
 
-  caja.tamingGoogleLoader.addPolicyFactoryUrl('foo', './fooPolicyFactory.js');
-  caja.tamingGoogleLoader.addPolicyFactoryUrl('bar', './barPolicyFactory.js');
+  caja.tamingGoogleLoader.addPolicyFactoryUrl(
+      'google.foo',
+      './google.foo.policyFactory.js');
+  caja.tamingGoogleLoader.addPolicyFactoryUrl(
+      'google.bar',
+      './google.bar.policyFactory.js');
 
   var goArray = [];
 
@@ -103,15 +115,17 @@ function runtests() {
   caja.load(createDiv(), uriPolicy, function (frame) {
 
     var t = caja.tamingGoogleLoader.applyToFrame(frame, {
-      initialObj: frame.markReadOnlyRecord({
-        initialFcn: frame.markFunction(function(x) {
-          return x + 19;
+      google: {
+        initialObj: frame.markReadOnlyRecord({
+          initialFcn: frame.markFunction(function(x) {
+            return x + 19;
+          })
         })
-      })
+      }
     });
 
-    t.whitelistApi('foo');
-    t.whitelistApi('bar');
+    t.whitelistApi('google.foo');
+    t.whitelistApi('google.bar');
 
     frame.code('es53-test-apitaming-guest-0.html')
          .api(createExtraImportsForTesting(caja, frame))
@@ -125,7 +139,7 @@ function runtests() {
   caja.load(createDiv(), uriPolicy, function (frame) {
 
     var t = caja.tamingGoogleLoader.applyToFrame(frame);
-    t.whitelistApi('foo');
+    t.whitelistApi('google.foo');
 
     frame.code('es53-test-apitaming-guest-1.html')
          .api(createExtraImportsForTesting(caja, frame))

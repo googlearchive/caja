@@ -44,9 +44,9 @@
     caja.load(guestDiv, uriPolicy, function(frame) {
 
       var t = caja.tamingGoogleLoader.applyToFrame(frame);
-      t.whitelistApi('picker');
-      t.whitelistApi('visualization');
-      t.whitelistApi('maps');
+      t.whitelistApi('google.picker');
+      t.whitelistApi('google.visualization');
+      t.whitelistApi('google.maps');
 
       var tameConsole = frame.tame(frame.markReadOnlyRecord({
         log: frame.markFunction(function(s) {
@@ -59,7 +59,7 @@
       }));
 
       frame
-          .code(testUrl, 'text/html' /*, testContent */)
+          .code(testUrl, 'text/html')
           .api({
             console: tameConsole,
             alert: tameAlert
@@ -72,14 +72,14 @@
 
   function runTests(tests) {
     caja.tamingGoogleLoader.addPolicyFactoryUrl(
-      'picker',
-      './pickerPolicyFactory.js');
+      'google.picker',
+      './google.picker.policyFactory.js');
     caja.tamingGoogleLoader.addPolicyFactoryUrl(
-      'visualization',
-      './visualizationPolicyFactory.js');
+      'google.visualization',
+      './google.visualization.policyFactory.js');
     caja.tamingGoogleLoader.addPolicyFactoryUrl(
-      'maps',
-      './mapsPolicyFactory.js');
+      'google.maps',
+      './google.maps.policyFactory.js');
 
     caja.initialize({
       cajaServer: getUrlParam('cajaServer'),
@@ -96,7 +96,9 @@
     var cajaServer = getUrlParam('cajaServer');
     loadScript(cajaServer + '/caja.js', function() {
       loadScript('./cajaTamingGoogleLoader.js', function() {
-        getTests(runTests);
+        loadScript('./google.load.loaderFactory.js', function() {
+          getTests(runTests);
+        });
       });
     });
   })();
