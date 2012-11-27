@@ -2950,12 +2950,17 @@ var Domado = (function() {
       inertCtor(TameNode, Object, 'Node');
       traceStartup("DT: about to DPA TameNode");
       definePropertiesAwesomely(TameNode.prototype, {
-        // tameDocument is not yet defined at this point so can't be a constant
-        ownerDocument: {
+        baseURI: {
           enumerable: canHaveEnumerableAccessors,
-          get: cajaVM.def(function () {
-          return tameDocument;
-        }) }
+          get: nodeMethod(function() {
+            return domicile.pseudoLocation.href;
+          })
+        },
+        ownerDocument: {
+          // tameDocument is not yet defined at this point so can't be a constant
+          enumerable: canHaveEnumerableAccessors,
+          get: nodeMethod(function() { return tameDocument; })
+        }
       });
       traceStartup("DT: about to set toString for TameNode");
       /**
@@ -4747,13 +4752,13 @@ var Domado = (function() {
       });
       var featureTestImage = makeDOMAccessible(document.createElement('img'));
       if ("naturalWidth" in featureTestImage) {
-        definePropertiesAwesomely(TameImageElement, {
+        definePropertiesAwesomely(TameImageElement.prototype, {
           naturalHeight: NP.filterProp(Number, Number),
           naturalWidth: NP.filterProp(Number, Number)
         });
       }
       if ("complete" in featureTestImage) {
-        definePropertiesAwesomely(TameImageElement, {
+        definePropertiesAwesomely(TameImageElement.prototype, {
           complete: NP.filterProp(Boolean, Boolean)
         });
       }
@@ -4761,6 +4766,7 @@ var Domado = (function() {
       function toInt(x) { return x | 0; }
       var TameFormField = defineElement({
         properties: {
+          autofocus: NP.ro,
           disabled: NP.rw,
           form: NP.related,
           maxLength: NP.rw,

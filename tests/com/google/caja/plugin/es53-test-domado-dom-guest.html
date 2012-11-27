@@ -2329,14 +2329,14 @@ After
     assertEquals(10, img.width);
     assertEquals(20, img.height);
     assertEquals('10px', window.getComputedStyle(img, null).width);
-    if ('naturalWidth' in img) {
+    if (directAccess.feralFeatureTest(img, 'naturalWidth')) {
       assertEquals(41, img.naturalWidth);
       assertEquals(13, img.naturalHeight);
     } else {
       assertFalse('naturalWidth' in img);
       assertFalse('naturalHeight' in img);
     }
-    if ('complete' in img) {
+    if (directAccess.feralFeatureTest(img, 'complete')) {
       assertEquals(true, img.complete);
     } else {
       assertFalse('complete' in img);
@@ -2618,7 +2618,6 @@ Test row cell
 ></map
 ><img usemap="#foo" src="mappic.gif"></p>
 <script type="text/javascript">
-  // TODO(kpreid): Enable for ES5 and debug; base URL is not being applied.
   jsunitRegister('testUsemap',
                  function testUsemap() {
     var el = document.getElementById('testUsemap');
@@ -2901,6 +2900,17 @@ Test row cell
     // TODO(felix8a): maybe this should succeed?
     //assertEquals('#bar', a.href.substr(-4));
     pass('testHash');
+  });
+</script>
+
+<div class="testcontainer" id="testBaseURI"></div>
+<script type="text/javascript">
+  jsunitRegister('testBaseURI', function testHash() {
+    // http://www.w3.org/TR/DOM-Level-3-Core/core.html#Node3-baseURI
+    assertEquals('http://localhost:8000/ant-testlib/com/google/caja/plugin/' +
+        'es53-test-domado-dom-guest.html',
+        document.getElementById('testBaseURI').baseURI);
+    pass('testBaseURI');
   });
 </script>
 
