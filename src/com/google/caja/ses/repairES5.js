@@ -1632,6 +1632,22 @@ var ses;
   }
 
   /**
+   * Detects whether calling push on a sealed array can modify the array.
+   * See http://code.google.com/p/v8/issues/detail?id=2412
+   */
+  function test_PUSH_IGNORES_SEALED() {
+    var x = [1,2];
+    Object.seal(x);
+    try {
+      x.push(3);
+    } catch (e) {
+      if (x.length !== 2) { return 'Unexpected modification of frozen array'; }
+      if (x[0] === 1 && x[1] === 2) { return false; }
+    }
+    return (x.length !== 2 || x[0] !== 1 || x[1] !== 2);
+  }
+
+  /**
    * In some browsers, assigning to array length can delete
    * non-configurable properties.
    * https://bugzilla.mozilla.org/show_bug.cgi?id=590690
@@ -2570,6 +2586,21 @@ var ses;
     });
   }
 
+  function repair_PUSH_IGNORES_SEALED() {
+    var push = Array.prototype.push;
+    var sealed = Object.isSealed;
+    Object.defineProperty(Array.prototype, 'push', {
+      value: function (compareFn) {
+        if (sealed(this)) {
+          throw new TypeError('Cannot push onto a sealed object.');
+        }
+        return push.apply(this, arguments);
+      },
+      configurable: true,
+      writable: true
+    });
+  }
+
   ////////////////////// Kludge Records /////////////////////
   //
   // Each kludge record has a <dl>
@@ -3112,6 +3143,16 @@ var ses;
       preSeverity: severities.UNSAFE_SPEC_VIOLATION,
       canRepair: true,
       urls: ['http://code.google.com/p/v8/issues/detail?id=2419'],
+      sections: ['15.4.4.11'],
+      tests: [] // TODO(erights): Add to test262
+    },
+    {
+      description: 'Array.prototype.push ignores sealing',
+      test: test_PUSH_IGNORES_SEALED,
+      repair: repair_PUSH_IGNORES_SEALED,
+      preSeverity: severities.UNSAFE_SPEC_VIOLATION,
+      canRepair: true,
+      urls: ['http://code.google.com/p/v8/issues/detail?id=2412'],
       sections: ['15.4.4.11'],
       tests: [] // TODO(erights): Add to test262
     },
