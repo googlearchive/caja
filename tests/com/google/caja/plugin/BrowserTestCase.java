@@ -171,7 +171,11 @@ public abstract class BrowserTestCase extends CajaTestCase {
       pageName = "test-index.html";
       params = null;
     }
-    String page = "http://" + localServer.hostname() + ":" + portNumber
+    String localhost = "localhost";
+    if (System.getProperty(REMOTE) != null) {
+      localhost = localServer.hostname();
+    }
+    String page = "http://" + localhost + ":" + portNumber
         + "/ant-testlib/com/google/caja/plugin/" + pageName;
     if (params != null && params.length > 0) {
       page += "?" + Joiner.on("&").join(params);
