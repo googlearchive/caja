@@ -2768,7 +2768,7 @@ Test row cell
   });
 </script>
 
-<div id="testNavigator" class="testcontainer"></div>
+<div id="testNavigator" class="testcontainer">testNavigator </div>
 <script type="text/javascript">
   jsunitRegister('testNavigator',
                  function testNavigator() {
@@ -2776,6 +2776,38 @@ Test row cell
     assert("navigator is not a string",
         "string" === typeof window.navigator.userAgent);
     pass('testNavigator');
+  });
+</script>
+
+<div id="testNoops" class="testcontainer">testNoops </div>
+<script type="text/javascript">
+  jsunitRegister('testNoops',
+                 function testNoops() {
+    [
+      'blur', 'focus',
+      'close',
+      'moveBy', 'moveTo',
+      'print',
+      'stop'
+    ].forEach(function(name) {
+      assertEquals('typeof ' + name, 'function', typeof window[name]);
+
+      // Fail if this function turns into something non-noopish unexpectedly
+      assertTrue('name ' + name,
+          /^function domadoNoop/.test(String(window[name])));
+
+      window[name]();  // should not fail
+    });
+
+    ['locationbar', 'personalbar', 'menubar', 'scrollbars', 'statusbar',
+        'toolbar'].forEach(function(name) {
+      assertEquals('typeof ' + name, 'object', typeof window[name]);
+      assertTrue('also on defaultView ' + name,
+          window[name] === document.defaultView[name]);
+      assertEquals('visible ' + name, false, window[name].visible);
+    });
+
+    pass('testNoops');
   });
 </script>
 

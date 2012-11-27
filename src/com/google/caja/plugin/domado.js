@@ -6066,7 +6066,49 @@ var Domado = (function() {
         TameWindow.prototype[propertyName] = value;
         TameDefaultView.prototype[propertyName] = value;
       }));
-      
+
+      // No-op functions/methods
+      [
+        'blur', 'focus',
+        'close',
+        'moveBy', 'moveTo',
+        'print',
+        'stop'
+      ].forEach(function(name) {
+        var notify = true;
+        Object.defineProperty(TameWindow.prototype, name, {
+          // Matches Firefox 17.0
+          // Chrome 25.0.1329.0 canary has configurable:false
+          configurable: true,
+          enumerable: true,
+          writable: true,
+          value: cajaVM.def(function domadoNoop() {
+            if (notify) {
+              notify = false;
+              if (typeof console !== 'undefined') {
+                console.warn('Domado: ignoring window.' + name + '(\u2026).');
+              }
+            }
+          })
+        });
+      });
+
+      // Stub properties
+      ['locationbar', 'personalbar', 'menubar', 'scrollbars', 'statusbar',
+          'toolbar'].forEach(function(name) {
+        // Firefox's class name is (exported) BarProp, Chrome's is (nonexported)
+        // BarInfo.
+        // visible: false was chosen to reflect what the Caja environment
+        // provides (e.g. there is no location bar displaying the URL), not
+        // browser behavior (which, for Firefox, is to have .visible be false if
+        // and only if the window was created by a window.open specifying that,
+        // whether or not the relevant toolbar actually is hidden).
+        var bar = cajaVM.def({visible: false});
+        TameWindow.prototype[name] = bar;
+        TameDefaultView.prototype[name] = bar;
+      })
+
+      cajaVM.def(TameDefaultView);  // and its prototype
       cajaVM.def(TameWindow);  // and its prototype
 
       // Freeze exported classes. Must occur before TameHTMLDocument is
