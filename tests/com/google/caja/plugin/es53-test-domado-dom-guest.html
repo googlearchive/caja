@@ -2048,7 +2048,12 @@ After
 <script type="text/javascript">
   jsunitRegister('testDefaultView',
                  function testDefaultView() {
-    assertNotEquals(window, document.defaultView);
+    // We used to have a defaultView distinct from window on capability grounds:
+    // window is also the global environment, so it contains all authority of
+    // the guest. However, we are in general not providing a
+    // capability-structured guest environment (e.g. we do not inhibit DOM
+    // .parentNode) so this separation is not particularly interesting.
+    assertEquals(window, document.defaultView);
     pass('testDefaultView');
   });
 </script>

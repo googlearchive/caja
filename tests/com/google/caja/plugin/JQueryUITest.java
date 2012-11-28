@@ -34,9 +34,11 @@ public class JQueryUITest extends QUnitTestCase {
   }
 
   public final void testAutocomplete() throws Exception {
-    runQUnitTestCase("autocomplete", 34);
+    runQUnitTestCase("autocomplete", 112);
+    // Current modifications made to test suite:
+    //   * Work around lost-signal problems due to lack of event simulation
     // Current failure categories:
-    //   * "null is not extensible"
+    //   * event simulation not available
   }
 
   public final void testButton() throws Exception {
@@ -91,15 +93,19 @@ public class JQueryUITest extends QUnitTestCase {
   }
 
   public final void testSpinner() throws Exception {
-    runQUnitTestCase("spinner", 30);
+    runQUnitTestCase("spinner", 106);
     // Current failure categories:
-    //   * Lots of "null is not extensible"
+    //   * "Unrecognized event type Events"
+    //   * various
   }
 
-  // Test suite hangs on a failed event simulation, so will always fail.
-  //public final void testTabs() throws Exception {
-  //  runQUnitTestCase("tabs", null);
-  //}
+  public final void testTabs() throws Exception {
+    runQUnitTestCase("tabs", 379);
+    // Current modifications made to test suite:
+    //   * Work around lost-signal problems due to lack of event simulation
+    // Current failure categories:
+    //   * not yet examined
+  }
 
   public final void testTooltip() throws Exception {
     runQUnitTestCase("tooltip", null);

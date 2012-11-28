@@ -78,7 +78,7 @@ public class JQueryTest extends QUnitTestCase {
   }
 
   public final void testEvent() throws Exception {
-    runQUnitTestCase("event", 377);
+    runQUnitTestCase("event", 381);
     // Current failure categories:
     //   * Various lost-signal failures:
     //        in 'bind(),live(),delegate() with non-null,defined data'

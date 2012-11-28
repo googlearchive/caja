@@ -5928,42 +5928,8 @@ var Domado = (function() {
         'first-line': true
       };
 
-      /**
-       * An <a href=
-       * href=http://www.w3.org/TR/DOM-Level-2-Views/views.html#Views-AbstractView
-       * >AbstractView</a> implementation that exposes styling, positioning, and
-       * sizing information about the current document's pseudo-body.
-       * <p>
-       * The AbstractView spec specifies very little in its IDL description, but
-       * mozilla defines it thusly:<blockquote>
-       *   document.defaultView is generally a reference to the window object
-       *   for the document, however that is not defined in the specification
-       *   and can't be relied upon for all host environments, particularly as
-       *   not all browsers implement it.
-       * </blockquote>
-       * <p>
-       * We can't provide access to the tamed window directly from document
-       * since it is the global scope of valija code, and so access to another
-       * module's tamed window provides an unbounded amount of authority.
-       * <p>
-       * Instead, we expose styling, positioning, and sizing properties
-       * via this class.  All of this authority is already available from the
-       * document.
-       */
-      function TameDefaultView() {
-        // TODO(mikesamuel): Implement in terms of
-        //     http://www.w3.org/TR/cssom-view/#the-windowview-interface
-        // TODO: expose a read-only version of the document
-        this.document = tameDocument;
-        // Exposing an editable default view that pointed to a read-only
-        // tameDocument via document.defaultView would allow escalation of
-        // authority.
-        assert(np(tameDocument).policy.editable);
-        taming.permitUntaming(this);
-      }
-
       // Under ES53, the set/clear pairs get invoked with 'this' bound
-      // to USELESS, which causes problems on Chrome unless they're wrpaped
+      // to USELESS, which causes problems on Chrome unless they're wrapped
       // this way.
       tameSetAndClear(
           TameWindow.prototype,
@@ -6008,70 +5974,82 @@ var Domado = (function() {
       TameWindow.prototype.dispatchEvent = cajaVM.def(function (evt) {
         // TODO(ihab.awad): Implement
       });
-
-      // Methods which are installed on window AND defaultView.
-      // See doc comment of TameDefaultView regarding authority to expose here.
-      forOwnKeys({
-        scrollBy: cajaVM.def(
-            function (dx, dy) {
-              // The window is always auto scrollable, so make the apparent window
-              // body scrollable if the gadget tries to scroll it.
-              if (dx || dy) {
-                makeScrollable(bridal, np(tameDocument).feralContainerNode);
-              }
-              tameScrollBy(np(tameDocument).feralContainerNode, dx, dy);
-            }),
-        scrollTo: cajaVM.def(
-            function (x, y) {
-              // The window is always auto scrollable, so make the apparent window
-              // body scrollable if the gadget tries to scroll it.
-              makeScrollable(bridal, np(tameDocument).feralContainerNode);
-              tameScrollTo(np(tameDocument).feralContainerNode, x, y);
-            }),
-        resizeTo: cajaVM.def(
-            function (w, h) {
-              tameResizeTo(np(tameDocument).feralContainerNode, w, h);
-            }),
-        resizeBy: cajaVM.def(
-            function (dw, dh) {
-              tameResizeBy(np(tameDocument).feralContainerNode, dw, dh);
-            }),
+      TameWindow.prototype.scrollBy = cajaVM.def(function(dx, dy) {
+        // The window is always auto scrollable, so make the apparent window
+        // body scrollable if the gadget tries to scroll it.
+        if (dx || dy) {
+          makeScrollable(bridal, np(tameDocument).feralContainerNode);
+        }
+        tameScrollBy(np(tameDocument).feralContainerNode, dx, dy);
+      });
+      TameWindow.prototype.scrollTo = cajaVM.def(function(x, y) {
+        // The window is always auto scrollable, so make the apparent window
+        // body scrollable if the gadget tries to scroll it.
+        makeScrollable(bridal, np(tameDocument).feralContainerNode);
+        tameScrollTo(np(tameDocument).feralContainerNode, x, y);
+      });
+      TameWindow.prototype.resizeTo = cajaVM.def(function(w, h) {
+        tameResizeTo(np(tameDocument).feralContainerNode, w, h);
+      });
+      TameWindow.prototype.resizeBy = cajaVM.def(function(dw, dh) {
+        tameResizeBy(np(tameDocument).feralContainerNode, dw, dh);
+      });
         /** A partial implementation of getComputedStyle. */
-        getComputedStyle: cajaVM.def(
-            // Pseudo elements are suffixes like :first-line which constrain to
-            // a portion of the element's content as defined at
-            // http://www.w3.org/TR/CSS2/selector.html#q20
-            function (tameElement, pseudoElement) {
-              tameElement = TameNodeT.coerce(tameElement);
-              // Coerce all nullish values to undefined, since that is the value
-              // for unspecified parameters.
-              // Per bug 973: pseudoElement should be null according to the
-              // spec, but mozilla docs contradict this.
-              // From https://developer.mozilla.org/En/DOM:window.getComputedStyle
-              //     pseudoElt is a string specifying the pseudo-element to match.
-              //     Should be an empty string for regular elements.
-              pseudoElement = (pseudoElement === null || pseudoElement === void 0
-                               || '' === pseudoElement)
-                  ? void 0 : String(pseudoElement).toLowerCase();
-              if (pseudoElement !== void 0
-                  && !PSEUDO_ELEMENT_WHITELIST.hasOwnProperty(pseudoElement)) {
-                throw new Error('Bad pseudo element ' + pseudoElement);
-              }
-              // No need to check editable since computed styles are readonly.
-              TameComputedStyle || buildTameStyle();
-              return new TameComputedStyle(
-                  np(tameElement).feral,
-                  pseudoElement);
-            })
+      TameWindow.prototype.getComputedStyle = cajaVM.def(
+          // Pseudo elements are suffixes like :first-line which constrain to
+          // a portion of the element's content as defined at
+          // http://www.w3.org/TR/CSS2/selector.html#q20
+          function (tameElement, pseudoElement) {
+        tameElement = TameNodeT.coerce(tameElement);
+        // Coerce all nullish values to undefined, since that is the value
+        // for unspecified parameters.
+        // Per bug 973: pseudoElement should be null according to the
+        // spec, but mozilla docs contradict this.
+        // From https://developer.mozilla.org/En/DOM:window.getComputedStyle
+        //     pseudoElt is a string specifying the pseudo-element to match.
+        //     Should be an empty string for regular elements.
+        pseudoElement = (pseudoElement === null || pseudoElement === void 0
+                         || '' === pseudoElement)
+            ? void 0 : String(pseudoElement).toLowerCase();
+        if (pseudoElement !== void 0
+            && !PSEUDO_ELEMENT_WHITELIST.hasOwnProperty(pseudoElement)) {
+          throw new Error('Bad pseudo element ' + pseudoElement);
+        }
+        // No need to check editable since computed styles are readonly.
+        TameComputedStyle || buildTameStyle();
+        return new TameComputedStyle(
+            np(tameElement).feral,
+            pseudoElement);
+      });
+      // NOT PROVIDED on window:
+      // event: a global on IE.  We always define it in scopes that can handle
+      //        events.
+      // opera: defined only on Opera.
 
-        // NOT PROVIDED
-        // event: a global on IE.  We always define it in scopes that can handle
-        //        events.
-        // opera: defined only on Opera.
-      }, (function (propertyName, value) {
-        TameWindow.prototype[propertyName] = value;
-        TameDefaultView.prototype[propertyName] = value;
-      }));
+      // misc getters
+      forOwnKeys({
+        pageXOffset: cajaVM.def(function() { return this.scrollX; }),
+        pageYOffset: cajaVM.def(function() { return this.scrollY; }),
+        // Note: np(this.document) is amplification; this is only a safe pattern
+        // when the method is harmless if applied to other nodes.
+        scrollX: cajaVM.def(function() {
+            return np(this.document).feralContainerNode.scrollLeft; }),
+        scrollY: cajaVM.def(function() {
+            return np(this.document).feralContainerNode.scrollTop; }),
+        innerHeight: cajaVM.def(function() {
+            return np(this.document).feralContainerNode.offsetHeight; }),
+        innerWidth: cajaVM.def(function() {
+            return np(this.document).feralContainerNode.offsetWidth; }),
+        outerHeight: cajaVM.def(function() {
+            return np(this.document).feralContainerNode.offsetHeight; }),
+        outerWidth: cajaVM.def(function() {
+            return np(this.document).feralContainerNode.offsetWidth; })
+      }, function(propertyName, handler) {
+        Object.defineProperty(TameWindow.prototype, propertyName, {
+          enumerable: canHaveEnumerableAccessors,
+          get: handler
+        });
+      });
 
       // No-op functions/methods
       [
@@ -6109,12 +6087,9 @@ var Domado = (function() {
         // browser behavior (which, for Firefox, is to have .visible be false if
         // and only if the window was created by a window.open specifying that,
         // whether or not the relevant toolbar actually is hidden).
-        var bar = cajaVM.def({visible: false});
-        TameWindow.prototype[name] = bar;
-        TameDefaultView.prototype[name] = bar;
+        TameWindow.prototype[name] = cajaVM.def({visible: false});
       })
 
-      cajaVM.def(TameDefaultView);  // and its prototype
       cajaVM.def(TameWindow);  // and its prototype
 
       // Freeze exported classes. Must occur before TameHTMLDocument is
@@ -6138,32 +6113,8 @@ var Domado = (function() {
       domicile.htmlEmitterTarget = containerNode;
 
       var tameWindow = new TameWindow();
-      var tameDefaultView = new TameDefaultView();
 
-      // Getters for properties which are installed on window AND defaultView.
-      // See doc comment of TameDefaultView regarding authority to expose here.
-      forOwnKeys({
-        pageXOffset: function () { return this.scrollX; },
-        pageYOffset: function () { return this.scrollY; },
-        scrollX: function () {
-            return np(tameDocument).feralContainerNode.scrollLeft; },
-        scrollY: function () {
-            return np(tameDocument).feralContainerNode.scrollTop; },
-        
-        innerHeight: function () {
-            return np(tameDocument).feralContainerNode.offsetHeight; },
-        innerWidth:  function () {
-            return np(tameDocument).feralContainerNode.offsetWidth; },
-        outerHeight: function () {
-            return np(tameDocument).feralContainerNode.offsetHeight; },
-        outerWidth:  function () {
-            return np(tameDocument).feralContainerNode.offsetWidth; }
-      }, function (propertyName, handler) {
-        // TODO(mikesamuel): define on prototype.
-        var desc = {enumerable: canHaveEnumerableAccessors, get: handler};
-        Object.defineProperty(tameWindow, propertyName, desc);
-        Object.defineProperty(tameDefaultView, propertyName, desc);
-      });
+
 
       // Attach reflexive properties to 'window' object
       var windowProps = ['top', 'self', 'opener', 'parent', 'window'];
@@ -6173,10 +6124,9 @@ var Domado = (function() {
         tameWindow[prop] = tameWindow;
       }
 
-      Object.freeze(tameDefaultView);
-
       if (np(tameDocument).policy.editable) {
-        tameDocument.defaultView = tameDefaultView;
+        // Powerful singleton authority not granted for RO document
+        tameDocument.defaultView = tameWindow;
 
         // Hook for document.write support.
         domicile.sanitizeAttrs = sanitizeAttrs;

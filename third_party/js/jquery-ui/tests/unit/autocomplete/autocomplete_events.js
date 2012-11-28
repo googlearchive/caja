@@ -63,16 +63,22 @@ $.each([
 				}),
 			menu = element.autocomplete( "widget" );
 
-		element.simulate( "focus" )[ settings.valueMethod ]( "j" ).keydown();
-		setTimeout(function() {
-			ok( menu.is( ":visible" ), "menu is visible after delay" );
-			element.simulate( "keydown", { keyCode: $.ui.keyCode.DOWN } );
-			element.simulate( "keydown", { keyCode: $.ui.keyCode.ENTER } );
-			// blur must be async for IE to handle it properly
+		try {
+			element.simulate( "focus" )[ settings.valueMethod ]( "j" ).keydown();
+		} finally {
 			setTimeout(function() {
-				element.simulate( "blur" );
-			}, 1 );
-		}, 50 );
+				ok( menu.is( ":visible" ), "menu is visible after delay" );
+				try {
+					element.simulate( "keydown", { keyCode: $.ui.keyCode.DOWN } );
+					element.simulate( "keydown", { keyCode: $.ui.keyCode.ENTER } );
+					// blur must be async for IE to handle it properly
+				} finally {
+					setTimeout(function() {
+						element.simulate( "blur" );
+					}, 1 );
+				}
+			}, 50 );
+		}
 	});
 });
 
@@ -132,12 +138,18 @@ asyncTest( "cancel focus", function() {
 				return false;
 			}
 		});
-	element.val( "ja" ).keydown();
-	setTimeout(function() {
-		element.simulate( "keydown", { keyCode: $.ui.keyCode.DOWN } );
-		equal( element.val(), customVal );
-		start();
-	}, 50 );
+	try {
+		element.val( "ja" ).keydown();
+	} finally {
+		setTimeout(function() {
+			try {
+				element.simulate( "keydown", { keyCode: $.ui.keyCode.DOWN } );
+			} finally {
+				equal( element.val(), customVal );
+				start();
+			}
+		}, 50 );
+	}
 });
 
 asyncTest( "cancel select", function() {
@@ -151,13 +163,19 @@ asyncTest( "cancel select", function() {
 				return false;
 			}
 		});
-	element.val( "ja" ).keydown();
-	setTimeout(function() {
-		element.simulate( "keydown", { keyCode: $.ui.keyCode.DOWN } );
-		element.simulate( "keydown", { keyCode: $.ui.keyCode.ENTER } );
-		equal( element.val(), customVal );
-		start();
-	}, 50 );
+	try {
+		element.val( "ja" ).keydown();
+	} finally {
+		setTimeout(function() {
+			try {
+				element.simulate( "keydown", { keyCode: $.ui.keyCode.DOWN } );
+				element.simulate( "keydown", { keyCode: $.ui.keyCode.ENTER } );
+			} finally {
+				equal( element.val(), customVal );
+				start();
+			}
+		}, 50 );
+	}
 });
 
 asyncTest( "blur during remote search", function() {
