@@ -105,6 +105,29 @@
     }());
 
     /**
+      * Tests of global structure-referencing property behavior.
+      */
+    (function () {
+      // Behavior of document.title without any title element present
+      registerGuestTest('testNoElementTitleProp',
+          '<body>' + // TODO(kpreid): That this is required is a HtmlEmitter bug
+          '<script>window.globalGuestTest =' +
+          '    function globalGuestTest() {' +
+          '  assertEquals("head before get", "", ' +
+          '      document.getElementsByTagName("head")[0].innerHTML);' +
+          '  assertEquals("title before set", "", document.title);' +
+          '  assertEquals("head after get", "", ' +
+          '      document.getElementsByTagName("head")[0].innerHTML);' +
+          '  document.title = "t";' +
+          '  assertEquals("title after set", "t", document.title);' +
+          '  assertEquals("head after set", "<title>t</title>", ' +
+          '      document.getElementsByTagName("head")[0].innerHTML);' +
+          '};</script>');
+    
+      // TODO(kpreid): Test document.body
+    })();
+
+    /**
      * Tests of onload handlers, which are a special case because on* attributes
      * on <body> are actually aliases for event handlers of the _window_ object,
      * so since our virtual window object is not backed by anything we have to

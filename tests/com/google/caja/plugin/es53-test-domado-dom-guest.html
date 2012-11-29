@@ -2484,6 +2484,12 @@ Test row cell
 <script type="text/javascript">
   jsunitRegister('testIframeShim',
                  function testIframeShim() {
+    // Tests that iframes can be used as visual layout tools, as some HTML in
+    // the wild does. Historical note: This test was written to test a
+    // specialized attribute-blacklisting case for HTMLIFrameElement, which no
+    // longer exists; all of this is now the default behavior for
+    // non-whitelisted attributes, but as it is important to security this
+    // specific test remains.
     var ifr = document.createElement('iframe');
     ifr.height = 5;
     ifr.width = 6;
@@ -2495,10 +2501,12 @@ Test row cell
     assertEquals('5', ifr.getAttribute('height'));
     assertEquals('6', ifr.getAttribute('width'));
     assertEquals('1', ifr.getAttribute('frameBorder'));
-    assertEquals(null, ifr.getAttribute('name'));
-    assertEquals(null, ifr.getAttribute('src'));
-    assertEquals(void 0, ifr.name);
-    assertEquals(void 0, ifr.src);
+    // Hazardous attributes are virtualized normally...
+    assertEquals('test', ifr.getAttribute('name'));
+    assertEquals('http://www.google.com', ifr.getAttribute('src'));
+    // ...but do not actually get set.
+    assertEquals(null, directAccess.getAttribute(ifr, 'name'));
+    assertEquals(null, directAccess.getAttribute(ifr, 'src'));
     pass('testIframeShim');
   });
 </script>

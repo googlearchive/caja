@@ -922,7 +922,6 @@ var Domado = (function() {
    * objects, and a shared map allowing separate virtual documents to dispatch
    * events across them. (TODO(kpreid): Confirm this explanation is good.)
    *
-   * @param {Object} taming. An interface to a taming membrane.
    * @param {Object} opt_rulebreaker. If necessary, authorities to break the
    *     ES5/3 taming membrane and work with the taming-frame system. If
    *     running under SES, pass null instead.
@@ -1519,6 +1518,7 @@ var Domado = (function() {
      *     virtual Document node provided to Cajoled code.
      * @param {Object} optTargetAttributePresets a record containing the presets
      *     (default and whitelist) for the HTML "target" attribute.
+     * @param {Object} taming. An interface to a taming membrane.
      * @return {Object} A collection of privileged access tools, plus the tamed
      *     {@code document} and {@code window} objects under those names. This
      *     object is known as a "domicile".
@@ -3576,6 +3576,11 @@ var Domado = (function() {
                     bridal.getAttribute(feral, 'target')));
               }
             }
+          } else {
+            if (typeof console !== 'undefined') {
+              console.warn('Rejecting <' + tagName + '>.setAttribute(',
+                  attribName, ',', value, ')');
+            }
           }
         }
         return value;
@@ -4618,15 +4623,6 @@ var Domado = (function() {
         domClass: 'HTMLHtmlElement'
       });
 
-      var P_blacklist = {
-        enumerable: true,
-        extendedAccessors: true,
-        get: nodeMethod(function () { return undefined; }),
-        set: nodeMethod(function (value, prop) {
-          if (typeof console !== 'undefined')
-            console.error('Cannot set the [', prop, '] property of an iframe.');
-        })
-      };
       var TameIFrameElement = defineElement({
         domClass: 'HTMLIFrameElement',
         construct: function () {
@@ -4664,8 +4660,8 @@ var Domado = (function() {
           },
           height: NP.filterProp(identity, Number),
           width:  NP.filterProp(identity, Number),
-          src: P_blacklist,
-          name: P_blacklist,
+          src: NP.filterAttr(identity, identity), // rewrite handled for attr
+          name: NP.filterAttr(identity, identity), // rejection handled for attr
           contentDocument: {
             enumerable: true,
             get: cajaVM.def(function () {
@@ -4680,32 +4676,6 @@ var Domado = (function() {
           }
         }
       });
-      // TODO(kpreid): Check these two (straight from Domita) for correctness
-      // vs. TameElement's version
-      setOwn(TameIFrameElement.prototype, 'getAttribute',
-          nodeMethod(function (attr) {
-        var attrLc = String(attr).toLowerCase();
-        if (attrLc !== 'name' && attrLc !== 'src') {
-          return TameElement.prototype.getAttribute.call(this, attr);
-        }
-        return null;
-      }));
-      setOwn(TameIFrameElement.prototype, 'setAttribute',
-          nodeMethod(function (attr, value) {
-        var attrLc = String(attr).toLowerCase();
-        // The 'name' and 'src' attributes are whitelisted for all tags in
-        // html4-attributes-whitelist.json, since they're needed on tags
-        // like <img>.  Because there's currently no way to filter attributes
-        // based on the tag, we have to blacklist these two here.
-        // TODO(kpreid): Don't we have per-attribute filtering now?
-        if (attrLc !== 'name' && attrLc !== 'src') {
-          return TameElement.prototype.setAttribute.call(this, attr, value);
-        }
-        if (typeof console !== 'undefined')
-          console.error('Cannot set the [' + attrLc +
-              '] attribute of an iframe.');
-        return value;
-      }));
       function contentDomicile(tameIFrame) {
         // TODO(kpreid): Once we support loading content via src=, we will need
         // to consider whether this should always allow access to said content,
@@ -5318,10 +5288,19 @@ var Domado = (function() {
           enumerable: true,
           get: nodeMethod(function() {
             var titleEl = this.getElementsByTagName('title')[0];
-            return trimHTML5Spaces(titleEl.textContent);
+            return titleEl ? trimHTML5Spaces(titleEl.textContent) : "";
           }),
           set: nodeMethod(function(value) {
             var titleEl = this.getElementsByTagName('title')[0];
+            if (!titleEl) {
+              var head = this.getElementsByTagName('head')[0];
+              if (head) {
+                titleEl = this.createElement('title');
+                head.appendChild(titleEl);
+              } else {
+                return;
+              }
+            }
             titleEl.textContent = value;
           })
         },
