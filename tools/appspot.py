@@ -13,8 +13,8 @@ The current change description is stored in a file named '.appspot-change'.
 If you're using git, the filename will be '.appspot-change.$GITBRANCH'.
 
 Flags:
-  -m --message : overrides the changelist message, a one line summary.
-  -d --description : overrides the changelist's detailed description.
+  -t --title : overrides the changelist title, a one line summary.
+  -m --message : overrides the changelist's detailed description.
   -r --reviewer : overrides the email of the assigned reviewer
   -c --cc : overrides the CC list.
   -p --private : mark the mail as private.
@@ -34,25 +34,28 @@ import sys
 import tempfile
 import upload
 
+# explicitly specify https, because upload.py doesn't default to it
+server = 'https://codereview.appspot.com'
+
 class ChangeList(object):
-  def __init__(self, issue=None, description=None, reviewer=None, cc=None,
-               message=None, private=None):
+  def __init__(self, issue=None, title=None, message=None, cc=None,
+               reviewer=None, private=None):
     """
     A value of None for any parameter means its unspecified and so will not
     be set on a merge operation.
     """
     assert issue is None or type(issue) in (str, unicode)
-    assert description is None or type(description) in (str, unicode)
+    assert title is None or type(title) in (str, unicode)
+    assert message is None or type(message) in (str, unicode)
     assert cc is None or type(cc) in (str, unicode)
     assert reviewer is None or type(reviewer) in (str, unicode)
-    assert message is None or type(message) in (str, unicode)
     assert private is None or type(private) is bool
 
     self.issue = issue
-    self.description = description
+    self.title = title
+    self.message = message
     self.cc = cc
     self.reviewer = reviewer
-    self.message = message
     self.private = private
     # TODO(mikesamuel): add a code.google.com bug number to update when code
     # is submitted
@@ -60,12 +63,12 @@ class ChangeList(object):
   def get_app_spot_uri(self):
     """The URL of a change list."""
     if self.issue is not None:
-      return 'http://codereview.appspot.com/%d' % int(self.issue)
+      return '%s/%d' % (server, int(self.issue))
     return None
 
   def is_unspecified(self):
-    return (self.issue is None and self.description is None and self.cc is None
-            and self.reviewer is None and self.message is None
+    return (self.issue is None and self.title is None and self.message is None
+            and self.cc is None and self.reviewer is None
             and self.private is None)
 
   def get_upload_args(self, send_mail=False):
@@ -74,10 +77,13 @@ class ChangeList(object):
     modify a code review.
     """
     args = []
+    args.extend(['--server', server])
     if self.issue:
       args.extend(['--issue', str(self.issue)])
-    if self.description:
-      args.extend(['--description', str(self.description)])
+    if self.title:
+      args.extend(['--title', str(self.title)])
+    if self.message:
+      args.extend(['--message', str(self.message)])
     if self.private:
       # Private issues should not go to the public list.
       cc_list = difference_of_address_lists(
@@ -98,8 +104,6 @@ class ChangeList(object):
     args.extend(['--cc', cc_list])
     if self.reviewer:
       args.extend(['--reviewer', str(self.reviewer)])
-    if self.message:
-      args.extend(['--message', str(self.message)])
     if self.private:
       args.append('--private');
     if send_mail:
@@ -131,10 +135,10 @@ class ChangeList(object):
 
   def merge_into(self, target):
     if self.issue is not None:        target.issue = self.issue
-    if self.description is not None:  target.description = self.description
+    if self.title is not None:        target.title = self.title
+    if self.message is not None:      target.message = self.message
     if self.cc is not None:           target.cc = self.cc
     if self.reviewer is not None:     target.reviewer = self.reviewer
-    if self.message is not None:      target.message = self.message
     if self.private is not None:      target.private = self.private
 
 
@@ -190,9 +194,9 @@ def editable_change(cl):
 %(url)s
 
 
-### Message:
+### Title:
 ### One-line summary of the change.
-%(message)s
+%(title)s
 
 
 ### Private:
@@ -201,9 +205,9 @@ def editable_change(cl):
 %(private)s
 
 
-### Description:
+### Message:
 ### Detailed description of the change.
-%(description)s
+%(message)s
 
 
 ### Reviewer:
@@ -223,10 +227,10 @@ def readable_change(cl):
   return ('''
 
 
-%(message)s
+%(title)s
 %(url)s
 
-%(description)s
+%(message)s
 
 R=%(reviewer)s
 
@@ -242,8 +246,8 @@ def pack_for_display(changelist):
   return {
     'issue': changelist.issue or '<unassigned>',
     'url': changelist.get_app_spot_uri() or '<unassigned>',
+    'title': changelist.title or '',
     'message': changelist.message or '',
-    'description': changelist.description or '',
     'reviewer': changelist.reviewer or '',
     'cc': changelist.cc or '',
     'private': private_str,
@@ -279,10 +283,17 @@ def parse_change(editable_change):
   issue = fields.get('Issue')
   if issue is not None and not re.search('^\d+$', issue):
     issue = None
-  description = fields.get('Description')
+
+  # Compatibility with older field names. TODO(kpreid): Remove this after no one
+  # likely has older files.
+  if 'Description' in fields and not 'Title' in fields:
+    title = fields.get('Message')
+    message = fields.get('Description')
+  else:
+    title = fields.get('Title')
+    message = fields.get('Message')
   cc = fields.get('CC')
   reviewer = fields.get('Reviewer')
-  message = fields.get('Message')
   private = fields.get('Private')
   if private is not None:
     private = private.strip().lower()
@@ -290,8 +301,8 @@ def parse_change(editable_change):
       private = None
     else:
       private = private != 'false'
-  return ChangeList(issue=issue, description=description, cc=cc,
-                    reviewer=reviewer, message=message, private=private)
+  return ChangeList(issue=issue, title=title, message=message, cc=cc,
+                    reviewer=reviewer, private=private)
 
 
 def do_edit(given_cl, current_cl, cl_file_path):
@@ -339,7 +350,7 @@ def do_snapshot(given_cl, current_cl, cl_file_path, send_mail):
     if current_cl.reviewer is not None:
       send_mail = True
   # If the user has not created a CL description, show an editor.
-  if not current_cl.message or not current_cl.reviewer:
+  if not current_cl.title or not current_cl.reviewer:
     do_edit(ChangeList(), current_cl, cl_file_path)
   # If the CL does not have an issue number but user specified a reviewer
   # send mail since it's the first upload.
@@ -382,8 +393,8 @@ def main():
     # Map short flag names to long flag names
     abbrevs = {
         '-i': '--issue',
+        '-t': '--title',
         '-m': '--message',
-        '-d': '--description',
         '-r': '--reviewer',
         '-c': '--cc',
         '-p': '--private',
@@ -392,8 +403,8 @@ def main():
     flag_spec = {
         '--send_mail': bool,
         '--issue': int,
+        '--title': str,
         '--message': str,
-        '--description': str,
         '--reviewer': str,
         '--cc': str,
         '--private': bool,
@@ -452,8 +463,8 @@ def main():
   if len(argv) != 0: show_help_and_exit()
   given_cl = ChangeList(
       issue=params.get('--issue'),
+      title=params.get('--title'),
       message=params.get('--message'),
-      description=params.get('--description'),
       reviewer=params.get('--reviewer'),
       cc=params.get('--cc'),
       private=params.get('--private'))
