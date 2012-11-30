@@ -307,6 +307,59 @@ jsunitRegister('testUriPolicy',
   jsunit.pass();
 });
 
+jsunitRegister('testTagPolicy',
+               function testTagPolicy() {
+  // NOTE: makeHtmlSanitizer / sanitizeWithPolicy is not documented in the wiki
+  // JsHtmlSanitizer doc. However, it is used by Caja and other clients. Changes
+  // to this API should be noted in releases.
+  function checkT(expected, input, tagPolicy) {
+    assertEquals(expected, html.sanitizeWithPolicy(input, tagPolicy));
+  }
+  // pass tag
+  checkT('<a href="http://www.example.com/">hi</a> there',
+      '<a href="http://www.example.com/">hi</a> there',
+      function(name, attribs) {
+        return {attribs: attribs};
+      });
+  // reject tag
+  checkT(' there',
+      '<a href="http://www.example.com/">hi</a> there',
+      function(name, attribs) {
+        return null;
+      });
+  // modify attribs
+  checkT('<a x="y">hi</a> there',
+      '<a href="http://www.example.com/">hi</a> there',
+      function(name, attribs) {
+        return {attribs: ["x", "y"]};
+      });
+  // modify tagName
+  checkT('<xax href="http://www.example.com/">hi</xax> there',
+      '<a href="http://www.example.com/">hi</a> there',
+      function(name, attribs) {
+        return {attribs: attribs, tagName: 'x' + name + 'x'};
+      });
+  function conditionalRewritePolicy(name, attribs) {
+    return {attribs: attribs,
+            tagName: attribs.length ? 'x' + name + 'x' : name};
+  }
+  // proper end-tag matching w/ rewrite
+  checkT('<span>a<xspanx r="1">b</xspanx>c</span>',
+      '<span>a<span r=1>b</span>c</span>',
+      conditionalRewritePolicy);
+  // proper optional-end-tag handling w/ rewrite - siblings
+  // (Note: This example will not sensibly parse as HTML; it is only to stress
+  // the intended algorithm here.)
+  checkT('<ul><li>a</li><xlix r="1">b</xlix></ul>',
+      '<ul><li>a<li r=1>b</li></ul>',
+      conditionalRewritePolicy);
+  // descendant end-tag matching (Ditto.)
+  checkT('<ul><li>a<ul><xlix r="1">b</xlix></ul></li></ul>',
+      '<ul><li>a<ul><li r=1>b</li></ul></li></ul>',
+      conditionalRewritePolicy);
+  jsunit.pass();
+});
+
 function assertSanitizerMessages(input, expected, messages) {
   logMessages = [];
   var actual = html.sanitize(input, uriPolicy, nmTokenPolicy, logPolicy);
