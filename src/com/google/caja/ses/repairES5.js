@@ -1494,8 +1494,35 @@ var ses;
       if (err instanceof TypeError) { return false; }
       return 'Defining __proto__ failed with: ' + err;
     }
-    if (y.isPrototypeOf(x)) { return true; }
-    return 'Defining __proto__ neither failed nor succeeded';
+    // If x.__proto__ has changed but is not equal to y,
+    // we deal with that in the next test.
+    return (x.__proto__ === y);
+  }
+
+
+  /**
+   * Some versions of v8 fail silently when attempting to assign to __proto__
+   */
+  function test_DEFINING_READ_ONLY_PROTO_FAILS_SILENTLY() {
+    if (!('freeze' in Object)) {
+      // Object.freeze and its ilk (including preventExtensions) are
+      // still absent on released Android and would
+      // cause a bogus bug detection in the following try/catch code.
+      return false;
+    }
+    var x = Object.preventExtensions({});
+    if (x.__proto__ === void 0 && !('__proto__' in x)) { return false; }
+    var y = {};
+    try {
+      Object.defineProperty(x, '__proto__', { value: y });
+    } catch (err) {
+      if (err instanceof TypeError) { return false; }
+      return 'Defining __proto__ failed with: ' + err;
+    }
+    if (x.__proto__ === Object.prototype) {
+      return true;
+    }
+    return "Read-only proto was changed in a strange way.";
   }
 
   /**
@@ -1867,6 +1894,8 @@ var ses;
   var slice = Array.prototype.slice;
   var concat = Array.prototype.concat;
   var getPrototypeOf = Object.getPrototypeOf;
+  var unsafeDefProp = Object.defineProperty;
+  var isExtensible = Object.isExtensible;
 
   function patchMissingProp(base, name, missingFunc) {
     if (!(name in base)) {
@@ -1894,8 +1923,11 @@ var ses;
                      function fakeIsExtensible(obj) { return true; });
   }
 
-  function repair_FUNCTION_PROTOTYPE_DESCRIPTOR_LIES() {
-    var unsafeDefProp = Object.defineProperty;
+  /*
+   * Fixes both FUNCTION_PROTOTYPE_DESCRIPTOR_LIES and
+   * DEFINING_READ_ONLY_PROTO_FAILS_SILENTLY.
+   */
+  function repair_DEFINE_PROPERTY() {
     function repairedDefineProperty(base, name, desc) {
       if (typeof base === 'function' &&
           name === 'prototype' &&
@@ -1905,6 +1937,9 @@ var ses;
         } catch (err) {
           logger.warn('prototype fixup failed', err);
         }
+      }
+      if (!isExtensible(base) && name === '__proto__') {
+        throw TypeError('Cannot redefine __proto__ on a non-extensible object');
       }
       return unsafeDefProp(base, name, desc);
     }
@@ -2724,7 +2759,7 @@ var ses;
     {
       description: 'A function.prototype\'s descriptor lies',
       test: test_FUNCTION_PROTOTYPE_DESCRIPTOR_LIES,
-      repair: repair_FUNCTION_PROTOTYPE_DESCRIPTOR_LIES,
+      repair: repair_DEFINE_PROPERTY,
       preSeverity: severities.UNSAFE_SPEC_VIOLATION,
       canRepair: true,
       urls: ['http://code.google.com/p/v8/issues/detail?id=1530',
@@ -3071,7 +3106,17 @@ var ses;
       canRepair: false,
       urls: ['https://bugs.webkit.org/show_bug.cgi?id=65832'],
       sections: ['8.6.2'],
-      tests: ['S8.6.2_A8']
+      tests: ['S8.6.2_A8'] 
+    },
+    {
+      description: 'Defining __proto__ on non-extensible object fails silently',
+      test: test_DEFINING_READ_ONLY_PROTO_FAILS_SILENTLY,
+      repair: repair_DEFINE_PROPERTY,
+      preSeverity: severities.NO_KNOWN_EXPLOIT_SPEC_VIOLATION,
+      canRepair: true,
+      urls: ['http://code.google.com/p/v8/issues/detail?id=2441'],
+      sections: ['8.6.2'],
+      tests: [] // TODO(erights): Add to test262
     },
     {
       description: 'Strict eval function leaks variable definitions',
