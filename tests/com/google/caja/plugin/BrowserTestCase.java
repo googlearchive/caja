@@ -210,7 +210,7 @@ public abstract class BrowserTestCase extends CajaTestCase {
       result = driveBrowser(driver, data, pageName);
       passed = true;
     } finally {
-      if (!passed) {
+      if (!passed && driver != null) {
         // It's helpful for debugging to keep failed windows open.
         switchToNewWindow(driver);
       }
@@ -397,7 +397,7 @@ public abstract class BrowserTestCase extends CajaTestCase {
     } else if ("firefox".equals(browser)) {
       return new FirefoxDriver();
     } else {
-      throw new RuntimeException("Unsupported local browser " + browser);
+      throw new RuntimeException("Unsupported local browser '" + browser + "'");
     }
   }
 }
