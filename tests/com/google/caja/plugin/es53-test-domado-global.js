@@ -39,9 +39,14 @@
             html)
           .run(createExtraImportsForTesting(caja, frame),
               jsunitCallback(function(result) {
-                frame.untame(frame.imports.globalGuestTest).apply(undefined,
-                    guestTestArgs);
-                jsunitPass(testName);
+                // Domado delays onload handlers with setTimeout(,0),
+                // so we have to delay globalGuestTest to make sure
+                // it's run after all the onloads fire.
+                window.setTimeout(function() {
+                  frame.untame(frame.imports.globalGuestTest).apply(undefined,
+                      guestTestArgs);
+                  jsunitPass(testName);
+                }, 0);
               }, testName, frame));
       });
     });

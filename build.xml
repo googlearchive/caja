@@ -202,15 +202,17 @@
 
   <target name="brserve" description="Run just browser test server.">
     <antcall target="runtests">
-      <param name="test.filter" value="GeneralBrowserTest"/>
       <param name="caja.test.serverOnly" value="true"/>
+      <!-- Run an arbitrary test to trigger the serverOnly logic -->
+      <param name="test.filter" value="Es5BrowserTest"/>
     </antcall>
   </target>
 
   <target name="brserve+" description="... and a test browser.">
     <antcall target="runtests">
-      <param name="test.filter" value="GeneralBrowserTest"/>
       <param name="caja.test.startAndWait" value="true"/>
+      <!-- Run an arbitrary test to trigger the startAndWait logic -->
+      <param name="test.filter" value="Es5BrowserTest"/>
     </antcall>
   </target>
 

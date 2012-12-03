@@ -2327,16 +2327,16 @@ After
   jsunitRegister('testImageElement',
                  function testImageElement() {
     var img = document.getElementById('testImageElement-image');
-    assertEquals(41, img.width);
-    assertEquals(13, img.height);
+    assertEquals('width', 41, img.width);
+    assertEquals('height', 13, img.height);
     img.width = 10;
     img.height = 20;
     assertEquals(10, img.width);
     assertEquals(20, img.height);
     assertEquals('10px', window.getComputedStyle(img, null).width);
     if (directAccess.feralFeatureTest(img, 'naturalWidth')) {
-      assertEquals(41, img.naturalWidth);
-      assertEquals(13, img.naturalHeight);
+      assertEquals('naturalWidth', 41, img.naturalWidth);
+      assertEquals('naturalHeight', 13, img.naturalHeight);
     } else {
       assertFalse('naturalWidth' in img);
       assertFalse('naturalHeight' in img);

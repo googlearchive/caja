@@ -52,5 +52,25 @@
   </head>
   <body onload="pageLoaded___()">
     <div id="automatedTestingReadyIndicator" style="display: none;"></div>
+
+    <!-- in es53 mode, testImageElement() is reliably fired
+         before the browser has loaded the image, because js runs
+         continuously without yielding: html-emitter sets the img
+         src, then eventually calls signalLoaded, which runs the
+         js tests.  The browser doesn't get a chance to render
+         any of the DOM until all the tests are finished running.
+         testImageElement fails, because the not-loaded-yet image
+         width is 0.
+
+         This is a workaround: it makes sure the image is loaded
+         before any tests get run.
+
+         TODO(felix8a): maybe we should use setTimeout to yield
+         somewhere in all that js.
+
+         TODO(felix8a): maybe testImageElement should use (and
+         test) img onload handling. -->
+
+    <img src="test-image-41x13.png" style="display:none">
   </body>
 </html>

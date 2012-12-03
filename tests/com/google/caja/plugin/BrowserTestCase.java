@@ -234,18 +234,6 @@ public abstract class BrowserTestCase extends CajaTestCase {
         && !"false".equalsIgnoreCase(value);
   }
 
-  protected String runTestDriver(String testDriver, String... params)
-      throws Exception {
-    return runTestDriver(testDriver, true, params) + "\n"
-        + runTestDriver(testDriver, false, params);
-  }
-
-  protected String runTestCase(String testCase, String... params)
-      throws Exception {
-    return runTestCase(testCase, true, params) + "\n"
-        + runTestCase(testCase, false, params);
-  }
-
   protected String runTestDriver(
       String testDriver, boolean es5, String... params)
       throws Exception {

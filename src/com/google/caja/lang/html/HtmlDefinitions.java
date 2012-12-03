@@ -44,7 +44,6 @@ import com.google.caja.parser.html.AttribKey;
 import com.google.caja.parser.html.ElKey;
 import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.Expression;
-import com.google.caja.parser.js.ExpressionStmt;
 import com.google.caja.parser.js.Identifier;
 import com.google.caja.parser.js.IntegerLiteral;
 import com.google.caja.parser.js.Reference;
