@@ -275,7 +275,7 @@ public abstract class BrowserTestCase extends CajaTestCase {
       @Override public String toString() { return "startup"; }
       public boolean run() {
         List<WebElement> readyElements = driver.findElements(
-            By.xpath("//*[@class='readytotest']"));
+            By.className("readytotest"));
         return readyElements.size() != 0;
       }
     });
