@@ -412,6 +412,8 @@
       <and>
         <istrue value="${runtests.success}"/>
         <equals arg1="${test.filter}" arg2="*Test"/>
+        <equals arg1="${test.method.filter}" arg2="*"/>
+        <isfalse value="${caja.test.headless}"/>
         <isfalse value="${caja.test.startAndWait}"/>
       </and>
     </condition>
