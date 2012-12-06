@@ -47,6 +47,7 @@
       t.whitelistApi('google.picker');
       t.whitelistApi('google.visualization');
       t.whitelistApi('google.maps');
+      t.whitelistApi('gapi.client.urlshortener');
 
       var tameConsole = frame.tame(frame.markReadOnlyRecord({
         log: frame.markFunction(function(s) {
@@ -72,14 +73,17 @@
 
   function runTests(tests) {
     caja.tamingGoogleLoader.addPolicyFactoryUrl(
-      'google.picker',
-      './google.picker.policyFactory.js');
+        'google.picker',
+        './google.picker.policyFactory.js');
     caja.tamingGoogleLoader.addPolicyFactoryUrl(
-      'google.visualization',
-      './google.visualization.policyFactory.js');
+        'google.visualization',
+        './google.visualization.policyFactory.js');
     caja.tamingGoogleLoader.addPolicyFactoryUrl(
-      'google.maps',
-      './google.maps.policyFactory.js');
+        'google.maps',
+        './google.maps.policyFactory.js');
+    caja.tamingGoogleLoader.addPolicyFactoryUrl(
+        'gapi.client.urlshortener',
+        './gapi.client.urlshortener.policyFactory.js');
 
     caja.initialize({
       cajaServer: getUrlParam('cajaServer'),
@@ -92,16 +96,13 @@
     }
   }
 
-  (function() {
-    var cajaServer = getUrlParam('cajaServer');
-    loadScript(cajaServer + '/caja.js', function() {
-      loadScript('./cajaTamingGoogleLoader.js', function() {
-        loadScript('./google.load.loaderFactory.js', function() {
-          getTests(runTests);
-        });
-      });
-    });
-  })();
+  loadScript([
+    getUrlParam('cajaServer') + '/caja.js',
+    './cajaTamingGoogleLoader.js',
+    './google.load.loaderFactory.js',
+    './gapi.client.load.loaderFactory.js'
+    ],
+    function() { getTests(runTests); });
 })();
 
 

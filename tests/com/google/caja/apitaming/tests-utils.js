@@ -59,9 +59,19 @@ function resolve(url) {
 }
 
 function loadScript(src, cb) {
-  var script = document.createElement('script');
-  script.setAttribute('src', src);
-  script.onload = cb;
-  document.head.appendChild(script);
+  if (src instanceof Array) {
+    if (src.length === 0) {
+      cb();
+    } else {
+      loadScript(src[0], function() {
+        loadScript(src.slice(1), cb);
+      });
+    }
+  } else {
+    var script = document.createElement('script');
+    script.setAttribute('src', src);
+    script.onload = cb;
+    document.head.appendChild(script);
+  }
 }
 
